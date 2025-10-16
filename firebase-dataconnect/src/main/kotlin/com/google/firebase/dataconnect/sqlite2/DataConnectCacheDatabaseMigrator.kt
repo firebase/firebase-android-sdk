@@ -211,41 +211,55 @@ private constructor(private val sqliteDatabase: SQLiteDatabase, private val logg
     )
     sqliteDatabase.execSQL(
       logger,
+      """CREATE TABLE users (
+        id INTEGER PRIMARY KEY,
+        auth_uid TEXT NOT NULL UNIQUE,
+        debug_info TEXT
+      )"""
+    )
+    sqliteDatabase.execSQL(
+      logger,
       """CREATE TABLE entity_data (
         id INTEGER PRIMARY KEY,
-        entityId BLOB NOT NULL UNIQUE,
+        userId INT NOT NULL REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
+        entityId BLOB NOT NULL,
         flags INT NOT NULL,
         data BLOB NOT NULL,
         sequence_number INT NOT NULL,
-        debug_info TEXT
+        debug_info TEXT,
+        UNIQUE (userId, entityId)
       )"""
     )
     sqliteDatabase.execSQL(
       logger,
       """CREATE TABLE query_results (
         id INTEGER PRIMARY KEY,
-        queryId BLOB NOT NULL UNIQUE,
+        userId INT NOT NULL REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
+        queryId BLOB NOT NULL,
         flags INT NOT NULL,
         data BLOB NOT NULL,
         sequence_number INT NOT NULL,
         ttl BLOB,
-        debug_info TEXT
+        debug_info TEXT,
+        UNIQUE (userId, queryId)
       )"""
     )
     sqliteDatabase.execSQL(
       logger,
       """CREATE TABLE entity_query_map (
+        userId INT NOT NULL REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
         queryId BLOB NOT NULL REFERENCES queries ON DELETE CASCADE ON UPDATE CASCADE,
         entityId BLOB NOT NULL REFERENCES entities ON DELETE CASCADE ON UPDATE CASCADE,
-        PRIMARY KEY (queryId, entityId)
+        PRIMARY KEY (userId, queryId, entityId)
       )"""
     )
-    // Add an explicit index on the `entityId` column so that "WHERE entityId=?" queries are fast.
-    // Note that "WHERE queryId=?" queries are already fast because `queryId` is the _first_
-    // component of the primary key and, therefore, is implicitly indexed.
+    // Add an explicit index on the `userId`-`entityId` columns so that
+    // "WHERE userId=? AND entityId=?" queries are fast. Note that "WHERE userId=? AND queryId=?"
+    // queries are _already_ fast because `userId` and `queryId` are the _first_ components of the
+    // primary key and, therefore, are implicitly indexed.
     sqliteDatabase.execSQL(
       logger,
-      "CREATE INDEX entity_query_map_entity_index ON entity_query_map(entityId)"
+      "CREATE INDEX entity_query_map_user_entity_index ON entity_query_map(userId, entityId)"
     )
   }
 
