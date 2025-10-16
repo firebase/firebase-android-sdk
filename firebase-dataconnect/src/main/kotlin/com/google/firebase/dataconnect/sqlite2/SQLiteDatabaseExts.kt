@@ -24,6 +24,7 @@ import android.os.CancellationSignal
 import android.util.Base64
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
+import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
 import org.intellij.lang.annotations.Language
 
 internal object SQLiteDatabaseExts {
@@ -70,6 +71,23 @@ internal object SQLiteDatabaseExts {
       }
 
     return cursor.use { block(it) }
+  }
+
+  fun SQLiteDatabase.getApplicationId(logger: Logger): Int {
+    val applicationId =
+      rawQuery("PRAGMA application_id", null).use { cursor ->
+        cursor.moveToNext()
+        cursor.getInt(0)
+      }
+    logger.debug {
+      "PRAGMA application_id returned $applicationId (${applicationId.to0xHexString()})"
+    }
+    return applicationId
+  }
+
+  fun SQLiteDatabase.setApplicationId(logger: Logger, applicationId: Int) {
+    logger.debug { "PRAGMA application_id = $applicationId (${applicationId.to0xHexString()})" }
+    execSQL("PRAGMA application_id = $applicationId")
   }
 
   private fun Logger.debugSql(@Language("RoomSql") sql: String, bindArgs: Array<Any?>?) = debug {

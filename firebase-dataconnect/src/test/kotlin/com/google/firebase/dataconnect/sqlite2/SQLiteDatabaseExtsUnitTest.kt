@@ -23,15 +23,22 @@ import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.sqlite2.SQLiteArbs.ColumnValue
 import com.google.firebase.dataconnect.sqlite2.SQLiteArbs.StringColumnValue
 import com.google.firebase.dataconnect.sqlite2.SQLiteDatabaseExts.execSQL
+import com.google.firebase.dataconnect.sqlite2.SQLiteDatabaseExts.getApplicationId
 import com.google.firebase.dataconnect.sqlite2.SQLiteDatabaseExts.rawQuery
+import com.google.firebase.dataconnect.sqlite2.SQLiteDatabaseExts.setApplicationId
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
 import com.google.firebase.dataconnect.testutil.SQLiteDatabaseRule
+import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
+import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
+import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
+import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
+import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
@@ -45,7 +52,10 @@ import io.kotest.property.arbitrary.next
 import io.kotest.property.arbitrary.set
 import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
+import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.runs
 import io.mockk.verify
 import java.util.concurrent.atomic.AtomicLong
 import kotlinx.coroutines.test.runTest
@@ -572,6 +582,73 @@ class SQLiteDatabaseExtsUnitTest {
     }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
+  // getApplicationId(Logger) unit tests
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+
+  @Test
+  fun `getApplicationId(Logger) should return the correct value`() = runTest {
+    checkAll(propTestConfig, Arb.int()) { applicationId ->
+      val mockLogger: Logger = mockk(relaxed = true)
+      sqliteDatabase.execSQL("PRAGMA application_id = $applicationId")
+      sqliteDatabase.getApplicationId(mockLogger) shouldBe applicationId
+    }
+  }
+
+  @Test
+  fun `getApplicationId(Logger) should log a message`() = runTest {
+    checkAll(propTestConfig, Arb.int()) { applicationId ->
+      val mockLogger: Logger = mockk(relaxed = true)
+      val logMessages = mutableListOf<String>()
+      every { mockLogger.log(any(), any(), capture(logMessages)) } just runs
+      sqliteDatabase.execSQL("PRAGMA application_id = $applicationId")
+
+      sqliteDatabase.getApplicationId(mockLogger)
+
+      val logMessage = logMessages.single()
+      assertSoftly {
+        logMessage shouldContainWithNonAbuttingText "application_id"
+        logMessage shouldContainWithNonAbuttingText applicationId.toString()
+        logMessage shouldContainWithNonAbuttingTextIgnoringCase applicationId.to0xHexString()
+      }
+    }
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // setApplicationId(Logger, Int) unit tests
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+
+  @Test
+  fun `setApplicationId(Logger, Int) should set the given value`() = runTest {
+    checkAll(propTestConfig, Arb.int()) { applicationId ->
+      val mockLogger: Logger = mockk(relaxed = true)
+
+      sqliteDatabase.setApplicationId(mockLogger, applicationId)
+
+      val actualApplicationId =
+        sqliteDatabase.rawQuery("PRAGMA application_id", null).use { cursor -> cursor.toInt() }
+      actualApplicationId shouldBe applicationId
+    }
+  }
+
+  @Test
+  fun `setApplicationId(Logger, Int) should log a message`() = runTest {
+    checkAll(propTestConfig, Arb.int()) { applicationId ->
+      val mockLogger: Logger = mockk(relaxed = true)
+      val logMessages = mutableListOf<String>()
+      every { mockLogger.log(any(), any(), capture(logMessages)) } just runs
+
+      sqliteDatabase.setApplicationId(mockLogger, applicationId)
+
+      val logMessage = logMessages.single()
+      assertSoftly {
+        logMessage shouldContainWithNonAbuttingText "application_id"
+        logMessage shouldContainWithNonAbuttingText applicationId.toString()
+        logMessage shouldContainWithNonAbuttingTextIgnoringCase applicationId.to0xHexString()
+      }
+    }
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
   // Helper classes and functions.
   //////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -613,6 +690,11 @@ class SQLiteDatabaseExtsUnitTest {
       while (moveToNext()) {
         add(getLong(0))
       }
+    }
+
+    fun Cursor.toInt(): Int {
+      withClue("moveToNext()") { moveToNext().shouldBeTrue() }
+      return getInt(0)
     }
 
     fun Cursor.toStringList(): List<String> = buildList {
