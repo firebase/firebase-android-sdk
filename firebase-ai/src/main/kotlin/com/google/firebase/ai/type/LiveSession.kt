@@ -28,7 +28,6 @@ import com.google.firebase.ai.common.JSON
 import com.google.firebase.ai.common.util.CancelledCoroutineScope
 import com.google.firebase.ai.common.util.accumulateUntil
 import com.google.firebase.ai.common.util.childJob
-import com.google.firebase.ai.type.MediaData.Internal
 import com.google.firebase.annotations.concurrent.Blocking
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import io.ktor.websocket.Frame
@@ -120,6 +119,35 @@ internal constructor(
     functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)? = null,
     enableInterruptions: Boolean = false,
   ) {
+    startAudioConversation(
+      functionCallHandler = functionCallHandler,
+      enableInterruptions = enableInterruptions
+    )
+  }
+
+  /**
+   * Starts an audio conversation with the model, which can only be stopped using
+   * [stopAudioConversation] or [close].
+   *
+   * @param functionCallHandler A callback function that is invoked whenever the model receives a
+   * function call. The [FunctionResponsePart] that the callback function returns will be
+   * automatically sent to the model.
+   *
+   * @param transcriptHandler A callback function that is invoked whenever the model receives a
+   * transcript.
+   *
+   * @param enableInterruptions If enabled, allows the user to speak over or interrupt the model's
+   * ongoing reply.
+   *
+   * **WARNING**: The user interruption feature relies on device-specific support, and may not be
+   * consistently available.
+   */
+  @RequiresPermission(RECORD_AUDIO)
+  public suspend fun startAudioConversation(
+    functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)? = null,
+    transcriptHandler: ((LiveServerMessage) -> Unit)? = null,
+    enableInterruptions: Boolean = false,
+  ) {
 
     val context = firebaseApp.applicationContext
     if (
@@ -142,7 +170,7 @@ internal constructor(
       audioHelper = AudioHelper.build()
 
       recordUserAudio()
-      processModelResponses(functionCallHandler)
+      processModelResponses(functionCallHandler, transcriptHandler)
       listenForModelPlayback(enableInterruptions)
     }
   }
@@ -390,7 +418,8 @@ internal constructor(
    * function call.
    */
   private fun processModelResponses(
-    functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)?
+    functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)?,
+    transcriptHandler: ((LiveServerMessage) -> Unit)?
   ) {
     receive()
       .onEach {
@@ -419,6 +448,9 @@ internal constructor(
             )
           }
           is LiveServerContent -> {
+            if (it.outputTranscription != null || it.inputTranscription != null) {
+              transcriptHandler?.invoke(it)
+            }
             if (it.interrupted) {
               playBackQueue.clear()
             } else {

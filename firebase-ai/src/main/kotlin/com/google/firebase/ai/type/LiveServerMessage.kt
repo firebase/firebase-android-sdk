@@ -108,8 +108,9 @@ public class LiveServerContent(
   @Serializable
   internal data class InternalWrapper(val serverContent: Internal) : InternalLiveServerMessage {
     @OptIn(ExperimentalSerializationApi::class)
-    override fun toPublic() =
-      LiveServerContent(
+    override fun toPublic(): LiveServerContent {
+      // WhenMajor(Revisit the decision to make these have default values)
+      return LiveServerContent(
         serverContent.modelTurn?.toPublic(),
         serverContent.interrupted ?: false,
         serverContent.turnComplete ?: false,
@@ -117,6 +118,7 @@ public class LiveServerContent(
         serverContent.inputTranscription?.toPublic(),
         serverContent.outputTranscription?.toPublic()
       )
+    }
   }
 }
 
