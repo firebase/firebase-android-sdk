@@ -168,6 +168,12 @@ internal constructor(
   ) : InternalPart
 }
 
+
+/**
+ * Represents binary data with an associated MIME type.
+ * @property data the binary data as a [ByteArray]
+ * @property mimeType an IANA standard MIME type.
+ */
 public class InlineData(public val data: ByteArray, public val mimeType: String) {
   @Serializable internal data class Internal(val mimeType: String, val data: Base64)
 
