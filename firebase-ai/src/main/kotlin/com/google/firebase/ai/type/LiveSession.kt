@@ -196,8 +196,6 @@ internal constructor(
             response
               .getOrNull()
               ?.let {
-                var x = it.readBytes().toString(Charsets.UTF_8)
-                Log.d(TAG, x)
                 JSON.decodeFromString<InternalLiveServerMessage>(
                   it.readBytes().toString(Charsets.UTF_8)
                 )
@@ -319,7 +317,6 @@ internal constructor(
             )
             .toInternal()
         )
-      Log.d(TAG, jsonString)
       session.send(Frame.Text(jsonString))
     }
   }
@@ -369,7 +366,6 @@ internal constructor(
 
   /** Listen to the user's microphone and send the data to the model. */
   private fun recordUserAudio() {
-    // ?.onEach { sendAudioRealtime(InlineDataPart (it, "audio/pcm")) }
     // Buffer the recording so we can keep recording while data is sent to the server
     audioHelper
       ?.listenToRecording()
