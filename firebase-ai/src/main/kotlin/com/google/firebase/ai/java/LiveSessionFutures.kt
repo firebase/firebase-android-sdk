@@ -141,7 +141,7 @@ public abstract class LiveSessionFutures internal constructor() {
    * input usage.
    * @param video The video data to send. Video MIME type could be either video or image.
    */
-  public abstract fun sendVideoRealtime(video: InlineData) : ListenableFuture<Unit>
+  public abstract fun sendVideoRealtime(video: InlineData): ListenableFuture<Unit>
 
   /**
    * Sends text data to the server in realtime. Check
@@ -218,7 +218,6 @@ public abstract class LiveSessionFutures internal constructor() {
 
     override fun sendAudioRealtime(audio: InlineData): ListenableFuture<Unit> =
       SuspendToFutureAdapter.launchFuture { session.sendAudioRealtime(audio) }
-
 
     override fun sendVideoRealtime(video: InlineData): ListenableFuture<Unit> =
       SuspendToFutureAdapter.launchFuture { session.sendVideoRealtime(video) }

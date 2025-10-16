@@ -261,7 +261,7 @@ internal constructor(
    *
    * To learn more about audio formats, and the required state they should be provided in, see the
    * docs on
-   * [Supported audio formats](https://cloud.google.com/vertex-ai/generative-ai/docs/live-api#supported-audio-formats).
+   * [Supported audio formats](https://cloud.google.com/vertex-ai/generative-ai/docs/live-api#supported-audio-formats)
    *
    * @param audio Raw audio data used to update the model on the client's conversation. For best
    * results, send 16-bit PCM audio at 24kHz.
@@ -278,8 +278,7 @@ internal constructor(
    * Sends a video input stream to the model, using the realtime API.
    *
    * @param video Encoded video data, used to update the model on the client's conversation. The
-   * MIME type can be a video format (e.g., `video/webm`) or an image format (e.g.,
-   * `image/jpeg`).
+   * MIME type can be a video format (e.g., `video/webm`) or an image format (e.g., `image/jpeg`).
    */
   public suspend fun sendVideoRealtime(video: InlineData) {
     FirebaseAIException.catchAsync {
