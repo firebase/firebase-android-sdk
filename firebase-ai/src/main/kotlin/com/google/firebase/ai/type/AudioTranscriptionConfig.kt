@@ -16,8 +16,6 @@
 
 package com.google.firebase.ai.type
 
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 
 /**
@@ -34,5 +32,4 @@ public class AudioTranscriptionConfig(
 ) {
 
   internal fun toInternal() = JsonObject(emptyMap())
-
 }

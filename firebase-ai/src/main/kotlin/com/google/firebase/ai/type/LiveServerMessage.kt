@@ -112,8 +112,8 @@ public class LiveServerContent(
       LiveServerContent(
         serverContent.modelTurn?.toPublic(),
         serverContent.interrupted ?: false,
-        serverContent.turnComplete?: false,
-        serverContent.generationComplete?: false,
+        serverContent.turnComplete ?: false,
+        serverContent.generationComplete ?: false,
         serverContent.inputTranscription?.toPublic(),
         serverContent.outputTranscription?.toPublic()
       )
