@@ -37,17 +37,17 @@ internal val AudioRecord.minBufferSize: Int
  *
  * Will yield when this instance is not recording.
  */
-internal fun AudioRecord.readAsFlow() = callbackFlow {
+internal fun AudioRecord.readAsFlow() = flow {
   val buffer = ByteArray(minBufferSize)
 
-  while (isActive) {
+  while (true) {
     if (recordingState != AudioRecord.RECORDSTATE_RECORDING) {
       delay(0)
       continue
     }
     val bytesRead = read(buffer, 0, buffer.size)
     if (bytesRead > 0) {
-      send(buffer.copyOf(bytesRead))
+      emit(buffer.copyOf(bytesRead))
     }
     delay(0)
   }
