@@ -338,13 +338,13 @@ internal fun Part.toInternal(): InternalPart {
     is TextPart -> TextPart.Internal(text, isThought, thoughtSignature)
     is ImagePart ->
       InlineDataPart.Internal(
-        InlineDataPart.Internal.InlineData("image/jpeg", encodeBitmapToBase64Jpeg(image)),
+        InlineData.Internal("image/jpeg", encodeBitmapToBase64Jpeg(image)),
         isThought,
         thoughtSignature
       )
     is InlineDataPart ->
       InlineDataPart.Internal(
-        InlineDataPart.Internal.InlineData(
+        InlineData.Internal(
           mimeType,
           android.util.Base64.encodeToString(inlineData, BASE_64_FLAGS)
         ),
