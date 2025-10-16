@@ -19,10 +19,12 @@ package com.google.firebase.dataconnect.sqlite2
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteDatabase.CREATE_IF_NECESSARY
 import android.database.sqlite.SQLiteDatabase.OPEN_READONLY
+import android.database.sqlite.SQLiteException
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
 import com.google.firebase.dataconnect.testutil.StringCaseInsensitiveEquality
+import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.matchers.booleans.shouldBeFalse
@@ -39,12 +41,12 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.verify
-import java.io.File
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import java.io.File
 
 @RunWith(RobolectricTestRunner::class)
 class DataConnectSQLiteDatabaseOpenerUnitTest {
@@ -170,6 +172,31 @@ class DataConnectSQLiteDatabaseOpenerUnitTest {
     }
   }
 
+  @Test
+  fun `open() should specify NO_LOCALIZED_COLLATORS when opening the database`() {
+    val mockLogger: Logger = mockk(relaxed = true)
+    val createTableSql = "CREATE TABLE foo (col TEXT)"
+    val querySql = "SELECT col FROM foo ORDER BY col COLLATE LOCALIZED ASC"
+    // Verify that rawQuery(querySql) does not throw an exception when NO_LOCALIZED_COLLATORS is NOT
+    // specified to openDatabase(). If it _does_ throw an exception, then the rest of the test is
+    // invalid.
+    SQLiteDatabase.openDatabase(":memory:", null, 0).use { db ->
+      db.execSQL(createTableSql)
+      db.rawQuery(querySql, null).close()
+    }
+
+    val exception = DataConnectSQLiteDatabaseOpener.open(dbFile, mockLogger).use { db ->
+      db.execSQL(createTableSql)
+      shouldThrow<SQLiteException> {
+        db.rawQuery(querySql, null).close()
+      }
+    }
+
+    // Verify that the exception is indeed due to the "LOCALIZED" collator being absent, which is
+    // what we want because it is the observable side effect of NO_LOCALIZED_COLLATORS.
+    exception.message shouldContainWithNonAbuttingTextIgnoringCase "no such collation sequence"
+  }
+
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Helper methods and classes
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -222,10 +249,6 @@ class DataConnectSQLiteDatabaseOpenerUnitTest {
 
     fun setApplicationId(db: SQLiteDatabase, applicationId: Int) {
       db.execSQL("PRAGMA application_id = $applicationId")
-    }
-
-    fun setApplicationId(dbFile: File, applicationId: Int) {
-      withReadWriteDb(dbFile) { setApplicationId(it, applicationId) }
     }
 
     fun getPragmaStringValue(db: SQLiteDatabase, pragma: String): String =
