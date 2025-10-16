@@ -16,20 +16,12 @@
 
 package com.google.firebase.ai.type
 
-import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.Serializable
 
-/**
- * The audio transcription configuration.
- * @property enable If true, the server will use Gemini to transcribe the audio.
- * @property prefixPrompt Prefix prompt for the audio transcription op. This is useful to override
- * the default prefix prompt that only asks the model to transcribe the audio. Overriding can be
- * useful to provide additional context to the model such as what language is expected to be spoken
- * in the audio.
- */
-public class AudioTranscriptionConfig(
-  internal val enable: Boolean? = null,
-  internal val prefixPrompt: String? = null
-) {
+/** The audio transcription configuration. Its presence enables audio transcription */
+public class AudioTranscriptionConfig() {
 
-  internal fun toInternal() = JsonObject(emptyMap())
+  @Serializable internal object Internal
+
+  internal fun toInternal() = Internal
 }
