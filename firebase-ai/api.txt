@@ -145,8 +145,11 @@ package com.google.firebase.ai.java {
     method public abstract org.reactivestreams.Publisher<com.google.firebase.ai.type.LiveServerMessage> receive();
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> send(com.google.firebase.ai.type.Content content);
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> send(String text);
+    method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> sendAudioRealtime(com.google.firebase.ai.type.InlineData audio);
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> sendFunctionResponse(java.util.List<com.google.firebase.ai.type.FunctionResponsePart> functionList);
-    method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> sendMediaStream(java.util.List<com.google.firebase.ai.type.MediaData> mediaChunks);
+    method @Deprecated public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> sendMediaStream(java.util.List<com.google.firebase.ai.type.MediaData> mediaChunks);
+    method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> sendTextRealtime(String text);
+    method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> sendVideoRealtime(com.google.firebase.ai.type.InlineData video);
     method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> startAudioConversation();
     method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> startAudioConversation(boolean enableInterruptions);
     method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> startAudioConversation(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.FunctionCallPart,com.google.firebase.ai.type.FunctionResponsePart>? functionCallHandler);
@@ -805,6 +808,14 @@ package com.google.firebase.ai.type {
   public static final class ImagenSubjectReferenceType.Companion {
   }
 
+  public final class InlineData {
+    ctor public InlineData(byte[] data, String mimeType);
+    method public byte[] getData();
+    method public String getMimeType();
+    property public final byte[] data;
+    property public final String mimeType;
+  }
+
   public final class InlineDataPart implements com.google.firebase.ai.type.Part {
     ctor public InlineDataPart(byte[] inlineData, String mimeType);
     method public byte[] getInlineData();
@@ -903,20 +914,23 @@ package com.google.firebase.ai.type {
     method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.type.LiveServerMessage> receive();
     method public suspend Object? send(com.google.firebase.ai.type.Content content, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public suspend Object? send(String text, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public suspend Object? sendAudioRealtime(com.google.firebase.ai.type.InlineData audio, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public suspend Object? sendFunctionResponse(java.util.List<com.google.firebase.ai.type.FunctionResponsePart> functionList, kotlin.coroutines.Continuation<? super kotlin.Unit>);
-    method public suspend Object? sendMediaStream(java.util.List<com.google.firebase.ai.type.MediaData> mediaChunks, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method @Deprecated public suspend Object? sendMediaStream(java.util.List<com.google.firebase.ai.type.MediaData> mediaChunks, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public suspend Object? sendTextRealtime(String text, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public suspend Object? sendVideoRealtime(com.google.firebase.ai.type.InlineData video, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public suspend Object? startAudioConversation(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.FunctionCallPart,com.google.firebase.ai.type.FunctionResponsePart>? functionCallHandler = null, boolean enableInterruptions = false, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public suspend Object? startAudioConversation(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.FunctionCallPart,com.google.firebase.ai.type.FunctionResponsePart>? functionCallHandler = null, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public void stopAudioConversation();
     method public void stopReceiving();
   }
 
-  @com.google.firebase.ai.type.PublicPreviewAPI public final class MediaData {
-    ctor public MediaData(byte[] data, String mimeType);
-    method public byte[] getData();
-    method public String getMimeType();
-    property public final byte[] data;
-    property public final String mimeType;
+  @Deprecated @com.google.firebase.ai.type.PublicPreviewAPI public final class MediaData {
+    ctor @Deprecated public MediaData(byte[] data, String mimeType);
+    method @Deprecated public byte[] getData();
+    method @Deprecated public String getMimeType();
+    property @Deprecated public final byte[] data;
+    property @Deprecated public final String mimeType;
   }
 
   public final class ModalityTokenCount {
