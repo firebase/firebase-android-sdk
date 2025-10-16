@@ -25,6 +25,7 @@ import android.os.CancellationSignal
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
+import com.google.firebase.dataconnect.sqlite2.SQLiteDatabaseExts.execSQL
 import java.io.File
 
 internal object DataConnectSQLiteDatabaseOpener {
@@ -40,13 +41,12 @@ internal object DataConnectSQLiteDatabaseOpener {
     val openFlags = ENABLE_WRITE_AHEAD_LOGGING or CREATE_IF_NECESSARY or NO_LOCALIZED_COLLATORS
     logger.debug { "opening sqlite database: $dbPath" }
     val sqliteDatabase = SQLiteDatabase.openDatabase(dbPath, null, openFlags)
-    logger.debug { "opened sqlite database: $dbPath" }
-    cancellationSignal.throwIfCanceled()
 
     var sqliteDatabaseInitializationSuccessful = false
     try {
-      initializeSQLiteDatabase(sqliteDatabase)
-      logger.debug { "initialized sqlite database: $dbPath" }
+      cancellationSignal.throwIfCanceled()
+      logger.debug { "initializing sqlite database: $dbPath" }
+      initializeSQLiteDatabase(sqliteDatabase, logger)
       sqliteDatabaseInitializationSuccessful = true
     } finally {
       if (!sqliteDatabaseInitializationSuccessful) {
@@ -61,20 +61,20 @@ internal object DataConnectSQLiteDatabaseOpener {
     return sqliteDatabase
   }
 
-  private fun initializeSQLiteDatabase(sqliteDatabase: SQLiteDatabase) {
+  private fun initializeSQLiteDatabase(sqliteDatabase: SQLiteDatabase, logger: Logger) {
     sqliteDatabase.setForeignKeyConstraintsEnabled(true)
 
     // Enable "full" synchronous mode to get atomic, consistent, isolated, and durable (ACID)
     // properties. Note that ACID is only guaranteed because WAL mode is enabled by calling
     // db.enableWriteAheadLogging() above.
     // https://www.sqlite.org/pragma.html#pragma_synchronous
-    sqliteDatabase.execSQL("PRAGMA synchronous = FULL")
+    sqliteDatabase.execSQL(logger, "PRAGMA synchronous = FULL")
 
     @SuppressLint("UseKtx") sqliteDatabase.beginTransaction()
     try {
       // Incur a slight performance penalty to eagerly report and isolate database corruption.
       // https://www.sqlite.org/pragma.html#pragma_cell_size_check
-      sqliteDatabase.execSQL("PRAGMA cell_size_check = true")
+      sqliteDatabase.execSQL(logger, "PRAGMA cell_size_check = true")
 
       sqliteDatabase.setTransactionSuccessful()
     } finally {
