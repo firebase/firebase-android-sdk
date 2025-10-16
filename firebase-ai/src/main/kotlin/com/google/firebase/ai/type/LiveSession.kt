@@ -264,15 +264,10 @@ internal constructor(
    * input usage.
    * @param audio The audio data to send.
    */
-  public suspend fun sendAudioRealtime(audio: InlineDataPart) {
+  public suspend fun sendAudioRealtime(audio: InlineData) {
     FirebaseAIException.catchAsync {
       val jsonString =
-        Json.encodeToString(
-          BidiGenerateContentRealtimeInputSetup(
-              audio = MediaData(audio.inlineData, mimeType = audio.mimeType).toInternal()
-            )
-            .toInternal()
-        )
+        Json.encodeToString(BidiGenerateContentRealtimeInputSetup(audio = audio).toInternal())
       session.send(Frame.Text(jsonString))
     }
   }
@@ -283,15 +278,10 @@ internal constructor(
    * input usage.
    * @param video The video data to send. Video MIME type could be either video or image.
    */
-  public suspend fun sendVideoRealtime(video: InlineDataPart) {
+  public suspend fun sendVideoRealtime(video: InlineData) {
     FirebaseAIException.catchAsync {
       val jsonString =
-        Json.encodeToString(
-          BidiGenerateContentRealtimeInputSetup(
-              video = MediaData(video.inlineData, mimeType = video.mimeType).toInternal()
-            )
-            .toInternal()
-        )
+        Json.encodeToString(BidiGenerateContentRealtimeInputSetup(video = video).toInternal())
       session.send(Frame.Text(jsonString))
     }
   }
@@ -324,7 +314,10 @@ internal constructor(
     FirebaseAIException.catchAsync {
       val jsonString =
         Json.encodeToString(
-          BidiGenerateContentRealtimeInputSetup(mediaChunks.map { (it.toInternal()) }).toInternal()
+          BidiGenerateContentRealtimeInputSetup(
+              mediaChunks.map { InlineData(it.data, it.mimeType) }
+            )
+            .toInternal()
         )
       Log.d(TAG, jsonString)
       session.send(Frame.Text(jsonString))
@@ -382,7 +375,7 @@ internal constructor(
       ?.listenToRecording()
       ?.buffer(UNLIMITED)
       ?.accumulateUntil(MIN_BUFFER_SIZE)
-      ?.onEach { sendAudioRealtime(InlineDataPart(it, "audio/pcm")) }
+      ?.onEach { sendAudioRealtime(InlineData(it, "audio/pcm")) }
       ?.catch { throw FirebaseAIException.from(it) }
       ?.launchIn(scope)
   }
@@ -523,23 +516,30 @@ internal constructor(
    * End of turn is derived from user activity (eg; end of speech).
    */
   internal class BidiGenerateContentRealtimeInputSetup(
-    val mediaChunks: List<MediaData.Internal>? = null,
-    val audio: MediaData.Internal? = null,
-    val video: MediaData.Internal? = null,
+    val mediaChunks: List<InlineData>? = null,
+    val audio: InlineData? = null,
+    val video: InlineData? = null,
     val text: String? = null
   ) {
     @Serializable
     internal class Internal(val realtimeInput: BidiGenerateContentRealtimeInput) {
       @Serializable
       internal data class BidiGenerateContentRealtimeInput(
-        val mediaChunks: List<MediaData.Internal>?,
-        val audio: MediaData.Internal?,
-        val video: MediaData.Internal?,
+        val mediaChunks: List<InlineData.Internal>?,
+        val audio: InlineData.Internal?,
+        val video: InlineData.Internal?,
         val text: String?
       )
     }
     fun toInternal() =
-      Internal(Internal.BidiGenerateContentRealtimeInput(mediaChunks, audio, video, text))
+      Internal(
+        Internal.BidiGenerateContentRealtimeInput(
+          mediaChunks?.map { it.toInternal() },
+          audio?.toInternal(),
+          video?.toInternal(),
+          text
+        )
+      )
   }
 
   private companion object {
