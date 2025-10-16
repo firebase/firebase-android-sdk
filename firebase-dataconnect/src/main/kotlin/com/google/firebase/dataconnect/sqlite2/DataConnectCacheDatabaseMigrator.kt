@@ -183,7 +183,11 @@ private constructor(private val sqliteDatabase: SQLiteDatabase, private val logg
     // The PATCH version changes for all other non-schema-affecting changes, such as adding an
     // index to an existing table.
     return if (schemaVersion === null) {
-      throw InvalidSchemaVersionException("schema_version is null")
+      throw InvalidSchemaVersionException(
+        "schema_version is null or not set;" +
+          " expected a value that starts with \"1.\";" +
+          " aborting to avoid corrupting the contents of the database"
+      )
     } else if (schemaVersion == "1.0.0") {
       RunMigrationStepResult.StepExecuted("1.1.0").apply {
         logger.debug { "migrating to schema version $newSchemaVersion from $schemaVersion" }
@@ -192,7 +196,11 @@ private constructor(private val sqliteDatabase: SQLiteDatabase, private val logg
     } else if (schemaVersion.startsWith("1.")) {
       RunMigrationStepResult.NoMore
     } else {
-      throw InvalidSchemaVersionException("unsupported schema_version: $schemaVersion")
+      throw InvalidSchemaVersionException(
+        "schema_version $schemaVersion is unknown;" +
+          " expected a value that starts with \"1.\";" +
+          " aborting to avoid corrupting the contents of the database"
+      )
     }
   }
 
