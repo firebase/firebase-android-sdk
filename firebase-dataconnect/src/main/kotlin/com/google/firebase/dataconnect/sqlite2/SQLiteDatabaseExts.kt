@@ -87,9 +87,12 @@ internal object SQLiteDatabaseExts {
     } else if (sql.count { it == '?' } == bindArgs.size) {
       buildString {
         append(sql.trimIndent())
+        var questionMarkIndexOfStart = 0
         bindArgs.forEach { bindArg ->
-          val questionMarkIndex = indexOf('?')
-          replace(questionMarkIndex, questionMarkIndex + 1, bindArg.escapedSQL())
+          val questionMarkIndex = indexOf('?', questionMarkIndexOfStart)
+          val escapedBindArg = bindArg.escapedSQL()
+          replace(questionMarkIndex, questionMarkIndex + 1, escapedBindArg)
+          questionMarkIndexOfStart = questionMarkIndex + escapedBindArg.length
         }
       }
     } else {
