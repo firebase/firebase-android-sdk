@@ -17,10 +17,13 @@
 package com.google.firebase.dataconnect.sqlite2
 
 import android.database.Cursor
+import android.util.Base64
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import io.kotest.property.Arb
 import io.kotest.property.RandomSource
 import io.kotest.property.Sample
+import io.kotest.property.arbitrary.byte
+import io.kotest.property.arbitrary.byteArray
 import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.double
@@ -45,6 +48,7 @@ object SQLiteArbs {
     floatColumnValue: Arb<FloatColumnValue> = floatColumnValue(),
     doubleColumnValue: Arb<DoubleColumnValue> = doubleColumnValue(),
     stringColumnValue: Arb<StringColumnValue> = stringColumnValue(),
+    byteArrayColumnValue: Arb<ByteArrayColumnValue> = byteArrayColumnValue(),
   ): Arb<ColumnValue<*>> =
     Arb.choice(
       nullColumnValue,
@@ -53,6 +57,7 @@ object SQLiteArbs {
       floatColumnValue,
       doubleColumnValue,
       stringColumnValue,
+      byteArrayColumnValue,
     )
 
   fun nullColumnValue(): Arb<NullColumnValue> = Arb.constant(NullColumnValue)
@@ -73,6 +78,19 @@ object SQLiteArbs {
     string: Arb<String> = Arb.dataConnect.string(),
     containsApostropheProbability: Float = 0.5f
   ): Arb<StringColumnValue> = StringColumnValueArb(string, containsApostropheProbability)
+
+  fun byteArrayColumnValue(
+    byteArray: Arb<ByteArray> = Arb.byteArray(Arb.int(0..40), Arb.byte()),
+  ): Arb<ByteArrayColumnValue> =
+    byteArray.map {
+      val itPrefix = it.take(20)
+      val itPrefixBase64 = Base64.encodeToString(itPrefix.toByteArray(), Base64.NO_WRAP)
+      val suffix = if (itPrefix.size < it.size) "..." else ""
+      ByteArrayColumnValue(
+        bindArgsValue = it,
+        loggedValue = "byte[${it.size}]=" + itPrefixBase64 + suffix,
+      )
+    }
 
   /**
    * Stores information about a Kotlin value that can be used as a value of a sqlite column by
@@ -117,15 +135,7 @@ object SQLiteArbs {
 
     /** A function to call to get the value of this column from a [Cursor]. */
     val getValueFromCursor: Cursor.(columnIndex: Int) -> T,
-  ) {
-
-    override fun equals(other: Any?): Boolean =
-      other is ColumnValue<*> && other.bindArgsValue == bindArgsValue
-
-    override fun hashCode(): Int = bindArgsValue.hashCode()
-
-    override fun toString(): String = bindArgsValue.toString()
-  }
+  )
 
   /**
    * An implementation of [ColumnValue] where the [bindArgsValue] is exactly the same as the
@@ -233,6 +243,19 @@ object SQLiteArbs {
         )
     }
   }
+
+  class ByteArrayColumnValue(
+    bindArgsValue: ByteArray,
+    loggedValue: String,
+  ) :
+    ColumnValue<ByteArray>(
+      bindArgsValue = bindArgsValue,
+      loggedValue = loggedValue,
+      readBackValue = bindArgsValue,
+      readBackNullableValue = bindArgsValue,
+      sqliteColumnType = "BLOB",
+      getValueFromCursor = { getBlob(it) },
+    )
 
   /**
    * The same as [String.drop] except that if the drop would break up a surrogate pair, causing a

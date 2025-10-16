@@ -21,6 +21,7 @@ import android.database.sqlite.SQLiteCursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteQuery
 import android.os.CancellationSignal
+import android.util.Base64
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import org.intellij.lang.annotations.Language
@@ -116,11 +117,12 @@ internal object SQLiteDatabaseExts {
       is String -> "'" + replace("'", "''") + "'"
       is Number -> toString()
       is ByteArray ->
-        this.contentToString().let {
-          if (it.length <= 10) {
-            it
-          } else {
-            it.substring(0, 10) + "..."
+        buildString {
+          append("byte[").append(size).append("]=")
+          val len = size.coerceAtMost(20)
+          append(Base64.encodeToString(this@escapedSQL, 0, len, Base64.NO_WRAP))
+          if (size > len) {
+            append("...")
           }
         }
       else -> this.toString()

@@ -138,6 +138,20 @@ class SQLiteArbsUnitTest {
   }
 
   @Test
+  fun `byteArrayColumnValue should generate ByteArrayColumnValue instances`() = runTest {
+    val bindArgsValues = mutableListOf<ByteArray>()
+    checkAll(propTestConfig, Arb.sqlite.byteArrayColumnValue()) { value ->
+      bindArgsValues.add(value.bindArgsValue)
+    }
+
+    assertSoftly {
+      bindArgsValues.count { it.isEmpty() } shouldBeGreaterThan 10
+      bindArgsValues.count { it.size > 20 } shouldBeGreaterThan 200
+      bindArgsValues.count { it.size < 20 } shouldBeGreaterThan 200
+    }
+  }
+
+  @Test
   fun `columnValue should generate all ColumnValue types`() = runTest {
     val columnValues = mutableListOf<SQLiteArbs.ColumnValue<*>>()
     checkAll(propTestConfig, Arb.sqlite.columnValue()) { value -> columnValues.add(value) }
@@ -149,6 +163,7 @@ class SQLiteArbsUnitTest {
       columnValues.count { it is SQLiteArbs.FloatColumnValue } shouldBeGreaterThan 10
       columnValues.count { it is SQLiteArbs.DoubleColumnValue } shouldBeGreaterThan 10
       columnValues.count { it is SQLiteArbs.StringColumnValue } shouldBeGreaterThan 10
+      columnValues.count { it is SQLiteArbs.ByteArrayColumnValue } shouldBeGreaterThan 10
     }
   }
 
