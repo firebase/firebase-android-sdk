@@ -4,6 +4,7 @@
   on OkHTTP version 3.x the change is both binary- and Java source-compatible, with a few small
   exceptions. See https://square.github.io/okhttp/changelogs/upgrading_to_okhttp_4/ for more
   details.
+- [fixed] Fixed StrictMode DiskReadViolation prompted by AppStartTrace setup. [#7340]
 
 # 22.0.2
 
