@@ -42,10 +42,10 @@ internal class DataConnectAppCheck(
   private val appCheckTokenListener = AppCheckTokenListenerImpl(logger)
 
   @DeferredApi
-  override fun addTokenListener(provider: InteropAppCheckTokenProvider) =
+  override fun registerProvider(provider: InteropAppCheckTokenProvider) =
     provider.addAppCheckTokenListener(appCheckTokenListener)
 
-  override fun removeTokenListener(provider: InteropAppCheckTokenProvider) =
+  override fun unregisterProvider(provider: InteropAppCheckTokenProvider) =
     provider.removeAppCheckTokenListener(appCheckTokenListener)
 
   override suspend fun getToken(provider: InteropAppCheckTokenProvider, forceRefresh: Boolean) =
