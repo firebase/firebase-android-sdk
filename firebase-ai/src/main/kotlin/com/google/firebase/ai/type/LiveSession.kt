@@ -28,6 +28,7 @@ import com.google.firebase.ai.common.JSON
 import com.google.firebase.ai.common.util.CancelledCoroutineScope
 import com.google.firebase.ai.common.util.accumulateUntil
 import com.google.firebase.ai.common.util.childJob
+import com.google.firebase.ai.type.MediaData.Internal
 import com.google.firebase.annotations.concurrent.Blocking
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import io.ktor.websocket.Frame
@@ -256,19 +257,68 @@ internal constructor(
   }
 
   /**
+   * Sends an audio input stream to the model, using the realtime API.
+   *
+   * To learn more about audio formats, and the required state they should be provided in, see the
+   * docs on
+   * [Supported audio formats](https://cloud.google.com/vertex-ai/generative-ai/docs/live-api#supported-audio-formats)
+   *
+   * @param audio Raw audio data used to update the model on the client's conversation. For best
+   * results, send 16-bit PCM audio at 24kHz.
+   */
+  public suspend fun sendAudioRealtime(audio: InlineData) {
+    FirebaseAIException.catchAsync {
+      val jsonString =
+        Json.encodeToString(BidiGenerateContentRealtimeInputSetup(audio = audio).toInternal())
+      session.send(Frame.Text(jsonString))
+    }
+  }
+
+  /**
+   * Sends a video input stream to the model, using the realtime API.
+   *
+   * @param video Encoded video data, used to update the model on the client's conversation. The
+   * MIME type can be a video format (e.g., `video/webm`) or an image format (e.g., `image/jpeg`).
+   */
+  public suspend fun sendVideoRealtime(video: InlineData) {
+    FirebaseAIException.catchAsync {
+      val jsonString =
+        Json.encodeToString(BidiGenerateContentRealtimeInputSetup(video = video).toInternal())
+      session.send(Frame.Text(jsonString))
+    }
+  }
+
+  /**
+   * Sends a text input stream to the model, using the realtime API.
+   *
+   * @param text Text content to append to the current client's conversation.
+   */
+  public suspend fun sendTextRealtime(text: String) {
+    FirebaseAIException.catchAsync {
+      val jsonString =
+        Json.encodeToString(BidiGenerateContentRealtimeInputSetup(text = text).toInternal())
+      session.send(Frame.Text(jsonString))
+    }
+  }
+
+  /**
    * Streams client data to the model.
    *
    * Calling this after [startAudioConversation] will play the response audio immediately.
    *
    * @param mediaChunks The list of [MediaData] instances representing the media data to be sent.
    */
+  @Deprecated("Use sendAudioRealtime, sendVideoRealtime, or sendTextRealtime instead")
   public suspend fun sendMediaStream(
     mediaChunks: List<MediaData>,
   ) {
     FirebaseAIException.catchAsync {
       val jsonString =
         Json.encodeToString(
-          BidiGenerateContentRealtimeInputSetup(mediaChunks.map { (it.toInternal()) }).toInternal()
+          BidiGenerateContentRealtimeInputSetup(
+              mediaChunks.map { InlineData(it.data, it.mimeType) }
+            )
+            .toInternal()
         )
       session.send(Frame.Text(jsonString))
     }
@@ -324,7 +374,7 @@ internal constructor(
       ?.listenToRecording()
       ?.buffer(UNLIMITED)
       ?.accumulateUntil(MIN_BUFFER_SIZE)
-      ?.onEach { sendMediaStream(listOf(MediaData(it, "audio/pcm"))) }
+      ?.onEach { sendAudioRealtime(InlineData(it, "audio/pcm")) }
       ?.catch { throw FirebaseAIException.from(it) }
       ?.launchIn(scope)
   }
@@ -464,15 +514,31 @@ internal constructor(
    *
    * End of turn is derived from user activity (eg; end of speech).
    */
-  internal class BidiGenerateContentRealtimeInputSetup(val mediaChunks: List<MediaData.Internal>) {
+  internal class BidiGenerateContentRealtimeInputSetup(
+    val mediaChunks: List<InlineData>? = null,
+    val audio: InlineData? = null,
+    val video: InlineData? = null,
+    val text: String? = null
+  ) {
     @Serializable
     internal class Internal(val realtimeInput: BidiGenerateContentRealtimeInput) {
       @Serializable
       internal data class BidiGenerateContentRealtimeInput(
-        val mediaChunks: List<MediaData.Internal>
+        val mediaChunks: List<InlineData.Internal>?,
+        val audio: InlineData.Internal?,
+        val video: InlineData.Internal?,
+        val text: String?
       )
     }
-    fun toInternal() = Internal(Internal.BidiGenerateContentRealtimeInput(mediaChunks))
+    fun toInternal() =
+      Internal(
+        Internal.BidiGenerateContentRealtimeInput(
+          mediaChunks?.map { it.toInternal() },
+          audio?.toInternal(),
+          video?.toInternal(),
+          text
+        )
+      )
   }
 
   private companion object {
