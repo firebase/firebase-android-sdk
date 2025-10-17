@@ -123,18 +123,25 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, R : GetTokenRe
   private val state = MutableStateFlow<State<T, R>>(State.New)
 
   /**
-   * Adds the token listener to the given provider.
+   * Registers the given provider [T] instance if, and when, it becomes available.
    *
-   * @see removeTokenListener
+   * The implementation may want, or need, to register a listener of some sort with the provider in
+   * order to be notified of provider state changes, such as a user logging in or logging out.
+   *
+   * @see unregisterProvider
    */
-  @DeferredApi protected abstract fun addTokenListener(provider: T)
+  @DeferredApi protected abstract fun registerProvider(provider: T)
 
   /**
-   * Removes the token listener from the given provider.
+   * Registers the given provider [T] instance, which can occur if a new provider becomes available
+   * of if [close] is called.
    *
-   * @see addTokenListener
+   * The implementation should undo any work done by [registerProvider], such as unregistering
+   * listeners.
+   *
+   * @see registerProvider
    */
-  protected abstract fun removeTokenListener(provider: T)
+  protected abstract fun unregisterProvider(provider: T)
 
   /**
    * Starts an asynchronous task to get a new access token from the given provider, forcing a token
@@ -192,7 +199,7 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, R : GetTokenRe
       is State.Initialized -> {}
       is State.Closed -> {}
       is State.StateWithProvider -> {
-        removeTokenListener(oldState.provider)
+        unregisterProvider(oldState.provider)
       }
     }
   }
@@ -398,7 +405,7 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, R : GetTokenRe
   @DeferredApi
   private fun onProviderAvailable(newProvider: T) {
     logger.debug { "onProviderAvailable(newProvider=$newProvider)" }
-    addTokenListener(newProvider)
+    registerProvider(newProvider)
 
     val oldState =
       state.getAndUpdate { currentState ->
@@ -422,7 +429,7 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any, R : GetTokenRe
           "onProviderAvailable(newProvider=$newProvider)" +
             " unregistering token listener that was just added"
         }
-        removeTokenListener(newProvider)
+        unregisterProvider(newProvider)
       }
       is State.Initialized -> {}
       is State.Idle -> {}
