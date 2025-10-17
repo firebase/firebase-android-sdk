@@ -136,7 +136,7 @@ internal constructor(
    *
    * @param transcriptHandler A callback function that is invoked whenever the model receives a
    * transcript. The first [Transcription] object is the input transcription, and the second is the
-   * output transcription
+   * output transcription.
    *
    * @param enableInterruptions If enabled, allows the user to speak over or interrupt the model's
    * ongoing reply.
@@ -450,7 +450,7 @@ internal constructor(
             )
           }
           is LiveServerContent -> {
-            if (it.outputTranscription != null || it.inputTranscription != null) {
+            if (it.inputTranscription != null || it.outputTranscription != null) {
               transcriptHandler?.invoke(it.inputTranscription, it.outputTranscription)
             }
             if (it.interrupted) {

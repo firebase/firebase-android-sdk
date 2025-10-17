@@ -876,7 +876,7 @@ package com.google.firebase.ai.type {
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class LiveServerContent implements com.google.firebase.ai.type.LiveServerMessage {
-    ctor public LiveServerContent(com.google.firebase.ai.type.Content? content, boolean interrupted, boolean turnComplete, boolean generationComplete, com.google.firebase.ai.type.Transcription? inputTranscription, com.google.firebase.ai.type.Transcription? outputTranscription);
+    ctor @Deprecated public LiveServerContent(com.google.firebase.ai.type.Content? content, boolean interrupted, boolean turnComplete, boolean generationComplete, com.google.firebase.ai.type.Transcription? inputTranscription, com.google.firebase.ai.type.Transcription? outputTranscription);
     method public com.google.firebase.ai.type.Content? getContent();
     method public boolean getGenerationComplete();
     method public com.google.firebase.ai.type.Transcription? getInputTranscription();
@@ -1252,7 +1252,6 @@ package com.google.firebase.ai.type {
   }
 
   public final class Transcription {
-    ctor public Transcription(String? text);
     method public String? getText();
     property public final String? text;
   }

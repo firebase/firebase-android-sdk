@@ -42,7 +42,9 @@ import kotlinx.serialization.json.jsonObject
  * play it out in realtime.
  */
 @PublicPreviewAPI
-public class LiveServerContent(
+public class LiveServerContent
+@Deprecated("This class should not be constructed, only received from the Server")
+public constructor(
   /**
    * The content that the model has generated as part of the current conversation with the user.
    *

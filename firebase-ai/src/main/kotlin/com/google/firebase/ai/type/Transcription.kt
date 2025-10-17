@@ -22,7 +22,7 @@ import kotlinx.serialization.Serializable
  * Audio transcription message.
  * @property text Transcription text
  */
-public class Transcription(public val text: String?) {
+public class Transcription internal constructor(public val text: String?) {
 
   @Serializable
   internal data class Internal(val text: String?) {
