@@ -32,6 +32,7 @@ import com.google.firebase.dataconnect.testutil.UnavailableDeferred
 import com.google.firebase.dataconnect.testutil.newBackgroundScopeThatAdvancesLikeForeground
 import com.google.firebase.dataconnect.testutil.newMockLogger
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
+import com.google.firebase.dataconnect.testutil.property.arbitrary.distinctPair
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import com.google.firebase.dataconnect.testutil.shouldHaveLoggedAtLeastOneMessageContaining
@@ -46,15 +47,19 @@ import io.kotest.assertions.nondeterministic.eventually
 import io.kotest.assertions.nondeterministic.eventuallyConfig
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.property.Arb
 import io.kotest.property.RandomSource
+import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.next
+import io.kotest.property.arbs.products.brand
 import io.mockk.coEvery
 import io.mockk.confirmVerified
 import io.mockk.every
@@ -309,6 +314,74 @@ class DataConnectAuthUnitTest {
       "returns retrieved token: ${accessToken.toScrubbedAccessToken()}"
     )
     mockLogger.shouldNotHaveLoggedAnyMessagesContaining(accessToken)
+  }
+
+  @Test
+  fun `getToken() should populate authUids from user_id claim`() = runTest {
+    val dataConnectAuth = newDataConnectAuth()
+    dataConnectAuth.initialize()
+    advanceUntilIdle()
+    val uid = Arb.brand().map { it.value }.next(rs)
+    coEvery { mockInternalAuthProvider.getAccessToken(any()) } returns
+      taskForToken(accessToken, mapOf("user_id" to uid))
+
+    val result = dataConnectAuth.getToken(requestId)
+
+    result.shouldNotBeNull().authUids.shouldContainExactly(uid)
+  }
+
+  @Test
+  fun `getToken() should populate authUids from sub claim`() = runTest {
+    val dataConnectAuth = newDataConnectAuth()
+    dataConnectAuth.initialize()
+    advanceUntilIdle()
+    val uid = Arb.brand().map { it.value }.next(rs)
+    coEvery { mockInternalAuthProvider.getAccessToken(any()) } returns
+      taskForToken(accessToken, mapOf("sub" to uid))
+
+    val result = dataConnectAuth.getToken(requestId)
+
+    result.shouldNotBeNull().authUids.shouldContainExactly(uid)
+  }
+
+  @Test
+  fun `getToken() should populate authUids from user_id and sub claims`() = runTest {
+    val dataConnectAuth = newDataConnectAuth()
+    dataConnectAuth.initialize()
+    advanceUntilIdle()
+    val (uid1, uid2) = Arb.brand().map { it.value }.distinctPair().next(rs)
+    coEvery { mockInternalAuthProvider.getAccessToken(any()) } returns
+      taskForToken(accessToken, mapOf("user_id" to uid1, "sub" to uid2))
+
+    val result = dataConnectAuth.getToken(requestId)
+
+    result.shouldNotBeNull().authUids.shouldContainExactlyInAnyOrder(uid1, uid2)
+  }
+
+  @Test
+  fun `getToken() should populate empty authUids if claims are missing`() = runTest {
+    val dataConnectAuth = newDataConnectAuth()
+    dataConnectAuth.initialize()
+    advanceUntilIdle()
+    coEvery { mockInternalAuthProvider.getAccessToken(any()) } returns
+      taskForToken(accessToken, emptyMap())
+
+    val result = dataConnectAuth.getToken(requestId)
+
+    result.shouldNotBeNull().authUids.shouldBeEmpty()
+  }
+
+  @Test
+  fun `getToken() should ignore non-string uid claims`() = runTest {
+    val dataConnectAuth = newDataConnectAuth()
+    dataConnectAuth.initialize()
+    advanceUntilIdle()
+    coEvery { mockInternalAuthProvider.getAccessToken(any()) } returns
+      taskForToken(accessToken, mapOf("user_id" to 123, "sub" to true))
+
+    val result = dataConnectAuth.getToken(requestId)
+
+    result.shouldNotBeNull().authUids shouldBe emptySet()
   }
 
   @Test
@@ -613,7 +686,7 @@ class DataConnectAuthUnitTest {
       interval = 100.milliseconds
     }
 
-    fun taskForToken(token: String?): Task<GetTokenResult> =
-      Tasks.forResult(mockk(relaxed = true) { every { getToken() } returns token })
+    fun taskForToken(token: String?, claims: Map<String, Any> = emptyMap()): Task<GetTokenResult> =
+      Tasks.forResult(GetTokenResult(token, claims))
   }
 }
