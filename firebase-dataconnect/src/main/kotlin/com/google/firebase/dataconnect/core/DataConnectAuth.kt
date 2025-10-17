@@ -74,13 +74,31 @@ internal class DataConnectAuth(
   }
 
   override suspend fun getToken(provider: InternalAuthProvider, forceRefresh: Boolean) =
-    provider.getAccessToken(forceRefresh).await().let { GetAuthTokenResult(it.token) }
+    provider.getAccessToken(forceRefresh).await().let {
+      GetAuthTokenResult(it.token, it.getAuthUids())
+    }
 
-  data class GetAuthTokenResult(override val token: String?) : GetTokenResult
+  data class GetAuthTokenResult(override val token: String?, val authUids: Set<String>) :
+    GetTokenResult
 
   private class IdTokenListenerImpl(private val logger: Logger) : IdTokenListener {
     override fun onIdTokenChanged(tokenResult: InternalTokenResult) {
       logger.debug { "onIdTokenChanged(token=${tokenResult.token?.toScrubbedAccessToken()})" }
+    }
+  }
+
+  private companion object {
+
+    val authUidClaimNames = listOf("user_id", "sub")
+
+    fun com.google.firebase.auth.GetTokenResult.getAuthUids(): Set<String> = buildSet {
+      authUidClaimNames.forEach { claimName ->
+        claims[claimName]?.let { claimValue ->
+          if (claimValue is String) {
+            add(claimValue)
+          }
+        }
+      }
     }
   }
 }
