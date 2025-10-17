@@ -1,5 +1,6 @@
 # Unreleased
 
+- [feature] Added support for sending realtime audio and video in a `LiveSession`.
 - [changed] Removed redundant internal exception types. (#7475)
 
 # 17.4.0
