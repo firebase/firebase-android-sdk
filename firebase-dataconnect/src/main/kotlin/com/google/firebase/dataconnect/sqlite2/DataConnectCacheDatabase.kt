@@ -43,7 +43,8 @@ import kotlinx.coroutines.job
  * All methods and properties of [DataConnectCacheDatabase] are thread-safe and may be safely called
  * and/or accessed concurrently from multiple threads and/or coroutines.
  */
-internal class DataConnectCacheDatabase(private val dbFile: File?, private val logger: Logger) {
+internal class DataConnectCacheDatabase(private val dbFile: File?, private val logger: Logger) :
+  AutoCloseable {
 
   private val state = MutableStateFlow<State>(State.New)
 
@@ -135,7 +136,7 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
    * This method is idempotent; it is safe to call more than once. Subsequent invocation will
    * suspend, like the original invocation, until the "close" operation has completed.
    */
-  fun close() {
+  override fun close() {
     state.update { currentState ->
       when (currentState) {
         State.New -> {}
