@@ -33,37 +33,47 @@ import kotlinx.serialization.json.JsonNames
  * @property safetyRatings A list of [SafetyRating]s describing the generated content.
  * @property citationMetadata Metadata about the sources used to generate this content.
  * @property finishReason The reason the model stopped generating content, if it exist.
- * @property groundingMetadata Metadata returned to the client when grounding is enabled.
+ * @property groundingMetadata Metadata returned to the client when the model grounds its response.
+ * @property urlContextMetadata Metadata returned to the client when the [UrlContext] tool is
+ * enabled.
  */
 public class Candidate
+@OptIn(PublicPreviewAPI::class)
 internal constructor(
   public val content: Content,
   public val safetyRatings: List<SafetyRating>,
   public val citationMetadata: CitationMetadata?,
   public val finishReason: FinishReason?,
-  public val groundingMetadata: GroundingMetadata?
+  public val groundingMetadata: GroundingMetadata?,
+  @property:PublicPreviewAPI public val urlContextMetadata: UrlContextMetadata?
 ) {
 
+  @OptIn(PublicPreviewAPI::class)
   @Serializable
   internal data class Internal(
     val content: Content.Internal? = null,
     val finishReason: FinishReason.Internal? = null,
     val safetyRatings: List<SafetyRating.Internal>? = null,
     val citationMetadata: CitationMetadata.Internal? = null,
-    val groundingMetadata: GroundingMetadata.Internal? = null
+    val groundingMetadata: GroundingMetadata.Internal? = null,
+    val urlContextMetadata: UrlContextMetadata.Internal? = null
   ) {
+
+    @OptIn(PublicPreviewAPI::class)
     internal fun toPublic(): Candidate {
       val safetyRatings = safetyRatings?.mapNotNull { it.toPublic() }.orEmpty()
       val citations = citationMetadata?.toPublic()
       val finishReason = finishReason?.toPublic()
       val groundingMetadata = groundingMetadata?.toPublic()
+      val urlContextMetadata = urlContextMetadata?.toPublic()
 
       return Candidate(
         this.content?.toPublic() ?: content("model") {},
         safetyRatings,
         citations,
         finishReason,
-        groundingMetadata
+        groundingMetadata,
+        urlContextMetadata
       )
     }
   }
@@ -323,7 +333,7 @@ public class FinishReason private constructor(public val name: String, public va
 /**
  * Metadata returned to the client when grounding is enabled.
  *
- * If using Grounding with Google Search, you are required to comply with the "Grounding with Google
+ * If using grounding with Google Search, you are required to comply with the "Grounding with Google
  * Search" usage requirements for your chosen API provider:
  * [Gemini Developer API](https://ai.google.dev/gemini-api/terms#grounding-with-google-search) or
  * Vertex AI Gemini API (see [Service Terms](https://cloud.google.com/terms/service-terms) section
@@ -398,8 +408,7 @@ public class SearchEntryPoint(
 }
 
 /**
- * Represents a chunk of retrieved data that supports a claim in the model's response. This is part
- * of the grounding information provided when grounding is enabled.
+ * Represents a chunk of retrieved data that supports a claim in the model's response.
  *
  * @property web Contains details if the grounding chunk is from a web source.
  */
@@ -516,5 +525,89 @@ public class Segment(
         partIndex = partIndex ?: 0,
         text = text ?: ""
       )
+  }
+}
+
+/**
+ * Metadata related to the [UrlContext] tool.
+ *
+ * @property urlMetadata List of [UrlMetadata] used to provide context to the Gemini model.
+ */
+@PublicPreviewAPI
+public class UrlContextMetadata internal constructor(public val urlMetadata: List<UrlMetadata>) {
+
+  @Serializable
+  @PublicPreviewAPI
+  internal data class Internal(val urlMetadata: List<UrlMetadata.Internal>?) {
+    internal fun toPublic() = UrlContextMetadata(urlMetadata?.map { it.toPublic() } ?: emptyList())
+  }
+}
+
+/**
+ * Metadata for a single URL retrieved by the [UrlContext] tool.
+ *
+ * @property retrievedUrl The retrieved URL.
+ * @property urlRetrievalStatus The status of the URL retrieval.
+ */
+@PublicPreviewAPI
+public class UrlMetadata
+internal constructor(
+  public val retrievedUrl: String?,
+  public val urlRetrievalStatus: UrlRetrievalStatus
+) {
+  @Serializable
+  internal data class Internal(
+    val retrievedUrl: String?,
+    val urlRetrievalStatus: UrlRetrievalStatus.Internal
+  ) {
+    internal fun toPublic() = UrlMetadata(retrievedUrl, urlRetrievalStatus.toPublic())
+  }
+}
+
+/**
+ * The status of a URL retrieval.
+ *
+ * @property name The name of the retrieval status.
+ * @property ordinal The ordinal value of the retrieval status.
+ */
+@PublicPreviewAPI
+public class UrlRetrievalStatus
+private constructor(public val name: String, public val ordinal: Int) {
+
+  @Serializable(Internal.Serializer::class)
+  internal enum class Internal {
+    @SerialName("URL_RETRIEVAL_STATUS_UNSPECIFIED") UNSPECIFIED,
+    @SerialName("URL_RETRIEVAL_STATUS_SUCCESS") SUCCESS,
+    @SerialName("URL_RETRIEVAL_STATUS_ERROR") ERROR,
+    @SerialName("URL_RETRIEVAL_STATUS_PAYWALL") PAYWALL,
+    @SerialName("URL_RETRIEVAL_STATUS_UNSAFE") UNSAFE;
+
+    internal object Serializer : KSerializer<Internal> by FirstOrdinalSerializer(Internal::class)
+
+    internal fun toPublic() =
+      when (this) {
+        SUCCESS -> UrlRetrievalStatus.SUCCESS
+        ERROR -> UrlRetrievalStatus.ERROR
+        PAYWALL -> UrlRetrievalStatus.PAYWALL
+        UNSAFE -> UrlRetrievalStatus.UNSAFE
+        else -> UrlRetrievalStatus.UNSPECIFIED
+      }
+  }
+
+  public companion object {
+    /** Unspecified retrieval status. */
+    @JvmField public val UNSPECIFIED: UrlRetrievalStatus = UrlRetrievalStatus("UNSPECIFIED", 0)
+
+    /** The URL retrieval was successful. */
+    @JvmField public val SUCCESS: UrlRetrievalStatus = UrlRetrievalStatus("SUCCESS", 1)
+
+    /** The URL retrieval failed. */
+    @JvmField public val ERROR: UrlRetrievalStatus = UrlRetrievalStatus("ERROR", 2)
+
+    /** The URL retrieval failed because the content is behind a paywall. */
+    @JvmField public val PAYWALL: UrlRetrievalStatus = UrlRetrievalStatus("PAYWALL", 3)
+
+    /** The URL retrieval failed because the content is unsafe. */
+    @JvmField public val UNSAFE: UrlRetrievalStatus = UrlRetrievalStatus("UNSAFE", 4)
   }
 }

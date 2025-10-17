@@ -1,8 +1,19 @@
 # Unreleased
 
+- [feature] Added support for sending realtime audio and video in a `LiveSession`.
+- [changed] Removed redundant internal exception types. (#7475)
+
+# 17.4.0
+
 - [changed] **Breaking Change**: Removed the `candidateCount` option from `LiveGenerationConfig`
-  (#7382)
+- [changed] Added support for user interrupts for the `startAudioConversation` method in the
+  `LiveSession` class. (#7413)
+- [changed] Added support for the URL context tool, which allows the model to access content from
+  provided public web URLs to inform and enhance its responses. (#7382)
 - [changed] Added better error messages to `ServiceConnectionHandshakeFailedException` (#7412)
+- [changed] Marked the public constructor for `UsageMetadata` as deprecated (#7420)
+- [changed] Using Firebase AI Logic with the Gemini Developer API is now Generally Available (GA).
+- [changed] Using Firebase AI Logic with the Imagen generation APIs is now Generally Available (GA).
 
 # 17.3.0
 
@@ -46,7 +57,7 @@
 
 - [feature] Added support for configuring the "thinking" budget when using Gemini 2.5 series models.
   (#6990)
-- [feature] **Breaking Change**: Add support for Grounding with Google Search (#7042).
+- [feature] **Breaking Change**: Add support for grounding with Google Search (#7042).
   - **Action Required:** Update all references of `groundingAttributions`, `webSearchQueries`,
     `retrievalQueries` in `GroundingMetadata` to be non-optional.
 - [changed] require at least one argument for `generateContent()`, `generateContentStream()` and
