@@ -19,8 +19,8 @@ package com.google.firebase.ai
 import com.google.firebase.FirebaseApp
 import com.google.firebase.ai.common.APIController
 import com.google.firebase.ai.common.AppCheckHeaderProvider
-import com.google.firebase.ai.common.ContentBlockedException
 import com.google.firebase.ai.common.GenerateImageRequest
+import com.google.firebase.ai.type.ContentBlockedException
 import com.google.firebase.ai.type.Dimensions
 import com.google.firebase.ai.type.FirebaseAIException
 import com.google.firebase.ai.type.ImagenEditMode

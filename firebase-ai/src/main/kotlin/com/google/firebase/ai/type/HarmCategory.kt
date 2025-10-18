@@ -16,7 +16,6 @@
 
 package com.google.firebase.ai.type
 
-import com.google.firebase.ai.common.makeMissingCaseException
 import com.google.firebase.ai.common.util.FirstOrdinalSerializer
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName

@@ -17,7 +17,6 @@
 package com.google.firebase.ai.type
 
 import com.google.firebase.ai.FirebaseAI
-import com.google.firebase.ai.common.FirebaseCommonAIException
 import kotlinx.coroutines.TimeoutCancellationException
 
 /** Parent class for any errors that occur from the [FirebaseAI] SDK. */
@@ -35,36 +34,6 @@ internal constructor(message: String, cause: Throwable? = null) : RuntimeExcepti
     internal fun from(cause: Throwable): FirebaseAIException =
       when (cause) {
         is FirebaseAIException -> cause
-        is FirebaseCommonAIException ->
-          when (cause) {
-            is com.google.firebase.ai.common.SerializationException ->
-              SerializationException(cause.message ?: "", cause.cause)
-            is com.google.firebase.ai.common.ServerException ->
-              ServerException(cause.message ?: "", cause.cause)
-            is com.google.firebase.ai.common.InvalidAPIKeyException ->
-              InvalidAPIKeyException(cause.message ?: "")
-            is com.google.firebase.ai.common.PromptBlockedException ->
-              PromptBlockedException(cause.response?.toPublic(), cause.cause)
-            is com.google.firebase.ai.common.UnsupportedUserLocationException ->
-              UnsupportedUserLocationException(cause.cause)
-            is com.google.firebase.ai.common.InvalidStateException ->
-              InvalidStateException(cause.message ?: "", cause)
-            is com.google.firebase.ai.common.ResponseStoppedException ->
-              ResponseStoppedException(cause.response.toPublic(), cause.cause)
-            is com.google.firebase.ai.common.RequestTimeoutException ->
-              RequestTimeoutException(cause.message ?: "", cause.cause)
-            is com.google.firebase.ai.common.ServiceDisabledException ->
-              ServiceDisabledException(cause.message ?: "", cause.cause)
-            is com.google.firebase.ai.common.UnknownException ->
-              UnknownException(cause.message ?: "", cause.cause)
-            is com.google.firebase.ai.common.ContentBlockedException ->
-              ContentBlockedException(cause.message ?: "", cause.cause)
-            is com.google.firebase.ai.common.QuotaExceededException ->
-              QuotaExceededException(cause.message ?: "", cause.cause)
-            is com.google.firebase.ai.common.APINotConfiguredException ->
-              APINotConfiguredException(cause.message ?: "", cause.cause)
-            else -> UnknownException(cause.message ?: "", cause)
-          }
         is TimeoutCancellationException ->
           RequestTimeoutException("The request failed to complete in the allotted time.")
         else -> UnknownException("Something unexpected happened.", cause)
@@ -238,3 +207,18 @@ public class PermissionMissingException(message: String, cause: Throwable? = nul
 /** Catch all case for exceptions not explicitly expected. */
 public class UnknownException internal constructor(message: String, cause: Throwable? = null) :
   FirebaseAIException(message, cause)
+
+internal fun makeMissingCaseException(
+  source: String,
+  ordinal: Int
+): com.google.firebase.ai.type.SerializationException {
+  return com.google.firebase.ai.type.SerializationException(
+    """
+    |Missing case for a $source: $ordinal
+    |This error indicates that one of the `toInternal` conversions needs updating.
+    |If you're a developer seeing this exception, please file an issue on our GitHub repo:
+    |https://github.com/firebase/firebase-android-sdk
+  """
+      .trimMargin()
+  )
+}
