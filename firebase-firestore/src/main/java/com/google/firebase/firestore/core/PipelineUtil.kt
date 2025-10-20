@@ -32,8 +32,8 @@ import com.google.firebase.firestore.util.Assert.hardAssert
 
 /** A class that wraps either a Query or a RealtimePipeline. */
 sealed class QueryOrPipeline {
-  data class QueryWrapper(val query: Query) : QueryOrPipeline()
-  data class PipelineWrapper(val pipeline: RealtimePipeline) : QueryOrPipeline()
+  internal data class QueryWrapper(internal val query: Query) : QueryOrPipeline()
+  internal data class PipelineWrapper(internal val pipeline: RealtimePipeline) : QueryOrPipeline()
 
   val isQuery: Boolean
     get() = this is QueryWrapper
@@ -45,7 +45,7 @@ sealed class QueryOrPipeline {
     return (this as QueryWrapper).query
   }
 
-  fun pipeline(): RealtimePipeline {
+  internal fun pipeline(): RealtimePipeline {
     return (this as PipelineWrapper).pipeline
   }
 
@@ -102,7 +102,7 @@ sealed class QueryOrPipeline {
 /** A class that wraps either a Target or a RealtimePipeline. */
 sealed class TargetOrPipeline {
   data class TargetWrapper(val target: Target) : TargetOrPipeline()
-  data class PipelineWrapper(val pipeline: RealtimePipeline) : TargetOrPipeline()
+  internal data class PipelineWrapper(val pipeline: RealtimePipeline) : TargetOrPipeline()
 
   val isTarget: Boolean
     get() = this is TargetWrapper
@@ -114,7 +114,7 @@ sealed class TargetOrPipeline {
     return (this as TargetWrapper).target
   }
 
-  fun pipeline(): RealtimePipeline {
+  internal fun pipeline(): RealtimePipeline {
     return (this as PipelineWrapper).pipeline
   }
 
@@ -178,7 +178,7 @@ enum class PipelineSourceType {
 }
 
 // Determines the flavor of the given pipeline based on its stages.
-fun getPipelineFlavor(pipeline: RealtimePipeline): PipelineFlavor {
+internal fun getPipelineFlavor(pipeline: RealtimePipeline): PipelineFlavor {
   // For now, it is only possible to construct RealtimePipeline that is kExact.
   // PORTING NOTE: the typescript implementation support other flavors already,
   // despite not being used. We can port that later.
@@ -186,7 +186,7 @@ fun getPipelineFlavor(pipeline: RealtimePipeline): PipelineFlavor {
 }
 
 // Determines the source type of the given pipeline based on its first stage.
-fun getPipelineSourceType(pipeline: RealtimePipeline): PipelineSourceType {
+internal fun getPipelineSourceType(pipeline: RealtimePipeline): PipelineSourceType {
   hardAssert(
     !pipeline.stages.isEmpty(),
     "Pipeline must have at least one stage to determine its source.",
@@ -202,7 +202,7 @@ fun getPipelineSourceType(pipeline: RealtimePipeline): PipelineSourceType {
 
 // Retrieves the collection group ID if the pipeline's source is a collection
 // group.
-fun getPipelineCollectionGroup(pipeline: RealtimePipeline): String? {
+internal fun getPipelineCollectionGroup(pipeline: RealtimePipeline): String? {
   if (getPipelineSourceType(pipeline) == PipelineSourceType.COLLECTION_GROUP) {
     hardAssert(
       !pipeline.stages.isEmpty(),
@@ -217,7 +217,7 @@ fun getPipelineCollectionGroup(pipeline: RealtimePipeline): String? {
 }
 
 // Retrieves the collection path if the pipeline's source is a collection.
-fun getPipelineCollection(pipeline: RealtimePipeline): String? {
+internal fun getPipelineCollection(pipeline: RealtimePipeline): String? {
   if (getPipelineSourceType(pipeline) == PipelineSourceType.COLLECTION) {
     hardAssert(
       !pipeline.stages.isEmpty(),
@@ -232,7 +232,7 @@ fun getPipelineCollection(pipeline: RealtimePipeline): String? {
 }
 
 // Retrieves the document pathes if the pipeline's source is a document source.
-fun getPipelineDocuments(pipeline: RealtimePipeline): Array<out String>? {
+internal fun getPipelineDocuments(pipeline: RealtimePipeline): Array<out String>? {
   if (getPipelineSourceType(pipeline) == PipelineSourceType.DOCUMENTS) {
     hardAssert(
       !pipeline.stages.isEmpty(),
@@ -248,7 +248,7 @@ fun getPipelineDocuments(pipeline: RealtimePipeline): Array<out String>? {
 
 // Creates a new pipeline by replacing CollectionGroupSource stages with
 // CollectionSource stages using the provided path.
-fun asCollectionPipelineAtPath(
+internal fun asCollectionPipelineAtPath(
   pipeline: RealtimePipeline,
   path: ResourcePath,
 ): RealtimePipeline {
@@ -271,7 +271,7 @@ fun asCollectionPipelineAtPath(
   )
 }
 
-fun getLastEffectiveLimit(pipeline: RealtimePipeline): Int? {
+internal fun getLastEffectiveLimit(pipeline: RealtimePipeline): Int? {
   for (stagePtr in pipeline.rewrittenStages.asReversed()) {
     // Check if the stage is a LimitStage
     if (stagePtr is LimitStage) {
