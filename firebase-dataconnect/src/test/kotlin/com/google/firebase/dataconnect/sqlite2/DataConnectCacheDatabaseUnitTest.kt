@@ -18,15 +18,19 @@ package com.google.firebase.dataconnect.sqlite2
 
 import android.database.sqlite.SQLiteDatabase
 import com.google.firebase.dataconnect.core.Logger
+import com.google.firebase.dataconnect.testutil.CleanupsRule
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
-import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
+import com.google.firebase.dataconnect.testutil.SuspendingCountDownLatch
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import io.kotest.assertions.throwables.shouldThrow
-import io.kotest.property.RandomSource
-import io.kotest.property.arbitrary.next
+import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkObject
+import io.mockk.unmockkObject
 import java.io.File
+import java.util.concurrent.CountDownLatch
+import kotlinx.coroutines.async
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Rule
@@ -40,10 +44,9 @@ class DataConnectCacheDatabaseUnitTest {
 
   @get:Rule val temporaryFolder = TemporaryFolder()
 
-  @get:Rule val randomSeedTestRule = RandomSeedTestRule()
-  private val rs: RandomSource by randomSeedTestRule.rs
-
   @get:Rule val dataConnectLogLevelRule = DataConnectLogLevelRule()
+
+  @get:Rule val cleanups = CleanupsRule()
 
   private val lazyDataConnectCacheDatabase = lazy {
     val dbFile = File(temporaryFolder.newFolder(), "db.sqlite")
@@ -99,5 +102,32 @@ class DataConnectCacheDatabaseUnitTest {
 
     exception.message shouldContainWithNonAbuttingText "initialize()"
     exception.message shouldContainWithNonAbuttingTextIgnoringCase "already been called"
+  }
+
+  @Test
+  fun `initialize() should throw if it is already in progress`() = runTest {
+    val countDownLatch1 = SuspendingCountDownLatch(1)
+    val countDownLatch2 = CountDownLatch(1)
+    mockkObject(DataConnectSQLiteDatabaseOpener)
+    cleanups.register { unmockkObject(DataConnectSQLiteDatabaseOpener) }
+    every { DataConnectSQLiteDatabaseOpener.open(any(), any()) } answers
+      {
+        countDownLatch1.countDown()
+        countDownLatch2.await()
+        callOriginal()
+      }
+    async { dataConnectCacheDatabase.initialize() }
+
+    val exception =
+      try {
+        countDownLatch1.await()
+        shouldThrow<IllegalStateException> { dataConnectCacheDatabase.initialize() }
+      } finally {
+        countDownLatch2.countDown()
+      }
+
+    exception.message shouldContainWithNonAbuttingText "initialize()"
+    exception.message shouldContainWithNonAbuttingTextIgnoringCase
+      "already running in another thread"
   }
 }

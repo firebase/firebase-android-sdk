@@ -61,9 +61,10 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
       state.updateAndGet { currentState ->
         when (currentState) {
           State.New -> State.Initializing(CancellationSignal())
-          is State.Initializing,
           is State.Initialized ->
             throw IllegalStateException("initialize() has already been called")
+          is State.Initializing ->
+            throw IllegalStateException("initialize() is already running in another thread")
           State.Closed -> throw IllegalStateException("initialize() cannot be called after close()")
         }
       }
