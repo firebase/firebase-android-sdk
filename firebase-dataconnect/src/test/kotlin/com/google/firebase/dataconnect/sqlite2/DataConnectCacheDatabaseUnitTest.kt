@@ -20,7 +20,6 @@ import android.database.sqlite.SQLiteDatabase
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.testutil.CleanupsRule
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
-import com.google.firebase.dataconnect.testutil.SuspendingCountDownLatch
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import io.kotest.assertions.throwables.shouldThrow
@@ -34,10 +33,12 @@ import io.mockk.spyk
 import io.mockk.unmockkObject
 import io.mockk.verify
 import java.io.File
-import java.util.concurrent.CountDownLatch
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.async
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Rule
@@ -67,7 +68,7 @@ class DataConnectCacheDatabaseUnitTest {
   @After
   fun closeLazyDataConnectCacheDatabase() {
     if (lazyDataConnectCacheDatabase.isInitialized()) {
-      lazyDataConnectCacheDatabase.value.close()
+      runBlocking { lazyDataConnectCacheDatabase.value.close() }
     }
   }
 
@@ -109,33 +110,6 @@ class DataConnectCacheDatabaseUnitTest {
 
     exception.message shouldContainWithNonAbuttingText "initialize()"
     exception.message shouldContainWithNonAbuttingTextIgnoringCase "already been called"
-  }
-
-  @Test
-  fun `initialize() should throw if it is already in progress`() = runTest {
-    val countDownLatch1 = SuspendingCountDownLatch(1)
-    val countDownLatch2 = CountDownLatch(1)
-    mockkObject(DataConnectSQLiteDatabaseOpener)
-    cleanups.register { unmockkObject(DataConnectSQLiteDatabaseOpener) }
-    every { DataConnectSQLiteDatabaseOpener.open(any(), any()) } answers
-      {
-        countDownLatch1.countDown()
-        countDownLatch2.await()
-        callOriginal()
-      }
-    async { dataConnectCacheDatabase.initialize() }
-
-    val exception =
-      try {
-        countDownLatch1.await()
-        shouldThrow<IllegalStateException> { dataConnectCacheDatabase.initialize() }
-      } finally {
-        countDownLatch2.countDown()
-      }
-
-    exception.message shouldContainWithNonAbuttingText "initialize()"
-    exception.message shouldContainWithNonAbuttingTextIgnoringCase
-      "already running in another thread"
   }
 
   @Test
@@ -193,42 +167,45 @@ class DataConnectCacheDatabaseUnitTest {
     }
 
   @Test
-  fun `initialize() should throw if open() interrupted by close()`() = runTest {
+  fun `initialize() should run to completion if open() is interrupted by close()`() = runTest {
     mockkObject(DataConnectSQLiteDatabaseOpener)
     cleanups.register { unmockkObject(DataConnectSQLiteDatabaseOpener) }
     val sqliteDatabaseRef = MutableStateFlow<SQLiteDatabase?>(null)
+    val closeJob = MutableStateFlow<Job?>(null)
     every { DataConnectSQLiteDatabaseOpener.open(any(), any()) } answers
       {
-        dataConnectCacheDatabase.close()
+        closeJob.value = launch { dataConnectCacheDatabase.close() }
+        @OptIn(ExperimentalCoroutinesApi::class) advanceUntilIdle()
         val sqliteDatabase = callOriginal()
         sqliteDatabaseRef.value = sqliteDatabase
         sqliteDatabase
       }
 
-    val exception = shouldThrow<CancellationException> { dataConnectCacheDatabase.initialize() }
+    dataConnectCacheDatabase.initialize() // should not throw
 
-    exception.message shouldContainWithNonAbuttingTextIgnoringCase "cancelled by close()"
+    closeJob.value.shouldNotBeNull().join()
     sqliteDatabaseRef.value.shouldNotBeNull().isOpen shouldBe false
   }
 
   @Test
-  fun `initialize() should throw if migrate() interrupted by close()`() = runTest {
+  fun `initialize() should run to completion if migrate() is interrupted by close()`() = runTest {
     mockkObject(DataConnectCacheDatabaseMigrator)
     cleanups.register { unmockkObject(DataConnectCacheDatabaseMigrator) }
+    val closeJob = MutableStateFlow<Job?>(null)
     every { DataConnectCacheDatabaseMigrator.migrate(any(), any()) } answers
       {
-        dataConnectCacheDatabase.close()
+        closeJob.value = launch { dataConnectCacheDatabase.close() }
+        @OptIn(ExperimentalCoroutinesApi::class) advanceUntilIdle()
         callOriginal()
       }
 
-    val exception = shouldThrow<CancellationException> { dataConnectCacheDatabase.initialize() }
-
-    exception.message shouldContainWithNonAbuttingTextIgnoringCase "cancelled by close()"
+    dataConnectCacheDatabase.initialize() // should not throw
 
     val sqliteDatabaseSlot = CapturingSlot<SQLiteDatabase>()
     verify(exactly = 1) {
       DataConnectCacheDatabaseMigrator.migrate(capture(sqliteDatabaseSlot), any())
     }
+    closeJob.value.shouldNotBeNull().join()
     sqliteDatabaseSlot.captured.isOpen shouldBe false
   }
 }

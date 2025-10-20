@@ -16,7 +16,7 @@
 
 package com.google.firebase.dataconnect.sqlite2
 
-import androidx.core.os.CancellationSignal
+import android.database.sqlite.SQLiteDatabase
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import java.io.File
@@ -24,15 +24,15 @@ import java.util.concurrent.Executors
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.ensureActive
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.flow.updateAndGet
-import kotlinx.coroutines.job
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
  * Provides and manages access to the sqlite database used to stored cached query results for
@@ -43,10 +43,10 @@ import kotlinx.coroutines.job
  * All methods and properties of [DataConnectCacheDatabase] are thread-safe and may be safely called
  * and/or accessed concurrently from multiple threads and/or coroutines.
  */
-internal class DataConnectCacheDatabase(private val dbFile: File?, private val logger: Logger) :
-  AutoCloseable {
+internal class DataConnectCacheDatabase(private val dbFile: File?, private val logger: Logger) {
 
-  private val state = MutableStateFlow<State>(State.New)
+  private val stateMutex = Mutex()
+  private var state: State = State.New
 
   /**
    * Initializes this object.
@@ -57,78 +57,86 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
    * This method must be called at most once; subsequent invocations will fail.
    */
   suspend fun initialize() {
-    val initializingState =
-      state.updateAndGet { currentState ->
-        when (currentState) {
-          State.New -> State.Initializing(CancellationSignal())
-          is State.Initialized ->
-            throw IllegalStateException("initialize() has already been called")
-          is State.Initializing ->
-            throw IllegalStateException("initialize() is already running in another thread")
-          State.Closed -> throw IllegalStateException("initialize() cannot be called after close()")
-        }
+    stateMutex.withLock {
+      when (state) {
+        State.New -> {}
+        is State.InitializeCalled ->
+          throw IllegalStateException("initialize() has already been called")
+        is State.CloseCalled ->
+          throw IllegalStateException("initialize() cannot be called after close()")
       }
-    check(initializingState is State.Initializing) {
-      "internal error j8h5349z4q: initializingState=$initializingState, but expected Initializing"
-    }
 
-    // Create a single-threaded dispatcher on which all write transactions will run.
-    // This is the recommended approach to avoid SQLITE_BUSY errors and also allows us to
-    // run higher-priority write transactions before lower-priority ones.
-    val dispatcher =
-      Executors.newSingleThreadExecutor { runnable -> Thread(runnable, logger.nameWithId) }
-        .asCoroutineDispatcher()
+      // Create a single-threaded dispatcher on which all write transactions will run.
+      // This is the recommended approach to avoid SQLITE_BUSY errors and also allows us to
+      // run higher-priority write transactions before lower-priority ones.
+      val executor =
+        Executors.newSingleThreadExecutor { runnable -> Thread(runnable, logger.nameWithId) }
 
-    val coroutineScope =
-      CoroutineScope(
-        SupervisorJob() +
-          CoroutineName(logger.nameWithId) +
-          dispatcher +
-          CoroutineExceptionHandler { context, throwable ->
-            logger.warn(throwable) {
-              "uncaught exception from a coroutine named ${context[CoroutineName]}: $throwable"
+      val supervisorJob = SupervisorJob()
+      supervisorJob.invokeOnCompletion { executor.shutdown() }
+
+      val coroutineScope =
+        CoroutineScope(
+          supervisorJob +
+            CoroutineName(logger.nameWithId) +
+            executor.asCoroutineDispatcher() +
+            CoroutineExceptionHandler { context, throwable ->
+              logger.warn(throwable) {
+                "uncaught exception from a coroutine named ${context[CoroutineName]}: $throwable"
+              }
+            }
+        )
+
+      val initializeDeferred =
+        coroutineScope.async {
+          val sqliteDatabase = DataConnectSQLiteDatabaseOpener.open(dbFile, logger)
+
+          var migrateSucceeded = false
+          try {
+            DataConnectCacheDatabaseMigrator.migrate(sqliteDatabase, logger)
+            migrateSucceeded = true
+          } finally {
+            if (!migrateSucceeded) {
+              sqliteDatabase
+                .runCatching { close() }
+                .onFailure { closeException ->
+                  logger.warn(closeException) { "SQLiteDatabase.close() failed" }
+                }
             }
           }
-      )
 
-    coroutineScope.coroutineContext.job.invokeOnCompletion { dispatcher.close() }
+          sqliteDatabase
+        }
 
-    val initializeJob =
-      coroutineScope.async {
-        ensureActive()
-        val db = DataConnectSQLiteDatabaseOpener.open(dbFile, logger)
-
-        val migrateResult =
-          DataConnectCacheDatabaseMigrator.runCatching {
-            ensureActive()
-            migrate(db, logger)
-          }
-
-        migrateResult.onFailure { exception ->
-          db
-            .runCatching { close() }
-            .onFailure { closeException ->
-              logger.warn(closeException) { "closing SQLiteDatabase failed" }
+      val sqliteDatabase =
+        initializeDeferred
+          .runCatching { await() }
+          .fold(
+            onSuccess = { it },
+            onFailure = { initializeException ->
+              coroutineScope.cancel()
+              state = State.InitializeCalled.InitializeFailed
+              throw initializeException
             }
-          throw exception
+          )
+
+      val transactionQueue = Channel<Job>(Int.MAX_VALUE)
+
+      val transactionsJob =
+        coroutineScope.launch {
+          for (transaction in transactionQueue) {
+            transaction.join()
+          }
         }
 
-        if (!state.compareAndSet(initializingState, State.Initialized(coroutineScope))) {
-          db.close()
-        }
-      }
-
-    initializingState.cancellationSignal.setOnCancelListener {
-      initializeJob.cancel("initialize() cancelled by close()")
+      state =
+        State.InitializeCalled.Initialized(
+          sqliteDatabase,
+          coroutineScope,
+          transactionsJob,
+          transactionQueue
+        )
     }
-
-    initializeJob.invokeOnCompletion { exception ->
-      if (exception !== null) {
-        coroutineScope.cancel("initialize() failed: $exception")
-      }
-    }
-
-    initializeJob.await()
   }
 
   /**
@@ -140,15 +148,32 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
    * This method is idempotent; it is safe to call more than once. Subsequent invocation will
    * suspend, like the original invocation, until the "close" operation has completed.
    */
-  override fun close() {
-    state.update { currentState ->
-      when (currentState) {
-        State.New -> {}
-        is State.Initializing -> currentState.cancellationSignal.cancel()
-        is State.Initialized -> currentState.coroutineScope.cancel("close() called")
-        State.Closed -> {}
+  suspend fun close() {
+    val initializedState: State.InitializeCalled.Initialized =
+      stateMutex.withLock {
+        when (val currentState = state) {
+          State.New,
+          is State.InitializeCalled.InitializeFailed -> {
+            state = State.CloseCalled.Closed
+            return
+          }
+          is State.InitializeCalled.Initialized -> {
+            state = State.CloseCalled.Closing(currentState)
+            currentState
+          }
+          is State.CloseCalled.Closing -> currentState.initialized
+          State.CloseCalled.Closed -> return
+        }
       }
-      State.Closed
+
+    initializedState.transactionQueue.close()
+    initializedState.transactionsJob.join()
+    initializedState.coroutineScope.async { initializedState.sqliteDatabase.close() }.join()
+    initializedState.coroutineScope.cancel()
+
+    stateMutex.withLock {
+      check(state is State.CloseCalled) { "internal error: unexpected state: $state" }
+      state = State.CloseCalled.Closed
     }
   }
 
@@ -156,10 +181,20 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
 
     object New : State
 
-    class Initializing(val cancellationSignal: CancellationSignal) : State
+    sealed interface InitializeCalled : State {
+      object InitializeFailed : InitializeCalled
 
-    class Initialized(val coroutineScope: CoroutineScope) : State
+      class Initialized(
+        val sqliteDatabase: SQLiteDatabase,
+        val coroutineScope: CoroutineScope,
+        val transactionsJob: Job,
+        val transactionQueue: Channel<*>,
+      ) : InitializeCalled
+    }
 
-    object Closed : State
+    sealed interface CloseCalled : State {
+      class Closing(val initialized: InitializeCalled.Initialized) : CloseCalled
+      object Closed : CloseCalled
+    }
   }
 }
