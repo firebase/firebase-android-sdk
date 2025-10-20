@@ -111,7 +111,9 @@ internal constructor(
           modelName,
           config?.toInternal(),
           tools?.map { it.toInternal() },
-          systemInstruction?.toInternal()
+          systemInstruction?.toInternal(),
+          config?.inputAudioTranscription?.toInternal(),
+          config?.outputAudioTranscription?.toInternal()
         )
         .toInternal()
     val data: String = Json.encodeToString(clientMessage)
@@ -135,7 +137,7 @@ internal constructor(
     } catch (e: ClosedReceiveChannelException) {
       val reason = webSession?.closeReason?.await()
       val message =
-        "Channel was closed by the server.${if(reason!=null) " Details: ${reason.message}" else "" }"
+        "Channel was closed by the server.${if (reason != null) " Details: ${reason.message}" else ""}"
       throw ServiceConnectionHandshakeFailedException(message, e)
     }
   }
