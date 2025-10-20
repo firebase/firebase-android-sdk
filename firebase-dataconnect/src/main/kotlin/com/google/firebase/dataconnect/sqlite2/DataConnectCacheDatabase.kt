@@ -98,25 +98,28 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
         ensureActive()
         val db = DataConnectSQLiteDatabaseOpener.open(dbFile, logger)
 
-        var migrationSucceeded = false
-        try {
-          ensureActive()
-          DataConnectCacheDatabaseMigrator.migrate(db, logger)
-          migrationSucceeded = true
-        } finally {
-          if (!migrationSucceeded) {
-            db.runCatching { close() }
+        val migrateResult =
+          DataConnectCacheDatabaseMigrator.runCatching {
+            ensureActive()
+            migrate(db, logger)
           }
+
+        migrateResult.onFailure { exception ->
+          db
+            .runCatching { close() }
+            .onFailure { closeException ->
+              logger.warn(closeException) { "closing SQLiteDatabase failed" }
+            }
+          throw exception
         }
 
-        val initializedState = State.Initialized(coroutineScope)
-        if (!state.compareAndSet(initializingState, initializedState)) {
+        if (!state.compareAndSet(initializingState, State.Initialized(coroutineScope))) {
           db.close()
         }
       }
 
     initializingState.cancellationSignal.setOnCancelListener {
-      initializeJob.cancel("initialize() cancelled by a call to close()")
+      initializeJob.cancel("initialize() cancelled by close()")
     }
 
     initializeJob.invokeOnCompletion { exception ->

@@ -24,13 +24,20 @@ import com.google.firebase.dataconnect.testutil.SuspendingCountDownLatch
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
+import io.mockk.CapturingSlot
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
+import io.mockk.spyk
 import io.mockk.unmockkObject
+import io.mockk.verify
 import java.io.File
 import java.util.concurrent.CountDownLatch
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Rule
@@ -129,5 +136,99 @@ class DataConnectCacheDatabaseUnitTest {
     exception.message shouldContainWithNonAbuttingText "initialize()"
     exception.message shouldContainWithNonAbuttingTextIgnoringCase
       "already running in another thread"
+  }
+
+  @Test
+  fun `initialize() should throw if called after close()`() = runTest {
+    dataConnectCacheDatabase.initialize()
+    dataConnectCacheDatabase.close()
+
+    val exception = shouldThrow<IllegalStateException> { dataConnectCacheDatabase.initialize() }
+
+    exception.message shouldContainWithNonAbuttingText "initialize()"
+    exception.message shouldContainWithNonAbuttingTextIgnoringCase "called after close"
+  }
+
+  @Test
+  fun `initialize() should re-throw exception from migrate() and close SQLiteDatabase`() = runTest {
+    mockkObject(DataConnectCacheDatabaseMigrator)
+    cleanups.register { unmockkObject(DataConnectCacheDatabaseMigrator) }
+    class TestMigrateException : Exception()
+    every { DataConnectCacheDatabaseMigrator.migrate(any(), any()) } throws TestMigrateException()
+
+    shouldThrow<TestMigrateException> { dataConnectCacheDatabase.initialize() }
+
+    val sqliteDatabaseSlot = CapturingSlot<SQLiteDatabase>()
+    verify(exactly = 1) {
+      DataConnectCacheDatabaseMigrator.migrate(capture(sqliteDatabaseSlot), any())
+    }
+    sqliteDatabaseSlot.captured.isOpen shouldBe false
+  }
+
+  @Test
+  fun `initialize() should ignore exception closing SQLiteDatabase if migrate() throws`() =
+    runTest {
+      mockkObject(DataConnectSQLiteDatabaseOpener)
+      cleanups.register { unmockkObject(DataConnectSQLiteDatabaseOpener) }
+      class TestCloseException : Exception()
+      every { DataConnectSQLiteDatabaseOpener.open(any(), any()) } answers
+        {
+          val db = callOriginal()
+          val dbSpy = spyk(db)
+          every { dbSpy.close() } throws TestCloseException()
+          dbSpy
+        }
+      mockkObject(DataConnectCacheDatabaseMigrator)
+      cleanups.register { unmockkObject(DataConnectCacheDatabaseMigrator) }
+      class TestMigrateException : Exception()
+      every { DataConnectCacheDatabaseMigrator.migrate(any(), any()) } throws TestMigrateException()
+
+      shouldThrow<TestMigrateException> { dataConnectCacheDatabase.initialize() }
+
+      val sqliteDatabaseSlot = CapturingSlot<SQLiteDatabase>()
+      verify(exactly = 1) {
+        DataConnectCacheDatabaseMigrator.migrate(capture(sqliteDatabaseSlot), any())
+      }
+      verify(exactly = 1) { sqliteDatabaseSlot.captured.close() }
+    }
+
+  @Test
+  fun `initialize() should throw if open() interrupted by close()`() = runTest {
+    mockkObject(DataConnectSQLiteDatabaseOpener)
+    cleanups.register { unmockkObject(DataConnectSQLiteDatabaseOpener) }
+    val sqliteDatabaseRef = MutableStateFlow<SQLiteDatabase?>(null)
+    every { DataConnectSQLiteDatabaseOpener.open(any(), any()) } answers
+      {
+        dataConnectCacheDatabase.close()
+        val sqliteDatabase = callOriginal()
+        sqliteDatabaseRef.value = sqliteDatabase
+        sqliteDatabase
+      }
+
+    val exception = shouldThrow<CancellationException> { dataConnectCacheDatabase.initialize() }
+
+    exception.message shouldContainWithNonAbuttingTextIgnoringCase "cancelled by close()"
+    sqliteDatabaseRef.value.shouldNotBeNull().isOpen shouldBe false
+  }
+
+  @Test
+  fun `initialize() should throw if migrate() interrupted by close()`() = runTest {
+    mockkObject(DataConnectCacheDatabaseMigrator)
+    cleanups.register { unmockkObject(DataConnectCacheDatabaseMigrator) }
+    every { DataConnectCacheDatabaseMigrator.migrate(any(), any()) } answers
+      {
+        dataConnectCacheDatabase.close()
+        callOriginal()
+      }
+
+    val exception = shouldThrow<CancellationException> { dataConnectCacheDatabase.initialize() }
+
+    exception.message shouldContainWithNonAbuttingTextIgnoringCase "cancelled by close()"
+
+    val sqliteDatabaseSlot = CapturingSlot<SQLiteDatabase>()
+    verify(exactly = 1) {
+      DataConnectCacheDatabaseMigrator.migrate(capture(sqliteDatabaseSlot), any())
+    }
+    sqliteDatabaseSlot.captured.isOpen shouldBe false
   }
 }
