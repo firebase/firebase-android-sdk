@@ -293,7 +293,6 @@ internal constructor(
         Json.encodeToString(
           BidiGenerateContentRealtimeInputSetup(mediaChunks.map { (it.toInternal()) }).toInternal()
         )
-      println("Sending $jsonString")
       session.send(Frame.Text(jsonString))
     }
   }
@@ -400,7 +399,6 @@ internal constructor(
             if (it.interrupted) {
               playBackQueue.clear()
             } else {
-              println("Queuing audio parts from model")
               val audioParts = it.content?.parts?.filterIsInstance<InlineDataPart>().orEmpty()
               for (part in audioParts) {
                 playBackQueue.add(part.inlineData)
@@ -438,7 +436,6 @@ internal constructor(
           }
           delay(0)
         } else {
-          println("Playing audio data")
           /**
            * We pause the recording while the model is speaking to avoid interrupting it because of
            * no echo cancellation
