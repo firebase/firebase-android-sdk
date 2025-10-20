@@ -155,6 +155,10 @@ internal constructor(
    * function call. The [FunctionResponsePart] that the callback function returns will be
    * automatically sent to the model.
    *
+   * @param transcriptHandler A callback function that is invoked whenever the model receives a
+   * transcript. The first [Transcription] object is the input transcription, and the second is the
+   * output transcription.
+   *
    * @param enableInterruptions If enabled, allows the user to speak over or interrupt the model's
    * ongoing reply.
    *
@@ -250,6 +254,8 @@ internal constructor(
                 )
               }
               ?.let { emit(it.toPublic()) }
+            // delay uses a different scheduler in the backend, so it's "stickier" in its
+            // enforcement when compared to yield.
             delay(0)
           }
         }
@@ -427,6 +433,8 @@ internal constructor(
       ?.accumulateUntil(MIN_BUFFER_SIZE)
       ?.onEach {
         sendAudioRealtime(InlineData(it, "audio/pcm"))
+        // delay uses a different scheduler in the backend, so it's "stickier" in its enforcement
+        // when compared to yield.
         delay(0)
       }
       ?.catch { throw FirebaseAIException.from(it) }
@@ -515,6 +523,8 @@ internal constructor(
           if (!enableInterruptions) {
             audioHelper?.resumeRecording()
           }
+          // delay uses a different scheduler in the backend, so it's "stickier" in its enforcement
+          // when compared to yield.
           delay(0)
         } else {
           /**

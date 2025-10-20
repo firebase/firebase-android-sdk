@@ -38,6 +38,8 @@ internal fun AudioRecord.readAsFlow() = flow {
 
   while (true) {
     if (recordingState != AudioRecord.RECORDSTATE_RECORDING) {
+      // delay uses a different scheduler in the backend, so it's "stickier" in its enforcement when
+      // compared to yield.
       delay(0)
       continue
     }
@@ -45,6 +47,8 @@ internal fun AudioRecord.readAsFlow() = flow {
     if (bytesRead > 0) {
       emit(buffer.copyOf(bytesRead))
     }
+    // delay uses a different scheduler in the backend, so it's "stickier" in its enforcement when
+    // compared to yield.
     delay(0)
   }
 }
