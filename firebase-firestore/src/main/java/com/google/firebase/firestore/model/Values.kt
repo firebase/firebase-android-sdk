@@ -761,6 +761,19 @@ object Values {
     return Timestamp.newBuilder().setSeconds(seconds).setNanos(truncatedNanoseconds).build()
   }
 
+  @JvmStatic
+  fun getVectorValue(value: Value): DoubleArray? {
+    if (value.valueTypeCase != ValueTypeCase.MAP_VALUE || !isVectorValue(value)) {
+      return null
+    }
+
+    return value.mapValue.fieldsMap[VECTOR_MAP_VECTORS_KEY]
+      ?.arrayValue
+      ?.valuesList
+      ?.map { it.doubleValue }
+      ?.toDoubleArray()
+  }
+
   /**
    * Ensures that the date and time are within what we consider valid ranges.
    *

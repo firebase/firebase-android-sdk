@@ -16,6 +16,8 @@
 
 package com.google.firebase.firestore.pipeline
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import com.google.common.math.DoubleMath
 import com.google.common.math.IntMath
 import com.google.common.math.LongMath
@@ -27,8 +29,11 @@ import com.google.firebase.firestore.Blob
 import com.google.firebase.firestore.RealtimePipeline
 import com.google.firebase.firestore.model.MutableDocument
 import com.google.firebase.firestore.model.Values
+import com.google.firebase.firestore.model.Values.VECTOR_MAP_VECTORS_KEY
 import com.google.firebase.firestore.model.Values.encodeValue
+import com.google.firebase.firestore.model.Values.getVectorValue
 import com.google.firebase.firestore.model.Values.isNanValue
+import com.google.firebase.firestore.model.Values.isVectorValue
 import com.google.firebase.firestore.model.Values.strictCompare
 import com.google.firebase.firestore.model.Values.strictEquals
 import com.google.firebase.firestore.util.Assert
@@ -419,6 +424,159 @@ internal val evaluateArrayLength = unaryFunction { array: List<Value> ->
   EvaluateResult.long(array.size)
 }
 
+internal val evaluateArrayReverse = unaryFunction { array: List<Value> ->
+  EvaluateResult.value(encodeValue(array.reversed()))
+}
+
+internal val evaluateJoin: EvaluateFunction = { params ->
+  block@{ input: MutableDocument ->
+    if (params.size != 2)
+      throw Assert.fail("Function should have exactly 2 params, but %d were given.", params.size)
+
+    var hasNull = false
+    val array = params[0](input)
+    when (array) {
+      is EvaluateResultError -> return@block EvaluateResultError
+      is EvaluateResultUnset -> return@block EvaluateResultError
+      EvaluateResult.NULL -> hasNull = true
+      else -> {
+        if (array.value?.valueTypeCase != ValueTypeCase.ARRAY_VALUE)
+          return@block EvaluateResultError
+      }
+    }
+
+    val delimiter = params[1](input)
+    when (delimiter) {
+      is EvaluateResultError -> return@block EvaluateResultError
+      is EvaluateResultUnset -> return@block EvaluateResultError
+      EvaluateResult.NULL -> return@block EvaluateResult.NULL
+      else -> {
+        when (delimiter.value?.valueTypeCase) {
+          ValueTypeCase.STRING_VALUE ->
+            if (!hasNull) {
+              joinStrings(array.value?.arrayValue!!.valuesList, delimiter.value?.stringValue!!)
+            } else EvaluateResult.NULL
+          ValueTypeCase.BYTES_VALUE ->
+            if (!hasNull) {
+              joinBytes(array.value?.arrayValue!!.valuesList, delimiter.value?.bytesValue!!)
+            } else EvaluateResult.NULL
+          else -> EvaluateResultError
+        }
+      }
+    }
+  }
+}
+
+private fun joinStrings(array: List<Value>, delimiter: String): EvaluateResult {
+  val builder = java.lang.StringBuilder()
+  var isFirstElement = true
+  for (i in 0 until array.size) {
+    val element = array[i]
+    when (element.valueTypeCase) {
+      ValueTypeCase.STRING_VALUE -> {
+        if (!isFirstElement) {
+          builder.append(delimiter)
+        }
+        builder.append(element.stringValue)
+        isFirstElement = false
+      }
+      ValueTypeCase.NULL_VALUE -> {} // skip null
+      else -> return EvaluateResultError
+    }
+  }
+  return EvaluateResult.string(builder.toString())
+}
+
+private fun joinBytes(array: List<Value>, delimiter: ByteString): EvaluateResult {
+  val builder = mutableListOf<Byte>()
+  var isFirstElement = true
+  for (i in 0 until array.size) {
+    when (array[i].valueTypeCase) {
+      ValueTypeCase.BYTES_VALUE -> {
+        if (!isFirstElement) {
+          delimiter.forEach { builder.add(it) }
+        }
+        array[i].bytesValue.forEach { builder.add(it) }
+        isFirstElement = false
+      }
+      ValueTypeCase.NULL_VALUE -> {} // skip null
+      else -> return EvaluateResultError
+    }
+  }
+  return EvaluateResult.value(encodeValue(builder.toByteArray()))
+}
+
+internal val evaluateArrayGet: EvaluateFunction = { params ->
+  block@{ input: MutableDocument ->
+    if (params.size != 2)
+      throw Assert.fail("Function should have exactly 2 params, but %d were given.", params.size)
+
+    val p1 = params[0](input)
+    val array =
+      if (p1.value?.hasArrayValue() == true) {
+        p1.value?.arrayValue?.valuesList
+      } else null
+
+    val p2 = params[1](input)
+    val offset =
+      if (p2.value?.hasIntegerValue() == true) {
+        p2.value!!
+      } else return@block EvaluateResultError
+
+    if (array == null) return@block EvaluateResultUnset
+
+    // If the index is out of bounds, return UNSET.
+    var index = offset.integerValue
+    if (index >= array.size || index < -array.size) {
+      return@block EvaluateResultUnset
+    }
+
+    // Adjust index for negative indexes.
+    index =
+      if (index < 0) {
+        array.size + index
+      } else index
+
+    EvaluateResult.value(array[index.toInt()])
+  }
+}
+
+internal val evaluateArrayConcat: EvaluateFunction = { params ->
+  block@{ input: MutableDocument ->
+    if (params.size < 2)
+      throw Assert.fail("Function should have at least 2 params, but %d were given.", params.size)
+
+    val allArraysValues = mutableListOf<List<Value>>()
+    var hasNull = false
+
+    for (param in params) {
+      val result = param(input)
+      when (result) {
+        is EvaluateResultValue -> {
+          if (result.value?.hasArrayValue() == true) {
+            allArraysValues.add(result.value.arrayValue.valuesList)
+          } else if (result.value?.hasNullValue() == true) {
+            hasNull = true
+          } else {
+            return@block EvaluateResultError
+          }
+        }
+        EvaluateResultUnset -> hasNull = true
+        EvaluateResultError -> return@block EvaluateResultError
+      }
+    }
+
+    if (hasNull) {
+      return@block EvaluateResult.NULL
+    }
+
+    arrayConcat(allArraysValues)
+  }
+}
+
+private fun arrayConcat(arrays: List<List<Value>>) =
+  EvaluateResult.value(encodeValue(arrays.flatten()))
+
 private fun equalAny(value: Value, list: List<Value>): EvaluateResult {
   var foundNull = false
   for (element in list) when (strictEquals(value, element)) {
@@ -481,7 +639,46 @@ internal val evaluateToLowercase = unaryFunctionPrimitive(String::lowercase)
 
 internal val evaluateToUppercase = unaryFunctionPrimitive(String::uppercase)
 
-internal val evaluateReverse = unaryFunctionPrimitive(String::reversed)
+internal val evaluateReverse = unaryFunction { value: Value ->
+  when (value.valueTypeCase) {
+    ValueTypeCase.STRING_VALUE -> EvaluateResult.string(stringReverse(value.stringValue))
+    ValueTypeCase.BYTES_VALUE ->
+      EvaluateResult.value(encodeValue(Blob.fromBytes(bytesReverse(value.bytesValue))))
+    ValueTypeCase.ARRAY_VALUE ->
+      EvaluateResult.value(encodeValue(value.arrayValue.valuesList.reversed()))
+    else -> EvaluateResultError
+  }
+}
+
+internal val evaluateStringReverse = unaryFunction { value: Value ->
+  when (value.valueTypeCase) {
+    ValueTypeCase.STRING_VALUE -> EvaluateResult.string(stringReverse(value.stringValue))
+    ValueTypeCase.BYTES_VALUE ->
+      EvaluateResult.value(encodeValue(Blob.fromBytes(bytesReverse(value.bytesValue))))
+    else -> EvaluateResultError
+  }
+}
+
+private fun stringReverse(input: String): String {
+  val reversed = java.lang.StringBuilder()
+  var curIndex: Int = input.length
+  while (curIndex > 0) {
+    curIndex = input.offsetByCodePoints(curIndex, -1)
+    reversed.append(Character.toChars(input.codePointAt(curIndex)))
+  }
+  return reversed.toString()
+}
+
+private fun bytesReverse(input: ByteString): ByteArray {
+  val bytes = input.toByteArray()
+
+  for (i in 0 until bytes.size / 2) {
+    val tmp = bytes[i]
+    bytes[i] = bytes[bytes.size - i - 1]
+    bytes[bytes.size - i - 1] = tmp
+  }
+  return bytes
+}
 
 internal val evaluateSplit = notImplemented // TODO: Does not exist in expressions.kt yet.
 
@@ -560,8 +757,6 @@ internal val evaluateTrim = unaryFunctionPrimitive(String::trim)
 internal val evaluateLTrim = notImplemented // TODO: Does not exist in expressions.kt yet.
 
 internal val evaluateRTrim = notImplemented // TODO: Does not exist in expressions.kt yet.
-
-internal val evaluateStrJoin = notImplemented // TODO: Does not exist in expressions.kt yet.
 
 internal val evaluateReplaceAll = notImplemented // TODO: Does not exist in backend yet.
 
@@ -755,6 +950,256 @@ internal val evaluateMap: EvaluateFunction = { params ->
       EvaluateResultValue(encodeValue(map))
     }
 }
+// === Vector Functions ===
+internal val evaluateVectorLength = unaryFunction { value: Value ->
+  if (value.valueTypeCase == ValueTypeCase.MAP_VALUE && isVectorValue(value)) {
+    EvaluateResult.long(vectorLength(value))
+  } else EvaluateResultError
+}
+
+internal val evaluateCosineDistance = binaryFunction { left: DoubleArray, right: DoubleArray ->
+  cosineDistance(left, right)
+}
+
+internal val evaluateDotProductDistance = binaryFunction { left: DoubleArray, right: DoubleArray ->
+  dotProductDistance(left, right)
+}
+
+internal val evaluateEuclideanDistance = binaryFunction { left: DoubleArray, right: DoubleArray ->
+  euclideanDistance(left, right)
+}
+
+/**
+ * Computes the Cosine Distance between two vectors: distance = 1 - <a></a>,b>/|a||b|.
+ *
+ * See [wikipedia](https://en.wikipedia.org/wiki/Cosine_similarity) for more info.
+ *
+ * It is recommended that customers use unit normalized vectors and dotProductDistance instead of
+ * cosine distance which is mathematically equivalent, but avoids divisions and square roots.
+ *
+ * @throws IllegalArgumentException if the vectors are different dimensions.
+ */
+private fun cosineDistance(vector1: DoubleArray, vector2: DoubleArray): EvaluateResult {
+  if (vector1.size != vector2.size) return EvaluateResultError
+
+  var sum1 = 0.0
+  var sum2 = 0.0
+  var sum3 = 0.0
+  var sum4 = 0.0
+
+  var norm11 = 0.0
+  var norm12 = 0.0
+  var norm13 = 0.0
+  var norm14 = 0.0
+
+  var norm21 = 0.0
+  var norm22 = 0.0
+  var norm23 = 0.0
+  var norm24 = 0.0
+
+  val limit = vector1.size and (4 - 1).inv()
+  run {
+    var i = 0
+    while (i < limit) {
+      sum1 = fma(vector1[i + 0], vector2[i + 0], sum1)
+      sum2 = fma(vector1[i + 1], vector2[i + 1], sum2)
+      sum3 = fma(vector1[i + 2], vector2[i + 2], sum3)
+      sum4 = fma(vector1[i + 3], vector2[i + 3], sum4)
+
+      norm11 = fma(vector1[i + 0], vector1[i + 0], norm11)
+      norm12 = fma(vector1[i + 1], vector1[i + 1], norm12)
+      norm13 = fma(vector1[i + 2], vector1[i + 2], norm13)
+      norm14 = fma(vector1[i + 3], vector1[i + 3], norm14)
+
+      norm21 = fma(vector2[i + 0], vector2[i + 0], norm21)
+      norm22 = fma(vector2[i + 1], vector2[i + 1], norm22)
+      norm23 = fma(vector2[i + 2], vector2[i + 2], norm23)
+      norm24 = fma(vector2[i + 3], vector2[i + 3], norm24)
+      i += 4
+    }
+  }
+
+  var sum = sum1 + sum2 + sum3 + sum4
+  var norm1 = norm11 + norm12 + norm13 + norm14
+  var norm2 = norm21 + norm22 + norm23 + norm24
+
+  for (i in limit until vector1.size) {
+    val val1 = vector1[i]
+    val val2 = vector2[i]
+    sum += val1 * val2
+    norm1 += val1 * val1
+    norm2 += val2 * val2
+  }
+  val result = 1.0 - (sum / sqrt(norm1 * norm2))
+  if (result.isNaN()) return EvaluateResultError
+  return EvaluateResult.double(result)
+}
+
+/**
+ * Computes the euclidean distance between two vectors: distance = |a-b|^2.
+ *
+ * See [wikipedia](https://en.wikipedia.org/wiki/Euclidean_distance) for more info.
+ *
+ * @throws IllegalArgumentException if the vectors are different dimensions.
+ */
+private fun euclideanDistance(vector1: DoubleArray, vector2: DoubleArray): EvaluateResult {
+  if (vector1.size != vector2.size) return EvaluateResultError
+
+  var a1 = 0.0
+  var a2 = 0.0
+  var a3 = 0.0
+  var a4 = 0.0
+
+  val limit = vector1.size and (4 - 1).inv()
+  run {
+    var i = 0
+    while (i < limit) {
+      val diff1 = vector1[i + 0] - vector2[i + 0]
+      val diff2 = vector1[i + 1] - vector2[i + 1]
+      val diff3 = vector1[i + 2] - vector2[i + 2]
+      val diff4 = vector1[i + 3] - vector2[i + 3]
+      a1 = fma(diff1, diff1, a1)
+      a2 = fma(diff2, diff2, a2)
+      a3 = fma(diff3, diff3, a3)
+      a4 = fma(diff4, diff4, a4)
+      i += 4
+    }
+  }
+
+  var result = a1 + a2 + a3 + a4
+
+  // Process the remainder one by one.
+  for (i in limit until vector1.size) {
+    val diff = vector1[i] - vector2[i]
+    result = fma(diff, diff, result)
+  }
+  return EvaluateResult.double(sqrt(result))
+}
+
+/**
+ * Computes the sum of the products of two vectors.
+ *
+ * See [wikipedia](https://en.wikipedia.org/wiki/dot_product) for more info.
+ *
+ * @throws IllegalArgumentException if the vectors are different dimensions.
+ */
+private fun dotProductDistance(vector1: DoubleArray, vector2: DoubleArray): EvaluateResult {
+  if (vector1.size != vector2.size) return EvaluateResultError
+
+  var a1 = 0.0
+  var a2 = 0.0
+  var a3 = 0.0
+  var a4 = 0.0
+
+  // Process data in independent chunks to reduce branching & data dependencies.
+  val limit = vector1.size and (4 - 1).inv()
+  run {
+    var i = 0
+    while (i < limit) {
+      a1 = fma(vector1[i + 0], vector2[i + 0], a1)
+      a2 = fma(vector1[i + 1], vector2[i + 1], a2)
+      a3 = fma(vector1[i + 2], vector2[i + 2], a3)
+      a4 = fma(vector1[i + 3], vector2[i + 3], a4)
+      i += 4
+    }
+  }
+
+  var result = a1 + a2 + a3 + a4
+
+  // Process the remainder one by one.
+  for (i in limit until vector1.size) {
+    result += vector1[i] * vector2[i]
+  }
+
+  return EvaluateResult.double(result)
+}
+
+/** Computes the fused multiply-add operation a * b + c. */
+private fun fma(a: Double, b: Double, c: Double): Double {
+  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+    // Use the native Java 9+ implementation for higher accuracy on modern Android.
+    return nativeFma(a, b, c)
+  } else {
+    // Fallback to the standard (a * b) + c operation for older versions.
+    return (a * b) + c
+  }
+}
+
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
+private fun nativeFma(a: Double, b: Double, c: Double): Double {
+  return Math.fma(a, b, c)
+}
+
+private fun vectorLength(value: Value): Long =
+  value.mapValue.fieldsMap[VECTOR_MAP_VECTORS_KEY]!!.arrayValue.valuesCount.toLong()
+
+// === General Functions ===
+internal val evaluateLength = unaryFunction { value: Value ->
+  when (value.valueTypeCase) {
+    ValueTypeCase.STRING_VALUE ->
+      EvaluateResult.long(value.stringValue.codePointCount(0, value.stringValue.length))
+    ValueTypeCase.BYTES_VALUE -> EvaluateResult.long(value.bytesValue.size())
+    ValueTypeCase.ARRAY_VALUE -> EvaluateResult.long(value.arrayValue.valuesCount)
+    ValueTypeCase.MAP_VALUE -> {
+      if (isVectorValue(value)) {
+        EvaluateResult.long(vectorLength(value))
+      } else {
+        EvaluateResult.long(value.mapValue.fieldsMap.size)
+      }
+    }
+    else -> EvaluateResultError
+  }
+}
+
+internal val evaluateConcat: EvaluateFunction = { params ->
+  block@{ input: MutableDocument ->
+    if (params.size < 2)
+      throw Assert.fail("Function should have at least 2 params, but %d were given.", params.size)
+
+    var hasNull = false
+    var firstTypeValue: Value? = null
+    val values = mutableListOf<Value>()
+
+    for (param in params) {
+      val result = param(input)
+      when (result) {
+        is EvaluateResultError -> return@block EvaluateResultError
+        is EvaluateResultUnset -> hasNull = true
+        EvaluateResult.NULL -> hasNull = true
+        else -> {
+          if (firstTypeValue == null) {
+            firstTypeValue =
+              when (result.value?.valueTypeCase) {
+                ValueTypeCase.ARRAY_VALUE -> result.value
+                ValueTypeCase.STRING_VALUE -> result.value
+                ValueTypeCase.BYTES_VALUE -> result.value
+                else -> return@block EvaluateResultError
+              }
+          } else if (firstTypeValue.valueTypeCase != result.value?.valueTypeCase) {
+            return@block EvaluateResultError
+          }
+
+          values.add(result.value!!)
+        }
+      }
+    }
+
+    if (hasNull) return@block EvaluateResult.NULL
+
+    return@block when (firstTypeValue?.valueTypeCase) {
+      ValueTypeCase.ARRAY_VALUE -> arrayConcat(values.map { it.arrayValue.valuesList })
+      ValueTypeCase.STRING_VALUE ->
+        EvaluateResult.string(buildString { values.forEach { append(it.stringValue) } })
+      ValueTypeCase.BYTES_VALUE -> bytesConcat(values.map { it.bytesValue })
+      else -> throw IllegalStateException("Unreachable")
+    }
+  }
+}
+
+private fun bytesConcat(byteStrings: List<ByteString>) =
+  EvaluateResult.value(
+    encodeValue(byteStrings.map { it.toByteArray() }.reduce { acc, bytes -> acc + bytes })
+  )
 
 // === Helper Functions ===
 
@@ -1053,6 +1498,29 @@ private inline fun binaryFunction(
   crossinline function: (List<Value>, Value) -> EvaluateResult
 ): EvaluateFunction = binaryFunction { v1: Value, v2: Value ->
   if (v1.hasArrayValue()) function(v1.arrayValue.valuesList, v2) else EvaluateResultError
+}
+
+/**
+ * Binary (Vector, Vector) Function
+ * - Validates there is exactly 2 parameters.
+ * - First, short circuits UNSET and ERROR parameters to return ERROR.
+ * - Second short circuits NULL [Value] parameters to return NULL [Value], however NULL [Value]s can
+ * appear inside of Array.
+ * - Extracts vectors for [function] evaluation.
+ * - All other parameter types return ERROR.
+ * - Catches evaluation exceptions and returns them as an ERROR.
+ */
+@JvmName("binaryVectorVectorFunction")
+private inline fun binaryFunction(
+  crossinline function: (DoubleArray, DoubleArray) -> EvaluateResult
+): EvaluateFunction = binaryFunction { left: Value, right: Value ->
+  val leftVector = getVectorValue(left)
+  if (leftVector == null) return@binaryFunction EvaluateResultError
+
+  val rightVector = getVectorValue(right)
+  if (rightVector == null) return@binaryFunction EvaluateResultError
+
+  function(leftVector, rightVector)
 }
 
 /**

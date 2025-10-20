@@ -1930,7 +1930,7 @@ abstract class Expression internal constructor() {
      * @return A new [Expression] representing the length operation.
      */
     @JvmStatic
-    fun length(expr: Expression): Expression = FunctionExpression("length", notImplemented, expr)
+    fun length(expr: Expression): Expression = FunctionExpression("length", evaluateLength, expr)
 
     /**
      * Creates an expression that calculates the length of a string, array, map, vector, or blob
@@ -1946,7 +1946,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun length(fieldName: String): Expression =
-      FunctionExpression("length", notImplemented, fieldName)
+      FunctionExpression("length", evaluateLength, fieldName)
 
     /**
      * Creates an expression that calculates the character length of a string expression in UTF8.
@@ -2136,7 +2136,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun join(arrayExpression: Expression, delimiter: String): Expression =
-      FunctionExpression("join", notImplemented, arrayExpression, constant(delimiter))
+      FunctionExpression("join", evaluateJoin, arrayExpression, constant(delimiter))
 
     /**
      * Creates an expression that joins the elements of an array into a string.
@@ -2152,7 +2152,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun join(arrayExpression: Expression, delimiterExpression: Expression): Expression =
-      FunctionExpression("join", notImplemented, arrayExpression, delimiterExpression)
+      FunctionExpression("join", evaluateJoin, arrayExpression, delimiterExpression)
 
     /**
      * Creates an expression that joins the elements of an array field into a string.
@@ -2168,7 +2168,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun join(arrayFieldName: String, delimiter: String): Expression =
-      FunctionExpression("join", notImplemented, arrayFieldName, constant(delimiter))
+      FunctionExpression("join", evaluateJoin, arrayFieldName, constant(delimiter))
 
     /**
      * Creates an expression that joins the elements of an array field into a string.
@@ -2184,7 +2184,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun join(arrayFieldName: String, delimiterExpression: Expression): Expression =
-      FunctionExpression("join", notImplemented, arrayFieldName, delimiterExpression)
+      FunctionExpression("join", evaluateJoin, arrayFieldName, delimiterExpression)
 
     /**
      * Creates an expression that performs a case-sensitive wildcard string comparison.
@@ -2682,7 +2682,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun stringReverse(str: Expression): Expression =
-      FunctionExpression("string_reverse", notImplemented, str)
+      FunctionExpression("string_reverse", evaluateStringReverse, str)
 
     /**
      * Reverses the given string field.
@@ -2697,7 +2697,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun stringReverse(fieldName: String): Expression =
-      FunctionExpression("string_reverse", notImplemented, fieldName)
+      FunctionExpression("string_reverse", evaluateStringReverse, fieldName)
 
     /**
      * Creates an expression that returns a substring of the given string.
@@ -3145,7 +3145,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun cosineDistance(vector1: Expression, vector2: Expression): Expression =
-      FunctionExpression("cosine_distance", notImplemented, vector1, vector2)
+      FunctionExpression("cosine_distance", evaluateCosineDistance, vector1, vector2)
 
     /**
      * Calculates the Cosine distance between vector expression and a vector literal.
@@ -3161,7 +3161,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun cosineDistance(vector1: Expression, vector2: DoubleArray): Expression =
-      FunctionExpression("cosine_distance", notImplemented, vector1, vector(vector2))
+      FunctionExpression("cosine_distance", evaluateCosineDistance, vector1, vector(vector2))
 
     /**
      * Calculates the Cosine distance between vector expression and a vector literal.
@@ -3177,7 +3177,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun cosineDistance(vector1: Expression, vector2: VectorValue): Expression =
-      FunctionExpression("cosine_distance", notImplemented, vector1, vector2)
+      FunctionExpression("cosine_distance", evaluateCosineDistance, vector1, vector2)
 
     /**
      * Calculates the Cosine distance between a vector field and a vector expression.
@@ -3193,7 +3193,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun cosineDistance(vectorFieldName: String, vector: Expression): Expression =
-      FunctionExpression("cosine_distance", notImplemented, vectorFieldName, vector)
+      FunctionExpression("cosine_distance", evaluateCosineDistance, vectorFieldName, vector)
 
     /**
      * Calculates the Cosine distance between a vector field and a vector literal.
@@ -3209,7 +3209,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun cosineDistance(vectorFieldName: String, vector: DoubleArray): Expression =
-      FunctionExpression("cosine_distance", notImplemented, vectorFieldName, vector(vector))
+      FunctionExpression("cosine_distance", evaluateCosineDistance, vectorFieldName, vector(vector))
 
     /**
      * Calculates the Cosine distance between a vector field and a vector literal.
@@ -3225,7 +3225,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun cosineDistance(vectorFieldName: String, vector: VectorValue): Expression =
-      FunctionExpression("cosine_distance", notImplemented, vectorFieldName, vector)
+      FunctionExpression("cosine_distance", evaluateCosineDistance, vectorFieldName, vector)
 
     /**
      * Calculates the dot product distance between two vector expressions.
@@ -3241,7 +3241,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun dotProduct(vector1: Expression, vector2: Expression): Expression =
-      FunctionExpression("dot_product", notImplemented, vector1, vector2)
+      FunctionExpression("dot_product", evaluateDotProductDistance, vector1, vector2)
 
     /**
      * Calculates the dot product distance between vector expression and a vector literal.
@@ -3257,7 +3257,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun dotProduct(vector1: Expression, vector2: DoubleArray): Expression =
-      FunctionExpression("dot_product", notImplemented, vector1, vector(vector2))
+      FunctionExpression("dot_product", evaluateDotProductDistance, vector1, vector(vector2))
 
     /**
      * Calculates the dot product distance between vector expression and a vector literal.
@@ -3273,7 +3273,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun dotProduct(vector1: Expression, vector2: VectorValue): Expression =
-      FunctionExpression("dot_product", notImplemented, vector1, vector2)
+      FunctionExpression("dot_product", evaluateDotProductDistance, vector1, vector2)
 
     /**
      * Calculates the dot product distance between a vector field and a vector expression.
@@ -3289,7 +3289,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun dotProduct(vectorFieldName: String, vector: Expression): Expression =
-      FunctionExpression("dot_product", notImplemented, vectorFieldName, vector)
+      FunctionExpression("dot_product", evaluateDotProductDistance, vectorFieldName, vector)
 
     /**
      * Calculates the dot product distance between vector field and a vector literal.
@@ -3305,7 +3305,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun dotProduct(vectorFieldName: String, vector: DoubleArray): Expression =
-      FunctionExpression("dot_product", notImplemented, vectorFieldName, vector(vector))
+      FunctionExpression("dot_product", evaluateDotProductDistance, vectorFieldName, vector(vector))
 
     /**
      * Calculates the dot product distance between a vector field and a vector literal.
@@ -3321,7 +3321,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun dotProduct(vectorFieldName: String, vector: VectorValue): Expression =
-      FunctionExpression("dot_product", notImplemented, vectorFieldName, vector)
+      FunctionExpression("dot_product", evaluateDotProductDistance, vectorFieldName, vector)
 
     /**
      * Calculates the Euclidean distance between two vector expressions.
@@ -3337,7 +3337,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun euclideanDistance(vector1: Expression, vector2: Expression): Expression =
-      FunctionExpression("euclidean_distance", notImplemented, vector1, vector2)
+      FunctionExpression("euclidean_distance", evaluateEuclideanDistance, vector1, vector2)
 
     /**
      * Calculates the Euclidean distance between vector expression and a vector literal.
@@ -3353,7 +3353,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun euclideanDistance(vector1: Expression, vector2: DoubleArray): Expression =
-      FunctionExpression("euclidean_distance", notImplemented, vector1, vector(vector2))
+      FunctionExpression("euclidean_distance", evaluateEuclideanDistance, vector1, vector(vector2))
 
     /**
      * Calculates the Euclidean distance between vector expression and a vector literal.
@@ -3369,7 +3369,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun euclideanDistance(vector1: Expression, vector2: VectorValue): Expression =
-      FunctionExpression("euclidean_distance", notImplemented, vector1, vector2)
+      FunctionExpression("euclidean_distance", evaluateEuclideanDistance, vector1, vector2)
 
     /**
      * Calculates the Euclidean distance between a vector field and a vector expression.
@@ -3385,7 +3385,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun euclideanDistance(vectorFieldName: String, vector: Expression): Expression =
-      FunctionExpression("euclidean_distance", notImplemented, vectorFieldName, vector)
+      FunctionExpression("euclidean_distance", evaluateEuclideanDistance, vectorFieldName, vector)
 
     /**
      * Calculates the Euclidean distance between a vector field and a vector literal.
@@ -3401,7 +3401,12 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun euclideanDistance(vectorFieldName: String, vector: DoubleArray): Expression =
-      FunctionExpression("euclidean_distance", notImplemented, vectorFieldName, vector(vector))
+      FunctionExpression(
+        "euclidean_distance",
+        evaluateEuclideanDistance,
+        vectorFieldName,
+        vector(vector)
+      )
 
     /**
      * Calculates the Euclidean distance between a vector field and a vector literal.
@@ -3417,7 +3422,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun euclideanDistance(vectorFieldName: String, vector: VectorValue): Expression =
-      FunctionExpression("euclidean_distance", notImplemented, vectorFieldName, vector)
+      FunctionExpression("euclidean_distance", evaluateEuclideanDistance, vectorFieldName, vector)
 
     /**
      * Creates an expression that calculates the length (dimension) of a Firestore Vector.
@@ -3432,7 +3437,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun vectorLength(vectorExpression: Expression): Expression =
-      FunctionExpression("vector_length", notImplemented, vectorExpression)
+      FunctionExpression("vector_length", evaluateVectorLength, vectorExpression)
 
     /**
      * Creates an expression that calculates the length (dimension) of a Firestore Vector.
@@ -3447,7 +3452,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun vectorLength(fieldName: String): Expression =
-      FunctionExpression("vector_length", notImplemented, fieldName)
+      FunctionExpression("vector_length", evaluateVectorLength, fieldName)
 
     /**
      * Creates an expression that evaluates to the current server timestamp.
@@ -4401,7 +4406,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun concat(first: Expression, second: Expression, vararg others: Any): Expression =
-      FunctionExpression("concat", notImplemented, first, second, *others)
+      FunctionExpression("concat", evaluateConcat, first, second, *others)
 
     /**
      * Creates an expression that concatenates strings, arrays, or blobs. Types cannot be mixed.
@@ -4418,7 +4423,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun concat(first: Expression, second: Any, vararg others: Any): Expression =
-      FunctionExpression("concat", notImplemented, first, second, *others)
+      FunctionExpression("concat", evaluateConcat, first, second, *others)
 
     /**
      * Creates an expression that concatenates strings, arrays, or blobs. Types cannot be mixed.
@@ -4435,7 +4440,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun concat(first: String, second: Expression, vararg others: Any): Expression =
-      FunctionExpression("concat", notImplemented, first, second, *others)
+      FunctionExpression("concat", evaluateConcat, first, second, *others)
 
     /**
      * Creates an expression that concatenates strings, arrays, or blobs. Types cannot be mixed.
@@ -4452,7 +4457,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun concat(first: String, second: Any, vararg others: Any): Expression =
-      FunctionExpression("concat", notImplemented, first, second, *others)
+      FunctionExpression("concat", evaluateConcat, first, second, *others)
 
     /**
      * Creates an expression that creates a Firestore array value from an input array.
@@ -4505,7 +4510,7 @@ abstract class Expression internal constructor() {
       secondArray: Expression,
       vararg otherArrays: Any
     ): Expression =
-      FunctionExpression("array_concat", notImplemented, firstArray, secondArray, *otherArrays)
+      FunctionExpression("array_concat", evaluateArrayConcat, firstArray, secondArray, *otherArrays)
 
     /**
      * Creates an expression that concatenates an array with other arrays.
@@ -4522,7 +4527,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun arrayConcat(firstArray: Expression, secondArray: Any, vararg otherArrays: Any): Expression =
-      FunctionExpression("array_concat", notImplemented, firstArray, secondArray, *otherArrays)
+      FunctionExpression("array_concat", evaluateArrayConcat, firstArray, secondArray, *otherArrays)
 
     /**
      * Creates an expression that concatenates a field's array value with other arrays.
@@ -4543,7 +4548,13 @@ abstract class Expression internal constructor() {
       secondArray: Expression,
       vararg otherArrays: Any
     ): Expression =
-      FunctionExpression("array_concat", notImplemented, firstArrayField, secondArray, *otherArrays)
+      FunctionExpression(
+        "array_concat",
+        evaluateArrayConcat,
+        firstArrayField,
+        secondArray,
+        *otherArrays
+      )
 
     /**
      * Creates an expression that concatenates a field's array value with other arrays.
@@ -4564,7 +4575,13 @@ abstract class Expression internal constructor() {
       secondArray: Any,
       vararg otherArrays: Any
     ): Expression =
-      FunctionExpression("array_concat", notImplemented, firstArrayField, secondArray, *otherArrays)
+      FunctionExpression(
+        "array_concat",
+        evaluateArrayConcat,
+        firstArrayField,
+        secondArray,
+        *otherArrays
+      )
 
     /**
      * Reverses the order of elements in the [array].
@@ -4579,7 +4596,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun arrayReverse(array: Expression): Expression =
-      FunctionExpression("array_reverse", notImplemented, array)
+      FunctionExpression("array_reverse", evaluateArrayReverse, array)
 
     /**
      * Reverses the order of elements in the array field.
@@ -4594,7 +4611,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun arrayReverse(arrayFieldName: String): Expression =
-      FunctionExpression("array_reverse", notImplemented, arrayFieldName)
+      FunctionExpression("array_reverse", evaluateArrayReverse, arrayFieldName)
 
     /**
      * Creates an expression that returns the sum of the elements in an array.
@@ -4882,7 +4899,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun arrayGet(array: Expression, offset: Expression): Expression =
-      FunctionExpression("array_get", notImplemented, array, offset)
+      FunctionExpression("array_get", evaluateArrayGet, array, offset)
 
     /**
      * Creates an expression that indexes into an array from the beginning or end and return the
@@ -4900,7 +4917,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun arrayGet(array: Expression, offset: Int): Expression =
-      FunctionExpression("array_get", notImplemented, array, constant(offset))
+      FunctionExpression("array_get", evaluateArrayGet, array, constant(offset))
 
     /**
      * Creates an expression that indexes into an array from the beginning or end and return the
@@ -4918,7 +4935,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun arrayGet(arrayFieldName: String, offset: Expression): Expression =
-      FunctionExpression("array_get", notImplemented, arrayFieldName, offset)
+      FunctionExpression("array_get", evaluateArrayGet, arrayFieldName, offset)
 
     /**
      * Creates an expression that indexes into an array from the beginning or end and return the
@@ -4936,7 +4953,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun arrayGet(arrayFieldName: String, offset: Int): Expression =
-      FunctionExpression("array_get", notImplemented, arrayFieldName, constant(offset))
+      FunctionExpression("array_get", evaluateArrayGet, arrayFieldName, constant(offset))
 
     /**
      * Creates a conditional expression that evaluates to a [thenExpr] expression if a condition is
