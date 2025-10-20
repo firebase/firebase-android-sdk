@@ -77,6 +77,7 @@ internal object FunctionRegistry {
       "array_contains" to evaluateArrayContains,
       "array_contains_any" to evaluateArrayContainsAny,
       "array_contains_all" to evaluateArrayContainsAll,
+      "array_get" to evaluateArrayGet,
       "array_length" to evaluateArrayLength,
       "timestamp_add" to evaluateTimestampAdd,
       "timestamp_sub" to evaluateTimestampSub,
@@ -104,7 +105,6 @@ internal object FunctionRegistry {
       "split" to evaluateSplit,
       "substring" to evaluateSubstring,
       "ltrim" to evaluateLTrim,
-      "rtrim" to evaluateRTrim,
-      "str_join" to evaluateStrJoin
+      "rtrim" to evaluateRTrim
     )
 }

@@ -20,19 +20,25 @@ import com.google.firebase.firestore.pipeline.Expression.Companion.arrayContains
 import com.google.firebase.firestore.pipeline.Expression.Companion.arrayContainsAll
 import com.google.firebase.firestore.pipeline.Expression.Companion.arrayContainsAny
 import com.google.firebase.firestore.pipeline.Expression.Companion.arrayLength
+import com.google.firebase.firestore.pipeline.Expression.Companion.arrayReverse
 import com.google.firebase.firestore.pipeline.Expression.Companion.byteLength
 import com.google.firebase.firestore.pipeline.Expression.Companion.charLength
 import com.google.firebase.firestore.pipeline.Expression.Companion.constant
+import com.google.firebase.firestore.pipeline.Expression.Companion.cosineDistance
 import com.google.firebase.firestore.pipeline.Expression.Companion.divide
+import com.google.firebase.firestore.pipeline.Expression.Companion.dotProduct
 import com.google.firebase.firestore.pipeline.Expression.Companion.endsWith
 import com.google.firebase.firestore.pipeline.Expression.Companion.equal
 import com.google.firebase.firestore.pipeline.Expression.Companion.equalAny
+import com.google.firebase.firestore.pipeline.Expression.Companion.euclideanDistance
 import com.google.firebase.firestore.pipeline.Expression.Companion.exp
 import com.google.firebase.firestore.pipeline.Expression.Companion.field
 import com.google.firebase.firestore.pipeline.Expression.Companion.greaterThan
 import com.google.firebase.firestore.pipeline.Expression.Companion.greaterThanOrEqual
 import com.google.firebase.firestore.pipeline.Expression.Companion.isNan
 import com.google.firebase.firestore.pipeline.Expression.Companion.isNotNan
+import com.google.firebase.firestore.pipeline.Expression.Companion.join
+import com.google.firebase.firestore.pipeline.Expression.Companion.length
 import com.google.firebase.firestore.pipeline.Expression.Companion.lessThan
 import com.google.firebase.firestore.pipeline.Expression.Companion.lessThanOrEqual
 import com.google.firebase.firestore.pipeline.Expression.Companion.like
@@ -52,6 +58,7 @@ import com.google.firebase.firestore.pipeline.Expression.Companion.sqrt
 import com.google.firebase.firestore.pipeline.Expression.Companion.startsWith
 import com.google.firebase.firestore.pipeline.Expression.Companion.stringConcat
 import com.google.firebase.firestore.pipeline.Expression.Companion.stringContains
+import com.google.firebase.firestore.pipeline.Expression.Companion.stringReverse
 import com.google.firebase.firestore.pipeline.Expression.Companion.subtract
 import com.google.firebase.firestore.pipeline.Expression.Companion.timestampToUnixMicros
 import com.google.firebase.firestore.pipeline.Expression.Companion.timestampToUnixMillis
@@ -62,6 +69,7 @@ import com.google.firebase.firestore.pipeline.Expression.Companion.trim
 import com.google.firebase.firestore.pipeline.Expression.Companion.unixMicrosToTimestamp
 import com.google.firebase.firestore.pipeline.Expression.Companion.unixMillisToTimestamp
 import com.google.firebase.firestore.pipeline.Expression.Companion.unixSecondsToTimestamp
+import com.google.firebase.firestore.pipeline.Expression.Companion.vectorLength
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -107,12 +115,16 @@ internal class MirroringSemanticsTests {
         "isNan" to { v -> isNan(v) },
         "isNotNan" to { v -> isNotNan(v) },
         "arrayLength" to { v -> arrayLength(v) },
+        "vectorLength" to { v -> vectorLength(v) },
+        "length" to { v -> length(v) },
         "reverse" to { v -> reverse(v) },
+        "stringReverse" to { v -> stringReverse(v) },
         "charLength" to { v -> charLength(v) },
         "byteLength" to { v -> byteLength(v) },
         "toLower" to { v -> toLower(v) },
         "toUpper" to { v -> toUpper(v) },
         "trim" to { v -> trim(v) },
+        "arrayReverse" to { v -> arrayReverse(v) },
         "unixMicrosToTimestamp" to { v -> unixMicrosToTimestamp(v) },
         "timestampToUnixMicros" to { v -> timestampToUnixMicros(v) },
         "unixMillisToTimestamp" to { v -> unixMillisToTimestamp(v) },
@@ -172,6 +184,8 @@ internal class MirroringSemanticsTests {
         "arrayContains" to { v1, v2 -> arrayContains(v1, v2) },
         "arrayContainsAll" to { v1, v2 -> arrayContainsAll(v1, v2) },
         "arrayContainsAny" to { v1, v2 -> arrayContainsAny(v1, v2) },
+        // TODO(pipeline): arrayConcat is correct, the rest need to be updated
+        // "arrayConcat" to { v1, v2 -> arrayConcat(v1, v2) },
         "eqAny" to { v1, v2 -> equalAny(v1, v2) }, // Maps to EqAnyExpr
         "notEqAny" to { v1, v2 -> notEqualAny(v1, v2) }, // Maps to NotEqAnyExpr
         // String
@@ -181,7 +195,11 @@ internal class MirroringSemanticsTests {
         "strContains" to { v1, v2 -> stringContains(v1, v2) }, // Maps to StrContainsExpr
         "startsWith" to { v1, v2 -> startsWith(v1, v2) },
         "endsWith" to { v1, v2 -> endsWith(v1, v2) },
-        "strConcat" to { v1, v2 -> stringConcat(v1, v2) } // Maps to StrConcatExpr
+        "strConcat" to { v1, v2 -> stringConcat(v1, v2) },
+        "join" to { v1, v2 -> join(v1, v2) },
+        "cosineDistance" to { v1, v2 -> cosineDistance(v1, v2) },
+        "dotProduct" to { v1, v2 -> dotProduct(v1, v2) },
+        "euclideanDistance" to { v1, v2 -> euclideanDistance(v1, v2) },
         // TODO(b/351084804): mapGet is not implemented yet
         )
 
