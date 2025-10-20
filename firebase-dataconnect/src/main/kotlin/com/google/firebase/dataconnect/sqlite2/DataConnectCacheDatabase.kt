@@ -19,11 +19,13 @@ package com.google.firebase.dataconnect.sqlite2
 import android.database.sqlite.SQLiteDatabase
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
+import com.google.firebase.dataconnect.sqlite2.SQLiteDatabaseExts.execSQL
 import java.io.File
 import java.util.concurrent.Executors
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -115,7 +117,7 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
             onSuccess = { it },
             onFailure = { initializeException ->
               coroutineScope.cancel()
-              state = State.InitializeCalled.InitializeFailed
+              state = State.InitializeCalled.InitializeFailed(initializeException)
               throw initializeException
             }
           )
@@ -177,18 +179,53 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
     }
   }
 
+  suspend fun insertUser(authUid: String) {
+    runReadWriteTransaction { sqliteDatabase ->
+      sqliteDatabase.execSQL(logger, "INSERT INTO users (auth_uid) VALUES (?)", arrayOf(authUid))
+    }
+  }
+
+  private suspend inline fun <T> runReadWriteTransaction(
+    crossinline block: suspend CoroutineScope.(SQLiteDatabase) -> T
+  ): T {
+    val initializedState: State.InitializeCalled.Initialized =
+      stateMutex.withLock {
+        when (val currentState = state) {
+          State.New ->
+            throw IllegalStateException(
+              "initialize() must be called before running a database transaction"
+            )
+          is State.InitializeCalled.InitializeFailed -> throw currentState.exception
+          is State.InitializeCalled.Initialized -> currentState
+          is State.CloseCalled ->
+            throw IllegalStateException(
+              "a database transaction cannot be started after calling close()"
+            )
+        }
+      }
+
+    val job =
+      initializedState.coroutineScope.async(start = CoroutineStart.LAZY) {
+        block(initializedState.coroutineScope, initializedState.sqliteDatabase)
+      }
+
+    initializedState.transactionQueue.send(job)
+
+    return job.await()
+  }
+
   private sealed interface State {
 
     object New : State
 
     sealed interface InitializeCalled : State {
-      object InitializeFailed : InitializeCalled
+      class InitializeFailed(val exception: Throwable) : InitializeCalled
 
       class Initialized(
         val sqliteDatabase: SQLiteDatabase,
         val coroutineScope: CoroutineScope,
         val transactionsJob: Job,
-        val transactionQueue: Channel<*>,
+        val transactionQueue: Channel<Job>,
       ) : InitializeCalled
     }
 
