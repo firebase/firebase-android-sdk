@@ -25,7 +25,8 @@ import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.register
 
 /**
- * Copies the root google-services.json into the project directory during build time.
+ * Copies the root google-services.json into the project directory during build time. If the file
+ * doesn't exist, a dummy file is created and copied instead
  *
  * If a path is provided via `FIREBASE_GOOGLE_SERVICES_PATH`, that will be used instead. The file
  * will also be renamed to `google-services.json`, so provided files do *not* need to be properly
@@ -35,12 +36,19 @@ import org.gradle.kotlin.dsl.register
  */
 abstract class CopyGoogleServicesPlugin : Plugin<Project> {
   override fun apply(project: Project) {
-    val copyRootGoogleServices = registerCopyRootGoogleServicesTask(project)
+    if (File(project.projectDir, "google-services.json").exists()) {
+      project.logger.info("Google Services file already present in project, skipping copy task")
+    } else {
+      val sourcePath = getSourcePath(project)
+      val copyRootGoogleServices = registerCopyRootGoogleServicesTask(project, sourcePath)
 
-    project.allprojects {
-      // fixes dependencies with gradle tasks that do not properly dependOn `preBuild`
-      tasks.configureEach {
-        if (name !== "copyRootGoogleServices") dependsOn(copyRootGoogleServices)
+      project.allprojects {
+        // fixes dependencies with gradle tasks that do not properly dependOn `preBuild`
+        tasks.configureEach {
+          if (name !== "copyRootGoogleServices") {
+            dependsOn(copyRootGoogleServices)
+          }
+        }
       }
     }
 
@@ -56,22 +64,19 @@ abstract class CopyGoogleServicesPlugin : Plugin<Project> {
     return gradle.startParameter.taskNames.any { testTasks.any(it::contains) }
   }
 
-  private fun registerCopyRootGoogleServicesTask(project: Project) =
+  private fun registerCopyRootGoogleServicesTask(project: Project, path: String) =
     project.tasks.register<Copy>("copyRootGoogleServices") {
-      val sourcePath =
-        System.getenv("FIREBASE_GOOGLE_SERVICES_PATH") ?: "${project.rootDir}/google-services.json"
-
       val library = project.extensions.getByType<BaseExtension>()
 
       val targetPackageLine = "\"package_name\": \"${library.namespace}\""
       val packageLineRegex = Regex("\"package_name\":\\s+\".*\"")
 
-      from(sourcePath)
+      from(path)
       into(project.projectDir)
 
       rename { "google-services.json" }
 
-      if (fileIsMissingPackageName(sourcePath, targetPackageLine)) {
+      if (fileIsMissingPackageName(path, targetPackageLine)) {
         /**
          * Modifies `google-services.json` such that all declared `package_name` entries are
          * replaced with the project's namespace. This tricks the google services plugin into
@@ -90,5 +95,15 @@ abstract class CopyGoogleServicesPlugin : Plugin<Project> {
     if (!file.exists()) return true
 
     return !file.readText().contains(targetPackageLine)
+  }
+
+  private fun getSourcePath(project: Project): String {
+    val path =
+      System.getenv("FIREBASE_GOOGLE_SERVICES_PATH") ?: "${project.rootDir}/google-services.json"
+    if (File(path).exists()) {
+      return path
+    }
+    project.logger.warn("Google services file not found, using fallback")
+    return "${project.rootDir}/plugins/resources/dummy-google-services.json"
   }
 }

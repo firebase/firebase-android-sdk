@@ -161,7 +161,7 @@ dependencies {
     testImplementation 'com.google.guava:guava-testlib:12.0-rc2'
     testImplementation libs.truth
     testImplementation libs.junit
-    testImplementation libs.hamcrest.junit
+    testImplementation libs.hamcrest
     testImplementation libs.mockito.core
     testImplementation libs.robolectric
 

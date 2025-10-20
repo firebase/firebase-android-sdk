@@ -1,5 +1,10 @@
 # Unreleased
 
+- [feature] Added support for sending realtime audio and video in a `LiveSession`.
+- [changed] Removed redundant internal exception types. (#7475)
+
+# 17.4.0
+
 - [changed] **Breaking Change**: Removed the `candidateCount` option from `LiveGenerationConfig`
 - [changed] Added support for user interrupts for the `startAudioConversation` method in the
   `LiveSession` class. (#7413)

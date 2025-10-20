@@ -49,6 +49,7 @@ import io.kotest.assertions.withClue
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.property.Arb
@@ -302,7 +303,7 @@ class DataConnectAuthUnitTest {
 
     val result = dataConnectAuth.getToken(requestId)
 
-    withClue("result=$result") { result shouldBe accessToken }
+    withClue("result=$result") { result.shouldNotBeNull().token shouldBe accessToken }
     mockLogger.shouldHaveLoggedExactlyOneMessageContaining(requestId)
     mockLogger.shouldHaveLoggedExactlyOneMessageContaining(
       "returns retrieved token: ${accessToken.toScrubbedAccessToken()}"
@@ -363,7 +364,7 @@ class DataConnectAuthUnitTest {
     dataConnectAuth.forceRefresh()
     val result = dataConnectAuth.getToken(requestId)
 
-    withClue("result=$result") { result shouldBe accessToken }
+    withClue("result=$result") { result.shouldNotBeNull().token shouldBe accessToken }
     verify(exactly = 1) { mockInternalAuthProvider.getAccessToken(true) }
     verify(exactly = 0) { mockInternalAuthProvider.getAccessToken(false) }
     mockLogger.shouldHaveLoggedExactlyOneMessageContaining(requestId)
@@ -419,7 +420,7 @@ class DataConnectAuthUnitTest {
         taskForToken(accessTokenGenerator.next().also { tokens.add(it) })
       }
 
-    val results = List(5) { dataConnectAuth.getToken(requestId) }
+    val results = List(5) { dataConnectAuth.getToken(requestId)?.token }
 
     results shouldContainExactly tokens
   }
@@ -447,7 +448,7 @@ class DataConnectAuthUnitTest {
         }
       }
 
-    val actualTokens = jobs.map { it.await() }
+    val actualTokens = jobs.map { it.await()?.token }
     actualTokens.forEachIndexed { index, token ->
       withClue("actualTokens[$index]") { tokens shouldContain token }
     }
@@ -481,7 +482,7 @@ class DataConnectAuthUnitTest {
 
     val result = dataConnectAuth.getToken(requestId)
 
-    withClue("result=$result") { result shouldBe tokens.last() }
+    withClue("result=$result") { result.shouldNotBeNull().token shouldBe tokens.last() }
     verify(exactly = 2) { mockInternalAuthProvider.getAccessToken(true) }
     verify(exactly = 1) { mockInternalAuthProvider.getAccessToken(false) }
     mockLogger.shouldHaveLoggedAtLeastOneMessageContaining("retrying due to needs token refresh")
@@ -496,11 +497,7 @@ class DataConnectAuthUnitTest {
     advanceUntilIdle()
     val invocationCount = AtomicInteger(0)
     val tokens = CopyOnWriteArrayList<String>()
-    val getTokenJob2 =
-      async(start = CoroutineStart.LAZY) {
-        val accessToken = dataConnectAuth.getToken(requestId)
-        accessToken
-      }
+    val getTokenJob2 = async(start = CoroutineStart.LAZY) { dataConnectAuth.getToken(requestId) }
     coEvery { mockInternalAuthProvider.getAccessToken(any()) } coAnswers
       {
         if (invocationCount.getAndIncrement() == 0) {
@@ -509,16 +506,15 @@ class DataConnectAuthUnitTest {
           getTokenJob2.start()
           advanceUntilIdle()
         }
-        val rv = taskForToken(accessTokenGenerator.next().also { tokens.add(it) })
-        rv
+        taskForToken(accessTokenGenerator.next().also { tokens.add(it) })
       }
 
     val result1 = dataConnectAuth.getToken(requestId)
     withClue("getTokenJob2.isActive") { getTokenJob2.isActive shouldBe true }
     val result2 = getTokenJob2.await()
 
-    withClue("result1=$result1") { result1 shouldBe tokens[0] }
-    withClue("result2=$result2") { result2 shouldBe tokens[1] }
+    withClue("result1=$result1") { result1.shouldNotBeNull().token shouldBe tokens[0] }
+    withClue("result2=$result2") { result2.shouldNotBeNull().token shouldBe tokens[1] }
     verify(exactly = 2) { mockInternalAuthProvider.getAccessToken(false) }
     verify(exactly = 0) { mockInternalAuthProvider.getAccessToken(true) }
     mockLogger.shouldHaveLoggedExactlyOneMessageContaining("got an old result; retrying")

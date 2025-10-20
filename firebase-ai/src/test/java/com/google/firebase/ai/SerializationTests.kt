@@ -437,7 +437,7 @@ internal class SerializationTests {
     }
       """
         .trimIndent()
-    val actualJson = descriptorToJson(Schema.Internal.serializer().descriptor)
+    val actualJson = descriptorToJson(Schema.InternalOpenAPI.serializer().descriptor)
     expectedJsonAsString shouldEqualJson actualJson.toString()
   }
 
