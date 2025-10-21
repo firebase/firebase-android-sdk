@@ -1,5 +1,7 @@
 # Unreleased
 
+- [changed] Updated `com.github.bumptech.glide:glide` dependency to `5.0.5`. [#7469]
+
 # 22.0.1
 
 - [changed] Bumped internal dependencies.
