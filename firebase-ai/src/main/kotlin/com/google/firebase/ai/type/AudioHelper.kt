@@ -159,7 +159,7 @@ internal class AudioHelper(
      * constructor.
      */
     @RequiresPermission(Manifest.permission.RECORD_AUDIO)
-    fun build(): AudioHelper {
+    fun build(audioHandler: ((AudioRecord, AudioTrack) -> Unit)? = null): AudioHelper {
       val playbackTrack =
         AudioTrack(
           AudioAttributes.Builder()
@@ -209,6 +209,9 @@ internal class AudioHelper(
         AcousticEchoCanceler.create(recorder.audioSessionId)?.enabled = true
       }
 
+      if (audioHandler != null) {
+        audioHandler(recorder, playbackTrack)
+      }
       return AudioHelper(recorder, playbackTrack)
     }
   }
