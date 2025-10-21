@@ -331,10 +331,16 @@ internal constructor(
   }
 
   /**
-   * Sends a video input stream to the model, using the realtime API.
+   * Sends a video frame to the model, using the realtime API.
    *
-   * @param video Encoded video data, used to update the model on the client's conversation. The
-   * MIME type can be a video format (e.g., `video/webm`) or an image format (e.g., `image/jpeg`).
+   * Instead of raw video data, the model expects individual frames of the video, sent as images.
+   *
+   * For better performance, frames can also be sent at a lower rate than the video; even as low as
+   * 1 frame per second.
+   *
+   * @param inlineData Encoded image data extracted from a frame of the video, used to update the
+   * model on the client's conversation, with the corresponding IANA standard MIME type of the video
+   * frame data (e.g., `image/png`, `image/jpeg`, etc.).
    */
   public suspend fun sendVideoRealtime(video: InlineData) {
     FirebaseAIException.catchAsync {
