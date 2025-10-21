@@ -226,10 +226,12 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
       if (cursor.moveToNext()) {
         cursor.getLong(0)
       } else {
-        throw UserIdNotFoundException("authUid=$authUid")
+        throw AuthUidNotFoundException("authUid=$authUid (internal error m5m52ahrxz)")
       }
     }
   }
+
+  class AuthUidNotFoundException(message: String) : Exception(message)
 
   private fun SQLiteDatabase.nextSequenceNumber(): Long {
     execSQL(logger, "INSERT INTO sequence_number DEFAULT VALUES")
@@ -362,11 +364,8 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
     }
   }
 
-  class UserIdNotFoundException(message: String) : Exception(message)
-  class SequenceNumberNotFoundException : Exception()
-
   private suspend inline fun <T> runReadWriteTransaction(
-    crossinline block: suspend CoroutineScope.(SQLiteDatabase) -> T
+    crossinline block: suspend (SQLiteDatabase) -> T
   ): T {
     val initializedState: State.InitializeCalled.Initialized =
       stateMutex.withLock {
@@ -390,7 +389,7 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
           async(coroutineDispatcher, start = CoroutineStart.LAZY) {
             sqliteDatabase.beginTransaction()
             try {
-              val result = block(coroutineScope, sqliteDatabase)
+              val result = block(sqliteDatabase)
               sqliteDatabase.setTransactionSuccessful()
               result
             } finally {
