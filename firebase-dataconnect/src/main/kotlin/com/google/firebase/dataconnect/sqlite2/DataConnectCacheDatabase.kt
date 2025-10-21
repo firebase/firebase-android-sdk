@@ -20,18 +20,22 @@ import android.database.sqlite.SQLiteDatabase
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import com.google.firebase.dataconnect.sqlite2.SQLiteDatabaseExts.execSQL
+import com.google.firebase.dataconnect.sqlite2.SQLiteDatabaseExts.getLastInsertRowId
+import com.google.firebase.dataconnect.sqlite2.SQLiteDatabaseExts.rawQuery
 import java.io.File
 import java.util.concurrent.Executors
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.ExecutorCoroutineDispatcher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -71,17 +75,17 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
       // Create a single-threaded dispatcher on which all write transactions will run.
       // This is the recommended approach to avoid SQLITE_BUSY errors and also allows us to
       // run higher-priority write transactions before lower-priority ones.
-      val executor =
+      val coroutineDispatcher =
         Executors.newSingleThreadExecutor { runnable -> Thread(runnable, logger.nameWithId) }
+          .asCoroutineDispatcher()
 
-      val supervisorJob = SupervisorJob()
-      supervisorJob.invokeOnCompletion { executor.shutdown() }
+      val coroutineJob = SupervisorJob()
 
       val coroutineScope =
         CoroutineScope(
-          supervisorJob +
+          coroutineJob +
             CoroutineName(logger.nameWithId) +
-            executor.asCoroutineDispatcher() +
+            coroutineDispatcher +
             CoroutineExceptionHandler { context, throwable ->
               logger.warn(throwable) {
                 "uncaught exception from a coroutine named ${context[CoroutineName]}: $throwable"
@@ -89,7 +93,7 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
             }
         )
 
-      val initializeDeferred =
+      val initializeJob =
         coroutineScope.async {
           val sqliteDatabase = DataConnectSQLiteDatabaseOpener.open(dbFile, logger)
 
@@ -111,7 +115,7 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
         }
 
       val sqliteDatabase =
-        initializeDeferred
+        initializeJob
           .runCatching { await() }
           .fold(
             onSuccess = { it },
@@ -135,6 +139,7 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
         State.InitializeCalled.Initialized(
           sqliteDatabase,
           coroutineScope,
+          coroutineDispatcher,
           transactionsJob,
           transactionQueue
         )
@@ -168,10 +173,14 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
         }
       }
 
-    initializedState.transactionQueue.close()
-    initializedState.transactionsJob.join()
-    initializedState.coroutineScope.async { initializedState.sqliteDatabase.close() }.join()
-    initializedState.coroutineScope.cancel()
+    initializedState.run {
+      transactionQueue.close() // Stop accepting new transactions.
+      transactionsJob.join() // Suspend until all enqueued transactions are complete.
+      coroutineScope.async { sqliteDatabase.close() }.join()
+      coroutineScope.cancel()
+      coroutineScope.coroutineContext[Job]?.join()
+      coroutineDispatcher.close()
+    }
 
     stateMutex.withLock {
       check(state is State.CloseCalled) { "internal error: unexpected state: $state" }
@@ -179,11 +188,182 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
     }
   }
 
-  suspend fun insertUser(authUid: String) {
-    runReadWriteTransaction { sqliteDatabase ->
-      sqliteDatabase.execSQL(logger, "INSERT INTO users (auth_uid) VALUES (?)", arrayOf(authUid))
+  class QueryResult(
+    val authUid: String?,
+    val id: ByteArray,
+    val data: ByteArray,
+    val flags: Int,
+    val entities: List<Entity>,
+  ) {
+
+    @OptIn(ExperimentalStdlibApi::class)
+    override fun toString(): String =
+      "QueryResult(" +
+        "authUid=$authUid, " +
+        "id=${id.toHexString()}, " +
+        "data=${data.toHexString()}, " +
+        "flags=$flags, " +
+        "entities=$entities)"
+
+    class Entity(
+      val id: ByteArray,
+      val data: ByteArray,
+      val flags: Int,
+    ) {
+      @OptIn(ExperimentalStdlibApi::class)
+      override fun toString(): String =
+        "Entity(" + "id=${id.toHexString()}, " + "data=${data.toHexString()}, " + "flags=$flags)"
     }
   }
+
+  private fun SQLiteDatabase.getOrInsertAuthUid(authUid: String?): Long {
+    execSQL(logger, "INSERT OR IGNORE INTO users (auth_uid) VALUES (?)", arrayOf(authUid))
+    return rawQuery(
+      logger,
+      "SELECT id FROM users WHERE auth_uid ${if (authUid === null) "IS NULL" else "= ?"}",
+      if (authUid === null) emptyArray() else arrayOf(authUid),
+    ) { cursor ->
+      if (cursor.moveToNext()) {
+        cursor.getLong(0)
+      } else {
+        throw UserIdNotFoundException("authUid=$authUid")
+      }
+    }
+  }
+
+  private fun SQLiteDatabase.nextSequenceNumber(): Long {
+    execSQL(logger, "INSERT INTO sequence_number DEFAULT VALUES")
+    val sequenceNumber: Long = getLastInsertRowId(logger)
+    execSQL(logger, "DELETE FROM sequence_number")
+    return sequenceNumber
+  }
+
+  private fun SQLiteDatabase.insertQueryResult(
+    userRowId: Long,
+    queryId: ByteArray,
+    queryFlags: Int,
+    queryData: ByteArray,
+    sequenceNumber: Long,
+  ): Long {
+    execSQL(
+      """
+        INSERT OR REPLACE INTO query_results
+        (user_id, query_id, flags, data, sequence_number)
+        VALUES (?, ?, ?, ?, ?)
+      """,
+      arrayOf(userRowId, queryId, queryFlags, queryData, sequenceNumber)
+    )
+    return getLastInsertRowId(logger)
+  }
+
+  private fun SQLiteDatabase.insertEntity(
+    userRowId: Long,
+    entityId: ByteArray,
+    entityFlags: Int,
+    entityData: ByteArray,
+    sequenceNumber: Long,
+  ): Long {
+    execSQL(
+      """
+        INSERT OR REPLACE INTO entities
+        (user_id, entity_id, flags, data, sequence_number)
+        VALUES (?, ?, ?, ?, ?)
+      """,
+      arrayOf(userRowId, entityId, entityFlags, entityData, sequenceNumber)
+    )
+    return getLastInsertRowId(logger)
+  }
+
+  private fun SQLiteDatabase.deleteEntity(entityRowId: Long) {
+    execSQL(logger, "DELETE FROM entities WHERE id=?", arrayOf(entityRowId))
+  }
+
+  private fun SQLiteDatabase.insertQueryIdEntityIdMapping(queryRowId: Long, entityRowId: Long) {
+    execSQL(
+      """
+        INSERT OR IGNORE INTO entity_query_results_map
+        (query_id, entity_id)
+        VALUES (?, ?)
+      """,
+      arrayOf(queryRowId, entityRowId)
+    )
+  }
+
+  private fun SQLiteDatabase.getEntityIdMappingsForQueryId(queryRowId: Long): List<Long> =
+    buildList {
+      rawQuery(
+        logger,
+        "SELECT entity_id FROM entity_query_results_map WHERE query_id=?",
+        arrayOf(queryRowId)
+      ) { cursor ->
+        while (cursor.moveToNext()) {
+          add(cursor.getLong(0))
+        }
+      }
+    }
+
+  private fun SQLiteDatabase.deleteEntityIdMappingsForQueryId(queryRowId: Long) {
+    execSQL(logger, "DELETE FROM entity_query_results_map WHERE query_id=?", arrayOf(queryRowId))
+  }
+
+  private fun SQLiteDatabase.hasEntityIdToQueryIdMappingForEntityId(entityRowId: Long): Boolean =
+    rawQuery(
+      logger,
+      "SELECT query_id FROM entity_query_results_map WHERE entity_id=?",
+      arrayOf(entityRowId)
+    ) { cursor ->
+      cursor.moveToNext()
+    }
+
+  suspend fun insertQueryResult(queryResult: QueryResult) {
+    runReadWriteTransaction { sqliteDatabase ->
+      val userRowId = sqliteDatabase.getOrInsertAuthUid(queryResult.authUid)
+      val sequenceNumber = sqliteDatabase.nextSequenceNumber()
+
+      val queryRowId =
+        sqliteDatabase.insertQueryResult(
+          userRowId = userRowId,
+          queryId = queryResult.id,
+          queryFlags = queryResult.flags,
+          queryData = queryResult.data,
+          sequenceNumber = sequenceNumber,
+        )
+
+      val entityRowIdsBefore = sqliteDatabase.getEntityIdMappingsForQueryId(queryRowId)
+      sqliteDatabase.deleteEntityIdMappingsForQueryId(queryRowId)
+
+      val entityRowIdsAfter = mutableListOf<Long>()
+      for (entity in queryResult.entities) {
+        val entityRowId =
+          sqliteDatabase.insertEntity(
+            userRowId = userRowId,
+            entityId = entity.id,
+            entityFlags = entity.flags,
+            entityData = entity.data,
+            sequenceNumber = sequenceNumber,
+          )
+        entityRowIdsAfter.add(entityRowId)
+
+        sqliteDatabase.insertQueryIdEntityIdMapping(
+          queryRowId = queryRowId,
+          entityRowId = entityRowId,
+        )
+      }
+
+      val disownedEntityRowIds = entityRowIdsBefore.filter { !entityRowIdsAfter.contains(it) }
+      for (disownedEntityRowId in disownedEntityRowIds) {
+        if (
+          !sqliteDatabase.hasEntityIdToQueryIdMappingForEntityId(entityRowId = disownedEntityRowId)
+        ) {
+          continue
+        }
+        sqliteDatabase.deleteEntity(entityRowId = disownedEntityRowId)
+      }
+    }
+  }
+
+  class UserIdNotFoundException(message: String) : Exception(message)
+  class SequenceNumberNotFoundException : Exception()
 
   private suspend inline fun <T> runReadWriteTransaction(
     crossinline block: suspend CoroutineScope.(SQLiteDatabase) -> T
@@ -204,14 +384,25 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
         }
       }
 
-    val job =
-      initializedState.coroutineScope.async(start = CoroutineStart.LAZY) {
-        block(initializedState.coroutineScope, initializedState.sqliteDatabase)
+    return initializedState.run {
+      coroutineScope {
+        val job =
+          async(coroutineDispatcher, start = CoroutineStart.LAZY) {
+            sqliteDatabase.beginTransaction()
+            try {
+              val result = block(coroutineScope, sqliteDatabase)
+              sqliteDatabase.setTransactionSuccessful()
+              result
+            } finally {
+              sqliteDatabase.endTransaction()
+            }
+          }
+
+        transactionQueue.send(job)
+
+        job.await()
       }
-
-    initializedState.transactionQueue.send(job)
-
-    return job.await()
+    }
   }
 
   private sealed interface State {
@@ -224,6 +415,7 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
       class Initialized(
         val sqliteDatabase: SQLiteDatabase,
         val coroutineScope: CoroutineScope,
+        val coroutineDispatcher: ExecutorCoroutineDispatcher,
         val transactionsJob: Job,
         val transactionQueue: Channel<Job>,
       ) : InitializeCalled

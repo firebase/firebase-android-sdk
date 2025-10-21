@@ -18,13 +18,30 @@ package com.google.firebase.dataconnect.sqlite2
 
 import android.database.sqlite.SQLiteDatabase
 import com.google.firebase.dataconnect.core.Logger
+import com.google.firebase.dataconnect.sqlite2.DataConnectCacheDatabase.QueryResult
+import com.google.firebase.dataconnect.sqlite2.DataConnectCacheDatabase.QueryResult.Entity
 import com.google.firebase.dataconnect.testutil.CleanupsRule
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.property.Arb
+import io.kotest.property.EdgeConfig
+import io.kotest.property.PropTestConfig
+import io.kotest.property.ShrinkingMode
+import io.kotest.property.arbitrary.Codepoint
+import io.kotest.property.arbitrary.alphanumeric
+import io.kotest.property.arbitrary.bind
+import io.kotest.property.arbitrary.byte
+import io.kotest.property.arbitrary.byteArray
+import io.kotest.property.arbitrary.int
+import io.kotest.property.arbitrary.list
+import io.kotest.property.arbitrary.orNull
+import io.kotest.property.arbitrary.string
+import io.kotest.property.checkAll
 import io.mockk.CapturingSlot
 import io.mockk.every
 import io.mockk.mockk
@@ -207,5 +224,48 @@ class DataConnectCacheDatabaseUnitTest {
     }
     closeJob.value.shouldNotBeNull().join()
     sqliteDatabaseSlot.captured.isOpen shouldBe false
+  }
+
+  @Test
+  fun `insertQueryResult() should insert a query result`() = runTest {
+    dataConnectCacheDatabase.initialize()
+
+    checkAll(propTestConfig, queryResultArb()) { queryResult ->
+      dataConnectCacheDatabase.insertQueryResult(queryResult)
+    }
+  }
+
+  private companion object {
+
+    @OptIn(ExperimentalKotest::class)
+    val propTestConfig =
+      PropTestConfig(
+        iterations = 100,
+        edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.33),
+        shrinkingMode = ShrinkingMode.Off
+      )
+
+    fun entityIdArb(): Arb<ByteArray> = Arb.byteArray(Arb.int(0..50), Arb.byte())
+    fun entityDataArb(): Arb<ByteArray> = Arb.byteArray(Arb.int(0..50), Arb.byte())
+    fun entityFlagsArb(): Arb<Int> = Arb.int()
+    fun queryResultIdArb(): Arb<ByteArray> = Arb.byteArray(Arb.int(0..50), Arb.byte())
+    fun queryResultDataArb(): Arb<ByteArray> = Arb.byteArray(Arb.int(0..50), Arb.byte())
+    fun queryResultFlagsArb(): Arb<Int> = Arb.int()
+    fun authUidArb(): Arb<String?> =
+      Arb.string(0..10, Codepoint.alphanumeric()).orNull(nullProbability = 0.33)
+
+    fun entityArb(
+      id: Arb<ByteArray> = entityIdArb(),
+      data: Arb<ByteArray> = entityDataArb(),
+      flags: Arb<Int> = entityFlagsArb(),
+    ): Arb<Entity> = Arb.bind(id, data, flags, ::Entity)
+
+    fun queryResultArb(
+      authUid: Arb<String?> = authUidArb(),
+      id: Arb<ByteArray> = queryResultIdArb(),
+      data: Arb<ByteArray> = queryResultDataArb(),
+      flags: Arb<Int> = queryResultFlagsArb(),
+      entities: Arb<List<Entity>> = Arb.list(entityArb(), 0..5),
+    ): Arb<QueryResult> = Arb.bind(authUid, id, data, flags, entities, ::QueryResult)
   }
 }

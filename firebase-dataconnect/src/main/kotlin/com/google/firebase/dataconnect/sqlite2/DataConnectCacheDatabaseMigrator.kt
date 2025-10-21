@@ -213,53 +213,50 @@ private constructor(private val sqliteDatabase: SQLiteDatabase, private val logg
       logger,
       """CREATE TABLE users (
         id INTEGER PRIMARY KEY,
-        auth_uid TEXT NOT NULL UNIQUE,
+        auth_uid TEXT UNIQUE,
         debug_info TEXT
       )"""
     )
     sqliteDatabase.execSQL(
       logger,
-      """CREATE TABLE entity_data (
+      """CREATE TABLE entities (
         id INTEGER PRIMARY KEY,
-        userId INT NOT NULL REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
-        entityId BLOB NOT NULL,
+        user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
+        entity_id BLOB NOT NULL,
         flags INT NOT NULL,
         data BLOB NOT NULL,
         sequence_number INT NOT NULL,
         debug_info TEXT,
-        UNIQUE (userId, entityId)
+        UNIQUE (user_id, entity_id)
       )"""
     )
     sqliteDatabase.execSQL(
       logger,
       """CREATE TABLE query_results (
         id INTEGER PRIMARY KEY,
-        userId INT NOT NULL REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
-        queryId BLOB NOT NULL,
+        user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
+        query_id BLOB NOT NULL,
         flags INT NOT NULL,
         data BLOB NOT NULL,
         sequence_number INT NOT NULL,
-        ttl BLOB,
         debug_info TEXT,
-        UNIQUE (userId, queryId)
+        UNIQUE (user_id, query_id)
       )"""
     )
     sqliteDatabase.execSQL(
       logger,
-      """CREATE TABLE entity_query_map (
-        userId INT NOT NULL REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
-        queryId BLOB NOT NULL REFERENCES queries ON DELETE CASCADE ON UPDATE CASCADE,
-        entityId BLOB NOT NULL REFERENCES entities ON DELETE CASCADE ON UPDATE CASCADE,
-        PRIMARY KEY (userId, queryId, entityId)
+      """CREATE TABLE entity_query_results_map (
+        query_id INTEGER NOT NULL REFERENCES query_results(id) ON DELETE CASCADE ON UPDATE CASCADE,
+        entity_id INTEGER NOT NULL REFERENCES entities(id) ON DELETE CASCADE ON UPDATE CASCADE,
+        PRIMARY KEY (query_id, entity_id)
       )"""
     )
-    // Add an explicit index on the `userId`-`entityId` columns so that
-    // "WHERE userId=? AND entityId=?" queries are fast. Note that "WHERE userId=? AND queryId=?"
-    // queries are _already_ fast because `userId` and `queryId` are the _first_ components of the
-    // primary key and, therefore, are implicitly indexed.
+    // Add an explicit index on the `entity_id` column so that "WHERE entity_id=?" queries are fast.
+    // Note that "WHERE query_id=?" queries are _already_ fast because `query_id` is the _first_
+    // component of the primary key and, therefore, is implicitly indexed.
     sqliteDatabase.execSQL(
       logger,
-      "CREATE INDEX entity_query_map_user_entity_index ON entity_query_map(userId, entityId)"
+      "CREATE INDEX entity_query_results_map_entity_index ON entity_query_results_map(entity_id)"
     )
   }
 
