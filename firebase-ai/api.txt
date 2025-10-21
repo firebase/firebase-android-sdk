@@ -152,19 +152,12 @@ package com.google.firebase.ai.java {
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> sendVideoRealtime(com.google.firebase.ai.type.InlineData video);
     method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> startAudioConversation();
     method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> startAudioConversation(boolean enableInterruptions);
+    method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> startAudioConversation(com.google.firebase.ai.type.ConversationConfig conversationConfig);
     method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> startAudioConversation(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.FunctionCallPart,com.google.firebase.ai.type.FunctionResponsePart>? functionCallHandler);
     method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> startAudioConversation(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.FunctionCallPart,com.google.firebase.ai.type.FunctionResponsePart>? functionCallHandler, boolean enableInterruptions);
-    method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> startAudioConversation(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.FunctionCallPart,com.google.firebase.ai.type.FunctionResponsePart>? functionCallHandler, kotlin.jvm.functions.Function2<? super android.media.AudioRecord,? super android.media.AudioTrack,kotlin.Unit>? audioHandler);
-    method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> startAudioConversation(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.FunctionCallPart,com.google.firebase.ai.type.FunctionResponsePart>? functionCallHandler, kotlin.jvm.functions.Function2<? super android.media.AudioRecord,? super android.media.AudioTrack,kotlin.Unit>? audioHandler, boolean enableInterruptions);
     method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> startAudioConversation(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.FunctionCallPart,com.google.firebase.ai.type.FunctionResponsePart>? functionCallHandler, kotlin.jvm.functions.Function2<? super com.google.firebase.ai.type.Transcription?,? super com.google.firebase.ai.type.Transcription?,kotlin.Unit>? transcriptHandler, boolean enableInterruptions);
-    method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> startAudioConversation(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.FunctionCallPart,com.google.firebase.ai.type.FunctionResponsePart>? functionCallHandler, kotlin.jvm.functions.Function2<? super com.google.firebase.ai.type.Transcription?,? super com.google.firebase.ai.type.Transcription?,kotlin.Unit>? transcriptHandler, kotlin.jvm.functions.Function2<? super android.media.AudioRecord,? super android.media.AudioTrack,kotlin.Unit>? audioHandler);
-    method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> startAudioConversation(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.FunctionCallPart,com.google.firebase.ai.type.FunctionResponsePart>? functionCallHandler, kotlin.jvm.functions.Function2<? super com.google.firebase.ai.type.Transcription?,? super com.google.firebase.ai.type.Transcription?,kotlin.Unit>? transcriptHandler, kotlin.jvm.functions.Function2<? super android.media.AudioRecord,? super android.media.AudioTrack,kotlin.Unit>? audioHandler, boolean enableInterruptions);
-    method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> startAudioConversation(kotlin.jvm.functions.Function2<? super android.media.AudioRecord,? super android.media.AudioTrack,kotlin.Unit>? audioHandler);
-    method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> startAudioConversation(kotlin.jvm.functions.Function2<? super android.media.AudioRecord,? super android.media.AudioTrack,kotlin.Unit>? audioHandler, boolean enableInterruptions);
     method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> startAudioConversation(kotlin.jvm.functions.Function2<? super com.google.firebase.ai.type.Transcription?,? super com.google.firebase.ai.type.Transcription?,kotlin.Unit>? transcriptHandler);
     method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> startAudioConversation(kotlin.jvm.functions.Function2<? super com.google.firebase.ai.type.Transcription?,? super com.google.firebase.ai.type.Transcription?,kotlin.Unit>? transcriptHandler, boolean enableInterruptions);
-    method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> startAudioConversation(kotlin.jvm.functions.Function2<? super com.google.firebase.ai.type.Transcription?,? super com.google.firebase.ai.type.Transcription?,kotlin.Unit>? transcriptHandler, kotlin.jvm.functions.Function2<? super android.media.AudioRecord,? super android.media.AudioTrack,kotlin.Unit>? audioHandler);
-    method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> startAudioConversation(kotlin.jvm.functions.Function2<? super com.google.firebase.ai.type.Transcription?,? super com.google.firebase.ai.type.Transcription?,kotlin.Unit>? transcriptHandler, kotlin.jvm.functions.Function2<? super android.media.AudioRecord,? super android.media.AudioTrack,kotlin.Unit>? audioHandler, boolean enableInterruptions);
     method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> stopAudioConversation();
     method public abstract void stopReceiving();
     field public static final com.google.firebase.ai.java.LiveSessionFutures.Companion Companion;
@@ -295,6 +288,31 @@ package com.google.firebase.ai.type {
   }
 
   public static final class ContentModality.Companion {
+  }
+
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class ConversationConfig {
+    field public static final com.google.firebase.ai.type.ConversationConfig.Companion Companion;
+  }
+
+  public static final class ConversationConfig.Builder {
+    ctor public ConversationConfig.Builder();
+    method public com.google.firebase.ai.type.ConversationConfig build();
+    method public com.google.firebase.ai.type.ConversationConfig.Builder setAudioHandler(kotlin.jvm.functions.Function2<? super android.media.AudioRecord,? super android.media.AudioTrack,kotlin.Unit>? audioHandler);
+    method public com.google.firebase.ai.type.ConversationConfig.Builder setEnableInterruptions(boolean enableInterruptions);
+    method public com.google.firebase.ai.type.ConversationConfig.Builder setFunctionCallHandler(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.FunctionCallPart,com.google.firebase.ai.type.FunctionResponsePart>? functionCallHandler);
+    method public com.google.firebase.ai.type.ConversationConfig.Builder setTranscriptHandler(kotlin.jvm.functions.Function2<? super com.google.firebase.ai.type.Transcription?,? super com.google.firebase.ai.type.Transcription?,kotlin.Unit>? transcriptHandler);
+    field public kotlin.jvm.functions.Function2<? super android.media.AudioRecord,? super android.media.AudioTrack,kotlin.Unit>? audioHandler;
+    field public boolean enableInterruptions;
+    field public kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.FunctionCallPart,com.google.firebase.ai.type.FunctionResponsePart>? functionCallHandler;
+    field public kotlin.jvm.functions.Function2<? super com.google.firebase.ai.type.Transcription?,? super com.google.firebase.ai.type.Transcription?,kotlin.Unit>? transcriptHandler;
+  }
+
+  public static final class ConversationConfig.Companion {
+    method public com.google.firebase.ai.type.ConversationConfig.Builder builder();
+  }
+
+  public final class ConversationConfigKt {
+    method public static com.google.firebase.ai.type.ConversationConfig conversationConfig(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.ConversationConfig.Builder,kotlin.Unit> init);
   }
 
   public final class CountTokensResponse {
@@ -930,10 +948,10 @@ package com.google.firebase.ai.type {
     method @Deprecated public suspend Object? sendMediaStream(java.util.List<com.google.firebase.ai.type.MediaData> mediaChunks, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public suspend Object? sendTextRealtime(String text, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public suspend Object? sendVideoRealtime(com.google.firebase.ai.type.InlineData video, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public suspend Object? startAudioConversation(com.google.firebase.ai.type.ConversationConfig conversationConfig, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public suspend Object? startAudioConversation(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.FunctionCallPart,com.google.firebase.ai.type.FunctionResponsePart>? functionCallHandler = null, boolean enableInterruptions = false, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public suspend Object? startAudioConversation(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.FunctionCallPart,com.google.firebase.ai.type.FunctionResponsePart>? functionCallHandler = null, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public suspend Object? startAudioConversation(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.FunctionCallPart,com.google.firebase.ai.type.FunctionResponsePart>? functionCallHandler = null, kotlin.jvm.functions.Function2<? super com.google.firebase.ai.type.Transcription?,? super com.google.firebase.ai.type.Transcription?,kotlin.Unit>? transcriptHandler = null, boolean enableInterruptions = false, kotlin.coroutines.Continuation<? super kotlin.Unit>);
-    method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public suspend Object? startAudioConversation(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.FunctionCallPart,com.google.firebase.ai.type.FunctionResponsePart>? functionCallHandler = null, kotlin.jvm.functions.Function2<? super com.google.firebase.ai.type.Transcription?,? super com.google.firebase.ai.type.Transcription?,kotlin.Unit>? transcriptHandler = null, kotlin.jvm.functions.Function2<? super android.media.AudioRecord,? super android.media.AudioTrack,kotlin.Unit>? audioHandler = null, boolean enableInterruptions = false, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public void stopAudioConversation();
     method public void stopReceiving();
   }
