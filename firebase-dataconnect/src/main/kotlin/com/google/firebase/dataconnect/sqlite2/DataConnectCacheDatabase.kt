@@ -22,6 +22,7 @@ import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import com.google.firebase.dataconnect.sqlite2.SQLiteDatabaseExts.execSQL
 import com.google.firebase.dataconnect.sqlite2.SQLiteDatabaseExts.getLastInsertRowId
 import com.google.firebase.dataconnect.sqlite2.SQLiteDatabaseExts.rawQuery
+import com.google.protobuf.Struct
 import java.io.File
 import java.util.concurrent.Executors
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -191,28 +192,17 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
   class QueryResult(
     val authUid: String?,
     val id: ByteArray,
-    val data: ByteArray,
-    val flags: Int,
-    val entities: List<Entity>,
+    /** Values must be either [com.google.protobuf.Value] or [Entity]. */
+    val data: Map<String, Any>,
   ) {
 
     @OptIn(ExperimentalStdlibApi::class)
     override fun toString(): String =
-      "QueryResult(" +
-        "authUid=$authUid, " +
-        "id=${id.toHexString()}, " +
-        "data=${data.toHexString()}, " +
-        "flags=$flags, " +
-        "entities=$entities)"
+      "QueryResult(authUid=$authUid, id=${id.toHexString()}, data=$data)"
 
-    class Entity(
-      val id: ByteArray,
-      val data: ByteArray,
-      val flags: Int,
-    ) {
+    class Entity(val id: ByteArray, val data: Struct) {
       @OptIn(ExperimentalStdlibApi::class)
-      override fun toString(): String =
-        "Entity(" + "id=${id.toHexString()}, " + "data=${data.toHexString()}, " + "flags=$flags)"
+      override fun toString(): String = "Entity(id=${id.toHexString()}, data=$data)"
     }
   }
 
@@ -319,6 +309,9 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
 
   suspend fun insertQueryResult(queryResult: QueryResult) {
     runReadWriteTransaction { sqliteDatabase ->
+      val entities = mutableListOf<QueryResult.Entity>()
+      val encodedQueryResultData = QueryResultCodec.encode(queryResult.data, entities)
+
       val userRowId = sqliteDatabase.getOrInsertAuthUid(queryResult.authUid)
       val sequenceNumber = sqliteDatabase.nextSequenceNumber()
 
@@ -326,8 +319,8 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
         sqliteDatabase.insertQueryResult(
           userRowId = userRowId,
           queryId = queryResult.id,
-          queryFlags = queryResult.flags,
-          queryData = queryResult.data,
+          queryFlags = 0,
+          queryData = encodedQueryResultData,
           sequenceNumber = sequenceNumber,
         )
 
@@ -335,13 +328,13 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
       sqliteDatabase.deleteEntityIdMappingsForQueryId(queryRowId)
 
       val entityRowIdsAfter = mutableListOf<Long>()
-      for (entity in queryResult.entities) {
+      for (entity in entities) {
         val entityRowId =
           sqliteDatabase.insertEntity(
             userRowId = userRowId,
             entityId = entity.id,
-            entityFlags = entity.flags,
-            entityData = entity.data,
+            entityFlags = 0,
+            entityData = QueryResultCodec.encode(entity.data),
             sequenceNumber = sequenceNumber,
           )
         entityRowIdsAfter.add(entityRowId)

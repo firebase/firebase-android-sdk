@@ -17,37 +17,52 @@
 package com.google.firebase.dataconnect.sqlite2
 
 import com.google.firebase.dataconnect.sqlite2.DataConnectCacheDatabase.QueryResult.Entity
+import com.google.protobuf.Struct
 import com.google.protobuf.Value
 import java.io.ByteArrayOutputStream
 import java.io.DataOutputStream
 
 internal object QueryResultCodec {
 
-  fun encode(data: Map<String, Any>): ByteArray {
+  fun encode(
+    data: Map<String, Any>,
+    visitedEntities: MutableCollection<Entity>? = null
+  ): ByteArray {
     val byteArrayOutputStream = ByteArrayOutputStream()
     DataOutputStream(byteArrayOutputStream).use { dataOutputStream ->
-      dataOutputStream.writeInt(INDICATOR)
-      dataOutputStream.writeQueryResultData(data)
+      dataOutputStream.writeInt(ENCODED_QUERY_DATA_INDICATOR)
+      dataOutputStream.writeQueryResultData(data, visitedEntities)
     }
     return byteArrayOutputStream.toByteArray()
   }
 
-  private const val INDICATOR: Int = 0x7f060a4f
-  private const val QUERY_RESULT_DATA_INDICATOR: Int = 0x00e0daf7
-  private const val QUERY_RESULT_DATA_END_INDICATOR: Int = 0x0044457d
-  private const val VALUE_INDICATOR: Int = 0x01278e70
-  private const val VALUE_END_INDICATOR: Int = 0x0139f646
-  private const val ENTITY_INDICATOR: Int = 0x0207393a
-  private const val NULL_INDICATOR: Int = 0x106ea79e
-  private const val NUMBER_INDICATOR: Int = 0x11866ea2
-  private const val STRING_INDICATOR: Int = 0x120ad2d2
-  private const val BOOL_INDICATOR: Int = 0x13303fa6
-  private const val STRUCT_INDICATOR: Int = 0x1423e48e
-  private const val STRUCT_END_INDICATOR: Int = 0x14b9c87c
-  private const val LIST_INDICATOR: Int = 0x150012c7
-  private const val LIST_END_INDICATOR: Int = 0x15002db8
+  fun encode(struct: Struct): ByteArray {
+    val byteArrayOutputStream = ByteArrayOutputStream()
+    DataOutputStream(byteArrayOutputStream).use { dataOutputStream ->
+      dataOutputStream.writeStruct(struct)
+    }
+    return byteArrayOutputStream.toByteArray()
+  }
 
-  private fun DataOutputStream.writeQueryResultData(data: Map<*, *>) {
+  private const val ENCODED_QUERY_DATA_INDICATOR: Int = 0x00060a4f
+  private const val QUERY_RESULT_DATA_INDICATOR: Int = 0x1000daf7
+  private const val QUERY_RESULT_DATA_END_INDICATOR: Int = 0x1004457d
+  private const val VALUE_INDICATOR: Int = 0x20078e70
+  private const val VALUE_END_INDICATOR: Int = 0x2009f646
+  private const val ENTITY_INDICATOR: Int = 0x3007393a
+  private const val NULL_INDICATOR: Int = 0x400ea79e
+  private const val NUMBER_INDICATOR: Int = 0x41066ea2
+  private const val STRING_INDICATOR: Int = 0x420ad2d2
+  private const val BOOL_INDICATOR: Int = 0x43003fa6
+  private const val STRUCT_INDICATOR: Int = 0x4403e48e
+  private const val STRUCT_END_INDICATOR: Int = 0x4509c87c
+  private const val LIST_INDICATOR: Int = 0x460012c7
+  private const val LIST_END_INDICATOR: Int = 0x47002db8
+
+  private fun DataOutputStream.writeQueryResultData(
+    data: Map<*, *>,
+    visitedEntities: MutableCollection<Entity>?
+  ) {
     data.forEach { (key, value) ->
       checkNotNull(key) { "got null key, but expected String" }
       check(key is String) {
@@ -57,6 +72,7 @@ internal object QueryResultCodec {
       when (value) {
         is Entity -> {
           writeInt(ENTITY_INDICATOR)
+          visitedEntities?.add(value)
           writeEntity(value)
         }
         is Value -> {
@@ -66,7 +82,7 @@ internal object QueryResultCodec {
         }
         is Map<*, *> -> {
           writeInt(QUERY_RESULT_DATA_INDICATOR)
-          writeQueryResultData(value)
+          writeQueryResultData(value, visitedEntities)
           writeInt(QUERY_RESULT_DATA_END_INDICATOR)
         }
         null -> throw IllegalArgumentException("unsupported value for key $key: null")
@@ -85,6 +101,15 @@ internal object QueryResultCodec {
     write(entity.id)
   }
 
+  private fun DataOutputStream.writeStruct(struct: Struct) {
+    writeInt(STRUCT_INDICATOR)
+    struct.fieldsMap.forEach { structEntry ->
+      writeUtf16String(structEntry.key)
+      writeValue(structEntry.value)
+    }
+    writeInt(STRUCT_END_INDICATOR)
+  }
+
   private fun DataOutputStream.writeValue(value: Value) {
     when (value.kindCase) {
       Value.KindCase.NULL_VALUE -> writeInt(NULL_INDICATOR)
@@ -101,12 +126,7 @@ internal object QueryResultCodec {
         writeBoolean(value.boolValue)
       }
       Value.KindCase.STRUCT_VALUE -> {
-        writeInt(STRUCT_INDICATOR)
-        value.structValue.fieldsMap.forEach { structEntry ->
-          writeUtf16String(structEntry.key)
-          writeValue(structEntry.value)
-        }
-        writeInt(STRUCT_END_INDICATOR)
+        writeStruct(value.structValue)
       }
       Value.KindCase.LIST_VALUE -> {
         writeInt(LIST_INDICATOR)
