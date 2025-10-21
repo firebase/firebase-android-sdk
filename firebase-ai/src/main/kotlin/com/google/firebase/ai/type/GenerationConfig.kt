@@ -206,7 +206,7 @@ private constructor(
       frequencyPenalty = frequencyPenalty,
       presencePenalty = presencePenalty,
       responseMimeType = responseMimeType,
-      responseSchema = responseSchema?.toInternal(),
+      responseSchema = responseSchema?.toInternalOpenApi(),
       responseModalities = responseModalities?.map { it.toInternal() },
       thinkingConfig = thinkingConfig?.toInternal(),
       imageConfig = imageConfig?.toInternal()
@@ -223,7 +223,7 @@ private constructor(
     @SerialName("response_mime_type") val responseMimeType: String? = null,
     @SerialName("presence_penalty") val presencePenalty: Float? = null,
     @SerialName("frequency_penalty") val frequencyPenalty: Float? = null,
-    @SerialName("response_schema") val responseSchema: Schema.Internal? = null,
+    @SerialName("response_schema") val responseSchema: Schema.InternalOpenAPI? = null,
     @SerialName("response_modalities") val responseModalities: List<String>? = null,
     @SerialName("thinking_config") val thinkingConfig: ThinkingConfig.Internal? = null,
     @SerialName("image_config") val imageConfig: ImageConfig.Internal? = null

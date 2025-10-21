@@ -1,5 +1,7 @@
 # Unreleased
 
+- [changed] Added better scheduling and louder output for Live API.
+- [changed] Added support for input and output transcription. (#7482)
 - [feature] Added support for sending realtime audio and video in a `LiveSession`.
 - [changed] Removed redundant internal exception types. (#7475)
 - [feature] Added support for configuring the aspect ratio when generating images with the 

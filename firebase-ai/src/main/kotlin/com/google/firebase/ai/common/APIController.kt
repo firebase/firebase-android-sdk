@@ -77,6 +77,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.json.ClassDiscriminatorMode
 import kotlinx.serialization.json.Json
 
 @OptIn(ExperimentalSerializationApi::class)
@@ -85,6 +86,7 @@ internal val JSON = Json {
   prettyPrint = false
   isLenient = true
   explicitNulls = false
+  classDiscriminatorMode = ClassDiscriminatorMode.NONE
 }
 
 /**
