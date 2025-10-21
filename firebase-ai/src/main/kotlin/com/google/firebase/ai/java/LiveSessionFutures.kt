@@ -17,12 +17,11 @@
 package com.google.firebase.ai.java
 
 import android.Manifest.permission.RECORD_AUDIO
-import android.media.AudioRecord
-import android.media.AudioTrack
 import androidx.annotation.RequiresPermission
 import androidx.concurrent.futures.SuspendToFutureAdapter
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.firebase.ai.type.Content
+import com.google.firebase.ai.type.ConversationConfig
 import com.google.firebase.ai.type.FunctionCallPart
 import com.google.firebase.ai.type.FunctionResponsePart
 import com.google.firebase.ai.type.InlineData
@@ -50,6 +49,18 @@ public abstract class LiveSessionFutures internal constructor() {
    */
   @RequiresPermission(RECORD_AUDIO)
   public abstract fun startAudioConversation(): ListenableFuture<Unit>
+
+  /**
+   * Starts an audio conversation with the model, which can only be stopped using
+   * [stopAudioConversation].
+   *
+   * @param conversationConfig A [ConversationConfig] provided by the user to control the various
+   * aspects of the conversation.
+   */
+  @RequiresPermission(RECORD_AUDIO)
+  public abstract fun startAudioConversation(
+    conversationConfig: ConversationConfig
+  ): ListenableFuture<Unit>
 
   /**
    * Starts an audio conversation with the model, which can only be stopped using
@@ -106,186 +117,6 @@ public abstract class LiveSessionFutures internal constructor() {
   public abstract fun startAudioConversation(
     transcriptHandler: ((Transcription?, Transcription?) -> Unit)?,
     enableInterruptions: Boolean
-  ): ListenableFuture<Unit>
-
-  /**
-   * Starts an audio conversation with the model, which can only be stopped using
-   * [stopAudioConversation] or [close].
-   *
-   * @param functionCallHandler A callback function that is invoked whenever the model receives a
-   * function call. The [FunctionResponsePart] that the callback function returns will be
-   * automatically sent to the model.
-   *
-   * @param audioHandler A callback function that is invoked immediately following the successful
-   * initialization of the associated [AudioRecord] and [AudioTrack] objects. This offers a final
-   * opportunity to apply custom configurations or modifications to these objects, which will remain
-   * valid and effective for the duration of the current audio session.
-   */
-  @RequiresPermission(RECORD_AUDIO)
-  public abstract fun startAudioConversation(
-    functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)?,
-    audioHandler: ((AudioRecord, AudioTrack) -> Unit)?
-  ): ListenableFuture<Unit>
-
-  /**
-   * Starts an audio conversation with the model, which can only be stopped using
-   * [stopAudioConversation] or [close].
-   *
-   * @param transcriptHandler A callback function that is invoked whenever the model receives a
-   * transcript. The first [Transcription] object is the input transcription, and the second is the
-   * output transcription.
-   *
-   * @param audioHandler A callback function that is invoked immediately following the successful
-   * initialization of the associated [AudioRecord] and [AudioTrack] objects. This offers a final
-   * opportunity to apply custom configurations or modifications to these objects, which will remain
-   * valid and effective for the duration of the current audio session.
-   */
-  @RequiresPermission(RECORD_AUDIO)
-  public abstract fun startAudioConversation(
-    transcriptHandler: ((Transcription?, Transcription?) -> Unit)?,
-    audioHandler: ((AudioRecord, AudioTrack) -> Unit)?
-  ): ListenableFuture<Unit>
-
-  /**
-   * Starts an audio conversation with the model, which can only be stopped using
-   * [stopAudioConversation] or [close].
-   *
-   * @param audioHandler A callback function that is invoked immediately following the successful
-   * initialization of the associated [AudioRecord] and [AudioTrack] objects. This offers a final
-   * opportunity to apply custom configurations or modifications to these objects, which will remain
-   * valid and effective for the duration of the current audio session.
-   *
-   * @param enableInterruptions If enabled, allows the user to speak over or interrupt the model's
-   * ongoing reply.
-   *
-   * **WARNING**: The user interruption feature relies on device-specific support, and may not be
-   * consistently available.
-   */
-  @RequiresPermission(RECORD_AUDIO)
-  public abstract fun startAudioConversation(
-    audioHandler: ((AudioRecord, AudioTrack) -> Unit)?,
-    enableInterruptions: Boolean
-  ): ListenableFuture<Unit>
-
-  /**
-   * Starts an audio conversation with the model, which can only be stopped using
-   * [stopAudioConversation] or [close].
-   *
-   * @param functionCallHandler A callback function that is invoked whenever the model receives a
-   * function call. The [FunctionResponsePart] that the callback function returns will be
-   * automatically sent to the model.
-   *
-   * @param transcriptHandler A callback function that is invoked whenever the model receives a
-   * transcript. The first [Transcription] object is the input transcription, and the second is the
-   * output transcription.
-   *
-   * @param audioHandler A callback function that is invoked immediately following the successful
-   * initialization of the associated [AudioRecord] and [AudioTrack] objects. This offers a final
-   * opportunity to apply custom configurations or modifications to these objects, which will remain
-   * valid and effective for the duration of the current audio session.
-   */
-  @RequiresPermission(RECORD_AUDIO)
-  public abstract fun startAudioConversation(
-    functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)?,
-    transcriptHandler: ((Transcription?, Transcription?) -> Unit)?,
-    audioHandler: ((AudioRecord, AudioTrack) -> Unit)?
-  ): ListenableFuture<Unit>
-
-  /**
-   * Starts an audio conversation with the model, which can only be stopped using
-   * [stopAudioConversation] or [close].
-   *
-   * @param functionCallHandler A callback function that is invoked whenever the model receives a
-   * function call. The [FunctionResponsePart] that the callback function returns will be
-   * automatically sent to the model.
-   *
-   * @param transcriptHandler A callback function that is invoked whenever the model receives a
-   * transcript. The first [Transcription] object is the input transcription, and the second is the
-   * output transcription.
-   *
-   * @param audioHandler A callback function that is invoked immediately following the successful
-   * initialization of the associated [AudioRecord] and [AudioTrack] objects. This offers a final
-   * opportunity to apply custom configurations or modifications to these objects, which will remain
-   * valid and effective for the duration of the current audio session.
-   *
-   * @param enableInterruptions If enabled, allows the user to speak over or interrupt the model's
-   * ongoing reply.
-   *
-   * **WARNING**: The user interruption feature relies on device-specific support, and may not be
-   * consistently available.
-   */
-  @RequiresPermission(RECORD_AUDIO)
-  public abstract fun startAudioConversation(
-    functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)?,
-    transcriptHandler: ((Transcription?, Transcription?) -> Unit)?,
-    audioHandler: ((AudioRecord, AudioTrack) -> Unit)?,
-    enableInterruptions: Boolean
-  ): ListenableFuture<Unit>
-
-  /**
-   * Starts an audio conversation with the model, which can only be stopped using
-   * [stopAudioConversation] or [close].
-   *
-   * @param functionCallHandler A callback function that is invoked whenever the model receives a
-   * function call. The [FunctionResponsePart] that the callback function returns will be
-   * automatically sent to the model.
-   *
-   * @param audioHandler A callback function that is invoked immediately following the successful
-   * initialization of the associated [AudioRecord] and [AudioTrack] objects. This offers a final
-   * opportunity to apply custom configurations or modifications to these objects, which will remain
-   * valid and effective for the duration of the current audio session.
-   *
-   * @param enableInterruptions If enabled, allows the user to speak over or interrupt the model's
-   * ongoing reply.
-   *
-   * **WARNING**: The user interruption feature relies on device-specific support, and may not be
-   * consistently available.
-   */
-  @RequiresPermission(RECORD_AUDIO)
-  public abstract fun startAudioConversation(
-    functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)?,
-    audioHandler: ((AudioRecord, AudioTrack) -> Unit)?,
-    enableInterruptions: Boolean
-  ): ListenableFuture<Unit>
-
-  /**
-   * Starts an audio conversation with the model, which can only be stopped using
-   * [stopAudioConversation] or [close].
-   *
-   * @param transcriptHandler A callback function that is invoked whenever the model receives a
-   * transcript. The first [Transcription] object is the input transcription, and the second is the
-   * output transcription.
-   *
-   * @param audioHandler A callback function that is invoked immediately following the successful
-   * initialization of the associated [AudioRecord] and [AudioTrack] objects. This offers a final
-   * opportunity to apply custom configurations or modifications to these objects, which will remain
-   * valid and effective for the duration of the current audio session.
-   *
-   * @param enableInterruptions If enabled, allows the user to speak over or interrupt the model's
-   * ongoing reply.
-   *
-   * **WARNING**: The user interruption feature relies on device-specific support, and may not be
-   * consistently available.
-   */
-  @RequiresPermission(RECORD_AUDIO)
-  public abstract fun startAudioConversation(
-    transcriptHandler: ((Transcription?, Transcription?) -> Unit)?,
-    audioHandler: ((AudioRecord, AudioTrack) -> Unit)?,
-    enableInterruptions: Boolean
-  ): ListenableFuture<Unit>
-
-  /**
-   * Starts an audio conversation with the model, which can only be stopped using
-   * [stopAudioConversation] or [close].
-   *
-   * @param audioHandler A callback function that is invoked immediately following the successful
-   * initialization of the associated [AudioRecord] and [AudioTrack] objects. This offers a final
-   * opportunity to apply custom configurations or modifications to these objects, which will remain
-   * valid and effective for the duration of the current audio session.
-   */
-  @RequiresPermission(RECORD_AUDIO)
-  public abstract fun startAudioConversation(
-    audioHandler: ((AudioRecord, AudioTrack) -> Unit)?
   ): ListenableFuture<Unit>
 
   /**
@@ -481,6 +312,10 @@ public abstract class LiveSessionFutures internal constructor() {
       }
 
     @RequiresPermission(RECORD_AUDIO)
+    override fun startAudioConversation(conversationConfig: ConversationConfig) =
+      SuspendToFutureAdapter.launchFuture { session.startAudioConversation(conversationConfig) }
+
+    @RequiresPermission(RECORD_AUDIO)
     override fun startAudioConversation() =
       SuspendToFutureAdapter.launchFuture { session.startAudioConversation() }
 
@@ -499,108 +334,6 @@ public abstract class LiveSessionFutures internal constructor() {
         session.startAudioConversation(
           transcriptHandler = transcriptHandler,
           enableInterruptions = enableInterruptions
-        )
-      }
-
-    @RequiresPermission(RECORD_AUDIO)
-    override fun startAudioConversation(
-      functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)?,
-      audioHandler: ((AudioRecord, AudioTrack) -> Unit)?
-    ) =
-      SuspendToFutureAdapter.launchFuture {
-        session.startAudioConversation(
-          functionCallHandler = functionCallHandler,
-          audioHandler = audioHandler
-        )
-      }
-
-    @RequiresPermission(RECORD_AUDIO)
-    override fun startAudioConversation(
-      transcriptHandler: ((Transcription?, Transcription?) -> Unit)?,
-      audioHandler: ((AudioRecord, AudioTrack) -> Unit)?
-    ) =
-      SuspendToFutureAdapter.launchFuture {
-        session.startAudioConversation(
-          transcriptHandler = transcriptHandler,
-          audioHandler = audioHandler
-        )
-      }
-
-    @RequiresPermission(RECORD_AUDIO)
-    override fun startAudioConversation(
-      audioHandler: ((AudioRecord, AudioTrack) -> Unit)?,
-      enableInterruptions: Boolean
-    ) =
-      SuspendToFutureAdapter.launchFuture {
-        session.startAudioConversation(
-          audioHandler = audioHandler,
-          enableInterruptions = enableInterruptions
-        )
-      }
-
-    @RequiresPermission(RECORD_AUDIO)
-    override fun startAudioConversation(
-      functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)?,
-      transcriptHandler: ((Transcription?, Transcription?) -> Unit)?,
-      audioHandler: ((AudioRecord, AudioTrack) -> Unit)?
-    ) =
-      SuspendToFutureAdapter.launchFuture {
-        session.startAudioConversation(
-          functionCallHandler = functionCallHandler,
-          transcriptHandler = transcriptHandler,
-          audioHandler = audioHandler,
-        )
-      }
-
-    @RequiresPermission(RECORD_AUDIO)
-    override fun startAudioConversation(
-      functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)?,
-      transcriptHandler: ((Transcription?, Transcription?) -> Unit)?,
-      audioHandler: ((AudioRecord, AudioTrack) -> Unit)?,
-      enableInterruptions: Boolean
-    ) =
-      SuspendToFutureAdapter.launchFuture {
-        session.startAudioConversation(
-          functionCallHandler = functionCallHandler,
-          transcriptHandler = transcriptHandler,
-          audioHandler = audioHandler,
-          enableInterruptions = enableInterruptions
-        )
-      }
-
-    @RequiresPermission(RECORD_AUDIO)
-    override fun startAudioConversation(
-      functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)?,
-      audioHandler: ((AudioRecord, AudioTrack) -> Unit)?,
-      enableInterruptions: Boolean
-    ) =
-      SuspendToFutureAdapter.launchFuture {
-        session.startAudioConversation(
-          functionCallHandler = functionCallHandler,
-          audioHandler = audioHandler,
-          enableInterruptions = enableInterruptions,
-        )
-      }
-
-    @RequiresPermission(RECORD_AUDIO)
-    override fun startAudioConversation(
-      transcriptHandler: ((Transcription?, Transcription?) -> Unit)?,
-      audioHandler: ((AudioRecord, AudioTrack) -> Unit)?,
-      enableInterruptions: Boolean
-    ) =
-      SuspendToFutureAdapter.launchFuture {
-        session.startAudioConversation(
-          transcriptHandler = transcriptHandler,
-          audioHandler = audioHandler,
-          enableInterruptions = enableInterruptions,
-        )
-      }
-
-    @RequiresPermission(RECORD_AUDIO)
-    override fun startAudioConversation(audioHandler: ((AudioRecord, AudioTrack) -> Unit)?) =
-      SuspendToFutureAdapter.launchFuture {
-        session.startAudioConversation(
-          audioHandler = audioHandler,
         )
       }
 
