@@ -20,6 +20,7 @@ import android.Manifest.permission.RECORD_AUDIO
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.media.AudioFormat
+import android.media.AudioRecord
 import android.media.AudioTrack
 import android.os.Process
 import android.os.StrictMode
@@ -168,7 +169,45 @@ internal constructor(
   @RequiresPermission(RECORD_AUDIO)
   public suspend fun startAudioConversation(
     functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)? = null,
+    transcriptHandler: ((Transcription?, Transcription?) -> Unit)?,
+    enableInterruptions: Boolean = false,
+  ) {
+    startAudioConversation(
+      functionCallHandler = functionCallHandler,
+      transcriptHandler = transcriptHandler,
+      audioHandler = null,
+      enableInterruptions = enableInterruptions
+    )
+  }
+
+  /**
+   * Starts an audio conversation with the model, which can only be stopped using
+   * [stopAudioConversation] or [close].
+   *
+   * @param functionCallHandler A callback function that is invoked whenever the model receives a
+   * function call. The [FunctionResponsePart] that the callback function returns will be
+   * automatically sent to the model.
+   *
+   * @param transcriptHandler A callback function that is invoked whenever the model receives a
+   * transcript. The first [Transcription] object is the input transcription, and the second is the
+   * output transcription.
+   *
+   * @param audioHandler A callback function that is invoked immediately following the successful
+   * initialization of the associated [AudioRecord] and [AudioTrack] objects. This offers a final
+   * opportunity to apply custom configurations or modifications to these objects, which will remain
+   * valid and effective for the duration of the current audio session.
+   *
+   * @param enableInterruptions If enabled, allows the user to speak over or interrupt the model's
+   * ongoing reply.
+   *
+   * **WARNING**: The user interruption feature relies on device-specific support, and may not be
+   * consistently available.
+   */
+  @RequiresPermission(RECORD_AUDIO)
+  public suspend fun startAudioConversation(
+    functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)? = null,
     transcriptHandler: ((Transcription?, Transcription?) -> Unit)? = null,
+    audioHandler: ((AudioRecord, AudioTrack) -> Unit)? = null,
     enableInterruptions: Boolean = false,
   ) {
 
@@ -191,7 +230,7 @@ internal constructor(
       networkScope =
         CoroutineScope(blockingDispatcher + childJob() + CoroutineName("LiveSession Network"))
       audioScope = CoroutineScope(audioDispatcher + childJob() + CoroutineName("LiveSession Audio"))
-      audioHelper = AudioHelper.build()
+      audioHelper = AudioHelper.build(audioHandler)
 
       recordUserAudio()
       processModelResponses(functionCallHandler, transcriptHandler)
