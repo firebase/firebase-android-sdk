@@ -131,7 +131,7 @@ public final class RemoteMessage extends AbstractSafeParcelable {
     if (data == null) {
       data = MessagePayloadKeys.extractDeveloperDefinedPayload(bundle);
     }
-    return new HashMap<>(this.data);
+    return new HashMap<>(data);
   }
 
   /** @hide */
