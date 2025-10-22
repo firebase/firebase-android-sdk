@@ -107,6 +107,33 @@ internal constructor(
   }
 
   /**
+   * Instantiates a new [TemplateGenerativeModel] given the provided parameters.
+   *
+   * @param requestOptions Configuration options for sending requests to the backend.
+   * @return The initialized [TemplateGenerativeModel] instance.
+   */
+  @JvmOverloads
+  public fun templateGenerativeModel(
+    requestOptions: RequestOptions = RequestOptions(),
+  ): TemplateGenerativeModel {
+    val templateUri =
+      when (backend.backend) {
+        GenerativeBackendEnum.VERTEX_AI ->
+          "projects/${firebaseApp.options.projectId}/locations/${backend.location}/templates/"
+        GenerativeBackendEnum.GOOGLE_AI -> "projects/${firebaseApp.options.projectId}/templates/"
+      }
+    return TemplateGenerativeModel(
+      templateUri,
+      firebaseApp.options.apiKey,
+      firebaseApp,
+      useLimitedUseAppCheckTokens,
+      requestOptions,
+      appCheckProvider.get(),
+      internalAuthProvider.get(),
+    )
+  }
+
+  /**
    * Instantiates a new [LiveGenerationConfig] given the provided parameters.
    *
    * @param modelName The name of the model to use. See the documentation for a list of
@@ -199,6 +226,33 @@ internal constructor(
       useLimitedUseAppCheckTokens,
       generationConfig,
       safetySettings,
+      requestOptions,
+      appCheckProvider.get(),
+      internalAuthProvider.get(),
+    )
+  }
+
+  /**
+   * Instantiates a new [ImagenModel] given the provided parameters.
+   *
+   * @param requestOptions Configuration options for sending requests to the backend.
+   * @return The initialized [TemplateImagenModel] instance.
+   */
+  @JvmOverloads
+  public fun templateImagenModel(
+    requestOptions: RequestOptions = RequestOptions(),
+  ): TemplateImagenModel {
+    val templateUri =
+      when (backend.backend) {
+        GenerativeBackendEnum.VERTEX_AI ->
+          "projects/${firebaseApp.options.projectId}/locations/${backend.location}/templates/"
+        GenerativeBackendEnum.GOOGLE_AI -> "projects/${firebaseApp.options.projectId}/templates/"
+      }
+    return TemplateImagenModel(
+      templateUri,
+      firebaseApp.options.apiKey,
+      firebaseApp,
+      useLimitedUseAppCheckTokens,
       requestOptions,
       appCheckProvider.get(),
       internalAuthProvider.get(),
