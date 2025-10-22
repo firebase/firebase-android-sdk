@@ -23,8 +23,6 @@ import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
 import com.google.firebase.dataconnect.core.Globals.toScrubbedAccessToken
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.internal.InternalTokenResult
-import java.util.concurrent.locks.ReentrantLock
-import kotlin.concurrent.withLock
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.tasks.await
@@ -41,37 +39,14 @@ internal class DataConnectAuth(
     blockingDispatcher = blockingDispatcher,
     logger = logger,
   ) {
-
-  private data class ProviderIdTokenListenerPair(
-    val provider: InternalAuthProvider,
-    val idTokenListener: IdTokenListenerImpl,
-  )
-
-  private val providersLock = ReentrantLock()
-  private val providers = mutableListOf<ProviderIdTokenListenerPair>()
-
-  /**
-   * The Firebase Auth UID of the current user, or `null` if Firebase Auth is not (yet) available or
-   * if there is no logged-in user.
-   */
-  val authUid: String?
-    get() = providersLock.withLock { providers.lastOrNull()?.provider?.uid }
+  private val idTokenListener = IdTokenListenerImpl(logger)
 
   @DeferredApi
-  override fun registerProvider(provider: InternalAuthProvider) {
-    val idTokenListener = IdTokenListenerImpl(logger)
+  override fun addTokenListener(provider: InternalAuthProvider) =
     provider.addIdTokenListener(idTokenListener)
-    providersLock.withLock { providers.add(ProviderIdTokenListenerPair(provider, idTokenListener)) }
-  }
 
-  override fun unregisterProvider(provider: InternalAuthProvider) {
-    val idTokenListener =
-      providersLock.withLock {
-        val index = providers.indexOfLast { it.provider === provider }
-        if (index < 0) null else providers.removeAt(index).idTokenListener
-      }
-    idTokenListener?.let { provider.removeIdTokenListener(idTokenListener) }
-  }
+  override fun removeTokenListener(provider: InternalAuthProvider) =
+    provider.removeIdTokenListener(idTokenListener)
 
   override suspend fun getToken(provider: InternalAuthProvider, forceRefresh: Boolean) =
     provider.getAccessToken(forceRefresh).await().let {
