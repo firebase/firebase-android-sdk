@@ -51,7 +51,6 @@ import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.list
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.orNull
-import io.kotest.property.arbitrary.set
 import io.kotest.property.arbitrary.string
 import io.mockk.coEvery
 import io.mockk.mockk
@@ -335,8 +334,9 @@ internal inline fun <Data, reified Variables> DataConnectArb.operationRefConstru
 
 internal fun DataConnectArb.authTokenResult(
   accessToken: Arb<String?> = accessToken().orNull(nullProbability = 0.33),
-  authUids: Arb<Set<String>> = Arb.set(string(0..10, Codepoint.alphanumeric()), 0..10),
-): Arb<GetAuthTokenResult> = Arb.bind(accessToken, authUids, ::GetAuthTokenResult)
+  authUid: Arb<String?> =
+    Arb.string(0..10, Codepoint.alphanumeric()).orNull(nullProbability = 0.33),
+): Arb<GetAuthTokenResult> = Arb.bind(accessToken, authUid, ::GetAuthTokenResult)
 
 internal fun DataConnectArb.appCheckTokenResult(
   accessToken: Arb<String> = accessToken()

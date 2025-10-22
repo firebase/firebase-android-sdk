@@ -50,11 +50,10 @@ internal class DataConnectAuth(
 
   override suspend fun getToken(provider: InternalAuthProvider, forceRefresh: Boolean) =
     provider.getAccessToken(forceRefresh).await().let {
-      GetAuthTokenResult(it.token, it.getAuthUids())
+      GetAuthTokenResult(it.token, it.getAuthUid())
     }
 
-  data class GetAuthTokenResult(override val token: String?, val authUids: Set<String>) :
-    GetTokenResult
+  data class GetAuthTokenResult(override val token: String?, val authUid: String?) : GetTokenResult
 
   private class IdTokenListenerImpl(private val logger: Logger) : IdTokenListener {
     override fun onIdTokenChanged(tokenResult: InternalTokenResult) {
@@ -64,16 +63,6 @@ internal class DataConnectAuth(
 
   private companion object {
 
-    val authUidClaimNames = listOf("user_id", "sub")
-
-    fun com.google.firebase.auth.GetTokenResult.getAuthUids(): Set<String> = buildSet {
-      authUidClaimNames.forEach { claimName ->
-        claims[claimName]?.let { claimValue ->
-          if (claimValue is String) {
-            add(claimValue)
-          }
-        }
-      }
-    }
+    fun com.google.firebase.auth.GetTokenResult.getAuthUid(): String? = claims["sub"] as? String
   }
 }
