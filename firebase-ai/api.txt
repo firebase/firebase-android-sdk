@@ -179,6 +179,23 @@ package com.google.firebase.ai.java {
     method public com.google.firebase.ai.java.LiveSessionFutures from(com.google.firebase.ai.type.LiveSession session);
   }
 
+  public abstract class TemplateGenerativeModelFutures {
+    method public static final com.google.firebase.ai.java.TemplateGenerativeModelFutures from(com.google.firebase.ai.TemplateGenerativeModel model);
+    method public abstract com.google.common.util.concurrent.ListenableFuture<com.google.firebase.ai.type.GenerateContentResponse> generateContent(String templateId, java.util.Map<java.lang.String,?> inputs);
+    method public abstract org.reactivestreams.Publisher<com.google.firebase.ai.type.GenerateContentResponse> generateContentStream(String templateId, java.util.Map<java.lang.String,?> inputs);
+    method public abstract com.google.firebase.ai.TemplateGenerativeModel getGenerativeModel();
+    field public static final com.google.firebase.ai.java.TemplateGenerativeModelFutures.Companion Companion;
+  }
+
+  public static final class TemplateGenerativeModelFutures.Companion {
+    method public com.google.firebase.ai.java.TemplateGenerativeModelFutures from(com.google.firebase.ai.TemplateGenerativeModel model);
+  }
+
+  public abstract class TemplateImagenModelFutures {
+    method public abstract com.google.common.util.concurrent.ListenableFuture<com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>> generateImages(String templateId, java.util.Map<java.lang.String,?> inputs);
+    method public abstract com.google.firebase.ai.TemplateImagenModel getImageModel();
+  }
+
 }
 
 package com.google.firebase.ai.type {
