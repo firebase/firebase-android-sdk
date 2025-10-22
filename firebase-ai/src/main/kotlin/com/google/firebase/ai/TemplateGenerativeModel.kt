@@ -33,6 +33,9 @@ import com.google.firebase.auth.internal.InternalAuthProvider
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import org.json.JSONObject
 
 /**
  * Represents a multimodal model (like Gemini), capable of generating content based on various
@@ -111,7 +114,9 @@ internal constructor(
       .map { it.toPublic().validate() }
 
   internal fun constructRequest(inputs: Map<String, Any>): TemplateGenerateContentRequest {
-    return TemplateGenerateContentRequest(inputs)
+    return TemplateGenerateContentRequest(
+      Json.parseToJsonElement(JSONObject(inputs).toString()).jsonObject
+    )
   }
 
   private fun GenerateContentResponse.validate() = apply {

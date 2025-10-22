@@ -28,10 +28,10 @@ import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.SafetySetting
 import com.google.firebase.ai.type.Tool
 import com.google.firebase.ai.type.ToolConfig
-import kotlinx.serialization.Contextual
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
 
 internal interface Request
 
@@ -46,13 +46,9 @@ internal data class GenerateContentRequest(
   @SerialName("system_instruction") val systemInstruction: Content.Internal? = null,
 ) : Request
 
-@Serializable
-internal data class TemplateGenerateContentRequest(val inputs: Map<String, @Contextual Any>) :
-  Request
+@Serializable internal data class TemplateGenerateContentRequest(val inputs: JsonObject) : Request
 
-@Serializable
-internal data class TemplateGenerateImageRequest(val inputs: Map<String, @Contextual Any>) :
-  Request
+@Serializable internal data class TemplateGenerateImageRequest(val inputs: JsonObject) : Request
 
 @Serializable
 internal data class CountTokensRequest(
