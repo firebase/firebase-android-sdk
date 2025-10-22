@@ -19,6 +19,7 @@ package com.google.firebase.ai.java
 import androidx.concurrent.futures.SuspendToFutureAdapter
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.firebase.ai.TemplateImagenModel
+import com.google.firebase.ai.java.ImagenModelFutures.FuturesImpl
 import com.google.firebase.ai.type.ImagenGenerationResponse
 import com.google.firebase.ai.type.ImagenInlineImage
 import com.google.firebase.ai.type.PublicPreviewAPI
@@ -56,5 +57,11 @@ public abstract class TemplateImagenModelFutures internal constructor() {
     override fun getImageModel(): TemplateImagenModel {
       return model
     }
+  }
+  public companion object {
+
+    /** @return a [TemplateImagenModelFutures] created around the provided [TemplateImagenModel] */
+    @JvmStatic
+    public fun from(model: TemplateImagenModel): TemplateImagenModelFutures = FuturesImpl(model)
   }
 }

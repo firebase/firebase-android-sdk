@@ -192,8 +192,14 @@ package com.google.firebase.ai.java {
   }
 
   public abstract class TemplateImagenModelFutures {
+    method public static final com.google.firebase.ai.java.TemplateImagenModelFutures from(com.google.firebase.ai.TemplateImagenModel model);
     method public abstract com.google.common.util.concurrent.ListenableFuture<com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>> generateImages(String templateId, java.util.Map<java.lang.String,?> inputs);
     method public abstract com.google.firebase.ai.TemplateImagenModel getImageModel();
+    field public static final com.google.firebase.ai.java.TemplateImagenModelFutures.Companion Companion;
+  }
+
+  public static final class TemplateImagenModelFutures.Companion {
+    method public com.google.firebase.ai.java.TemplateImagenModelFutures from(com.google.firebase.ai.TemplateImagenModel model);
   }
 
 }
