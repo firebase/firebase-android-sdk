@@ -21,10 +21,10 @@ import androidx.annotation.RequiresPermission
 import androidx.concurrent.futures.SuspendToFutureAdapter
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.firebase.ai.type.Content
-import com.google.firebase.ai.type.ConversationConfig
 import com.google.firebase.ai.type.FunctionCallPart
 import com.google.firebase.ai.type.FunctionResponsePart
 import com.google.firebase.ai.type.InlineData
+import com.google.firebase.ai.type.LiveAudioConversationConfig
 import com.google.firebase.ai.type.LiveServerMessage
 import com.google.firebase.ai.type.LiveSession
 import com.google.firebase.ai.type.MediaData
@@ -54,12 +54,12 @@ public abstract class LiveSessionFutures internal constructor() {
    * Starts an audio conversation with the model, which can only be stopped using
    * [stopAudioConversation].
    *
-   * @param conversationConfig A [ConversationConfig] provided by the user to control the various
-   * aspects of the conversation.
+   * @param liveAudioConversationConfig A [LiveAudioConversationConfig] provided by the user to
+   * control the various aspects of the conversation.
    */
   @RequiresPermission(RECORD_AUDIO)
   public abstract fun startAudioConversation(
-    conversationConfig: ConversationConfig
+    liveAudioConversationConfig: LiveAudioConversationConfig
   ): ListenableFuture<Unit>
 
   /**
@@ -312,8 +312,10 @@ public abstract class LiveSessionFutures internal constructor() {
       }
 
     @RequiresPermission(RECORD_AUDIO)
-    override fun startAudioConversation(conversationConfig: ConversationConfig) =
-      SuspendToFutureAdapter.launchFuture { session.startAudioConversation(conversationConfig) }
+    override fun startAudioConversation(liveAudioConversationConfig: LiveAudioConversationConfig) =
+      SuspendToFutureAdapter.launchFuture {
+        session.startAudioConversation(liveAudioConversationConfig)
+      }
 
     @RequiresPermission(RECORD_AUDIO)
     override fun startAudioConversation() =

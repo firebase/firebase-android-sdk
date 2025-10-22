@@ -171,22 +171,26 @@ internal constructor(
     transcriptHandler: ((Transcription?, Transcription?) -> Unit)? = null,
     enableInterruptions: Boolean = false,
   ) {
-    val config = ConversationConfig.builder()
-    config.functionCallHandler = functionCallHandler
-    config.transcriptHandler = transcriptHandler
-    config.enableInterruptions = enableInterruptions
-    startAudioConversation(config.build())
+    startAudioConversation(
+      liveAudioConversationConfig {
+        this.functionCallHandler = functionCallHandler
+        this.transcriptHandler = transcriptHandler
+        this.enableInterruptions = enableInterruptions
+      }
+    )
   }
 
   /**
    * Starts an audio conversation with the model, which can only be stopped using
    * [stopAudioConversation] or [close].
    *
-   * @param conversationConfig A [ConversationConfig] provided by the user to control the various
-   * aspects of the conversation.
+   * @param liveAudioConversationConfig A [LiveAudioConversationConfig] provided by the user to
+   * control the various aspects of the conversation.
    */
   @RequiresPermission(RECORD_AUDIO)
-  public suspend fun startAudioConversation(conversationConfig: ConversationConfig) {
+  public suspend fun startAudioConversation(
+    liveAudioConversationConfig: LiveAudioConversationConfig
+  ) {
 
     val context = firebaseApp.applicationContext
     if (
@@ -207,14 +211,14 @@ internal constructor(
       networkScope =
         CoroutineScope(blockingDispatcher + childJob() + CoroutineName("LiveSession Network"))
       audioScope = CoroutineScope(audioDispatcher + childJob() + CoroutineName("LiveSession Audio"))
-      audioHelper = AudioHelper.build(conversationConfig.audioHandler)
+      audioHelper = AudioHelper.build(liveAudioConversationConfig.audioHandler)
 
       recordUserAudio()
       processModelResponses(
-        conversationConfig.functionCallHandler,
-        conversationConfig.transcriptHandler
+        liveAudioConversationConfig.functionCallHandler,
+        liveAudioConversationConfig.transcriptHandler
       )
-      listenForModelPlayback(conversationConfig.enableInterruptions)
+      listenForModelPlayback(liveAudioConversationConfig.enableInterruptions)
     }
   }
 

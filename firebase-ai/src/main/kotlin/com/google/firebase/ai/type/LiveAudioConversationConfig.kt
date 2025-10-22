@@ -22,18 +22,18 @@ import android.media.AudioTrack
 /**
  * Configuration parameters to use for conversation config.
  *
- * @property functionCallHandler A callback that is invoked whenever the model receives a
- * function call. The [FunctionResponsePart] that the callback function returns will be
- * automatically sent to the model.
+ * @property functionCallHandler A callback that is invoked whenever the model receives a function
+ * call. The [FunctionResponsePart] that the callback function returns will be automatically sent to
+ * the model.
  *
- * @property transcriptHandler A callback that is invoked whenever the model receives a
- * transcript. The first [Transcription] object is the input transcription, and the second is the
- * output transcription.
+ * @property transcriptHandler A callback that is invoked whenever the model receives a transcript.
+ * The first [Transcription] object is the input transcription, and the second is the output
+ * transcription.
  *
  * @property audioHandler A callback that is invoked immediately following the successful
  * initialization of the associated [AudioRecord] and [AudioTrack] objects. This offers a final
- * opportunity to configure these objects, which will remain
- * valid and effective for the duration of the current audio session.
+ * opportunity to configure these objects, which will remain valid and effective for the duration of
+ * the current audio session.
  *
  * @property enableInterruptions If enabled, allows the user to speak over or interrupt the model's
  * ongoing reply.
@@ -42,7 +42,7 @@ import android.media.AudioTrack
  * consistently available.
  */
 @PublicPreviewAPI
-public class LiveConversationConfig
+public class LiveAudioConversationConfig
 private constructor(
   internal val functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)?,
   internal val audioHandler: ((AudioRecord, AudioTrack) -> Unit)?,
@@ -51,18 +51,18 @@ private constructor(
 ) {
 
   /**
-   * Builder for creating a [ConversationConfig].
+   * Builder for creating a [LiveAudioConversationConfig].
    *
-   * Mainly intended for Java interop. Kotlin consumers should use [conversationConfig] for a more
-   * idiomatic experience.
+   * Mainly intended for Java interop. Kotlin consumers should use [liveAudioConversationConfig] for
+   * a more idiomatic experience.
    *
-   * @property functionCallHandler See [ConversationConfig.functionCallHandler].
+   * @property functionCallHandler See [LiveAudioConversationConfig.functionCallHandler].
    *
-   * @property audioHandler See [ConversationConfig.audioHandler].
+   * @property audioHandler See [LiveAudioConversationConfig.audioHandler].
    *
-   * @property transcriptHandler See [ConversationConfig.transcriptHandler].
+   * @property transcriptHandler See [LiveAudioConversationConfig.transcriptHandler].
    *
-   * @property enableInterruptions See [ConversationConfig.enableInterruptions].
+   * @property enableInterruptions See [LiveAudioConversationConfig.enableInterruptions].
    */
   public class Builder {
     @JvmField public var functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)? = null
@@ -87,9 +87,9 @@ private constructor(
       this.enableInterruptions = enableInterruptions
     }
 
-    /** Create a new [ConversationConfig] with the attached arguments. */
-    public fun build(): ConversationConfig =
-      ConversationConfig(
+    /** Create a new [LiveAudioConversationConfig] with the attached arguments. */
+    public fun build(): LiveAudioConversationConfig =
+      LiveAudioConversationConfig(
         functionCallHandler = functionCallHandler,
         audioHandler = audioHandler,
         transcriptHandler = transcriptHandler,
@@ -100,9 +100,9 @@ private constructor(
   public companion object {
 
     /**
-     * Alternative casing for [ConversationConfig.Builder]:
+     * Alternative casing for [LiveAudioConversationConfig.Builder]:
      * ```
-     * val config = ConversationConfig.builder()
+     * val config = LiveAudioConversationConfig.builder()
      * ```
      */
     public fun builder(): Builder = Builder()
@@ -110,11 +110,11 @@ private constructor(
 }
 
 /**
- * Helper method to construct a [ConversationConfig] in a DSL-like manner.
+ * Helper method to construct a [LiveAudioConversationConfig] in a DSL-like manner.
  *
  * Example Usage:
  * ```
- * conversationConfig {
+ * liveAudioConversationConfig {
  *   functionCallHandler = ...
  *   audioHandler = ...
  *   ...
@@ -122,8 +122,10 @@ private constructor(
  * ```
  */
 @OptIn(PublicPreviewAPI::class)
-public fun conversationConfig(init: ConversationConfig.Builder.() -> Unit): ConversationConfig {
-  val builder = ConversationConfig.builder()
+public fun liveAudioConversationConfig(
+  init: LiveAudioConversationConfig.Builder.() -> Unit
+): LiveAudioConversationConfig {
+  val builder = LiveAudioConversationConfig.builder()
   builder.init()
   return builder.build()
 }
