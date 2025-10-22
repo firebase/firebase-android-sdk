@@ -339,5 +339,5 @@ internal fun DataConnectArb.authTokenResult(
 ): Arb<GetAuthTokenResult> = Arb.bind(accessToken, authUid, ::GetAuthTokenResult)
 
 internal fun DataConnectArb.appCheckTokenResult(
-  accessToken: Arb<String> = accessToken()
+  accessToken: Arb<String?> = accessToken().orNull(nullProbability = 0.33),
 ): Arb<GetAppCheckTokenResult> = accessToken.map(::GetAppCheckTokenResult)
