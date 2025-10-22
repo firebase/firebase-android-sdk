@@ -22,17 +22,17 @@ import android.media.AudioTrack
 /**
  * Configuration parameters to use for conversation config.
  *
- * @property functionCallHandler A callback function that is invoked whenever the model receives a
+ * @property functionCallHandler A callback that is invoked whenever the model receives a
  * function call. The [FunctionResponsePart] that the callback function returns will be
  * automatically sent to the model.
  *
- * @property transcriptHandler A callback function that is invoked whenever the model receives a
+ * @property transcriptHandler A callback that is invoked whenever the model receives a
  * transcript. The first [Transcription] object is the input transcription, and the second is the
  * output transcription.
  *
- * @property audioHandler A callback function that is invoked immediately following the successful
+ * @property audioHandler A callback that is invoked immediately following the successful
  * initialization of the associated [AudioRecord] and [AudioTrack] objects. This offers a final
- * opportunity to apply custom configurations or modifications to these objects, which will remain
+ * opportunity to configure these objects, which will remain
  * valid and effective for the duration of the current audio session.
  *
  * @property enableInterruptions If enabled, allows the user to speak over or interrupt the model's
@@ -42,12 +42,12 @@ import android.media.AudioTrack
  * consistently available.
  */
 @PublicPreviewAPI
-public class ConversationConfig
+public class LiveConversationConfig
 private constructor(
-  internal var functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)?,
-  internal var audioHandler: ((AudioRecord, AudioTrack) -> Unit)?,
-  internal var transcriptHandler: ((Transcription?, Transcription?) -> Unit)?,
-  internal var enableInterruptions: Boolean
+  internal val functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)?,
+  internal val audioHandler: ((AudioRecord, AudioTrack) -> Unit)?,
+  internal val transcriptHandler: ((Transcription?, Transcription?) -> Unit)?,
+  internal val enableInterruptions: Boolean
 ) {
 
   /**
