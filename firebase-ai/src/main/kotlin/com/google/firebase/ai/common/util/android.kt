@@ -17,10 +17,8 @@
 package com.google.firebase.ai.common.util
 
 import android.media.AudioRecord
-import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.yield
 
 /**
  * The minimum buffer size for this instance.
@@ -40,15 +38,17 @@ internal fun AudioRecord.readAsFlow() = flow {
 
   while (true) {
     if (recordingState != AudioRecord.RECORDSTATE_RECORDING) {
-      // TODO(vguthal): Investigate if both yield and delay are required.
-      delay(10.milliseconds)
-      yield()
+      // delay uses a different scheduler in the backend, so it's "stickier" in its enforcement when
+      // compared to yield.
+      delay(0)
       continue
     }
     val bytesRead = read(buffer, 0, buffer.size)
     if (bytesRead > 0) {
       emit(buffer.copyOf(bytesRead))
     }
-    yield()
+    // delay uses a different scheduler in the backend, so it's "stickier" in its enforcement when
+    // compared to yield.
+    delay(0)
   }
 }
