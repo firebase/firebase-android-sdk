@@ -17,12 +17,17 @@
 package com.google.firebase.ai.type
 
 import android.Manifest.permission.RECORD_AUDIO
+import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.media.AudioFormat
 import android.media.AudioTrack
+import android.os.Process
+import android.os.StrictMode
+import android.os.StrictMode.ThreadPolicy
 import android.util.Log
 import androidx.annotation.RequiresPermission
 import androidx.core.content.ContextCompat
+import com.google.firebase.BuildConfig
 import com.google.firebase.FirebaseApp
 import com.google.firebase.ai.common.JSON
 import com.google.firebase.ai.common.util.CancelledCoroutineScope
@@ -34,21 +39,27 @@ import io.ktor.websocket.Frame
 import io.ktor.websocket.close
 import io.ktor.websocket.readBytes
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.Executors
+import java.util.concurrent.ThreadFactory
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
 import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.yield
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
@@ -65,11 +76,21 @@ internal constructor(
   private val firebaseApp: FirebaseApp,
 ) {
   /**
-   * Coroutine scope that we batch data on for [startAudioConversation].
+   * Coroutine scope that we batch data on for network related behavior.
    *
    * Makes it easy to stop all the work with [stopAudioConversation] by just cancelling the scope.
    */
-  private var scope = CancelledCoroutineScope
+  private var networkScope = CancelledCoroutineScope
+
+  /**
+   * Coroutine scope that we batch data on for audio recording and playback.
+   *
+   * Separate from [networkScope] to ensure interchanging of dispatchers doesn't cause any deadlocks
+   * or issues.
+   *
+   * Makes it easy to stop all the work with [stopAudioConversation] by just cancelling the scope.
+   */
+  private var audioScope = CancelledCoroutineScope
 
   /**
    * Playback audio data sent from the model.
@@ -159,7 +180,7 @@ internal constructor(
     }
 
     FirebaseAIException.catchAsync {
-      if (scope.isActive) {
+      if (networkScope.isActive || audioScope.isActive) {
         Log.w(
           TAG,
           "startAudioConversation called after the recording has already started. " +
@@ -167,8 +188,9 @@ internal constructor(
         )
         return@catchAsync
       }
-
-      scope = CoroutineScope(blockingDispatcher + childJob())
+      networkScope =
+        CoroutineScope(blockingDispatcher + childJob() + CoroutineName("LiveSession Network"))
+      audioScope = CoroutineScope(audioDispatcher + childJob() + CoroutineName("LiveSession Audio"))
       audioHelper = AudioHelper.build()
 
       recordUserAudio()
@@ -188,7 +210,8 @@ internal constructor(
     FirebaseAIException.catch {
       if (!startedReceiving.getAndSet(false)) return@catch
 
-      scope.cancel()
+      networkScope.cancel()
+      audioScope.cancel()
       playBackQueue.clear()
 
       audioHelper?.release()
@@ -231,7 +254,9 @@ internal constructor(
                 )
               }
               ?.let { emit(it.toPublic()) }
-            yield()
+            // delay uses a different scheduler in the backend, so it's "stickier" in its
+            // enforcement when compared to yield.
+            delay(0)
           }
         }
         .onCompletion { stopAudioConversation() }
@@ -258,7 +283,8 @@ internal constructor(
     FirebaseAIException.catch {
       if (!startedReceiving.getAndSet(false)) return@catch
 
-      scope.cancel()
+      networkScope.cancel()
+      audioScope.cancel()
       playBackQueue.clear()
 
       audioHelper?.release()
@@ -305,10 +331,18 @@ internal constructor(
   }
 
   /**
-   * Sends a video input stream to the model, using the realtime API.
+   * Sends a video frame to the model, using the realtime API.
    *
-   * @param video Encoded video data, used to update the model on the client's conversation. The
-   * MIME type can be a video format (e.g., `video/webm`) or an image format (e.g., `image/jpeg`).
+   * Instead of raw video data, the model expects individual frames of the video, sent as images.
+   *
+   * If your video has audio, send it separately through [sendAudioRealtime].
+   *
+   * For better performance, frames can also be sent at a lower rate than the video; even as low as
+   * 1 frame per second.
+   *
+   * @param video Encoded image data extracted from a frame of the video, used to update the model
+   * on the client's conversation, with the corresponding IANA standard MIME type of the video frame
+   * data (e.g., `image/png`, `image/jpeg`, etc.).
    */
   public suspend fun sendVideoRealtime(video: InlineData) {
     FirebaseAIException.catchAsync {
@@ -403,10 +437,16 @@ internal constructor(
     audioHelper
       ?.listenToRecording()
       ?.buffer(UNLIMITED)
+      ?.flowOn(audioDispatcher)
       ?.accumulateUntil(MIN_BUFFER_SIZE)
-      ?.onEach { sendAudioRealtime(InlineData(it, "audio/pcm")) }
+      ?.onEach {
+        sendAudioRealtime(InlineData(it, "audio/pcm"))
+        // delay uses a different scheduler in the backend, so it's "stickier" in its enforcement
+        // when compared to yield.
+        delay(0)
+      }
       ?.catch { throw FirebaseAIException.from(it) }
-      ?.launchIn(scope)
+      ?.launchIn(networkScope)
   }
 
   /**
@@ -414,7 +454,7 @@ internal constructor(
    *
    * Audio messages are added to [playBackQueue].
    *
-   * Launched asynchronously on [scope].
+   * Launched asynchronously on [networkScope].
    *
    * @param functionCallHandler A callback function that is invoked whenever the server receives a
    * function call.
@@ -471,7 +511,7 @@ internal constructor(
           }
         }
       }
-      .launchIn(scope)
+      .launchIn(networkScope)
   }
 
   /**
@@ -479,10 +519,10 @@ internal constructor(
    *
    * Polls [playBackQueue] for data, and calls [AudioHelper.playAudio] when data is received.
    *
-   * Launched asynchronously on [scope].
+   * Launched asynchronously on [networkScope].
    */
   private fun listenForModelPlayback(enableInterruptions: Boolean = false) {
-    scope.launch {
+    audioScope.launch {
       while (isActive) {
         val playbackData = playBackQueue.poll()
         if (playbackData == null) {
@@ -491,14 +531,16 @@ internal constructor(
           if (!enableInterruptions) {
             audioHelper?.resumeRecording()
           }
-          yield()
+          // delay uses a different scheduler in the backend, so it's "stickier" in its enforcement
+          // when compared to yield.
+          delay(0)
         } else {
           /**
            * We pause the recording while the model is speaking to avoid interrupting it because of
            * no echo cancellation
            */
           // TODO(b/408223520): Conditionally pause when param is added
-          if (enableInterruptions != true) {
+          if (!enableInterruptions) {
             audioHelper?.pauseRecording()
           }
           audioHelper?.playAudio(playbackData)
@@ -583,5 +625,38 @@ internal constructor(
         AudioFormat.CHANNEL_OUT_MONO,
         AudioFormat.ENCODING_PCM_16BIT
       )
+    @SuppressLint("ThreadPoolCreation")
+    val audioDispatcher =
+      Executors.newCachedThreadPool(AudioThreadFactory()).asCoroutineDispatcher()
+  }
+}
+
+internal class AudioThreadFactory : ThreadFactory {
+  private val threadCount = AtomicLong()
+  private val policy: ThreadPolicy = audioPolicy()
+
+  override fun newThread(task: Runnable?): Thread? {
+    val thread =
+      DEFAULT.newThread {
+        Process.setThreadPriority(Process.THREAD_PRIORITY_AUDIO)
+        StrictMode.setThreadPolicy(policy)
+        task?.run()
+      }
+    thread.name = "Firebase Audio Thread #${threadCount.andIncrement}"
+    return thread
+  }
+
+  companion object {
+    val DEFAULT: ThreadFactory = Executors.defaultThreadFactory()
+
+    private fun audioPolicy(): ThreadPolicy {
+      val builder = ThreadPolicy.Builder().detectNetwork()
+
+      if (BuildConfig.DEBUG) {
+        builder.penaltyDeath()
+      }
+
+      return builder.penaltyLog().build()
+    }
   }
 }
