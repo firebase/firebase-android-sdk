@@ -338,7 +338,7 @@ internal constructor(
    * For better performance, frames can also be sent at a lower rate than the video; even as low as
    * 1 frame per second.
    *
-   * @param inlineData Encoded image data extracted from a frame of the video, used to update the
+   * @param video Encoded image data extracted from a frame of the video, used to update the
    * model on the client's conversation, with the corresponding IANA standard MIME type of the video
    * frame data (e.g., `image/png`, `image/jpeg`, etc.).
    */
