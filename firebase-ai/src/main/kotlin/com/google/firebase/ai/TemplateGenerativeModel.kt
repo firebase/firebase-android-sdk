@@ -24,6 +24,7 @@ import com.google.firebase.ai.type.FinishReason
 import com.google.firebase.ai.type.FirebaseAIException
 import com.google.firebase.ai.type.GenerateContentResponse
 import com.google.firebase.ai.type.PromptBlockedException
+import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.RequestOptions
 import com.google.firebase.ai.type.ResponseStoppedException
 import com.google.firebase.ai.type.SerializationException
@@ -37,6 +38,7 @@ import kotlinx.coroutines.flow.map
  * Represents a multimodal model (like Gemini), capable of generating content based on various
  * templated input types.
  */
+@PublicPreviewAPI
 public class TemplateGenerativeModel
 internal constructor(
   private val templateUri: String,

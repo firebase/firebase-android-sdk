@@ -23,6 +23,7 @@ import com.google.firebase.ai.common.TemplateGenerateImageRequest
 import com.google.firebase.ai.type.FirebaseAIException
 import com.google.firebase.ai.type.ImagenGenerationResponse
 import com.google.firebase.ai.type.ImagenInlineImage
+import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.RequestOptions
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
@@ -33,6 +34,7 @@ import com.google.firebase.auth.internal.InternalAuthProvider
  * See the documentation for a list of
  * [supported models](https://firebase.google.com/docs/ai-logic/models).
  */
+@PublicPreviewAPI
 public class TemplateImagenModel
 internal constructor(
   private val templateUri: String,

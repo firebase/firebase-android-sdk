@@ -113,15 +113,11 @@ internal constructor(
    * @return The initialized [TemplateGenerativeModel] instance.
    */
   @JvmOverloads
+  @PublicPreviewAPI
   public fun templateGenerativeModel(
     requestOptions: RequestOptions = RequestOptions(),
   ): TemplateGenerativeModel {
-    val templateUri =
-      when (backend.backend) {
-        GenerativeBackendEnum.VERTEX_AI ->
-          "projects/${firebaseApp.options.projectId}/locations/${backend.location}/templates/"
-        GenerativeBackendEnum.GOOGLE_AI -> "projects/${firebaseApp.options.projectId}/templates/"
-      }
+    val templateUri = getTemplateUri(backend)
     return TemplateGenerativeModel(
       templateUri,
       firebaseApp.options.apiKey,
@@ -233,21 +229,17 @@ internal constructor(
   }
 
   /**
-   * Instantiates a new [ImagenModel] given the provided parameters.
+   * Instantiates a new [TemplateImagenModel] given the provided parameters.
    *
    * @param requestOptions Configuration options for sending requests to the backend.
    * @return The initialized [TemplateImagenModel] instance.
    */
   @JvmOverloads
+  @PublicPreviewAPI
   public fun templateImagenModel(
     requestOptions: RequestOptions = RequestOptions(),
   ): TemplateImagenModel {
-    val templateUri =
-      when (backend.backend) {
-        GenerativeBackendEnum.VERTEX_AI ->
-          "projects/${firebaseApp.options.projectId}/locations/${backend.location}/templates/"
-        GenerativeBackendEnum.GOOGLE_AI -> "projects/${firebaseApp.options.projectId}/templates/"
-      }
+    val templateUri = getTemplateUri(backend)
     return TemplateImagenModel(
       templateUri,
       firebaseApp.options.apiKey,
@@ -312,6 +304,13 @@ internal constructor(
 
     private val TAG = FirebaseAI::class.java.simpleName
   }
+
+  private fun getTemplateUri(backend: GenerativeBackend): String =
+    when (backend.backend) {
+      GenerativeBackendEnum.VERTEX_AI ->
+        "projects/${firebaseApp.options.projectId}/locations/${backend.location}/templates/"
+      GenerativeBackendEnum.GOOGLE_AI -> "projects/${firebaseApp.options.projectId}/templates/"
+    }
 }
 
 /** The [FirebaseAI] instance for the default [FirebaseApp] using the Google AI Backend. */
