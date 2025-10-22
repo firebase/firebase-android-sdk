@@ -19,7 +19,6 @@ package com.google.firebase.ai.java
 import androidx.concurrent.futures.SuspendToFutureAdapter
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.firebase.ai.TemplateImagenModel
-import com.google.firebase.ai.java.ImagenModelFutures.FuturesImpl
 import com.google.firebase.ai.type.ImagenGenerationResponse
 import com.google.firebase.ai.type.ImagenInlineImage
 import com.google.firebase.ai.type.PublicPreviewAPI

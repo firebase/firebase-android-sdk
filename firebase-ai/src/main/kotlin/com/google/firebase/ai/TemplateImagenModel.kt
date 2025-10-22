@@ -97,7 +97,5 @@ internal constructor(
 
   internal companion object {
     private val TAG = TemplateImagenModel::class.java.simpleName
-    internal const val DEFAULT_FILTERED_ERROR =
-      "Unable to show generated images. All images were filtered out because they violated Vertex AI's usage guidelines. You will not be charged for blocked images. Try rephrasing the prompt. If you think this was an error, send feedback."
   }
 }
