@@ -22,20 +22,20 @@ import android.media.AudioTrack
 /**
  * Configuration parameters to use for conversation config.
  *
- * @param functionCallHandler A callback function that is invoked whenever the model receives a
+ * @property functionCallHandler A callback function that is invoked whenever the model receives a
  * function call. The [FunctionResponsePart] that the callback function returns will be
  * automatically sent to the model.
  *
- * @param transcriptHandler A callback function that is invoked whenever the model receives a
+ * @property transcriptHandler A callback function that is invoked whenever the model receives a
  * transcript. The first [Transcription] object is the input transcription, and the second is the
  * output transcription.
  *
- * @param audioHandler A callback function that is invoked immediately following the successful
+ * @property audioHandler A callback function that is invoked immediately following the successful
  * initialization of the associated [AudioRecord] and [AudioTrack] objects. This offers a final
  * opportunity to apply custom configurations or modifications to these objects, which will remain
  * valid and effective for the duration of the current audio session.
  *
- * @param enableInterruptions If enabled, allows the user to speak over or interrupt the model's
+ * @property enableInterruptions If enabled, allows the user to speak over or interrupt the model's
  * ongoing reply.
  *
  * **WARNING**: The user interruption feature relies on device-specific support, and may not be
