@@ -24,10 +24,18 @@ import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.ints.shouldBeInRange
+import io.kotest.matchers.ranges.shouldBeIn
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
+import io.kotest.property.arbitrary.constant
+import io.kotest.property.arbitrary.flatMap
+import io.kotest.property.arbitrary.int
+import io.kotest.property.arbitrary.list
+import io.kotest.property.arbitrary.map
+import io.kotest.property.arbitrary.next
+import io.kotest.property.arbitrary.pair
 import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
 import kotlin.code
@@ -214,6 +222,51 @@ class stringUnitTest {
       }
     }
 
+  @Test
+  fun `stringWithLoneSurrogates() should produce string with at least 1 lone surrogate`() =
+    runTest {
+      checkAll(propTestConfig, Arb.stringWithLoneSurrogates(1..20)) { stringInfo ->
+        stringInfo.string.countLoneSurrogates() shouldBeGreaterThan 0
+      }
+    }
+
+  @Test
+  fun `stringWithLoneSurrogates() should produce strings with the specified number of lone surrogates`() =
+    runTest {
+      checkAll(propTestConfig, Arb.stringWithLoneSurrogates(1..50)) { stringInfo ->
+        stringInfo.loneSurrogateCount shouldBe stringInfo.string.countLoneSurrogates()
+      }
+    }
+
+  @Test
+  fun `stringWithLoneSurrogates() should produce strings whose length is within the given range`() =
+    runTest {
+      val arb =
+        stringLengthRangeArb().flatMap { lengthRange: IntRange ->
+          Arb.pair(Arb.constant(lengthRange), Arb.stringWithLoneSurrogates(lengthRange))
+        }
+      checkAll(propTestConfig, arb) { (lengthRange, sample) ->
+        sample.string.length shouldBeIn lengthRange
+      }
+    }
+
+  @Test
+  fun `stringWithLoneSurrogates() should produce strings with the entire range of lone surrogate counts`() =
+    runTest {
+      val arb =
+        stringLengthRangeArb().flatMap { lengthRange: IntRange ->
+          Arb.pair(
+            Arb.constant(lengthRange),
+            Arb.list(Arb.stringWithLoneSurrogates(lengthRange), 1000..1000)
+          )
+        }
+      checkAll(propTestConfig, arb) { (lengthRange, samples) ->
+        val loneSurrogateCounts = mutableSetOf<Int>()
+        samples.forEach { loneSurrogateCounts.add(it.loneSurrogateCount) }
+        loneSurrogateCounts shouldContainExactlyInAnyOrder lengthRange.toList()
+      }
+    }
+
   private companion object {
 
     @OptIn(ExperimentalKotest::class)
@@ -229,6 +282,11 @@ class stringUnitTest {
         iterations = 1000,
         edgeConfig = EdgeConfig(edgecasesGenerationProbability = 1.0)
       )
+
+    fun stringLengthRangeArb(): Arb<IntRange> =
+      Arb.twoValues(Arb.int(1..20)).map { (bound1, bound2) ->
+        if (bound1 < bound2) bound1..bound2 else bound2..bound1
+      }
 
     fun String.codepointUtf8EncodingByteCounts(): Set<Int> = buildSet {
       var i = 0
@@ -247,6 +305,28 @@ class stringUnitTest {
           }
         )
       }
+    }
+
+    fun String.countLoneSurrogates(): Int {
+      var loneSurrogateCount = 0
+      var i = 0
+      while (i < length) {
+        val char: Char = get(i++)
+        if (!char.isSurrogate()) {
+          continue
+        }
+        if (char.isLowSurrogate()) {
+          loneSurrogateCount++
+        } else if (i == length) {
+          loneSurrogateCount++
+        } else if (get(i).isLowSurrogate()) {
+          i++
+        } else {
+          loneSurrogateCount++
+        }
+      }
+
+      return loneSurrogateCount
     }
   }
 }
