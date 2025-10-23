@@ -46,7 +46,11 @@ internal data class GenerateContentRequest(
   @SerialName("system_instruction") val systemInstruction: Content.Internal? = null,
 ) : Request
 
-@Serializable internal data class TemplateGenerateContentRequest(val inputs: JsonObject) : Request
+@Serializable
+internal data class TemplateGenerateContentRequest(
+  val inputs: JsonObject,
+  val history: List<Content.Internal>?
+) : Request
 
 @Serializable internal data class TemplateGenerateImageRequest(val inputs: JsonObject) : Request
 

@@ -87,9 +87,18 @@ package com.google.firebase.ai {
     method public suspend Object? connect(kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.LiveSession>);
   }
 
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class TemplateChat {
+    ctor public TemplateChat(com.google.firebase.ai.TemplateGenerativeModel model, String templateID, java.util.List<com.google.firebase.ai.type.Content> history = java.util.ArrayList());
+    method public java.util.List<com.google.firebase.ai.type.Content> getHistory();
+    method public suspend Object? sendMessage(com.google.firebase.ai.type.Content prompt, java.util.Map<java.lang.String,?> inputs, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.GenerateContentResponse>);
+    method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.type.GenerateContentResponse> sendMessageStream(com.google.firebase.ai.type.Content prompt, java.util.Map<java.lang.String,?> inputs);
+    property public final java.util.List<com.google.firebase.ai.type.Content> history;
+  }
+
   @com.google.firebase.ai.type.PublicPreviewAPI public final class TemplateGenerativeModel {
-    method public suspend Object? generateContent(String templateId, java.util.Map<java.lang.String,?> inputs, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.GenerateContentResponse>);
-    method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.type.GenerateContentResponse> generateContentStream(String templateId, java.util.Map<java.lang.String,?> inputs);
+    method public suspend Object? generateContent(String templateId, java.util.Map<java.lang.String,?> inputs, java.util.List<com.google.firebase.ai.type.Content>? history = null, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.GenerateContentResponse>);
+    method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.type.GenerateContentResponse> generateContentStream(String templateId, java.util.Map<java.lang.String,?> inputs, java.util.List<com.google.firebase.ai.type.Content>? history = null);
+    method public com.google.firebase.ai.TemplateChat startChat(String templateId, java.util.List<com.google.firebase.ai.type.Content> history = emptyList());
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class TemplateImagenModel {
@@ -177,6 +186,18 @@ package com.google.firebase.ai.java {
 
   public static final class LiveSessionFutures.Companion {
     method public com.google.firebase.ai.java.LiveSessionFutures from(com.google.firebase.ai.type.LiveSession session);
+  }
+
+  @com.google.firebase.ai.type.PublicPreviewAPI public abstract class TemplateChatFutures {
+    method public static final com.google.firebase.ai.java.TemplateChatFutures from(com.google.firebase.ai.TemplateChat chat);
+    method public abstract com.google.firebase.ai.TemplateChat getChat();
+    method public abstract com.google.common.util.concurrent.ListenableFuture<com.google.firebase.ai.type.GenerateContentResponse> sendMessage(com.google.firebase.ai.type.Content prompt, java.util.Map<java.lang.String,?> inputs);
+    method public abstract org.reactivestreams.Publisher<com.google.firebase.ai.type.GenerateContentResponse> sendMessageStream(com.google.firebase.ai.type.Content prompt, java.util.Map<java.lang.String,?> inputs);
+    field public static final com.google.firebase.ai.java.TemplateChatFutures.Companion Companion;
+  }
+
+  public static final class TemplateChatFutures.Companion {
+    method public com.google.firebase.ai.java.TemplateChatFutures from(com.google.firebase.ai.TemplateChat chat);
   }
 
   public abstract class TemplateGenerativeModelFutures {
