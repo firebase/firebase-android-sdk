@@ -36,6 +36,7 @@ import com.google.firebase.messaging.Constants.MessagePayloadKeys;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Map;
+import java.util.HashMap;
 
 /**
  * A remote Firebase Message.
