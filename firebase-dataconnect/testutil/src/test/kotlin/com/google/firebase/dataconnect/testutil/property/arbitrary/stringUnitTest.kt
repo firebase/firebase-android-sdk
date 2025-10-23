@@ -257,13 +257,14 @@ class stringUnitTest {
         stringLengthRangeArb().flatMap { lengthRange: IntRange ->
           Arb.pair(
             Arb.constant(lengthRange),
-            Arb.list(Arb.stringWithLoneSurrogates(lengthRange), 1000..1000)
+            Arb.list(
+              Arb.stringWithLoneSurrogates(lengthRange).map { it.loneSurrogateCount },
+              1000..1000
+            )
           )
         }
-      checkAll(propTestConfig, arb) { (lengthRange, samples) ->
-        val loneSurrogateCounts = mutableSetOf<Int>()
-        samples.forEach { loneSurrogateCounts.add(it.loneSurrogateCount) }
-        loneSurrogateCounts shouldContainExactlyInAnyOrder lengthRange.toList()
+      checkAll(propTestConfig, arb) { (lengthRange, loneSurrogateCounts) ->
+        loneSurrogateCounts.toSet() shouldContainExactlyInAnyOrder (1..lengthRange.last).toList()
       }
     }
 

@@ -72,7 +72,7 @@ private class StringWithLoneSurrogatesArb(length: IntRange) : Arb<StringWithLone
     require(length.start > 0) { "invalid length range: $length (start must be greater than zero)" }
   }
 
-  private val lengthRange = length
+  private val lengthRange: IntRange = length
   private fun RandomSource.nextStringWithLoneSurrogatesLength(): Int = random.nextInt(lengthRange)
   private val codepointArb: Arb<Codepoint> = Arb.codepointWithEvenNumByteUtf8EncodingDistribution()
   private fun RandomSource.nextCodepoint(): Codepoint = codepointArb.sample(this).value
@@ -91,9 +91,7 @@ private class StringWithLoneSurrogatesArb(length: IntRange) : Arb<StringWithLone
           "internal error v9gcbvh7cq: charCount ($charCount) should be less than length ($length)"
         }
 
-        // Always insert a lone surrogate as the first character (that is, when isEmpty() returns
-        // true) to guarantee that there is at least one lone surrogate in the resulting string.
-        val isLoneSurrogate = isEmpty() || rs.random.nextDouble() < loneSurrogateProbability
+        val isLoneSurrogate = rs.random.nextDouble() < loneSurrogateProbability
 
         val curCharCount: Int =
           if (isLoneSurrogate) {
@@ -112,6 +110,22 @@ private class StringWithLoneSurrogatesArb(length: IntRange) : Arb<StringWithLone
 
         charCount += curCharCount
         codePointCount++
+      }
+
+      // Make sure there is at least 1 lone surrogate
+      if (loneSurrogateIndices.isEmpty()) {
+        val index = rs.random.nextInt(size)
+        loneSurrogateIndices.add(index)
+        val removedCodePoint = removeAt(index)
+        when (removedCodePoint.charCount) {
+          1 -> {}
+          2 -> add(index, rs.nextNonSurrogate())
+          else ->
+            throw IllegalStateException(
+              "internal error hcxwv7w6sq: " +
+                "unexpected removedCodePoint.charCount: ${removedCodePoint.charCount} (expected 1 or 2)"
+            )
+        }
       }
 
       // Insert the lone surrogates
