@@ -19,7 +19,8 @@ import com.google.firebase.firestore.model.Values.encodeValue
 import com.google.firestore.v1.Value
 import com.google.protobuf.Timestamp
 
-internal sealed class EvaluateResult(val value: Value?) {
+internal sealed class EvaluateResult {
+  abstract val value: Value?
   abstract val isError: Boolean
   abstract val isSuccess: Boolean
   abstract val isUnset: Boolean
@@ -49,19 +50,21 @@ internal sealed class EvaluateResult(val value: Value?) {
   }
 }
 
-internal class EvaluateResultValue(value: Value) : EvaluateResult(value) {
+internal data class EvaluateResultValue(override val value: Value) : EvaluateResult() {
   override val isSuccess: Boolean = true
   override val isError: Boolean = false
   override val isUnset: Boolean = false
 }
 
-internal object EvaluateResultError : EvaluateResult(null) {
+internal object EvaluateResultError : EvaluateResult() {
+  override val value: Value? = null
   override val isSuccess: Boolean = false
   override val isError: Boolean = true
   override val isUnset: Boolean = false
 }
 
-internal object EvaluateResultUnset : EvaluateResult(null) {
+internal object EvaluateResultUnset : EvaluateResult() {
+  override val value: Value? = null
   override val isSuccess: Boolean = false
   override val isError: Boolean = false
   override val isUnset: Boolean = true

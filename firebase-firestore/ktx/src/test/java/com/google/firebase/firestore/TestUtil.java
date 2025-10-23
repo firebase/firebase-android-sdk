@@ -22,6 +22,7 @@ import static org.mockito.Mockito.mock;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.DocumentViewChange;
 import com.google.firebase.firestore.core.DocumentViewChange.Type;
+import com.google.firebase.firestore.core.QueryOrPipeline;
 import com.google.firebase.firestore.core.ViewSnapshot;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -98,7 +99,8 @@ public class TestUtil {
     }
     ViewSnapshot viewSnapshot =
         new ViewSnapshot(
-            com.google.firebase.firestore.testutil.TestUtil.query(path),
+            new QueryOrPipeline.QueryWrapper(
+                com.google.firebase.firestore.testutil.TestUtil.query(path)),
             newDocuments,
             oldDocuments,
             documentChanges,

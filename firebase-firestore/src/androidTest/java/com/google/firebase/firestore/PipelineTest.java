@@ -1885,6 +1885,9 @@ public class PipelineTest {
 
   @Test
   public void testErrorExpression() {
+    assumeFalse(
+        "Certain options are not supported against the emulator yet.", isRunningAgainstEmulator());
+
     Exception exception =
         assertThrows(
             Exception.class,
