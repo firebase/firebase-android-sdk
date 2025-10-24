@@ -63,6 +63,8 @@ class MetaDataStore {
       writer.flush();
     } catch (Exception e) {
       Logger.getLogger().w("Error serializing user metadata.", e);
+    } catch (OutOfMemoryError e) {
+      Logger.getLogger().w("OOM serializing user metadata.", e);
     } finally {
       CommonUtils.closeOrLog(writer, "Failed to close user metadata file.");
     }
@@ -86,6 +88,9 @@ class MetaDataStore {
     } catch (Exception e) {
       Logger.getLogger().w("Error deserializing user metadata.", e);
       safeDeleteCorruptFile(f);
+    } catch (OutOfMemoryError e) {
+      Logger.getLogger().w("OOM deserializing user metadata.", e);
+      safeDeleteCorruptFile(f);
     } finally {
       CommonUtils.closeOrLog(is, "Failed to close user metadata file.");
     }
@@ -107,6 +112,9 @@ class MetaDataStore {
       writer.flush();
     } catch (Exception e) {
       Logger.getLogger().w("Error serializing key/value metadata.", e);
+      safeDeleteCorruptFile(f);
+    } catch (OutOfMemoryError e) {
+      Logger.getLogger().w("OOM serializing key/value metadata.", e);
       safeDeleteCorruptFile(f);
     } finally {
       CommonUtils.closeOrLog(writer, "Failed to close key/value metadata file.");
@@ -132,6 +140,9 @@ class MetaDataStore {
     } catch (Exception e) {
       Logger.getLogger().w("Error deserializing user metadata.", e);
       safeDeleteCorruptFile(f);
+    } catch (OutOfMemoryError e) {
+      Logger.getLogger().w("OOM deserializing user metadata.", e);
+      safeDeleteCorruptFile(f);
     } finally {
       CommonUtils.closeOrLog(is, "Failed to close user metadata file.");
     }
@@ -155,6 +166,9 @@ class MetaDataStore {
     } catch (Exception e) {
       Logger.getLogger().w("Error deserializing rollouts state.", e);
       safeDeleteCorruptFile(f);
+    } catch (OutOfMemoryError e) {
+      Logger.getLogger().w("OOM deserializing rollouts state.", e);
+      safeDeleteCorruptFile(f);
     } finally {
       CommonUtils.closeOrLog(is, "Failed to close rollouts state file.");
     }
@@ -176,6 +190,9 @@ class MetaDataStore {
       writer.flush();
     } catch (Exception e) {
       Logger.getLogger().w("Error serializing rollouts state.", e);
+      safeDeleteCorruptFile(f);
+    } catch (OutOfMemoryError e) {
+      Logger.getLogger().w("OOM serializing rollouts state.", e);
       safeDeleteCorruptFile(f);
     } finally {
       CommonUtils.closeOrLog(writer, "Failed to close rollouts state file.");
