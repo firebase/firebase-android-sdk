@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+@file:OptIn(ExperimentalKotest::class)
+
 package com.google.firebase.dataconnect.testutil.property.arbitrary
 
 import io.kotest.assertions.assertSoftly
@@ -32,7 +34,6 @@ import io.kotest.property.PropTestConfig
 import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.flatMap
 import io.kotest.property.arbitrary.int
-import io.kotest.property.arbitrary.list
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.pair
 import io.kotest.property.arbitrary.string
@@ -251,35 +252,30 @@ class stringUnitTest {
   @Test
   fun `stringWithLoneSurrogates() should produce strings with the entire range of lone surrogate counts`() =
     runTest {
-      val arb =
-        stringLengthRangeArb().flatMap { lengthRange: IntRange ->
-          Arb.pair(
-            Arb.constant(lengthRange),
-            Arb.list(
-              Arb.stringWithLoneSurrogates(lengthRange).map { it.loneSurrogateCount },
-              1000..1000
-            )
-          )
+      checkAll(propTestConfig, stringLengthRangeArb()) { lengthRange ->
+        val loneSurrogateCounts: Set<Int> = buildSet {
+          checkAll(
+            propTestConfig.copy(iterations = 1000),
+            Arb.stringWithLoneSurrogates(lengthRange),
+          ) {
+            add(it.loneSurrogateCount)
+          }
         }
-      checkAll(propTestConfig, arb) { (lengthRange, loneSurrogateCounts) ->
-        val distinctLoneSurrogateCounts = loneSurrogateCounts.distinct()
-        val expectedLoneSurrogateCounts = (1..lengthRange.last).toList()
-        withClue("distinctSortedLoneSurrogateCounts=${distinctLoneSurrogateCounts.sorted()}") {
-          distinctLoneSurrogateCounts shouldContainExactlyInAnyOrder expectedLoneSurrogateCounts
+
+        withClue("loneSurrogateCounts=${loneSurrogateCounts.sorted()}") {
+          loneSurrogateCounts shouldContainExactlyInAnyOrder (1..lengthRange.last).toList()
         }
       }
     }
 
   private companion object {
 
-    @OptIn(ExperimentalKotest::class)
     val propTestConfig =
       PropTestConfig(
         iterations = 1000,
         edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.2)
       )
 
-    @OptIn(ExperimentalKotest::class)
     val propTestConfigEdgeCasesOnly =
       PropTestConfig(
         iterations = 1000,
