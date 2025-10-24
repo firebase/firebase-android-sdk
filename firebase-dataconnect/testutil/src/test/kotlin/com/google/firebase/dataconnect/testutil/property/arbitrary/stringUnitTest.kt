@@ -34,11 +34,9 @@ import io.kotest.property.arbitrary.flatMap
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.list
 import io.kotest.property.arbitrary.map
-import io.kotest.property.arbitrary.next
 import io.kotest.property.arbitrary.pair
 import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
-import kotlin.code
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
@@ -264,7 +262,11 @@ class stringUnitTest {
           )
         }
       checkAll(propTestConfig, arb) { (lengthRange, loneSurrogateCounts) ->
-        loneSurrogateCounts.toSet() shouldContainExactlyInAnyOrder (1..lengthRange.last).toList()
+        val distinctLoneSurrogateCounts = loneSurrogateCounts.distinct()
+        val expectedLoneSurrogateCounts = (1..lengthRange.last).toList()
+        withClue("distinctSortedLoneSurrogateCounts=${distinctLoneSurrogateCounts.sorted()}") {
+          distinctLoneSurrogateCounts shouldContainExactlyInAnyOrder expectedLoneSurrogateCounts
+        }
       }
     }
 
