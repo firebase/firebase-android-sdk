@@ -78,172 +78,128 @@ private class StringWithLoneSurrogatesArb(length: IntRange) : Arb<StringWithLone
     if (random.nextBoolean()) lengthRange.first else lengthRange.last
 
   private val codepointArb: Arb<Codepoint> = Arb.codepointWithEvenNumByteUtf8EncodingDistribution()
-  private fun RandomSource.nextCodepoint(): Codepoint = codepointArb.sample(this).value
 
-  override fun sample(rs: RandomSource): Sample<StringWithLoneSurrogates> {
-    val length = rs.nextStringLength()
-    return sample(rs, length).asSample()
+  override fun sample(rs: RandomSource): Sample<StringWithLoneSurrogates> =
+    rs.nextStringWithLoneSurrogates().asSample()
+
+  private fun RandomSource.nextStringWithLoneSurrogates(
+    length: Int = nextStringLength(),
+    loneSurrogateProbability: Float = random.nextFloat(),
+    edgeCaseProbability: Float = random.nextFloat(),
+  ): StringWithLoneSurrogates {
+    fun RandomSource.nextCharIsLoneSurrogate(): Boolean =
+      random.nextFloat() < loneSurrogateProbability
+    val codepointGenerator = codepointArb.iterator(edgeCaseProbability)
+
+    var loneSurrogateCount = 0
+    val sb = StringBuilder()
+    while (sb.length < length) {
+      if (!nextCharIsLoneSurrogate()) {
+        val codePoint: Int = codepointGenerator.next(this@nextStringWithLoneSurrogates).value
+        if (sb.length + Character.charCount(codePoint) <= length) {
+          sb.appendCodePoint(codePoint)
+        }
+      } else {
+        loneSurrogateCount++
+        val char: Char =
+          if (sb.lastIsHighSurrogate()) {
+            nextHighSurrogateChar(edgeCaseProbability)
+          } else {
+            nextSurrogateChar(edgeCaseProbability)
+          }
+        sb.append(char)
+      }
+    }
+
+    check(sb.length == length) { "internal error: sb.length=${sb.length} but length=$length" }
+    return StringWithLoneSurrogates(sb.toString(), loneSurrogateCount)
   }
 
-  private fun sample(rs: RandomSource, length: Int): StringWithLoneSurrogates {
-    require(length > 0) { "internal error: invalid length: $length" }
-    val loneSurrogateProbability = rs.random.nextDouble()
-
-    val loneSurrogateIndices = mutableListOf<Int>()
-    val codePoints: List<CodePointType> = buildList {
-      var codePointCount = 0
-      var charCount = 0
-      while (charCount != length) {
-        check(charCount < length) {
-          "internal error v9gcbvh7cq: charCount ($charCount) should be less than length ($length)"
-        }
-
-        val isLoneSurrogate = rs.random.nextDouble() < loneSurrogateProbability
-
-        val curCharCount: Int =
-          if (isLoneSurrogate) {
-            loneSurrogateIndices.add(codePointCount)
-            1
-          } else {
-            val codePoint: CodePointType.NonLoneSurrogate =
-              if (charCount + 1 == length) {
-                rs.nextNonSurrogate()
-              } else {
-                rs.nextNonLoneSurrogate()
-              }
-            add(codePoint)
-            codePoint.charCount
-          }
-
-        charCount += curCharCount
-        codePointCount++
-      }
-
-      // Make sure there is at least 1 lone surrogate
-      if (loneSurrogateIndices.isEmpty()) {
-        val index = rs.random.nextInt(size)
-        loneSurrogateIndices.add(index)
-        val removedCodePoint = removeAt(index)
-        when (removedCodePoint.charCount) {
-          1 -> {}
-          2 -> add(index, rs.nextNonSurrogate())
-          else ->
-            throw IllegalStateException(
-              "internal error hcxwv7w6sq: " +
-                "unexpected removedCodePoint.charCount: ${removedCodePoint.charCount} (expected 1 or 2)"
-            )
-        }
-      }
-
-      // Insert the lone surrogates
-      loneSurrogateIndices.forEach { i ->
-        if (i == 0 || get(i - 1) !is CodePointType.LoneHighSurrogate) {
-          add(i, rs.nextLoneSurrogate())
-        } else {
-          add(i, rs.nextLoneHighSurrogate())
-        }
-      }
+  private fun RandomSource.nextStringWithoutLoneSurrogates(
+    length: Int,
+    edgeCaseProbability: Float
+  ): String {
+    val sample =
+      nextStringWithLoneSurrogates(
+        length = length,
+        loneSurrogateProbability = 0.0f,
+        edgeCaseProbability = edgeCaseProbability,
+      )
+    check(sample.loneSurrogateCount == 0) {
+      "internal error: sample.loneSurrogateCount=${sample.loneSurrogateCount} but expected 0"
     }
-
-    // Assemble the string from the chosen code points.
-    val string = buildString {
-      codePoints.forEach { codePoint ->
-        when (codePoint) {
-          is CodePointType.SingleCharCodePointType -> append(codePoint.char)
-          is CodePointType.SurrogatePair -> append(codePoint.char1).append(codePoint.char2)
-        }
-      }
-    }
-
-    return StringWithLoneSurrogates(string, loneSurrogateIndices.size)
+    return sample.string
   }
 
   override fun edgecase(rs: RandomSource): StringWithLoneSurrogates {
+    val edgeCaseProbability = rs.random.nextFloat()
+
     val length =
       when (EdgeCase.entries.random(rs.random)) {
-        EdgeCase.StringLength -> {
-          val length = rs.nextStringLengthEdgeCase()
-          return sample(rs, length)
-        }
+        EdgeCase.StringLength ->
+          return rs.nextStringWithLoneSurrogates(
+            length = rs.nextStringLengthEdgeCase(),
+            edgeCaseProbability = edgeCaseProbability
+          )
         EdgeCase.Contents -> rs.nextStringLength()
         EdgeCase.StringLengthAndContents -> rs.nextStringLengthEdgeCase()
       }
 
     return when (ContentsEdgeCase.entries.random(rs.random)) {
       ContentsEdgeCase.AllLoneSurrogates ->
-        StringWithLoneSurrogates(
-          buildString {
-            repeat(length) {
-              append(
-                if (this@buildString.isEmpty() || !this@buildString.last().isHighSurrogate()) {
-                  rs.nextLoneSurrogate().char
-                } else {
-                  rs.nextLoneHighSurrogate().char
-                }
-              )
-            }
-          },
-          length
+        rs.nextStringWithLoneSurrogates(
+          length = length,
+          loneSurrogateProbability = 1.0f,
+          edgeCaseProbability = edgeCaseProbability
         )
       ContentsEdgeCase.BeginsWithLoneSurrogate ->
         StringWithLoneSurrogates(
           buildString {
-            append(rs.nextLoneSurrogate().char)
-            appendStringWithEvenNumByteUtf8EncodingDistribution(rs, length - 1)
+            append(rs.nextSurrogateChar(edgeCaseProbability = edgeCaseProbability))
+            append(
+              rs.nextStringWithoutLoneSurrogates(
+                length = length - 1,
+                edgeCaseProbability = edgeCaseProbability
+              )
+            )
           },
           1
         )
       ContentsEdgeCase.EndsWithLoneSurrogate ->
         StringWithLoneSurrogates(
           buildString {
-            appendStringWithEvenNumByteUtf8EncodingDistribution(rs, length - 1)
-            append(rs.nextLoneSurrogate().char)
+            append(
+              rs.nextStringWithoutLoneSurrogates(
+                length = length - 1,
+                edgeCaseProbability = edgeCaseProbability
+              )
+            )
+            append(rs.nextSurrogateChar(edgeCaseProbability = edgeCaseProbability))
           },
           1
         )
       ContentsEdgeCase.BeginsAndEndsWithLoneSurrogate ->
-        if (length == 1) {
-          StringWithLoneSurrogates(rs.nextLoneSurrogate().char.toString(), 1)
-        } else if (length == 2) {
-          StringWithLoneSurrogates(
-            buildString {
-              val char1 = rs.nextLoneSurrogate().char
-              val char2 =
-                if (char1.isHighSurrogate()) {
-                  rs.nextLoneHighSurrogate().char
-                } else {
-                  rs.nextLoneSurrogate().char
-                }
-              append(char1).append(char2)
-            },
-            2
+        if (length <= 2) {
+          rs.nextStringWithLoneSurrogates(
+            length = length,
+            loneSurrogateProbability = 1.0f,
+            edgeCaseProbability = edgeCaseProbability
           )
         } else {
           StringWithLoneSurrogates(
             buildString {
-              append(rs.nextLoneSurrogate().char)
-              appendStringWithEvenNumByteUtf8EncodingDistribution(rs, length - 2)
-              append(rs.nextLoneSurrogate().char)
+              append(rs.nextSurrogateChar(edgeCaseProbability = edgeCaseProbability))
+              append(
+                rs.nextStringWithoutLoneSurrogates(
+                  length = length - 2,
+                  edgeCaseProbability = edgeCaseProbability
+                )
+              )
+              append(rs.nextSurrogateChar(edgeCaseProbability = edgeCaseProbability))
             },
             2
           )
         }
-    }
-  }
-
-  private fun StringBuilder.appendStringWithEvenNumByteUtf8EncodingDistribution(
-    rs: RandomSource,
-    n: Int
-  ) {
-    require(n >= 0) { "invalid n: $n" }
-    var charAppendedCount = 0
-    while (charAppendedCount < n) {
-      val codePoint: Int = rs.nextCodepoint().value
-      val charCount = Character.charCount(codePoint)
-      if (charAppendedCount + charCount <= n) {
-        appendCodePoint(codePoint)
-        charAppendedCount += charCount
-      }
     }
   }
 
@@ -260,64 +216,33 @@ private class StringWithLoneSurrogatesArb(length: IntRange) : Arb<StringWithLone
     BeginsAndEndsWithLoneSurrogate,
   }
 
-  private sealed interface CodePointType {
-    val charCount: Int
+  private companion object {
+    val highSurrogateRange: CharRange = MIN_HIGH_SURROGATE..MAX_HIGH_SURROGATE
+    val lowSurrogateRange: CharRange = MIN_LOW_SURROGATE..MAX_LOW_SURROGATE
+    val surrogateRange: CharRange = MIN_SURROGATE..MAX_SURROGATE
 
-    sealed class SingleCharCodePointType(val char: Char) : CodePointType {
-      override val charCount
-        get() = 1
-    }
+    val highSurrogateEdgeCases = listOf(highSurrogateRange.first, highSurrogateRange.last)
+    val lowSurrogateEdgeCases = listOf(lowSurrogateRange.first, lowSurrogateRange.last)
+    val surrogateEdgeCases = highSurrogateEdgeCases + lowSurrogateEdgeCases
 
-    sealed interface NonLoneSurrogate : CodePointType
-    class NonSurrogate(char: Char) : SingleCharCodePointType(char), NonLoneSurrogate
+    fun RandomSource.nextSurrogateChar(edgeCaseProbability: Float): Char =
+      nextChar(edgeCaseProbability, surrogateRange, surrogateEdgeCases)
 
-    sealed class LoneSurrogate(char: Char) : SingleCharCodePointType(char)
-    class LoneHighSurrogate(char: Char) : LoneSurrogate(char)
-    class LoneLowSurrogate(char: Char) : LoneSurrogate(char)
+    fun RandomSource.nextHighSurrogateChar(edgeCaseProbability: Float): Char =
+      nextChar(edgeCaseProbability, highSurrogateRange, highSurrogateEdgeCases)
 
-    class SurrogatePair(val char1: Char, val char2: Char) : CodePointType, NonLoneSurrogate {
-      override val charCount
-        get() = 2
-    }
-  }
-
-  private val toCharsBuffer = CharArray(2)
-
-  private fun RandomSource.nextNonLoneSurrogate(): CodePointType.NonLoneSurrogate =
-    nextCodepoint().let { codepoint ->
-      when (val charCount = Character.toChars(codepoint.value, toCharsBuffer, 0)) {
-        1 -> CodePointType.NonSurrogate(toCharsBuffer[0])
-        2 -> CodePointType.SurrogatePair(toCharsBuffer[0], toCharsBuffer[1])
-        else ->
-          throw IllegalStateException(
-            "internal error hndtga9jqh: Character.toChars() returned $charCount, " +
-              "but expected 1 or 2; codepoint.value=${codepoint.value}"
-          )
+    fun RandomSource.nextChar(
+      edgeCaseProbability: Float,
+      range: CharRange,
+      edgeCases: List<Char>
+    ): Char =
+      if (random.nextFloat() < edgeCaseProbability) {
+        edgeCases.random(random)
+      } else {
+        range.random(random)
       }
-    }
 
-  companion object {
-
-    private val highSurrogateRange: CharRange = MIN_HIGH_SURROGATE..MAX_HIGH_SURROGATE
-    private val lowSurrogateRange: CharRange = MIN_LOW_SURROGATE..MAX_LOW_SURROGATE
-    private val nonSurrogateRange1: CharRange = Char.MIN_VALUE until MIN_SURROGATE
-    private val nonSurrogateRange2: CharRange = MAX_SURROGATE + 1..Char.MAX_VALUE
-
-    private fun RandomSource.nextChar(charRange: CharRange): Char =
-      random.nextInt(charRange.first.code, charRange.last.code + 1).toChar()
-
-    private fun RandomSource.nextHighSurrogateChar(): Char = nextChar(highSurrogateRange)
-    private fun RandomSource.nextLowSurrogateChar(): Char = nextChar(lowSurrogateRange)
-
-    private fun RandomSource.nextNonSurrogateChar(): Char =
-      nextChar(if (random.nextBoolean()) nonSurrogateRange1 else nonSurrogateRange2)
-
-    private fun RandomSource.nextLoneHighSurrogate() =
-      CodePointType.LoneHighSurrogate(nextHighSurrogateChar())
-    private fun RandomSource.nextLoneLowSurrogate() =
-      CodePointType.LoneLowSurrogate(nextLowSurrogateChar())
-    private fun RandomSource.nextLoneSurrogate(): CodePointType.LoneSurrogate =
-      if (random.nextBoolean()) nextLoneHighSurrogate() else nextLoneLowSurrogate()
-    private fun RandomSource.nextNonSurrogate() = CodePointType.NonSurrogate(nextNonSurrogateChar())
+    fun CharSequence.lastIsHighSurrogate(): Boolean =
+      lastOrNull().let { it !== null && it.isHighSurrogate() }
   }
 }
