@@ -340,4 +340,4 @@ internal fun DataConnectArb.authTokenResult(
 
 internal fun DataConnectArb.appCheckTokenResult(
   accessToken: Arb<String?> = accessToken().orNull(nullProbability = 0.33),
-): Arb<GetAppCheckTokenResult> = accessToken.map(::GetAppCheckTokenResult)
+): Arb<GetAppCheckTokenResult> = accessToken.map { GetAppCheckTokenResult(it) }
