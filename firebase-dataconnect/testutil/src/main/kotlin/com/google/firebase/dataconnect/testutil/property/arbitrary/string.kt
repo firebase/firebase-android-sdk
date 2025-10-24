@@ -196,7 +196,7 @@ private class StringWithLoneSurrogatesArb(length: IntRange) : Arb<StringWithLone
     private val highSurrogateRange: CharRange = MIN_HIGH_SURROGATE..MAX_HIGH_SURROGATE
     private val lowSurrogateRange: CharRange = MIN_LOW_SURROGATE..MAX_LOW_SURROGATE
     private val nonSurrogateRange1: CharRange = Char.MIN_VALUE until MIN_SURROGATE
-    private val nonSurrogateRange2: CharRange = MAX_SURROGATE..Char.MAX_VALUE
+    private val nonSurrogateRange2: CharRange = MAX_SURROGATE + 1..Char.MAX_VALUE
 
     private fun RandomSource.nextChar(charRange: CharRange): Char =
       random.nextInt(charRange.first.code, charRange.last.code + 1).toChar()
