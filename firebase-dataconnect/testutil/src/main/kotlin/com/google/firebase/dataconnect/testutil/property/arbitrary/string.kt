@@ -73,13 +73,20 @@ private class StringWithLoneSurrogatesArb(length: IntRange) : Arb<StringWithLone
   }
 
   private val lengthRange: IntRange = length
-  private fun RandomSource.nextStringWithLoneSurrogatesLength(): Int = random.nextInt(lengthRange)
+  private fun RandomSource.nextStringLength(): Int = random.nextInt(lengthRange)
+  private fun RandomSource.nextStringLengthEdgeCase(): Int =
+    if (random.nextBoolean()) lengthRange.first else lengthRange.last
+
   private val codepointArb: Arb<Codepoint> = Arb.codepointWithEvenNumByteUtf8EncodingDistribution()
   private fun RandomSource.nextCodepoint(): Codepoint = codepointArb.sample(this).value
 
   override fun sample(rs: RandomSource): Sample<StringWithLoneSurrogates> {
-    val length = rs.nextStringWithLoneSurrogatesLength()
-    check(length > 0) { "internal error: invalid length: $length" }
+    val length = rs.nextStringLength()
+    return sample(rs, length).asSample()
+  }
+
+  private fun sample(rs: RandomSource, length: Int): StringWithLoneSurrogates {
+    require(length > 0) { "internal error: invalid length: $length" }
     val loneSurrogateProbability = rs.random.nextDouble()
 
     val loneSurrogateIndices = mutableListOf<Int>()
@@ -148,11 +155,109 @@ private class StringWithLoneSurrogatesArb(length: IntRange) : Arb<StringWithLone
       }
     }
 
-    return StringWithLoneSurrogates(string, loneSurrogateIndices.size).asSample()
+    return StringWithLoneSurrogates(string, loneSurrogateIndices.size)
   }
 
-  override fun edgecase(rs: RandomSource): StringWithLoneSurrogates? {
-    return null // TODO("not yet implemented")
+  override fun edgecase(rs: RandomSource): StringWithLoneSurrogates {
+    val length =
+      when (EdgeCase.entries.random(rs.random)) {
+        EdgeCase.StringLength -> {
+          val length = rs.nextStringLengthEdgeCase()
+          return sample(rs, length)
+        }
+        EdgeCase.Contents -> rs.nextStringLength()
+        EdgeCase.StringLengthAndContents -> rs.nextStringLengthEdgeCase()
+      }
+
+    return when (ContentsEdgeCase.entries.random(rs.random)) {
+      ContentsEdgeCase.AllLoneSurrogates ->
+        StringWithLoneSurrogates(
+          buildString {
+            repeat(length) {
+              append(
+                if (this@buildString.isEmpty() || !this@buildString.last().isHighSurrogate()) {
+                  rs.nextLoneSurrogate().char
+                } else {
+                  rs.nextLoneHighSurrogate().char
+                }
+              )
+            }
+          },
+          length
+        )
+      ContentsEdgeCase.BeginsWithLoneSurrogate ->
+        StringWithLoneSurrogates(
+          buildString {
+            append(rs.nextLoneSurrogate().char)
+            appendStringWithEvenNumByteUtf8EncodingDistribution(rs, length - 1)
+          },
+          1
+        )
+      ContentsEdgeCase.EndsWithLoneSurrogate ->
+        StringWithLoneSurrogates(
+          buildString {
+            appendStringWithEvenNumByteUtf8EncodingDistribution(rs, length - 1)
+            append(rs.nextLoneSurrogate().char)
+          },
+          1
+        )
+      ContentsEdgeCase.BeginsAndEndsWithLoneSurrogate ->
+        if (length == 1) {
+          StringWithLoneSurrogates(rs.nextLoneSurrogate().char.toString(), 1)
+        } else if (length == 2) {
+          StringWithLoneSurrogates(
+            buildString {
+              val char1 = rs.nextLoneSurrogate().char
+              val char2 =
+                if (char1.isHighSurrogate()) {
+                  rs.nextLoneHighSurrogate().char
+                } else {
+                  rs.nextLoneSurrogate().char
+                }
+              append(char1).append(char2)
+            },
+            2
+          )
+        } else {
+          StringWithLoneSurrogates(
+            buildString {
+              append(rs.nextLoneSurrogate().char)
+              appendStringWithEvenNumByteUtf8EncodingDistribution(rs, length - 2)
+              append(rs.nextLoneSurrogate().char)
+            },
+            2
+          )
+        }
+    }
+  }
+
+  private fun StringBuilder.appendStringWithEvenNumByteUtf8EncodingDistribution(
+    rs: RandomSource,
+    n: Int
+  ) {
+    require(n >= 0) { "invalid n: $n" }
+    var charAppendedCount = 0
+    while (charAppendedCount < n) {
+      val codePoint: Int = rs.nextCodepoint().value
+      val charCount = Character.charCount(codePoint)
+      if (charAppendedCount + charCount <= n) {
+        appendCodePoint(codePoint)
+        charAppendedCount += charCount
+      }
+    }
+  }
+
+  private enum class EdgeCase {
+    StringLength,
+    Contents,
+    StringLengthAndContents,
+  }
+
+  private enum class ContentsEdgeCase {
+    AllLoneSurrogates,
+    BeginsWithLoneSurrogate,
+    EndsWithLoneSurrogate,
+    BeginsAndEndsWithLoneSurrogate,
   }
 
   private sealed interface CodePointType {
