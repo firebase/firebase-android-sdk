@@ -1,0 +1,287 @@
+{
+    "changesByLibraryName": {
+        "firebase-ai": [
+            {
+                "commitId": "0afe7cb308d9e76ad608d9b42699edd46a50ee80",
+                "prId": "7508",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Fix kdoc (#7508)\n\nThe kdoc for `LiveSession.sendVideoRealtime` referenced the type,\n`InlineData`, rather than the name of the param, `video`.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/0afe7cb308d9e76ad608d9b42699edd46a50ee80",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7508"
+            },
+            {
+                "commitId": "4194057057a77e0983c62b104e2c0f1ea57dfd1a",
+                "prId": "7506",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Add kdoc note about sending video and audio (#7506)\n\nTo send video and audio, the dev should call to both `sendVideoRealtime`\nand `sendAudioRealtime`",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/4194057057a77e0983c62b104e2c0f1ea57dfd1a",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7506"
+            },
+            {
+                "commitId": "89c3e537eb50b13b80d611b2912624aca2699e44",
+                "prId": "7502",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Adjust `sendVideoRealtime` kdoc (#7502)\n\nThe doc must accurately describe that the expected data is a video\n*frame* rather than actual video data.\n\nDescription is aligned to the iOS description from\nhttps://github.com/firebase/firebase-ios-sdk/pull/15432",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/89c3e537eb50b13b80d611b2912624aca2699e44",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7502"
+            },
+            {
+                "commitId": "e0e995a59e0d10843fac800c64a327b2f2c64f83",
+                "prId": "7481",
+                "author": "Vinay Guthal",
+                "message": " Live API Changes: Better Scheduling and Louder Output (#7481)\n\nThis pr does the following\n- Uses delay instead of yield for better scheduling.\n- Uses CONTENT_TYPE_SPEECH instead of USAGE_VOICE_COMMUNICATION for\nlouder model voice.\n- Launches audio recording, audio playing and getting model response in\n3 separate threads.\n\n---------\n\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>\nCo-authored-by: Daymon <daymxn@google.com>\nCo-authored-by: Daymon <17409137+daymxn@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e0e995a59e0d10843fac800c64a327b2f2c64f83",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7481"
+            },
+            {
+                "commitId": "1c862ecd2fdcd05bb0dbcc5caf9f20bc8e7d72f8",
+                "prId": "7482",
+                "author": "David Motsonashvili",
+                "message": "Add LiveAPI Transcription (#7482)\n\n* Added AudioTranscription setting object\n* Added Transcription parsing and public API\n* Added TrascriptionHandler\n* Added Java API\n\n---------\n\nCo-authored-by: David Motsonashvili <davidmotson@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/1c862ecd2fdcd05bb0dbcc5caf9f20bc8e7d72f8",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7482"
+            },
+            {
+                "commitId": "264ebadd45b9dad616fca5572b0e618c816d5faa",
+                "prId": "7474",
+                "author": "David Motsonashvili",
+                "message": "Enable JSONSchema encoding (#7474)\n\n* Add JsonSchema types\n* Add Encoding Switches\n* Add Tests\n\nTODO: Still need to actually switch over behavior depending on which\nmodel is selected\n\n---------\n\nCo-authored-by: David Motsonashvili <davidmotson@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/264ebadd45b9dad616fca5572b0e618c816d5faa",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7474"
+            },
+            {
+                "commitId": "968342d6094d153fdbcdb485348145b98a1c3be5",
+                "prId": "7480",
+                "author": "Rodrigo Lazo",
+                "message": "[ALF] Implement LiveAPI realtime methods (#7480)\n\nThe new methods, with specific endpoints for audio, video, and text are\nthe recommended way of contacting the LiveAPI service.\n\nThe `sendMediaStream` method is now deprecated.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/968342d6094d153fdbcdb485348145b98a1c3be5",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7480"
+            },
+            {
+                "commitId": "cb9e9c5c4c52a98de54f2684e21923257a8a179a",
+                "prId": "7475",
+                "author": "emilypgoogle",
+                "message": "[ALF] Remove duplicate internal exception types (#7475)\n\nRemoves old internal \"common\" exception types and the conversion to\npublic ones, instead, just immediately use public exceptions.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/cb9e9c5c4c52a98de54f2684e21923257a8a179a",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7475"
+            },
+            {
+                "commitId": "668bd66a7fcd6222afa2741eca724a85a6204078",
+                "prId": "7413",
+                "author": "Vinay Guthal",
+                "message": "Audio Conversation user interrupt support and threading fixes (#7413)\n\nThis PR does the following 2 things.\n- Adds a paramater enableInterruptions which when set true will allow\nusers to interrupt the server response.\n- Fixes threading issue with audio recording taking up the space by\nyielding after everytime a recording is done.\n\n---------\n\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/668bd66a7fcd6222afa2741eca724a85a6204078",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7413"
+            },
+            {
+                "commitId": "803dc348f8a56f6d47336c3e5d7f5120258549f8",
+                "prId": "7445",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Update api.txt in firebase-ai (#7445)\n\nMissing from #7425. Updating it separately, otherwise it pollutes  other PRs / diffs.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/803dc348f8a56f6d47336c3e5d7f5120258549f8",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7445"
+            },
+            {
+                "commitId": "77c5daf3adb9effccb3079614b442f5200b98e59",
+                "prId": "7425",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Remove `PublicPreviewAPI` annotation for image generation (#7425)\n\nThe API surface is graduating to GA. It does not include imagen editing\nfeatures. Those still require the opt-in annotation to be used.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/77c5daf3adb9effccb3079614b442f5200b98e59",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7425"
+            }
+        ],
+        "firebase-crashlytics": [
+            {
+                "commitId": "e9ce620fe5fb175ff9822dbf15b0c8f89382acd4",
+                "prId": "7453",
+                "author": "Matthew Robertson",
+                "message": "Fix 3p license files (#7453)\n\nFix the third party license files. All the 3p libs we bundle happen to\nbe Apache-2.0, which makes this easy. We need to include the apache-2.0\ntext, as well as each lib's attribution notice\n\nTested by extracting the maven artifact and inspecting the\nthird_party_licenses.txt file",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e9ce620fe5fb175ff9822dbf15b0c8f89382acd4",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7453"
+            },
+            {
+                "commitId": "68c53c606ecf8531ea831a3aeae5e39d973e7be1",
+                "prId": "7440",
+                "author": "Matthew Robertson",
+                "message": "Make creating DataStore files more resilient (#7440)\n\nPrepare the DataStore files directly in the Sessions SDK, instead of\nrelying on DataStore to do it.\n\nDataStore uses the old `File.mkdirs` api, which lacks any meaningful\nerror messages. This will use the better `Files.createDirectories` api\nif available, which has proper error messages.\n\nAlso renamed the parent directory from `aqs` to `firebaseSessions` to\navoid any collision with any other libraries that might use DataStore\nand a 3 letter file name. If there is an unexpected file where the\n`firebaseSessions` directory should be, this will safely remove it.\n\nTested manually by creating the conflicting file and running the\nSessions Test App on both old and new api levels.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/68c53c606ecf8531ea831a3aeae5e39d973e7be1",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7440"
+            }
+        ],
+        "firebase-crashlytics-ndk": [
+            {
+                "commitId": "e9ce620fe5fb175ff9822dbf15b0c8f89382acd4",
+                "prId": "7453",
+                "author": "Matthew Robertson",
+                "message": "Fix 3p license files (#7453)\n\nFix the third party license files. All the 3p libs we bundle happen to\nbe Apache-2.0, which makes this easy. We need to include the apache-2.0\ntext, as well as each lib's attribution notice\n\nTested by extracting the maven artifact and inspecting the\nthird_party_licenses.txt file",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e9ce620fe5fb175ff9822dbf15b0c8f89382acd4",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7453"
+            },
+            {
+                "commitId": "d34199faf93b262b9da2a8b566e7ac4632d6f3bd",
+                "prId": "7441",
+                "author": "Rodrigo Lazo",
+                "message": "[crash] Add missing entries to changelogs (#7441)\n\nThe change introduced in #7440 will force the release of both  \ncrashlytics-ndk and sessions. This PR adds the corresponding entries  \nto the changelog files.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/d34199faf93b262b9da2a8b566e7ac4632d6f3bd",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7441"
+            }
+        ],
+        "firebase-sessions": [
+            {
+                "commitId": "e9ce620fe5fb175ff9822dbf15b0c8f89382acd4",
+                "prId": "7453",
+                "author": "Matthew Robertson",
+                "message": "Fix 3p license files (#7453)\n\nFix the third party license files. All the 3p libs we bundle happen to\nbe Apache-2.0, which makes this easy. We need to include the apache-2.0\ntext, as well as each lib's attribution notice\n\nTested by extracting the maven artifact and inspecting the\nthird_party_licenses.txt file",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e9ce620fe5fb175ff9822dbf15b0c8f89382acd4",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7453"
+            },
+            {
+                "commitId": "d34199faf93b262b9da2a8b566e7ac4632d6f3bd",
+                "prId": "7441",
+                "author": "Rodrigo Lazo",
+                "message": "[crash] Add missing entries to changelogs (#7441)\n\nThe change introduced in #7440 will force the release of both  \ncrashlytics-ndk and sessions. This PR adds the corresponding entries  \nto the changelog files.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/d34199faf93b262b9da2a8b566e7ac4632d6f3bd",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7441"
+            },
+            {
+                "commitId": "68c53c606ecf8531ea831a3aeae5e39d973e7be1",
+                "prId": "7440",
+                "author": "Matthew Robertson",
+                "message": "Make creating DataStore files more resilient (#7440)\n\nPrepare the DataStore files directly in the Sessions SDK, instead of\nrelying on DataStore to do it.\n\nDataStore uses the old `File.mkdirs` api, which lacks any meaningful\nerror messages. This will use the better `Files.createDirectories` api\nif available, which has proper error messages.\n\nAlso renamed the parent directory from `aqs` to `firebaseSessions` to\navoid any collision with any other libraries that might use DataStore\nand a 3 letter file name. If there is an unexpected file where the\n`firebaseSessions` directory should be, this will safely remove it.\n\nTested manually by creating the conflicting file and running the\nSessions Test App on both old and new api levels.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/68c53c606ecf8531ea831a3aeae5e39d973e7be1",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7440"
+            }
+        ],
+        "firebase-dataconnect": [
+            {
+                "commitId": "1c3812fb44665b990e1693cc51a5cffa64cb51cc",
+                "prId": "7484",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: auth token internal refactor to track authUid, part 1 (#7484)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/1c3812fb44665b990e1693cc51a5cffa64cb51cc",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7484"
+            },
+            {
+                "commitId": "1246b69b5c616b17c5b8abe53005d2c57c523929",
+                "prId": "7435",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: test: Add integration tests for operations with empty selection sets (#7435)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/1246b69b5c616b17c5b8abe53005d2c57c523929",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7435"
+            },
+            {
+                "commitId": "3190085cd4e7f8d242eaafdcb510140aac315b26",
+                "prId": "7434",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: ci: upgrade data connect emulator to 2.14.0 (was 2.13.0) and firebase-tools to 14.18.0 (was 14.16.0) (#7434)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/3190085cd4e7f8d242eaafdcb510140aac315b26",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7434"
+            },
+            {
+                "commitId": "c011f831de552569ea8b5640926984c2133aed7f",
+                "prId": "7430",
+                "author": "Rodrigo Lazo",
+                "message": "[DataConnect] Fix changelog to list Enum work as unreleased (#7430)\n\nThe change #7153 was not part of the 17.0.1 release, so it should be\npart of the unreleased section. Also, since it introduces API changes,\nit requires a minor version bump.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/c011f831de552569ea8b5640926984c2133aed7f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7430"
+            },
+            {
+                "commitId": "9688492229f72b53cb72dfdb0a7d80d7c7a39240",
+                "prId": "7428",
+                "author": "Rodrigo Lazo",
+                "message": "[DataConnect] Add changelog entry for #7399 (#7428)\n\nThe changes in PR #7399 are only kdoc fixes, but will be included in the\nnext release and need to have an entry in the changelog.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/9688492229f72b53cb72dfdb0a7d80d7c7a39240",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7428"
+            }
+        ],
+        "firebase-firestore": [
+            {
+                "commitId": "e894db134b8e608957a5c34877cb9f4fa664f21e",
+                "prId": "7455",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] bump org.hamcrest:hamcrest-library from 2.2 to 3.0 (#7455)\n\nThe change expands on dependabot's\n<https://github.com/firebase/firebase-android-sdk/pull/7448> by making\nadditional changes to firestore's test gradle config",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e894db134b8e608957a5c34877cb9f4fa664f21e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7455"
+            },
+            {
+                "commitId": "2d9174022835c1a3df5dde684402e4cc3ea13e52",
+                "prId": "7436",
+                "author": "Denver Coneybeare",
+                "message": "firestore: test: fix expected message in ServerTimestampTest.java to include \"Instant\" (#7436)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/2d9174022835c1a3df5dde684402e4cc3ea13e52",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7436"
+            },
+            {
+                "commitId": "8a8298dfca20fb8c23ab2a34767615b79b8c49c6",
+                "prId": "6235",
+                "author": "Eran Leshem",
+                "message": "feat: `Instant` support (#6235)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/8a8298dfca20fb8c23ab2a34767615b79b8c49c6",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/6235"
+            }
+        ],
+        "firebase-functions": [
+            {
+                "commitId": "0e81807450977989b973b6f7fb644189ecc7d2bb",
+                "prId": "7437",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Bump okhttp dependency from 3.12.13 to 4.12.0  (#7437)\n\nThis change affects the Functions and Perf SDKs. We moved to the latest\nversion of 4.x since it's the last one requiring kotlin < 2.0.21, which\nis the version we use. Versions in the 5.x branch require kotlin > 2.1.x",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/0e81807450977989b973b6f7fb644189ecc7d2bb",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7437"
+            },
+            {
+                "commitId": "e9ce620fe5fb175ff9822dbf15b0c8f89382acd4",
+                "prId": "7453",
+                "author": "Matthew Robertson",
+                "message": "Fix 3p license files (#7453)\n\nFix the third party license files. All the 3p libs we bundle happen to\nbe Apache-2.0, which makes this easy. We need to include the apache-2.0\ntext, as well as each lib's attribution notice\n\nTested by extracting the maven artifact and inspecting the\nthird_party_licenses.txt file",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e9ce620fe5fb175ff9822dbf15b0c8f89382acd4",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7453"
+            }
+        ],
+        "firebase-inappmessaging": [
+            {
+                "commitId": "e9ce620fe5fb175ff9822dbf15b0c8f89382acd4",
+                "prId": "7453",
+                "author": "Matthew Robertson",
+                "message": "Fix 3p license files (#7453)\n\nFix the third party license files. All the 3p libs we bundle happen to\nbe Apache-2.0, which makes this easy. We need to include the apache-2.0\ntext, as well as each lib's attribution notice\n\nTested by extracting the maven artifact and inspecting the\nthird_party_licenses.txt file",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e9ce620fe5fb175ff9822dbf15b0c8f89382acd4",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7453"
+            }
+        ],
+        "firebase-inappmessaging-display": [
+            {
+                "commitId": "089f0a1cd7e67aa697789974fccd76012eac03f9",
+                "prId": "7489",
+                "author": "Rodrigo Lazo",
+                "message": "[FIAMD] Add changelog entry about version bump (#7489)\n\nThe glide dependency has been updated in `libs.versions.toml` to 5.0.5\nand the only library using it is FIAMD. We need to mention the change\nin the changelog.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/089f0a1cd7e67aa697789974fccd76012eac03f9",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7489"
+            },
+            {
+                "commitId": "e9ce620fe5fb175ff9822dbf15b0c8f89382acd4",
+                "prId": "7453",
+                "author": "Matthew Robertson",
+                "message": "Fix 3p license files (#7453)\n\nFix the third party license files. All the 3p libs we bundle happen to\nbe Apache-2.0, which makes this easy. We need to include the apache-2.0\ntext, as well as each lib's attribution notice\n\nTested by extracting the maven artifact and inspecting the\nthird_party_licenses.txt file",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e9ce620fe5fb175ff9822dbf15b0c8f89382acd4",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7453"
+            }
+        ],
+        "firebase-perf": [
+            {
+                "commitId": "0e81807450977989b973b6f7fb644189ecc7d2bb",
+                "prId": "7437",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Bump okhttp dependency from 3.12.13 to 4.12.0  (#7437)\n\nThis change affects the Functions and Perf SDKs. We moved to the latest\nversion of 4.x since it's the last one requiring kotlin < 2.0.21, which\nis the version we use. Versions in the 5.x branch require kotlin > 2.1.x",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/0e81807450977989b973b6f7fb644189ecc7d2bb",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7437"
+            }
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":firebase-appdistribution",
+        ":firebase-appdistribution-api",
+        ":firebase-ml-modeldownloader",
+        ":transport:transport-backend-cct",
+        ":transport:transport-runtime"
+    ]
+}
