@@ -19,7 +19,6 @@ package com.google.firebase.ai.type
 import android.Manifest
 import android.media.AudioAttributes
 import android.media.AudioFormat
-import android.media.AudioManager
 import android.media.AudioRecord
 import android.media.AudioTrack
 import android.media.MediaRecorder
@@ -157,28 +156,39 @@ internal class AudioHelper(
      *
      * It also makes it easier to read, since the long initialization is separate from the
      * constructor.
+     *
+     * @param audioHandler A callback that is invoked immediately following the successful
+     * initialization of the associated [AudioRecord] and [AudioTrack] objects. This offers a final
+     * opportunity to configure these objects, which will remain valid and effective for the
+     * duration of the current audio session.
      */
     @RequiresPermission(Manifest.permission.RECORD_AUDIO)
-    fun build(audioHandler: ((AudioRecord, AudioTrack) -> Unit)? = null): AudioHelper {
-      val playbackTrack =
-        AudioTrack(
-          AudioAttributes.Builder()
-            .setUsage(AudioAttributes.USAGE_MEDIA)
-            .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
-            .build(),
+    fun build(
+      audioHandler: ((AudioRecord.Builder, AudioTrack.Builder) -> Unit)? = null
+    ): AudioHelper {
+      val playTrackBuilder = AudioTrack.Builder()
+      playTrackBuilder
+        .setAudioFormat(
           AudioFormat.Builder()
             .setSampleRate(24000)
             .setChannelMask(AudioFormat.CHANNEL_OUT_MONO)
             .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
-            .build(),
+            .build()
+        )
+        .setAudioAttributes(
+          AudioAttributes.Builder()
+            .setUsage(AudioAttributes.USAGE_MEDIA)
+            .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+            .build()
+        )
+        .setBufferSizeInBytes(
           AudioTrack.getMinBufferSize(
             24000,
             AudioFormat.CHANNEL_OUT_MONO,
             AudioFormat.ENCODING_PCM_16BIT
           ),
-          AudioTrack.MODE_STREAM,
-          AudioManager.AUDIO_SESSION_ID_GENERATE
         )
+        .setTransferMode(AudioTrack.MODE_STREAM)
 
       val bufferSize =
         AudioRecord.getMinBufferSize(
@@ -191,15 +201,22 @@ internal class AudioHelper(
         throw AudioRecordInitializationFailedException(
           "Audio Record buffer size is invalid ($bufferSize)"
         )
-
-      val recorder =
-        AudioRecord(
-          MediaRecorder.AudioSource.VOICE_COMMUNICATION,
-          16000,
-          AudioFormat.CHANNEL_IN_MONO,
-          AudioFormat.ENCODING_PCM_16BIT,
-          bufferSize
-        )
+      val recorderBuilder =
+        AudioRecord.Builder()
+          .setAudioSource(MediaRecorder.AudioSource.VOICE_COMMUNICATION)
+          .setAudioFormat(
+            AudioFormat.Builder()
+              .setEncoding(AudioFormat.ENCODING_PCM_16BIT)
+              .setSampleRate(16000)
+              .setChannelMask(AudioFormat.CHANNEL_IN_MONO)
+              .build()
+          )
+          .setBufferSizeInBytes(bufferSize)
+      if (audioHandler != null) {
+        audioHandler(recorderBuilder, playTrackBuilder)
+      }
+      val recorder = recorderBuilder.build()
+      val playbackTrack = playTrackBuilder.build()
       if (recorder.state != AudioRecord.STATE_INITIALIZED)
         throw AudioRecordInitializationFailedException(
           "Audio Record initialization has failed. State: ${recorder.state}"
@@ -209,9 +226,6 @@ internal class AudioHelper(
         AcousticEchoCanceler.create(recorder.audioSessionId)?.enabled = true
       }
 
-      if (audioHandler != null) {
-        audioHandler(recorder, playbackTrack)
-      }
       return AudioHelper(recorder, playbackTrack)
     }
   }
