@@ -128,7 +128,7 @@ internal constructor(
   ): TemplateGenerateContentRequest {
     return TemplateGenerateContentRequest(
       Json.parseToJsonElement(JSONObject(inputs).toString()).jsonObject,
-      history?.let { it.map { it.toInternal() } }
+      history?.let { it.map { it.toInternal(nullPartThought = true) } }
     )
   }
 
