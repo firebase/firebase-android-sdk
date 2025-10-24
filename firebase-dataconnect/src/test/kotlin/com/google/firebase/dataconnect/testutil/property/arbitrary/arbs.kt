@@ -333,9 +333,9 @@ internal inline fun <Data, reified Variables> DataConnectArb.operationRefConstru
 }
 
 internal fun DataConnectArb.authTokenResult(
-  accessToken: Arb<String> = accessToken()
+  accessToken: Arb<String?> = accessToken().orNull(nullProbability = 0.33),
 ): Arb<GetAuthTokenResult> = accessToken.map { GetAuthTokenResult(it) }
 
 internal fun DataConnectArb.appCheckTokenResult(
-  accessToken: Arb<String> = accessToken()
+  accessToken: Arb<String?> = accessToken().orNull(nullProbability = 0.33),
 ): Arb<GetAppCheckTokenResult> = accessToken.map { GetAppCheckTokenResult(it) }
