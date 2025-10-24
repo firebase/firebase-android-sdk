@@ -63,6 +63,8 @@ internal class DataConnectAuth(
 
   private companion object {
 
+    // The "sub" claim is documented to be "a non-empty string and must be the uid of the user or
+    // device". See http://goo.gle/4oGjEQt for the relevant Firebase documentation.
     fun com.google.firebase.auth.GetTokenResult.getAuthUid(): String? = claims["sub"] as? String
   }
 }
