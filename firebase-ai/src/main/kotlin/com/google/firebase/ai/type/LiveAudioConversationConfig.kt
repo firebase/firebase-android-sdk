@@ -66,7 +66,7 @@ private constructor(
    */
   public class Builder {
     @JvmField public var functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)? = null
-    @JvmField public var audioHandler: ((AudioRecord, AudioTrack) -> Unit)? = null
+    @JvmField public var audioHandler: ((AudioRecord.Builder, AudioTrack.Builder) -> Unit)? = null
     @JvmField public var transcriptHandler: ((Transcription?, Transcription?) -> Unit)? = null
     @JvmField public var enableInterruptions: Boolean = false
 
@@ -74,10 +74,9 @@ private constructor(
       functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)?
     ): Builder = apply { this.functionCallHandler = functionCallHandler }
 
-    public fun setAudioHandler(audioHandler: ((AudioRecord, AudioTrack) -> Unit)?): Builder =
-      apply {
-        this.audioHandler = audioHandler
-      }
+    public fun setAudioHandler(
+      audioHandler: ((AudioRecord.Builder, AudioTrack.Builder) -> Unit)?
+    ): Builder = apply { this.audioHandler = audioHandler }
 
     public fun setTranscriptHandler(
       transcriptHandler: ((Transcription?, Transcription?) -> Unit)?
