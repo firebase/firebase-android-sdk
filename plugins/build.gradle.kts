@@ -63,7 +63,7 @@ dependencies {
   implementation("org.ow2.asm:asm-tree:9.8")
   implementation("org.eclipse.jgit:org.eclipse.jgit:7.1.0.202411261347-r")
   implementation(libs.kotlinx.serialization.json)
-  implementation("com.google.code.gson:gson:2.13.1")
+  implementation("com.google.code.gson:gson:2.13.2")
   implementation(libs.android.gradlePlugin.gradle)
   implementation(libs.android.gradlePlugin.builder.test.api)
   implementation("io.github.pdvrieze.xmlutil:serialization-jvm:0.90.3") {
