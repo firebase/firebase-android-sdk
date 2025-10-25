@@ -70,7 +70,7 @@ serialization = "1.7.3"
 slf4jNop = "2.0.17"
 spotless = "7.0.4"
 testServices = "1.6.0"
-truth = "1.4.4"
+truth = "1.4.5"
 truthProtoExtension = "1.0"
 wiremockStandalone = "2.26.3"
 
