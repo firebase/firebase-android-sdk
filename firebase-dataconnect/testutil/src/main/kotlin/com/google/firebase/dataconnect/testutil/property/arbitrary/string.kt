@@ -80,12 +80,20 @@ private class StringWithLoneSurrogatesArb(length: IntRange) : Arb<StringWithLone
   private val codepointArb: Arb<Codepoint> = Arb.codepointWithEvenNumByteUtf8EncodingDistribution()
 
   override fun sample(rs: RandomSource): Sample<StringWithLoneSurrogates> =
-    rs.nextStringWithLoneSurrogates().asSample()
+    rs
+      .nextStringWithLoneSurrogates(
+        length = rs.nextStringLength(),
+        loneSurrogateProbability = rs.random.nextFloat(),
+        edgeCaseProbability = rs.random.nextFloat(),
+        requireAtLeast1LoneSurrogate = true,
+      )
+      .asSample()
 
   private fun RandomSource.nextStringWithLoneSurrogates(
-    length: Int = nextStringLength(),
-    loneSurrogateProbability: Float = random.nextFloat(),
-    edgeCaseProbability: Float = random.nextFloat(),
+    length: Int,
+    loneSurrogateProbability: Float,
+    edgeCaseProbability: Float,
+    requireAtLeast1LoneSurrogate: Boolean,
   ): StringWithLoneSurrogates {
     fun RandomSource.nextCharIsLoneSurrogate(): Boolean =
       random.nextFloat() < loneSurrogateProbability
@@ -112,6 +120,18 @@ private class StringWithLoneSurrogatesArb(length: IntRange) : Arb<StringWithLone
     }
 
     check(sb.length == length) { "internal error: sb.length=${sb.length} but length=$length" }
+
+    if (loneSurrogateCount == 0 && requireAtLeast1LoneSurrogate) {
+      loneSurrogateCount = 1
+      val i = random.nextInt(sb.length)
+      sb[i] =
+        if (sb[i].isSurrogate()) {
+          nextNonSurrogateChar(edgeCaseProbability)
+        } else {
+          nextSurrogateChar(edgeCaseProbability)
+        }
+    }
+
     return StringWithLoneSurrogates(sb.toString(), loneSurrogateCount)
   }
 
@@ -124,6 +144,7 @@ private class StringWithLoneSurrogatesArb(length: IntRange) : Arb<StringWithLone
         length = length,
         loneSurrogateProbability = 0.0f,
         edgeCaseProbability = edgeCaseProbability,
+        requireAtLeast1LoneSurrogate = false,
       )
     check(sample.loneSurrogateCount == 0) {
       "internal error: sample.loneSurrogateCount=${sample.loneSurrogateCount} but expected 0"
@@ -139,7 +160,9 @@ private class StringWithLoneSurrogatesArb(length: IntRange) : Arb<StringWithLone
         EdgeCase.StringLength ->
           return rs.nextStringWithLoneSurrogates(
             length = rs.nextStringLengthEdgeCase(),
-            edgeCaseProbability = edgeCaseProbability
+            edgeCaseProbability = edgeCaseProbability,
+            loneSurrogateProbability = rs.random.nextFloat(),
+            requireAtLeast1LoneSurrogate = true,
           )
         EdgeCase.Contents -> rs.nextStringLength()
         EdgeCase.StringLengthAndContents -> rs.nextStringLengthEdgeCase()
@@ -150,7 +173,8 @@ private class StringWithLoneSurrogatesArb(length: IntRange) : Arb<StringWithLone
         rs.nextStringWithLoneSurrogates(
           length = length,
           loneSurrogateProbability = 1.0f,
-          edgeCaseProbability = edgeCaseProbability
+          edgeCaseProbability = edgeCaseProbability,
+          requireAtLeast1LoneSurrogate = true,
         )
       ContentsEdgeCase.BeginsWithLoneSurrogate ->
         StringWithLoneSurrogates(
@@ -183,7 +207,8 @@ private class StringWithLoneSurrogatesArb(length: IntRange) : Arb<StringWithLone
           rs.nextStringWithLoneSurrogates(
             length = length,
             loneSurrogateProbability = 1.0f,
-            edgeCaseProbability = edgeCaseProbability
+            edgeCaseProbability = edgeCaseProbability,
+            requireAtLeast1LoneSurrogate = true,
           )
         } else {
           StringWithLoneSurrogates(
@@ -220,16 +245,29 @@ private class StringWithLoneSurrogatesArb(length: IntRange) : Arb<StringWithLone
     val highSurrogateRange: CharRange = MIN_HIGH_SURROGATE..MAX_HIGH_SURROGATE
     val lowSurrogateRange: CharRange = MIN_LOW_SURROGATE..MAX_LOW_SURROGATE
     val surrogateRange: CharRange = MIN_SURROGATE..MAX_SURROGATE
+    val nonSurrogateRange1: CharRange = Char.MIN_VALUE until MIN_SURROGATE
+    val nonSurrogateRange2: CharRange = MAX_SURROGATE + 1..Char.MAX_VALUE
 
     val highSurrogateEdgeCases = listOf(highSurrogateRange.first, highSurrogateRange.last)
     val lowSurrogateEdgeCases = listOf(lowSurrogateRange.first, lowSurrogateRange.last)
     val surrogateEdgeCases = highSurrogateEdgeCases + lowSurrogateEdgeCases
+    val nonSurrogateEdgeCases =
+      listOf(Char.MIN_VALUE, MIN_SURROGATE - 1, MAX_SURROGATE + 1, Char.MAX_VALUE)
 
     fun RandomSource.nextSurrogateChar(edgeCaseProbability: Float): Char =
       nextChar(edgeCaseProbability, surrogateRange, surrogateEdgeCases)
 
     fun RandomSource.nextHighSurrogateChar(edgeCaseProbability: Float): Char =
       nextChar(edgeCaseProbability, highSurrogateRange, highSurrogateEdgeCases)
+
+    fun RandomSource.nextNonSurrogateChar(edgeCaseProbability: Float): Char =
+      if (random.nextFloat() < edgeCaseProbability) {
+        nonSurrogateEdgeCases.random(random)
+      } else if (random.nextBoolean()) {
+        nonSurrogateRange1.random(random)
+      } else {
+        nonSurrogateRange2.random(random)
+      }
 
     fun RandomSource.nextChar(
       edgeCaseProbability: Float,

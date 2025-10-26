@@ -31,11 +31,8 @@ import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
-import io.kotest.property.arbitrary.constant
-import io.kotest.property.arbitrary.flatMap
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.map
-import io.kotest.property.arbitrary.pair
 import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
 import kotlinx.coroutines.test.runTest
@@ -240,11 +237,8 @@ class stringUnitTest {
   @Test
   fun `stringWithLoneSurrogates() should produce strings whose length is within the given range`() =
     runTest {
-      val arb =
-        stringLengthRangeArb().flatMap { lengthRange: IntRange ->
-          Arb.pair(Arb.constant(lengthRange), Arb.stringWithLoneSurrogates(lengthRange))
-        }
-      checkAll(propTestConfig, arb) { (lengthRange, sample) ->
+      checkAll(propTestConfig, stringLengthRangeArb()) { lengthRange ->
+        val sample = Arb.stringWithLoneSurrogates(lengthRange).bind()
         sample.string.length shouldBeIn lengthRange
       }
     }
@@ -252,18 +246,17 @@ class stringUnitTest {
   @Test
   fun `stringWithLoneSurrogates() should produce strings with the entire range of lone surrogate counts`() =
     runTest {
-      checkAll(propTestConfig, stringLengthRangeArb()) { lengthRange ->
-        val loneSurrogateCounts: Set<Int> = buildSet {
-          checkAll(
-            propTestConfig.copy(iterations = 1000),
-            Arb.stringWithLoneSurrogates(lengthRange),
-          ) {
-            add(it.loneSurrogateCount)
-          }
-        }
-
-        withClue("loneSurrogateCounts=${loneSurrogateCounts.sorted()}") {
-          loneSurrogateCounts shouldContainExactlyInAnyOrder (1..lengthRange.last).toList()
+      checkAll(propTestConfig.copy(seed = 6691604605600041128), stringLengthRangeArb()) {
+        lengthRange ->
+        val arb = Arb.stringWithLoneSurrogates(lengthRange)
+        val samples = List(1000) { arb.bind() }
+        val loneSurrogateCounts =
+          samples.groupBy { it.loneSurrogateCount }.mapValues { it.value.size }
+        println(
+          "loneSurrogateCounts[${evals()}]=${loneSurrogateCounts.toSortedMap(compareBy { it })}"
+        )
+        withClue("loneSurrogateCounts=${loneSurrogateCounts.toSortedMap(compareBy { it })}") {
+          loneSurrogateCounts.keys shouldContainExactlyInAnyOrder (1..lengthRange.last).toList()
         }
       }
     }
