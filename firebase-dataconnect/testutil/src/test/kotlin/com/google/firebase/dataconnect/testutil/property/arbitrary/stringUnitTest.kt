@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalKotest::class)
-
 package com.google.firebase.dataconnect.testutil.property.arbitrary
 
 import io.kotest.assertions.assertSoftly
@@ -26,13 +24,12 @@ import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.ints.shouldBeInRange
-import io.kotest.matchers.ranges.shouldBeIn
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
+import io.kotest.property.ShrinkingMode
 import io.kotest.property.arbitrary.int
-import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
 import kotlinx.coroutines.test.runTest
@@ -221,64 +218,61 @@ class stringUnitTest {
   @Test
   fun `stringWithLoneSurrogates() should produce string with at least 1 lone surrogate`() =
     runTest {
-      checkAll(propTestConfig, Arb.stringWithLoneSurrogates(1..20)) { stringInfo ->
-        stringInfo.string.countLoneSurrogates() shouldBeGreaterThan 0
+      checkAll(propTestConfig, Arb.int(1..20)) { stringLength ->
+        val sample = Arb.stringWithLoneSurrogates(stringLength).bind()
+        sample.loneSurrogateCount shouldBeGreaterThan 0
       }
     }
 
   @Test
-  fun `stringWithLoneSurrogates() should produce strings with the specified number of lone surrogates`() =
+  fun `stringWithLoneSurrogates() should produce strings with the indicated number of lone surrogates`() =
     runTest {
-      checkAll(propTestConfig, Arb.stringWithLoneSurrogates(1..50)) { stringInfo ->
-        stringInfo.loneSurrogateCount shouldBe stringInfo.string.countLoneSurrogates()
+      checkAll(propTestConfig, Arb.int(1..20)) { stringLength ->
+        val sample = Arb.stringWithLoneSurrogates(stringLength).bind()
+        sample.loneSurrogateCount shouldBe sample.string.countLoneSurrogates()
       }
     }
 
   @Test
-  fun `stringWithLoneSurrogates() should produce strings whose length is within the given range`() =
+  fun `stringWithLoneSurrogates() should produce strings whose length is the specified length`() =
     runTest {
-      checkAll(propTestConfig, stringLengthRangeArb()) { lengthRange ->
-        val sample = Arb.stringWithLoneSurrogates(lengthRange).bind()
-        sample.string.length shouldBeIn lengthRange
+      checkAll(propTestConfig, Arb.int(1..20)) { stringLength ->
+        val sample = Arb.stringWithLoneSurrogates(stringLength).bind()
+        sample.string.length shouldBe stringLength
       }
     }
 
   @Test
   fun `stringWithLoneSurrogates() should produce strings with the entire range of lone surrogate counts`() =
     runTest {
-      checkAll(propTestConfig.copy(seed = 6691604605600041128), stringLengthRangeArb()) {
-        lengthRange ->
-        val arb = Arb.stringWithLoneSurrogates(lengthRange)
+      checkAll(propTestConfig, Arb.int(1..50)) { stringLength ->
+        val arb = Arb.stringWithLoneSurrogates(stringLength)
         val samples = List(1000) { arb.bind() }
         val loneSurrogateCounts =
           samples.groupBy { it.loneSurrogateCount }.mapValues { it.value.size }
-        println(
-          "loneSurrogateCounts[${evals()}]=${loneSurrogateCounts.toSortedMap(compareBy { it })}"
-        )
         withClue("loneSurrogateCounts=${loneSurrogateCounts.toSortedMap(compareBy { it })}") {
-          loneSurrogateCounts.keys shouldContainExactlyInAnyOrder (1..lengthRange.last).toList()
+          loneSurrogateCounts.keys shouldContainExactlyInAnyOrder (1..stringLength).toList()
         }
       }
     }
 
   private companion object {
 
+    @OptIn(ExperimentalKotest::class)
     val propTestConfig =
       PropTestConfig(
         iterations = 1000,
-        edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.2)
+        edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.2),
+        shrinkingMode = ShrinkingMode.Off,
       )
 
+    @OptIn(ExperimentalKotest::class)
     val propTestConfigEdgeCasesOnly =
       PropTestConfig(
         iterations = 1000,
-        edgeConfig = EdgeConfig(edgecasesGenerationProbability = 1.0)
+        edgeConfig = EdgeConfig(edgecasesGenerationProbability = 1.0),
+        shrinkingMode = ShrinkingMode.Off,
       )
-
-    fun stringLengthRangeArb(): Arb<IntRange> =
-      Arb.twoValues(Arb.int(1..20)).map { (bound1, bound2) ->
-        if (bound1 < bound2) bound1..bound2 else bound2..bound1
-      }
 
     fun String.codepointUtf8EncodingByteCounts(): Set<Int> = buildSet {
       var i = 0
