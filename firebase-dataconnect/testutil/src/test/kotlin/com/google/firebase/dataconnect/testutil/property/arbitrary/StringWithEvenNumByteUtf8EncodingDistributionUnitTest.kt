@@ -29,14 +29,12 @@ import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
 import io.kotest.property.ShrinkingMode
-import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
-@Suppress("ClassName")
-class stringUnitTest {
+class StringWithEvenNumByteUtf8EncodingDistributionUnitTest {
 
   @Test
   fun `codepointWith1ByteUtf8Encoding() should produce codepoints whose utf8 encoding is 1 byte`() =
@@ -215,47 +213,6 @@ class stringUnitTest {
       }
     }
 
-  @Test
-  fun `stringWithLoneSurrogates() should produce string with at least 1 lone surrogate`() =
-    runTest {
-      checkAll(propTestConfig, Arb.int(1..20)) { stringLength ->
-        val sample = Arb.stringWithLoneSurrogates(stringLength).bind()
-        sample.loneSurrogateCount shouldBeGreaterThan 0
-      }
-    }
-
-  @Test
-  fun `stringWithLoneSurrogates() should produce strings with the indicated number of lone surrogates`() =
-    runTest {
-      checkAll(propTestConfig, Arb.int(1..20)) { stringLength ->
-        val sample = Arb.stringWithLoneSurrogates(stringLength).bind()
-        sample.loneSurrogateCount shouldBe sample.string.countLoneSurrogates()
-      }
-    }
-
-  @Test
-  fun `stringWithLoneSurrogates() should produce strings whose length is the specified length`() =
-    runTest {
-      checkAll(propTestConfig, Arb.int(1..20)) { stringLength ->
-        val sample = Arb.stringWithLoneSurrogates(stringLength).bind()
-        sample.string.length shouldBe stringLength
-      }
-    }
-
-  @Test
-  fun `stringWithLoneSurrogates() should produce strings with the entire range of lone surrogate counts`() =
-    runTest {
-      checkAll(propTestConfig, Arb.int(1..50)) { stringLength ->
-        val arb = Arb.stringWithLoneSurrogates(stringLength)
-        val samples = List(1000) { arb.bind() }
-        val loneSurrogateCounts =
-          samples.groupBy { it.loneSurrogateCount }.mapValues { it.value.size }
-        withClue("loneSurrogateCounts=${loneSurrogateCounts.toSortedMap(compareBy { it })}") {
-          loneSurrogateCounts.keys shouldContainExactlyInAnyOrder (1..stringLength).toList()
-        }
-      }
-    }
-
   private companion object {
 
     @OptIn(ExperimentalKotest::class)
@@ -291,28 +248,6 @@ class stringUnitTest {
           }
         )
       }
-    }
-
-    fun String.countLoneSurrogates(): Int {
-      var loneSurrogateCount = 0
-      var i = 0
-      while (i < length) {
-        val char: Char = get(i++)
-        if (!char.isSurrogate()) {
-          continue
-        }
-        if (char.isLowSurrogate()) {
-          loneSurrogateCount++
-        } else if (i == length) {
-          loneSurrogateCount++
-        } else if (get(i).isLowSurrogate()) {
-          i++
-        } else {
-          loneSurrogateCount++
-        }
-      }
-
-      return loneSurrogateCount
     }
   }
 }

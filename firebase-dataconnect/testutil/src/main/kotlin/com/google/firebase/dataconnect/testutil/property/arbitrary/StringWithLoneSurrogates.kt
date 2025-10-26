@@ -20,10 +20,6 @@ import io.kotest.property.Arb
 import io.kotest.property.RandomSource
 import io.kotest.property.Sample
 import io.kotest.property.arbitrary.Codepoint
-import io.kotest.property.arbitrary.choice
-import io.kotest.property.arbitrary.int
-import io.kotest.property.arbitrary.map
-import io.kotest.property.arbitrary.string
 import io.kotest.property.asSample
 import kotlin.Char.Companion.MAX_HIGH_SURROGATE
 import kotlin.Char.Companion.MAX_LOW_SURROGATE
@@ -31,35 +27,11 @@ import kotlin.Char.Companion.MAX_SURROGATE
 import kotlin.Char.Companion.MIN_HIGH_SURROGATE
 import kotlin.Char.Companion.MIN_LOW_SURROGATE
 import kotlin.Char.Companion.MIN_SURROGATE
-import kotlin.random.nextInt
 
-fun Arb.Companion.codepointWith1ByteUtf8Encoding(): Arb<Codepoint> =
-  int(0 until 0x80).map(::Codepoint)
-
-fun Arb.Companion.codepointWith2ByteUtf8Encoding(): Arb<Codepoint> =
-  int(0x80 until 0x800).map(::Codepoint)
-
-fun Arb.Companion.codepointWith3ByteUtf8Encoding(): Arb<Codepoint> =
-  Arb.choice(
-      int(0x800 until 0xd800),
-      int(0xe000 until 0x10000),
-    )
-    .map(::Codepoint)
-
-fun Arb.Companion.codepointWith4ByteUtf8Encoding(): Arb<Codepoint> =
-  int(0x10000..0x10FFFF).map(::Codepoint)
-
-fun Arb.Companion.codepointWithEvenNumByteUtf8EncodingDistribution(): Arb<Codepoint> =
-  Arb.choice(
-    codepointWith1ByteUtf8Encoding(),
-    codepointWith2ByteUtf8Encoding(),
-    codepointWith3ByteUtf8Encoding(),
-    codepointWith4ByteUtf8Encoding(),
-  )
-
-fun Arb.Companion.stringWithEvenNumByteUtf8EncodingDistribution(length: IntRange): Arb<String> =
-  string(length, codepointWithEvenNumByteUtf8EncodingDistribution())
-
+/**
+ * Generates Strings with the given length that contain at least 1 UTF-16 "lone surrogate"
+ * character.
+ */
 fun Arb.Companion.stringWithLoneSurrogates(length: Int): Arb<StringWithLoneSurrogates> =
   StringWithLoneSurrogatesArb(length)
 
@@ -87,18 +59,19 @@ private class StringWithLoneSurrogatesArb(private val length: Int) :
       "invalid loneSurrogateCount: $loneSurrogateCount (must be greater than or equal to zero)"
     }
     require(loneSurrogateCount <= length) {
-      "invalid loneSurrogateCount: $loneSurrogateCount (must be less than or equal to length=$length)"
+      "invalid loneSurrogateCount: $loneSurrogateCount " +
+        "(must be less than or equal to length=$length)"
     }
 
-    val codepointGenerator = codepointArb.iterator(edgeCaseProbability)
     val codepoints = buildList {
-      var charCount = loneSurrogateCount
-      while (charCount != length) {
+      val codepointGenerator = codepointArb.iterator(edgeCaseProbability)
+      var charCountRemaining = length - loneSurrogateCount
+      while (charCountRemaining > 0) {
         val codepoint = codepointGenerator.next(this@nextStringWithLoneSurrogates).value
-        val curCharCount = Character.charCount(codepoint)
-        if (charCount + curCharCount <= length) {
+        val codepointCharCount = Character.charCount(codepoint)
+        if (codepointCharCount <= charCountRemaining) {
           add(codepoint)
-          charCount += curCharCount
+          charCountRemaining -= codepointCharCount
         }
       }
     }
@@ -111,8 +84,9 @@ private class StringWithLoneSurrogatesArb(private val length: Int) :
         shuffle(random)
 
         // Make sure that lone high surrogates are NOT followed by lone low surrogates; otherwise,
-        // they will combine to make a valid code point. To rectify this, subtract 1024 from the
-        // low surrogate to convert it to a high surrogate.
+        // they will combine to make a valid code point. To rectify this, subtract 1024 from a lone
+        // low surrogate that follows a high surrogate to convert the low surrogate to a high
+        // surrogate, thus breaking the valid combination.
         forEachIndexed { index, element ->
           if (index > 0 && element is Char && element.isLowSurrogate()) {
             val previousElement = get(index - 1)
