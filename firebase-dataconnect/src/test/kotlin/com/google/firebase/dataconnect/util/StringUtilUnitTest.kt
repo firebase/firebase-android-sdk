@@ -16,6 +16,10 @@
 
 package com.google.firebase.dataconnect.util
 
+import com.google.firebase.dataconnect.testutil.property.arbitrary.stringWithEvenNumByteUtf8EncodingDistribution
+import com.google.firebase.dataconnect.testutil.property.arbitrary.stringWithLoneSurrogates
+import com.google.firebase.dataconnect.util.StringUtil.calculateUtf8ByteCount
+import com.google.firebase.dataconnect.util.StringUtil.containsLoneSurrogates
 import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.shouldBe
@@ -36,6 +40,39 @@ class StringUtilUnitTest {
       int.to0xHexString() shouldBe expected
     }
   }
+
+  @Test
+  fun `calculateUtf8ByteCount() should return the correct byte count`() = runTest {
+    checkAll(propTestConfig, Arb.stringWithEvenNumByteUtf8EncodingDistribution(0..100)) { string ->
+      string.calculateUtf8ByteCount() shouldBe string.toByteArray().size
+    }
+  }
+
+  @Test
+  fun `calculateUtf8ByteCount() should not throw when encountering lone surrogates`() = runTest {
+    checkAll(propTestConfig, Arb.int(1..100)) { stringLength ->
+      val string = Arb.stringWithLoneSurrogates(stringLength).bind().string
+      string.calculateUtf8ByteCount()
+    }
+  }
+
+  @Test
+  fun `containsLoneSurrogates() should return false when the string does not contain lone surrogates`() =
+    runTest {
+      checkAll(propTestConfig, Arb.stringWithEvenNumByteUtf8EncodingDistribution(0..100)) { string
+        ->
+        string.containsLoneSurrogates() shouldBe false
+      }
+    }
+
+  @Test
+  fun `containsLoneSurrogates() should return true when the string contains lone surrogates`() =
+    runTest {
+      checkAll(propTestConfig, Arb.int(1..100)) { stringLength ->
+        val string = Arb.stringWithLoneSurrogates(stringLength).bind().string
+        string.containsLoneSurrogates() shouldBe true
+      }
+    }
 
   private companion object {
 
