@@ -16,130 +16,166 @@
 
 package com.google.firebase.dataconnect.sqlite2
 
-import com.google.firebase.dataconnect.sqlite2.DataConnectCacheDatabase.QueryResult.Entity
+import com.google.firebase.dataconnect.sqlite2.QueryResultCodec.EncodeResult.Entity
+import com.google.firebase.dataconnect.util.StringUtil.calculateUtf8ByteCount
+import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
 import java.io.ByteArrayOutputStream
+import java.io.DataOutput
 import java.io.DataOutputStream
+import java.nio.ByteBuffer
+import java.nio.CharBuffer
+import java.nio.charset.CharsetEncoder
+import java.nio.charset.CodingErrorAction
 
 internal object QueryResultCodec {
 
-  fun encode(
-    data: Map<String, Any>,
-    visitedEntities: MutableCollection<Entity>? = null
-  ): ByteArray {
+  class EncodeResult(val data: ByteArray, val entities: List<Entity>) {
+    class Entity(
+      val id: ByteArray,
+      val data: Struct,
+    )
+  }
+
+  fun encode(data: Struct): EncodeResult {
     val byteArrayOutputStream = ByteArrayOutputStream()
+    val entities = mutableListOf<Entity>()
     DataOutputStream(byteArrayOutputStream).use { dataOutputStream ->
-      dataOutputStream.writeInt(ENCODED_QUERY_DATA_INDICATOR)
-      dataOutputStream.writeQueryResultData(data, visitedEntities)
+      Encoder(dataOutputStream, entities).writeQueryResultData(data)
     }
-    return byteArrayOutputStream.toByteArray()
+    return EncodeResult(byteArrayOutputStream.toByteArray(), entities)
   }
 
-  fun encode(struct: Struct): ByteArray {
-    val byteArrayOutputStream = ByteArrayOutputStream()
-    DataOutputStream(byteArrayOutputStream).use { dataOutputStream ->
-      dataOutputStream.writeStruct(struct)
+  const val QUERY_RESULT_HEADER: Int = 0x2e4286dc
+  const val VALUE_NULL: Byte = 1
+  const val VALUE_NUMBER: Byte = 2
+  const val VALUE_STRING_UTF8: Byte = 3
+  const val VALUE_STRING_UTF16: Byte = 4
+  const val VALUE_BOOL_TRUE: Byte = 5
+  const val VALUE_BOOL_FALSE: Byte = 6
+  const val VALUE_STRUCT: Byte = 7
+  const val VALUE_LIST: Byte = 8
+  const val VALUE_KIND_NOT_SET: Byte = 0
+  const val VALUE_ENTITY: Byte = 10
+
+  private class Encoder(dataOutput: DataOutput, private val entities: MutableList<Entity>) :
+    DataOutput by dataOutput {
+
+    fun writeQueryResultData(data: Struct) {
+      writeInt(QUERY_RESULT_HEADER)
+      writeStruct(data)
     }
-    return byteArrayOutputStream.toByteArray()
-  }
 
-  private const val ENCODED_QUERY_DATA_INDICATOR: Int = 0x00060a4f
-  private const val QUERY_RESULT_DATA_INDICATOR: Int = 0x1000daf7
-  private const val QUERY_RESULT_DATA_END_INDICATOR: Int = 0x1004457d
-  private const val VALUE_INDICATOR: Int = 0x20078e70
-  private const val VALUE_END_INDICATOR: Int = 0x2009f646
-  private const val ENTITY_INDICATOR: Int = 0x3007393a
-  private const val NULL_INDICATOR: Int = 0x400ea79e
-  private const val NUMBER_INDICATOR: Int = 0x41066ea2
-  private const val STRING_INDICATOR: Int = 0x420ad2d2
-  private const val BOOL_INDICATOR: Int = 0x43003fa6
-  private const val STRUCT_INDICATOR: Int = 0x4403e48e
-  private const val STRUCT_END_INDICATOR: Int = 0x4509c87c
-  private const val LIST_INDICATOR: Int = 0x460012c7
-  private const val LIST_END_INDICATOR: Int = 0x47002db8
-
-  private fun DataOutputStream.writeQueryResultData(
-    data: Map<*, *>,
-    visitedEntities: MutableCollection<Entity>?
-  ) {
-    data.forEach { (key, value) ->
-      checkNotNull(key) { "got null key, but expected String" }
-      check(key is String) {
-        "invalid key: $key (must be String, but got ${key::class.qualifiedName})"
-      }
-      writeUtf16String(key)
-      when (value) {
-        is Entity -> {
-          writeInt(ENTITY_INDICATOR)
-          visitedEntities?.add(value)
-          writeEntity(value)
+    private fun writeValue(value: Value) {
+      when (value.kindCase) {
+        Value.KindCase.KIND_NOT_SET -> writeByte(VALUE_KIND_NOT_SET.toInt())
+        Value.KindCase.NULL_VALUE -> writeByte(VALUE_NULL.toInt())
+        Value.KindCase.BOOL_VALUE -> {
+          val boolValue: Byte = if (value.boolValue) VALUE_BOOL_TRUE else VALUE_BOOL_FALSE
+          writeByte(boolValue.toInt())
         }
-        is Value -> {
-          writeInt(VALUE_INDICATOR)
-          writeValue(value)
-          writeInt(VALUE_END_INDICATOR)
+        Value.KindCase.NUMBER_VALUE -> {
+          writeByte(VALUE_NUMBER.toInt())
+          writeDouble(value.numberValue)
         }
-        is Map<*, *> -> {
-          writeInt(QUERY_RESULT_DATA_INDICATOR)
-          writeQueryResultData(value, visitedEntities)
-          writeInt(QUERY_RESULT_DATA_END_INDICATOR)
+        Value.KindCase.STRING_VALUE -> {
+          writeSizeOptimizedString(value.stringValue)
         }
-        null -> throw IllegalArgumentException("unsupported value for key $key: null")
-        else ->
-          throw IllegalArgumentException(
-            "unsupported value for key $key: $value" +
-              " (got ${value::class.qualifiedName}, but expected ${Entity::class.qualifiedName}" +
-              ", ${Value::class.qualifiedName}, or ${Map::class.qualifiedName})"
-          )
+        Value.KindCase.LIST_VALUE -> {
+          writeByte(VALUE_LIST.toInt())
+          writeList(value.listValue)
+        }
+        Value.KindCase.STRUCT_VALUE -> {
+          writeStruct(value.structValue)
+        }
       }
     }
-  }
 
-  private fun DataOutputStream.writeEntity(entity: Entity) {
-    writeInt(entity.id.size)
-    write(entity.id)
-  }
-
-  private fun DataOutputStream.writeStruct(struct: Struct) {
-    writeInt(STRUCT_INDICATOR)
-    struct.fieldsMap.forEach { structEntry ->
-      writeUtf16String(structEntry.key)
-      writeValue(structEntry.value)
+    private sealed class StringEncodingInfo(val byteCount: Int) {
+      class Utf8(byteCount: Int) : StringEncodingInfo(byteCount)
+      class Utf16(byteCount: Int) : StringEncodingInfo(byteCount)
     }
-    writeInt(STRUCT_END_INDICATOR)
-  }
 
-  private fun DataOutputStream.writeValue(value: Value) {
-    when (value.kindCase) {
-      Value.KindCase.NULL_VALUE -> writeInt(NULL_INDICATOR)
-      Value.KindCase.NUMBER_VALUE -> {
-        writeInt(NUMBER_INDICATOR)
-        writeDouble(value.numberValue)
+    /**
+     * Examines this string to determine which encoding technique will result in the fewest number
+     * of bytes in the encoding. Since database access performance is largely determined by I/O,
+     * using the encoding technique that results in the smallest byte size will generally lead to
+     * improved overall performance.
+     */
+    private fun writeSizeOptimizedString(string: String): ByteArray {
+      val utf8Encoder = threadLocalUtf8Encoder.get()!!
+      utf8Encoder.reset()
+
+      fun String.calculateUtf16ByteCount(): Int = length * 2
+
+      val encodingInfo: StringEncodingInfo =
+        if (!utf8Encoder.canEncode(string)) {
+          StringEncodingInfo.Utf16(string.calculateUtf16ByteCount())
+        } else {
+          val utf8EncodingByteCount = string.calculateUtf8ByteCount()
+          val utf16EncodingByteCount = string.calculateUtf16ByteCount()
+          if (utf8EncodingByteCount <= utf16EncodingByteCount) {
+            StringEncodingInfo.Utf8(utf8EncodingByteCount)
+          } else {
+            StringEncodingInfo.Utf16(utf16EncodingByteCount)
+          }
+        }
+
+      val byteArray = ByteArray(encodingInfo.byteCount + 1)
+      when (encodingInfo) {
+        is StringEncodingInfo.Utf8 -> {
+          val byteBuffer = ByteBuffer.wrap(byteArray)
+          byteBuffer.put(VALUE_STRING_UTF8)
+          utf8Encoder.reset()
+          utf8Encoder.encode(CharBuffer.wrap(string), byteBuffer, true)
+        }
+        is StringEncodingInfo.Utf16 -> {
+          byteArray[0] = VALUE_STRING_UTF16
+          var i = 1
+          string.forEach { char ->
+            byteArray[i++] = ((char.code ushr 8) and 0xFF).toByte()
+            byteArray[i++] = ((char.code ushr 0) and 0xFF).toByte()
+          }
+        }
       }
-      Value.KindCase.STRING_VALUE -> {
-        writeInt(STRING_INDICATOR)
-        writeUtf16String(value.stringValue)
-      }
-      Value.KindCase.BOOL_VALUE -> {
-        writeInt(BOOL_INDICATOR)
-        writeBoolean(value.boolValue)
-      }
-      Value.KindCase.STRUCT_VALUE -> {
-        writeStruct(value.structValue)
-      }
-      Value.KindCase.LIST_VALUE -> {
-        writeInt(LIST_INDICATOR)
-        value.listValue.valuesList.forEach { listEntry -> writeValue(listEntry) }
-        writeInt(LIST_END_INDICATOR)
-      }
-      Value.KindCase.KIND_NOT_SET ->
-        throw IllegalArgumentException("Value.KindCase.KIND_NOT_SET is not supported")
+
+      write(byteArray)
+      return byteArray
     }
-  }
 
-  private fun DataOutputStream.writeUtf16String(string: String) {
-    writeInt(string.length)
-    writeChars(string)
+    private val threadLocalUtf8Encoder =
+      object : ThreadLocal<CharsetEncoder>() {
+        override fun initialValue(): CharsetEncoder =
+          Charsets.UTF_8.newEncoder()
+            .onMalformedInput(CodingErrorAction.REPORT)
+            .onUnmappableCharacter(CodingErrorAction.REPORT)
+      }
+
+    private fun writeStruct(struct: Struct) {
+      val map: Map<String, Value> = struct.fieldsMap
+
+      val entityId: String? =
+        map["_id"]?.let {
+          if (it.kindCase == Value.KindCase.STRING_VALUE) {
+            it.stringValue
+          } else {
+            null
+          }
+        }
+
+      if (entityId !== null) {
+        writeByte(VALUE_ENTITY.toInt())
+        writeSizeOptimizedString(entityId)
+      }
+
+      writeInt(map.size)
+      map.entries.forEach { (key, value) ->
+        writeSizeOptimizedString(key)
+        writeValue(value)
+      }
+    }
+
+    private fun writeList(list: ListValue) {}
   }
 }
