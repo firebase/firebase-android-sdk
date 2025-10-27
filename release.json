@@ -2,14 +2,10 @@
     "name": "m172",
     "libraries": [
         ":firebase-ai",
-        ":firebase-crashlytics",
-        ":firebase-crashlytics-ndk",
-        ":firebase-sessions",
         ":firebase-dataconnect",
         ":firebase-firestore",
-        ":firebase-functions",
-        ":firebase-inappmessaging",
-        ":firebase-inappmessaging-display",
+	":firebase-inappmessaging",
+	":firebase-inappmessaging-display",
         ":firebase-perf"
     ]
 }
