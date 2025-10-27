@@ -22,8 +22,9 @@ package com.google.firebase.dataconnect
  * A declaration annotated with [ExperimentalFirebaseDataConnect] is "experimental": its signature
  * and/or semantics may change in backwards-incompatible ways at any time without notice, up to and
  * including complete removal. If you have a use case that relies on such a declaration please open
- * a "feature request" issue at https://github.com/firebase/firebase-android-sdk requesting the
- * declaration's promotion from "experimental" to "fully-supported".
+ * a "feature request" issue at
+ * [https://github.com/firebase/firebase-android-sdk](https://github.com/firebase/firebase-android-sdk)
+ * requesting the declaration's promotion from "experimental" to "fully-supported".
  */
 @MustBeDocumented
 @Retention(value = AnnotationRetention.BINARY)

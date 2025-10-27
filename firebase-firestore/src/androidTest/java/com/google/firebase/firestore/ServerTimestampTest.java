@@ -363,7 +363,7 @@ public class ServerTimestampTest {
     } catch (IllegalArgumentException e) {
       assertEquals(
           "Field timestamp is annotated with @ServerTimestamp but is class "
-              + "java.lang.String instead of Date or Timestamp.",
+              + "java.lang.String instead of Date, Timestamp, or Instant.",
           e.getMessage());
     }
   }

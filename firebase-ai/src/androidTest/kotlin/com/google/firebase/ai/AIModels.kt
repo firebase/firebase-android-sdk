@@ -51,12 +51,12 @@ class AIModels {
       flash2Model =
         FirebaseAI.getInstance(app!!, GenerativeBackend.vertexAI())
           .generativeModel(
-            modelName = "gemini-2.0-flash",
+            modelName = "gemini-2.5-flash",
           )
       flash2LiteModel =
         FirebaseAI.getInstance(app!!, GenerativeBackend.vertexAI())
           .generativeModel(
-            modelName = "gemini-2.0-flash-lite",
+            modelName = "gemini-2.5-flash-lite",
           )
     }
   }

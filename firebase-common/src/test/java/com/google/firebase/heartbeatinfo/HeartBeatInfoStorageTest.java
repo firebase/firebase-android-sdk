@@ -35,12 +35,13 @@ import org.robolectric.annotation.Config;
 @RunWith(AndroidJUnit4.class)
 public class HeartBeatInfoStorageTest {
   private final Preferences.Key<Long> testSdk = PreferencesKeys.longKey("testSdk");
-  private final Preferences.Key<Long> GLOBAL = PreferencesKeys.longKey("fire-global");
+  private static final Preferences.Key<Long> GLOBAL = PreferencesKeys.longKey("fire-global");
   private static final int HEART_BEAT_COUNT_LIMIT = 30;
-  private static Context applicationContext = ApplicationProvider.getApplicationContext();
-  private static JavaDataStorage heartBeatDataStore =
+  private static final Context applicationContext = ApplicationProvider.getApplicationContext();
+  private static final JavaDataStorage heartBeatDataStore =
       new JavaDataStorage(applicationContext, "testHeartBeat");
-  private HeartBeatInfoStorage heartBeatInfoStorage = new HeartBeatInfoStorage(heartBeatDataStore);
+  private final HeartBeatInfoStorage heartBeatInfoStorage =
+      new HeartBeatInfoStorage(heartBeatDataStore);
 
   @Before
   public void setUp() {

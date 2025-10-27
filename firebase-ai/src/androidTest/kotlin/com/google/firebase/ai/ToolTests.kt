@@ -299,7 +299,7 @@ class ToolTests {
       val model =
         FirebaseAI.getInstance(app(), GenerativeBackend.vertexAI())
           .generativeModel(
-            modelName = "gemini-2.0-flash",
+            modelName = "gemini-2.5-flash",
             toolConfig =
               ToolConfig(
                 functionCallingConfig = FunctionCallingConfig(FunctionCallingConfig.Mode.ANY)

@@ -37,7 +37,6 @@ import com.google.android.gms.common.annotation.KeepForSdk;
 import com.google.android.gms.common.api.internal.BackgroundDetector;
 import com.google.android.gms.common.internal.Objects;
 import com.google.android.gms.common.internal.Preconditions;
-import com.google.android.gms.common.util.PlatformVersion;
 import com.google.android.gms.common.util.ProcessUtils;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentDiscovery;
@@ -689,8 +688,7 @@ public class FirebaseApp {
         new AtomicReference<>();
 
     private static void ensureBackgroundStateListenerRegistered(Context context) {
-      if (!(PlatformVersion.isAtLeastIceCreamSandwich()
-          && context.getApplicationContext() instanceof Application)) {
+      if (!(context.getApplicationContext() instanceof Application)) {
         return;
       }
       Application application = (Application) context.getApplicationContext();

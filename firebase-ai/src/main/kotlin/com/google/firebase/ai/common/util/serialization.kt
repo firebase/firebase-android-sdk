@@ -17,7 +17,7 @@
 package com.google.firebase.ai.common.util
 
 import android.util.Log
-import com.google.firebase.ai.common.SerializationException
+import com.google.firebase.ai.type.SerializationException
 import kotlin.reflect.KClass
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName

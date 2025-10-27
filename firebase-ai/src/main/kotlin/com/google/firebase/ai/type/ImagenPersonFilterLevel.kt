@@ -17,7 +17,6 @@
 package com.google.firebase.ai.type
 
 /** A filter used to prevent images from containing depictions of children or people. */
-@PublicPreviewAPI
 public class ImagenPersonFilterLevel private constructor(internal val internalVal: String) {
   public companion object {
     /**

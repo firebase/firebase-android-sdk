@@ -51,6 +51,7 @@ import com.google.firebase.ai.type.ImagenEditMode;
 import com.google.firebase.ai.type.ImagenEditingConfig;
 import com.google.firebase.ai.type.ImagenInlineImage;
 import com.google.firebase.ai.type.ImagenMaskReference;
+import com.google.firebase.ai.type.InlineData;
 import com.google.firebase.ai.type.InlineDataPart;
 import com.google.firebase.ai.type.LiveGenerationConfig;
 import com.google.firebase.ai.type.LiveServerContent;
@@ -365,6 +366,9 @@ public class JavaCompileTests {
 
     byte[] bytes = new byte[] {(byte) 0xCA, (byte) 0xFE, (byte) 0xBA, (byte) 0xBE};
     session.sendMediaStream(List.of(new MediaData(bytes, "image/jxl")));
+    session.sendAudioRealtime(new InlineData(bytes, "audio/jxl"));
+    session.sendVideoRealtime(new InlineData(bytes, "image/jxl"));
+    session.sendTextRealtime("text");
 
     FunctionResponsePart functionResponse =
         new FunctionResponsePart("myFunction", new JsonObject(Map.of()));

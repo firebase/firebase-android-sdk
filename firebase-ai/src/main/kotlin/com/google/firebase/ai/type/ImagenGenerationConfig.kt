@@ -28,7 +28,6 @@ package com.google.firebase.ai.type
  */
 import kotlin.jvm.JvmField
 
-@PublicPreviewAPI
 public class ImagenGenerationConfig(
   public val negativePrompt: String? = null,
   public val numberOfImages: Int? = 1,
@@ -109,7 +108,6 @@ public class ImagenGenerationConfig(
  * }
  * ```
  */
-@PublicPreviewAPI
 public fun imagenGenerationConfig(
   init: ImagenGenerationConfig.Builder.() -> Unit
 ): ImagenGenerationConfig {

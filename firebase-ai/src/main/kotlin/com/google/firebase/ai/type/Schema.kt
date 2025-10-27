@@ -322,46 +322,147 @@ internal constructor(
     public fun anyOf(schemas: List<Schema>): Schema = Schema(type = "ANYOF", anyOf = schemas)
   }
 
-  internal fun toInternal(): Internal {
+  internal fun toInternalOpenApi(): InternalOpenAPI {
     val cleanedType =
       if (type == "ANYOF") {
         null
       } else {
         type
       }
-    return Internal(
+    return InternalOpenAPI(
       cleanedType,
       description,
       format,
       nullable,
       enum,
-      properties?.mapValues { it.value.toInternal() },
+      properties?.mapValues { it.value.toInternalOpenApi() },
       required,
-      items?.toInternal(),
+      items?.toInternalOpenApi(),
       title,
       minItems,
       maxItems,
       minimum,
       maximum,
-      anyOf?.map { it.toInternal() },
+      anyOf?.map { it.toInternalOpenApi() },
+    )
+  }
+
+  internal fun toInternalJson(): InternalJson {
+    val outType =
+      if (type == "ANYOF" || (type == "STRING" && format == "enum")) {
+        null
+      } else {
+        type.lowercase()
+      }
+
+    val (outMinimum, outMaximum) =
+      if (outType == "integer" && format == "int32") {
+        (minimum ?: Integer.MIN_VALUE.toDouble()) to (maximum ?: Integer.MAX_VALUE.toDouble())
+      } else {
+        minimum to maximum
+      }
+
+    val outFormat =
+      if (
+        (outType == "integer" && format == "int32") ||
+          (outType == "number" && format == "float") ||
+          format == "enum"
+      ) {
+        null
+      } else {
+        format
+      }
+
+    if (nullable == true) {
+      return InternalJsonNullable(
+        outType?.let { listOf(it, "null") },
+        description,
+        outFormat,
+        enum?.let {
+          buildList {
+            addAll(it)
+            add("null")
+          }
+        },
+        properties?.mapValues { it.value.toInternalJson() },
+        required,
+        items?.toInternalJson(),
+        title,
+        minItems,
+        maxItems,
+        outMinimum,
+        outMaximum,
+        anyOf?.map { it.toInternalJson() },
+      )
+    }
+    return InternalJsonNonNull(
+      outType,
+      description,
+      outFormat,
+      enum,
+      properties?.mapValues { it.value.toInternalJson() },
+      required,
+      items?.toInternalJson(),
+      title,
+      minItems,
+      maxItems,
+      outMinimum,
+      outMaximum,
+      anyOf?.map { it.toInternalJson() },
     )
   }
 
   @Serializable
-  internal data class Internal(
+  internal data class InternalOpenAPI(
     val type: String? = null,
     val description: String? = null,
     val format: String? = null,
     val nullable: Boolean? = false,
     val enum: List<String>? = null,
-    val properties: Map<String, Internal>? = null,
+    val properties: Map<String, InternalOpenAPI>? = null,
     val required: List<String>? = null,
-    val items: Internal? = null,
+    val items: InternalOpenAPI? = null,
     val title: String? = null,
     val minItems: Int? = null,
     val maxItems: Int? = null,
     val minimum: Double? = null,
     val maximum: Double? = null,
-    val anyOf: List<Internal>? = null,
+    val anyOf: List<InternalOpenAPI>? = null,
   )
+
+  @Serializable internal sealed interface InternalJson
+
+  @Serializable
+  internal data class InternalJsonNonNull(
+    val type: String? = null,
+    val description: String? = null,
+    val format: String? = null,
+    val enum: List<String>? = null,
+    val properties: Map<String, InternalJson>? = null,
+    val required: List<String>? = null,
+    val items: InternalJson? = null,
+    val title: String? = null,
+    val minItems: Int? = null,
+    val maxItems: Int? = null,
+    val minimum: Double? = null,
+    val maximum: Double? = null,
+    val anyOf: List<InternalJson>? = null,
+  ) : InternalJson
+
+  @Serializable
+  internal data class InternalJsonNullable(
+    val type: List<String>? = null,
+    val description: String? = null,
+    val format: String? = null,
+    val enum: List<String>? = null,
+    val properties: Map<String, InternalJson>? = null,
+    val required: List<String>? = null,
+    val items: InternalJson? = null,
+    val title: String? = null,
+    val minItems: Int? = null,
+    val maxItems: Int? = null,
+    val minimum: Double? = null,
+    val maximum: Double? = null,
+    val anyOf: List<InternalJson>? = null,
+  ) : InternalJson
 }

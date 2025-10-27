@@ -85,12 +85,8 @@ internal class DataConnectGrpcMetadata(
       if (appId.isNotBlank()) {
         it.put(gmpAppIdHeader, appId)
       }
-      if (authToken !== null) {
-        it.put(firebaseAuthTokenHeader, authToken)
-      }
-      if (appCheckToken !== null) {
-        it.put(firebaseAppCheckTokenHeader, appCheckToken)
-      }
+      authToken?.token?.let { token -> it.put(firebaseAuthTokenHeader, token) }
+      appCheckToken?.token?.let { token -> it.put(firebaseAppCheckTokenHeader, token) }
     }
   }
 

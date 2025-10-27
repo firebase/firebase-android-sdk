@@ -32,6 +32,7 @@ import com.google.firebase.ai.type.Tool
 import com.google.firebase.annotations.concurrent.Blocking
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
+import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import io.ktor.websocket.Frame
 import io.ktor.websocket.close
 import io.ktor.websocket.readBytes
@@ -110,12 +111,15 @@ internal constructor(
           modelName,
           config?.toInternal(),
           tools?.map { it.toInternal() },
-          systemInstruction?.toInternal()
+          systemInstruction?.toInternal(),
+          config?.inputAudioTranscription?.toInternal(),
+          config?.outputAudioTranscription?.toInternal()
         )
         .toInternal()
     val data: String = Json.encodeToString(clientMessage)
+    var webSession: DefaultClientWebSocketSession? = null
     try {
-      val webSession = controller.getWebSocketSession(location)
+      webSession = controller.getWebSocketSession(location)
       webSession.send(Frame.Text(data))
       val receivedJsonStr = webSession.incoming.receive().readBytes().toString(Charsets.UTF_8)
       val receivedJson = JSON.parseToJsonElement(receivedJsonStr)
@@ -131,7 +135,10 @@ internal constructor(
         throw ServiceConnectionHandshakeFailedException("Unable to connect to the server")
       }
     } catch (e: ClosedReceiveChannelException) {
-      throw ServiceConnectionHandshakeFailedException("Channel was closed by the server", e)
+      val reason = webSession?.closeReason?.await()
+      val message =
+        "Channel was closed by the server.${if (reason != null) " Details: ${reason.message}" else ""}"
+      throw ServiceConnectionHandshakeFailedException(message, e)
     }
   }
 

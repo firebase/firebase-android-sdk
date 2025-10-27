@@ -22,9 +22,8 @@ import java.util.Objects
 import kotlinx.serialization.Serializable
 
 /**
- * A date without a time-zone in the ISO-8601 calendar system, such as {@code 2007-12-03}. This is
- * the default Kotlin type used to represent a `Date` GraphQL custom scalar in Firebase Data
- * Connect.
+ * A date without a time-zone in the ISO-8601 calendar system, such as `2007-12-03`. This is the
+ * default Kotlin type used to represent a `Date` GraphQL custom scalar in Firebase Data Connect.
  *
  * ### Description (adapted from [java.time.LocalDate])
  *
@@ -44,10 +43,10 @@ import kotlinx.serialization.Serializable
  * The [java.time.LocalDate] class was added in Android API 26 and should be used if it's available
  * instead of this class. If [java.time.LocalDate] is available then [kotlinx.datetime.LocalDate] is
  * a completely valid option as well, if it's desirable to take a dependency on
- * https://github.com/Kotlin/kotlinx-datetime.
+ * [kotlinx-datetime](https://github.com/Kotlin/kotlinx-datetime).
  *
  * Alternately, if your application has its `minSdkVersion` set to a value _less than_ 26, you can
- * use "desugaring" (https://developer.android.com/studio/write/java8-support-table) to get access
+ * use ["desugaring"](https://developer.android.com/studio/write/java8-support-table) to get access
  * [java.time.LocalDate] class regardless of the API version used at runtime.
  *
  * ### Using [java.time.LocalDate] and [kotlinx.datetime.LocalDate] in code generation.
@@ -66,19 +65,20 @@ import kotlinx.serialization.Serializable
  *     dateClass: java.time.LocalDate # or kotlinx.datetime.LocalDate
  * ```
  *
- * ### Safe for Concurrent Use
+ * ### Safe for concurrent use
  *
- * All methods and properties of [FirebaseDataConnect] are thread-safe and may be safely called
- * and/or accessed concurrently from multiple threads and/or coroutines.
+ * All methods and properties of [LocalDate] are thread-safe and may be safely called and/or
+ * accessed concurrently from multiple threads and/or coroutines.
  *
  * @property year The year. The valid range is between 1583 and 9999, inclusive; however, this is
- * _not_ checked or prevented by this class. Values less than 1583 are not forbidden; however, their
- * interpretation by the Data Connect backend is unspecified. See
- * https://en.wikipedia.org/wiki/ISO_8601#Years for more details.
+ * _not_ checked or enforced by this class. Values less than 1583 are not strictly forbidden;
+ * however, their interpretation by the Data Connect backend is unspecified. See
+ * [https://en.wikipedia.org/wiki/ISO_8601#Years](https://en.wikipedia.org/wiki/ISO_8601#Years) for
+ * more details.
  * @property month The month. The valid range is between 1 and 12, inclusive; however, this is _not_
- * checked or prevented by this class.
+ * checked or enforced by this class.
  * @property day The day of the month. The valid range is between 1 and 31, inclusive; however, this
- * is _not_ checked or prevented by this class.
+ * is _not_ checked or enforced by this class.
  */
 @Serializable(with = LocalDateSerializer::class)
 public class LocalDate(public val year: Int, public val month: Int, public val day: Int) {
@@ -123,7 +123,7 @@ public class LocalDate(public val year: Int, public val month: Int, public val d
  *
  * Be sure to _only_ call this method if [java.time.LocalDate] is available; otherwise the behavior
  * is undefined. If your application's `minSdkVersion` is greater than or equal to `26`, or if you
- * have configured "desugaring" (https://developer.android.com/studio/write/java8-support-table)
+ * have configured ["desugaring"](https://developer.android.com/studio/write/java8-support-table)
  * then it is guaranteed to be available. Otherwise, check [android.os.Build.VERSION.SDK_INT] at
  * runtime and verify that its value is at least [android.os.Build.VERSION_CODES.O] before calling
  * this method.
@@ -157,8 +157,8 @@ public fun java.time.LocalDate.toDataConnectLocalDate(): LocalDate =
  *
  * Be sure to _only_ call this method if your application has a dependency on
  * `org.jetbrains.kotlinx:kotlinx-datetime`; otherwise, the behavior of this method is undefined. If
- * your `minSdkVersion` is less than `26` then you _may_ also need to configure "desugaring"
- * (https://developer.android.com/studio/write/java8-support-table).
+ * your `minSdkVersion` is less than `26` then you _may_ also need to configure
+ * ["desugaring"](https://developer.android.com/studio/write/java8-support-table).
  *
  * @see kotlinx.datetime.LocalDate.toDataConnectLocalDate
  * @see java.time.LocalDate.toDataConnectLocalDate

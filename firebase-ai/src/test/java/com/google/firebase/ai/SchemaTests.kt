@@ -19,7 +19,9 @@ package com.google.firebase.ai
 import com.google.firebase.ai.type.Schema
 import com.google.firebase.ai.type.StringFormat
 import io.kotest.assertions.json.shouldEqualJson
+import java.io.File
 import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.ClassDiscriminatorMode
 import kotlinx.serialization.json.Json
 import org.junit.Test
 
@@ -93,7 +95,7 @@ internal class SchemaTests {
     """
         .trimIndent()
 
-    Json.encodeToString(schemaDeclaration.toInternal()).shouldEqualJson(expectedJson)
+    Json.encodeToString(schemaDeclaration.toInternalOpenApi()).shouldEqualJson(expectedJson)
   }
 
   @Test
@@ -216,6 +218,70 @@ internal class SchemaTests {
       """
         .trimIndent()
 
-    Json.encodeToString(schemaDeclaration.toInternal()).shouldEqualJson(expectedJson)
+    Json.encodeToString(schemaDeclaration.toInternalOpenApi()).shouldEqualJson(expectedJson)
   }
+
+  @Test
+  fun `schema encoding openAPI spec test`() {
+    val expectedSerialization = getSchemaJson("open-api-schema.json")
+    val serializedSchema = JSON_ENCODER.encodeToString(TEST_SCHEMA.toInternalOpenApi())
+    serializedSchema.shouldEqualJson(expectedSerialization)
+  }
+
+  @Test
+  fun `schema encoding jsonSchema spec test`() {
+    val expectedSerialization = getSchemaJson("json-schema.json")
+    val serializedSchema = JSON_ENCODER.encodeToString(TEST_SCHEMA.toInternalJson())
+    serializedSchema.shouldEqualJson(expectedSerialization)
+  }
+
+  internal fun getSchemaJson(filename: String): String {
+    return File("src/test/resources/vertexai-sdk-test-data/mock-responses/schema/${filename}")
+      .readText()
+  }
+
+  private val JSON_ENCODER = Json { classDiscriminatorMode = ClassDiscriminatorMode.NONE }
+
+  private val TEST_SCHEMA =
+    Schema.obj(
+      properties =
+        mapOf(
+          "integerTest" to Schema.integer(title = "integerTest", nullable = true),
+          "longTest" to
+            Schema.long(
+              title = "longTest",
+              nullable = false,
+              minimum = 0.0,
+              maximum = 5.0,
+              description = "a test long"
+            ),
+          "floatTest" to Schema.float(title = "floatTest", nullable = false),
+          "doubleTest" to Schema.double(title = "doubleTest", nullable = true),
+          "listTest" to
+            Schema.array(
+              items = Schema.integer(nullable = false),
+              title = "listTest",
+              nullable = false,
+              minItems = 0,
+              maxItems = 5
+            ),
+          "booleanTest" to Schema.boolean(title = "booleanTest", nullable = false),
+          "stringTest" to
+            Schema.string(title = "stringTest", format = StringFormat.Custom("email")),
+          "objTest" to
+            Schema.obj(
+              properties =
+                mapOf(
+                  "testInt" to Schema.integer(title = "testInt", nullable = false),
+                ),
+              title = "objTest",
+              description = "class kdoc should be used if property kdocs aren't present",
+              nullable = false
+            ),
+          "enumTest" to Schema.enumeration(values = listOf("val1", "val2", "val3"))
+        ),
+      optionalProperties = listOf("booleanTest"),
+      description = "A test kdoc",
+      nullable = false
+    )
 }

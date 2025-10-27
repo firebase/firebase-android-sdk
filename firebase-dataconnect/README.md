@@ -13,7 +13,7 @@ To build Firebase Data Connect, from the source root run:
 ./gradlew :firebase-dataconnect:assembleRelease
 ```
 
-## Unit Testing
+## Unit testing
 
 To run unit tests for Firebase Data Connect, from the source root run:
 
@@ -21,7 +21,7 @@ To run unit tests for Firebase Data Connect, from the source root run:
 ./gradlew :firebase-dataconnect:check
 ```
 
-## Integration Testing
+## Integration testing
 
 Running integration tests requires a Firebase project because they connect to the Firebase Data
 Connect backend.
@@ -34,10 +34,10 @@ Make sure you have created a Firebase Data Connect instance for your project, be
 
 By default, integration tests run against the Firebase Data Connect emulator.
 
-### Setting up the Firebase Data Connect Emulator
+### Setting up the Firebase Data Connect emulator
 
 The integration tests require that the Firebase Data Connect emulator is running on port 9399, which
-is default when running it via the Data Connect Toolkit.
+is default when running it via the Firebase CLI.
 
 - [Install the Firebase CLI](https://firebase.google.com/docs/cli/).
   ```
@@ -57,7 +57,7 @@ is default when running it via the Data Connect Toolkit.
 To run the integration tests against prod, select `DataConnectProdIntegrationTest` run
 configuration.
 
-### Run on Local Android Emulator
+### Run on local Android emulator
 
 Then run:
 
@@ -79,7 +79,7 @@ Run:
 ./gradlew :firebase-dataconnect:deviceCheck
 ```
 
-## Code Formatting
+## Code formatting
 
 Run below to format Kotlin and Java code:
 
@@ -90,7 +90,7 @@ Run below to format Kotlin and Java code:
 See [here](../README.md#code-formatting) if you want to be able to format code from within Android
 Studio.
 
-## Build Local Jar of Firebase Data Connect SDK
+## Build local jar of Firebase Data Connect SDK
 
 ```bash
 ./gradlew -PprojectsToPublish="firebase-dataconnect" publishReleasingLibrariesToMavenLocal
