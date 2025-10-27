@@ -4,8 +4,8 @@
         ":firebase-ai",
         ":firebase-dataconnect",
         ":firebase-firestore",
-	":firebase-inappmessaging",
-	":firebase-inappmessaging-display",
+		":firebase-inappmessaging",
+		":firebase-inappmessaging-display",
         ":firebase-perf"
     ]
 }
