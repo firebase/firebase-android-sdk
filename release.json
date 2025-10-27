@@ -2,6 +2,7 @@
     "name": "m172",
     "libraries": [
         ":firebase-ai",
+        ":firebase-functions",
         ":firebase-dataconnect",
         ":firebase-firestore",
 		":firebase-inappmessaging",
