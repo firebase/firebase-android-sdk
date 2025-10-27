@@ -38,8 +38,6 @@ import org.slf4j.LoggerFactory
 @SuppressWarnings("NewApi")
 class TestReportGenerator(private val apiToken: String) {
   private val LOG: Logger = LoggerFactory.getLogger("firebase-test-report")
-  private val client: HttpClient =
-    HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build()
 
   fun createReport(commitCount: Int) {
     val response: JsonObject =
@@ -310,7 +308,7 @@ class TestReportGenerator(private val apiToken: String) {
         .header("X-GitHub-Api-Version", GITHUB_API_VERSION)
         .build()
     try {
-      val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+      val response = CLIENT.send(request, HttpResponse.BodyHandlers.ofString())
       val body = response.body()
       if (response.statusCode() >= 300) {
         LOG.error(response.toString())
@@ -366,24 +364,12 @@ class TestReportGenerator(private val apiToken: String) {
     // eg `<http://www.foo.bar/>; baz="qux"; rel="next";` -> `http://www.foo.bar/`
     private val NEXT_LINK_REGEX =
       Regex(
-        "<" + // eg `<http://www.foo.bar/>`
-          "(" + // URL group
-          /**/ "[^>]*" + // Only ignoring `>`, other illegal characters assumed not present
-          ")" +
-          ">" +
-          "\\s*" +
-          ";" + // Link separator
-          "(" + // Ignore other parameters, eg `foo="bar";`
-          /**/ "\\s*" +
-          /**/ "\\w+" + // Key
-          /**/ "=" +
-          /**/ "\"\\w*\"" + // Quoted value
-          /**/ "\\s*" +
-          /**/ ";" +
-          ")" +
-          "\\s*" +
-          "rel=\"next\""
-        // "<([^>]*)>\\s*;(\\s*\\w+=\"\\w*\"\\s*;)\\s*rel=\"next\""
+        "<([^>]*)>" + // eg `<http://www.foo.bar/>`
+          "\\s*;" + // Link separator
+          "(\\s*\\w+=\"\\w*\"\\s*;)" + // Capture other parameters, eg `foo="bar";`
+          "\\s*rel=\"next\"" // Matches specifically rel=next
       )
+    private val CLIENT: HttpClient =
+      HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build()
   }
 }
