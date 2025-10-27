@@ -335,9 +335,10 @@ internal inline fun <Data, reified Variables> DataConnectArb.operationRefConstru
 
 internal fun DataConnectArb.authTokenResult(
   accessToken: Arb<String?> = accessToken().orNull(nullProbability = 0.33),
-  authUids: Arb<Set<String>> = Arb.set(string(0..10, Codepoint.alphanumeric()), 0..10),
-): Arb<GetAuthTokenResult> = Arb.bind(accessToken, authUids, ::GetAuthTokenResult)
+  authUid: Arb<String?> =
+    Arb.string(0..10, Codepoint.alphanumeric()).orNull(nullProbability = 0.33),
+): Arb<GetAuthTokenResult> = Arb.bind(accessToken, authUid, ::GetAuthTokenResult)
 
 internal fun DataConnectArb.appCheckTokenResult(
-  accessToken: Arb<String> = accessToken()
-): Arb<GetAppCheckTokenResult> = accessToken.map(::GetAppCheckTokenResult)
+  accessToken: Arb<String?> = accessToken().orNull(nullProbability = 0.33),
+): Arb<GetAppCheckTokenResult> = accessToken.map { GetAppCheckTokenResult(it) }
