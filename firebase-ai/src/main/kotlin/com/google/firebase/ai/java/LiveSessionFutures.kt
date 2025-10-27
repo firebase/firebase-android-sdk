@@ -23,11 +23,13 @@ import com.google.common.util.concurrent.ListenableFuture
 import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.FunctionCallPart
 import com.google.firebase.ai.type.FunctionResponsePart
+import com.google.firebase.ai.type.InlineData
 import com.google.firebase.ai.type.LiveServerMessage
 import com.google.firebase.ai.type.LiveSession
 import com.google.firebase.ai.type.MediaData
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.SessionAlreadyReceivingException
+import com.google.firebase.ai.type.Transcription
 import io.ktor.websocket.close
 import kotlinx.coroutines.reactive.asPublisher
 import org.reactivestreams.Publisher
@@ -39,6 +41,13 @@ import org.reactivestreams.Publisher
  */
 @PublicPreviewAPI
 public abstract class LiveSessionFutures internal constructor() {
+
+  /**
+   * Starts an audio conversation with the model, which can only be stopped using
+   * [stopAudioConversation].
+   */
+  @RequiresPermission(RECORD_AUDIO)
+  public abstract fun startAudioConversation(): ListenableFuture<Unit>
 
   /**
    * Starts an audio conversation with the model, which can only be stopped using
@@ -55,9 +64,14 @@ public abstract class LiveSessionFutures internal constructor() {
   /**
    * Starts an audio conversation with the model, which can only be stopped using
    * [stopAudioConversation].
+   * @param transcriptHandler A callback function that is invoked whenever the model receives a
+   * transcript. The first [Transcription] object is the input transcription, and the second is the
+   * output transcription
    */
   @RequiresPermission(RECORD_AUDIO)
-  public abstract fun startAudioConversation(): ListenableFuture<Unit>
+  public abstract fun startAudioConversation(
+    transcriptHandler: ((Transcription?, Transcription?) -> Unit)?,
+  ): ListenableFuture<Unit>
 
   /**
    * Starts an audio conversation with the model, which can only be stopped using
@@ -76,6 +90,26 @@ public abstract class LiveSessionFutures internal constructor() {
    * Starts an audio conversation with the model, which can only be stopped using
    * [stopAudioConversation] or [close].
    *
+   * @param transcriptHandler A callback function that is invoked whenever the model receives a
+   * transcript. The first [Transcription] object is the input transcription, and the second is the
+   * output transcription
+   *
+   * @param enableInterruptions If enabled, allows the user to speak over or interrupt the model's
+   * ongoing reply.
+   *
+   * **WARNING**: The user interruption feature relies on device-specific support, and may not be
+   * consistently available.
+   */
+  @RequiresPermission(RECORD_AUDIO)
+  public abstract fun startAudioConversation(
+    transcriptHandler: ((Transcription?, Transcription?) -> Unit)?,
+    enableInterruptions: Boolean
+  ): ListenableFuture<Unit>
+
+  /**
+   * Starts an audio conversation with the model, which can only be stopped using
+   * [stopAudioConversation] or [close].
+   *
    * @param functionCallHandler A callback function that is invoked whenever the model receives a
    * function call.
    *
@@ -88,6 +122,30 @@ public abstract class LiveSessionFutures internal constructor() {
   @RequiresPermission(RECORD_AUDIO)
   public abstract fun startAudioConversation(
     functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)?,
+    enableInterruptions: Boolean
+  ): ListenableFuture<Unit>
+
+  /**
+   * Starts an audio conversation with the model, which can only be stopped using
+   * [stopAudioConversation] or [close].
+   *
+   * @param functionCallHandler A callback function that is invoked whenever the model receives a
+   * function call.
+   *
+   * @param transcriptHandler A callback function that is invoked whenever the model receives a
+   * transcript. The first [Transcription] object is the input transcription, and the second is the
+   * output transcription
+   *
+   * @param enableInterruptions If enabled, allows the user to speak over or interrupt the model's
+   * ongoing reply.
+   *
+   * **WARNING**: The user interruption feature relies on device-specific support, and may not be
+   * consistently available.
+   */
+  @RequiresPermission(RECORD_AUDIO)
+  public abstract fun startAudioConversation(
+    functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)?,
+    transcriptHandler: ((Transcription?, Transcription?) -> Unit)?,
     enableInterruptions: Boolean
   ): ListenableFuture<Unit>
 
@@ -127,12 +185,37 @@ public abstract class LiveSessionFutures internal constructor() {
   ): ListenableFuture<Unit>
 
   /**
+   * Sends audio data to the server in realtime. Check
+   * https://ai.google.dev/api/live#bidigeneratecontentrealtimeinput for details about the realtime
+   * input usage.
+   * @param audio The audio data to send.
+   */
+  public abstract fun sendAudioRealtime(audio: InlineData): ListenableFuture<Unit>
+
+  /**
+   * Sends video data to the server in realtime. Check
+   * https://ai.google.dev/api/live#bidigeneratecontentrealtimeinput for details about the realtime
+   * input usage.
+   * @param video The video data to send. Video MIME type could be either video or image.
+   */
+  public abstract fun sendVideoRealtime(video: InlineData): ListenableFuture<Unit>
+
+  /**
+   * Sends text data to the server in realtime. Check
+   * https://ai.google.dev/api/live#bidigeneratecontentrealtimeinput for details about the realtime
+   * input usage.
+   * @param text The text data to send.
+   */
+  public abstract fun sendTextRealtime(text: String): ListenableFuture<Unit>
+
+  /**
    * Streams client data to the model.
    *
    * Calling this after [startAudioConversation] will play the response audio immediately.
    *
    * @param mediaChunks The list of [MediaData] instances representing the media data to be sent.
    */
+  @Deprecated("Use sendAudioRealtime, sendVideoRealtime, or sendTextRealtime instead")
   public abstract fun sendMediaStream(mediaChunks: List<MediaData>): ListenableFuture<Unit>
 
   /**
@@ -190,6 +273,15 @@ public abstract class LiveSessionFutures internal constructor() {
     override fun sendFunctionResponse(functionList: List<FunctionResponsePart>) =
       SuspendToFutureAdapter.launchFuture { session.sendFunctionResponse(functionList) }
 
+    override fun sendAudioRealtime(audio: InlineData): ListenableFuture<Unit> =
+      SuspendToFutureAdapter.launchFuture { session.sendAudioRealtime(audio) }
+
+    override fun sendVideoRealtime(video: InlineData): ListenableFuture<Unit> =
+      SuspendToFutureAdapter.launchFuture { session.sendVideoRealtime(video) }
+
+    override fun sendTextRealtime(text: String): ListenableFuture<Unit> =
+      SuspendToFutureAdapter.launchFuture { session.sendTextRealtime(text) }
+
     override fun sendMediaStream(mediaChunks: List<MediaData>) =
       SuspendToFutureAdapter.launchFuture { session.sendMediaStream(mediaChunks) }
 
@@ -199,6 +291,14 @@ public abstract class LiveSessionFutures internal constructor() {
     ) = SuspendToFutureAdapter.launchFuture { session.startAudioConversation(functionCallHandler) }
 
     @RequiresPermission(RECORD_AUDIO)
+    override fun startAudioConversation(
+      transcriptHandler: ((Transcription?, Transcription?) -> Unit)?
+    ) =
+      SuspendToFutureAdapter.launchFuture {
+        session.startAudioConversation(transcriptHandler = transcriptHandler)
+      }
+
+    @RequiresPermission(RECORD_AUDIO)
     override fun startAudioConversation() =
       SuspendToFutureAdapter.launchFuture { session.startAudioConversation() }
 
@@ -206,6 +306,32 @@ public abstract class LiveSessionFutures internal constructor() {
     override fun startAudioConversation(enableInterruptions: Boolean) =
       SuspendToFutureAdapter.launchFuture {
         session.startAudioConversation(enableInterruptions = enableInterruptions)
+      }
+
+    @RequiresPermission(RECORD_AUDIO)
+    override fun startAudioConversation(
+      transcriptHandler: ((Transcription?, Transcription?) -> Unit)?,
+      enableInterruptions: Boolean
+    ) =
+      SuspendToFutureAdapter.launchFuture {
+        session.startAudioConversation(
+          transcriptHandler = transcriptHandler,
+          enableInterruptions = enableInterruptions
+        )
+      }
+
+    @RequiresPermission(RECORD_AUDIO)
+    override fun startAudioConversation(
+      functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)?,
+      transcriptHandler: ((Transcription?, Transcription?) -> Unit)?,
+      enableInterruptions: Boolean
+    ) =
+      SuspendToFutureAdapter.launchFuture {
+        session.startAudioConversation(
+          functionCallHandler = functionCallHandler,
+          transcriptHandler = transcriptHandler,
+          enableInterruptions = enableInterruptions
+        )
       }
 
     @RequiresPermission(RECORD_AUDIO)
