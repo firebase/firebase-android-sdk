@@ -66,7 +66,7 @@ dependencies {
   implementation("com.google.code.gson:gson:2.13.2")
   implementation(libs.android.gradlePlugin.gradle)
   implementation(libs.android.gradlePlugin.builder.test.api)
-  implementation("io.github.pdvrieze.xmlutil:serialization-jvm:0.90.3") {
+  implementation("io.github.pdvrieze.xmlutil:serialization-jvm:0.91.3") {
     exclude("org.jetbrains.kotlinx", "kotlinx-serialization-json")
     exclude("org.jetbrains.kotlinx", "kotlinx-serialization-core")
   }
