@@ -88,8 +88,8 @@ package com.google.firebase.ai {
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class TemplateGenerativeModel {
-    method public suspend Object? generateContent(String templateId, java.util.Map<java.lang.String,?> inputs, java.util.List<com.google.firebase.ai.type.Content>? history = null, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.GenerateContentResponse>);
-    method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.type.GenerateContentResponse> generateContentStream(String templateId, java.util.Map<java.lang.String,?> inputs, java.util.List<com.google.firebase.ai.type.Content>? history = null);
+    method public suspend Object? generateContent(String templateId, java.util.Map<java.lang.String,?> inputs, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.GenerateContentResponse>);
+    method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.type.GenerateContentResponse> generateContentStream(String templateId, java.util.Map<java.lang.String,?> inputs);
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class TemplateImagenModel {
