@@ -43,17 +43,16 @@ internal class QueryResultEncoder(private val dataOutput: DataOutput) {
     map.entries.forEach { (key, value) ->
       dataOutput.writeString(key)
       when (value.kindCase) {
+        Value.KindCase.NULL_VALUE -> dataOutput.writeByte(QueryResultCodec.VALUE_NULL)
         Value.KindCase.NUMBER_VALUE -> {
           dataOutput.writeByte(QueryResultCodec.VALUE_NUMBER)
           dataOutput.writeDouble(value.numberValue)
         }
-        Value.KindCase.BOOL_VALUE -> {
-          dataOutput.writeByte(QueryResultCodec.VALUE_BOOL)
-          dataOutput.writeBoolean(value.boolValue)
-        }
-        Value.KindCase.NULL_VALUE -> {
-          dataOutput.writeByte(QueryResultCodec.VALUE_NULL)
-        }
+        Value.KindCase.BOOL_VALUE ->
+          dataOutput.writeByte(
+            if (value.boolValue) QueryResultCodec.VALUE_BOOL_TRUE
+            else QueryResultCodec.VALUE_BOOL_FALSE
+          )
         Value.KindCase.STRING_VALUE -> {
           dataOutput.writeByte(QueryResultCodec.VALUE_STRING_UTF8)
           dataOutput.writeString(value.stringValue)

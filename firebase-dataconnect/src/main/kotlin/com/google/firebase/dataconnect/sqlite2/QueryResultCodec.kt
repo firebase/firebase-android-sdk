@@ -49,13 +49,14 @@ internal object QueryResultCodec {
   const val QUERY_RESULT_HEADER: Int = 0x2e4286dc
   const val VALUE_NULL: Byte = 1
   const val VALUE_NUMBER: Byte = 2
-  const val VALUE_STRING_UTF8: Byte = 3
-  const val VALUE_STRING_UTF16: Byte = 4
-  const val VALUE_BOOL: Byte = 5
-  const val VALUE_STRUCT: Byte = 6
-  const val VALUE_LIST: Byte = 7
-  const val VALUE_KIND_NOT_SET: Byte = 8
-  const val VALUE_ENTITY: Byte = 9
+  const val VALUE_BOOL_TRUE: Byte = 3
+  const val VALUE_BOOL_FALSE: Byte = 4
+  const val VALUE_STRING_UTF8: Byte = 5
+  const val VALUE_STRING_UTF16: Byte = 6
+  const val VALUE_STRUCT: Byte = 7
+  const val VALUE_LIST: Byte = 8
+  const val VALUE_KIND_NOT_SET: Byte = 9
+  const val VALUE_ENTITY: Byte = 10
 
   private class Encoder(dataOutput: DataOutput, private val entities: MutableList<Entity>) :
     DataOutput by dataOutput {
@@ -69,10 +70,12 @@ internal object QueryResultCodec {
       when (value.kindCase) {
         Value.KindCase.KIND_NOT_SET -> writeByte(VALUE_KIND_NOT_SET.toInt())
         Value.KindCase.NULL_VALUE -> writeByte(VALUE_NULL.toInt())
-        Value.KindCase.BOOL_VALUE -> {
-          writeByte(VALUE_BOOL.toInt())
-          writeBoolean(value.boolValue)
-        }
+        Value.KindCase.BOOL_VALUE ->
+          if (value.boolValue) {
+            writeByte(VALUE_BOOL_TRUE.toInt())
+          } else {
+            writeByte(VALUE_BOOL_FALSE.toInt())
+          }
         Value.KindCase.NUMBER_VALUE -> {
           writeByte(VALUE_NUMBER.toInt())
           writeDouble(value.numberValue)

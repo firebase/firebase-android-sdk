@@ -22,7 +22,6 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWith
 import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWith4ByteUtf8Encoding
 import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWithEvenNumByteUtf8EncodingDistribution
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
-import com.google.firebase.dataconnect.testutil.property.arbitrary.stringWithLoneSurrogates
 import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.protobuf.NullValue
 import com.google.protobuf.Struct
@@ -41,8 +40,6 @@ import io.kotest.property.arbitrary.boolean
 import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.double
-import io.kotest.property.arbitrary.flatMap
-import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.list
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.string
@@ -55,6 +52,13 @@ class QueryResultEncoderUnitTest {
   @Test
   fun `empty struct`() {
     Struct.getDefaultInstance().decodingEncodingShouldProduceIdenticalStruct()
+  }
+
+  @Test
+  fun `struct with all null values`() = runTest {
+    checkAll(propTestConfig, structWithNullValuesArb()) { struct ->
+      struct.decodingEncodingShouldProduceIdenticalStruct()
+    }
   }
 
   @Test
@@ -72,13 +76,6 @@ class QueryResultEncoderUnitTest {
   }
 
   @Test
-  fun `struct with all null values`() = runTest {
-    checkAll(propTestConfig, structWithNullValuesArb()) { struct ->
-      struct.decodingEncodingShouldProduceIdenticalStruct()
-    }
-  }
-
-  @Test
   fun `struct with all string values`() = runTest {
     checkAll(propTestConfig, structWithStringValuesArb()) { struct ->
       struct.decodingEncodingShouldProduceIdenticalStruct()
@@ -88,6 +85,14 @@ class QueryResultEncoderUnitTest {
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Tests for helper functions
   //////////////////////////////////////////////////////////////////////////////////////////////////
+
+  @Test
+  fun `structWithNullValuesArb() should produce structs with only number values`() =
+    verifyArbProducesStructsWithKindCase(structWithNullValuesArb(), Value.KindCase.NULL_VALUE)
+
+  @Test
+  fun `structWithNullValuesArb() should produce non-empty structs`() =
+    verifyArbProducesNonEmptyStructs(structWithNullValuesArb())
 
   @Test
   fun `structWithNumberValuesArb() should produce structs with only number values`() =
@@ -104,14 +109,6 @@ class QueryResultEncoderUnitTest {
   @Test
   fun `structWithBoolValuesArb() should produce non-empty structs`() =
     verifyArbProducesNonEmptyStructs(structWithBoolValuesArb())
-
-  @Test
-  fun `structWithNullValuesArb() should produce structs with only number values`() =
-    verifyArbProducesStructsWithKindCase(structWithNullValuesArb(), Value.KindCase.NULL_VALUE)
-
-  @Test
-  fun `structWithNullValuesArb() should produce non-empty structs`() =
-    verifyArbProducesNonEmptyStructs(structWithNullValuesArb())
 
   @Test
   fun `structWithStringValuesArb() should produce structs with only number values`() =
@@ -164,7 +161,7 @@ class QueryResultEncoderUnitTest {
         Arb.string(1..20, Arb.codepointWith4ByteUtf8Encoding()),
         Arb.string(1..20, Arb.codepointWithEvenNumByteUtf8EncodingDistribution()),
         // TODO: add support for lone surrogates
-        //Arb.int(1..20).flatMap { Arb.stringWithLoneSurrogates(it) }.map { it.string },
+        // Arb.int(1..20).flatMap { Arb.stringWithLoneSurrogates(it) }.map { it.string },
         Arb.dataConnect.string(0..20),
       )
 
@@ -173,6 +170,17 @@ class QueryResultEncoderUnitTest {
       val decodeResult = QueryResultDecoder.decode(encodeResult.byteArray, encodeResult.entities)
       decodeResult shouldBe this
     }
+
+    fun structWithNullValuesArb(
+      keys: Arb<List<String>> = Arb.list(Arb.string(1..10, Codepoint.alphanumeric()), 1..10)
+    ): Arb<Struct> =
+      keys.map { keys ->
+        val builder = Struct.newBuilder()
+        keys.forEach { key ->
+          builder.putFields(key, Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build())
+        }
+        builder.build()
+      }
 
     fun structWithNumberValuesArb(
       map: Arb<Map<String, Double>> =
@@ -194,17 +202,6 @@ class QueryResultEncoderUnitTest {
         val builder = Struct.newBuilder()
         map.entries.forEach { (key, value) ->
           builder.putFields(key, Value.newBuilder().setBoolValue(value).build())
-        }
-        builder.build()
-      }
-
-    fun structWithNullValuesArb(
-      keys: Arb<List<String>> = Arb.list(Arb.string(1..10, Codepoint.alphanumeric()), 1..10)
-    ): Arb<Struct> =
-      keys.map { keys ->
-        val builder = Struct.newBuilder()
-        keys.forEach { key ->
-          builder.putFields(key, Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build())
         }
         builder.build()
       }

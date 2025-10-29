@@ -120,9 +120,10 @@ class QueryResultDecoderUnitTest {
 
     val kindCaseBytes =
       setOf(
-        QueryResultCodec.VALUE_NUMBER,
-        QueryResultCodec.VALUE_BOOL,
         QueryResultCodec.VALUE_NULL,
+        QueryResultCodec.VALUE_NUMBER,
+        QueryResultCodec.VALUE_BOOL_TRUE,
+        QueryResultCodec.VALUE_BOOL_FALSE,
         QueryResultCodec.VALUE_STRING_UTF8,
       )
 

@@ -19,7 +19,6 @@ package com.google.firebase.dataconnect.sqlite2
 import com.google.firebase.dataconnect.sqlite2.QueryResultCodec.Entity
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.protobuf.Struct
-import com.google.protobuf.Value
 import java.io.ByteArrayInputStream
 import java.io.DataInput
 import java.io.DataInputStream
@@ -42,11 +41,11 @@ internal class QueryResultDecoder(
     repeat(keyCount) {
       val key = dataInput.readString()
       when (dataInput.readKindCase()) {
-        Value.KindCase.NUMBER_VALUE -> put(key, dataInput.readDouble())
-        Value.KindCase.BOOL_VALUE -> put(key, dataInput.readBoolean())
-        Value.KindCase.STRING_VALUE -> put(key, dataInput.readString())
-        Value.KindCase.NULL_VALUE -> putNull(key)
-        else -> TODO()
+        ValueKindCase.Null -> putNull(key)
+        ValueKindCase.Number -> put(key, dataInput.readDouble())
+        ValueKindCase.BoolTrue -> put(key, true)
+        ValueKindCase.BoolFalse -> put(key, false)
+        ValueKindCase.String -> put(key, dataInput.readString())
       }
     }
   }
@@ -100,21 +99,28 @@ internal class QueryResultDecoder(
         }
       }
 
-    private val kindCaseByKindCaseInt: Map<Byte, Value.KindCase> =
-      mapOf(
-        QueryResultCodec.VALUE_NUMBER to Value.KindCase.NUMBER_VALUE,
-        QueryResultCodec.VALUE_BOOL to Value.KindCase.BOOL_VALUE,
-        QueryResultCodec.VALUE_NULL to Value.KindCase.NULL_VALUE,
-        QueryResultCodec.VALUE_STRING_UTF8 to Value.KindCase.STRING_VALUE,
-      )
+    private enum class ValueKindCase(val serializedByte: Byte, val displayName: String) {
+      Null(QueryResultCodec.VALUE_NULL, "null"),
+      Number(QueryResultCodec.VALUE_NUMBER, "number"),
+      BoolTrue(QueryResultCodec.VALUE_BOOL_TRUE, "true"),
+      BoolFalse(QueryResultCodec.VALUE_BOOL_FALSE, "false"),
+      String(QueryResultCodec.VALUE_STRING_UTF8, "utf8");
 
-    private fun DataInput.readKindCase(): Value.KindCase =
+      companion object {
+        fun fromSerializedByte(serializedByte: Byte): ValueKindCase? =
+          entries.firstOrNull { it.serializedByte == serializedByte }
+      }
+    }
+
+    private fun DataInput.readKindCase(): ValueKindCase =
       readByte().let { byte ->
-        val kindCase = kindCaseByKindCaseInt[byte]
+        val kindCase = ValueKindCase.fromSerializedByte(byte)
         if (kindCase === null) {
           throw UnknownKindCaseByteException(
             "read unknown kind case byte $byte, but expected one of " +
-              kindCaseByKindCaseInt.keys.sorted().joinToString { it.toString() } +
+              ValueKindCase.entries
+                .sortedBy { it.serializedByte }
+                .joinToString { "${it.serializedByte} (${it.displayName})" } +
               " [pmkb3sc2mn]"
           )
         }
