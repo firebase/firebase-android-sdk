@@ -118,10 +118,6 @@ internal constructor(
       .catch { throw FirebaseAIException.from(it) }
       .map { it.toPublic().validate() }
 
-  /** Creates a [TemplateChat] instance using this model with the optionally provided history. */
-  public fun startChat(templateId: String, history: List<Content> = emptyList()): TemplateChat =
-    TemplateChat(this, templateId, history.toMutableList())
-
   internal fun constructRequest(
     inputs: Map<String, Any>,
     history: List<Content>? = null
