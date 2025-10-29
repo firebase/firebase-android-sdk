@@ -514,10 +514,10 @@ internal class SerializationTests {
     expectedJsonAsString shouldEqualJson actualJson.toString()
   }
 
-    @Test
-    fun `test template request serialization as Json`() {
-        val expectedJsonAsString =
-            """
+  @Test
+  fun `test template request serialization as Json`() {
+    val expectedJsonAsString =
+      """
         {
           "id": "TemplateGenerateContentRequest",
           "type": "object",
@@ -537,15 +537,15 @@ internal class SerializationTests {
           }
         }
       """
-                .trimIndent()
-        val actualJson = descriptorToJson(TemplateGenerateContentRequest.serializer().descriptor)
-        expectedJsonAsString shouldEqualJson actualJson.toString()
-    }
+        .trimIndent()
+    val actualJson = descriptorToJson(TemplateGenerateContentRequest.serializer().descriptor)
+    expectedJsonAsString shouldEqualJson actualJson.toString()
+  }
 
-    @Test
-    fun `test template imagen request serialization as Json`() {
-        val expectedJsonAsString =
-            """
+  @Test
+  fun `test template imagen request serialization as Json`() {
+    val expectedJsonAsString =
+      """
         {
           "id": "TemplateGenerateImageRequest",
           "type": "object",
@@ -559,10 +559,10 @@ internal class SerializationTests {
           }
         }
       """
-                .trimIndent()
-        val actualJson = descriptorToJson(TemplateGenerateImageRequest.serializer().descriptor)
-        expectedJsonAsString shouldEqualJson actualJson.toString()
-    }
+        .trimIndent()
+    val actualJson = descriptorToJson(TemplateGenerateImageRequest.serializer().descriptor)
+    expectedJsonAsString shouldEqualJson actualJson.toString()
+  }
 
   @Test
   fun `test GoogleSearch serialization as Json`() {
