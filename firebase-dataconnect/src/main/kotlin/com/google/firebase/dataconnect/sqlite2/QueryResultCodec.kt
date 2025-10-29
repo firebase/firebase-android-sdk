@@ -16,7 +16,7 @@
 
 package com.google.firebase.dataconnect.sqlite2
 
-import com.google.firebase.dataconnect.sqlite2.QueryResultCodec.EncodeResult.Entity
+import com.google.firebase.dataconnect.sqlite2.QueryResultCodec.Entity
 import com.google.firebase.dataconnect.util.StringUtil.calculateUtf8ByteCount
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
@@ -31,12 +31,12 @@ import java.nio.charset.CodingErrorAction
 
 internal object QueryResultCodec {
 
-  class EncodeResult(val data: ByteArray, val entities: List<Entity>) {
-    class Entity(
-      val id: ByteArray,
-      val data: Struct,
-    )
-  }
+  class Entity(
+    val id: ByteArray,
+    val data: Struct,
+  )
+
+  class EncodeResult(val data: ByteArray, val entities: List<Entity>) {}
 
   fun encode(data: Struct): EncodeResult {
     val byteArrayOutputStream = ByteArrayOutputStream()

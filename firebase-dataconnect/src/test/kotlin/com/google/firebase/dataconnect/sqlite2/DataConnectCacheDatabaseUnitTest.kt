@@ -22,8 +22,11 @@ import com.google.firebase.dataconnect.sqlite2.DataConnectCacheDatabase.QueryRes
 import com.google.firebase.dataconnect.sqlite2.DataConnectCacheDatabase.QueryResult.Entity
 import com.google.firebase.dataconnect.testutil.CleanupsRule
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
+import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
+import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
+import com.google.protobuf.Struct
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -37,8 +40,8 @@ import io.kotest.property.arbitrary.alphanumeric
 import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.byte
 import io.kotest.property.arbitrary.byteArray
+import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.int
-import io.kotest.property.arbitrary.list
 import io.kotest.property.arbitrary.orNull
 import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
@@ -256,16 +259,13 @@ class DataConnectCacheDatabaseUnitTest {
 
     fun entityArb(
       id: Arb<ByteArray> = entityIdArb(),
-      data: Arb<ByteArray> = entityDataArb(),
-      flags: Arb<Int> = entityFlagsArb(),
-    ): Arb<Entity> = Arb.bind(id, data, flags, ::Entity)
+      data: Arb<Struct> = Arb.proto.struct(),
+    ): Arb<Entity> = Arb.bind(id, data, ::Entity)
 
     fun queryResultArb(
       authUid: Arb<String?> = authUidArb(),
       id: Arb<ByteArray> = queryResultIdArb(),
-      data: Arb<ByteArray> = queryResultDataArb(),
-      flags: Arb<Int> = queryResultFlagsArb(),
-      entities: Arb<List<Entity>> = Arb.list(entityArb(), 0..5),
-    ): Arb<QueryResult> = Arb.bind(authUid, id, data, flags, entities, ::QueryResult)
+      data: Arb<Map<String, Any>> = Arb.constant(TODO())
+    ): Arb<QueryResult> = Arb.bind(authUid, id, data, ::QueryResult)
   }
 }

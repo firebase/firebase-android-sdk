@@ -310,7 +310,8 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
   suspend fun insertQueryResult(queryResult: QueryResult) {
     runReadWriteTransaction { sqliteDatabase ->
       val entities = mutableListOf<QueryResult.Entity>()
-      val encodedQueryResultData = QueryResultCodec.encode(queryResult.data, entities)
+      // val encodedQueryResultData = QueryResultCodec.encode(queryResult.data, entities)
+      val encodedQueryResultData: ByteArray = TODO()
 
       val userRowId = sqliteDatabase.getOrInsertAuthUid(queryResult.authUid)
       val sequenceNumber = sqliteDatabase.nextSequenceNumber()
@@ -334,7 +335,7 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
             userRowId = userRowId,
             entityId = entity.id,
             entityFlags = 0,
-            entityData = QueryResultCodec.encode(entity.data),
+            entityData = TODO(), // QueryResultCodec.encode(entity.data)
             sequenceNumber = sequenceNumber,
           )
         entityRowIdsAfter.add(entityRowId)
