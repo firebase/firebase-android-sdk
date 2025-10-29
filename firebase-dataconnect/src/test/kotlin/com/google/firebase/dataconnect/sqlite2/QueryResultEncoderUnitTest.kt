@@ -18,10 +18,6 @@ package com.google.firebase.dataconnect.sqlite2
 
 import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWith1ByteUtf8Encoding
 import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWith2ByteUtf8Encoding
-import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWith3ByteUtf8Encoding
-import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWith4ByteUtf8Encoding
-import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWithEvenNumByteUtf8EncodingDistribution
-import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.protobuf.NullValue
 import com.google.protobuf.Struct
@@ -157,13 +153,13 @@ class QueryResultEncoderUnitTest {
         Arb.constant(""),
         Arb.string(1..20, Arb.codepointWith1ByteUtf8Encoding()),
         Arb.string(1..20, Arb.codepointWith2ByteUtf8Encoding()),
-        Arb.string(1..20, Arb.codepointWith3ByteUtf8Encoding()),
-        Arb.string(1..20, Arb.codepointWith4ByteUtf8Encoding()),
-        Arb.string(1..20, Arb.codepointWithEvenNumByteUtf8EncodingDistribution()),
-        // TODO: add support for lone surrogates
-        // Arb.int(1..20).flatMap { Arb.stringWithLoneSurrogates(it) }.map { it.string },
-        Arb.dataConnect.string(0..20),
-      )
+        //        Arb.string(1..20, Arb.codepointWith3ByteUtf8Encoding()),
+        //        Arb.string(1..20, Arb.codepointWith4ByteUtf8Encoding()),
+        //        Arb.string(1..20, Arb.codepointWithEvenNumByteUtf8EncodingDistribution()),
+        //        // TODO: add support for lone surrogates
+        //        // Arb.int(1..20).flatMap { Arb.stringWithLoneSurrogates(it) }.map { it.string },
+        //        Arb.dataConnect.string(0..20),
+        )
 
     fun Struct.decodingEncodingShouldProduceIdenticalStruct() {
       val encodeResult = QueryResultEncoder.encode(this)

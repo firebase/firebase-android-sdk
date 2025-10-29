@@ -17,6 +17,7 @@
 package com.google.firebase.dataconnect.sqlite2
 
 import com.google.firebase.dataconnect.sqlite2.QueryResultCodec.Entity
+import com.google.firebase.dataconnect.util.StringUtil.calculateUtf8ByteCount
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
 import java.io.ByteArrayOutputStream
@@ -24,6 +25,10 @@ import java.io.DataOutput
 import java.io.DataOutputStream
 import java.nio.ByteBuffer
 import java.nio.CharBuffer
+import java.nio.charset.CharsetEncoder
+import java.nio.charset.CoderResult
+import java.nio.charset.CodingErrorAction
+import kotlin.math.absoluteValue
 
 /**
  * This class is NOT thread safe. The behavior of an instance of this class when used concurrently
@@ -33,7 +38,13 @@ internal class QueryResultEncoder(private val dataOutput: DataOutput) {
 
   val entities: MutableList<Entity> = mutableListOf()
 
-  private val charsetEncoder = Charsets.UTF_8.newEncoder()
+  private val charsetEncoder =
+    Charsets.UTF_8.newEncoder()
+      .onUnmappableCharacter(CodingErrorAction.REPORT)
+      .onMalformedInput(CodingErrorAction.REPORT)
+
+  private val byteArray = ByteArray(2048)
+  private val byteBuffer = ByteBuffer.wrap(byteArray)
 
   class EncodeResult(val byteArray: ByteArray, val entities: List<Entity>)
 
@@ -65,11 +76,20 @@ internal class QueryResultEncoder(private val dataOutput: DataOutput) {
   }
 
   private fun DataOutput.writeString(string: String) {
-    charsetEncoder.reset()
-    val encodedString: ByteBuffer = charsetEncoder.encode(CharBuffer.wrap(string))
+    if (string.isEmpty()) {
+      writeByte(QueryResultCodec.VALUE_STRING_EMPTY)
+      return
+    }
 
-    writeInt(encodedString.remaining())
-    writeByteBuffer(encodedString)
+    val utf8ByteCount = string.calculateUtf8ByteCount()
+    val utf16ByteCount = string.length * 2
+    charsetEncoder.reset() // Prepare `charsetEncoder` for calling `canEncode()`.
+
+    if (utf8ByteCount <= utf16ByteCount && charsetEncoder.canEncode(string)) {
+      writeStringUtf8(string, utf8ByteCount, charsetEncoder, byteBuffer)
+    } else {
+      writeStringCustomUtf16(string, utf16ByteCount, byteArray)
+    }
   }
 
   companion object {
@@ -94,6 +114,103 @@ internal class QueryResultEncoder(private val dataOutput: DataOutput) {
       val offset = byteBuffer.arrayOffset() + byteBuffer.position()
       val length = byteBuffer.remaining()
       write(byteArray, offset, length)
+    }
+
+    private fun DataOutput.writeStringUtf8(
+      string: String,
+      utf8ByteCount: Int,
+      charsetEncoder: CharsetEncoder,
+      byteBuffer: ByteBuffer
+    ) {
+      // Assuming an array offset of 0 just makes the logic below simpler because we don't have to
+      // calculate the offset from which to access the underlying byte array.
+      require(byteBuffer.arrayOffset() == 0) {
+        "internal error f6rk5x4dbp: byteBuffer.arrayOffset() should be zero, " +
+          "but got ${byteBuffer.arrayOffset()}"
+      }
+
+      charsetEncoder.reset()
+      byteBuffer.clear()
+      val byteArray = byteBuffer.array()
+      val charBuffer = CharBuffer.wrap(string)
+
+      writeByte(QueryResultCodec.VALUE_STRING_UTF8)
+      writeInt(utf8ByteCount)
+      writeInt(string.length)
+
+      var byteWriteCount = 0
+      while (true) {
+        val coderResult1 =
+          if (charBuffer.hasRemaining()) {
+            charsetEncoder.encode(charBuffer, byteBuffer, true)
+          } else {
+            CoderResult.UNDERFLOW
+          }
+
+        val coderResult2 =
+          if (coderResult1.isUnderflow) {
+            charsetEncoder.flush(byteBuffer)
+          } else {
+            coderResult1
+          }
+
+        if (coderResult2.isUnderflow) {
+          break
+        }
+        if (coderResult2.isOverflow) {
+          byteBuffer.flip()
+          byteWriteCount += byteBuffer.remaining()
+          write(byteArray, 0, byteBuffer.remaining())
+          byteBuffer.clear()
+        } else {
+          coderResult2.throwException()
+        }
+      }
+
+      byteBuffer.flip()
+      if (byteBuffer.hasRemaining()) {
+        byteWriteCount += byteBuffer.remaining()
+        write(byteArray, 0, byteBuffer.remaining())
+      }
+
+      check(byteWriteCount == utf8ByteCount) {
+        "internal error rvmdh67npk: byteWriteCount=$byteWriteCount " +
+          "should be equal to utf8ByteCount=$utf8ByteCount, but they differ by " +
+          "${(utf8ByteCount-byteWriteCount).absoluteValue}"
+      }
+    }
+
+    private fun DataOutput.writeStringCustomUtf16(
+      string: String,
+      utf16ByteCount: Int,
+      buffer: ByteArray
+    ) {
+      writeByte(QueryResultCodec.VALUE_STRING_UTF16)
+      writeInt(utf16ByteCount)
+
+      var i = 0
+      var byteWriteCount = 0
+      string.forEach { char ->
+        buffer[i++] = ((char.code ushr 8) and 0xFF).toByte()
+        buffer[i++] = ((char.code ushr 0) and 0xFF).toByte()
+
+        if (i + 2 >= buffer.size) {
+          write(buffer, 0, i)
+          byteWriteCount += i
+          i = 0
+        }
+      }
+
+      if (i > 0) {
+        write(buffer, 0, i)
+        byteWriteCount += i
+      }
+
+      check(byteWriteCount == utf16ByteCount) {
+        "internal error agdf5qbwwp: byteWriteCount=$byteWriteCount " +
+          "should be equal to utf16ByteCount=$utf16ByteCount, but they differ by " +
+          "${(utf16ByteCount - byteWriteCount).absoluteValue}"
+      }
     }
   }
 }

@@ -51,12 +51,13 @@ internal object QueryResultCodec {
   const val VALUE_NUMBER: Byte = 2
   const val VALUE_BOOL_TRUE: Byte = 3
   const val VALUE_BOOL_FALSE: Byte = 4
-  const val VALUE_STRING_UTF8: Byte = 5
-  const val VALUE_STRING_UTF16: Byte = 6
-  const val VALUE_STRUCT: Byte = 7
-  const val VALUE_LIST: Byte = 8
-  const val VALUE_KIND_NOT_SET: Byte = 9
-  const val VALUE_ENTITY: Byte = 10
+  const val VALUE_STRING_EMPTY: Byte = 5
+  const val VALUE_STRING_UTF8: Byte = 6
+  const val VALUE_STRING_UTF16: Byte = 7
+  const val VALUE_STRUCT: Byte = 8
+  const val VALUE_LIST: Byte = 9
+  const val VALUE_KIND_NOT_SET: Byte = 10
+  const val VALUE_ENTITY: Byte = 11
 
   private class Encoder(dataOutput: DataOutput, private val entities: MutableList<Entity>) :
     DataOutput by dataOutput {
