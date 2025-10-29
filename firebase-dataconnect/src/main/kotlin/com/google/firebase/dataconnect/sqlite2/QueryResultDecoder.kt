@@ -66,7 +66,7 @@ internal class QueryResultDecoder(
 
   class NegativeStringByteCountException(message: String) : DecodeException(message)
 
-  class UnknownKindCaseIntException(message: String) : DecodeException(message)
+  class UnknownKindCaseByteException(message: String) : DecodeException(message)
 
   companion object {
 
@@ -108,10 +108,10 @@ internal class QueryResultDecoder(
       readByte().let { byte ->
         val kindCase = kindCaseByKindCaseInt[byte]
         if (kindCase === null) {
-          throw UnknownKindCaseIntException(
-            "read unknown kind case int $byte, but expected one of " +
+          throw UnknownKindCaseByteException(
+            "read unknown kind case byte $byte, but expected one of " +
               kindCaseByKindCaseInt.keys.sorted().joinToString { it.toString() } +
-              " [tke6446rm9]"
+              " [pmkb3sc2mn]"
           )
         }
         kindCase

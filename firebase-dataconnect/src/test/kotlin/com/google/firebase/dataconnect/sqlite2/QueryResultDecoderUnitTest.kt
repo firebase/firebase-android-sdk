@@ -27,6 +27,8 @@ import io.kotest.common.ExperimentalKotest
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
+import io.kotest.property.arbitrary.byte
+import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.negativeInt
 import io.kotest.property.arbitrary.positiveInt
 import io.kotest.property.checkAll
@@ -77,6 +79,30 @@ class QueryResultDecoderUnitTest {
     }
   }
 
+  @Test
+  fun `decode() should throw UnknownKindCaseIntException`() = runTest {
+    checkAll(propTestConfig, Arb.positiveInt(), invalidKindCaseByteArb()) {
+      positiveInt,
+      invalidKindCaseByte ->
+      val byteArray = buildByteArray {
+        writeInt(positiveInt)
+        writeInt(0)
+        writeByte(invalidKindCaseByte.toInt())
+      }
+
+      val exception =
+        shouldThrow<QueryResultDecoder.UnknownKindCaseByteException> {
+          decode(byteArray, emptyList())
+        }
+
+      assertSoftly {
+        exception.message shouldContainWithNonAbuttingText "pmkb3sc2mn"
+        exception.message shouldContainWithNonAbuttingText invalidKindCaseByte.toString()
+        exception.message shouldContainWithNonAbuttingTextIgnoringCase "unknown kind case byte"
+      }
+    }
+  }
+
   private companion object {
 
     @OptIn(ExperimentalKotest::class)
@@ -91,5 +117,13 @@ class QueryResultDecoderUnitTest {
         DataOutputStream(byteArrayOutputStream).use { dataOutputStream -> block(dataOutputStream) }
         byteArrayOutputStream.toByteArray()
       }
+
+    val kindCaseBytes =
+      setOf(
+        QueryResultCodec.VALUE_NUMBER,
+        QueryResultCodec.VALUE_BOOL,
+      )
+
+    fun invalidKindCaseByteArb(): Arb<Byte> = Arb.byte().filterNot { it in kindCaseBytes }
   }
 }
