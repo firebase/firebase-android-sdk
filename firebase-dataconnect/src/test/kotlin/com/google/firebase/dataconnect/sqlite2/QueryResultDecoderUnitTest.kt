@@ -122,6 +122,7 @@ class QueryResultDecoderUnitTest {
       setOf(
         QueryResultCodec.VALUE_NUMBER,
         QueryResultCodec.VALUE_BOOL,
+        QueryResultCodec.VALUE_NULL,
       )
 
     fun invalidKindCaseByteArb(): Arb<Byte> = Arb.byte().filterNot { it in kindCaseBytes }

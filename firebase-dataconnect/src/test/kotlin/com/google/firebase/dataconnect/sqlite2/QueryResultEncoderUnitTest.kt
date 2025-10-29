@@ -17,6 +17,7 @@
 package com.google.firebase.dataconnect.sqlite2
 
 import com.google.firebase.dataconnect.testutil.shouldBe
+import com.google.protobuf.NullValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
 import io.kotest.assertions.withClue
@@ -31,6 +32,7 @@ import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.alphanumeric
 import io.kotest.property.arbitrary.boolean
 import io.kotest.property.arbitrary.double
+import io.kotest.property.arbitrary.list
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
@@ -58,6 +60,13 @@ class QueryResultEncoderUnitTest {
     }
   }
 
+  @Test
+  fun `struct with all null values`() = runTest {
+    checkAll(propTestConfig, structWithNullValuesArb()) { struct ->
+      struct.decodingEncodingShouldProduceIdenticalStruct()
+    }
+  }
+
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Tests for helper functions
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -77,6 +86,14 @@ class QueryResultEncoderUnitTest {
   @Test
   fun `structWithBoolValuesArb() should produce non-empty structs`() =
     verifyArbProducesNonEmptyStructs(structWithBoolValuesArb())
+
+  @Test
+  fun `structWithNullValuesArb() should produce structs with only number values`() =
+    verifyArbProducesStructsWithKindCase(structWithNullValuesArb(), Value.KindCase.NULL_VALUE)
+
+  @Test
+  fun `structWithNullValuesArb() should produce non-empty structs`() =
+    verifyArbProducesNonEmptyStructs(structWithNullValuesArb())
 
   private fun verifyArbProducesStructsWithKindCase(
     arb: Arb<Struct>,
@@ -138,6 +155,17 @@ class QueryResultEncoderUnitTest {
         val builder = Struct.newBuilder()
         map.entries.forEach { (key, value) ->
           builder.putFields(key, Value.newBuilder().setBoolValue(value).build())
+        }
+        builder.build()
+      }
+
+    fun structWithNullValuesArb(
+      keys: Arb<List<String>> = Arb.list(Arb.string(1..10, Codepoint.alphanumeric()), 1..10)
+    ): Arb<Struct> =
+      keys.map { keys ->
+        val builder = Struct.newBuilder()
+        keys.forEach { key ->
+          builder.putFields(key, Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build())
         }
         builder.build()
       }

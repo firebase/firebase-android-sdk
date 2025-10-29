@@ -44,6 +44,7 @@ internal class QueryResultDecoder(
       when (dataInput.readKindCase()) {
         Value.KindCase.NUMBER_VALUE -> put(key, dataInput.readDouble())
         Value.KindCase.BOOL_VALUE -> put(key, dataInput.readBoolean())
+        Value.KindCase.NULL_VALUE -> putNull(key)
         else -> TODO()
       }
     }
@@ -102,6 +103,7 @@ internal class QueryResultDecoder(
       mapOf(
         QueryResultCodec.VALUE_NUMBER to Value.KindCase.NUMBER_VALUE,
         QueryResultCodec.VALUE_BOOL to Value.KindCase.BOOL_VALUE,
+        QueryResultCodec.VALUE_NULL to Value.KindCase.NULL_VALUE,
       )
 
     private fun DataInput.readKindCase(): Value.KindCase =
