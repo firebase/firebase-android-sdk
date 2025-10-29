@@ -19,6 +19,7 @@ package com.google.firebase.dataconnect.sqlite2
 import com.google.firebase.dataconnect.sqlite2.QueryResultCodec.Entity
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.protobuf.Struct
+import com.google.protobuf.Value
 import java.io.ByteArrayInputStream
 import java.io.DataInput
 import java.io.DataInputStream
@@ -40,8 +41,11 @@ internal class QueryResultDecoder(
     val keyCount = dataInput.readStructKeyCount()
     repeat(keyCount) {
       val key = dataInput.readString()
-      val value = dataInput.readDouble()
-      put(key, value)
+      when (dataInput.readKindCase()) {
+        Value.KindCase.NUMBER_VALUE -> put(key, dataInput.readDouble())
+        Value.KindCase.BOOL_VALUE -> put(key, dataInput.readBoolean())
+        else -> TODO()
+      }
     }
   }
 
@@ -61,6 +65,8 @@ internal class QueryResultDecoder(
   class NegativeStructKeyCountException(message: String) : DecodeException(message)
 
   class NegativeStringByteCountException(message: String) : DecodeException(message)
+
+  class UnknownKindCaseIntException(message: String) : DecodeException(message)
 
   companion object {
 
@@ -90,6 +96,25 @@ internal class QueryResultDecoder(
               "a number greater than or equal to zero [a9kma55y7m]"
           )
         }
+      }
+
+    private val kindCaseByKindCaseInt: Map<Byte, Value.KindCase> =
+      mapOf(
+        QueryResultCodec.VALUE_NUMBER to Value.KindCase.NUMBER_VALUE,
+        QueryResultCodec.VALUE_BOOL to Value.KindCase.BOOL_VALUE,
+      )
+
+    private fun DataInput.readKindCase(): Value.KindCase =
+      readByte().let { byte ->
+        val kindCase = kindCaseByKindCaseInt[byte]
+        if (kindCase === null) {
+          throw UnknownKindCaseIntException(
+            "read unknown kind case int $byte, but expected one of " +
+              kindCaseByKindCaseInt.keys.sorted().joinToString { it.toString() } +
+              " [tke6446rm9]"
+          )
+        }
+        kindCase
       }
   }
 }

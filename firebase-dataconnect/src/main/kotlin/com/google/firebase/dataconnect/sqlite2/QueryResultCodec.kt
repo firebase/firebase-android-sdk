@@ -16,7 +16,6 @@
 
 package com.google.firebase.dataconnect.sqlite2
 
-import com.google.firebase.dataconnect.sqlite2.QueryResultCodec.Entity
 import com.google.firebase.dataconnect.util.StringUtil.calculateUtf8ByteCount
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
@@ -52,12 +51,11 @@ internal object QueryResultCodec {
   const val VALUE_NUMBER: Byte = 2
   const val VALUE_STRING_UTF8: Byte = 3
   const val VALUE_STRING_UTF16: Byte = 4
-  const val VALUE_BOOL_TRUE: Byte = 5
-  const val VALUE_BOOL_FALSE: Byte = 6
-  const val VALUE_STRUCT: Byte = 7
-  const val VALUE_LIST: Byte = 8
-  const val VALUE_KIND_NOT_SET: Byte = 0
-  const val VALUE_ENTITY: Byte = 10
+  const val VALUE_BOOL: Byte = 5
+  const val VALUE_STRUCT: Byte = 6
+  const val VALUE_LIST: Byte = 7
+  const val VALUE_KIND_NOT_SET: Byte = 8
+  const val VALUE_ENTITY: Byte = 9
 
   private class Encoder(dataOutput: DataOutput, private val entities: MutableList<Entity>) :
     DataOutput by dataOutput {
@@ -72,8 +70,8 @@ internal object QueryResultCodec {
         Value.KindCase.KIND_NOT_SET -> writeByte(VALUE_KIND_NOT_SET.toInt())
         Value.KindCase.NULL_VALUE -> writeByte(VALUE_NULL.toInt())
         Value.KindCase.BOOL_VALUE -> {
-          val boolValue: Byte = if (value.boolValue) VALUE_BOOL_TRUE else VALUE_BOOL_FALSE
-          writeByte(boolValue.toInt())
+          writeByte(VALUE_BOOL.toInt())
+          writeBoolean(value.boolValue)
         }
         Value.KindCase.NUMBER_VALUE -> {
           writeByte(VALUE_NUMBER.toInt())

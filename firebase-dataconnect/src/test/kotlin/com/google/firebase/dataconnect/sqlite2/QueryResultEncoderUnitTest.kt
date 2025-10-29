@@ -17,14 +17,19 @@
 package com.google.firebase.dataconnect.sqlite2
 
 import com.google.firebase.dataconnect.testutil.shouldBe
-import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.protobuf.Struct
+import com.google.protobuf.Value
+import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
+import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.collections.shouldNotContain
+import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
 import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.alphanumeric
+import io.kotest.property.arbitrary.boolean
 import io.kotest.property.arbitrary.double
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.string
@@ -43,6 +48,58 @@ class QueryResultEncoderUnitTest {
   fun `struct with all number values`() = runTest {
     checkAll(propTestConfig, structWithNumberValuesArb()) { struct ->
       struct.decodingEncodingShouldProduceIdenticalStruct()
+    }
+  }
+
+  @Test
+  fun `struct with all bool values`() = runTest {
+    checkAll(propTestConfig, structWithBoolValuesArb()) { struct ->
+      struct.decodingEncodingShouldProduceIdenticalStruct()
+    }
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // Tests for helper functions
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+
+  @Test
+  fun `structWithNumberValuesArb() should produce structs with only number values`() =
+    verifyArbProducesStructsWithKindCase(structWithNumberValuesArb(), Value.KindCase.NUMBER_VALUE)
+
+  @Test
+  fun `structWithNumberValuesArb() should produce non-empty structs`() =
+    verifyArbProducesNonEmptyStructs(structWithNumberValuesArb())
+
+  @Test
+  fun `structWithBoolValuesArb() should produce structs with only number values`() =
+    verifyArbProducesStructsWithKindCase(structWithBoolValuesArb(), Value.KindCase.BOOL_VALUE)
+
+  @Test
+  fun `structWithBoolValuesArb() should produce non-empty structs`() =
+    verifyArbProducesNonEmptyStructs(structWithBoolValuesArb())
+
+  private fun verifyArbProducesStructsWithKindCase(
+    arb: Arb<Struct>,
+    expectedKindCase: Value.KindCase
+  ) = runTest {
+    checkAll(propTestConfig, arb) { struct ->
+      struct.fieldsMap.values.forEach { it.kindCase shouldBe expectedKindCase }
+    }
+  }
+
+  fun verifyArbProducesNonEmptyStructs(arb: Arb<Struct>) = runTest {
+    val occurrenceCountBySize = mutableMapOf<Int, Int>()
+    checkAll(propTestConfig, arb) { struct ->
+      val oldCount = occurrenceCountBySize.getOrDefault(struct.fieldsCount, 0)
+      occurrenceCountBySize[struct.fieldsCount] = oldCount + 1
+    }
+    withClue(
+      "occurrenceCountBySize=${occurrenceCountBySize.toSortedMap(Comparator.comparing { it } )}"
+    ) {
+      val occurrenceCounts = occurrenceCountBySize.keys.sorted() // sorted for better fail messages
+      occurrenceCounts shouldNotContain 0
+      occurrenceCounts shouldContain 1
+      occurrenceCounts shouldContain 2
     }
   }
 
@@ -65,6 +122,24 @@ class QueryResultEncoderUnitTest {
       map: Arb<Map<String, Double>> =
         Arb.map(Arb.string(1..10, Codepoint.alphanumeric()), Arb.double(), 1, 10)
     ): Arb<Struct> =
-      map.map { map -> buildStructProto { map.entries.forEach { put(it.key, it.value) } } }
+      map.map { map ->
+        val builder = Struct.newBuilder()
+        map.entries.forEach { (key, value) ->
+          builder.putFields(key, Value.newBuilder().setNumberValue(value).build())
+        }
+        builder.build()
+      }
+
+    fun structWithBoolValuesArb(
+      map: Arb<Map<String, Boolean>> =
+        Arb.map(Arb.string(1..10, Codepoint.alphanumeric()), Arb.boolean(), 1, 10)
+    ): Arb<Struct> =
+      map.map { map ->
+        val builder = Struct.newBuilder()
+        map.entries.forEach { (key, value) ->
+          builder.putFields(key, Value.newBuilder().setBoolValue(value).build())
+        }
+        builder.build()
+      }
   }
 }

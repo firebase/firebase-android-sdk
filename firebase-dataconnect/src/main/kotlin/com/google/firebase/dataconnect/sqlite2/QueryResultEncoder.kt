@@ -18,6 +18,7 @@ package com.google.firebase.dataconnect.sqlite2
 
 import com.google.firebase.dataconnect.sqlite2.QueryResultCodec.Entity
 import com.google.protobuf.Struct
+import com.google.protobuf.Value
 import java.io.ByteArrayOutputStream
 import java.io.DataOutput
 import java.io.DataOutputStream
@@ -41,7 +42,21 @@ internal class QueryResultEncoder(private val dataOutput: DataOutput) {
     dataOutput.writeInt(map.size)
     map.entries.forEach { (key, value) ->
       dataOutput.writeString(key)
-      dataOutput.writeDouble(value.numberValue)
+      when (value.kindCase) {
+        Value.KindCase.NUMBER_VALUE -> {
+          dataOutput.writeByte(QueryResultCodec.VALUE_NUMBER)
+          dataOutput.writeDouble(value.numberValue)
+        }
+        Value.KindCase.BOOL_VALUE -> {
+          dataOutput.writeByte(QueryResultCodec.VALUE_BOOL)
+          dataOutput.writeBoolean(value.boolValue)
+        }
+        Value.KindCase.NULL_VALUE -> TODO()
+        Value.KindCase.STRING_VALUE -> TODO()
+        Value.KindCase.STRUCT_VALUE -> TODO()
+        Value.KindCase.LIST_VALUE -> TODO()
+        Value.KindCase.KIND_NOT_SET -> TODO()
+      }
     }
   }
 
@@ -65,6 +80,10 @@ internal class QueryResultEncoder(private val dataOutput: DataOutput) {
           }
         EncodeResult(byteArrayOutputStream.toByteArray(), entities)
       }
+
+    private fun DataOutput.writeByte(byte: Byte) {
+      writeByte(byte.toInt())
+    }
 
     private fun DataOutput.writeByteBuffer(byteBuffer: ByteBuffer) {
       val byteArray = byteBuffer.array()
