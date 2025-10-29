@@ -19,7 +19,6 @@ package com.google.firebase.ai.type
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Log
-import com.google.firebase.ai.type.ImagenImageFormat.Internal
 import java.io.ByteArrayOutputStream
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerialName
@@ -337,8 +336,8 @@ internal object PartSerializer :
   }
 }
 
-internal fun Part.toInternal(nullThought: Boolean): InternalPart {
-  val thought = if (nullThought) null else isThought
+internal fun Part.toInternal(ignoreThoughtFlag: Boolean = false): InternalPart {
+  val thought = if (ignoreThoughtFlag) null else isThought
   return when (this) {
     is TextPart -> TextPart.Internal(text, thought, thoughtSignature)
     is ImagePart ->
