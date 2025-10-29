@@ -15,25 +15,25 @@
 package com.google.firebase.firestore.pipeline
 
 import com.google.firebase.firestore.model.Values.encodeValue
-import com.google.firebase.firestore.pipeline.Expr.Companion.add
-import com.google.firebase.firestore.pipeline.Expr.Companion.and
-import com.google.firebase.firestore.pipeline.Expr.Companion.array
-import com.google.firebase.firestore.pipeline.Expr.Companion.cond
-import com.google.firebase.firestore.pipeline.Expr.Companion.constant
-import com.google.firebase.firestore.pipeline.Expr.Companion.eqAny
-import com.google.firebase.firestore.pipeline.Expr.Companion.field
-import com.google.firebase.firestore.pipeline.Expr.Companion.isNan
-import com.google.firebase.firestore.pipeline.Expr.Companion.isNotNan
-import com.google.firebase.firestore.pipeline.Expr.Companion.isNotNull
-import com.google.firebase.firestore.pipeline.Expr.Companion.isNull
-import com.google.firebase.firestore.pipeline.Expr.Companion.logicalMaximum
-import com.google.firebase.firestore.pipeline.Expr.Companion.logicalMinimum
-import com.google.firebase.firestore.pipeline.Expr.Companion.map
-import com.google.firebase.firestore.pipeline.Expr.Companion.not
-import com.google.firebase.firestore.pipeline.Expr.Companion.notEqAny
-import com.google.firebase.firestore.pipeline.Expr.Companion.nullValue
-import com.google.firebase.firestore.pipeline.Expr.Companion.or
-import com.google.firebase.firestore.pipeline.Expr.Companion.xor
+import com.google.firebase.firestore.pipeline.Expression.Companion.add
+import com.google.firebase.firestore.pipeline.Expression.Companion.and
+import com.google.firebase.firestore.pipeline.Expression.Companion.array
+import com.google.firebase.firestore.pipeline.Expression.Companion.conditional
+import com.google.firebase.firestore.pipeline.Expression.Companion.constant
+import com.google.firebase.firestore.pipeline.Expression.Companion.equalAny
+import com.google.firebase.firestore.pipeline.Expression.Companion.field
+import com.google.firebase.firestore.pipeline.Expression.Companion.isNan
+import com.google.firebase.firestore.pipeline.Expression.Companion.isNotNan
+import com.google.firebase.firestore.pipeline.Expression.Companion.isNotNull
+import com.google.firebase.firestore.pipeline.Expression.Companion.isNull
+import com.google.firebase.firestore.pipeline.Expression.Companion.logicalMaximum
+import com.google.firebase.firestore.pipeline.Expression.Companion.logicalMinimum
+import com.google.firebase.firestore.pipeline.Expression.Companion.map
+import com.google.firebase.firestore.pipeline.Expression.Companion.not
+import com.google.firebase.firestore.pipeline.Expression.Companion.notEqualAny
+import com.google.firebase.firestore.pipeline.Expression.Companion.nullValue
+import com.google.firebase.firestore.pipeline.Expression.Companion.or
+import com.google.firebase.firestore.pipeline.Expression.Companion.xor
 import com.google.firebase.firestore.testutil.TestUtilKtx.doc
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -46,7 +46,7 @@ class LogicalTests {
   private val falseExpr = constant(false)
   private val nullExpr = nullValue() // Changed
   private val nanExpr = constant(Double.NaN)
-  private val errorExpr = field("error.field").eq(constant("random"))
+  private val errorExpr = field("error.field").equal(constant("random"))
 
   // Corrected document creation using doc() from TestUtilKtx
   private val testDocWithNan =
@@ -292,33 +292,33 @@ class LogicalTests {
   // --- Cond (? :) Tests ---
   @Test
   fun `cond - true condition returns true case`() {
-    val expr = cond(trueExpr, constant("true case"), errorExpr)
+    val expr = conditional(trueExpr, constant("true case"), errorExpr)
     val result = evaluate(expr, emptyDoc)
     assertEvaluatesTo(result, encodeValue("true case"), "cond(true, 'true case', error)")
   }
 
   @Test
   fun `cond - false condition returns false case`() {
-    val expr = cond(falseExpr, errorExpr, constant("false case"))
+    val expr = conditional(falseExpr, errorExpr, constant("false case"))
     val result = evaluate(expr, emptyDoc)
     assertEvaluatesTo(result, encodeValue("false case"), "cond(false, error, 'false case')")
   }
 
   @Test
   fun `cond - error condition returns error`() {
-    val expr = cond(errorExpr, constant("true case"), constant("false case"))
+    val expr = conditional(errorExpr, constant("true case"), constant("false case"))
     assertEvaluatesToError(evaluate(expr, errorDoc), "Cond with error condition")
   }
 
   @Test
   fun `cond - true condition but true case is error returns error`() {
-    val expr = cond(trueExpr, errorExpr, constant("false case"))
+    val expr = conditional(trueExpr, errorExpr, constant("false case"))
     assertEvaluatesToError(evaluate(expr, errorDoc), "Cond with error true-case")
   }
 
   @Test
   fun `cond - false condition but false case is error returns error`() {
-    val expr = cond(falseExpr, constant("true case"), errorExpr)
+    val expr = conditional(falseExpr, constant("true case"), errorExpr)
     assertEvaluatesToError(evaluate(expr, errorDoc), "Cond with error false-case")
   }
 
@@ -571,7 +571,7 @@ class LogicalTests {
 
   @Test
   fun `not - error is error`() {
-    val expr = not(errorExpr as BooleanExpr) // Changed
+    val expr = not(errorExpr as BooleanExpression) // Changed
     assertEvaluatesToError(evaluate(expr, errorDoc), "NOT(error)")
   }
 
@@ -585,7 +585,7 @@ class LogicalTests {
 
   @Test
   fun `xor - false, error is error`() {
-    val expr = xor(falseExpr, errorExpr as BooleanExpr) // Changed
+    val expr = xor(falseExpr, errorExpr as BooleanExpression) // Changed
     assertEvaluatesToError(evaluate(expr, errorDoc), "XOR(F,E)")
   }
 
@@ -597,19 +597,19 @@ class LogicalTests {
 
   @Test
   fun `xor - error, false is error`() {
-    val expr = xor(errorExpr as BooleanExpr, falseExpr) // Changed
+    val expr = xor(errorExpr as BooleanExpression, falseExpr) // Changed
     assertEvaluatesToError(evaluate(expr, errorDoc), "XOR(E,F)")
   }
 
   @Test
   fun `xor - error, error is error`() {
-    val expr = xor(errorExpr as BooleanExpr, errorExpr as BooleanExpr) // Changed
+    val expr = xor(errorExpr as BooleanExpression, errorExpr as BooleanExpression) // Changed
     assertEvaluatesToError(evaluate(expr, errorDoc), "XOR(E,E)")
   }
 
   @Test
   fun `xor - error, true is error`() {
-    val expr = xor(errorExpr as BooleanExpr, trueExpr) // Changed
+    val expr = xor(errorExpr as BooleanExpression, trueExpr) // Changed
     assertEvaluatesToError(evaluate(expr, errorDoc), "XOR(E,T)")
   }
 
@@ -621,7 +621,7 @@ class LogicalTests {
 
   @Test
   fun `xor - true, error is error`() {
-    val expr = xor(trueExpr, errorExpr as BooleanExpr) // Changed
+    val expr = xor(trueExpr, errorExpr as BooleanExpression) // Changed
     assertEvaluatesToError(evaluate(expr, errorDoc), "XOR(T,E)")
   }
 
@@ -640,7 +640,7 @@ class LogicalTests {
 
   @Test
   fun `xor - false, false, error is error`() {
-    val expr = xor(falseExpr, falseExpr, errorExpr as BooleanExpr) // Changed
+    val expr = xor(falseExpr, falseExpr, errorExpr as BooleanExpression) // Changed
     assertEvaluatesToError(evaluate(expr, errorDoc), "XOR(F,F,E)")
   }
 
@@ -652,19 +652,20 @@ class LogicalTests {
 
   @Test
   fun `xor - false, error, false is error`() {
-    val expr = xor(falseExpr, errorExpr as BooleanExpr, falseExpr) // Changed
+    val expr = xor(falseExpr, errorExpr as BooleanExpression, falseExpr) // Changed
     assertEvaluatesToError(evaluate(expr, errorDoc), "XOR(F,E,F)")
   }
 
   @Test
   fun `xor - false, error, error is error`() {
-    val expr = xor(falseExpr, errorExpr as BooleanExpr, errorExpr as BooleanExpr) // Changed
+    val expr =
+      xor(falseExpr, errorExpr as BooleanExpression, errorExpr as BooleanExpression) // Changed
     assertEvaluatesToError(evaluate(expr, errorDoc), "XOR(F,E,E)")
   }
 
   @Test
   fun `xor - false, error, true is error`() {
-    val expr = xor(falseExpr, errorExpr as BooleanExpr, trueExpr) // Changed
+    val expr = xor(falseExpr, errorExpr as BooleanExpression, trueExpr) // Changed
     assertEvaluatesToError(evaluate(expr, errorDoc), "XOR(F,E,T)")
   }
 
@@ -676,7 +677,7 @@ class LogicalTests {
 
   @Test
   fun `xor - false, true, error is error`() {
-    val expr = xor(falseExpr, trueExpr, errorExpr as BooleanExpr) // Changed
+    val expr = xor(falseExpr, trueExpr, errorExpr as BooleanExpression) // Changed
     assertEvaluatesToError(evaluate(expr, errorDoc), "XOR(F,T,E)")
   }
 
@@ -688,56 +689,64 @@ class LogicalTests {
 
   @Test
   fun `xor - error, false, false is error`() {
-    val expr = xor(errorExpr as BooleanExpr, falseExpr, falseExpr) // Changed
+    val expr = xor(errorExpr as BooleanExpression, falseExpr, falseExpr) // Changed
     assertEvaluatesToError(evaluate(expr, errorDoc), "XOR(E,F,F)")
   }
 
   @Test
   fun `xor - error, false, error is error`() {
-    val expr = xor(errorExpr as BooleanExpr, falseExpr, errorExpr as BooleanExpr) // Changed
+    val expr =
+      xor(errorExpr as BooleanExpression, falseExpr, errorExpr as BooleanExpression) // Changed
     assertEvaluatesToError(evaluate(expr, errorDoc), "XOR(E,F,E)")
   }
 
   @Test
   fun `xor - error, false, true is error`() {
-    val expr = xor(errorExpr as BooleanExpr, falseExpr, trueExpr) // Changed
+    val expr = xor(errorExpr as BooleanExpression, falseExpr, trueExpr) // Changed
     assertEvaluatesToError(evaluate(expr, errorDoc), "XOR(E,F,T)")
   }
 
   @Test
   fun `xor - error, error, false is error`() {
-    val expr = xor(errorExpr as BooleanExpr, errorExpr as BooleanExpr, falseExpr) // Changed
+    val expr =
+      xor(errorExpr as BooleanExpression, errorExpr as BooleanExpression, falseExpr) // Changed
     assertEvaluatesToError(evaluate(expr, errorDoc), "XOR(E,E,F)")
   }
 
   @Test
   fun `xor - error, error, error is error`() {
     val expr =
-      xor(errorExpr as BooleanExpr, errorExpr as BooleanExpr, errorExpr as BooleanExpr) // Changed
+      xor(
+        errorExpr as BooleanExpression,
+        errorExpr as BooleanExpression,
+        errorExpr as BooleanExpression
+      ) // Changed
     assertEvaluatesToError(evaluate(expr, errorDoc), "XOR(E,E,E)")
   }
 
   @Test
   fun `xor - error, error, true is error`() {
-    val expr = xor(errorExpr as BooleanExpr, errorExpr as BooleanExpr, trueExpr) // Changed
+    val expr =
+      xor(errorExpr as BooleanExpression, errorExpr as BooleanExpression, trueExpr) // Changed
     assertEvaluatesToError(evaluate(expr, errorDoc), "XOR(E,E,T)")
   }
 
   @Test
   fun `xor - error, true, false is error`() {
-    val expr = xor(errorExpr as BooleanExpr, trueExpr, falseExpr) // Changed
+    val expr = xor(errorExpr as BooleanExpression, trueExpr, falseExpr) // Changed
     assertEvaluatesToError(evaluate(expr, errorDoc), "XOR(E,T,F)")
   }
 
   @Test
   fun `xor - error, true, error is error`() {
-    val expr = xor(errorExpr as BooleanExpr, trueExpr, errorExpr as BooleanExpr) // Changed
+    val expr =
+      xor(errorExpr as BooleanExpression, trueExpr, errorExpr as BooleanExpression) // Changed
     assertEvaluatesToError(evaluate(expr, errorDoc), "XOR(E,T,E)")
   }
 
   @Test
   fun `xor - error, true, true is error`() {
-    val expr = xor(errorExpr as BooleanExpr, trueExpr, trueExpr) // Changed
+    val expr = xor(errorExpr as BooleanExpression, trueExpr, trueExpr) // Changed
     assertEvaluatesToError(evaluate(expr, errorDoc), "XOR(E,T,T)")
   }
 
@@ -749,7 +758,7 @@ class LogicalTests {
 
   @Test
   fun `xor - true, false, error is error`() {
-    val expr = xor(trueExpr, falseExpr, errorExpr as BooleanExpr) // Changed
+    val expr = xor(trueExpr, falseExpr, errorExpr as BooleanExpression) // Changed
     assertEvaluatesToError(evaluate(expr, errorDoc), "XOR(T,F,E)")
   }
 
@@ -761,19 +770,20 @@ class LogicalTests {
 
   @Test
   fun `xor - true, error, false is error`() {
-    val expr = xor(trueExpr, errorExpr as BooleanExpr, falseExpr) // Changed
+    val expr = xor(trueExpr, errorExpr as BooleanExpression, falseExpr) // Changed
     assertEvaluatesToError(evaluate(expr, errorDoc), "XOR(T,E,F)")
   }
 
   @Test
   fun `xor - true, error, error is error`() {
-    val expr = xor(trueExpr, errorExpr as BooleanExpr, errorExpr as BooleanExpr) // Changed
+    val expr =
+      xor(trueExpr, errorExpr as BooleanExpression, errorExpr as BooleanExpression) // Changed
     assertEvaluatesToError(evaluate(expr, errorDoc), "XOR(T,E,E)")
   }
 
   @Test
   fun `xor - true, error, true is error`() {
-    val expr = xor(trueExpr, errorExpr as BooleanExpr, trueExpr) // Changed
+    val expr = xor(trueExpr, errorExpr as BooleanExpression, trueExpr) // Changed
     assertEvaluatesToError(evaluate(expr, errorDoc), "XOR(T,E,T)")
   }
 
@@ -785,7 +795,7 @@ class LogicalTests {
 
   @Test
   fun `xor - true, true, error is error`() {
-    val expr = xor(trueExpr, trueExpr, errorExpr as BooleanExpr) // Changed
+    val expr = xor(trueExpr, trueExpr, errorExpr as BooleanExpression) // Changed
     assertEvaluatesToError(evaluate(expr, errorDoc), "XOR(T,T,E)")
   }
 
@@ -960,26 +970,27 @@ class LogicalTests {
   // --- EqAny Tests ---
   @Test
   fun `eqAny - value found in array`() {
-    val expr = eqAny(constant("hello"), array(constant("hello"), constant("world")))
+    val expr = equalAny(constant("hello"), array(constant("hello"), constant("world")))
     assertEvaluatesTo(evaluate(expr, emptyDoc), true, "eqAny(hello, [hello, world])")
   }
 
   @Test
   fun `eqAny - value not found in array`() {
-    val expr = eqAny(constant(4L), array(constant(42L), constant("matang"), constant(true)))
+    val expr = equalAny(constant(4L), array(constant(42L), constant("matang"), constant(true)))
     assertEvaluatesTo(evaluate(expr, emptyDoc), false, "eqAny(4, [42, matang, true])")
   }
 
   @Test
   fun `notEqAny - value not found in array`() {
     val expr =
-      notEqAny(constant(4L), array(constant(42L), constant("matang"), constant(true))) // Changed
+      notEqualAny(constant(4L), array(constant(42L), constant("matang"), constant(true))) // Changed
     assertEvaluatesTo(evaluate(expr, emptyDoc), true, "notEqAny(4, [42, matang, true])")
   }
 
   @Test
   fun `notEqAny - value found in array`() {
-    val expr = notEqAny(constant("hello"), array(constant("hello"), constant("world"))) // Changed
+    val expr =
+      notEqualAny(constant("hello"), array(constant("hello"), constant("world"))) // Changed
     assertEvaluatesTo(evaluate(expr, emptyDoc), false, "notEqAny(hello, [hello, world])")
   }
 
@@ -987,7 +998,7 @@ class LogicalTests {
   fun `eqAny - equivalent numerics`() {
     assertEvaluatesTo(
       evaluate(
-        eqAny(constant(42L), array(constant(42.0), constant("matang"), constant(true))),
+        equalAny(constant(42L), array(constant(42.0), constant("matang"), constant(true))),
         emptyDoc
       ),
       true,
@@ -995,7 +1006,7 @@ class LogicalTests {
     )
     assertEvaluatesTo(
       evaluate(
-        eqAny(constant(42.0), array(constant(42L), constant("matang"), constant(true))),
+        equalAny(constant(42.0), array(constant(42L), constant("matang"), constant(true))),
         emptyDoc
       ),
       true,
@@ -1012,7 +1023,7 @@ class LogicalTests {
         array(constant(4L), constant(5L), constant(6L))
       )
     assertEvaluatesTo(
-      evaluate(eqAny(searchArray, valuesArray), emptyDoc),
+      evaluate(equalAny(searchArray, valuesArray), emptyDoc),
       true,
       "eqAny([1,2,3], [[1,2,3],...])"
     )
@@ -1020,49 +1031,49 @@ class LogicalTests {
 
   @Test
   fun `eqAny - array not found returns error`() {
-    val expr = eqAny(constant("matang"), field("non-existent-field"))
+    val expr = equalAny(constant("matang"), field("non-existent-field"))
     assertEvaluatesToError(evaluate(expr, emptyDoc), "eqAny(matang, non-existent-field)")
   }
 
   @Test
   fun `eqAny - array is empty returns false`() {
-    val expr = eqAny(constant(42L), array())
+    val expr = equalAny(constant(42L), array())
     assertEvaluatesTo(evaluate(expr, emptyDoc), false, "eqAny(42L, [])")
   }
 
   @Test
   fun `eqAny - search reference not found returns error`() {
-    val expr = eqAny(field("non-existent-field"), array(constant(42L)))
+    val expr = equalAny(field("non-existent-field"), array(constant(42L)))
     assertEvaluatesToError(evaluate(expr, emptyDoc), "eqAny(non-existent-field, [42L])")
   }
 
   @Test
   fun `eqAny - search is null`() {
-    val expr = eqAny(nullExpr, array(nullExpr, constant(1L), constant("matang")))
+    val expr = equalAny(nullExpr, array(nullExpr, constant(1L), constant("matang")))
     assertEvaluatesToNull(evaluate(expr, emptyDoc), "eqAny(null, [null,1,matang])")
   }
 
   @Test
   fun `eqAny - search is null empty values array returns null`() {
-    val expr = eqAny(nullExpr, array())
+    val expr = equalAny(nullExpr, array())
     assertEvaluatesToNull(evaluate(expr, emptyDoc), "eqAny(null, [])")
   }
 
   @Test
   fun `eqAny - search is nan`() {
-    val expr = eqAny(nanExpr, array(nanExpr, constant(42L), constant(3.14)))
+    val expr = equalAny(nanExpr, array(nanExpr, constant(42L), constant(3.14)))
     assertEvaluatesTo(evaluate(expr, emptyDoc), false, "eqAny(NaN, [NaN,42,3.14])")
   }
 
   @Test
   fun `eqAny - search is empty array is empty`() {
-    val expr = eqAny(array(), array())
+    val expr = equalAny(array(), array())
     assertEvaluatesTo(evaluate(expr, emptyDoc), false, "eqAny([], [])")
   }
 
   @Test
   fun `eqAny - search is empty array contains empty array returns true`() {
-    val expr = eqAny(array(), array(array()))
+    val expr = equalAny(array(), array(array()))
     assertEvaluatesTo(evaluate(expr, emptyDoc), true, "eqAny([], [[]])")
   }
 
@@ -1076,7 +1087,7 @@ class LogicalTests {
         map(mapOf("foo" to constant(42L)))
       )
     assertEvaluatesTo(
-      evaluate(eqAny(searchMap, valuesArray), emptyDoc),
+      evaluate(equalAny(searchMap, valuesArray), emptyDoc),
       true,
       "eqAny(map, [...,map])"
     )

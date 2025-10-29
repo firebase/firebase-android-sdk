@@ -18,15 +18,14 @@ import com.google.common.truth.Truth.assertThat
 import com.google.firebase.firestore.FieldPath as PublicFieldPath
 import com.google.firebase.firestore.RealtimePipelineSource
 import com.google.firebase.firestore.TestUtil
-import com.google.firebase.firestore.pipeline.Expr.Companion.constant
-import com.google.firebase.firestore.pipeline.Expr.Companion.exists
-import com.google.firebase.firestore.pipeline.Expr.Companion.field
-import com.google.firebase.firestore.pipeline.Expr.Companion.isNull
-import com.google.firebase.firestore.pipeline.Expr.Companion.map
-import com.google.firebase.firestore.pipeline.Expr.Companion.not
+import com.google.firebase.firestore.pipeline.Expression.Companion.constant
+import com.google.firebase.firestore.pipeline.Expression.Companion.exists
+import com.google.firebase.firestore.pipeline.Expression.Companion.field
+import com.google.firebase.firestore.pipeline.Expression.Companion.isNull
+import com.google.firebase.firestore.pipeline.Expression.Companion.map
+import com.google.firebase.firestore.pipeline.Expression.Companion.not
 import com.google.firebase.firestore.runPipeline
 import com.google.firebase.firestore.testutil.TestUtilKtx.doc
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -123,7 +122,7 @@ internal class NestedPropertiesTests {
     val pipeline =
       RealtimePipelineSource(db)
         .collection("/users")
-        .where(field("a.b.c.d.e.f.g.h.i.j.k").eq(constant(42L)))
+        .where(field("a.b.c.d.e.f.g.h.i.j.k").equal(constant(42L)))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1)
@@ -215,7 +214,7 @@ internal class NestedPropertiesTests {
     val pipeline =
       RealtimePipelineSource(db)
         .collection("/users")
-        .where(field("a.b.c.d.e.f.g.h.i.j.k").gte(constant(0L)))
+        .where(field("a.b.c.d.e.f.g.h.i.j.k").greaterThanOrEqual(constant(0L)))
         .sort(field(PublicFieldPath.documentId()).ascending())
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
@@ -251,7 +250,7 @@ internal class NestedPropertiesTests {
     val pipeline =
       RealtimePipelineSource(db)
         .collection("/users")
-        .where(field("address.street").eq(constant("76")))
+        .where(field("address.street").equal(constant("76")))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc2)
@@ -286,8 +285,8 @@ internal class NestedPropertiesTests {
     val pipeline =
       RealtimePipelineSource(db)
         .collection("/users")
-        .where(field("address.city").eq(constant("San Francisco")))
-        .where(field("address.zip").gt(constant(90000L)))
+        .where(field("address.city").equal(constant("San Francisco")))
+        .where(field("address.zip").greaterThan(constant(90000L)))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1)
@@ -324,9 +323,9 @@ internal class NestedPropertiesTests {
         .collection("/users")
         .where(
           field("address")
-            .eq(map(mapOf("city" to "San Francisco", "state" to "CA", "zip" to 94105L)))
+            .equal(map(mapOf("city" to "San Francisco", "state" to "CA", "zip" to 94105L)))
         )
-        .where(field("address.zip").gt(constant(90000L)))
+        .where(field("address.zip").greaterThan(constant(90000L)))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1)
@@ -362,8 +361,8 @@ internal class NestedPropertiesTests {
     val pipeline =
       RealtimePipelineSource(db)
         .collection("/users")
-        .where(field("address.city").eq(constant("San Francisco")))
-        .where(field("address.zip").gt(constant(90000L)))
+        .where(field("address.city").equal(constant("San Francisco")))
+        .where(field("address.zip").greaterThan(constant(90000L)))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1)
@@ -398,25 +397,27 @@ internal class NestedPropertiesTests {
     val pipeline1 =
       RealtimePipelineSource(db)
         .collection("/users")
-        .where(field("address.zip").gt(constant(90000L)))
+        .where(field("address.zip").greaterThan(constant(90000L)))
     assertThat(runPipeline(pipeline1, listOf(*documents.toTypedArray())).toList())
       .containsExactly(doc1, doc3)
 
     val pipeline2 =
       RealtimePipelineSource(db)
         .collection("/users")
-        .where(field("address.zip").lt(constant(90000L)))
+        .where(field("address.zip").lessThan(constant(90000L)))
     assertThat(runPipeline(pipeline2, listOf(*documents.toTypedArray())).toList())
       .containsExactly(doc2)
 
     val pipeline3 =
-      RealtimePipelineSource(db).collection("/users").where(field("address.zip").lt(constant(0L)))
+      RealtimePipelineSource(db)
+        .collection("/users")
+        .where(field("address.zip").lessThan(constant(0L)))
     assertThat(runPipeline(pipeline3, listOf(*documents.toTypedArray())).toList()).isEmpty()
 
     val pipeline4 =
       RealtimePipelineSource(db)
         .collection("/users")
-        .where(field("address.zip").neq(constant(10011L)))
+        .where(field("address.zip").notEqual(constant(10011L)))
     assertThat(runPipeline(pipeline4, listOf(*documents.toTypedArray())).toList())
       .containsExactly(doc1, doc3)
   }
@@ -643,7 +644,7 @@ internal class NestedPropertiesTests {
     val pipeline =
       RealtimePipelineSource(db)
         .collection("/users")
-        .where(field("address.city").eq(constant("San Francisco")))
+        .where(field("address.city").equal(constant("San Francisco")))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc2)
@@ -659,7 +660,7 @@ internal class NestedPropertiesTests {
     val pipeline =
       RealtimePipelineSource(db)
         .collection("/users")
-        .where(field(PublicFieldPath.of("address.city")).eq(constant("San Francisco")))
+        .where(field(PublicFieldPath.of("address.city")).equal(constant("San Francisco")))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1)

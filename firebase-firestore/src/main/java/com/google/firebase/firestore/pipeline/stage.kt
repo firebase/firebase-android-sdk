@@ -16,15 +16,14 @@ package com.google.firebase.firestore.pipeline
 
 import com.google.firebase.firestore.UserDataReader
 import com.google.firebase.firestore.VectorValue
-import com.google.firebase.firestore.core.Canonicalizable
 import com.google.firebase.firestore.model.Document
 import com.google.firebase.firestore.model.DocumentKey.KEY_FIELD_NAME
 import com.google.firebase.firestore.model.MutableDocument
 import com.google.firebase.firestore.model.ResourcePath
 import com.google.firebase.firestore.model.Values
 import com.google.firebase.firestore.model.Values.encodeValue
-import com.google.firebase.firestore.pipeline.Expr.Companion.constant
-import com.google.firebase.firestore.pipeline.Expr.Companion.field
+import com.google.firebase.firestore.pipeline.Expression.Companion.constant
+import com.google.firebase.firestore.pipeline.Expression.Companion.field
 import com.google.firebase.firestore.remote.RemoteSerializer
 import com.google.firestore.v1.Pipeline
 import com.google.firestore.v1.Value
@@ -38,6 +37,9 @@ sealed class Stage<T : Stage<T>>(internal val name: String, internal val options
     options.forEach(builder::putOptions)
     return builder.build()
   }
+
+  internal abstract fun canonicalId(): String
+
   internal abstract fun args(userDataReader: UserDataReader): Sequence<Value>
 
   internal abstract fun self(options: InternalOptions): T
@@ -132,6 +134,10 @@ private constructor(
   fun withArguments(vararg arguments: Any): RawStage =
     RawStage(name, arguments.map(GenericArg::from), options)
 
+  override fun canonicalId(): String {
+    TODO("Not yet implemented")
+  }
+
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     arguments.asSequence().map { it.toProto(userDataReader) }
 }
@@ -145,7 +151,7 @@ internal sealed class GenericArg {
         is Map<*, *> ->
           MapArg(arg.asIterable().associate { (key, value) -> key as String to from(value) })
         is List<*> -> ListArg(arg.map(::from))
-        else -> ExprArg(Expr.toExprOrConstant(arg))
+        else -> ExprArg(Expression.toExprOrConstant(arg))
       }
   }
   abstract fun toProto(userDataReader: UserDataReader): Value
@@ -154,7 +160,7 @@ internal sealed class GenericArg {
     override fun toProto(userDataReader: UserDataReader) = aggregate.toProto(userDataReader)
   }
 
-  data class ExprArg(val expr: Expr) : GenericArg() {
+  data class ExprArg(val expr: Expression) : GenericArg() {
     override fun toProto(userDataReader: UserDataReader) = expr.toProto(userDataReader)
   }
 
@@ -178,6 +184,10 @@ internal class DatabaseSource
 internal constructor(options: InternalOptions = InternalOptions.EMPTY) :
   Stage<DatabaseSource>("database", options) {
   override fun self(options: InternalOptions) = DatabaseSource(options)
+  override fun canonicalId(): String {
+    TODO("Not yet implemented")
+  }
+
   override fun args(userDataReader: UserDataReader): Sequence<Value> = emptySequence()
 
   override fun equals(other: Any?): Boolean {
@@ -197,7 +207,7 @@ internal constructor(
   // We validate [firestore.databaseId] when adding to pipeline.
   internal val serializer: RemoteSerializer,
   options: InternalOptions
-) : Stage<CollectionSource>("collection", options), Canonicalizable {
+) : Stage<CollectionSource>("collection", options) {
 
   internal constructor(
     path: ResourcePath,
@@ -287,7 +297,7 @@ class CollectionHints internal constructor(options: InternalOptions) :
 }
 
 class CollectionGroupSource(val collectionId: String, options: InternalOptions) :
-  Stage<CollectionGroupSource>("collection_group", options), Canonicalizable {
+  Stage<CollectionGroupSource>("collection_group", options) {
 
   internal constructor(
     collectionId: String,
@@ -348,7 +358,7 @@ internal class DocumentsSource
 internal constructor(
   val documents: Array<ResourcePath>,
   options: InternalOptions = InternalOptions.EMPTY
-) : Stage<DocumentsSource>("documents", options), Canonicalizable {
+) : Stage<DocumentsSource>("documents", options) {
   private val docKeySet: HashSet<String> by lazy {
     documents.map { it.canonicalString() }.toHashSet()
   }
@@ -387,6 +397,20 @@ internal constructor(
     documents.asSequence().map(::encodeValue)
 }
 
+private fun associateWithoutDuplications(
+  fields: Array<out Selectable>,
+  userDataReader: UserDataReader
+): Map<String, Value> {
+  return fields.fold(HashMap<String, Value>()) { results, selectable ->
+    if (results.contains(selectable.alias)) {
+      throw IllegalArgumentException("Duplicate alias: '${selectable.alias}'")
+    }
+
+    results.set(selectable.alias, selectable.toProto(userDataReader))
+    results
+  }
+}
+
 internal class AddFieldsStage
 internal constructor(
   private val fields: Array<out Selectable>,
@@ -401,8 +425,12 @@ internal constructor(
     }
   }
   override fun self(options: InternalOptions) = AddFieldsStage(fields, options)
+  override fun canonicalId(): String {
+    TODO("Not yet implemented")
+  }
+
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
-    sequenceOf(encodeValue(fields.associate { it.alias to it.toProto(userDataReader) }))
+    sequenceOf(encodeValue(associateWithoutDuplications(fields, userDataReader)))
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
@@ -438,7 +466,7 @@ internal constructor(
 class AggregateStage
 private constructor(
   private val accumulators: Map<String, AggregateFunction>,
-  private val groups: Map<String, Expr>,
+  private val groups: Map<String, Expression>,
   options: InternalOptions = InternalOptions.EMPTY
 ) : Stage<AggregateStage>("aggregate", options) {
   private constructor(accumulators: Map<String, AggregateFunction>) : this(accumulators, emptyMap())
@@ -458,10 +486,15 @@ private constructor(
       accumulator: AliasedAggregate,
       vararg additionalAccumulators: AliasedAggregate
     ): AggregateStage {
-      return AggregateStage(
-        mapOf(accumulator.alias to accumulator.expr)
-          .plus(additionalAccumulators.associate { it.alias to it.expr })
-      )
+      val accumulators =
+        additionalAccumulators.fold(mapOf(accumulator.alias to accumulator.expr)) { acc, next ->
+          if (acc.containsKey(next.alias)) {
+            throw IllegalArgumentException("Duplicate alias: '${next.alias}'")
+          }
+          acc.plus(next.alias to next.expr)
+        }
+
+      return AggregateStage(accumulators)
     }
   }
 
@@ -475,8 +508,8 @@ private constructor(
    * combinations or [String]s representing field names.
    * @return [AggregateStage] with specified groups.
    */
-  fun withGroups(groupField: String, vararg additionalGroups: Any) =
-    withGroups(Expr.field(groupField), *additionalGroups)
+  fun withGroups(groupField: String, vararg additionalGroups: Any): AggregateStage =
+    withGroups(Expression.field(groupField), *additionalGroups)
 
   /**
    * Add one or more groups to [AggregateStage]
@@ -486,16 +519,26 @@ private constructor(
    * combinations or [String]s representing field names.
    * @return [AggregateStage] with specified groups.
    */
-  fun withGroups(group: Selectable, vararg additionalGroups: Any) =
-    AggregateStage(
-      accumulators,
-      mapOf(group.alias to group.expr)
-        .plus(additionalGroups.map(Selectable::toSelectable).associateBy(Selectable::alias)),
-      options
-    )
+  fun withGroups(group: Selectable, vararg additionalGroups: Any): AggregateStage {
+    val groups =
+      additionalGroups.map(Selectable::toSelectable).fold(mapOf(group.alias to group.expr)) {
+        acc,
+        next ->
+        if (acc.containsKey(next.alias)) {
+          throw IllegalArgumentException("Duplicate alias: '${next.alias}'")
+        }
+        acc.plus(next.alias to next.expr)
+      }
+
+    return AggregateStage(accumulators, groups, options)
+  }
 
   internal fun withOptions(options: AggregateOptions) =
     AggregateStage(accumulators, groups, options.options)
+
+  override fun canonicalId(): String {
+    TODO("Not yet implemented")
+  }
 
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(
@@ -554,9 +597,9 @@ class AggregateOptions internal constructor(options: InternalOptions) :
 
 internal class WhereStage
 internal constructor(
-  internal val condition: Expr,
+  internal val condition: Expression,
   options: InternalOptions = InternalOptions.EMPTY
-) : Stage<WhereStage>("where", options), Canonicalizable {
+) : Stage<WhereStage>("where", options) {
   override fun canonicalId(): String {
     return "${name}(${condition.canonicalId()})"
   }
@@ -594,15 +637,15 @@ internal constructor(
  */
 class FindNearestStage
 internal constructor(
-  private val property: Expr,
-  private val vector: Expr,
+  private val property: Expression,
+  private val vector: Expression,
   private val distanceMeasure: DistanceMeasure,
   options: InternalOptions = InternalOptions.EMPTY
 ) : Stage<FindNearestStage>("find_nearest", options) {
 
   private constructor(
-    property: Expr,
-    vector: Expr,
+    property: Expression,
+    vector: Expression,
     distanceMeasure: DistanceMeasure,
     options: FindNearestOptions
   ) : this(property, vector, distanceMeasure, options.options)
@@ -643,7 +686,7 @@ internal constructor(
       vectorValue: DoubleArray,
       distanceMeasure: DistanceMeasure,
       options: FindNearestOptions = FindNearestOptions()
-    ) = FindNearestStage(vectorField, Expr.vector(vectorValue), distanceMeasure, options)
+    ) = FindNearestStage(vectorField, Expression.vector(vectorValue), distanceMeasure, options)
 
     /**
      * Create [FindNearestStage].
@@ -679,11 +722,12 @@ internal constructor(
       vectorValue: DoubleArray,
       distanceMeasure: DistanceMeasure,
       options: FindNearestOptions = FindNearestOptions()
-    ) = FindNearestStage(field(vectorField), Expr.vector(vectorValue), distanceMeasure, options)
+    ) =
+      FindNearestStage(field(vectorField), Expression.vector(vectorValue), distanceMeasure, options)
 
     internal fun of(
       vectorField: String,
-      vectorValue: Expr,
+      vectorValue: Expression,
       distanceMeasure: DistanceMeasure,
       options: FindNearestOptions = FindNearestOptions()
     ) = FindNearestStage(field(vectorField), vectorValue, distanceMeasure, options)
@@ -706,6 +750,10 @@ internal constructor(
 
   override fun self(options: InternalOptions) =
     FindNearestStage(property, vector, distanceMeasure, options)
+
+  override fun canonicalId(): String {
+    TODO("Not yet implemented")
+  }
 
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(
@@ -775,7 +823,7 @@ class FindNearestOptions private constructor(options: InternalOptions) :
 
 internal class LimitStage
 internal constructor(val limit: Int, options: InternalOptions = InternalOptions.EMPTY) :
-  Stage<LimitStage>("limit", options), Canonicalizable {
+  Stage<LimitStage>("limit", options) {
   override fun canonicalId(): String {
     return "${name}(${limit})"
   }
@@ -812,6 +860,10 @@ internal class OffsetStage
 internal constructor(private val offset: Int, options: InternalOptions = InternalOptions.EMPTY) :
   Stage<OffsetStage>("offset", options) {
   override fun self(options: InternalOptions) = OffsetStage(offset, options)
+  override fun canonicalId(): String {
+    TODO("Not yet implemented")
+  }
+
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(encodeValue(offset))
 
@@ -846,8 +898,12 @@ private constructor(internal val fields: Array<out Selectable>, options: Interna
       of(field(fieldName), *additionalSelections)
   }
   override fun self(options: InternalOptions) = SelectStage(fields, options)
+  override fun canonicalId(): String {
+    TODO("Not yet implemented")
+  }
+
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
-    sequenceOf(encodeValue(fields.associate { it.alias to it.toProto(userDataReader) }))
+    sequenceOf(encodeValue(associateWithoutDuplications(fields, userDataReader)))
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
@@ -898,7 +954,7 @@ internal class SortStage
 internal constructor(
   val orders: Array<out Ordering>,
   options: InternalOptions = InternalOptions.EMPTY
-) : Stage<SortStage>("sort", options), Canonicalizable {
+) : Stage<SortStage>("sort", options) {
   override fun canonicalId(): String {
     return "${name}(${orders.joinToString(",") { it.canonicalId() }})"
   }
@@ -952,8 +1008,12 @@ internal constructor(
   options: InternalOptions = InternalOptions.EMPTY
 ) : Stage<DistinctStage>("distinct", options) {
   override fun self(options: InternalOptions) = DistinctStage(groups, options)
+  override fun canonicalId(): String {
+    TODO("Not yet implemented")
+  }
+
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
-    sequenceOf(encodeValue(groups.associate { it.alias to it.toProto(userDataReader) }))
+    sequenceOf(encodeValue(associateWithoutDuplications(groups, userDataReader)))
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
@@ -984,6 +1044,10 @@ internal constructor(
     }
   }
   override fun self(options: InternalOptions) = RemoveFieldsStage(fields, options)
+  override fun canonicalId(): String {
+    TODO("Not yet implemented")
+  }
+
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     fields.asSequence().map(Field::toProto)
 
@@ -1004,7 +1068,7 @@ internal constructor(
 
 internal class ReplaceStage
 internal constructor(
-  private val mapValue: Expr,
+  private val mapValue: Expression,
   private val mode: Mode,
   options: InternalOptions = InternalOptions.EMPTY
 ) : Stage<ReplaceStage>("replace_with", options) {
@@ -1017,6 +1081,10 @@ internal constructor(
     }
   }
   override fun self(options: InternalOptions) = ReplaceStage(mapValue, mode, options)
+  override fun canonicalId(): String {
+    TODO("Not yet implemented")
+  }
+
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(mapValue.toProto(userDataReader), mode.proto)
 
@@ -1052,6 +1120,10 @@ private constructor(
   options: InternalOptions = InternalOptions.EMPTY
 ) : Stage<SampleStage>("sample", options) {
   override fun self(options: InternalOptions) = SampleStage(size, mode, options)
+  override fun canonicalId(): String {
+    TODO("Not yet implemented")
+  }
+
   class Mode private constructor(internal val proto: Value) {
     private constructor(protoString: String) : this(encodeValue(protoString))
     companion object {
@@ -1113,6 +1185,10 @@ internal constructor(
   options: InternalOptions = InternalOptions.EMPTY
 ) : Stage<UnionStage>("union", options) {
   override fun self(options: InternalOptions) = UnionStage(other, options)
+  override fun canonicalId(): String {
+    TODO("Not yet implemented")
+  }
+
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(Value.newBuilder().setPipelineValue(other.toPipelineProto()).build())
 
@@ -1146,10 +1222,10 @@ internal constructor(
      * Creates [UnnestStage] with input array and alias specified.
      *
      * For each document emitted by the prior stage, this stage will emit zero or more augmented
-     * documents. The input array is found in parameter [arrayWithAlias], which can be an [Expr]
-     * with an alias specified via [Expr.alias], or a [Field] that can also have alias specified.
-     * For each element of the input array, an augmented document will be produced. The element of
-     * input array will be stored in a field with name specified by the alias of the
+     * documents. The input array is found in parameter [arrayWithAlias], which can be an
+     * [Expression] with an alias specified via [Expression.alias], or a [Field] that can also have
+     * alias specified. For each element of the input array, an augmented document will be produced.
+     * The element of input array will be stored in a field with name specified by the alias of the
      * [arrayWithAlias] parameter. If the [arrayWithAlias] is a [Field] with no alias, then the
      * original array field will be replaced with the individual element.
      *
@@ -1171,9 +1247,13 @@ internal constructor(
      */
     @JvmStatic
     fun withField(arrayField: String, alias: String): UnnestStage =
-      UnnestStage(Expr.Companion.field(arrayField).alias(alias))
+      UnnestStage(Expression.Companion.field(arrayField).alias(alias))
   }
   override fun self(options: InternalOptions) = UnnestStage(selectable, options)
+  override fun canonicalId(): String {
+    TODO("Not yet implemented")
+  }
+
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(selectable.toProto(userDataReader), field(selectable.alias).toProto())
 

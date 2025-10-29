@@ -1089,11 +1089,11 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
             if (usePipelineMode) {
               return leftQuery
                   .toRealtimePipeline(db, new UserDataReader(databaseInfo.getDatabaseId()))
-                  .canonicalId()
+                  .toString()
                   .compareTo(
                       rightQuery
                           .toRealtimePipeline(db, new UserDataReader(databaseInfo.getDatabaseId()))
-                          .canonicalId());
+                          .toString());
             }
 
             return leftQuery.getCanonicalId().compareTo(rightQuery.getCanonicalId());

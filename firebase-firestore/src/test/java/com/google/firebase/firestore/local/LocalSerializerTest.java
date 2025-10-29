@@ -45,7 +45,7 @@ import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.firebase.firestore.model.mutation.PatchMutation;
 import com.google.firebase.firestore.model.mutation.SetMutation;
-import com.google.firebase.firestore.pipeline.Expr;
+import com.google.firebase.firestore.pipeline.Expression;
 import com.google.firebase.firestore.proto.WriteBatch;
 import com.google.firebase.firestore.remote.RemoteSerializer;
 import com.google.firebase.firestore.testutil.TestUtil;
@@ -496,8 +496,8 @@ public final class LocalSerializerTest {
     RealtimePipeline pipeline =
         db.realtimePipeline()
             .collection("rooms")
-            .where(Expr.field("name").eq("test room"))
-            .sort(Expr.field("age").descending())
+            .where(Expression.field("name").equal("test room"))
+            .sort(Expression.field("age").descending())
             .limit(10);
 
     TargetOrPipeline targetOrPipeline = new TargetOrPipeline.PipelineWrapper(pipeline);

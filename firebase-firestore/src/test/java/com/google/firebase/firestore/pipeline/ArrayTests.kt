@@ -14,17 +14,18 @@
 
 package com.google.firebase.firestore.pipeline
 
+// use
 import com.google.common.truth.Truth.assertWithMessage
 import com.google.firebase.firestore.model.Values.encodeValue
-import com.google.firebase.firestore.pipeline.Expr.Companion.array // For the helper & direct use
-import com.google.firebase.firestore.pipeline.Expr.Companion.arrayContains
-import com.google.firebase.firestore.pipeline.Expr.Companion.arrayContainsAll
-import com.google.firebase.firestore.pipeline.Expr.Companion.arrayContainsAny
-import com.google.firebase.firestore.pipeline.Expr.Companion.arrayLength
-import com.google.firebase.firestore.pipeline.Expr.Companion.constant // For the helper
-import com.google.firebase.firestore.pipeline.Expr.Companion.field
-import com.google.firebase.firestore.pipeline.Expr.Companion.map // For map literals
-import com.google.firebase.firestore.pipeline.Expr.Companion.nullValue // For the helper
+import com.google.firebase.firestore.pipeline.Expression.Companion.array // For the helper & direct
+import com.google.firebase.firestore.pipeline.Expression.Companion.arrayContains
+import com.google.firebase.firestore.pipeline.Expression.Companion.arrayContainsAll
+import com.google.firebase.firestore.pipeline.Expression.Companion.arrayContainsAny
+import com.google.firebase.firestore.pipeline.Expression.Companion.arrayLength
+import com.google.firebase.firestore.pipeline.Expression.Companion.constant // For the helper
+import com.google.firebase.firestore.pipeline.Expression.Companion.field
+import com.google.firebase.firestore.pipeline.Expression.Companion.map // For map literals
+import com.google.firebase.firestore.pipeline.Expression.Companion.nullValue // For the helper
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -102,8 +103,9 @@ class ArrayTests {
   @Test
   fun `arrayContainsAll - large number of elements`() {
     val elements = (1..500).map { it.toLong() }
-    // Use the statically imported 'array' directly here as it takes List<Expr>
-    // The elements.map { constant(it) } is correct as Expr.array(List<Expr>) expects Expr elements
+    // Use the statically imported 'array' directly here as it takes List<Expression>
+    // The elements.map { constant(it) } is correct as Expression.array(List<Expression>) expects
+    // Expression elements
     val arrayToSearch = array(elements.map { constant(it) })
     val valuesToFind = array(elements.map { constant(it) })
     val expr = arrayContainsAll(arrayToSearch, valuesToFind)
@@ -228,7 +230,7 @@ class ArrayTests {
   @Test
   fun `arrayContains - search value is map`() {
     val arrayToSearch = array(123L, mapOf("foo" to 123L), mapOf("bar" to 42L), mapOf("foo" to 42L))
-    val valueToFind = map(mapOf("foo" to 42L)) // Use Expr.map directly
+    val valueToFind = map(mapOf("foo" to 42L)) // Use Expression.map directly
     val expr = arrayContains(arrayToSearch, valueToFind)
     assertEvaluatesTo(evaluate(expr), true, "arrayContains search for map")
   }

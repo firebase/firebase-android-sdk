@@ -15,24 +15,23 @@
 package com.google.firebase.firestore.pipeline
 
 import com.google.firebase.firestore.model.Values.encodeValue
-import com.google.firebase.firestore.pipeline.Expr.Companion.blob
-import com.google.firebase.firestore.pipeline.Expr.Companion.byteLength
-import com.google.firebase.firestore.pipeline.Expr.Companion.charLength
-import com.google.firebase.firestore.pipeline.Expr.Companion.constant
-import com.google.firebase.firestore.pipeline.Expr.Companion.endsWith
-import com.google.firebase.firestore.pipeline.Expr.Companion.field
-import com.google.firebase.firestore.pipeline.Expr.Companion.like
-import com.google.firebase.firestore.pipeline.Expr.Companion.nullValue
-import com.google.firebase.firestore.pipeline.Expr.Companion.regexContains
-import com.google.firebase.firestore.pipeline.Expr.Companion.regexMatch
-import com.google.firebase.firestore.pipeline.Expr.Companion.reverse
-import com.google.firebase.firestore.pipeline.Expr.Companion.startsWith
-import com.google.firebase.firestore.pipeline.Expr.Companion.strConcat
-import com.google.firebase.firestore.pipeline.Expr.Companion.strContains
-import com.google.firebase.firestore.pipeline.Expr.Companion.substr
-import com.google.firebase.firestore.pipeline.Expr.Companion.toLower
-import com.google.firebase.firestore.pipeline.Expr.Companion.toUpper
-import com.google.firebase.firestore.pipeline.Expr.Companion.trim
+import com.google.firebase.firestore.pipeline.Expression.Companion.byteLength
+import com.google.firebase.firestore.pipeline.Expression.Companion.charLength
+import com.google.firebase.firestore.pipeline.Expression.Companion.constant
+import com.google.firebase.firestore.pipeline.Expression.Companion.endsWith
+import com.google.firebase.firestore.pipeline.Expression.Companion.field
+import com.google.firebase.firestore.pipeline.Expression.Companion.like
+import com.google.firebase.firestore.pipeline.Expression.Companion.nullValue
+import com.google.firebase.firestore.pipeline.Expression.Companion.regexContains
+import com.google.firebase.firestore.pipeline.Expression.Companion.regexMatch
+import com.google.firebase.firestore.pipeline.Expression.Companion.reverse
+import com.google.firebase.firestore.pipeline.Expression.Companion.startsWith
+import com.google.firebase.firestore.pipeline.Expression.Companion.stringConcat
+import com.google.firebase.firestore.pipeline.Expression.Companion.stringContains
+import com.google.firebase.firestore.pipeline.Expression.Companion.substring
+import com.google.firebase.firestore.pipeline.Expression.Companion.toLower
+import com.google.firebase.firestore.pipeline.Expression.Companion.toUpper
+import com.google.firebase.firestore.pipeline.Expression.Companion.trim
 import com.google.firebase.firestore.testutil.TestUtilKtx.doc
 import com.google.protobuf.ByteString
 import org.junit.Test
@@ -52,7 +51,7 @@ internal class StringTests {
 
   @Test
   fun byteLength_emptyByte_returnsZero() {
-    val expr = byteLength(blob(byteArrayOf()))
+    val expr = byteLength(constant(byteArrayOf()))
     val result = evaluate(expr)
     assertEvaluatesTo(result, encodeValue(0L), "byteLength(blob(byteArrayOf()))")
   }
@@ -66,7 +65,7 @@ internal class StringTests {
     // Test with a valid Blob
     val bytesForBlob = byteArrayOf(0x01.toByte(), 0x02.toByte(), 0x03.toByte())
     val exprAsBlob =
-      byteLength(blob(bytesForBlob)) // Renamed exprBlob to avoid conflict if it was a var
+      byteLength(constant(bytesForBlob)) // Renamed exprBlob to avoid conflict if it was a var
     val resultBlob = evaluate(exprAsBlob)
     assertEvaluatesTo(resultBlob, encodeValue(3L), "byteLength(blob(1,2,3))")
 
@@ -206,7 +205,7 @@ internal class StringTests {
         0xbc.toByte()
       )
     assertEvaluatesTo(
-      evaluate(byteLength(blob(bytesTwo))),
+      evaluate(byteLength(constant(bytesTwo))),
       encodeValue(10L),
       "byteLength(blob for \"éçñöü\")"
     )
@@ -234,7 +233,7 @@ internal class StringTests {
         0x8c.toByte()
       )
     assertEvaluatesTo(
-      evaluate(byteLength(blob(bytesThree))),
+      evaluate(byteLength(constant(bytesThree))),
       encodeValue(12L),
       "byteLength(blob for \"你好世界\")"
     )
@@ -257,7 +256,7 @@ internal class StringTests {
         0xA1.toByte()
       )
     assertEvaluatesTo(
-      evaluate(byteLength(blob(bytesFour))),
+      evaluate(byteLength(constant(bytesFour))),
       encodeValue(8L),
       "byteLength(blob for \"🀘🂡\")"
     )
@@ -286,7 +285,7 @@ internal class StringTests {
         0xA1.toByte()
       )
     assertEvaluatesTo(
-      evaluate(byteLength(blob(bytesMix))),
+      evaluate(byteLength(constant(bytesMix))),
       encodeValue(10L),
       "byteLength(blob for \"aé好🂡\")"
     )
@@ -304,7 +303,7 @@ internal class StringTests {
   fun charLength_bytesType_returnsError() {
     // charLength expects a string, not bytes/blob
     val charBlobBytes = byteArrayOf('a'.code.toByte(), 'b'.code.toByte(), 'c'.code.toByte())
-    val expr = charLength(blob(charBlobBytes))
+    val expr = charLength(constant(charBlobBytes))
     val result = evaluate(expr)
     assertEvaluatesToError(result, "charLength(blob)")
   }
@@ -447,48 +446,48 @@ internal class StringTests {
 
   // --- StrConcat Tests ---
   @Test
-  fun strConcat_multipleStringChildren_returnsCombination() {
-    val expr = strConcat(constant("foo"), constant(" "), constant("bar"))
+  fun stringConcat_multipleStringChildren_returnsCombination() {
+    val expr = stringConcat(constant("foo"), constant(" "), constant("bar"))
     val result = evaluate(expr)
-    assertEvaluatesTo(result, encodeValue("foo bar"), "strConcat(\"foo\", \" \", \"bar\")")
+    assertEvaluatesTo(result, encodeValue("foo bar"), "stringConcat(\"foo\", \" \", \"bar\")")
   }
 
   @Test
-  fun strConcat_multipleNonStringChildren_returnsError() {
-    // strConcat should only accept strings or expressions that evaluate to strings.
-    // The Kotlin `strConcat` vararg is `Any`, then converted via `toArrayOfExprOrConstant`.
+  fun stringConcat_multipleNonStringChildren_returnsError() {
+    // stringConcat should only accept strings or expressions that evaluate to strings.
+    // The Kotlin `stringConcat` vararg is `Any`, then converted via `toArrayOfExprOrConstant`.
     // `evaluateStrConcat` checks if all resolved params are strings.
-    val expr = strConcat(constant("foo"), constant(42L), constant("bar"))
+    val expr = stringConcat(constant("foo"), constant(42L), constant("bar"))
     val result = evaluate(expr)
-    assertEvaluatesToError(result, "strConcat(\"foo\", 42L, \"bar\")")
+    assertEvaluatesToError(result, "stringConcat(\"foo\", 42L, \"bar\")")
   }
 
   @Test
-  fun strConcat_multipleCalls() {
-    val expr = strConcat(constant("foo"), constant(" "), constant("bar"))
-    assertEvaluatesTo(evaluate(expr), encodeValue("foo bar"), "strConcat call 1")
-    assertEvaluatesTo(evaluate(expr), encodeValue("foo bar"), "strConcat call 2")
-    assertEvaluatesTo(evaluate(expr), encodeValue("foo bar"), "strConcat call 3")
+  fun stringConcat_multipleCalls() {
+    val expr = stringConcat(constant("foo"), constant(" "), constant("bar"))
+    assertEvaluatesTo(evaluate(expr), encodeValue("foo bar"), "stringConcat call 1")
+    assertEvaluatesTo(evaluate(expr), encodeValue("foo bar"), "stringConcat call 2")
+    assertEvaluatesTo(evaluate(expr), encodeValue("foo bar"), "stringConcat call 3")
   }
 
   @Test
-  fun strConcat_largeNumberOfInputs() {
+  fun stringConcat_largeNumberOfInputs() {
     val argCount = 500
     val args = Array(argCount) { constant("a") }
     val expectedResult = "a".repeat(argCount)
-    val expr = strConcat(args.first(), *args.drop(1).toTypedArray()) // Pass varargs correctly
+    val expr = stringConcat(args.first(), *args.drop(1).toTypedArray()) // Pass varargs correctly
     val result = evaluate(expr)
-    assertEvaluatesTo(result, encodeValue(expectedResult), "strConcat large number of inputs")
+    assertEvaluatesTo(result, encodeValue(expectedResult), "stringConcat large number of inputs")
   }
 
   @Test
-  fun strConcat_largeStrings() {
+  fun stringConcat_largeStrings() {
     val a500 = "a".repeat(500)
     val b500 = "b".repeat(500)
     val c500 = "c".repeat(500)
-    val expr = strConcat(constant(a500), constant(b500), constant(c500))
+    val expr = stringConcat(constant(a500), constant(b500), constant(c500))
     val result = evaluate(expr)
-    assertEvaluatesTo(result, encodeValue(a500 + b500 + c500), "strConcat large strings")
+    assertEvaluatesTo(result, encodeValue(a500 + b500 + c500), "stringConcat large strings")
   }
 
   // --- EndsWith Tests ---
@@ -617,13 +616,13 @@ internal class StringTests {
   @Test
   fun regexContains_getSubStringLiteral() {
     val expr = regexContains(constant("yummy good food"), constant("good"))
-    assertEvaluatesTo(evaluate(expr), true, "regexContains substring literal")
+    assertEvaluatesTo(evaluate(expr), true, "regexContains substringing literal")
   }
 
   @Test
   fun regexContains_getSubStringRegex() {
     val expr = regexContains(constant("yummy good food"), constant("go*d"))
-    assertEvaluatesTo(evaluate(expr), true, "regexContains substring regex")
+    assertEvaluatesTo(evaluate(expr), true, "regexContains substringing regex")
   }
 
   @Test
@@ -666,13 +665,13 @@ internal class StringTests {
   @Test
   fun regexMatch_getSubStringLiteral() {
     val expr = regexMatch(constant("yummy good food"), constant("good"))
-    assertEvaluatesTo(evaluate(expr), false, "regexMatch substring literal (false)")
+    assertEvaluatesTo(evaluate(expr), false, "regexMatch substringing literal (false)")
   }
 
   @Test
   fun regexMatch_getSubStringRegex() {
     val expr = regexMatch(constant("yummy good food"), constant("go*d"))
-    assertEvaluatesTo(evaluate(expr), false, "regexMatch substring regex (false)")
+    assertEvaluatesTo(evaluate(expr), false, "regexMatch substringing regex (false)")
   }
 
   @Test
@@ -740,67 +739,67 @@ internal class StringTests {
 
   // --- StrContains Tests ---
   @Test
-  fun strContains_valueNonString_isError() {
-    val expr = strContains(constant(42L), constant("value"))
-    assertEvaluatesToError(evaluate(expr), "strContains(42L, \"value\")")
+  fun stringContains_valueNonString_isError() {
+    val expr = stringContains(constant(42L), constant("value"))
+    assertEvaluatesToError(evaluate(expr), "stringContains(42L, \"value\")")
   }
 
   @Test
-  fun strContains_subStringNonString_isError() {
-    val expr = strContains(constant("search space"), constant(42L))
-    assertEvaluatesToError(evaluate(expr), "strContains(\"search space\", 42L)")
+  fun stringContains_subStringNonString_isError() {
+    val expr = stringContains(constant("search space"), constant(42L))
+    assertEvaluatesToError(evaluate(expr), "stringContains(\"search space\", 42L)")
   }
 
   @Test
-  fun strContains_executeTrue() {
+  fun stringContains_executeTrue() {
     assertEvaluatesTo(
-      evaluate(strContains(constant("abc"), constant("c"))),
+      evaluate(stringContains(constant("abc"), constant("c"))),
       true,
-      "strContains true 1"
+      "stringContains true 1"
     )
     assertEvaluatesTo(
-      evaluate(strContains(constant("abc"), constant("bc"))),
+      evaluate(stringContains(constant("abc"), constant("bc"))),
       true,
-      "strContains true 2"
+      "stringContains true 2"
     )
     assertEvaluatesTo(
-      evaluate(strContains(constant("abc"), constant("abc"))),
+      evaluate(stringContains(constant("abc"), constant("abc"))),
       true,
-      "strContains true 3"
+      "stringContains true 3"
     )
     assertEvaluatesTo(
-      evaluate(strContains(constant("abc"), constant(""))),
+      evaluate(stringContains(constant("abc"), constant(""))),
       true,
-      "strContains true 4"
-    ) // Empty string is a substring
+      "stringContains true 4"
+    ) // Empty string is a substringing
     assertEvaluatesTo(
-      evaluate(strContains(constant(""), constant(""))),
+      evaluate(stringContains(constant(""), constant(""))),
       true,
-      "strContains true 5"
+      "stringContains true 5"
     ) // Empty string in empty string
     assertEvaluatesTo(
-      evaluate(strContains(constant("☃☃☃"), constant("☃"))),
+      evaluate(stringContains(constant("☃☃☃"), constant("☃"))),
       true,
-      "strContains true 6"
+      "stringContains true 6"
     )
   }
 
   @Test
-  fun strContains_executeFalse() {
+  fun stringContains_executeFalse() {
     assertEvaluatesTo(
-      evaluate(strContains(constant("abc"), constant("abcd"))),
+      evaluate(stringContains(constant("abc"), constant("abcd"))),
       false,
-      "strContains false 1"
+      "stringContains false 1"
     )
     assertEvaluatesTo(
-      evaluate(strContains(constant("abc"), constant("d"))),
+      evaluate(stringContains(constant("abc"), constant("d"))),
       false,
-      "strContains false 2"
+      "stringContains false 2"
     )
     assertEvaluatesTo(
-      evaluate(strContains(constant(""), constant("a"))),
+      evaluate(stringContains(constant(""), constant("a"))),
       false,
-      "strContains false 3"
+      "stringContains false 3"
     )
   }
 
@@ -825,7 +824,7 @@ internal class StringTests {
 
   @Test
   fun toLower_null() {
-    val expr = toLower(nullValue()) // Use Expr.nullValue() for Firestore null
+    val expr = toLower(nullValue()) // Use Expression.nullValue() for Firestore null
     assertEvaluatesToNull(evaluate(expr), "toLower(null)")
   }
 
@@ -926,271 +925,271 @@ internal class StringTests {
   }
 
   @Test
-  fun substr_onString_returnsSubstring() {
-    val expr = substr(constant("abc"), constant(1L), constant(2L))
-    assertEvaluatesTo(evaluate(expr), encodeValue("bc"), "substr(\"abc\", 1, 2)")
+  fun substring_onString_returnsSubstring() {
+    val expr = substring(constant("abc"), constant(1L), constant(2L))
+    assertEvaluatesTo(evaluate(expr), encodeValue("bc"), "substring(\"abc\", 1, 2)")
   }
 
   @Test
-  fun substr_onString_largePosition_returnsEmptyString() {
-    val expr = substr(constant("abc"), constant(Long.MAX_VALUE), constant(1L))
-    assertEvaluatesTo(evaluate(expr), encodeValue(""), "substr('abc', Long.MAX_VALUE, 1)")
+  fun substring_onString_largePosition_returnsEmptyString() {
+    val expr = substring(constant("abc"), constant(Long.MAX_VALUE), constant(1L))
+    assertEvaluatesTo(evaluate(expr), encodeValue(""), "substring('abc', Long.MAX_VALUE, 1)")
   }
 
   @Test
-  fun substr_onString_positionOnLast_returnsLastCharacter() {
-    val expr = substr(constant("abc"), constant(2L), constant(2L))
-    assertEvaluatesTo(evaluate(expr), encodeValue("c"), "substr(\"abc\", 2, 2)")
+  fun substring_onString_positionOnLast_returnsLastCharacter() {
+    val expr = substring(constant("abc"), constant(2L), constant(2L))
+    assertEvaluatesTo(evaluate(expr), encodeValue("c"), "substring(\"abc\", 2, 2)")
   }
 
   @Test
-  fun substr_onString_positionPastLast_returnsEmptyString() {
-    val expr = substr(constant("abc"), constant(3L), constant(2L))
-    assertEvaluatesTo(evaluate(expr), encodeValue(""), "substr(\"abc\", 3, 2)")
+  fun substring_onString_positionPastLast_returnsEmptyString() {
+    val expr = substring(constant("abc"), constant(3L), constant(2L))
+    assertEvaluatesTo(evaluate(expr), encodeValue(""), "substring(\"abc\", 3, 2)")
   }
 
   @Test
-  fun substr_onString_positionOnZero_startsFromZero() {
-    val expr = substr(constant("abc"), constant(0L), constant(6L))
-    assertEvaluatesTo(evaluate(expr), encodeValue("abc"), "substr(\"abc\", 0, 6)")
+  fun substring_onString_positionOnZero_startsFromZero() {
+    val expr = substring(constant("abc"), constant(0L), constant(6L))
+    assertEvaluatesTo(evaluate(expr), encodeValue("abc"), "substring(\"abc\", 0, 6)")
   }
 
   @Test
-  fun substr_onString_oversizedLength_returnsTruncatedString() {
-    val expr = substr(constant("abc"), constant(1L), constant(Long.MAX_VALUE))
-    assertEvaluatesTo(evaluate(expr), encodeValue("bc"), "substr(\"abc\", 1, Long.MAX_VALUE)")
+  fun substring_onString_oversizedLength_returnsTruncatedString() {
+    val expr = substring(constant("abc"), constant(1L), constant(Long.MAX_VALUE))
+    assertEvaluatesTo(evaluate(expr), encodeValue("bc"), "substring(\"abc\", 1, Long.MAX_VALUE)")
   }
 
   @Test
-  fun substr_onString_negativePosition() {
-    val expr = substr(constant("abcd"), constant(-3L), constant(2L))
-    assertEvaluatesTo(evaluate(expr), encodeValue("bc"), "substr(\"abcd\", -3, 2)")
+  fun substring_onString_negativePosition() {
+    val expr = substring(constant("abcd"), constant(-3L), constant(2L))
+    assertEvaluatesTo(evaluate(expr), encodeValue("bc"), "substring(\"abcd\", -3, 2)")
   }
 
   @Test
-  fun substr_onString_negativePosition_startsFromLast() {
-    val expr = substr(constant("abc"), constant(-1L), constant(1L))
-    assertEvaluatesTo(evaluate(expr), encodeValue("c"), "substr(\"abc\", -1, 1)")
+  fun substring_onString_negativePosition_startsFromLast() {
+    val expr = substring(constant("abc"), constant(-1L), constant(1L))
+    assertEvaluatesTo(evaluate(expr), encodeValue("c"), "substring(\"abc\", -1, 1)")
   }
 
   @Test
-  fun substr_onCodePoints_negativePosition_startsFromLast() {
-    val expr = substr(constant("㉇🀄"), constant(-1L), constant(1L))
-    assertEvaluatesTo(evaluate(expr), encodeValue("🀄"), "substr(\"㉇🀄\", -1, 1)")
+  fun substring_onCodePoints_negativePosition_startsFromLast() {
+    val expr = substring(constant("㉇🀄"), constant(-1L), constant(1L))
+    assertEvaluatesTo(evaluate(expr), encodeValue("🀄"), "substring(\"㉇🀄\", -1, 1)")
   }
 
   @Test
-  fun substr_onString_maxNegativePosition_startsFromZero() {
-    val expr = substr(blob("abc".toByteArray()), constant(-Long.MAX_VALUE), constant(2L))
+  fun substring_onString_maxNegativePosition_startsFromZero() {
+    val expr = substring(constant("abc".toByteArray()), constant(-Long.MAX_VALUE), constant(2L))
     assertEvaluatesTo(
       evaluate(expr),
       encodeValue(com.google.firebase.firestore.Blob.fromBytes("ab".toByteArray())),
-      "substr(blob(abc), -Long.MAX_VALUE, 2)"
+      "substring(blob(abc), -Long.MAX_VALUE, 2)"
     )
   }
 
   @Test
-  fun substr_onString_oversizedNegativePosition_startsFromZero() {
-    val expr = substr(blob("abc".toByteArray()), constant(-4L), constant(2L))
+  fun substring_onString_oversizedNegativePosition_startsFromZero() {
+    val expr = substring(constant("abc".toByteArray()), constant(-4L), constant(2L))
     assertEvaluatesTo(
       evaluate(expr),
       encodeValue(com.google.firebase.firestore.Blob.fromBytes("ab".toByteArray())),
-      "substr(blob(abc), -4, 2)"
+      "substring(blob(abc), -4, 2)"
     )
   }
 
   @Test
-  fun substr_onNonAsciiString() {
-    val expr = substr(constant("ϖϗϠ"), constant(1L), constant(1L))
-    assertEvaluatesTo(evaluate(expr), encodeValue("ϗ"), "substr(\"ϖϗϠ\", 1, 1)")
+  fun substring_onNonAsciiString() {
+    val expr = substring(constant("ϖϗϠ"), constant(1L), constant(1L))
+    assertEvaluatesTo(evaluate(expr), encodeValue("ϗ"), "substring(\"ϖϗϠ\", 1, 1)")
   }
 
   @Test
-  fun substr_onCharacterDecomposition_treatedAsSeparateCharacters() {
+  fun substring_onCharacterDecomposition_treatedAsSeparateCharacters() {
     val umlaut = String(charArrayOf(0x0308.toChar()))
     val decomposedChar = "u" + umlaut
 
     // Assert that the component characters of a decomposed character are trimmed correctly.
-    val expr1 = substr(constant(decomposedChar), constant(1), constant(2))
-    assertEvaluatesTo(evaluate(expr1), encodeValue(umlaut), "substr(decomposed, 1, 2)")
+    val expr1 = substring(constant(decomposedChar), constant(1), constant(2))
+    assertEvaluatesTo(evaluate(expr1), encodeValue(umlaut), "substring(decomposed, 1, 2)")
 
-    val expr2 = substr(constant(decomposedChar), constant(0), constant(1))
-    assertEvaluatesTo(evaluate(expr2), encodeValue("u"), "substr(decomposed, 0, 1)")
+    val expr2 = substring(constant(decomposedChar), constant(0), constant(1))
+    assertEvaluatesTo(evaluate(expr2), encodeValue("u"), "substring(decomposed, 0, 1)")
   }
 
   @Test
-  fun substr_onComposedCharacter_treatedAsSingleCharacter() {
-    val expr1 = substr(constant("ü"), constant(1), constant(1))
-    assertEvaluatesTo(evaluate(expr1), encodeValue(""), "substr(\"ü\", 1, 1)")
+  fun substring_onComposedCharacter_treatedAsSingleCharacter() {
+    val expr1 = substring(constant("ü"), constant(1), constant(1))
+    assertEvaluatesTo(evaluate(expr1), encodeValue(""), "substring(\"ü\", 1, 1)")
 
-    val expr2 = substr(constant("ü"), constant(0), constant(1))
-    assertEvaluatesTo(evaluate(expr2), encodeValue("ü"), "substr(\"ü\", 0, 1)")
+    val expr2 = substring(constant("ü"), constant(0), constant(1))
+    assertEvaluatesTo(evaluate(expr2), encodeValue("ü"), "substring(\"ü\", 0, 1)")
   }
 
   @Test
-  fun substr_mixedAsciiNonAsciiString_returnsSubstring() {
-    val expr = substr(constant("aϗbϖϗϠc"), constant(1), constant(3))
-    assertEvaluatesTo(evaluate(expr), encodeValue("ϗbϖ"), "substr(\"aϗbϖϗϠc\", 1, 3)")
+  fun substring_mixedAsciiNonAsciiString_returnsSubstring() {
+    val expr = substring(constant("aϗbϖϗϠc"), constant(1), constant(3))
+    assertEvaluatesTo(evaluate(expr), encodeValue("ϗbϖ"), "substring(\"aϗbϖϗϠc\", 1, 3)")
   }
 
   @Test
-  fun substr_mixedAsciiNonAsciiString_afterNonAscii() {
-    val expr = substr(constant("aϗbϖϗϠc"), constant(4), constant(2))
-    assertEvaluatesTo(evaluate(expr), encodeValue("ϗϠ"), "substr(\"aϗbϖϗϠc\", 4, 2)")
+  fun substring_mixedAsciiNonAsciiString_afterNonAscii() {
+    val expr = substring(constant("aϗbϖϗϠc"), constant(4), constant(2))
+    assertEvaluatesTo(evaluate(expr), encodeValue("ϗϠ"), "substring(\"aϗbϖϗϠc\", 4, 2)")
   }
 
   @Test
-  fun substr_onString_negativeLength_throws() {
-    val expr = substr(blob("abc".toByteArray()), constant(1L), constant(-1L))
-    assertEvaluatesToError(evaluate(expr), "substr with negative length")
+  fun substring_onString_negativeLength_throws() {
+    val expr = substring(constant("abc".toByteArray()), constant(1L), constant(-1L))
+    assertEvaluatesToError(evaluate(expr), "substring with negative length")
   }
 
   @Test
-  fun substr_onBytes_returnsSubstring() {
-    val expr = substr(blob("abc".toByteArray()), constant(1L), constant(2L))
+  fun substring_onBytes_returnsSubstring() {
+    val expr = substring(constant("abc".toByteArray()), constant(1L), constant(2L))
     assertEvaluatesTo(
       evaluate(expr),
       encodeValue(com.google.firebase.firestore.Blob.fromBytes("bc".toByteArray())),
-      "substr(blob(abc), 1, 2)"
+      "substring(blob(abc), 1, 2)"
     )
   }
 
   @Test
-  fun substr_onBytes_returnsInvalidUTF8Substring() {
+  fun substring_onBytes_returnsInvalidUTF8Substring() {
     val expr =
-      substr(
-        blob(ByteString.fromHex("F9FAFB").toByteArray()),
+      substring(
+        constant(ByteString.fromHex("F9FAFB").toByteArray()),
         constant(1L),
         constant(Long.MAX_VALUE)
       )
     assertEvaluatesTo(
       evaluate(expr),
       encodeValue(com.google.firebase.firestore.Blob.fromByteString(ByteString.fromHex("FAFB"))),
-      "substr invalid utf8"
+      "substring invalid utf8"
     )
   }
 
   @Test
-  fun substr_onCodePoints_returnsSubstring() {
+  fun substring_onCodePoints_returnsSubstring() {
     val codePoints = "🌎㉇🀄⛹"
-    val expr = substr(constant(codePoints), constant(1L), constant(2L))
-    assertEvaluatesTo(evaluate(expr), encodeValue("㉇🀄"), "substr(\"🌎㉇🀄⛹\", 1, 2)")
+    val expr = substring(constant(codePoints), constant(1L), constant(2L))
+    assertEvaluatesTo(evaluate(expr), encodeValue("㉇🀄"), "substring(\"🌎㉇🀄⛹\", 1, 2)")
   }
 
   @Test
-  fun substr_onCodePoints_andAscii_returnsSubstring() {
+  fun substring_onCodePoints_andAscii_returnsSubstring() {
     val codePoints = "🌎㉇foo🀄bar⛹"
-    val expr = substr(constant(codePoints), constant(4L), constant(4L))
-    assertEvaluatesTo(evaluate(expr), encodeValue("o🀄ba"), "substr(\"🌎㉇foo🀄bar⛹\", 4, 4)")
+    val expr = substring(constant(codePoints), constant(4L), constant(4L))
+    assertEvaluatesTo(evaluate(expr), encodeValue("o🀄ba"), "substring(\"🌎㉇foo🀄bar⛹\", 4, 4)")
   }
 
   @Test
-  fun substr_onCodePoints_oversizedLength_returnsSubstring() {
+  fun substring_onCodePoints_oversizedLength_returnsSubstring() {
     val codePoints = "🌎㉇🀄⛹"
-    val expr = substr(constant(codePoints), constant(1L), constant(6L))
-    assertEvaluatesTo(evaluate(expr), encodeValue("㉇🀄⛹"), "substr(\"🌎㉇🀄⛹\", 1, 6)")
+    val expr = substring(constant(codePoints), constant(1L), constant(6L))
+    assertEvaluatesTo(evaluate(expr), encodeValue("㉇🀄⛹"), "substring(\"🌎㉇🀄⛹\", 1, 6)")
   }
 
   @Test
-  fun substr_onCodePoints_startingAtZero_returnsSubstring() {
+  fun substring_onCodePoints_startingAtZero_returnsSubstring() {
     val codePoints = "🌎㉇🀄⛹"
-    val expr = substr(constant(codePoints), constant(0L), constant(3L))
-    assertEvaluatesTo(evaluate(expr), encodeValue("🌎㉇🀄"), "substr(\"🌎㉇🀄⛹\", 0, 3)")
+    val expr = substring(constant(codePoints), constant(0L), constant(3L))
+    assertEvaluatesTo(evaluate(expr), encodeValue("🌎㉇🀄"), "substring(\"🌎㉇🀄⛹\", 0, 3)")
   }
 
   @Test
-  fun substr_onSingleCodePointGrapheme_doesNotSplit() {
-    val expr1 = substr(constant("🖖"), constant(0L), constant(1L))
-    assertEvaluatesTo(evaluate(expr1), encodeValue("🖖"), "substr(\"🖖\", 0, 1)")
-    val expr2 = substr(constant("🖖"), constant(1L), constant(1L))
-    assertEvaluatesTo(evaluate(expr2), encodeValue(""), "substr(\"🖖\", 1, 1)")
+  fun substring_onSingleCodePointGrapheme_doesNotSplit() {
+    val expr1 = substring(constant("🖖"), constant(0L), constant(1L))
+    assertEvaluatesTo(evaluate(expr1), encodeValue("🖖"), "substring(\"🖖\", 0, 1)")
+    val expr2 = substring(constant("🖖"), constant(1L), constant(1L))
+    assertEvaluatesTo(evaluate(expr2), encodeValue(""), "substring(\"🖖\", 1, 1)")
   }
 
   @Test
-  fun substr_onMultiCodePointGrapheme_splitsGrapheme() {
-    val expr1 = substr(constant("🖖🏻"), constant(0L), constant(1L))
-    assertEvaluatesTo(evaluate(expr1), encodeValue("🖖"), "substr(\"🖖🏻\", 0, 1)")
+  fun substring_onMultiCodePointGrapheme_splitsGrapheme() {
+    val expr1 = substring(constant("🖖🏻"), constant(0L), constant(1L))
+    assertEvaluatesTo(evaluate(expr1), encodeValue("🖖"), "substring(\"🖖🏻\", 0, 1)")
     // Asserting that when the second half is split, it only returns the skin tone code point.
-    val expr2 = substr(constant("🖖🏻"), constant(1L), constant(1L))
+    val expr2 = substring(constant("🖖🏻"), constant(1L), constant(1L))
     val skinTone = String(charArrayOf(0xD83C.toChar(), 0xDFFB.toChar()))
-    assertEvaluatesTo(evaluate(expr2), encodeValue(skinTone), "substr(\"🖖🏻\", 1, 1)")
+    assertEvaluatesTo(evaluate(expr2), encodeValue(skinTone), "substring(\"🖖🏻\", 1, 1)")
   }
 
   @Test
-  fun substr_onBytes_largePosition_returnsEmptyString() {
-    val expr = substr(blob("abc".toByteArray()), constant(Long.MAX_VALUE), constant(3L))
+  fun substring_onBytes_largePosition_returnsEmptyString() {
+    val expr = substring(constant("abc".toByteArray()), constant(Long.MAX_VALUE), constant(3L))
     assertEvaluatesTo(
       evaluate(expr),
       encodeValue(com.google.firebase.firestore.Blob.fromByteString(ByteString.EMPTY)),
-      "substr(blob(abc), Long.MAX_VALUE, 3)"
+      "substring(blob(abc), Long.MAX_VALUE, 3)"
     )
   }
 
   @Test
-  fun substr_onBytes_positionOnLast_returnsLastByte() {
-    val expr = substr(blob("abc".toByteArray()), constant(2L), constant(2L))
+  fun substring_onBytes_positionOnLast_returnsLastByte() {
+    val expr = substring(constant("abc".toByteArray()), constant(2L), constant(2L))
     assertEvaluatesTo(
       evaluate(expr),
       encodeValue(com.google.firebase.firestore.Blob.fromBytes("c".toByteArray())),
-      "substr(blob(abc), 2, 2)"
+      "substring(blob(abc), 2, 2)"
     )
   }
 
   @Test
-  fun substr_onBytes_positionPastLast_returnsEmptyByteString() {
-    val expr = substr(blob("abc".toByteArray()), constant(3L), constant(2L))
+  fun substring_onBytes_positionPastLast_returnsEmptyByteString() {
+    val expr = substring(constant("abc".toByteArray()), constant(3L), constant(2L))
     assertEvaluatesTo(
       evaluate(expr),
       encodeValue(com.google.firebase.firestore.Blob.fromByteString(ByteString.EMPTY)),
-      "substr(blob(abc), 3, 2)"
+      "substring(blob(abc), 3, 2)"
     )
   }
 
   @Test
-  fun substr_onBytes_positionOnZero_startsFromZero() {
-    val expr = substr(blob("abc".toByteArray()), constant(0L), constant(6L))
+  fun substring_onBytes_positionOnZero_startsFromZero() {
+    val expr = substring(constant("abc".toByteArray()), constant(0L), constant(6L))
     assertEvaluatesTo(
       evaluate(expr),
       encodeValue(com.google.firebase.firestore.Blob.fromBytes("abc".toByteArray())),
-      "substr(blob(abc), 0, 6)"
+      "substring(blob(abc), 0, 6)"
     )
   }
 
   @Test
-  fun substr_onBytes_negativePosition_startsFromLast() {
-    val expr = substr(blob("abc".toByteArray()), constant(-1L), constant(1L))
+  fun substring_onBytes_negativePosition_startsFromLast() {
+    val expr = substring(constant("abc".toByteArray()), constant(-1L), constant(1L))
     assertEvaluatesTo(
       evaluate(expr),
       encodeValue(com.google.firebase.firestore.Blob.fromBytes("c".toByteArray())),
-      "substr(blob(abc), -1, 1)"
+      "substring(blob(abc), -1, 1)"
     )
   }
 
   @Test
-  fun substr_onBytes_oversizedNegativePosition_startsFromZero() {
-    val expr = substr(blob("abc".toByteArray()), constant(-Long.MAX_VALUE), constant(3L))
+  fun substring_onBytes_oversizedNegativePosition_startsFromZero() {
+    val expr = substring(constant("abc".toByteArray()), constant(-Long.MAX_VALUE), constant(3L))
     assertEvaluatesTo(
       evaluate(expr),
       encodeValue(com.google.firebase.firestore.Blob.fromBytes("abc".toByteArray())),
-      "substr(blob(abc), -Long.MAX_VALUE, 3)"
+      "substring(blob(abc), -Long.MAX_VALUE, 3)"
     )
   }
 
   @Test
-  fun substr_unknownValueType_returnsError() {
-    val expr = substr(constant(20L), constant(4L), constant(1L))
-    assertEvaluatesToError(evaluate(expr), "substr on non-string/blob")
+  fun substring_unknownValueType_returnsError() {
+    val expr = substring(constant(20L), constant(4L), constant(1L))
+    assertEvaluatesToError(evaluate(expr), "substring on non-string/blob")
   }
 
   @Test
-  fun substr_unknownPositionType_returnsError() {
-    val expr = substr(constant("abc"), constant("foo"), constant(1L))
-    assertEvaluatesToError(evaluate(expr), "substr with non-integer position")
+  fun substring_unknownPositionType_returnsError() {
+    val expr = substring(constant("abc"), constant("foo"), constant(1L))
+    assertEvaluatesToError(evaluate(expr), "substring with non-integer position")
   }
 
   @Test
-  fun substr_unknownLengthType_returnsError() {
-    val expr = substr(constant("abc"), constant(1L), constant("foo"))
-    assertEvaluatesToError(evaluate(expr), "substr with non-integer length")
+  fun substring_unknownLengthType_returnsError() {
+    val expr = substring(constant("abc"), constant(1L), constant("foo"))
+    assertEvaluatesToError(evaluate(expr), "substring with non-integer length")
   }
 }
