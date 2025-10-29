@@ -54,7 +54,9 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.property.Arb
 import io.kotest.property.RandomSource
+import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.next
+import io.kotest.property.arbs.products.brand
 import io.mockk.coEvery
 import io.mockk.confirmVerified
 import io.mockk.every
@@ -309,6 +311,46 @@ class DataConnectAuthUnitTest {
       "returns retrieved token: ${accessToken.toScrubbedAccessToken()}"
     )
     mockLogger.shouldNotHaveLoggedAnyMessagesContaining(accessToken)
+  }
+
+  @Test
+  fun `getToken() should populate authUid from sub claim`() = runTest {
+    val dataConnectAuth = newDataConnectAuth()
+    dataConnectAuth.initialize()
+    advanceUntilIdle()
+    val uid = Arb.brand().map { it.value }.next(rs)
+    coEvery { mockInternalAuthProvider.getAccessToken(any()) } returns
+      taskForToken(accessToken, mapOf("sub" to uid))
+
+    val result = dataConnectAuth.getToken(requestId)
+
+    result.shouldNotBeNull().authUid shouldBe uid
+  }
+
+  @Test
+  fun `getToken() should populate null authUid if sub claim is missing`() = runTest {
+    val dataConnectAuth = newDataConnectAuth()
+    dataConnectAuth.initialize()
+    advanceUntilIdle()
+    coEvery { mockInternalAuthProvider.getAccessToken(any()) } returns
+      taskForToken(accessToken, emptyMap())
+
+    val result = dataConnectAuth.getToken(requestId)
+
+    result.shouldNotBeNull().authUid.shouldBeNull()
+  }
+
+  @Test
+  fun `getToken() should populate null authUid if sub claim is not a String`() = runTest {
+    val dataConnectAuth = newDataConnectAuth()
+    dataConnectAuth.initialize()
+    advanceUntilIdle()
+    coEvery { mockInternalAuthProvider.getAccessToken(any()) } returns
+      taskForToken(accessToken, mapOf("sub" to 42))
+
+    val result = dataConnectAuth.getToken(requestId)
+
+    result.shouldNotBeNull().authUid.shouldBeNull()
   }
 
   @Test
@@ -613,7 +655,7 @@ class DataConnectAuthUnitTest {
       interval = 100.milliseconds
     }
 
-    fun taskForToken(token: String?): Task<GetTokenResult> =
-      Tasks.forResult(mockk(relaxed = true) { every { getToken() } returns token })
+    fun taskForToken(token: String?, claims: Map<String, Any> = emptyMap()): Task<GetTokenResult> =
+      Tasks.forResult(GetTokenResult(token, claims))
   }
 }
