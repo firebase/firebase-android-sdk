@@ -54,7 +54,10 @@ internal class QueryResultEncoder(private val dataOutput: DataOutput) {
         Value.KindCase.NULL_VALUE -> {
           dataOutput.writeByte(QueryResultCodec.VALUE_NULL)
         }
-        Value.KindCase.STRING_VALUE -> TODO()
+        Value.KindCase.STRING_VALUE -> {
+          dataOutput.writeByte(QueryResultCodec.VALUE_STRING_UTF8)
+          dataOutput.writeString(value.stringValue)
+        }
         Value.KindCase.STRUCT_VALUE -> TODO()
         Value.KindCase.LIST_VALUE -> TODO()
         Value.KindCase.KIND_NOT_SET -> TODO()

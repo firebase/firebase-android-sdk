@@ -16,6 +16,13 @@
 
 package com.google.firebase.dataconnect.sqlite2
 
+import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWith1ByteUtf8Encoding
+import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWith2ByteUtf8Encoding
+import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWith3ByteUtf8Encoding
+import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWith4ByteUtf8Encoding
+import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWithEvenNumByteUtf8EncodingDistribution
+import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
+import com.google.firebase.dataconnect.testutil.property.arbitrary.stringWithLoneSurrogates
 import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.protobuf.NullValue
 import com.google.protobuf.Struct
@@ -31,7 +38,11 @@ import io.kotest.property.PropTestConfig
 import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.alphanumeric
 import io.kotest.property.arbitrary.boolean
+import io.kotest.property.arbitrary.choice
+import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.double
+import io.kotest.property.arbitrary.flatMap
+import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.list
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.string
@@ -67,6 +78,13 @@ class QueryResultEncoderUnitTest {
     }
   }
 
+  @Test
+  fun `struct with all string values`() = runTest {
+    checkAll(propTestConfig, structWithStringValuesArb()) { struct ->
+      struct.decodingEncodingShouldProduceIdenticalStruct()
+    }
+  }
+
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Tests for helper functions
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -94,6 +112,14 @@ class QueryResultEncoderUnitTest {
   @Test
   fun `structWithNullValuesArb() should produce non-empty structs`() =
     verifyArbProducesNonEmptyStructs(structWithNullValuesArb())
+
+  @Test
+  fun `structWithStringValuesArb() should produce structs with only number values`() =
+    verifyArbProducesStructsWithKindCase(structWithStringValuesArb(), Value.KindCase.STRING_VALUE)
+
+  @Test
+  fun `structWithStringValuesArb() should produce non-empty structs`() =
+    verifyArbProducesNonEmptyStructs(structWithStringValuesArb())
 
   private fun verifyArbProducesStructsWithKindCase(
     arb: Arb<Struct>,
@@ -127,6 +153,19 @@ class QueryResultEncoderUnitTest {
       PropTestConfig(
         iterations = 1000,
         edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.33)
+      )
+
+    fun stringForEncodeTestingArb(): Arb<String> =
+      Arb.choice(
+        Arb.constant(""),
+        Arb.string(1..20, Arb.codepointWith1ByteUtf8Encoding()),
+        Arb.string(1..20, Arb.codepointWith2ByteUtf8Encoding()),
+        Arb.string(1..20, Arb.codepointWith3ByteUtf8Encoding()),
+        Arb.string(1..20, Arb.codepointWith4ByteUtf8Encoding()),
+        Arb.string(1..20, Arb.codepointWithEvenNumByteUtf8EncodingDistribution()),
+        // TODO: add support for lone surrogates
+        //Arb.int(1..20).flatMap { Arb.stringWithLoneSurrogates(it) }.map { it.string },
+        Arb.dataConnect.string(0..20),
       )
 
     fun Struct.decodingEncodingShouldProduceIdenticalStruct() {
@@ -166,6 +205,18 @@ class QueryResultEncoderUnitTest {
         val builder = Struct.newBuilder()
         keys.forEach { key ->
           builder.putFields(key, Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build())
+        }
+        builder.build()
+      }
+
+    fun structWithStringValuesArb(
+      map: Arb<Map<String, String>> =
+        Arb.map(Arb.string(1..10, Codepoint.alphanumeric()), stringForEncodeTestingArb(), 1, 10)
+    ): Arb<Struct> =
+      map.map { map ->
+        val builder = Struct.newBuilder()
+        map.entries.forEach { (key, value) ->
+          builder.putFields(key, Value.newBuilder().setStringValue(value).build())
         }
         builder.build()
       }
