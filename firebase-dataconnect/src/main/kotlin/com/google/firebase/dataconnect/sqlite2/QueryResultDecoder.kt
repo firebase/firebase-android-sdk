@@ -17,10 +17,13 @@
 package com.google.firebase.dataconnect.sqlite2
 
 import com.google.firebase.dataconnect.sqlite2.QueryResultCodec.Entity
+import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.protobuf.Struct
 import java.io.ByteArrayInputStream
 import java.io.DataInput
 import java.io.DataInputStream
+import java.nio.ByteBuffer
+import java.nio.CharBuffer
 
 /**
  * This class is NOT thread safe. The behavior of an instance of this class when used concurrently
@@ -31,9 +34,33 @@ internal class QueryResultDecoder(
   private val entities: List<Entity>
 ) {
 
-  fun decode(): Struct {
-    return Struct.getDefaultInstance()
+  private val charsetDecoder = Charsets.UTF_8.newDecoder()
+
+  fun decode(): Struct = buildStructProto {
+    val keyCount = dataInput.readStructKeyCount()
+    repeat(keyCount) {
+      val key = dataInput.readString()
+      val value = dataInput.readDouble()
+      put(key, value)
+    }
   }
+
+  private fun DataInput.readString(): String {
+    val byteCount = dataInput.readStringByteCount()
+
+    val encodedStringBytes = ByteArray(byteCount)
+    readFully(encodedStringBytes)
+
+    charsetDecoder.reset()
+    val decodedString: CharBuffer = charsetDecoder.decode(ByteBuffer.wrap(encodedStringBytes))
+    return decodedString.toString()
+  }
+
+  sealed class DecodeException(message: String) : Exception(message)
+
+  class NegativeStructKeyCountException(message: String) : DecodeException(message)
+
+  class NegativeStringByteCountException(message: String) : DecodeException(message)
 
   companion object {
 
@@ -42,6 +69,26 @@ internal class QueryResultDecoder(
         DataInputStream(byteArrayInputStream).use { dataInputStream ->
           val decoder = QueryResultDecoder(dataInputStream, entities)
           decoder.decode()
+        }
+      }
+
+    private fun DataInput.readStructKeyCount(): Int =
+      readInt().also {
+        if (it < 0) {
+          throw NegativeStructKeyCountException(
+            "read struct key count $it, but expected " +
+              "a number greater than or equal to zero [y9253xj96g]"
+          )
+        }
+      }
+
+    private fun DataInput.readStringByteCount(): Int =
+      readInt().also {
+        if (it < 0) {
+          throw NegativeStringByteCountException(
+            "read string byte count $it, but expected " +
+              "a number greater than or equal to zero [a9kma55y7m]"
+          )
         }
       }
   }

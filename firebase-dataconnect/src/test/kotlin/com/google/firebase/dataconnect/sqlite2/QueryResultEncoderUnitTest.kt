@@ -17,15 +17,54 @@
 package com.google.firebase.dataconnect.sqlite2
 
 import com.google.firebase.dataconnect.testutil.shouldBe
+import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.protobuf.Struct
+import io.kotest.common.ExperimentalKotest
+import io.kotest.property.Arb
+import io.kotest.property.EdgeConfig
+import io.kotest.property.PropTestConfig
+import io.kotest.property.arbitrary.Codepoint
+import io.kotest.property.arbitrary.alphanumeric
+import io.kotest.property.arbitrary.double
+import io.kotest.property.arbitrary.map
+import io.kotest.property.arbitrary.string
+import io.kotest.property.checkAll
+import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
 class QueryResultEncoderUnitTest {
 
   @Test
   fun `empty struct`() {
-    val encodeResult = QueryResultEncoder.encode(Struct.getDefaultInstance())
-    val decodeResult = QueryResultDecoder.decode(encodeResult.byteArray, encodeResult.entities)
-    decodeResult shouldBe Struct.getDefaultInstance()
+    Struct.getDefaultInstance().decodingEncodingShouldProduceIdenticalStruct()
+  }
+
+  @Test
+  fun `struct with all number values`() = runTest {
+    checkAll(propTestConfig, structWithNumberValuesArb()) { struct ->
+      struct.decodingEncodingShouldProduceIdenticalStruct()
+    }
+  }
+
+  private companion object {
+
+    @OptIn(ExperimentalKotest::class)
+    val propTestConfig =
+      PropTestConfig(
+        iterations = 1000,
+        edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.33)
+      )
+
+    fun Struct.decodingEncodingShouldProduceIdenticalStruct() {
+      val encodeResult = QueryResultEncoder.encode(this)
+      val decodeResult = QueryResultDecoder.decode(encodeResult.byteArray, encodeResult.entities)
+      decodeResult shouldBe this
+    }
+
+    fun structWithNumberValuesArb(
+      map: Arb<Map<String, Double>> =
+        Arb.map(Arb.string(1..10, Codepoint.alphanumeric()), Arb.double(), 1, 10)
+    ): Arb<Struct> =
+      map.map { map -> buildStructProto { map.entries.forEach { put(it.key, it.value) } } }
   }
 }

@@ -21,6 +21,8 @@ import com.google.protobuf.Struct
 import java.io.ByteArrayOutputStream
 import java.io.DataOutput
 import java.io.DataOutputStream
+import java.nio.ByteBuffer
+import java.nio.CharBuffer
 
 /**
  * This class is NOT thread safe. The behavior of an instance of this class when used concurrently
@@ -30,9 +32,26 @@ internal class QueryResultEncoder(private val dataOutput: DataOutput) {
 
   val entities: MutableList<Entity> = mutableListOf()
 
+  private val charsetEncoder = Charsets.UTF_8.newEncoder()
+
   class EncodeResult(val byteArray: ByteArray, val entities: List<Entity>)
 
-  fun encode(queryResult: Struct) {}
+  fun encode(queryResult: Struct) {
+    val map = queryResult.fieldsMap
+    dataOutput.writeInt(map.size)
+    map.entries.forEach { (key, value) ->
+      dataOutput.writeString(key)
+      dataOutput.writeDouble(value.numberValue)
+    }
+  }
+
+  private fun DataOutput.writeString(string: String) {
+    charsetEncoder.reset()
+    val encodedString: ByteBuffer = charsetEncoder.encode(CharBuffer.wrap(string))
+
+    writeInt(encodedString.remaining())
+    writeByteBuffer(encodedString)
+  }
 
   companion object {
 
@@ -46,5 +65,12 @@ internal class QueryResultEncoder(private val dataOutput: DataOutput) {
           }
         EncodeResult(byteArrayOutputStream.toByteArray(), entities)
       }
+
+    private fun DataOutput.writeByteBuffer(byteBuffer: ByteBuffer) {
+      val byteArray = byteBuffer.array()
+      val offset = byteBuffer.arrayOffset() + byteBuffer.position()
+      val length = byteBuffer.remaining()
+      write(byteArray, offset, length)
+    }
   }
 }
