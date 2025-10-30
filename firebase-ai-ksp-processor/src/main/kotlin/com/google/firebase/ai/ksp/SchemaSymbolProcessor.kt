@@ -197,7 +197,7 @@ public class SchemaSymbolProcessor(
       }
       if (
         (minItems != null || maxItems != null) &&
-          className.canonicalName !== "kotlin.collections.List"
+          className.canonicalName != "kotlin.collections.List"
       ) {
         logger.warn(
           "${parentType?.toClassName()?.simpleName?.let { "$it." }}$name is not a List type, minItems and maxItems are not valid parameters to specify in @Guide"
