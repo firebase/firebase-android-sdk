@@ -15,6 +15,7 @@
 package com.google.firebase.firestore.pipeline
 
 import com.google.firebase.firestore.UserDataReader
+import com.google.firestore.v1.Function as ProtoFunction
 import com.google.firestore.v1.Value
 
 class AliasedAggregate
@@ -178,7 +179,7 @@ private constructor(
   fun alias(alias: String) = AliasedAggregate(alias, this)
 
   internal fun toProto(userDataReader: UserDataReader): Value {
-    val builder = com.google.firestore.v1.Function.newBuilder()
+    val builder = ProtoFunction.newBuilder()
     builder.setName(name)
     for (param in params) {
       builder.addArgs(param.toProto(userDataReader))

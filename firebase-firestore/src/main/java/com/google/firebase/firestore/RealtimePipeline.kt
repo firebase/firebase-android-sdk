@@ -42,6 +42,7 @@ import com.google.firebase.firestore.remote.RemoteSerializer
 import com.google.firebase.firestore.util.Assert
 import com.google.firebase.firestore.util.Assert.fail
 import com.google.firebase.firestore.util.Executors
+import com.google.firestore.v1.Pipeline as ProtoPipeline
 import com.google.firestore.v1.StructuredPipeline
 import java.util.concurrent.Executor
 import kotlinx.coroutines.channels.awaitClose
@@ -424,7 +425,7 @@ internal constructor(
   internal fun toStructurePipelineProto(): StructuredPipeline {
     val builder = StructuredPipeline.newBuilder()
     builder.pipeline =
-      com.google.firestore.v1.Pipeline.newBuilder()
+      ProtoPipeline.newBuilder()
         .addAllStages(rewrittenStages.map { it.toProtoStage(userDataReader) })
         .build()
     return builder.build()

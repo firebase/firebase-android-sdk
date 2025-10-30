@@ -193,6 +193,7 @@ public class View {
             changeSet.addChange(DocumentViewChange.create(Type.MODIFIED, newDoc));
             changeApplied = true;
 
+            Comparator<Document> queryComparator = query.comparator();
             if ((lastDocInLimit != null && queryComparator.compare(newDoc, lastDocInLimit) > 0)
                 || (firstDocInLimit != null
                     && queryComparator.compare(newDoc, firstDocInLimit) < 0)) {

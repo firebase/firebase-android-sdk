@@ -728,7 +728,9 @@ public class SQLiteSchemaTest {
 
     Map<DocumentKey, MutableDocument> results =
         remoteDocumentCache.getDocumentsMatchingQuery(
-            query("coll"), IndexOffset.NONE, new HashSet<DocumentKey>());
+            new QueryOrPipeline.QueryWrapper(query("coll")),
+            IndexOffset.NONE,
+            new HashSet<DocumentKey>());
     assertResultsContain(results, "coll/doc0", "coll/doc1", "coll/doc2");
   }
 
