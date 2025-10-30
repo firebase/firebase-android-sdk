@@ -108,11 +108,16 @@ internal class QueryResultEncoder(private val dataOutput: DataOutput) {
       writeByte(byte.toInt())
     }
 
-    private fun DataOutput.writeByteBuffer(byteBuffer: ByteBuffer) {
+    private fun DataOutput.writeByteBuffer(byteBuffer: ByteBuffer): Int {
       val byteArray = byteBuffer.array()
-      val offset = byteBuffer.arrayOffset() + byteBuffer.position()
+      val position = byteBuffer.position()
+      val offset = byteBuffer.arrayOffset() + position
       val length = byteBuffer.remaining()
+
       write(byteArray, offset, length)
+
+      byteBuffer.position(position + length)
+      return length
     }
 
     private fun DataOutput.writeStringUtf8(
@@ -121,16 +126,8 @@ internal class QueryResultEncoder(private val dataOutput: DataOutput) {
       charsetEncoder: CharsetEncoder,
       byteBuffer: ByteBuffer
     ) {
-      // Assuming an array offset of 0 just makes the logic below simpler because we don't have to
-      // calculate the offset from which to access the underlying byte array.
-      require(byteBuffer.arrayOffset() == 0) {
-        "internal error f6rk5x4dbp: byteBuffer.arrayOffset() should be zero, " +
-          "but got ${byteBuffer.arrayOffset()}"
-      }
-
       charsetEncoder.reset()
       byteBuffer.clear()
-      val byteArray = byteBuffer.array()
       val charBuffer = CharBuffer.wrap(string)
 
       writeByte(QueryResultCodec.VALUE_STRING_UTF8)
@@ -158,8 +155,7 @@ internal class QueryResultEncoder(private val dataOutput: DataOutput) {
         }
         if (coderResult2.isOverflow) {
           byteBuffer.flip()
-          byteWriteCount += byteBuffer.remaining()
-          write(byteArray, 0, byteBuffer.remaining())
+          byteWriteCount += writeByteBuffer(byteBuffer)
           byteBuffer.clear()
         } else {
           coderResult2.throwException()
@@ -168,8 +164,7 @@ internal class QueryResultEncoder(private val dataOutput: DataOutput) {
 
       byteBuffer.flip()
       if (byteBuffer.hasRemaining()) {
-        byteWriteCount += byteBuffer.remaining()
-        write(byteArray, 0, byteBuffer.remaining())
+        byteWriteCount += writeByteBuffer(byteBuffer)
       }
 
       check(byteWriteCount == expectedByteCount) {
