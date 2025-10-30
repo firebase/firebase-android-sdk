@@ -5,7 +5,7 @@
 - [feature] Added support for sending realtime audio and video in a `LiveSession`.
 - [changed] Removed redundant internal exception types. (#7475)
 - [feature] Added support for server templates via `TemplateGenerativeModel` and 
-- `TemplateImagenModel`. (#7503)
+  `TemplateImagenModel`. (#7503)
 
 # 17.4.0
 
