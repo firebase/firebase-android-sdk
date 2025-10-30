@@ -26,6 +26,7 @@ import java.nio.ByteBuffer
 import java.nio.CharBuffer
 import java.nio.charset.CharsetDecoder
 import java.nio.charset.CodingErrorAction
+import kotlin.math.absoluteValue
 
 /**
  * This class is NOT thread safe. The behavior of an instance of this class when used concurrently
@@ -53,13 +54,17 @@ internal class QueryResultDecoder(
         ValueKindCase.Number -> put(key, dataInput.readDouble())
         ValueKindCase.BoolTrue -> put(key, true)
         ValueKindCase.BoolFalse -> put(key, false)
-        ValueKindCase.String -> put(key, dataInput.readString())
+        ValueKindCase.StringEmpty -> put(key, dataInput.readString(StringType.Empty))
+        ValueKindCase.StringUtf8 -> put(key, dataInput.readString(StringType.Utf8))
+        ValueKindCase.StringUtf16 -> put(key, dataInput.readString(StringType.Utf16))
       }
     }
   }
 
-  private fun DataInput.readString(): String =
-    when (readStringType()) {
+  private fun DataInput.readString(): String = readString(readStringType())
+
+  private fun DataInput.readString(stringType: StringType): String =
+    when (stringType) {
       StringType.Empty -> ""
       StringType.Utf8 -> readStringUtf8(charsetDecoder, byteBuffer)
       StringType.Utf16 -> readStringCustomUtf16(byteArray)
@@ -122,7 +127,9 @@ internal class QueryResultDecoder(
       Number(QueryResultCodec.VALUE_NUMBER, "number"),
       BoolTrue(QueryResultCodec.VALUE_BOOL_TRUE, "true"),
       BoolFalse(QueryResultCodec.VALUE_BOOL_FALSE, "false"),
-      String(QueryResultCodec.VALUE_STRING_UTF8, "utf8");
+      StringEmpty(QueryResultCodec.VALUE_STRING_EMPTY, "emptystring"),
+      StringUtf8(QueryResultCodec.VALUE_STRING_UTF8, "utf8"),
+      StringUtf16(QueryResultCodec.VALUE_STRING_UTF16, "utf16");
 
       companion object {
         fun fromSerializedByte(serializedByte: Byte): ValueKindCase? =
@@ -145,26 +152,35 @@ internal class QueryResultDecoder(
         kindCase
       }
 
-    private enum class StringType(val serializedByte: Byte, val displayName: String) {
-      Empty(QueryResultCodec.VALUE_STRING_EMPTY, "empty"),
-      Utf8(QueryResultCodec.VALUE_STRING_UTF8, "utf8"),
-      Utf16(QueryResultCodec.VALUE_STRING_UTF16, "utf16");
+    private enum class StringType(val valueKindCase: ValueKindCase) {
+      Empty(ValueKindCase.StringEmpty),
+      Utf8(ValueKindCase.StringUtf8),
+      Utf16(ValueKindCase.StringUtf16);
 
       companion object {
-        fun fromSerializedByte(serializedByte: Byte): StringType? =
-          entries.firstOrNull { it.serializedByte == serializedByte }
+        fun fromValueKindCase(valueKindCase: ValueKindCase): StringType? =
+          entries.firstOrNull { it.valueKindCase == valueKindCase }
       }
     }
 
+    private fun DataInput.readFully(byteBuffer: ByteBuffer) {
+      val array = byteBuffer.array()
+      readFully(array, byteBuffer.arrayOffset() + byteBuffer.position(), byteBuffer.remaining())
+      byteBuffer.position(byteBuffer.limit())
+    }
+
     private fun DataInput.readStringType(): StringType =
-      readByte().let { byte ->
-        val stringType = StringType.fromSerializedByte(byte)
+      readKindCase().let { valueKindCase ->
+        val stringType = StringType.fromValueKindCase(valueKindCase)
         if (stringType === null) {
           throw UnknownStringTypeException(
-            "read unknown string type byte $byte, but expected one of " +
+            "read non-string value type ${valueKindCase.serializedByte} " +
+              "(${valueKindCase.displayName}), but expected one of " +
               StringType.entries
-                .sortedBy { it.serializedByte }
-                .joinToString { "${it.serializedByte} (${it.displayName})" } +
+                .sortedBy { it.valueKindCase.serializedByte }
+                .joinToString {
+                  "${it.valueKindCase.serializedByte} (${it.valueKindCase.displayName})"
+                } +
               " [hfvxx849cv]"
           )
         }
@@ -175,36 +191,32 @@ internal class QueryResultDecoder(
       charsetDecoder: CharsetDecoder,
       byteBuffer: ByteBuffer
     ): String {
-      // Assuming an array offset of 0 just makes the logic below simpler because we don't have to
-      // calculate the offset from which to access the underlying byte array.
-      require(byteBuffer.arrayOffset() == 0) {
-        "internal error zv3dagabjp: byteBuffer.arrayOffset() should be zero, " +
-          "but got ${byteBuffer.arrayOffset()}"
-      }
-
       val byteCount = readStringByteCount()
       val charCount = readStringCharCount()
 
       charsetDecoder.reset()
+      byteBuffer.clear()
       val charArray = CharArray(charCount)
       val charBuffer = CharBuffer.wrap(charArray)
-      val byteArray = byteBuffer.array()
 
       var bytesRemaining = byteCount
-      while (bytesRemaining > 0) {
-        val curReadCount = bytesRemaining.coerceAtMost(byteArray.size)
-        if (curReadCount == 0) {
-          break
-        }
-        byteBuffer.clear()
-        byteBuffer.limit(curReadCount)
-        readFully(byteArray, 0, curReadCount)
+      while (true) {
+        val curReadCount = bytesRemaining.coerceAtMost(byteBuffer.remaining())
+        byteBuffer.limit(byteBuffer.position() + curReadCount)
+        readFully(byteBuffer)
         bytesRemaining -= curReadCount
 
+        byteBuffer.flip()
         val codingResult = charsetDecoder.decode(byteBuffer, charBuffer, false)
         if (!codingResult.isUnderflow) {
           codingResult.throwException()
         }
+
+        if (bytesRemaining == 0) {
+          break
+        }
+
+        byteBuffer.compact()
       }
 
       val finalDecodeResult = charsetDecoder.decode(byteBuffer, charBuffer, true)
@@ -221,7 +233,44 @@ internal class QueryResultDecoder(
     }
 
     private fun DataInput.readStringCustomUtf16(byteArray: ByteArray): String {
-      TODO()
+      val charCount = readStringCharCount()
+      val charArray = CharArray(charCount)
+
+      var bytesRemaining = charCount * 2
+      var i = 0
+      var charArrayIndex = 0
+      while (bytesRemaining > 0) {
+        val byteReadCount = bytesRemaining.coerceAtMost(byteArray.size - i)
+        readFully(byteArray, i, byteReadCount)
+        bytesRemaining -= byteReadCount
+
+        while (i + 1 < byteReadCount) {
+          val b1 = byteArray[i++]
+          val b2 = byteArray[i++]
+          val charCode = ((b1.toInt() and 0xFF) shl 8) or (b2.toInt() and 0xFF)
+          charArray[charArrayIndex++] = charCode.toChar()
+        }
+
+        if (i == byteReadCount) {
+          i = 0
+        } else {
+          check(i + 1 == byteReadCount) {
+            "internal error h2pzy6wefr: i=$i byteReadCount=$byteReadCount; " +
+              "i+1 should equal byteReadCount, but they differ by " +
+              "${(byteReadCount-i-1).absoluteValue}"
+          }
+          byteArray[0] = byteArray[i]
+          i = 1
+        }
+      }
+
+      check(charArrayIndex == charArray.size) {
+        "internal error pfdwdh929b: charArrayIndex=$charArrayIndex, " +
+          "charArray.size=${charArray.size}; charArrayIndex should equal charArray.size, " +
+          "but they differ by ${(charArray.size-charArrayIndex).absoluteValue}"
+      }
+
+      return String(charArray)
     }
   }
 }

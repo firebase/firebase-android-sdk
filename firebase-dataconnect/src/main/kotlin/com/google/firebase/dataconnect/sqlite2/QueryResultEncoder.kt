@@ -65,7 +65,6 @@ internal class QueryResultEncoder(private val dataOutput: DataOutput) {
             else QueryResultCodec.VALUE_BOOL_FALSE
           )
         Value.KindCase.STRING_VALUE -> {
-          dataOutput.writeByte(QueryResultCodec.VALUE_STRING_UTF8)
           dataOutput.writeString(value.stringValue)
         }
         Value.KindCase.STRUCT_VALUE -> TODO()
@@ -118,7 +117,7 @@ internal class QueryResultEncoder(private val dataOutput: DataOutput) {
 
     private fun DataOutput.writeStringUtf8(
       string: String,
-      utf8ByteCount: Int,
+      expectedByteCount: Int,
       charsetEncoder: CharsetEncoder,
       byteBuffer: ByteBuffer
     ) {
@@ -135,7 +134,7 @@ internal class QueryResultEncoder(private val dataOutput: DataOutput) {
       val charBuffer = CharBuffer.wrap(string)
 
       writeByte(QueryResultCodec.VALUE_STRING_UTF8)
-      writeInt(utf8ByteCount)
+      writeInt(expectedByteCount)
       writeInt(string.length)
 
       var byteWriteCount = 0
@@ -173,20 +172,20 @@ internal class QueryResultEncoder(private val dataOutput: DataOutput) {
         write(byteArray, 0, byteBuffer.remaining())
       }
 
-      check(byteWriteCount == utf8ByteCount) {
+      check(byteWriteCount == expectedByteCount) {
         "internal error rvmdh67npk: byteWriteCount=$byteWriteCount " +
-          "should be equal to utf8ByteCount=$utf8ByteCount, but they differ by " +
-          "${(utf8ByteCount-byteWriteCount).absoluteValue}"
+          "should be equal to expectedByteCount=$expectedByteCount, but they differ by " +
+          "${(expectedByteCount-byteWriteCount).absoluteValue}"
       }
     }
 
     private fun DataOutput.writeStringCustomUtf16(
       string: String,
-      utf16ByteCount: Int,
+      expectedByteCount: Int,
       buffer: ByteArray
     ) {
       writeByte(QueryResultCodec.VALUE_STRING_UTF16)
-      writeInt(utf16ByteCount)
+      writeInt(string.length)
 
       var i = 0
       var byteWriteCount = 0
@@ -206,10 +205,10 @@ internal class QueryResultEncoder(private val dataOutput: DataOutput) {
         byteWriteCount += i
       }
 
-      check(byteWriteCount == utf16ByteCount) {
+      check(byteWriteCount == expectedByteCount) {
         "internal error agdf5qbwwp: byteWriteCount=$byteWriteCount " +
-          "should be equal to utf16ByteCount=$utf16ByteCount, but they differ by " +
-          "${(utf16ByteCount - byteWriteCount).absoluteValue}"
+          "should be equal to expectedByteCount=$expectedByteCount, but they differ by " +
+          "${(expectedByteCount - byteWriteCount).absoluteValue}"
       }
     }
   }

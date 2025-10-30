@@ -18,6 +18,11 @@ package com.google.firebase.dataconnect.sqlite2
 
 import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWith1ByteUtf8Encoding
 import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWith2ByteUtf8Encoding
+import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWith3ByteUtf8Encoding
+import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWith4ByteUtf8Encoding
+import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWithEvenNumByteUtf8EncodingDistribution
+import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
+import com.google.firebase.dataconnect.testutil.property.arbitrary.stringWithLoneSurrogates
 import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.protobuf.NullValue
 import com.google.protobuf.Struct
@@ -74,6 +79,15 @@ class QueryResultEncoderUnitTest {
   @Test
   fun `struct with all string values`() = runTest {
     checkAll(propTestConfig, structWithStringValuesArb()) { struct ->
+      struct.decodingEncodingShouldProduceIdenticalStruct()
+    }
+  }
+
+  @Test
+  fun `struct with long string values`() = runTest {
+    val structArb = structWithStringValuesArb(value = longStringForEncodeTestingArb())
+    checkAll(@OptIn(ExperimentalKotest::class) propTestConfig.copy(iterations = 10), structArb) {
+      struct ->
       struct.decodingEncodingShouldProduceIdenticalStruct()
     }
   }
@@ -153,13 +167,23 @@ class QueryResultEncoderUnitTest {
         Arb.constant(""),
         Arb.string(1..20, Arb.codepointWith1ByteUtf8Encoding()),
         Arb.string(1..20, Arb.codepointWith2ByteUtf8Encoding()),
-        //        Arb.string(1..20, Arb.codepointWith3ByteUtf8Encoding()),
-        //        Arb.string(1..20, Arb.codepointWith4ByteUtf8Encoding()),
-        //        Arb.string(1..20, Arb.codepointWithEvenNumByteUtf8EncodingDistribution()),
-        //        // TODO: add support for lone surrogates
-        //        // Arb.int(1..20).flatMap { Arb.stringWithLoneSurrogates(it) }.map { it.string },
-        //        Arb.dataConnect.string(0..20),
-        )
+        Arb.string(1..20, Arb.codepointWith3ByteUtf8Encoding()),
+        Arb.string(1..20, Arb.codepointWith4ByteUtf8Encoding()),
+        Arb.string(1..20, Arb.codepointWithEvenNumByteUtf8EncodingDistribution()),
+        Arb.stringWithLoneSurrogates(1..20).map { it.string },
+        Arb.dataConnect.string(0..20),
+      )
+
+    fun longStringForEncodeTestingArb(): Arb<String> =
+      Arb.choice(
+        Arb.string(2048..99999, Arb.codepointWith1ByteUtf8Encoding()),
+        Arb.string(2048..99999, Arb.codepointWith2ByteUtf8Encoding()),
+        Arb.string(2048..99999, Arb.codepointWith3ByteUtf8Encoding()),
+        Arb.string(2048..99999, Arb.codepointWith4ByteUtf8Encoding()),
+        Arb.string(2048..99999, Arb.codepointWithEvenNumByteUtf8EncodingDistribution()),
+        Arb.stringWithLoneSurrogates(2048..99999).map { it.string },
+        Arb.dataConnect.string(2048..99999),
+      )
 
     fun Struct.decodingEncodingShouldProduceIdenticalStruct() {
       val encodeResult = QueryResultEncoder.encode(this)
@@ -203,9 +227,11 @@ class QueryResultEncoderUnitTest {
       }
 
     fun structWithStringValuesArb(
-      map: Arb<Map<String, String>> =
-        Arb.map(Arb.string(1..10, Codepoint.alphanumeric()), stringForEncodeTestingArb(), 1, 10)
-    ): Arb<Struct> =
+      key: Arb<String> = Arb.string(1..10, Codepoint.alphanumeric()),
+      value: Arb<String> = stringForEncodeTestingArb(),
+    ): Arb<Struct> = structWithStringValuesArb(Arb.map(key, value, 1, 10))
+
+    fun structWithStringValuesArb(map: Arb<Map<String, String>>): Arb<Struct> =
       map.map { map ->
         val builder = Struct.newBuilder()
         map.entries.forEach { (key, value) ->
