@@ -37,6 +37,7 @@ import com.google.firebase.firestore.model.Values.canonicalId
 import com.google.firebase.firestore.model.Values.encodeValue
 import com.google.firebase.firestore.pipeline.Expression.Companion.field
 import com.google.firebase.firestore.util.CustomClassMapper
+import com.google.firestore.v1.Function as ProtoFunction
 import com.google.firestore.v1.MapValue
 import com.google.firestore.v1.Value
 import java.util.Date
@@ -7388,7 +7389,7 @@ internal constructor(
   ) : this(name, function, arrayOf(field(fieldName), *toArrayOfExprOrConstant(params)))
 
   override fun toProto(userDataReader: UserDataReader): Value {
-    val builder = com.google.firestore.v1.Function.newBuilder()
+    val builder = ProtoFunction.newBuilder()
     builder.setName(name)
     for (param in params) {
       builder.addArgs(param.toProto(userDataReader))
