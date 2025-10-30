@@ -46,12 +46,14 @@ internal constructor(
   @Blocking private val blockingDispatcher: CoroutineContext,
   private val appCheckProvider: Provider<InteropAppCheckTokenProvider>,
   private val internalAuthProvider: Provider<InternalAuthProvider>,
+  private val useLimitedUseAppCheckTokens: Boolean
 ) {
 
   /**
    * Instantiates a new [GenerativeModel] given the provided parameters.
    *
-   * @param modelName The name of the model to use, for example `"gemini-2.0-flash-exp"`.
+   * @param modelName The name of the model to use. See the documentation for a list of
+   * [supported models](https://firebase.google.com/docs/ai-logic/models).
    * @param generationConfig The configuration parameters to use for content generation.
    * @param safetySettings The safety bounds the model will abide to during content generation.
    * @param tools A list of [Tool]s the model may use to generate content.
@@ -91,6 +93,7 @@ internal constructor(
       modelUri,
       firebaseApp.options.apiKey,
       firebaseApp,
+      useLimitedUseAppCheckTokens,
       generationConfig,
       safetySettings,
       tools,
@@ -104,9 +107,33 @@ internal constructor(
   }
 
   /**
+   * Instantiates a new [TemplateGenerativeModel] given the provided parameters.
+   *
+   * @param requestOptions Configuration options for sending requests to the backend.
+   * @return The initialized [TemplateGenerativeModel] instance.
+   */
+  @JvmOverloads
+  @PublicPreviewAPI
+  public fun templateGenerativeModel(
+    requestOptions: RequestOptions = RequestOptions(),
+  ): TemplateGenerativeModel {
+    val templateUri = getTemplateUri(backend)
+    return TemplateGenerativeModel(
+      templateUri,
+      firebaseApp.options.apiKey,
+      firebaseApp,
+      useLimitedUseAppCheckTokens,
+      requestOptions,
+      appCheckProvider.get(),
+      internalAuthProvider.get(),
+    )
+  }
+
+  /**
    * Instantiates a new [LiveGenerationConfig] given the provided parameters.
    *
-   * @param modelName The name of the model to use, for example `"gemini-2.0-flash-exp"`.
+   * @param modelName The name of the model to use. See the documentation for a list of
+   * [supported models](https://firebase.google.com/docs/ai-logic/models).
    * @param generationConfig The configuration parameters to use for content generation.
    * @param tools A list of [Tool]s the model may use to generate content.
    * @param systemInstruction [Content] instructions that direct the model to behave a certain way.
@@ -150,21 +177,22 @@ internal constructor(
       requestOptions,
       appCheckProvider.get(),
       internalAuthProvider.get(),
-      backend
+      backend,
+      useLimitedUseAppCheckTokens,
     )
   }
 
   /**
    * Instantiates a new [ImagenModel] given the provided parameters.
    *
-   * @param modelName The name of the model to use, for example `"imagen-3.0-generate-001"`.
+   * @param modelName The name of the model to use. See the documentation for a list of
+   * [supported models](https://firebase.google.com/docs/ai-logic/models).
    * @param generationConfig The configuration parameters to use for image generation.
    * @param safetySettings The safety bounds the model will abide by during image generation.
    * @param requestOptions Configuration options for sending requests to the backend.
    * @return The initialized [ImagenModel] instance.
    */
   @JvmOverloads
-  @PublicPreviewAPI
   public fun imagenModel(
     modelName: String,
     generationConfig: ImagenGenerationConfig? = null,
@@ -191,8 +219,32 @@ internal constructor(
       modelUri,
       firebaseApp.options.apiKey,
       firebaseApp,
+      useLimitedUseAppCheckTokens,
       generationConfig,
       safetySettings,
+      requestOptions,
+      appCheckProvider.get(),
+      internalAuthProvider.get(),
+    )
+  }
+
+  /**
+   * Instantiates a new [TemplateImagenModel] given the provided parameters.
+   *
+   * @param requestOptions Configuration options for sending requests to the backend.
+   * @return The initialized [TemplateImagenModel] instance.
+   */
+  @JvmOverloads
+  @PublicPreviewAPI
+  public fun templateImagenModel(
+    requestOptions: RequestOptions = RequestOptions(),
+  ): TemplateImagenModel {
+    val templateUri = getTemplateUri(backend)
+    return TemplateImagenModel(
+      templateUri,
+      firebaseApp.options.apiKey,
+      firebaseApp,
+      useLimitedUseAppCheckTokens,
       requestOptions,
       appCheckProvider.get(),
       internalAuthProvider.get(),
@@ -216,8 +268,29 @@ internal constructor(
       app: FirebaseApp = Firebase.app,
       backend: GenerativeBackend
     ): FirebaseAI {
+      return getInstance(app, backend, false)
+    }
+
+    /**
+     * Returns the [FirebaseAI] instance for the provided [FirebaseApp] and [backend].
+     *
+     * @param backend the backend reference to make generative AI requests to.
+     * @param useLimitedUseAppCheckTokens when sending tokens to the backend, this option enables
+     * the usage of App Check's limited-use tokens instead of the standard cached tokens. Learn more
+     * about [limited-use tokens](https://firebase.google.com/docs/ai-logic/app-check), including
+     * their nuances, when to use them, and best practices for integrating them into your app.
+     *
+     * _This flag is set to `false` by default._
+     */
+    @JvmStatic
+    @JvmOverloads
+    public fun getInstance(
+      app: FirebaseApp = Firebase.app,
+      backend: GenerativeBackend,
+      useLimitedUseAppCheckTokens: Boolean,
+    ): FirebaseAI {
       val multiResourceComponent = app[FirebaseAIMultiResourceComponent::class.java]
-      return multiResourceComponent.get(backend)
+      return multiResourceComponent.get(InstanceKey(backend, useLimitedUseAppCheckTokens))
     }
 
     /** The [FirebaseAI] instance for the provided [FirebaseApp] using the Google AI Backend. */
@@ -231,6 +304,13 @@ internal constructor(
 
     private val TAG = FirebaseAI::class.java.simpleName
   }
+
+  private fun getTemplateUri(backend: GenerativeBackend): String =
+    when (backend.backend) {
+      GenerativeBackendEnum.VERTEX_AI ->
+        "projects/${firebaseApp.options.projectId}/locations/${backend.location}/templates/"
+      GenerativeBackendEnum.GOOGLE_AI -> "projects/${firebaseApp.options.projectId}/templates/"
+    }
 }
 
 /** The [FirebaseAI] instance for the default [FirebaseApp] using the Google AI Backend. */
@@ -246,3 +326,19 @@ public fun Firebase.ai(
   app: FirebaseApp = Firebase.app,
   backend: GenerativeBackend = GenerativeBackend.googleAI()
 ): FirebaseAI = FirebaseAI.getInstance(app, backend)
+
+/**
+ * Returns the [FirebaseAI] instance for the provided [FirebaseApp] and [backend].
+ *
+ * @param backend the backend reference to make generative AI requests to.
+ * @param useLimitedUseAppCheckTokens use App Check's limited-use tokens when sending requests to
+ * the backend. Learn more about
+ * [limited-use tokens](https://firebase.google.com/docs/ai-logic/app-check), including their
+ * nuances, when to use them, and best practices for integrating them into your app.
+ */
+// TODO(b/440356335): Update docs above when web page goes live in M170
+public fun Firebase.ai(
+  app: FirebaseApp = Firebase.app,
+  backend: GenerativeBackend = GenerativeBackend.googleAI(),
+  useLimitedUseAppCheckTokens: Boolean
+): FirebaseAI = FirebaseAI.getInstance(app, backend, useLimitedUseAppCheckTokens)

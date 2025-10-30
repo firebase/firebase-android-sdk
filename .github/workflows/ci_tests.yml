@@ -38,6 +38,7 @@ jobs:
     runs-on: ubuntu-22.04
     needs:
       - determine_changed
+    if: ${{ needs.determine_changed.outputs.modules != '[]' }}
     strategy:
       fail-fast: false
       matrix:
@@ -63,6 +64,7 @@ jobs:
       - name: Add google-services.json
         env:
           INTEG_TESTS_GOOGLE_SERVICES: ${{ secrets.INTEG_TESTS_GOOGLE_SERVICES }}
+        if: env.INTEG_TESTS_GOOGLE_SERVICES != '' && env.INTEG_TESTS_GOOGLE_SERVICES != 'null'
         run: |
           echo $INTEG_TESTS_GOOGLE_SERVICES | base64 -d > google-services.json
 
@@ -89,12 +91,11 @@ jobs:
   # to be used as a required check for merging.
   check_all:
     runs-on: ubuntu-22.04
-    if: always()
     name: Unit Tests (matrix)
     needs: unit_tests
+    if: ${{ failure() }}
     steps:
-      - name: Check test matrix
-        if: needs.unit_tests.result != 'success'
+      - name: Check test matrix results
         run: exit 1
 
 
@@ -129,6 +130,7 @@ jobs:
       - name: Add google-services.json
         env:
           INTEG_TESTS_GOOGLE_SERVICES: ${{ secrets.INTEG_TESTS_GOOGLE_SERVICES }}
+        if: env.INTEG_TESTS_GOOGLE_SERVICES != '' && env.INTEG_TESTS_GOOGLE_SERVICES != 'null'
         run: |
           echo $INTEG_TESTS_GOOGLE_SERVICES | base64 -d > google-services.json
       - uses: google-github-actions/auth@71f986410dfbc7added4569d411d040a91dc6935 # v2.1.8

@@ -97,6 +97,31 @@ package com.google.firebase.dataconnect {
     method public static com.google.firebase.dataconnect.DataConnectSettings copy(com.google.firebase.dataconnect.DataConnectSettings, String host = host, boolean sslEnabled = sslEnabled, com.google.firebase.dataconnect.cache.DataConnectCache cache = cache);
   }
 
+  public sealed interface EnumValue<T extends java.lang.Enum<? extends T>> {
+    method public String getStringValue();
+    method public T? getValue();
+    property public abstract String stringValue;
+    property public abstract T? value;
+  }
+
+  public static final class EnumValue.Known<T extends java.lang.Enum<T>> implements com.google.firebase.dataconnect.EnumValue<T> {
+    ctor public EnumValue.Known(T value);
+    method public com.google.firebase.dataconnect.EnumValue.Known<T> copy(T value = value);
+    method public String getStringValue();
+    method public T getValue();
+    property public String stringValue;
+    property public T value;
+  }
+
+  public static final class EnumValue.Unknown implements com.google.firebase.dataconnect.EnumValue {
+    ctor public EnumValue.Unknown(String stringValue);
+    method public com.google.firebase.dataconnect.EnumValue.Unknown copy(String stringValue = stringValue);
+    method public String getStringValue();
+    method public Void? getValue();
+    property public String stringValue;
+    property public Void? value;
+  }
+
   @kotlin.RequiresOptIn(level=kotlin.RequiresOptIn.Level.WARNING, message="This declaration is \"experimental\": its signature and/or semantics " + "may change in backwards-incompatible ways at any time without notice, " + "up to and including complete removal. " + "If you have a use case that relies on this declaration please open a " + "\"feature request\" issue at https://github.com/firebase/firebase-android-sdk " + "requesting this declaration\'s promotion from \"experimental\" to \"fully-supported\".") @kotlin.annotation.MustBeDocumented @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface ExperimentalFirebaseDataConnect {
   }
 
@@ -409,6 +434,14 @@ package com.google.firebase.dataconnect.serializers {
     method public void serialize(kotlinx.serialization.encoding.Encoder encoder, com.google.firebase.dataconnect.AnyValue value);
     property public kotlinx.serialization.descriptors.SerialDescriptor descriptor;
     field public static final com.google.firebase.dataconnect.serializers.AnyValueSerializer INSTANCE;
+  }
+
+  public class EnumValueSerializer<T extends java.lang.Enum<T>> implements kotlinx.serialization.KSerializer<com.google.firebase.dataconnect.EnumValue<? extends T>> {
+    ctor public EnumValueSerializer(Iterable<? extends T> values);
+    method public com.google.firebase.dataconnect.EnumValue<T> deserialize(kotlinx.serialization.encoding.Decoder decoder);
+    method public kotlinx.serialization.descriptors.SerialDescriptor getDescriptor();
+    method public void serialize(kotlinx.serialization.encoding.Encoder encoder, com.google.firebase.dataconnect.EnumValue<? extends T> value);
+    property public kotlinx.serialization.descriptors.SerialDescriptor descriptor;
   }
 
   public final class JavaTimeLocalDateSerializer implements kotlinx.serialization.KSerializer<java.time.LocalDate> {

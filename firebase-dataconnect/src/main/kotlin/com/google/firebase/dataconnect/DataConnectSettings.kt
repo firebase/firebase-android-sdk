@@ -23,12 +23,12 @@ import java.util.Objects
 /**
  * Settings that control the behavior of [FirebaseDataConnect] instances.
  *
- * ### Safe for Concurrent Use
+ * ### Safe for concurrent use
  *
  * All methods and properties of [DataConnectSettings] are thread-safe and may be safely called
  * and/or accessed concurrently from multiple threads and/or coroutines.
  *
- * @property host The host of the Firebase Data Connect service to which to connect (e.g.
+ * @property host The host of the Firebase Data Connect service to which to connect (for example,
  * `"myproxy.foo.com"`, `"myproxy.foo.com:9987"`).
  * @property sslEnabled Whether to use SSL for the connection; if `true`, then the connection will
  * be encrypted using SSL and, if false, the connection will _not_ be encrypted and all network

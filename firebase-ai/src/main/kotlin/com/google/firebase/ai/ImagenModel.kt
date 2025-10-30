@@ -19,8 +19,8 @@ package com.google.firebase.ai
 import com.google.firebase.FirebaseApp
 import com.google.firebase.ai.common.APIController
 import com.google.firebase.ai.common.AppCheckHeaderProvider
-import com.google.firebase.ai.common.ContentBlockedException
 import com.google.firebase.ai.common.GenerateImageRequest
+import com.google.firebase.ai.type.ContentBlockedException
 import com.google.firebase.ai.type.Dimensions
 import com.google.firebase.ai.type.FirebaseAIException
 import com.google.firebase.ai.type.ImagenEditMode
@@ -41,8 +41,10 @@ import com.google.firebase.auth.internal.InternalAuthProvider
 /**
  * Represents a generative model (like Imagen), capable of generating images based on various input
  * types.
+ *
+ * See the documentation for a list of
+ * [supported models](https://firebase.google.com/docs/ai-logic/models).
  */
-@PublicPreviewAPI
 public class ImagenModel
 internal constructor(
   private val modelName: String,
@@ -55,6 +57,7 @@ internal constructor(
     modelName: String,
     apiKey: String,
     firebaseApp: FirebaseApp,
+    useLimitedUseAppCheckTokens: Boolean,
     generationConfig: ImagenGenerationConfig? = null,
     safetySettings: ImagenSafetySettings? = null,
     requestOptions: RequestOptions = RequestOptions(),
@@ -70,7 +73,12 @@ internal constructor(
       requestOptions,
       "gl-kotlin/${KotlinVersion.CURRENT}-ai fire/${BuildConfig.VERSION_NAME}",
       firebaseApp,
-      AppCheckHeaderProvider(TAG, appCheckTokenProvider, internalAuthProvider),
+      AppCheckHeaderProvider(
+        TAG,
+        useLimitedUseAppCheckTokens,
+        appCheckTokenProvider,
+        internalAuthProvider
+      ),
     ),
   )
 
@@ -97,6 +105,7 @@ internal constructor(
    * @param prompt the text input given to the model as a prompt
    * @param config the editing configuration settings
    */
+  @PublicPreviewAPI
   public suspend fun editImage(
     referenceImages: List<ImagenReferenceImage>,
     prompt: String,
@@ -121,6 +130,7 @@ internal constructor(
    * @param mask the mask which defines where in the image can be painted by Imagen.
    * @param config the editing configuration settings, it should include an [ImagenEditMode]
    */
+  @PublicPreviewAPI
   public suspend fun inpaintImage(
     image: ImagenInlineImage,
     prompt: String,
@@ -145,6 +155,7 @@ internal constructor(
    * @param config the editing configuration settings
    * @see [ImagenMaskReference.generateMaskAndPadForOutpainting]
    */
+  @PublicPreviewAPI
   public suspend fun outpaintImage(
     image: ImagenInlineImage,
     newDimensions: Dimensions,
@@ -163,11 +174,13 @@ internal constructor(
     prompt: String,
     generationConfig: ImagenGenerationConfig? = null,
   ): GenerateImageRequest {
+    @OptIn(PublicPreviewAPI::class)
     return GenerateImageRequest(
       listOf(GenerateImageRequest.ImagenPrompt(prompt, null)),
       GenerateImageRequest.ImagenParameters(
         sampleCount = generationConfig?.numberOfImages ?: 1,
         includeRaiReason = true,
+        includeSafetyAttributes = true,
         addWatermark = generationConfig?.addWatermark,
         personGeneration = safetySettings?.personFilterLevel?.internalVal,
         negativePrompt = generationConfig?.negativePrompt,
@@ -181,6 +194,7 @@ internal constructor(
     )
   }
 
+  @PublicPreviewAPI
   private fun constructEditRequest(
     referenceImages: List<ImagenReferenceImage>,
     prompt: String,
@@ -197,6 +211,7 @@ internal constructor(
       GenerateImageRequest.ImagenParameters(
         sampleCount = generationConfig?.numberOfImages ?: 1,
         includeRaiReason = true,
+        includeSafetyAttributes = true,
         addWatermark = generationConfig?.addWatermark,
         personGeneration = safetySettings?.personFilterLevel?.internalVal,
         negativePrompt = generationConfig?.negativePrompt,
@@ -218,7 +233,7 @@ internal constructor(
 }
 
 @OptIn(PublicPreviewAPI::class)
-private fun ImagenGenerationResponse.Internal.validate(): ImagenGenerationResponse.Internal {
+internal fun ImagenGenerationResponse.Internal.validate(): ImagenGenerationResponse.Internal {
   if (predictions.none { it.mimeType != null }) {
     throw ContentBlockedException(
       message = predictions.first { it.raiFilteredReason != null }.raiFilteredReason

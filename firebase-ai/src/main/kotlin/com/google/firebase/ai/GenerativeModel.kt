@@ -65,6 +65,7 @@ internal constructor(
     modelName: String,
     apiKey: String,
     firebaseApp: FirebaseApp,
+    useLimitedUseAppCheckTokens: Boolean,
     generationConfig: GenerationConfig? = null,
     safetySettings: List<SafetySetting>? = null,
     tools: List<Tool>? = null,
@@ -73,7 +74,7 @@ internal constructor(
     requestOptions: RequestOptions = RequestOptions(),
     generativeBackend: GenerativeBackend,
     appCheckTokenProvider: InteropAppCheckTokenProvider? = null,
-    internalAuthProvider: InternalAuthProvider? = null,
+    internalAuthProvider: InternalAuthProvider? = null
   ) : this(
     modelName,
     generationConfig,
@@ -88,7 +89,12 @@ internal constructor(
       requestOptions,
       "gl-kotlin/${KotlinVersion.CURRENT}-ai fire/${BuildConfig.VERSION_NAME}",
       firebaseApp,
-      AppCheckHeaderProvider(TAG, appCheckTokenProvider, internalAuthProvider),
+      AppCheckHeaderProvider(
+        TAG,
+        useLimitedUseAppCheckTokens,
+        appCheckTokenProvider,
+        internalAuthProvider
+      ),
     ),
   )
 

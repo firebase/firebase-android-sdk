@@ -70,6 +70,16 @@ query GetHardcodedFoo
   }
 }
 
+# This is an example mutation that has an empty selection set (Googlers see b/448629126).
+mutation UpsertFooEmptySelectionSet($id: String!, $bar: String) @auth(level: PUBLIC) {
+  foo_upsert(data: {id: $id, bar: $bar}) @redact
+}
+
+# This is an example query that has an empty selection set (Googlers see b/448629126).
+query GetFooByIdEmptySelectionSet($id: String!) @auth(level: PUBLIC) {
+  foo(id: $id) @redact { bar }
+}
+
 mutation InsertStringVariants(
   $nonNullWithNonEmptyValue: String!,
   $nonNullWithEmptyValue: String!,

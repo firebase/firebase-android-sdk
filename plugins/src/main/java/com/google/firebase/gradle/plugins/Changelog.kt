@@ -264,7 +264,7 @@ data class ReleaseContent(val subtext: String, val changes: List<Change>) {
      * ]
      * ```
      */
-    val CHANGE_REGEX = Regex("^\\* ([\\s\\S]+?)(?=^\\*|(?![\\s\\S]))", RegexOption.MULTILINE)
+    val CHANGE_REGEX = "^[*-] ([\\s\\S]+?)(?=^[*-]|(?![\\s\\S]))".toRegex(RegexOption.MULTILINE)
 
     /**
      * Regex for finding the subtext in a release.
@@ -326,7 +326,7 @@ data class ReleaseContent(val subtext: String, val changes: List<Change>) {
  */
 data class Change(val type: ChangeType, val message: String) {
 
-  override fun toString(): String = "* [$type] $message"
+  override fun toString(): String = "- [$type] $message"
 
   companion object {
     /**

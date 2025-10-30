@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
   id("com.android.library")
@@ -31,14 +31,16 @@ android {
   compileSdk = compileSdkVersion
   defaultConfig {
     minSdk = minSdkVersion
-    targetSdk = targetSdkVersion
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
   }
-  kotlinOptions { jvmTarget = "1.8" }
+
+  @Suppress("UnstableApiUsage") testOptions { targetSdk = targetSdkVersion }
+
+  lint { targetSdk = targetSdkVersion }
 
   packaging {
     resources {
@@ -48,10 +50,17 @@ android {
   }
 }
 
+kotlin {
+  compilerOptions {
+    jvmTarget = JvmTarget.JVM_1_8
+    optIn.add("kotlin.RequiresOptIn")
+  }
+}
+
 dependencies {
   implementation(project(":firebase-dataconnect"))
 
-  implementation("com.google.firebase:firebase-components:19.0.0")
+  implementation(libs.firebase.components)
   implementation("com.google.firebase:firebase-auth:22.3.1")
 
   compileOnly(libs.kotlinx.datetime)
@@ -67,8 +76,4 @@ dependencies {
   implementation(libs.robolectric)
   implementation(libs.testonly.three.ten.abp)
   implementation(libs.truth)
-}
-
-tasks.withType<KotlinCompile>().all {
-  kotlinOptions { freeCompilerArgs = listOf("-opt-in=kotlin.RequiresOptIn") }
 }

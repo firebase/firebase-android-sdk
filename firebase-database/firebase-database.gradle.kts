@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
   id("firebase-library")
   id("kotlin-android")
@@ -52,7 +54,6 @@ android {
       sourceCompatibility = JavaVersion.VERSION_1_8
       targetCompatibility = JavaVersion.VERSION_1_8
     }
-    kotlinOptions { jvmTarget = "1.8" }
 
     packagingOptions.resources.excludes += "META-INF/DEPENDENCIES"
 
@@ -64,10 +65,12 @@ android {
   }
 }
 
+kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_1_8 } }
+
 dependencies {
   api("com.google.firebase:firebase-appcheck-interop:17.1.0")
-  api("com.google.firebase:firebase-common:22.0.0")
-  api("com.google.firebase:firebase-components:19.0.0")
+  api(libs.firebase.common)
+  api(libs.firebase.components)
   api("com.google.firebase:firebase-auth-interop:20.0.0") {
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-components")

@@ -49,9 +49,9 @@ dependencies {
     javadocClasspath libs.autovalue.annotations
 
     api project(':appcheck:firebase-appcheck')
-    api 'com.google.firebase:firebase-annotations:17.0.0'
-    api 'com.google.firebase:firebase-common:22.0.0'
-    api 'com.google.firebase:firebase-components:19.0.0'
+    api libs.firebase.annotations
+    api libs.firebase.common
+    api libs.firebase.components
     implementation platform(libs.kotlin.bom)
 
     implementation libs.playservices.base

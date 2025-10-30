@@ -30,7 +30,7 @@ import io.kotest.property.arbitrary.int
  * _not_ included in the "number of digits" count.
  *
  * @param range The range of values to produce; if `null` (the default) then use the entire range of
- * integers (i.e. `Int.MIN_VALUE..Int.MAX_VALUE`).
+ * integers (formally, `Int.MIN_VALUE..Int.MAX_VALUE`).
  *
  * @see intWithEvenNumDigitsDistribution
  */
@@ -72,7 +72,7 @@ fun Arb.Companion.intWithEvenNumDigitsDistribution(range: IntRange): Arb<Int> {
  * _not_ included in the "number of digits" count.
  *
  * @param range The range of values to produce; if `null` (the default) then use the entire range of
- * integers (i.e. `Int.MIN_VALUE..Int.MAX_VALUE`).
+ * integers (formally, `Int.MIN_VALUE..Int.MAX_VALUE`).
  *
  * @see intWithEvenNumDigitsDistribution
  */

@@ -17,7 +17,6 @@ package com.google.firebase.perf.util;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
-import android.os.Build;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.os.SystemClock;
@@ -72,10 +71,7 @@ public class Timer implements Parcelable {
    * @return wall-clock time in microseconds.
    */
   private static long elapsedRealtimeMicros() {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-      return NANOSECONDS.toMicros(SystemClock.elapsedRealtimeNanos());
-    }
-    return MILLISECONDS.toMicros(SystemClock.elapsedRealtime());
+    return NANOSECONDS.toMicros(SystemClock.elapsedRealtimeNanos());
   }
 
   // TODO: make all constructors private, use public static factory methods, per Effective Java

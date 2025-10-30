@@ -31,6 +31,7 @@ import com.google.firebase.ai.type.ToolConfig
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
 
 internal interface Request
 
@@ -44,6 +45,14 @@ internal data class GenerateContentRequest(
   @SerialName("tool_config") var toolConfig: ToolConfig.Internal? = null,
   @SerialName("system_instruction") val systemInstruction: Content.Internal? = null,
 ) : Request
+
+@Serializable
+internal data class TemplateGenerateContentRequest(
+  val inputs: JsonObject,
+  val history: List<Content.Internal>?
+) : Request
+
+@Serializable internal data class TemplateGenerateImageRequest(val inputs: JsonObject) : Request
 
 @Serializable
 internal data class CountTokensRequest(
@@ -77,7 +86,7 @@ internal data class CountTokensRequest(
 }
 
 @Serializable
-@PublicPreviewAPI
+@OptIn(PublicPreviewAPI::class)
 internal data class GenerateImageRequest(
   val instances: List<ImagenPrompt>,
   val parameters: ImagenParameters,
@@ -88,11 +97,11 @@ internal data class GenerateImageRequest(
     val referenceImages: List<ImagenReferenceImage.Internal>?
   )
 
-  @OptIn(PublicPreviewAPI::class)
   @Serializable
   internal data class ImagenParameters(
     val sampleCount: Int,
     val includeRaiReason: Boolean,
+    val includeSafetyAttributes: Boolean,
     val storageUri: String?,
     val negativePrompt: String?,
     val aspectRatio: String?,
@@ -101,7 +110,7 @@ internal data class GenerateImageRequest(
     val addWatermark: Boolean?,
     val imageOutputOptions: ImagenImageFormat.Internal?,
     val editMode: String?,
-    val editConfig: ImagenEditingConfig.Internal?,
+    @OptIn(PublicPreviewAPI::class) val editConfig: ImagenEditingConfig.Internal?,
   )
 
   @Serializable

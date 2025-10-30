@@ -26,10 +26,13 @@ import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.CountTokensResponse
 import com.google.firebase.ai.type.FunctionCallingConfig
 import com.google.firebase.ai.type.GoogleSearch
+import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.RequestOptions
+import com.google.firebase.ai.type.RequestTimeoutException
 import com.google.firebase.ai.type.TextPart
 import com.google.firebase.ai.type.Tool
 import com.google.firebase.ai.type.ToolConfig
+import com.google.firebase.ai.type.UrlContext
 import io.kotest.assertions.json.shouldContainJsonKey
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
@@ -41,7 +44,6 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import io.ktor.utils.io.ByteChannel
-import io.ktor.utils.io.close
 import io.ktor.utils.io.writeFully
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
@@ -113,7 +115,7 @@ internal class RequestFormatTests {
     val controller =
       APIController(
         "super_cool_test_key",
-        "gemini-pro-1.5",
+        "gemini-pro-2.5",
         RequestOptions(),
         mockEngine,
         "genai-android/${BuildConfig.VERSION_NAME}",
@@ -143,7 +145,7 @@ internal class RequestFormatTests {
     val controller =
       APIController(
         "super_cool_test_key",
-        "gemini-pro-1.5",
+        "gemini-pro-2.5",
         RequestOptions(timeout = 5.seconds, endpoint = "https://my.custom.endpoint"),
         mockEngine,
         TEST_CLIENT_ID,
@@ -173,7 +175,7 @@ internal class RequestFormatTests {
     val controller =
       APIController(
         "super_cool_test_key",
-        "gemini-pro-1.5",
+        "gemini-pro-2.5",
         RequestOptions(),
         mockEngine,
         TEST_CLIENT_ID,
@@ -200,7 +202,7 @@ internal class RequestFormatTests {
     val controller =
       APIController(
         "super_cool_test_key",
-        "gemini-pro-1.5",
+        "gemini-pro-2.5",
         RequestOptions(),
         mockEngine,
         TEST_CLIENT_ID,
@@ -228,7 +230,7 @@ internal class RequestFormatTests {
     val controller =
       APIController(
         "super_cool_test_key",
-        "gemini-pro-1.5",
+        "gemini-pro-2.5",
         RequestOptions(),
         mockEngine,
         TEST_CLIENT_ID,
@@ -285,6 +287,7 @@ internal class RequestFormatTests {
       )
 
     withTimeout(5.seconds) {
+      @OptIn(PublicPreviewAPI::class)
       controller
         .generateContentStream(
           GenerateContentRequest(
@@ -299,6 +302,45 @@ internal class RequestFormatTests {
     val requestBodyAsText = (mockEngine.requestHistory.first().body as TextContent).text
 
     requestBodyAsText shouldContainJsonKey "tools[0].googleSearch"
+  }
+
+  @Test
+  fun `url context tool serialization contains correct keys`() = doBlocking {
+    val channel = ByteChannel(autoFlush = true)
+    val mockEngine = MockEngine {
+      respond(channel, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
+    }
+    prepareStreamingResponse(createResponses("Random")).forEach { channel.writeFully(it) }
+
+    val controller =
+      APIController(
+        "super_cool_test_key",
+        "gemini-pro-2.5",
+        RequestOptions(),
+        mockEngine,
+        TEST_CLIENT_ID,
+        mockFirebaseApp,
+        TEST_VERSION,
+        TEST_APP_ID,
+        null,
+      )
+
+    withTimeout(5.seconds) {
+      @OptIn(PublicPreviewAPI::class)
+      controller
+        .generateContentStream(
+          GenerateContentRequest(
+            model = "unused",
+            contents = listOf(Content.Internal(parts = listOf(TextPart.Internal("Arbitrary")))),
+            tools = listOf(Tool.Internal(urlContext = UrlContext.Internal())),
+          )
+        )
+        .collect { channel.close() }
+    }
+
+    val requestBodyAsText = (mockEngine.requestHistory.first().body as TextContent).text
+
+    requestBodyAsText shouldContainJsonKey "tools[0].urlContext"
   }
 
   @Test
@@ -320,7 +362,7 @@ internal class RequestFormatTests {
     val controller =
       APIController(
         "super_cool_test_key",
-        "gemini-pro-1.5",
+        "gemini-pro-2.5",
         RequestOptions(),
         mockEngine,
         TEST_CLIENT_ID,
@@ -357,7 +399,7 @@ internal class RequestFormatTests {
     val controller =
       APIController(
         "super_cool_test_key",
-        "gemini-pro-1.5",
+        "gemini-pro-2.5",
         RequestOptions(),
         mockEngine,
         TEST_CLIENT_ID,
@@ -383,7 +425,7 @@ internal class RequestFormatTests {
     val controller =
       APIController(
         "super_cool_test_key",
-        "gemini-pro-1.5",
+        "gemini-pro-2.5",
         RequestOptions(),
         mockEngine,
         TEST_CLIENT_ID,
@@ -394,6 +436,7 @@ internal class RequestFormatTests {
       )
 
     withTimeout(5.seconds) {
+      @OptIn(PublicPreviewAPI::class)
       controller
         .generateContentStream(
           GenerateContentRequest(

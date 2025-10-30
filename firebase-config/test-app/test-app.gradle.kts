@@ -1,7 +1,4 @@
 @file:Suppress("DEPRECATION") // App projects should still use FirebaseTestLabPlugin.
-
-import com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
-
 /*
  * Copyright 2023 Google LLC
  *
@@ -17,6 +14,9 @@ import com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+import com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
   id("com.android.application")
@@ -47,8 +47,9 @@ android {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
   }
-  kotlinOptions { jvmTarget = "1.8" }
 }
+
+kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_1_8 } }
 
 dependencies {
   implementation(project(":firebase-crashlytics")) {
@@ -62,7 +63,7 @@ dependencies {
   // Released artifacts don't need these dependencies since they don't use `project` to refer
   // to Remote Config.
   implementation("com.google.firebase:firebase-common:22.0.0")
-  implementation("com.google.firebase:firebase-components:19.0.0")
+  implementation(libs.firebase.components)
 
   implementation("com.google.firebase:firebase-installations-interop:17.1.0")
   runtimeOnly("com.google.firebase:firebase-installations:18.0.0") {
