@@ -18,4 +18,4 @@ package com.google.firebase.ai.annotations
 
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.SOURCE)
-public annotation class Generable()
+public annotation class Generable
