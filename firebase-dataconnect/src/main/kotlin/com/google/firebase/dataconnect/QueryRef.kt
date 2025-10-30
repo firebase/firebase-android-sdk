@@ -36,11 +36,12 @@ import kotlinx.serialization.modules.SerializersModule
  */
 public interface QueryRef<Data, Variables> : OperationRef<Data, Variables> {
 
-  public override suspend fun execute(): QueryResult<Data, Variables> = execute(FetchPolicy.DEFAULT)
+  public override suspend fun execute(): QueryResult<Data, Variables> =
+    execute(FetchPolicy.PreferCache)
 
   /** Executes this operation with the given fetch policy, and returns the result. */
   public suspend fun execute(
-    fetchPolicy: FetchPolicy = FetchPolicy.DEFAULT
+    fetchPolicy: FetchPolicy = FetchPolicy.PreferCache
   ): QueryResult<Data, Variables>
 
   /** The caching policy to use in [QueryRef.execute]. */
@@ -48,24 +49,24 @@ public interface QueryRef<Data, Variables> : OperationRef<Data, Variables> {
 
     /**
      * If the query has a cached result that has not expired, then return it without any
-     * communication with the server, just as [CACHE] would do. Otherwise, if there is no cached
+     * communication with the server, just as [CacheOnly] would do. Otherwise, if there is no cached
      * data for the query or the cached data has expired, then get the latest result from the
-     * server, just as [SERVER] would do.
+     * server, just as [ServerOnly] would do.
      */
-    DEFAULT,
+    PreferCache,
 
     /**
      * Return the query result from the cache without any communication with the server. If there is
      * no cached data for the query then return an empty/null result, just as the server would have
      * returned in that case.
      */
-    CACHE,
+    CacheOnly,
 
     /**
      * Unconditionally get the latest result from the server, even if there is a locally-cached
-     * results for the query. The local cache will be updated with the result, if successful.
+     * result for the query. The local cache will be updated with the result, if successful.
      */
-    SERVER,
+    ServerOnly,
   }
 
   /**

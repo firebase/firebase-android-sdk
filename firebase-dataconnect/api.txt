@@ -299,7 +299,7 @@ package com.google.firebase.dataconnect {
 
   public interface QueryRef<Data, Variables> extends com.google.firebase.dataconnect.OperationRef<Data,Variables> {
     method @com.google.firebase.dataconnect.ExperimentalFirebaseDataConnect public com.google.firebase.dataconnect.QueryRef<Data,Variables> copy(String operationName, Variables variables, kotlinx.serialization.DeserializationStrategy<? extends Data> dataDeserializer, kotlinx.serialization.SerializationStrategy<? super Variables> variablesSerializer, com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType callerSdkType, kotlinx.serialization.modules.SerializersModule? dataSerializersModule, kotlinx.serialization.modules.SerializersModule? variablesSerializersModule);
-    method public suspend Object? execute(com.google.firebase.dataconnect.QueryRef.FetchPolicy fetchPolicy = com.google.firebase.dataconnect.QueryRef.FetchPolicy.DEFAULT, kotlin.coroutines.Continuation<? super com.google.firebase.dataconnect.QueryResult<Data,Variables>>);
+    method public suspend Object? execute(com.google.firebase.dataconnect.QueryRef.FetchPolicy fetchPolicy = com.google.firebase.dataconnect.QueryRef.FetchPolicy.PreferCache, kotlin.coroutines.Continuation<? super com.google.firebase.dataconnect.QueryResult<Data,Variables>>);
     method public default suspend Object? execute(kotlin.coroutines.Continuation<? super com.google.firebase.dataconnect.QueryResult<Data,Variables>>);
     method public com.google.firebase.dataconnect.QuerySubscription<Data,Variables> subscribe();
     method @com.google.firebase.dataconnect.ExperimentalFirebaseDataConnect public <NewData> com.google.firebase.dataconnect.QueryRef<NewData,Variables> withDataDeserializer(kotlinx.serialization.DeserializationStrategy<? extends NewData> dataDeserializer, kotlinx.serialization.modules.SerializersModule? dataSerializersModule);
@@ -307,9 +307,9 @@ package com.google.firebase.dataconnect {
   }
 
   public enum QueryRef.FetchPolicy {
-    enum_constant public static final com.google.firebase.dataconnect.QueryRef.FetchPolicy CACHE;
-    enum_constant public static final com.google.firebase.dataconnect.QueryRef.FetchPolicy DEFAULT;
-    enum_constant public static final com.google.firebase.dataconnect.QueryRef.FetchPolicy SERVER;
+    enum_constant public static final com.google.firebase.dataconnect.QueryRef.FetchPolicy CacheOnly;
+    enum_constant public static final com.google.firebase.dataconnect.QueryRef.FetchPolicy PreferCache;
+    enum_constant public static final com.google.firebase.dataconnect.QueryRef.FetchPolicy ServerOnly;
   }
 
   public final class QueryRefKt {
