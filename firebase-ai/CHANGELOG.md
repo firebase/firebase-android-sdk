@@ -1,5 +1,7 @@
 # Unreleased
 
+# 17.5.0
+
 - [changed] Added better scheduling and louder output for Live API.
 - [changed] Added support for input and output transcription. (#7482)
 - [feature] Added support for sending realtime audio and video in a `LiveSession`.
