@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.local;
 
+import static com.google.firebase.firestore.core.PipelineUtilKt.getPipelineCollection;
 import static com.google.firebase.firestore.model.DocumentCollections.emptyDocumentMap;
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
@@ -25,7 +26,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
-import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.core.QueryOrPipeline;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
@@ -33,7 +34,7 @@ import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.util.BackgroundQueue;
-import com.google.firebase.firestore.util.Function;
+import com.google.firebase.firestore.util.Predicate;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.MessageLite;
 import java.util.ArrayList;
@@ -197,7 +198,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
     if (collections.isEmpty()) {
       return Collections.emptyMap();
     } else if (BINDS_PER_STATEMENT * collections.size() < SQLitePersistence.MAX_ARGS) {
-      return getAll(collections, offset, limit, /*filter*/ null);
+      return getAll(collections, offset, limit, /*filter*/ null, /*context*/ null);
     } else {
       // We need to fan out our collection scan since SQLite only supports 999 binds per statement.
       Map<DocumentKey, MutableDocument> results = new HashMap<>();
@@ -208,7 +209,8 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
                 collections.subList(i, Math.min(collections.size(), i + pageSize)),
                 offset,
                 limit,
-                /*filter*/ null));
+                /*filter*/ null,
+                /*context*/ null));
       }
       return firstNEntries(results, limit, IndexOffset.DOCUMENT_COMPARATOR);
     }
@@ -266,15 +268,13 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
     BackgroundQueue backgroundQueue = new BackgroundQueue();
     Map<DocumentKey, MutableDocument> results = new HashMap<>();
-    db.query(sql.toString())
-        .binding(bindVars)
-        .forEach(
-            row -> {
-              processRowInBackground(backgroundQueue, results, row, filter);
-              if (context != null) {
-                context.incrementDocumentReadCount();
-              }
-            });
+    int cnt =
+        db.query(sql.toString())
+            .binding(bindVars)
+            .forEach(row -> processRowInBackground(backgroundQueue, results, row, filter));
+    if (context != null) {
+      context.incrementDocumentReadCount(cnt);
+    }
     backgroundQueue.drain();
 
     // Backfill any null "document_type" columns discovered by processRowInBackground().
@@ -299,7 +299,7 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
       BackgroundQueue backgroundQueue,
       Map<DocumentKey, MutableDocument> results,
       Cursor row,
-      @Nullable Function<MutableDocument, Boolean> filter) {
+      @Nullable Predicate<MutableDocument> filter) {
     byte[] rawDocument = row.getBlob(0);
     int readTimeSeconds = row.getInt(1);
     int readTimeNanos = row.getInt(2);
@@ -331,18 +331,28 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
   @Override
   public Map<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
-      Query query, IndexOffset offset, @Nonnull Set<DocumentKey> mutatedKeys) {
+      QueryOrPipeline query, IndexOffset offset, @Nonnull Set<DocumentKey> mutatedKeys) {
     return getDocumentsMatchingQuery(query, offset, mutatedKeys, /*context*/ null);
   }
 
   @Override
   public Map<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
-      Query query,
+      QueryOrPipeline query,
       IndexOffset offset,
       @Nonnull Set<DocumentKey> mutatedKeys,
       @Nullable QueryContext context) {
+    ResourcePath path = ResourcePath.EMPTY;
+    if (query.isQuery()) {
+      path = query.query().getPath();
+    } else {
+      String pathString = getPipelineCollection(query.pipeline());
+      hardAssert(
+          pathString != null,
+          "SQLiteRemoteDocumentCache.getDocumentsMatchingQuery receives pipeline without collection source.");
+      path = ResourcePath.fromString(pathString);
+    }
     return getAll(
-        Collections.singletonList(query.getPath()),
+        Collections.singletonList(path),
         offset,
         Integer.MAX_VALUE,
         // Specify tryFilterDocumentType=FOUND_DOCUMENT to getAll() as an optimization, because
