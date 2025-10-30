@@ -17,13 +17,13 @@ package com.google.firebase.firestore;
 import static com.google.firebase.firestore.testutil.TestUtil.doc;
 import static com.google.firebase.firestore.testutil.TestUtil.docSet;
 import static com.google.firebase.firestore.testutil.TestUtil.key;
-import static org.mockito.Mockito.mock;
 
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.DocumentViewChange;
 import com.google.firebase.firestore.core.DocumentViewChange.Type;
 import com.google.firebase.firestore.core.ViewSnapshot;
+import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.DocumentSet;
@@ -38,7 +38,11 @@ import org.robolectric.Robolectric;
 
 public class TestUtil {
 
-  private static final FirebaseFirestore FIRESTORE = mock(FirebaseFirestore.class);
+  public static final String PROJECT_ID = "projectId";
+  public static final DatabaseId DATABASE_ID = DatabaseId.forProject(PROJECT_ID);
+  public static final UserDataReader USER_DATA_READER = new UserDataReader(DATABASE_ID);
+  private static final FirebaseFirestore FIRESTORE =
+      new FirebaseFirestoreIntegrationTestFactory(DATABASE_ID).firestore;
 
   public static FirebaseFirestore firestore() {
     return FIRESTORE;
@@ -110,7 +114,8 @@ public class TestUtil {
     }
     ViewSnapshot viewSnapshot =
         new ViewSnapshot(
-            com.google.firebase.firestore.testutil.TestUtil.query(path),
+            new com.google.firebase.firestore.core.QueryOrPipeline.QueryWrapper(
+                com.google.firebase.firestore.testutil.TestUtil.query(path)),
             newDocuments,
             oldDocuments,
             documentChanges,

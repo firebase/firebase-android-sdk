@@ -41,8 +41,10 @@ import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.FirebaseFirestoreIntegrationTestFactory;
 import com.google.firebase.firestore.ListenSource;
 import com.google.firebase.firestore.LoadBundleTask;
+import com.google.firebase.firestore.UserDataReader;
 import com.google.firebase.firestore.auth.User;
 import com.google.firebase.firestore.bundle.BundleReader;
 import com.google.firebase.firestore.bundle.BundleSerializer;
@@ -55,7 +57,10 @@ import com.google.firebase.firestore.core.EventManager.ListenOptions;
 import com.google.firebase.firestore.core.OnlineState;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.QueryListener;
+import com.google.firebase.firestore.core.QueryOrPipeline;
 import com.google.firebase.firestore.core.SyncEngine;
+import com.google.firebase.firestore.core.Target;
+import com.google.firebase.firestore.core.TargetOrPipeline;
 import com.google.firebase.firestore.local.LocalStore;
 import com.google.firebase.firestore.local.LruDelegate;
 import com.google.firebase.firestore.local.LruGarbageCollector;
@@ -102,6 +107,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -161,6 +167,8 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
   // separated by a space character.
   private static final String TEST_FILTER_PROPERTY = "specTestFilter";
 
+  private static final String NO_PIPELINE_CONVERSION_TAG = "no-pipeline-conversion";
+
   // Tags on tests that should be excluded from execution, useful to allow the platforms to
   // temporarily diverge or for features that are designed to be platform specific (such as
   // 'multi-client').
@@ -172,6 +180,9 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
   private boolean useEagerGcForMemory;
   private int maxConcurrentLimboResolutions;
   private boolean networkEnabled = true;
+  protected boolean usePipelineMode = false;
+
+  private FirebaseFirestore db;
 
   //
   // Parts of the Firestore system that the spec tests need to control.
@@ -194,7 +205,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
    * A dictionary for tracking the listens on queries. Note that the identity of the listeners is
    * used to remove them.
    */
-  private Map<Query, QueryListener> queryListeners;
+  private Map<QueryOrPipeline, QueryListener> queryListeners;
 
   /**
    * Set of documents that are expected to be in limbo with an active target. Verified at every
@@ -289,6 +300,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
 
     currentUser = User.UNAUTHENTICATED;
     databaseInfo = PersistenceTestHelpers.nextDatabaseInfo();
+    db = new FirebaseFirestoreIntegrationTestFactory(databaseInfo.getDatabaseId()).firestore;
 
     if (config.optInt("numClients", 1) != 1) {
       throw Assert.fail("The Android client does not support multi-client tests");
@@ -575,13 +587,22 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     Query query = parseQuery(listenSpec.getJSONObject("query"));
     ListenOptions options = parseListenOptions(listenSpec);
 
+    QueryOrPipeline queryOrPipeline;
+    if (usePipelineMode) {
+      queryOrPipeline =
+          new QueryOrPipeline.PipelineWrapper(
+              query.toRealtimePipeline(db, new UserDataReader(databaseInfo.getDatabaseId())));
+    } else {
+      queryOrPipeline = new QueryOrPipeline.QueryWrapper(query);
+    }
+
     QueryListener listener =
         new QueryListener(
-            query,
+            queryOrPipeline,
             options,
             (value, error) -> {
               QueryEvent event = new QueryEvent();
-              event.query = query;
+              event.queryOrPipeline = queryOrPipeline;
               if (value != null) {
                 event.view = value;
               } else {
@@ -589,7 +610,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
               }
               events.add(event);
             });
-    queryListeners.put(query, listener);
+    queryListeners.put(queryOrPipeline, listener);
     queue.runSync(
         () -> {
           int actualId = eventManager.addQueryListener(listener);
@@ -599,7 +620,15 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
 
   private void doUnlisten(JSONArray unlistenSpec) throws Exception {
     Query query = parseQuery(unlistenSpec.get(1));
-    QueryListener listener = queryListeners.remove(query);
+    QueryOrPipeline queryOrPipeline;
+    if (usePipelineMode) {
+      queryOrPipeline =
+          new QueryOrPipeline.PipelineWrapper(
+              query.toRealtimePipeline(db, new UserDataReader(databaseInfo.getDatabaseId())));
+    } else {
+      queryOrPipeline = new QueryOrPipeline.QueryWrapper(query);
+    }
+    QueryListener listener = queryListeners.remove(queryOrPipeline);
     queue.runSync(() -> eventManager.removeQueryListener(listener));
   }
 
@@ -988,7 +1017,14 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
 
   private void assertEventMatches(JSONObject expected, QueryEvent actual) throws JSONException {
     Query expectedQuery = parseQuery(expected.get("query"));
-    assertEquals(expectedQuery, actual.query);
+    if (usePipelineMode) {
+      assertEquals(
+          expectedQuery.toRealtimePipeline(db, new UserDataReader(databaseInfo.getDatabaseId())),
+          actual.queryOrPipeline.pipeline());
+    } else {
+      assertEquals(expectedQuery, actual.queryOrPipeline.query());
+    }
+
     if (expected.has("errorCode") && !Status.fromCodeValue(expected.getInt("errorCode")).isOk()) {
       assertNotNull(actual.error);
       assertEquals(expected.getInt("errorCode"), actual.error.getCode().value());
@@ -1039,7 +1075,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     }
 
     // Sort both the expected and actual events by the query's canonical ID.
-    events.sort((q1, q2) -> q1.query.getCanonicalId().compareTo(q2.query.getCanonicalId()));
+    events.sort(Comparator.comparing(q -> q.queryOrPipeline.canonicalId()));
 
     List<JSONObject> expectedEvents = new ArrayList<>();
     for (int i = 0; i < expectedEventsJson.length(); ++i) {
@@ -1050,6 +1086,16 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
           try {
             Query leftQuery = parseQuery(left.get("query"));
             Query rightQuery = parseQuery(right.get("query"));
+            if (usePipelineMode) {
+              return leftQuery
+                  .toRealtimePipeline(db, new UserDataReader(databaseInfo.getDatabaseId()))
+                  .toString()
+                  .compareTo(
+                      rightQuery
+                          .toRealtimePipeline(db, new UserDataReader(databaseInfo.getDatabaseId()))
+                          .toString());
+            }
+
             return leftQuery.getCanonicalId().compareTo(rightQuery.getCanonicalId());
           } catch (JSONException e) {
             throw new RuntimeException("Failed to parse JSON during event sorting", e);
@@ -1118,7 +1164,11 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
             }
 
             TargetData targetData =
-                new TargetData(query.toTarget(), targetId, ARBITRARY_SEQUENCE_NUMBER, purpose);
+                new TargetData(
+                    new TargetOrPipeline.TargetWrapper(query.toTarget()),
+                    targetId,
+                    ARBITRARY_SEQUENCE_NUMBER,
+                    purpose);
             if (queryDataJson.has("resumeToken")) {
               targetData =
                   targetData.withResumeToken(
@@ -1264,9 +1314,25 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
       // with the single assertEquals on the TargetData objects themselves if the sequenceNumber is
       // ever made to be consistent.
       // assertEquals(expectedTarget, actualTarget);
-
       assertEquals(expectedTarget.getPurpose(), actualTarget.getPurpose());
-      assertEquals(expectedTarget.getTarget(), actualTarget.getTarget());
+      if (usePipelineMode && !expectedTarget.getPurpose().equals(QueryPurpose.LIMBO_RESOLUTION)) {
+        Target target = expectedTarget.getTarget().target();
+        assertEquals(
+            new TargetOrPipeline.PipelineWrapper(
+                new Query(
+                        target.getPath(),
+                        target.getCollectionGroup(),
+                        target.getFilters(),
+                        target.getOrderBy(),
+                        target.getLimit(),
+                        Query.LimitType.LIMIT_TO_FIRST,
+                        target.getStartAt(),
+                        target.getEndAt())
+                    .toRealtimePipeline(db, new UserDataReader(databaseInfo.getDatabaseId()))),
+            actualTarget.getTarget());
+      } else {
+        assertEquals(expectedTarget.getTarget(), actualTarget.getTarget());
+      }
       assertEquals(expectedTarget.getTargetId(), actualTarget.getTargetId());
       assertEquals(expectedTarget.getSnapshotVersion(), actualTarget.getSnapshotVersion());
       assertEquals(
@@ -1386,6 +1452,10 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
         JSONArray steps = testJSON.getJSONArray("steps");
         Set<String> tags = getTestTags(testJSON);
 
+        if (name.contains("Newer ")) {
+          info("Skipping test: " + name);
+        }
+
         boolean runTest;
         if (!shouldRunTest(tags)) {
           runTest = false;
@@ -1437,6 +1507,9 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
 
   /** Called before executing each test to see if it should be run. */
   private boolean shouldRunTest(Set<String> tags) {
+    if (usePipelineMode && tags.contains(NO_PIPELINE_CONVERSION_TAG)) {
+      return false;
+    }
     return shouldRun(tags);
   }
 
