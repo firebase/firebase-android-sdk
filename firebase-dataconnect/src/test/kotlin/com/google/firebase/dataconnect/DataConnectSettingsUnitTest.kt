@@ -19,12 +19,12 @@
 
 package com.google.firebase.dataconnect
 
-import com.google.firebase.dataconnect.cache.PersistentCache
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import io.kotest.assertions.assertSoftly
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldEndWith
 import io.kotest.matchers.string.shouldStartWith
 import io.kotest.matchers.types.shouldBeSameInstanceAs
@@ -48,38 +48,38 @@ class DataConnectSettingsUnitTest {
 
     settings.host shouldBe "firebasedataconnect.googleapis.com"
     settings.sslEnabled shouldBe true
-    settings.cache shouldBe PersistentCache()
+    settings.cacheSettings shouldBe CacheSettings()
   }
 
   @Test
   fun `properties should be the same objects given to the constructor`() = runTest {
-    checkAll(propTestConfig, Arb.string(), Arb.boolean(), Arb.dataConnect.cache()) {
+    checkAll(propTestConfig, Arb.string(), Arb.boolean(), Arb.dataConnect.cacheSettings()) {
       host,
       sslEnabled,
-      cache ->
-      val settings = DataConnectSettings(host, sslEnabled, cache)
+      cacheSettings ->
+      val settings = DataConnectSettings(host, sslEnabled, cacheSettings)
       assertSoftly {
         settings.host shouldBeSameInstanceAs host
         settings.sslEnabled shouldBe sslEnabled
-        settings.cache shouldBeSameInstanceAs cache
+        settings.cacheSettings shouldBeSameInstanceAs cacheSettings
       }
     }
   }
 
   @Test
   fun `toString() returns a string that incorporates all property values`() = runTest {
-    checkAll(propTestConfig, Arb.string(), Arb.boolean(), Arb.dataConnect.cache()) {
+    checkAll(propTestConfig, Arb.string(), Arb.boolean(), Arb.dataConnect.cacheSettings()) {
       host,
       sslEnabled,
-      cache ->
-      val settings = DataConnectSettings(host, sslEnabled, cache)
+      cacheSettings ->
+      val settings = DataConnectSettings(host, sslEnabled, cacheSettings)
       val toStringResult = settings.toString()
       assertSoftly {
         toStringResult shouldStartWith "DataConnectSettings("
         toStringResult shouldEndWith ")"
         toStringResult shouldContainWithNonAbuttingText "host=${settings.host}"
         toStringResult shouldContainWithNonAbuttingText "sslEnabled=${settings.sslEnabled}"
-        toStringResult shouldContainWithNonAbuttingText "cache=${settings.cache}"
+        toStringResult shouldContainWithNonAbuttingText "cacheSettings=${settings.cacheSettings}"
       }
     }
   }
@@ -109,7 +109,12 @@ class DataConnectSettingsUnitTest {
   @Test
   fun `equals() should return false for a different type`() = runTest {
     val otherTypes =
-      Arb.choice(Arb.string(), Arb.int(), Arb.dataConnect.errorPath(), Arb.dataConnect.cache())
+      Arb.choice(
+        Arb.string(),
+        Arb.int(),
+        Arb.dataConnect.errorPath(),
+        Arb.dataConnect.cacheSettings()
+      )
     checkAll(propTestConfig, Arb.dataConnect.dataConnectSettings(), otherTypes) { settings, other ->
       settings.equals(other) shouldBe false
     }
@@ -134,12 +139,14 @@ class DataConnectSettingsUnitTest {
   }
 
   @Test
-  fun `equals() should return false when only 'cache' differs`() = runTest {
-    checkAll(propTestConfig, Arb.dataConnect.dataConnectSettings(), Arb.dataConnect.cache()) {
-      settings1,
-      newCache ->
-      assume(settings1.cache != newCache)
-      val settings2 = settings1.copy(cache = newCache)
+  fun `equals() should return false when only 'cacheSettings' differs`() = runTest {
+    checkAll(
+      propTestConfig,
+      Arb.dataConnect.dataConnectSettings(),
+      Arb.dataConnect.cacheSettings()
+    ) { settings1, newCacheSettings ->
+      assume(settings1.cacheSettings != newCacheSettings)
+      val settings2 = settings1.copy(cacheSettings = newCacheSettings)
       settings1.equals(settings2) shouldBe false
     }
   }
@@ -158,7 +165,7 @@ class DataConnectSettingsUnitTest {
   fun `hashCode() should return the same value on equal objects`() = runTest {
     checkAll(propTestConfig, Arb.dataConnect.dataConnectSettings()) { settings1 ->
       val settings2 = settings1.copy()
-      settings1.equals(settings2) shouldBe true
+      settings1.hashCode() shouldBe settings2.hashCode()
     }
   }
 
@@ -171,7 +178,7 @@ class DataConnectSettingsUnitTest {
     ) { settings1, newHost ->
       assume { settings1.host.hashCode() != newHost.hashCode() }
       val settings2 = settings1.copy(host = newHost)
-      settings1.equals(settings2) shouldBe false
+      settings1.hashCode() shouldNotBe settings2.hashCode()
     }
   }
 
@@ -179,20 +186,20 @@ class DataConnectSettingsUnitTest {
   fun `hashCode() should return a different value when only 'sslEnabled' differs`() = runTest {
     checkAll(hashEqualityPropTestConfig, Arb.dataConnect.dataConnectSettings()) { settings1 ->
       val settings2 = settings1.copy(sslEnabled = !settings1.sslEnabled)
-      settings1.equals(settings2) shouldBe false
+      settings1.hashCode() shouldNotBe settings2.hashCode()
     }
   }
 
   @Test
-  fun `hashCode() should return a different value when only 'cache' differs`() = runTest {
+  fun `hashCode() should return a different value when only 'cacheSettings' differs`() = runTest {
     checkAll(
       hashEqualityPropTestConfig,
       Arb.dataConnect.dataConnectSettings(),
-      Arb.dataConnect.cache()
-    ) { settings1, newCache ->
-      assume { settings1.cache.hashCode() != newCache.hashCode() }
-      val settings2 = settings1.copy(cache = newCache)
-      settings1.equals(settings2) shouldBe false
+      Arb.dataConnect.cacheSettings()
+    ) { settings1, newCacheSettings ->
+      assume { settings1.cacheSettings.hashCode() != newCacheSettings.hashCode() }
+      val settings2 = settings1.copy(cacheSettings = newCacheSettings)
+      settings1.hashCode() shouldNotBe settings2.hashCode()
     }
   }
 
@@ -206,7 +213,7 @@ class DataConnectSettingsUnitTest {
           settings1.equals(settings2) shouldBe true
           settings1.host shouldBeSameInstanceAs settings2.host
           settings1.sslEnabled shouldBe settings2.sslEnabled
-          settings1.cache shouldBeSameInstanceAs settings2.cache
+          settings1.cacheSettings shouldBeSameInstanceAs settings2.cacheSettings
         }
       }
     }
@@ -220,7 +227,7 @@ class DataConnectSettingsUnitTest {
       assertSoftly {
         settings2.host shouldBeSameInstanceAs newHost
         settings2.sslEnabled shouldBe settings1.sslEnabled
-        settings2.cache shouldBeSameInstanceAs settings1.cache
+        settings2.cacheSettings shouldBeSameInstanceAs settings1.cacheSettings
       }
     }
   }
@@ -234,21 +241,23 @@ class DataConnectSettingsUnitTest {
       assertSoftly {
         settings2.host shouldBeSameInstanceAs settings1.host
         settings2.sslEnabled shouldBe newSslEnabled
-        settings2.cache shouldBeSameInstanceAs settings1.cache
+        settings2.cacheSettings shouldBeSameInstanceAs settings1.cacheSettings
       }
     }
   }
 
   @Test
-  fun `copy() should return an object with the given 'cache'`() = runTest {
-    checkAll(propTestConfig, Arb.dataConnect.dataConnectSettings(), Arb.dataConnect.cache()) {
-      settings1,
-      newCache ->
-      val settings2 = settings1.copy(cache = newCache)
+  fun `copy() should return an object with the given 'cacheSettings'`() = runTest {
+    checkAll(
+      propTestConfig,
+      Arb.dataConnect.dataConnectSettings(),
+      Arb.dataConnect.cacheSettings()
+    ) { settings1, newCacheSettings ->
+      val settings2 = settings1.copy(cacheSettings = newCacheSettings)
       assertSoftly {
         settings2.host shouldBeSameInstanceAs settings1.host
         settings2.sslEnabled shouldBe settings1.sslEnabled
-        settings2.cache shouldBeSameInstanceAs newCache
+        settings2.cacheSettings shouldBeSameInstanceAs newCacheSettings
       }
     }
   }
@@ -260,13 +269,14 @@ class DataConnectSettingsUnitTest {
       Arb.dataConnect.dataConnectSettings(),
       Arb.dataConnect.string(),
       Arb.boolean(),
-      Arb.dataConnect.cache(),
-    ) { settings1, newHost, newSslEnabled, newCache ->
-      val settings2 = settings1.copy(host = newHost, sslEnabled = newSslEnabled, cache = newCache)
+      Arb.dataConnect.cacheSettings(),
+    ) { settings1, newHost, newSslEnabled, newCacheSettings ->
+      val settings2 =
+        settings1.copy(host = newHost, sslEnabled = newSslEnabled, cacheSettings = newCacheSettings)
       assertSoftly {
         settings2.host shouldBeSameInstanceAs newHost
         settings2.sslEnabled shouldBe newSslEnabled
-        settings2.cache shouldBeSameInstanceAs newCache
+        settings2.cacheSettings shouldBeSameInstanceAs newCacheSettings
       }
     }
   }

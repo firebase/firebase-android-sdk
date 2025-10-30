@@ -18,13 +18,11 @@
 
 package com.google.firebase.dataconnect.testutil.property.arbitrary
 
+import com.google.firebase.dataconnect.CacheSettings
 import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.DataConnectSettings
 import com.google.firebase.dataconnect.QueryResult
-import com.google.firebase.dataconnect.cache.DataConnectCache
-import com.google.firebase.dataconnect.cache.InMemoryCache
-import com.google.firebase.dataconnect.cache.PersistentCache
 import io.kotest.property.Arb
 import io.kotest.property.Exhaustive
 import io.kotest.property.arbitrary.Codepoint
@@ -32,12 +30,14 @@ import io.kotest.property.arbitrary.alphanumeric
 import io.kotest.property.arbitrary.arabic
 import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.ascii
+import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.boolean
 import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.choose
 import io.kotest.property.arbitrary.cyrillic
 import io.kotest.property.arbitrary.double
 import io.kotest.property.arbitrary.egyptianHieroglyphs
+import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.hex
 import io.kotest.property.arbitrary.int
@@ -133,31 +133,19 @@ object DataConnectArb {
 
   fun invalidMaxCacheSizeBytes(): Arb<Long> = Arb.long(max = -1)
 
-  fun inMemoryCache(maxSizeBytes: Arb<Long> = maxCacheSizeBytes()): Arb<InMemoryCache> =
-    maxSizeBytes.map { InMemoryCache(it) }
-
-  fun persistentCache(maxSizeBytes: Arb<Long> = maxCacheSizeBytes()): Arb<PersistentCache> =
-    maxSizeBytes.map { PersistentCache(it) }
-
-  fun cache(
-    inMemoryCache: Arb<InMemoryCache> = inMemoryCache(),
-    persistentCache: Arb<PersistentCache> = persistentCache(),
-  ): Arb<DataConnectCache> = Arb.choice(inMemoryCache, persistentCache)
+  fun cacheSettings(
+    storage: Arb<CacheSettings.Storage> = Arb.enum<CacheSettings.Storage>(),
+    maxSizeBytes: Arb<Long> = maxCacheSizeBytes(),
+  ): Arb<CacheSettings> = Arb.bind(storage, maxSizeBytes, ::CacheSettings)
 
   fun dataConnectSettings(
     prefix: String? = null,
     host: Arb<String> = host(),
     sslEnabled: Arb<Boolean> = Arb.boolean(),
-    cache: Arb<DataConnectCache> = cache(),
+    cacheSettings: Arb<CacheSettings> = cacheSettings(),
   ): Arb<DataConnectSettings> {
     val wrappedHost = prefix?.let { host.withPrefix(it) } ?: host
-    return arbitrary {
-      DataConnectSettings(
-        host = wrappedHost.bind(),
-        sslEnabled = sslEnabled.bind(),
-        cache = cache.bind()
-      )
-    }
+    return Arb.bind(wrappedHost, sslEnabled, cacheSettings, ::DataConnectSettings)
   }
 
   fun tag(string: Arb<String> = Arb.string(size = 50, Codepoint.alphanumeric())): Arb<String> =

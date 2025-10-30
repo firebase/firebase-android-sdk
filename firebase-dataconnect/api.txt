@@ -24,6 +24,23 @@ package com.google.firebase.dataconnect {
     method public static com.google.firebase.dataconnect.AnyValue? fromNullableAny(com.google.firebase.dataconnect.AnyValue.Companion, Object? value);
   }
 
+  public final class CacheSettings {
+    ctor public CacheSettings(com.google.firebase.dataconnect.CacheSettings.Storage storage = com.google.firebase.dataconnect.CacheSettings.Storage.Persistent, long maxSizeBytes = 100_000_000);
+    method public long getMaxSizeBytes();
+    method public com.google.firebase.dataconnect.CacheSettings.Storage getStorage();
+    property public final long maxSizeBytes;
+    property public final com.google.firebase.dataconnect.CacheSettings.Storage storage;
+  }
+
+  public enum CacheSettings.Storage {
+    enum_constant public static final com.google.firebase.dataconnect.CacheSettings.Storage Memory;
+    enum_constant public static final com.google.firebase.dataconnect.CacheSettings.Storage Persistent;
+  }
+
+  public final class CacheSettingsKt {
+    method public static com.google.firebase.dataconnect.CacheSettings copy(com.google.firebase.dataconnect.CacheSettings, com.google.firebase.dataconnect.CacheSettings.Storage storage = storage, long maxSizeBytes = maxSizeBytes);
+  }
+
   public final class ConnectorConfig {
     ctor public ConnectorConfig(String connector, String location, String serviceId);
     method public String getConnector();
@@ -84,17 +101,17 @@ package com.google.firebase.dataconnect {
   }
 
   public final class DataConnectSettings {
-    ctor public DataConnectSettings(String host = "firebasedataconnect.googleapis.com", boolean sslEnabled = true, com.google.firebase.dataconnect.cache.DataConnectCache cache = com.google.firebase.dataconnect.cache.PersistentCache());
-    method public com.google.firebase.dataconnect.cache.DataConnectCache getCache();
+    ctor public DataConnectSettings(String host = "firebasedataconnect.googleapis.com", boolean sslEnabled = true, com.google.firebase.dataconnect.CacheSettings? cacheSettings = com.google.firebase.dataconnect.CacheSettings());
+    method public com.google.firebase.dataconnect.CacheSettings? getCacheSettings();
     method public String getHost();
     method public boolean getSslEnabled();
-    property public final com.google.firebase.dataconnect.cache.DataConnectCache cache;
+    property public final com.google.firebase.dataconnect.CacheSettings? cacheSettings;
     property public final String host;
     property public final boolean sslEnabled;
   }
 
   public final class DataConnectSettingsKt {
-    method public static com.google.firebase.dataconnect.DataConnectSettings copy(com.google.firebase.dataconnect.DataConnectSettings, String host = host, boolean sslEnabled = sslEnabled, com.google.firebase.dataconnect.cache.DataConnectCache cache = cache);
+    method public static com.google.firebase.dataconnect.DataConnectSettings copy(com.google.firebase.dataconnect.DataConnectSettings, String host = host, boolean sslEnabled = sslEnabled, com.google.firebase.dataconnect.CacheSettings? cacheSettings = cacheSettings);
   }
 
   public sealed interface EnumValue<T extends java.lang.Enum<? extends T>> {
@@ -337,43 +354,6 @@ package com.google.firebase.dataconnect {
     method public String toString();
     property public abstract com.google.firebase.dataconnect.QueryRef<Data,Variables> query;
     property public abstract Object result;
-  }
-
-}
-
-package com.google.firebase.dataconnect.cache {
-
-  public abstract sealed class DataConnectCache {
-  }
-
-  public final class InMemoryCache extends com.google.firebase.dataconnect.cache.DataConnectCache {
-    ctor public InMemoryCache(long maxSizeBytes = 100000000L);
-    method public long getMaxSizeBytes();
-    property public final long maxSizeBytes;
-    field public static final com.google.firebase.dataconnect.cache.InMemoryCache.Companion Companion;
-    field public static final long DEFAULT_MAX_SIZE_BYTES = 100000000L; // 0x5f5e100L
-  }
-
-  public static final class InMemoryCache.Companion {
-  }
-
-  public final class InMemoryCacheKt {
-    method public static com.google.firebase.dataconnect.cache.InMemoryCache copy(com.google.firebase.dataconnect.cache.InMemoryCache, long maxSizeBytes = maxSizeBytes);
-  }
-
-  public final class PersistentCache extends com.google.firebase.dataconnect.cache.DataConnectCache {
-    ctor public PersistentCache(long maxSizeBytes = 100000000L);
-    method public long getMaxSizeBytes();
-    property public final long maxSizeBytes;
-    field public static final com.google.firebase.dataconnect.cache.PersistentCache.Companion Companion;
-    field public static final long DEFAULT_MAX_SIZE_BYTES = 100000000L; // 0x5f5e100L
-  }
-
-  public static final class PersistentCache.Companion {
-  }
-
-  public final class PersistentCacheKt {
-    method public static com.google.firebase.dataconnect.cache.PersistentCache copy(com.google.firebase.dataconnect.cache.PersistentCache, long maxSizeBytes = maxSizeBytes);
   }
 
 }

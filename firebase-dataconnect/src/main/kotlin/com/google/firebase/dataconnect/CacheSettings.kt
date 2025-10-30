@@ -12,22 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.dataconnect.cache
+package com.google.firebase.dataconnect
 
 import java.util.Objects
 
 /**
- * A [DataConnectCache] that caches data in memory.
+ * The local caching settings used by a [FirebaseDataConnect] object, as specified in its
+ * [DataConnectSettings].
  *
- * @param maxSizeBytes The value to use for [InMemoryCache.maxSizeBytes].
+ * @param storage The value to set for the [CacheSettings.storage] property.
+ * @param maxSizeBytes The value to set for the [CacheSettings.maxSizeBytes] property.
  *
+ * @property storage The type of storage to use to store the cache data.
  * @property maxSizeBytes The maximum size, in bytes, of the cache. A value of `0` (zero) indicates
  * that the size is unbounded. This value is _not_ a hard limit but rather a guideline as the exact
  * cache size may not be easily computable and this limit may be briefly exceeded as entries are
  * evicted to bring the cache below the maximum size.
  */
-public class InMemoryCache(public val maxSizeBytes: Long = DEFAULT_MAX_SIZE_BYTES) :
-  DataConnectCache() {
+public class CacheSettings(
+  public val storage: Storage = Storage.Persistent,
+  public val maxSizeBytes: Long = 100_000_000,
+) {
 
   init {
     require(maxSizeBytes >= 0) {
@@ -36,15 +41,23 @@ public class InMemoryCache(public val maxSizeBytes: Long = DEFAULT_MAX_SIZE_BYTE
   }
 
   /**
+   * The types of cache storage supported by [FirebaseDataConnect] in its [CacheSettings] setting.
+   */
+  public enum class Storage {
+    Memory,
+    Persistent,
+  }
+
+  /**
    * Compares this object with another object for equality.
    *
    * @param other The object to compare to this for equality.
-   * @return true if, and only if, the other object is an instance of [InMemoryCache] whose public
+   * @return true if, and only if, the other object is an instance of [CacheSettings] whose public
    * properties compare equal using the `==` operator to the corresponding properties of this
    * object.
    */
   override fun equals(other: Any?): Boolean =
-    other is InMemoryCache && (other.maxSizeBytes == maxSizeBytes)
+    other is CacheSettings && other.storage == storage && other.maxSizeBytes == maxSizeBytes
 
   /**
    * Calculates and returns the hash code for this object.
@@ -54,7 +67,7 @@ public class InMemoryCache(public val maxSizeBytes: Long = DEFAULT_MAX_SIZE_BYTE
    * @return the hash code for this object, that incorporates the values of this object's public
    * properties.
    */
-  override fun hashCode(): Int = Objects.hash(InMemoryCache::class, maxSizeBytes)
+  override fun hashCode(): Int = Objects.hash(CacheSettings::class, storage, maxSizeBytes)
 
   /**
    * Returns a string representation of this object, useful for debugging.
@@ -69,16 +82,12 @@ public class InMemoryCache(public val maxSizeBytes: Long = DEFAULT_MAX_SIZE_BYTE
    * all public properties.
    */
   override fun toString(): String {
-    return "InMemoryCache(maxSizeBytes=$maxSizeBytes)"
-  }
-
-  public companion object {
-
-    /** The default value of [InMemoryCache.maxSizeBytes] (100 MB). */
-    public const val DEFAULT_MAX_SIZE_BYTES: Long = 100_000_000
+    return "CacheSettings(storage=$storage, maxSizeBytes=$maxSizeBytes)"
   }
 }
 
-/** Creates and returns a new [InMemoryCache] object with the given property values. */
-public fun InMemoryCache.copy(maxSizeBytes: Long = this.maxSizeBytes): InMemoryCache =
-  InMemoryCache(maxSizeBytes = maxSizeBytes)
+/** Creates and returns a new [CacheSettings] object with the given property values. */
+public fun CacheSettings.copy(
+  storage: CacheSettings.Storage = this.storage,
+  maxSizeBytes: Long = this.maxSizeBytes,
+): CacheSettings = CacheSettings(storage = storage, maxSizeBytes = maxSizeBytes)
