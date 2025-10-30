@@ -27,6 +27,7 @@ import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
 import io.kotest.property.arbitrary.int
+import io.kotest.property.arbitrary.map
 import io.kotest.property.checkAll
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
@@ -50,8 +51,7 @@ class StringUtilUnitTest {
 
   @Test
   fun `calculateUtf8ByteCount() should not throw when encountering lone surrogates`() = runTest {
-    checkAll(propTestConfig, Arb.int(1..100)) { stringLength ->
-      val string = Arb.stringWithLoneSurrogates(stringLength).bind().string
+    checkAll(propTestConfig, Arb.stringWithLoneSurrogates(1..100).map { it.string }) { string ->
       string.calculateUtf8ByteCount()
     }
   }
@@ -68,8 +68,7 @@ class StringUtilUnitTest {
   @Test
   fun `containsLoneSurrogates() should return true when the string contains lone surrogates`() =
     runTest {
-      checkAll(propTestConfig, Arb.int(1..100)) { stringLength ->
-        val string = Arb.stringWithLoneSurrogates(stringLength).bind().string
+      checkAll(propTestConfig, Arb.stringWithLoneSurrogates(1..100).map { it.string }) { string ->
         string.containsLoneSurrogates() shouldBe true
       }
     }

@@ -20,6 +20,7 @@ import io.kotest.property.Arb
 import io.kotest.property.RandomSource
 import io.kotest.property.Sample
 import io.kotest.property.arbitrary.Codepoint
+import io.kotest.property.arbitrary.int
 import io.kotest.property.asSample
 import kotlin.Char.Companion.MAX_HIGH_SURROGATE
 import kotlin.Char.Companion.MAX_LOW_SURROGATE
@@ -32,25 +33,49 @@ import kotlin.Char.Companion.MIN_SURROGATE
  * Generates Strings with the given length that contain at least 1 UTF-16 "lone surrogate"
  * character.
  */
-fun Arb.Companion.stringWithLoneSurrogates(length: Int): Arb<StringWithLoneSurrogates> =
-  StringWithLoneSurrogatesArb(length)
+fun Arb.Companion.stringWithLoneSurrogates(lengthRange: IntRange): Arb<StringWithLoneSurrogates> =
+  StringWithLoneSurrogatesArb(lengthRange)
 
 data class StringWithLoneSurrogates(val string: String, val loneSurrogateCount: Int)
 
-private class StringWithLoneSurrogatesArb(private val length: Int) :
-  Arb<StringWithLoneSurrogates>() {
+private class StringWithLoneSurrogatesArb(lengthRange: IntRange) : Arb<StringWithLoneSurrogates>() {
 
   init {
-    require(length > 0) { "invalid length: $length (start be greater than zero)" }
+    require(lengthRange.first > 0) {
+      "lengthRange.first must be greater than zero, but got ${lengthRange.first}"
+    }
+    require(lengthRange.last >= lengthRange.first) {
+      "lengthRange.last (${lengthRange.last}) must be greater than or equal to " +
+        "lengthRange.first (${lengthRange.first})"
+    }
   }
 
-  private val codepointArb: Arb<Codepoint> = Arb.codepointWithEvenNumByteUtf8EncodingDistribution()
+  private val lengthArb = Arb.int(lengthRange)
+
+  private val generator = StringWithLoneSurrogatesGenerator()
 
   override fun sample(rs: RandomSource): Sample<StringWithLoneSurrogates> =
-    rs.nextStringWithLoneSurrogates().asSample()
+    generator.sample(rs, rs.nextLength(edgeCaseProbability = 0.1f)).asSample()
+
+  override fun edgecase(rs: RandomSource): StringWithLoneSurrogates =
+    generator.edgecase(rs, rs.nextLength(edgeCaseProbability = 0.5f))
+
+  private fun RandomSource.nextLength(edgeCaseProbability: Float): Int =
+    if (random.nextFloat() < edgeCaseProbability) {
+      lengthArb.edgecase(this)!!
+    } else {
+      lengthArb.sample(this).value
+    }
+}
+
+private class StringWithLoneSurrogatesGenerator {
+  private val codepointArb: Arb<Codepoint> = Arb.codepointWithEvenNumByteUtf8EncodingDistribution()
+
+  fun sample(rs: RandomSource, length: Int): StringWithLoneSurrogates =
+    rs.nextStringWithLoneSurrogates(length)
 
   private fun RandomSource.nextStringWithLoneSurrogates(
-    length: Int = this@StringWithLoneSurrogatesArb.length,
+    length: Int,
     loneSurrogateCount: Int = 1 + random.nextInt(length),
     edgeCaseProbability: Float = random.nextFloat(),
   ): StringWithLoneSurrogates {
@@ -119,7 +144,7 @@ private class StringWithLoneSurrogatesArb(private val length: Int) :
     return StringWithLoneSurrogates(string, loneSurrogateCount)
   }
 
-  override fun edgecase(rs: RandomSource): StringWithLoneSurrogates {
+  fun edgecase(rs: RandomSource, length: Int): StringWithLoneSurrogates {
     val surrogateEdgeCaseProbability = rs.random.nextFloat()
 
     fun StringBuilder.appendStringWithNoLoneSurrogates(length: Int) {
@@ -131,21 +156,26 @@ private class StringWithLoneSurrogatesArb(private val length: Int) :
       append(rs.nextSurrogateChar(edgeCaseProbability = surrogateEdgeCaseProbability))
     }
 
+    val stringWithLoneSurrogatesLength = length
+
     return when (EdgeCase.supportingLength(length).random(rs.random)) {
       EdgeCase.AllLoneSurrogates ->
-        rs.nextStringWithLoneSurrogates(length = length, loneSurrogateCount = length)
+        rs.nextStringWithLoneSurrogates(
+          length = stringWithLoneSurrogatesLength,
+          loneSurrogateCount = stringWithLoneSurrogatesLength
+        )
       EdgeCase.BeginsWithLoneSurrogate ->
         StringWithLoneSurrogates(
           buildString {
             appendSurrogateChar()
-            appendStringWithNoLoneSurrogates(this@StringWithLoneSurrogatesArb.length - 1)
+            appendStringWithNoLoneSurrogates(stringWithLoneSurrogatesLength - 1)
           },
           1
         )
       EdgeCase.EndsWithLoneSurrogate ->
         StringWithLoneSurrogates(
           buildString {
-            appendStringWithNoLoneSurrogates(this@StringWithLoneSurrogatesArb.length - 1)
+            appendStringWithNoLoneSurrogates(stringWithLoneSurrogatesLength - 1)
             appendSurrogateChar()
           },
           1
@@ -154,7 +184,7 @@ private class StringWithLoneSurrogatesArb(private val length: Int) :
         StringWithLoneSurrogates(
           buildString {
             appendSurrogateChar()
-            appendStringWithNoLoneSurrogates(this@StringWithLoneSurrogatesArb.length - 2)
+            appendStringWithNoLoneSurrogates(stringWithLoneSurrogatesLength - 2)
             appendSurrogateChar()
           },
           2

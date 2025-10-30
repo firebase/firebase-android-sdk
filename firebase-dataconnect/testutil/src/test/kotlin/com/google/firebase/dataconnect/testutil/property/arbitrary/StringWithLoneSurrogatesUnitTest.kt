@@ -16,16 +16,20 @@
 
 package com.google.firebase.dataconnect.testutil.property.arbitrary
 
+import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.ints.shouldBeGreaterThan
+import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
+import io.kotest.matchers.ints.shouldBeLessThanOrEqual
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
 import io.kotest.property.ShrinkingMode
 import io.kotest.property.arbitrary.int
+import io.kotest.property.arbitrary.positiveInt
 import io.kotest.property.checkAll
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
@@ -35,8 +39,7 @@ class StringWithLoneSurrogatesUnitTest {
   @Test
   fun `stringWithLoneSurrogates() should produce strings with at least 1 lone surrogate`() =
     runTest {
-      checkAll(propTestConfig, Arb.int(1..20)) { stringLength ->
-        val sample = Arb.stringWithLoneSurrogates(stringLength).bind()
+      checkAll(propTestConfig, Arb.stringWithLoneSurrogates(1..20)) { sample ->
         sample.loneSurrogateCount shouldBeGreaterThan 0
       }
     }
@@ -44,18 +47,21 @@ class StringWithLoneSurrogatesUnitTest {
   @Test
   fun `stringWithLoneSurrogates() should produce strings with the indicated number of lone surrogates`() =
     runTest {
-      checkAll(propTestConfig, Arb.int(1..20)) { stringLength ->
-        val sample = Arb.stringWithLoneSurrogates(stringLength).bind()
+      checkAll(propTestConfig, Arb.stringWithLoneSurrogates(1..20)) { sample ->
         sample.loneSurrogateCount shouldBe sample.string.countLoneSurrogates()
       }
     }
 
   @Test
-  fun `stringWithLoneSurrogates() should produce strings whose length is the specified length`() =
+  fun `stringWithLoneSurrogates() should produce strings whose length is in the given range`() =
     runTest {
-      checkAll(propTestConfig, Arb.int(1..20)) { stringLength ->
-        val sample = Arb.stringWithLoneSurrogates(stringLength).bind()
-        sample.string.length shouldBe stringLength
+      checkAll(propTestConfig, Arb.positiveInt(100).distinctPair()) { (bound1, bound2) ->
+        val lengthRange = if (bound1 < bound2) bound1..bound2 else bound2..bound1
+        val sample = Arb.stringWithLoneSurrogates(lengthRange).bind()
+        assertSoftly {
+          sample.string.length shouldBeGreaterThanOrEqual lengthRange.first
+          sample.string.length shouldBeLessThanOrEqual lengthRange.last
+        }
       }
     }
 
@@ -63,7 +69,7 @@ class StringWithLoneSurrogatesUnitTest {
   fun `stringWithLoneSurrogates() should produce strings with the entire range of lone surrogate counts`() =
     runTest {
       checkAll(propTestConfig, Arb.int(1..50)) { stringLength ->
-        val arb = Arb.stringWithLoneSurrogates(stringLength)
+        val arb = Arb.stringWithLoneSurrogates(stringLength..stringLength)
         val samples = List(1000) { arb.bind() }
         val loneSurrogateCounts =
           samples.groupBy { it.loneSurrogateCount }.mapValues { it.value.size }
