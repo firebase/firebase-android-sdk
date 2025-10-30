@@ -203,7 +203,7 @@ public class SchemaSymbolProcessor(
           "${parentType?.toClassName()?.simpleName?.let { "$it." }}$name is not a List type, minItems and maxItems are not valid parameters to specify in @Guide"
         )
       }
-      if (format != null && className.canonicalName !== "kotlin.String") {
+      if (format != null && className.canonicalName != "kotlin.String") {
         logger.warn(
           "${parentType?.toClassName()?.simpleName?.let { "$it." }}$name is not a String type, format is not a valid parameter to specify in @Guide"
         )
