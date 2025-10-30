@@ -1,0 +1,11 @@
+{
+    "name": "m172",
+    "libraries": [
+        ":firebase-ai",
+        ":firebase-functions",
+        ":firebase-dataconnect",
+		":firebase-inappmessaging",
+		":firebase-inappmessaging-display",
+        ":firebase-perf"
+    ]
+}
