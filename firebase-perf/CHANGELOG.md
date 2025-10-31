@@ -1,5 +1,7 @@
 # Unreleased
 
+- [fixed] Fixed StrictMode DiskReadViolation prompted by AppStartTrace setup. [#7340]
+
 # 22.0.3
 
 - [changed] Bumped dependency on OkHTTP to version 4.12.0 from version 3.12.13. If your app depends
