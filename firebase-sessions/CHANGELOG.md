@@ -1,5 +1,7 @@
 # Unreleased
 
+- [changed] Restore SessionLifecycleService as no-op
+
 # 3.0.3
 
 - [fixed] Made creating DataStore files more resilient (#7440)
