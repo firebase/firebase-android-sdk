@@ -61,6 +61,7 @@ import com.google.firebase.firestore.pipeline.WhereStage
 import com.google.firebase.firestore.remote.RemoteSerializer
 import com.google.firebase.firestore.util.Logger
 import com.google.firestore.v1.ExecutePipelineRequest
+import com.google.firestore.v1.Pipeline as ProtoPipeline
 import com.google.firestore.v1.StructuredPipeline
 import com.google.firestore.v1.Value
 
@@ -131,10 +132,8 @@ internal constructor(
     return builder.build()
   }
 
-  internal fun toPipelineProto(): com.google.firestore.v1.Pipeline =
-    com.google.firestore.v1.Pipeline.newBuilder()
-      .addAllStages(stages.map { it.toProtoStage(userDataReader) })
-      .build()
+  internal fun toPipelineProto(): ProtoPipeline =
+    ProtoPipeline.newBuilder().addAllStages(stages.map { it.toProtoStage(userDataReader) }).build()
 
   private fun toExecutePipelineRequest(options: InternalOptions?): ExecutePipelineRequest {
     val database = firestore!!.databaseId

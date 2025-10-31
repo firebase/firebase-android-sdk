@@ -21,7 +21,9 @@ import com.google.firebase.ai.common.util.fullModelName
 import com.google.firebase.ai.common.util.trimmedModelName
 import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.GenerationConfig
+import com.google.firebase.ai.type.ImagenEditingConfig
 import com.google.firebase.ai.type.ImagenImageFormat
+import com.google.firebase.ai.type.ImagenReferenceImage
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.SafetySetting
 import com.google.firebase.ai.type.Tool
@@ -75,17 +77,22 @@ internal data class CountTokensRequest(
 }
 
 @Serializable
+@OptIn(PublicPreviewAPI::class)
 internal data class GenerateImageRequest(
   val instances: List<ImagenPrompt>,
   val parameters: ImagenParameters,
 ) : Request {
-  @Serializable internal data class ImagenPrompt(val prompt: String)
+  @Serializable
+  internal data class ImagenPrompt(
+    val prompt: String?,
+    val referenceImages: List<ImagenReferenceImage.Internal>?
+  )
 
-  @OptIn(PublicPreviewAPI::class)
   @Serializable
   internal data class ImagenParameters(
     val sampleCount: Int,
     val includeRaiReason: Boolean,
+    val includeSafetyAttributes: Boolean,
     val storageUri: String?,
     val negativePrompt: String?,
     val aspectRatio: String?,
@@ -93,5 +100,19 @@ internal data class GenerateImageRequest(
     val personGeneration: String?,
     val addWatermark: Boolean?,
     val imageOutputOptions: ImagenImageFormat.Internal?,
+    val editMode: String?,
+    @OptIn(PublicPreviewAPI::class) val editConfig: ImagenEditingConfig.Internal?,
   )
+
+  @Serializable
+  internal enum class ReferenceType {
+    @SerialName("REFERENCE_TYPE_UNSPECIFIED") UNSPECIFIED,
+    @SerialName("REFERENCE_TYPE_RAW") RAW,
+    @SerialName("REFERENCE_TYPE_MASK") MASK,
+    @SerialName("REFERENCE_TYPE_CONTROL") CONTROL,
+    @SerialName("REFERENCE_TYPE_STYLE") STYLE,
+    @SerialName("REFERENCE_TYPE_SUBJECT") SUBJECT,
+    @SerialName("REFERENCE_TYPE_MASKED_SUBJECT") MASKED_SUBJECT,
+    @SerialName("REFERENCE_TYPE_PRODUCT") PRODUCT
+  }
 }

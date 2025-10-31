@@ -23,12 +23,14 @@ package com.google.firebase.ai {
     method public com.google.firebase.ai.GenerativeModel generativeModel(String modelName, com.google.firebase.ai.type.GenerationConfig? generationConfig = null, java.util.List<com.google.firebase.ai.type.SafetySetting>? safetySettings = null, java.util.List<com.google.firebase.ai.type.Tool>? tools = null, com.google.firebase.ai.type.ToolConfig? toolConfig = null, com.google.firebase.ai.type.Content? systemInstruction = null, com.google.firebase.ai.type.RequestOptions requestOptions = com.google.firebase.ai.type.RequestOptions());
     method public static com.google.firebase.ai.FirebaseAI getInstance();
     method public static com.google.firebase.ai.FirebaseAI getInstance(com.google.firebase.ai.type.GenerativeBackend backend);
+    method public static com.google.firebase.ai.FirebaseAI getInstance(com.google.firebase.ai.type.GenerativeBackend backend, boolean useLimitedUseAppCheckTokens);
     method public static com.google.firebase.ai.FirebaseAI getInstance(com.google.firebase.FirebaseApp app);
     method public static com.google.firebase.ai.FirebaseAI getInstance(com.google.firebase.FirebaseApp app = Firebase.app, com.google.firebase.ai.type.GenerativeBackend backend);
-    method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.ImagenModel imagenModel(String modelName);
-    method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.ImagenModel imagenModel(String modelName, com.google.firebase.ai.type.ImagenGenerationConfig? generationConfig = null);
-    method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.ImagenModel imagenModel(String modelName, com.google.firebase.ai.type.ImagenGenerationConfig? generationConfig = null, com.google.firebase.ai.type.ImagenSafetySettings? safetySettings = null);
-    method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.ImagenModel imagenModel(String modelName, com.google.firebase.ai.type.ImagenGenerationConfig? generationConfig = null, com.google.firebase.ai.type.ImagenSafetySettings? safetySettings = null, com.google.firebase.ai.type.RequestOptions requestOptions = com.google.firebase.ai.type.RequestOptions());
+    method public static com.google.firebase.ai.FirebaseAI getInstance(com.google.firebase.FirebaseApp app = Firebase.app, com.google.firebase.ai.type.GenerativeBackend backend, boolean useLimitedUseAppCheckTokens);
+    method public com.google.firebase.ai.ImagenModel imagenModel(String modelName);
+    method public com.google.firebase.ai.ImagenModel imagenModel(String modelName, com.google.firebase.ai.type.ImagenGenerationConfig? generationConfig = null);
+    method public com.google.firebase.ai.ImagenModel imagenModel(String modelName, com.google.firebase.ai.type.ImagenGenerationConfig? generationConfig = null, com.google.firebase.ai.type.ImagenSafetySettings? safetySettings = null);
+    method public com.google.firebase.ai.ImagenModel imagenModel(String modelName, com.google.firebase.ai.type.ImagenGenerationConfig? generationConfig = null, com.google.firebase.ai.type.ImagenSafetySettings? safetySettings = null, com.google.firebase.ai.type.RequestOptions requestOptions = com.google.firebase.ai.type.RequestOptions());
     method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.LiveGenerativeModel liveModel(String modelName);
     method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.LiveGenerativeModel liveModel(String modelName, com.google.firebase.ai.type.LiveGenerationConfig? generationConfig = null);
     method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.LiveGenerativeModel liveModel(String modelName, com.google.firebase.ai.type.LiveGenerationConfig? generationConfig = null, java.util.List<com.google.firebase.ai.type.Tool>? tools = null);
@@ -41,31 +43,40 @@ package com.google.firebase.ai {
   public static final class FirebaseAI.Companion {
     method public com.google.firebase.ai.FirebaseAI getInstance();
     method public com.google.firebase.ai.FirebaseAI getInstance(com.google.firebase.ai.type.GenerativeBackend backend);
+    method public com.google.firebase.ai.FirebaseAI getInstance(com.google.firebase.ai.type.GenerativeBackend backend, boolean useLimitedUseAppCheckTokens);
     method public com.google.firebase.ai.FirebaseAI getInstance(com.google.firebase.FirebaseApp app);
     method public com.google.firebase.ai.FirebaseAI getInstance(com.google.firebase.FirebaseApp app = Firebase.app, com.google.firebase.ai.type.GenerativeBackend backend);
+    method public com.google.firebase.ai.FirebaseAI getInstance(com.google.firebase.FirebaseApp app = Firebase.app, com.google.firebase.ai.type.GenerativeBackend backend, boolean useLimitedUseAppCheckTokens);
     property public final com.google.firebase.ai.FirebaseAI instance;
   }
 
   public final class FirebaseAIKt {
     method public static com.google.firebase.ai.FirebaseAI ai(com.google.firebase.Firebase, com.google.firebase.FirebaseApp app = Firebase.app, com.google.firebase.ai.type.GenerativeBackend backend = GenerativeBackend.googleAI());
+    method public static com.google.firebase.ai.FirebaseAI ai(com.google.firebase.Firebase, com.google.firebase.FirebaseApp app = Firebase.app, com.google.firebase.ai.type.GenerativeBackend backend = GenerativeBackend.googleAI(), boolean useLimitedUseAppCheckTokens);
     method public static com.google.firebase.ai.FirebaseAI getAi(com.google.firebase.Firebase);
   }
 
   public final class GenerativeModel {
     method public suspend Object? countTokens(android.graphics.Bitmap prompt, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.CountTokensResponse>);
-    method public suspend Object? countTokens(com.google.firebase.ai.type.Content[] prompt, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.CountTokensResponse>);
+    method public suspend Object? countTokens(com.google.firebase.ai.type.Content prompt, com.google.firebase.ai.type.Content[] prompts, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.CountTokensResponse>);
     method public suspend Object? countTokens(String prompt, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.CountTokensResponse>);
+    method public suspend Object? countTokens(java.util.List<com.google.firebase.ai.type.Content> prompt, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.CountTokensResponse>);
     method public suspend Object? generateContent(android.graphics.Bitmap prompt, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.GenerateContentResponse>);
-    method public suspend Object? generateContent(com.google.firebase.ai.type.Content[] prompt, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.GenerateContentResponse>);
+    method public suspend Object? generateContent(com.google.firebase.ai.type.Content prompt, com.google.firebase.ai.type.Content[] prompts, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.GenerateContentResponse>);
     method public suspend Object? generateContent(String prompt, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.GenerateContentResponse>);
+    method public suspend Object? generateContent(java.util.List<com.google.firebase.ai.type.Content> prompt, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.GenerateContentResponse>);
     method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.type.GenerateContentResponse> generateContentStream(android.graphics.Bitmap prompt);
-    method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.type.GenerateContentResponse> generateContentStream(com.google.firebase.ai.type.Content... prompt);
+    method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.type.GenerateContentResponse> generateContentStream(com.google.firebase.ai.type.Content prompt, com.google.firebase.ai.type.Content... prompts);
     method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.type.GenerateContentResponse> generateContentStream(String prompt);
+    method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.type.GenerateContentResponse> generateContentStream(java.util.List<com.google.firebase.ai.type.Content> prompt);
     method public com.google.firebase.ai.Chat startChat(java.util.List<com.google.firebase.ai.type.Content> history = emptyList());
   }
 
-  @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenModel {
+  public final class ImagenModel {
+    method @com.google.firebase.ai.type.PublicPreviewAPI public suspend Object? editImage(java.util.List<? extends com.google.firebase.ai.type.ImagenReferenceImage> referenceImages, String prompt, com.google.firebase.ai.type.ImagenEditingConfig? config = null, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>>);
     method public suspend Object? generateImages(String prompt, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>>);
+    method @com.google.firebase.ai.type.PublicPreviewAPI public suspend Object? inpaintImage(com.google.firebase.ai.type.ImagenInlineImage image, String prompt, com.google.firebase.ai.type.ImagenMaskReference mask, com.google.firebase.ai.type.ImagenEditingConfig config, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>>);
+    method @com.google.firebase.ai.type.PublicPreviewAPI public suspend Object? outpaintImage(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.Dimensions newDimensions, com.google.firebase.ai.type.ImagenImagePlacement newPosition = com.google.firebase.ai.type.ImagenImagePlacement.CENTER, String prompt = "", com.google.firebase.ai.type.ImagenEditingConfig? config = null, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>>);
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class LiveGenerativeModel {
@@ -89,10 +100,10 @@ package com.google.firebase.ai.java {
   }
 
   public abstract class GenerativeModelFutures {
-    method public abstract com.google.common.util.concurrent.ListenableFuture<com.google.firebase.ai.type.CountTokensResponse> countTokens(com.google.firebase.ai.type.Content... prompt);
+    method public abstract com.google.common.util.concurrent.ListenableFuture<com.google.firebase.ai.type.CountTokensResponse> countTokens(com.google.firebase.ai.type.Content prompt, com.google.firebase.ai.type.Content... prompts);
     method public static final com.google.firebase.ai.java.GenerativeModelFutures from(com.google.firebase.ai.GenerativeModel model);
-    method public abstract com.google.common.util.concurrent.ListenableFuture<com.google.firebase.ai.type.GenerateContentResponse> generateContent(com.google.firebase.ai.type.Content... prompt);
-    method public abstract org.reactivestreams.Publisher<com.google.firebase.ai.type.GenerateContentResponse> generateContentStream(com.google.firebase.ai.type.Content... prompt);
+    method public abstract com.google.common.util.concurrent.ListenableFuture<com.google.firebase.ai.type.GenerateContentResponse> generateContent(com.google.firebase.ai.type.Content prompt, com.google.firebase.ai.type.Content... prompts);
+    method public abstract org.reactivestreams.Publisher<com.google.firebase.ai.type.GenerateContentResponse> generateContentStream(com.google.firebase.ai.type.Content prompt, com.google.firebase.ai.type.Content... prompts);
     method public abstract com.google.firebase.ai.GenerativeModel getGenerativeModel();
     method public abstract com.google.firebase.ai.java.ChatFutures startChat();
     method public abstract com.google.firebase.ai.java.ChatFutures startChat(java.util.List<com.google.firebase.ai.type.Content> history);
@@ -104,9 +115,13 @@ package com.google.firebase.ai.java {
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public abstract class ImagenModelFutures {
+    method public abstract com.google.common.util.concurrent.ListenableFuture<com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>> editImage(java.util.List<? extends com.google.firebase.ai.type.ImagenReferenceImage> referenceImages, String prompt);
+    method public abstract com.google.common.util.concurrent.ListenableFuture<com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>> editImage(java.util.List<? extends com.google.firebase.ai.type.ImagenReferenceImage> referenceImages, String prompt, com.google.firebase.ai.type.ImagenEditingConfig? config = null);
     method public static final com.google.firebase.ai.java.ImagenModelFutures from(com.google.firebase.ai.ImagenModel model);
     method public abstract com.google.common.util.concurrent.ListenableFuture<com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>> generateImages(String prompt);
     method public abstract com.google.firebase.ai.ImagenModel getImageModel();
+    method public abstract com.google.common.util.concurrent.ListenableFuture<com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>> inpaintImage(com.google.firebase.ai.type.ImagenInlineImage image, String prompt, com.google.firebase.ai.type.ImagenMaskReference mask, com.google.firebase.ai.type.ImagenEditingConfig config);
+    method public abstract com.google.common.util.concurrent.ListenableFuture<com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>> outpaintImage(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.Dimensions newDimensions, com.google.firebase.ai.type.ImagenImagePlacement newPosition = com.google.firebase.ai.type.ImagenImagePlacement.CENTER, String prompt = "", com.google.firebase.ai.type.ImagenEditingConfig? config = null);
     field public static final com.google.firebase.ai.java.ImagenModelFutures.Companion Companion;
   }
 
@@ -130,10 +145,18 @@ package com.google.firebase.ai.java {
     method public abstract org.reactivestreams.Publisher<com.google.firebase.ai.type.LiveServerMessage> receive();
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> send(com.google.firebase.ai.type.Content content);
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> send(String text);
+    method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> sendAudioRealtime(com.google.firebase.ai.type.InlineData audio);
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> sendFunctionResponse(java.util.List<com.google.firebase.ai.type.FunctionResponsePart> functionList);
-    method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> sendMediaStream(java.util.List<com.google.firebase.ai.type.MediaData> mediaChunks);
+    method @Deprecated public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> sendMediaStream(java.util.List<com.google.firebase.ai.type.MediaData> mediaChunks);
+    method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> sendTextRealtime(String text);
+    method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> sendVideoRealtime(com.google.firebase.ai.type.InlineData video);
     method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> startAudioConversation();
-    method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> startAudioConversation(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.FunctionCallPart,com.google.firebase.ai.type.FunctionResponsePart>? functionCallHandler);
+    method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> startAudioConversation(boolean enableInterruptions);
+    method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> startAudioConversation(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.FunctionCallPart,com.google.firebase.ai.type.FunctionResponsePart>? functionCallHandler);
+    method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> startAudioConversation(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.FunctionCallPart,com.google.firebase.ai.type.FunctionResponsePart>? functionCallHandler, boolean enableInterruptions);
+    method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> startAudioConversation(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.FunctionCallPart,com.google.firebase.ai.type.FunctionResponsePart>? functionCallHandler, kotlin.jvm.functions.Function2<? super com.google.firebase.ai.type.Transcription?,? super com.google.firebase.ai.type.Transcription?,kotlin.Unit>? transcriptHandler, boolean enableInterruptions);
+    method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> startAudioConversation(kotlin.jvm.functions.Function2<? super com.google.firebase.ai.type.Transcription?,? super com.google.firebase.ai.type.Transcription?,kotlin.Unit>? transcriptHandler);
+    method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> startAudioConversation(kotlin.jvm.functions.Function2<? super com.google.firebase.ai.type.Transcription?,? super com.google.firebase.ai.type.Transcription?,kotlin.Unit>? transcriptHandler, boolean enableInterruptions);
     method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> stopAudioConversation();
     method public abstract void stopReceiving();
     field public static final com.google.firebase.ai.java.LiveSessionFutures.Companion Companion;
@@ -147,8 +170,15 @@ package com.google.firebase.ai.java {
 
 package com.google.firebase.ai.type {
 
+  public final class APINotConfiguredException extends com.google.firebase.ai.type.FirebaseAIException {
+  }
+
   public final class AudioRecordInitializationFailedException extends com.google.firebase.ai.type.FirebaseAIException {
     ctor public AudioRecordInitializationFailedException(String message);
+  }
+
+  public final class AudioTranscriptionConfig {
+    ctor public AudioTranscriptionConfig();
   }
 
   public final class BlockReason {
@@ -171,11 +201,15 @@ package com.google.firebase.ai.type {
     method public com.google.firebase.ai.type.CitationMetadata? getCitationMetadata();
     method public com.google.firebase.ai.type.Content getContent();
     method public com.google.firebase.ai.type.FinishReason? getFinishReason();
+    method public com.google.firebase.ai.type.GroundingMetadata? getGroundingMetadata();
     method public java.util.List<com.google.firebase.ai.type.SafetyRating> getSafetyRatings();
+    method public com.google.firebase.ai.type.UrlContextMetadata? getUrlContextMetadata();
     property public final com.google.firebase.ai.type.CitationMetadata? citationMetadata;
     property public final com.google.firebase.ai.type.Content content;
     property public final com.google.firebase.ai.type.FinishReason? finishReason;
+    property public final com.google.firebase.ai.type.GroundingMetadata? groundingMetadata;
     property public final java.util.List<com.google.firebase.ai.type.SafetyRating> safetyRatings;
+    property public final com.google.firebase.ai.type.UrlContextMetadata? urlContextMetadata;
   }
 
   public final class Citation {
@@ -196,6 +230,17 @@ package com.google.firebase.ai.type {
   public final class CitationMetadata {
     method public java.util.List<com.google.firebase.ai.type.Citation> getCitations();
     property public final java.util.List<com.google.firebase.ai.type.Citation> citations;
+  }
+
+  public final class CodeExecutionResultPart implements com.google.firebase.ai.type.Part {
+    ctor @Deprecated public CodeExecutionResultPart(String outcome, String output);
+    method public boolean executionSucceeded();
+    method public String getOutcome();
+    method public String getOutput();
+    method public boolean isThought();
+    property public boolean isThought;
+    property public final String outcome;
+    property public final String output;
   }
 
   public final class Content {
@@ -245,22 +290,42 @@ package com.google.firebase.ai.type {
   }
 
   public final class CountTokensResponse {
-    ctor public CountTokensResponse(int totalTokens, Integer? totalBillableCharacters = null, java.util.List<com.google.firebase.ai.type.ModalityTokenCount> promptTokensDetails = emptyList());
+    ctor public CountTokensResponse(int totalTokens, @Deprecated Integer? totalBillableCharacters = null, java.util.List<com.google.firebase.ai.type.ModalityTokenCount> promptTokensDetails = emptyList());
     method public operator int component1();
     method public operator Integer? component2();
     method public operator java.util.List<com.google.firebase.ai.type.ModalityTokenCount>? component3();
     method public java.util.List<com.google.firebase.ai.type.ModalityTokenCount> getPromptTokensDetails();
-    method public Integer? getTotalBillableCharacters();
+    method @Deprecated public Integer? getTotalBillableCharacters();
     method public int getTotalTokens();
     property public final java.util.List<com.google.firebase.ai.type.ModalityTokenCount> promptTokensDetails;
-    property public final Integer? totalBillableCharacters;
+    property @Deprecated public final Integer? totalBillableCharacters;
     property public final int totalTokens;
+  }
+
+  public final class Dimensions {
+    ctor public Dimensions(int width, int height);
+    method public int getHeight();
+    method public int getWidth();
+    property public final int height;
+    property public final int width;
+  }
+
+  public final class ExecutableCodePart implements com.google.firebase.ai.type.Part {
+    ctor @Deprecated public ExecutableCodePart(String language, String code);
+    method public String getCode();
+    method public String getLanguage();
+    method public boolean isThought();
+    property public final String code;
+    property public boolean isThought;
+    property public final String language;
   }
 
   public final class FileDataPart implements com.google.firebase.ai.type.Part {
     ctor public FileDataPart(String uri, String mimeType);
     method public String getMimeType();
     method public String getUri();
+    method public boolean isThought();
+    property public boolean isThought;
     property public final String mimeType;
     property public final String uri;
   }
@@ -295,8 +360,10 @@ package com.google.firebase.ai.type {
     method public java.util.Map<java.lang.String,kotlinx.serialization.json.JsonElement> getArgs();
     method public String? getId();
     method public String getName();
+    method public boolean isThought();
     property public final java.util.Map<java.lang.String,kotlinx.serialization.json.JsonElement> args;
     property public final String? id;
+    property public boolean isThought;
     property public final String name;
   }
 
@@ -325,7 +392,9 @@ package com.google.firebase.ai.type {
     method public String? getId();
     method public String getName();
     method public kotlinx.serialization.json.JsonObject getResponse();
+    method public boolean isThought();
     property public final String? id;
+    property public boolean isThought;
     property public final String name;
     property public final kotlinx.serialization.json.JsonObject response;
   }
@@ -337,12 +406,14 @@ package com.google.firebase.ai.type {
     method public java.util.List<com.google.firebase.ai.type.InlineDataPart> getInlineDataParts();
     method public com.google.firebase.ai.type.PromptFeedback? getPromptFeedback();
     method public String? getText();
+    method public String? getThoughtSummary();
     method public com.google.firebase.ai.type.UsageMetadata? getUsageMetadata();
     property public final java.util.List<com.google.firebase.ai.type.Candidate> candidates;
     property public final java.util.List<com.google.firebase.ai.type.FunctionCallPart> functionCalls;
     property public final java.util.List<com.google.firebase.ai.type.InlineDataPart> inlineDataParts;
     property public final com.google.firebase.ai.type.PromptFeedback? promptFeedback;
     property public final String? text;
+    property public final String? thoughtSummary;
     property public final com.google.firebase.ai.type.UsageMetadata? usageMetadata;
   }
 
@@ -362,6 +433,7 @@ package com.google.firebase.ai.type {
     method public com.google.firebase.ai.type.GenerationConfig.Builder setResponseSchema(com.google.firebase.ai.type.Schema? responseSchema);
     method public com.google.firebase.ai.type.GenerationConfig.Builder setStopSequences(java.util.List<java.lang.String>? stopSequences);
     method public com.google.firebase.ai.type.GenerationConfig.Builder setTemperature(Float? temperature);
+    method public com.google.firebase.ai.type.GenerationConfig.Builder setThinkingConfig(com.google.firebase.ai.type.ThinkingConfig? thinkingConfig);
     method public com.google.firebase.ai.type.GenerationConfig.Builder setTopK(Integer? topK);
     method public com.google.firebase.ai.type.GenerationConfig.Builder setTopP(Float? topP);
     field public Integer? candidateCount;
@@ -373,6 +445,7 @@ package com.google.firebase.ai.type {
     field public com.google.firebase.ai.type.Schema? responseSchema;
     field public java.util.List<java.lang.String>? stopSequences;
     field public Float? temperature;
+    field public com.google.firebase.ai.type.ThinkingConfig? thinkingConfig;
     field public Integer? topK;
     field public Float? topP;
   }
@@ -396,6 +469,48 @@ package com.google.firebase.ai.type {
     method public com.google.firebase.ai.type.GenerativeBackend googleAI();
     method public com.google.firebase.ai.type.GenerativeBackend vertexAI();
     method public com.google.firebase.ai.type.GenerativeBackend vertexAI(String location = "us-central1");
+  }
+
+  public final class GoogleSearch {
+    ctor public GoogleSearch();
+  }
+
+  @Deprecated public final class GroundingAttribution {
+    ctor @Deprecated public GroundingAttribution(com.google.firebase.ai.type.Segment segment, Float? confidenceScore);
+    method @Deprecated public Float? getConfidenceScore();
+    method @Deprecated public com.google.firebase.ai.type.Segment getSegment();
+    property @Deprecated public final Float? confidenceScore;
+    property @Deprecated public final com.google.firebase.ai.type.Segment segment;
+  }
+
+  public final class GroundingChunk {
+    ctor public GroundingChunk(com.google.firebase.ai.type.WebGroundingChunk? web);
+    method public com.google.firebase.ai.type.WebGroundingChunk? getWeb();
+    property public final com.google.firebase.ai.type.WebGroundingChunk? web;
+  }
+
+  public final class GroundingMetadata {
+    ctor public GroundingMetadata(java.util.List<java.lang.String> webSearchQueries, com.google.firebase.ai.type.SearchEntryPoint? searchEntryPoint, java.util.List<java.lang.String> retrievalQueries, @Deprecated java.util.List<com.google.firebase.ai.type.GroundingAttribution> groundingAttribution, java.util.List<com.google.firebase.ai.type.GroundingChunk> groundingChunks, java.util.List<com.google.firebase.ai.type.GroundingSupport> groundingSupports);
+    method @Deprecated public java.util.List<com.google.firebase.ai.type.GroundingAttribution> getGroundingAttribution();
+    method public java.util.List<com.google.firebase.ai.type.GroundingChunk> getGroundingChunks();
+    method public java.util.List<com.google.firebase.ai.type.GroundingSupport> getGroundingSupports();
+    method public java.util.List<java.lang.String> getRetrievalQueries();
+    method public com.google.firebase.ai.type.SearchEntryPoint? getSearchEntryPoint();
+    method public java.util.List<java.lang.String> getWebSearchQueries();
+    property @Deprecated public final java.util.List<com.google.firebase.ai.type.GroundingAttribution> groundingAttribution;
+    property public final java.util.List<com.google.firebase.ai.type.GroundingChunk> groundingChunks;
+    property public final java.util.List<com.google.firebase.ai.type.GroundingSupport> groundingSupports;
+    property public final java.util.List<java.lang.String> retrievalQueries;
+    property public final com.google.firebase.ai.type.SearchEntryPoint? searchEntryPoint;
+    property public final java.util.List<java.lang.String> webSearchQueries;
+  }
+
+  public final class GroundingSupport {
+    ctor public GroundingSupport(com.google.firebase.ai.type.Segment segment, java.util.List<java.lang.Integer> groundingChunkIndices);
+    method public java.util.List<java.lang.Integer> getGroundingChunkIndices();
+    method public com.google.firebase.ai.type.Segment getSegment();
+    property public final java.util.List<java.lang.Integer> groundingChunkIndices;
+    property public final com.google.firebase.ai.type.Segment segment;
   }
 
   public final class HarmBlockMethod {
@@ -431,6 +546,10 @@ package com.google.firebase.ai.type {
     field public static final com.google.firebase.ai.type.HarmCategory DANGEROUS_CONTENT;
     field public static final com.google.firebase.ai.type.HarmCategory HARASSMENT;
     field public static final com.google.firebase.ai.type.HarmCategory HATE_SPEECH;
+    field public static final com.google.firebase.ai.type.HarmCategory IMAGE_DANGEROUS_CONTENT;
+    field public static final com.google.firebase.ai.type.HarmCategory IMAGE_HARASSMENT;
+    field public static final com.google.firebase.ai.type.HarmCategory IMAGE_HATE;
+    field public static final com.google.firebase.ai.type.HarmCategory IMAGE_SEXUALLY_EXPLICIT;
     field public static final com.google.firebase.ai.type.HarmCategory SEXUALLY_EXPLICIT;
     field public static final com.google.firebase.ai.type.HarmCategory UNKNOWN;
   }
@@ -469,10 +588,12 @@ package com.google.firebase.ai.type {
   public final class ImagePart implements com.google.firebase.ai.type.Part {
     ctor public ImagePart(android.graphics.Bitmap image);
     method public android.graphics.Bitmap getImage();
+    method public boolean isThought();
     property public final android.graphics.Bitmap image;
+    property public boolean isThought;
   }
 
-  @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenAspectRatio {
+  public final class ImagenAspectRatio {
     field public static final com.google.firebase.ai.type.ImagenAspectRatio.Companion Companion;
     field public static final com.google.firebase.ai.type.ImagenAspectRatio LANDSCAPE_16x9;
     field public static final com.google.firebase.ai.type.ImagenAspectRatio LANDSCAPE_4x3;
@@ -484,7 +605,44 @@ package com.google.firebase.ai.type {
   public static final class ImagenAspectRatio.Companion {
   }
 
-  @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenGenerationConfig {
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenBackgroundMask extends com.google.firebase.ai.type.ImagenMaskReference {
+    ctor public ImagenBackgroundMask(Double? dilation = null);
+  }
+
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenControlReference extends com.google.firebase.ai.type.ImagenReferenceImage {
+    ctor public ImagenControlReference(com.google.firebase.ai.type.ImagenControlType type, com.google.firebase.ai.type.ImagenInlineImage? image = null, Integer? referenceId = null, Boolean? enableComputation = null, Integer? superpixelRegionSize = null, Integer? superpixelRuler = null);
+  }
+
+  public final class ImagenControlType {
+    field public static final com.google.firebase.ai.type.ImagenControlType CANNY;
+    field public static final com.google.firebase.ai.type.ImagenControlType COLOR_SUPERPIXEL;
+    field public static final com.google.firebase.ai.type.ImagenControlType.Companion Companion;
+    field public static final com.google.firebase.ai.type.ImagenControlType FACE_MESH;
+    field public static final com.google.firebase.ai.type.ImagenControlType SCRIBBLE;
+  }
+
+  public static final class ImagenControlType.Companion {
+  }
+
+  public final class ImagenEditMode {
+    field public static final com.google.firebase.ai.type.ImagenEditMode.Companion Companion;
+    field public static final com.google.firebase.ai.type.ImagenEditMode INPAINT_INSERTION;
+    field public static final com.google.firebase.ai.type.ImagenEditMode INPAINT_REMOVAL;
+    field public static final com.google.firebase.ai.type.ImagenEditMode OUTPAINT;
+  }
+
+  public static final class ImagenEditMode.Companion {
+  }
+
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenEditingConfig {
+    ctor public ImagenEditingConfig(com.google.firebase.ai.type.ImagenEditMode? editMode = null, Integer? editSteps = null);
+  }
+
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenForegroundMask extends com.google.firebase.ai.type.ImagenMaskReference {
+    ctor public ImagenForegroundMask(Double? dilation = null);
+  }
+
+  public final class ImagenGenerationConfig {
     ctor public ImagenGenerationConfig(String? negativePrompt = null, Integer? numberOfImages = 1, com.google.firebase.ai.type.ImagenAspectRatio? aspectRatio = null, com.google.firebase.ai.type.ImagenImageFormat? imageFormat = null, Boolean? addWatermark = null);
     method public Boolean? getAddWatermark();
     method public com.google.firebase.ai.type.ImagenAspectRatio? getAspectRatio();
@@ -519,17 +677,17 @@ package com.google.firebase.ai.type {
   }
 
   public final class ImagenGenerationConfigKt {
-    method @com.google.firebase.ai.type.PublicPreviewAPI public static com.google.firebase.ai.type.ImagenGenerationConfig imagenGenerationConfig(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.ImagenGenerationConfig.Builder,kotlin.Unit> init);
+    method public static com.google.firebase.ai.type.ImagenGenerationConfig imagenGenerationConfig(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.ImagenGenerationConfig.Builder,kotlin.Unit> init);
   }
 
-  @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenGenerationResponse<T> {
+  public final class ImagenGenerationResponse<T> {
     method public String? getFilteredReason();
     method public java.util.List<T> getImages();
     property public final String? filteredReason;
     property public final java.util.List<T> images;
   }
 
-  @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenImageFormat {
+  public final class ImagenImageFormat {
     method public Integer? getCompressionQuality();
     method public String getMimeType();
     method public static com.google.firebase.ai.type.ImagenImageFormat jpeg(Integer? compressionQuality = null);
@@ -544,7 +702,29 @@ package com.google.firebase.ai.type {
     method public com.google.firebase.ai.type.ImagenImageFormat png();
   }
 
-  @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenInlineImage {
+  public final class ImagenImagePlacement {
+    method public static com.google.firebase.ai.type.ImagenImagePlacement fromCoordinate(int x, int y);
+    method public Integer? getX();
+    method public Integer? getY();
+    property public final Integer? x;
+    property public final Integer? y;
+    field public static final com.google.firebase.ai.type.ImagenImagePlacement BOTTOM_CENTER;
+    field public static final com.google.firebase.ai.type.ImagenImagePlacement BOTTOM_LEFT;
+    field public static final com.google.firebase.ai.type.ImagenImagePlacement BOTTOM_RIGHT;
+    field public static final com.google.firebase.ai.type.ImagenImagePlacement CENTER;
+    field public static final com.google.firebase.ai.type.ImagenImagePlacement.Companion Companion;
+    field public static final com.google.firebase.ai.type.ImagenImagePlacement LEFT_CENTER;
+    field public static final com.google.firebase.ai.type.ImagenImagePlacement RIGHT_CENTER;
+    field public static final com.google.firebase.ai.type.ImagenImagePlacement TOP_CENTER;
+    field public static final com.google.firebase.ai.type.ImagenImagePlacement TOP_LEFT;
+    field public static final com.google.firebase.ai.type.ImagenImagePlacement TOP_RIGHT;
+  }
+
+  public static final class ImagenImagePlacement.Companion {
+    method public com.google.firebase.ai.type.ImagenImagePlacement fromCoordinate(int x, int y);
+  }
+
+  public final class ImagenInlineImage {
     method public android.graphics.Bitmap asBitmap();
     method public byte[] getData();
     method public String getMimeType();
@@ -552,7 +732,24 @@ package com.google.firebase.ai.type {
     property public final String mimeType;
   }
 
-  @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenPersonFilterLevel {
+  public final class ImagenInlineImageKt {
+    method @com.google.firebase.ai.type.PublicPreviewAPI public static com.google.firebase.ai.type.ImagenInlineImage toImagenInlineImage(android.graphics.Bitmap);
+  }
+
+  @com.google.firebase.ai.type.PublicPreviewAPI public abstract class ImagenMaskReference extends com.google.firebase.ai.type.ImagenReferenceImage {
+    method public static final java.util.List<com.google.firebase.ai.type.ImagenReferenceImage> generateMaskAndPadForOutpainting(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.Dimensions newDimensions);
+    method public static final java.util.List<com.google.firebase.ai.type.ImagenReferenceImage> generateMaskAndPadForOutpainting(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.Dimensions newDimensions, com.google.firebase.ai.type.ImagenImagePlacement newPosition = com.google.firebase.ai.type.ImagenImagePlacement.CENTER);
+    method public static final java.util.List<com.google.firebase.ai.type.ImagenReferenceImage> generateMaskAndPadForOutpainting(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.Dimensions newDimensions, com.google.firebase.ai.type.ImagenImagePlacement newPosition = com.google.firebase.ai.type.ImagenImagePlacement.CENTER, double dilation = 0.01);
+    field public static final com.google.firebase.ai.type.ImagenMaskReference.Companion Companion;
+  }
+
+  public static final class ImagenMaskReference.Companion {
+    method public java.util.List<com.google.firebase.ai.type.ImagenReferenceImage> generateMaskAndPadForOutpainting(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.Dimensions newDimensions);
+    method public java.util.List<com.google.firebase.ai.type.ImagenReferenceImage> generateMaskAndPadForOutpainting(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.Dimensions newDimensions, com.google.firebase.ai.type.ImagenImagePlacement newPosition = com.google.firebase.ai.type.ImagenImagePlacement.CENTER);
+    method public java.util.List<com.google.firebase.ai.type.ImagenReferenceImage> generateMaskAndPadForOutpainting(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.Dimensions newDimensions, com.google.firebase.ai.type.ImagenImagePlacement newPosition = com.google.firebase.ai.type.ImagenImagePlacement.CENTER, double dilation = 0.01);
+  }
+
+  public final class ImagenPersonFilterLevel {
     field public static final com.google.firebase.ai.type.ImagenPersonFilterLevel ALLOW_ADULT;
     field public static final com.google.firebase.ai.type.ImagenPersonFilterLevel ALLOW_ALL;
     field public static final com.google.firebase.ai.type.ImagenPersonFilterLevel BLOCK_ALL;
@@ -562,7 +759,22 @@ package com.google.firebase.ai.type {
   public static final class ImagenPersonFilterLevel.Companion {
   }
 
-  @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenSafetyFilterLevel {
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenRawImage extends com.google.firebase.ai.type.ImagenReferenceImage {
+    ctor public ImagenRawImage(com.google.firebase.ai.type.ImagenInlineImage image);
+  }
+
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenRawMask extends com.google.firebase.ai.type.ImagenMaskReference {
+    ctor public ImagenRawMask(com.google.firebase.ai.type.ImagenInlineImage mask, Double? dilation = null);
+  }
+
+  @com.google.firebase.ai.type.PublicPreviewAPI public abstract class ImagenReferenceImage {
+    method public final com.google.firebase.ai.type.ImagenInlineImage? getImage();
+    method public final Integer? getReferenceId();
+    property public final com.google.firebase.ai.type.ImagenInlineImage? image;
+    property public final Integer? referenceId;
+  }
+
+  public final class ImagenSafetyFilterLevel {
     field public static final com.google.firebase.ai.type.ImagenSafetyFilterLevel BLOCK_LOW_AND_ABOVE;
     field public static final com.google.firebase.ai.type.ImagenSafetyFilterLevel BLOCK_MEDIUM_AND_ABOVE;
     field public static final com.google.firebase.ai.type.ImagenSafetyFilterLevel BLOCK_NONE;
@@ -573,15 +785,47 @@ package com.google.firebase.ai.type {
   public static final class ImagenSafetyFilterLevel.Companion {
   }
 
-  @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenSafetySettings {
+  public final class ImagenSafetySettings {
     ctor public ImagenSafetySettings(com.google.firebase.ai.type.ImagenSafetyFilterLevel safetyFilterLevel, com.google.firebase.ai.type.ImagenPersonFilterLevel personFilterLevel);
+  }
+
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenSemanticMask extends com.google.firebase.ai.type.ImagenMaskReference {
+    ctor public ImagenSemanticMask(java.util.List<java.lang.Integer> classes, Double? dilation = null);
+  }
+
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenStyleReference extends com.google.firebase.ai.type.ImagenReferenceImage {
+    ctor public ImagenStyleReference(com.google.firebase.ai.type.ImagenInlineImage image, Integer? referenceId = null, String? description = null);
+  }
+
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenSubjectReference extends com.google.firebase.ai.type.ImagenReferenceImage {
+    ctor public ImagenSubjectReference(com.google.firebase.ai.type.ImagenInlineImage image, Integer? referenceId = null, String? description = null, com.google.firebase.ai.type.ImagenSubjectReferenceType? subjectType = null);
+  }
+
+  public final class ImagenSubjectReferenceType {
+    field public static final com.google.firebase.ai.type.ImagenSubjectReferenceType ANIMAL;
+    field public static final com.google.firebase.ai.type.ImagenSubjectReferenceType.Companion Companion;
+    field public static final com.google.firebase.ai.type.ImagenSubjectReferenceType PERSON;
+    field public static final com.google.firebase.ai.type.ImagenSubjectReferenceType PRODUCT;
+  }
+
+  public static final class ImagenSubjectReferenceType.Companion {
+  }
+
+  public final class InlineData {
+    ctor public InlineData(byte[] data, String mimeType);
+    method public byte[] getData();
+    method public String getMimeType();
+    property public final byte[] data;
+    property public final String mimeType;
   }
 
   public final class InlineDataPart implements com.google.firebase.ai.type.Part {
     ctor public InlineDataPart(byte[] inlineData, String mimeType);
     method public byte[] getInlineData();
     method public String getMimeType();
+    method public boolean isThought();
     property public final byte[] inlineData;
+    property public boolean isThought;
     property public final String mimeType;
   }
 
@@ -601,18 +845,20 @@ package com.google.firebase.ai.type {
   public static final class LiveGenerationConfig.Builder {
     ctor public LiveGenerationConfig.Builder();
     method public com.google.firebase.ai.type.LiveGenerationConfig build();
-    method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setCandidateCount(Integer? candidateCount);
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setFrequencyPenalty(Float? frequencyPenalty);
+    method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setInputAudioTranscription(com.google.firebase.ai.type.AudioTranscriptionConfig? config);
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setMaxOutputTokens(Integer? maxOutputTokens);
+    method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setOutputAudioTranscription(com.google.firebase.ai.type.AudioTranscriptionConfig? config);
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setPresencePenalty(Float? presencePenalty);
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setResponseModality(com.google.firebase.ai.type.ResponseModality? responseModality);
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setSpeechConfig(com.google.firebase.ai.type.SpeechConfig? speechConfig);
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setTemperature(Float? temperature);
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setTopK(Integer? topK);
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setTopP(Float? topP);
-    field public Integer? candidateCount;
     field public Float? frequencyPenalty;
+    field public com.google.firebase.ai.type.AudioTranscriptionConfig? inputAudioTranscription;
     field public Integer? maxOutputTokens;
+    field public com.google.firebase.ai.type.AudioTranscriptionConfig? outputAudioTranscription;
     field public Float? presencePenalty;
     field public com.google.firebase.ai.type.ResponseModality? responseModality;
     field public com.google.firebase.ai.type.SpeechConfig? speechConfig;
@@ -630,14 +876,18 @@ package com.google.firebase.ai.type {
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class LiveServerContent implements com.google.firebase.ai.type.LiveServerMessage {
-    ctor public LiveServerContent(com.google.firebase.ai.type.Content? content, boolean interrupted, boolean turnComplete, boolean generationComplete);
+    ctor @Deprecated public LiveServerContent(com.google.firebase.ai.type.Content? content, boolean interrupted, boolean turnComplete, boolean generationComplete, com.google.firebase.ai.type.Transcription? inputTranscription, com.google.firebase.ai.type.Transcription? outputTranscription);
     method public com.google.firebase.ai.type.Content? getContent();
     method public boolean getGenerationComplete();
+    method public com.google.firebase.ai.type.Transcription? getInputTranscription();
     method public boolean getInterrupted();
+    method public com.google.firebase.ai.type.Transcription? getOutputTranscription();
     method public boolean getTurnComplete();
     property public final com.google.firebase.ai.type.Content? content;
     property public final boolean generationComplete;
+    property public final com.google.firebase.ai.type.Transcription? inputTranscription;
     property public final boolean interrupted;
+    property public final com.google.firebase.ai.type.Transcription? outputTranscription;
     property public final boolean turnComplete;
   }
 
@@ -662,22 +912,29 @@ package com.google.firebase.ai.type {
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class LiveSession {
     method public suspend Object? close(kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public boolean isAudioConversationActive();
+    method public boolean isClosed();
     method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.type.LiveServerMessage> receive();
     method public suspend Object? send(com.google.firebase.ai.type.Content content, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public suspend Object? send(String text, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public suspend Object? sendAudioRealtime(com.google.firebase.ai.type.InlineData audio, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public suspend Object? sendFunctionResponse(java.util.List<com.google.firebase.ai.type.FunctionResponsePart> functionList, kotlin.coroutines.Continuation<? super kotlin.Unit>);
-    method public suspend Object? sendMediaStream(java.util.List<com.google.firebase.ai.type.MediaData> mediaChunks, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method @Deprecated public suspend Object? sendMediaStream(java.util.List<com.google.firebase.ai.type.MediaData> mediaChunks, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public suspend Object? sendTextRealtime(String text, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public suspend Object? sendVideoRealtime(com.google.firebase.ai.type.InlineData video, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public suspend Object? startAudioConversation(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.FunctionCallPart,com.google.firebase.ai.type.FunctionResponsePart>? functionCallHandler = null, boolean enableInterruptions = false, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public suspend Object? startAudioConversation(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.FunctionCallPart,com.google.firebase.ai.type.FunctionResponsePart>? functionCallHandler = null, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public suspend Object? startAudioConversation(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.FunctionCallPart,com.google.firebase.ai.type.FunctionResponsePart>? functionCallHandler = null, kotlin.jvm.functions.Function2<? super com.google.firebase.ai.type.Transcription?,? super com.google.firebase.ai.type.Transcription?,kotlin.Unit>? transcriptHandler = null, boolean enableInterruptions = false, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public void stopAudioConversation();
     method public void stopReceiving();
   }
 
-  @com.google.firebase.ai.type.PublicPreviewAPI public final class MediaData {
-    ctor public MediaData(byte[] data, String mimeType);
-    method public byte[] getData();
-    method public String getMimeType();
-    property public final byte[] data;
-    property public final String mimeType;
+  @Deprecated @com.google.firebase.ai.type.PublicPreviewAPI public final class MediaData {
+    ctor @Deprecated public MediaData(byte[] data, String mimeType);
+    method @Deprecated public byte[] getData();
+    method @Deprecated public String getMimeType();
+    property @Deprecated public final byte[] data;
+    property @Deprecated public final String mimeType;
   }
 
   public final class ModalityTokenCount {
@@ -690,6 +947,8 @@ package com.google.firebase.ai.type {
   }
 
   public interface Part {
+    method public boolean isThought();
+    property public abstract boolean isThought;
   }
 
   public final class PartKt {
@@ -697,6 +956,10 @@ package com.google.firebase.ai.type {
     method public static android.graphics.Bitmap? asImageOrNull(com.google.firebase.ai.type.Part);
     method public static com.google.firebase.ai.type.InlineDataPart? asInlineDataPartOrNull(com.google.firebase.ai.type.Part);
     method public static String? asTextOrNull(com.google.firebase.ai.type.Part);
+  }
+
+  public final class PermissionMissingException extends com.google.firebase.ai.type.FirebaseAIException {
+    ctor public PermissionMissingException(String message, Throwable? cause = null);
   }
 
   public final class PromptBlockedException extends com.google.firebase.ai.type.FirebaseAIException {
@@ -714,7 +977,7 @@ package com.google.firebase.ai.type {
     property public final java.util.List<com.google.firebase.ai.type.SafetyRating> safetyRatings;
   }
 
-  @kotlin.RequiresOptIn(level=kotlin.RequiresOptIn.Level.ERROR, message="This API is part of an experimental public preview and may change in " + "backwards-incompatible ways without notice.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) public @interface PublicPreviewAPI {
+  @kotlin.RequiresOptIn(level=kotlin.RequiresOptIn.Level.ERROR, message="This API is part of an experimental public preview and may change in " + "backwards-incompatible ways without notice.") @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.BINARY) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.CLASS, kotlin.annotation.AnnotationTarget.FUNCTION, kotlin.annotation.AnnotationTarget.PROPERTY}) public @interface PublicPreviewAPI {
   }
 
   public final class QuotaExceededException extends com.google.firebase.ai.type.FirebaseAIException {
@@ -765,84 +1028,156 @@ package com.google.firebase.ai.type {
   }
 
   public final class Schema {
+    method public static com.google.firebase.ai.type.Schema anyOf(java.util.List<com.google.firebase.ai.type.Schema> schemas);
     method public static com.google.firebase.ai.type.Schema array(com.google.firebase.ai.type.Schema items);
     method public static com.google.firebase.ai.type.Schema array(com.google.firebase.ai.type.Schema items, String? description = null);
     method public static com.google.firebase.ai.type.Schema array(com.google.firebase.ai.type.Schema items, String? description = null, boolean nullable = false);
+    method public static com.google.firebase.ai.type.Schema array(com.google.firebase.ai.type.Schema items, String? description = null, boolean nullable = false, String? title = null);
+    method public static com.google.firebase.ai.type.Schema array(com.google.firebase.ai.type.Schema items, String? description = null, boolean nullable = false, String? title = null, Integer? minItems = null);
+    method public static com.google.firebase.ai.type.Schema array(com.google.firebase.ai.type.Schema items, String? description = null, boolean nullable = false, String? title = null, Integer? minItems = null, Integer? maxItems = null);
     method public static com.google.firebase.ai.type.Schema boolean();
     method public static com.google.firebase.ai.type.Schema boolean(String? description = null);
     method public static com.google.firebase.ai.type.Schema boolean(String? description = null, boolean nullable = false);
+    method public static com.google.firebase.ai.type.Schema boolean(String? description = null, boolean nullable = false, String? title = null);
     method public static com.google.firebase.ai.type.Schema enumeration(java.util.List<java.lang.String> values);
     method public static com.google.firebase.ai.type.Schema enumeration(java.util.List<java.lang.String> values, String? description = null);
     method public static com.google.firebase.ai.type.Schema enumeration(java.util.List<java.lang.String> values, String? description = null, boolean nullable = false);
+    method public static com.google.firebase.ai.type.Schema enumeration(java.util.List<java.lang.String> values, String? description = null, boolean nullable = false, String? title = null);
+    method public java.util.List<com.google.firebase.ai.type.Schema>? getAnyOf();
     method public String? getDescription();
     method public java.util.List<java.lang.String>? getEnum();
     method public String? getFormat();
     method public com.google.firebase.ai.type.Schema? getItems();
+    method public Integer? getMaxItems();
+    method public Double? getMaximum();
+    method public Integer? getMinItems();
+    method public Double? getMinimum();
     method public Boolean? getNullable();
     method public java.util.Map<java.lang.String,com.google.firebase.ai.type.Schema>? getProperties();
     method public java.util.List<java.lang.String>? getRequired();
+    method public String? getTitle();
     method public String getType();
     method public static com.google.firebase.ai.type.Schema numDouble();
     method public static com.google.firebase.ai.type.Schema numDouble(String? description = null);
     method public static com.google.firebase.ai.type.Schema numDouble(String? description = null, boolean nullable = false);
+    method public static com.google.firebase.ai.type.Schema numDouble(String? description = null, boolean nullable = false, String? title = null);
+    method public static com.google.firebase.ai.type.Schema numDouble(String? description = null, boolean nullable = false, String? title = null, Double? minimum = null);
+    method public static com.google.firebase.ai.type.Schema numDouble(String? description = null, boolean nullable = false, String? title = null, Double? minimum = null, Double? maximum = null);
     method public static com.google.firebase.ai.type.Schema numFloat();
     method public static com.google.firebase.ai.type.Schema numFloat(String? description = null);
     method public static com.google.firebase.ai.type.Schema numFloat(String? description = null, boolean nullable = false);
+    method public static com.google.firebase.ai.type.Schema numFloat(String? description = null, boolean nullable = false, String? title = null);
+    method public static com.google.firebase.ai.type.Schema numFloat(String? description = null, boolean nullable = false, String? title = null, Double? minimum = null);
+    method public static com.google.firebase.ai.type.Schema numFloat(String? description = null, boolean nullable = false, String? title = null, Double? minimum = null, Double? maximum = null);
     method public static com.google.firebase.ai.type.Schema numInt();
     method public static com.google.firebase.ai.type.Schema numInt(String? description = null);
     method public static com.google.firebase.ai.type.Schema numInt(String? description = null, boolean nullable = false);
+    method public static com.google.firebase.ai.type.Schema numInt(String? description = null, boolean nullable = false, String? title = null);
+    method public static com.google.firebase.ai.type.Schema numInt(String? description = null, boolean nullable = false, String? title = null, Double? minimum = null);
+    method public static com.google.firebase.ai.type.Schema numInt(String? description = null, boolean nullable = false, String? title = null, Double? minimum = null, Double? maximum = null);
     method public static com.google.firebase.ai.type.Schema numLong();
     method public static com.google.firebase.ai.type.Schema numLong(String? description = null);
     method public static com.google.firebase.ai.type.Schema numLong(String? description = null, boolean nullable = false);
+    method public static com.google.firebase.ai.type.Schema numLong(String? description = null, boolean nullable = false, String? title = null);
+    method public static com.google.firebase.ai.type.Schema numLong(String? description = null, boolean nullable = false, String? title = null, Double? minimum = null);
+    method public static com.google.firebase.ai.type.Schema numLong(String? description = null, boolean nullable = false, String? title = null, Double? minimum = null, Double? maximum = null);
     method public static com.google.firebase.ai.type.Schema obj(java.util.Map<java.lang.String,com.google.firebase.ai.type.Schema> properties);
     method public static com.google.firebase.ai.type.Schema obj(java.util.Map<java.lang.String,com.google.firebase.ai.type.Schema> properties, java.util.List<java.lang.String> optionalProperties = emptyList());
     method public static com.google.firebase.ai.type.Schema obj(java.util.Map<java.lang.String,com.google.firebase.ai.type.Schema> properties, java.util.List<java.lang.String> optionalProperties = emptyList(), String? description = null);
     method public static com.google.firebase.ai.type.Schema obj(java.util.Map<java.lang.String,com.google.firebase.ai.type.Schema> properties, java.util.List<java.lang.String> optionalProperties = emptyList(), String? description = null, boolean nullable = false);
+    method public static com.google.firebase.ai.type.Schema obj(java.util.Map<java.lang.String,com.google.firebase.ai.type.Schema> properties, java.util.List<java.lang.String> optionalProperties = emptyList(), String? description = null, boolean nullable = false, String? title = null);
     method public static com.google.firebase.ai.type.Schema str();
     method public static com.google.firebase.ai.type.Schema str(String? description = null);
     method public static com.google.firebase.ai.type.Schema str(String? description = null, boolean nullable = false);
     method public static com.google.firebase.ai.type.Schema str(String? description = null, boolean nullable = false, com.google.firebase.ai.type.StringFormat? format = null);
+    method public static com.google.firebase.ai.type.Schema str(String? description = null, boolean nullable = false, com.google.firebase.ai.type.StringFormat? format = null, String? title = null);
+    property public final java.util.List<com.google.firebase.ai.type.Schema>? anyOf;
     property public final String? description;
     property public final java.util.List<java.lang.String>? enum;
     property public final String? format;
     property public final com.google.firebase.ai.type.Schema? items;
+    property public final Integer? maxItems;
+    property public final Double? maximum;
+    property public final Integer? minItems;
+    property public final Double? minimum;
     property public final Boolean? nullable;
     property public final java.util.Map<java.lang.String,com.google.firebase.ai.type.Schema>? properties;
     property public final java.util.List<java.lang.String>? required;
+    property public final String? title;
     property public final String type;
     field public static final com.google.firebase.ai.type.Schema.Companion Companion;
   }
 
   public static final class Schema.Companion {
+    method public com.google.firebase.ai.type.Schema anyOf(java.util.List<com.google.firebase.ai.type.Schema> schemas);
     method public com.google.firebase.ai.type.Schema array(com.google.firebase.ai.type.Schema items);
     method public com.google.firebase.ai.type.Schema array(com.google.firebase.ai.type.Schema items, String? description = null);
     method public com.google.firebase.ai.type.Schema array(com.google.firebase.ai.type.Schema items, String? description = null, boolean nullable = false);
+    method public com.google.firebase.ai.type.Schema array(com.google.firebase.ai.type.Schema items, String? description = null, boolean nullable = false, String? title = null);
+    method public com.google.firebase.ai.type.Schema array(com.google.firebase.ai.type.Schema items, String? description = null, boolean nullable = false, String? title = null, Integer? minItems = null);
+    method public com.google.firebase.ai.type.Schema array(com.google.firebase.ai.type.Schema items, String? description = null, boolean nullable = false, String? title = null, Integer? minItems = null, Integer? maxItems = null);
     method public com.google.firebase.ai.type.Schema boolean();
     method public com.google.firebase.ai.type.Schema boolean(String? description = null);
     method public com.google.firebase.ai.type.Schema boolean(String? description = null, boolean nullable = false);
+    method public com.google.firebase.ai.type.Schema boolean(String? description = null, boolean nullable = false, String? title = null);
     method public com.google.firebase.ai.type.Schema enumeration(java.util.List<java.lang.String> values);
     method public com.google.firebase.ai.type.Schema enumeration(java.util.List<java.lang.String> values, String? description = null);
     method public com.google.firebase.ai.type.Schema enumeration(java.util.List<java.lang.String> values, String? description = null, boolean nullable = false);
+    method public com.google.firebase.ai.type.Schema enumeration(java.util.List<java.lang.String> values, String? description = null, boolean nullable = false, String? title = null);
     method public com.google.firebase.ai.type.Schema numDouble();
     method public com.google.firebase.ai.type.Schema numDouble(String? description = null);
     method public com.google.firebase.ai.type.Schema numDouble(String? description = null, boolean nullable = false);
+    method public com.google.firebase.ai.type.Schema numDouble(String? description = null, boolean nullable = false, String? title = null);
+    method public com.google.firebase.ai.type.Schema numDouble(String? description = null, boolean nullable = false, String? title = null, Double? minimum = null);
+    method public com.google.firebase.ai.type.Schema numDouble(String? description = null, boolean nullable = false, String? title = null, Double? minimum = null, Double? maximum = null);
     method public com.google.firebase.ai.type.Schema numFloat();
     method public com.google.firebase.ai.type.Schema numFloat(String? description = null);
     method public com.google.firebase.ai.type.Schema numFloat(String? description = null, boolean nullable = false);
+    method public com.google.firebase.ai.type.Schema numFloat(String? description = null, boolean nullable = false, String? title = null);
+    method public com.google.firebase.ai.type.Schema numFloat(String? description = null, boolean nullable = false, String? title = null, Double? minimum = null);
+    method public com.google.firebase.ai.type.Schema numFloat(String? description = null, boolean nullable = false, String? title = null, Double? minimum = null, Double? maximum = null);
     method public com.google.firebase.ai.type.Schema numInt();
     method public com.google.firebase.ai.type.Schema numInt(String? description = null);
     method public com.google.firebase.ai.type.Schema numInt(String? description = null, boolean nullable = false);
+    method public com.google.firebase.ai.type.Schema numInt(String? description = null, boolean nullable = false, String? title = null);
+    method public com.google.firebase.ai.type.Schema numInt(String? description = null, boolean nullable = false, String? title = null, Double? minimum = null);
+    method public com.google.firebase.ai.type.Schema numInt(String? description = null, boolean nullable = false, String? title = null, Double? minimum = null, Double? maximum = null);
     method public com.google.firebase.ai.type.Schema numLong();
     method public com.google.firebase.ai.type.Schema numLong(String? description = null);
     method public com.google.firebase.ai.type.Schema numLong(String? description = null, boolean nullable = false);
+    method public com.google.firebase.ai.type.Schema numLong(String? description = null, boolean nullable = false, String? title = null);
+    method public com.google.firebase.ai.type.Schema numLong(String? description = null, boolean nullable = false, String? title = null, Double? minimum = null);
+    method public com.google.firebase.ai.type.Schema numLong(String? description = null, boolean nullable = false, String? title = null, Double? minimum = null, Double? maximum = null);
     method public com.google.firebase.ai.type.Schema obj(java.util.Map<java.lang.String,com.google.firebase.ai.type.Schema> properties);
     method public com.google.firebase.ai.type.Schema obj(java.util.Map<java.lang.String,com.google.firebase.ai.type.Schema> properties, java.util.List<java.lang.String> optionalProperties = emptyList());
     method public com.google.firebase.ai.type.Schema obj(java.util.Map<java.lang.String,com.google.firebase.ai.type.Schema> properties, java.util.List<java.lang.String> optionalProperties = emptyList(), String? description = null);
     method public com.google.firebase.ai.type.Schema obj(java.util.Map<java.lang.String,com.google.firebase.ai.type.Schema> properties, java.util.List<java.lang.String> optionalProperties = emptyList(), String? description = null, boolean nullable = false);
+    method public com.google.firebase.ai.type.Schema obj(java.util.Map<java.lang.String,com.google.firebase.ai.type.Schema> properties, java.util.List<java.lang.String> optionalProperties = emptyList(), String? description = null, boolean nullable = false, String? title = null);
     method public com.google.firebase.ai.type.Schema str();
     method public com.google.firebase.ai.type.Schema str(String? description = null);
     method public com.google.firebase.ai.type.Schema str(String? description = null, boolean nullable = false);
     method public com.google.firebase.ai.type.Schema str(String? description = null, boolean nullable = false, com.google.firebase.ai.type.StringFormat? format = null);
+    method public com.google.firebase.ai.type.Schema str(String? description = null, boolean nullable = false, com.google.firebase.ai.type.StringFormat? format = null, String? title = null);
+  }
+
+  public final class SearchEntryPoint {
+    ctor public SearchEntryPoint(String renderedContent, String? sdkBlob);
+    method public String getRenderedContent();
+    method public String? getSdkBlob();
+    property public final String renderedContent;
+    property public final String? sdkBlob;
+  }
+
+  public final class Segment {
+    ctor public Segment(int startIndex, int endIndex, int partIndex, String text);
+    method public int getEndIndex();
+    method public int getPartIndex();
+    method public int getStartIndex();
+    method public String getText();
+    property public final int endIndex;
+    property public final int partIndex;
+    property public final int startIndex;
+    property public final String text;
   }
 
   public final class SerializationException extends com.google.firebase.ai.type.FirebaseAIException {
@@ -878,20 +1213,47 @@ package com.google.firebase.ai.type {
   public final class TextPart implements com.google.firebase.ai.type.Part {
     ctor public TextPart(String text);
     method public String getText();
+    method public boolean isThought();
+    property public boolean isThought;
     property public final String text;
   }
 
+  public final class ThinkingConfig {
+  }
+
+  public static final class ThinkingConfig.Builder {
+    ctor public ThinkingConfig.Builder();
+    method public com.google.firebase.ai.type.ThinkingConfig build();
+    method public com.google.firebase.ai.type.ThinkingConfig.Builder setIncludeThoughts(boolean includeThoughts);
+    method public com.google.firebase.ai.type.ThinkingConfig.Builder setThinkingBudget(int thinkingBudget);
+  }
+
+  public final class ThinkingConfigKt {
+    method public static com.google.firebase.ai.type.ThinkingConfig thinkingConfig(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.ThinkingConfig.Builder,kotlin.Unit> init);
+  }
+
   public final class Tool {
+    method public static com.google.firebase.ai.type.Tool codeExecution();
     method public static com.google.firebase.ai.type.Tool functionDeclarations(java.util.List<com.google.firebase.ai.type.FunctionDeclaration> functionDeclarations);
+    method public static com.google.firebase.ai.type.Tool googleSearch(com.google.firebase.ai.type.GoogleSearch googleSearch = com.google.firebase.ai.type.GoogleSearch());
+    method @com.google.firebase.ai.type.PublicPreviewAPI public static com.google.firebase.ai.type.Tool urlContext(com.google.firebase.ai.type.UrlContext urlContext = com.google.firebase.ai.type.UrlContext());
     field public static final com.google.firebase.ai.type.Tool.Companion Companion;
   }
 
   public static final class Tool.Companion {
+    method public com.google.firebase.ai.type.Tool codeExecution();
     method public com.google.firebase.ai.type.Tool functionDeclarations(java.util.List<com.google.firebase.ai.type.FunctionDeclaration> functionDeclarations);
+    method public com.google.firebase.ai.type.Tool googleSearch(com.google.firebase.ai.type.GoogleSearch googleSearch = com.google.firebase.ai.type.GoogleSearch());
+    method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.type.Tool urlContext(com.google.firebase.ai.type.UrlContext urlContext = com.google.firebase.ai.type.UrlContext());
   }
 
   public final class ToolConfig {
     ctor public ToolConfig(com.google.firebase.ai.type.FunctionCallingConfig? functionCallingConfig);
+  }
+
+  public final class Transcription {
+    method public String? getText();
+    property public final String? text;
   }
 
   public final class UnknownException extends com.google.firebase.ai.type.FirebaseAIException {
@@ -900,17 +1262,55 @@ package com.google.firebase.ai.type {
   public final class UnsupportedUserLocationException extends com.google.firebase.ai.type.FirebaseAIException {
   }
 
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class UrlContext {
+    ctor public UrlContext();
+  }
+
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class UrlContextMetadata {
+    method public java.util.List<com.google.firebase.ai.type.UrlMetadata> getUrlMetadata();
+    property public final java.util.List<com.google.firebase.ai.type.UrlMetadata> urlMetadata;
+  }
+
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class UrlMetadata {
+    method public String? getRetrievedUrl();
+    method public com.google.firebase.ai.type.UrlRetrievalStatus getUrlRetrievalStatus();
+    property public final String? retrievedUrl;
+    property public final com.google.firebase.ai.type.UrlRetrievalStatus urlRetrievalStatus;
+  }
+
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class UrlRetrievalStatus {
+    method public String getName();
+    method public int getOrdinal();
+    property public final String name;
+    property public final int ordinal;
+    field public static final com.google.firebase.ai.type.UrlRetrievalStatus.Companion Companion;
+    field public static final com.google.firebase.ai.type.UrlRetrievalStatus ERROR;
+    field public static final com.google.firebase.ai.type.UrlRetrievalStatus PAYWALL;
+    field public static final com.google.firebase.ai.type.UrlRetrievalStatus SUCCESS;
+    field public static final com.google.firebase.ai.type.UrlRetrievalStatus UNSAFE;
+    field public static final com.google.firebase.ai.type.UrlRetrievalStatus UNSPECIFIED;
+  }
+
+  public static final class UrlRetrievalStatus.Companion {
+  }
+
   public final class UsageMetadata {
-    ctor public UsageMetadata(int promptTokenCount, Integer? candidatesTokenCount, int totalTokenCount, java.util.List<com.google.firebase.ai.type.ModalityTokenCount> promptTokensDetails, java.util.List<com.google.firebase.ai.type.ModalityTokenCount> candidatesTokensDetails);
+    ctor @Deprecated public UsageMetadata(int promptTokenCount, Integer? candidatesTokenCount, int totalTokenCount, java.util.List<com.google.firebase.ai.type.ModalityTokenCount> promptTokensDetails, java.util.List<com.google.firebase.ai.type.ModalityTokenCount> candidatesTokensDetails, int thoughtsTokenCount);
     method public Integer? getCandidatesTokenCount();
     method public java.util.List<com.google.firebase.ai.type.ModalityTokenCount> getCandidatesTokensDetails();
     method public int getPromptTokenCount();
     method public java.util.List<com.google.firebase.ai.type.ModalityTokenCount> getPromptTokensDetails();
+    method public int getThoughtsTokenCount();
+    method public int getToolUsePromptTokenCount();
+    method public java.util.List<com.google.firebase.ai.type.ModalityTokenCount> getToolUsePromptTokensDetails();
     method public int getTotalTokenCount();
     property public final Integer? candidatesTokenCount;
     property public final java.util.List<com.google.firebase.ai.type.ModalityTokenCount> candidatesTokensDetails;
     property public final int promptTokenCount;
     property public final java.util.List<com.google.firebase.ai.type.ModalityTokenCount> promptTokensDetails;
+    property public final int thoughtsTokenCount;
+    property public final int toolUsePromptTokenCount;
+    property public final java.util.List<com.google.firebase.ai.type.ModalityTokenCount> toolUsePromptTokensDetails;
     property public final int totalTokenCount;
   }
 
@@ -933,6 +1333,16 @@ package com.google.firebase.ai.type {
   }
 
   @Deprecated public static final class Voices.Companion {
+  }
+
+  public final class WebGroundingChunk {
+    ctor public WebGroundingChunk(String? uri, String? title, String? domain);
+    method public String? getDomain();
+    method public String? getTitle();
+    method public String? getUri();
+    property public final String? domain;
+    property public final String? title;
+    property public final String? uri;
   }
 
 }

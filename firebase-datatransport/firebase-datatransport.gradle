@@ -49,8 +49,8 @@ android {
 }
 
 dependencies {
-    api 'com.google.firebase:firebase-common:21.0.0'
-    api 'com.google.firebase:firebase-components:18.0.0'
+    api libs.firebase.common
+    api libs.firebase.components
 
     implementation libs.androidx.annotation
     implementation 'com.google.android.datatransport:transport-api:3.1.0'

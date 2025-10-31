@@ -59,11 +59,11 @@ dependencies {
   implementation(libs.org.json)
   implementation(libs.bundles.maven.resolver)
 
-  implementation("com.google.guava:guava:31.1-jre")
-  implementation("org.ow2.asm:asm-tree:9.5")
+  implementation("com.google.guava:guava:33.5.0-jre")
+  implementation("org.ow2.asm:asm-tree:9.8")
   implementation("org.eclipse.jgit:org.eclipse.jgit:7.1.0.202411261347-r")
   implementation(libs.kotlinx.serialization.json)
-  implementation("com.google.code.gson:gson:2.8.9")
+  implementation("com.google.code.gson:gson:2.13.2")
   implementation(libs.android.gradlePlugin.gradle)
   implementation(libs.android.gradlePlugin.builder.test.api)
   implementation("io.github.pdvrieze.xmlutil:serialization-jvm:0.90.3") {
@@ -76,7 +76,7 @@ dependencies {
   testImplementation(libs.mockk)
   testImplementation(libs.junit)
   testImplementation(libs.truth)
-  testImplementation("commons-io:commons-io:2.15.1")
+  testImplementation("commons-io:commons-io:2.20.0")
   testImplementation(kotlin("test"))
 }
 

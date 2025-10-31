@@ -30,6 +30,7 @@ import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.remote.TargetChange;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -192,9 +193,10 @@ public class View {
             changeSet.addChange(DocumentViewChange.create(Type.MODIFIED, newDoc));
             changeApplied = true;
 
-            if ((lastDocInLimit != null && query.comparator().compare(newDoc, lastDocInLimit) > 0)
+            Comparator<Document> queryComparator = query.comparator();
+            if ((lastDocInLimit != null && queryComparator.compare(newDoc, lastDocInLimit) > 0)
                 || (firstDocInLimit != null
-                    && query.comparator().compare(newDoc, firstDocInLimit) < 0)) {
+                    && queryComparator.compare(newDoc, firstDocInLimit) < 0)) {
               // This doc moved from inside the limit to outside the limit. That means there may be
               // some doc in the local cache that should be included instead.
               needsRefill = true;
@@ -333,7 +335,9 @@ public class View {
     mutatedKeys = docChanges.mutatedKeys;
 
     // Sort changes based on type and query comparator.
+
     List<DocumentViewChange> viewChanges = docChanges.changeSet.getChanges();
+    Comparator<Document> queryComparator = query.comparator();
     Collections.sort(
         viewChanges,
         (DocumentViewChange o1, DocumentViewChange o2) -> {
@@ -342,7 +346,7 @@ public class View {
           if (typeComp != 0) {
             return typeComp;
           }
-          return query.comparator().compare(o1.getDocument(), o2.getDocument());
+          return queryComparator.compare(o1.getDocument(), o2.getDocument());
         });
     applyTargetChange(targetChange);
     List<LimboDocumentChange> limboDocumentChanges =

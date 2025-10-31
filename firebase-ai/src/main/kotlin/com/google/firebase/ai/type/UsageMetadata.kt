@@ -28,14 +28,41 @@ import kotlinx.serialization.Serializable
  * prompt.
  * @param candidatesTokensDetails The breakdown, by modality, of how many tokens are consumed by the
  * candidates.
+ * @param toolUsePromptTokensDetails The breakdown, by modality, of how many tokens are consumed by
+ * tools.
+ * @param thoughtsTokenCount The number of tokens used by the model's internal "thinking" process.
+ * @param toolUsePromptTokenCount The number of tokens used by tools.
  */
-public class UsageMetadata(
+public class UsageMetadata
+internal constructor(
   public val promptTokenCount: Int,
   public val candidatesTokenCount: Int?,
   public val totalTokenCount: Int,
   public val promptTokensDetails: List<ModalityTokenCount>,
   public val candidatesTokensDetails: List<ModalityTokenCount>,
+  public val thoughtsTokenCount: Int,
+  public val toolUsePromptTokenCount: Int,
+  public val toolUsePromptTokensDetails: List<ModalityTokenCount>
 ) {
+
+  @Deprecated("Not intended for public use")
+  public constructor(
+    promptTokenCount: Int,
+    candidatesTokenCount: Int?,
+    totalTokenCount: Int,
+    promptTokensDetails: List<ModalityTokenCount>,
+    candidatesTokensDetails: List<ModalityTokenCount>,
+    thoughtsTokenCount: Int
+  ) : this(
+    promptTokenCount,
+    candidatesTokenCount,
+    totalTokenCount,
+    promptTokensDetails,
+    candidatesTokensDetails,
+    thoughtsTokenCount,
+    0,
+    emptyList()
+  )
 
   @Serializable
   internal data class Internal(
@@ -44,6 +71,9 @@ public class UsageMetadata(
     val totalTokenCount: Int? = null,
     val promptTokensDetails: List<ModalityTokenCount.Internal>? = null,
     val candidatesTokensDetails: List<ModalityTokenCount.Internal>? = null,
+    val thoughtsTokenCount: Int? = null,
+    val toolUsePromptTokenCount: Int? = null,
+    val toolUsePromptTokensDetails: List<ModalityTokenCount.Internal>? = null,
   ) {
 
     internal fun toPublic(): UsageMetadata =
@@ -52,7 +82,11 @@ public class UsageMetadata(
         candidatesTokenCount ?: 0,
         totalTokenCount ?: 0,
         promptTokensDetails = promptTokensDetails?.map { it.toPublic() } ?: emptyList(),
-        candidatesTokensDetails = candidatesTokensDetails?.map { it.toPublic() } ?: emptyList()
+        candidatesTokensDetails = candidatesTokensDetails?.map { it.toPublic() } ?: emptyList(),
+        thoughtsTokenCount ?: 0,
+        toolUsePromptTokenCount ?: 0,
+        toolUsePromptTokensDetails = toolUsePromptTokensDetails?.map { it.toPublic() }
+            ?: emptyList(),
       )
   }
 }

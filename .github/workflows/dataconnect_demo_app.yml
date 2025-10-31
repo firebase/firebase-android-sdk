@@ -18,7 +18,7 @@ on:
 
 env:
   FDC_NODE_VERSION: ${{ inputs.nodeVersion || '20' }}
-  FDC_FIREBASE_TOOLS_VERSION: ${{ inputs.firebaseToolsVersion || '14.5.1' }}
+  FDC_FIREBASE_TOOLS_VERSION: ${{ inputs.firebaseToolsVersion || '14.18.0' }}
   FDC_JAVA_VERSION: ${{ inputs.javaVersion || '17' }}
   FDC_FIREBASE_TOOLS_DIR: ${{ github.workspace }}/firebase-tools
   FDC_FIREBASE_COMMAND: ${{ github.workspace }}/firebase-tools/node_modules/.bin/firebase
@@ -106,11 +106,20 @@ jobs:
           set -x
           firebase-dataconnect/demo/gradlew \
           --project-dir firebase-dataconnect/demo \
-          --no-daemon \
           ${{ (inputs.gradleInfoLog && '--info') || '' }} \
           --profile \
-          -PdataConnect.minimalApp.firebaseCommand=${{ env.FDC_FIREBASE_COMMAND }} \
+          --warning-mode all \
+          -PdataConnect.demo.firebaseCommand=${{ env.FDC_FIREBASE_COMMAND }} \
           assemble test
+
+      - name: gradle dokkaGeneratePublicationHtml
+        run: |
+          set -x
+          firebase-dataconnect/demo/gradlew \
+          --warning-mode all \
+          --project-dir firebase-dataconnect/demo \
+          ${{ (inputs.gradleInfoLog && '--info') || '' }} \
+          dokkaGeneratePublicationHtml
 
       - uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
         with:
@@ -123,6 +132,13 @@ jobs:
         with:
           name: gradle_build_reports
           path: firebase-dataconnect/demo/build/reports/
+          if-no-files-found: warn
+          compression-level: 9
+
+      - uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        with:
+          name: ktdoc
+          path: firebase-dataconnect/demo/build/dokka/html
           if-no-files-found: warn
           compression-level: 9
 
@@ -162,6 +178,7 @@ jobs:
         run: |
           set -x
           firebase-dataconnect/demo/gradlew \
+          --warning-mode all \
           --project-dir firebase-dataconnect/demo \
           --no-daemon \
           ${{ (inputs.gradleInfoLog && '--info') || '' }} \

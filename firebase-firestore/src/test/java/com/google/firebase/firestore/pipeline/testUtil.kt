@@ -49,6 +49,13 @@ internal fun assertEvaluatesTo(
   vararg args: Any?
 ) = assertEvaluatesTo(result, encodeValue(expected), format, *args)
 
+internal fun assertEvaluatesTo(
+  result: EvaluateResult,
+  expected: String,
+  format: String,
+  vararg args: Any?
+) = assertEvaluatesTo(result, encodeValue(expected), format, *args)
+
 // Helper to check for successful evaluation to a value
 internal fun assertEvaluatesTo(
   result: EvaluateResult,

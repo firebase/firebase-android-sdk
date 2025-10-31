@@ -23,10 +23,10 @@ buildscript {
   }
 
   dependencies {
-    classpath "com.android.tools.build:gradle:8.3.2"
-    classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.0"
-    classpath "com.google.gms:google-services:4.3.14"
-    classpath "com.google.firebase:firebase-crashlytics-gradle:2.8.1"
+    classpath "com.android.tools.build:gradle:8.6.1"
+    classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:2.0.21"
+    classpath "com.google.gms:google-services:4.4.3"
+    classpath "com.google.firebase:firebase-crashlytics-gradle:3.0.4"
   }
 }
 
@@ -69,34 +69,33 @@ apply from: "configure.gradle"
 dependencies {
   implementation libs.androidx.test.core
   // Common utilities (application side)
-  implementation "androidx.test:rules:1.4.0"
-  implementation "androidx.test:runner:1.4.0"
+  implementation "androidx.test:rules:1.5.0"
+  implementation "androidx.test:runner:1.6.2"
   // Firebase
   implementation "com.google.firebase:firebase-analytics"
   implementation "com.google.firebase:firebase-annotations"
-  implementation "com.google.firebase:firebase-appdistribution:16.0.0-beta03"
-  implementation "com.google.firebase:firebase-appdistribution-api:16.0.0-beta03"
+  implementation "com.google.firebase:firebase-appdistribution:16.0.0-beta15"
+  implementation "com.google.firebase:firebase-appdistribution-api:16.0.0-beta15"
   implementation "com.google.firebase:firebase-auth"
   implementation "com.google.firebase:firebase-common"
   implementation "com.google.firebase:firebase-config"
-  implementation "com.google.firebase:firebase-crashlytics:18.6.4"
+  implementation "com.google.firebase:firebase-crashlytics:19.4.4"
   implementation "com.google.firebase:firebase-database"
-  implementation "com.google.firebase:firebase-dynamic-links"
   implementation "com.google.firebase:firebase-firestore"
   implementation "com.google.firebase:firebase-functions"
   // TODO(yifany): remove after the issue is fixed
   // https://github.com/firebase/firebase-android-sdk/issues/4206
-  implementation "com.google.firebase:firebase-iid:21.1.0"
+  implementation "com.google.firebase:firebase-iid"
   implementation "com.google.firebase:firebase-inappmessaging"
   implementation "com.google.firebase:firebase-messaging"
-  implementation "com.google.firebase:firebase-ml-modeldownloader:24.2.3"
+  implementation "com.google.firebase:firebase-ml-modeldownloader:25.0.1"
   implementation "com.google.firebase:firebase-perf"
   implementation "com.google.firebase:firebase-storage"
-  implementation "com.google.truth:truth:1.0.1"
+  implementation "com.google.truth:truth:1.4.4"
   implementation libs.junit
 
   // Common utilities (instrumentation side)
-  androidTestImplementation "androidx.test:runner:1.4.0"
+  androidTestImplementation "androidx.test:runner:1.6.2"
   androidTestImplementation libs.junit
 
   // Desugaring library

@@ -36,7 +36,7 @@ import org.robolectric.annotation.Config;
 
 /** Tests for {@link FirebaseStorage}. */
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = Build.VERSION_CODES.LOLLIPOP_MR1)
+@Config(sdk = Build.VERSION_CODES.M)
 public class PathingTest {
 
   @Rule public RetryRule retryRule = new RetryRule(3);

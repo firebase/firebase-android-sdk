@@ -42,6 +42,12 @@ internal constructor(
   public val properties: Map<String, Schema>? = null,
   public val required: List<String>? = null,
   public val items: Schema? = null,
+  public val title: String? = null,
+  public val minItems: Int? = null,
+  public val maxItems: Int? = null,
+  public val minimum: Double? = null,
+  public val maximum: Double? = null,
+  public val anyOf: List<Schema>? = null,
 ) {
 
   public companion object {
@@ -53,12 +59,12 @@ internal constructor(
      */
     @JvmStatic
     @JvmOverloads
-    public fun boolean(description: String? = null, nullable: Boolean = false): Schema =
-      Schema(
-        description = description,
-        nullable = nullable,
-        type = "BOOLEAN",
-      )
+    public fun boolean(
+      description: String? = null,
+      nullable: Boolean = false,
+      title: String? = null,
+    ): Schema =
+      Schema(description = description, nullable = nullable, type = "BOOLEAN", title = title)
 
     /**
      * Returns a [Schema] for a 32-bit signed integer number.
@@ -73,12 +79,21 @@ internal constructor(
     @JvmStatic
     @JvmName("numInt")
     @JvmOverloads
-    public fun integer(description: String? = null, nullable: Boolean = false): Schema =
+    public fun integer(
+      description: String? = null,
+      nullable: Boolean = false,
+      title: String? = null,
+      minimum: Double? = null,
+      maximum: Double? = null,
+    ): Schema =
       Schema(
         description = description,
         format = "int32",
         nullable = nullable,
         type = "INTEGER",
+        title = title,
+        minimum = minimum,
+        maximum = maximum,
       )
 
     /**
@@ -90,11 +105,20 @@ internal constructor(
     @JvmStatic
     @JvmName("numLong")
     @JvmOverloads
-    public fun long(description: String? = null, nullable: Boolean = false): Schema =
+    public fun long(
+      description: String? = null,
+      nullable: Boolean = false,
+      title: String? = null,
+      minimum: Double? = null,
+      maximum: Double? = null,
+    ): Schema =
       Schema(
         description = description,
         nullable = nullable,
         type = "INTEGER",
+        title = title,
+        minimum = minimum,
+        maximum = maximum,
       )
 
     /**
@@ -106,8 +130,21 @@ internal constructor(
     @JvmStatic
     @JvmName("numDouble")
     @JvmOverloads
-    public fun double(description: String? = null, nullable: Boolean = false): Schema =
-      Schema(description = description, nullable = nullable, type = "NUMBER")
+    public fun double(
+      description: String? = null,
+      nullable: Boolean = false,
+      title: String? = null,
+      minimum: Double? = null,
+      maximum: Double? = null,
+    ): Schema =
+      Schema(
+        description = description,
+        nullable = nullable,
+        type = "NUMBER",
+        title = title,
+        minimum = minimum,
+        maximum = maximum,
+      )
 
     /**
      * Returns a [Schema] for a single-precision floating-point number.
@@ -123,8 +160,22 @@ internal constructor(
     @JvmStatic
     @JvmName("numFloat")
     @JvmOverloads
-    public fun float(description: String? = null, nullable: Boolean = false): Schema =
-      Schema(description = description, nullable = nullable, type = "NUMBER", format = "float")
+    public fun float(
+      description: String? = null,
+      nullable: Boolean = false,
+      title: String? = null,
+      minimum: Double? = null,
+      maximum: Double? = null,
+    ): Schema =
+      Schema(
+        description = description,
+        nullable = nullable,
+        type = "NUMBER",
+        format = "float",
+        title = title,
+        minimum = minimum,
+        maximum = maximum,
+      )
 
     /**
      * Returns a [Schema] for a string.
@@ -139,13 +190,15 @@ internal constructor(
     public fun string(
       description: String? = null,
       nullable: Boolean = false,
-      format: StringFormat? = null
+      format: StringFormat? = null,
+      title: String? = null,
     ): Schema =
       Schema(
         description = description,
         format = format?.value,
         nullable = nullable,
-        type = "STRING"
+        type = "STRING",
+        title = title,
       )
 
     /**
@@ -155,6 +208,7 @@ internal constructor(
      * `String` and values of type [Schema].
      *
      * **Example:** A `city` could be represented with the following object `Schema`.
+     *
      * ```
      * Schema.obj(mapOf(
      *   "name"  to Schema.string(),
@@ -176,6 +230,7 @@ internal constructor(
       optionalProperties: List<String> = emptyList(),
       description: String? = null,
       nullable: Boolean = false,
+      title: String? = null,
     ): Schema {
       if (!properties.keys.containsAll(optionalProperties)) {
         throw IllegalArgumentException(
@@ -188,6 +243,7 @@ internal constructor(
         properties = properties,
         required = properties.keys.minus(optionalProperties.toSet()).toList(),
         type = "OBJECT",
+        title = title,
       )
     }
 
@@ -203,20 +259,25 @@ internal constructor(
     public fun array(
       items: Schema,
       description: String? = null,
-      nullable: Boolean = false
+      nullable: Boolean = false,
+      title: String? = null,
+      minItems: Int? = null,
+      maxItems: Int? = null,
     ): Schema =
       Schema(
         description = description,
         nullable = nullable,
         items = items,
         type = "ARRAY",
+        title = title,
+        minItems = minItems,
+        maxItems = maxItems,
       )
 
     /**
      * Returns a [Schema] for an enumeration.
      *
      * For example, the cardinal directions can be represented as:
-     *
      * ```
      * Schema.enumeration(listOf("north", "east", "south", "west"), "Cardinal directions")
      * ```
@@ -230,7 +291,8 @@ internal constructor(
     public fun enumeration(
       values: List<String>,
       description: String? = null,
-      nullable: Boolean = false
+      nullable: Boolean = false,
+      title: String? = null,
     ): Schema =
       Schema(
         description = description,
@@ -238,29 +300,169 @@ internal constructor(
         nullable = nullable,
         enum = values,
         type = "STRING",
+        title = title,
       )
+
+    /**
+     * Returns a [Schema] representing a value that must conform to *any* (one of) the provided
+     * sub-schema.
+     *
+     * Example: A field that can hold either a simple userID or a more detailed user object.
+     *
+     * ```
+     * Schema.anyOf( listOf( Schema.integer(description = "User ID"), Schema.obj( mapOf(
+     *     "userID" to Schema.integer(description = "User ID"),
+     *     "username" to Schema.string(description = "Username")
+     * )))
+     * ```
+     *
+     * @param schemas The list of valid schemas which could be here
+     */
+    @JvmStatic
+    public fun anyOf(schemas: List<Schema>): Schema = Schema(type = "ANYOF", anyOf = schemas)
   }
 
-  internal fun toInternal(): Internal =
-    Internal(
-      type,
+  internal fun toInternalOpenApi(): InternalOpenAPI {
+    val cleanedType =
+      if (type == "ANYOF") {
+        null
+      } else {
+        type
+      }
+    return InternalOpenAPI(
+      cleanedType,
       description,
       format,
       nullable,
       enum,
-      properties?.mapValues { it.value.toInternal() },
+      properties?.mapValues { it.value.toInternalOpenApi() },
       required,
-      items?.toInternal(),
+      items?.toInternalOpenApi(),
+      title,
+      minItems,
+      maxItems,
+      minimum,
+      maximum,
+      anyOf?.map { it.toInternalOpenApi() },
     )
+  }
+
+  internal fun toInternalJson(): InternalJson {
+    val outType =
+      if (type == "ANYOF" || (type == "STRING" && format == "enum")) {
+        null
+      } else {
+        type.lowercase()
+      }
+
+    val (outMinimum, outMaximum) =
+      if (outType == "integer" && format == "int32") {
+        (minimum ?: Integer.MIN_VALUE.toDouble()) to (maximum ?: Integer.MAX_VALUE.toDouble())
+      } else {
+        minimum to maximum
+      }
+
+    val outFormat =
+      if (
+        (outType == "integer" && format == "int32") ||
+          (outType == "number" && format == "float") ||
+          format == "enum"
+      ) {
+        null
+      } else {
+        format
+      }
+
+    if (nullable == true) {
+      return InternalJsonNullable(
+        outType?.let { listOf(it, "null") },
+        description,
+        outFormat,
+        enum?.let {
+          buildList {
+            addAll(it)
+            add("null")
+          }
+        },
+        properties?.mapValues { it.value.toInternalJson() },
+        required,
+        items?.toInternalJson(),
+        title,
+        minItems,
+        maxItems,
+        outMinimum,
+        outMaximum,
+        anyOf?.map { it.toInternalJson() },
+      )
+    }
+    return InternalJsonNonNull(
+      outType,
+      description,
+      outFormat,
+      enum,
+      properties?.mapValues { it.value.toInternalJson() },
+      required,
+      items?.toInternalJson(),
+      title,
+      minItems,
+      maxItems,
+      outMinimum,
+      outMaximum,
+      anyOf?.map { it.toInternalJson() },
+    )
+  }
+
   @Serializable
-  internal data class Internal(
-    val type: String,
+  internal data class InternalOpenAPI(
+    val type: String? = null,
     val description: String? = null,
     val format: String? = null,
     val nullable: Boolean? = false,
     val enum: List<String>? = null,
-    val properties: Map<String, Internal>? = null,
+    val properties: Map<String, InternalOpenAPI>? = null,
     val required: List<String>? = null,
-    val items: Internal? = null,
+    val items: InternalOpenAPI? = null,
+    val title: String? = null,
+    val minItems: Int? = null,
+    val maxItems: Int? = null,
+    val minimum: Double? = null,
+    val maximum: Double? = null,
+    val anyOf: List<InternalOpenAPI>? = null,
   )
+
+  @Serializable internal sealed interface InternalJson
+
+  @Serializable
+  internal data class InternalJsonNonNull(
+    val type: String? = null,
+    val description: String? = null,
+    val format: String? = null,
+    val enum: List<String>? = null,
+    val properties: Map<String, InternalJson>? = null,
+    val required: List<String>? = null,
+    val items: InternalJson? = null,
+    val title: String? = null,
+    val minItems: Int? = null,
+    val maxItems: Int? = null,
+    val minimum: Double? = null,
+    val maximum: Double? = null,
+    val anyOf: List<InternalJson>? = null,
+  ) : InternalJson
+
+  @Serializable
+  internal data class InternalJsonNullable(
+    val type: List<String>? = null,
+    val description: String? = null,
+    val format: String? = null,
+    val enum: List<String>? = null,
+    val properties: Map<String, InternalJson>? = null,
+    val required: List<String>? = null,
+    val items: InternalJson? = null,
+    val title: String? = null,
+    val minItems: Int? = null,
+    val maxItems: Int? = null,
+    val minimum: Double? = null,
+    val maximum: Double? = null,
+    val anyOf: List<InternalJson>? = null,
+  ) : InternalJson
 }

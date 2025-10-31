@@ -59,7 +59,6 @@ internal class LiveQuery(
       debug {
         "created by ${parentLogger.nameWithId} with" +
           " operationName=$operationName" +
-          " variables=$variables" +
           " key=$key" +
           " grpcClient=${grpcClient.instanceId}"
       }

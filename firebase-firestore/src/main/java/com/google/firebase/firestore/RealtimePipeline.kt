@@ -42,6 +42,7 @@ import com.google.firebase.firestore.remote.RemoteSerializer
 import com.google.firebase.firestore.util.Assert
 import com.google.firebase.firestore.util.Assert.fail
 import com.google.firebase.firestore.util.Executors
+import com.google.firestore.v1.Pipeline as ProtoPipeline
 import com.google.firestore.v1.StructuredPipeline
 import java.util.concurrent.Executor
 import kotlinx.coroutines.channels.awaitClose
@@ -138,6 +139,179 @@ internal constructor(
   internal val stages: List<Stage<*>>,
   internal val internalOptions: EventManager.ListenOptions? = null
 ) {
+
+  /**
+   * An options object that configures the behavior of `snapshots()` calls. By default,
+   * `snapshots()` attempts to provide up-to-date data when possible, but falls back to cached data
+   * if the device is offline and the server cannot be reached.
+   */
+  class ListenOptions
+  private constructor(
+    internal val source: ListenSource,
+    internal val serverTimestampBehavior: DocumentSnapshot.ServerTimestampBehavior,
+    internal val metadataChanges: MetadataChanges,
+    options: InternalOptions
+  ) {
+
+    constructor() :
+      this(
+        ListenSource.DEFAULT,
+        DocumentSnapshot.ServerTimestampBehavior.NONE,
+        MetadataChanges.EXCLUDE,
+        InternalOptions.EMPTY
+      )
+
+    companion object {
+      /** A `ListenOptions` object with default options. */
+      @JvmField
+      val DEFAULT: ListenOptions =
+        ListenOptions(
+          ListenSource.DEFAULT,
+          DocumentSnapshot.ServerTimestampBehavior.NONE,
+          MetadataChanges.EXCLUDE,
+          InternalOptions.EMPTY
+        )
+    }
+
+    /**
+     * Returns a new `ListenOptions` object with the specified `ListenSource`.
+     *
+     * @param source The `ListenSource` to use.
+     * @return A new `ListenOptions` object.
+     */
+    fun withSource(source: ListenSource): ListenOptions {
+      return ListenOptions(source, serverTimestampBehavior, metadataChanges, InternalOptions.EMPTY)
+    }
+
+    /**
+     * Returns a new `ListenOptions` object with the specified `ServerTimestampBehavior`.
+     *
+     * @param serverTimestampBehavior The `ServerTimestampBehavior` to use.
+     * @return A new `ListenOptions` object.
+     */
+    fun withServerTimestampBehavior(
+      serverTimestampBehavior: DocumentSnapshot.ServerTimestampBehavior
+    ): ListenOptions {
+      return ListenOptions(source, serverTimestampBehavior, metadataChanges, InternalOptions.EMPTY)
+    }
+
+    /**
+     * Returns a new `ListenOptions` object with the specified `MetadataChanges` option.
+     *
+     * @param metadataChanges The `MetadataChanges` option to use.
+     * @return A new `ListenOptions` object.
+     */
+    fun withMetadataChanges(metadataChanges: MetadataChanges): ListenOptions {
+      return ListenOptions(source, serverTimestampBehavior, metadataChanges, InternalOptions.EMPTY)
+    }
+
+    internal fun toListenOptions(): EventManager.ListenOptions {
+      val result = EventManager.ListenOptions()
+      result.source = source
+      result.includeQueryMetadataChanges = metadataChanges == MetadataChanges.INCLUDE
+      result.includeDocumentMetadataChanges = metadataChanges == MetadataChanges.INCLUDE
+      result.waitForSyncWhenOnline = false
+      result.serverTimestampBehavior = serverTimestampBehavior
+      return result
+    }
+  }
+
+  /**
+   * A `Snapshot` contains the results of a realtime pipeline listen. It can be used to retrieve the
+   * full list of results, or the incremental changes since the last snapshot.
+   */
+  class Snapshot
+  internal constructor(
+    private val viewSnapshot: ViewSnapshot,
+    private val firestore: FirebaseFirestore,
+    private val options: ListenOptions
+  ) {
+    /**
+     * Metadata about a [Snapshot], including information about the source of the data and whether
+     * the snapshot has pending writes.
+     *
+     * @property hasPendingWrites True if the snapshot contains results that have not yet been
+     * written to the backend.
+     * @property isConsistentBetweenListeners True if the snapshot is guaranteed to be consistent
+     * with other active listeners on the same Firestore instance.
+     */
+    data class SnapshotMetadata
+    internal constructor(val hasPendingWrites: Boolean, val isConsistentBetweenListeners: Boolean)
+
+    /**
+     * A `ResultChange` represents a change to a single result in a `Snapshot`.
+     *
+     * @property result The `PipelineResult` that changed.
+     * @property type The type of change.
+     * @property oldIndex The index of the result in the previous snapshot, or -1 if it's a new
+     * result.
+     * @property newIndex The index of the result in the new snapshot, or -1 if it was removed.
+     */
+    data class ResultChange
+    internal constructor(
+      val result: PipelineResult,
+      val type: ChangeType,
+      val oldIndex: Int?,
+      val newIndex: Int?
+    ) {
+      /** An enumeration of the different types of changes that can occur. */
+      enum class ChangeType {
+        ADDED,
+        MODIFIED,
+        REMOVED
+      }
+
+      internal constructor(
+        firestore: FirebaseFirestore,
+        doc: Document,
+        serverTimestampBehavior: DocumentSnapshot.ServerTimestampBehavior,
+        type: DocumentChange.Type,
+        oldIndex: Int,
+        newIndex: Int
+      ) : this(
+        PipelineResult(doc, serverTimestampBehavior, firestore),
+        getChangeType(type),
+        oldIndex,
+        newIndex
+      )
+
+      companion object {
+        private fun getChangeType(type: DocumentChange.Type): ChangeType =
+          when (type) {
+            DocumentChange.Type.ADDED -> ChangeType.ADDED
+            DocumentChange.Type.MODIFIED -> ChangeType.MODIFIED
+            DocumentChange.Type.REMOVED -> ChangeType.REMOVED
+          }
+      }
+    }
+
+    /** Returns the metadata for this snapshot. */
+    val metadata: SnapshotMetadata
+      get() = SnapshotMetadata(viewSnapshot.hasPendingWrites(), !viewSnapshot.isFromCache)
+
+    /** Returns the results of the pipeline for this snapshot. */
+    val results: List<PipelineResult>
+      get() =
+        viewSnapshot.documents.map {
+          PipelineResult(it, options.serverTimestampBehavior, firestore)
+        }
+
+    /**
+     * Returns the incremental changes since the last snapshot.
+     *
+     * @param metadataChanges Whether to include metadata-only changes.
+     * @return A list of [ResultChange] objects.
+     */
+    fun getChanges(metadataChanges: MetadataChanges? = null): List<ResultChange> =
+      changesFromSnapshot(metadataChanges ?: MetadataChanges.EXCLUDE, viewSnapshot) {
+        doc,
+        type,
+        oldIndex,
+        newIndex ->
+        ResultChange(firestore, doc, options.serverTimestampBehavior, type, oldIndex, newIndex)
+      }
+  }
+
   internal constructor(
     firestore: FirebaseFirestore,
     serializer: RemoteSerializer,
@@ -228,21 +402,19 @@ internal constructor(
   fun where(condition: BooleanExpression): RealtimePipeline = append(WhereStage(condition))
 
   /**
-   * Starts listening to this pipeline and emits a [RealtimePipelineSnapshot] every time the results
-   * change.
+   * Starts listening to this pipeline and emits a [Snapshot] every time the results change.
    *
-   * @return A [Flow] of [RealtimePipelineSnapshot] that emits new snapshots on every change.
+   * @return A [Flow] of [Snapshot] that emits new snapshots on every change.
    */
-  fun snapshots(): Flow<RealtimePipelineSnapshot> = snapshots(RealtimePipelineOptions.DEFAULT)
+  fun snapshots(): Flow<Snapshot> = snapshots(ListenOptions.DEFAULT)
 
   /**
-   * Starts listening to this pipeline and emits a [RealtimePipelineSnapshot] every time the results
-   * change.
+   * Starts listening to this pipeline and emits a [Snapshot] every time the results change.
    *
-   * @param options The [RealtimePipelineOptions] to use for this listen.
-   * @return A [Flow] of [RealtimePipelineSnapshot] that emits new snapshots on every change.
+   * @param options The [ListenOptions] to use for this listen.
+   * @return A [Flow] of [Snapshot] that emits new snapshots on every change.
    */
-  fun snapshots(options: RealtimePipelineOptions): Flow<RealtimePipelineSnapshot> = callbackFlow {
+  fun snapshots(options: ListenOptions): Flow<Snapshot> = callbackFlow {
     val listener =
       addSnapshotListener(options) { snapshot, error ->
         if (snapshot != null) {
@@ -260,19 +432,19 @@ internal constructor(
    * @param listener The event listener to receive the results.
    * @return A [ListenerRegistration] that can be used to stop listening.
    */
-  fun addSnapshotListener(listener: EventListener<RealtimePipelineSnapshot>): ListenerRegistration =
-    addSnapshotListener(RealtimePipelineOptions.DEFAULT, listener)
+  fun addSnapshotListener(listener: EventListener<Snapshot>): ListenerRegistration =
+    addSnapshotListener(ListenOptions.DEFAULT, listener)
 
   /**
    * Starts listening to this pipeline using an [EventListener].
    *
-   * @param options The [RealtimePipelineOptions] to use for this listen.
+   * @param options The [ListenOptions] to use for this listen.
    * @param listener The event listener to receive the results.
    * @return A [ListenerRegistration] that can be used to stop listening.
    */
   fun addSnapshotListener(
-    options: RealtimePipelineOptions,
-    listener: EventListener<RealtimePipelineSnapshot>
+    options: ListenOptions,
+    listener: EventListener<Snapshot>
   ): ListenerRegistration =
     addSnapshotListener(Executors.DEFAULT_CALLBACK_EXECUTOR, options, listener)
 
@@ -285,25 +457,25 @@ internal constructor(
    */
   fun addSnapshotListener(
     executor: Executor,
-    listener: EventListener<RealtimePipelineSnapshot>
-  ): ListenerRegistration = addSnapshotListener(executor, RealtimePipelineOptions.DEFAULT, listener)
+    listener: EventListener<Snapshot>
+  ): ListenerRegistration = addSnapshotListener(executor, ListenOptions.DEFAULT, listener)
 
   /**
    * Starts listening to this pipeline using an [EventListener].
    *
    * @param executor The executor to use for the listener.
-   * @param options The [RealtimePipelineOptions] to use for this listen.
+   * @param options The [ListenOptions] to use for this listen.
    * @param listener The event listener to receive the results.
    * @return A [ListenerRegistration] that can be used to stop listening.
    */
   fun addSnapshotListener(
     executor: Executor,
-    options: RealtimePipelineOptions,
-    listener: EventListener<RealtimePipelineSnapshot>
+    options: ListenOptions,
+    listener: EventListener<Snapshot>
   ): ListenerRegistration {
     val userListener =
       EventListener<ViewSnapshot> { snapshot, error ->
-        val realtimeSnapshot = snapshot?.let { RealtimePipelineSnapshot(it, firestore!!, options) }
+        val realtimeSnapshot = snapshot?.let { Snapshot(it, firestore!!, options) }
         listener.onEvent(realtimeSnapshot, error)
       }
 
@@ -424,7 +596,7 @@ internal constructor(
   internal fun toStructurePipelineProto(): StructuredPipeline {
     val builder = StructuredPipeline.newBuilder()
     builder.pipeline =
-      com.google.firestore.v1.Pipeline.newBuilder()
+      ProtoPipeline.newBuilder()
         .addAllStages(rewrittenStages.map { it.toProtoStage(userDataReader) })
         .build()
     return builder.build()
@@ -439,197 +611,6 @@ internal constructor(
       // like fineNearest
     }
     throw fail("RealtimePipeline must contain at least one Sort stage (ensured by RewriteStages).")
-  }
-}
-
-/**
- * An options object that configures the behavior of `snapshots()` calls. By default, `snapshots()`
- * attempts to provide up-to-date data when possible, but falls back to cached data if the device is
- * offline and the server cannot be reached.
- */
-class RealtimePipelineOptions
-private constructor(
-  internal val source: ListenSource,
-  internal val serverTimestampBehavior: DocumentSnapshot.ServerTimestampBehavior,
-  internal val metadataChanges: MetadataChanges,
-  options: InternalOptions
-) {
-
-  constructor() :
-    this(
-      ListenSource.DEFAULT,
-      DocumentSnapshot.ServerTimestampBehavior.NONE,
-      MetadataChanges.EXCLUDE,
-      InternalOptions.EMPTY
-    )
-
-  companion object {
-    /** A `RealtimePipelineOptions` object with default options. */
-    @JvmField
-    val DEFAULT: RealtimePipelineOptions =
-      RealtimePipelineOptions(
-        ListenSource.DEFAULT,
-        DocumentSnapshot.ServerTimestampBehavior.NONE,
-        MetadataChanges.EXCLUDE,
-        InternalOptions.EMPTY
-      )
-  }
-
-  /**
-   * Returns a new `RealtimePipelineOptions` object with the specified `ListenSource`.
-   *
-   * @param source The `ListenSource` to use.
-   * @return A new `RealtimePipelineOptions` object.
-   */
-  fun withSource(source: ListenSource): RealtimePipelineOptions {
-    return RealtimePipelineOptions(
-      source,
-      serverTimestampBehavior,
-      metadataChanges,
-      InternalOptions.EMPTY
-    )
-  }
-
-  /**
-   * Returns a new `RealtimePipelineOptions` object with the specified `ServerTimestampBehavior`.
-   *
-   * @param serverTimestampBehavior The `ServerTimestampBehavior` to use.
-   * @return A new `RealtimePipelineOptions` object.
-   */
-  fun withServerTimestampBehavior(
-    serverTimestampBehavior: DocumentSnapshot.ServerTimestampBehavior
-  ): RealtimePipelineOptions {
-    return RealtimePipelineOptions(
-      source,
-      serverTimestampBehavior,
-      metadataChanges,
-      InternalOptions.EMPTY
-    )
-  }
-
-  /**
-   * Returns a new `RealtimePipelineOptions` object with the specified `MetadataChanges` option.
-   *
-   * @param metadataChanges The `MetadataChanges` option to use.
-   * @return A new `RealtimePipelineOptions` object.
-   */
-  fun withMetadataChanges(metadataChanges: MetadataChanges): RealtimePipelineOptions {
-    return RealtimePipelineOptions(
-      source,
-      serverTimestampBehavior,
-      metadataChanges,
-      InternalOptions.EMPTY
-    )
-  }
-
-  internal fun toListenOptions(): EventManager.ListenOptions {
-    val result = EventManager.ListenOptions()
-    result.source = source
-    result.includeQueryMetadataChanges = metadataChanges == MetadataChanges.INCLUDE
-    result.includeDocumentMetadataChanges = metadataChanges == MetadataChanges.INCLUDE
-    result.waitForSyncWhenOnline = false
-    result.serverTimestampBehavior = serverTimestampBehavior
-    return result
-  }
-}
-
-/**
- * A `RealtimePipelineSnapshot` contains the results of a realtime pipeline listen. It can be used
- * to retrieve the full list of results, or the incremental changes since the last snapshot.
- */
-class RealtimePipelineSnapshot
-internal constructor(
-  private val viewSnapshot: ViewSnapshot,
-  private val firestore: FirebaseFirestore,
-  private val options: RealtimePipelineOptions
-) {
-  /** Returns the metadata for this snapshot. */
-  val metadata: PipelineSnapshotMetadata
-    get() = PipelineSnapshotMetadata(viewSnapshot.hasPendingWrites(), !viewSnapshot.isFromCache)
-
-  /** Returns the results of the pipeline for this snapshot. */
-  val results: List<PipelineResult>
-    get() =
-      viewSnapshot.documents.map { PipelineResult(it, options.serverTimestampBehavior, firestore) }
-
-  /**
-   * Returns the incremental changes since the last snapshot.
-   *
-   * @param metadataChanges Whether to include metadata-only changes.
-   * @return A list of [PipelineResultChange] objects.
-   */
-  fun getChanges(metadataChanges: MetadataChanges? = null): List<PipelineResultChange> =
-    changesFromSnapshot(metadataChanges ?: MetadataChanges.EXCLUDE, viewSnapshot) {
-      doc,
-      type,
-      oldIndex,
-      newIndex ->
-      PipelineResultChange(
-        firestore,
-        doc,
-        options.serverTimestampBehavior,
-        type,
-        oldIndex,
-        newIndex
-      )
-    }
-}
-
-/**
- * Metadata about a [RealtimePipelineSnapshot], including information about the source of the data
- * and whether the snapshot has pending writes.
- *
- * @property hasPendingWrites True if the snapshot contains results that have not yet been written
- * to the backend.
- * @property isConsistentBetweenListeners True if the snapshot is guaranteed to be consistent with
- * other active listeners on the same Firestore instance.
- */
-data class PipelineSnapshotMetadata
-internal constructor(val hasPendingWrites: Boolean, val isConsistentBetweenListeners: Boolean)
-
-/**
- * A `PipelineResultChange` represents a change to a single result in a `RealtimePipelineSnapshot`.
- *
- * @property result The `PipelineResult` that changed.
- * @property type The type of change.
- * @property oldIndex The index of the result in the previous snapshot, or -1 if it's a new result.
- * @property newIndex The index of the result in the new snapshot, or -1 if it was removed.
- */
-data class PipelineResultChange
-internal constructor(
-  val result: PipelineResult,
-  val type: ChangeType,
-  val oldIndex: Int?,
-  val newIndex: Int?
-) {
-  /** An enumeration of the different types of changes that can occur. */
-  enum class ChangeType {
-    ADDED,
-    MODIFIED,
-    REMOVED
-  }
-
-  internal constructor(
-    firestore: FirebaseFirestore,
-    doc: Document,
-    serverTimestampBehavior: DocumentSnapshot.ServerTimestampBehavior,
-    type: DocumentChange.Type,
-    oldIndex: Int,
-    newIndex: Int
-  ) : this(
-    PipelineResult(doc, serverTimestampBehavior, firestore),
-    getChangeType(type),
-    oldIndex,
-    newIndex
-  )
-
-  companion object {
-    private fun getChangeType(type: DocumentChange.Type): ChangeType =
-      when (type) {
-        DocumentChange.Type.ADDED -> ChangeType.ADDED
-        DocumentChange.Type.MODIFIED -> ChangeType.MODIFIED
-        DocumentChange.Type.REMOVED -> ChangeType.REMOVED
-      }
   }
 }
 

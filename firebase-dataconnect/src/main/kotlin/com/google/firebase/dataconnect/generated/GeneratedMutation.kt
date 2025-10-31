@@ -25,18 +25,16 @@ import kotlinx.serialization.SerializationStrategy
 /**
  * The specialization of [GeneratedOperation] for mutations.
  *
- * ### Safe for Concurrent Use
+ * ### Safe for concurrent use
  *
  * All methods and properties of [GeneratedMutation] are thread-safe and may be safely called and/or
  * accessed concurrently from multiple threads and/or coroutines.
  *
- * ### Stable for Inheritance (after graduating to "Generally Available")
+ * ### Stable for inheritance
  *
  * The [GeneratedMutation] interface _is_ stable for inheritance in third-party libraries, as new
  * methods will not be added to this interface and contracts of the existing methods will not be
- * changed. Note, however, that this interface is still subject to changes, up to and including
- * outright deletion, until the Firebase Data Connect product graduates from "alpha" and/or "beta"
- * to "Generally Available" status.
+ * changed, except possibly during major version number changes.
  */
 public interface GeneratedMutation<Connector : GeneratedConnector<Connector>, Data, Variables> :
   GeneratedOperation<Connector, Data, Variables> {

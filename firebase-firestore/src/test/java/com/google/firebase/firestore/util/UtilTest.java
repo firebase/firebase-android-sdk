@@ -108,7 +108,7 @@ public class UtilTest {
       ByteString b2 = ByteString.copyFromUtf8(s2);
       int expected = Util.compareByteStrings(b1, b2);
 
-      if (actual == expected) {
+      if (Integer.signum(actual) == Integer.signum(expected)) {
         passCount++;
       } else {
         errors.add(
@@ -117,9 +117,12 @@ public class UtilTest {
                 + "\", s2=\""
                 + s2
                 + "\") returned "
+                + signName(actual)
+                + " ("
                 + actual
+                + ")"
                 + ", but expected "
-                + expected
+                + signName(expected)
                 + " (i="
                 + i
                 + ", s1.length="
@@ -139,6 +142,16 @@ public class UtilTest {
         sb.append("\nerrors[").append(i).append("]: ").append(errors.get(i));
       }
       fail(sb.toString());
+    }
+  }
+
+  private static String signName(int value) {
+    if (value < 0) {
+      return "a negative value";
+    } else if (value > 0) {
+      return "a positive value";
+    } else {
+      return "0";
     }
   }
 

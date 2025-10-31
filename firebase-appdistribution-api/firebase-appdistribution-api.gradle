@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     id 'firebase-library'
     id("kotlin-android")
@@ -29,9 +31,9 @@ firebaseLibrary {
 android {
     namespace "com.google.firebase.appdistribution"
     compileSdkVersion project.compileSdkVersion
-    
+
     defaultConfig {
-        minSdkVersion 21
+        minSdkVersion project.minSdkVersion
         targetSdkVersion project.targetSdkVersion
         multiDexEnabled true
         versionName version
@@ -41,9 +43,6 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
-    kotlinOptions {
-        jvmTarget = '1.8'
-    }
     testOptions {
         unitTests {
             includeAndroidResources = true
@@ -51,11 +50,12 @@ android {
     }
 }
 
+kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_1_8 } }
+
 dependencies {
     api libs.playservices.tasks
-    api("com.google.firebase:firebase-common:21.0.0")
-    api("com.google.firebase:firebase-common-ktx:21.0.0")
-    api("com.google.firebase:firebase-components:18.0.0")
+    api(libs.firebase.common)
+    api(libs.firebase.components)
 
     implementation libs.androidx.annotation
     implementation libs.kotlin.stdlib
@@ -69,7 +69,6 @@ dependencies {
     testImplementation libs.truth
     testImplementation libs.junit
     testImplementation libs.mockito.core
-    testImplementation libs.mockito.mockito.inline
     testImplementation libs.robolectric
 
     androidTestImplementation libs.androidx.test.core

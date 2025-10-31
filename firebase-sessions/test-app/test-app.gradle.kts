@@ -18,6 +18,7 @@
 
 import com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabExtension
 import com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
   id("com.android.application")
@@ -38,6 +39,7 @@ android {
 
   defaultConfig {
     applicationId = "com.google.firebase.testing.sessions"
+    applicationIdSuffix = "" // e.g. app3
     minSdk = minSdkVersion
     targetSdk = targetSdkVersion
     versionCode = 1
@@ -55,6 +57,7 @@ android {
   }
 
   buildTypes {
+    release { signingConfig = signingConfigs["debug"] }
     create("benchmark") {
       initWith(buildTypes["release"])
       signingConfig = signingConfigs["debug"]
@@ -67,13 +70,14 @@ android {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
   }
-  kotlinOptions { jvmTarget = "1.8" }
 
   buildFeatures {
     buildConfig = true
     viewBinding = true
   }
 }
+
+kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_1_8 } }
 
 dependencies {
   if (project.hasProperty("useReleasedVersions")) {
@@ -102,7 +106,7 @@ dependencies {
   implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.4.0")
   implementation(libs.androidx.core)
 
-  androidTestImplementation("com.google.firebase:firebase-common:21.0.0")
+  androidTestImplementation("com.google.firebase:firebase-common:22.0.0")
   androidTestImplementation("androidx.test.uiautomator:uiautomator:2.2.0")
   androidTestImplementation(libs.androidx.test.junit)
   androidTestImplementation(libs.androidx.test.runner)

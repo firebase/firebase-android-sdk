@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import com.google.firebase.dataconnect.gradle.plugin.DataConnectExecutableVersionsRegistry
+import com.google.firebase.dataconnect.gradle.plugin.UpdateDataConnectExecutableVersionsTask
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
   id("firebase-library")
@@ -22,16 +24,17 @@ plugins {
   id("com.google.protobuf")
   id("copy-google-services")
   alias(libs.plugins.kotlinx.serialization)
+  id("com.google.firebase.dataconnect.gradle.plugin") apply false
 }
 
 firebaseLibrary {
   libraryGroup = "dataconnect"
   testLab.enabled = false
-  publishJavadoc = false
+  publishJavadoc = true
+  onlyPublishKotlindoc = true
   releaseNotes {
     name.set("{{data_connect_short}}")
     versionName.set("data-connect")
-    hasKTX.set(false)
   }
 }
 
@@ -44,7 +47,6 @@ android {
   compileSdk = compileSdkVersion
   defaultConfig {
     minSdk = minSdkVersion
-    targetSdk = targetSdkVersion
     multiDexEnabled = true
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
@@ -52,7 +54,6 @@ android {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
   }
-  kotlinOptions { jvmTarget = "1.8" }
 
   @Suppress("UnstableApiUsage")
   testOptions {
@@ -71,6 +72,14 @@ android {
       excludes.add("META-INF/LICENSE-notice.md")
     }
   }
+}
+
+kotlin {
+  compilerOptions {
+    jvmTarget = JvmTarget.JVM_1_8
+    optIn.add("kotlin.RequiresOptIn")
+  }
+  explicitApi()
 }
 
 protobuf {
@@ -93,12 +102,12 @@ protobuf {
 }
 
 dependencies {
-  api("com.google.firebase:firebase-common:21.0.0")
+  api(libs.firebase.common)
 
-  implementation("com.google.firebase:firebase-annotations:16.2.0")
+  implementation(libs.firebase.annotations)
   implementation("com.google.firebase:firebase-appcheck-interop:17.1.0")
   implementation("com.google.firebase:firebase-auth-interop:20.0.0")
-  implementation("com.google.firebase:firebase-components:18.0.0")
+  implementation(libs.firebase.components)
 
   compileOnly(libs.javax.annotation.jsr250)
   compileOnly(libs.kotlinx.datetime)
@@ -145,20 +154,12 @@ dependencies {
   androidTestImplementation(libs.turbine)
 }
 
-tasks.withType<KotlinCompile>().all {
-  kotlinOptions { freeCompilerArgs = listOf("-opt-in=kotlin.RequiresOptIn") }
-}
-
-// Enable Kotlin "Explicit API Mode". This causes the Kotlin compiler to fail if any
-// classes, methods, or properties have implicit `public` visibility. This check helps
-// avoid  accidentally leaking elements into the public API, requiring that any public
-// element be explicitly declared as `public`.
-// https://github.com/Kotlin/KEEP/blob/master/proposals/explicit-api-mode.md
-// https://chao2zhang.medium.com/explicit-api-mode-for-kotlin-on-android-b8264fdd76d1
-tasks.withType<KotlinCompile>().all {
-  if (!name.contains("test", ignoreCase = true)) {
-    if (!kotlinOptions.freeCompilerArgs.contains("-Xexplicit-api=strict")) {
-      kotlinOptions.freeCompilerArgs += "-Xexplicit-api=strict"
-    }
-  }
+// Registers a Gradle task that updates the JSON file that stores the list of Data Connect
+// executable versions. The task gets the list of all versions from the Internet and then
+// updates the JSON file with their sizes and hashes.
+tasks.register<UpdateDataConnectExecutableVersionsTask>("updateJson") {
+  jsonFile.set(
+    file("gradleplugin/plugin/src/main/resources/${DataConnectExecutableVersionsRegistry.PATH}")
+  )
+  workDirectory.set(project.layout.buildDirectory.dir("updateJson"))
 }

@@ -195,7 +195,7 @@ abstract class GenerateTutorialBundleTask : DefaultTask() {
     } else {
       logger.info("Fetching the latest version for an artifact: $fullArtifactName")
 
-      return gmaven.get().latestVersionOrNull(fullArtifactName)
+      return gmaven.get().latestNonAlphaVersionOrNull(fullArtifactName)
         ?: throw RuntimeException(
           "An artifact required for the tutorial bundle is missing from gmaven: $fullArtifactName"
         )
@@ -205,11 +205,13 @@ abstract class GenerateTutorialBundleTask : DefaultTask() {
   private fun artifactVariableString(fullArtifactName: String): String {
     val (name, alias, extra) = mappings[fullArtifactName]!!
 
-    return multiLine(
-      "<!-- $name -->",
-      "<!ENTITY $alias \"$fullArtifactName:${versionString(fullArtifactName)}\">",
-      extra,
-    )
+    val version = versionString(fullArtifactName)
+    if (version.lowercase().contains("-alpha")) {
+      logger.info("Ignoring alpha version of $fullArtifactName")
+      return "" // Alpha versions should not be included in the tutorial bundle
+    }
+
+    return multiLine("<!-- $name -->", "<!ENTITY $alias \"$fullArtifactName:${version}\">", extra)
   }
 
   companion object {
@@ -236,7 +238,7 @@ abstract class GenerateTutorialBundleTask : DefaultTask() {
         "com.google.firebase:firebase-perf" to
           ArtifactTutorialMapping("Performance Monitoring", "perf-dependency"),
         "com.google.firebase:firebase-ai" to
-          ArtifactTutorialMapping("Firebase AI Logic", "firebase-ai-depedency"),
+          ArtifactTutorialMapping("Firebase AI Logic", "firebase-ai-dependency"),
         "com.google.firebase:firebase-messaging" to
           ArtifactTutorialMapping("Cloud Messaging", "messaging-dependency"),
         "com.google.firebase:firebase-auth" to

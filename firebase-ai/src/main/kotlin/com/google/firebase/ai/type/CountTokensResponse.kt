@@ -22,19 +22,19 @@ import kotlinx.serialization.Serializable
  * The model's response to a count tokens request.
  *
  * **Important:** The counters in this class do not include billable image, video or other non-text
- * input. See [Vertex AI pricing](https://cloud.google.com/vertex-ai/generative-ai/pricing) for
- * details.
+ * input. See [Pricing](https://firebase.google.com/docs/ai-logic/pricing) for details.
  *
  * @property totalTokens The total number of tokens in the input given to the model as a prompt.
  * @property totalBillableCharacters The total number of billable characters in the text input given
  * to the model as a prompt. **Important:** this property does not include billable image, video or
- * other non-text input. See
- * [Vertex AI pricing](https://cloud.google.com/vertex-ai/generative-ai/pricing) for details.
+ * other non-text input. See [Pricing](https://firebase.google.com/docs/ai-logic/pricing) for
+ * details.
  * @property promptTokensDetails The breakdown, by modality, of how many tokens are consumed by the
  * prompt.
  */
 public class CountTokensResponse(
   public val totalTokens: Int,
+  @Deprecated("This field is deprecated and will be removed in a future version.")
   public val totalBillableCharacters: Int? = null,
   public val promptTokensDetails: List<ModalityTokenCount> = emptyList(),
 ) {
@@ -46,14 +46,14 @@ public class CountTokensResponse(
 
   @Serializable
   internal data class Internal(
-    val totalTokens: Int,
+    val totalTokens: Int? = null,
     val totalBillableCharacters: Int? = null,
     val promptTokensDetails: List<ModalityTokenCount.Internal>? = null
   ) : Response {
 
     internal fun toPublic(): CountTokensResponse {
       return CountTokensResponse(
-        totalTokens,
+        totalTokens ?: 0,
         totalBillableCharacters ?: 0,
         promptTokensDetails?.map { it.toPublic() } ?: emptyList()
       )
