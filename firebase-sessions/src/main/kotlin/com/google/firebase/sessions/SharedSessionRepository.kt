@@ -64,6 +64,8 @@ constructor(
   override var isInForeground = false
     private set
 
+  private var pendingForegroundCheck = false
+
   /**
    * Either notify the subscribers with general multi-process supported session or fallback local
    * session
@@ -93,6 +95,10 @@ constructor(
         }
         .collect { sessionData ->
           localSessionData = sessionData
+          if (pendingForegroundCheck) {
+            pendingForegroundCheck = false
+            appForeground()
+          }
           val sessionId = sessionData.sessionDetails.sessionId
           notifySubscribers(sessionId, NotificationType.GENERAL)
         }
@@ -122,6 +128,7 @@ constructor(
   override fun appForeground() {
     isInForeground = true
     if (!::localSessionData.isInitialized) {
+      pendingForegroundCheck = true
       Log.d(TAG, "App foregrounded, but local SessionData not initialized")
       return
     }
