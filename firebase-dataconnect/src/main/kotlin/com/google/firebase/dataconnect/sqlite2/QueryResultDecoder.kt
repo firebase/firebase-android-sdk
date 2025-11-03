@@ -205,18 +205,7 @@ internal class QueryResultDecoder(
     val charBuffer = CharBuffer.allocate(charCount)
 
     var bytesRemaining = byteCount
-    while (true) {
-      if (byteBuffer.remaining() >= bytesRemaining) {
-        val oldLimit = byteBuffer.limit()
-        byteBuffer.limit(byteBuffer.position() + bytesRemaining)
-        val decodeResult = charsetDecoder.decode(byteBuffer, charBuffer, true)
-        byteBuffer.limit(oldLimit)
-        if (!decodeResult.isUnderflow) {
-          decodeResult.throwException()
-        }
-        break
-      }
-
+    while (byteBuffer.remaining() < bytesRemaining) {
       val byteBufferPositionBefore = byteBuffer.position()
       val decodeResult = charsetDecoder.decode(byteBuffer, charBuffer, false)
       val byteBufferPositionAfter = byteBuffer.position()
@@ -232,8 +221,16 @@ internal class QueryResultDecoder(
       }
     }
 
+    val oldLimit = byteBuffer.limit()
+    byteBuffer.limit(byteBuffer.position() + bytesRemaining)
+    val finalDecodeResult = charsetDecoder.decode(byteBuffer, charBuffer, true)
+    byteBuffer.limit(oldLimit)
+    if (!finalDecodeResult.isUnderflow) {
+      finalDecodeResult.throwException()
+    }
+
     val flushResult = charsetDecoder.flush(charBuffer)
-    if (!flushResult.isUnderflow || charBuffer.remaining() > 0) {
+    if (!flushResult.isUnderflow || charBuffer.hasRemaining()) {
       flushResult.throwException()
     }
 
@@ -250,7 +247,7 @@ internal class QueryResultDecoder(
         readSome()
       }
       if (byteBuffer.remaining() == 0) {
-        throw EOFException(
+        throw Utf16EOFException(
           "expected to read ${charCount*2} bytes, but only got ${byteBuffer.remaining() + (charBuffer.position()*2)}"
         )
       }
@@ -279,6 +276,10 @@ internal class QueryResultDecoder(
   class UnknownKindCaseByteException(message: String) : DecodeException(message)
 
   class UnknownStringTypeException(message: String) : DecodeException(message)
+
+  class Utf8EOFException(message: String) : DecodeException(message)
+
+  class Utf16EOFException(message: String) : DecodeException(message)
 
   companion object {
 
