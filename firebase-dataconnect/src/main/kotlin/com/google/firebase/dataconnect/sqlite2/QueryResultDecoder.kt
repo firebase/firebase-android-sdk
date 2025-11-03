@@ -174,7 +174,7 @@ internal class QueryResultDecoder(
         val stringType = StringType.fromValueKindCase(valueKindCase)
         if (stringType === null) {
           throw UnknownStringTypeException(
-            "read non-string value type ${valueKindCase.serializedByte} " +
+            "read non-string kind case byte ${valueKindCase.serializedByte} " +
               "(${valueKindCase.displayName}), but expected one of " +
               StringType.entries
                 .sortedBy { it.valueKindCase.serializedByte }
