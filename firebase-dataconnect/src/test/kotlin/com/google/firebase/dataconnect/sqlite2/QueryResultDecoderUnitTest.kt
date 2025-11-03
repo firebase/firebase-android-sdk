@@ -22,6 +22,8 @@ import com.google.firebase.dataconnect.sqlite2.QueryResultDecoder.NegativeString
 import com.google.firebase.dataconnect.sqlite2.QueryResultDecoder.NegativeStructKeyCountException
 import com.google.firebase.dataconnect.sqlite2.QueryResultDecoder.UnknownKindCaseByteException
 import com.google.firebase.dataconnect.sqlite2.QueryResultDecoder.UnknownStringTypeException
+import com.google.firebase.dataconnect.sqlite2.QueryResultDecoder.Utf16EOFException
+import com.google.firebase.dataconnect.sqlite2.QueryResultDecoder.Utf8EOFException
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import io.kotest.assertions.assertSoftly
@@ -35,6 +37,7 @@ import io.kotest.property.arbitrary.byte
 import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.negativeInt
 import io.kotest.property.arbitrary.positiveInt
+import io.kotest.property.arbitrary.string
 import io.kotest.property.arbitrary.withEdgecases
 import io.kotest.property.checkAll
 import io.kotest.property.exhaustive.collection
@@ -176,6 +179,102 @@ class QueryResultDecoderUnitTest {
       }
     }
   }
+
+  @Test
+  fun `decode() should throw Utf8EOFException with 'insufficient bytes' message for utf8`() =
+    runTest {
+      checkAll(
+        propTestConfig,
+        Arb.positiveInt(),
+        Arb.string(0..20),
+        Arb.positiveInt(1),
+        Arb.positiveInt(1)
+      ) { structKeyCount, string, byteCountDelta, charCountDelta ->
+        val stringUtf8Bytes = string.encodeToByteArray()
+        val byteCount = stringUtf8Bytes.size + byteCountDelta
+        val charCount = string.length + charCountDelta
+        val byteArray = buildByteArray {
+          putInt(structKeyCount)
+          put(QueryResultCodec.VALUE_STRING_UTF8)
+          putInt(byteCount)
+          putInt(charCount)
+          put(stringUtf8Bytes)
+        }
+
+        val exception = shouldThrow<Utf8EOFException> { decode(byteArray, emptyList()) }
+
+        assertSoftly {
+          exception.message shouldContainWithNonAbuttingText "c8d6bbnms9"
+          exception.message shouldContainWithNonAbuttingTextIgnoringCase
+            "expected to read $byteCount bytes"
+          exception.message shouldContainWithNonAbuttingTextIgnoringCase "$charCount characters"
+          exception.message shouldContainWithNonAbuttingTextIgnoringCase
+            "got ${stringUtf8Bytes.size} bytes"
+          exception.message shouldContainWithNonAbuttingTextIgnoringCase
+            "${string.length} characters"
+        }
+      }
+    }
+
+  @Test
+  fun `decode() should throw Utf8EOFException with 'insufficient chars' message for utf8`() =
+    runTest {
+      checkAll(propTestConfig, Arb.positiveInt(), Arb.string(0..20), Arb.positiveInt(1)) {
+        structKeyCount,
+        string,
+        charCountDelta ->
+        val stringUtf8Bytes = string.encodeToByteArray()
+        val charCount = string.length + charCountDelta
+        val byteArray = buildByteArray {
+          putInt(structKeyCount)
+          put(QueryResultCodec.VALUE_STRING_UTF8)
+          putInt(stringUtf8Bytes.size)
+          putInt(charCount)
+          put(stringUtf8Bytes)
+        }
+
+        val exception = shouldThrow<Utf8EOFException> { decode(byteArray, emptyList()) }
+
+        assertSoftly {
+          exception.message shouldContainWithNonAbuttingText "dhvzxrcrqe"
+          exception.message shouldContainWithNonAbuttingTextIgnoringCase
+            "expected to read $charCount characters"
+          exception.message shouldContainWithNonAbuttingTextIgnoringCase
+            "${stringUtf8Bytes.size} bytes"
+          exception.message shouldContainWithNonAbuttingTextIgnoringCase
+            "got ${string.length} characters"
+        }
+      }
+    }
+
+  @Test
+  fun `decode() should throw Utf16EOFException with 'insufficient chars' message for utf16`() =
+    runTest {
+      checkAll(propTestConfig, Arb.positiveInt(), Arb.string(0..20), Arb.positiveInt(1)) {
+        structKeyCount,
+        string,
+        charCountDelta ->
+        val charCount = string.length + charCountDelta
+        val byteArray = buildByteArray {
+          putInt(structKeyCount)
+          put(QueryResultCodec.VALUE_STRING_UTF16)
+          putInt(charCount)
+          string.forEach(::putChar)
+        }
+
+        val exception = shouldThrow<Utf16EOFException> { decode(byteArray, emptyList()) }
+
+        assertSoftly {
+          exception.message shouldContainWithNonAbuttingText "e399qdvzdz"
+          exception.message shouldContainWithNonAbuttingTextIgnoringCase
+            "expected to read $charCount characters"
+          exception.message shouldContainWithNonAbuttingTextIgnoringCase
+            "${string.length * 2} bytes"
+          exception.message shouldContainWithNonAbuttingTextIgnoringCase
+            "got ${string.length} characters"
+        }
+      }
+    }
 
   private companion object {
 

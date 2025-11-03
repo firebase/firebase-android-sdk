@@ -212,8 +212,14 @@ internal class QueryResultDecoder(
       val curByteCount = byteBufferPositionAfter - byteBufferPositionBefore
       bytesRemaining -= curByteCount
 
-      if (!decodeResult.isUnderflow || curByteCount == 0) {
+      if (!decodeResult.isUnderflow) {
         decodeResult.throwException()
+      } else if (curByteCount == 0) {
+        throw Utf8EOFException(
+          "expected to read $byteCount bytes ($charCount characters), " +
+            "but only got ${byteCount - bytesRemaining} bytes " +
+            "(${charBuffer.position()} characters) [c8d6bbnms9]"
+        )
       }
 
       if (byteBuffer.remaining() < bytesRemaining) {
@@ -221,17 +227,23 @@ internal class QueryResultDecoder(
       }
     }
 
-    val oldLimit = byteBuffer.limit()
-    byteBuffer.limit(byteBuffer.position() + bytesRemaining)
+    val byteBufferPositionBefore = byteBuffer.position()
+    byteBuffer.limit(byteBufferPositionBefore + bytesRemaining)
     val finalDecodeResult = charsetDecoder.decode(byteBuffer, charBuffer, true)
-    byteBuffer.limit(oldLimit)
+    byteBuffer.limit(byteBufferPositionBefore)
     if (!finalDecodeResult.isUnderflow) {
       finalDecodeResult.throwException()
     }
 
     val flushResult = charsetDecoder.flush(charBuffer)
-    if (!flushResult.isUnderflow || charBuffer.hasRemaining()) {
+    if (!flushResult.isUnderflow) {
       flushResult.throwException()
+    }
+    if (charBuffer.hasRemaining()) {
+      throw Utf8EOFException(
+        "expected to read $charCount characters ($byteCount bytes), " +
+          "but only got ${charBuffer.position()} characters [dhvzxrcrqe]"
+      )
     }
 
     charBuffer.clear()
@@ -248,7 +260,9 @@ internal class QueryResultDecoder(
       }
       if (byteBuffer.remaining() == 0) {
         throw Utf16EOFException(
-          "expected to read ${charCount*2} bytes, but only got ${byteBuffer.remaining() + (charBuffer.position()*2)}"
+          "expected to read $charCount characters (${charCount*2} bytes), but only got " +
+            "${charBuffer.position()} characters " +
+            "(${charBuffer.position()*2 + byteBuffer.remaining()} bytes) [e399qdvzdz]"
         )
       }
 
