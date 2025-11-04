@@ -16,7 +16,6 @@
 
 package com.google.firebase.dataconnect.sqlite2
 
-import com.google.firebase.dataconnect.sqlite2.QueryResultEncoderUnitTest.StructArb.EdgeCase.Companion.nextEdgeCases
 import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWith1ByteUtf8Encoding
 import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWith2ByteUtf8Encoding
 import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWith3ByteUtf8Encoding
@@ -43,7 +42,6 @@ import io.kotest.property.arbitrary.boolean
 import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.double
-import io.kotest.property.arbitrary.list
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.string
 import io.kotest.property.asSample
@@ -147,6 +145,10 @@ class QueryResultEncoderUnitTest {
     checkAll(propTestConfig, arb) { value -> value.kindCase shouldBe expectedKindCase }
   }
 
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // StructArb class
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+
   private class StructArb(
     private val size: IntRange,
     private val keyArb: Arb<String>,
@@ -245,17 +247,114 @@ class QueryResultEncoderUnitTest {
     private enum class EdgeCase {
       Size,
       Keys,
-      Values;
+      Values,
+    }
 
-      companion object {
-
-        fun RandomSource.nextEdgeCases(): List<EdgeCase> {
-          val edgeCaseCount = random.nextInt(1..EdgeCase.entries.size)
-          return EdgeCase.entries.shuffled(random).take(edgeCaseCount)
-        }
+    private companion object {
+      fun RandomSource.nextEdgeCases(): List<EdgeCase> {
+        val edgeCaseCount = random.nextInt(1..EdgeCase.entries.size)
+        return EdgeCase.entries.shuffled(random).take(edgeCaseCount)
       }
     }
   }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // ListValueArb class
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+
+  private class ListValueArb(
+    private val length: IntRange,
+    private val valueArb: Arb<Value>,
+  ) : Arb<ListValue>() {
+
+    init {
+      require(length.first >= 0) {
+        "length.first must be greater than or equal to zero, but got length=$length"
+      }
+      require(!length.isEmpty()) { "length.isEmpty() must be false, but got $length" }
+    }
+
+    private val lengthEdgeCases =
+      listOf(length.first, length.first + 1, length.last, length.last - 1)
+        .distinct()
+        .filter { it in length }
+        .sorted()
+
+    override fun sample(rs: RandomSource): Sample<ListValue> {
+      val lengthEdgeCaseProbability = rs.random.nextFloat()
+      val valueEdgeCaseProbability = rs.random.nextFloat()
+      val sample =
+        sample(
+          rs,
+          lengthEdgeCaseProbability = lengthEdgeCaseProbability,
+          valueEdgeCaseProbability = valueEdgeCaseProbability,
+        )
+      return sample.asSample()
+    }
+
+    private fun sample(
+      rs: RandomSource,
+      lengthEdgeCaseProbability: Float,
+      valueEdgeCaseProbability: Float,
+    ): ListValue {
+      val length = rs.nextLength(lengthEdgeCaseProbability)
+      val listValueBuilder = ListValue.newBuilder()
+      repeat(length) {
+        val value = rs.nextValue(valueEdgeCaseProbability)
+        listValueBuilder.addValues(value)
+      }
+      return listValueBuilder.build()
+    }
+
+    override fun edgecase(rs: RandomSource): ListValue {
+      val edgeCases = rs.nextEdgeCases()
+      val lengthEdgeCaseProbability = if (edgeCases.contains(EdgeCase.Length)) 1.0f else 0.0f
+      val valueEdgeCaseProbability = if (edgeCases.contains(EdgeCase.Values)) 1.0f else 0.0f
+      return sample(
+        rs,
+        lengthEdgeCaseProbability = lengthEdgeCaseProbability,
+        valueEdgeCaseProbability = valueEdgeCaseProbability,
+      )
+    }
+
+    private fun RandomSource.nextLength(edgeCaseProbability: Float): Int {
+      require(edgeCaseProbability in 0.0f..1.0f) {
+        "invalid edgeCaseProbability: $edgeCaseProbability"
+      }
+      return if (random.nextFloat() < edgeCaseProbability) {
+        lengthEdgeCases.random(random)
+      } else {
+        length.random(random)
+      }
+    }
+
+    private fun RandomSource.nextValue(edgeCaseProbability: Float): Value {
+      require(edgeCaseProbability in 0.0f..1.0f) {
+        "invalid edgeCaseProbability: $edgeCaseProbability"
+      }
+      return if (random.nextFloat() < edgeCaseProbability) {
+        valueArb.edgecase(this)!!
+      } else {
+        valueArb.sample(this).value
+      }
+    }
+
+    private enum class EdgeCase {
+      Length,
+      Values,
+    }
+
+    private companion object {
+      fun RandomSource.nextEdgeCases(): List<EdgeCase> {
+        val edgeCaseCount = random.nextInt(1..EdgeCase.entries.size)
+        return EdgeCase.entries.shuffled(random).take(edgeCaseCount)
+      }
+    }
+  }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // companion object
+  //////////////////////////////////////////////////////////////////////////////////////////////////
 
   private companion object {
 
@@ -328,14 +427,18 @@ class QueryResultEncoderUnitTest {
       boolValueArb: Arb<Value> = boolValueArb(),
       stringValueArb: Arb<Value> = stringValueArb(),
       kindNotSetValueArb: Arb<Value> = kindNotSetValueArb(),
-    ): Arb<Value> {
-      val valueArb =
-        Arb.choice(nullValueArb, numberValueArb, boolValueArb, stringValueArb, kindNotSetValueArb)
-      val listArb = Arb.list(valueArb, length)
-      return listArb.map { list ->
-        val listValue = ListValue.newBuilder().addAllValues(list).build()
-        Value.newBuilder().setListValue(listValue).build()
-      }
-    }
+    ): Arb<Value> =
+      ListValueArb(
+          length = length,
+          valueArb =
+            Arb.choice(
+              nullValueArb,
+              numberValueArb,
+              boolValueArb,
+              stringValueArb,
+              kindNotSetValueArb
+            ),
+        )
+        .map { Value.newBuilder().setListValue(it).build() }
   }
 }
