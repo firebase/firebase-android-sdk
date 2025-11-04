@@ -212,13 +212,12 @@ internal class QueryResultDecoder(
       val view = byteBuffer.slice()
       view.limit(view.limit().coerceAtMost(bytesRemaining))
       val decodeResult = charsetDecoder.decode(view, charBuffer, false)
-      val curByteCount = view.limit()
-      byteBuffer.position(byteBuffer.position() + curByteCount)
-      bytesRemaining -= curByteCount
+      byteBuffer.position(byteBuffer.position() + view.position())
+      bytesRemaining -= view.position()
 
       if (!decodeResult.isUnderflow) {
         decodeResult.throwException()
-      } else if (curByteCount == 0) {
+      } else if (view.position() == 0) {
         throw Utf8EOFException(
           "expected to read $byteCount bytes ($charCount characters), " +
             "but only got ${byteCount - bytesRemaining} bytes " +
