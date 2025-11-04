@@ -17,7 +17,8 @@
 package com.google.firebase.dataconnect.sqlite2
 
 import com.google.firebase.dataconnect.sqlite2.QueryResultCodec.Entity
-import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
+import com.google.protobuf.ListValue
+import com.google.protobuf.NullValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
 import java.io.ByteArrayInputStream
@@ -49,21 +50,15 @@ internal class QueryResultDecoder(
       flip()
     }
 
-  fun decode(): Struct = buildStructProto {
+  fun decode(): Struct {
     val keyCount = readStructKeyCount()
+    val structBuilder = Struct.newBuilder()
     repeat(keyCount) {
       val key = readString()
-      when (readKindCase()) {
-        ValueKindCase.Null -> putNull(key)
-        ValueKindCase.Number -> put(key, readDouble())
-        ValueKindCase.BoolTrue -> put(key, true)
-        ValueKindCase.BoolFalse -> put(key, false)
-        ValueKindCase.StringEmpty -> put(key, readString(StringType.Empty))
-        ValueKindCase.StringUtf8 -> put(key, readString(StringType.Utf8))
-        ValueKindCase.StringUtf16 -> put(key, readString(StringType.Utf16))
-        ValueKindCase.KindNotSet -> put(key, Value.getDefaultInstance())
-      }
+      val value = readValue()
+      structBuilder.putFields(key, value)
     }
+    return structBuilder.build()
   }
 
   private fun readSome() {
@@ -140,6 +135,15 @@ internal class QueryResultDecoder(
       }
     }
 
+  private fun readListSize(): Int =
+    readInt().also {
+      if (it < 0) {
+        throw NegativeListSizeException(
+          "read list size $it, but expected a number greater than or equal to zero [yfvpf9pwt8]"
+        )
+      }
+    }
+
   private enum class ValueKindCase(val serializedByte: Byte, val displayName: String) {
     Null(QueryResultCodec.VALUE_NULL, "null"),
     Number(QueryResultCodec.VALUE_NUMBER, "number"),
@@ -148,7 +152,8 @@ internal class QueryResultDecoder(
     StringEmpty(QueryResultCodec.VALUE_STRING_EMPTY, "emptystring"),
     StringUtf8(QueryResultCodec.VALUE_STRING_UTF8, "utf8"),
     StringUtf16(QueryResultCodec.VALUE_STRING_UTF16, "utf16"),
-    KindNotSet(QueryResultCodec.VALUE_KIND_NOT_SET, "kindnotset");
+    KindNotSet(QueryResultCodec.VALUE_KIND_NOT_SET, "kindnotset"),
+    List(QueryResultCodec.VALUE_LIST, "list");
 
     companion object {
       fun fromSerializedByte(serializedByte: Byte): ValueKindCase? =
@@ -156,20 +161,21 @@ internal class QueryResultDecoder(
     }
   }
 
-  private fun readKindCase(): ValueKindCase =
-    readByte().let { byte ->
-      val kindCase = ValueKindCase.fromSerializedByte(byte)
-      if (kindCase === null) {
-        throw UnknownKindCaseByteException(
-          "read unknown kind case byte $byte, but expected one of " +
-            ValueKindCase.entries
-              .sortedBy { it.serializedByte }
-              .joinToString { "${it.serializedByte} (${it.displayName})" } +
-            " [pmkb3sc2mn]"
-        )
-      }
-      kindCase
+  private fun readKindCase(): ValueKindCase {
+    byteBuffer.mark()
+    val byte = readByte()
+    val kindCase = ValueKindCase.fromSerializedByte(byte)
+    if (kindCase === null) {
+      throw UnknownKindCaseByteException(
+        "read unknown kind case byte $byte, but expected one of " +
+          ValueKindCase.entries
+            .sortedBy { it.serializedByte }
+            .joinToString { "${it.serializedByte} (${it.displayName})" } +
+          " [pmkb3sc2mn]"
+      )
     }
+    return kindCase
+  }
 
   private enum class StringType(val valueKindCase: ValueKindCase) {
     Empty(ValueKindCase.StringEmpty),
@@ -282,6 +288,37 @@ internal class QueryResultDecoder(
     return charBuffer.toString()
   }
 
+  private fun readList(): ListValue {
+    val size = readListSize()
+    val listValueBuilder = ListValue.newBuilder()
+    repeat(size) {
+      val value = readValue()
+      listValueBuilder.addValues(value)
+    }
+    return listValueBuilder.build()
+  }
+
+  private fun readValue(): Value {
+    val valueBuilder = Value.newBuilder()
+    when (readKindCase()) {
+      ValueKindCase.Null -> valueBuilder.setNullValue(NullValue.NULL_VALUE)
+      ValueKindCase.Number -> valueBuilder.setNumberValue(readDouble())
+      ValueKindCase.BoolTrue -> valueBuilder.setBoolValue(true)
+      ValueKindCase.BoolFalse -> valueBuilder.setBoolValue(false)
+      ValueKindCase.StringEmpty,
+      ValueKindCase.StringUtf8,
+      ValueKindCase.StringUtf16 -> {
+        byteBuffer.reset()
+        valueBuilder.setStringValue(readString())
+      }
+      ValueKindCase.KindNotSet -> {
+        // do nothing, leaving the kind as KIND_NOT_SET
+      }
+      ValueKindCase.List -> valueBuilder.setListValue(readList())
+    }
+    return valueBuilder.build()
+  }
+
   sealed class DecodeException(message: String) : Exception(message)
 
   class NegativeStructKeyCountException(message: String) : DecodeException(message)
@@ -289,6 +326,8 @@ internal class QueryResultDecoder(
   class NegativeStringByteCountException(message: String) : DecodeException(message)
 
   class NegativeStringCharCountException(message: String) : DecodeException(message)
+
+  class NegativeListSizeException(message: String) : DecodeException(message)
 
   class UnknownKindCaseByteException(message: String) : DecodeException(message)
 

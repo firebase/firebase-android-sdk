@@ -18,6 +18,7 @@ package com.google.firebase.dataconnect.sqlite2
 
 import com.google.firebase.dataconnect.sqlite2.QueryResultCodec.Entity
 import com.google.firebase.dataconnect.util.StringUtil.calculateUtf8ByteCount
+import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
 import java.io.ByteArrayOutputStream
@@ -52,24 +53,7 @@ internal class QueryResultEncoder(private val channel: WritableByteChannel) {
     writeInt(map.size)
     map.entries.forEach { (key, value) ->
       writeString(key)
-      when (value.kindCase) {
-        Value.KindCase.NULL_VALUE -> writeByte(QueryResultCodec.VALUE_NULL)
-        Value.KindCase.NUMBER_VALUE -> {
-          writeByte(QueryResultCodec.VALUE_NUMBER)
-          writeDouble(value.numberValue)
-        }
-        Value.KindCase.BOOL_VALUE ->
-          writeByte(
-            if (value.boolValue) QueryResultCodec.VALUE_BOOL_TRUE
-            else QueryResultCodec.VALUE_BOOL_FALSE
-          )
-        Value.KindCase.STRING_VALUE -> {
-          writeString(value.stringValue)
-        }
-        Value.KindCase.STRUCT_VALUE -> TODO()
-        Value.KindCase.LIST_VALUE -> TODO()
-        Value.KindCase.KIND_NOT_SET -> writeByte(QueryResultCodec.VALUE_KIND_NOT_SET)
-      }
+      writeValue(value)
     }
   }
 
@@ -194,6 +178,31 @@ internal class QueryResultEncoder(private val channel: WritableByteChannel) {
       "internal error agdf5qbwwp: byteWriteCount=$byteWriteCount " +
         "should be equal to expectedByteCount=$expectedByteCount, but they differ by " +
         "${(expectedByteCount - byteWriteCount).absoluteValue}"
+    }
+  }
+
+  private fun writeList(listValue: ListValue) {
+    writeByte(QueryResultCodec.VALUE_LIST)
+    writeInt(listValue.valuesCount)
+    repeat(listValue.valuesCount) { writeValue(listValue.getValues(it)) }
+  }
+
+  private fun writeValue(value: Value) {
+    when (value.kindCase) {
+      Value.KindCase.NULL_VALUE -> writeByte(QueryResultCodec.VALUE_NULL)
+      Value.KindCase.NUMBER_VALUE -> {
+        writeByte(QueryResultCodec.VALUE_NUMBER)
+        writeDouble(value.numberValue)
+      }
+      Value.KindCase.BOOL_VALUE ->
+        writeByte(
+          if (value.boolValue) QueryResultCodec.VALUE_BOOL_TRUE
+          else QueryResultCodec.VALUE_BOOL_FALSE
+        )
+      Value.KindCase.STRING_VALUE -> writeString(value.stringValue)
+      Value.KindCase.STRUCT_VALUE -> TODO()
+      Value.KindCase.LIST_VALUE -> writeList(value.listValue)
+      Value.KindCase.KIND_NOT_SET -> writeByte(QueryResultCodec.VALUE_KIND_NOT_SET)
     }
   }
 

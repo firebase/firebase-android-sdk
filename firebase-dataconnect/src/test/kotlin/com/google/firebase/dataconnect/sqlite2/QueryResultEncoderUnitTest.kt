@@ -25,6 +25,7 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWith
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.stringWithLoneSurrogates
 import com.google.firebase.dataconnect.testutil.shouldBe
+import com.google.protobuf.ListValue
 import com.google.protobuf.NullValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
@@ -42,6 +43,7 @@ import io.kotest.property.arbitrary.boolean
 import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.double
+import io.kotest.property.arbitrary.list
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.string
 import io.kotest.property.asSample
@@ -103,6 +105,13 @@ class QueryResultEncoderUnitTest {
     }
   }
 
+  @Test
+  fun `struct with all list values`() = runTest {
+    checkAll(propTestConfig, structArb(value = listValueArb())) { struct ->
+      struct.decodingEncodingShouldProduceIdenticalStruct()
+    }
+  }
+
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Tests for helper functions
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -126,6 +135,10 @@ class QueryResultEncoderUnitTest {
   @Test
   fun `kindNotSetValueArb() should produce Values with kindCase KIND_NOT_SET`() =
     verifyArbGeneratesValuesWithKindCase(kindNotSetValueArb(), Value.KindCase.KIND_NOT_SET)
+
+  @Test
+  fun `listValueArb() should produce Values with kindCase LIST_VALUE`() =
+    verifyArbGeneratesValuesWithKindCase(listValueArb(), Value.KindCase.LIST_VALUE)
 
   private fun verifyArbGeneratesValuesWithKindCase(
     arb: Arb<Value>,
@@ -307,5 +320,22 @@ class QueryResultEncoderUnitTest {
     ): Arb<Value> = string.map { Value.newBuilder().setStringValue(it).build() }
 
     fun kindNotSetValueArb(): Arb<Value> = arbitrary { Value.newBuilder().build() }
+
+    fun listValueArb(
+      length: IntRange = 0..10,
+      nullValueArb: Arb<Value> = nullValueArb(),
+      numberValueArb: Arb<Value> = numberValueArb(),
+      boolValueArb: Arb<Value> = boolValueArb(),
+      stringValueArb: Arb<Value> = stringValueArb(),
+      kindNotSetValueArb: Arb<Value> = kindNotSetValueArb(),
+    ): Arb<Value> {
+      val valueArb =
+        Arb.choice(nullValueArb, numberValueArb, boolValueArb, stringValueArb, kindNotSetValueArb)
+      val listArb = Arb.list(valueArb, length)
+      return listArb.map { list ->
+        val listValue = ListValue.newBuilder().addAllValues(list).build()
+        Value.newBuilder().setListValue(listValue).build()
+      }
+    }
   }
 }
