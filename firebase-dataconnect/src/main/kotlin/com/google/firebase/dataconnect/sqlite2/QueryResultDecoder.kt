@@ -61,21 +61,21 @@ internal class QueryResultDecoder(
     return structBuilder.build()
   }
 
-  private fun readSome() {
+  private fun readSome(): Int {
     byteBuffer.compact()
-    channel.read(byteBuffer)
+    val readCount = channel.read(byteBuffer)
     byteBuffer.flip()
+    return readCount
   }
 
   private fun ensureRemaining(byteCount: Int) {
     val originalRemaining = byteBuffer.remaining()
     while (byteBuffer.remaining() < byteCount) {
-      val remainingBefore = byteBuffer.remaining()
-      readSome()
-      val remainingAfter = byteBuffer.remaining()
-      if (remainingBefore == remainingAfter) {
+      val byteReadCount = readSome()
+      if (byteReadCount <= 0) {
         throw EOFException(
-          "unexpected EOF: expected at least $byteCount bytes, but only got ${remainingAfter-originalRemaining}"
+          "unexpected EOF: expected at least $byteCount bytes, " +
+            "but only got ${byteBuffer.remaining()-originalRemaining}"
         )
       }
     }
@@ -162,7 +162,6 @@ internal class QueryResultDecoder(
   }
 
   private fun readKindCase(): ValueKindCase {
-    byteBuffer.mark()
     val byte = readByte()
     val kindCase = ValueKindCase.fromSerializedByte(byte)
     if (kindCase === null) {
@@ -223,16 +222,17 @@ internal class QueryResultDecoder(
 
       if (!decodeResult.isUnderflow) {
         decodeResult.throwException()
-      } else if (view.position() == 0) {
-        throw Utf8EOFException(
-          "expected to read $byteCount bytes ($charCount characters), " +
-            "but only got ${byteCount - bytesRemaining} bytes " +
-            "(${charBuffer.position()} characters) [c8d6bbnms9]"
-        )
       }
 
       if (byteBuffer.remaining() < bytesRemaining) {
-        readSome()
+        val byteReadCount = readSome()
+        if (byteReadCount <= 0) {
+          throw Utf8EOFException(
+            "expected to read $byteCount bytes ($charCount characters), " +
+              "but only got ${byteCount - bytesRemaining} bytes " +
+              "(${charBuffer.position()} characters) [c8d6bbnms9]"
+          )
+        }
       }
     }
 
@@ -305,12 +305,9 @@ internal class QueryResultDecoder(
       ValueKindCase.Number -> valueBuilder.setNumberValue(readDouble())
       ValueKindCase.BoolTrue -> valueBuilder.setBoolValue(true)
       ValueKindCase.BoolFalse -> valueBuilder.setBoolValue(false)
-      ValueKindCase.StringEmpty,
-      ValueKindCase.StringUtf8,
-      ValueKindCase.StringUtf16 -> {
-        byteBuffer.reset()
-        valueBuilder.setStringValue(readString())
-      }
+      ValueKindCase.StringEmpty -> valueBuilder.setStringValue("")
+      ValueKindCase.StringUtf8 -> valueBuilder.setStringValue(readStringUtf8())
+      ValueKindCase.StringUtf16 -> valueBuilder.setStringValue(readStringCustomUtf16())
       ValueKindCase.KindNotSet -> {
         // do nothing, leaving the kind as KIND_NOT_SET
       }
