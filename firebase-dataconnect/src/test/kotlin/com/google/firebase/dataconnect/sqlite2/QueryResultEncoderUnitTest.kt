@@ -38,6 +38,7 @@ import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
 import io.kotest.property.RandomSource
 import io.kotest.property.Sample
+import io.kotest.property.ShrinkingMode
 import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.alphanumeric
 import io.kotest.property.arbitrary.arbitrary
@@ -112,9 +113,18 @@ class QueryResultEncoderUnitTest {
   }
 
   @Test
-  fun `struct with all list values`() = runTest {
-    val listValueArb: Arb<Value> = listValueArb().map { it.toValueProto() }
+  fun `struct with all non-nested list values`() = runTest {
+    val listValueArb: Arb<Value> = listValueArb(depth = 1..1).map { it.toValueProto() }
     checkAll(propTestConfig, structArb(value = listValueArb)) { struct ->
+      struct.decodingEncodingShouldProduceIdenticalStruct()
+    }
+  }
+
+  @Test
+  fun `struct with all nested list values`() = runTest {
+    val listValueArb: Arb<Value> =
+      listValueArb(length = 1..2, depth = 2..4).map { it.toValueProto() }
+    checkAll(propTestConfig, structArb(size = 1..2, value = listValueArb)) { struct ->
       struct.decodingEncodingShouldProduceIdenticalStruct()
     }
   }
@@ -457,7 +467,8 @@ class QueryResultEncoderUnitTest {
     val propTestConfig =
       PropTestConfig(
         iterations = 1000,
-        edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.33)
+        edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.33),
+        shrinkingMode = ShrinkingMode.Off,
       )
 
     fun stringForEncodeTestingArb(): Arb<String> =
