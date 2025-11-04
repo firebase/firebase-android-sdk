@@ -17,6 +17,7 @@
 package com.google.firebase.dataconnect.sqlite2
 
 import com.google.firebase.dataconnect.sqlite2.QueryResultDecoder.Companion.decode
+import com.google.firebase.dataconnect.sqlite2.QueryResultDecoder.NegativeListSizeException
 import com.google.firebase.dataconnect.sqlite2.QueryResultDecoder.NegativeStringByteCountException
 import com.google.firebase.dataconnect.sqlite2.QueryResultDecoder.NegativeStringCharCountException
 import com.google.firebase.dataconnect.sqlite2.QueryResultDecoder.NegativeStructKeyCountException
@@ -275,6 +276,31 @@ class QueryResultDecoderUnitTest {
         }
       }
     }
+
+  @Test
+  fun `decode() should throw NegativeListSizeException`() = runTest {
+    checkAll(propTestConfig, Arb.positiveInt(), Arb.string(0..20), Arb.negativeInt()) {
+      structKeyCount,
+      string,
+      negativeListSize ->
+      val byteArray = buildByteArray {
+        putInt(structKeyCount)
+        put(QueryResultCodec.VALUE_STRING_EMPTY)
+        put(QueryResultCodec.VALUE_LIST)
+        putInt(negativeListSize)
+      }
+
+      val exception = shouldThrow<NegativeListSizeException> { decode(byteArray, emptyList()) }
+
+      assertSoftly {
+        exception.message shouldContainWithNonAbuttingText "yfvpf9pwt8"
+        exception.message shouldContainWithNonAbuttingTextIgnoringCase
+          "read list size $negativeListSize"
+        exception.message shouldContainWithNonAbuttingTextIgnoringCase
+          "greater than or equal to zero"
+      }
+    }
+  }
 
   private companion object {
 
