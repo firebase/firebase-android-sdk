@@ -16,6 +16,7 @@
 
 package com.google.firebase.dataconnect.sqlite2
 
+import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
 import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWith1ByteUtf8Encoding
 import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWith2ByteUtf8Encoding
 import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWith3ByteUtf8Encoding
@@ -28,7 +29,9 @@ import com.google.protobuf.ListValue
 import com.google.protobuf.NullValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
+import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
@@ -48,9 +51,14 @@ import io.kotest.property.asSample
 import io.kotest.property.checkAll
 import kotlin.random.nextInt
 import kotlinx.coroutines.test.runTest
+import org.junit.Rule
 import org.junit.Test
 
 class QueryResultEncoderUnitTest {
+
+  @get:Rule val randomSeedTestRule = RandomSeedTestRule()
+
+  private val rs: RandomSource by randomSeedTestRule.rs
 
   @Test
   fun `empty struct`() {
@@ -105,7 +113,8 @@ class QueryResultEncoderUnitTest {
 
   @Test
   fun `struct with all list values`() = runTest {
-    checkAll(propTestConfig, structArb(value = listValueArb())) { struct ->
+    val listValueArb: Arb<Value> = listValueArb().map { it.toValueProto() }
+    checkAll(propTestConfig, structArb(value = listValueArb)) { struct ->
       struct.decodingEncodingShouldProduceIdenticalStruct()
     }
   }
@@ -136,7 +145,33 @@ class QueryResultEncoderUnitTest {
 
   @Test
   fun `listValueArb() should produce Values with kindCase LIST_VALUE`() =
-    verifyArbGeneratesValuesWithKindCase(listValueArb(), Value.KindCase.LIST_VALUE)
+    verifyArbGeneratesValuesWithKindCase(
+      listValueArb().map { it.toValueProto() },
+      Value.KindCase.LIST_VALUE
+    )
+
+  @Test
+  fun `listValueArb() should specify the correct depth`() = runTest {
+    checkAll(propTestConfig, listValueArb()) { sample ->
+      sample.depth shouldBe sample.listValue.maxDepth()
+    }
+  }
+
+  @Test
+  fun `listValueArb() should generate depths up to 3 for normal samples`() = runTest {
+    val arb = listValueArb()
+    val depths = mutableSetOf<Int>()
+    repeat(propTestConfig.iterations!!) { depths.add(arb.sample(rs).value.depth) }
+    withClue("depths=${depths.sorted()}") { depths.shouldContainExactlyInAnyOrder(1, 2, 3) }
+  }
+
+  @Test
+  fun `listValueArb() should generate depths up to 3 for edge cases`() = runTest {
+    val arb = listValueArb()
+    val depths = mutableSetOf<Int>()
+    repeat(propTestConfig.iterations!!) { depths.add(arb.edgecase(rs)!!.depth) }
+    withClue("depths=${depths.sorted()}") { depths.shouldContainExactlyInAnyOrder(1, 2, 3) }
+  }
 
   private fun verifyArbGeneratesValuesWithKindCase(
     arb: Arb<Value>,
@@ -264,14 +299,24 @@ class QueryResultEncoderUnitTest {
 
   private class ListValueArb(
     private val length: IntRange,
+    private val depth: IntRange,
     private val valueArb: Arb<Value>,
-  ) : Arb<ListValue>() {
+  ) : Arb<ListValueArb.ListValueInfo>() {
+
+    class ListValueInfo(
+      val listValue: ListValue,
+      val depth: Int,
+    ) {
+      fun toValueProto(): Value = Value.newBuilder().setListValue(listValue).build()
+    }
 
     init {
       require(length.first >= 0) {
         "length.first must be greater than or equal to zero, but got length=$length"
       }
       require(!length.isEmpty()) { "length.isEmpty() must be false, but got $length" }
+      require(depth.first > 0) { "depth.first must be greater than zero, but got depth=$depth" }
+      require(!depth.isEmpty()) { "depth.isEmpty() must be false, but got $depth" }
     }
 
     private val lengthEdgeCases =
@@ -280,40 +325,77 @@ class QueryResultEncoderUnitTest {
         .filter { it in length }
         .sorted()
 
-    override fun sample(rs: RandomSource): Sample<ListValue> {
-      val lengthEdgeCaseProbability = rs.random.nextFloat()
-      val valueEdgeCaseProbability = rs.random.nextFloat()
+    private val depthEdgeCases = listOf(depth.first, depth.last)
+
+    override fun sample(rs: RandomSource): Sample<ListValueInfo> {
       val sample =
         sample(
           rs,
-          lengthEdgeCaseProbability = lengthEdgeCaseProbability,
-          valueEdgeCaseProbability = valueEdgeCaseProbability,
+          depth = rs.nextDepth(edgeCaseProbability = rs.random.nextFloat()),
+          lengthEdgeCaseProbability = rs.random.nextFloat(),
+          valueEdgeCaseProbability = rs.random.nextFloat(),
+          nestedProbability = rs.random.nextFloat(),
         )
       return sample.asSample()
     }
 
     private fun sample(
       rs: RandomSource,
+      depth: Int,
       lengthEdgeCaseProbability: Float,
       valueEdgeCaseProbability: Float,
-    ): ListValue {
+      nestedProbability: Float,
+    ): ListValueInfo {
+      require(depth > 0) { "invalid depth: $depth (must be greater than zero)" }
       val length = rs.nextLength(lengthEdgeCaseProbability)
-      val listValueBuilder = ListValue.newBuilder()
-      repeat(length) {
-        val value = rs.nextValue(valueEdgeCaseProbability)
-        listValueBuilder.addValues(value)
+      val values = mutableListOf<Value>()
+
+      fun RandomSource.listValue(): Value {
+        val listValue =
+          sample(
+            this,
+            depth = depth - 1,
+            lengthEdgeCaseProbability = lengthEdgeCaseProbability,
+            valueEdgeCaseProbability = valueEdgeCaseProbability,
+            nestedProbability = nestedProbability,
+          )
+        return Value.newBuilder().setListValue(listValue.listValue).build()
       }
-      return listValueBuilder.build()
+
+      var hasNestedListValue = false
+      repeat(length) {
+        val value =
+          if (depth > 1 && rs.random.nextFloat() < nestedProbability) {
+            hasNestedListValue = true
+            rs.listValue()
+          } else {
+            rs.nextValue(valueEdgeCaseProbability)
+          }
+        values.add(value)
+      }
+
+      if (depth > 1 && !hasNestedListValue) {
+        values.removeFirstOrNull()
+        values.add(rs.listValue())
+        values.shuffle(rs.random)
+      }
+
+      val listValue = ListValue.newBuilder().addAllValues(values).build()
+      return ListValueInfo(listValue, depth)
     }
 
-    override fun edgecase(rs: RandomSource): ListValue {
+    override fun edgecase(rs: RandomSource): ListValueInfo {
       val edgeCases = rs.nextEdgeCases()
       val lengthEdgeCaseProbability = if (edgeCases.contains(EdgeCase.Length)) 1.0f else 0.0f
+      val depthEdgeCaseProbability = if (edgeCases.contains(EdgeCase.Depth)) 1.0f else 0.0f
       val valueEdgeCaseProbability = if (edgeCases.contains(EdgeCase.Values)) 1.0f else 0.0f
+      val nestedProbability = if (edgeCases.contains(EdgeCase.OnlyNested)) 1.0f else 0.0f
       return sample(
         rs,
+        depth = rs.nextDepth(depthEdgeCaseProbability),
         lengthEdgeCaseProbability = lengthEdgeCaseProbability,
         valueEdgeCaseProbability = valueEdgeCaseProbability,
+        nestedProbability = nestedProbability,
       )
     }
 
@@ -325,6 +407,17 @@ class QueryResultEncoderUnitTest {
         lengthEdgeCases.random(random)
       } else {
         length.random(random)
+      }
+    }
+
+    private fun RandomSource.nextDepth(edgeCaseProbability: Float): Int {
+      require(edgeCaseProbability in 0.0f..1.0f) {
+        "invalid edgeCaseProbability: $edgeCaseProbability"
+      }
+      return if (random.nextFloat() < edgeCaseProbability) {
+        depthEdgeCases.random(random)
+      } else {
+        depth.random(random)
       }
     }
 
@@ -341,7 +434,9 @@ class QueryResultEncoderUnitTest {
 
     private enum class EdgeCase {
       Length,
+      Depth,
       Values,
+      OnlyNested,
     }
 
     private companion object {
@@ -422,23 +517,39 @@ class QueryResultEncoderUnitTest {
 
     fun listValueArb(
       length: IntRange = 0..10,
+      depth: IntRange = 1..3,
       nullValueArb: Arb<Value> = nullValueArb(),
       numberValueArb: Arb<Value> = numberValueArb(),
       boolValueArb: Arb<Value> = boolValueArb(),
       stringValueArb: Arb<Value> = stringValueArb(),
       kindNotSetValueArb: Arb<Value> = kindNotSetValueArb(),
-    ): Arb<Value> =
+    ): Arb<ListValueArb.ListValueInfo> =
       ListValueArb(
-          length = length,
-          valueArb =
-            Arb.choice(
-              nullValueArb,
-              numberValueArb,
-              boolValueArb,
-              stringValueArb,
-              kindNotSetValueArb
-            ),
-        )
-        .map { Value.newBuilder().setListValue(it).build() }
+        length = length,
+        depth = depth,
+        valueArb =
+          Arb.choice(
+            nullValueArb,
+            numberValueArb,
+            boolValueArb,
+            stringValueArb,
+            kindNotSetValueArb
+          ),
+      )
+
+    fun ListValue.maxDepth(): Int {
+      var maxDepth = 1
+      repeat(valuesCount) {
+        val value = getValues(it)
+        val listElementDepth =
+          when (value.kindCase) {
+            Value.KindCase.STRUCT_VALUE -> TODO()
+            Value.KindCase.LIST_VALUE -> 1 + value.listValue.maxDepth()
+            else -> 0
+          }
+        maxDepth = maxDepth.coerceAtLeast(listElementDepth)
+      }
+      return maxDepth
+    }
   }
 }
