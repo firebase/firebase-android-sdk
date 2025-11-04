@@ -16,6 +16,7 @@
 
 package com.google.firebase.dataconnect.sqlite2
 
+import com.google.firebase.dataconnect.sqlite2.QueryResultEncoderUnitTest.StructArb.EdgeCase.Companion.nextEdgeCases
 import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWith1ByteUtf8Encoding
 import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWith2ByteUtf8Encoding
 import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWith3ByteUtf8Encoding
@@ -27,24 +28,25 @@ import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.protobuf.NullValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
-import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
-import io.kotest.matchers.collections.shouldContain
-import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
+import io.kotest.property.RandomSource
+import io.kotest.property.Sample
 import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.alphanumeric
+import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.boolean
 import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.double
-import io.kotest.property.arbitrary.list
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.string
+import io.kotest.property.asSample
 import io.kotest.property.checkAll
+import kotlin.random.nextInt
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
@@ -57,44 +59,46 @@ class QueryResultEncoderUnitTest {
 
   @Test
   fun `struct with all null values`() = runTest {
-    checkAll(propTestConfig, structWithNullValuesArb()) { struct ->
+    checkAll(propTestConfig, structArb(value = nullValueArb())) { struct ->
       struct.decodingEncodingShouldProduceIdenticalStruct()
     }
   }
 
   @Test
   fun `struct with all number values`() = runTest {
-    checkAll(propTestConfig, structWithNumberValuesArb()) { struct ->
+    checkAll(propTestConfig, structArb(value = numberValueArb())) { struct ->
       struct.decodingEncodingShouldProduceIdenticalStruct()
     }
   }
 
   @Test
   fun `struct with all bool values`() = runTest {
-    checkAll(propTestConfig, structWithBoolValuesArb()) { struct ->
+    checkAll(propTestConfig, structArb(value = boolValueArb())) { struct ->
       struct.decodingEncodingShouldProduceIdenticalStruct()
     }
   }
 
   @Test
-  fun `struct with all string values`() = runTest {
-    checkAll(propTestConfig, structWithStringValuesArb()) { struct ->
-      struct.decodingEncodingShouldProduceIdenticalStruct()
-    }
-  }
+  fun `struct with all string values`() =
+    testStructWithStringValues(propTestConfig, stringForEncodeTestingArb())
 
   @Test
-  fun `struct with long string values`() = runTest {
-    val structArb = structWithStringValuesArb(value = longStringForEncodeTestingArb())
-    checkAll(@OptIn(ExperimentalKotest::class) propTestConfig.copy(iterations = 10), structArb) {
-      struct ->
-      struct.decodingEncodingShouldProduceIdenticalStruct()
+  fun `struct with long string values`() =
+    testStructWithStringValues(
+      @OptIn(ExperimentalKotest::class) propTestConfig.copy(iterations = 10),
+      longStringForEncodeTestingArb()
+    )
+
+  private fun testStructWithStringValues(propTestConfig: PropTestConfig, stringArb: Arb<String>) =
+    runTest {
+      checkAll(propTestConfig, structArb(value = stringValueArb(stringArb))) { struct ->
+        struct.decodingEncodingShouldProduceIdenticalStruct()
+      }
     }
-  }
 
   @Test
   fun `struct with all kind_not_set values`() = runTest {
-    checkAll(propTestConfig, structWithKindNotSetValuesArb()) { struct ->
+    checkAll(propTestConfig, structArb(value = kindNotSetValueArb())) { struct ->
       struct.decodingEncodingShouldProduceIdenticalStruct()
     }
   }
@@ -104,59 +108,139 @@ class QueryResultEncoderUnitTest {
   //////////////////////////////////////////////////////////////////////////////////////////////////
 
   @Test
-  fun `structWithNullValuesArb() should produce structs with only number values`() =
-    verifyArbProducesStructsWithKindCase(structWithNullValuesArb(), Value.KindCase.NULL_VALUE)
+  fun `nullValueArb() should produce Values with kindCase NULL_VALUE`() =
+    verifyArbGeneratesValuesWithKindCase(nullValueArb(), Value.KindCase.NULL_VALUE)
 
   @Test
-  fun `structWithNullValuesArb() should produce non-empty structs`() =
-    verifyArbProducesNonEmptyStructs(structWithNullValuesArb())
+  fun `numberValueArb() should produce Values with kindCase NUMBER_VALUE`() =
+    verifyArbGeneratesValuesWithKindCase(numberValueArb(), Value.KindCase.NUMBER_VALUE)
 
   @Test
-  fun `structWithNumberValuesArb() should produce structs with only number values`() =
-    verifyArbProducesStructsWithKindCase(structWithNumberValuesArb(), Value.KindCase.NUMBER_VALUE)
+  fun `boolValueArb() should produce Values with kindCase BOOL_VALUE`() =
+    verifyArbGeneratesValuesWithKindCase(boolValueArb(), Value.KindCase.BOOL_VALUE)
 
   @Test
-  fun `structWithNumberValuesArb() should produce non-empty structs`() =
-    verifyArbProducesNonEmptyStructs(structWithNumberValuesArb())
+  fun `stringValueArb() should produce Values with kindCase STRING_VALUE`() =
+    verifyArbGeneratesValuesWithKindCase(stringValueArb(), Value.KindCase.STRING_VALUE)
 
   @Test
-  fun `structWithBoolValuesArb() should produce structs with only number values`() =
-    verifyArbProducesStructsWithKindCase(structWithBoolValuesArb(), Value.KindCase.BOOL_VALUE)
+  fun `kindNotSetValueArb() should produce Values with kindCase KIND_NOT_SET`() =
+    verifyArbGeneratesValuesWithKindCase(kindNotSetValueArb(), Value.KindCase.KIND_NOT_SET)
 
-  @Test
-  fun `structWithBoolValuesArb() should produce non-empty structs`() =
-    verifyArbProducesNonEmptyStructs(structWithBoolValuesArb())
-
-  @Test
-  fun `structWithStringValuesArb() should produce structs with only number values`() =
-    verifyArbProducesStructsWithKindCase(structWithStringValuesArb(), Value.KindCase.STRING_VALUE)
-
-  @Test
-  fun `structWithStringValuesArb() should produce non-empty structs`() =
-    verifyArbProducesNonEmptyStructs(structWithStringValuesArb())
-
-  private fun verifyArbProducesStructsWithKindCase(
-    arb: Arb<Struct>,
+  private fun verifyArbGeneratesValuesWithKindCase(
+    arb: Arb<Value>,
     expectedKindCase: Value.KindCase
   ) = runTest {
-    checkAll(propTestConfig, arb) { struct ->
-      struct.fieldsMap.values.forEach { it.kindCase shouldBe expectedKindCase }
-    }
+    checkAll(propTestConfig, arb) { value -> value.kindCase shouldBe expectedKindCase }
   }
 
-  fun verifyArbProducesNonEmptyStructs(arb: Arb<Struct>) = runTest {
-    val occurrenceCountBySize = mutableMapOf<Int, Int>()
-    checkAll(propTestConfig, arb) { struct ->
-      val oldCount = occurrenceCountBySize.getOrDefault(struct.fieldsCount, 0)
-      occurrenceCountBySize[struct.fieldsCount] = oldCount + 1
+  private class StructArb(
+    private val size: IntRange,
+    private val keyArb: Arb<String>,
+    private val valueArb: Arb<Value>,
+  ) : Arb<Struct>() {
+
+    init {
+      require(size.first >= 0) {
+        "size.first must be greater than or equal to zero, but got size=$size"
+      }
+      require(!size.isEmpty()) { "size.isEmpty() must be false, but got $size" }
     }
-    withClue(
-      "occurrenceCountBySize=${occurrenceCountBySize.toSortedMap(Comparator.comparing { it } )}"
-    ) {
-      val occurrenceCounts = occurrenceCountBySize.keys.sorted() // sorted for better fail messages
-      occurrenceCounts shouldNotContain 0
-      occurrenceCounts shouldContain 1
-      occurrenceCounts shouldContain 2
+
+    private val sizeEdgeCases =
+      listOf(size.first, size.first + 1, size.last, size.last - 1)
+        .distinct()
+        .filter { it in size }
+        .sorted()
+
+    override fun sample(rs: RandomSource): Sample<Struct> {
+      val sizeEdgeCaseProbability = rs.random.nextFloat()
+      val keyEdgeCaseProbability = rs.random.nextFloat()
+      val valueEdgeCaseProbability = rs.random.nextFloat()
+      val sample =
+        sample(
+          rs,
+          sizeEdgeCaseProbability = sizeEdgeCaseProbability,
+          keyEdgeCaseProbability = keyEdgeCaseProbability,
+          valueEdgeCaseProbability = valueEdgeCaseProbability,
+        )
+      return sample.asSample()
+    }
+
+    private fun sample(
+      rs: RandomSource,
+      sizeEdgeCaseProbability: Float,
+      keyEdgeCaseProbability: Float,
+      valueEdgeCaseProbability: Float,
+    ): Struct {
+      val size = rs.nextSize(sizeEdgeCaseProbability)
+      val structBuilder = Struct.newBuilder()
+      repeat(size) {
+        val key = rs.nextKey(keyEdgeCaseProbability)
+        val value = rs.nextValue(valueEdgeCaseProbability)
+        structBuilder.putFields(key, value)
+      }
+      return structBuilder.build()
+    }
+
+    override fun edgecase(rs: RandomSource): Struct {
+      val edgeCases = rs.nextEdgeCases()
+      val sizeEdgeCaseProbability = if (edgeCases.contains(EdgeCase.Size)) 1.0f else 0.0f
+      val keyEdgeCaseProbability = if (edgeCases.contains(EdgeCase.Keys)) 1.0f else 0.0f
+      val valueEdgeCaseProbability = if (edgeCases.contains(EdgeCase.Values)) 1.0f else 0.0f
+      return sample(
+        rs,
+        sizeEdgeCaseProbability = sizeEdgeCaseProbability,
+        keyEdgeCaseProbability = keyEdgeCaseProbability,
+        valueEdgeCaseProbability = valueEdgeCaseProbability,
+      )
+    }
+
+    private fun RandomSource.nextSize(edgeCaseProbability: Float): Int {
+      require(edgeCaseProbability in 0.0f..1.0f) {
+        "invalid edgeCaseProbability: $edgeCaseProbability"
+      }
+      return if (random.nextFloat() < edgeCaseProbability) {
+        sizeEdgeCases.random(random)
+      } else {
+        size.random(random)
+      }
+    }
+
+    private fun RandomSource.nextKey(edgeCaseProbability: Float): String {
+      require(edgeCaseProbability in 0.0f..1.0f) {
+        "invalid edgeCaseProbability: $edgeCaseProbability"
+      }
+      return if (random.nextFloat() < edgeCaseProbability) {
+        keyArb.edgecase(this)!!
+      } else {
+        keyArb.sample(this).value
+      }
+    }
+
+    private fun RandomSource.nextValue(edgeCaseProbability: Float): Value {
+      require(edgeCaseProbability in 0.0f..1.0f) {
+        "invalid edgeCaseProbability: $edgeCaseProbability"
+      }
+      return if (random.nextFloat() < edgeCaseProbability) {
+        valueArb.edgecase(this)!!
+      } else {
+        valueArb.sample(this).value
+      }
+    }
+
+    private enum class EdgeCase {
+      Size,
+      Keys,
+      Values;
+
+      companion object {
+
+        fun RandomSource.nextEdgeCases(): List<EdgeCase> {
+          val edgeCaseCount = random.nextInt(1..EdgeCase.entries.size)
+          return EdgeCase.entries.shuffled(random).take(edgeCaseCount)
+        }
+      }
     }
   }
 
@@ -198,62 +282,30 @@ class QueryResultEncoderUnitTest {
       decodeResult shouldBe this
     }
 
-    fun structWithNullValuesArb(
-      keys: Arb<List<String>> = Arb.list(Arb.string(1..10, Codepoint.alphanumeric()), 1..10)
-    ): Arb<Struct> =
-      keys.map { keys ->
-        val builder = Struct.newBuilder()
-        keys.forEach { key ->
-          builder.putFields(key, Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build())
-        }
-        builder.build()
-      }
+    fun structKeyArb(): Arb<String> = Arb.string(1..10, Codepoint.alphanumeric())
 
-    fun structWithNumberValuesArb(
-      map: Arb<Map<String, Double>> =
-        Arb.map(Arb.string(1..10, Codepoint.alphanumeric()), Arb.double(), 1, 10)
-    ): Arb<Struct> =
-      map.map { map ->
-        val builder = Struct.newBuilder()
-        map.entries.forEach { (key, value) ->
-          builder.putFields(key, Value.newBuilder().setNumberValue(value).build())
-        }
-        builder.build()
-      }
+    fun structArb(
+      size: IntRange = 0..10,
+      key: Arb<String> = structKeyArb(),
+      value: Arb<Value>,
+    ): Arb<Struct> = StructArb(size, key, value)
 
-    fun structWithBoolValuesArb(
-      map: Arb<Map<String, Boolean>> =
-        Arb.map(Arb.string(1..10, Codepoint.alphanumeric()), Arb.boolean(), 1, 10)
-    ): Arb<Struct> =
-      map.map { map ->
-        val builder = Struct.newBuilder()
-        map.entries.forEach { (key, value) ->
-          builder.putFields(key, Value.newBuilder().setBoolValue(value).build())
-        }
-        builder.build()
-      }
+    fun nullValueArb(): Arb<Value> = arbitrary {
+      Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build()
+    }
 
-    fun structWithStringValuesArb(
-      key: Arb<String> = Arb.string(1..10, Codepoint.alphanumeric()),
-      value: Arb<String> = stringForEncodeTestingArb(),
-    ): Arb<Struct> = structWithStringValuesArb(Arb.map(key, value, 1, 10))
+    fun numberValueArb(
+      number: Arb<Double> = Arb.double(),
+    ): Arb<Value> = number.map { Value.newBuilder().setNumberValue(it).build() }
 
-    fun structWithStringValuesArb(map: Arb<Map<String, String>>): Arb<Struct> =
-      map.map { map ->
-        val builder = Struct.newBuilder()
-        map.entries.forEach { (key, value) ->
-          builder.putFields(key, Value.newBuilder().setStringValue(value).build())
-        }
-        builder.build()
-      }
+    fun boolValueArb(
+      boolean: Arb<Boolean> = Arb.boolean(),
+    ): Arb<Value> = boolean.map { Value.newBuilder().setBoolValue(it).build() }
 
-    fun structWithKindNotSetValuesArb(
-      keys: Arb<List<String>> = Arb.list(Arb.string(1..10, Codepoint.alphanumeric()), 1..10)
-    ): Arb<Struct> =
-      keys.map { keys ->
-        val builder = Struct.newBuilder()
-        keys.forEach { key -> builder.putFields(key, Value.getDefaultInstance()) }
-        builder.build()
-      }
+    fun stringValueArb(
+      string: Arb<String> = stringForEncodeTestingArb(),
+    ): Arb<Value> = string.map { Value.newBuilder().setStringValue(it).build() }
+
+    fun kindNotSetValueArb(): Arb<Value> = arbitrary { Value.newBuilder().build() }
   }
 }
