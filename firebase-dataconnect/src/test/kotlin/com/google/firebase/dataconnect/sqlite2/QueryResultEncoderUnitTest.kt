@@ -183,6 +183,29 @@ class QueryResultEncoderUnitTest {
     withClue("depths=${depths.sorted()}") { depths.shouldContainExactlyInAnyOrder(1, 2, 3) }
   }
 
+  @Test
+  fun `structArb() should specify the correct depth`() = runTest {
+    checkAll(propTestConfig, structArb()) { sample ->
+      sample.depth shouldBe sample.struct.maxDepth()
+    }
+  }
+
+  @Test
+  fun `structArb() should generate depths up to 3 for normal samples`() = runTest {
+    val arb = structArb()
+    val depths = mutableSetOf<Int>()
+    repeat(propTestConfig.iterations!!) { depths.add(arb.sample(rs).value.depth) }
+    withClue("depths=${depths.sorted()}") { depths.shouldContainExactlyInAnyOrder(1, 2, 3) }
+  }
+
+  @Test
+  fun `structArb() should generate depths up to 3 for edge cases`() = runTest {
+    val arb = structArb()
+    val depths = mutableSetOf<Int>()
+    repeat(propTestConfig.iterations!!) { depths.add(arb.edgecase(rs)!!.depth) }
+    withClue("depths=${depths.sorted()}") { depths.shouldContainExactlyInAnyOrder(1, 2, 3) }
+  }
+
   private fun verifyArbGeneratesValuesWithKindCase(
     arb: Arb<Value>,
     expectedKindCase: Value.KindCase
@@ -196,15 +219,25 @@ class QueryResultEncoderUnitTest {
 
   private class StructArb(
     private val size: IntRange,
+    private val depth: IntRange,
     private val keyArb: Arb<String>,
     private val valueArb: Arb<Value>,
-  ) : Arb<Struct>() {
+  ) : Arb<StructArb.StructInfo>() {
 
     init {
       require(size.first >= 0) {
         "size.first must be greater than or equal to zero, but got size=$size"
       }
       require(!size.isEmpty()) { "size.isEmpty() must be false, but got $size" }
+      require(depth.first > 0) { "depth.first must be greater than zero, but got depth=$depth" }
+      require(!depth.isEmpty()) { "depth.isEmpty() must be false, but got $depth" }
+    }
+
+    class StructInfo(
+      val struct: Struct,
+      val depth: Int,
+    ) {
+      fun toValueProto(): Value = Value.newBuilder().setStructValue(struct).build()
     }
 
     private val sizeEdgeCases =
@@ -213,46 +246,85 @@ class QueryResultEncoderUnitTest {
         .filter { it in size }
         .sorted()
 
-    override fun sample(rs: RandomSource): Sample<Struct> {
+    private val depthEdgeCases = listOf(depth.first, depth.last)
+
+    override fun sample(rs: RandomSource): Sample<StructInfo> {
       val sizeEdgeCaseProbability = rs.random.nextFloat()
       val keyEdgeCaseProbability = rs.random.nextFloat()
       val valueEdgeCaseProbability = rs.random.nextFloat()
       val sample =
         sample(
           rs,
+          depth = rs.nextDepth(edgeCaseProbability = rs.random.nextFloat()),
           sizeEdgeCaseProbability = sizeEdgeCaseProbability,
           keyEdgeCaseProbability = keyEdgeCaseProbability,
           valueEdgeCaseProbability = valueEdgeCaseProbability,
+          nestedProbability = rs.random.nextFloat(),
         )
       return sample.asSample()
     }
 
     private fun sample(
       rs: RandomSource,
+      depth: Int,
       sizeEdgeCaseProbability: Float,
       keyEdgeCaseProbability: Float,
       valueEdgeCaseProbability: Float,
-    ): Struct {
+      nestedProbability: Float,
+    ): StructInfo {
+      require(depth > 0) { "invalid depth: $depth (must be greater than zero)" }
       val size = rs.nextSize(sizeEdgeCaseProbability)
+
+      fun RandomSource.nextNestedStruct(): Value {
+        val struct =
+          sample(
+            this,
+            depth = depth - 1,
+            sizeEdgeCaseProbability = sizeEdgeCaseProbability,
+            keyEdgeCaseProbability = keyEdgeCaseProbability,
+            valueEdgeCaseProbability = valueEdgeCaseProbability,
+            nestedProbability = nestedProbability,
+          )
+        return Value.newBuilder().setStructValue(struct.struct).build()
+      }
+
       val structBuilder = Struct.newBuilder()
+      var hasNestedStruct = false
       repeat(size) {
         val key = rs.nextKey(keyEdgeCaseProbability)
-        val value = rs.nextValue(valueEdgeCaseProbability)
+        val value =
+          if (depth > 1 && rs.random.nextFloat() < nestedProbability) {
+            hasNestedStruct = true
+            rs.nextNestedStruct()
+          } else {
+            rs.nextValue(valueEdgeCaseProbability)
+          }
         structBuilder.putFields(key, value)
       }
-      return structBuilder.build()
+
+      if (depth > 1 && !hasNestedStruct) {
+        val keyToReplace = structBuilder.fieldsMap.keys.randomOrNull(rs.random)
+        val key = keyToReplace ?: rs.nextKey(keyEdgeCaseProbability)
+        structBuilder.putFields(key, rs.nextNestedStruct())
+      }
+
+      return StructInfo(structBuilder.build(), depth)
     }
 
-    override fun edgecase(rs: RandomSource): Struct {
+    override fun edgecase(rs: RandomSource): StructInfo {
       val edgeCases = rs.nextEdgeCases()
       val sizeEdgeCaseProbability = if (edgeCases.contains(EdgeCase.Size)) 1.0f else 0.0f
+      val depthEdgeCaseProbability = if (edgeCases.contains(EdgeCase.Depth)) 1.0f else 0.0f
       val keyEdgeCaseProbability = if (edgeCases.contains(EdgeCase.Keys)) 1.0f else 0.0f
       val valueEdgeCaseProbability = if (edgeCases.contains(EdgeCase.Values)) 1.0f else 0.0f
+      val nestedProbability = if (edgeCases.contains(EdgeCase.OnlyNested)) 1.0f else 0.0f
       return sample(
         rs,
+        depth = rs.nextDepth(depthEdgeCaseProbability),
         sizeEdgeCaseProbability = sizeEdgeCaseProbability,
         keyEdgeCaseProbability = keyEdgeCaseProbability,
         valueEdgeCaseProbability = valueEdgeCaseProbability,
+        nestedProbability = nestedProbability,
       )
     }
 
@@ -264,6 +336,17 @@ class QueryResultEncoderUnitTest {
         sizeEdgeCases.random(random)
       } else {
         size.random(random)
+      }
+    }
+
+    private fun RandomSource.nextDepth(edgeCaseProbability: Float): Int {
+      require(edgeCaseProbability in 0.0f..1.0f) {
+        "invalid edgeCaseProbability: $edgeCaseProbability"
+      }
+      return if (random.nextFloat() < edgeCaseProbability) {
+        depthEdgeCases.random(random)
+      } else {
+        depth.random(random)
       }
     }
 
@@ -291,8 +374,10 @@ class QueryResultEncoderUnitTest {
 
     private enum class EdgeCase {
       Size,
+      Depth,
       Keys,
       Values,
+      OnlyNested,
     }
 
     private companion object {
@@ -360,7 +445,7 @@ class QueryResultEncoderUnitTest {
       val length = rs.nextLength(lengthEdgeCaseProbability)
       val values = mutableListOf<Value>()
 
-      fun RandomSource.listValue(): Value {
+      fun RandomSource.nextNestedListValue(): Value {
         val listValue =
           sample(
             this,
@@ -377,7 +462,7 @@ class QueryResultEncoderUnitTest {
         val value =
           if (depth > 1 && rs.random.nextFloat() < nestedProbability) {
             hasNestedListValue = true
-            rs.listValue()
+            rs.nextNestedListValue()
           } else {
             rs.nextValue(valueEdgeCaseProbability)
           }
@@ -386,7 +471,7 @@ class QueryResultEncoderUnitTest {
 
       if (depth > 1 && !hasNestedListValue) {
         values.removeFirstOrNull()
-        values.add(rs.listValue())
+        values.add(rs.nextNestedListValue())
         values.shuffle(rs.random)
       }
 
@@ -503,10 +588,41 @@ class QueryResultEncoderUnitTest {
     fun structKeyArb(): Arb<String> = Arb.string(1..10, Codepoint.alphanumeric())
 
     fun structArb(
-      size: IntRange = 0..10,
+      size: IntRange = 0..5,
       key: Arb<String> = structKeyArb(),
       value: Arb<Value>,
-    ): Arb<Struct> = StructArb(size, key, value)
+    ): Arb<Struct> =
+      StructArb(
+          size = size,
+          depth = 1..1,
+          keyArb = key,
+          valueArb = value,
+        )
+        .map { it.struct }
+
+    fun structArb(
+      size: IntRange = 0..5,
+      depth: IntRange = 1..3,
+      key: Arb<String> = structKeyArb(),
+      nullValue: Arb<Value> = nullValueArb(),
+      numberValue: Arb<Value> = numberValueArb(),
+      boolValue: Arb<Value> = boolValueArb(),
+      stringValue: Arb<Value> = stringValueArb(),
+      kindNotSetValue: Arb<Value> = kindNotSetValueArb(),
+    ): Arb<StructArb.StructInfo> =
+      StructArb(
+        size = size,
+        depth = depth,
+        keyArb = key,
+        valueArb =
+          Arb.choice(
+            nullValue,
+            numberValue,
+            boolValue,
+            stringValue,
+            kindNotSetValue,
+          )
+      )
 
     fun nullValueArb(): Arb<Value> = arbitrary {
       Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build()
@@ -529,38 +645,52 @@ class QueryResultEncoderUnitTest {
     fun listValueArb(
       length: IntRange = 0..10,
       depth: IntRange = 1..3,
-      nullValueArb: Arb<Value> = nullValueArb(),
-      numberValueArb: Arb<Value> = numberValueArb(),
-      boolValueArb: Arb<Value> = boolValueArb(),
-      stringValueArb: Arb<Value> = stringValueArb(),
-      kindNotSetValueArb: Arb<Value> = kindNotSetValueArb(),
+      nullValue: Arb<Value> = nullValueArb(),
+      numberValue: Arb<Value> = numberValueArb(),
+      boolValue: Arb<Value> = boolValueArb(),
+      stringValue: Arb<Value> = stringValueArb(),
+      kindNotSetValue: Arb<Value> = kindNotSetValueArb(),
     ): Arb<ListValueArb.ListValueInfo> =
       ListValueArb(
         length = length,
         depth = depth,
         valueArb =
           Arb.choice(
-            nullValueArb,
-            numberValueArb,
-            boolValueArb,
-            stringValueArb,
-            kindNotSetValueArb
+            nullValue,
+            numberValue,
+            boolValue,
+            stringValue,
+            kindNotSetValue,
           ),
       )
 
     fun ListValue.maxDepth(): Int {
       var maxDepth = 1
       repeat(valuesCount) {
-        val value = getValues(it)
-        val listElementDepth =
-          when (value.kindCase) {
-            Value.KindCase.STRUCT_VALUE -> TODO()
-            Value.KindCase.LIST_VALUE -> 1 + value.listValue.maxDepth()
-            else -> 0
-          }
-        maxDepth = maxDepth.coerceAtLeast(listElementDepth)
+        val curMaxDepth = getValues(it).maxDepth()
+        if (curMaxDepth > maxDepth) {
+          maxDepth = curMaxDepth
+        }
       }
       return maxDepth
     }
+
+    fun Struct.maxDepth(): Int {
+      var maxDepth = 1
+      fieldsMap.values.forEach { value ->
+        val curMaxDepth = value.maxDepth()
+        if (curMaxDepth > maxDepth) {
+          maxDepth = curMaxDepth
+        }
+      }
+      return maxDepth
+    }
+
+    fun Value.maxDepth(): Int =
+      when (kindCase) {
+        Value.KindCase.STRUCT_VALUE -> 1 + structValue.maxDepth()
+        Value.KindCase.LIST_VALUE -> 1 + listValue.maxDepth()
+        else -> 1
+      }
   }
 }
