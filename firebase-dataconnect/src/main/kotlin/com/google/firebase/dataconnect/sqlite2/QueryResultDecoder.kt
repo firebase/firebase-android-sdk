@@ -209,10 +209,11 @@ internal class QueryResultDecoder(
 
     var bytesRemaining = byteCount
     while (byteBuffer.remaining() < bytesRemaining) {
-      val byteBufferPositionBefore = byteBuffer.position()
-      val decodeResult = charsetDecoder.decode(byteBuffer, charBuffer, false)
-      val byteBufferPositionAfter = byteBuffer.position()
-      val curByteCount = byteBufferPositionAfter - byteBufferPositionBefore
+      val view = byteBuffer.slice()
+      view.limit(view.limit().coerceAtMost(bytesRemaining))
+      val decodeResult = charsetDecoder.decode(view, charBuffer, false)
+      val curByteCount = view.limit()
+      byteBuffer.position(byteBuffer.position() + curByteCount)
       bytesRemaining -= curByteCount
 
       if (!decodeResult.isUnderflow) {
@@ -230,10 +231,10 @@ internal class QueryResultDecoder(
       }
     }
 
-    val byteBufferPositionBefore = byteBuffer.position()
-    byteBuffer.limit(byteBufferPositionBefore + bytesRemaining)
-    val finalDecodeResult = charsetDecoder.decode(byteBuffer, charBuffer, true)
-    byteBuffer.limit(byteBufferPositionBefore)
+    val view = byteBuffer.slice()
+    view.limit(bytesRemaining)
+    val finalDecodeResult = charsetDecoder.decode(view, charBuffer, true)
+    byteBuffer.position(byteBuffer.position() + view.position())
     if (!finalDecodeResult.isUnderflow) {
       finalDecodeResult.throwException()
     }
