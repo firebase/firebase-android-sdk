@@ -19,6 +19,7 @@ package com.google.firebase.dataconnect.sqlite2
 import com.google.firebase.dataconnect.sqlite2.QueryResultCodec.Entity
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.protobuf.Struct
+import com.google.protobuf.Value
 import java.io.ByteArrayInputStream
 import java.io.EOFException
 import java.nio.ByteBuffer
@@ -60,6 +61,7 @@ internal class QueryResultDecoder(
         ValueKindCase.StringEmpty -> put(key, readString(StringType.Empty))
         ValueKindCase.StringUtf8 -> put(key, readString(StringType.Utf8))
         ValueKindCase.StringUtf16 -> put(key, readString(StringType.Utf16))
+        ValueKindCase.KindNotSet -> put(key, Value.getDefaultInstance())
       }
     }
   }
@@ -145,7 +147,8 @@ internal class QueryResultDecoder(
     BoolFalse(QueryResultCodec.VALUE_BOOL_FALSE, "false"),
     StringEmpty(QueryResultCodec.VALUE_STRING_EMPTY, "emptystring"),
     StringUtf8(QueryResultCodec.VALUE_STRING_UTF8, "utf8"),
-    StringUtf16(QueryResultCodec.VALUE_STRING_UTF16, "utf16");
+    StringUtf16(QueryResultCodec.VALUE_STRING_UTF16, "utf16"),
+    KindNotSet(QueryResultCodec.VALUE_KIND_NOT_SET, "kindnotset");
 
     companion object {
       fun fromSerializedByte(serializedByte: Byte): ValueKindCase? =

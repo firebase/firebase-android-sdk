@@ -303,6 +303,7 @@ class QueryResultDecoderUnitTest {
         QueryResultCodec.VALUE_STRING_EMPTY,
         QueryResultCodec.VALUE_STRING_UTF8,
         QueryResultCodec.VALUE_STRING_UTF16,
+        QueryResultCodec.VALUE_KIND_NOT_SET,
       )
 
     val stringTypeBytes: Set<Byte> =

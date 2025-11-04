@@ -92,6 +92,13 @@ class QueryResultEncoderUnitTest {
     }
   }
 
+  @Test
+  fun `struct with all kind_not_set values`() = runTest {
+    checkAll(propTestConfig, structWithKindNotSetValuesArb()) { struct ->
+      struct.decodingEncodingShouldProduceIdenticalStruct()
+    }
+  }
+
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Tests for helper functions
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -237,6 +244,15 @@ class QueryResultEncoderUnitTest {
         map.entries.forEach { (key, value) ->
           builder.putFields(key, Value.newBuilder().setStringValue(value).build())
         }
+        builder.build()
+      }
+
+    fun structWithKindNotSetValuesArb(
+      keys: Arb<List<String>> = Arb.list(Arb.string(1..10, Codepoint.alphanumeric()), 1..10)
+    ): Arb<Struct> =
+      keys.map { keys ->
+        val builder = Struct.newBuilder()
+        keys.forEach { key -> builder.putFields(key, Value.getDefaultInstance()) }
         builder.build()
       }
   }

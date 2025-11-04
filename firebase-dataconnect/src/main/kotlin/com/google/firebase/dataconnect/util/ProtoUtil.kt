@@ -461,6 +461,10 @@ internal class StructProtoBuilder(struct: Struct? = null) {
     builder.putFields(key, value?.toValueProto() ?: nullProtoValue)
   }
 
+  fun put(key: String, value: Value) {
+    builder.putFields(key, value)
+  }
+
   fun putStruct(key: String, block: StructProtoBuilder.() -> Unit) {
     val initialValue = builder.getFieldsOrDefault(key, Value.getDefaultInstance()).structValueOrNull
     builder.putFields(key, StructProtoBuilder(initialValue).apply(block).build().toValueProto())

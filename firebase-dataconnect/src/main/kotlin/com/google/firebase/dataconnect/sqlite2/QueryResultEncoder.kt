@@ -68,7 +68,7 @@ internal class QueryResultEncoder(private val channel: WritableByteChannel) {
         }
         Value.KindCase.STRUCT_VALUE -> TODO()
         Value.KindCase.LIST_VALUE -> TODO()
-        Value.KindCase.KIND_NOT_SET -> TODO()
+        Value.KindCase.KIND_NOT_SET -> writeByte(QueryResultCodec.VALUE_KIND_NOT_SET)
       }
     }
   }
