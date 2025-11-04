@@ -14,6 +14,8 @@
 
 package com.google.firebase.firestore.pipeline
 
+import com.google.firebase.firestore.pipeline.evaluation.*
+
 /**
  * A registry of all built-in pipeline functions.
  *

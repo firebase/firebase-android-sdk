@@ -36,6 +36,7 @@ import com.google.firebase.firestore.model.Values
 import com.google.firebase.firestore.model.Values.canonicalId
 import com.google.firebase.firestore.model.Values.encodeValue
 import com.google.firebase.firestore.pipeline.Expression.Companion.field
+import com.google.firebase.firestore.pipeline.evaluation.*
 import com.google.firebase.firestore.util.CustomClassMapper
 import com.google.firestore.v1.Function as ProtoFunction
 import com.google.firestore.v1.MapValue

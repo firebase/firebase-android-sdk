@@ -21,6 +21,10 @@ import com.google.firebase.firestore.model.DatabaseId
 import com.google.firebase.firestore.model.MutableDocument
 import com.google.firebase.firestore.model.Values.NULL_VALUE
 import com.google.firebase.firestore.model.Values.encodeValue
+import com.google.firebase.firestore.pipeline.evaluation.EvaluateResult
+import com.google.firebase.firestore.pipeline.evaluation.EvaluateResultError
+import com.google.firebase.firestore.pipeline.evaluation.EvaluateResultUnset
+import com.google.firebase.firestore.pipeline.evaluation.EvaluationContext
 import com.google.firebase.firestore.remote.RemoteSerializer
 import com.google.firebase.firestore.testutil.TestUtilKtx.doc
 import com.google.firestore.v1.Value

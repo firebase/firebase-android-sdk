@@ -24,6 +24,7 @@ import com.google.firebase.firestore.model.Values
 import com.google.firebase.firestore.model.Values.encodeValue
 import com.google.firebase.firestore.pipeline.Expression.Companion.constant
 import com.google.firebase.firestore.pipeline.Expression.Companion.field
+import com.google.firebase.firestore.pipeline.evaluation.EvaluationContext
 import com.google.firebase.firestore.remote.RemoteSerializer
 import com.google.firestore.v1.Pipeline
 import com.google.firestore.v1.Value

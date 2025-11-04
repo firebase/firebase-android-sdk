@@ -29,7 +29,6 @@ import com.google.firebase.firestore.pipeline.CollectionGroupOptions
 import com.google.firebase.firestore.pipeline.CollectionGroupSource
 import com.google.firebase.firestore.pipeline.CollectionSource
 import com.google.firebase.firestore.pipeline.CollectionSourceOptions
-import com.google.firebase.firestore.pipeline.EvaluationContext
 import com.google.firebase.firestore.pipeline.Field
 import com.google.firebase.firestore.pipeline.InternalOptions
 import com.google.firebase.firestore.pipeline.LimitStage
@@ -38,6 +37,7 @@ import com.google.firebase.firestore.pipeline.Ordering
 import com.google.firebase.firestore.pipeline.SortStage
 import com.google.firebase.firestore.pipeline.Stage
 import com.google.firebase.firestore.pipeline.WhereStage
+import com.google.firebase.firestore.pipeline.evaluation.EvaluationContext
 import com.google.firebase.firestore.remote.RemoteSerializer
 import com.google.firebase.firestore.util.Assert
 import com.google.firebase.firestore.util.Assert.fail
