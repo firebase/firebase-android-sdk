@@ -18,7 +18,6 @@ package com.google.firebase.gradle.plugins
 
 import com.android.build.gradle.LibraryExtension
 import com.google.firebase.gradle.plugins.ci.Coverage
-import com.google.firebase.gradle.plugins.report.UnitTestReportTask
 import com.google.firebase.gradle.plugins.services.GMavenService
 import java.io.File
 import java.nio.file.Paths
@@ -141,13 +140,6 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
       previousVersionString.value(library.previousVersion)
     }
   }
-
-  protected fun registerUnitTestReportTask(project: Project) =
-    project.tasks.register<UnitTestReportTask>("generateTestReport") {
-      outputFile.set(project.file("test-report.md"))
-      commitCount.set(8 as Integer)
-      apiToken.set(System.getenv("GH_TOKEN"))
-    }
 
   protected fun getApiInfo(
     project: Project,

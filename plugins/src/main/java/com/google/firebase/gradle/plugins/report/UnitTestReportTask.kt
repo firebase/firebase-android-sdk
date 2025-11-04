@@ -22,7 +22,16 @@ import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 
-abstract class UnitTestReportTask: DefaultTask() {
+/**
+ * Creates a markdown unit test report file based on recent runs of GitHub Actions. Task simply
+ * aggregates live test data and does not rely on the current state of the repository.
+ *
+ * @property outputFile The file path to output the markdown test report to.
+ * @property commitCount The number of remote commits to aggregate test results from.
+ * @property apiToken The GitHub API token with adequate permissions to read test result data and
+ *   execute GraphQL queries.
+ */
+abstract class UnitTestReportTask : DefaultTask() {
   @get:OutputFile abstract val outputFile: RegularFileProperty
 
   @get:Input abstract val commitCount: Property<Integer>

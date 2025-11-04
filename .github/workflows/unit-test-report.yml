@@ -1,4 +1,4 @@
-name: Firebase AI Daily Tests
+name: Generate Test Report
 
 on:
   schedule:
@@ -10,8 +10,8 @@ permissions:
   issues: write
 
 jobs:
-  dailies:
-    name: "Unit Test Report"
+  report:
+    name: "Generate Test Report"
     runs-on: ubuntu-latest
 
     steps:

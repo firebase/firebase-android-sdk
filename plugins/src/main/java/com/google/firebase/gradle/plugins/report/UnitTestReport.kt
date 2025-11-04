@@ -20,6 +20,7 @@ import com.google.gson.GsonBuilder
 import com.google.gson.JsonArray
 import com.google.gson.JsonElement
 import com.google.gson.JsonObject
+import java.io.File
 import java.io.FileWriter
 import java.io.IOException
 import java.net.URI
@@ -30,7 +31,6 @@ import java.time.Duration
 import java.util.regex.Matcher
 import java.util.regex.Pattern
 import org.gradle.internal.Pair
-import java.io.File
 
 @SuppressWarnings("NewApi")
 class UnitTestReport(private val apiToken: String) {

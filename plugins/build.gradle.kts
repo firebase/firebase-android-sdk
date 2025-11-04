@@ -114,6 +114,10 @@ gradlePlugin {
       id = "copy-google-services"
       implementationClass = "com.google.firebase.gradle.plugins.CopyGoogleServicesPlugin"
     }
+    register("testReportPlugin") {
+      id = "test-report"
+      implementationClass = "com.google.firebase.gradle.plugins.report.UnitTestReportPlugin"
+    }
   }
 }
 

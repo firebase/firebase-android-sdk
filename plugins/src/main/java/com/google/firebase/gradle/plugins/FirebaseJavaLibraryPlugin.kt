@@ -105,7 +105,6 @@ class FirebaseJavaLibraryPlugin : BaseFirebaseLibraryPlugin() {
     }
 
     setupMetalavaSemver(project, firebaseLibrary)
-    registerUnitTestReportTask(project)
   }
 
   private fun setupApiInformationAnalysis(project: Project) {
