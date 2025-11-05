@@ -1,0 +1,85 @@
+{
+    "changesByLibraryName": {
+        "firebase-ai": [
+            {
+                "commitId": "a707c193ad4e9c828c98cc16db2119bd85854248",
+                "prId": "7533",
+                "author": "emilypgoogle",
+                "message": "Fix AI logic changelog (#7533)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a707c193ad4e9c828c98cc16db2119bd85854248",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7533"
+            },
+            {
+                "commitId": "8287ef3a532869a4d305f962411af25a1b6fb1de",
+                "prId": "7525",
+                "author": "David Motsonashvili",
+                "message": "[AI] Add changelog for server template change (#7525)\n\nCo-authored-by: David Motsonashvili <davidmotson@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/8287ef3a532869a4d305f962411af25a1b6fb1de",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7525"
+            },
+            {
+                "commitId": "9cbd70222f3017c3f5a3fc13737f9d6cd62868a4",
+                "prId": "7503",
+                "author": "David Motsonashvili",
+                "message": "Server Templates (#7503)\n\n* Added `TemplateGenerativeModel` and `TemplateImagenModel` types with\nentrypoints in `FirebaseAI`\n* Added java types to match\n* Added new request types with serialization\nTODO: Tests\n\n---------\n\nCo-authored-by: David Motsonashvili <davidmotson@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/9cbd70222f3017c3f5a3fc13737f9d6cd62868a4",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7503"
+            },
+            {
+                "commitId": "4139f6b6fcec5c44bbbbc888f80d846cba4fdeeb",
+                "prId": "7520",
+                "author": "Vinay Guthal",
+                "message": "update javadocs for firebase ai (#7520)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/4139f6b6fcec5c44bbbbc888f80d846cba4fdeeb",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7520"
+            }
+        ],
+        "firebase-dataconnect": [
+            {
+                "commitId": "544b1a2e1035c42af678a97cb4a845fe39526942",
+                "prId": "7485",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: auth token internal refactor to track authUid, part 2 (#7485)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/544b1a2e1035c42af678a97cb4a845fe39526942",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7485"
+            },
+            {
+                "commitId": "d2d23d3525b449f121a6adb8eba2dcf9006bf9c6",
+                "prId": "7507",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: augment tests for null token in DataConnectGrpcMetadataUnitTest (#7507)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/d2d23d3525b449f121a6adb8eba2dcf9006bf9c6",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7507"
+            }
+        ],
+        "firebase-inappmessaging": [
+            {
+                "commitId": "24c1b86facbd519331494a4bee6a4dc1df22d18e",
+                "prId": "7514",
+                "author": "Vinay Guthal",
+                "message": "update change log for inappmessaging (#7514)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/24c1b86facbd519331494a4bee6a4dc1df22d18e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7514"
+            }
+        ],
+        "firebase-inappmessaging-display": [],
+        "firebase-perf": [
+            {
+                "commitId": "4832b5d16bcbc8ca8857e0643be95bdc1429d933",
+                "prId": "7449",
+                "author": "OOS93",
+                "message": "DiskReadViolation in Firebase Performance during Activity#onResume #7392 (#7449)\n\nAs reported in #7340, RemoteConfig interactions are removed from\nAppStartTrace (RemoteConfig is no longer supported, thus is safe to\ndelete).\n\n---------\n\nCo-authored-by: Tejas Deshpande <tdeshpande@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/4832b5d16bcbc8ca8857e0643be95bdc1429d933",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7449"
+            }
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":firebase-firestore",
+        ":firebase-messaging",
+        ":firebase-messaging-directboot",
+        ":firebase-crashlytics",
+        ":firebase-crashlytics-ndk",
+        ":firebase-sessions"
+    ]
+}
