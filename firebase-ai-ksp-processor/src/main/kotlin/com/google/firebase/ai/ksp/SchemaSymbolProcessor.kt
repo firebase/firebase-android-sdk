@@ -123,9 +123,7 @@ public class SchemaSymbolProcessor(
       val baseKdoc = extractBaseKdoc(kdocString)
       val propertyDocs = extractPropertyKdocs(kdocString)
       val guideClassAnnotation =
-        type.annotations.firstOrNull() {
-          it.shortName.getShortName() == "Guide"
-        }
+        type.annotations.firstOrNull() { it.shortName.getShortName() == "Guide" }
       val description =
         getDescriptionFromAnnotations(guideAnnotation, guideClassAnnotation, description, baseKdoc)
       val minimum = getDoubleFromAnnotation(guideAnnotation, "minimum")
@@ -180,9 +178,7 @@ public class SchemaSymbolProcessor(
                     description = propertyDocs[propertyName],
                     name = propertyName,
                     guideAnnotation =
-                      property.annotations.firstOrNull() {
-                        it.shortName.getShortName() == "Guide"
-                      },
+                      property.annotations.firstOrNull() { it.shortName.getShortName() == "Guide" },
                   )
               }
             properties.entries.forEach {
