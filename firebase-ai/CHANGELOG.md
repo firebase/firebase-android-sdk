@@ -1,4 +1,8 @@
 # Unreleased
+- [feature] Added support for server templates via `TemplateGenerativeModel` and
+  `TemplateImagenModel`. (#7503)
+
+# 17.5.0
 
 - [changed] Added better scheduling and louder output for Live API.
 - [changed] Added support for input and output transcription. (#7482)
