@@ -48,7 +48,7 @@ public class SchemaSymbolProcessor(
 ) : SymbolProcessor {
   override fun process(resolver: Resolver): List<KSAnnotated> {
     resolver
-      .getSymbolsWithAnnotation(Generable::class.qualifiedName.orEmpty())
+      .getSymbolsWithAnnotation("com.google.firebase.ai.annotations.Generable")
       .filterIsInstance<KSClassDeclaration>()
       .map { it to SchemaSymbolProcessorVisitor(it, resolver) }
       .forEach { it.second.visitClassDeclaration(it.first, Unit) }
@@ -126,7 +126,7 @@ public class SchemaSymbolProcessor(
       val propertyDocs = extractPropertyKdocs(kdocString)
       val guideClassAnnotation =
         type.annotations.firstOrNull() {
-          it.shortName.getShortName() == Guide::class.java.simpleName
+          it.shortName.getShortName() == "Guide"
         }
       val description =
         getDescriptionFromAnnotations(guideAnnotation, guideClassAnnotation, description, baseKdoc)
@@ -183,7 +183,7 @@ public class SchemaSymbolProcessor(
                     name = propertyName,
                     guideAnnotation =
                       property.annotations.firstOrNull() {
-                        it.shortName.getShortName() == Guide::class.java.simpleName
+                        it.shortName.getShortName() == "Guide"
                       },
                   )
               }

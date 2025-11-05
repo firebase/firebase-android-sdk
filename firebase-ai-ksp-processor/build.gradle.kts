@@ -35,7 +35,7 @@ publishing {
     create<MavenPublication>("mavenKotlin") {
       from(components["kotlin"])
       groupId = "com.google.firebase"
-      artifactId = "firebase-ai-ksp-processor"
+      artifactId = "firebase-ai-processor"
       version = "1.0.0"
     }
   }
