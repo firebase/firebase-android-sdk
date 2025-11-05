@@ -40,6 +40,7 @@ import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
 import com.squareup.kotlinpoet.ksp.writeTo
+import javax.annotation.processing.Generated
 
 public class SchemaSymbolProcessor(
   private val codeGenerator: CodeGenerator,
@@ -84,6 +85,7 @@ public class SchemaSymbolProcessor(
         .addImport("com.google.firebase.ai.type", "Schema")
         .addType(
           TypeSpec.classBuilder("${classDeclaration.simpleName.asString()}GeneratedSchema")
+            .addAnnotation(Generated::class)
             .addType(
               TypeSpec.companionObjectBuilder()
                 .addProperty(
