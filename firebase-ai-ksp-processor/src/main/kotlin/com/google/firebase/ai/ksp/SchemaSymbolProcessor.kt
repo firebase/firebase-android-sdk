@@ -138,31 +138,40 @@ public class SchemaSymbolProcessor(
       val builder = CodeBlock.builder()
       when (className.canonicalName) {
         "kotlin.Int" -> {
-          builder.addStatement("Schema.integer(")
+          builder.addStatement("Schema.integer(").indent()
         }
         "kotlin.Long" -> {
-          builder.addStatement("Schema.long(")
+          builder.addStatement("Schema.long(").indent()
         }
         "kotlin.Boolean" -> {
-          builder.addStatement("Schema.boolean(")
+          builder.addStatement("Schema.boolean(").indent()
         }
         "kotlin.Float" -> {
-          builder.addStatement("Schema.float(")
+          builder.addStatement("Schema.float(").indent()
         }
         "kotlin.Double" -> {
-          builder.addStatement("Schema.double(")
+          builder.addStatement("Schema.double(").indent()
         }
         "kotlin.String" -> {
-          builder.addStatement("Schema.string(")
+          builder.addStatement("Schema.string(").indent()
         }
         else -> {
           if (className.canonicalName == "kotlin.collections.List") {
             val listTypeParam = type.arguments.first().type!!.resolve()
             val listParamCodeBlock =
               generateCodeBlockForSchema(type = listTypeParam, parentType = type)
-            builder.addStatement("Schema.array(items = ").add(listParamCodeBlock).addStatement(",")
+            builder
+              .addStatement("Schema.array(")
+              .indent()
+              .addStatement("items = ")
+              .add(listParamCodeBlock)
+              .addStatement(",")
           } else {
-            builder.addStatement("Schema.obj(properties = ")
+            builder
+              .addStatement("Schema.obj(")
+              .indent()
+              .addStatement("properties = mapOf(")
+              .indent()
             val properties =
               (type.declaration as KSClassDeclaration).getAllProperties().associate { property ->
                 val propertyName = property.simpleName.asString()
@@ -178,11 +187,15 @@ public class SchemaSymbolProcessor(
                       },
                   )
               }
-            builder.addStatement("mapOf(")
             properties.entries.forEach {
-              builder.addStatement("%S to ", it.key).add(it.value).addStatement(", ")
+              builder
+                .addStatement("%S to ", it.key)
+                .indent()
+                .add(it.value)
+                .unindent()
+                .addStatement(", ")
             }
-            builder.addStatement("),")
+            builder.unindent().addStatement("),")
           }
         }
       }
@@ -225,7 +238,7 @@ public class SchemaSymbolProcessor(
       if (format != null) {
         builder.addStatement("format = %S,", format)
       }
-      builder.addStatement("nullable = %L)", className.isNullable)
+      builder.addStatement("nullable = %L)", className.isNullable).unindent()
       return builder.build()
     }
 
