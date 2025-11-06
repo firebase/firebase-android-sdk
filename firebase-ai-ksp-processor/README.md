@@ -7,7 +7,7 @@ plugins {
     id("com.google.devtools.ksp")
 }
 dependencies {
-    implementation("com.google.firebase:firebase-ai-ksp-processor:1.0.0")
-    ksp("com.google.firebase:firebase-ai-ksp-processor:1.0.0")
+    implementation("com.google.firebase:firebase-ai:<latest_version>")
+    ksp("com.google.firebase:firebase-ai-processor:1.0.0")
 }
 ```
