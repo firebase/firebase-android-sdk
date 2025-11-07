@@ -50,16 +50,7 @@ internal class QueryResultDecoder(
       flip()
     }
 
-  fun decode(): Struct {
-    val keyCount = readStructKeyCount()
-    val structBuilder = Struct.newBuilder()
-    repeat(keyCount) {
-      val key = readString()
-      val value = readValue()
-      structBuilder.putFields(key, value)
-    }
-    return structBuilder.build()
-  }
+  fun decode(): Struct = readStruct()
 
   private fun readSome(): Int {
     byteBuffer.compact()
@@ -153,7 +144,8 @@ internal class QueryResultDecoder(
     StringUtf8(QueryResultCodec.VALUE_STRING_UTF8, "utf8"),
     StringUtf16(QueryResultCodec.VALUE_STRING_UTF16, "utf16"),
     KindNotSet(QueryResultCodec.VALUE_KIND_NOT_SET, "kindnotset"),
-    List(QueryResultCodec.VALUE_LIST, "list");
+    List(QueryResultCodec.VALUE_LIST, "list"),
+    Struct(QueryResultCodec.VALUE_STRUCT, "struct");
 
     companion object {
       fun fromSerializedByte(serializedByte: Byte): ValueKindCase? =
@@ -298,6 +290,17 @@ internal class QueryResultDecoder(
     return listValueBuilder.build()
   }
 
+  private fun readStruct(): Struct {
+    val keyCount = readStructKeyCount()
+    val structBuilder = Struct.newBuilder()
+    repeat(keyCount) {
+      val key = readString()
+      val value = readValue()
+      structBuilder.putFields(key, value)
+    }
+    return structBuilder.build()
+  }
+
   private fun readValue(): Value {
     val valueBuilder = Value.newBuilder()
     when (readKindCase()) {
@@ -308,10 +311,11 @@ internal class QueryResultDecoder(
       ValueKindCase.StringEmpty -> valueBuilder.setStringValue("")
       ValueKindCase.StringUtf8 -> valueBuilder.setStringValue(readStringUtf8())
       ValueKindCase.StringUtf16 -> valueBuilder.setStringValue(readStringCustomUtf16())
+      ValueKindCase.List -> valueBuilder.setListValue(readList())
+      ValueKindCase.Struct -> valueBuilder.setStructValue(readStruct())
       ValueKindCase.KindNotSet -> {
         // do nothing, leaving the kind as KIND_NOT_SET
       }
-      ValueKindCase.List -> valueBuilder.setListValue(readList())
     }
     return valueBuilder.build()
   }

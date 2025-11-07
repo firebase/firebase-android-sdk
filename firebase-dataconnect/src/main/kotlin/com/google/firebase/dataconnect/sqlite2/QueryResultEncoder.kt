@@ -49,12 +49,7 @@ internal class QueryResultEncoder(private val channel: WritableByteChannel) {
   class EncodeResult(val byteArray: ByteArray, val entities: List<Entity>)
 
   fun encode(queryResult: Struct) {
-    val map = queryResult.fieldsMap
-    writeInt(map.size)
-    map.entries.forEach { (key, value) ->
-      writeString(key)
-      writeValue(value)
-    }
+    writeStruct(queryResult, includeTypeIndicator = false)
   }
 
   fun flush() {
@@ -187,6 +182,18 @@ internal class QueryResultEncoder(private val channel: WritableByteChannel) {
     repeat(listValue.valuesCount) { writeValue(listValue.getValues(it)) }
   }
 
+  private fun writeStruct(struct: Struct, includeTypeIndicator: Boolean = true) {
+    if (includeTypeIndicator) {
+      writeByte(QueryResultCodec.VALUE_STRUCT)
+    }
+    val map = struct.fieldsMap
+    writeInt(map.size)
+    map.entries.forEach { (key, value) ->
+      writeString(key)
+      writeValue(value)
+    }
+  }
+
   private fun writeValue(value: Value) {
     when (value.kindCase) {
       Value.KindCase.NULL_VALUE -> writeByte(QueryResultCodec.VALUE_NULL)
@@ -200,7 +207,7 @@ internal class QueryResultEncoder(private val channel: WritableByteChannel) {
           else QueryResultCodec.VALUE_BOOL_FALSE
         )
       Value.KindCase.STRING_VALUE -> writeString(value.stringValue)
-      Value.KindCase.STRUCT_VALUE -> TODO()
+      Value.KindCase.STRUCT_VALUE -> writeStruct(value.structValue)
       Value.KindCase.LIST_VALUE -> writeList(value.listValue)
       Value.KindCase.KIND_NOT_SET -> writeByte(QueryResultCodec.VALUE_KIND_NOT_SET)
     }

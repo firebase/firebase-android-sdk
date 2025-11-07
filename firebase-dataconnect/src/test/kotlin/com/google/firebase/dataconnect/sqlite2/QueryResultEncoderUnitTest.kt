@@ -130,6 +130,22 @@ class QueryResultEncoderUnitTest {
     }
   }
 
+  @Test
+  fun `struct with all non-nested struct values`() = runTest {
+    val listValueArb: Arb<Value> = structArb(depth = 1..1).map { it.toValueProto() }
+    checkAll(propTestConfig, structArb(value = listValueArb)) { struct ->
+      struct.decodingEncodingShouldProduceIdenticalStruct()
+    }
+  }
+
+  @Test
+  fun `struct with all nested struct values`() = runTest {
+    val listValueArb: Arb<Value> = structArb(size = 1..2, depth = 2..4).map { it.toValueProto() }
+    checkAll(propTestConfig, structArb(value = listValueArb)) { struct ->
+      struct.decodingEncodingShouldProduceIdenticalStruct()
+    }
+  }
+
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Tests for helper functions
   //////////////////////////////////////////////////////////////////////////////////////////////////
