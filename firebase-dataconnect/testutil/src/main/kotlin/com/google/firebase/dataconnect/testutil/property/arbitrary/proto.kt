@@ -35,6 +35,7 @@ import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.string
 import io.kotest.property.asSample
 import kotlin.random.nextInt
+import kotlin.ranges.IntRange
 
 object Proto {
 
@@ -135,6 +136,7 @@ private class StructArb(
   private val depth: IntRange,
   private val keyArb: Arb<String>,
   private val scalarValueArb: Arb<Value>,
+  listValueArb: ListValueArb? = null
 ) : Arb<Proto.StructInfo>() {
 
   init {
@@ -145,6 +147,15 @@ private class StructArb(
     require(depth.first > 0) { "depth.first must be greater than zero, but got depth=$depth" }
     require(!depth.isEmpty()) { "depth.isEmpty() must be false, but got $depth" }
   }
+
+  private val listValueArb =
+    listValueArb
+      ?: ListValueArb(
+        length = size,
+        depth = depth,
+        scalarValueArb = scalarValueArb,
+        structArb = this,
+      )
 
   private val sizeEdgeCases =
     listOf(size.first, size.first + 1, size.last, size.last - 1)
@@ -170,7 +181,7 @@ private class StructArb(
     return sample.asSample()
   }
 
-  private fun sample(
+  fun sample(
     rs: RandomSource,
     depth: Int,
     sizeEdgeCaseProbability: Float,
@@ -181,21 +192,17 @@ private class StructArb(
     require(depth > 0) { "invalid depth: $depth (must be greater than zero)" }
     val size = rs.nextSize(sizeEdgeCaseProbability)
 
-    fun RandomSource.nextNestedStruct(): Value {
-      val struct =
-        sample(
-          this,
-          depth = depth - 1,
-          sizeEdgeCaseProbability = sizeEdgeCaseProbability,
-          keyEdgeCaseProbability = keyEdgeCaseProbability,
-          valueEdgeCaseProbability = valueEdgeCaseProbability,
-          nestedProbability = nestedProbability,
-        )
-      return Value.newBuilder().setStructValue(struct.struct).build()
-    }
+    fun RandomSource.nextNestedValue(): Value =
+      rs.nextNestedValue(
+        depth = depth - 1,
+        sizeEdgeCaseProbability = sizeEdgeCaseProbability,
+        keyEdgeCaseProbability = keyEdgeCaseProbability,
+        valueEdgeCaseProbability = valueEdgeCaseProbability,
+        nestedProbability = nestedProbability,
+      )
 
     val structBuilder = Struct.newBuilder()
-    var hasNestedStruct = false
+    var hasNestedValue = false
     while (structBuilder.fieldsCount < size) {
       val key = rs.nextKey(keyEdgeCaseProbability)
       if (structBuilder.containsFields(key)) {
@@ -203,18 +210,18 @@ private class StructArb(
       }
       val value =
         if (depth > 1 && rs.random.nextFloat() < nestedProbability) {
-          hasNestedStruct = true
-          rs.nextNestedStruct()
+          hasNestedValue = true
+          rs.nextNestedValue()
         } else {
           rs.nextScalarValue(valueEdgeCaseProbability)
         }
       structBuilder.putFields(key, value)
     }
 
-    if (depth > 1 && !hasNestedStruct) {
+    if (depth > 1 && !hasNestedValue) {
       val keyToReplace = structBuilder.fieldsMap.keys.randomOrNull(rs.random)
       val key = keyToReplace ?: rs.nextKey(keyEdgeCaseProbability)
-      structBuilder.putFields(key, rs.nextNestedStruct())
+      structBuilder.putFields(key, rs.nextNestedValue())
     }
 
     return Proto.StructInfo(structBuilder.build(), depth)
@@ -281,6 +288,41 @@ private class StructArb(
     }
   }
 
+  private fun RandomSource.nextNestedValue(
+    depth: Int,
+    sizeEdgeCaseProbability: Float,
+    keyEdgeCaseProbability: Float,
+    valueEdgeCaseProbability: Float,
+    nestedProbability: Float,
+  ): Value {
+    val valueBuilder = Value.newBuilder()
+
+    if (random.nextBoolean()) {
+      val sample =
+        sample(
+          this,
+          depth = depth,
+          sizeEdgeCaseProbability = sizeEdgeCaseProbability,
+          keyEdgeCaseProbability = keyEdgeCaseProbability,
+          valueEdgeCaseProbability = valueEdgeCaseProbability,
+          nestedProbability = nestedProbability,
+        )
+      valueBuilder.setStructValue(sample.struct)
+    } else {
+      val sample =
+        listValueArb.sample(
+          this,
+          depth = depth,
+          lengthEdgeCaseProbability = sizeEdgeCaseProbability,
+          valueEdgeCaseProbability = valueEdgeCaseProbability,
+          nestedProbability = nestedProbability,
+        )
+      valueBuilder.setListValue(sample.listValue)
+    }
+
+    return valueBuilder.build()
+  }
+
   private enum class EdgeCase {
     Size,
     Depth,
@@ -305,6 +347,7 @@ private class ListValueArb(
   private val length: IntRange,
   private val depth: IntRange,
   private val scalarValueArb: Arb<Value>,
+  structArb: StructArb? = null,
 ) : Arb<Proto.ListValueInfo>() {
 
   init {
@@ -315,6 +358,16 @@ private class ListValueArb(
     require(depth.first > 0) { "depth.first must be greater than zero, but got depth=$depth" }
     require(!depth.isEmpty()) { "depth.isEmpty() must be false, but got $depth" }
   }
+
+  private val structArb =
+    structArb
+      ?: StructArb(
+        size = length,
+        depth = depth,
+        keyArb = Arb.proto.structKey(),
+        scalarValueArb = scalarValueArb,
+        listValueArb = this,
+      )
 
   private val lengthEdgeCases =
     listOf(length.first, length.first + 1, length.last, length.last - 1)
@@ -336,7 +389,7 @@ private class ListValueArb(
     return sample.asSample()
   }
 
-  private fun sample(
+  fun sample(
     rs: RandomSource,
     depth: Int,
     lengthEdgeCaseProbability: Float,
@@ -347,33 +400,29 @@ private class ListValueArb(
     val length = rs.nextLength(lengthEdgeCaseProbability)
     val values = mutableListOf<Value>()
 
-    fun RandomSource.nextNestedListValue(): Value {
-      val listValue =
-        sample(
-          this,
-          depth = depth - 1,
-          lengthEdgeCaseProbability = lengthEdgeCaseProbability,
-          valueEdgeCaseProbability = valueEdgeCaseProbability,
-          nestedProbability = nestedProbability,
-        )
-      return Value.newBuilder().setListValue(listValue.listValue).build()
-    }
+    fun RandomSource.nextNestedValue(): Value =
+      nextNestedValue(
+        depth = depth - 1,
+        lengthEdgeCaseProbability = lengthEdgeCaseProbability,
+        valueEdgeCaseProbability = valueEdgeCaseProbability,
+        nestedProbability = nestedProbability,
+      )
 
-    var hasNestedListValue = false
+    var hasNestedValue = false
     repeat(length) {
       val value =
         if (depth > 1 && rs.random.nextFloat() < nestedProbability) {
-          hasNestedListValue = true
-          rs.nextNestedListValue()
+          hasNestedValue = true
+          rs.nextNestedValue()
         } else {
           rs.nextScalarValue(valueEdgeCaseProbability)
         }
       values.add(value)
     }
 
-    if (depth > 1 && !hasNestedListValue) {
+    if (depth > 1 && !hasNestedValue) {
       values.removeFirstOrNull()
-      values.add(rs.nextNestedListValue())
+      values.add(rs.nextNestedValue())
       values.shuffle(rs.random)
     }
 
@@ -427,6 +476,40 @@ private class ListValueArb(
     } else {
       scalarValueArb.sample(this).value
     }
+  }
+
+  private fun RandomSource.nextNestedValue(
+    depth: Int,
+    lengthEdgeCaseProbability: Float,
+    valueEdgeCaseProbability: Float,
+    nestedProbability: Float,
+  ): Value {
+    val valueBuilder = Value.newBuilder()
+
+    if (random.nextBoolean()) {
+      val sample =
+        sample(
+          this,
+          depth = depth,
+          lengthEdgeCaseProbability = lengthEdgeCaseProbability,
+          valueEdgeCaseProbability = valueEdgeCaseProbability,
+          nestedProbability = nestedProbability,
+        )
+      valueBuilder.setListValue(sample.listValue)
+    } else {
+      val sample =
+        structArb.sample(
+          this,
+          depth = depth,
+          sizeEdgeCaseProbability = lengthEdgeCaseProbability,
+          keyEdgeCaseProbability = 0.33f,
+          valueEdgeCaseProbability = valueEdgeCaseProbability,
+          nestedProbability = nestedProbability,
+        )
+      valueBuilder.setStructValue(sample.struct)
+    }
+
+    return valueBuilder.build()
   }
 
   private enum class EdgeCase {

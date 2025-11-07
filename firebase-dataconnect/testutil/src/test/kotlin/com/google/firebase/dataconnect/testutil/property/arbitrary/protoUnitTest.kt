@@ -20,10 +20,12 @@ import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
+import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.collections.shouldBeIn
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
+import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
@@ -123,6 +125,26 @@ class protoUnitTest {
   }
 
   @Test
+  fun `listValue() should generate nested structs and lists`() = runTest {
+    var nestedListCount = 0
+    var nestedStructCount = 0
+
+    checkAll(propTestConfig, Arb.proto.listValue()) { sample ->
+      if (sample.listValue.hasNestedKind(Value.KindCase.LIST_VALUE)) {
+        nestedListCount++
+      }
+      if (sample.listValue.hasNestedKind(Value.KindCase.STRUCT_VALUE)) {
+        nestedStructCount++
+      }
+    }
+
+    assertSoftly {
+      withClue("nestedListCount") { nestedListCount shouldBeGreaterThan 0 }
+      withClue("nestedStructCount") { nestedStructCount shouldBeGreaterThan 0 }
+    }
+  }
+
+  @Test
   fun `struct() should specify the correct depth`() = runTest {
     checkAll(propTestConfig, Arb.proto.struct()) { sample ->
       sample.depth shouldBe sample.struct.maxDepth()
@@ -143,6 +165,26 @@ class protoUnitTest {
     val depths = mutableSetOf<Int>()
     repeat(propTestConfig.iterations!!) { depths.add(arb.edgecase(rs)!!.depth) }
     withClue("depths=${depths.sorted()}") { depths.shouldContainExactlyInAnyOrder(1, 2, 3) }
+  }
+
+  @Test
+  fun `struct() should generate nested structs and lists`() = runTest {
+    var nestedListCount = 0
+    var nestedStructCount = 0
+
+    checkAll(propTestConfig, Arb.proto.struct()) { sample ->
+      if (sample.struct.hasNestedKind(Value.KindCase.LIST_VALUE)) {
+        nestedListCount++
+      }
+      if (sample.struct.hasNestedKind(Value.KindCase.STRUCT_VALUE)) {
+        nestedStructCount++
+      }
+    }
+
+    assertSoftly {
+      withClue("nestedListCount") { nestedListCount shouldBeGreaterThan 0 }
+      withClue("nestedStructCount") { nestedStructCount shouldBeGreaterThan 0 }
+    }
   }
 
   private fun verifyArbGeneratesValuesWithKindCase(
@@ -198,6 +240,36 @@ class protoUnitTest {
         Value.KindCase.STRUCT_VALUE -> 1 + structValue.maxDepth()
         Value.KindCase.LIST_VALUE -> 1 + listValue.maxDepth()
         else -> 1
+      }
+
+    fun ListValue.hasNestedKind(kindCase: Value.KindCase): Boolean {
+      repeat(valuesCount) {
+        val value = getValues(it)
+        if (value.hasNestedKind(kindCase)) {
+          return true
+        }
+      }
+      return false
+    }
+
+    fun Struct.hasNestedKind(kindCase: Value.KindCase): Boolean {
+      fieldsMap.values.forEach { value ->
+        if (value.hasNestedKind(kindCase)) {
+          return true
+        }
+      }
+      return false
+    }
+
+    fun Value.hasNestedKind(kindCase: Value.KindCase): Boolean =
+      if (this@hasNestedKind.kindCase == kindCase) {
+        true
+      } else if (this@hasNestedKind.kindCase == Value.KindCase.LIST_VALUE) {
+        listValue.hasNestedKind(kindCase)
+      } else if (this@hasNestedKind.kindCase == Value.KindCase.STRUCT_VALUE) {
+        structValue.hasNestedKind(kindCase)
+      } else {
+        false
       }
   }
 }
