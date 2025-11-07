@@ -1,4 +1,6 @@
 # Unreleased
+- [feature] Added support for server templates via `TemplateGenerativeModel` and
+  `TemplateImagenModel`. (#7503)
 
 # 17.5.0
 
@@ -6,8 +8,6 @@
 - [changed] Added support for input and output transcription. (#7482)
 - [feature] Added support for sending realtime audio and video in a `LiveSession`.
 - [changed] Removed redundant internal exception types. (#7475)
-- [feature] Added support for server templates via `TemplateGenerativeModel` and 
-  `TemplateImagenModel`. (#7503)
 
 # 17.4.0
 
