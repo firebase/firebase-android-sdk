@@ -60,45 +60,6 @@ val Arb.Companion.proto: Proto
 // Arb.Companion.proto extension functions
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
-fun Proto.structKey(): Arb<String> = Arb.string(1..10, Codepoint.alphanumeric())
-
-fun Proto.struct(
-  size: IntRange = 0..5,
-  key: Arb<String> = structKey(),
-  value: Arb<Value>,
-): Arb<Struct> =
-  StructArb(
-      size = size,
-      depth = 1..1,
-      keyArb = key,
-      valueArb = value,
-    )
-    .map { it.struct }
-
-fun Proto.struct(
-  size: IntRange = 0..5,
-  depth: IntRange = 1..3,
-  key: Arb<String> = structKey(),
-  nullValue: Arb<Value> = nullValue(),
-  numberValue: Arb<Value> = numberValue(),
-  boolValue: Arb<Value> = boolValue(),
-  stringValue: Arb<Value> = stringValue(),
-  kindNotSetValue: Arb<Value> = kindNotSetValue(),
-): Arb<Proto.StructInfo> =
-  StructArb(
-    size = size,
-    depth = depth,
-    keyArb = key,
-    valueArb =
-      Arb.choice(
-        nullValue,
-        numberValue,
-        boolValue,
-        stringValue,
-        kindNotSetValue,
-      )
-  )
-
 fun Proto.nullValue(): Arb<Value> = arbitrary {
   Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build()
 }
@@ -117,27 +78,42 @@ fun Proto.stringValue(
 
 fun Proto.kindNotSetValue(): Arb<Value> = arbitrary { Value.newBuilder().build() }
 
+fun Proto.scalarValue(exclude: Value.KindCase? = null): Arb<Value> {
+  val arbs = buildList {
+    if (exclude != Value.KindCase.NULL_VALUE) {
+      add(nullValue())
+    }
+    if (exclude != Value.KindCase.NUMBER_VALUE) {
+      add(numberValue())
+    }
+    if (exclude != Value.KindCase.BOOL_VALUE) {
+      add(boolValue())
+    }
+    if (exclude != Value.KindCase.STRING_VALUE) {
+      add(stringValue())
+    }
+    if (exclude != Value.KindCase.KIND_NOT_SET) {
+      add(kindNotSetValue())
+    }
+  }
+
+  return Arb.choice(arbs)
+}
+
 fun Proto.listValue(
   length: IntRange = 0..10,
   depth: IntRange = 1..3,
-  nullValue: Arb<Value> = nullValue(),
-  numberValue: Arb<Value> = numberValue(),
-  boolValue: Arb<Value> = boolValue(),
-  stringValue: Arb<Value> = stringValue(),
-  kindNotSetValue: Arb<Value> = kindNotSetValue(),
-): Arb<Proto.ListValueInfo> =
-  ListValueArb(
-    length = length,
-    depth = depth,
-    valueArb =
-      Arb.choice(
-        nullValue,
-        numberValue,
-        boolValue,
-        stringValue,
-        kindNotSetValue,
-      ),
-  )
+  value: Arb<Value> = scalarValue(),
+): Arb<Proto.ListValueInfo> = ListValueArb(length = length, depth = depth, valueArb = value)
+
+fun Proto.structKey(): Arb<String> = Arb.string(1..10, Codepoint.alphanumeric())
+
+fun Proto.struct(
+  size: IntRange = 0..5,
+  depth: IntRange = 1..3,
+  key: Arb<String> = structKey(),
+  value: Arb<Value> = scalarValue(),
+): Arb<Proto.StructInfo> = StructArb(size = size, depth = depth, keyArb = key, valueArb = value)
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // StructArb class

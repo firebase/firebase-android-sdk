@@ -22,15 +22,18 @@ import com.google.protobuf.Struct
 import com.google.protobuf.Value
 import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
+import io.kotest.matchers.collections.shouldBeIn
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
+import io.kotest.property.Exhaustive
 import io.kotest.property.PropTestConfig
 import io.kotest.property.RandomSource
 import io.kotest.property.ShrinkingMode
 import io.kotest.property.arbitrary.map
 import io.kotest.property.checkAll
+import io.kotest.property.exhaustive.collection
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
@@ -61,6 +64,33 @@ class protoUnitTest {
   @Test
   fun `kindNotSetValue() should produce Values with kindCase KIND_NOT_SET`() =
     verifyArbGeneratesValuesWithKindCase(Arb.proto.kindNotSetValue(), Value.KindCase.KIND_NOT_SET)
+
+  @Test
+  fun `scalarValue() should only produce scalar values`() = runTest {
+    checkAll(propTestConfig, Arb.proto.scalarValue()) { value ->
+      value.kindCase shouldBeIn scalarKindCases
+    }
+  }
+
+  @Test
+  fun `scalarValue() should produce all scalar value kind cases`() = runTest {
+    val encounteredKindCases = mutableSetOf<Value.KindCase>()
+    checkAll(propTestConfig, Arb.proto.scalarValue()) { value ->
+      encounteredKindCases.add(value.kindCase)
+    }
+    encounteredKindCases shouldContainExactlyInAnyOrder scalarKindCases
+  }
+
+  @Test
+  fun `scalarValue() should exclude the given kind case`() = runTest {
+    checkAll(propTestConfig, Exhaustive.collection(scalarKindCases)) { kindCase ->
+      val scalarValueArb = Arb.proto.scalarValue(exclude = kindCase)
+      val encounteredKindCases =
+        List(propTestConfig.iterations!!) { scalarValueArb.bind().kindCase }
+      val expectedEncounteredKindCases = scalarKindCases.filterNot { it == kindCase }
+      encounteredKindCases.distinct() shouldContainExactlyInAnyOrder expectedEncounteredKindCases
+    }
+  }
 
   @Test
   fun `listValue() should produce Values with kindCase LIST_VALUE`() =
@@ -130,6 +160,15 @@ class protoUnitTest {
         iterations = 1000,
         edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.33),
         shrinkingMode = ShrinkingMode.Off,
+      )
+
+    val scalarKindCases: List<Value.KindCase> =
+      listOf(
+        Value.KindCase.NULL_VALUE,
+        Value.KindCase.BOOL_VALUE,
+        Value.KindCase.NUMBER_VALUE,
+        Value.KindCase.STRING_VALUE,
+        Value.KindCase.KIND_NOT_SET,
       )
 
     fun ListValue.maxDepth(): Int {

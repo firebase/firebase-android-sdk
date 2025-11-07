@@ -57,21 +57,21 @@ class QueryResultEncoderUnitTest {
   @Test
   fun `struct with all null values`() = runTest {
     checkAll(propTestConfig, Arb.proto.struct(value = Arb.proto.nullValue())) { struct ->
-      struct.decodingEncodingShouldProduceIdenticalStruct()
+      struct.struct.decodingEncodingShouldProduceIdenticalStruct()
     }
   }
 
   @Test
   fun `struct with all number values`() = runTest {
     checkAll(propTestConfig, Arb.proto.struct(value = Arb.proto.numberValue())) { struct ->
-      struct.decodingEncodingShouldProduceIdenticalStruct()
+      struct.struct.decodingEncodingShouldProduceIdenticalStruct()
     }
   }
 
   @Test
   fun `struct with all bool values`() = runTest {
     checkAll(propTestConfig, Arb.proto.struct(value = Arb.proto.boolValue())) { struct ->
-      struct.decodingEncodingShouldProduceIdenticalStruct()
+      struct.struct.decodingEncodingShouldProduceIdenticalStruct()
     }
   }
 
@@ -90,14 +90,14 @@ class QueryResultEncoderUnitTest {
     runTest {
       checkAll(propTestConfig, Arb.proto.struct(value = Arb.proto.stringValue(stringArb))) { struct
         ->
-        struct.decodingEncodingShouldProduceIdenticalStruct()
+        struct.struct.decodingEncodingShouldProduceIdenticalStruct()
       }
     }
 
   @Test
   fun `struct with all kind_not_set values`() = runTest {
     checkAll(propTestConfig, Arb.proto.struct(value = Arb.proto.kindNotSetValue())) { struct ->
-      struct.decodingEncodingShouldProduceIdenticalStruct()
+      struct.struct.decodingEncodingShouldProduceIdenticalStruct()
     }
   }
 
@@ -105,7 +105,7 @@ class QueryResultEncoderUnitTest {
   fun `struct with all non-nested list values`() = runTest {
     val listValueArb: Arb<Value> = Arb.proto.listValue(depth = 1..1).map { it.toValueProto() }
     checkAll(propTestConfig, Arb.proto.struct(value = listValueArb)) { struct ->
-      struct.decodingEncodingShouldProduceIdenticalStruct()
+      struct.struct.decodingEncodingShouldProduceIdenticalStruct()
     }
   }
 
@@ -113,8 +113,8 @@ class QueryResultEncoderUnitTest {
   fun `struct with all nested list values`() = runTest {
     val listValueArb: Arb<Value> =
       Arb.proto.listValue(length = 1..2, depth = 2..4).map { it.toValueProto() }
-    checkAll(propTestConfig, Arb.proto.struct(value = listValueArb)) { struct ->
-      struct.decodingEncodingShouldProduceIdenticalStruct()
+    checkAll(propTestConfig, Arb.proto.struct(depth = 1..1, value = listValueArb)) { struct ->
+      struct.struct.decodingEncodingShouldProduceIdenticalStruct()
     }
   }
 
@@ -122,7 +122,7 @@ class QueryResultEncoderUnitTest {
   fun `struct with all non-nested struct values`() = runTest {
     val structValueArb: Arb<Value> = Arb.proto.struct(depth = 1..1).map { it.toValueProto() }
     checkAll(propTestConfig, Arb.proto.struct(value = structValueArb)) { struct ->
-      struct.decodingEncodingShouldProduceIdenticalStruct()
+      struct.struct.decodingEncodingShouldProduceIdenticalStruct()
     }
   }
 
@@ -130,8 +130,8 @@ class QueryResultEncoderUnitTest {
   fun `struct with all nested struct values`() = runTest {
     val structValueArb: Arb<Value> =
       Arb.proto.struct(size = 1..2, depth = 2..4).map { it.toValueProto() }
-    checkAll(propTestConfig, Arb.proto.struct(value = structValueArb)) { struct ->
-      struct.decodingEncodingShouldProduceIdenticalStruct()
+    checkAll(propTestConfig, Arb.proto.struct(depth = 1..1, value = structValueArb)) { struct ->
+      struct.struct.decodingEncodingShouldProduceIdenticalStruct()
     }
   }
 
