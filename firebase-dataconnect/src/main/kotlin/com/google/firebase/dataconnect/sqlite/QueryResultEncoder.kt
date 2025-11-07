@@ -35,7 +35,10 @@ import kotlin.math.absoluteValue
  * This class is NOT thread safe. The behavior of an instance of this class when used concurrently
  * from multiple threads without external synchronization is undefined.
  */
-internal class QueryResultEncoder(private val channel: WritableByteChannel) {
+internal class QueryResultEncoder(
+  private val channel: WritableByteChannel,
+  private val entityFieldName: String? = null
+) {
 
   val entities: MutableList<Entity> = mutableListOf()
 
@@ -215,11 +218,11 @@ internal class QueryResultEncoder(private val channel: WritableByteChannel) {
 
   companion object {
 
-    fun encode(queryResult: Struct): EncodeResult =
+    fun encode(queryResult: Struct, entityFieldName: String? = null): EncodeResult =
       ByteArrayOutputStream().use { byteArrayOutputStream ->
         val entities =
           Channels.newChannel(byteArrayOutputStream).use { writableByteChannel ->
-            val encoder = QueryResultEncoder(writableByteChannel)
+            val encoder = QueryResultEncoder(writableByteChannel, entityFieldName)
             encoder.encode(queryResult)
             encoder.flush()
             encoder.entities

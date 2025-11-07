@@ -28,11 +28,15 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.protobuf.Struct
+import io.kotest.assertions.assertSoftly
+import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
 import io.kotest.property.ShrinkingMode
+import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.map
@@ -77,6 +81,17 @@ class QueryResultEncoderUnitTest {
     }
   }
 
+  @Test
+  fun `entire struct is an entity with no nested entities`() = runTest {
+    checkAll(propTestConfig, stringForEncodeTestingArb()) { entityFieldName ->
+      val struct = entityArb(entityFieldName).bind()
+      struct.decodingEncodingShouldProduceIdenticalStruct(
+        entities = listOf(struct),
+        entityFieldName
+      )
+    }
+  }
+
   private companion object {
 
     @OptIn(ExperimentalKotest::class)
@@ -110,10 +125,31 @@ class QueryResultEncoderUnitTest {
         Arb.dataConnect.string(2048..99999),
       )
 
-    fun Struct.decodingEncodingShouldProduceIdenticalStruct() {
-      val encodeResult = QueryResultEncoder.encode(this)
-      val decodeResult = QueryResultDecoder.decode(encodeResult.byteArray, encodeResult.entities)
-      decodeResult shouldBe this
+    fun Struct.decodingEncodingShouldProduceIdenticalStruct(
+      entities: List<Struct>? = null,
+      entityFieldName: String? = null
+    ) {
+      val encodeResult = QueryResultEncoder.encode(this, entityFieldName)
+      val decodeResult =
+        QueryResultDecoder.decode(encodeResult.byteArray, encodeResult.entities, entityFieldName)
+
+      assertSoftly {
+        withClue("QueryResultDecoder.decode() return value") { decodeResult shouldBe this }
+        if (entities !== null) {
+          withClue("entities returned from QueryResultEncoder.encode()") {
+            encodeResult.entities.map { it.data } shouldContainExactlyInAnyOrder entities
+          }
+        }
+      }
     }
+
+    fun entityArb(
+      idFieldName: String,
+      id: Arb<String> = stringForEncodeTestingArb(),
+      struct: Arb<Struct> = Arb.proto.struct().map { it.struct },
+    ): Arb<Struct> =
+      Arb.bind(id, struct) { id, struct ->
+        struct.toBuilder().putFields(idFieldName, id.toValueProto()).build()
+      }
   }
 }

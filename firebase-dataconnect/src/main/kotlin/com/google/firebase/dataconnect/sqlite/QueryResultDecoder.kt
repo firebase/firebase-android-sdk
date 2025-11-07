@@ -36,7 +36,8 @@ import java.nio.charset.CodingErrorAction
  */
 internal class QueryResultDecoder(
   private val channel: ReadableByteChannel,
-  private val entities: List<Entity>
+  private val entities: List<Entity>,
+  private val entityFieldName: String? = null,
 ) {
 
   private val charsetDecoder =
@@ -340,10 +341,14 @@ internal class QueryResultDecoder(
 
   companion object {
 
-    fun decode(byteArray: ByteArray, entities: List<Entity>): Struct =
+    fun decode(
+      byteArray: ByteArray,
+      entities: List<Entity>,
+      entityFieldName: String? = null,
+    ): Struct =
       ByteArrayInputStream(byteArray).use { byteArrayInputStream ->
         Channels.newChannel(byteArrayInputStream).use { channel ->
-          val decoder = QueryResultDecoder(channel, entities)
+          val decoder = QueryResultDecoder(channel, entities, entityFieldName)
           decoder.decode()
         }
       }
