@@ -3,8 +3,6 @@
     "libraries": [
         ":firebase-ai",
         ":firebase-dataconnect",
-        ":firebase-inappmessaging",
-        ":firebase-inappmessaging-display",
         ":firebase-perf"
     ]
 }
