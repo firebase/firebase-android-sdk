@@ -25,6 +25,7 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWith
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.stringWithLoneSurrogates
 import com.google.firebase.dataconnect.testutil.shouldBe
+import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.protobuf.ListValue
 import com.google.protobuf.NullValue
 import com.google.protobuf.Struct
@@ -238,6 +239,8 @@ class QueryResultEncoderUnitTest {
       val depth: Int,
     ) {
       fun toValueProto(): Value = Value.newBuilder().setStructValue(struct).build()
+
+      override fun toString(): String = struct.toCompactString()
     }
 
     private val sizeEdgeCases =
@@ -406,6 +409,8 @@ class QueryResultEncoderUnitTest {
       val depth: Int,
     ) {
       fun toValueProto(): Value = Value.newBuilder().setListValue(listValue).build()
+
+      override fun toString(): String = listValue.toCompactString()
     }
 
     init {
