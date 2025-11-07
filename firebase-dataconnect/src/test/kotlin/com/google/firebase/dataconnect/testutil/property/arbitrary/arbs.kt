@@ -91,7 +91,7 @@ internal fun DataConnectArb.operationErrorInfo(
   Arb.bind(message, path) { message0, path0 -> ErrorInfoImpl(message0, path0) }
 
 internal fun DataConnectArb.operationRawData(): Arb<Map<String, Any?>?> =
-  Arb.proto.struct().map { it.toMap() }.orNull(nullProbability = 0.33)
+  Arb.proto.struct().map { it.struct.toMap() }.orNull(nullProbability = 0.33)
 
 internal data class SampleOperationData(val value: String)
 
@@ -113,7 +113,7 @@ internal fun DataConnectArb.operationFailureResponseImpl(
   }
 
 internal fun DataConnectArb.operationResult(
-  data: Arb<Struct?> = Arb.proto.struct().orNull(nullProbability = 0.2),
+  data: Arb<Struct?> = Arb.proto.struct().map { it.struct }.orNull(nullProbability = 0.2),
   errors: Arb<List<ErrorInfoImpl>> = operationErrors(),
 ) =
   Arb.bind(data, errors) { data0, errors0 -> DataConnectGrpcClient.OperationResult(data0, errors0) }

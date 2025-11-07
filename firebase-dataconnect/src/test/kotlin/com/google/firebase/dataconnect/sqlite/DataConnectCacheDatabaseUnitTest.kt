@@ -42,6 +42,7 @@ import io.kotest.property.arbitrary.byte
 import io.kotest.property.arbitrary.byteArray
 import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.int
+import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.orNull
 import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
@@ -259,7 +260,7 @@ class DataConnectCacheDatabaseUnitTest {
 
     fun entityArb(
       id: Arb<ByteArray> = entityIdArb(),
-      data: Arb<Struct> = Arb.proto.struct(),
+      data: Arb<Struct> = Arb.proto.struct().map { it.struct },
     ): Arb<Entity> = Arb.bind(id, data, ::Entity)
 
     fun queryResultArb(
