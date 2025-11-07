@@ -20,14 +20,7 @@
 
 * dataconnect: augment tests for null token in DataConnectGrpcMetadataUnitTest (#7507)   
   [pr](https://github.com/firebase/firebase-android-sdk/pull/7507) [commit](https://github.com/firebase/firebase-android-sdk/commit/d2d23d3525b449f121a6adb8eba2dcf9006bf9c6)  [Denver Coneybeare]
-
-## firebase-inappmessaging
-      
-* update change log for inappmessaging (#7514)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/7514) [commit](https://github.com/firebase/firebase-android-sdk/commit/24c1b86facbd519331494a4bee6a4dc1df22d18e)  [Vinay Guthal]
-
-## firebase-inappmessaging-display
-      
+    
 
 ## firebase-perf
       

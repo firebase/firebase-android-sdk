@@ -52,17 +52,6 @@
                 "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7507"
             }
         ],
-        "firebase-inappmessaging": [
-            {
-                "commitId": "24c1b86facbd519331494a4bee6a4dc1df22d18e",
-                "prId": "7514",
-                "author": "Vinay Guthal",
-                "message": "update change log for inappmessaging (#7514)\n\n",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/24c1b86facbd519331494a4bee6a4dc1df22d18e",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7514"
-            }
-        ],
-        "firebase-inappmessaging-display": [],
         "firebase-perf": [
             {
                 "commitId": "4832b5d16bcbc8ca8857e0643be95bdc1429d933",
