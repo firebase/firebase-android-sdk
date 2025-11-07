@@ -290,8 +290,11 @@ class QueryResultEncoderUnitTest {
 
       val structBuilder = Struct.newBuilder()
       var hasNestedStruct = false
-      repeat(size) {
+      while (structBuilder.fieldsCount < size) {
         val key = rs.nextKey(keyEdgeCaseProbability)
+        if (structBuilder.containsFields(key)) {
+          continue
+        }
         val value =
           if (depth > 1 && rs.random.nextFloat() < nestedProbability) {
             hasNestedStruct = true
