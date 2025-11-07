@@ -23,6 +23,7 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWith
 import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWithEvenNumByteUtf8EncodingDistribution
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
+import com.google.firebase.dataconnect.testutil.property.arbitrary.stringValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.stringWithLoneSurrogates
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.shouldBe
@@ -82,9 +83,9 @@ class QueryResultEncoderUnitTest {
   }
 
   @Test
-  fun `entire struct is an entity with no nested entities`() = runTest {
-    checkAll(propTestConfig, stringForEncodeTestingArb()) { entityFieldName ->
-      val struct = entityArb(entityFieldName).bind()
+  fun `entire struct is an empty entity`() = runTest {
+    checkAll(propTestConfig, Arb.string(), Arb.proto.stringValue()) { entityFieldName, entityId ->
+      val struct = Struct.newBuilder().putFields(entityFieldName, entityId).build()
       struct.decodingEncodingShouldProduceIdenticalStruct(
         entities = listOf(struct),
         entityFieldName
@@ -126,7 +127,7 @@ class QueryResultEncoderUnitTest {
       )
 
     fun Struct.decodingEncodingShouldProduceIdenticalStruct(
-      entities: List<Struct>? = null,
+      entities: List<Struct> = emptyList(),
       entityFieldName: String? = null
     ) {
       val encodeResult = QueryResultEncoder.encode(this, entityFieldName)
@@ -135,10 +136,8 @@ class QueryResultEncoderUnitTest {
 
       assertSoftly {
         withClue("QueryResultDecoder.decode() return value") { decodeResult shouldBe this }
-        if (entities !== null) {
-          withClue("entities returned from QueryResultEncoder.encode()") {
-            encodeResult.entities.map { it.data } shouldContainExactlyInAnyOrder entities
-          }
+        withClue("entities returned from QueryResultEncoder.encode()") {
+          encodeResult.entities.map { it.data } shouldContainExactlyInAnyOrder entities
         }
       }
     }

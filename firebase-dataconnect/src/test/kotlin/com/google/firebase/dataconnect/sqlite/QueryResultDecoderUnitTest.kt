@@ -16,6 +16,7 @@
 
 package com.google.firebase.dataconnect.sqlite
 
+import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.BadHeaderException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.Companion.decode
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.NegativeListSizeException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.NegativeStringByteCountException
@@ -23,6 +24,7 @@ import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.NegativeStringC
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.NegativeStructKeyCountException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.UnknownKindCaseByteException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.UnknownStringTypeException
+import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.UnknownStructTypeException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.Utf16EOFException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.Utf8EOFException
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
@@ -30,12 +32,14 @@ import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.common.ExperimentalKotest
+import io.kotest.matchers.string.shouldMatch
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.Exhaustive
 import io.kotest.property.PropTestConfig
 import io.kotest.property.arbitrary.byte
 import io.kotest.property.arbitrary.filterNot
+import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.negativeInt
 import io.kotest.property.arbitrary.positiveInt
 import io.kotest.property.arbitrary.string
@@ -49,9 +53,51 @@ import org.junit.Test
 class QueryResultDecoderUnitTest {
 
   @Test
+  fun `decode() should throw BadHeaderException`() = runTest {
+    val badHeaderArb = Arb.int().filterNot { it == QueryResultCodec.QUERY_RESULT_HEADER }
+    checkAll(propTestConfig, badHeaderArb) { badHeader ->
+      val byteArray = buildByteArray { putInt(badHeader) }
+
+      val exception = shouldThrow<BadHeaderException> { decode(byteArray, emptyList()) }
+
+      assertSoftly {
+        exception.message shouldContainWithNonAbuttingText "jk832sz9hx"
+        exception.message shouldMatch
+          Regex(".*read header 0x0*${badHeader.toUInt().toString(16)}.*", RegexOption.IGNORE_CASE)
+        exception.message shouldMatch
+          Regex(
+            ".*expected 0x0*${QueryResultCodec.QUERY_RESULT_HEADER.toUInt().toString(16)}.*",
+            RegexOption.IGNORE_CASE
+          )
+      }
+    }
+  }
+
+  @Test
+  fun `decode() should throw UnknownStructTypeException`() = runTest {
+    checkAll(propTestConfig, nonStructKindCaseByteExhaustive()) { nonStructKindCaseByte ->
+      val byteArray = buildByteArray {
+        putInt(QueryResultCodec.QUERY_RESULT_HEADER)
+        put(nonStructKindCaseByte)
+      }
+
+      val exception = shouldThrow<UnknownStructTypeException> { decode(byteArray, emptyList()) }
+
+      assertSoftly {
+        exception.message shouldContainWithNonAbuttingText "s8b9jqegdy"
+        exception.message shouldContainWithNonAbuttingText nonStructKindCaseByte.toString()
+        exception.message shouldContainWithNonAbuttingTextIgnoringCase "non-struct kind case byte"
+      }
+    }
+  }
+  @Test
   fun `decode() should throw NegativeStructKeyCountException`() = runTest {
     checkAll(propTestConfig, Arb.negativeInt()) { negativeStructKeyCount ->
-      val byteArray = buildByteArray { putInt(negativeStructKeyCount) }
+      val byteArray = buildByteArray {
+        putInt(QueryResultCodec.QUERY_RESULT_HEADER)
+        put(QueryResultCodec.VALUE_STRUCT)
+        putInt(negativeStructKeyCount)
+      }
 
       val exception =
         shouldThrow<NegativeStructKeyCountException> { decode(byteArray, emptyList()) }
@@ -72,6 +118,8 @@ class QueryResultDecoderUnitTest {
       structKeyCount,
       negativeStringByteCount ->
       val byteArray = buildByteArray {
+        putInt(QueryResultCodec.QUERY_RESULT_HEADER)
+        put(QueryResultCodec.VALUE_STRUCT)
         putInt(structKeyCount)
         put(QueryResultCodec.VALUE_STRING_UTF8)
         putInt(negativeStringByteCount)
@@ -97,6 +145,8 @@ class QueryResultDecoderUnitTest {
       stringByteCount,
       negativeStringCharCount ->
       val byteArray = buildByteArray {
+        putInt(QueryResultCodec.QUERY_RESULT_HEADER)
+        put(QueryResultCodec.VALUE_STRUCT)
         putInt(structKeyCount)
         put(QueryResultCodec.VALUE_STRING_UTF8)
         putInt(stringByteCount)
@@ -122,6 +172,8 @@ class QueryResultDecoderUnitTest {
       structKeyCount,
       negativeStringCharCount ->
       val byteArray = buildByteArray {
+        putInt(QueryResultCodec.QUERY_RESULT_HEADER)
+        put(QueryResultCodec.VALUE_STRUCT)
         putInt(structKeyCount)
         put(QueryResultCodec.VALUE_STRING_UTF16)
         putInt(negativeStringCharCount)
@@ -146,6 +198,8 @@ class QueryResultDecoderUnitTest {
       nonStringKindCaseByte,
       structKeyCount ->
       val byteArray = buildByteArray {
+        putInt(QueryResultCodec.QUERY_RESULT_HEADER)
+        put(QueryResultCodec.VALUE_STRUCT)
         putInt(structKeyCount)
         put(nonStringKindCaseByte)
       }
@@ -166,6 +220,8 @@ class QueryResultDecoderUnitTest {
       structKeyCount,
       invalidKindCaseByte ->
       val byteArray = buildByteArray {
+        putInt(QueryResultCodec.QUERY_RESULT_HEADER)
+        put(QueryResultCodec.VALUE_STRUCT)
         putInt(structKeyCount)
         put(QueryResultCodec.VALUE_STRING_EMPTY)
         put(invalidKindCaseByte)
@@ -195,6 +251,8 @@ class QueryResultDecoderUnitTest {
         val byteCount = stringUtf8Bytes.size + byteCountDelta
         val charCount = string.length + charCountDelta
         val byteArray = buildByteArray {
+          putInt(QueryResultCodec.QUERY_RESULT_HEADER)
+          put(QueryResultCodec.VALUE_STRUCT)
           putInt(structKeyCount)
           put(QueryResultCodec.VALUE_STRING_UTF8)
           putInt(byteCount)
@@ -227,6 +285,8 @@ class QueryResultDecoderUnitTest {
         val stringUtf8Bytes = string.encodeToByteArray()
         val charCount = string.length + charCountDelta
         val byteArray = buildByteArray {
+          putInt(QueryResultCodec.QUERY_RESULT_HEADER)
+          put(QueryResultCodec.VALUE_STRUCT)
           putInt(structKeyCount)
           put(QueryResultCodec.VALUE_STRING_UTF8)
           putInt(stringUtf8Bytes.size)
@@ -257,6 +317,8 @@ class QueryResultDecoderUnitTest {
         charCountDelta ->
         val charCount = string.length + charCountDelta
         val byteArray = buildByteArray {
+          putInt(QueryResultCodec.QUERY_RESULT_HEADER)
+          put(QueryResultCodec.VALUE_STRUCT)
           putInt(structKeyCount)
           put(QueryResultCodec.VALUE_STRING_UTF16)
           putInt(charCount)
@@ -279,11 +341,12 @@ class QueryResultDecoderUnitTest {
 
   @Test
   fun `decode() should throw NegativeListSizeException`() = runTest {
-    checkAll(propTestConfig, Arb.positiveInt(), Arb.string(0..20), Arb.negativeInt()) {
+    checkAll(propTestConfig, Arb.positiveInt(), Arb.negativeInt()) {
       structKeyCount,
-      string,
       negativeListSize ->
       val byteArray = buildByteArray {
+        putInt(QueryResultCodec.QUERY_RESULT_HEADER)
+        put(QueryResultCodec.VALUE_STRUCT)
         putInt(structKeyCount)
         put(QueryResultCodec.VALUE_STRING_EMPTY)
         put(QueryResultCodec.VALUE_LIST)
@@ -332,6 +395,7 @@ class QueryResultDecoderUnitTest {
         QueryResultCodec.VALUE_KIND_NOT_SET,
         QueryResultCodec.VALUE_LIST,
         QueryResultCodec.VALUE_STRUCT,
+        QueryResultCodec.VALUE_ENTITY,
       )
 
     val stringTypeBytes: Set<Byte> =
@@ -342,6 +406,14 @@ class QueryResultDecoderUnitTest {
       )
 
     val nonStringTypeBytes: Set<Byte> = kindCaseBytes - stringTypeBytes
+
+    val structTypeBytes: Set<Byte> =
+      setOf(
+        QueryResultCodec.VALUE_STRUCT,
+        QueryResultCodec.VALUE_ENTITY,
+      )
+
+    val nonStructTypeBytes: Set<Byte> = kindCaseBytes - structTypeBytes
 
     val invalidKindCaseByteEdgeCases: List<Byte> =
       buildSet {
@@ -366,5 +438,8 @@ class QueryResultDecoderUnitTest {
 
     fun nonStringKindCaseByteExhaustive(): Exhaustive<Byte> =
       Exhaustive.collection(nonStringTypeBytes)
+
+    fun nonStructKindCaseByteExhaustive(): Exhaustive<Byte> =
+      Exhaustive.collection(nonStructTypeBytes)
   }
 }

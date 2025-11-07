@@ -51,7 +51,13 @@ internal class QueryResultDecoder(
       flip()
     }
 
-  fun decode(): Struct = readStruct()
+  fun decode(): Struct {
+    readHeader()
+    return when (readStructType()) {
+      StructType.Struct -> readStruct()
+      StructType.Entity -> readEntity()
+    }
+  }
 
   private fun readSome(): Int {
     byteBuffer.compact()
@@ -95,6 +101,19 @@ internal class QueryResultDecoder(
       StringType.Empty -> ""
       StringType.Utf8 -> readStringUtf8()
       StringType.Utf16 -> readStringCustomUtf16()
+    }
+
+  private fun readHeader(): Int =
+    readInt().also {
+      if (it != QueryResultCodec.QUERY_RESULT_HEADER) {
+        throw BadHeaderException(
+          "read header 0x" +
+            it.toUInt().toString(16).padStart(8, '0') +
+            ", but expected 0x" +
+            QueryResultCodec.QUERY_RESULT_HEADER.toUInt().toString(16).padStart(8, '0') +
+            " [jk832sz9hx]"
+        )
+      }
     }
 
   private fun readStructKeyCount(): Int =
@@ -146,7 +165,8 @@ internal class QueryResultDecoder(
     StringUtf16(QueryResultCodec.VALUE_STRING_UTF16, "utf16"),
     KindNotSet(QueryResultCodec.VALUE_KIND_NOT_SET, "kindnotset"),
     List(QueryResultCodec.VALUE_LIST, "list"),
-    Struct(QueryResultCodec.VALUE_STRUCT, "struct");
+    Struct(QueryResultCodec.VALUE_STRUCT, "struct"),
+    Entity(QueryResultCodec.VALUE_ENTITY, "entity");
 
     companion object {
       fun fromSerializedByte(serializedByte: Byte): ValueKindCase? =
@@ -291,6 +311,34 @@ internal class QueryResultDecoder(
     return listValueBuilder.build()
   }
 
+  private enum class StructType(val valueKindCase: ValueKindCase) {
+    Struct(ValueKindCase.Struct),
+    Entity(ValueKindCase.Entity);
+
+    companion object {
+      fun fromValueKindCase(valueKindCase: ValueKindCase): StructType? =
+        entries.firstOrNull { it.valueKindCase == valueKindCase }
+    }
+  }
+
+  private fun readStructType(): StructType =
+    readKindCase().let { valueKindCase ->
+      val structType = StructType.fromValueKindCase(valueKindCase)
+      if (structType === null) {
+        throw UnknownStructTypeException(
+          "read non-struct kind case byte ${valueKindCase.serializedByte} " +
+            "(${valueKindCase.displayName}), but expected one of " +
+            StructType.entries
+              .sortedBy { it.valueKindCase.serializedByte }
+              .joinToString {
+                "${it.valueKindCase.serializedByte} (${it.valueKindCase.displayName})"
+              } +
+            " [s8b9jqegdy]"
+        )
+      }
+      structType
+    }
+
   private fun readStruct(): Struct {
     val keyCount = readStructKeyCount()
     val structBuilder = Struct.newBuilder()
@@ -300,6 +348,10 @@ internal class QueryResultDecoder(
       structBuilder.putFields(key, value)
     }
     return structBuilder.build()
+  }
+
+  private fun readEntity(): Struct {
+    TODO()
   }
 
   private fun readValue(): Value {
@@ -314,6 +366,7 @@ internal class QueryResultDecoder(
       ValueKindCase.StringUtf16 -> valueBuilder.setStringValue(readStringCustomUtf16())
       ValueKindCase.List -> valueBuilder.setListValue(readList())
       ValueKindCase.Struct -> valueBuilder.setStructValue(readStruct())
+      ValueKindCase.Entity -> TODO()
       ValueKindCase.KindNotSet -> {
         // do nothing, leaving the kind as KIND_NOT_SET
       }
@@ -322,6 +375,8 @@ internal class QueryResultDecoder(
   }
 
   sealed class DecodeException(message: String) : Exception(message)
+
+  class BadHeaderException(message: String) : DecodeException(message)
 
   class NegativeStructKeyCountException(message: String) : DecodeException(message)
 
@@ -334,6 +389,8 @@ internal class QueryResultDecoder(
   class UnknownKindCaseByteException(message: String) : DecodeException(message)
 
   class UnknownStringTypeException(message: String) : DecodeException(message)
+
+  class UnknownStructTypeException(message: String) : DecodeException(message)
 
   class Utf8EOFException(message: String) : DecodeException(message)
 

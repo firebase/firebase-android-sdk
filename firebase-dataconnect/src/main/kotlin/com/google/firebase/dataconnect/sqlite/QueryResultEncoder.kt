@@ -22,175 +22,86 @@ import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
 import java.io.ByteArrayOutputStream
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
-import java.nio.CharBuffer
 import java.nio.channels.Channels
 import java.nio.channels.WritableByteChannel
-import java.nio.charset.CoderResult
 import java.nio.charset.CodingErrorAction
-import kotlin.math.absoluteValue
 
 /**
  * This class is NOT thread safe. The behavior of an instance of this class when used concurrently
  * from multiple threads without external synchronization is undefined.
  */
 internal class QueryResultEncoder(
-  private val channel: WritableByteChannel,
+  channel: WritableByteChannel,
   private val entityFieldName: String? = null
 ) {
 
   val entities: MutableList<Entity> = mutableListOf()
 
-  private val charsetEncoder =
+  private val utf8CharsetEncoder =
     Charsets.UTF_8.newEncoder()
       .onUnmappableCharacter(CodingErrorAction.REPORT)
       .onMalformedInput(CodingErrorAction.REPORT)
 
-  private val byteBuffer = ByteBuffer.allocate(2048).order(ByteOrder.BIG_ENDIAN)
+  private val writer = ProtoValueWriter(channel, utf8CharsetEncoder)
 
   class EncodeResult(val byteArray: ByteArray, val entities: List<Entity>)
 
   fun encode(queryResult: Struct) {
-    writeStruct(queryResult, includeTypeIndicator = false)
+    writer.writeInt(QueryResultCodec.QUERY_RESULT_HEADER)
+    writeStruct(queryResult)
   }
 
   fun flush() {
-    byteBuffer.flip()
-    while (byteBuffer.remaining() > 0) {
-      channel.write(byteBuffer)
-    }
-    byteBuffer.clear()
-  }
-
-  private fun flushOnce() {
-    byteBuffer.flip()
-    channel.write(byteBuffer)
-    byteBuffer.compact()
-  }
-
-  private fun ensureRemaining(minRemainingBytes: Int) {
-    while (byteBuffer.remaining() < minRemainingBytes) {
-      flushOnce()
-    }
-  }
-
-  private fun writeInt(value: Int) {
-    ensureRemaining(4)
-    byteBuffer.putInt(value)
-  }
-
-  private fun writeByte(value: Byte) {
-    ensureRemaining(1)
-    byteBuffer.put(value)
-  }
-
-  private fun writeDouble(value: Double) {
-    ensureRemaining(8)
-    byteBuffer.putDouble(value)
+    writer.flush()
   }
 
   private fun writeString(string: String) {
     if (string.isEmpty()) {
-      writeByte(QueryResultCodec.VALUE_STRING_EMPTY)
+      writer.writeByte(QueryResultCodec.VALUE_STRING_EMPTY)
       return
     }
 
     val utf8ByteCount = string.calculateUtf8ByteCount()
     val utf16ByteCount = string.length * 2
-    charsetEncoder.reset() // Prepare `charsetEncoder` for calling `canEncode()`.
+    utf8CharsetEncoder.reset() // Prepare for calling `canEncode()`.
 
-    if (utf8ByteCount <= utf16ByteCount && charsetEncoder.canEncode(string)) {
-      writeStringUtf8(string, utf8ByteCount)
+    if (utf8ByteCount <= utf16ByteCount && utf8CharsetEncoder.canEncode(string)) {
+      writer.writeByte(QueryResultCodec.VALUE_STRING_UTF8)
+      writer.writeStringUtf8(string, utf8ByteCount)
     } else {
-      writeStringCustomUtf16(string, utf16ByteCount)
-    }
-  }
-
-  private fun writeStringUtf8(string: String, expectedByteCount: Int) {
-    charsetEncoder.reset()
-    val charBuffer = CharBuffer.wrap(string)
-
-    writeByte(QueryResultCodec.VALUE_STRING_UTF8)
-    writeInt(expectedByteCount)
-    writeInt(string.length)
-
-    var byteWriteCount = 0
-    while (true) {
-      val byteBufferPositionBefore = byteBuffer.position()
-
-      val coderResult1 =
-        if (charBuffer.hasRemaining()) {
-          charsetEncoder.encode(charBuffer, byteBuffer, true)
-        } else {
-          CoderResult.UNDERFLOW
-        }
-
-      val coderResult2 =
-        if (coderResult1.isUnderflow) {
-          charsetEncoder.flush(byteBuffer)
-        } else {
-          coderResult1
-        }
-
-      val byteBufferPositionAfter = byteBuffer.position()
-      byteWriteCount += byteBufferPositionAfter - byteBufferPositionBefore
-
-      if (coderResult2.isUnderflow) {
-        break
-      }
-
-      if (!coderResult2.isOverflow) {
-        coderResult2.throwException()
-      }
-
-      flushOnce()
-    }
-
-    check(byteWriteCount == expectedByteCount) {
-      "internal error rvmdh67npk: byteWriteCount=$byteWriteCount " +
-        "should be equal to expectedByteCount=$expectedByteCount, but they differ by " +
-        "${(expectedByteCount-byteWriteCount).absoluteValue}"
-    }
-  }
-
-  private fun writeStringCustomUtf16(string: String, expectedByteCount: Int) {
-    writeByte(QueryResultCodec.VALUE_STRING_UTF16)
-    writeInt(string.length)
-
-    var byteWriteCount = 0
-    var stringOffset = 0
-    while (stringOffset < string.length) {
-      val charBuffer = byteBuffer.asCharBuffer()
-      val putLength = charBuffer.remaining().coerceAtMost(string.length - stringOffset)
-      charBuffer.put(string, stringOffset, stringOffset + putLength)
-
-      byteBuffer.position(byteBuffer.position() + (putLength * 2))
-      flushOnce()
-
-      byteWriteCount += putLength * 2
-      stringOffset += putLength
-    }
-
-    check(byteWriteCount == expectedByteCount) {
-      "internal error agdf5qbwwp: byteWriteCount=$byteWriteCount " +
-        "should be equal to expectedByteCount=$expectedByteCount, but they differ by " +
-        "${(expectedByteCount - byteWriteCount).absoluteValue}"
+      writer.writeByte(QueryResultCodec.VALUE_STRING_UTF16)
+      writer.writeStringCustomUtf16(string, utf16ByteCount)
     }
   }
 
   private fun writeList(listValue: ListValue) {
-    writeByte(QueryResultCodec.VALUE_LIST)
-    writeInt(listValue.valuesCount)
+    writer.writeByte(QueryResultCodec.VALUE_LIST)
+    writer.writeInt(listValue.valuesCount)
     repeat(listValue.valuesCount) { writeValue(listValue.getValues(it)) }
   }
 
-  private fun writeStruct(struct: Struct, includeTypeIndicator: Boolean = true) {
-    if (includeTypeIndicator) {
-      writeByte(QueryResultCodec.VALUE_STRUCT)
-    }
+  private fun writeStruct(struct: Struct) {
     val map = struct.fieldsMap
-    writeInt(map.size)
+
+    val entityId =
+      if (entityFieldName === null) {
+        null
+      } else {
+        val entityIdValue = map[entityFieldName]
+        if (entityIdValue?.kindCase != Value.KindCase.STRING_VALUE) {
+          null
+        } else {
+          entityIdValue.stringValue
+        }
+      }
+
+    if (entityId !== null) {
+      writeEntity(entityId, struct)
+      return
+    }
+
+    writer.writeByte(QueryResultCodec.VALUE_STRUCT)
+    writer.writeInt(map.size)
     map.entries.forEach { (key, value) ->
       writeString(key)
       writeValue(value)
@@ -199,21 +110,37 @@ internal class QueryResultEncoder(
 
   private fun writeValue(value: Value) {
     when (value.kindCase) {
-      Value.KindCase.NULL_VALUE -> writeByte(QueryResultCodec.VALUE_NULL)
+      Value.KindCase.NULL_VALUE -> writer.writeByte(QueryResultCodec.VALUE_NULL)
       Value.KindCase.NUMBER_VALUE -> {
-        writeByte(QueryResultCodec.VALUE_NUMBER)
-        writeDouble(value.numberValue)
+        writer.writeByte(QueryResultCodec.VALUE_NUMBER)
+        writer.writeDouble(value.numberValue)
       }
       Value.KindCase.BOOL_VALUE ->
-        writeByte(
+        writer.writeByte(
           if (value.boolValue) QueryResultCodec.VALUE_BOOL_TRUE
           else QueryResultCodec.VALUE_BOOL_FALSE
         )
       Value.KindCase.STRING_VALUE -> writeString(value.stringValue)
       Value.KindCase.STRUCT_VALUE -> writeStruct(value.structValue)
       Value.KindCase.LIST_VALUE -> writeList(value.listValue)
-      Value.KindCase.KIND_NOT_SET -> writeByte(QueryResultCodec.VALUE_KIND_NOT_SET)
+      Value.KindCase.KIND_NOT_SET -> writer.writeByte(QueryResultCodec.VALUE_KIND_NOT_SET)
     }
+  }
+
+  private fun writeEntity(entityId: String, entity: Struct) {
+    writer.writeByte(QueryResultCodec.VALUE_ENTITY)
+
+    val encodedEntityId: ByteArray =
+      ByteArrayOutputStream().use { byteArrayOutputStream ->
+        Channels.newChannel(byteArrayOutputStream).use { channel ->
+          writeString(entityId)
+          byteArrayOf() // TODO!
+        }
+        byteArrayOutputStream.toByteArray()
+      }
+
+    writer.writeInt(entity.fieldsCount)
+    entity.fieldsMap.keys.forEach { writeString(it) }
   }
 
   companion object {
