@@ -16,24 +16,18 @@
 
 package com.google.firebase.dataconnect.sqlite
 
-import com.google.firebase.dataconnect.testutil.property.arbitrary.boolValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWith1ByteUtf8Encoding
 import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWith2ByteUtf8Encoding
 import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWith3ByteUtf8Encoding
 import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWith4ByteUtf8Encoding
 import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWithEvenNumByteUtf8EncodingDistribution
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
-import com.google.firebase.dataconnect.testutil.property.arbitrary.kindNotSetValue
-import com.google.firebase.dataconnect.testutil.property.arbitrary.listValue
-import com.google.firebase.dataconnect.testutil.property.arbitrary.nullValue
-import com.google.firebase.dataconnect.testutil.property.arbitrary.numberValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
-import com.google.firebase.dataconnect.testutil.property.arbitrary.stringValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.stringWithLoneSurrogates
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.shouldBe
+import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.protobuf.Struct
-import com.google.protobuf.Value
 import io.kotest.common.ExperimentalKotest
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
@@ -50,94 +44,38 @@ import org.junit.Test
 class QueryResultEncoderUnitTest {
 
   @Test
-  fun `empty struct`() {
-    Struct.getDefaultInstance().decodingEncodingShouldProduceIdenticalStruct()
-  }
-
-  @Test
-  fun `struct with all null values`() = runTest {
-    checkAll(propTestConfig, Arb.proto.struct(value = Arb.proto.nullValue())) { struct ->
+  fun `various structs round trip`() = runTest {
+    checkAll(propTestConfig, Arb.proto.struct()) { struct ->
       struct.struct.decodingEncodingShouldProduceIdenticalStruct()
     }
   }
 
   @Test
-  fun `struct with all number values`() = runTest {
-    checkAll(propTestConfig, Arb.proto.struct(value = Arb.proto.numberValue())) { struct ->
+  fun `string encodings round trip`() = runTest {
+    val structArb =
+      Arb.proto.struct(
+        size = 1..10,
+        key = stringForEncodeTestingArb(),
+        scalarValue = stringForEncodeTestingArb().map { it.toValueProto() },
+      )
+    checkAll(propTestConfig, structArb) { struct ->
       struct.struct.decodingEncodingShouldProduceIdenticalStruct()
     }
   }
 
   @Test
-  fun `struct with all bool values`() = runTest {
-    checkAll(propTestConfig, Arb.proto.struct(value = Arb.proto.boolValue())) { struct ->
+  fun `long string encodings round trip`() = runTest {
+    val structArb =
+      Arb.proto.struct(
+        size = 1..1,
+        key = longStringForEncodeTestingArb(),
+        scalarValue = longStringForEncodeTestingArb().map { it.toValueProto() },
+      )
+    checkAll(@OptIn(ExperimentalKotest::class) propTestConfig.copy(iterations = 10), structArb) {
+      struct ->
       struct.struct.decodingEncodingShouldProduceIdenticalStruct()
     }
   }
-
-  @Test
-  fun `struct with all string values`() =
-    testStructWithStringValues(propTestConfig, stringForEncodeTestingArb())
-
-  @Test
-  fun `struct with long string values`() =
-    testStructWithStringValues(
-      @OptIn(ExperimentalKotest::class) propTestConfig.copy(iterations = 10),
-      longStringForEncodeTestingArb()
-    )
-
-  private fun testStructWithStringValues(propTestConfig: PropTestConfig, stringArb: Arb<String>) =
-    runTest {
-      checkAll(propTestConfig, Arb.proto.struct(value = Arb.proto.stringValue(stringArb))) { struct
-        ->
-        struct.struct.decodingEncodingShouldProduceIdenticalStruct()
-      }
-    }
-
-  @Test
-  fun `struct with all kind_not_set values`() = runTest {
-    checkAll(propTestConfig, Arb.proto.struct(value = Arb.proto.kindNotSetValue())) { struct ->
-      struct.struct.decodingEncodingShouldProduceIdenticalStruct()
-    }
-  }
-
-  @Test
-  fun `struct with all non-nested list values`() = runTest {
-    val listValueArb: Arb<Value> = Arb.proto.listValue(depth = 1..1).map { it.toValueProto() }
-    checkAll(propTestConfig, Arb.proto.struct(value = listValueArb)) { struct ->
-      struct.struct.decodingEncodingShouldProduceIdenticalStruct()
-    }
-  }
-
-  @Test
-  fun `struct with all nested list values`() = runTest {
-    val listValueArb: Arb<Value> =
-      Arb.proto.listValue(length = 1..2, depth = 2..4).map { it.toValueProto() }
-    checkAll(propTestConfig, Arb.proto.struct(depth = 1..1, value = listValueArb)) { struct ->
-      struct.struct.decodingEncodingShouldProduceIdenticalStruct()
-    }
-  }
-
-  @Test
-  fun `struct with all non-nested struct values`() = runTest {
-    val structValueArb: Arb<Value> = Arb.proto.struct(depth = 1..1).map { it.toValueProto() }
-    checkAll(propTestConfig, Arb.proto.struct(value = structValueArb)) { struct ->
-      struct.struct.decodingEncodingShouldProduceIdenticalStruct()
-    }
-  }
-
-  @Test
-  fun `struct with all nested struct values`() = runTest {
-    val structValueArb: Arb<Value> =
-      Arb.proto.struct(size = 1..2, depth = 2..4).map { it.toValueProto() }
-    checkAll(propTestConfig, Arb.proto.struct(depth = 1..1, value = structValueArb)) { struct ->
-      struct.struct.decodingEncodingShouldProduceIdenticalStruct()
-    }
-  }
-
-  //////////////////////////////////////////////////////////////////////////////////////////////////
-  // companion object
-  //////////////////////////////////////////////////////////////////////////////////////////////////
 
   private companion object {
 

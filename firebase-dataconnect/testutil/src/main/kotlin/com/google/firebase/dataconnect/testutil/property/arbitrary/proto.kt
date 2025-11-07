@@ -103,8 +103,13 @@ fun Proto.scalarValue(exclude: Value.KindCase? = null): Arb<Value> {
 fun Proto.listValue(
   length: IntRange = 0..10,
   depth: IntRange = 1..3,
-  value: Arb<Value> = scalarValue(),
-): Arb<Proto.ListValueInfo> = ListValueArb(length = length, depth = depth, valueArb = value)
+  scalarValue: Arb<Value> = scalarValue(),
+): Arb<Proto.ListValueInfo> =
+  ListValueArb(
+    length = length,
+    depth = depth,
+    scalarValueArb = scalarValue,
+  )
 
 fun Proto.structKey(): Arb<String> = Arb.string(1..10, Codepoint.alphanumeric())
 
@@ -112,8 +117,14 @@ fun Proto.struct(
   size: IntRange = 0..5,
   depth: IntRange = 1..3,
   key: Arb<String> = structKey(),
-  value: Arb<Value> = scalarValue(),
-): Arb<Proto.StructInfo> = StructArb(size = size, depth = depth, keyArb = key, valueArb = value)
+  scalarValue: Arb<Value> = scalarValue(),
+): Arb<Proto.StructInfo> =
+  StructArb(
+    size = size,
+    depth = depth,
+    keyArb = key,
+    scalarValueArb = scalarValue,
+  )
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // StructArb class
@@ -123,7 +134,7 @@ private class StructArb(
   private val size: IntRange,
   private val depth: IntRange,
   private val keyArb: Arb<String>,
-  private val valueArb: Arb<Value>,
+  private val scalarValueArb: Arb<Value>,
 ) : Arb<Proto.StructInfo>() {
 
   init {
@@ -195,7 +206,7 @@ private class StructArb(
           hasNestedStruct = true
           rs.nextNestedStruct()
         } else {
-          rs.nextValue(valueEdgeCaseProbability)
+          rs.nextScalarValue(valueEdgeCaseProbability)
         }
       structBuilder.putFields(key, value)
     }
@@ -259,14 +270,14 @@ private class StructArb(
     }
   }
 
-  private fun RandomSource.nextValue(edgeCaseProbability: Float): Value {
+  private fun RandomSource.nextScalarValue(edgeCaseProbability: Float): Value {
     require(edgeCaseProbability in 0.0f..1.0f) {
       "invalid edgeCaseProbability: $edgeCaseProbability"
     }
     return if (random.nextFloat() < edgeCaseProbability) {
-      valueArb.edgecase(this)!!
+      scalarValueArb.edgecase(this)!!
     } else {
-      valueArb.sample(this).value
+      scalarValueArb.sample(this).value
     }
   }
 
@@ -293,7 +304,7 @@ private class StructArb(
 private class ListValueArb(
   private val length: IntRange,
   private val depth: IntRange,
-  private val valueArb: Arb<Value>,
+  private val scalarValueArb: Arb<Value>,
 ) : Arb<Proto.ListValueInfo>() {
 
   init {
@@ -355,7 +366,7 @@ private class ListValueArb(
           hasNestedListValue = true
           rs.nextNestedListValue()
         } else {
-          rs.nextValue(valueEdgeCaseProbability)
+          rs.nextScalarValue(valueEdgeCaseProbability)
         }
       values.add(value)
     }
@@ -407,14 +418,14 @@ private class ListValueArb(
     }
   }
 
-  private fun RandomSource.nextValue(edgeCaseProbability: Float): Value {
+  private fun RandomSource.nextScalarValue(edgeCaseProbability: Float): Value {
     require(edgeCaseProbability in 0.0f..1.0f) {
       "invalid edgeCaseProbability: $edgeCaseProbability"
     }
     return if (random.nextFloat() < edgeCaseProbability) {
-      valueArb.edgecase(this)!!
+      scalarValueArb.edgecase(this)!!
     } else {
-      valueArb.sample(this).value
+      scalarValueArb.sample(this).value
     }
   }
 
