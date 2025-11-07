@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.firebase.dataconnect.sqlite2
+package com.google.firebase.dataconnect.sqlite
 
 import android.database.Cursor
 import android.util.Base64

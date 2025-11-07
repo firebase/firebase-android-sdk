@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-package com.google.firebase.dataconnect.sqlite2
+package com.google.firebase.dataconnect.sqlite
 
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import com.google.firebase.dataconnect.LogLevel
 import com.google.firebase.dataconnect.core.Logger
-import com.google.firebase.dataconnect.sqlite2.SQLiteArbs.ColumnValue
-import com.google.firebase.dataconnect.sqlite2.SQLiteArbs.StringColumnValue
-import com.google.firebase.dataconnect.sqlite2.SQLiteDatabaseExts.execSQL
-import com.google.firebase.dataconnect.sqlite2.SQLiteDatabaseExts.getApplicationId
-import com.google.firebase.dataconnect.sqlite2.SQLiteDatabaseExts.rawQuery
-import com.google.firebase.dataconnect.sqlite2.SQLiteDatabaseExts.setApplicationId
+import com.google.firebase.dataconnect.sqlite.SQLiteArbs.ColumnValue
+import com.google.firebase.dataconnect.sqlite.SQLiteArbs.StringColumnValue
+import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.execSQL
+import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.getApplicationId
+import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.rawQuery
+import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.setApplicationId
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
 import com.google.firebase.dataconnect.testutil.SQLiteDatabaseRule

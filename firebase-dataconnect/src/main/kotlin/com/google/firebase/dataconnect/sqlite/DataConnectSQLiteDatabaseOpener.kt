@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.firebase.dataconnect.sqlite2
+package com.google.firebase.dataconnect.sqlite
 
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteDatabase.CREATE_IF_NECESSARY
@@ -23,7 +23,7 @@ import android.database.sqlite.SQLiteDatabase.NO_LOCALIZED_COLLATORS
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
-import com.google.firebase.dataconnect.sqlite2.SQLiteDatabaseExts.execSQL
+import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.execSQL
 import java.io.File
 
 internal object DataConnectSQLiteDatabaseOpener {

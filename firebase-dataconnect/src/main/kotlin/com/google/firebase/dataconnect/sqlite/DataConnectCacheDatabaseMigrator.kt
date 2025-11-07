@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-package com.google.firebase.dataconnect.sqlite2
+package com.google.firebase.dataconnect.sqlite
 
 import android.annotation.SuppressLint
 import android.database.sqlite.SQLiteDatabase
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
-import com.google.firebase.dataconnect.sqlite2.SQLiteDatabaseExts.execSQL
-import com.google.firebase.dataconnect.sqlite2.SQLiteDatabaseExts.getApplicationId
-import com.google.firebase.dataconnect.sqlite2.SQLiteDatabaseExts.rawQuery
-import com.google.firebase.dataconnect.sqlite2.SQLiteDatabaseExts.setApplicationId
+import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.execSQL
+import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.getApplicationId
+import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.rawQuery
+import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.setApplicationId
 import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
 
 internal class DataConnectCacheDatabaseMigrator

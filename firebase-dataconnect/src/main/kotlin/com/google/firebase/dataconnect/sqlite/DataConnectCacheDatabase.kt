@@ -16,268 +16,407 @@
 
 package com.google.firebase.dataconnect.sqlite
 
-import android.database.Cursor
+import android.database.sqlite.SQLiteDatabase
 import com.google.firebase.dataconnect.core.Logger
-import com.google.firebase.dataconnect.core.LoggerGlobals.debug
-import com.google.firebase.dataconnect.sqlite.KSQLiteDatabase.ReadOnlyTransaction
-import com.google.firebase.dataconnect.sqlite.KSQLiteDatabase.ReadWriteTransaction
-import com.google.firebase.dataconnect.util.NullableReference
+import com.google.firebase.dataconnect.core.LoggerGlobals.warn
+import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.execSQL
+import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.getLastInsertRowId
+import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.rawQuery
+import com.google.protobuf.Struct
 import java.io.File
-import kotlinx.coroutines.CoroutineDispatcher
+import java.util.concurrent.Executors
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.ExecutorCoroutineDispatcher
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.async
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
-internal class DataConnectCacheDatabase(
-  dbFile: File?,
-  ioDispatcher: CoroutineDispatcher,
-  logger: Logger,
-) :
-  DataConnectSqliteDatabase(
-    file = dbFile,
-    ioDispatcher = ioDispatcher,
-    logger = logger,
+/**
+ * Provides and manages access to the sqlite database used to stored cached query results for
+ * Firebase Data Connect.
+ *
+ * ### Safe for concurrent use
+ *
+ * All methods and properties of [DataConnectCacheDatabase] are thread-safe and may be safely called
+ * and/or accessed concurrently from multiple threads and/or coroutines.
+ */
+internal class DataConnectCacheDatabase(private val dbFile: File?, private val logger: Logger) {
+
+  private val stateMutex = Mutex()
+  private var state: State = State.New
+
+  /**
+   * Initializes this object.
+   *
+   * The behavior of calling any method of this class (other than [close]) is undefined before a
+   * successful call of [initialize].
+   *
+   * This method must be called at most once; subsequent invocations will fail.
+   */
+  suspend fun initialize() {
+    stateMutex.withLock {
+      when (state) {
+        State.New -> {}
+        is State.InitializeCalled ->
+          throw IllegalStateException("initialize() has already been called")
+        is State.CloseCalled ->
+          throw IllegalStateException("initialize() cannot be called after close()")
+      }
+
+      // Create a single-threaded dispatcher on which all write transactions will run.
+      // This is the recommended approach to avoid SQLITE_BUSY errors and also allows us to
+      // run higher-priority write transactions before lower-priority ones.
+      val coroutineDispatcher =
+        Executors.newSingleThreadExecutor { runnable -> Thread(runnable, logger.nameWithId) }
+          .asCoroutineDispatcher()
+
+      val coroutineJob = SupervisorJob()
+
+      val coroutineScope =
+        CoroutineScope(
+          coroutineJob +
+            CoroutineName(logger.nameWithId) +
+            coroutineDispatcher +
+            CoroutineExceptionHandler { context, throwable ->
+              logger.warn(throwable) {
+                "uncaught exception from a coroutine named ${context[CoroutineName]}: $throwable"
+              }
+            }
+        )
+
+      val initializeJob =
+        coroutineScope.async {
+          val sqliteDatabase = DataConnectSQLiteDatabaseOpener.open(dbFile, logger)
+
+          var migrateSucceeded = false
+          try {
+            DataConnectCacheDatabaseMigrator.migrate(sqliteDatabase, logger)
+            migrateSucceeded = true
+          } finally {
+            if (!migrateSucceeded) {
+              sqliteDatabase
+                .runCatching { close() }
+                .onFailure { closeException ->
+                  logger.warn(closeException) { "SQLiteDatabase.close() failed" }
+                }
+            }
+          }
+
+          sqliteDatabase
+        }
+
+      val sqliteDatabase =
+        initializeJob
+          .runCatching { await() }
+          .fold(
+            onSuccess = { it },
+            onFailure = { initializeException ->
+              coroutineScope.cancel()
+              state = State.InitializeCalled.InitializeFailed(initializeException)
+              throw initializeException
+            }
+          )
+
+      val transactionQueue = Channel<Job>(Int.MAX_VALUE)
+
+      val transactionsJob =
+        coroutineScope.launch {
+          for (transaction in transactionQueue) {
+            transaction.join()
+          }
+        }
+
+      state =
+        State.InitializeCalled.Initialized(
+          sqliteDatabase,
+          coroutineScope,
+          coroutineDispatcher,
+          transactionsJob,
+          transactionQueue
+        )
+    }
+  }
+
+  /**
+   * Closes this object, releasing any resources that it holds.
+   *
+   * The behavior of calling any method of this class (other than [close] itself) is undefined after
+   * having called [close].
+   *
+   * This method is idempotent; it is safe to call more than once. Subsequent invocation will
+   * suspend, like the original invocation, until the "close" operation has completed.
+   */
+  suspend fun close() {
+    val initializedState: State.InitializeCalled.Initialized =
+      stateMutex.withLock {
+        when (val currentState = state) {
+          State.New,
+          is State.InitializeCalled.InitializeFailed -> {
+            state = State.CloseCalled.Closed
+            return
+          }
+          is State.InitializeCalled.Initialized -> {
+            state = State.CloseCalled.Closing(currentState)
+            currentState
+          }
+          is State.CloseCalled.Closing -> currentState.initialized
+          State.CloseCalled.Closed -> return
+        }
+      }
+
+    initializedState.run {
+      transactionQueue.close() // Stop accepting new transactions.
+      transactionsJob.join() // Suspend until all enqueued transactions are complete.
+      coroutineScope.async { sqliteDatabase.close() }.join()
+      coroutineScope.cancel()
+      coroutineScope.coroutineContext[Job]?.join()
+      coroutineDispatcher.close()
+    }
+
+    stateMutex.withLock {
+      check(state is State.CloseCalled) { "internal error: unexpected state: $state" }
+      state = State.CloseCalled.Closed
+    }
+  }
+
+  class QueryResult(
+    val authUid: String?,
+    val id: ByteArray,
+    /** Values must be either [com.google.protobuf.Value] or [Entity]. */
+    val data: Map<String, Any>,
   ) {
 
-  override suspend fun onOpen(db: KSQLiteDatabase) {
-    logger.debug { "onOpen() starting" }
-    onOpenInitializeApplicationId(db)
-    onOpenInitializeUserVersion(db)
-    onOpenRunMigrations(db)
-    logger.debug { "onOpen() done" }
+    @OptIn(ExperimentalStdlibApi::class)
+    override fun toString(): String =
+      "QueryResult(authUid=$authUid, id=${id.toHexString()}, data=$data)"
+
+    class Entity(val id: ByteArray, val data: Struct) {
+      @OptIn(ExperimentalStdlibApi::class)
+      override fun toString(): String = "Entity(id=${id.toHexString()}, data=$data)"
+    }
   }
 
-  private suspend fun onOpenInitializeApplicationId(db: KSQLiteDatabase) {
-    db.runReadWriteTransaction { txn ->
-      val applicationId = txn.getApplicationId()
-      logger.debug { "getApplicationId() returns ${applicationId.toString(16)}" }
-      if (applicationId == 0) {
-        logger.debug { "setApplicationId(${APPLICATION_ID.toString(16)})" }
-        txn.setApplicationId(APPLICATION_ID)
-      } else if (applicationId != APPLICATION_ID) {
-        throw InvalidDatabaseException(
-          "sqlite database has an unexpected application_id: " +
-            "${applicationId.toString(16)} (expected ${APPLICATION_ID.toString(16)}); " +
-            "this probably isn't the correct sqlite database; refusing to open it"
-        )
+  private fun SQLiteDatabase.getOrInsertAuthUid(authUid: String?): Long {
+    execSQL(logger, "INSERT OR IGNORE INTO users (auth_uid) VALUES (?)", arrayOf(authUid))
+    return rawQuery(
+      logger,
+      "SELECT id FROM users WHERE auth_uid ${if (authUid === null) "IS NULL" else "= ?"}",
+      if (authUid === null) emptyArray() else arrayOf(authUid),
+    ) { cursor ->
+      if (cursor.moveToNext()) {
+        cursor.getLong(0)
+      } else {
+        throw AuthUidNotFoundException("authUid=$authUid (internal error m5m52ahrxz)")
       }
     }
   }
 
-  private suspend fun onOpenInitializeUserVersion(db: KSQLiteDatabase) {
-    db.runReadWriteTransaction { txn ->
-      val userVersion = txn.getUserVersion()
-      logger.debug { "getUserVersion() returns ${userVersion.toString(16)}" }
-      if (userVersion == 0) {
-        txn.executeStatement(
-          """
-          CREATE TABLE metadata (
-            id INTEGER PRIMARY KEY,
-            key TEXT NOT NULL UNIQUE,
-            blob BLOB,
-            text TEXT,
-            int INTEGER
-          )
-        """
-        )
-        logger.debug { "setUserVersion(1)" }
-        txn.setUserVersion(1)
-      } else if (userVersion != 1) {
-        throw InvalidDatabaseException(
-          "sqlite database has an unexpected user_version: " +
-            "$userVersion (expected 0 or 1); " +
-            "this probably isn't the correct sqlite database; refusing to open it"
-        )
-      }
-    }
+  class AuthUidNotFoundException(message: String) : Exception(message)
+
+  private fun SQLiteDatabase.nextSequenceNumber(): Long {
+    execSQL(logger, "INSERT INTO sequence_number DEFAULT VALUES")
+    val sequenceNumber: Long = getLastInsertRowId(logger)
+    execSQL(logger, "DELETE FROM sequence_number")
+    return sequenceNumber
   }
 
-  private suspend fun onOpenRunMigrations(db: KSQLiteDatabase) {
-    val visitedSchemaVersions = mutableSetOf<NullableReference<String>>()
-    var done = false
-    while (!done) {
-      db.runReadWriteTransaction { txn ->
-        val schemaVersion = txn.getMetadataSchemaVersion()
-        logger.debug { "schemaVersion=$schemaVersion" }
-
-        // Guard against an infinite loop if there is a bug in the migration logic that updates the
-        // schema version to an already-visited value, or forgets to update it altogether.
-        val schemaVersionNullableRef = NullableReference(schemaVersion)
-        check(!visitedSchemaVersions.contains(schemaVersionNullableRef)) {
-          "internal error bypc86g9yj: schema version $schemaVersion already visited " +
-            "(visitedSchemaVersions=${visitedSchemaVersions.map { it.ref ?: "null" }.sorted()})"
-        }
-        visitedSchemaVersions.add(schemaVersionNullableRef)
-
-        // ========= Schema Versioning Versioning Scheme =========
-        // The database schema version uses "semantic versioning" (https://semver.org/).
-        //
-        // The MAJOR version changes when backwards and/or forwards incompatible changes are made
-        // to the database schema, such as deleting tables or columns, changing the type of columns,
-        // or changing the semantics of the tables such that older clients' updates will corrupt the
-        // database. If the application sees a major version that it doesn't know about it MUST
-        // immediately abort and refuse to write to the database. MAJOR version changes MUST
-        // correspond to major version bumps of the SDK itself.
-        //
-        // The MINOR version changes when the schema meaningfully changes, such as adding new tables
-        // or adding columns to existing tables, but added in a backwards-compatible manner. The
-        // logic that uses these new columns and/or tables must be resilient to older clients
-        // that are unaware of these tables/columns making their updates in ignorance of their
-        // existence. For example, if a new "modified date" column is added to a table then older
-        // clients will not know about this column and will not update it. The newer code must
-        // handle such updates by, for example, explicitly checking for null values even thought the
-        // latest code would never put null values into that column. MINOR version changes SHOULD
-        // (but are not strictly required to) correspond to minor version bumps of the SDK itself.
-        //
-        // The PATCH version changes for all other non-schema-affecting changes, such as adding an
-        // index to an existing table.
-        when (schemaVersion) {
-          null -> {
-            initializeSchema(txn)
-            txn.setMetadataSchemaVersion("1.0.0")
-          }
-          else ->
-            if (schemaVersion.startsWith("1.")) {
-              done = true
-            } else {
-              throw InvalidDatabaseException("unsupported schema version: $schemaVersion")
-            }
-        }
-      }
-    }
-  }
-
-  private suspend fun initializeSchema(txn: ReadWriteTransaction) {
-    logger.debug { "initializeSchema()" }
-
-    // TODO: Create tables!
-  }
-
-  suspend fun <T> runReadOnlyMetadataTransaction(block: suspend (ReadOnlyMetadata) -> T): T =
-    withDb { kdb ->
-      kdb.runReadOnlyTransaction { txn -> block(ReadOnlyMetadataImpl(txn)) }
-    }
-
-  suspend fun <T> runReadWriteMetadataTransaction(block: suspend (ReadWriteMetadata) -> T): T =
-    withDb { kdb ->
-      kdb.runReadWriteTransaction { txn -> block(ReadWriteMetadataImpl(txn)) }
-    }
-
-  interface ReadOnlyMetadata {
-
-    suspend fun getInt(key: String): Int?
-    suspend fun getString(key: String): String?
-    suspend fun getBlob(key: String): ByteArray?
-  }
-
-  private open class ReadOnlyMetadataImpl(private val txn: ReadOnlyTransaction) : ReadOnlyMetadata {
-
-    override suspend fun getInt(key: String): Int? = txn.getMetadataIntValue(key)
-
-    override suspend fun getString(key: String): String? = txn.getMetadataStringValue(key)
-
-    override suspend fun getBlob(key: String): ByteArray? = txn.getMetadataBlobValue(key)
-  }
-
-  interface ReadWriteMetadata : ReadOnlyMetadata {
-    fun set(key: String, value: CharSequence)
-    fun set(key: String, value: Int)
-    fun set(key: String, value: ByteArray)
-  }
-
-  private class ReadWriteMetadataImpl(private val txn: ReadWriteTransaction) :
-    ReadOnlyMetadataImpl(txn), ReadWriteMetadata {
-
-    override fun set(key: String, value: CharSequence) = txn.setMetadataStringValue(key, value)
-
-    override fun set(key: String, value: Int) = txn.setMetadataIntValue(key, value)
-
-    override fun set(key: String, value: ByteArray) = txn.setMetadataBlobValue(key, value)
-  }
-
-  class InvalidDatabaseException(message: String) : Exception(message)
-
-  companion object {
-
-    internal suspend inline fun <reified T> ReadOnlyMetadata.get(key: String): T? =
-      when (val clazz = T::class) {
-        Int::class,
-        Number::class -> getInt(key) as T?
-        String::class,
-        CharSequence::class -> getString(key) as T?
-        ByteArray::class -> getBlob(key) as T?
-        else -> throw IllegalArgumentException("unsupported type: $clazz")
-      }
-
-    internal fun ReadWriteMetadata.set(key: String, value: Any): Unit =
-      when (value) {
-        is Int -> set(key, value)
-        is CharSequence -> set(key, value)
-        is ByteArray -> set(key, value)
-        else -> throw IllegalArgumentException("unsupported type: ${value::class.qualifiedName}")
-      }
-
-    private const val APPLICATION_ID: Int = 0x7f1bc816
-    private const val SCHEMA_VERSION_KEY = "schema_version"
-
-    private suspend fun ReadOnlyTransaction.getMetadataSchemaVersion(): String? =
-      getMetadataStringValue(SCHEMA_VERSION_KEY)
-
-    private suspend fun ReadWriteTransaction.setMetadataSchemaVersion(value: String): Unit =
-      setMetadataStringValue(SCHEMA_VERSION_KEY, value)
-
-    private fun ReadWriteTransaction.setMetadataBlobValue(key: String, value: ByteArray) {
-      setMetadataValue(key, "blob", value)
-    }
-
-    private fun ReadWriteTransaction.setMetadataStringValue(key: String, value: CharSequence) {
-      setMetadataValue(key, "text", value.toString())
-    }
-
-    private fun ReadWriteTransaction.setMetadataIntValue(key: String, value: Int) {
-      setMetadataValue(key, "int", value)
-    }
-
-    private fun <T> ReadWriteTransaction.setMetadataValue(
-      key: String,
-      columnName: String,
-      value: T
-    ) {
-      executeStatement(
-        """
-        INSERT OR REPLACE INTO metadata
-        (key, $columnName)
-        VALUES
-        (?, ?)
+  private fun SQLiteDatabase.insertQueryResult(
+    userRowId: Long,
+    queryId: ByteArray,
+    queryFlags: Int,
+    queryData: ByteArray,
+    sequenceNumber: Long,
+  ): Long {
+    execSQL(
+      """
+        INSERT OR REPLACE INTO query_results
+        (user_id, query_id, flags, data, sequence_number)
+        VALUES (?, ?, ?, ?, ?)
       """,
-        bindings = listOf(key, value)
-      )
-    }
+      arrayOf(userRowId, queryId, queryFlags, queryData, sequenceNumber)
+    )
+    return getLastInsertRowId(logger)
+  }
 
-    private suspend fun ReadOnlyTransaction.getMetadataBlobValue(key: String): ByteArray? =
-      getMetadataValue(key, "blob") { cursor -> cursor.getBlob(0) }
-
-    private suspend fun ReadOnlyTransaction.getMetadataStringValue(key: String): String? =
-      getMetadataValue(key, "text") { cursor -> cursor.getString(0) }
-
-    private suspend fun ReadOnlyTransaction.getMetadataIntValue(key: String): Int? =
-      getMetadataValue(key, "int") { cursor -> cursor.getInt(0) }
-
-    private suspend inline fun <T> ReadOnlyTransaction.getMetadataValue(
-      key: String,
-      columnName: String,
-      crossinline block: (Cursor) -> T
-    ): T? =
-      executeQuery(
-        """
-        SELECT $columnName
-        FROM metadata
-        WHERE key = ?
+  private fun SQLiteDatabase.insertEntity(
+    userRowId: Long,
+    entityId: ByteArray,
+    entityFlags: Int,
+    entityData: ByteArray,
+    sequenceNumber: Long,
+  ): Long {
+    execSQL(
+      """
+        INSERT OR REPLACE INTO entities
+        (user_id, entity_id, flags, data, sequence_number)
+        VALUES (?, ?, ?, ?, ?)
       """,
-        bindings = listOf(key),
+      arrayOf(userRowId, entityId, entityFlags, entityData, sequenceNumber)
+    )
+    return getLastInsertRowId(logger)
+  }
+
+  private fun SQLiteDatabase.deleteEntity(entityRowId: Long) {
+    execSQL(logger, "DELETE FROM entities WHERE id=?", arrayOf(entityRowId))
+  }
+
+  private fun SQLiteDatabase.insertQueryIdEntityIdMapping(queryRowId: Long, entityRowId: Long) {
+    execSQL(
+      """
+        INSERT OR IGNORE INTO entity_query_results_map
+        (query_id, entity_id)
+        VALUES (?, ?)
+      """,
+      arrayOf(queryRowId, entityRowId)
+    )
+  }
+
+  private fun SQLiteDatabase.getEntityIdMappingsForQueryId(queryRowId: Long): List<Long> =
+    buildList {
+      rawQuery(
+        logger,
+        "SELECT entity_id FROM entity_query_results_map WHERE query_id=?",
+        arrayOf(queryRowId)
       ) { cursor ->
-        if (cursor.moveToNext() && !cursor.isNull(0)) {
-          block(cursor)
-        } else {
-          null
+        while (cursor.moveToNext()) {
+          add(cursor.getLong(0))
         }
       }
+    }
+
+  private fun SQLiteDatabase.deleteEntityIdMappingsForQueryId(queryRowId: Long) {
+    execSQL(logger, "DELETE FROM entity_query_results_map WHERE query_id=?", arrayOf(queryRowId))
+  }
+
+  private fun SQLiteDatabase.hasEntityIdToQueryIdMappingForEntityId(entityRowId: Long): Boolean =
+    rawQuery(
+      logger,
+      "SELECT query_id FROM entity_query_results_map WHERE entity_id=?",
+      arrayOf(entityRowId)
+    ) { cursor ->
+      cursor.moveToNext()
+    }
+
+  suspend fun insertQueryResult(queryResult: QueryResult) {
+    runReadWriteTransaction { sqliteDatabase ->
+      val entities = mutableListOf<QueryResult.Entity>()
+      // val encodedQueryResultData = QueryResultCodec.encode(queryResult.data, entities)
+      val encodedQueryResultData: ByteArray = TODO()
+
+      val userRowId = sqliteDatabase.getOrInsertAuthUid(queryResult.authUid)
+      val sequenceNumber = sqliteDatabase.nextSequenceNumber()
+
+      val queryRowId =
+        sqliteDatabase.insertQueryResult(
+          userRowId = userRowId,
+          queryId = queryResult.id,
+          queryFlags = 0,
+          queryData = encodedQueryResultData,
+          sequenceNumber = sequenceNumber,
+        )
+
+      val entityRowIdsBefore = sqliteDatabase.getEntityIdMappingsForQueryId(queryRowId)
+      sqliteDatabase.deleteEntityIdMappingsForQueryId(queryRowId)
+
+      val entityRowIdsAfter = mutableListOf<Long>()
+      for (entity in entities) {
+        val entityRowId =
+          sqliteDatabase.insertEntity(
+            userRowId = userRowId,
+            entityId = entity.id,
+            entityFlags = 0,
+            entityData = TODO(), // QueryResultCodec.encode(entity.data)
+            sequenceNumber = sequenceNumber,
+          )
+        entityRowIdsAfter.add(entityRowId)
+
+        sqliteDatabase.insertQueryIdEntityIdMapping(
+          queryRowId = queryRowId,
+          entityRowId = entityRowId,
+        )
+      }
+
+      val disownedEntityRowIds = entityRowIdsBefore.filter { !entityRowIdsAfter.contains(it) }
+      for (disownedEntityRowId in disownedEntityRowIds) {
+        if (
+          !sqliteDatabase.hasEntityIdToQueryIdMappingForEntityId(entityRowId = disownedEntityRowId)
+        ) {
+          continue
+        }
+        sqliteDatabase.deleteEntity(entityRowId = disownedEntityRowId)
+      }
+    }
+  }
+
+  private suspend inline fun <T> runReadWriteTransaction(
+    crossinline block: suspend (SQLiteDatabase) -> T
+  ): T {
+    val initializedState: State.InitializeCalled.Initialized =
+      stateMutex.withLock {
+        when (val currentState = state) {
+          State.New ->
+            throw IllegalStateException(
+              "initialize() must be called before running a database transaction"
+            )
+          is State.InitializeCalled.InitializeFailed -> throw currentState.exception
+          is State.InitializeCalled.Initialized -> currentState
+          is State.CloseCalled ->
+            throw IllegalStateException(
+              "a database transaction cannot be started after calling close()"
+            )
+        }
+      }
+
+    return initializedState.run {
+      coroutineScope {
+        val job =
+          async(coroutineDispatcher, start = CoroutineStart.LAZY) {
+            sqliteDatabase.beginTransaction()
+            try {
+              val result = block(sqliteDatabase)
+              sqliteDatabase.setTransactionSuccessful()
+              result
+            } finally {
+              sqliteDatabase.endTransaction()
+            }
+          }
+
+        transactionQueue.send(job)
+
+        job.await()
+      }
+    }
+  }
+
+  private sealed interface State {
+
+    object New : State
+
+    sealed interface InitializeCalled : State {
+      class InitializeFailed(val exception: Throwable) : InitializeCalled
+
+      class Initialized(
+        val sqliteDatabase: SQLiteDatabase,
+        val coroutineScope: CoroutineScope,
+        val coroutineDispatcher: ExecutorCoroutineDispatcher,
+        val transactionsJob: Job,
+        val transactionQueue: Channel<Job>,
+      ) : InitializeCalled
+    }
+
+    sealed interface CloseCalled : State {
+      class Closing(val initialized: InitializeCalled.Initialized) : CloseCalled
+      object Closed : CloseCalled
+    }
   }
 }

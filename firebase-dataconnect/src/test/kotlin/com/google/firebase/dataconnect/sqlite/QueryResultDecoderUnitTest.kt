@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-package com.google.firebase.dataconnect.sqlite2
+package com.google.firebase.dataconnect.sqlite
 
-import com.google.firebase.dataconnect.sqlite2.QueryResultDecoder.Companion.decode
-import com.google.firebase.dataconnect.sqlite2.QueryResultDecoder.NegativeListSizeException
-import com.google.firebase.dataconnect.sqlite2.QueryResultDecoder.NegativeStringByteCountException
-import com.google.firebase.dataconnect.sqlite2.QueryResultDecoder.NegativeStringCharCountException
-import com.google.firebase.dataconnect.sqlite2.QueryResultDecoder.NegativeStructKeyCountException
-import com.google.firebase.dataconnect.sqlite2.QueryResultDecoder.UnknownKindCaseByteException
-import com.google.firebase.dataconnect.sqlite2.QueryResultDecoder.UnknownStringTypeException
-import com.google.firebase.dataconnect.sqlite2.QueryResultDecoder.Utf16EOFException
-import com.google.firebase.dataconnect.sqlite2.QueryResultDecoder.Utf8EOFException
+import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.Companion.decode
+import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.NegativeListSizeException
+import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.NegativeStringByteCountException
+import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.NegativeStringCharCountException
+import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.NegativeStructKeyCountException
+import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.UnknownKindCaseByteException
+import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.UnknownStringTypeException
+import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.Utf16EOFException
+import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.Utf8EOFException
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import io.kotest.assertions.assertSoftly

@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-package com.google.firebase.dataconnect.sqlite2
+package com.google.firebase.dataconnect.sqlite
 
 import android.database.sqlite.SQLiteDatabase
 import com.google.firebase.dataconnect.core.Logger
-import com.google.firebase.dataconnect.sqlite2.DataConnectCacheDatabaseMigrator.InvalidApplicationIdException
-import com.google.firebase.dataconnect.sqlite2.DataConnectCacheDatabaseMigrator.InvalidSchemaVersionException
-import com.google.firebase.dataconnect.sqlite2.DataConnectCacheDatabaseMigrator.InvalidUserVersionException
-import com.google.firebase.dataconnect.sqlite2.SQLiteDatabaseExts.getApplicationId
-import com.google.firebase.dataconnect.sqlite2.SQLiteDatabaseExts.setApplicationId
+import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabaseMigrator.InvalidApplicationIdException
+import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabaseMigrator.InvalidSchemaVersionException
+import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabaseMigrator.InvalidUserVersionException
+import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.getApplicationId
+import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.setApplicationId
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase

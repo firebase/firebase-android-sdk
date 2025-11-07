@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.firebase.dataconnect.sqlite2
+package com.google.firebase.dataconnect.sqlite
 
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteDatabase.CREATE_IF_NECESSARY

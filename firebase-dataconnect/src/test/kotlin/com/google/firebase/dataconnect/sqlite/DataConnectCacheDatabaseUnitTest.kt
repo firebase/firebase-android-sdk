@@ -16,37 +16,51 @@
 
 package com.google.firebase.dataconnect.sqlite
 
-import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase.Companion.get
-import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase.Companion.set
-import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase.InvalidDatabaseException
-import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
-import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
+import android.database.sqlite.SQLiteDatabase
+import com.google.firebase.dataconnect.core.Logger
+import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase.QueryResult
+import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase.QueryResult.Entity
+import com.google.firebase.dataconnect.testutil.CleanupsRule
+import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
+import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
+import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
-import io.kotest.assertions.assertSoftly
+import com.google.protobuf.Struct
 import io.kotest.assertions.throwables.shouldThrow
-import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
-import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
+import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
-import io.kotest.property.RandomSource
 import io.kotest.property.ShrinkingMode
+import io.kotest.property.arbitrary.Codepoint
+import io.kotest.property.arbitrary.alphanumeric
+import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.byte
 import io.kotest.property.arbitrary.byteArray
-import io.kotest.property.arbitrary.choice
-import io.kotest.property.arbitrary.filter
-import io.kotest.property.arbitrary.flatMap
+import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.int
-import io.kotest.property.arbitrary.list
-import io.kotest.property.arbitrary.map
-import io.kotest.property.arbitrary.next
+import io.kotest.property.arbitrary.orNull
+import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
+import io.mockk.CapturingSlot
+import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkObject
+import io.mockk.spyk
+import io.mockk.unmockkObject
+import io.mockk.verify
 import java.io.File
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import org.junit.After
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -57,378 +71,201 @@ import org.robolectric.RobolectricTestRunner
 class DataConnectCacheDatabaseUnitTest {
 
   @get:Rule val temporaryFolder = TemporaryFolder()
-  private val dbFile: File by lazy { File(temporaryFolder.newFolder(), "db.sqlite") }
 
-  @get:Rule val randomSeedTestRule = RandomSeedTestRule()
-  private val rs: RandomSource by randomSeedTestRule.rs
+  @get:Rule val dataConnectLogLevelRule = DataConnectLogLevelRule()
 
-  @Test
-  fun `onOpen should throw if application_id is invalid`() = runTest {
-    withDataConnectCacheDatabase(dbFile) { db -> db.ensureOpen() }
-    val invalidApplicationId = Arb.int().filter { it != 0x7f1bc816 }.next(rs)
-    setDataConnectSqliteDatabaseApplicationId(dbFile, invalidApplicationId)
+  @get:Rule val cleanups = CleanupsRule()
 
-    val exception =
-      withDataConnectCacheDatabase(dbFile) { db ->
-        shouldThrow<InvalidDatabaseException> { db.ensureOpen() }
-      }
-
-    exception.message shouldContainWithNonAbuttingText "application_id"
-    exception.message shouldContainWithNonAbuttingTextIgnoringCase "7f1bc816"
-    exception.message shouldContainWithNonAbuttingTextIgnoringCase invalidApplicationId.toString(16)
+  private val lazyDataConnectCacheDatabase = lazy {
+    val dbFile = File(temporaryFolder.newFolder(), "db.sqlite")
+    val mockLogger: Logger = mockk(relaxed = true)
+    DataConnectCacheDatabase(dbFile, mockLogger)
   }
 
-  @Test
-  fun `onOpen should throw if user_version is invalid`() = runTest {
-    withDataConnectCacheDatabase(dbFile) { db -> db.ensureOpen() }
-    setDataConnectSqliteDatabaseUserVersion(dbFile, 2)
+  private val dataConnectCacheDatabase: DataConnectCacheDatabase by
+    lazyDataConnectCacheDatabase::value
 
-    val exception =
-      withDataConnectCacheDatabase(dbFile) { db ->
-        shouldThrow<InvalidDatabaseException> { db.ensureOpen() }
-      }
-
-    exception.message shouldContainWithNonAbuttingText "user_version"
-    exception.message shouldContainWithNonAbuttingTextIgnoringCase "0 or 1"
-    exception.message shouldContainWithNonAbuttingTextIgnoringCase "2"
-  }
-
-  @Test
-  fun `runReadWriteMetadataTransaction ReadWriteMetadata set String values`() = runTest {
-    checkAll(propTestConfig, Arb.dataConnect.string(), Arb.dataConnect.string()) { key, value ->
-      withDataConnectCacheDatabase(dbFile) { db: DataConnectCacheDatabase ->
-        db.runReadWriteMetadataTransaction { metadata -> metadata.set(key, value) }
-      }
-      val actualValue =
-        withDataConnectCacheDatabase(dbFile) { db: DataConnectCacheDatabase ->
-          db.runReadOnlyMetadataTransaction { metadata -> metadata.getString(key) }
-        }
-      actualValue shouldBe value
+  @After
+  fun closeLazyDataConnectCacheDatabase() {
+    if (lazyDataConnectCacheDatabase.isInitialized()) {
+      runBlocking { lazyDataConnectCacheDatabase.value.close() }
     }
   }
 
   @Test
-  fun `runReadWriteMetadataTransaction ReadWriteMetadata set CharSequence values`() = runTest {
-    checkAll(propTestConfig, Arb.dataConnect.string(), Arb.dataConnect.string()) { key, value ->
-      withDataConnectCacheDatabase(dbFile) { db: DataConnectCacheDatabase ->
-        db.runReadWriteMetadataTransaction { metadata -> metadata.set(key, StringBuilder(value)) }
+  fun `initialize() should create the database at the file given to the constructor`() = runTest {
+    val dbFile = File(temporaryFolder.newFolder(), "db.sqlite")
+    val mockLogger: Logger = mockk(relaxed = true)
+    val dataConnectCacheDatabase = DataConnectCacheDatabase(dbFile, mockLogger)
+
+    dataConnectCacheDatabase.initialize()
+
+    try {
+      SQLiteDatabase.openDatabase(dbFile.absolutePath, null, 0).use { sqliteDatabase ->
+        // Run a query that would fail if initialization had not occurred.
+        sqliteDatabase.rawQuery("SELECT * FROM metadata", null).close()
       }
-      val actualValue =
-        withDataConnectCacheDatabase(dbFile) { db: DataConnectCacheDatabase ->
-          db.runReadOnlyMetadataTransaction { metadata -> metadata.getString(key) }
-        }
-      actualValue shouldBe value
+    } finally {
+      dataConnectCacheDatabase.close()
     }
   }
 
   @Test
-  fun `runReadWriteMetadataTransaction ReadWriteMetadata set Int values`() = runTest {
-    checkAll(propTestConfig, Arb.dataConnect.string(), Arb.int()) { key, value ->
-      withDataConnectCacheDatabase(dbFile) { db: DataConnectCacheDatabase ->
-        db.runReadWriteMetadataTransaction { metadata -> metadata.set(key, value) }
-      }
-      val actualValue =
-        withDataConnectCacheDatabase(dbFile) { db: DataConnectCacheDatabase ->
-          db.runReadOnlyMetadataTransaction { metadata -> metadata.getInt(key) }
-        }
-      actualValue shouldBe value
-    }
-  }
-
-  @Test
-  fun `runReadWriteMetadataTransaction ReadWriteMetadata set Blob metadata values`() = runTest {
-    checkAll(propTestConfig, Arb.dataConnect.string(), blobArb) { key, value ->
-      withDataConnectCacheDatabase(dbFile) { db: DataConnectCacheDatabase ->
-        db.runReadWriteMetadataTransaction { metadata -> metadata.set(key, value) }
-      }
-      val actualValue =
-        withDataConnectCacheDatabase(dbFile) { db: DataConnectCacheDatabase ->
-          db.runReadOnlyMetadataTransaction { metadata -> metadata.getBlob(key) }
-        }
-      actualValue shouldBe value
-    }
-  }
-
-  @Test
-  fun `runReadWriteMetadataTransaction ReadWriteMetadata set clears other types`() = runTest {
-    checkAll(propTestConfig, Arb.dataConnect.string(), Arb.list(metadataValueArb, 2..20)) {
-      key,
-      values ->
-      withDataConnectCacheDatabase(dbFile) { db: DataConnectCacheDatabase ->
-        values.forEach { value ->
-          db.runReadWriteMetadataTransaction { metadata ->
-            when (value) {
-              is String -> metadata.set(key, value)
-              is Int -> metadata.set(key, value)
-              is ByteArray -> metadata.set(key, value)
-              else -> throw IllegalArgumentException("unsupported value type: $value")
-            }
-          }
-        }
-      }
-      val (actualStringValue, actualIntValue, actualBlobValue) =
-        withDataConnectCacheDatabase(dbFile) { db: DataConnectCacheDatabase ->
-          db.runReadOnlyMetadataTransaction { metadata ->
-            Triple(
-              metadata.getString(key),
-              metadata.getInt(key),
-              metadata.getBlob(key),
-            )
-          }
-        }
-
-      val lastValue = values.last()
-      assertSoftly {
-        withClue("string") { actualStringValue shouldBe (lastValue as? String) }
-        withClue("int") { actualIntValue shouldBe (lastValue as? Int) }
-        withClue("blob") { actualBlobValue shouldBe (lastValue as? ByteArray) }
-      }
-    }
-  }
-
-  @Test
-  fun `runReadWriteMetadataTransaction ReadWriteMetadata set multiple keys`() = runTest {
-    val arb =
-      Arb.int(10..100).flatMap { count ->
-        val keyArb = Arb.dataConnect.string()
-        Arb.map(keyArb, metadataValueArb, minSize = 10, maxSize = 20, slippage = 100)
-      }
-    checkAll(propTestConfig, arb) { valueByKey ->
-      withDataConnectCacheDatabase(dbFile) { db: DataConnectCacheDatabase ->
-        valueByKey.entries.forEach { (key, value) ->
-          db.runReadWriteMetadataTransaction { metadata ->
-            when (value) {
-              is String -> metadata.set(key, value)
-              is Int -> metadata.set(key, value)
-              is ByteArray -> metadata.set(key, value)
-              else -> throw IllegalArgumentException("unsupported value type: $value")
-            }
-          }
-        }
-      }
-      withDataConnectCacheDatabase(dbFile) { db: DataConnectCacheDatabase ->
-        db.runReadOnlyMetadataTransaction { metadata ->
-          valueByKey.entries.forEachIndexed { index, (key, expectedValue) ->
-            val actualValue =
-              when (expectedValue) {
-                is String -> metadata.getString(key)
-                is Int -> metadata.getInt(key)
-                is ByteArray -> metadata.getBlob(key)
-                else -> throw IllegalArgumentException("unsupported value type: $expectedValue")
-              }
-            withClue("index=$index") { actualValue shouldBe expectedValue }
-          }
-        }
-      }
-    }
-  }
-
-  @Test
-  fun `runReadWriteMetadataTransaction ReadWriteMetadata set should throw after block`() = runTest {
-    val key = Arb.dataConnect.string().next(rs)
-    val stringValue = Arb.dataConnect.string().next(rs)
-    val intValue = Arb.int().next(rs)
-    val blobValue = blobArb.next(rs)
-
-    withDataConnectCacheDatabase(dbFile) { db: DataConnectCacheDatabase ->
-      val metadata = db.runReadWriteMetadataTransaction { metadata -> metadata }
-      assertSoftly {
-        withClue("string") { shouldThrow<IllegalStateException> { metadata.set(key, stringValue) } }
-        withClue("int") { shouldThrow<IllegalStateException> { metadata.set(key, intValue) } }
-        withClue("blob") { shouldThrow<IllegalStateException> { metadata.set(key, blobValue) } }
-      }
-    }
-  }
-
-  @Test
-  fun `runReadWriteMetadataTransaction ReadWriteMetadata set extension String`() = runTest {
-    checkAll(propTestConfig, Arb.dataConnect.string(), Arb.dataConnect.string()) { key, value ->
-      withDataConnectCacheDatabase(dbFile) { db: DataConnectCacheDatabase ->
-        db.runReadWriteMetadataTransaction { metadata ->
-          metadata.set(key, value)
-          metadata.getString(key) shouldBe value
-        }
-      }
-    }
-  }
-
-  @Test
-  fun `runReadWriteMetadataTransaction ReadWriteMetadata set extension CharSequence`() = runTest {
-    checkAll(propTestConfig, Arb.dataConnect.string(), Arb.dataConnect.string()) { key, value ->
-      withDataConnectCacheDatabase(dbFile) { db: DataConnectCacheDatabase ->
-        db.runReadWriteMetadataTransaction { metadata ->
-          metadata.set(key, StringBuilder(value))
-          metadata.getString(key) shouldBe value
-        }
-      }
-    }
-  }
-
-  @Test
-  fun `runReadWriteMetadataTransaction ReadWriteMetadata set extension Int`() = runTest {
-    checkAll(propTestConfig, Arb.dataConnect.string(), Arb.int()) { key, value ->
-      withDataConnectCacheDatabase(dbFile) { db: DataConnectCacheDatabase ->
-        db.runReadWriteMetadataTransaction { metadata ->
-          metadata.set(key, value)
-          metadata.getInt(key) shouldBe value
-        }
-      }
-    }
-  }
-
-  @Test
-  fun `runReadWriteMetadataTransaction ReadWriteMetadata set extension Blob`() = runTest {
-    checkAll(propTestConfig, Arb.dataConnect.string(), blobArb) { key, value ->
-      withDataConnectCacheDatabase(dbFile) { db: DataConnectCacheDatabase ->
-        db.runReadWriteMetadataTransaction { metadata ->
-          metadata.set(key, value)
-          metadata.getBlob(key) shouldBe value
-        }
-      }
-    }
-  }
-
-  @Test
-  fun `runReadWriteMetadataTransaction ReadWriteMetadata set extension unsupported type throws`() =
+  fun `initialize() should create an in-memory database if a null file given to the constructor`() =
     runTest {
-      val key = Arb.dataConnect.string().next(rs)
-      withDataConnectCacheDatabase(dbFile) { db: DataConnectCacheDatabase ->
-        db.runReadWriteMetadataTransaction { metadata ->
-          shouldThrow<IllegalArgumentException> { metadata.set(key, Unit) }
-        }
-      }
+      val mockLogger: Logger = mockk(relaxed = true)
+      val dataConnectCacheDatabase = DataConnectCacheDatabase(null, mockLogger)
+
+      dataConnectCacheDatabase.initialize()
+
+      // There's nothing really to "verify" here, except that no exception is thrown.
+      dataConnectCacheDatabase.close()
     }
 
   @Test
-  fun `runReadOnlyMetadataTransaction ReadOnlyMetadata getXXX returns null if not set`() = runTest {
-    checkAll(propTestConfig, Arb.dataConnect.string()) { key ->
-      withDataConnectCacheDatabase(dbFile) { db: DataConnectCacheDatabase ->
-        db.runReadOnlyMetadataTransaction { metadata ->
-          assertSoftly {
-            withClue("getString") { metadata.getString(key).shouldBeNull() }
-            withClue("getInt") { metadata.getInt(key).shouldBeNull() }
-            withClue("getBlob") { metadata.getBlob(key).shouldBeNull() }
-          }
-        }
-      }
-    }
+  fun `initialize() should throw if it has already completed successfully`() = runTest {
+    dataConnectCacheDatabase.initialize()
+
+    val exception = shouldThrow<IllegalStateException> { dataConnectCacheDatabase.initialize() }
+
+    exception.message shouldContainWithNonAbuttingText "initialize()"
+    exception.message shouldContainWithNonAbuttingTextIgnoringCase "already been called"
   }
 
   @Test
-  fun `runReadOnlyMetadataTransaction ReadOnlyMetadata getXXX returns null if a different type is set`() =
+  fun `initialize() should throw if called after close()`() = runTest {
+    dataConnectCacheDatabase.initialize()
+    dataConnectCacheDatabase.close()
+
+    val exception = shouldThrow<IllegalStateException> { dataConnectCacheDatabase.initialize() }
+
+    exception.message shouldContainWithNonAbuttingText "initialize()"
+    exception.message shouldContainWithNonAbuttingTextIgnoringCase "called after close"
+  }
+
+  @Test
+  fun `initialize() should re-throw exception from migrate() and close SQLiteDatabase`() = runTest {
+    mockkObject(DataConnectCacheDatabaseMigrator)
+    cleanups.register { unmockkObject(DataConnectCacheDatabaseMigrator) }
+    class TestMigrateException : Exception()
+    every { DataConnectCacheDatabaseMigrator.migrate(any(), any()) } throws TestMigrateException()
+
+    shouldThrow<TestMigrateException> { dataConnectCacheDatabase.initialize() }
+
+    val sqliteDatabaseSlot = CapturingSlot<SQLiteDatabase>()
+    verify(exactly = 1) {
+      DataConnectCacheDatabaseMigrator.migrate(capture(sqliteDatabaseSlot), any())
+    }
+    sqliteDatabaseSlot.captured.isOpen shouldBe false
+  }
+
+  @Test
+  fun `initialize() should ignore exception closing SQLiteDatabase if migrate() throws`() =
     runTest {
-      checkAll(propTestConfig, Arb.dataConnect.string(), metadataValueArb, metadataValueArb) {
-        key,
-        value1,
-        value2 ->
-        withDataConnectCacheDatabase(dbFile) { db: DataConnectCacheDatabase ->
-          db.runReadWriteMetadataTransaction { metadata ->
-            metadata.set(key, value1)
-            metadata.set(key, value2)
-          }
-          db.runReadOnlyMetadataTransaction { metadata ->
-            assertSoftly {
-              withClue("getString") { metadata.getString(key) shouldBe (value2 as? String) }
-              withClue("getInt") { metadata.getInt(key) shouldBe (value2 as? Int) }
-              withClue("getBlob") { metadata.getBlob(key) shouldBe (value2 as? ByteArray) }
-            }
-          }
+      mockkObject(DataConnectSQLiteDatabaseOpener)
+      cleanups.register { unmockkObject(DataConnectSQLiteDatabaseOpener) }
+      class TestCloseException : Exception()
+      every { DataConnectSQLiteDatabaseOpener.open(any(), any()) } answers
+        {
+          val db = callOriginal()
+          val dbSpy = spyk(db)
+          every { dbSpy.close() } throws TestCloseException()
+          dbSpy
         }
+      mockkObject(DataConnectCacheDatabaseMigrator)
+      cleanups.register { unmockkObject(DataConnectCacheDatabaseMigrator) }
+      class TestMigrateException : Exception()
+      every { DataConnectCacheDatabaseMigrator.migrate(any(), any()) } throws TestMigrateException()
+
+      shouldThrow<TestMigrateException> { dataConnectCacheDatabase.initialize() }
+
+      val sqliteDatabaseSlot = CapturingSlot<SQLiteDatabase>()
+      verify(exactly = 1) {
+        DataConnectCacheDatabaseMigrator.migrate(capture(sqliteDatabaseSlot), any())
       }
+      verify(exactly = 1) { sqliteDatabaseSlot.captured.close() }
     }
 
   @Test
-  fun `runReadOnlyMetadataTransaction ReadOnlyMetadata get should throw after block`() = runTest {
-    val key = Arb.dataConnect.string().next(rs)
-
-    withDataConnectCacheDatabase(dbFile) { db: DataConnectCacheDatabase ->
-      val metadata = db.runReadOnlyMetadataTransaction { metadata -> metadata }
-      assertSoftly {
-        withClue("getString") { shouldThrow<IllegalStateException> { metadata.getString(key) } }
-        withClue("getInt") { shouldThrow<IllegalStateException> { metadata.getInt(key) } }
-        withClue("getBlob") { shouldThrow<IllegalStateException> { metadata.getBlob(key) } }
+  fun `initialize() should run to completion if open() is interrupted by close()`() = runTest {
+    mockkObject(DataConnectSQLiteDatabaseOpener)
+    cleanups.register { unmockkObject(DataConnectSQLiteDatabaseOpener) }
+    val sqliteDatabaseRef = MutableStateFlow<SQLiteDatabase?>(null)
+    val closeJob = MutableStateFlow<Job?>(null)
+    every { DataConnectSQLiteDatabaseOpener.open(any(), any()) } answers
+      {
+        closeJob.value = launch { dataConnectCacheDatabase.close() }
+        @OptIn(ExperimentalCoroutinesApi::class) advanceUntilIdle()
+        val sqliteDatabase = callOriginal()
+        sqliteDatabaseRef.value = sqliteDatabase
+        sqliteDatabase
       }
-    }
+
+    dataConnectCacheDatabase.initialize() // should not throw
+
+    closeJob.value.shouldNotBeNull().join()
+    sqliteDatabaseRef.value.shouldNotBeNull().isOpen shouldBe false
   }
 
   @Test
-  fun `runReadOnlyMetadataTransaction ReadOnlyMetadata get extension String`() = runTest {
-    checkAll(propTestConfig, Arb.dataConnect.string(), Arb.dataConnect.string()) { key, value ->
-      withDataConnectCacheDatabase(dbFile) { db: DataConnectCacheDatabase ->
-        db.runReadWriteMetadataTransaction { metadata ->
-          metadata.set(key, value)
-          metadata.get<String>(key) shouldBe value
-        }
+  fun `initialize() should run to completion if migrate() is interrupted by close()`() = runTest {
+    mockkObject(DataConnectCacheDatabaseMigrator)
+    cleanups.register { unmockkObject(DataConnectCacheDatabaseMigrator) }
+    val closeJob = MutableStateFlow<Job?>(null)
+    every { DataConnectCacheDatabaseMigrator.migrate(any(), any()) } answers
+      {
+        closeJob.value = launch { dataConnectCacheDatabase.close() }
+        @OptIn(ExperimentalCoroutinesApi::class) advanceUntilIdle()
+        callOriginal()
       }
+
+    dataConnectCacheDatabase.initialize() // should not throw
+
+    val sqliteDatabaseSlot = CapturingSlot<SQLiteDatabase>()
+    verify(exactly = 1) {
+      DataConnectCacheDatabaseMigrator.migrate(capture(sqliteDatabaseSlot), any())
     }
+    closeJob.value.shouldNotBeNull().join()
+    sqliteDatabaseSlot.captured.isOpen shouldBe false
   }
 
   @Test
-  fun `runReadOnlyMetadataTransaction ReadOnlyMetadata get extension Int`() = runTest {
-    checkAll(propTestConfig, Arb.dataConnect.string(), Arb.int()) { key, value ->
-      withDataConnectCacheDatabase(dbFile) { db: DataConnectCacheDatabase ->
-        db.runReadWriteMetadataTransaction { metadata ->
-          metadata.set(key, value)
-          metadata.get<Int>(key) shouldBe value
-        }
-      }
+  fun `insertQueryResult() should insert a query result`() = runTest {
+    dataConnectCacheDatabase.initialize()
+
+    checkAll(propTestConfig, queryResultArb()) { queryResult ->
+      dataConnectCacheDatabase.insertQueryResult(queryResult)
     }
   }
-
-  @Test
-  fun `runReadOnlyMetadataTransaction ReadOnlyMetadata get extension Number`() = runTest {
-    checkAll(propTestConfig, Arb.dataConnect.string(), Arb.int()) { key, value ->
-      withDataConnectCacheDatabase(dbFile) { db: DataConnectCacheDatabase ->
-        db.runReadWriteMetadataTransaction { metadata ->
-          metadata.set(key, value)
-          metadata.get<Number>(key) shouldBe value
-        }
-      }
-    }
-  }
-
-  @Test
-  fun `runReadOnlyMetadataTransaction ReadOnlyMetadata get extension ByteArray`() = runTest {
-    checkAll(propTestConfig, Arb.dataConnect.string(), blobArb) { key, value ->
-      withDataConnectCacheDatabase(dbFile) { db: DataConnectCacheDatabase ->
-        db.runReadWriteMetadataTransaction { metadata ->
-          metadata.set(key, value)
-          metadata.get<ByteArray>(key) shouldBe value
-        }
-      }
-    }
-  }
-
-  @Test
-  fun `runReadOnlyMetadataTransaction ReadOnlyMetadata get extension throws for unsupported types`() =
-    runTest {
-      val key = Arb.dataConnect.string().next(rs)
-      withDataConnectCacheDatabase(dbFile) { db: DataConnectCacheDatabase ->
-        db.runReadWriteMetadataTransaction { metadata ->
-          shouldThrow<IllegalArgumentException> { metadata.get<Any>(key) }
-        }
-      }
-    }
 
   private companion object {
 
     @OptIn(ExperimentalKotest::class)
-    val propTestConfig = PropTestConfig(iterations = 10, shrinkingMode = ShrinkingMode.Off)
+    val propTestConfig =
+      PropTestConfig(
+        iterations = 100,
+        edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.33),
+        shrinkingMode = ShrinkingMode.Off
+      )
 
-    val blobArb = Arb.byteArray(Arb.int(0..20), Arb.byte())
+    fun entityIdArb(): Arb<ByteArray> = Arb.byteArray(Arb.int(0..50), Arb.byte())
+    fun entityDataArb(): Arb<ByteArray> = Arb.byteArray(Arb.int(0..50), Arb.byte())
+    fun entityFlagsArb(): Arb<Int> = Arb.int()
+    fun queryResultIdArb(): Arb<ByteArray> = Arb.byteArray(Arb.int(0..50), Arb.byte())
+    fun queryResultDataArb(): Arb<ByteArray> = Arb.byteArray(Arb.int(0..50), Arb.byte())
+    fun queryResultFlagsArb(): Arb<Int> = Arb.int()
+    fun authUidArb(): Arb<String?> =
+      Arb.string(0..10, Codepoint.alphanumeric()).orNull(nullProbability = 0.33)
 
-    val metadataValueArb = Arb.choice(Arb.dataConnect.string(), Arb.int(), blobArb)
+    fun entityArb(
+      id: Arb<ByteArray> = entityIdArb(),
+      data: Arb<Struct> = Arb.proto.struct(),
+    ): Arb<Entity> = Arb.bind(id, data, ::Entity)
 
-    private suspend inline fun <T> withDataConnectCacheDatabase(
-      dbFile: File,
-      block: suspend (DataConnectCacheDatabase) -> T
-    ): T {
-      val db = DataConnectCacheDatabase(dbFile, Dispatchers.IO, mockk(relaxed = true))
-      return try {
-        block(db)
-      } finally {
-        db.close()
-      }
-    }
+    fun queryResultArb(
+      authUid: Arb<String?> = authUidArb(),
+      id: Arb<ByteArray> = queryResultIdArb(),
+      data: Arb<Map<String, Any>> = Arb.constant(TODO())
+    ): Arb<QueryResult> = Arb.bind(authUid, id, data, ::QueryResult)
   }
 }

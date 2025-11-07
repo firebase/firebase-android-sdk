@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.firebase.dataconnect.sqlite2
+package com.google.firebase.dataconnect.sqlite
 
 import com.google.firebase.dataconnect.util.StringUtil.calculateUtf8ByteCount
 import com.google.protobuf.ListValue
