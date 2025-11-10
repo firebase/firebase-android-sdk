@@ -1,0 +1,8 @@
+{
+    "name": "m173",
+    "libraries": [
+        ":firebase-ai",
+        ":firebase-dataconnect",
+        ":firebase-perf"
+    ]
+}

@@ -1,4 +1,5 @@
 # Unreleased
+
 - [feature] Added support for server templates via `TemplateGenerativeModel` and
   `TemplateImagenModel`. (#7503)
 
