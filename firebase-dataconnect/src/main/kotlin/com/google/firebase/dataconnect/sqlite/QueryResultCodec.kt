@@ -21,7 +21,8 @@ import com.google.protobuf.Struct
 internal object QueryResultCodec {
 
   class Entity(
-    val id: ByteArray,
+    val id: String,
+    val idBytes: ByteArray,
     val data: Struct,
   )
 
