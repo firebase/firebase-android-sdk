@@ -38,13 +38,6 @@ class ArrayContainsTests {
   }
 
   @Test
-  fun `arrayContains - value not found in array`() {
-    val arrayToSearch = array(42L, "matang", true)
-    val expr = arrayContains(arrayToSearch, constant(4L))
-    assertEvaluatesTo(evaluate(expr), false, "arrayContains value not found")
-  }
-
-  @Test
   fun `arrayContains - equivalent numerics`() {
     val arrayToSearch = array(42L, "matang", true)
     val expr = arrayContains(arrayToSearch, constant(42.0))
@@ -60,18 +53,16 @@ class ArrayContainsTests {
   }
 
   @Test
-  fun `arrayContains - search value is null returns null`() {
+  fun `arrayContains - search value is null returns true`() {
     val arrayToSearch = array(null, 1L, "matang", true)
     val expr = arrayContains(arrayToSearch, nullValue())
-    // Firestore/backend behavior: null comparisons return null.
-    assertEvaluatesToNull(evaluate(expr), "arrayContains search for null")
+    assertEvaluatesTo(evaluate(expr), true, "arrayContains search for null")
   }
 
   @Test
-  fun `arrayContains - search value is null empty values array returns null`() {
+  fun `arrayContains - search value is null empty values array returns false`() {
     val expr = arrayContains(array(), nullValue())
-    // Firestore/backend behavior: null comparisons return null.
-    assertEvaluatesToNull(evaluate(expr), "arrayContains search for null in empty array")
+    assertEvaluatesTo(evaluate(expr), false, "arrayContains search for null in empty array")
   }
 
   @Test
@@ -86,9 +77,8 @@ class ArrayContainsTests {
   fun `arrayContains - search value is NaN`() {
     val arrayToSearch = array(Double.NaN, "foo")
     val valueToFind = constant(Double.NaN)
-    // Firestore/backend behavior: NaN comparisons are always false.
     val expr = arrayContains(arrayToSearch, valueToFind)
-    assertEvaluatesTo(evaluate(expr), false, "arrayContains search for NaN")
+    assertEvaluatesTo(evaluate(expr), true, "arrayContains search for NaN")
   }
 
   @Test
@@ -98,10 +88,10 @@ class ArrayContainsTests {
   }
 
   @Test
-  fun `arrayContains - array to search not found returns error`() {
+  fun `arrayContains - array to search not found returns null`() {
     val expr = arrayContains(field("not-exist"), constant("matang"))
     // Accessing a non-existent field results in UNSET, which then causes an error in arrayContains
-    assertEvaluatesToError(evaluate(expr), "arrayContains field not-exist for array")
+    assertEvaluatesToNull(evaluate(expr), "arrayContains field not-exist for array")
   }
 
   @Test
@@ -111,11 +101,11 @@ class ArrayContainsTests {
   }
 
   @Test
-  fun `arrayContains - search value reference not found returns error`() {
+  fun `arrayContains - search value reference not found returns false`() {
     val arrayToSearch = array(42L, "matang", true)
     val expr = arrayContains(arrayToSearch, field("not-exist"))
     // Accessing a non-existent field for the search value results in UNSET.
     // arrayContains then attempts to compare with UNSET, which is an error.
-    assertEvaluatesToError(evaluate(expr), "arrayContains field not-exist for search value")
+    assertEvaluatesTo(evaluate(expr), false, "arrayContains field not-exist for search value")
   }
 }

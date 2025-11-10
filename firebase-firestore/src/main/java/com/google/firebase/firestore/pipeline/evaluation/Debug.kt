@@ -20,6 +20,8 @@ internal val evaluateIsError: EvaluateFunction = unaryFunction { r: EvaluateResu
   EvaluateResult.boolean(r.isError)
 }
 
+internal val evaluateError: EvaluateFunction = { _ -> { _ -> EvaluateResultError } }
+
 internal val evaluateExists: EvaluateFunction = unaryFunction { r: EvaluateResult ->
   when (r) {
     EvaluateResultError -> r

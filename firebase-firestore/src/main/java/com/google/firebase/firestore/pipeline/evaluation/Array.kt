@@ -15,8 +15,8 @@
 package com.google.firebase.firestore.pipeline.evaluation
 
 import com.google.firebase.firestore.model.MutableDocument
+import com.google.firebase.firestore.model.Values.Enterprise.equals
 import com.google.firebase.firestore.model.Values.encodeValue
-import com.google.firebase.firestore.model.Values.strictEquals
 import com.google.firebase.firestore.pipeline.evaluation.EvaluateResult.Companion.list
 import com.google.firebase.firestore.util.Assert
 import com.google.firestore.v1.Value
@@ -27,44 +27,49 @@ import com.google.protobuf.ByteString
 
 internal val evaluateArray = variadicNullableValueFunction(::list)
 
-internal val evaluateEqAny = binaryFunction(::equalAny)
+internal val evaluateEqAny = binaryFunction { v: Value?, l: List<Value> ->
+  if (v == null) return@binaryFunction EvaluateResult.FALSE
+  return@binaryFunction equalAny(v, l)
+}
 
-internal val evaluateNotEqAny = binaryFunction(::notEqualAny)
+internal val evaluateNotEqAny =
+  binaryFunction { v: Value?, l: List<Value>,
+    ->
+    if (v == null) return@binaryFunction EvaluateResult.FALSE
+    return@binaryFunction notEqualAny(v, l)
+  }
 
-internal val evaluateArrayContains = binaryFunction { l: List<Value>, v: Value -> equalAny(v, l) }
+internal val evaluateArrayContains = binaryFunction { l: List<Value>, v: Value? ->
+  if (v == null) return@binaryFunction EvaluateResult.FALSE
+  return@binaryFunction equalAny(v, l)
+}
 
 internal val evaluateArrayContainsAny =
   binaryFunction { array: List<Value>, searchValues: List<Value> ->
-    var foundNull = false
-    for (value in array) for (search in searchValues) when (strictEquals(value, search)) {
+    for (value in array) for (search in searchValues) when (equals(value, search)) {
       true -> return@binaryFunction EvaluateResult.TRUE
       false -> {}
-      null -> foundNull = true
     }
-    return@binaryFunction if (foundNull) EvaluateResult.NULL else EvaluateResult.FALSE
+    return@binaryFunction EvaluateResult.FALSE
   }
 
 internal val evaluateArrayContainsAll =
   binaryFunction { array: List<Value>, searchValues: List<Value> ->
-    var foundNullAtLeastOnce = false
     for (search in searchValues) {
       var found = false
-      var foundNull = false
-      for (value in array) when (strictEquals(value, search)) {
+      for (value in array) when (equals(value, search)) {
         true -> {
           found = true
           break
         }
         false -> {}
-        null -> foundNull = true
       }
-      if (foundNull) {
-        foundNullAtLeastOnce = true
-      } else if (!found) {
+
+      if (!found) {
         return@binaryFunction EvaluateResult.FALSE
       }
     }
-    return@binaryFunction if (foundNullAtLeastOnce) EvaluateResult.NULL else EvaluateResult.TRUE
+    return@binaryFunction EvaluateResult.TRUE
   }
 
 internal val evaluateArrayLength = unaryFunction { array: List<Value> ->
@@ -167,13 +172,13 @@ internal val evaluateArrayGet: EvaluateFunction = { params ->
     val p2 = params[1](input)
     val offset =
       if (p2.value?.hasIntegerValue() == true) {
-        p2.value!!
+        p2.value?.integerValue
       } else return@block EvaluateResultError
 
     if (array == null) return@block EvaluateResultUnset
 
     // If the index is out of bounds, return UNSET.
-    var index = offset.integerValue
+    var index = offset!!
     if (index >= array.size || index < -array.size) {
       return@block EvaluateResultUnset
     }
@@ -225,21 +230,17 @@ internal fun arrayConcatImpl(arrays: List<List<Value>>) =
   EvaluateResult.value(encodeValue(arrays.flatten()))
 
 private fun equalAny(value: Value, list: List<Value>): EvaluateResult {
-  var foundNull = false
-  for (element in list) when (strictEquals(value, element)) {
+  for (element in list) when (equals(value, element)) {
     true -> return EvaluateResult.TRUE
     false -> {}
-    null -> foundNull = true
   }
-  return if (foundNull) EvaluateResult.NULL else EvaluateResult.FALSE
+  return EvaluateResult.FALSE
 }
 
 private fun notEqualAny(value: Value, list: List<Value>): EvaluateResult {
-  var foundNull = false
-  for (element in list) when (strictEquals(value, element)) {
+  for (element in list) when (equals(value, element)) {
     true -> return EvaluateResult.FALSE
     false -> {}
-    null -> foundNull = true
   }
-  return if (foundNull) EvaluateResult.NULL else EvaluateResult.TRUE
+  return EvaluateResult.TRUE
 }

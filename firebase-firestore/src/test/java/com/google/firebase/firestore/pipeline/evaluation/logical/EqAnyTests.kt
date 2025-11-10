@@ -31,7 +31,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
-class InTests {
+class EqAnyTests {
   private val nullExpr = nullValue()
   private val nanExpr = constant(Double.NaN)
   private val emptyDoc = doc("coll/docEmpty", 1, emptyMap())
@@ -97,9 +97,9 @@ class InTests {
   }
 
   @Test
-  fun `eqAny - array not found returns error`() {
+  fun `eqAny - array not found returns null`() {
     val expr = equalAny(constant("matang"), field("non-existent-field"))
-    assertEvaluatesToError(evaluate(expr, emptyDoc), "eqAny(matang, non-existent-field)")
+    assertEvaluatesToNull(evaluate(expr, emptyDoc), "eqAny(matang, non-existent-field)")
   }
 
   @Test
@@ -109,27 +109,27 @@ class InTests {
   }
 
   @Test
-  fun `eqAny - search reference not found returns error`() {
+  fun `eqAny - search reference not found returns false`() {
     val expr = equalAny(field("non-existent-field"), array(constant(42L)))
-    assertEvaluatesToError(evaluate(expr, emptyDoc), "eqAny(non-existent-field, [42L])")
+    assertEvaluatesTo(evaluate(expr, emptyDoc), false, "eqAny(non-existent-field, [42L])")
   }
 
   @Test
   fun `eqAny - search is null`() {
     val expr = equalAny(nullExpr, array(nullExpr, constant(1L), constant("matang")))
-    assertEvaluatesToNull(evaluate(expr, emptyDoc), "eqAny(null, [null,1,matang])")
+    assertEvaluatesTo(evaluate(expr, emptyDoc), true, "eqAny(null, [null,1,matang])")
   }
 
   @Test
-  fun `eqAny - search is null empty values array returns null`() {
+  fun `eqAny - search is null empty values array returns false`() {
     val expr = equalAny(nullExpr, array())
-    assertEvaluatesToNull(evaluate(expr, emptyDoc), "eqAny(null, [])")
+    assertEvaluatesTo(evaluate(expr, emptyDoc), false, "eqAny(null, [])")
   }
 
   @Test
   fun `eqAny - search is nan`() {
     val expr = equalAny(nanExpr, array(nanExpr, constant(42L), constant(3.14)))
-    assertEvaluatesTo(evaluate(expr, emptyDoc), false, "eqAny(NaN, [NaN,42,3.14])")
+    assertEvaluatesTo(evaluate(expr, emptyDoc), true, "eqAny(NaN, [NaN,42,3.14])")
   }
 
   @Test
@@ -142,6 +142,101 @@ class InTests {
   fun `eqAny - search is empty array contains empty array returns true`() {
     val expr = equalAny(array(), array(array()))
     assertEvaluatesTo(evaluate(expr, emptyDoc), true, "eqAny([], [[]])")
+  }
+
+  @Test
+  fun `eqAny - value found in array with null`() {
+    val expr = equalAny(constant("hello"), array(nullValue(), constant("hello")))
+    assertEvaluatesTo(evaluate(expr, emptyDoc), true, "eqAny(hello, [null, hello])")
+  }
+
+  @Test
+  fun `eqAny - value not found in array with null`() {
+    val expr = equalAny(constant(4L), array(nullValue(), constant(42L)))
+    assertEvaluatesTo(evaluate(expr, emptyDoc), false, "eqAny(4, [null, 42])")
+  }
+
+  @Test
+  fun `eqAny - value not found in array with only nulls`() {
+    val expr = equalAny(constant(4L), array(nullValue(), nullValue()))
+    assertEvaluatesTo(evaluate(expr, emptyDoc), false, "eqAny(4, [null, null])")
+  }
+
+  @Test
+  fun `eqAny - search is null in single null array`() {
+    val expr = equalAny(nullValue(), array(nullValue()))
+    assertEvaluatesTo(evaluate(expr, emptyDoc), true, "eqAny(null, [null])")
+  }
+
+  @Test
+  fun `eqAny - search is null in array with other values`() {
+    val expr = equalAny(nullValue(), array(nullValue(), constant(42L)))
+    assertEvaluatesTo(evaluate(expr, emptyDoc), true, "eqAny(null, [null, 42])")
+  }
+
+  @Test
+  fun `eqAny - search is array with null in array with null and array with null`() {
+    val searchArray = array(nullValue())
+    val valuesArray = array(nullValue(), array(nullValue()))
+    assertEvaluatesTo(
+      evaluate(equalAny(searchArray, valuesArray), emptyDoc),
+      true,
+      "eqAny([null], [null, [null]])"
+    )
+  }
+
+  @Test
+  fun `eqAny - search is array with null in array with other and array with null`() {
+    val searchArray = array(nullValue())
+    val valuesArray = array(constant(42L), array(nullValue()))
+    assertEvaluatesTo(
+      evaluate(equalAny(searchArray, valuesArray), emptyDoc),
+      true,
+      "eqAny([null], [42L, [null]])"
+    )
+  }
+
+  @Test
+  fun `eqAny - search is empty map in empty array`() {
+    val expr = equalAny(map(emptyMap()), array())
+    assertEvaluatesTo(evaluate(expr, emptyDoc), false, "eqAny({}, [])")
+  }
+
+  @Test
+  fun `eqAny - search is empty map in array with empty map`() {
+    val expr = equalAny(map(emptyMap()), array(map(emptyMap())))
+    assertEvaluatesTo(evaluate(expr, emptyDoc), true, "eqAny({}, [{}])")
+  }
+
+  @Test
+  fun `eqAny - search is map with null`() {
+    val searchMap = map(mapOf("a" to nullValue()))
+    val valuesArray = array(nullValue(), map(mapOf("a" to nullValue())))
+    assertEvaluatesTo(
+      evaluate(equalAny(searchMap, valuesArray), emptyDoc),
+      true,
+      "eqAny({a:null}, [null, {a:null}])"
+    )
+  }
+
+  @Test
+  fun `eqAny - search is map with null in array with other and map with null`() {
+    val searchMap = map(mapOf("a" to nullValue()))
+    val valuesArray = array(constant(42L), map(mapOf("a" to nullValue())))
+    assertEvaluatesTo(
+      evaluate(equalAny(searchMap, valuesArray), emptyDoc),
+      true,
+      "eqAny({a:null}, [42L, {a:null}])"
+    )
+  }
+
+  @Test
+  fun `eqAny - array is not array type returns error`() {
+    val expr = equalAny(constant("matang"), constant("values"))
+    assertEvaluatesToError(
+      evaluate(expr, emptyDoc),
+      "The function eq_any(...) requires `Array` but got `STRING`"
+    )
   }
 
   @Test

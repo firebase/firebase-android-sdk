@@ -26,6 +26,7 @@ import com.google.firebase.firestore.pipeline.assertEvaluatesTo
 import com.google.firebase.firestore.pipeline.assertEvaluatesToError
 import com.google.firebase.firestore.pipeline.evaluate
 import com.google.firebase.firestore.pipeline.evaluation.comparison.ComparisonTestData
+import com.google.firebase.firestore.pipeline.evaluation.comparison.ComparisonTestData.unsetValue
 import com.google.firebase.firestore.testutil.TestUtil.doc
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -45,7 +46,10 @@ class ExistsTests {
 
   @Test
   fun `anything but unset returns true for exists`() {
-    ComparisonTestData.allSupportedComparableValues.forEach { valueExpr ->
+    ComparisonTestData.allValues.forEach { valueExpr ->
+      if (valueExpr == unsetValue) {
+        return
+      }
       assertEvaluatesTo(evaluate(exists(valueExpr)), true, "exists(%s)", valueExpr)
     }
   }

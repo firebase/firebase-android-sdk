@@ -42,11 +42,7 @@ class JoinTests {
         ),
         constant(ByteString.copyFromUtf8(",").toByteArray())
       )
-    assertEvaluatesTo(
-      evaluate(expr),
-      encodeValue(ByteString.copyFromUtf8("a,b,c").toByteArray()),
-      "join_bytes"
-    )
+    assertEvaluatesTo(evaluate(expr), encodeValue("a,b,c".toByteArray()), "join_bytes")
   }
 
   @Test
@@ -66,11 +62,7 @@ class JoinTests {
         ),
         constant(ByteString.copyFromUtf8(",").toByteArray())
       )
-    assertEvaluatesTo(
-      evaluate(expr),
-      encodeValue(ByteString.copyFromUtf8("a,c").toByteArray()),
-      "joinWithNulls_bytes"
-    )
+    assertEvaluatesTo(evaluate(expr), encodeValue("a,c".toByteArray()), "joinWithNulls_bytes")
   }
 
   @Test
@@ -82,7 +74,7 @@ class JoinTests {
   @Test
   fun `joinEmptyArray_bytes`() {
     val expr = join(array(), constant(ByteString.copyFromUtf8(",").toByteArray()))
-    assertEvaluatesTo(evaluate(expr), encodeValue(ByteArray(0)), "joinEmptyArray_bytes")
+    assertEvaluatesTo(evaluate(expr), encodeValue("".toByteArray()), "joinEmptyArray_bytes")
   }
 
   @Test
@@ -108,11 +100,7 @@ class JoinTests {
         ),
         constant(ByteString.copyFromUtf8(",").toByteArray())
       )
-    assertEvaluatesTo(
-      evaluate(expr),
-      encodeValue(ByteString.copyFromUtf8("a,c").toByteArray()),
-      "joinWithLeadingNull_bytes"
-    )
+    assertEvaluatesTo(evaluate(expr), encodeValue("a,c".toByteArray()), "joinWithLeadingNull_bytes")
   }
 
   @Test
@@ -128,11 +116,7 @@ class JoinTests {
         array(constant(ByteString.copyFromUtf8("a").toByteArray())),
         constant(ByteString.copyFromUtf8(",").toByteArray())
       )
-    assertEvaluatesTo(
-      evaluate(expr),
-      encodeValue(ByteString.copyFromUtf8("a").toByteArray()),
-      "joinSingleElement_bytes"
-    )
+    assertEvaluatesTo(evaluate(expr), encodeValue("a".toByteArray()), "joinSingleElement_bytes")
   }
 
   @Test
@@ -154,7 +138,7 @@ class JoinTests {
       )
     assertEvaluatesTo(
       evaluate(expr),
-      encodeValue(ByteString.copyFromUtf8("abc").toByteArray()),
+      encodeValue("abc".toByteArray()),
       "joinWithEmptyDelimiter_bytes"
     )
   }
@@ -169,7 +153,7 @@ class JoinTests {
   fun `joinAllNulls_bytes`() {
     val expr =
       join(array(nullValue(), nullValue()), constant(ByteString.copyFromUtf8(",").toByteArray()))
-    assertEvaluatesTo(evaluate(expr), encodeValue(ByteArray(0)), "joinAllNulls_bytes")
+    assertEvaluatesTo(evaluate(expr), encodeValue("".toByteArray()), "joinAllNulls_bytes")
   }
 
   @Test
@@ -181,13 +165,13 @@ class JoinTests {
   @Test
   fun `joinSingleNull_bytes`() {
     val expr = join(array(nullValue()), constant(ByteString.copyFromUtf8(",").toByteArray()))
-    assertEvaluatesTo(evaluate(expr), encodeValue(ByteArray(0)), "joinSingleNull_bytes")
+    assertEvaluatesTo(evaluate(expr), encodeValue("".toByteArray()), "joinSingleNull_bytes")
   }
 
   @Test
   fun `joinWithNonStringValue_strings`() {
     val expr = join(array(1L, "b"), constant(","))
-    assertEvaluatesToError(evaluate(expr), "joinWithNonStringValue_strings")
+    assertEvaluatesToError(evaluate(expr), "Cannot join non-string types")
   }
 
   @Test
@@ -197,13 +181,13 @@ class JoinTests {
         array(constant(1L), constant(ByteString.copyFromUtf8("b").toByteArray())),
         constant(ByteString.copyFromUtf8(",").toByteArray())
       )
-    assertEvaluatesToError(evaluate(expr), "joinWithNonBytesValue_bytes")
+    assertEvaluatesToError(evaluate(expr), "Cannot join non-string types")
   }
 
   @Test
   fun `join_numberArray_returnsError`() {
     val expr = join(array(1L, 2L), constant(","))
-    assertEvaluatesToError(evaluate(expr), "join_numberArray_returnsError")
+    assertEvaluatesToError(evaluate(expr), "Cannot join non-string types")
   }
 
   @Test
@@ -216,13 +200,16 @@ class JoinTests {
         ),
         constant(",")
       )
-    assertEvaluatesToError(evaluate(expr), "join_bytesArray_stringDelimiter_returnsError")
+    assertEvaluatesToError(evaluate(expr), "Cannot join non-string types")
   }
 
   @Test
   fun `invalidDelimiterType_returnsError`() {
     val expr = join(array("a", "b"), constant(1L))
-    assertEvaluatesToError(evaluate(expr), "invalidDelimiterType_returnsError")
+    assertEvaluatesToError(
+      evaluate(expr),
+      "The function join(...) requires `String` but got `LONG`"
+    )
   }
 
   @Test
@@ -240,7 +227,7 @@ class JoinTests {
   @Test
   fun `mixedTypesStringArrayBytesDelimiterReturnsError`() {
     val expr = join(array("a", null, "c"), constant(ByteString.copyFromUtf8(",").toByteArray()))
-    assertEvaluatesToError(evaluate(expr), "mixedTypesStringArrayBytesDelimiterReturnsError")
+    assertEvaluatesToError(evaluate(expr), "Cannot join non-string types")
   }
 
   @Test
@@ -253,13 +240,13 @@ class JoinTests {
         ),
         constant(",")
       )
-    assertEvaluatesToError(evaluate(expr), "mixedTypesBytesArrayStringDelimiterReturnsError")
+    assertEvaluatesToError(evaluate(expr), "Cannot join non-string types")
   }
 
   @Test
   fun `invalidArrayElementType_returnsError`() {
     val expr = join(array(constant(ByteString.copyFromUtf8("a").toByteArray())), constant(","))
-    assertEvaluatesToError(evaluate(expr), "invalidArrayElementType_returnsError")
+    assertEvaluatesToError(evaluate(expr), "Cannot join non-string types")
   }
 
   @Test
@@ -271,7 +258,10 @@ class JoinTests {
   @Test
   fun `errorHasPrecedenceOverNull_invalidDelimiter`() {
     val expr = join(nullValue(), constant(1L))
-    assertEvaluatesToError(evaluate(expr), "errorHasPrecedenceOverNull_invalidDelimiter")
+    assertEvaluatesToError(
+      evaluate(expr),
+      "The function join(...) requires `String` but got `LONG`"
+    )
   }
 
   @Test

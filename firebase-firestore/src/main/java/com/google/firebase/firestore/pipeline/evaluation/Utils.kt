@@ -17,7 +17,6 @@ package com.google.firebase.firestore.pipeline.evaluation
 import com.google.firebase.firestore.RealtimePipeline
 import com.google.firebase.firestore.model.MutableDocument
 import com.google.firebase.firestore.model.Values.getVectorValue
-import com.google.firebase.firestore.model.Values.isNanValue
 import com.google.firebase.firestore.util.Assert
 import com.google.firestore.v1.Value
 import com.google.firestore.v1.Value.ValueTypeCase
@@ -160,12 +159,17 @@ internal inline fun unaryFunction(crossinline function: (Timestamp) -> EvaluateR
  * - Catches evaluation exceptions and returns them as an ERROR.
  */
 @JvmName("unaryArrayFunction")
-internal inline fun unaryFunction(crossinline longOp: (List<Value>) -> EvaluateResult) =
-  unaryFunctionType(
-    ValueTypeCase.ARRAY_VALUE,
-    { it.arrayValue.valuesList },
-    longOp,
-  )
+internal inline fun unaryFunction(crossinline function: (List<Value>) -> EvaluateResult) =
+  unaryFunction { r: EvaluateResult ->
+    val v = r.value
+    if (v === null) EvaluateResult.NULL
+    else
+      when (v.valueTypeCase) {
+        ValueTypeCase.NULL_VALUE -> EvaluateResult.NULL
+        ValueTypeCase.ARRAY_VALUE -> function(v.arrayValue.valuesList)
+        else -> EvaluateResultError
+      }
+  }
 
 /**
  * Unary Bytes/String Function
@@ -255,17 +259,19 @@ internal inline fun <T1, T2> unaryFunctionType(
  */
 @JvmName("binaryValueValueFunction")
 internal inline fun binaryFunction(
-  crossinline function: (Value, Value) -> EvaluateResult
+  crossinline function: (Value?, Value?) -> EvaluateResult
 ): EvaluateFunction = { params ->
   if (params.size != 2)
     throw Assert.fail("Function should have exactly 2 params, but %d were given.", params.size)
   val p1 = params[0]
   val p2 = params[1]
   block@{ input: MutableDocument ->
-    val v1 = p1(input).value ?: return@block EvaluateResultError
-    val v2 = p2(input).value ?: return@block EvaluateResultError
-    if (v1.hasNullValue() || v2.hasNullValue()) return@block EvaluateResult.NULL
-    catch { function(v1, v2) }
+    val v1 = p1(input)
+    if (v1.isError) return@block EvaluateResultError
+    val v2 = p2(input)
+    if (v2.isError) return@block EvaluateResultError
+
+    catch { function(v1.value, v2.value) }
   }
 }
 
@@ -303,9 +309,14 @@ internal inline fun binaryFunction(
  */
 @JvmName("binaryValueArrayFunction")
 internal inline fun binaryFunction(
-  crossinline function: (Value, List<Value>) -> EvaluateResult
-): EvaluateFunction = binaryFunction { v1: Value, v2: Value ->
-  if (v2.hasArrayValue()) function(v1, v2.arrayValue.valuesList) else EvaluateResultError
+  crossinline function: (Value?, List<Value>) -> EvaluateResult
+): EvaluateFunction = binaryFunction { v1: Value?, v2: Value? ->
+  when (v2?.valueTypeCase) {
+    null,
+    ValueTypeCase.NULL_VALUE -> EvaluateResult.NULL
+    ValueTypeCase.ARRAY_VALUE -> function(v1, v2.arrayValue.valuesList)
+    else -> EvaluateResultError
+  }
 }
 
 /**
@@ -320,9 +331,14 @@ internal inline fun binaryFunction(
  */
 @JvmName("binaryArrayValueFunction")
 internal inline fun binaryFunction(
-  crossinline function: (List<Value>, Value) -> EvaluateResult
-): EvaluateFunction = binaryFunction { v1: Value, v2: Value ->
-  if (v1.hasArrayValue()) function(v1.arrayValue.valuesList, v2) else EvaluateResultError
+  crossinline function: (List<Value>, Value?) -> EvaluateResult
+): EvaluateFunction = binaryFunction { v1: Value?, v2: Value? ->
+  when (v1?.valueTypeCase) {
+    null,
+    ValueTypeCase.NULL_VALUE -> EvaluateResult.NULL
+    ValueTypeCase.ARRAY_VALUE -> function(v1.arrayValue.valuesList, v2)
+    else -> EvaluateResultError
+  }
 }
 
 /**
@@ -338,7 +354,7 @@ internal inline fun binaryFunction(
 @JvmName("binaryVectorVectorFunction")
 internal inline fun binaryFunction(
   crossinline function: (DoubleArray, DoubleArray) -> EvaluateResult
-): EvaluateFunction = binaryFunction { left: Value, right: Value ->
+): EvaluateFunction = binaryFunction { left: Value?, right: Value? ->
   val leftVector = getVectorValue(left)
   if (leftVector == null) return@binaryFunction EvaluateResultError
 
@@ -444,14 +460,39 @@ internal inline fun <T> cache(crossinline ifAbsent: (String) -> T): (String) -> 
 @JvmName("binaryArrayArrayFunction")
 internal inline fun binaryFunction(
   crossinline function: (List<Value>, List<Value>) -> EvaluateResult
-) =
-  binaryFunctionType(
-    ValueTypeCase.ARRAY_VALUE,
-    { it.arrayValue.valuesList },
-    ValueTypeCase.ARRAY_VALUE,
-    { it.arrayValue.valuesList },
-    function
-  )
+): EvaluateFunction = { params ->
+  if (params.size != 2)
+    throw Assert.fail("Function should have exactly 2 params, but %d were given.", params.size)
+
+  (block@{ input: MutableDocument ->
+    val p1 = params[0](input)
+    val v1 = if (p1.isError) return@block EvaluateResultError else p1.value
+    val p2 = params[1](input)
+    val v2 = if (p2.isError) return@block EvaluateResultError else p2.value
+
+    // Mirroring Semantics
+    val array1 =
+      when (v1?.valueTypeCase) {
+        null,
+        ValueTypeCase.NULL_VALUE -> null
+        ValueTypeCase.ARRAY_VALUE -> v1.arrayValue.valuesList
+        else -> {
+          return@block EvaluateResultError
+        }
+      }
+    val array2 =
+      when (v2?.valueTypeCase) {
+        null,
+        ValueTypeCase.NULL_VALUE -> null
+        ValueTypeCase.ARRAY_VALUE -> v2.arrayValue.valuesList
+        else -> {
+          return@block EvaluateResultError
+        }
+      }
+
+    if (array1 == null || array2 == null) EvaluateResult.NULL else function(array1, array2)
+  })
+}
 
 /**
  * For building type specific Binary Functions
@@ -474,17 +515,24 @@ internal inline fun <T1, T2> binaryFunctionType(
   if (params.size != 2)
     throw Assert.fail("Function should have exactly 2 params, but %d were given.", params.size)
   (block@{ input: MutableDocument ->
-    val v1 = params[0](input).value ?: return@block EvaluateResultError
-    val v2 = params[1](input).value ?: return@block EvaluateResultError
-    when (v1.valueTypeCase) {
+    val p1 = params[0](input)
+    val v1 = if (p1.isError) return@block EvaluateResultError else p1.value
+    val p2 = params[1](input)
+    val v2 = if (p2.isError) return@block EvaluateResultError else p2.value
+
+    // Mirroring Semantics
+    when (v1?.valueTypeCase) {
+      null -> return@block EvaluateResultUnset
       ValueTypeCase.NULL_VALUE ->
-        when (v2.valueTypeCase) {
-          ValueTypeCase.NULL_VALUE -> EvaluateResult.NULL
+        when (v2?.valueTypeCase) {
+          null,
+          ValueTypeCase.NULL_VALUE,
           valueTypeCase2 -> EvaluateResult.NULL
           else -> EvaluateResultError
         }
       valueTypeCase1 ->
-        when (v2.valueTypeCase) {
+        when (v2?.valueTypeCase) {
+          null,
           ValueTypeCase.NULL_VALUE -> EvaluateResult.NULL
           valueTypeCase2 -> catch { function(valueExtractor1(v1), valueExtractor2(v2)) }
           else -> EvaluateResultError
@@ -704,16 +752,12 @@ internal inline fun variadicFunction(
 /**
  * Binary (Value, Value) Function for Comparisons
  * - Validates there is exactly 2 parameters.
- * - First, short circuits UNSET and ERROR parameters to return ERROR.
- * - Second short circuits NULL [Value] parameters to return NULL [Value].
- * - Third short circuits Double.NaN [Value] parameters to return FALSE.
  * - Wraps result as EvaluateResult.
  * - Catches evaluation exceptions and returns them as an ERROR.
  */
-internal inline fun comparison(crossinline f: (Value, Value) -> Boolean?): EvaluateFunction =
-  binaryFunction { p1: Value, p2: Value ->
-    if (isNanValue(p1) or isNanValue(p2)) EvaluateResult.FALSE
-    else EvaluateResult.boolean(f(p1, p2))
+internal inline fun comparison(crossinline f: (Value?, Value?) -> Boolean): EvaluateFunction =
+  binaryFunction { p1: Value?, p2: Value? ->
+    EvaluateResult.boolean(f(p1, p2))
   }
 
 /**
@@ -822,9 +866,9 @@ internal inline fun arithmetic(
 internal inline fun arithmetic(
   crossinline intOp: (Long, Long) -> EvaluateResult,
   crossinline doubleOp: (Double, Long) -> EvaluateResult
-): EvaluateFunction = binaryFunction { p1: Value, p2: Value ->
-  if (p2.hasIntegerValue())
-    when (p1.valueTypeCase) {
+): EvaluateFunction = binaryFunction { p1: Value?, p2: Value? ->
+  if (p2?.hasIntegerValue() == true)
+    when (p1?.valueTypeCase) {
       ValueTypeCase.INTEGER_VALUE -> intOp(p1.integerValue, p2.integerValue)
       ValueTypeCase.DOUBLE_VALUE -> doubleOp(p1.doubleValue, p2.integerValue)
       else -> EvaluateResultError
@@ -846,16 +890,16 @@ internal inline fun arithmetic(
 internal inline fun arithmetic(
   crossinline intOp: (Long, Long) -> EvaluateResult,
   crossinline doubleOp: (Double, Double) -> EvaluateResult
-): EvaluateFunction = binaryFunction { p1: Value, p2: Value ->
-  when (p1.valueTypeCase) {
+): EvaluateFunction = binaryFunction { p1: Value?, p2: Value? ->
+  when (p1?.valueTypeCase) {
     ValueTypeCase.INTEGER_VALUE ->
-      when (p2.valueTypeCase) {
+      when (p2?.valueTypeCase) {
         ValueTypeCase.INTEGER_VALUE -> intOp(p1.integerValue, p2.integerValue)
         ValueTypeCase.DOUBLE_VALUE -> doubleOp(p1.integerValue.toDouble(), p2.doubleValue)
         else -> EvaluateResultError
       }
     ValueTypeCase.DOUBLE_VALUE ->
-      when (p2.valueTypeCase) {
+      when (p2?.valueTypeCase) {
         ValueTypeCase.INTEGER_VALUE -> doubleOp(p1.doubleValue, p2.integerValue.toDouble())
         ValueTypeCase.DOUBLE_VALUE -> doubleOp(p1.doubleValue, p2.doubleValue)
         else -> EvaluateResultError
@@ -876,15 +920,15 @@ internal inline fun arithmetic(
  */
 internal inline fun arithmetic(
   crossinline function: (Double, Double) -> EvaluateResult
-): EvaluateFunction = binaryFunction { p1: Value, p2: Value ->
+): EvaluateFunction = binaryFunction { p1: Value?, p2: Value? ->
   val v1: Double =
-    when (p1.valueTypeCase) {
+    when (p1?.valueTypeCase) {
       ValueTypeCase.INTEGER_VALUE -> p1.integerValue.toDouble()
       ValueTypeCase.DOUBLE_VALUE -> p1.doubleValue
       else -> return@binaryFunction EvaluateResultError
     }
   val v2: Double =
-    when (p2.valueTypeCase) {
+    when (p2?.valueTypeCase) {
       ValueTypeCase.INTEGER_VALUE -> p2.integerValue.toDouble()
       ValueTypeCase.DOUBLE_VALUE -> p2.doubleValue
       else -> return@binaryFunction EvaluateResultError

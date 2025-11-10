@@ -63,7 +63,7 @@ class IsErrorTests {
 
   @Test
   fun `isError anything but error returns false`() {
-    ComparisonTestData.allSupportedComparableValues.forEach { valueExpr ->
+    ComparisonTestData.allValues.forEach { valueExpr ->
       assertEvaluatesTo(evaluate(isError(valueExpr)), false, "isError(%s)", valueExpr)
     }
     assertEvaluatesTo(evaluate(isError(nullValue())), false, "isError(null)")

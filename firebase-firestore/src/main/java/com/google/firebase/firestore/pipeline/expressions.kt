@@ -5031,7 +5031,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     internal fun error(message: String): Expression =
-      FunctionExpression("error", notImplemented, constant(message))
+      FunctionExpression("error", evaluateError, constant(message))
 
     /**
      * Creates an expression that returns the [catchExpr] argument if there is an error, else return

@@ -65,7 +65,7 @@ internal object EvaluateResultError : EvaluateResult() {
 
 internal object EvaluateResultUnset : EvaluateResult() {
   override val value: Value? = null
-  override val isSuccess: Boolean = false
+  override val isSuccess: Boolean = true
   override val isError: Boolean = false
   override val isUnset: Boolean = true
 }

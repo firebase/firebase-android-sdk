@@ -70,11 +70,9 @@ class ArrayContainsAllTests {
   fun `arrayContainsAll - search value is NaN`() {
     val arrayToSearch = array(Double.NaN, 42.0)
     val valuesToFind = array(Double.NaN)
-    // Firestore/backend behavior: NaN comparisons are always false.
-    // arrayContainsAll uses standard equality which means NaN == NaN is false.
-    // If arrayToSearch contains NaN and valuesToFind contains NaN, it won't find it.
+    // Hyperstore behavior: NaN comparisons are true.
     val expr = arrayContainsAll(arrayToSearch, valuesToFind)
-    assertEvaluatesTo(evaluate(expr), false, "arrayContainsAll with NaN in search values")
+    assertEvaluatesTo(evaluate(expr), true, "arrayContainsAll with NaN in search values")
   }
 
   @Test
@@ -103,5 +101,62 @@ class ArrayContainsAllTests {
     val valuesToFind = array(elements.map { constant(it) })
     val expr = arrayContainsAll(arrayToSearch, valuesToFind)
     assertEvaluatesTo(evaluate(expr), true, "arrayContainsAll large number of elements")
+  }
+
+  /* Null specific tests */
+  @Test
+  fun `array_singleNull_noMatch_returnsFalse`() {
+    val arrayToSearch = array(null, "b")
+    val valuesToFind = array("c", "d")
+    val expr = arrayContainsAll(arrayToSearch, valuesToFind)
+    assertEvaluatesTo(evaluate(expr), false, "array with single null, no match")
+  }
+
+  @Test
+  fun `array_singleNull_partialMatch_returnsFalse`() {
+    val arrayToSearch = array(null, "b")
+    val valuesToFind = array("b", "d")
+    val expr = arrayContainsAll(arrayToSearch, valuesToFind)
+    assertEvaluatesTo(evaluate(expr), false, "array with single null, partial match")
+  }
+
+  @Test
+  fun `array_singleNull_fullMatch_returnsTrue`() {
+    val arrayToSearch = array(null, "b")
+    val valuesToFind = array("b", null)
+    val expr = arrayContainsAll(arrayToSearch, valuesToFind)
+    assertEvaluatesTo(evaluate(expr), true, "array with single null, full match")
+  }
+
+  @Test
+  fun `array_allNull_noMatch_returnsFalse`() {
+    val arrayToSearch = array(null, null)
+    val valuesToFind = array("c", "d")
+    val expr = arrayContainsAll(arrayToSearch, valuesToFind)
+    assertEvaluatesTo(evaluate(expr), false, "array with all nulls, no match")
+  }
+
+  @Test
+  fun `search_singleNull_noMatch_returnsFalse`() {
+    val arrayToSearch = array("a", "b")
+    val valuesToFind = array(null, "d")
+    val expr = arrayContainsAll(arrayToSearch, valuesToFind)
+    assertEvaluatesTo(evaluate(expr), false, "search with single null, no match")
+  }
+
+  @Test
+  fun `search_singleNull_partialMatch_returnsFalse`() {
+    val arrayToSearch = array("a", "b")
+    val valuesToFind = array(null, "a")
+    val expr = arrayContainsAll(arrayToSearch, valuesToFind)
+    assertEvaluatesTo(evaluate(expr), false, "search with single null, partial match")
+  }
+
+  @Test
+  fun `search_allNull_noMatch_returnsFalse`() {
+    val arrayToSearch = array("a", "b")
+    val valuesToFind = array(null, null)
+    val expr = arrayContainsAll(arrayToSearch, valuesToFind)
+    assertEvaluatesTo(evaluate(expr), false, "search with all nulls, no match")
   }
 }

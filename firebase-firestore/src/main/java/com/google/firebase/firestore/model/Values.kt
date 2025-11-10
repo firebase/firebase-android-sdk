@@ -65,29 +65,39 @@ object Values {
    * support server timestamps and [.MAX_VALUE].
    */
   const val TYPE_ORDER_NULL: Int = 0
+  // UNSET is considered to have the same order as NULL.
+  const val TYPE_ORDER_UNSET: Int = 0
 
-  const val TYPE_ORDER_BOOLEAN: Int = 1
-  const val TYPE_ORDER_NUMBER: Int = 2
-  const val TYPE_ORDER_TIMESTAMP: Int = 3
-  const val TYPE_ORDER_SERVER_TIMESTAMP: Int = 4
-  const val TYPE_ORDER_STRING: Int = 5
-  const val TYPE_ORDER_BLOB: Int = 6
-  const val TYPE_ORDER_REFERENCE: Int = 7
-  const val TYPE_ORDER_GEOPOINT: Int = 8
-  const val TYPE_ORDER_ARRAY: Int = 9
-  const val TYPE_ORDER_VECTOR: Int = 10
-  const val TYPE_ORDER_MAP: Int = 11
+  const val TYPE_ORDER_BOOLEAN: Int = 2
+  const val TYPE_ORDER_NUMBER_NAN: Int = 3
+  const val TYPE_ORDER_NUMBER: Int = 4
+  const val TYPE_ORDER_TIMESTAMP: Int = 5
+  const val TYPE_ORDER_SERVER_TIMESTAMP: Int = 6
+  const val TYPE_ORDER_STRING: Int = 7
+  const val TYPE_ORDER_BLOB: Int = 8
+  const val TYPE_ORDER_REFERENCE: Int = 10
+  const val TYPE_ORDER_GEOPOINT: Int = 13
+  const val TYPE_ORDER_ARRAY: Int = 15
+  const val TYPE_ORDER_VECTOR: Int = 16
+  const val TYPE_ORDER_MAP: Int = 17
 
   const val TYPE_ORDER_MAX_VALUE: Int = Int.MAX_VALUE
 
   /** Returns the backend's type order of the given Value type. */
   @JvmStatic
-  fun typeOrder(value: Value): Int {
-    return when (value.valueTypeCase) {
+  fun typeOrder(value: Value?): Int {
+    return when (value?.valueTypeCase) {
+      null -> TYPE_ORDER_UNSET
       ValueTypeCase.NULL_VALUE -> TYPE_ORDER_NULL
       ValueTypeCase.BOOLEAN_VALUE -> TYPE_ORDER_BOOLEAN
       ValueTypeCase.INTEGER_VALUE -> TYPE_ORDER_NUMBER
-      ValueTypeCase.DOUBLE_VALUE -> TYPE_ORDER_NUMBER
+      ValueTypeCase.DOUBLE_VALUE -> {
+        if (java.lang.Double.isNaN(value.doubleValue)) {
+          TYPE_ORDER_NUMBER_NAN
+        } else {
+          TYPE_ORDER_NUMBER
+        }
+      }
       ValueTypeCase.TIMESTAMP_VALUE -> TYPE_ORDER_TIMESTAMP
       ValueTypeCase.STRING_VALUE -> TYPE_ORDER_STRING
       ValueTypeCase.BYTES_VALUE -> TYPE_ORDER_BLOB
@@ -106,36 +116,6 @@ object Values {
         }
       else -> throw Assert.fail("Invalid value type: " + value.valueTypeCase)
     }
-  }
-
-  fun strictEquals(left: Value, right: Value): Boolean? {
-    if (left.hasNullValue() || right.hasNullValue()) return null
-    val leftType = typeOrder(left)
-    val rightType = typeOrder(right)
-    if (leftType != rightType) {
-      return false
-    }
-
-    return when (leftType) {
-      TYPE_ORDER_NULL -> null
-      TYPE_ORDER_NUMBER -> strictNumberEquals(left, right)
-      TYPE_ORDER_ARRAY -> strictArrayEquals(left, right)
-      TYPE_ORDER_VECTOR,
-      TYPE_ORDER_MAP -> strictObjectEquals(left, right)
-      TYPE_ORDER_SERVER_TIMESTAMP ->
-        ServerTimestamps.getLocalWriteTime(left) == ServerTimestamps.getLocalWriteTime(right)
-      TYPE_ORDER_MAX_VALUE -> true
-      else -> left == right
-    }
-  }
-
-  fun strictCompare(left: Value, right: Value): Int? {
-    val leftType = typeOrder(left)
-    val rightType = typeOrder(right)
-    if (leftType != rightType) {
-      return null
-    }
-    return compareInternal(leftType, left, right)
   }
 
   @JvmStatic
@@ -166,11 +146,6 @@ object Values {
     }
   }
 
-  private fun strictNumberEquals(left: Value, right: Value): Boolean {
-    if (left.doubleValue.isNaN() || right.doubleValue.isNaN()) return false
-    return numberEquals(left, right)
-  }
-
   private fun numberEquals(left: Value, right: Value): Boolean =
     when (left.valueTypeCase) {
       ValueTypeCase.INTEGER_VALUE ->
@@ -191,26 +166,6 @@ object Values {
       else -> false
     }
 
-  private fun strictArrayEquals(left: Value, right: Value): Boolean? {
-    val leftArray = left.arrayValue
-    val rightArray = right.arrayValue
-
-    if (leftArray.valuesCount != rightArray.valuesCount) {
-      return false
-    }
-
-    var foundNull = false
-    for (i in 0 until leftArray.valuesCount) {
-      val equals = strictEquals(leftArray.getValues(i), rightArray.getValues(i))
-      if (equals === null) {
-        foundNull = true
-      } else if (!equals) {
-        return false
-      }
-    }
-    return if (foundNull) null else true
-  }
-
   private fun arrayEquals(left: Value, right: Value): Boolean {
     val leftArray = left.arrayValue
     val rightArray = right.arrayValue
@@ -226,28 +181,6 @@ object Values {
     }
 
     return true
-  }
-
-  private fun strictObjectEquals(left: Value, right: Value): Boolean? {
-    val leftMap = left.mapValue
-    val rightMap = right.mapValue
-
-    if (leftMap.fieldsCount != rightMap.fieldsCount) {
-      return false
-    }
-
-    var foundNull = false
-    for ((key, value) in leftMap.fieldsMap) {
-      val otherEntry = rightMap.fieldsMap[key] ?: return false
-      val equals = strictEquals(value, otherEntry)
-      if (equals === null) {
-        foundNull = true
-      } else if (!equals) {
-        return false
-      }
-    }
-
-    return if (foundNull) null else true
   }
 
   private fun objectEquals(left: Value, right: Value): Boolean {
@@ -266,6 +199,47 @@ object Values {
     }
 
     return true
+  }
+
+  internal object Enterprise {
+
+    internal fun equals(left: Value?, right: Value?): Boolean {
+      return Values.equals(left, right)
+    }
+
+    internal enum class CompareResult {
+      LESS_THAN,
+      EQUAL,
+      GREATER_THAN,
+      TYPE_MISMATCH
+    }
+
+    internal fun strictCompare(left: Value?, right: Value?): CompareResult {
+      // both are UNSET
+      if (left == null && right == null) {
+        return CompareResult.EQUAL
+      }
+
+      // One is UNSET
+      if (left == null || right == null) {
+        return CompareResult.TYPE_MISMATCH
+      }
+
+      val leftType = typeOrder(left)
+      val rightType = typeOrder(right)
+      if (leftType != rightType) {
+        return CompareResult.TYPE_MISMATCH
+      }
+
+      // It's OK to use !! here because they cannot be null
+      val cmp = compareInternal(leftType, left!!, right!!)
+      if (cmp < 0) {
+        return CompareResult.LESS_THAN
+      } else if (cmp > 0) {
+        return CompareResult.GREATER_THAN
+      }
+      return CompareResult.EQUAL
+    }
   }
 
   /** Returns true if the Value list contains the specified element. */
@@ -294,6 +268,7 @@ object Values {
   private fun compareInternal(leftType: Int, left: Value, right: Value): Int =
     when (leftType) {
       TYPE_ORDER_NULL,
+      TYPE_ORDER_NUMBER_NAN,
       TYPE_ORDER_MAX_VALUE -> 0
       TYPE_ORDER_BOOLEAN -> left.booleanValue.compareTo(right.booleanValue)
       TYPE_ORDER_NUMBER -> compareNumbers(left, right)
@@ -762,8 +737,8 @@ object Values {
   }
 
   @JvmStatic
-  fun getVectorValue(value: Value): DoubleArray? {
-    if (value.valueTypeCase != ValueTypeCase.MAP_VALUE || !isVectorValue(value)) {
+  fun getVectorValue(value: Value?): DoubleArray? {
+    if (value?.valueTypeCase != ValueTypeCase.MAP_VALUE || !isVectorValue(value)) {
       return null
     }
 

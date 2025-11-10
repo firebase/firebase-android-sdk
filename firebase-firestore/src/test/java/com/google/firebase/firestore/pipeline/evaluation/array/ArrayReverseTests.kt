@@ -15,11 +15,14 @@
 package com.google.firebase.firestore.pipeline.evaluation.array
 
 import com.google.common.truth.Truth.assertWithMessage
+import com.google.firebase.firestore.model.Values.NULL_VALUE
 import com.google.firebase.firestore.model.Values.encodeValue
 import com.google.firebase.firestore.pipeline.Expression.Companion.array
 import com.google.firebase.firestore.pipeline.Expression.Companion.arrayReverse
 import com.google.firebase.firestore.pipeline.Expression.Companion.constant
+import com.google.firebase.firestore.pipeline.Expression.Companion.field
 import com.google.firebase.firestore.pipeline.Expression.Companion.map
+import com.google.firebase.firestore.pipeline.Expression.Companion.nullValue
 import com.google.firebase.firestore.pipeline.assertEvaluatesToError
 import com.google.firebase.firestore.pipeline.evaluate
 import org.junit.Test
@@ -29,6 +32,23 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class ArrayReverseTests {
   // --- ArrayReverse Tests ---
+  @Test
+  fun `arrayReverse - null and unset inputs`() {
+    val testCases =
+      listOf(
+        nullValue() to NULL_VALUE,
+        field("nonexistent") to NULL_VALUE,
+      )
+    for ((input, expected) in testCases) {
+      val expr = arrayReverse(input)
+      val result = evaluate(expr)
+      assertWithMessage("arrayReverse null/unset input").that(result.isSuccess).isTrue()
+      assertWithMessage("arrayReverse null/unset input value")
+        .that(result.value)
+        .isEqualTo(expected)
+    }
+  }
+
   @Test
   fun `arrayReverse - one element`() {
     val expr = arrayReverse(array(42L))
@@ -75,6 +95,9 @@ class ArrayReverseTests {
     assertEvaluatesToError(evaluate(arrayReverse(constant("notAnArray"))), "arrayReverse string")
     assertEvaluatesToError(evaluate(arrayReverse(constant(123L))), "arrayReverse long")
     assertEvaluatesToError(evaluate(arrayReverse(constant(true))), "arrayReverse boolean")
-    assertEvaluatesToError(evaluate(arrayReverse(map(mapOf("a" to 1)))), "arrayReverse map")
+    assertEvaluatesToError(
+      evaluate(arrayReverse(map(mapOf("a" to 1)))),
+      "The function array_reverse(...) requires `Array` but got `MAP`."
+    )
   }
 }

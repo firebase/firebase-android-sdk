@@ -15,11 +15,15 @@
 package com.google.firebase.firestore.pipeline.evaluation.array
 
 import com.google.common.truth.Truth.assertWithMessage
+import com.google.firebase.firestore.model.Values.NULL_VALUE
 import com.google.firebase.firestore.model.Values.encodeValue
+import com.google.firebase.firestore.pipeline.Expression
 import com.google.firebase.firestore.pipeline.Expression.Companion.array
 import com.google.firebase.firestore.pipeline.Expression.Companion.arrayLength
 import com.google.firebase.firestore.pipeline.Expression.Companion.constant
+import com.google.firebase.firestore.pipeline.Expression.Companion.field
 import com.google.firebase.firestore.pipeline.Expression.Companion.map
+import com.google.firebase.firestore.pipeline.Expression.Companion.nullValue
 import com.google.firebase.firestore.pipeline.assertEvaluatesToError
 import com.google.firebase.firestore.pipeline.evaluate
 import org.junit.Test
@@ -54,7 +58,26 @@ class ArrayLengthTests {
   }
 
   @Test
+  fun `arrayLength - null and unset inputs`() {
+    val testCases =
+      listOf(
+        nullValue() to NULL_VALUE,
+        field("nonexistent") to NULL_VALUE,
+      )
+    for ((input, expected) in testCases) {
+      val expr = arrayLength(input)
+      val result = evaluate(expr)
+      assertWithMessage("arrayLength null/unset input").that(result.isSuccess).isTrue()
+      assertWithMessage("arrayLength null/unset input value").that(result.value).isEqualTo(expected)
+    }
+  }
+
+  @Test
   fun `arrayLength - not array type returns error`() {
+    assertEvaluatesToError(
+      evaluate(arrayLength(Expression.vector(doubleArrayOf(1.0, 2.0)))),
+      "The function array_length(...) requires `Array` but got `VECTOR`."
+    )
     assertEvaluatesToError(evaluate(arrayLength(constant("notAnArray"))), "arrayLength string")
     assertEvaluatesToError(evaluate(arrayLength(constant(123L))), "arrayLength long")
     assertEvaluatesToError(evaluate(arrayLength(constant(true))), "arrayLength boolean")

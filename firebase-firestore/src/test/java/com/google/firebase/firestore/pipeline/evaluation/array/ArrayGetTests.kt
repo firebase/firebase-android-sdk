@@ -15,6 +15,7 @@
 package com.google.firebase.firestore.pipeline.evaluation.array
 
 import com.google.common.truth.Truth.assertWithMessage
+import com.google.firebase.firestore.model.Values.NULL_VALUE
 import com.google.firebase.firestore.model.Values.encodeValue
 import com.google.firebase.firestore.pipeline.Expression
 import com.google.firebase.firestore.pipeline.Expression.Companion.array
@@ -203,6 +204,44 @@ class ArrayGetTests {
           constant(Long.MIN_VALUE),
           EvaluateResultUnset,
           "min long index"
+        ),
+
+        // Null/NaN values
+        ArrayGetTestCase(
+          array(nullValue()),
+          constant(0),
+          EvaluateResultValue(NULL_VALUE),
+          "get NULL from array"
+        ),
+        ArrayGetTestCase(
+          array(constant(Double.NaN)),
+          constant(0),
+          EvaluateResultValue(encodeValue(Double.NaN)),
+          "get NaN from array"
+        ),
+        ArrayGetTestCase(
+          array(nullValue(), "a"),
+          constant(0),
+          EvaluateResultValue(NULL_VALUE),
+          "get NULL from array with other values"
+        ),
+        ArrayGetTestCase(
+          array("a", nullValue()),
+          constant(1),
+          EvaluateResultValue(NULL_VALUE),
+          "get NULL from array with other values 2"
+        ),
+        ArrayGetTestCase(
+          array(constant(Double.NaN), "a"),
+          constant(0),
+          EvaluateResultValue(encodeValue(Double.NaN)),
+          "get NaN from array with other values"
+        ),
+        ArrayGetTestCase(
+          array("a", constant(Double.NaN)),
+          constant(1),
+          EvaluateResultValue(encodeValue(Double.NaN)),
+          "get NaN from array with other values 2"
         ),
       )
 

@@ -14,41 +14,46 @@
 
 package com.google.firebase.firestore.pipeline.evaluation
 
-import com.google.firebase.firestore.model.Values.strictCompare
-import com.google.firebase.firestore.model.Values.strictEquals
+import com.google.firebase.firestore.model.Values
 import com.google.firestore.v1.Value
 
 // === Comparison Functions ===
 
-internal val evaluateEq: EvaluateFunction = binaryFunction { p1: Value, p2: Value ->
-  EvaluateResult.boolean(strictEquals(p1, p2))
+internal val evaluateEq: EvaluateFunction = binaryFunction { p1: Value?, p2: Value? ->
+  EvaluateResult.boolean(Values.Enterprise.equals(p1, p2))
 }
 
-internal val evaluateNeq: EvaluateFunction = binaryFunction { p1: Value, p2: Value ->
-  EvaluateResult.boolean(strictEquals(p1, p2)?.not())
+internal val evaluateNeq: EvaluateFunction = binaryFunction { p1: Value?, p2: Value? ->
+  EvaluateResult.boolean(Values.Enterprise.equals(p1, p2)?.not())
 }
 
 internal val evaluateGt: EvaluateFunction = comparison { v1, v2 ->
-  (strictCompare(v1, v2) ?: return@comparison false) > 0
+  when (Values.Enterprise.strictCompare(v1, v2)) {
+    Values.Enterprise.CompareResult.GREATER_THAN -> true
+    else -> false
+  }
 }
 
 internal val evaluateGte: EvaluateFunction = comparison { v1, v2 ->
-  when (strictEquals(v1, v2)) {
-    true -> true
-    false -> (strictCompare(v1, v2) ?: return@comparison false) > 0
-    null -> null
+  when (Values.Enterprise.strictCompare(v1, v2)) {
+    Values.Enterprise.CompareResult.GREATER_THAN -> true
+    Values.Enterprise.CompareResult.EQUAL -> true
+    else -> false
   }
 }
 
 internal val evaluateLt: EvaluateFunction = comparison { v1, v2 ->
-  (strictCompare(v1, v2) ?: return@comparison false) < 0
+  when (Values.Enterprise.strictCompare(v1, v2)) {
+    Values.Enterprise.CompareResult.LESS_THAN -> true
+    else -> false
+  }
 }
 
 internal val evaluateLte: EvaluateFunction = comparison { v1, v2 ->
-  when (strictEquals(v1, v2)) {
-    true -> true
-    false -> (strictCompare(v1, v2) ?: return@comparison false) < 0
-    null -> null
+  when (Values.Enterprise.strictCompare(v1, v2)) {
+    Values.Enterprise.CompareResult.LESS_THAN -> true
+    Values.Enterprise.CompareResult.EQUAL -> true
+    else -> false
   }
 }
 

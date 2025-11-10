@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.pipeline.evaluation.logical
 
+import com.google.firebase.firestore.pipeline.Expression
 import com.google.firebase.firestore.pipeline.Expression.Companion.array
 import com.google.firebase.firestore.pipeline.Expression.Companion.constant
 import com.google.firebase.firestore.pipeline.Expression.Companion.field
@@ -31,7 +32,7 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class IsNullTests {
   private val nullExpr = nullValue()
-  private val errorExpr = field("error.field").equal(constant("random"))
+  private val errorExpr = Expression.error("error.field").equal(constant("random"))
   private val errorDoc =
     doc("coll/docError", 1, mapOf("error" to 123)) // "error.field" will be UNSET
   private val emptyDoc = doc("coll/docEmpty", 1, emptyMap())

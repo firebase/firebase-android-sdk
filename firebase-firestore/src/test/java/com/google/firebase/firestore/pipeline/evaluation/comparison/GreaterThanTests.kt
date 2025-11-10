@@ -14,14 +14,13 @@
 
 package com.google.firebase.firestore.pipeline.evaluation.comparison
 
-import com.google.firebase.firestore.pipeline.Expression.Companion.array
+import com.google.firebase.firestore.pipeline.Expression
 import com.google.firebase.firestore.pipeline.Expression.Companion.constant
 import com.google.firebase.firestore.pipeline.Expression.Companion.field
 import com.google.firebase.firestore.pipeline.Expression.Companion.greaterThan
 import com.google.firebase.firestore.pipeline.Expression.Companion.nullValue
 import com.google.firebase.firestore.pipeline.assertEvaluatesTo
 import com.google.firebase.firestore.pipeline.assertEvaluatesToError
-import com.google.firebase.firestore.pipeline.assertEvaluatesToNull
 import com.google.firebase.firestore.pipeline.evaluate
 import com.google.firebase.firestore.testutil.TestUtilKtx.doc
 import org.junit.Test
@@ -31,126 +30,71 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 internal class GreaterThanTests {
   @Test
-  fun gt_equivalentValues_returnFalse() {
+  fun `gt equivalent values returns false`() {
     ComparisonTestData.equivalentValues.forEach { (v1, v2) ->
-      if (v1 == nullValue() && v2 == nullValue()) {
-        assertEvaluatesToNull(evaluate(greaterThan(v1, v2)), "gt(%s, %s)", v1, v2)
-      } else {
-        assertEvaluatesTo(evaluate(greaterThan(v1, v2)), false, "gt(%s, %s)", v1, v2)
-      }
-    }
-  }
-
-  @Test
-  fun gt_lessThanValues_returnFalse() {
-    ComparisonTestData.lessThanValues.forEach { (v1, v2) ->
       assertEvaluatesTo(evaluate(greaterThan(v1, v2)), false, "gt(%s, %s)", v1, v2)
     }
   }
 
   @Test
-  fun gt_greaterThanValues_returnTrue() {
-    ComparisonTestData.lessThanValues.forEach { (less, greater) ->
-      assertEvaluatesTo(evaluate(greaterThan(greater, less)), true, "gt(%s, %s)", greater, less)
+  fun `gt equivalent values reversed returns false`() {
+    ComparisonTestData.equivalentValues.forEach { (v1, v2) ->
+      assertEvaluatesTo(evaluate(greaterThan(v2, v1)), false, "gt(%s, %s)", v2, v1)
     }
   }
 
   @Test
-  fun gt_mixedTypeValues_returnFalse() {
-    ComparisonTestData.mixedTypeValues.forEach { (v1, v2) ->
-      if (v1 == nullValue() || v2 == nullValue()) {
-        assertEvaluatesToNull(evaluate(greaterThan(v1, v2)), "gt(%s, %s)", v1, v2)
-        assertEvaluatesToNull(evaluate(greaterThan(v2, v1)), "gt(%s, %s)", v2, v1)
-      } else {
-        assertEvaluatesTo(evaluate(greaterThan(v1, v2)), false, "gt(%s, %s)", v1, v2)
-        assertEvaluatesTo(evaluate(greaterThan(v2, v1)), false, "gt(%s, %s)", v2, v1)
-      }
+  fun `gt unequal values on greater returns true`() {
+    ComparisonTestData.unequalValues.forEach { (lesser, greater) ->
+      assertEvaluatesTo(evaluate(greaterThan(greater, lesser)), true, "gt(%s, %s)", greater, lesser)
     }
   }
 
   @Test
-  fun gt_nullOperand_returnsNullOrError() {
-    ComparisonTestData.allSupportedComparableValues.forEach { value ->
-      val nullVal = nullValue()
-      assertEvaluatesToNull(evaluate(greaterThan(nullVal, value)), "gt(%s, %s)", nullVal, value)
-      assertEvaluatesToNull(evaluate(greaterThan(value, nullVal)), "gt(%s, %s)", value, nullVal)
-    }
-    val nullVal = nullValue()
-    assertEvaluatesToNull(evaluate(greaterThan(nullVal, nullVal)), "gt(%s, %s)", nullVal, nullVal)
-    val missingField = field("nonexistent")
-    assertEvaluatesToError(
-      evaluate(greaterThan(nullVal, missingField)),
-      "gt(%s, %s)",
-      nullVal,
-      missingField
-    )
-  }
-
-  @Test
-  fun gt_nanComparisons_returnFalse() {
-    val nanExpr = ComparisonTestData.doubleNaN
-    assertEvaluatesTo(
-      evaluate(greaterThan(nanExpr, nanExpr)),
-      false,
-      "gt(%s, %s)",
-      nanExpr,
-      nanExpr
-    )
-
-    ComparisonTestData.numericValuesForNanTest.forEach { numVal ->
+  fun `gt unequal values on lesser returns false`() {
+    ComparisonTestData.unequalValues.forEach { (lesser, greater) ->
       assertEvaluatesTo(
-        evaluate(greaterThan(nanExpr, numVal)),
+        evaluate(greaterThan(lesser, greater)),
         false,
         "gt(%s, %s)",
-        nanExpr,
-        numVal
-      )
-      assertEvaluatesTo(
-        evaluate(greaterThan(numVal, nanExpr)),
-        false,
-        "gt(%s, %s)",
-        numVal,
-        nanExpr
+        lesser,
+        greater
       )
     }
-    (ComparisonTestData.allSupportedComparableValues -
-        ComparisonTestData.numericValuesForNanTest.toSet() -
-        nanExpr)
-      .forEach { otherVal ->
-        if (otherVal != nanExpr) {
-          assertEvaluatesTo(
-            evaluate(greaterThan(nanExpr, otherVal)),
-            false,
-            "gt(%s, %s)",
-            nanExpr,
-            otherVal
-          )
-          assertEvaluatesTo(
-            evaluate(greaterThan(otherVal, nanExpr)),
-            false,
-            "gt(%s, %s)",
-            otherVal,
-            nanExpr
-          )
-        }
-      }
-    val arrayWithNaN1 = array(constant(Double.NaN))
-    val arrayWithNaN2 = array(constant(Double.NaN))
-    assertEvaluatesTo(
-      evaluate(greaterThan(arrayWithNaN1, arrayWithNaN2)),
-      false,
-      "gt(%s, %s)",
-      arrayWithNaN1,
-      arrayWithNaN2
-    )
+  }
+
+  @Test
+  fun `gt cross-type on greater returns false`() {
+    ComparisonTestData.crossTypeValues.forEach { (lesser, greater) ->
+      assertEvaluatesTo(
+        evaluate(greaterThan(greater, lesser)),
+        false,
+        "gt(%s, %s)",
+        greater,
+        lesser
+      )
+    }
+  }
+
+  @Test
+  fun `gt cross-type on lesser returns false`() {
+    ComparisonTestData.crossTypeValues.forEach { (lesser, greater) ->
+      assertEvaluatesTo(
+        evaluate(greaterThan(lesser, greater)),
+        false,
+        "gt(%s, %s)",
+        lesser,
+        greater
+      )
+    }
   }
 
   @Test
   fun gt_errorHandling_returnsError() {
-    val errorExpr = field("a.b")
+    val errorExpr = Expression.error("test")
     val testDoc = doc("test/gtError", 0, mapOf("a" to 123))
 
-    ComparisonTestData.allSupportedComparableValues.forEach { value ->
+    ComparisonTestData.allValues.forEach { value ->
       assertEvaluatesToError(
         evaluate(greaterThan(errorExpr, value), testDoc),
         "gt(%s, %s)",
@@ -179,19 +123,22 @@ internal class GreaterThanTests {
   }
 
   @Test
-  fun gt_missingField_returnsError() {
+  fun gt_missingField_returnsFalse() {
     val missingField = field("nonexistent")
     val presentValue = constant(1L)
     val testDoc = doc("test/gtMissing", 0, mapOf("exists" to 10L))
 
-    assertEvaluatesToError(
+    assertEvaluatesTo(
       evaluate(greaterThan(missingField, presentValue), testDoc),
+      false,
       "gt(%s, %s)",
       missingField,
       presentValue
     )
-    assertEvaluatesToError(
+
+    assertEvaluatesTo(
       evaluate(greaterThan(presentValue, missingField), testDoc),
+      false,
       "gt(%s, %s)",
       presentValue,
       missingField

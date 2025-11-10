@@ -15,9 +15,9 @@
 package com.google.firebase.firestore.pipeline.evaluation.logical
 
 import com.google.firebase.firestore.pipeline.BooleanExpression
+import com.google.firebase.firestore.pipeline.Expression
 import com.google.firebase.firestore.pipeline.Expression.Companion.and
 import com.google.firebase.firestore.pipeline.Expression.Companion.constant
-import com.google.firebase.firestore.pipeline.Expression.Companion.field
 import com.google.firebase.firestore.pipeline.assertEvaluatesTo
 import com.google.firebase.firestore.pipeline.assertEvaluatesToError
 import com.google.firebase.firestore.pipeline.evaluate
@@ -31,7 +31,7 @@ class AndTests {
 
   private val trueExpr = constant(true)
   private val falseExpr = constant(false)
-  private val errorExpr = field("error.field").equal(constant("random"))
+  private val errorExpr = Expression.error("test").equal(constant("random"))
 
   private val errorDoc =
     doc("coll/docError", 1, mapOf("error" to 123)) // "error.field" will be UNSET
