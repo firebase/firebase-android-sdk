@@ -62,22 +62,73 @@ internal class QueryResultEncoder(
   }
 
   private fun writeString(string: String) {
-    if (string.isEmpty()) {
-      writer.writeByte(QueryResultCodec.VALUE_STRING_EMPTY)
-      return
+    val (encoding, encodedByteCount) = calculateMinEncodingSizeFor(string, utf8CharsetEncoder)
+    when (encoding) {
+      StringEncoding.Empty -> writer.writeByte(QueryResultCodec.VALUE_STRING_EMPTY)
+      StringEncoding.Utf8 -> {
+        writer.writeByte(QueryResultCodec.VALUE_STRING_UTF8)
+        writer.writeStringUtf8(string, encodedByteCount)
+      }
+      StringEncoding.Utf16 -> {
+        writer.writeByte(QueryResultCodec.VALUE_STRING_UTF16)
+        writer.writeStringCustomUtf16(string, encodedByteCount)
+      }
+    }
+  }
+
+  private fun encodeString(string: String): ByteBuffer {
+    val (encoding, encodedByteCount) = calculateMinEncodingSizeFor(string, utf8CharsetEncoder)
+    val encodedString =
+      when (encoding) {
+        StringEncoding.Empty -> {
+          val byteArray = ByteArray(1)
+          byteArray[0] = QueryResultCodec.VALUE_STRING_EMPTY
+          ByteBuffer.wrap(byteArray)
+        }
+        StringEncoding.Utf8 -> {
+          val byteBuffer = ByteBuffer.allocate(encodedByteCount + 1 + 8)
+          byteBuffer.put(QueryResultCodec.VALUE_STRING_UTF8)
+          QueryResultChannelWriter.writeStringUtf8(
+            string,
+            encodedByteCount,
+            utf8CharsetEncoder,
+            byteBuffer
+          ) {
+            throw IllegalStateException(
+              "internal error jvab6jke6t: flushOnce() should never be called from writeStringUtf8()"
+            )
+          }
+          byteBuffer.flip()
+          byteBuffer
+        }
+        StringEncoding.Utf16 -> {
+          val byteBuffer = ByteBuffer.allocate(encodedByteCount + 1 + 4)
+          byteBuffer.put(QueryResultCodec.VALUE_STRING_UTF16)
+          QueryResultChannelWriter.writeStringCustomUtf16(string, encodedByteCount, byteBuffer) {
+            throw IllegalStateException(
+              "internal error ea3ecqg496: flushOnce() should never be called from writeStringCustomUtf16()"
+            )
+          }
+          byteBuffer.flip()
+          byteBuffer
+        }
+      }
+
+    check(encodedString.arrayOffset() == 0) {
+      "internal error nz44se7xrk: encodedString.arrayOffset() returned " +
+        "${encodedString.arrayOffset()}, but expected 0"
+    }
+    check(encodedString.position() == 0) {
+      "internal error kevwyy4ftg: encodedString.position() returned " +
+        "${encodedString.position()}, but expected 0"
+    }
+    check(encodedString.limit() == encodedString.capacity()) {
+      "internal error jxcdvvpjs2: encodedString.limit() returned ${encodedString.limit()}, " +
+        "but expected ${encodedString.capacity()} " +
+        "(the value returned from encodedString.capacity())"
     }
 
-    val utf8ByteCount = string.calculateUtf8ByteCount()
-    val utf16ByteCount = string.length * 2
-    utf8CharsetEncoder.reset() // Prepare for calling `canEncode()`.
-
-    if (utf8ByteCount <= utf16ByteCount && utf8CharsetEncoder.canEncode(string)) {
-      writer.writeByte(QueryResultCodec.VALUE_STRING_UTF8)
-      writer.writeStringUtf8(string, utf8ByteCount)
-    } else {
-      writer.writeByte(QueryResultCodec.VALUE_STRING_UTF16)
-      writer.writeStringCustomUtf16(string, utf16ByteCount)
-    }
+    return encodedString
   }
 
   private fun writeList(listValue: ListValue) {
@@ -133,21 +184,28 @@ internal class QueryResultEncoder(
     }
   }
 
+  private fun writeEntityId(entityId: String): ByteArray {
+    val encodedEntityId = encodeString(entityId)
+    writer.write(encodedEntityId)
+    return encodedEntityId.array()
+  }
+
   private fun writeEntity(entityId: String, entity: Struct) {
     writer.writeByte(QueryResultCodec.VALUE_ENTITY)
-
-    val encodedEntityId: ByteArray =
-      ByteArrayOutputStream().use { byteArrayOutputStream ->
-        Channels.newChannel(byteArrayOutputStream).use { channel ->
-          writeString(entityId)
-          byteArrayOf() // TODO!
-        }
-        byteArrayOutputStream.toByteArray()
-      }
-
-    writer.writeInt(entity.fieldsCount)
-    entity.fieldsMap.keys.forEach { writeString(it) }
+    val encodedEntityId = writeEntityId(entityId)
+    entities.add(Entity(encodedEntityId, entity))
   }
+
+  private enum class StringEncoding {
+    Empty,
+    Utf8,
+    Utf16,
+  }
+
+  private data class CalculateMinEncodingSizeResult(
+    val encoding: StringEncoding,
+    val encodedByteCount: Int
+  )
 
   companion object {
 
@@ -162,6 +220,25 @@ internal class QueryResultEncoder(
           }
         EncodeResult(byteArrayOutputStream.toByteArray(), entities)
       }
+
+    private fun calculateMinEncodingSizeFor(
+      string: String,
+      utf8CharsetEncoder: CharsetEncoder
+    ): CalculateMinEncodingSizeResult {
+      if (string.isEmpty()) {
+        return CalculateMinEncodingSizeResult(StringEncoding.Empty, 0)
+      }
+
+      val utf8ByteCount = string.calculateUtf8ByteCount()
+      val utf16ByteCount = string.length * 2
+      utf8CharsetEncoder.reset() // Prepare for calling `canEncode()`.
+
+      return if (utf8ByteCount <= utf16ByteCount && utf8CharsetEncoder.canEncode(string)) {
+        CalculateMinEncodingSizeResult(StringEncoding.Utf8, utf8ByteCount)
+      } else {
+        CalculateMinEncodingSizeResult(StringEncoding.Utf16, utf16ByteCount)
+      }
+    }
   }
 }
 
@@ -195,97 +272,150 @@ private class QueryResultChannelWriter(
     byteBuffer.putDouble(value)
   }
 
-  fun writeStringUtf8(string: String, expectedByteCount: Int) {
-    utf8CharsetEncoder.reset()
-    val charBuffer = CharBuffer.wrap(string)
-
-    writeInt(expectedByteCount)
-    writeInt(string.length)
-
-    var byteWriteCount = 0
+  fun write(value: ByteBuffer) {
     while (true) {
-      val byteBufferPositionBefore = byteBuffer.position()
-
-      val coderResult1 =
-        if (charBuffer.hasRemaining()) {
-          utf8CharsetEncoder.encode(charBuffer, byteBuffer, true)
-        } else {
-          CoderResult.UNDERFLOW
-        }
-
-      val coderResult2 =
-        if (coderResult1.isUnderflow) {
-          utf8CharsetEncoder.flush(byteBuffer)
-        } else {
-          coderResult1
-        }
-
-      val byteBufferPositionAfter = byteBuffer.position()
-      byteWriteCount += byteBufferPositionAfter - byteBufferPositionBefore
-
-      if (coderResult2.isUnderflow) {
+      if (value.remaining() <= byteBuffer.remaining()) {
+        byteBuffer.put(value)
         break
       }
 
-      if (!coderResult2.isOverflow) {
-        coderResult2.throwException()
+      if (byteBuffer.position() == 0) {
+        val byteWriteCount = channel.write(byteBuffer)
+        check(byteWriteCount > 0) {
+          "internal error jtp329cezy: no bytes written " +
+            "when ${byteBuffer.remaining()} byte were available"
+        }
+      } else {
+        val oldLimit = value.limit()
+        value.limit(value.position() + byteBuffer.remaining())
+        byteBuffer.put(value)
+        value.limit(oldLimit)
+
+        flushOnce()
       }
-
-      flushOnce()
     }
+  }
 
-    check(byteWriteCount == expectedByteCount) {
-      "internal error rvmdh67npk: byteWriteCount=$byteWriteCount " +
-        "should be equal to expectedByteCount=$expectedByteCount, but they differ by " +
-        "${(expectedByteCount-byteWriteCount).absoluteValue}"
-    }
+  fun writeStringUtf8(string: String, expectedByteCount: Int) {
+    writeStringUtf8(string, expectedByteCount, utf8CharsetEncoder, byteBuffer, ::flushOnce)
   }
 
   fun writeStringCustomUtf16(string: String, expectedByteCount: Int) {
-    writeInt(string.length)
-
-    var byteWriteCount = 0
-    var stringOffset = 0
-    while (stringOffset < string.length) {
-      val charBuffer = byteBuffer.asCharBuffer()
-      val putLength = charBuffer.remaining().coerceAtMost(string.length - stringOffset)
-      charBuffer.put(string, stringOffset, stringOffset + putLength)
-
-      byteBuffer.position(byteBuffer.position() + (putLength * 2))
-      flushOnce()
-
-      byteWriteCount += putLength * 2
-      stringOffset += putLength
-    }
-
-    check(byteWriteCount == expectedByteCount) {
-      "internal error agdf5qbwwp: byteWriteCount=$byteWriteCount " +
-        "should be equal to expectedByteCount=$expectedByteCount, but they differ by " +
-        "${(expectedByteCount - byteWriteCount).absoluteValue}"
-    }
+    writeStringCustomUtf16(string, expectedByteCount, byteBuffer, ::flushOnce)
   }
 
-  class NoBytesWrittenException(message: String) : Exception(message)
-
-  private fun flushOnce(): Int {
+  private fun flushOnce() {
     byteBuffer.flip()
     val byteWriteCount = channel.write(byteBuffer)
     byteBuffer.compact()
-    return byteWriteCount
+    check(byteWriteCount > 0) {
+      "internal error gmsx2fhfrx: no bytes written " +
+        "when ${byteBuffer.remaining()} byte were available"
+    }
   }
 
-  private fun ensureRemaining(minRemaining: Int) {
-    require(minRemaining <= byteBuffer.capacity()) {
-      "minRemaining=$minRemaining must be less than or equal to " +
-        "byteBuffer.capacity()=${byteBuffer.capacity()}"
+  private fun ensureRemaining(minRemaining: Int) =
+    ensureRemaining(minRemaining, byteBuffer, ::flushOnce)
+
+  companion object {
+
+    inline fun ensureRemaining(minRemaining: Int, byteBuffer: ByteBuffer, flushOnce: () -> Unit) {
+      require(minRemaining <= byteBuffer.capacity()) {
+        "minRemaining=$minRemaining must be less than or equal to " +
+          "byteBuffer.capacity()=${byteBuffer.capacity()}"
+      }
+
+      while (byteBuffer.remaining() < minRemaining) {
+        val remainingBefore = byteBuffer.remaining()
+        flushOnce()
+        val remainingAfter = byteBuffer.remaining()
+        check(remainingAfter > remainingBefore) {
+          "internal error jtjszvtb4z: need $minRemaining bytes of available buffer space, " +
+            "but could only get $remainingAfter"
+        }
+      }
     }
 
-    while (byteBuffer.remaining() < minRemaining) {
-      val byteWriteCount = flushOnce()
-      if (byteWriteCount < 1) {
-        throw NoBytesWrittenException(
-          "no bytes were written despite ${byteBuffer.position()} byte available for writing"
-        )
+    inline fun writeStringUtf8(
+      string: String,
+      expectedByteCount: Int,
+      utf8CharsetEncoder: CharsetEncoder,
+      byteBuffer: ByteBuffer,
+      flushOnce: () -> Unit,
+    ) {
+      utf8CharsetEncoder.reset()
+      val charBuffer = CharBuffer.wrap(string)
+
+      ensureRemaining(8, byteBuffer, flushOnce)
+      byteBuffer.putInt(expectedByteCount)
+      byteBuffer.putInt(string.length)
+
+      var byteWriteCount = 0
+      while (true) {
+        val byteBufferPositionBefore = byteBuffer.position()
+
+        val coderResult1 =
+          if (charBuffer.hasRemaining()) {
+            utf8CharsetEncoder.encode(charBuffer, byteBuffer, true)
+          } else {
+            CoderResult.UNDERFLOW
+          }
+
+        val coderResult2 =
+          if (coderResult1.isUnderflow) {
+            utf8CharsetEncoder.flush(byteBuffer)
+          } else {
+            coderResult1
+          }
+
+        val byteBufferPositionAfter = byteBuffer.position()
+        byteWriteCount += byteBufferPositionAfter - byteBufferPositionBefore
+
+        if (coderResult2.isUnderflow) {
+          break
+        }
+
+        if (!coderResult2.isOverflow) {
+          coderResult2.throwException()
+        }
+
+        flushOnce()
+      }
+
+      check(byteWriteCount == expectedByteCount) {
+        "internal error rvmdh67npk: byteWriteCount=$byteWriteCount " +
+          "should be equal to expectedByteCount=$expectedByteCount, but they differ by " +
+          "${(expectedByteCount-byteWriteCount).absoluteValue}"
+      }
+    }
+
+    inline fun writeStringCustomUtf16(
+      string: String,
+      expectedByteCount: Int,
+      byteBuffer: ByteBuffer,
+      flushOnce: () -> Unit,
+    ) {
+      ensureRemaining(4, byteBuffer, flushOnce)
+      byteBuffer.putInt(string.length)
+
+      var byteWriteCount = 0
+      var stringOffset = 0
+      while (stringOffset < string.length) {
+        val charBuffer = byteBuffer.asCharBuffer()
+        val putLength = charBuffer.remaining().coerceAtMost(string.length - stringOffset)
+        charBuffer.put(string, stringOffset, stringOffset + putLength)
+
+        byteBuffer.position(byteBuffer.position() + (putLength * 2))
+        flushOnce()
+
+        byteWriteCount += putLength * 2
+        stringOffset += putLength
+      }
+
+      check(byteWriteCount == expectedByteCount) {
+        "internal error agdf5qbwwp: byteWriteCount=$byteWriteCount " +
+          "should be equal to expectedByteCount=$expectedByteCount, but they differ by " +
+          "${(expectedByteCount - byteWriteCount).absoluteValue}"
       }
     }
   }
