@@ -22,9 +22,7 @@ import com.google.firebase.dataconnect.CacheSettings
 import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.DataConnectSettings
-import com.google.firebase.dataconnect.QueryResult
 import io.kotest.property.Arb
-import io.kotest.property.Exhaustive
 import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.alphanumeric
 import io.kotest.property.arbitrary.arabic
@@ -32,7 +30,6 @@ import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.ascii
 import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.boolean
-import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.choose
 import io.kotest.property.arbitrary.cyrillic
 import io.kotest.property.arbitrary.double
@@ -47,9 +44,6 @@ import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.merge
 import io.kotest.property.arbitrary.orNull
 import io.kotest.property.arbitrary.string
-import io.kotest.property.exhaustive.boolean
-import io.kotest.property.exhaustive.map
-import io.kotest.property.exhaustive.of
 import io.mockk.mockk
 import kotlinx.serialization.modules.SerializersModule
 
@@ -142,7 +136,7 @@ object DataConnectArb {
     prefix: String? = null,
     host: Arb<String> = host(),
     sslEnabled: Arb<Boolean> = Arb.boolean(),
-    cacheSettings: Arb<CacheSettings> = cacheSettings(),
+    cacheSettings: Arb<CacheSettings?> = cacheSettings().orNull(nullProbability = 0.33),
   ): Arb<DataConnectSettings> {
     val wrappedHost = prefix?.let { host.withPrefix(it) } ?: host
     return Arb.bind(wrappedHost, sslEnabled, cacheSettings, ::DataConnectSettings)
@@ -174,28 +168,6 @@ object DataConnectArb {
     range: IntRange = 0..10,
   ): Arb<List<DataConnectPathSegment>> = Arb.list(pathSegment, range)
 }
-
-object QueryResultSourceArb {
-
-  fun cache(): Exhaustive<QueryResult.Source.Cache> =
-    Exhaustive.boolean().map { QueryResult.Source.Cache(it) }
-
-  fun server(): Exhaustive<QueryResult.Source.Server> = Exhaustive.of(QueryResult.Source.Server)
-}
-
-object QueryResultArb {
-
-  fun source(
-    cache: Arb<QueryResult.Source.Cache> = source.cache().toArb(),
-    server: Arb<QueryResult.Source.Server> = source.server().toArb(),
-  ): Arb<QueryResult.Source> = Arb.choice(cache, server)
-}
-
-val QueryResultArb.source: QueryResultSourceArb
-  get() = QueryResultSourceArb
-
-val DataConnectArb.queryResult: QueryResultArb
-  get() = QueryResultArb
 
 val Arb.Companion.dataConnect: DataConnectArb
   get() = DataConnectArb

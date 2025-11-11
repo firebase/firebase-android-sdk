@@ -18,12 +18,11 @@
 
 package com.google.firebase.dataconnect.core
 
-import com.google.firebase.dataconnect.QueryResult
+import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.distinctPair
 import com.google.firebase.dataconnect.testutil.property.arbitrary.queryRefImpl
-import com.google.firebase.dataconnect.testutil.property.arbitrary.queryResult
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
@@ -37,6 +36,7 @@ import io.kotest.property.Arb
 import io.kotest.property.PropTestConfig
 import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.choice
+import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.map
 import io.kotest.property.assume
@@ -53,13 +53,13 @@ class QueryResultImplUnitTest {
       propTestConfig,
       Arb.dataConnect.queryRefImpl(),
       Arb.dataConnect.testData(),
-      Arb.dataConnect.queryResult.source()
-    ) { ref, data, source ->
-      val queryResult = ref.QueryResultImpl(data, source)
+      Arb.enum<DataSource>(),
+    ) { ref, data, dataSource ->
+      val queryResult = ref.QueryResultImpl(data, dataSource)
       assertSoftly {
         withClue("ref") { queryResult.ref shouldBeSameInstanceAs ref }
         withClue("data") { queryResult.data shouldBeSameInstanceAs data }
-        withClue("source") { queryResult.source shouldBeSameInstanceAs source }
+        withClue("dataSource") { queryResult.dataSource shouldBeSameInstanceAs dataSource }
       }
     }
   }
@@ -70,14 +70,14 @@ class QueryResultImplUnitTest {
       propTestConfig,
       Arb.dataConnect.queryRefImpl(),
       Arb.dataConnect.testData(),
-      Arb.dataConnect.queryResult.source()
-    ) { query, data, source ->
-      val queryResult = query.QueryResultImpl(data, source)
+      Arb.enum<DataSource>(),
+    ) { query, data, dataSource ->
+      val queryResult = query.QueryResultImpl(data, dataSource)
       val toStringResult = queryResult.toString()
       assertSoftly {
         toStringResult shouldStartWith "QueryResultImpl("
         toStringResult shouldContainWithNonAbuttingText "data=$data"
-        toStringResult shouldContainWithNonAbuttingText "source=$source"
+        toStringResult shouldContainWithNonAbuttingText "dataSource=$dataSource"
         toStringResult shouldContainWithNonAbuttingText "ref=$query"
         toStringResult shouldEndWith ")"
       }
@@ -97,10 +97,10 @@ class QueryResultImplUnitTest {
       propTestConfig,
       Arb.dataConnect.queryRefImpl(),
       Arb.dataConnect.testData(),
-      Arb.dataConnect.queryResult.source()
-    ) { query, data, source ->
-      val queryResult1 = query.QueryResultImpl(data, source)
-      val queryResult2 = query.QueryResultImpl(data, source)
+      Arb.enum<DataSource>(),
+    ) { query, data, dataSource ->
+      val queryResult1 = query.QueryResultImpl(data, dataSource)
+      val queryResult2 = query.QueryResultImpl(data, dataSource)
       queryResult1.equals(queryResult2) shouldBe true
     }
   }
@@ -110,10 +110,10 @@ class QueryResultImplUnitTest {
     checkAll(
       propTestConfig,
       Arb.dataConnect.queryRefImpl(),
-      Arb.dataConnect.queryResult.source()
-    ) { query, source ->
-      val queryResult1 = query.QueryResultImpl(null, source)
-      val queryResult2 = query.QueryResultImpl(null, source)
+      Arb.enum<DataSource>(),
+    ) { query, dataSource ->
+      val queryResult1 = query.QueryResultImpl(null, dataSource)
+      val queryResult2 = query.QueryResultImpl(null, dataSource)
       queryResult1.equals(queryResult2) shouldBe true
     }
   }
@@ -139,24 +139,24 @@ class QueryResultImplUnitTest {
       propTestConfig,
       Arb.dataConnect.queryRefImpl(),
       Arb.dataConnect.testData().distinctPair(),
-      Arb.dataConnect.queryResult.source(),
-    ) { query, (data1, data2), source ->
-      val queryResult1 = query.QueryResultImpl(data1, source)
-      val queryResult2 = query.QueryResultImpl(data2, source)
+      Arb.enum<DataSource>(),
+    ) { query, (data1, data2), dataSource ->
+      val queryResult1 = query.QueryResultImpl(data1, dataSource)
+      val queryResult2 = query.QueryResultImpl(data2, dataSource)
       queryResult1.equals(queryResult2) shouldBe false
     }
   }
 
   @Test
-  fun `equals() should return false when only 'source' differs`() = runTest {
+  fun `equals() should return false when only 'dataSource' differs`() = runTest {
     checkAll(
       propTestConfig,
       Arb.dataConnect.queryRefImpl(),
       Arb.dataConnect.testData(),
-      Arb.dataConnect.queryResult.source().distinctPair(),
-    ) { query, data, (source1, source2) ->
-      val queryResult1 = query.QueryResultImpl(data, source1)
-      val queryResult2 = query.QueryResultImpl(data, source2)
+      Arb.enum<DataSource>().distinctPair(),
+    ) { query, data, (dataSource1, dataSource2) ->
+      val queryResult1 = query.QueryResultImpl(data, dataSource1)
+      val queryResult2 = query.QueryResultImpl(data, dataSource2)
       queryResult1.equals(queryResult2) shouldBe false
     }
   }
@@ -167,11 +167,11 @@ class QueryResultImplUnitTest {
       propTestConfig,
       Arb.dataConnect.queryRefImpl().distinctPair(),
       Arb.dataConnect.testData(),
-      Arb.dataConnect.queryResult.source(),
-    ) { (query1, query2), data, source ->
+      Arb.enum<DataSource>(),
+    ) { (query1, query2), data, dataSource ->
       assume(query1 != query2)
-      val queryResult1 = query1.QueryResultImpl(data, source)
-      val queryResult2 = query2.QueryResultImpl(data, source)
+      val queryResult1 = query1.QueryResultImpl(data, dataSource)
+      val queryResult2 = query2.QueryResultImpl(data, dataSource)
       queryResult1.equals(queryResult2) shouldBe false
     }
   }
@@ -183,11 +183,11 @@ class QueryResultImplUnitTest {
         propTestConfig,
         Arb.dataConnect.queryRefImpl(),
         Arb.dataConnect.testData(),
-        Arb.dataConnect.queryResult.source()
-      ) { query, data, source,
+        Arb.enum<DataSource>(),
+      ) { query, data, dataSource,
         ->
-        val queryResult1 = query.QueryResultImpl(null, source)
-        val queryResult2 = query.QueryResultImpl(data, source)
+        val queryResult1 = query.QueryResultImpl(null, dataSource)
+        val queryResult2 = query.QueryResultImpl(data, dataSource)
         queryResult1.equals(queryResult2) shouldBe false
       }
     }
@@ -199,11 +199,11 @@ class QueryResultImplUnitTest {
         propTestConfig,
         Arb.dataConnect.queryRefImpl(),
         Arb.dataConnect.testData(),
-        Arb.dataConnect.queryResult.source()
-      ) { query, data, source,
+        Arb.enum<DataSource>()
+      ) { query, data, dataSource,
         ->
-        val queryResult1 = query.QueryResultImpl(data, source)
-        val queryResult2 = query.QueryResultImpl(null, source)
+        val queryResult1 = query.QueryResultImpl(data, dataSource)
+        val queryResult2 = query.QueryResultImpl(null, dataSource)
         queryResult1.equals(queryResult2) shouldBe false
       }
     }
@@ -225,11 +225,11 @@ class QueryResultImplUnitTest {
       propTestConfig,
       Arb.dataConnect.queryRefImpl(),
       Arb.dataConnect.testData(),
-      Arb.dataConnect.queryResult.source()
-    ) { query, data, source,
+      Arb.enum<DataSource>()
+    ) { query, data, dataSource,
       ->
-      val queryResult1 = query.QueryResultImpl(data, source)
-      val queryResult2 = query.QueryResultImpl(data, source)
+      val queryResult1 = query.QueryResultImpl(data, dataSource)
+      val queryResult2 = query.QueryResultImpl(data, dataSource)
       queryResult1.hashCode() shouldBe queryResult2.hashCode()
     }
   }
@@ -240,28 +240,28 @@ class QueryResultImplUnitTest {
       hashEqualityPropTestConfig,
       Arb.dataConnect.queryRefImpl(),
       Arb.dataConnect.testData().distinctPair(),
-      Arb.dataConnect.queryResult.source(),
-    ) { query, (data1, data2), source,
+      Arb.enum<DataSource>(),
+    ) { query, (data1, data2), dataSource,
       ->
       assume(data1.hashCode() != data2.hashCode())
-      val queryResult1 = query.QueryResultImpl(data1, source)
-      val queryResult2 = query.QueryResultImpl(data2, source)
+      val queryResult1 = query.QueryResultImpl(data1, dataSource)
+      val queryResult2 = query.QueryResultImpl(data2, dataSource)
       queryResult1.hashCode() shouldNotBe queryResult2.hashCode()
     }
   }
 
   @Test
-  fun `hashCode() should return a different value if 'source' is different`() = runTest {
+  fun `hashCode() should return a different value if 'dataSource' is different`() = runTest {
     checkAll(
       hashEqualityPropTestConfig,
       Arb.dataConnect.queryRefImpl(),
       Arb.dataConnect.testData(),
-      Arb.dataConnect.queryResult.source().distinctPair(),
-    ) { query, data, (source1, source2),
+      Arb.enum<DataSource>().distinctPair(),
+    ) { query, data, (dataSource1, dataSource2),
       ->
-      assume(source1.hashCode() != source2.hashCode())
-      val queryResult1 = query.QueryResultImpl(data, source1)
-      val queryResult2 = query.QueryResultImpl(data, source2)
+      assume(dataSource1.hashCode() != dataSource2.hashCode())
+      val queryResult1 = query.QueryResultImpl(data, dataSource1)
+      val queryResult2 = query.QueryResultImpl(data, dataSource2)
       queryResult1.hashCode() shouldNotBe queryResult2.hashCode()
     }
   }
@@ -272,11 +272,11 @@ class QueryResultImplUnitTest {
       hashEqualityPropTestConfig,
       Arb.dataConnect.queryRefImpl().distinctPair(),
       Arb.dataConnect.testData(),
-      Arb.dataConnect.queryResult.source(),
-    ) { (query1, query2), data, source ->
+      Arb.enum<DataSource>(),
+    ) { (query1, query2), data, dataSource ->
       assume(query1.hashCode() != query2.hashCode())
-      val queryResult1 = query1.QueryResultImpl(data, source)
-      val queryResult2 = query2.QueryResultImpl(data, source)
+      val queryResult1 = query1.QueryResultImpl(data, dataSource)
+      val queryResult2 = query2.QueryResultImpl(data, dataSource)
       queryResult1.hashCode() shouldNotBe queryResult2.hashCode()
     }
   }
@@ -305,9 +305,11 @@ class QueryResultImplUnitTest {
     fun DataConnectArb.queryResultImpl(
       query: Arb<QueryRefImpl<TestData?, TestVariables>> = queryRefImpl(),
       data: Arb<TestData> = testData(),
-      source: Arb<QueryResult.Source> = queryResult.source(),
+      dataSource: Arb<DataSource> = Arb.enum<DataSource>(),
     ): Arb<QueryRefImpl<TestData?, TestVariables>.QueryResultImpl> =
-      Arb.bind(query, data, source) { query, data, source -> query.QueryResultImpl(data, source) }
+      Arb.bind(query, data, dataSource) { query, data, dataSource ->
+        query.QueryResultImpl(data, dataSource)
+      }
 
     fun DataConnectArb.queryRefImpl(): Arb<QueryRefImpl<TestData?, TestVariables>> =
       queryRefImpl(Arb.dataConnect.testVariables())

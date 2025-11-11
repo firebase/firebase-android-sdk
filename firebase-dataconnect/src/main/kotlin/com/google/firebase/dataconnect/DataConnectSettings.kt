@@ -37,7 +37,7 @@ import java.util.Objects
 public class DataConnectSettings(
   public val host: String = "firebasedataconnect.googleapis.com",
   public val sslEnabled: Boolean = true,
-  public val cacheSettings: CacheSettings? = CacheSettings(),
+  public val cacheSettings: CacheSettings? = null,
 ) {
 
   /**
