@@ -27,7 +27,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
-class ConditionalTests {
+class CondTests {
   private val trueExpr = constant(true)
   private val falseExpr = constant(false)
   private val errorExpr = Expression.error("error").equal(constant("random"))
@@ -67,5 +67,25 @@ class ConditionalTests {
   fun `cond - false condition but false case is error returns error`() {
     val expr = conditional(falseExpr, constant("true case"), errorExpr)
     assertEvaluatesToError(evaluate(expr, errorDoc), "Cond with error false-case")
+  }
+
+  @Test
+  fun `cond - null condition returns false case`() {
+    val expr = conditional(nullBoolean(), errorExpr, constant("false case"))
+    val result = evaluate(expr, emptyDoc)
+    assertEvaluatesTo(result, encodeValue("false case"), "cond(null, error, 'false case')")
+  }
+
+  @Test
+  fun `cond - unset condition returns false case`() {
+    val expr = conditional(unsetBoolean(), constant("true case"), constant("false case"))
+    val result = evaluate(expr, emptyDoc)
+    assertEvaluatesTo(result, encodeValue("false case"), "cond(unset, 'true case', 'false case')")
+  }
+
+  @Test
+  fun `cond - non-boolean condition returns error`() {
+    val expr = conditional(stringBoolean(), constant("true case"), constant("false case"))
+    assertEvaluatesToError(evaluate(expr, emptyDoc), "Cond with non-boolean condition")
   }
 }

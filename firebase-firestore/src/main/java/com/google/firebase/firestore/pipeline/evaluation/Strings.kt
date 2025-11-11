@@ -16,6 +16,12 @@
 
 package com.google.firebase.firestore.pipeline.evaluation
 
+import android.icu.lang.UCharacter.isLowerCase
+import android.icu.lang.UCharacter.isUpperCase
+import android.icu.lang.UCharacter.toLowerCase
+import android.icu.lang.UCharacter.toUpperCase
+import android.os.Build
+import com.google.common.base.CharMatcher
 import com.google.common.math.IntMath
 import com.google.common.primitives.Ints
 import com.google.firebase.firestore.Blob
@@ -59,9 +65,65 @@ internal val evaluateCharLength = unaryFunction { s: String ->
   EvaluateResult.long(s.codePointCount(0, s.length))
 }
 
-internal val evaluateToLowercase = unaryFunctionPrimitive(String::lowercase)
+private fun isUpperCaseImpl(c: Int): Boolean =
+  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+    isUpperCase(c)
+  } else {
+    Char(c).isUpperCase()
+  }
 
-internal val evaluateToUppercase = unaryFunctionPrimitive(String::uppercase)
+private fun toLowerCaseImpl(c: Int): Int =
+  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+    toLowerCase(c)
+  } else {
+    Char(c).lowercaseChar().code
+  }
+
+internal val evaluateToLowercase = unaryFunction { value: Value ->
+  when (value.valueTypeCase) {
+    ValueTypeCase.STRING_VALUE -> EvaluateResult.string(value.stringValue.lowercase())
+    ValueTypeCase.BYTES_VALUE -> {
+      val bytes: ByteArray = value.bytesValue.toByteArray()
+      for (i in bytes.indices) {
+        bytes[i] =
+          if (isUpperCaseImpl(bytes[i].toInt())) toLowerCaseImpl(bytes[i].toInt()).toByte()
+          else bytes[i]
+      }
+      EvaluateResult.value(encodeValue(bytes))
+    }
+    else -> EvaluateResultError
+  }
+}
+
+private fun isLowerCaseImpl(c: Int): Boolean =
+  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+    isLowerCase(c)
+  } else {
+    Char(c).isUpperCase()
+  }
+
+private fun toUpperCaseImpl(c: Int): Int =
+  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+    toUpperCase(c)
+  } else {
+    Char(c).uppercaseChar().code
+  }
+
+internal val evaluateToUppercase = unaryFunction { value: Value ->
+  when (value.valueTypeCase) {
+    ValueTypeCase.STRING_VALUE -> EvaluateResult.string(value.stringValue.uppercase())
+    ValueTypeCase.BYTES_VALUE -> {
+      val bytes: ByteArray = value.bytesValue.toByteArray()
+      for (i in bytes.indices) {
+        bytes[i] =
+          if (isLowerCaseImpl(bytes[i].toInt())) toUpperCaseImpl(bytes[i].toInt()).toByte()
+          else bytes[i]
+      }
+      EvaluateResult.value(encodeValue(bytes))
+    }
+    else -> EvaluateResultError
+  }
+}
 
 internal val evaluateReverse = unaryFunction { value: Value ->
   when (value.valueTypeCase) {
@@ -176,7 +238,33 @@ internal val evaluateSubstring = ternaryLazyFunction { strFn, startFn, lengthFn 
   }
 }
 
-internal val evaluateTrim = unaryFunctionPrimitive(String::trim)
+internal val evaluateTrim = unaryFunction { value: Value ->
+  when (value.valueTypeCase) {
+    ValueTypeCase.STRING_VALUE ->
+      EvaluateResult.string(CharMatcher.whitespace().trimFrom(value.stringValue))
+    ValueTypeCase.BYTES_VALUE -> {
+      val bytes = value.bytesValue
+      var startIndex = 0
+      while (
+        startIndex < bytes.size() && Character.isWhitespace(bytes.byteAt(startIndex).toInt())
+      ) {
+        startIndex++
+      }
+
+      var endIndex: Int = bytes.size() - 1
+      while (endIndex >= startIndex && Character.isWhitespace(bytes.byteAt(endIndex).toInt())) {
+        endIndex--
+      }
+
+      if (startIndex > endIndex) {
+        EvaluateResult.value(encodeValue(ByteString.EMPTY.toByteArray()))
+      } else {
+        EvaluateResult.value(encodeValue(bytes.substring(startIndex, endIndex + 1).toByteArray()))
+      }
+    }
+    else -> EvaluateResultError
+  }
+}
 
 internal val evaluateLTrim = notImplemented // TODO: Does not exist in expressions.kt yet.
 
@@ -186,23 +274,60 @@ internal val evaluateReplaceAll = notImplemented // TODO: Does not exist in back
 
 internal val evaluateReplaceFirst = notImplemented // TODO: Does not exist in backend yet.
 
-internal val evaluateRegexContains = binaryPatternFunction { pattern: Pattern, value: String ->
-  pattern.matcher(value).find()
-}
+internal val evaluateRegexContains =
+  binaryFunctionConstructorType(
+    ValueTypeCase.STRING_VALUE,
+    Value::getStringValue,
+    ValueTypeCase.STRING_VALUE,
+    Value::getStringValue
+  ) {
+    ({ value: String, patternString: String ->
+      val pattern =
+        try {
+          Pattern.compile(patternString)
+        } catch (_: Exception) {
+          null
+        }
+      if (pattern == null) EvaluateResultError
+      else EvaluateResult.boolean(pattern.matcher(value).find())
+    })
+  }
 
-internal val evaluateRegexMatch = binaryPatternFunction(Pattern::matches)
+internal val evaluateRegexMatch =
+  binaryFunctionConstructorType(
+    ValueTypeCase.STRING_VALUE,
+    Value::getStringValue,
+    ValueTypeCase.STRING_VALUE,
+    Value::getStringValue
+  ) {
+    ({ value: String, patternString: String ->
+      val pattern =
+        try {
+          Pattern.compile(patternString)
+        } catch (_: Exception) {
+          null
+        }
+      if (pattern == null) EvaluateResultError else EvaluateResult.boolean(pattern.matches(value))
+    })
+  }
 
 internal val evaluateLike =
-  binaryPatternConstructorFunction(
-    { likeString: String ->
-      try {
-        Pattern.compile(likeToRegex(likeString))
-      } catch (e: Exception) {
-        null
-      }
-    },
-    Pattern::matches
-  )
+  binaryFunctionConstructorType(
+    ValueTypeCase.STRING_VALUE,
+    Value::getStringValue,
+    ValueTypeCase.STRING_VALUE,
+    Value::getStringValue
+  ) {
+    ({ value: String, like: String ->
+      val pattern =
+        try {
+          Pattern.compile(likeToRegex(like))
+        } catch (_: Exception) {
+          null
+        }
+      if (pattern == null) EvaluateResultError else EvaluateResult.boolean(pattern.matches(value))
+    })
+  }
 
 private fun likeToRegex(like: String): String = buildString {
   var escape = false

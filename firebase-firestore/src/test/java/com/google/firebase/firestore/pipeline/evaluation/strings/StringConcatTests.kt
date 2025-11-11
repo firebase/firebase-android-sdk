@@ -19,7 +19,9 @@ import com.google.firebase.firestore.pipeline.Expression.Companion.constant
 import com.google.firebase.firestore.pipeline.Expression.Companion.stringConcat
 import com.google.firebase.firestore.pipeline.assertEvaluatesTo
 import com.google.firebase.firestore.pipeline.assertEvaluatesToError
+import com.google.firebase.firestore.pipeline.assertEvaluatesToNull
 import com.google.firebase.firestore.pipeline.evaluate
+import com.google.firebase.firestore.pipeline.evaluation.MirroringTestCases
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -71,5 +73,13 @@ internal class StringConcatTests {
     val expr = stringConcat(constant(a500), constant(b500), constant(c500))
     val result = evaluate(expr)
     assertEvaluatesTo(result, encodeValue(a500 + b500 + c500), "stringConcat large strings")
+  }
+
+  @Test
+  fun stringConcat_mirrorError() {
+    for ((name, left, right) in MirroringTestCases.BINARY_MIRROR_TEST_CASES) {
+      val expr = stringConcat(left, right)
+      assertEvaluatesToNull(evaluate(expr), "stringConcat($name)")
+    }
   }
 }

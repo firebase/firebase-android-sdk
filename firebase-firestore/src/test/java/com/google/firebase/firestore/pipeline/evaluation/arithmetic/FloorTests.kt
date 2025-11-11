@@ -18,10 +18,20 @@ import com.google.common.truth.Truth.assertThat
 import com.google.firebase.firestore.model.Values.encodeValue
 import com.google.firebase.firestore.pipeline.Expression.Companion.constant
 import com.google.firebase.firestore.pipeline.Expression.Companion.floor
+import com.google.firebase.firestore.pipeline.assertEvaluatesToNull
 import com.google.firebase.firestore.pipeline.evaluate
+import com.google.firebase.firestore.pipeline.evaluation.MirroringTestCases
 import org.junit.Test
 
 internal class FloorTests {
+
+  @Test
+  fun floorMirrorsErrors() {
+    for (testCase in MirroringTestCases.UNARY_MIRROR_TEST_CASES) {
+      assertEvaluatesToNull(evaluate(floor(testCase.input)), "floor(${'$'}{testCase.name})")
+    }
+  }
+
   @Test
   fun floorFunctionTestWithInteger() {
     assertThat(evaluate(floor(constant(Integer.MIN_VALUE))).value)

@@ -18,7 +18,9 @@ import com.google.firebase.firestore.pipeline.Expression.Companion.constant
 import com.google.firebase.firestore.pipeline.Expression.Companion.endsWith
 import com.google.firebase.firestore.pipeline.assertEvaluatesTo
 import com.google.firebase.firestore.pipeline.assertEvaluatesToError
+import com.google.firebase.firestore.pipeline.assertEvaluatesToNull
 import com.google.firebase.firestore.pipeline.evaluate
+import com.google.firebase.firestore.pipeline.evaluation.MirroringTestCases
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -27,6 +29,14 @@ import org.robolectric.RobolectricTestRunner
 internal class EndsWithTests {
 
   // --- EndsWith Tests ---
+  @Test
+  fun endsWith_mirrorError() {
+    for ((name, left, right) in MirroringTestCases.BINARY_MIRROR_TEST_CASES) {
+      val expr = endsWith(left, right)
+      assertEvaluatesToNull(evaluate(expr), "endsWith($name)")
+    }
+  }
+
   @Test
   fun endsWith_getNonStringValue_isError() {
     val expr = endsWith(constant(42L), constant("search"))

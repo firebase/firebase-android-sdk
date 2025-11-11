@@ -31,6 +31,12 @@ import kotlin.math.sqrt
 
 // === Arithmetic Functions ===
 
+internal sealed interface FirestoreNumber
+
+internal data class LongValue(val value: Long) : FirestoreNumber
+
+internal data class DoubleValue(val value: Double) : FirestoreNumber
+
 internal val evaluateAdd: EvaluateFunction = arithmeticPrimitive(LongMath::checkedAdd, Double::plus)
 
 internal val evaluateCeil = arithmeticPrimitive({ it }, Math::ceil)
@@ -111,7 +117,7 @@ internal val evaluateRoundToPrecision =
     { value: Double, places: Long ->
       // A double can only represent up to 16 decimal places. Here we return the original value if
       // attempting to round to more decimal places than the double can represent.
-      if (places >= 16 || !value.isInfinite()) {
+      if (places >= 16 || !value.isFinite()) {
         return@arithmetic EvaluateResult.double(value)
       }
 
@@ -126,7 +132,7 @@ internal val evaluateRoundToPrecision =
         BigDecimal.valueOf(value).setScale(places.toInt(), RoundingMode.HALF_UP)
       val result: Double = rounded.toDouble()
 
-      if (result.isInfinite()) EvaluateResult.double(result)
+      if (result.isFinite()) EvaluateResult.double(result)
       else EvaluateResultError // overflow error
     }
   )
@@ -140,15 +146,23 @@ internal val evaluateAbs =
     { d: Double -> d.absoluteValue }
   )
 
-internal val evaluateExp = arithmetic { value: Double -> EvaluateResult.double(exp(value)) }
+internal val evaluateExp = arithmetic { value: Double ->
+  val result = exp(value)
+  // Returning an error on double overflow (characterized by a non-infinite exponent returning an
+  // infinite result).
+  if (result == Double.POSITIVE_INFINITY && value != Double.POSITIVE_INFINITY) {
+    throw Exception("exp(...) exponent overflow")
+  }
+  EvaluateResult.double(exp(value))
+}
 
 internal val evaluateLn = arithmetic { value: Double ->
-  if (value < 0) EvaluateResultError else EvaluateResult.double(ln(value))
+  if (value <= 0) EvaluateResultError else EvaluateResult.double(ln(value))
 }
 
 internal val evaluateLog = arithmetic { value: Double, base: Double ->
   return@arithmetic if (value == Double.NEGATIVE_INFINITY) {
-    EvaluateResultError
+    EvaluateResult.double(Double.NaN)
   } else if (base == Double.POSITIVE_INFINITY) {
     EvaluateResult.double(Double.NaN)
   } else if (base <= 0 || value <= 0 || base == 1.0) {
@@ -157,7 +171,7 @@ internal val evaluateLog = arithmetic { value: Double, base: Double ->
 }
 
 internal val evaluateLog10 = arithmetic { value: Double ->
-  if (value < 0) EvaluateResultError else EvaluateResult.double(log10(value))
+  if (value <= 0) EvaluateResultError else EvaluateResult.double(log10(value))
 }
 
 internal val evaluateSqrt = arithmetic { value: Double ->

@@ -18,10 +18,20 @@ import com.google.common.truth.Truth.assertThat
 import com.google.firebase.firestore.model.Values.encodeValue
 import com.google.firebase.firestore.pipeline.Expression.Companion.constant
 import com.google.firebase.firestore.pipeline.Expression.Companion.log
+import com.google.firebase.firestore.pipeline.assertEvaluatesToNull
 import com.google.firebase.firestore.pipeline.evaluate
+import com.google.firebase.firestore.pipeline.evaluation.MirroringTestCases
 import org.junit.Test
 
 internal class LogTests {
+  @Test
+  fun logMirrosErrors() {
+    for ((name, left, right) in MirroringTestCases.BINARY_MIRROR_TEST_CASES) {
+      val expr = log(left, right)
+      assertEvaluatesToNull(evaluate(expr), "log($name)")
+    }
+  }
+
   @Test
   fun logFunctionTest() {
     assertThat(evaluate(log(constant(100.0), constant(10.0))).value).isEqualTo(encodeValue(2.0))
@@ -39,18 +49,18 @@ internal class LogTests {
 
   @Test
   fun logFunctionTestWithInfiniteSemantics() {
-    assertThat(evaluate(log(constant(Double.NEGATIVE_INFINITY), constant(0.0))).isError).isTrue()
+    assertThat(evaluate(log(constant(Double.NEGATIVE_INFINITY), constant(0.0))).value)
+      .isEqualTo(encodeValue(Double.NaN))
     assertThat(
-        evaluate(log(constant(Double.NEGATIVE_INFINITY), constant(Double.NEGATIVE_INFINITY)))
-          .isError
+        evaluate(log(constant(Double.NEGATIVE_INFINITY), constant(Double.NEGATIVE_INFINITY))).value
       )
-      .isTrue()
+      .isEqualTo(encodeValue(Double.NaN))
     assertThat(
-        evaluate(log(constant(Double.NEGATIVE_INFINITY), constant(Double.POSITIVE_INFINITY)))
-          .isError
+        evaluate(log(constant(Double.NEGATIVE_INFINITY), constant(Double.POSITIVE_INFINITY))).value
       )
-      .isTrue()
-    assertThat(evaluate(log(constant(Double.NEGATIVE_INFINITY), constant(10.0))).isError).isTrue()
+      .isEqualTo(encodeValue(Double.NaN))
+    assertThat(evaluate(log(constant(Double.NEGATIVE_INFINITY), constant(10.0))).value)
+      .isEqualTo(encodeValue(Double.NaN))
     assertThat(evaluate(log(constant(0.0), constant(Double.POSITIVE_INFINITY))).value)
       .isEqualTo(encodeValue(Double.NaN))
     assertThat(evaluate(log(constant(-10.0), constant(Double.POSITIVE_INFINITY))).value)

@@ -18,10 +18,19 @@ import com.google.common.truth.Truth.assertThat
 import com.google.firebase.firestore.model.Values.encodeValue
 import com.google.firebase.firestore.pipeline.Expression.Companion.add
 import com.google.firebase.firestore.pipeline.Expression.Companion.constant
+import com.google.firebase.firestore.pipeline.assertEvaluatesToNull
 import com.google.firebase.firestore.pipeline.evaluate
+import com.google.firebase.firestore.pipeline.evaluation.MirroringTestCases
 import org.junit.Test
 
 internal class AddTests {
+  @Test
+  fun addMirrorsErrors() {
+    for ((name, left, right) in MirroringTestCases.BINARY_MIRROR_TEST_CASES) {
+      val expr = add(left, right)
+      assertEvaluatesToNull(evaluate(expr), "add($name)")
+    }
+  }
 
   @Test
   fun addFunctionTestWithBasicNumerics() {
@@ -40,13 +49,10 @@ internal class AddTests {
 
   @Test
   fun addFunctionTestWithDoubleLongAdditionOverflow() {
-    val longMaxAsDoublePlusOne = Long.MAX_VALUE.toDouble() + 1.0
     assertThat(evaluate(add(constant(Long.MAX_VALUE), constant(1.0))).value)
-      .isEqualTo(encodeValue(longMaxAsDoublePlusOne))
-
-    val intermediate = longMaxAsDoublePlusOne
-    assertThat(evaluate(add(constant(intermediate), constant(100L))).value)
-      .isEqualTo(encodeValue(intermediate + 100.0))
+      .isEqualTo(encodeValue(9.223372036854776E18))
+    assertThat(evaluate(add(constant(Long.MAX_VALUE.toDouble()), constant(100L))).value)
+      .isEqualTo(encodeValue(9.223372036854776E18))
   }
 
   @Test
@@ -77,15 +83,13 @@ internal class AddTests {
     val nanVal = Double.NaN
     assertThat(evaluate(add(constant(1L), constant(nanVal))).value).isEqualTo(encodeValue(nanVal))
     assertThat(evaluate(add(constant(1.0), constant(nanVal))).value).isEqualTo(encodeValue(nanVal))
-    assertThat(evaluate(add(constant(9007199254740991L), constant(nanVal))).value)
+    assertThat(evaluate(add(constant(Long.MAX_VALUE), constant(nanVal))).value)
       .isEqualTo(encodeValue(nanVal))
-    assertThat(evaluate(add(constant(-9007199254740991L), constant(nanVal))).value)
+    assertThat(evaluate(add(constant(Long.MIN_VALUE), constant(nanVal))).value)
       .isEqualTo(encodeValue(nanVal))
     assertThat(evaluate(add(constant(Double.MAX_VALUE), constant(nanVal))).value)
       .isEqualTo(encodeValue(nanVal))
-    assertThat(
-        evaluate(add(constant(-Double.MAX_VALUE), constant(nanVal))).value
-      ) // Corresponds to C++ std::numeric_limits<double>::lowest()
+    assertThat(evaluate(add(constant(Double.MIN_VALUE), constant(nanVal))).value)
       .isEqualTo(encodeValue(nanVal))
     assertThat(evaluate(add(constant(Double.POSITIVE_INFINITY), constant(nanVal))).value)
       .isEqualTo(encodeValue(nanVal))

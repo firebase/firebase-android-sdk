@@ -18,10 +18,19 @@ import com.google.common.truth.Truth.assertThat
 import com.google.firebase.firestore.model.Values.encodeValue
 import com.google.firebase.firestore.pipeline.Expression.Companion.constant
 import com.google.firebase.firestore.pipeline.Expression.Companion.ln
+import com.google.firebase.firestore.pipeline.assertEvaluatesToNull
 import com.google.firebase.firestore.pipeline.evaluate
+import com.google.firebase.firestore.pipeline.evaluation.MirroringTestCases
 import org.junit.Test
 
 internal class LnTests {
+  @Test
+  fun lnMirrorsErrors() {
+    for (testCase in MirroringTestCases.UNARY_MIRROR_TEST_CASES) {
+      assertEvaluatesToNull(evaluate(ln(testCase.input)), "ln(${'$'}{testCase.name})")
+    }
+  }
+
   @Test
   fun lnFunctionTestWithDouble() {
     assertThat(evaluate(ln(constant(kotlin.math.exp(16.0)))).value).isEqualTo(encodeValue(16.0))
@@ -39,12 +48,12 @@ internal class LnTests {
 
   @Test
   fun lnFunctionTestWithZero() {
-    assertThat(evaluate(ln(constant(0))).value).isEqualTo(encodeValue(Double.NEGATIVE_INFINITY))
+    assertThat(evaluate(ln(constant(0))).isError).isTrue()
   }
 
   @Test
   fun lnFunctionTestWithNegativeZero() {
-    assertThat(evaluate(ln(constant(-0.0))).value).isEqualTo(encodeValue(Double.NEGATIVE_INFINITY))
+    assertThat(evaluate(ln(constant(-0.0))).isError).isTrue()
   }
 
   @Test

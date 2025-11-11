@@ -18,10 +18,24 @@ import com.google.common.truth.Truth.assertThat
 import com.google.firebase.firestore.model.Values.encodeValue
 import com.google.firebase.firestore.pipeline.Expression.Companion.constant
 import com.google.firebase.firestore.pipeline.Expression.Companion.log10
+import com.google.firebase.firestore.pipeline.assertEvaluatesToNull
 import com.google.firebase.firestore.pipeline.evaluate
+import com.google.firebase.firestore.pipeline.evaluation.MirroringTestCases
 import org.junit.Test
 
 internal class Log10Tests {
+  @Test
+  fun log10MirrorsErrors() {
+    for (testCase in MirroringTestCases.UNARY_MIRROR_TEST_CASES) {
+      assertEvaluatesToNull(evaluate(log10(testCase.input)), "log10(${'$'}{testCase.name})")
+    }
+  }
+
+  @Test
+  fun log10FunctionTestWithNaN() {
+    assertThat(evaluate(log10(constant(Double.NaN))).value).isEqualTo(encodeValue(Double.NaN))
+  }
+
   @Test
   fun log10FunctionTestWithDouble() {
     assertThat(evaluate(log10(constant(100.0))).value).isEqualTo(encodeValue(2.0))
@@ -39,13 +53,12 @@ internal class Log10Tests {
 
   @Test
   fun log10FunctionTestWithZero() {
-    assertThat(evaluate(log10(constant(0))).value).isEqualTo(encodeValue(Double.NEGATIVE_INFINITY))
+    assertThat(evaluate(log10(constant(0))).isError).isTrue()
   }
 
   @Test
   fun log10FunctionTestWithNegativeZero() {
-    assertThat(evaluate(log10(constant(-0.0))).value)
-      .isEqualTo(encodeValue(Double.NEGATIVE_INFINITY))
+    assertThat(evaluate(log10(constant(-0.0))).isError).isTrue()
   }
 
   @Test

@@ -18,18 +18,17 @@ import com.google.common.truth.Truth.assertThat
 import com.google.firebase.firestore.model.Values.encodeValue
 import com.google.firebase.firestore.pipeline.Expression.Companion.constant
 import com.google.firebase.firestore.pipeline.Expression.Companion.sqrt
+import com.google.firebase.firestore.pipeline.assertEvaluatesToNull
 import com.google.firebase.firestore.pipeline.evaluate
+import com.google.firebase.firestore.pipeline.evaluation.MirroringTestCases
 import org.junit.Test
 
 internal class SqrtTests {
   @Test
-  fun sqrtFunctionTestWithInteger() {
-    assertThat(evaluate(sqrt(constant(16))).value).isEqualTo(encodeValue(4.0))
-  }
-
-  @Test
-  fun sqrtFunctionTestWithNegativeInteger() {
-    assertThat(evaluate(sqrt(constant(-16))).isError).isTrue()
+  fun sqrtMirrorsErrors() {
+    for (testCase in MirroringTestCases.UNARY_MIRROR_TEST_CASES) {
+      assertEvaluatesToNull(evaluate(sqrt(testCase.input)), "sqrt(${'$'}{testCase.name})")
+    }
   }
 
   @Test

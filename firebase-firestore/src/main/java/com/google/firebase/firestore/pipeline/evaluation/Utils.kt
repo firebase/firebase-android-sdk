@@ -16,14 +16,14 @@ package com.google.firebase.firestore.pipeline.evaluation
 
 import com.google.firebase.firestore.RealtimePipeline
 import com.google.firebase.firestore.model.MutableDocument
+import com.google.firebase.firestore.model.Values
 import com.google.firebase.firestore.model.Values.getVectorValue
 import com.google.firebase.firestore.util.Assert
+import com.google.firebase.firestore.util.Assert.fail
 import com.google.firestore.v1.Value
 import com.google.firestore.v1.Value.ValueTypeCase
 import com.google.protobuf.ByteString
 import com.google.protobuf.Timestamp
-import com.google.re2j.Pattern
-import com.google.re2j.PatternSyntaxException
 
 // === Helper Functions ===
 
@@ -59,9 +59,13 @@ internal inline fun unaryFunction(
 internal inline fun unaryFunction(
   crossinline function: (Value) -> EvaluateResult
 ): EvaluateFunction = unaryFunction { r: EvaluateResult ->
-  val v = r.value
-  if (v === null) EvaluateResultError
-  else if (v.hasNullValue()) EvaluateResult.NULL else function(v)
+  if (r.isError) return@unaryFunction EvaluateResultError
+
+  when (r.value?.valueTypeCase) {
+    null,
+    ValueTypeCase.NULL_VALUE -> EvaluateResult.NULL
+    else -> function(r.value!!)
+  }
 }
 
 /**
@@ -208,14 +212,15 @@ internal inline fun <T> unaryFunctionType(
   crossinline valueExtractor: (Value) -> T,
   crossinline function: (T) -> EvaluateResult
 ): EvaluateFunction = unaryFunction { r: EvaluateResult ->
+  if (r.isError) return@unaryFunction EvaluateResultError
+
   val v = r.value
-  if (v === null) EvaluateResultError
-  else
-    when (v.valueTypeCase) {
-      ValueTypeCase.NULL_VALUE -> EvaluateResult.NULL
-      valueTypeCase -> catch { function(valueExtractor(v)) }
-      else -> EvaluateResultError
-    }
+  when (v?.valueTypeCase) {
+    null,
+    ValueTypeCase.NULL_VALUE -> EvaluateResult.NULL
+    valueTypeCase -> catch { function(valueExtractor(v)) }
+    else -> EvaluateResultError
+  }
 }
 
 /**
@@ -240,8 +245,12 @@ internal inline fun <T1, T2> unaryFunctionType(
     throw Assert.fail("Function should have exactly 1 params, but %d were given.", params.size)
   val p = params[0]
   block@{ input: MutableDocument ->
-    val v = p(input).value ?: return@block EvaluateResultError
-    when (v.valueTypeCase) {
+    val r = p(input)
+    if (r.isError) return@block EvaluateResultError
+
+    val v = r.value
+    when (v?.valueTypeCase) {
+      null,
       ValueTypeCase.NULL_VALUE -> EvaluateResult.NULL
       valueTypeCase1 -> catch { function1(valueExtractor1(v)) }
       valueTypeCase2 -> catch { function2(valueExtractor2(v)) }
@@ -274,28 +283,6 @@ internal inline fun binaryFunction(
     catch { function(v1.value, v2.value) }
   }
 }
-
-/**
- * Binary (Map, String) Function
- * - Validates there is exactly 2 parameters.
- * - First, short circuits UNSET and ERROR parameters to return ERROR.
- * - Second short circuits NULL [Value] parameters to return NULL [Value], however NULL [Value]s can
- * appear inside of Map.
- * - Extracts Map and String for [function] evaluation.
- * - All other parameter types return ERROR.
- * - Catches evaluation exceptions and returns them as an ERROR.
- */
-@JvmName("binaryMapStringFunction")
-internal inline fun binaryFunction(
-  crossinline function: (Map<String, Value>, String) -> EvaluateResult
-): EvaluateFunction =
-  binaryFunctionType(
-    ValueTypeCase.MAP_VALUE,
-    { v: Value -> v.mapValue.fieldsMap },
-    ValueTypeCase.STRING_VALUE,
-    Value::getStringValue,
-    function
-  )
 
 /**
  * Binary (Value, Array) Function
@@ -355,13 +342,23 @@ internal inline fun binaryFunction(
 internal inline fun binaryFunction(
   crossinline function: (DoubleArray, DoubleArray) -> EvaluateResult
 ): EvaluateFunction = binaryFunction { left: Value?, right: Value? ->
-  val leftVector = getVectorValue(left)
-  if (leftVector == null) return@binaryFunction EvaluateResultError
+  val leftVector =
+    when {
+      left == null -> null
+      Values.isNullValue(left) -> null
+      Values.isVectorValue(left) -> getVectorValue(left)
+      else -> return@binaryFunction EvaluateResultError
+    }
+  val rightVector =
+    when {
+      right == null -> null
+      Values.isNullValue(right) -> null
+      Values.isVectorValue(right) -> getVectorValue(right)
+      else -> return@binaryFunction EvaluateResultError
+    }
 
-  val rightVector = getVectorValue(right)
-  if (rightVector == null) return@binaryFunction EvaluateResultError
-
-  function(leftVector, rightVector)
+  if (leftVector == null || rightVector == null) return@binaryFunction EvaluateResult.NULL
+  else catch { function(leftVector, rightVector) }
 }
 
 /**
@@ -380,57 +377,6 @@ internal inline fun binaryFunction(crossinline function: (String, String) -> Eva
     Value::getStringValue,
     ValueTypeCase.STRING_VALUE,
     Value::getStringValue,
-    function
-  )
-
-/**
- * For building binary functions that perform Regex evaluation.
- * - Separates the Regex compilation via [patternConstructor] from the [function] evaluation.
- * - Caches previously seen Regex to avoid compilation overhead.
- * - First, short circuits UNSET and ERROR parameters to return ERROR.
- * - Second short circuits NULL [Value] parameters to return NULL [Value].
- * - Extracts String and Regex via [patternConstructor] for [function] evaluation.
- * - All other parameter types return ERROR.
- * - Catches evaluation exceptions and returns them as an ERROR.
- */
-@JvmName("binaryStringPatternConstructorFunction")
-internal inline fun binaryPatternConstructorFunction(
-  crossinline patternConstructor: (String) -> Pattern?,
-  crossinline function: (Pattern, String) -> Boolean
-) =
-  binaryFunctionConstructorType(
-    ValueTypeCase.STRING_VALUE,
-    Value::getStringValue,
-    ValueTypeCase.STRING_VALUE,
-    Value::getStringValue
-  ) {
-    val cache = cache(patternConstructor)
-    ({ value: String, regex: String ->
-      val pattern = cache(regex)
-      if (pattern == null) EvaluateResultError else EvaluateResult.boolean(function(pattern, value))
-    })
-  }
-
-/**
- * Binary (String, Regex from String) Function
- * - Validates there is exactly 2 parameters.
- * - First, short circuits UNSET and ERROR parameters to return ERROR.
- * - Second short circuits NULL [Value] parameters to return NULL [Value].
- * - Extracts String and Regex for [function] evaluation.
- * - Caches previously seen Regex to avoid compilation overhead.
- * - All other parameter types return ERROR.
- * - Catches evaluation exceptions and returns them as an ERROR.
- */
-@JvmName("binaryStringPatternFunction")
-internal inline fun binaryPatternFunction(crossinline function: (Pattern, String) -> Boolean) =
-  binaryPatternConstructorFunction(
-    { s: String ->
-      try {
-        Pattern.compile(s)
-      } catch (e: PatternSyntaxException) {
-        null
-      }
-    },
     function
   )
 
@@ -520,25 +466,20 @@ internal inline fun <T1, T2> binaryFunctionType(
     val p2 = params[1](input)
     val v2 = if (p2.isError) return@block EvaluateResultError else p2.value
 
-    // Mirroring Semantics
     when (v1?.valueTypeCase) {
-      null -> return@block EvaluateResultUnset
-      ValueTypeCase.NULL_VALUE ->
-        when (v2?.valueTypeCase) {
-          null,
-          ValueTypeCase.NULL_VALUE,
-          valueTypeCase2 -> EvaluateResult.NULL
-          else -> EvaluateResultError
-        }
-      valueTypeCase1 ->
-        when (v2?.valueTypeCase) {
-          null,
-          ValueTypeCase.NULL_VALUE -> EvaluateResult.NULL
-          valueTypeCase2 -> catch { function(valueExtractor1(v1), valueExtractor2(v2)) }
-          else -> EvaluateResultError
-        }
-      else -> EvaluateResultError
+      null,
+      ValueTypeCase.NULL_VALUE -> return@block EvaluateResult.NULL
+      valueTypeCase1 -> {}
+      else -> return@block EvaluateResultError
     }
+
+    when (v2?.valueTypeCase) {
+      null,
+      ValueTypeCase.NULL_VALUE -> return@block EvaluateResult.NULL
+      valueTypeCase2 -> {}
+      else -> return@block EvaluateResultError
+    }
+    catch { function(valueExtractor1(v1), valueExtractor2(v2)) }
   })
 }
 
@@ -567,23 +508,27 @@ internal inline fun <T1, T2> binaryFunctionConstructorType(
   val p2 = params[1]
   val f = functionConstructor()
   (block@{ input: MutableDocument ->
-    val v1 = p1(input).value ?: return@block EvaluateResultError
-    val v2 = p2(input).value ?: return@block EvaluateResultError
-    when (v1.valueTypeCase) {
-      ValueTypeCase.NULL_VALUE ->
-        when (v2.valueTypeCase) {
-          ValueTypeCase.NULL_VALUE -> EvaluateResult.NULL
-          valueTypeCase2 -> EvaluateResult.NULL
-          else -> EvaluateResultError
-        }
-      valueTypeCase1 ->
-        when (v2.valueTypeCase) {
-          ValueTypeCase.NULL_VALUE -> EvaluateResult.NULL
-          valueTypeCase2 -> catch { f(valueExtractor1(v1), valueExtractor2(v2)) }
-          else -> EvaluateResultError
-        }
-      else -> EvaluateResultError
-    }
+    val v1 = p1(input)
+    if (v1.isError) return@block EvaluateResultError
+    val v2 = p2(input)
+    if (v2.isError) return@block EvaluateResultError
+
+    val v1Ready =
+      when (v1.value?.valueTypeCase) {
+        null,
+        ValueTypeCase.NULL_VALUE -> null
+        valueTypeCase1 -> v1.value
+        else -> return@block EvaluateResultError
+      }
+    val v2Ready =
+      when (v2.value?.valueTypeCase) {
+        null,
+        ValueTypeCase.NULL_VALUE -> null
+        valueTypeCase2 -> v2.value
+        else -> return@block EvaluateResultError
+      }
+    if (v1Ready == null || v2Ready == null) EvaluateResult.NULL
+    else f(valueExtractor1(v1Ready), valueExtractor2(v2Ready))
   })
 }
 
@@ -617,24 +562,33 @@ internal inline fun ternaryLazyFunction(
  */
 internal inline fun ternaryTimestampFunction(
   crossinline function: (Timestamp, String, Long) -> EvaluateResult
-): EvaluateFunction = ternaryNullableValueFunction { timestamp: Value, unit: Value, number: Value ->
-  val t: Timestamp =
-    when (timestamp.valueTypeCase) {
-      ValueTypeCase.NULL_VALUE -> return@ternaryNullableValueFunction EvaluateResult.NULL
-      ValueTypeCase.TIMESTAMP_VALUE -> timestamp.timestampValue
-      else -> return@ternaryNullableValueFunction EvaluateResultError
-    }
-  val u: String =
-    if (unit.hasStringValue()) unit.stringValue
-    else return@ternaryNullableValueFunction EvaluateResultError
-  val n: Long =
-    when (number.valueTypeCase) {
-      ValueTypeCase.NULL_VALUE -> return@ternaryNullableValueFunction EvaluateResult.NULL
-      ValueTypeCase.INTEGER_VALUE -> number.integerValue
-      else -> return@ternaryNullableValueFunction EvaluateResultError
-    }
-  function(t, u, n)
-}
+): EvaluateFunction =
+  ternaryNullableValueFunction { timestamp: Value?, unit: Value?, number: Value? ->
+    val t =
+      when (timestamp?.valueTypeCase) {
+        null,
+        ValueTypeCase.NULL_VALUE -> null
+        ValueTypeCase.TIMESTAMP_VALUE -> timestamp.timestampValue
+        else -> return@ternaryNullableValueFunction EvaluateResultError
+      }
+
+    val u: String =
+      when (unit?.valueTypeCase) {
+        ValueTypeCase.STRING_VALUE -> unit.stringValue
+        else -> return@ternaryNullableValueFunction EvaluateResultError
+      }
+
+    val n: Long? =
+      when (number?.valueTypeCase) {
+        null,
+        ValueTypeCase.NULL_VALUE -> null
+        ValueTypeCase.INTEGER_VALUE -> number.integerValue
+        else -> return@ternaryNullableValueFunction EvaluateResultError
+      }
+
+    if (t == null || n == null) return@ternaryNullableValueFunction EvaluateResult.NULL
+    else function(t, u, n)
+  }
 
 /**
  * Ternary Value Function
@@ -644,11 +598,14 @@ internal inline fun ternaryTimestampFunction(
  * - Catches evaluation exceptions and returns them as an ERROR.
  */
 internal inline fun ternaryNullableValueFunction(
-  crossinline function: (Value, Value, Value) -> EvaluateResult
+  crossinline function: (Value?, Value?, Value?) -> EvaluateResult
 ): EvaluateFunction = ternaryLazyFunction { p1, p2, p3 ->
-  val v1 = p1().value ?: return@ternaryLazyFunction EvaluateResultError
-  val v2 = p2().value ?: return@ternaryLazyFunction EvaluateResultError
-  val v3 = p3().value ?: return@ternaryLazyFunction EvaluateResultError
+  val v1 = if (p1().isError) return@ternaryLazyFunction EvaluateResultError else p1().value
+
+  val v2 = if (p2().isError) return@ternaryLazyFunction EvaluateResultError else p2().value
+
+  val v3 = if (p3().isError) return@ternaryLazyFunction EvaluateResultError else p3().value
+
   function(v1, v2, v3)
 }
 
@@ -711,10 +668,12 @@ internal inline fun <T> variadicFunctionType(
     val values = ArrayList<T>(params.size)
     var nullFound = false
     for (param in params) {
-      val v = param(input).value ?: return@block EvaluateResultError
-      when (v.valueTypeCase) {
+      val p = param(input)
+      if (p.isError) return@block EvaluateResultError
+      when (p.value?.valueTypeCase) {
+        null,
         ValueTypeCase.NULL_VALUE -> nullFound = true
-        valueTypeCase -> values.add(valueExtractor(v))
+        valueTypeCase -> values.add(valueExtractor(p.value!!))
         else -> return@block EvaluateResultError
       }
     }
@@ -724,8 +683,8 @@ internal inline fun <T> variadicFunctionType(
 
 /**
  * Variadic String Function
- * - First short circuits UNSET and ERROR parameters to return ERROR.
- * - Second short circuits NULL [Value] parameters to return NULL [Value].
+ * - First short circuits ERROR parameters to return ERROR.
+ * - Second short circuits UNSET and NULL [Value] parameters to return NULL [Value].
  * - Extract String parameters into BooleanArray for [function] evaluation.
  * - All other parameter types return ERROR.
  * - Catches evaluation exceptions and returns them as an ERROR.
@@ -738,8 +697,11 @@ internal inline fun variadicFunction(
     val values = BooleanArray(params.size)
     var nullFound = false
     params.forEachIndexed { i, param ->
-      val v = param(input).value ?: return@block EvaluateResultError
-      when (v.valueTypeCase) {
+      val result = param(input)
+      if (result.isError) return@block EvaluateResultError
+      val v = result.value
+      when (v?.valueTypeCase) {
+        null,
         ValueTypeCase.NULL_VALUE -> nullFound = true
         ValueTypeCase.BOOLEAN_VALUE -> values[i] = v.booleanValue
         else -> return@block EvaluateResultError
@@ -802,20 +764,6 @@ internal inline fun arithmeticPrimitive(
   )
 
 /**
- * Binary Arithmetic Function
- * - Validates there is exactly 2 parameter.
- * - Short circuits UNSET and ERROR parameter to return ERROR.
- * - Short circuits NULL [Value] parameter to return NULL [Value].
- * - If any of parameters are Integer, they will be converted to Double.
- * - After conversion, if both parameters are Double, the [doubleOp] will be used for evaluation.
- * - All other parameter types return ERROR.
- * - Catches evaluation exceptions and returns them as an ERROR.
- */
-internal inline fun arithmeticPrimitive(
-  crossinline doubleOp: (Double, Double) -> Double
-): EvaluateFunction = arithmetic { x: Double, y: Double -> EvaluateResult.double(doubleOp(x, y)) }
-
-/**
  * Unary Arithmetic Function
  * - Validates there is exactly 1 parameter.
  * - Short circuits UNSET and ERROR parameter to return ERROR.
@@ -867,13 +815,29 @@ internal inline fun arithmetic(
   crossinline intOp: (Long, Long) -> EvaluateResult,
   crossinline doubleOp: (Double, Long) -> EvaluateResult
 ): EvaluateFunction = binaryFunction { p1: Value?, p2: Value? ->
-  if (p2?.hasIntegerValue() == true)
+  val n1: FirestoreNumber? =
     when (p1?.valueTypeCase) {
-      ValueTypeCase.INTEGER_VALUE -> intOp(p1.integerValue, p2.integerValue)
-      ValueTypeCase.DOUBLE_VALUE -> doubleOp(p1.doubleValue, p2.integerValue)
-      else -> EvaluateResultError
+      null,
+      ValueTypeCase.NULL_VALUE -> null
+      ValueTypeCase.INTEGER_VALUE -> LongValue(p1.integerValue)
+      ValueTypeCase.DOUBLE_VALUE -> DoubleValue(p1.doubleValue)
+      else -> return@binaryFunction EvaluateResultError
     }
-  else EvaluateResultError
+  val n2: Long? =
+    when (p2?.valueTypeCase) {
+      null,
+      ValueTypeCase.NULL_VALUE -> null
+      ValueTypeCase.INTEGER_VALUE -> p2.integerValue
+      ValueTypeCase.DOUBLE_VALUE -> p2.doubleValue.toLong()
+      else -> return@binaryFunction EvaluateResultError
+    }
+
+  if (n1 == null || n2 == null) return@binaryFunction EvaluateResult.NULL
+
+  return@binaryFunction when (n1) {
+    is LongValue -> intOp(n1.value, n2)
+    is DoubleValue -> doubleOp(n1.value, n2)
+  }
 }
 
 /**
@@ -891,50 +855,45 @@ internal inline fun arithmetic(
   crossinline intOp: (Long, Long) -> EvaluateResult,
   crossinline doubleOp: (Double, Double) -> EvaluateResult
 ): EvaluateFunction = binaryFunction { p1: Value?, p2: Value? ->
-  when (p1?.valueTypeCase) {
-    ValueTypeCase.INTEGER_VALUE ->
-      when (p2?.valueTypeCase) {
-        ValueTypeCase.INTEGER_VALUE -> intOp(p1.integerValue, p2.integerValue)
-        ValueTypeCase.DOUBLE_VALUE -> doubleOp(p1.integerValue.toDouble(), p2.doubleValue)
-        else -> EvaluateResultError
+  val n1: FirestoreNumber? =
+    when (p1?.valueTypeCase) {
+      null,
+      ValueTypeCase.NULL_VALUE -> null
+      ValueTypeCase.INTEGER_VALUE -> LongValue(p1.integerValue)
+      ValueTypeCase.DOUBLE_VALUE -> DoubleValue(p1.doubleValue)
+      else -> return@binaryFunction EvaluateResultError
+    }
+  val n2: FirestoreNumber? =
+    when (p2?.valueTypeCase) {
+      null,
+      ValueTypeCase.NULL_VALUE -> null
+      ValueTypeCase.INTEGER_VALUE -> LongValue(p2.integerValue)
+      ValueTypeCase.DOUBLE_VALUE -> DoubleValue(p2.doubleValue)
+      else -> return@binaryFunction EvaluateResultError
+    }
+
+  if (n1 == null || n2 == null) return@binaryFunction EvaluateResult.NULL
+
+  return@binaryFunction when (n1) {
+    is LongValue -> {
+      when (n2) {
+        is LongValue -> intOp(n1.value, n2.value)
+        is DoubleValue -> doubleOp(n1.value.toDouble(), n2.value)
       }
-    ValueTypeCase.DOUBLE_VALUE ->
-      when (p2?.valueTypeCase) {
-        ValueTypeCase.INTEGER_VALUE -> doubleOp(p1.doubleValue, p2.integerValue.toDouble())
-        ValueTypeCase.DOUBLE_VALUE -> doubleOp(p1.doubleValue, p2.doubleValue)
-        else -> EvaluateResultError
+    }
+    is DoubleValue -> {
+      when (n2) {
+        is DoubleValue -> doubleOp(n1.value, n2.value)
+        is LongValue -> doubleOp(n1.value, n2.value.toDouble())
+        else -> return@binaryFunction EvaluateResultError
       }
-    else -> EvaluateResultError
+    }
   }
 }
 
-/**
- * Binary Arithmetic Function
- * - Validates there is exactly 2 parameter.
- * - Short circuits UNSET and ERROR parameter to return ERROR.
- * - Short circuits NULL [Value] parameter to return NULL [Value].
- * - If any of parameters are Integer, they will be converted to Double.
- * - After conversion, if both parameters are Double, the [function] will be used for evaluation.
- * - All other parameter types return ERROR.
- * - Catches evaluation exceptions and returns them as an ERROR.
- */
 internal inline fun arithmetic(
-  crossinline function: (Double, Double) -> EvaluateResult
-): EvaluateFunction = binaryFunction { p1: Value?, p2: Value? ->
-  val v1: Double =
-    when (p1?.valueTypeCase) {
-      ValueTypeCase.INTEGER_VALUE -> p1.integerValue.toDouble()
-      ValueTypeCase.DOUBLE_VALUE -> p1.doubleValue
-      else -> return@binaryFunction EvaluateResultError
-    }
-  val v2: Double =
-    when (p2?.valueTypeCase) {
-      ValueTypeCase.INTEGER_VALUE -> p2.integerValue.toDouble()
-      ValueTypeCase.DOUBLE_VALUE -> p2.doubleValue
-      else -> return@binaryFunction EvaluateResultError
-    }
-  function(v1, v2)
-}
+  crossinline doubleOp: (Double, Double) -> EvaluateResult
+): EvaluateFunction = arithmetic({ l1, l2 -> doubleOp(l1.toDouble(), l2.toDouble()) }, doubleOp)
 
 internal class EvaluationContext(val pipeline: RealtimePipeline)
 

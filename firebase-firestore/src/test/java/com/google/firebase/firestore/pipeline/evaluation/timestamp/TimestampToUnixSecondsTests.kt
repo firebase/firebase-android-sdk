@@ -20,7 +20,9 @@ import com.google.firebase.firestore.pipeline.Expression.Companion.constant
 import com.google.firebase.firestore.pipeline.Expression.Companion.timestampToUnixSeconds
 import com.google.firebase.firestore.pipeline.assertEvaluatesTo
 import com.google.firebase.firestore.pipeline.assertEvaluatesToError
+import com.google.firebase.firestore.pipeline.assertEvaluatesToNull
 import com.google.firebase.firestore.pipeline.evaluate
+import com.google.firebase.firestore.pipeline.evaluation.MirroringTestCases
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -38,8 +40,18 @@ internal class TimestampToUnixSecondsTests {
   }
 
   @Test
+  fun timestampToUnixSeconds_mirroing() {
+    for (testCase in MirroringTestCases.UNARY_MIRROR_TEST_CASES) {
+      assertEvaluatesToNull(
+        evaluate(timestampToUnixSeconds(testCase.input)),
+        "timestampToUnixSeconds(${'$'}{testCase.name})"
+      )
+    }
+  }
+
+  @Test
   fun timestampToUnixSeconds_timestamp_returnsSeconds() {
-    val ts = Timestamp(347068800, 0) // March 1, 1981 00:00:00 UTC
+    val ts = Timestamp(347068800, 0) // December 31, 1980 00:00:00 UTC
     val expr = timestampToUnixSeconds(constant(ts))
     val result = evaluate(expr)
     assertEvaluatesTo(

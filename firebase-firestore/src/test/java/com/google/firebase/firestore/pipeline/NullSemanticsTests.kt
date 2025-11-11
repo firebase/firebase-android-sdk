@@ -116,12 +116,10 @@ internal class NullSemanticsTests {
     val documents = listOf(doc1, doc2, doc3, doc4)
 
     val pipeline =
-      RealtimePipelineSource(db)
-        .collection("users")
-        .where(equal(field("score"), nullValue())) // Equality filters never match null or missing
+      RealtimePipelineSource(db).collection("users").where(equal(field("score"), nullValue()))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
-    assertThat(result).isEmpty()
+    assertThat(result).containsExactly(doc1)
   }
 
   @Test
@@ -134,12 +132,10 @@ internal class NullSemanticsTests {
     val documents = listOf(doc1, doc2, doc3, doc4, doc5)
 
     val pipeline =
-      RealtimePipelineSource(db)
-        .collection("users")
-        .where(equal(field("score"), field("rank"))) // Equality filters never match null
+      RealtimePipelineSource(db).collection("users").where(equal(field("score"), field("rank")))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
-    assertThat(result).isEmpty()
+    assertThat(result).containsExactly(doc1)
   }
 
   @Test
@@ -156,7 +152,7 @@ internal class NullSemanticsTests {
       RealtimePipelineSource(db).collection("users").where(equal(field("score.bonus"), nullValue()))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
-    assertThat(result).isEmpty()
+    assertThat(result).containsExactly(doc1)
   }
 
   @Test
@@ -175,7 +171,7 @@ internal class NullSemanticsTests {
         .where(and(equal(field("score.bonus"), nullValue()), equal(field("rank"), nullValue())))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
-    assertThat(result).isEmpty()
+    assertThat(result).containsExactly(doc1)
   }
 
   @Test
@@ -189,7 +185,7 @@ internal class NullSemanticsTests {
       RealtimePipelineSource(db).collection("k").where(equal(field("foo"), array(nullValue())))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
-    assertThat(result).isEmpty()
+    assertThat(result).containsExactly(doc1)
   }
 
   @Test
@@ -206,7 +202,7 @@ internal class NullSemanticsTests {
         .where(equal(field("foo"), array(constant(1.0), nullValue())))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
-    assertThat(result).isEmpty()
+    assertThat(result).containsExactly(doc2, doc3)
   }
 
   @Test
@@ -222,7 +218,7 @@ internal class NullSemanticsTests {
         .where(equal(field("foo"), array(nullValue(), constant(Double.NaN))))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
-    assertThat(result).isEmpty()
+    assertThat(result).containsExactly(doc3)
   }
 
   @Test
@@ -238,7 +234,7 @@ internal class NullSemanticsTests {
         .where(equal(field("foo"), map(mapOf("a" to nullValue()))))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
-    assertThat(result).isEmpty()
+    assertThat(result).containsExactly(doc1)
   }
 
   @Test
@@ -255,7 +251,7 @@ internal class NullSemanticsTests {
         .where(equal(field("foo"), map(mapOf("a" to constant(1.0), "b" to nullValue()))))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
-    assertThat(result).isEmpty()
+    assertThat(result).containsExactly(doc2, doc3)
   }
 
   @Test
@@ -271,7 +267,7 @@ internal class NullSemanticsTests {
         .where(equal(field("foo"), map(mapOf("a" to nullValue(), "b" to constant(Double.NaN)))))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
-    assertThat(result).isEmpty()
+    assertThat(result).containsExactly(doc3)
   }
 
   @Test
@@ -291,7 +287,7 @@ internal class NullSemanticsTests {
         .where(equal(field("foo"), map(mapOf("a" to array(nullValue())))))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
-    assertThat(result).isEmpty()
+    assertThat(result).containsExactly(doc1)
   }
 
   @Test
@@ -312,7 +308,7 @@ internal class NullSemanticsTests {
         .where(equal(field("foo"), map(mapOf("a" to array(constant(1.0), nullValue())))))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
-    assertThat(result).isEmpty()
+    assertThat(result).containsExactly(doc2, doc3)
   }
 
   @Test
@@ -332,7 +328,7 @@ internal class NullSemanticsTests {
         .where(equal(field("foo"), map(mapOf("a" to array(nullValue(), constant(Double.NaN))))))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
-    assertThat(result).isEmpty()
+    assertThat(result).containsExactly(doc3)
   }
 
   @Test
@@ -347,7 +343,7 @@ internal class NullSemanticsTests {
         .where(and(equal(field("score"), constant(42L)), equal(field("rank"), nullValue())))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
-    assertThat(result).isEmpty()
+    assertThat(result).containsExactly(doc1)
   }
 
   @Test
@@ -360,10 +356,10 @@ internal class NullSemanticsTests {
     val pipeline =
       RealtimePipelineSource(db)
         .collection("users")
-        .where(equalAny(field("score"), array(nullValue()))) // IN filters never match null
+        .where(equalAny(field("score"), array(nullValue())))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
-    assertThat(result).isEmpty()
+    assertThat(result).containsExactly(doc1)
   }
 
   @Test
@@ -381,7 +377,7 @@ internal class NullSemanticsTests {
         .where(equalAny(field("score"), array(nullValue(), constant(100L))))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
-    assertThat(result).containsExactly(doc4)
+    assertThat(result).containsExactlyElementsIn(listOf(doc1, doc4))
   }
 
   @Test
@@ -400,10 +396,10 @@ internal class NullSemanticsTests {
     val pipeline =
       RealtimePipelineSource(db)
         .collection("users")
-        .where(arrayContains(field("score"), nullValue())) // arrayContains does not match null
+        .where(arrayContains(field("score"), nullValue()))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
-    assertThat(result).isEmpty()
+    assertThat(result).containsExactlyElementsIn(listOf(doc3, doc4, doc5))
   }
 
   @Test
@@ -422,12 +418,10 @@ internal class NullSemanticsTests {
     val pipeline =
       RealtimePipelineSource(db)
         .collection("users")
-        .where(
-          arrayContainsAny(field("score"), array(nullValue()))
-        ) // arrayContainsAny does not match null
+        .where(arrayContainsAny(field("score"), array(nullValue())))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
-    assertThat(result).isEmpty()
+    assertThat(result).containsExactlyElementsIn(listOf(doc3, doc4, doc5))
   }
 
   @Test
@@ -449,7 +443,7 @@ internal class NullSemanticsTests {
         .where(arrayContainsAny(field("score"), array(nullValue(), constant("foo"))))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
-    assertThat(result).containsExactly(doc6)
+    assertThat(result).containsExactlyElementsIn(listOf(doc3, doc4, doc5, doc6))
   }
 
   @Test
@@ -468,12 +462,10 @@ internal class NullSemanticsTests {
     val pipeline =
       RealtimePipelineSource(db)
         .collection("users")
-        .where(
-          arrayContainsAll(field("score"), array(nullValue()))
-        ) // arrayContainsAll does not match null
+        .where(arrayContainsAll(field("score"), array(nullValue())))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
-    assertThat(result).isEmpty()
+    assertThat(result).containsExactlyElementsIn(listOf(doc3, doc4, doc5))
   }
 
   @Test
@@ -492,12 +484,10 @@ internal class NullSemanticsTests {
     val pipeline =
       RealtimePipelineSource(db)
         .collection("users")
-        .where(
-          arrayContainsAll(field("score"), array(nullValue(), constant(42L)))
-        ) // arrayContainsAll does not match null
+        .where(arrayContainsAll(field("score"), array(nullValue(), constant(42L))))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
-    assertThat(result).isEmpty()
+    assertThat(result).containsExactly(doc4)
   }
 
   @Test
@@ -509,12 +499,10 @@ internal class NullSemanticsTests {
     val documents = listOf(doc1, doc2, doc3, doc4)
 
     val pipeline =
-      RealtimePipelineSource(db)
-        .collection("users")
-        .where(notEqual(field("score"), nullValue())) // != null is not supported
+      RealtimePipelineSource(db).collection("users").where(notEqual(field("score"), nullValue()))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
-    assertThat(result).isEmpty()
+    assertThat(result).containsExactlyElementsIn(listOf(doc2, doc3, doc4))
   }
 
   @Test
@@ -527,13 +515,18 @@ internal class NullSemanticsTests {
     val documents = listOf(doc1, doc2, doc3, doc4, doc5)
 
     val pipeline =
-      RealtimePipelineSource(db)
-        .collection("users")
-        .where(notEqual(field("score"), field("rank"))) // != null is not supported
+      RealtimePipelineSource(db).collection("users").where(notEqual(field("score"), field("rank")))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
-    assertThat(result).isEmpty()
+    assertThat(result).containsExactlyElementsIn(listOf(doc2, doc3, doc4, doc5))
   }
+
+  // ... (Tests between these are unchanged, but the replace tool needs context or separate calls. I
+  // will use separate calls or a large block if contiguous)
+  // The tests are not contiguous. I will use separate replacements.
+  // Actually, wait. `whereNeqConstantAsNull` is followed by `whereNeqFieldAsNull` which is followed
+  // by others. `whereGt` is further down.
+  // I will do `whereNeq` tests first.
 
   @Test
   fun whereNeqNullInArray(): Unit = runBlocking {
@@ -543,9 +536,7 @@ internal class NullSemanticsTests {
     val documents = listOf(doc1, doc2, doc3)
 
     val pipeline =
-      RealtimePipelineSource(db)
-        .collection("k")
-        .where(notEqual(field("foo"), array(nullValue()))) // != [null] is not supported
+      RealtimePipelineSource(db).collection("k").where(notEqual(field("foo"), array(nullValue())))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc2, doc3))
@@ -562,12 +553,10 @@ internal class NullSemanticsTests {
     val pipeline =
       RealtimePipelineSource(db)
         .collection("k")
-        .where(
-          notEqual(field("foo"), array(constant(1.0), nullValue()))
-        ) // != [1.0, null] is not supported
+        .where(notEqual(field("foo"), array(constant(1.0), nullValue())))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
-    assertThat(result).containsExactly(doc1)
+    assertThat(result).containsExactlyElementsIn(listOf(doc1, doc4))
   }
 
   @Test
@@ -580,12 +569,10 @@ internal class NullSemanticsTests {
     val pipeline =
       RealtimePipelineSource(db)
         .collection("k")
-        .where(
-          notEqual(field("foo"), array(nullValue(), constant(Double.NaN)))
-        ) // != [null, NaN] is not supported
+        .where(notEqual(field("foo"), array(nullValue(), constant(Double.NaN))))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
-    assertThat(result).containsExactlyElementsIn(listOf(doc1, doc3))
+    assertThat(result).containsExactlyElementsIn(listOf(doc1, doc2))
   }
 
   @Test
@@ -598,9 +585,7 @@ internal class NullSemanticsTests {
     val pipeline =
       RealtimePipelineSource(db)
         .collection("k")
-        .where(
-          notEqual(field("foo"), map(mapOf("a" to nullValue())))
-        ) // != {a:null} is not supported
+        .where(notEqual(field("foo"), map(mapOf("a" to nullValue()))))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc2, doc3))
@@ -617,12 +602,10 @@ internal class NullSemanticsTests {
     val pipeline =
       RealtimePipelineSource(db)
         .collection("k")
-        .where(
-          notEqual(field("foo"), map(mapOf("a" to constant(1.0), "b" to nullValue())))
-        ) // != {a:1.0,b:null} not supported
+        .where(notEqual(field("foo"), map(mapOf("a" to constant(1.0), "b" to nullValue()))))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
-    assertThat(result).containsExactly(doc1)
+    assertThat(result).containsExactlyElementsIn(listOf(doc1, doc4))
   }
 
   @Test
@@ -635,12 +618,10 @@ internal class NullSemanticsTests {
     val pipeline =
       RealtimePipelineSource(db)
         .collection("k")
-        .where(
-          notEqual(field("foo"), map(mapOf("a" to nullValue(), "b" to constant(Double.NaN))))
-        ) // != {a:null,b:NaN} not supported
+        .where(notEqual(field("foo"), map(mapOf("a" to nullValue(), "b" to constant(Double.NaN)))))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
-    assertThat(result).containsExactlyElementsIn(listOf(doc1, doc3))
+    assertThat(result).containsExactlyElementsIn(listOf(doc1, doc2))
   }
 
   @Test
@@ -652,10 +633,10 @@ internal class NullSemanticsTests {
     val pipeline =
       RealtimePipelineSource(db)
         .collection("users")
-        .where(notEqualAny(field("score"), array(nullValue()))) // NOT IN [null] is not supported
+        .where(notEqualAny(field("score"), array(nullValue())))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
-    assertThat(result).isEmpty()
+    assertThat(result).containsExactly(doc2)
   }
 
   @Test
@@ -668,9 +649,7 @@ internal class NullSemanticsTests {
     val documents = listOf(doc1, doc2, doc3, doc4, doc5)
 
     val pipeline =
-      RealtimePipelineSource(db)
-        .collection("users")
-        .where(greaterThan(field("score"), nullValue())) // > null is not supported
+      RealtimePipelineSource(db).collection("users").where(greaterThan(field("score"), nullValue()))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
@@ -688,10 +667,10 @@ internal class NullSemanticsTests {
     val pipeline =
       RealtimePipelineSource(db)
         .collection("users")
-        .where(greaterThanOrEqual(field("score"), nullValue())) // >= null is not supported
+        .where(greaterThanOrEqual(field("score"), nullValue()))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
-    assertThat(result).isEmpty()
+    assertThat(result).containsExactly(doc1)
   }
 
   @Test
@@ -704,9 +683,7 @@ internal class NullSemanticsTests {
     val documents = listOf(doc1, doc2, doc3, doc4, doc5)
 
     val pipeline =
-      RealtimePipelineSource(db)
-        .collection("users")
-        .where(lessThan(field("score"), nullValue())) // < null is not supported
+      RealtimePipelineSource(db).collection("users").where(lessThan(field("score"), nullValue()))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
@@ -724,10 +701,10 @@ internal class NullSemanticsTests {
     val pipeline =
       RealtimePipelineSource(db)
         .collection("users")
-        .where(lessThanOrEqual(field("score"), nullValue())) // <= null is not supported
+        .where(lessThanOrEqual(field("score"), nullValue()))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
-    assertThat(result).isEmpty()
+    assertThat(result).containsExactly(doc1)
   }
 
   @Test
@@ -735,113 +712,44 @@ internal class NullSemanticsTests {
     val doc1 = doc("k/1", 1000, mapOf("a" to true, "b" to null))
     val doc2 = doc("k/2", 1000, mapOf("a" to false, "b" to null))
     val doc3 = doc("k/3", 1000, mapOf("a" to null, "b" to null))
-    val doc4 = doc("k/4", 1000, mapOf("a" to true, "b" to true)) // Match
+    val doc4 = doc("k/4", 1000, mapOf("a" to true, "b" to true))
     val documents = listOf(doc1, doc2, doc3, doc4)
 
     val pipeline =
       RealtimePipelineSource(db)
         .collection("k")
-        .where(and(equal(field("a"), constant(true)), equal(field("b"), constant(true))))
+        .where(and(field("a").asBoolean(), field("b").asBoolean()))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc4)
   }
 
   @Test
-  fun whereIsNullAnd(): Unit = runBlocking {
-    val doc1 = doc("k/1", 1000, mapOf("a" to null, "b" to null))
-    val doc2 = doc("k/2", 1000, mapOf("a" to null))
-    val doc3 = doc("k/3", 1000, mapOf("a" to null, "b" to true))
-    val doc4 = doc("k/4", 1000, mapOf("a" to null, "b" to false))
-    val doc5 = doc("k/5", 1000, mapOf("b" to null))
-    val doc6 = doc("k/6", 1000, mapOf("a" to true, "b" to null))
-    val doc7 = doc("k/7", 1000, mapOf("a" to false, "b" to null))
-    val doc8 = doc("k/8", 1000, mapOf("not-a" to true, "not-b" to true))
-    val documents = listOf(doc1, doc2, doc3, doc4, doc5, doc6, doc7, doc8)
-
-    val pipeline =
-      RealtimePipelineSource(db)
-        .collection("k")
-        .where(isNull(and(equal(field("a"), constant(true)), equal(field("b"), constant(true)))))
-    // (a==true AND b==true) is NULL if:
-    // (true AND null) -> null (doc6)
-    // (null AND true) -> null (doc3)
-    // (null AND null) -> null (doc1)
-    // (false AND null) -> false
-    // (null AND false) -> false
-    // (missing AND true) -> error
-    // (true AND missing) -> error
-    // (missing AND null) -> error
-    // (null AND missing) -> error
-    // (missing AND missing) -> error
-    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
-    assertThat(result).containsExactlyElementsIn(listOf(doc1, doc3, doc6))
-  }
-
-  @Test
   fun whereIsErrorAnd(): Unit = runBlocking {
-    val doc1 =
-      doc(
-        "k/1",
-        1000,
-        mapOf("a" to null, "b" to null)
-      ) // a=null, b=null -> AND is null -> isError(null) is false
-    val doc2 =
-      doc(
-        "k/2",
-        1000,
-        mapOf("a" to null)
-      ) // a=null, b=missing -> AND is error -> isError(error) is true -> Match
-    val doc3 =
-      doc(
-        "k/3",
-        1000,
-        mapOf("a" to null, "b" to true)
-      ) // a=null, b=true -> AND is null -> isError(null) is false
-    val doc4 =
-      doc(
-        "k/4",
-        1000,
-        mapOf("a" to null, "b" to false)
-      ) // a=null, b=false -> AND is false -> isError(false) is false
-    val doc5 =
-      doc(
-        "k/5",
-        1000,
-        mapOf("b" to null)
-      ) // a=missing, b=null -> AND is error -> isError(error) is true -> Match
-    val doc6 =
-      doc(
-        "k/6",
-        1000,
-        mapOf("a" to true, "b" to null)
-      ) // a=true, b=null -> AND is null -> isError(null) is false
-    val doc7 =
-      doc(
-        "k/7",
-        1000,
-        mapOf("a" to false, "b" to null)
-      ) // a=false, b=null -> AND is false -> isError(false) is false
-    val doc8 =
-      doc(
-        "k/8",
-        1000,
-        mapOf("not-a" to true, "not-b" to true)
-      ) // a=missing, b=missing -> AND is error -> isError(error) is true -> Match
-    val documents = listOf(doc1, doc2, doc3, doc4, doc5, doc6, doc7, doc8)
+    val doc1 = doc("k/1", 1000, mapOf<String, Any?>())
+    val doc2 = doc("k/2", 1000, mapOf("a" to null, "b" to null))
+    val doc3 = doc("k/3", 1000, mapOf("a" to null))
+    val doc4 = doc("k/4", 1000, mapOf("a" to null, "b" to true))
+    val doc5 = doc("k/5", 1000, mapOf("a" to null, "b" to false))
+    val doc6 = doc("k/6", 1000, mapOf("b" to null))
+    val doc7 = doc("k/7", 1000, mapOf("a" to true, "b" to null))
+    val doc8 = doc("k/8", 1000, mapOf("a" to false, "b" to null))
+    val doc9 = doc("k/9", 1000, mapOf("not-a" to true, "not-b" to true))
+    val doc10 = doc("k/10", 1000, mapOf("a" to 1L, "b" to 2L))
+    val documents = listOf(doc1, doc2, doc3, doc4, doc5, doc6, doc7, doc8, doc9, doc10)
 
     val pipeline =
       RealtimePipelineSource(db)
         .collection("k")
-        .where(isError(and(equal(field("a"), constant(true)), equal(field("b"), constant(true)))))
-    // This happens if either a or b is missing.
+        .where(isError(and(field("a").asBoolean(), field("b").asBoolean())))
+
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
-    assertThat(result).containsExactlyElementsIn(listOf(doc2, doc5, doc8))
+    assertThat(result).containsExactly(doc10)
   }
 
   @Test
   fun whereOr(): Unit = runBlocking {
-    val doc1 = doc("k/1", 1000, mapOf("a" to true, "b" to null)) // Match
+    val doc1 = doc("k/1", 1000, mapOf("a" to true, "b" to null))
     val doc2 = doc("k/2", 1000, mapOf("a" to false, "b" to null))
     val doc3 = doc("k/3", 1000, mapOf("a" to null, "b" to null))
     val documents = listOf(doc1, doc2, doc3)
@@ -849,14 +757,14 @@ internal class NullSemanticsTests {
     val pipeline =
       RealtimePipelineSource(db)
         .collection("k")
-        .where(or(equal(field("a"), constant(true)), equal(field("b"), constant(true))))
+        .where(or(field("a").asBoolean(), field("b").asBoolean()))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1)
   }
 
   @Test
-  fun whereIsNullOr(): Unit = runBlocking {
+  fun whereEqNullOr(): Unit = runBlocking {
     val doc1 = doc("k/1", 1000, mapOf("a" to null, "b" to null))
     val doc2 = doc("k/2", 1000, mapOf("a" to null))
     val doc3 = doc("k/3", 1000, mapOf("a" to null, "b" to true))
@@ -870,99 +778,54 @@ internal class NullSemanticsTests {
     val pipeline =
       RealtimePipelineSource(db)
         .collection("k")
-        .where(isNull(or(equal(field("a"), constant(true)), equal(field("b"), constant(true)))))
-    // (a==true OR b==true) is NULL if:
-    // (false OR null) -> null (doc7)
-    // (null OR false) -> null (doc4)
-    // (null OR null) -> null (doc1)
-    // (true OR null) -> true
-    // (null OR true) -> true
-    // (missing OR false) -> error
-    // (false OR missing) -> error
+        .where(equal(or(field("a").asBoolean(), field("b").asBoolean()), nullValue()))
+
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
-    assertThat(result).containsExactlyElementsIn(listOf(doc1, doc4, doc7))
+    assertThat(result).containsExactly(doc1, doc2, doc4, doc5, doc7, doc8)
   }
 
   @Test
   fun whereIsErrorOr(): Unit = runBlocking {
-    val doc1 =
-      doc(
-        "k/1",
-        1000,
-        mapOf("a" to null, "b" to null)
-      ) // a=null, b=null -> OR is null -> isError(null) is false
-    val doc2 =
-      doc(
-        "k/2",
-        1000,
-        mapOf("a" to null)
-      ) // a=null, b=missing -> OR is error -> isError(error) is true -> Match
-    val doc3 =
-      doc(
-        "k/3",
-        1000,
-        mapOf("a" to null, "b" to true)
-      ) // a=null, b=true -> OR is true -> isError(true) is false
-    val doc4 =
-      doc(
-        "k/4",
-        1000,
-        mapOf("a" to null, "b" to false)
-      ) // a=null, b=false -> OR is null -> isError(null) is false
-    val doc5 =
-      doc(
-        "k/5",
-        1000,
-        mapOf("b" to null)
-      ) // a=missing, b=null -> OR is error -> isError(error) is true -> Match
-    val doc6 =
-      doc(
-        "k/6",
-        1000,
-        mapOf("a" to true, "b" to null)
-      ) // a=true, b=null -> OR is true -> isError(true) is false
-    val doc7 =
-      doc(
-        "k/7",
-        1000,
-        mapOf("a" to false, "b" to null)
-      ) // a=false, b=null -> OR is null -> isError(null) is false
-    val doc8 =
-      doc(
-        "k/8",
-        1000,
-        mapOf("not-a" to true, "not-b" to true)
-      ) // a=missing, b=missing -> OR is error -> isError(error) is true -> Match
-    val documents = listOf(doc1, doc2, doc3, doc4, doc5, doc6, doc7, doc8)
+    val doc1 = doc("k/1", 1000, mapOf<String, Any?>())
+    val doc2 = doc("k/2", 1000, mapOf("a" to null, "b" to null))
+    val doc3 = doc("k/3", 1000, mapOf("a" to null))
+    val doc4 = doc("k/4", 1000, mapOf("a" to null, "b" to true))
+    val doc5 = doc("k/5", 1000, mapOf("a" to null, "b" to false))
+    val doc6 = doc("k/6", 1000, mapOf("b" to null))
+    val doc7 = doc("k/7", 1000, mapOf("a" to true, "b" to null))
+    val doc8 = doc("k/8", 1000, mapOf("a" to false, "b" to null))
+    val doc9 = doc("k/9", 1000, mapOf("not-a" to true, "not-b" to true))
+    val doc10 = doc("k/10", 1000, mapOf("a" to 1L, "b" to 2L))
+    val documents = listOf(doc1, doc2, doc3, doc4, doc5, doc6, doc7, doc8, doc9, doc10)
+
     val pipeline =
       RealtimePipelineSource(db)
         .collection("k")
-        .where(isError(or(equal(field("a"), constant(true)), equal(field("b"), constant(true)))))
-    // This happens if either a or b is missing.
+        .where(isError(or(field("a").asBoolean(), field("b").asBoolean())))
+
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
-    assertThat(result).containsExactlyElementsIn(listOf(doc2, doc5, doc8))
+    assertThat(result).containsExactly(doc10)
   }
 
   @Test
   fun whereXor(): Unit = runBlocking {
-    val doc1 = doc("k/1", 1000, mapOf("a" to true, "b" to null)) // a=T, b=null -> XOR is null
-    val doc2 = doc("k/2", 1000, mapOf("a" to false, "b" to null)) // a=F, b=null -> XOR is null
-    val doc3 = doc("k/3", 1000, mapOf("a" to null, "b" to null)) // a=null, b=null -> XOR is null
-    val doc4 =
-      doc("k/4", 1000, mapOf("a" to true, "b" to false)) // a=T, b=F -> XOR is true -> Match
+    val doc1 = doc("k/1", 1000, mapOf("a" to true, "b" to null))
+    val doc2 = doc("k/2", 1000, mapOf("a" to false, "b" to null))
+    val doc3 = doc("k/3", 1000, mapOf("a" to null, "b" to null))
+    val doc4 = doc("k/4", 1000, mapOf("a" to true, "b" to false))
     val documents = listOf(doc1, doc2, doc3, doc4)
 
     val pipeline =
       RealtimePipelineSource(db)
         .collection("k")
-        .where(xor(equal(field("a"), constant(true)), equal(field("b"), constant(true))))
+        .where(xor(field("a").asBoolean(), field("b").asBoolean()))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc4)
   }
 
   @Test
-  fun whereIsNullXor(): Unit = runBlocking {
+  fun whereEqNullXor(): Unit = runBlocking {
     val doc1 = doc("k/1", 1000, mapOf("a" to null, "b" to null))
     val doc2 = doc("k/2", 1000, mapOf("a" to null))
     val doc3 = doc("k/3", 1000, mapOf("a" to null, "b" to true))
@@ -976,134 +839,2269 @@ internal class NullSemanticsTests {
     val pipeline =
       RealtimePipelineSource(db)
         .collection("k")
-        .where(isNull(xor(equal(field("a"), constant(true)), equal(field("b"), constant(true)))))
-    // (a==true XOR b==true) is NULL if:
-    // (true XOR null) -> null (doc6)
-    // (false XOR null) -> null (doc7)
-    // (null XOR true) -> null (doc3)
-    // (null XOR false) -> null (doc4)
-    // (null XOR null) -> null (doc1)
-    // (missing XOR true) -> error
-    // (true XOR missing) -> error
+        .where(equal(xor(field("a").asBoolean(), field("b").asBoolean()), nullValue()))
+
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
-    assertThat(result).containsExactlyElementsIn(listOf(doc1, doc3, doc4, doc6, doc7))
+    assertThat(result).containsExactly(doc1, doc2, doc3, doc4, doc5, doc6, doc7, doc8)
   }
 
   @Test
   fun whereIsErrorXor(): Unit = runBlocking {
-    val doc1 =
-      doc(
-        "k/1",
-        1000,
-        mapOf("a" to null, "b" to null)
-      ) // a=null, b=null -> XOR is null -> isError(null) is false
-    val doc2 =
-      doc(
-        "k/2",
-        1000,
-        mapOf("a" to null)
-      ) // a=null, b=missing -> XOR is error -> isError(error) is true -> Match
-    val doc3 =
-      doc(
-        "k/3",
-        1000,
-        mapOf("a" to null, "b" to true)
-      ) // a=null, b=true -> XOR is null -> isError(null) is false
-    val doc4 =
-      doc(
-        "k/4",
-        1000,
-        mapOf("a" to null, "b" to false)
-      ) // a=null, b=false -> XOR is null -> isError(null) is false
-    val doc5 =
-      doc(
-        "k/5",
-        1000,
-        mapOf("b" to null)
-      ) // a=missing, b=null -> XOR is error -> isError(error) is true -> Match
-    val doc6 =
-      doc(
-        "k/6",
-        1000,
-        mapOf("a" to true, "b" to null)
-      ) // a=true, b=null -> XOR is null -> isError(null) is false
-    val doc7 =
-      doc(
-        "k/7",
-        1000,
-        mapOf("a" to false, "b" to null)
-      ) // a=false, b=null -> XOR is null -> isError(null) is false
-    val doc8 =
-      doc(
-        "k/8",
-        1000,
-        mapOf("not-a" to true, "not-b" to true)
-      ) // a=missing, b=missing -> XOR is error -> isError(error) is true -> Match
-    val documents = listOf(doc1, doc2, doc3, doc4, doc5, doc6, doc7, doc8)
+    val doc1 = doc("k/1", 1000, mapOf<String, Any?>())
+    val doc2 = doc("k/2", 1000, mapOf("a" to null, "b" to null))
+    val doc3 = doc("k/3", 1000, mapOf("a" to null))
+    val doc4 = doc("k/4", 1000, mapOf("a" to null, "b" to true))
+    val doc5 = doc("k/5", 1000, mapOf("a" to null, "b" to false))
+    val doc6 = doc("k/6", 1000, mapOf("b" to null))
+    val doc7 = doc("k/7", 1000, mapOf("a" to true, "b" to null))
+    val doc8 = doc("k/8", 1000, mapOf("a" to false, "b" to null))
+    val doc9 = doc("k/9", 1000, mapOf("not-a" to true, "not-b" to true))
+    val doc10 = doc("k/10", 1000, mapOf("a" to 1L, "b" to 2L))
+    val documents = listOf(doc1, doc2, doc3, doc4, doc5, doc6, doc7, doc8, doc9, doc10)
 
     val pipeline =
       RealtimePipelineSource(db)
         .collection("k")
-        .where(isError(xor(equal(field("a"), constant(true)), equal(field("b"), constant(true)))))
-    // This happens if either a or b is missing.
+        .where(isError(xor(field("a").asBoolean(), field("b").asBoolean())))
+
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
-    assertThat(result).containsExactlyElementsIn(listOf(doc2, doc5, doc8))
+    assertThat(result).containsExactly(doc10)
   }
 
   @Test
   fun whereNot(): Unit = runBlocking {
     val doc1 = doc("k/1", 1000, mapOf("a" to true))
-    val doc2 = doc("k/2", 1000, mapOf("a" to false)) // Match
+    val doc2 = doc("k/2", 1000, mapOf("a" to false))
     val doc3 = doc("k/3", 1000, mapOf("a" to null))
     val documents = listOf(doc1, doc2, doc3)
 
-    val pipeline =
-      RealtimePipelineSource(db).collection("k").where(not(equal(field("a"), constant(true))))
+    val pipeline = RealtimePipelineSource(db).collection("k").where(not(field("a").asBoolean()))
 
-    // Based on C++ test's interpretation of TS behavior for NOT
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc2)
   }
 
   @Test
-  fun whereIsNullNot(): Unit = runBlocking {
-    val doc1 = doc("k/1", 1000, mapOf("a" to true))
-    val doc2 = doc("k/2", 1000, mapOf("a" to false))
-    val doc3 = doc("k/3", 1000, mapOf("a" to null)) // Match
-    val documents = listOf(doc1, doc2, doc3)
-
-    val pipeline =
-      RealtimePipelineSource(db)
-        .collection("k")
-        .where(isNull(not(equal(field("a"), constant(true)))))
-    // NOT(null_operand) -> null. So ISNULL(null) -> true.
-    // NOT(true) -> false. ISNULL(false) -> false.
-    // NOT(false) -> true. ISNULL(true) -> false.
-    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
-    assertThat(result).containsExactly(doc3)
-  }
-
-  @Test
-  fun whereIsErrorNot(): Unit = runBlocking {
-    val doc1 = doc("k/1", 1000, mapOf("a" to true)) // a=T -> NOT(a==T) is F -> isError(F) is false
-    val doc2 = doc("k/2", 1000, mapOf("a" to false)) // a=F -> NOT(a==T) is T -> isError(T) is false
-    val doc3 =
-      doc("k/3", 1000, mapOf("a" to null)) // a=null -> NOT(a==T) is null -> isError(T) is false
-    val doc4 =
-      doc(
-        "k/4",
-        1000,
-        mapOf("not-a" to true)
-      ) // a=missing -> NOT(a==T) is error -> isError(error) is true -> Match
+  fun whereEqNullNot(): Unit = runBlocking {
+    val doc1 = doc("k/1", 1000, mapOf("a" to null))
+    val doc2 = doc("k/2", 1000, mapOf("a" to true))
+    val doc3 = doc("k/3", 1000, mapOf("a" to false))
+    val doc4 = doc("k/4", 1000, mapOf("not-a" to true))
     val documents = listOf(doc1, doc2, doc3, doc4)
 
     val pipeline =
       RealtimePipelineSource(db)
         .collection("k")
-        .where(isError(not(equal(field("a"), constant(true)))))
-    // This happens if a is missing.
+        .where(equal(not(field("a").asBoolean()), nullValue()))
+
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
-    assertThat(result).containsExactly(doc4)
+    assertThat(result).containsExactly(doc1, doc4)
+  }
+
+  @Test
+  fun whereIsErrorNot(): Unit = runBlocking {
+    val doc1 = doc("k/1", 1000, mapOf("a" to null))
+    val doc2 = doc("k/2", 1000, mapOf("a" to true))
+    val doc3 = doc("k/3", 1000, mapOf("a" to false))
+    val doc4 = doc("k/4", 1000, mapOf("not-a" to true))
+    val doc5 = doc("k/5", 1000, mapOf("a" to 1L))
+    val documents = listOf(doc1, doc2, doc3, doc4, doc5)
+
+    val pipeline =
+      RealtimePipelineSource(db).collection("k").where(isError(not(field("a").asBoolean())))
+
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactly(doc5)
+  }
+
+  @Test
+  fun whereEqFieldAsUnset(): Unit = runBlocking {
+    val doc1 = doc("users/1", 1000, mapOf("rank" to null))
+    val doc2 = doc("users/2", 1000, mapOf("unset" to null))
+    val doc3 = doc("users/3", 1000, mapOf("rank" to 42L))
+    val doc4 = doc("users/4", 1000, mapOf("unset" to "foo"))
+    val doc5 = doc("users/5", 1000, mapOf<String, Any?>())
+    val documents = listOf(doc1, doc2, doc3, doc4, doc5)
+
+    val pipeline =
+      RealtimePipelineSource(db).collection("users").where(equal(field("unset"), field("rank")))
+
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactly(doc5)
+  }
+
+  @Test
+  fun whereEqAnyNullInArray(): Unit = runBlocking {
+    val doc1 = doc("k/1", 1000, mapOf("foo" to null))
+    val doc2 = doc("k/2", 1000, mapOf("foo" to listOf(null)))
+    val doc3 = doc("k/3", 1000, mapOf("foo" to listOf(listOf(null))))
+    val doc4 = doc("k/4", 1000, mapOf("foo" to listOf(1.0, null)))
+    val doc5 = doc("k/5", 1000, mapOf("foo" to listOf(null, Double.NaN)))
+    val documents = listOf(doc1, doc2, doc3, doc4, doc5)
+
+    val pipeline =
+      RealtimePipelineSource(db)
+        .collection("k")
+        .where(equalAny(field("foo"), array(array(nullValue()))))
+
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactly(doc2)
+  }
+
+  @Test
+  fun whereGtArrayEmpty(): Unit = runBlocking {
+    val doc1 = doc("users/1", 1000, mapOf("score" to null))
+    val doc2 = doc("users/2", 1000, mapOf("score" to 42L))
+    val doc3 = doc("users/3", 1000, mapOf("score" to "hello world"))
+    val doc4 = doc("users/4", 1000, mapOf("score" to Double.NaN))
+    val doc5 = doc("users/5", 1000, mapOf("not-score" to 42L))
+    val doc6 = doc("users/6", 1000, mapOf("score" to emptyMap<String, Any>()))
+    val doc7 = doc("users/7", 1000, mapOf("score" to mapOf("a" to 42L)))
+    val doc8 = doc("users/8", 1000, mapOf("score" to mapOf("a" to mapOf("b" to null))))
+    val doc9 = doc("users/9", 1000, mapOf("score" to mapOf("a" to null)))
+    val doc10 = doc("users/10", 1000, mapOf("score" to mapOf("a" to null, "b" to 42L)))
+    val doc11 = doc("users/11", 1000, mapOf("score" to mapOf("a" to 42L, "b" to null)))
+    val doc12 = doc("users/12", 1000, mapOf("score" to mapOf("a" to 42L, "b" to 43L)))
+    val doc13 = doc("users/13", 1000, mapOf("score" to emptyList<Any>()))
+    val doc14 = doc("users/14", 1000, mapOf("score" to listOf(null)))
+    val doc15 = doc("users/15", 1000, mapOf("score" to listOf(listOf(null))))
+    val doc16 = doc("users/16", 1000, mapOf("score" to listOf(42L)))
+    val doc17 = doc("users/17", 1000, mapOf("score" to listOf(null, 42L)))
+    val doc18 = doc("users/18", 1000, mapOf("score" to listOf(42L, null)))
+    val doc19 = doc("users/19", 1000, mapOf("score" to listOf(42L, 43L)))
+    val documents =
+      listOf(
+        doc1,
+        doc2,
+        doc3,
+        doc4,
+        doc5,
+        doc6,
+        doc7,
+        doc8,
+        doc9,
+        doc10,
+        doc11,
+        doc12,
+        doc13,
+        doc14,
+        doc15,
+        doc16,
+        doc17,
+        doc18,
+        doc19
+      )
+
+    val pipeline =
+      RealtimePipelineSource(db).collection("users").where(greaterThan(field("score"), array()))
+
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactly(doc14, doc15, doc16, doc17, doc18, doc19)
+  }
+
+  @Test
+  fun whereGtArraySingleton(): Unit = runBlocking {
+    // Docs same as above
+    val doc1 = doc("users/1", 1000, mapOf("score" to null))
+    val doc2 = doc("users/2", 1000, mapOf("score" to 42L))
+    val doc3 = doc("users/3", 1000, mapOf("score" to "hello world"))
+    val doc4 = doc("users/4", 1000, mapOf("score" to Double.NaN))
+    val doc5 = doc("users/5", 1000, mapOf("not-score" to 42L))
+    val doc6 = doc("users/6", 1000, mapOf("score" to emptyMap<String, Any>()))
+    val doc7 = doc("users/7", 1000, mapOf("score" to mapOf("a" to 42L)))
+    val doc8 = doc("users/8", 1000, mapOf("score" to mapOf("a" to mapOf("b" to null))))
+    val doc9 = doc("users/9", 1000, mapOf("score" to mapOf("a" to null)))
+    val doc10 = doc("users/10", 1000, mapOf("score" to mapOf("a" to null, "b" to 42L)))
+    val doc11 = doc("users/11", 1000, mapOf("score" to mapOf("a" to 42L, "b" to null)))
+    val doc12 = doc("users/12", 1000, mapOf("score" to mapOf("a" to 42L, "b" to 43L)))
+    val doc13 = doc("users/13", 1000, mapOf("score" to emptyList<Any>()))
+    val doc14 = doc("users/14", 1000, mapOf("score" to listOf(null)))
+    val doc15 = doc("users/15", 1000, mapOf("score" to listOf(listOf(null))))
+    val doc16 = doc("users/16", 1000, mapOf("score" to listOf(42L)))
+    val doc17 = doc("users/17", 1000, mapOf("score" to listOf(null, 42L)))
+    val doc18 = doc("users/18", 1000, mapOf("score" to listOf(42L, null)))
+    val doc19 = doc("users/19", 1000, mapOf("score" to listOf(42L, 43L)))
+    val documents =
+      listOf(
+        doc1,
+        doc2,
+        doc3,
+        doc4,
+        doc5,
+        doc6,
+        doc7,
+        doc8,
+        doc9,
+        doc10,
+        doc11,
+        doc12,
+        doc13,
+        doc14,
+        doc15,
+        doc16,
+        doc17,
+        doc18,
+        doc19
+      )
+
+    val pipeline =
+      RealtimePipelineSource(db)
+        .collection("users")
+        .where(greaterThan(field("score"), array(constant(42L))))
+
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactly(doc15, doc18, doc19)
+  }
+
+  @Test
+  fun whereGtArraySingletonNull(): Unit = runBlocking {
+    // Docs same as above
+    val doc1 = doc("users/1", 1000, mapOf("score" to null))
+    val doc2 = doc("users/2", 1000, mapOf("score" to 42L))
+    val doc3 = doc("users/3", 1000, mapOf("score" to "hello world"))
+    val doc4 = doc("users/4", 1000, mapOf("score" to Double.NaN))
+    val doc5 = doc("users/5", 1000, mapOf("not-score" to 42L))
+    val doc6 = doc("users/6", 1000, mapOf("score" to emptyMap<String, Any>()))
+    val doc7 = doc("users/7", 1000, mapOf("score" to mapOf("a" to 42L)))
+    val doc8 = doc("users/8", 1000, mapOf("score" to mapOf("a" to mapOf("b" to null))))
+    val doc9 = doc("users/9", 1000, mapOf("score" to mapOf("a" to null)))
+    val doc10 = doc("users/10", 1000, mapOf("score" to mapOf("a" to null, "b" to 42L)))
+    val doc11 = doc("users/11", 1000, mapOf("score" to mapOf("a" to 42L, "b" to null)))
+    val doc12 = doc("users/12", 1000, mapOf("score" to mapOf("a" to 42L, "b" to 43L)))
+    val doc13 = doc("users/13", 1000, mapOf("score" to emptyList<Any>()))
+    val doc14 = doc("users/14", 1000, mapOf("score" to listOf(null)))
+    val doc15 = doc("users/15", 1000, mapOf("score" to listOf(listOf(null))))
+    val doc16 = doc("users/16", 1000, mapOf("score" to listOf(42L)))
+    val doc17 = doc("users/17", 1000, mapOf("score" to listOf(null, 42L)))
+    val doc18 = doc("users/18", 1000, mapOf("score" to listOf(42L, null)))
+    val doc19 = doc("users/19", 1000, mapOf("score" to listOf(42L, 43L)))
+    val documents =
+      listOf(
+        doc1,
+        doc2,
+        doc3,
+        doc4,
+        doc5,
+        doc6,
+        doc7,
+        doc8,
+        doc9,
+        doc10,
+        doc11,
+        doc12,
+        doc13,
+        doc14,
+        doc15,
+        doc16,
+        doc17,
+        doc18,
+        doc19
+      )
+
+    val pipeline =
+      RealtimePipelineSource(db)
+        .collection("users")
+        .where(greaterThan(field("score"), array(nullValue())))
+
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactly(doc15, doc16, doc17, doc18, doc19)
+  }
+
+  @Test
+  fun whereGtArrayNullFirst(): Unit = runBlocking {
+    // Docs same as above
+    val doc1 = doc("users/1", 1000, mapOf("score" to null))
+    val doc2 = doc("users/2", 1000, mapOf("score" to 42L))
+    val doc3 = doc("users/3", 1000, mapOf("score" to "hello world"))
+    val doc4 = doc("users/4", 1000, mapOf("score" to Double.NaN))
+    val doc5 = doc("users/5", 1000, mapOf("not-score" to 42L))
+    val doc6 = doc("users/6", 1000, mapOf("score" to emptyMap<String, Any>()))
+    val doc7 = doc("users/7", 1000, mapOf("score" to mapOf("a" to 42L)))
+    val doc8 = doc("users/8", 1000, mapOf("score" to mapOf("a" to mapOf("b" to null))))
+    val doc9 = doc("users/9", 1000, mapOf("score" to mapOf("a" to null)))
+    val doc10 = doc("users/10", 1000, mapOf("score" to mapOf("a" to null, "b" to 42L)))
+    val doc11 = doc("users/11", 1000, mapOf("score" to mapOf("a" to 42L, "b" to null)))
+    val doc12 = doc("users/12", 1000, mapOf("score" to mapOf("a" to 42L, "b" to 43L)))
+    val doc13 = doc("users/13", 1000, mapOf("score" to emptyList<Any>()))
+    val doc14 = doc("users/14", 1000, mapOf("score" to listOf(null)))
+    val doc15 = doc("users/15", 1000, mapOf("score" to listOf(listOf(null))))
+    val doc16 = doc("users/16", 1000, mapOf("score" to listOf(42L)))
+    val doc17 = doc("users/17", 1000, mapOf("score" to listOf(null, 42L)))
+    val doc18 = doc("users/18", 1000, mapOf("score" to listOf(42L, null)))
+    val doc19 = doc("users/19", 1000, mapOf("score" to listOf(42L, 43L)))
+    val documents =
+      listOf(
+        doc1,
+        doc2,
+        doc3,
+        doc4,
+        doc5,
+        doc6,
+        doc7,
+        doc8,
+        doc9,
+        doc10,
+        doc11,
+        doc12,
+        doc13,
+        doc14,
+        doc15,
+        doc16,
+        doc17,
+        doc18,
+        doc19
+      )
+
+    val pipeline =
+      RealtimePipelineSource(db)
+        .collection("users")
+        .where(greaterThan(field("score"), array(nullValue(), constant(42L))))
+
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactly(doc15, doc16, doc18, doc19)
+  }
+
+  @Test
+  fun whereGtArrayNullLast(): Unit = runBlocking {
+    // Docs same as above
+    val doc1 = doc("users/1", 1000, mapOf("score" to null))
+    val doc2 = doc("users/2", 1000, mapOf("score" to 42L))
+    val doc3 = doc("users/3", 1000, mapOf("score" to "hello world"))
+    val doc4 = doc("users/4", 1000, mapOf("score" to Double.NaN))
+    val doc5 = doc("users/5", 1000, mapOf("not-score" to 42L))
+    val doc6 = doc("users/6", 1000, mapOf("score" to emptyMap<String, Any>()))
+    val doc7 = doc("users/7", 1000, mapOf("score" to mapOf("a" to 42L)))
+    val doc8 = doc("users/8", 1000, mapOf("score" to mapOf("a" to mapOf("b" to null))))
+    val doc9 = doc("users/9", 1000, mapOf("score" to mapOf("a" to null)))
+    val doc10 = doc("users/10", 1000, mapOf("score" to mapOf("a" to null, "b" to 42L)))
+    val doc11 = doc("users/11", 1000, mapOf("score" to mapOf("a" to 42L, "b" to null)))
+    val doc12 = doc("users/12", 1000, mapOf("score" to mapOf("a" to 42L, "b" to 43L)))
+    val doc13 = doc("users/13", 1000, mapOf("score" to emptyList<Any>()))
+    val doc14 = doc("users/14", 1000, mapOf("score" to listOf(null)))
+    val doc15 = doc("users/15", 1000, mapOf("score" to listOf(listOf(null))))
+    val doc16 = doc("users/16", 1000, mapOf("score" to listOf(42L)))
+    val doc17 = doc("users/17", 1000, mapOf("score" to listOf(null, 42L)))
+    val doc18 = doc("users/18", 1000, mapOf("score" to listOf(42L, null)))
+    val doc19 = doc("users/19", 1000, mapOf("score" to listOf(42L, 43L)))
+    val doc20 = doc("users/20", 1000, mapOf("score" to listOf(43L, null)))
+    val documents =
+      listOf(
+        doc1,
+        doc2,
+        doc3,
+        doc4,
+        doc5,
+        doc6,
+        doc7,
+        doc8,
+        doc9,
+        doc10,
+        doc11,
+        doc12,
+        doc13,
+        doc14,
+        doc15,
+        doc16,
+        doc17,
+        doc18,
+        doc19,
+        doc20
+      )
+
+    val pipeline =
+      RealtimePipelineSource(db)
+        .collection("users")
+        .where(greaterThan(field("score"), array(constant(42L), nullValue())))
+
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactly(doc15, doc19, doc20)
+  }
+
+  @Test
+  fun whereGtMapEmpty(): Unit = runBlocking {
+    val doc1 = doc("users/1", 1000, mapOf("score" to null))
+    val doc2 = doc("users/2", 1000, mapOf("score" to 42L))
+    val doc3 = doc("users/3", 1000, mapOf("score" to "hello world"))
+    val doc4 = doc("users/4", 1000, mapOf("score" to Double.NaN))
+    val doc5 = doc("users/5", 1000, mapOf("not-score" to 42L))
+    val doc6 = doc("users/6", 1000, mapOf("score" to emptyMap<String, Any>()))
+    val doc7 = doc("users/7", 1000, mapOf("score" to mapOf("a" to 42L)))
+    val doc8 = doc("users/8", 1000, mapOf("score" to mapOf("a" to mapOf("b" to null))))
+    val doc9 = doc("users/9", 1000, mapOf("score" to mapOf("a" to null)))
+    val doc10 = doc("users/10", 1000, mapOf("score" to mapOf("a" to null, "b" to 42L)))
+    val doc11 = doc("users/11", 1000, mapOf("score" to mapOf("a" to 42L, "b" to null)))
+    val doc12 = doc("users/12", 1000, mapOf("score" to mapOf("a" to 42L, "b" to 43L)))
+    val doc13 = doc("users/13", 1000, mapOf("score" to emptyList<Any>()))
+    val doc14 = doc("users/14", 1000, mapOf("score" to listOf(null)))
+    val doc15 = doc("users/15", 1000, mapOf("score" to listOf(listOf(null))))
+    val doc16 = doc("users/16", 1000, mapOf("score" to listOf(42L)))
+    val doc17 = doc("users/17", 1000, mapOf("score" to listOf(null, 42L)))
+    val doc18 = doc("users/18", 1000, mapOf("score" to listOf(42L, null)))
+    val doc19 = doc("users/19", 1000, mapOf("score" to listOf(42L, 43L)))
+    val documents =
+      listOf(
+        doc1,
+        doc2,
+        doc3,
+        doc4,
+        doc5,
+        doc6,
+        doc7,
+        doc8,
+        doc9,
+        doc10,
+        doc11,
+        doc12,
+        doc13,
+        doc14,
+        doc15,
+        doc16,
+        doc17,
+        doc18,
+        doc19
+      )
+
+    val pipeline =
+      RealtimePipelineSource(db)
+        .collection("users")
+        .where(greaterThan(field("score"), map(mapOf())))
+
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactly(doc7, doc8, doc9, doc10, doc11, doc12)
+  }
+
+  @Test
+  fun whereGtMapSingleton(): Unit = runBlocking {
+    // Docs same as above
+    val doc1 = doc("users/1", 1000, mapOf("score" to null))
+    val doc2 = doc("users/2", 1000, mapOf("score" to 42L))
+    val doc3 = doc("users/3", 1000, mapOf("score" to "hello world"))
+    val doc4 = doc("users/4", 1000, mapOf("score" to Double.NaN))
+    val doc5 = doc("users/5", 1000, mapOf("not-score" to 42L))
+    val doc6 = doc("users/6", 1000, mapOf("score" to emptyMap<String, Any>()))
+    val doc7 = doc("users/7", 1000, mapOf("score" to mapOf("a" to 42L)))
+    val doc8 = doc("users/8", 1000, mapOf("score" to mapOf("a" to mapOf("b" to null))))
+    val doc9 = doc("users/9", 1000, mapOf("score" to mapOf("a" to null)))
+    val doc10 = doc("users/10", 1000, mapOf("score" to mapOf("a" to null, "b" to 42L)))
+    val doc11 = doc("users/11", 1000, mapOf("score" to mapOf("a" to 42L, "b" to null)))
+    val doc12 = doc("users/12", 1000, mapOf("score" to mapOf("a" to 42L, "b" to 43L)))
+    val doc13 = doc("users/13", 1000, mapOf("score" to emptyList<Any>()))
+    val doc14 = doc("users/14", 1000, mapOf("score" to listOf(null)))
+    val doc15 = doc("users/15", 1000, mapOf("score" to listOf(listOf(null))))
+    val doc16 = doc("users/16", 1000, mapOf("score" to listOf(42L)))
+    val doc17 = doc("users/17", 1000, mapOf("score" to listOf(null, 42L)))
+    val doc18 = doc("users/18", 1000, mapOf("score" to listOf(42L, null)))
+    val doc19 = doc("users/19", 1000, mapOf("score" to listOf(42L, 43L)))
+    val documents =
+      listOf(
+        doc1,
+        doc2,
+        doc3,
+        doc4,
+        doc5,
+        doc6,
+        doc7,
+        doc8,
+        doc9,
+        doc10,
+        doc11,
+        doc12,
+        doc13,
+        doc14,
+        doc15,
+        doc16,
+        doc17,
+        doc18,
+        doc19
+      )
+
+    val pipeline =
+      RealtimePipelineSource(db)
+        .collection("users")
+        .where(greaterThan(field("score"), map(mapOf("a" to constant(42L)))))
+
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactly(doc8, doc11, doc12)
+  }
+
+  @Test
+  fun whereGtMapSingletonNull(): Unit = runBlocking {
+    // Docs same as above
+    val doc1 = doc("users/1", 1000, mapOf("score" to null))
+    val doc2 = doc("users/2", 1000, mapOf("score" to 42L))
+    val doc3 = doc("users/3", 1000, mapOf("score" to "hello world"))
+    val doc4 = doc("users/4", 1000, mapOf("score" to Double.NaN))
+    val doc5 = doc("users/5", 1000, mapOf("not-score" to 42L))
+    val doc6 = doc("users/6", 1000, mapOf("score" to emptyMap<String, Any>()))
+    val doc7 = doc("users/7", 1000, mapOf("score" to mapOf("a" to 42L)))
+    val doc8 = doc("users/8", 1000, mapOf("score" to mapOf("a" to mapOf("b" to null))))
+    val doc9 = doc("users/9", 1000, mapOf("score" to mapOf("a" to null)))
+    val doc10 = doc("users/10", 1000, mapOf("score" to mapOf("a" to null, "b" to 42L)))
+    val doc11 = doc("users/11", 1000, mapOf("score" to mapOf("a" to 42L, "b" to null)))
+    val doc12 = doc("users/12", 1000, mapOf("score" to mapOf("a" to 42L, "b" to 43L)))
+    val doc13 = doc("users/13", 1000, mapOf("score" to emptyList<Any>()))
+    val doc14 = doc("users/14", 1000, mapOf("score" to listOf(null)))
+    val doc15 = doc("users/15", 1000, mapOf("score" to listOf(listOf(null))))
+    val doc16 = doc("users/16", 1000, mapOf("score" to listOf(42L)))
+    val doc17 = doc("users/17", 1000, mapOf("score" to listOf(null, 42L)))
+    val doc18 = doc("users/18", 1000, mapOf("score" to listOf(42L, null)))
+    val doc19 = doc("users/19", 1000, mapOf("score" to listOf(42L, 43L)))
+    val documents =
+      listOf(
+        doc1,
+        doc2,
+        doc3,
+        doc4,
+        doc5,
+        doc6,
+        doc7,
+        doc8,
+        doc9,
+        doc10,
+        doc11,
+        doc12,
+        doc13,
+        doc14,
+        doc15,
+        doc16,
+        doc17,
+        doc18,
+        doc19
+      )
+
+    val pipeline =
+      RealtimePipelineSource(db)
+        .collection("users")
+        .where(greaterThan(field("score"), map(mapOf("a" to nullValue()))))
+
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactly(doc7, doc8, doc10, doc11, doc12)
+  }
+
+  @Test
+  fun whereGtMapNullFirst(): Unit = runBlocking {
+    // Docs same as above
+    val doc1 = doc("users/1", 1000, mapOf("score" to null))
+    val doc2 = doc("users/2", 1000, mapOf("score" to 42L))
+    val doc3 = doc("users/3", 1000, mapOf("score" to "hello world"))
+    val doc4 = doc("users/4", 1000, mapOf("score" to Double.NaN))
+    val doc5 = doc("users/5", 1000, mapOf("not-score" to 42L))
+    val doc6 = doc("users/6", 1000, mapOf("score" to emptyMap<String, Any>()))
+    val doc7 = doc("users/7", 1000, mapOf("score" to mapOf("a" to 42L)))
+    val doc8 = doc("users/8", 1000, mapOf("score" to mapOf("a" to mapOf("b" to null))))
+    val doc9 = doc("users/9", 1000, mapOf("score" to mapOf("a" to null)))
+    val doc10 = doc("users/10", 1000, mapOf("score" to mapOf("a" to null, "b" to 42L)))
+    val doc11 = doc("users/11", 1000, mapOf("score" to mapOf("a" to 42L, "b" to null)))
+    val doc12 = doc("users/12", 1000, mapOf("score" to mapOf("a" to 42L, "b" to 43L)))
+    val doc13 = doc("users/13", 1000, mapOf("score" to emptyList<Any>()))
+    val doc14 = doc("users/14", 1000, mapOf("score" to listOf(null)))
+    val doc15 = doc("users/15", 1000, mapOf("score" to listOf(listOf(null))))
+    val doc16 = doc("users/16", 1000, mapOf("score" to listOf(42L)))
+    val doc17 = doc("users/17", 1000, mapOf("score" to listOf(null, 42L)))
+    val doc18 = doc("users/18", 1000, mapOf("score" to listOf(42L, null)))
+    val doc19 = doc("users/19", 1000, mapOf("score" to listOf(42L, 43L)))
+    // Java adds doc13 with "c" to null, but logic same without it if not referenced
+    // Java test `where_gt_map_nullFirst_database` creates:
+    // doc13: {c:null}
+    // Query: {a:null, b:42}
+    // result: doc7, doc8, doc11, doc12, doc13.
+    // doc10 ({a:null, b:42}) is EQUAL, so not GT.
+    // doc9 ({a:null}) < {a:null, b:42}
+    // Wait, {a:null} is shorter than {a:null, b:42}, so it's smaller. Correct.
+
+    // I'll add doc20 for completeness if I want to match Java exactly but I'll stick to doc1-19 +
+    // maybe doc20 if needed.
+    // Java: doc13 = {c:null}.
+    // Let's add it to be safe.
+    val doc20 = doc("users/20", 1000, mapOf("score" to mapOf("c" to null)))
+    val documents =
+      listOf(
+        doc1,
+        doc2,
+        doc3,
+        doc4,
+        doc5,
+        doc6,
+        doc7,
+        doc8,
+        doc9,
+        doc10,
+        doc11,
+        doc12,
+        doc13,
+        doc14,
+        doc15,
+        doc16,
+        doc17,
+        doc18,
+        doc19,
+        doc20
+      )
+
+    val pipeline =
+      RealtimePipelineSource(db)
+        .collection("users")
+        .where(greaterThan(field("score"), map(mapOf("a" to nullValue(), "b" to constant(42L)))))
+
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactly(doc7, doc8, doc11, doc12, doc20)
+  }
+
+  @Test
+  fun whereGtMapNullLast(): Unit = runBlocking {
+    // Docs same as above
+    val doc1 = doc("users/1", 1000, mapOf("score" to null))
+    val doc2 = doc("users/2", 1000, mapOf("score" to 42L))
+    val doc3 = doc("users/3", 1000, mapOf("score" to "hello world"))
+    val doc4 = doc("users/4", 1000, mapOf("score" to Double.NaN))
+    val doc5 = doc("users/5", 1000, mapOf("not-score" to 42L))
+    val doc6 = doc("users/6", 1000, mapOf("score" to emptyMap<String, Any>()))
+    val doc7 = doc("users/7", 1000, mapOf("score" to mapOf("a" to 42L)))
+    val doc8 = doc("users/8", 1000, mapOf("score" to mapOf("a" to mapOf("b" to null))))
+    val doc9 = doc("users/9", 1000, mapOf("score" to mapOf("a" to null)))
+    val doc10 = doc("users/10", 1000, mapOf("score" to mapOf("a" to null, "b" to 42L)))
+    val doc11 = doc("users/11", 1000, mapOf("score" to mapOf("a" to 42L, "b" to null)))
+    val doc12 = doc("users/12", 1000, mapOf("score" to mapOf("a" to 42L, "b" to 43L)))
+    val doc13 = doc("users/13", 1000, mapOf("score" to emptyList<Any>()))
+    val doc14 = doc("users/14", 1000, mapOf("score" to listOf(null)))
+    val doc15 = doc("users/15", 1000, mapOf("score" to listOf(listOf(null))))
+    val doc16 = doc("users/16", 1000, mapOf("score" to listOf(42L)))
+    val doc17 = doc("users/17", 1000, mapOf("score" to listOf(null, 42L)))
+    val doc18 = doc("users/18", 1000, mapOf("score" to listOf(42L, null)))
+    val doc19 = doc("users/19", 1000, mapOf("score" to listOf(42L, 43L)))
+    val documents =
+      listOf(
+        doc1,
+        doc2,
+        doc3,
+        doc4,
+        doc5,
+        doc6,
+        doc7,
+        doc8,
+        doc9,
+        doc10,
+        doc11,
+        doc12,
+        doc13,
+        doc14,
+        doc15,
+        doc16,
+        doc17,
+        doc18,
+        doc19
+      )
+
+    val pipeline =
+      RealtimePipelineSource(db)
+        .collection("users")
+        .where(greaterThan(field("score"), map(mapOf("a" to constant(42L), "b" to nullValue()))))
+
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactly(doc8, doc12)
+  }
+
+  @Test
+  fun whereGteArrayEmpty(): Unit = runBlocking {
+    // Reuse docs setup
+    val doc1 = doc("users/1", 1000, mapOf("score" to null))
+    val doc2 = doc("users/2", 1000, mapOf("score" to 42L))
+    val doc3 = doc("users/3", 1000, mapOf("score" to "hello world"))
+    val doc4 = doc("users/4", 1000, mapOf("score" to Double.NaN))
+    val doc5 = doc("users/5", 1000, mapOf("not-score" to 42L))
+    val doc6 = doc("users/6", 1000, mapOf("score" to emptyMap<String, Any>()))
+    val doc7 = doc("users/7", 1000, mapOf("score" to mapOf("a" to 42L)))
+    val doc8 = doc("users/8", 1000, mapOf("score" to mapOf("a" to mapOf("b" to null))))
+    val doc9 = doc("users/9", 1000, mapOf("score" to mapOf("a" to null)))
+    val doc10 = doc("users/10", 1000, mapOf("score" to mapOf("a" to null, "b" to 42L)))
+    val doc11 = doc("users/11", 1000, mapOf("score" to mapOf("a" to 42L, "b" to null)))
+    val doc12 = doc("users/12", 1000, mapOf("score" to mapOf("a" to 42L, "b" to 43L)))
+    val doc13 = doc("users/13", 1000, mapOf("score" to emptyList<Any>()))
+    val doc14 = doc("users/14", 1000, mapOf("score" to listOf(null)))
+    val doc15 = doc("users/15", 1000, mapOf("score" to listOf(listOf(null))))
+    val doc16 = doc("users/16", 1000, mapOf("score" to listOf(42L)))
+    val doc17 = doc("users/17", 1000, mapOf("score" to listOf(null, 42L)))
+    val doc18 = doc("users/18", 1000, mapOf("score" to listOf(42L, null)))
+    val doc19 = doc("users/19", 1000, mapOf("score" to listOf(42L, 43L)))
+    val documents =
+      listOf(
+        doc1,
+        doc2,
+        doc3,
+        doc4,
+        doc5,
+        doc6,
+        doc7,
+        doc8,
+        doc9,
+        doc10,
+        doc11,
+        doc12,
+        doc13,
+        doc14,
+        doc15,
+        doc16,
+        doc17,
+        doc18,
+        doc19
+      )
+
+    val pipeline =
+      RealtimePipelineSource(db)
+        .collection("users")
+        .where(greaterThanOrEqual(field("score"), array()))
+
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactly(doc13, doc14, doc15, doc16, doc17, doc18, doc19)
+  }
+
+  @Test
+  fun whereGteArraySingleton(): Unit = runBlocking {
+    val doc1 = doc("users/1", 1000, mapOf("score" to null))
+    val doc2 = doc("users/2", 1000, mapOf("score" to 42L))
+    val doc3 = doc("users/3", 1000, mapOf("score" to "hello world"))
+    val doc4 = doc("users/4", 1000, mapOf("score" to Double.NaN))
+    val doc5 = doc("users/5", 1000, mapOf("not-score" to 42L))
+    val doc6 = doc("users/6", 1000, mapOf("score" to emptyMap<String, Any>()))
+    val doc7 = doc("users/7", 1000, mapOf("score" to mapOf("a" to 42L)))
+    val doc8 = doc("users/8", 1000, mapOf("score" to mapOf("a" to mapOf("b" to null))))
+    val doc9 = doc("users/9", 1000, mapOf("score" to mapOf("a" to null)))
+    val doc10 = doc("users/10", 1000, mapOf("score" to mapOf("a" to null, "b" to 42L)))
+    val doc11 = doc("users/11", 1000, mapOf("score" to mapOf("a" to 42L, "b" to null)))
+    val doc12 = doc("users/12", 1000, mapOf("score" to mapOf("a" to 42L, "b" to 43L)))
+    val doc13 = doc("users/13", 1000, mapOf("score" to emptyList<Any>()))
+    val doc14 = doc("users/14", 1000, mapOf("score" to listOf(null)))
+    val doc15 = doc("users/15", 1000, mapOf("score" to listOf(listOf(null))))
+    val doc16 = doc("users/16", 1000, mapOf("score" to listOf(42L)))
+    val doc17 = doc("users/17", 1000, mapOf("score" to listOf(null, 42L)))
+    val doc18 = doc("users/18", 1000, mapOf("score" to listOf(42L, null)))
+    val doc19 = doc("users/19", 1000, mapOf("score" to listOf(42L, 43L)))
+    val documents =
+      listOf(
+        doc1,
+        doc2,
+        doc3,
+        doc4,
+        doc5,
+        doc6,
+        doc7,
+        doc8,
+        doc9,
+        doc10,
+        doc11,
+        doc12,
+        doc13,
+        doc14,
+        doc15,
+        doc16,
+        doc17,
+        doc18,
+        doc19
+      )
+
+    val pipeline =
+      RealtimePipelineSource(db)
+        .collection("users")
+        .where(greaterThanOrEqual(field("score"), array(constant(42L))))
+
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactly(doc15, doc16, doc18, doc19)
+  }
+
+  @Test
+  fun whereGteArraySingletonNull(): Unit = runBlocking {
+    val doc1 = doc("users/1", 1000, mapOf("score" to null))
+    val doc2 = doc("users/2", 1000, mapOf("score" to 42L))
+    val doc3 = doc("users/3", 1000, mapOf("score" to "hello world"))
+    val doc4 = doc("users/4", 1000, mapOf("score" to Double.NaN))
+    val doc5 = doc("users/5", 1000, mapOf("not-score" to 42L))
+    val doc6 = doc("users/6", 1000, mapOf("score" to emptyMap<String, Any>()))
+    val doc7 = doc("users/7", 1000, mapOf("score" to mapOf("a" to 42L)))
+    val doc8 = doc("users/8", 1000, mapOf("score" to mapOf("a" to mapOf("b" to null))))
+    val doc9 = doc("users/9", 1000, mapOf("score" to mapOf("a" to null)))
+    val doc10 = doc("users/10", 1000, mapOf("score" to mapOf("a" to null, "b" to 42L)))
+    val doc11 = doc("users/11", 1000, mapOf("score" to mapOf("a" to 42L, "b" to null)))
+    val doc12 = doc("users/12", 1000, mapOf("score" to mapOf("a" to 42L, "b" to 43L)))
+    val doc13 = doc("users/13", 1000, mapOf("score" to emptyList<Any>()))
+    val doc14 = doc("users/14", 1000, mapOf("score" to listOf(null)))
+    val doc15 = doc("users/15", 1000, mapOf("score" to listOf(listOf(null))))
+    val doc16 = doc("users/16", 1000, mapOf("score" to listOf(42L)))
+    val doc17 = doc("users/17", 1000, mapOf("score" to listOf(null, 42L)))
+    val doc18 = doc("users/18", 1000, mapOf("score" to listOf(42L, null)))
+    val doc19 = doc("users/19", 1000, mapOf("score" to listOf(42L, 43L)))
+    val documents =
+      listOf(
+        doc1,
+        doc2,
+        doc3,
+        doc4,
+        doc5,
+        doc6,
+        doc7,
+        doc8,
+        doc9,
+        doc10,
+        doc11,
+        doc12,
+        doc13,
+        doc14,
+        doc15,
+        doc16,
+        doc17,
+        doc18,
+        doc19
+      )
+
+    val pipeline =
+      RealtimePipelineSource(db)
+        .collection("users")
+        .where(greaterThanOrEqual(field("score"), array(nullValue())))
+
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactly(doc14, doc15, doc16, doc17, doc18, doc19)
+  }
+
+  @Test
+  fun whereGteArrayNullFirst(): Unit = runBlocking {
+    val doc1 = doc("users/1", 1000, mapOf("score" to null))
+    val doc2 = doc("users/2", 1000, mapOf("score" to 42L))
+    val doc3 = doc("users/3", 1000, mapOf("score" to "hello world"))
+    val doc4 = doc("users/4", 1000, mapOf("score" to Double.NaN))
+    val doc5 = doc("users/5", 1000, mapOf("not-score" to 42L))
+    val doc6 = doc("users/6", 1000, mapOf("score" to emptyMap<String, Any>()))
+    val doc7 = doc("users/7", 1000, mapOf("score" to mapOf("a" to 42L)))
+    val doc8 = doc("users/8", 1000, mapOf("score" to mapOf("a" to mapOf("b" to null))))
+    val doc9 = doc("users/9", 1000, mapOf("score" to mapOf("a" to null)))
+    val doc10 = doc("users/10", 1000, mapOf("score" to mapOf("a" to null, "b" to 42L)))
+    val doc11 = doc("users/11", 1000, mapOf("score" to mapOf("a" to 42L, "b" to null)))
+    val doc12 = doc("users/12", 1000, mapOf("score" to mapOf("a" to 42L, "b" to 43L)))
+    val doc13 = doc("users/13", 1000, mapOf("score" to emptyList<Any>()))
+    val doc14 = doc("users/14", 1000, mapOf("score" to listOf(null)))
+    val doc15 = doc("users/15", 1000, mapOf("score" to listOf(listOf(null))))
+    val doc16 = doc("users/16", 1000, mapOf("score" to listOf(42L)))
+    val doc17 = doc("users/17", 1000, mapOf("score" to listOf(null, 42L)))
+    val doc18 = doc("users/18", 1000, mapOf("score" to listOf(42L, null)))
+    val doc19 = doc("users/19", 1000, mapOf("score" to listOf(42L, 43L)))
+    val documents =
+      listOf(
+        doc1,
+        doc2,
+        doc3,
+        doc4,
+        doc5,
+        doc6,
+        doc7,
+        doc8,
+        doc9,
+        doc10,
+        doc11,
+        doc12,
+        doc13,
+        doc14,
+        doc15,
+        doc16,
+        doc17,
+        doc18,
+        doc19
+      )
+
+    val pipeline =
+      RealtimePipelineSource(db)
+        .collection("users")
+        .where(greaterThanOrEqual(field("score"), array(nullValue(), constant(42L))))
+
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactly(doc15, doc16, doc17, doc18, doc19)
+  }
+
+  @Test
+  fun whereGteArrayNullLast(): Unit = runBlocking {
+    val doc1 = doc("users/1", 1000, mapOf("score" to null))
+    val doc2 = doc("users/2", 1000, mapOf("score" to 42L))
+    val doc3 = doc("users/3", 1000, mapOf("score" to "hello world"))
+    val doc4 = doc("users/4", 1000, mapOf("score" to Double.NaN))
+    val doc5 = doc("users/5", 1000, mapOf("not-score" to 42L))
+    val doc6 = doc("users/6", 1000, mapOf("score" to emptyMap<String, Any>()))
+    val doc7 = doc("users/7", 1000, mapOf("score" to mapOf("a" to 42L)))
+    val doc8 = doc("users/8", 1000, mapOf("score" to mapOf("a" to mapOf("b" to null))))
+    val doc9 = doc("users/9", 1000, mapOf("score" to mapOf("a" to null)))
+    val doc10 = doc("users/10", 1000, mapOf("score" to mapOf("a" to null, "b" to 42L)))
+    val doc11 = doc("users/11", 1000, mapOf("score" to mapOf("a" to 42L, "b" to null)))
+    val doc12 = doc("users/12", 1000, mapOf("score" to mapOf("a" to 42L, "b" to 43L)))
+    val doc13 = doc("users/13", 1000, mapOf("score" to emptyList<Any>()))
+    val doc14 = doc("users/14", 1000, mapOf("score" to listOf(null)))
+    val doc15 = doc("users/15", 1000, mapOf("score" to listOf(listOf(null))))
+    val doc16 = doc("users/16", 1000, mapOf("score" to listOf(42L)))
+    val doc17 = doc("users/17", 1000, mapOf("score" to listOf(null, 42L)))
+    val doc18 = doc("users/18", 1000, mapOf("score" to listOf(42L, null)))
+    val doc19 = doc("users/19", 1000, mapOf("score" to listOf(42L, 43L)))
+    val documents =
+      listOf(
+        doc1,
+        doc2,
+        doc3,
+        doc4,
+        doc5,
+        doc6,
+        doc7,
+        doc8,
+        doc9,
+        doc10,
+        doc11,
+        doc12,
+        doc13,
+        doc14,
+        doc15,
+        doc16,
+        doc17,
+        doc18,
+        doc19
+      )
+
+    val pipeline =
+      RealtimePipelineSource(db)
+        .collection("users")
+        .where(greaterThanOrEqual(field("score"), array(constant(42L), nullValue())))
+
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactly(doc15, doc18, doc19)
+  }
+
+  @Test
+  fun whereGteMapEmpty(): Unit = runBlocking {
+    val doc1 = doc("users/1", 1000, mapOf("score" to null))
+    val doc2 = doc("users/2", 1000, mapOf("score" to 42L))
+    val doc3 = doc("users/3", 1000, mapOf("score" to "hello world"))
+    val doc4 = doc("users/4", 1000, mapOf("score" to Double.NaN))
+    val doc5 = doc("users/5", 1000, mapOf("not-score" to 42L))
+    val doc6 = doc("users/6", 1000, mapOf("score" to emptyMap<String, Any>()))
+    val doc7 = doc("users/7", 1000, mapOf("score" to mapOf("a" to 42L)))
+    val doc8 = doc("users/8", 1000, mapOf("score" to mapOf("a" to mapOf("b" to null))))
+    val doc9 = doc("users/9", 1000, mapOf("score" to mapOf("a" to null)))
+    val doc10 = doc("users/10", 1000, mapOf("score" to mapOf("a" to null, "b" to 42L)))
+    val doc11 = doc("users/11", 1000, mapOf("score" to mapOf("a" to 42L, "b" to null)))
+    val doc12 = doc("users/12", 1000, mapOf("score" to mapOf("a" to 42L, "b" to 43L)))
+    val doc13 = doc("users/13", 1000, mapOf("score" to emptyList<Any>()))
+    val doc14 = doc("users/14", 1000, mapOf("score" to listOf(null)))
+    val doc15 = doc("users/15", 1000, mapOf("score" to listOf(listOf(null))))
+    val doc16 = doc("users/16", 1000, mapOf("score" to listOf(42L)))
+    val doc17 = doc("users/17", 1000, mapOf("score" to listOf(null, 42L)))
+    val doc18 = doc("users/18", 1000, mapOf("score" to listOf(42L, null)))
+    val doc19 = doc("users/19", 1000, mapOf("score" to listOf(42L, 43L)))
+    val documents =
+      listOf(
+        doc1,
+        doc2,
+        doc3,
+        doc4,
+        doc5,
+        doc6,
+        doc7,
+        doc8,
+        doc9,
+        doc10,
+        doc11,
+        doc12,
+        doc13,
+        doc14,
+        doc15,
+        doc16,
+        doc17,
+        doc18,
+        doc19
+      )
+
+    val pipeline =
+      RealtimePipelineSource(db)
+        .collection("users")
+        .where(greaterThanOrEqual(field("score"), map(mapOf())))
+
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactly(doc6, doc7, doc8, doc9, doc10, doc11, doc12)
+  }
+
+  @Test
+  fun whereGteMapSingleton(): Unit = runBlocking {
+    val doc1 = doc("users/1", 1000, mapOf("score" to null))
+    val doc2 = doc("users/2", 1000, mapOf("score" to 42L))
+    val doc3 = doc("users/3", 1000, mapOf("score" to "hello world"))
+    val doc4 = doc("users/4", 1000, mapOf("score" to Double.NaN))
+    val doc5 = doc("users/5", 1000, mapOf("not-score" to 42L))
+    val doc6 = doc("users/6", 1000, mapOf("score" to emptyMap<String, Any>()))
+    val doc7 = doc("users/7", 1000, mapOf("score" to mapOf("a" to 42L)))
+    val doc8 = doc("users/8", 1000, mapOf("score" to mapOf("a" to mapOf("b" to null))))
+    val doc9 = doc("users/9", 1000, mapOf("score" to mapOf("a" to null)))
+    val doc10 = doc("users/10", 1000, mapOf("score" to mapOf("a" to null, "b" to 42L)))
+    val doc11 = doc("users/11", 1000, mapOf("score" to mapOf("a" to 42L, "b" to null)))
+    val doc12 = doc("users/12", 1000, mapOf("score" to mapOf("a" to 42L, "b" to 43L)))
+    val doc13 = doc("users/13", 1000, mapOf("score" to emptyList<Any>()))
+    val doc14 = doc("users/14", 1000, mapOf("score" to listOf(null)))
+    val doc15 = doc("users/15", 1000, mapOf("score" to listOf(listOf(null))))
+    val doc16 = doc("users/16", 1000, mapOf("score" to listOf(42L)))
+    val doc17 = doc("users/17", 1000, mapOf("score" to listOf(null, 42L)))
+    val doc18 = doc("users/18", 1000, mapOf("score" to listOf(42L, null)))
+    val doc19 = doc("users/19", 1000, mapOf("score" to listOf(42L, 43L)))
+    val documents =
+      listOf(
+        doc1,
+        doc2,
+        doc3,
+        doc4,
+        doc5,
+        doc6,
+        doc7,
+        doc8,
+        doc9,
+        doc10,
+        doc11,
+        doc12,
+        doc13,
+        doc14,
+        doc15,
+        doc16,
+        doc17,
+        doc18,
+        doc19
+      )
+
+    val pipeline =
+      RealtimePipelineSource(db)
+        .collection("users")
+        .where(greaterThanOrEqual(field("score"), map(mapOf("a" to constant(42L)))))
+
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactly(doc7, doc8, doc11, doc12)
+  }
+
+  @Test
+  fun whereGteMapSingletonNull(): Unit = runBlocking {
+    val doc1 = doc("users/1", 1000, mapOf("score" to null))
+    val doc2 = doc("users/2", 1000, mapOf("score" to 42L))
+    val doc3 = doc("users/3", 1000, mapOf("score" to "hello world"))
+    val doc4 = doc("users/4", 1000, mapOf("score" to Double.NaN))
+    val doc5 = doc("users/5", 1000, mapOf("not-score" to 42L))
+    val doc6 = doc("users/6", 1000, mapOf("score" to emptyMap<String, Any>()))
+    val doc7 = doc("users/7", 1000, mapOf("score" to mapOf("a" to 42L)))
+    val doc8 = doc("users/8", 1000, mapOf("score" to mapOf("a" to mapOf("b" to null))))
+    val doc9 = doc("users/9", 1000, mapOf("score" to mapOf("a" to null)))
+    val doc10 = doc("users/10", 1000, mapOf("score" to mapOf("a" to null, "b" to 42L)))
+    val doc11 = doc("users/11", 1000, mapOf("score" to mapOf("a" to 42L, "b" to null)))
+    val doc12 = doc("users/12", 1000, mapOf("score" to mapOf("a" to 42L, "b" to 43L)))
+    val doc13 = doc("users/13", 1000, mapOf("score" to emptyList<Any>()))
+    val doc14 = doc("users/14", 1000, mapOf("score" to listOf(null)))
+    val doc15 = doc("users/15", 1000, mapOf("score" to listOf(listOf(null))))
+    val doc16 = doc("users/16", 1000, mapOf("score" to listOf(42L)))
+    val doc17 = doc("users/17", 1000, mapOf("score" to listOf(null, 42L)))
+    val doc18 = doc("users/18", 1000, mapOf("score" to listOf(42L, null)))
+    val doc19 = doc("users/19", 1000, mapOf("score" to listOf(42L, 43L)))
+    val doc20 = doc("users/20", 1000, mapOf("score" to mapOf("c" to null)))
+    val documents =
+      listOf(
+        doc1,
+        doc2,
+        doc3,
+        doc4,
+        doc5,
+        doc6,
+        doc7,
+        doc8,
+        doc9,
+        doc10,
+        doc11,
+        doc12,
+        doc13,
+        doc14,
+        doc15,
+        doc16,
+        doc17,
+        doc18,
+        doc19,
+        doc20
+      )
+
+    val pipeline =
+      RealtimePipelineSource(db)
+        .collection("users")
+        .where(greaterThanOrEqual(field("score"), map(mapOf("a" to nullValue()))))
+
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactly(doc7, doc8, doc9, doc10, doc11, doc12, doc20)
+  }
+
+  @Test
+  fun whereGteMapNullFirst(): Unit = runBlocking {
+    val doc1 = doc("users/1", 1000, mapOf("score" to null))
+    val doc2 = doc("users/2", 1000, mapOf("score" to 42L))
+    val doc3 = doc("users/3", 1000, mapOf("score" to "hello world"))
+    val doc4 = doc("users/4", 1000, mapOf("score" to Double.NaN))
+    val doc5 = doc("users/5", 1000, mapOf("not-score" to 42L))
+    val doc6 = doc("users/6", 1000, mapOf("score" to emptyMap<String, Any>()))
+    val doc7 = doc("users/7", 1000, mapOf("score" to mapOf("a" to 42L)))
+    val doc8 = doc("users/8", 1000, mapOf("score" to mapOf("a" to mapOf("b" to null))))
+    val doc9 = doc("users/9", 1000, mapOf("score" to mapOf("a" to null)))
+    val doc10 = doc("users/10", 1000, mapOf("score" to mapOf("a" to null, "b" to 42L)))
+    val doc11 = doc("users/11", 1000, mapOf("score" to mapOf("a" to 42L, "b" to null)))
+    val doc12 = doc("users/12", 1000, mapOf("score" to mapOf("a" to 42L, "b" to 43L)))
+    val doc13 = doc("users/13", 1000, mapOf("score" to emptyList<Any>()))
+    val doc14 = doc("users/14", 1000, mapOf("score" to listOf(null)))
+    val doc15 = doc("users/15", 1000, mapOf("score" to listOf(listOf(null))))
+    val doc16 = doc("users/16", 1000, mapOf("score" to listOf(42L)))
+    val doc17 = doc("users/17", 1000, mapOf("score" to listOf(null, 42L)))
+    val doc18 = doc("users/18", 1000, mapOf("score" to listOf(42L, null)))
+    val doc19 = doc("users/19", 1000, mapOf("score" to listOf(42L, 43L)))
+    val doc20 = doc("users/20", 1000, mapOf("score" to mapOf("c" to null)))
+    val documents =
+      listOf(
+        doc1,
+        doc2,
+        doc3,
+        doc4,
+        doc5,
+        doc6,
+        doc7,
+        doc8,
+        doc9,
+        doc10,
+        doc11,
+        doc12,
+        doc13,
+        doc14,
+        doc15,
+        doc16,
+        doc17,
+        doc18,
+        doc19,
+        doc20
+      )
+
+    val pipeline =
+      RealtimePipelineSource(db)
+        .collection("users")
+        .where(
+          greaterThanOrEqual(field("score"), map(mapOf("a" to nullValue(), "b" to constant(42L))))
+        )
+
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactly(doc7, doc8, doc10, doc11, doc12, doc20)
+  }
+
+  @Test
+  fun whereGteMapNullLast(): Unit = runBlocking {
+    val doc1 = doc("users/1", 1000, mapOf("score" to null))
+    val doc2 = doc("users/2", 1000, mapOf("score" to 42L))
+    val doc3 = doc("users/3", 1000, mapOf("score" to "hello world"))
+    val doc4 = doc("users/4", 1000, mapOf("score" to Double.NaN))
+    val doc5 = doc("users/5", 1000, mapOf("not-score" to 42L))
+    val doc6 = doc("users/6", 1000, mapOf("score" to emptyMap<String, Any>()))
+    val doc7 = doc("users/7", 1000, mapOf("score" to mapOf("a" to 42L)))
+    val doc8 = doc("users/8", 1000, mapOf("score" to mapOf("a" to mapOf("b" to null))))
+    val doc9 = doc("users/9", 1000, mapOf("score" to mapOf("a" to null)))
+    val doc10 = doc("users/10", 1000, mapOf("score" to mapOf("a" to null, "b" to 42L)))
+    val doc11 = doc("users/11", 1000, mapOf("score" to mapOf("a" to 42L, "b" to null)))
+    val doc12 = doc("users/12", 1000, mapOf("score" to mapOf("a" to 42L, "b" to 43L)))
+    val doc13 = doc("users/13", 1000, mapOf("score" to emptyList<Any>()))
+    val doc14 = doc("users/14", 1000, mapOf("score" to listOf(null)))
+    val doc15 = doc("users/15", 1000, mapOf("score" to listOf(listOf(null))))
+    val doc16 = doc("users/16", 1000, mapOf("score" to listOf(42L)))
+    val doc17 = doc("users/17", 1000, mapOf("score" to listOf(null, 42L)))
+    val doc18 = doc("users/18", 1000, mapOf("score" to listOf(42L, null)))
+    val doc19 = doc("users/19", 1000, mapOf("score" to listOf(42L, 43L)))
+    val documents =
+      listOf(
+        doc1,
+        doc2,
+        doc3,
+        doc4,
+        doc5,
+        doc6,
+        doc7,
+        doc8,
+        doc9,
+        doc10,
+        doc11,
+        doc12,
+        doc13,
+        doc14,
+        doc15,
+        doc16,
+        doc17,
+        doc18,
+        doc19
+      )
+
+    val pipeline =
+      RealtimePipelineSource(db)
+        .collection("users")
+        .where(
+          greaterThanOrEqual(field("score"), map(mapOf("a" to constant(42L), "b" to nullValue())))
+        )
+
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactly(doc8, doc11, doc12)
+  }
+
+  @Test
+  fun whereLtArrayEmpty(): Unit = runBlocking {
+    // Reuse docs setup
+    val doc1 = doc("users/1", 1000, mapOf("score" to null))
+    val doc2 = doc("users/2", 1000, mapOf("score" to 42L))
+    val doc3 = doc("users/3", 1000, mapOf("score" to "hello world"))
+    val doc4 = doc("users/4", 1000, mapOf("score" to Double.NaN))
+    val doc5 = doc("users/5", 1000, mapOf("not-score" to 42L))
+    val doc6 = doc("users/6", 1000, mapOf("score" to emptyMap<String, Any>()))
+    val doc7 = doc("users/7", 1000, mapOf("score" to mapOf("a" to 42L)))
+    val doc8 = doc("users/8", 1000, mapOf("score" to mapOf("a" to mapOf("b" to null))))
+    val doc9 = doc("users/9", 1000, mapOf("score" to mapOf("a" to null)))
+    val doc10 = doc("users/10", 1000, mapOf("score" to mapOf("a" to null, "b" to 42L)))
+    val doc11 = doc("users/11", 1000, mapOf("score" to mapOf("a" to 42L, "b" to null)))
+    val doc12 = doc("users/12", 1000, mapOf("score" to mapOf("a" to 42L, "b" to 43L)))
+    val doc13 = doc("users/13", 1000, mapOf("score" to emptyList<Any>()))
+    val doc14 = doc("users/14", 1000, mapOf("score" to listOf(null)))
+    val doc15 = doc("users/15", 1000, mapOf("score" to listOf(listOf(null))))
+    val doc16 = doc("users/16", 1000, mapOf("score" to listOf(42L)))
+    val doc17 = doc("users/17", 1000, mapOf("score" to listOf(null, 42L)))
+    val doc18 = doc("users/18", 1000, mapOf("score" to listOf(42L, null)))
+    val doc19 = doc("users/19", 1000, mapOf("score" to listOf(42L, 43L)))
+    val documents =
+      listOf(
+        doc1,
+        doc2,
+        doc3,
+        doc4,
+        doc5,
+        doc6,
+        doc7,
+        doc8,
+        doc9,
+        doc10,
+        doc11,
+        doc12,
+        doc13,
+        doc14,
+        doc15,
+        doc16,
+        doc17,
+        doc18,
+        doc19
+      )
+
+    val pipeline =
+      RealtimePipelineSource(db).collection("users").where(lessThan(field("score"), array()))
+
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
+    assertThat(result).isEmpty()
+  }
+
+  @Test
+  fun whereLtArraySingleton(): Unit = runBlocking {
+    val doc1 = doc("users/1", 1000, mapOf("score" to null))
+    val doc2 = doc("users/2", 1000, mapOf("score" to 42L))
+    val doc3 = doc("users/3", 1000, mapOf("score" to "hello world"))
+    val doc4 = doc("users/4", 1000, mapOf("score" to Double.NaN))
+    val doc5 = doc("users/5", 1000, mapOf("not-score" to 42L))
+    val doc6 = doc("users/6", 1000, mapOf("score" to emptyMap<String, Any>()))
+    val doc7 = doc("users/7", 1000, mapOf("score" to mapOf("a" to 42L)))
+    val doc8 = doc("users/8", 1000, mapOf("score" to mapOf("a" to mapOf("b" to null))))
+    val doc9 = doc("users/9", 1000, mapOf("score" to mapOf("a" to null)))
+    val doc10 = doc("users/10", 1000, mapOf("score" to mapOf("a" to null, "b" to 42L)))
+    val doc11 = doc("users/11", 1000, mapOf("score" to mapOf("a" to 42L, "b" to null)))
+    val doc12 = doc("users/12", 1000, mapOf("score" to mapOf("a" to 42L, "b" to 43L)))
+    val doc13 = doc("users/13", 1000, mapOf("score" to emptyList<Any>()))
+    val doc14 = doc("users/14", 1000, mapOf("score" to listOf(null)))
+    val doc15 = doc("users/15", 1000, mapOf("score" to listOf(listOf(null))))
+    val doc16 = doc("users/16", 1000, mapOf("score" to listOf(42L)))
+    val doc17 = doc("users/17", 1000, mapOf("score" to listOf(null, 42L)))
+    val doc18 = doc("users/18", 1000, mapOf("score" to listOf(42L, null)))
+    val doc19 = doc("users/19", 1000, mapOf("score" to listOf(42L, 43L)))
+    val doc21 = doc("users/21", 1000, mapOf("score" to listOf(41L, null)))
+    val documents =
+      listOf(
+        doc1,
+        doc2,
+        doc3,
+        doc4,
+        doc5,
+        doc6,
+        doc7,
+        doc8,
+        doc9,
+        doc10,
+        doc11,
+        doc12,
+        doc13,
+        doc14,
+        doc15,
+        doc16,
+        doc17,
+        doc18,
+        doc19,
+        doc21
+      )
+
+    val pipeline =
+      RealtimePipelineSource(db)
+        .collection("users")
+        .where(lessThan(field("score"), array(constant(42L))))
+
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactly(doc13, doc14, doc17, doc21)
+  }
+
+  @Test
+  fun whereLtArraySingletonNull(): Unit = runBlocking {
+    val doc1 = doc("users/1", 1000, mapOf("score" to null))
+    val doc2 = doc("users/2", 1000, mapOf("score" to 42L))
+    val doc3 = doc("users/3", 1000, mapOf("score" to "hello world"))
+    val doc4 = doc("users/4", 1000, mapOf("score" to Double.NaN))
+    val doc5 = doc("users/5", 1000, mapOf("not-score" to 42L))
+    val doc6 = doc("users/6", 1000, mapOf("score" to emptyMap<String, Any>()))
+    val doc7 = doc("users/7", 1000, mapOf("score" to mapOf("a" to 42L)))
+    val doc8 = doc("users/8", 1000, mapOf("score" to mapOf("a" to mapOf("b" to null))))
+    val doc9 = doc("users/9", 1000, mapOf("score" to mapOf("a" to null)))
+    val doc10 = doc("users/10", 1000, mapOf("score" to mapOf("a" to null, "b" to 42L)))
+    val doc11 = doc("users/11", 1000, mapOf("score" to mapOf("a" to 42L, "b" to null)))
+    val doc12 = doc("users/12", 1000, mapOf("score" to mapOf("a" to 42L, "b" to 43L)))
+    val doc13 = doc("users/13", 1000, mapOf("score" to emptyList<Any>()))
+    val doc14 = doc("users/14", 1000, mapOf("score" to listOf(null)))
+    val doc15 = doc("users/15", 1000, mapOf("score" to listOf(listOf(null))))
+    val doc16 = doc("users/16", 1000, mapOf("score" to listOf(42L)))
+    val doc17 = doc("users/17", 1000, mapOf("score" to listOf(null, 42L)))
+    val doc18 = doc("users/18", 1000, mapOf("score" to listOf(42L, null)))
+    val doc19 = doc("users/19", 1000, mapOf("score" to listOf(42L, 43L)))
+    val documents =
+      listOf(
+        doc1,
+        doc2,
+        doc3,
+        doc4,
+        doc5,
+        doc6,
+        doc7,
+        doc8,
+        doc9,
+        doc10,
+        doc11,
+        doc12,
+        doc13,
+        doc14,
+        doc15,
+        doc16,
+        doc17,
+        doc18,
+        doc19
+      )
+
+    val pipeline =
+      RealtimePipelineSource(db)
+        .collection("users")
+        .where(lessThan(field("score"), array(nullValue())))
+
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactly(doc13)
+  }
+
+  @Test
+  fun whereLtArrayNullFirst(): Unit = runBlocking {
+    val doc1 = doc("users/1", 1000, mapOf("score" to null))
+    val doc2 = doc("users/2", 1000, mapOf("score" to 42L))
+    val doc3 = doc("users/3", 1000, mapOf("score" to "hello world"))
+    val doc4 = doc("users/4", 1000, mapOf("score" to Double.NaN))
+    val doc5 = doc("users/5", 1000, mapOf("not-score" to 42L))
+    val doc6 = doc("users/6", 1000, mapOf("score" to emptyMap<String, Any>()))
+    val doc7 = doc("users/7", 1000, mapOf("score" to mapOf("a" to 42L)))
+    val doc8 = doc("users/8", 1000, mapOf("score" to mapOf("a" to mapOf("b" to null))))
+    val doc9 = doc("users/9", 1000, mapOf("score" to mapOf("a" to null)))
+    val doc10 = doc("users/10", 1000, mapOf("score" to mapOf("a" to null, "b" to 42L)))
+    val doc11 = doc("users/11", 1000, mapOf("score" to mapOf("a" to 42L, "b" to null)))
+    val doc12 = doc("users/12", 1000, mapOf("score" to mapOf("a" to 42L, "b" to 43L)))
+    val doc13 = doc("users/13", 1000, mapOf("score" to emptyList<Any>()))
+    val doc14 = doc("users/14", 1000, mapOf("score" to listOf(null)))
+    val doc15 = doc("users/15", 1000, mapOf("score" to listOf(listOf(null))))
+    val doc16 = doc("users/16", 1000, mapOf("score" to listOf(42L)))
+    val doc17 = doc("users/17", 1000, mapOf("score" to listOf(null, 42L)))
+    val doc18 = doc("users/18", 1000, mapOf("score" to listOf(42L, null)))
+    val doc19 = doc("users/19", 1000, mapOf("score" to listOf(42L, 43L)))
+    val documents =
+      listOf(
+        doc1,
+        doc2,
+        doc3,
+        doc4,
+        doc5,
+        doc6,
+        doc7,
+        doc8,
+        doc9,
+        doc10,
+        doc11,
+        doc12,
+        doc13,
+        doc14,
+        doc15,
+        doc16,
+        doc17,
+        doc18,
+        doc19
+      )
+
+    val pipeline =
+      RealtimePipelineSource(db)
+        .collection("users")
+        .where(lessThan(field("score"), array(nullValue(), constant(42L))))
+
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactly(doc13, doc14)
+  }
+
+  @Test
+  fun whereLtArrayNullLast(): Unit = runBlocking {
+    val doc1 = doc("users/1", 1000, mapOf("score" to null))
+    val doc2 = doc("users/2", 1000, mapOf("score" to 42L))
+    val doc3 = doc("users/3", 1000, mapOf("score" to "hello world"))
+    val doc4 = doc("users/4", 1000, mapOf("score" to Double.NaN))
+    val doc5 = doc("users/5", 1000, mapOf("not-score" to 42L))
+    val doc6 = doc("users/6", 1000, mapOf("score" to emptyMap<String, Any>()))
+    val doc7 = doc("users/7", 1000, mapOf("score" to mapOf("a" to 42L)))
+    val doc8 = doc("users/8", 1000, mapOf("score" to mapOf("a" to mapOf("b" to null))))
+    val doc9 = doc("users/9", 1000, mapOf("score" to mapOf("a" to null)))
+    val doc10 = doc("users/10", 1000, mapOf("score" to mapOf("a" to null, "b" to 42L)))
+    val doc11 = doc("users/11", 1000, mapOf("score" to mapOf("a" to 42L, "b" to null)))
+    val doc12 = doc("users/12", 1000, mapOf("score" to mapOf("a" to 42L, "b" to 43L)))
+    val doc13 = doc("users/13", 1000, mapOf("score" to emptyList<Any>()))
+    val doc14 = doc("users/14", 1000, mapOf("score" to listOf(null)))
+    val doc15 = doc("users/15", 1000, mapOf("score" to listOf(listOf(null))))
+    val doc16 = doc("users/16", 1000, mapOf("score" to listOf(42L)))
+    val doc17 = doc("users/17", 1000, mapOf("score" to listOf(null, 42L)))
+    val doc18 = doc("users/18", 1000, mapOf("score" to listOf(42L, null)))
+    val doc19 = doc("users/19", 1000, mapOf("score" to listOf(42L, 43L)))
+    val documents =
+      listOf(
+        doc1,
+        doc2,
+        doc3,
+        doc4,
+        doc5,
+        doc6,
+        doc7,
+        doc8,
+        doc9,
+        doc10,
+        doc11,
+        doc12,
+        doc13,
+        doc14,
+        doc15,
+        doc16,
+        doc17,
+        doc18,
+        doc19
+      )
+
+    val pipeline =
+      RealtimePipelineSource(db)
+        .collection("users")
+        .where(lessThan(field("score"), array(constant(42L), nullValue())))
+
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactly(doc13, doc14, doc16, doc17)
+  }
+
+  @Test
+  fun whereLtMapEmpty(): Unit = runBlocking {
+    val doc1 = doc("users/1", 1000, mapOf("score" to null))
+    val doc2 = doc("users/2", 1000, mapOf("score" to 42L))
+    val doc3 = doc("users/3", 1000, mapOf("score" to "hello world"))
+    val doc4 = doc("users/4", 1000, mapOf("score" to Double.NaN))
+    val doc5 = doc("users/5", 1000, mapOf("not-score" to 42L))
+    val doc6 = doc("users/6", 1000, mapOf("score" to emptyMap<String, Any>()))
+    val doc7 = doc("users/7", 1000, mapOf("score" to mapOf("a" to 42L)))
+    val doc8 = doc("users/8", 1000, mapOf("score" to mapOf("a" to mapOf("b" to null))))
+    val doc9 = doc("users/9", 1000, mapOf("score" to mapOf("a" to null)))
+    val doc10 = doc("users/10", 1000, mapOf("score" to mapOf("a" to null, "b" to 42L)))
+    val doc11 = doc("users/11", 1000, mapOf("score" to mapOf("a" to 42L, "b" to null)))
+    val doc12 = doc("users/12", 1000, mapOf("score" to mapOf("a" to 42L, "b" to 43L)))
+    val doc13 = doc("users/13", 1000, mapOf("score" to emptyList<Any>()))
+    val doc14 = doc("users/14", 1000, mapOf("score" to listOf(null)))
+    val doc15 = doc("users/15", 1000, mapOf("score" to listOf(listOf(null))))
+    val doc16 = doc("users/16", 1000, mapOf("score" to listOf(42L)))
+    val doc17 = doc("users/17", 1000, mapOf("score" to listOf(null, 42L)))
+    val doc18 = doc("users/18", 1000, mapOf("score" to listOf(42L, null)))
+    val doc19 = doc("users/19", 1000, mapOf("score" to listOf(42L, 43L)))
+    val documents =
+      listOf(
+        doc1,
+        doc2,
+        doc3,
+        doc4,
+        doc5,
+        doc6,
+        doc7,
+        doc8,
+        doc9,
+        doc10,
+        doc11,
+        doc12,
+        doc13,
+        doc14,
+        doc15,
+        doc16,
+        doc17,
+        doc18,
+        doc19
+      )
+
+    val pipeline =
+      RealtimePipelineSource(db).collection("users").where(lessThan(field("score"), map(mapOf())))
+
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
+    assertThat(result).isEmpty()
+  }
+
+  @Test
+  fun whereLtMapSingleton(): Unit = runBlocking {
+    val doc1 = doc("users/1", 1000, mapOf("score" to null))
+    val doc2 = doc("users/2", 1000, mapOf("score" to 42L))
+    val doc3 = doc("users/3", 1000, mapOf("score" to "hello world"))
+    val doc4 = doc("users/4", 1000, mapOf("score" to Double.NaN))
+    val doc5 = doc("users/5", 1000, mapOf("not-score" to 42L))
+    val doc6 = doc("users/6", 1000, mapOf("score" to emptyMap<String, Any>()))
+    val doc7 = doc("users/7", 1000, mapOf("score" to mapOf("a" to 42L)))
+    val doc8 = doc("users/8", 1000, mapOf("score" to mapOf("a" to mapOf("b" to null))))
+    val doc9 = doc("users/9", 1000, mapOf("score" to mapOf("a" to null)))
+    val doc10 = doc("users/10", 1000, mapOf("score" to mapOf("a" to null, "b" to 42L)))
+    val doc11 = doc("users/11", 1000, mapOf("score" to mapOf("a" to 42L, "b" to null)))
+    val doc12 = doc("users/12", 1000, mapOf("score" to mapOf("a" to 42L, "b" to 43L)))
+    val doc13 = doc("users/13", 1000, mapOf("score" to emptyList<Any>()))
+    val doc14 = doc("users/14", 1000, mapOf("score" to listOf(null)))
+    val doc15 = doc("users/15", 1000, mapOf("score" to listOf(listOf(null))))
+    val doc16 = doc("users/16", 1000, mapOf("score" to listOf(42L)))
+    val doc17 = doc("users/17", 1000, mapOf("score" to listOf(null, 42L)))
+    val doc18 = doc("users/18", 1000, mapOf("score" to listOf(42L, null)))
+    val doc19 = doc("users/19", 1000, mapOf("score" to listOf(42L, 43L)))
+    val documents =
+      listOf(
+        doc1,
+        doc2,
+        doc3,
+        doc4,
+        doc5,
+        doc6,
+        doc7,
+        doc8,
+        doc9,
+        doc10,
+        doc11,
+        doc12,
+        doc13,
+        doc14,
+        doc15,
+        doc16,
+        doc17,
+        doc18,
+        doc19
+      )
+
+    val pipeline =
+      RealtimePipelineSource(db)
+        .collection("users")
+        .where(lessThan(field("score"), map(mapOf("a" to constant(42L)))))
+
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactly(doc6, doc9, doc10)
+  }
+
+  @Test
+  fun whereLtMapSingletonNull(): Unit = runBlocking {
+    val doc1 = doc("users/1", 1000, mapOf("score" to null))
+    val doc2 = doc("users/2", 1000, mapOf("score" to 42L))
+    val doc3 = doc("users/3", 1000, mapOf("score" to "hello world"))
+    val doc4 = doc("users/4", 1000, mapOf("score" to Double.NaN))
+    val doc5 = doc("users/5", 1000, mapOf("not-score" to 42L))
+    val doc6 = doc("users/6", 1000, mapOf("score" to emptyMap<String, Any>()))
+    val doc7 = doc("users/7", 1000, mapOf("score" to mapOf("a" to 42L)))
+    val doc8 = doc("users/8", 1000, mapOf("score" to mapOf("a" to mapOf("b" to null))))
+    val doc9 = doc("users/9", 1000, mapOf("score" to mapOf("a" to null)))
+    val doc10 = doc("users/10", 1000, mapOf("score" to mapOf("a" to null, "b" to 42L)))
+    val doc11 = doc("users/11", 1000, mapOf("score" to mapOf("a" to 42L, "b" to null)))
+    val doc12 = doc("users/12", 1000, mapOf("score" to mapOf("a" to 42L, "b" to 43L)))
+    val doc13 = doc("users/13", 1000, mapOf("score" to emptyList<Any>()))
+    val doc14 = doc("users/14", 1000, mapOf("score" to listOf(null)))
+    val doc15 = doc("users/15", 1000, mapOf("score" to listOf(listOf(null))))
+    val doc16 = doc("users/16", 1000, mapOf("score" to listOf(42L)))
+    val doc17 = doc("users/17", 1000, mapOf("score" to listOf(null, 42L)))
+    val doc18 = doc("users/18", 1000, mapOf("score" to listOf(42L, null)))
+    val doc19 = doc("users/19", 1000, mapOf("score" to listOf(42L, 43L)))
+    val documents =
+      listOf(
+        doc1,
+        doc2,
+        doc3,
+        doc4,
+        doc5,
+        doc6,
+        doc7,
+        doc8,
+        doc9,
+        doc10,
+        doc11,
+        doc12,
+        doc13,
+        doc14,
+        doc15,
+        doc16,
+        doc17,
+        doc18,
+        doc19
+      )
+
+    val pipeline =
+      RealtimePipelineSource(db)
+        .collection("users")
+        .where(lessThan(field("score"), map(mapOf("a" to nullValue()))))
+
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactly(doc6)
+  }
+
+  @Test
+  fun whereLtMapNullFirst(): Unit = runBlocking {
+    val doc1 = doc("users/1", 1000, mapOf("score" to null))
+    val doc2 = doc("users/2", 1000, mapOf("score" to 42L))
+    val doc3 = doc("users/3", 1000, mapOf("score" to "hello world"))
+    val doc4 = doc("users/4", 1000, mapOf("score" to Double.NaN))
+    val doc5 = doc("users/5", 1000, mapOf("not-score" to 42L))
+    val doc6 = doc("users/6", 1000, mapOf("score" to emptyMap<String, Any>()))
+    val doc7 = doc("users/7", 1000, mapOf("score" to mapOf("a" to 42L)))
+    val doc8 = doc("users/8", 1000, mapOf("score" to mapOf("a" to mapOf("b" to null))))
+    val doc9 = doc("users/9", 1000, mapOf("score" to mapOf("a" to null)))
+    val doc10 = doc("users/10", 1000, mapOf("score" to mapOf("a" to null, "b" to 42L)))
+    val doc11 = doc("users/11", 1000, mapOf("score" to mapOf("a" to 42L, "b" to null)))
+    val doc12 = doc("users/12", 1000, mapOf("score" to mapOf("a" to 42L, "b" to 43L)))
+    val doc13 = doc("users/13", 1000, mapOf("score" to emptyList<Any>()))
+    val doc14 = doc("users/14", 1000, mapOf("score" to listOf(null)))
+    val doc15 = doc("users/15", 1000, mapOf("score" to listOf(listOf(null))))
+    val doc16 = doc("users/16", 1000, mapOf("score" to listOf(42L)))
+    val doc17 = doc("users/17", 1000, mapOf("score" to listOf(null, 42L)))
+    val doc18 = doc("users/18", 1000, mapOf("score" to listOf(42L, null)))
+    val doc19 = doc("users/19", 1000, mapOf("score" to listOf(42L, 43L)))
+    val documents =
+      listOf(
+        doc1,
+        doc2,
+        doc3,
+        doc4,
+        doc5,
+        doc6,
+        doc7,
+        doc8,
+        doc9,
+        doc10,
+        doc11,
+        doc12,
+        doc13,
+        doc14,
+        doc15,
+        doc16,
+        doc17,
+        doc18,
+        doc19
+      )
+
+    val pipeline =
+      RealtimePipelineSource(db)
+        .collection("users")
+        .where(lessThan(field("score"), map(mapOf("a" to nullValue(), "b" to constant(42L)))))
+
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactly(doc6, doc9)
+  }
+
+  @Test
+  fun whereLtMapNullLast(): Unit = runBlocking {
+    val doc1 = doc("users/1", 1000, mapOf("score" to null))
+    val doc2 = doc("users/2", 1000, mapOf("score" to 42L))
+    val doc3 = doc("users/3", 1000, mapOf("score" to "hello world"))
+    val doc4 = doc("users/4", 1000, mapOf("score" to Double.NaN))
+    val doc5 = doc("users/5", 1000, mapOf("not-score" to 42L))
+    val doc6 = doc("users/6", 1000, mapOf("score" to emptyMap<String, Any>()))
+    val doc7 = doc("users/7", 1000, mapOf("score" to mapOf("a" to 42L)))
+    val doc8 = doc("users/8", 1000, mapOf("score" to mapOf("a" to mapOf("b" to null))))
+    val doc9 = doc("users/9", 1000, mapOf("score" to mapOf("a" to null)))
+    val doc10 = doc("users/10", 1000, mapOf("score" to mapOf("a" to null, "b" to 42L)))
+    val doc11 = doc("users/11", 1000, mapOf("score" to mapOf("a" to 42L, "b" to null)))
+    val doc12 = doc("users/12", 1000, mapOf("score" to mapOf("a" to 42L, "b" to 43L)))
+    val doc13 = doc("users/13", 1000, mapOf("score" to emptyList<Any>()))
+    val doc14 = doc("users/14", 1000, mapOf("score" to listOf(null)))
+    val doc15 = doc("users/15", 1000, mapOf("score" to listOf(listOf(null))))
+    val doc16 = doc("users/16", 1000, mapOf("score" to listOf(42L)))
+    val doc17 = doc("users/17", 1000, mapOf("score" to listOf(null, 42L)))
+    val doc18 = doc("users/18", 1000, mapOf("score" to listOf(42L, null)))
+    val doc19 = doc("users/19", 1000, mapOf("score" to listOf(42L, 43L)))
+    val documents =
+      listOf(
+        doc1,
+        doc2,
+        doc3,
+        doc4,
+        doc5,
+        doc6,
+        doc7,
+        doc8,
+        doc9,
+        doc10,
+        doc11,
+        doc12,
+        doc13,
+        doc14,
+        doc15,
+        doc16,
+        doc17,
+        doc18,
+        doc19
+      )
+
+    val pipeline =
+      RealtimePipelineSource(db)
+        .collection("users")
+        .where(lessThan(field("score"), map(mapOf("a" to constant(42L), "b" to nullValue()))))
+
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactly(doc6, doc7, doc9, doc10)
+  }
+
+  @Test
+  fun whereLteArrayEmpty(): Unit = runBlocking {
+    // Reuse docs setup
+    val doc1 = doc("users/1", 1000, mapOf("score" to null))
+    val doc2 = doc("users/2", 1000, mapOf("score" to 42L))
+    val doc3 = doc("users/3", 1000, mapOf("score" to "hello world"))
+    val doc4 = doc("users/4", 1000, mapOf("score" to Double.NaN))
+    val doc5 = doc("users/5", 1000, mapOf("not-score" to 42L))
+    val doc6 = doc("users/6", 1000, mapOf("score" to emptyMap<String, Any>()))
+    val doc7 = doc("users/7", 1000, mapOf("score" to mapOf("a" to 42L)))
+    val doc8 = doc("users/8", 1000, mapOf("score" to mapOf("a" to mapOf("b" to null))))
+    val doc9 = doc("users/9", 1000, mapOf("score" to mapOf("a" to null)))
+    val doc10 = doc("users/10", 1000, mapOf("score" to mapOf("a" to null, "b" to 42L)))
+    val doc11 = doc("users/11", 1000, mapOf("score" to mapOf("a" to 42L, "b" to null)))
+    val doc12 = doc("users/12", 1000, mapOf("score" to mapOf("a" to 42L, "b" to 43L)))
+    val doc13 = doc("users/13", 1000, mapOf("score" to emptyList<Any>()))
+    val doc14 = doc("users/14", 1000, mapOf("score" to listOf(null)))
+    val doc15 = doc("users/15", 1000, mapOf("score" to listOf(listOf(null))))
+    val doc16 = doc("users/16", 1000, mapOf("score" to listOf(42L)))
+    val doc17 = doc("users/17", 1000, mapOf("score" to listOf(null, 42L)))
+    val doc18 = doc("users/18", 1000, mapOf("score" to listOf(42L, null)))
+    val doc19 = doc("users/19", 1000, mapOf("score" to listOf(42L, 43L)))
+    val documents =
+      listOf(
+        doc1,
+        doc2,
+        doc3,
+        doc4,
+        doc5,
+        doc6,
+        doc7,
+        doc8,
+        doc9,
+        doc10,
+        doc11,
+        doc12,
+        doc13,
+        doc14,
+        doc15,
+        doc16,
+        doc17,
+        doc18,
+        doc19
+      )
+
+    val pipeline =
+      RealtimePipelineSource(db).collection("users").where(lessThanOrEqual(field("score"), array()))
+
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactly(doc13)
+  }
+
+  @Test
+  fun whereLteArraySingleton(): Unit = runBlocking {
+    val doc1 = doc("users/1", 1000, mapOf("score" to null))
+    val doc2 = doc("users/2", 1000, mapOf("score" to 42L))
+    val doc3 = doc("users/3", 1000, mapOf("score" to "hello world"))
+    val doc4 = doc("users/4", 1000, mapOf("score" to Double.NaN))
+    val doc5 = doc("users/5", 1000, mapOf("not-score" to 42L))
+    val doc6 = doc("users/6", 1000, mapOf("score" to emptyMap<String, Any>()))
+    val doc7 = doc("users/7", 1000, mapOf("score" to mapOf("a" to 42L)))
+    val doc8 = doc("users/8", 1000, mapOf("score" to mapOf("a" to mapOf("b" to null))))
+    val doc9 = doc("users/9", 1000, mapOf("score" to mapOf("a" to null)))
+    val doc10 = doc("users/10", 1000, mapOf("score" to mapOf("a" to null, "b" to 42L)))
+    val doc11 = doc("users/11", 1000, mapOf("score" to mapOf("a" to 42L, "b" to null)))
+    val doc12 = doc("users/12", 1000, mapOf("score" to mapOf("a" to 42L, "b" to 43L)))
+    val doc13 = doc("users/13", 1000, mapOf("score" to emptyList<Any>()))
+    val doc14 = doc("users/14", 1000, mapOf("score" to listOf(null)))
+    val doc15 = doc("users/15", 1000, mapOf("score" to listOf(listOf(null))))
+    val doc16 = doc("users/16", 1000, mapOf("score" to listOf(42L)))
+    val doc17 = doc("users/17", 1000, mapOf("score" to listOf(null, 42L)))
+    val doc18 = doc("users/18", 1000, mapOf("score" to listOf(42L, null)))
+    val doc19 = doc("users/19", 1000, mapOf("score" to listOf(42L, 43L)))
+    val doc21 = doc("users/21", 1000, mapOf("score" to listOf(41L, null)))
+    val documents =
+      listOf(
+        doc1,
+        doc2,
+        doc3,
+        doc4,
+        doc5,
+        doc6,
+        doc7,
+        doc8,
+        doc9,
+        doc10,
+        doc11,
+        doc12,
+        doc13,
+        doc14,
+        doc15,
+        doc16,
+        doc17,
+        doc18,
+        doc19,
+        doc21
+      )
+
+    val pipeline =
+      RealtimePipelineSource(db)
+        .collection("users")
+        .where(lessThanOrEqual(field("score"), array(constant(42L))))
+
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactly(doc13, doc14, doc16, doc17, doc21)
+  }
+
+  @Test
+  fun whereLteArraySingletonNull(): Unit = runBlocking {
+    val doc1 = doc("users/1", 1000, mapOf("score" to null))
+    val doc2 = doc("users/2", 1000, mapOf("score" to 42L))
+    val doc3 = doc("users/3", 1000, mapOf("score" to "hello world"))
+    val doc4 = doc("users/4", 1000, mapOf("score" to Double.NaN))
+    val doc5 = doc("users/5", 1000, mapOf("not-score" to 42L))
+    val doc6 = doc("users/6", 1000, mapOf("score" to emptyMap<String, Any>()))
+    val doc7 = doc("users/7", 1000, mapOf("score" to mapOf("a" to 42L)))
+    val doc8 = doc("users/8", 1000, mapOf("score" to mapOf("a" to mapOf("b" to null))))
+    val doc9 = doc("users/9", 1000, mapOf("score" to mapOf("a" to null)))
+    val doc10 = doc("users/10", 1000, mapOf("score" to mapOf("a" to null, "b" to 42L)))
+    val doc11 = doc("users/11", 1000, mapOf("score" to mapOf("a" to 42L, "b" to null)))
+    val doc12 = doc("users/12", 1000, mapOf("score" to mapOf("a" to 42L, "b" to 43L)))
+    val doc13 = doc("users/13", 1000, mapOf("score" to emptyList<Any>()))
+    val doc14 = doc("users/14", 1000, mapOf("score" to listOf(null)))
+    val doc15 = doc("users/15", 1000, mapOf("score" to listOf(listOf(null))))
+    val doc16 = doc("users/16", 1000, mapOf("score" to listOf(42L)))
+    val doc17 = doc("users/17", 1000, mapOf("score" to listOf(null, 42L)))
+    val doc18 = doc("users/18", 1000, mapOf("score" to listOf(42L, null)))
+    val doc19 = doc("users/19", 1000, mapOf("score" to listOf(42L, 43L)))
+    val documents =
+      listOf(
+        doc1,
+        doc2,
+        doc3,
+        doc4,
+        doc5,
+        doc6,
+        doc7,
+        doc8,
+        doc9,
+        doc10,
+        doc11,
+        doc12,
+        doc13,
+        doc14,
+        doc15,
+        doc16,
+        doc17,
+        doc18,
+        doc19
+      )
+
+    val pipeline =
+      RealtimePipelineSource(db)
+        .collection("users")
+        .where(lessThanOrEqual(field("score"), array(nullValue())))
+
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactly(doc13, doc14)
+  }
+
+  @Test
+  fun whereLteArrayNullFirst(): Unit = runBlocking {
+    val doc1 = doc("users/1", 1000, mapOf("score" to null))
+    val doc2 = doc("users/2", 1000, mapOf("score" to 42L))
+    val doc3 = doc("users/3", 1000, mapOf("score" to "hello world"))
+    val doc4 = doc("users/4", 1000, mapOf("score" to Double.NaN))
+    val doc5 = doc("users/5", 1000, mapOf("not-score" to 42L))
+    val doc6 = doc("users/6", 1000, mapOf("score" to emptyMap<String, Any>()))
+    val doc7 = doc("users/7", 1000, mapOf("score" to mapOf("a" to 42L)))
+    val doc8 = doc("users/8", 1000, mapOf("score" to mapOf("a" to mapOf("b" to null))))
+    val doc9 = doc("users/9", 1000, mapOf("score" to mapOf("a" to null)))
+    val doc10 = doc("users/10", 1000, mapOf("score" to mapOf("a" to null, "b" to 42L)))
+    val doc11 = doc("users/11", 1000, mapOf("score" to mapOf("a" to 42L, "b" to null)))
+    val doc12 = doc("users/12", 1000, mapOf("score" to mapOf("a" to 42L, "b" to 43L)))
+    val doc13 = doc("users/13", 1000, mapOf("score" to emptyList<Any>()))
+    val doc14 = doc("users/14", 1000, mapOf("score" to listOf(null)))
+    val doc15 = doc("users/15", 1000, mapOf("score" to listOf(listOf(null))))
+    val doc16 = doc("users/16", 1000, mapOf("score" to listOf(42L)))
+    val doc17 = doc("users/17", 1000, mapOf("score" to listOf(null, 42L)))
+    val doc18 = doc("users/18", 1000, mapOf("score" to listOf(42L, null)))
+    val doc19 = doc("users/19", 1000, mapOf("score" to listOf(42L, 43L)))
+    val documents =
+      listOf(
+        doc1,
+        doc2,
+        doc3,
+        doc4,
+        doc5,
+        doc6,
+        doc7,
+        doc8,
+        doc9,
+        doc10,
+        doc11,
+        doc12,
+        doc13,
+        doc14,
+        doc15,
+        doc16,
+        doc17,
+        doc18,
+        doc19
+      )
+
+    val pipeline =
+      RealtimePipelineSource(db)
+        .collection("users")
+        .where(lessThanOrEqual(field("score"), array(nullValue(), constant(42L))))
+
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactly(doc13, doc14, doc17)
+  }
+
+  @Test
+  fun whereLteArrayNullLast(): Unit = runBlocking {
+    val doc1 = doc("users/1", 1000, mapOf("score" to null))
+    val doc2 = doc("users/2", 1000, mapOf("score" to 42L))
+    val doc3 = doc("users/3", 1000, mapOf("score" to "hello world"))
+    val doc4 = doc("users/4", 1000, mapOf("score" to Double.NaN))
+    val doc5 = doc("users/5", 1000, mapOf("not-score" to 42L))
+    val doc6 = doc("users/6", 1000, mapOf("score" to emptyMap<String, Any>()))
+    val doc7 = doc("users/7", 1000, mapOf("score" to mapOf("a" to 42L)))
+    val doc8 = doc("users/8", 1000, mapOf("score" to mapOf("a" to mapOf("b" to null))))
+    val doc9 = doc("users/9", 1000, mapOf("score" to mapOf("a" to null)))
+    val doc10 = doc("users/10", 1000, mapOf("score" to mapOf("a" to null, "b" to 42L)))
+    val doc11 = doc("users/11", 1000, mapOf("score" to mapOf("a" to 42L, "b" to null)))
+    val doc12 = doc("users/12", 1000, mapOf("score" to mapOf("a" to 42L, "b" to 43L)))
+    val doc13 = doc("users/13", 1000, mapOf("score" to emptyList<Any>()))
+    val doc14 = doc("users/14", 1000, mapOf("score" to listOf(null)))
+    val doc15 = doc("users/15", 1000, mapOf("score" to listOf(listOf(null))))
+    val doc16 = doc("users/16", 1000, mapOf("score" to listOf(42L)))
+    val doc17 = doc("users/17", 1000, mapOf("score" to listOf(null, 42L)))
+    val doc18 = doc("users/18", 1000, mapOf("score" to listOf(42L, null)))
+    val doc19 = doc("users/19", 1000, mapOf("score" to listOf(42L, 43L)))
+    val documents =
+      listOf(
+        doc1,
+        doc2,
+        doc3,
+        doc4,
+        doc5,
+        doc6,
+        doc7,
+        doc8,
+        doc9,
+        doc10,
+        doc11,
+        doc12,
+        doc13,
+        doc14,
+        doc15,
+        doc16,
+        doc17,
+        doc18,
+        doc19
+      )
+
+    val pipeline =
+      RealtimePipelineSource(db)
+        .collection("users")
+        .where(lessThanOrEqual(field("score"), array(constant(42L), nullValue())))
+
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactly(doc13, doc14, doc16, doc17, doc18)
+  }
+
+  @Test
+  fun whereLteMapEmpty(): Unit = runBlocking {
+    val doc1 = doc("users/1", 1000, mapOf("score" to null))
+    val doc2 = doc("users/2", 1000, mapOf("score" to 42L))
+    val doc3 = doc("users/3", 1000, mapOf("score" to "hello world"))
+    val doc4 = doc("users/4", 1000, mapOf("score" to Double.NaN))
+    val doc5 = doc("users/5", 1000, mapOf("not-score" to 42L))
+    val doc6 = doc("users/6", 1000, mapOf("score" to emptyMap<String, Any>()))
+    val doc7 = doc("users/7", 1000, mapOf("score" to mapOf("a" to 42L)))
+    val doc8 = doc("users/8", 1000, mapOf("score" to mapOf("a" to mapOf("b" to null))))
+    val doc9 = doc("users/9", 1000, mapOf("score" to mapOf("a" to null)))
+    val doc10 = doc("users/10", 1000, mapOf("score" to mapOf("a" to null, "b" to 42L)))
+    val doc11 = doc("users/11", 1000, mapOf("score" to mapOf("a" to 42L, "b" to null)))
+    val doc12 = doc("users/12", 1000, mapOf("score" to mapOf("a" to 42L, "b" to 43L)))
+    val doc13 = doc("users/13", 1000, mapOf("score" to emptyList<Any>()))
+    val doc14 = doc("users/14", 1000, mapOf("score" to listOf(null)))
+    val doc15 = doc("users/15", 1000, mapOf("score" to listOf(listOf(null))))
+    val doc16 = doc("users/16", 1000, mapOf("score" to listOf(42L)))
+    val doc17 = doc("users/17", 1000, mapOf("score" to listOf(null, 42L)))
+    val doc18 = doc("users/18", 1000, mapOf("score" to listOf(42L, null)))
+    val doc19 = doc("users/19", 1000, mapOf("score" to listOf(42L, 43L)))
+    val documents =
+      listOf(
+        doc1,
+        doc2,
+        doc3,
+        doc4,
+        doc5,
+        doc6,
+        doc7,
+        doc8,
+        doc9,
+        doc10,
+        doc11,
+        doc12,
+        doc13,
+        doc14,
+        doc15,
+        doc16,
+        doc17,
+        doc18,
+        doc19
+      )
+
+    val pipeline =
+      RealtimePipelineSource(db)
+        .collection("users")
+        .where(lessThanOrEqual(field("score"), map(mapOf())))
+
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactly(doc6)
+  }
+
+  @Test
+  fun whereLteMapSingleton(): Unit = runBlocking {
+    val doc1 = doc("users/1", 1000, mapOf("score" to null))
+    val doc2 = doc("users/2", 1000, mapOf("score" to 42L))
+    val doc3 = doc("users/3", 1000, mapOf("score" to "hello world"))
+    val doc4 = doc("users/4", 1000, mapOf("score" to Double.NaN))
+    val doc5 = doc("users/5", 1000, mapOf("not-score" to 42L))
+    val doc6 = doc("users/6", 1000, mapOf("score" to emptyMap<String, Any>()))
+    val doc7 = doc("users/7", 1000, mapOf("score" to mapOf("a" to 42L)))
+    val doc8 = doc("users/8", 1000, mapOf("score" to mapOf("a" to mapOf("b" to null))))
+    val doc9 = doc("users/9", 1000, mapOf("score" to mapOf("a" to null)))
+    val doc10 = doc("users/10", 1000, mapOf("score" to mapOf("a" to null, "b" to 42L)))
+    val doc11 = doc("users/11", 1000, mapOf("score" to mapOf("a" to 42L, "b" to null)))
+    val doc12 = doc("users/12", 1000, mapOf("score" to mapOf("a" to 42L, "b" to 43L)))
+    val doc13 = doc("users/13", 1000, mapOf("score" to emptyList<Any>()))
+    val doc14 = doc("users/14", 1000, mapOf("score" to listOf(null)))
+    val doc15 = doc("users/15", 1000, mapOf("score" to listOf(listOf(null))))
+    val doc16 = doc("users/16", 1000, mapOf("score" to listOf(42L)))
+    val doc17 = doc("users/17", 1000, mapOf("score" to listOf(null, 42L)))
+    val doc18 = doc("users/18", 1000, mapOf("score" to listOf(42L, null)))
+    val doc19 = doc("users/19", 1000, mapOf("score" to listOf(42L, 43L)))
+    val documents =
+      listOf(
+        doc1,
+        doc2,
+        doc3,
+        doc4,
+        doc5,
+        doc6,
+        doc7,
+        doc8,
+        doc9,
+        doc10,
+        doc11,
+        doc12,
+        doc13,
+        doc14,
+        doc15,
+        doc16,
+        doc17,
+        doc18,
+        doc19
+      )
+
+    val pipeline =
+      RealtimePipelineSource(db)
+        .collection("users")
+        .where(lessThanOrEqual(field("score"), map(mapOf("a" to constant(42L)))))
+
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactly(doc6, doc7, doc9, doc10)
+  }
+
+  @Test
+  fun whereLteMapSingletonNull(): Unit = runBlocking {
+    val doc1 = doc("users/1", 1000, mapOf("score" to null))
+    val doc2 = doc("users/2", 1000, mapOf("score" to 42L))
+    val doc3 = doc("users/3", 1000, mapOf("score" to "hello world"))
+    val doc4 = doc("users/4", 1000, mapOf("score" to Double.NaN))
+    val doc5 = doc("users/5", 1000, mapOf("not-score" to 42L))
+    val doc6 = doc("users/6", 1000, mapOf("score" to emptyMap<String, Any>()))
+    val doc7 = doc("users/7", 1000, mapOf("score" to mapOf("a" to 42L)))
+    val doc8 = doc("users/8", 1000, mapOf("score" to mapOf("a" to mapOf("b" to null))))
+    val doc9 = doc("users/9", 1000, mapOf("score" to mapOf("a" to null)))
+    val doc10 = doc("users/10", 1000, mapOf("score" to mapOf("a" to null, "b" to 42L)))
+    val doc11 = doc("users/11", 1000, mapOf("score" to mapOf("a" to 42L, "b" to null)))
+    val doc12 = doc("users/12", 1000, mapOf("score" to mapOf("a" to 42L, "b" to 43L)))
+    val doc13 = doc("users/13", 1000, mapOf("score" to emptyList<Any>()))
+    val doc14 = doc("users/14", 1000, mapOf("score" to listOf(null)))
+    val doc15 = doc("users/15", 1000, mapOf("score" to listOf(listOf(null))))
+    val doc16 = doc("users/16", 1000, mapOf("score" to listOf(42L)))
+    val doc17 = doc("users/17", 1000, mapOf("score" to listOf(null, 42L)))
+    val doc18 = doc("users/18", 1000, mapOf("score" to listOf(42L, null)))
+    val doc19 = doc("users/19", 1000, mapOf("score" to listOf(42L, 43L)))
+    val documents =
+      listOf(
+        doc1,
+        doc2,
+        doc3,
+        doc4,
+        doc5,
+        doc6,
+        doc7,
+        doc8,
+        doc9,
+        doc10,
+        doc11,
+        doc12,
+        doc13,
+        doc14,
+        doc15,
+        doc16,
+        doc17,
+        doc18,
+        doc19
+      )
+
+    val pipeline =
+      RealtimePipelineSource(db)
+        .collection("users")
+        .where(lessThanOrEqual(field("score"), map(mapOf("a" to nullValue()))))
+
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactly(doc6, doc9)
+  }
+
+  @Test
+  fun whereLteMapNullFirst(): Unit = runBlocking {
+    val doc1 = doc("users/1", 1000, mapOf("score" to null))
+    val doc2 = doc("users/2", 1000, mapOf("score" to 42L))
+    val doc3 = doc("users/3", 1000, mapOf("score" to "hello world"))
+    val doc4 = doc("users/4", 1000, mapOf("score" to Double.NaN))
+    val doc5 = doc("users/5", 1000, mapOf("not-score" to 42L))
+    val doc6 = doc("users/6", 1000, mapOf("score" to emptyMap<String, Any>()))
+    val doc7 = doc("users/7", 1000, mapOf("score" to mapOf("a" to 42L)))
+    val doc8 = doc("users/8", 1000, mapOf("score" to mapOf("a" to mapOf("b" to null))))
+    val doc9 = doc("users/9", 1000, mapOf("score" to mapOf("a" to null)))
+    val doc10 = doc("users/10", 1000, mapOf("score" to mapOf("a" to null, "b" to 42L)))
+    val doc11 = doc("users/11", 1000, mapOf("score" to mapOf("a" to 42L, "b" to null)))
+    val doc12 = doc("users/12", 1000, mapOf("score" to mapOf("a" to 42L, "b" to 43L)))
+    val doc13 = doc("users/13", 1000, mapOf("score" to emptyList<Any>()))
+    val doc14 = doc("users/14", 1000, mapOf("score" to listOf(null)))
+    val doc15 = doc("users/15", 1000, mapOf("score" to listOf(listOf(null))))
+    val doc16 = doc("users/16", 1000, mapOf("score" to listOf(42L)))
+    val doc17 = doc("users/17", 1000, mapOf("score" to listOf(null, 42L)))
+    val doc18 = doc("users/18", 1000, mapOf("score" to listOf(42L, null)))
+    val doc19 = doc("users/19", 1000, mapOf("score" to listOf(42L, 43L)))
+    val documents =
+      listOf(
+        doc1,
+        doc2,
+        doc3,
+        doc4,
+        doc5,
+        doc6,
+        doc7,
+        doc8,
+        doc9,
+        doc10,
+        doc11,
+        doc12,
+        doc13,
+        doc14,
+        doc15,
+        doc16,
+        doc17,
+        doc18,
+        doc19
+      )
+
+    val pipeline =
+      RealtimePipelineSource(db)
+        .collection("users")
+        .where(
+          lessThanOrEqual(field("score"), map(mapOf("a" to nullValue(), "b" to constant(42L))))
+        )
+
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactly(doc6, doc9, doc10)
+  }
+
+  @Test
+  fun whereLteMapNullLast(): Unit = runBlocking {
+    val doc1 = doc("users/1", 1000, mapOf("score" to null))
+    val doc2 = doc("users/2", 1000, mapOf("score" to 42L))
+    val doc3 = doc("users/3", 1000, mapOf("score" to "hello world"))
+    val doc4 = doc("users/4", 1000, mapOf("score" to Double.NaN))
+    val doc5 = doc("users/5", 1000, mapOf("not-score" to 42L))
+    val doc6 = doc("users/6", 1000, mapOf("score" to emptyMap<String, Any>()))
+    val doc7 = doc("users/7", 1000, mapOf("score" to mapOf("a" to 42L)))
+    val doc8 = doc("users/8", 1000, mapOf("score" to mapOf("a" to mapOf("b" to null))))
+    val doc9 = doc("users/9", 1000, mapOf("score" to mapOf("a" to null)))
+    val doc10 = doc("users/10", 1000, mapOf("score" to mapOf("a" to null, "b" to 42L)))
+    val doc11 = doc("users/11", 1000, mapOf("score" to mapOf("a" to 42L, "b" to null)))
+    val doc12 = doc("users/12", 1000, mapOf("score" to mapOf("a" to 42L, "b" to 43L)))
+    val doc13 = doc("users/13", 1000, mapOf("score" to emptyList<Any>()))
+    val doc14 = doc("users/14", 1000, mapOf("score" to listOf(null)))
+    val doc15 = doc("users/15", 1000, mapOf("score" to listOf(listOf(null))))
+    val doc16 = doc("users/16", 1000, mapOf("score" to listOf(42L)))
+    val doc17 = doc("users/17", 1000, mapOf("score" to listOf(null, 42L)))
+    val doc18 = doc("users/18", 1000, mapOf("score" to listOf(42L, null)))
+    val doc19 = doc("users/19", 1000, mapOf("score" to listOf(42L, 43L)))
+    val documents =
+      listOf(
+        doc1,
+        doc2,
+        doc3,
+        doc4,
+        doc5,
+        doc6,
+        doc7,
+        doc8,
+        doc9,
+        doc10,
+        doc11,
+        doc12,
+        doc13,
+        doc14,
+        doc15,
+        doc16,
+        doc17,
+        doc18,
+        doc19
+      )
+
+    val pipeline =
+      RealtimePipelineSource(db)
+        .collection("users")
+        .where(
+          lessThanOrEqual(field("score"), map(mapOf("a" to constant(42L), "b" to nullValue())))
+        )
+
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactly(doc6, doc7, doc9, doc10, doc11)
   }
 
   // ===================================================================

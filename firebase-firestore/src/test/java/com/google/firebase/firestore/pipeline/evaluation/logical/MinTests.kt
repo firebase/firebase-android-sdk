@@ -14,13 +14,14 @@
 
 package com.google.firebase.firestore.pipeline.evaluation.logical
 
-import com.google.firebase.firestore.model.Values.encodeValue
 import com.google.firebase.firestore.pipeline.Expression
+import com.google.firebase.firestore.pipeline.Expression.Companion.array
 import com.google.firebase.firestore.pipeline.Expression.Companion.constant
+import com.google.firebase.firestore.pipeline.Expression.Companion.error
 import com.google.firebase.firestore.pipeline.Expression.Companion.logicalMinimum
 import com.google.firebase.firestore.pipeline.Expression.Companion.nullValue
 import com.google.firebase.firestore.pipeline.assertEvaluatesTo
-import com.google.firebase.firestore.pipeline.assertEvaluatesToNull
+import com.google.firebase.firestore.pipeline.assertEvaluatesToError
 import com.google.firebase.firestore.pipeline.evaluate
 import com.google.firebase.firestore.testutil.TestUtilKtx.doc
 import org.junit.Test
@@ -29,93 +30,199 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class MinTests {
-  private val nullExpr = nullValue()
-  private val nanExpr = constant(Double.NaN)
-  private val errorExpr = Expression.error("error.field").equal(constant("random"))
-  private val errorDoc =
-    doc("coll/docError", 1, mapOf("error" to 123)) // "error.field" will be UNSET
   private val emptyDoc = doc("coll/docEmpty", 1, emptyMap())
 
-  // --- LogicalMinimum Tests ---
+  private data class VariadicValueTestCase(
+    val inputs: List<Expression>,
+    val expected: Expression,
+    val description: String = ""
+  )
+  private data class EqualValues(val left: Expression, val right: Expression)
 
-  @Test
-  fun `logicalMinimum - numeric type`() {
-    val expr = logicalMinimum(constant(1L), logicalMinimum(constant(2.0), constant(3L)))
-    val result = evaluate(expr, emptyDoc)
-    assertEvaluatesTo(result, encodeValue(1L), "Min(1L, Min(2.0, 3L)) should be 1L")
-  }
+  private val generalCases =
+    listOf(
+      // Testing the relative priority of different types, following TypeComparator.
+      // Boolean < Number < String < Array < Map. Null always has the lowest
+      // priority.
+      VariadicValueTestCase(listOf(constant(true), nullValue()), constant(true)),
+      VariadicValueTestCase(listOf(nullValue(), constant(true)), constant(true)),
+      VariadicValueTestCase(listOf(constant(0L), constant(false)), constant(false)),
+      VariadicValueTestCase(listOf(constant(0.0), constant(true)), constant(true)),
+      VariadicValueTestCase(listOf(constant(""), constant(0L)), constant(0L)),
+      VariadicValueTestCase(listOf(constant(0.0), constant("foo")), constant(0.0)),
+      VariadicValueTestCase(listOf(array(2, 3), constant("foo")), constant("foo")),
+      VariadicValueTestCase(
+        listOf(Expression.map(mapOf<String, Any>()), array(listOf<Any>())),
+        array(listOf<Any>())
+      ),
+      VariadicValueTestCase(
+        listOf(array(listOf<Any>()), Expression.map(mapOf<String, Any>())),
+        array(listOf<Any>())
+      ),
 
-  @Test
-  fun `logicalMinimum - string type`() {
-    val expr = logicalMinimum(logicalMinimum(constant("a"), constant("b")), constant("c"))
-    val result = evaluate(expr, emptyDoc)
-    assertEvaluatesTo(result, encodeValue("a"), "Min(Min('a', 'b'), 'c') should be 'a'")
-  }
+      // Testing numeric comparisons are equal across types.
+      VariadicValueTestCase(listOf(constant(1.0), constant(2L)), constant(1.0)),
+      VariadicValueTestCase(listOf(constant(1.1), constant(1L)), constant(1L)),
+      VariadicValueTestCase(listOf(constant(-20), constant(4.24)), constant(-20)),
+      VariadicValueTestCase(listOf(constant(1L), constant(2.0), constant(3L)), constant(1L)),
+      VariadicValueTestCase(listOf(constant(2.5), constant(2.6)), constant(2.5)),
+      VariadicValueTestCase(
+        listOf(constant(Double.NEGATIVE_INFINITY), constant(Long.MIN_VALUE)),
+        constant(Double.NEGATIVE_INFINITY)
+      ),
+      VariadicValueTestCase(
+        listOf(constant(Double.POSITIVE_INFINITY), constant(Long.MAX_VALUE)),
+        constant(Long.MAX_VALUE)
+      ),
 
-  @Test
-  fun `logicalMinimum - mixed type`() {
-    val expr = logicalMinimum(constant(1L), logicalMinimum(constant("1"), constant(0L)))
-    val result = evaluate(expr, emptyDoc)
-    assertEvaluatesTo(result, encodeValue(0L), "Min(1L, Min('1', 0L)) should be 0L")
-  }
+      // Testing comparisons within the same type.
+      VariadicValueTestCase(listOf(constant(true), constant(false)), constant(false)),
+      VariadicValueTestCase(listOf(constant(1L), constant(0L)), constant(0L)),
+      VariadicValueTestCase(listOf(constant(-0.4), constant(0.0)), constant(-0.4)),
+      VariadicValueTestCase(listOf(constant(1), constant(2), constant(3)), constant(1)),
+      VariadicValueTestCase(listOf(constant("b"), constant("a")), constant("a")),
+      VariadicValueTestCase(listOf(constant("b"), constant("aaaa")), constant("aaaa")),
+      VariadicValueTestCase(listOf(nullValue(), nullValue()), nullValue()),
+      VariadicValueTestCase(listOf(nullValue(), nullValue()), nullValue()), // for UNSET
 
-  @Test
-  fun `logicalMinimum - only null and error returns null`() {
-    val expr = logicalMinimum(nullExpr, errorExpr)
-    val result = evaluate(expr, errorDoc)
-    assertEvaluatesToNull(result, "Min(Null, Error) should be Null")
-  }
+      // List comparison is based on the comparison of the first elements, or size as a
+      // tie-breaker.
+      VariadicValueTestCase(listOf(array(listOf(2)), array(listOf(1))), array(listOf(1))),
+      VariadicValueTestCase(
+        listOf(array(listOf(2)), array(listOf(1, 1, 2, 3, 4))),
+        array(listOf(1, 1, 2, 3, 4))
+      ),
+      VariadicValueTestCase(listOf(array(listOf(2, 3)), array(listOf(2, 2))), array(listOf(2, 2))),
+      VariadicValueTestCase(listOf(array(listOf(2)), array(listOf(2, -10))), array(listOf(2))),
 
-  @Test
-  fun `logicalMinimum - nan and numbers`() {
-    val expr1 = logicalMinimum(nanExpr, constant(0L))
-    assertEvaluatesTo(
-      evaluate(expr1, emptyDoc),
-      encodeValue(Double.NaN),
-      "Min(NaN, 0L) should be NaN"
+      // Map comparison is based on the comparison of the smallest keys and their values, or
+      // size as a tie-breaker.
+      VariadicValueTestCase(
+        listOf(Expression.map(mapOf("b" to 1)), Expression.map(mapOf("a" to 10))),
+        Expression.map(mapOf("a" to 10))
+      ),
+      VariadicValueTestCase(
+        listOf(Expression.map(mapOf("b" to 1)), Expression.map(mapOf("b" to 0))),
+        Expression.map(mapOf("b" to 0))
+      ),
+      VariadicValueTestCase(
+        listOf(
+          Expression.map(mapOf("b" to 1, "c" to 2)),
+          Expression.map(mapOf("a" to 3, "b" to 5))
+        ),
+        Expression.map(mapOf("a" to 3, "b" to 5))
+      ),
+      VariadicValueTestCase(
+        listOf(
+          Expression.map(mapOf("b" to 1, "a" to 1)),
+          Expression.map(mapOf("a" to 3, "b" to 0))
+        ),
+        Expression.map(mapOf("b" to 1, "a" to 1))
+      ),
+      VariadicValueTestCase(
+        listOf(Expression.map(mapOf("b" to 1, "a" to 2)), Expression.map(mapOf("b" to 1))),
+        Expression.map(mapOf("b" to 1, "a" to 2))
+      ),
+      VariadicValueTestCase(
+        listOf(Expression.map(mapOf("b" to 1, "c" to 2)), Expression.map(mapOf("b" to 1))),
+        Expression.map(mapOf("b" to 1))
+      ),
+
+      // Testing across different value types
+      VariadicValueTestCase(
+        listOf(array(listOf(2, 3)), constant(2), Expression.map(mapOf("2" to 2, "3" to 3))),
+        constant(2)
+      ),
+      VariadicValueTestCase(listOf(constant("a"), constant("b"), constant("c")), constant("a")),
+      VariadicValueTestCase(listOf(constant(1L), constant("1"), constant(0L)), constant(0L)),
+      VariadicValueTestCase(listOf(constant(Double.NaN), constant(0L)), constant(Double.NaN)),
+      VariadicValueTestCase(listOf(constant(Double.NaN), constant(1)), constant(Double.NaN)),
+      VariadicValueTestCase(listOf(nullValue(), constant(1L)), constant(1L)),
+      VariadicValueTestCase(listOf(nullValue(), constant(1L)), constant(1L)), // for UNSET
+      VariadicValueTestCase(listOf(nullValue(), constant(12)), constant(12)),
+      VariadicValueTestCase(listOf(nullValue(), constant(12)), constant(12))
     )
 
-    val expr2 = logicalMinimum(constant(0L), nanExpr)
-    assertEvaluatesTo(
-      evaluate(expr2, emptyDoc),
-      encodeValue(Double.NaN),
-      "Min(0L, NaN) should be NaN"
+  private val equalCases =
+    listOf(
+      EqualValues(constant(1.0), constant(1)),
+      EqualValues(constant(1L), constant(1.0)),
+      EqualValues(constant(1), constant(1.0)),
+      EqualValues(constant(-0.0), constant(0.0)),
+      EqualValues(constant(0L), constant(-0.0)),
+      EqualValues(constant(1), constant(1.0)), // Decimal128
+      EqualValues(constant(-1), constant(-1L)),
+      EqualValues(constant(Double.NaN), constant(Double.NaN)), // Decimal128.NAN
+      EqualValues(
+        constant(Double.NEGATIVE_INFINITY),
+        constant(Double.NEGATIVE_INFINITY)
+      ), // Decimal128.NEGATIVE_INFINITY
+      EqualValues(
+        constant(Double.POSITIVE_INFINITY),
+        constant(Double.POSITIVE_INFINITY)
+      ), // Decimal128.POSITIVE_INFINITY
+      EqualValues(constant(-0.0), constant(-0.0)), // Decimal128.NEGATIVE_ZERO
+      EqualValues(constant(0.0), constant(0.0)), // Decimal128.POSITIVE_ZERO
+      EqualValues(array(listOf(2)), array(listOf(2.0))),
+      EqualValues(Expression.map(mapOf("a" to 2)), Expression.map(mapOf("a" to 2.0)))
     )
 
-    val expr3 = logicalMinimum(nanExpr, nullExpr, errorExpr)
-    assertEvaluatesTo(
-      evaluate(expr3, errorDoc),
-      encodeValue(Double.NaN),
-      "Min(NaN, Null, Error) should be NaN"
-    )
+  @Test
+  fun `min with general cases`() {
+    generalCases.forEach { (inputs, expected, description) ->
+      val expr = logicalMinimum(inputs[0], *inputs.subList(1, inputs.size).toTypedArray())
+      assertEvaluatesTo(
+        evaluate(expr, emptyDoc),
+        evaluate(expected, emptyDoc),
+        "Min(${inputs.joinToString()}) should be $expected. $description"
+      )
+    }
+  }
 
-    val expr4 = logicalMinimum(nanExpr, errorExpr)
-    assertEvaluatesTo(
-      evaluate(expr4, errorDoc),
-      encodeValue(Double.NaN),
-      "Min(NaN, Error) should be NaN"
+  // Testing that the result of calling min on two equal values always results in the first value
+  // being returned.
+  @Test
+  fun `min on equal values returns first input`() {
+    equalCases.forEach { (left, right) ->
+      assertEvaluatesTo(
+        evaluate(logicalMinimum(left, right), emptyDoc),
+        evaluate(left, emptyDoc),
+        "Min(${left}, ${right}) should be ${left}"
+      )
+      assertEvaluatesTo(
+        evaluate(logicalMinimum(right, left), emptyDoc),
+        evaluate(right, emptyDoc),
+        "Min(${right}, ${left}) should be ${right}"
+      )
+    }
+  }
+
+  @Test
+  fun `one argument throws`() {
+    assertEvaluatesToError(evaluate(logicalMinimum(constant(1L)), emptyDoc), "minimum(1)")
+  }
+
+  @Test
+  fun `error value isError`() {
+    assertEvaluatesToError(
+      evaluate(logicalMinimum(error("error-1"), constant(1L)), emptyDoc),
+      "minimum(error, 1)"
     )
   }
 
   @Test
-  fun `logicalMinimum - error input skip`() {
-    val expr = logicalMinimum(errorExpr, constant(1L))
-    val result = evaluate(expr, errorDoc)
-    assertEvaluatesTo(result, encodeValue(1L), "Min(Error, 1L) should be 1L")
+  fun `value error isError`() {
+    assertEvaluatesToError(
+      evaluate(logicalMinimum(constant(1L), error("error-2")), emptyDoc),
+      "minimum(1, error)"
+    )
   }
 
   @Test
-  fun `logicalMinimum - null input skip`() {
-    val expr = logicalMinimum(nullExpr, constant(1L))
-    val result = evaluate(expr, emptyDoc)
-    assertEvaluatesTo(result, encodeValue(1L), "Min(Null, 1L) should be 1L")
-  }
-
-  @Test
-  fun `logicalMinimum - equivalent numerics`() {
-    val expr = logicalMinimum(constant(1L), constant(1.0))
-    val result = evaluate(expr, emptyDoc)
-    // Similar to Max, asserting against integer form.
-    assertEvaluatesTo(result, encodeValue(1L), "Min(1L, 1.0) should be numerically 1")
+  fun `error error isError`() {
+    assertEvaluatesToError(
+      evaluate(logicalMinimum(error("error-1"), error("error-2")), emptyDoc),
+      "minimum(error, error)"
+    )
   }
 }

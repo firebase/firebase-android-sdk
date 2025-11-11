@@ -19,13 +19,22 @@ import com.google.firebase.firestore.pipeline.Expression.Companion.byteLength
 import com.google.firebase.firestore.pipeline.Expression.Companion.constant
 import com.google.firebase.firestore.pipeline.assertEvaluatesTo
 import com.google.firebase.firestore.pipeline.assertEvaluatesToError
+import com.google.firebase.firestore.pipeline.assertEvaluatesToNull
 import com.google.firebase.firestore.pipeline.evaluate
+import com.google.firebase.firestore.pipeline.evaluation.MirroringTestCases
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 internal class ByteLengthTests {
+
+  @Test
+  fun byteLength_mirror() {
+    for (testCase in MirroringTestCases.UNARY_MIRROR_TEST_CASES) {
+      assertEvaluatesToNull(evaluate(byteLength(testCase.input)), "byteLength(${testCase.name})")
+    }
+  }
 
   // --- ByteLength Tests ---
   @Test
@@ -63,7 +72,7 @@ internal class ByteLengthTests {
   }
 
   @Test
-  fun byteLength_highSurrogateOnly_returnsError() {
+  fun byteLength_highSurrogateOnly() {
     // UTF-8 encoding of a lone high surrogate is invalid.
     // U+D83C (high surrogate) incorrectly encoded as 3 bytes in ISO-8859-1
     // This test assumes the underlying string processing correctly identifies invalid UTF-8
@@ -95,7 +104,7 @@ internal class ByteLengthTests {
   }
 
   @Test
-  fun byteLength_lowSurrogateOnly_returnsError() {
+  fun byteLength_lowSurrogateOnly() {
     // Similar to high surrogate, Java's toByteArray(UTF_8) replaces with '?'
     val expr = byteLength(constant("\uDF53")) // Java string with lone low surrogate
     val result = evaluate(expr)
@@ -103,7 +112,7 @@ internal class ByteLengthTests {
   }
 
   @Test
-  fun byteLength_lowAndHighSurrogateSwapped_returnsError() {
+  fun byteLength_lowAndHighSurrogateSwapped() {
     // "\uDF53\uD83C" - two replacement characters '??'
     val expr = byteLength(constant("\uDF53\uD83C"))
     val result = evaluate(expr)
@@ -112,23 +121,6 @@ internal class ByteLengthTests {
       encodeValue(2L),
       "byteLength(\"\\uDF53\\uD83C\") - swapped surrogates"
     )
-  }
-
-  @Test
-  fun byteLength_wrongContinuation_returnsError() {
-    // This C++ test checks specific invalid UTF-8 byte sequences.
-    // In Kotlin, `constant(String)` takes a valid Java String.
-    // If we want to test invalid byte sequences, we should use `constant(Blob)` or
-    // `constant(ByteArray)`.
-    // The `evaluateByteLength` for string input converts the Java string to UTF-8 bytes.
-    // If the Java string itself is valid (e.g. contains lone surrogates), it gets converted (often
-    // with replacement chars).
-    // The C++ tests like "Start \xFF End" are passing byte sequences that are not valid UTF-8.
-    // We cannot directly create `constant("Start \xFF End")` where \xFF is a literal byte.
-    // We will skip porting these specific invalid byte sequence tests for string inputs,
-    // as they test behavior not directly exposed by `byteLength(constant(String))` in the same way.
-    // The `byteLength` for `Blob` would be the place for such tests if needed.
-    // For now, we assume `byteLength(String)` expects a valid Java string.
   }
 
   @Test

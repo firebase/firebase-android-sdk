@@ -20,7 +20,9 @@ import com.google.firebase.firestore.pipeline.Expression.Companion.constant
 import com.google.firebase.firestore.pipeline.Expression.Companion.unixMillisToTimestamp
 import com.google.firebase.firestore.pipeline.assertEvaluatesTo
 import com.google.firebase.firestore.pipeline.assertEvaluatesToError
+import com.google.firebase.firestore.pipeline.assertEvaluatesToNull
 import com.google.firebase.firestore.pipeline.evaluate
+import com.google.firebase.firestore.pipeline.evaluation.MirroringTestCases
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -29,6 +31,15 @@ import org.robolectric.RobolectricTestRunner
 internal class UnixMillisToTimestampTests {
 
   // --- UnixMillisToTimestamp Tests ---
+  @Test
+  fun unixMillisToTimestamp_mirrors_errors() {
+    for (testCase in MirroringTestCases.UNARY_MIRROR_TEST_CASES) {
+      assertEvaluatesToNull(
+        evaluate(unixMillisToTimestamp(testCase.input)),
+        "unixMillisToTimestamp(${'$'}{testCase.name})"
+      )
+    }
+  }
 
   @Test
   fun unixMillisToTimestamp_stringType_returnsError() {

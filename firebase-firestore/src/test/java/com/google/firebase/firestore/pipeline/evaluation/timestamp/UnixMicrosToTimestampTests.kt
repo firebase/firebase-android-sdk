@@ -20,7 +20,9 @@ import com.google.firebase.firestore.pipeline.Expression.Companion.constant
 import com.google.firebase.firestore.pipeline.Expression.Companion.unixMicrosToTimestamp
 import com.google.firebase.firestore.pipeline.assertEvaluatesTo
 import com.google.firebase.firestore.pipeline.assertEvaluatesToError
+import com.google.firebase.firestore.pipeline.assertEvaluatesToNull
 import com.google.firebase.firestore.pipeline.evaluate
+import com.google.firebase.firestore.pipeline.evaluation.MirroringTestCases
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -35,6 +37,16 @@ internal class UnixMicrosToTimestampTests {
     val expr = unixMicrosToTimestamp(constant("abc"))
     val result = evaluate(expr)
     assertEvaluatesToError(result, "unixMicrosToTimestamp(\"abc\")")
+  }
+
+  @Test
+  fun unixMicrosToTimestamp_mirrors_errors() {
+    for (testCase in MirroringTestCases.UNARY_MIRROR_TEST_CASES) {
+      assertEvaluatesToNull(
+        evaluate(unixMicrosToTimestamp(testCase.input)),
+        "unixMicrosToTimestamp(${'$'}{testCase.name})"
+      )
+    }
   }
 
   @Test

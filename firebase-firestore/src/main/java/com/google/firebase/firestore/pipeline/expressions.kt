@@ -392,7 +392,7 @@ abstract class Expression internal constructor() {
      * @return A new [BooleanExpression] representing the logical 'AND' operation.
      */
     @JvmStatic
-    fun and(condition: BooleanExpression, vararg conditions: BooleanExpression) =
+    fun and(condition: BooleanExpression, vararg conditions: BooleanExpression): BooleanExpression =
       BooleanFunctionExpression("and", evaluateAnd, condition, *conditions)
 
     /**
@@ -408,7 +408,7 @@ abstract class Expression internal constructor() {
      * @return A new [BooleanExpression] representing the logical 'OR' operation.
      */
     @JvmStatic
-    fun or(condition: BooleanExpression, vararg conditions: BooleanExpression) =
+    fun or(condition: BooleanExpression, vararg conditions: BooleanExpression): BooleanExpression =
       BooleanFunctionExpression("or", evaluateOr, condition, *conditions)
 
     /**
@@ -424,7 +424,7 @@ abstract class Expression internal constructor() {
      * @return A new [BooleanExpression] representing the logical 'XOR' operation.
      */
     @JvmStatic
-    fun xor(condition: BooleanExpression, vararg conditions: BooleanExpression) =
+    fun xor(condition: BooleanExpression, vararg conditions: BooleanExpression): BooleanExpression =
       BooleanFunctionExpression("xor", evaluateXor, condition, *conditions)
 
     /**
@@ -2283,7 +2283,7 @@ abstract class Expression internal constructor() {
      * @return A new [BooleanExpression] representing the contains regular expression comparison.
      */
     @JvmStatic
-    fun regexContains(fieldName: String, pattern: Expression) =
+    fun regexContains(fieldName: String, pattern: Expression): BooleanExpression =
       BooleanFunctionExpression("regex_contains", evaluateRegexContains, fieldName, pattern)
 
     /**
@@ -2300,7 +2300,7 @@ abstract class Expression internal constructor() {
      * @return A new [BooleanExpression] representing the contains regular expression comparison.
      */
     @JvmStatic
-    fun regexContains(fieldName: String, pattern: String) =
+    fun regexContains(fieldName: String, pattern: String): BooleanExpression =
       BooleanFunctionExpression("regex_contains", evaluateRegexContains, fieldName, pattern)
 
     /**
@@ -2348,7 +2348,7 @@ abstract class Expression internal constructor() {
      * @return A new [BooleanExpression] representing the regular expression match comparison.
      */
     @JvmStatic
-    fun regexMatch(fieldName: String, pattern: Expression) =
+    fun regexMatch(fieldName: String, pattern: Expression): BooleanExpression =
       BooleanFunctionExpression("regex_match", evaluateRegexMatch, fieldName, pattern)
 
     /**
@@ -2364,7 +2364,7 @@ abstract class Expression internal constructor() {
      * @return A new [BooleanExpression] representing the regular expression match comparison.
      */
     @JvmStatic
-    fun regexMatch(fieldName: String, pattern: String) =
+    fun regexMatch(fieldName: String, pattern: String): BooleanExpression =
       BooleanFunctionExpression("regex_match", evaluateRegexMatch, fieldName, pattern)
 
     /**
@@ -4660,7 +4660,7 @@ abstract class Expression internal constructor() {
      * @return A new [BooleanExpression] representing the arrayContains operation.
      */
     @JvmStatic
-    fun arrayContains(arrayFieldName: String, element: Expression) =
+    fun arrayContains(arrayFieldName: String, element: Expression): BooleanExpression =
       BooleanFunctionExpression("array_contains", evaluateArrayContains, arrayFieldName, element)
 
     /**
@@ -4695,7 +4695,7 @@ abstract class Expression internal constructor() {
      * @return A new [BooleanExpression] representing the arrayContains operation.
      */
     @JvmStatic
-    fun arrayContains(arrayFieldName: String, element: Any) =
+    fun arrayContains(arrayFieldName: String, element: Any): BooleanExpression =
       BooleanFunctionExpression("array_contains", evaluateArrayContains, arrayFieldName, element)
 
     /**
@@ -4711,7 +4711,7 @@ abstract class Expression internal constructor() {
      * @return A new [BooleanExpression] representing the arrayContainsAll operation.
      */
     @JvmStatic
-    fun arrayContainsAll(array: Expression, values: List<Any>) =
+    fun arrayContainsAll(array: Expression, values: List<Any>): BooleanExpression =
       arrayContainsAll(array, array(values))
 
     /**
@@ -4727,7 +4727,7 @@ abstract class Expression internal constructor() {
      * @return A new [BooleanExpression] representing the arrayContainsAll operation.
      */
     @JvmStatic
-    fun arrayContainsAll(array: Expression, arrayExpression: Expression) =
+    fun arrayContainsAll(array: Expression, arrayExpression: Expression): BooleanExpression =
       BooleanFunctionExpression(
         "array_contains_all",
         evaluateArrayContainsAll,
@@ -4748,7 +4748,7 @@ abstract class Expression internal constructor() {
      * @return A new [BooleanExpression] representing the arrayContainsAll operation.
      */
     @JvmStatic
-    fun arrayContainsAll(arrayFieldName: String, values: List<Any>) =
+    fun arrayContainsAll(arrayFieldName: String, values: List<Any>): BooleanExpression =
       BooleanFunctionExpression(
         "array_contains_all",
         evaluateArrayContainsAll,
@@ -4769,7 +4769,7 @@ abstract class Expression internal constructor() {
      * @return A new [BooleanExpression] representing the arrayContainsAll operation.
      */
     @JvmStatic
-    fun arrayContainsAll(arrayFieldName: String, arrayExpression: Expression) =
+    fun arrayContainsAll(arrayFieldName: String, arrayExpression: Expression): BooleanExpression =
       BooleanFunctionExpression(
         "array_contains_all",
         evaluateArrayContainsAll,
@@ -4790,7 +4790,7 @@ abstract class Expression internal constructor() {
      * @return A new [BooleanExpression] representing the arrayContainsAny operation.
      */
     @JvmStatic
-    fun arrayContainsAny(array: Expression, values: List<Any>) =
+    fun arrayContainsAny(array: Expression, values: List<Any>): BooleanExpression =
       BooleanFunctionExpression(
         "array_contains_any",
         evaluateArrayContainsAny,
@@ -4812,7 +4812,7 @@ abstract class Expression internal constructor() {
      * @return A new [BooleanExpression] representing the arrayContainsAny operation.
      */
     @JvmStatic
-    fun arrayContainsAny(array: Expression, arrayExpression: Expression) =
+    fun arrayContainsAny(array: Expression, arrayExpression: Expression): BooleanExpression =
       BooleanFunctionExpression(
         "array_contains_any",
         evaluateArrayContainsAny,
@@ -4833,7 +4833,7 @@ abstract class Expression internal constructor() {
      * @return A new [BooleanExpression] representing the arrayContainsAny operation.
      */
     @JvmStatic
-    fun arrayContainsAny(arrayFieldName: String, values: List<Any>) =
+    fun arrayContainsAny(arrayFieldName: String, values: List<Any>): BooleanExpression =
       BooleanFunctionExpression(
         "array_contains_any",
         evaluateArrayContainsAny,
@@ -4854,7 +4854,7 @@ abstract class Expression internal constructor() {
      * @return A new [BooleanExpression] representing the arrayContainsAny operation.
      */
     @JvmStatic
-    fun arrayContainsAny(arrayFieldName: String, arrayExpression: Expression) =
+    fun arrayContainsAny(arrayFieldName: String, arrayExpression: Expression): BooleanExpression =
       BooleanFunctionExpression(
         "array_contains_any",
         evaluateArrayContainsAny,
@@ -7316,7 +7316,7 @@ class Field internal constructor(internal val fieldPath: ModelFieldPath) : Selec
     when (fieldPath) {
       KEY_PATH ->
         EvaluateResultValue(
-          Value.newBuilder().setReferenceValue(input.key.path.canonicalString()).build()
+          encodeValue(context.pipeline.firestore?.document(input.key.path.canonicalString())!!)
         )
       CREATE_TIME_PATH -> EvaluateResultValue(encodeValue(input.createTime.timestamp))
       UPDATE_TIME_PATH -> EvaluateResultValue(encodeValue(input.version.timestamp))
@@ -7529,7 +7529,7 @@ abstract class BooleanExpression : Expression() {
   }
 }
 
-open class BooleanFunctionExpression internal constructor(val expr: FunctionExpression) :
+internal class BooleanFunctionExpression internal constructor(val expr: Expression) :
   BooleanExpression() {
   internal constructor(
     name: String,

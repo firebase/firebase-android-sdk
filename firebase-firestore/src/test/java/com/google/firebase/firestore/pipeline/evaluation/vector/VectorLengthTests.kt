@@ -21,13 +21,24 @@ import com.google.firebase.firestore.pipeline.Expression.Companion.constant
 import com.google.firebase.firestore.pipeline.Expression.Companion.vector
 import com.google.firebase.firestore.pipeline.Expression.Companion.vectorLength
 import com.google.firebase.firestore.pipeline.assertEvaluatesToError
+import com.google.firebase.firestore.pipeline.assertEvaluatesToNull
 import com.google.firebase.firestore.pipeline.evaluate
+import com.google.firebase.firestore.pipeline.evaluation.MirroringTestCases
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class VectorLengthTests {
+  @Test
+  fun `vectorLength - mirroring errors`() {
+    for (testCase in MirroringTestCases.UNARY_MIRROR_TEST_CASES) {
+      assertEvaluatesToNull(
+        evaluate(vectorLength(testCase.input)),
+        "vectorLength(${'$'}{testCase.name})"
+      )
+    }
+  }
 
   @Test
   fun `vectorLength - length`() {

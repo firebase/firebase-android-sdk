@@ -21,6 +21,7 @@ import com.google.firebase.firestore.TestUtil
 import com.google.firebase.firestore.model.MutableDocument
 import com.google.firebase.firestore.pipeline.Expression.Companion.array
 import com.google.firebase.firestore.pipeline.Expression.Companion.arrayContains
+import com.google.firebase.firestore.pipeline.Expression.Companion.constant
 import com.google.firebase.firestore.pipeline.Expression.Companion.equalAny
 import com.google.firebase.firestore.pipeline.Expression.Companion.field
 import com.google.firebase.firestore.pipeline.Expression.Companion.greaterThan
@@ -80,6 +81,64 @@ internal class CollectionGroupTests {
       listOf(doc3, doc1, doc5) // Expected order by key: alice, bob, charlie (from 'users' only)
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(expectedDocs).inOrder()
+  }
+
+  @Test
+  fun `skips docs with collection group in parent path`(): Unit = runBlocking {
+    val pipeline = RealtimePipelineSource(db).collectionGroup("users")
+
+    val doc1 = doc("users/alice", 1000, mapOf("score" to 50L))
+    val doc2 = doc("users/bob/games/halo", 1000, mapOf("score" to 90L))
+    val doc3 = doc("users/charlie", 1000, mapOf("score" to 97L))
+    val doc4 = doc("users/david/games/halo/play/1", 1000, mapOf("score" to 90L))
+    val doc5 = doc("games/halo/users/david/play/1", 1000, mapOf("score" to 90L))
+
+    val documents = listOf(doc1, doc2, doc3, doc4, doc5)
+    val expectedDocs = listOf(doc1, doc3)
+
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactlyElementsIn(expectedDocs).inOrder()
+  }
+
+  @Test
+  fun `skips docs with collection group in parent path with in on name`(): Unit = runBlocking {
+    val doc1 = doc("users/charlie", 1000, mapOf("score" to 97L))
+    val doc2 = doc("users/david/games/halo", 1000, mapOf("score" to 90L))
+    // Extra doc that should be filtered out by query
+    val doc3 = doc("users/alice", 1000, mapOf("score" to 50L))
+
+    val pipeline =
+      RealtimePipelineSource(db)
+        .collectionGroup("users")
+        .where(
+          equalAny(
+            field(PublicFieldPath.documentId()),
+            array(
+              constant(db.document(doc1.key.path.toString())),
+              constant(db.document(doc2.key.path.toString()))
+            )
+          )
+        )
+
+    val documents = listOf(doc1, doc2, doc3)
+    val expectedDocs = listOf(doc1)
+
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactlyElementsIn(expectedDocs)
+  }
+
+  @Test
+  fun `duplicate collection name`(): Unit = runBlocking {
+    val pipeline = RealtimePipelineSource(db).collectionGroup("matches")
+
+    val doc1 = doc("users/alice/matches/1/opponents/bob/matches/1", 1000, mapOf("score" to 90L))
+    val doc2 = doc("users/alice/matches/1/opponents/bob/matches/2", 1000, mapOf("score" to 90L))
+    val doc3 = doc("users/not-alice/matches/1/opponents/bob/matches/1", 1000, mapOf("score" to 90L))
+    val doc4 = doc("users/not-alice/matches/1/opponents/bob/matches/2", 1000, mapOf("score" to 90L))
+
+    val documents = listOf(doc1, doc2, doc3, doc4)
+    val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
+    assertThat(result).containsExactlyElementsIn(documents)
   }
 
   @Test
