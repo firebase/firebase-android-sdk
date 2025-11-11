@@ -237,6 +237,12 @@ class QueryResultDecoderUnitTest {
     }
   }
 
+  @Test fun `decode() should throw NegativeEntityIdSizeException`() = runTest { TODO() }
+
+  @Test fun `decode() should throw EntityNotFoundException`() = runTest { TODO() }
+
+  @Test fun `decode() should be able to decode very long entity IDs`() = runTest { TODO() }
+
   @Test
   fun `decode() should throw Utf8EOFException with 'insufficient bytes' message for utf8`() =
     runTest {
