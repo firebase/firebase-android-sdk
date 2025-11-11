@@ -22,6 +22,7 @@ import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessor
+import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSClassDeclaration
@@ -151,17 +152,33 @@ public class SchemaSymbolProcessor(
         "kotlin.String" -> {
           builder.addStatement("Schema.string(").indent()
         }
+        "kotlin.collections.List" -> {
+          val listTypeParam = type.arguments.first().type!!.resolve()
+          val listParamCodeBlock =
+            generateCodeBlockForSchema(type = listTypeParam, parentType = type)
+          builder
+            .addStatement("Schema.array(")
+            .indent()
+            .addStatement("items = ")
+            .add(listParamCodeBlock)
+            .addStatement(",")
+        }
         else -> {
-          if (className.canonicalName == "kotlin.collections.List") {
-            val listTypeParam = type.arguments.first().type!!.resolve()
-            val listParamCodeBlock =
-              generateCodeBlockForSchema(type = listTypeParam, parentType = type)
+          if ((type.declaration as? KSClassDeclaration)?.classKind == ClassKind.ENUM_CLASS) {
+            val enumValues =
+              (type.declaration as KSClassDeclaration)
+                .declarations
+                .filterIsInstance(KSClassDeclaration::class.java)
+                .map { it.simpleName.asString() }
+                .toList()
             builder
-              .addStatement("Schema.array(")
+              .addStatement("Schema.enumeration(")
               .indent()
-              .addStatement("items = ")
-              .add(listParamCodeBlock)
-              .addStatement(",")
+              .addStatement("values = listOf(")
+              .indent()
+              .addStatement(enumValues.joinToString { "\"$it\"" })
+              .unindent()
+              .addStatement("),")
           } else {
             builder
               .addStatement("Schema.obj(")
