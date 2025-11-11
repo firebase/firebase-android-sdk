@@ -14,13 +14,14 @@
 
 package com.google.firebase.firestore.pipeline.evaluation.logical
 
-import com.google.firebase.firestore.model.Values.encodeValue
 import com.google.firebase.firestore.pipeline.Expression
+import com.google.firebase.firestore.pipeline.Expression.Companion.array
 import com.google.firebase.firestore.pipeline.Expression.Companion.constant
 import com.google.firebase.firestore.pipeline.Expression.Companion.logicalMaximum
+import com.google.firebase.firestore.pipeline.Expression.Companion.map
 import com.google.firebase.firestore.pipeline.Expression.Companion.nullValue
 import com.google.firebase.firestore.pipeline.assertEvaluatesTo
-import com.google.firebase.firestore.pipeline.assertEvaluatesToNull
+import com.google.firebase.firestore.pipeline.assertEvaluatesToError
 import com.google.firebase.firestore.pipeline.evaluate
 import com.google.firebase.firestore.testutil.TestUtilKtx.doc
 import org.junit.Test
@@ -29,91 +30,184 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class MaxTests {
-  private val nullExpr = nullValue()
-  private val nanExpr = constant(Double.NaN)
-  private val errorExpr = Expression.error("error.field").equal(constant("random"))
-  private val errorDoc =
-    doc("coll/docError", 1, mapOf("error" to 123)) // "error.field" will be UNSET
+  private val errorExpr1 = Expression.error("error-1")
+  private val errorExpr2 = Expression.error("error-2")
   private val emptyDoc = doc("coll/docEmpty", 1, emptyMap())
 
-  // --- LogicalMaximum Tests ---
-  // Note: logicalMaximum is notImplemented in expressions.kt.
-  // Tests will fail if NotImplementedError is thrown, which is the desired behavior
-  // until the function is implemented. Assertions check for correctness once implemented.
-  @Test
-  fun `logicalMaximum - numeric type`() {
-    val expr = logicalMaximum(constant(1L), logicalMaximum(constant(2.0), constant(3L)))
-    val result = evaluate(expr, emptyDoc)
-    assertEvaluatesTo(result, encodeValue(3L), "Max(1L, Max(2.0, 3L)) should be 3L")
-  }
+  private data class VariadicValueTestCase(
+    val inputs: List<Expression>,
+    val expected: Expression,
+  )
+  private data class EqualValues(val left: Expression, val right: Expression)
 
-  @Test
-  fun `logicalMaximum - string type`() {
-    val expr = logicalMaximum(logicalMaximum(constant("a"), constant("b")), constant("c"))
-    val result = evaluate(expr, emptyDoc)
-    assertEvaluatesTo(result, encodeValue("c"), "Max(Max('a', 'b'), 'c') should be 'c'")
-  }
+  private val generalCases =
+    listOf(
+      // Testing the relative priority of different types, following TypeComparator.
+      // Boolean(2) < Number(3) < String(6) < Array(14) < Map(16). Null/Unset always have the
+      // lowest priority.
+      VariadicValueTestCase(listOf(constant(true), nullValue()), constant(true)),
+      VariadicValueTestCase(listOf(nullValue(), constant(true)), constant(true)), // for UNSET
+      VariadicValueTestCase(listOf(constant(0L), constant(false)), constant(0L)),
+      VariadicValueTestCase(listOf(constant(0.0), constant(true)), constant(0.0)),
+      VariadicValueTestCase(listOf(constant(""), constant(0L)), constant("")),
+      VariadicValueTestCase(listOf(constant(0.0), constant("foo")), constant("foo")),
+      VariadicValueTestCase(listOf(array(2, 3), constant("foo")), array(2, 3)),
+      VariadicValueTestCase(
+        listOf(map(emptyMap<String, Any>()), array(emptyList<Any>())),
+        map(emptyMap<String, Any>())
+      ),
+      VariadicValueTestCase(
+        listOf(array(emptyList<Any>()), map(emptyMap<String, Any>())),
+        map(emptyMap<String, Any>())
+      ),
 
-  @Test
-  fun `logicalMaximum - mixed type`() {
-    val expr = logicalMaximum(constant(1L), logicalMaximum(constant("1"), constant(0L)))
-    val result = evaluate(expr, emptyDoc)
-    assertEvaluatesTo(result, encodeValue("1"), "Max(1L, Max('1', 0L)) should be '1'")
-  }
+      // Testing numeric comparisons are equal across types.
+      VariadicValueTestCase(listOf(constant(1.0), constant(2L)), constant(2L)),
+      VariadicValueTestCase(listOf(constant(1.1), constant(1L)), constant(1.1)),
+      VariadicValueTestCase(listOf(constant(-20), constant(4.24)), constant(4.24)),
+      VariadicValueTestCase(listOf(constant(1L), constant(2.0), constant(3L)), constant(3L)),
+      VariadicValueTestCase(listOf(constant(2.5), constant(2.6)), constant(2.6)), // Decimal128
+      VariadicValueTestCase(
+        listOf(constant(Double.NEGATIVE_INFINITY), constant(Long.MIN_VALUE)),
+        constant(Long.MIN_VALUE)
+      ),
+      VariadicValueTestCase(
+        listOf(constant(Double.POSITIVE_INFINITY), constant(Long.MAX_VALUE)),
+        constant(Double.POSITIVE_INFINITY)
+      ),
 
-  @Test
-  fun `logicalMaximum - only null and error returns null`() {
-    val expr = logicalMaximum(nullExpr, errorExpr)
-    val result = evaluate(expr, errorDoc)
-    assertEvaluatesToNull(result, "Max(Null, Error) should be Null")
-  }
+      // Testing comparisons within the same type.
+      VariadicValueTestCase(listOf(constant(true), constant(false)), constant(true)),
+      VariadicValueTestCase(listOf(constant(1L), constant(0L)), constant(1L)),
+      VariadicValueTestCase(listOf(constant(1), constant(2), constant(3)), constant(3)),
+      VariadicValueTestCase(listOf(constant(-0.4), constant(0.0)), constant(0.0)),
+      VariadicValueTestCase(listOf(constant("b"), constant("a")), constant("b")),
+      VariadicValueTestCase(listOf(constant("b"), constant("aaaa")), constant("b")),
+      VariadicValueTestCase(listOf(nullValue(), nullValue()), nullValue()),
+      VariadicValueTestCase(listOf(nullValue(), nullValue()), nullValue()), // for UNSET
 
-  @Test
-  fun `logicalMaximum - nan and numbers`() {
-    val expr1 = logicalMaximum(nanExpr, constant(0L))
-    assertEvaluatesTo(evaluate(expr1, emptyDoc), encodeValue(0L), "Max(NaN, 0L) should be 0L")
+      // List comparison is based on the comparison of the first elements, or size as a
+      // tie-breaker.
+      VariadicValueTestCase(listOf(array(2), array(1)), array(2)),
+      VariadicValueTestCase(listOf(array(2), array(1, 1, 2, 3, 4)), array(2)),
+      VariadicValueTestCase(listOf(array(2, 3), array(2, 2)), array(2, 3)),
+      VariadicValueTestCase(listOf(array(2), array(2, -10)), array(2, -10)),
 
-    val expr2 = logicalMaximum(constant(0L), nanExpr)
-    assertEvaluatesTo(evaluate(expr2, emptyDoc), encodeValue(0L), "Max(0L, NaN) should be 0L")
+      // Map comparison is based on the comparison of the smallest keys and their values, or
+      // size as a tie-breaker.
+      VariadicValueTestCase(
+        listOf(map(mapOf("b" to 1)), map(mapOf("a" to 10))),
+        map(mapOf("b" to 1))
+      ),
+      VariadicValueTestCase(
+        listOf(map(mapOf("b" to 1)), map(mapOf("b" to 0))),
+        map(mapOf("b" to 1))
+      ),
+      VariadicValueTestCase(
+        listOf(map(mapOf("b" to 1, "c" to 2)), map(mapOf("a" to 3, "b" to 5))),
+        map(mapOf("b" to 1, "c" to 2))
+      ),
+      VariadicValueTestCase(
+        listOf(map(mapOf("b" to 1, "a" to 1)), map(mapOf("a" to 3, "b" to 0))),
+        map(mapOf("a" to 3, "b" to 0))
+      ),
+      VariadicValueTestCase(
+        listOf(map(mapOf("b" to 1, "a" to 2)), map(mapOf("b" to 1))),
+        map(mapOf("b" to 1))
+      ),
+      VariadicValueTestCase(
+        listOf(map(mapOf("b" to 1, "c" to 2)), map(mapOf("b" to 1))),
+        map(mapOf("b" to 1, "c" to 2))
+      ),
 
-    val expr3 = logicalMaximum(nanExpr, nullExpr, errorExpr)
-    assertEvaluatesTo(
-      evaluate(expr3, errorDoc),
-      encodeValue(Double.NaN),
-      "Max(NaN, Null, Error) should be NaN"
+      // Testing across different value types
+      VariadicValueTestCase(
+        listOf(array(2, 3), constant(2), map(mapOf("2" to 2, "3" to 3))),
+        map(mapOf("2" to 2, "3" to 3))
+      ),
+      VariadicValueTestCase(listOf(constant("a"), constant("b"), constant("c")), constant("c")),
+      VariadicValueTestCase(listOf(constant(1L), constant("1"), constant(0L)), constant("1")),
+      VariadicValueTestCase(listOf(constant(Double.NaN), constant(0L)), constant(0L)),
+      VariadicValueTestCase(listOf(constant(Double.NaN), constant(1)), constant(1)),
+      VariadicValueTestCase(listOf(nullValue(), constant(1L)), constant(1L)),
+      VariadicValueTestCase(listOf(nullValue(), constant(1L)), constant(1L)), // for UNSET
+      VariadicValueTestCase(listOf(nullValue(), constant(12)), constant(12)),
+      VariadicValueTestCase(listOf(nullValue(), constant(12)), constant(12)), // for UNSET
     )
 
-    val expr4 = logicalMaximum(nanExpr, errorExpr)
-    assertEvaluatesTo(
-      evaluate(expr4, errorDoc),
-      encodeValue(Double.NaN),
-      "Max(NaN, Error) should be NaN"
+  private val equalCases =
+    listOf(
+      EqualValues(constant(1.0), constant(1)),
+      EqualValues(constant(1L), constant(1.0)),
+      EqualValues(constant(1), constant(1.0)),
+      EqualValues(constant(-0.0), constant(0.0)),
+      EqualValues(constant(0L), constant(-0.0)),
+      EqualValues(constant(1), constant(1.0)), // Decimal128.fromString("1.0")
+      EqualValues(constant(-1), constant(-1L)),
+      EqualValues(constant(Double.NaN), constant(Double.NaN)), // Decimal128.NAN
+      EqualValues(
+        constant(Double.NEGATIVE_INFINITY),
+        constant(Double.NEGATIVE_INFINITY)
+      ), // Decimal128.NEGATIVE_INFINITY
+      EqualValues(
+        constant(Double.POSITIVE_INFINITY),
+        constant(Double.POSITIVE_INFINITY)
+      ), // Decimal128.POSITIVE_INFINITY
+      EqualValues(constant(-0.0), constant(-0.0)), // Decimal128.NEGATIVE_ZERO
+      EqualValues(constant(0.0), constant(0.0)), // Decimal128.POSITIVE_ZERO
+      EqualValues(array(2), array(2.0)),
+      EqualValues(map(mapOf("a" to 2)), map(mapOf("a" to 2.0))),
     )
+
+  @Test
+  fun `max with general values`() {
+    generalCases.forEach { (inputs, expected) ->
+      val expr = logicalMaximum(inputs[0], *inputs.subList(1, inputs.size).toTypedArray())
+      assertEvaluatesTo(
+        evaluate(expr, emptyDoc),
+        evaluate(expected, emptyDoc),
+        "Max(${inputs.joinToString()}) should be $expected"
+      )
+    }
   }
 
   @Test
-  fun `logicalMaximum - error input skip`() {
-    val expr = logicalMaximum(errorExpr, constant(1L))
-    val result = evaluate(expr, errorDoc)
-    assertEvaluatesTo(result, encodeValue(1L), "Max(Error, 1L) should be 1L")
+  fun `max on equal values returns first input`() {
+    equalCases.forEach { (left, right) ->
+      assertEvaluatesTo(
+        evaluate(logicalMaximum(left, right), emptyDoc),
+        evaluate(left, emptyDoc),
+        "Max($left, $right) should be $left"
+      )
+      assertEvaluatesTo(
+        evaluate(logicalMaximum(right, left), emptyDoc),
+        evaluate(right, emptyDoc),
+        "Max($right, $left) should be $right"
+      )
+    }
   }
 
   @Test
-  fun `logicalMaximum - null input skip`() {
-    val expr = logicalMaximum(nullExpr, constant(1L))
-    val result = evaluate(expr, emptyDoc)
-    assertEvaluatesTo(result, encodeValue(1L), "Max(Null, 1L) should be 1L")
+  fun `one argument evaluates to error`() {
+    val result = evaluate(logicalMaximum(constant(1L)), emptyDoc)
+    assertEvaluatesToError(result, "1")
   }
 
   @Test
-  fun `logicalMaximum - equivalent numerics`() {
-    val expr = logicalMaximum(constant(1L), constant(1.0))
-    val result = evaluate(expr, emptyDoc)
-    // Firestore considers 1L and 1.0 equivalent for comparison. Max could return either.
-    // C++ test implies it might return based on the first type if equivalent, or a preferred type.
-    // Let's assert it's numerically 1. The exact Value proto might differ.
-    // A more robust check might be needed if the exact proto type matters and varies.
-    // For now, assuming it might return the integer form if an integer is dominant or first.
-    assertEvaluatesTo(result, encodeValue(1L), "Max(1L, 1.0) should be numerically 1")
+  fun `error value isError`() {
+    val result = evaluate(logicalMaximum(errorExpr1, constant(1L)), emptyDoc)
+    assertEvaluatesToError(result, "error-1")
+  }
+
+  @Test
+  fun `value error isError`() {
+    val result = evaluate(logicalMaximum(constant(1L), errorExpr2), emptyDoc)
+    assertEvaluatesToError(result, "error-2")
+  }
+
+  @Test
+  fun `error error isError`() {
+    val result = evaluate(logicalMaximum(errorExpr1, errorExpr2), emptyDoc)
+    assertEvaluatesToError(result, "error-1")
   }
 }

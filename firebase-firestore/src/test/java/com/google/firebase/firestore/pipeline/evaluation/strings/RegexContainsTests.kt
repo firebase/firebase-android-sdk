@@ -19,7 +19,9 @@ import com.google.firebase.firestore.pipeline.Expression.Companion.field
 import com.google.firebase.firestore.pipeline.Expression.Companion.regexContains
 import com.google.firebase.firestore.pipeline.assertEvaluatesTo
 import com.google.firebase.firestore.pipeline.assertEvaluatesToError
+import com.google.firebase.firestore.pipeline.assertEvaluatesToNull
 import com.google.firebase.firestore.pipeline.evaluate
+import com.google.firebase.firestore.pipeline.evaluation.MirroringTestCases
 import com.google.firebase.firestore.testutil.TestUtilKtx.doc
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -29,6 +31,14 @@ import org.robolectric.RobolectricTestRunner
 internal class RegexContainsTests {
 
   // --- RegexContains Tests ---
+  @Test
+  fun regexContains_mirroringError() {
+    for ((name, left, right) in MirroringTestCases.BINARY_MIRROR_TEST_CASES) {
+      val expr = regexContains(left, right)
+      assertEvaluatesToNull(evaluate(expr), "regexContains($name)")
+    }
+  }
+
   @Test
   fun regexContains_getNonStringRegex_isError() {
     val expr = regexContains(constant(42L), constant("search"))

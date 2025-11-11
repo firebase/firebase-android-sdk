@@ -30,6 +30,7 @@ import com.google.firebase.firestore.pipeline.CollectionGroupSource
 import com.google.firebase.firestore.pipeline.CollectionSource
 import com.google.firebase.firestore.pipeline.CollectionSourceOptions
 import com.google.firebase.firestore.pipeline.Field
+import com.google.firebase.firestore.pipeline.FunctionExpression
 import com.google.firebase.firestore.pipeline.InternalOptions
 import com.google.firebase.firestore.pipeline.LimitStage
 import com.google.firebase.firestore.pipeline.OffsetStage
@@ -555,9 +556,11 @@ internal constructor(
       // Check for Where stage
       if (stage is WhereStage) {
         // Check if it's the special 'exists(__name__)' case
-        val funcExpr = stage.condition as? BooleanFunctionExpression
-        if (funcExpr?.expr?.name == "exists" && funcExpr.expr.params.size == 1) {
-          val fieldExpr = funcExpr?.expr?.params[0] as? Field
+        val booleanFunc = stage.condition as? BooleanFunctionExpression
+        val funcExpr = booleanFunc?.expr as? FunctionExpression
+
+        if (funcExpr?.name == "exists" && funcExpr.params.size == 1) {
+          val fieldExpr = funcExpr?.params[0] as? Field
           if (fieldExpr?.fieldPath?.isKeyField == true) {
             continue // This specific 'exists(__name__)' filter doesn't count
           }

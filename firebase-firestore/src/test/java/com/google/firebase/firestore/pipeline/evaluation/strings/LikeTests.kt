@@ -19,7 +19,9 @@ import com.google.firebase.firestore.pipeline.Expression.Companion.field
 import com.google.firebase.firestore.pipeline.Expression.Companion.like
 import com.google.firebase.firestore.pipeline.assertEvaluatesTo
 import com.google.firebase.firestore.pipeline.assertEvaluatesToError
+import com.google.firebase.firestore.pipeline.assertEvaluatesToNull
 import com.google.firebase.firestore.pipeline.evaluate
+import com.google.firebase.firestore.pipeline.evaluation.MirroringTestCases
 import com.google.firebase.firestore.testutil.TestUtilKtx.doc
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -28,7 +30,14 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 internal class LikeTests {
 
-  // --- Like Tests --- (Expected to be failing/error due to notImplemented)
+  @Test
+  fun like_mirrorError() {
+    for ((name, left, right) in MirroringTestCases.BINARY_MIRROR_TEST_CASES) {
+      val expr = like(left, right)
+      assertEvaluatesToNull(evaluate(expr), "like($name)")
+    }
+  }
+
   @Test
   fun like_getNonStringLike_isError() {
     val expr = like(constant(42L), constant("search"))
@@ -63,6 +72,26 @@ internal class LikeTests {
   fun like_getEscapedLike() {
     val expr = like(constant("yummy food??"), constant("%food??"))
     assertEvaluatesTo(evaluate(expr), true, "like(\"yummy food??\", \"%food??\")")
+  }
+
+  @Test
+  fun like_badRegex_isError() {
+    val expr = like(constant("yummy food"), constant("%\\"))
+    assertEvaluatesToError(evaluate(expr), "like with bad regex")
+  }
+
+  @Test
+  fun like_getEscapedLike_withBackslashes() {
+    val expr = like(constant("high-% _food_"), field("pattern"))
+    val doc1 = doc("coll/doc1", 0, mapOf("pattern" to "%\\%_\\_%"))
+    val doc2 = doc("coll/doc2", 0, mapOf("pattern" to "%\\__\\%%"))
+    val doc3 = doc("coll/doc3", 0, mapOf("pattern" to "%\\i%"))
+    val doc4 = doc("coll/doc4", 0, mapOf("pattern" to "%\\j%"))
+
+    assertEvaluatesTo(evaluate(expr, doc1), true, "like dynamic escaped doc1")
+    assertEvaluatesTo(evaluate(expr, doc2), false, "like dynamic escaped doc2")
+    assertEvaluatesTo(evaluate(expr, doc3), true, "like dynamic escaped doc3")
+    assertEvaluatesTo(evaluate(expr, doc4), false, "like dynamic escaped doc4")
   }
 
   @Test

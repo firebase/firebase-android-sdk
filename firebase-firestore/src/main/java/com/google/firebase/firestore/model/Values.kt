@@ -135,6 +135,7 @@ object Values {
     }
 
     return when (leftType) {
+      TYPE_ORDER_NUMBER_NAN,
       TYPE_ORDER_NUMBER -> numberEquals(left, right)
       TYPE_ORDER_ARRAY -> arrayEquals(left, right)
       TYPE_ORDER_VECTOR,
@@ -206,6 +207,8 @@ object Values {
     internal fun equals(left: Value?, right: Value?): Boolean {
       return Values.equals(left, right)
     }
+
+    internal val compare = Values::compare
 
     internal enum class CompareResult {
       LESS_THAN,

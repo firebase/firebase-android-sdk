@@ -19,7 +19,10 @@ import com.google.firebase.firestore.pipeline.Expression.Companion.field
 import com.google.firebase.firestore.pipeline.Expression.Companion.regexMatch
 import com.google.firebase.firestore.pipeline.assertEvaluatesTo
 import com.google.firebase.firestore.pipeline.assertEvaluatesToError
+import com.google.firebase.firestore.pipeline.assertEvaluatesToNull
 import com.google.firebase.firestore.pipeline.evaluate
+import com.google.firebase.firestore.pipeline.evaluation.MirroringTestCases
+import com.google.firebase.firestore.pipeline.evaluation.comparison.ComparisonTestData.doubleNaN
 import com.google.firebase.firestore.testutil.TestUtilKtx.doc
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -30,6 +33,14 @@ internal class RegexMatchTests {
 
   // --- RegexMatch Tests ---
   @Test
+  fun regexMatch_mirrorError() {
+    for ((name, left, right) in MirroringTestCases.BINARY_MIRROR_TEST_CASES) {
+      val expr = regexMatch(left, right)
+      assertEvaluatesToNull(evaluate(expr), "regexMatch($name)")
+    }
+  }
+
+  @Test
   fun regexMatch_getNonStringRegex_isError() {
     val expr = regexMatch(constant(42L), constant("search"))
     assertEvaluatesToError(evaluate(expr), "regexMatch(42L, \"search\")")
@@ -39,6 +50,18 @@ internal class RegexMatchTests {
   fun regexMatch_getNonStringValue_isError() {
     val expr = regexMatch(constant("ear"), constant(42L))
     assertEvaluatesToError(evaluate(expr), "regexMatch(\"ear\", 42L)")
+  }
+
+  @Test
+  fun regexMatch_getNaNRegex_isError() {
+    val expr = regexMatch(constant("foo"), doubleNaN)
+    assertEvaluatesToError(evaluate(expr), "regexMatch(foo, NaN)")
+  }
+
+  @Test
+  fun regexMatch_getNaNValue_isError() {
+    val expr = regexMatch(doubleNaN, constant("foo"))
+    assertEvaluatesToError(evaluate(expr), "regexMatch(NaN, foo)")
   }
 
   @Test

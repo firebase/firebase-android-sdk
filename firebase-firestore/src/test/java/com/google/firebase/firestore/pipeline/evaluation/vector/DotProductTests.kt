@@ -20,13 +20,22 @@ import com.google.firebase.firestore.pipeline.Expression.Companion.array
 import com.google.firebase.firestore.pipeline.Expression.Companion.dotProduct
 import com.google.firebase.firestore.pipeline.Expression.Companion.vector
 import com.google.firebase.firestore.pipeline.assertEvaluatesToError
+import com.google.firebase.firestore.pipeline.assertEvaluatesToNull
 import com.google.firebase.firestore.pipeline.evaluate
+import com.google.firebase.firestore.pipeline.evaluation.MirroringTestCases
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class DotProductTests {
+  @Test
+  fun `dotProduct - mirroring errors`() {
+    for ((name, left, right) in MirroringTestCases.BINARY_MIRROR_TEST_CASES) {
+      val expr = dotProduct(left, right)
+      assertEvaluatesToNull(evaluate(expr), "dotProduct($name)")
+    }
+  }
 
   @Test
   fun `dotProduct - calculates dot product`() {

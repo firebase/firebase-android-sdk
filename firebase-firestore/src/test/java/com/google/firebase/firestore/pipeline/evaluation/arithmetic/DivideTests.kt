@@ -18,10 +18,20 @@ import com.google.common.truth.Truth.assertThat
 import com.google.firebase.firestore.model.Values.encodeValue
 import com.google.firebase.firestore.pipeline.Expression.Companion.constant
 import com.google.firebase.firestore.pipeline.Expression.Companion.divide
+import com.google.firebase.firestore.pipeline.assertEvaluatesToNull
 import com.google.firebase.firestore.pipeline.evaluate
+import com.google.firebase.firestore.pipeline.evaluation.MirroringTestCases
 import org.junit.Test
 
 internal class DivideTests {
+  @Test
+  fun divideMirrorsErrors() {
+    for ((name, left, right) in MirroringTestCases.BINARY_MIRROR_TEST_CASES) {
+      val expr = divide(left, right)
+      assertEvaluatesToNull(evaluate(expr), "divide($name)")
+    }
+  }
+
   @Test
   fun divideFunctionTestWithBasicNumerics() {
     assertThat(evaluate(divide(constant(10L), constant(2L))).value).isEqualTo(encodeValue(5L))

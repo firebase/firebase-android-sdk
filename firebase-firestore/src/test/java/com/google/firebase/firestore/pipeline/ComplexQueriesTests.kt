@@ -33,7 +33,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
-internal class ComplexTests {
+internal class ComplexQueriesTests {
 
   private val db: FirebaseFirestore = TestUtil.firestore()
   private val collectionId = "test"

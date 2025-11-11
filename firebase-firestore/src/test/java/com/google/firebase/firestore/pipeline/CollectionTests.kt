@@ -298,4 +298,16 @@ internal class CollectionTests {
     val result = runPipeline(pipeline, listOf(*inputDocs.toTypedArray())).toList()
     assertThat(result).containsExactly(doc3, doc2, doc1).inOrder()
   }
+
+  @Test
+  fun `duplicate collection name`(): Unit = runBlocking {
+    val pipeline =
+      RealtimePipelineSource(db).collection("/users/alice/matches/1/opponents/bob/matches")
+    val doc1 = doc("users/alice/matches/1/opponents/bob/matches/1", 1000, mapOf("score" to 90L))
+    val doc2 = doc("users/alice/matches/1/opponents/bob/matches/2", 1000, mapOf("score" to 90L))
+    val doc3 = doc("users/not-alice/matches/1/opponents/bob/matches/1", 1000, mapOf("score" to 90L))
+    val inputDocs = listOf(doc1, doc2, doc3)
+    val result = runPipeline(pipeline, listOf(*inputDocs.toTypedArray())).toList()
+    assertThat(result).containsExactly(doc1, doc2)
+  }
 }

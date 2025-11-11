@@ -27,41 +27,42 @@ import com.google.firestore.v1.Value.ValueTypeCase
 
 internal val evaluateAnd: EvaluateFunction = { params ->
   fun(input: MutableDocument): EvaluateResult {
-    var isError = false
     var isNull = false
     for (param in params) {
-      val value = param(input).value
-      if (value === null) isError = true
-      else
-        when (value.valueTypeCase) {
-          ValueTypeCase.NULL_VALUE -> isNull = true
-          ValueTypeCase.BOOLEAN_VALUE -> {
-            if (!value.booleanValue) return FALSE
-          }
-          else -> return EvaluateResultError
+      val result = param(input)
+      if (result.isError) return EvaluateResultError
+
+      val value = result.value
+      when (value?.valueTypeCase) {
+        null,
+        ValueTypeCase.NULL_VALUE -> isNull = true
+        ValueTypeCase.BOOLEAN_VALUE -> {
+          if (!value.booleanValue) return FALSE
         }
+        else -> return EvaluateResultError
+      }
     }
-    return if (isError) EvaluateResultError else if (isNull) NULL else TRUE
+    return if (isNull) NULL else TRUE
   }
 }
 
 internal val evaluateOr: EvaluateFunction = { params ->
   fun(input: MutableDocument): EvaluateResult {
-    var isError = false
     var isNull = false
     for (param in params) {
-      val value = param(input).value
-      if (value === null) isError = true
-      else
-        when (value.valueTypeCase) {
-          ValueTypeCase.NULL_VALUE -> isNull = true
-          ValueTypeCase.BOOLEAN_VALUE -> {
-            if (value.booleanValue) return TRUE
-          }
-          else -> return EvaluateResultError
+      val result = param(input)
+      if (result.isError) return EvaluateResultError
+      val value = result.value
+      when (value?.valueTypeCase) {
+        null,
+        ValueTypeCase.NULL_VALUE -> isNull = true
+        ValueTypeCase.BOOLEAN_VALUE -> {
+          if (value.booleanValue) return TRUE
         }
+        else -> return EvaluateResultError
+      }
     }
-    return if (isError) EvaluateResultError else if (isNull) NULL else FALSE
+    return if (isNull) NULL else FALSE
   }
 }
 
@@ -70,30 +71,66 @@ internal val evaluateXor: EvaluateFunction = variadicFunction { values: BooleanA
 }
 
 internal val evaluateCond: EvaluateFunction = ternaryLazyFunction { p1, p2, p3 ->
-  val v1 = p1().value ?: return@ternaryLazyFunction EvaluateResultError
-  when (v1.valueTypeCase) {
+  val r1 = p1()
+  if (r1.isError) return@ternaryLazyFunction EvaluateResultError
+
+  val v1 = r1.value
+  when (v1?.valueTypeCase) {
     ValueTypeCase.BOOLEAN_VALUE -> if (v1.booleanValue) p2() else p3()
+    null,
     ValueTypeCase.NULL_VALUE -> p3()
     else -> EvaluateResultError
   }
 }
 
 internal val evaluateLogicalMaximum: EvaluateFunction =
-  variadicResultFunction { l: List<EvaluateResult> ->
-    val value =
-      l.mapNotNull(EvaluateResult::value)
-        .filterNot(Value::hasNullValue)
-        .maxWithOrNull(Values::compare)
-    if (value === null) NULL else EvaluateResultValue(value)
+  variadicResultFunction { params: List<EvaluateResult> ->
+    if (params.size < 2) return@variadicResultFunction EvaluateResultError
+
+    val maximum = { a: Value?, b: Value ->
+      if (a === null) b
+      else {
+        val result = Values.Enterprise.compare(a, b)
+        if (result == 0) a else if (result > 0) a else b
+      }
+    }
+
+    var maxResult: Value? = null
+    for (param in params) {
+      if (param.isError) return@variadicResultFunction EvaluateResultError
+      val value = param.value
+      when (value?.valueTypeCase) {
+        null,
+        ValueTypeCase.NULL_VALUE -> {}
+        else -> maxResult = maximum(maxResult, value)
+      }
+    }
+    if (maxResult === null) NULL else EvaluateResult.value(maxResult)
   }
 
 internal val evaluateLogicalMinimum: EvaluateFunction =
-  variadicResultFunction { l: List<EvaluateResult> ->
-    val value =
-      l.mapNotNull(EvaluateResult::value)
-        .filterNot(Value::hasNullValue)
-        .minWithOrNull(Values::compare)
-    if (value === null) NULL else EvaluateResultValue(value)
+  variadicResultFunction { params: List<EvaluateResult> ->
+    if (params.size < 2) return@variadicResultFunction EvaluateResultError
+
+    val minimum = { a: Value?, b: Value ->
+      if (a === null) b
+      else {
+        val result = Values.Enterprise.compare(a, b)
+        if (result == 0) a else if (result > 0) b else a
+      }
+    }
+
+    var minResult: Value? = null
+    for (param in params) {
+      if (param.isError) return@variadicResultFunction EvaluateResultError
+      val value = param.value
+      when (value?.valueTypeCase) {
+        null,
+        ValueTypeCase.NULL_VALUE -> {}
+        else -> minResult = minimum(minResult, value)
+      }
+    }
+    if (minResult === null) NULL else EvaluateResult.value(minResult)
   }
 
 // === Type Functions ===

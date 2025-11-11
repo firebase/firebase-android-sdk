@@ -20,13 +20,23 @@ import com.google.firebase.firestore.pipeline.Expression.Companion.array
 import com.google.firebase.firestore.pipeline.Expression.Companion.cosineDistance
 import com.google.firebase.firestore.pipeline.Expression.Companion.vector
 import com.google.firebase.firestore.pipeline.assertEvaluatesToError
+import com.google.firebase.firestore.pipeline.assertEvaluatesToNull
 import com.google.firebase.firestore.pipeline.evaluate
+import com.google.firebase.firestore.pipeline.evaluation.MirroringTestCases
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class CosineDistanceTests {
+
+  @Test
+  fun `cosineDistance - mirroring errors`() {
+    for ((name, left, right) in MirroringTestCases.BINARY_MIRROR_TEST_CASES) {
+      val expr = cosineDistance(left, right)
+      assertEvaluatesToNull(evaluate(expr), "cosineDistance($name)")
+    }
+  }
 
   @Test
   fun `cosineDistance - calculates distance`() {

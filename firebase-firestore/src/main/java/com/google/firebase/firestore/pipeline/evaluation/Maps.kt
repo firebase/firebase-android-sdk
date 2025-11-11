@@ -15,14 +15,28 @@
 package com.google.firebase.firestore.pipeline.evaluation
 
 import com.google.firebase.firestore.model.MutableDocument
+import com.google.firebase.firestore.model.Values
 import com.google.firebase.firestore.model.Values.encodeValue
 import com.google.firebase.firestore.util.Assert
 import com.google.firestore.v1.Value
 
 // === Map Functions ===
 
-internal val evaluateMapGet = binaryFunction { map: Map<String, Value>, key: String ->
-  EvaluateResultValue(map[key] ?: return@binaryFunction EvaluateResultUnset)
+internal val evaluateMapGet = binaryFunction { mapValue: Value?, keyValue: Value? ->
+  val map =
+    when {
+      mapValue == null -> null
+      Values.isMapValue(mapValue) && !Values.isVectorValue(mapValue) -> mapValue.mapValue.fieldsMap
+      else -> null
+    }
+
+  val result =
+    when (keyValue?.valueTypeCase) {
+      Value.ValueTypeCase.STRING_VALUE -> map?.get(keyValue.stringValue)
+      else -> return@binaryFunction EvaluateResultError
+    }
+
+  if (result == null) EvaluateResultUnset else EvaluateResultValue(result)
 }
 
 internal val evaluateMap: EvaluateFunction = { params ->

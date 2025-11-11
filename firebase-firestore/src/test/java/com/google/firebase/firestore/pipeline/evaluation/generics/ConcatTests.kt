@@ -24,6 +24,7 @@ import com.google.firebase.firestore.pipeline.assertEvaluatesTo
 import com.google.firebase.firestore.pipeline.assertEvaluatesToError
 import com.google.firebase.firestore.pipeline.assertEvaluatesToNull
 import com.google.firebase.firestore.pipeline.evaluate
+import com.google.firebase.firestore.pipeline.evaluation.MirroringTestCases
 import com.google.protobuf.ByteString
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -31,6 +32,14 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class ConcatTests {
+  @Test
+  fun `concat_mirrors_error`() {
+    for ((name, left, right) in MirroringTestCases.BINARY_MIRROR_TEST_CASES) {
+      val expr = concat(left, right)
+      assertEvaluatesToNull(evaluate(expr), "concat($name)")
+    }
+  }
+
   @Test
   fun `stringConcat_withMultipleStrings`() {
     val expr = concat(constant("hello"), constant(" "), constant("world"))
@@ -50,9 +59,9 @@ class ConcatTests {
   }
 
   @Test
-  fun `string_unset_string_isError`() {
+  fun `string_unset_string_isNull`() {
     val expr = concat(constant("hello"), field("non-existent"), constant("world"))
-    assertEvaluatesToNull(evaluate(expr), "string_unset_string_isError")
+    assertEvaluatesToNull(evaluate(expr), "string_unset_string_isNull")
   }
 
   @Test

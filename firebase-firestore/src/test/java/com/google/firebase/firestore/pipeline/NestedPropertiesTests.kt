@@ -392,7 +392,11 @@ internal class NestedPropertiesTests {
         mapOf("address" to mapOf("city" to "Mountain View", "state" to "CA", "zip" to 94043L))
       ) // zip > 90k
     val doc4 = doc("users/d", 1000, mapOf())
-    val documents = listOf(doc1, doc2, doc3, doc4)
+    val doc5 = doc("users/d", 1000, mapOf("address" to "1 Front Street"))
+    val doc6 = doc("users/d", 1000, mapOf("address" to null))
+    val doc7 = doc("users/d", 1000, mapOf("different" to mapOf("zip" to 94105L)))
+    val doc8 = doc("users/d", 1000, mapOf("not-address" to "1 Front Street"))
+    val documents = listOf(doc1, doc2, doc3, doc4, doc5, doc6, doc7, doc8)
 
     val pipeline1 =
       RealtimePipelineSource(db)
@@ -419,7 +423,7 @@ internal class NestedPropertiesTests {
         .collection("/users")
         .where(field("address.zip").notEqual(constant(10011L)))
     assertThat(runPipeline(pipeline4, listOf(*documents.toTypedArray())).toList())
-      .containsExactly(doc1, doc3)
+      .containsExactly(doc1, doc3, doc4, doc5, doc6, doc7, doc8)
   }
 
   @Test

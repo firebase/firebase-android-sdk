@@ -18,10 +18,19 @@ import com.google.common.truth.Truth.assertThat
 import com.google.firebase.firestore.model.Values.encodeValue
 import com.google.firebase.firestore.pipeline.Expression.Companion.constant
 import com.google.firebase.firestore.pipeline.Expression.Companion.subtract
+import com.google.firebase.firestore.pipeline.assertEvaluatesToNull
 import com.google.firebase.firestore.pipeline.evaluate
+import com.google.firebase.firestore.pipeline.evaluation.MirroringTestCases
 import org.junit.Test
 
 internal class SubtractTests {
+  @Test
+  fun subtractMirrorsErrors() {
+    for ((name, left, right) in MirroringTestCases.BINARY_MIRROR_TEST_CASES) {
+      val expr = subtract(left, right)
+      assertEvaluatesToNull(evaluate(expr), "subtract($name)")
+    }
+  }
 
   @Test
   fun subtractFunctionTestWithBasicNumerics() {
@@ -36,6 +45,14 @@ internal class SubtractTests {
     assertThat(evaluate(subtract(constant(1L), constant("1"))).isError).isTrue()
     assertThat(evaluate(subtract(constant("1"), constant(1.0))).isError).isTrue()
     assertThat(evaluate(subtract(constant("1"), constant("1"))).isError).isTrue()
+  }
+
+  @Test
+  fun subtractFunctionTestWithDoubleLongSubtractionOverflow() {
+    assertThat(evaluate(subtract(constant(Long.MIN_VALUE), constant(1.0))).value)
+      .isEqualTo(encodeValue(-9.223372036854776E18))
+    assertThat(evaluate(subtract(constant(Long.MIN_VALUE.toDouble()), constant(100L))).value)
+      .isEqualTo(encodeValue(-9.223372036854776E18))
   }
 
   @Test

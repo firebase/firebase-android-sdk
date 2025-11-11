@@ -71,6 +71,16 @@ internal fun assertEvaluatesTo(
   assertWithMessage(format, *args).that(result.value).isEqualTo(expected)
 }
 
+// Helper to check for successful evaluation to a value
+internal fun assertEvaluatesTo(
+  result: EvaluateResult,
+  expected: EvaluateResult,
+  format: String,
+  vararg args: Any?
+) {
+  assertWithMessage(format, *args).that(result).isEqualTo(expected)
+}
+
 // Helper to check for evaluation resulting in NULL
 internal fun assertEvaluatesToNull(result: EvaluateResult, format: String, vararg args: Any?) {
   assertWithMessage(format, *args)

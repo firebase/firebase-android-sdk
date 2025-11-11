@@ -18,10 +18,20 @@ import com.google.common.truth.Truth.assertThat
 import com.google.firebase.firestore.model.Values.encodeValue
 import com.google.firebase.firestore.pipeline.Expression.Companion.constant
 import com.google.firebase.firestore.pipeline.Expression.Companion.mod
+import com.google.firebase.firestore.pipeline.assertEvaluatesToNull
 import com.google.firebase.firestore.pipeline.evaluate
+import com.google.firebase.firestore.pipeline.evaluation.MirroringTestCases
 import org.junit.Test
 
 internal class ModTests {
+  @Test
+  fun modFunctionTestWithMirrorError() {
+    for ((name, left, right) in MirroringTestCases.BINARY_MIRROR_TEST_CASES) {
+      val expr = mod(left, right)
+      assertEvaluatesToNull(evaluate(expr), "mod($name)")
+    }
+  }
+
   @Test
   fun modFunctionTestWithDivisorZero() {
     assertThat(evaluate(mod(constant(42L), constant(0L))).isError).isTrue()
@@ -110,6 +120,14 @@ internal class ModTests {
     val nanVal = Double.NaN
     assertThat(evaluate(mod(constant(1L), constant(nanVal))).value).isEqualTo(encodeValue(nanVal))
     assertThat(evaluate(mod(constant(1.0), constant(nanVal))).value).isEqualTo(encodeValue(nanVal))
+    assertThat(evaluate(mod(constant(Long.MAX_VALUE), constant(nanVal))).value)
+      .isEqualTo(encodeValue(nanVal))
+    assertThat(evaluate(mod(constant(Long.MIN_VALUE), constant(nanVal))).value)
+      .isEqualTo(encodeValue(nanVal))
+    assertThat(evaluate(mod(constant(Double.MAX_VALUE), constant(nanVal))).value)
+      .isEqualTo(encodeValue(nanVal))
+    assertThat(evaluate(mod(constant(Double.MIN_VALUE), constant(nanVal))).value)
+      .isEqualTo(encodeValue(nanVal))
     assertThat(evaluate(mod(constant(Double.POSITIVE_INFINITY), constant(nanVal))).value)
       .isEqualTo(encodeValue(nanVal))
     assertThat(evaluate(mod(constant(Double.NEGATIVE_INFINITY), constant(nanVal))).value)

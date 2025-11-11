@@ -104,6 +104,7 @@ internal object ComparisonTestData {
       map(mapOf("a" to constant(1L))) to map(mapOf("a" to constant(1L))),
 
       // Deep fuzzed equality
+      array(array(null)) to array(array(null)),
       array(constant(2L)) to array(constant(2.0)),
       map(mapOf("a" to constant(2.0))) to map(mapOf("a" to constant(2L))),
       map(mapOf("foo" to constant(1L), "bar" to constant(42.0))) to

@@ -24,6 +24,7 @@ import com.google.firebase.firestore.pipeline.Expression.Companion.field
 import com.google.firebase.firestore.pipeline.Expression.Companion.isNan
 import com.google.firebase.firestore.pipeline.Expression.Companion.isNull
 import com.google.firebase.firestore.pipeline.Expression.Companion.not
+import com.google.firebase.firestore.pipeline.Expression.Companion.nullValue
 import com.google.firebase.firestore.pipeline.Expression.Companion.or
 import com.google.firebase.firestore.runPipeline
 import com.google.firebase.firestore.testutil.TestUtilKtx.doc
@@ -578,7 +579,7 @@ internal class DisjunctiveTests {
         .where(field("name").equalAny(array(Expression.nullValue(), constant("alice"))))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
-    assertThat(result).containsExactly(doc1) // Nulls are not matched by IN
+    assertThat(result).containsExactlyElementsIn(listOf(doc1, doc2))
   }
 
   @Test
@@ -595,7 +596,7 @@ internal class DisjunctiveTests {
         .where(Expression.arrayContains(field("field"), Expression.nullValue()))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
-    assertThat(result).isEmpty() // arrayContains does not match null
+    assertThat(result).containsExactlyElementsIn(listOf(doc1, doc2, doc3))
   }
 
   @Test
@@ -612,7 +613,7 @@ internal class DisjunctiveTests {
         .where(field("field").arrayContainsAny(array(Expression.nullValue(), constant("foo"))))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
-    assertThat(result).containsExactly(doc3) // arrayContainsAny does not match null
+    assertThat(result).containsExactlyElementsIn(listOf(doc1, doc2, doc3))
   }
 
   @Test
@@ -628,7 +629,7 @@ internal class DisjunctiveTests {
         .where(field("age").equalAny(array(Expression.nullValue())))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
-    assertThat(result).isEmpty() // Nulls are not matched by IN
+    assertThat(result).containsExactlyElementsIn(listOf(doc1))
   }
 
   @Test
@@ -1127,7 +1128,7 @@ internal class DisjunctiveTests {
   }
 
   @Test
-  fun `or isNull and isNaN on different field`(): Unit = runBlocking {
+  fun `or is null and is nan on different field`(): Unit = runBlocking {
     val doc1 = doc("users/a", 1000, mapOf("a" to null))
     val doc2 = doc("users/b", 1000, mapOf("a" to Double.NaN))
     val doc3 = doc("users/c", 1000, mapOf("a" to "abc"))
@@ -1139,7 +1140,7 @@ internal class DisjunctiveTests {
     val pipeline =
       RealtimePipelineSource(db)
         .collection("/users")
-        .where(or(isNull(field("a")), isNan(field("b"))))
+        .where(or(field("a").equal(nullValue()), field("b").equal(Double.NaN)))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc1, doc5))

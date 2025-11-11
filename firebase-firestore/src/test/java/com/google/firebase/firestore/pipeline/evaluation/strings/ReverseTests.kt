@@ -15,11 +15,14 @@
 package com.google.firebase.firestore.pipeline.evaluation.strings
 
 import com.google.firebase.firestore.model.Values.encodeValue
+import com.google.firebase.firestore.pipeline.Expression
 import com.google.firebase.firestore.pipeline.Expression.Companion.constant
 import com.google.firebase.firestore.pipeline.Expression.Companion.reverse
 import com.google.firebase.firestore.pipeline.assertEvaluatesTo
 import com.google.firebase.firestore.pipeline.assertEvaluatesToError
+import com.google.firebase.firestore.pipeline.assertEvaluatesToNull
 import com.google.firebase.firestore.pipeline.evaluate
+import com.google.firebase.firestore.pipeline.evaluation.MirroringTestCases
 import com.google.protobuf.ByteString
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -29,6 +32,14 @@ import org.robolectric.RobolectricTestRunner
 internal class ReverseTests {
 
   // --- Reverse Tests ---
+
+  @Test
+  fun reverse_mirror() {
+    for (testCase in MirroringTestCases.UNARY_MIRROR_TEST_CASES) {
+      assertEvaluatesToNull(evaluate(reverse(testCase.input)), "reverse(${testCase.name})")
+    }
+  }
+
   @Test
   fun reverse_onSimpleString() {
     val expr = reverse(constant("foobar"))
@@ -123,6 +134,36 @@ internal class ReverseTests {
   @Test
   fun reverse_onUnsupportedType() {
     val expr = reverse(constant(1L))
-    assertEvaluatesToError(evaluate(expr), "reverse on unsupported type")
+    assertEvaluatesToError(
+      evaluate(expr),
+      "The function string_reverse(...) requires `String | Bytes` but got `LONG`"
+    )
+  }
+
+  @Test
+  fun reverse_onBoolean() {
+    val expr = reverse(constant(true))
+    assertEvaluatesToError(
+      evaluate(expr),
+      "The function string_reverse(...) requires `String | Bytes` but got `BOOLEAN`"
+    )
+  }
+
+  @Test
+  fun reverse_onDouble() {
+    val expr = reverse(constant(1.0))
+    assertEvaluatesToError(
+      evaluate(expr),
+      "The function string_reverse(...) requires `String | Bytes` but got `DOUBLE`"
+    )
+  }
+
+  @Test
+  fun reverse_onMap() {
+    val expr = reverse(Expression.map(mapOf()))
+    assertEvaluatesToError(
+      evaluate(expr),
+      "The function string_reverse(...) requires `String | Bytes` but got `MAP`"
+    )
   }
 }

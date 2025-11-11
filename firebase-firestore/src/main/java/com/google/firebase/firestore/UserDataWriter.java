@@ -23,6 +23,7 @@ import static com.google.firebase.firestore.model.Values.TYPE_ORDER_GEOPOINT;
 import static com.google.firebase.firestore.model.Values.TYPE_ORDER_MAP;
 import static com.google.firebase.firestore.model.Values.TYPE_ORDER_NULL;
 import static com.google.firebase.firestore.model.Values.TYPE_ORDER_NUMBER;
+import static com.google.firebase.firestore.model.Values.TYPE_ORDER_NUMBER_NAN;
 import static com.google.firebase.firestore.model.Values.TYPE_ORDER_REFERENCE;
 import static com.google.firebase.firestore.model.Values.TYPE_ORDER_SERVER_TIMESTAMP;
 import static com.google.firebase.firestore.model.Values.TYPE_ORDER_STRING;
@@ -77,6 +78,7 @@ public class UserDataWriter {
         return null;
       case TYPE_ORDER_BOOLEAN:
         return value.getBooleanValue();
+      case TYPE_ORDER_NUMBER_NAN:
       case TYPE_ORDER_NUMBER:
         return value.hasIntegerValue()
             ? (Object) value.getIntegerValue() // Cast to Object to prevent type coercion to double

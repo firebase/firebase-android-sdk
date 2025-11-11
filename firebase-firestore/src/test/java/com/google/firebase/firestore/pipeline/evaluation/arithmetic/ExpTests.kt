@@ -18,11 +18,20 @@ import com.google.common.truth.Truth.assertThat
 import com.google.firebase.firestore.model.Values.encodeValue
 import com.google.firebase.firestore.pipeline.Expression.Companion.constant
 import com.google.firebase.firestore.pipeline.Expression.Companion.exp
+import com.google.firebase.firestore.pipeline.assertEvaluatesToNull
 import com.google.firebase.firestore.pipeline.evaluate
+import com.google.firebase.firestore.pipeline.evaluation.MirroringTestCases
 import kotlin.math.E
 import org.junit.Test
 
 internal class ExpTests {
+  @Test
+  fun expMirrorsErrors() {
+    for (testCase in MirroringTestCases.UNARY_MIRROR_TEST_CASES) {
+      assertEvaluatesToNull(evaluate(exp(testCase.input)), "exp(${'$'}{testCase.name})")
+    }
+  }
+
   @Test
   fun expFunctionTestWithDouble() {
     assertThat(evaluate(exp(constant(2.0))).value).isEqualTo(encodeValue(kotlin.math.exp(2.0)))
@@ -76,8 +85,7 @@ internal class ExpTests {
 
   @Test
   fun expFunctionTestWithDoubleOverflow() {
-    assertThat(evaluate(exp(constant(Double.MAX_VALUE))).value)
-      .isEqualTo(encodeValue(Double.POSITIVE_INFINITY))
+    assertThat(evaluate(exp(constant(Double.MAX_VALUE))).isError).isTrue()
   }
 
   @Test

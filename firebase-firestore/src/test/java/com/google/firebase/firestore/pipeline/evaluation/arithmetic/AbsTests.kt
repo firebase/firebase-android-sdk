@@ -18,10 +18,37 @@ import com.google.common.truth.Truth.assertThat
 import com.google.firebase.firestore.model.Values.encodeValue
 import com.google.firebase.firestore.pipeline.Expression.Companion.abs
 import com.google.firebase.firestore.pipeline.Expression.Companion.constant
+import com.google.firebase.firestore.pipeline.assertEvaluatesToNull
 import com.google.firebase.firestore.pipeline.evaluate
+import com.google.firebase.firestore.pipeline.evaluation.MirroringTestCases
 import org.junit.Test
 
 internal class AbsTests {
+  @Test
+  fun absMirrorsErrors() {
+    for (testCase in MirroringTestCases.UNARY_MIRROR_TEST_CASES) {
+      assertEvaluatesToNull(evaluate(abs(testCase.input)), "abs(${'$'}{testCase.name})")
+    }
+  }
+
+  @Test
+  fun absFunctionTestWithInt() {
+    assertThat(evaluate(abs(constant(-42))).value).isEqualTo(encodeValue(42))
+    assertThat(evaluate(abs(constant(42))).value).isEqualTo(encodeValue(42))
+  }
+
+  @Test
+  fun absFunctionTestWithIntZero() {
+    assertThat(evaluate(abs(constant(0))).value).isEqualTo(encodeValue(0))
+    assertThat(evaluate(abs(constant(-0))).value).isEqualTo(encodeValue(0))
+  }
+
+  @Test
+  fun absFunctionTestWithIntMaxValue() {
+    assertThat(evaluate(abs(constant(Int.MAX_VALUE))).value).isEqualTo(encodeValue(Int.MAX_VALUE))
+    assertThat(evaluate(abs(constant(-Int.MAX_VALUE))).value).isEqualTo(encodeValue(Int.MAX_VALUE))
+  }
+
   @Test
   fun absFunctionTestWithLong() {
     assertThat(evaluate(abs(constant(-42L))).value).isEqualTo(encodeValue(42L))

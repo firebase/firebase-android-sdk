@@ -20,13 +20,22 @@ import com.google.firebase.firestore.pipeline.Expression.Companion.array
 import com.google.firebase.firestore.pipeline.Expression.Companion.euclideanDistance
 import com.google.firebase.firestore.pipeline.Expression.Companion.vector
 import com.google.firebase.firestore.pipeline.assertEvaluatesToError
+import com.google.firebase.firestore.pipeline.assertEvaluatesToNull
 import com.google.firebase.firestore.pipeline.evaluate
+import com.google.firebase.firestore.pipeline.evaluation.MirroringTestCases
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 class EuclideanDistanceTests {
+  @Test
+  fun `euclideanDistance - mirroring errors`() {
+    for ((name, left, right) in MirroringTestCases.BINARY_MIRROR_TEST_CASES) {
+      val expr = euclideanDistance(left, right)
+      assertEvaluatesToNull(evaluate(expr), "euclideanDistance($name)")
+    }
+  }
 
   @Test
   fun `euclideanDistance - calculates distance`() {

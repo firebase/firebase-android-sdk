@@ -17,11 +17,22 @@ package com.google.firebase.firestore.pipeline.evaluation.arithmetic
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.firestore.model.Values.encodeValue
 import com.google.firebase.firestore.pipeline.Expression.Companion.constant
+import com.google.firebase.firestore.pipeline.Expression.Companion.mod
 import com.google.firebase.firestore.pipeline.Expression.Companion.round
+import com.google.firebase.firestore.pipeline.assertEvaluatesToNull
 import com.google.firebase.firestore.pipeline.evaluate
+import com.google.firebase.firestore.pipeline.evaluation.MirroringTestCases
 import org.junit.Test
 
 internal class RoundTests {
+
+  @Test
+  fun roundMirrorsErrors() {
+    for (testCase in MirroringTestCases.UNARY_MIRROR_TEST_CASES) {
+      assertEvaluatesToNull(evaluate(round(testCase.input)), "round(${'$'}{testCase.name})")
+    }
+  }
+
   @Test
   fun roundFunctionTest() {
     assertThat(evaluate(round(constant(15.48924))).value).isEqualTo(encodeValue(15.0))
@@ -73,19 +84,19 @@ internal class RoundTests {
 
   @Test
   fun roundFunctionTestWithInteger() {
-    assertThat(evaluate(round(constant(15))).value).isEqualTo(encodeValue(15L))
+    assertThat(evaluate(round(constant(15))).value).isEqualTo(encodeValue(15))
   }
 
   @Test
   fun roundFunctionTestWithMaxInteger() {
     assertThat(evaluate(round(constant(Integer.MAX_VALUE))).value)
-      .isEqualTo(encodeValue(Integer.MAX_VALUE.toLong()))
+      .isEqualTo(encodeValue(Integer.MAX_VALUE))
   }
 
   @Test
   fun roundFunctionTestWithMaxIntegerNegative() {
     assertThat(evaluate(round(constant(-Integer.MAX_VALUE))).value)
-      .isEqualTo(encodeValue((-Integer.MAX_VALUE).toLong()))
+      .isEqualTo(encodeValue(-Integer.MAX_VALUE))
   }
 
   @Test

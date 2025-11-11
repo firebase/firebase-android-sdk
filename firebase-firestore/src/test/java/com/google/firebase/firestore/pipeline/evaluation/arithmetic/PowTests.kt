@@ -18,10 +18,20 @@ import com.google.common.truth.Truth.assertThat
 import com.google.firebase.firestore.model.Values.encodeValue
 import com.google.firebase.firestore.pipeline.Expression.Companion.constant
 import com.google.firebase.firestore.pipeline.Expression.Companion.pow
+import com.google.firebase.firestore.pipeline.assertEvaluatesToNull
 import com.google.firebase.firestore.pipeline.evaluate
+import com.google.firebase.firestore.pipeline.evaluation.MirroringTestCases
 import org.junit.Test
 
 internal class PowTests {
+  @Test
+  fun powFunctionTestWithMirrorError() {
+    for ((name, left, right) in MirroringTestCases.BINARY_MIRROR_TEST_CASES) {
+      val expr = pow(left, right)
+      assertEvaluatesToNull(evaluate(expr), "pow($name)")
+    }
+  }
+
   @Test
   fun powFunctionTest() {
     assertThat(evaluate(pow(constant(2), constant(3))).value).isEqualTo(encodeValue(8.0))

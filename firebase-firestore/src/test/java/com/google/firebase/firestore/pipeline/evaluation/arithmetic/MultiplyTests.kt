@@ -17,17 +17,28 @@ package com.google.firebase.firestore.pipeline.evaluation.arithmetic
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.firestore.model.Values.encodeValue
 import com.google.firebase.firestore.pipeline.Expression.Companion.constant
+import com.google.firebase.firestore.pipeline.Expression.Companion.mod
 import com.google.firebase.firestore.pipeline.Expression.Companion.multiply
+import com.google.firebase.firestore.pipeline.assertEvaluatesToNull
 import com.google.firebase.firestore.pipeline.evaluate
+import com.google.firebase.firestore.pipeline.evaluation.MirroringTestCases
 import org.junit.Test
 
 internal class MultiplyTests {
+  @Test
+  fun multiplyFunctionTestWithMirrorError() {
+    for ((name, left, right) in MirroringTestCases.BINARY_MIRROR_TEST_CASES) {
+      val expr = multiply(left, right)
+      assertEvaluatesToNull(evaluate(expr), "multiply($name)")
+    }
+  }
+
   @Test
   fun multiplyFunctionTestWithBasicNumerics() {
     assertThat(evaluate(multiply(constant(1L), constant(2L))).value).isEqualTo(encodeValue(2L))
     assertThat(evaluate(multiply(constant(3L), constant(2.5))).value).isEqualTo(encodeValue(7.5))
     assertThat(evaluate(multiply(constant(1.0), constant(2L))).value).isEqualTo(encodeValue(2.0))
-    assertThat(evaluate(multiply(constant(1.32), constant(2.0))).value).isEqualTo(encodeValue(2.64))
+    assertThat(evaluate(multiply(constant(1.3), constant(10.0))).value).isEqualTo(encodeValue(13.0))
   }
 
   @Test
@@ -40,8 +51,9 @@ internal class MultiplyTests {
   @Test
   fun multiplyFunctionTestWithDoubleLongMultiplicationOverflow() {
     assertThat(evaluate(multiply(constant(Long.MAX_VALUE), constant(100.0))).value)
-      .isEqualTo(encodeValue(Long.MAX_VALUE.toDouble() * 100.0))
-    assertThat(evaluate(multiply(constant(Long.MAX_VALUE), constant(100L))).isError).isTrue()
+      .isEqualTo(encodeValue(9.223372036854776E20))
+    assertThat(evaluate(multiply(constant(Long.MAX_VALUE.toDouble()), constant(100L))).value)
+      .isEqualTo(encodeValue(9.223372036854776E20))
   }
 
   @Test
@@ -67,13 +79,13 @@ internal class MultiplyTests {
       .isEqualTo(encodeValue(nanVal))
     assertThat(evaluate(multiply(constant(1.0), constant(nanVal))).value)
       .isEqualTo(encodeValue(nanVal))
-    assertThat(evaluate(multiply(constant(9007199254740991L), constant(nanVal))).value)
+    assertThat(evaluate(multiply(constant(Long.MAX_VALUE), constant(nanVal))).value)
       .isEqualTo(encodeValue(nanVal))
-    assertThat(evaluate(multiply(constant(-9007199254740991L), constant(nanVal))).value)
+    assertThat(evaluate(multiply(constant(Long.MIN_VALUE), constant(nanVal))).value)
       .isEqualTo(encodeValue(nanVal))
     assertThat(evaluate(multiply(constant(Double.MAX_VALUE), constant(nanVal))).value)
       .isEqualTo(encodeValue(nanVal))
-    assertThat(evaluate(multiply(constant(-Double.MAX_VALUE), constant(nanVal))).value)
+    assertThat(evaluate(multiply(constant(Double.MIN_VALUE), constant(nanVal))).value)
       .isEqualTo(encodeValue(nanVal))
     assertThat(evaluate(multiply(constant(Double.POSITIVE_INFINITY), constant(nanVal))).value)
       .isEqualTo(encodeValue(nanVal))
