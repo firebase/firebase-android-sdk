@@ -49,9 +49,9 @@ internal class QueryResultEncoder(
       .onUnmappableCharacter(CodingErrorAction.REPORT)
       .onMalformedInput(CodingErrorAction.REPORT)
 
-  private val sha512Digest = MessageDigest.getInstance("SHA-512")
-
   private val writer = QueryResultChannelWriter(channel, utf8CharsetEncoder)
+
+  private val sha512DigestCalculator = Sha512DigestCalculator()
 
   class EncodeResult(val byteArray: ByteArray, val entities: List<Entity>)
 
@@ -64,9 +64,8 @@ internal class QueryResultEncoder(
     writer.flush()
   }
 
-  private fun writeString(string: String, digest: MessageDigest? = null) {
+  private fun writeString(string: String) {
     if (string.isEmpty()) {
-      digest?.update(QueryResultCodec.VALUE_STRING_EMPTY)
       writer.writeByte(QueryResultCodec.VALUE_STRING_EMPTY)
       return
     }
@@ -76,13 +75,11 @@ internal class QueryResultEncoder(
     utf8CharsetEncoder.reset() // Prepare for calling `canEncode()`.
 
     if (utf8ByteCount <= utf16ByteCount && utf8CharsetEncoder.canEncode(string)) {
-      digest?.update(QueryResultCodec.VALUE_STRING_UTF8)
       writer.writeByte(QueryResultCodec.VALUE_STRING_UTF8)
-      writer.writeStringUtf8(string, utf8ByteCount, digest)
+      writer.writeStringUtf8(string, utf8ByteCount)
     } else {
-      digest?.update(QueryResultCodec.VALUE_STRING_UTF16)
       writer.writeByte(QueryResultCodec.VALUE_STRING_UTF16)
-      writer.writeStringCustomUtf16(string, utf16ByteCount, digest)
+      writer.writeStringCustomUtf16(string, utf16ByteCount)
     }
   }
 
@@ -140,13 +137,11 @@ internal class QueryResultEncoder(
   }
 
   private fun writeEntity(entityId: String, entity: Struct) {
+    val encodedEntityId = sha512DigestCalculator.calculate(entityId)
     writer.writeByte(QueryResultCodec.VALUE_ENTITY)
-
-    sha512Digest.reset()
-    writeString(entityId, sha512Digest)
-    val entityIdSha512 = sha512Digest.digest()
-
-    entities.add(Entity(entityId, entityIdSha512, entity))
+    writer.writeInt(encodedEntityId.size)
+    writer.write(ByteBuffer.wrap(encodedEntityId))
+    entities.add(Entity(entityId, encodedEntityId, entity))
   }
 
   companion object {
@@ -195,7 +190,24 @@ private class QueryResultChannelWriter(
     byteBuffer.putDouble(value)
   }
 
-  fun writeStringUtf8(string: String, expectedByteCount: Int, digest: MessageDigest?) {
+  fun write(bytes: ByteBuffer) {
+    while (bytes.remaining() > 0) {
+      if (byteBuffer.remaining() > bytes.remaining()) {
+        byteBuffer.put(bytes)
+        break
+      } else if (byteBuffer.position() == 0) {
+        channel.write(byteBuffer)
+      } else {
+        val limitBefore = bytes.limit()
+        bytes.limit(bytes.position() + byteBuffer.remaining())
+        byteBuffer.put(bytes)
+        bytes.limit(limitBefore)
+        flushOnce()
+      }
+    }
+  }
+
+  fun writeStringUtf8(string: String, expectedByteCount: Int) {
     utf8CharsetEncoder.reset()
     val charBuffer = CharBuffer.wrap(string)
 
@@ -222,11 +234,6 @@ private class QueryResultChannelWriter(
 
       val byteBufferPositionAfter = byteBuffer.position()
       byteWriteCount += byteBufferPositionAfter - byteBufferPositionBefore
-      digest?.update(
-        byteBuffer.array(),
-        byteBuffer.arrayOffset() + byteBufferPositionBefore,
-        byteWriteCount
-      )
 
       if (coderResult2.isUnderflow) {
         break
@@ -246,7 +253,7 @@ private class QueryResultChannelWriter(
     }
   }
 
-  fun writeStringCustomUtf16(string: String, expectedByteCount: Int, digest: MessageDigest?) {
+  fun writeStringCustomUtf16(string: String, expectedByteCount: Int) {
     writeInt(string.length)
 
     var byteWriteCount = 0
@@ -256,16 +263,10 @@ private class QueryResultChannelWriter(
       val putLength = charBuffer.remaining().coerceAtMost(string.length - stringOffset)
       charBuffer.put(string, stringOffset, stringOffset + putLength)
 
-      val curByteWriteCount = putLength * 2
-      digest?.update(
-        byteBuffer.array(),
-        byteBuffer.arrayOffset() + byteBuffer.position(),
-        curByteWriteCount
-      )
-      byteBuffer.position(byteBuffer.position() + (curByteWriteCount))
+      byteBuffer.position(byteBuffer.position() + (putLength * 2))
       flushOnce()
 
-      byteWriteCount += curByteWriteCount
+      byteWriteCount += putLength * 2
       stringOffset += putLength
     }
 
@@ -299,5 +300,36 @@ private class QueryResultChannelWriter(
         )
       }
     }
+  }
+}
+
+private class Sha512DigestCalculator {
+
+  private val digest = MessageDigest.getInstance("SHA-512")
+  private val buffer = ByteArray(1024)
+
+  fun calculate(string: String): ByteArray {
+    digest.reset()
+
+    var bufferIndex = 0
+    string.forEach { char ->
+      buffer[bufferIndex++] = char.toByteUshr(8)
+      buffer[bufferIndex++] = char.toByteUshr(0)
+      if (bufferIndex + 2 >= buffer.size) {
+        digest.update(buffer, 0, bufferIndex)
+        bufferIndex = 0
+      }
+    }
+
+    if (bufferIndex > 0) {
+      digest.update(buffer, 0, bufferIndex)
+    }
+
+    return digest.digest()
+  }
+
+  private companion object {
+    @Suppress("SpellCheckingInspection")
+    fun Char.toByteUshr(shiftAmount: Int): Byte = ((code ushr shiftAmount) and 0xFF).toByte()
   }
 }

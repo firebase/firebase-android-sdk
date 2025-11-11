@@ -16,15 +16,30 @@
 
 package com.google.firebase.dataconnect.sqlite
 
+import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.protobuf.Struct
+import java.util.Objects
 
 internal object QueryResultCodec {
 
   class Entity(
     val id: String,
-    val idBytes: ByteArray,
+    val encodedId: ByteArray,
     val data: Struct,
-  )
+  ) {
+
+    override fun hashCode(): Int =
+      Objects.hash(Entity::class.java, id, encodedId.contentHashCode(), data)
+
+    override fun equals(other: Any?): Boolean =
+      other is Entity &&
+        other.id == id &&
+        other.encodedId.contentEquals(encodedId) &&
+        other.data == data
+
+    override fun toString(): String =
+      "Entity{id=$id, encodedId=${encodedId.contentToString()}, data=${data.toCompactString()}}"
+  }
 
   const val QUERY_RESULT_HEADER: Int = 0x2e4286dc
   const val VALUE_NULL: Byte = 1
