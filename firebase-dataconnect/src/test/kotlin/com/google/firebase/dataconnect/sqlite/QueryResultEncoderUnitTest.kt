@@ -34,11 +34,12 @@ import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
+import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
 import io.kotest.property.ShrinkingMode
-import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.filterNot
@@ -47,6 +48,8 @@ import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.pair
 import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
+import java.nio.ByteBuffer
+import java.security.MessageDigest
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
@@ -94,6 +97,19 @@ class QueryResultEncoderUnitTest {
         entities = listOf(struct),
         entityFieldName
       )
+    }
+  }
+
+  @Test
+  fun `entity IDs are encoded using SHA-512`() = runTest {
+    checkAll(propTestConfig, stringForEncodeTestingArb()) { entityId ->
+      val struct = Struct.newBuilder().putFields("entityId", entityId.toValueProto()).build()
+
+      val encodeResult = QueryResultEncoder.encode(struct, "entityId")
+
+      encodeResult.entities shouldHaveSize 1
+      val encodedEntityId = encodeResult.entities[0].encodedId
+      encodedEntityId shouldBe entityId.calculateExpectedEncodingAsEntityId()
     }
   }
 
@@ -207,13 +223,13 @@ class QueryResultEncoderUnitTest {
       }
     }
 
-    fun entityArb(
-      idFieldName: String,
-      id: Arb<String> = stringForEncodeTestingArb(),
-      struct: Arb<Struct> = Arb.proto.struct().map { it.struct },
-    ): Arb<Struct> =
-      Arb.bind(id, struct) { id, struct ->
-        struct.toBuilder().putFields(idFieldName, id.toValueProto()).build()
-      }
+    fun String.calculateExpectedEncodingAsEntityId(): ByteArray {
+      val byteBuffer = ByteBuffer.allocate(length * 2)
+      forEach(byteBuffer::putChar)
+      val digest = MessageDigest.getInstance("SHA-512")
+      byteBuffer.flip()
+      digest.update(byteBuffer)
+      return digest.digest()
+    }
   }
 }
