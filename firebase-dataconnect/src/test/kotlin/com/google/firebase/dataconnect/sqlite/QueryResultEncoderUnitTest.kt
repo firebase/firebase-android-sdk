@@ -98,6 +98,31 @@ class QueryResultEncoderUnitTest {
   }
 
   @Test
+  fun `entity ID contains code points with 1, 2, 3, and 4 byte UTF-8 encodings`() = runTest {
+    checkAll(propTestConfig, Arb.string(), stringForEncodeTestingArb()) { entityFieldName, entityId
+      ->
+      val struct = Struct.newBuilder().putFields(entityFieldName, entityId.toValueProto()).build()
+      struct.decodingEncodingShouldProduceIdenticalStruct(
+        entities = listOf(struct),
+        entityFieldName
+      )
+    }
+  }
+
+  @Test
+  fun `entity ID are long strings`() = runTest {
+    checkAll(propTestConfig, Arb.string(), longStringForEncodeTestingArb()) {
+      entityFieldName,
+      entityId ->
+      val struct = Struct.newBuilder().putFields(entityFieldName, entityId.toValueProto()).build()
+      struct.decodingEncodingShouldProduceIdenticalStruct(
+        entities = listOf(struct),
+        entityFieldName
+      )
+    }
+  }
+
+  @Test
   fun `entire struct is a non-nested entity`() = runTest {
     val arb: Arb<Pair<String, Struct>> =
       Arb.pair(Arb.string(), Arb.proto.stringValue()).flatMap { (entityFieldName, entityId) ->

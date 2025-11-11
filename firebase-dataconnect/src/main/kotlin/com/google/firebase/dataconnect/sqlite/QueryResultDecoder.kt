@@ -361,7 +361,7 @@ internal class QueryResultDecoder(
     val size = readInt()
     if (size < 0) {
       throw NegativeEntityIdSizeException(
-        "read entity id size $size, but expected a number greater than or equal to zero [j8h3k5n6m2]"
+        "read entity id size $size, but expected a number greater than or equal to zero [w3p6z2xc7r]"
       )
     }
     val encodedEntityId = readBytes(size)
