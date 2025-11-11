@@ -94,6 +94,13 @@ internal class QueryResultDecoder(
     return byteBuffer.getDouble()
   }
 
+  private fun readBytes(byteCount: Int): ByteArray {
+    ensureRemaining(byteCount)
+    val bytes = ByteArray(byteCount)
+    byteBuffer.get(bytes)
+    return bytes
+  }
+
   private fun readString(): String = readString(readStringType())
 
   private fun readString(stringType: StringType): String =
@@ -351,7 +358,19 @@ internal class QueryResultDecoder(
   }
 
   private fun readEntity(): Struct {
-    TODO()
+    val size = readInt()
+    if (size < 0) {
+      throw NegativeEntityIdSizeException(
+        "read entity id size $size, but expected a number greater than or equal to zero [j8h3k5n6m2]"
+      )
+    }
+    val encodedEntityId = readBytes(size)
+    val entity =
+      entities.find { it.encodedId.contentEquals(encodedEntityId) }
+        ?: throw EntityNotFoundException(
+          "could not find entity with encoded id ${encodedEntityId.contentToString()} [p9o8i7u6y5]"
+        )
+    return entity.data
   }
 
   private fun readValue(): Value {
@@ -366,7 +385,7 @@ internal class QueryResultDecoder(
       ValueKindCase.StringUtf16 -> valueBuilder.setStringValue(readStringCustomUtf16())
       ValueKindCase.List -> valueBuilder.setListValue(readList())
       ValueKindCase.Struct -> valueBuilder.setStructValue(readStruct())
-      ValueKindCase.Entity -> TODO()
+      ValueKindCase.Entity -> valueBuilder.setStructValue(readEntity())
       ValueKindCase.KindNotSet -> {
         // do nothing, leaving the kind as KIND_NOT_SET
       }
@@ -395,6 +414,10 @@ internal class QueryResultDecoder(
   class Utf8EOFException(message: String) : DecodeException(message)
 
   class Utf16EOFException(message: String) : DecodeException(message)
+
+  class NegativeEntityIdSizeException(message: String) : DecodeException(message)
+
+  class EntityNotFoundException(message: String) : DecodeException(message)
 
   companion object {
 

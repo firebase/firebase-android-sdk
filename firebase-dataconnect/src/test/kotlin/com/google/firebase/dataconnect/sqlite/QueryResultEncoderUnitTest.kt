@@ -26,6 +26,7 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.stringValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.stringWithLoneSurrogates
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
+import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
 import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.protobuf.Struct
@@ -40,7 +41,10 @@ import io.kotest.property.ShrinkingMode
 import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.constant
+import io.kotest.property.arbitrary.filterNot
+import io.kotest.property.arbitrary.flatMap
 import io.kotest.property.arbitrary.map
+import io.kotest.property.arbitrary.pair
 import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
 import kotlinx.coroutines.test.runTest
@@ -72,7 +76,7 @@ class QueryResultEncoderUnitTest {
   fun `long string encodings round trip`() = runTest {
     val structArb =
       Arb.proto.struct(
-        size = 1..1,
+        size = 1,
         key = longStringForEncodeTestingArb(),
         scalarValue = longStringForEncodeTestingArb().map { it.toValueProto() },
       )
@@ -86,6 +90,42 @@ class QueryResultEncoderUnitTest {
   fun `entire struct is an empty entity`() = runTest {
     checkAll(propTestConfig, Arb.string(), Arb.proto.stringValue()) { entityFieldName, entityId ->
       val struct = Struct.newBuilder().putFields(entityFieldName, entityId).build()
+      struct.decodingEncodingShouldProduceIdenticalStruct(
+        entities = listOf(struct),
+        entityFieldName
+      )
+    }
+  }
+
+  @Test
+  fun `entire struct is a non-nested entity`() = runTest {
+    val arb: Arb<Pair<String, Struct>> =
+      Arb.pair(Arb.string(), Arb.proto.stringValue()).flatMap { (entityFieldName, entityId) ->
+        val keyArb = Arb.proto.structKey().filterNot { it == entityFieldName }
+        Arb.proto.struct(size = 1..100, depth = 1, key = keyArb).map { struct ->
+          val newStruct = struct.struct.toBuilder().putFields(entityFieldName, entityId).build()
+          Pair(entityFieldName, newStruct)
+        }
+      }
+    checkAll(propTestConfig, arb) { (entityFieldName: String, struct: Struct) ->
+      struct.decodingEncodingShouldProduceIdenticalStruct(
+        entities = listOf(struct),
+        entityFieldName
+      )
+    }
+  }
+
+  @Test
+  fun `entire struct is a nested entity`() = runTest {
+    val arb: Arb<Pair<String, Struct>> =
+      Arb.pair(Arb.string(), Arb.proto.stringValue()).flatMap { (entityFieldName, entityId) ->
+        val keyArb = Arb.proto.structKey().filterNot { it == entityFieldName }
+        Arb.proto.struct(size = 2..3, depth = 2..4, key = keyArb).map { struct ->
+          val newStruct = struct.struct.toBuilder().putFields(entityFieldName, entityId).build()
+          Pair(entityFieldName, newStruct)
+        }
+      }
+    checkAll(propTestConfig, arb) { (entityFieldName: String, struct: Struct) ->
       struct.decodingEncodingShouldProduceIdenticalStruct(
         entities = listOf(struct),
         entityFieldName

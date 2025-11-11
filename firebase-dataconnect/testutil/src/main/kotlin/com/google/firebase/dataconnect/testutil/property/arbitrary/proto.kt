@@ -35,7 +35,6 @@ import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.string
 import io.kotest.property.asSample
 import kotlin.random.nextInt
-import kotlin.ranges.IntRange
 
 object Proto {
 
@@ -123,6 +122,45 @@ fun Proto.struct(
   StructArb(
     size = size,
     depth = depth,
+    keyArb = key,
+    scalarValueArb = scalarValue,
+  )
+
+fun Proto.struct(
+  size: Int,
+  depth: IntRange = 1..3,
+  key: Arb<String> = structKey(),
+  scalarValue: Arb<Value> = scalarValue(),
+): Arb<Proto.StructInfo> =
+  StructArb(
+    size = size..size,
+    depth = depth,
+    keyArb = key,
+    scalarValueArb = scalarValue,
+  )
+
+fun Proto.struct(
+  size: IntRange = 0..5,
+  depth: Int,
+  key: Arb<String> = structKey(),
+  scalarValue: Arb<Value> = scalarValue(),
+): Arb<Proto.StructInfo> =
+  StructArb(
+    size = size,
+    depth = depth..depth,
+    keyArb = key,
+    scalarValueArb = scalarValue,
+  )
+
+fun Proto.struct(
+  size: Int,
+  depth: Int,
+  key: Arb<String> = structKey(),
+  scalarValue: Arb<Value> = scalarValue(),
+): Arb<Proto.StructInfo> =
+  StructArb(
+    size = size..size,
+    depth = depth..depth,
     keyArb = key,
     scalarValueArb = scalarValue,
   )
