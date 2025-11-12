@@ -26,6 +26,8 @@ import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
+import io.kotest.property.arbitrary.byte
+import io.kotest.property.arbitrary.byteArray
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.map
 import io.kotest.property.checkAll
@@ -35,10 +37,22 @@ import org.junit.Test
 class StringUtilUnitTest {
 
   @Test
-  fun `to0xHexString() should return the correct string`() = runTest {
+  fun `Int to0xHexString() should return the correct string`() = runTest {
     checkAll(propTestConfig, Arb.int()) { int ->
       val expected = "0x" + int.toUInt().toString(16).uppercase().padStart(8, '0')
       int.to0xHexString() shouldBe expected
+    }
+  }
+
+  @Test
+  fun `ByteArray to0xHexString() should return the correct string`() = runTest {
+    checkAll(propTestConfig, Arb.byteArray(Arb.int(0..100), Arb.byte())) { byteArray ->
+      val expected = buildString {
+        append("0x")
+        byteArray.forEach { append(it.toUByte().toString(16).uppercase().padStart(2, '0')) }
+      }
+
+      byteArray.to0xHexString() shouldBe expected
     }
   }
 

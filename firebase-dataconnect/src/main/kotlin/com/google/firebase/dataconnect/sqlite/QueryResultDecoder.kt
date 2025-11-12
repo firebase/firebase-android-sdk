@@ -17,6 +17,7 @@
 package com.google.firebase.dataconnect.sqlite
 
 import com.google.firebase.dataconnect.sqlite.QueryResultCodec.Entity
+import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
 import com.google.protobuf.ListValue
 import com.google.protobuf.NullValue
 import com.google.protobuf.Struct
@@ -158,6 +159,16 @@ internal class QueryResultDecoder(
       if (it < 0) {
         throw NegativeListSizeException(
           "read list size $it, but expected a number greater than or equal to zero [yfvpf9pwt8]"
+        )
+      }
+    }
+
+  private fun readEntityIdSize(): Int =
+    readInt().also {
+      if (it < 0) {
+        throw NegativeEntityIdSizeException(
+          "read entity id size $it, " +
+            "but expected a number greater than or equal to zero [agvqmbgknh]"
         )
       }
     }
@@ -358,17 +369,12 @@ internal class QueryResultDecoder(
   }
 
   private fun readEntity(): Struct {
-    val size = readInt()
-    if (size < 0) {
-      throw NegativeEntityIdSizeException(
-        "read entity id size $size, but expected a number greater than or equal to zero [w3p6z2xc7r]"
-      )
-    }
+    val size = readEntityIdSize()
     val encodedEntityId = readBytes(size)
     val entity =
       entities.find { it.encodedId.contentEquals(encodedEntityId) }
         ?: throw EntityNotFoundException(
-          "could not find entity with encoded id ${encodedEntityId.contentToString()} [p9o8i7u6y5]"
+          "could not find entity with encoded id ${encodedEntityId.to0xHexString()} [p583k77y7r]"
         )
     return entity.data
   }

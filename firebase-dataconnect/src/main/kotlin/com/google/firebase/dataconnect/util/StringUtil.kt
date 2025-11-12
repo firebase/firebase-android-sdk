@@ -35,6 +35,15 @@ internal object StringUtil {
   fun Int.to0xHexString(): String = String.format("0x%08X", this)
 
   /**
+   * Converts this byte array to a hexadecimal string of the form 0xA1B2C3D4 where each byte in the
+   * array produces two hexadecimal digits.
+   *
+   * The implementation of this function is NOT efficient, and should only be used when performance
+   * is not important, such as producing error messages.
+   */
+  fun ByteArray.to0xHexString(): String = "0x" + joinToString("") { String.format("%02X", it) }
+
+  /**
    * Calculates and returns the number of bytes required to encode this string into utf8.
    *
    * The runtime complexity of this method is Θ(size). The auxiliary space complexity of this method

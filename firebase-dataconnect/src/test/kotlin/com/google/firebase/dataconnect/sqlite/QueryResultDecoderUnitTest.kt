@@ -18,6 +18,8 @@ package com.google.firebase.dataconnect.sqlite
 
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.BadHeaderException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.Companion.decode
+import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.EntityNotFoundException
+import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.NegativeEntityIdSizeException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.NegativeListSizeException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.NegativeStringByteCountException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.NegativeStringCharCountException
@@ -29,6 +31,7 @@ import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.Utf16EOFExcepti
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.Utf8EOFException
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
+import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.common.ExperimentalKotest
@@ -38,6 +41,7 @@ import io.kotest.property.EdgeConfig
 import io.kotest.property.Exhaustive
 import io.kotest.property.PropTestConfig
 import io.kotest.property.arbitrary.byte
+import io.kotest.property.arbitrary.byteArray
 import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.negativeInt
@@ -237,9 +241,46 @@ class QueryResultDecoderUnitTest {
     }
   }
 
-  @Test fun `decode() should throw NegativeEntityIdSizeException`() = runTest { TODO() }
+  @Test
+  fun `decode() should throw NegativeEntityIdSizeException`() = runTest {
+    checkAll(propTestConfig, Arb.negativeInt()) { negativeEntityIdSize ->
+      val byteArray = buildByteArray {
+        putInt(QueryResultCodec.QUERY_RESULT_HEADER)
+        put(QueryResultCodec.VALUE_ENTITY)
+        putInt(negativeEntityIdSize)
+      }
 
-  @Test fun `decode() should throw EntityNotFoundException`() = runTest { TODO() }
+      val exception = shouldThrow<NegativeEntityIdSizeException> { decode(byteArray, emptyList()) }
+
+      assertSoftly {
+        exception.message shouldContainWithNonAbuttingText "agvqmbgknh"
+        exception.message shouldContainWithNonAbuttingText negativeEntityIdSize.toString()
+        exception.message shouldContainWithNonAbuttingTextIgnoringCase "entity id size"
+        exception.message shouldContainWithNonAbuttingTextIgnoringCase
+          "greater than or equal to zero"
+      }
+    }
+  }
+
+  @Test
+  fun `decode() should throw EntityNotFoundException`() = runTest {
+    checkAll(propTestConfig, Arb.byteArray(Arb.int(0..50), Arb.byte())) { encodedEntityId ->
+      val byteArray = buildByteArray {
+        putInt(QueryResultCodec.QUERY_RESULT_HEADER)
+        put(QueryResultCodec.VALUE_ENTITY)
+        putInt(encodedEntityId.size)
+        put(encodedEntityId)
+      }
+
+      val exception = shouldThrow<EntityNotFoundException> { decode(byteArray, emptyList()) }
+
+      assertSoftly {
+        exception.message shouldContainWithNonAbuttingText "p583k77y7r"
+        exception.message shouldContainWithNonAbuttingText encodedEntityId.to0xHexString()
+        exception.message shouldContainWithNonAbuttingTextIgnoringCase "could not find entity"
+      }
+    }
+  }
 
   @Test fun `decode() should be able to decode very long entity IDs`() = runTest { TODO() }
 
