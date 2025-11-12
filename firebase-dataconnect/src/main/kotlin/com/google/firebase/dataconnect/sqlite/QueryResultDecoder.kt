@@ -38,7 +38,6 @@ import java.nio.charset.CodingErrorAction
 internal class QueryResultDecoder(
   private val channel: ReadableByteChannel,
   private val entities: List<Entity>,
-  private val entityFieldName: String? = null,
 ) {
 
   private val charsetDecoder =
@@ -60,21 +59,20 @@ internal class QueryResultDecoder(
     }
   }
 
-  private fun readSome(): Int {
+  private fun readSome(): Boolean {
     byteBuffer.compact()
     val readCount = channel.read(byteBuffer)
     byteBuffer.flip()
-    return readCount
+    return readCount > 0
   }
 
   private fun ensureRemaining(byteCount: Int) {
-    val originalRemaining = byteBuffer.remaining()
     while (byteBuffer.remaining() < byteCount) {
-      val byteReadCount = readSome()
-      if (byteReadCount <= 0) {
+      if (!readSome()) {
         throw EOFException(
-          "unexpected EOF: expected at least $byteCount bytes, " +
-            "but only got ${byteBuffer.remaining()-originalRemaining}"
+          "end of input reached prematurely reading $byteCount bytes: " +
+            "got ${byteBuffer.remaining()} bytes, " +
+            "${byteCount-byteBuffer.remaining()} fewer bytes than expected [xg5y5fm2vk]"
         )
       }
     }
@@ -96,10 +94,25 @@ internal class QueryResultDecoder(
   }
 
   private fun readBytes(byteCount: Int): ByteArray {
-    ensureRemaining(byteCount)
-    val bytes = ByteArray(byteCount)
-    byteBuffer.get(bytes)
-    return bytes
+    val byteArray = ByteArray(byteCount)
+    var byteArrayOffset = 0
+    while (byteArrayOffset < byteCount) {
+      val wantByteCount = byteCount - byteArrayOffset
+
+      if (byteBuffer.remaining() == 0 && !readSome()) {
+        throw ByteArrayEOFException(
+          "end of input reached prematurely reading byte array of length $byteCount: " +
+            "got ${byteArrayOffset + byteBuffer.remaining()} bytes, " +
+            "${wantByteCount - byteBuffer.remaining()} fewer bytes than expected [dnx886qwmk]"
+        )
+      }
+
+      val getByteCount = wantByteCount.coerceAtMost(byteBuffer.remaining())
+      byteBuffer.get(byteArray, byteArrayOffset, getByteCount)
+      byteArrayOffset += getByteCount
+    }
+
+    return byteArray
   }
 
   private fun readString(): String = readString(readStringType())
@@ -255,15 +268,14 @@ internal class QueryResultDecoder(
         decodeResult.throwException()
       }
 
-      if (byteBuffer.remaining() < bytesRemaining) {
-        val byteReadCount = readSome()
-        if (byteReadCount <= 0) {
-          throw Utf8EOFException(
-            "expected to read $byteCount bytes ($charCount characters), " +
-              "but only got ${byteCount - bytesRemaining} bytes " +
-              "(${charBuffer.position()} characters) [c8d6bbnms9]"
-          )
-        }
+      if (byteBuffer.remaining() < bytesRemaining && !readSome()) {
+        val totalBytesRead = byteBuffer.remaining() + byteCount - bytesRemaining
+        throw Utf8EOFException(
+          "end of input reached prematurely reading $charCount characters ($byteCount bytes) " +
+            "of a UTF-8 encoded string: got ${charBuffer.position()} characters, " +
+            "${charBuffer.remaining()} fewer characters than expected " +
+            "($totalBytesRead bytes, $bytesRemaining fewer bytes than expected) [akn3x7p8rm]"
+        )
       }
     }
 
@@ -280,9 +292,10 @@ internal class QueryResultDecoder(
       flushResult.throwException()
     }
     if (charBuffer.hasRemaining()) {
-      throw Utf8EOFException(
-        "expected to read $charCount characters ($byteCount bytes), " +
-          "but only got ${charBuffer.position()} characters [dhvzxrcrqe]"
+      throw Utf8TooFewCharactersException(
+        "expected to read $charCount characters ($byteCount bytes) of a UTF-8 encoded string, " +
+          "but only got ${charBuffer.position()} characters, " +
+          "${charBuffer.remaining()} fewer characters than expected [dhvzxrcrqe]"
       )
     }
 
@@ -295,14 +308,16 @@ internal class QueryResultDecoder(
     val charBuffer = CharBuffer.allocate(charCount)
 
     while (charBuffer.remaining() > 0) {
-      if (byteBuffer.remaining() < 2) {
-        readSome()
-      }
-      if (byteBuffer.remaining() == 0) {
+      if (byteBuffer.remaining() < 2 && !readSome()) {
+        val totalBytesRead = byteBuffer.remaining() + (charBuffer.position() * 2)
+        val expectedTotalBytesRead = charCount * 2
         throw Utf16EOFException(
-          "expected to read $charCount characters (${charCount*2} bytes), but only got " +
-            "${charBuffer.position()} characters " +
-            "(${charBuffer.position()*2 + byteBuffer.remaining()} bytes) [e399qdvzdz]"
+          "end of input reached prematurely reading $charCount characters " +
+            "($expectedTotalBytesRead bytes) of a UTF-16 encoded string: " +
+            "got ${charBuffer.position()} characters, " +
+            "${charBuffer.remaining()} fewer characters than expected " +
+            "($totalBytesRead bytes, ${expectedTotalBytesRead-totalBytesRead} " +
+            "fewer bytes than expected) [e399qdvzdz]"
         )
       }
 
@@ -417,7 +432,11 @@ internal class QueryResultDecoder(
 
   class UnknownStructTypeException(message: String) : DecodeException(message)
 
+  class ByteArrayEOFException(message: String) : DecodeException(message)
+
   class Utf8EOFException(message: String) : DecodeException(message)
+
+  class Utf8TooFewCharactersException(message: String) : DecodeException(message)
 
   class Utf16EOFException(message: String) : DecodeException(message)
 
@@ -427,14 +446,10 @@ internal class QueryResultDecoder(
 
   companion object {
 
-    fun decode(
-      byteArray: ByteArray,
-      entities: List<Entity>,
-      entityFieldName: String? = null,
-    ): Struct =
+    fun decode(byteArray: ByteArray, entities: List<Entity>): Struct =
       ByteArrayInputStream(byteArray).use { byteArrayInputStream ->
         Channels.newChannel(byteArrayInputStream).use { channel ->
-          val decoder = QueryResultDecoder(channel, entities, entityFieldName)
+          val decoder = QueryResultDecoder(channel, entities)
           decoder.decode()
         }
       }

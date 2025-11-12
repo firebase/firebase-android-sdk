@@ -17,6 +17,7 @@
 package com.google.firebase.dataconnect.sqlite
 
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.BadHeaderException
+import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.ByteArrayEOFException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.Companion.decode
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.EntityNotFoundException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.NegativeEntityIdSizeException
@@ -29,6 +30,10 @@ import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.UnknownStringTy
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.UnknownStructTypeException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.Utf16EOFException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.Utf8EOFException
+import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.Utf8TooFewCharactersException
+import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
+import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
+import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
@@ -282,7 +287,28 @@ class QueryResultDecoderUnitTest {
     }
   }
 
-  @Test fun `decode() should be able to decode very long entity IDs`() = runTest { TODO() }
+  @Test
+  fun `decode() should be able to decode very long entity IDs`() = runTest {
+    checkAll(
+      @OptIn(ExperimentalKotest::class) propTestConfig.copy(iterations = 10),
+      Arb.byteArray(Arb.int(2000..90000), Arb.byte()),
+      Arb.proto.struct(depth = 1)
+    ) { encodedEntityId, entityData ->
+      val byteArray =
+        buildByteArray(maxSize = encodedEntityId.size + 100) {
+          putInt(QueryResultCodec.QUERY_RESULT_HEADER)
+          put(QueryResultCodec.VALUE_ENTITY)
+          putInt(encodedEntityId.size)
+          put(encodedEntityId)
+        }
+      val entity =
+        QueryResultCodec.Entity(id = "", encodedId = encodedEntityId, data = entityData.struct)
+
+      val decodeResult = decode(byteArray, listOf(entity))
+
+      decodeResult shouldBe entityData.struct
+    }
+  }
 
   @Test
   fun `decode() should throw Utf8EOFException with 'insufficient bytes' message for utf8`() =
@@ -310,14 +336,15 @@ class QueryResultDecoderUnitTest {
         val exception = shouldThrow<Utf8EOFException> { decode(byteArray, emptyList()) }
 
         assertSoftly {
-          exception.message shouldContainWithNonAbuttingText "c8d6bbnms9"
+          exception.message shouldContainWithNonAbuttingText "akn3x7p8rm"
           exception.message shouldContainWithNonAbuttingTextIgnoringCase
-            "expected to read $byteCount bytes"
-          exception.message shouldContainWithNonAbuttingTextIgnoringCase "$charCount characters"
+            "end of input reached prematurely"
           exception.message shouldContainWithNonAbuttingTextIgnoringCase
-            "got ${stringUtf8Bytes.size} bytes"
+            "reading $charCount characters ($byteCount bytes) of a UTF-8 encoded string"
           exception.message shouldContainWithNonAbuttingTextIgnoringCase
-            "${string.length} characters"
+            "got ${string.length} characters, ${charCount-string.length} fewer characters"
+          exception.message shouldContainWithNonAbuttingTextIgnoringCase
+            "${stringUtf8Bytes.size} bytes, ${byteCount-stringUtf8Bytes.size} fewer bytes"
         }
       }
     }
@@ -341,7 +368,8 @@ class QueryResultDecoderUnitTest {
           put(stringUtf8Bytes)
         }
 
-        val exception = shouldThrow<Utf8EOFException> { decode(byteArray, emptyList()) }
+        val exception =
+          shouldThrow<Utf8TooFewCharactersException> { decode(byteArray, emptyList()) }
 
         assertSoftly {
           exception.message shouldContainWithNonAbuttingText "dhvzxrcrqe"
@@ -350,7 +378,7 @@ class QueryResultDecoderUnitTest {
           exception.message shouldContainWithNonAbuttingTextIgnoringCase
             "${stringUtf8Bytes.size} bytes"
           exception.message shouldContainWithNonAbuttingTextIgnoringCase
-            "got ${string.length} characters"
+            "got ${string.length} characters, ${charCount - string.length} fewer characters"
         }
       }
     }
@@ -377,11 +405,13 @@ class QueryResultDecoderUnitTest {
         assertSoftly {
           exception.message shouldContainWithNonAbuttingText "e399qdvzdz"
           exception.message shouldContainWithNonAbuttingTextIgnoringCase
-            "expected to read $charCount characters"
+            "end of input reached prematurely"
           exception.message shouldContainWithNonAbuttingTextIgnoringCase
-            "${string.length * 2} bytes"
+            "reading $charCount characters (${charCount*2} bytes) of a UTF-16 encoded string"
           exception.message shouldContainWithNonAbuttingTextIgnoringCase
-            "got ${string.length} characters"
+            "got ${string.length} characters, ${charCount-string.length} fewer characters"
+          exception.message shouldContainWithNonAbuttingTextIgnoringCase
+            "${string.length*2} bytes, ${(charCount - string.length)*2} fewer bytes"
         }
       }
     }
@@ -412,6 +442,35 @@ class QueryResultDecoderUnitTest {
     }
   }
 
+  @Test
+  fun `decode() should throw ByteArrayEOFException`() = runTest {
+    checkAll(
+      propTestConfig,
+      Arb.byteArray(Arb.int(0..16384), Arb.byte()),
+      Arb.positiveInt(32768),
+    ) { encodedEntityId, byteCountDelta ->
+      val byteArray =
+        buildByteArray(maxSize = 17000) {
+          putInt(QueryResultCodec.QUERY_RESULT_HEADER)
+          put(QueryResultCodec.VALUE_ENTITY)
+          putInt(encodedEntityId.size + byteCountDelta)
+          put(encodedEntityId)
+        }
+
+      val exception = shouldThrow<ByteArrayEOFException> { decode(byteArray, emptyList()) }
+
+      assertSoftly {
+        exception.message shouldContainWithNonAbuttingText "dnx886qwmk"
+        exception.message shouldContainWithNonAbuttingTextIgnoringCase
+          "end of input reached prematurely"
+        exception.message shouldContainWithNonAbuttingTextIgnoringCase
+          "reading byte array of length ${encodedEntityId.size + byteCountDelta}"
+        exception.message shouldContainWithNonAbuttingTextIgnoringCase
+          "got ${encodedEntityId.size} bytes, $byteCountDelta fewer bytes"
+      }
+    }
+  }
+
   private companion object {
 
     @OptIn(ExperimentalKotest::class)
@@ -421,8 +480,8 @@ class QueryResultDecoderUnitTest {
         edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.33)
       )
 
-    fun buildByteArray(block: ByteBuffer.() -> Unit): ByteArray {
-      val byteBuffer = ByteBuffer.allocate(1024)
+    fun buildByteArray(maxSize: Int = 1024, block: ByteBuffer.() -> Unit): ByteArray {
+      val byteBuffer = ByteBuffer.allocate(maxSize)
       block(byteBuffer)
       byteBuffer.flip()
       val byteArray = ByteArray(byteBuffer.remaining())

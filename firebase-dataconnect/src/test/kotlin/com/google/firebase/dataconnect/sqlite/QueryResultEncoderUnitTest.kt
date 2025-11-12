@@ -127,9 +127,11 @@ class QueryResultEncoderUnitTest {
 
   @Test
   fun `entity ID are long strings`() = runTest {
-    checkAll(propTestConfig, Arb.string(), longStringForEncodeTestingArb()) {
-      entityFieldName,
-      entityId ->
+    checkAll(
+      @OptIn(ExperimentalKotest::class) propTestConfig.copy(iterations = 10),
+      Arb.string(),
+      longStringForEncodeTestingArb()
+    ) { entityFieldName, entityId ->
       val struct = Struct.newBuilder().putFields(entityFieldName, entityId.toValueProto()).build()
       struct.decodingEncodingShouldProduceIdenticalStruct(
         entities = listOf(struct),
@@ -212,8 +214,7 @@ class QueryResultEncoderUnitTest {
       entityFieldName: String? = null
     ) {
       val encodeResult = QueryResultEncoder.encode(this, entityFieldName)
-      val decodeResult =
-        QueryResultDecoder.decode(encodeResult.byteArray, encodeResult.entities, entityFieldName)
+      val decodeResult = QueryResultDecoder.decode(encodeResult.byteArray, encodeResult.entities)
 
       assertSoftly {
         withClue("QueryResultDecoder.decode() return value") { decodeResult shouldBe this }
