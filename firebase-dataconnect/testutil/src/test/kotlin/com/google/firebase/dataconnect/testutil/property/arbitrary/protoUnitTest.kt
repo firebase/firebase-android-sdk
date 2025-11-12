@@ -213,35 +213,6 @@ class protoUnitTest {
         Value.KindCase.KIND_NOT_SET,
       )
 
-    fun ListValue.maxDepth(): Int {
-      var maxDepth = 1
-      repeat(valuesCount) {
-        val curMaxDepth = getValues(it).maxDepth()
-        if (curMaxDepth > maxDepth) {
-          maxDepth = curMaxDepth
-        }
-      }
-      return maxDepth
-    }
-
-    fun Struct.maxDepth(): Int {
-      var maxDepth = 1
-      fieldsMap.values.forEach { value ->
-        val curMaxDepth = value.maxDepth()
-        if (curMaxDepth > maxDepth) {
-          maxDepth = curMaxDepth
-        }
-      }
-      return maxDepth
-    }
-
-    fun Value.maxDepth(): Int =
-      when (kindCase) {
-        Value.KindCase.STRUCT_VALUE -> 1 + structValue.maxDepth()
-        Value.KindCase.LIST_VALUE -> 1 + listValue.maxDepth()
-        else -> 1
-      }
-
     fun ListValue.hasNestedKind(kindCase: Value.KindCase): Boolean {
       repeat(valuesCount) {
         val value = getValues(it)
