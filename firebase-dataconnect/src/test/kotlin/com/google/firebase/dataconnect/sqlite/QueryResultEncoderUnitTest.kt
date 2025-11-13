@@ -287,6 +287,96 @@ class QueryResultEncoderUnitTest {
     )
   }
 
+  @Test
+  fun `list has nested entities and scalar values`() = runTest {
+    val entity1 = buildStructProto {
+      put("_id", "entity1")
+      put("name", "annie")
+      put("age", 42)
+    }
+    val entity2 = buildStructProto {
+      put("_id", "entity2")
+      put("name", "jackson")
+      put("age", 24)
+      put("sibling", entity1)
+    }
+    val list =
+      ListValue.newBuilder()
+        .apply {
+          addValues("foobar".toValueProto())
+          addValues(entity2.toValueProto())
+          addValues(42.toValueProto())
+        }
+        .build()
+    val root = buildStructProto {
+      put("foo", "bar")
+      put("stuff", list)
+    }
+
+    val entities: List<Struct> =
+      listOf(
+        entity1,
+        entity2.toBuilder().removeFields("sibling").build(),
+      )
+
+    root.decodingEncodingShouldProduceIdenticalStruct(
+      entities = entities,
+      entityIdFieldName = "_id",
+    )
+  }
+
+  @Test
+  fun `entity has list with nested entities and scalar values`() = runTest {
+    val entity1 = buildStructProto {
+      put("_id", "entity1")
+      put("name", "annie")
+      put("age", 42)
+    }
+    val entity2 = buildStructProto {
+      put("_id", "entity2")
+      put("name", "jackson")
+      put("age", 24)
+      put("sibling", entity1)
+    }
+    val list =
+      ListValue.newBuilder()
+        .apply {
+          addValues("foobar".toValueProto())
+          addValues(entity2.toValueProto())
+          addValues(42.toValueProto())
+        }
+        .build()
+    val root = buildStructProto {
+      put("_id", "root")
+      put("foo", "bar")
+      put("stuff", list)
+    }
+
+    val entities: List<Struct> =
+      listOf(
+        entity1,
+        entity2.toBuilder().removeFields("sibling").build(),
+        root
+          .toBuilder()
+          .putFields(
+            "stuff",
+            root
+              .getFieldsOrThrow("stuff")
+              .listValue
+              .toBuilder()
+              .apply { setValues(1, Value.getDefaultInstance()) }
+              .build()
+              .toValueProto()
+          )
+          .build()
+      )
+
+    root.decodingEncodingShouldProduceIdenticalStruct(
+      entities = entities,
+      entityIdFieldName = "_id",
+    )
+  }
+
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Unit tests for unit testing classes and functions defined in this file
   //////////////////////////////////////////////////////////////////////////////////////////////////
