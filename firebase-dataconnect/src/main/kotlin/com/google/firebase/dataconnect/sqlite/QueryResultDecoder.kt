@@ -17,6 +17,7 @@
 package com.google.firebase.dataconnect.sqlite
 
 import com.google.firebase.dataconnect.sqlite.QueryResultCodec.Entity
+import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
 import com.google.protobuf.ListValue
 import com.google.protobuf.NullValue
@@ -383,6 +384,36 @@ internal class QueryResultDecoder(
     return structBuilder.build()
   }
 
+  private enum class EntitySubStructType(val valueKindCase: ValueKindCase) {
+    Entity(ValueKindCase.Entity),
+    Struct(ValueKindCase.Struct),
+    List(ValueKindCase.List),
+    Scalar(ValueKindCase.KindNotSet);
+
+    companion object {
+      fun fromValueKindCase(valueKindCase: ValueKindCase): EntitySubStructType? =
+        entries.firstOrNull { it.valueKindCase == valueKindCase }
+    }
+  }
+
+  private fun readEntitySubStructType(): EntitySubStructType =
+    readKindCase().let { valueKindCase ->
+      val entitySubStructType = EntitySubStructType.fromValueKindCase(valueKindCase)
+      if (entitySubStructType === null) {
+        throw UnknownEntitySubStructTypeException(
+          "read non-entity-sub-struct kind case byte ${valueKindCase.serializedByte} " +
+            "(${valueKindCase.displayName}), but expected one of " +
+            EntitySubStructType.entries
+              .sortedBy { it.valueKindCase.serializedByte }
+              .joinToString {
+                "${it.valueKindCase.serializedByte} (${it.valueKindCase.displayName})"
+              } +
+            " [w26af67653]"
+        )
+      }
+      entitySubStructType
+    }
+
   private fun readEntity(): Struct {
     val size = readEntityIdSize()
     val encodedEntityId = readBytes(size)
@@ -391,7 +422,50 @@ internal class QueryResultDecoder(
         ?: throw EntityNotFoundException(
           "could not find entity with encoded id ${encodedEntityId.to0xHexString()} [p583k77y7r]"
         )
-    return entity.data
+    return readEntitySubStruct(entity.data)
+  }
+
+  private fun readEntitySubStruct(entity: Struct): Struct {
+    val structKeyCount = readStructKeyCount()
+    val structBuilder = Struct.newBuilder()
+    repeat(structKeyCount) {
+      val key = readString()
+      val value = readEntityValue(key, entity)
+      structBuilder.putFields(key, value)
+    }
+    return structBuilder.build()
+  }
+
+  private fun readEntitySubList(entity: ListValue): ListValue {
+    val listSize = readListSize()
+    val listValueBuilder = ListValue.newBuilder()
+    repeat(listSize) { index ->
+      val value = readEntityValue(index, entity)
+      listValueBuilder.addValues(value)
+    }
+    return listValueBuilder.build()
+  }
+
+  private inline fun readEntityValue(getSubEntity: () -> Value): Value =
+    when (readEntitySubStructType()) {
+      EntitySubStructType.Entity -> readEntity().toValueProto()
+      EntitySubStructType.Struct -> {
+        val subEntity = getSubEntity().structValue
+        readEntitySubStruct(subEntity).toValueProto()
+      }
+      EntitySubStructType.List -> {
+        val subEntity = getSubEntity().listValue
+        readEntitySubList(subEntity).toValueProto()
+      }
+      EntitySubStructType.Scalar -> getSubEntity()
+    }
+
+  private fun readEntityValue(key: String, entity: Struct): Value = readEntityValue {
+    entity.getFieldsOrThrow(key)
+  }
+
+  private fun readEntityValue(index: Int, entity: ListValue): Value = readEntityValue {
+    entity.getValues(index)
   }
 
   private fun readValue(): Value {
@@ -431,6 +505,8 @@ internal class QueryResultDecoder(
   class UnknownStringTypeException(message: String) : DecodeException(message)
 
   class UnknownStructTypeException(message: String) : DecodeException(message)
+
+  class UnknownEntitySubStructTypeException(message: String) : DecodeException(message)
 
   class ByteArrayEOFException(message: String) : DecodeException(message)
 

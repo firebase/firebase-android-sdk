@@ -17,6 +17,7 @@
 package com.google.firebase.dataconnect.sqlite
 
 import com.google.firebase.dataconnect.sqlite.QueryResultCodec.Entity
+import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.firebase.dataconnect.util.StringUtil.calculateUtf8ByteCount
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
@@ -31,6 +32,8 @@ import java.nio.charset.CharsetEncoder
 import java.nio.charset.CoderResult
 import java.nio.charset.CodingErrorAction
 import java.security.MessageDigest
+import kotlin.collections.component1
+import kotlin.collections.component2
 import kotlin.math.absoluteValue
 
 /**
@@ -89,26 +92,27 @@ internal class QueryResultEncoder(
     repeat(listValue.valuesCount) { writeValue(listValue.getValues(it)) }
   }
 
-  private fun writeStruct(struct: Struct) {
-    val map = struct.fieldsMap
-
-    val entityId =
-      if (entityFieldName === null) {
+  private fun Struct.getEntityId(): String? =
+    if (entityFieldName === null || !containsFields(entityFieldName)) {
+      null
+    } else {
+      val entityIdValue = getFieldsOrThrow(entityFieldName)
+      if (entityIdValue?.kindCase != Value.KindCase.STRING_VALUE) {
         null
       } else {
-        val entityIdValue = map[entityFieldName]
-        if (entityIdValue?.kindCase != Value.KindCase.STRING_VALUE) {
-          null
-        } else {
-          entityIdValue.stringValue
-        }
+        entityIdValue.stringValue
       }
+    }
 
+  private fun writeStruct(struct: Struct) {
+    val entityId = struct.getEntityId()
     if (entityId !== null) {
+      writer.writeByte(QueryResultCodec.VALUE_ENTITY)
       writeEntity(entityId, struct)
       return
     }
 
+    val map = struct.fieldsMap
     writer.writeByte(QueryResultCodec.VALUE_STRUCT)
     writer.writeInt(map.size)
     map.entries.forEach { (key, value) ->
@@ -138,10 +142,57 @@ internal class QueryResultEncoder(
 
   private fun writeEntity(entityId: String, entity: Struct) {
     val encodedEntityId = sha512DigestCalculator.calculate(entityId)
-    writer.writeByte(QueryResultCodec.VALUE_ENTITY)
     writer.writeInt(encodedEntityId.size)
     writer.write(ByteBuffer.wrap(encodedEntityId))
-    entities.add(Entity(entityId, encodedEntityId, entity))
+    val struct = writeEntitySubStruct(entity)
+    entities.add(Entity(entityId, encodedEntityId, struct))
+  }
+
+  private fun writeEntitySubStruct(struct: Struct): Struct {
+    writer.writeInt(struct.fieldsCount)
+    val structBuilder = Struct.newBuilder()
+    struct.fieldsMap.entries.forEach { (key, value) ->
+      writeString(key)
+      val entityValue = writeEntityValue(value)
+      if (entityValue !== null) {
+        structBuilder.putFields(key, entityValue)
+      }
+    }
+    return structBuilder.build()
+  }
+
+  private fun writeEntitySubList(listValue: ListValue): ListValue {
+    writer.writeInt(listValue.valuesCount)
+    val listValueBuilder = ListValue.newBuilder()
+    listValue.valuesList.forEach { value ->
+      val entityValue = writeEntityValue(value)
+      listValueBuilder.addValues(entityValue ?: Value.getDefaultInstance())
+    }
+    return listValueBuilder.build()
+  }
+
+  private fun writeEntityValue(value: Value): Value? {
+    return when (value.kindCase) {
+      Value.KindCase.STRUCT_VALUE -> {
+        val subStructEntityId = value.structValue.getEntityId()
+        if (subStructEntityId !== null) {
+          writer.writeByte(QueryResultCodec.VALUE_ENTITY)
+          writeEntity(subStructEntityId, value.structValue)
+          null
+        } else {
+          writer.writeByte(QueryResultCodec.VALUE_STRUCT)
+          writeEntitySubStruct(value.structValue).toValueProto()
+        }
+      }
+      Value.KindCase.LIST_VALUE -> {
+        writer.writeByte(QueryResultCodec.VALUE_LIST)
+        writeEntitySubList(value.listValue).toValueProto()
+      }
+      else -> {
+        writer.writeByte(QueryResultCodec.VALUE_KIND_NOT_SET)
+        value
+      }
+    }
   }
 
   companion object {

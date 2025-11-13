@@ -295,11 +295,25 @@ class QueryResultDecoderUnitTest {
       Arb.proto.struct(depth = 1)
     ) { encodedEntityId, entityData ->
       val byteArray =
-        buildByteArray(maxSize = encodedEntityId.size + 100) {
+        buildByteArray(
+          maxSize =
+            encodedEntityId.size +
+              entityData.struct.fieldsMap.keys.sumOf { 10 + it.length * 4 } +
+              100
+        ) {
           putInt(QueryResultCodec.QUERY_RESULT_HEADER)
           put(QueryResultCodec.VALUE_ENTITY)
           putInt(encodedEntityId.size)
           put(encodedEntityId)
+          putInt(entityData.struct.fieldsCount)
+          entityData.struct.fieldsMap.keys.forEach { key ->
+            val encodedKey = key.encodeToByteArray()
+            put(QueryResultCodec.VALUE_STRING_UTF8)
+            putInt(encodedKey.size)
+            putInt(key.length)
+            put(encodedKey)
+            put(QueryResultCodec.VALUE_KIND_NOT_SET)
+          }
         }
       val entity =
         QueryResultCodec.Entity(id = "", encodedId = encodedEntityId, data = entityData.struct)

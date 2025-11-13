@@ -29,6 +29,7 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.stringWithLon
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
 import com.google.firebase.dataconnect.testutil.shouldBe
+import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.protobuf.ListValue
@@ -257,6 +258,33 @@ class QueryResultEncoderUnitTest {
         entityIdFieldName
       )
     }
+  }
+
+  @Test
+  fun `struct has nested entities`() = runTest {
+    val entity1 = buildStructProto {
+      put("_id", "entity1")
+      put("name", "annie")
+      put("age", 42)
+    }
+    val entity2 = buildStructProto {
+      put("_id", "entity2")
+      put("name", "jackson")
+      put("age", 24)
+      put("sibling", entity1)
+    }
+    val entity2Pruned = entity2.toBuilder().removeFields("sibling").build()
+    val rootEntity = buildStructProto {
+      put("_id", "entity3")
+      put("type", "results")
+      put("person", entity2)
+    }
+    val rootEntityPruned = rootEntity.toBuilder().removeFields("person").build()
+
+    rootEntity.decodingEncodingShouldProduceIdenticalStruct(
+      entities = listOf(rootEntityPruned, entity1, entity2Pruned),
+      entityIdFieldName = "_id",
+    )
   }
 
   //////////////////////////////////////////////////////////////////////////////////////////////////
