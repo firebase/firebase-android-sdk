@@ -22,6 +22,7 @@ import com.google.firebase.ai.type.GenerateContentResponse
 import com.google.firebase.ai.type.ImagePart
 import com.google.firebase.ai.type.InlineDataPart
 import com.google.firebase.ai.type.InvalidStateException
+import com.google.firebase.ai.type.Part
 import com.google.firebase.ai.type.TextPart
 import com.google.firebase.ai.type.content
 import java.util.LinkedList
@@ -133,6 +134,7 @@ public class Chat(
     val bitmaps = LinkedList<Bitmap>()
     val inlineDataParts = LinkedList<InlineDataPart>()
     val text = StringBuilder()
+    val parts = mutableListOf<Part>()
 
     /**
      * TODO: revisit when images and inline data are returned. This will cause issues with how
@@ -147,6 +149,7 @@ public class Chat(
             is ImagePart -> bitmaps.add(part.image)
             is InlineDataPart -> inlineDataParts.add(part)
           }
+          parts.add(part)
         }
       }
       .onCompletion {
@@ -154,15 +157,20 @@ public class Chat(
         if (it == null) {
           val content =
             content("model") {
-              for (bitmap in bitmaps) {
-                image(bitmap)
-              }
-              for (inlineDataPart in inlineDataParts) {
-                inlineData(inlineDataPart.inlineData, inlineDataPart.mimeType)
-              }
-              if (text.isNotBlank()) {
-                text(text.toString())
-              }
+              setParts(
+                parts
+                  .filterNot { part -> part is TextPart && part.text.isNotEmpty() }
+                  .toMutableList()
+              )
+              //              for (bitmap in bitmaps) {
+              //                image(bitmap)
+              //              }
+              //              for (inlineDataPart in inlineDataParts) {
+              //                inlineData(inlineDataPart.inlineData, inlineDataPart.mimeType)
+              //              }
+              //              if (text.isNotBlank()) {
+              //                text(text.toString())
+              //              }
             }
 
           history.add(prompt)
