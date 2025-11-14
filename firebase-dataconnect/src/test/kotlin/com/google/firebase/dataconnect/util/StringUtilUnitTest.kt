@@ -16,10 +16,6 @@
 
 package com.google.firebase.dataconnect.util
 
-import com.google.firebase.dataconnect.testutil.property.arbitrary.stringWithEvenNumByteUtf8EncodingDistribution
-import com.google.firebase.dataconnect.testutil.property.arbitrary.stringWithLoneSurrogates
-import com.google.firebase.dataconnect.util.StringUtil.calculateUtf8ByteCount
-import com.google.firebase.dataconnect.util.StringUtil.containsLoneSurrogates
 import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.shouldBe
@@ -29,8 +25,8 @@ import io.kotest.property.PropTestConfig
 import io.kotest.property.arbitrary.byte
 import io.kotest.property.arbitrary.byteArray
 import io.kotest.property.arbitrary.int
-import io.kotest.property.arbitrary.map
 import io.kotest.property.checkAll
+import kotlin.collections.forEach
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
@@ -47,45 +43,26 @@ class StringUtilUnitTest {
   @Test
   fun `ByteArray to0xHexString() should return the correct string`() = runTest {
     checkAll(propTestConfig, Arb.byteArray(Arb.int(0..100), Arb.byte())) { byteArray ->
-      val expected = buildString {
-        append("0x")
-        byteArray.forEach { append(it.toUByte().toString(16).uppercase().padStart(2, '0')) }
-      }
-
+      val expected = "0x" + byteArray.toExpectedHexString()
       byteArray.to0xHexString() shouldBe expected
     }
   }
 
   @Test
-  fun `calculateUtf8ByteCount() should return the correct byte count`() = runTest {
-    checkAll(propTestConfig, Arb.stringWithEvenNumByteUtf8EncodingDistribution(0..100)) { string ->
-      string.calculateUtf8ByteCount() shouldBe string.toByteArray().size
+  fun `ByteArray to0xHexString(include0xPrefix=true)`() = runTest {
+    checkAll(propTestConfig, Arb.byteArray(Arb.int(0..100), Arb.byte())) { byteArray ->
+      val expected = "0x" + byteArray.toExpectedHexString()
+      byteArray.to0xHexString(include0xPrefix = true) shouldBe expected
     }
   }
 
   @Test
-  fun `calculateUtf8ByteCount() should not throw when encountering lone surrogates`() = runTest {
-    checkAll(propTestConfig, Arb.stringWithLoneSurrogates(1..100).map { it.string }) { string ->
-      string.calculateUtf8ByteCount()
+  fun `ByteArray to0xHexString(include0xPrefix=false)`() = runTest {
+    checkAll(propTestConfig, Arb.byteArray(Arb.int(0..100), Arb.byte())) { byteArray ->
+      val expected = byteArray.toExpectedHexString()
+      byteArray.to0xHexString(include0xPrefix = false) shouldBe expected
     }
   }
-
-  @Test
-  fun `containsLoneSurrogates() should return false when the string does not contain lone surrogates`() =
-    runTest {
-      checkAll(propTestConfig, Arb.stringWithEvenNumByteUtf8EncodingDistribution(0..100)) { string
-        ->
-        string.containsLoneSurrogates() shouldBe false
-      }
-    }
-
-  @Test
-  fun `containsLoneSurrogates() should return true when the string contains lone surrogates`() =
-    runTest {
-      checkAll(propTestConfig, Arb.stringWithLoneSurrogates(1..100).map { it.string }) { string ->
-        string.containsLoneSurrogates() shouldBe true
-      }
-    }
 
   private companion object {
 
@@ -95,5 +72,11 @@ class StringUtilUnitTest {
         iterations = 1000,
         edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.2)
       )
+
+    fun ByteArray.toExpectedHexString(): String = buildString {
+      this@toExpectedHexString.forEach {
+        append(it.toUByte().toString(16).uppercase().padStart(2, '0'))
+      }
+    }
   }
 }

@@ -16,6 +16,8 @@
 
 package com.google.firebase.dataconnect.sqlite
 
+import com.google.firebase.dataconnect.sqlite.QueryResultEncoderUnitTest.StringWithEncodingLengthArb.Mode.Utf8EncodingLongerThanUtf16
+import com.google.firebase.dataconnect.sqlite.QueryResultEncoderUnitTest.StringWithEncodingLengthArb.Mode.Utf8EncodingShorterThanOrEqualToUtf16
 import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWith1ByteUtf8Encoding
 import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWith2ByteUtf8Encoding
 import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWith3ByteUtf8Encoding
@@ -28,10 +30,12 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.stringValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.stringWithLoneSurrogates
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
+import com.google.firebase.dataconnect.testutil.property.arbitrary.twoValues
 import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
+import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
@@ -43,23 +47,35 @@ import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.comparables.shouldBeLessThanOrEqualTo
+import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.ints.shouldBeInRange
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
 import io.kotest.property.RandomSource
+import io.kotest.property.Sample
 import io.kotest.property.ShrinkingMode
+import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.distinct
 import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.flatMap
 import io.kotest.property.arbitrary.int
+import io.kotest.property.arbitrary.list
 import io.kotest.property.arbitrary.map
+import io.kotest.property.arbitrary.nonNegativeInt
+import io.kotest.property.arbitrary.of
 import io.kotest.property.arbitrary.pair
 import io.kotest.property.arbitrary.set
 import io.kotest.property.arbitrary.string
+import io.kotest.property.arbitrary.withEdgecases
+import io.kotest.property.asSample
+import io.kotest.property.assume
 import io.kotest.property.checkAll
 import java.nio.ByteBuffer
 import java.security.MessageDigest
@@ -68,6 +84,34 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
 class QueryResultEncoderUnitTest {
+
+  @Test
+  fun `strings are encoded in utf8 when shorter than or equal to utf16`() = runTest {
+    val stringArb = StringWithEncodingLengthArb(Utf8EncodingShorterThanOrEqualToUtf16, 1..100)
+    checkAll(propTestConfig, stringArb) { string ->
+      val struct = Struct.newBuilder().putFields(string, true.toValueProto()).build()
+
+      val encodedBytes = QueryResultEncoder.encode(struct).byteArray
+
+      val stringUtf8Encoded = string.encodeToByteArray()
+      encodedBytes.to0xHexString() shouldContain
+        stringUtf8Encoded.to0xHexString(include0xPrefix = false)
+    }
+  }
+
+  @Test
+  fun `strings are encoded in utf16 when longer than utf8`() = runTest {
+    val stringArb = StringWithEncodingLengthArb(Utf8EncodingLongerThanUtf16, 1..100)
+    checkAll(propTestConfig, stringArb) { string ->
+      val struct = Struct.newBuilder().putFields(string, true.toValueProto()).build()
+
+      val encodedBytes = QueryResultEncoder.encode(struct).byteArray
+
+      val stringUtf16Encoded = string.toByteArray(Charsets.UTF_16BE)
+      encodedBytes.to0xHexString() shouldContain
+        stringUtf16Encoded.to0xHexString(include0xPrefix = false)
+    }
+  }
 
   @Test
   fun `various structs round trip`() = runTest {
@@ -496,6 +540,296 @@ class QueryResultEncoderUnitTest {
     }
   }
 
+  @Test
+  fun `StringWithEncodingLengthArb should produce string lengths in the given range`() = runTest {
+    var minLengthCount = 0
+    var maxLengthCount = 0
+    var midLengthCount = 0
+    val modeArb = Arb.of(Utf8EncodingLongerThanUtf16, Utf8EncodingShorterThanOrEqualToUtf16)
+    val lengthRangeArb =
+      Arb.twoValues(Arb.nonNegativeInt(max = 100)).map { (bound1, bound2) ->
+        if (bound1 < bound2) bound1..bound2 else bound2..bound1
+      }
+
+    checkAll(propTestConfig, modeArb, lengthRangeArb) { mode, lengthRange ->
+      assume(lengthRange.last >= mode.minCharCount)
+      val sample = StringWithEncodingLengthArb(mode, lengthRange).bind()
+
+      sample.length shouldBeInRange lengthRange
+
+      if (sample.length == lengthRange.first) {
+        minLengthCount++
+      } else if (sample.length == lengthRange.last) {
+        maxLengthCount++
+      } else {
+        midLengthCount++
+      }
+    }
+
+    assertSoftly {
+      withClue("minLengthCount") { minLengthCount shouldBeGreaterThan 0 }
+      withClue("maxLengthCount") { maxLengthCount shouldBeGreaterThan 0 }
+      withClue("midLengthCount") { midLengthCount shouldBeGreaterThan 0 }
+    }
+  }
+
+  @Test
+  fun `StringWithEncodingLengthArb should produce strings with utf8 and utf16 encoding lengths respecting the given mode`() =
+    runTest {
+      var utf8EdgeCaseCount = 0
+      var utf8NonEdgeCaseCount = 0
+      var utf16EdgeCaseCount = 0
+      var utf16NonEdgeCaseCount = 0
+      val modeArb = Arb.of(Utf8EncodingLongerThanUtf16, Utf8EncodingShorterThanOrEqualToUtf16)
+      val lengthRangeArb = Arb.nonNegativeInt(max = 100).map { it..it }
+
+      checkAll(propTestConfig, modeArb, lengthRangeArb) { mode, lengthRange ->
+        assume(lengthRange.last >= mode.minCharCount)
+        val sample = StringWithEncodingLengthArb(mode, lengthRange).bind()
+
+        val utf8ByteCount = Utf8.encodedLength(sample).shouldNotBeNull()
+        val utf16ByteCount = sample.length * 2
+
+        when (mode) {
+          Utf8EncodingLongerThanUtf16 -> {
+            utf8ByteCount shouldBeGreaterThan utf16ByteCount
+            if (utf8ByteCount == utf16ByteCount + 1) {
+              utf16EdgeCaseCount++
+            } else {
+              utf16NonEdgeCaseCount++
+            }
+          }
+          Utf8EncodingShorterThanOrEqualToUtf16 -> {
+            utf8ByteCount shouldBeLessThanOrEqualTo utf16ByteCount
+            if (utf8ByteCount == utf16ByteCount) {
+              utf8EdgeCaseCount++
+            } else {
+              utf8NonEdgeCaseCount++
+            }
+          }
+        }
+      }
+
+      assertSoftly {
+        withClue("utf8EdgeCaseCount") { utf8EdgeCaseCount shouldBeGreaterThan 0 }
+        withClue("utf8NonEdgeCaseCount") { utf8NonEdgeCaseCount shouldBeGreaterThan 0 }
+        withClue("utf16EdgeCaseCount") { utf16EdgeCaseCount shouldBeGreaterThan 0 }
+        withClue("utf16NonEdgeCaseCount") { utf16NonEdgeCaseCount shouldBeGreaterThan 0 }
+      }
+    }
+
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+  // StringWithEncodingLengthArb class
+  //////////////////////////////////////////////////////////////////////////////////////////////////
+
+  private class StringWithEncodingLengthArb(private val mode: Mode, lengthRange: IntRange) :
+    Arb<String>() {
+
+    private val lengthArb = run {
+      require(lengthRange.last >= mode.minCharCount) {
+        "lengthRange.last=${lengthRange.last}, but must be at least ${mode.minCharCount} " +
+          "when mode=$mode is used"
+      }
+      val modifiedFirst = lengthRange.first.coerceAtLeast(mode.minCharCount)
+      val modifiedLast = lengthRange.last
+      val modifiedLengthRange = modifiedFirst..modifiedLast
+
+      modifiedLengthRange.run modifiedRun@{
+        Arb.int(min = first, max = last)
+          .withEdgecases(listOf(first, first + 1, last, last - 1).filter { it in this@modifiedRun })
+      }
+    }
+
+    private class CodePointArb(
+      val arb: Arb<Codepoint>,
+      val utf8ByteCount: Int,
+      val utf16CharCount: Int
+    ) {
+      val utf16ByteCount = utf16CharCount * 2
+    }
+
+    private val codePointArbs =
+      listOf(
+        CodePointArb(Arb.codepointWith1ByteUtf8Encoding(), utf8ByteCount = 1, utf16CharCount = 1),
+        CodePointArb(Arb.codepointWith2ByteUtf8Encoding(), utf8ByteCount = 2, utf16CharCount = 1),
+        CodePointArb(Arb.codepointWith3ByteUtf8Encoding(), utf8ByteCount = 3, utf16CharCount = 1),
+        CodePointArb(Arb.codepointWith4ByteUtf8Encoding(), utf8ByteCount = 4, utf16CharCount = 2),
+      )
+
+    private val codePointArbsWithUtf16CharCountEquals1 =
+      codePointArbs.filter { it.utf16CharCount == 1 }
+
+    private val fixByteCountArbs = codePointArbs.filter(mode.fixedByteCountCodepointArbFilter)
+
+    override fun sample(rs: RandomSource): Sample<String> =
+      sample(
+          rs,
+          lengthEdgeCaseProbability = rs.random.nextFloat(),
+          codepointEdgeCaseProbability = rs.random.nextFloat(),
+        )
+        .asSample()
+
+    override fun edgecase(rs: RandomSource): String =
+      when (val case = rs.random.nextInt(3)) {
+        0 -> sample(rs, lengthEdgeCaseProbability = 1.0f, codepointEdgeCaseProbability = 0.0f)
+        1 -> sample(rs, lengthEdgeCaseProbability = 0.0f, codepointEdgeCaseProbability = 1.0f)
+        2 -> sample(rs, lengthEdgeCaseProbability = 1.0f, codepointEdgeCaseProbability = 1.0f)
+        else -> throw IllegalStateException("unexpected case: $case [jb56se5ky9]")
+      }
+
+    private fun sample(
+      rs: RandomSource,
+      lengthEdgeCaseProbability: Float,
+      codepointEdgeCaseProbability: Float,
+    ): String {
+      val length = lengthArb.next(rs, lengthEdgeCaseProbability)
+      val generator = Generator(rs, length, codepointEdgeCaseProbability)
+      generator.populateCodepoints()
+      generator.fixByteCounts()
+      return generator.toString()
+    }
+
+    sealed class Mode {
+      abstract val minCharCount: Int
+
+      abstract val fixedByteCountCodepointArbFilter: (CodePointArb) -> Boolean
+
+      abstract fun byteCountNeedsFixing(utf8ByteCountsSum: Int, utf16ByteCountsSum: Int): Boolean
+
+      abstract fun byteCountIsFixable(
+        charCount: Int,
+        utf8ByteCount: Int,
+        utf16ByteCount: Int,
+      ): Boolean
+
+      fun findIndexToFix(
+        charCounts: List<Int>,
+        utf8ByteCounts: List<Int>,
+        utf16ByteCounts: List<Int>,
+      ): Int =
+        utf8ByteCounts.indices.first {
+          byteCountIsFixable(charCounts[it], utf8ByteCounts[it], utf16ByteCounts[it])
+        }
+
+      data object Utf8EncodingLongerThanUtf16 : Mode() {
+        override val minCharCount = 1
+
+        override val fixedByteCountCodepointArbFilter = { arb: CodePointArb ->
+          arb.utf8ByteCount > arb.utf16ByteCount
+        }
+
+        override fun byteCountNeedsFixing(utf8ByteCountsSum: Int, utf16ByteCountsSum: Int) =
+          utf8ByteCountsSum <= utf16ByteCountsSum
+
+        override fun byteCountIsFixable(charCount: Int, utf8ByteCount: Int, utf16ByteCount: Int) =
+          utf8ByteCount <= utf16ByteCount
+      }
+
+      data object Utf8EncodingShorterThanOrEqualToUtf16 : Mode() {
+        override val minCharCount = 0
+
+        override val fixedByteCountCodepointArbFilter = { arb: CodePointArb ->
+          arb.utf8ByteCount <= arb.utf16ByteCount && arb.utf16CharCount == 1
+        }
+
+        override fun byteCountNeedsFixing(utf8ByteCountsSum: Int, utf16ByteCountsSum: Int) =
+          utf8ByteCountsSum > utf16ByteCountsSum
+
+        override fun byteCountIsFixable(charCount: Int, utf8ByteCount: Int, utf16ByteCount: Int) =
+          utf8ByteCount > utf16ByteCount
+      }
+    }
+
+    private inner class Generator(
+      private val rs: RandomSource,
+      private val length: Int,
+      private val codepointEdgeCaseProbability: Float,
+    ) {
+      private val codepoints = mutableListOf<Int>()
+      private val utf8ByteCounts = mutableListOf<Int>()
+      private var utf8ByteCountsSum = 0
+      private val utf16ByteCounts = mutableListOf<Int>()
+      private var utf16ByteCountsSum = 0
+      private val charCounts = mutableListOf<Int>()
+      private var charCountsSum = 0
+
+      fun populateCodepoints() {
+        while (charCountsSum < length) {
+          val codePointArb = run {
+            val candidateCodePointArbs =
+              if (charCountsSum + 1 == length) {
+                codePointArbsWithUtf16CharCountEquals1
+              } else {
+                codePointArbs
+              }
+            candidateCodePointArbs.random(rs.random)
+          }
+
+          val codepoint = codePointArb.arb.next(rs, codepointEdgeCaseProbability).value
+          check(Character.charCount(codepoint) == codePointArb.utf16CharCount) {
+            "codepoint=$codepoint, charCount(codepoint)=${Character.charCount(codepoint)}, " +
+              "codePointArb.utf16CharCount=${codePointArb.utf16CharCount}, but the char counts " +
+              "should be equal [ka3sm2q7xm]"
+          }
+
+          codepoints.add(codepoint)
+          utf8ByteCounts.add(codePointArb.utf8ByteCount)
+          utf8ByteCountsSum += codePointArb.utf8ByteCount
+          utf16ByteCounts.add(codePointArb.utf16ByteCount)
+          utf16ByteCountsSum += codePointArb.utf16ByteCount
+          charCounts.add(codePointArb.utf16CharCount)
+          charCountsSum += codePointArb.utf16CharCount
+        }
+
+        check(charCountsSum == length) {
+          "charCountsSum=$charCountsSum and length=$length, but they should be equal " +
+            "(codepoints=$codepoints, utf8ByteCounts=$utf8ByteCounts, " +
+            "utf16ByteCounts=$utf16ByteCounts, charCounts=$charCounts) [mvdxbck2sc]"
+        }
+      }
+
+      fun fixByteCounts() {
+        while (mode.byteCountNeedsFixing(utf8ByteCountsSum, utf16ByteCountsSum)) {
+          val fixByteCountArb = fixByteCountArbs.random(rs.random)
+          val index = mode.findIndexToFix(charCounts, utf8ByteCounts, utf16ByteCounts)
+
+          codepoints.removeAt(index)
+          val oldCharCount = charCounts[index]
+          charCounts.removeAt(index)
+          utf8ByteCountsSum -= utf8ByteCounts[index]
+          utf8ByteCounts.removeAt(index)
+          utf16ByteCountsSum -= utf16ByteCounts[index]
+          utf16ByteCounts.removeAt(index)
+
+          var newCharCount = 0
+          while (newCharCount < oldCharCount) {
+            val codepoint = fixByteCountArb.arb.next(rs, codepointEdgeCaseProbability).value
+            val codepointCharCount = Character.charCount(codepoint)
+            newCharCount += codepointCharCount
+
+            codepoints.add(codepoint)
+            charCounts.add(codepointCharCount)
+            utf8ByteCountsSum += fixByteCountArb.utf8ByteCount
+            utf8ByteCounts.add(fixByteCountArb.utf8ByteCount)
+            utf16ByteCountsSum += fixByteCountArb.utf16ByteCount
+            utf16ByteCounts.add(fixByteCountArb.utf16ByteCount)
+          }
+
+          check(newCharCount == oldCharCount) {
+            "newCharCount=$newCharCount, oldCharCount=$oldCharCount, but they should be equal"
+          }
+        }
+      }
+
+      override fun toString(): String {
+        codepoints.shuffle(rs.random)
+        val sb = StringBuilder()
+        codepoints.forEach(sb::appendCodePoint)
+        return sb.toString()
+      }
+    }
+  }
+
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Class-level classes and functions
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -702,5 +1036,12 @@ class QueryResultEncoderUnitTest {
 
       return patchedStruct
     }
+
+    fun <T> Arb<T>.next(rs: RandomSource, edgeCaseProbability: Float): T =
+      if (rs.random.nextFloat() < edgeCaseProbability) {
+        edgecase(rs)!!
+      } else {
+        sample(rs).value
+      }
   }
 }

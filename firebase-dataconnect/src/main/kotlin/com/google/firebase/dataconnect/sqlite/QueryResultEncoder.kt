@@ -18,7 +18,6 @@ package com.google.firebase.dataconnect.sqlite
 
 import com.google.firebase.dataconnect.sqlite.QueryResultCodec.Entity
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
-import com.google.firebase.dataconnect.util.StringUtil.calculateUtf8ByteCount
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
@@ -28,12 +27,9 @@ import java.nio.ByteOrder
 import java.nio.CharBuffer
 import java.nio.channels.Channels
 import java.nio.channels.WritableByteChannel
-import java.nio.charset.CharsetEncoder
 import java.nio.charset.CoderResult
 import java.nio.charset.CodingErrorAction
 import java.security.MessageDigest
-import kotlin.collections.component1
-import kotlin.collections.component2
 import kotlin.math.absoluteValue
 
 /**
@@ -47,12 +43,7 @@ internal class QueryResultEncoder(
 
   val entities: MutableList<Entity> = mutableListOf()
 
-  private val utf8CharsetEncoder =
-    Charsets.UTF_8.newEncoder()
-      .onUnmappableCharacter(CodingErrorAction.REPORT)
-      .onMalformedInput(CodingErrorAction.REPORT)
-
-  private val writer = QueryResultChannelWriter(channel, utf8CharsetEncoder)
+  private val writer = QueryResultChannelWriter(channel)
 
   private val sha512DigestCalculator = Sha512DigestCalculator()
 
@@ -73,11 +64,10 @@ internal class QueryResultEncoder(
       return
     }
 
-    val utf8ByteCount = string.calculateUtf8ByteCount()
+    val utf8ByteCount: Int? = Utf8.encodedLength(string)
     val utf16ByteCount = string.length * 2
-    utf8CharsetEncoder.reset() // Prepare for calling `canEncode()`.
 
-    if (utf8ByteCount <= utf16ByteCount && utf8CharsetEncoder.canEncode(string)) {
+    if (utf8ByteCount !== null && utf8ByteCount <= utf16ByteCount) {
       writer.writeByte(QueryResultCodec.VALUE_STRING_UTF8)
       writer.writeStringUtf8(string, utf8ByteCount)
     } else {
@@ -211,10 +201,12 @@ internal class QueryResultEncoder(
   }
 }
 
-private class QueryResultChannelWriter(
-  private val channel: WritableByteChannel,
-  private val utf8CharsetEncoder: CharsetEncoder,
-) {
+private class QueryResultChannelWriter(private val channel: WritableByteChannel) {
+
+  private val utf8CharsetEncoder =
+    Charsets.UTF_8.newEncoder()
+      .onUnmappableCharacter(CodingErrorAction.REPORT)
+      .onMalformedInput(CodingErrorAction.REPORT)
 
   private val byteBuffer = ByteBuffer.allocate(2048).order(ByteOrder.BIG_ENDIAN)
 

@@ -31,6 +31,7 @@ import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.UnknownStructTy
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.Utf16EOFException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.Utf8EOFException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.Utf8TooFewCharactersException
+import com.google.firebase.dataconnect.testutil.buildByteArray
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.shouldBe
@@ -55,7 +56,6 @@ import io.kotest.property.arbitrary.string
 import io.kotest.property.arbitrary.withEdgecases
 import io.kotest.property.checkAll
 import io.kotest.property.exhaustive.collection
-import java.nio.ByteBuffer
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
@@ -294,27 +294,21 @@ class QueryResultDecoderUnitTest {
       Arb.byteArray(Arb.int(2000..90000), Arb.byte()),
       Arb.proto.struct(depth = 1)
     ) { encodedEntityId, entityData ->
-      val byteArray =
-        buildByteArray(
-          maxSize =
-            encodedEntityId.size +
-              entityData.struct.fieldsMap.keys.sumOf { 10 + it.length * 4 } +
-              100
-        ) {
-          putInt(QueryResultCodec.QUERY_RESULT_HEADER)
-          put(QueryResultCodec.VALUE_ENTITY)
-          putInt(encodedEntityId.size)
-          put(encodedEntityId)
-          putInt(entityData.struct.fieldsCount)
-          entityData.struct.fieldsMap.keys.forEach { key ->
-            val encodedKey = key.encodeToByteArray()
-            put(QueryResultCodec.VALUE_STRING_UTF8)
-            putInt(encodedKey.size)
-            putInt(key.length)
-            put(encodedKey)
-            put(QueryResultCodec.VALUE_KIND_NOT_SET)
-          }
+      val byteArray = buildByteArray {
+        putInt(QueryResultCodec.QUERY_RESULT_HEADER)
+        put(QueryResultCodec.VALUE_ENTITY)
+        putInt(encodedEntityId.size)
+        put(encodedEntityId)
+        putInt(entityData.struct.fieldsCount)
+        entityData.struct.fieldsMap.keys.forEach { key ->
+          val encodedKey = key.encodeToByteArray()
+          put(QueryResultCodec.VALUE_STRING_UTF8)
+          putInt(encodedKey.size)
+          putInt(key.length)
+          put(encodedKey)
+          put(QueryResultCodec.VALUE_KIND_NOT_SET)
         }
+      }
       val entity =
         QueryResultCodec.Entity(id = "", encodedId = encodedEntityId, data = entityData.struct)
 
@@ -463,13 +457,12 @@ class QueryResultDecoderUnitTest {
       Arb.byteArray(Arb.int(0..16384), Arb.byte()),
       Arb.positiveInt(32768),
     ) { encodedEntityId, byteCountDelta ->
-      val byteArray =
-        buildByteArray(maxSize = 17000) {
-          putInt(QueryResultCodec.QUERY_RESULT_HEADER)
-          put(QueryResultCodec.VALUE_ENTITY)
-          putInt(encodedEntityId.size + byteCountDelta)
-          put(encodedEntityId)
-        }
+      val byteArray = buildByteArray {
+        putInt(QueryResultCodec.QUERY_RESULT_HEADER)
+        put(QueryResultCodec.VALUE_ENTITY)
+        putInt(encodedEntityId.size + byteCountDelta)
+        put(encodedEntityId)
+      }
 
       val exception = shouldThrow<ByteArrayEOFException> { decode(byteArray, emptyList()) }
 
@@ -493,15 +486,6 @@ class QueryResultDecoderUnitTest {
         iterations = 1000,
         edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.33)
       )
-
-    fun buildByteArray(maxSize: Int = 1024, block: ByteBuffer.() -> Unit): ByteArray {
-      val byteBuffer = ByteBuffer.allocate(maxSize)
-      block(byteBuffer)
-      byteBuffer.flip()
-      val byteArray = ByteArray(byteBuffer.remaining())
-      byteBuffer.get(byteArray)
-      return byteArray
-    }
 
     val kindCaseBytes: Set<Byte> =
       setOf(

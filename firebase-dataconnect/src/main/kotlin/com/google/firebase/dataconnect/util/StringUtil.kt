@@ -41,68 +41,10 @@ internal object StringUtil {
    * The implementation of this function is NOT efficient, and should only be used when performance
    * is not important, such as producing error messages.
    */
-  fun ByteArray.to0xHexString(): String = "0x" + joinToString("") { String.format("%02X", it) }
-
-  /**
-   * Calculates and returns the number of bytes required to encode this string into utf8.
-   *
-   * The runtime complexity of this method is Θ(size). The auxiliary space complexity of this method
-   * is O(1).
-   *
-   * This method assumes that this string does _not_ contain lone surrogates, as would be reported
-   * by [containsLoneSurrogates]. If this string _does_, however, contain lone surrogates then the
-   * return value of this method is undefined.
-   */
-  fun String.calculateUtf8ByteCount(): Int {
-    var count = 0
-    var i = 0
-    while (i < length) {
-      val c = this[i++]
-      count +=
-        if (c.code < 0x80) {
-          1
-        } else if (c.code < 0x0800) {
-          2
-        } else if (!c.isSurrogate()) {
-          3
-        } else {
-          i++ // skip the low surrogate of a surrogate pair
-          4
-        }
+  fun ByteArray.to0xHexString(include0xPrefix: Boolean = true): String = buildString {
+    if (include0xPrefix) {
+      append("0x")
     }
-    return count
-  }
-
-  /**
-   * Returns whether this string contains lone surrogates.
-   *
-   * The runtime complexity of this method is Θ(size). The auxiliary space complexity of this method
-   * is O(1).
-   *
-   * A string is considered to contain lone surrogates if, and only if, it is non-empty and one or
-   * more of the following conditions are met:
-   * 1. The first character is a low surrogate.
-   * 2. The last character is a high surrogate.
-   * 3. A high surrogate is not immediately followed by a low surrogate.
-   * 4. A low surrogate is not immediately preceded by a high surrogate.
-   */
-  fun String.containsLoneSurrogates(): Boolean {
-    if (isEmpty()) {
-      return false
-    } else if (first().isLowSurrogate() || last().isHighSurrogate()) {
-      return true
-    }
-    var i = 0
-    while (i < length) {
-      val c = this[i++]
-      if (c.isHighSurrogate()) {
-        if (!this[i++].isLowSurrogate()) {
-          return true
-        }
-      } else if (c.isLowSurrogate()) {
-        return true
-      }
-    }
-    return false
+    this@to0xHexString.forEach { append(String.format("%02X", it)) }
   }
 }
