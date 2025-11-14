@@ -57,6 +57,7 @@ import io.kotest.property.Exhaustive
 import io.kotest.property.PropTestConfig
 import io.kotest.property.RandomSource
 import io.kotest.property.ShrinkingMode
+import io.kotest.property.arbitrary.char
 import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.distinct
@@ -67,6 +68,7 @@ import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.pair
 import io.kotest.property.arbitrary.set
 import io.kotest.property.arbitrary.string
+import io.kotest.property.arbitrary.withEdgecases
 import io.kotest.property.checkAll
 import io.kotest.property.exhaustive.collection
 import java.nio.ByteBuffer
@@ -123,16 +125,61 @@ class QueryResultEncoderUnitTest {
     }
 
   @Test
+  fun `strings are encoded with STRING_1CHAR when string is 1 char with codepoint at least 256`() =
+    runTest {
+      val charRange = 256.toChar()..Char.MAX_VALUE
+      val charEdgeCases: List<Char> =
+        listOf(
+            charRange.first,
+            charRange.last,
+            Char.MIN_VALUE,
+            Char.MAX_VALUE,
+            Char.MIN_HIGH_SURROGATE,
+            Char.MAX_HIGH_SURROGATE,
+            Char.MIN_LOW_SURROGATE,
+            Char.MAX_LOW_SURROGATE,
+          )
+          .flatMap { listOf(it, it + 1, it - 1) }
+      val charArb =
+        Arb.char(charRange).withEdgecases(charEdgeCases.distinct().filter { it in charRange })
+
+      checkAll(propTestConfig, charArb) { char ->
+        val struct = Struct.newBuilder().putFields(char.toString(), true.toValueProto()).build()
+
+        val encodedBytes = QueryResultEncoder.encode(struct).byteArray
+
+        val expectedEncodedBytes = buildByteArray {
+          putInt(QueryResultCodec.QUERY_RESULT_HEADER)
+          put(QueryResultCodec.VALUE_STRUCT)
+          putInt(1) // struct size
+          put(QueryResultCodec.VALUE_STRING_1CHAR)
+          putChar(char)
+          put(QueryResultCodec.VALUE_BOOL_TRUE)
+        }
+        assertSoftly {
+          withClue("encoded bytes") { encodedBytes shouldBe expectedEncodedBytes }
+          withClue("round trip") { struct.decodingEncodingShouldProduceIdenticalStruct() }
+        }
+      }
+    }
+
+  @Test
   fun `strings are encoded in utf8 when shorter than or equal to utf16`() = runTest {
-    val stringArb = StringWithEncodingLengthArb(Utf8EncodingShorterThanOrEqualToUtf16, 1..100)
+    // The minimum length of strings is 3, as strings shorter than 3 characters are optimized.
+    val stringArb = StringWithEncodingLengthArb(Utf8EncodingShorterThanOrEqualToUtf16, 3..100)
     checkAll(propTestConfig, stringArb) { string ->
       val struct = Struct.newBuilder().putFields(string, true.toValueProto()).build()
 
       val encodedBytes = QueryResultEncoder.encode(struct).byteArray
 
       val stringUtf8Encoded = string.encodeToByteArray()
-      encodedBytes.to0xHexString() shouldContain
-        stringUtf8Encoded.to0xHexString(include0xPrefix = false)
+      assertSoftly {
+        withClue("encoded bytes") {
+          encodedBytes.to0xHexString() shouldContain
+            stringUtf8Encoded.to0xHexString(include0xPrefix = false)
+        }
+        withClue("round trip") { struct.decodingEncodingShouldProduceIdenticalStruct() }
+      }
     }
   }
 
@@ -145,8 +192,13 @@ class QueryResultEncoderUnitTest {
       val encodedBytes = QueryResultEncoder.encode(struct).byteArray
 
       val stringUtf16Encoded = string.toByteArray(Charsets.UTF_16BE)
-      encodedBytes.to0xHexString() shouldContain
-        stringUtf16Encoded.to0xHexString(include0xPrefix = false)
+      assertSoftly {
+        withClue("encoded bytes") {
+          encodedBytes.to0xHexString() shouldContain
+            stringUtf16Encoded.to0xHexString(include0xPrefix = false)
+        }
+        withClue("round trip") { struct.decodingEncodingShouldProduceIdenticalStruct() }
+      }
     }
   }
 
@@ -159,8 +211,13 @@ class QueryResultEncoderUnitTest {
       val encodedBytes = QueryResultEncoder.encode(struct).byteArray
 
       val stringUtf16Encoded = buildByteArray { string.forEach(::putChar) }
-      encodedBytes.to0xHexString() shouldContain
-        stringUtf16Encoded.to0xHexString(include0xPrefix = false)
+      assertSoftly {
+        withClue("encoded bytes") {
+          encodedBytes.to0xHexString() shouldContain
+            stringUtf16Encoded.to0xHexString(include0xPrefix = false)
+        }
+        withClue("round trip") { struct.decodingEncodingShouldProduceIdenticalStruct() }
+      }
     }
   }
 

@@ -86,6 +86,11 @@ internal class QueryResultDecoder(
     return byteBuffer.get()
   }
 
+  private fun readChar(): Char {
+    ensureRemaining(2)
+    return byteBuffer.getChar()
+  }
+
   private fun readInt(): Int {
     ensureRemaining(4)
     return byteBuffer.getInt()
@@ -124,6 +129,7 @@ internal class QueryResultDecoder(
     when (stringType) {
       StringType.Empty -> ""
       StringType.OneByte -> readString1Byte()
+      StringType.OneChar -> readString1Char()
       StringType.Utf8 -> readStringUtf8()
       StringType.Utf16 -> readStringCustomUtf16()
     }
@@ -201,6 +207,7 @@ internal class QueryResultDecoder(
     Entity(QueryResultCodec.VALUE_ENTITY, "entity"),
     StringEmpty(QueryResultCodec.VALUE_STRING_EMPTY, "emptystring"),
     String1Byte(QueryResultCodec.VALUE_STRING_1BYTE, "1bytestring"),
+    String1Char(QueryResultCodec.VALUE_STRING_1CHAR, "1charstring"),
     StringUtf8(QueryResultCodec.VALUE_STRING_UTF8, "utf8"),
     StringUtf16(QueryResultCodec.VALUE_STRING_UTF16, "utf16");
 
@@ -228,6 +235,7 @@ internal class QueryResultDecoder(
   private enum class StringType(val valueKindCase: ValueKindCase) {
     Empty(ValueKindCase.StringEmpty),
     OneByte(ValueKindCase.String1Byte),
+    OneChar(ValueKindCase.String1Char),
     Utf8(ValueKindCase.StringUtf8),
     Utf16(ValueKindCase.StringUtf16);
 
@@ -259,7 +267,13 @@ internal class QueryResultDecoder(
     val byte = readByte()
     val codepoint = byte.toUByte().toInt()
     val charCount = Character.toChars(codepoint, charArray, 0)
-    return String(charArray, 0, charCount).intern()
+    check(charCount == 1) { "charCount=$charCount, but expected 1 (codepoint=$codepoint)" }
+    return String(charArray, 0, 1).intern()
+  }
+
+  private fun readString1Char(): String {
+    val char = readChar()
+    return char.toString()
   }
 
   private fun readStringUtf8(): String {
@@ -493,6 +507,7 @@ internal class QueryResultDecoder(
       ValueKindCase.Entity -> valueBuilder.setStructValue(readEntity())
       ValueKindCase.StringEmpty -> valueBuilder.setStringValue("")
       ValueKindCase.String1Byte -> valueBuilder.setStringValue(readString1Byte())
+      ValueKindCase.String1Char -> valueBuilder.setStringValue(readString1Char())
       ValueKindCase.StringUtf8 -> valueBuilder.setStringValue(readStringUtf8())
       ValueKindCase.StringUtf16 -> valueBuilder.setStringValue(readStringCustomUtf16())
     }

@@ -62,9 +62,15 @@ internal class QueryResultEncoder(
     if (string.isEmpty()) {
       writer.writeByte(QueryResultCodec.VALUE_STRING_EMPTY)
       return
-    } else if (string.length == 1 && string[0].code < 256) {
-      writer.writeByte(QueryResultCodec.VALUE_STRING_1BYTE)
-      writer.writeByte(string[0].code.toByte())
+    } else if (string.length == 1) {
+      val char = string[0]
+      if (char.code < 256) {
+        writer.writeByte(QueryResultCodec.VALUE_STRING_1BYTE)
+        writer.writeByte(char.code.toByte())
+      } else {
+        writer.writeByte(QueryResultCodec.VALUE_STRING_1CHAR)
+        writer.writeChar(char)
+      }
       return
     }
 
@@ -230,6 +236,11 @@ private class QueryResultChannelWriter(private val channel: WritableByteChannel)
   fun writeByte(value: Byte) {
     ensureRemaining(1)
     byteBuffer.put(value)
+  }
+
+  fun writeChar(value: Char) {
+    ensureRemaining(2)
+    byteBuffer.putChar(value)
   }
 
   fun writeDouble(value: Double) {
