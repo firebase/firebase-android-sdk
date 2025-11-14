@@ -89,7 +89,7 @@ class QueryResultEncoderUnitTest {
     val expectedEncodedBytes = buildByteArray {
       putInt(QueryResultCodec.QUERY_RESULT_HEADER)
       put(QueryResultCodec.VALUE_STRUCT)
-      putInt(1) // struct size
+      put(1) // struct size
       put(QueryResultCodec.VALUE_STRING_EMPTY)
       put(QueryResultCodec.VALUE_BOOL_TRUE)
     }
@@ -113,7 +113,7 @@ class QueryResultEncoderUnitTest {
         val expectedEncodedBytes = buildByteArray {
           putInt(QueryResultCodec.QUERY_RESULT_HEADER)
           put(QueryResultCodec.VALUE_STRUCT)
-          putInt(1) // struct size
+          put(1) // struct size
           put(QueryResultCodec.VALUE_STRING_1BYTE)
           put(codepoint.toByte())
           put(QueryResultCodec.VALUE_BOOL_TRUE)
@@ -136,7 +136,7 @@ class QueryResultEncoderUnitTest {
         val expectedEncodedBytes = buildByteArray {
           putInt(QueryResultCodec.QUERY_RESULT_HEADER)
           put(QueryResultCodec.VALUE_STRUCT)
-          putInt(1) // struct size
+          put(1) // struct size
           put(QueryResultCodec.VALUE_STRING_1CHAR)
           putChar(char)
           put(QueryResultCodec.VALUE_BOOL_TRUE)
@@ -164,7 +164,7 @@ class QueryResultEncoderUnitTest {
         val expectedEncodedBytes = buildByteArray {
           putInt(QueryResultCodec.QUERY_RESULT_HEADER)
           put(QueryResultCodec.VALUE_STRUCT)
-          putInt(1) // struct size
+          put(1) // struct size
           put(QueryResultCodec.VALUE_STRING_2BYTE)
           put(codepoint1.toByte())
           put(codepoint2.toByte())
@@ -192,7 +192,7 @@ class QueryResultEncoderUnitTest {
         val expectedEncodedBytes = buildByteArray {
           putInt(QueryResultCodec.QUERY_RESULT_HEADER)
           put(QueryResultCodec.VALUE_STRUCT)
-          putInt(1) // struct size
+          put(1) // struct size
           put(QueryResultCodec.VALUE_STRING_2CHAR)
           putChar(char1)
           putChar(char2)
@@ -291,8 +291,11 @@ class QueryResultEncoderUnitTest {
         key = longStringForEncodeTestingArb(),
         scalarValue = longStringForEncodeTestingArb().map { it.toValueProto() },
       )
-    checkAll(@OptIn(ExperimentalKotest::class) propTestConfig.copy(iterations = 10), structArb) {
-      struct ->
+    checkAll(
+      @OptIn(ExperimentalKotest::class)
+      propTestConfig.copy(iterations = 100, seed = 5085109927819487176),
+      structArb
+    ) { struct ->
       struct.struct.decodingEncodingShouldProduceIdenticalStruct()
     }
   }

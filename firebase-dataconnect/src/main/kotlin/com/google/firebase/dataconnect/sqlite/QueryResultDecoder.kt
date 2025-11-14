@@ -96,6 +96,30 @@ internal class QueryResultDecoder(
     return byteBuffer.getInt()
   }
 
+  private fun readCount(): Int {
+    ensureRemaining(1)
+    val byte1 = byteBuffer.get().toInt()
+    return if ((byte1 and 0b1000_0000) == 0) {
+      byte1
+    } else if ((byte1 and 0b0100_0000) == 0) {
+      ensureRemaining(1)
+      val byte2 = byteBuffer.get().toInt()
+      val b1 = (byte1 and 0b0011_1111) shl 8
+      val b2 = byte2 and 0b1111_1111
+      128 + (b1 or b2)
+    } else if ((byte1 and 0b0010_0000) == 0) {
+      ensureRemaining(2)
+      val byte2 = byteBuffer.get().toInt()
+      val byte3 = byteBuffer.get().toInt()
+      val b1 = (byte1 and 0b0001_1111) shl 16
+      val b2 = (byte2 and 0b1111_1111) shl 8
+      val b3 = byte3 and 0b1111_1111
+      16_512 + (b1 or b2 or b3)
+    } else {
+      readInt()
+    }
+  }
+
   private fun readDouble(): Double {
     ensureRemaining(8)
     return byteBuffer.getDouble()
@@ -150,7 +174,7 @@ internal class QueryResultDecoder(
     }
 
   private fun readStructKeyCount(): Int =
-    readInt().also {
+    readCount().also {
       if (it < 0) {
         throw NegativeStructKeyCountException(
           "read struct key count $it, but expected " +
@@ -160,7 +184,7 @@ internal class QueryResultDecoder(
     }
 
   private fun readStringByteCount(): Int =
-    readInt().also {
+    readCount().also {
       if (it < 0) {
         throw NegativeStringByteCountException(
           "read string byte count $it, but expected " +
@@ -170,7 +194,7 @@ internal class QueryResultDecoder(
     }
 
   private fun readStringCharCount(): Int =
-    readInt().also {
+    readCount().also {
       if (it < 0) {
         throw NegativeStringCharCountException(
           "read string char count $it, but expected " +
@@ -180,7 +204,7 @@ internal class QueryResultDecoder(
     }
 
   private fun readListSize(): Int =
-    readInt().also {
+    readCount().also {
       if (it < 0) {
         throw NegativeListSizeException(
           "read list size $it, but expected a number greater than or equal to zero [yfvpf9pwt8]"
@@ -189,7 +213,7 @@ internal class QueryResultDecoder(
     }
 
   private fun readEntityIdSize(): Int =
-    readInt().also {
+    readCount().also {
       if (it < 0) {
         throw NegativeEntityIdSizeException(
           "read entity id size $it, " +
