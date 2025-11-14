@@ -53,6 +53,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
+import io.kotest.property.Exhaustive
 import io.kotest.property.PropTestConfig
 import io.kotest.property.RandomSource
 import io.kotest.property.ShrinkingMode
@@ -67,6 +68,7 @@ import io.kotest.property.arbitrary.pair
 import io.kotest.property.arbitrary.set
 import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
+import io.kotest.property.exhaustive.collection
 import java.nio.ByteBuffer
 import java.security.MessageDigest
 import kotlin.random.nextInt
@@ -88,8 +90,37 @@ class QueryResultEncoderUnitTest {
       put(QueryResultCodec.VALUE_STRING_EMPTY)
       put(QueryResultCodec.VALUE_BOOL_TRUE)
     }
-    encodedBytes shouldBe expectedEncodedBytes
+
+    assertSoftly {
+      withClue("encoded bytes") { encodedBytes shouldBe expectedEncodedBytes }
+      withClue("round trip") { struct.decodingEncodingShouldProduceIdenticalStruct() }
+    }
   }
+
+  @Test
+  fun `strings are encoded with STRING_1BYTE when string is 1 char with codepoint less than 256`() =
+    runTest {
+      val codepointArb = Exhaustive.collection((0..255).toList())
+      checkAll(propTestConfig, codepointArb) { codepoint ->
+        val string = StringBuilder().appendCodePoint(codepoint).toString()
+        val struct = Struct.newBuilder().putFields(string, true.toValueProto()).build()
+
+        val encodedBytes = QueryResultEncoder.encode(struct).byteArray
+
+        val expectedEncodedBytes = buildByteArray {
+          putInt(QueryResultCodec.QUERY_RESULT_HEADER)
+          put(QueryResultCodec.VALUE_STRUCT)
+          putInt(1) // struct size
+          put(QueryResultCodec.VALUE_STRING_1BYTE)
+          put(codepoint.toByte())
+          put(QueryResultCodec.VALUE_BOOL_TRUE)
+        }
+        assertSoftly {
+          withClue("encoded bytes") { encodedBytes shouldBe expectedEncodedBytes }
+          withClue("round trip") { struct.decodingEncodingShouldProduceIdenticalStruct() }
+        }
+      }
+    }
 
   @Test
   fun `strings are encoded in utf8 when shorter than or equal to utf16`() = runTest {

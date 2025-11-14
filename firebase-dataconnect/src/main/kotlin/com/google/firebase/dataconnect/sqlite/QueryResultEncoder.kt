@@ -62,6 +62,10 @@ internal class QueryResultEncoder(
     if (string.isEmpty()) {
       writer.writeByte(QueryResultCodec.VALUE_STRING_EMPTY)
       return
+    } else if (string.length == 1 && string[0].code < 256) {
+      writer.writeByte(QueryResultCodec.VALUE_STRING_1BYTE)
+      writer.writeByte(string[0].code.toByte())
+      return
     }
 
     val utf8ByteCount: Int? = Utf8.encodedLength(string)

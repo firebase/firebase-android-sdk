@@ -52,6 +52,8 @@ internal class QueryResultDecoder(
       flip()
     }
 
+  private val charArray = CharArray(2)
+
   fun decode(): Struct {
     readHeader()
     return when (readStructType()) {
@@ -121,6 +123,7 @@ internal class QueryResultDecoder(
   private fun readString(stringType: StringType): String =
     when (stringType) {
       StringType.Empty -> ""
+      StringType.OneByte -> readString1Byte()
       StringType.Utf8 -> readStringUtf8()
       StringType.Utf16 -> readStringCustomUtf16()
     }
@@ -192,13 +195,14 @@ internal class QueryResultDecoder(
     Number(QueryResultCodec.VALUE_NUMBER, "number"),
     BoolTrue(QueryResultCodec.VALUE_BOOL_TRUE, "true"),
     BoolFalse(QueryResultCodec.VALUE_BOOL_FALSE, "false"),
-    StringEmpty(QueryResultCodec.VALUE_STRING_EMPTY, "emptystring"),
-    StringUtf8(QueryResultCodec.VALUE_STRING_UTF8, "utf8"),
-    StringUtf16(QueryResultCodec.VALUE_STRING_UTF16, "utf16"),
     KindNotSet(QueryResultCodec.VALUE_KIND_NOT_SET, "kindnotset"),
     List(QueryResultCodec.VALUE_LIST, "list"),
     Struct(QueryResultCodec.VALUE_STRUCT, "struct"),
-    Entity(QueryResultCodec.VALUE_ENTITY, "entity");
+    Entity(QueryResultCodec.VALUE_ENTITY, "entity"),
+    StringEmpty(QueryResultCodec.VALUE_STRING_EMPTY, "emptystring"),
+    String1Byte(QueryResultCodec.VALUE_STRING_1BYTE, "1bytestring"),
+    StringUtf8(QueryResultCodec.VALUE_STRING_UTF8, "utf8"),
+    StringUtf16(QueryResultCodec.VALUE_STRING_UTF16, "utf16");
 
     companion object {
       fun fromSerializedByte(serializedByte: Byte): ValueKindCase? =
@@ -223,6 +227,7 @@ internal class QueryResultDecoder(
 
   private enum class StringType(val valueKindCase: ValueKindCase) {
     Empty(ValueKindCase.StringEmpty),
+    OneByte(ValueKindCase.String1Byte),
     Utf8(ValueKindCase.StringUtf8),
     Utf16(ValueKindCase.StringUtf16);
 
@@ -249,6 +254,13 @@ internal class QueryResultDecoder(
       }
       stringType
     }
+
+  private fun readString1Byte(): String {
+    val byte = readByte()
+    val codepoint = byte.toUByte().toInt()
+    val charCount = Character.toChars(codepoint, charArray, 0)
+    return String(charArray, 0, charCount).intern()
+  }
 
   private fun readStringUtf8(): String {
     val byteCount = readStringByteCount()
@@ -475,15 +487,14 @@ internal class QueryResultDecoder(
       ValueKindCase.Number -> valueBuilder.setNumberValue(readDouble())
       ValueKindCase.BoolTrue -> valueBuilder.setBoolValue(true)
       ValueKindCase.BoolFalse -> valueBuilder.setBoolValue(false)
-      ValueKindCase.StringEmpty -> valueBuilder.setStringValue("")
-      ValueKindCase.StringUtf8 -> valueBuilder.setStringValue(readStringUtf8())
-      ValueKindCase.StringUtf16 -> valueBuilder.setStringValue(readStringCustomUtf16())
       ValueKindCase.List -> valueBuilder.setListValue(readList())
       ValueKindCase.Struct -> valueBuilder.setStructValue(readStruct())
+      ValueKindCase.KindNotSet -> {}
       ValueKindCase.Entity -> valueBuilder.setStructValue(readEntity())
-      ValueKindCase.KindNotSet -> {
-        // do nothing, leaving the kind as KIND_NOT_SET
-      }
+      ValueKindCase.StringEmpty -> valueBuilder.setStringValue("")
+      ValueKindCase.String1Byte -> valueBuilder.setStringValue(readString1Byte())
+      ValueKindCase.StringUtf8 -> valueBuilder.setStringValue(readStringUtf8())
+      ValueKindCase.StringUtf16 -> valueBuilder.setStringValue(readStringCustomUtf16())
     }
     return valueBuilder.build()
   }

@@ -46,11 +46,14 @@ internal object QueryResultCodec {
   const val VALUE_NUMBER: Byte = 2
   const val VALUE_BOOL_TRUE: Byte = 3
   const val VALUE_BOOL_FALSE: Byte = 4
-  const val VALUE_STRING_EMPTY: Byte = 5
-  const val VALUE_STRING_UTF8: Byte = 6
-  const val VALUE_STRING_UTF16: Byte = 7
-  const val VALUE_STRUCT: Byte = 8
-  const val VALUE_LIST: Byte = 9
-  const val VALUE_KIND_NOT_SET: Byte = 10
-  const val VALUE_ENTITY: Byte = 11
+  const val VALUE_STRUCT: Byte = 5
+  const val VALUE_LIST: Byte = 6
+  const val VALUE_KIND_NOT_SET: Byte = 7
+  const val VALUE_ENTITY: Byte = 8
+  const val VALUE_STRING_EMPTY: Byte = 9
+  const val VALUE_STRING_1BYTE: Byte = 10
+  const val VALUE_STRING_1CHAR: Byte = 11
+  const val VALUE_STRING_2CHARS: Byte = 12
+  const val VALUE_STRING_UTF8: Byte = 13
+  const val VALUE_STRING_UTF16: Byte = 14
 }
