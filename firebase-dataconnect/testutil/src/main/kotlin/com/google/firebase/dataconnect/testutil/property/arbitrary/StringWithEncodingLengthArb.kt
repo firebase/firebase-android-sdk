@@ -49,9 +49,9 @@ class StringWithEncodingLengthArb(private val mode: Mode, lengthRange: IntRange)
     val modifiedLast = lengthRange.last
     val modifiedLengthRange = modifiedFirst..modifiedLast
 
-    modifiedLengthRange.run modifiedRun@{
-      Arb.int(min = first, max = last)
-        .withEdgecases(listOf(first, first + 1, last, last - 1).filter { it in this@modifiedRun })
+    modifiedLengthRange.let { range ->
+      val edgeCases = listOf(range.first, range.first + 1, range.last, range.last - 1)
+      Arb.int(range).withEdgecases(edgeCases.distinct().filter { it in range })
     }
   }
 
