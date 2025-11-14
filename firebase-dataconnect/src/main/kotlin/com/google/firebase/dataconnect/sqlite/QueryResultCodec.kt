@@ -41,7 +41,7 @@ internal object QueryResultCodec {
       "Entity{id=$id, encodedId=${encodedId.contentToString()}, data=${data.toCompactString()}}"
   }
 
-  const val QUERY_RESULT_HEADER: Int = 0x2e4286dc
+  const val QUERY_RESULT_HEADER: Int = 0x46444353 // "FDCS" in ASCII encoding
   const val VALUE_NULL: Byte = 1
   const val VALUE_NUMBER: Byte = 2
   const val VALUE_BOOL_TRUE: Byte = 3
