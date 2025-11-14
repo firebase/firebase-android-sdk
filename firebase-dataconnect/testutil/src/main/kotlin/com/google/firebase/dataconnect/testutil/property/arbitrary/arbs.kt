@@ -22,6 +22,7 @@ import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.DataConnectSettings
 import io.kotest.property.Arb
+import io.kotest.property.RandomSource
 import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.alphanumeric
 import io.kotest.property.arbitrary.arabic
@@ -163,3 +164,14 @@ val Arb.Companion.dataConnect: DataConnectArb
   get() = DataConnectArb
 
 inline fun <reified T : Any> Arb.Companion.mock(): Arb<T> = arbitrary { mockk<T>(relaxed = true) }
+
+fun <T> Arb<T>.next(rs: RandomSource, edgeCaseProbability: Float): T {
+  require(edgeCaseProbability in 0.0f..1.0f) {
+    "invalid edgeCaseProbability: $edgeCaseProbability (must be between 0.0 and 1.0, inclusive)"
+  }
+  return if (rs.random.nextFloat() < edgeCaseProbability) {
+    edgecase(rs)!!
+  } else {
+    sample(rs).value
+  }
+}
