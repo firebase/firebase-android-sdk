@@ -182,6 +182,41 @@ abstract class GMavenService : BuildService<BuildServiceParameters.None> {
   }
 
   /**
+   * Gets the latest stable version of the artifact that has been uploaded to GMaven, if any.
+   *
+   * Stable versions do not include alpha or beta versions.
+   *
+   * ```
+   * gmaven.latestStableVersionOrNull("com.google.firebase", "firebase-components") // "18.0.1"
+   * ```
+   *
+   * @param groupId The group to search under.
+   * @param artifactId The artifact to search for.
+   * @return The latest released version as a string, or null if the artifact couldn't be found.
+   * @see latestVersion
+   */
+  fun latestStableVersionOrNull(groupId: String, artifactId: String) =
+    controller.latestStableVersionOrNull(groupId, artifactId)
+
+  /**
+   * Gets the latest stable version of the artifact that has been uploaded to GMaven, if any.
+   *
+   * Stable versions do not include alpha or beta versions.
+   *
+   * ```
+   * gmaven.latestStableVersionOrNull("com.google.firebase:firebase-components") // "18.0.1"
+   * ```
+   *
+   * @param fullArtifactName The artifact to search for, represented as "groupId:artifactId".
+   * @return The latest released version as a string, or null if the artifact couldn't be found.
+   * @see latestVersion
+   */
+  fun latestStableVersionOrNull(fullArtifactName: String): String? {
+    val (groupId, artifactId) = fullArtifactName.split(":")
+    return latestStableVersionOrNull(groupId, artifactId)
+  }
+
+  /**
    * Gets the latest version of the artifact that has been uploaded to GMaven, if any.
    *
    * ```
@@ -439,6 +474,11 @@ class GMavenServiceController(
     return findFirebaseArtifact(groupId, artifactId)?.latestNonAlphaVersion
   }
 
+  /** @see GMavenService.latestStableVersionOrNull */
+  fun latestStableVersionOrNull(groupId: String, artifactId: String): String? {
+    return findFirebaseArtifact(groupId, artifactId)?.latestStableVersion
+  }
+
   /** @see GMavenService.hasReleasedArtifact */
   fun hasReleasedArtifact(groupId: String, artifactId: String): Boolean {
     return findFirebaseArtifact(groupId, artifactId) !== null
@@ -592,6 +632,7 @@ data class GroupIndexArtifact(
   val versions: List<String>,
   val latestVersion: String = versions.last(),
   val latestNonAlphaVersion: String? = versions.findLast { !it.contains("alpha") },
+  val latestStableVersion: String? = versions.findLast { !it.contains("alpha") && !it.contains("beta") },
 ) {
 
   /**

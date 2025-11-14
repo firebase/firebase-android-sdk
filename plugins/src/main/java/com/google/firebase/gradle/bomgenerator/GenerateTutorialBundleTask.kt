@@ -195,7 +195,7 @@ abstract class GenerateTutorialBundleTask : DefaultTask() {
     } else {
       logger.info("Fetching the latest version for an artifact: $fullArtifactName")
 
-      return gmaven.get().latestNonAlphaVersionOrNull(fullArtifactName)
+      return gmaven.get().latestStableVersionOrNull(fullArtifactName)
         ?: throw RuntimeException(
           "An artifact required for the tutorial bundle is missing from gmaven: $fullArtifactName"
         )
@@ -206,10 +206,6 @@ abstract class GenerateTutorialBundleTask : DefaultTask() {
     val (name, alias, extra) = mappings[fullArtifactName]!!
 
     val version = versionString(fullArtifactName)
-    if (version.lowercase().contains("-alpha")) {
-      logger.info("Ignoring alpha version of $fullArtifactName")
-      return "" // Alpha versions should not be included in the tutorial bundle
-    }
 
     return multiLine("<!-- $name -->", "<!ENTITY $alias \"$fullArtifactName:${version}\">", extra)
   }
