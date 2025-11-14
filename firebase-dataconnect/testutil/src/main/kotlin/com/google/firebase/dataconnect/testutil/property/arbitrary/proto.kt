@@ -250,10 +250,11 @@ private class StructArb(
       val arb = if (depth > 1) nonZeroSizeArb else sizeArb
       arb.next(rs, sizeEdgeCaseProbability)
     }
+    val forcedDepthIndex = if (size == 0 || depth <= 1) -1 else rs.random.nextInt(size)
 
-    fun RandomSource.nextNestedValue(): Value =
+    fun RandomSource.nextNestedValue(depth: Int): Value =
       rs.nextNestedValue(
-        depth = rs.random.nextInt(1 until depth),
+        depth = depth,
         sizeEdgeCaseProbability = sizeEdgeCaseProbability,
         keyEdgeCaseProbability = keyEdgeCaseProbability,
         valueEdgeCaseProbability = valueEdgeCaseProbability,
@@ -261,26 +262,22 @@ private class StructArb(
       )
 
     val structBuilder = Struct.newBuilder()
-    var hasNestedValue = false
     while (structBuilder.fieldsCount < size) {
+      val index = structBuilder.fieldsCount
       val key = keyArb.next(rs, keyEdgeCaseProbability)
       if (structBuilder.containsFields(key)) {
         continue
       }
+
       val value =
-        if (depth > 1 && rs.random.nextFloat() < nestedProbability) {
-          hasNestedValue = true
-          rs.nextNestedValue()
+        if (depth > 1 && index == forcedDepthIndex) {
+          rs.nextNestedValue(depth - 1)
+        } else if (depth > 1 && rs.random.nextFloat() < nestedProbability) {
+          rs.nextNestedValue(rs.random.nextInt(1 until depth))
         } else {
           scalarValueArb.next(rs, valueEdgeCaseProbability)
         }
       structBuilder.putFields(key, value)
-    }
-
-    if (depth > 1 && !hasNestedValue) {
-      val keyToReplace = structBuilder.fieldsMap.keys.randomOrNull(rs.random)
-      val key = keyToReplace ?: keyArb.next(rs, keyEdgeCaseProbability)
-      structBuilder.putFields(key, rs.nextNestedValue())
     }
 
     return Proto.StructInfo(structBuilder.build(), depth)
@@ -433,33 +430,28 @@ private class ListValueArb(
       val arb = if (depth > 1) nonZeroLengthArb else lengthArb
       arb.next(rs, lengthEdgeCaseProbability)
     }
+    val forcedDepthIndex = if (length == 0 || depth <= 1) -1 else rs.random.nextInt(length)
 
     val values = mutableListOf<Value>()
 
-    fun RandomSource.nextNestedValue(): Value =
+    fun RandomSource.nextNestedValue(depth: Int): Value =
       nextNestedValue(
-        depth = rs.random.nextInt(1 until depth),
+        depth = depth,
         lengthEdgeCaseProbability = lengthEdgeCaseProbability,
         valueEdgeCaseProbability = valueEdgeCaseProbability,
         nestedProbability = nestedProbability,
       )
 
-    var hasNestedValue = false
-    repeat(length) {
+    repeat(length) { index ->
       val value =
-        if (depth > 1 && rs.random.nextFloat() < nestedProbability) {
-          hasNestedValue = true
-          rs.nextNestedValue()
+        if (depth > 1 && index == forcedDepthIndex) {
+          rs.nextNestedValue(depth - 1)
+        } else if (depth > 1 && rs.random.nextFloat() < nestedProbability) {
+          rs.nextNestedValue(rs.random.nextInt(1 until depth))
         } else {
           scalarValueArb.next(rs, valueEdgeCaseProbability)
         }
       values.add(value)
-    }
-
-    if (depth > 1 && !hasNestedValue) {
-      values.removeFirstOrNull()
-      values.add(rs.nextNestedValue())
-      values.shuffle(rs.random)
     }
 
     val listValue = ListValue.newBuilder().addAllValues(values).build()
