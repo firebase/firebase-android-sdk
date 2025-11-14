@@ -129,7 +129,9 @@ internal class QueryResultDecoder(
     when (stringType) {
       StringType.Empty -> ""
       StringType.OneByte -> readString1Byte()
+      StringType.TwoByte -> readString2Byte()
       StringType.OneChar -> readString1Char()
+      StringType.TwoChar -> readString2Char()
       StringType.Utf8 -> readStringUtf8()
       StringType.Utf16 -> readStringCustomUtf16()
     }
@@ -207,7 +209,9 @@ internal class QueryResultDecoder(
     Entity(QueryResultCodec.VALUE_ENTITY, "entity"),
     StringEmpty(QueryResultCodec.VALUE_STRING_EMPTY, "emptystring"),
     String1Byte(QueryResultCodec.VALUE_STRING_1BYTE, "1bytestring"),
+    String2Byte(QueryResultCodec.VALUE_STRING_2BYTE, "2bytestring"),
     String1Char(QueryResultCodec.VALUE_STRING_1CHAR, "1charstring"),
+    String2Char(QueryResultCodec.VALUE_STRING_2CHAR, "2charstring"),
     StringUtf8(QueryResultCodec.VALUE_STRING_UTF8, "utf8"),
     StringUtf16(QueryResultCodec.VALUE_STRING_UTF16, "utf16");
 
@@ -235,7 +239,9 @@ internal class QueryResultDecoder(
   private enum class StringType(val valueKindCase: ValueKindCase) {
     Empty(ValueKindCase.StringEmpty),
     OneByte(ValueKindCase.String1Byte),
+    TwoByte(ValueKindCase.String2Byte),
     OneChar(ValueKindCase.String1Char),
+    TwoChar(ValueKindCase.String2Char),
     Utf8(ValueKindCase.StringUtf8),
     Utf16(ValueKindCase.StringUtf16);
 
@@ -263,17 +269,38 @@ internal class QueryResultDecoder(
       stringType
     }
 
-  private fun readString1Byte(): String {
-    val byte = readByte()
-    val codepoint = byte.toUByte().toInt()
+  private fun Byte.decodeChar(): Char {
+    val codepoint = toUByte().toInt()
     val charCount = Character.toChars(codepoint, charArray, 0)
     check(charCount == 1) { "charCount=$charCount, but expected 1 (codepoint=$codepoint)" }
-    return String(charArray, 0, 1).intern()
+    return charArray[0]
+  }
+
+  private fun readString1Byte(): String {
+    val byte = readByte()
+    val char = byte.decodeChar()
+    return char.toString()
+  }
+
+  private fun readString2Byte(): String {
+    val byte1 = readByte()
+    val byte2 = readByte()
+    val char1 = byte1.decodeChar()
+    val char2 = byte2.decodeChar()
+    charArray[0] = char1
+    charArray[1] = char2
+    return String(charArray, 0, 2)
   }
 
   private fun readString1Char(): String {
     val char = readChar()
     return char.toString()
+  }
+
+  private fun readString2Char(): String {
+    charArray[0] = readChar()
+    charArray[1] = readChar()
+    return String(charArray, 0, 2)
   }
 
   private fun readStringUtf8(): String {
@@ -507,7 +534,9 @@ internal class QueryResultDecoder(
       ValueKindCase.Entity -> valueBuilder.setStructValue(readEntity())
       ValueKindCase.StringEmpty -> valueBuilder.setStringValue("")
       ValueKindCase.String1Byte -> valueBuilder.setStringValue(readString1Byte())
+      ValueKindCase.String2Byte -> valueBuilder.setStringValue(readString2Byte())
       ValueKindCase.String1Char -> valueBuilder.setStringValue(readString1Char())
+      ValueKindCase.String2Char -> valueBuilder.setStringValue(readString2Char())
       ValueKindCase.StringUtf8 -> valueBuilder.setStringValue(readStringUtf8())
       ValueKindCase.StringUtf16 -> valueBuilder.setStringValue(readStringCustomUtf16())
     }

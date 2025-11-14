@@ -72,6 +72,19 @@ internal class QueryResultEncoder(
         writer.writeChar(char)
       }
       return
+    } else if (string.length == 2) {
+      val char1 = string[0]
+      val char2 = string[1]
+      if (char1.code < 256 && char2.code < 256) {
+        writer.writeByte(QueryResultCodec.VALUE_STRING_2BYTE)
+        writer.writeByte(char1.code.toByte())
+        writer.writeByte(char2.code.toByte())
+      } else {
+        writer.writeByte(QueryResultCodec.VALUE_STRING_2CHAR)
+        writer.writeChar(char1)
+        writer.writeChar(char2)
+      }
+      return
     }
 
     val utf8ByteCount: Int? = Utf8.encodedLength(string)

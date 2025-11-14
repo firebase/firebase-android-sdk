@@ -32,6 +32,7 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.stringValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.stringWithLoneSurrogates
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
+import com.google.firebase.dataconnect.testutil.property.arbitrary.twoValues
 import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
@@ -93,9 +94,9 @@ class QueryResultEncoderUnitTest {
       put(QueryResultCodec.VALUE_BOOL_TRUE)
     }
 
-    assertSoftly {
-      withClue("encoded bytes") { encodedBytes shouldBe expectedEncodedBytes }
-      withClue("round trip") { struct.decodingEncodingShouldProduceIdenticalStruct() }
+    withClue("encoded bytes") { encodedBytes shouldBe expectedEncodedBytes }
+    withClue("decoded struct") {
+      QueryResultDecoder.decode(encodedBytes, emptyList()) shouldBe struct
     }
   }
 
@@ -117,9 +118,9 @@ class QueryResultEncoderUnitTest {
           put(codepoint.toByte())
           put(QueryResultCodec.VALUE_BOOL_TRUE)
         }
-        assertSoftly {
-          withClue("encoded bytes") { encodedBytes shouldBe expectedEncodedBytes }
-          withClue("round trip") { struct.decodingEncodingShouldProduceIdenticalStruct() }
+        withClue("encoded bytes") { encodedBytes shouldBe expectedEncodedBytes }
+        withClue("decoded struct") {
+          QueryResultDecoder.decode(encodedBytes, emptyList()) shouldBe struct
         }
       }
     }
@@ -127,23 +128,7 @@ class QueryResultEncoderUnitTest {
   @Test
   fun `strings are encoded with STRING_1CHAR when string is 1 char with codepoint at least 256`() =
     runTest {
-      val charRange = 256.toChar()..Char.MAX_VALUE
-      val charEdgeCases: List<Char> =
-        listOf(
-            charRange.first,
-            charRange.last,
-            Char.MIN_VALUE,
-            Char.MAX_VALUE,
-            Char.MIN_HIGH_SURROGATE,
-            Char.MAX_HIGH_SURROGATE,
-            Char.MIN_LOW_SURROGATE,
-            Char.MAX_LOW_SURROGATE,
-          )
-          .flatMap { listOf(it, it + 1, it - 1) }
-      val charArb =
-        Arb.char(charRange).withEdgecases(charEdgeCases.distinct().filter { it in charRange })
-
-      checkAll(propTestConfig, charArb) { char ->
+      checkAll(propTestConfig, charArbWithCodeGreaterThan255()) { char ->
         val struct = Struct.newBuilder().putFields(char.toString(), true.toValueProto()).build()
 
         val encodedBytes = QueryResultEncoder.encode(struct).byteArray
@@ -156,9 +141,66 @@ class QueryResultEncoderUnitTest {
           putChar(char)
           put(QueryResultCodec.VALUE_BOOL_TRUE)
         }
-        assertSoftly {
-          withClue("encoded bytes") { encodedBytes shouldBe expectedEncodedBytes }
-          withClue("round trip") { struct.decodingEncodingShouldProduceIdenticalStruct() }
+        withClue("encoded bytes") { encodedBytes shouldBe expectedEncodedBytes }
+        withClue("decoded struct") {
+          QueryResultDecoder.decode(encodedBytes, emptyList()) shouldBe struct
+        }
+      }
+    }
+
+  @Test
+  fun `strings are encoded with STRING_2BYTE when string is 2 chars with codepoints less than 256`() =
+    runTest {
+      val codepointArb = Exhaustive.collection((0..255).toList()).toArb()
+      checkAll(propTestConfig, Arb.twoValues(codepointArb)) { (codepoint1, codepoint2) ->
+        val string = buildString {
+          appendCodePoint(codepoint1)
+          appendCodePoint(codepoint2)
+        }
+        val struct = Struct.newBuilder().putFields(string, true.toValueProto()).build()
+
+        val encodedBytes = QueryResultEncoder.encode(struct).byteArray
+
+        val expectedEncodedBytes = buildByteArray {
+          putInt(QueryResultCodec.QUERY_RESULT_HEADER)
+          put(QueryResultCodec.VALUE_STRUCT)
+          putInt(1) // struct size
+          put(QueryResultCodec.VALUE_STRING_2BYTE)
+          put(codepoint1.toByte())
+          put(codepoint2.toByte())
+          put(QueryResultCodec.VALUE_BOOL_TRUE)
+        }
+        withClue("encoded bytes") { encodedBytes shouldBe expectedEncodedBytes }
+        withClue("decoded struct") {
+          QueryResultDecoder.decode(encodedBytes, emptyList()) shouldBe struct
+        }
+      }
+    }
+
+  @Test
+  fun `strings are encoded with STRING_2CHAR when string is 2 chars with codepoints at least 256`() =
+    runTest {
+      checkAll(propTestConfig, Arb.twoValues(charArbWithCodeGreaterThan255())) { (char1, char2) ->
+        val string = buildString {
+          append(char1)
+          append(char2)
+        }
+        val struct = Struct.newBuilder().putFields(string, true.toValueProto()).build()
+
+        val encodedBytes = QueryResultEncoder.encode(struct).byteArray
+
+        val expectedEncodedBytes = buildByteArray {
+          putInt(QueryResultCodec.QUERY_RESULT_HEADER)
+          put(QueryResultCodec.VALUE_STRUCT)
+          putInt(1) // struct size
+          put(QueryResultCodec.VALUE_STRING_2CHAR)
+          putChar(char1)
+          putChar(char2)
+          put(QueryResultCodec.VALUE_BOOL_TRUE)
+        }
+        withClue("encoded bytes") { encodedBytes shouldBe expectedEncodedBytes }
+        withClue("decoded struct") {
+          QueryResultDecoder.decode(encodedBytes, emptyList()) shouldBe struct
         }
       }
     }
@@ -729,6 +771,23 @@ class QueryResultEncoderUnitTest {
         structSize = structSize,
         structDepth = structDepth..structDepth,
       )
+
+    fun charArbWithCodeGreaterThan255(): Arb<Char> {
+      val charRange = 256.toChar()..Char.MAX_VALUE
+      val charEdgeCases: List<Char> =
+        listOf(
+            charRange.first,
+            charRange.last,
+            Char.MIN_VALUE,
+            Char.MAX_VALUE,
+            Char.MIN_HIGH_SURROGATE,
+            Char.MAX_HIGH_SURROGATE,
+            Char.MIN_LOW_SURROGATE,
+            Char.MAX_LOW_SURROGATE,
+          )
+          .flatMap { listOf(it, it + 1, it - 1) }
+      return Arb.char(charRange).withEdgecases(charEdgeCases.distinct().filter { it in charRange })
+    }
 
     fun Struct.decodingEncodingShouldProduceIdenticalStruct(
       entities: List<Struct> = emptyList(),

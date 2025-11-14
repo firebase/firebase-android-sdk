@@ -52,8 +52,9 @@ internal object QueryResultCodec {
   const val VALUE_ENTITY: Byte = 8
   const val VALUE_STRING_EMPTY: Byte = 9
   const val VALUE_STRING_1BYTE: Byte = 10
-  const val VALUE_STRING_1CHAR: Byte = 11
-  const val VALUE_STRING_2CHARS: Byte = 12
-  const val VALUE_STRING_UTF8: Byte = 13
-  const val VALUE_STRING_UTF16: Byte = 14
+  const val VALUE_STRING_2BYTE: Byte = 11
+  const val VALUE_STRING_1CHAR: Byte = 12
+  const val VALUE_STRING_2CHAR: Byte = 13
+  const val VALUE_STRING_UTF8: Byte = 14
+  const val VALUE_STRING_UTF16: Byte = 15
 }
