@@ -158,19 +158,8 @@ public class Chat(
           val content =
             content("model") {
               setParts(
-                parts
-                  .filterNot { part -> part is TextPart && part.text.isNotEmpty() }
-                  .toMutableList()
+                parts.filterNot { part -> part is TextPart && !part.hasContent() }.toMutableList()
               )
-              //              for (bitmap in bitmaps) {
-              //                image(bitmap)
-              //              }
-              //              for (inlineDataPart in inlineDataParts) {
-              //                inlineData(inlineDataPart.inlineData, inlineDataPart.mimeType)
-              //              }
-              //              if (text.isNotBlank()) {
-              //                text(text.toString())
-              //              }
             }
 
           history.add(prompt)
@@ -231,4 +220,13 @@ public class Chat(
       )
     }
   }
+}
+
+/**
+ * Returns true if the [TextPart] contains any content, either in its [TextPart.text] property or
+ * its [TextPart.thoughtSignature] property.
+ */
+private fun TextPart.hasContent(): Boolean {
+  if (text.isNotEmpty()) return true
+  return !thoughtSignature.isNullOrBlank()
 }
