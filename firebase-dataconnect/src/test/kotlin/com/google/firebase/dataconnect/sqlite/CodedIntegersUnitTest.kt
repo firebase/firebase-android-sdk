@@ -28,7 +28,9 @@ import io.kotest.property.ShrinkingMode
 import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.int
+import io.kotest.property.arbitrary.long
 import io.kotest.property.arbitrary.negativeInt
+import io.kotest.property.arbitrary.negativeLong
 import io.kotest.property.arbitrary.withEdgecases
 import io.kotest.property.checkAll
 import java.nio.ByteBuffer
@@ -45,13 +47,56 @@ class CodedIntegersUnitTest {
   }
 
   @Test
-  fun `putUInt32 round trips with getUInt32`() = runTest {
+  fun `putUInt32() round trips with getUInt32()`() = runTest {
     val byteBuffer = ByteBuffer.allocate(CodedIntegers.MAX_VARINT32_SIZE)
-    checkAll(propTestConfig.copy(seed = -909944200961535779), uint32Arb()) { value ->
+    checkAll(propTestConfig, uint32Arb()) { value ->
       byteBuffer.clear()
       CodedIntegers.putUInt32(value, byteBuffer)
       byteBuffer.flip()
       CodedIntegers.getUInt32(byteBuffer) shouldBe value
+    }
+  }
+
+  @Test
+  fun `putUInt32() puts the number of bytes calculated by computeUInt32Size()`() = runTest {
+    val byteBuffer = ByteBuffer.allocate(CodedIntegers.MAX_VARINT32_SIZE)
+    checkAll(propTestConfig, uint32Arb()) { value ->
+      byteBuffer.clear()
+      CodedIntegers.putUInt32(value, byteBuffer)
+      byteBuffer.position() shouldBe CodedIntegers.computeUInt32Size(value)
+    }
+  }
+
+  @Test
+  fun `computeUInt64Size() returns the correct value`() = runTest {
+    checkAll(propTestConfig, uint64Arb()) { value ->
+      val byteBuffer = ByteBuffer.allocate(CodedIntegers.MAX_VARINT64_SIZE)
+      assertSoftly {
+        byteBuffer.clear()
+        CodedIntegers.putUInt64(value, byteBuffer)
+        CodedIntegers.computeUInt64Size(value) shouldBe value.calculateUInt64Size()
+      }
+    }
+  }
+
+  @Test
+  fun `putUInt64() round trips with getUInt64()`() = runTest {
+    val byteBuffer = ByteBuffer.allocate(CodedIntegers.MAX_VARINT64_SIZE)
+    checkAll(propTestConfig, uint64Arb()) { value ->
+      byteBuffer.clear()
+      CodedIntegers.putUInt64(value, byteBuffer)
+      byteBuffer.flip()
+      CodedIntegers.getUInt64(byteBuffer) shouldBe value
+    }
+  }
+
+  @Test
+  fun `putUInt64() puts the number of bytes calculated by computeUInt64Size()`() = runTest {
+    val byteBuffer = ByteBuffer.allocate(CodedIntegers.MAX_VARINT64_SIZE)
+    checkAll(propTestConfig, uint64Arb()) { value ->
+      byteBuffer.clear()
+      CodedIntegers.putUInt64(value, byteBuffer)
+      byteBuffer.position() shouldBe CodedIntegers.computeUInt64Size(value)
     }
   }
 
@@ -76,9 +121,6 @@ class CodedIntegersUnitTest {
         counts[index]++
       }
     }
-
-    println("negativeCount=$negativeCount")
-    println("counts=${counts.contentToString()}")
 
     assertSoftly {
       withClue("negativeCount") { negativeCount shouldBeGreaterThan 0 }
@@ -108,6 +150,52 @@ class CodedIntegersUnitTest {
     }
   }
 
+  @Test
+  fun `uint64Arb() should produce correct samples`() = runTest {
+    val counts = IntArray(uint64MaxValueByByteCount.size)
+    var negativeCount = 0
+    val uint64Arb = uint64Arb()
+
+    checkAll(propTestConfig, Arb.constant(null)) {
+      val sample = uint64Arb.sample(randomSource()).value
+      if (sample < 0) {
+        negativeCount++
+      } else if (sample == 0L) {
+        counts[0]++
+      } else {
+        val index = uint64MaxValueByByteCount.indexOfLast { sample > it }
+        counts[index]++
+      }
+    }
+
+    assertSoftly {
+      withClue("negativeCount") { negativeCount shouldBeGreaterThan 0 }
+      counts.forEachIndexed { index, count ->
+        withClue("counts[$index]") { count shouldBeGreaterThan 0 }
+      }
+    }
+  }
+
+  @Test
+  fun `uint64Arb() should produce correct edge cases`() = runTest {
+    val counts = IntArray(uint64EdgeCases.size)
+    val uint64Arb = uint64Arb()
+
+    checkAll(propTestConfig, Arb.constant(null)) {
+      val sample = uint64Arb.edgecase(randomSource())
+      val index = uint64EdgeCases.indexOf(sample)
+      counts[index]++
+    }
+
+    assertSoftly {
+      counts.forEachIndexed { index, count ->
+        withClue("counts[$index],uint64EdgeCases[$index]=${uint64EdgeCases[index]}") {
+          count shouldBeGreaterThan 0
+        }
+      }
+    }
+  }
+
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // companion object
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -122,7 +210,7 @@ class CodedIntegersUnitTest {
         shrinkingMode = ShrinkingMode.Off,
       )
 
-    val uint32MaxValueByByteCount = listOf(0, 127, 16_383, 2_097_151, 268_435_455)
+    val uint32MaxValueByByteCount: List<Int> = listOf(0, 127, 16_383, 2_097_151, 268_435_455)
 
     val uint32EdgeCases: List<Int> =
       uint32MaxValueByByteCount
@@ -166,6 +254,67 @@ class CodedIntegersUnitTest {
         }
       }
       return 5
+    }
+
+    val uint64MaxValueByByteCount: List<Long> =
+      listOf(
+        0,
+        127,
+        16_383,
+        2_097_151,
+        268_435_455,
+        34_359_738_367,
+        4_398_046_511_103,
+        562_949_953_421_311,
+        72_057_594_037_927_935,
+      )
+
+    val uint64EdgeCases: List<Long> =
+      uint64MaxValueByByteCount
+        .flatMap { listOf(it, -it) }
+        .flatMap { listOf(it, it + 1, it + 2, it - 1) }
+        .toMutableList()
+        .apply {
+          add(1)
+          add(-1)
+          add(2)
+          add(-2)
+        }
+        .distinct()
+
+    fun uint64Arb(): Arb<Long> {
+      val positiveRanges =
+        uint64MaxValueByByteCount.windowed(2, partialWindows = true).map { window ->
+          when (window.size) {
+            1 -> (window[0] + 1)..Long.MAX_VALUE
+            2 -> (window[0] + 1)..window[1]
+            else ->
+              throw IllegalStateException("window.size=${window.size} window=$window [f4t2gk6tbb]")
+          }
+        }
+
+      val arbs =
+        positiveRanges
+          .map { Arb.long(it) }
+          .toMutableList()
+          .apply { add(Arb.negativeLong()) }
+          .toList()
+
+      return Arb.choice(arbs).withEdgecases(uint64EdgeCases)
+    }
+
+    fun Long.calculateUInt64Size(): Int {
+      if (this < 0) {
+        return 10
+      } else if (this == 0L) {
+        return 1
+      }
+      uint64MaxValueByByteCount.forEachIndexed { index, cutoff ->
+        if (this <= cutoff) {
+          return index
+        }
+      }
+      return 9
     }
   }
 }
