@@ -100,6 +100,62 @@ class CodedIntegersUnitTest {
     }
   }
 
+  @Test
+  fun `computeSInt32Size() returns the correct value`() = runTest {
+    checkAll(propTestConfig, sint32Arb()) { value ->
+      CodedIntegers.computeSInt32Size(value) shouldBe value.calculateSInt32Size()
+    }
+  }
+
+  @Test
+  fun `putSInt32() round trips with getSInt32()`() = runTest {
+    val byteBuffer = ByteBuffer.allocate(CodedIntegers.MAX_VARINT32_SIZE)
+    checkAll(propTestConfig, sint32Arb()) { value ->
+      byteBuffer.clear()
+      CodedIntegers.putSInt32(value, byteBuffer)
+      byteBuffer.flip()
+      CodedIntegers.getSInt32(byteBuffer) shouldBe value
+    }
+  }
+
+  @Test
+  fun `putSInt32() puts the number of bytes calculated by computeSInt32Size()`() = runTest {
+    val byteBuffer = ByteBuffer.allocate(CodedIntegers.MAX_VARINT32_SIZE)
+    checkAll(propTestConfig, sint32Arb()) { value ->
+      byteBuffer.clear()
+      CodedIntegers.putSInt32(value, byteBuffer)
+      byteBuffer.position() shouldBe CodedIntegers.computeSInt32Size(value)
+    }
+  }
+
+  @Test
+  fun `computeSInt64Size() returns the correct value`() = runTest {
+    checkAll(propTestConfig, sint64Arb()) { value ->
+      CodedIntegers.computeSInt64Size(value) shouldBe value.calculateSInt64Size()
+    }
+  }
+
+  @Test
+  fun `putSInt64() round trips with getSInt64()`() = runTest {
+    val byteBuffer = ByteBuffer.allocate(CodedIntegers.MAX_VARINT64_SIZE)
+    checkAll(propTestConfig, sint64Arb()) { value ->
+      byteBuffer.clear()
+      CodedIntegers.putSInt64(value, byteBuffer)
+      byteBuffer.flip()
+      CodedIntegers.getSInt64(byteBuffer) shouldBe value
+    }
+  }
+
+  @Test
+  fun `putSInt64() puts the number of bytes calculated by computeSInt64Size()`() = runTest {
+    val byteBuffer = ByteBuffer.allocate(CodedIntegers.MAX_VARINT64_SIZE)
+    checkAll(propTestConfig, sint64Arb()) { value ->
+      byteBuffer.clear()
+      CodedIntegers.putSInt64(value, byteBuffer)
+      byteBuffer.position() shouldBe CodedIntegers.computeSInt64Size(value)
+    }
+  }
+
   //////////////////////////////////////////////////////////////////////////////////////////////////
   // Unit tests for test helper methods
   //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -190,6 +246,82 @@ class CodedIntegersUnitTest {
     assertSoftly {
       counts.forEachIndexed { index, count ->
         withClue("counts[$index],uint64EdgeCases[$index]=${uint64EdgeCases[index]}") {
+          count shouldBeGreaterThan 0
+        }
+      }
+    }
+  }
+
+  @Test
+  fun `sint32Arb() should produce correct samples`() = runTest {
+    val counts = IntArray(sint32RangeByByteCount.size)
+    val sint32Arb = sint32Arb()
+
+    checkAll(propTestConfig, Arb.constant(null)) {
+      val sample = sint32Arb.sample(randomSource()).value
+      val index = sint32RangeByByteCount.indexOfFirst { sample in it }
+      counts[index]++
+    }
+
+    assertSoftly {
+      counts.forEachIndexed { index, count ->
+        withClue("counts[$index]") { count shouldBeGreaterThan 0 }
+      }
+    }
+  }
+
+  @Test
+  fun `sint32Arb() should produce correct edge cases`() = runTest {
+    val counts = IntArray(sint32EdgeCases.size)
+    val sint32Arb = sint32Arb()
+
+    checkAll(propTestConfig, Arb.constant(null)) {
+      val sample = sint32Arb.edgecase(randomSource())
+      val index = sint32EdgeCases.indexOf(sample)
+      counts[index]++
+    }
+
+    assertSoftly {
+      counts.forEachIndexed { index, count ->
+        withClue("counts[$index],sint32EdgeCases[$index]=${sint32EdgeCases[index]}") {
+          count shouldBeGreaterThan 0
+        }
+      }
+    }
+  }
+
+  @Test
+  fun `sint64Arb() should produce correct samples`() = runTest {
+    val counts = IntArray(sint64RangeByByteCount.size)
+    val sint64Arb = sint64Arb()
+
+    checkAll(propTestConfig, Arb.constant(null)) {
+      val sample = sint64Arb.sample(randomSource()).value
+      val index = sint64RangeByByteCount.indexOfFirst { sample in it }
+      counts[index]++
+    }
+
+    assertSoftly {
+      counts.forEachIndexed { index, count ->
+        withClue("counts[$index]") { count shouldBeGreaterThan 0 }
+      }
+    }
+  }
+
+  @Test
+  fun `sint64Arb() should produce correct edge cases`() = runTest {
+    val counts = IntArray(sint64EdgeCases.size)
+    val sint64Arb = sint64Arb()
+
+    checkAll(propTestConfig, Arb.constant(null)) {
+      val sample = sint64Arb.edgecase(randomSource())
+      val index = sint64EdgeCases.indexOf(sample)
+      counts[index]++
+    }
+
+    assertSoftly {
+      counts.forEachIndexed { index, count ->
+        withClue("counts[$index],sint64EdgeCases[$index]=${sint64EdgeCases[index]}") {
           count shouldBeGreaterThan 0
         }
       }
@@ -315,6 +447,125 @@ class CodedIntegersUnitTest {
         }
       }
       return 9
+    }
+
+    val sint32RangeByByteCount: List<IntRange> =
+      listOf(
+        -64..63,
+        -8192..8191,
+        -1_048_576..1_048_575,
+        -134_217_728..134_217_727,
+        Int.MIN_VALUE..Int.MAX_VALUE,
+      )
+
+    val sint32EdgeCases: List<Int> =
+      sint32RangeByByteCount
+        .flatMap { listOf(it.first, it.last) }
+        .flatMap { listOf(it, it + 1, it + 2, it - 1, it - 2) }
+        .toMutableList()
+        .apply {
+          add(0)
+          add(1)
+          add(-1)
+          add(2)
+          add(-2)
+        }
+        .distinct()
+
+    fun sint32Arb(): Arb<Int> {
+      val ranges =
+        sint32RangeByByteCount
+          .reversed()
+          .windowed(2, partialWindows = true)
+          .map { window ->
+            val range1: IntRange = window[0]
+            when (window.size) {
+              1 -> listOf(range1, range1)
+              2 -> {
+                val range2: IntRange = window[1]
+                listOf(range1.first until range2.first, (range2.last + 1)..range1.last)
+              }
+              else ->
+                throw IllegalStateException(
+                  "window.size=${window.size} window=$window [w2gj722j6v]"
+                )
+            }
+          }
+          .flatten()
+
+      val arbs = ranges.map { Arb.int(it) }
+      return Arb.choice(arbs).withEdgecases(sint32EdgeCases)
+    }
+
+    fun Int.calculateSInt32Size(): Int {
+      sint32RangeByByteCount.forEachIndexed { index, range ->
+        if (this in range) {
+          return index + 1
+        }
+      }
+      throw IllegalStateException("should never get here yxwcs2ndgh: $this")
+    }
+
+    val sint64RangeByByteCount: List<LongRange> =
+      listOf(
+        -64L..63L,
+        -8192L..8191L,
+        -1_048_576L..1_048_575L,
+        -134_217_728L..134_217_727L,
+        -17_179_869_184..17_179_869_183,
+        -2_199_023_255_552..2_199_023_255_551,
+        -281_474_976_710_656..281_474_976_710_655,
+        -36_028_797_018_963_968..36_028_797_018_963_967,
+        -4_611_686_018_427_387_904..4_611_686_018_427_387_903,
+        Long.MIN_VALUE..Long.MAX_VALUE,
+      )
+
+    val sint64EdgeCases: List<Long> =
+      sint64RangeByByteCount
+        .flatMap { listOf(it.first, it.last) }
+        .flatMap { listOf(it, it + 1, it + 2, it - 1, it - 2) }
+        .toMutableList()
+        .apply {
+          add(0)
+          add(1)
+          add(-1)
+          add(2)
+          add(-2)
+        }
+        .distinct()
+
+    fun sint64Arb(): Arb<Long> {
+      val ranges =
+        sint64RangeByByteCount
+          .reversed()
+          .windowed(2, partialWindows = true)
+          .map { window ->
+            val range1: LongRange = window[0]
+            when (window.size) {
+              1 -> listOf(range1, range1)
+              2 -> {
+                val range2: LongRange = window[1]
+                listOf(range1.first until range2.first, (range2.last + 1)..range1.last)
+              }
+              else ->
+                throw IllegalStateException(
+                  "window.size=${window.size} window=$window [w2gj722j6v]"
+                )
+            }
+          }
+          .flatten()
+
+      val arbs = ranges.map { Arb.long(it) }
+      return Arb.choice(arbs).withEdgecases(sint64EdgeCases)
+    }
+
+    fun Long.calculateSInt64Size(): Int {
+      sint64RangeByByteCount.forEachIndexed { index, range ->
+        if (this in range) {
+          return index + 1
+        }
+      }
+      throw IllegalStateException("should never get here p5zq8wjntk: $this")
     }
   }
 }
