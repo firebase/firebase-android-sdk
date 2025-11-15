@@ -7,7 +7,8 @@
 
 // This entire file was adapted from
 // https://github.com/protocolbuffers/protobuf/blob/1bf47797fbe591392269c50cd83e153938450462/java/core/src/main/java/com/google/protobuf/CodedOutputStream.java
-// with some unnecessary stuff removed.
+// and
+// https://github.com/protocolbuffers/protobuf/blob/1bf47797fbe591392269c50cd83e153938450462/java/core/src/main/java/com/google/protobuf/CodedInputStream.java
 
 package com.google.firebase.dataconnect.sqlite;
 
@@ -16,6 +17,9 @@ import java.nio.ByteBuffer;
 final class CodedIntegers {
 
   private CodedIntegers() {}
+
+  public static final int MAX_VARINT32_SIZE = 5;
+  public static final int MAX_VARINT64_SIZE = 10;
 
   /**
    * Computes and returns the number of bytes that would be needed by {@link #putUInt32},
@@ -68,19 +72,20 @@ final class CodedIntegers {
   public static void putUInt32(int value, ByteBuffer byteBuffer) {
     byte[] buffer = byteBuffer.array();
     int offset = byteBuffer.arrayOffset();
-    int position = byteBuffer.position();
+    int pos = byteBuffer.position() + offset;
     while (true) {
-      position++;
-
       if ((value & ~0x7F) == 0) {
-        buffer[offset + position] = (byte) value;
-        byteBuffer.position(position);
+        buffer[pos++] = (byte) value;
         break;
       }
-
-      buffer[offset + position] = (byte) (value | 0x80);
+      buffer[pos++] = (byte) (value | 0x80);
       value >>>= 7;
     }
+    byteBuffer.position(pos - offset);
+  }
+
+  public static int getUInt32(ByteBuffer byteBuffer) {
+    return getRawVarint32(byteBuffer);
   }
 
   /**
@@ -96,6 +101,10 @@ final class CodedIntegers {
     putUInt32(encodeZigZag32(value), byteBuffer);
   }
 
+  public static int getSInt32(ByteBuffer byteBuffer) {
+    return decodeZigZag32(getRawVarint32(byteBuffer));
+  }
+
   /**
    * Computes and returns the number of bytes that would be needed by {@link #putUInt64},
    * which is between 1 and 10. Smaller values consume fewer bytes.
@@ -109,19 +118,20 @@ final class CodedIntegers {
   public static void putUInt64(long value, ByteBuffer byteBuffer) {
     byte[] buffer = byteBuffer.array();
     int offset = byteBuffer.arrayOffset();
-    int position = byteBuffer.position();
+    int pos = byteBuffer.position() + offset;
     while (true) {
-      position++;
-
       if ((value & ~0x7FL) == 0) {
-        buffer[offset + position] = (byte) value;
-        byteBuffer.position(position);
+        buffer[pos++] = (byte) value;
         break;
       }
-
-      buffer[offset + position] = (byte) ((int) value | 0x80);
+      buffer[pos++] = (byte) ((int) value | 0x80);
       value >>>= 7;
     }
+    byteBuffer.position(pos);
+  }
+
+  public static long getUInt64(ByteBuffer byteBuffer) {
+    return getRawVarint64(byteBuffer);
   }
 
   /**
@@ -129,12 +139,16 @@ final class CodedIntegers {
    * which is between 1 and 10. Smaller absolute values consume fewer bytes. For example, numbers
    * between -128 and 127 consume only 1 byte, but {@link Long#MAX_VALUE} consumes 10 bytes.
    */
-  public static int computeSInt64Size(final long value) {
+  public static int computeSInt64Size(long value) {
     return computeUInt64Size(encodeZigZag64(value));
   }
 
-  public static void putSInt64(final long value, ByteBuffer byteBuffer) {
+  public static void putSInt64(long value, ByteBuffer byteBuffer) {
     putUInt64(encodeZigZag64(value), byteBuffer);
+  }
+
+  public static long getSInt64(ByteBuffer byteBuffer) {
+    return decodeZigZag64(getUInt64(byteBuffer));
   }
 
   /**
@@ -152,6 +166,19 @@ final class CodedIntegers {
   }
 
   /**
+   * Decode a ZigZag-encoded 32-bit value. ZigZag encodes signed integers into values that can be
+   * efficiently encoded with varint. (Otherwise, negative values must be sign-extended to 64 bits
+   * to be varint encoded, thus always taking 10 bytes on the wire.)
+   *
+   * @param n An unsigned 32-bit integer, stored in a signed int because Java has no explicit
+   *     unsigned support.
+   * @return A signed 32-bit integer.
+   */
+  public static int decodeZigZag32(final int n) {
+    return (n >>> 1) ^ -(n & 1);
+  }
+
+  /**
    * Encode a ZigZag-encoded 64-bit value. ZigZag encodes signed integers into values that can be
    * efficiently encoded with varint. (Otherwise, negative values must be sign-extended to 64 bits
    * to be varint encoded, thus always taking 10 bytes on the wire.)
@@ -160,8 +187,165 @@ final class CodedIntegers {
    * @return An unsigned 64-bit integer, stored in a signed int because Java has no explicit
    *     unsigned support.
    */
-  public static long encodeZigZag64(final long n) {
+  public static long encodeZigZag64(long n) {
     // Note:  the right-shift must be arithmetic
     return (n << 1) ^ (n >> 63);
   }
+
+  /**
+   * Decode a ZigZag-encoded 64-bit value. ZigZag encodes signed integers into values that can be
+   * efficiently encoded with varint. (Otherwise, negative values must be sign-extended to 64 bits
+   * to be varint encoded, thus always taking 10 bytes on the wire.)
+   *
+   * @param n An unsigned 64-bit integer, stored in a signed int because Java has no explicit
+   *     unsigned support.
+   * @return A signed 64-bit integer.
+   */
+  public static long decodeZigZag64(long n) {
+    return (n >>> 1) ^ -(n & 1);
+  }
+
+  private static int getRawVarint32(ByteBuffer byteBuffer) {
+    final byte[] buffer = byteBuffer.array();
+    final int offset = byteBuffer.arrayOffset();
+    final int pos = offset + byteBuffer.position();
+    final int limit = offset + byteBuffer.limit();
+
+    // See implementation notes for readRawVarint64
+    fastpath:
+    {
+      int tempPos = pos;
+
+      if (limit == tempPos) {
+        break fastpath;
+      }
+
+      int x;
+      if ((x = buffer[tempPos++]) >= 0) {
+        byteBuffer.position(tempPos - offset);
+        return x;
+      } else if (limit - tempPos < 9) {
+        break fastpath;
+      } else if ((x ^= (buffer[tempPos++] << 7)) < 0) {
+        x ^= (~0 << 7);
+      } else if ((x ^= (buffer[tempPos++] << 14)) >= 0) {
+        x ^= (~0 << 7) ^ (~0 << 14);
+      } else if ((x ^= (buffer[tempPos++] << 21)) < 0) {
+        x ^= (~0 << 7) ^ (~0 << 14) ^ (~0 << 21);
+      } else {
+        int y = buffer[tempPos++];
+        x ^= y << 28;
+        x ^= (~0 << 7) ^ (~0 << 14) ^ (~0 << 21) ^ (~0 << 28);
+        if (y < 0
+            && buffer[tempPos++] < 0
+            && buffer[tempPos++] < 0
+            && buffer[tempPos++] < 0
+            && buffer[tempPos++] < 0
+            && buffer[tempPos++] < 0) {
+          break fastpath; // Will throw malformedVarint()
+        }
+      }
+      byteBuffer.position(tempPos - offset);
+      return x;
+    }
+    return (int) getRawVarint64SlowPath(byteBuffer);
+  }
+
+  private static long getRawVarint64(ByteBuffer byteBuffer) {
+    // Implementation notes:
+    //
+    // Optimized for one-byte values, expected to be common.
+    // The particular code below was selected from various candidates
+    // empirically, by winning VarintBenchmark.
+    //
+    // Sign extension of (signed) Java bytes is usually a nuisance, but
+    // we exploit it here to more easily obtain the sign of bytes read.
+    // Instead of cleaning up the sign extension bits by masking eagerly,
+    // we delay until we find the final (positive) byte, when we clear all
+    // accumulated bits with one xor.  We depend on javac to constant fold.
+
+    final byte[] buffer = byteBuffer.array();
+    final int offset = byteBuffer.arrayOffset();
+    final int pos = offset + byteBuffer.position();
+    final int limit = offset + byteBuffer.limit();
+
+    fastpath:
+    {
+      int tempPos = pos;
+
+      if (limit == tempPos) {
+        break fastpath;
+      }
+
+      long x;
+      int y;
+      if ((y = buffer[tempPos++]) >= 0) {
+        byteBuffer.position(tempPos - offset);
+        return y;
+      } else if (limit - tempPos < 9) {
+        break fastpath;
+      } else if ((y ^= (buffer[tempPos++] << 7)) < 0) {
+        x = y ^ (~0 << 7);
+      } else if ((y ^= (buffer[tempPos++] << 14)) >= 0) {
+        x = y ^ ((~0 << 7) ^ (~0 << 14));
+      } else if ((y ^= (buffer[tempPos++] << 21)) < 0) {
+        x = y ^ ((~0 << 7) ^ (~0 << 14) ^ (~0 << 21));
+      } else if ((x = y ^ ((long) buffer[tempPos++] << 28)) >= 0L) {
+        x ^= (~0L << 7) ^ (~0L << 14) ^ (~0L << 21) ^ (~0L << 28);
+      } else if ((x ^= ((long) buffer[tempPos++] << 35)) < 0L) {
+        x ^= (~0L << 7) ^ (~0L << 14) ^ (~0L << 21) ^ (~0L << 28) ^ (~0L << 35);
+      } else if ((x ^= ((long) buffer[tempPos++] << 42)) >= 0L) {
+        x ^= (~0L << 7) ^ (~0L << 14) ^ (~0L << 21) ^ (~0L << 28) ^ (~0L << 35) ^ (~0L << 42);
+      } else if ((x ^= ((long) buffer[tempPos++] << 49)) < 0L) {
+        x ^=
+            (~0L << 7)
+                ^ (~0L << 14)
+                ^ (~0L << 21)
+                ^ (~0L << 28)
+                ^ (~0L << 35)
+                ^ (~0L << 42)
+                ^ (~0L << 49);
+      } else if ((x ^= ((long) buffer[tempPos++] << 56)) >= 0L) {
+        x ^=
+            (~0L << 7)
+                ^ (~0L << 14)
+                ^ (~0L << 21)
+                ^ (~0L << 28)
+                ^ (~0L << 35)
+                ^ (~0L << 42)
+                ^ (~0L << 49)
+                ^ (~0L << 56);
+      } else if ((x ^= ((long) buffer[tempPos++] << 63)) >= 0L) {
+        x ^=
+            (~0L << 7)
+                ^ (~0L << 14)
+                ^ (~0L << 21)
+                ^ (~0L << 28)
+                ^ (~0L << 35)
+                ^ (~0L << 42)
+                ^ (~0L << 49)
+                ^ (~0L << 56)
+                ^ (~0L << 63);
+      } else {
+        break fastpath; // Will throw malformedVarint()
+      }
+      byteBuffer.position(tempPos - offset);
+      return x;
+    }
+    return getRawVarint64SlowPath(byteBuffer);
+  }
+
+  private static long getRawVarint64SlowPath(ByteBuffer byteBuffer) {
+    long result = 0;
+    for (int shift = 0; shift < 64; shift += 7) {
+      final byte b = byteBuffer.get();
+      result |= (long) (b & 0x7F) << shift;
+      if ((b & 0x80) == 0) {
+        return result;
+      }
+    }
+    throw new MalformedVarintException();
+  }
+
+  public static final class MalformedVarintException extends RuntimeException {}
 }
