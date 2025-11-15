@@ -16,6 +16,7 @@
 
 package com.google.firebase.dataconnect.sqlite
 
+import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.getUInt32
 import com.google.firebase.dataconnect.sqlite.QueryResultCodec.Entity
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
@@ -96,27 +97,20 @@ internal class QueryResultDecoder(
     return byteBuffer.getInt()
   }
 
-  private fun readCount(): Int {
+  private fun readUInt32(): Int {
     ensureRemaining(1)
-    val byte1 = byteBuffer.get().toInt()
-    return if ((byte1 and 0b1000_0000) == 0) {
-      byte1
-    } else if ((byte1 and 0b0100_0000) == 0) {
-      ensureRemaining(1)
-      val byte2 = byteBuffer.get().toInt()
-      val b1 = (byte1 and 0b0011_1111) shl 8
-      val b2 = byte2 and 0b1111_1111
-      128 + (b1 or b2)
-    } else if ((byte1 and 0b0010_0000) == 0) {
-      ensureRemaining(2)
-      val byte2 = byteBuffer.get().toInt()
-      val byte3 = byteBuffer.get().toInt()
-      val b1 = (byte1 and 0b0001_1111) shl 16
-      val b2 = (byte2 and 0b1111_1111) shl 8
-      val b3 = byte3 and 0b1111_1111
-      16_512 + (b1 or b2 or b3)
-    } else {
-      readInt()
+    while (true) {
+      try {
+        return byteBuffer.getUInt32()
+      } catch (_: CodedIntegers.MalformedVarintException) {
+        if (!readSome()) {
+          throw UInt32EOFException(
+            "end of input reached prematurely reading uint32: " +
+              "got ${byteBuffer.remaining()} bytes," +
+              "but need between 1 and ${CodedIntegers.MAX_VARINT32_SIZE} bytes [f9bkxazr3r]"
+          )
+        }
+      }
     }
   }
 
@@ -174,7 +168,7 @@ internal class QueryResultDecoder(
     }
 
   private fun readStructKeyCount(): Int =
-    readCount().also {
+    readUInt32().also {
       if (it < 0) {
         throw NegativeStructKeyCountException(
           "read struct key count $it, but expected " +
@@ -184,7 +178,7 @@ internal class QueryResultDecoder(
     }
 
   private fun readStringByteCount(): Int =
-    readCount().also {
+    readUInt32().also {
       if (it < 0) {
         throw NegativeStringByteCountException(
           "read string byte count $it, but expected " +
@@ -194,7 +188,7 @@ internal class QueryResultDecoder(
     }
 
   private fun readStringCharCount(): Int =
-    readCount().also {
+    readUInt32().also {
       if (it < 0) {
         throw NegativeStringCharCountException(
           "read string char count $it, but expected " +
@@ -204,7 +198,7 @@ internal class QueryResultDecoder(
     }
 
   private fun readListSize(): Int =
-    readCount().also {
+    readUInt32().also {
       if (it < 0) {
         throw NegativeListSizeException(
           "read list size $it, but expected a number greater than or equal to zero [yfvpf9pwt8]"
@@ -213,7 +207,7 @@ internal class QueryResultDecoder(
     }
 
   private fun readEntityIdSize(): Int =
-    readCount().also {
+    readUInt32().also {
       if (it < 0) {
         throw NegativeEntityIdSizeException(
           "read entity id size $it, " +
@@ -588,6 +582,8 @@ internal class QueryResultDecoder(
   class UnknownEntitySubStructTypeException(message: String) : DecodeException(message)
 
   class ByteArrayEOFException(message: String) : DecodeException(message)
+
+  class UInt32EOFException(message: String) : DecodeException(message)
 
   class Utf8EOFException(message: String) : DecodeException(message)
 

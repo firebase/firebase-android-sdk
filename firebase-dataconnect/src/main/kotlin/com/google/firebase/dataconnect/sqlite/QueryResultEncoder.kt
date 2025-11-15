@@ -16,6 +16,7 @@
 
 package com.google.firebase.dataconnect.sqlite
 
+import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.putUInt32
 import com.google.firebase.dataconnect.sqlite.QueryResultCodec.Entity
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.protobuf.ListValue
@@ -101,7 +102,7 @@ internal class QueryResultEncoder(
 
   private fun writeList(listValue: ListValue) {
     writer.writeByte(QueryResultCodec.VALUE_LIST)
-    writer.writeCount(listValue.valuesCount)
+    writer.writeUInt32(listValue.valuesCount)
     repeat(listValue.valuesCount) { writeValue(listValue.getValues(it)) }
   }
 
@@ -127,7 +128,7 @@ internal class QueryResultEncoder(
 
     val map = struct.fieldsMap
     writer.writeByte(QueryResultCodec.VALUE_STRUCT)
-    writer.writeCount(map.size)
+    writer.writeUInt32(map.size)
     map.entries.forEach { (key, value) ->
       writeString(key)
       writeValue(value)
@@ -155,14 +156,14 @@ internal class QueryResultEncoder(
 
   private fun writeEntity(entityId: String, entity: Struct) {
     val encodedEntityId = sha512DigestCalculator.calculate(entityId)
-    writer.writeCount(encodedEntityId.size)
+    writer.writeUInt32(encodedEntityId.size)
     writer.write(ByteBuffer.wrap(encodedEntityId))
     val struct = writeEntitySubStruct(entity)
     entities.add(Entity(entityId, encodedEntityId, struct))
   }
 
   private fun writeEntitySubStruct(struct: Struct): Struct {
-    writer.writeCount(struct.fieldsCount)
+    writer.writeUInt32(struct.fieldsCount)
     val structBuilder = Struct.newBuilder()
     struct.fieldsMap.entries.forEach { (key, value) ->
       writeString(key)
@@ -175,7 +176,7 @@ internal class QueryResultEncoder(
   }
 
   private fun writeEntitySubList(listValue: ListValue): ListValue {
-    writer.writeCount(listValue.valuesCount)
+    writer.writeUInt32(listValue.valuesCount)
     val listValueBuilder = ListValue.newBuilder()
     listValue.valuesList.forEach { value ->
       val entityValue = writeEntityValue(value)
@@ -241,31 +242,13 @@ private class QueryResultChannelWriter(private val channel: WritableByteChannel)
     byteBuffer.clear()
   }
 
-  fun writeCount(value: Int) {
+  fun writeUInt32(value: Int) {
     require(value >= 0) {
       "value=$value, but it must be greater than or equal to zero [fqn5fex58z]"
     }
-    when (value) {
-      in 0..127 -> writeByte(value.toByte())
-      in 128..16_511 -> {
-        val b1 = value - 128
-        val b2 = ((b1 ushr 8) or 0b1000_0000)
-        require((b2 and 0b1100_0000) == 0b1000_0000)
-        writeBytes(b2.toByte(), b1.toByte())
-      }
-      in 16_512..2_113_663 -> {
-        val b1 = value - 16_512
-        val b2 = (b1 ushr 8) and 0b1111_1111
-        val b3 = (b1 ushr 16) or 0b1100_0000
-        require((b3 and 0b1110_0000) == 0b1100_0000)
-        writeBytes(b3.toByte(), b2.toByte(), b1.toByte())
-      }
-      else -> {
-        ensureRemaining(5)
-        byteBuffer.put(0b1111_1111.toByte())
-        byteBuffer.putInt(value)
-      }
-    }
+    val size = CodedIntegers.computeUInt32Size(value)
+    ensureRemaining(size)
+    byteBuffer.putUInt32(value)
   }
 
   fun writeInt(value: Int) {
@@ -322,8 +305,8 @@ private class QueryResultChannelWriter(private val channel: WritableByteChannel)
     utf8CharsetEncoder.reset()
     val charBuffer = CharBuffer.wrap(string)
 
-    writeCount(expectedByteCount)
-    writeCount(string.length)
+    writeUInt32(expectedByteCount)
+    writeUInt32(string.length)
 
     var byteWriteCount = 0
     while (true) {
@@ -365,7 +348,7 @@ private class QueryResultChannelWriter(private val channel: WritableByteChannel)
   }
 
   fun writeStringCustomUtf16(string: String, expectedByteCount: Int) {
-    writeCount(string.length)
+    writeUInt32(string.length)
 
     var byteWriteCount = 0
     var stringOffset = 0

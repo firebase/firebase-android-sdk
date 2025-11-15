@@ -22,54 +22,43 @@ import java.nio.ByteOrder
 import java.nio.channels.Channels
 import java.nio.channels.WritableByteChannel
 
-interface BuildByteArrayDSL {
-  fun putChar(value: Char)
-  fun putInt(value: Int)
-  fun put(value: Byte)
-  fun put(value: ByteArray)
-  fun put(value: ByteBuffer)
-}
-
 fun buildByteArray(byteOrder: ByteOrder? = null, block: BuildByteArrayDSL.() -> Unit): ByteArray =
   ByteArrayOutputStream().use { byteArrayOutputStream ->
     Channels.newChannel(byteArrayOutputStream).use { channel ->
-      block(BuildByteArrayDSLImpl(byteOrder, channel))
+      block(BuildByteArrayDSL(byteOrder, channel))
     }
     byteArrayOutputStream.toByteArray()
   }
 
-private class BuildByteArrayDSLImpl(
-  byteOrder: ByteOrder?,
-  private val channel: WritableByteChannel
-) : BuildByteArrayDSL {
-  private val byteBuffer =
+class BuildByteArrayDSL(byteOrder: ByteOrder?, val channel: WritableByteChannel) {
+  val byteBuffer: ByteBuffer =
     ByteBuffer.allocate(8).also {
       if (byteOrder !== null) {
         it.order(byteOrder)
       }
     }
 
-  override fun putChar(value: Char) {
-    write { putChar(value) }
+  fun putChar(value: Char) {
+    write { it.putChar(value) }
   }
 
-  override fun putInt(value: Int) {
-    write { putInt(value) }
+  fun putInt(value: Int) {
+    write { it.putInt(value) }
   }
 
-  override fun put(value: Byte) {
-    write { put(value) }
+  fun put(value: Byte) {
+    write { it.put(value) }
   }
 
-  override fun put(value: ByteArray) {
+  fun put(value: ByteArray) {
     put(ByteBuffer.wrap(value))
   }
 
-  override fun put(value: ByteBuffer) {
+  fun put(value: ByteBuffer) {
     write { channel.write(value) }
   }
 
-  private inline fun write(block: ByteBuffer.() -> Unit) {
+  inline fun write(block: (ByteBuffer) -> Unit) {
     byteBuffer.clear()
     block(byteBuffer)
     byteBuffer.flip()
