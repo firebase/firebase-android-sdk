@@ -32,6 +32,7 @@ import java.nio.CharBuffer
 import java.nio.channels.Channels
 import java.nio.channels.ReadableByteChannel
 import java.nio.charset.CodingErrorAction
+import kotlin.math.absoluteValue
 
 /**
  * This class is NOT thread safe. The behavior of an instance of this class when used concurrently
@@ -325,6 +326,11 @@ internal class QueryResultDecoder(
     val byteCount = readStringByteCount()
     val charCount = readStringCharCount()
 
+    val fastStringRead = readUtf8Fast(byteCount = byteCount, charCount = charCount)
+    if (fastStringRead !== null) {
+      return fastStringRead
+    }
+
     charsetDecoder.reset()
     val charBuffer = CharBuffer.allocate(charCount)
 
@@ -364,7 +370,7 @@ internal class QueryResultDecoder(
       flushResult.throwException()
     }
     if (charBuffer.hasRemaining()) {
-      throw Utf8TooFewCharactersException(
+      throw Utf8IncorrectNumCharactersException(
         "expected to read $charCount characters ($byteCount bytes) of a UTF-8 encoded string, " +
           "but only got ${charBuffer.position()} characters, " +
           "${charBuffer.remaining()} fewer characters than expected [dhvzxrcrqe]"
@@ -373,6 +379,33 @@ internal class QueryResultDecoder(
 
     charBuffer.clear()
     return charBuffer.toString()
+  }
+
+  private fun readUtf8Fast(byteCount: Int, charCount: Int): String? {
+    if (byteCount > byteBuffer.capacity()) {
+      return null
+    }
+
+    if (byteBuffer.remaining() < byteCount) {
+      readSome()
+      if (byteBuffer.remaining() < byteCount) {
+        return null
+      }
+    }
+
+    val byteBufferPosition = byteBuffer.position()
+    val decodedString = Utf8.decodeUtf8(byteBuffer, byteBufferPosition, byteCount)
+    byteBuffer.position(byteBufferPosition + byteCount)
+
+    if (decodedString.length != charCount) {
+      throw Utf8IncorrectNumCharactersException(
+        "expected to read $charCount characters ($byteCount bytes) of a UTF-8 encoded string, " +
+          "but got ${decodedString.length} characters, a difference of " +
+          "${(decodedString.length-charCount).absoluteValue} characters [chq89pn4j6]"
+      )
+    }
+
+    return decodedString
   }
 
   private fun readStringCustomUtf16(): String {
@@ -587,7 +620,7 @@ internal class QueryResultDecoder(
 
   class Utf8EOFException(message: String) : DecodeException(message)
 
-  class Utf8TooFewCharactersException(message: String) : DecodeException(message)
+  class Utf8IncorrectNumCharactersException(message: String) : DecodeException(message)
 
   class Utf16EOFException(message: String) : DecodeException(message)
 

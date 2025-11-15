@@ -30,7 +30,7 @@ import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.UnknownStringTy
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.UnknownStructTypeException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.Utf16EOFException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.Utf8EOFException
-import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.Utf8TooFewCharactersException
+import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.Utf8IncorrectNumCharactersException
 import com.google.firebase.dataconnect.testutil.buildByteArray
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
@@ -358,7 +358,7 @@ class QueryResultDecoderUnitTest {
     }
 
   @Test
-  fun `decode() should throw Utf8EOFException with 'insufficient chars' message for utf8`() =
+  fun `decode() should throw Utf8IncorrectNumCharactersException with 'insufficient chars' message for utf8`() =
     runTest {
       checkAll(propTestConfig, Arb.positiveInt(), Arb.string(0..20), Arb.positiveInt(1)) {
         structKeyCount,
@@ -377,7 +377,7 @@ class QueryResultDecoderUnitTest {
         }
 
         val exception =
-          shouldThrow<Utf8TooFewCharactersException> { decode(byteArray, emptyList()) }
+          shouldThrow<Utf8IncorrectNumCharactersException> { decode(byteArray, emptyList()) }
 
         assertSoftly {
           exception.message shouldContainWithNonAbuttingText "dhvzxrcrqe"

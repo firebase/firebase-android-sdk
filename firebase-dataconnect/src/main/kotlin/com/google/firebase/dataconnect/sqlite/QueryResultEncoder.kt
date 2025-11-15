@@ -302,11 +302,15 @@ private class QueryResultChannelWriter(private val channel: WritableByteChannel)
   }
 
   fun writeStringUtf8(string: String, expectedByteCount: Int) {
-    utf8CharsetEncoder.reset()
-    val charBuffer = CharBuffer.wrap(string)
-
     writeUInt32(expectedByteCount)
     writeUInt32(string.length)
+
+    if (writeUtf8Fast(string, expectedByteCount)) {
+      return
+    }
+
+    utf8CharsetEncoder.reset()
+    val charBuffer = CharBuffer.wrap(string)
 
     var byteWriteCount = 0
     while (true) {
@@ -345,6 +349,33 @@ private class QueryResultChannelWriter(private val channel: WritableByteChannel)
         "should be equal to expectedByteCount=$expectedByteCount, but they differ by " +
         "${(expectedByteCount-byteWriteCount).absoluteValue}"
     }
+  }
+
+  private fun writeUtf8Fast(string: String, expectedByteCount: Int): Boolean {
+    if (expectedByteCount > byteBuffer.capacity()) {
+      return false
+    }
+
+    if (expectedByteCount > byteBuffer.remaining()) {
+      flushOnce()
+      if (expectedByteCount > byteBuffer.remaining()) {
+        return false
+      }
+    }
+
+    val byteBufferArrayOffset = byteBuffer.arrayOffset()
+    val offset = byteBufferArrayOffset + byteBuffer.position()
+    val newOffset = Utf8.encode(string, byteBuffer.array(), offset, byteBuffer.limit())
+
+    val byteWriteCount = newOffset - offset
+    check(byteWriteCount == expectedByteCount) {
+      "internal error s469aqrktv: byteWriteCount=$byteWriteCount " +
+        "should be equal to expectedByteCount=$expectedByteCount, but they differ by " +
+        "${(expectedByteCount-byteWriteCount).absoluteValue}"
+    }
+
+    byteBuffer.position(newOffset - byteBufferArrayOffset)
+    return true
   }
 
   fun writeStringCustomUtf16(string: String, expectedByteCount: Int) {
