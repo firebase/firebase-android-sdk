@@ -490,21 +490,36 @@ class QueryResultDecoderUnitTest {
     val kindCaseBytes: Set<Byte> =
       setOf(
         QueryResultCodec.VALUE_NULL,
-        QueryResultCodec.VALUE_NUMBER,
+        QueryResultCodec.VALUE_KIND_NOT_SET,
+        QueryResultCodec.VALUE_ENTITY,
+        QueryResultCodec.VALUE_NUMBER_DOUBLE,
+        QueryResultCodec.VALUE_NUMBER_POSITIVE_ZERO,
+        QueryResultCodec.VALUE_NUMBER_NEGATIVE_ZERO,
+        QueryResultCodec.VALUE_NUMBER_FIXED32,
+        QueryResultCodec.VALUE_NUMBER_UINT32,
+        QueryResultCodec.VALUE_NUMBER_SINT32,
+        QueryResultCodec.VALUE_NUMBER_UINT64,
+        QueryResultCodec.VALUE_NUMBER_SINT64,
         QueryResultCodec.VALUE_BOOL_TRUE,
         QueryResultCodec.VALUE_BOOL_FALSE,
+        QueryResultCodec.VALUE_STRUCT,
+        QueryResultCodec.VALUE_LIST,
         QueryResultCodec.VALUE_STRING_EMPTY,
+        QueryResultCodec.VALUE_STRING_1BYTE,
+        QueryResultCodec.VALUE_STRING_2BYTE,
+        QueryResultCodec.VALUE_STRING_1CHAR,
+        QueryResultCodec.VALUE_STRING_2CHAR,
         QueryResultCodec.VALUE_STRING_UTF8,
         QueryResultCodec.VALUE_STRING_UTF16,
-        QueryResultCodec.VALUE_KIND_NOT_SET,
-        QueryResultCodec.VALUE_LIST,
-        QueryResultCodec.VALUE_STRUCT,
-        QueryResultCodec.VALUE_ENTITY,
       )
 
     val stringTypeBytes: Set<Byte> =
       setOf(
         QueryResultCodec.VALUE_STRING_EMPTY,
+        QueryResultCodec.VALUE_STRING_1BYTE,
+        QueryResultCodec.VALUE_STRING_2BYTE,
+        QueryResultCodec.VALUE_STRING_1CHAR,
+        QueryResultCodec.VALUE_STRING_2CHAR,
         QueryResultCodec.VALUE_STRING_UTF8,
         QueryResultCodec.VALUE_STRING_UTF16,
       )

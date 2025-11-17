@@ -79,13 +79,6 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
 class QueryResultEncoderUnitTest {
-  @OptIn(ExperimentalStdlibApi::class)
-  @Test
-  fun foo() {
-    println("0.0 " + (0.0).toBits())
-    println("-0.0 " + (-0.0).toBits())
-    println("Long.MIN_VALUE " + Long.MIN_VALUE)
-  }
 
   @Test
   fun `strings are encoded with the empty string marker when the length is 0`() {

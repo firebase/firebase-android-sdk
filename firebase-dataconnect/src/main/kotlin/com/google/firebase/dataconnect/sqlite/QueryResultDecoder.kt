@@ -16,7 +16,10 @@
 
 package com.google.firebase.dataconnect.sqlite
 
+import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.getSInt32
+import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.getSInt64
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.getUInt32
+import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.getUInt64
 import com.google.firebase.dataconnect.sqlite.QueryResultCodec.Entity
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
@@ -98,22 +101,72 @@ internal class QueryResultDecoder(
     return byteBuffer.getInt()
   }
 
-  private fun readUInt32(): Int {
+  private inline fun <T : Number> readVarint(
+    typeName: String,
+    maxSize: Int,
+    parseException: (message: String, cause: Throwable) -> Exception,
+    eofException: (message: String, cause: Throwable) -> Exception,
+    read: (ByteBuffer) -> T
+  ): T {
     ensureRemaining(1)
     while (true) {
       try {
-        return byteBuffer.getUInt32()
-      } catch (_: CodedIntegers.MalformedVarintException) {
+        return read(byteBuffer)
+      } catch (e: CodedIntegers.MalformedVarintException) {
+        if (byteBuffer.remaining() >= maxSize) {
+          throw parseException(
+            "failed to parse ${byteBuffer.remaining()} bytes of $typeName value: " +
+              "${e.message} [nne8eyhcbs]",
+            e
+          )
+        }
         if (!readSome()) {
-          throw UInt32EOFException(
-            "end of input reached prematurely reading uint32: " +
+          throw eofException(
+            "end of input reached prematurely reading $typeName value: " +
               "got ${byteBuffer.remaining()} bytes," +
-              "but need between 1 and ${CodedIntegers.MAX_VARINT32_SIZE} bytes [f9bkxazr3r]"
+              "but need between 1 and $maxSize bytes [f9bkxazr3r]",
+            e
           )
         }
       }
     }
   }
+
+  private fun readUInt32(): Int =
+    readVarint(
+      typeName = "uint32",
+      maxSize = CodedIntegers.MAX_VARINT32_SIZE,
+      parseException = ::UInt32ParseException,
+      eofException = ::UInt32EOFException,
+      read = { byteBuffer -> byteBuffer.getUInt32() },
+    )
+
+  private fun readSInt32(): Int =
+    readVarint(
+      typeName = "sint32",
+      maxSize = CodedIntegers.MAX_VARINT32_SIZE,
+      parseException = ::SInt32ParseException,
+      eofException = ::SInt32EOFException,
+      read = { byteBuffer -> byteBuffer.getSInt32() },
+    )
+
+  private fun readUInt64(): Long =
+    readVarint(
+      typeName = "uint64",
+      maxSize = CodedIntegers.MAX_VARINT64_SIZE,
+      parseException = ::UInt64ParseException,
+      eofException = ::UInt64EOFException,
+      read = { byteBuffer -> byteBuffer.getUInt64() },
+    )
+
+  private fun readSInt64(): Long =
+    readVarint(
+      typeName = "sint64",
+      maxSize = CodedIntegers.MAX_VARINT64_SIZE,
+      parseException = ::SInt64ParseException,
+      eofException = ::SInt64EOFException,
+      read = { byteBuffer -> byteBuffer.getSInt64() },
+    )
 
   private fun readDouble(): Double {
     ensureRemaining(8)
@@ -219,7 +272,14 @@ internal class QueryResultDecoder(
 
   private enum class ValueKindCase(val serializedByte: Byte, val displayName: String) {
     Null(QueryResultCodec.VALUE_NULL, "null"),
-    Number(QueryResultCodec.VALUE_NUMBER, "number"),
+    Double(QueryResultCodec.VALUE_NUMBER_DOUBLE, "double"),
+    PositiveZero(QueryResultCodec.VALUE_NUMBER_POSITIVE_ZERO, "+0.0"),
+    NegativeZero(QueryResultCodec.VALUE_NUMBER_NEGATIVE_ZERO, "+0.0"),
+    Fixed32Int(QueryResultCodec.VALUE_NUMBER_FIXED32, "fixed32Int"),
+    UInt32(QueryResultCodec.VALUE_NUMBER_UINT32, "uint32"),
+    SInt32(QueryResultCodec.VALUE_NUMBER_SINT32, "sint32"),
+    UInt64(QueryResultCodec.VALUE_NUMBER_UINT64, "uint64"),
+    SInt64(QueryResultCodec.VALUE_NUMBER_SINT64, "sint64"),
     BoolTrue(QueryResultCodec.VALUE_BOOL_TRUE, "true"),
     BoolFalse(QueryResultCodec.VALUE_BOOL_FALSE, "false"),
     KindNotSet(QueryResultCodec.VALUE_KIND_NOT_SET, "kindnotset"),
@@ -576,7 +636,14 @@ internal class QueryResultDecoder(
     val valueBuilder = Value.newBuilder()
     when (readKindCase()) {
       ValueKindCase.Null -> valueBuilder.setNullValue(NullValue.NULL_VALUE)
-      ValueKindCase.Number -> valueBuilder.setNumberValue(readDouble())
+      ValueKindCase.Double -> valueBuilder.setNumberValue(readDouble())
+      ValueKindCase.PositiveZero -> valueBuilder.setNumberValue(0.0)
+      ValueKindCase.NegativeZero -> valueBuilder.setNumberValue(-0.0)
+      ValueKindCase.Fixed32Int -> valueBuilder.setNumberValue(readFixed32Int().toDouble())
+      ValueKindCase.UInt32 -> valueBuilder.setNumberValue(readUInt32().toDouble())
+      ValueKindCase.SInt32 -> valueBuilder.setNumberValue(readSInt32().toDouble())
+      ValueKindCase.UInt64 -> valueBuilder.setNumberValue(readUInt64().toDouble())
+      ValueKindCase.SInt64 -> valueBuilder.setNumberValue(readSInt64().toDouble())
       ValueKindCase.BoolTrue -> valueBuilder.setBoolValue(true)
       ValueKindCase.BoolFalse -> valueBuilder.setBoolValue(false)
       ValueKindCase.List -> valueBuilder.setListValue(readList())
@@ -594,7 +661,8 @@ internal class QueryResultDecoder(
     return valueBuilder.build()
   }
 
-  sealed class DecodeException(message: String) : Exception(message)
+  sealed class DecodeException(message: String, cause: Throwable? = null) :
+    Exception(message, cause)
 
   class BadHeaderException(message: String) : DecodeException(message)
 
@@ -616,7 +684,29 @@ internal class QueryResultDecoder(
 
   class ByteArrayEOFException(message: String) : DecodeException(message)
 
-  class UInt32EOFException(message: String) : DecodeException(message)
+  class UInt32ParseException(message: String, cause: Throwable? = null) :
+    DecodeException(message, cause)
+
+  class UInt32EOFException(message: String, cause: Throwable? = null) :
+    DecodeException(message, cause)
+
+  class SInt32ParseException(message: String, cause: Throwable? = null) :
+    DecodeException(message, cause)
+
+  class SInt32EOFException(message: String, cause: Throwable? = null) :
+    DecodeException(message, cause)
+
+  class UInt64ParseException(message: String, cause: Throwable? = null) :
+    DecodeException(message, cause)
+
+  class UInt64EOFException(message: String, cause: Throwable? = null) :
+    DecodeException(message, cause)
+
+  class SInt64ParseException(message: String, cause: Throwable? = null) :
+    DecodeException(message, cause)
+
+  class SInt64EOFException(message: String, cause: Throwable? = null) :
+    DecodeException(message, cause)
 
   class Utf8EOFException(message: String) : DecodeException(message)
 
