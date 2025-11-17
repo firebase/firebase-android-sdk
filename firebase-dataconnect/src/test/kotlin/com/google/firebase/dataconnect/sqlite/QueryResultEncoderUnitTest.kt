@@ -38,7 +38,6 @@ import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
-import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
@@ -52,10 +51,8 @@ import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.ints.shouldBeInRange
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.string.shouldContain
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
-import io.kotest.property.Exhaustive
 import io.kotest.property.PropTestConfig
 import io.kotest.property.RandomSource
 import io.kotest.property.ShrinkingMode
@@ -75,8 +72,8 @@ import io.kotest.property.arbitrary.set
 import io.kotest.property.arbitrary.string
 import io.kotest.property.arbitrary.withEdgecases
 import io.kotest.property.checkAll
-import io.kotest.property.exhaustive.collection
 import java.nio.ByteBuffer
+import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import kotlin.random.nextInt
 import kotlinx.coroutines.test.runTest
@@ -85,185 +82,62 @@ import org.junit.Test
 class QueryResultEncoderUnitTest {
 
   @Test
-  fun `strings are encoded with the empty string marker when the length is 0`() {
-    val struct = Struct.newBuilder().putFields("", true.toValueProto()).build()
+  fun `double values should be encoded optimally`() = runTest {
+    checkAll(propTestConfig, DoubleEncodingTestCase.arb()) { sample ->
+      val struct = Struct.newBuilder().putFields("", sample.value.toValueProto()).build()
 
-    val encodedBytes = QueryResultEncoder.encode(struct).byteArray
+      val encodeResult = QueryResultEncoder.encode(struct)
 
-    val expectedEncodedBytes = buildByteArray {
-      putInt(QueryResultCodec.QUERY_RESULT_HEADER)
-      put(QueryResultCodec.VALUE_STRUCT)
-      putUInt32(1) // struct size
-      put(QueryResultCodec.VALUE_STRING_EMPTY)
-      put(QueryResultCodec.VALUE_BOOL_TRUE)
-    }
+      val expectedEncodedBytes = buildByteArray {
+        putInt(QueryResultCodec.QUERY_RESULT_HEADER)
+        put(QueryResultCodec.VALUE_STRUCT)
+        putUInt32(1) // struct size
+        put(QueryResultCodec.VALUE_STRING_EMPTY)
+        sample.encode(this)
+      }
 
-    withClue("encoded bytes") { encodedBytes shouldBe expectedEncodedBytes }
-    withClue("decoded struct") {
-      QueryResultDecoder.decode(encodedBytes, emptyList()) shouldBe struct
+      encodeResult.byteArray shouldBe expectedEncodedBytes
     }
   }
 
   @Test
-  fun `strings are encoded with STRING_1BYTE when string is 1 char with codepoint less than 256`() =
-    runTest {
-      val codepointArb = Exhaustive.collection((0..255).toList())
-      checkAll(propTestConfig, codepointArb) { codepoint ->
-        val string = StringBuilder().appendCodePoint(codepoint).toString()
-        val struct = Struct.newBuilder().putFields(string, true.toValueProto()).build()
+  fun `double value encodings round trip`() = runTest {
+    checkAll(propTestConfig, DoubleEncodingTestCase.arb()) { sample ->
+      val struct = Struct.newBuilder().putFields("", sample.value.toValueProto()).build()
 
-        val encodedBytes = QueryResultEncoder.encode(struct).byteArray
+      val encodeResult = QueryResultEncoder.encode(struct)
 
-        val expectedEncodedBytes = buildByteArray {
-          putInt(QueryResultCodec.QUERY_RESULT_HEADER)
-          put(QueryResultCodec.VALUE_STRUCT)
-          putUInt32(1) // struct size
-          put(QueryResultCodec.VALUE_STRING_1BYTE)
-          put(codepoint.toByte())
-          put(QueryResultCodec.VALUE_BOOL_TRUE)
-        }
-        withClue("encoded bytes") { encodedBytes shouldBe expectedEncodedBytes }
-        withClue("decoded struct") {
-          QueryResultDecoder.decode(encodedBytes, emptyList()) shouldBe struct
-        }
-      }
-    }
-
-  @Test
-  fun `strings are encoded with STRING_1CHAR when string is 1 char with codepoint at least 256`() =
-    runTest {
-      checkAll(propTestConfig, charArbWithCodeGreaterThan255()) { char ->
-        val struct = Struct.newBuilder().putFields(char.toString(), true.toValueProto()).build()
-
-        val encodedBytes = QueryResultEncoder.encode(struct).byteArray
-
-        val expectedEncodedBytes = buildByteArray {
-          putInt(QueryResultCodec.QUERY_RESULT_HEADER)
-          put(QueryResultCodec.VALUE_STRUCT)
-          putUInt32(1) // struct size
-          put(QueryResultCodec.VALUE_STRING_1CHAR)
-          putChar(char)
-          put(QueryResultCodec.VALUE_BOOL_TRUE)
-        }
-        withClue("encoded bytes") { encodedBytes shouldBe expectedEncodedBytes }
-        withClue("decoded struct") {
-          QueryResultDecoder.decode(encodedBytes, emptyList()) shouldBe struct
-        }
-      }
-    }
-
-  @Test
-  fun `strings are encoded with STRING_2BYTE when string is 2 chars with codepoints less than 256`() =
-    runTest {
-      val codepointArb = Exhaustive.collection((0..255).toList()).toArb()
-      checkAll(propTestConfig, Arb.twoValues(codepointArb)) { (codepoint1, codepoint2) ->
-        val string = buildString {
-          appendCodePoint(codepoint1)
-          appendCodePoint(codepoint2)
-        }
-        val struct = Struct.newBuilder().putFields(string, true.toValueProto()).build()
-
-        val encodedBytes = QueryResultEncoder.encode(struct).byteArray
-
-        val expectedEncodedBytes = buildByteArray {
-          putInt(QueryResultCodec.QUERY_RESULT_HEADER)
-          put(QueryResultCodec.VALUE_STRUCT)
-          putUInt32(1) // struct size
-          put(QueryResultCodec.VALUE_STRING_2BYTE)
-          put(codepoint1.toByte())
-          put(codepoint2.toByte())
-          put(QueryResultCodec.VALUE_BOOL_TRUE)
-        }
-        withClue("encoded bytes") { encodedBytes shouldBe expectedEncodedBytes }
-        withClue("decoded struct") {
-          QueryResultDecoder.decode(encodedBytes, emptyList()) shouldBe struct
-        }
-      }
-    }
-
-  @Test
-  fun `strings are encoded with STRING_2CHAR when string is 2 chars with codepoints at least 256`() =
-    runTest {
-      checkAll(propTestConfig, Arb.twoValues(charArbWithCodeGreaterThan255())) { (char1, char2) ->
-        val string = buildString {
-          append(char1)
-          append(char2)
-        }
-        val struct = Struct.newBuilder().putFields(string, true.toValueProto()).build()
-
-        val encodedBytes = QueryResultEncoder.encode(struct).byteArray
-
-        val expectedEncodedBytes = buildByteArray {
-          putInt(QueryResultCodec.QUERY_RESULT_HEADER)
-          put(QueryResultCodec.VALUE_STRUCT)
-          putUInt32(1) // struct size
-          put(QueryResultCodec.VALUE_STRING_2CHAR)
-          putChar(char1)
-          putChar(char2)
-          put(QueryResultCodec.VALUE_BOOL_TRUE)
-        }
-        withClue("encoded bytes") { encodedBytes shouldBe expectedEncodedBytes }
-        withClue("decoded struct") {
-          QueryResultDecoder.decode(encodedBytes, emptyList()) shouldBe struct
-        }
-      }
-    }
-
-  @Test
-  fun `strings are encoded in utf8 when shorter than or equal to utf16`() = runTest {
-    // The minimum length of strings is 3, as strings shorter than 3 characters are optimized.
-    val stringArb = StringWithEncodingLengthArb(Utf8EncodingShorterThanOrEqualToUtf16, 3..100)
-    checkAll(propTestConfig, stringArb) { string ->
-      val struct = Struct.newBuilder().putFields(string, true.toValueProto()).build()
-
-      val encodedBytes = QueryResultEncoder.encode(struct).byteArray
-
-      val stringUtf8Encoded = string.encodeToByteArray()
-      assertSoftly {
-        withClue("encoded bytes") {
-          encodedBytes.to0xHexString() shouldContain
-            stringUtf8Encoded.to0xHexString(include0xPrefix = false)
-        }
-        withClue("round trip") { struct.decodingEncodingShouldProduceIdenticalStruct() }
-      }
+      QueryResultDecoder.decode(encodeResult.byteArray, emptyList()) shouldBe struct
     }
   }
 
   @Test
-  fun `strings are encoded in utf16 when longer than utf8`() = runTest {
-    val stringArb = StringWithEncodingLengthArb(Utf8EncodingLongerThanUtf16, 1..100)
-    checkAll(propTestConfig, stringArb) { string ->
-      val struct = Struct.newBuilder().putFields(string, true.toValueProto()).build()
+  fun `string values should be encoded optimally`() = runTest {
+    checkAll(propTestConfig, StringEncodingTestCase.arb()) { sample ->
+      val struct = Struct.newBuilder().putFields(sample.string, Value.getDefaultInstance()).build()
 
-      val encodedBytes = QueryResultEncoder.encode(struct).byteArray
+      val encodeResult = QueryResultEncoder.encode(struct)
 
-      val stringUtf16Encoded = string.toByteArray(Charsets.UTF_16BE)
-      assertSoftly {
-        withClue("encoded bytes") {
-          encodedBytes.to0xHexString() shouldContain
-            stringUtf16Encoded.to0xHexString(include0xPrefix = false)
-        }
-        withClue("round trip") { struct.decodingEncodingShouldProduceIdenticalStruct() }
+      val expectedEncodedBytes = buildByteArray {
+        putInt(QueryResultCodec.QUERY_RESULT_HEADER)
+        put(QueryResultCodec.VALUE_STRUCT)
+        putUInt32(1) // struct size
+        sample.encode(this)
+        put(QueryResultCodec.VALUE_KIND_NOT_SET)
       }
+
+      encodeResult.byteArray shouldBe expectedEncodedBytes
     }
   }
 
   @Test
-  fun `strings are encoded in utf16 when they contain lone surrogates`() = runTest {
-    val stringArb = Arb.stringWithLoneSurrogates(1..100).map { it.string }
-    checkAll(propTestConfig, stringArb) { string ->
-      val struct = Struct.newBuilder().putFields(string, true.toValueProto()).build()
+  fun `string value encodings round trip`() = runTest {
+    checkAll(propTestConfig, StringEncodingTestCase.arb()) { sample ->
+      val struct = Struct.newBuilder().putFields(sample.string, Value.getDefaultInstance()).build()
 
-      val encodedBytes = QueryResultEncoder.encode(struct).byteArray
+      val encodeResult = QueryResultEncoder.encode(struct)
 
-      val stringUtf16Encoded = buildByteArray { string.forEach(::putChar) }
-      assertSoftly {
-        withClue("encoded bytes") {
-          encodedBytes.to0xHexString() shouldContain
-            stringUtf16Encoded.to0xHexString(include0xPrefix = false)
-        }
-        withClue("round trip") { struct.decodingEncodingShouldProduceIdenticalStruct() }
-      }
+      QueryResultDecoder.decode(encodeResult.byteArray, emptyList()) shouldBe struct
     }
   }
 
@@ -301,24 +175,6 @@ class QueryResultEncoderUnitTest {
       structArb
     ) { struct ->
       struct.struct.decodingEncodingShouldProduceIdenticalStruct()
-    }
-  }
-
-  @Test
-  fun `double encoding`() = runTest {
-    checkAll(propTestConfig, DoubleEncodingTestCase.arb()) { sample ->
-      val struct = Struct.newBuilder().putFields("", sample.value.toValueProto()).build()
-
-      val encodeResult = QueryResultEncoder.encode(struct)
-
-      val expectedEncodedBytes = buildByteArray {
-        putInt(QueryResultCodec.QUERY_RESULT_HEADER)
-        put(QueryResultCodec.VALUE_STRUCT)
-        putUInt32(1) // struct size
-        put(QueryResultCodec.VALUE_STRING_EMPTY)
-        sample.encode(this)
-      }
-      encodeResult.byteArray shouldBe expectedEncodedBytes
     }
   }
 
@@ -1084,6 +940,143 @@ class QueryResultEncoderUnitTest {
               it.toLong().toDouble() == it || it.isNaN() || it.isInfinite() || it == 0.0
             }
             .map { DoubleEncoded(it, "double typical case") }
+        )
+    }
+  }
+
+  sealed class StringEncodingTestCase(val string: String) {
+
+    abstract fun encode(dsl: BuildByteArrayDSL)
+
+    data object EmptyString : StringEncodingTestCase("") {
+      override fun encode(dsl: BuildByteArrayDSL) {
+        dsl.put(QueryResultCodec.VALUE_STRING_EMPTY)
+      }
+    }
+
+    class OneByte(val char: Char) : StringEncodingTestCase(char.toString()) {
+      init {
+        require((char.code.toByte().toInt() and 0xFF) == char.code)
+      }
+      override fun encode(dsl: BuildByteArrayDSL) {
+        dsl.put(QueryResultCodec.VALUE_STRING_1BYTE)
+        dsl.put(char.code.toByte())
+      }
+      override fun toString() = "OneByte(char.code=${char.code})"
+    }
+
+    class TwoBytes(val char1: Char, val char2: Char) :
+      StringEncodingTestCase(char1.toString() + char2.toString()) {
+      init {
+        require((char1.code.toByte().toInt() and 0xFF) == char1.code)
+        require((char2.code.toByte().toInt() and 0xFF) == char2.code)
+      }
+      override fun encode(dsl: BuildByteArrayDSL) {
+        dsl.put(QueryResultCodec.VALUE_STRING_2BYTE)
+        dsl.put(char1.code.toByte())
+        dsl.put(char2.code.toByte())
+      }
+      override fun toString() = "TwoBytes(char1.code=${char1.code}, char2.code=${char2.code})"
+    }
+
+    class OneChar(val char: Char, val description: String) :
+      StringEncodingTestCase(char.toString()) {
+      override fun encode(dsl: BuildByteArrayDSL) {
+        dsl.put(QueryResultCodec.VALUE_STRING_1CHAR)
+        dsl.putChar(char)
+      }
+      override fun toString() = "OneChar(char.code=${char.code}, description=$description)"
+    }
+
+    class TwoChars(val char1: Char, val char2: Char, val description: String) :
+      StringEncodingTestCase(char1.toString() + char2.toString()) {
+      override fun encode(dsl: BuildByteArrayDSL) {
+        dsl.put(QueryResultCodec.VALUE_STRING_2CHAR)
+        dsl.putChar(char1)
+        dsl.putChar(char2)
+      }
+      override fun toString() =
+        "TwoChars(" +
+          "char1.code=${char1.code}, char2.code=${char2.code}, description=$description)"
+    }
+
+    class Utf8Encoding(string: String) : StringEncodingTestCase(string) {
+
+      private val utf8EncodingBytes = string.encodeToByteArray()
+
+      override fun encode(dsl: BuildByteArrayDSL) {
+        dsl.put(QueryResultCodec.VALUE_STRING_UTF8)
+        dsl.putUInt32(utf8EncodingBytes.size)
+        dsl.putUInt32(string.length)
+        dsl.put(utf8EncodingBytes)
+      }
+      override fun toString() =
+        "Utf8Encoding(" +
+          "string=$string, utf8EncodingBytes=${utf8EncodingBytes.contentToString()})"
+    }
+
+    class Utf16Encoding(string: String) : StringEncodingTestCase(string) {
+
+      private val utf16EncodingBytes = string.toByteArray(StandardCharsets.UTF_16BE)
+
+      override fun encode(dsl: BuildByteArrayDSL) {
+        dsl.put(QueryResultCodec.VALUE_STRING_UTF16)
+        dsl.putUInt32(string.length)
+        dsl.put(utf16EncodingBytes)
+      }
+      override fun toString() =
+        "Utf16Encoding(" +
+          "string=$string, utf16EncodingBytes=${utf16EncodingBytes.contentToString()})"
+    }
+
+    class Utf16WithLoneSurrogatesEncoding(string: String, val loneSurrogateCount: Int) :
+      StringEncodingTestCase(string) {
+
+      private val utf16EncodingBytes =
+        ByteBuffer.allocate(string.length * 2).let { byteBuffer ->
+          val charBuffer = byteBuffer.asCharBuffer()
+          charBuffer.put(string)
+          byteBuffer.array()
+        }
+
+      override fun encode(dsl: BuildByteArrayDSL) {
+        dsl.put(QueryResultCodec.VALUE_STRING_UTF16)
+        dsl.putUInt32(string.length)
+        dsl.put(utf16EncodingBytes)
+      }
+      override fun toString() =
+        "Utf16WithLoneSurrogatesEncoding(" +
+          "loneSurrogateCount=$loneSurrogateCount, string=$string, " +
+          "utf16EncodingBytes=${utf16EncodingBytes.contentToString()})"
+    }
+
+    companion object {
+
+      fun arb(): Arb<StringEncodingTestCase> =
+        Arb.choice(
+          Arb.constant(EmptyString),
+          Arb.int(0..255).map { OneByte(it.toChar()) },
+          charArbWithCodeGreaterThan255().map { OneChar(it, "not a lone surrogate") },
+          Arb.twoValues(Arb.int(0..255)).map { (codepoint1, codepoint2) ->
+            TwoBytes(codepoint1.toChar(), codepoint2.toChar())
+          },
+          Arb.twoValues(charArbWithCodeGreaterThan255()).map { (char1, char2) ->
+            TwoChars(char1, char2, "no lone surrogates")
+          },
+          // The minimum length is 3, as strings shorter than 3 characters are handled above.
+          StringWithEncodingLengthArb(Utf8EncodingShorterThanOrEqualToUtf16, 3..100).map {
+            Utf8Encoding(it)
+          },
+          StringWithEncodingLengthArb(Utf8EncodingLongerThanUtf16, 3..100).map {
+            Utf16Encoding(it)
+          },
+          Arb.stringWithLoneSurrogates(3..100).map {
+            Utf16WithLoneSurrogatesEncoding(it.string, it.loneSurrogateCount)
+          },
+          Arb.stringWithLoneSurrogates(1..1).map { OneChar(it.string.single(), "lone surrogate") },
+          Arb.stringWithLoneSurrogates(2..2).map {
+            TwoChars(it.string[0], it.string[1], "${it.loneSurrogateCount} lone surrogates")
+          },
         )
     }
   }
