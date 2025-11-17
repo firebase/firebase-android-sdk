@@ -16,24 +16,16 @@
 
 package com.google.firebase.dataconnect.sqlite
 
-import com.google.firebase.dataconnect.testutil.BuildByteArrayDSL
+import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.EntityTestCase
+import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.calculateExpectedEncodingAsEntityId
+import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.decodingEncodingShouldProduceIdenticalStruct
+import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.withRandomlyInsertedEntities
 import com.google.firebase.dataconnect.testutil.buildByteArray
-import com.google.firebase.dataconnect.testutil.property.arbitrary.StringWithEncodingLengthArb
-import com.google.firebase.dataconnect.testutil.property.arbitrary.StringWithEncodingLengthArb.Mode.Utf8EncodingLongerThanUtf16
-import com.google.firebase.dataconnect.testutil.property.arbitrary.StringWithEncodingLengthArb.Mode.Utf8EncodingShorterThanOrEqualToUtf16
-import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWith1ByteUtf8Encoding
-import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWith2ByteUtf8Encoding
-import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWith3ByteUtf8Encoding
-import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWith4ByteUtf8Encoding
-import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWithEvenNumByteUtf8EncodingDistribution
-import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.maxDepth
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.stringValue
-import com.google.firebase.dataconnect.testutil.property.arbitrary.stringWithLoneSurrogates
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
-import com.google.firebase.dataconnect.testutil.property.arbitrary.twoValues
 import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
@@ -41,40 +33,20 @@ import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
-import io.kotest.assertions.asClue
-import io.kotest.assertions.assertSoftly
-import io.kotest.assertions.withClue
-import io.kotest.common.DelicateKotest
 import io.kotest.common.ExperimentalKotest
-import io.kotest.matchers.booleans.shouldBeTrue
-import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.collections.shouldHaveSize
-import io.kotest.matchers.ints.shouldBeInRange
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
-import io.kotest.property.RandomSource
 import io.kotest.property.ShrinkingMode
-import io.kotest.property.arbitrary.char
-import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.constant
-import io.kotest.property.arbitrary.distinct
-import io.kotest.property.arbitrary.double
 import io.kotest.property.arbitrary.filterNot
-import io.kotest.property.arbitrary.flatMap
 import io.kotest.property.arbitrary.int
-import io.kotest.property.arbitrary.long
 import io.kotest.property.arbitrary.map
-import io.kotest.property.arbitrary.of
-import io.kotest.property.arbitrary.pair
 import io.kotest.property.arbitrary.set
 import io.kotest.property.arbitrary.string
-import io.kotest.property.arbitrary.withEdgecases
 import io.kotest.property.checkAll
-import java.nio.ByteBuffer
-import java.nio.charset.StandardCharsets
-import java.security.MessageDigest
 import kotlin.random.nextInt
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
@@ -153,8 +125,8 @@ class QueryResultEncoderUnitTest {
     val structArb =
       Arb.proto.struct(
         size = 1..10,
-        key = stringForEncodeTestingArb(),
-        scalarValue = stringForEncodeTestingArb().map { it.toValueProto() },
+        key = StringEncodingTestCase.arb().map { it.string },
+        scalarValue = StringEncodingTestCase.arb().map { it.string.toValueProto() },
       )
     checkAll(propTestConfig, structArb) { struct ->
       struct.struct.decodingEncodingShouldProduceIdenticalStruct()
@@ -166,8 +138,8 @@ class QueryResultEncoderUnitTest {
     val structArb =
       Arb.proto.struct(
         size = 1,
-        key = longStringForEncodeTestingArb(),
-        scalarValue = longStringForEncodeTestingArb().map { it.toValueProto() },
+        key = StringEncodingTestCase.longStringsArb().map { it.string },
+        scalarValue = StringEncodingTestCase.longStringsArb().map { it.string.toValueProto() },
       )
     checkAll(
       @OptIn(ExperimentalKotest::class)
@@ -191,23 +163,24 @@ class QueryResultEncoderUnitTest {
 
   @Test
   fun `entity IDs are encoded using SHA-512`() = runTest {
-    checkAll(propTestConfig, stringForEncodeTestingArb()) { entityId ->
-      val struct = Struct.newBuilder().putFields("entityId", entityId.toValueProto()).build()
+    checkAll(propTestConfig, StringEncodingTestCase.arb()) { entityId ->
+      val struct = Struct.newBuilder().putFields("entityId", entityId.string.toValueProto()).build()
 
       val encodeResult = QueryResultEncoder.encode(struct, "entityId")
 
       encodeResult.entities shouldHaveSize 1
       val encodedEntityId = encodeResult.entities[0].encodedId
-      encodedEntityId shouldBe entityId.calculateExpectedEncodingAsEntityId()
+      encodedEntityId shouldBe entityId.string.calculateExpectedEncodingAsEntityId()
     }
   }
 
   @Test
   fun `entity ID contains code points with 1, 2, 3, and 4 byte UTF-8 encodings`() = runTest {
-    checkAll(propTestConfig, Arb.string(), stringForEncodeTestingArb()) {
+    checkAll(propTestConfig, Arb.string(), StringEncodingTestCase.arb()) {
       entityIdFieldName,
       entityId ->
-      val struct = Struct.newBuilder().putFields(entityIdFieldName, entityId.toValueProto()).build()
+      val struct =
+        Struct.newBuilder().putFields(entityIdFieldName, entityId.string.toValueProto()).build()
       struct.decodingEncodingShouldProduceIdenticalStruct(
         entities = listOf(struct),
         entityIdFieldName
@@ -220,7 +193,7 @@ class QueryResultEncoderUnitTest {
     checkAll(
       @OptIn(ExperimentalKotest::class) propTestConfig.copy(iterations = 10),
       Arb.string(),
-      longStringForEncodeTestingArb()
+      StringEncodingTestCase.longStringsArb().map { it.string },
     ) { entityIdFieldName, entityId ->
       val struct = Struct.newBuilder().putFields(entityIdFieldName, entityId.toValueProto()).build()
       struct.decodingEncodingShouldProduceIdenticalStruct(
@@ -232,7 +205,7 @@ class QueryResultEncoderUnitTest {
 
   @Test
   fun `entire struct is a non-nested entity`() = runTest {
-    checkAll(propTestConfig, entityArb(structSize = 1..100, structDepth = 1)) { sample ->
+    checkAll(propTestConfig, EntityTestCase.arb(structSize = 1..100, structDepth = 1)) { sample ->
       sample.struct.decodingEncodingShouldProduceIdenticalStruct(
         entities = listOf(sample.struct),
         sample.entityIdFieldName
@@ -242,7 +215,7 @@ class QueryResultEncoderUnitTest {
 
   @Test
   fun `entire struct is a nested entity`() = runTest {
-    checkAll(propTestConfig, entityArb(structSize = 2..3, structDepth = 2..4)) { sample ->
+    checkAll(propTestConfig, EntityTestCase.arb(structSize = 2..3, structDepth = 2..4)) { sample ->
       sample.struct.decodingEncodingShouldProduceIdenticalStruct(
         entities = listOf(sample.struct),
         sample.entityIdFieldName
@@ -254,7 +227,7 @@ class QueryResultEncoderUnitTest {
   fun `struct has only entities at top level`() = runTest {
     checkAll(propTestConfig, Arb.string(), Arb.int(1..3)) { entityIdFieldName, entityCount ->
       val entityArb =
-        entityArb(
+        EntityTestCase.arb(
           entityIdFieldName = Arb.constant(entityIdFieldName),
           structSize = 0..2,
           structDepth = 1..2,
@@ -283,7 +256,7 @@ class QueryResultEncoderUnitTest {
       Arb.int(1..3),
     ) { entityIdFieldName, entityCount ->
       val entityArb =
-        entityArb(
+        EntityTestCase.arb(
           entityIdFieldName = Arb.constant(entityIdFieldName),
           structSize = 0..2,
           structDepth = 1..2,
@@ -316,7 +289,7 @@ class QueryResultEncoderUnitTest {
   fun `struct has intermixed entities and values`() = runTest {
     checkAll(propTestConfig, Arb.string(), Arb.int(1..3)) { entityIdFieldName, entityCount ->
       val entityArb =
-        entityArb(
+        EntityTestCase.arb(
           entityIdFieldName = Arb.constant(entityIdFieldName),
           structSize = 0..2,
           structDepth = 1..2,
@@ -456,135 +429,6 @@ class QueryResultEncoderUnitTest {
     )
   }
 
-  //////////////////////////////////////////////////////////////////////////////////////////////////
-  // Unit tests for unit testing classes and functions defined in this file
-  //////////////////////////////////////////////////////////////////////////////////////////////////
-
-  @Test
-  fun `entityArb() should specify the correct entityIdFieldName in its samples`() = runTest {
-    checkAll(propTestConfig, Arb.string()) { entityIdFieldName ->
-      val entityArb =
-        entityArb(
-          entityIdFieldName = Arb.constant(entityIdFieldName),
-          structSize = 0..10,
-          structDepth = 1..1,
-        )
-
-      val sample = entityArb.bind()
-
-      sample.entityIdFieldName shouldBe entityIdFieldName
-    }
-  }
-
-  @Test
-  fun `entityArb() should specify the correct entityId in its samples`() = runTest {
-    checkAll(propTestConfig, Arb.string()) { entityId ->
-      val entityArb =
-        entityArb(
-          entityId = Arb.constant(entityId),
-          structSize = 0..10,
-          structDepth = 1..1,
-        )
-
-      val sample = entityArb.bind()
-
-      sample.entityId shouldBe entityId
-    }
-  }
-
-  @Test
-  fun `entityArb() should use set the entityId using the entityIdFieldName in the struct`() =
-    runTest {
-      checkAll(propTestConfig, Arb.string(), Arb.string()) { entityId, entityIdFieldName ->
-        val entityArb =
-          entityArb(
-            entityIdFieldName = Arb.constant(entityIdFieldName),
-            entityId = Arb.constant(entityId),
-            structSize = 0..10,
-            structDepth = 1..1,
-          )
-
-        val sample = entityArb.bind()
-
-        sample.asClue {
-          withClue("containsFields") { it.struct.containsFields(entityIdFieldName).shouldBeTrue() }
-          val entityIdValue: Value = it.struct.getFieldsOrThrow(entityIdFieldName)
-          withClue("kindCase") { entityIdValue.kindCase shouldBe Value.KindCase.STRING_VALUE }
-          withClue("stringValue") { entityIdValue.stringValue shouldBe entityId }
-        }
-      }
-    }
-
-  @Test
-  fun `entityArb() should use the given structKey`() = runTest {
-    checkAll(propTestConfig, Arb.string()) { entityIdFieldName ->
-      val generatedKeys = mutableSetOf(entityIdFieldName)
-      val structKeyArb = Arb.proto.structKey().map { it.also(generatedKeys::add) }
-      val entityArb =
-        entityArb(
-          entityIdFieldName = Arb.constant(entityIdFieldName),
-          structKey = structKeyArb,
-          structSize = 1..3,
-          structDepth = 1..3,
-        )
-
-      val sample = entityArb.bind()
-
-      sample.struct.keysRecursive().distinct() shouldContainExactlyInAnyOrder generatedKeys
-    }
-  }
-
-  @Test
-  fun `entityArb() should use the given structSize`() = runTest {
-    checkAll(propTestConfig, Arb.int(0..20), Arb.int(0..20)) { bound1, bound2 ->
-      val entityArbStructSize = if (bound1 <= bound2) bound1..bound2 else bound2..bound1
-      val entityArb = entityArb(structSize = entityArbStructSize, structDepth = 1)
-
-      val sample = entityArb.bind()
-
-      // Add 1 to the end of the struct size range to account for the entityId field itself.
-      val structSizeRange = entityArbStructSize.first..(entityArbStructSize.last + 1)
-      assertSoftly {
-        sample.struct.structSizesRecursive().forEachIndexed { index, structSize ->
-          withClue("index=$index") { structSize shouldBeInRange structSizeRange }
-        }
-      }
-    }
-  }
-
-  @Test
-  fun `entityArb() should use the given structDepth as IntRange`() = runTest {
-    checkAll(propTestConfig, Arb.int(1..5), Arb.int(1..5)) { bound1, bound2 ->
-      val entityArbStructDepth = if (bound1 <= bound2) bound1..bound2 else bound2..bound1
-      val entityArb = entityArb(structSize = 1..2, structDepth = entityArbStructDepth)
-
-      val sample = entityArb.bind()
-
-      sample.struct.maxDepth() shouldBeInRange entityArbStructDepth
-    }
-  }
-
-  @Test
-  fun `entityArb() should use the given structDepth as Int`() = runTest {
-    checkAll(propTestConfig, Arb.int(1..5)) { entityArbStructDepth ->
-      val entityArb = entityArb(structSize = 1..2, structDepth = entityArbStructDepth)
-
-      val sample = entityArb.bind()
-
-      sample.struct.maxDepth() shouldBe entityArbStructDepth
-    }
-  }
-
-  //////////////////////////////////////////////////////////////////////////////////////////////////
-  // Class-level classes and functions
-  //////////////////////////////////////////////////////////////////////////////////////////////////
-
-  data class EntityArbSample(
-    val entityIdFieldName: String,
-    val entityId: String,
-    val struct: Struct
-  )
-
   private companion object {
 
     @OptIn(ExperimentalKotest::class)
@@ -594,490 +438,5 @@ class QueryResultEncoderUnitTest {
         edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.33),
         shrinkingMode = ShrinkingMode.Off,
       )
-
-    fun stringForEncodeTestingArb(): Arb<String> =
-      Arb.choice(
-        Arb.constant(""),
-        Arb.string(1..20, Arb.codepointWith1ByteUtf8Encoding()),
-        Arb.string(1..20, Arb.codepointWith2ByteUtf8Encoding()),
-        Arb.string(1..20, Arb.codepointWith3ByteUtf8Encoding()),
-        Arb.string(1..20, Arb.codepointWith4ByteUtf8Encoding()),
-        Arb.string(1..20, Arb.codepointWithEvenNumByteUtf8EncodingDistribution()),
-        Arb.stringWithLoneSurrogates(1..20).map { it.string },
-        Arb.dataConnect.string(0..20),
-      )
-
-    fun longStringForEncodeTestingArb(): Arb<String> =
-      Arb.choice(
-        Arb.string(2048..99999, Arb.codepointWith1ByteUtf8Encoding()),
-        Arb.string(2048..99999, Arb.codepointWith2ByteUtf8Encoding()),
-        Arb.string(2048..99999, Arb.codepointWith3ByteUtf8Encoding()),
-        Arb.string(2048..99999, Arb.codepointWith4ByteUtf8Encoding()),
-        Arb.string(2048..99999, Arb.codepointWithEvenNumByteUtf8EncodingDistribution()),
-        Arb.stringWithLoneSurrogates(2048..99999).map { it.string },
-        Arb.dataConnect.string(2048..99999),
-      )
-
-    fun entityArb(
-      entityIdFieldName: Arb<String> = stringForEncodeTestingArb(),
-      @OptIn(DelicateKotest::class) entityId: Arb<String> = stringForEncodeTestingArb().distinct(),
-      structKey: Arb<String> = Arb.proto.structKey(),
-      structSize: IntRange,
-      structDepth: IntRange,
-    ): Arb<EntityArbSample> =
-      Arb.pair(entityIdFieldName, entityId).flatMap { (entityIdFieldName, entityId) ->
-        val keyArb = structKey.filterNot { it == entityIdFieldName }
-        Arb.proto.struct(size = structSize, depth = structDepth, key = keyArb).map { struct ->
-          val newStruct =
-            struct.struct.toBuilder().putFields(entityIdFieldName, entityId.toValueProto()).build()
-          EntityArbSample(
-            entityIdFieldName = entityIdFieldName,
-            entityId = entityId,
-            struct = newStruct,
-          )
-        }
-      }
-
-    fun entityArb(
-      entityIdFieldName: Arb<String> = stringForEncodeTestingArb(),
-      entityId: Arb<String> = stringForEncodeTestingArb(),
-      structKey: Arb<String> = Arb.proto.structKey(),
-      structSize: IntRange,
-      structDepth: Int,
-    ): Arb<EntityArbSample> =
-      entityArb(
-        entityIdFieldName = entityIdFieldName,
-        entityId = entityId,
-        structKey = structKey,
-        structSize = structSize,
-        structDepth = structDepth..structDepth,
-      )
-
-    fun charArbWithCodeGreaterThan255(): Arb<Char> {
-      val charRange = 256.toChar()..Char.MAX_VALUE
-      val charEdgeCases: List<Char> =
-        listOf(
-            charRange.first,
-            charRange.last,
-            Char.MIN_VALUE,
-            Char.MAX_VALUE,
-            Char.MIN_HIGH_SURROGATE,
-            Char.MAX_HIGH_SURROGATE,
-            Char.MIN_LOW_SURROGATE,
-            Char.MAX_LOW_SURROGATE,
-          )
-          .flatMap { listOf(it, it + 1, it - 1) }
-      return Arb.char(charRange).withEdgecases(charEdgeCases.distinct().filter { it in charRange })
-    }
-
-    fun Struct.decodingEncodingShouldProduceIdenticalStruct(
-      entities: List<Struct> = emptyList(),
-      entityIdFieldName: String? = null
-    ) {
-      val encodeResult = QueryResultEncoder.encode(this, entityIdFieldName)
-      withClue("entities returned from QueryResultEncoder.encode()") {
-        encodeResult.entities.map { it.data } shouldContainExactlyInAnyOrder entities
-      }
-
-      val decodeResult = QueryResultDecoder.decode(encodeResult.byteArray, encodeResult.entities)
-      withClue("QueryResultDecoder.decode() return value") { decodeResult shouldBe this }
-    }
-
-    fun String.calculateExpectedEncodingAsEntityId(): ByteArray {
-      val byteBuffer = ByteBuffer.allocate(length * 2)
-      forEach(byteBuffer::putChar)
-      val digest = MessageDigest.getInstance("SHA-512")
-      byteBuffer.flip()
-      digest.update(byteBuffer)
-      return digest.digest()
-    }
-
-    fun Struct.forEachValue(block: (Value) -> Unit) {
-      val values: MutableList<Value> = mutableListOf(this.toValueProto())
-      while (values.isNotEmpty()) {
-        val value = values.removeFirst()
-        block(value)
-
-        if (value.kindCase == Value.KindCase.LIST_VALUE) {
-          value.listValue.valuesList.forEach(values::add)
-        } else if (value.kindCase == Value.KindCase.STRUCT_VALUE) {
-          value.structValue.fieldsMap.entries.forEach { values.add(it.value) }
-        }
-      }
-    }
-
-    fun Struct.keysRecursive(): List<String> {
-      val keys = mutableListOf<String>()
-      forEachValue { value ->
-        if (value.kindCase == Value.KindCase.STRUCT_VALUE) {
-          keys.addAll(value.structValue.fieldsMap.keys)
-        }
-      }
-      return keys
-    }
-
-    fun Struct.structSizesRecursive(): List<Int> {
-      val structSizes = mutableListOf<Int>()
-      forEachValue { value ->
-        if (value.kindCase == Value.KindCase.STRUCT_VALUE) {
-          structSizes.add(value.structValue.fieldsCount)
-        }
-      }
-      return structSizes
-    }
-
-    fun Value.subStructs(): List<Value> {
-      val subStructs = mutableListOf<Value>()
-      val values = mutableListOf(this)
-      while (values.isNotEmpty()) {
-        val value = values.removeFirst()
-        if (value.kindCase == Value.KindCase.STRUCT_VALUE) {
-          subStructs.add(value)
-          value.structValue.fieldsMap.values.forEach(values::add)
-        } else if (value.kindCase == Value.KindCase.LIST_VALUE) {
-          value.listValue.valuesList.forEach(values::add)
-        }
-      }
-      return subStructs
-    }
-
-    fun Struct.withRandomlyInsertedEntities(
-      entities: List<Struct>,
-      rs: RandomSource,
-      nextKey: () -> String
-    ): Struct {
-      val valueWrapper = toValueProto()
-      val subStructs = valueWrapper.subStructs()
-      val subStructByEntityIndex = List(entities.size) { subStructs.random(rs.random) }
-      val insertedEntityIndices = mutableSetOf<Int>()
-
-      fun patch(value: Value): Value {
-        return if (value.kindCase == Value.KindCase.STRUCT_VALUE) {
-          val entityIndices =
-            subStructByEntityIndex.indices.filter { subStructByEntityIndex[it] === value }
-          entityIndices.forEach {
-            check(!insertedEntityIndices.contains(it)) {
-              "internal error jstfxyrdsg: entity index $it visited multiple times"
-            }
-          }
-
-          val builder = value.structValue.toBuilder()
-
-          builder.fieldsMap.entries.toList().forEach { (key, value) ->
-            builder.putFields(key, patch(value))
-          }
-
-          entityIndices.forEach { entityIndex ->
-            insertedEntityIndices.add(entityIndex)
-            val entity = entities[entityIndex]
-            var key = nextKey()
-            while (builder.containsFields(key)) {
-              key = nextKey()
-            }
-            builder.putFields(key, entity.toValueProto())
-          }
-
-          builder.build().toValueProto()
-        } else if (value.kindCase == Value.KindCase.LIST_VALUE) {
-          val builder = ListValue.newBuilder()
-          value.listValue.valuesList.forEach { builder.addValues(patch(it)) }
-          builder.build().toValueProto()
-        } else {
-          value
-        }
-      }
-
-      val patchedStruct = patch(valueWrapper).structValue
-
-      val entityIndicesSorted = entities.indices.sorted()
-      val insertedEntityIndicesSorted = insertedEntityIndices.sorted()
-      check(entityIndicesSorted == insertedEntityIndicesSorted) {
-        "internal error esv76bzer6: not all entities were inserted: " +
-          "entityIndices=$entityIndicesSorted, insertedEntityIndices=$insertedEntityIndicesSorted"
-      }
-
-      return patchedStruct
-    }
-  }
-
-  sealed class DoubleEncodingTestCase(val value: Double) {
-
-    abstract fun encode(dsl: BuildByteArrayDSL)
-
-    data object PositiveZero : DoubleEncodingTestCase(0.0) {
-      override fun encode(dsl: BuildByteArrayDSL) {
-        dsl.put(QueryResultCodec.VALUE_NUMBER_POSITIVE_ZERO)
-      }
-    }
-
-    data object NegativeZero : DoubleEncodingTestCase(-0.0) {
-      override fun encode(dsl: BuildByteArrayDSL) {
-        dsl.put(QueryResultCodec.VALUE_NUMBER_NEGATIVE_ZERO)
-      }
-    }
-
-    class DoubleEncoded(value: Double, val description: String) : DoubleEncodingTestCase(value) {
-      override fun encode(dsl: BuildByteArrayDSL) {
-        dsl.put(QueryResultCodec.VALUE_NUMBER_DOUBLE)
-        dsl.putDouble(value)
-      }
-      override fun toString() = "DoubleEncoded($value, description=$description)"
-    }
-
-    data class UInt32Encoded(val intValue: Int, val byteCount: Int) :
-      DoubleEncodingTestCase(intValue.toDouble()) {
-      override fun encode(dsl: BuildByteArrayDSL) {
-        dsl.put(QueryResultCodec.VALUE_NUMBER_UINT32)
-        val actualByteCount = dsl.putUInt32(intValue)
-        check(actualByteCount == byteCount) {
-          "actualByteCount=$actualByteCount, byteCount=$byteCount, " +
-            "but they should be equal [qmgvc7th7p]"
-        }
-      }
-      override fun toString() = "UInt32Encoded($intValue, byteCount=$byteCount)"
-    }
-
-    data class SInt32Encoded(val intValue: Int, val byteCount: Int) :
-      DoubleEncodingTestCase(intValue.toDouble()) {
-      override fun encode(dsl: BuildByteArrayDSL) {
-        dsl.put(QueryResultCodec.VALUE_NUMBER_SINT32)
-        val actualByteCount = dsl.putSInt32(intValue)
-        check(actualByteCount == byteCount) {
-          "actualByteCount=$actualByteCount, byteCount=$byteCount, " +
-            "but they should be equal [m74dahr5s5]"
-        }
-      }
-      override fun toString() = "SInt32Encoded($intValue, byteCount=$byteCount)"
-    }
-
-    data class Fixed32IntEncoded(val intValue: Int) : DoubleEncodingTestCase(intValue.toDouble()) {
-      override fun encode(dsl: BuildByteArrayDSL) {
-        dsl.put(QueryResultCodec.VALUE_NUMBER_FIXED32)
-        dsl.putInt(intValue)
-      }
-      override fun toString() = "Fixed32IntEncoded($intValue)"
-    }
-
-    data class UInt64Encoded(val longValue: Long, val byteCount: Int) :
-      DoubleEncodingTestCase(longValue.toDouble()) {
-      init {
-        require(longValue.toDouble().toLong() == longValue) {
-          "longValue=$longValue, which does not losslessly round-trip to and from a double: " +
-            "$longValue.toDouble()=${longValue.toDouble()}, " +
-            "$longValue.toDouble().toLong()=${longValue.toDouble().toLong()} [b7xe5d3mez]"
-        }
-      }
-      override fun encode(dsl: BuildByteArrayDSL) {
-        dsl.put(QueryResultCodec.VALUE_NUMBER_UINT64)
-        val actualByteCount = dsl.putUInt64(longValue)
-        check(actualByteCount == byteCount) {
-          "actualByteCount=$actualByteCount, byteCount=$byteCount, " +
-            "but they should be equal [j7pnjj29fb]"
-        }
-      }
-      override fun toString() = "UInt64Encoded($longValue, byteCount=$byteCount)"
-    }
-
-    data class SInt64Encoded(val longValue: Long, val byteCount: Int) :
-      DoubleEncodingTestCase(longValue.toDouble()) {
-      init {
-        require(longValue.toDouble().toLong() == longValue) {
-          "longValue=$longValue, which does not losslessly round-trip to and from a double: " +
-            "$longValue.toDouble()=${longValue.toDouble()}, " +
-            "$longValue.toDouble().toLong()=${longValue.toDouble().toLong()} [zvppmvqt53]"
-        }
-      }
-      override fun encode(dsl: BuildByteArrayDSL) {
-        dsl.put(QueryResultCodec.VALUE_NUMBER_SINT64)
-        val actualByteCount = dsl.putSInt64(longValue)
-        check(actualByteCount == byteCount) {
-          "actualByteCount=$actualByteCount, byteCount=$byteCount, " +
-            "but they should be equal [mhsh585nq2]"
-        }
-      }
-      override fun toString() = "SInt64Encoded($longValue, byteCount=$byteCount)"
-    }
-
-    companion object {
-
-      fun arb(): Arb<DoubleEncodingTestCase> =
-        Arb.choice(
-          Arb.of(
-            PositiveZero,
-            NegativeZero,
-            DoubleEncoded(Double.NaN, "NaN"),
-            DoubleEncoded(Double.POSITIVE_INFINITY, "POSITIVE_INFINITY"),
-            DoubleEncoded(Double.NEGATIVE_INFINITY, "NEGATIVE_INFINITY"),
-          ),
-          Arb.int(1..127).map { UInt32Encoded(it, byteCount = 1) },
-          Arb.int(128..16_383).map { UInt32Encoded(it, byteCount = 2) },
-          Arb.int(16_384..2_097_151).map { UInt32Encoded(it, byteCount = 3) },
-          Arb.int(2_097_152..Int.MAX_VALUE).map { Fixed32IntEncoded(it) },
-          Arb.long(Int.MAX_VALUE.toLong() + 1..34_359_738_367).map {
-            UInt64Encoded(it, byteCount = 5)
-          },
-          Arb.long(34_359_738_368..4_398_046_511_103).map { UInt64Encoded(it, byteCount = 6) },
-          Arb.long(4_398_046_511_104..562_949_953_421_311).map { UInt64Encoded(it, byteCount = 7) },
-          Arb.long(562_949_953_421_312..Long.MAX_VALUE).map {
-            DoubleEncoded(it.toDouble(), "long value $it")
-          },
-          Arb.int(-64..-1).map { SInt32Encoded(it, byteCount = 1) },
-          Arb.int(-8192..-65).map { SInt32Encoded(it, byteCount = 2) },
-          Arb.int(-1_048_576..-8193).map { SInt32Encoded(it, byteCount = 3) },
-          Arb.int(Int.MIN_VALUE..-1_048_577).map { Fixed32IntEncoded(it) },
-          Arb.long(-17_179_869_184 until Int.MIN_VALUE.toLong()).map {
-            SInt64Encoded(it, byteCount = 5)
-          },
-          Arb.long(-2_199_023_255_552..-17_179_869_185).map { SInt64Encoded(it, byteCount = 6) },
-          Arb.long(-281_474_976_710_656..-2_199_023_255_553).map {
-            SInt64Encoded(it, byteCount = 7)
-          },
-          Arb.long(Long.MIN_VALUE..-281_474_976_710_657).map {
-            DoubleEncoded(it.toDouble(), "negative long value $it")
-          },
-          Arb.double()
-            .filterNot {
-              it.toLong().toDouble() == it || it.isNaN() || it.isInfinite() || it == 0.0
-            }
-            .map { DoubleEncoded(it, "double typical case") }
-        )
-    }
-  }
-
-  sealed class StringEncodingTestCase(val string: String) {
-
-    abstract fun encode(dsl: BuildByteArrayDSL)
-
-    data object EmptyString : StringEncodingTestCase("") {
-      override fun encode(dsl: BuildByteArrayDSL) {
-        dsl.put(QueryResultCodec.VALUE_STRING_EMPTY)
-      }
-    }
-
-    class OneByte(val char: Char) : StringEncodingTestCase(char.toString()) {
-      init {
-        require((char.code.toByte().toInt() and 0xFF) == char.code)
-      }
-      override fun encode(dsl: BuildByteArrayDSL) {
-        dsl.put(QueryResultCodec.VALUE_STRING_1BYTE)
-        dsl.put(char.code.toByte())
-      }
-      override fun toString() = "OneByte(char.code=${char.code})"
-    }
-
-    class TwoBytes(val char1: Char, val char2: Char) :
-      StringEncodingTestCase(char1.toString() + char2.toString()) {
-      init {
-        require((char1.code.toByte().toInt() and 0xFF) == char1.code)
-        require((char2.code.toByte().toInt() and 0xFF) == char2.code)
-      }
-      override fun encode(dsl: BuildByteArrayDSL) {
-        dsl.put(QueryResultCodec.VALUE_STRING_2BYTE)
-        dsl.put(char1.code.toByte())
-        dsl.put(char2.code.toByte())
-      }
-      override fun toString() = "TwoBytes(char1.code=${char1.code}, char2.code=${char2.code})"
-    }
-
-    class OneChar(val char: Char, val description: String) :
-      StringEncodingTestCase(char.toString()) {
-      override fun encode(dsl: BuildByteArrayDSL) {
-        dsl.put(QueryResultCodec.VALUE_STRING_1CHAR)
-        dsl.putChar(char)
-      }
-      override fun toString() = "OneChar(char.code=${char.code}, description=$description)"
-    }
-
-    class TwoChars(val char1: Char, val char2: Char, val description: String) :
-      StringEncodingTestCase(char1.toString() + char2.toString()) {
-      override fun encode(dsl: BuildByteArrayDSL) {
-        dsl.put(QueryResultCodec.VALUE_STRING_2CHAR)
-        dsl.putChar(char1)
-        dsl.putChar(char2)
-      }
-      override fun toString() =
-        "TwoChars(" +
-          "char1.code=${char1.code}, char2.code=${char2.code}, description=$description)"
-    }
-
-    class Utf8Encoding(string: String) : StringEncodingTestCase(string) {
-
-      private val utf8EncodingBytes = string.encodeToByteArray()
-
-      override fun encode(dsl: BuildByteArrayDSL) {
-        dsl.put(QueryResultCodec.VALUE_STRING_UTF8)
-        dsl.putUInt32(utf8EncodingBytes.size)
-        dsl.putUInt32(string.length)
-        dsl.put(utf8EncodingBytes)
-      }
-      override fun toString() =
-        "Utf8Encoding(" +
-          "string=$string, utf8EncodingBytes=${utf8EncodingBytes.contentToString()})"
-    }
-
-    class Utf16Encoding(string: String) : StringEncodingTestCase(string) {
-
-      private val utf16EncodingBytes = string.toByteArray(StandardCharsets.UTF_16BE)
-
-      override fun encode(dsl: BuildByteArrayDSL) {
-        dsl.put(QueryResultCodec.VALUE_STRING_UTF16)
-        dsl.putUInt32(string.length)
-        dsl.put(utf16EncodingBytes)
-      }
-      override fun toString() =
-        "Utf16Encoding(" +
-          "string=$string, utf16EncodingBytes=${utf16EncodingBytes.contentToString()})"
-    }
-
-    class Utf16WithLoneSurrogatesEncoding(string: String, val loneSurrogateCount: Int) :
-      StringEncodingTestCase(string) {
-
-      private val utf16EncodingBytes =
-        ByteBuffer.allocate(string.length * 2).let { byteBuffer ->
-          val charBuffer = byteBuffer.asCharBuffer()
-          charBuffer.put(string)
-          byteBuffer.array()
-        }
-
-      override fun encode(dsl: BuildByteArrayDSL) {
-        dsl.put(QueryResultCodec.VALUE_STRING_UTF16)
-        dsl.putUInt32(string.length)
-        dsl.put(utf16EncodingBytes)
-      }
-      override fun toString() =
-        "Utf16WithLoneSurrogatesEncoding(" +
-          "loneSurrogateCount=$loneSurrogateCount, string=$string, " +
-          "utf16EncodingBytes=${utf16EncodingBytes.contentToString()})"
-    }
-
-    companion object {
-
-      fun arb(): Arb<StringEncodingTestCase> =
-        Arb.choice(
-          Arb.constant(EmptyString),
-          Arb.int(0..255).map { OneByte(it.toChar()) },
-          charArbWithCodeGreaterThan255().map { OneChar(it, "not a lone surrogate") },
-          Arb.twoValues(Arb.int(0..255)).map { (codepoint1, codepoint2) ->
-            TwoBytes(codepoint1.toChar(), codepoint2.toChar())
-          },
-          Arb.twoValues(charArbWithCodeGreaterThan255()).map { (char1, char2) ->
-            TwoChars(char1, char2, "no lone surrogates")
-          },
-          // The minimum length is 3, as strings shorter than 3 characters are handled above.
-          StringWithEncodingLengthArb(Utf8EncodingShorterThanOrEqualToUtf16, 3..100).map {
-            Utf8Encoding(it)
-          },
-          StringWithEncodingLengthArb(Utf8EncodingLongerThanUtf16, 3..100).map {
-            Utf16Encoding(it)
-          },
-          Arb.stringWithLoneSurrogates(3..100).map {
-            Utf16WithLoneSurrogatesEncoding(it.string, it.loneSurrogateCount)
-          },
-          Arb.stringWithLoneSurrogates(1..1).map { OneChar(it.string.single(), "lone surrogate") },
-          Arb.stringWithLoneSurrogates(2..2).map {
-            TwoChars(it.string[0], it.string[1], "${it.loneSurrogateCount} lone surrogates")
-          },
-        )
-    }
   }
 }
