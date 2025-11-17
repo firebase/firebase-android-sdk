@@ -93,7 +93,7 @@ internal class QueryResultDecoder(
     return byteBuffer.getChar()
   }
 
-  private fun readInt(): Int {
+  private fun readFixed32Int(): Int {
     ensureRemaining(4)
     return byteBuffer.getInt()
   }
@@ -156,7 +156,7 @@ internal class QueryResultDecoder(
     }
 
   private fun readHeader(): Int =
-    readInt().also {
+    readFixed32Int().also {
       if (it != QueryResultCodec.QUERY_RESULT_HEADER) {
         throw BadHeaderException(
           "read header 0x" +

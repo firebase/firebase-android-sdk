@@ -48,18 +48,29 @@ internal object QueryResultCodec {
   // simply a valid "continuation byte" for a multi-byte UTF-8 code point encoding.
   const val QUERY_RESULT_HEADER: Int = 0xC186F880.toInt()
   const val VALUE_NULL: Byte = 1
-  const val VALUE_NUMBER: Byte = 2
-  const val VALUE_BOOL_TRUE: Byte = 3
-  const val VALUE_BOOL_FALSE: Byte = 4
-  const val VALUE_STRUCT: Byte = 5
-  const val VALUE_LIST: Byte = 6
-  const val VALUE_KIND_NOT_SET: Byte = 7
-  const val VALUE_ENTITY: Byte = 8
-  const val VALUE_STRING_EMPTY: Byte = 9
-  const val VALUE_STRING_1BYTE: Byte = 10
-  const val VALUE_STRING_2BYTE: Byte = 11
-  const val VALUE_STRING_1CHAR: Byte = 12
-  const val VALUE_STRING_2CHAR: Byte = 13
-  const val VALUE_STRING_UTF8: Byte = 14
-  const val VALUE_STRING_UTF16: Byte = 15
+  const val VALUE_KIND_NOT_SET: Byte = 2
+  const val VALUE_ENTITY: Byte = 3
+
+  const val VALUE_NUMBER_DOUBLE: Byte = 4
+  const val VALUE_NUMBER_POSITIVE_ZERO: Byte = 5
+  const val VALUE_NUMBER_NEGATIVE_ZERO: Byte = 6
+  const val VALUE_NUMBER_FIXED32: Byte = 7
+  const val VALUE_NUMBER_UINT32: Byte = 8
+  const val VALUE_NUMBER_SINT32: Byte = 9
+  const val VALUE_NUMBER_UINT64: Byte = 10
+  const val VALUE_NUMBER_SINT64: Byte = 11
+
+  const val VALUE_BOOL_TRUE: Byte = 12
+  const val VALUE_BOOL_FALSE: Byte = 13
+
+  const val VALUE_STRUCT: Byte = 14
+  const val VALUE_LIST: Byte = 15
+
+  const val VALUE_STRING_EMPTY: Byte = 16
+  const val VALUE_STRING_1BYTE: Byte = 17
+  const val VALUE_STRING_2BYTE: Byte = 18
+  const val VALUE_STRING_1CHAR: Byte = 19
+  const val VALUE_STRING_2CHAR: Byte = 20
+  const val VALUE_STRING_UTF8: Byte = 21
+  const val VALUE_STRING_UTF16: Byte = 22
 }

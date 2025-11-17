@@ -16,7 +16,10 @@
 
 package com.google.firebase.dataconnect.sqlite
 
+import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.putSInt32
+import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.putSInt64
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.putUInt32
+import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.putUInt64
 import com.google.firebase.dataconnect.sqlite.QueryResultCodec.Entity
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.protobuf.ListValue
@@ -51,12 +54,48 @@ internal class QueryResultEncoder(
   class EncodeResult(val byteArray: ByteArray, val entities: List<Entity>)
 
   fun encode(queryResult: Struct) {
-    writer.writeInt(QueryResultCodec.QUERY_RESULT_HEADER)
+    writer.writeFixed32Int(QueryResultCodec.QUERY_RESULT_HEADER)
     writeStruct(queryResult)
   }
 
   fun flush() {
     writer.flush()
+  }
+
+  private fun writeBoolean(value: Boolean) {
+    val byte = if (value) QueryResultCodec.VALUE_BOOL_TRUE else QueryResultCodec.VALUE_BOOL_FALSE
+    writer.writeByte(byte)
+  }
+
+  private fun writeDouble(value: Double) {
+    when (val encoding = DoubleEncoding.calculateOptimalSpaceEfficientEncodingFor(value)) {
+      is DoubleEncoding.Double -> {
+        writer.writeByte(QueryResultCodec.VALUE_NUMBER_DOUBLE)
+        writer.writeDouble(value)
+      }
+      DoubleEncoding.PositiveZero -> writer.writeByte(QueryResultCodec.VALUE_NUMBER_POSITIVE_ZERO)
+      DoubleEncoding.NegativeZero -> writer.writeByte(QueryResultCodec.VALUE_NUMBER_NEGATIVE_ZERO)
+      is DoubleEncoding.Fixed32Int -> {
+        writer.writeByte(QueryResultCodec.VALUE_NUMBER_FIXED32)
+        writer.writeFixed32Int(encoding.value)
+      }
+      is DoubleEncoding.UInt32 -> {
+        writer.writeByte(QueryResultCodec.VALUE_NUMBER_UINT32)
+        writer.writeUInt32(encoding.value, encoding.size)
+      }
+      is DoubleEncoding.SInt32 -> {
+        writer.writeByte(QueryResultCodec.VALUE_NUMBER_SINT32)
+        writer.writeSInt32(encoding.value, encoding.size)
+      }
+      is DoubleEncoding.UInt64 -> {
+        writer.writeByte(QueryResultCodec.VALUE_NUMBER_UINT64)
+        writer.writeUInt64(encoding.value, encoding.size)
+      }
+      is DoubleEncoding.SInt64 -> {
+        writer.writeByte(QueryResultCodec.VALUE_NUMBER_SINT64)
+        writer.writeSInt64(encoding.value, encoding.size)
+      }
+    }
   }
 
   private fun writeString(string: String) {
@@ -138,15 +177,8 @@ internal class QueryResultEncoder(
   private fun writeValue(value: Value) {
     when (value.kindCase) {
       Value.KindCase.NULL_VALUE -> writer.writeByte(QueryResultCodec.VALUE_NULL)
-      Value.KindCase.NUMBER_VALUE -> {
-        writer.writeByte(QueryResultCodec.VALUE_NUMBER)
-        writer.writeDouble(value.numberValue)
-      }
-      Value.KindCase.BOOL_VALUE ->
-        writer.writeByte(
-          if (value.boolValue) QueryResultCodec.VALUE_BOOL_TRUE
-          else QueryResultCodec.VALUE_BOOL_FALSE
-        )
+      Value.KindCase.NUMBER_VALUE -> writeDouble(value.numberValue)
+      Value.KindCase.BOOL_VALUE -> writeBoolean(value.boolValue)
       Value.KindCase.STRING_VALUE -> writeString(value.stringValue)
       Value.KindCase.STRUCT_VALUE -> writeStruct(value.structValue)
       Value.KindCase.LIST_VALUE -> writeList(value.listValue)
@@ -209,6 +241,65 @@ internal class QueryResultEncoder(
     }
   }
 
+  private sealed interface DoubleEncoding {
+    data class Double(val value: kotlin.Double) : DoubleEncoding
+    object PositiveZero : DoubleEncoding
+    object NegativeZero : DoubleEncoding
+
+    data class UInt32(val value: Int, val size: Int) : DoubleEncoding
+    data class SInt32(val value: Int, val size: Int) : DoubleEncoding
+    data class Fixed32Int(val value: Int) : DoubleEncoding
+
+    data class UInt64(val value: Long, val size: Int) : DoubleEncoding
+    data class SInt64(val value: Long, val size: Int) : DoubleEncoding
+
+    companion object {
+      fun calculateOptimalSpaceEfficientEncodingFor(value: kotlin.Double): DoubleEncoding {
+        if (!value.isFinite()) {
+          return Double(value)
+        }
+
+        value.toBits().also { bits ->
+          if (bits == 0L) {
+            return PositiveZero
+          } else if (bits == Long.MIN_VALUE) {
+            return NegativeZero
+          }
+        }
+
+        value.toInt().also { intValue ->
+          if (intValue.toDouble() == value) {
+            val uint32Size = CodedIntegers.computeUInt32Size(intValue)
+            val sint32Size = CodedIntegers.computeSInt32Size(intValue)
+            return if (uint32Size >= 4 && sint32Size >= 4) {
+              Fixed32Int(intValue)
+            } else if (uint32Size <= sint32Size) {
+              UInt32(intValue, uint32Size)
+            } else {
+              SInt32(intValue, sint32Size)
+            }
+          }
+        }
+
+        value.toLong().also { longValue ->
+          if (longValue.toDouble() == value) {
+            if (longValue > 0) {
+              val uint64Size = CodedIntegers.computeUInt64Size(longValue)
+              val sint64Size = CodedIntegers.computeSInt64Size(longValue)
+              if (uint64Size < 8 && uint64Size < sint64Size) {
+                UInt64(longValue, uint64Size)
+              } else if (sint64Size < 8 && sint64Size < uint64Size) {
+                SInt64(longValue, sint64Size)
+              }
+            }
+          }
+        }
+
+        return Double(value)
+      }
+    }
+  }
+
   companion object {
 
     fun encode(queryResult: Struct, entityFieldName: String? = null): EncodeResult =
@@ -242,18 +333,29 @@ private class QueryResultChannelWriter(private val channel: WritableByteChannel)
     byteBuffer.clear()
   }
 
-  fun writeUInt32(value: Int) {
-    require(value >= 0) {
-      "value=$value, but it must be greater than or equal to zero [fqn5fex58z]"
-    }
-    val size = CodedIntegers.computeUInt32Size(value)
-    ensureRemaining(size)
+  fun writeUInt32(value: Int, size: Int? = null) {
+    ensureRemaining(size ?: CodedIntegers.computeUInt32Size(value))
     byteBuffer.putUInt32(value)
   }
 
-  fun writeInt(value: Int) {
+  fun writeSInt32(value: Int, size: Int? = null) {
+    ensureRemaining(size ?: CodedIntegers.computeSInt32Size(value))
+    byteBuffer.putSInt32(value)
+  }
+
+  fun writeFixed32Int(value: Int) {
     ensureRemaining(4)
     byteBuffer.putInt(value)
+  }
+
+  fun writeUInt64(value: Long, size: Int? = null) {
+    ensureRemaining(size ?: CodedIntegers.computeUInt64Size(value))
+    byteBuffer.putUInt64(value)
+  }
+
+  fun writeSInt64(value: Long, size: Int? = null) {
+    ensureRemaining(size ?: CodedIntegers.computeSInt64Size(value))
+    byteBuffer.putSInt64(value)
   }
 
   fun writeByte(value: Byte) {
