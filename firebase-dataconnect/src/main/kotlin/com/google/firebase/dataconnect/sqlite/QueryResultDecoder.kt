@@ -29,6 +29,7 @@ import com.google.protobuf.Struct
 import com.google.protobuf.Value
 import java.io.ByteArrayInputStream
 import java.io.EOFException
+import java.nio.BufferUnderflowException
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.CharBuffer
@@ -110,24 +111,32 @@ internal class QueryResultDecoder(
   ): T {
     ensureRemaining(1)
     while (true) {
-      try {
-        return read(byteBuffer)
-      } catch (e: CodedIntegers.MalformedVarintException) {
-        if (byteBuffer.remaining() >= maxSize) {
-          throw parseException(
-            "failed to parse ${byteBuffer.remaining()} bytes of $typeName value: " +
-              "${e.message} [nne8eyhcbs]",
-            e
-          )
+      val originalPosition = byteBuffer.position()
+      val exception =
+        try {
+          return read(byteBuffer)
+        } catch (e: BufferUnderflowException) {
+          e
+        } catch (e: CodedIntegers.MalformedVarintException) {
+          e
         }
-        if (!readSome()) {
-          throw eofException(
-            "end of input reached prematurely reading $typeName value: " +
-              "got ${byteBuffer.remaining()} bytes," +
-              "but need between 1 and $maxSize bytes [f9bkxazr3r]",
-            e
-          )
-        }
+
+      byteBuffer.position(originalPosition)
+
+      if (byteBuffer.remaining() >= maxSize) {
+        throw parseException(
+          "failed to parse ${byteBuffer.remaining()} bytes of $typeName value: " +
+            "${exception.message} [nne8eyhcbs]",
+          exception
+        )
+      }
+      if (!readSome()) {
+        throw eofException(
+          "end of input reached prematurely reading $typeName value: " +
+            "got ${byteBuffer.remaining()} bytes," +
+            "but need between 1 and $maxSize bytes [f9bkxazr3r]",
+          exception
+        )
       }
     }
   }
