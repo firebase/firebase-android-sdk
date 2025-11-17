@@ -259,37 +259,52 @@ internal class QueryResultEncoder(
           return Double(value)
         }
 
-        value.toBits().also { bits ->
-          if (bits == 0L) {
-            return PositiveZero
-          } else if (bits == Long.MIN_VALUE) {
-            return NegativeZero
+        if (value == 0.0) {
+          value.toBits().also { bits ->
+            return when (bits) {
+              0L -> PositiveZero
+              Long.MIN_VALUE -> NegativeZero
+              else ->
+                throw IllegalStateException("unexpected bits for ${value}: $bits [myedq2mzzg]")
+            }
           }
         }
 
         value.toInt().also { intValue ->
           if (intValue.toDouble() == value) {
-            val uint32Size = CodedIntegers.computeUInt32Size(intValue)
-            val sint32Size = CodedIntegers.computeSInt32Size(intValue)
-            return if (uint32Size >= 4 && sint32Size >= 4) {
-              Fixed32Int(intValue)
-            } else if (uint32Size <= sint32Size) {
-              UInt32(intValue, uint32Size)
+            return if (intValue < 0) {
+              val sint32Size = CodedIntegers.computeSInt32Size(intValue)
+              if (sint32Size < 4) {
+                SInt32(intValue, sint32Size)
+              } else {
+                Fixed32Int(intValue)
+              }
             } else {
-              SInt32(intValue, sint32Size)
+              val uint32Size = CodedIntegers.computeUInt32Size(intValue)
+              if (uint32Size < 4) {
+                UInt32(intValue, uint32Size)
+              } else {
+                Fixed32Int(intValue)
+              }
             }
           }
         }
 
         value.toLong().also { longValue ->
           if (longValue.toDouble() == value) {
-            if (longValue > 0) {
-              val uint64Size = CodedIntegers.computeUInt64Size(longValue)
+            return if (longValue < 0) {
               val sint64Size = CodedIntegers.computeSInt64Size(longValue)
-              if (uint64Size < 8 && uint64Size < sint64Size) {
-                UInt64(longValue, uint64Size)
-              } else if (sint64Size < 8 && sint64Size < uint64Size) {
+              if (sint64Size < 8) {
                 SInt64(longValue, sint64Size)
+              } else {
+                Double(value)
+              }
+            } else {
+              val uint64Size = CodedIntegers.computeUInt64Size(longValue)
+              if (uint64Size < 8) {
+                UInt64(longValue, uint64Size)
+              } else {
+                Double(value)
               }
             }
           }

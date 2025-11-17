@@ -16,6 +16,7 @@
 
 package com.google.firebase.dataconnect.sqlite
 
+import com.google.firebase.dataconnect.testutil.BuildByteArrayDSL
 import com.google.firebase.dataconnect.testutil.buildByteArray
 import com.google.firebase.dataconnect.testutil.property.arbitrary.StringWithEncodingLengthArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.StringWithEncodingLengthArb.Mode.Utf8EncodingLongerThanUtf16
@@ -62,10 +63,13 @@ import io.kotest.property.arbitrary.char
 import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.distinct
+import io.kotest.property.arbitrary.double
 import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.flatMap
 import io.kotest.property.arbitrary.int
+import io.kotest.property.arbitrary.long
 import io.kotest.property.arbitrary.map
+import io.kotest.property.arbitrary.of
 import io.kotest.property.arbitrary.pair
 import io.kotest.property.arbitrary.set
 import io.kotest.property.arbitrary.string
@@ -297,6 +301,24 @@ class QueryResultEncoderUnitTest {
       structArb
     ) { struct ->
       struct.struct.decodingEncodingShouldProduceIdenticalStruct()
+    }
+  }
+
+  @Test
+  fun `double encoding`() = runTest {
+    checkAll(propTestConfig, DoubleEncodingTestCase.arb()) { sample ->
+      val struct = Struct.newBuilder().putFields("", sample.value.toValueProto()).build()
+
+      val encodeResult = QueryResultEncoder.encode(struct)
+
+      val expectedEncodedBytes = buildByteArray {
+        putInt(QueryResultCodec.QUERY_RESULT_HEADER)
+        put(QueryResultCodec.VALUE_STRUCT)
+        putUInt32(1) // struct size
+        put(QueryResultCodec.VALUE_STRING_EMPTY)
+        sample.encode(this)
+      }
+      encodeResult.byteArray shouldBe expectedEncodedBytes
     }
   }
 
@@ -919,6 +941,150 @@ class QueryResultEncoderUnitTest {
       }
 
       return patchedStruct
+    }
+  }
+
+  sealed class DoubleEncodingTestCase(val value: Double) {
+
+    abstract fun encode(dsl: BuildByteArrayDSL)
+
+    data object PositiveZero : DoubleEncodingTestCase(0.0) {
+      override fun encode(dsl: BuildByteArrayDSL) {
+        dsl.put(QueryResultCodec.VALUE_NUMBER_POSITIVE_ZERO)
+      }
+    }
+
+    data object NegativeZero : DoubleEncodingTestCase(-0.0) {
+      override fun encode(dsl: BuildByteArrayDSL) {
+        dsl.put(QueryResultCodec.VALUE_NUMBER_NEGATIVE_ZERO)
+      }
+    }
+
+    class DoubleEncoded(value: Double, val description: String) : DoubleEncodingTestCase(value) {
+      override fun encode(dsl: BuildByteArrayDSL) {
+        dsl.put(QueryResultCodec.VALUE_NUMBER_DOUBLE)
+        dsl.putDouble(value)
+      }
+      override fun toString() = "DoubleEncoded($value, description=$description)"
+    }
+
+    data class UInt32Encoded(val intValue: Int, val byteCount: Int) :
+      DoubleEncodingTestCase(intValue.toDouble()) {
+      override fun encode(dsl: BuildByteArrayDSL) {
+        dsl.put(QueryResultCodec.VALUE_NUMBER_UINT32)
+        val actualByteCount = dsl.putUInt32(intValue)
+        check(actualByteCount == byteCount) {
+          "actualByteCount=$actualByteCount, byteCount=$byteCount, " +
+            "but they should be equal [qmgvc7th7p]"
+        }
+      }
+      override fun toString() = "UInt32Encoded($intValue, byteCount=$byteCount)"
+    }
+
+    data class SInt32Encoded(val intValue: Int, val byteCount: Int) :
+      DoubleEncodingTestCase(intValue.toDouble()) {
+      override fun encode(dsl: BuildByteArrayDSL) {
+        dsl.put(QueryResultCodec.VALUE_NUMBER_SINT32)
+        val actualByteCount = dsl.putSInt32(intValue)
+        check(actualByteCount == byteCount) {
+          "actualByteCount=$actualByteCount, byteCount=$byteCount, " +
+            "but they should be equal [m74dahr5s5]"
+        }
+      }
+      override fun toString() = "SInt32Encoded($intValue, byteCount=$byteCount)"
+    }
+
+    data class Fixed32IntEncoded(val intValue: Int) : DoubleEncodingTestCase(intValue.toDouble()) {
+      override fun encode(dsl: BuildByteArrayDSL) {
+        dsl.put(QueryResultCodec.VALUE_NUMBER_FIXED32)
+        dsl.putInt(intValue)
+      }
+      override fun toString() = "Fixed32IntEncoded($intValue)"
+    }
+
+    data class UInt64Encoded(val longValue: Long, val byteCount: Int) :
+      DoubleEncodingTestCase(longValue.toDouble()) {
+      init {
+        require(longValue.toDouble().toLong() == longValue) {
+          "longValue=$longValue, which does not losslessly round-trip to and from a double: " +
+            "$longValue.toDouble()=${longValue.toDouble()}, " +
+            "$longValue.toDouble().toLong()=${longValue.toDouble().toLong()} [b7xe5d3mez]"
+        }
+      }
+      override fun encode(dsl: BuildByteArrayDSL) {
+        dsl.put(QueryResultCodec.VALUE_NUMBER_UINT64)
+        val actualByteCount = dsl.putUInt64(longValue)
+        check(actualByteCount == byteCount) {
+          "actualByteCount=$actualByteCount, byteCount=$byteCount, " +
+            "but they should be equal [j7pnjj29fb]"
+        }
+      }
+      override fun toString() = "UInt64Encoded($longValue, byteCount=$byteCount)"
+    }
+
+    data class SInt64Encoded(val longValue: Long, val byteCount: Int) :
+      DoubleEncodingTestCase(longValue.toDouble()) {
+      init {
+        require(longValue.toDouble().toLong() == longValue) {
+          "longValue=$longValue, which does not losslessly round-trip to and from a double: " +
+            "$longValue.toDouble()=${longValue.toDouble()}, " +
+            "$longValue.toDouble().toLong()=${longValue.toDouble().toLong()} [zvppmvqt53]"
+        }
+      }
+      override fun encode(dsl: BuildByteArrayDSL) {
+        dsl.put(QueryResultCodec.VALUE_NUMBER_SINT64)
+        val actualByteCount = dsl.putSInt64(longValue)
+        check(actualByteCount == byteCount) {
+          "actualByteCount=$actualByteCount, byteCount=$byteCount, " +
+            "but they should be equal [mhsh585nq2]"
+        }
+      }
+      override fun toString() = "SInt64Encoded($longValue, byteCount=$byteCount)"
+    }
+
+    companion object {
+
+      fun arb(): Arb<DoubleEncodingTestCase> =
+        Arb.choice(
+          Arb.of(
+            PositiveZero,
+            NegativeZero,
+            DoubleEncoded(Double.NaN, "NaN"),
+            DoubleEncoded(Double.POSITIVE_INFINITY, "POSITIVE_INFINITY"),
+            DoubleEncoded(Double.NEGATIVE_INFINITY, "NEGATIVE_INFINITY"),
+          ),
+          Arb.int(1..127).map { UInt32Encoded(it, byteCount = 1) },
+          Arb.int(128..16_383).map { UInt32Encoded(it, byteCount = 2) },
+          Arb.int(16_384..2_097_151).map { UInt32Encoded(it, byteCount = 3) },
+          Arb.int(2_097_152..Int.MAX_VALUE).map { Fixed32IntEncoded(it) },
+          Arb.long(Int.MAX_VALUE.toLong() + 1..34_359_738_367).map {
+            UInt64Encoded(it, byteCount = 5)
+          },
+          Arb.long(34_359_738_368..4_398_046_511_103).map { UInt64Encoded(it, byteCount = 6) },
+          Arb.long(4_398_046_511_104..562_949_953_421_311).map { UInt64Encoded(it, byteCount = 7) },
+          Arb.long(562_949_953_421_312..Long.MAX_VALUE).map {
+            DoubleEncoded(it.toDouble(), "long value $it")
+          },
+          Arb.int(-64..-1).map { SInt32Encoded(it, byteCount = 1) },
+          Arb.int(-8192..-65).map { SInt32Encoded(it, byteCount = 2) },
+          Arb.int(-1_048_576..-8193).map { SInt32Encoded(it, byteCount = 3) },
+          Arb.int(Int.MIN_VALUE..-1_048_577).map { Fixed32IntEncoded(it) },
+          Arb.long(-17_179_869_184 until Int.MIN_VALUE.toLong()).map {
+            SInt64Encoded(it, byteCount = 5)
+          },
+          Arb.long(-2_199_023_255_552..-17_179_869_185).map { SInt64Encoded(it, byteCount = 6) },
+          Arb.long(-281_474_976_710_656..-2_199_023_255_553).map {
+            SInt64Encoded(it, byteCount = 7)
+          },
+          Arb.long(Long.MIN_VALUE..-281_474_976_710_657).map {
+            DoubleEncoded(it.toDouble(), "negative long value $it")
+          },
+          Arb.double()
+            .filterNot {
+              it.toLong().toDouble() == it || it.isNaN() || it.isInfinite() || it == 0.0
+            }
+            .map { DoubleEncoded(it, "double typical case") }
+        )
     }
   }
 }

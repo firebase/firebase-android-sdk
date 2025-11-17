@@ -22,10 +22,10 @@ import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.putUInt32
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.putUInt64
 import com.google.firebase.dataconnect.testutil.BuildByteArrayDSL
 
-fun BuildByteArrayDSL.putSInt32(value: Int) = write { it.putSInt32(value) }
+fun BuildByteArrayDSL.putSInt32(value: Int): Int = write { it.putSInt32(value) }
 
-fun BuildByteArrayDSL.putSInt64(value: Long) = write { it.putSInt64(value) }
+fun BuildByteArrayDSL.putSInt64(value: Long): Int = write { it.putSInt64(value) }
 
-fun BuildByteArrayDSL.putUInt32(value: Int) = write { it.putUInt32(value) }
+fun BuildByteArrayDSL.putUInt32(value: Int): Int = write { it.putUInt32(value) }
 
-fun BuildByteArrayDSL.putUInt64(value: Long) = write { it.putUInt64(value) }
+fun BuildByteArrayDSL.putUInt64(value: Long): Int = write { it.putUInt64(value) }

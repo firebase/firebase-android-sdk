@@ -46,6 +46,10 @@ class BuildByteArrayDSL(byteOrder: ByteOrder?, val channel: WritableByteChannel)
     write { it.putInt(value) }
   }
 
+  fun putDouble(value: Double) {
+    write { it.putDouble(value) }
+  }
+
   fun put(value: Byte) {
     write { it.put(value) }
   }
@@ -58,10 +62,11 @@ class BuildByteArrayDSL(byteOrder: ByteOrder?, val channel: WritableByteChannel)
     write { channel.write(value) }
   }
 
-  inline fun write(block: (ByteBuffer) -> Unit) {
+  inline fun write(block: (ByteBuffer) -> Unit): Int {
     byteBuffer.clear()
     block(byteBuffer)
     byteBuffer.flip()
     channel.write(byteBuffer)
+    return byteBuffer.position()
   }
 }
