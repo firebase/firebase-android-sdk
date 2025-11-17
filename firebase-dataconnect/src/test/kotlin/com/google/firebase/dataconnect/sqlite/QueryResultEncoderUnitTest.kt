@@ -38,6 +38,7 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
+import io.kotest.property.Exhaustive
 import io.kotest.property.PropTestConfig
 import io.kotest.property.ShrinkingMode
 import io.kotest.property.arbitrary.constant
@@ -47,6 +48,7 @@ import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.set
 import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
+import io.kotest.property.exhaustive.of
 import kotlin.random.nextInt
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
@@ -54,7 +56,33 @@ import org.junit.Test
 class QueryResultEncoderUnitTest {
 
   @Test
-  fun `double values should be encoded optimally`() = runTest {
+  fun `bool values`() = runTest {
+    data class BoolTestCase(val value: Boolean, val discriminator: Byte)
+    val arb =
+      Exhaustive.of(
+        BoolTestCase(true, QueryResultCodec.VALUE_BOOL_TRUE),
+        BoolTestCase(false, QueryResultCodec.VALUE_BOOL_FALSE),
+      )
+    checkAll(propTestConfig, arb) { sample ->
+      val struct = Struct.newBuilder().putFields("", sample.value.toValueProto()).build()
+
+      val encodeResult = QueryResultEncoder.encode(struct)
+
+      val expectedEncodedBytes = buildByteArray {
+        putInt(QueryResultCodec.QUERY_RESULT_HEADER)
+        put(QueryResultCodec.VALUE_STRUCT)
+        putUInt32(1) // struct size
+        put(QueryResultCodec.VALUE_STRING_EMPTY)
+        put(sample.discriminator)
+      }
+
+      encodeResult.byteArray shouldBe expectedEncodedBytes
+      QueryResultDecoder.decode(encodeResult.byteArray, emptyList()) shouldBe struct
+    }
+  }
+
+  @Test
+  fun `number values`() = runTest {
     checkAll(propTestConfig, DoubleEncodingTestCase.arb()) { sample ->
       val struct = Struct.newBuilder().putFields("", sample.value.toValueProto()).build()
 
@@ -69,23 +97,39 @@ class QueryResultEncoderUnitTest {
       }
 
       encodeResult.byteArray shouldBe expectedEncodedBytes
-    }
-  }
-
-  @Test
-  fun `double value encodings round trip`() = runTest {
-    checkAll(propTestConfig, DoubleEncodingTestCase.arb()) { sample ->
-      val struct = Struct.newBuilder().putFields("", sample.value.toValueProto()).build()
-
-      val encodeResult = QueryResultEncoder.encode(struct)
-
       QueryResultDecoder.decode(encodeResult.byteArray, emptyList()) shouldBe struct
     }
   }
 
-  @Test
-  fun `string values should be encoded optimally`() = runTest {
-    checkAll(propTestConfig, StringEncodingTestCase.arb()) { sample ->
+  @Test fun `string values`() = verifyStringValues(StringEncodingTestCase.arb())
+
+  @Test fun `long string values`() = verifyStringValues(StringEncodingTestCase.longStringsArb())
+
+  private fun verifyStringValues(arb: Arb<StringEncodingTestCase>) = runTest {
+    checkAll(propTestConfig, arb) { sample ->
+      val struct = Struct.newBuilder().putFields("", sample.string.toValueProto()).build()
+
+      val encodeResult = QueryResultEncoder.encode(struct)
+
+      val expectedEncodedBytes = buildByteArray {
+        putInt(QueryResultCodec.QUERY_RESULT_HEADER)
+        put(QueryResultCodec.VALUE_STRUCT)
+        putUInt32(1) // struct size
+        put(QueryResultCodec.VALUE_STRING_EMPTY)
+        sample.encode(this)
+      }
+
+      encodeResult.byteArray shouldBe expectedEncodedBytes
+      QueryResultDecoder.decode(encodeResult.byteArray, emptyList()) shouldBe struct
+    }
+  }
+
+  @Test fun `struct keys`() = verifyStringStructKeys(StringEncodingTestCase.arb())
+
+  @Test fun `long struct keys`() = verifyStringStructKeys(StringEncodingTestCase.longStringsArb())
+
+  private fun verifyStringStructKeys(arb: Arb<StringEncodingTestCase>) = runTest {
+    checkAll(propTestConfig, arb) { sample ->
       val struct = Struct.newBuilder().putFields(sample.string, Value.getDefaultInstance()).build()
 
       val encodeResult = QueryResultEncoder.encode(struct)
@@ -99,16 +143,6 @@ class QueryResultEncoderUnitTest {
       }
 
       encodeResult.byteArray shouldBe expectedEncodedBytes
-    }
-  }
-
-  @Test
-  fun `string value encodings round trip`() = runTest {
-    checkAll(propTestConfig, StringEncodingTestCase.arb()) { sample ->
-      val struct = Struct.newBuilder().putFields(sample.string, Value.getDefaultInstance()).build()
-
-      val encodeResult = QueryResultEncoder.encode(struct)
-
       QueryResultDecoder.decode(encodeResult.byteArray, emptyList()) shouldBe struct
     }
   }

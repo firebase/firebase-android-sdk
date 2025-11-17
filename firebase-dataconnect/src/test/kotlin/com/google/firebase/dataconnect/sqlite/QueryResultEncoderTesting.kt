@@ -569,10 +569,10 @@ sealed class StringEncodingTestCase(val string: String) {
           Utf8Encoding(it, "string with all chars having 2-byte utf-8 encoding")
         },
         Arb.string(longStringLengthRange, Arb.codepointWith3ByteUtf8Encoding()).map {
-          Utf8Encoding(it, "string with all chars having 3-byte utf-8 encoding")
+          Utf16Encoding(it, "string with all chars having 3-byte utf-8 encoding")
         },
         Arb.string(longStringLengthRange, Arb.codepointWith4ByteUtf8Encoding()).map {
-          Utf16Encoding(it, "string with all chars having 4-byte utf-8 encoding")
+          Utf8Encoding(it, "string with all chars having 4-byte utf-8 encoding")
         },
         Arb.string(longStringLengthRange, Arb.codepointWithEvenNumByteUtf8EncodingDistribution())
           .map {
