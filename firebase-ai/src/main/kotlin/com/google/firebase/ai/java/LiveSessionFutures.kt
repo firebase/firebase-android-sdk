@@ -197,9 +197,7 @@ public abstract class LiveSessionFutures internal constructor() {
   public abstract fun sendVideoRealtime(video: InlineData): ListenableFuture<Unit>
 
   /**
-   * Sends text data to the server in realtime. Check
-   * https://ai.google.dev/api/live#bidigeneratecontentrealtimeinput for details about the realtime
-   * input usage.
+   * Sends text data to the model, using the realtime API.
    * @param text The text data to send.
    */
   public abstract fun sendTextRealtime(text: String): ListenableFuture<Unit>
