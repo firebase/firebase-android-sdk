@@ -16,7 +16,7 @@
 
 package com.google.firebase.dataconnect.sqlite
 
-import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.BadHeaderException
+import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.BadMagicException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.ByteArrayEOFException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.Companion.decode
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.EntityNotFoundException
@@ -25,19 +25,19 @@ import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.NegativeListSiz
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.NegativeStringByteCountException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.NegativeStringCharCountException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.NegativeStructKeyCountException
-import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.UnknownKindCaseByteException
-import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.UnknownStringTypeException
-import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.UnknownStructTypeException
+import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.UnknownStringValueTypeIndicatorByteException
+import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.UnknownStructValueTypeIndicatorByteException
+import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.UnknownValueTypeIndicatorByteException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.Utf16EOFException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.Utf8EOFException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.Utf8IncorrectNumCharactersException
 import com.google.firebase.dataconnect.testutil.buildByteArray
-import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
-import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
+import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
+import com.google.protobuf.Struct
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.common.ExperimentalKotest
@@ -46,313 +46,360 @@ import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.Exhaustive
 import io.kotest.property.PropTestConfig
+import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.byte
 import io.kotest.property.arbitrary.byteArray
+import io.kotest.property.arbitrary.double
 import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.int
+import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.negativeInt
+import io.kotest.property.arbitrary.of
 import io.kotest.property.arbitrary.positiveInt
 import io.kotest.property.arbitrary.string
 import io.kotest.property.arbitrary.withEdgecases
 import io.kotest.property.checkAll
 import io.kotest.property.exhaustive.collection
+import io.kotest.property.exhaustive.map
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
 class QueryResultDecoderUnitTest {
 
   @Test
-  fun `decode() should throw BadHeaderException`() = runTest {
-    val badHeaderArb = Arb.int().filterNot { it == QueryResultCodec.QUERY_RESULT_HEADER }
-    checkAll(propTestConfig, badHeaderArb) { badHeader ->
-      val byteArray = buildByteArray { putInt(badHeader) }
+  fun `decode() should throw BadMagicException`() = runTest {
+    class MagicValue(val value: Int) {
+      val hexValue = value.toUInt().toString(16)
+      override fun toString(): String = "$value (hexValue=0x$hexValue)"
+    }
+    class BadMagicTestCase(val good: MagicValue, val bad: MagicValue) {
+      override fun toString(): String = "MagicTestCase(good=$good, bad=$bad)"
+    }
+    val goodMagic = MagicValue(QueryResultCodec.QUERY_RESULT_MAGIC)
+    val arb =
+      Arb.int()
+        .filterNot { it == goodMagic.value }
+        .map { BadMagicTestCase(good = goodMagic, bad = MagicValue(it)) }
 
-      val exception = shouldThrow<BadHeaderException> { decode(byteArray, emptyList()) }
-
-      assertSoftly {
-        exception.message shouldContainWithNonAbuttingText "jk832sz9hx"
-        exception.message shouldMatch
-          Regex(".*read header 0x0*${badHeader.toUInt().toString(16)}.*", RegexOption.IGNORE_CASE)
-        exception.message shouldMatch
-          Regex(
-            ".*expected 0x0*${QueryResultCodec.QUERY_RESULT_HEADER.toUInt().toString(16)}.*",
-            RegexOption.IGNORE_CASE
-          )
+    checkAll(propTestConfig, arb) { testCase ->
+      val byteArray = buildByteArray { putInt(testCase.bad.value) }
+      assertDecodeThrows<BadMagicException>(byteArray) {
+        messageShouldContainWithNonAbuttingText("jk832sz9hx")
+        messageShouldContainRegexMatchIgnoringCase("read magic value 0x0*${testCase.bad.hexValue}")
+        messageShouldContainRegexMatchIgnoringCase("expected 0x0*${testCase.good.hexValue}")
       }
     }
   }
 
   @Test
-  fun `decode() should throw UnknownStructTypeException`() = runTest {
-    checkAll(propTestConfig, nonStructKindCaseByteExhaustive()) { nonStructKindCaseByte ->
+  fun `decode() should throw UnknownStructValueTypeIndicatorByteException`() = runTest {
+    data class NonStructDiscriminator(val value: Byte)
+    val arb =
+      Exhaustive.collection(valueDiscriminatorBytes - structDiscriminatorBytes)
+        .map(::NonStructDiscriminator)
+
+    checkAll(propTestConfig, arb) { nonStructDiscriminator ->
       val byteArray = buildByteArray {
-        putInt(QueryResultCodec.QUERY_RESULT_HEADER)
-        put(nonStructKindCaseByte)
+        putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
+        put(nonStructDiscriminator.value)
       }
-
-      val exception = shouldThrow<UnknownStructTypeException> { decode(byteArray, emptyList()) }
-
-      assertSoftly {
-        exception.message shouldContainWithNonAbuttingText "s8b9jqegdy"
-        exception.message shouldContainWithNonAbuttingText nonStructKindCaseByte.toString()
-        exception.message shouldContainWithNonAbuttingTextIgnoringCase "non-struct kind case byte"
+      assertDecodeThrows<UnknownStructValueTypeIndicatorByteException>(byteArray) {
+        messageShouldContainWithNonAbuttingText("s8b9jqegdy")
+        messageShouldContainWithNonAbuttingText(nonStructDiscriminator.value.toString())
+        messageShouldContainWithNonAbuttingText("non-struct kind case byte")
       }
     }
   }
   @Test
   fun `decode() should throw NegativeStructKeyCountException`() = runTest {
-    checkAll(propTestConfig, Arb.negativeInt()) { negativeStructKeyCount ->
+    data class NegativeStructKeyCount(val value: Int)
+    val arb = Arb.negativeInt().map(::NegativeStructKeyCount)
+
+    checkAll(propTestConfig, arb) { negativeStructKeyCount ->
       val byteArray = buildByteArray {
-        putInt(QueryResultCodec.QUERY_RESULT_HEADER)
+        putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
         put(QueryResultCodec.VALUE_STRUCT)
-        putInt(negativeStructKeyCount)
+        putUInt32(negativeStructKeyCount.value)
       }
-
-      val exception =
-        shouldThrow<NegativeStructKeyCountException> { decode(byteArray, emptyList()) }
-
-      assertSoftly {
-        exception.message shouldContainWithNonAbuttingText "y9253xj96g"
-        exception.message shouldContainWithNonAbuttingText negativeStructKeyCount.toString()
-        exception.message shouldContainWithNonAbuttingTextIgnoringCase "struct key count"
-        exception.message shouldContainWithNonAbuttingTextIgnoringCase
-          "greater than or equal to zero"
+      assertDecodeThrows<NegativeStructKeyCountException>(byteArray) {
+        messageShouldContainWithNonAbuttingText("y9253xj96g")
+        messageShouldContainWithNonAbuttingText(negativeStructKeyCount.value.toString())
+        messageShouldContainWithNonAbuttingTextIgnoringCase("struct key count")
+        messageShouldContainWithNonAbuttingTextIgnoringCase("greater than or equal to zero")
       }
     }
   }
 
   @Test
   fun `decode() should throw NegativeStringByteCountException for utf8`() = runTest {
-    checkAll(propTestConfig, Arb.positiveInt(), Arb.negativeInt()) {
-      structKeyCount,
-      negativeStringByteCount ->
+    data class NegativeStringByteCountTestCase(
+      val structKeyCount: Int,
+      val negativeStringByteCount: Int
+    )
+    val arb = Arb.bind(Arb.positiveInt(), Arb.negativeInt(), ::NegativeStringByteCountTestCase)
+
+    checkAll(propTestConfig, arb) { testCase ->
       val byteArray = buildByteArray {
-        putInt(QueryResultCodec.QUERY_RESULT_HEADER)
+        putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
         put(QueryResultCodec.VALUE_STRUCT)
-        putInt(structKeyCount)
+        putUInt32(testCase.structKeyCount)
         put(QueryResultCodec.VALUE_STRING_UTF8)
-        putInt(negativeStringByteCount)
+        putUInt32(testCase.negativeStringByteCount)
       }
-
-      val exception =
-        shouldThrow<NegativeStringByteCountException> { decode(byteArray, emptyList()) }
-
-      assertSoftly {
-        exception.message shouldContainWithNonAbuttingText "a9kma55y7m"
-        exception.message shouldContainWithNonAbuttingText negativeStringByteCount.toString()
-        exception.message shouldContainWithNonAbuttingTextIgnoringCase "string byte count"
-        exception.message shouldContainWithNonAbuttingTextIgnoringCase
-          "greater than or equal to zero"
+      assertDecodeThrows<NegativeStringByteCountException>(byteArray) {
+        messageShouldContainWithNonAbuttingText("a9kma55y7m")
+        messageShouldContainWithNonAbuttingText(testCase.negativeStringByteCount.toString())
+        messageShouldContainWithNonAbuttingTextIgnoringCase("string byte count")
+        messageShouldContainWithNonAbuttingTextIgnoringCase("greater than or equal to zero")
       }
     }
   }
 
   @Test
   fun `decode() should throw NegativeStringCharCountException for utf8`() = runTest {
-    checkAll(propTestConfig, Arb.positiveInt(), Arb.positiveInt(), Arb.negativeInt()) {
-      structKeyCount,
-      stringByteCount,
-      negativeStringCharCount ->
+    data class NegativeStringCharCountTestCase(
+      val structKeyCount: Int,
+      val stringByteCount: Int,
+      val negativeStringCharCount: Int
+    )
+    val arb =
+      Arb.bind(
+        Arb.positiveInt(),
+        Arb.positiveInt(),
+        Arb.negativeInt(),
+        ::NegativeStringCharCountTestCase
+      )
+
+    checkAll(propTestConfig, arb) { testCase ->
       val byteArray = buildByteArray {
-        putInt(QueryResultCodec.QUERY_RESULT_HEADER)
+        putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
         put(QueryResultCodec.VALUE_STRUCT)
-        putInt(structKeyCount)
+        putUInt32(testCase.structKeyCount)
         put(QueryResultCodec.VALUE_STRING_UTF8)
-        putInt(stringByteCount)
-        putInt(negativeStringCharCount)
+        putUInt32(testCase.stringByteCount)
+        putUInt32(testCase.negativeStringCharCount)
       }
-
-      val exception =
-        shouldThrow<NegativeStringCharCountException> { decode(byteArray, emptyList()) }
-
-      assertSoftly {
-        exception.message shouldContainWithNonAbuttingText "gwybfam237"
-        exception.message shouldContainWithNonAbuttingText negativeStringCharCount.toString()
-        exception.message shouldContainWithNonAbuttingTextIgnoringCase "string char count"
-        exception.message shouldContainWithNonAbuttingTextIgnoringCase
-          "greater than or equal to zero"
+      assertDecodeThrows<NegativeStringCharCountException>(byteArray) {
+        messageShouldContainWithNonAbuttingText("gwybfam237")
+        messageShouldContainWithNonAbuttingText(testCase.negativeStringCharCount.toString())
+        messageShouldContainWithNonAbuttingTextIgnoringCase("string char count")
+        messageShouldContainWithNonAbuttingTextIgnoringCase("greater than or equal to zero")
       }
     }
   }
 
   @Test
   fun `decode() should throw NegativeStringCharCountException for utf16`() = runTest {
-    checkAll(propTestConfig, Arb.positiveInt(), Arb.negativeInt()) {
-      structKeyCount,
-      negativeStringCharCount ->
+    data class NegativeStringCharCountTestCase(
+      val structKeyCount: Int,
+      val negativeStringCharCount: Int
+    )
+    val arb = Arb.bind(Arb.positiveInt(), Arb.negativeInt(), ::NegativeStringCharCountTestCase)
+    checkAll(propTestConfig, arb) { testCase ->
       val byteArray = buildByteArray {
-        putInt(QueryResultCodec.QUERY_RESULT_HEADER)
+        putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
         put(QueryResultCodec.VALUE_STRUCT)
-        putInt(structKeyCount)
+        putUInt32(testCase.structKeyCount)
         put(QueryResultCodec.VALUE_STRING_UTF16)
-        putInt(negativeStringCharCount)
+        putUInt32(testCase.negativeStringCharCount)
       }
-
-      val exception =
-        shouldThrow<NegativeStringCharCountException> { decode(byteArray, emptyList()) }
-
-      assertSoftly {
-        exception.message shouldContainWithNonAbuttingText "gwybfam237"
-        exception.message shouldContainWithNonAbuttingText negativeStringCharCount.toString()
-        exception.message shouldContainWithNonAbuttingTextIgnoringCase "string char count"
-        exception.message shouldContainWithNonAbuttingTextIgnoringCase
-          "greater than or equal to zero"
+      assertDecodeThrows<NegativeStringCharCountException>(byteArray) {
+        messageShouldContainWithNonAbuttingText("gwybfam237")
+        messageShouldContainWithNonAbuttingText(testCase.negativeStringCharCount.toString())
+        messageShouldContainWithNonAbuttingTextIgnoringCase("string char count")
+        messageShouldContainWithNonAbuttingTextIgnoringCase("greater than or equal to zero")
       }
     }
   }
 
   @Test
-  fun `decode() should throw UnknownStringTypeException`() = runTest {
-    checkAll(propTestConfig, nonStringKindCaseByteExhaustive(), Arb.positiveInt()) {
-      nonStringKindCaseByte,
-      structKeyCount ->
+  fun `decode() should throw UnknownStringValueTypeIndicatorByteException`() = runTest {
+    data class NonStringDiscriminator(val value: Byte)
+    data class StructKeyCount(val value: Int)
+    val arb =
+      Exhaustive.collection(valueDiscriminatorBytes - stringDiscriminatorBytes)
+        .map(::NonStringDiscriminator)
+    val structKeyCountArb = Arb.positiveInt().map(::StructKeyCount)
+
+    checkAll(propTestConfig, arb, structKeyCountArb) { nonStringDiscriminator, structKeyCount ->
       val byteArray = buildByteArray {
-        putInt(QueryResultCodec.QUERY_RESULT_HEADER)
+        putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
         put(QueryResultCodec.VALUE_STRUCT)
-        putInt(structKeyCount)
-        put(nonStringKindCaseByte)
+        putUInt32(structKeyCount.value)
+        put(nonStringDiscriminator.value)
       }
-
-      val exception = shouldThrow<UnknownStringTypeException> { decode(byteArray, emptyList()) }
-
-      assertSoftly {
-        exception.message shouldContainWithNonAbuttingText "hfvxx849cv"
-        exception.message shouldContainWithNonAbuttingText nonStringKindCaseByte.toString()
-        exception.message shouldContainWithNonAbuttingTextIgnoringCase "non-string kind case byte"
+      assertDecodeThrows<UnknownStringValueTypeIndicatorByteException>(byteArray) {
+        messageShouldContainWithNonAbuttingText("hfvxx849cv")
+        messageShouldContainWithNonAbuttingText(nonStringDiscriminator.value.toString())
+        messageShouldContainWithNonAbuttingTextIgnoringCase("non-string discriminator byte")
       }
     }
   }
 
   @Test
-  fun `decode() should throw UnknownKindCaseByteException`() = runTest {
-    checkAll(propTestConfig, Arb.positiveInt(), invalidKindCaseByteArb()) {
-      structKeyCount,
-      invalidKindCaseByte ->
+  fun `decode() should throw UnknownValueTypeIndicatorByteException`() = runTest {
+    data class InvalidDiscriminator(val value: Byte)
+    data class StructKeyCount(val value: Int)
+    val arb = Arb.invalidDiscriminatorByte().map(::InvalidDiscriminator)
+    val structKeyCountArb = Arb.positiveInt().map(::StructKeyCount)
+
+    checkAll(propTestConfig, arb, structKeyCountArb) { invalidDiscriminator, structKeyCount ->
       val byteArray = buildByteArray {
-        putInt(QueryResultCodec.QUERY_RESULT_HEADER)
+        putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
         put(QueryResultCodec.VALUE_STRUCT)
-        putInt(structKeyCount)
+        putUInt32(structKeyCount.value)
         put(QueryResultCodec.VALUE_STRING_EMPTY)
-        put(invalidKindCaseByte)
+        put(invalidDiscriminator.value)
       }
-
-      val exception = shouldThrow<UnknownKindCaseByteException> { decode(byteArray, emptyList()) }
-
-      assertSoftly {
-        exception.message shouldContainWithNonAbuttingText "pmkb3sc2mn"
-        exception.message shouldContainWithNonAbuttingText invalidKindCaseByte.toString()
-        exception.message shouldContainWithNonAbuttingTextIgnoringCase "unknown kind case byte"
+      assertDecodeThrows<UnknownValueTypeIndicatorByteException>(byteArray) {
+        messageShouldContainWithNonAbuttingText("pmkb3sc2mn")
+        messageShouldContainWithNonAbuttingText(invalidDiscriminator.value.toString())
+        messageShouldContainWithNonAbuttingTextIgnoringCase("unknown discriminator byte")
       }
     }
   }
 
   @Test
   fun `decode() should throw NegativeEntityIdSizeException`() = runTest {
-    checkAll(propTestConfig, Arb.negativeInt()) { negativeEntityIdSize ->
+    data class NegativeEntityIdSize(val value: Int)
+    val arb = Arb.negativeInt().map(::NegativeEntityIdSize)
+
+    checkAll(propTestConfig, arb) { negativeEntityIdSize ->
       val byteArray = buildByteArray {
-        putInt(QueryResultCodec.QUERY_RESULT_HEADER)
+        putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
         put(QueryResultCodec.VALUE_ENTITY)
-        putInt(negativeEntityIdSize)
+        putUInt32(negativeEntityIdSize.value)
       }
-
-      val exception = shouldThrow<NegativeEntityIdSizeException> { decode(byteArray, emptyList()) }
-
-      assertSoftly {
-        exception.message shouldContainWithNonAbuttingText "agvqmbgknh"
-        exception.message shouldContainWithNonAbuttingText negativeEntityIdSize.toString()
-        exception.message shouldContainWithNonAbuttingTextIgnoringCase "entity id size"
-        exception.message shouldContainWithNonAbuttingTextIgnoringCase
-          "greater than or equal to zero"
+      assertDecodeThrows<NegativeEntityIdSizeException>(byteArray) {
+        messageShouldContainWithNonAbuttingText("agvqmbgknh")
+        messageShouldContainWithNonAbuttingText(negativeEntityIdSize.value.toString())
+        messageShouldContainWithNonAbuttingTextIgnoringCase("entity id size")
+        messageShouldContainWithNonAbuttingTextIgnoringCase("greater than or equal to zero")
       }
     }
   }
 
   @Test
   fun `decode() should throw EntityNotFoundException`() = runTest {
-    checkAll(propTestConfig, Arb.byteArray(Arb.int(0..50), Arb.byte())) { encodedEntityId ->
+    class EncodedEntityId(val value: ByteArray) {
+      override fun toString() = "EncodedEntityId(${value.to0xHexString()})"
+    }
+    val arb = Arb.byteArray(Arb.int(0..50), Arb.byte()).map(::EncodedEntityId)
+
+    checkAll(propTestConfig, arb) { encodedEntityId ->
       val byteArray = buildByteArray {
-        putInt(QueryResultCodec.QUERY_RESULT_HEADER)
+        putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
         put(QueryResultCodec.VALUE_ENTITY)
-        putInt(encodedEntityId.size)
-        put(encodedEntityId)
+        putUInt32(encodedEntityId.value.size)
+        put(encodedEntityId.value)
       }
-
-      val exception = shouldThrow<EntityNotFoundException> { decode(byteArray, emptyList()) }
-
-      assertSoftly {
-        exception.message shouldContainWithNonAbuttingText "p583k77y7r"
-        exception.message shouldContainWithNonAbuttingText encodedEntityId.to0xHexString()
-        exception.message shouldContainWithNonAbuttingTextIgnoringCase "could not find entity"
+      assertDecodeThrows<EntityNotFoundException>(byteArray) {
+        messageShouldContainWithNonAbuttingText("p583k77y7r")
+        messageShouldContainWithNonAbuttingText(encodedEntityId.value.to0xHexString())
+        messageShouldContainWithNonAbuttingTextIgnoringCase("could not find entity")
       }
     }
   }
 
   @Test
   fun `decode() should be able to decode very long entity IDs`() = runTest {
-    checkAll(
-      @OptIn(ExperimentalKotest::class) propTestConfig.copy(iterations = 10),
-      Arb.byteArray(Arb.int(2000..90000), Arb.byte()),
-      Arb.proto.struct(depth = 1)
-    ) { encodedEntityId, entityData ->
+    class VeryLongEncodedEntityIdTestCase(
+      val veryLongEncodedEntityId: ByteArray,
+      val randomValue: Double
+    ) {
+      override fun toString(): String =
+        "VeryLongEncodedEntityIdTestCase(" +
+          veryLongEncodedEntityId.to0xHexString().substring(0..20) +
+          "..., " +
+          "length=${veryLongEncodedEntityId.size}, " +
+          "randomValue=$randomValue)"
+    }
+    val arb =
+      Arb.bind(
+        Arb.byteArray(Arb.int(2000..90000), Arb.byte()),
+        Arb.double(),
+        ::VeryLongEncodedEntityIdTestCase
+      )
+
+    checkAll(@OptIn(ExperimentalKotest::class) propTestConfig.copy(iterations = 10), arb) { testCase
+      ->
       val byteArray = buildByteArray {
-        putInt(QueryResultCodec.QUERY_RESULT_HEADER)
+        putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
         put(QueryResultCodec.VALUE_ENTITY)
-        putInt(encodedEntityId.size)
-        put(encodedEntityId)
-        putInt(entityData.struct.fieldsCount)
-        entityData.struct.fieldsMap.keys.forEach { key ->
-          val encodedKey = key.encodeToByteArray()
-          put(QueryResultCodec.VALUE_STRING_UTF8)
-          putInt(encodedKey.size)
-          putInt(key.length)
-          put(encodedKey)
-          put(QueryResultCodec.VALUE_KIND_NOT_SET)
-        }
+        putUInt32(testCase.veryLongEncodedEntityId.size)
+        put(testCase.veryLongEncodedEntityId)
+        putUInt32(1) // entity key count
+        put(QueryResultCodec.VALUE_STRING_EMPTY)
+        put(QueryResultCodec.VALUE_KIND_NOT_SET)
       }
       val entity =
-        QueryResultCodec.Entity(id = "", encodedId = encodedEntityId, data = entityData.struct)
+        QueryResultCodec.Entity(
+          id = "",
+          encodedId = testCase.veryLongEncodedEntityId,
+          data = Struct.newBuilder().putFields("", testCase.randomValue.toValueProto()).build()
+        )
 
       val decodeResult = decode(byteArray, listOf(entity))
 
-      decodeResult shouldBe entityData.struct
+      decodeResult shouldBe entity.data
     }
   }
 
   @Test
   fun `decode() should throw Utf8EOFException with 'insufficient bytes' message for utf8`() =
     runTest {
-      checkAll(
-        propTestConfig,
-        Arb.positiveInt(),
-        Arb.string(0..20),
-        Arb.positiveInt(1),
-        Arb.positiveInt(1)
-      ) { structKeyCount, string, byteCountDelta, charCountDelta ->
+      class InsufficientUtf8BytesTestCase(
+        val string: String,
+        val structKeyCount: Int,
+        val byteCountInflation: Int,
+        val charCountInflation: Int,
+      ) {
+        val inflatedCharCount = string.length + charCountInflation
         val stringUtf8Bytes = string.encodeToByteArray()
-        val byteCount = stringUtf8Bytes.size + byteCountDelta
-        val charCount = string.length + charCountDelta
+        val inflatedByteCount = stringUtf8Bytes.size + byteCountInflation
+        override fun toString(): String =
+          "InsufficientUtf8BytesTestCase(" +
+            "string=$string (charCount=${string.length}), " +
+            "stringUtf8Bytes=${stringUtf8Bytes.to0xHexString()} " +
+            "(byteCount=${stringUtf8Bytes.size}), " +
+            "structKeyCount=$structKeyCount, " +
+            "byteCountInflation=$byteCountInflation, charCountInflation=$charCountInflation, " +
+            "inflatedCharCount=${inflatedCharCount}, inflatedByteCount=${inflatedByteCount})"
+      }
+      val arb =
+        Arb.bind(
+          Arb.string(0..20),
+          Arb.positiveInt(),
+          Arb.positiveInt(100),
+          Arb.positiveInt(100),
+          ::InsufficientUtf8BytesTestCase,
+        )
+
+      checkAll(propTestConfig, arb) { testCase ->
         val byteArray = buildByteArray {
-          putInt(QueryResultCodec.QUERY_RESULT_HEADER)
+          putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
           put(QueryResultCodec.VALUE_STRUCT)
-          putInt(structKeyCount)
+          putUInt32(testCase.structKeyCount)
           put(QueryResultCodec.VALUE_STRING_UTF8)
-          putInt(byteCount)
-          putInt(charCount)
-          put(stringUtf8Bytes)
+          putUInt32(testCase.inflatedByteCount)
+          putUInt32(testCase.inflatedCharCount)
+          put(testCase.stringUtf8Bytes)
         }
-
-        val exception = shouldThrow<Utf8EOFException> { decode(byteArray, emptyList()) }
-
-        assertSoftly {
-          exception.message shouldContainWithNonAbuttingText "akn3x7p8rm"
-          exception.message shouldContainWithNonAbuttingTextIgnoringCase
-            "end of input reached prematurely"
-          exception.message shouldContainWithNonAbuttingTextIgnoringCase
-            "reading $charCount characters ($byteCount bytes) of a UTF-8 encoded string"
-          exception.message shouldContainWithNonAbuttingTextIgnoringCase
-            "got ${string.length} characters, ${charCount-string.length} fewer characters"
-          exception.message shouldContainWithNonAbuttingTextIgnoringCase
-            "${stringUtf8Bytes.size} bytes, ${byteCount-stringUtf8Bytes.size} fewer bytes"
+        assertDecodeThrows<Utf8EOFException>(byteArray) {
+          messageShouldContainWithNonAbuttingText("zzyzx")
+          messageShouldContainWithNonAbuttingText("akn3x7p8rm")
+          messageShouldContainWithNonAbuttingTextIgnoringCase("end of input reached prematurely")
+          messageShouldContainWithNonAbuttingTextIgnoringCase(
+            "reading ${testCase.inflatedCharCount} characters " +
+              "(${testCase.inflatedByteCount} bytes) of a UTF-8 encoded string"
+          )
+          messageShouldContainWithNonAbuttingTextIgnoringCase(
+            "got ${testCase.string.length} characters, " +
+              "${testCase.charCountInflation} fewer characters"
+          )
+          messageShouldContainWithNonAbuttingTextIgnoringCase(
+            "${testCase.stringUtf8Bytes.size} bytes, ${testCase.byteCountInflation} fewer bytes"
+          )
         }
       }
     }
@@ -367,7 +414,7 @@ class QueryResultDecoderUnitTest {
         val stringUtf8Bytes = string.encodeToByteArray()
         val charCount = string.length + charCountDelta
         val byteArray = buildByteArray {
-          putInt(QueryResultCodec.QUERY_RESULT_HEADER)
+          putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
           put(QueryResultCodec.VALUE_STRUCT)
           putInt(structKeyCount)
           put(QueryResultCodec.VALUE_STRING_UTF8)
@@ -400,7 +447,7 @@ class QueryResultDecoderUnitTest {
         charCountDelta ->
         val charCount = string.length + charCountDelta
         val byteArray = buildByteArray {
-          putInt(QueryResultCodec.QUERY_RESULT_HEADER)
+          putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
           put(QueryResultCodec.VALUE_STRUCT)
           putInt(structKeyCount)
           put(QueryResultCodec.VALUE_STRING_UTF16)
@@ -430,7 +477,7 @@ class QueryResultDecoderUnitTest {
       structKeyCount,
       negativeListSize ->
       val byteArray = buildByteArray {
-        putInt(QueryResultCodec.QUERY_RESULT_HEADER)
+        putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
         put(QueryResultCodec.VALUE_STRUCT)
         putInt(structKeyCount)
         put(QueryResultCodec.VALUE_STRING_EMPTY)
@@ -458,7 +505,7 @@ class QueryResultDecoderUnitTest {
       Arb.positiveInt(32768),
     ) { encodedEntityId, byteCountDelta ->
       val byteArray = buildByteArray {
-        putInt(QueryResultCodec.QUERY_RESULT_HEADER)
+        putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
         put(QueryResultCodec.VALUE_ENTITY)
         putInt(encodedEntityId.size + byteCountDelta)
         put(encodedEntityId)
@@ -478,6 +525,46 @@ class QueryResultDecoderUnitTest {
     }
   }
 
+  private class AssertDecodeThrowsDSL {
+
+    val messageSubstringsWithNonAbuttingText = mutableListOf<String>()
+    val messageSubstringsWithNonAbuttingTextIgnoringCase = mutableListOf<String>()
+    val messageSubstringRegexMatchesIgnoringCase = mutableListOf<String>()
+
+    fun messageShouldContainWithNonAbuttingText(text: String) {
+      messageSubstringsWithNonAbuttingText.add(text)
+    }
+
+    fun messageShouldContainWithNonAbuttingTextIgnoringCase(text: String) {
+      messageSubstringsWithNonAbuttingTextIgnoringCase.add(text)
+    }
+
+    fun messageShouldContainRegexMatchIgnoringCase(text: String) {
+      messageSubstringRegexMatchesIgnoringCase.add(text)
+    }
+  }
+
+  private inline fun <reified E : Throwable> assertDecodeThrows(
+    byteArray: ByteArray,
+    config: AssertDecodeThrowsDSL.() -> Unit,
+  ) {
+    val dsl = AssertDecodeThrowsDSL().apply(config)
+
+    val exception = shouldThrow<E> { decode(byteArray, emptyList()) }
+
+    assertSoftly {
+      dsl.messageSubstringsWithNonAbuttingText.forEach {
+        exception.message shouldContainWithNonAbuttingText it
+      }
+      dsl.messageSubstringsWithNonAbuttingTextIgnoringCase.forEach {
+        exception.message shouldContainWithNonAbuttingTextIgnoringCase it
+      }
+      dsl.messageSubstringRegexMatchesIgnoringCase.forEach {
+        exception.message shouldMatch Regex(".*${it}.*", RegexOption.IGNORE_CASE)
+      }
+    }
+  }
+
   private companion object {
 
     @OptIn(ExperimentalKotest::class)
@@ -487,7 +574,7 @@ class QueryResultDecoderUnitTest {
         edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.33)
       )
 
-    val kindCaseBytes: Set<Byte> =
+    val valueDiscriminatorBytes: Set<Byte> =
       setOf(
         QueryResultCodec.VALUE_NULL,
         QueryResultCodec.VALUE_KIND_NOT_SET,
@@ -513,7 +600,12 @@ class QueryResultDecoderUnitTest {
         QueryResultCodec.VALUE_STRING_UTF16,
       )
 
-    val stringTypeBytes: Set<Byte> =
+    val invalidValueDiscriminatorBytes: List<Byte> =
+      (Byte.MIN_VALUE..Byte.MAX_VALUE)
+        .map { it.toByte() }
+        .filterNot { valueDiscriminatorBytes.contains(it) }
+
+    val stringDiscriminatorBytes: Set<Byte> =
       setOf(
         QueryResultCodec.VALUE_STRING_EMPTY,
         QueryResultCodec.VALUE_STRING_1BYTE,
@@ -524,41 +616,32 @@ class QueryResultDecoderUnitTest {
         QueryResultCodec.VALUE_STRING_UTF16,
       )
 
-    val nonStringTypeBytes: Set<Byte> = kindCaseBytes - stringTypeBytes
+    val structDiscriminatorBytes: Set<Byte> =
+      setOf(QueryResultCodec.VALUE_STRUCT, QueryResultCodec.VALUE_ENTITY)
 
-    val structTypeBytes: Set<Byte> =
-      setOf(
-        QueryResultCodec.VALUE_STRUCT,
-        QueryResultCodec.VALUE_ENTITY,
-      )
-
-    val nonStructTypeBytes: Set<Byte> = kindCaseBytes - structTypeBytes
-
-    val invalidKindCaseByteEdgeCases: List<Byte> =
+    val invalidValueDiscriminatorByteEdgeCases: List<Byte> =
       buildSet {
           add(Byte.MIN_VALUE)
           add(Byte.MAX_VALUE)
           add(0)
           add(-1)
           add(1)
-          kindCaseBytes.forEach { kindCaseByte ->
+          valueDiscriminatorBytes.forEach { discriminator ->
             repeat(3) { offset ->
-              add((kindCaseByte + offset).toByte())
-              add((kindCaseByte - offset).toByte())
+              add((discriminator + offset).toByte())
+              add((discriminator - offset).toByte())
             }
           }
-          kindCaseBytes.forEach { kindCaseByte -> remove(kindCaseByte) }
+          removeAll(valueDiscriminatorBytes)
         }
         .distinct()
-        .sorted()
 
-    fun invalidKindCaseByteArb(): Arb<Byte> =
-      Arb.byte().filterNot { it in kindCaseBytes }.withEdgecases(invalidKindCaseByteEdgeCases)
+    /**
+     * Creates and returns an [Arb] that generates [Byte] values that are not one of the "value
+     * discriminator" bytes (the VALUE_XXX constants) defined in [QueryResultCodec].
+     */
+    fun Arb.Companion.invalidDiscriminatorByte(): Arb<Byte> =
+      of(invalidValueDiscriminatorBytes).withEdgecases(invalidValueDiscriminatorByteEdgeCases)
 
-    fun nonStringKindCaseByteExhaustive(): Exhaustive<Byte> =
-      Exhaustive.collection(nonStringTypeBytes)
-
-    fun nonStructKindCaseByteExhaustive(): Exhaustive<Byte> =
-      Exhaustive.collection(nonStructTypeBytes)
   }
 }

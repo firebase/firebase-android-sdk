@@ -61,10 +61,10 @@ internal class QueryResultDecoder(
   private val charArray = CharArray(2)
 
   fun decode(): Struct {
-    readHeader()
-    return when (readStructType()) {
-      StructType.Struct -> readStruct()
-      StructType.Entity -> readEntity()
+    readMagic()
+    return when (readStructValueType()) {
+      StructValueType.Struct -> readStruct()
+      StructValueType.Entity -> readEntity()
     }
   }
 
@@ -204,27 +204,27 @@ internal class QueryResultDecoder(
     return byteArray
   }
 
-  private fun readString(): String = readString(readStringType())
+  private fun readString(): String = readString(readStringValueType())
 
-  private fun readString(stringType: StringType): String =
+  private fun readString(stringType: StringValueType): String =
     when (stringType) {
-      StringType.Empty -> ""
-      StringType.OneByte -> readString1Byte()
-      StringType.TwoByte -> readString2Byte()
-      StringType.OneChar -> readString1Char()
-      StringType.TwoChar -> readString2Char()
-      StringType.Utf8 -> readStringUtf8()
-      StringType.Utf16 -> readStringCustomUtf16()
+      StringValueType.Empty -> ""
+      StringValueType.OneByte -> readString1Byte()
+      StringValueType.TwoByte -> readString2Byte()
+      StringValueType.OneChar -> readString1Char()
+      StringValueType.TwoChar -> readString2Char()
+      StringValueType.Utf8 -> readStringUtf8()
+      StringValueType.Utf16 -> readStringCustomUtf16()
     }
 
-  private fun readHeader(): Int =
+  private fun readMagic(): Int =
     readFixed32Int().also {
-      if (it != QueryResultCodec.QUERY_RESULT_HEADER) {
-        throw BadHeaderException(
-          "read header 0x" +
+      if (it != QueryResultCodec.QUERY_RESULT_MAGIC) {
+        throw BadMagicException(
+          "read magic value 0x" +
             it.toUInt().toString(16).padStart(8, '0') +
             ", but expected 0x" +
-            QueryResultCodec.QUERY_RESULT_HEADER.toUInt().toString(16).padStart(8, '0') +
+            QueryResultCodec.QUERY_RESULT_MAGIC.toUInt().toString(16).padStart(8, '0') +
             " [jk832sz9hx]"
         )
       }
@@ -279,7 +279,7 @@ internal class QueryResultDecoder(
       }
     }
 
-  private enum class ValueKindCase(val serializedByte: Byte, val displayName: String) {
+  private enum class ValueType(val serializedByte: Byte, val displayName: String) {
     Null(QueryResultCodec.VALUE_NULL, "null"),
     Double(QueryResultCodec.VALUE_NUMBER_DOUBLE, "double"),
     PositiveZero(QueryResultCodec.VALUE_NUMBER_POSITIVE_ZERO, "+0.0"),
@@ -304,57 +304,51 @@ internal class QueryResultDecoder(
     StringUtf16(QueryResultCodec.VALUE_STRING_UTF16, "utf16");
 
     companion object {
-      fun fromSerializedByte(serializedByte: Byte): ValueKindCase? =
+      fun fromSerializedByte(serializedByte: Byte): ValueType? =
         entries.firstOrNull { it.serializedByte == serializedByte }
     }
   }
 
-  private fun readKindCase(): ValueKindCase {
+  private fun readValueType(): ValueType {
     val byte = readByte()
-    val kindCase = ValueKindCase.fromSerializedByte(byte)
-    if (kindCase === null) {
-      throw UnknownKindCaseByteException(
-        "read unknown kind case byte $byte, but expected one of " +
-          ValueKindCase.entries
+    val valueType = ValueType.fromSerializedByte(byte)
+    return valueType
+      ?: throw UnknownValueTypeIndicatorByteException(
+        "read unknown value type indicator byte $byte, but expected one of " +
+          ValueType.entries
             .sortedBy { it.serializedByte }
             .joinToString { "${it.serializedByte} (${it.displayName})" } +
           " [pmkb3sc2mn]"
       )
-    }
-    return kindCase
   }
 
-  private enum class StringType(val valueKindCase: ValueKindCase) {
-    Empty(ValueKindCase.StringEmpty),
-    OneByte(ValueKindCase.String1Byte),
-    TwoByte(ValueKindCase.String2Byte),
-    OneChar(ValueKindCase.String1Char),
-    TwoChar(ValueKindCase.String2Char),
-    Utf8(ValueKindCase.StringUtf8),
-    Utf16(ValueKindCase.StringUtf16);
+  private enum class StringValueType(val valueType: ValueType) {
+    Empty(ValueType.StringEmpty),
+    OneByte(ValueType.String1Byte),
+    TwoByte(ValueType.String2Byte),
+    OneChar(ValueType.String1Char),
+    TwoChar(ValueType.String2Char),
+    Utf8(ValueType.StringUtf8),
+    Utf16(ValueType.StringUtf16);
 
     companion object {
-      fun fromValueKindCase(valueKindCase: ValueKindCase): StringType? =
-        entries.firstOrNull { it.valueKindCase == valueKindCase }
+      fun fromValueType(valueType: ValueType): StringValueType? =
+        entries.firstOrNull { it.valueType == valueType }
     }
   }
 
-  private fun readStringType(): StringType =
-    readKindCase().let { valueKindCase ->
-      val stringType = StringType.fromValueKindCase(valueKindCase)
-      if (stringType === null) {
-        throw UnknownStringTypeException(
-          "read non-string kind case byte ${valueKindCase.serializedByte} " +
-            "(${valueKindCase.displayName}), but expected one of " +
-            StringType.entries
-              .sortedBy { it.valueKindCase.serializedByte }
-              .joinToString {
-                "${it.valueKindCase.serializedByte} (${it.valueKindCase.displayName})"
-              } +
+  private fun readStringValueType(): StringValueType =
+    readValueType().let { valueType ->
+      val stringValueType = StringValueType.fromValueType(valueType)
+      return stringValueType
+        ?: throw UnknownStringValueTypeIndicatorByteException(
+          "read non-string value type indicator byte ${valueType.serializedByte} " +
+            "(${valueType.displayName}), but expected one of " +
+            StringValueType.entries
+              .sortedBy { it.valueType.serializedByte }
+              .joinToString { "${it.valueType.serializedByte} (${it.valueType.displayName})" } +
             " [hfvxx849cv]"
         )
-      }
-      stringType
     }
 
   private fun Byte.decodeChar(): Char {
@@ -518,32 +512,28 @@ internal class QueryResultDecoder(
     return listValueBuilder.build()
   }
 
-  private enum class StructType(val valueKindCase: ValueKindCase) {
-    Struct(ValueKindCase.Struct),
-    Entity(ValueKindCase.Entity);
+  private enum class StructValueType(val valueType: ValueType) {
+    Struct(ValueType.Struct),
+    Entity(ValueType.Entity);
 
     companion object {
-      fun fromValueKindCase(valueKindCase: ValueKindCase): StructType? =
-        entries.firstOrNull { it.valueKindCase == valueKindCase }
+      fun fromValueType(valueType: ValueType): StructValueType? =
+        entries.firstOrNull { it.valueType == valueType }
     }
   }
 
-  private fun readStructType(): StructType =
-    readKindCase().let { valueKindCase ->
-      val structType = StructType.fromValueKindCase(valueKindCase)
-      if (structType === null) {
-        throw UnknownStructTypeException(
-          "read non-struct kind case byte ${valueKindCase.serializedByte} " +
-            "(${valueKindCase.displayName}), but expected one of " +
-            StructType.entries
-              .sortedBy { it.valueKindCase.serializedByte }
-              .joinToString {
-                "${it.valueKindCase.serializedByte} (${it.valueKindCase.displayName})"
-              } +
+  private fun readStructValueType(): StructValueType =
+    readValueType().let { valueType ->
+      val structValueType = StructValueType.fromValueType(valueType)
+      return structValueType
+        ?: throw UnknownStructValueTypeIndicatorByteException(
+          "read non-struct value type indicator byte ${valueType.serializedByte} " +
+            "(${valueType.displayName}), but expected one of " +
+            StructValueType.entries
+              .sortedBy { it.valueType.serializedByte }
+              .joinToString { "${it.valueType.serializedByte} (${it.valueType.displayName})" } +
             " [s8b9jqegdy]"
         )
-      }
-      structType
     }
 
   private fun readStruct(): Struct {
@@ -557,34 +547,30 @@ internal class QueryResultDecoder(
     return structBuilder.build()
   }
 
-  private enum class EntitySubStructType(val valueKindCase: ValueKindCase) {
-    Entity(ValueKindCase.Entity),
-    Struct(ValueKindCase.Struct),
-    List(ValueKindCase.List),
-    Scalar(ValueKindCase.KindNotSet);
+  private enum class EntitySubStructType(val valueType: ValueType) {
+    Entity(ValueType.Entity),
+    Struct(ValueType.Struct),
+    List(ValueType.List),
+    Scalar(ValueType.KindNotSet);
 
     companion object {
-      fun fromValueKindCase(valueKindCase: ValueKindCase): EntitySubStructType? =
-        entries.firstOrNull { it.valueKindCase == valueKindCase }
+      fun fromValueType(valueType: ValueType): EntitySubStructType? =
+        entries.firstOrNull { it.valueType == valueType }
     }
   }
 
   private fun readEntitySubStructType(): EntitySubStructType =
-    readKindCase().let { valueKindCase ->
-      val entitySubStructType = EntitySubStructType.fromValueKindCase(valueKindCase)
-      if (entitySubStructType === null) {
-        throw UnknownEntitySubStructTypeException(
-          "read non-entity-sub-struct kind case byte ${valueKindCase.serializedByte} " +
-            "(${valueKindCase.displayName}), but expected one of " +
+    readValueType().let { valueType ->
+      val entitySubStructType = EntitySubStructType.fromValueType(valueType)
+      return entitySubStructType
+        ?: throw UnknownEntitySubStructTypeException(
+          "read non-entity-sub-struct value type indicator byte ${valueType.serializedByte} " +
+            "(${valueType.displayName}), but expected one of " +
             EntitySubStructType.entries
-              .sortedBy { it.valueKindCase.serializedByte }
-              .joinToString {
-                "${it.valueKindCase.serializedByte} (${it.valueKindCase.displayName})"
-              } +
+              .sortedBy { it.valueType.serializedByte }
+              .joinToString { "${it.valueType.serializedByte} (${it.valueType.displayName})" } +
             " [w26af67653]"
         )
-      }
-      entitySubStructType
     }
 
   private fun readEntity(): Struct {
@@ -643,29 +629,29 @@ internal class QueryResultDecoder(
 
   private fun readValue(): Value {
     val valueBuilder = Value.newBuilder()
-    when (readKindCase()) {
-      ValueKindCase.Null -> valueBuilder.setNullValue(NullValue.NULL_VALUE)
-      ValueKindCase.Double -> valueBuilder.setNumberValue(readDouble())
-      ValueKindCase.PositiveZero -> valueBuilder.setNumberValue(0.0)
-      ValueKindCase.NegativeZero -> valueBuilder.setNumberValue(-0.0)
-      ValueKindCase.Fixed32Int -> valueBuilder.setNumberValue(readFixed32Int().toDouble())
-      ValueKindCase.UInt32 -> valueBuilder.setNumberValue(readUInt32().toDouble())
-      ValueKindCase.SInt32 -> valueBuilder.setNumberValue(readSInt32().toDouble())
-      ValueKindCase.UInt64 -> valueBuilder.setNumberValue(readUInt64().toDouble())
-      ValueKindCase.SInt64 -> valueBuilder.setNumberValue(readSInt64().toDouble())
-      ValueKindCase.BoolTrue -> valueBuilder.setBoolValue(true)
-      ValueKindCase.BoolFalse -> valueBuilder.setBoolValue(false)
-      ValueKindCase.List -> valueBuilder.setListValue(readList())
-      ValueKindCase.Struct -> valueBuilder.setStructValue(readStruct())
-      ValueKindCase.KindNotSet -> {}
-      ValueKindCase.Entity -> valueBuilder.setStructValue(readEntity())
-      ValueKindCase.StringEmpty -> valueBuilder.setStringValue("")
-      ValueKindCase.String1Byte -> valueBuilder.setStringValue(readString1Byte())
-      ValueKindCase.String2Byte -> valueBuilder.setStringValue(readString2Byte())
-      ValueKindCase.String1Char -> valueBuilder.setStringValue(readString1Char())
-      ValueKindCase.String2Char -> valueBuilder.setStringValue(readString2Char())
-      ValueKindCase.StringUtf8 -> valueBuilder.setStringValue(readStringUtf8())
-      ValueKindCase.StringUtf16 -> valueBuilder.setStringValue(readStringCustomUtf16())
+    when (readValueType()) {
+      ValueType.Null -> valueBuilder.setNullValue(NullValue.NULL_VALUE)
+      ValueType.Double -> valueBuilder.setNumberValue(readDouble())
+      ValueType.PositiveZero -> valueBuilder.setNumberValue(0.0)
+      ValueType.NegativeZero -> valueBuilder.setNumberValue(-0.0)
+      ValueType.Fixed32Int -> valueBuilder.setNumberValue(readFixed32Int().toDouble())
+      ValueType.UInt32 -> valueBuilder.setNumberValue(readUInt32().toDouble())
+      ValueType.SInt32 -> valueBuilder.setNumberValue(readSInt32().toDouble())
+      ValueType.UInt64 -> valueBuilder.setNumberValue(readUInt64().toDouble())
+      ValueType.SInt64 -> valueBuilder.setNumberValue(readSInt64().toDouble())
+      ValueType.BoolTrue -> valueBuilder.setBoolValue(true)
+      ValueType.BoolFalse -> valueBuilder.setBoolValue(false)
+      ValueType.List -> valueBuilder.setListValue(readList())
+      ValueType.Struct -> valueBuilder.setStructValue(readStruct())
+      ValueType.KindNotSet -> {}
+      ValueType.Entity -> valueBuilder.setStructValue(readEntity())
+      ValueType.StringEmpty -> valueBuilder.setStringValue("")
+      ValueType.String1Byte -> valueBuilder.setStringValue(readString1Byte())
+      ValueType.String2Byte -> valueBuilder.setStringValue(readString2Byte())
+      ValueType.String1Char -> valueBuilder.setStringValue(readString1Char())
+      ValueType.String2Char -> valueBuilder.setStringValue(readString2Char())
+      ValueType.StringUtf8 -> valueBuilder.setStringValue(readStringUtf8())
+      ValueType.StringUtf16 -> valueBuilder.setStringValue(readStringCustomUtf16())
     }
     return valueBuilder.build()
   }
@@ -673,7 +659,7 @@ internal class QueryResultDecoder(
   sealed class DecodeException(message: String, cause: Throwable? = null) :
     Exception(message, cause)
 
-  class BadHeaderException(message: String) : DecodeException(message)
+  class BadMagicException(message: String) : DecodeException(message)
 
   class NegativeStructKeyCountException(message: String) : DecodeException(message)
 
@@ -683,11 +669,11 @@ internal class QueryResultDecoder(
 
   class NegativeListSizeException(message: String) : DecodeException(message)
 
-  class UnknownKindCaseByteException(message: String) : DecodeException(message)
+  class UnknownValueTypeIndicatorByteException(message: String) : DecodeException(message)
 
-  class UnknownStringTypeException(message: String) : DecodeException(message)
+  class UnknownStringValueTypeIndicatorByteException(message: String) : DecodeException(message)
 
-  class UnknownStructTypeException(message: String) : DecodeException(message)
+  class UnknownStructValueTypeIndicatorByteException(message: String) : DecodeException(message)
 
   class UnknownEntitySubStructTypeException(message: String) : DecodeException(message)
 

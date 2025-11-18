@@ -54,7 +54,7 @@ internal class QueryResultEncoder(
   class EncodeResult(val byteArray: ByteArray, val entities: List<Entity>)
 
   fun encode(queryResult: Struct) {
-    writer.writeFixed32Int(QueryResultCodec.QUERY_RESULT_HEADER)
+    writer.writeFixed32Int(QueryResultCodec.QUERY_RESULT_MAGIC)
     writeStruct(queryResult)
   }
 

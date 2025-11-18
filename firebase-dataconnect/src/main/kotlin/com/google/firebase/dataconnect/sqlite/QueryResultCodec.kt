@@ -41,12 +41,13 @@ internal object QueryResultCodec {
       "Entity{id=$id, encodedId=${encodedId.contentToString()}, data=${data.toCompactString()}}"
   }
 
-  // The header is chosen such that it fails to parse by any UTF8 decoder that strictly adheres to
-  // the standard. The first two bytes are an overlong encoding of the code point U+0046 ("Latin
-  // Capital Letter F"). The third byte, 0xF8, (1111 1000 in binary) indicates a 5-byte sequence
-  // which does not exist in UTF-8, which has a maximum of 4 bytes in a sequence. The final byte is
-  // simply a valid "continuation byte" for a multi-byte UTF-8 code point encoding.
-  const val QUERY_RESULT_HEADER: Int = 0xC186F880.toInt()
+  // The magic string is chosen such that it fails to parse by any UTF8 decoder that strictly
+  // adheres to the standard. The first two bytes are an overlong encoding of the code point U+0046
+  // ("Latin Capital Letter F"). The third byte, 0xF8, (1111 1000 in binary) indicates a 5-byte
+  // sequence which does not exist in UTF-8, which has a maximum of 4 bytes in a sequence. The final
+  // byte is simply a valid "continuation byte" for a multi-byte UTF-8 code point encoding.
+  const val QUERY_RESULT_MAGIC: Int = 0xC186F880.toInt()
+
   const val VALUE_NULL: Byte = 1
   const val VALUE_KIND_NOT_SET: Byte = 2
   const val VALUE_ENTITY: Byte = 3

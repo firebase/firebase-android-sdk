@@ -69,7 +69,7 @@ class QueryResultEncoderUnitTest {
       val encodeResult = QueryResultEncoder.encode(struct)
 
       val expectedEncodedBytes = buildByteArray {
-        putInt(QueryResultCodec.QUERY_RESULT_HEADER)
+        putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
         put(QueryResultCodec.VALUE_STRUCT)
         putUInt32(1) // struct size
         put(QueryResultCodec.VALUE_STRING_EMPTY)
@@ -89,7 +89,7 @@ class QueryResultEncoderUnitTest {
       val encodeResult = QueryResultEncoder.encode(struct)
 
       val expectedEncodedBytes = buildByteArray {
-        putInt(QueryResultCodec.QUERY_RESULT_HEADER)
+        putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
         put(QueryResultCodec.VALUE_STRUCT)
         putUInt32(1) // struct size
         put(QueryResultCodec.VALUE_STRING_EMPTY)
@@ -112,7 +112,7 @@ class QueryResultEncoderUnitTest {
       val encodeResult = QueryResultEncoder.encode(struct)
 
       val expectedEncodedBytes = buildByteArray {
-        putInt(QueryResultCodec.QUERY_RESULT_HEADER)
+        putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
         put(QueryResultCodec.VALUE_STRUCT)
         putUInt32(1) // struct size
         put(QueryResultCodec.VALUE_STRING_EMPTY)
@@ -135,7 +135,7 @@ class QueryResultEncoderUnitTest {
       val encodeResult = QueryResultEncoder.encode(struct)
 
       val expectedEncodedBytes = buildByteArray {
-        putInt(QueryResultCodec.QUERY_RESULT_HEADER)
+        putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
         put(QueryResultCodec.VALUE_STRUCT)
         putUInt32(1) // struct size
         sample.encode(this)
