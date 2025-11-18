@@ -152,7 +152,8 @@ abstract class GMavenService : BuildService<BuildServiceParameters.None> {
 
   /**
    * Gets the latest version with no qualifiers of the artifact that has been uploaded to GMaven, if
-   * any.   *
+   * any. *
+   *
    * ```
    * gmaven.latestStableVersionOrNull("com.google.firebase", "firebase-components") // "18.0.1"
    * ```
