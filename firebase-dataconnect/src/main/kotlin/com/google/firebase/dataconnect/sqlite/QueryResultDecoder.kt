@@ -36,7 +36,6 @@ import java.nio.CharBuffer
 import java.nio.channels.Channels
 import java.nio.channels.ReadableByteChannel
 import java.nio.charset.CodingErrorAction
-import kotlin.math.absoluteValue
 
 /**
  * This class is NOT thread safe. The behavior of an instance of this class when used concurrently
@@ -461,10 +460,16 @@ internal class QueryResultDecoder(
     byteBuffer.position(byteBufferPosition + byteCount)
 
     if (decodedString.length != charCount) {
+      val differenceString =
+        if (decodedString.length > charCount) {
+          "${decodedString.length - charCount} more"
+        } else {
+          "${charCount - decodedString.length} fewer"
+        }
       throw Utf8IncorrectNumCharactersException(
-        "expected to read $charCount characters ($byteCount bytes) of a UTF-8 encoded string, " +
-          "but got ${decodedString.length} characters, a difference of " +
-          "${(decodedString.length-charCount).absoluteValue} characters [chq89pn4j6]"
+        "expected to read $charCount characters ($byteCount bytes) of a UTF-8 encoded string; " +
+          "got the expected number of bytes, but got ${decodedString.length} characters, " +
+          "$differenceString characters than expected [chq89pn4j6]"
       )
     }
 

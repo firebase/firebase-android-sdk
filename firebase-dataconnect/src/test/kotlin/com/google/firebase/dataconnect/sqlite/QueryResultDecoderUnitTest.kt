@@ -51,10 +51,12 @@ import io.kotest.property.arbitrary.byte
 import io.kotest.property.arbitrary.byteArray
 import io.kotest.property.arbitrary.double
 import io.kotest.property.arbitrary.filterNot
+import io.kotest.property.arbitrary.flatMap
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.negativeInt
 import io.kotest.property.arbitrary.of
+import io.kotest.property.arbitrary.pair
 import io.kotest.property.arbitrary.positiveInt
 import io.kotest.property.arbitrary.string
 import io.kotest.property.arbitrary.withEdgecases
@@ -73,7 +75,7 @@ class QueryResultDecoderUnitTest {
       override fun toString(): String = "$value (hexValue=0x$hexValue)"
     }
     class BadMagicTestCase(val good: MagicValue, val bad: MagicValue) {
-      override fun toString(): String = "MagicTestCase(good=$good, bad=$bad)"
+      override fun toString(): String = "${this::class.simpleName}(good=$good, bad=$bad)"
     }
     val goodMagic = MagicValue(QueryResultCodec.QUERY_RESULT_MAGIC)
     val arb =
@@ -282,7 +284,7 @@ class QueryResultDecoderUnitTest {
   @Test
   fun `decode() should throw EntityNotFoundException`() = runTest {
     class EncodedEntityId(val value: ByteArray) {
-      override fun toString() = "EncodedEntityId(${value.to0xHexString()})"
+      override fun toString() = "${this::class.simpleName}(${value.to0xHexString()})"
     }
     val arb = Arb.byteArray(Arb.int(0..50), Arb.byte()).map(::EncodedEntityId)
 
@@ -308,7 +310,7 @@ class QueryResultDecoderUnitTest {
       val randomValue: Double
     ) {
       override fun toString(): String =
-        "VeryLongEncodedEntityIdTestCase(" +
+        "${this::class.simpleName}(" +
           veryLongEncodedEntityId.to0xHexString().substring(0..20) +
           "..., " +
           "length=${veryLongEncodedEntityId.size}, " +
@@ -358,7 +360,7 @@ class QueryResultDecoderUnitTest {
         val stringUtf8Bytes = string.encodeToByteArray()
         val inflatedByteCount = stringUtf8Bytes.size + byteCountInflation
         override fun toString(): String =
-          "InsufficientUtf8BytesTestCase(" +
+          "${this::class.simpleName}(" +
             "string=$string (charCount=${string.length}), " +
             "stringUtf8Bytes=${stringUtf8Bytes.to0xHexString()} " +
             "(byteCount=${stringUtf8Bytes.size}), " +
@@ -386,7 +388,6 @@ class QueryResultDecoderUnitTest {
           put(testCase.stringUtf8Bytes)
         }
         assertDecodeThrows<Utf8EOFException>(byteArray) {
-          messageShouldContainWithNonAbuttingText("zzyzx")
           messageShouldContainWithNonAbuttingText("akn3x7p8rm")
           messageShouldContainWithNonAbuttingTextIgnoringCase("end of input reached prematurely")
           messageShouldContainWithNonAbuttingTextIgnoringCase(
@@ -407,33 +408,59 @@ class QueryResultDecoderUnitTest {
   @Test
   fun `decode() should throw Utf8IncorrectNumCharactersException with 'insufficient chars' message for utf8`() =
     runTest {
-      checkAll(propTestConfig, Arb.positiveInt(), Arb.string(0..20), Arb.positiveInt(1)) {
-        structKeyCount,
-        string,
-        charCountDelta ->
+      class IncorrectUtf8NumCharactersTestCase(
+        val string: String,
+        val structKeyCount: Int,
+        val charCountInflation: Int,
+      ) {
+        val inflatedCharCount = string.length + charCountInflation
         val stringUtf8Bytes = string.encodeToByteArray()
-        val charCount = string.length + charCountDelta
+        override fun toString(): String =
+          "${this::class.simpleName}(" +
+            "string=$string (charCount=${string.length}), " +
+            "stringUtf8Bytes=${stringUtf8Bytes.to0xHexString()} " +
+            "(byteCount=${stringUtf8Bytes.size}), " +
+            "structKeyCount=$structKeyCount, " +
+            "charCountInflation=$charCountInflation, inflatedCharCount=${inflatedCharCount})"
+      }
+      val arb =
+        Arb.pair(Arb.string(0..20), Arb.positiveInt()).flatMap { (string, structKeyCount) ->
+          val charCountInflationValues = (-10..10).filter { it != 0 && it >= -(string.length) }
+          Arb.of(charCountInflationValues).map { charCountInflation ->
+            IncorrectUtf8NumCharactersTestCase(string, structKeyCount, charCountInflation)
+          }
+        }
+
+      checkAll(propTestConfig, arb) { testCase ->
         val byteArray = buildByteArray {
           putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
           put(QueryResultCodec.VALUE_STRUCT)
-          putInt(structKeyCount)
+          putUInt32(testCase.structKeyCount)
           put(QueryResultCodec.VALUE_STRING_UTF8)
-          putInt(stringUtf8Bytes.size)
-          putInt(charCount)
-          put(stringUtf8Bytes)
+          putUInt32(testCase.stringUtf8Bytes.size)
+          putUInt32(testCase.inflatedCharCount)
+          put(testCase.stringUtf8Bytes)
         }
-
-        val exception =
-          shouldThrow<Utf8IncorrectNumCharactersException> { decode(byteArray, emptyList()) }
-
-        assertSoftly {
-          exception.message shouldContainWithNonAbuttingText "dhvzxrcrqe"
-          exception.message shouldContainWithNonAbuttingTextIgnoringCase
-            "expected to read $charCount characters"
-          exception.message shouldContainWithNonAbuttingTextIgnoringCase
-            "${stringUtf8Bytes.size} bytes"
-          exception.message shouldContainWithNonAbuttingTextIgnoringCase
-            "got ${string.length} characters, ${charCount - string.length} fewer characters"
+        assertDecodeThrows<Utf8IncorrectNumCharactersException>(byteArray) {
+          messageShouldContainWithNonAbuttingText("chq89pn4j6")
+          messageShouldContainWithNonAbuttingTextIgnoringCase(
+            "expected to read ${testCase.inflatedCharCount} characters"
+          )
+          messageShouldContainWithNonAbuttingTextIgnoringCase(
+            "${testCase.stringUtf8Bytes.size} bytes"
+          )
+          messageShouldContainWithNonAbuttingTextIgnoringCase("got the expected number of bytes")
+          if (testCase.charCountInflation > 0) {
+            messageShouldContainWithNonAbuttingTextIgnoringCase(
+              "got ${testCase.string.length} characters, " +
+                "${testCase.charCountInflation} fewer characters"
+            )
+          } else {
+            messageShouldContainWithNonAbuttingTextIgnoringCase(
+              "got ${testCase.string.length} characters, " +
+                "${-testCase.charCountInflation} more characters"
+            )
+          }
         }
       }
     }
@@ -441,32 +468,50 @@ class QueryResultDecoderUnitTest {
   @Test
   fun `decode() should throw Utf16EOFException with 'insufficient chars' message for utf16`() =
     runTest {
-      checkAll(propTestConfig, Arb.positiveInt(), Arb.string(0..20), Arb.positiveInt(1)) {
-        structKeyCount,
-        string,
-        charCountDelta ->
-        val charCount = string.length + charCountDelta
+      class InsufficientUtf16BytesTestCase(
+        val string: String,
+        val structKeyCount: Int,
+        val charCountInflation: Int,
+      ) {
+        val inflatedCharCount = string.length + charCountInflation
+        override fun toString(): String =
+          "${this::class.simpleName}(" +
+            "string=$string " +
+            "(charCount=${string.length}, utf16ByteCount=${string.length*2}), " +
+            "structKeyCount=$structKeyCount, " +
+            "charCountInflation=$charCountInflation, inflatedCharCount=${inflatedCharCount})"
+      }
+      val arb =
+        Arb.bind(
+          Arb.string(0..20),
+          Arb.positiveInt(),
+          Arb.positiveInt(max = 10),
+          ::InsufficientUtf16BytesTestCase
+        )
+
+      checkAll(propTestConfig, arb) { testCase ->
         val byteArray = buildByteArray {
           putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
           put(QueryResultCodec.VALUE_STRUCT)
-          putInt(structKeyCount)
+          putUInt32(testCase.structKeyCount)
           put(QueryResultCodec.VALUE_STRING_UTF16)
-          putInt(charCount)
-          string.forEach(::putChar)
+          putUInt32(testCase.inflatedCharCount)
+          testCase.string.forEach(::putChar)
         }
-
-        val exception = shouldThrow<Utf16EOFException> { decode(byteArray, emptyList()) }
-
-        assertSoftly {
-          exception.message shouldContainWithNonAbuttingText "e399qdvzdz"
-          exception.message shouldContainWithNonAbuttingTextIgnoringCase
-            "end of input reached prematurely"
-          exception.message shouldContainWithNonAbuttingTextIgnoringCase
-            "reading $charCount characters (${charCount*2} bytes) of a UTF-16 encoded string"
-          exception.message shouldContainWithNonAbuttingTextIgnoringCase
-            "got ${string.length} characters, ${charCount-string.length} fewer characters"
-          exception.message shouldContainWithNonAbuttingTextIgnoringCase
-            "${string.length*2} bytes, ${(charCount - string.length)*2} fewer bytes"
+        assertDecodeThrows<Utf16EOFException>(byteArray) {
+          messageShouldContainWithNonAbuttingText("e399qdvzdz")
+          messageShouldContainWithNonAbuttingTextIgnoringCase("end of input reached prematurely")
+          messageShouldContainWithNonAbuttingTextIgnoringCase(
+            "reading ${testCase.inflatedCharCount} characters " +
+              "(${testCase.inflatedCharCount * 2} bytes) of a UTF-16 encoded string"
+          )
+          messageShouldContainWithNonAbuttingTextIgnoringCase(
+            "got ${testCase.string.length} characters, " +
+              "${testCase.charCountInflation} fewer characters"
+          )
+          messageShouldContainWithNonAbuttingTextIgnoringCase(
+            "${testCase.string.length*2} bytes, ${testCase.charCountInflation*2} fewer bytes"
+          )
         }
       }
     }
@@ -642,6 +687,5 @@ class QueryResultDecoderUnitTest {
      */
     fun Arb.Companion.invalidDiscriminatorByte(): Arb<Byte> =
       of(invalidValueDiscriminatorBytes).withEdgecases(invalidValueDiscriminatorByteEdgeCases)
-
   }
 }
