@@ -95,20 +95,20 @@ class QueryResultDecoderUnitTest {
 
   @Test
   fun `decode() should throw UnknownStructValueTypeIndicatorByteException`() = runTest {
-    data class NonStructDiscriminator(val value: Byte)
+    data class NonStructValueTypeIndicator(val value: Byte)
     val arb =
-      Exhaustive.collection(valueDiscriminatorBytes - structDiscriminatorBytes)
-        .map(::NonStructDiscriminator)
+      Exhaustive.collection(valueTypeIndicatorBytes - structValueTypeIndicatorBytes)
+        .map(::NonStructValueTypeIndicator)
 
-    checkAll(propTestConfig, arb) { nonStructDiscriminator ->
+    checkAll(propTestConfig, arb) { nonStructValueTypeIndicator ->
       val byteArray = buildByteArray {
         putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
-        put(nonStructDiscriminator.value)
+        put(nonStructValueTypeIndicator.value)
       }
       assertDecodeThrows<UnknownStructValueTypeIndicatorByteException>(byteArray) {
         messageShouldContainWithNonAbuttingText("s8b9jqegdy")
-        messageShouldContainWithNonAbuttingText(nonStructDiscriminator.value.toString())
-        messageShouldContainWithNonAbuttingText("non-struct kind case byte")
+        messageShouldContainWithNonAbuttingText(nonStructValueTypeIndicator.value.toString())
+        messageShouldContainWithNonAbuttingText("non-struct value type indicator byte")
       }
     }
   }
@@ -216,47 +216,48 @@ class QueryResultDecoderUnitTest {
 
   @Test
   fun `decode() should throw UnknownStringValueTypeIndicatorByteException`() = runTest {
-    data class NonStringDiscriminator(val value: Byte)
+    data class NonStringValueTypeIndicator(val value: Byte)
     data class StructKeyCount(val value: Int)
     val arb =
-      Exhaustive.collection(valueDiscriminatorBytes - stringDiscriminatorBytes)
-        .map(::NonStringDiscriminator)
+      Exhaustive.collection(valueTypeIndicatorBytes - stringValueTypeIndicatorBytes)
+        .map(::NonStringValueTypeIndicator)
     val structKeyCountArb = Arb.positiveInt().map(::StructKeyCount)
 
-    checkAll(propTestConfig, arb, structKeyCountArb) { nonStringDiscriminator, structKeyCount ->
+    checkAll(propTestConfig, arb, structKeyCountArb) { nonStringValueTypeIndicator, structKeyCount
+      ->
       val byteArray = buildByteArray {
         putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
         put(QueryResultCodec.VALUE_STRUCT)
         putUInt32(structKeyCount.value)
-        put(nonStringDiscriminator.value)
+        put(nonStringValueTypeIndicator.value)
       }
       assertDecodeThrows<UnknownStringValueTypeIndicatorByteException>(byteArray) {
         messageShouldContainWithNonAbuttingText("hfvxx849cv")
-        messageShouldContainWithNonAbuttingText(nonStringDiscriminator.value.toString())
-        messageShouldContainWithNonAbuttingTextIgnoringCase("non-string discriminator byte")
+        messageShouldContainWithNonAbuttingText(nonStringValueTypeIndicator.value.toString())
+        messageShouldContainWithNonAbuttingTextIgnoringCase("non-string value type indicator byte")
       }
     }
   }
 
   @Test
   fun `decode() should throw UnknownValueTypeIndicatorByteException`() = runTest {
-    data class InvalidDiscriminator(val value: Byte)
+    data class InvalidValueTypeIndicator(val value: Byte)
     data class StructKeyCount(val value: Int)
-    val arb = Arb.invalidDiscriminatorByte().map(::InvalidDiscriminator)
+    val arb = Arb.invalidValueTypeIndicatorByte().map(::InvalidValueTypeIndicator)
     val structKeyCountArb = Arb.positiveInt().map(::StructKeyCount)
 
-    checkAll(propTestConfig, arb, structKeyCountArb) { invalidDiscriminator, structKeyCount ->
+    checkAll(propTestConfig, arb, structKeyCountArb) { invalidValueTypeIndicator, structKeyCount ->
       val byteArray = buildByteArray {
         putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
         put(QueryResultCodec.VALUE_STRUCT)
         putUInt32(structKeyCount.value)
         put(QueryResultCodec.VALUE_STRING_EMPTY)
-        put(invalidDiscriminator.value)
+        put(invalidValueTypeIndicator.value)
       }
       assertDecodeThrows<UnknownValueTypeIndicatorByteException>(byteArray) {
         messageShouldContainWithNonAbuttingText("pmkb3sc2mn")
-        messageShouldContainWithNonAbuttingText(invalidDiscriminator.value.toString())
-        messageShouldContainWithNonAbuttingTextIgnoringCase("unknown discriminator byte")
+        messageShouldContainWithNonAbuttingText(invalidValueTypeIndicator.value.toString())
+        messageShouldContainWithNonAbuttingTextIgnoringCase("unknown value type indicator byte")
       }
     }
   }
@@ -625,7 +626,7 @@ class QueryResultDecoderUnitTest {
         edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.33)
       )
 
-    val valueDiscriminatorBytes: Set<Byte> =
+    val valueTypeIndicatorBytes: Set<Byte> =
       setOf(
         QueryResultCodec.VALUE_NULL,
         QueryResultCodec.VALUE_KIND_NOT_SET,
@@ -651,12 +652,12 @@ class QueryResultDecoderUnitTest {
         QueryResultCodec.VALUE_STRING_UTF16,
       )
 
-    val invalidValueDiscriminatorBytes: List<Byte> =
+    val invalidValueTypeIndicatorBytes: List<Byte> =
       (Byte.MIN_VALUE..Byte.MAX_VALUE)
         .map { it.toByte() }
-        .filterNot { valueDiscriminatorBytes.contains(it) }
+        .filterNot { valueTypeIndicatorBytes.contains(it) }
 
-    val stringDiscriminatorBytes: Set<Byte> =
+    val stringValueTypeIndicatorBytes: Set<Byte> =
       setOf(
         QueryResultCodec.VALUE_STRING_EMPTY,
         QueryResultCodec.VALUE_STRING_1BYTE,
@@ -667,31 +668,31 @@ class QueryResultDecoderUnitTest {
         QueryResultCodec.VALUE_STRING_UTF16,
       )
 
-    val structDiscriminatorBytes: Set<Byte> =
+    val structValueTypeIndicatorBytes: Set<Byte> =
       setOf(QueryResultCodec.VALUE_STRUCT, QueryResultCodec.VALUE_ENTITY)
 
-    val invalidValueDiscriminatorByteEdgeCases: List<Byte> =
+    val invalidValueTypeIndicatorByteEdgeCases: List<Byte> =
       buildSet {
           add(Byte.MIN_VALUE)
           add(Byte.MAX_VALUE)
           add(0)
           add(-1)
           add(1)
-          valueDiscriminatorBytes.forEach { discriminator ->
+          valueTypeIndicatorBytes.forEach { valueTypeIndicatorByte ->
             repeat(3) { offset ->
-              add((discriminator + offset).toByte())
-              add((discriminator - offset).toByte())
+              add((valueTypeIndicatorByte + offset).toByte())
+              add((valueTypeIndicatorByte - offset).toByte())
             }
           }
-          removeAll(valueDiscriminatorBytes)
+          removeAll(valueTypeIndicatorBytes)
         }
         .distinct()
 
     /**
-     * Creates and returns an [Arb] that generates [Byte] values that are not one of the "value
-     * discriminator" bytes (the VALUE_XXX constants) defined in [QueryResultCodec].
+     * Creates and returns an [Arb] that generates [Byte] values that are not one of the "value type
+     * indicator" bytes (the VALUE_XXX constants) defined in [QueryResultCodec].
      */
-    fun Arb.Companion.invalidDiscriminatorByte(): Arb<Byte> =
-      of(invalidValueDiscriminatorBytes).withEdgecases(invalidValueDiscriminatorByteEdgeCases)
+    fun Arb.Companion.invalidValueTypeIndicatorByte(): Arb<Byte> =
+      of(invalidValueTypeIndicatorBytes).withEdgecases(invalidValueTypeIndicatorByteEdgeCases)
   }
 }

@@ -295,10 +295,10 @@ internal class QueryResultDecoder(
     Struct(QueryResultCodec.VALUE_STRUCT, "struct"),
     Entity(QueryResultCodec.VALUE_ENTITY, "entity"),
     StringEmpty(QueryResultCodec.VALUE_STRING_EMPTY, "emptystring"),
-    String1Byte(QueryResultCodec.VALUE_STRING_1BYTE, "1bytestring"),
-    String2Byte(QueryResultCodec.VALUE_STRING_2BYTE, "2bytestring"),
-    String1Char(QueryResultCodec.VALUE_STRING_1CHAR, "1charstring"),
-    String2Char(QueryResultCodec.VALUE_STRING_2CHAR, "2charstring"),
+    String1Byte(QueryResultCodec.VALUE_STRING_1BYTE, "onebytestring"),
+    String2Byte(QueryResultCodec.VALUE_STRING_2BYTE, "twobytestring"),
+    String1Char(QueryResultCodec.VALUE_STRING_1CHAR, "onecharstring"),
+    String2Char(QueryResultCodec.VALUE_STRING_2CHAR, "twocharstring"),
     StringUtf8(QueryResultCodec.VALUE_STRING_UTF8, "utf8"),
     StringUtf16(QueryResultCodec.VALUE_STRING_UTF16, "utf16");
 
