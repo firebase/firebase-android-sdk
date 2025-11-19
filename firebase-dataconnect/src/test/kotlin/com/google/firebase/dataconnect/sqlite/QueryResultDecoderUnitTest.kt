@@ -617,6 +617,38 @@ class QueryResultDecoderUnitTest {
     }
   }
 
+  @Test
+  fun `decode() should throw UInt32DecodeException`() = runTest {
+    class MalformedUInt32TestCase(
+      val structKeyCount: Int,
+      val malformedUInt32Bytes: ByteArray,
+    ) {
+      override fun toString() =
+        "${this::class.simpleName}(" +
+          "malformedUInt32Bytes=${malformedUInt32Bytes.to0xHexString()} " +
+          "(${malformedUInt32Bytes.size} bytes), structKeyCount=$structKeyCount)"
+    }
+    val arb =
+      Arb.bind(Arb.positiveInt(), malformedVarintByteArrayArb(5..20), ::MalformedUInt32TestCase)
+
+    checkAll(propTestConfig, arb) { testCase ->
+      val byteArray = buildByteArray {
+        putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
+        put(QueryResultCodec.VALUE_STRUCT)
+        putUInt32(testCase.structKeyCount)
+        put(QueryResultCodec.VALUE_STRING_EMPTY)
+        put(QueryResultCodec.VALUE_NUMBER_UINT32)
+        put(testCase.malformedUInt32Bytes)
+      }
+      assertDecodeThrows<QueryResultDecoder.UInt32DecodeException>(byteArray) {
+        messageShouldContainWithNonAbuttingText("zzyx")
+        messageShouldContainWithNonAbuttingText("nne8eyhcbs")
+        messageShouldContainWithNonAbuttingTextIgnoringCase("failed to parse 5 bytes of uint32")
+        messageShouldContainWithNonAbuttingTextIgnoringCase("uint32 value")
+      }
+    }
+  }
+
   private companion object {
 
     @OptIn(ExperimentalKotest::class)
@@ -694,5 +726,22 @@ class QueryResultDecoderUnitTest {
      */
     fun Arb.Companion.invalidValueTypeIndicatorByte(): Arb<Byte> =
       of(invalidValueTypeIndicatorBytes).withEdgecases(invalidValueTypeIndicatorByteEdgeCases)
+
+    /**
+     * Converts this byte to a protobuf variant "continuation byte" by setting the high bit, and
+     * returning the result.
+     */
+    fun Byte.toVarintContinuationByte(): Byte = (toInt() or 0x80).toByte()
+
+    /**
+     * Creates and returns an [Arb] that generates byte arrays that will fail to be parsed as a
+     * varint. The sizes of the generated arrays will be in the given [sizeRange] with the first
+     * `sizeRange.first` bytes set to "continuation bytes".
+     */
+    fun malformedVarintByteArrayArb(sizeRange: IntRange): Arb<ByteArray> =
+      Arb.byteArray(Arb.int(sizeRange), Arb.byte()).map { byteArray ->
+        repeat(sizeRange.first) { byteArray[it] = byteArray[it].toVarintContinuationByte() }
+        byteArray
+      }
   }
 }
