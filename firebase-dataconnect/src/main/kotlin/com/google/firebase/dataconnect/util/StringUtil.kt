@@ -41,10 +41,38 @@ internal object StringUtil {
    * The implementation of this function is NOT efficient, and should only be used when performance
    * is not important, such as producing error messages.
    */
-  fun ByteArray.to0xHexString(include0xPrefix: Boolean = true): String = buildString {
+  fun ByteArray.to0xHexString(
+    offset: Int = 0,
+    length: Int = size - offset,
+    include0xPrefix: Boolean = true,
+  ): String = buildString {
+    require(offset >= 0) {
+      "invalid offset: $offset (must be greater than or equal to zero; array size=$size)"
+    }
+    require(length >= 0) {
+      "invalid length: $length " +
+        "(must be greater than or equal to zero; offset=$offset, array size=$size)"
+    }
+    require(offset + length in 0..size) {
+      "invalid offset + length: ${offset+length} " +
+        "(must be less than or equal to the array size; " +
+        "offset=$offset, length=$length, array size=$size)"
+    }
+
+    return to0xHexString(this@to0xHexString, offset, length, include0xPrefix)
+  }
+
+  @JvmName("to0xHexStringInternal")
+  private fun to0xHexString(
+    byteArray: ByteArray,
+    offset: Int,
+    length: Int,
+    include0xPrefix: Boolean,
+  ) = buildString {
     if (include0xPrefix) {
       append("0x")
     }
-    this@to0xHexString.forEach { append(String.format("%02X", it)) }
+    val indices = offset until (offset + length)
+    indices.map { byteArray[it] }.map { String.format("%02X", it) }.forEach(::append)
   }
 }

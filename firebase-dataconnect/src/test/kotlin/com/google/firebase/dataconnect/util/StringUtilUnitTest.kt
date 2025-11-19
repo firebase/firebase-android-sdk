@@ -16,7 +16,13 @@
 
 package com.google.firebase.dataconnect.util
 
+import com.google.firebase.dataconnect.testutil.property.arbitrary.OffsetLengthOutOfRangeArb
+import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
+import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
+import io.kotest.assertions.assertSoftly
+import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
@@ -25,8 +31,9 @@ import io.kotest.property.PropTestConfig
 import io.kotest.property.arbitrary.byte
 import io.kotest.property.arbitrary.byteArray
 import io.kotest.property.arbitrary.int
+import io.kotest.property.arbitrary.negativeInt
 import io.kotest.property.checkAll
-import kotlin.collections.forEach
+import kotlin.random.nextInt
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
@@ -61,6 +68,94 @@ class StringUtilUnitTest {
     checkAll(propTestConfig, Arb.byteArray(Arb.int(0..100), Arb.byte())) { byteArray ->
       val expected = byteArray.toExpectedHexString()
       byteArray.to0xHexString(include0xPrefix = false) shouldBe expected
+    }
+  }
+
+  @Test
+  fun `ByteArray to0xHexString(offset)`() = runTest {
+    checkAll(propTestConfig, Arb.byteArray(Arb.int(0..100), Arb.byte())) { byteArray ->
+      val offset = randomSource().random.nextInt(0..byteArray.size)
+      val expected = "0x" + byteArray.sliceArray(offset until byteArray.size).toExpectedHexString()
+      withClue("offset=$offset") { byteArray.to0xHexString(offset = offset) shouldBe expected }
+    }
+  }
+
+  @Test
+  fun `ByteArray to0xHexString(length)`() = runTest {
+    checkAll(propTestConfig, Arb.byteArray(Arb.int(0..100), Arb.byte())) { byteArray ->
+      val length = randomSource().random.nextInt(0..byteArray.size)
+      val expected = "0x" + byteArray.sliceArray(0 until length).toExpectedHexString()
+      withClue("length=$length") { byteArray.to0xHexString(length = length) shouldBe expected }
+    }
+  }
+
+  @Test
+  fun `ByteArray to0xHexString(offset, length)`() = runTest {
+    checkAll(propTestConfig, Arb.byteArray(Arb.int(0..100), Arb.byte())) { byteArray ->
+      val indices = List(2) { randomSource().random.nextInt(0..byteArray.size) }.sorted()
+      val offset = indices[0]
+      val length = indices[1] - offset
+      val expected =
+        "0x" + byteArray.sliceArray(offset until (offset + length)).toExpectedHexString()
+      withClue("offset=$offset, length=$length") {
+        byteArray.to0xHexString(offset = offset, length = length) shouldBe expected
+      }
+    }
+  }
+
+  @Test
+  fun `ByteArray to0xHexString(offset=negative)`() = runTest {
+    checkAll(propTestConfig, Arb.byteArray(Arb.int(0..100), Arb.byte()), Arb.negativeInt()) {
+      byteArray,
+      negativeOffset ->
+      val exception =
+        shouldThrow<IllegalArgumentException> { byteArray.to0xHexString(offset = negativeOffset) }
+      assertSoftly {
+        exception.message shouldContainWithNonAbuttingTextIgnoringCase
+          "invalid offset: $negativeOffset"
+        exception.message shouldContainWithNonAbuttingTextIgnoringCase
+          "must be greater than or equal to zero"
+        exception.message shouldContainWithNonAbuttingText "size=${byteArray.size}"
+      }
+    }
+  }
+
+  @Test
+  fun `ByteArray to0xHexString(length=negative)`() = runTest {
+    checkAll(propTestConfig, Arb.byteArray(Arb.int(0..100), Arb.byte()), Arb.negativeInt()) {
+      byteArray,
+      negativeLength ->
+      val exception =
+        shouldThrow<IllegalArgumentException> { byteArray.to0xHexString(length = negativeLength) }
+      assertSoftly {
+        exception.message shouldContainWithNonAbuttingTextIgnoringCase
+          "invalid length: $negativeLength"
+        exception.message shouldContainWithNonAbuttingTextIgnoringCase
+          "must be greater than or equal to zero"
+        exception.message shouldContainWithNonAbuttingText "offset=0"
+        exception.message shouldContainWithNonAbuttingText "size=${byteArray.size}"
+      }
+    }
+  }
+
+  @Test
+  fun `ByteArray to0xHexString(offset+length out of range)`() = runTest {
+    checkAll(propTestConfig, Arb.byteArray(Arb.int(0..100), Arb.byte())) { byteArray ->
+      val offsetLengthOutOfRangeArb = OffsetLengthOutOfRangeArb(byteArray.size)
+      val (offset, length) = offsetLengthOutOfRangeArb.bind()
+
+      withClue("offset=$offset, length=$length, byteArray.size=${byteArray.size}") {
+        val exception =
+          shouldThrow<IllegalArgumentException> {
+            byteArray.to0xHexString(offset = offset, length = length)
+          }
+        assertSoftly {
+          exception.message shouldContainWithNonAbuttingText "offset=$offset"
+          exception.message shouldContainWithNonAbuttingText "length=$length"
+          exception.message shouldContainWithNonAbuttingText "offset + length: ${offset+length}"
+          exception.message shouldContainWithNonAbuttingText "size=${byteArray.size}"
+        }
+      }
     }
   }
 
