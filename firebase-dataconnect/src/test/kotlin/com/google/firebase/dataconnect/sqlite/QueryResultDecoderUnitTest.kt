@@ -518,54 +518,60 @@ class QueryResultDecoderUnitTest {
 
   @Test
   fun `decode() should throw NegativeListSizeException`() = runTest {
-    checkAll(propTestConfig, Arb.positiveInt(), Arb.negativeInt()) {
-      structKeyCount,
-      negativeListSize ->
+    data class NegativeListSizeTestCase(val negativeListSize: Int, val structKeyCount: Int)
+    val arb = Arb.bind(Arb.negativeInt(), Arb.positiveInt(), ::NegativeListSizeTestCase)
+
+    checkAll(propTestConfig, arb) { testCase ->
       val byteArray = buildByteArray {
         putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
         put(QueryResultCodec.VALUE_STRUCT)
-        putInt(structKeyCount)
+        putUInt32(testCase.structKeyCount)
         put(QueryResultCodec.VALUE_STRING_EMPTY)
         put(QueryResultCodec.VALUE_LIST)
-        putInt(negativeListSize)
+        putUInt32(testCase.negativeListSize)
       }
-
-      val exception = shouldThrow<NegativeListSizeException> { decode(byteArray, emptyList()) }
-
-      assertSoftly {
-        exception.message shouldContainWithNonAbuttingText "yfvpf9pwt8"
-        exception.message shouldContainWithNonAbuttingTextIgnoringCase
-          "read list size $negativeListSize"
-        exception.message shouldContainWithNonAbuttingTextIgnoringCase
-          "greater than or equal to zero"
+      assertDecodeThrows<NegativeListSizeException>(byteArray) {
+        messageShouldContainWithNonAbuttingText("yfvpf9pwt8")
+        messageShouldContainWithNonAbuttingTextIgnoringCase(
+          "read list size ${testCase.negativeListSize}"
+        )
+        messageShouldContainWithNonAbuttingTextIgnoringCase("greater than or equal to zero")
       }
     }
   }
 
   @Test
   fun `decode() should throw ByteArrayEOFException`() = runTest {
-    checkAll(
-      propTestConfig,
-      Arb.byteArray(Arb.int(0..16384), Arb.byte()),
-      Arb.positiveInt(32768),
-    ) { encodedEntityId, byteCountDelta ->
+    class ByteArrayEOFTestCase(val byteArray: ByteArray, val byteCountInflation: Int) {
+      val inflatedByteCount = byteArray.size + byteCountInflation
+      override fun toString() =
+        "${this::class.simpleName}(" +
+          "byteArray=${byteArray.to0xHexString()}, " +
+          "byteCountInflation=$byteCountInflation, inflatedByteCount=$inflatedByteCount)"
+    }
+    val arb =
+      Arb.bind(
+        Arb.byteArray(Arb.int(0..16384), Arb.byte()),
+        Arb.positiveInt(32768),
+        ::ByteArrayEOFTestCase
+      )
+
+    checkAll(propTestConfig, arb) { testCase ->
       val byteArray = buildByteArray {
         putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
         put(QueryResultCodec.VALUE_ENTITY)
-        putInt(encodedEntityId.size + byteCountDelta)
-        put(encodedEntityId)
+        putUInt32(testCase.inflatedByteCount)
+        put(testCase.byteArray)
       }
-
-      val exception = shouldThrow<ByteArrayEOFException> { decode(byteArray, emptyList()) }
-
-      assertSoftly {
-        exception.message shouldContainWithNonAbuttingText "dnx886qwmk"
-        exception.message shouldContainWithNonAbuttingTextIgnoringCase
-          "end of input reached prematurely"
-        exception.message shouldContainWithNonAbuttingTextIgnoringCase
-          "reading byte array of length ${encodedEntityId.size + byteCountDelta}"
-        exception.message shouldContainWithNonAbuttingTextIgnoringCase
-          "got ${encodedEntityId.size} bytes, $byteCountDelta fewer bytes"
+      assertDecodeThrows<ByteArrayEOFException>(byteArray) {
+        messageShouldContainWithNonAbuttingText("dnx886qwmk")
+        messageShouldContainWithNonAbuttingTextIgnoringCase("end of input reached prematurely")
+        messageShouldContainWithNonAbuttingTextIgnoringCase(
+          "reading byte array of length ${testCase.inflatedByteCount}"
+        )
+        messageShouldContainWithNonAbuttingTextIgnoringCase(
+          "got ${testCase.byteArray.size} bytes, ${testCase.byteCountInflation} fewer bytes"
+        )
       }
     }
   }
