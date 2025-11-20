@@ -59,34 +59,53 @@ import kotlin.time.ExperimentalTime
 
 class MainComposeActivity : ComponentActivity() {
 
-  private val notesDb = InMemoryNotesDatabase()
+  private lateinit var notesDb: InMemoryNotesDatabase
+  private lateinit var noteEditorData: NoteEditorData
 
   override fun onCreate(savedInstanceState: Bundle?) {
     enableEdgeToEdge()
     super.onCreate(savedInstanceState)
+    notesDb = InMemoryNotesDatabase()
+    noteEditorData = NoteEditorData(notesDb)
+
     setContent {
       MaterialTheme {
         Scaffold(
           topBar = { TopAppBar(title = { Text("After Hours Data Connect") }) },
           modifier = Modifier.fillMaxSize(),
         ) { innerPadding ->
-          NoteEditor(notesDb, Modifier.padding(innerPadding).fillMaxSize())
+          NoteEditor(notesDb, noteEditorData, Modifier.padding(innerPadding).fillMaxSize())
         }
       }
     }
   }
 }
 
+class NoteEditorData(notesDb: InMemoryNotesDatabase) {
+  val id = mutableStateOf<UUID?>(null)
+  val title = mutableStateOf("")
+  val body = mutableStateOf("")
+  val createdAt = mutableStateOf("")
+  val isFavorite = mutableStateOf(false)
+  val notes = mutableStateOf(notesDb.getAll())
+  val showMenu = mutableStateOf(false)
+  val selectedNote = mutableStateOf<InMemoryNotesDatabase.Note?>(null)
+}
+
 @Composable
-fun NoteEditor(notesDb: InMemoryNotesDatabase, modifier: Modifier = Modifier) {
-  var id: UUID? by remember { mutableStateOf(null) }
-  var title by remember { mutableStateOf("") }
-  var body by remember { mutableStateOf("") }
-  var createdAt by remember { mutableStateOf("") }
-  var isFavorite by remember { mutableStateOf(false) }
-  var notes by remember { mutableStateOf(notesDb.getAll()) }
-  var showMenu by remember { mutableStateOf(false) }
-  var selectedNote by remember { mutableStateOf<InMemoryNotesDatabase.Note?>(null) }
+fun NoteEditor(
+  notesDb: InMemoryNotesDatabase,
+  data: NoteEditorData,
+  modifier: Modifier = Modifier,
+) {
+  var id by remember { data.id }
+  var title by remember { data.title }
+  var body by remember { data.body }
+  var createdAt by remember { data.createdAt }
+  var isFavorite by remember { data.isFavorite }
+  var notes by remember { data.notes }
+  var showMenu by remember { data.showMenu }
+  var selectedNote by remember { data.selectedNote }
 
   Column(modifier = modifier.padding(16.dp)) {
     TextField(
