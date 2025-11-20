@@ -21,6 +21,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -156,20 +157,28 @@ fun NoteEditor(notesDb: InMemoryNotesDatabase, modifier: Modifier = Modifier) {
         Box {
           Text(
             text = note.title,
+            style = MaterialTheme.typography.titleMedium,
             modifier =
-              Modifier.fillMaxWidth().pointerInput(Unit) {
-                detectTapGestures(
-                  onTap = {
-                    id = note.id
-                    title = note.title
-                    body = note.body
-                  },
-                  onLongPress = {
-                    selectedNote = note
-                    showMenu = true
-                  },
-                )
-              },
+              Modifier.fillMaxWidth()
+                .clickable {
+                  id = note.id
+                  title = note.title
+                  body = note.body
+                }
+                .padding(vertical = 8.dp)
+                .pointerInput(Unit) {
+                  detectTapGestures(
+                    onTap = {
+                      id = note.id
+                      title = note.title
+                      body = note.body
+                    },
+                    onLongPress = {
+                      selectedNote = note
+                      showMenu = true
+                    },
+                  )
+                },
           )
           DropdownMenu(
             expanded = showMenu && selectedNote == note,
