@@ -23,14 +23,14 @@ import kotlinx.serialization.Serializable
 @PublicPreviewAPI
 public class SpeechConfig(
   /** The voice to be used for the server's speech response. */
-  public val voice: Voices
+  public val voice: Voice
 ) {
 
   @Serializable
   internal data class Internal(@SerialName("voice_config") val voiceConfig: VoiceConfigInternal) {
     @Serializable
     internal data class VoiceConfigInternal(
-      @SerialName("prebuilt_voice_config") val prebuiltVoiceConfig: Voices.Internal,
+      @SerialName("prebuilt_voice_config") val prebuiltVoiceConfig: Voice.Internal,
     )
   }
 

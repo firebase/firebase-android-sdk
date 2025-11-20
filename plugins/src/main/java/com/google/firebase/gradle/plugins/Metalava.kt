@@ -19,6 +19,7 @@ package com.google.firebase.gradle.plugins
 import java.io.File
 import java.io.FileOutputStream
 import java.io.OutputStream
+import javax.inject.Inject
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
 import org.gradle.api.artifacts.Configuration
@@ -33,6 +34,7 @@ import org.gradle.api.tasks.InputFiles
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
+import org.gradle.process.ExecOperations
 
 val Project.metalavaConfig: Configuration
   get() =
@@ -46,9 +48,10 @@ val Project.metalavaConfig: Configuration
       }
 
 val Project.docStubs: File?
-  get() = project.file("${buildDir.path}/doc-stubs")
+  get() = project.file("${project.layout.buildDirectory.get().asFile.path}/doc-stubs")
 
 fun Project.runMetalavaWithArgs(
+  execOperations: ExecOperations,
   arguments: List<String>,
   ignoreFailure: Boolean = false,
   stdOut: OutputStream? = null,
@@ -61,23 +64,25 @@ fun Project.runMetalavaWithArgs(
       "HiddenAbstractMethod",
     ) + arguments
 
-  project.javaexec {
+  execOperations.javaexec {
     mainClass.set("com.android.tools.metalava.Driver")
-    classpath = project.metalavaConfig
+    classpath = metalavaConfig
     args = allArgs
     isIgnoreExitValue = ignoreFailure
     if (stdOut != null) errorOutput = stdOut
   }
 }
 
-abstract class GenerateStubsTask : DefaultTask() {
+abstract class GenerateStubsTask @Inject constructor(private val execOperations: ExecOperations) :
+  DefaultTask() {
   /** Source files against which API signatures will be validated. */
   @get:InputFiles abstract val sources: ConfigurableFileCollection
 
   @get:[InputFiles Classpath]
   lateinit var classPath: FileCollection
 
-  @get:OutputDirectory val outputDir: File = File(project.buildDir, "doc-stubs")
+  @get:OutputDirectory
+  val outputDir: File = File(project.layout.buildDirectory.get().asFile, "doc-stubs")
 
   @TaskAction
   fun run() {
@@ -87,6 +92,7 @@ abstract class GenerateStubsTask : DefaultTask() {
     project.androidJar?.let { classPath += listOf(it.absolutePath) }
 
     project.runMetalavaWithArgs(
+      execOperations,
       listOf(
         "--source-path",
         sourcePath,
@@ -95,12 +101,13 @@ abstract class GenerateStubsTask : DefaultTask() {
         "--include-annotations",
         "--doc-stubs",
         outputDir.absolutePath,
-      )
+      ),
     )
   }
 }
 
-abstract class GenerateApiTxtTask : DefaultTask() {
+abstract class GenerateApiTxtTask @Inject constructor(private val execOperations: ExecOperations) :
+  DefaultTask() {
   /** Source files against which API signatures will be validated. */
   @get:InputFiles abstract val sources: ConfigurableFileCollection
 
@@ -120,6 +127,7 @@ abstract class GenerateApiTxtTask : DefaultTask() {
     project.androidJar?.let { classPath += listOf(it.absolutePath) }
 
     project.runMetalavaWithArgs(
+      execOperations,
       listOf(
         "--source-path",
         sourcePath,
@@ -138,7 +146,8 @@ abstract class GenerateApiTxtTask : DefaultTask() {
   }
 }
 
-abstract class ApiInformationTask : DefaultTask() {
+abstract class ApiInformationTask @Inject constructor(private val execOperations: ExecOperations) :
+  DefaultTask() {
   /** Source files against which API signatures will be validated. */
   @get:InputFiles abstract val sources: ConfigurableFileCollection
 
@@ -162,6 +171,7 @@ abstract class ApiInformationTask : DefaultTask() {
     project.androidJar?.let { classPath += listOf(it.absolutePath) }
 
     project.runMetalavaWithArgs(
+      execOperations,
       listOf(
         "--source-path",
         sourcePath,
@@ -175,6 +185,7 @@ abstract class ApiInformationTask : DefaultTask() {
     )
 
     project.runMetalavaWithArgs(
+      execOperations,
       listOf(
         "--source-files",
         outputApiFile.get().asFile.absolutePath,

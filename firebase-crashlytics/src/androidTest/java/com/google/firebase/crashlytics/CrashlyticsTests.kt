@@ -83,22 +83,6 @@ class CrashlyticsTests {
     assertThat(result).isEqualTo(expectedKeys)
   }
 
-  @Test
-  fun keyValueBuilder_withCrashlyticsInstance() {
-    @Suppress("DEPRECATION") val keyValueBuilder = KeyValueBuilder(Firebase.crashlytics)
-    keyValueBuilder.key("string", "world")
-    keyValueBuilder.key("int", Int.MAX_VALUE)
-    keyValueBuilder.key("float", Float.MAX_VALUE)
-    keyValueBuilder.key("boolean", true)
-    keyValueBuilder.key("double", Double.MAX_VALUE)
-    keyValueBuilder.key("long", Long.MAX_VALUE)
-
-    val result: Map<String, String> = keyValueBuilder.build().keysAndValues
-
-    // The result is empty because it called crashlytics.setCustomKey for every key.
-    assertThat(result).isEmpty()
-  }
-
   companion object {
     private const val APP_ID = "1:1:android:1a"
     private const val API_KEY = "API-KEY-API-KEY-API-KEY-API-KEY-API-KEY"

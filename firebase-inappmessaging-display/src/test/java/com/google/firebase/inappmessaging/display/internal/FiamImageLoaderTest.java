@@ -36,7 +36,7 @@ import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = 21, qualifiers = "por")
+@Config(sdk = 23, qualifiers = "por")
 public class FiamImageLoaderTest {
   private static final String IMAGE_URL = "https://www.imgur.com";
   @Mock private RequestManager glideRequestManager;

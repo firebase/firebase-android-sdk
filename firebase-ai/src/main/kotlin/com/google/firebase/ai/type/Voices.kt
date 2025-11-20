@@ -20,6 +20,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /** Various voices supported by the server */
+@Deprecated("Use the Voice class instead.", ReplaceWith("Voice"))
 @PublicPreviewAPI
 public class Voices private constructor(public val ordinal: Int) {
 

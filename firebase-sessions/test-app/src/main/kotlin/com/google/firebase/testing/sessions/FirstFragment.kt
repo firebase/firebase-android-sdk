@@ -16,7 +16,6 @@
 
 package com.google.firebase.testing.sessions
 
-import android.app.Application
 import android.content.Intent
 import android.content.Intent.FLAG_ACTIVITY_LAUNCH_ADJACENT
 import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
@@ -30,7 +29,11 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.google.firebase.perf.FirebasePerformance
+import com.google.firebase.perf.trace
+import com.google.firebase.testing.sessions.TestApplication.Companion.myProcessName
 import com.google.firebase.testing.sessions.databinding.FragmentFirstBinding
+import java.net.HttpURLConnection
+import java.net.URL
 import java.util.Date
 import java.util.Locale
 import kotlinx.coroutines.Dispatchers
@@ -52,7 +55,7 @@ class FirstFragment : Fragment() {
   override fun onCreateView(
     inflater: LayoutInflater,
     container: ViewGroup?,
-    savedInstanceState: Bundle?
+    savedInstanceState: Bundle?,
   ): View? {
 
     _binding = FragmentFirstBinding.inflate(inflater, container, false)
@@ -79,6 +82,28 @@ class FirstFragment : Fragment() {
         performanceTrace.stop()
       }
     }
+    binding.createTrace2.setOnClickListener {
+      lifecycleScope.launch(Dispatchers.IO) {
+        val performanceTrace = performance.newTrace("test_trace_2")
+        performanceTrace.start()
+        delay(1200)
+        performanceTrace.stop()
+      }
+    }
+    binding.createNetworkTrace.setOnClickListener {
+      lifecycleScope.launch(Dispatchers.IO) {
+        val url = URL("https://www.google.com")
+        val metric =
+          performance.newHttpMetric("https://www.google.com", FirebasePerformance.HttpMethod.GET)
+        metric.trace {
+          val conn = url.openConnection() as HttpURLConnection
+          val content = conn.inputStream.bufferedReader().use { it.readText() }
+          setHttpResponseCode(conn.responseCode)
+          setResponsePayloadSize(content.length.toLong())
+          conn.disconnect()
+        }
+      }
+    }
     binding.buttonForegroundProcess.setOnClickListener {
       if (binding.buttonForegroundProcess.getText().startsWith("Start")) {
         ForegroundService.startService(requireContext(), "Starting service at ${getDateText()}")
@@ -92,7 +117,6 @@ class FirstFragment : Fragment() {
       val intent = Intent(requireContext(), SecondActivity::class.java)
       intent.addFlags(FLAG_ACTIVITY_NEW_TASK or FLAG_ACTIVITY_LAUNCH_ADJACENT)
       startActivity(intent)
-      activity?.finish()
     }
     binding.startSplitscreenSame.setOnClickListener {
       val intent = Intent(requireContext(), MainActivity::class.java)
@@ -104,7 +128,7 @@ class FirstFragment : Fragment() {
       intent.addFlags(FLAG_ACTIVITY_NEW_TASK)
       startActivity(intent)
     }
-    binding.processName.text = getProcessName()
+    binding.processName.text = myProcessName
   }
 
   override fun onResume() {
@@ -126,10 +150,6 @@ class FirstFragment : Fragment() {
     fun getDateText(): String =
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N)
         SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
-      else "unknown"
-
-    fun getProcessName(): String =
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) Application.getProcessName()
       else "unknown"
   }
 }

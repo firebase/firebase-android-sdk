@@ -32,7 +32,9 @@ internal class LiveClientSetupMessage(
   // needs its own config class
   val generationConfig: LiveGenerationConfig.Internal?,
   val tools: List<Tool.Internal>?,
-  val systemInstruction: Content.Internal?
+  val systemInstruction: Content.Internal?,
+  val inputAudioTranscription: AudioTranscriptionConfig.Internal?,
+  val outputAudioTranscription: AudioTranscriptionConfig.Internal?,
 ) {
   @Serializable
   internal class Internal(val setup: LiveClientSetup) {
@@ -41,10 +43,21 @@ internal class LiveClientSetupMessage(
       val model: String,
       val generationConfig: LiveGenerationConfig.Internal?,
       val tools: List<Tool.Internal>?,
-      val systemInstruction: Content.Internal?
+      val systemInstruction: Content.Internal?,
+      val inputAudioTranscription: AudioTranscriptionConfig.Internal?,
+      val outputAudioTranscription: AudioTranscriptionConfig.Internal?,
     )
   }
 
   fun toInternal() =
-    Internal(Internal.LiveClientSetup(model, generationConfig, tools, systemInstruction))
+    Internal(
+      Internal.LiveClientSetup(
+        model,
+        generationConfig,
+        tools,
+        systemInstruction,
+        inputAudioTranscription,
+        outputAudioTranscription
+      )
+    )
 }

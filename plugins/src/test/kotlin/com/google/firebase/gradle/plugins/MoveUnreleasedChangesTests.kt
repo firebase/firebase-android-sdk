@@ -18,15 +18,10 @@ package com.google.firebase.gradle.plugins
 
 import com.google.firebase.gradle.plugins.ChangeType.FIXED
 import io.kotest.core.spec.style.FunSpec
-import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldHaveAtLeastSize
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNot
-import io.kotest.matchers.shouldNotBe
-import io.kotest.matchers.string.beEmpty
-import io.kotest.matchers.string.shouldMatch
 import java.io.File
 import org.gradle.testkit.runner.GradleRunner
 import org.junit.BeforeClass
@@ -54,22 +49,6 @@ class MoveUnreleasedChangesTests : FunSpec() {
     val releasedEntry = newChangelog.releases[1]
 
     releasedEntry.ktx shouldBe ktxEntry
-  }
-
-  @Test
-  fun `Uses template text on KTX libs with no changes`() {
-    basicChangelog.releases.first().ktx shouldBe null
-
-    val newChangelog = buildWithChangelog(basicChangelog)
-    validateChangelog(basicChangelog, newChangelog)
-
-    val releasedEntry = newChangelog.releases[1]
-
-    releasedEntry.ktx shouldNotBe null
-    releasedEntry.ktx?.let {
-      it.subtext shouldNot beEmpty()
-      it.changes.shouldBeEmpty()
-    }
   }
 
   @Test
@@ -122,7 +101,7 @@ class MoveUnreleasedChangesTests : FunSpec() {
     val originalEntry = original.releases.first()
 
     releasedEntry.content.changes shouldContainExactly originalEntry.content.changes
-    releasedEntry.content.subtext shouldMatch originalEntry.content.subtext
+    releasedEntry.content.subtext shouldBe originalEntry.content.subtext
   }
 
   companion object {

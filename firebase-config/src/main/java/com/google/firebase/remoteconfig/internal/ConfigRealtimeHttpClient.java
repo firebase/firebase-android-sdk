@@ -57,6 +57,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -381,15 +382,16 @@ public class ConfigRealtimeHttpClient {
 
     if (httpRetriesRemaining > 0) {
       httpRetriesRemaining--;
-      scheduledExecutorService.schedule(
-          new Runnable() {
-            @Override
-            public void run() {
-              beginRealtimeHttpStream();
-            }
-          },
-          retryMilliseconds,
-          TimeUnit.MILLISECONDS);
+      ScheduledFuture<?> unused =
+          scheduledExecutorService.schedule(
+              new Runnable() {
+                @Override
+                public void run() {
+                  beginRealtimeHttpStream();
+                }
+              },
+              retryMilliseconds,
+              TimeUnit.MILLISECONDS);
     } else if (!isInBackground) {
       propagateErrors(
           new FirebaseRemoteConfigClientException(
@@ -469,7 +471,8 @@ public class ConfigRealtimeHttpClient {
         activatedCache,
         listeners,
         retryCallback,
-        scheduledExecutorService);
+        scheduledExecutorService,
+        sharedPrefsClient);
   }
 
   // HTTP status code that the Realtime client should retry on.

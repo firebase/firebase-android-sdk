@@ -26,7 +26,6 @@ import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.Overlay;
 import com.google.firebase.firestore.util.BackgroundQueue;
-import com.google.firebase.firestore.util.Executors;
 import com.google.firestore.v1.Write;
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.ArrayList;
@@ -35,7 +34,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
-import java.util.concurrent.Executor;
 
 public class SQLiteDocumentOverlayCache implements DocumentOverlayCache {
   private final SQLitePersistence db;
@@ -204,16 +202,21 @@ public class SQLiteDocumentOverlayCache implements DocumentOverlayCache {
     byte[] rawMutation = row.getBlob(0);
     int largestBatchId = row.getInt(1);
 
-    // Since scheduling background tasks incurs overhead, we only dispatch to a
-    // background thread if there are still some documents remaining.
-    Executor executor = row.isLast() ? Executors.DIRECT_EXECUTOR : backgroundQueue;
-    executor.execute(
+    Runnable runnable =
         () -> {
           Overlay overlay = decodeOverlay(rawMutation, largestBatchId);
           synchronized (results) {
             results.put(overlay.getKey(), overlay);
           }
-        });
+        };
+
+    // If the cursor has exactly one row then just process that row synchronously to avoid the
+    // unnecessary overhead of scheduling its processing to run asynchronously.
+    if (row.isFirst() && row.isLast()) {
+      runnable.run();
+    } else {
+      backgroundQueue.submit(runnable);
+    }
   }
 
   private Overlay decodeOverlay(byte[] rawMutation, int largestBatchId) {

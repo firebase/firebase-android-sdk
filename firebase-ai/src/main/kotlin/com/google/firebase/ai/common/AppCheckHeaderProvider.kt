@@ -25,6 +25,7 @@ import kotlinx.coroutines.tasks.await
 
 internal class AppCheckHeaderProvider(
   private val logTag: String,
+  private val useLimitedUseAppCheckTokens: Boolean,
   private val appCheckTokenProvider: InteropAppCheckTokenProvider? = null,
   private val internalAuthProvider: InternalAuthProvider? = null,
 ) : HeaderProvider {
@@ -36,7 +37,14 @@ internal class AppCheckHeaderProvider(
     if (appCheckTokenProvider == null) {
       Log.w(logTag, "AppCheck not registered, skipping")
     } else {
-      val token = appCheckTokenProvider.getToken(false).await()
+      val result =
+        if (useLimitedUseAppCheckTokens) {
+          appCheckTokenProvider.limitedUseToken
+        } else {
+          appCheckTokenProvider.getToken(false)
+        }
+
+      val token = result.await()
 
       if (token.error != null) {
         Log.w(logTag, "Error obtaining AppCheck token", token.error)

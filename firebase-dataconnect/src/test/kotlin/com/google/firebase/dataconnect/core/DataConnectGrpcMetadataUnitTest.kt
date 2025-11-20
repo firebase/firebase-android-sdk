@@ -19,7 +19,11 @@ import android.os.Build
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.firebase.dataconnect.BuildConfig
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
+import com.google.firebase.dataconnect.core.DataConnectAppCheck.GetAppCheckTokenResult
+import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
 import com.google.firebase.dataconnect.testutil.FirebaseAppUnitTestingRule
+import com.google.firebase.dataconnect.testutil.property.arbitrary.appCheckTokenResult
+import com.google.firebase.dataconnect.testutil.property.arbitrary.authTokenResult
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnectGrpcMetadata
 import io.grpc.Metadata
@@ -29,9 +33,12 @@ import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.property.Arb
+import io.kotest.property.Exhaustive
 import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.next
+import io.kotest.property.checkAll
+import io.kotest.property.exhaustive.of
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
@@ -158,25 +165,34 @@ class DataConnectGrpcMetadataUnitTest {
 
   @Test
   fun `should omit x-firebase-auth-token when the auth token is null`() = runTest {
-    val dataConnectAuth: DataConnectAuth = mockk()
-    coEvery { dataConnectAuth.getToken(any()) } returns null
-    val dataConnectGrpcMetadata =
-      Arb.dataConnect
-        .dataConnectGrpcMetadata(dataConnectAuth = Arb.constant(dataConnectAuth))
-        .next()
-    val requestId = Arb.dataConnect.requestId().next()
-    val callerSdkType = Arb.enum<CallerSdkType>().next()
+    val getAuthTokenResults: Exhaustive<GetAuthTokenResult?> =
+      Exhaustive.of(
+        null,
+        Arb.dataConnect.authTokenResult(accessToken = Arb.constant(null)).next(),
+      )
 
-    val metadata = dataConnectGrpcMetadata.get(requestId, callerSdkType)
+    checkAll(getAuthTokenResults) { getAuthTokenResult ->
+      val dataConnectAuth: DataConnectAuth = mockk()
+      coEvery { dataConnectAuth.getToken(any()) } returns getAuthTokenResult
+      val dataConnectGrpcMetadata =
+        Arb.dataConnect
+          .dataConnectGrpcMetadata(dataConnectAuth = Arb.constant(dataConnectAuth))
+          .next()
+      val requestId = Arb.dataConnect.requestId().next()
+      val callerSdkType = Arb.enum<CallerSdkType>().next()
 
-    metadata.asClue { it.keys() shouldNotContain "x-firebase-auth-token" }
+      val metadata = dataConnectGrpcMetadata.get(requestId, callerSdkType)
+
+      metadata.asClue { it.keys() shouldNotContain "x-firebase-auth-token" }
+    }
   }
 
   @Test
   fun `should include x-firebase-auth-token when the auth token is not null`() = runTest {
     val dataConnectAuth: DataConnectAuth = mockk()
-    val accessToken = Arb.dataConnect.accessToken().next()
-    coEvery { dataConnectAuth.getToken(any()) } returns accessToken
+    val authTokenResult =
+      Arb.dataConnect.authTokenResult(accessToken = Arb.dataConnect.accessToken()).next()
+    coEvery { dataConnectAuth.getToken(any()) } returns authTokenResult
     val dataConnectGrpcMetadata =
       Arb.dataConnect
         .dataConnectGrpcMetadata(dataConnectAuth = Arb.constant(dataConnectAuth))
@@ -189,32 +205,41 @@ class DataConnectGrpcMetadataUnitTest {
     metadata.asClue {
       it.keys() shouldContain "x-firebase-auth-token"
       val metadataKey = Metadata.Key.of("x-firebase-auth-token", Metadata.ASCII_STRING_MARSHALLER)
-      it.get(metadataKey) shouldBe accessToken
+      it.get(metadataKey) shouldBe authTokenResult.token
     }
   }
 
   @Test
   fun `should omit x-firebase-appcheck when the AppCheck token is null`() = runTest {
-    val dataConnectAppCheck: DataConnectAppCheck = mockk {
-      coEvery { getToken(any()) } returns null
+    val getAppCheckTokenResults: Exhaustive<GetAppCheckTokenResult?> =
+      Exhaustive.of(
+        null,
+        Arb.dataConnect.appCheckTokenResult(accessToken = Arb.constant(null)).next(),
+      )
+
+    checkAll(getAppCheckTokenResults) { getAppCheckTokenResult ->
+      val dataConnectAppCheck: DataConnectAppCheck = mockk {
+        coEvery { getToken(any()) } returns getAppCheckTokenResult
+      }
+      val dataConnectGrpcMetadata =
+        Arb.dataConnect
+          .dataConnectGrpcMetadata(dataConnectAppCheck = Arb.constant(dataConnectAppCheck))
+          .next()
+      val requestId = Arb.dataConnect.requestId().next()
+      val callerSdkType = Arb.enum<CallerSdkType>().next()
+
+      val metadata = dataConnectGrpcMetadata.get(requestId, callerSdkType)
+
+      metadata.asClue { it.keys() shouldNotContain "x-firebase-appcheck" }
     }
-    val dataConnectGrpcMetadata =
-      Arb.dataConnect
-        .dataConnectGrpcMetadata(dataConnectAppCheck = Arb.constant(dataConnectAppCheck))
-        .next()
-    val requestId = Arb.dataConnect.requestId().next()
-    val callerSdkType = Arb.enum<CallerSdkType>().next()
-
-    val metadata = dataConnectGrpcMetadata.get(requestId, callerSdkType)
-
-    metadata.asClue { it.keys() shouldNotContain "x-firebase-appcheck" }
   }
 
   @Test
   fun `should include x-firebase-appcheck when the AppCheck token is not null`() = runTest {
-    val accessToken = Arb.dataConnect.accessToken().next()
+    val appCheckTokenResult =
+      Arb.dataConnect.appCheckTokenResult(accessToken = Arb.dataConnect.accessToken()).next()
     val dataConnectAppCheck: DataConnectAppCheck = mockk {
-      coEvery { getToken(any()) } returns accessToken
+      coEvery { getToken(any()) } returns appCheckTokenResult
     }
     val dataConnectGrpcMetadata =
       Arb.dataConnect
@@ -228,7 +253,7 @@ class DataConnectGrpcMetadataUnitTest {
     metadata.asClue {
       it.keys() shouldContain "x-firebase-appcheck"
       val metadataKey = Metadata.Key.of("x-firebase-appcheck", Metadata.ASCII_STRING_MARSHALLER)
-      it.get(metadataKey) shouldBe accessToken
+      it.get(metadataKey) shouldBe appCheckTokenResult.token
     }
   }
 

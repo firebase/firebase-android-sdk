@@ -46,14 +46,14 @@ dependencyResolutionManagement {
  *
  * Expected file format:
  * - Empty lines are ignored.
- * - Lines starting with # are considered comments.
+ * - Text following a '#' character on the same line is treated as a comment.
  * - Other lines are treated as project paths.
  */
 fun discoverSubprojects(subprojectsFile: File): List<String> {
   return subprojectsFile
     .readLines()
-    .map { it.trim() }
-    .filter { it.isNotEmpty() && !it.startsWith("#") }
+    .map { it.split("#").firstOrNull()?.trim() ?: "" }
+    .filter { it.isNotEmpty() }
 }
 
 /**

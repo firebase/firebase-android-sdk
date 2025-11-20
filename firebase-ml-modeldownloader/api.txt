@@ -78,18 +78,3 @@ package com.google.firebase.ml.modeldownloader {
 
 }
 
-package com.google.firebase.ml.modeldownloader.ktx {
-
-  public final class ModelDownloaderKt {
-    method public static operator java.io.File? component1(com.google.firebase.ml.modeldownloader.CustomModel);
-    method public static operator long component2(com.google.firebase.ml.modeldownloader.CustomModel);
-    method public static operator long component3(com.google.firebase.ml.modeldownloader.CustomModel);
-    method public static operator String component4(com.google.firebase.ml.modeldownloader.CustomModel);
-    method public static operator String component5(com.google.firebase.ml.modeldownloader.CustomModel);
-    method @Deprecated public static com.google.firebase.ml.modeldownloader.CustomModelDownloadConditions customModelDownloadConditions(kotlin.jvm.functions.Function1<? super com.google.firebase.ml.modeldownloader.CustomModelDownloadConditions.Builder,kotlin.Unit> init);
-    method @Deprecated public static com.google.firebase.ml.modeldownloader.FirebaseModelDownloader getModelDownloader(com.google.firebase.ktx.Firebase);
-    method @Deprecated public static com.google.firebase.ml.modeldownloader.FirebaseModelDownloader modelDownloader(com.google.firebase.ktx.Firebase, com.google.firebase.FirebaseApp app);
-  }
-
-}
-

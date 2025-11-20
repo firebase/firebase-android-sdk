@@ -1,4 +1,3 @@
 # Unreleased
-* [changed] Release to align with ktx changes
 
-
+- [changed] Release to align with ktx changes

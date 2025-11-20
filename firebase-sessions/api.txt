@@ -1,6 +1,11 @@
 // Signature format: 3.0
 package com.google.firebase.sessions.api {
 
+  public final class CrashEventReceiver {
+    method public static void notifyCrashOccurred();
+    field public static final com.google.firebase.sessions.api.CrashEventReceiver INSTANCE;
+  }
+
   public final class FirebaseSessionsDependencies {
     method public static void addDependency(com.google.firebase.sessions.api.SessionSubscriber.Name subscriberName);
     method public static void register(com.google.firebase.sessions.api.SessionSubscriber subscriber);

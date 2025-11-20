@@ -5,8 +5,9 @@ permalink: /
 
 # Contributor documentation
 
-This site is a collection of docs and best practices for contributors to Firebase Android SDKs.
-It describes how Firebase works on Android and provides guidance on how to build/maintain a Firebase SDK.
+This site is a collection of docs and best practices for contributors to Firebase Android SDKs. It
+describes how Firebase works on Android and provides guidance on how to build/maintain a Firebase
+SDK.
 
 ## New to Firebase?
 

@@ -16,13 +16,14 @@ package com.google.firebase.inappmessaging.internal;
 
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.inappmessaging.internal.InAppMessageStreamManager.ON_FOREGROUND;
+import static org.robolectric.Shadows.shadowOf;
 
+import android.os.Looper;
 import io.reactivex.flowables.ConnectableFlowable;
 import io.reactivex.subscribers.TestSubscriber;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.robolectric.Robolectric;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 
@@ -61,7 +62,7 @@ public class ForegroundNotifierTest {
     foregroundNotifier.onActivityResumed(null); // 1
     assertThat(subscriber.getEvents().get(0)).hasSize(1);
     foregroundNotifier.onActivityPaused(null);
-    Robolectric.flushForegroundThreadScheduler();
+    shadowOf(Looper.getMainLooper()).runToEndOfTasks();
     foregroundNotifier.onActivityResumed(null); // 2
     assertThat(subscriber.getEvents().get(0)).hasSize(2);
   }

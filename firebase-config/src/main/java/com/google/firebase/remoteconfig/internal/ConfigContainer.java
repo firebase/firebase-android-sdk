@@ -14,6 +14,7 @@
 
 package com.google.firebase.remoteconfig.internal;
 
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -328,11 +329,13 @@ public class ConfigContainer {
       this.builderRolloutMetadata = otherContainer.getRolloutMetadata();
     }
 
+    @CanIgnoreReturnValue
     public Builder replaceConfigsWith(Map<String, String> configsMap) {
       this.builderConfigsJson = new JSONObject(configsMap);
       return this;
     }
 
+    @CanIgnoreReturnValue
     public Builder replaceConfigsWith(JSONObject configsJson) {
       try {
         this.builderConfigsJson = new JSONObject(configsJson.toString());
@@ -345,11 +348,13 @@ public class ConfigContainer {
       return this;
     }
 
+    @CanIgnoreReturnValue
     public Builder withFetchTime(Date fetchTime) {
       this.builderFetchTime = fetchTime;
       return this;
     }
 
+    @CanIgnoreReturnValue
     public Builder withAbtExperiments(JSONArray abtExperiments) {
       try {
         this.builderAbtExperiments = new JSONArray(abtExperiments.toString());
@@ -362,6 +367,7 @@ public class ConfigContainer {
       return this;
     }
 
+    @CanIgnoreReturnValue
     public Builder withPersonalizationMetadata(JSONObject personalizationMetadata) {
       try {
         this.builderPersonalizationMetadata = new JSONObject(personalizationMetadata.toString());
@@ -374,11 +380,13 @@ public class ConfigContainer {
       return this;
     }
 
+    @CanIgnoreReturnValue
     public Builder withTemplateVersionNumber(long templateVersionNumber) {
       this.builderTemplateVersionNumber = templateVersionNumber;
       return this;
     }
 
+    @CanIgnoreReturnValue
     public Builder withRolloutMetadata(JSONArray rolloutMetadata) {
       try {
         this.builderRolloutMetadata = new JSONArray(rolloutMetadata.toString());

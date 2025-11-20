@@ -12,11 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.firestore;
+package com.google.firebase.firestore.index;
 
-import com.google.firebase.firestore.index.DirectionalIndexByteEncoder;
-import com.google.firebase.firestore.index.FirestoreIndexValueWriter;
-import com.google.firebase.firestore.index.IndexByteEncoder;
+import com.google.firebase.firestore.FieldValue;
+import com.google.firebase.firestore.UserDataReader;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.FieldIndex;
 import com.google.firestore.v1.Value;

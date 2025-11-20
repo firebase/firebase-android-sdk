@@ -37,18 +37,24 @@ internal class FirebaseAIMultiResourceComponent(
   private val internalAuthProvider: Provider<InternalAuthProvider>,
 ) {
 
-  @GuardedBy("this") private val instances: MutableMap<String, FirebaseAI> = mutableMapOf()
+  @GuardedBy("this") private val instances: MutableMap<InstanceKey, FirebaseAI> = mutableMapOf()
 
-  fun get(backend: GenerativeBackend): FirebaseAI =
+  fun get(key: InstanceKey): FirebaseAI =
     synchronized(this) {
-      instances[backend.location]
-        ?: FirebaseAI(
-            app,
-            backend,
-            blockingDispatcher,
-            appCheckProvider,
-            internalAuthProvider,
-          )
-          .also { instances[backend.location] = it }
+      instances.getOrPut(key) {
+        FirebaseAI(
+          app,
+          key.backend,
+          blockingDispatcher,
+          appCheckProvider,
+          internalAuthProvider,
+          key.useLimitedUseAppCheckTokens
+        )
+      }
     }
 }
+
+internal data class InstanceKey(
+  val backend: GenerativeBackend,
+  val useLimitedUseAppCheckTokens: Boolean
+)

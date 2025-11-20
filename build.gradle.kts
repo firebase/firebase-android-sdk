@@ -33,7 +33,7 @@ extra["targetSdkVersion"] = 34
 
 extra["compileSdkVersion"] = 34
 
-extra["minSdkVersion"] = 21
+extra["minSdkVersion"] = 23
 
 firebaseContinuousIntegration {
   ignorePaths =
@@ -59,6 +59,11 @@ fun Project.applySpotless() {
     kotlinGradle {
       target("*.gradle.kts") // default target for kotlinGradle
       ktfmt("0.41").googleStyle()
+    }
+    format("styling") {
+      target("src/**/*.md", "*.md", "docs/**/*.md")
+      targetExclude("**/third_party/**", "src/test/resources/**", "release_report.md")
+      prettier().config(mapOf("printWidth" to 100, "proseWrap" to "always"))
     }
   }
 }

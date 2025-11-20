@@ -17,38 +17,44 @@ package com.google.firebase.dataconnect.gradle.plugin
 
 import java.io.File
 import org.gradle.api.Task
+import org.gradle.process.ExecOperations
 
 interface DataConnectExecutableConfig {
   var outputDirectory: File?
   var connectors: Collection<String>
+  var connectorId: Collection<String>
   var listen: String?
   var localConnectionString: String?
   var logFile: File?
   var schemaExtensionsOutputEnabled: Boolean?
+  var platform: String?
 }
 
 fun Task.runDataConnectExecutable(
   dataConnectExecutable: File,
   subCommand: List<String>,
   configDirectory: File,
+  execOperations: ExecOperations,
   configure: DataConnectExecutableConfig.() -> Unit,
 ) {
   val config =
     object : DataConnectExecutableConfig {
         override var outputDirectory: File? = null
         override var connectors: Collection<String> = emptyList()
+        override var connectorId: Collection<String> = emptyList()
         override var listen: String? = null
         override var localConnectionString: String? = null
         override var logFile: File? = null
         override var schemaExtensionsOutputEnabled: Boolean? = null
+        override var platform: String? = null
       }
       .apply(configure)
 
-  val logFile = config.logFile?.also { project.mkdir(it.parentFile) }
+  val logFile = config.logFile?.also { it.parentFile.mkdirs() }
   val logFileStream = logFile?.outputStream()
 
   try {
-    project.exec { execSpec ->
+    execOperations.exec { execSpec ->
       execSpec.run {
         executable(dataConnectExecutable)
         isIgnoreExitValue = false
@@ -76,7 +82,13 @@ fun Task.runDataConnectExecutable(
             args("-connectors=${it.joinToString(",")}")
           }
         }
+        config.connectorId.let {
+          if (it.isNotEmpty()) {
+            args("-connector_id=${it.joinToString(",")}")
+          }
+        }
         config.listen?.let { args("-listen=${it}") }
+        config.platform?.let { args("-platform=${it}") }
         config.localConnectionString?.let { args("-local_connection_string=${it}") }
         config.schemaExtensionsOutputEnabled?.let { args("-enable_output_schema_extensions=${it}") }
       }

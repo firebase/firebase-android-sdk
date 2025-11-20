@@ -105,11 +105,6 @@
             </dependency>
             <dependency>
                 <groupId>com.google.firebase</groupId>
-                <artifactId>firebase-vertexai</artifactId>
-                <version>16.0.2</version>
-            </dependency>
-            <dependency>
-                <groupId>com.google.firebase</groupId>
                 <artifactId>firebase-inappmessaging</artifactId>
                 <version>21.0.1</version>
             </dependency>
@@ -212,11 +207,6 @@
                 <groupId>com.google.firebase</groupId>
                 <artifactId>firebase-inappmessaging-ktx</artifactId>
                 <version>21.0.1</version>
-            </dependency>
-            <dependency>
-                <groupId>com.google.firebase</groupId>
-                <artifactId>firebase-database</artifactId>
-                <version>21.0.0</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

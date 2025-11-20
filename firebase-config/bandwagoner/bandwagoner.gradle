@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 apply plugin: 'com.android.application'
 apply plugin: com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
 apply plugin: 'org.jetbrains.kotlin.android'
@@ -58,10 +60,9 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
-    kotlinOptions {
-        jvmTarget = '1.8'
-    }
 }
+
+kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_1_8 } }
 
 firebaseTestLab {
     device 'model=panther,version=33,locale=en,orientation=portrait'
@@ -75,12 +76,9 @@ dependencies {
         exclude group: 'com.google.firebase', module: 'firebase-common'
         exclude group: 'com.google.firebase', module: 'firebase-components'
     }
-    implementation(project(":firebase-config:ktx")) {
-        exclude group: 'com.google.firebase', module: 'firebase-common'
-        exclude group: 'com.google.firebase', module: 'firebase-components'
-    }
     implementation(project(":firebase-installations")) {
         exclude group: 'com.google.firebase', module: 'firebase-common'
+        exclude group: 'com.google.firebase', module: 'firebase-common-ktx'
         exclude group: 'com.google.firebase', module: 'firebase-components'
     }
     implementation libs.androidx.annotation
@@ -95,9 +93,8 @@ dependencies {
     // "implementation" dependencies. The alternative would be to make common an "api" dep of remote-config.
     // Released artifacts don't need these dependencies since they don't use `project` to refer
     // to Remote Config.
-    implementation("com.google.firebase:firebase-common:21.0.0")
-    implementation("com.google.firebase:firebase-common-ktx:21.0.0")
-    implementation("com.google.firebase:firebase-components:18.0.0")
+    implementation("com.google.firebase:firebase-common:22.0.0")
+    implementation(libs.firebase.components)
     implementation("com.google.firebase:firebase-installations-interop:17.1.1") {
         exclude group: 'com.google.firebase', module: 'firebase-common'
         exclude group: 'com.google.firebase', module: 'firebase-components'

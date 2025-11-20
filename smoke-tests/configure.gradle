@@ -14,7 +14,7 @@
 
 
 def configurePlatform() {
-  def bom = "com.google.firebase:firebase-bom:20.0.0"
+  def bom = "com.google.firebase:firebase-bom:33.16.0"
   if (project.hasProperty("firebase-bom")) {
     bom = project.getProperty("firebase-bom")
   }

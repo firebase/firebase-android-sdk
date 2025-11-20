@@ -355,3 +355,91 @@ type OrderDirectionTest @table @index(fields: ["tag"]) {
   value: Int
   tag: String
 }
+
+enum N5ekmae3jn {
+  DPSKD6HR3A,
+  XGWGVMYTHJ,
+  QJX7C7RD5T,
+  RGTB44C2M8,
+  ZE6Z5778RV,
+  N3HWNCRWBP,
+}
+
+type EnumNonNullable @table @index(fields: ["tag"]) {
+  value: N5ekmae3jn!
+  tag: String
+}
+
+type EnumNonNullableTableDefault @table {
+  value: N5ekmae3jn! @default(value: RGTB44C2M8)
+}
+
+type EnumNullable @table @index(fields: ["tag"]) {
+  value: N5ekmae3jn
+  tag: String
+}
+
+type EnumNullableTableDefault @table {
+  value: N5ekmae3jn @default(value: ZE6Z5778RV)
+}
+
+type EnumNonNullableListOfNonNullable @table {
+  value: [N5ekmae3jn!]!
+}
+
+type EnumNonNullableListOfNullable @table {
+  value: [N5ekmae3jn]!
+}
+
+type EnumNullableListOfNonNullable @table {
+  value: [N5ekmae3jn!]
+}
+
+type EnumNullableListOfNullable @table {
+  value: [N5ekmae3jn]
+}
+
+# An enum that uses Kotlin keywords to ensure they are correctly escaped.
+enum break {
+  when,
+  super,
+  try,
+}
+
+type EnumKotlinKeywords @table {
+  value: break!
+}
+
+# An enum that has a subset of the values in the N5ekmae3jn enum.
+# This is used for testing unknown enum values.
+enum N5ekmae3jnSubset {
+  DPSKD6HR3A,
+  XGWGVMYTHJ,
+  QJX7C7RD5T,
+}
+
+type EnumSubset @table {
+  value: N5ekmae3jnSubset!
+}
+
+type EnumSubsetList @table {
+  value: [N5ekmae3jnSubset]!
+}
+
+type EnumKey @table(key: ["id", "enumValue"]) {
+  id: UUID! @default(expr: "uuidV4()")
+  enumValue: N5ekmae3jn!
+  tag: String!
+}
+
+enum S7yayynb25 {
+  XJ27ZAXKD3,
+  R36KQ8PT5K,
+  ETCV3FN9GH,
+  NMAJAGZHDS,
+}
+
+type MultipleEnumColumns @table {
+  enum1: N5ekmae3jn!
+  enum2: S7yayynb25!
+}

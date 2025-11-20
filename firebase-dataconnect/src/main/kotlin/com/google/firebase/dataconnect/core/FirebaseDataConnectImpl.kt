@@ -118,11 +118,12 @@ internal class FirebaseDataConnectImpl(
 
   private val dataConnectAuth: DataConnectAuth =
     DataConnectAuth(
-      deferredAuthProvider = deferredAuthProvider,
-      parentCoroutineScope = coroutineScope,
-      blockingDispatcher = blockingDispatcher,
-      logger = Logger("DataConnectAuth").apply { debug { "created by $instanceId" } },
-    )
+        deferredAuthProvider = deferredAuthProvider,
+        parentCoroutineScope = coroutineScope,
+        blockingDispatcher = blockingDispatcher,
+        logger = Logger("DataConnectAuth").apply { debug { "created by $instanceId" } },
+      )
+      .apply { initialize() }
 
   override suspend fun awaitAuthReady() {
     dataConnectAuth.awaitTokenProvider()
@@ -130,11 +131,12 @@ internal class FirebaseDataConnectImpl(
 
   private val dataConnectAppCheck: DataConnectAppCheck =
     DataConnectAppCheck(
-      deferredAppCheckTokenProvider = deferredAppCheckProvider,
-      parentCoroutineScope = coroutineScope,
-      blockingDispatcher = blockingDispatcher,
-      logger = Logger("DataConnectAppCheck").apply { debug { "created by $instanceId" } },
-    )
+        deferredAppCheckTokenProvider = deferredAppCheckProvider,
+        parentCoroutineScope = coroutineScope,
+        blockingDispatcher = blockingDispatcher,
+        logger = Logger("DataConnectAppCheck").apply { debug { "created by $instanceId" } },
+      )
+      .apply { initialize() }
 
   override suspend fun awaitAppCheckReady() {
     dataConnectAppCheck.awaitTokenProvider()

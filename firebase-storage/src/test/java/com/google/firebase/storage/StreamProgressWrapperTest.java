@@ -16,7 +16,6 @@ package com.google.firebase.storage;
 
 import static com.google.firebase.common.testutil.Assert.assertThrows;
 
-import android.os.Build;
 import com.google.firebase.storage.StreamDownloadTask.StreamProgressWrapper;
 import com.google.firebase.storage.network.MockInputStreamHelper;
 import java.io.ByteArrayInputStream;
@@ -35,7 +34,7 @@ import org.robolectric.annotation.Config;
 
 /** Tests for {@link StreamProgressWrapper}. */
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = Build.VERSION_CODES.LOLLIPOP_MR1)
+@Config(sdk = Config.OLDEST_SDK)
 @SuppressWarnings("ResultOfMethodCallIgnored")
 public class StreamProgressWrapperTest {
 

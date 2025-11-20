@@ -35,7 +35,8 @@ public enum class LogLevel {
   internal companion object {
 
     /**
-     * Returns one of the two given log levels, the one that is "noisier" (i.e. that logs more).
+     * Returns one of the two given log levels, the one that is "noisier" (that is, the one that
+     * logs more).
      *
      * It can be useful to figure out which of two log levels are noisier on log level change, to
      * emit a message about the log level change at the noisiest level.

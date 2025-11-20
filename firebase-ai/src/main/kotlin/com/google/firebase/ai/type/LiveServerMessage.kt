@@ -42,7 +42,9 @@ import kotlinx.serialization.json.jsonObject
  * play it out in realtime.
  */
 @PublicPreviewAPI
-public class LiveServerContent(
+public class LiveServerContent
+@Deprecated("This class should not be constructed, only received from the Server")
+public constructor(
   /**
    * The content that the model has generated as part of the current conversation with the user.
    *
@@ -82,25 +84,43 @@ public class LiveServerContent(
    * [interrupted] -> [turnComplete].
    */
   public val generationComplete: Boolean,
+
+  /**
+   * The input transcription. The transcription is independent to the model turn which means it
+   * doesn't imply any ordering between transcription and model turn.
+   */
+  public val inputTranscription: Transcription?,
+
+  /**
+   * The output transcription. The transcription is independent to the model turn which means it
+   * doesn't imply any ordering between transcription and model turn.
+   */
+  public val outputTranscription: Transcription?
 ) : LiveServerMessage {
   @OptIn(ExperimentalSerializationApi::class)
   @Serializable
   internal data class Internal(
-    val modelTurn: Content.Internal? = null,
-    val interrupted: Boolean = false,
-    val turnComplete: Boolean = false,
-    val generationComplete: Boolean = false
+    val modelTurn: Content.Internal?,
+    val interrupted: Boolean?,
+    val turnComplete: Boolean?,
+    val generationComplete: Boolean?,
+    val inputTranscription: Transcription.Internal?,
+    val outputTranscription: Transcription.Internal?
   )
   @Serializable
   internal data class InternalWrapper(val serverContent: Internal) : InternalLiveServerMessage {
     @OptIn(ExperimentalSerializationApi::class)
-    override fun toPublic() =
-      LiveServerContent(
+    override fun toPublic(): LiveServerContent {
+      // WhenMajor(Revisit the decision to make these have default values)
+      return LiveServerContent(
         serverContent.modelTurn?.toPublic(),
-        serverContent.interrupted,
-        serverContent.turnComplete,
-        serverContent.generationComplete
+        serverContent.interrupted ?: false,
+        serverContent.turnComplete ?: false,
+        serverContent.generationComplete ?: false,
+        serverContent.inputTranscription?.toPublic(),
+        serverContent.outputTranscription?.toPublic()
       )
+    }
   }
 }
 
@@ -135,7 +155,8 @@ public class LiveServerToolCall(public val functionCalls: List<FunctionCallPart>
         toolCall.functionCalls.map { functionCall ->
           FunctionCallPart(
             name = functionCall.name,
-            args = functionCall.args.orEmpty().mapValues { it.value ?: JsonNull }
+            args = functionCall.args.orEmpty().mapValues { it.value ?: JsonNull },
+            id = functionCall.id
           )
         }
       )
@@ -183,7 +204,7 @@ internal object LiveServerMessageSerializer :
         LiveServerToolCallCancellation.InternalWrapper.serializer()
       else ->
         throw SerializationException(
-          "The given subclass of LiveServerMessage (${javaClass.simpleName}) is not supported in the serialization yet."
+          "Unknown LiveServerMessage response type. Keys found: ${jsonObject.keys}"
         )
     }
   }

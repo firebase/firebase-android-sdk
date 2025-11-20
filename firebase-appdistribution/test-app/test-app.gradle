@@ -68,10 +68,9 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
-    kotlinOptions {
-        jvmTarget = '1.8'
-    }
 }
+
+kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_1_8 } }
 
 dependencies {
     // TODO(rachelprince): Add flag to build with public version of SDK
@@ -82,7 +81,6 @@ dependencies {
     // In this test project we also need to explicitly declare these dependencies
     implementation project(':firebase-appdistribution-api')
     // All variants use the API
-    implementation project(':firebase-appdistribution-api:ktx')
     implementation "androidx.activity:activity-ktx:1.6.0"
     implementation 'androidx.appcompat:appcompat:1.5.1'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
@@ -91,7 +89,6 @@ dependencies {
     implementation "androidx.fragment:fragment-ktx:1.5.3"
     implementation "com.google.android.gms:play-services-tasks:18.0.2"
     implementation 'com.google.android.material:material:1.6.1'
-    implementation 'com.google.firebase:firebase-common-ktx:21.0.0'
     // Shake detection
     implementation 'com.squareup:seismic:1.0.3'
     // Other dependencies

@@ -23,3 +23,5 @@ package com.google.firebase.ai.common.util
  */
 internal fun fullModelName(name: String): String =
   name.takeIf { it.contains("/") } ?: "models/$name"
+
+internal fun trimmedModelName(name: String): String = name.split("/").last()

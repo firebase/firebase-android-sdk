@@ -36,17 +36,6 @@ package com.google.firebase.perf {
 
 }
 
-package com.google.firebase.perf.ktx {
-
-  public final class PerformanceKt {
-    method @Deprecated public static com.google.firebase.perf.FirebasePerformance getPerformance(com.google.firebase.ktx.Firebase);
-    method @Deprecated public static inline void trace(com.google.firebase.perf.metrics.HttpMetric, kotlin.jvm.functions.Function1<? super com.google.firebase.perf.metrics.HttpMetric,kotlin.Unit> block);
-    method @Deprecated public static inline <T> T trace(com.google.firebase.perf.metrics.Trace, kotlin.jvm.functions.Function1<? super com.google.firebase.perf.metrics.Trace,? extends T> block);
-    method @Deprecated public static inline <T> T trace(String name, kotlin.jvm.functions.Function1<? super com.google.firebase.perf.metrics.Trace,? extends T> block);
-  }
-
-}
-
 package com.google.firebase.perf.metrics {
 
   @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public @interface AddTrace {

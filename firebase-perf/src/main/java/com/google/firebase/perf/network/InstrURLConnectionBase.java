@@ -411,9 +411,7 @@ class InstrURLConnectionBase {
   }
 
   public void setFixedLengthStreamingMode(final long contentLength) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-      httpUrlConnection.setFixedLengthStreamingMode(contentLength);
-    }
+    httpUrlConnection.setFixedLengthStreamingMode(contentLength);
   }
 
   public void setIfModifiedSince(final long ifmodifiedsince) {

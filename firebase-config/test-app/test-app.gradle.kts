@@ -1,7 +1,4 @@
 @file:Suppress("DEPRECATION") // App projects should still use FirebaseTestLabPlugin.
-
-import com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
-
 /*
  * Copyright 2023 Google LLC
  *
@@ -17,6 +14,9 @@ import com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+import com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
   id("com.android.application")
@@ -47,29 +47,28 @@ android {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
   }
-  kotlinOptions { jvmTarget = "1.8" }
 }
+
+kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_1_8 } }
 
 dependencies {
   implementation(project(":firebase-crashlytics")) {
     exclude(group = "com.google.firebase", module = "firebase-config-interop")
   }
-  implementation(project(":firebase-config")) {
-    exclude(group = "com.google.firebase", module = "firebase-config-interop")
-  }
-  implementation(project(":firebase-config:ktx"))
+  implementation(project(":firebase-config"))
 
   // This is required since a `project` dependency on frc does not expose the APIs of its
   // "implementation" dependencies. The alternative would be to make common an "api" dep of
   // remote-config.
   // Released artifacts don't need these dependencies since they don't use `project` to refer
   // to Remote Config.
-  implementation("com.google.firebase:firebase-common:21.0.0")
-  implementation("com.google.firebase:firebase-common-ktx:21.0.0")
-  implementation("com.google.firebase:firebase-components:18.0.0")
+  implementation("com.google.firebase:firebase-common:22.0.0")
+  implementation(libs.firebase.components)
 
   implementation("com.google.firebase:firebase-installations-interop:17.1.0")
-  runtimeOnly("com.google.firebase:firebase-installations:17.1.4")
+  runtimeOnly("com.google.firebase:firebase-installations:18.0.0") {
+    exclude(group = "com.google.firebase", module = "firebase-common-ktx")
+  }
 
   implementation("com.google.android.gms:play-services-basement:18.1.0")
   implementation("com.google.android.gms:play-services-tasks:18.0.1")
@@ -80,7 +79,6 @@ dependencies {
   implementation("androidx.core:core-ktx:1.9.0")
   implementation("com.google.android.material:material:1.8.0")
 
-  androidTestImplementation("com.google.firebase:firebase-common-ktx:21.0.0")
   androidTestImplementation(libs.androidx.test.junit)
   androidTestImplementation(libs.androidx.test.runner)
   androidTestImplementation(libs.truth)

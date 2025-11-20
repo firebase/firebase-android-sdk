@@ -373,7 +373,6 @@ public class ConfigSharedPrefsClient {
   // Realtime exponential backoff logic.
   // -----------------------------------------------------------------
 
-  @VisibleForTesting
   public RealtimeBackoffMetadata getRealtimeBackoffMetadata() {
     synchronized (realtimeBackoffMetadataLock) {
       return new RealtimeBackoffMetadata(
@@ -394,6 +393,15 @@ public class ConfigSharedPrefsClient {
     }
   }
 
+  public void setRealtimeBackoffEndTime(Date backoffEndTime) {
+    synchronized (realtimeBackoffMetadataLock) {
+      frcSharedPrefs
+          .edit()
+          .putLong(REALTIME_BACKOFF_END_TIME_IN_MILLIS_KEY, backoffEndTime.getTime())
+          .apply();
+    }
+  }
+
   void resetRealtimeBackoff() {
     setRealtimeBackoffMetadata(NO_FAILED_REALTIME_STREAMS, NO_BACKOFF_TIME);
   }
@@ -405,7 +413,6 @@ public class ConfigSharedPrefsClient {
    * <p>The purpose of this class is to avoid race conditions when retrieving backoff metadata
    * values separately.
    */
-  @VisibleForTesting
   public static class RealtimeBackoffMetadata {
     private int numFailedStreams;
     private Date backoffEndTime;

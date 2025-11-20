@@ -23,12 +23,12 @@ import kotlinx.serialization.modules.SerializersModule
 /**
  * A specialization of [OperationRef] for _query_ operations.
  *
- * ### Safe for Concurrent Use
+ * ### Safe for concurrent use
  *
  * All methods and properties of [QueryRef] are thread-safe and may be safely called and/or accessed
  * concurrently from multiple threads and/or coroutines.
  *
- * ### Not Stable for Inheritance
+ * ### Not stable for inheritance
  *
  * The [QueryRef] interface is _not_ stable for inheritance in third-party libraries, as new methods
  * might be added to this interface or contracts of the existing methods can be changed.
@@ -75,12 +75,12 @@ public interface QueryRef<Data, Variables> : OperationRef<Data, Variables> {
 /**
  * A specialization of [OperationResult] for [QueryRef].
  *
- * ### Safe for Concurrent Use
+ * ### Safe for concurrent use
  *
  * All methods and properties of [QueryResult] are thread-safe and may be safely called and/or
  * accessed concurrently from multiple threads and/or coroutines.
  *
- * ### Not Stable for Inheritance
+ * ### Not stable for inheritance
  *
  * The [QueryResult] interface is _not_ stable for inheritance in third-party libraries, as new
  * methods might be added to this interface or contracts of the existing methods can be changed.

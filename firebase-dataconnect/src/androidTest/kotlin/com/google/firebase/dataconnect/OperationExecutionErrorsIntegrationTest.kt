@@ -231,6 +231,31 @@ class OperationExecutionErrorsIntegrationTest : DataConnectIntegrationTestBase()
     )
   }
 
+  @Test
+  fun executeMutationFailsWithNonNullDataNonEmptyErrorsDecodingFailsInTransaction() = runTest {
+    val id = Arb.alphanumericString().next()
+    val name = Arb.alphanumericString().next()
+    val mutationRef =
+      dataConnect.mutation(
+        operationName = "createPersonWithPartialFailureInTransaction",
+        variables = CreatePersonWithPartialFailureVariables(id = id, name = name),
+        dataDeserializer = serializer<IncompatibleData>(),
+        variablesSerializer = serializer(),
+        optionsBuilder = {},
+      )
+
+    val exception = shouldThrow<DataConnectOperationException> { mutationRef.execute() }
+
+    exception.shouldSatisfy(
+      expectedMessageSubstringCaseInsensitive = "operation encountered errors",
+      expectedMessageSubstringCaseSensitive = "te36b3zkvn",
+      expectedCause = null,
+      expectedRawData = mapOf("person1" to null, "person2" to null),
+      expectedData = null,
+      errorsValidator = { it.shouldHaveAtLeastSize(1) },
+    )
+  }
+
   @Serializable private data class IncompatibleVariables(val jwdbzka4k5: String)
 
   @Serializable private data class IncompatibleData(val btzjhbfz7h: String)
