@@ -20,18 +20,32 @@ import java.util.UUID
 
 class InMemoryNotesDatabase {
 
-  data class Note(val id: UUID, val title: String, val body: String, val createdAt: String)
+  data class Note(
+    val id: UUID,
+    val title: String,
+    val body: String,
+    val createdAt: String,
+    val isFavorite: Boolean,
+  )
 
   private val notes = mutableListOf<Note>()
 
-  fun createNote(title: String, body: String, createdAt: String) {
-    notes.add(Note(id = UUID.randomUUID(), title = title, body = body, createdAt = createdAt))
+  fun createNote(title: String, body: String, createdAt: String, isFavorite: Boolean) {
+    notes.add(
+      Note(
+        id = UUID.randomUUID(),
+        title = title,
+        body = body,
+        createdAt = createdAt,
+        isFavorite = isFavorite,
+      )
+    )
   }
 
-  fun updateNote(id: UUID, title: String, body: String) {
+  fun updateNote(id: UUID, title: String, body: String, isFavorite: Boolean) {
     val index = notes.indexOfFirst { it.id == id }
     if (index >= 0) {
-      notes[index] = notes[index].copy(title = title, body = body)
+      notes[index] = notes[index].copy(title = title, body = body, isFavorite = isFavorite)
     }
   }
 

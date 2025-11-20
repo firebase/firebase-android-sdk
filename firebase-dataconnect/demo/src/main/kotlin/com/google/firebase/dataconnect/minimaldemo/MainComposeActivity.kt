@@ -35,6 +35,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -48,6 +49,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
@@ -81,6 +83,7 @@ fun NoteEditor(notesDb: InMemoryNotesDatabase, modifier: Modifier = Modifier) {
   var title by remember { mutableStateOf("") }
   var body by remember { mutableStateOf("") }
   var createdAt by remember { mutableStateOf("") }
+  var isFavorite by remember { mutableStateOf(false) }
   var notes by remember { mutableStateOf(notesDb.getAll()) }
   var showMenu by remember { mutableStateOf(false) }
   var selectedNote by remember { mutableStateOf<InMemoryNotesDatabase.Note?>(null) }
@@ -104,6 +107,10 @@ fun NoteEditor(notesDb: InMemoryNotesDatabase, modifier: Modifier = Modifier) {
       text = "Created At: $createdAt",
       modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 16.dp),
     )
+    Row(verticalAlignment = Alignment.CenterVertically) {
+      Checkbox(checked = isFavorite, onCheckedChange = { isFavorite = it })
+      Text("Favorite")
+    }
     Row(modifier = Modifier.fillMaxWidth()) {
       val noteId = id
       if (noteId === null) {
@@ -116,12 +123,14 @@ fun NoteEditor(notesDb: InMemoryNotesDatabase, modifier: Modifier = Modifier) {
                 title = cleanTitle,
                 body = cleanBody,
                 createdAt = Clock.System.now().toString(),
+                isFavorite = isFavorite,
               )
               notes = notesDb.getAll()
               id = null
               title = ""
               body = ""
               createdAt = ""
+              isFavorite = false
             }
           },
           modifier = Modifier.weight(1f),
@@ -134,12 +143,18 @@ fun NoteEditor(notesDb: InMemoryNotesDatabase, modifier: Modifier = Modifier) {
             val cleanTitle = title.trim()
             if (!cleanTitle.isEmpty()) {
               val cleanBody = body.trimEnd()
-              notesDb.updateNote(noteId, title = cleanTitle, body = cleanBody)
+              notesDb.updateNote(
+                noteId,
+                title = cleanTitle,
+                body = cleanBody,
+                isFavorite = isFavorite,
+              )
               notes = notesDb.getAll()
               id = null
               title = ""
               body = ""
               createdAt = ""
+              isFavorite = false
             }
           },
           modifier = Modifier.weight(1f),
@@ -154,6 +169,7 @@ fun NoteEditor(notesDb: InMemoryNotesDatabase, modifier: Modifier = Modifier) {
           title = ""
           body = ""
           createdAt = ""
+          isFavorite = false
         },
         modifier = Modifier.weight(1f),
       ) {
@@ -182,6 +198,7 @@ fun NoteEditor(notesDb: InMemoryNotesDatabase, modifier: Modifier = Modifier) {
                       title = note.title
                       body = note.body
                       createdAt = note.createdAt
+                      isFavorite = note.isFavorite
                     },
                     onLongPress = {
                       selectedNote = note
@@ -204,6 +221,7 @@ fun NoteEditor(notesDb: InMemoryNotesDatabase, modifier: Modifier = Modifier) {
                   title = ""
                   body = ""
                   createdAt = ""
+                  isFavorite = false
                 }
                 showMenu = false
               },
