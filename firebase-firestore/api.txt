@@ -576,33 +576,3 @@ package com.google.firebase.firestore {
 
 }
 
-package com.google.firebase.firestore.ktx {
-
-  public final class FirestoreKt {
-    method @Deprecated public static inline <reified T> kotlinx.coroutines.flow.Flow<T?> dataObjects(com.google.firebase.firestore.DocumentReference, com.google.firebase.firestore.MetadataChanges metadataChanges = com.google.firebase.firestore.MetadataChanges.EXCLUDE);
-    method @Deprecated public static inline <reified T> kotlinx.coroutines.flow.Flow<java.util.List<? extends T>> dataObjects(com.google.firebase.firestore.Query, com.google.firebase.firestore.MetadataChanges metadataChanges = com.google.firebase.firestore.MetadataChanges.EXCLUDE);
-    method @Deprecated public static com.google.firebase.firestore.FirebaseFirestore firestore(com.google.firebase.ktx.Firebase, com.google.firebase.FirebaseApp app);
-    method @Deprecated public static com.google.firebase.firestore.FirebaseFirestore firestore(com.google.firebase.ktx.Firebase, com.google.firebase.FirebaseApp app, String database);
-    method @Deprecated public static com.google.firebase.firestore.FirebaseFirestore firestore(com.google.firebase.ktx.Firebase, String database);
-    method @Deprecated public static com.google.firebase.firestore.FirebaseFirestoreSettings firestoreSettings(kotlin.jvm.functions.Function1<? super com.google.firebase.firestore.FirebaseFirestoreSettings.Builder,kotlin.Unit> init);
-    method @Deprecated public static inline <reified T> T? getField(com.google.firebase.firestore.DocumentSnapshot, com.google.firebase.firestore.FieldPath fieldPath);
-    method @Deprecated public static inline <reified T> T? getField(com.google.firebase.firestore.DocumentSnapshot, com.google.firebase.firestore.FieldPath fieldPath, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior serverTimestampBehavior);
-    method @Deprecated public static inline <reified T> T? getField(com.google.firebase.firestore.DocumentSnapshot, String field);
-    method @Deprecated public static inline <reified T> T? getField(com.google.firebase.firestore.DocumentSnapshot, String field, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior serverTimestampBehavior);
-    method @Deprecated public static com.google.firebase.firestore.FirebaseFirestore getFirestore(com.google.firebase.ktx.Firebase);
-    method public static com.google.firebase.firestore.MemoryCacheSettings memoryCacheSettings(kotlin.jvm.functions.Function1<? super com.google.firebase.firestore.MemoryCacheSettings.Builder,kotlin.Unit> init);
-    method public static com.google.firebase.firestore.MemoryEagerGcSettings memoryEagerGcSettings(kotlin.jvm.functions.Function1<? super com.google.firebase.firestore.MemoryEagerGcSettings.Builder,kotlin.Unit> init);
-    method public static com.google.firebase.firestore.MemoryLruGcSettings memoryLruGcSettings(kotlin.jvm.functions.Function1<? super com.google.firebase.firestore.MemoryLruGcSettings.Builder,kotlin.Unit> init);
-    method public static com.google.firebase.firestore.PersistentCacheSettings persistentCacheSettings(kotlin.jvm.functions.Function1<? super com.google.firebase.firestore.PersistentCacheSettings.Builder,kotlin.Unit> init);
-    method @Deprecated public static kotlinx.coroutines.flow.Flow<com.google.firebase.firestore.DocumentSnapshot> snapshots(com.google.firebase.firestore.DocumentReference, com.google.firebase.firestore.MetadataChanges metadataChanges = com.google.firebase.firestore.MetadataChanges.EXCLUDE);
-    method @Deprecated public static kotlinx.coroutines.flow.Flow<com.google.firebase.firestore.QuerySnapshot> snapshots(com.google.firebase.firestore.Query, com.google.firebase.firestore.MetadataChanges metadataChanges = com.google.firebase.firestore.MetadataChanges.EXCLUDE);
-    method @Deprecated public static inline <reified T> T? toObject(com.google.firebase.firestore.DocumentSnapshot);
-    method @Deprecated public static inline <reified T> T? toObject(com.google.firebase.firestore.DocumentSnapshot, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior serverTimestampBehavior);
-    method @Deprecated public static inline <reified T> T toObject(com.google.firebase.firestore.QueryDocumentSnapshot);
-    method @Deprecated public static inline <reified T> T toObject(com.google.firebase.firestore.QueryDocumentSnapshot, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior serverTimestampBehavior);
-    method @Deprecated public static inline <reified T> java.util.List<T> toObjects(com.google.firebase.firestore.QuerySnapshot);
-    method @Deprecated public static inline <reified T> java.util.List<T> toObjects(com.google.firebase.firestore.QuerySnapshot, com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior serverTimestampBehavior);
-  }
-
-}
-

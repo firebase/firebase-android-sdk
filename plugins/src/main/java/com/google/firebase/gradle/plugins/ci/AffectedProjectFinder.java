@@ -16,6 +16,7 @@ package com.google.firebase.gradle.plugins.ci;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.io.CharStreams;
+import com.google.common.io.Files;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -39,6 +40,8 @@ public class AffectedProjectFinder {
     this(project, changedPaths(project.getRootDir()), ignorePaths);
   }
 
+  private static final Set<String> DOC_EXTENSIONS = ImmutableSet.of("md", "txt", "html");
+
   public AffectedProjectFinder(
       Project project, Set<String> changedPaths, List<Pattern> ignorePaths) {
     this.project = project;
@@ -53,7 +56,15 @@ public class AffectedProjectFinder {
                   }
                   return true;
                 })
+            .filter(p -> !isDocFile(p))
             .collect(Collectors.toSet());
+  }
+
+  private static boolean isDocFile(String path) {
+    if (path.startsWith("docs/")) {
+      return true;
+    }
+    return DOC_EXTENSIONS.contains(Files.getFileExtension(path));
   }
 
   Set<Project> find() {
@@ -107,7 +118,7 @@ public class AffectedProjectFinder {
     while (itr.hasNext()) {
       String file = itr.next();
       if (file.startsWith(relativePath)) {
-        System.out.println("Claiming file " + file + " for project " + project);
+        project.getLogger().info("Claiming file {} for {}", file, project);
         itr.remove();
         projects.add(project);
       }

@@ -19,20 +19,20 @@ package com.google.firebase.sessions.api
 import androidx.annotation.Discouraged
 
 /** [SessionSubscriber] is an interface that dependent SDKs must implement. */
-interface SessionSubscriber {
+public interface SessionSubscriber {
   /** [SessionSubscriber.Name]s are used for identifying subscribers. */
-  enum class Name {
+  public enum class Name {
     CRASHLYTICS,
     PERFORMANCE,
     @Discouraged(message = "This is for testing purposes only.") MATT_SAYS_HI,
   }
 
   /** [SessionDetails] contains session data passed to subscribers whenever the session changes */
-  data class SessionDetails(val sessionId: String)
+  public data class SessionDetails(val sessionId: String)
 
-  fun onSessionChanged(sessionDetails: SessionDetails)
+  public fun onSessionChanged(sessionDetails: SessionDetails)
 
-  val isDataCollectionEnabled: Boolean
+  public val isDataCollectionEnabled: Boolean
 
-  val sessionSubscriberName: Name
+  public val sessionSubscriberName: Name
 }

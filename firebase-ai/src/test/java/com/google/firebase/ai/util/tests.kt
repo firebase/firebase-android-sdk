@@ -29,11 +29,11 @@ import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.ktor.client.engine.mock.MockEngine
 import io.ktor.client.engine.mock.respond
+import io.ktor.client.request.HttpRequestData
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import io.ktor.utils.io.ByteChannel
-import io.ktor.utils.io.close
 import io.ktor.utils.io.writeFully
 import java.io.File
 import kotlinx.coroutines.launch
@@ -103,6 +103,7 @@ internal fun commonTest(
   status: HttpStatusCode = HttpStatusCode.OK,
   requestOptions: RequestOptions = RequestOptions(),
   backend: GenerativeBackend = GenerativeBackend.vertexAI(),
+  requestHandler: (HttpRequestData) -> Unit = {},
   block: CommonTest,
 ) = doBlocking {
   val channel = ByteChannel(autoFlush = true)
@@ -115,6 +116,7 @@ internal fun commonTest(
       "gemini-pro",
       requestOptions,
       MockEngine {
+        requestHandler(it)
         respond(channel, status, headersOf(HttpHeaders.ContentType, "application/json"))
       },
       TEST_CLIENT_ID,
@@ -144,12 +146,13 @@ internal fun goldenStreamingFile(
   name: String,
   httpStatusCode: HttpStatusCode = HttpStatusCode.OK,
   backend: GenerativeBackend = GenerativeBackend.vertexAI(),
+  requestHandler: (HttpRequestData) -> Unit,
   block: CommonTest,
 ) = doBlocking {
   val goldenFile = loadGoldenFile(name)
   val messages = goldenFile.readLines().filter { it.isNotBlank() }
 
-  commonTest(httpStatusCode, backend = backend) {
+  commonTest(httpStatusCode, backend = backend, requestHandler = requestHandler) {
     launch {
       for (message in messages) {
         channel.writeFully("$message$SSE_SEPARATOR".toByteArray())
@@ -175,8 +178,15 @@ internal fun goldenStreamingFile(
 internal fun goldenVertexStreamingFile(
   name: String,
   httpStatusCode: HttpStatusCode = HttpStatusCode.OK,
+  requestHandler: (HttpRequestData) -> Unit = {},
   block: CommonTest,
-) = goldenStreamingFile("vertexai/$name", httpStatusCode, block = block)
+) =
+  goldenStreamingFile(
+    "vertexai/$name",
+    httpStatusCode,
+    requestHandler = requestHandler,
+    block = block
+  )
 
 /**
  * A variant of [goldenStreamingFile] for testing the developer api
@@ -192,8 +202,16 @@ internal fun goldenVertexStreamingFile(
 internal fun goldenDevAPIStreamingFile(
   name: String,
   httpStatusCode: HttpStatusCode = HttpStatusCode.OK,
+  requestHandler: (HttpRequestData) -> Unit = {},
   block: CommonTest,
-) = goldenStreamingFile("googleai/$name", httpStatusCode, GenerativeBackend.googleAI(), block)
+) =
+  goldenStreamingFile(
+    "googleai/$name",
+    httpStatusCode,
+    GenerativeBackend.googleAI(),
+    requestHandler,
+    block
+  )
 
 /**
  * A variant of [commonTest] for performing snapshot tests.

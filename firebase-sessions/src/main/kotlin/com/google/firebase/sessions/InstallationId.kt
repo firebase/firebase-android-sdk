@@ -18,13 +18,12 @@ package com.google.firebase.sessions
 
 import android.util.Log
 import com.google.firebase.installations.FirebaseInstallationsApi
+import com.google.firebase.sessions.FirebaseSessions.Companion.TAG
 import kotlinx.coroutines.tasks.await
 
 /** Provides the Firebase installation id and Firebase authentication token. */
 internal class InstallationId private constructor(val fid: String, val authToken: String) {
   companion object {
-    private const val TAG = "InstallationId"
-
     suspend fun create(firebaseInstallations: FirebaseInstallationsApi): InstallationId {
       // Fetch the auth token first, so the fid will be validated.
       val authToken: String =
@@ -37,7 +36,7 @@ internal class InstallationId private constructor(val fid: String, val authToken
         }
       val fid: String =
         try {
-          firebaseInstallations.id.await()
+          firebaseInstallations.id.await() ?: ""
         } catch (ex: Exception) {
           Log.w(TAG, "Error getting Firebase installation id .", ex)
           ""

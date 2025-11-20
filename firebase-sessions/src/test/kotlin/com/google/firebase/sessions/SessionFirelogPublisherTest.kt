@@ -75,7 +75,7 @@ class SessionFirelogPublisherTest {
       )
 
     // Construct an event with no fid set.
-    publisher.logSession(TestSessionEventData.TEST_SESSION_DETAILS)
+    publisher.mayLogSession(TestSessionEventData.TEST_SESSION_DETAILS)
 
     runCurrent()
 
@@ -105,7 +105,7 @@ class SessionFirelogPublisherTest {
       )
 
     // Construct an event with no fid set.
-    publisher.logSession(TestSessionEventData.TEST_SESSION_DETAILS)
+    publisher.mayLogSession(TestSessionEventData.TEST_SESSION_DETAILS)
 
     runCurrent()
 
@@ -134,7 +134,7 @@ class SessionFirelogPublisherTest {
       )
 
     // Construct an event with no fid set.
-    publisher.logSession(TestSessionEventData.TEST_SESSION_DETAILS)
+    publisher.mayLogSession(TestSessionEventData.TEST_SESSION_DETAILS)
 
     runCurrent()
 

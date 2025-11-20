@@ -112,6 +112,7 @@ public class NewReleaseFetcherTest {
 
     // Don't set the result until after calling twice, to make sure that the task from the first
     // call is still ongoing.
+    awaitTask(newReleaseFetcher.cachedCheckForNewRelease.newTaskForSequentialExecutorFlush());
     task.setResult(null);
     awaitTask(checkForNewReleaseTask1);
     awaitTask(checkForNewReleaseTask2);

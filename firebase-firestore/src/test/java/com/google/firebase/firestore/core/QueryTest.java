@@ -40,14 +40,12 @@ import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.testutil.ComparatorTester;
 import com.google.firebase.firestore.util.BackgroundQueue;
-import com.google.firebase.firestore.util.Executors;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executor;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -991,10 +989,7 @@ public class QueryTest {
 
     while (iterator.hasNext()) {
       MutableDocument doc = iterator.next();
-      // Only put the processing in the backgroundQueue if there are more documents
-      // in the list. This behavior matches SQLiteRemoteDocumentCache.getAll(...)
-      Executor executor = iterator.hasNext() ? backgroundQueue : Executors.DIRECT_EXECUTOR;
-      executor.execute(
+      backgroundQueue.submit(
           () -> {
             // We call query.matches() to indirectly test query.matchesOrderBy()
             boolean result = query.matches(doc);

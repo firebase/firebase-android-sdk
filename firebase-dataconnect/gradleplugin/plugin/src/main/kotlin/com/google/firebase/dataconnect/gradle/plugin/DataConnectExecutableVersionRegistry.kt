@@ -15,6 +15,8 @@
  */
 package com.google.firebase.dataconnect.gradle.plugin
 
+import io.github.z4kn4fein.semver.LooseVersionSerializer
+import io.github.z4kn4fein.semver.Version
 import java.io.InputStream
 import java.io.OutputStream
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -38,6 +40,7 @@ object DataConnectExecutableVersionsRegistry {
     Json {
       prettyPrint = true
       prettyPrintIndent = "  "
+      allowTrailingComma = true
     }
   }
 
@@ -59,13 +62,13 @@ object DataConnectExecutableVersionsRegistry {
 
   @Serializable
   data class Root(
-    val defaultVersion: String,
+    @Serializable(with = LooseVersionSerializer::class) val defaultVersion: Version,
     val versions: List<VersionInfo>,
   )
 
   @Serializable
   data class VersionInfo(
-    val version: String,
+    @Serializable(with = LooseVersionSerializer::class) val version: Version,
     @Serializable(with = OperatingSystemSerializer::class) val os: OperatingSystem,
     val size: Long,
     val sha512DigestHex: String,
@@ -79,24 +82,24 @@ object DataConnectExecutableVersionsRegistry {
       )
 
     override fun deserialize(decoder: Decoder): OperatingSystem =
-      when (val name = decoder.decodeString()) {
-        "windows" -> OperatingSystem.Windows
-        "macos" -> OperatingSystem.MacOS
-        "linux" -> OperatingSystem.Linux
-        else ->
-          throw DataConnectGradleException(
+      decoder.decodeString().let { serializedValue ->
+        OperatingSystem.entries.singleOrNull { it.serializedValue == serializedValue }
+          ?: throw DataConnectGradleException(
             "nd5z2jk4hr",
-            "Unknown operating system: $name (must be windows, macos, or linux)"
+            "Unknown operating system: $serializedValue " +
+              "(must be one of ${OperatingSystem.entries.joinToString { it.serializedValue }})"
           )
       }
 
     override fun serialize(encoder: Encoder, value: OperatingSystem) =
-      encoder.encodeString(
-        when (value) {
-          OperatingSystem.Windows -> "windows"
-          OperatingSystem.MacOS -> "macos"
-          OperatingSystem.Linux -> "linux"
-        }
-      )
+      encoder.encodeString(value.serializedValue)
   }
+
+  val OperatingSystem.serializedValue: String
+    get() =
+      when (this) {
+        OperatingSystem.Windows -> "windows"
+        OperatingSystem.MacOS -> "macos"
+        OperatingSystem.Linux -> "linux"
+      }
 }

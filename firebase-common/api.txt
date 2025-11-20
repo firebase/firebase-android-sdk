@@ -82,23 +82,6 @@ package com.google.firebase {
 
 }
 
-package com.google.firebase.ktx {
-
-  @Deprecated public final class Firebase {
-    field @Deprecated public static final com.google.firebase.ktx.Firebase INSTANCE;
-  }
-
-  public final class FirebaseKt {
-    method @Deprecated public static com.google.firebase.FirebaseApp app(com.google.firebase.ktx.Firebase, String name);
-    method @Deprecated public static com.google.firebase.FirebaseApp getApp(com.google.firebase.ktx.Firebase);
-    method @Deprecated public static com.google.firebase.FirebaseOptions getOptions(com.google.firebase.ktx.Firebase);
-    method @Deprecated public static com.google.firebase.FirebaseApp? initialize(com.google.firebase.ktx.Firebase, android.content.Context context);
-    method @Deprecated public static com.google.firebase.FirebaseApp initialize(com.google.firebase.ktx.Firebase, android.content.Context context, com.google.firebase.FirebaseOptions options);
-    method @Deprecated public static com.google.firebase.FirebaseApp initialize(com.google.firebase.ktx.Firebase, android.content.Context context, com.google.firebase.FirebaseOptions options, String name);
-  }
-
-}
-
 package com.google.firebase.provider {
 
   public class FirebaseInitProvider extends android.content.ContentProvider {

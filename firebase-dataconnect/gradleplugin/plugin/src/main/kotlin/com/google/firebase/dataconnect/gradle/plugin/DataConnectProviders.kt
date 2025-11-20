@@ -49,7 +49,7 @@ class DataConnectProviders(
     val defaultVersion: Provider<DataConnectExecutable> =
       project.provider {
         val root = DataConnectExecutableVersionsRegistry.load()
-        DataConnectExecutable.Version(root.defaultVersion)
+        DataConnectExecutable.Version(root.defaultVersion.toString())
       }
 
     valueFromLocalSettings

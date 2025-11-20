@@ -21,6 +21,7 @@ import com.google.android.datatransport.Encoding
 import com.google.android.datatransport.Event
 import com.google.android.datatransport.TransportFactory
 import com.google.firebase.inject.Provider
+import com.google.firebase.sessions.FirebaseSessions.Companion.TAG
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -61,8 +62,6 @@ constructor(private val transportFactoryProvider: Provider<TransportFactory>) :
   }
 
   companion object {
-    private const val TAG = "EventGDTLogger"
-
     private const val AQS_LOG_SOURCE = "FIREBASE_APPQUALITY_SESSION"
   }
 }

@@ -22,6 +22,7 @@ import com.google.firebase.ai.type.GenerateContentResponse
 import com.google.firebase.ai.type.ImagePart
 import com.google.firebase.ai.type.InlineDataPart
 import com.google.firebase.ai.type.InvalidStateException
+import com.google.firebase.ai.type.Part
 import com.google.firebase.ai.type.TextPart
 import com.google.firebase.ai.type.content
 import java.util.LinkedList
@@ -66,7 +67,8 @@ public class Chat(
     prompt.assertComesFromUser()
     attemptLock()
     try {
-      val response = model.generateContent(*history.toTypedArray(), prompt)
+      val fullPrompt = history + prompt
+      val response = model.generateContent(fullPrompt.first(), *fullPrompt.drop(1).toTypedArray())
       history.add(prompt)
       history.add(response.candidates.first().content)
       return response
@@ -127,10 +129,12 @@ public class Chat(
     prompt.assertComesFromUser()
     attemptLock()
 
-    val flow = model.generateContentStream(*history.toTypedArray(), prompt)
+    val fullPrompt = history + prompt
+    val flow = model.generateContentStream(fullPrompt.first(), *fullPrompt.drop(1).toTypedArray())
     val bitmaps = LinkedList<Bitmap>()
     val inlineDataParts = LinkedList<InlineDataPart>()
     val text = StringBuilder()
+    val parts = mutableListOf<Part>()
 
     /**
      * TODO: revisit when images and inline data are returned. This will cause issues with how
@@ -145,6 +149,7 @@ public class Chat(
             is ImagePart -> bitmaps.add(part.image)
             is InlineDataPart -> inlineDataParts.add(part)
           }
+          parts.add(part)
         }
       }
       .onCompletion {
@@ -152,15 +157,9 @@ public class Chat(
         if (it == null) {
           val content =
             content("model") {
-              for (bitmap in bitmaps) {
-                image(bitmap)
-              }
-              for (inlineDataPart in inlineDataParts) {
-                inlineData(inlineDataPart.inlineData, inlineDataPart.mimeType)
-              }
-              if (text.isNotBlank()) {
-                text(text.toString())
-              }
+              setParts(
+                parts.filterNot { part -> part is TextPart && !part.hasContent() }.toMutableList()
+              )
             }
 
           history.add(prompt)
@@ -221,4 +220,13 @@ public class Chat(
       )
     }
   }
+}
+
+/**
+ * Returns true if the [TextPart] contains any content, either in its [TextPart.text] property or
+ * its [TextPart.thoughtSignature] property.
+ */
+private fun TextPart.hasContent(): Boolean {
+  if (text.isNotEmpty()) return true
+  return !thoughtSignature.isNullOrBlank()
 }

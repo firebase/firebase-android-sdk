@@ -23,8 +23,6 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import androidx.annotation.Keep;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
-import com.google.firebase.FirebaseApp;
-import com.google.firebase.StartupTime;
 import com.google.firebase.inject.Provider;
 import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.util.Optional;
@@ -54,15 +52,14 @@ public class RemoteConfigManager {
   private static final long TIME_AFTER_WHICH_A_FETCH_IS_CONSIDERED_STALE_MS =
       TimeUnit.HOURS.toMillis(12);
   private static final long FETCH_NEVER_HAPPENED_TIMESTAMP_MS = 0;
-  private static final long MIN_APP_START_CONFIG_FETCH_DELAY_MS = 5000;
-  private static final int RANDOM_APP_START_CONFIG_FETCH_DELAY_MS = 25000;
+  private static final long MIN_CONFIG_FETCH_DELAY_MS = 5000;
+  private static final int RANDOM_CONFIG_FETCH_DELAY_MS = 25000;
+  private final long rcmInitTimestamp = getCurrentSystemTimeMillis();
 
   private final DeviceCacheManager cache;
   private final ConcurrentHashMap<String, FirebaseRemoteConfigValue> allRcConfigMap;
   private final Executor executor;
-  private final long appStartTimeInMs;
-  private final long appStartConfigFetchDelayInMs;
-
+  private final long remoteConfigFetchDelayInMs;
   private long firebaseRemoteConfigLastFetchTimestampMs = FETCH_NEVER_HAPPENED_TIMESTAMP_MS;
 
   @Nullable private Provider<RemoteConfigComponent> firebaseRemoteConfigProvider;
@@ -80,26 +77,7 @@ public class RemoteConfigManager {
             TimeUnit.SECONDS,
             new LinkedBlockingQueue<Runnable>()),
         /* firebaseRemoteConfig= */ null, // set once FirebaseRemoteConfig is initialized
-        MIN_APP_START_CONFIG_FETCH_DELAY_MS
-            + new Random().nextInt(RANDOM_APP_START_CONFIG_FETCH_DELAY_MS),
-        getInitialStartupMillis());
-  }
-
-  @VisibleForTesting
-  @SuppressWarnings("FirebaseUseExplicitDependencies")
-  static long getInitialStartupMillis() {
-    StartupTime startupTime = null;
-    try {
-      startupTime = FirebaseApp.getInstance().get(StartupTime.class);
-    } catch (IllegalStateException ex) {
-      // This can happen if you start a trace before Firebase is init
-      logger.debug("Unable to get StartupTime instance.");
-    }
-    if (startupTime != null) {
-      return startupTime.getEpochMillis();
-    } else {
-      return System.currentTimeMillis();
-    }
+        MIN_CONFIG_FETCH_DELAY_MS + new Random().nextInt(RANDOM_CONFIG_FETCH_DELAY_MS));
   }
 
   @VisibleForTesting
@@ -107,8 +85,7 @@ public class RemoteConfigManager {
       DeviceCacheManager cache,
       Executor executor,
       FirebaseRemoteConfig firebaseRemoteConfig,
-      long appStartConfigFetchDelayInMs,
-      long appStartTimeInMs) {
+      long remoteConfigFetchDelayInMs) {
     this.cache = cache;
     this.executor = executor;
     this.firebaseRemoteConfig = firebaseRemoteConfig;
@@ -116,8 +93,7 @@ public class RemoteConfigManager {
         firebaseRemoteConfig == null
             ? new ConcurrentHashMap<>()
             : new ConcurrentHashMap<>(firebaseRemoteConfig.getAll());
-    this.appStartTimeInMs = appStartTimeInMs;
-    this.appStartConfigFetchDelayInMs = appStartConfigFetchDelayInMs;
+    this.remoteConfigFetchDelayInMs = remoteConfigFetchDelayInMs;
   }
 
   /** Gets the singleton instance. */
@@ -329,7 +305,7 @@ public class RemoteConfigManager {
    *
    * <ol>
    *   <li>Firebase Remote Config is available,
-   *   <li>Time-since-app-start has passed a randomized delay-time (b/187985523), and
+   *   <li>Time has passed a randomized delay-time (b/187985523), and
    *   <li>At least 12 hours have passed since the previous fetch.
    * </ol>
    */
@@ -363,7 +339,7 @@ public class RemoteConfigManager {
   @VisibleForTesting
   protected void syncConfigValues(Map<String, FirebaseRemoteConfigValue> newlyFetchedMap) {
     allRcConfigMap.putAll(newlyFetchedMap);
-    for (String existingKey : allRcConfigMap.keySet()) {
+    for (String existingKey : ((Map<String, FirebaseRemoteConfigValue>) allRcConfigMap).keySet()) {
       if (!newlyFetchedMap.containsKey(existingKey)) {
         allRcConfigMap.remove(existingKey);
       }
@@ -408,17 +384,17 @@ public class RemoteConfigManager {
   /** Returns true if a RC fetch should be made, false otherwise. */
   private boolean shouldFetchAndActivateRemoteConfigValues() {
     long currentTimeInMs = getCurrentSystemTimeMillis();
-    return hasAppStartConfigFetchDelayElapsed(currentTimeInMs)
+    return hasRemoteConfigFetchDelayElapsed(currentTimeInMs)
         && hasLastFetchBecomeStale(currentTimeInMs);
   }
 
   /**
-   * Delay fetch by some random time since app start. This is to prevent b/187985523.
+   * Delay fetch by some random time. This is to prevent b/187985523.
    *
    * @return true if the random delay has elapsed, false otherwise
    */
-  private boolean hasAppStartConfigFetchDelayElapsed(long currentTimeInMs) {
-    return (currentTimeInMs - appStartTimeInMs) >= appStartConfigFetchDelayInMs;
+  private boolean hasRemoteConfigFetchDelayElapsed(long currentTimeInMs) {
+    return (currentTimeInMs - rcmInitTimestamp) >= remoteConfigFetchDelayInMs;
   }
 
   // We want to fetch once when the app starts and every 12 hours after that.

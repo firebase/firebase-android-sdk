@@ -24,6 +24,6 @@ java {
   targetCompatibility = JavaVersion.VERSION_1_8
 }
 
-tasks.withType<JavaCompile> { options.compilerArgs.add("-Werror") }
+tasks.withType<JavaCompile> { options.compilerArgs.addAll(listOf("-Werror", "-Xlint:-options")) }
 
 dependencies { implementation(libs.javax.inject) }

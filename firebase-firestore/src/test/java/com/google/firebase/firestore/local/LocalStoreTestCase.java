@@ -137,8 +137,9 @@ public abstract class LocalStoreTestCase {
     localStorePersistence.shutdown();
   }
 
-  protected void writeMutation(Mutation mutation) {
+  protected Mutation writeMutation(Mutation mutation) {
     writeMutations(asList(mutation));
+    return mutation;
   }
 
   private void writeMutations(List<Mutation> mutations) {
@@ -188,11 +189,11 @@ public abstract class LocalStoreTestCase {
     lastChanges = localStore.acknowledgeBatch(result);
   }
 
-  private void acknowledgeMutation(long documentVersion) {
+  protected void acknowledgeMutation(long documentVersion) {
     acknowledgeMutationWithTransformResults(documentVersion);
   }
 
-  private void rejectMutation() {
+  protected void rejectMutation() {
     MutationBatch batch = batches.get(0);
     batches.remove(0);
     lastChanges = localStore.rejectBatch(batch.getBatchId());

@@ -16,7 +16,8 @@
 
 set -euo pipefail
 
-readonly PROJECT_ROOT_DIR="$(dirname "$0")/../.."
+PROJECT_ROOT_DIR="$(dirname "$0")/../.."
+readonly PROJECT_ROOT_DIR
 
 readonly TARGETS=(
   ":firebase-dataconnect:testDebugUnitTest"

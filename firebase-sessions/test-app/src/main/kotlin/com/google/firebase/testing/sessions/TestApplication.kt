@@ -17,21 +17,29 @@
 package com.google.firebase.testing.sessions
 
 import android.annotation.SuppressLint
+import android.app.Application
 import android.content.IntentFilter
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import android.widget.TextView
 import androidx.multidex.MultiDexApplication
+import com.google.firebase.FirebaseApp
 import com.google.firebase.sessions.api.FirebaseSessionsDependencies
 import com.google.firebase.sessions.api.SessionSubscriber
+import java.io.File
 
 class TestApplication : MultiDexApplication() {
   private val broadcastReceiver = CrashBroadcastReceiver()
 
+  @SuppressLint("UnspecifiedRegisterReceiverFlag")
   override fun onCreate() {
     super.onCreate()
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+    Log.i(TAG, "TestApplication created on process: $myProcessName")
+    FirebaseApp.initializeApp(this)
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
       registerReceiver(
         broadcastReceiver,
         IntentFilter(CrashBroadcastReceiver.CRASH_ACTION),
@@ -48,6 +56,7 @@ class TestApplication : MultiDexApplication() {
     }
   }
 
+  @SuppressLint("DiscouragedApi")
   class FakeSessionSubscriber : SessionSubscriber {
     override val isDataCollectionEnabled = true
     override val sessionSubscriberName = SessionSubscriber.Name.MATT_SAYS_HI
@@ -78,7 +87,18 @@ class TestApplication : MultiDexApplication() {
 
   @SuppressLint("DiscouragedApi")
   companion object {
+    const val TAG = "SessionsTestApp"
+
     val sessionSubscriber = FakeSessionSubscriber()
+
+    val myProcessName: String =
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) Application.getProcessName()
+      else
+        try {
+          File("/proc/self/cmdline").readText().substringBefore('\u0000').trim()
+        } catch (_: Exception) {
+          null
+        } ?: "unknown"
 
     init {
       FirebaseSessionsDependencies.addDependency(SessionSubscriber.Name.MATT_SAYS_HI)

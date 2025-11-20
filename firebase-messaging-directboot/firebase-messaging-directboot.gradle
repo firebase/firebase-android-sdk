@@ -23,7 +23,6 @@ firebaseLibrary {
     releaseNotes {
         name.set("Cloud Messaging Direct Boot")
         versionName.set("messaging-directboot")
-        hasKTX.set(false)
     }
 }
 

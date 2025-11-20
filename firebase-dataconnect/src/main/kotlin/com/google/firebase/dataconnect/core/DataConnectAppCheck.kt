@@ -20,6 +20,7 @@ import com.google.firebase.annotations.DeferredApi
 import com.google.firebase.appcheck.AppCheckTokenResult
 import com.google.firebase.appcheck.interop.AppCheckTokenListener
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
+import com.google.firebase.dataconnect.core.DataConnectAppCheck.GetAppCheckTokenResult
 import com.google.firebase.dataconnect.core.Globals.toScrubbedAccessToken
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import kotlinx.coroutines.CoroutineDispatcher
@@ -32,7 +33,7 @@ internal class DataConnectAppCheck(
   blockingDispatcher: CoroutineDispatcher,
   logger: Logger,
 ) :
-  DataConnectCredentialsTokenManager<InteropAppCheckTokenProvider>(
+  DataConnectCredentialsTokenManager<InteropAppCheckTokenProvider, GetAppCheckTokenResult>(
     deferredProvider = deferredAppCheckTokenProvider,
     parentCoroutineScope = parentCoroutineScope,
     blockingDispatcher = blockingDispatcher,
@@ -48,7 +49,9 @@ internal class DataConnectAppCheck(
     provider.removeAppCheckTokenListener(appCheckTokenListener)
 
   override suspend fun getToken(provider: InteropAppCheckTokenProvider, forceRefresh: Boolean) =
-    provider.getToken(forceRefresh).await().let { GetTokenResult(it.token) }
+    provider.getToken(forceRefresh).await().let { GetAppCheckTokenResult(it.token) }
+
+  data class GetAppCheckTokenResult(override val token: String?) : GetTokenResult
 
   private class AppCheckTokenListenerImpl(private val logger: Logger) : AppCheckTokenListener {
     override fun onAppCheckTokenChanged(tokenResult: AppCheckTokenResult) {

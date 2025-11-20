@@ -48,7 +48,7 @@ abstract class FactoryTestRule<T, P> : ExternalResource() {
   override fun after() {
     active.set(false)
     while (instances.isNotEmpty()) {
-      destroyInstance(instances.removeLast())
+      destroyInstance(instances.removeAt(instances.lastIndex))
     }
   }
 

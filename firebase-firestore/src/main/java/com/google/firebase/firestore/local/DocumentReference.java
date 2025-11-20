@@ -14,8 +14,6 @@
 
 package com.google.firebase.firestore.local;
 
-import static com.google.firebase.firestore.util.Util.compareIntegers;
-
 import com.google.firebase.firestore.model.DocumentKey;
 import java.util.Comparator;
 
@@ -60,12 +58,12 @@ class DocumentReference {
           return keyComp;
         }
 
-        return compareIntegers(o1.targetOrBatchId, o2.targetOrBatchId);
+        return Integer.compare(o1.targetOrBatchId, o2.targetOrBatchId);
       };
 
   static final Comparator<DocumentReference> BY_TARGET =
       (o1, o2) -> {
-        int targetComp = compareIntegers(o1.targetOrBatchId, o2.targetOrBatchId);
+        int targetComp = Integer.compare(o1.targetOrBatchId, o2.targetOrBatchId);
 
         if (targetComp != 0) {
           return targetComp;

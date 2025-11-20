@@ -177,7 +177,12 @@ private class ProtoStructValueDecoder(
           addAll(struct.fieldsMap.keys)
           addAll(descriptor.elementNames)
         }
-      elementIndexes = names.map(descriptor::getElementIndex).sorted().iterator()
+      elementIndexes =
+        names
+          .map(descriptor::getElementIndex)
+          .filter { it != CompositeDecoder.UNKNOWN_NAME } // ignore unknown keys
+          .sorted()
+          .iterator()
     }
 
     return elementIndexes

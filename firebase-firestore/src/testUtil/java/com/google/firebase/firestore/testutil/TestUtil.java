@@ -606,7 +606,11 @@ public class TestUtil {
   }
 
   public static DeleteMutation deleteMutation(String path) {
-    return new DeleteMutation(key(path), Precondition.NONE);
+    return deleteMutation(key(path));
+  }
+
+  public static DeleteMutation deleteMutation(DocumentKey key) {
+    return new DeleteMutation(key, Precondition.NONE);
   }
 
   public static VerifyMutation verifyMutation(String path, int micros) {

@@ -22,7 +22,6 @@ firebaseLibrary {
     releaseNotes {
         name.set("{{ab_testing}}")
         versionName.set("ab_testing")
-        hasKTX.set(false)
     }
 }
 
@@ -52,8 +51,8 @@ android {
 }
 
 dependencies {
-    api 'com.google.firebase:firebase-common:21.0.0'
-    api 'com.google.firebase:firebase-components:18.0.0'
+    api libs.firebase.common
+    api libs.firebase.components
 
     implementation libs.playservices.basement
     implementation ('com.google.firebase:firebase-measurement-connector:18.0.0') {

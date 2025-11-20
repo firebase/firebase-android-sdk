@@ -81,11 +81,11 @@ import java.net.URL
  * - https://screenshot.googleplex.com/AmNdgDkWmR4gQXr
  * - https://screenshot.googleplex.com/8Aq5YKUXCLUAjKr
  *
- * When using "autopush" or "staging", the `firebase-tools` cli must be told about the URL of the
- * Data Connect server to which to deploy using the `FIREBASE_DATACONNECT_URL` environment variable.
- * This only matters if running a command line `firebase deploy --only dataconnect` or other
- * `firebase` commands that talk to a Data Connect backend. See the documentation of [Staging] and
- * [Autopush] for details.
+ * When using "autopush" or "staging", the Firebase CLI must be told about the URL of the Data
+ * Connect server to which to deploy using the `FIREBASE_DATACONNECT_URL` environment variable. This
+ * only matters if running a command line `firebase deploy --only dataconnect` or other `firebase`
+ * commands that talk to a Data Connect backend. See the documentation of [Staging] and [Autopush]
+ * for details.
  */
 sealed interface DataConnectBackend {
 

@@ -22,13 +22,13 @@ import java.util.Objects
  * Information about a Firebase Data Connect "connector" that is used by [FirebaseDataConnect] to
  * connect to the correct Google Cloud resources.
  *
- * ### Safe for Concurrent Use
+ * ### Safe for concurrent use
  *
  * All methods and properties of [ConnectorConfig] are thread-safe and may be safely called and/or
  * accessed concurrently from multiple threads and/or coroutines.
  *
  * @property connector The ID of the Firebase Data Connect "connector".
- * @property location The location where the connector is located (e.g. `"us-central1"`).
+ * @property location The location where the connector is located (for example, `"us-central1"`).
  * @property serviceId The ID of the Firebase Data Connect service.
  */
 public class ConnectorConfig(

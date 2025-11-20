@@ -39,7 +39,7 @@ fun computeLibraryGroups(project: Project): Map<String, List<FirebaseLibraryExte
 }
 
 fun fixLibraryGroupVersions(libraryGroups: Map<String, List<FirebaseLibraryExtension>>) {
-  for ((name, libraryGroup) in libraryGroups) {
+  for ((_, libraryGroup) in libraryGroups) {
     val maxVersion =
       libraryGroup.mapNotNull { it.moduleVersion }.maxOrNull()?.toString() ?: continue
     for (firebaseExtension in libraryGroup) {
