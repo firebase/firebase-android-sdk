@@ -21,6 +21,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -45,6 +46,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import java.util.UUID
 
 class MainComposeActivity : ComponentActivity() {
 
@@ -68,6 +70,7 @@ class MainComposeActivity : ComponentActivity() {
 
 @Composable
 fun NoteEditor(notesDb: InMemoryNotesDatabase, modifier: Modifier = Modifier) {
+  var id: UUID? by remember { mutableStateOf(null) }
   var title by remember { mutableStateOf("") }
   var body by remember { mutableStateOf("") }
   var notes by remember { mutableStateOf(notesDb.getAll()) }
@@ -87,24 +90,46 @@ fun NoteEditor(notesDb: InMemoryNotesDatabase, modifier: Modifier = Modifier) {
     )
     Spacer(modifier = Modifier.height(16.dp))
     Row(modifier = Modifier.fillMaxWidth()) {
-      Button(
-        onClick = {
-          val cleanTitle = title.trim()
-          if (!cleanTitle.isEmpty()) {
-            val cleanBody = body.trimEnd()
-            notesDb.createNote(title = cleanTitle, body = cleanBody)
-            notes = notesDb.getAll()
-            title = ""
-            body = ""
-          }
-        },
-        modifier = Modifier.weight(1f),
-      ) {
-        Text("Create Note")
+      val noteId = id
+      if (noteId === null) {
+        Button(
+          onClick = {
+            val cleanTitle = title.trim()
+            if (!cleanTitle.isEmpty()) {
+              val cleanBody = body.trimEnd()
+              notesDb.createNote(title = cleanTitle, body = cleanBody)
+              notes = notesDb.getAll()
+              id = null
+              title = ""
+              body = ""
+            }
+          },
+          modifier = Modifier.weight(1f),
+        ) {
+          Text("Create Note")
+        }
+      } else {
+        Button(
+          onClick = {
+            val cleanTitle = title.trim()
+            if (!cleanTitle.isEmpty()) {
+              val cleanBody = body.trimEnd()
+              notesDb.updateNote(noteId, title = cleanTitle, body = cleanBody)
+              notes = notesDb.getAll()
+              id = null
+              title = ""
+              body = ""
+            }
+          },
+          modifier = Modifier.weight(1f),
+        ) {
+          Text("Save Note")
+        }
       }
       Spacer(modifier = Modifier.width(8.dp))
       Button(
         onClick = {
+          id = null
           title = ""
           body = ""
         },
@@ -114,6 +139,18 @@ fun NoteEditor(notesDb: InMemoryNotesDatabase, modifier: Modifier = Modifier) {
       }
     }
     Spacer(modifier = Modifier.height(16.dp))
-    LazyColumn { items(notes) { note -> Text(note.title) } }
+    LazyColumn {
+      items(notes) { note ->
+        Text(
+          text = note.title,
+          modifier =
+            Modifier.fillMaxWidth().clickable {
+              id = note.id
+              title = note.title
+              body = note.body
+            },
+        )
+      }
+    }
   }
 }

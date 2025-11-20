@@ -16,14 +16,23 @@
 
 package com.google.firebase.dataconnect.minimaldemo
 
+import java.util.UUID
+
 class InMemoryNotesDatabase {
 
-  data class Note(val title: String, val body: String)
+  data class Note(val id: UUID, val title: String, val body: String)
 
   private val notes = mutableListOf<Note>()
 
   fun createNote(title: String, body: String) {
-    notes.add(Note(title = title, body = body))
+    notes.add(Note(id = UUID.randomUUID(), title = title, body = body))
+  }
+
+  fun updateNote(id: UUID, title: String, body: String) {
+    val index = notes.indexOfFirst { it.id == id }
+    if (index >= 0) {
+      notes[index] = Note(id = id, title = title, body = body)
+    }
   }
 
   fun getAll(): List<Note> = notes.toList()
