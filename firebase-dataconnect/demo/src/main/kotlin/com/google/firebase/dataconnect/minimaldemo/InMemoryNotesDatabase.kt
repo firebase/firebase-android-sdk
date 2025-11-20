@@ -35,5 +35,12 @@ class InMemoryNotesDatabase {
     }
   }
 
+  fun deleteNote(id: UUID) {
+    val index = notes.indexOfFirst { it.id == id }
+    if (index >= 0) {
+      notes.removeAt(index)
+    }
+  }
+
   fun getAll(): List<Note> = notes.toList()
 }
