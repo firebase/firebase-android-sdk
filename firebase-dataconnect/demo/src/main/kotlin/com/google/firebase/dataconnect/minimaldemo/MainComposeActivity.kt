@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:OptIn(ExperimentalMaterial3Api::class)
+@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalTime::class)
 
 package com.google.firebase.dataconnect.minimaldemo
 
@@ -51,6 +51,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import java.util.UUID
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
 class MainComposeActivity : ComponentActivity() {
 
@@ -103,7 +105,11 @@ fun NoteEditor(notesDb: InMemoryNotesDatabase, modifier: Modifier = Modifier) {
             val cleanTitle = title.trim()
             if (!cleanTitle.isEmpty()) {
               val cleanBody = body.trimEnd()
-              notesDb.createNote(title = cleanTitle, body = cleanBody)
+              notesDb.createNote(
+                title = cleanTitle,
+                body = cleanBody,
+                createdAt = Clock.System.now().toString(),
+              )
               notes = notesDb.getAll()
               id = null
               title = ""
