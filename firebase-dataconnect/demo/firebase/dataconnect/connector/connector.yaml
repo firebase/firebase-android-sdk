@@ -1,5 +1,5 @@
-connectorId: ctry3q3tp6kzx
+connectorId: Notes
 generate:
   kotlinSdk:
-    outputDir: ../../../build/dataConnect/generatedSources
+    outputDir: ../../../src/main/kotlin
     package: com.google.firebase.dataconnect.minimaldemo.connector
