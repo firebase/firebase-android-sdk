@@ -204,22 +204,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun constant(value: Boolean): BooleanExpression {
-      val encodedValue = encodeValue(value)
-      val evaluateResultValue = EvaluateResultValue(encodedValue)
-      return object :
-        BooleanExpression("N/A", { _ -> { _ -> evaluateResultValue } }, emptyArray()) {
-        override fun toProto(userDataReader: UserDataReader): Value {
-          return encodedValue
-        }
-
-        override fun hashCode(): Int {
-          return encodedValue.hashCode()
-        }
-
-        override fun toString(): String {
-          return "constant($value)"
-        }
-      }
+      return BooleanConstant(Constant(encodeValue(value)))
     }
 
     /**
@@ -407,7 +392,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun and(condition: BooleanExpression, vararg conditions: BooleanExpression) =
-      BooleanExpression("and", evaluateAnd, condition, *conditions)
+      BooleanFunctionExpression("and", evaluateAnd, condition, *conditions)
 
     /**
      * Creates an expression that performs a logical 'OR' operation.
@@ -423,7 +408,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun or(condition: BooleanExpression, vararg conditions: BooleanExpression) =
-      BooleanExpression("or", evaluateOr, condition, *conditions)
+      BooleanFunctionExpression("or", evaluateOr, condition, *conditions)
 
     /**
      * Creates an expression that performs a logical 'XOR' operation.
@@ -439,7 +424,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun xor(condition: BooleanExpression, vararg conditions: BooleanExpression) =
-      BooleanExpression("xor", evaluateXor, condition, *conditions)
+      BooleanFunctionExpression("xor", evaluateXor, condition, *conditions)
 
     /**
      * Creates an expression that negates a boolean expression.
@@ -454,7 +439,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun not(condition: BooleanExpression): BooleanExpression =
-      BooleanExpression("not", evaluateNot, condition)
+      BooleanFunctionExpression("not", evaluateNot, condition)
 
     /**
      * Creates an expression that applies a bitwise AND operation between two expressions.
@@ -1628,7 +1613,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun equalAny(expression: Expression, arrayExpression: Expression): BooleanExpression =
-      BooleanExpression("equal_any", evaluateEqAny, expression, arrayExpression)
+      BooleanFunctionExpression("equal_any", evaluateEqAny, expression, arrayExpression)
 
     /**
      * Creates an expression that checks if a field's value is equal to any of the provided [values]
@@ -1663,7 +1648,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun equalAny(fieldName: String, arrayExpression: Expression): BooleanExpression =
-      BooleanExpression("equal_any", evaluateEqAny, fieldName, arrayExpression)
+      BooleanFunctionExpression("equal_any", evaluateEqAny, fieldName, arrayExpression)
 
     /**
      * Creates an expression that checks if an [expression], when evaluated, is not equal to all the
@@ -1698,7 +1683,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun notEqualAny(expression: Expression, arrayExpression: Expression): BooleanExpression =
-      BooleanExpression("not_equal_any", evaluateNotEqAny, expression, arrayExpression)
+      BooleanFunctionExpression("not_equal_any", evaluateNotEqAny, expression, arrayExpression)
 
     /**
      * Creates an expression that checks if a field's value is not equal to all of the provided
@@ -1733,7 +1718,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun notEqualAny(fieldName: String, arrayExpression: Expression): BooleanExpression =
-      BooleanExpression("not_equal_any", evaluateNotEqAny, fieldName, arrayExpression)
+      BooleanFunctionExpression("not_equal_any", evaluateNotEqAny, fieldName, arrayExpression)
 
     /**
      * Creates an expression that returns true if a value is absent. Otherwise, returns false even
@@ -1749,7 +1734,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun isAbsent(value: Expression): BooleanExpression =
-      BooleanExpression("is_absent", evaluateIsAbsent, value)
+      BooleanFunctionExpression("is_absent", evaluateIsAbsent, value)
 
     /**
      * Creates an expression that returns true if a field is absent. Otherwise, returns false even
@@ -1765,7 +1750,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun isAbsent(fieldName: String): BooleanExpression =
-      BooleanExpression("is_absent", evaluateIsAbsent, fieldName)
+      BooleanFunctionExpression("is_absent", evaluateIsAbsent, fieldName)
 
     /**
      * Creates an expression that checks if an expression evaluates to 'NaN' (Not a Number).
@@ -1780,7 +1765,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     internal fun isNan(expr: Expression): BooleanExpression =
-      BooleanExpression("is_nan", evaluateIsNaN, expr)
+      BooleanFunctionExpression("is_nan", evaluateIsNaN, expr)
 
     /**
      * Creates an expression that checks if the field's value evaluates to 'NaN' (Not a Number).
@@ -1795,7 +1780,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     internal fun isNan(fieldName: String): BooleanExpression =
-      BooleanExpression("is_nan", evaluateIsNaN, fieldName)
+      BooleanFunctionExpression("is_nan", evaluateIsNaN, fieldName)
 
     /**
      * Creates an expression that checks if the results of [expr] is NOT 'NaN' (Not a Number).
@@ -1810,7 +1795,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     internal fun isNotNan(expr: Expression): BooleanExpression =
-      BooleanExpression("is_not_nan", evaluateIsNotNaN, expr)
+      BooleanFunctionExpression("is_not_nan", evaluateIsNotNaN, expr)
 
     /**
      * Creates an expression that checks if the field's value is NOT 'NaN' (Not a Number).
@@ -1825,7 +1810,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     internal fun isNotNan(fieldName: String): BooleanExpression =
-      BooleanExpression("is_not_nan", evaluateIsNotNaN, fieldName)
+      BooleanFunctionExpression("is_not_nan", evaluateIsNotNaN, fieldName)
 
     /**
      * Creates an expression that checks if the result of [expr] is null.
@@ -1840,7 +1825,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     internal fun isNull(expr: Expression): BooleanExpression =
-      BooleanExpression("is_null", evaluateIsNull, expr)
+      BooleanFunctionExpression("is_null", evaluateIsNull, expr)
 
     /**
      * Creates an expression that checks if the value of a field is null.
@@ -1855,7 +1840,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     internal fun isNull(fieldName: String): BooleanExpression =
-      BooleanExpression("is_null", evaluateIsNull, fieldName)
+      BooleanFunctionExpression("is_null", evaluateIsNull, fieldName)
 
     /**
      * Creates an expression that checks if the result of [expr] is not null.
@@ -1870,7 +1855,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     internal fun isNotNull(expr: Expression): BooleanExpression =
-      BooleanExpression("is_not_null", evaluateIsNotNull, expr)
+      BooleanFunctionExpression("is_not_null", evaluateIsNotNull, expr)
 
     /**
      * Creates an expression that checks if the value of a field is not null.
@@ -1885,7 +1870,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     internal fun isNotNull(fieldName: String): BooleanExpression =
-      BooleanExpression("is_not_null", evaluateIsNotNull, fieldName)
+      BooleanFunctionExpression("is_not_null", evaluateIsNotNull, fieldName)
 
     /**
      * Creates an expression that returns a string indicating the type of the value this expression
@@ -2024,7 +2009,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun like(stringExpression: Expression, pattern: Expression): BooleanExpression =
-      BooleanExpression("like", evaluateLike, stringExpression, pattern)
+      BooleanFunctionExpression("like", evaluateLike, stringExpression, pattern)
 
     /**
      * Creates an expression that splits a string or blob by a delimiter.
@@ -2200,7 +2185,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun like(stringExpression: Expression, pattern: String): BooleanExpression =
-      BooleanExpression("like", evaluateLike, stringExpression, pattern)
+      BooleanFunctionExpression("like", evaluateLike, stringExpression, pattern)
 
     /**
      * Creates an expression that performs a case-sensitive wildcard string comparison against a
@@ -2217,7 +2202,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun like(fieldName: String, pattern: Expression): BooleanExpression =
-      BooleanExpression("like", evaluateLike, fieldName, pattern)
+      BooleanFunctionExpression("like", evaluateLike, fieldName, pattern)
 
     /**
      * Creates an expression that performs a case-sensitive wildcard string comparison against a
@@ -2234,7 +2219,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun like(fieldName: String, pattern: String): BooleanExpression =
-      BooleanExpression("like", evaluateLike, fieldName, pattern)
+      BooleanFunctionExpression("like", evaluateLike, fieldName, pattern)
 
     /**
      * Creates an expression that returns a pseudo-random number of type double in the range of [0,
@@ -2264,7 +2249,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun regexContains(stringExpression: Expression, pattern: Expression): BooleanExpression =
-      BooleanExpression("regex_contains", evaluateRegexContains, stringExpression, pattern)
+      BooleanFunctionExpression("regex_contains", evaluateRegexContains, stringExpression, pattern)
 
     /**
      * Creates an expression that checks if a string expression contains a specified regular
@@ -2281,7 +2266,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun regexContains(stringExpression: Expression, pattern: String): BooleanExpression =
-      BooleanExpression("regex_contains", evaluateRegexContains, stringExpression, pattern)
+      BooleanFunctionExpression("regex_contains", evaluateRegexContains, stringExpression, pattern)
 
     /**
      * Creates an expression that checks if a string field contains a specified regular expression
@@ -2298,7 +2283,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun regexContains(fieldName: String, pattern: Expression) =
-      BooleanExpression("regex_contains", evaluateRegexContains, fieldName, pattern)
+      BooleanFunctionExpression("regex_contains", evaluateRegexContains, fieldName, pattern)
 
     /**
      * Creates an expression that checks if a string field contains a specified regular expression
@@ -2315,7 +2300,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun regexContains(fieldName: String, pattern: String) =
-      BooleanExpression("regex_contains", evaluateRegexContains, fieldName, pattern)
+      BooleanFunctionExpression("regex_contains", evaluateRegexContains, fieldName, pattern)
 
     /**
      * Creates an expression that checks if a string field matches a specified regular expression.
@@ -2331,7 +2316,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun regexMatch(stringExpression: Expression, pattern: Expression): BooleanExpression =
-      BooleanExpression("regex_match", evaluateRegexMatch, stringExpression, pattern)
+      BooleanFunctionExpression("regex_match", evaluateRegexMatch, stringExpression, pattern)
 
     /**
      * Creates an expression that checks if a string field matches a specified regular expression.
@@ -2347,7 +2332,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun regexMatch(stringExpression: Expression, pattern: String): BooleanExpression =
-      BooleanExpression("regex_match", evaluateRegexMatch, stringExpression, pattern)
+      BooleanFunctionExpression("regex_match", evaluateRegexMatch, stringExpression, pattern)
 
     /**
      * Creates an expression that checks if a string field matches a specified regular expression.
@@ -2363,7 +2348,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun regexMatch(fieldName: String, pattern: Expression) =
-      BooleanExpression("regex_match", evaluateRegexMatch, fieldName, pattern)
+      BooleanFunctionExpression("regex_match", evaluateRegexMatch, fieldName, pattern)
 
     /**
      * Creates an expression that checks if a string field matches a specified regular expression.
@@ -2379,7 +2364,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun regexMatch(fieldName: String, pattern: String) =
-      BooleanExpression("regex_match", evaluateRegexMatch, fieldName, pattern)
+      BooleanFunctionExpression("regex_match", evaluateRegexMatch, fieldName, pattern)
 
     /**
      * Creates an expression that returns the largest value between multiple input expressions or
@@ -2493,7 +2478,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun stringContains(stringExpression: Expression, substring: Expression): BooleanExpression =
-      BooleanExpression("string_contains", evaluateStrContains, stringExpression, substring)
+      BooleanFunctionExpression("string_contains", evaluateStrContains, stringExpression, substring)
 
     /**
      * Creates an expression that checks if a string expression contains a specified substring.
@@ -2509,7 +2494,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun stringContains(stringExpression: Expression, substring: String): BooleanExpression =
-      BooleanExpression("string_contains", evaluateStrContains, stringExpression, substring)
+      BooleanFunctionExpression("string_contains", evaluateStrContains, stringExpression, substring)
 
     /**
      * Creates an expression that checks if a string field contains a specified substring.
@@ -2525,7 +2510,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun stringContains(fieldName: String, substring: Expression): BooleanExpression =
-      BooleanExpression("string_contains", evaluateStrContains, fieldName, substring)
+      BooleanFunctionExpression("string_contains", evaluateStrContains, fieldName, substring)
 
     /**
      * Creates an expression that checks if a string field contains a specified substring.
@@ -2541,7 +2526,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun stringContains(fieldName: String, substring: String): BooleanExpression =
-      BooleanExpression("string_contains", evaluateStrContains, fieldName, substring)
+      BooleanFunctionExpression("string_contains", evaluateStrContains, fieldName, substring)
 
     /**
      * ```kotlin
@@ -2555,7 +2540,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun startsWith(stringExpr: Expression, prefix: Expression): BooleanExpression =
-      BooleanExpression("starts_with", evaluateStartsWith, stringExpr, prefix)
+      BooleanFunctionExpression("starts_with", evaluateStartsWith, stringExpr, prefix)
 
     /**
      * Creates an expression that checks if a string expression starts with a given [prefix].
@@ -2571,7 +2556,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun startsWith(stringExpr: Expression, prefix: String): BooleanExpression =
-      BooleanExpression("starts_with", evaluateStartsWith, stringExpr, prefix)
+      BooleanFunctionExpression("starts_with", evaluateStartsWith, stringExpr, prefix)
 
     /**
      * Creates an expression that checks if a string expression starts with a given [prefix].
@@ -2587,7 +2572,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun startsWith(fieldName: String, prefix: Expression): BooleanExpression =
-      BooleanExpression("starts_with", evaluateStartsWith, fieldName, prefix)
+      BooleanFunctionExpression("starts_with", evaluateStartsWith, fieldName, prefix)
 
     /**
      * Creates an expression that checks if a string expression starts with a given [prefix].
@@ -2603,7 +2588,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun startsWith(fieldName: String, prefix: String): BooleanExpression =
-      BooleanExpression("starts_with", evaluateStartsWith, fieldName, prefix)
+      BooleanFunctionExpression("starts_with", evaluateStartsWith, fieldName, prefix)
 
     /**
      * Creates an expression that checks if a string expression ends with a given [suffix].
@@ -2619,7 +2604,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun endsWith(stringExpr: Expression, suffix: Expression): BooleanExpression =
-      BooleanExpression("ends_with", evaluateEndsWith, stringExpr, suffix)
+      BooleanFunctionExpression("ends_with", evaluateEndsWith, stringExpr, suffix)
 
     /**
      * Creates an expression that checks if a string expression ends with a given [suffix].
@@ -2635,7 +2620,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun endsWith(stringExpr: Expression, suffix: String): BooleanExpression =
-      BooleanExpression("ends_with", evaluateEndsWith, stringExpr, suffix)
+      BooleanFunctionExpression("ends_with", evaluateEndsWith, stringExpr, suffix)
 
     /**
      * Creates an expression that checks if a string expression ends with a given [suffix].
@@ -2651,7 +2636,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun endsWith(fieldName: String, suffix: Expression): BooleanExpression =
-      BooleanExpression("ends_with", evaluateEndsWith, fieldName, suffix)
+      BooleanFunctionExpression("ends_with", evaluateEndsWith, fieldName, suffix)
 
     /**
      * Creates an expression that checks if a string expression ends with a given [suffix].
@@ -2667,7 +2652,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun endsWith(fieldName: String, suffix: String): BooleanExpression =
-      BooleanExpression("ends_with", evaluateEndsWith, fieldName, suffix)
+      BooleanFunctionExpression("ends_with", evaluateEndsWith, fieldName, suffix)
 
     /**
      * Reverses the given string expression.
@@ -4016,7 +4001,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun equal(left: Expression, right: Expression): BooleanExpression =
-      BooleanExpression("equal", evaluateEq, left, right)
+      BooleanFunctionExpression("equal", evaluateEq, left, right)
 
     /**
      * Creates an expression that checks if an expression is equal to a value.
@@ -4032,7 +4017,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun equal(left: Expression, right: Any): BooleanExpression =
-      BooleanExpression("equal", evaluateEq, left, right)
+      BooleanFunctionExpression("equal", evaluateEq, left, right)
 
     /**
      * Creates an expression that checks if a field's value is equal to an expression.
@@ -4048,7 +4033,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun equal(fieldName: String, expression: Expression): BooleanExpression =
-      BooleanExpression("equal", evaluateEq, fieldName, expression)
+      BooleanFunctionExpression("equal", evaluateEq, fieldName, expression)
 
     /**
      * Creates an expression that checks if a field's value is equal to another value.
@@ -4064,7 +4049,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun equal(fieldName: String, value: Any): BooleanExpression =
-      BooleanExpression("equal", evaluateEq, fieldName, value)
+      BooleanFunctionExpression("equal", evaluateEq, fieldName, value)
 
     /**
      * Creates an expression that checks if two expressions are not equal.
@@ -4080,7 +4065,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun notEqual(left: Expression, right: Expression): BooleanExpression =
-      BooleanExpression("not_equal", evaluateNeq, left, right)
+      BooleanFunctionExpression("not_equal", evaluateNeq, left, right)
 
     /**
      * Creates an expression that checks if an expression is not equal to a value.
@@ -4096,7 +4081,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun notEqual(left: Expression, right: Any): BooleanExpression =
-      BooleanExpression("not_equal", evaluateNeq, left, right)
+      BooleanFunctionExpression("not_equal", evaluateNeq, left, right)
 
     /**
      * Creates an expression that checks if a field's value is not equal to an expression.
@@ -4112,7 +4097,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun notEqual(fieldName: String, expression: Expression): BooleanExpression =
-      BooleanExpression("not_equal", evaluateNeq, fieldName, expression)
+      BooleanFunctionExpression("not_equal", evaluateNeq, fieldName, expression)
 
     /**
      * Creates an expression that checks if a field's value is not equal to another value.
@@ -4131,7 +4116,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun notEqual(fieldName: String, value: Any): BooleanExpression =
-      BooleanExpression("not_equal", evaluateNeq, fieldName, value)
+      BooleanFunctionExpression("not_equal", evaluateNeq, fieldName, value)
 
     /**
      * Creates an expression that checks if the first expression is greater than the second
@@ -4148,7 +4133,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun greaterThan(left: Expression, right: Expression): BooleanExpression =
-      BooleanExpression("greater_than", evaluateGt, left, right)
+      BooleanFunctionExpression("greater_than", evaluateGt, left, right)
 
     /**
      * Creates an expression that checks if an expression is greater than a value.
@@ -4164,7 +4149,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun greaterThan(left: Expression, right: Any): BooleanExpression =
-      BooleanExpression("greater_than", evaluateGt, left, right)
+      BooleanFunctionExpression("greater_than", evaluateGt, left, right)
 
     /**
      * Creates an expression that checks if a field's value is greater than an expression.
@@ -4180,7 +4165,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun greaterThan(fieldName: String, expression: Expression): BooleanExpression =
-      BooleanExpression("greater_than", evaluateGt, fieldName, expression)
+      BooleanFunctionExpression("greater_than", evaluateGt, fieldName, expression)
 
     /**
      * Creates an expression that checks if a field's value is greater than another value.
@@ -4196,7 +4181,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun greaterThan(fieldName: String, value: Any): BooleanExpression =
-      BooleanExpression("greater_than", evaluateGt, fieldName, value)
+      BooleanFunctionExpression("greater_than", evaluateGt, fieldName, value)
 
     /**
      * Creates an expression that checks if the first expression is greater than or equal to the
@@ -4213,7 +4198,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun greaterThanOrEqual(left: Expression, right: Expression): BooleanExpression =
-      BooleanExpression("greater_than_or_equal", evaluateGte, left, right)
+      BooleanFunctionExpression("greater_than_or_equal", evaluateGte, left, right)
 
     /**
      * Creates an expression that checks if an expression is greater than or equal to a value.
@@ -4229,7 +4214,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun greaterThanOrEqual(left: Expression, right: Any): BooleanExpression =
-      BooleanExpression("greater_than_or_equal", evaluateGte, left, right)
+      BooleanFunctionExpression("greater_than_or_equal", evaluateGte, left, right)
 
     /**
      * Creates an expression that checks if a field's value is greater than or equal to an
@@ -4246,7 +4231,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun greaterThanOrEqual(fieldName: String, expression: Expression): BooleanExpression =
-      BooleanExpression("greater_than_or_equal", evaluateGte, fieldName, expression)
+      BooleanFunctionExpression("greater_than_or_equal", evaluateGte, fieldName, expression)
 
     /**
      * Creates an expression that checks if a field's value is greater than or equal to another
@@ -4263,7 +4248,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun greaterThanOrEqual(fieldName: String, value: Any): BooleanExpression =
-      BooleanExpression("greater_than_or_equal", evaluateGte, fieldName, value)
+      BooleanFunctionExpression("greater_than_or_equal", evaluateGte, fieldName, value)
 
     /**
      * Creates an expression that checks if the first expression is less than the second expression.
@@ -4279,7 +4264,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun lessThan(left: Expression, right: Expression): BooleanExpression =
-      BooleanExpression("less_than", evaluateLt, left, right)
+      BooleanFunctionExpression("less_than", evaluateLt, left, right)
 
     /**
      * Creates an expression that checks if an expression is less than a value.
@@ -4295,7 +4280,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun lessThan(left: Expression, right: Any): BooleanExpression =
-      BooleanExpression("less_than", evaluateLt, left, right)
+      BooleanFunctionExpression("less_than", evaluateLt, left, right)
 
     /**
      * Creates an expression that checks if a field's value is less than an expression.
@@ -4311,7 +4296,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun lessThan(fieldName: String, expression: Expression): BooleanExpression =
-      BooleanExpression("less_than", evaluateLt, fieldName, expression)
+      BooleanFunctionExpression("less_than", evaluateLt, fieldName, expression)
 
     /**
      * Creates an expression that checks if a field's value is less than another value.
@@ -4327,7 +4312,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun lessThan(fieldName: String, value: Any): BooleanExpression =
-      BooleanExpression("less_than", evaluateLt, fieldName, value)
+      BooleanFunctionExpression("less_than", evaluateLt, fieldName, value)
 
     /**
      * Creates an expression that checks if the first expression is less than or equal to the second
@@ -4344,7 +4329,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun lessThanOrEqual(left: Expression, right: Expression): BooleanExpression =
-      BooleanExpression("less_than_or_equal", evaluateLte, left, right)
+      BooleanFunctionExpression("less_than_or_equal", evaluateLte, left, right)
 
     /**
      * Creates an expression that checks if an expression is less than or equal to a value.
@@ -4360,7 +4345,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun lessThanOrEqual(left: Expression, right: Any): BooleanExpression =
-      BooleanExpression("less_than_or_equal", evaluateLte, left, right)
+      BooleanFunctionExpression("less_than_or_equal", evaluateLte, left, right)
 
     /**
      * Creates an expression that checks if a field's value is less than or equal to an expression.
@@ -4376,7 +4361,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun lessThanOrEqual(fieldName: String, expression: Expression): BooleanExpression =
-      BooleanExpression("less_than_or_equal", evaluateLte, fieldName, expression)
+      BooleanFunctionExpression("less_than_or_equal", evaluateLte, fieldName, expression)
 
     /**
      * Creates an expression that checks if a field's value is less than or equal to another value.
@@ -4392,7 +4377,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun lessThanOrEqual(fieldName: String, value: Any): BooleanExpression =
-      BooleanExpression("less_than_or_equal", evaluateLte, fieldName, value)
+      BooleanFunctionExpression("less_than_or_equal", evaluateLte, fieldName, value)
 
     /**
      * Creates an expression that concatenates strings, arrays, or blobs. Types cannot be mixed.
@@ -4642,7 +4627,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun arrayContains(array: Expression, element: Expression): BooleanExpression =
-      BooleanExpression("array_contains", evaluateArrayContains, array, element)
+      BooleanFunctionExpression("array_contains", evaluateArrayContains, array, element)
 
     /**
      * Creates an expression that checks if the array field contains a specific [element].
@@ -4658,7 +4643,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun arrayContains(arrayFieldName: String, element: Expression) =
-      BooleanExpression("array_contains", evaluateArrayContains, arrayFieldName, element)
+      BooleanFunctionExpression("array_contains", evaluateArrayContains, arrayFieldName, element)
 
     /**
      * Creates an expression that checks if the [array] contains a specific [element].
@@ -4677,7 +4662,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun arrayContains(array: Expression, element: Any): BooleanExpression =
-      BooleanExpression("array_contains", evaluateArrayContains, array, element)
+      BooleanFunctionExpression("array_contains", evaluateArrayContains, array, element)
 
     /**
      * Creates an expression that checks if the array field contains a specific [element].
@@ -4693,7 +4678,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun arrayContains(arrayFieldName: String, element: Any) =
-      BooleanExpression("array_contains", evaluateArrayContains, arrayFieldName, element)
+      BooleanFunctionExpression("array_contains", evaluateArrayContains, arrayFieldName, element)
 
     /**
      * Creates an expression that checks if [array] contains all the specified [values].
@@ -4725,7 +4710,12 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun arrayContainsAll(array: Expression, arrayExpression: Expression) =
-      BooleanExpression("array_contains_all", evaluateArrayContainsAll, array, arrayExpression)
+      BooleanFunctionExpression(
+        "array_contains_all",
+        evaluateArrayContainsAll,
+        array,
+        arrayExpression
+      )
 
     /**
      * Creates an expression that checks if array field contains all the specified [values].
@@ -4741,7 +4731,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun arrayContainsAll(arrayFieldName: String, values: List<Any>) =
-      BooleanExpression(
+      BooleanFunctionExpression(
         "array_contains_all",
         evaluateArrayContainsAll,
         arrayFieldName,
@@ -4762,7 +4752,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun arrayContainsAll(arrayFieldName: String, arrayExpression: Expression) =
-      BooleanExpression(
+      BooleanFunctionExpression(
         "array_contains_all",
         evaluateArrayContainsAll,
         arrayFieldName,
@@ -4783,7 +4773,12 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun arrayContainsAny(array: Expression, values: List<Any>) =
-      BooleanExpression("array_contains_any", evaluateArrayContainsAny, array, array(values))
+      BooleanFunctionExpression(
+        "array_contains_any",
+        evaluateArrayContainsAny,
+        array,
+        array(values)
+      )
 
     /**
      * Creates an expression that checks if [array] contains any elements of [arrayExpression].
@@ -4800,7 +4795,12 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun arrayContainsAny(array: Expression, arrayExpression: Expression) =
-      BooleanExpression("array_contains_any", evaluateArrayContainsAny, array, arrayExpression)
+      BooleanFunctionExpression(
+        "array_contains_any",
+        evaluateArrayContainsAny,
+        array,
+        arrayExpression
+      )
 
     /**
      * Creates an expression that checks if array field contains any of the specified [values].
@@ -4816,7 +4816,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun arrayContainsAny(arrayFieldName: String, values: List<Any>) =
-      BooleanExpression(
+      BooleanFunctionExpression(
         "array_contains_any",
         evaluateArrayContainsAny,
         arrayFieldName,
@@ -4837,7 +4837,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun arrayContainsAny(arrayFieldName: String, arrayExpression: Expression) =
-      BooleanExpression(
+      BooleanFunctionExpression(
         "array_contains_any",
         evaluateArrayContainsAny,
         arrayFieldName,
@@ -4988,7 +4988,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun exists(value: Expression): BooleanExpression =
-      BooleanExpression("exists", evaluateExists, value)
+      BooleanFunctionExpression("exists", evaluateExists, value)
 
     /**
      * Creates an expression that checks if a field exists.
@@ -4998,7 +4998,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun exists(fieldName: String): BooleanExpression =
-      BooleanExpression("exists", evaluateExists, fieldName)
+      BooleanFunctionExpression("exists", evaluateExists, fieldName)
 
     /**
      * Creates an expression that raises an error with the given message. This could be useful for
@@ -5053,7 +5053,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun ifError(tryExpr: BooleanExpression, catchExpr: BooleanExpression): BooleanExpression =
-      BooleanExpression("if_error", notImplemented, tryExpr, catchExpr)
+      BooleanFunctionExpression("if_error", notImplemented, tryExpr, catchExpr)
 
     /**
      * Creates an expression that checks if a given expression produces an error.
@@ -5068,7 +5068,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun isError(expr: Expression): BooleanExpression =
-      BooleanExpression("is_error", evaluateIsError, expr)
+      BooleanFunctionExpression("is_error", evaluateIsError, expr)
 
     /**
      * Creates an expression that returns the [catchValue] argument if there is an error, else
@@ -7204,6 +7204,20 @@ abstract class Expression internal constructor() {
    */
   fun isError(): BooleanExpression = Companion.isError(this)
 
+  /**
+   * Casts the expression to a [BooleanExpression].
+   *
+   * @return A [BooleanExpression] representing the same expression.
+   */
+  fun asBoolean(): BooleanExpression {
+    return when (this) {
+      is BooleanExpression -> this
+      is Constant -> BooleanConstant(this)
+      is Field -> BooleanField(this)
+      else -> BooleanFunctionExpression(this as FunctionExpression)
+    }
+  }
+
   internal abstract fun toProto(userDataReader: UserDataReader): Value
 
   internal abstract fun evaluateFunction(context: EvaluationContext): EvaluateDocument
@@ -7424,63 +7438,7 @@ internal constructor(
 }
 
 /** A class that represents a filter condition. */
-open class BooleanExpression
-internal constructor(name: String, function: EvaluateFunction, params: Array<out Expression>) :
-  FunctionExpression(name, function, params, InternalOptions.EMPTY) {
-  internal constructor(
-    name: String,
-    function: EvaluateFunction,
-    param: Expression
-  ) : this(name, function, arrayOf(param))
-  internal constructor(
-    name: String,
-    function: EvaluateFunction,
-    param1: Expression,
-    param2: Any
-  ) : this(name, function, arrayOf(param1, toExprOrConstant(param2)))
-  internal constructor(
-    name: String,
-    function: EvaluateFunction,
-    param: Expression,
-    vararg params: Any
-  ) : this(name, function, arrayOf(param, *toArrayOfExprOrConstant(params)))
-  internal constructor(
-    name: String,
-    function: EvaluateFunction,
-    param1: Expression,
-    param2: Expression
-  ) : this(name, function, arrayOf(param1, param2))
-  internal constructor(
-    name: String,
-    function: EvaluateFunction,
-    fieldName: String
-  ) : this(name, function, arrayOf(field(fieldName)))
-  internal constructor(
-    name: String,
-    function: EvaluateFunction,
-    fieldName: String,
-    vararg params: Any
-  ) : this(name, function, arrayOf(field(fieldName), *toArrayOfExprOrConstant(params)))
-
-  companion object {
-
-    /**
-     * Creates a 'raw' boolean function expression. This is useful if the expression is available in
-     * the backend, but not yet in the current version of the SDK yet.
-     *
-     * ```kotlin
-     * // Create a raw boolean function call
-     * BooleanExpression.rawFunction("my_boolean_function", field("arg1"), constant(true))
-     * ```
-     *
-     * @param name The name of the raw function.
-     * @param expr The expressions to be passed as arguments to the function.
-     * @return A new [BooleanExpression] representing the raw function.
-     */
-    @JvmStatic
-    fun rawFunction(name: String, vararg expr: Expression): BooleanExpression =
-      BooleanExpression(name, notImplemented, expr)
-  }
+abstract class BooleanExpression : Expression() {
 
   /**
    * Creates an aggregation that counts the number of stage inputs where the this boolean expression
@@ -7531,6 +7489,133 @@ internal constructor(name: String, function: EvaluateFunction, params: Array<out
    */
   internal fun ifError(catchExpr: BooleanExpression): BooleanExpression =
     Expression.Companion.ifError(this, catchExpr)
+
+  companion object {
+
+    /**
+     * Creates a 'raw' boolean function expression. This is useful if the expression is available in
+     * the backend, but not yet in the current version of the SDK yet.
+     *
+     * ```kotlin
+     * // Create a raw boolean function call
+     * BooleanExpression.rawFunction("my_boolean_function", field("arg1"), constant(true))
+     * ```
+     *
+     * @param name The name of the raw function.
+     * @param expr The expressions to be passed as arguments to the function.
+     * @return A new [BooleanExpression] representing the raw function.
+     */
+    @JvmStatic
+    fun rawFunction(name: String, vararg expr: Expression): BooleanExpression =
+      BooleanFunctionExpression(name, notImplemented, expr)
+  }
+}
+
+open class BooleanFunctionExpression internal constructor(val expr: FunctionExpression) :
+  BooleanExpression() {
+  internal constructor(
+    name: String,
+    function: EvaluateFunction,
+    params: Array<out Expression>
+  ) : this(FunctionExpression(name, function, params))
+  internal constructor(
+    name: String,
+    function: EvaluateFunction,
+    param: Expression
+  ) : this(name, function, arrayOf(param))
+  internal constructor(
+    name: String,
+    function: EvaluateFunction,
+    param1: Expression,
+    param2: Any
+  ) : this(name, function, arrayOf(param1, Expression.toExprOrConstant(param2)))
+  internal constructor(
+    name: String,
+    function: EvaluateFunction,
+    param: Expression,
+    vararg params: Any
+  ) : this(name, function, arrayOf(param, *Expression.toArrayOfExprOrConstant(params)))
+  internal constructor(
+    name: String,
+    function: EvaluateFunction,
+    param1: Expression,
+    param2: Expression
+  ) : this(name, function, arrayOf(param1, param2))
+  internal constructor(
+    name: String,
+    function: EvaluateFunction,
+    fieldName: String
+  ) : this(name, function, arrayOf(field(fieldName)))
+  internal constructor(
+    name: String,
+    function: EvaluateFunction,
+    fieldName: String,
+    vararg params: Any
+  ) : this(name, function, arrayOf(field(fieldName), *Expression.toArrayOfExprOrConstant(params)))
+
+  override fun toProto(userDataReader: UserDataReader): Value = expr.toProto(userDataReader)
+
+  override fun evaluateFunction(context: EvaluationContext): EvaluateDocument =
+    expr.evaluateFunction(context)
+
+  override fun canonicalId(): String = expr.canonicalId()
+
+  override fun toString(): String = expr.toString()
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    return when (other) {
+      is BooleanFunctionExpression -> expr == other.expr
+      is FunctionExpression -> expr == other
+      else -> false
+    }
+  }
+
+  override fun hashCode(): Int = expr.hashCode()
+}
+
+internal class BooleanConstant(val constant: Expression.Constant) : BooleanExpression() {
+  override fun toProto(userDataReader: UserDataReader): Value = constant.value
+
+  override fun evaluateFunction(context: EvaluationContext): EvaluateDocument =
+    constant.evaluateFunction(context)
+
+  override fun canonicalId(): String = constant.canonicalId()
+
+  override fun toString(): String = constant.toString()
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    return when (other) {
+      is BooleanConstant -> constant == other.constant
+      is Constant -> constant == other
+      else -> false
+    }
+  }
+
+  override fun hashCode(): Int = constant.hashCode()
+}
+
+internal class BooleanField(val field: Field) : BooleanExpression() {
+  override fun toProto(userDataReader: UserDataReader): Value = field.toProto(userDataReader)
+
+  override fun evaluateFunction(context: EvaluationContext): EvaluateDocument =
+    field.evaluateFunction(context)
+
+  override fun canonicalId(): String = field.canonicalId()
+
+  override fun toString(): String = field.toString()
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    return when (other) {
+      is BooleanField -> field == other.field
+      is Field -> field == other
+      else -> false
+    }
+  }
+
+  override fun hashCode(): Int = field.hashCode()
 }
 
 /**
