@@ -46,6 +46,8 @@ import androidx.compose.ui.unit.dp
 
 class MainComposeActivity : ComponentActivity() {
 
+  private val notesDb = InMemoryNotesDatabase()
+
   override fun onCreate(savedInstanceState: Bundle?) {
     enableEdgeToEdge()
     super.onCreate(savedInstanceState)
@@ -55,7 +57,7 @@ class MainComposeActivity : ComponentActivity() {
           topBar = { TopAppBar(title = { Text("After Hours Data Connect") }) },
           modifier = Modifier.fillMaxSize(),
         ) { innerPadding ->
-          NoteEditor(Modifier.padding(innerPadding).fillMaxSize())
+          NoteEditor(notesDb, Modifier.padding(innerPadding).fillMaxSize())
         }
       }
     }
@@ -63,7 +65,7 @@ class MainComposeActivity : ComponentActivity() {
 }
 
 @Composable
-fun NoteEditor(modifier: Modifier = Modifier) {
+fun NoteEditor(notesDb: InMemoryNotesDatabase, modifier: Modifier = Modifier) {
   var title by remember { mutableStateOf("") }
   var body by remember { mutableStateOf("") }
 
@@ -83,7 +85,15 @@ fun NoteEditor(modifier: Modifier = Modifier) {
     Spacer(modifier = Modifier.height(16.dp))
     Row(modifier = Modifier.fillMaxWidth()) {
       Button(
-        onClick = { /* TODO: Implement note creation logic */ },
+        onClick = {
+          val cleanTitle = title.trim()
+          if (!cleanTitle.isEmpty()) {
+            val cleanBody = body.trimEnd()
+            notesDb.createNote(title = cleanTitle, body = cleanBody)
+            title = ""
+            body = ""
+          }
+        },
         modifier = Modifier.weight(1f),
       ) {
         Text("Create Note")
