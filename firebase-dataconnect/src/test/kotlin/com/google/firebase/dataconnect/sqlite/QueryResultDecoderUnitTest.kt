@@ -25,6 +25,8 @@ import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.NegativeListSiz
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.NegativeStringByteCountException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.NegativeStringCharCountException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.NegativeStructKeyCountException
+import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.UInt32DecodeException
+import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.UInt64DecodeException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.UnknownStringValueTypeIndicatorByteException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.UnknownStructValueTypeIndicatorByteException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.UnknownValueTypeIndicatorByteException
@@ -56,7 +58,6 @@ import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.negativeInt
 import io.kotest.property.arbitrary.of
-import io.kotest.property.arbitrary.pair
 import io.kotest.property.arbitrary.positiveInt
 import io.kotest.property.arbitrary.string
 import io.kotest.property.arbitrary.withEdgecases
@@ -134,17 +135,14 @@ class QueryResultDecoderUnitTest {
 
   @Test
   fun `decode() should throw NegativeStringByteCountException for utf8`() = runTest {
-    data class NegativeStringByteCountTestCase(
-      val structKeyCount: Int,
-      val negativeStringByteCount: Int
-    )
-    val arb = Arb.bind(Arb.positiveInt(), Arb.negativeInt(), ::NegativeStringByteCountTestCase)
+    data class NegativeStringByteCountTestCase(val negativeStringByteCount: Int)
+    val arb = Arb.positiveInt().map(::NegativeStringByteCountTestCase)
 
     checkAll(propTestConfig, arb) { testCase ->
       val byteArray = buildByteArray {
         putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
         put(QueryResultCodec.VALUE_STRUCT)
-        putUInt32(testCase.structKeyCount)
+        putUInt32(1) // struct key count
         put(QueryResultCodec.VALUE_STRING_UTF8)
         putUInt32(testCase.negativeStringByteCount)
       }
@@ -160,23 +158,16 @@ class QueryResultDecoderUnitTest {
   @Test
   fun `decode() should throw NegativeStringCharCountException for utf8`() = runTest {
     data class NegativeStringCharCountTestCase(
-      val structKeyCount: Int,
       val stringByteCount: Int,
-      val negativeStringCharCount: Int
+      val negativeStringCharCount: Int,
     )
-    val arb =
-      Arb.bind(
-        Arb.positiveInt(),
-        Arb.positiveInt(),
-        Arb.negativeInt(),
-        ::NegativeStringCharCountTestCase
-      )
+    val arb = Arb.bind(Arb.positiveInt(), Arb.negativeInt(), ::NegativeStringCharCountTestCase)
 
     checkAll(propTestConfig, arb) { testCase ->
       val byteArray = buildByteArray {
         putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
         put(QueryResultCodec.VALUE_STRUCT)
-        putUInt32(testCase.structKeyCount)
+        putUInt32(1) // struct key count
         put(QueryResultCodec.VALUE_STRING_UTF8)
         putUInt32(testCase.stringByteCount)
         putUInt32(testCase.negativeStringCharCount)
@@ -192,16 +183,13 @@ class QueryResultDecoderUnitTest {
 
   @Test
   fun `decode() should throw NegativeStringCharCountException for utf16`() = runTest {
-    data class NegativeStringCharCountTestCase(
-      val structKeyCount: Int,
-      val negativeStringCharCount: Int
-    )
-    val arb = Arb.bind(Arb.positiveInt(), Arb.negativeInt(), ::NegativeStringCharCountTestCase)
+    data class NegativeStringCharCountTestCase(val negativeStringCharCount: Int)
+    val arb = Arb.positiveInt().map(::NegativeStringCharCountTestCase)
     checkAll(propTestConfig, arb) { testCase ->
       val byteArray = buildByteArray {
         putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
         put(QueryResultCodec.VALUE_STRUCT)
-        putUInt32(testCase.structKeyCount)
+        putUInt32(1) // struct key count
         put(QueryResultCodec.VALUE_STRING_UTF16)
         putUInt32(testCase.negativeStringCharCount)
       }
@@ -217,18 +205,15 @@ class QueryResultDecoderUnitTest {
   @Test
   fun `decode() should throw UnknownStringValueTypeIndicatorByteException`() = runTest {
     data class NonStringValueTypeIndicator(val value: Byte)
-    data class StructKeyCount(val value: Int)
     val arb =
       Exhaustive.collection(valueTypeIndicatorBytes - stringValueTypeIndicatorBytes)
         .map(::NonStringValueTypeIndicator)
-    val structKeyCountArb = Arb.positiveInt().map(::StructKeyCount)
 
-    checkAll(propTestConfig, arb, structKeyCountArb) { nonStringValueTypeIndicator, structKeyCount
-      ->
+    checkAll(propTestConfig, arb) { nonStringValueTypeIndicator ->
       val byteArray = buildByteArray {
         putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
         put(QueryResultCodec.VALUE_STRUCT)
-        putUInt32(structKeyCount.value)
+        putUInt32(1) // struct key count
         put(nonStringValueTypeIndicator.value)
       }
       assertDecodeThrows<UnknownStringValueTypeIndicatorByteException>(byteArray) {
@@ -242,15 +227,13 @@ class QueryResultDecoderUnitTest {
   @Test
   fun `decode() should throw UnknownValueTypeIndicatorByteException`() = runTest {
     data class InvalidValueTypeIndicator(val value: Byte)
-    data class StructKeyCount(val value: Int)
     val arb = Arb.invalidValueTypeIndicatorByte().map(::InvalidValueTypeIndicator)
-    val structKeyCountArb = Arb.positiveInt().map(::StructKeyCount)
 
-    checkAll(propTestConfig, arb, structKeyCountArb) { invalidValueTypeIndicator, structKeyCount ->
+    checkAll(propTestConfig, arb) { invalidValueTypeIndicator ->
       val byteArray = buildByteArray {
         putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
         put(QueryResultCodec.VALUE_STRUCT)
-        putUInt32(structKeyCount.value)
+        putUInt32(1) // struct key count
         put(QueryResultCodec.VALUE_STRING_EMPTY)
         put(invalidValueTypeIndicator.value)
       }
@@ -353,7 +336,6 @@ class QueryResultDecoderUnitTest {
     runTest {
       class InsufficientUtf8BytesTestCase(
         val string: String,
-        val structKeyCount: Int,
         val byteCountInflation: Int,
         val charCountInflation: Int,
       ) {
@@ -365,14 +347,12 @@ class QueryResultDecoderUnitTest {
             "string=$string (charCount=${string.length}), " +
             "stringUtf8Bytes=${stringUtf8Bytes.to0xHexString()} " +
             "(byteCount=${stringUtf8Bytes.size}), " +
-            "structKeyCount=$structKeyCount, " +
             "byteCountInflation=$byteCountInflation, charCountInflation=$charCountInflation, " +
             "inflatedCharCount=${inflatedCharCount}, inflatedByteCount=${inflatedByteCount})"
       }
       val arb =
         Arb.bind(
           Arb.string(0..20),
-          Arb.positiveInt(),
           Arb.positiveInt(100),
           Arb.positiveInt(100),
           ::InsufficientUtf8BytesTestCase,
@@ -382,7 +362,7 @@ class QueryResultDecoderUnitTest {
         val byteArray = buildByteArray {
           putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
           put(QueryResultCodec.VALUE_STRUCT)
-          putUInt32(testCase.structKeyCount)
+          putUInt32(1) // struct key count
           put(QueryResultCodec.VALUE_STRING_UTF8)
           putUInt32(testCase.inflatedByteCount)
           putUInt32(testCase.inflatedCharCount)
@@ -411,7 +391,6 @@ class QueryResultDecoderUnitTest {
     runTest {
       class IncorrectUtf8NumCharactersTestCase(
         val string: String,
-        val structKeyCount: Int,
         val charCountInflation: Int,
       ) {
         val inflatedCharCount = string.length + charCountInflation
@@ -421,14 +400,13 @@ class QueryResultDecoderUnitTest {
             "string=$string (charCount=${string.length}), " +
             "stringUtf8Bytes=${stringUtf8Bytes.to0xHexString()} " +
             "(byteCount=${stringUtf8Bytes.size}), " +
-            "structKeyCount=$structKeyCount, " +
             "charCountInflation=$charCountInflation, inflatedCharCount=${inflatedCharCount})"
       }
       val arb =
-        Arb.pair(Arb.string(0..20), Arb.positiveInt()).flatMap { (string, structKeyCount) ->
+        Arb.string(0..20).flatMap { string ->
           val charCountInflationValues = (-10..10).filter { it != 0 && it >= -(string.length) }
           Arb.of(charCountInflationValues).map { charCountInflation ->
-            IncorrectUtf8NumCharactersTestCase(string, structKeyCount, charCountInflation)
+            IncorrectUtf8NumCharactersTestCase(string, charCountInflation)
           }
         }
 
@@ -436,7 +414,7 @@ class QueryResultDecoderUnitTest {
         val byteArray = buildByteArray {
           putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
           put(QueryResultCodec.VALUE_STRUCT)
-          putUInt32(testCase.structKeyCount)
+          putUInt32(1) // struct key count
           put(QueryResultCodec.VALUE_STRING_UTF8)
           putUInt32(testCase.stringUtf8Bytes.size)
           putUInt32(testCase.inflatedCharCount)
@@ -471,7 +449,6 @@ class QueryResultDecoderUnitTest {
     runTest {
       class InsufficientUtf16BytesTestCase(
         val string: String,
-        val structKeyCount: Int,
         val charCountInflation: Int,
       ) {
         val inflatedCharCount = string.length + charCountInflation
@@ -479,22 +456,16 @@ class QueryResultDecoderUnitTest {
           "${this::class.simpleName}(" +
             "string=$string " +
             "(charCount=${string.length}, utf16ByteCount=${string.length*2}), " +
-            "structKeyCount=$structKeyCount, " +
             "charCountInflation=$charCountInflation, inflatedCharCount=${inflatedCharCount})"
       }
       val arb =
-        Arb.bind(
-          Arb.string(0..20),
-          Arb.positiveInt(),
-          Arb.positiveInt(max = 10),
-          ::InsufficientUtf16BytesTestCase
-        )
+        Arb.bind(Arb.string(0..20), Arb.positiveInt(max = 10), ::InsufficientUtf16BytesTestCase)
 
       checkAll(propTestConfig, arb) { testCase ->
         val byteArray = buildByteArray {
           putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
           put(QueryResultCodec.VALUE_STRUCT)
-          putUInt32(testCase.structKeyCount)
+          putUInt32(1) // struct key count
           put(QueryResultCodec.VALUE_STRING_UTF16)
           putUInt32(testCase.inflatedCharCount)
           testCase.string.forEach(::putChar)
@@ -519,14 +490,14 @@ class QueryResultDecoderUnitTest {
 
   @Test
   fun `decode() should throw NegativeListSizeException`() = runTest {
-    data class NegativeListSizeTestCase(val negativeListSize: Int, val structKeyCount: Int)
-    val arb = Arb.bind(Arb.negativeInt(), Arb.positiveInt(), ::NegativeListSizeTestCase)
+    data class NegativeListSizeTestCase(val negativeListSize: Int)
+    val arb = Arb.negativeInt().map(::NegativeListSizeTestCase)
 
     checkAll(propTestConfig, arb) { testCase ->
       val byteArray = buildByteArray {
         putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
         put(QueryResultCodec.VALUE_STRUCT)
-        putUInt32(testCase.structKeyCount)
+        putUInt32(1) // struct key count
         put(QueryResultCodec.VALUE_STRING_EMPTY)
         put(QueryResultCodec.VALUE_LIST)
         putUInt32(testCase.negativeListSize)
@@ -640,11 +611,41 @@ class QueryResultDecoderUnitTest {
         put(QueryResultCodec.VALUE_NUMBER_UINT32)
         put(testCase.malformedUInt32Bytes)
       }
-      assertDecodeThrows<QueryResultDecoder.UInt32DecodeException>(byteArray) {
-        messageShouldContainWithNonAbuttingText("zzyx")
+      assertDecodeThrows<UInt32DecodeException>(byteArray) {
         messageShouldContainWithNonAbuttingText("nne8eyhcbs")
-        messageShouldContainWithNonAbuttingTextIgnoringCase("failed to parse 5 bytes of uint32")
-        messageShouldContainWithNonAbuttingTextIgnoringCase("uint32 value")
+        messageShouldContainWithNonAbuttingTextIgnoringCase(
+          "uint32 decode failed of 5 bytes: " +
+            testCase.malformedUInt32Bytes.to0xHexString(length = 5)
+        )
+      }
+    }
+  }
+
+  @Test
+  fun `decode() should throw UInt64DecodeException`() = runTest {
+    class MalformedUInt64TestCase(val malformedUInt64Bytes: ByteArray) {
+      override fun toString() =
+        "${this::class.simpleName}(" +
+          "malformedUInt64Bytes=${malformedUInt64Bytes.to0xHexString()} " +
+          "(${malformedUInt64Bytes.size} bytes))"
+    }
+    val arb = malformedVarintByteArrayArb(10..20).map(::MalformedUInt64TestCase)
+
+    checkAll(propTestConfig, arb) { testCase ->
+      val byteArray = buildByteArray {
+        putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
+        put(QueryResultCodec.VALUE_STRUCT)
+        putUInt32(1) // struct key count
+        put(QueryResultCodec.VALUE_STRING_EMPTY)
+        put(QueryResultCodec.VALUE_NUMBER_UINT64)
+        put(testCase.malformedUInt64Bytes)
+      }
+      assertDecodeThrows<UInt64DecodeException>(byteArray) {
+        messageShouldContainWithNonAbuttingText("nne8eyhcbs")
+        messageShouldContainWithNonAbuttingTextIgnoringCase(
+          "uint64 decode failed of 10 bytes: " +
+            testCase.malformedUInt64Bytes.to0xHexString(length = 10)
+        )
       }
     }
   }

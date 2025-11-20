@@ -129,7 +129,7 @@ internal class QueryResultDecoder(
 
       if (byteBuffer.remaining() >= maxSize) {
         throw decodeException(
-          "failed to parse $maxSize bytes of $typeName value: " +
+          "$typeName decode failed of $maxSize bytes: " +
             "${byteBuffer.get0xHexString(length=maxSize)} [nne8eyhcbs]",
           exception
         )
