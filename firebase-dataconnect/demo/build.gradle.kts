@@ -29,6 +29,8 @@ plugins {
   kotlin("android") version kotlinVersion
   kotlin("plugin.serialization") version kotlinVersion
 
+  id("org.jetbrains.kotlin.plugin.compose") version kotlinVersion
+
   // The following code in this "plugins" block can be omitted from customer
   // facing documentation as it is an implementation detail of this application.
   id("com.diffplug.spotless") version "7.1.0"
@@ -46,10 +48,20 @@ dependencies {
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
   implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
   implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.9.0")
+  implementation("androidx.core:core-ktx:1.16.0")
+  implementation("com.google.android.material:material:1.12.0")
   implementation("androidx.appcompat:appcompat:1.7.1")
   implementation("androidx.activity:activity-ktx:1.10.1")
+  implementation("androidx.activity:activity-compose:1.10.1")
+  implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.9.2")
   implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.9.2")
   implementation("com.google.android.material:material:1.12.0")
+
+  // Jetpack compose dependencies.
+  implementation(platform("androidx.compose:compose-bom:2025.05.00"))
+  implementation("androidx.compose.ui:ui-graphics")
+  implementation("androidx.compose.material3:material3")
+  debugImplementation("androidx.compose.ui:ui-tooling")
 
   // The following code in this "dependencies" block can be omitted from customer
   // facing documentation as it is an implementation detail of this application.
@@ -84,6 +96,8 @@ android {
     isCoreLibraryDesugaringEnabled = true
   }
   buildFeatures.viewBinding = true
+  kotlinOptions.jvmTarget = "1.8"
+  buildFeatures.compose = true
 }
 
 kotlin {
