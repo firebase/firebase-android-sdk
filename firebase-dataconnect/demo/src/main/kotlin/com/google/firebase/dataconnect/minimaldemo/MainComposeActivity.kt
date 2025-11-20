@@ -21,7 +21,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -46,6 +45,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -53,20 +53,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
+import com.google.firebase.dataconnect.minimaldemo.InMemoryNotesDatabase.Note
 import java.util.UUID
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
 class MainComposeActivity : ComponentActivity() {
 
-  private lateinit var notesDb: InMemoryNotesDatabase
-  private lateinit var noteEditorData: NoteEditorData
+  private val notesDb = InMemoryNotesDatabase()
+  private val notes = mutableStateListOf<Note>()
 
   override fun onCreate(savedInstanceState: Bundle?) {
     enableEdgeToEdge()
     super.onCreate(savedInstanceState)
-    notesDb = InMemoryNotesDatabase()
-    noteEditorData = NoteEditorData(notesDb)
+
+    notes.addAll(notesDb.getAll())
 
     setContent {
       MaterialTheme {
@@ -74,38 +75,59 @@ class MainComposeActivity : ComponentActivity() {
           topBar = { TopAppBar(title = { Text("After Hours Data Connect") }) },
           modifier = Modifier.fillMaxSize(),
         ) { innerPadding ->
-          NoteEditor(notesDb, noteEditorData, Modifier.padding(innerPadding).fillMaxSize())
+          NoteEditor(
+            notes,
+            Modifier.padding(innerPadding).fillMaxSize(),
+            onCreateClick = ::onCreateClick,
+            onUpdateClick = ::onUpdateClick,
+            onDeleteClick = ::onDeleteClick,
+          )
         }
       }
     }
   }
+
+  private fun onCreateClick(info: CreateInfo) {
+    notesDb.createNote(
+      title = info.title,
+      body = info.body,
+      createdAt = Clock.System.now().toString(),
+      isFavorite = info.isFavorite,
+    )
+    notes.clear()
+    notes.addAll(notesDb.getAll())
+  }
+
+  private fun onUpdateClick(noteId: UUID, info: CreateInfo) {
+    notesDb.updateNote(noteId, title = info.title, body = info.body, isFavorite = info.isFavorite)
+    notes.clear()
+    notes.addAll(notesDb.getAll())
+  }
+
+  private fun onDeleteClick(noteId: UUID) {
+    notesDb.deleteNote(noteId)
+    notes.clear()
+    notes.addAll(notesDb.getAll())
+  }
 }
 
-class NoteEditorData(notesDb: InMemoryNotesDatabase) {
-  val id = mutableStateOf<UUID?>(null)
-  val title = mutableStateOf("")
-  val body = mutableStateOf("")
-  val createdAt = mutableStateOf("")
-  val isFavorite = mutableStateOf(false)
-  val notes = mutableStateOf(notesDb.getAll())
-  val showMenu = mutableStateOf(false)
-  val selectedNote = mutableStateOf<InMemoryNotesDatabase.Note?>(null)
-}
+data class CreateInfo(val title: String, val body: String?, val isFavorite: Boolean)
 
 @Composable
 fun NoteEditor(
-  notesDb: InMemoryNotesDatabase,
-  data: NoteEditorData,
+  notes: List<Note>,
   modifier: Modifier = Modifier,
+  onCreateClick: (CreateInfo) -> Unit,
+  onUpdateClick: (UUID, CreateInfo) -> Unit,
+  onDeleteClick: (UUID) -> Unit,
 ) {
-  var id by remember { data.id }
-  var title by remember { data.title }
-  var body by remember { data.body }
-  var createdAt by remember { data.createdAt }
-  var isFavorite by remember { data.isFavorite }
-  var notes by remember { data.notes }
-  var showMenu by remember { data.showMenu }
-  var selectedNote by remember { data.selectedNote }
+  var noteId: UUID? by remember { mutableStateOf(null) }
+  var title by remember { mutableStateOf("") }
+  var body by remember { mutableStateOf<String?>(null) }
+  var createdAt by remember { mutableStateOf("") }
+  var isFavorite by remember { mutableStateOf(false) }
+  var showMenu by remember { mutableStateOf(false) }
+  var selectedNoteId by remember { mutableStateOf<UUID?>(null) }
 
   Column(modifier = modifier.padding(16.dp)) {
     TextField(
@@ -116,7 +138,7 @@ fun NoteEditor(
     )
     Spacer(modifier = Modifier.height(16.dp))
     TextField(
-      value = body,
+      value = body ?: "",
       onValueChange = { body = it },
       label = { Text("Body") },
       modifier = Modifier.fillMaxWidth(),
@@ -131,26 +153,21 @@ fun NoteEditor(
       Text("Favorite")
     }
     Row(modifier = Modifier.fillMaxWidth()) {
-      val noteId = id
-      if (noteId === null) {
+      val displayedNoteId = noteId
+      if (displayedNoteId === null) {
         Button(
           onClick = {
             val cleanTitle = title.trim()
-            if (!cleanTitle.isEmpty()) {
-              val cleanBody = body.trimEnd()
-              notesDb.createNote(
-                title = cleanTitle,
-                body = cleanBody,
-                createdAt = Clock.System.now().toString(),
-                isFavorite = isFavorite,
-              )
-              notes = notesDb.getAll()
-              id = null
-              title = ""
-              body = ""
-              createdAt = ""
-              isFavorite = false
+            if (cleanTitle.isEmpty()) {
+              return@Button
             }
+            onCreateClick(
+              CreateInfo(title = cleanTitle, body = body?.trimEnd(), isFavorite = isFavorite)
+            )
+            title = ""
+            body = null
+            createdAt = ""
+            isFavorite = false
           },
           modifier = Modifier.weight(1f),
         ) {
@@ -160,21 +177,18 @@ fun NoteEditor(
         Button(
           onClick = {
             val cleanTitle = title.trim()
-            if (!cleanTitle.isEmpty()) {
-              val cleanBody = body.trimEnd()
-              notesDb.updateNote(
-                noteId,
-                title = cleanTitle,
-                body = cleanBody,
-                isFavorite = isFavorite,
-              )
-              notes = notesDb.getAll()
-              id = null
-              title = ""
-              body = ""
-              createdAt = ""
-              isFavorite = false
+            if (cleanTitle.isEmpty()) {
+              return@Button
             }
+            onUpdateClick(
+              displayedNoteId,
+              CreateInfo(title = cleanTitle, body = body?.trimEnd(), isFavorite = isFavorite),
+            )
+            noteId = null
+            title = ""
+            body = null
+            createdAt = ""
+            isFavorite = false
           },
           modifier = Modifier.weight(1f),
         ) {
@@ -184,9 +198,9 @@ fun NoteEditor(
       Spacer(modifier = Modifier.width(8.dp))
       Button(
         onClick = {
-          id = null
+          noteId = null
           title = ""
-          body = ""
+          body = null
           createdAt = ""
           isFavorite = false
         },
@@ -203,46 +217,38 @@ fun NoteEditor(
             text = note.title,
             style = MaterialTheme.typography.titleMedium,
             modifier =
-              Modifier.fillMaxWidth()
-                .clickable {
-                  id = note.id
-                  title = note.title
-                  body = note.body
-                }
-                .padding(vertical = 8.dp)
-                .pointerInput(Unit) {
-                  detectTapGestures(
-                    onTap = {
-                      id = note.id
-                      title = note.title
-                      body = note.body
-                      createdAt = note.createdAt
-                      isFavorite = note.isFavorite
-                    },
-                    onLongPress = {
-                      selectedNote = note
-                      showMenu = true
-                    },
-                  )
-                },
+              Modifier.fillMaxWidth().padding(vertical = 8.dp).pointerInput(Unit) {
+                detectTapGestures(
+                  onTap = {
+                    noteId = note.id
+                    title = note.title
+                    body = note.body
+                    createdAt = note.createdAt
+                    isFavorite = note.isFavorite
+                  },
+                  onLongPress = {
+                    selectedNoteId = note.id
+                    showMenu = true
+                  },
+                )
+              },
           )
           DropdownMenu(
-            expanded = showMenu && selectedNote == note,
+            expanded = showMenu && selectedNoteId == note.id,
             onDismissRequest = { showMenu = false },
           ) {
             DropdownMenuItem(
               text = { Text("Delete") },
               onClick = {
-                notesDb.deleteNote(note.id)
-                notes = notesDb.getAll()
-                if (id == note.id) {
-                  id = null
+                showMenu = false
+                onDeleteClick(note.id)
+                if (noteId == note.id) {
+                  noteId = null
                   title = ""
-                  body = ""
+                  body = null
                   createdAt = ""
                   isFavorite = false
                 }
-                showMenu = false
               },
             )
           }
