@@ -80,6 +80,7 @@ fun NoteEditor(notesDb: InMemoryNotesDatabase, modifier: Modifier = Modifier) {
   var id: UUID? by remember { mutableStateOf(null) }
   var title by remember { mutableStateOf("") }
   var body by remember { mutableStateOf("") }
+  var createdAt by remember { mutableStateOf("") }
   var notes by remember { mutableStateOf(notesDb.getAll()) }
   var showMenu by remember { mutableStateOf(false) }
   var selectedNote by remember { mutableStateOf<InMemoryNotesDatabase.Note?>(null) }
@@ -91,6 +92,7 @@ fun NoteEditor(notesDb: InMemoryNotesDatabase, modifier: Modifier = Modifier) {
       label = { Text("Title") },
       modifier = Modifier.fillMaxWidth(),
     )
+    Spacer(modifier = Modifier.height(16.dp))
     TextField(
       value = body,
       onValueChange = { body = it },
@@ -98,6 +100,10 @@ fun NoteEditor(notesDb: InMemoryNotesDatabase, modifier: Modifier = Modifier) {
       modifier = Modifier.fillMaxWidth(),
     )
     Spacer(modifier = Modifier.height(16.dp))
+    Text(
+      text = "Created At: $createdAt",
+      modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 16.dp),
+    )
     Row(modifier = Modifier.fillMaxWidth()) {
       val noteId = id
       if (noteId === null) {
@@ -115,6 +121,7 @@ fun NoteEditor(notesDb: InMemoryNotesDatabase, modifier: Modifier = Modifier) {
               id = null
               title = ""
               body = ""
+              createdAt = ""
             }
           },
           modifier = Modifier.weight(1f),
@@ -132,6 +139,7 @@ fun NoteEditor(notesDb: InMemoryNotesDatabase, modifier: Modifier = Modifier) {
               id = null
               title = ""
               body = ""
+              createdAt = ""
             }
           },
           modifier = Modifier.weight(1f),
@@ -145,6 +153,7 @@ fun NoteEditor(notesDb: InMemoryNotesDatabase, modifier: Modifier = Modifier) {
           id = null
           title = ""
           body = ""
+          createdAt = ""
         },
         modifier = Modifier.weight(1f),
       ) {
@@ -172,6 +181,7 @@ fun NoteEditor(notesDb: InMemoryNotesDatabase, modifier: Modifier = Modifier) {
                       id = note.id
                       title = note.title
                       body = note.body
+                      createdAt = note.createdAt
                     },
                     onLongPress = {
                       selectedNote = note
@@ -193,6 +203,7 @@ fun NoteEditor(notesDb: InMemoryNotesDatabase, modifier: Modifier = Modifier) {
                   id = null
                   title = ""
                   body = ""
+                  createdAt = ""
                 }
                 showMenu = false
               },
