@@ -23,14 +23,14 @@ class InMemoryNotesDatabase {
   data class Note(
     val id: UUID,
     val title: String,
-    val body: String,
+    val body: String?,
     val createdAt: String,
     val isFavorite: Boolean,
   )
 
   private val notes = mutableListOf<Note>()
 
-  fun createNote(title: String, body: String, createdAt: String, isFavorite: Boolean) {
+  fun createNote(title: String, body: String?, createdAt: String, isFavorite: Boolean) {
     notes.add(
       Note(
         id = UUID.randomUUID(),
@@ -42,7 +42,7 @@ class InMemoryNotesDatabase {
     )
   }
 
-  fun updateNote(id: UUID, title: String, body: String, isFavorite: Boolean) {
+  fun updateNote(id: UUID, title: String, body: String?, isFavorite: Boolean) {
     val index = notes.indexOfFirst { it.id == id }
     if (index >= 0) {
       notes[index] = notes[index].copy(title = title, body = body, isFavorite = isFavorite)
