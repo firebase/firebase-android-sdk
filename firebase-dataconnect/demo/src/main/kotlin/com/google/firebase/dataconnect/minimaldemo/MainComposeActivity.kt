@@ -53,10 +53,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.lifecycleScope
 import com.google.firebase.dataconnect.minimaldemo.InMemoryNotesDatabase.Note
 import java.util.UUID
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
+import kotlinx.coroutines.launch
 
 class MainComposeActivity : ComponentActivity() {
 
