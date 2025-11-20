@@ -30,7 +30,6 @@ import com.google.protobuf.Struct
 import com.google.protobuf.Value
 import java.io.ByteArrayInputStream
 import java.io.EOFException
-import java.nio.BufferUnderflowException
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.CharBuffer
@@ -105,44 +104,53 @@ internal class QueryResultDecoder(
   private inline fun <T : Number> readVarint(
     typeName: String,
     maxSize: Int,
-    decodeException: (message: String, cause: Throwable) -> Exception,
-    eofException: (message: String, cause: Throwable) -> Exception,
+    isValidDecodedValue: (T) -> Boolean,
+    decodeException: (message: String, cause: Throwable?) -> Exception,
     read: (ByteBuffer) -> T
   ): T {
     ensureRemaining(1)
     while (true) {
       val originalPosition = byteBuffer.position()
-      val originalLimit = byteBuffer.limit()
-      byteBuffer.limit(originalLimit.coerceAtMost(byteBuffer.position() + maxSize))
-      val exception =
-        try {
-          return read(byteBuffer)
-        } catch (e: BufferUnderflowException) {
-          e
-        } catch (e: CodedIntegers.MalformedVarintException) {
-          e
-        } finally {
-          byteBuffer.limit(originalLimit)
+
+      val readResult = runCatching { read(byteBuffer) }
+
+      readResult.fold(
+        onSuccess = { decodedValue ->
+          if (isValidDecodedValue(decodedValue)) {
+            return decodedValue
+          }
+
+          val newPosition = byteBuffer.position()
+          byteBuffer.position(originalPosition)
+          val decodedByteCount = newPosition - originalPosition
+          throw decodeException(
+            "invalid $typeName value decoded: $decodedValue " +
+              "(decoded from $decodedByteCount bytes: " +
+              "${byteBuffer.get0xHexString(length = decodedByteCount)}) [fpt2q953k9]",
+            null
+          )
+        },
+        onFailure = {
+          byteBuffer.position(originalPosition)
+
+          if (byteBuffer.remaining() >= maxSize) {
+            throw decodeException(
+              "$typeName decode failed of $maxSize bytes: " +
+                "${byteBuffer.get0xHexString(length=maxSize)} [ybydmsykkp]",
+              readResult.exceptionOrNull()
+            )
+          }
+
+          if (!readSome()) {
+            throw decodeException(
+              "end of input reached during decoding of $typeName value: " +
+                "got ${byteBuffer.remaining()} bytes (${byteBuffer.get0xHexString()}), " +
+                " but expected between 1 and $maxSize bytes [c439qmdmnk]",
+              readResult.exceptionOrNull()
+            )
+          }
         }
-
-      byteBuffer.position(originalPosition)
-
-      if (byteBuffer.remaining() >= maxSize) {
-        throw decodeException(
-          "$typeName decode failed of $maxSize bytes: " +
-            "${byteBuffer.get0xHexString(length=maxSize)} [nne8eyhcbs]",
-          exception
-        )
-      }
-
-      if (!readSome()) {
-        throw eofException(
-          "end of input reached prematurely reading $typeName value: " +
-            "got ${byteBuffer.remaining()} bytes," +
-            "but need between 1 and $maxSize bytes [f9bkxazr3r]",
-          exception
-        )
-      }
+      )
     }
   }
 
@@ -150,8 +158,8 @@ internal class QueryResultDecoder(
     readVarint(
       typeName = "uint32",
       maxSize = CodedIntegers.MAX_VARINT32_SIZE,
+      isValidDecodedValue = { it >= 0 },
       decodeException = ::UInt32DecodeException,
-      eofException = ::UInt32EOFException,
       read = { byteBuffer -> byteBuffer.getUInt32() },
     )
 
@@ -159,8 +167,8 @@ internal class QueryResultDecoder(
     readVarint(
       typeName = "sint32",
       maxSize = CodedIntegers.MAX_VARINT32_SIZE,
+      isValidDecodedValue = { true },
       decodeException = ::SInt32DecodeException,
-      eofException = ::SInt32EOFException,
       read = { byteBuffer -> byteBuffer.getSInt32() },
     )
 
@@ -168,8 +176,8 @@ internal class QueryResultDecoder(
     readVarint(
       typeName = "uint64",
       maxSize = CodedIntegers.MAX_VARINT64_SIZE,
+      isValidDecodedValue = { it >= 0 },
       decodeException = ::UInt64DecodeException,
-      eofException = ::UInt64EOFException,
       read = { byteBuffer -> byteBuffer.getUInt64() },
     )
 
@@ -177,8 +185,8 @@ internal class QueryResultDecoder(
     readVarint(
       typeName = "sint64",
       maxSize = CodedIntegers.MAX_VARINT64_SIZE,
+      isValidDecodedValue = { true },
       decodeException = ::SInt64DecodeException,
-      eofException = ::SInt64EOFException,
       read = { byteBuffer -> byteBuffer.getSInt64() },
     )
 
@@ -693,25 +701,13 @@ internal class QueryResultDecoder(
   class UInt32DecodeException(message: String, cause: Throwable? = null) :
     DecodeException(message, cause)
 
-  class UInt32EOFException(message: String, cause: Throwable? = null) :
-    DecodeException(message, cause)
-
   class SInt32DecodeException(message: String, cause: Throwable? = null) :
-    DecodeException(message, cause)
-
-  class SInt32EOFException(message: String, cause: Throwable? = null) :
     DecodeException(message, cause)
 
   class UInt64DecodeException(message: String, cause: Throwable? = null) :
     DecodeException(message, cause)
 
-  class UInt64EOFException(message: String, cause: Throwable? = null) :
-    DecodeException(message, cause)
-
   class SInt64DecodeException(message: String, cause: Throwable? = null) :
-    DecodeException(message, cause)
-
-  class SInt64EOFException(message: String, cause: Throwable? = null) :
     DecodeException(message, cause)
 
   class Utf8EOFException(message: String) : DecodeException(message)
