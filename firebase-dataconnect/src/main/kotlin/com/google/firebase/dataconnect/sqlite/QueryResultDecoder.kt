@@ -284,18 +284,20 @@ internal class QueryResultDecoder(
       StringValueType.Utf16 -> readStringCustomUtf16()
     }
 
-  private fun readMagic(): Int =
-    readFixed32Int(eofErrorId = "MagicEOF").also {
-      if (it != QueryResultCodec.QUERY_RESULT_MAGIC) {
-        throw BadMagicException(
-          "read magic value 0x" +
-            it.toUInt().toString(16).padStart(8, '0') +
-            ", but expected 0x" +
-            QueryResultCodec.QUERY_RESULT_MAGIC.toUInt().toString(16).padStart(8, '0') +
-            " [jk832sz9hx]"
-        )
-      }
+  private fun readMagic() {
+    ensureRemaining(4, eofErrorId = "MagicEOF", ::MagicEOFException)
+    val magic = byteBuffer.getInt()
+
+    if (magic != QueryResultCodec.QUERY_RESULT_MAGIC) {
+      throw BadMagicException(
+        "read magic value 0x" +
+          magic.toUInt().toString(16).padStart(8, '0') +
+          ", but expected 0x" +
+          QueryResultCodec.QUERY_RESULT_MAGIC.toUInt().toString(16).padStart(8, '0') +
+          " [jk832sz9hx]"
+      )
     }
+  }
 
   private enum class ValueType(val serializedByte: Byte, val displayName: String) {
     Null(QueryResultCodec.VALUE_NULL, "null"),
@@ -807,6 +809,8 @@ internal class QueryResultDecoder(
 
   class BadMagicException(message: String, cause: Throwable? = null) :
     DecodeException(message, cause)
+
+  class MagicEOFException(message: String, cause: Throwable? = null) : EOFException(message, cause)
 
   class UnknownValueTypeIndicatorByteException(message: String, cause: Throwable? = null) :
     DecodeException(message, cause)

@@ -20,6 +20,7 @@ import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.BadMagicExcepti
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.ByteArrayEOFException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.Companion.decode
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.EntityNotFoundException
+import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.MagicEOFException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.UInt32DecodeException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.UInt32InvalidValueException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.UInt64DecodeException
@@ -66,7 +67,7 @@ import org.junit.Test
 class QueryResultDecoderUnitTest {
 
   @Test
-  fun `decode() should throw BadMagicException`() = runTest {
+  fun `decode() should throw BadMagicException when the magic bytes are incorrect`() = runTest {
     class MagicValue(val value: Int) {
       val hexValue = value.toUInt().toString(16)
       override fun toString(): String = "$value (hexValue=0x$hexValue)"
@@ -86,6 +87,32 @@ class QueryResultDecoderUnitTest {
         messageShouldContainWithNonAbuttingText("jk832sz9hx")
         messageShouldContainRegexMatchIgnoringCase("read magic value 0x0*${testCase.bad.hexValue}")
         messageShouldContainRegexMatchIgnoringCase("expected 0x0*${testCase.good.hexValue}")
+      }
+    }
+  }
+
+  @Test
+  fun `decode() should throw MagicEOFException when magic bytes are truncated`() = runTest {
+    class TruncatedMagicTestCase(val byteArray: ByteArray) {
+      override fun toString(): String =
+        "${this::class.simpleName}(" +
+          "byteArray=${byteArray.to0xHexString()} (${byteArray.size} bytes))"
+    }
+    val arb = Arb.byteArray(Arb.int(0..3), Arb.byte()).map(::TruncatedMagicTestCase)
+
+    checkAll(propTestConfig, arb) { testCase ->
+      val byteArray = buildByteArray { put(testCase.byteArray) }
+      assertDecodeThrows<MagicEOFException>(byteArray) {
+        messageShouldContainWithNonAbuttingText("xg5y5fm2vk")
+        messageShouldContainWithNonAbuttingText("eofErrorId=MagicEOF")
+        messageShouldContainWithNonAbuttingTextIgnoringCase(testCase.byteArray.to0xHexString())
+        messageShouldContainWithNonAbuttingTextIgnoringCase(
+          "end of input reached prematurely reading 4 bytes"
+        )
+        messageShouldContainWithNonAbuttingTextIgnoringCase("got ${testCase.byteArray.size} bytes")
+        messageShouldContainWithNonAbuttingTextIgnoringCase(
+          "${4 - testCase.byteArray.size} fewer bytes than expected"
+        )
       }
     }
   }
