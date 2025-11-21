@@ -60,9 +60,18 @@ internal class QueryResultDecoder(
 
   fun decode(): Struct {
     readMagic()
-    return when (readStructValueType()) {
-      StructValueType.Struct -> readStruct()
-      StructValueType.Entity -> readEntity()
+
+    val rootStructValueType =
+      readValueType(
+        eofErrorId = "RootStructValueTypeIndicatorByteEOF",
+        unknownErrorId = "RootStructValueTypeIndicatorByteUnknown",
+        unexpectedErrorId = "RootStructValueTypeIndicatorByteUnexpected",
+        map = RootStructValueType.instanceByValueType,
+      )
+
+    return when (rootStructValueType) {
+      RootStructValueType.Struct -> readStruct()
+      RootStructValueType.Entity -> readEntity()
     }
   }
 
@@ -82,7 +91,7 @@ internal class QueryResultDecoder(
       if (!readSome()) {
         val remaining = byteBuffer.remaining()
         throw eofException(
-          "end of input reached prematurely reading $byteCount bytes: " +
+          "end of input reached prematurely while reading $byteCount bytes: " +
             "got $remaining bytes (${byteBuffer.get0xHexString()}), " +
             "${byteCount-remaining} fewer bytes than expected " +
             "[xg5y5fm2vk, eofErrorId=$eofErrorId]",
@@ -102,6 +111,7 @@ internal class QueryResultDecoder(
     return byteBuffer.getChar()
   }
 
+  @Suppress("SameParameterValue")
   private fun readFixed32Int(eofErrorId: String): Int {
     ensureRemaining(4, eofErrorId, ::Fixed32IntEOFException)
     return byteBuffer.getInt()
@@ -119,7 +129,6 @@ internal class QueryResultDecoder(
     eofException: (message: String, cause: Throwable?) -> Exception,
     read: (ByteBuffer) -> T
   ): T {
-    ensureRemaining(1, eofErrorId, eofException)
     while (true) {
       val originalPosition = byteBuffer.position()
 
@@ -158,9 +167,9 @@ internal class QueryResultDecoder(
 
           if (!readSome()) {
             throw eofException(
-              "end of input reached during decoding of $typeName value: " +
+              "end of input reached prematurely while decoding $typeName value: " +
                 "got ${byteBuffer.remaining()} bytes (${byteBuffer.get0xHexString()}), " +
-                " but expected between 1 and $maxSize bytes [c439qmdmnk, eofErrorId=$eofErrorId]",
+                "but expected between 1 and $maxSize bytes [c439qmdmnk, eofErrorId=$eofErrorId]",
               readResult.exceptionOrNull()
             )
           }
@@ -257,7 +266,7 @@ internal class QueryResultDecoder(
 
       if (byteBuffer.remaining() == 0 && !readSome()) {
         throw ByteArrayEOFException(
-          "end of input reached prematurely reading byte array of length $byteCount: " +
+          "end of input reached prematurely while reading byte array of length $byteCount: " +
             "got ${byteArrayOffset + byteBuffer.remaining()} bytes, " +
             "${wantByteCount - byteBuffer.remaining()} fewer bytes than expected [dnx886qwmk]"
         )
@@ -324,27 +333,47 @@ internal class QueryResultDecoder(
     StringUtf16(QueryResultCodec.VALUE_STRING_UTF16, "utf16");
 
     companion object {
+      val identityMap = buildMap { ValueType.entries.forEach { put(it, it) } }
+
       fun fromSerializedByte(serializedByte: Byte): ValueType? =
         entries.firstOrNull { it.serializedByte == serializedByte }
     }
   }
 
-  private inline fun readValueType(
-    valueTypeDescription: String,
+  private fun <T : Any> readValueType(
     eofErrorId: String,
-    unknownValueTypeIndicatorByteException: (message: String, cause: Throwable?) -> Exception
-  ): ValueType {
+    unknownErrorId: String,
+    unexpectedErrorId: String,
+    map: Map<ValueType, T>,
+  ): T {
     val byte = readByte(eofErrorId)
+
     val valueType = ValueType.fromSerializedByte(byte)
-    return valueType
-      ?: throw unknownValueTypeIndicatorByteException(
-        "read unknown $valueTypeDescription value type indicator byte: $byte; expected one of " +
+    if (valueType === null) {
+      throw UnknownValueTypeIndicatorByteException(
+        "read unknown value type indicator byte: $byte; expected one of " +
           ValueType.entries
             .sortedBy { it.serializedByte }
             .joinToString { "${it.serializedByte} (${it.displayName})" } +
-          " [pmkb3sc2mn]",
+          " [y6ppbg7ary, unknownErrorId=$unknownErrorId]",
         null
       )
+    }
+
+    val mappedType = map[valueType]
+    if (mappedType === null) {
+      throw UnexpectedValueTypeIndicatorByteException(
+        "read unexpected value type indicator byte: $byte (${valueType.displayName}); " +
+          "expected one of " +
+          map.keys
+            .sortedBy { it.serializedByte }
+            .joinToString { "${it.serializedByte} (${it.displayName})" } +
+          " [hxtgz4ffem, unexpectedErrorId=$unexpectedErrorId]",
+        null
+      )
+    }
+
+    return mappedType
   }
 
   private enum class StringValueType(val valueType: ValueType) {
@@ -357,32 +386,27 @@ internal class QueryResultDecoder(
     Utf16(ValueType.StringUtf16);
 
     companion object {
+      val instanceByValueType: Map<ValueType, StringValueType> = buildMap {
+        StringValueType.entries.forEach { stringValueType ->
+          check(stringValueType.valueType !in this) {
+            "internal error fv988yxmbr: duplicate value type: ${stringValueType.valueType}"
+          }
+          put(stringValueType.valueType, stringValueType)
+        }
+      }
+
       fun fromValueType(valueType: ValueType): StringValueType? =
         entries.firstOrNull { it.valueType == valueType }
     }
   }
 
-  private fun readStringValueType(): StringValueType {
-    val valueType =
-      readValueType(
-        valueTypeDescription = "string",
-        eofErrorId = "StringValueTypeIndicatorByteEOF",
-        unknownValueTypeIndicatorByteException = ::UnknownStringValueTypeIndicatorByteException,
-      )
-
-    StringValueType.fromValueType(valueType)?.let {
-      return it
-    }
-
-    throw NonStringValueTypeIndicatorByteException(
-      "read non-string value type indicator byte: ${valueType.serializedByte} " +
-        "(${valueType.displayName}); expected one of " +
-        StringValueType.entries
-          .sortedBy { it.valueType.serializedByte }
-          .joinToString { "${it.valueType.serializedByte} (${it.valueType.displayName})" } +
-        " [hfvxx849cv]"
+  private fun readStringValueType(): StringValueType =
+    readValueType(
+      eofErrorId = "StringValueTypeIndicatorByteEOF",
+      unknownErrorId = "StringValueTypeIndicatorByteUnknown",
+      unexpectedErrorId = "StringValueTypeIndicatorByteUnexpected",
+      map = StringValueType.instanceByValueType,
     )
-  }
 
   private fun Byte.decodeChar(): Char {
     val codepoint = toUByte().toInt()
@@ -455,8 +479,9 @@ internal class QueryResultDecoder(
       if (byteBuffer.remaining() < bytesRemaining && !readSome()) {
         val totalBytesRead = byteBuffer.remaining() + byteCount - bytesRemaining
         throw Utf8EOFException(
-          "end of input reached prematurely reading $charCount characters ($byteCount bytes) " +
-            "of a UTF-8 encoded string: got ${charBuffer.position()} characters, " +
+          "end of input reached prematurely while reading $charCount characters " +
+            "($byteCount bytes) of a UTF-8 encoded string: " +
+            "got ${charBuffer.position()} characters, " +
             "${charBuffer.remaining()} fewer characters than expected " +
             "($totalBytesRead bytes, $bytesRemaining fewer bytes than expected) [akn3x7p8rm]"
         )
@@ -535,7 +560,7 @@ internal class QueryResultDecoder(
         val totalBytesRead = byteBuffer.remaining() + (charBuffer.position() * 2)
         val expectedTotalBytesRead = charCount * 2
         throw Utf16EOFException(
-          "end of input reached prematurely reading $charCount characters " +
+          "end of input reached prematurely while reading $charCount characters " +
             "($expectedTotalBytesRead bytes) of a UTF-16 encoded string: " +
             "got ${charBuffer.position()} characters, " +
             "${charBuffer.remaining()} fewer characters than expected " +
@@ -573,36 +598,23 @@ internal class QueryResultDecoder(
     return listValueBuilder.build()
   }
 
-  private enum class StructValueType(val valueType: ValueType) {
+  private enum class RootStructValueType(val valueType: ValueType) {
     Struct(ValueType.Struct),
     Entity(ValueType.Entity);
 
     companion object {
-      fun fromValueType(valueType: ValueType): StructValueType? =
+      val instanceByValueType: Map<ValueType, RootStructValueType> = buildMap {
+        RootStructValueType.entries.forEach { structValueType ->
+          check(structValueType.valueType !in this) {
+            "internal error j6rhkqr37n: duplicate value type: ${structValueType.valueType}"
+          }
+          put(structValueType.valueType, structValueType)
+        }
+      }
+
+      fun fromValueType(valueType: ValueType): RootStructValueType? =
         entries.firstOrNull { it.valueType == valueType }
     }
-  }
-
-  private fun readStructValueType(): StructValueType {
-    val valueType =
-      readValueType(
-        valueTypeDescription = "struct",
-        eofErrorId = "StructValueTypeIndicatorByteEOF",
-        unknownValueTypeIndicatorByteException = ::UnknownStructValueTypeIndicatorByteException,
-      )
-
-    StructValueType.fromValueType(valueType)?.let {
-      return it
-    }
-
-    throw NonStructValueTypeIndicatorByteException(
-      "read non-struct value type indicator byte: ${valueType.serializedByte} " +
-        "(${valueType.displayName}); expected one of " +
-        StructValueType.entries
-          .sortedBy { it.valueType.serializedByte }
-          .joinToString { "${it.valueType.serializedByte} (${it.valueType.displayName})" } +
-        " [w5k8zmq9nz]"
-    )
   }
 
   private fun readStruct(): Struct {
@@ -629,32 +641,18 @@ internal class QueryResultDecoder(
     Scalar(ValueType.KindNotSet);
 
     companion object {
+      val instanceByValueType: Map<ValueType, EntitySubStructValueType> = buildMap {
+        EntitySubStructValueType.entries.forEach { entitySubStructValueType ->
+          check(entitySubStructValueType.valueType !in this) {
+            "internal error f2a6c8nqby: duplicate value type: ${entitySubStructValueType.valueType}"
+          }
+          put(entitySubStructValueType.valueType, entitySubStructValueType)
+        }
+      }
+
       fun fromValueType(valueType: ValueType): EntitySubStructValueType? =
         entries.firstOrNull { it.valueType == valueType }
     }
-  }
-
-  private fun readEntitySubStructValueType(): EntitySubStructValueType {
-    val valueType =
-      readValueType(
-        valueTypeDescription = "entity sub-struct",
-        eofErrorId = "EntitySubStructValueTypeIndicatorByteEOF",
-        unknownValueTypeIndicatorByteException =
-          ::UnknownEntitySubStructValueTypeIndicatorByteException,
-      )
-
-    EntitySubStructValueType.fromValueType(valueType)?.let {
-      return it
-    }
-
-    throw NonEntitySubStructValueTypeIndicatorByteException(
-      "read non-entity-sub-struct value type indicator byte: ${valueType.serializedByte} " +
-        "(${valueType.displayName}); expected one of " +
-        EntitySubStructValueType.entries
-          .sortedBy { it.valueType.serializedByte }
-          .joinToString { "${it.valueType.serializedByte} (${it.valueType.displayName})" } +
-        " [xsaekqs6pw]"
-    )
   }
 
   private fun readEntity(): Struct {
@@ -707,8 +705,16 @@ internal class QueryResultDecoder(
     return listValueBuilder.build()
   }
 
-  private inline fun readEntityValue(getSubEntity: () -> Value): Value =
-    when (readEntitySubStructValueType()) {
+  private inline fun readEntityValue(getSubEntity: () -> Value): Value {
+    val entitySubStructValueType =
+      readValueType(
+        eofErrorId = "EntitySubStructValueTypeIndicatorByteEOF",
+        unknownErrorId = "EntitySubStructValueTypeIndicatorByteUnknown",
+        unexpectedErrorId = "EntitySubStructValueTypeIndicatorByteUnexpected",
+        map = EntitySubStructValueType.instanceByValueType,
+      )
+
+    return when (entitySubStructValueType) {
       EntitySubStructValueType.Entity -> readEntity().toValueProto()
       EntitySubStructValueType.Struct -> {
         val subEntity = getSubEntity().structValue
@@ -720,6 +726,7 @@ internal class QueryResultDecoder(
       }
       EntitySubStructValueType.Scalar -> getSubEntity()
     }
+  }
 
   private fun readEntityValue(key: String, entity: Struct): Value = readEntityValue {
     entity.getFieldsOrThrow(key)
@@ -732,9 +739,10 @@ internal class QueryResultDecoder(
   private fun readValue(): Value {
     val valueType =
       readValueType(
-        valueTypeDescription = "value",
         eofErrorId = "ReadValueValueTypeIndicatorByteEOF",
-        unknownValueTypeIndicatorByteException = ::UnknownValueTypeIndicatorByteException,
+        unknownErrorId = "ReadValueValueTypeIndicatorByteUnknown",
+        unexpectedErrorId = "ReadValueValueTypeIndicatorByteUnexpected",
+        map = ValueType.identityMap,
       )
 
     val valueBuilder = Value.newBuilder()
@@ -815,22 +823,8 @@ internal class QueryResultDecoder(
   class UnknownValueTypeIndicatorByteException(message: String, cause: Throwable? = null) :
     DecodeException(message, cause)
 
-  class UnknownStringValueTypeIndicatorByteException(message: String, cause: Throwable? = null) :
+  class UnexpectedValueTypeIndicatorByteException(message: String, cause: Throwable? = null) :
     DecodeException(message, cause)
-
-  class NonStringValueTypeIndicatorByteException(message: String, cause: Throwable? = null) :
-    DecodeException(message, cause)
-
-  class UnknownStructValueTypeIndicatorByteException(message: String, cause: Throwable? = null) :
-    DecodeException(message, cause)
-
-  class NonStructValueTypeIndicatorByteException(message: String, cause: Throwable? = null) :
-    DecodeException(message, cause)
-
-  class UnknownEntitySubStructValueTypeIndicatorByteException(
-    message: String,
-    cause: Throwable? = null
-  ) : DecodeException(message, cause)
 
   class NonEntitySubStructValueTypeIndicatorByteException(
     message: String,
