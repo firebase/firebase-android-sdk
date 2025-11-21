@@ -32,7 +32,6 @@ import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.UnknownValueTyp
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.Utf16EOFException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.Utf8EOFException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.Utf8IncorrectNumCharactersException
-import com.google.firebase.dataconnect.sqlite.QueryResultDecoderUnitTest.ByteArraySample
 import com.google.firebase.dataconnect.testutil.buildByteArray
 import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
@@ -62,8 +61,6 @@ import io.kotest.property.arbitrary.string
 import io.kotest.property.arbitrary.withEdgecases
 import io.kotest.property.checkAll
 import io.kotest.property.exhaustive.collection
-import io.kotest.property.exhaustive.map
-import kotlin.collections.sliceArray
 import kotlin.random.nextInt
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
@@ -114,54 +111,41 @@ class QueryResultDecoderUnitTest {
 
   @Test
   fun `root struct value type indicator byte unknown should throw`() = runTest {
-    checkAll(propTestConfig, Arb.unknownValueTypeIndicatorByte()) { unknownValueTypeIndicator ->
+    checkAll(propTestConfig, UnknownValueTypeIndicatorByte.arb()) { unknownValueTypeIndicator ->
       val byteArray = buildByteArray {
         putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
         put(unknownValueTypeIndicator.byte)
       }
-      assertDecodeThrows<UnknownValueTypeIndicatorByteException>(byteArray) {
-        messageShouldContainWithNonAbuttingText("y6ppbg7ary")
-        messageShouldContainWithNonAbuttingText(
-          "unknownErrorId=RootStructValueTypeIndicatorByteUnknown"
-        )
-        messageShouldContainWithNonAbuttingTextIgnoringCase(
-          "read unknown value type indicator byte: ${unknownValueTypeIndicator.byte}"
-        )
-      }
+      assertDecodeThrowsUnknownValueTypeIndicatorByteException(
+        byteArray,
+        callerErrorId = "RootStructValueTypeIndicatorByteUnknown",
+        unknownValueTypeIndicator = unknownValueTypeIndicator.byte,
+      )
     }
   }
 
   @Test
   fun `root struct value type indicator byte unexpected should throw`() = runTest {
-    val arb = Exhaustive.collection(valueTypeIndicatorBytes - structValueTypeIndicatorBytes)
-    checkAll(propTestConfig, arb) { unexpectedRootStructValueTypeIndicatorByte ->
+    val arb = Exhaustive.collection(ValueTypeIndicatorByte.all - ValueTypeIndicatorByte.rootStructs)
+    checkAll(propTestConfig, arb) { nonRootStructValueTypeIndicatorByte ->
       val byteArray = buildByteArray {
         putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
-        put(unexpectedRootStructValueTypeIndicatorByte)
+        put(nonRootStructValueTypeIndicatorByte.byte)
       }
-      assertDecodeThrows<UnexpectedValueTypeIndicatorByteException>(byteArray) {
-        messageShouldContainWithNonAbuttingText("hxtgz4ffem")
-        messageShouldContainWithNonAbuttingText(
-          "unexpectedErrorId=RootStructValueTypeIndicatorByteUnexpected"
-        )
-        messageShouldContainWithNonAbuttingTextIgnoringCase(
-          "read unexpected value type indicator byte: $unexpectedRootStructValueTypeIndicatorByte"
-        )
-      }
+      assertDecodeThrowsUnexpectedValueTypeIndicatorByteException(
+        byteArray,
+        callerErrorId = "RootStructValueTypeIndicatorByteUnexpected",
+        unexpectedValueTypeIndicator = nonRootStructValueTypeIndicatorByte.byte,
+      )
     }
   }
 
   @Test
   fun `root struct value type indicator byte truncated should throw`() {
     val byteArray = buildByteArray { putInt(QueryResultCodec.QUERY_RESULT_MAGIC) }
-    assertDecodeThrowsEOFException<ByteEOFException>(
+    assertDecodeThrowsValueTypeIndicatorEOFException(
       byteArray,
-      errorUid = "xg5y5fm2vk",
       callerErrorId = "RootStructValueTypeIndicatorByteEOF",
-      whileText = "reading 1 bytes",
-      gotBytes = ByteArray(0),
-      expectedBytesText = null,
-      fewerBytesThanExpected = 1,
     )
   }
 
@@ -306,31 +290,59 @@ class QueryResultDecoderUnitTest {
     }
   }
 
-  @Test
-  fun `should throw UnknownStringValueTypeIndicatorByteException`() = runTest {
-    data class NonStringValueTypeIndicator(val value: Byte)
-    val arb =
-      Exhaustive.collection(valueTypeIndicatorBytes - stringValueTypeIndicatorBytes)
-        .map(::NonStringValueTypeIndicator)
+  private fun makeByteArrayEndingWithStringValueTypeIndicator(
+    stringValueTypeIndicator: Byte
+  ): ByteArray =
+    makeByteArrayEndingWithStringValueTypeIndicator(byteArrayOf(stringValueTypeIndicator))
 
-    checkAll(propTestConfig, arb) { nonStringValueTypeIndicator ->
-      val byteArray = buildByteArray {
-        putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
-        put(QueryResultCodec.VALUE_STRUCT)
-        putUInt32(1) // struct key count
-        put(nonStringValueTypeIndicator.value)
-      }
-      assertDecodeThrows<IllegalArgumentException>(byteArray) {
-        messageShouldContainWithNonAbuttingText("hfvxx849cv")
-        messageShouldContainWithNonAbuttingText(nonStringValueTypeIndicator.value.toString())
-        messageShouldContainWithNonAbuttingTextIgnoringCase("non-string value type indicator byte")
-      }
+  private fun makeByteArrayEndingWithStringValueTypeIndicator(
+    stringValueTypeIndicator: ByteArray
+  ): ByteArray = buildByteArray {
+    putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
+    put(QueryResultCodec.VALUE_STRUCT)
+    putUInt32(1) // struct key count
+    put(stringValueTypeIndicator)
+  }
+
+  @Test
+  fun `string value type indicator byte unknown should throw`() = runTest {
+    checkAll(propTestConfig, UnknownValueTypeIndicatorByte.arb()) { unknownValueTypeIndicator ->
+      val byteArray =
+        makeByteArrayEndingWithStringValueTypeIndicator(unknownValueTypeIndicator.byte)
+      assertDecodeThrowsUnknownValueTypeIndicatorByteException(
+        byteArray,
+        callerErrorId = "StringValueTypeIndicatorByteUnknown",
+        unknownValueTypeIndicator = unknownValueTypeIndicator.byte,
+      )
     }
   }
 
   @Test
+  fun `string value type indicator byte unexpected should throw`() = runTest {
+    val arb = Exhaustive.collection(ValueTypeIndicatorByte.all - ValueTypeIndicatorByte.strings)
+    checkAll(propTestConfig, arb) { nonStringValueTypeIndicatorByte ->
+      val byteArray =
+        makeByteArrayEndingWithStringValueTypeIndicator(nonStringValueTypeIndicatorByte.byte)
+      assertDecodeThrowsUnexpectedValueTypeIndicatorByteException(
+        byteArray,
+        callerErrorId = "StringValueTypeIndicatorByteUnexpected",
+        unexpectedValueTypeIndicator = nonStringValueTypeIndicatorByte.byte,
+      )
+    }
+  }
+
+  @Test
+  fun `string value type indicator byte truncated should throw`() {
+    val byteArray = makeByteArrayEndingWithStringValueTypeIndicator(byteArrayOf())
+    assertDecodeThrowsValueTypeIndicatorEOFException(
+      byteArray,
+      callerErrorId = "StringValueTypeIndicatorByteEOF",
+    )
+  }
+
+  @Test
   fun `should throw UnknownValueTypeIndicatorByteException`() = runTest {
-    checkAll(propTestConfig, Arb.unknownValueTypeIndicatorByte()) { unknownValueTypeIndicatorByte ->
+    checkAll(propTestConfig, UnknownValueTypeIndicatorByte.arb()) { unknownValueTypeIndicatorByte ->
       val byteArray = buildByteArray {
         putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
         put(QueryResultCodec.VALUE_STRUCT)
@@ -740,6 +752,46 @@ class QueryResultDecoderUnitTest {
       )
     }
 
+  private fun assertDecodeThrowsUnknownValueTypeIndicatorByteException(
+    byteArray: ByteArray,
+    callerErrorId: String,
+    unknownValueTypeIndicator: Byte,
+  ) =
+    assertDecodeThrows<UnknownValueTypeIndicatorByteException>(byteArray) {
+      messageShouldContainWithNonAbuttingText("y6ppbg7ary")
+      messageShouldContainWithNonAbuttingText("unknownErrorId=$callerErrorId")
+      messageShouldContainWithNonAbuttingTextIgnoringCase(
+        "read unknown value type indicator byte: $unknownValueTypeIndicator"
+      )
+    }
+
+  private fun assertDecodeThrowsUnexpectedValueTypeIndicatorByteException(
+    byteArray: ByteArray,
+    callerErrorId: String,
+    unexpectedValueTypeIndicator: Byte,
+  ) =
+    assertDecodeThrows<UnexpectedValueTypeIndicatorByteException>(byteArray) {
+      messageShouldContainWithNonAbuttingText("hxtgz4ffem")
+      messageShouldContainWithNonAbuttingText("unexpectedErrorId=$callerErrorId")
+      messageShouldContainWithNonAbuttingTextIgnoringCase(
+        "read unexpected value type indicator byte: $unexpectedValueTypeIndicator"
+      )
+    }
+
+  private fun assertDecodeThrowsValueTypeIndicatorEOFException(
+    byteArray: ByteArray,
+    callerErrorId: String,
+  ) =
+    assertDecodeThrowsEOFException<ByteEOFException>(
+      byteArray,
+      errorUid = "xg5y5fm2vk",
+      callerErrorId = callerErrorId,
+      whileText = "reading 1 bytes",
+      gotBytes = ByteArray(0),
+      expectedBytesText = null,
+      fewerBytesThanExpected = 1,
+    )
+
   @Test
   fun `should throw UInt32DecodeException when decoding invalid varints`() = runTest {
     checkAll(propTestConfig, MalformedVarintByteArrayArb(5..20)) { testCase ->
@@ -831,7 +883,125 @@ class QueryResultDecoderUnitTest {
       "byte array: ${_byteArray.to0xHexString()} (${_byteArray.size} bytes))"
   }
 
-  private data class UnknownValueTypeIndicatorByte(val byte: Byte)
+  private data class UnknownValueTypeIndicatorByte(val byte: Byte) {
+    companion object {
+      fun arb(): Arb<UnknownValueTypeIndicatorByte> = Arb.of(all).withEdgecases(edgeCases)
+
+      val all: Set<UnknownValueTypeIndicatorByte> = run {
+        val validValueTypeIndicatorBytes = ValueTypeIndicatorByte.all.map { it.byte }
+        (Byte.MIN_VALUE..Byte.MAX_VALUE)
+          .map { it.toByte() }
+          .filterNot { validValueTypeIndicatorBytes.contains(it) }
+          .map(::UnknownValueTypeIndicatorByte)
+          .toSet()
+      }
+
+      val edgeCases: List<UnknownValueTypeIndicatorByte> =
+        buildSet {
+            add(Byte.MIN_VALUE)
+            add(Byte.MAX_VALUE)
+            add(0)
+            add(-1)
+            add(1)
+            ValueTypeIndicatorByte.all.forEach { valueTypeIndicatorByte ->
+              repeat(3) { offset ->
+                add((valueTypeIndicatorByte.byte + offset).toByte())
+                add((valueTypeIndicatorByte.byte - offset).toByte())
+              }
+            }
+            ValueTypeIndicatorByte.all.forEach { remove(it.byte) }
+          }
+          .map(::UnknownValueTypeIndicatorByte)
+    }
+  }
+
+  private data class ValueTypeIndicatorByte(val byte: Byte, val name: String) {
+    companion object {
+      val NULL = ValueTypeIndicatorByte(QueryResultCodec.VALUE_NULL, "VALUE_NULL")
+      val KIND_NOT_SET =
+        ValueTypeIndicatorByte(QueryResultCodec.VALUE_KIND_NOT_SET, "VALUE_KIND_NOT_SET")
+      val ENTITY = ValueTypeIndicatorByte(QueryResultCodec.VALUE_ENTITY, "VALUE_ENTITY")
+      val NUMBER_DOUBLE =
+        ValueTypeIndicatorByte(QueryResultCodec.VALUE_NUMBER_DOUBLE, "VALUE_NUMBER_DOUBLE")
+      val NUMBER_POSITIVE_ZERO =
+        ValueTypeIndicatorByte(
+          QueryResultCodec.VALUE_NUMBER_POSITIVE_ZERO,
+          "VALUE_NUMBER_POSITIVE_ZERO"
+        )
+      val NUMBER_NEGATIVE_ZERO =
+        ValueTypeIndicatorByte(
+          QueryResultCodec.VALUE_NUMBER_NEGATIVE_ZERO,
+          "VALUE_NUMBER_NEGATIVE_ZERO"
+        )
+      val NUMBER_FIXED32 =
+        ValueTypeIndicatorByte(QueryResultCodec.VALUE_NUMBER_FIXED32, "VALUE_NUMBER_FIXED32")
+      val NUMBER_UINT32 =
+        ValueTypeIndicatorByte(QueryResultCodec.VALUE_NUMBER_UINT32, "VALUE_NUMBER_UINT32")
+      val NUMBER_SINT32 =
+        ValueTypeIndicatorByte(QueryResultCodec.VALUE_NUMBER_SINT32, "VALUE_NUMBER_SINT32")
+      val NUMBER_UINT64 =
+        ValueTypeIndicatorByte(QueryResultCodec.VALUE_NUMBER_UINT64, "VALUE_NUMBER_UINT64")
+      val NUMBER_SINT64 =
+        ValueTypeIndicatorByte(QueryResultCodec.VALUE_NUMBER_SINT64, "VALUE_NUMBER_SINT64")
+      val BOOL_TRUE = ValueTypeIndicatorByte(QueryResultCodec.VALUE_BOOL_TRUE, "VALUE_BOOL_TRUE")
+      val BOOL_FALSE = ValueTypeIndicatorByte(QueryResultCodec.VALUE_BOOL_FALSE, "VALUE_BOOL_FALSE")
+      val STRUCT = ValueTypeIndicatorByte(QueryResultCodec.VALUE_STRUCT, "VALUE_STRUCT")
+      val LIST = ValueTypeIndicatorByte(QueryResultCodec.VALUE_LIST, "VALUE_LIST")
+      val STRING_EMPTY =
+        ValueTypeIndicatorByte(QueryResultCodec.VALUE_STRING_EMPTY, "VALUE_STRING_EMPTY")
+      val STRING_1BYTE =
+        ValueTypeIndicatorByte(QueryResultCodec.VALUE_STRING_1BYTE, "VALUE_STRING_1BYTE")
+      val STRING_2BYTE =
+        ValueTypeIndicatorByte(QueryResultCodec.VALUE_STRING_2BYTE, "VALUE_STRING_2BYTE")
+      val STRING_1CHAR =
+        ValueTypeIndicatorByte(QueryResultCodec.VALUE_STRING_1CHAR, "VALUE_STRING_1CHAR")
+      val STRING_2CHAR =
+        ValueTypeIndicatorByte(QueryResultCodec.VALUE_STRING_2CHAR, "VALUE_STRING_2CHAR")
+      val STRING_UTF8 =
+        ValueTypeIndicatorByte(QueryResultCodec.VALUE_STRING_UTF8, "VALUE_STRING_UTF8")
+      val STRING_UTF16 =
+        ValueTypeIndicatorByte(QueryResultCodec.VALUE_STRING_UTF16, "VALUE_STRING_UTF16")
+
+      val all: Set<ValueTypeIndicatorByte> =
+        setOf(
+          NULL,
+          KIND_NOT_SET,
+          ENTITY,
+          NUMBER_DOUBLE,
+          NUMBER_POSITIVE_ZERO,
+          NUMBER_NEGATIVE_ZERO,
+          NUMBER_FIXED32,
+          NUMBER_UINT32,
+          NUMBER_SINT32,
+          NUMBER_UINT64,
+          NUMBER_SINT64,
+          BOOL_TRUE,
+          BOOL_FALSE,
+          STRUCT,
+          LIST,
+          STRING_EMPTY,
+          STRING_1BYTE,
+          STRING_2BYTE,
+          STRING_1CHAR,
+          STRING_2CHAR,
+          STRING_UTF8,
+          STRING_UTF16,
+        )
+
+      val strings: Set<ValueTypeIndicatorByte> =
+        setOf(
+          STRING_EMPTY,
+          STRING_1BYTE,
+          STRING_2BYTE,
+          STRING_1CHAR,
+          STRING_2CHAR,
+          STRING_UTF8,
+          STRING_UTF16,
+        )
+
+      val rootStructs: Set<ValueTypeIndicatorByte> = setOf(STRUCT, ENTITY)
+    }
+  }
 
   private companion object {
 
@@ -842,80 +1012,9 @@ class QueryResultDecoderUnitTest {
         edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.33)
       )
 
-    val valueTypeIndicatorBytes: Set<Byte> =
-      setOf(
-        QueryResultCodec.VALUE_NULL,
-        QueryResultCodec.VALUE_KIND_NOT_SET,
-        QueryResultCodec.VALUE_ENTITY,
-        QueryResultCodec.VALUE_NUMBER_DOUBLE,
-        QueryResultCodec.VALUE_NUMBER_POSITIVE_ZERO,
-        QueryResultCodec.VALUE_NUMBER_NEGATIVE_ZERO,
-        QueryResultCodec.VALUE_NUMBER_FIXED32,
-        QueryResultCodec.VALUE_NUMBER_UINT32,
-        QueryResultCodec.VALUE_NUMBER_SINT32,
-        QueryResultCodec.VALUE_NUMBER_UINT64,
-        QueryResultCodec.VALUE_NUMBER_SINT64,
-        QueryResultCodec.VALUE_BOOL_TRUE,
-        QueryResultCodec.VALUE_BOOL_FALSE,
-        QueryResultCodec.VALUE_STRUCT,
-        QueryResultCodec.VALUE_LIST,
-        QueryResultCodec.VALUE_STRING_EMPTY,
-        QueryResultCodec.VALUE_STRING_1BYTE,
-        QueryResultCodec.VALUE_STRING_2BYTE,
-        QueryResultCodec.VALUE_STRING_1CHAR,
-        QueryResultCodec.VALUE_STRING_2CHAR,
-        QueryResultCodec.VALUE_STRING_UTF8,
-        QueryResultCodec.VALUE_STRING_UTF16,
-      )
-
-    val invalidValueTypeIndicatorBytes: List<UnknownValueTypeIndicatorByte> =
-      (Byte.MIN_VALUE..Byte.MAX_VALUE)
-        .map { it.toByte() }
-        .filterNot { valueTypeIndicatorBytes.contains(it) }
-        .map(::UnknownValueTypeIndicatorByte)
-
-    val stringValueTypeIndicatorBytes: Set<Byte> =
-      setOf(
-        QueryResultCodec.VALUE_STRING_EMPTY,
-        QueryResultCodec.VALUE_STRING_1BYTE,
-        QueryResultCodec.VALUE_STRING_2BYTE,
-        QueryResultCodec.VALUE_STRING_1CHAR,
-        QueryResultCodec.VALUE_STRING_2CHAR,
-        QueryResultCodec.VALUE_STRING_UTF8,
-        QueryResultCodec.VALUE_STRING_UTF16,
-      )
-
-    val structValueTypeIndicatorBytes: Set<Byte> =
-      setOf(QueryResultCodec.VALUE_STRUCT, QueryResultCodec.VALUE_ENTITY)
-
-    val invalidValueTypeIndicatorByteEdgeCases: List<UnknownValueTypeIndicatorByte> =
-      buildSet {
-          add(Byte.MIN_VALUE)
-          add(Byte.MAX_VALUE)
-          add(0)
-          add(-1)
-          add(1)
-          valueTypeIndicatorBytes.forEach { valueTypeIndicatorByte ->
-            repeat(3) { offset ->
-              add((valueTypeIndicatorByte + offset).toByte())
-              add((valueTypeIndicatorByte - offset).toByte())
-            }
-          }
-          removeAll(valueTypeIndicatorBytes)
-        }
-        .distinct()
-        .map(::UnknownValueTypeIndicatorByte)
-
     fun Byte.withLeastSignificantBitSet(): Byte = (toInt() or 1).toByte()
 
     fun Byte.withLeastSignificantBitCleared(): Byte = (toInt() and 1.inv()).toByte()
-
-    /**
-     * Creates and returns an [Arb] that generates [Byte] values that are not one of the "value type
-     * indicator" bytes (the VALUE_XXX constants) defined in [QueryResultCodec].
-     */
-    fun Arb.Companion.unknownValueTypeIndicatorByte(): Arb<UnknownValueTypeIndicatorByte> =
-      of(invalidValueTypeIndicatorBytes).withEdgecases(invalidValueTypeIndicatorByteEdgeCases)
 
     fun Arb.Companion.varintContinuationByte(byte: Arb<Byte> = byte()): Arb<Byte> =
       byte.map { it.toVarintContinuationByte() }
