@@ -29,7 +29,6 @@ import com.google.protobuf.NullValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
 import java.io.ByteArrayInputStream
-import java.io.EOFException
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.nio.CharBuffer
@@ -74,30 +73,36 @@ internal class QueryResultDecoder(
     return readCount > 0
   }
 
-  private fun ensureRemaining(byteCount: Int) {
+  private inline fun ensureRemaining(
+    byteCount: Int,
+    eofErrorId: String,
+    eofException: (message: String, cause: Throwable?) -> Throwable
+  ) {
     while (byteBuffer.remaining() < byteCount) {
       if (!readSome()) {
-        throw EOFException(
+        throw eofException(
           "end of input reached prematurely reading $byteCount bytes: " +
             "got ${byteBuffer.remaining()} bytes, " +
-            "${byteCount-byteBuffer.remaining()} fewer bytes than expected [xg5y5fm2vk]"
+            "${byteCount-byteBuffer.remaining()} fewer bytes than expected " +
+            "[xg5y5fm2vk, eofErrorId=$eofErrorId]",
+          null
         )
       }
     }
   }
 
-  private fun readByte(): Byte {
-    ensureRemaining(1)
+  private fun readByte(eofErrorId: String): Byte {
+    ensureRemaining(1, eofErrorId, ::ByteEOFException)
     return byteBuffer.get()
   }
 
-  private fun readChar(): Char {
-    ensureRemaining(2)
+  private fun readChar(eofErrorId: String): Char {
+    ensureRemaining(2, eofErrorId, ::CharEOFException)
     return byteBuffer.getChar()
   }
 
-  private fun readFixed32Int(): Int {
-    ensureRemaining(4)
+  private fun readFixed32Int(eofErrorId: String): Int {
+    ensureRemaining(4, eofErrorId, ::Fixed32IntEOFException)
     return byteBuffer.getInt()
   }
 
@@ -105,12 +110,15 @@ internal class QueryResultDecoder(
     typeName: String,
     maxSize: Int,
     isValidDecodedValue: (T) -> Boolean,
+    invalidValueErrorId: String,
+    decodeErrorId: String,
+    eofErrorId: String,
     invalidValueException: (message: String) -> Exception,
     decodeException: (message: String, cause: Throwable?) -> Exception,
     eofException: (message: String, cause: Throwable?) -> Exception,
     read: (ByteBuffer) -> T
   ): T {
-    ensureRemaining(1)
+    ensureRemaining(1, eofErrorId, eofException)
     while (true) {
       val originalPosition = byteBuffer.position()
 
@@ -131,7 +139,8 @@ internal class QueryResultDecoder(
           throw invalidValueException(
             "invalid $typeName value decoded: $decodedValue " +
               "(decoded from $decodedByteCount bytes: " +
-              "${byteBuffer.get0xHexString(length = decodedByteCount)}) [pypnp79waw]"
+              "${byteBuffer.get0xHexString(length = decodedByteCount)}) " +
+              "[pypnp79waw, invalidValueErrorId=$invalidValueErrorId]"
           )
         },
         onFailure = {
@@ -140,7 +149,8 @@ internal class QueryResultDecoder(
           if (byteBuffer.remaining() >= maxSize) {
             throw decodeException(
               "$typeName decode failed of $decodedByteCount bytes: " +
-                "${byteBuffer.get0xHexString(length=decodedByteCount)} [ybydmsykkp]",
+                "${byteBuffer.get0xHexString(length=decodedByteCount)} " +
+                "[ybydmsykkp, decodeErrorId=$decodeErrorId]",
               readResult.exceptionOrNull()
             )
           }
@@ -149,7 +159,7 @@ internal class QueryResultDecoder(
             throw eofException(
               "end of input reached during decoding of $typeName value: " +
                 "got ${byteBuffer.remaining()} bytes (${byteBuffer.get0xHexString()}), " +
-                " but expected between 1 and $maxSize bytes [c439qmdmnk]",
+                " but expected between 1 and $maxSize bytes [c439qmdmnk, eofErrorId=$eofErrorId]",
               readResult.exceptionOrNull()
             )
           }
@@ -157,53 +167,84 @@ internal class QueryResultDecoder(
       )
     }
   }
-
-  private fun readUInt32(): Int =
+  private fun readUInt32(
+    invalidValueErrorId: String,
+    decodeErrorId: String,
+    eofErrorId: String,
+  ): Int =
     readVarint(
       typeName = "uint32",
       maxSize = CodedIntegers.MAX_VARINT32_SIZE,
       isValidDecodedValue = { it >= 0 },
+      invalidValueErrorId = invalidValueErrorId,
+      decodeErrorId = decodeErrorId,
+      eofErrorId = eofErrorId,
       invalidValueException = ::UInt32InvalidValueException,
       decodeException = ::UInt32DecodeException,
       eofException = ::UInt32EOFException,
       read = { byteBuffer -> byteBuffer.getUInt32() },
     )
 
-  private fun readSInt32(): Int =
+  @Suppress("SameParameterValue")
+  private fun readSInt32(
+    invalidValueErrorId: String,
+    decodeErrorId: String,
+    eofErrorId: String,
+  ): Int =
     readVarint(
       typeName = "sint32",
       maxSize = CodedIntegers.MAX_VARINT32_SIZE,
       isValidDecodedValue = { true },
+      invalidValueErrorId = invalidValueErrorId,
+      decodeErrorId = decodeErrorId,
+      eofErrorId = eofErrorId,
       invalidValueException = ::SInt32InvalidValueException,
       decodeException = ::SInt32DecodeException,
       eofException = ::SInt32EOFException,
       read = { byteBuffer -> byteBuffer.getSInt32() },
     )
 
-  private fun readUInt64(): Long =
+  @Suppress("SameParameterValue")
+  private fun readUInt64(
+    invalidValueErrorId: String,
+    decodeErrorId: String,
+    eofErrorId: String,
+  ): Long =
     readVarint(
       typeName = "uint64",
       maxSize = CodedIntegers.MAX_VARINT64_SIZE,
       isValidDecodedValue = { it >= 0 },
+      invalidValueErrorId = invalidValueErrorId,
+      decodeErrorId = decodeErrorId,
+      eofErrorId = eofErrorId,
       invalidValueException = ::UInt64InvalidValueException,
       decodeException = ::UInt64DecodeException,
       eofException = ::UInt64EOFException,
       read = { byteBuffer -> byteBuffer.getUInt64() },
     )
 
-  private fun readSInt64(): Long =
+  @Suppress("SameParameterValue")
+  private fun readSInt64(
+    invalidValueErrorId: String,
+    decodeErrorId: String,
+    eofErrorId: String,
+  ): Long =
     readVarint(
       typeName = "sint64",
       maxSize = CodedIntegers.MAX_VARINT64_SIZE,
       isValidDecodedValue = { true },
+      invalidValueErrorId = invalidValueErrorId,
+      decodeErrorId = decodeErrorId,
+      eofErrorId = eofErrorId,
       invalidValueException = ::SInt64InvalidValueException,
       decodeException = ::SInt64DecodeException,
       eofException = ::SInt64EOFException,
       read = { byteBuffer -> byteBuffer.getSInt64() },
     )
 
-  private fun readDouble(): Double {
-    ensureRemaining(8)
+  @Suppress("SameParameterValue")
+  private fun readDouble(eofErrorId: String): Double {
+    ensureRemaining(8, eofErrorId, ::DoubleEOFException)
     return byteBuffer.getDouble()
   }
 
@@ -243,7 +284,7 @@ internal class QueryResultDecoder(
     }
 
   private fun readMagic(): Int =
-    readFixed32Int().also {
+    readFixed32Int(eofErrorId = "MagicEOF").also {
       if (it != QueryResultCodec.QUERY_RESULT_MAGIC) {
         throw BadMagicException(
           "read magic value 0x" +
@@ -251,55 +292,6 @@ internal class QueryResultDecoder(
             ", but expected 0x" +
             QueryResultCodec.QUERY_RESULT_MAGIC.toUInt().toString(16).padStart(8, '0') +
             " [jk832sz9hx]"
-        )
-      }
-    }
-
-  private fun readStructKeyCount(): Int =
-    readUInt32().also {
-      if (it < 0) {
-        throw NegativeStructKeyCountException(
-          "read struct key count $it, but expected " +
-            "a number greater than or equal to zero [y9253xj96g]"
-        )
-      }
-    }
-
-  private fun readStringByteCount(): Int =
-    readUInt32().also {
-      if (it < 0) {
-        throw NegativeStringByteCountException(
-          "read string byte count $it, but expected " +
-            "a number greater than or equal to zero [a9kma55y7m]"
-        )
-      }
-    }
-
-  private fun readStringCharCount(): Int =
-    readUInt32().also {
-      if (it < 0) {
-        throw NegativeStringCharCountException(
-          "read string char count $it, but expected " +
-            "a number greater than or equal to zero [gwybfam237]"
-        )
-      }
-    }
-
-  private fun readListSize(): Int =
-    readUInt32().also {
-      if (it < 0) {
-        throw NegativeListSizeException(
-          "read list size $it, but expected a number greater than or equal to zero [yfvpf9pwt8]"
-        )
-      }
-    }
-
-  private fun readEntityIdSize(): Int =
-    readUInt32().also {
-      if (it < 0) {
-        throw NegativeEntityIdSizeException(
-          "read entity id size $it, " +
-            "but expected a number greater than or equal to zero [agvqmbgknh]"
         )
       }
     }
@@ -334,16 +326,21 @@ internal class QueryResultDecoder(
     }
   }
 
-  private fun readValueType(): ValueType {
-    val byte = readByte()
+  private inline fun readValueType(
+    valueTypeDescription: String,
+    eofErrorId: String,
+    unknownValueTypeIndicatorByteException: (message: String, cause: Throwable?) -> Exception
+  ): ValueType {
+    val byte = readByte(eofErrorId)
     val valueType = ValueType.fromSerializedByte(byte)
     return valueType
-      ?: throw UnknownValueTypeIndicatorByteException(
-        "read unknown value type indicator byte $byte, but expected one of " +
+      ?: throw unknownValueTypeIndicatorByteException(
+        "read unknown $valueTypeDescription value type indicator byte $byte, but expected one of " +
           ValueType.entries
             .sortedBy { it.serializedByte }
             .joinToString { "${it.serializedByte} (${it.displayName})" } +
-          " [pmkb3sc2mn]"
+          " [pmkb3sc2mn]",
+        null
       )
   }
 
@@ -362,19 +359,27 @@ internal class QueryResultDecoder(
     }
   }
 
-  private fun readStringValueType(): StringValueType =
-    readValueType().let { valueType ->
-      val stringValueType = StringValueType.fromValueType(valueType)
-      return stringValueType
-        ?: throw UnknownStringValueTypeIndicatorByteException(
-          "read non-string value type indicator byte ${valueType.serializedByte} " +
-            "(${valueType.displayName}), but expected one of " +
-            StringValueType.entries
-              .sortedBy { it.valueType.serializedByte }
-              .joinToString { "${it.valueType.serializedByte} (${it.valueType.displayName})" } +
-            " [hfvxx849cv]"
-        )
+  private fun readStringValueType(): StringValueType {
+    val valueType =
+      readValueType(
+        valueTypeDescription = "string",
+        eofErrorId = "StringValueTypeIndicatorByteEOF",
+        unknownValueTypeIndicatorByteException = ::UnknownStringValueTypeIndicatorByteException,
+      )
+
+    StringValueType.fromValueType(valueType)?.let {
+      return it
     }
+
+    throw NonStringValueTypeIndicatorByteException(
+      "read non-string value type indicator byte ${valueType.serializedByte} " +
+        "(${valueType.displayName}), but expected one of " +
+        StringValueType.entries
+          .sortedBy { it.valueType.serializedByte }
+          .joinToString { "${it.valueType.serializedByte} (${it.valueType.displayName})" } +
+        " [hfvxx849cv]"
+    )
+  }
 
   private fun Byte.decodeChar(): Char {
     val codepoint = toUByte().toInt()
@@ -384,14 +389,14 @@ internal class QueryResultDecoder(
   }
 
   private fun readString1Byte(): String {
-    val byte = readByte()
+    val byte = readByte(eofErrorId = "String1ByteEOF")
     val char = byte.decodeChar()
     return char.toString()
   }
 
   private fun readString2Byte(): String {
-    val byte1 = readByte()
-    val byte2 = readByte()
+    val byte1 = readByte(eofErrorId = "String2ByteEOF1")
+    val byte2 = readByte(eofErrorId = "String2ByteEOF2")
     val char1 = byte1.decodeChar()
     val char2 = byte2.decodeChar()
     charArray[0] = char1
@@ -400,19 +405,29 @@ internal class QueryResultDecoder(
   }
 
   private fun readString1Char(): String {
-    val char = readChar()
+    val char = readChar(eofErrorId = "String1CharEOF")
     return char.toString()
   }
 
   private fun readString2Char(): String {
-    charArray[0] = readChar()
-    charArray[1] = readChar()
+    charArray[0] = readChar(eofErrorId = "String2CharEOF1")
+    charArray[1] = readChar(eofErrorId = "String2CharEOF2")
     return String(charArray, 0, 2)
   }
 
   private fun readStringUtf8(): String {
-    val byteCount = readStringByteCount()
-    val charCount = readStringCharCount()
+    val byteCount =
+      readUInt32(
+        invalidValueErrorId = "StringUtf8ByteCountInvalidValue",
+        decodeErrorId = "StringUtf8ByteCountDecodeFailed",
+        eofErrorId = "StringUtf8ByteCountEOF",
+      )
+    val charCount =
+      readUInt32(
+        invalidValueErrorId = "StringUtf8CharCountInvalidValue",
+        decodeErrorId = "StringUtf8CharCountDecodeFailed",
+        eofErrorId = "StringUtf8CharCountEOF",
+      )
 
     val fastStringRead = readUtf8Fast(byteCount = byteCount, charCount = charCount)
     if (fastStringRead !== null) {
@@ -503,7 +518,13 @@ internal class QueryResultDecoder(
   }
 
   private fun readStringCustomUtf16(): String {
-    val charCount = readStringCharCount()
+    val charCount =
+      readUInt32(
+        invalidValueErrorId = "StringUtf16CharCountInvalidValue",
+        decodeErrorId = "StringUtf16CharCountDecodeFailed",
+        eofErrorId = "StringUtf16CharCountEOF",
+      )
+
     val charBuffer = CharBuffer.allocate(charCount)
 
     while (charBuffer.remaining() > 0) {
@@ -534,7 +555,13 @@ internal class QueryResultDecoder(
   }
 
   private fun readList(): ListValue {
-    val size = readListSize()
+    val size =
+      readUInt32(
+        invalidValueErrorId = "ListSizeInvalidValue",
+        decodeErrorId = "ListSizeDecodeFailed",
+        eofErrorId = "ListSizeEOF",
+      )
+
     val listValueBuilder = ListValue.newBuilder()
     repeat(size) {
       val value = readValue()
@@ -553,22 +580,36 @@ internal class QueryResultDecoder(
     }
   }
 
-  private fun readStructValueType(): StructValueType =
-    readValueType().let { valueType ->
-      val structValueType = StructValueType.fromValueType(valueType)
-      return structValueType
-        ?: throw UnknownStructValueTypeIndicatorByteException(
-          "read non-struct value type indicator byte ${valueType.serializedByte} " +
-            "(${valueType.displayName}), but expected one of " +
-            StructValueType.entries
-              .sortedBy { it.valueType.serializedByte }
-              .joinToString { "${it.valueType.serializedByte} (${it.valueType.displayName})" } +
-            " [s8b9jqegdy]"
-        )
+  private fun readStructValueType(): StructValueType {
+    val valueType =
+      readValueType(
+        valueTypeDescription = "struct",
+        eofErrorId = "StructValueTypeIndicatorByteEOF",
+        unknownValueTypeIndicatorByteException = ::UnknownStructValueTypeIndicatorByteException,
+      )
+
+    StructValueType.fromValueType(valueType)?.let {
+      return it
     }
 
+    throw NonStructValueTypeIndicatorByteException(
+      "read non-string value type indicator byte ${valueType.serializedByte} " +
+        "(${valueType.displayName}), but expected one of " +
+        StructValueType.entries
+          .sortedBy { it.valueType.serializedByte }
+          .joinToString { "${it.valueType.serializedByte} (${it.valueType.displayName})" } +
+        " [w5k8zmq9nz]"
+    )
+  }
+
   private fun readStruct(): Struct {
-    val keyCount = readStructKeyCount()
+    val keyCount =
+      readUInt32(
+        invalidValueErrorId = "StructKeyCountInvalidValue",
+        decodeErrorId = "StructKeyCountDecodeFailed",
+        eofErrorId = "StructKeyCountEOF",
+      )
+
     val structBuilder = Struct.newBuilder()
     repeat(keyCount) {
       val key = readString()
@@ -578,35 +619,50 @@ internal class QueryResultDecoder(
     return structBuilder.build()
   }
 
-  private enum class EntitySubStructType(val valueType: ValueType) {
+  private enum class EntitySubStructValueType(val valueType: ValueType) {
     Entity(ValueType.Entity),
     Struct(ValueType.Struct),
     List(ValueType.List),
     Scalar(ValueType.KindNotSet);
 
     companion object {
-      fun fromValueType(valueType: ValueType): EntitySubStructType? =
+      fun fromValueType(valueType: ValueType): EntitySubStructValueType? =
         entries.firstOrNull { it.valueType == valueType }
     }
   }
 
-  private fun readEntitySubStructType(): EntitySubStructType =
-    readValueType().let { valueType ->
-      val entitySubStructType = EntitySubStructType.fromValueType(valueType)
-      return entitySubStructType
-        ?: throw UnknownEntitySubStructTypeException(
-          "read non-entity-sub-struct value type indicator byte ${valueType.serializedByte} " +
-            "(${valueType.displayName}), but expected one of " +
-            EntitySubStructType.entries
-              .sortedBy { it.valueType.serializedByte }
-              .joinToString { "${it.valueType.serializedByte} (${it.valueType.displayName})" } +
-            " [w26af67653]"
-        )
+  private fun readEntitySubStructValueType(): EntitySubStructValueType {
+    val valueType =
+      readValueType(
+        valueTypeDescription = "entity sub-struct",
+        eofErrorId = "EntitySubStructValueTypeIndicatorByteEOF",
+        unknownValueTypeIndicatorByteException =
+          ::UnknownEntitySubStructValueTypeIndicatorByteException,
+      )
+
+    EntitySubStructValueType.fromValueType(valueType)?.let {
+      return it
     }
 
+    throw NonEntitySubStructValueTypeIndicatorByteException(
+      "read non-entity-sub-struct value type indicator byte ${valueType.serializedByte} " +
+        "(${valueType.displayName}), but expected one of " +
+        EntitySubStructValueType.entries
+          .sortedBy { it.valueType.serializedByte }
+          .joinToString { "${it.valueType.serializedByte} (${it.valueType.displayName})" } +
+        " [xsaekqs6pw]"
+    )
+  }
+
   private fun readEntity(): Struct {
-    val size = readEntityIdSize()
-    val encodedEntityId = readBytes(size)
+    val encodedEntityIdSize =
+      readUInt32(
+        invalidValueErrorId = "EncodedEntityIdSizeInvalidValue",
+        decodeErrorId = "EncodedEntityIdSizeDecodeFailed",
+        eofErrorId = "EncodedEntityIdSizeEOF",
+      )
+
+    val encodedEntityId = readBytes(encodedEntityIdSize)
     val entity =
       entities.find { it.encodedId.contentEquals(encodedEntityId) }
         ?: throw EntityNotFoundException(
@@ -616,7 +672,13 @@ internal class QueryResultDecoder(
   }
 
   private fun readEntitySubStruct(entity: Struct): Struct {
-    val structKeyCount = readStructKeyCount()
+    val structKeyCount =
+      readUInt32(
+        invalidValueErrorId = "EntitySubStructKeyCountInvalidValue",
+        decodeErrorId = "EntitySubStructKeyCountDecodeFailed",
+        eofErrorId = "EntitySubStructKeyCountEOF",
+      )
+
     val structBuilder = Struct.newBuilder()
     repeat(structKeyCount) {
       val key = readString()
@@ -627,7 +689,13 @@ internal class QueryResultDecoder(
   }
 
   private fun readEntitySubList(entity: ListValue): ListValue {
-    val listSize = readListSize()
+    val listSize =
+      readUInt32(
+        invalidValueErrorId = "EntitySubListSizeInvalidValue",
+        decodeErrorId = "EntitySubListSizeDecodeFailed",
+        eofErrorId = "EntitySubListSizeEOF",
+      )
+
     val listValueBuilder = ListValue.newBuilder()
     repeat(listSize) { index ->
       val value = readEntityValue(index, entity)
@@ -637,17 +705,17 @@ internal class QueryResultDecoder(
   }
 
   private inline fun readEntityValue(getSubEntity: () -> Value): Value =
-    when (readEntitySubStructType()) {
-      EntitySubStructType.Entity -> readEntity().toValueProto()
-      EntitySubStructType.Struct -> {
+    when (readEntitySubStructValueType()) {
+      EntitySubStructValueType.Entity -> readEntity().toValueProto()
+      EntitySubStructValueType.Struct -> {
         val subEntity = getSubEntity().structValue
         readEntitySubStruct(subEntity).toValueProto()
       }
-      EntitySubStructType.List -> {
+      EntitySubStructValueType.List -> {
         val subEntity = getSubEntity().listValue
         readEntitySubList(subEntity).toValueProto()
       }
-      EntitySubStructType.Scalar -> getSubEntity()
+      EntitySubStructValueType.Scalar -> getSubEntity()
     }
 
   private fun readEntityValue(key: String, entity: Struct): Value = readEntityValue {
@@ -659,17 +727,60 @@ internal class QueryResultDecoder(
   }
 
   private fun readValue(): Value {
+    val valueType =
+      readValueType(
+        valueTypeDescription = "value",
+        eofErrorId = "ReadValueValueTypeIndicatorByteEOF",
+        unknownValueTypeIndicatorByteException = ::UnknownValueTypeIndicatorByteException,
+      )
+
     val valueBuilder = Value.newBuilder()
-    when (readValueType()) {
+
+    when (valueType) {
       ValueType.Null -> valueBuilder.setNullValue(NullValue.NULL_VALUE)
-      ValueType.Double -> valueBuilder.setNumberValue(readDouble())
+      ValueType.Double -> valueBuilder.setNumberValue(readDouble(eofErrorId = "ReadDoubleValueEOF"))
       ValueType.PositiveZero -> valueBuilder.setNumberValue(0.0)
       ValueType.NegativeZero -> valueBuilder.setNumberValue(-0.0)
-      ValueType.Fixed32Int -> valueBuilder.setNumberValue(readFixed32Int().toDouble())
-      ValueType.UInt32 -> valueBuilder.setNumberValue(readUInt32().toDouble())
-      ValueType.SInt32 -> valueBuilder.setNumberValue(readSInt32().toDouble())
-      ValueType.UInt64 -> valueBuilder.setNumberValue(readUInt64().toDouble())
-      ValueType.SInt64 -> valueBuilder.setNumberValue(readSInt64().toDouble())
+      ValueType.Fixed32Int ->
+        valueBuilder.setNumberValue(
+          readFixed32Int(eofErrorId = "ReadFixed32IntValueEOF").toDouble()
+        )
+      ValueType.UInt32 ->
+        valueBuilder.setNumberValue(
+          readUInt32(
+              invalidValueErrorId = "ReadUInt32ValueInvalidValue",
+              decodeErrorId = "ReadUInt32ValueDecodeError",
+              eofErrorId = "ReadUInt32ValueEOF",
+            )
+            .toDouble()
+        )
+      ValueType.SInt32 ->
+        valueBuilder.setNumberValue(
+          readSInt32(
+              invalidValueErrorId = "ReadSInt32ValueInvalidValue",
+              decodeErrorId = "ReadSInt32ValueDecodeError",
+              eofErrorId = "ReadSInt32ValueEOF",
+            )
+            .toDouble()
+        )
+      ValueType.UInt64 ->
+        valueBuilder.setNumberValue(
+          readUInt64(
+              invalidValueErrorId = "ReadUInt64ValueInvalidValue",
+              decodeErrorId = "ReadUInt64ValueDecodeError",
+              eofErrorId = "ReadUInt64ValueEOF",
+            )
+            .toDouble()
+        )
+      ValueType.SInt64 ->
+        valueBuilder.setNumberValue(
+          readSInt64(
+              invalidValueErrorId = "ReadSInt64ValueInvalidValue",
+              decodeErrorId = "ReadSInt64ValueDecodeError",
+              eofErrorId = "ReadSInt64ValueEOF",
+            )
+            .toDouble()
+        )
       ValueType.BoolTrue -> valueBuilder.setBoolValue(true)
       ValueType.BoolFalse -> valueBuilder.setBoolValue(false)
       ValueType.List -> valueBuilder.setListValue(readList())
@@ -690,67 +801,95 @@ internal class QueryResultDecoder(
   sealed class DecodeException(message: String, cause: Throwable? = null) :
     Exception(message, cause)
 
-  class BadMagicException(message: String) : DecodeException(message)
+  sealed class EOFException(message: String, cause: Throwable? = null) :
+    DecodeException(message, cause)
 
-  class NegativeStructKeyCountException(message: String) : DecodeException(message)
+  class BadMagicException(message: String, cause: Throwable? = null) :
+    DecodeException(message, cause)
 
-  class NegativeStringByteCountException(message: String) : DecodeException(message)
+  class UnknownValueTypeIndicatorByteException(message: String, cause: Throwable? = null) :
+    DecodeException(message, cause)
 
-  class NegativeStringCharCountException(message: String) : DecodeException(message)
+  class UnknownStringValueTypeIndicatorByteException(message: String, cause: Throwable? = null) :
+    DecodeException(message, cause)
 
-  class NegativeListSizeException(message: String) : DecodeException(message)
+  class NonStringValueTypeIndicatorByteException(message: String, cause: Throwable? = null) :
+    DecodeException(message, cause)
 
-  class UnknownValueTypeIndicatorByteException(message: String) : DecodeException(message)
+  class UnknownStructValueTypeIndicatorByteException(message: String, cause: Throwable? = null) :
+    DecodeException(message, cause)
 
-  class UnknownStringValueTypeIndicatorByteException(message: String) : DecodeException(message)
+  class NonStructValueTypeIndicatorByteException(message: String, cause: Throwable? = null) :
+    DecodeException(message, cause)
 
-  class UnknownStructValueTypeIndicatorByteException(message: String) : DecodeException(message)
+  class UnknownEntitySubStructValueTypeIndicatorByteException(
+    message: String,
+    cause: Throwable? = null
+  ) : DecodeException(message, cause)
 
-  class UnknownEntitySubStructTypeException(message: String) : DecodeException(message)
+  class NonEntitySubStructValueTypeIndicatorByteException(
+    message: String,
+    cause: Throwable? = null
+  ) : DecodeException(message, cause)
 
-  class ByteArrayEOFException(message: String) : DecodeException(message)
+  class ByteEOFException(message: String, cause: Throwable? = null) : EOFException(message, cause)
 
-  class UInt32InvalidValueException(message: String) : DecodeException(message)
+  class CharEOFException(message: String, cause: Throwable? = null) : EOFException(message, cause)
+
+  class Fixed32IntEOFException(message: String, cause: Throwable? = null) :
+    EOFException(message, cause)
+
+  class DoubleEOFException(message: String, cause: Throwable? = null) :
+    EOFException(message, cause)
+
+  class ByteArrayEOFException(message: String, cause: Throwable? = null) :
+    EOFException(message, cause)
+
+  class UInt32EOFException(message: String, cause: Throwable? = null) :
+    EOFException(message, cause)
+
+  class UInt32InvalidValueException(message: String, cause: Throwable? = null) :
+    DecodeException(message, cause)
 
   class UInt32DecodeException(message: String, cause: Throwable? = null) :
     DecodeException(message, cause)
 
-  class UInt32EOFException(message: String, cause: Throwable? = null) :
+  class UInt64EOFException(message: String, cause: Throwable? = null) :
+    EOFException(message, cause)
+
+  class UInt64InvalidValueException(message: String, cause: Throwable? = null) :
     DecodeException(message, cause)
-
-  class SInt32InvalidValueException(message: String) : DecodeException(message)
-
-  class SInt32DecodeException(message: String, cause: Throwable? = null) :
-    DecodeException(message, cause)
-
-  class SInt32EOFException(message: String, cause: Throwable? = null) :
-    DecodeException(message, cause)
-
-  class UInt64InvalidValueException(message: String) : DecodeException(message)
 
   class UInt64DecodeException(message: String, cause: Throwable? = null) :
     DecodeException(message, cause)
 
-  class UInt64EOFException(message: String, cause: Throwable? = null) :
+  class SInt32EOFException(message: String, cause: Throwable? = null) :
+    EOFException(message, cause)
+
+  class SInt32InvalidValueException(message: String, cause: Throwable? = null) :
     DecodeException(message, cause)
 
-  class SInt64InvalidValueException(message: String) : DecodeException(message)
+  class SInt32DecodeException(message: String, cause: Throwable? = null) :
+    DecodeException(message, cause)
+
+  class SInt64EOFException(message: String, cause: Throwable? = null) :
+    EOFException(message, cause)
+
+  class SInt64InvalidValueException(message: String, cause: Throwable? = null) :
+    DecodeException(message, cause)
 
   class SInt64DecodeException(message: String, cause: Throwable? = null) :
     DecodeException(message, cause)
 
-  class SInt64EOFException(message: String, cause: Throwable? = null) :
+  class Utf8EOFException(message: String, cause: Throwable? = null) : EOFException(message, cause)
+
+  class Utf8IncorrectNumCharactersException(message: String, cause: Throwable? = null) :
     DecodeException(message, cause)
 
-  class Utf8EOFException(message: String) : DecodeException(message)
+  class Utf16EOFException(message: String, cause: Throwable? = null) : EOFException(message, cause)
 
-  class Utf8IncorrectNumCharactersException(message: String) : DecodeException(message)
-
-  class Utf16EOFException(message: String) : DecodeException(message)
-
-  class NegativeEntityIdSizeException(message: String) : DecodeException(message)
-
-  class EntityNotFoundException(message: String) : DecodeException(message)
+  class EntityNotFoundException(message: String, cause: Throwable? = null) :
+    DecodeException(message, cause)
 
   companion object {
 
