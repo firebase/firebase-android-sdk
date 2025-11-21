@@ -214,7 +214,7 @@ public abstract class LiveSessionFutures internal constructor() {
    *
    * @param mediaChunks The list of [MediaData] instances representing the media data to be sent.
    */
-  @Deprecated("Use sendAudioRealtime, sendVideoRealtime, or sendTextRealtime instead")
+  @Deprecated("Use `sendAudioRealtime`, `sendVideoRealtime`, or `sendTextRealtime` instead")
   public abstract fun sendMediaStream(mediaChunks: List<MediaData>): ListenableFuture<Unit>
 
   /**
