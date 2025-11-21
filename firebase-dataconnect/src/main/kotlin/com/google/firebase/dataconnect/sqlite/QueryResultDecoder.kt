@@ -80,10 +80,11 @@ internal class QueryResultDecoder(
   ) {
     while (byteBuffer.remaining() < byteCount) {
       if (!readSome()) {
+        val remaining = byteBuffer.remaining()
         throw eofException(
           "end of input reached prematurely reading $byteCount bytes: " +
-            "got ${byteBuffer.remaining()} bytes, " +
-            "${byteCount-byteBuffer.remaining()} fewer bytes than expected " +
+            "got $remaining bytes (${byteBuffer.get0xHexString()}), " +
+            "${byteCount-remaining} fewer bytes than expected " +
             "[xg5y5fm2vk, eofErrorId=$eofErrorId]",
           null
         )
