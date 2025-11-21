@@ -109,4 +109,17 @@ internal object StringUtil {
     val indices = offset until (offset + length)
     indices.map { byteArray[it] }.map { String.format("%02X", it) }.forEach(::append)
   }
+
+  fun String.ellipsizeMiddle(maxLength: Int): String {
+    require(maxLength > 4) { "invalid maxLength: $maxLength (must be greater than 4)" }
+    if (length <= maxLength) {
+      return this
+    }
+
+    val wantCharCount = maxLength - 3
+    val prefixLength = wantCharCount / 2
+    val suffixLength = wantCharCount - prefixLength
+
+    return take(prefixLength) + "..." + takeLast(suffixLength)
+  }
 }

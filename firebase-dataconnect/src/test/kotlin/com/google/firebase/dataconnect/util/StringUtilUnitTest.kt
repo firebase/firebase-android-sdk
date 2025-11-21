@@ -20,19 +20,26 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.ByteBufferArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.OffsetLengthOutOfRangeArb
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
+import com.google.firebase.dataconnect.util.StringUtil.ellipsizeMiddle
 import com.google.firebase.dataconnect.util.StringUtil.get0xHexString
 import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
+import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
 import io.kotest.property.arbitrary.byte
 import io.kotest.property.arbitrary.byteArray
+import io.kotest.property.arbitrary.char
+import io.kotest.property.arbitrary.charArray
+import io.kotest.property.arbitrary.flatMap
 import io.kotest.property.arbitrary.int
+import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.negativeInt
 import io.kotest.property.checkAll
 import kotlin.random.nextInt
@@ -282,6 +289,85 @@ class StringUtilUnitTest {
           exception.message shouldContainWithNonAbuttingText "remaining=${byteBufferInfo.remaining}"
         }
       }
+    }
+  }
+
+  data class EllipsizeMiddleTestCase(val string: String, val maxLength: Int) {
+    override fun toString() =
+      "${this::class.simpleName}(maxLength=$maxLength, " +
+        "string.length=${string.length}, string=$string)"
+
+    companion object {
+      fun stringLengthLessThanOrEqualToMaxLengthArb(
+        maxLength: Arb<Int>
+      ): Arb<EllipsizeMiddleTestCase> = arb(maxLength) { 0..it }
+
+      fun stringLengthGreaterThanMaxLengthArb(maxLength: Arb<Int>): Arb<EllipsizeMiddleTestCase> =
+        arb(maxLength) { (it + 1)..((it + 1) * 3) }
+
+      private inline fun arb(
+        maxLength: Arb<Int>,
+        crossinline toRange: (maxLength: Int) -> IntRange
+      ): Arb<EllipsizeMiddleTestCase> =
+        maxLength.flatMap { maxLength ->
+          Arb.charArray(Arb.int(toRange(maxLength)), Arb.char()).map {
+            EllipsizeMiddleTestCase(it.concatToString(), maxLength)
+          }
+        }
+    }
+  }
+
+  @Test
+  fun `String ellipsizeMiddle() should return unmodified string if string length is less than or equal to maxLength`() =
+    runTest {
+      val arb = EllipsizeMiddleTestCase.stringLengthLessThanOrEqualToMaxLengthArb(Arb.int(5..50))
+      checkAll(propTestConfig, arb) { testCase ->
+        testCase.string.ellipsizeMiddle(testCase.maxLength) shouldBe testCase.string
+      }
+    }
+
+  @Test
+  fun `String ellipsizeMiddle() should return the receiving object if string length is less than or equal to maxLength`() =
+    runTest {
+      val arb = EllipsizeMiddleTestCase.stringLengthLessThanOrEqualToMaxLengthArb(Arb.int(5..50))
+      checkAll(propTestConfig, arb) { testCase ->
+        testCase.string.ellipsizeMiddle(testCase.maxLength) shouldBeSameInstanceAs testCase.string
+      }
+    }
+
+  @Test
+  fun `String ellipsizeMiddle() should return a string with length maxLength`() = runTest {
+    val arb = EllipsizeMiddleTestCase.stringLengthGreaterThanMaxLengthArb(Arb.int(5..50))
+    checkAll(propTestConfig, arb) { testCase ->
+      testCase.string.ellipsizeMiddle(testCase.maxLength).length shouldBe testCase.maxLength
+    }
+  }
+
+  @Test
+  fun `String ellipsizeMiddle() should return an ellipsized string`() = runTest {
+    data class SubstringLength(val prefixLength: Int, val suffixLength: Int)
+
+    val arb = EllipsizeMiddleTestCase.stringLengthGreaterThanMaxLengthArb(Arb.int(5..50))
+    checkAll(propTestConfig, arb) { (string, maxLength) ->
+      val ellipsizedString = string.ellipsizeMiddle(maxLength)
+
+      val validLengths = sequence {
+        val wantChars = maxLength - 3
+        val wantCharsHalf = wantChars / 2
+        if (wantChars % 2 == 0) {
+          yield(SubstringLength(wantCharsHalf, wantCharsHalf))
+        } else {
+          yield(SubstringLength(wantCharsHalf, wantCharsHalf + 1))
+          yield(SubstringLength(wantCharsHalf + 1, wantCharsHalf))
+        }
+      }
+      val acceptableEllipsizedStrings =
+        validLengths
+          .map { (prefixLength, suffixLength) ->
+            string.take(prefixLength) + "..." + string.takeLast(suffixLength)
+          }
+          .toList()
+      acceptableEllipsizedStrings shouldContain ellipsizedString
     }
   }
 
