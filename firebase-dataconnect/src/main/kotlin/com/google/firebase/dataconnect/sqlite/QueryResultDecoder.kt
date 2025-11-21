@@ -22,6 +22,7 @@ import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.getUInt32
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.getUInt64
 import com.google.firebase.dataconnect.sqlite.QueryResultCodec.Entity
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
+import com.google.firebase.dataconnect.util.StringUtil.ellipsizeMiddle
 import com.google.firebase.dataconnect.util.StringUtil.get0xHexString
 import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
 import com.google.protobuf.ListValue
@@ -265,9 +266,13 @@ internal class QueryResultDecoder(
       val wantByteCount = byteCount - byteArrayOffset
 
       if (byteBuffer.remaining() == 0 && !readSome()) {
+        val byteArrayHexString =
+          byteArray
+            .to0xHexString(length = byteArrayOffset, include0xPrefix = false)
+            .ellipsizeMiddle(maxLength = 20)
         throw ByteArrayEOFException(
           "end of input reached prematurely while reading byte array of length $byteCount: " +
-            "got ${byteArrayOffset + byteBuffer.remaining()} bytes, " +
+            "got $byteArrayOffset bytes (0x$byteArrayHexString), " +
             "${wantByteCount - byteBuffer.remaining()} fewer bytes than expected [dnx886qwmk]"
         )
       }
