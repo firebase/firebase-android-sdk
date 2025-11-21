@@ -340,22 +340,41 @@ class QueryResultDecoderUnitTest {
     )
   }
 
+  private fun makeByteArrayEndingWithReadValueValueTypeIndicator(
+    readValueValueTypeIndicator: Byte
+  ): ByteArray =
+    makeByteArrayEndingWithReadValueValueTypeIndicator(byteArrayOf(readValueValueTypeIndicator))
+
+  private fun makeByteArrayEndingWithReadValueValueTypeIndicator(
+    readValueValueTypeIndicator: ByteArray
+  ): ByteArray = buildByteArray {
+    putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
+    put(QueryResultCodec.VALUE_STRUCT)
+    putUInt32(1) // struct key count
+    put(QueryResultCodec.VALUE_STRING_EMPTY)
+    put(readValueValueTypeIndicator)
+  }
+
   @Test
-  fun `should throw UnknownValueTypeIndicatorByteException`() = runTest {
-    checkAll(propTestConfig, UnknownValueTypeIndicatorByte.arb()) { unknownValueTypeIndicatorByte ->
-      val byteArray = buildByteArray {
-        putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
-        put(QueryResultCodec.VALUE_STRUCT)
-        putUInt32(1) // struct key count
-        put(QueryResultCodec.VALUE_STRING_EMPTY)
-        put(unknownValueTypeIndicatorByte.byte)
-      }
-      assertDecodeThrows<UnknownValueTypeIndicatorByteException>(byteArray) {
-        messageShouldContainWithNonAbuttingText("pmkb3sc2mn")
-        messageShouldContainWithNonAbuttingText(unknownValueTypeIndicatorByte.byte.toString())
-        messageShouldContainWithNonAbuttingTextIgnoringCase("unknown value type indicator byte")
-      }
+  fun `read value value type indicator byte unknown should throw`() = runTest {
+    checkAll(propTestConfig, UnknownValueTypeIndicatorByte.arb()) { unknownValueTypeIndicator ->
+      val byteArray =
+        makeByteArrayEndingWithReadValueValueTypeIndicator(unknownValueTypeIndicator.byte)
+      assertDecodeThrowsUnknownValueTypeIndicatorByteException(
+        byteArray,
+        callerErrorId = "ReadValueValueTypeIndicatorByteUnknown",
+        unknownValueTypeIndicator = unknownValueTypeIndicator.byte,
+      )
     }
+  }
+
+  @Test
+  fun `read value value type indicator byte truncated should throw`() {
+    val byteArray = makeByteArrayEndingWithReadValueValueTypeIndicator(byteArrayOf())
+    assertDecodeThrowsValueTypeIndicatorEOFException(
+      byteArray,
+      callerErrorId = "ReadValueValueTypeIndicatorByteEOF",
+    )
   }
 
   @Test
