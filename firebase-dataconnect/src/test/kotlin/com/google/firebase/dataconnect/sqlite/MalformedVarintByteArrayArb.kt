@@ -32,9 +32,14 @@ class MalformedVarintByteArrayArb(private val sizeRange: IntRange) :
   Arb<MalformedVarintByteArrayArb.Sample>() {
 
   class Sample(val byteArray: ByteArray, val edgeCase: EdgeCase?) {
-    override fun toString() =
+    val description =
       "${MalformedVarintByteArrayArb::class.simpleName}.${this::class.simpleName}(" +
         "${byteArray.to0xHexString()} (${byteArray.size} bytes), edgeCase=$edgeCase)"
+
+    override fun toString() = description
+
+    fun copy(byteArray: ByteArray = this.byteArray, edgeCase: EdgeCase? = this.edgeCase): Sample =
+      Sample(byteArray = byteArray, edgeCase = edgeCase)
   }
 
   enum class EdgeCase {

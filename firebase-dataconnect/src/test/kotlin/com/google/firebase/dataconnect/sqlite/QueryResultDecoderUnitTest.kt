@@ -27,6 +27,7 @@ import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.NegativeStringC
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.NegativeStructKeyCountException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.UInt32DecodeException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.UInt64DecodeException
+import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.UInt64InvalidValueException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.UnknownStringValueTypeIndicatorByteException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.UnknownStructValueTypeIndicatorByteException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.UnknownValueTypeIndicatorByteException
@@ -589,46 +590,36 @@ class QueryResultDecoderUnitTest {
   }
 
   @Test
-  fun `decode() should throw UInt32DecodeException when all continuation bytes`() = runTest {
-    class MalformedUInt32TestCase(
-      val malformedUInt32Bytes: ByteArray,
-    ) {
-      override fun toString() =
-        "${this::class.simpleName}(" +
-          "${malformedUInt32Bytes.to0xHexString()} (${malformedUInt32Bytes.size} bytes)"
-    }
-    val arb = MalformedVarintByteArrayArb(5..20).map { it.byteArray }.map(::MalformedUInt32TestCase)
-
-    checkAll(propTestConfig, arb) { testCase ->
+  fun `decode() should throw UInt32DecodeException when decoding invalid varints`() = runTest {
+    checkAll(propTestConfig, MalformedVarintByteArrayArb(5..20)) { testCase ->
       val byteArray = buildByteArray {
         putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
         put(QueryResultCodec.VALUE_STRUCT)
         putUInt32(1) // struct key count
         put(QueryResultCodec.VALUE_STRING_EMPTY)
         put(QueryResultCodec.VALUE_NUMBER_UINT32)
-        put(testCase.malformedUInt32Bytes)
+        put(testCase.byteArray)
       }
       assertDecodeThrows<UInt32DecodeException>(byteArray) {
         messageShouldContainWithNonAbuttingText("ybydmsykkp")
         messageShouldContainWithNonAbuttingTextIgnoringCase(
-          "uint32 decode failed of 5 bytes: " +
-            testCase.malformedUInt32Bytes.to0xHexString(length = 5)
+          "uint32 decode failed of 5 bytes: " + testCase.byteArray.to0xHexString(length = 5)
         )
       }
     }
   }
 
   @Test
-  fun `decode() should throw UInt64DecodeException when all continuation bytes`() = runTest {
-    class MalformedUInt64TestCase(
-      val malformedUInt64Bytes: ByteArray,
-    ) {
-      override fun toString() =
-        "${this::class.simpleName}(" +
-          "${malformedUInt64Bytes.to0xHexString()} (${malformedUInt64Bytes.size} bytes)"
-    }
+  fun `decode() should throw UInt64DecodeException when decoding invalid varints`() = runTest {
+    // Make sure that byte 10 has its least significant bit cleared, because if it is, instead, set,
+    // then a UInt64InvalidValueException is thrown instead.
     val arb =
-      MalformedVarintByteArrayArb(10..20).map { it.byteArray }.map(::MalformedUInt64TestCase)
+      MalformedVarintByteArrayArb(10..20).map { sample ->
+        sample.copy(
+          byteArray =
+            sample.byteArray.copyOf().also { it[9] = it[9].withLeastSignificantBitCleared() }
+        )
+      }
 
     checkAll(propTestConfig, arb) { testCase ->
       val byteArray = buildByteArray {
@@ -637,17 +628,48 @@ class QueryResultDecoderUnitTest {
         putUInt32(1) // struct key count
         put(QueryResultCodec.VALUE_STRING_EMPTY)
         put(QueryResultCodec.VALUE_NUMBER_UINT64)
-        put(testCase.malformedUInt64Bytes)
+        put(testCase.byteArray)
       }
       assertDecodeThrows<UInt64DecodeException>(byteArray) {
         messageShouldContainWithNonAbuttingText("ybydmsykkp")
         messageShouldContainWithNonAbuttingTextIgnoringCase(
-          "uint64 decode failed of 5 bytes: " +
-            testCase.malformedUInt64Bytes.to0xHexString(length = 10)
+          "uint64 decode failed of 10 bytes: " + testCase.byteArray.to0xHexString(length = 10)
         )
       }
     }
   }
+
+  @Test
+  fun `decode() should throw UInt64InvalidValueException when decoding invalid varints`() =
+    runTest {
+      // Make sure that byte 10 has its least significant bit set, because if it is, instead, clear,
+      // then a UInt64DecodeException is thrown instead.
+      val arb =
+        MalformedVarintByteArrayArb(10..20).map { sample ->
+          sample.copy(
+            byteArray =
+              sample.byteArray.copyOf().also { it[9] = it[9].withLeastSignificantBitSet() }
+          )
+        }
+
+      checkAll(propTestConfig, arb) { testCase ->
+        val byteArray = buildByteArray {
+          putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
+          put(QueryResultCodec.VALUE_STRUCT)
+          putUInt32(1) // struct key count
+          put(QueryResultCodec.VALUE_STRING_EMPTY)
+          put(QueryResultCodec.VALUE_NUMBER_UINT64)
+          put(testCase.byteArray)
+        }
+        assertDecodeThrows<UInt64InvalidValueException>(byteArray) {
+          messageShouldContainWithNonAbuttingText("pypnp79waw")
+          messageShouldContainRegexMatchIgnoringCase("invalid uint64 value decoded: -[0-9]+\\W")
+          messageShouldContainWithNonAbuttingTextIgnoringCase(
+            "decoded from 10 bytes: " + testCase.byteArray.to0xHexString(length = 10)
+          )
+        }
+      }
+    }
 
   private companion object {
 
@@ -719,6 +741,10 @@ class QueryResultDecoderUnitTest {
           removeAll(valueTypeIndicatorBytes)
         }
         .distinct()
+
+    fun Byte.withLeastSignificantBitSet(): Byte = (toInt() or 1).toByte()
+
+    fun Byte.withLeastSignificantBitCleared(): Byte = (toInt() and 1.inv()).toByte()
 
     /**
      * Creates and returns an [Arb] that generates [Byte] values that are not one of the "value type
