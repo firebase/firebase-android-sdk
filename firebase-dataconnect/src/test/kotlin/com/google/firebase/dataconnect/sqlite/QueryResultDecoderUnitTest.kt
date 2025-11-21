@@ -63,6 +63,8 @@ import io.kotest.property.arbitrary.withEdgecases
 import io.kotest.property.checkAll
 import io.kotest.property.exhaustive.collection
 import io.kotest.property.exhaustive.map
+import kotlin.collections.sliceArray
+import kotlin.random.nextInt
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
@@ -163,117 +165,144 @@ class QueryResultDecoderUnitTest {
     )
   }
 
+  private fun makeByteArrayEndingWithStructKeyCount(structKeyCount: ByteArray): ByteArray =
+    buildByteArray {
+      putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
+      put(QueryResultCodec.VALUE_STRUCT)
+      put(structKeyCount)
+    }
+
   @Test
   fun `struct key count invalid should throw`() = runTest {
-    checkAll(propTestConfig, MalformedVarintByteArrayArb(5..10)) { testCase ->
-      val byteArray = buildByteArray {
-        putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
-        put(QueryResultCodec.VALUE_STRUCT)
-        put(testCase.byteArray)
-      }
-      assertDecodeThrows<UInt32DecodeException>(byteArray) {
-        messageShouldContainWithNonAbuttingText("ybydmsykkp")
-        messageShouldContainWithNonAbuttingText("decodeErrorId=StructKeyCountDecodeFailed")
-        messageShouldContainWithNonAbuttingTextIgnoringCase("uint32 decode failed of 5 bytes")
-        messageShouldContainWithNonAbuttingTextIgnoringCase(
-          testCase.byteArray.sliceArray(0..4).to0xHexString()
-        )
-      }
+    checkAll(propTestConfig, MalformedVarintByteArrayArb(5..10)) { invalidStructKeyCount ->
+      val byteArray = makeByteArrayEndingWithStructKeyCount(invalidStructKeyCount.byteArray)
+      assertDecodeThrowsUInt32DecodeException(
+        byteArray,
+        callerErrorId = "StructKeyCountDecodeFailed",
+        uint32ByteArray = invalidStructKeyCount.byteArray,
+      )
     }
   }
 
   @Test
   fun `struct key count truncated should throw`() = runTest {
-    checkAll(propTestConfig, Arb.truncatedUInt32ByteArray()) { sample ->
-      val byteArray = buildByteArray {
-        putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
-        put(QueryResultCodec.VALUE_STRUCT)
-        put(sample.byteArray)
-      }
-      assertDecodeThrowsEOFException<UInt32EOFException>(
+    checkAll(propTestConfig, Arb.truncatedUInt32ByteArray()) { truncatedStructKeyCount ->
+      val byteArray = makeByteArrayEndingWithStructKeyCount(truncatedStructKeyCount.byteArray)
+      assertDecodeThrowsUInt32EOFException(
         byteArray,
-        errorUid = "c439qmdmnk",
         callerErrorId = "StructKeyCountEOF",
-        whileText = "decoding uint32 value",
-        gotBytes = sample.byteArray,
-        expectedBytesText = "between 1 and 5",
-        fewerBytesThanExpected = null,
+        uint32ByteArray = truncatedStructKeyCount.byteArray,
+      )
+    }
+  }
+
+  private fun makeByteArrayEndingWithUtf8ByteCount(utf8ByteCount: ByteArray): ByteArray =
+    buildByteArray {
+      putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
+      put(QueryResultCodec.VALUE_STRUCT)
+      putUInt32(1) // struct key count
+      put(QueryResultCodec.VALUE_STRING_UTF8)
+      put(utf8ByteCount)
+    }
+
+  @Test
+  fun `utf8 byte count invalid should throw`() = runTest {
+    checkAll(propTestConfig, MalformedVarintByteArrayArb(5..10)) { invalidUtf8ByteCount ->
+      val byteArray = makeByteArrayEndingWithUtf8ByteCount(invalidUtf8ByteCount.byteArray)
+      assertDecodeThrowsUInt32DecodeException(
+        byteArray,
+        callerErrorId = "StringUtf8ByteCountDecodeFailed",
+        uint32ByteArray = invalidUtf8ByteCount.byteArray,
       )
     }
   }
 
   @Test
-  fun `should throw UInt32InvalidValueException for utf8 invalid byte count`() = runTest {
-    checkAll(propTestConfig, MalformedVarintByteArrayArb(5..10)) { testCase ->
-      val byteArray = buildByteArray {
-        putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
-        put(QueryResultCodec.VALUE_STRUCT)
-        putUInt32(1) // struct key count
-        put(QueryResultCodec.VALUE_STRING_UTF8)
-        put(testCase.byteArray)
-      }
-      assertDecodeThrows<UInt32InvalidValueException>(byteArray) {
-        messageShouldContainWithNonAbuttingText("a9kma55y7m")
-        messageShouldContainWithNonAbuttingTextIgnoringCase(
-          testCase.byteArray.sliceArray(0..4).to0xHexString()
-        )
-        messageShouldContainWithNonAbuttingTextIgnoringCase("string byte count")
-        messageShouldContainWithNonAbuttingTextIgnoringCase("greater than or equal to zero")
-      }
-    }
-  }
-
-  @Test
-  fun `should throw UInt32InvalidValueException for utf8 invalid char count`() = runTest {
-    data class InvalidStringCharCountTestCase(
-      val stringByteCount: Int,
-      val invalidStringCharCount: MalformedVarintByteArrayArb.Sample,
-    )
-    val arb =
-      Arb.bind(
-        Arb.positiveInt(),
-        MalformedVarintByteArrayArb(5..10),
-        ::InvalidStringCharCountTestCase
+  fun `utf8 byte count truncated should throw`() = runTest {
+    checkAll(propTestConfig, Arb.truncatedUInt32ByteArray()) { truncatedUtf8ByteCount ->
+      val byteArray = makeByteArrayEndingWithUtf8ByteCount(truncatedUtf8ByteCount.byteArray)
+      assertDecodeThrowsUInt32EOFException(
+        byteArray,
+        callerErrorId = "StringUtf8ByteCountEOF",
+        uint32ByteArray = truncatedUtf8ByteCount.byteArray,
       )
+    }
+  }
 
-    checkAll(propTestConfig, arb) { testCase ->
-      val byteArray = buildByteArray {
-        putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
-        put(QueryResultCodec.VALUE_STRUCT)
-        putUInt32(1) // struct key count
-        put(QueryResultCodec.VALUE_STRING_UTF8)
-        putUInt32(testCase.stringByteCount)
-        put(testCase.invalidStringCharCount.byteArray)
-      }
-      assertDecodeThrows<UInt32InvalidValueException>(byteArray) {
-        messageShouldContainWithNonAbuttingText("gwybfam237")
-        messageShouldContainWithNonAbuttingTextIgnoringCase(
-          testCase.invalidStringCharCount.byteArray.sliceArray(0..4).to0xHexString()
+  private fun makeByteArrayEndingWithUtf8CharCount(
+    utf8ByteCount: Int,
+    utf8CharCount: ByteArray
+  ): ByteArray = buildByteArray {
+    putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
+    put(QueryResultCodec.VALUE_STRUCT)
+    putUInt32(1) // struct key count
+    put(QueryResultCodec.VALUE_STRING_UTF8)
+    putUInt32(utf8ByteCount)
+    put(utf8CharCount)
+  }
+
+  @Test
+  fun `utf8 char count invalid should throw`() = runTest {
+    checkAll(propTestConfig, MalformedVarintByteArrayArb(5..10)) { invalidUtf8CharCount ->
+      val byteArray =
+        makeByteArrayEndingWithUtf8CharCount(
+          utf8ByteCount = randomSource().random.nextInt(0..Int.MAX_VALUE),
+          utf8CharCount = invalidUtf8CharCount.byteArray,
         )
-        messageShouldContainWithNonAbuttingTextIgnoringCase("string char count")
-        messageShouldContainWithNonAbuttingTextIgnoringCase("greater than or equal to zero")
-      }
+      assertDecodeThrowsUInt32DecodeException(
+        byteArray,
+        callerErrorId = "StringUtf8CharCountDecodeFailed",
+        uint32ByteArray = invalidUtf8CharCount.byteArray,
+      )
     }
   }
 
   @Test
-  fun `should throw UInt32InvalidValueException for utf16 invalid char count`() = runTest {
-    checkAll(propTestConfig, MalformedVarintByteArrayArb(5..10)) { testCase ->
-      val byteArray = buildByteArray {
-        putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
-        put(QueryResultCodec.VALUE_STRUCT)
-        putUInt32(1) // struct key count
-        put(QueryResultCodec.VALUE_STRING_UTF16)
-        put(testCase.byteArray)
-      }
-      assertDecodeThrows<UInt32InvalidValueException>(byteArray) {
-        messageShouldContainWithNonAbuttingText("gwybfam237")
-        messageShouldContainWithNonAbuttingTextIgnoringCase(
-          testCase.byteArray.sliceArray(0..4).to0xHexString()
+  fun `utf8 char count truncated should throw`() = runTest {
+    checkAll(propTestConfig, Arb.truncatedUInt32ByteArray()) { truncatedUtf8CharCount ->
+      val byteArray =
+        makeByteArrayEndingWithUtf8CharCount(
+          utf8ByteCount = randomSource().random.nextInt(0..Int.MAX_VALUE),
+          utf8CharCount = truncatedUtf8CharCount.byteArray,
         )
-        messageShouldContainWithNonAbuttingTextIgnoringCase("string char count")
-        messageShouldContainWithNonAbuttingTextIgnoringCase("greater than or equal to zero")
-      }
+      assertDecodeThrowsUInt32EOFException(
+        byteArray,
+        callerErrorId = "StringUtf8CharCountEOF",
+        uint32ByteArray = truncatedUtf8CharCount.byteArray,
+      )
+    }
+  }
+
+  private fun makeByteArrayEndingWithUtf16CharCount(utf16CharCount: ByteArray): ByteArray =
+    buildByteArray {
+      putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
+      put(QueryResultCodec.VALUE_STRUCT)
+      putUInt32(1) // struct key count
+      put(QueryResultCodec.VALUE_STRING_UTF16)
+      put(utf16CharCount)
+    }
+
+  @Test
+  fun `utf16 char count invalid should throw`() = runTest {
+    checkAll(propTestConfig, MalformedVarintByteArrayArb(5..10)) { invalidUtf16CharCount ->
+      val byteArray = makeByteArrayEndingWithUtf16CharCount(invalidUtf16CharCount.byteArray)
+      assertDecodeThrowsUInt32DecodeException(
+        byteArray,
+        callerErrorId = "StringUtf16CharCountDecodeFailed",
+        uint32ByteArray = invalidUtf16CharCount.byteArray,
+      )
+    }
+  }
+
+  @Test
+  fun `utf16 char count truncated should throw`() = runTest {
+    checkAll(propTestConfig, Arb.truncatedUInt32ByteArray()) { truncatedUtf16CharCount ->
+      val byteArray = makeByteArrayEndingWithUtf16CharCount(truncatedUtf16CharCount.byteArray)
+      assertDecodeThrowsUInt32EOFException(
+        byteArray,
+        callerErrorId = "StringUtf16CharCountEOF",
+        uint32ByteArray = truncatedUtf16CharCount.byteArray,
+      )
     }
   }
 
@@ -680,6 +709,35 @@ class QueryResultDecoderUnitTest {
           "$fewerBytesThanExpected fewer bytes than expected"
         )
       }
+    }
+
+  private fun assertDecodeThrowsUInt32EOFException(
+    byteArray: ByteArray,
+    callerErrorId: String,
+    uint32ByteArray: ByteArray,
+  ) =
+    assertDecodeThrowsEOFException<UInt32EOFException>(
+      byteArray,
+      errorUid = "c439qmdmnk",
+      callerErrorId = callerErrorId,
+      whileText = "decoding uint32 value",
+      gotBytes = uint32ByteArray,
+      expectedBytesText = "between 1 and 5",
+      fewerBytesThanExpected = null,
+    )
+
+  private fun assertDecodeThrowsUInt32DecodeException(
+    byteArray: ByteArray,
+    callerErrorId: String,
+    uint32ByteArray: ByteArray,
+  ) =
+    assertDecodeThrows<UInt32DecodeException>(byteArray) {
+      messageShouldContainWithNonAbuttingText("ybydmsykkp")
+      messageShouldContainWithNonAbuttingText("decodeErrorId=$callerErrorId")
+      messageShouldContainWithNonAbuttingTextIgnoringCase("uint32 decode failed of 5 bytes")
+      messageShouldContainWithNonAbuttingTextIgnoringCase(
+        uint32ByteArray.sliceArray(0..4).to0xHexString()
+      )
     }
 
   @Test
