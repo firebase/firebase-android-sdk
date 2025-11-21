@@ -18,15 +18,16 @@ package com.google.firebase.dataconnect.sqlite
 
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.BadMagicException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.ByteArrayEOFException
+import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.ByteEOFException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.Companion.decode
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.EntityNotFoundException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.MagicEOFException
+import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.NonStructValueTypeIndicatorByteException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.UInt32DecodeException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.UInt32InvalidValueException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.UInt64DecodeException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.UInt64InvalidValueException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.UnknownStringValueTypeIndicatorByteException
-import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.UnknownStructValueTypeIndicatorByteException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.UnknownValueTypeIndicatorByteException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.Utf16EOFException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.Utf8EOFException
@@ -118,7 +119,7 @@ class QueryResultDecoderUnitTest {
   }
 
   @Test
-  fun `decode() should throw UnknownStructValueTypeIndicatorByteException`() = runTest {
+  fun `decode() should throw NonStructValueTypeIndicatorByteException`() = runTest {
     data class NonStructValueTypeIndicator(val value: Byte)
     val arb =
       Exhaustive.collection(valueTypeIndicatorBytes - structValueTypeIndicatorBytes)
@@ -129,13 +130,29 @@ class QueryResultDecoderUnitTest {
         putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
         put(nonStructValueTypeIndicator.value)
       }
-      assertDecodeThrows<UnknownStructValueTypeIndicatorByteException>(byteArray) {
-        messageShouldContainWithNonAbuttingText("s8b9jqegdy")
+      assertDecodeThrows<NonStructValueTypeIndicatorByteException>(byteArray) {
+        messageShouldContainWithNonAbuttingText("w5k8zmq9nz")
         messageShouldContainWithNonAbuttingText(nonStructValueTypeIndicator.value.toString())
-        messageShouldContainWithNonAbuttingText("non-struct value type indicator byte")
+        messageShouldContainWithNonAbuttingTextIgnoringCase("non-struct value type indicator byte")
       }
     }
   }
+
+  @Test
+  fun `decode() should throw ByteEOFException when struct value type indicator byte is truncated`() {
+    val byteArray = buildByteArray { putInt(QueryResultCodec.QUERY_RESULT_MAGIC) }
+    assertDecodeThrows<ByteEOFException>(byteArray) {
+      messageShouldContainWithNonAbuttingText("xg5y5fm2vk")
+      messageShouldContainWithNonAbuttingText("eofErrorId=StructValueTypeIndicatorByteEOF")
+      messageShouldContainWithNonAbuttingTextIgnoringCase("0x")
+      messageShouldContainWithNonAbuttingTextIgnoringCase(
+        "end of input reached prematurely reading 1 bytes"
+      )
+      messageShouldContainWithNonAbuttingTextIgnoringCase("got 0 bytes")
+      messageShouldContainWithNonAbuttingTextIgnoringCase("1 fewer bytes than expected")
+    }
+  }
+
   @Test
   fun `decode() should throw UInt32InvalidValueException for struct key count`() = runTest {
     checkAll(propTestConfig, MalformedVarintByteArrayArb(5..10)) { testCase ->

@@ -338,7 +338,7 @@ internal class QueryResultDecoder(
     val valueType = ValueType.fromSerializedByte(byte)
     return valueType
       ?: throw unknownValueTypeIndicatorByteException(
-        "read unknown $valueTypeDescription value type indicator byte $byte, but expected one of " +
+        "read unknown $valueTypeDescription value type indicator byte: $byte; expected one of " +
           ValueType.entries
             .sortedBy { it.serializedByte }
             .joinToString { "${it.serializedByte} (${it.displayName})" } +
@@ -375,8 +375,8 @@ internal class QueryResultDecoder(
     }
 
     throw NonStringValueTypeIndicatorByteException(
-      "read non-string value type indicator byte ${valueType.serializedByte} " +
-        "(${valueType.displayName}), but expected one of " +
+      "read non-string value type indicator byte: ${valueType.serializedByte} " +
+        "(${valueType.displayName}); expected one of " +
         StringValueType.entries
           .sortedBy { it.valueType.serializedByte }
           .joinToString { "${it.valueType.serializedByte} (${it.valueType.displayName})" } +
@@ -596,8 +596,8 @@ internal class QueryResultDecoder(
     }
 
     throw NonStructValueTypeIndicatorByteException(
-      "read non-string value type indicator byte ${valueType.serializedByte} " +
-        "(${valueType.displayName}), but expected one of " +
+      "read non-struct value type indicator byte: ${valueType.serializedByte} " +
+        "(${valueType.displayName}); expected one of " +
         StructValueType.entries
           .sortedBy { it.valueType.serializedByte }
           .joinToString { "${it.valueType.serializedByte} (${it.valueType.displayName})" } +
@@ -648,8 +648,8 @@ internal class QueryResultDecoder(
     }
 
     throw NonEntitySubStructValueTypeIndicatorByteException(
-      "read non-entity-sub-struct value type indicator byte ${valueType.serializedByte} " +
-        "(${valueType.displayName}), but expected one of " +
+      "read non-entity-sub-struct value type indicator byte: ${valueType.serializedByte} " +
+        "(${valueType.displayName}); expected one of " +
         EntitySubStructValueType.entries
           .sortedBy { it.valueType.serializedByte }
           .joinToString { "${it.valueType.serializedByte} (${it.valueType.displayName})" } +
