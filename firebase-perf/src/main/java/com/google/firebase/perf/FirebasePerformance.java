@@ -151,7 +151,6 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
    * @param firebaseRemoteConfigProvider The {@link Provider} for FirebaseRemoteConfig instance.
    * @param firebaseInstallationsApi The FirebaseInstallationsApi instance.
    * @param transportFactoryProvider The {@link Provider} for the the {@link TransportFactory}.
-   * @param remoteConfigManager The RemoteConfigManager instance.
    * @param configResolver The ConfigResolver instance.
    * @param sessionManager The SessionManager instance.
    */
@@ -162,7 +161,6 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
       Provider<RemoteConfigComponent> firebaseRemoteConfigProvider,
       FirebaseInstallationsApi firebaseInstallationsApi,
       Provider<TransportFactory> transportFactoryProvider,
-      RemoteConfigManager remoteConfigManager,
       ConfigResolver configResolver,
       SessionManager sessionManager) {
 
@@ -185,8 +183,8 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
     // TODO(b/110178816): Explore moving off of main thread.
     mMetadataBundle = extractMetadata(appContext);
 
-    remoteConfigManager.setFirebaseRemoteConfigProvider(firebaseRemoteConfigProvider);
     this.configResolver = configResolver;
+    this.configResolver.getRemoteConfigManager().setFirebaseRemoteConfigProvider(firebaseRemoteConfigProvider);
     this.configResolver.setMetadataBundle(mMetadataBundle);
     this.configResolver.setApplicationContext(appContext);
     sessionManager.setApplicationContext(appContext);

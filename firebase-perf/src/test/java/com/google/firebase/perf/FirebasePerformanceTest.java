@@ -63,7 +63,7 @@ public class FirebasePerformanceTest {
       "firebase_performance_collection_deactivated";
   private static final String FIREPERF_ENABLED_KEY = "firebase_performance_collection_enabled";
 
-  @Nullable private RemoteConfigManager spyRemoteConfigManager = null;
+  @Nullable private RemoteConfigManager spyRemoteConfigManager = spy(new RemoteConfigManager());
   @Nullable private ConfigResolver spyConfigResolver = null;
 
   @Nullable private SessionManager spySessionManager = null;
@@ -100,9 +100,10 @@ public class FirebasePerformanceTest {
     sharedPreferences.edit().clear().commit();
     DeviceCacheManager.clearInstance();
 
-    spyRemoteConfigManager = spy(RemoteConfigManager.getInstance());
     ConfigResolver.clearInstance();
-    spyConfigResolver = spy(ConfigResolver.getInstance());
+    ConfigResolver configResolver = ConfigResolver.getInstance();
+    configResolver.setRemoteConfigManager(spyRemoteConfigManager);
+    spyConfigResolver = spy(configResolver);
 
     spySessionManager = spy(SessionManager.getInstance());
     fakeDirectExecutorService = new FakeDirectExecutorService();
@@ -470,6 +471,7 @@ public class FirebasePerformanceTest {
             () -> FirebaseApp.getInstance().get(TransportFactory.class));
 
     verify(spyRemoteConfigManager).setFirebaseRemoteConfigProvider(firebaseRemoteConfigProvider);
+    assertThat(spyRemoteConfigManager.isFirebaseRemoteConfigAvailable()).isTrue();
   }
 
   @Test
@@ -577,7 +579,6 @@ public class FirebasePerformanceTest {
         firebaseRemoteConfigProvider,
         mock(FirebaseInstallationsApi.class),
         transportFactoryProvider,
-        spyRemoteConfigManager,
         spyConfigResolver,
         spySessionManager);
   }

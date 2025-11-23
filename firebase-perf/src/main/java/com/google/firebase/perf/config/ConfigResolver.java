@@ -58,7 +58,7 @@ public class ConfigResolver {
   private static volatile ConfigResolver instance;
 
   // Configuration Storage objects.
-  private final RemoteConfigManager remoteConfigManager;
+  private RemoteConfigManager remoteConfigManager;
   private ImmutableBundle metadataBundle;
   private DeviceCacheManager deviceCacheManager;
 
@@ -75,7 +75,7 @@ public class ConfigResolver {
       @Nullable ImmutableBundle metadataBundle,
       @Nullable DeviceCacheManager deviceCacheManager) {
     this.remoteConfigManager =
-        remoteConfigManager == null ? RemoteConfigManager.getInstance() : remoteConfigManager;
+        remoteConfigManager != null ? remoteConfigManager : new RemoteConfigManager();
     this.metadataBundle = metadataBundle == null ? new ImmutableBundle() : metadataBundle;
     this.deviceCacheManager =
         deviceCacheManager == null ? DeviceCacheManager.getInstance() : deviceCacheManager;
@@ -96,6 +96,11 @@ public class ConfigResolver {
   @VisibleForTesting
   public void setDeviceCacheManager(DeviceCacheManager deviceCacheManager) {
     this.deviceCacheManager = deviceCacheManager;
+  }
+
+  @VisibleForTesting
+  public void setRemoteConfigManager(RemoteConfigManager remoteConfigManager) {
+    this.remoteConfigManager = remoteConfigManager;
   }
 
   public void setContentProviderContext(Context context) {
@@ -915,5 +920,9 @@ public class ConfigResolver {
 
   private boolean isSessionsMaxDurationMinutesValid(long maxDurationMin) {
     return maxDurationMin > 0;
+  }
+
+  public RemoteConfigManager getRemoteConfigManager() {
+    return remoteConfigManager;
   }
 }
