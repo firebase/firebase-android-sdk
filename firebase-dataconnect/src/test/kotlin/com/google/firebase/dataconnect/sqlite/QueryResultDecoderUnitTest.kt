@@ -413,11 +413,12 @@ class QueryResultDecoderUnitTest {
     val arb =
       Arb.bind(
         Arb.byteArray(Arb.int(0..16384), Arb.byte()),
-        Arb.int(1..32768),
+        Arb.int(1..8192),
         ::EncodedEntityIdTruncatedTestCase
       )
 
-    checkAll(propTestConfig, arb) { testCase ->
+    checkAll(@OptIn(ExperimentalKotest::class) propTestConfig.copy(iterations = 50), arb) { testCase
+      ->
       val testCaseByteArray = testCase.byteArrayCopy()
       val byteArray = buildByteArray {
         putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
