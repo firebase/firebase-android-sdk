@@ -118,14 +118,18 @@ internal class QueryResultDecoder(
     return byteBuffer.getInt()
   }
 
+  private interface VarintValueVerifier<T : Number> {
+    val errorId: String
+    fun isValid(decodedValue: T): Boolean
+    fun exception(message: String): Exception
+  }
+
   private inline fun <T : Number> readVarint(
     typeName: String,
     maxSize: Int,
-    isValidDecodedValue: (T) -> Boolean,
-    invalidValueErrorId: String,
     decodeErrorId: String,
     eofErrorId: String,
-    invalidValueException: (message: String) -> Exception,
+    valueVerifier: VarintValueVerifier<T>?,
     decodeException: (message: String, cause: Throwable?) -> Exception,
     eofException: (message: String, cause: Throwable?) -> Exception,
     read: (ByteBuffer) -> T
@@ -142,16 +146,16 @@ internal class QueryResultDecoder(
 
       readResult.fold(
         onSuccess = { decodedValue ->
-          if (isValidDecodedValue(decodedValue)) {
+          if (valueVerifier === null || valueVerifier.isValid(decodedValue)) {
             return decodedValue
           }
 
           byteBuffer.position(originalPosition)
-          throw invalidValueException(
+          throw valueVerifier.exception(
             "invalid $typeName value decoded: $decodedValue " +
               "(decoded from $decodedByteCount bytes: " +
               "${byteBuffer.get0xHexString(length = decodedByteCount)}) " +
-              "[pypnp79waw, invalidValueErrorId=$invalidValueErrorId]"
+              "[pypnp79waw, invalidValueErrorId=${valueVerifier.errorId}]"
           )
         },
         onFailure = {
@@ -178,76 +182,71 @@ internal class QueryResultDecoder(
       )
     }
   }
+
+  private class UInt32ValueVerifier(override val errorId: String) : VarintValueVerifier<Int> {
+    override fun isValid(decodedValue: Int) = decodedValue >= 0
+    override fun exception(message: String) = UInt32InvalidValueException(message)
+  }
+
   private fun readUInt32(
-    invalidValueErrorId: String,
+    valueVerifier: UInt32ValueVerifier,
     decodeErrorId: String,
     eofErrorId: String,
   ): Int =
     readVarint(
       typeName = "uint32",
       maxSize = CodedIntegers.MAX_VARINT32_SIZE,
-      isValidDecodedValue = { it >= 0 },
-      invalidValueErrorId = invalidValueErrorId,
       decodeErrorId = decodeErrorId,
       eofErrorId = eofErrorId,
-      invalidValueException = ::UInt32InvalidValueException,
+      valueVerifier = valueVerifier,
       decodeException = ::UInt32DecodeException,
       eofException = ::UInt32EOFException,
       read = { byteBuffer -> byteBuffer.getUInt32() },
     )
 
   @Suppress("SameParameterValue")
-  private fun readSInt32(
-    invalidValueErrorId: String,
-    decodeErrorId: String,
-    eofErrorId: String,
-  ): Int =
+  private fun readSInt32(decodeErrorId: String, eofErrorId: String): Int =
     readVarint(
       typeName = "sint32",
       maxSize = CodedIntegers.MAX_VARINT32_SIZE,
-      isValidDecodedValue = { true },
-      invalidValueErrorId = invalidValueErrorId,
       decodeErrorId = decodeErrorId,
       eofErrorId = eofErrorId,
-      invalidValueException = ::SInt32InvalidValueException,
+      valueVerifier = null,
       decodeException = ::SInt32DecodeException,
       eofException = ::SInt32EOFException,
       read = { byteBuffer -> byteBuffer.getSInt32() },
     )
 
+  private class UInt64ValueVerifier(override val errorId: String) : VarintValueVerifier<Long> {
+    override fun isValid(decodedValue: Long) = decodedValue >= 0
+    override fun exception(message: String) = UInt64InvalidValueException(message)
+  }
+
   @Suppress("SameParameterValue")
   private fun readUInt64(
-    invalidValueErrorId: String,
+    valueVerifier: UInt64ValueVerifier,
     decodeErrorId: String,
     eofErrorId: String,
   ): Long =
     readVarint(
       typeName = "uint64",
       maxSize = CodedIntegers.MAX_VARINT64_SIZE,
-      isValidDecodedValue = { it >= 0 },
-      invalidValueErrorId = invalidValueErrorId,
       decodeErrorId = decodeErrorId,
       eofErrorId = eofErrorId,
-      invalidValueException = ::UInt64InvalidValueException,
+      valueVerifier = valueVerifier,
       decodeException = ::UInt64DecodeException,
       eofException = ::UInt64EOFException,
       read = { byteBuffer -> byteBuffer.getUInt64() },
     )
 
   @Suppress("SameParameterValue")
-  private fun readSInt64(
-    invalidValueErrorId: String,
-    decodeErrorId: String,
-    eofErrorId: String,
-  ): Long =
+  private fun readSInt64(decodeErrorId: String, eofErrorId: String): Long =
     readVarint(
       typeName = "sint64",
       maxSize = CodedIntegers.MAX_VARINT64_SIZE,
-      isValidDecodedValue = { true },
-      invalidValueErrorId = invalidValueErrorId,
       decodeErrorId = decodeErrorId,
       eofErrorId = eofErrorId,
-      invalidValueException = ::SInt64InvalidValueException,
+      valueVerifier = null,
       decodeException = ::SInt64DecodeException,
       eofException = ::SInt64EOFException,
       read = { byteBuffer -> byteBuffer.getSInt64() },
@@ -450,13 +449,13 @@ internal class QueryResultDecoder(
   private fun readStringUtf8(): String {
     val byteCount =
       readUInt32(
-        invalidValueErrorId = "StringUtf8ByteCountInvalidValue",
+        valueVerifier = stringUtf8ByteCountUInt32ValueVerifier,
         decodeErrorId = "StringUtf8ByteCountDecodeFailed",
         eofErrorId = "StringUtf8ByteCountEOF",
       )
     val charCount =
       readUInt32(
-        invalidValueErrorId = "StringUtf8CharCountInvalidValue",
+        valueVerifier = stringUtf8CharCountUInt32ValueVerifier,
         decodeErrorId = "StringUtf8CharCountDecodeFailed",
         eofErrorId = "StringUtf8CharCountEOF",
       )
@@ -553,7 +552,7 @@ internal class QueryResultDecoder(
   private fun readStringCustomUtf16(): String {
     val charCount =
       readUInt32(
-        invalidValueErrorId = "StringUtf16CharCountInvalidValue",
+        valueVerifier = stringUtf16CharCountUInt32ValueVerifier,
         decodeErrorId = "StringUtf16CharCountDecodeFailed",
         eofErrorId = "StringUtf16CharCountEOF",
       )
@@ -590,7 +589,7 @@ internal class QueryResultDecoder(
   private fun readList(): ListValue {
     val size =
       readUInt32(
-        invalidValueErrorId = "ListSizeInvalidValue",
+        valueVerifier = listSizeUInt32ValueVerifier,
         decodeErrorId = "ListSizeDecodeFailed",
         eofErrorId = "ListSizeEOF",
       )
@@ -625,7 +624,7 @@ internal class QueryResultDecoder(
   private fun readStruct(): Struct {
     val keyCount =
       readUInt32(
-        invalidValueErrorId = "StructKeyCountInvalidValue",
+        valueVerifier = structKeyCountUInt32ValueVerifier,
         decodeErrorId = "StructKeyCountDecodeFailed",
         eofErrorId = "StructKeyCountEOF",
       )
@@ -663,7 +662,7 @@ internal class QueryResultDecoder(
   private fun readEntity(): Struct {
     val encodedEntityIdSize =
       readUInt32(
-        invalidValueErrorId = "EncodedEntityIdSizeInvalidValue",
+        valueVerifier = encodedEntityIdSizeUInt32ValueVerifier,
         decodeErrorId = "EncodedEntityIdSizeDecodeFailed",
         eofErrorId = "EncodedEntityIdSizeEOF",
       )
@@ -680,7 +679,7 @@ internal class QueryResultDecoder(
   private fun readEntitySubStruct(entity: Struct): Struct {
     val structKeyCount =
       readUInt32(
-        invalidValueErrorId = "EntitySubStructKeyCountInvalidValue",
+        valueVerifier = entitySubStructKeyCountUInt32ValueVerifier,
         decodeErrorId = "EntitySubStructKeyCountDecodeFailed",
         eofErrorId = "EntitySubStructKeyCountEOF",
       )
@@ -697,7 +696,7 @@ internal class QueryResultDecoder(
   private fun readEntitySubList(entity: ListValue): ListValue {
     val listSize =
       readUInt32(
-        invalidValueErrorId = "EntitySubListSizeInvalidValue",
+        valueVerifier = entitySubListSizeUInt32ValueVerifier,
         decodeErrorId = "EntitySubListSizeDecodeFailed",
         eofErrorId = "EntitySubListSizeEOF",
       )
@@ -764,7 +763,7 @@ internal class QueryResultDecoder(
       ValueType.UInt32 ->
         valueBuilder.setNumberValue(
           readUInt32(
-              invalidValueErrorId = "ReadUInt32ValueInvalidValue",
+              valueVerifier = readUInt32ValueVerifier,
               decodeErrorId = "ReadUInt32ValueDecodeError",
               eofErrorId = "ReadUInt32ValueEOF",
             )
@@ -773,7 +772,6 @@ internal class QueryResultDecoder(
       ValueType.SInt32 ->
         valueBuilder.setNumberValue(
           readSInt32(
-              invalidValueErrorId = "ReadSInt32ValueInvalidValue",
               decodeErrorId = "ReadSInt32ValueDecodeError",
               eofErrorId = "ReadSInt32ValueEOF",
             )
@@ -782,7 +780,7 @@ internal class QueryResultDecoder(
       ValueType.UInt64 ->
         valueBuilder.setNumberValue(
           readUInt64(
-              invalidValueErrorId = "ReadUInt64ValueInvalidValue",
+              valueVerifier = readUInt64ValueVerifier,
               decodeErrorId = "ReadUInt64ValueDecodeError",
               eofErrorId = "ReadUInt64ValueEOF",
             )
@@ -791,7 +789,6 @@ internal class QueryResultDecoder(
       ValueType.SInt64 ->
         valueBuilder.setNumberValue(
           readSInt64(
-              invalidValueErrorId = "ReadSInt64ValueInvalidValue",
               decodeErrorId = "ReadSInt64ValueDecodeError",
               eofErrorId = "ReadSInt64ValueEOF",
             )
@@ -870,17 +867,11 @@ internal class QueryResultDecoder(
   class SInt32EOFException(message: String, cause: Throwable? = null) :
     EOFException(message, cause)
 
-  class SInt32InvalidValueException(message: String, cause: Throwable? = null) :
-    DecodeException(message, cause)
-
   class SInt32DecodeException(message: String, cause: Throwable? = null) :
     DecodeException(message, cause)
 
   class SInt64EOFException(message: String, cause: Throwable? = null) :
     EOFException(message, cause)
-
-  class SInt64InvalidValueException(message: String, cause: Throwable? = null) :
-    DecodeException(message, cause)
 
   class SInt64DecodeException(message: String, cause: Throwable? = null) :
     DecodeException(message, cause)
@@ -904,5 +895,32 @@ internal class QueryResultDecoder(
           decoder.decode()
         }
       }
+
+    private val stringUtf8ByteCountUInt32ValueVerifier =
+      UInt32ValueVerifier("StringUtf8ByteCountInvalidValue")
+
+    private val stringUtf8CharCountUInt32ValueVerifier =
+      UInt32ValueVerifier("StringUtf8CharCountInvalidValue")
+
+    private val stringUtf16CharCountUInt32ValueVerifier =
+      UInt32ValueVerifier("StringUtf16CharCountInvalidValue")
+
+    private val listSizeUInt32ValueVerifier = UInt32ValueVerifier("ListSizeInvalidValue")
+
+    private val structKeyCountUInt32ValueVerifier =
+      UInt32ValueVerifier("StructKeyCountInvalidValue")
+
+    private val encodedEntityIdSizeUInt32ValueVerifier =
+      UInt32ValueVerifier("EncodedEntityIdSizeInvalidValue")
+
+    private val entitySubStructKeyCountUInt32ValueVerifier =
+      UInt32ValueVerifier("EntitySubStructKeyCountInvalidValue")
+
+    private val entitySubListSizeUInt32ValueVerifier =
+      UInt32ValueVerifier("EntitySubListSizeInvalidValue")
+
+    private val readUInt32ValueVerifier = UInt32ValueVerifier("ReadUInt32ValueInvalidValue")
+
+    private val readUInt64ValueVerifier = UInt64ValueVerifier("ReadUInt64ValueInvalidValue")
   }
 }
