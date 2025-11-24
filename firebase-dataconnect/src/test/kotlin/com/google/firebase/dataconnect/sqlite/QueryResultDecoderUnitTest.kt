@@ -26,6 +26,10 @@ import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.SInt32DecodeExc
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.SInt32EOFException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.SInt64DecodeException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.SInt64EOFException
+import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.String1ByteEOFException
+import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.String1CharEOFException
+import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.String2ByteEOFException
+import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.String2CharEOFException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.UInt32DecodeException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.UInt32EOFException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.UInt64DecodeException
@@ -184,6 +188,77 @@ class QueryResultDecoderUnitTest {
         byteArray,
         callerErrorId = "StructKeyCountEOF",
         uint32ByteArray = truncatedStructKeyCountByteArray,
+      )
+    }
+  }
+
+  @Test
+  fun `string 1 byte value truncated`() {
+    val byteArray = makeByteArrayEndingWithValue { put(QueryResultCodec.VALUE_STRING_1BYTE) }
+    assertDecodeThrowsEOFException<String1ByteEOFException>(
+      byteArray,
+      errorUid = "xg5y5fm2vk",
+      callerErrorId = "String1ByteEOF",
+      whileText = "reading 1 bytes",
+      gotBytes = byteArrayOf(),
+      expectedBytesText = null,
+      fewerBytesThanExpected = 1,
+    )
+  }
+
+  @Test
+  fun `string 2 byte value truncated`() = runTest {
+    checkAll(propTestConfig, Arb.byteArray(Arb.int(0..1), Arb.byte())) { truncated2ByteString ->
+      val byteArray = makeByteArrayEndingWithValue {
+        put(QueryResultCodec.VALUE_STRING_2BYTE)
+        put(truncated2ByteString)
+      }
+      assertDecodeThrowsEOFException<String2ByteEOFException>(
+        byteArray,
+        errorUid = "xg5y5fm2vk",
+        callerErrorId = "String2ByteEOF",
+        whileText = "reading 2 bytes",
+        gotBytes = truncated2ByteString,
+        expectedBytesText = null,
+        fewerBytesThanExpected = 2 - truncated2ByteString.size,
+      )
+    }
+  }
+
+  @Test
+  fun `string 1 char value truncated`() = runTest {
+    checkAll(propTestConfig, Arb.byteArray(Arb.int(0..1), Arb.byte())) { truncated1CharString ->
+      val byteArray = makeByteArrayEndingWithValue {
+        put(QueryResultCodec.VALUE_STRING_1CHAR)
+        put(truncated1CharString)
+      }
+      assertDecodeThrowsEOFException<String1CharEOFException>(
+        byteArray,
+        errorUid = "xg5y5fm2vk",
+        callerErrorId = "String1CharEOF",
+        whileText = "reading 2 bytes",
+        gotBytes = truncated1CharString,
+        expectedBytesText = null,
+        fewerBytesThanExpected = 2 - truncated1CharString.size,
+      )
+    }
+  }
+
+  @Test
+  fun `string 2 char value truncated`() = runTest {
+    checkAll(propTestConfig, Arb.byteArray(Arb.int(0..3), Arb.byte())) { truncated2CharString ->
+      val byteArray = makeByteArrayEndingWithValue {
+        put(QueryResultCodec.VALUE_STRING_2CHAR)
+        put(truncated2CharString)
+      }
+      assertDecodeThrowsEOFException<String2CharEOFException>(
+        byteArray,
+        errorUid = "xg5y5fm2vk",
+        callerErrorId = "String2CharEOF",
+        whileText = "reading 4 bytes",
+        gotBytes = truncated2CharString,
+        expectedBytesText = null,
+        fewerBytesThanExpected = 4 - truncated2CharString.size,
       )
     }
   }

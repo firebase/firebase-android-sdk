@@ -107,11 +107,6 @@ internal class QueryResultDecoder(
     return byteBuffer.get()
   }
 
-  private fun readChar(eofErrorId: String): Char {
-    ensureRemaining(2, eofErrorId, ::CharEOFException)
-    return byteBuffer.getChar()
-  }
-
   @Suppress("SameParameterValue")
   private fun readFixed32Int(eofErrorId: String): Int {
     ensureRemaining(4, eofErrorId, ::Fixed32IntEOFException)
@@ -420,14 +415,16 @@ internal class QueryResultDecoder(
   }
 
   private fun readString1Byte(): String {
-    val byte = readByte(eofErrorId = "String1ByteEOF")
+    ensureRemaining(1, eofErrorId = "String1ByteEOF", ::String1ByteEOFException)
+    val byte = byteBuffer.get()
     val char = byte.decodeChar()
     return char.toString()
   }
 
   private fun readString2Byte(): String {
-    val byte1 = readByte(eofErrorId = "String2ByteEOF1")
-    val byte2 = readByte(eofErrorId = "String2ByteEOF2")
+    ensureRemaining(2, eofErrorId = "String2ByteEOF", ::String2ByteEOFException)
+    val byte1 = byteBuffer.get()
+    val byte2 = byteBuffer.get()
     val char1 = byte1.decodeChar()
     val char2 = byte2.decodeChar()
     charArray[0] = char1
@@ -436,13 +433,15 @@ internal class QueryResultDecoder(
   }
 
   private fun readString1Char(): String {
-    val char = readChar(eofErrorId = "String1CharEOF")
+    ensureRemaining(2, eofErrorId = "String1CharEOF", ::String1CharEOFException)
+    val char = byteBuffer.getChar()
     return char.toString()
   }
 
   private fun readString2Char(): String {
-    charArray[0] = readChar(eofErrorId = "String2CharEOF1")
-    charArray[1] = readChar(eofErrorId = "String2CharEOF2")
+    ensureRemaining(4, eofErrorId = "String2CharEOF", ::String2CharEOFException)
+    charArray[0] = byteBuffer.getChar()
+    charArray[1] = byteBuffer.getChar()
     return String(charArray, 0, 2)
   }
 
@@ -833,9 +832,19 @@ internal class QueryResultDecoder(
     cause: Throwable? = null
   ) : DecodeException(message, cause)
 
-  class ByteEOFException(message: String, cause: Throwable? = null) : EOFException(message, cause)
+  class String1ByteEOFException(message: String, cause: Throwable? = null) :
+    EOFException(message, cause)
 
-  class CharEOFException(message: String, cause: Throwable? = null) : EOFException(message, cause)
+  class String2ByteEOFException(message: String, cause: Throwable? = null) :
+    EOFException(message, cause)
+
+  class String1CharEOFException(message: String, cause: Throwable? = null) :
+    EOFException(message, cause)
+
+  class String2CharEOFException(message: String, cause: Throwable? = null) :
+    EOFException(message, cause)
+
+  class ByteEOFException(message: String, cause: Throwable? = null) : EOFException(message, cause)
 
   class Fixed32IntEOFException(message: String, cause: Throwable? = null) :
     EOFException(message, cause)
