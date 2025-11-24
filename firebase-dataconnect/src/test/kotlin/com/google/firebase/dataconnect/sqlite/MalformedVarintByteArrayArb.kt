@@ -28,17 +28,24 @@ import io.kotest.property.asSample
  * The sizes of the generated arrays will be in the given [sizeRange] with the first
  * `sizeRange.first` bytes set to "continuation bytes".
  */
-class MalformedVarintByteArrayArb(private val sizeRange: IntRange) :
-  Arb<MalformedVarintByteArrayArb.Sample>() {
+class MalformedVarintByteArrayArb(
+  private val sizeRange: IntRange,
+  private val transformer: (ByteArray) -> Unit = {}
+) : Arb<MalformedVarintByteArrayArb.Sample>() {
 
-  class Sample(val byteArray: ByteArray, val edgeCase: EdgeCase?) {
-    val description =
+  class Sample(byteArray: ByteArray, val edgeCase: EdgeCase?) {
+    private val _byteArray = byteArray.copyOf()
+    val byteArraySize: Int = byteArray.size
+
+    fun byteArrayCopy(): ByteArray = _byteArray.copyOf()
+
+    fun byteArraySliceArray(indices: IntRange): ByteArray = _byteArray.sliceArray(indices)
+
+    override fun toString() =
       "${MalformedVarintByteArrayArb::class.simpleName}.${this::class.simpleName}(" +
-        "${byteArray.to0xHexString()} (${byteArray.size} bytes), edgeCase=$edgeCase)"
+        "${_byteArray.to0xHexString()} (${_byteArray.size} bytes), edgeCase=$edgeCase)"
 
-    override fun toString() = description
-
-    fun copy(byteArray: ByteArray = this.byteArray, edgeCase: EdgeCase? = this.edgeCase): Sample =
+    fun copy(byteArray: ByteArray = _byteArray, edgeCase: EdgeCase? = this.edgeCase): Sample =
       Sample(byteArray = byteArray, edgeCase = edgeCase)
   }
 
@@ -95,6 +102,9 @@ class MalformedVarintByteArrayArb(private val sizeRange: IntRange) :
           }
         }
     }
+
+    transformer(byteArray)
+
     return Sample(byteArray, edgeCase)
   }
 }

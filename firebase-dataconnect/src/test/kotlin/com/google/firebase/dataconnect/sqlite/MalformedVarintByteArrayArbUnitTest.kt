@@ -46,7 +46,7 @@ class MalformedVarintByteArrayArbUnitTest {
 
       val sample = arb.bind()
 
-      sample.byteArray.size shouldBeInRange sizeRange
+      sample.byteArrayCopy().size shouldBeInRange sizeRange
     }
   }
 
@@ -57,7 +57,8 @@ class MalformedVarintByteArrayArbUnitTest {
 
       val sample = arb.bind()
 
-      sample.byteArray.sliceArray(0 until sizeRange.first).forEachIndexed { index, byte ->
+      val initialBytesRange = 0 until sizeRange.first
+      sample.byteArrayCopy().sliceArray(initialBytesRange).forEachIndexed { index, byte ->
         withClue("index=$index") { byte.isContinuationByte() shouldBe true }
       }
     }
@@ -73,7 +74,8 @@ class MalformedVarintByteArrayArbUnitTest {
 
       val sample = arb.bind()
 
-      sample.byteArray.sliceArray(sizeRange.first until sample.byteArray.size).forEach { byte ->
+      val subsequentBytesRange = sizeRange.first until sample.byteArraySize
+      sample.byteArrayCopy().sliceArray(subsequentBytesRange).forEach { byte ->
         if (byte.isContinuationByte()) {
           continuationByteCount++
         } else {
@@ -110,7 +112,7 @@ class MalformedVarintByteArrayArbUnitTest {
 
       if (sample.edgeCase == MalformedVarintByteArrayArb.EdgeCase.Size) {
         sizeEdgeCaseCount++
-        sample.asClue { listOf(sizeRange.first, sizeRange.last) shouldContain it.byteArray.size }
+        sample.asClue { listOf(sizeRange.first, sizeRange.last) shouldContain it.byteArraySize }
       }
     }
 
@@ -129,7 +131,7 @@ class MalformedVarintByteArrayArbUnitTest {
       if (sample.edgeCase == MalformedVarintByteArrayArb.EdgeCase.Byte) {
         byteEdgeCaseCount++
         sample.asClue {
-          it.byteArray.forEachIndexed { index, byte ->
+          it.byteArrayCopy().forEachIndexed { index, byte ->
             val expectedValues = buildSet {
               addAll(continuationByteEdgeCases)
               if (index > sizeRange.first) {
@@ -157,7 +159,7 @@ class MalformedVarintByteArrayArbUnitTest {
       if (sample.edgeCase == MalformedVarintByteArrayArb.EdgeCase.AllContinuationBytes) {
         allContinuationBytesEdgeCaseCount++
         sample.asClue {
-          it.byteArray.forEachIndexed { index, byte ->
+          it.byteArrayCopy().forEachIndexed { index, byte ->
             withClue("index=$index, byte=$byte") { byte.isContinuationByte() shouldBe true }
           }
         }
@@ -181,8 +183,8 @@ class MalformedVarintByteArrayArbUnitTest {
       if (sample.edgeCase == MalformedVarintByteArrayArb.EdgeCase.SizeAndByte) {
         sizeAndByteEdgeCaseCount++
         sample.asClue {
-          listOf(sizeRange.first, sizeRange.last) shouldContain it.byteArray.size
-          it.byteArray.forEachIndexed { index, byte ->
+          listOf(sizeRange.first, sizeRange.last) shouldContain it.byteArraySize
+          it.byteArrayCopy().forEachIndexed { index, byte ->
             val expectedValues = buildSet {
               addAll(continuationByteEdgeCases)
               if (index > sizeRange.first) {
@@ -196,6 +198,39 @@ class MalformedVarintByteArrayArbUnitTest {
     }
 
     withClue("sizeAndByteEdgeCaseCount") { sizeAndByteEdgeCaseCount shouldBeGreaterThan 0 }
+  }
+
+  @Test
+  fun `should apply the given transformer`() = runTest {
+    val arb =
+      MalformedVarintByteArrayArb(
+        5..100,
+        transformer = { byteArray ->
+          byteArray.indices.forEach { index -> byteArray[index] = index.toByte() }
+        }
+      )
+
+    checkAll(propTestConfig, arb) { sample ->
+      val expectedByteArray = ByteArray(sample.byteArraySize)
+      expectedByteArray.indices.forEach { expectedByteArray[it] = it.toByte() }
+
+      sample.byteArrayCopy() shouldBe expectedByteArray
+    }
+  }
+
+  @Test
+  fun `should ignore changes made by the transformer after the fact`() = runTest {
+    val byteArrays = mutableListOf<ByteArray>()
+    val arb = MalformedVarintByteArrayArb(5..100, transformer = byteArrays::add)
+    checkAll(propTestConfig, arb) { sample ->
+      val sampleByteArray1 = sample.byteArrayCopy()
+
+      check(byteArrays.isNotEmpty())
+      byteArrays.forEach { byteArray -> byteArray.shuffle(randomSource().random) }
+      byteArrays.clear()
+
+      sample.byteArrayCopy() shouldBe sampleByteArray1
+    }
   }
 
   private companion object {
