@@ -342,7 +342,7 @@ internal constructor(
    *
    * @param video Encoded image data extracted from a frame of the video, used to update the model
    * on the client's conversation, with the corresponding IANA standard MIME type of the video frame
-   * data (e.g., `image/png`, `image/jpeg`, etc.).
+   * data (for example, `image/png`, `image/jpeg`, etc.).
    */
   public suspend fun sendVideoRealtime(video: InlineData) {
     FirebaseAIException.catchAsync {

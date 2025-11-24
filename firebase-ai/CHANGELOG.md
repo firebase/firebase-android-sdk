@@ -1,6 +1,9 @@
 # Unreleased
 
 - [fixed] Fixed an issue causing streaming chat interactions to drop thought signatures. (#7562)
+
+# 17.6.0
+
 - [feature] Added support for server templates via `TemplateGenerativeModel` and
   `TemplateImagenModel`. (#7503)
 
