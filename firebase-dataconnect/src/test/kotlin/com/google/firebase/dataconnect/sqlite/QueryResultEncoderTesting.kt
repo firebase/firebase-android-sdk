@@ -33,7 +33,7 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
 import com.google.firebase.dataconnect.testutil.property.arbitrary.twoValues
 import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
-import com.google.protobuf.ListValue
+import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
 import io.kotest.assertions.withClue
@@ -202,7 +202,7 @@ object QueryResultEncoderTesting {
   fun Struct.withRandomlyInsertedEntities(
     entities: List<Struct>,
     rs: RandomSource,
-    nextKey: () -> String
+    generateKey: () -> String
   ): Struct {
     val valueWrapper = toValueProto()
     val subStructs = valueWrapper.subStructs()
@@ -228,17 +228,14 @@ object QueryResultEncoderTesting {
         entityIndices.forEach { entityIndex ->
           insertedEntityIndices.add(entityIndex)
           val entity = entities[entityIndex]
-          var key = nextKey()
-          while (builder.containsFields(key)) {
-            key = nextKey()
-          }
+          val key = generateSequence(generateKey).filterNot { builder.containsFields(it) }.first()
           builder.putFields(key, entity.toValueProto())
         }
 
         builder.build().toValueProto()
       } else if (value.kindCase == Value.KindCase.LIST_VALUE) {
-        val builder = ListValue.newBuilder()
-        value.listValue.valuesList.forEach { builder.addValues(patch(it)) }
+        val builder = value.listValue.toBuilder()
+        repeat(builder.valuesCount) { builder.setValues(it, patch(builder.getValues(it))) }
         builder.build().toValueProto()
       } else {
         value
@@ -464,7 +461,7 @@ sealed class StringEncodingTestCase(val string: String) {
     }
     override fun toString() =
       "Utf8Encoding(description=$description, " +
-        "string=$string, utf8EncodingBytes=${utf8EncodingBytes.contentToString()})"
+        "string=$string, utf8EncodingBytes=${utf8EncodingBytes.to0xHexString()})"
   }
 
   class Utf16Encoding(string: String, val description: String) : StringEncodingTestCase(string) {
@@ -476,9 +473,10 @@ sealed class StringEncodingTestCase(val string: String) {
       dsl.putUInt32(string.length)
       dsl.put(utf16EncodingBytes)
     }
+
     override fun toString() =
-      "Utf16Encoding(" +
-        "string=$string, utf16EncodingBytes=${utf16EncodingBytes.contentToString()})"
+      "Utf16Encoding(description=$description, string=$string, " +
+        "utf16EncodingBytes=${utf16EncodingBytes.to0xHexString()})"
   }
 
   class Utf16WithLoneSurrogatesEncoding(string: String, val loneSurrogateCount: Int) :
@@ -499,7 +497,7 @@ sealed class StringEncodingTestCase(val string: String) {
     override fun toString() =
       "Utf16WithLoneSurrogatesEncoding(" +
         "loneSurrogateCount=$loneSurrogateCount, string=$string, " +
-        "utf16EncodingBytes=${utf16EncodingBytes.contentToString()})"
+        "utf16EncodingBytes=${utf16EncodingBytes.to0xHexString()})"
   }
 
   companion object {
