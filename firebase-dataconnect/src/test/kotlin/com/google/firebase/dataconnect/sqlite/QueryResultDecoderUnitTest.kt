@@ -18,9 +18,10 @@ package com.google.firebase.dataconnect.sqlite
 
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.BadMagicException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.ByteArrayEOFException
-import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.ByteEOFException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.Companion.decode
+import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.DoubleEOFException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.EntityNotFoundException
+import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.Fixed32IntEOFException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.MagicEOFException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.SInt32DecodeException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.SInt32EOFException
@@ -40,6 +41,7 @@ import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.UnknownValueTyp
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.Utf16EOFException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.Utf8EOFException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.Utf8IncorrectNumCharactersException
+import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.ValueTypeIndicatorEOFException
 import com.google.firebase.dataconnect.testutil.BuildByteArrayDSL
 import com.google.firebase.dataconnect.testutil.buildByteArray
 import com.google.firebase.dataconnect.testutil.shouldBe
@@ -753,6 +755,44 @@ class QueryResultDecoderUnitTest {
   }
 
   @Test
+  fun `double value truncated should throw`() = runTest {
+    checkAll(propTestConfig, Arb.byteArray(Arb.int(0..7), Arb.byte())) { truncatedDoubleValue ->
+      val byteArray = makeByteArrayEndingWithValue {
+        put(QueryResultCodec.VALUE_NUMBER_DOUBLE)
+        put(truncatedDoubleValue)
+      }
+      assertDecodeThrowsEOFException<DoubleEOFException>(
+        byteArray,
+        errorUid = "xg5y5fm2vk",
+        callerErrorId = "ReadDoubleValueEOF",
+        whileText = "reading 8 bytes",
+        gotBytes = truncatedDoubleValue,
+        expectedBytesText = null,
+        fewerBytesThanExpected = 8 - truncatedDoubleValue.size,
+      )
+    }
+  }
+
+  @Test
+  fun `fixed32 value truncated should throw`() = runTest {
+    checkAll(propTestConfig, Arb.byteArray(Arb.int(0..3), Arb.byte())) { truncatedFixed32Value ->
+      val byteArray = makeByteArrayEndingWithValue {
+        put(QueryResultCodec.VALUE_NUMBER_FIXED32)
+        put(truncatedFixed32Value)
+      }
+      assertDecodeThrowsEOFException<Fixed32IntEOFException>(
+        byteArray,
+        errorUid = "xg5y5fm2vk",
+        callerErrorId = "ReadFixed32IntValueEOF",
+        whileText = "reading 4 bytes",
+        gotBytes = truncatedFixed32Value,
+        expectedBytesText = null,
+        fewerBytesThanExpected = 4 - truncatedFixed32Value.size,
+      )
+    }
+  }
+
+  @Test
   fun `uint32 value invalid should throw`() = runTest {
     checkAll(propTestConfig, MalformedVarintByteArrayArb(5..10)) { invalidUInt32Value ->
       val invalidUInt32ValueByteArray = invalidUInt32Value.byteArrayCopy()
@@ -1071,7 +1111,7 @@ class QueryResultDecoderUnitTest {
     byteArray: ByteArray,
     callerErrorId: String,
   ) =
-    assertDecodeThrowsEOFException<ByteEOFException>(
+    assertDecodeThrowsEOFException<ValueTypeIndicatorEOFException>(
       byteArray,
       errorUid = "xg5y5fm2vk",
       callerErrorId = callerErrorId,

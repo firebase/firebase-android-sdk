@@ -102,17 +102,6 @@ internal class QueryResultDecoder(
     }
   }
 
-  private fun readByte(eofErrorId: String): Byte {
-    ensureRemaining(1, eofErrorId, ::ByteEOFException)
-    return byteBuffer.get()
-  }
-
-  @Suppress("SameParameterValue")
-  private fun readFixed32Int(eofErrorId: String): Int {
-    ensureRemaining(4, eofErrorId, ::Fixed32IntEOFException)
-    return byteBuffer.getInt()
-  }
-
   private interface VarintValueVerifier<T : Number> {
     val errorId: String
     fun isValid(decodedValue: T): Boolean
@@ -247,12 +236,6 @@ internal class QueryResultDecoder(
       read = { byteBuffer -> byteBuffer.getSInt64() },
     )
 
-  @Suppress("SameParameterValue")
-  private fun readDouble(eofErrorId: String): Double {
-    ensureRemaining(8, eofErrorId, ::DoubleEOFException)
-    return byteBuffer.getDouble()
-  }
-
   private fun readBytes(byteCount: Int): ByteArray {
     val byteArray = ByteArray(byteCount)
     var byteArrayOffset = 0
@@ -345,7 +328,8 @@ internal class QueryResultDecoder(
     unexpectedErrorId: String,
     map: Map<ValueType, T>,
   ): T {
-    val byte = readByte(eofErrorId)
+    ensureRemaining(1, eofErrorId, ::ValueTypeIndicatorEOFException)
+    val byte = byteBuffer.get()
 
     val valueType = ValueType.fromSerializedByte(byte)
     if (valueType === null) {
@@ -752,13 +736,16 @@ internal class QueryResultDecoder(
 
     when (valueType) {
       ValueType.Null -> valueBuilder.setNullValue(NullValue.NULL_VALUE)
-      ValueType.Double -> valueBuilder.setNumberValue(readDouble(eofErrorId = "ReadDoubleValueEOF"))
+      ValueType.Double -> {
+        ensureRemaining(8, eofErrorId = "ReadDoubleValueEOF", ::DoubleEOFException)
+        valueBuilder.setNumberValue(byteBuffer.getDouble())
+      }
       ValueType.PositiveZero -> valueBuilder.setNumberValue(0.0)
       ValueType.NegativeZero -> valueBuilder.setNumberValue(-0.0)
-      ValueType.Fixed32Int ->
-        valueBuilder.setNumberValue(
-          readFixed32Int(eofErrorId = "ReadFixed32IntValueEOF").toDouble()
-        )
+      ValueType.Fixed32Int -> {
+        ensureRemaining(4, eofErrorId = "ReadFixed32IntValueEOF", ::Fixed32IntEOFException)
+        valueBuilder.setNumberValue(byteBuffer.getInt().toDouble())
+      }
       ValueType.UInt32 ->
         valueBuilder.setNumberValue(
           readUInt32(
@@ -821,6 +808,9 @@ internal class QueryResultDecoder(
 
   class MagicEOFException(message: String, cause: Throwable? = null) : EOFException(message, cause)
 
+  class ValueTypeIndicatorEOFException(message: String, cause: Throwable? = null) :
+    EOFException(message, cause)
+
   class UnknownValueTypeIndicatorByteException(message: String, cause: Throwable? = null) :
     DecodeException(message, cause)
 
@@ -843,8 +833,6 @@ internal class QueryResultDecoder(
 
   class String2CharEOFException(message: String, cause: Throwable? = null) :
     EOFException(message, cause)
-
-  class ByteEOFException(message: String, cause: Throwable? = null) : EOFException(message, cause)
 
   class Fixed32IntEOFException(message: String, cause: Throwable? = null) :
     EOFException(message, cause)
