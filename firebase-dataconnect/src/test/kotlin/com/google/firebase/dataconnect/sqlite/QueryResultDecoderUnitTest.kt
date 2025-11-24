@@ -22,6 +22,10 @@ import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.ByteEOFExceptio
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.Companion.decode
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.EntityNotFoundException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.MagicEOFException
+import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.SInt32DecodeException
+import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.SInt32EOFException
+import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.SInt64DecodeException
+import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.SInt64EOFException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.UInt32DecodeException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.UInt32EOFException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.UInt64DecodeException
@@ -32,6 +36,7 @@ import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.UnknownValueTyp
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.Utf16EOFException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.Utf8EOFException
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.Utf8IncorrectNumCharactersException
+import com.google.firebase.dataconnect.testutil.BuildByteArrayDSL
 import com.google.firebase.dataconnect.testutil.buildByteArray
 import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
@@ -170,7 +175,7 @@ class QueryResultDecoderUnitTest {
 
   @Test
   fun `struct key count truncated should throw`() = runTest {
-    checkAll(propTestConfig, Arb.truncatedUInt32ByteArray()) { truncatedStructKeyCount ->
+    checkAll(propTestConfig, Arb.truncatedVarint32ByteArray()) { truncatedStructKeyCount ->
       val byteArray = makeByteArrayEndingWithStructKeyCount(truncatedStructKeyCount.byteArray)
       assertDecodeThrowsUInt32EOFException(
         byteArray,
@@ -180,19 +185,13 @@ class QueryResultDecoderUnitTest {
     }
   }
 
-  private fun makeByteArrayEndingWithUtf8ByteCount(utf8ByteCount: ByteArray): ByteArray =
-    buildByteArray {
-      putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
-      put(QueryResultCodec.VALUE_STRUCT)
-      putUInt32(1) // struct key count
-      put(QueryResultCodec.VALUE_STRING_UTF8)
-      put(utf8ByteCount)
-    }
-
   @Test
   fun `utf8 byte count invalid should throw`() = runTest {
     checkAll(propTestConfig, MalformedVarintByteArrayArb(5..10)) { invalidUtf8ByteCount ->
-      val byteArray = makeByteArrayEndingWithUtf8ByteCount(invalidUtf8ByteCount.byteArray)
+      val byteArray = makeByteArrayEndingWithValue {
+        put(QueryResultCodec.VALUE_STRING_UTF8)
+        put(invalidUtf8ByteCount.byteArray)
+      }
       assertDecodeThrowsUInt32DecodeException(
         byteArray,
         callerErrorId = "StringUtf8ByteCountDecodeFailed",
@@ -203,8 +202,11 @@ class QueryResultDecoderUnitTest {
 
   @Test
   fun `utf8 byte count truncated should throw`() = runTest {
-    checkAll(propTestConfig, Arb.truncatedUInt32ByteArray()) { truncatedUtf8ByteCount ->
-      val byteArray = makeByteArrayEndingWithUtf8ByteCount(truncatedUtf8ByteCount.byteArray)
+    checkAll(propTestConfig, Arb.truncatedVarint32ByteArray()) { truncatedUtf8ByteCount ->
+      val byteArray = makeByteArrayEndingWithValue {
+        put(QueryResultCodec.VALUE_STRING_UTF8)
+        put(truncatedUtf8ByteCount.byteArray)
+      }
       assertDecodeThrowsUInt32EOFException(
         byteArray,
         callerErrorId = "StringUtf8ByteCountEOF",
@@ -213,26 +215,14 @@ class QueryResultDecoderUnitTest {
     }
   }
 
-  private fun makeByteArrayEndingWithUtf8CharCount(
-    utf8ByteCount: Int,
-    utf8CharCount: ByteArray
-  ): ByteArray = buildByteArray {
-    putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
-    put(QueryResultCodec.VALUE_STRUCT)
-    putUInt32(1) // struct key count
-    put(QueryResultCodec.VALUE_STRING_UTF8)
-    putUInt32(utf8ByteCount)
-    put(utf8CharCount)
-  }
-
   @Test
   fun `utf8 char count invalid should throw`() = runTest {
     checkAll(propTestConfig, MalformedVarintByteArrayArb(5..10)) { invalidUtf8CharCount ->
-      val byteArray =
-        makeByteArrayEndingWithUtf8CharCount(
-          utf8ByteCount = randomSource().random.nextInt(0..Int.MAX_VALUE),
-          utf8CharCount = invalidUtf8CharCount.byteArray,
-        )
+      val byteArray = makeByteArrayEndingWithValue {
+        put(QueryResultCodec.VALUE_STRING_UTF8)
+        putUInt32(randomSource().random.nextInt(0..Int.MAX_VALUE)) // utf8ByteCount
+        put(invalidUtf8CharCount.byteArray)
+      }
       assertDecodeThrowsUInt32DecodeException(
         byteArray,
         callerErrorId = "StringUtf8CharCountDecodeFailed",
@@ -243,12 +233,12 @@ class QueryResultDecoderUnitTest {
 
   @Test
   fun `utf8 char count truncated should throw`() = runTest {
-    checkAll(propTestConfig, Arb.truncatedUInt32ByteArray()) { truncatedUtf8CharCount ->
-      val byteArray =
-        makeByteArrayEndingWithUtf8CharCount(
-          utf8ByteCount = randomSource().random.nextInt(0..Int.MAX_VALUE),
-          utf8CharCount = truncatedUtf8CharCount.byteArray,
-        )
+    checkAll(propTestConfig, Arb.truncatedVarint32ByteArray()) { truncatedUtf8CharCount ->
+      val byteArray = makeByteArrayEndingWithValue {
+        put(QueryResultCodec.VALUE_STRING_UTF8)
+        putUInt32(randomSource().random.nextInt(0..Int.MAX_VALUE)) // utf8ByteCount
+        put(truncatedUtf8CharCount.byteArray)
+      }
       assertDecodeThrowsUInt32EOFException(
         byteArray,
         callerErrorId = "StringUtf8CharCountEOF",
@@ -257,19 +247,13 @@ class QueryResultDecoderUnitTest {
     }
   }
 
-  private fun makeByteArrayEndingWithUtf16CharCount(utf16CharCount: ByteArray): ByteArray =
-    buildByteArray {
-      putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
-      put(QueryResultCodec.VALUE_STRUCT)
-      putUInt32(1) // struct key count
-      put(QueryResultCodec.VALUE_STRING_UTF16)
-      put(utf16CharCount)
-    }
-
   @Test
   fun `utf16 char count invalid should throw`() = runTest {
     checkAll(propTestConfig, MalformedVarintByteArrayArb(5..10)) { invalidUtf16CharCount ->
-      val byteArray = makeByteArrayEndingWithUtf16CharCount(invalidUtf16CharCount.byteArray)
+      val byteArray = makeByteArrayEndingWithValue {
+        put(QueryResultCodec.VALUE_STRING_UTF16)
+        put(invalidUtf16CharCount.byteArray)
+      }
       assertDecodeThrowsUInt32DecodeException(
         byteArray,
         callerErrorId = "StringUtf16CharCountDecodeFailed",
@@ -280,8 +264,11 @@ class QueryResultDecoderUnitTest {
 
   @Test
   fun `utf16 char count truncated should throw`() = runTest {
-    checkAll(propTestConfig, Arb.truncatedUInt32ByteArray()) { truncatedUtf16CharCount ->
-      val byteArray = makeByteArrayEndingWithUtf16CharCount(truncatedUtf16CharCount.byteArray)
+    checkAll(propTestConfig, Arb.truncatedVarint32ByteArray()) { truncatedUtf16CharCount ->
+      val byteArray = makeByteArrayEndingWithValue {
+        put(QueryResultCodec.VALUE_STRING_UTF16)
+        put(truncatedUtf16CharCount.byteArray)
+      }
       assertDecodeThrowsUInt32EOFException(
         byteArray,
         callerErrorId = "StringUtf16CharCountEOF",
@@ -340,26 +327,10 @@ class QueryResultDecoderUnitTest {
     )
   }
 
-  private fun makeByteArrayEndingWithReadValueValueTypeIndicator(
-    readValueValueTypeIndicator: Byte
-  ): ByteArray =
-    makeByteArrayEndingWithReadValueValueTypeIndicator(byteArrayOf(readValueValueTypeIndicator))
-
-  private fun makeByteArrayEndingWithReadValueValueTypeIndicator(
-    readValueValueTypeIndicator: ByteArray
-  ): ByteArray = buildByteArray {
-    putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
-    put(QueryResultCodec.VALUE_STRUCT)
-    putUInt32(1) // struct key count
-    put(QueryResultCodec.VALUE_STRING_EMPTY)
-    put(readValueValueTypeIndicator)
-  }
-
   @Test
   fun `read value value type indicator byte unknown should throw`() = runTest {
     checkAll(propTestConfig, UnknownValueTypeIndicatorByte.arb()) { unknownValueTypeIndicator ->
-      val byteArray =
-        makeByteArrayEndingWithReadValueValueTypeIndicator(unknownValueTypeIndicator.byte)
+      val byteArray = makeByteArrayEndingWithValue { put(unknownValueTypeIndicator.byte) }
       assertDecodeThrowsUnknownValueTypeIndicatorByteException(
         byteArray,
         callerErrorId = "ReadValueValueTypeIndicatorByteUnknown",
@@ -370,7 +341,7 @@ class QueryResultDecoderUnitTest {
 
   @Test
   fun `read value value type indicator byte truncated should throw`() {
-    val byteArray = makeByteArrayEndingWithReadValueValueTypeIndicator(byteArrayOf())
+    val byteArray = makeByteArrayEndingWithValue {}
     assertDecodeThrowsValueTypeIndicatorEOFException(
       byteArray,
       callerErrorId = "ReadValueValueTypeIndicatorByteEOF",
@@ -400,7 +371,7 @@ class QueryResultDecoderUnitTest {
 
   @Test
   fun `encoded entity id size truncated should throw`() = runTest {
-    checkAll(propTestConfig, Arb.truncatedUInt32ByteArray()) { truncatedEncodedEntityIdSize ->
+    checkAll(propTestConfig, Arb.truncatedVarint32ByteArray()) { truncatedEncodedEntityIdSize ->
       val byteArray =
         makeByteArrayEndingWithEncodedEntityIdSize(truncatedEncodedEntityIdSize.byteArray)
       assertDecodeThrowsUInt32EOFException(
@@ -539,10 +510,7 @@ class QueryResultDecoderUnitTest {
       )
 
     checkAll(propTestConfig, arb) { testCase ->
-      val byteArray = buildByteArray {
-        putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
-        put(QueryResultCodec.VALUE_STRUCT)
-        putUInt32(1) // struct key count
+      val byteArray = makeByteArrayEndingWithValue {
         put(QueryResultCodec.VALUE_STRING_UTF8)
         putUInt32(testCase.inflatedByteCount)
         putUInt32(testCase.inflatedCharCount)
@@ -590,10 +558,7 @@ class QueryResultDecoderUnitTest {
       }
 
     checkAll(propTestConfig, arb) { testCase ->
-      val byteArray = buildByteArray {
-        putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
-        put(QueryResultCodec.VALUE_STRUCT)
-        putUInt32(1) // struct key count
+      val byteArray = makeByteArrayEndingWithValue {
         put(QueryResultCodec.VALUE_STRING_UTF8)
         putUInt32(testCase.stringUtf8Bytes.size)
         putUInt32(testCase.inflatedCharCount)
@@ -640,10 +605,7 @@ class QueryResultDecoderUnitTest {
       Arb.bind(Arb.string(0..20), Arb.positiveInt(max = 10), ::InsufficientUtf16CharsTestCase)
 
     checkAll(propTestConfig, arb) { testCase ->
-      val byteArray = buildByteArray {
-        putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
-        put(QueryResultCodec.VALUE_STRUCT)
-        putUInt32(1) // struct key count
+      val byteArray = makeByteArrayEndingWithValue {
         put(QueryResultCodec.VALUE_STRING_UTF16)
         putUInt32(testCase.inflatedCharCount)
         testCase.string.forEach(::putChar)
@@ -666,19 +628,13 @@ class QueryResultDecoderUnitTest {
     }
   }
 
-  private fun makeByteArrayEndingWithListSize(listSize: ByteArray): ByteArray = buildByteArray {
-    putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
-    put(QueryResultCodec.VALUE_STRUCT)
-    putUInt32(1) // struct key count
-    put(QueryResultCodec.VALUE_STRING_EMPTY)
-    put(QueryResultCodec.VALUE_LIST)
-    put(listSize)
-  }
-
   @Test
   fun `list size invalid should throw`() = runTest {
     checkAll(propTestConfig, MalformedVarintByteArrayArb(5..10)) { invalidListSize ->
-      val byteArray = makeByteArrayEndingWithListSize(invalidListSize.byteArray)
+      val byteArray = makeByteArrayEndingWithValue {
+        put(QueryResultCodec.VALUE_LIST)
+        put(invalidListSize.byteArray)
+      }
       assertDecodeThrowsUInt32DecodeException(
         byteArray,
         callerErrorId = "ListSizeDecodeFailed",
@@ -689,8 +645,11 @@ class QueryResultDecoderUnitTest {
 
   @Test
   fun `list size truncated should throw`() = runTest {
-    checkAll(propTestConfig, Arb.truncatedUInt32ByteArray()) { truncatedListSize ->
-      val byteArray = makeByteArrayEndingWithListSize(truncatedListSize.byteArray)
+    checkAll(propTestConfig, Arb.truncatedVarint32ByteArray()) { truncatedListSize ->
+      val byteArray = makeByteArrayEndingWithValue {
+        put(QueryResultCodec.VALUE_LIST)
+        put(truncatedListSize.byteArray)
+      }
       assertDecodeThrowsUInt32EOFException(
         byteArray,
         callerErrorId = "ListSizeEOF",
@@ -699,19 +658,13 @@ class QueryResultDecoderUnitTest {
     }
   }
 
-  private fun makeByteArrayEndingWithUInt32Value(uint32: ByteArray): ByteArray = buildByteArray {
-    putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
-    put(QueryResultCodec.VALUE_STRUCT)
-    putUInt32(1) // struct key count
-    put(QueryResultCodec.VALUE_STRING_EMPTY)
-    put(QueryResultCodec.VALUE_NUMBER_UINT32)
-    put(uint32)
-  }
-
   @Test
   fun `uint32 value invalid should throw`() = runTest {
     checkAll(propTestConfig, MalformedVarintByteArrayArb(5..10)) { invalidUInt32Value ->
-      val byteArray = makeByteArrayEndingWithUInt32Value(invalidUInt32Value.byteArray)
+      val byteArray = makeByteArrayEndingWithValue {
+        put(QueryResultCodec.VALUE_NUMBER_UINT32)
+        put(invalidUInt32Value.byteArray)
+      }
       assertDecodeThrowsUInt32DecodeException(
         byteArray,
         callerErrorId = "ReadUInt32ValueDecodeError",
@@ -722,23 +675,17 @@ class QueryResultDecoderUnitTest {
 
   @Test
   fun `uint32 value truncated should throw`() = runTest {
-    checkAll(propTestConfig, Arb.truncatedUInt32ByteArray()) { truncatedUInt32Value ->
-      val byteArray = makeByteArrayEndingWithUInt32Value(truncatedUInt32Value.byteArray)
+    checkAll(propTestConfig, Arb.truncatedVarint32ByteArray()) { truncatedUInt32Value ->
+      val byteArray = makeByteArrayEndingWithValue {
+        put(QueryResultCodec.VALUE_NUMBER_UINT32)
+        put(truncatedUInt32Value.byteArray)
+      }
       assertDecodeThrowsUInt32EOFException(
         byteArray,
         callerErrorId = "ReadUInt32ValueEOF",
         uint32ByteArray = truncatedUInt32Value.byteArray,
       )
     }
-  }
-
-  private fun makeByteArrayEndingWithUInt64Value(uint64: ByteArray): ByteArray = buildByteArray {
-    putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
-    put(QueryResultCodec.VALUE_STRUCT)
-    putUInt32(1) // struct key count
-    put(QueryResultCodec.VALUE_STRING_EMPTY)
-    put(QueryResultCodec.VALUE_NUMBER_UINT64)
-    put(uint64)
   }
 
   @Test
@@ -754,7 +701,10 @@ class QueryResultDecoderUnitTest {
       }
 
     checkAll(propTestConfig, arb) { invalidUInt64Value ->
-      val byteArray = makeByteArrayEndingWithUInt64Value(invalidUInt64Value.byteArray)
+      val byteArray = makeByteArrayEndingWithValue {
+        put(QueryResultCodec.VALUE_NUMBER_UINT64)
+        put(invalidUInt64Value.byteArray)
+      }
       assertDecodeThrows<UInt64DecodeException>(byteArray) {
         messageShouldContainWithNonAbuttingText("ybydmsykkp")
         messageShouldContainWithNonAbuttingText("decodeErrorId=ReadUInt64ValueDecodeError")
@@ -778,7 +728,10 @@ class QueryResultDecoderUnitTest {
       }
 
     checkAll(propTestConfig, arb) { invalidUInt64Value ->
-      val byteArray = makeByteArrayEndingWithUInt64Value(invalidUInt64Value.byteArray)
+      val byteArray = makeByteArrayEndingWithValue {
+        put(QueryResultCodec.VALUE_NUMBER_UINT64)
+        put(invalidUInt64Value.byteArray)
+      }
       assertDecodeThrows<UInt64InvalidValueException>(byteArray) {
         messageShouldContainWithNonAbuttingText("pypnp79waw")
         messageShouldContainRegexMatchIgnoringCase("invalid uint64 value decoded: -[0-9]+\\W")
@@ -791,14 +744,101 @@ class QueryResultDecoderUnitTest {
 
   @Test
   fun `uint64 value truncated should throw`() = runTest {
-    checkAll(propTestConfig, Arb.truncatedUInt64ByteArray()) { truncatedUInt64Value ->
-      val byteArray = makeByteArrayEndingWithUInt64Value(truncatedUInt64Value.byteArray)
+    checkAll(propTestConfig, Arb.truncatedVarint64ByteArray()) { truncatedUInt64Value ->
+      val byteArray = makeByteArrayEndingWithValue {
+        put(QueryResultCodec.VALUE_NUMBER_UINT64)
+        put(truncatedUInt64Value.byteArray)
+      }
       assertDecodeThrowsEOFException<UInt64EOFException>(
         byteArray,
         errorUid = "c439qmdmnk",
         callerErrorId = "ReadUInt64ValueEOF",
         whileText = "decoding uint64 value",
         gotBytes = truncatedUInt64Value.byteArray,
+        expectedBytesText = "between 1 and 10",
+        fewerBytesThanExpected = null,
+      )
+    }
+  }
+
+  @Test
+  fun `sint32 value invalid should throw`() = runTest {
+    checkAll(propTestConfig, MalformedVarintByteArrayArb(5..10)) { invalidSInt32Value ->
+      val byteArray = makeByteArrayEndingWithValue {
+        put(QueryResultCodec.VALUE_NUMBER_SINT32)
+        put(invalidSInt32Value.byteArray)
+      }
+      assertDecodeThrows<SInt32DecodeException>(byteArray) {
+        messageShouldContainWithNonAbuttingText("ybydmsykkp")
+        messageShouldContainWithNonAbuttingText("decodeErrorId=ReadSInt32ValueDecodeError")
+        messageShouldContainWithNonAbuttingTextIgnoringCase("sint32 decode failed of 5 bytes")
+        messageShouldContainWithNonAbuttingTextIgnoringCase(
+          invalidSInt32Value.byteArray.sliceArray(0..4).to0xHexString()
+        )
+      }
+    }
+  }
+
+  @Test
+  fun `sint32 value truncated should throw`() = runTest {
+    checkAll(propTestConfig, Arb.truncatedVarint32ByteArray()) { truncatedSInt32Value ->
+      val byteArray = makeByteArrayEndingWithValue {
+        put(QueryResultCodec.VALUE_NUMBER_SINT32)
+        put(truncatedSInt32Value.byteArray)
+      }
+      assertDecodeThrowsEOFException<SInt32EOFException>(
+        byteArray,
+        errorUid = "c439qmdmnk",
+        callerErrorId = "ReadSInt32ValueEOF",
+        whileText = "decoding sint32 value",
+        gotBytes = truncatedSInt32Value.byteArray,
+        expectedBytesText = "between 1 and 5",
+        fewerBytesThanExpected = null,
+      )
+    }
+  }
+
+  @Test
+  fun `sint64 value invalid with byte 10 LSB clear should throw`() = runTest {
+    // Make sure that byte 10 has its least significant bit cleared, because if it is, instead, set,
+    // then a value SInt64 value will be decoded.
+    val arb =
+      MalformedVarintByteArrayArb(10..20).map { sample ->
+        sample.copy(
+          byteArray =
+            sample.byteArray.copyOf().also { it[9] = it[9].withLeastSignificantBitCleared() }
+        )
+      }
+
+    checkAll(propTestConfig, arb) { invalidSInt64Value ->
+      val byteArray = makeByteArrayEndingWithValue {
+        put(QueryResultCodec.VALUE_NUMBER_SINT64)
+        put(invalidSInt64Value.byteArray)
+      }
+      assertDecodeThrows<SInt64DecodeException>(byteArray) {
+        messageShouldContainWithNonAbuttingText("ybydmsykkp")
+        messageShouldContainWithNonAbuttingText("decodeErrorId=ReadSInt64ValueDecodeError")
+        messageShouldContainWithNonAbuttingTextIgnoringCase("sint64 decode failed of 10 bytes")
+        messageShouldContainWithNonAbuttingTextIgnoringCase(
+          invalidSInt64Value.byteArray.sliceArray(0..9).to0xHexString()
+        )
+      }
+    }
+  }
+
+  @Test
+  fun `sint64 value truncated should throw`() = runTest {
+    checkAll(propTestConfig, Arb.truncatedVarint64ByteArray()) { truncatedSInt64Value ->
+      val byteArray = makeByteArrayEndingWithValue {
+        put(QueryResultCodec.VALUE_NUMBER_SINT64)
+        put(truncatedSInt64Value.byteArray)
+      }
+      assertDecodeThrowsEOFException<SInt64EOFException>(
+        byteArray,
+        errorUid = "c439qmdmnk",
+        callerErrorId = "ReadSInt64ValueEOF",
+        whileText = "decoding sint64 value",
+        gotBytes = truncatedSInt64Value.byteArray,
         expectedBytesText = "between 1 and 10",
         fewerBytesThanExpected = null,
       )
@@ -945,6 +985,15 @@ class QueryResultDecoderUnitTest {
       expectedBytesText = null,
       fewerBytesThanExpected = 1,
     )
+
+  private fun makeByteArrayEndingWithValue(block: BuildByteArrayDSL.() -> Unit): ByteArray =
+    buildByteArray {
+      putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
+      put(QueryResultCodec.VALUE_STRUCT)
+      putUInt32(1) // struct key count
+      put(QueryResultCodec.VALUE_STRING_EMPTY)
+      block(this)
+    }
 
   private class ByteArraySample(private val _byteArray: ByteArray) {
     val arraySize: Int = _byteArray.size
@@ -1099,10 +1148,10 @@ class QueryResultDecoderUnitTest {
     ): Arb<ByteArraySample> =
       byteArray(Arb.int(lengthRange), varintContinuationByte(byte)).map(::ByteArraySample)
 
-    fun Arb.Companion.truncatedUInt32ByteArray(byte: Arb<Byte> = byte()): Arb<ByteArraySample> =
+    fun Arb.Companion.truncatedVarint32ByteArray(byte: Arb<Byte> = byte()): Arb<ByteArraySample> =
       varintContinuationByteArray(0..4, byte)
 
-    fun Arb.Companion.truncatedUInt64ByteArray(byte: Arb<Byte> = byte()): Arb<ByteArraySample> =
+    fun Arb.Companion.truncatedVarint64ByteArray(byte: Arb<Byte> = byte()): Arb<ByteArraySample> =
       varintContinuationByteArray(0..9, byte)
   }
 }
