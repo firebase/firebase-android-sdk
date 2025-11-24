@@ -41,12 +41,19 @@ class ByteBufferArb(
 
   class Sample(
     val byteBuffer: ByteBuffer,
-    val bytes: ByteArray,
+    bytes: ByteArray,
     val remaining: Int,
     val headerSize: Int,
     val trailerSize: Int,
     val bufferType: BufferType,
   ) {
+    private val _bytes = bytes.copyOf()
+    val bytesSize: Int = bytes.size
+
+    fun bytesCopy(): ByteArray = _bytes.copyOf()
+
+    fun bytesSliceArray(indices: IntRange): ByteArray = _bytes.sliceArray(indices)
+
     val arrayOffset = if (byteBuffer.hasArray()) byteBuffer.arrayOffset() else -1
     val position = byteBuffer.position()
     val limit = byteBuffer.limit()
@@ -58,14 +65,12 @@ class ByteBufferArb(
       check(headerSize + remaining + trailerSize == byteBuffer.capacity())
     }
 
-    val description =
+    override fun toString() =
       "${this::class.simpleName}(" +
         "bufferType=$bufferType, position=$position, limit=$limit, remaining=$remaining, " +
         "capacity=$capacity, arrayOffset=$arrayOffset " +
         "headerSize=$headerSize, trailerSize=$trailerSize, " +
-        "bytes.size=${bytes.size}, bytes=0x${bytes.toHexString()})"
-
-    override fun toString() = description
+        "bytes.size=${_bytes.size}, bytes=0x${_bytes.toHexString()})"
   }
 
   override fun sample(rs: RandomSource) =

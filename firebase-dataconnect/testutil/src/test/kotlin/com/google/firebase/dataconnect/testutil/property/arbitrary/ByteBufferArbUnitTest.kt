@@ -24,6 +24,7 @@ import io.kotest.matchers.comparables.shouldBeLessThanOrEqualTo
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.ints.shouldBeInRange
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldNotBeSameInstanceAs
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
@@ -33,6 +34,7 @@ import io.kotest.property.arbitrary.byte
 import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.int
+import io.kotest.property.arbitrary.intRange
 import io.kotest.property.arbitrary.map
 import io.kotest.property.checkAll
 import kotlin.random.nextInt
@@ -159,9 +161,17 @@ class ByteBufferArbUnitTest {
   }
 
   @Test
-  fun `sample bytes should match the contents of the ByteBuffer`() = runTest {
+  fun `sample bytesSize should be the length of the array returned from bytesCopy()`() = runTest {
     checkAll(propTestConfig, ByteBufferArb()) { sample ->
-      val bytesCopy = sample.bytes.copyOf()
+      val bytesCopy = sample.bytesCopy()
+      sample.bytesSize shouldBe bytesCopy.size
+    }
+  }
+
+  @Test
+  fun `sample bytesCopy should match the contents of the ByteBuffer`() = runTest {
+    checkAll(propTestConfig, ByteBufferArb()) { sample ->
+      val bytesCopy = sample.bytesCopy()
       val bytesRead = ByteArray(sample.byteBuffer.remaining())
       sample.byteBuffer.get(bytesRead)
       bytesRead shouldBe bytesCopy
@@ -169,25 +179,46 @@ class ByteBufferArbUnitTest {
   }
 
   @Test
-  fun `sample bytes should not affect bytes in the ByteBuffer`() = runTest {
+  fun `sample bytesCopy should not affect bytes in the ByteBuffer`() = runTest {
     checkAll(propTestConfig, ByteBufferArb()) { sample ->
-      val bytesCopy1 = sample.bytes.copyOf()
-      sample.bytes.shuffle(randomSource().random)
+      val bytesCopy = sample.bytesCopy()
+      sample.bytesCopy().shuffle(randomSource().random)
       val bytesRead = ByteArray(sample.byteBuffer.remaining())
       sample.byteBuffer.get(bytesRead)
-      bytesRead shouldBe bytesCopy1
+      bytesRead shouldBe bytesCopy
     }
   }
 
   @Test
-  fun `sample bytes should not reflect bytes in the ByteBuffer`() = runTest {
+  fun `sample bytesCopy should not reflect bytes in the ByteBuffer`() = runTest {
     checkAll(propTestConfig, ByteBufferArb()) { sample ->
-      val bytesCopy = sample.bytes.copyOf()
+      val bytesCopy = sample.bytesCopy()
       sample.byteBuffer.clear()
       while (sample.byteBuffer.hasRemaining()) {
         sample.byteBuffer.put(randomSource().random.nextInt().toByte())
       }
-      sample.bytes shouldBe bytesCopy
+      sample.bytesCopy() shouldBe bytesCopy
+    }
+  }
+
+  @Test
+  fun `sample bytesCopy should always return a new object`() = runTest {
+    checkAll(propTestConfig, ByteBufferArb()) { sample ->
+      val bytesCopy1 = sample.bytesCopy()
+      val bytesCopy2 = sample.bytesCopy()
+      bytesCopy1 shouldNotBeSameInstanceAs bytesCopy2
+    }
+  }
+
+  @Test
+  fun `sample bytesSliceArray should return correct slice`() = runTest {
+    checkAll(propTestConfig, ByteBufferArb(remaining = Arb.int(1..100))) { sample ->
+      val bytes = sample.bytesCopy()
+      val sliceRange = Arb.intRange(0 until bytes.size).bind()
+
+      val slice = sample.bytesSliceArray(sliceRange)
+
+      slice shouldBe bytes.sliceArray(sliceRange)
     }
   }
 

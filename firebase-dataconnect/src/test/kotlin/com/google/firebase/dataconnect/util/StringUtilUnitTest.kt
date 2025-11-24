@@ -171,7 +171,7 @@ class StringUtilUnitTest {
   @Test
   fun `ByteBuffer get0xHexString() should return the correct string`() = runTest {
     checkAll(propTestConfig, ByteBufferArb(remaining = Arb.int(0..100))) { byteBufferInfo ->
-      val expected = "0x" + byteBufferInfo.bytes.toExpectedHexString()
+      val expected = "0x" + byteBufferInfo.bytesCopy().toExpectedHexString()
       byteBufferInfo.byteBuffer.get0xHexString() shouldBe expected
     }
   }
@@ -179,7 +179,7 @@ class StringUtilUnitTest {
   @Test
   fun `ByteBuffer get0xHexString(include0xPrefix=true)`() = runTest {
     checkAll(propTestConfig, ByteBufferArb(remaining = Arb.int(0..100))) { byteBufferInfo ->
-      val expected = "0x" + byteBufferInfo.bytes.toExpectedHexString()
+      val expected = "0x" + byteBufferInfo.bytesCopy().toExpectedHexString()
       byteBufferInfo.byteBuffer.get0xHexString(include0xPrefix = true) shouldBe expected
     }
   }
@@ -187,7 +187,7 @@ class StringUtilUnitTest {
   @Test
   fun `ByteBuffer get0xHexString(include0xPrefix=false)`() = runTest {
     checkAll(propTestConfig, ByteBufferArb(remaining = Arb.int(0..100))) { byteBufferInfo ->
-      val expected = byteBufferInfo.bytes.toExpectedHexString()
+      val expected = byteBufferInfo.bytesCopy().toExpectedHexString()
       byteBufferInfo.byteBuffer.get0xHexString(include0xPrefix = false) shouldBe expected
     }
   }
@@ -198,8 +198,8 @@ class StringUtilUnitTest {
       val offset = randomSource().random.nextInt(0..byteBufferInfo.remaining)
       val expected =
         "0x" +
-          byteBufferInfo.bytes
-            .sliceArray(offset until byteBufferInfo.bytes.size)
+          byteBufferInfo
+            .bytesSliceArray(offset until byteBufferInfo.bytesSize)
             .toExpectedHexString()
       withClue("offset=$offset") {
         byteBufferInfo.byteBuffer.get0xHexString(offset = offset) shouldBe expected
@@ -211,7 +211,7 @@ class StringUtilUnitTest {
   fun `ByteBuffer get0xHexString(length)`() = runTest {
     checkAll(propTestConfig, ByteBufferArb(remaining = Arb.int(0..100))) { byteBufferInfo ->
       val length = randomSource().random.nextInt(0..byteBufferInfo.remaining)
-      val expected = "0x" + byteBufferInfo.bytes.sliceArray(0 until length).toExpectedHexString()
+      val expected = "0x" + byteBufferInfo.bytesSliceArray(0 until length).toExpectedHexString()
       withClue("length=$length") {
         byteBufferInfo.byteBuffer.get0xHexString(length = length) shouldBe expected
       }
@@ -225,7 +225,7 @@ class StringUtilUnitTest {
       val offset = indices[0]
       val length = indices[1] - offset
       val expected =
-        "0x" + byteBufferInfo.bytes.sliceArray(offset until (offset + length)).toExpectedHexString()
+        "0x" + byteBufferInfo.bytesSliceArray(offset until (offset + length)).toExpectedHexString()
       withClue("offset=$offset, length=$length") {
         byteBufferInfo.byteBuffer.get0xHexString(offset = offset, length = length) shouldBe expected
       }
