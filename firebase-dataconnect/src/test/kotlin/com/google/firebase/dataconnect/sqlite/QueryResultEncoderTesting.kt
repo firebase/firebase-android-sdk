@@ -18,6 +18,7 @@ package com.google.firebase.dataconnect.sqlite
 
 import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.charArbWithCodeGreaterThan255
 import com.google.firebase.dataconnect.testutil.BuildByteArrayDSL
+import com.google.firebase.dataconnect.testutil.beEqualTo
 import com.google.firebase.dataconnect.testutil.property.arbitrary.StringWithEncodingLengthArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.StringWithEncodingLengthArb.Mode.Utf8EncodingLongerThanUtf16
 import com.google.firebase.dataconnect.testutil.property.arbitrary.StringWithEncodingLengthArb.Mode.Utf8EncodingShorterThanOrEqualToUtf16
@@ -31,7 +32,7 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.stringWithLon
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
 import com.google.firebase.dataconnect.testutil.property.arbitrary.twoValues
-import com.google.firebase.dataconnect.testutil.shouldBe
+import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
 import com.google.protobuf.Struct
@@ -39,6 +40,7 @@ import com.google.protobuf.Value
 import io.kotest.assertions.withClue
 import io.kotest.common.DelicateKotest
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
+import io.kotest.matchers.should
 import io.kotest.property.Arb
 import io.kotest.property.RandomSource
 import io.kotest.property.arbitrary.char
@@ -133,12 +135,24 @@ object QueryResultEncoderTesting {
     entityIdFieldName: String? = null
   ) {
     val encodeResult = QueryResultEncoder.encode(this, entityIdFieldName)
-    withClue("entities returned from QueryResultEncoder.encode()") {
-      encodeResult.entities.map { it.data } shouldContainExactlyInAnyOrder entities
+
+    withClue("QueryResultEncoder.encode() entities returned") {
+      class StructWrapper(val struct: Struct) {
+        override fun equals(other: Any?) = other is StructWrapper && other.struct == struct
+        override fun hashCode() = struct.hashCode()
+        override fun toString() = struct.toCompactString()
+      }
+
+      val actualEntities = encodeResult.entities.map { it.data }.map(::StructWrapper)
+      val expectedEntities = entities.map(::StructWrapper)
+      actualEntities shouldContainExactlyInAnyOrder expectedEntities
     }
 
     val decodeResult = QueryResultDecoder.decode(encodeResult.byteArray, encodeResult.entities)
-    withClue("QueryResultDecoder.decode() return value") { decodeResult shouldBe this }
+
+    withClue("QueryResultDecoder.decode() return value") {
+      decodeResult should beEqualTo(this, structPrinter = { it.toCompactString() })
+    }
   }
 
   fun String.calculateExpectedEncodingAsEntityId(): ByteArray {

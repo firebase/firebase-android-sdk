@@ -33,6 +33,7 @@ import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
+import io.kotest.common.DelicateKotest
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
@@ -41,7 +42,9 @@ import io.kotest.property.EdgeConfig
 import io.kotest.property.Exhaustive
 import io.kotest.property.PropTestConfig
 import io.kotest.property.ShrinkingMode
+import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.constant
+import io.kotest.property.arbitrary.distinct
 import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.map
@@ -49,6 +52,8 @@ import io.kotest.property.arbitrary.set
 import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
 import io.kotest.property.exhaustive.of
+import kotlin.math.roundToInt
+import kotlin.math.sqrt
 import kotlin.random.nextInt
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
@@ -348,29 +353,63 @@ class QueryResultEncoderUnitTest {
 
   @Test
   fun `struct has nested entities`() = runTest {
-    val entity1 = buildStructProto {
-      put("_id", "entity1")
-      put("name", "annie")
-      put("age", 42)
-    }
-    val entity2 = buildStructProto {
-      put("_id", "entity2")
-      put("name", "jackson")
-      put("age", 24)
-      put("sibling", entity1)
-    }
-    val entity2Pruned = entity2.toBuilder().removeFields("sibling").build()
-    val rootEntity = buildStructProto {
-      put("_id", "entity3")
-      put("type", "results")
-      put("person", entity2)
-    }
-    val rootEntityPruned = rootEntity.toBuilder().removeFields("person").build()
+    data class EntityIdFieldName(val value: String)
+    val entityIdFieldNameArb = Arb.proto.structKey().map(::EntityIdFieldName)
+    checkAll(propTestConfig.copy(seed = 1234), entityIdFieldNameArb) { entityIdFieldName ->
+      val structKeyArb = Arb.proto.structKey().filterNot { it == entityIdFieldName.value }
+      val structArb = Arb.proto.struct(key = structKeyArb).map { it.struct }
+      val entityIdArb = @OptIn(DelicateKotest::class) StringEncodingTestCase.arb().distinct()
+      val entityArb: Arb<Struct> =
+        Arb.bind(structArb, entityIdArb) { struct, entityId ->
+          struct.toBuilder().let {
+            it.putFields(entityIdFieldName.value, entityId.string.toValueProto())
+            it.build()
+          }
+        }
 
-    rootEntity.decodingEncodingShouldProduceIdenticalStruct(
-      entities = listOf(rootEntityPruned, entity1, entity2Pruned),
-      entityIdFieldName = "_id",
-    )
+      val entities = List(randomSource().random.nextInt(2..10)) { entityArb.bind() }
+
+      val nestedEntities = buildList {
+        addAll(entities)
+        while (size > 3) {
+          val rootCount = sqrt(size.toDouble()).roundToInt().coerceAtLeast(1)
+          shuffle(randomSource().random)
+          val roots = MutableList(rootCount) { removeFirst() }
+          while (isNotEmpty()) {
+            val index = roots.indices.random(randomSource().random)
+            roots[index] =
+              roots[index].withRandomlyInsertedEntities(
+                listOf(removeFirst()),
+                randomSource(),
+                { structKeyArb.bind() }
+              )
+          }
+          addAll(roots)
+        }
+      }
+
+      val rootStruct =
+        if (randomSource().random.nextBoolean()) {
+          val struct = structArb.bind()
+          struct.withRandomlyInsertedEntities(
+            nestedEntities,
+            randomSource(),
+            { structKeyArb.bind() }
+          )
+        } else {
+          val struct = nestedEntities[0]
+          struct.withRandomlyInsertedEntities(
+            nestedEntities.drop(1),
+            randomSource(),
+            { structKeyArb.bind() }
+          )
+        }
+
+      rootStruct.decodingEncodingShouldProduceIdenticalStruct(
+        entities = entities,
+        entityIdFieldName.value
+      )
+    }
   }
 
   @Test
