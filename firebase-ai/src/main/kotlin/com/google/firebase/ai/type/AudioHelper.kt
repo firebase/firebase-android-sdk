@@ -158,9 +158,9 @@ internal class AudioHelper(
      * constructor.
      *
      * @param audioHandler A callback that is invoked immediately following the successful
-     * initialization of the associated [AudioRecord] and [AudioTrack] objects. This offers a final
-     * opportunity to configure these objects, which will remain valid and effective for the
-     * duration of the current audio session.
+     * initialization of the associated [AudioRecord.Builder] and [AudioTrack.Builder] objects. This
+     * offers a final opportunity to configure these objects, which will remain valid and effective
+     * for the duration of the current audio session.
      */
     @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     fun build(
