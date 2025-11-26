@@ -25,4 +25,5 @@ public annotation class Guide(
   public val minItems: Int = -1,
   public val maxItems: Int = -1,
   public val format: String = "",
+  public val pattern: String = "",
 )

@@ -16,43 +16,41 @@
 
 package com.google.firebase.ai.type
 
-import kotlinx.serialization.Serializable
-
-public abstract class StringFormat private constructor(internal val value: String) {
-  public class Custom(value: String) : StringFormat(value)
-}
+import kotlinx.serialization.json.JsonObject
 
 /**
  * Definition of a data type.
  *
  * These types can be objects, but also primitives and arrays. Represents a select subset of an
- * [OpenAPI 3.0 schema object](https://spec.openapis.org/oas/v3.0.3#schema).
+ * [JsonSchema object](https://json-schema.org/specification).
  *
- * **Note:** While optional, including a `description` field in your `Schema` is strongly
+ * **Note:** While optional, including a `description` field in your `JsonSchema` is strongly
  * encouraged. The more information the model has about what it's expected to generate, the better
  * the results.
  */
-public class Schema
+public class JsonSchema<T>
 internal constructor(
   public val type: String,
+  public val clazz: Class<T>,
   public val description: String? = null,
   public val format: String? = null,
+  public val pattern: String? = null,
   public val nullable: Boolean? = null,
   public val enum: List<String>? = null,
-  public val properties: Map<String, Schema>? = null,
+  public val properties: Map<String, JsonSchema<*>>? = null,
   public val required: List<String>? = null,
-  public val items: Schema? = null,
+  public val items: JsonSchema<*>? = null,
   public val title: String? = null,
   public val minItems: Int? = null,
   public val maxItems: Int? = null,
   public val minimum: Double? = null,
   public val maximum: Double? = null,
-  public val anyOf: List<Schema>? = null,
+  public val anyOf: List<JsonSchema<*>>? = null,
 ) {
 
   public companion object {
     /**
-     * Returns a [Schema] representing a boolean value.
+     * Returns a [JsonSchema] representing a boolean value.
      *
      * @param description An optional description of what the boolean should contain or represent.
      * @param nullable Indicates whether the value can be `null`. Defaults to `false`.
@@ -63,15 +61,21 @@ internal constructor(
       description: String? = null,
       nullable: Boolean = false,
       title: String? = null,
-    ): Schema =
-      Schema(description = description, nullable = nullable, type = "BOOLEAN", title = title)
+    ): JsonSchema<Boolean> =
+      JsonSchema<Boolean>(
+        description = description,
+        nullable = nullable,
+        type = "BOOLEAN",
+        title = title,
+        clazz = Boolean::class.java
+      )
 
     /**
-     * Returns a [Schema] for a 32-bit signed integer number.
+     * Returns a [JsonSchema] for a 32-bit signed integer number.
      *
-     * **Important:** This [Schema] provides a hint to the model that it should generate a 32-bit
-     * integer, but only guarantees that the value will be an integer. Therefore it's *possible*
-     * that decoding it as an `Int` variable (or `int` in Java) could overflow.
+     * **Important:** This [JsonSchema] provides a hint to the model that it should generate a
+     * 32-bit integer, but only guarantees that the value will be an integer. Therefore it's
+     * *possible* that decoding it as an `Int` variable (or `int` in Java) could overflow.
      *
      * @param description An optional description of what the integer should contain or represent.
      * @param nullable Indicates whether the value can be `null`. Defaults to `false`.
@@ -85,8 +89,8 @@ internal constructor(
       title: String? = null,
       minimum: Double? = null,
       maximum: Double? = null,
-    ): Schema =
-      Schema(
+    ): JsonSchema<Integer> =
+      JsonSchema(
         description = description,
         format = "int32",
         nullable = nullable,
@@ -94,10 +98,11 @@ internal constructor(
         title = title,
         minimum = minimum,
         maximum = maximum,
+        clazz = Integer::class.java
       )
 
     /**
-     * Returns a [Schema] for a 64-bit signed integer number.
+     * Returns a [JsonSchema] for a 64-bit signed integer number.
      *
      * @param description An optional description of what the number should contain or represent.
      * @param nullable Indicates whether the value can be `null`. Defaults to `false`.
@@ -111,18 +116,19 @@ internal constructor(
       title: String? = null,
       minimum: Double? = null,
       maximum: Double? = null,
-    ): Schema =
-      Schema(
+    ): JsonSchema<Long> =
+      JsonSchema(
         description = description,
         nullable = nullable,
         type = "INTEGER",
         title = title,
         minimum = minimum,
         maximum = maximum,
+        clazz = Long::class.java
       )
 
     /**
-     * Returns a [Schema] for a double-precision floating-point number.
+     * Returns a [JsonSchema] for a double-precision floating-point number.
      *
      * @param description An optional description of what the number should contain or represent.
      * @param nullable Indicates whether the value can be `null`. Defaults to `false`.
@@ -136,20 +142,21 @@ internal constructor(
       title: String? = null,
       minimum: Double? = null,
       maximum: Double? = null,
-    ): Schema =
-      Schema(
+    ): JsonSchema<Double> =
+      JsonSchema(
         description = description,
         nullable = nullable,
         type = "NUMBER",
         title = title,
         minimum = minimum,
         maximum = maximum,
+        clazz = Double::class.java
       )
 
     /**
-     * Returns a [Schema] for a single-precision floating-point number.
+     * Returns a [JsonSchema] for a single-precision floating-point number.
      *
-     * **Important:** This [Schema] provides a hint to the model that it should generate a
+     * **Important:** This [JsonSchema] provides a hint to the model that it should generate a
      * single-precision floating-point number, but only guarantees that the value will be a number.
      * Therefore it's *possible* that decoding it as a `Float` variable (or `float` in Java) could
      * overflow.
@@ -166,8 +173,8 @@ internal constructor(
       title: String? = null,
       minimum: Double? = null,
       maximum: Double? = null,
-    ): Schema =
-      Schema(
+    ): JsonSchema<Float> =
+      JsonSchema(
         description = description,
         nullable = nullable,
         type = "NUMBER",
@@ -175,10 +182,11 @@ internal constructor(
         title = title,
         minimum = minimum,
         maximum = maximum,
+        clazz = Float::class.java
       )
 
     /**
-     * Returns a [Schema] for a string.
+     * Returns a [JsonSchema] for a string.
      *
      * @param description An optional description of what the string should contain or represent.
      * @param nullable Indicates whether the value can be `null`. Defaults to `false`.
@@ -191,32 +199,35 @@ internal constructor(
       description: String? = null,
       nullable: Boolean = false,
       format: StringFormat? = null,
+      pattern: String? = null,
       title: String? = null,
-    ): Schema =
-      Schema(
+    ): JsonSchema<String> =
+      JsonSchema(
         description = description,
         format = format?.value,
         nullable = nullable,
         type = "STRING",
         title = title,
+        clazz = String::class.java,
+        pattern = pattern
       )
 
     /**
-     * Returns a [Schema] for a complex data type.
+     * Returns a [JsonSchema] for a complex data type.
      *
      * This schema instructs the model to produce data of type object, which has keys of type
-     * `String` and values of type [Schema].
+     * `String` and values of type [JsonSchema].
      *
-     * **Example:** A `city` could be represented with the following object `Schema`.
+     * **Example:** A `city` could be represented with the following object `JsonSchema`.
      *
      * ```
-     * Schema.obj(mapOf(
-     *   "name"  to Schema.string(),
-     *   "population" to Schema.integer()
+     * JsonSchema.obj(mapOf(
+     *   "name"  to JsonSchema.string(),
+     *   "population" to JsonSchema.integer()
      * ))
      * ```
      *
-     * @param properties The map of the object's property names to their [Schema]s.
+     * @param properties The map of the object's property names to their [JsonSchema]s.
      * @param optionalProperties The list of optional properties. They must correspond to the keys
      * provided in the `properties` map. By default it's empty, signaling the model that all
      * properties are to be included.
@@ -226,45 +237,97 @@ internal constructor(
     @JvmStatic
     @JvmOverloads
     public fun obj(
-      properties: Map<String, Schema>,
+      properties: Map<String, JsonSchema<*>>,
       optionalProperties: List<String> = emptyList(),
       description: String? = null,
       nullable: Boolean = false,
       title: String? = null,
-    ): Schema {
+    ): JsonSchema<JsonObject> {
       if (!properties.keys.containsAll(optionalProperties)) {
         throw IllegalArgumentException(
           "All optional properties must be present in properties. Missing: ${optionalProperties.minus(properties.keys)}"
         )
       }
-      return Schema(
+      return JsonSchema(
         description = description,
         nullable = nullable,
         properties = properties,
         required = properties.keys.minus(optionalProperties.toSet()).toList(),
         type = "OBJECT",
         title = title,
+        clazz = JsonObject::class.java
       )
     }
 
     /**
-     * Returns a [Schema] for an array.
+     * Returns a [JsonSchema] for a complex data type.
      *
-     * @param items The [Schema] of the elements stored in the array.
+     * This schema instructs the model to produce data of type object, which has keys of type
+     * `String` and values of type [JsonSchema].
+     *
+     * **Example:** A `city` could be represented with the following object `JsonSchema`.
+     *
+     * ```
+     * JsonSchema.obj(mapOf(
+     *     "name"  to JsonSchema.string(),
+     *     "population" to JsonSchema.integer()
+     *   ),
+     *   City::class.java
+     * )
+     * ```
+     *
+     * @param clazz the real class that this schema represents
+     * @param properties The map of the object's property names to their [JsonSchema]s.
+     * @param optionalProperties The list of optional properties. They must correspond to the keys
+     * provided in the `properties` map. By default it's empty, signaling the model that all
+     * properties are to be included.
+     * @param description An optional description of what the object represents.
+     * @param nullable Indicates whether the value can be `null`. Defaults to `false`.
+     */
+    @JvmStatic
+    @JvmOverloads
+    public fun <T> obj(
+      clazz: Class<T>,
+      properties: Map<String, JsonSchema<*>>,
+      optionalProperties: List<String> = emptyList(),
+      description: String? = null,
+      nullable: Boolean = false,
+      title: String? = null,
+    ): JsonSchema<T> {
+      if (!properties.keys.containsAll(optionalProperties)) {
+        throw IllegalArgumentException(
+          "All optional properties must be present in properties. Missing: ${optionalProperties.minus(properties.keys)}"
+        )
+      }
+      return JsonSchema(
+        description = description,
+        nullable = nullable,
+        properties = properties,
+        required = properties.keys.minus(optionalProperties.toSet()).toList(),
+        type = "OBJECT",
+        title = title,
+        clazz = clazz
+      )
+    }
+
+    /**
+     * Returns a [JsonSchema] for an array.
+     *
+     * @param items The [JsonSchema] of the elements stored in the array.
      * @param description An optional description of what the array represents.
      * @param nullable Indicates whether the value can be `null`. Defaults to `false`.
      */
     @JvmStatic
     @JvmOverloads
     public fun array(
-      items: Schema,
+      items: JsonSchema<*>,
       description: String? = null,
       nullable: Boolean = false,
       title: String? = null,
       minItems: Int? = null,
       maxItems: Int? = null,
-    ): Schema =
-      Schema(
+    ): JsonSchema<List<*>> =
+      JsonSchema(
         description = description,
         nullable = nullable,
         items = items,
@@ -272,14 +335,15 @@ internal constructor(
         title = title,
         minItems = minItems,
         maxItems = maxItems,
+        clazz = List::class.java
       )
 
     /**
-     * Returns a [Schema] for an enumeration.
+     * Returns a [JsonSchema] for an enumeration.
      *
      * For example, the cardinal directions can be represented as:
      * ```
-     * Schema.enumeration(listOf("north", "east", "south", "west"), "Cardinal directions")
+     * JsonSchema.enumeration(listOf("north", "east", "south", "west"), "Cardinal directions")
      * ```
      *
      * @param values The list of valid values for this enumeration
@@ -293,61 +357,74 @@ internal constructor(
       description: String? = null,
       nullable: Boolean = false,
       title: String? = null,
-    ): Schema =
-      Schema(
+    ): JsonSchema<String> =
+      JsonSchema(
         description = description,
         format = "enum",
         nullable = nullable,
         enum = values,
         type = "STRING",
         title = title,
+        clazz = String::class.java
       )
 
     /**
-     * Returns a [Schema] representing a value that must conform to *any* (one of) the provided
+     * Returns a [JsonSchema] for an enumeration.
+     *
+     * For example, the cardinal directions can be represented as:
+     * ```
+     * JsonSchema.enumeration(
+     *   listOf("north", "east", "south", "west"),
+     *   Direction::class.java,
+     *   "Cardinal directions"
+     * )
+     * ```
+     *
+     * @param clazz the real class that this schema represents
+     * @param values The list of valid values for this enumeration
+     * @param description The description of what the parameter should contain or represent
+     * @param nullable Indicates whether the value can be `null`. Defaults to `false`.
+     */
+    @JvmStatic
+    @JvmOverloads
+    public fun <T> enumeration(
+      clazz: Class<T>,
+      values: List<String>,
+      description: String? = null,
+      nullable: Boolean = false,
+      title: String? = null,
+    ): JsonSchema<T> =
+      JsonSchema(
+        description = description,
+        format = "enum",
+        nullable = nullable,
+        enum = values,
+        type = "STRING",
+        title = title,
+        clazz = clazz
+      )
+
+    /**
+     * Returns a [JsonSchema] representing a value that must conform to *any* (one of) the provided
      * sub-schema.
      *
      * Example: A field that can hold either a simple userID or a more detailed user object.
      *
      * ```
-     * Schema.anyOf( listOf( Schema.integer(description = "User ID"), Schema.obj( mapOf(
-     *     "userID" to Schema.integer(description = "User ID"),
-     *     "username" to Schema.string(description = "Username")
+     * JsonSchema.anyOf( listOf( JsonSchema.integer(description = "User ID"), JsonSchema.obj( mapOf(
+     *     "userID" to JsonSchema.integer(description = "User ID"),
+     *     "username" to JsonSchema.string(description = "Username")
      * )))
      * ```
      *
      * @param schemas The list of valid schemas which could be here
      */
     @JvmStatic
-    public fun anyOf(schemas: List<Schema>): Schema = Schema(type = "ANYOF", anyOf = schemas)
+    public fun anyOf(schemas: List<JsonSchema<*>>): JsonSchema<String> =
+      JsonSchema(type = "ANYOF", anyOf = schemas, clazz = String::class.java)
   }
 
-  internal fun toInternalOpenApi(): InternalOpenAPI {
-    val cleanedType =
-      if (type == "ANYOF") {
-        null
-      } else {
-        type
-      }
-    return InternalOpenAPI(
-      cleanedType,
-      description,
-      format,
-      nullable,
-      enum,
-      properties?.mapValues { it.value.toInternalOpenApi() },
-      required,
-      items?.toInternalOpenApi(),
-      title,
-      minItems,
-      maxItems,
-      minimum,
-      maximum,
-      anyOf?.map { it.toInternalOpenApi() },
-    )
-  }
-
-  internal fun toInternalJson(): InternalJson {
+  internal fun toInternalJson(): Schema.InternalJson {
     val outType =
       if (type == "ANYOF" || (type == "STRING" && format == "enum")) {
         null
@@ -374,11 +451,11 @@ internal constructor(
       }
 
     if (nullable == true) {
-      return InternalJsonNullable(
+      return Schema.InternalJsonNullable(
         outType?.let { listOf(it, "null") },
         description,
         outFormat,
-        null,
+        pattern,
         enum?.let {
           buildList {
             addAll(it)
@@ -396,11 +473,11 @@ internal constructor(
         anyOf?.map { it.toInternalJson() },
       )
     }
-    return InternalJsonNonNull(
+    return Schema.InternalJsonNonNull(
       outType,
       description,
       outFormat,
-      null,
+      pattern,
       enum,
       properties?.mapValues { it.value.toInternalJson() },
       required,
@@ -413,60 +490,4 @@ internal constructor(
       anyOf?.map { it.toInternalJson() },
     )
   }
-
-  @Serializable
-  internal data class InternalOpenAPI(
-    val type: String? = null,
-    val description: String? = null,
-    val format: String? = null,
-    val nullable: Boolean? = false,
-    val enum: List<String>? = null,
-    val properties: Map<String, InternalOpenAPI>? = null,
-    val required: List<String>? = null,
-    val items: InternalOpenAPI? = null,
-    val title: String? = null,
-    val minItems: Int? = null,
-    val maxItems: Int? = null,
-    val minimum: Double? = null,
-    val maximum: Double? = null,
-    val anyOf: List<InternalOpenAPI>? = null,
-  )
-
-  @Serializable internal sealed interface InternalJson
-
-  @Serializable
-  internal data class InternalJsonNonNull(
-    val type: String? = null,
-    val description: String? = null,
-    val format: String? = null,
-    val pattern: String? = null,
-    val enum: List<String>? = null,
-    val properties: Map<String, InternalJson>? = null,
-    val required: List<String>? = null,
-    val items: InternalJson? = null,
-    val title: String? = null,
-    val minItems: Int? = null,
-    val maxItems: Int? = null,
-    val minimum: Double? = null,
-    val maximum: Double? = null,
-    val anyOf: List<InternalJson>? = null,
-  ) : InternalJson
-
-  @Serializable
-  internal data class InternalJsonNullable(
-    val type: List<String>? = null,
-    val description: String? = null,
-    val format: String? = null,
-    val pattern: String? = null,
-    val enum: List<String>? = null,
-    val properties: Map<String, InternalJson>? = null,
-    val required: List<String>? = null,
-    val items: InternalJson? = null,
-    val title: String? = null,
-    val minItems: Int? = null,
-    val maxItems: Int? = null,
-    val minimum: Double? = null,
-    val maximum: Double? = null,
-    val anyOf: List<InternalJson>? = null,
-  ) : InternalJson
 }

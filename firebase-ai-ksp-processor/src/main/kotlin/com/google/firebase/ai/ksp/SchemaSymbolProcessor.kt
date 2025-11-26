@@ -34,6 +34,7 @@ import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterizedTypeName
+import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.ksp.toClassName
@@ -81,7 +82,7 @@ public class SchemaSymbolProcessor(
           classDeclaration.packageName.asString(),
           "${classDeclaration.simpleName.asString()}GeneratedSchema",
         )
-        .addImport("com.google.firebase.ai.type", "Schema")
+        .addImport("com.google.firebase.ai.type", "JsonSchema")
         .addType(
           TypeSpec.classBuilder("${classDeclaration.simpleName.asString()}GeneratedSchema")
             .addAnnotation(Generated::class)
@@ -90,7 +91,13 @@ public class SchemaSymbolProcessor(
                 .addProperty(
                   PropertySpec.builder(
                       "SCHEMA",
-                      ClassName("com.google.firebase.ai.type", "Schema"),
+                      ClassName("com.google.firebase.ai.type", "JsonSchema")
+                        .parameterizedBy(
+                          ClassName(
+                            classDeclaration.packageName.asString(),
+                            classDeclaration.simpleName.asString()
+                          )
+                        ),
                       KModifier.PUBLIC,
                     )
                     .mutable(false)
@@ -132,32 +139,33 @@ public class SchemaSymbolProcessor(
       val minItems = getIntFromAnnotation(guideAnnotation, "minItems")
       val maxItems = getIntFromAnnotation(guideAnnotation, "maxItems")
       val format = getStringFromAnnotation(guideAnnotation, "format")
+      val pattern = getStringFromAnnotation(guideAnnotation, "pattern")
       val builder = CodeBlock.builder()
       when (className.canonicalName) {
         "kotlin.Int" -> {
-          builder.addStatement("Schema.integer(").indent()
+          builder.addStatement("JsonSchema.integer(").indent()
         }
         "kotlin.Long" -> {
-          builder.addStatement("Schema.long(").indent()
+          builder.addStatement("JsonSchema.long(").indent()
         }
         "kotlin.Boolean" -> {
-          builder.addStatement("Schema.boolean(").indent()
+          builder.addStatement("JsonSchema.boolean(").indent()
         }
         "kotlin.Float" -> {
-          builder.addStatement("Schema.float(").indent()
+          builder.addStatement("JsonSchema.float(").indent()
         }
         "kotlin.Double" -> {
-          builder.addStatement("Schema.double(").indent()
+          builder.addStatement("JsonSchema.double(").indent()
         }
         "kotlin.String" -> {
-          builder.addStatement("Schema.string(").indent()
+          builder.addStatement("JsonSchema.string(").indent()
         }
         "kotlin.collections.List" -> {
           val listTypeParam = type.arguments.first().type!!.resolve()
           val listParamCodeBlock =
             generateCodeBlockForSchema(type = listTypeParam, parentType = type)
           builder
-            .addStatement("Schema.array(")
+            .addStatement("JsonSchema.array(")
             .indent()
             .addStatement("items = ")
             .add(listParamCodeBlock)
@@ -172,8 +180,9 @@ public class SchemaSymbolProcessor(
                 .map { it.simpleName.asString() }
                 .toList()
             builder
-              .addStatement("Schema.enumeration(")
+              .addStatement("JsonSchema.enumeration(")
               .indent()
+              .addStatement("clazz = ${type.declaration.qualifiedName!!.asString()}::class.java,")
               .addStatement("values = listOf(")
               .indent()
               .addStatement(enumValues.joinToString { "\"$it\"" })
@@ -181,8 +190,9 @@ public class SchemaSymbolProcessor(
               .addStatement("),")
           } else {
             builder
-              .addStatement("Schema.obj(")
+              .addStatement("JsonSchema.obj(")
               .indent()
+              .addStatement("clazz = ${type.declaration.qualifiedName!!.asString()}::class.java,")
               .addStatement("properties = mapOf(")
               .indent()
             val properties =
@@ -229,9 +239,9 @@ public class SchemaSymbolProcessor(
           "${parentType?.toClassName()?.simpleName?.let { "$it." }}$name is not a List type, minItems and maxItems are not valid parameters to specify in @Guide"
         )
       }
-      if (format != null && className.canonicalName != "kotlin.String") {
+      if ((format != null || pattern != null) && className.canonicalName != "kotlin.String") {
         logger.warn(
-          "${parentType?.toClassName()?.simpleName?.let { "$it." }}$name is not a String type, format is not a valid parameter to specify in @Guide"
+          "${parentType?.toClassName()?.simpleName?.let { "$it." }}$name is not a String type, format and pattern are not a valid parameter to specify in @Guide"
         )
       }
       if (minimum != null) {
@@ -248,6 +258,9 @@ public class SchemaSymbolProcessor(
       }
       if (format != null) {
         builder.addStatement("format = %S,", format)
+      }
+      if (pattern != null) {
+        builder.addStatement("pattern = %S,", pattern)
       }
       builder.addStatement("nullable = %L)", className.isNullable).unindent()
       return builder.build()
