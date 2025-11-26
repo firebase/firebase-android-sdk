@@ -198,25 +198,24 @@ public abstract class LiveSessionFutures internal constructor() {
   ): ListenableFuture<Unit>
 
   /**
-   * Sends audio data to the server in realtime. Check
-   * https://ai.google.dev/api/live#bidigeneratecontentrealtimeinput for details about the realtime
-   * input usage.
+   * Sends an audio input stream to the model, using the realtime API.
    * @param audio The audio data to send.
    */
   public abstract fun sendAudioRealtime(audio: InlineData): ListenableFuture<Unit>
 
   /**
-   * Sends video data to the server in realtime. Check
-   * https://ai.google.dev/api/live#bidigeneratecontentrealtimeinput for details about the realtime
-   * input usage.
+   * Sends a video input stream to the model, using the realtime API.
    * @param video The video data to send. Video MIME type could be either video or image.
    */
   public abstract fun sendVideoRealtime(video: InlineData): ListenableFuture<Unit>
 
   /**
-   * Sends text data to the server in realtime. Check
-   * https://ai.google.dev/api/live#bidigeneratecontentrealtimeinput for details about the realtime
-   * input usage.
+   * For details about the realtime input usage, see the `BidiGenerateContentRealtimeInput`
+   * documentation (
+   * [Gemini Developer API](https://ai.google.dev/api/live#bidigeneratecontentrealtimeinput) or
+   * [Vertex AI Gemini API](https://docs.cloud.google.com/vertex-ai/generative-ai/docs/model-reference/multimodal-live#bidigeneratecontentrealtimeinput)
+   * ).
+   *
    * @param text The text data to send.
    */
   public abstract fun sendTextRealtime(text: String): ListenableFuture<Unit>
@@ -228,7 +227,7 @@ public abstract class LiveSessionFutures internal constructor() {
    *
    * @param mediaChunks The list of [MediaData] instances representing the media data to be sent.
    */
-  @Deprecated("Use sendAudioRealtime, sendVideoRealtime, or sendTextRealtime instead")
+  @Deprecated("Use `sendAudioRealtime`, `sendVideoRealtime`, or `sendTextRealtime` instead")
   public abstract fun sendMediaStream(mediaChunks: List<MediaData>): ListenableFuture<Unit>
 
   /**

@@ -87,6 +87,10 @@ constructor(public val role: String? = "user", public val parts: List<Part>) {
   @OptIn(ExperimentalSerializationApi::class)
   internal fun toInternal() = Internal(this.role ?: "user", this.parts.map { it.toInternal() })
 
+  @OptIn(ExperimentalSerializationApi::class)
+  internal fun toTemplateInternal() =
+    Internal(this.role ?: "user", this.parts.map { it.toInternal(true) })
+
   @ExperimentalSerializationApi
   @Serializable
   internal data class Internal(

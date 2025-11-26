@@ -36,6 +36,10 @@ package com.google.firebase.ai {
     method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.LiveGenerativeModel liveModel(String modelName, com.google.firebase.ai.type.LiveGenerationConfig? generationConfig = null, java.util.List<com.google.firebase.ai.type.Tool>? tools = null);
     method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.LiveGenerativeModel liveModel(String modelName, com.google.firebase.ai.type.LiveGenerationConfig? generationConfig = null, java.util.List<com.google.firebase.ai.type.Tool>? tools = null, com.google.firebase.ai.type.Content? systemInstruction = null);
     method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.LiveGenerativeModel liveModel(String modelName, com.google.firebase.ai.type.LiveGenerationConfig? generationConfig = null, java.util.List<com.google.firebase.ai.type.Tool>? tools = null, com.google.firebase.ai.type.Content? systemInstruction = null, com.google.firebase.ai.type.RequestOptions requestOptions = com.google.firebase.ai.type.RequestOptions());
+    method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.TemplateGenerativeModel templateGenerativeModel();
+    method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.TemplateGenerativeModel templateGenerativeModel(com.google.firebase.ai.type.RequestOptions requestOptions = com.google.firebase.ai.type.RequestOptions());
+    method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.TemplateImagenModel templateImagenModel();
+    method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.TemplateImagenModel templateImagenModel(com.google.firebase.ai.type.RequestOptions requestOptions = com.google.firebase.ai.type.RequestOptions());
     property public static final com.google.firebase.ai.FirebaseAI instance;
     field public static final com.google.firebase.ai.FirebaseAI.Companion Companion;
   }
@@ -81,6 +85,15 @@ package com.google.firebase.ai {
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class LiveGenerativeModel {
     method public suspend Object? connect(kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.LiveSession>);
+  }
+
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class TemplateGenerativeModel {
+    method public suspend Object? generateContent(String templateId, java.util.Map<java.lang.String,?> inputs, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.GenerateContentResponse>);
+    method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.type.GenerateContentResponse> generateContentStream(String templateId, java.util.Map<java.lang.String,?> inputs);
+  }
+
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class TemplateImagenModel {
+    method public suspend Object? generateImages(String templateId, java.util.Map<java.lang.String,?> inputs, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>>);
   }
 
 }
@@ -165,6 +178,29 @@ package com.google.firebase.ai.java {
 
   public static final class LiveSessionFutures.Companion {
     method public com.google.firebase.ai.java.LiveSessionFutures from(com.google.firebase.ai.type.LiveSession session);
+  }
+
+  public abstract class TemplateGenerativeModelFutures {
+    method public static final com.google.firebase.ai.java.TemplateGenerativeModelFutures from(com.google.firebase.ai.TemplateGenerativeModel model);
+    method public abstract com.google.common.util.concurrent.ListenableFuture<com.google.firebase.ai.type.GenerateContentResponse> generateContent(String templateId, java.util.Map<java.lang.String,?> inputs);
+    method public abstract org.reactivestreams.Publisher<com.google.firebase.ai.type.GenerateContentResponse> generateContentStream(String templateId, java.util.Map<java.lang.String,?> inputs);
+    method public abstract com.google.firebase.ai.TemplateGenerativeModel getGenerativeModel();
+    field public static final com.google.firebase.ai.java.TemplateGenerativeModelFutures.Companion Companion;
+  }
+
+  public static final class TemplateGenerativeModelFutures.Companion {
+    method public com.google.firebase.ai.java.TemplateGenerativeModelFutures from(com.google.firebase.ai.TemplateGenerativeModel model);
+  }
+
+  public abstract class TemplateImagenModelFutures {
+    method public static final com.google.firebase.ai.java.TemplateImagenModelFutures from(com.google.firebase.ai.TemplateImagenModel model);
+    method public abstract com.google.common.util.concurrent.ListenableFuture<com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>> generateImages(String templateId, java.util.Map<java.lang.String,?> inputs);
+    method public abstract com.google.firebase.ai.TemplateImagenModel getImageModel();
+    field public static final com.google.firebase.ai.java.TemplateImagenModelFutures.Companion Companion;
+  }
+
+  public static final class TemplateImagenModelFutures.Companion {
+    method public com.google.firebase.ai.java.TemplateImagenModelFutures from(com.google.firebase.ai.TemplateImagenModel model);
   }
 
 }

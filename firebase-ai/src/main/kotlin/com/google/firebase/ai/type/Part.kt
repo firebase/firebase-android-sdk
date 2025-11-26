@@ -19,7 +19,6 @@ package com.google.firebase.ai.type
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Log
-import com.google.firebase.ai.type.ImagenImageFormat.Internal
 import java.io.ByteArrayOutputStream
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerialName
@@ -337,13 +336,14 @@ internal object PartSerializer :
   }
 }
 
-internal fun Part.toInternal(): InternalPart {
+internal fun Part.toInternal(ignoreThoughtFlag: Boolean = false): InternalPart {
+  val thought = if (ignoreThoughtFlag) null else isThought
   return when (this) {
-    is TextPart -> TextPart.Internal(text, isThought, thoughtSignature)
+    is TextPart -> TextPart.Internal(text, thought, thoughtSignature)
     is ImagePart ->
       InlineDataPart.Internal(
         InlineData.Internal("image/jpeg", encodeBitmapToBase64Jpeg(image)),
-        isThought,
+        thought,
         thoughtSignature
       )
     is InlineDataPart ->
@@ -352,37 +352,37 @@ internal fun Part.toInternal(): InternalPart {
           mimeType,
           android.util.Base64.encodeToString(inlineData, BASE_64_FLAGS)
         ),
-        isThought,
+        thought,
         thoughtSignature
       )
     is FunctionCallPart ->
       FunctionCallPart.Internal(
         FunctionCallPart.Internal.FunctionCall(name, args, id),
-        isThought,
+        thought,
         thoughtSignature
       )
     is FunctionResponsePart ->
       FunctionResponsePart.Internal(
         FunctionResponsePart.Internal.FunctionResponse(name, response, id),
-        isThought,
+        thought,
         thoughtSignature
       )
     is FileDataPart ->
       FileDataPart.Internal(
         FileDataPart.Internal.FileData(mimeType = mimeType, fileUri = uri),
-        isThought,
+        thought,
         thoughtSignature
       )
     is ExecutableCodePart ->
       ExecutableCodePart.Internal(
         ExecutableCodePart.Internal.ExecutableCode(language, code),
-        isThought,
+        thought,
         thoughtSignature
       )
     is CodeExecutionResultPart ->
       CodeExecutionResultPart.Internal(
         CodeExecutionResultPart.Internal.CodeExecutionResult(outcome, output),
-        isThought,
+        thought,
         thoughtSignature
       )
     else ->
