@@ -157,14 +157,14 @@ internal class AudioHelper(
      * It also makes it easier to read, since the long initialization is separate from the
      * constructor.
      *
-     * @param audioHandler A callback that is invoked immediately following the successful
+     * @param initializationHandler A callback that is invoked immediately following the successful
      * initialization of the associated [AudioRecord.Builder] and [AudioTrack.Builder] objects. This
      * offers a final opportunity to configure these objects, which will remain valid and effective
      * for the duration of the current audio session.
      */
     @RequiresPermission(Manifest.permission.RECORD_AUDIO)
     fun build(
-      audioHandler: ((AudioRecord.Builder, AudioTrack.Builder) -> Unit)? = null
+      initializationHandler: ((AudioRecord.Builder, AudioTrack.Builder) -> Unit)? = null
     ): AudioHelper {
       val playTrackBuilder = AudioTrack.Builder()
       playTrackBuilder
@@ -212,8 +212,8 @@ internal class AudioHelper(
               .build()
           )
           .setBufferSizeInBytes(bufferSize)
-      if (audioHandler != null) {
-        audioHandler(recorderBuilder, playTrackBuilder)
+      if (initializationHandler != null) {
+        initializationHandler(recorderBuilder, playTrackBuilder)
       }
       val recorder = recorderBuilder.build()
       val playbackTrack = playTrackBuilder.build()

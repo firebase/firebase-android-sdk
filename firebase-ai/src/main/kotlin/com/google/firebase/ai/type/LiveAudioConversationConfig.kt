@@ -30,7 +30,7 @@ import android.media.AudioTrack
  * The first [Transcription] object is the input transcription, and the second is the output
  * transcription.
  *
- * @property audioHandler A callback that is invoked immediately following the successful
+ * @property initializationHandler A callback that is invoked immediately following the successful
  * initialization of the associated [AudioRecord.Builder] and [AudioTrack.Builder] objects. This
  * offers a final opportunity to configure these objects, which will remain valid and effective for
  * the duration of the current audio session.
@@ -45,7 +45,7 @@ import android.media.AudioTrack
 public class LiveAudioConversationConfig
 private constructor(
   internal val functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)?,
-  internal val audioHandler: ((AudioRecord.Builder, AudioTrack.Builder) -> Unit)?,
+  internal val initializationHandler: ((AudioRecord.Builder, AudioTrack.Builder) -> Unit)?,
   internal val transcriptHandler: ((Transcription?, Transcription?) -> Unit)?,
   internal val enableInterruptions: Boolean
 ) {
@@ -58,7 +58,7 @@ private constructor(
    *
    * @property functionCallHandler See [LiveAudioConversationConfig.functionCallHandler].
    *
-   * @property audioHandler See [LiveAudioConversationConfig.audioHandler].
+   * @property initializationHandler See [LiveAudioConversationConfig.initializationHandler].
    *
    * @property transcriptHandler See [LiveAudioConversationConfig.transcriptHandler].
    *
@@ -66,7 +66,8 @@ private constructor(
    */
   public class Builder {
     @JvmField public var functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)? = null
-    @JvmField public var audioHandler: ((AudioRecord.Builder, AudioTrack.Builder) -> Unit)? = null
+    @JvmField
+    public var initializationHandler: ((AudioRecord.Builder, AudioTrack.Builder) -> Unit)? = null
     @JvmField public var transcriptHandler: ((Transcription?, Transcription?) -> Unit)? = null
     @JvmField public var enableInterruptions: Boolean = false
 
@@ -74,9 +75,9 @@ private constructor(
       functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)?
     ): Builder = apply { this.functionCallHandler = functionCallHandler }
 
-    public fun setAudioHandler(
-      audioHandler: ((AudioRecord.Builder, AudioTrack.Builder) -> Unit)?
-    ): Builder = apply { this.audioHandler = audioHandler }
+    public fun setInitializationHandler(
+      initializationHandler: ((AudioRecord.Builder, AudioTrack.Builder) -> Unit)?
+    ): Builder = apply { this.initializationHandler = initializationHandler }
 
     public fun setTranscriptHandler(
       transcriptHandler: ((Transcription?, Transcription?) -> Unit)?
@@ -90,7 +91,7 @@ private constructor(
     public fun build(): LiveAudioConversationConfig =
       LiveAudioConversationConfig(
         functionCallHandler = functionCallHandler,
-        audioHandler = audioHandler,
+        initializationHandler = initializationHandler,
         transcriptHandler = transcriptHandler,
         enableInterruptions = enableInterruptions
       )
@@ -115,7 +116,7 @@ private constructor(
  * ```
  * liveAudioConversationConfig {
  *   functionCallHandler = ...
- *   audioHandler = ...
+ *   initializationHandler = ...
  *   ...
  * }
  * ```

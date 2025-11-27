@@ -211,7 +211,7 @@ internal constructor(
       networkScope =
         CoroutineScope(blockingDispatcher + childJob() + CoroutineName("LiveSession Network"))
       audioScope = CoroutineScope(audioDispatcher + childJob() + CoroutineName("LiveSession Audio"))
-      audioHelper = AudioHelper.build(liveAudioConversationConfig.audioHandler)
+      audioHelper = AudioHelper.build(liveAudioConversationConfig.initializationHandler)
 
       recordUserAudio()
       processModelResponses(
