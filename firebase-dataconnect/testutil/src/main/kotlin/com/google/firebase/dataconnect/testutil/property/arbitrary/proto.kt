@@ -32,6 +32,7 @@ import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.boolean
 import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.double
+import io.kotest.property.arbitrary.filter
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.string
@@ -93,7 +94,11 @@ fun Proto.nullValue(): Arb<Value> = arbitrary {
 
 fun Proto.numberValue(
   number: Arb<Double> = Arb.double(),
-): Arb<Value> = number.map { Value.newBuilder().setNumberValue(it).build() }
+  filter: ((Double) -> Boolean)? = null,
+): Arb<Value> =
+  number
+    .filter { filter === null || filter(it) }
+    .map { Value.newBuilder().setNumberValue(it).build() }
 
 fun Proto.boolValue(
   boolean: Arb<Boolean> = Arb.boolean(),
@@ -101,7 +106,11 @@ fun Proto.boolValue(
 
 fun Proto.stringValue(
   string: Arb<String> = Arb.dataConnect.string(),
-): Arb<Value> = string.map { Value.newBuilder().setStringValue(it).build() }
+  filter: ((String) -> Boolean)? = null,
+): Arb<Value> =
+  string
+    .filter { filter === null || filter(it) }
+    .map { Value.newBuilder().setStringValue(it).build() }
 
 fun Proto.kindNotSetValue(): Arb<Value> = arbitrary { Value.newBuilder().build() }
 

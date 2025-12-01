@@ -472,13 +472,19 @@ fun Value.allDescendants(): List<Value> = buildList {
   }
 }
 
-fun Struct.allDescendantPaths(): List<List<PathComponent>> = toValueProto().allDescendantPaths()
+fun Struct.allDescendantPaths(
+  filter: ((path: List<PathComponent>, value: Value) -> Boolean)? = null,
+): List<List<PathComponent>> = toValueProto().allDescendantPaths(filter)
 
-fun ListValue.allDescendantPaths(): List<List<PathComponent>> = toValueProto().allDescendantPaths()
+fun ListValue.allDescendantPaths(
+  filter: ((path: List<PathComponent>, value: Value) -> Boolean)? = null,
+): List<List<PathComponent>> = toValueProto().allDescendantPaths(filter)
 
-fun Value.allDescendantPaths(): List<List<PathComponent>> = buildList {
-  walk { path, _ ->
-    if (path.isNotEmpty()) {
+fun Value.allDescendantPaths(
+  filter: ((path: List<PathComponent>, value: Value) -> Boolean)? = null,
+): List<List<PathComponent>> = buildList {
+  walk { path, value ->
+    if (path.isNotEmpty() && (filter === null || filter(path, value))) {
       add(path)
     }
   }

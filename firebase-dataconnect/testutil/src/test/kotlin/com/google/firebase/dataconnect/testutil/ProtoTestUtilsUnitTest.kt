@@ -22,9 +22,10 @@ import com.google.firebase.dataconnect.DataConnectPathSegment as PathComponent
 import com.google.firebase.dataconnect.testutil.property.arbitrary.distinctPair
 import com.google.firebase.dataconnect.testutil.property.arbitrary.listValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.next
+import com.google.firebase.dataconnect.testutil.property.arbitrary.numberValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
-import com.google.firebase.dataconnect.testutil.property.arbitrary.random
 import com.google.firebase.dataconnect.testutil.property.arbitrary.scalarValue
+import com.google.firebase.dataconnect.testutil.property.arbitrary.stringValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
 import com.google.firebase.dataconnect.testutil.property.arbitrary.value
@@ -56,8 +57,8 @@ import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.list
 import io.kotest.property.arbitrary.long
 import io.kotest.property.arbitrary.map
-import io.kotest.property.arbitrary.set
 import io.kotest.property.arbitrary.string
+import io.kotest.property.assume
 import io.kotest.property.checkAll
 import kotlin.random.Random
 import kotlinx.coroutines.test.runTest
@@ -201,24 +202,17 @@ class ProtoTestUtilsUnitTest {
     }
   }
 
-  @Test
-  fun `structDiff,structFastEqual for keys added to root struct`() = runTest {
-    val structKeyArb = Arb.proto.structKey()
-    val valueArb = Arb.proto.value()
-    checkAll(propTestConfig, Arb.proto.struct(), Arb.int(1..5)) { sample, unexpectedKeyCount ->
-      val struct1 = sample.struct
-      val struct2KeyArb = structKeyArb.filterNot(struct1::containsFields).distinct()
-      val expectedDifferences = mutableListOf<DifferencePathPair<Difference.StructUnexpectedKey>>()
-      val struct2 =
-        struct1.toBuilder().let { struct2Builder ->
-          repeat(unexpectedKeyCount) {
-            val difference = Difference.StructUnexpectedKey(struct2KeyArb.bind(), valueArb.bind())
-            check(!struct2Builder.containsFields(difference.key))
-            struct2Builder.putFields(difference.key, difference.value)
-            expectedDifferences.add(DifferencePathPair(emptyList(), difference))
-          }
-          struct2Builder.build()
-        }
+  private suspend fun verifyStructDiffReturnsDifferences(
+    structArb: Arb<Struct>,
+    prepare:
+      suspend PropertyContext.(
+        struct1: Struct, keyCount: Int, expectedDifferences: MutableList<DifferencePathPair<*>>
+      ) -> Struct,
+  ) {
+    checkAll(propTestConfig, structArb, Arb.int(1..5)) { struct1, keyCount ->
+      val mutableDifferences = mutableListOf<DifferencePathPair<*>>()
+      val struct2 = prepare(struct1, keyCount, mutableDifferences)
+      val expectedDifferences = mutableDifferences.toList()
 
       structFastEqual(struct1, struct2) shouldBe false
       structFastEqual(struct2, struct1) shouldBe false
@@ -228,21 +222,38 @@ class ProtoTestUtilsUnitTest {
       }
       structDiff(struct2, struct1).asClue { differences ->
         differences.toList() shouldContainExactlyInAnyOrder
-          expectedDifferences.map {
-            val missingKeyDifference = it.difference.run { Difference.StructMissingKey(key, value) }
-            DifferencePathPair(it.path, missingKeyDifference)
-          }
+          expectedDifferences.withInvertedDifferences()
+      }
+    }
+  }
+
+  @Test
+  fun `structDiff,structFastEqual for keys added to root struct`() = runTest {
+    val valueArb = Arb.proto.value()
+    val structKeyArb = Arb.proto.structKey()
+    val structArb = Arb.proto.struct(key = structKeyArb).map { it.struct }
+
+    verifyStructDiffReturnsDifferences(structArb) { struct1, keyCount, expectedDifferences ->
+      val struct2KeyArb = structKeyArb.filterNot(struct1::containsFields).distinct()
+      struct1.toBuilder().let { struct2Builder ->
+        repeat(keyCount) {
+          val difference = Difference.StructUnexpectedKey(struct2KeyArb.bind(), valueArb.bind())
+          check(!struct2Builder.containsFields(difference.key))
+          struct2Builder.putFields(difference.key, difference.value)
+          expectedDifferences.add(DifferencePathPair(emptyList(), difference))
+        }
+        struct2Builder.build()
       }
     }
   }
 
   @Test
   fun `structDiff,structFastEqual for keys added to nested struct`() = runTest {
-    val structKeyArb = Arb.proto.structKey()
     val valueArb = Arb.proto.value()
-    checkAll(propTestConfig, Arb.structWithAtLeast1SubStruct(structKeyArb), Arb.int(1..5)) {
-      struct1,
-      unexpectedKeyCount ->
+    val structKeyArb = Arb.proto.structKey()
+    val structArb = Arb.structWithAtLeast1SubStruct(structKeyArb)
+
+    verifyStructDiffReturnsDifferences(structArb) { struct1, keyCount, expectedDifferences ->
       val structPaths = buildList {
         struct1.walk { path, value ->
           if (path.isNotEmpty() && value.kindCase == Value.KindCase.STRUCT_VALUE) {
@@ -251,76 +262,148 @@ class ProtoTestUtilsUnitTest {
           }
         }
       }
-      val expectedDifferences =
-        List(unexpectedKeyCount) {
-          val (path, keyArb) = structPaths.random(randomSource().random)
-          val difference = Difference.StructUnexpectedKey(keyArb.bind(), valueArb.bind())
-          DifferencePathPair(path, difference)
-        }
-      val struct2 =
-        struct1.map { path, value ->
-          val curDifferences = expectedDifferences.filter { it.path == path }.map { it.difference }
-          if (curDifferences.isEmpty()) {
-            value
-          } else {
-            value.structValue.toBuilder().let { structBuilder ->
-              curDifferences.forEach { structBuilder.putFields(it.key, it.value) }
-              structBuilder.build().toValueProto()
+      repeat(keyCount) {
+        val (path, keyArb) = structPaths.random(randomSource().random)
+        val difference = Difference.StructUnexpectedKey(keyArb.bind(), valueArb.bind())
+        expectedDifferences.add(DifferencePathPair(path, difference))
+      }
+      struct1.map { path, value ->
+        val curDifferences = expectedDifferences.filter { it.path == path }.map { it.difference }
+        if (curDifferences.isEmpty()) {
+          value
+        } else {
+          value.structValue.toBuilder().let { structBuilder ->
+            curDifferences.forEach {
+              check(it is Difference.StructUnexpectedKey)
+              structBuilder.putFields(it.key, it.value)
             }
+            structBuilder.build().toValueProto()
           }
         }
-
-      structFastEqual(struct1, struct2) shouldBe false
-      structFastEqual(struct2, struct1) shouldBe false
-
-      structDiff(struct1, struct2).asClue { differences ->
-        differences.toList() shouldContainExactlyInAnyOrder expectedDifferences
       }
-      structDiff(struct2, struct1).asClue { differences ->
-        differences.toList() shouldContainExactlyInAnyOrder
-          expectedDifferences.map {
-            val missingKeyDifference = it.difference.run { Difference.StructMissingKey(key, value) }
-            DifferencePathPair(it.path, missingKeyDifference)
-          }
-      }
+    }
+  }
+
+  @Test
+  fun `structDiff,structFastEqual for keys removed`() = runTest {
+    val structArb = Arb.proto.struct(size = 1..5).map { it.struct }
+    verifyStructDiffReturnsDifferences(structArb) { struct1, keyCount, expectedDifferences ->
+      val replaceResult =
+        replaceRandomValues(
+          struct1,
+          keyCount,
+          filter = { path, _ -> path.lastOrNull() is PathComponent.Field },
+          replacementValue = { _, _ -> null },
+        )
+      assume(replaceResult.replacements.isNotEmpty())
+
+      val differences =
+        replaceResult.replacements.map { replacement ->
+          DifferencePathPair(
+            replacement.path.dropLast(1),
+            Difference.StructMissingKey(
+              (replacement.path.last() as PathComponent.Field).field,
+              replacement.oldValue
+            )
+          )
+        }
+
+      expectedDifferences.addAll(differences)
+      replaceResult.newStruct
     }
   }
 
   @Test
   fun `structDiff,structFastEqual for KindCase`() = runTest {
     val valueArb = Arb.proto.value()
-    checkAll(propTestConfig, Arb.proto.struct(size = 1..5).map { it.struct }, Arb.int(1..5)) {
-      struct1,
-      changedKeyCount ->
-      val struct1PathsToReplace = randomPathsToReplace(struct1, changedKeyCount)
-      val expectedDifferences = mutableListOf<DifferencePathPair<Difference.KindCase>>()
-      val struct2 =
-        struct1.map { path, value ->
-          if (!struct1PathsToReplace.contains(path)) {
-            value
-          } else {
-            val newValue = valueArb.filterNot { it.kindCase == value.kindCase }.bind()
-            expectedDifferences.add(DifferencePathPair(path, Difference.KindCase(value, newValue)))
-            newValue
+    val structKeyArb = Arb.proto.structKey()
+    val structArb = Arb.proto.struct(size = 1..5, key = structKeyArb).map { it.struct }
+
+    verifyStructDiffReturnsDifferences(structArb) { struct1, keyCount, expectedDifferences ->
+      val replaceResult =
+        replaceRandomValues(
+          struct1,
+          keyCount,
+          replacementValue = { _, oldValue ->
+            valueArb.filterNot { it.kindCase == oldValue.kindCase }.bind()
           }
+        )
+
+      val differences =
+        replaceResult.replacements.map { replacement ->
+          DifferencePathPair(
+            replacement.path,
+            Difference.KindCase(replacement.oldValue, replacement.newValue)
+          )
         }
 
-      structFastEqual(struct1, struct2) shouldBe false
-      structFastEqual(struct2, struct1) shouldBe false
+      expectedDifferences.addAll(differences)
+      replaceResult.newStruct
+    }
+  }
 
-      structDiff(struct1, struct2).asClue { differences ->
-        differences.toList() shouldContainExactlyInAnyOrder expectedDifferences
-      }
-      structDiff(struct2, struct1).asClue { differences ->
-        val invertedExpectedDifferences =
-          expectedDifferences.map {
-            DifferencePathPair(
-              it.path,
-              Difference.KindCase(value1 = it.difference.value2, value2 = it.difference.value1)
-            )
+  @Test
+  fun `structDiff,structFastEqual for BoolValue, NumberValue, StringValue`() = runTest {
+    val structArb = Arb.proto.struct(size = 1..5).map { it.struct }
+
+    verifyStructDiffReturnsDifferences(structArb) { struct1, keyCount, expectedDifferences ->
+      val replaceResult =
+        replaceRandomValues(
+          struct1,
+          keyCount,
+          filter = { _, value ->
+            when (value.kindCase) {
+              Value.KindCase.BOOL_VALUE,
+              Value.KindCase.NUMBER_VALUE,
+              Value.KindCase.STRING_VALUE -> true
+              else -> false
+            }
+          },
+          replacementValue = { _, oldValue ->
+            when (val kindCase = oldValue.kindCase) {
+              Value.KindCase.BOOL_VALUE ->
+                oldValue.toBuilder().setBoolValue(!oldValue.boolValue).build()
+              Value.KindCase.NUMBER_VALUE ->
+                Arb.proto
+                  .numberValue(filter = { !numberValuesEqual(it, oldValue.numberValue) })
+                  .bind()
+              Value.KindCase.STRING_VALUE ->
+                Arb.proto.stringValue(filter = { it != oldValue.stringValue }).bind()
+              else ->
+                throw IllegalStateException(
+                  "should never get here: kindCase=$kindCase oldValue=$oldValue [vqrnqxwcds]"
+                )
+            }
           }
-        differences.toList() shouldContainExactlyInAnyOrder invertedExpectedDifferences
-      }
+        )
+      assume(replaceResult.replacements.isNotEmpty())
+
+      val differences =
+        replaceResult.replacements.map { replacement ->
+          val difference =
+            when (val kindCase = replacement.oldValue.kindCase) {
+              Value.KindCase.NUMBER_VALUE ->
+                Difference.NumberValue(
+                  replacement.oldValue.numberValue,
+                  replacement.newValue.numberValue
+                )
+              Value.KindCase.STRING_VALUE ->
+                Difference.StringValue(
+                  replacement.oldValue.stringValue,
+                  replacement.newValue.stringValue
+                )
+              Value.KindCase.BOOL_VALUE ->
+                Difference.BoolValue(replacement.oldValue.boolValue, replacement.newValue.boolValue)
+              else ->
+                throw IllegalStateException(
+                  "should never get here: kindCase=$kindCase replacement=$replacement [xgdwtkgtg2]"
+                )
+            }
+          DifferencePathPair(replacement.path, difference)
+        }
+
+      expectedDifferences.addAll(differences)
+      replaceResult.newStruct
     }
   }
 
@@ -503,11 +586,16 @@ class ProtoTestUtilsUnitTest {
 
     fun PropertyContext.randomPathsToReplace(
       struct: Struct,
-      maxNumPaths: Int
-    ): List<List<PathComponent>> = randomSource().random.pathsToReplace(struct, maxNumPaths)
+      maxNumPaths: Int,
+      filter: ((path: List<PathComponent>, value: Value) -> Boolean)? = null,
+    ): List<List<PathComponent>> = randomSource().random.pathsToReplace(struct, maxNumPaths, filter)
 
-    fun Random.pathsToReplace(struct: Struct, maxNumPaths: Int): List<List<PathComponent>> {
-      val candidatePaths = struct.allDescendantPaths().toMutableList()
+    fun Random.pathsToReplace(
+      struct: Struct,
+      maxNumPaths: Int,
+      filter: ((path: List<PathComponent>, value: Value) -> Boolean)? = null,
+    ): List<List<PathComponent>> {
+      val candidatePaths = struct.allDescendantPaths(filter).toMutableList()
       return buildList {
         while (size < maxNumPaths && candidatePaths.isNotEmpty()) {
           val path = candidatePaths.random(this@pathsToReplace)
@@ -524,6 +612,61 @@ class ProtoTestUtilsUnitTest {
         false
       } else {
         otherList.subList(0, size) == this
+      }
+
+    data class ReplaceRandomValuesResult<V : Value?>(
+      val newStruct: Struct,
+      val replacements: List<Replacement<V>>,
+    ) {
+      data class Replacement<V : Value?>(
+        val path: List<PathComponent>,
+        val oldValue: Value,
+        val newValue: V,
+      )
+    }
+
+    fun <V : Value?> PropertyContext.replaceRandomValues(
+      struct: Struct,
+      maxNumPaths: Int,
+      filter: ((path: List<PathComponent>, value: Value) -> Boolean)? = null,
+      replacementValue: (path: List<PathComponent>, oldValue: Value) -> V,
+    ): ReplaceRandomValuesResult<V> {
+      val pathsToReplace = randomPathsToReplace(struct, maxNumPaths, filter)
+
+      val replacements = mutableListOf<ReplaceRandomValuesResult.Replacement<V>>()
+      val newStruct =
+        struct.map { path, value ->
+          if (pathsToReplace.contains(path)) {
+            val newValue = replacementValue(path, value)
+            replacements.add(ReplaceRandomValuesResult.Replacement(path, value, newValue))
+            newValue
+          } else {
+            value
+          }
+        }
+
+      return ReplaceRandomValuesResult(newStruct, replacements.toList())
+    }
+
+    fun List<DifferencePathPair<*>>.withInvertedDifferences(): List<DifferencePathPair<*>> = map {
+      it.withInvertedDifference()
+    }
+
+    fun DifferencePathPair<*>.withInvertedDifference(): DifferencePathPair<*> =
+      DifferencePathPair(path, difference.inverse())
+
+    fun Difference.inverse(): Difference =
+      when (this) {
+        is Difference.BoolValue -> Difference.BoolValue(value1 = value2, value2 = value1)
+        is Difference.KindCase -> Difference.KindCase(value1 = value2, value2 = value1)
+        is Difference.ListMissingElement ->
+          Difference.ListUnexpectedElement(index = index, value = value)
+        is Difference.ListUnexpectedElement ->
+          Difference.ListMissingElement(index = index, value = value)
+        is Difference.NumberValue -> Difference.NumberValue(value1 = value2, value2 = value1)
+        is Difference.StringValue -> Difference.StringValue(value1 = value2, value2 = value1)
+        is Difference.StructMissingKey -> Difference.StructUnexpectedKey(key = key, value = value)
+        is Difference.StructUnexpectedKey -> Difference.StructMissingKey(key = key, value = value)
       }
   }
 }
