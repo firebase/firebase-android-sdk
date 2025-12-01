@@ -16,17 +16,25 @@
 
 package com.google.firebase.dataconnect.testutil
 
+import com.google.firebase.dataconnect.DataConnectPathSegment as PathComponent
+import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
+import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
 import com.google.protobuf.ListValue
 import com.google.protobuf.MessageLite
 import com.google.protobuf.NullValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
 import io.kotest.assertions.print.print
+import io.kotest.common.DelicateKotest
 import io.kotest.matchers.Matcher
 import io.kotest.matchers.MatcherResult
 import io.kotest.matchers.neverNullMatcher
 import io.kotest.matchers.should
+import io.kotest.property.Arb
+import io.kotest.property.PropertyContext
+import io.kotest.property.arbitrary.distinct
 import java.util.regex.Pattern
+import kotlin.random.Random
 
 /** Asserts that a proto message is equal to the given proto message. */
 infix fun MessageLite?.shouldBe(other: MessageLite?): MessageLite? {
@@ -122,10 +130,10 @@ fun beEqualTo(
     )
   } else {
     MatcherResult(
-      structDiff(value, other, null),
+      structFastEqual(value, other),
       {
-        val differences = DifferenceAccumulator().also { structDiff(value, other, it) }
-        "${structPrinter(value)} should be equal to ${structPrinter(other)}, but found $differences"
+        "${structPrinter(value)} should be equal to ${structPrinter(other)}, " +
+          "but found ${structDiff(value, other)}"
       },
       { "${structPrinter(value)} should not be equal to ${structPrinter(other)}" }
     )
@@ -162,121 +170,164 @@ private fun MessageLite?.toTrimmedStringForTesting(): String {
   return subjectString.ifEmpty { "[empty proto]" }
 }
 
+fun structFastEqual(struct1: Struct, struct2: Struct): Boolean {
+  if (struct1 === struct2) {
+    return true
+  } else if (struct1.fieldsCount != struct2.fieldsCount) {
+    return false
+  }
+
+  val struct2FieldsMap = struct2.fieldsMap
+  struct1.fieldsMap.entries.forEach { (key, value1) ->
+    val value2 = struct2FieldsMap[key] ?: return false
+    if (!valueFastEqual(value1, value2)) {
+      return false
+    }
+  }
+
+  return true
+}
+
+fun listValueFastEqual(listValue1: ListValue, listValue2: ListValue): Boolean {
+  if (listValue1 === listValue2) {
+    return true
+  } else if (listValue1.valuesCount != listValue2.valuesCount) {
+    return false
+  }
+
+  listValue1.valuesList.zip(listValue2.valuesList).forEach { (value1, value2) ->
+    if (!valueFastEqual(value1, value2)) {
+      return false
+    }
+  }
+
+  return true
+}
+
+fun valueFastEqual(value1: Value, value2: Value): Boolean {
+  if (value1 === value2) {
+    return true
+  } else if (value1.kindCase != value2.kindCase) {
+    return false
+  }
+  return when (value1.kindCase) {
+    Value.KindCase.KIND_NOT_SET -> true
+    Value.KindCase.NULL_VALUE -> true
+    Value.KindCase.NUMBER_VALUE -> numberValuesEqual(value1.numberValue, value2.numberValue)
+    Value.KindCase.STRING_VALUE -> value1.stringValue == value2.stringValue
+    Value.KindCase.BOOL_VALUE -> value1.boolValue == value2.boolValue
+    Value.KindCase.STRUCT_VALUE -> structFastEqual(value1.structValue, value2.structValue)
+    Value.KindCase.LIST_VALUE -> listValueFastEqual(value1.listValue, value2.listValue)
+  }
+}
+
+data class DifferencePathPair<T : Difference>(val path: List<PathComponent>, val difference: T)
+
 sealed interface Difference {
-  data class KindCase(val kindCase1: Value.KindCase, val kindCase2: Value.KindCase) : Difference
+  data class KindCase(val value1: Value, val value2: Value) : Difference
   data class BoolValue(val value1: Boolean, val value2: Boolean) : Difference
   data class NumberValue(val value1: Double, val value2: Double) : Difference
   data class StringValue(val value1: String, val value2: String) : Difference
-  data class StructFieldCount(val count1: Int, val count2: Int) : Difference
-  data class StructMissingKey(val key: String, val kindCase: Value.KindCase) : Difference
-  data class StructUnexpectedKey(val key: String, val kindCase: Value.KindCase) : Difference
-  data class ListSize(val size1: Int, val size2: Int) : Difference
-  data class ListMissingElement(val index: Int, val kindCase: Value.KindCase) : Difference
-  data class ListUnexpectedElement(val index: Int, val kindCase: Value.KindCase) : Difference
+  data class StructMissingKey(val key: String, val value: Value) : Difference
+  data class StructUnexpectedKey(val key: String, val value: Value) : Difference
+  data class ListMissingElement(val index: Int, val value: Value) : Difference
+  data class ListUnexpectedElement(val index: Int, val value: Value) : Difference
 }
 
-fun structDiff(struct1: Struct, struct2: Struct, differences: DifferenceAccumulator?): Boolean {
-  if (struct1 === struct2) {
-    return true
-  }
-
-  var isEqual = true
-
-  if (struct1.fieldsCount != struct2.fieldsCount) {
-    if (differences === null) {
-      return false
-    }
-    isEqual = false
-    differences.add(Difference.StructFieldCount(struct1.fieldsCount, struct2.fieldsCount))
-  }
-
+fun structDiff(
+  struct1: Struct,
+  struct2: Struct,
+  differences: DifferenceAccumulator = DifferenceAccumulator(),
+): DifferenceAccumulator {
   val map1 = struct1.fieldsMap
   val map2 = struct2.fieldsMap
 
   map1.entries.forEach { (key, value) ->
     if (key !in map2) {
-      if (differences === null) {
-        return false
-      }
-      isEqual = false
-      differences.add(Difference.StructMissingKey(key, value.kindCase))
+      differences.add(Difference.StructMissingKey(key, value))
     } else {
-      val diffResult =
-        differences.withPushedPathComponent({ "\"$key\"" }) {
-          valueDiff(value, map2[key]!!, differences)
-        }
-      if (differences === null && !diffResult) {
-        return false
+      differences.withPushedPathComponent({ PathComponent.Field(key) }) {
+        valueDiff(value, map2[key]!!, differences)
       }
     }
   }
 
   map2.entries.forEach { (key, value) ->
     if (key !in map1) {
-      if (differences === null) {
-        return false
-      }
-      isEqual = false
-      differences.add(Difference.StructUnexpectedKey(key, value.kindCase))
+      differences.add(Difference.StructUnexpectedKey(key, value))
     }
   }
 
-  return isEqual
+  return differences
 }
 
 fun listValueDiff(
   listValue1: ListValue,
   listValue2: ListValue,
-  differences: DifferenceAccumulator?
-): Boolean {
-  if (listValue1 === listValue2) {
-    return true
-  }
-
-  var isEqual = true
-
-  if (listValue1.valuesCount != listValue2.valuesCount) {
-    if (differences === null) {
-      return false
-    }
-    isEqual = false
-    differences.add(Difference.ListSize(listValue1.valuesCount, listValue2.valuesCount))
-  }
-
+  differences: DifferenceAccumulator = DifferenceAccumulator(),
+): DifferenceAccumulator {
   repeat(listValue1.valuesCount.coerceAtMost(listValue2.valuesCount)) {
     val value1 = listValue1.getValues(it)
     val value2 = listValue2.getValues(it)
-    val diffResult =
-      differences.withPushedPathComponent({ "[$it]" }) { valueDiff(value1, value2, differences) }
-    if (differences === null && !diffResult) {
-      return false
+    differences.withPushedPathComponent({ PathComponent.ListIndex(it) }) {
+      valueDiff(value1, value2, differences)
     }
   }
 
   if (listValue1.valuesCount > listValue2.valuesCount) {
-    checkNotNull(differences)
     (listValue2.valuesCount until listValue1.valuesCount).forEach {
-      isEqual = false
-      differences.add(Difference.ListMissingElement(it, listValue1.getValues(it).kindCase))
+      differences.add(Difference.ListMissingElement(it, listValue1.getValues(it)))
     }
   } else if (listValue1.valuesCount < listValue2.valuesCount) {
-    checkNotNull(differences)
     (listValue1.valuesCount until listValue2.valuesCount).forEach {
-      isEqual = false
-      differences.add(Difference.ListUnexpectedElement(it, listValue2.getValues(it).kindCase))
+      differences.add(Difference.ListUnexpectedElement(it, listValue2.getValues(it)))
     }
   }
 
-  return isEqual
+  return differences
+}
+
+fun valueDiff(
+  value1: Value,
+  value2: Value,
+  differences: DifferenceAccumulator = DifferenceAccumulator(),
+): DifferenceAccumulator {
+  if (value1.kindCase != value2.kindCase) {
+    differences.add(Difference.KindCase(value1, value2))
+    return differences
+  }
+
+  when (value1.kindCase) {
+    Value.KindCase.KIND_NOT_SET,
+    Value.KindCase.NULL_VALUE -> {}
+    Value.KindCase.STRUCT_VALUE -> structDiff(value1.structValue, value2.structValue, differences)
+    Value.KindCase.LIST_VALUE -> listValueDiff(value1.listValue, value2.listValue, differences)
+    Value.KindCase.BOOL_VALUE ->
+      if (value1.boolValue != value2.boolValue) {
+        differences.add(Difference.BoolValue(value1.boolValue, value2.boolValue))
+      }
+    Value.KindCase.NUMBER_VALUE ->
+      if (!numberValuesEqual(value1.numberValue, value2.numberValue)) {
+        differences.add(Difference.NumberValue(value1.numberValue, value2.numberValue))
+      }
+    Value.KindCase.STRING_VALUE ->
+      if (value1.stringValue != value2.stringValue) {
+        differences.add(Difference.StringValue(value1.stringValue, value2.stringValue))
+      }
+  }
+
+  return differences
 }
 
 class DifferenceAccumulator {
-  private val differences = mutableListOf<DifferenceInfo>()
-  private val path = mutableListOf<String>()
+  private val differences = mutableListOf<DifferencePathPair<*>>()
+  private val path = mutableListOf<PathComponent>()
 
   val size: Int by differences::size
 
-  fun pushPathComponent(pathComponent: String) {
+  fun toList(): List<DifferencePathPair<*>> = differences.toList()
+
+  fun pushPathComponent(pathComponent: PathComponent) {
     path.add(pathComponent)
   }
 
@@ -285,8 +336,7 @@ class DifferenceAccumulator {
   }
 
   fun add(difference: Difference) {
-    val key = path.joinToString(".")
-    differences.add(DifferenceInfo(key, difference))
+    differences.add(DifferencePathPair(path.toList(), difference))
   }
 
   override fun toString() = buildString {
@@ -300,12 +350,10 @@ class DifferenceAccumulator {
       }
     }
   }
-
-  data class DifferenceInfo(val path: String, val difference: Difference)
 }
 
 private inline fun <T> DifferenceAccumulator?.withPushedPathComponent(
-  pathComponent: () -> String,
+  pathComponent: () -> PathComponent,
   block: () -> T
 ): T {
   this?.pushPathComponent(pathComponent())
@@ -316,42 +364,7 @@ private inline fun <T> DifferenceAccumulator?.withPushedPathComponent(
   }
 }
 
-private inline fun DifferenceAccumulator.addIf(predicate: Boolean, block: () -> Difference) {
-  if (predicate) {
-    add(block())
-  }
-}
-
-fun valueDiff(value1: Value, value2: Value, differences: DifferenceAccumulator?): Boolean {
-  if (value1 === value2) {
-    return true
-  }
-
-  if (value1.kindCase != value2.kindCase) {
-    differences?.add(Difference.KindCase(value1.kindCase, value2.kindCase))
-    return false
-  }
-  return when (value1.kindCase) {
-    Value.KindCase.KIND_NOT_SET -> true
-    Value.KindCase.NULL_VALUE -> true
-    Value.KindCase.STRUCT_VALUE -> structDiff(value1.structValue, value2.structValue, differences)
-    Value.KindCase.LIST_VALUE -> listValueDiff(value1.listValue, value2.listValue, differences)
-    Value.KindCase.BOOL_VALUE ->
-      (value1.boolValue == value2.boolValue).also {
-        differences?.addIf(!it, { Difference.BoolValue(value1.boolValue, value2.boolValue) })
-      }
-    Value.KindCase.NUMBER_VALUE ->
-      numberValuesEqual(value1.numberValue, value2.numberValue).also {
-        differences?.addIf(!it, { Difference.NumberValue(value1.numberValue, value2.numberValue) })
-      }
-    Value.KindCase.STRING_VALUE ->
-      (value1.stringValue == value2.stringValue).also {
-        differences?.addIf(!it, { Difference.StringValue(value1.stringValue, value2.stringValue) })
-      }
-  }
-}
-
-private fun numberValuesEqual(value1: Double, value2: Double): Boolean =
+fun numberValuesEqual(value1: Double, value2: Double): Boolean =
   if (value1.isNaN()) {
     value2.isNaN()
   } else if (value1 != value2) {
@@ -379,10 +392,10 @@ fun beEqualTo(
     )
   } else {
     MatcherResult(
-      valueDiff(value, other, null),
+      valueFastEqual(value, other),
       {
-        val differences = DifferenceAccumulator().also { valueDiff(value, other, it) }
-        "${valuePrinter(value)} should be equal to ${valuePrinter(other)}, but found $differences"
+        "${valuePrinter(value)} should be equal to ${valuePrinter(other)}, " +
+          "but found ${valueDiff(value, other)}"
       },
       { "${valuePrinter(value)} should not be equal to ${valuePrinter(other)}" }
     )
@@ -415,18 +428,223 @@ fun Value.deepCopy(): Value =
     builder.build()
   }
 
-fun Struct.valuesRecursive(dest: MutableList<Value> = mutableListOf()): List<Value> =
-  dest.apply { fieldsMap.values.forEach { it.valuesRecursive(dest) } }
+fun Boolean.toValueProto(): Value = Value.newBuilder().setBoolValue(this).build()
 
-fun ListValue.valuesRecursive(dest: MutableList<Value> = mutableListOf()): List<Value> =
-  dest.apply { valuesList.forEach { it.valuesRecursive(dest) } }
+fun String.toValueProto(): Value = Value.newBuilder().setStringValue(this).build()
 
-fun Value.valuesRecursive(dest: MutableList<Value> = mutableListOf()): List<Value> {
-  dest.add(this)
-  if (kindCase == Value.KindCase.STRUCT_VALUE) {
-    structValue.valuesRecursive(dest)
-  } else if (kindCase == Value.KindCase.LIST_VALUE) {
-    listValue.valuesRecursive(dest)
+fun Double.toValueProto(): Value = Value.newBuilder().setNumberValue(this).build()
+
+fun Struct.toValueProto(): Value = Value.newBuilder().setStructValue(this).build()
+
+fun ListValue.toValueProto(): Value = Value.newBuilder().setListValue(this).build()
+
+fun Iterable<Value>.toValueProto(): Value = toListValue().toValueProto()
+
+fun Iterable<Value>.toListValue(): ListValue = ListValue.newBuilder().addAllValues(this).build()
+
+fun PropertyContext.structWithValues(
+  values: Collection<Value>,
+  structKey: Arb<String> = @OptIn(DelicateKotest::class) Arb.proto.structKey().distinct()
+): Struct =
+  Struct.newBuilder().let { structBuilder ->
+    values.forEach { structBuilder.putFields(structKey.bind(), it) }
+    structBuilder.build()
   }
-  return dest
+
+fun Struct.walk(visit: (path: List<PathComponent>, value: Value) -> Unit): Unit =
+  toValueProto().walk(visit)
+
+fun ListValue.walk(visit: (path: List<PathComponent>, value: Value) -> Unit): Unit =
+  toValueProto().walk(visit)
+
+fun Value.walk(visit: (path: List<PathComponent>, value: Value) -> Unit): Unit =
+  fold(Unit) { _, path, value -> visit(path, value) }
+
+fun Struct.allDescendants(): List<Value> = toValueProto().allDescendants()
+
+fun ListValue.allDescendants(): List<Value> = toValueProto().allDescendants()
+
+fun Value.allDescendants(): List<Value> = buildList {
+  walk { path, value ->
+    if (path.isNotEmpty()) {
+      add(value)
+    }
+  }
+}
+
+fun Struct.allDescendantPaths(): List<List<PathComponent>> = toValueProto().allDescendantPaths()
+
+fun ListValue.allDescendantPaths(): List<List<PathComponent>> = toValueProto().allDescendantPaths()
+
+fun Value.allDescendantPaths(): List<List<PathComponent>> = buildList {
+  walk { path, _ ->
+    if (path.isNotEmpty()) {
+      add(path)
+    }
+  }
+}
+
+fun <R> Struct.fold(
+  initial: R,
+  folder: (foldedValue: R, path: List<PathComponent>, value: Value) -> R,
+): R = toValueProto().fold(initial, folder)
+
+fun <R> ListValue.fold(
+  initial: R,
+  folder: (foldedValue: R, path: List<PathComponent>, value: Value) -> R,
+): R = toValueProto().fold(initial, folder)
+
+fun <R> Value.fold(
+  initial: R,
+  folder: (foldedValue: R, path: List<PathComponent>, value: Value) -> R,
+): R = foldValue(this, initial, folder)
+
+fun <R> foldValue(
+  rootValue: Value,
+  initial: R,
+  folder: (foldedValue: R, path: List<PathComponent>, value: Value) -> R
+): R {
+  var foldedValue = initial
+  val queue = mutableListOf<Pair<List<PathComponent>, Value>>(Pair(emptyList(), rootValue))
+
+  while (queue.isNotEmpty()) {
+    val (path, value) = queue.removeFirst()
+    foldedValue = folder(foldedValue, path, value)
+
+    if (value.kindCase == Value.KindCase.STRUCT_VALUE) {
+      val childPath = path.toMutableList()
+      childPath.add(PathComponent.ListIndex(-1))
+      value.structValue.fieldsMap.entries.forEach { (key, value) ->
+        childPath[childPath.lastIndex] = PathComponent.Field(key)
+        queue.add(childPath.toList() to value)
+      }
+    } else if (value.kindCase == Value.KindCase.LIST_VALUE) {
+      val childPath = path.toMutableList()
+      childPath.add(PathComponent.ListIndex(-1))
+      value.listValue.valuesList.forEachIndexed { index, value ->
+        childPath[childPath.lastIndex] = PathComponent.ListIndex(index)
+        queue.add(childPath.toList() to value)
+      }
+    }
+  }
+
+  return foldedValue
+}
+
+fun Struct.map(
+  path: MutableList<PathComponent> = mutableListOf(),
+  mapper: (path: List<PathComponent>, value: Value) -> Value?
+): Struct =
+  Struct.newBuilder().let { builder ->
+    fieldsMap.entries.forEach { (key, value) ->
+      path.add(PathComponent.Field(key))
+
+      val mappedValue =
+        mapper(path.toList(), value)?.let {
+          when (it.kindCase) {
+            Value.KindCase.STRUCT_VALUE -> it.structValue.map(path, mapper).toValueProto()
+            Value.KindCase.LIST_VALUE -> it.listValue.map(path, mapper).toValueProto()
+            else -> it
+          }
+        }
+
+      path.removeLast()
+
+      if (mappedValue !== null) {
+        builder.putFields(key, mappedValue)
+      }
+    }
+    builder.build()
+  }
+
+fun ListValue.map(
+  path: MutableList<PathComponent> = mutableListOf(),
+  mapper: (path: List<PathComponent>, value: Value) -> Value?
+): ListValue =
+  ListValue.newBuilder().let { builder ->
+    valuesList.forEachIndexed { index, value ->
+      path.add(PathComponent.ListIndex(index))
+
+      val mappedValue =
+        mapper(path.toList(), value)?.let {
+          when (it.kindCase) {
+            Value.KindCase.STRUCT_VALUE -> it.structValue.map(path, mapper).toValueProto()
+            Value.KindCase.LIST_VALUE -> it.listValue.map(path, mapper).toValueProto()
+            else -> it
+          }
+        }
+
+      path.removeLast()
+
+      if (mappedValue !== null) {
+        builder.addValues(mappedValue)
+      }
+    }
+
+    builder.build()
+  }
+
+fun Struct.withRandomlyInsertedValues(
+  values: List<Value>,
+  random: Random,
+  generateKey: () -> String
+): Struct {
+  val structAndListPaths = buildList {
+    walk { path, value ->
+      when (value.kindCase) {
+        Value.KindCase.STRUCT_VALUE,
+        Value.KindCase.LIST_VALUE -> add(path)
+        else -> {}
+      }
+    }
+  }
+
+  val insertions = List(values.size) { structAndListPaths.random(random) to values[it] }
+
+  val rootStruct =
+    toBuilder().let { rootStructBuilder ->
+      insertions
+        .filter { it.first.isEmpty() }
+        .map { it.second }
+        .forEach { value ->
+          while (true) {
+            val key = generateKey()
+            if (!rootStructBuilder.containsFields(key)) {
+              rootStructBuilder.putFields(key, value)
+              break
+            }
+          }
+        }
+      rootStructBuilder.build()
+    }
+
+  return rootStruct.map { path, value ->
+    val curInsertions = insertions.filter { it.first == path }.map { it.second }
+    if (curInsertions.isEmpty()) {
+      value
+    } else if (value.kindCase == Value.KindCase.STRUCT_VALUE) {
+      value.structValue
+        .toBuilder()
+        .also { structBuilder ->
+          curInsertions.forEach { valueToInsert ->
+            while (true) {
+              val key = generateKey()
+              if (!structBuilder.containsFields(key)) {
+                structBuilder.putFields(key, valueToInsert)
+                break
+              }
+            }
+          }
+        }
+        .build()
+        .toValueProto()
+    } else if (value.kindCase == Value.KindCase.LIST_VALUE) {
+      val newValuesList = value.listValue.valuesList.toMutableList()
+      newValuesList.addAll(curInsertions)
+      newValuesList.shuffle(random)
+      newValuesList.toValueProto()
+    } else {
+      throw IllegalStateException("should never get here value=$value [ywwmyjnpwa]")
+    }
+  }
 }
