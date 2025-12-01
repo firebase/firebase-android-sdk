@@ -102,9 +102,29 @@ class protoUnitTest {
     )
 
   @Test
-  fun `listValue() should specify the correct depth`() = runTest {
+  fun `listValue() Sample should specify the correct depth`() = runTest {
     checkAll(propTestConfig, Arb.proto.listValue()) { sample ->
       sample.depth shouldBe sample.listValue.maxDepth()
+    }
+  }
+
+  @Test
+  fun `listValue() Sample should specify the correct descendantValues`() = runTest {
+    checkAll(propTestConfig, Arb.proto.listValue()) { sample ->
+      val expectedDescendantValues = buildList {
+        val queue = sample.listValue.valuesList.toMutableList()
+        while (queue.isNotEmpty()) {
+          val value = queue.removeLast()
+          add(value)
+          if (value.kindCase == Value.KindCase.LIST_VALUE) {
+            queue.addAll(value.listValue.valuesList)
+          } else if (value.kindCase == Value.KindCase.STRUCT_VALUE) {
+            queue.addAll(value.structValue.fieldsMap.values)
+          }
+        }
+      }
+
+      sample.descendantValues shouldContainExactlyInAnyOrder expectedDescendantValues
     }
   }
 
@@ -145,9 +165,29 @@ class protoUnitTest {
   }
 
   @Test
-  fun `struct() should specify the correct depth`() = runTest {
+  fun `struct() Sample should specify the correct depth`() = runTest {
     checkAll(propTestConfig, Arb.proto.struct()) { sample ->
       sample.depth shouldBe sample.struct.maxDepth()
+    }
+  }
+
+  @Test
+  fun `struct() Sample should specify the correct descendantValues`() = runTest {
+    checkAll(propTestConfig, Arb.proto.struct()) { sample ->
+      val expectedDescendantValues = buildList {
+        val queue = sample.struct.fieldsMap.values.toMutableList()
+        while (queue.isNotEmpty()) {
+          val value = queue.removeLast()
+          add(value)
+          if (value.kindCase == Value.KindCase.LIST_VALUE) {
+            queue.addAll(value.listValue.valuesList)
+          } else if (value.kindCase == Value.KindCase.STRUCT_VALUE) {
+            queue.addAll(value.structValue.fieldsMap.values)
+          }
+        }
+      }
+
+      sample.descendantValues shouldContainExactlyInAnyOrder expectedDescendantValues
     }
   }
 

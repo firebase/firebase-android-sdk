@@ -18,6 +18,7 @@
 
 package com.google.firebase.dataconnect.testutil.property.arbitrary
 
+import com.google.firebase.dataconnect.testutil.toValueProto
 import com.google.protobuf.ListValue
 import com.google.protobuf.NullValue
 import com.google.protobuf.Struct
@@ -43,15 +44,17 @@ object Proto {
   data class StructInfo(
     val struct: Struct,
     val depth: Int,
+    val descendantValues: List<Value>,
   ) {
-    fun toValueProto(): Value = Value.newBuilder().setStructValue(struct).build()
+    fun toValueProto(): Value = struct.toValueProto()
   }
 
   data class ListValueInfo(
     val listValue: ListValue,
     val depth: Int,
+    val descendantValues: List<Value>,
   ) {
-    fun toValueProto(): Value = Value.newBuilder().setListValue(listValue).build()
+    fun toValueProto(): Value = listValue.toValueProto()
   }
 }
 
@@ -61,6 +64,28 @@ val Arb.Companion.proto: Proto
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // Arb.Companion.proto extension functions
 //////////////////////////////////////////////////////////////////////////////////////////////////
+
+fun Proto.valueOfKind(kindCase: Value.KindCase): Arb<Value> =
+  when (kindCase) {
+    Value.KindCase.KIND_NOT_SET -> kindNotSetValue()
+    Value.KindCase.NULL_VALUE -> nullValue()
+    Value.KindCase.NUMBER_VALUE -> numberValue()
+    Value.KindCase.STRING_VALUE -> stringValue()
+    Value.KindCase.BOOL_VALUE -> boolValue()
+    Value.KindCase.STRUCT_VALUE -> struct().map { it.toValueProto() }
+    Value.KindCase.LIST_VALUE -> listValue().map { it.toValueProto() }
+  }
+
+fun Proto.value(): Arb<Value> =
+  Arb.choice(
+    kindNotSetValue(),
+    nullValue(),
+    numberValue(),
+    stringValue(),
+    boolValue(),
+    struct().map { it.toValueProto() },
+    listValue().map { it.toValueProto() },
+  )
 
 fun Proto.nullValue(): Arb<Value> = arbitrary {
   Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build()
@@ -252,7 +277,7 @@ private class StructArb(
     }
     val forcedDepthIndex = if (size == 0 || depth <= 1) -1 else rs.random.nextInt(size)
 
-    fun RandomSource.nextNestedValue(depth: Int): Value =
+    fun RandomSource.nextNestedValue(depth: Int) =
       rs.nextNestedValue(
         depth = depth,
         sizeEdgeCaseProbability = sizeEdgeCaseProbability,
@@ -260,6 +285,12 @@ private class StructArb(
         valueEdgeCaseProbability = valueEdgeCaseProbability,
         nestedProbability = nestedProbability,
       )
+
+    val descendantValues = mutableListOf<Value>()
+    fun NextNestedValueResult.extractValue(): Value {
+      descendantValues.addAll(this.descendantValues)
+      return value
+    }
 
     val structBuilder = Struct.newBuilder()
     while (structBuilder.fieldsCount < size) {
@@ -271,16 +302,18 @@ private class StructArb(
 
       val value =
         if (depth > 1 && index == forcedDepthIndex) {
-          rs.nextNestedValue(depth - 1)
+          rs.nextNestedValue(depth - 1).extractValue()
         } else if (depth > 1 && rs.random.nextFloat() < nestedProbability) {
-          rs.nextNestedValue(rs.random.nextInt(1 until depth))
+          rs.nextNestedValue(rs.random.nextInt(1 until depth)).extractValue()
         } else {
           scalarValueArb.next(rs, valueEdgeCaseProbability)
         }
+
+      descendantValues.add(value)
       structBuilder.putFields(key, value)
     }
 
-    return Proto.StructInfo(structBuilder.build(), depth)
+    return Proto.StructInfo(structBuilder.build(), depth, descendantValues.toList())
   }
 
   override fun edgecase(rs: RandomSource): Proto.StructInfo {
@@ -300,15 +333,18 @@ private class StructArb(
     )
   }
 
+  private class NextNestedValueResult(
+    val value: Value,
+    val descendantValues: List<Value>,
+  )
+
   private fun RandomSource.nextNestedValue(
     depth: Int,
     sizeEdgeCaseProbability: Float,
     keyEdgeCaseProbability: Float,
     valueEdgeCaseProbability: Float,
     nestedProbability: Float,
-  ): Value {
-    val valueBuilder = Value.newBuilder()
-
+  ): NextNestedValueResult =
     if (random.nextBoolean()) {
       val sample =
         sample(
@@ -319,7 +355,7 @@ private class StructArb(
           valueEdgeCaseProbability = valueEdgeCaseProbability,
           nestedProbability = nestedProbability,
         )
-      valueBuilder.setStructValue(sample.struct)
+      NextNestedValueResult(sample.struct.toValueProto(), sample.descendantValues)
     } else {
       val sample =
         listValueArb.sample(
@@ -329,11 +365,8 @@ private class StructArb(
           valueEdgeCaseProbability = valueEdgeCaseProbability,
           nestedProbability = nestedProbability,
         )
-      valueBuilder.setListValue(sample.listValue)
+      NextNestedValueResult(sample.listValue.toValueProto(), sample.descendantValues)
     }
-
-    return valueBuilder.build()
-  }
 
   private enum class EdgeCase {
     Size,
@@ -434,7 +467,7 @@ private class ListValueArb(
 
     val values = mutableListOf<Value>()
 
-    fun RandomSource.nextNestedValue(depth: Int): Value =
+    fun RandomSource.nextNestedValue(depth: Int) =
       nextNestedValue(
         depth = depth,
         lengthEdgeCaseProbability = lengthEdgeCaseProbability,
@@ -442,20 +475,28 @@ private class ListValueArb(
         nestedProbability = nestedProbability,
       )
 
+    val descendantValues = mutableListOf<Value>()
+    fun NextNestedValueResult.extractValue(): Value {
+      descendantValues.addAll(this.descendantValues)
+      return value
+    }
+
     repeat(length) { index ->
       val value =
         if (depth > 1 && index == forcedDepthIndex) {
-          rs.nextNestedValue(depth - 1)
+          rs.nextNestedValue(depth - 1).extractValue()
         } else if (depth > 1 && rs.random.nextFloat() < nestedProbability) {
-          rs.nextNestedValue(rs.random.nextInt(1 until depth))
+          rs.nextNestedValue(rs.random.nextInt(1 until depth)).extractValue()
         } else {
           scalarValueArb.next(rs, valueEdgeCaseProbability)
         }
+
+      descendantValues.add(value)
       values.add(value)
     }
 
     val listValue = ListValue.newBuilder().addAllValues(values).build()
-    return Proto.ListValueInfo(listValue, depth)
+    return Proto.ListValueInfo(listValue, depth, descendantValues.toList())
   }
 
   override fun edgecase(rs: RandomSource): Proto.ListValueInfo {
@@ -473,14 +514,17 @@ private class ListValueArb(
     )
   }
 
+  private class NextNestedValueResult(
+    val value: Value,
+    val descendantValues: List<Value>,
+  )
+
   private fun RandomSource.nextNestedValue(
     depth: Int,
     lengthEdgeCaseProbability: Float,
     valueEdgeCaseProbability: Float,
     nestedProbability: Float,
-  ): Value {
-    val valueBuilder = Value.newBuilder()
-
+  ): NextNestedValueResult =
     if (random.nextBoolean()) {
       val sample =
         sample(
@@ -490,7 +534,7 @@ private class ListValueArb(
           valueEdgeCaseProbability = valueEdgeCaseProbability,
           nestedProbability = nestedProbability,
         )
-      valueBuilder.setListValue(sample.listValue)
+      NextNestedValueResult(sample.listValue.toValueProto(), sample.descendantValues)
     } else {
       val sample =
         structArb.sample(
@@ -501,11 +545,8 @@ private class ListValueArb(
           valueEdgeCaseProbability = valueEdgeCaseProbability,
           nestedProbability = nestedProbability,
         )
-      valueBuilder.setStructValue(sample.struct)
+      NextNestedValueResult(sample.struct.toValueProto(), sample.descendantValues)
     }
-
-    return valueBuilder.build()
-  }
 
   private enum class EdgeCase {
     Length,
