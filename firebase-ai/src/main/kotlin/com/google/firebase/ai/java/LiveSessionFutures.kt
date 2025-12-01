@@ -24,6 +24,7 @@ import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.FunctionCallPart
 import com.google.firebase.ai.type.FunctionResponsePart
 import com.google.firebase.ai.type.InlineData
+import com.google.firebase.ai.type.LiveAudioConversationConfig
 import com.google.firebase.ai.type.LiveServerMessage
 import com.google.firebase.ai.type.LiveSession
 import com.google.firebase.ai.type.MediaData
@@ -48,6 +49,18 @@ public abstract class LiveSessionFutures internal constructor() {
    */
   @RequiresPermission(RECORD_AUDIO)
   public abstract fun startAudioConversation(): ListenableFuture<Unit>
+
+  /**
+   * Starts an audio conversation with the model, which can only be stopped using
+   * [stopAudioConversation].
+   *
+   * @param liveAudioConversationConfig A [LiveAudioConversationConfig] provided by the user to
+   * control the various aspects of the conversation.
+   */
+  @RequiresPermission(RECORD_AUDIO)
+  public abstract fun startAudioConversation(
+    liveAudioConversationConfig: LiveAudioConversationConfig
+  ): ListenableFuture<Unit>
 
   /**
    * Starts an audio conversation with the model, which can only be stopped using
@@ -295,6 +308,12 @@ public abstract class LiveSessionFutures internal constructor() {
     ) =
       SuspendToFutureAdapter.launchFuture {
         session.startAudioConversation(transcriptHandler = transcriptHandler)
+      }
+
+    @RequiresPermission(RECORD_AUDIO)
+    override fun startAudioConversation(liveAudioConversationConfig: LiveAudioConversationConfig) =
+      SuspendToFutureAdapter.launchFuture {
+        session.startAudioConversation(liveAudioConversationConfig)
       }
 
     @RequiresPermission(RECORD_AUDIO)
