@@ -538,57 +538,85 @@ fun <R> foldValue(
 }
 
 fun Struct.map(
+  includeSelf: Boolean = false,
   path: MutableList<PathComponent> = mutableListOf(),
   mapper: (path: List<PathComponent>, value: Value) -> Value?
-): Struct =
-  Struct.newBuilder().let { builder ->
-    fieldsMap.entries.forEach { (key, value) ->
-      path.add(PathComponent.Field(key))
+): Struct {
+  val newStruct =
+    Struct.newBuilder().let { builder ->
+      fieldsMap.entries.forEach { (key, value) ->
+        path.add(PathComponent.Field(key))
 
-      val mappedValue =
-        mapper(path.toList(), value)?.let {
-          when (it.kindCase) {
-            Value.KindCase.STRUCT_VALUE -> it.structValue.map(path, mapper).toValueProto()
-            Value.KindCase.LIST_VALUE -> it.listValue.map(path, mapper).toValueProto()
-            else -> it
+        val mappedValue =
+          mapper(path.toList(), value)?.let {
+            when (it.kindCase) {
+              Value.KindCase.STRUCT_VALUE -> it.structValue.map(false, path, mapper).toValueProto()
+              Value.KindCase.LIST_VALUE -> it.listValue.map(false, path, mapper).toValueProto()
+              else -> it
+            }
           }
+
+        path.removeLast()
+
+        if (mappedValue !== null) {
+          builder.putFields(key, mappedValue)
         }
-
-      path.removeLast()
-
-      if (mappedValue !== null) {
-        builder.putFields(key, mappedValue)
       }
+      builder.build()
     }
-    builder.build()
+
+  if (!includeSelf) {
+    return newStruct
   }
+
+  val mappedSelf = mapper(path, newStruct.toValueProto())
+  checkNotNull(mappedSelf) { "mapper() must return non-null for the root Struct" }
+  check(mappedSelf.kindCase == Value.KindCase.STRUCT_VALUE) {
+    "mapper() must return a STRUCT_VALUE for the root, but got ${mappedSelf.kindCase}: $mappedSelf"
+  }
+  return mappedSelf.structValue
+}
 
 fun ListValue.map(
+  includeSelf: Boolean = false,
   path: MutableList<PathComponent> = mutableListOf(),
   mapper: (path: List<PathComponent>, value: Value) -> Value?
-): ListValue =
-  ListValue.newBuilder().let { builder ->
-    valuesList.forEachIndexed { index, value ->
-      path.add(PathComponent.ListIndex(index))
+): ListValue {
+  val newListValue =
+    ListValue.newBuilder().let { builder ->
+      valuesList.forEachIndexed { index, value ->
+        path.add(PathComponent.ListIndex(index))
 
-      val mappedValue =
-        mapper(path.toList(), value)?.let {
-          when (it.kindCase) {
-            Value.KindCase.STRUCT_VALUE -> it.structValue.map(path, mapper).toValueProto()
-            Value.KindCase.LIST_VALUE -> it.listValue.map(path, mapper).toValueProto()
-            else -> it
+        val mappedValue =
+          mapper(path.toList(), value)?.let {
+            when (it.kindCase) {
+              Value.KindCase.STRUCT_VALUE -> it.structValue.map(false, path, mapper).toValueProto()
+              Value.KindCase.LIST_VALUE -> it.listValue.map(false, path, mapper).toValueProto()
+              else -> it
+            }
           }
+
+        path.removeLast()
+
+        if (mappedValue !== null) {
+          builder.addValues(mappedValue)
         }
-
-      path.removeLast()
-
-      if (mappedValue !== null) {
-        builder.addValues(mappedValue)
       }
+
+      builder.build()
     }
 
-    builder.build()
+  if (!includeSelf) {
+    return newListValue
   }
+
+  val mappedSelf = mapper(path, newListValue.toValueProto())
+  checkNotNull(mappedSelf) { "mapper() must return non-null for the root ListValue" }
+  check(mappedSelf.kindCase == Value.KindCase.LIST_VALUE) {
+    "mapper() must return a LIST_VALUE for the root, but got ${mappedSelf.kindCase}: $mappedSelf"
+  }
+  return mappedSelf.listValue
+}
 
 fun Struct.withRandomlyInsertedValues(
   values: List<Value>,

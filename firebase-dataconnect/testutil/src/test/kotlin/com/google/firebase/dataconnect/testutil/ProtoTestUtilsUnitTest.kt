@@ -21,7 +21,6 @@ package com.google.firebase.dataconnect.testutil
 import com.google.firebase.dataconnect.DataConnectPathSegment as PathComponent
 import com.google.firebase.dataconnect.testutil.property.arbitrary.distinctPair
 import com.google.firebase.dataconnect.testutil.property.arbitrary.listValue
-import com.google.firebase.dataconnect.testutil.property.arbitrary.next
 import com.google.firebase.dataconnect.testutil.property.arbitrary.numberValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.scalarValue
@@ -44,23 +43,18 @@ import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
 import io.kotest.property.PropertyContext
-import io.kotest.property.RandomSource
 import io.kotest.property.ShrinkingMode
-import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.boolean
 import io.kotest.property.arbitrary.choice
-import io.kotest.property.arbitrary.distinct
 import io.kotest.property.arbitrary.double
 import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.list
-import io.kotest.property.arbitrary.long
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.string
 import io.kotest.property.assume
 import io.kotest.property.checkAll
-import kotlin.collections.map
 import kotlin.random.Random
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
@@ -229,54 +223,43 @@ class ProtoTestUtilsUnitTest {
   }
 
   @Test
-  fun `structDiff,structFastEqual for keys added to root struct`() = runTest {
+  fun `structDiff,structFastEqual for keys added to structs`() = runTest {
     val valueArb = Arb.proto.value()
     val structKeyArb = Arb.proto.structKey()
     val structArb = Arb.proto.struct(key = structKeyArb).map { it.struct }
 
     verifyStructDiffReturnsDifferences(structArb) { struct1, keyCount, expectedDifferences ->
-      val struct2KeyArb = structKeyArb.filterNot(struct1::containsFields).distinct()
-      struct1.toBuilder().let { struct2Builder ->
-        repeat(keyCount) {
-          val difference = Difference.StructUnexpectedKey(struct2KeyArb.bind(), valueArb.bind())
-          check(!struct2Builder.containsFields(difference.key))
-          struct2Builder.putFields(difference.key, difference.value)
-          expectedDifferences.add(DifferencePathPair(emptyList(), difference))
-        }
-        struct2Builder.build()
-      }
-    }
-  }
-
-  @Test
-  fun `structDiff,structFastEqual for keys added to nested struct`() = runTest {
-    val valueArb = Arb.proto.value()
-    val structKeyArb = Arb.proto.structKey()
-    val structArb = Arb.structWithAtLeast1SubStruct(structKeyArb)
-
-    verifyStructDiffReturnsDifferences(structArb) { struct1, keyCount, expectedDifferences ->
-      val structPaths = buildList {
-        struct1.walk { path, value ->
-          if (path.isNotEmpty() && value.kindCase == Value.KindCase.STRUCT_VALUE) {
-            val struct = value.structValue
-            add(path to structKeyArb.filterNot(struct::containsFields).distinct())
+      val structPaths = buildSet {
+        add(emptyList())
+        struct1.allDescendantPaths().forEach { path ->
+          if (path.lastOrNull() is PathComponent.Field) {
+            add(path.dropLast(1))
           }
         }
       }
-      repeat(keyCount) {
-        val (path, keyArb) = structPaths.random(randomSource().random)
-        val difference = Difference.StructUnexpectedKey(keyArb.bind(), valueArb.bind())
-        expectedDifferences.add(DifferencePathPair(path, difference))
+      val valuesToAddByPath: Map<List<PathComponent>, MutableList<Value>> = buildMap {
+        repeat(keyCount) {
+          val path = structPaths.random(randomSource().random)
+          getOrPut(path) { mutableListOf() }.add(valueArb.bind())
+        }
       }
-      struct1.map { path, value ->
-        val curDifferences = expectedDifferences.filter { it.path == path }.map { it.difference }
-        if (curDifferences.isEmpty()) {
+      check(valuesToAddByPath.values.flatten().size == keyCount)
+      struct1.map(includeSelf = true) { path, value ->
+        val valuesToAdd = valuesToAddByPath[path]
+        if (valuesToAdd === null) {
           value
         } else {
           value.structValue.toBuilder().let { structBuilder ->
-            curDifferences.forEach {
-              check(it is Difference.StructUnexpectedKey)
-              structBuilder.putFields(it.key, it.value)
+            val myStructKeyArb = structKeyArb.filterNot(structBuilder::containsFields)
+            valuesToAdd.forEach { valueToAdd ->
+              val keyToAdd = myStructKeyArb.bind()
+              expectedDifferences.add(
+                DifferencePathPair(
+                  path,
+                  Difference.StructUnexpectedKey(keyToAdd, valueToAdd),
+                )
+              )
+              structBuilder.putFields(keyToAdd, valueToAdd)
             }
             structBuilder.build().toValueProto()
           }
@@ -385,7 +368,7 @@ class ProtoTestUtilsUnitTest {
       suspend PropertyContext.(
         listValue1: ListValue,
         itemCount: Int,
-        expectedDifferences: MutableList<DifferencePathPair<*>>
+        expectedDifferences: MutableList<DifferencePathPair<*>>,
       ) -> ListValue,
   ) {
     checkAll(propTestConfig, listValueArb, Arb.int(1..5)) { listValue1, itemCount ->
@@ -434,6 +417,78 @@ class ProtoTestUtilsUnitTest {
       replaceResult.newItem
     }
   }
+
+  @Test
+  fun `listValueDiff,listValueFastEqual for values added to the end of a list`() = runTest {
+    val valueArb = Arb.proto.value()
+    val listValueArb = Arb.proto.listValue(length = 1..5).map { it.listValue }
+
+    verifyListValueDiffReturnsDifferences(listValueArb) { listValue1, itemCount, expectedDifferences
+      ->
+      val listPaths = buildSet {
+        add(emptyList())
+        listValue1.allDescendantPaths().forEach { path ->
+          if (path.lastOrNull() is PathComponent.ListIndex) {
+            add(path.dropLast(1))
+          }
+        }
+      }
+      val valuesToAddByPath: Map<List<PathComponent>, MutableList<Value>> = buildMap {
+        repeat(itemCount) {
+          val path = listPaths.random(randomSource().random)
+          getOrPut(path) { mutableListOf() }.add(valueArb.bind())
+        }
+      }
+      check(valuesToAddByPath.values.flatten().size == itemCount)
+      listValue1.map(includeSelf = true) { path, value ->
+        val valuesToAdd = valuesToAddByPath[path]
+        if (valuesToAdd === null) {
+          value
+        } else {
+          value.listValue.toBuilder().let { listValueBuilder ->
+            valuesToAdd.forEach { valueToAdd ->
+              expectedDifferences.add(
+                DifferencePathPair(
+                  path,
+                  Difference.ListUnexpectedElement(listValueBuilder.valuesCount, valueToAdd),
+                )
+              )
+              listValueBuilder.addValues(valueToAdd)
+            }
+            listValueBuilder.build().toValueProto()
+          }
+        }
+      }
+    }
+  }
+
+  @Test
+  fun `listValueDiff,listValueFastEqual for values removed from the end of the root list`() =
+    runTest {
+      val listValueArb = Arb.proto.listValue(length = 1..5).map { it.listValue }
+
+      verifyListValueDiffReturnsDifferences(listValueArb) {
+        listValue1,
+        itemCount,
+        expectedDifferences ->
+        listValue1.toBuilder().let { listValueBuilder ->
+          var i = itemCount
+          while (listValueBuilder.valuesCount > 0 && i > 0) {
+            i--
+            val removeIndex = listValueBuilder.valuesCount - 1
+            val oldValue = listValueBuilder.getValues(removeIndex)
+            listValueBuilder.removeValues(removeIndex)
+            expectedDifferences.add(
+              DifferencePathPair(
+                path = emptyList(),
+                difference = Difference.ListMissingElement(removeIndex, oldValue),
+              )
+            )
+          }
+          listValueBuilder.build()
+        }
+      }
+    }
 
   @Test
   fun `listValueDiff,listValueFastEqual for BoolValue, NumberValue, StringValue`() = runTest {
@@ -602,18 +657,6 @@ class ProtoTestUtilsUnitTest {
         edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.33),
         shrinkingMode = ShrinkingMode.Off,
       )
-
-    fun Arb.Companion.structWithAtLeast1SubStruct(key: Arb<String>): Arb<Struct> {
-      val structArb = Arb.proto.struct(depth = 2..4, key = key).map { it.struct }
-      return Arb.bind(structArb, structArb, Arb.long()) { struct1, struct2, randomSeed ->
-        val rs = RandomSource.seeded(randomSeed)
-        struct1.withRandomlyInsertedValues(
-          listOf(struct2.toValueProto()),
-          rs.random,
-          { key.next(rs, edgeCaseProbability = rs.random.nextFloat()) },
-        )
-      }
-    }
 
     fun PropertyContext.randomPathsToReplace(
       value: Value,
