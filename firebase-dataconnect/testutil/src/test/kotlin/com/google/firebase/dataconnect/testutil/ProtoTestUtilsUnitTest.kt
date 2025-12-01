@@ -60,6 +60,7 @@ import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.string
 import io.kotest.property.assume
 import io.kotest.property.checkAll
+import kotlin.collections.map
 import kotlin.random.Random
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
@@ -309,7 +310,7 @@ class ProtoTestUtilsUnitTest {
         }
 
       expectedDifferences.addAll(differences)
-      replaceResult.newStruct
+      replaceResult.newItem
     }
   }
 
@@ -338,7 +339,7 @@ class ProtoTestUtilsUnitTest {
         }
 
       expectedDifferences.addAll(differences)
-      replaceResult.newStruct
+      replaceResult.newItem
     }
   }
 
@@ -351,75 +352,105 @@ class ProtoTestUtilsUnitTest {
         replaceRandomValues(
           struct1,
           keyCount,
-          filter = { _, value ->
-            when (value.kindCase) {
-              Value.KindCase.BOOL_VALUE,
-              Value.KindCase.NUMBER_VALUE,
-              Value.KindCase.STRING_VALUE -> true
-              else -> false
-            }
-          },
-          replacementValue = { _, oldValue ->
-            when (val kindCase = oldValue.kindCase) {
-              Value.KindCase.BOOL_VALUE ->
-                oldValue.toBuilder().setBoolValue(!oldValue.boolValue).build()
-              Value.KindCase.NUMBER_VALUE ->
-                Arb.proto
-                  .numberValue(filter = { !numberValuesEqual(it, oldValue.numberValue) })
-                  .bind()
-              Value.KindCase.STRING_VALUE ->
-                Arb.proto.stringValue(filter = { it != oldValue.stringValue }).bind()
-              else ->
-                throw IllegalStateException(
-                  "should never get here: kindCase=$kindCase oldValue=$oldValue [vqrnqxwcds]"
-                )
-            }
-          }
+          filter = { _, value -> value.isBoolNumberOrString() },
+          replacementValue = { _, oldValue -> unequalValueOfSameKind(oldValue) },
         )
       assume(replaceResult.replacements.isNotEmpty())
+      expectedDifferences.addAllUnequalValueOfSameKindDifferences(replaceResult.replacements)
+      replaceResult.newItem
+    }
+  }
+
+  @Test
+  fun `listValueDiff,listValueFastEqual for same instance`() = runTest {
+    checkAll(propTestConfig, Arb.proto.listValue()) { sample ->
+      listValueFastEqual(sample.listValue, sample.listValue) shouldBe true
+      listValueDiff(sample.listValue, sample.listValue).size shouldBe 0
+    }
+  }
+
+  @Test
+  fun `listValueDiff,listValueFastEqual for distinct, but equal instance`() = runTest {
+    checkAll(propTestConfig, Arb.proto.listValue()) { sample ->
+      val listValue1 = sample.listValue
+      val listValue2 = listValue1.deepCopy()
+      listValueFastEqual(listValue1, listValue2) shouldBe true
+      listValueDiff(listValue1, listValue2).size shouldBe 0
+    }
+  }
+
+  private suspend fun verifyListValueDiffReturnsDifferences(
+    listValueArb: Arb<ListValue>,
+    prepare:
+      suspend PropertyContext.(
+        listValue1: ListValue,
+        itemCount: Int,
+        expectedDifferences: MutableList<DifferencePathPair<*>>
+      ) -> ListValue,
+  ) {
+    checkAll(propTestConfig, listValueArb, Arb.int(1..5)) { listValue1, itemCount ->
+      val mutableDifferences = mutableListOf<DifferencePathPair<*>>()
+      val listValue2 = prepare(listValue1, itemCount, mutableDifferences)
+      val expectedDifferences = mutableDifferences.toList()
+
+      listValueFastEqual(listValue1, listValue2) shouldBe false
+      listValueFastEqual(listValue2, listValue1) shouldBe false
+
+      listValueDiff(listValue1, listValue2).asClue { differences ->
+        differences.toList() shouldContainExactlyInAnyOrder expectedDifferences
+      }
+      listValueDiff(listValue2, listValue1).asClue { differences ->
+        differences.toList() shouldContainExactlyInAnyOrder
+          expectedDifferences.withInvertedDifferences()
+      }
+    }
+  }
+
+  @Test
+  fun `listValueDiff,listValueFastEqual for KindCase`() = runTest {
+    val valueArb = Arb.proto.value()
+    val listValueArb = Arb.proto.listValue(length = 1..5).map { it.listValue }
+
+    verifyListValueDiffReturnsDifferences(listValueArb) { listValue1, itemCount, expectedDifferences
+      ->
+      val replaceResult =
+        replaceRandomValues(
+          listValue1,
+          itemCount,
+          replacementValue = { _, oldValue ->
+            valueArb.filterNot { it.kindCase == oldValue.kindCase }.bind()
+          }
+        )
 
       val differences =
         replaceResult.replacements.map { replacement ->
-          val difference =
-            when (val kindCase = replacement.oldValue.kindCase) {
-              Value.KindCase.NUMBER_VALUE ->
-                Difference.NumberValue(
-                  replacement.oldValue.numberValue,
-                  replacement.newValue.numberValue
-                )
-              Value.KindCase.STRING_VALUE ->
-                Difference.StringValue(
-                  replacement.oldValue.stringValue,
-                  replacement.newValue.stringValue
-                )
-              Value.KindCase.BOOL_VALUE ->
-                Difference.BoolValue(replacement.oldValue.boolValue, replacement.newValue.boolValue)
-              else ->
-                throw IllegalStateException(
-                  "should never get here: kindCase=$kindCase replacement=$replacement [xgdwtkgtg2]"
-                )
-            }
-          DifferencePathPair(replacement.path, difference)
+          DifferencePathPair(
+            replacement.path,
+            Difference.KindCase(replacement.oldValue, replacement.newValue)
+          )
         }
 
       expectedDifferences.addAll(differences)
-      replaceResult.newStruct
+      replaceResult.newItem
     }
   }
 
   @Test
-  fun `listValueDiff reports equal for same instance`() = runTest {
-    checkAll(propTestConfig, Arb.proto.listValue()) { sample ->
-      val differences = listValueDiff(sample.listValue, sample.listValue)
-      differences.size shouldBe 0
-    }
-  }
+  fun `listValueDiff,listValueFastEqual for BoolValue, NumberValue, StringValue`() = runTest {
+    val listValueArb = Arb.proto.listValue(length = 1..5).map { it.listValue }
 
-  @Test
-  fun `listValueDiff reports equal for equal, but distinct instance`() = runTest {
-    checkAll(propTestConfig, Arb.proto.listValue()) { sample ->
-      val differences = listValueDiff(sample.listValue, sample.listValue.deepCopy())
-      differences.size shouldBe 0
+    verifyListValueDiffReturnsDifferences(listValueArb) { listValue1, itemCount, expectedDifferences
+      ->
+      val replaceResult =
+        replaceRandomValues(
+          listValue1,
+          itemCount,
+          filter = { _, value -> value.isBoolNumberOrString() },
+          replacementValue = { _, oldValue -> unequalValueOfSameKind(oldValue) },
+        )
+      assume(replaceResult.replacements.isNotEmpty())
+      expectedDifferences.addAllUnequalValueOfSameKindDifferences(replaceResult.replacements)
+      replaceResult.newItem
     }
   }
 
@@ -585,17 +616,17 @@ class ProtoTestUtilsUnitTest {
     }
 
     fun PropertyContext.randomPathsToReplace(
-      struct: Struct,
+      value: Value,
       maxNumPaths: Int,
       filter: ((path: List<PathComponent>, value: Value) -> Boolean)? = null,
-    ): List<List<PathComponent>> = randomSource().random.pathsToReplace(struct, maxNumPaths, filter)
+    ): List<List<PathComponent>> = randomSource().random.pathsToReplace(value, maxNumPaths, filter)
 
     fun Random.pathsToReplace(
-      struct: Struct,
+      value: Value,
       maxNumPaths: Int,
       filter: ((path: List<PathComponent>, value: Value) -> Boolean)? = null,
     ): List<List<PathComponent>> {
-      val candidatePaths = struct.allDescendantPaths(filter).toMutableList()
+      val candidatePaths = value.allDescendantPaths(filter).toMutableList()
       return buildList {
         while (size < maxNumPaths && candidatePaths.isNotEmpty()) {
           val path = candidatePaths.random(this@pathsToReplace)
@@ -614,8 +645,8 @@ class ProtoTestUtilsUnitTest {
         otherList.subList(0, size) == this
       }
 
-    data class ReplaceRandomValuesResult<V : Value?>(
-      val newStruct: Struct,
+    data class ReplaceRandomValuesResult<T, V : Value?>(
+      val newItem: T,
       val replacements: List<Replacement<V>>,
     ) {
       data class Replacement<V : Value?>(
@@ -630,8 +661,8 @@ class ProtoTestUtilsUnitTest {
       maxNumPaths: Int,
       filter: ((path: List<PathComponent>, value: Value) -> Boolean)? = null,
       replacementValue: (path: List<PathComponent>, oldValue: Value) -> V,
-    ): ReplaceRandomValuesResult<V> {
-      val pathsToReplace = randomPathsToReplace(struct, maxNumPaths, filter)
+    ): ReplaceRandomValuesResult<Struct, V> {
+      val pathsToReplace = randomPathsToReplace(struct.toValueProto(), maxNumPaths, filter)
 
       val replacements = mutableListOf<ReplaceRandomValuesResult.Replacement<V>>()
       val newStruct =
@@ -646,6 +677,29 @@ class ProtoTestUtilsUnitTest {
         }
 
       return ReplaceRandomValuesResult(newStruct, replacements.toList())
+    }
+
+    fun <V : Value?> PropertyContext.replaceRandomValues(
+      listValue: ListValue,
+      maxNumPaths: Int,
+      filter: ((path: List<PathComponent>, value: Value) -> Boolean)? = null,
+      replacementValue: (path: List<PathComponent>, oldValue: Value) -> V,
+    ): ReplaceRandomValuesResult<ListValue, V> {
+      val pathsToReplace = randomPathsToReplace(listValue.toValueProto(), maxNumPaths, filter)
+
+      val replacements = mutableListOf<ReplaceRandomValuesResult.Replacement<V>>()
+      val newListValue =
+        listValue.map { path, value ->
+          if (pathsToReplace.contains(path)) {
+            val newValue = replacementValue(path, value)
+            replacements.add(ReplaceRandomValuesResult.Replacement(path, value, newValue))
+            newValue
+          } else {
+            value
+          }
+        }
+
+      return ReplaceRandomValuesResult(newListValue, replacements.toList())
     }
 
     fun List<DifferencePathPair<*>>.withInvertedDifferences(): List<DifferencePathPair<*>> = map {
@@ -668,5 +722,54 @@ class ProtoTestUtilsUnitTest {
         is Difference.StructMissingKey -> Difference.StructUnexpectedKey(key = key, value = value)
         is Difference.StructUnexpectedKey -> Difference.StructMissingKey(key = key, value = value)
       }
+
+    fun Value.isBoolNumberOrString(): Boolean =
+      when (kindCase) {
+        Value.KindCase.NUMBER_VALUE,
+        Value.KindCase.STRING_VALUE,
+        Value.KindCase.BOOL_VALUE -> true
+        else -> false
+      }
+
+    fun PropertyContext.unequalValueOfSameKind(value: Value): Value =
+      when (val kindCase = value.kindCase) {
+        Value.KindCase.BOOL_VALUE -> value.toBuilder().setBoolValue(!value.boolValue).build()
+        Value.KindCase.NUMBER_VALUE ->
+          Arb.proto.numberValue(filter = { !numberValuesEqual(it, value.numberValue) }).bind()
+        Value.KindCase.STRING_VALUE ->
+          Arb.proto.stringValue(filter = { it != value.stringValue }).bind()
+        else ->
+          throw IllegalStateException(
+            "should never get here: kindCase=$kindCase value=$value [vqrnqxwcds]"
+          )
+      }
+
+    fun MutableList<DifferencePathPair<*>>.addAllUnequalValueOfSameKindDifferences(
+      replacements: List<ReplaceRandomValuesResult.Replacement<Value>>
+    ) {
+      replacements.forEach { replacement ->
+        val difference =
+          when (val kindCase = replacement.oldValue.kindCase) {
+            Value.KindCase.NUMBER_VALUE ->
+              Difference.NumberValue(
+                replacement.oldValue.numberValue,
+                replacement.newValue.numberValue
+              )
+            Value.KindCase.STRING_VALUE ->
+              Difference.StringValue(
+                replacement.oldValue.stringValue,
+                replacement.newValue.stringValue
+              )
+            Value.KindCase.BOOL_VALUE ->
+              Difference.BoolValue(replacement.oldValue.boolValue, replacement.newValue.boolValue)
+            else ->
+              throw IllegalStateException(
+                "should never get here: kindCase=$kindCase replacement=$replacement [xgdwtkgtg2]"
+              )
+          }
+
+        add(DifferencePathPair(replacement.path, difference))
+      }
+    }
   }
 }
