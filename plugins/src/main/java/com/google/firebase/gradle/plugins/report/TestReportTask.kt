@@ -31,7 +31,7 @@ import org.gradle.api.tasks.TaskAction
  * @property apiToken The GitHub API token with adequate permissions to read test result data and
  *   execute GraphQL queries.
  */
-abstract class UnitTestReportTask : DefaultTask() {
+abstract class TestReportTask : DefaultTask() {
   @get:OutputFile abstract val outputFile: RegularFileProperty
 
   @get:Input abstract val commitCount: Property<Integer>
@@ -40,6 +40,6 @@ abstract class UnitTestReportTask : DefaultTask() {
 
   @TaskAction
   fun make() {
-    UnitTestReport(apiToken.get()).createReport(outputFile.asFile.get(), commitCount.get().toInt())
+    TestReportGenerator(apiToken.get()).createReport(outputFile.asFile.get(), commitCount.get().toInt())
   }
 }
