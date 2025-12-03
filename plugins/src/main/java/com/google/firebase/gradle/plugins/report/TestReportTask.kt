@@ -40,6 +40,7 @@ abstract class TestReportTask : DefaultTask() {
 
   @TaskAction
   fun make() {
-    TestReportGenerator(apiToken.get()).createReport(outputFile.asFile.get(), commitCount.get().toInt())
+    TestReportGenerator(apiToken.get())
+      .createReport(outputFile.asFile.get(), commitCount.get().toInt())
   }
 }
