@@ -116,7 +116,7 @@ gradlePlugin {
     }
     register("testReportPlugin") {
       id = "test-report"
-      implementationClass = "com.google.firebase.gradle.plugins.report.UnitTestReportPlugin"
+      implementationClass = "com.google.firebase.gradle.plugins.report.TestReportPlugin"
     }
   }
 }
