@@ -17,11 +17,13 @@
 package com.google.firebase.dataconnect.sqlite
 
 import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.EntityTestCase
-import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.keysRecursive
-import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.structSizesRecursive
+import com.google.firebase.dataconnect.testutil.StructKeyProtoValuePathComponent
+import com.google.firebase.dataconnect.testutil.isStructValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.maxDepth
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
+import com.google.firebase.dataconnect.testutil.walk
+import com.google.firebase.dataconnect.testutil.walkPaths
 import com.google.protobuf.Value
 import io.kotest.assertions.asClue
 import io.kotest.assertions.assertSoftly
@@ -115,7 +117,13 @@ class QueryResultEncoderTestingUnitTest {
 
       val sample = entityArb.bind()
 
-      sample.struct.keysRecursive().distinct() shouldContainExactlyInAnyOrder generatedKeys
+      val actualStructKeys =
+        sample.struct
+          .walkPaths()
+          .mapNotNull { it.lastOrNull() as? StructKeyProtoValuePathComponent }
+          .map { it.field }
+          .toSet()
+      actualStructKeys shouldContainExactlyInAnyOrder generatedKeys
     }
   }
 
@@ -130,9 +138,14 @@ class QueryResultEncoderTestingUnitTest {
       // Add 1 to the end of the struct size range to account for the entityId field itself.
       val structSizeRange = entityArbStructSize.first..(entityArbStructSize.last + 1)
       assertSoftly {
-        sample.struct.structSizesRecursive().forEachIndexed { index, structSize ->
-          withClue("index=$index") { structSize shouldBeInRange structSizeRange }
-        }
+        sample.struct
+          .walk()
+          .filter { it.value.isStructValue }
+          .forEach { (path, value) ->
+            withClue("path=${path.joinToString(".")}") {
+              value.structValue.fieldsCount shouldBeInRange structSizeRange
+            }
+          }
       }
     }
   }

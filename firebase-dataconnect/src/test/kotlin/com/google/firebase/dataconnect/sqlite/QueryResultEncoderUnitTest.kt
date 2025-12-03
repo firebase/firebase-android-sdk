@@ -19,7 +19,7 @@ package com.google.firebase.dataconnect.sqlite
 import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.EntityTestCase
 import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.calculateExpectedEncodingAsEntityId
 import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.decodingEncodingShouldProduceIdenticalStruct
-import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.withRandomlyInsertedEntities
+import com.google.firebase.dataconnect.testutil.RandomInsertMode
 import com.google.firebase.dataconnect.testutil.buildByteArray
 import com.google.firebase.dataconnect.testutil.property.arbitrary.maxDepth
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
@@ -27,13 +27,13 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.stringValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
 import com.google.firebase.dataconnect.testutil.shouldBe
+import com.google.firebase.dataconnect.testutil.withRandomlyInsertedStructs
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
-import io.kotest.common.DelicateKotest
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
@@ -42,9 +42,7 @@ import io.kotest.property.EdgeConfig
 import io.kotest.property.Exhaustive
 import io.kotest.property.PropTestConfig
 import io.kotest.property.ShrinkingMode
-import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.constant
-import io.kotest.property.arbitrary.distinct
 import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.map
@@ -52,8 +50,6 @@ import io.kotest.property.arbitrary.set
 import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
 import io.kotest.property.exhaustive.of
-import kotlin.math.roundToInt
-import kotlin.math.sqrt
 import kotlin.random.nextInt
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
@@ -180,11 +176,8 @@ class QueryResultEncoderUnitTest {
         key = StringEncodingTestCase.longStringsArb().map { it.string },
         scalarValue = StringEncodingTestCase.longStringsArb().map { it.string.toValueProto() },
       )
-    checkAll(
-      @OptIn(ExperimentalKotest::class)
-      propTestConfig.copy(iterations = 100, seed = 5085109927819487176),
-      structArb
-    ) { struct ->
+    checkAll(@OptIn(ExperimentalKotest::class) propTestConfig.copy(iterations = 100), structArb) {
+      struct ->
       struct.struct.decodingEncodingShouldProduceIdenticalStruct()
     }
   }
@@ -333,19 +326,19 @@ class QueryResultEncoderUnitTest {
           structSize = 0..2,
           structDepth = 1..2,
         )
-      val entities = List(entityCount) { entityArb.bind() }
-      val entityStructs = entities.map { it.struct }
+      val entities = List(entityCount) { entityArb.bind().struct }
       val structKeyArb = Arb.proto.structKey().filterNot { it == entityIdFieldName }
       val originalStruct = Arb.proto.struct(key = structKeyArb).bind().struct
       val patchedStruct =
-        originalStruct.withRandomlyInsertedEntities(
-          entityStructs,
-          randomSource(),
-          { structKeyArb.bind() }
+        originalStruct.withRandomlyInsertedStructs(
+          entities,
+          randomSource().random,
+          RandomInsertMode.Struct,
+          { structKeyArb.bind() },
         )
 
       patchedStruct.decodingEncodingShouldProduceIdenticalStruct(
-        entities = entityStructs,
+        entities = entities,
         entityIdFieldName
       )
     }
@@ -355,57 +348,51 @@ class QueryResultEncoderUnitTest {
   fun `struct has nested entities`() = runTest {
     data class EntityIdFieldName(val value: String)
     val entityIdFieldNameArb = Arb.proto.structKey().map(::EntityIdFieldName)
-    checkAll(propTestConfig.copy(seed = 1234), entityIdFieldNameArb) { entityIdFieldName ->
+    checkAll(propTestConfig, entityIdFieldNameArb, Arb.int(3..5)) { entityIdFieldName, entityCount
+      ->
+      val entityArb =
+        EntityTestCase.arb(
+          entityIdFieldName = Arb.constant(entityIdFieldName.value),
+          structSize = 0..2,
+          structDepth = 1..2,
+        )
+      val entities = List(entityCount) { entityArb.bind().struct }
       val structKeyArb = Arb.proto.structKey().filterNot { it == entityIdFieldName.value }
-      val structArb = Arb.proto.struct(key = structKeyArb).map { it.struct }
-      val entityIdArb = @OptIn(DelicateKotest::class) StringEncodingTestCase.arb().distinct()
-      val entityArb: Arb<Struct> =
-        Arb.bind(structArb, entityIdArb) { struct, entityId ->
-          struct.toBuilder().let {
-            it.putFields(entityIdFieldName.value, entityId.string.toValueProto())
-            it.build()
-          }
-        }
-
-      val entities = List(randomSource().random.nextInt(2..10)) { entityArb.bind() }
-
-      val nestedEntities = buildList {
-        addAll(entities)
-        while (size > 3) {
-          val rootCount = sqrt(size.toDouble()).roundToInt().coerceAtLeast(1)
-          shuffle(randomSource().random)
-          val roots = MutableList(rootCount) { removeFirst() }
-          while (isNotEmpty()) {
-            val index = roots.indices.random(randomSource().random)
-            roots[index] =
-              roots[index].withRandomlyInsertedEntities(
-                listOf(removeFirst()),
-                randomSource(),
-                { structKeyArb.bind() }
-              )
-          }
-          addAll(roots)
-        }
+      val candidateEntities = entities.toMutableList()
+      val targetCandidateEntitiesSize =
+        randomSource().random.nextInt(1..(candidateEntities.size / 2))
+      while (candidateEntities.size > targetCandidateEntitiesSize) {
+        val twoEntities =
+          candidateEntities.indices
+            .shuffled(randomSource().random)
+            .take(2)
+            .sortedDescending()
+            .map { candidateEntities.removeAt(it) }
+            .shuffled(randomSource().random)
+        val mergedEntity =
+          twoEntities[0].withRandomlyInsertedStructs(
+            twoEntities.drop(1),
+            randomSource().random,
+            RandomInsertMode.Struct,
+            { structKeyArb.bind() },
+          )
+        candidateEntities.add(mergedEntity)
       }
 
-      val rootStruct =
-        if (randomSource().random.nextBoolean()) {
-          val struct = structArb.bind()
-          struct.withRandomlyInsertedEntities(
-            nestedEntities,
-            randomSource(),
-            { structKeyArb.bind() }
-          )
+      val struct =
+        if (candidateEntities.size == 1) {
+          candidateEntities.single()
         } else {
-          val struct = nestedEntities[0]
-          struct.withRandomlyInsertedEntities(
-            nestedEntities.drop(1),
-            randomSource(),
-            { structKeyArb.bind() }
+          val struct = Arb.proto.struct(key = structKeyArb).bind().struct
+          struct.withRandomlyInsertedStructs(
+            candidateEntities,
+            randomSource().random,
+            RandomInsertMode.Struct,
+            { structKeyArb.bind() },
           )
         }
 
-      rootStruct.decodingEncodingShouldProduceIdenticalStruct(
+      struct.decodingEncodingShouldProduceIdenticalStruct(
         entities = entities,
         entityIdFieldName.value
       )

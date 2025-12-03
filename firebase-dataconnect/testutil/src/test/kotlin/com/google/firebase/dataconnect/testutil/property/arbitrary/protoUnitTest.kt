@@ -16,7 +16,13 @@
 
 package com.google.firebase.dataconnect.testutil.property.arbitrary
 
+import com.google.firebase.dataconnect.testutil.ListElementProtoValuePathComponent
+import com.google.firebase.dataconnect.testutil.ProtoValuePathPair
 import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
+import com.google.firebase.dataconnect.testutil.StructKeyProtoValuePathComponent
+import com.google.firebase.dataconnect.testutil.isListValue
+import com.google.firebase.dataconnect.testutil.isStructValue
+import com.google.firebase.dataconnect.testutil.toValueProto
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
@@ -109,22 +115,11 @@ class protoUnitTest {
   }
 
   @Test
-  fun `listValue() Sample should specify the correct descendantValues`() = runTest {
+  fun `listValue() Sample should specify the correct descendants`() = runTest {
     checkAll(propTestConfig, Arb.proto.listValue()) { sample ->
-      val expectedDescendantValues = buildList {
-        val queue = sample.listValue.valuesList.toMutableList()
-        while (queue.isNotEmpty()) {
-          val value = queue.removeLast()
-          add(value)
-          if (value.kindCase == Value.KindCase.LIST_VALUE) {
-            queue.addAll(value.listValue.valuesList)
-          } else if (value.kindCase == Value.KindCase.STRUCT_VALUE) {
-            queue.addAll(value.structValue.fieldsMap.values)
-          }
-        }
-      }
-
-      sample.descendantValues shouldContainExactlyInAnyOrder expectedDescendantValues
+      val listValue: ListValue = sample.listValue
+      val expectedDescendants = listValue.toValueProto().calculateExpectedDescendants()
+      sample.descendants shouldContainExactlyInAnyOrder expectedDescendants
     }
   }
 
@@ -172,22 +167,11 @@ class protoUnitTest {
   }
 
   @Test
-  fun `struct() Sample should specify the correct descendantValues`() = runTest {
+  fun `struct() Sample should specify the correct descendants`() = runTest {
     checkAll(propTestConfig, Arb.proto.struct()) { sample ->
-      val expectedDescendantValues = buildList {
-        val queue = sample.struct.fieldsMap.values.toMutableList()
-        while (queue.isNotEmpty()) {
-          val value = queue.removeLast()
-          add(value)
-          if (value.kindCase == Value.KindCase.LIST_VALUE) {
-            queue.addAll(value.listValue.valuesList)
-          } else if (value.kindCase == Value.KindCase.STRUCT_VALUE) {
-            queue.addAll(value.structValue.fieldsMap.values)
-          }
-        }
-      }
-
-      sample.descendantValues shouldContainExactlyInAnyOrder expectedDescendantValues
+      val struct: Struct = sample.struct
+      val expectedDescendants = struct.toValueProto().calculateExpectedDescendants()
+      sample.descendants shouldContainExactlyInAnyOrder expectedDescendants
     }
   }
 
@@ -282,5 +266,36 @@ class protoUnitTest {
       } else {
         false
       }
+
+    fun Value.calculateExpectedDescendants(): List<ProtoValuePathPair> = buildList {
+      val queue: MutableList<ProtoValuePathPair> = mutableListOf()
+      queue.add(ProtoValuePathPair(emptyList(), this@calculateExpectedDescendants))
+
+      while (queue.isNotEmpty()) {
+        val entry = queue.removeFirst()
+        val (path, value) = entry
+        if (path.isNotEmpty()) {
+          add(entry)
+        }
+
+        if (value.isStructValue) {
+          value.structValue.fieldsMap.entries.forEach { (key, childValue) ->
+            val childPath = buildList {
+              addAll(path)
+              add(StructKeyProtoValuePathComponent(key))
+            }
+            queue.add(ProtoValuePathPair(childPath, childValue))
+          }
+        } else if (value.isListValue) {
+          value.listValue.valuesList.forEachIndexed { index, childValue ->
+            val childPath = buildList {
+              addAll(path)
+              add(ListElementProtoValuePathComponent(index))
+            }
+            queue.add(ProtoValuePathPair(childPath, childValue))
+          }
+        }
+      }
+    }
   }
 }

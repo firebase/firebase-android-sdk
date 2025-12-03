@@ -36,13 +36,11 @@ import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
 import com.google.protobuf.Struct
-import com.google.protobuf.Value
 import io.kotest.assertions.withClue
 import io.kotest.common.DelicateKotest
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.should
 import io.kotest.property.Arb
-import io.kotest.property.RandomSource
 import io.kotest.property.arbitrary.char
 import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.constant
@@ -72,9 +70,8 @@ object QueryResultEncoderTesting {
     companion object {
 
       fun arb(
-        entityIdFieldName: Arb<String> = StringEncodingTestCase.arb().map { it.string },
-        @OptIn(DelicateKotest::class)
-        entityId: Arb<String> = StringEncodingTestCase.arb().map { it.string }.distinct(),
+        entityIdFieldName: Arb<String> = Arb.proto.structKey(),
+        @OptIn(DelicateKotest::class) entityId: Arb<String> = Arb.proto.structKey().distinct(),
         structKey: Arb<String> = Arb.proto.structKey(),
         structSize: IntRange,
         structDepth: IntRange,
@@ -96,9 +93,8 @@ object QueryResultEncoderTesting {
         }
 
       fun arb(
-        entityIdFieldName: Arb<String> = StringEncodingTestCase.arb().map { it.string },
-        @OptIn(DelicateKotest::class)
-        entityId: Arb<String> = StringEncodingTestCase.arb().map { it.string }.distinct(),
+        entityIdFieldName: Arb<String> = Arb.proto.structKey(),
+        @OptIn(DelicateKotest::class) entityId: Arb<String> = Arb.proto.structKey().distinct(),
         structKey: Arb<String> = Arb.proto.structKey(),
         structSize: IntRange,
         structDepth: Int,
@@ -162,110 +158,6 @@ object QueryResultEncoderTesting {
     byteBuffer.flip()
     digest.update(byteBuffer)
     return digest.digest()
-  }
-
-  fun Struct.forEachValue(block: (Value) -> Unit) {
-    val values: MutableList<Value> = mutableListOf(this.toValueProto())
-    while (values.isNotEmpty()) {
-      val value = values.removeFirst()
-      block(value)
-
-      if (value.kindCase == Value.KindCase.LIST_VALUE) {
-        value.listValue.valuesList.forEach(values::add)
-      } else if (value.kindCase == Value.KindCase.STRUCT_VALUE) {
-        value.structValue.fieldsMap.entries.forEach { values.add(it.value) }
-      }
-    }
-  }
-
-  fun Struct.keysRecursive(): List<String> {
-    val keys = mutableListOf<String>()
-    forEachValue { value ->
-      if (value.kindCase == Value.KindCase.STRUCT_VALUE) {
-        keys.addAll(value.structValue.fieldsMap.keys)
-      }
-    }
-    return keys
-  }
-
-  fun Struct.structSizesRecursive(): List<Int> {
-    val structSizes = mutableListOf<Int>()
-    forEachValue { value ->
-      if (value.kindCase == Value.KindCase.STRUCT_VALUE) {
-        structSizes.add(value.structValue.fieldsCount)
-      }
-    }
-    return structSizes
-  }
-
-  fun Value.subStructs(): List<Value> {
-    val subStructs = mutableListOf<Value>()
-    val values = mutableListOf(this)
-    while (values.isNotEmpty()) {
-      val value = values.removeFirst()
-      if (value.kindCase == Value.KindCase.STRUCT_VALUE) {
-        subStructs.add(value)
-        value.structValue.fieldsMap.values.forEach(values::add)
-      } else if (value.kindCase == Value.KindCase.LIST_VALUE) {
-        value.listValue.valuesList.forEach(values::add)
-      }
-    }
-    return subStructs
-  }
-
-  fun Struct.withRandomlyInsertedEntities(
-    entities: List<Struct>,
-    rs: RandomSource,
-    generateKey: () -> String
-  ): Struct {
-    val valueWrapper = toValueProto()
-    val subStructs = valueWrapper.subStructs()
-    val subStructByEntityIndex = List(entities.size) { subStructs.random(rs.random) }
-    val insertedEntityIndices = mutableSetOf<Int>()
-
-    fun patch(value: Value): Value {
-      return if (value.kindCase == Value.KindCase.STRUCT_VALUE) {
-        val entityIndices =
-          subStructByEntityIndex.indices.filter { subStructByEntityIndex[it] === value }
-        entityIndices.forEach {
-          check(!insertedEntityIndices.contains(it)) {
-            "internal error jstfxyrdsg: entity index $it visited multiple times"
-          }
-        }
-
-        val builder = value.structValue.toBuilder()
-
-        builder.fieldsMap.entries.toList().forEach { (key, value) ->
-          builder.putFields(key, patch(value))
-        }
-
-        entityIndices.forEach { entityIndex ->
-          insertedEntityIndices.add(entityIndex)
-          val entity = entities[entityIndex]
-          val key = generateSequence(generateKey).filterNot { builder.containsFields(it) }.first()
-          builder.putFields(key, entity.toValueProto())
-        }
-
-        builder.build().toValueProto()
-      } else if (value.kindCase == Value.KindCase.LIST_VALUE) {
-        val builder = value.listValue.toBuilder()
-        repeat(builder.valuesCount) { builder.setValues(it, patch(builder.getValues(it))) }
-        builder.build().toValueProto()
-      } else {
-        value
-      }
-    }
-
-    val patchedStruct = patch(valueWrapper).structValue
-
-    val entityIndicesSorted = entities.indices.sorted()
-    val insertedEntityIndicesSorted = insertedEntityIndices.sorted()
-    check(entityIndicesSorted == insertedEntityIndicesSorted) {
-      "internal error esv76bzer6: not all entities were inserted: " +
-        "entityIndices=$entityIndicesSorted, insertedEntityIndices=$insertedEntityIndicesSorted"
-    }
-
-    return patchedStruct
   }
 }
 
