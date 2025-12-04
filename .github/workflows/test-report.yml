@@ -32,4 +32,6 @@ jobs:
         run: ./gradlew generateTestReport
 
       - name: Update tracking issue
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh issue edit 7421 --body-file test-report.md
