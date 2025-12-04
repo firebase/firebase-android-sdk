@@ -1,10 +1,6 @@
 {
     "name": "m174",
     "libraries": [
-        ":firebase-ai",
-        ":firebase-crashlytics",
-        ":firebase-crashlytics-ndk",
-        ":firebase-sessions",
-        ":firebase-dataconnect"
+        ":firebase-ai"
     ]
 }
