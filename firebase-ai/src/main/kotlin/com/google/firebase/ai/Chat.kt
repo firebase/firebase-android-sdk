@@ -22,6 +22,7 @@ import com.google.firebase.ai.type.FunctionCallPart
 import com.google.firebase.ai.type.FunctionResponsePart
 import com.google.firebase.ai.type.GenerateContentResponse
 import com.google.firebase.ai.type.InvalidStateException
+import com.google.firebase.ai.type.Part
 import com.google.firebase.ai.type.TextPart
 import com.google.firebase.ai.type.content
 import java.util.LinkedList
@@ -268,4 +269,13 @@ public class Chat(
       )
     }
   }
+}
+
+/**
+ * Returns true if the [TextPart] contains any content, either in its [TextPart.text] property or
+ * its [TextPart.thoughtSignature] property.
+ */
+private fun TextPart.hasContent(): Boolean {
+  if (text.isNotEmpty()) return true
+  return !thoughtSignature.isNullOrBlank()
 }

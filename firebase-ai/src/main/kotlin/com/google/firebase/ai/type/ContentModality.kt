@@ -71,7 +71,7 @@ public class ContentModality private constructor(public val ordinal: Int) {
     /** Audio. */
     @JvmField public val AUDIO: ContentModality = ContentModality(4)
 
-    /** Document, e.g. PDF. */
+    /** Document (for example, PDF). */
     @JvmField public val DOCUMENT: ContentModality = ContentModality(5)
   }
 }
