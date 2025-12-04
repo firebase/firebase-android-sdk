@@ -1,0 +1,87 @@
+{
+    "changesByLibraryName": {
+        "firebase-ai": [
+            {
+                "commitId": "f98eadcb2030ae8d3d37936d9ec1507082564ef3",
+                "prId": "7496",
+                "author": "Vinay Guthal",
+                "message": "AudioHandler callback to modify AudioTrack and AudioRecord (#7496)\n\nThis PR adds a callback function `audioHandler` which would apply the\nnecessary configurations or modifications to the `AudioTrack` and the\n`AudioRecord` objects used by the `startAudioCoversation` function.\n\nThis PR also adds a new configuration class called conversation config\nwhich could be sent to the `startAudioConversation` function which\nallows users to specify different aspects of the conversation.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f98eadcb2030ae8d3d37936d9ec1507082564ef3",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7496"
+            },
+            {
+                "commitId": "a0911a711491d5c9d008af7637698c9c18d1e225",
+                "prId": "7569",
+                "author": "David Motsonashvili",
+                "message": "Firebase AI Documentation Fix (#7569)\n\nincludes requested fixes to the Firebase AI documentation including:\n* Removing all uses of \"e. g.\"\n* Adding backticks to code in @Deprecated tags\n* Better details on `sendTextRealtime`\n\n---------\n\nCo-authored-by: David Motsonashvili <davidmotson@google.com>\nCo-authored-by: rachelsaunders <52258509+rachelsaunders@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a0911a711491d5c9d008af7637698c9c18d1e225",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7569"
+            },
+            {
+                "commitId": "f31257c6a781ab857667c6535d5454fd22c69e7f",
+                "prId": "7567",
+                "author": "Ryan Wilson",
+                "message": "Add tests for HarmBlockMethod compatibility with GoogleAI and VertexAI (#7567)\n\nAdded unit tests to `GenerativeModelTesting.kt` to verify that:\n1. Using `HarmBlockMethod` with `GoogleAI` backend throws\n`InvalidStateException`.\n2. Using `HarmBlockMethod` with `VertexAI` backend does not throw\n`InvalidStateException`.\n\nThis covers an edge case where `HarmBlockMethod` is only supported by\nVertexAI.\n\n---------\n\nCo-authored-by: google-labs-jules[bot] <161369871+google-labs-jules[bot]@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f31257c6a781ab857667c6535d5454fd22c69e7f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7567"
+            },
+            {
+                "commitId": "964dccc8fd900254e72f3b4139798bc07ff92f17",
+                "prId": "7562",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Chat history must store all the parts (streaming)  (#7562)\n\nThe chat history in streaming mode reconstructs the parts from their\ncontents, rather than storing the parts themselves. This causes\nnon-visible elements, like `thoughtSignature` to get lost.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/964dccc8fd900254e72f3b4139798bc07ff92f17",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7562"
+            },
+            {
+                "commitId": "5188058b301dfa173ba3238395bd8f51ced88c78",
+                "prId": "7541",
+                "author": "emilypgoogle",
+                "message": "Bump AI Logic version (#7541)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5188058b301dfa173ba3238395bd8f51ced88c78",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7541"
+            }
+        ],
+        "firebase-crashlytics": [
+            {
+                "commitId": "b6e04d3d1b45dcc1707cdec79f0d06c49eeca498",
+                "prId": "7530",
+                "author": "Matthew Robertson",
+                "message": "Update changelogs for AQS and Crashlytics (#7530)\n\nUpdate changelogs for AQS and Crashlytics",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/b6e04d3d1b45dcc1707cdec79f0d06c49eeca498",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7530"
+            }
+        ],
+        "firebase-crashlytics-ndk": [
+            {
+                "commitId": "b6e04d3d1b45dcc1707cdec79f0d06c49eeca498",
+                "prId": "7530",
+                "author": "Matthew Robertson",
+                "message": "Update changelogs for AQS and Crashlytics (#7530)\n\nUpdate changelogs for AQS and Crashlytics",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/b6e04d3d1b45dcc1707cdec79f0d06c49eeca498",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7530"
+            }
+        ],
+        "firebase-sessions": [
+            {
+                "commitId": "b6e04d3d1b45dcc1707cdec79f0d06c49eeca498",
+                "prId": "7530",
+                "author": "Matthew Robertson",
+                "message": "Update changelogs for AQS and Crashlytics (#7530)\n\nUpdate changelogs for AQS and Crashlytics",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/b6e04d3d1b45dcc1707cdec79f0d06c49eeca498",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7530"
+            }
+        ],
+        "firebase-dataconnect": [
+            {
+                "commitId": "ace8d5a8804b9a4341c0f077d1a504864f5cdb5e",
+                "prId": "7536",
+                "author": "emilypgoogle",
+                "message": "Fix dataconnect changelog (#7536)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ace8d5a8804b9a4341c0f077d1a504864f5cdb5e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7536"
+            }
+        ]
+    },
+    "changedLibrariesWithNoChangelog": []
+}
