@@ -18,17 +18,18 @@ package com.google.firebase.ai
 
 import android.graphics.Bitmap
 import com.google.firebase.ai.type.Content
+import com.google.firebase.ai.type.FunctionCallPart
+import com.google.firebase.ai.type.FunctionResponsePart
 import com.google.firebase.ai.type.GenerateContentResponse
-import com.google.firebase.ai.type.ImagePart
-import com.google.firebase.ai.type.InlineDataPart
 import com.google.firebase.ai.type.InvalidStateException
 import com.google.firebase.ai.type.TextPart
 import com.google.firebase.ai.type.content
 import java.util.LinkedList
 import java.util.concurrent.Semaphore
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.onCompletion
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.transform
 
 /**
  * Representation of a multi-turn interaction with a model.
@@ -51,25 +52,36 @@ public class Chat(
   private var lock = Semaphore(1)
 
   /**
-   * Sends a message using the provided [prompt]; automatically providing the existing [history] as
-   * context.
+   * Sends a message using the provided [inputPrompt]; automatically providing the existing
+   * [history] as context.
    *
    * If successful, the message and response will be added to the [history]. If unsuccessful,
    * [history] will remain unchanged.
    *
-   * @param prompt The input that, together with the history, will be given to the model as the
+   * @param inputPrompt The input that, together with the history, will be given to the model as the
    * prompt.
-   * @throws InvalidStateException if [prompt] is not coming from the 'user' role.
+   * @throws InvalidStateException if [inputPrompt] is not coming from the 'user' role.
    * @throws InvalidStateException if the [Chat] instance has an active request.
    */
-  public suspend fun sendMessage(prompt: Content): GenerateContentResponse {
-    prompt.assertComesFromUser()
+  public suspend fun sendMessage(inputPrompt: Content): GenerateContentResponse {
+    inputPrompt.assertComesFromUser()
     attemptLock()
+    var response: GenerateContentResponse
+    var prompt = inputPrompt
     try {
-      val fullPrompt = history + prompt
-      val response = model.generateContent(fullPrompt.first(), *fullPrompt.drop(1).toTypedArray())
-      history.add(prompt)
-      history.add(response.candidates.first().content)
+      while (true) {
+        response = model.generateContent(listOf(*history.toTypedArray(), prompt))
+        val responsePart = response.candidates.first().content.parts.first()
+
+        history.add(prompt)
+        history.add(response.candidates.first().content)
+        if (responsePart is FunctionCallPart) {
+          val output = model.executeFunction(responsePart)
+          prompt = Content("function", listOf(FunctionResponsePart(responsePart.name, output)))
+        } else {
+          break
+        }
+      }
       return response
     } finally {
       lock.release()
@@ -130,9 +142,8 @@ public class Chat(
 
     val fullPrompt = history + prompt
     val flow = model.generateContentStream(fullPrompt.first(), *fullPrompt.drop(1).toTypedArray())
-    val bitmaps = LinkedList<Bitmap>()
-    val inlineDataParts = LinkedList<InlineDataPart>()
-    val text = StringBuilder()
+    val tempHistory = LinkedList<Content>()
+    tempHistory.add(prompt)
 
     /**
      * TODO: revisit when images and inline data are returned. This will cause issues with how
@@ -140,33 +151,11 @@ public class Chat(
      * represented as image/text
      */
     return flow
-      .onEach {
-        for (part in it.candidates.first().content.parts) {
-          when (part) {
-            is TextPart -> text.append(part.text)
-            is ImagePart -> bitmaps.add(part.image)
-            is InlineDataPart -> inlineDataParts.add(part)
-          }
-        }
-      }
+      .transform { response -> automaticFunctionExecutingTransform(this, tempHistory, response) }
       .onCompletion {
         lock.release()
         if (it == null) {
-          val content =
-            content("model") {
-              for (bitmap in bitmaps) {
-                image(bitmap)
-              }
-              for (inlineDataPart in inlineDataParts) {
-                inlineData(inlineDataPart.inlineData, inlineDataPart.mimeType)
-              }
-              if (text.isNotBlank()) {
-                text(text.toString())
-              }
-            }
-
-          history.add(prompt)
-          history.add(content)
+          history.addAll(tempHistory)
         }
       }
   }
@@ -207,6 +196,62 @@ public class Chat(
   public fun sendMessageStream(prompt: Bitmap): Flow<GenerateContentResponse> {
     val content = content { image(prompt) }
     return sendMessageStream(content)
+  }
+
+  private suspend fun automaticFunctionExecutingTransform(
+    transformer: FlowCollector<GenerateContentResponse>,
+    tempHistory: LinkedList<Content>,
+    response: GenerateContentResponse
+  ) {
+    for (part in response.candidates.first().content.parts) {
+      when (part) {
+        is TextPart -> {
+          transformer.emit(response)
+          addTextToHistory(tempHistory, part)
+        }
+        is FunctionCallPart -> {
+          val functionCall =
+            response.candidates.first().content.parts.first { it is FunctionCallPart }
+              as FunctionCallPart
+          val output = model.executeFunction(functionCall)
+          val functionResponse =
+            Content("function", listOf(FunctionResponsePart(functionCall.name, output)))
+          tempHistory.add(response.candidates.first().content)
+          tempHistory.add(functionResponse)
+          model
+            .generateContentStream(listOf(*history.toTypedArray(), *tempHistory.toTypedArray()))
+            .collect { automaticFunctionExecutingTransform(transformer, tempHistory, it) }
+        }
+        else -> {
+          transformer.emit(response)
+          tempHistory.add(Content("model", listOf(part)))
+        }
+      }
+    }
+  }
+
+  private fun addTextToHistory(tempHistory: LinkedList<Content>, textPart: TextPart) {
+    val lastContent = tempHistory.lastOrNull()
+    if (lastContent?.role == "model" && lastContent.parts.any { it is TextPart }) {
+      tempHistory.removeLast()
+      val editedContent =
+        Content(
+          "model",
+          lastContent.parts.map {
+            when (it) {
+              is TextPart -> {
+                TextPart(it.text + textPart.text)
+              }
+              else -> {
+                it
+              }
+            }
+          }
+        )
+      tempHistory.add(editedContent)
+      return
+    }
+    tempHistory.add(Content("model", listOf(textPart)))
   }
 
   private fun Content.assertComesFromUser() {

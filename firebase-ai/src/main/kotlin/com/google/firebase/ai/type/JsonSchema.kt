@@ -16,6 +16,7 @@
 
 package com.google.firebase.ai.type
 
+import kotlin.reflect.KClass
 import kotlinx.serialization.json.JsonObject
 
 /**
@@ -28,10 +29,10 @@ import kotlinx.serialization.json.JsonObject
  * encouraged. The more information the model has about what it's expected to generate, the better
  * the results.
  */
-public class JsonSchema<T>
+public class JsonSchema<T : Any>
 internal constructor(
   public val type: String,
-  public val clazz: Class<T>,
+  public val clazz: KClass<T>,
   public val description: String? = null,
   public val format: String? = null,
   public val pattern: String? = null,
@@ -67,7 +68,7 @@ internal constructor(
         nullable = nullable,
         type = "BOOLEAN",
         title = title,
-        clazz = Boolean::class.java
+        clazz = Boolean::class
       )
 
     /**
@@ -98,7 +99,7 @@ internal constructor(
         title = title,
         minimum = minimum,
         maximum = maximum,
-        clazz = Integer::class.java
+        clazz = Integer::class
       )
 
     /**
@@ -124,7 +125,7 @@ internal constructor(
         title = title,
         minimum = minimum,
         maximum = maximum,
-        clazz = Long::class.java
+        clazz = Long::class
       )
 
     /**
@@ -150,7 +151,7 @@ internal constructor(
         title = title,
         minimum = minimum,
         maximum = maximum,
-        clazz = Double::class.java
+        clazz = Double::class
       )
 
     /**
@@ -182,7 +183,7 @@ internal constructor(
         title = title,
         minimum = minimum,
         maximum = maximum,
-        clazz = Float::class.java
+        clazz = Float::class
       )
 
     /**
@@ -199,7 +200,6 @@ internal constructor(
       description: String? = null,
       nullable: Boolean = false,
       format: StringFormat? = null,
-      pattern: String? = null,
       title: String? = null,
     ): JsonSchema<String> =
       JsonSchema(
@@ -208,8 +208,7 @@ internal constructor(
         nullable = nullable,
         type = "STRING",
         title = title,
-        clazz = String::class.java,
-        pattern = pattern
+        clazz = String::class
       )
 
     /**
@@ -255,7 +254,7 @@ internal constructor(
         required = properties.keys.minus(optionalProperties.toSet()).toList(),
         type = "OBJECT",
         title = title,
-        clazz = JsonObject::class.java
+        clazz = JsonObject::class
       )
     }
 
@@ -272,12 +271,12 @@ internal constructor(
      *     "name"  to JsonSchema.string(),
      *     "population" to JsonSchema.integer()
      *   ),
-     *   City::class.java
+     *   City::class
      * )
      * ```
      *
-     * @param clazz the real class that this schema represents
      * @param properties The map of the object's property names to their [JsonSchema]s.
+     * @param clazz the real class that this schema represents
      * @param optionalProperties The list of optional properties. They must correspond to the keys
      * provided in the `properties` map. By default it's empty, signaling the model that all
      * properties are to be included.
@@ -286,9 +285,9 @@ internal constructor(
      */
     @JvmStatic
     @JvmOverloads
-    public fun <T> obj(
-      clazz: Class<T>,
+    public fun <T : Any> obj(
       properties: Map<String, JsonSchema<*>>,
+      clazz: KClass<T>,
       optionalProperties: List<String> = emptyList(),
       description: String? = null,
       nullable: Boolean = false,
@@ -335,7 +334,7 @@ internal constructor(
         title = title,
         minItems = minItems,
         maxItems = maxItems,
-        clazz = List::class.java
+        clazz = List::class
       )
 
     /**
@@ -365,7 +364,7 @@ internal constructor(
         enum = values,
         type = "STRING",
         title = title,
-        clazz = String::class.java
+        clazz = String::class
       )
 
     /**
@@ -375,21 +374,21 @@ internal constructor(
      * ```
      * JsonSchema.enumeration(
      *   listOf("north", "east", "south", "west"),
-     *   Direction::class.java,
+     *   Direction::class,
      *   "Cardinal directions"
      * )
      * ```
      *
-     * @param clazz the real class that this schema represents
      * @param values The list of valid values for this enumeration
+     * @param clazz the real class that this schema represents
      * @param description The description of what the parameter should contain or represent
      * @param nullable Indicates whether the value can be `null`. Defaults to `false`.
      */
     @JvmStatic
     @JvmOverloads
-    public fun <T> enumeration(
-      clazz: Class<T>,
+    public fun <T : Any> enumeration(
       values: List<String>,
+      clazz: KClass<T>,
       description: String? = null,
       nullable: Boolean = false,
       title: String? = null,
@@ -421,7 +420,7 @@ internal constructor(
      */
     @JvmStatic
     public fun anyOf(schemas: List<JsonSchema<*>>): JsonSchema<String> =
-      JsonSchema(type = "ANYOF", anyOf = schemas, clazz = String::class.java)
+      JsonSchema(type = "ANYOF", anyOf = schemas, clazz = String::class)
   }
 
   internal fun toInternalJson(): Schema.InternalJson {
