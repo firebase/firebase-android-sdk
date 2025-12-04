@@ -1,0 +1,35 @@
+name: Generate Test Report
+
+on:
+  schedule:
+    - cron: 51 8 * * *  # Runs automatically once a day
+  workflow_dispatch:   # Allow triggering the workflow manually
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  report:
+    name: "Generate Test Report"
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          submodules: true
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12 # v4.7.0
+        with:
+          java-version: 17
+          distribution: temurin
+          cache: gradle
+
+      - name: Generate Test Report
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./gradlew generateTestReport
+
+      - name: Update tracking issue
+        run: gh issue edit 7421 --body-file test-report.md
