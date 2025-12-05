@@ -34,6 +34,13 @@ fun PropertyContext.structWithValues(
     structBuilder.build()
   }
 
+fun Struct.withRandomlyInsertedStruct(
+  struct: Struct,
+  random: Random,
+  mode: RandomInsertMode = RandomInsertMode.StructAndListValue,
+  generateKey: () -> String
+): Struct = withRandomlyInsertedStructs(listOf(struct), random, mode, generateKey)
+
 fun Struct.withRandomlyInsertedStructs(
   structs: List<Struct>,
   random: Random,

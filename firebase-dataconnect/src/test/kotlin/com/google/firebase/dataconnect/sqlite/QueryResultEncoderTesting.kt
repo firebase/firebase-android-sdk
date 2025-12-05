@@ -73,8 +73,8 @@ object QueryResultEncoderTesting {
         entityIdFieldName: Arb<String> = Arb.proto.structKey(),
         @OptIn(DelicateKotest::class) entityId: Arb<String> = Arb.proto.structKey().distinct(),
         structKey: Arb<String> = Arb.proto.structKey(),
-        structSize: IntRange,
-        structDepth: IntRange,
+        structSize: IntRange = 0..5,
+        structDepth: IntRange = 1..3,
       ): Arb<EntityTestCase> =
         Arb.pair(entityIdFieldName, entityId).flatMap { (entityIdFieldName, entityId) ->
           val keyArb = structKey.filterNot { it == entityIdFieldName }

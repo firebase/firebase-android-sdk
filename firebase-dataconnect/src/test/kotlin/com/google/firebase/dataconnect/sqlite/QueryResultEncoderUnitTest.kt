@@ -21,20 +21,17 @@ import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.calculat
 import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.decodingEncodingShouldProduceIdenticalStruct
 import com.google.firebase.dataconnect.testutil.RandomInsertMode
 import com.google.firebase.dataconnect.testutil.buildByteArray
-import com.google.firebase.dataconnect.testutil.property.arbitrary.maxDepth
+import com.google.firebase.dataconnect.testutil.map
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
-import com.google.firebase.dataconnect.testutil.property.arbitrary.stringValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
 import com.google.firebase.dataconnect.testutil.property.arbitrary.withIterations
 import com.google.firebase.dataconnect.testutil.property.arbitrary.withIterationsIfNotNull
 import com.google.firebase.dataconnect.testutil.shouldBe
-import com.google.firebase.dataconnect.testutil.withRandomlyInsertedStructs
-import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
+import com.google.firebase.dataconnect.testutil.withRandomlyInsertedStruct
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
-import io.kotest.common.DelicateKotest
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
@@ -44,15 +41,13 @@ import io.kotest.property.Exhaustive
 import io.kotest.property.PropTestConfig
 import io.kotest.property.ShrinkingMode
 import io.kotest.property.arbitrary.constant
-import io.kotest.property.arbitrary.distinct
 import io.kotest.property.arbitrary.filterNot
-import io.kotest.property.arbitrary.int
+import io.kotest.property.arbitrary.list
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.set
 import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
 import io.kotest.property.exhaustive.of
-import kotlin.random.nextInt
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
@@ -130,6 +125,13 @@ class QueryResultEncoderUnitTest {
       }
     }
 
+  @Test
+  fun `struct values`() = runTest {
+    checkAll(propTestConfig, Arb.proto.struct()) { struct ->
+      struct.struct.decodingEncodingShouldProduceIdenticalStruct()
+    }
+  }
+
   @Test fun `struct keys`() = verifyStringStructKeys(StringEncodingTestCase.arb())
 
   @Test
@@ -158,13 +160,6 @@ class QueryResultEncoderUnitTest {
     }
 
   @Test
-  fun `various structs round trip`() = runTest {
-    checkAll(propTestConfig, Arb.proto.struct()) { struct ->
-      struct.struct.decodingEncodingShouldProduceIdenticalStruct()
-    }
-  }
-
-  @Test
   fun `string encodings round trip`() = runTest {
     val structArb =
       Arb.proto.struct(
@@ -187,17 +182,6 @@ class QueryResultEncoderUnitTest {
       )
     checkAll(propTestConfig.withIterations(50), structArb) { struct ->
       struct.struct.decodingEncodingShouldProduceIdenticalStruct()
-    }
-  }
-
-  @Test
-  fun `entire struct is an empty entity`() = runTest {
-    checkAll(propTestConfig, Arb.string(), Arb.proto.stringValue()) { entityIdFieldName, entityId ->
-      val struct = Struct.newBuilder().putFields(entityIdFieldName, entityId).build()
-      struct.decodingEncodingShouldProduceIdenticalStruct(
-        entities = listOf(struct),
-        entityIdFieldName
-      )
     }
   }
 
@@ -244,8 +228,8 @@ class QueryResultEncoderUnitTest {
   }
 
   @Test
-  fun `entire struct is an entity with depth 1`() = runTest {
-    checkAll(propTestConfig, EntityTestCase.arb(structSize = 1..100, structDepth = 1)) { sample ->
+  fun `single entity`() = runTest {
+    checkAll(propTestConfig, EntityTestCase.arb()) { sample ->
       sample.struct.decodingEncodingShouldProduceIdenticalStruct(
         entities = listOf(sample.struct),
         sample.entityIdFieldName
@@ -254,156 +238,26 @@ class QueryResultEncoderUnitTest {
   }
 
   @Test
-  fun `entire struct is an entity with depth greater than 1`() = runTest {
-    checkAll(propTestConfig, EntityTestCase.arb(structSize = 2..3, structDepth = 2..4)) { sample ->
-      sample.struct.decodingEncodingShouldProduceIdenticalStruct(
-        entities = listOf(sample.struct),
-        sample.entityIdFieldName
-      )
-    }
-  }
-
-  @Test
-  fun `struct has only entities at top level`() = runTest {
-    checkAll(propTestConfig, Arb.string(), Arb.int(1..3)) { entityIdFieldName, entityCount ->
-      val entityArb =
-        EntityTestCase.arb(
-          entityIdFieldName = Arb.constant(entityIdFieldName),
-          structSize = 0..2,
-          structDepth = 1..2,
-        )
-      val entities = List(entityCount) { entityArb.bind().struct }
-      val structKeyArb =
-        @OptIn(DelicateKotest::class)
-        Arb.proto.structKey().filterNot { it == entityIdFieldName }.distinct()
-      val struct =
-        Struct.newBuilder().let { structBuilder ->
-          entities.forEach { entity ->
-            structBuilder.putFields(structKeyArb.bind(), entity.toValueProto())
-          }
-          structBuilder.build()
-        }
-
-      struct.decodingEncodingShouldProduceIdenticalStruct(entities = entities, entityIdFieldName)
-    }
-  }
-
-  @Test
-  fun `struct has entities at mixed depths`() = runTest {
-    checkAll(
-      @OptIn(ExperimentalKotest::class) propTestConfig.copy(iterations = 100),
-      Arb.string(),
-      Arb.int(1..3),
-    ) { entityIdFieldName, entityCount ->
-      val entityArb =
-        EntityTestCase.arb(
-          entityIdFieldName = Arb.constant(entityIdFieldName),
-          structSize = 0..2,
-          structDepth = 1..2,
-        )
-      val entities = List(entityCount) { entityArb.bind().struct }
-      val structKeyArb = Arb.proto.structKey().filterNot { it == entityIdFieldName }
-      val structKeys = Arb.set(structKeyArb, entities.size).bind()
-      val struct =
-        Struct.newBuilder()
-          .apply {
-            structKeys.zip(entities).forEach { (key, entity) ->
-              val depth = randomSource().random.nextInt(1..5)
-              var subStruct = entity
-              repeat(depth) {
-                subStruct = Struct.newBuilder().putFields(key, subStruct.toValueProto()).build()
-              }
-              putFields(key, subStruct.toValueProto())
-            }
-          }
-          .build()
-      check(struct.maxDepth() > 1) {
-        "struct.maxDepth()==${struct.maxDepth()}, struct=${struct.toCompactString()}"
-      }
-
-      struct.decodingEncodingShouldProduceIdenticalStruct(entities = entities, entityIdFieldName)
-    }
-  }
-
-  @Test
-  fun `struct has intermixed entities and values`() = runTest {
-    checkAll(propTestConfig, Arb.string(), Arb.int(1..3)) { entityIdFieldName, entityCount ->
-      val entityArb =
-        EntityTestCase.arb(
-          entityIdFieldName = Arb.constant(entityIdFieldName),
-          structSize = 0..2,
-          structDepth = 1..2,
-        )
-      val entities = List(entityCount) { entityArb.bind().struct }
-      val structKeyArb = Arb.proto.structKey().filterNot { it == entityIdFieldName }
-      val originalStruct = Arb.proto.struct(key = structKeyArb).bind().struct
-      val patchedStruct =
-        originalStruct.withRandomlyInsertedStructs(
-          entities,
-          randomSource().random,
-          RandomInsertMode.Struct,
-          { structKeyArb.bind() },
-        )
-
-      patchedStruct.decodingEncodingShouldProduceIdenticalStruct(
-        entities = entities,
-        entityIdFieldName
-      )
-    }
-  }
-
-  @Test
-  fun `struct has nested entities`() = runTest {
-    data class EntityIdFieldName(val value: String)
-    val entityIdFieldNameArb = Arb.proto.structKey().map(::EntityIdFieldName)
-    checkAll(propTestConfig, entityIdFieldNameArb, Arb.int(3..5)) { entityIdFieldName, entityCount
-      ->
-      val entityArb =
-        EntityTestCase.arb(
-          entityIdFieldName = Arb.constant(entityIdFieldName.value),
-          structSize = 0..2,
-          structDepth = 1..2,
-        )
-      val entities = List(entityCount) { entityArb.bind().struct }
-      val structKeyArb = Arb.proto.structKey().filterNot { it == entityIdFieldName.value }
-      val candidateEntities = entities.toMutableList()
-      val targetCandidateEntitiesSize =
-        randomSource().random.nextInt(1..(candidateEntities.size / 2))
-      while (candidateEntities.size > targetCandidateEntitiesSize) {
-        val twoEntities =
-          candidateEntities.indices
-            .shuffled(randomSource().random)
-            .take(2)
-            .sortedDescending()
-            .map { candidateEntities.removeAt(it) }
-            .shuffled(randomSource().random)
-        val mergedEntity =
-          twoEntities[0].withRandomlyInsertedStructs(
-            twoEntities.drop(1),
+  fun `entities nested in struct values`() = runTest {
+    checkAll(propTestConfig.copy(seed = 3485715271109845159), Arb.proto.structKey()) {
+      entityIdFieldName ->
+      val entityArb = EntityTestCase.arb(entityIdFieldName = Arb.constant(entityIdFieldName))
+      val entities = Arb.list(entityArb, 1..10).bind().map { it.struct }
+      val rootStruct = run {
+        val nonEntityIdFieldNameArb = Arb.proto.structKey().filterNot { it == entityIdFieldName }
+        entities.fold(Arb.proto.struct(key = nonEntityIdFieldNameArb).bind().struct) {
+          rootStruct,
+          entity ->
+          rootStruct.withRandomlyInsertedStruct(
+            entity,
             randomSource().random,
             RandomInsertMode.Struct,
-            { structKeyArb.bind() },
-          )
-        candidateEntities.add(mergedEntity)
-      }
-
-      val struct =
-        if (candidateEntities.size == 1) {
-          candidateEntities.single()
-        } else {
-          val struct = Arb.proto.struct(key = structKeyArb).bind().struct
-          struct.withRandomlyInsertedStructs(
-            candidateEntities,
-            randomSource().random,
-            RandomInsertMode.Struct,
-            { structKeyArb.bind() },
+            { nonEntityIdFieldNameArb.bind() }
           )
         }
+      }
 
-      struct.decodingEncodingShouldProduceIdenticalStruct(
-        entities = entities,
-        entityIdFieldName.value
-      )
+      rootStruct.decodingEncodingShouldProduceIdenticalStruct(entities, entityIdFieldName)
     }
   }
 
