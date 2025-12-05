@@ -67,11 +67,6 @@ public class FirebasePerformanceModule {
   }
 
   @Provides
-  RemoteConfigManager providesRemoteConfigManager() {
-    return RemoteConfigManager.getInstance();
-  }
-
-  @Provides
   ConfigResolver providesConfigResolver() {
     return ConfigResolver.getInstance();
   }
