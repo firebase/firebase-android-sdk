@@ -140,10 +140,59 @@ internal class QueryResultEncoder(
   }
 
   private fun writeList(listValue: ListValue) {
-    writer.writeByte(QueryResultCodec.VALUE_LIST)
-    writer.writeUInt32(listValue.valuesCount)
-    repeat(listValue.valuesCount) { writeValue(listValue.getValues(it)) }
+    when (listValue.classifyContents()) {
+      ListValueContentsClassification.AllEntities -> writeListOfEntities(listValue)
+      ListValueContentsClassification.AllNonEntities -> writeListOfNonEntities(listValue)
+      ListValueContentsClassification.BothEntitiesAndNonEntities ->
+        throw UnsupportedOperationException(
+          "lists containing both entities and non-entities is not supported; " +
+            "only lists containing exclusively entities or exclusively non-entities " +
+            "is supported [v48fwcfqp6]"
+        )
+    }
   }
+
+  private fun writeListOfEntities(listValue: ListValue) {
+    writer.writeByte(QueryResultCodec.VALUE_LIST_OF_ENTITIES)
+    writer.writeUInt32(listValue.valuesCount)
+
+    repeat(listValue.valuesCount) {
+      val value = listValue.getValues(it)
+      val entityId = value.getEntityId()
+      checkNotNull(entityId) {
+        "internal error war94t239m: " +
+          "list value at index $it is not an entity (kindCase=${value.kindCase}), " +
+          "but expected it to be an entity"
+      }
+      writeEntity(entityId, value.structValue)
+    }
+  }
+
+  private fun writeListOfNonEntities(listValue: ListValue) {
+    writer.writeByte(QueryResultCodec.VALUE_LIST_OF_NON_ENTITIES)
+    writer.writeUInt32(listValue.valuesCount)
+
+    repeat(listValue.valuesCount) {
+      val value =
+        listValue.getValues(it).apply {
+          getEntityId().let { entityId ->
+            check(entityId === null) {
+              "internal error xv6cywynv8: " +
+                "list value at index $it is an entity with id=$entityId, " +
+                "but expected it to not be an entity"
+            }
+          }
+        }
+      writeValue(value)
+    }
+  }
+
+  private fun Value.getEntityId(): String? =
+    if (kindCase == Value.KindCase.STRUCT_VALUE) {
+      structValue.getEntityId()
+    } else {
+      null
+    }
 
   private fun Struct.getEntityId(): String? =
     if (entityFieldName === null || !containsFields(entityFieldName)) {
@@ -156,6 +205,16 @@ internal class QueryResultEncoder(
         entityIdValue.stringValue
       }
     }
+
+  private fun Struct.isEntity(): Boolean =
+    if (entityFieldName === null || !containsFields(entityFieldName)) {
+      false
+    } else {
+      getFieldsOrThrow(entityFieldName)?.kindCase == Value.KindCase.STRING_VALUE
+    }
+
+  private fun Value.isEntity(): Boolean =
+    kindCase == Value.KindCase.STRUCT_VALUE && structValue.isEntity()
 
   private fun writeStruct(struct: Struct) {
     val entityId = struct.getEntityId()
@@ -207,14 +266,36 @@ internal class QueryResultEncoder(
     return structBuilder.build()
   }
 
-  private fun writeEntitySubList(listValue: ListValue): ListValue {
-    writer.writeUInt32(listValue.valuesCount)
-    val listValueBuilder = ListValue.newBuilder()
-    listValue.valuesList.forEach { value ->
-      val entityValue = writeEntityValue(value)
-      listValueBuilder.addValues(entityValue ?: Value.getDefaultInstance())
+  private fun writeEntitySubList(listValue: ListValue): ListValue? =
+    when (listValue.classifyContents()) {
+      ListValueContentsClassification.AllEntities -> {
+        writeListOfEntities(listValue)
+        null
+      }
+      ListValueContentsClassification.AllNonEntities -> {
+        writeEntitySubListOfAllNonEntities(listValue)
+        listValue
+      }
+      ListValueContentsClassification.BothEntitiesAndNonEntities ->
+        throw UnsupportedOperationException(
+          "entity sub-lists containing both entities and non-entities is not supported; " +
+            "only entity sub-lists containing exclusively entities or exclusively non-entities " +
+            "is supported [pvae6pzg2a]"
+        )
     }
-    return listValueBuilder.build()
+
+  private fun writeEntitySubListOfAllNonEntities(listValue: ListValue) {
+    writer.writeByte(QueryResultCodec.VALUE_LIST_OF_NON_ENTITIES)
+    writer.writeUInt32(listValue.valuesCount)
+
+    listValue.valuesList.forEachIndexed { index, value ->
+      val entityValue = writeEntityValue(value)
+      checkNotNull(entityValue) {
+        "internal error gj26tyh2bj: " +
+          "list value at index $index is an entity with id=${value.getEntityId()}, " +
+          "but expected it to not be an entity"
+      }
+    }
   }
 
   private fun writeEntityValue(value: Value): Value? {
@@ -231,8 +312,7 @@ internal class QueryResultEncoder(
         }
       }
       Value.KindCase.LIST_VALUE -> {
-        writer.writeByte(QueryResultCodec.VALUE_LIST)
-        writeEntitySubList(value.listValue).toValueProto()
+        writeEntitySubList(value.listValue)?.toValueProto()
       }
       else -> {
         writer.writeByte(QueryResultCodec.VALUE_KIND_NOT_SET)
@@ -312,6 +392,33 @@ internal class QueryResultEncoder(
 
         return Double(value)
       }
+    }
+  }
+
+  private enum class ListValueContentsClassification {
+    AllEntities,
+    AllNonEntities,
+    BothEntitiesAndNonEntities,
+  }
+
+  private fun ListValue.classifyContents(): ListValueContentsClassification {
+    var containsEntities = false
+    var containsNonEntities = false
+
+    valuesList.forEach { value ->
+      if (value.isEntity()) {
+        containsEntities = true
+      } else {
+        containsNonEntities = true
+      }
+    }
+
+    return if (containsEntities && containsNonEntities) {
+      ListValueContentsClassification.BothEntitiesAndNonEntities
+    } else if (containsEntities) {
+      ListValueContentsClassification.AllEntities
+    } else {
+      ListValueContentsClassification.AllNonEntities
     }
   }
 

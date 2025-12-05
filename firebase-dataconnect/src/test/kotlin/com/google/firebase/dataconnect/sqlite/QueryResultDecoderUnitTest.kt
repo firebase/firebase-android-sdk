@@ -723,32 +723,64 @@ class QueryResultDecoderUnitTest {
   }
 
   @Test
-  fun `list size invalid should throw`() = runTest {
+  fun `list of entities size invalid should throw`() = runTest {
     checkAll(propTestConfig, MalformedVarintByteArrayArb(5..10)) { invalidListSize ->
       val invalidListSizeByteArray = invalidListSize.byteArrayCopy()
       val byteArray = makeByteArrayEndingWithValue {
-        put(QueryResultCodec.VALUE_LIST)
+        put(QueryResultCodec.VALUE_LIST_OF_ENTITIES)
         put(invalidListSizeByteArray)
       }
       assertDecodeThrowsUInt32DecodeException(
         byteArray,
-        callerErrorId = "ListSizeDecodeFailed",
+        callerErrorId = "ListOfEntitiesSizeDecodeFailed",
         uint32ByteArray = invalidListSizeByteArray,
       )
     }
   }
 
   @Test
-  fun `list size truncated should throw`() = runTest {
+  fun `list of entities size truncated should throw`() = runTest {
     checkAll(propTestConfig, Arb.truncatedVarint32ByteArray()) { truncatedListSize ->
       val truncatedListSizeByteArray = truncatedListSize.byteArrayCopy()
       val byteArray = makeByteArrayEndingWithValue {
-        put(QueryResultCodec.VALUE_LIST)
+        put(QueryResultCodec.VALUE_LIST_OF_ENTITIES)
         put(truncatedListSizeByteArray)
       }
       assertDecodeThrowsUInt32EOFException(
         byteArray,
-        callerErrorId = "ListSizeEOF",
+        callerErrorId = "ListOfEntitiesSizeEOF",
+        uint32ByteArray = truncatedListSizeByteArray,
+      )
+    }
+  }
+
+  @Test
+  fun `list of non-entities size invalid should throw`() = runTest {
+    checkAll(propTestConfig, MalformedVarintByteArrayArb(5..10)) { invalidListSize ->
+      val invalidListSizeByteArray = invalidListSize.byteArrayCopy()
+      val byteArray = makeByteArrayEndingWithValue {
+        put(QueryResultCodec.VALUE_LIST_OF_NON_ENTITIES)
+        put(invalidListSizeByteArray)
+      }
+      assertDecodeThrowsUInt32DecodeException(
+        byteArray,
+        callerErrorId = "ListOfNonEntitiesSizeDecodeFailed",
+        uint32ByteArray = invalidListSizeByteArray,
+      )
+    }
+  }
+
+  @Test
+  fun `list of non-entities size truncated should throw`() = runTest {
+    checkAll(propTestConfig, Arb.truncatedVarint32ByteArray()) { truncatedListSize ->
+      val truncatedListSizeByteArray = truncatedListSize.byteArrayCopy()
+      val byteArray = makeByteArrayEndingWithValue {
+        put(QueryResultCodec.VALUE_LIST_OF_NON_ENTITIES)
+        put(truncatedListSizeByteArray)
+      }
+      assertDecodeThrowsUInt32EOFException(
+        byteArray,
+        callerErrorId = "ListOfNonEntitiesSizeEOF",
         uint32ByteArray = truncatedListSizeByteArray,
       )
     }
@@ -1203,7 +1235,13 @@ class QueryResultDecoderUnitTest {
       val BOOL_TRUE = ValueTypeIndicatorByte(QueryResultCodec.VALUE_BOOL_TRUE, "VALUE_BOOL_TRUE")
       val BOOL_FALSE = ValueTypeIndicatorByte(QueryResultCodec.VALUE_BOOL_FALSE, "VALUE_BOOL_FALSE")
       val STRUCT = ValueTypeIndicatorByte(QueryResultCodec.VALUE_STRUCT, "VALUE_STRUCT")
-      val LIST = ValueTypeIndicatorByte(QueryResultCodec.VALUE_LIST, "VALUE_LIST")
+      val LIST_OF_NON_ENTITIES =
+        ValueTypeIndicatorByte(
+          QueryResultCodec.VALUE_LIST_OF_NON_ENTITIES,
+          "VALUE_LIST_OF_NON_ENTITIES"
+        )
+      val LIST_OF_ENTITIES =
+        ValueTypeIndicatorByte(QueryResultCodec.VALUE_LIST_OF_ENTITIES, "VALUE_LIST_OF_ENTITIES")
       val STRING_EMPTY =
         ValueTypeIndicatorByte(QueryResultCodec.VALUE_STRING_EMPTY, "VALUE_STRING_EMPTY")
       val STRING_1BYTE =
@@ -1235,7 +1273,8 @@ class QueryResultDecoderUnitTest {
           BOOL_TRUE,
           BOOL_FALSE,
           STRUCT,
-          LIST,
+          LIST_OF_ENTITIES,
+          LIST_OF_NON_ENTITIES,
           STRING_EMPTY,
           STRING_1BYTE,
           STRING_2BYTE,

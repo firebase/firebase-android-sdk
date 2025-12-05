@@ -57,6 +57,36 @@ import org.junit.Test
 class QueryResultEncoderUnitTest {
 
   @Test
+  fun rootNonEntityListOfScalars() {
+    val listOfNonEntities =
+      ListValue.newBuilder().addValues("bar".toValueProto()).addValues("zzz".toValueProto()).build()
+    val struct = buildStructProto { put("foo", listOfNonEntities) }
+    struct.decodingEncodingShouldProduceIdenticalStruct(entities = emptyList(), null)
+  }
+
+  @Test
+  fun rootNonEntityListOfEntities() {
+    val entity = buildStructProto {
+      put("_id", "abc123")
+      put("name", "denver")
+    }
+    val listOfEntities = ListValue.newBuilder().addValues(entity.toValueProto()).build()
+    val struct = buildStructProto { put("listOfEntities", listOfEntities) }
+    struct.decodingEncodingShouldProduceIdenticalStruct(listOf(entity), "_id")
+  }
+
+  @Test
+  fun rootEntityListOfNonEntities() {
+    val listOfNonEntities =
+      ListValue.newBuilder().addValues("bar".toValueProto()).addValues("zzz".toValueProto()).build()
+    val struct = buildStructProto {
+      put("_id", "abc123")
+      put("foo", listOfNonEntities)
+    }
+    struct.decodingEncodingShouldProduceIdenticalStruct(listOf(struct), "_id")
+  }
+
+  @Test
   fun `bool values`() = runTest {
     data class BoolTestCase(val value: Boolean, val discriminator: Byte)
     val arb =
