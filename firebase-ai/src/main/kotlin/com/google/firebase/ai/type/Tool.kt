@@ -27,6 +27,7 @@ public class Tool
 @OptIn(PublicPreviewAPI::class)
 internal constructor(
   internal val functionDeclarations: List<FunctionDeclaration>?,
+  internal val autoFunctionDeclarations: List<AutoFunctionDeclaration<*, *>>?,
   internal val googleSearch: GoogleSearch?,
   internal val codeExecution: JsonObject?,
   @property:PublicPreviewAPI internal val urlContext: UrlContext?,
@@ -35,7 +36,10 @@ internal constructor(
   @OptIn(PublicPreviewAPI::class)
   internal fun toInternal() =
     Internal(
-      functionDeclarations?.map { it.toInternal() } ?: emptyList(),
+      buildList {
+        functionDeclarations?.let { addAll(it.map { it.toInternal() }) }
+        autoFunctionDeclarations?.let { addAll(it.map { it.toInternal() }) }
+      },
       googleSearch = this.googleSearch?.toInternal(),
       codeExecution = this.codeExecution,
       urlContext = this.urlContext?.toInternal()
@@ -53,7 +57,9 @@ internal constructor(
   public companion object {
 
     @OptIn(PublicPreviewAPI::class)
-    private val codeExecutionInstance by lazy { Tool(null, null, JsonObject(emptyMap()), null) }
+    private val codeExecutionInstance by lazy {
+      Tool(null, null, null, JsonObject(emptyMap()), null)
+    }
 
     /**
      * Creates a [Tool] instance that provides the model with access to the [functionDeclarations].
@@ -61,8 +67,12 @@ internal constructor(
      * @param functionDeclarations The list of functions that this tool allows the model access to.
      */
     @JvmStatic
-    public fun functionDeclarations(functionDeclarations: List<FunctionDeclaration>): Tool {
-      @OptIn(PublicPreviewAPI::class) return Tool(functionDeclarations, null, null, null)
+    public fun functionDeclarations(
+      functionDeclarations: List<FunctionDeclaration>? = null,
+      autoFunctionDeclarations: List<AutoFunctionDeclaration<*, *>>? = null
+    ): Tool {
+      @OptIn(PublicPreviewAPI::class)
+      return Tool(functionDeclarations, autoFunctionDeclarations, null, null, null)
     }
 
     /** Creates a [Tool] instance that allows the model to use code execution. */
@@ -82,7 +92,7 @@ internal constructor(
     @PublicPreviewAPI
     @JvmStatic
     public fun urlContext(urlContext: UrlContext = UrlContext()): Tool {
-      return Tool(null, null, null, urlContext)
+      return Tool(null, null, null, null, urlContext)
     }
 
     /**
@@ -103,7 +113,7 @@ internal constructor(
      */
     @JvmStatic
     public fun googleSearch(googleSearch: GoogleSearch = GoogleSearch()): Tool {
-      @OptIn(PublicPreviewAPI::class) return Tool(null, googleSearch, null, null)
+      @OptIn(PublicPreviewAPI::class) return Tool(null, null, googleSearch, null, null)
     }
   }
 }

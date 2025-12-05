@@ -98,6 +98,28 @@ package com.google.firebase.ai {
 
 }
 
+package com.google.firebase.ai.annotations {
+
+  @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.SOURCE) @kotlin.annotation.Target(allowedTargets=kotlin.annotation.AnnotationTarget.CLASS) public @interface Generable {
+  }
+
+  @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.SOURCE) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.CLASS, kotlin.annotation.AnnotationTarget.PROPERTY}) public @interface Guide {
+    method public abstract String description() default "";
+    method public abstract String format() default "";
+    method public abstract int maxItems() default -1;
+    method public abstract double maximum() default -1.0;
+    method public abstract int minItems() default -1;
+    method public abstract double minimum() default -1.0;
+    property public abstract String description;
+    property public abstract String format;
+    property public abstract int maxItems;
+    property public abstract double maximum;
+    property public abstract int minItems;
+    property public abstract double minimum;
+  }
+
+}
+
 package com.google.firebase.ai.java {
 
   public abstract class ChatFutures {

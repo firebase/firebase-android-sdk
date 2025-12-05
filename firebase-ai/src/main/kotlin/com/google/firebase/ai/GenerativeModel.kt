@@ -22,10 +22,12 @@ import com.google.firebase.ai.common.APIController
 import com.google.firebase.ai.common.AppCheckHeaderProvider
 import com.google.firebase.ai.common.CountTokensRequest
 import com.google.firebase.ai.common.GenerateContentRequest
+import com.google.firebase.ai.type.AutoFunctionDeclaration
 import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.CountTokensResponse
 import com.google.firebase.ai.type.FinishReason
 import com.google.firebase.ai.type.FirebaseAIException
+import com.google.firebase.ai.type.FunctionCallPart
 import com.google.firebase.ai.type.GenerateContentResponse
 import com.google.firebase.ai.type.GenerationConfig
 import com.google.firebase.ai.type.GenerativeBackend
@@ -45,6 +47,11 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.InternalSerializationApi
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.serializerOrNull
 
 /**
  * Represents a multimodal model (like Gemini), capable of generating content based on various input
@@ -264,6 +271,43 @@ internal constructor(
    */
   public suspend fun countTokens(prompt: Bitmap): CountTokensResponse {
     return countTokens(content { image(prompt) })
+  }
+
+  @OptIn(InternalSerializationApi::class)
+  internal suspend fun executeFunction(call: FunctionCallPart): JsonObject {
+    if (tools == null) {
+      throw RuntimeException("No registered tools")
+    }
+    val tool = tools.flatMap { it.autoFunctionDeclarations?.filterNotNull() ?: emptyList() }
+    val declaration =
+      tool.firstOrNull() { it.name == call.name }
+        ?: throw RuntimeException("No registered function named ${call.name}")
+    return executeFunction<Any, Any>(
+      declaration as AutoFunctionDeclaration<Any, Any>,
+      call.args["param"].toString()
+    )
+  }
+
+  @OptIn(InternalSerializationApi::class)
+  internal suspend fun <I : Any, O : Any> executeFunction(
+    functionDeclaration: AutoFunctionDeclaration<I, O>,
+    parameter: String
+  ): JsonObject {
+    val inputDeserializer =
+      functionDeclaration.inputSchema.clazz.serializerOrNull()
+        ?: throw RuntimeException(
+          "Function input type ${functionDeclaration.inputSchema.clazz.qualifiedName} is not @Serializable"
+        )
+    val input = Json.decodeFromString(inputDeserializer, parameter)
+    val functionReference =
+      functionDeclaration.functionReference
+        ?: throw RuntimeException("Function reference for ${functionDeclaration.name} is missing")
+    val output = functionReference.invoke(input)
+    val outputSerializer = functionDeclaration.outputSchema?.clazz?.serializerOrNull()
+    if (outputSerializer != null) {
+      return Json.encodeToJsonElement(outputSerializer, output).jsonObject
+    }
+    return output as JsonObject
   }
 
   @OptIn(ExperimentalSerializationApi::class)
