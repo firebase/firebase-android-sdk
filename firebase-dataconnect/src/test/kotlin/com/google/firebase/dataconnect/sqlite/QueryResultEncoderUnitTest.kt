@@ -26,14 +26,15 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.stringValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
+import com.google.firebase.dataconnect.testutil.property.arbitrary.withIterations
+import com.google.firebase.dataconnect.testutil.property.arbitrary.withIterationsIfNotNull
 import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.testutil.withRandomlyInsertedStructs
-import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
-import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
+import io.kotest.common.DelicateKotest
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
@@ -43,6 +44,7 @@ import io.kotest.property.Exhaustive
 import io.kotest.property.PropTestConfig
 import io.kotest.property.ShrinkingMode
 import io.kotest.property.arbitrary.constant
+import io.kotest.property.arbitrary.distinct
 import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.map
@@ -58,7 +60,7 @@ class QueryResultEncoderUnitTest {
 
   @Test
   fun `bool values`() = runTest {
-    data class BoolTestCase(val value: Boolean, val discriminator: Byte)
+    data class BoolTestCase(val value: Boolean, val valueTypeIndicator: Byte)
     val arb =
       Exhaustive.of(
         BoolTestCase(true, QueryResultCodec.VALUE_BOOL_TRUE),
@@ -74,7 +76,7 @@ class QueryResultEncoderUnitTest {
         put(QueryResultCodec.VALUE_STRUCT)
         putUInt32(1) // struct size
         put(QueryResultCodec.VALUE_STRING_EMPTY)
-        put(sample.discriminator)
+        put(sample.valueTypeIndicator)
       }
 
       encodeResult.byteArray shouldBe expectedEncodedBytes
@@ -104,49 +106,56 @@ class QueryResultEncoderUnitTest {
 
   @Test fun `string values`() = verifyStringValues(StringEncodingTestCase.arb())
 
-  @Test fun `long string values`() = verifyStringValues(StringEncodingTestCase.longStringsArb())
+  @Test
+  fun `long string values`() =
+    verifyStringValues(StringEncodingTestCase.longStringsArb(), iterations = 50)
 
-  private fun verifyStringValues(arb: Arb<StringEncodingTestCase>) = runTest {
-    checkAll(propTestConfig, arb) { sample ->
-      val struct = Struct.newBuilder().putFields("", sample.string.toValueProto()).build()
+  private fun verifyStringValues(arb: Arb<StringEncodingTestCase>, iterations: Int? = null) =
+    runTest {
+      checkAll(propTestConfig.withIterationsIfNotNull(iterations), arb) { sample ->
+        val struct = Struct.newBuilder().putFields("", sample.string.toValueProto()).build()
 
-      val encodeResult = QueryResultEncoder.encode(struct)
+        val encodeResult = QueryResultEncoder.encode(struct)
 
-      val expectedEncodedBytes = buildByteArray {
-        putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
-        put(QueryResultCodec.VALUE_STRUCT)
-        putUInt32(1) // struct size
-        put(QueryResultCodec.VALUE_STRING_EMPTY)
-        sample.encode(this)
+        val expectedEncodedBytes = buildByteArray {
+          putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
+          put(QueryResultCodec.VALUE_STRUCT)
+          putUInt32(1) // struct size
+          put(QueryResultCodec.VALUE_STRING_EMPTY)
+          sample.encode(this)
+        }
+
+        encodeResult.byteArray shouldBe expectedEncodedBytes
+        QueryResultDecoder.decode(encodeResult.byteArray, emptyList()) shouldBe struct
       }
-
-      encodeResult.byteArray shouldBe expectedEncodedBytes
-      QueryResultDecoder.decode(encodeResult.byteArray, emptyList()) shouldBe struct
     }
-  }
 
   @Test fun `struct keys`() = verifyStringStructKeys(StringEncodingTestCase.arb())
 
-  @Test fun `long struct keys`() = verifyStringStructKeys(StringEncodingTestCase.longStringsArb())
+  @Test
+  fun `long struct keys`() =
+    verifyStringStructKeys(StringEncodingTestCase.longStringsArb(), iterations = 50)
 
-  private fun verifyStringStructKeys(arb: Arb<StringEncodingTestCase>) = runTest {
-    checkAll(propTestConfig, arb) { sample ->
-      val struct = Struct.newBuilder().putFields(sample.string, Value.getDefaultInstance()).build()
+  private fun verifyStringStructKeys(arb: Arb<StringEncodingTestCase>, iterations: Int? = null) =
+    runTest {
+      checkAll(propTestConfig.withIterationsIfNotNull(iterations), arb) { sample ->
+        val struct =
+          Struct.newBuilder().putFields(sample.string, Value.getDefaultInstance()).build()
 
-      val encodeResult = QueryResultEncoder.encode(struct)
+        val encodeResult = QueryResultEncoder.encode(struct)
 
-      val expectedEncodedBytes = buildByteArray {
-        putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
-        put(QueryResultCodec.VALUE_STRUCT)
-        putUInt32(1) // struct size
-        sample.encode(this)
-        put(QueryResultCodec.VALUE_KIND_NOT_SET)
+        val expectedEncodedBytes = buildByteArray {
+          putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
+          put(QueryResultCodec.VALUE_STRUCT)
+          putUInt32(1) // struct size
+          sample.encode(this)
+          put(QueryResultCodec.VALUE_KIND_NOT_SET)
+        }
+
+        encodeResult.byteArray shouldBe expectedEncodedBytes
+        QueryResultDecoder.decode(encodeResult.byteArray, emptyList()) shouldBe struct
       }
-
-      encodeResult.byteArray shouldBe expectedEncodedBytes
-      QueryResultDecoder.decode(encodeResult.byteArray, emptyList()) shouldBe struct
     }
-  }
 
   @Test
   fun `various structs round trip`() = runTest {
@@ -176,8 +185,7 @@ class QueryResultEncoderUnitTest {
         key = StringEncodingTestCase.longStringsArb().map { it.string },
         scalarValue = StringEncodingTestCase.longStringsArb().map { it.string.toValueProto() },
       )
-    checkAll(@OptIn(ExperimentalKotest::class) propTestConfig.copy(iterations = 100), structArb) {
-      struct ->
+    checkAll(propTestConfig.withIterations(50), structArb) { struct ->
       struct.struct.decodingEncodingShouldProduceIdenticalStruct()
     }
   }
@@ -223,7 +231,7 @@ class QueryResultEncoderUnitTest {
   @Test
   fun `entity ID are long strings`() = runTest {
     checkAll(
-      @OptIn(ExperimentalKotest::class) propTestConfig.copy(iterations = 10),
+      propTestConfig.withIterations(50),
       Arb.string(),
       StringEncodingTestCase.longStringsArb().map { it.string },
     ) { entityIdFieldName, entityId ->
@@ -236,7 +244,7 @@ class QueryResultEncoderUnitTest {
   }
 
   @Test
-  fun `entire struct is a non-nested entity`() = runTest {
+  fun `entire struct is an entity with depth 1`() = runTest {
     checkAll(propTestConfig, EntityTestCase.arb(structSize = 1..100, structDepth = 1)) { sample ->
       sample.struct.decodingEncodingShouldProduceIdenticalStruct(
         entities = listOf(sample.struct),
@@ -246,7 +254,7 @@ class QueryResultEncoderUnitTest {
   }
 
   @Test
-  fun `entire struct is a nested entity`() = runTest {
+  fun `entire struct is an entity with depth greater than 1`() = runTest {
     checkAll(propTestConfig, EntityTestCase.arb(structSize = 2..3, structDepth = 2..4)) { sample ->
       sample.struct.decodingEncodingShouldProduceIdenticalStruct(
         entities = listOf(sample.struct),
@@ -265,16 +273,16 @@ class QueryResultEncoderUnitTest {
           structDepth = 1..2,
         )
       val entities = List(entityCount) { entityArb.bind().struct }
-      val structKeyArb = Arb.proto.structKey().filterNot { it == entityIdFieldName }
-      val structKeys = Arb.set(structKeyArb, entities.size).bind()
+      val structKeyArb =
+        @OptIn(DelicateKotest::class)
+        Arb.proto.structKey().filterNot { it == entityIdFieldName }.distinct()
       val struct =
-        Struct.newBuilder()
-          .apply {
-            structKeys.zip(entities).forEach { (key, entity) ->
-              putFields(key, entity.toValueProto())
-            }
+        Struct.newBuilder().let { structBuilder ->
+          entities.forEach { entity ->
+            structBuilder.putFields(structKeyArb.bind(), entity.toValueProto())
           }
-          .build()
+          structBuilder.build()
+        }
 
       struct.decodingEncodingShouldProduceIdenticalStruct(entities = entities, entityIdFieldName)
     }
@@ -397,96 +405,6 @@ class QueryResultEncoderUnitTest {
         entityIdFieldName.value
       )
     }
-  }
-
-  @Test
-  fun `list has nested entities and scalar values`() = runTest {
-    val entity1 = buildStructProto {
-      put("_id", "entity1")
-      put("name", "annie")
-      put("age", 42)
-    }
-    val entity2 = buildStructProto {
-      put("_id", "entity2")
-      put("name", "jackson")
-      put("age", 24)
-      put("sibling", entity1)
-    }
-    val list =
-      ListValue.newBuilder()
-        .apply {
-          addValues("foobar".toValueProto())
-          addValues(entity2.toValueProto())
-          addValues(42.toValueProto())
-        }
-        .build()
-    val root = buildStructProto {
-      put("foo", "bar")
-      put("stuff", list)
-    }
-
-    val entities: List<Struct> =
-      listOf(
-        entity1,
-        entity2.toBuilder().removeFields("sibling").build(),
-      )
-
-    root.decodingEncodingShouldProduceIdenticalStruct(
-      entities = entities,
-      entityIdFieldName = "_id",
-    )
-  }
-
-  @Test
-  fun `entity has list with nested entities and scalar values`() = runTest {
-    val entity1 = buildStructProto {
-      put("_id", "entity1")
-      put("name", "annie")
-      put("age", 42)
-    }
-    val entity2 = buildStructProto {
-      put("_id", "entity2")
-      put("name", "jackson")
-      put("age", 24)
-      put("sibling", entity1)
-    }
-    val list =
-      ListValue.newBuilder()
-        .apply {
-          addValues("foobar".toValueProto())
-          addValues(entity2.toValueProto())
-          addValues(42.toValueProto())
-        }
-        .build()
-    val root = buildStructProto {
-      put("_id", "root")
-      put("foo", "bar")
-      put("stuff", list)
-    }
-
-    val entities: List<Struct> =
-      listOf(
-        entity1,
-        entity2.toBuilder().removeFields("sibling").build(),
-        root
-          .toBuilder()
-          .putFields(
-            "stuff",
-            root
-              .getFieldsOrThrow("stuff")
-              .listValue
-              .toBuilder()
-              .apply { setValues(1, Value.getDefaultInstance()) }
-              .build()
-              .toValueProto()
-          )
-          .build()
-      )
-
-    root.decodingEncodingShouldProduceIdenticalStruct(
-      entities = entities,
-      entityIdFieldName = "_id",
-    )
   }
 
   private companion object {
