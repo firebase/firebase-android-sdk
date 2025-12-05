@@ -23,6 +23,7 @@ plugins {
   alias(libs.plugins.errorprone)
   alias(libs.plugins.crashlytics) apply false
   id("PublishingPlugin")
+  id("test-report")
   id("firebase-ci")
   id("smoke-tests")
   alias(libs.plugins.google.services)
