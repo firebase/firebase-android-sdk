@@ -29,3 +29,32 @@ typealias MutableProtoValuePath = MutableList<ProtoValuePathComponent>
 typealias ProtoValuePath = List<ProtoValuePathComponent>
 
 data class ProtoValuePathPair(val path: ProtoValuePath, val value: Value)
+
+object ProtoValuePathComparator : Comparator<ProtoValuePath> {
+  override fun compare(o1: ProtoValuePath, o2: ProtoValuePath): Int {
+    val size = o1.size.coerceAtMost(o2.size)
+    repeat(size) {
+      val componentComparisonResult = ProtoValuePathComponentComparator.compare(o1[it], o2[it])
+      if (componentComparisonResult != 0) {
+        return componentComparisonResult
+      }
+    }
+    return o1.size.compareTo(o2.size)
+  }
+}
+
+object ProtoValuePathComponentComparator : Comparator<ProtoValuePathComponent> {
+  override fun compare(o1: ProtoValuePathComponent, o2: ProtoValuePathComponent): Int =
+    when (o1) {
+      is DataConnectPathSegment.Field ->
+        when (o2) {
+          is DataConnectPathSegment.Field -> o1.field.compareTo(o2.field)
+          is DataConnectPathSegment.ListIndex -> -1
+        }
+      is DataConnectPathSegment.ListIndex ->
+        when (o2) {
+          is DataConnectPathSegment.Field -> 1
+          is DataConnectPathSegment.ListIndex -> o1.index.compareTo(o2.index)
+        }
+    }
+}

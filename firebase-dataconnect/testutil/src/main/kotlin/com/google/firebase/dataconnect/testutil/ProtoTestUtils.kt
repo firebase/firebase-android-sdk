@@ -79,6 +79,7 @@ private fun withRandomlyInsertedValues(
       .filter { mode.supportedKindCases.contains(it.value.kindCase) }
       .map { it.path }
       .toList()
+      .sortedWith(ProtoValuePathComparator)
 
   val insertions =
     values.map {
