@@ -176,7 +176,7 @@ public class FirebasePerfHttpClient {
       final TransportManager transportManager)
       throws IOException {
     HttpResponse response = null;
-    NetworkRequestMetricBuilder builder = NetworkRequestMetricBuilder.builder(transportManager);
+    NetworkRequestMetricBuilder builder = NetworkRequestMetricBuilder.builder(transportManager, transportManager.getSessionManager());
     try {
       builder.setUrl(request.getURI().toString()).setHttpMethod(request.getMethod());
       Long requestContentLength =
@@ -224,7 +224,7 @@ public class FirebasePerfHttpClient {
       final TransportManager transportManager)
       throws IOException {
     HttpResponse response = null;
-    NetworkRequestMetricBuilder builder = NetworkRequestMetricBuilder.builder(transportManager);
+    NetworkRequestMetricBuilder builder = NetworkRequestMetricBuilder.builder(transportManager, transportManager.getSessionManager());
     try {
       builder.setUrl(request.getURI().toString()).setHttpMethod(request.getMethod());
       Long requestContentLength =
@@ -272,7 +272,7 @@ public class FirebasePerfHttpClient {
       final Timer timer,
       final TransportManager transportManager)
       throws IOException {
-    NetworkRequestMetricBuilder builder = NetworkRequestMetricBuilder.builder(transportManager);
+    NetworkRequestMetricBuilder builder = NetworkRequestMetricBuilder.builder(transportManager, transportManager.getSessionManager());
     try {
       builder.setUrl(request.getURI().toString()).setHttpMethod(request.getMethod());
       Long requestContentLength =
@@ -309,7 +309,7 @@ public class FirebasePerfHttpClient {
       final Timer timer,
       final TransportManager transportManager)
       throws IOException {
-    NetworkRequestMetricBuilder builder = NetworkRequestMetricBuilder.builder(transportManager);
+    NetworkRequestMetricBuilder builder = NetworkRequestMetricBuilder.builder(transportManager, transportManager.getSessionManager());
     try {
       builder.setUrl(request.getURI().toString()).setHttpMethod(request.getMethod());
       Long requestContentLength =
@@ -347,7 +347,7 @@ public class FirebasePerfHttpClient {
       final TransportManager transportManager)
       throws IOException {
     HttpResponse response = null;
-    NetworkRequestMetricBuilder builder = NetworkRequestMetricBuilder.builder(transportManager);
+    NetworkRequestMetricBuilder builder = NetworkRequestMetricBuilder.builder(transportManager, transportManager.getSessionManager());
     try {
       builder
           .setUrl(target.toURI() + request.getRequestLine().getUri())
@@ -399,7 +399,7 @@ public class FirebasePerfHttpClient {
       final TransportManager transportManager)
       throws IOException {
     HttpResponse response = null;
-    NetworkRequestMetricBuilder builder = NetworkRequestMetricBuilder.builder(transportManager);
+    NetworkRequestMetricBuilder builder = NetworkRequestMetricBuilder.builder(transportManager, transportManager.getSessionManager());
     try {
       builder
           .setUrl(target.toURI() + request.getRequestLine().getUri())
@@ -450,7 +450,7 @@ public class FirebasePerfHttpClient {
       final Timer timer,
       final TransportManager transportManager)
       throws IOException {
-    NetworkRequestMetricBuilder builder = NetworkRequestMetricBuilder.builder(transportManager);
+    NetworkRequestMetricBuilder builder = NetworkRequestMetricBuilder.builder(transportManager, transportManager.getSessionManager());
     try {
       builder
           .setUrl(target.toURI() + request.getRequestLine().getUri())
@@ -492,7 +492,7 @@ public class FirebasePerfHttpClient {
       final Timer timer,
       final TransportManager transportManager)
       throws IOException {
-    NetworkRequestMetricBuilder builder = NetworkRequestMetricBuilder.builder(transportManager);
+    NetworkRequestMetricBuilder builder = NetworkRequestMetricBuilder.builder(transportManager, transportManager.getSessionManager());
     try {
       builder
           .setUrl(target.toURI() + request.getRequestLine().getUri())
