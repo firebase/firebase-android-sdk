@@ -37,53 +37,38 @@ fun PropertyContext.structWithValues(
 fun Struct.withRandomlyInsertedStruct(
   struct: Struct,
   random: Random,
-  mode: RandomInsertMode = RandomInsertMode.StructAndListValue,
   generateKey: () -> String
-): Struct = withRandomlyInsertedStructs(listOf(struct), random, mode, generateKey)
+): Struct = withRandomlyInsertedStructs(listOf(struct), random, generateKey)
 
 fun Struct.withRandomlyInsertedStructs(
   structs: List<Struct>,
   random: Random,
-  mode: RandomInsertMode = RandomInsertMode.StructAndListValue,
   generateKey: () -> String
-): Struct =
-  withRandomlyInsertedValues(this, structs.map { it.toValueProto() }, random, mode, generateKey)
+): Struct = withRandomlyInsertedValues(this, structs.map { it.toValueProto() }, random, generateKey)
 
 fun Struct.withRandomlyInsertedValue(
   value: Value,
   random: Random,
-  mode: RandomInsertMode = RandomInsertMode.StructAndListValue,
   generateKey: () -> String
-): Struct = withRandomlyInsertedValues(listOf(value), random, mode, generateKey)
+): Struct = withRandomlyInsertedValues(listOf(value), random, generateKey)
 
 fun Struct.withRandomlyInsertedValues(
   values: List<Value>,
   random: Random,
-  mode: RandomInsertMode = RandomInsertMode.StructAndListValue,
   generateKey: () -> String
-): Struct = withRandomlyInsertedValues(this, values, random, mode, generateKey)
-
-/**
- * The types of values into which values will be randomly inserted by [withRandomlyInsertedValues].
- */
-enum class RandomInsertMode(val supportedKindCases: Set<Value.KindCase>) {
-  Struct(setOf(Value.KindCase.STRUCT_VALUE)),
-  ListValue(setOf(Value.KindCase.LIST_VALUE)),
-  StructAndListValue(setOf(Value.KindCase.STRUCT_VALUE, Value.KindCase.LIST_VALUE)),
-}
+): Struct = withRandomlyInsertedValues(this, values, random, generateKey)
 
 @JvmName("withRandomlyInsertedValuesInternal")
 private fun withRandomlyInsertedValues(
   struct: Struct,
   values: List<Value>,
   random: Random,
-  mode: RandomInsertMode,
   generateKey: () -> String
 ): Struct {
   val candidateInsertionPaths =
     struct
       .walk(includeSelf = true)
-      .filter { mode.supportedKindCases.contains(it.value.kindCase) }
+      .filter { it.value.isStructValue }
       .map { it.path }
       .toList()
       .sortedWith(ProtoValuePathComparator)
@@ -98,7 +83,10 @@ private fun withRandomlyInsertedValues(
     val curInsertions = insertions.filter { it.path == path }.map { it.value }
     if (curInsertions.isEmpty()) {
       value
-    } else if (value.isStructValue) {
+    } else {
+      check(value.isStructValue) {
+        "must be a struct, but got value.kindCase=${value.kindCase}, value=$value [ywwmyjnpwa]"
+      }
       value.structValue
         .toBuilder()
         .also { structBuilder ->
@@ -108,13 +96,6 @@ private fun withRandomlyInsertedValues(
         }
         .build()
         .toValueProto()
-    } else if (value.isListValue) {
-      val newValuesList = value.listValue.valuesList.toMutableList()
-      newValuesList.addAll(curInsertions)
-      newValuesList.shuffle(random)
-      newValuesList.toValueProto()
-    } else {
-      throw IllegalStateException("should never get here value=$value [ywwmyjnpwa]")
     }
   }
 }

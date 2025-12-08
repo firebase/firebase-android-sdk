@@ -19,7 +19,6 @@ package com.google.firebase.dataconnect.sqlite
 import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.EntityTestCase
 import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.calculateExpectedEncodingAsEntityId
 import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.decodingEncodingShouldProduceIdenticalStruct
-import com.google.firebase.dataconnect.testutil.RandomInsertMode
 import com.google.firebase.dataconnect.testutil.buildByteArray
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.randomPartitions
@@ -50,9 +49,9 @@ import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
 import io.kotest.property.exhaustive.of
-import kotlin.random.nextInt
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
+import kotlin.random.nextInt
 
 class QueryResultEncoderUnitTest {
 
@@ -254,7 +253,6 @@ class QueryResultEncoderUnitTest {
           rootStruct.withRandomlyInsertedStruct(
             entity,
             randomSource().random,
-            RandomInsertMode.Struct,
             { nonEntityIdFieldNameArb.bind() }
           )
         }
@@ -284,7 +282,6 @@ class QueryResultEncoderUnitTest {
           rootStruct.withRandomlyInsertedValue(
             entityListValue.toValueProto(),
             randomSource().random,
-            RandomInsertMode.Struct,
             { nonEntityIdFieldNameArb.bind() }
           )
         }

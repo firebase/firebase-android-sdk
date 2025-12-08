@@ -21,8 +21,6 @@ import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
-import io.kotest.property.PropertyContext
-import io.kotest.property.RandomSource
 import io.kotest.property.ShrinkingMode
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.list
@@ -35,52 +33,25 @@ import org.junit.Test
 class ListPartitionUnitTest {
 
   @Test
-  fun `randomPartitions Random generates random partitions`() =
-    randomPartitionsReturnValueTest { list, partitionCount ->
-      list.randomPartitions(partitionCount, randomSource().random)
-    }
-
-  @Test
-  fun `randomPartitions Random uses the given Random`() =
-    randomPartitionsUsesGivenRandomTest { list, partitionCount, randomSeed ->
-      list.randomPartitions(partitionCount, Random(randomSeed))
-    }
-
-  @Test
-  fun `randomPartitions RandomSource generates random partitions`() =
-    randomPartitionsReturnValueTest { list, partitionCount ->
-      list.randomPartitions(partitionCount, randomSource())
-    }
-
-  @Test
-  fun `randomPartitions RandomSource uses the given RandomSource`() =
-    randomPartitionsUsesGivenRandomTest { list, partitionCount, randomSeed ->
-      list.randomPartitions(partitionCount, RandomSource.seeded(randomSeed))
-    }
-
-  private fun randomPartitionsReturnValueTest(
-    block: PropertyContext.(list: List<Long>, partitionCount: Int) -> List<List<Long>>
-  ) = runTest {
+  fun `randomPartitions Random generates random partitions`() = runTest {
     checkAll(propTestConfig, Arb.list(Arb.long(), 1..100)) { list ->
       val partitionCount = Arb.int(1..list.size).bind()
 
-      val partitions = block(list, partitionCount)
+      val partitions = list.randomPartitions(partitionCount, randomSource().random)
 
       partitions.size shouldBe partitionCount
       partitions.flatten() shouldBe list
     }
   }
 
-  private fun randomPartitionsUsesGivenRandomTest(
-    block:
-      PropertyContext.(list: List<Long>, partitionCount: Int, randomSeed: Long) -> List<List<Long>>
-  ) = runTest {
+  @Test
+  fun `randomPartitions Random uses the given Random`() = runTest {
     checkAll(propTestConfig, Arb.list(Arb.long(), 1..100)) { list ->
       val partitionCount = Arb.int(1..list.size).bind()
       val randomSeed = randomSource().random.nextLong()
 
-      val partitions1 = block(list, partitionCount, randomSeed)
-      val partitions2 = block(list, partitionCount, randomSeed)
+      val partitions1 = list.randomPartitions(partitionCount, Random(randomSeed))
+      val partitions2 = list.randomPartitions(partitionCount, Random(randomSeed))
 
       partitions1 shouldBe partitions2
     }
