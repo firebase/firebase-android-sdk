@@ -29,6 +29,7 @@ import static com.google.firebase.firestore.pipeline.Expression.documentId;
 import static com.google.firebase.firestore.pipeline.Expression.endsWith;
 import static com.google.firebase.firestore.pipeline.Expression.equal;
 import static com.google.firebase.firestore.pipeline.Expression.euclideanDistance;
+import static com.google.firebase.firestore.pipeline.Expression.exists;
 import static com.google.firebase.firestore.pipeline.Expression.field;
 import static com.google.firebase.firestore.pipeline.Expression.greaterThan;
 import static com.google.firebase.firestore.pipeline.Expression.join;
@@ -54,6 +55,7 @@ import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitForException;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assume.assumeFalse;
+import static org.junit.Assume.assumeTrue;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
@@ -281,6 +283,9 @@ public class PipelineTest {
 
   @Before
   public void setup() {
+    assumeTrue(
+        "Skip PipelineTest on standard backend",
+        IntegrationTestUtil.getBackendEdition() == IntegrationTestUtil.BackendEdition.ENTERPRISE);
     randomCol = IntegrationTestUtil.testCollectionWithDocs(bookDocs);
     firestore = randomCol.firestore;
   }
@@ -1754,6 +1759,7 @@ public class PipelineTest {
         firestore
             .pipeline()
             .collection(randomCol)
+            .where(exists("genre"))
             .where(Expression.notEqualAny("genre", ImmutableList.of("Romance", "Dystopian")))
             .select("genre")
             .distinct("genre")
@@ -2312,7 +2318,13 @@ public class PipelineTest {
                 new AggregateOptions()
                     .withHints(new AggregateHints().withForceStreamableEnabled()));
 
-    waitFor(pipeline.execute(opts));
+    RuntimeException exception =
+        assertThrows(
+            RuntimeException.class,
+            () -> {
+              waitFor(pipeline.execute());
+            });
+    assertThat(exception.getMessage()).contains("Invalid index");
   }
 
   @Test

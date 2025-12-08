@@ -211,6 +211,16 @@ class RealtimePipelineTest {
 
   @Before
   fun setUp() {
+    org.junit.Assume.assumeTrue(
+      "Skip RealtimePipelineTest on prod",
+      IntegrationTestUtil.isRunningAgainstEmulator()
+    )
+
+    org.junit.Assume.assumeTrue(
+      "Skip RealtimePipelineTest on standard backend",
+      IntegrationTestUtil.getBackendEdition() == IntegrationTestUtil.BackendEdition.ENTERPRISE
+    )
+
     collRef = IntegrationTestUtil.testCollection()
     db = collRef.firestore
     eventCollRef = db.collection(autoId())

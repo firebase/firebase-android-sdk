@@ -21,6 +21,7 @@ import static com.google.firebase.firestore.Filter.equalTo;
 import static com.google.firebase.firestore.Filter.inArray;
 import static com.google.firebase.firestore.Filter.or;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.checkQueryAndPipelineResultsMatch;
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.getBackendEdition;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.nullList;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.pipelineSnapshotToIds;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.pipelineSnapshotToValues;
@@ -34,6 +35,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeTrue;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
@@ -44,11 +46,17 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(AndroidJUnit4.class)
 public class QueryToPipelineTest {
+
+  @Before
+  public void setUp() {
+    assumeTrue(getBackendEdition() == IntegrationTestUtil.BackendEdition.ENTERPRISE);
+  }
 
   @After
   public void tearDown() {

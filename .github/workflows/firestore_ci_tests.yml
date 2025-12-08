@@ -85,7 +85,7 @@ jobs:
           heap-size: 4096M
           script: |
             adb logcat -v time > logcat.txt &
-            ./gradlew firebase-firestore:connectedCheck withErrorProne -PtargetBackend="prod"
+            ./gradlew firebase-firestore:connectedCheck withErrorProne -PtargetBackend="prod" -PbackendEdition="standard" -PtargetDatabaseId="(default)"
       - name: Upload logs
         if: failure()
         uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
@@ -177,7 +177,7 @@ jobs:
           heap-size: 4096M
           script: |
             adb logcat -v time > logcat.txt &
-            ./gradlew firebase-firestore:connectedCheck withErrorProne -PtargetBackend="prod"
+            ./gradlew firebase-firestore:connectedCheck withErrorProne -PtargetBackend="prod" -PbackendEdition="standard" -PtargetDatabaseId="(default)"
       - name: Upload logs
         if: failure()
         uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
@@ -240,7 +240,7 @@ jobs:
           heap-size: 4096M
           script: |
             adb logcat -v time > logcat.txt &
-            ./gradlew firebase-firestore:connectedCheck withErrorProne -PtargetBackend="nightly"
+            ./gradlew firebase-firestore:connectedCheck withErrorProne -PtargetBackend="nightly" -PbackendEdition="enterprise" -PtargetDatabaseId="enterprise"
       - name: Upload logs
         if: failure()
         uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
@@ -314,7 +314,7 @@ jobs:
           heap-size: 4096M
           script: |
             adb logcat -v time > logcat.txt &
-            ./gradlew firebase-firestore:connectedCheck withErrorProne -PtargetBackend="emulator"
+            ./gradlew firebase-firestore:connectedCheck withErrorProne -PtargetBackend="emulator" -PbackendEdition="enterprise"
       - name: Upload logs
         if: failure()
         uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1

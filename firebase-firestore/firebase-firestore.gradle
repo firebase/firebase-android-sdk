@@ -77,6 +77,9 @@ android {
         def targetBackend = findProperty("targetBackend") ?: "emulator"
         buildConfigField("String", "TARGET_BACKEND", "\"$targetBackend\"")
 
+        def backendEdition = findProperty("backendEdition") ?: "enterprise"
+        buildConfigField("String", "BACKEND_EDITION", "\"$backendEdition\"")
+
         def targetDatabaseId = findProperty('targetDatabaseId') ?: "enterprise"
         buildConfigField("String", "TARGET_DATABASE_ID", "\"$targetDatabaseId\"")
 

@@ -98,9 +98,15 @@ public class IntegrationTestUtil {
     PROD
   }
 
+  public enum BackendEdition {
+    STANDARD,
+    ENTERPRISE
+  }
+
   // Set this to the desired enum value to change the target backend when running tests locally.
   // Note: DO NOT change this variable except for local testing.
   private static final TargetBackend backendForLocalTesting = null;
+  private static final BackendEdition backendEditionForLocalTesting = null;
 
   private static final TargetBackend backend = getTargetBackend();
   private static final String EMULATOR_HOST = "10.0.2.2";
@@ -170,6 +176,20 @@ public class IntegrationTestUtil {
         return TargetBackend.NIGHTLY;
       case "prod":
         return TargetBackend.PROD;
+      default:
+        throw new RuntimeException("Unknown backend configuration used for integration tests.");
+    }
+  }
+
+  public static BackendEdition getBackendEdition() {
+    if (backendEditionForLocalTesting != null) {
+      return backendEditionForLocalTesting;
+    }
+    switch (BuildConfig.BACKEND_EDITION) {
+      case "enterprise":
+        return BackendEdition.ENTERPRISE;
+      case "standard":
+        return BackendEdition.STANDARD;
       default:
         throw new RuntimeException("Unknown backend configuration used for integration tests.");
     }
