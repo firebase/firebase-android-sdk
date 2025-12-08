@@ -140,6 +140,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
   private final Provider<RemoteConfigComponent> firebaseRemoteConfigProvider;
   private final FirebaseInstallationsApi firebaseInstallationsApi;
   private final Provider<TransportFactory> transportFactoryProvider;
+  private final SessionManager sessionManager;
 
   /**
    * Constructs the FirebasePerformance class and allows injecting dependencies.
@@ -168,6 +169,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
     this.firebaseRemoteConfigProvider = firebaseRemoteConfigProvider;
     this.firebaseInstallationsApi = firebaseInstallationsApi;
     this.transportFactoryProvider = transportFactoryProvider;
+    this.sessionManager = sessionManager;
 
     if (firebaseApp == null) {
       this.mPerformanceCollectionForceEnabledState = false;
@@ -177,7 +179,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
     }
 
     TransportManager.getInstance()
-        .initialize(firebaseApp, firebaseInstallationsApi, transportFactoryProvider);
+        .initialize(firebaseApp, firebaseInstallationsApi, transportFactoryProvider, sessionManager);
 
     Context appContext = firebaseApp.getApplicationContext();
     // TODO(b/110178816): Explore moving off of main thread.
@@ -187,7 +189,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
     this.configResolver.getRemoteConfigManager().setFirebaseRemoteConfigProvider(firebaseRemoteConfigProvider);
     this.configResolver.setMetadataBundle(mMetadataBundle);
     this.configResolver.setApplicationContext(appContext);
-    sessionManager.setApplicationContext(appContext);
+    this.sessionManager.setApplicationContext(appContext);
 
     mPerformanceCollectionForceEnabledState = configResolver.getIsPerformanceCollectionEnabled();
     if (logger.isLogcatEnabled() && isPerformanceCollectionEnabled()) {
@@ -423,7 +425,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
    */
   @NonNull
   public HttpMetric newHttpMetric(@NonNull String url, @NonNull @HttpMethod String httpMethod) {
-    return new HttpMetric(url, httpMethod, TransportManager.getInstance(), new Timer());
+    return new HttpMetric(url, httpMethod, TransportManager.getInstance(), new Timer(), sessionManager);
   }
 
   /**
@@ -436,7 +438,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
    */
   @NonNull
   public HttpMetric newHttpMetric(@NonNull URL url, @NonNull @HttpMethod String httpMethod) {
-    return new HttpMetric(url, httpMethod, TransportManager.getInstance(), new Timer());
+    return new HttpMetric(url, httpMethod, TransportManager.getInstance(), new Timer(), sessionManager);
   }
 
   /**

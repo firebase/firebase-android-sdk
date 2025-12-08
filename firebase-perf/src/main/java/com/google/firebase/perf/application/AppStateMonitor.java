@@ -80,6 +80,8 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   private boolean isRegisteredForLifecycleCallbacks = false;
   private boolean isColdStart = true;
 
+  private SessionManager sessionManager;
+
   public static AppStateMonitor getInstance() {
     if (instance == null) {
       synchronized (AppStateMonitor.class) {
@@ -159,7 +161,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
       activityToRecorderMap.put(activity, recorder);
       if (activity instanceof FragmentActivity) {
         FragmentStateMonitor fragmentStateMonitor =
-            new FragmentStateMonitor(clock, transportManager, this, recorder);
+            new FragmentStateMonitor(clock, transportManager, this, recorder, sessionManager);
         activityToFragmentStateMonitorMap.put(activity, fragmentStateMonitor);
         FragmentActivity fragmentActivity = (FragmentActivity) activity;
         fragmentActivity
@@ -198,7 +200,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
       // Starts recording frame metrics for this activity.
       activityToRecorderMap.get(activity).start();
       // Start the Trace
-      Trace screenTrace = new Trace(getScreenTraceName(activity), transportManager, clock, this);
+      Trace screenTrace = new Trace(getScreenTraceName(activity), transportManager, clock, this, sessionManager);
       screenTrace.start();
       activityToScreenTraceMap.put(activity, screenTrace);
     }
@@ -379,7 +381,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
             .setName(name)
             .setClientStartTimeUs(startTime.getMicros())
             .setDurationUs(startTime.getDurationMicros(endTime))
-            .addPerfSessions(SessionManager.getInstance().perfSession().build());
+            .addPerfSessions(sessionManager.perfSession().build());
     // Atomically get mTsnsCount and set it to zero.
     int tsnsCount = this.tsnsCount.getAndSet(0);
     synchronized (metricToCountMap) {
@@ -462,5 +464,13 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   @VisibleForTesting
   public void setIsColdStart(boolean isColdStart) {
     this.isColdStart = isColdStart;
+  }
+
+  public SessionManager getSessionManager() {
+    return sessionManager;
+  }
+
+  public void setSessionManager(SessionManager sessionManager) {
+    this.sessionManager = sessionManager;
   }
 }
