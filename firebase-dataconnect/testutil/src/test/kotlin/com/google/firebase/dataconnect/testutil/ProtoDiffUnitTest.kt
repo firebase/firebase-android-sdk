@@ -263,7 +263,7 @@ class ProtoDiffUnitTest {
   @Test
   fun `listValueDiff,listValueFastEqual for KindCase`() = runTest {
     val valueArb = Arb.proto.value()
-    val listValueArb = Arb.proto.listValue(length = 1..5).map { it.listValue }
+    val listValueArb = Arb.proto.listValue(size = 1..5).map { it.listValue }
 
     verifyListValueDiffReturnsDifferences(listValueArb) { listValue1, itemCount, expectedDifferences
       ->
@@ -292,7 +292,7 @@ class ProtoDiffUnitTest {
   @Test
   fun `listValueDiff,listValueFastEqual for values added to the end of a list`() = runTest {
     val valueArb = Arb.proto.value()
-    val listValueArb = Arb.proto.listValue(length = 1..5).map { it.listValue }
+    val listValueArb = Arb.proto.listValue(size = 1..5).map { it.listValue }
 
     verifyListValueDiffReturnsDifferences(listValueArb) { listValue1, itemCount, expectedDifferences
       ->
@@ -330,7 +330,7 @@ class ProtoDiffUnitTest {
   @Test
   fun `listValueDiff,listValueFastEqual for values removed from the end of the root list`() =
     runTest {
-      val listValueArb = Arb.proto.listValue(length = 1..5).map { it.listValue }
+      val listValueArb = Arb.proto.listValue(size = 1..5).map { it.listValue }
 
       verifyListValueDiffReturnsDifferences(listValueArb) {
         listValue1,
@@ -357,7 +357,7 @@ class ProtoDiffUnitTest {
 
   @Test
   fun `listValueDiff,listValueFastEqual for BoolValue, NumberValue, StringValue`() = runTest {
-    val listValueArb = Arb.proto.listValue(length = 1..5).map { it.listValue }
+    val listValueArb = Arb.proto.listValue(size = 1..5).map { it.listValue }
 
     verifyListValueDiffReturnsDifferences(listValueArb) { listValue1, itemCount, expectedDifferences
       ->

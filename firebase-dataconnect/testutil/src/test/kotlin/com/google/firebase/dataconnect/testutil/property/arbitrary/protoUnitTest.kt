@@ -30,6 +30,7 @@ import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.collections.shouldBeIn
+import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
@@ -39,6 +40,8 @@ import io.kotest.property.Exhaustive
 import io.kotest.property.PropTestConfig
 import io.kotest.property.RandomSource
 import io.kotest.property.ShrinkingMode
+import io.kotest.property.arbitrary.int
+import io.kotest.property.arbitrary.long
 import io.kotest.property.arbitrary.map
 import io.kotest.property.checkAll
 import io.kotest.property.exhaustive.collection
@@ -211,11 +214,69 @@ class protoUnitTest {
     }
   }
 
+  @Test
+  fun `valueOfKind() should generate same values when given same random seed`() {
+    Value.KindCase.entries.forEach { kindCase ->
+      verifyArbGeneratesSameValuesWithSameRandomSeed(Arb.proto.valueOfKind(kindCase))
+    }
+  }
+
+  @Test
+  fun `value() should generate same values when given same random seed`() =
+    verifyArbGeneratesSameValuesWithSameRandomSeed(Arb.proto.value())
+
+  @Test
+  fun `nullValue() should generate same values when given same random seed`() =
+    verifyArbGeneratesSameValuesWithSameRandomSeed(Arb.proto.nullValue())
+
+  @Test
+  fun `numberValue() should generate same values when given same random seed`() =
+    verifyArbGeneratesSameValuesWithSameRandomSeed(Arb.proto.numberValue())
+
+  @Test
+  fun `boolValue() should generate same values when given same random seed`() =
+    verifyArbGeneratesSameValuesWithSameRandomSeed(Arb.proto.boolValue())
+
+  @Test
+  fun `stringValue() should generate same values when given same random seed`() =
+    verifyArbGeneratesSameValuesWithSameRandomSeed(Arb.proto.stringValue())
+
+  @Test
+  fun `kindNotSetValue() should generate same values when given same random seed`() =
+    verifyArbGeneratesSameValuesWithSameRandomSeed(Arb.proto.kindNotSetValue())
+
+  @Test
+  fun `scalarValue() should generate same values when given same random seed`() =
+    verifyArbGeneratesSameValuesWithSameRandomSeed(Arb.proto.scalarValue())
+
+  @Test
+  fun `listValue() should generate same values when given same random seed`() =
+    verifyArbGeneratesSameValuesWithSameRandomSeed(Arb.proto.listValue())
+
+  @Test
+  fun `structKey() should generate same values when given same random seed`() =
+    verifyArbGeneratesSameValuesWithSameRandomSeed(Arb.proto.structKey())
+
+  @Test
+  fun `struct() should generate same values when given same random seed`() =
+    verifyArbGeneratesSameValuesWithSameRandomSeed(Arb.proto.struct())
+
   private fun verifyArbGeneratesValuesWithKindCase(
     arb: Arb<Value>,
     expectedKindCase: Value.KindCase
   ) = runTest {
     checkAll(propTestConfig, arb) { value -> value.kindCase shouldBe expectedKindCase }
+  }
+
+  private fun verifyArbGeneratesSameValuesWithSameRandomSeed(arb: Arb<*>) = runTest {
+    val edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.33)
+    checkAll(propTestConfig.withIterations(10), Arb.long(), Arb.int(1..20)) { seed, count ->
+      fun generateSamples() =
+        arb.generate(RandomSource.seeded(seed), edgeConfig).map { it.value }.take(count).toList()
+      val samples1 = generateSamples()
+      val samples2 = generateSamples()
+      samples1 shouldContainExactly samples2
+    }
   }
 
   private companion object {

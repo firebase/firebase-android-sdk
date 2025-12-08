@@ -25,7 +25,3 @@ fun PropTestConfig.withIterations(iterations: Int): PropTestConfig {
 
 fun PropTestConfig.withIterationsIfNotNull(iterations: Int?): PropTestConfig =
   if (iterations === null) this else withIterations(iterations)
-
-fun PropTestConfig.withSeed(seed: Long): PropTestConfig {
-  @OptIn(ExperimentalKotest::class) return copy(seed = seed)
-}
