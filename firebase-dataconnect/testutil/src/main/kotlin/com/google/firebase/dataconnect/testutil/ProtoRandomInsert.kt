@@ -15,25 +15,10 @@
  */
 package com.google.firebase.dataconnect.testutil
 
-import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
-import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
-import io.kotest.common.DelicateKotest
-import io.kotest.property.Arb
-import io.kotest.property.PropertyContext
-import io.kotest.property.arbitrary.distinct
 import kotlin.random.Random
-
-fun PropertyContext.structWithValues(
-  values: Collection<Value>,
-  structKey: Arb<String> = @OptIn(DelicateKotest::class) Arb.proto.structKey().distinct()
-): Struct =
-  Struct.newBuilder().let { structBuilder ->
-    values.forEach { structBuilder.putFields(structKey.bind(), it) }
-    structBuilder.build()
-  }
 
 fun Struct.withRandomlyInsertedStruct(
   struct: Struct,
