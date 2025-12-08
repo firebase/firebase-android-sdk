@@ -67,6 +67,12 @@ object QueryResultEncoderTesting {
     val struct: Struct
   ) {
 
+    override fun toString() =
+      "EntityTestCase(" +
+        "entityIdFieldName=$entityIdFieldName, " +
+        "entityId=$entityId, " +
+        "struct=${struct.toCompactString()})"
+
     companion object {
 
       fun arb(

@@ -21,7 +21,6 @@ import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.calculat
 import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.decodingEncodingShouldProduceIdenticalStruct
 import com.google.firebase.dataconnect.testutil.RandomInsertMode
 import com.google.firebase.dataconnect.testutil.buildByteArray
-import com.google.firebase.dataconnect.testutil.map
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
@@ -44,7 +43,6 @@ import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.map
-import io.kotest.property.arbitrary.set
 import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
 import io.kotest.property.exhaustive.of

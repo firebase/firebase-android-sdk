@@ -274,7 +274,6 @@ internal class QueryResultEncoder(
       }
       ListValueContentsClassification.AllNonEntities -> {
         writeEntitySubListOfAllNonEntities(listValue)
-        listValue
       }
       ListValueContentsClassification.BothEntitiesAndNonEntities ->
         throw UnsupportedOperationException(
@@ -284,18 +283,22 @@ internal class QueryResultEncoder(
         )
     }
 
-  private fun writeEntitySubListOfAllNonEntities(listValue: ListValue) {
+  private fun writeEntitySubListOfAllNonEntities(listValue: ListValue): ListValue {
     writer.writeByte(QueryResultCodec.VALUE_LIST_OF_NON_ENTITIES)
     writer.writeUInt32(listValue.valuesCount)
 
+    val listValueBuilder = ListValue.newBuilder()
     listValue.valuesList.forEachIndexed { index, value ->
-      val entityValue = writeEntityValue(value)
-      checkNotNull(entityValue) {
+      val nonEntityValue = writeEntityValue(value)
+      checkNotNull(nonEntityValue) {
         "internal error gj26tyh2bj: " +
           "list value at index $index is an entity with id=${value.getEntityId()}, " +
           "but expected it to not be an entity"
       }
+      listValueBuilder.addValues(nonEntityValue)
     }
+
+    return listValueBuilder.build()
   }
 
   private fun writeEntityValue(value: Value): Value? {
