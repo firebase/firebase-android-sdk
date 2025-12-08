@@ -22,13 +22,17 @@ import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.decoding
 import com.google.firebase.dataconnect.testutil.RandomInsertMode
 import com.google.firebase.dataconnect.testutil.buildByteArray
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
+import com.google.firebase.dataconnect.testutil.property.arbitrary.randomPartitions
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
 import com.google.firebase.dataconnect.testutil.property.arbitrary.withIterations
 import com.google.firebase.dataconnect.testutil.property.arbitrary.withIterationsIfNotNull
 import com.google.firebase.dataconnect.testutil.shouldBe
+import com.google.firebase.dataconnect.testutil.toListValue
+import com.google.firebase.dataconnect.testutil.toValueProto
 import com.google.firebase.dataconnect.testutil.withRandomlyInsertedStruct
-import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
+import com.google.firebase.dataconnect.testutil.withRandomlyInsertedValue
+import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
 import io.kotest.common.ExperimentalKotest
@@ -46,6 +50,7 @@ import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
 import io.kotest.property.exhaustive.of
+import kotlin.random.nextInt
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
@@ -245,9 +250,39 @@ class QueryResultEncoderUnitTest {
         val nonEntityIdFieldNameArb = Arb.proto.structKey().filterNot { it == entityIdFieldName }
         entities.fold(Arb.proto.struct(key = nonEntityIdFieldNameArb).bind().struct) {
           rootStruct,
-          entity ->
+          entity: Struct ->
           rootStruct.withRandomlyInsertedStruct(
             entity,
+            randomSource().random,
+            RandomInsertMode.Struct,
+            { nonEntityIdFieldNameArb.bind() }
+          )
+        }
+      }
+
+      rootStruct.decodingEncodingShouldProduceIdenticalStruct(entities, entityIdFieldName)
+    }
+  }
+
+  @Test
+  fun `list values containing all entities`() = runTest {
+    checkAll(propTestConfig, Arb.proto.structKey(), Arb.int(1..10)) { entityIdFieldName, entityCount
+      ->
+      val entityArb = EntityTestCase.arb(entityIdFieldName = Arb.constant(entityIdFieldName))
+      val entities = List(entityCount) { entityArb.bind().struct }
+      val entityListCount = randomSource().random.nextInt(1..(entities.size / 2).coerceAtLeast(1))
+      val entityListValues: List<ListValue> =
+        randomPartitions(entities, entityListCount).map { entityList ->
+          entityList.map { it.toValueProto() }.toListValue()
+        }
+
+      val rootStruct = run {
+        val nonEntityIdFieldNameArb = Arb.proto.structKey().filterNot { it == entityIdFieldName }
+        entityListValues.fold(Arb.proto.struct(key = nonEntityIdFieldNameArb).bind().struct) {
+          rootStruct,
+          entityListValue: ListValue ->
+          rootStruct.withRandomlyInsertedValue(
+            entityListValue.toValueProto(),
             randomSource().random,
             RandomInsertMode.Struct,
             { nonEntityIdFieldNameArb.bind() }

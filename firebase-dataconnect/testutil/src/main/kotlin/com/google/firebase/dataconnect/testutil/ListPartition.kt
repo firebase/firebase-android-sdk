@@ -16,14 +16,10 @@
 
 package com.google.firebase.dataconnect.testutil
 
-import io.kotest.property.RandomSource
 import kotlin.random.Random
 
 fun <T> List<T>.randomPartitions(partitionCount: Int, random: Random): List<List<T>> =
   randomPartitions(this, partitionCount, random)
-
-fun <T> List<T>.randomPartitions(partitionCount: Int, rs: RandomSource): List<List<T>> =
-  randomPartitions(partitionCount, rs.random)
 
 @JvmName("randomPartitionsPrivate")
 private fun <T> randomPartitions(

@@ -49,6 +49,13 @@ fun Struct.withRandomlyInsertedStructs(
 ): Struct =
   withRandomlyInsertedValues(this, structs.map { it.toValueProto() }, random, mode, generateKey)
 
+fun Struct.withRandomlyInsertedValue(
+  value: Value,
+  random: Random,
+  mode: RandomInsertMode = RandomInsertMode.StructAndListValue,
+  generateKey: () -> String
+): Struct = withRandomlyInsertedValues(listOf(value), random, mode, generateKey)
+
 fun Struct.withRandomlyInsertedValues(
   values: List<Value>,
   random: Random,
