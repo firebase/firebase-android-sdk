@@ -15,6 +15,7 @@
 package com.google.firebase.perf.network;
 
 import com.google.firebase.perf.metrics.NetworkRequestMetricBuilder;
+import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Timer;
 import java.io.IOException;
@@ -37,9 +38,10 @@ public class InstrumentOkHttpEnqueueCallback implements Callback {
       final Callback callback,
       final TransportManager transportManager,
       Timer timer,
-      long startTime) {
+      long startTime,
+      final SessionManager sessionManager) {
     this.callback = callback;
-    networkMetricBuilder = NetworkRequestMetricBuilder.builder(transportManager);
+    networkMetricBuilder = NetworkRequestMetricBuilder.builder(transportManager, sessionManager);
     startTimeMicros = startTime;
     this.timer = timer;
   }

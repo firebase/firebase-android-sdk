@@ -56,6 +56,7 @@ public final class NetworkRequestMetricBuilder extends AppStateUpdateHandler
   // TODO(b/177317027): Consider using a Set to avoid adding same PerfSession object
   private final List<PerfSession> sessions;
   private final GaugeManager gaugeManager;
+  private final SessionManager sessionManager;
   private final TransportManager transportManager;
 
   private final NetworkRequestMetric.Builder builder = NetworkRequestMetric.newBuilder();
@@ -80,16 +81,16 @@ public final class NetworkRequestMetricBuilder extends AppStateUpdateHandler
   }
 
   /** Creates and returns a {@link NetworkRequestMetricBuilder} object. */
-  public static NetworkRequestMetricBuilder builder(TransportManager transportManager) {
-    return new NetworkRequestMetricBuilder(transportManager);
+  public static NetworkRequestMetricBuilder builder(TransportManager transportManager, SessionManager sessionManager) {
+    return new NetworkRequestMetricBuilder(transportManager, sessionManager);
   }
 
   /**
    * SDK facing constructor which calls constructor with AppStateMonitor and GaugeManager to
    * initialize them.
    */
-  private NetworkRequestMetricBuilder(TransportManager transportManager) {
-    this(transportManager, AppStateMonitor.getInstance(), GaugeManager.getInstance());
+  private NetworkRequestMetricBuilder(TransportManager transportManager, SessionManager sessionManager) {
+    this(transportManager, AppStateMonitor.getInstance(), GaugeManager.getInstance(), sessionManager);
   }
 
   /**
@@ -99,11 +100,13 @@ public final class NetworkRequestMetricBuilder extends AppStateUpdateHandler
   public NetworkRequestMetricBuilder(
       TransportManager transportManager,
       AppStateMonitor appStateMonitor,
-      GaugeManager gaugeManager) {
+      GaugeManager gaugeManager,
+      SessionManager sessionManager) {
     super(appStateMonitor);
 
     this.transportManager = transportManager;
     this.gaugeManager = gaugeManager;
+    this.sessionManager = sessionManager;
     sessions = Collections.synchronizedList(new ArrayList<>());
 
     registerForAppState();
@@ -227,9 +230,8 @@ public final class NetworkRequestMetricBuilder extends AppStateUpdateHandler
    * @see PerfSession#isGaugeAndEventCollectionEnabled()
    */
   public NetworkRequestMetricBuilder setRequestStartTimeMicros(long time) {
-    SessionManager sessionManager = SessionManager.getInstance();
     PerfSession perfSession = sessionManager.perfSession();
-    SessionManager.getInstance().registerForSessionUpdates(weakReference);
+    sessionManager.registerForSessionUpdates(weakReference);
 
     builder.setClientStartTimeUs(time);
     updateSession(perfSession);
@@ -270,8 +272,8 @@ public final class NetworkRequestMetricBuilder extends AppStateUpdateHandler
   public NetworkRequestMetricBuilder setTimeToResponseCompletedMicros(long time) {
     builder.setTimeToResponseCompletedUs(time);
 
-    if (SessionManager.getInstance().perfSession().isGaugeAndEventCollectionEnabled()) {
-      gaugeManager.collectGaugeMetricOnce(SessionManager.getInstance().perfSession().getTimer());
+    if (sessionManager.perfSession().isGaugeAndEventCollectionEnabled()) {
+      gaugeManager.collectGaugeMetricOnce(sessionManager.perfSession().getTimer());
     }
 
     return this;
@@ -309,7 +311,7 @@ public final class NetworkRequestMetricBuilder extends AppStateUpdateHandler
 
   /** Builds the current {@link NetworkRequestMetric}. */
   public NetworkRequestMetric build() {
-    SessionManager.getInstance().unregisterForSessionUpdates(weakReference);
+    sessionManager.unregisterForSessionUpdates(weakReference);
     unregisterForAppState();
 
     com.google.firebase.perf.v1.PerfSession[] perfSessions =

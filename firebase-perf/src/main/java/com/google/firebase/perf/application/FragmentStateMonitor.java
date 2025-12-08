@@ -21,6 +21,7 @@ import androidx.fragment.app.FragmentManager;
 import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.metrics.FrameMetricsCalculator.PerfFrameMetrics;
 import com.google.firebase.perf.metrics.Trace;
+import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Constants;
@@ -33,6 +34,7 @@ public class FragmentStateMonitor extends FragmentManager.FragmentLifecycleCallb
   private final WeakHashMap<Fragment, Trace> fragmentToTraceMap = new WeakHashMap<>();
   private final Clock clock;
   private final TransportManager transportManager;
+  private final SessionManager sessionManager;
   private final AppStateMonitor appStateMonitor;
   private final FrameMetricsRecorder activityFramesRecorder;
 
@@ -40,11 +42,13 @@ public class FragmentStateMonitor extends FragmentManager.FragmentLifecycleCallb
       Clock clock,
       TransportManager transportManager,
       AppStateMonitor appStateMonitor,
-      FrameMetricsRecorder recorder) {
+      FrameMetricsRecorder recorder,
+      SessionManager sessionManager) {
     this.clock = clock;
     this.transportManager = transportManager;
     this.appStateMonitor = appStateMonitor;
     this.activityFramesRecorder = recorder;
+    this.sessionManager = sessionManager;
   }
 
   /**
@@ -63,7 +67,7 @@ public class FragmentStateMonitor extends FragmentManager.FragmentLifecycleCallb
     // Start Fragment screen trace
     logger.debug("FragmentMonitor %s.onFragmentResumed", f.getClass().getSimpleName());
     Trace fragmentTrace =
-        new Trace(getFragmentScreenTraceName(f), transportManager, clock, appStateMonitor);
+        new Trace(getFragmentScreenTraceName(f), transportManager, clock, appStateMonitor, sessionManager);
     fragmentTrace.start();
 
     fragmentTrace.putAttribute(

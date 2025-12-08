@@ -37,9 +37,6 @@ import java.util.concurrent.Future;
 @Keep // Needed because of b/117526359.
 public class SessionManager extends AppStateUpdateHandler {
 
-  @SuppressLint("StaticFieldLeak")
-  private static final SessionManager instance = new SessionManager();
-
   private final GaugeManager gaugeManager;
   private final AppStateMonitor appStateMonitor;
   private final Set<WeakReference<SessionAwareObject>> clients = new HashSet<>();
@@ -47,17 +44,12 @@ public class SessionManager extends AppStateUpdateHandler {
   private PerfSession perfSession;
   private Future syncInitFuture;
 
-  /** Returns the singleton instance of SessionManager. */
-  public static SessionManager getInstance() {
-    return instance;
-  }
-
   /** Returns the currently active PerfSession. */
   public final PerfSession perfSession() {
     return perfSession;
   }
 
-  private SessionManager() {
+  public SessionManager() {
     // Generate a new sessionID for every cold start.
     this(
         GaugeManager.getInstance(),
