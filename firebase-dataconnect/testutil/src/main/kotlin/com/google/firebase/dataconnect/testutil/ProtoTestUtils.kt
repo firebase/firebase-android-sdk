@@ -80,11 +80,10 @@ private fun withRandomlyInsertedValues(
       .map { it.path }
       .toList()
 
-  data class Insertion(val path: ProtoValuePath, val value: Value)
   val insertions =
     values.map {
       val insertionPath = candidateInsertionPaths.random(random)
-      Insertion(insertionPath, it)
+      ProtoValuePathPair(insertionPath, it)
     }
 
   return struct.map { path, value ->
