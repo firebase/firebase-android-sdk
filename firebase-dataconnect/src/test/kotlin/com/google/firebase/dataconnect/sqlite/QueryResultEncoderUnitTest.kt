@@ -42,7 +42,7 @@ import io.kotest.property.PropTestConfig
 import io.kotest.property.ShrinkingMode
 import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.filterNot
-import io.kotest.property.arbitrary.list
+import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.set
 import io.kotest.property.arbitrary.string
@@ -239,10 +239,10 @@ class QueryResultEncoderUnitTest {
 
   @Test
   fun `entities nested in struct values`() = runTest {
-    checkAll(propTestConfig.copy(seed = 3485715271109845159), Arb.proto.structKey()) {
-      entityIdFieldName ->
+    checkAll(propTestConfig, Arb.proto.structKey(), Arb.int(1..10)) { entityIdFieldName, entityCount
+      ->
       val entityArb = EntityTestCase.arb(entityIdFieldName = Arb.constant(entityIdFieldName))
-      val entities = Arb.list(entityArb, 1..10).bind().map { it.struct }
+      val entities = List(entityCount) { entityArb.bind().struct }
       val rootStruct = run {
         val nonEntityIdFieldNameArb = Arb.proto.structKey().filterNot { it == entityIdFieldName }
         entities.fold(Arb.proto.struct(key = nonEntityIdFieldNameArb).bind().struct) {
