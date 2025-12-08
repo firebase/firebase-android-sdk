@@ -39,7 +39,7 @@ import io.kotest.property.checkAll
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
-class ProtoTestUtilsUnitTest {
+class ProtoWalkUnitTest {
 
   @Test
   fun `walk Value scalars`() = runTest {

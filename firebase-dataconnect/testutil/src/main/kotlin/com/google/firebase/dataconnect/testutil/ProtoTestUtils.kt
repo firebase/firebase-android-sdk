@@ -17,6 +17,7 @@ package com.google.firebase.dataconnect.testutil
 
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
+import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
 import io.kotest.common.DelicateKotest
@@ -58,6 +59,31 @@ fun Struct.withRandomlyInsertedValues(
   generateKey: () -> String
 ): Struct = withRandomlyInsertedValues(this, values, random, generateKey)
 
+fun Struct.Builder.randomlyInsertStruct(
+  struct: Struct,
+  random: Random,
+  generateKey: () -> String
+): ProtoValuePath = randomlyInsertStructs(listOf(struct), random, generateKey).single()
+
+fun Struct.Builder.randomlyInsertStructs(
+  structs: List<Struct>,
+  random: Random,
+  generateKey: () -> String
+): List<ProtoValuePath> =
+  randomlyInsertValues(this, structs.map { it.toValueProto() }, random, generateKey)
+
+fun Struct.Builder.randomlyInsertValue(
+  value: Value,
+  random: Random,
+  generateKey: () -> String
+): ProtoValuePath = randomlyInsertValues(listOf(value), random, generateKey).single()
+
+fun Struct.Builder.randomlyInsertValues(
+  values: List<Value>,
+  random: Random,
+  generateKey: () -> String
+): List<ProtoValuePath> = randomlyInsertValues(this, values, random, generateKey)
+
 @JvmName("withRandomlyInsertedValuesInternal")
 private fun withRandomlyInsertedValues(
   struct: Struct,
@@ -65,51 +91,119 @@ private fun withRandomlyInsertedValues(
   random: Random,
   generateKey: () -> String
 ): Struct {
-  val candidateInsertionPaths =
-    struct
+  val structBuilder = struct.toBuilder()
+  randomlyInsertValues(structBuilder, values, random, generateKey)
+  return structBuilder.build()
+}
+
+@JvmName("randomlyInsertValuesInternal")
+private fun randomlyInsertValues(
+  structBuilder: Struct.Builder,
+  values: List<Value>,
+  random: Random,
+  generateKey: () -> String
+): List<ProtoValuePath> {
+  val candidateInsertionPoints: List<ProtoValuePathPair> =
+    structBuilder
+      .build()
       .walk(includeSelf = true)
       .filter { it.value.isStructValue }
-      .map { it.path }
       .toList()
-      .sortedWith(ProtoValuePathComparator)
+      .sortedWith(ProtoValuePathPairPathComparator)
 
-  val insertions =
-    values.map {
-      val insertionPath = candidateInsertionPaths.random(random)
-      ProtoValuePathPair(insertionPath, it)
-    }
+  val insertionPoints: List<ProtoValuePathPair> =
+    List(values.size) { candidateInsertionPoints.random(random) }
 
-  return struct.map { path, value ->
-    val curInsertions = insertions.filter { it.path == path }.map { it.value }
-    if (curInsertions.isEmpty()) {
-      value
-    } else {
-      check(value.isStructValue) {
-        "must be a struct, but got value.kindCase=${value.kindCase}, value=$value [ywwmyjnpwa]"
-      }
-      value.structValue
-        .toBuilder()
-        .also { structBuilder ->
-          curInsertions.forEach { valueToInsert ->
-            structBuilder.putFieldsWithUnsetKey(valueToInsert, generateKey)
+  val insertions: List<ProtoValuePathPair> =
+    List(insertionPoints.size) {
+      val insertionPoint = insertionPoints[it]
+      val generatedKeysByPath: MutableMap<ProtoValuePath, MutableList<String>> = mutableMapOf()
+
+      val key: String =
+        sequence {
+            while (true) {
+              val key = generateKey()
+              if (insertionPoint.value.structValue.containsFields(key)) {
+                continue
+              }
+              val generatedKeys =
+                generatedKeysByPath.getOrPut(insertionPoint.path, { mutableListOf() })
+              if (generatedKeys.contains(key)) {
+                continue
+              }
+              generatedKeys.add(key)
+              yield(key)
+            }
           }
-        }
-        .build()
-        .toValueProto()
+          .first()
+
+      ProtoValuePathPair(insertionPoint.path.withAppendedStructKey(key), values[it])
     }
-  }
+
+  insertions.forEach { insertValue(structBuilder, it.path, it.value) }
+
+  return insertions.map { it.path }
 }
 
-private fun Struct.Builder.generateUnsetKey(generateKey: () -> String): String {
-  while (true) {
-    val key = generateKey()
-    if (!containsFields(key)) {
-      return key
-    }
+private fun insertValue(structBuilder: Struct.Builder, path: ProtoValuePath, value: Value) {
+  require(path.isNotEmpty()) { "internal error rmeq3c634e: path is empty" }
+  val pathComponent = path[0]
+  require(pathComponent is StructKeyProtoValuePathComponent) {
+    "internal error pt77babwtk: path[0] is ${pathComponent::class.qualifiedName}, " +
+      "but expected StructKeyProtoValuePathComponent: $pathComponent"
   }
+  val key = pathComponent.field
+
+  if (path.size == 1) {
+    require(!structBuilder.containsFields(key)) {
+      "internal error x5kr8f9mqx: the only component of path $path ($pathComponent) " +
+        "is already contained in the struct: ${structBuilder.build()}"
+    }
+    structBuilder.putFields(key, value)
+    return
+  }
+
+  require(structBuilder.containsFields(key)) {
+    "internal error sykypwq2h7: the first component of path $path ($pathComponent) " +
+      "should be contained in the struct, but it is not: ${structBuilder.build()}"
+  }
+  val oldValue: Value = structBuilder.getFieldsOrThrow(key)
+  val newValue = insertValue(oldValue, path.drop(1), value)
+  structBuilder.putFields(key, newValue)
 }
 
-private fun Struct.Builder.putFieldsWithUnsetKey(value: Value, generateKey: () -> String) {
-  val key = generateUnsetKey(generateKey)
-  putFields(key, value)
+private fun insertValue(listValueBuilder: ListValue.Builder, path: ProtoValuePath, value: Value) {
+  require(path.size > 1) {
+    "internal error en68kvkb83: path.size is ${path.size}, " + "but expected a value greater than 1"
+  }
+  val pathComponent = path[0]
+  require(pathComponent is ListElementProtoValuePathComponent) {
+    "internal error kgxfp9j7ee: path[0] is ${pathComponent::class.qualifiedName}, " +
+      "but expected ListElementProtoValuePathComponent: $pathComponent"
+  }
+  val index = pathComponent.index
+
+  require(index >= 0 && index < listValueBuilder.valuesCount) {
+    "internal error pcdar4t98b: the first component of path $path ($pathComponent) " +
+      "is not a valid index: $index (list size is ${listValueBuilder.valuesCount})"
+  }
+  val oldValue: Value = listValueBuilder.getValues(index)
+  val newValue = insertValue(oldValue, path.drop(1), value)
+  listValueBuilder.setValues(index, newValue)
 }
+
+private fun insertValue(oldValue: Value, path: ProtoValuePath, value: Value) =
+  if (oldValue.isStructValue) {
+    val oldValueBuilder = oldValue.structValue.toBuilder()
+    insertValue(oldValueBuilder, path, value)
+    oldValueBuilder.build().toValueProto()
+  } else if (oldValue.isListValue) {
+    val oldValueBuilder = oldValue.listValue.toBuilder()
+    insertValue(oldValueBuilder, path, value)
+    oldValueBuilder.build().toValueProto()
+  } else {
+    throw IllegalArgumentException(
+      "internal error m6zknembwx: value at path $path is a ${oldValue.kindCase}, " +
+        "but expected Struct or ListValue (oldValue=$oldValue)"
+    )
+  }

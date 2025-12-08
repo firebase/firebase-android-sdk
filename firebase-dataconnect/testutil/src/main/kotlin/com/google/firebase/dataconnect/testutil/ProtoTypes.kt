@@ -30,6 +30,11 @@ typealias ProtoValuePath = List<ProtoValuePathComponent>
 
 data class ProtoValuePathPair(val path: ProtoValuePath, val value: Value)
 
+object ProtoValuePathPairPathComparator : Comparator<ProtoValuePathPair> {
+  override fun compare(o1: ProtoValuePathPair, o2: ProtoValuePathPair): Int =
+    ProtoValuePathComparator.compare(o1.path, o2.path)
+}
+
 object ProtoValuePathComparator : Comparator<ProtoValuePath> {
   override fun compare(o1: ProtoValuePath, o2: ProtoValuePath): Int {
     val size = o1.size.coerceAtMost(o2.size)
