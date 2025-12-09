@@ -82,11 +82,12 @@ class ProtoRandomInsertUnitTest {
 
   @Test
   fun `Struct withRandomlyInsertedValue should use the given random`() = runTest {
-    checkAll(propTestConfig, Arb.proto.struct().map { it.struct }, Arb.proto.value()) {
+    checkAll(propTestConfig, Arb.proto.struct().map { it.struct }, Arb.proto.value(), Arb.long()) {
       struct,
-      value ->
+      value,
+      randomSeed ->
       shouldUseGivenRandom { random ->
-        struct.withRandomlyInsertedValue(value, random, keyGenerator())
+        struct.withRandomlyInsertedValue(value, random, keyGenerator(randomSeed))
       }
     }
   }
