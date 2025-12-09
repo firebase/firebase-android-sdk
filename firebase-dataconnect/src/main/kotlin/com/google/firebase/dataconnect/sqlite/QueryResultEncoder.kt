@@ -165,7 +165,8 @@ internal class QueryResultEncoder(
         checkNotNull(entityId) {
           "internal error war94t239m: " +
             "list value at index $it is not an entity (kindCase=${value.kindCase}), " +
-            "but expected it to be an entity or a list of entities"
+            "but expected it to be an entity, a list of entities, " +
+            "or a list of a list of entities (with any depth)"
         }
         writeEntity(entityId, value.structValue)
       }
