@@ -17,7 +17,7 @@
 package com.google.firebase.dataconnect.sqlite
 
 import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.EntityTestCase
-import com.google.firebase.dataconnect.testutil.StructKeyProtoValuePathComponent
+import com.google.firebase.dataconnect.testutil.ProtoValuePathComponent
 import com.google.firebase.dataconnect.testutil.isStructValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.maxDepth
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
@@ -120,8 +120,8 @@ class QueryResultEncoderTestingUnitTest {
       val actualStructKeys =
         sample.struct
           .walkPaths()
-          .mapNotNull { it.lastOrNull() as? StructKeyProtoValuePathComponent }
-          .map { it.field }
+          .mapNotNull { it.lastOrNull() as? ProtoValuePathComponent.StructKey }
+          .map { it.key }
           .toSet()
       actualStructKeys shouldContainExactlyInAnyOrder generatedKeys
     }
