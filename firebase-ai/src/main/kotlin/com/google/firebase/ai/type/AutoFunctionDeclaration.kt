@@ -29,8 +29,8 @@ internal constructor(
 
     public fun <I : Any> create(
       functionName: String,
-      inputSchema: JsonSchema<I>,
       description: String,
+      inputSchema: JsonSchema<I>,
       functionReference: ((I) -> JsonObject)? = null
     ): AutoFunctionDeclaration<I, JsonObject> {
       return AutoFunctionDeclaration<I, JsonObject>(

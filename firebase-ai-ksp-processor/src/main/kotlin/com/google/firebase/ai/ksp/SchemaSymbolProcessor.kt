@@ -182,7 +182,7 @@ public class SchemaSymbolProcessor(
             builder
               .addStatement("JsonSchema.enumeration(")
               .indent()
-              .addStatement("clazz = ${type.declaration.qualifiedName!!.asString()}::class.java,")
+              .addStatement("clazz = ${type.declaration.qualifiedName!!.asString()}::class,")
               .addStatement("values = listOf(")
               .indent()
               .addStatement(enumValues.joinToString { "\"$it\"" })
@@ -192,7 +192,7 @@ public class SchemaSymbolProcessor(
             builder
               .addStatement("JsonSchema.obj(")
               .indent()
-              .addStatement("clazz = ${type.declaration.qualifiedName!!.asString()}::class.java,")
+              .addStatement("clazz = ${type.declaration.qualifiedName!!.asString()}::class,")
               .addStatement("properties = mapOf(")
               .indent()
             val properties =
