@@ -157,7 +157,7 @@ class ProtoDiffUnitTest {
           DifferencePathPair(
             replacement.path.dropLast(1),
             Difference.StructMissingKey(
-              (replacement.path.last() as StructKeyProtoValuePathComponent).field,
+              replacement.path.last().structKeyOrThrow(),
               replacement.oldValue
             )
           )

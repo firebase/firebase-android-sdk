@@ -16,7 +16,6 @@
 
 package com.google.firebase.dataconnect.testutil
 
-import com.google.firebase.dataconnect.DataConnectPathSegment as PathComponent
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
@@ -72,7 +71,7 @@ fun valueFastEqual(value1: Value, value2: Value): Boolean {
   }
 }
 
-data class DifferencePathPair<T : Difference>(val path: List<PathComponent>, val difference: T)
+data class DifferencePathPair<T : Difference>(val path: ProtoValuePath, val difference: T)
 
 sealed interface Difference {
   data class KindCase(val value1: Value, val value2: Value) : Difference
@@ -97,7 +96,7 @@ fun structDiff(
     if (key !in map2) {
       differences.add(Difference.StructMissingKey(key, value))
     } else {
-      differences.withPushedPathComponent({ PathComponent.Field(key) }) {
+      differences.withPushedPathComponent({ ProtoValuePathComponent.StructKey(key) }) {
         valueDiff(value, map2[key]!!, differences)
       }
     }
@@ -120,7 +119,7 @@ fun listValueDiff(
   repeat(listValue1.valuesCount.coerceAtMost(listValue2.valuesCount)) {
     val value1 = listValue1.getValues(it)
     val value2 = listValue2.getValues(it)
-    differences.withPushedPathComponent({ PathComponent.ListIndex(it) }) {
+    differences.withPushedPathComponent({ ProtoValuePathComponent.ListIndex(it) }) {
       valueDiff(value1, value2, differences)
     }
   }
@@ -172,13 +171,13 @@ fun valueDiff(
 
 class DifferenceAccumulator {
   private val differences = mutableListOf<DifferencePathPair<*>>()
-  private val path = mutableListOf<PathComponent>()
+  private val path: MutableProtoValuePath = mutableListOf()
 
   val size: Int by differences::size
 
   fun toList(): List<DifferencePathPair<*>> = differences.toList()
 
-  fun pushPathComponent(pathComponent: PathComponent) {
+  fun pushPathComponent(pathComponent: ProtoValuePathComponent) {
     path.add(pathComponent)
   }
 
@@ -204,7 +203,7 @@ class DifferenceAccumulator {
 }
 
 private inline fun <T> DifferenceAccumulator?.withPushedPathComponent(
-  pathComponent: () -> PathComponent,
+  pathComponent: () -> ProtoValuePathComponent,
   block: () -> T
 ): T {
   this?.pushPathComponent(pathComponent())

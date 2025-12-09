@@ -16,10 +16,9 @@
 
 package com.google.firebase.dataconnect.testutil.property.arbitrary
 
-import com.google.firebase.dataconnect.testutil.ListElementProtoValuePathComponent
+import com.google.firebase.dataconnect.testutil.ProtoValuePathComponent
 import com.google.firebase.dataconnect.testutil.ProtoValuePathPair
 import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
-import com.google.firebase.dataconnect.testutil.StructKeyProtoValuePathComponent
 import com.google.firebase.dataconnect.testutil.isListValue
 import com.google.firebase.dataconnect.testutil.isStructValue
 import com.google.firebase.dataconnect.testutil.toValueProto
@@ -343,7 +342,7 @@ class protoUnitTest {
           value.structValue.fieldsMap.entries.forEach { (key, childValue) ->
             val childPath = buildList {
               addAll(path)
-              add(StructKeyProtoValuePathComponent(key))
+              add(ProtoValuePathComponent.StructKey(key))
             }
             queue.add(ProtoValuePathPair(childPath, childValue))
           }
@@ -351,7 +350,7 @@ class protoUnitTest {
           value.listValue.valuesList.forEachIndexed { index, childValue ->
             val childPath = buildList {
               addAll(path)
-              add(ListElementProtoValuePathComponent(index))
+              add(ProtoValuePathComponent.ListIndex(index))
             }
             queue.add(ProtoValuePathPair(childPath, childValue))
           }

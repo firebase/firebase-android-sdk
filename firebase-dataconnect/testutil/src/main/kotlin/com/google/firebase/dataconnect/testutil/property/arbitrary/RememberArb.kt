@@ -18,15 +18,26 @@ package com.google.firebase.dataconnect.testutil.property.arbitrary
 
 import io.kotest.property.Arb
 import io.kotest.property.RandomSource
-import io.kotest.property.arbitrary.arbitrary
-import io.kotest.property.arbitrary.long
-import io.kotest.property.arbitrary.map
-import kotlin.random.Random
+import io.kotest.property.Sample
 
-/** Generates [Random] instances with seeds from the given [Arb]. */
-fun Arb.Companion.random(seed: Arb<Long> = Arb.long()): Arb<Random> =
-  randomSource(seed).map { it.random }
+class RememberArb<T>(val delegate: Arb<T>) : Arb<T>() {
 
-/** Generates [RandomSource] instances with seeds from the given [Arb]. */
-fun Arb.Companion.randomSource(seed: Arb<Long> = Arb.long()): Arb<RandomSource> =
-  arbitrary(edgecases = emptyList()) { RandomSource.seeded(seed.bind()) }
+  private val _generatedValues: MutableList<T> = mutableListOf()
+
+  val generatedValues: List<T>
+    get() = _generatedValues.toList()
+
+  override fun sample(rs: RandomSource): Sample<T> {
+    val sample = delegate.sample(rs)
+    _generatedValues.add(sample.value)
+    return sample
+  }
+
+  override fun edgecase(rs: RandomSource): T? {
+    val generatedValue = delegate.edgecase(rs)
+    if (generatedValue !== null) {
+      _generatedValues.add(generatedValue)
+    }
+    return generatedValue
+  }
+}

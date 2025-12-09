@@ -14,93 +14,127 @@
  * limitations under the License.
  */
 
-@file:OptIn(DelicateKotest::class)
-
 package com.google.firebase.dataconnect.testutil
 
+import com.google.firebase.dataconnect.testutil.Difference.StructUnexpectedKey
+import com.google.firebase.dataconnect.testutil.property.arbitrary.RememberArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
+import com.google.firebase.dataconnect.testutil.property.arbitrary.random
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
 import com.google.firebase.dataconnect.testutil.property.arbitrary.value
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
+import io.kotest.assertions.asClue
 import io.kotest.assertions.withClue
-import io.kotest.common.DelicateKotest
 import io.kotest.common.ExperimentalKotest
-import io.kotest.matchers.collections.shouldContainAnyOf
+import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldHaveSize
-import io.kotest.matchers.collections.shouldNotBeEmpty
+import io.kotest.matchers.comparables.shouldBeGreaterThanOrEqualTo
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
+import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
+import io.kotest.property.PropertyContext
 import io.kotest.property.RandomSource
 import io.kotest.property.ShrinkingMode
+import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.long
+import io.kotest.property.arbitrary.map
 import io.kotest.property.checkAll
+import kotlin.random.Random
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
 class ProtoRandomInsertUnitTest {
 
   @Test
-  fun `Struct withRandomlyInsertedStruct should insert the value`() = runTest {
-    val structKeyArb = Arb.proto.structKey()
-    checkAll(propTestConfig, Arb.proto.struct(), Arb.proto.value()) { sampleStruct, valueToInsert ->
-      val insertResult =
-        sampleStruct.struct.withRandomlyInsertedValue(
-          valueToInsert,
-          randomSource().random,
-          { structKeyArb.bind() }
-        )
-
-      val foundPaths =
-        withClue("foundPaths") { insertResult.findValue(valueToInsert).shouldNotBeEmpty() }
-      val originalStructs =
-        foundPaths.map { insertResult.withRemovedValue(it) }.filter { it == sampleStruct.struct }
-      withClue("originalStructs") { originalStructs shouldHaveSize 1 }
+  fun `Struct withRandomlyInsertedValue should insert the value`() = runTest {
+    checkAll(
+      propTestConfig,
+      Arb.proto.struct().map { it.struct },
+      Arb.proto.value(),
+      Arb.random()
+    ) { struct, value, random ->
+      val result = struct.withRandomlyInsertedValue(value, random, keyGenerator())
+      result.shouldBeStructWithValueInserted(struct, value)
     }
   }
 
   @Test
-  fun `Struct withRandomlyInsertedStruct should use the given key generator`() = runTest {
-    val structKeyArb = Arb.proto.structKey()
-    checkAll(propTestConfig, Arb.proto.struct(), Arb.proto.value()) { sampleStruct, valueToInsert ->
-      val generatedKeys: MutableList<String> = mutableListOf()
+  fun `Struct withRandomlyInsertedValue should use the given key generator`() = runTest {
+    checkAll(
+      propTestConfig,
+      Arb.proto.struct().map { it.struct },
+      Arb.proto.value(),
+      Arb.random()
+    ) { struct, value, random ->
+      val structKeyArb = RememberArb(Arb.proto.structKey())
 
-      val insertResult =
-        sampleStruct.struct.withRandomlyInsertedValue(
-          valueToInsert,
-          randomSource().random,
-          { structKeyArb.bind().also { generatedKeys.add(it) } }
-        )
+      val result = struct.withRandomlyInsertedValue(value, random, { structKeyArb.bind() })
 
-      val foundPaths =
-        withClue("foundPaths") { insertResult.findValue(valueToInsert).shouldNotBeEmpty() }
-      val foundKeys =
-        foundPaths.mapNotNull { it.last() as? StructKeyProtoValuePathComponent }.map { it.field }
-      generatedKeys shouldContainAnyOf foundKeys
+      val insertPath = result.shouldBeStructWithValueInserted(struct, value)
+      insertPath.shouldHaveFinalComponentWithKeyIn(structKeyArb.generatedValues)
     }
   }
 
   @Test
-  fun `Struct withRandomlyInsertedStruct should use the given random`() = runTest {
-    val structKeyArb = Arb.proto.structKey()
-    checkAll(propTestConfig, Arb.proto.struct(), Arb.proto.value(), Arb.long()) {
-      sampleStruct,
-      valueToInsert,
-      randomSeed ->
-      fun doInsert(): Struct {
-        val rs = RandomSource.seeded(randomSeed)
-        return sampleStruct.struct
-          .deepCopy()
-          .withRandomlyInsertedValue(valueToInsert, rs.random, { structKeyArb.sample(rs).value })
+  fun `Struct withRandomlyInsertedValue should use the given random`() = runTest {
+    checkAll(propTestConfig, Arb.proto.struct().map { it.struct }, Arb.proto.value()) {
+      struct,
+      value ->
+      shouldUseGivenRandom { random ->
+        struct.withRandomlyInsertedValue(value, random, keyGenerator())
       }
+    }
+  }
 
-      val insertResult1 = doInsert()
-      val insertResult2 = doInsert()
+  @Test
+  fun `Struct withRandomlyInsertedValues should insert the values`() = runTest {
+    checkAll(propTestConfig, Arb.proto.struct().map { it.struct }, Arb.int(0..3), Arb.random()) {
+      struct,
+      valueCount,
+      random ->
+      val values: List<Value> = List(valueCount) { Arb.proto.value().bind() }
 
-      insertResult1 shouldBe insertResult2
+      val result = struct.withRandomlyInsertedValues(values, random, keyGenerator())
+
+      result.shouldBeStructWithValuesInserted(struct, values)
+    }
+  }
+
+  @Test
+  fun `Struct withRandomlyInsertedValues should use the given key generator`() = runTest {
+    checkAll(propTestConfig, Arb.proto.struct().map { it.struct }, Arb.int(0..3), Arb.random()) {
+      struct,
+      valueCount,
+      random ->
+      val values: List<Value> = List(valueCount) { Arb.proto.value().bind() }
+      val structKeyArb = RememberArb(Arb.proto.structKey())
+
+      val result = struct.withRandomlyInsertedValues(values, random, { structKeyArb.bind() })
+
+      val insertPaths = result.shouldBeStructWithValuesInserted(struct, values)
+      insertPaths.forEachIndexed { index, insertPath ->
+        withClue("insertPaths[$index]=$insertPath") {
+          insertPath.shouldHaveFinalComponentWithKeyIn(structKeyArb.generatedValues)
+        }
+      }
+    }
+  }
+
+  @Test
+  fun `Struct withRandomlyInsertedValues should use the given random`() = runTest {
+    checkAll(propTestConfig, Arb.proto.struct().map { it.struct }, Arb.int(0..3), Arb.long()) {
+      struct,
+      valueCount,
+      randomSeed ->
+      val values: List<Value> = List(valueCount) { Arb.proto.value().bind() }
+      shouldUseGivenRandom { random ->
+        struct.withRandomlyInsertedValues(values, random, keyGenerator(randomSeed))
+      }
     }
   }
 
@@ -113,21 +147,78 @@ class ProtoRandomInsertUnitTest {
         shrinkingMode = ShrinkingMode.Off,
       )
 
-    fun Struct.withRemovedValue(path: ProtoValuePath): Struct {
-      var found = false
-      val structWithRemovedValue = map { curPath, value ->
-        if (curPath != path) {
-          value
-        } else {
-          found = true
-          null
-        }
-      }
-      check(found) { "path $path not found in struct: $this [jr8we488nh]" }
-      return structWithRemovedValue
+    fun PropertyContext.keyGenerator(): (() -> String) {
+      val arb = Arb.proto.structKey()
+      return { arb.bind() }
     }
 
-    fun Struct.findValue(value: Value): List<ProtoValuePath> =
-      walk().filter { it.value === value }.map { it.path }.toList()
+    fun PropertyContext.keyGenerator(seed: Long): (() -> String) {
+      val arb = Arb.proto.structKey()
+      val rs = RandomSource.seeded(seed)
+      return { arb.generate(rs, config.edgeConfig).first().value }
+    }
+
+    fun Struct.shouldBeStructWithValueInserted(
+      originalStruct: Struct,
+      insertedValue: Value
+    ): ProtoValuePath {
+      val differences = structDiff(originalStruct, this).toList()
+      withClue("differences=$differences") { differences shouldHaveSize 1 }
+      differences.single().asClue { (path, difference) ->
+        difference.shouldBeInstanceOf<StructUnexpectedKey>()
+        difference.value shouldBeSameInstanceAs insertedValue
+        return path.withAppendedStructKey(difference.key)
+      }
+    }
+
+    fun Struct.shouldBeStructWithValuesInserted(
+      originalStruct: Struct,
+      insertedValues: List<Value>
+    ): List<ProtoValuePath> {
+      val differences = structDiff(originalStruct, this).toList()
+      withClue("differences.size=${differences.size}, differences=$differences") {
+        differences shouldHaveSize insertedValues.size
+
+        val unexpectedKeyDifferences =
+          differences
+            .mapIndexed { index, (path, difference) ->
+              val unexpectedKeyDifference =
+                withClue("differenceIndex=$index") {
+                  difference.shouldBeInstanceOf<StructUnexpectedKey>()
+                }
+              DifferencePathPair(path, unexpectedKeyDifference)
+            }
+            .toMutableList()
+
+        val insertPaths: MutableList<ProtoValuePath> = mutableListOf()
+        insertedValues.forEach { insertedValue ->
+          val unexpectedKeyDifferencesIndex =
+            unexpectedKeyDifferences.indexOfFirst { it.difference.value === insertedValue }
+          withClue(
+            "insertedValue=$insertedValue, unexpectedKeyDifferences=$unexpectedKeyDifferences"
+          ) {
+            unexpectedKeyDifferencesIndex shouldBeGreaterThanOrEqualTo 0
+          }
+          val (path, difference) = unexpectedKeyDifferences.removeAt(unexpectedKeyDifferencesIndex)
+          insertPaths.add(path.withAppendedStructKey(difference.key))
+        }
+
+        return insertPaths.toList()
+      }
+    }
+
+    fun ProtoValuePath.shouldHaveFinalComponentWithKeyIn(expectedKeys: Collection<String>) {
+      withClue("path=${this.toPathString()}") {
+        val finalComponent = lastOrNull().shouldBeInstanceOf<ProtoValuePathComponent.StructKey>()
+        withClue("finalComponent=$finalComponent") { expectedKeys shouldContain finalComponent.key }
+      }
+    }
+
+    private fun <T> PropertyContext.shouldUseGivenRandom(block: (Random) -> T) {
+      val seed = randomSource().random.nextLong()
+      val result1 = block(Random(seed))
+      val result2 = block(Random(seed))
+      withClue("random seed: $seed") { result1 shouldBe result2 }
+    }
   }
 }

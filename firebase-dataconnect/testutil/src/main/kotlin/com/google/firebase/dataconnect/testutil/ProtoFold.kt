@@ -15,7 +15,6 @@
  */
 package com.google.firebase.dataconnect.testutil
 
-import com.google.firebase.dataconnect.DataConnectPathSegment as PathComponent
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
@@ -53,16 +52,16 @@ private fun <R> foldValue(
 
     if (value.kindCase == Value.KindCase.STRUCT_VALUE) {
       val childPath = path.toMutableList()
-      childPath.add(PathComponent.ListIndex(-1))
+      childPath.add(ProtoValuePathComponent.ListIndex(-1))
       value.structValue.fieldsMap.entries.forEach { (key, value) ->
-        childPath[childPath.lastIndex] = PathComponent.Field(key)
+        childPath[childPath.lastIndex] = ProtoValuePathComponent.StructKey(key)
         queue.add(childPath, value)
       }
     } else if (value.kindCase == Value.KindCase.LIST_VALUE) {
       val childPath = path.toMutableList()
-      childPath.add(PathComponent.ListIndex(-1))
+      childPath.add(ProtoValuePathComponent.ListIndex(-1))
       value.listValue.valuesList.forEachIndexed { index, value ->
-        childPath[childPath.lastIndex] = PathComponent.ListIndex(index)
+        childPath[childPath.lastIndex] = ProtoValuePathComponent.ListIndex(index)
         queue.add(childPath, value)
       }
     }

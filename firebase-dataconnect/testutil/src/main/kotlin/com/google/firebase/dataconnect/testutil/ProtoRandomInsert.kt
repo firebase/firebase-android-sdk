@@ -99,31 +99,30 @@ private fun randomlyInsertValues(
   val insertionPoints: List<ProtoValuePathPair> =
     List(values.size) { candidateInsertionPoints.random(random) }
 
-  val insertions: List<ProtoValuePathPair> =
+  val insertions: List<ProtoValuePathPair> = run {
+    val generatedKeysByPath: Map<ProtoValuePath, MutableSet<String>> = buildMap {
+      candidateInsertionPoints.forEach { (path, value) ->
+        put(path, value.structValue.fieldsMap.keys.toMutableSet())
+      }
+    }
+
+    fun generateKeyForInsertionPointAt(path: ProtoValuePath): String {
+      val unavailableKeys = generatedKeysByPath[path]!!
+      while (true) {
+        val key = generateKey()
+        if (!unavailableKeys.contains(key)) {
+          unavailableKeys.add(key)
+          return key
+        }
+      }
+    }
+
     List(insertionPoints.size) {
       val insertionPoint = insertionPoints[it]
-      val generatedKeysByPath: MutableMap<ProtoValuePath, MutableList<String>> = mutableMapOf()
-
-      val key: String =
-        sequence {
-            while (true) {
-              val key = generateKey()
-              if (insertionPoint.value.structValue.containsFields(key)) {
-                continue
-              }
-              val generatedKeys =
-                generatedKeysByPath.getOrPut(insertionPoint.path, { mutableListOf() })
-              if (generatedKeys.contains(key)) {
-                continue
-              }
-              generatedKeys.add(key)
-              yield(key)
-            }
-          }
-          .first()
-
+      val key = generateKeyForInsertionPointAt(insertionPoint.path)
       ProtoValuePathPair(insertionPoint.path.withAppendedStructKey(key), values[it])
     }
+  }
 
   insertions.forEach { insertValue(structBuilder, it.path, it.value) }
 
@@ -133,11 +132,11 @@ private fun randomlyInsertValues(
 private fun insertValue(structBuilder: Struct.Builder, path: ProtoValuePath, value: Value) {
   require(path.isNotEmpty()) { "internal error rmeq3c634e: path is empty" }
   val pathComponent = path[0]
-  require(pathComponent is StructKeyProtoValuePathComponent) {
+  require(pathComponent is ProtoValuePathComponent.StructKey) {
     "internal error pt77babwtk: path[0] is ${pathComponent::class.qualifiedName}, " +
-      "but expected StructKeyProtoValuePathComponent: $pathComponent"
+      "but expected ProtoValuePathComponent.StructKey: $pathComponent"
   }
-  val key = pathComponent.field
+  val key = pathComponent.key
 
   if (path.size == 1) {
     require(!structBuilder.containsFields(key)) {
@@ -162,9 +161,9 @@ private fun insertValue(listValueBuilder: ListValue.Builder, path: ProtoValuePat
     "internal error en68kvkb83: path.size is ${path.size}, " + "but expected a value greater than 1"
   }
   val pathComponent = path[0]
-  require(pathComponent is ListElementProtoValuePathComponent) {
+  require(pathComponent is ProtoValuePathComponent.ListIndex) {
     "internal error kgxfp9j7ee: path[0] is ${pathComponent::class.qualifiedName}, " +
-      "but expected ListElementProtoValuePathComponent: $pathComponent"
+      "but expected ProtoValuePathComponent.ListIndex: $pathComponent"
   }
   val index = pathComponent.index
 

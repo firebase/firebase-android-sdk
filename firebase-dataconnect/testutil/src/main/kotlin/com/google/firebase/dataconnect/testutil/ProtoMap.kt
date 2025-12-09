@@ -63,7 +63,7 @@ private fun <V : Value?> mapRecursive(
     if (value.isStructValue) {
       Struct.newBuilder().let { structBuilder ->
         value.structValue.fieldsMap.entries.forEach { (key, value) ->
-          path.add(StructKeyProtoValuePathComponent(key))
+          path.add(ProtoValuePathComponent.StructKey(key))
           val mappedValue = mapRecursive(value, path, callback)
           path.removeLast()
           if (mappedValue !== null) {
@@ -75,7 +75,7 @@ private fun <V : Value?> mapRecursive(
     } else if (value.isListValue) {
       ListValue.newBuilder().let { listValueBuilder ->
         value.listValue.valuesList.forEachIndexed { index, value ->
-          path.add(ListElementProtoValuePathComponent(index))
+          path.add(ProtoValuePathComponent.ListIndex(index))
           val mappedValue = mapRecursive(value, path, callback)
           path.removeLast()
           if (mappedValue !== null) {

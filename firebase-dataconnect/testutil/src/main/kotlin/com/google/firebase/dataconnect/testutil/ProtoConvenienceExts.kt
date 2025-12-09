@@ -19,8 +19,6 @@ package com.google.firebase.dataconnect.testutil
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
-import kotlin.contracts.ExperimentalContracts
-import kotlin.contracts.contract
 
 fun Boolean.toValueProto(): Value = Value.newBuilder().setBoolValue(this).build()
 
@@ -56,27 +54,3 @@ val Value.isListValue: Boolean
 
 val Value.isKindNotSet: Boolean
   get() = kindCase == Value.KindCase.KIND_NOT_SET
-
-fun ProtoValuePath.withAppendedListIndex(index: Int): ProtoValuePath =
-  withAppendedComponent(ListElementProtoValuePathComponent(index))
-
-fun ProtoValuePath.withAppendedStructKey(key: String): ProtoValuePath =
-  withAppendedComponent(StructKeyProtoValuePathComponent(key))
-
-fun ProtoValuePath.withAppendedComponent(component: ProtoValuePathComponent): ProtoValuePath {
-  val mutablePath = toMutableList()
-  mutablePath.add(component)
-  return mutablePath.toList()
-}
-
-@OptIn(ExperimentalContracts::class)
-fun ProtoValuePathComponent?.isStructKey(): Boolean {
-  contract { returns(true) implies (this@isStructKey is StructKeyProtoValuePathComponent) }
-  return this is StructKeyProtoValuePathComponent
-}
-
-@OptIn(ExperimentalContracts::class)
-fun ProtoValuePathComponent?.isListElement(): Boolean {
-  contract { returns(true) implies (this@isListElement is ListElementProtoValuePathComponent) }
-  return this is ListElementProtoValuePathComponent
-}
