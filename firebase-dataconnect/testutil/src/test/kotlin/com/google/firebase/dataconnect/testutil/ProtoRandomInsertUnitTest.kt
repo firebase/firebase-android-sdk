@@ -29,6 +29,7 @@ import io.kotest.assertions.asClue
 import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.comparables.shouldBeGreaterThanOrEqualTo
 import io.kotest.matchers.shouldBe
@@ -93,6 +94,68 @@ class ProtoRandomInsertUnitTest {
   }
 
   @Test
+  fun `Struct Builder randomlyInsertValue should insert the value`() = runTest {
+    checkAll(
+      propTestConfig,
+      Arb.proto.struct().map { it.struct },
+      Arb.proto.value(),
+      Arb.random()
+    ) { struct, value, random ->
+      val structBuilder = struct.toBuilder()
+
+      structBuilder.randomlyInsertValue(value, random, keyGenerator())
+
+      structBuilder.build().shouldBeStructWithValueInserted(struct, value)
+    }
+  }
+
+  @Test
+  fun `Struct Builder randomlyInsertValue should return the insertion path`() = runTest {
+    checkAll(
+      propTestConfig,
+      Arb.proto.struct().map { it.struct },
+      Arb.proto.value(),
+      Arb.random()
+    ) { struct, value, random ->
+      val structBuilder = struct.toBuilder()
+
+      val result = structBuilder.randomlyInsertValue(value, random, keyGenerator())
+
+      val expectedPath = structBuilder.build().shouldBeStructWithValueInserted(struct, value)
+      result shouldBe expectedPath
+    }
+  }
+
+  @Test
+  fun `Struct Builder randomlyInsertValue should use the given key generator`() = runTest {
+    checkAll(
+      propTestConfig,
+      Arb.proto.struct().map { it.struct },
+      Arb.proto.value(),
+      Arb.random()
+    ) { struct, value, random ->
+      val structKeyArb = RememberArb(Arb.proto.structKey())
+      val structBuilder = struct.toBuilder()
+
+      val path = structBuilder.randomlyInsertValue(value, random, { structKeyArb.bind() })
+
+      path.shouldHaveFinalComponentWithKeyIn(structKeyArb.generatedValues)
+    }
+  }
+
+  @Test
+  fun `Struct Builder randomlyInsertValue should use the given random`() = runTest {
+    checkAll(propTestConfig, Arb.proto.struct().map { it.struct }, Arb.proto.value(), Arb.long()) {
+      struct,
+      value,
+      randomSeed ->
+      shouldUseGivenRandom { random ->
+        struct.toBuilder().randomlyInsertValue(value, random, keyGenerator(randomSeed))
+      }
+    }
+  }
+
+  @Test
   fun `Struct withRandomlyInsertedValues should insert the values`() = runTest {
     checkAll(propTestConfig, Arb.proto.struct().map { it.struct }, Arb.int(0..3), Arb.random()) {
       struct,
@@ -135,6 +198,71 @@ class ProtoRandomInsertUnitTest {
       val values: List<Value> = List(valueCount) { Arb.proto.value().bind() }
       shouldUseGivenRandom { random ->
         struct.withRandomlyInsertedValues(values, random, keyGenerator(randomSeed))
+      }
+    }
+  }
+
+  @Test
+  fun `Struct Builder randomlyInsertValues should insert the values`() = runTest {
+    checkAll(propTestConfig, Arb.proto.struct().map { it.struct }, Arb.int(0..3), Arb.random()) {
+      struct,
+      valueCount,
+      random ->
+      val values: List<Value> = List(valueCount) { Arb.proto.value().bind() }
+      val structBuilder = struct.toBuilder()
+
+      structBuilder.randomlyInsertValues(values, random, keyGenerator())
+
+      structBuilder.build().shouldBeStructWithValuesInserted(struct, values)
+    }
+  }
+
+  @Test
+  fun `Struct Builder randomlyInsertValues should return the insertion paths`() = runTest {
+    checkAll(propTestConfig, Arb.proto.struct().map { it.struct }, Arb.int(0..3), Arb.random()) {
+      struct,
+      valueCount,
+      random ->
+      val values: List<Value> = List(valueCount) { Arb.proto.value().bind() }
+      val structBuilder = struct.toBuilder()
+
+      val result = structBuilder.randomlyInsertValues(values, random, keyGenerator())
+
+      val expectedPaths = structBuilder.build().shouldBeStructWithValuesInserted(struct, values)
+      result shouldContainExactlyInAnyOrder expectedPaths
+    }
+  }
+
+  @Test
+  fun `Struct Builder randomlyInsertValues should use the given key generator`() = runTest {
+    checkAll(propTestConfig, Arb.proto.struct().map { it.struct }, Arb.int(0..3), Arb.random()) {
+      struct,
+      valueCount,
+      random ->
+      val values: List<Value> = List(valueCount) { Arb.proto.value().bind() }
+      val structKeyArb = RememberArb(Arb.proto.structKey())
+      val structBuilder = struct.toBuilder()
+
+      structBuilder.randomlyInsertValues(values, random, { structKeyArb.bind() })
+
+      val insertPaths = structBuilder.build().shouldBeStructWithValuesInserted(struct, values)
+      insertPaths.forEachIndexed { index, insertPath ->
+        withClue("insertPaths[$index]=$insertPath") {
+          insertPath.shouldHaveFinalComponentWithKeyIn(structKeyArb.generatedValues)
+        }
+      }
+    }
+  }
+
+  @Test
+  fun `Struct Builder randomlyInsertValues should use the given random`() = runTest {
+    checkAll(propTestConfig, Arb.proto.struct().map { it.struct }, Arb.int(0..3), Arb.long()) {
+      struct,
+      valueCount,
+      randomSeed ->
+      val values: List<Value> = List(valueCount) { Arb.proto.value().bind() }
+      shouldUseGivenRandom { random ->
+        struct.toBuilder().randomlyInsertValues(values, random, keyGenerator(randomSeed))
       }
     }
   }
