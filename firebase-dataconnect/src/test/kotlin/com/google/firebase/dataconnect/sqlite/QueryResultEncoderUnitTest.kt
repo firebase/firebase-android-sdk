@@ -45,6 +45,7 @@ import io.kotest.property.ShrinkingMode
 import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.int
+import io.kotest.property.arbitrary.list
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
@@ -277,6 +278,53 @@ class QueryResultEncoderUnitTest {
         val struct = Arb.proto.struct(key = nonEntityIdFieldNameArb).bind().struct
         struct.withRandomlyInsertedValues(
           entityListValues.map { it.toValueProto() },
+          randomSource().random,
+          { nonEntityIdFieldNameArb.bind() },
+        )
+      }
+
+      rootStruct.decodingEncodingShouldProduceIdenticalStruct(entities, entityIdFieldName)
+    }
+  }
+
+  @Test
+  fun `list values containing list values of all entities`() = runTest {
+    checkAll(propTestConfig, Arb.proto.structKey(), Arb.list(Arb.int(2..4), 1..3)) {
+      entityIdFieldName,
+      depths ->
+      val entityArb = EntityTestCase.arb(entityIdFieldName = Arb.constant(entityIdFieldName))
+      val entities: MutableList<Struct> = mutableListOf()
+      val entityGenerator =
+        generateSequence { entityArb.bind().struct }
+          .onEach { entities.add(it) }
+          .map { it.toValueProto() }
+          .iterator()
+      fun generateListValueOfEntities(depth: Int): ListValue {
+        require(depth > 0) { "invalid depth: $depth [gwt2a6bbsz]" }
+        val size = randomSource().random.nextInt(1..3)
+        return if (depth == 1) {
+          List(size) { entityGenerator.next() }.toListValue()
+        } else {
+          val fullDepthIndex = randomSource().random.nextInt(size)
+          List(size) {
+              val childDepth =
+                if (it == fullDepthIndex) {
+                  depth - 1
+                } else {
+                  randomSource().random.nextInt(1 until depth)
+                }
+              generateListValueOfEntities(childDepth).toValueProto()
+            }
+            .toListValue()
+        }
+      }
+      val listValuesOfListValuesOfEntities =
+        depths.map { depth -> generateListValueOfEntities(depth) }
+      val rootStruct = run {
+        val nonEntityIdFieldNameArb = Arb.proto.structKey().filterNot { it == entityIdFieldName }
+        val struct = Arb.proto.struct(key = nonEntityIdFieldNameArb).bind().struct
+        struct.withRandomlyInsertedValues(
+          listValuesOfListValuesOfEntities.map { it.toValueProto() },
           randomSource().random,
           { nonEntityIdFieldNameArb.bind() },
         )
