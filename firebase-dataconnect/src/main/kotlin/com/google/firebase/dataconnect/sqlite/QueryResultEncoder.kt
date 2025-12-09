@@ -158,13 +158,17 @@ internal class QueryResultEncoder(
 
     repeat(listValue.valuesCount) {
       val value = listValue.getValues(it)
-      val entityId = value.getEntityId()
-      checkNotNull(entityId) {
-        "internal error war94t239m: " +
-          "list value at index $it is not an entity (kindCase=${value.kindCase}), " +
-          "but expected it to be an entity"
+      if (value.kindCase == Value.KindCase.LIST_VALUE) {
+        writeListOfEntities(value.listValue)
+      } else {
+        val entityId = value.getEntityId()
+        checkNotNull(entityId) {
+          "internal error war94t239m: " +
+            "list value at index $it is not an entity (kindCase=${value.kindCase}), " +
+            "but expected it to be an entity or a list of entities"
+        }
+        writeEntity(entityId, value.structValue)
       }
-      writeEntity(entityId, value.structValue)
     }
   }
 
@@ -408,11 +412,21 @@ internal class QueryResultEncoder(
     var containsEntities = false
     var containsNonEntities = false
 
-    valuesList.forEach { value ->
-      if (value.isEntity()) {
-        containsEntities = true
-      } else {
-        containsNonEntities = true
+    val queue: MutableList<ListValue> = mutableListOf(this)
+    processLoop@ while (!queue.isEmpty()) {
+      val listValue = queue.removeFirst()
+      for (value in listValue.valuesList) {
+        if (value.isEntity()) {
+          containsEntities = true
+        } else if (value.kindCase != Value.KindCase.LIST_VALUE) {
+          containsNonEntities = true
+        } else {
+          queue.add(value.listValue)
+        }
+
+        if (containsEntities && containsNonEntities) {
+          break@processLoop // short circuit
+        }
       }
     }
 

@@ -20,20 +20,26 @@ import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.EntityTe
 import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.calculateExpectedEncodingAsEntityId
 import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.decodingEncodingShouldProduceIdenticalStruct
 import com.google.firebase.dataconnect.testutil.buildByteArray
+import com.google.firebase.dataconnect.testutil.isStringValue
+import com.google.firebase.dataconnect.testutil.isStructValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.randomPartitions
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
+import com.google.firebase.dataconnect.testutil.property.arbitrary.twoValues
+import com.google.firebase.dataconnect.testutil.property.arbitrary.value
 import com.google.firebase.dataconnect.testutil.property.arbitrary.withIterations
 import com.google.firebase.dataconnect.testutil.property.arbitrary.withIterationsIfNotNull
 import com.google.firebase.dataconnect.testutil.randomlyInsertStruct
 import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.testutil.toListValue
 import com.google.firebase.dataconnect.testutil.toValueProto
+import com.google.firebase.dataconnect.testutil.withRandomlyInsertedValue
 import com.google.firebase.dataconnect.testutil.withRandomlyInsertedValues
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
@@ -41,6 +47,7 @@ import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.Exhaustive
 import io.kotest.property.PropTestConfig
+import io.kotest.property.PropertyContext
 import io.kotest.property.ShrinkingMode
 import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.filterNot
@@ -50,6 +57,7 @@ import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
 import io.kotest.property.exhaustive.of
+import kotlin.collections.map
 import kotlin.random.nextInt
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
@@ -295,31 +303,9 @@ class QueryResultEncoderUnitTest {
       val entityArb = EntityTestCase.arb(entityIdFieldName = Arb.constant(entityIdFieldName))
       val entities: MutableList<Struct> = mutableListOf()
       val entityGenerator =
-        generateSequence { entityArb.bind().struct }
-          .onEach { entities.add(it) }
-          .map { it.toValueProto() }
-          .iterator()
-      fun generateListValueOfEntities(depth: Int): ListValue {
-        require(depth > 0) { "invalid depth: $depth [gwt2a6bbsz]" }
-        val size = randomSource().random.nextInt(1..3)
-        return if (depth == 1) {
-          List(size) { entityGenerator.next() }.toListValue()
-        } else {
-          val fullDepthIndex = randomSource().random.nextInt(size)
-          List(size) {
-              val childDepth =
-                if (it == fullDepthIndex) {
-                  depth - 1
-                } else {
-                  randomSource().random.nextInt(1 until depth)
-                }
-              generateListValueOfEntities(childDepth).toValueProto()
-            }
-            .toListValue()
-        }
-      }
+        generateSequence { entityArb.bind().struct }.onEach { entities.add(it) }.iterator()
       val listValuesOfListValuesOfEntities =
-        depths.map { depth -> generateListValueOfEntities(depth) }
+        depths.map { depth -> generateListValueOfEntities(depth, entityGenerator) }
       val rootStruct = run {
         val nonEntityIdFieldNameArb = Arb.proto.structKey().filterNot { it == entityIdFieldName }
         val struct = Arb.proto.struct(key = nonEntityIdFieldNameArb).bind().struct
@@ -334,6 +320,54 @@ class QueryResultEncoderUnitTest {
     }
   }
 
+  @Test
+  fun `list with mixed entities and non-entities throws`() = runTest {
+    checkAll(propTestConfig, Arb.proto.structKey(), Arb.twoValues(Arb.int(1..4))) {
+      entityIdFieldName,
+      (entityCount, nonEntityCount) ->
+      val values = buildList {
+        val entityValueArb =
+          EntityTestCase.arb(entityIdFieldName = Arb.constant(entityIdFieldName)).map { it.struct }
+        val entityValueGenerator = generateSequence { entityValueArb.bind() }.iterator()
+        repeat(entityCount) {
+          if (randomSource().random.nextBoolean()) {
+            val entity: Struct = entityValueArb.bind()
+            add(entity.toValueProto())
+          } else {
+            val depth = randomSource().random.nextInt(1..3)
+            val listValueOfEntities: ListValue =
+              generateListValueOfEntities(depth, entityValueGenerator)
+            add(listValueOfEntities.toValueProto())
+          }
+        }
+
+        val nonEntityValueArb =
+          Arb.proto.value().filterNot {
+            it.isStructValue &&
+              it.structValue.containsFields(entityIdFieldName) &&
+              it.structValue.getFieldsOrThrow(entityIdFieldName).isStringValue
+          }
+        repeat(nonEntityCount) { add(nonEntityValueArb.bind()) }
+
+        shuffle(randomSource().random)
+      }
+
+      val rootStruct = run {
+        val nonEntityIdFieldNameArb = Arb.proto.structKey().filterNot { it == entityIdFieldName }
+        val struct = Arb.proto.struct(key = nonEntityIdFieldNameArb).bind().struct
+        struct.withRandomlyInsertedValue(
+          values.toListValue().toValueProto(),
+          randomSource().random,
+          { nonEntityIdFieldNameArb.bind() },
+        )
+      }
+
+      shouldThrow<UnsupportedOperationException> {
+        QueryResultEncoder.encode(rootStruct, entityIdFieldName)
+      }
+    }
+  }
+
   private companion object {
 
     @OptIn(ExperimentalKotest::class)
@@ -343,5 +377,29 @@ class QueryResultEncoderUnitTest {
         edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.33),
         shrinkingMode = ShrinkingMode.Off,
       )
+
+    fun PropertyContext.generateListValueOfEntities(
+      depth: Int,
+      entityGenerator: Iterator<Struct>
+    ): ListValue {
+      require(depth > 0) { "invalid depth: $depth [gwt2a6bbsz]" }
+      val size = randomSource().random.nextInt(1..3)
+      val valuesList =
+        if (depth == 1) {
+          List(size) { entityGenerator.next().toValueProto() }
+        } else {
+          val fullDepthIndex = randomSource().random.nextInt(size)
+          List(size) {
+            val childDepth =
+              if (it == fullDepthIndex) {
+                depth - 1
+              } else {
+                randomSource().random.nextInt(1 until depth)
+              }
+            generateListValueOfEntities(childDepth, entityGenerator).toValueProto()
+          }
+        }
+      return valuesList.toListValue()
+    }
   }
 }
