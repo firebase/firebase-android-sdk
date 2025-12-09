@@ -450,6 +450,7 @@ private class ListValueArb(
         path = emptyList(),
         depth = depthArb.next(rs, edgeCaseProbability = rs.random.nextFloat()),
         sizeEdgeCaseProbability = rs.random.nextFloat(),
+        structKeyEdgeCaseProbability = rs.random.nextFloat(),
         valueEdgeCaseProbability = rs.random.nextFloat(),
         nestedProbability = rs.random.nextFloat(),
       )
@@ -461,6 +462,7 @@ private class ListValueArb(
     path: ProtoValuePath,
     depth: Int,
     sizeEdgeCaseProbability: Float,
+    structKeyEdgeCaseProbability: Float,
     valueEdgeCaseProbability: Float,
     nestedProbability: Float,
   ): ProtoArb.ListValueInfo {
@@ -473,7 +475,7 @@ private class ListValueArb(
         path = curPath,
         depth = depth,
         sizeEdgeCaseProbability = sizeEdgeCaseProbability,
-        structKeyEdgeCaseProbability = 0.33f,
+        structKeyEdgeCaseProbability = structKeyEdgeCaseProbability,
         valueEdgeCaseProbability = valueEdgeCaseProbability,
         nestedProbability = nestedProbability,
       )
@@ -514,6 +516,7 @@ private class ListValueArb(
     val edgeCases = rs.nextEdgeCases()
     val sizeEdgeCaseProbability = if (edgeCases.contains(EdgeCase.Size)) 1.0f else 0.0f
     val depthEdgeCaseProbability = if (edgeCases.contains(EdgeCase.Depth)) 1.0f else 0.0f
+    val structKeyEdgeCaseProbability = if (edgeCases.contains(EdgeCase.StructKey)) 1.0f else 0.0f
     val valueEdgeCaseProbability = if (edgeCases.contains(EdgeCase.Values)) 1.0f else 0.0f
     val nestedProbability = if (edgeCases.contains(EdgeCase.OnlyNested)) 1.0f else 0.0f
     return sample(
@@ -521,6 +524,7 @@ private class ListValueArb(
       path = emptyList(),
       depth = depthArb.next(rs, depthEdgeCaseProbability),
       sizeEdgeCaseProbability = sizeEdgeCaseProbability,
+      structKeyEdgeCaseProbability = structKeyEdgeCaseProbability,
       valueEdgeCaseProbability = valueEdgeCaseProbability,
       nestedProbability = nestedProbability,
     )
@@ -529,6 +533,7 @@ private class ListValueArb(
   private enum class EdgeCase {
     Size,
     Depth,
+    StructKey,
     Values,
     OnlyNested,
   }
@@ -611,6 +616,7 @@ private fun RandomSource.nextNestedValue(
           path = path,
           depth = depth,
           sizeEdgeCaseProbability = sizeEdgeCaseProbability,
+          structKeyEdgeCaseProbability = structKeyEdgeCaseProbability,
           valueEdgeCaseProbability = valueEdgeCaseProbability,
           nestedProbability = nestedProbability,
         )

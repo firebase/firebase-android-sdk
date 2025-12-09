@@ -68,6 +68,7 @@ import io.kotest.property.arbitrary.alphanumeric
 import io.kotest.property.arbitrary.egyptianHieroglyphs
 import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.int
+import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.merge
 import io.kotest.property.arbitrary.next
 import io.kotest.property.arbitrary.string
@@ -635,10 +636,10 @@ class DataConnectGrpcClientOperationResultUnitTest {
     runTest {
       checkAll(
         propTestConfig,
-        Arb.proto.struct(),
+        Arb.proto.struct().map { it.struct },
         Arb.dataConnect.operationErrors(range = 1..10)
       ) { dataStruct, errors ->
-        val operationResult = OperationResult(dataStruct.struct, errors)
+        val operationResult = OperationResult(dataStruct, errors)
         val exception: DataConnectOperationException =
           shouldThrow<DataConnectOperationException> {
             operationResult.deserialize<Nothing>(mockk(), serializersModule = null)
@@ -647,7 +648,7 @@ class DataConnectGrpcClientOperationResultUnitTest {
           expectedMessageSubstringCaseInsensitive = "operation encountered errors",
           expectedMessageSubstringCaseSensitive = errors.toString(),
           expectedCause = null,
-          expectedRawData = dataStruct.struct,
+          expectedRawData = dataStruct,
           expectedData = null,
           expectedErrors = errors,
         )
@@ -697,9 +698,9 @@ class DataConnectGrpcClientOperationResultUnitTest {
 
   @Test
   fun `deserialize() should throw if decoding fails and error list is empty`() = runTest {
-    checkAll(propTestConfig, Arb.proto.struct()) { dataStruct ->
-      assume(!dataStruct.struct.containsFields("foo"))
-      val operationResult = OperationResult(dataStruct.struct, emptyList())
+    checkAll(propTestConfig, Arb.proto.struct().map { it.struct }) { dataStruct ->
+      assume(!dataStruct.containsFields("foo"))
+      val operationResult = OperationResult(dataStruct, emptyList())
       val exception: DataConnectOperationException =
         shouldThrow<DataConnectOperationException> {
           operationResult.deserialize(serializer<TestData>(), serializersModule = null)
@@ -707,7 +708,7 @@ class DataConnectGrpcClientOperationResultUnitTest {
       exception.shouldSatisfy(
         expectedMessageSubstringCaseInsensitive = "decoding data from the server's response failed",
         expectedCause = SerializationException::class,
-        expectedRawData = dataStruct.struct,
+        expectedRawData = dataStruct,
         expectedData = null,
         expectedErrors = emptyList(),
       )
