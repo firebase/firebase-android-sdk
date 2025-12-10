@@ -664,10 +664,6 @@ public class TransportManager implements AppStateCallback {
       return ConsoleUrlGenerator.generateCustomTraceUrl(projectId, packageName, traceName);
     }
   }
-
-  public SessionManager getSessionManager() {
-    return sessionManager;
-  }
   // endregion
 
   // region Visible for Testing

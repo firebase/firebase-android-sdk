@@ -67,7 +67,7 @@ public class FragmentStateMonitor extends FragmentManager.FragmentLifecycleCallb
     // Start Fragment screen trace
     logger.debug("FragmentMonitor %s.onFragmentResumed", f.getClass().getSimpleName());
     Trace fragmentTrace =
-        new Trace(getFragmentScreenTraceName(f), transportManager, clock, appStateMonitor, sessionManager);
+        new Trace(getFragmentScreenTraceName(f), transportManager, clock, appStateMonitor);
     fragmentTrace.start();
 
     fragmentTrace.putAttribute(

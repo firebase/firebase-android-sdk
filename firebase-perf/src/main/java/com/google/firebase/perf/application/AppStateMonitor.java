@@ -200,7 +200,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
       // Starts recording frame metrics for this activity.
       activityToRecorderMap.get(activity).start();
       // Start the Trace
-      Trace screenTrace = new Trace(getScreenTraceName(activity), transportManager, clock, this, sessionManager);
+      Trace screenTrace = new Trace(getScreenTraceName(activity), transportManager, clock, this);
       screenTrace.start();
       activityToScreenTraceMap.put(activity, screenTrace);
     }
@@ -416,6 +416,10 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     return FrameMetricsRecorder.isFrameMetricsRecordingSupported();
   }
 
+  public SessionManager getSessionManager() {
+    return sessionManager;
+  }
+
   /** An interface to be implemented by subscribers which needs to receive app state update. */
   public static interface AppStateCallback {
     public void onUpdateAppState(ApplicationProcessState newState);
@@ -464,10 +468,6 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   @VisibleForTesting
   public void setIsColdStart(boolean isColdStart) {
     this.isColdStart = isColdStart;
-  }
-
-  public SessionManager getSessionManager() {
-    return sessionManager;
   }
 
   public void setSessionManager(SessionManager sessionManager) {

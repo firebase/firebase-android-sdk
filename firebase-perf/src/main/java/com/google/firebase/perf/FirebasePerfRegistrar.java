@@ -26,11 +26,8 @@ import com.google.firebase.components.Dependency;
 import com.google.firebase.components.Qualified;
 import com.google.firebase.installations.FirebaseInstallationsApi;
 import com.google.firebase.perf.injection.components.DaggerFirebasePerformanceComponent;
-import com.google.firebase.perf.injection.components.DaggerSessionManagerComponent;
 import com.google.firebase.perf.injection.components.FirebasePerformanceComponent;
-import com.google.firebase.perf.injection.components.SessionManagerComponent;
 import com.google.firebase.perf.injection.modules.FirebasePerformanceModule;
-import com.google.firebase.perf.injection.modules.SessionManagerModule;
 import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.platforminfo.LibraryVersionComponent;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
@@ -81,7 +78,9 @@ public class FirebasePerfRegistrar implements ComponentRegistrar {
                         container.get(uiExecutor),
                         container.get(SessionManager.class)))
             .build(),
-        Component.builder(SessionManager.class).factory(container -> new SessionManager()).build(),
+        Component.builder(SessionManager.class).factory(container ->
+                SessionManager.getInstance() //TODO: JR: Remove getInstance in subsequent phases
+        ).build(),
         /**
          * Fireperf SDK is lazily by {@link FirebasePerformanceInitializer} during {@link
          * com.google.firebase.perf.application.AppStateMonitor#onActivityResumed(Activity)}. we use
