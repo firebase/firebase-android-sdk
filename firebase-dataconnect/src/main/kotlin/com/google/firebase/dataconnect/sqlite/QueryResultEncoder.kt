@@ -155,20 +155,16 @@ internal class QueryResultEncoder(
   private fun writeListOfEntities(listValue: ListValue) {
     writer.writeByte(QueryResultCodec.VALUE_LIST_OF_ENTITIES)
     writer.writeUInt32(listValue.valuesCount)
-
     repeat(listValue.valuesCount) {
       val value = listValue.getValues(it)
-      if (value.kindCase == Value.KindCase.LIST_VALUE) {
-        writeListOfEntities(value.listValue)
-      } else {
-        val entityId = value.getEntityId()
-        checkNotNull(entityId) {
+      val nonEntityValue = writeEntityValue(value)
+      if (nonEntityValue !== null) {
+        throw IllegalStateException(
           "internal error war94t239m: " +
             "list value at index $it is not an entity (kindCase=${value.kindCase}), " +
             "but expected it to be an entity, a list of entities, " +
             "or a list of a list of entities (with any depth)"
-        }
-        writeEntity(entityId, value.structValue)
+        )
       }
     }
   }
@@ -306,8 +302,8 @@ internal class QueryResultEncoder(
     return listValueBuilder.build()
   }
 
-  private fun writeEntityValue(value: Value): Value? {
-    return when (value.kindCase) {
+  private fun writeEntityValue(value: Value): Value? =
+    when (value.kindCase) {
       Value.KindCase.STRUCT_VALUE -> {
         val subStructEntityId = value.structValue.getEntityId()
         if (subStructEntityId !== null) {
@@ -327,7 +323,6 @@ internal class QueryResultEncoder(
         value
       }
     }
-  }
 
   private sealed interface DoubleEncoding {
     data class Double(val value: kotlin.Double) : DoubleEncoding
