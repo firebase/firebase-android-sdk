@@ -85,3 +85,4 @@
 # 1.0.0
 
 - [feature] Initial Firebase sessions library.
+
