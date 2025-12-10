@@ -28,6 +28,7 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWith
 import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWith4ByteUtf8Encoding
 import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWithEvenNumByteUtf8EncodingDistribution
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
+import com.google.firebase.dataconnect.testutil.property.arbitrary.scalarValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.stringWithLoneSurrogates
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
@@ -36,6 +37,7 @@ import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
 import com.google.protobuf.Struct
+import com.google.protobuf.Value
 import io.kotest.assertions.withClue
 import io.kotest.common.DelicateKotest
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
@@ -78,29 +80,33 @@ object QueryResultEncoderTesting {
       fun arb(
         entityIdFieldName: Arb<String> = Arb.proto.structKey(),
         @OptIn(DelicateKotest::class) entityId: Arb<String> = Arb.proto.structKey().distinct(),
+        scalarValue: Arb<Value> = Arb.proto.scalarValue(),
         structKey: Arb<String> = Arb.proto.structKey(),
         structSize: IntRange = 0..5,
         structDepth: IntRange = 1..3,
       ): Arb<EntityTestCase> =
         Arb.pair(entityIdFieldName, entityId).flatMap { (entityIdFieldName, entityId) ->
           val keyArb = structKey.filterNot { it == entityIdFieldName }
-          Arb.proto.struct(size = structSize, depth = structDepth, key = keyArb).map { struct ->
-            val newStruct =
-              struct.struct
-                .toBuilder()
-                .putFields(entityIdFieldName, entityId.toValueProto())
-                .build()
-            EntityTestCase(
-              entityIdFieldName = entityIdFieldName,
-              entityId = entityId,
-              struct = newStruct,
-            )
-          }
+          Arb.proto
+            .struct(size = structSize, depth = structDepth, key = keyArb, scalarValue = scalarValue)
+            .map { struct ->
+              val newStruct =
+                struct.struct
+                  .toBuilder()
+                  .putFields(entityIdFieldName, entityId.toValueProto())
+                  .build()
+              EntityTestCase(
+                entityIdFieldName = entityIdFieldName,
+                entityId = entityId,
+                struct = newStruct,
+              )
+            }
         }
 
       fun arb(
         entityIdFieldName: Arb<String> = Arb.proto.structKey(),
         @OptIn(DelicateKotest::class) entityId: Arb<String> = Arb.proto.structKey().distinct(),
+        scalarValue: Arb<Value> = Arb.proto.scalarValue(),
         structKey: Arb<String> = Arb.proto.structKey(),
         structSize: IntRange,
         structDepth: Int,
@@ -108,6 +114,7 @@ object QueryResultEncoderTesting {
         arb(
           entityIdFieldName = entityIdFieldName,
           entityId = entityId,
+          scalarValue = scalarValue,
           structKey = structKey,
           structSize = structSize,
           structDepth = structDepth..structDepth,
