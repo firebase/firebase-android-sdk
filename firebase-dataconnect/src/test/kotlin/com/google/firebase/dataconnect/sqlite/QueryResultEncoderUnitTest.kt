@@ -20,10 +20,13 @@ import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.EntityTe
 import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.calculateExpectedEncodingAsEntityId
 import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.decodingEncodingShouldProduceIdenticalStruct
 import com.google.firebase.dataconnect.testutil.buildByteArray
+import com.google.firebase.dataconnect.testutil.isListValue
 import com.google.firebase.dataconnect.testutil.isStringValue
 import com.google.firebase.dataconnect.testutil.isStructValue
+import com.google.firebase.dataconnect.testutil.property.arbitrary.listValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.randomPartitions
+import com.google.firebase.dataconnect.testutil.property.arbitrary.recursivelyEmptyListValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
 import com.google.firebase.dataconnect.testutil.property.arbitrary.twoValues
@@ -31,6 +34,8 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.value
 import com.google.firebase.dataconnect.testutil.property.arbitrary.withIterations
 import com.google.firebase.dataconnect.testutil.property.arbitrary.withIterationsIfNotNull
 import com.google.firebase.dataconnect.testutil.randomlyInsertStruct
+import com.google.firebase.dataconnect.testutil.randomlyInsertStructs
+import com.google.firebase.dataconnect.testutil.randomlyInsertValue
 import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.testutil.toListValue
 import com.google.firebase.dataconnect.testutil.toValueProto
@@ -49,6 +54,7 @@ import io.kotest.property.Exhaustive
 import io.kotest.property.PropTestConfig
 import io.kotest.property.PropertyContext
 import io.kotest.property.ShrinkingMode
+import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.int
@@ -140,6 +146,27 @@ class QueryResultEncoderUnitTest {
   fun `struct values`() = runTest {
     checkAll(propTestConfig, Arb.proto.struct()) { struct ->
       struct.struct.decodingEncodingShouldProduceIdenticalStruct()
+    }
+  }
+
+  @Test
+  fun `list values`() = runTest {
+    val structKeyArb = Arb.proto.structKey()
+    val structArb = Arb.proto.struct(size = 1..2, depth = 1..2)
+    val listValueArb =
+      Arb.choice(
+        Arb.proto.listValue(size = 0..5, depth = 1..2).map { it.listValue },
+        Arb.proto.recursivelyEmptyListValue().map { it.listValue },
+      )
+    checkAll(propTestConfig, structArb, Arb.list(listValueArb, 1..5)) { struct, listValueSamples ->
+      val listValues = listValueSamples.map { it.toValueProto() }
+      val structWithListValues =
+        struct.struct.withRandomlyInsertedValues(
+          listValues,
+          randomSource().random,
+          { structKeyArb.bind() }
+        )
+      structWithListValues.decodingEncodingShouldProduceIdenticalStruct()
     }
   }
 
@@ -321,6 +348,39 @@ class QueryResultEncoderUnitTest {
   }
 
   @Test
+  fun `list values containing entities containing recursively empty lists`() = runTest {
+    val recursivelyEmptyListValueArb = Arb.proto.recursivelyEmptyListValue()
+    checkAll(propTestConfig, Arb.proto.structKey(), Arb.int(1..5), Arb.int(1..5)) {
+      entityIdFieldName,
+      entityCount,
+      recursivelyEmptyListCount ->
+      val entityArb = EntityTestCase.arb(entityIdFieldName = Arb.constant(entityIdFieldName))
+      val entities: List<Struct> = List(entityCount) { entityArb.bind().struct }
+      val nonEntityIdFieldNameArb = Arb.proto.structKey().filterNot { it == entityIdFieldName }
+      val rootStruct = run {
+        val structBuilder =
+          Arb.proto.struct(key = nonEntityIdFieldNameArb).bind().struct.toBuilder()
+        structBuilder.randomlyInsertStructs(
+          entities,
+          randomSource().random,
+          { nonEntityIdFieldNameArb.bind() }
+        )
+        repeat(recursivelyEmptyListCount) {
+          val recursivelyEmptyList = recursivelyEmptyListValueArb.bind().listValue.toValueProto()
+          structBuilder.randomlyInsertValue(
+            recursivelyEmptyList,
+            randomSource().random,
+            { nonEntityIdFieldNameArb.bind() }
+          )
+        }
+        structBuilder.build()
+      }
+
+      rootStruct.decodingEncodingShouldProduceIdenticalStruct(entities, entityIdFieldName)
+    }
+  }
+
+  @Test
   fun `list with mixed entities and non-entities throws`() = runTest {
     checkAll(propTestConfig, Arb.proto.structKey(), Arb.twoValues(Arb.int(1..4))) {
       entityIdFieldName,
@@ -329,23 +389,19 @@ class QueryResultEncoderUnitTest {
         val entityValueArb =
           EntityTestCase.arb(entityIdFieldName = Arb.constant(entityIdFieldName)).map { it.struct }
         val entityValueGenerator = generateSequence { entityValueArb.bind() }.iterator()
+        val listValueOfEntitiesProbability = randomSource().random.nextFloat()
         repeat(entityCount) {
-          if (randomSource().random.nextBoolean()) {
-            val entity: Struct = entityValueArb.bind()
-            add(entity.toValueProto())
+          if (randomSource().random.nextFloat() > listValueOfEntitiesProbability) {
+            add(entityValueArb.bind().toValueProto())
           } else {
             val depth = randomSource().random.nextInt(1..3)
-            val listValueOfEntities: ListValue =
-              generateListValueOfEntities(depth, entityValueGenerator)
-            add(listValueOfEntities.toValueProto())
+            add(generateListValueOfEntities(depth, entityValueGenerator).toValueProto())
           }
         }
 
         val nonEntityValueArb =
           Arb.proto.value().filterNot {
-            it.isStructValue &&
-              it.structValue.containsFields(entityIdFieldName) &&
-              it.structValue.getFieldsOrThrow(entityIdFieldName).isStringValue
+            it.isEntity(entityIdFieldName) || it.isRecursivelyEmptyList()
           }
         repeat(nonEntityCount) { add(nonEntityValueArb.bind()) }
 
@@ -377,6 +433,17 @@ class QueryResultEncoderUnitTest {
         edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.33),
         shrinkingMode = ShrinkingMode.Off,
       )
+
+    fun Value.isEntity(entityIdFieldName: String): Boolean =
+      isStructValue &&
+        structValue.containsFields(entityIdFieldName) &&
+        structValue.getFieldsOrThrow(entityIdFieldName).isStringValue
+
+    fun Value.isRecursivelyEmptyList(): Boolean =
+      isListValue &&
+        listValue.let {
+          it.valuesCount == 0 || it.valuesList.all { subList -> subList.isRecursivelyEmptyList() }
+        }
 
     fun PropertyContext.generateListValueOfEntities(
       depth: Int,
