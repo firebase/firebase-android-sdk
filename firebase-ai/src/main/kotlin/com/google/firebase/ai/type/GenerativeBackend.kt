@@ -40,6 +40,10 @@ internal constructor(internal val location: String, internal val backend: Genera
       return GenerativeBackend(location, GenerativeBackendEnum.VERTEX_AI)
     }
   }
+
+  override fun equals(other: Any?): Boolean {
+    return other is GenerativeBackend && other.backend == this.backend
+  }
 }
 
 internal enum class GenerativeBackendEnum {
