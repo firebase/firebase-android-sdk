@@ -1,8 +1,14 @@
 # Unreleased
 
+# 17.1.2
+
 - [changed] Internal refactor for managing Auth and App Check tokens
-  ([#7484](https://github.com/firebase/firebase-android-sdk/pull/7484),
   [#7485](https://github.com/firebase/firebase-android-sdk/pull/7485))
+
+# 17.1.1
+
+- [changed] Internal refactor for managing Auth and App Check tokens
+  ([#7484](https://github.com/firebase/firebase-android-sdk/pull/7484)
 
 # 17.1.0
 

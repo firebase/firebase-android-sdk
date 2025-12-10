@@ -1,5 +1,10 @@
 # Unreleased
 
+# 26.1.0
+
+- [feature] Release Firestore Pipelines for Enterprise edition.
+  [#7590](//github.com/firebase/firebase-android-sdk/pull/7590)
+
 # 26.0.2
 
 - [changed] Improve query performance in large result sets by replacing the deprecated AsyncTask
