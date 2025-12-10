@@ -32,7 +32,7 @@ firebase-android-sdk$ ./gradlew :clean :firebase-perf:dev-app:build
 ```
 
 > **Note:** Builds with latest public version of `firebase-perf` SDK.
-
+>
 > **Tip:** The above command will build all the configured variants which may slow down the build.
 > To fasten local development replace `build` with `assembleRelease` task. To view the complete list
 > of tasks available run `./gradlew :clean :firebase-perf:dev-app:tasks --all`.
@@ -90,7 +90,7 @@ scenarios.
    but the performance events are sent to a different project with which apps are configured with
    (see `copyRootGoogleServices` task).
 
-1. **Local run**: When running locally both the tests and the events will happen on the same locally
+2. **Local run**: When running locally both the tests and the events will happen on the same locally
    integrated Firebase project.
 
 ## Logs
@@ -120,3 +120,4 @@ And go to the following locations to check for app artifact size:
 - Debug: `firebase-perf/dev-app/build/outputs/apk/debug/dev-app-debug.apk`
 - Release: `firebase-perf/dev-app/build/outputs/apk/release/dev-app-release.apk`
 - Aggressive: `firebase-perf/dev-app/build/outputs/apk/aggressive/dev-app-aggressive.apk`
+

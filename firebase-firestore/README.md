@@ -47,14 +47,17 @@ The integration tests require that the Firestore emulator is running on port 808
 when running it via CLI.
 
 - [Install the Firebase CLI](https://firebase.google.com/docs/cli/).
+
   ```
   npm install -g firebase-tools
   ```
 - [Install the Firestore emulator](https://firebase.google.com/docs/firestore/security/test-rules-emulator#install_the_emulator).
+
   ```
   firebase setup:emulators:firestore
   ```
 - Run the emulator
+
   ```
   firebase emulators:start --only firestore
   ```
@@ -200,16 +203,17 @@ android.util.Log.i("FirestoreVersion", com.google.firebase.firestore.BuildConfig
 If your changes require building other modules in this repository (like `firebase-common`), you must
 build and publish them locally as well.
 
-1.  In the dependency's directory (e.g., `firebase-common/`), edit `gradle.properties` to set a
-    unique version.
-2.  Publish the dependency to Maven Local:
-    ```bash
-    ./gradlew :firebase-common:publishToMavenLocal
-    ```
-3.  In `firebase-firestore/firebase-firestore.gradle`, ensure the dependency is a project
-    dependency. For example, change `api(libs.firebase.common)` to
-    `api(project(":firebase-common"))`.
-4.  Build and publish the `firebase-firestore` artifact as described in step 2.
+1. In the dependency's directory (e.g., `firebase-common/`), edit `gradle.properties` to set a
+   unique version.
+2. Publish the dependency to Maven Local:
+
+   ```bash
+   ./gradlew :firebase-common:publishToMavenLocal
+   ```
+3. In `firebase-firestore/firebase-firestore.gradle`, ensure the dependency is a project
+   dependency. For example, change `api(libs.firebase.common)` to
+   `api(project(":firebase-common"))`.
+4. Build and publish the `firebase-firestore` artifact as described in step 2.
 
 ## Misc
 
@@ -220,3 +224,4 @@ changes with the command:
 ```
 $ git checkout .idea/runConfigurations
 ```
+
