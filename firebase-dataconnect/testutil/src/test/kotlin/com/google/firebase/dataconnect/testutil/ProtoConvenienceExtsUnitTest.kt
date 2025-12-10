@@ -27,6 +27,7 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.value
 import com.google.protobuf.Value
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
@@ -197,6 +198,76 @@ class ProtoConvenienceExtsUnitTest {
   fun `Value isKindNotSet returns false when kindCase is not KIND_NOT_SET`() = runTest {
     checkAll(propTestConfig, Arb.proto.value(exclude = Value.KindCase.KIND_NOT_SET)) { value ->
       value.isKindNotSet shouldBe false
+    }
+  }
+
+  @Test
+  fun `Value numberValueOrNull returns numberValue when kindCase is NUMBER_VALUE`() = runTest {
+    checkAll(propTestConfig, Arb.proto.numberValue()) { value ->
+      value.numberValueOrNull shouldBe value.numberValue
+    }
+  }
+
+  @Test
+  fun `Value numberValueOrNull returns null when kindCase is not NUMBER_VALUE`() = runTest {
+    checkAll(propTestConfig, Arb.proto.value(exclude = Value.KindCase.NUMBER_VALUE)) { value ->
+      value.numberValueOrNull.shouldBeNull()
+    }
+  }
+
+  @Test
+  fun `Value boolValueOrNull returns boolValue when kindCase is BOOL_VALUE`() = runTest {
+    checkAll(propTestConfig, Arb.proto.boolValue()) { value ->
+      value.boolValueOrNull shouldBe value.boolValue
+    }
+  }
+
+  @Test
+  fun `Value boolValueOrNull returns null when kindCase is not BOOL_VALUE`() = runTest {
+    checkAll(propTestConfig, Arb.proto.value(exclude = Value.KindCase.BOOL_VALUE)) { value ->
+      value.boolValueOrNull.shouldBeNull()
+    }
+  }
+
+  @Test
+  fun `Value stringValueOrNull returns stringValue when kindCase is STRING_VALUE`() = runTest {
+    checkAll(propTestConfig, Arb.proto.stringValue()) { value ->
+      value.stringValueOrNull shouldBe value.stringValue
+    }
+  }
+
+  @Test
+  fun `Value stringValueOrNull returns null when kindCase is not STRING_VALUE`() = runTest {
+    checkAll(propTestConfig, Arb.proto.value(exclude = Value.KindCase.STRING_VALUE)) { value ->
+      value.stringValueOrNull.shouldBeNull()
+    }
+  }
+
+  @Test
+  fun `Value structValueOrNull returns structValue when kindCase is STRUCT_VALUE`() = runTest {
+    checkAll(propTestConfig, Arb.proto.struct().map { it.struct.toValueProto() }) { value ->
+      value.structValueOrNull shouldBe value.structValue
+    }
+  }
+
+  @Test
+  fun `Value structValueOrNull returns null when kindCase is not STRUCT_VALUE`() = runTest {
+    checkAll(propTestConfig, Arb.proto.value(exclude = Value.KindCase.STRUCT_VALUE)) { value ->
+      value.structValueOrNull.shouldBeNull()
+    }
+  }
+
+  @Test
+  fun `Value listValueOrNull returns listValue when kindCase is LIST_VALUE`() = runTest {
+    checkAll(propTestConfig, Arb.proto.listValue().map { it.listValue.toValueProto() }) { value ->
+      value.listValueOrNull shouldBe value.listValue
+    }
+  }
+
+  @Test
+  fun `Value listValueOrNull returns null when kindCase is not LIST_VALUE`() = runTest {
+    checkAll(propTestConfig, Arb.proto.value(exclude = Value.KindCase.LIST_VALUE)) { value ->
+      value.listValueOrNull.shouldBeNull()
     }
   }
 

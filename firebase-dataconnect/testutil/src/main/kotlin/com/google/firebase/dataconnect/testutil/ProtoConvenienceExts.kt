@@ -54,3 +54,18 @@ val Value.isListValue: Boolean
 
 val Value.isKindNotSet: Boolean
   get() = kindCase == Value.KindCase.KIND_NOT_SET
+
+val Value.numberValueOrNull: Double?
+  get() = if (isNumberValue) numberValue else null
+
+val Value.boolValueOrNull: Boolean?
+  get() = if (isBoolValue) boolValue else null
+
+val Value.stringValueOrNull: String?
+  get() = if (isStringValue) stringValue else null
+
+val Value.structValueOrNull: Struct?
+  get() = if (isStructValue) structValue else null
+
+val Value.listValueOrNull: ListValue?
+  get() = if (isListValue) listValue else null
