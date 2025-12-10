@@ -171,6 +171,26 @@ internal constructor(
     transcriptHandler: ((Transcription?, Transcription?) -> Unit)? = null,
     enableInterruptions: Boolean = false,
   ) {
+    startAudioConversation(
+      liveAudioConversationConfig {
+        this.functionCallHandler = functionCallHandler
+        this.transcriptHandler = transcriptHandler
+        this.enableInterruptions = enableInterruptions
+      }
+    )
+  }
+
+  /**
+   * Starts an audio conversation with the model, which can only be stopped using
+   * [stopAudioConversation] or [close].
+   *
+   * @param liveAudioConversationConfig A [LiveAudioConversationConfig] provided by the user to
+   * control the various aspects of the conversation.
+   */
+  @RequiresPermission(RECORD_AUDIO)
+  public suspend fun startAudioConversation(
+    liveAudioConversationConfig: LiveAudioConversationConfig
+  ) {
 
     val context = firebaseApp.applicationContext
     if (
@@ -191,11 +211,14 @@ internal constructor(
       networkScope =
         CoroutineScope(blockingDispatcher + childJob() + CoroutineName("LiveSession Network"))
       audioScope = CoroutineScope(audioDispatcher + childJob() + CoroutineName("LiveSession Audio"))
-      audioHelper = AudioHelper.build()
+      audioHelper = AudioHelper.build(liveAudioConversationConfig.initializationHandler)
 
       recordUserAudio()
-      processModelResponses(functionCallHandler, transcriptHandler)
-      listenForModelPlayback(enableInterruptions)
+      processModelResponses(
+        liveAudioConversationConfig.functionCallHandler,
+        liveAudioConversationConfig.transcriptHandler
+      )
+      listenForModelPlayback(liveAudioConversationConfig.enableInterruptions)
     }
   }
 
@@ -342,7 +365,7 @@ internal constructor(
    *
    * @param video Encoded image data extracted from a frame of the video, used to update the model
    * on the client's conversation, with the corresponding IANA standard MIME type of the video frame
-   * data (e.g., `image/png`, `image/jpeg`, etc.).
+   * data (for example, `image/png`, `image/jpeg`, etc.).
    */
   public suspend fun sendVideoRealtime(video: InlineData) {
     FirebaseAIException.catchAsync {

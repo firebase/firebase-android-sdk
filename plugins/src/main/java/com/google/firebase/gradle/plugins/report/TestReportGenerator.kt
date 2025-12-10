@@ -39,7 +39,7 @@ import org.slf4j.LoggerFactory
 class TestReportGenerator(private val apiToken: String) {
   private val LOG: Logger = LoggerFactory.getLogger("firebase-test-report")
 
-  fun createReport(commitCount: Int) {
+  fun createReport(outputFile: File, commitCount: Int) {
     val response: JsonObject =
       request(
         URI.create("https://api.github.com/graphql"),
@@ -75,10 +75,10 @@ class TestReportGenerator(private val apiToken: String) {
               ?.int ?: throw RuntimeException("Couldn't find PR number for commit $obj"),
           )
         }
-    outputReport(commits)
+    outputReport(outputFile, commits)
   }
 
-  private fun outputReport(commits: List<ReportCommit>) {
+  private fun outputReport(outputFile: File, commits: List<ReportCommit>) {
     val reports = commits.flatMap { commit -> parseTestReports(commit.sha) }
     val output = StringBuilder()
     output.append("### Unit Tests\n\n")
@@ -99,7 +99,7 @@ class TestReportGenerator(private val apiToken: String) {
     output.append("\n")
 
     try {
-      File("test-report.md").writeText(output.toString())
+      outputFile.writeText(output.toString())
     } catch (e: Exception) {
       throw RuntimeException("Error writing report file", e)
     }

@@ -20,7 +20,7 @@ import com.google.firebase.ai.common.util.FirstOrdinalSerializer
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 
-/** Represents the type of content present in a response (e.g., text, image, audio). */
+/** Represents the type of content present in a response (for example, text, image, audio). */
 public class ResponseModality private constructor(public val ordinal: Int) {
 
   @Serializable(Internal.Serializer::class)

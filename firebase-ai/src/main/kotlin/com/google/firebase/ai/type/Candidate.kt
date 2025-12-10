@@ -84,7 +84,7 @@ internal constructor(
  *
  * The rating will be restricted to a particular [category].
  *
- * @property category The category of harm being assessed (e.g., Hate speech).
+ * @property category The category of harm being assessed (for example, Hate speech).
  * @property probability The likelihood of the content causing harm.
  * @property probabilityScore A numerical score representing the probability of harm, between `0`
  * and `1`.

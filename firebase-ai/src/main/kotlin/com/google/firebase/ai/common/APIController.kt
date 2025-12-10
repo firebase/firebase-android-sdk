@@ -164,10 +164,60 @@ internal constructor(
       throw FirebaseAIException.from(e)
     }
 
+  suspend fun templateGenerateContent(
+    templateId: String,
+    request: TemplateGenerateContentRequest
+  ): GenerateContentResponse.Internal =
+    try {
+      client
+        .post(
+          "${requestOptions.endpoint}/${requestOptions.apiVersion}/$templateId:templateGenerateContent"
+        ) {
+          applyCommonConfiguration(request)
+          applyHeaderProvider()
+        }
+        .also { validateResponse(it) }
+        .body<GenerateContentResponse.Internal>()
+        .validate()
+    } catch (e: Throwable) {
+      throw FirebaseAIException.from(e)
+    }
+
+  fun templateGenerateContentStream(
+    templateId: String,
+    request: TemplateGenerateContentRequest
+  ): Flow<GenerateContentResponse.Internal> =
+    client
+      .postStream<GenerateContentResponse.Internal>(
+        "${requestOptions.endpoint}/${requestOptions.apiVersion}/$templateId:templateStreamGenerateContent?alt=sse"
+      ) {
+        applyCommonConfiguration(request)
+      }
+      .map { it.validate() }
+      .catch { throw FirebaseAIException.from(it) }
+
   suspend fun generateImage(request: GenerateImageRequest): ImagenGenerationResponse.Internal =
     try {
       client
         .post("${requestOptions.endpoint}/${requestOptions.apiVersion}/$model:predict") {
+          applyCommonConfiguration(request)
+          applyHeaderProvider()
+        }
+        .also { validateResponse(it) }
+        .body<ImagenGenerationResponse.Internal>()
+    } catch (e: Throwable) {
+      throw FirebaseAIException.from(e)
+    }
+
+  suspend fun templateGenerateImage(
+    templateId: String,
+    request: TemplateGenerateImageRequest
+  ): ImagenGenerationResponse.Internal =
+    try {
+      client
+        .post(
+          "${requestOptions.endpoint}/${requestOptions.apiVersion}/$templateId:templatePredict"
+        ) {
           applyCommonConfiguration(request)
           applyHeaderProvider()
         }
@@ -228,6 +278,8 @@ internal constructor(
       is GenerateContentRequest -> setBody<GenerateContentRequest>(request)
       is CountTokensRequest -> setBody<CountTokensRequest>(request)
       is GenerateImageRequest -> setBody<GenerateImageRequest>(request)
+      is TemplateGenerateContentRequest -> setBody<TemplateGenerateContentRequest>(request)
+      is TemplateGenerateImageRequest -> setBody<TemplateGenerateImageRequest>(request)
     }
     applyCommonHeaders()
   }

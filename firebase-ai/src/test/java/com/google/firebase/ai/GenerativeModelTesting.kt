@@ -23,8 +23,14 @@ import com.google.firebase.ai.common.util.doBlocking
 import com.google.firebase.ai.type.Candidate
 import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.GenerateContentResponse
+import com.google.firebase.ai.type.GenerativeBackend
+import com.google.firebase.ai.type.HarmBlockMethod
+import com.google.firebase.ai.type.HarmBlockThreshold
+import com.google.firebase.ai.type.HarmCategory
+import com.google.firebase.ai.type.InvalidStateException
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.RequestOptions
+import com.google.firebase.ai.type.SafetySetting
 import com.google.firebase.ai.type.ServerException
 import com.google.firebase.ai.type.TextPart
 import com.google.firebase.ai.type.content
@@ -144,6 +150,95 @@ internal class GenerativeModelTesting {
 
     // Let's not be too strict on the wording to avoid breaking the test unnecessarily.
     exception.message shouldContain "location"
+  }
+
+  @Test
+  fun `exception thrown when using HarmBlockMethod with GoogleAI`() = doBlocking {
+    val mockEngine = MockEngine {
+      respond(
+        generateContentResponseAsJsonString("text response"),
+        HttpStatusCode.OK,
+        headersOf(HttpHeaders.ContentType, "application/json")
+      )
+    }
+
+    val apiController =
+      APIController(
+        "super_cool_test_key",
+        "gemini-2.5-flash",
+        RequestOptions(),
+        mockEngine,
+        TEST_CLIENT_ID,
+        mockFirebaseApp,
+        TEST_VERSION,
+        TEST_APP_ID,
+        null,
+      )
+
+    val safetySettings =
+      listOf(
+        SafetySetting(
+          HarmCategory.HARASSMENT,
+          HarmBlockThreshold.MEDIUM_AND_ABOVE,
+          HarmBlockMethod.SEVERITY
+        )
+      )
+
+    val generativeModel =
+      GenerativeModel(
+        "gemini-2.5-flash",
+        safetySettings = safetySettings,
+        generativeBackend = GenerativeBackend.googleAI(),
+        controller = apiController
+      )
+
+    val exception =
+      shouldThrow<InvalidStateException> { generativeModel.generateContent("my test prompt") }
+
+    exception.message shouldContain "HarmBlockMethod is unsupported by the Google Developer API"
+  }
+
+  @Test
+  fun `exception NOT thrown when using HarmBlockMethod with VertexAI`() = doBlocking {
+    val mockEngine = MockEngine {
+      respond(
+        generateContentResponseAsJsonString("text response"),
+        HttpStatusCode.OK,
+        headersOf(HttpHeaders.ContentType, "application/json")
+      )
+    }
+
+    val apiController =
+      APIController(
+        "super_cool_test_key",
+        "gemini-2.5-flash",
+        RequestOptions(),
+        mockEngine,
+        TEST_CLIENT_ID,
+        mockFirebaseApp,
+        TEST_VERSION,
+        TEST_APP_ID,
+        null,
+      )
+
+    val safetySettings =
+      listOf(
+        SafetySetting(
+          HarmCategory.HARASSMENT,
+          HarmBlockThreshold.MEDIUM_AND_ABOVE,
+          HarmBlockMethod.SEVERITY
+        )
+      )
+
+    val generativeModel =
+      GenerativeModel(
+        "gemini-2.5-flash",
+        safetySettings = safetySettings,
+        generativeBackend = GenerativeBackend.vertexAI("us-central1"),
+        controller = apiController
+      )
+
+    withTimeout(5.seconds) { generativeModel.generateContent("my test prompt") }
   }
 
   @OptIn(PublicPreviewAPI::class)

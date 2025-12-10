@@ -1,5 +1,8 @@
 # Unreleased
 
+- [fixed] Fixed a bug when the app foregrounds before Sessions has initialized (#7519)
+- [changed] Restore SessionLifecycleService as no-op
+
 # 3.0.3
 
 - [fixed] Made creating DataStore files more resilient (#7440)

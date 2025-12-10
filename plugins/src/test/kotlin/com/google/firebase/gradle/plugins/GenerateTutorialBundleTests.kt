@@ -242,7 +242,7 @@ class GenerateTutorialBundleTests : FunSpec() {
   @Test
   fun `throws an error if an unreleased artifact is used`() {
     shouldThrowSubstring("missing from gmaven", "com.google.firebase:firebase-auth") {
-      every { service.latestNonAlphaVersionOrNull(any()) } answers { null }
+      every { service.latestStableVersionOrNull(any()) } answers { null }
 
       val task = makeTask { firebaseArtifacts.set(listOf("com.google.firebase:firebase-auth")) }
 
@@ -294,7 +294,7 @@ class GenerateTutorialBundleTests : FunSpec() {
         "$groupId:$artifactId" to version
       }
       .onEach { entry ->
-        every { service.latestNonAlphaVersionOrNull(entry.key) } answers { entry.value }
+        every { service.latestStableVersionOrNull(entry.key) } answers { entry.value }
       }
   }
 
