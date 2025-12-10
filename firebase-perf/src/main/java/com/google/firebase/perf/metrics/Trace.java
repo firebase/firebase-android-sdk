@@ -181,11 +181,12 @@ public class Trace extends AppStateUpdateHandler
     this.transportManager = transportManager;
     sessions = Collections.synchronizedList(new ArrayList<>());
     this.gaugeManager = gaugeManager;
-    this.sessionManager = transportManager.getSessionManager();
+    this.sessionManager = appStateMonitor.getSessionManager();
   }
 
   private Trace(@NonNull Parcel in, boolean isDataOnly) {
     super(isDataOnly ? null : AppStateMonitor.getInstance());
+    this.sessionManager = AppStateMonitor.getInstance().getSessionManager();
     parent = in.readParcelable(Trace.class.getClassLoader());
     name = in.readString();
     subtraces = new ArrayList<>();
@@ -207,7 +208,6 @@ public class Trace extends AppStateUpdateHandler
       clock = new Clock();
       gaugeManager = GaugeManager.getInstance();
     }
-    sessionManager = TransportManager.getInstance().getSessionManager();
   }
 
   /** Starts this trace. */
@@ -437,8 +437,7 @@ public class Trace extends AppStateUpdateHandler
       @NonNull String traceName,
       @NonNull TransportManager transportManager,
       @NonNull Clock clock,
-      @NonNull AppStateMonitor appStateMonitor,
-      @NonNull SessionManager sessionManager) {
+      @NonNull AppStateMonitor appStateMonitor) {
     Trace trace = traceNameToTraceMap.get(traceName);
     if (trace == null) {
       trace =
