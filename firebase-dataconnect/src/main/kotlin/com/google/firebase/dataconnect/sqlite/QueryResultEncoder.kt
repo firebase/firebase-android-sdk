@@ -16,12 +16,16 @@
 
 package com.google.firebase.dataconnect.sqlite
 
+import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.putSInt32
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.putSInt64
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.putUInt32
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.putUInt64
 import com.google.firebase.dataconnect.sqlite.QueryResultCodec.Entity
+import com.google.firebase.dataconnect.toPathString
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
+import com.google.firebase.dataconnect.withAddedField
+import com.google.firebase.dataconnect.withAddedListIndex
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
@@ -55,7 +59,7 @@ internal class QueryResultEncoder(
 
   fun encode(queryResult: Struct) {
     writer.writeFixed32Int(QueryResultCodec.QUERY_RESULT_MAGIC)
-    writeStruct(queryResult)
+    writeStruct(queryResult, path = mutableListOf())
   }
 
   fun flush() {
@@ -139,52 +143,59 @@ internal class QueryResultEncoder(
     }
   }
 
-  private fun writeList(listValue: ListValue) {
+  private fun writeList(listValue: ListValue, path: MutableList<DataConnectPathSegment>) {
     when (listValue.classifyContents()) {
-      ListValueContentsClassification.AllEntities -> writeListOfEntities(listValue)
-      ListValueContentsClassification.AllNonEntities -> writeListOfNonEntities(listValue)
+      ListValueContentsClassification.AllEntities -> writeListOfEntities(listValue, path)
+      ListValueContentsClassification.AllNonEntities,
+      ListValueContentsClassification.AllValuesAreEmptyLists ->
+        writeListOfNonEntities(listValue, path)
       ListValueContentsClassification.BothEntitiesAndNonEntities ->
         throw UnsupportedOperationException(
-          "lists containing both entities and non-entities is not supported; " +
-            "only lists containing exclusively entities or exclusively non-entities " +
-            "is supported [v48fwcfqp6]"
+          "list at ${path.toPathString()} contains both entities and non-entities, " +
+            "which is not supported; only lists containing exclusively entities " +
+            "or exclusively non-entities is supported [v48fwcfqp6]"
         )
     }
   }
 
-  private fun writeListOfEntities(listValue: ListValue) {
+  private fun writeListOfEntities(listValue: ListValue, path: MutableList<DataConnectPathSegment>) {
     writer.writeByte(QueryResultCodec.VALUE_LIST_OF_ENTITIES)
     writer.writeUInt32(listValue.valuesCount)
-    repeat(listValue.valuesCount) {
-      val value = listValue.getValues(it)
-      val nonEntityValue = writeEntityValue(value)
-      if (nonEntityValue !== null) {
-        throw IllegalStateException(
-          "internal error war94t239m: " +
-            "list value at index $it is not an entity (kindCase=${value.kindCase}), " +
-            "but expected it to be an entity, a list of entities, " +
-            "or a list of a list of entities (with any depth)"
-        )
+    repeat(listValue.valuesCount) { listIndex ->
+      path.withAddedListIndex(listIndex) {
+        val value = listValue.getValues(listIndex)
+        val nonEntityValue = writeEntityValue(value, path)
+        if (nonEntityValue !== null) {
+          throw IllegalStateException(
+            "internal error war94t239m: " +
+              "list at ${path.toPathString()} is not an entity (kind=${value.kindCase}), " +
+              "but expected it to be an entity, a list of entities, " +
+              "or a list of a list of entities (with any depth)"
+          )
+        }
       }
     }
   }
 
-  private fun writeListOfNonEntities(listValue: ListValue) {
+  private fun writeListOfNonEntities(
+    listValue: ListValue,
+    path: MutableList<DataConnectPathSegment>
+  ) {
     writer.writeByte(QueryResultCodec.VALUE_LIST_OF_NON_ENTITIES)
     writer.writeUInt32(listValue.valuesCount)
 
-    repeat(listValue.valuesCount) {
-      val value =
-        listValue.getValues(it).apply {
-          getEntityId().let { entityId ->
-            check(entityId === null) {
-              "internal error xv6cywynv8: " +
-                "list value at index $it is an entity with id=$entityId, " +
-                "but expected it to not be an entity"
-            }
+    repeat(listValue.valuesCount) { listIndex ->
+      path.withAddedListIndex(listIndex) {
+        val value = listValue.getValues(listIndex)
+        value.getEntityId().let { entityId ->
+          check(entityId === null) {
+            "internal error xv6cywynv8: " +
+              "list at ${path.toPathString()} is an entity with id=$entityId, " +
+              "but expected it to not be an entity"
           }
         }
-      writeValue(value)
+        writeValue(value, path)
+      }
     }
   }
 
@@ -217,11 +228,11 @@ internal class QueryResultEncoder(
   private fun Value.isEntity(): Boolean =
     kindCase == Value.KindCase.STRUCT_VALUE && structValue.isEntity()
 
-  private fun writeStruct(struct: Struct) {
+  private fun writeStruct(struct: Struct, path: MutableList<DataConnectPathSegment>) {
     val entityId = struct.getEntityId()
     if (entityId !== null) {
       writer.writeByte(QueryResultCodec.VALUE_ENTITY)
-      writeEntity(entityId, struct)
+      writeEntity(entityId, struct, path)
       return
     }
 
@@ -230,36 +241,43 @@ internal class QueryResultEncoder(
     writer.writeUInt32(map.size)
     map.entries.forEach { (key, value) ->
       writeString(key)
-      writeValue(value)
+      path.withAddedField(key) { writeValue(value, path) }
     }
   }
 
-  private fun writeValue(value: Value) {
+  private fun writeValue(value: Value, path: MutableList<DataConnectPathSegment>) {
     when (value.kindCase) {
       Value.KindCase.NULL_VALUE -> writer.writeByte(QueryResultCodec.VALUE_NULL)
       Value.KindCase.NUMBER_VALUE -> writeDouble(value.numberValue)
       Value.KindCase.BOOL_VALUE -> writeBoolean(value.boolValue)
       Value.KindCase.STRING_VALUE -> writeString(value.stringValue)
-      Value.KindCase.STRUCT_VALUE -> writeStruct(value.structValue)
-      Value.KindCase.LIST_VALUE -> writeList(value.listValue)
+      Value.KindCase.STRUCT_VALUE -> writeStruct(value.structValue, path)
+      Value.KindCase.LIST_VALUE -> writeList(value.listValue, path)
       Value.KindCase.KIND_NOT_SET -> writer.writeByte(QueryResultCodec.VALUE_KIND_NOT_SET)
     }
   }
 
-  private fun writeEntity(entityId: String, entity: Struct) {
+  private fun writeEntity(
+    entityId: String,
+    entity: Struct,
+    path: MutableList<DataConnectPathSegment>
+  ) {
     val encodedEntityId = sha512DigestCalculator.calculate(entityId)
     writer.writeUInt32(encodedEntityId.size)
     writer.write(ByteBuffer.wrap(encodedEntityId))
-    val struct = writeEntitySubStruct(entity)
+    val struct = writeEntitySubStruct(entity, path)
     entities.add(Entity(entityId, encodedEntityId, struct))
   }
 
-  private fun writeEntitySubStruct(struct: Struct): Struct {
+  private fun writeEntitySubStruct(
+    struct: Struct,
+    path: MutableList<DataConnectPathSegment>
+  ): Struct {
     writer.writeUInt32(struct.fieldsCount)
     val structBuilder = Struct.newBuilder()
     struct.fieldsMap.entries.forEach { (key, value) ->
       writeString(key)
-      val entityValue = writeEntityValue(value)
+      val entityValue: Value? = path.withAddedField(key) { writeEntityValue(value, path) }
       if (entityValue !== null) {
         structBuilder.putFields(key, entityValue)
       }
@@ -267,56 +285,65 @@ internal class QueryResultEncoder(
     return structBuilder.build()
   }
 
-  private fun writeEntitySubList(listValue: ListValue): ListValue? =
+  private fun writeEntitySubList(
+    listValue: ListValue,
+    path: MutableList<DataConnectPathSegment>
+  ): ListValue? =
     when (listValue.classifyContents()) {
-      ListValueContentsClassification.AllEntities -> {
-        writeListOfEntities(listValue)
+      ListValueContentsClassification.AllEntities,
+      ListValueContentsClassification.AllValuesAreEmptyLists -> {
+        writeListOfEntities(listValue, path)
         null
       }
       ListValueContentsClassification.AllNonEntities -> {
-        writeEntitySubListOfAllNonEntities(listValue)
+        writeEntitySubListOfAllNonEntities(listValue, path)
       }
       ListValueContentsClassification.BothEntitiesAndNonEntities ->
         throw UnsupportedOperationException(
-          "entity sub-lists containing both entities and non-entities is not supported; " +
-            "only entity sub-lists containing exclusively entities or exclusively non-entities " +
-            "is supported [pvae6pzg2a]"
+          "entity sub-list at ${path.toPathString()} contains both entities and non-entities, " +
+            "which is not supported; only entity sub-lists containing exclusively entities " +
+            "or exclusively non-entities is supported [pvae6pzg2a]"
         )
     }
 
-  private fun writeEntitySubListOfAllNonEntities(listValue: ListValue): ListValue {
+  private fun writeEntitySubListOfAllNonEntities(
+    listValue: ListValue,
+    path: MutableList<DataConnectPathSegment>
+  ): ListValue {
     writer.writeByte(QueryResultCodec.VALUE_LIST_OF_NON_ENTITIES)
     writer.writeUInt32(listValue.valuesCount)
 
     val listValueBuilder = ListValue.newBuilder()
     listValue.valuesList.forEachIndexed { index, value ->
-      val nonEntityValue = writeEntityValue(value)
-      checkNotNull(nonEntityValue) {
-        "internal error gj26tyh2bj: " +
-          "list value at index $index is an entity with id=${value.getEntityId()}, " +
-          "but expected it to not be an entity"
+      path.withAddedListIndex(index) {
+        val nonEntityValue = writeEntityValue(value, path)
+        checkNotNull(nonEntityValue) {
+          "internal error gj26tyh2bj: " +
+            "list at ${path.toPathString()} is an entity with id=${value.getEntityId()}, " +
+            "but expected it to not be an entity"
+        }
+        listValueBuilder.addValues(nonEntityValue)
       }
-      listValueBuilder.addValues(nonEntityValue)
     }
 
     return listValueBuilder.build()
   }
 
-  private fun writeEntityValue(value: Value): Value? =
+  private fun writeEntityValue(value: Value, path: MutableList<DataConnectPathSegment>): Value? =
     when (value.kindCase) {
       Value.KindCase.STRUCT_VALUE -> {
         val subStructEntityId = value.structValue.getEntityId()
         if (subStructEntityId !== null) {
           writer.writeByte(QueryResultCodec.VALUE_ENTITY)
-          writeEntity(subStructEntityId, value.structValue)
+          writeEntity(subStructEntityId, value.structValue, path)
           null
         } else {
           writer.writeByte(QueryResultCodec.VALUE_STRUCT)
-          writeEntitySubStruct(value.structValue).toValueProto()
+          writeEntitySubStruct(value.structValue, path).toValueProto()
         }
       }
       Value.KindCase.LIST_VALUE -> {
-        writeEntitySubList(value.listValue)?.toValueProto()
+        writeEntitySubList(value.listValue, path)?.toValueProto()
       }
       else -> {
         writer.writeByte(QueryResultCodec.VALUE_KIND_NOT_SET)
@@ -399,6 +426,7 @@ internal class QueryResultEncoder(
   }
 
   private enum class ListValueContentsClassification {
+    AllValuesAreEmptyLists,
     AllEntities,
     AllNonEntities,
     BothEntitiesAndNonEntities,
@@ -430,8 +458,10 @@ internal class QueryResultEncoder(
       ListValueContentsClassification.BothEntitiesAndNonEntities
     } else if (containsEntities) {
       ListValueContentsClassification.AllEntities
-    } else {
+    } else if (containsNonEntities) {
       ListValueContentsClassification.AllNonEntities
+    } else {
+      ListValueContentsClassification.AllValuesAreEmptyLists
     }
   }
 
@@ -650,7 +680,7 @@ private class QueryResultChannelWriter(private val channel: WritableByteChannel)
 
   private fun ensureRemaining(minRemaining: Int) {
     require(minRemaining <= byteBuffer.capacity()) {
-      "minRemaining=$minRemaining must be less than or equal to " +
+      "internal error hr3gyzbfh7: minRemaining=$minRemaining must be less than or equal to " +
         "byteBuffer.capacity()=${byteBuffer.capacity()}"
     }
 
@@ -658,7 +688,9 @@ private class QueryResultChannelWriter(private val channel: WritableByteChannel)
       val byteWriteCount = flushOnce()
       if (byteWriteCount < 1) {
         throw NoBytesWrittenException(
-          "no bytes were written despite ${byteBuffer.position()} byte available for writing"
+          "internal error wkh35rfq9e: byteWriteCount=$byteWriteCount " +
+            "despite ${byteBuffer.position()} bytes being available for writing" +
+            "(expected byteWriteCount to be greater than or equal to 1)"
         )
       }
     }
