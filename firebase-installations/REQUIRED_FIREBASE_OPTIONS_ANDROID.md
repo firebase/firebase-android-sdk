@@ -63,7 +63,7 @@ soon as possible:**
      [Download your `google-services.json` config file](https://support.google.com/firebase/answer/7015592)
      from the Firebase console to find your API key, Project ID, and Application ID, then update
      these values in the `FirebaseOptions` object in your app.
-1. Release a new version of your app to the Play Store.
+2. Release a new version of your app to the Play Store.
 
 ## FCM Server keys
 
