@@ -19,6 +19,7 @@ package com.google.firebase.dataconnect.core
 import com.google.firebase.dataconnect.DataConnectOperationFailureResponse
 import com.google.firebase.dataconnect.DataConnectOperationFailureResponse.ErrorInfo
 import com.google.firebase.dataconnect.DataConnectPathSegment
+import com.google.firebase.dataconnect.appendPathStringTo
 import java.util.Objects
 
 internal class DataConnectOperationFailureResponseImpl<Data>(
@@ -41,24 +42,10 @@ internal class DataConnectOperationFailureResponseImpl<Data>(
     override fun hashCode(): Int = Objects.hash("ErrorInfoImpl", message, path)
 
     override fun toString(): String = buildString {
-      path.forEachIndexed { segmentIndex, segment ->
-        when (segment) {
-          is DataConnectPathSegment.Field -> {
-            if (segmentIndex != 0) {
-              append('.')
-            }
-            append(segment.field)
-          }
-          is DataConnectPathSegment.ListIndex -> {
-            append('[').append(segment.index).append(']')
-          }
-        }
-      }
-
       if (path.isNotEmpty()) {
+        path.appendPathStringTo(this)
         append(": ")
       }
-
       append(message)
     }
   }
