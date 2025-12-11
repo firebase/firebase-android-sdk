@@ -117,7 +117,7 @@ fun beEqualTo(other: Struct?): Matcher<Struct?> = neverNullMatcher { value ->
       structFastEqual(value, other),
       {
         "${value.print().value} should be equal to ${other.print().value}, " +
-          "but found ${structDiff(value, other)}"
+          "but found ${structDiff(value, other).toSummaryString()}"
       },
       { "${value.print().value} should not be equal to ${other.print().value}" }
     )
@@ -140,7 +140,7 @@ fun beEqualTo(other: Value?): Matcher<Value?> = neverNullMatcher { value ->
       valueFastEqual(value, other),
       {
         "${value.print().value} should be equal to ${other.print().value}, " +
-          "but found ${valueDiff(value, other)}"
+          "but found ${valueDiff(value, other).toSummaryString()}"
       },
       { "${value.print().value} should not be equal to ${other.print().value}" }
     )

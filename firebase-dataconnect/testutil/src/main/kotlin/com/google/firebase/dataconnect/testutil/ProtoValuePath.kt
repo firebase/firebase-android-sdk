@@ -53,6 +53,27 @@ fun ProtoValuePath.withAppendedComponent(component: ProtoValuePathComponent): Pr
     add(component)
   }
 
+fun <T> MutableProtoValuePath.withAppendedListIndex(index: Int, block: () -> T): T =
+  withAppendedComponent(ProtoValuePathComponent.ListIndex(index), block)
+
+fun <T> MutableProtoValuePath.withAppendedStructKey(key: String, block: () -> T): T =
+  withAppendedComponent(ProtoValuePathComponent.StructKey(key), block)
+
+fun <T> MutableProtoValuePath.withAppendedComponent(
+  component: ProtoValuePathComponent,
+  block: () -> T
+): T {
+  val originalSize = size
+  add(component)
+  try {
+    return block()
+  } finally {
+    val removedComponent = removeLastOrNull()
+    check(removedComponent === component)
+    check(size == originalSize)
+  }
+}
+
 @OptIn(ExperimentalContracts::class)
 fun ProtoValuePathComponent?.isStructKey(): Boolean {
   contract { returns(true) implies (this@isStructKey is ProtoValuePathComponent.StructKey) }

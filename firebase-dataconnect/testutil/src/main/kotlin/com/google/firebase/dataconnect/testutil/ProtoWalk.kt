@@ -39,10 +39,10 @@ fun Value.walkValues(includeSelf: Boolean = true): Sequence<Value> =
 
 private fun valueWalk(value: Value, includeSelf: Boolean) = sequence {
   val rootProtoValuePathPair = ProtoValuePathPair(emptyList(), value)
-  val queue = mutableListOf<ProtoValuePathPair>()
+  val queue = ArrayDeque<ProtoValuePathPair>()
   queue.add(rootProtoValuePathPair)
 
-  while (!queue.isEmpty()) {
+  while (queue.isNotEmpty()) {
     val protoValuePathPair = queue.removeFirst()
     val (path, value) = protoValuePathPair
 
