@@ -53,7 +53,8 @@ private constructor(
      * depends on the model.
      */
     public fun setThinkingBudget(thinkingBudget: Int): Builder = apply {
-      assert(thinkingLevel == null) { "Cannot set both `thinkingBudget` and `thinkingLevel`" }
+      if (thinkingLevel != null)
+        throw IllegalArgumentException("Cannot set both `thinkingBudget` and `thinkingLevel`")
       this.thinkingBudget = thinkingBudget
     }
 
@@ -71,7 +72,8 @@ private constructor(
 
     /** Indicates the thinking budget based in Levels. */
     public fun setThinkingLevel(thinkingLevel: ThinkingLevel): Builder = apply {
-      assert(thinkingBudget == null) { "Cannot set both `thinkingBudget` and `thinkingLevel`" }
+      if (thinkingBudget != null)
+        throw IllegalArgumentException("Cannot set both `thinkingBudget` and `thinkingLevel`")
       this.thinkingLevel = thinkingLevel
     }
 
