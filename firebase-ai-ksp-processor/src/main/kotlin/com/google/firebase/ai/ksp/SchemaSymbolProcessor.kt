@@ -50,16 +50,13 @@ public class SchemaSymbolProcessor(
     resolver
       .getSymbolsWithAnnotation("com.google.firebase.ai.annotations.Generable")
       .filterIsInstance<KSClassDeclaration>()
-      .map { it to SchemaSymbolProcessorVisitor(it, resolver) }
-      .forEach { it.second.visitClassDeclaration(it.first, Unit) }
+      .map { it to SchemaSymbolProcessorVisitor() }
+      .forEach { (klass, visitor) -> visitor.visitClassDeclaration(klass, Unit) }
 
     return emptyList()
   }
 
-  private inner class SchemaSymbolProcessorVisitor(
-    private val klass: KSClassDeclaration,
-    private val resolver: Resolver,
-  ) : KSVisitorVoid() {
+  private inner class SchemaSymbolProcessorVisitor() : KSVisitorVoid() {
     private val numberTypes = setOf("kotlin.Int", "kotlin.Long", "kotlin.Double", "kotlin.Float")
     private val baseKdocRegex = Regex("^\\s*(.*?)((@\\w* .*)|\\z)", RegexOption.DOT_MATCHES_ALL)
     private val propertyKdocRegex =
@@ -228,7 +225,8 @@ public class SchemaSymbolProcessor(
       }
       if ((minimum != null || maximum != null) && !numberTypes.contains(className.canonicalName)) {
         logger.warn(
-          "${parentType?.toClassName()?.simpleName?.let { "$it." }}$name is not a number type, minimum and maximum are not valid parameters to specify in @Guide"
+          "${parentType?.toClassName()?.simpleName?.let { "$it." }}$name is not a number type, " +
+            "minimum and maximum are not valid parameters to specify in @Guide"
         )
       }
       if (
@@ -236,7 +234,8 @@ public class SchemaSymbolProcessor(
           className.canonicalName != "kotlin.collections.List"
       ) {
         logger.warn(
-          "${parentType?.toClassName()?.simpleName?.let { "$it." }}$name is not a List type, minItems and maxItems are not valid parameters to specify in @Guide"
+          "${parentType?.toClassName()?.simpleName?.let { "$it." }}$name is not a List type, " +
+            "minItems and maxItems are not valid parameters to specify in @Guide"
         )
       }
       if ((format != null || pattern != null) && className.canonicalName != "kotlin.String") {
