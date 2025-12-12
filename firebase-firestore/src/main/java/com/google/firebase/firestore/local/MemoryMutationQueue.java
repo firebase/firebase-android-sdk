@@ -28,7 +28,6 @@ import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.firebase.firestore.remote.WriteStream;
-import com.google.firebase.firestore.util.Util;
 import com.google.protobuf.ByteString;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -216,7 +215,7 @@ final class MemoryMutationQueue implements MutationQueue {
   public List<MutationBatch> getAllMutationBatchesAffectingDocumentKeys(
       Iterable<DocumentKey> documentKeys) {
     ImmutableSortedSet<Integer> uniqueBatchIDs =
-        new ImmutableSortedSet<Integer>(emptyList(), Util.comparator());
+        new ImmutableSortedSet<Integer>(emptyList(), Comparable::compareTo);
 
     for (DocumentKey key : documentKeys) {
       DocumentReference start = new DocumentReference(key, 0);
@@ -255,7 +254,7 @@ final class MemoryMutationQueue implements MutationQueue {
 
     // Find unique batchIDs referenced by all documents potentially matching the query.
     ImmutableSortedSet<Integer> uniqueBatchIDs =
-        new ImmutableSortedSet<Integer>(emptyList(), Util.comparator());
+        new ImmutableSortedSet<Integer>(emptyList(), Comparable::compareTo);
 
     Iterator<DocumentReference> iterator = batchesByDocumentKey.iteratorFrom(start);
     while (iterator.hasNext()) {

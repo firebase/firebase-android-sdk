@@ -22,7 +22,7 @@ import android.util.SparseArray;
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedSet;
-import com.google.firebase.firestore.core.Target;
+import com.google.firebase.firestore.core.TargetOrPipeline;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.util.Consumer;
@@ -96,7 +96,7 @@ final class SQLiteTargetCache implements TargetCache {
 
   private void saveTargetData(TargetData targetData) {
     int targetId = targetData.getTargetId();
-    String canonicalId = targetData.getTarget().getCanonicalId();
+    String canonicalId = targetData.getTarget().canonicalId();
     Timestamp version = targetData.getSnapshotVersion().getTimestamp();
 
     com.google.firebase.firestore.proto.Target targetProto =
@@ -207,11 +207,11 @@ final class SQLiteTargetCache implements TargetCache {
 
   @Nullable
   @Override
-  public TargetData getTargetData(Target target) {
+  public TargetData getTargetData(TargetOrPipeline target) {
     // Querying the targets table by canonical_id may yield more than one result because
     // canonical_id values are not required to be unique per target. This query depends on the
     // query_targets index to be efficient.
-    String canonicalId = target.getCanonicalId();
+    String canonicalId = target.canonicalId();
     TargetDataHolder result = new TargetDataHolder();
     db.query("SELECT target_proto FROM targets WHERE canonical_id = ?")
         .binding(canonicalId)

@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore;
 
+import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.firestore.testutil.TestUtil.blob;
 import static com.google.firebase.firestore.testutil.TestUtil.field;
 import static com.google.firebase.firestore.testutil.TestUtil.map;
@@ -264,7 +265,7 @@ public class UserDataWriterTest {
     ArrayValue.Builder expectedArray =
         ArrayValue.newBuilder().addValues(wrap("value")).addValues(wrap(true));
     Value actual = wrap(asList("value", true));
-    assertTrue(Values.equals(Value.newBuilder().setArrayValue(expectedArray).build(), actual));
+    assertThat(actual).isEqualTo(Value.newBuilder().setArrayValue(expectedArray).build());
   }
 
   @Test

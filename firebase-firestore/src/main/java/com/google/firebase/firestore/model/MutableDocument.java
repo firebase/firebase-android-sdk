@@ -63,6 +63,7 @@ public final class MutableDocument implements Document {
   private DocumentType documentType;
   private SnapshotVersion version;
   private SnapshotVersion readTime;
+  private SnapshotVersion createTime;
   private ObjectValue value;
   private DocumentState documentState;
 
@@ -171,6 +172,11 @@ public final class MutableDocument implements Document {
   @Override
   public DocumentKey getKey() {
     return key;
+  }
+
+  @Override
+  public SnapshotVersion getCreateTime() {
+    return createTime;
   }
 
   @Override

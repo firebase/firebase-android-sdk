@@ -18,7 +18,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
-import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.core.QueryOrPipeline;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
@@ -81,7 +81,7 @@ class CountingQueryEngine extends QueryEngine {
 
   @Override
   public ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
-      Query query,
+      QueryOrPipeline query,
       SnapshotVersion lastLimboFreeSnapshotVersion,
       ImmutableSortedSet<DocumentKey> remoteKeys) {
     return queryEngine.getDocumentsMatchingQuery(query, lastLimboFreeSnapshotVersion, remoteKeys);
@@ -185,13 +185,13 @@ class CountingQueryEngine extends QueryEngine {
 
       @Override
       public Map<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
-          Query query, IndexOffset offset, @NonNull Set<DocumentKey> mutatedKeys) {
+          QueryOrPipeline query, IndexOffset offset, @NonNull Set<DocumentKey> mutatedKeys) {
         return getDocumentsMatchingQuery(query, offset, mutatedKeys, /*context*/ null);
       }
 
       @Override
       public Map<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
-          Query query,
+          QueryOrPipeline query,
           IndexOffset offset,
           @NonNull Set<DocumentKey> mutatedKeys,
           @Nullable QueryContext context) {

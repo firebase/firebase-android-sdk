@@ -24,6 +24,7 @@ import static com.google.firebase.firestore.Filter.inArray;
 import static com.google.firebase.firestore.Filter.or;
 import static com.google.firebase.firestore.remote.TestingHooksUtil.captureExistenceFilterMismatches;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.checkOnlineAndOfflineResultsMatch;
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.getBackendEdition;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.isRunningAgainstEmulator;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.nullList;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.querySnapshotToIds;
@@ -41,6 +42,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeFalse;
+import static org.junit.Assume.assumeTrue;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
@@ -679,10 +681,19 @@ public class QueryTest {
     QuerySnapshot snapshot = waitFor(collection.whereArrayContains("array", 42L).get());
     assertEquals(asList(docA, docB, docD), querySnapshotToValues(snapshot));
 
-    // Note: whereArrayContains() requires a non-null value parameter, so no null test is needed.
-    // With NaN.
-    snapshot = waitFor(collection.whereArrayContains("array", Double.NaN).get());
-    assertEquals(new ArrayList<>(), querySnapshotToValues(snapshot));
+    switch (getBackendEdition()) {
+      case STANDARD:
+        // Note: whereArrayContains() requires a non-null value parameter, so no null test is
+        // needed.
+        // With NaN.
+        snapshot = waitFor(collection.whereArrayContains("array", Double.NaN).get());
+        assertEquals(new ArrayList<>(), querySnapshotToValues(snapshot));
+        break;
+      case ENTERPRISE:
+        // Enterprise will allow comparison with NaN
+        snapshot = waitFor(collection.whereArrayContains("array", Double.NaN).get());
+        assertEquals(asList(docF), querySnapshotToValues(snapshot));
+    }
   }
 
   @Test
@@ -714,21 +725,46 @@ public class QueryTest {
 
     // With null.
     snapshot = waitFor(collection.whereIn("zip", nullList()).get());
-    assertEquals(new ArrayList<>(), querySnapshotToValues(snapshot));
+    switch (getBackendEdition()) {
+      case STANDARD:
+        assertEquals(asList(), querySnapshotToValues(snapshot));
+        break;
+      case ENTERPRISE:
+        // Enterprise will allow comparison with NaN
+        assertEquals(asList(docH), querySnapshotToValues(snapshot));
+    }
 
     // With null and a value.
     List<Object> inputList = nullList();
     inputList.add(98101L);
     snapshot = waitFor(collection.whereIn("zip", inputList).get());
-    assertEquals(asList(docA), querySnapshotToValues(snapshot));
+    switch (getBackendEdition()) {
+      case STANDARD:
+        assertEquals(asList(docA), querySnapshotToValues(snapshot));
+        break;
+      case ENTERPRISE:
+        assertEquals(asList(docA, docH), querySnapshotToValues(snapshot));
+    }
 
     // With NaN.
     snapshot = waitFor(collection.whereIn("zip", asList(Double.NaN)).get());
-    assertEquals(new ArrayList<>(), querySnapshotToValues(snapshot));
+    switch (getBackendEdition()) {
+      case STANDARD:
+        assertEquals(new ArrayList<>(), querySnapshotToValues(snapshot));
+        break;
+      case ENTERPRISE:
+        assertEquals(asList(docI), querySnapshotToValues(snapshot));
+    }
 
     // With NaN and a value.
     snapshot = waitFor(collection.whereIn("zip", asList(Double.NaN, 98101L)).get());
-    assertEquals(asList(docA), querySnapshotToValues(snapshot));
+    switch (getBackendEdition()) {
+      case STANDARD:
+        assertEquals(asList(docA), querySnapshotToValues(snapshot));
+        break;
+      case ENTERPRISE:
+        assertEquals(asList(docA, docI), querySnapshotToValues(snapshot));
+    }
   }
 
   @Test
@@ -832,6 +868,10 @@ public class QueryTest {
 
   @Test
   public void testQueriesCanUseArrayContainsAnyFilters() {
+    assumeTrue(
+        "Only standard allows running arrayContainsAny on non-array fields",
+        getBackendEdition() == IntegrationTestUtil.BackendEdition.STANDARD);
+
     Map<String, Object> docA = map("array", asList(42L));
     Map<String, Object> docB = map("array", asList("a", 42L, "c"));
     Map<String, Object> docC = map("array", asList(41.999, "42", map("a", asList(42))));

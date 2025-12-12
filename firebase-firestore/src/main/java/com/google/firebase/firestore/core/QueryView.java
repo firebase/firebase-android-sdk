@@ -19,17 +19,17 @@ package com.google.firebase.firestore.core;
  * view.
  */
 final class QueryView {
-  private final Query query;
+  private final QueryOrPipeline query;
   private final int targetId;
   private final View view;
 
-  QueryView(Query query, int targetId, View view) {
+  QueryView(QueryOrPipeline query, int targetId, View view) {
     this.query = query;
     this.targetId = targetId;
     this.view = view;
   }
 
-  public Query getQuery() {
+  public QueryOrPipeline getQuery() {
     return query;
   }
 

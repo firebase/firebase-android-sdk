@@ -25,6 +25,7 @@ import static com.google.firebase.firestore.Filter.notEqualTo;
 import static com.google.firebase.firestore.Filter.notInArray;
 import static com.google.firebase.firestore.Filter.or;
 import static com.google.firebase.firestore.testutil.CompositeIndexTestHelper.COMPOSITE_INDEX_TEST_COLLECTION;
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.getBackendEdition;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.nullList;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testFirestore;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
@@ -36,6 +37,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeTrue;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.firebase.firestore.Query.Direction;
@@ -199,6 +201,10 @@ public class CompositeIndexQueryTest {
 
   @Test
   public void testPerformsAggregationWhenUsingArrayContainsAnyOperator() {
+    assumeTrue(
+        "Standard-only behavior",
+        getBackendEdition() == IntegrationTestUtil.BackendEdition.STANDARD);
+
     CompositeIndexTestHelper testHelper = new CompositeIndexTestHelper();
 
     Map<String, Map<String, Object>> testDocs =
@@ -821,6 +827,10 @@ public class CompositeIndexQueryTest {
 
   @Test
   public void testMultipleInequalityRejectsIfDocumentKeyAppearsOnlyInEqualityFilter() {
+    assumeTrue(
+        "Standard-only behavior",
+        getBackendEdition() == IntegrationTestUtil.BackendEdition.STANDARD);
+
     CompositeIndexTestHelper testHelper = new CompositeIndexTestHelper();
 
     CollectionReference collection = testHelper.withTestCollection();

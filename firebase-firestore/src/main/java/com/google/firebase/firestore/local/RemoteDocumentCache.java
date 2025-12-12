@@ -14,7 +14,7 @@
 
 package com.google.firebase.firestore.local;
 
-import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.core.QueryOrPipeline;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
 import com.google.firebase.firestore.model.MutableDocument;
@@ -89,7 +89,7 @@ interface RemoteDocumentCache {
    * @return A newly created map with the set of documents in the collection.
    */
   Map<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
-      Query query, IndexOffset offset, @Nonnull Set<DocumentKey> mutatedKeys);
+      QueryOrPipeline query, IndexOffset offset, @Nonnull Set<DocumentKey> mutatedKeys);
 
   /**
    * Returns the documents that match the given query.
@@ -103,7 +103,7 @@ interface RemoteDocumentCache {
    * @return A newly created map with the set of documents in the collection.
    */
   Map<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
-      Query query,
+      QueryOrPipeline query,
       IndexOffset offset,
       @Nonnull Set<DocumentKey> mutatedKeys,
       @Nullable QueryContext context);
