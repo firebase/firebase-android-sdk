@@ -120,6 +120,11 @@ package com.google.firebase.ai.annotations {
     property public abstract String pattern;
   }
 
+  @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.SOURCE) @kotlin.annotation.Target(allowedTargets=kotlin.annotation.AnnotationTarget.FUNCTION) public @interface Tool {
+    method public abstract String description() default "";
+    property public abstract String description;
+  }
+
 }
 
 package com.google.firebase.ai.java {
