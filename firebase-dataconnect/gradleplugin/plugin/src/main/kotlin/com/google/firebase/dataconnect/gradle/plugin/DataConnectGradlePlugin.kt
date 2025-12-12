@@ -111,6 +111,7 @@ abstract class DataConnectGradlePlugin : Plugin<Project> {
             )
           )
           operatingSystem.set(dataConnectProviders.operatingSystem)
+          cpuArchitecture.set(dataConnectProviders.cpuArchitecture)
           outputFile.set(
             dataConnectExecutable.map {
               when (it) {
