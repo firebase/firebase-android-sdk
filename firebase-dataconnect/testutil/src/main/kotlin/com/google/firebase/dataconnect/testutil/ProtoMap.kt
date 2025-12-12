@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Google LLC
+ * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -62,24 +62,22 @@ private fun <V : Value?> mapRecursive(
   val processedValue: Value =
     if (value.isStructValue) {
       Struct.newBuilder().let { structBuilder ->
-        value.structValue.fieldsMap.entries.forEach { (key, value) ->
-          path.add(ProtoValuePathComponent.StructKey(key))
-          val mappedValue = mapRecursive(value, path, callback)
-          path.removeLast()
-          if (mappedValue !== null) {
-            structBuilder.putFields(key, mappedValue)
+        value.structValue.fieldsMap.entries.forEach { (key, childValue) ->
+          val mappedChildValue =
+            path.withAppendedStructKey(key) { mapRecursive(childValue, path, callback) }
+          if (mappedChildValue !== null) {
+            structBuilder.putFields(key, mappedChildValue)
           }
         }
         structBuilder.build().toValueProto()
       }
     } else if (value.isListValue) {
       ListValue.newBuilder().let { listValueBuilder ->
-        value.listValue.valuesList.forEachIndexed { index, value ->
-          path.add(ProtoValuePathComponent.ListIndex(index))
-          val mappedValue = mapRecursive(value, path, callback)
-          path.removeLast()
-          if (mappedValue !== null) {
-            listValueBuilder.addValues(mappedValue)
+        value.listValue.valuesList.forEachIndexed { index, childValue ->
+          val mappedChildValue =
+            path.withAppendedListIndex(index) { mapRecursive(childValue, path, callback) }
+          if (mappedChildValue !== null) {
+            listValueBuilder.addValues(mappedChildValue)
           }
         }
         listValueBuilder.build().toValueProto()

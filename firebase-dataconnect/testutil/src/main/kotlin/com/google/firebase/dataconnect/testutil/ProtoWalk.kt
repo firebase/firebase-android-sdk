@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Google LLC
+ * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,10 +48,10 @@ fun Value.walkPaths(includeSelf: Boolean = true): Sequence<ProtoValuePath> =
 
 private fun valueWalk(value: Value, includeSelf: Boolean) = sequence {
   val rootProtoValuePathPair = ProtoValuePathPair(emptyList(), value)
-  val queue = mutableListOf<ProtoValuePathPair>()
+  val queue = ArrayDeque<ProtoValuePathPair>()
   queue.add(rootProtoValuePathPair)
 
-  while (!queue.isEmpty()) {
+  while (queue.isNotEmpty()) {
     val protoValuePathPair = queue.removeFirst()
     val (path, value) = protoValuePathPair
 

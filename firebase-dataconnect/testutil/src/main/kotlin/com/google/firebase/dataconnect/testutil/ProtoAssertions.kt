@@ -123,7 +123,7 @@ fun beEqualTo(
       structFastEqual(value, other),
       {
         "${structPrinter(value)} should be equal to ${structPrinter(other)}, " +
-          "but found ${structDiff(value, other)}"
+          "but found ${structDiff(value, other).toSummaryString()}"
       },
       { "${structPrinter(value)} should not be equal to ${structPrinter(other)}" }
     )
@@ -149,7 +149,7 @@ fun beEqualTo(
       valueFastEqual(value, other),
       {
         "${valuePrinter(value)} should be equal to ${valuePrinter(other)}, " +
-          "but found ${valueDiff(value, other)}"
+          "but found ${valueDiff(value, other).toSummaryString()}"
       },
       { "${valuePrinter(value)} should not be equal to ${valuePrinter(other)}" }
     )
