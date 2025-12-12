@@ -17,6 +17,7 @@
 package com.google.firebase.dataconnect.sqlite
 
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
+import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
 import com.google.protobuf.Struct
 import java.util.Objects
 
@@ -38,7 +39,7 @@ internal object QueryResultCodec {
         other.data == data
 
     override fun toString(): String =
-      "Entity{id=$id, encodedId=${encodedId.contentToString()}, data=${data.toCompactString()}}"
+      "Entity(id=$id, encodedId=${encodedId.to0xHexString()}, data=${data.toCompactString()})"
   }
 
   // The magic string is chosen such that it fails to parse by any UTF8 decoder that strictly
