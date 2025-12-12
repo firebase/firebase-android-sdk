@@ -144,17 +144,10 @@ internal class QueryResultEncoder(
   }
 
   private fun writeList(listValue: ListValue, path: MutableList<DataConnectPathSegment>) {
-    when (listValue.classifyContents()) {
-      ListValueContentsClassification.AllEntities -> writeListOfEntities(listValue, path)
-      ListValueContentsClassification.AllNonEntities,
-      ListValueContentsClassification.AllValuesAreEmptyLists ->
-        writeListOfNonEntities(listValue, path)
-      ListValueContentsClassification.BothEntitiesAndNonEntities ->
-        throw UnsupportedOperationException(
-          "list at ${path.toPathString()} contains both entities and non-entities, " +
-            "which is not supported; only lists containing exclusively entities " +
-            "or exclusively non-entities is supported [v48fwcfqp6]"
-        )
+    writer.writeByte(QueryResultCodec.VALUE_LIST)
+    writer.writeUInt32(listValue.valuesCount)
+    listValue.valuesList.forEachIndexed { listIndex, childValue ->
+      path.withAddedListIndex(listIndex) { writeValue(childValue, path) }
     }
   }
 
@@ -173,28 +166,6 @@ internal class QueryResultEncoder(
               "or a list of a list of entities (with any depth)"
           )
         }
-      }
-    }
-  }
-
-  private fun writeListOfNonEntities(
-    listValue: ListValue,
-    path: MutableList<DataConnectPathSegment>
-  ) {
-    writer.writeByte(QueryResultCodec.VALUE_LIST_OF_NON_ENTITIES)
-    writer.writeUInt32(listValue.valuesCount)
-
-    repeat(listValue.valuesCount) { listIndex ->
-      path.withAddedListIndex(listIndex) {
-        val value = listValue.getValues(listIndex)
-        value.getEntityId().let { entityId ->
-          check(entityId === null) {
-            "internal error xv6cywynv8: " +
-              "list at ${path.toPathString()} is an entity with id=$entityId, " +
-              "but expected it to not be an entity"
-          }
-        }
-        writeValue(value, path)
       }
     }
   }
@@ -290,12 +261,12 @@ internal class QueryResultEncoder(
     path: MutableList<DataConnectPathSegment>
   ): ListValue? =
     when (listValue.classifyContents()) {
-      ListValueContentsClassification.AllEntities,
-      ListValueContentsClassification.AllValuesAreEmptyLists -> {
+      ListValueContentsClassification.AllEntities -> {
         writeListOfEntities(listValue, path)
         null
       }
-      ListValueContentsClassification.AllNonEntities -> {
+      ListValueContentsClassification.AllNonEntities,
+      ListValueContentsClassification.AllValuesAreEmptyLists -> {
         writeEntitySubListOfAllNonEntities(listValue, path)
       }
       ListValueContentsClassification.BothEntitiesAndNonEntities ->
@@ -310,7 +281,7 @@ internal class QueryResultEncoder(
     listValue: ListValue,
     path: MutableList<DataConnectPathSegment>
   ): ListValue {
-    writer.writeByte(QueryResultCodec.VALUE_LIST_OF_NON_ENTITIES)
+    writer.writeByte(QueryResultCodec.VALUE_LIST)
     writer.writeUInt32(listValue.valuesCount)
 
     val listValueBuilder = ListValue.newBuilder()

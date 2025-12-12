@@ -759,7 +759,7 @@ class QueryResultDecoderUnitTest {
     checkAll(propTestConfig, MalformedVarintByteArrayArb(5..10)) { invalidListSize ->
       val invalidListSizeByteArray = invalidListSize.byteArrayCopy()
       val byteArray = makeByteArrayEndingWithValue {
-        put(QueryResultCodec.VALUE_LIST_OF_NON_ENTITIES)
+        put(QueryResultCodec.VALUE_LIST)
         put(invalidListSizeByteArray)
       }
       assertDecodeThrowsUInt32DecodeException(
@@ -775,7 +775,7 @@ class QueryResultDecoderUnitTest {
     checkAll(propTestConfig, Arb.truncatedVarint32ByteArray()) { truncatedListSize ->
       val truncatedListSizeByteArray = truncatedListSize.byteArrayCopy()
       val byteArray = makeByteArrayEndingWithValue {
-        put(QueryResultCodec.VALUE_LIST_OF_NON_ENTITIES)
+        put(QueryResultCodec.VALUE_LIST)
         put(truncatedListSizeByteArray)
       }
       assertDecodeThrowsUInt32EOFException(
@@ -1235,11 +1235,7 @@ class QueryResultDecoderUnitTest {
       val BOOL_TRUE = ValueTypeIndicatorByte(QueryResultCodec.VALUE_BOOL_TRUE, "VALUE_BOOL_TRUE")
       val BOOL_FALSE = ValueTypeIndicatorByte(QueryResultCodec.VALUE_BOOL_FALSE, "VALUE_BOOL_FALSE")
       val STRUCT = ValueTypeIndicatorByte(QueryResultCodec.VALUE_STRUCT, "VALUE_STRUCT")
-      val LIST_OF_NON_ENTITIES =
-        ValueTypeIndicatorByte(
-          QueryResultCodec.VALUE_LIST_OF_NON_ENTITIES,
-          "VALUE_LIST_OF_NON_ENTITIES"
-        )
+      val LIST = ValueTypeIndicatorByte(QueryResultCodec.VALUE_LIST, "VALUE_LIST")
       val LIST_OF_ENTITIES =
         ValueTypeIndicatorByte(QueryResultCodec.VALUE_LIST_OF_ENTITIES, "VALUE_LIST_OF_ENTITIES")
       val STRING_EMPTY =
@@ -1273,8 +1269,8 @@ class QueryResultDecoderUnitTest {
           BOOL_TRUE,
           BOOL_FALSE,
           STRUCT,
+          LIST,
           LIST_OF_ENTITIES,
-          LIST_OF_NON_ENTITIES,
           STRING_EMPTY,
           STRING_1BYTE,
           STRING_2BYTE,

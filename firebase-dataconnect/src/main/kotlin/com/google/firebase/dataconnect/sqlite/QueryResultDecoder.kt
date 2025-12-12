@@ -303,8 +303,8 @@ internal class QueryResultDecoder(
     BoolTrue(QueryResultCodec.VALUE_BOOL_TRUE, "true"),
     BoolFalse(QueryResultCodec.VALUE_BOOL_FALSE, "false"),
     KindNotSet(QueryResultCodec.VALUE_KIND_NOT_SET, "kindNotSet"),
+    List(QueryResultCodec.VALUE_LIST, "list"),
     ListOfEntities(QueryResultCodec.VALUE_LIST_OF_ENTITIES, "listOfEntities"),
-    ListOfNonEntities(QueryResultCodec.VALUE_LIST_OF_NON_ENTITIES, "listOfNonEntities"),
     Struct(QueryResultCodec.VALUE_STRUCT, "struct"),
     Entity(QueryResultCodec.VALUE_ENTITY, "entity"),
     StringEmpty(QueryResultCodec.VALUE_STRING_EMPTY, "emptyString"),
@@ -618,12 +618,12 @@ internal class QueryResultDecoder(
     return listValueBuilder.build()
   }
 
-  private fun readListOfNonEntities(): ListValue {
+  private fun readList(): ListValue {
     val size =
       readUInt32(
-        valueVerifier = listOfNonEntitiesSizeUInt32ValueVerifier,
-        decodeErrorId = "ListOfNonEntitiesSizeDecodeFailed",
-        eofErrorId = "ListOfNonEntitiesSizeEOF",
+        valueVerifier = listSizeUInt32ValueVerifier,
+        decodeErrorId = "ListSizeDecodeFailed",
+        eofErrorId = "ListSizeEOF",
       )
 
     val listValueBuilder = ListValue.newBuilder()
@@ -673,7 +673,7 @@ internal class QueryResultDecoder(
   private enum class EntitySubStructValueType(val valueType: ValueType) {
     Entity(ValueType.Entity),
     Struct(ValueType.Struct),
-    ListOfNonEntities(ValueType.ListOfNonEntities),
+    List(ValueType.List),
     Scalar(ValueType.KindNotSet);
 
     companion object {
@@ -756,7 +756,7 @@ internal class QueryResultDecoder(
         val subEntity = getSubEntity().structValue
         readEntitySubStruct(subEntity).toValueProto()
       }
-      EntitySubStructValueType.ListOfNonEntities -> {
+      EntitySubStructValueType.List -> {
         val subEntity = getSubEntity().listValue
         readEntitySubList(subEntity).toValueProto()
       }
@@ -831,8 +831,8 @@ internal class QueryResultDecoder(
         )
       ValueType.BoolTrue -> valueBuilder.setBoolValue(true)
       ValueType.BoolFalse -> valueBuilder.setBoolValue(false)
+      ValueType.List -> valueBuilder.setListValue(readList())
       ValueType.ListOfEntities -> valueBuilder.setListValue(readListOfEntities())
-      ValueType.ListOfNonEntities -> valueBuilder.setListValue(readListOfNonEntities())
       ValueType.Struct -> valueBuilder.setStructValue(readStruct())
       ValueType.KindNotSet -> {}
       ValueType.Entity -> valueBuilder.setStructValue(readEntity())
@@ -955,8 +955,7 @@ internal class QueryResultDecoder(
     private val listOfEntitiesSizeUInt32ValueVerifier =
       UInt32ValueVerifier("ListOfEntitiesSizeInvalidValue")
 
-    private val listOfNonEntitiesSizeUInt32ValueVerifier =
-      UInt32ValueVerifier("ListOfNonEntitiesSizeInvalidValue")
+    private val listSizeUInt32ValueVerifier = UInt32ValueVerifier("ListSizeInvalidValue")
 
     private val structKeyCountUInt32ValueVerifier =
       UInt32ValueVerifier("StructKeyCountInvalidValue")

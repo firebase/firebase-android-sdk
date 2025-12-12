@@ -85,7 +85,10 @@ fun ProtoArb.valueOfKind(kindCase: Value.KindCase): Arb<Value> =
     Value.KindCase.LIST_VALUE -> listValue().map { it.toValueProto() }
   }
 
-fun ProtoArb.value(exclude: Value.KindCase? = null): Arb<Value> {
+fun ProtoArb.value(
+  exclude: Value.KindCase? = null,
+  structKey: Arb<String> = structKey()
+): Arb<Value> {
   val arbs = buildList {
     if (exclude != Value.KindCase.KIND_NOT_SET) {
       add(kindNotSetValue())
@@ -103,10 +106,10 @@ fun ProtoArb.value(exclude: Value.KindCase? = null): Arb<Value> {
       add(boolValue())
     }
     if (exclude != Value.KindCase.STRUCT_VALUE) {
-      add(struct().map { it.toValueProto() })
+      add(struct(key = structKey).map { it.toValueProto() })
     }
     if (exclude != Value.KindCase.LIST_VALUE) {
-      add(listValue().map { it.toValueProto() })
+      add(listValue(structKey = structKey).map { it.toValueProto() })
     }
   }
   return Arb.choice(arbs)
@@ -281,11 +284,13 @@ class RecursivelyEmptyListValueArb(size: IntRange, depth: IntRange) :
 fun ProtoArb.listValue(
   size: IntRange = 0..10,
   depth: IntRange = 1..3,
+  structKey: Arb<String> = structKey(),
   scalarValue: Arb<Value> = scalarValue(),
 ): Arb<ProtoArb.ListValueInfo> =
   ListValueArb(
     size = size,
     depth = depth,
+    structKey = structKey,
     scalarValueArb = scalarValue,
   )
 
@@ -374,6 +379,7 @@ private class StructArb(
       ?: ListValueArb(
         size = size,
         depth = depth,
+        structKey = keyArb,
         scalarValueArb = scalarValueArb,
         structArb = this,
       )
@@ -512,6 +518,7 @@ private class StructArb(
 private class ListValueArb(
   size: IntRange,
   depth: IntRange,
+  structKey: Arb<String>,
   private val scalarValueArb: Arb<Value>,
   structArb: StructArb? = null,
 ) : Arb<ProtoArb.ListValueInfo>() {
@@ -535,7 +542,7 @@ private class ListValueArb(
       ?: StructArb(
         size = size,
         depth = depth,
-        keyArb = Arb.proto.structKey(),
+        keyArb = structKey,
         scalarValueArb = scalarValueArb,
         listValueArb = this,
       )

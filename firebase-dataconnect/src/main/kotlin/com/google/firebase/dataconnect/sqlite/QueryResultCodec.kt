@@ -65,7 +65,7 @@ internal object QueryResultCodec {
   const val VALUE_BOOL_FALSE: Byte = 13
 
   const val VALUE_STRUCT: Byte = 14
-  const val VALUE_LIST_OF_NON_ENTITIES: Byte = 15
+  const val VALUE_LIST: Byte = 15
   const val VALUE_LIST_OF_ENTITIES: Byte = 16
 
   const val VALUE_STRING_EMPTY: Byte = 17

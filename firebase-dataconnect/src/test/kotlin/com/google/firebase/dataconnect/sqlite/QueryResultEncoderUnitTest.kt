@@ -63,7 +63,6 @@ import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
 import io.kotest.property.exhaustive.of
-import kotlin.collections.map
 import kotlin.random.nextInt
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
@@ -300,8 +299,7 @@ class QueryResultEncoderUnitTest {
   fun `list values containing all entities, not nested`() = runTest {
     checkAll(propTestConfig, Arb.proto.structKey(), Arb.int(1..10)) { entityIdFieldName, entityCount
       ->
-      val entityArb = EntityTestCase.arb(entityIdFieldName = Arb.constant(entityIdFieldName))
-      val entities = List(entityCount) { entityArb.bind().struct }
+      val entities = generateEntities(entityCount, entityIdFieldName).map { it.struct }
       val entityListCount = randomSource().random.nextInt(1..(entities.size / 2).coerceAtLeast(1))
       val entityListValues: List<ListValue> =
         randomPartitions(entities, entityListCount).map { entityList ->
@@ -313,6 +311,29 @@ class QueryResultEncoderUnitTest {
         val struct = Arb.proto.struct(key = nonEntityIdFieldNameArb).bind().struct
         struct.withRandomlyInsertedValues(
           entityListValues.map { it.toValueProto() },
+          randomSource().random,
+          { nonEntityIdFieldNameArb.bind() },
+        )
+      }
+
+      rootStruct.decodingEncodingShouldProduceIdenticalStruct(entities, entityIdFieldName)
+    }
+  }
+
+  @Test
+  fun `list values with mixed entities and non-entities, not nested`() = runTest {
+    checkAll(propTestConfig, Arb.proto.structKey(), Arb.twoValues(Arb.int(1..4))) {
+      entityIdFieldName,
+      (entityCount, nonEntityCount) ->
+      val entities = generateEntities(entityCount, entityIdFieldName).map { it.struct }
+      val rootStruct = run {
+        val nonEntities = generateNonEntities(nonEntityCount, entityIdFieldName)
+        val listValue =
+          (entities.map { it.toValueProto() } + nonEntities).shuffled(randomSource().random)
+        val nonEntityIdFieldNameArb = Arb.proto.structKey().filterNot { it == entityIdFieldName }
+        val struct = Arb.proto.struct(key = nonEntityIdFieldNameArb).bind().struct
+        struct.withRandomlyInsertedValue(
+          listValue.toValueProto(),
           randomSource().random,
           { nonEntityIdFieldNameArb.bind() },
         )
@@ -433,6 +454,29 @@ class QueryResultEncoderUnitTest {
         edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.33),
         shrinkingMode = ShrinkingMode.Off,
       )
+
+    /**
+     * Generates the given number of [EntityTestCase] objects using the given entity ID field name.
+     */
+    fun PropertyContext.generateEntities(
+      count: Int,
+      entityIdFieldName: String
+    ): List<EntityTestCase> = buildList {
+      val entityValueArb = EntityTestCase.arb(entityIdFieldName = Arb.constant(entityIdFieldName))
+      repeat(count) { add(entityValueArb.bind()) }
+    }
+
+    /**
+     * Generates the given number of [Value] objects that would not be considered to be entities,
+     * nor contain values that would be considered to be entities with the given entity ID field
+     * name.
+     */
+    fun PropertyContext.generateNonEntities(count: Int, entityIdFieldName: String): List<Value> =
+      buildList {
+        val nonEntityIdStructKeyArb = Arb.proto.structKey().filterNot { it == entityIdFieldName }
+        val nonEntityValueArb = Arb.proto.value(structKey = nonEntityIdStructKeyArb)
+        repeat(count) { add(nonEntityValueArb.bind()) }
+      }
 
     fun Value.isEntity(entityIdFieldName: String): Boolean =
       isStructValue &&
