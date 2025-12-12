@@ -24,7 +24,6 @@ import com.google.devtools.ksp.processing.KSPLogger
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.symbol.ClassKind
-import com.google.devtools.ksp.symbol.FunctionKind
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSAnnotation
 import com.google.devtools.ksp.symbol.KSClassDeclaration
@@ -58,14 +57,14 @@ public class FirebaseSymbolProcessor(
     resolver
       .getSymbolsWithAnnotation("com.google.firebase.ai.annotations.Generable")
       .filterIsInstance<KSClassDeclaration>()
-      .map { it to SchemaSymbolProcessorVisitor(it, resolver) }
-      .forEach { it.second.visitClassDeclaration(it.first, Unit) }
+      .map { it to SchemaSymbolProcessorVisitor() }
+      .forEach { (klass, visitor) -> visitor.visitClassDeclaration(klass, Unit) }
 
     resolver
       .getSymbolsWithAnnotation("com.google.firebase.ai.annotations.Tool")
       .filterIsInstance<KSFunctionDeclaration>()
       .map { it to FunctionSymbolProcessorVisitor(it, resolver) }
-      .forEach { it.second.visitFunctionDeclaration(it.first, Unit) }
+      .forEach { (klass, visitor) -> visitor.visitFunctionDeclaration(klass, Unit) }
 
     return emptyList()
   }
@@ -83,7 +82,10 @@ public class FirebaseSymbolProcessor(
       }
       val containingClass = function.parentDeclaration as? KSClassDeclaration
       if (containingClass == null || !containingClass.isCompanionObject) {
-        logger.warn("$fullFunctionName must be within a companion object ${containingClass!!.qualifiedName!!.asString()}")
+        logger.warn(
+          "$fullFunctionName must be within a companion object " +
+                  containingClass!!.qualifiedName!!.asString()
+        )
         shouldError = true
       }
       if (function.parameters.size != 1) {
@@ -104,7 +106,7 @@ public class FirebaseSymbolProcessor(
       val output = function.returnType?.resolve()
       if (
         output != null &&
-          output.toClassName().canonicalName != "kotlinx.serialization.json.JsonObject"
+        output.toClassName().canonicalName != "kotlinx.serialization.json.JsonObject"
       ) {
         if (
           output.declaration.annotations.find { it.shortName.getShortName() != "Generable" } == null
@@ -114,7 +116,7 @@ public class FirebaseSymbolProcessor(
         }
         if (
           output.declaration.annotations.find { it.shortName.getShortName() != "Serializable" } ==
-            null
+          null
         ) {
           logger.warn("$fullFunctionName output must be annotated @Serializable")
           shouldError = true
@@ -131,12 +133,11 @@ public class FirebaseSymbolProcessor(
     }
 
     private fun generateFileSpec(functionDeclaration: KSFunctionDeclaration): FileSpec {
-      val generatedClassName = functionDeclaration.simpleName.asString()
-        .replaceFirstChar { if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString() } + "GeneratedFunctionDeclaration"
-      return FileSpec.builder(
-          functionDeclaration.packageName.asString(),
-        generatedClassName
-        )
+      val generatedClassName =
+        functionDeclaration.simpleName.asString().replaceFirstChar {
+          if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString()
+        } + "GeneratedFunctionDeclaration"
+      return FileSpec.builder(functionDeclaration.packageName.asString(), generatedClassName)
         .addImport("com.google.firebase.ai.type", "AutoFunctionDeclaration")
         .addType(
           TypeSpec.classBuilder(generatedClassName)
@@ -145,15 +146,15 @@ public class FirebaseSymbolProcessor(
               TypeSpec.companionObjectBuilder()
                 .addProperty(
                   PropertySpec.builder(
-                      "FUNCTION_DECLARATION",
-                      ClassName("com.google.firebase.ai.type", "AutoFunctionDeclaration")
-                        .parameterizedBy(
-                          functionDeclaration.parameters.first().type.resolve().toClassName(),
-                          functionDeclaration.returnType?.resolve()?.toClassName()
-                            ?: ClassName("kotlinx.serialization.json", "JsonObject")
-                        ),
-                      KModifier.PUBLIC,
-                    )
+                    "FUNCTION_DECLARATION",
+                    ClassName("com.google.firebase.ai.type", "AutoFunctionDeclaration")
+                      .parameterizedBy(
+                        functionDeclaration.parameters.first().type.resolve().toClassName(),
+                        functionDeclaration.returnType?.resolve()?.toClassName()
+                          ?: ClassName("kotlinx.serialization.json", "JsonObject")
+                      ),
+                    KModifier.PUBLIC,
+                  )
                     .mutable(false)
                     .initializer(
                       CodeBlock.builder()
@@ -168,14 +169,15 @@ public class FirebaseSymbolProcessor(
         )
         .build()
     }
+
     fun generateCodeBlockForFunctionDeclaration(
       functionDeclaration: KSFunctionDeclaration
     ): CodeBlock {
       val builder = CodeBlock.builder()
       val hasTypedOutput =
         !(functionDeclaration.returnType == null ||
-          functionDeclaration.returnType!!.resolve().toClassName().canonicalName ==
-            "kotlinx.serialization.json.JsonObject")
+                functionDeclaration.returnType!!.resolve().toClassName().canonicalName ==
+                "kotlinx.serialization.json.JsonObject")
       val kdocDescription = functionDeclaration.docString?.let { extractBaseKdoc(it) }
       val annotationDescription =
         getStringFromAnnotation(
@@ -184,7 +186,9 @@ public class FirebaseSymbolProcessor(
         )
       val description = annotationDescription ?: kdocDescription ?: ""
       val inputSchemaName =
-        "${functionDeclaration.parameters.first().type.resolve().toClassName().canonicalName}GeneratedSchema.SCHEMA"
+        "${
+          functionDeclaration.parameters.first().type.resolve().toClassName().canonicalName
+        }GeneratedSchema.SCHEMA"
       builder
         .addStatement("AutoFunctionDeclaration.create(")
         .indent()
@@ -193,21 +197,22 @@ public class FirebaseSymbolProcessor(
         .addStatement("inputSchema = $inputSchemaName,")
       if (hasTypedOutput) {
         val outputSchemaName =
-          "${functionDeclaration.returnType!!.resolve().toClassName().canonicalName}GeneratedSchema.SCHEMA"
+          "${
+            functionDeclaration.returnType!!.resolve().toClassName().canonicalName
+          }GeneratedSchema.SCHEMA"
         builder.addStatement("outputSchema = $outputSchemaName,")
       }
       builder.addStatement(
-        "functionReference = ${functionDeclaration.qualifiedName!!.getQualifier()}::${functionDeclaration.qualifiedName!!.getShortName()},"
+        "functionReference = " +
+                functionDeclaration.qualifiedName!!.getQualifier() +
+                "::${functionDeclaration.qualifiedName!!.getShortName()},"
       )
       builder.unindent().addStatement(")")
       return builder.build()
     }
   }
 
-  private inner class SchemaSymbolProcessorVisitor(
-    private val klass: KSClassDeclaration,
-    private val resolver: Resolver,
-  ) : KSVisitorVoid() {
+  private inner class SchemaSymbolProcessorVisitor() : KSVisitorVoid() {
     private val numberTypes = setOf("kotlin.Int", "kotlin.Long", "kotlin.Double", "kotlin.Float")
 
     override fun visitClassDeclaration(classDeclaration: KSClassDeclaration, data: Unit) {
@@ -224,9 +229,9 @@ public class FirebaseSymbolProcessor(
 
     fun generateFileSpec(classDeclaration: KSClassDeclaration): FileSpec {
       return FileSpec.builder(
-          classDeclaration.packageName.asString(),
-          "${classDeclaration.simpleName.asString()}GeneratedSchema",
-        )
+        classDeclaration.packageName.asString(),
+        "${classDeclaration.simpleName.asString()}GeneratedSchema",
+      )
         .addImport("com.google.firebase.ai.type", "JsonSchema")
         .addType(
           TypeSpec.classBuilder("${classDeclaration.simpleName.asString()}GeneratedSchema")
@@ -235,16 +240,16 @@ public class FirebaseSymbolProcessor(
               TypeSpec.companionObjectBuilder()
                 .addProperty(
                   PropertySpec.builder(
-                      "SCHEMA",
-                      ClassName("com.google.firebase.ai.type", "JsonSchema")
-                        .parameterizedBy(
-                          ClassName(
-                            classDeclaration.packageName.asString(),
-                            classDeclaration.simpleName.asString()
-                          )
-                        ),
-                      KModifier.PUBLIC,
-                    )
+                    "SCHEMA",
+                    ClassName("com.google.firebase.ai.type", "JsonSchema")
+                      .parameterizedBy(
+                        ClassName(
+                          classDeclaration.packageName.asString(),
+                          classDeclaration.simpleName.asString()
+                        )
+                      ),
+                    KModifier.PUBLIC,
+                  )
                     .mutable(false)
                     .initializer(
                       CodeBlock.builder()
@@ -344,14 +349,14 @@ public class FirebaseSymbolProcessor(
               (type.declaration as KSClassDeclaration).getAllProperties().associate { property ->
                 val propertyName = property.simpleName.asString()
                 propertyName to
-                  generateCodeBlockForSchema(
-                    type = property.type.resolve(),
-                    parentType = type,
-                    description = propertyDocs[propertyName],
-                    name = propertyName,
-                    guideAnnotation =
-                      property.annotations.firstOrNull() { it.shortName.getShortName() == "Guide" },
-                  )
+                        generateCodeBlockForSchema(
+                          type = property.type.resolve(),
+                          parentType = type,
+                          description = propertyDocs[propertyName],
+                          name = propertyName,
+                          guideAnnotation =
+                            property.annotations.firstOrNull() { it.shortName.getShortName() == "Guide" },
+                        )
               }
             properties.entries.forEach {
               builder
@@ -373,20 +378,23 @@ public class FirebaseSymbolProcessor(
       }
       if ((minimum != null || maximum != null) && !numberTypes.contains(className.canonicalName)) {
         logger.warn(
-          "${parentType?.toClassName()?.simpleName?.let { "$it." }}$name is not a number type, minimum and maximum are not valid parameters to specify in @Guide"
+          "${parentType?.toClassName()?.simpleName?.let { "$it." }}$name is not a number type, " +
+                  "minimum and maximum are not valid parameters to specify in @Guide"
         )
       }
       if (
         (minItems != null || maxItems != null) &&
-          className.canonicalName != "kotlin.collections.List"
+        className.canonicalName != "kotlin.collections.List"
       ) {
         logger.warn(
-          "${parentType?.toClassName()?.simpleName?.let { "$it." }}$name is not a List type, minItems and maxItems are not valid parameters to specify in @Guide"
+          "${parentType?.toClassName()?.simpleName?.let { "$it." }}$name is not a List type, " +
+                  "minItems and maxItems are not valid parameters to specify in @Guide"
         )
       }
       if ((format != null || pattern != null) && className.canonicalName != "kotlin.String") {
         logger.warn(
-          "${parentType?.toClassName()?.simpleName?.let { "$it." }}$name is not a String type, format and pattern are not a valid parameter to specify in @Guide"
+          "${parentType?.toClassName()?.simpleName?.let { "$it." }}$name is not a String type, " +
+                  "format and pattern are not a valid parameter to specify in @Guide"
         )
       }
       if (minimum != null) {
@@ -424,7 +432,6 @@ public class FirebaseSymbolProcessor(
 
     return guidePropertyDescription ?: guideClassDescription ?: description ?: baseKdoc
   }
-
   private fun getDoubleFromAnnotation(
     guideAnnotation: KSAnnotation?,
     doubleName: String,
