@@ -70,6 +70,7 @@ object DataConnectExecutableVersionsRegistry {
   data class VersionInfo(
     @Serializable(with = LooseVersionSerializer::class) val version: Version,
     @Serializable(with = OperatingSystemSerializer::class) val os: OperatingSystem,
+    @Serializable(with = CpuArchitectureSerializer::class) val arch: CpuArchitecture? = null,
     val size: Long,
     val sha512DigestHex: String,
   )
@@ -95,11 +96,39 @@ object DataConnectExecutableVersionsRegistry {
       encoder.encodeString(value.serializedValue)
   }
 
+  private object CpuArchitectureSerializer : KSerializer<CpuArchitecture> {
+    override val descriptor =
+      PrimitiveSerialDescriptor(
+        "com.google.firebase.dataconnect.gradle.plugin.CpuArchitecture",
+        PrimitiveKind.STRING,
+      )
+
+    override fun deserialize(decoder: Decoder): CpuArchitecture =
+      decoder.decodeString().let { serializedValue ->
+        CpuArchitecture.entries.singleOrNull { it.serializedValue == serializedValue }
+          ?: throw DataConnectGradleException(
+            "yxnvjm2nxe",
+            "Unknown CPU architecture: $serializedValue " +
+              "(must be one of ${CpuArchitecture.entries.joinToString { it.serializedValue }})"
+          )
+      }
+
+    override fun serialize(encoder: Encoder, value: CpuArchitecture) =
+      encoder.encodeString(value.serializedValue)
+  }
+
   val OperatingSystem.serializedValue: String
     get() =
       when (this) {
         OperatingSystem.Windows -> "windows"
         OperatingSystem.MacOS -> "macos"
         OperatingSystem.Linux -> "linux"
+      }
+
+  val CpuArchitecture.serializedValue: String
+    get() =
+      when (this) {
+        CpuArchitecture.AMD64 -> "amd64"
+        CpuArchitecture.ARM64 -> "arm64"
       }
 }

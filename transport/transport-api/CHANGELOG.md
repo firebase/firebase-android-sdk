@@ -17,3 +17,4 @@ extensions library has no additional updates.
 # 3.1.0
 
 - [feature] Added new APIs to support passing a product id when logging an event.
+

@@ -263,3 +263,4 @@ Kotlin extensions library has no additional updates.
   the default "us-central1".
 - [feature] New `useFunctionsEmulator` method allows testing against a local instance of the
   [Cloud Functions Emulator](https://firebase.google.com/docs/functions/local-emulator).
+
