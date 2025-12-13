@@ -69,7 +69,21 @@ internal constructor(
     @JvmStatic
     public fun functionDeclarations(
       functionDeclarations: List<FunctionDeclaration>? = null,
-      autoFunctionDeclarations: List<AutoFunctionDeclaration<*, *>>? = null
+    ): Tool {
+      @OptIn(PublicPreviewAPI::class) return Tool(functionDeclarations, null, null, null, null)
+    }
+
+    /**
+     * Creates a [Tool] instance that provides the model with access to the [functionDeclarations].
+     *
+     * @param functionDeclarations The list of functions that this tool allows the model access to.
+     * @param autoFunctionDeclarations The list of functions that this tool has access to which
+     * should be executed automatically
+     */
+    @JvmStatic
+    public fun functionDeclarations(
+      functionDeclarations: List<FunctionDeclaration>? = null,
+      autoFunctionDeclarations: List<AutoFunctionDeclaration<*, *>>?
     ): Tool {
       @OptIn(PublicPreviewAPI::class)
       return Tool(functionDeclarations, autoFunctionDeclarations, null, null, null)

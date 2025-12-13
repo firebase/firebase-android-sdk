@@ -52,32 +52,32 @@ public class Chat(
   private var lock = Semaphore(1)
 
   /**
-   * Sends a message using the provided [inputPrompt]; automatically providing the existing
-   * [history] as context.
+   * Sends a message using the provided [prompt]; automatically providing the existing [history] as
+   * context.
    *
    * If successful, the message and response will be added to the [history]. If unsuccessful,
    * [history] will remain unchanged.
    *
-   * @param inputPrompt The input that, together with the history, will be given to the model as the
+   * @param prompt The input that, together with the history, will be given to the model as the
    * prompt.
-   * @throws InvalidStateException if [inputPrompt] is not coming from the 'user' role.
+   * @throws InvalidStateException if [prompt] is not coming from the 'user' role.
    * @throws InvalidStateException if the [Chat] instance has an active request.
    */
-  public suspend fun sendMessage(inputPrompt: Content): GenerateContentResponse {
-    inputPrompt.assertComesFromUser()
+  public suspend fun sendMessage(prompt: Content): GenerateContentResponse {
+    prompt.assertComesFromUser()
     attemptLock()
     var response: GenerateContentResponse
-    var prompt = inputPrompt
+    var tempPrompt = prompt
     try {
       while (true) {
-        response = model.generateContent(listOf(*history.toTypedArray(), prompt))
+        response = model.generateContent(listOf(*history.toTypedArray(), tempPrompt))
         val responsePart = response.candidates.first().content.parts.first()
 
-        history.add(prompt)
+        history.add(tempPrompt)
         history.add(response.candidates.first().content)
         if (responsePart is FunctionCallPart && model.hasFunction(responsePart)) {
           val output = model.executeFunction(responsePart)
-          prompt = Content("function", listOf(FunctionResponsePart(responsePart.name, output)))
+          tempPrompt = Content("function", listOf(FunctionResponsePart(responsePart.name, output)))
         } else {
           break
         }
