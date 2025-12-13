@@ -273,6 +273,12 @@ internal constructor(
     return countTokens(content { image(prompt) })
   }
 
+  internal fun hasFunction(call: FunctionCallPart): Boolean {
+    return tools
+      ?.flatMap { it.autoFunctionDeclarations?.filterNotNull() ?: emptyList() }
+      ?.firstOrNull { it.name == call.name } != null
+  }
+
   @OptIn(InternalSerializationApi::class)
   internal suspend fun executeFunction(call: FunctionCallPart): JsonObject {
     if (tools == null) {

@@ -11,3 +11,4 @@ dependencies {
     ksp("com.google.firebase:firebase-ai-processor:1.0.0")
 }
 ```
+

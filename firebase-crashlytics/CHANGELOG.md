@@ -696,3 +696,4 @@ name change. The following release notes describe changes in the new SDK.
   app from Fabric, remove the Fabric API key from your `AndroidManifest.xml` file.
 - [removed] The `fabric.properties` and `crashlytics.properties` files are no longer supported.
   Remove them from your app.
+
