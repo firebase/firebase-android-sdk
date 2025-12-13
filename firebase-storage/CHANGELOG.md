@@ -232,3 +232,4 @@ Kotlin extensions library has no additional updates.
 - [changed] Removed the deprecated `StorageMetadata.getDownloadUrl()` and
   `UploadTask.TaskSnapshot.getDownloadUrl()` methods. To get a current download URL, use
   [`StorageReference.getDownloadUr()`](</docs/reference/android/com/google/firebase/storage/StorageReference.html#getDownloadUrl()>).
+

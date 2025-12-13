@@ -26,13 +26,13 @@ key(s) used in your application(s) are whitelisted for the Firebase Installation
 
 1. **Open** the
    [Google Cloud Platform Console](https://console.cloud.google.com/apis/credentials?folder).
-1. **Choose** the project you use for your application(s).
-1. **Open** `APIs & Services` and **select** `Credentials`.
-1. **Click** `Edit API Key` (pencil icon) for the API key in question.
-1. **Scroll down** to the `API restrictions` section.
-1. From the dropdown menu, **add** the `Firebase Installations API` to the list of permitted APIs,
+2. **Choose** the project you use for your application(s).
+3. **Open** `APIs & Services` and **select** `Credentials`.
+4. **Click** `Edit API Key` (pencil icon) for the API key in question.
+5. **Scroll down** to the `API restrictions` section.
+6. From the dropdown menu, **add** the `Firebase Installations API` to the list of permitted APIs,
    and click `Save`.
-1. If the radio button shows `Don't restrict key`, you may be looking at the wrong API key. \
+7. If the radio button shows `Don't restrict key`, you may be looking at the wrong API key. \
    You can check which API key is used for the Firebase Installations API by looking at the [service usage page for your project](https://console.cloud.google.com/apis/api/firebaseinstallations.googleapis.com/credentials).
 
 **Note**: **Verify** your fix by checking if you can see successful `200` requests increasing on the

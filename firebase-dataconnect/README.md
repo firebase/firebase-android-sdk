@@ -40,14 +40,17 @@ The integration tests require that the Firebase Data Connect emulator is running
 is default when running it via the Firebase CLI.
 
 - [Install the Firebase CLI](https://firebase.google.com/docs/cli/).
+
   ```
   npm install -g firebase-tools
   ```
 - [Install the Firebase Data Connect emulator](https://firebase.google.com/docs/FIX_URL/security/test-rules-emulator#install_the_emulator).
+
   ```
   firebase setup:emulators:dataconnect
   ```
 - Run the emulator
+
   ```
   firebase emulators:start --only dataconnect
   ```
@@ -110,3 +113,4 @@ changes with the command:
 ```
 $ git checkout .idea/runConfigurations
 ```
+

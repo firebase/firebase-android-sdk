@@ -28,43 +28,36 @@ This file is useful for understanding the role of each subproject in the reposit
 To work with this repository, the Android SDK must be installed. Use the `sdkmanager` command-line
 tool for this purpose.
 
-1.  **Install Android SDK Command-Line Tools**:
+1. **Install Android SDK Command-Line Tools**:
+   - If not already installed, download the command-line tools from the
+     [Android Studio page](https://developer.android.com/studio#command-line-tools-only).
+   - Create a directory for the Android SDK, e.g., `android_sdk`.
+   - Unzip the downloaded package. This will create a `cmdline-tools` directory. Move this
+     directory to `android_sdk/cmdline-tools/latest`.
+   - The final structure should be `android_sdk/cmdline-tools/latest/`.
+2. **Install required SDK packages**:
+   - Use `sdkmanager` to install the necessary platforms, build tools, and other packages. For
+     example:
 
-    - If not already installed, download the command-line tools from the
-      [Android Studio page](https://developer.android.com/studio#command-line-tools-only).
-    - Create a directory for the Android SDK, e.g., `android_sdk`.
-    - Unzip the downloaded package. This will create a `cmdline-tools` directory. Move this
-      directory to `android_sdk/cmdline-tools/latest`.
-    - The final structure should be `android_sdk/cmdline-tools/latest/`.
+     ```bash
+     # List all available packages
+     sdkmanager --list
 
-2.  **Install required SDK packages**:
+     # Install platform tools and the SDK for API level 33
+     sdkmanager "platform-tools" "platforms;android-33"
 
-    - Use `sdkmanager` to install the necessary platforms, build tools, and other packages. For
-      example:
-
-      ```bash
-      # List all available packages
-      sdkmanager --list
-
-      # Install platform tools and the SDK for API level 33
-      sdkmanager "platform-tools" "platforms;android-33"
-
-      # Accept all licenses
-      yes | sdkmanager --licenses
-      ```
-
-    - Refer to the specific requirements of the project to determine which packages to install.
-
-3.  **Configure for integration tests**:
-
-    - To run integration tests, a `google-services.json` file is required.
-    - Place this file in the root of the repository.
-
-4.  **Install NDK for specific projects**:
-    - Some projects, like `firebase-crashlytics-ndk`, require a specific version of the Android NDK.
-      You can install it using `sdkmanager`. For example, to install NDK version 21.4.7075529, you
-      would run `sdkmanager "ndk;21.4.7075529"`. Always refer to the project's `README.md` for the
-      exact version required.
+     # Accept all licenses
+     yes | sdkmanager --licenses
+     ```
+   - Refer to the specific requirements of the project to determine which packages to install.
+3. **Configure for integration tests**:
+   - To run integration tests, a `google-services.json` file is required.
+   - Place this file in the root of the repository.
+4. **Install NDK for specific projects**:
+   - Some projects, like `firebase-crashlytics-ndk`, require a specific version of the Android NDK.
+     You can install it using `sdkmanager`. For example, to install NDK version 21.4.7075529, you
+     would run `sdkmanager "ndk;21.4.7075529"`. Always refer to the project's `README.md` for the
+     exact version required.
 
 ## Building and Running
 
@@ -182,10 +175,12 @@ started.
 After you make a change, here's the flow you should follow:
 
 - Format the code using `spotless`. It can be run with:
+
   ```bash
   ./gradlew :<firebase-project>:spotlessApply
   ```
 - Run unit tests:
+
   ```bash
   ./gradlew :<firebase-project>:check
   ```
