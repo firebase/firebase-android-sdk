@@ -75,7 +75,7 @@ public class Chat(
 
         history.add(prompt)
         history.add(response.candidates.first().content)
-        if (responsePart is FunctionCallPart) {
+        if (responsePart is FunctionCallPart && model.hasFunction(responsePart)) {
           val output = model.executeFunction(responsePart)
           prompt = Content("function", listOf(FunctionResponsePart(responsePart.name, output)))
         } else {
@@ -213,14 +213,19 @@ public class Chat(
           val functionCall =
             response.candidates.first().content.parts.first { it is FunctionCallPart }
               as FunctionCallPart
-          val output = model.executeFunction(functionCall)
-          val functionResponse =
-            Content("function", listOf(FunctionResponsePart(functionCall.name, output)))
-          tempHistory.add(response.candidates.first().content)
-          tempHistory.add(functionResponse)
-          model
-            .generateContentStream(listOf(*history.toTypedArray(), *tempHistory.toTypedArray()))
-            .collect { automaticFunctionExecutingTransform(transformer, tempHistory, it) }
+          if (model.hasFunction(functionCall)) {
+            val output = model.executeFunction(functionCall)
+            val functionResponse =
+              Content("function", listOf(FunctionResponsePart(functionCall.name, output)))
+            tempHistory.add(response.candidates.first().content)
+            tempHistory.add(functionResponse)
+            model
+              .generateContentStream(listOf(*history.toTypedArray(), *tempHistory.toTypedArray()))
+              .collect { automaticFunctionExecutingTransform(transformer, tempHistory, it) }
+          } else {
+            transformer.emit(response)
+            tempHistory.add(Content("model", listOf(part)))
+          }
         }
         else -> {
           transformer.emit(response)
