@@ -42,7 +42,17 @@ internal constructor(internal val location: String, internal val backend: Genera
   }
 
   override fun equals(other: Any?): Boolean {
-    return other is GenerativeBackend && other.backend == this.backend
+    if (other is GenerativeBackend) {
+      return when (other.backend) {
+          GenerativeBackendEnum.GOOGLE_AI -> {
+            other.backend == this.backend
+          }
+          GenerativeBackendEnum.VERTEX_AI -> {
+            other.backend == this.backend && other.location == this.location
+          }
+      }
+    }
+    return false
   }
 }
 
