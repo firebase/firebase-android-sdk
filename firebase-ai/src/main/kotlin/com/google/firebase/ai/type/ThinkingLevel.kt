@@ -23,7 +23,9 @@ import kotlinx.serialization.Serializable
 public class ThinkingLevel private constructor(public val ordinal: Int) {
   internal fun toInternal() =
     when (this) {
+      MINIMAL -> Internal.MINIMAL
       LOW -> Internal.LOW
+      MEDIUM -> Internal.MEDIUM
       HIGH -> Internal.HIGH
       else -> throw makeMissingCaseException("ThinkingLevel", ordinal)
     }
@@ -31,14 +33,21 @@ public class ThinkingLevel private constructor(public val ordinal: Int) {
   @Serializable
   internal enum class Internal {
     @SerialName("THINKING_LEVEL_UNSPECIFIED") UNSPECIFIED,
+    MINIMAL,
     LOW,
+    MEDIUM,
     HIGH,
   }
   public companion object {
+    /** A minimal quality thinking response, which provides the lowest latency. */
+    @JvmField public val MINIMAL: ThinkingLevel = ThinkingLevel(0)
     /** A lower quality thinking response, which provides low latency. */
-    @JvmField public val LOW: ThinkingLevel = ThinkingLevel(0)
+    @JvmField public val LOW: ThinkingLevel = ThinkingLevel(1)
+
+    /** A medium quality thinking response. */
+    @JvmField public val MEDIUM: ThinkingLevel = ThinkingLevel(2)
 
     /** A higher quality thinking response, which may increase latency. */
-    @JvmField public val HIGH: ThinkingLevel = ThinkingLevel(1)
+    @JvmField public val HIGH: ThinkingLevel = ThinkingLevel(3)
   }
 }
