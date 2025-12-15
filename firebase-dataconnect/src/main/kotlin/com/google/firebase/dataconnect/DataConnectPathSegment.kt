@@ -55,6 +55,10 @@ public sealed interface DataConnectPathSegment {
   }
 }
 
+internal typealias DataConnectPath = List<DataConnectPathSegment>
+
+internal typealias MutableDataConnectPath = MutableList<DataConnectPathSegment>
+
 internal fun <T : DataConnectPathSegment> List<T>.toPathString(): String = buildString {
   appendPathStringTo(this)
 }
@@ -108,4 +112,20 @@ internal inline fun <T, S : DataConnectPathSegment> MutableList<in S>.withAddedP
       "internal error x6tzdsszmc: removed $removedSegment, but expected $pathSegment"
     }
   }
+}
+
+internal fun List<DataConnectPathSegment>.withAddedField(
+  field: String
+): List<DataConnectPathSegment> = withAddedPathSegment(DataConnectPathSegment.Field(field))
+
+internal fun List<DataConnectPathSegment>.withAddedListIndex(
+  index: Int
+): List<DataConnectPathSegment> = withAddedPathSegment(DataConnectPathSegment.ListIndex(index))
+
+internal fun List<DataConnectPathSegment>.withAddedPathSegment(
+  pathSegment: DataConnectPathSegment
+): List<DataConnectPathSegment> {
+  val mutableList = toMutableList()
+  mutableList.add(pathSegment)
+  return mutableList.toList()
 }

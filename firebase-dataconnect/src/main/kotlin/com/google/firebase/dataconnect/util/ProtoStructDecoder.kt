@@ -19,7 +19,9 @@
 package com.google.firebase.dataconnect.util
 
 import com.google.firebase.dataconnect.AnyValue
+import com.google.firebase.dataconnect.DataConnectPath
 import com.google.firebase.dataconnect.serializers.AnyValueSerializer
+import com.google.firebase.dataconnect.toPathString
 import com.google.firebase.dataconnect.util.ProtoDecoderUtil.decodeBoolean
 import com.google.firebase.dataconnect.util.ProtoDecoderUtil.decodeByte
 import com.google.firebase.dataconnect.util.ProtoDecoderUtil.decodeChar
@@ -34,6 +36,8 @@ import com.google.firebase.dataconnect.util.ProtoDecoderUtil.decodeShort
 import com.google.firebase.dataconnect.util.ProtoDecoderUtil.decodeString
 import com.google.firebase.dataconnect.util.ProtoDecoderUtil.decodeStruct
 import com.google.firebase.dataconnect.util.ProtoUtil.toAny
+import com.google.firebase.dataconnect.withAddedField
+import com.google.firebase.dataconnect.withAddedListIndex
 import com.google.protobuf.ListValue
 import com.google.protobuf.NullValue
 import com.google.protobuf.Struct
@@ -58,59 +62,64 @@ import kotlinx.serialization.modules.SerializersModule
  * avoids this public API pollution.
  */
 private object ProtoDecoderUtil {
-  fun <T> decode(value: Value, path: String?, expectedKindCase: KindCase, block: (Value) -> T): T =
+  fun <T> decode(
+    value: Value,
+    path: DataConnectPath,
+    expectedKindCase: KindCase,
+    block: (Value) -> T
+  ): T =
     if (value.kindCase != expectedKindCase) {
       throw SerializationException(
-        (if (path === null) "" else "decoding \"$path\" failed: ") +
+        (if (path.isEmpty()) "" else "decoding \"${path.toPathString()}\" failed: ") +
           "expected $expectedKindCase, but got ${value.kindCase} (${value.toAny()})"
       )
     } else {
       block(value)
     }
 
-  fun decodeBoolean(value: Value, path: String?): Boolean =
+  fun decodeBoolean(value: Value, path: DataConnectPath): Boolean =
     decode(value, path, KindCase.BOOL_VALUE) { it.boolValue }
 
-  fun decodeByte(value: Value, path: String?): Byte =
+  fun decodeByte(value: Value, path: DataConnectPath): Byte =
     decode(value, path, KindCase.NUMBER_VALUE) { it.numberValue.toInt().toByte() }
 
-  fun decodeChar(value: Value, path: String?): Char =
+  fun decodeChar(value: Value, path: DataConnectPath): Char =
     decode(value, path, KindCase.NUMBER_VALUE) { it.numberValue.toInt().toChar() }
 
-  fun decodeDouble(value: Value, path: String?): Double =
+  fun decodeDouble(value: Value, path: DataConnectPath): Double =
     decode(value, path, KindCase.NUMBER_VALUE) { it.numberValue }
 
-  fun decodeEnum(value: Value, path: String?): String =
+  fun decodeEnum(value: Value, path: DataConnectPath): String =
     decode(value, path, KindCase.STRING_VALUE) { it.stringValue }
 
-  fun decodeFloat(value: Value, path: String?): Float =
+  fun decodeFloat(value: Value, path: DataConnectPath): Float =
     decode(value, path, KindCase.NUMBER_VALUE) { it.numberValue.toFloat() }
 
-  fun decodeString(value: Value, path: String?): String =
+  fun decodeString(value: Value, path: DataConnectPath): String =
     decode(value, path, KindCase.STRING_VALUE) { it.stringValue }
 
-  fun decodeStruct(value: Value, path: String?): Struct =
+  fun decodeStruct(value: Value, path: DataConnectPath): Struct =
     decode(value, path, KindCase.STRUCT_VALUE) { it.structValue }
 
-  fun decodeList(value: Value, path: String?): ListValue =
+  fun decodeList(value: Value, path: DataConnectPath): ListValue =
     decode(value, path, KindCase.LIST_VALUE) { it.listValue }
 
-  fun decodeNull(value: Value, path: String?): NullValue =
+  fun decodeNull(value: Value, path: DataConnectPath): NullValue =
     decode(value, path, KindCase.NULL_VALUE) { it.nullValue }
 
-  fun decodeInt(value: Value, path: String?): Int =
+  fun decodeInt(value: Value, path: DataConnectPath): Int =
     decode(value, path, KindCase.NUMBER_VALUE) { it.numberValue.toInt() }
 
-  fun decodeLong(value: Value, path: String?): Long =
+  fun decodeLong(value: Value, path: DataConnectPath): Long =
     decode(value, path, KindCase.STRING_VALUE) { it.stringValue.toLong() }
 
-  fun decodeShort(value: Value, path: String?): Short =
+  fun decodeShort(value: Value, path: DataConnectPath): Short =
     decode(value, path, KindCase.NUMBER_VALUE) { it.numberValue.toInt().toShort() }
 }
 
 internal class ProtoValueDecoder(
   internal val valueProto: Value,
-  private val path: String?,
+  private val path: DataConnectPath,
   override val serializersModule: SerializersModule
 ) : Decoder {
 
@@ -162,7 +171,7 @@ internal class ProtoValueDecoder(
 
 private class ProtoStructValueDecoder(
   private val struct: Struct,
-  private val path: String?,
+  private val path: DataConnectPath,
   override val serializersModule: SerializersModule
 ) : CompositeDecoder {
 
@@ -228,7 +237,7 @@ private class ProtoStructValueDecoder(
   private fun <T> decodeValueElement(
     descriptor: SerialDescriptor,
     index: Int,
-    block: (Value, String?) -> T
+    block: (Value, DataConnectPath) -> T
   ): T {
     val elementName = descriptor.getElementName(index)
     val elementPath = elementPathForName(elementName)
@@ -290,13 +299,13 @@ private class ProtoStructValueDecoder(
     }
   }
 
-  private fun elementPathForName(elementName: String) =
-    if (path === null) elementName else "${path}.${elementName}"
+  private fun elementPathForName(elementName: String): DataConnectPath =
+    path.withAddedField(elementName)
 }
 
 private class ProtoListValueDecoder(
   private val list: ListValue,
-  private val path: String?,
+  private val path: DataConnectPath,
   override val serializersModule: SerializersModule
 ) : CompositeDecoder {
 
@@ -339,7 +348,7 @@ private class ProtoListValueDecoder(
   override fun decodeStringElement(descriptor: SerialDescriptor, index: Int) =
     decodeValueElement(index, ProtoDecoderUtil::decodeString)
 
-  private inline fun <T> decodeValueElement(index: Int, block: (Value, String?) -> T): T =
+  private inline fun <T> decodeValueElement(index: Int, block: (Value, DataConnectPath) -> T): T =
     block(list.valuesList[index], elementPathForIndex(index))
 
   override fun <T> decodeSerializableElement(
@@ -373,14 +382,15 @@ private class ProtoListValueDecoder(
       decodeSerializableElement(descriptor, index, deserializer, previousValue = null)
     }
 
-  private fun elementPathForIndex(index: Int) = if (path === null) "[$index]" else "${path}[$index]"
+  private fun elementPathForIndex(index: Int): DataConnectPath = path.withAddedListIndex(index)
 
-  override fun toString() = "ProtoListValueDecoder{path=$path, size=${list.valuesList.size}"
+  override fun toString() =
+    "ProtoListValueDecoder{path=${path.toPathString()}, size=${list.valuesList.size}}"
 }
 
 private class ProtoMapValueDecoder(
   private val struct: Struct,
-  private val path: String?,
+  private val path: DataConnectPath,
   override val serializersModule: SerializersModule
 ) : CompositeDecoder {
 
@@ -435,7 +445,7 @@ private class ProtoMapValueDecoder(
       decodeValueElement(index, ProtoDecoderUtil::decodeString)
     }
 
-  private inline fun <T> decodeValueElement(index: Int, block: (Value, String?) -> T): T {
+  private inline fun <T> decodeValueElement(index: Int, block: (Value, DataConnectPath) -> T): T {
     require(index % 2 != 0) { "invalid value index: $index" }
     val value = structEntryByElementIndex(index).value
     val elementPath = elementPathForIndex(index)
@@ -491,21 +501,22 @@ private class ProtoMapValueDecoder(
     return deserializer.deserialize(elementDecoder)
   }
 
-  private fun elementPathForIndex(index: Int): String {
+  private fun elementPathForIndex(index: Int): DataConnectPath {
     val structEntry = structEntryByElementIndex(index)
     val key = structEntry.key
     return if (index % 2 == 0) {
-      if (path === null) "[$key]" else "${path}[$key]"
+      path.withAddedField(key)
     } else {
-      if (path === null) "[$key].value" else "${path}[$key].value"
+      path.withAddedField(key).withAddedField("value")
     }
   }
 
-  override fun toString() = "ProtoMapValueDecoder{path=$path, size=${struct.fieldsCount}"
+  override fun toString() =
+    "ProtoMapValueDecoder{path=${path.toPathString()}, size=${struct.fieldsCount}"
 }
 
 private class ProtoObjectValueDecoder(
-  val path: String?,
+  val path: DataConnectPath,
   override val serializersModule: SerializersModule
 ) : CompositeDecoder {
 
@@ -553,12 +564,12 @@ private class ProtoObjectValueDecoder(
 
   override fun endStructure(descriptor: SerialDescriptor) {}
 
-  override fun toString() = "ProtoObjectValueDecoder{path=$path}"
+  override fun toString() = "ProtoObjectValueDecoder{path=${path.toPathString()}}"
 }
 
 private class MapKeyDecoder(
   val key: String,
-  val path: String,
+  val path: DataConnectPath,
   override val serializersModule: SerializersModule
 ) : Decoder {
 
@@ -595,5 +606,5 @@ private class MapKeyDecoder(
       "The only valid method call on MapKeyDecoder is decodeString()"
     )
 
-  override fun toString() = "MapKeyDecoder{path=$path}"
+  override fun toString() = "MapKeyDecoder{path=${path.toPathString()}"
 }

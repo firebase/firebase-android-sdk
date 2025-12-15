@@ -379,7 +379,7 @@ internal object ProtoUtil {
     serializersModule: SerializersModule?
   ): Value {
     val values = mutableListOf<Value>()
-    ProtoValueEncoder(null, serializersModule ?: EmptySerializersModule(), values::add)
+    ProtoValueEncoder(emptyList(), serializersModule ?: EmptySerializersModule(), values::add)
       .encodeSerializableValue(serializer, value)
     if (values.isEmpty()) {
       return Value.getDefaultInstance()
@@ -411,7 +411,7 @@ internal object ProtoUtil {
     serializersModule: SerializersModule?
   ): T {
     val decoder =
-      ProtoValueDecoder(value, path = null, serializersModule ?: EmptySerializersModule())
+      ProtoValueDecoder(value, path = emptyList(), serializersModule ?: EmptySerializersModule())
     return decoder.decodeSerializableValue(deserializer)
   }
 }
