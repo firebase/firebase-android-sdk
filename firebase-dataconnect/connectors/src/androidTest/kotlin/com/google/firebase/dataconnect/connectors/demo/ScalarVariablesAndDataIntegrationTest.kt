@@ -754,7 +754,7 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
     runTest(timeout = 60.seconds) {
       checkAll(propTestConfig, Arb.thisTest.longs()) { longs ->
         val insertResult =
-          connector.insertInt64variants.execute(
+          connector.insertInt64Variants.execute(
             nonNullWithZeroValue = 0,
             nonNullWithPositiveValue = longs.positiveValue1,
             nonNullWithNegativeValue = longs.negativeValue1,
@@ -769,9 +769,9 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
             nullableWithMinValue = Long.MIN_VALUE
           }
 
-        val queryResult = connector.getInt64variantsByKey.execute(insertResult.data.key)
+        val queryResult = connector.getInt64VariantsByKey.execute(insertResult.data.key)
         queryResult.data.int64Variants shouldBe
-          GetInt64variantsByKeyQuery.Data.Int64variants(
+          GetInt64VariantsByKeyQuery.Data.Int64Variants(
             nonNullWithZeroValue = 0,
             nonNullWithPositiveValue = longs.positiveValue1,
             nonNullWithNegativeValue = longs.negativeValue1,
@@ -790,11 +790,11 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
   @Test
   fun insertInt64VariantsWithDefaultValues() =
     runTest(timeout = 60.seconds) {
-      val insertResult = connector.insertInt64variantsWithHardcodedDefaults.execute {}
+      val insertResult = connector.insertInt64VariantsWithHardcodedDefaults.execute {}
 
-      val queryResult = connector.getInt64variantsByKey.execute(insertResult.data.key)
+      val queryResult = connector.getInt64VariantsByKey.execute(insertResult.data.key)
       queryResult.data.int64Variants shouldBe
-        GetInt64variantsByKeyQuery.Data.Int64variants(
+        GetInt64VariantsByKeyQuery.Data.Int64Variants(
           nonNullWithZeroValue = 0,
           nonNullWithPositiveValue = HardcodedValues.NON_NULL_POSITIVE_LONG,
           nonNullWithNegativeValue = HardcodedValues.NON_NULL_NEGATIVE_LONG,
@@ -814,7 +814,7 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
     runTest(timeout = 60.seconds) {
       checkAll(propTestConfig, Arb.thisTest.longs()) { longs ->
         val insertResult =
-          connector.insertInt64variants.execute(
+          connector.insertInt64Variants.execute(
             nonNullWithZeroValue = 0,
             nonNullWithPositiveValue = longs.positiveValue1,
             nonNullWithNegativeValue = longs.negativeValue1,
@@ -829,7 +829,7 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
             nullableWithMinValue = Long.MIN_VALUE
           }
 
-        connector.updateInt64variantsByKey.execute(insertResult.data.key) {
+        connector.updateInt64VariantsByKey.execute(insertResult.data.key) {
           nonNullWithZeroValue = Long.MAX_VALUE
           nonNullWithPositiveValue = Long.MIN_VALUE
           nonNullWithNegativeValue = 0
@@ -843,9 +843,9 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
           nullableWithMinValue = longs.positiveValue5
         }
 
-        val queryResult = connector.getInt64variantsByKey.execute(insertResult.data.key)
+        val queryResult = connector.getInt64VariantsByKey.execute(insertResult.data.key)
         queryResult.data.int64Variants shouldBe
-          GetInt64variantsByKeyQuery.Data.Int64variants(
+          GetInt64VariantsByKeyQuery.Data.Int64Variants(
             nonNullWithZeroValue = Long.MAX_VALUE,
             nonNullWithPositiveValue = Long.MIN_VALUE,
             nonNullWithNegativeValue = 0,
@@ -866,7 +866,7 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
     runTest(timeout = 60.seconds) {
       checkAll(propTestConfig, Arb.thisTest.longs()) { longs ->
         val insertResult =
-          connector.insertInt64variants.execute(
+          connector.insertInt64Variants.execute(
             nonNullWithZeroValue = 0,
             nonNullWithPositiveValue = longs.positiveValue1,
             nonNullWithNegativeValue = longs.negativeValue1,
@@ -881,7 +881,7 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
             nullableWithMinValue = Long.MIN_VALUE
           }
 
-        connector.updateInt64variantsByKey.execute(insertResult.data.key) {
+        connector.updateInt64VariantsByKey.execute(insertResult.data.key) {
           nullableWithNullValue = null
           nullableWithZeroValue = null
           nullableWithPositiveValue = null
@@ -890,9 +890,9 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
           nullableWithMinValue = null
         }
 
-        val queryResult = connector.getInt64variantsByKey.execute(insertResult.data.key)
+        val queryResult = connector.getInt64VariantsByKey.execute(insertResult.data.key)
         queryResult.data.int64Variants shouldBe
-          GetInt64variantsByKeyQuery.Data.Int64variants(
+          GetInt64VariantsByKeyQuery.Data.Int64Variants(
             nonNullWithZeroValue = 0,
             nonNullWithPositiveValue = longs.positiveValue1,
             nonNullWithNegativeValue = longs.negativeValue1,
@@ -913,7 +913,7 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
     runTest(timeout = 60.seconds) {
       checkAll(propTestConfig, Arb.thisTest.longs()) { longs ->
         val insertResult =
-          connector.insertInt64variants.execute(
+          connector.insertInt64Variants.execute(
             nonNullWithZeroValue = 0,
             nonNullWithPositiveValue = longs.positiveValue1,
             nonNullWithNegativeValue = longs.negativeValue1,
@@ -928,11 +928,11 @@ class ScalarVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase()
             nullableWithMinValue = Long.MIN_VALUE
           }
 
-        connector.updateInt64variantsByKey.execute(insertResult.data.key) {}
+        connector.updateInt64VariantsByKey.execute(insertResult.data.key) {}
 
-        val queryResult = connector.getInt64variantsByKey.execute(insertResult.data.key)
+        val queryResult = connector.getInt64VariantsByKey.execute(insertResult.data.key)
         queryResult.data.int64Variants shouldBe
-          GetInt64variantsByKeyQuery.Data.Int64variants(
+          GetInt64VariantsByKeyQuery.Data.Int64Variants(
             nonNullWithZeroValue = 0,
             nonNullWithPositiveValue = longs.positiveValue1,
             nonNullWithNegativeValue = longs.negativeValue1,
