@@ -276,7 +276,7 @@ internal constructor(
   internal fun hasFunction(call: FunctionCallPart): Boolean {
     return tools
       ?.flatMap { it.autoFunctionDeclarations?.filterNotNull() ?: emptyList() }
-      ?.firstOrNull { it.name == call.name } != null
+      ?.firstOrNull { it.name == call.name && it.functionReference != null} != null
   }
 
   @OptIn(InternalSerializationApi::class)
@@ -308,12 +308,16 @@ internal constructor(
     val functionReference =
       functionDeclaration.functionReference
         ?: throw RuntimeException("Function reference for ${functionDeclaration.name} is missing")
-    val output = functionReference.invoke(input)
-    val outputSerializer = functionDeclaration.outputSchema?.clazz?.serializerOrNull()
-    if (outputSerializer != null) {
-      return Json.encodeToJsonElement(outputSerializer, output).jsonObject
+    try {
+      val output = functionReference.invoke(input)
+      val outputSerializer = functionDeclaration.outputSchema?.clazz?.serializerOrNull()
+      if (outputSerializer != null) {
+        return Json.encodeToJsonElement(outputSerializer, output).jsonObject
+      }
+      return output as JsonObject
+    } catch (e: FirebaseAutoFunctionException) {
+      return JsonObject(mapOf("error" to e.message))
     }
-    return output as JsonObject
   }
 
   @OptIn(ExperimentalSerializationApi::class)
