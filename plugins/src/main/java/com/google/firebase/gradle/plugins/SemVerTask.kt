@@ -16,7 +16,6 @@
 
 package com.google.firebase.gradle.plugins
 
-import com.google.firebase.gradle.plugins.semver.VersionDelta
 import java.io.ByteArrayOutputStream
 import javax.inject.Inject
 import org.gradle.api.DefaultTask
@@ -44,9 +43,9 @@ abstract class SemVerTask @Inject constructor(private val execOperations: ExecOp
 
     val bump =
       when {
-        previous.major != current.major -> VersionDelta.MAJOR
-        previous.minor != current.minor -> VersionDelta.MINOR
-        else -> VersionDelta.PATCH
+        previous.major != current.major -> Delta.MAJOR
+        previous.minor != current.minor -> Delta.MINOR
+        else -> Delta.PATCH
       }
     val stream = ByteArrayOutputStream()
     project.runMetalavaWithArgs(
@@ -84,13 +83,13 @@ abstract class SemVerTask @Inject constructor(private val execOperations: ExecOp
       (majorChanges.joinToString(separator = "") { m -> "  MAJOR: $m\n" }) +
         minorChanges.joinToString(separator = "") { m -> "  MINOR: $m\n" }
     if (majorChanges.isNotEmpty()) {
-      if (bump != VersionDelta.MAJOR) {
+      if (bump != Delta.MAJOR) {
         throw GradleException(
           "API has non-bumped breaking MAJOR changes\nCurrent version bump is ${bump}, update the gradle.properties or fix the changes\n$allChanges"
         )
       }
     } else if (minorChanges.isNotEmpty()) {
-      if (bump != VersionDelta.MAJOR && bump != VersionDelta.MINOR) {
+      if (bump != Delta.MAJOR && bump != Delta.MINOR) {
         throw GradleException(
           "API has non-bumped MINOR changes\nCurrent version bump is ${bump}, update the gradle.properties or fix the changes\n$allChanges"
         )
@@ -102,5 +101,11 @@ abstract class SemVerTask @Inject constructor(private val execOperations: ExecOp
     private val MAJOR = setOf("AddedFinal")
     private val MINOR = setOf("AddedClass", "AddedMethod", "AddedField", "ChangedDeprecated")
     private val IGNORED = setOf("ReferencesDeprecated")
+  }
+
+  enum class Delta {
+    MAJOR,
+    MINOR,
+    PATCH,
   }
 }
