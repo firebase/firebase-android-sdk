@@ -1,5 +1,7 @@
 # Unreleased
 
+# 22.0.2
+
 - [changed] Updated `com.github.bumptech.glide:glide` dependency to `5.0.5`. [#7469]
 
 # 22.0.1
@@ -374,3 +376,4 @@ library. The Kotlin extensions library has no additional updates.
 - [feature] The initial public beta release of the Firebase In-App Messaging Display SDK for Android
   is now available. To learn more, see the
   [Firebase In-App Messaging documentation](/docs/in-app-messaging).
+

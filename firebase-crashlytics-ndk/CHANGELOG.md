@@ -1,5 +1,7 @@
 # Unreleased
 
+- [changed] Updated `firebase-crashlytics` dependency to 20.0.4
+
 # 20.0.3
 
 - [changed] Bumped internal dependencies.
@@ -317,3 +319,4 @@ the new SDK.
   [crashlytics] servers. See the
   [[crashlytics] Gradle plugin documentation](/docs/crashlytics/ndk-reports-new-sdk) for more
   information.
+

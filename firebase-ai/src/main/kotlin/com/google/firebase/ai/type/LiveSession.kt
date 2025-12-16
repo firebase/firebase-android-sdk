@@ -171,6 +171,26 @@ internal constructor(
     transcriptHandler: ((Transcription?, Transcription?) -> Unit)? = null,
     enableInterruptions: Boolean = false,
   ) {
+    startAudioConversation(
+      liveAudioConversationConfig {
+        this.functionCallHandler = functionCallHandler
+        this.transcriptHandler = transcriptHandler
+        this.enableInterruptions = enableInterruptions
+      }
+    )
+  }
+
+  /**
+   * Starts an audio conversation with the model, which can only be stopped using
+   * [stopAudioConversation] or [close].
+   *
+   * @param liveAudioConversationConfig A [LiveAudioConversationConfig] provided by the user to
+   * control the various aspects of the conversation.
+   */
+  @RequiresPermission(RECORD_AUDIO)
+  public suspend fun startAudioConversation(
+    liveAudioConversationConfig: LiveAudioConversationConfig
+  ) {
 
     val context = firebaseApp.applicationContext
     if (
@@ -191,11 +211,14 @@ internal constructor(
       networkScope =
         CoroutineScope(blockingDispatcher + childJob() + CoroutineName("LiveSession Network"))
       audioScope = CoroutineScope(audioDispatcher + childJob() + CoroutineName("LiveSession Audio"))
-      audioHelper = AudioHelper.build()
+      audioHelper = AudioHelper.build(liveAudioConversationConfig.initializationHandler)
 
       recordUserAudio()
-      processModelResponses(functionCallHandler, transcriptHandler)
-      listenForModelPlayback(enableInterruptions)
+      processModelResponses(
+        liveAudioConversationConfig.functionCallHandler,
+        liveAudioConversationConfig.transcriptHandler
+      )
+      listenForModelPlayback(liveAudioConversationConfig.enableInterruptions)
     }
   }
 
@@ -331,10 +354,18 @@ internal constructor(
   }
 
   /**
-   * Sends a video input stream to the model, using the realtime API.
+   * Sends a video frame to the model, using the realtime API.
    *
-   * @param video Encoded video data, used to update the model on the client's conversation. The
-   * MIME type can be a video format (e.g., `video/webm`) or an image format (e.g., `image/jpeg`).
+   * Instead of raw video data, the model expects individual frames of the video, sent as images.
+   *
+   * If your video has audio, send it separately through [sendAudioRealtime].
+   *
+   * For better performance, frames can also be sent at a lower rate than the video; even as low as
+   * 1 frame per second.
+   *
+   * @param video Encoded image data extracted from a frame of the video, used to update the model
+   * on the client's conversation, with the corresponding IANA standard MIME type of the video frame
+   * data (for example, `image/png`, `image/jpeg`, etc.).
    */
   public suspend fun sendVideoRealtime(video: InlineData) {
     FirebaseAIException.catchAsync {

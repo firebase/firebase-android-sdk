@@ -107,6 +107,29 @@ internal constructor(
   }
 
   /**
+   * Instantiates a new [TemplateGenerativeModel] given the provided parameters.
+   *
+   * @param requestOptions Configuration options for sending requests to the backend.
+   * @return The initialized [TemplateGenerativeModel] instance.
+   */
+  @JvmOverloads
+  @PublicPreviewAPI
+  public fun templateGenerativeModel(
+    requestOptions: RequestOptions = RequestOptions(),
+  ): TemplateGenerativeModel {
+    val templateUri = getTemplateUri(backend)
+    return TemplateGenerativeModel(
+      templateUri,
+      firebaseApp.options.apiKey,
+      firebaseApp,
+      useLimitedUseAppCheckTokens,
+      requestOptions,
+      appCheckProvider.get(),
+      internalAuthProvider.get(),
+    )
+  }
+
+  /**
    * Instantiates a new [LiveGenerationConfig] given the provided parameters.
    *
    * @param modelName The name of the model to use. See the documentation for a list of
@@ -205,6 +228,29 @@ internal constructor(
     )
   }
 
+  /**
+   * Instantiates a new [TemplateImagenModel] given the provided parameters.
+   *
+   * @param requestOptions Configuration options for sending requests to the backend.
+   * @return The initialized [TemplateImagenModel] instance.
+   */
+  @JvmOverloads
+  @PublicPreviewAPI
+  public fun templateImagenModel(
+    requestOptions: RequestOptions = RequestOptions(),
+  ): TemplateImagenModel {
+    val templateUri = getTemplateUri(backend)
+    return TemplateImagenModel(
+      templateUri,
+      firebaseApp.options.apiKey,
+      firebaseApp,
+      useLimitedUseAppCheckTokens,
+      requestOptions,
+      appCheckProvider.get(),
+      internalAuthProvider.get(),
+    )
+  }
+
   public companion object {
     /** The [FirebaseAI] instance for the default [FirebaseApp] using the Google AI Backend. */
     @JvmStatic
@@ -258,6 +304,13 @@ internal constructor(
 
     private val TAG = FirebaseAI::class.java.simpleName
   }
+
+  private fun getTemplateUri(backend: GenerativeBackend): String =
+    when (backend.backend) {
+      GenerativeBackendEnum.VERTEX_AI ->
+        "projects/${firebaseApp.options.projectId}/locations/${backend.location}/templates/"
+      GenerativeBackendEnum.GOOGLE_AI -> "projects/${firebaseApp.options.projectId}/templates/"
+    }
 }
 
 /** The [FirebaseAI] instance for the default [FirebaseApp] using the Google AI Backend. */

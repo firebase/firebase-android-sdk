@@ -1,7 +1,14 @@
 # Unreleased
 
+# 17.1.2
+
 - [changed] Internal refactor for managing Auth and App Check tokens
-  ([#7184](https://github.com/firebase/firebase-android-sdk/pull/7184))
+  [#7485](https://github.com/firebase/firebase-android-sdk/pull/7485))
+
+# 17.1.1
+
+- [changed] Internal refactor for managing Auth and App Check tokens
+  ([#7484](https://github.com/firebase/firebase-android-sdk/pull/7484)
 
 # 17.1.0
 
@@ -110,3 +117,4 @@
   ([#6299](https://github.com/firebase/firebase-android-sdk/pull/6299))
 - [changed] Added `equals` and `hashCode` methods to `GeneratedConnector`.
   ([#6177](https://github.com/firebase/firebase-android-sdk/pull/6177))
+
