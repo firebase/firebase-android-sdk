@@ -22,8 +22,10 @@ import kotlinx.serialization.Serializable
  * Configuration parameters to use for image generation.
  *
  * @property aspectRatio The aspect ratio of the generated image.
+ * @property imageSize The size of generated images.
  */
-public class ImageConfig internal constructor(internal val aspectRatio: AspectRatio?) {
+public class ImageConfig
+internal constructor(internal val aspectRatio: AspectRatio?, internal val imageSize: ImageSize?) {
 
   /**
    * Builder for creating an [ImageConfig].
@@ -32,6 +34,7 @@ public class ImageConfig internal constructor(internal val aspectRatio: AspectRa
    * idiomatic experience.
    *
    * @property aspectRatio See [ImageConfig.aspectRatio].
+   * @property imageSize See [ImageConfig.imageSize].
    * @see [imageConfig]
    */
   public class Builder {
@@ -39,17 +42,24 @@ public class ImageConfig internal constructor(internal val aspectRatio: AspectRa
     @set:JvmSynthetic // hide void setter from Java
     public var aspectRatio: AspectRatio? = null
 
+    @JvmField
+    @set:JvmSynthetic // hide void setter from Java
+    public var imageSize: ImageSize? = null
+
     public fun setAspectRatio(aspectRatio: AspectRatio?): Builder = apply {
       this.aspectRatio = aspectRatio
     }
 
+    public fun setImageSize(imageSize: ImageSize): Builder = apply { this.imageSize = imageSize }
+
     /** Create a new [ImageConfig] with the attached arguments. */
-    public fun build(): ImageConfig = ImageConfig(aspectRatio = aspectRatio)
+    public fun build(): ImageConfig = ImageConfig(aspectRatio = aspectRatio, imageSize = imageSize)
   }
 
-  internal fun toInternal() = Internal(aspectRatio = aspectRatio?.internalVal)
+  internal fun toInternal() =
+    Internal(aspectRatio = aspectRatio?.internalVal, imageSize = imageSize?.internalVal)
 
-  @Serializable internal data class Internal(val aspectRatio: String?)
+  @Serializable internal data class Internal(val aspectRatio: String?, val imageSize: String?)
 }
 
 /**
@@ -59,6 +69,7 @@ public class ImageConfig internal constructor(internal val aspectRatio: AspectRa
  * ```
  * imageConfig {
  *   aspectRatio = AspectRatio.LANDSCAPE_16x9
+ *   imageSize = ImageSize.SIZE_2K
  * }
  * ```
  */

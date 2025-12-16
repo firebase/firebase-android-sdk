@@ -651,6 +651,7 @@ package com.google.firebase.ai.type {
     ctor public ImageConfig.Builder();
     method public com.google.firebase.ai.type.ImageConfig build();
     method public com.google.firebase.ai.type.ImageConfig.Builder setAspectRatio(com.google.firebase.ai.type.AspectRatio? aspectRatio);
+    method public com.google.firebase.ai.type.ImageConfig.Builder setImageSize(com.google.firebase.ai.type.ImageSize imageSize);
   }
 
   public final class ImageConfigKt {
@@ -663,6 +664,16 @@ package com.google.firebase.ai.type {
     method public boolean isThought();
     property public final android.graphics.Bitmap image;
     property public boolean isThought;
+  }
+
+  public final class ImageSize {
+    field public static final com.google.firebase.ai.type.ImageSize.Companion Companion;
+    field public static final com.google.firebase.ai.type.ImageSize SIZE_1K;
+    field public static final com.google.firebase.ai.type.ImageSize SIZE_2K;
+    field public static final com.google.firebase.ai.type.ImageSize SIZE_4K;
+  }
+
+  public static final class ImageSize.Companion {
   }
 
   public final class ImagenAspectRatio {
