@@ -16,15 +16,20 @@
 
 package com.google.firebase.dataconnect.sqlite
 
+import com.google.firebase.dataconnect.DataConnectPath
+import com.google.firebase.dataconnect.MutableDataConnectPath
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.getSInt32
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.getSInt64
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.getUInt32
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.getUInt64
 import com.google.firebase.dataconnect.sqlite.QueryResultCodec.Entity
+import com.google.firebase.dataconnect.toPathString
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.firebase.dataconnect.util.StringUtil.ellipsizeMiddle
 import com.google.firebase.dataconnect.util.StringUtil.get0xHexString
 import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
+import com.google.firebase.dataconnect.withAddedField
+import com.google.firebase.dataconnect.withAddedListIndex
 import com.google.protobuf.ListValue
 import com.google.protobuf.NullValue
 import com.google.protobuf.Struct
@@ -60,10 +65,12 @@ internal class QueryResultDecoder(
   private val charArray = CharArray(2)
 
   fun decode(): Struct {
-    readMagic()
+    readMagic(path = emptyList())
 
     val rootStructValueType =
       readValueType(
+        path = emptyList(),
+        name = "root struct value type",
         eofErrorId = "RootStructValueTypeIndicatorByteEOF",
         unknownErrorId = "RootStructValueTypeIndicatorByteUnknown",
         unexpectedErrorId = "RootStructValueTypeIndicatorByteUnexpected",
@@ -71,8 +78,8 @@ internal class QueryResultDecoder(
       )
 
     return when (rootStructValueType) {
-      RootStructValueType.Struct -> readStruct()
-      RootStructValueType.Entity -> readEntity()
+      RootStructValueType.Struct -> readStruct(path = mutableListOf())
+      RootStructValueType.Entity -> readEntity(path = mutableListOf())
     }
   }
 
@@ -85,6 +92,8 @@ internal class QueryResultDecoder(
 
   private inline fun ensureRemaining(
     byteCount: Int,
+    path: DataConnectPath,
+    name: String,
     eofErrorId: String,
     eofException: (message: String, cause: Throwable?) -> Throwable
   ) {
@@ -92,8 +101,8 @@ internal class QueryResultDecoder(
       if (!readSome()) {
         val remaining = byteBuffer.remaining()
         throw eofException(
-          "end of input reached prematurely while reading $byteCount bytes: " +
-            "got $remaining bytes (${byteBuffer.get0xHexString()}), " +
+          "end of input reached prematurely while reading $byteCount bytes of $name " +
+            "at ${path.toPathString()}: got $remaining bytes (${byteBuffer.get0xHexString()}), " +
             "${byteCount-remaining} fewer bytes than expected " +
             "[xg5y5fm2vk, eofErrorId=$eofErrorId]",
           null
@@ -109,6 +118,8 @@ internal class QueryResultDecoder(
   }
 
   private inline fun <T : Number> readVarint(
+    path: DataConnectPath,
+    name: String,
     typeName: String,
     maxSize: Int,
     decodeErrorId: String,
@@ -136,7 +147,7 @@ internal class QueryResultDecoder(
 
           byteBuffer.position(originalPosition)
           throw valueVerifier.exception(
-            "invalid $typeName value decoded: $decodedValue " +
+            "invalid $name $typeName value decoded at ${path.toPathString()}: $decodedValue " +
               "(decoded from $decodedByteCount bytes: " +
               "${byteBuffer.get0xHexString(length = decodedByteCount)}) " +
               "[pypnp79waw, invalidValueErrorId=${valueVerifier.errorId}]"
@@ -147,8 +158,8 @@ internal class QueryResultDecoder(
 
           if (byteBuffer.remaining() >= maxSize) {
             throw decodeException(
-              "$typeName decode failed of $decodedByteCount bytes: " +
-                "${byteBuffer.get0xHexString(length=decodedByteCount)} " +
+              "$name $typeName decode failed of $decodedByteCount bytes at " +
+                "${path.toPathString()}: ${byteBuffer.get0xHexString(length=decodedByteCount)} " +
                 "[ybydmsykkp, decodeErrorId=$decodeErrorId]",
               readResult.exceptionOrNull()
             )
@@ -156,9 +167,10 @@ internal class QueryResultDecoder(
 
           if (!readSome()) {
             throw eofException(
-              "end of input reached prematurely while decoding $typeName value: " +
-                "got ${byteBuffer.remaining()} bytes (${byteBuffer.get0xHexString()}), " +
-                "but expected between 1 and $maxSize bytes [c439qmdmnk, eofErrorId=$eofErrorId]",
+              "end of input reached prematurely while decoding $name $typeName value at " +
+                "${path.toPathString()}: got ${byteBuffer.remaining()} bytes " +
+                "(${byteBuffer.get0xHexString()}), but expected between 1 and $maxSize bytes " +
+                "[c439qmdmnk, eofErrorId=$eofErrorId]",
               readResult.exceptionOrNull()
             )
           }
@@ -173,11 +185,15 @@ internal class QueryResultDecoder(
   }
 
   private fun readUInt32(
+    path: DataConnectPath,
+    name: String,
     valueVerifier: UInt32ValueVerifier,
     decodeErrorId: String,
     eofErrorId: String,
   ): Int =
     readVarint(
+      path = path,
+      name = name,
       typeName = "uint32",
       maxSize = CodedIntegers.MAX_VARINT32_SIZE,
       decodeErrorId = decodeErrorId,
@@ -189,8 +205,15 @@ internal class QueryResultDecoder(
     )
 
   @Suppress("SameParameterValue")
-  private fun readSInt32(decodeErrorId: String, eofErrorId: String): Int =
+  private fun readSInt32(
+    path: DataConnectPath,
+    name: String,
+    decodeErrorId: String,
+    eofErrorId: String
+  ): Int =
     readVarint(
+      path = path,
+      name = name,
       typeName = "sint32",
       maxSize = CodedIntegers.MAX_VARINT32_SIZE,
       decodeErrorId = decodeErrorId,
@@ -208,11 +231,15 @@ internal class QueryResultDecoder(
 
   @Suppress("SameParameterValue")
   private fun readUInt64(
+    path: DataConnectPath,
+    name: String,
     valueVerifier: UInt64ValueVerifier,
     decodeErrorId: String,
     eofErrorId: String,
   ): Long =
     readVarint(
+      path = path,
+      name = name,
       typeName = "uint64",
       maxSize = CodedIntegers.MAX_VARINT64_SIZE,
       decodeErrorId = decodeErrorId,
@@ -224,8 +251,15 @@ internal class QueryResultDecoder(
     )
 
   @Suppress("SameParameterValue")
-  private fun readSInt64(decodeErrorId: String, eofErrorId: String): Long =
+  private fun readSInt64(
+    path: DataConnectPath,
+    name: String,
+    decodeErrorId: String,
+    eofErrorId: String
+  ): Long =
     readVarint(
+      path = path,
+      name = name,
       typeName = "sint64",
       maxSize = CodedIntegers.MAX_VARINT64_SIZE,
       decodeErrorId = decodeErrorId,
@@ -236,7 +270,11 @@ internal class QueryResultDecoder(
       read = { byteBuffer -> byteBuffer.getSInt64() },
     )
 
-  private fun readBytes(byteCount: Int): ByteArray {
+  private fun readBytes(
+    path: DataConnectPath,
+    @Suppress("SameParameterValue") name: String,
+    byteCount: Int,
+  ): ByteArray {
     val byteArray = ByteArray(byteCount)
     var byteArrayOffset = 0
     while (byteArrayOffset < byteCount) {
@@ -248,8 +286,8 @@ internal class QueryResultDecoder(
             .to0xHexString(length = byteArrayOffset, include0xPrefix = false)
             .ellipsizeMiddle(maxLength = 20)
         throw ByteArrayEOFException(
-          "end of input reached prematurely while reading byte array of length $byteCount: " +
-            "got $byteArrayOffset bytes (0x$byteArrayHexString), " +
+          "end of input reached prematurely while reading $name byte array of length $byteCount " +
+            "at ${path.toPathString()} got $byteArrayOffset bytes (0x$byteArrayHexString), " +
             "${wantByteCount - byteBuffer.remaining()} fewer bytes than expected [dnx886qwmk]"
         )
       }
@@ -262,21 +300,22 @@ internal class QueryResultDecoder(
     return byteArray
   }
 
-  private fun readString(): String = readString(readStringValueType())
+  private fun readString(path: DataConnectPath, name: String): String =
+    readString(path, name, readStringValueType(path, name))
 
-  private fun readString(stringType: StringValueType): String =
+  private fun readString(path: DataConnectPath, name: String, stringType: StringValueType): String =
     when (stringType) {
       StringValueType.Empty -> ""
-      StringValueType.OneByte -> readString1Byte()
-      StringValueType.TwoByte -> readString2Byte()
-      StringValueType.OneChar -> readString1Char()
-      StringValueType.TwoChar -> readString2Char()
-      StringValueType.Utf8 -> readStringUtf8()
-      StringValueType.Utf16 -> readStringCustomUtf16()
+      StringValueType.OneByte -> readString1Byte(path, name)
+      StringValueType.TwoByte -> readString2Byte(path, name)
+      StringValueType.OneChar -> readString1Char(path, name)
+      StringValueType.TwoChar -> readString2Char(path, name)
+      StringValueType.Utf8 -> readStringUtf8(path, name)
+      StringValueType.Utf16 -> readStringCustomUtf16(path, name)
     }
 
-  private fun readMagic() {
-    ensureRemaining(4, eofErrorId = "MagicEOF", ::MagicEOFException)
+  private fun readMagic(path: DataConnectPath) {
+    ensureRemaining(4, path, name = "magic", eofErrorId = "MagicEOF", ::MagicEOFException)
     val magic = byteBuffer.getInt()
 
     if (magic != QueryResultCodec.QUERY_RESULT_MAGIC) {
@@ -324,18 +363,21 @@ internal class QueryResultDecoder(
   }
 
   private fun <T : Any> readValueType(
+    path: DataConnectPath,
+    name: String,
     eofErrorId: String,
     unknownErrorId: String,
     unexpectedErrorId: String,
     map: Map<ValueType, T>,
   ): T {
-    ensureRemaining(1, eofErrorId, ::ValueTypeIndicatorEOFException)
+    ensureRemaining(1, path, name, eofErrorId, ::ValueTypeIndicatorEOFException)
     val byte = byteBuffer.get()
 
     val valueType = ValueType.fromSerializedByte(byte)
     if (valueType === null) {
       throw UnknownValueTypeIndicatorByteException(
-        "read unknown value type indicator byte: $byte; expected one of " +
+        "read unknown $name value type indicator byte at ${path.toPathString()}: $byte; " +
+          "expected one of " +
           ValueType.entries
             .sortedBy { it.serializedByte }
             .joinToString { "${it.serializedByte} (${it.displayName})" } +
@@ -347,8 +389,8 @@ internal class QueryResultDecoder(
     val mappedType = map[valueType]
     if (mappedType === null) {
       throw UnexpectedValueTypeIndicatorByteException(
-        "read unexpected value type indicator byte: $byte (${valueType.displayName}); " +
-          "expected one of " +
+        "read unexpected $name value type indicator byte: $byte (${valueType.displayName}) " +
+          "at ${path.toPathString()}; expected one of " +
           map.keys
             .sortedBy { it.serializedByte }
             .joinToString { "${it.serializedByte} (${it.displayName})" } +
@@ -384,8 +426,10 @@ internal class QueryResultDecoder(
     }
   }
 
-  private fun readStringValueType(): StringValueType =
+  private fun readStringValueType(path: DataConnectPath, name: String): StringValueType =
     readValueType(
+      path,
+      name,
       eofErrorId = "StringValueTypeIndicatorByteEOF",
       unknownErrorId = "StringValueTypeIndicatorByteUnknown",
       unexpectedErrorId = "StringValueTypeIndicatorByteUnexpected",
@@ -399,15 +443,15 @@ internal class QueryResultDecoder(
     return charArray[0]
   }
 
-  private fun readString1Byte(): String {
-    ensureRemaining(1, eofErrorId = "String1ByteEOF", ::String1ByteEOFException)
+  private fun readString1Byte(path: DataConnectPath, name: String): String {
+    ensureRemaining(1, path, name, eofErrorId = "String1ByteEOF", ::String1ByteEOFException)
     val byte = byteBuffer.get()
     val char = byte.decodeChar()
     return char.toString()
   }
 
-  private fun readString2Byte(): String {
-    ensureRemaining(2, eofErrorId = "String2ByteEOF", ::String2ByteEOFException)
+  private fun readString2Byte(path: DataConnectPath, name: String): String {
+    ensureRemaining(2, path, name, eofErrorId = "String2ByteEOF", ::String2ByteEOFException)
     val byte1 = byteBuffer.get()
     val byte2 = byteBuffer.get()
     val char1 = byte1.decodeChar()
@@ -417,34 +461,38 @@ internal class QueryResultDecoder(
     return String(charArray, 0, 2)
   }
 
-  private fun readString1Char(): String {
-    ensureRemaining(2, eofErrorId = "String1CharEOF", ::String1CharEOFException)
+  private fun readString1Char(path: DataConnectPath, name: String): String {
+    ensureRemaining(2, path, name, eofErrorId = "String1CharEOF", ::String1CharEOFException)
     val char = byteBuffer.getChar()
     return char.toString()
   }
 
-  private fun readString2Char(): String {
-    ensureRemaining(4, eofErrorId = "String2CharEOF", ::String2CharEOFException)
+  private fun readString2Char(path: DataConnectPath, name: String): String {
+    ensureRemaining(4, path, name, eofErrorId = "String2CharEOF", ::String2CharEOFException)
     charArray[0] = byteBuffer.getChar()
     charArray[1] = byteBuffer.getChar()
     return String(charArray, 0, 2)
   }
 
-  private fun readStringUtf8(): String {
+  private fun readStringUtf8(path: DataConnectPath, name: String): String {
     val byteCount =
       readUInt32(
+        path,
+        name,
         valueVerifier = stringUtf8ByteCountUInt32ValueVerifier,
         decodeErrorId = "StringUtf8ByteCountDecodeFailed",
         eofErrorId = "StringUtf8ByteCountEOF",
       )
     val charCount =
       readUInt32(
+        path,
+        name,
         valueVerifier = stringUtf8CharCountUInt32ValueVerifier,
         decodeErrorId = "StringUtf8CharCountDecodeFailed",
         eofErrorId = "StringUtf8CharCountEOF",
       )
 
-    val fastStringRead = readUtf8Fast(byteCount = byteCount, charCount = charCount)
+    val fastStringRead = readUtf8Fast(path, name, byteCount = byteCount, charCount = charCount)
     if (fastStringRead !== null) {
       return fastStringRead
     }
@@ -468,7 +516,7 @@ internal class QueryResultDecoder(
         val totalBytesRead = byteBuffer.remaining() + byteCount - bytesRemaining
         throw Utf8EOFException(
           "end of input reached prematurely while reading $charCount characters " +
-            "($byteCount bytes) of a UTF-8 encoded string: " +
+            "($byteCount bytes) of a $name UTF-8 encoded string at ${path.toPathString()}: " +
             "got ${charBuffer.position()} characters, " +
             "${charBuffer.remaining()} fewer characters than expected " +
             "($totalBytesRead bytes, $bytesRemaining fewer bytes than expected) [akn3x7p8rm]"
@@ -490,7 +538,8 @@ internal class QueryResultDecoder(
     }
     if (charBuffer.hasRemaining()) {
       throw Utf8IncorrectNumCharactersException(
-        "expected to read $charCount characters ($byteCount bytes) of a UTF-8 encoded string, " +
+        "expected to read $charCount characters ($byteCount bytes) of a $name UTF-8 " +
+          "encoded string at ${path.toPathString()}, " +
           "but only got ${charBuffer.position()} characters, " +
           "${charBuffer.remaining()} fewer characters than expected [dhvzxrcrqe]"
       )
@@ -500,7 +549,12 @@ internal class QueryResultDecoder(
     return charBuffer.toString()
   }
 
-  private fun readUtf8Fast(byteCount: Int, charCount: Int): String? {
+  private fun readUtf8Fast(
+    path: DataConnectPath,
+    name: String,
+    byteCount: Int,
+    charCount: Int
+  ): String? {
     if (byteCount > byteBuffer.capacity()) {
       return null
     }
@@ -524,8 +578,9 @@ internal class QueryResultDecoder(
           "${charCount - decodedString.length} fewer"
         }
       throw Utf8IncorrectNumCharactersException(
-        "expected to read $charCount characters ($byteCount bytes) of a UTF-8 encoded string; " +
-          "got the expected number of bytes, but got ${decodedString.length} characters, " +
+        "expected to read $charCount characters ($byteCount bytes) of a $name UTF-8 " +
+          "encoded string at ${path.toPathString()}; got the expected number of bytes, " +
+          "but got ${decodedString.length} characters, " +
           "$differenceString characters than expected [chq89pn4j6]"
       )
     }
@@ -533,9 +588,11 @@ internal class QueryResultDecoder(
     return decodedString
   }
 
-  private fun readStringCustomUtf16(): String {
+  private fun readStringCustomUtf16(path: DataConnectPath, name: String): String {
     val charCount =
       readUInt32(
+        path,
+        name,
         valueVerifier = stringUtf16CharCountUInt32ValueVerifier,
         decodeErrorId = "StringUtf16CharCountDecodeFailed",
         eofErrorId = "StringUtf16CharCountEOF",
@@ -549,8 +606,8 @@ internal class QueryResultDecoder(
         val expectedTotalBytesRead = charCount * 2
         throw Utf16EOFException(
           "end of input reached prematurely while reading $charCount characters " +
-            "($expectedTotalBytesRead bytes) of a UTF-16 encoded string: " +
-            "got ${charBuffer.position()} characters, " +
+            "($expectedTotalBytesRead bytes) of $name UTF-16 encoded string " +
+            "at ${path.toPathString()}: got ${charBuffer.position()} characters, " +
             "${charBuffer.remaining()} fewer characters than expected " +
             "($totalBytesRead bytes, ${expectedTotalBytesRead-totalBytesRead} " +
             "fewer bytes than expected) [e399qdvzdz]"
@@ -589,28 +646,34 @@ internal class QueryResultDecoder(
     }
   }
 
-  private fun readListOfEntities(): ListValue {
+  private fun readListOfEntities(path: MutableDataConnectPath): ListValue {
     val size =
       readUInt32(
+        path,
+        name = "list size",
         valueVerifier = listOfEntitiesSizeUInt32ValueVerifier,
         decodeErrorId = "ListOfEntitiesSizeDecodeFailed",
         eofErrorId = "ListOfEntitiesSizeEOF",
       )
 
     val listValueBuilder = ListValue.newBuilder()
-    repeat(size) {
-      val listElementValueType =
-        readValueType(
-          eofErrorId = "ReadListOfEntitiesValueTypeIndicatorByteEOF",
-          unknownErrorId = "ReadListOfEntitiesValueTypeIndicatorByteUnknown",
-          unexpectedErrorId = "ReadListOfEntitiesValueTypeIndicatorByteUnexpected",
-          map = ListOfEntitiesValueType.instanceByValueType,
-        )
-
+    repeat(size) { listIndex ->
       val listElement: Value =
-        when (listElementValueType) {
-          ListOfEntitiesValueType.Entity -> readEntity().toValueProto()
-          ListOfEntitiesValueType.ListOfEntities -> readListOfEntities().toValueProto()
+        path.withAddedListIndex(listIndex) {
+          val listElementValueType =
+            readValueType(
+              path,
+              name = "list element",
+              eofErrorId = "ReadListOfEntitiesValueTypeIndicatorByteEOF",
+              unknownErrorId = "ReadListOfEntitiesValueTypeIndicatorByteUnknown",
+              unexpectedErrorId = "ReadListOfEntitiesValueTypeIndicatorByteUnexpected",
+              map = ListOfEntitiesValueType.instanceByValueType,
+            )
+
+          when (listElementValueType) {
+            ListOfEntitiesValueType.Entity -> readEntity(path).toValueProto()
+            ListOfEntitiesValueType.ListOfEntities -> readListOfEntities(path).toValueProto()
+          }
         }
 
       listValueBuilder.addValues(listElement)
@@ -618,17 +681,19 @@ internal class QueryResultDecoder(
     return listValueBuilder.build()
   }
 
-  private fun readList(): ListValue {
+  private fun readList(path: MutableDataConnectPath): ListValue {
     val size =
       readUInt32(
+        path,
+        name = "list size",
         valueVerifier = listSizeUInt32ValueVerifier,
         decodeErrorId = "ListSizeDecodeFailed",
         eofErrorId = "ListSizeEOF",
       )
 
     val listValueBuilder = ListValue.newBuilder()
-    repeat(size) {
-      val value = readValue()
+    repeat(size) { listIndex ->
+      val value: Value = path.withAddedListIndex(listIndex) { readValue(path) }
       listValueBuilder.addValues(value)
     }
     return listValueBuilder.build()
@@ -653,9 +718,11 @@ internal class QueryResultDecoder(
     }
   }
 
-  private fun readStruct(): Struct {
+  private fun readStruct(path: MutableDataConnectPath): Struct {
     val keyCount =
       readUInt32(
+        path,
+        name = "struct key count",
         valueVerifier = structKeyCountUInt32ValueVerifier,
         decodeErrorId = "StructKeyCountDecodeFailed",
         eofErrorId = "StructKeyCountEOF",
@@ -663,8 +730,8 @@ internal class QueryResultDecoder(
 
     val structBuilder = Struct.newBuilder()
     repeat(keyCount) {
-      val key = readString()
-      val value = readValue()
+      val key = readString(path, name = "struct key")
+      val value = path.withAddedField(key) { readValue(path) }
       structBuilder.putFields(key, value)
     }
     return structBuilder.build()
@@ -691,26 +758,30 @@ internal class QueryResultDecoder(
     }
   }
 
-  private fun readEntity(): Struct {
+  private fun readEntity(path: MutableDataConnectPath): Struct {
     val encodedEntityIdSize =
       readUInt32(
+        path,
+        name = "encoded entity ID size",
         valueVerifier = encodedEntityIdSizeUInt32ValueVerifier,
         decodeErrorId = "EncodedEntityIdSizeDecodeFailed",
         eofErrorId = "EncodedEntityIdSizeEOF",
       )
 
-    val encodedEntityId = readBytes(encodedEntityIdSize)
+    val encodedEntityId = readBytes(path, name = "encoded entity ID", encodedEntityIdSize)
     val entity =
       entities.find { it.encodedId.contentEquals(encodedEntityId) }
         ?: throw EntityNotFoundException(
           "could not find entity with encoded id ${encodedEntityId.to0xHexString()} [p583k77y7r]"
         )
-    return readEntitySubStruct(entity.data)
+    return readEntitySubStruct(path, entity.data)
   }
 
-  private fun readEntitySubStruct(entity: Struct): Struct {
+  private fun readEntitySubStruct(path: MutableDataConnectPath, entity: Struct): Struct {
     val structKeyCount =
       readUInt32(
+        path,
+        name = "entity sub-struct key count",
         valueVerifier = entitySubStructKeyCountUInt32ValueVerifier,
         decodeErrorId = "EntitySubStructKeyCountDecodeFailed",
         eofErrorId = "EntitySubStructKeyCountEOF",
@@ -718,16 +789,19 @@ internal class QueryResultDecoder(
 
     val structBuilder = Struct.newBuilder()
     repeat(structKeyCount) {
-      val key = readString()
-      val value = readEntityValue(key, entity)
+      val key = readString(path, name = "entity sub-struct key")
+      val value =
+        path.withAddedField(key) { readEntityValue(path) { entity.getFieldsOrThrow(key) } }
       structBuilder.putFields(key, value)
     }
     return structBuilder.build()
   }
 
-  private fun readEntitySubList(entity: ListValue): ListValue {
+  private fun readEntitySubList(path: MutableDataConnectPath, entity: ListValue): ListValue {
     val listSize =
       readUInt32(
+        path,
+        name = "entity sub-list size",
         valueVerifier = entitySubListSizeUInt32ValueVerifier,
         decodeErrorId = "EntitySubListSizeDecodeFailed",
         eofErrorId = "EntitySubListSizeEOF",
@@ -735,15 +809,21 @@ internal class QueryResultDecoder(
 
     val listValueBuilder = ListValue.newBuilder()
     repeat(listSize) { index ->
-      val value = readEntityValue(index, entity)
+      val value =
+        path.withAddedListIndex(index) { readEntityValue(path) { entity.getValues(index) } }
       listValueBuilder.addValues(value)
     }
     return listValueBuilder.build()
   }
 
-  private inline fun readEntityValue(getSubEntity: () -> Value): Value {
+  private inline fun readEntityValue(
+    path: MutableDataConnectPath,
+    getSubEntity: () -> Value
+  ): Value {
     val entitySubStructValueType =
       readValueType(
+        path,
+        name = "entity sub-struct value type",
         eofErrorId = "EntitySubStructValueTypeIndicatorByteEOF",
         unknownErrorId = "EntitySubStructValueTypeIndicatorByteUnknown",
         unexpectedErrorId = "EntitySubStructValueTypeIndicatorByteUnexpected",
@@ -751,30 +831,24 @@ internal class QueryResultDecoder(
       )
 
     return when (entitySubStructValueType) {
-      EntitySubStructValueType.Entity -> readEntity().toValueProto()
+      EntitySubStructValueType.Entity -> readEntity(path).toValueProto()
       EntitySubStructValueType.Struct -> {
         val subEntity = getSubEntity().structValue
-        readEntitySubStruct(subEntity).toValueProto()
+        readEntitySubStruct(path, subEntity).toValueProto()
       }
       EntitySubStructValueType.List -> {
         val subEntity = getSubEntity().listValue
-        readEntitySubList(subEntity).toValueProto()
+        readEntitySubList(path, subEntity).toValueProto()
       }
       EntitySubStructValueType.Scalar -> getSubEntity()
     }
   }
 
-  private fun readEntityValue(key: String, entity: Struct): Value = readEntityValue {
-    entity.getFieldsOrThrow(key)
-  }
-
-  private fun readEntityValue(index: Int, entity: ListValue): Value = readEntityValue {
-    entity.getValues(index)
-  }
-
-  private fun readValue(): Value {
+  private fun readValue(path: MutableDataConnectPath): Value {
     val valueType =
       readValueType(
+        path,
+        name = "value type",
         eofErrorId = "ReadValueValueTypeIndicatorByteEOF",
         unknownErrorId = "ReadValueValueTypeIndicatorByteUnknown",
         unexpectedErrorId = "ReadValueValueTypeIndicatorByteUnexpected",
@@ -786,18 +860,32 @@ internal class QueryResultDecoder(
     when (valueType) {
       ValueType.Null -> valueBuilder.setNullValue(NullValue.NULL_VALUE)
       ValueType.Double -> {
-        ensureRemaining(8, eofErrorId = "ReadDoubleValueEOF", ::DoubleEOFException)
+        ensureRemaining(
+          8,
+          path,
+          name = "double value",
+          eofErrorId = "ReadDoubleValueEOF",
+          ::DoubleEOFException
+        )
         valueBuilder.setNumberValue(byteBuffer.getDouble())
       }
       ValueType.PositiveZero -> valueBuilder.setNumberValue(0.0)
       ValueType.NegativeZero -> valueBuilder.setNumberValue(-0.0)
       ValueType.Fixed32Int -> {
-        ensureRemaining(4, eofErrorId = "ReadFixed32IntValueEOF", ::Fixed32IntEOFException)
+        ensureRemaining(
+          4,
+          path,
+          name = "Fixed32Int value",
+          eofErrorId = "ReadFixed32IntValueEOF",
+          ::Fixed32IntEOFException
+        )
         valueBuilder.setNumberValue(byteBuffer.getInt().toDouble())
       }
       ValueType.UInt32 ->
         valueBuilder.setNumberValue(
           readUInt32(
+              path,
+              name = "UInt32 value",
               valueVerifier = readUInt32ValueVerifier,
               decodeErrorId = "ReadUInt32ValueDecodeError",
               eofErrorId = "ReadUInt32ValueEOF",
@@ -807,6 +895,8 @@ internal class QueryResultDecoder(
       ValueType.SInt32 ->
         valueBuilder.setNumberValue(
           readSInt32(
+              path,
+              name = "SInt32 value",
               decodeErrorId = "ReadSInt32ValueDecodeError",
               eofErrorId = "ReadSInt32ValueEOF",
             )
@@ -815,6 +905,8 @@ internal class QueryResultDecoder(
       ValueType.UInt64 ->
         valueBuilder.setNumberValue(
           readUInt64(
+              path,
+              name = "UInt64 value",
               valueVerifier = readUInt64ValueVerifier,
               decodeErrorId = "ReadUInt64ValueDecodeError",
               eofErrorId = "ReadUInt64ValueEOF",
@@ -824,6 +916,8 @@ internal class QueryResultDecoder(
       ValueType.SInt64 ->
         valueBuilder.setNumberValue(
           readSInt64(
+              path,
+              name = "SInt64 value",
               decodeErrorId = "ReadSInt64ValueDecodeError",
               eofErrorId = "ReadSInt64ValueEOF",
             )
@@ -831,18 +925,24 @@ internal class QueryResultDecoder(
         )
       ValueType.BoolTrue -> valueBuilder.setBoolValue(true)
       ValueType.BoolFalse -> valueBuilder.setBoolValue(false)
-      ValueType.List -> valueBuilder.setListValue(readList())
-      ValueType.ListOfEntities -> valueBuilder.setListValue(readListOfEntities())
-      ValueType.Struct -> valueBuilder.setStructValue(readStruct())
+      ValueType.List -> valueBuilder.setListValue(readList(path))
+      ValueType.ListOfEntities -> valueBuilder.setListValue(readListOfEntities(path))
+      ValueType.Struct -> valueBuilder.setStructValue(readStruct(path))
       ValueType.KindNotSet -> {}
-      ValueType.Entity -> valueBuilder.setStructValue(readEntity())
+      ValueType.Entity -> valueBuilder.setStructValue(readEntity(path))
       ValueType.StringEmpty -> valueBuilder.setStringValue("")
-      ValueType.String1Byte -> valueBuilder.setStringValue(readString1Byte())
-      ValueType.String2Byte -> valueBuilder.setStringValue(readString2Byte())
-      ValueType.String1Char -> valueBuilder.setStringValue(readString1Char())
-      ValueType.String2Char -> valueBuilder.setStringValue(readString2Char())
-      ValueType.StringUtf8 -> valueBuilder.setStringValue(readStringUtf8())
-      ValueType.StringUtf16 -> valueBuilder.setStringValue(readStringCustomUtf16())
+      ValueType.String1Byte ->
+        valueBuilder.setStringValue(readString1Byte(path, name = "string value"))
+      ValueType.String2Byte ->
+        valueBuilder.setStringValue(readString2Byte(path, name = "string value"))
+      ValueType.String1Char ->
+        valueBuilder.setStringValue(readString1Char(path, name = "string value"))
+      ValueType.String2Char ->
+        valueBuilder.setStringValue(readString2Char(path, name = "string value"))
+      ValueType.StringUtf8 ->
+        valueBuilder.setStringValue(readStringUtf8(path, name = "string value"))
+      ValueType.StringUtf16 ->
+        valueBuilder.setStringValue(readStringCustomUtf16(path, name = "string value"))
     }
     return valueBuilder.build()
   }
