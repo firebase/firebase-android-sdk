@@ -156,9 +156,9 @@ internal class SerializationTests {
             "MALFORMED_FUNCTION_CALL",
             "IMAGE_SAFETY",
             "IMAGE_PROHIBITED_CONTENT",
+            "NO_IMAGE",
             "IMAGE_RECITATION",
-            "IMAGE_OTHER",
-            "NO_IMAGE"
+            "IMAGE_OTHER"
           ]
         },
         "safetyRatings": {
