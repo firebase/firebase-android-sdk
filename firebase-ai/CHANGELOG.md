@@ -1,11 +1,11 @@
 # Unreleased
+- [changed] Added `equals()` function to `GenerativeBackend`.
 
 # 17.7.0
 
 - [changed] Added `LiveAudioConversationConfig` to control different aspects of the conversation
   while using the `startAudioConversation` function.
 - [fixed] Fixed an issue causing streaming chat interactions to drop thought signatures. (#7562)
-- [changed] Added `equals()` function to `GenerativeBackend`.
 
 # 17.6.0
 
