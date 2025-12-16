@@ -1,4 +1,8 @@
 # Unreleased
+- [feature] Added support for configuring the aspect ratio when generating images with the Gemini
+ Image models.
+- [feature] Added `FinishReason.IMAGE_PROHIBITED_CONTENT` and `FinishReason.NO_IMAGE`, which can be
+  returned from Gemini image generation.
 
 # 17.7.0
 
@@ -17,10 +21,6 @@
 - [changed] Added support for input and output transcription. (#7482)
 - [feature] Added support for sending realtime audio and video in a `LiveSession`.
 - [changed] Removed redundant internal exception types. (#7475)
-- [feature] Added support for configuring the aspect ratio when generating images with the Gemini
-  2.5 Flash Image model.
-- [feature] Added `FinishReason.IMAGE_PROHIBITED_CONTENT` and `FinishReason.NO_IMAGE`, which can be
-  returned from Gemini image generation.
 
 # 17.4.0
 
