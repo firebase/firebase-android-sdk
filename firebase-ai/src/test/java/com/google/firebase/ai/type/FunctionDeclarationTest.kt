@@ -48,7 +48,9 @@ internal class FunctionDeclarationTest {
             "required": [
               "userID"
             ]
-          }
+          },
+          "parametersJsonSchema": null,
+          "responseJsonSchema": null
         }
     """
         .trimIndent()
@@ -90,7 +92,9 @@ internal class FunctionDeclarationTest {
             "required": [
               "userID"
             ]
-          }
+          },
+          "parametersJsonSchema": null,
+          "responseJsonSchema": null
         }
     """
         .trimIndent()

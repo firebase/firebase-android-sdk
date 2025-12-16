@@ -1,5 +1,8 @@
 # Unreleased
 
+- [feature] Added `JsonSchema`, `AutoFunctionDeclaration`, support for automatic function calling,
+  and the firebase-ai-ksp processor's annotation (`Generable`, `Tool`, and `Guide`)
+
 # 17.7.0
 
 - [changed] Added `LiveAudioConversationConfig` to control different aspects of the conversation
