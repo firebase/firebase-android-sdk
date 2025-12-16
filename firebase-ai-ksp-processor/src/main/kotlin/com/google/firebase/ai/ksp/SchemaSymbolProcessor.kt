@@ -245,7 +245,8 @@ public class SchemaSymbolProcessor(
       }
       if ((format != null || pattern != null) && className.canonicalName != "kotlin.String") {
         logger.warn(
-          "${parentType?.toClassName()?.simpleName?.let { "$it." }}$name is not a String type, format and pattern are not a valid parameter to specify in @Guide"
+          "${parentType?.toClassName()?.simpleName?.let { "$it." }}$name is not a String type, " +
+            "format and pattern are not a valid parameter to specify in @Guide"
         )
       }
       if (minimum != null) {
