@@ -1,4 +1,5 @@
 # Unreleased
+
 - [changed] Added `equals()` function to `GenerativeBackend`.
 
 # 17.7.0
