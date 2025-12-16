@@ -25,6 +25,4 @@ package com.google.firebase.ai.annotations
  */
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.SOURCE)
-public annotation class Generable(
-    public val description: String = ""
-)
+public annotation class Generable(public val description: String = "")
