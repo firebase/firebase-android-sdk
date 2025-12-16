@@ -650,7 +650,7 @@ internal class QueryResultDecoder(
     val size =
       readUInt32(
         path,
-        name = "list size",
+        name = "list of entities size",
         valueVerifier = listOfEntitiesSizeUInt32ValueVerifier,
         decodeErrorId = "ListOfEntitiesSizeDecodeFailed",
         eofErrorId = "ListOfEntitiesSizeEOF",
@@ -741,6 +741,7 @@ internal class QueryResultDecoder(
     Entity(ValueType.Entity),
     Struct(ValueType.Struct),
     List(ValueType.List),
+    ListOfEntities(ValueType.ListOfEntities),
     Scalar(ValueType.KindNotSet);
 
     companion object {
@@ -839,6 +840,9 @@ internal class QueryResultDecoder(
       EntitySubStructValueType.List -> {
         val subEntity = getSubEntity().listValue
         readEntitySubList(path, subEntity).toValueProto()
+      }
+      EntitySubStructValueType.ListOfEntities -> {
+        readListOfEntities(path).toValueProto()
       }
       EntitySubStructValueType.Scalar -> getSubEntity()
     }

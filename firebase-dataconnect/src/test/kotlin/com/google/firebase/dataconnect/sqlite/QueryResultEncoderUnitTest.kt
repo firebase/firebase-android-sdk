@@ -313,6 +313,27 @@ class QueryResultEncoderUnitTest {
   }
 
   @Test
+  fun `entity contains lists of lists of entities`() = runTest {
+    checkAll(propTestConfig, Arb.proto.structKey(), Arb.int(2..4)) { entityIdFieldName, depth ->
+      val entities = mutableListOf<Struct>()
+      val entityGenerator =
+        generateEntities(entityIdFieldName).map { it.struct }.onEach { entities.add(it) }.iterator()
+      val listValue = generateListValueOfEntities(depth = depth, entityGenerator)
+      val nonEntityIdFieldNameArb = Arb.proto.structKey().filterNot { it == entityIdFieldName }
+      val rootStruct =
+        entityGenerator
+          .next()
+          .withRandomlyInsertedValue(
+            listValue.toValueProto(),
+            randomSource().random,
+            generateKey = { nonEntityIdFieldNameArb.bind() }
+          )
+
+      rootStruct.decodingEncodingShouldProduceIdenticalStruct(entities, entityIdFieldName)
+    }
+  }
+
+  @Test
   fun `list containing only entities`() = runTest {
     checkAll(propTestConfig, Arb.proto.structKey(), Arb.int(1..10)) { entityIdFieldName, entityCount
       ->
@@ -355,29 +376,6 @@ class QueryResultEncoderUnitTest {
     }
   }
 
-  @Test
-  fun `entity containing list of only entities`() = runTest {
-    checkAll(propTestConfig, Arb.proto.structKey(), Arb.twoValues(Arb.int(1..4))) {
-      entityIdFieldName,
-      (entityCount, nonEntityCount) ->
-      val entities = generateEntities(entityCount, entityIdFieldName).map { it.struct }
-      val rootStruct = run {
-        val nonEntities = generateNonEntities(nonEntityCount, entityIdFieldName)
-        val valueList =
-          (entities.map { it.toValueProto() } + nonEntities).shuffled(randomSource().random)
-        val nonEntityIdFieldNameArb = Arb.proto.structKey().filterNot { it == entityIdFieldName }
-        val struct = Arb.proto.struct(key = nonEntityIdFieldNameArb).bind().struct
-        struct.withRandomlyInsertedValue(
-          valueList.toValueProto(),
-          randomSource().random,
-          { nonEntityIdFieldNameArb.bind() },
-        )
-      }
-
-      rootStruct.decodingEncodingShouldProduceIdenticalStruct(entities, entityIdFieldName)
-    }
-  }
-
   private companion object {
 
     @OptIn(ExperimentalKotest::class)
@@ -394,9 +392,12 @@ class QueryResultEncoderUnitTest {
     fun PropertyContext.generateEntities(
       count: Int,
       entityIdFieldName: String
-    ): List<EntityTestCase> = buildList {
+    ): List<EntityTestCase> = generateEntities(entityIdFieldName).take(count).toList()
+
+    /** Generates [EntityTestCase] objects using the given entity ID field name. */
+    fun PropertyContext.generateEntities(entityIdFieldName: String): Sequence<EntityTestCase> {
       val entityValueArb = EntityTestCase.arb(entityIdFieldName = Arb.constant(entityIdFieldName))
-      repeat(count) { add(entityValueArb.bind()) }
+      return generateSequence { entityValueArb.bind() }
     }
 
     /**
@@ -405,11 +406,17 @@ class QueryResultEncoderUnitTest {
      * name.
      */
     fun PropertyContext.generateNonEntities(count: Int, entityIdFieldName: String): List<Value> =
-      buildList {
-        val nonEntityIdStructKeyArb = Arb.proto.structKey().filterNot { it == entityIdFieldName }
-        val nonEntityValueArb = Arb.proto.value(structKey = nonEntityIdStructKeyArb)
-        repeat(count) { add(nonEntityValueArb.bind()) }
-      }
+      generateNonEntities(entityIdFieldName).take(count).toList()
+
+    /**
+     * Generates [Value] objects that would not be considered to be entities, nor contain values
+     * that would be considered to be entities with the given entity ID field name.
+     */
+    fun PropertyContext.generateNonEntities(entityIdFieldName: String): Sequence<Value> {
+      val nonEntityIdStructKeyArb = Arb.proto.structKey().filterNot { it == entityIdFieldName }
+      val nonEntityValueArb = Arb.proto.value(structKey = nonEntityIdStructKeyArb)
+      return generateSequence { nonEntityValueArb.bind() }
+    }
 
     fun Value.isEntity(entityIdFieldName: String): Boolean =
       isStructValue &&

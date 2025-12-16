@@ -298,7 +298,11 @@ internal class QueryResultEncoder(
       writeString(key)
       val entityValue: Value? =
         path.withAddedField(key) {
-          writeEntityValue(value, path, entitySubListLeafContentsAffinity = null)
+          writeEntityValue(
+            value,
+            path,
+            entitySubListLeafContentsAffinity = EntitySubListLeafContents.NonEntities
+          )
         }
       if (entityValue !== null) {
         structBuilder.putFields(key, entityValue)
@@ -366,7 +370,7 @@ internal class QueryResultEncoder(
   private fun writeEntityValue(
     value: Value,
     path: MutableDataConnectPath,
-    entitySubListLeafContentsAffinity: EntitySubListLeafContents?,
+    entitySubListLeafContentsAffinity: EntitySubListLeafContents,
   ): Value? =
     when (value.kindCase) {
       Value.KindCase.STRUCT_VALUE -> {
@@ -386,8 +390,7 @@ internal class QueryResultEncoder(
         val effectiveEntitySubListLeafContents =
           calculatedEntitySubListLeafContents ?: entitySubListLeafContentsAffinity
         when (effectiveEntitySubListLeafContents) {
-          EntitySubListLeafContents.Entities,
-          null -> {
+          EntitySubListLeafContents.Entities -> {
             writeEntitySubListOfEntities(value.listValue, path)
             null
           }
