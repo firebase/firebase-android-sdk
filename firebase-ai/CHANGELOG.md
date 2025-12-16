@@ -1,7 +1,10 @@
 # Unreleased
 
 - [feature] Added support for configuring thinking levels with Gemini 3 series
-  mdels and onwards. (#7599)
+  models and onwards. (#7599)
+
+# 17.7.0
+
 - [changed] Added `LiveAudioConversationConfig` to control different aspects of the conversation
   while using the `startAudioConversation` function.
 - [fixed] Fixed an issue causing streaming chat interactions to drop thought signatures. (#7562)

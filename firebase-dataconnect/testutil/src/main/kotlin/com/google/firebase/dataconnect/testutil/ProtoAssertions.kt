@@ -65,7 +65,7 @@ fun beEqualToDefaultInstance(): Matcher<MessageLite?> = neverNullMatcher { value
         "the default instance: ${defaultInstance.print().value}"
     },
     {
-      "${value::class.qualifiedName} ${value.print().value} should not be equal to : " +
+      "${value::class.qualifiedName} ${value.print().value} should not be equal to " +
         "the default instance: ${defaultInstance.print().value}"
     }
   )
@@ -114,8 +114,11 @@ fun beEqualTo(other: Struct?): Matcher<Struct?> = neverNullMatcher { value ->
     )
   } else {
     MatcherResult(
-      value == other,
-      { "${value.print().value} should be equal to ${other.print().value}" },
+      structFastEqual(value, other),
+      {
+        "${value.print().value} should be equal to ${other.print().value}, " +
+          "but found ${structDiff(value, other).toSummaryString()}"
+      },
       { "${value.print().value} should not be equal to ${other.print().value}" }
     )
   }
@@ -134,8 +137,11 @@ fun beEqualTo(other: Value?): Matcher<Value?> = neverNullMatcher { value ->
     )
   } else {
     MatcherResult(
-      value == other,
-      { "${value.print().value} should be equal to ${other.print().value}" },
+      valueFastEqual(value, other),
+      {
+        "${value.print().value} should be equal to ${other.print().value}, " +
+          "but found ${valueDiff(value, other).toSummaryString()}"
+      },
       { "${value.print().value} should not be equal to ${other.print().value}" }
     )
   }
