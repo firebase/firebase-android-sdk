@@ -120,6 +120,11 @@ package com.google.firebase.ai.annotations {
     property public abstract String pattern;
   }
 
+  @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.SOURCE) @kotlin.annotation.Target(allowedTargets=kotlin.annotation.AnnotationTarget.FUNCTION) public @interface Tool {
+    method public abstract String description() default "";
+    property public abstract String description;
+  }
+
 }
 
 package com.google.firebase.ai.java {
@@ -432,6 +437,10 @@ package com.google.firebase.ai.type {
   }
 
   public abstract class FirebaseAIException extends java.lang.RuntimeException {
+  }
+
+  public final class FirebaseAutoFunctionException extends com.google.firebase.ai.type.FirebaseAIException {
+    ctor public FirebaseAutoFunctionException(String message);
   }
 
   public final class FunctionCallPart implements com.google.firebase.ai.type.Part {
