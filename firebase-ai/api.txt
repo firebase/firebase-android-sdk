@@ -210,6 +210,23 @@ package com.google.firebase.ai.type {
   public final class APINotConfiguredException extends com.google.firebase.ai.type.FirebaseAIException {
   }
 
+  public final class AspectRatio {
+    field public static final com.google.firebase.ai.type.AspectRatio.Companion Companion;
+    field public static final com.google.firebase.ai.type.AspectRatio LANDSCAPE_16x9;
+    field public static final com.google.firebase.ai.type.AspectRatio LANDSCAPE_21x9;
+    field public static final com.google.firebase.ai.type.AspectRatio LANDSCAPE_3x2;
+    field public static final com.google.firebase.ai.type.AspectRatio LANDSCAPE_4x3;
+    field public static final com.google.firebase.ai.type.AspectRatio LANDSCAPE_5x4;
+    field public static final com.google.firebase.ai.type.AspectRatio PORTRAIT_2x3;
+    field public static final com.google.firebase.ai.type.AspectRatio PORTRAIT_3x4;
+    field public static final com.google.firebase.ai.type.AspectRatio PORTRAIT_4x5;
+    field public static final com.google.firebase.ai.type.AspectRatio PORTRAIT_9x16;
+    field public static final com.google.firebase.ai.type.AspectRatio SQUARE_1x1;
+  }
+
+  public static final class AspectRatio.Companion {
+  }
+
   public final class AudioRecordInitializationFailedException extends com.google.firebase.ai.type.FirebaseAIException {
     ctor public AudioRecordInitializationFailedException(String message);
   }
@@ -374,8 +391,13 @@ package com.google.firebase.ai.type {
     property public final int ordinal;
     field public static final com.google.firebase.ai.type.FinishReason BLOCKLIST;
     field public static final com.google.firebase.ai.type.FinishReason.Companion Companion;
+    field public static final com.google.firebase.ai.type.FinishReason IMAGE_OTHER;
+    field public static final com.google.firebase.ai.type.FinishReason IMAGE_PROHIBITED_CONTENT;
+    field public static final com.google.firebase.ai.type.FinishReason IMAGE_RECITATION;
+    field public static final com.google.firebase.ai.type.FinishReason IMAGE_SAFETY;
     field public static final com.google.firebase.ai.type.FinishReason MALFORMED_FUNCTION_CALL;
     field public static final com.google.firebase.ai.type.FinishReason MAX_TOKENS;
+    field public static final com.google.firebase.ai.type.FinishReason NO_IMAGE;
     field public static final com.google.firebase.ai.type.FinishReason OTHER;
     field public static final com.google.firebase.ai.type.FinishReason PROHIBITED_CONTENT;
     field public static final com.google.firebase.ai.type.FinishReason RECITATION;
@@ -463,6 +485,7 @@ package com.google.firebase.ai.type {
     method public com.google.firebase.ai.type.GenerationConfig build();
     method public com.google.firebase.ai.type.GenerationConfig.Builder setCandidateCount(Integer? candidateCount);
     method public com.google.firebase.ai.type.GenerationConfig.Builder setFrequencyPenalty(Float? frequencyPenalty);
+    method public com.google.firebase.ai.type.GenerationConfig.Builder setImageConfig(com.google.firebase.ai.type.ImageConfig? imageConfig);
     method public com.google.firebase.ai.type.GenerationConfig.Builder setMaxOutputTokens(Integer? maxOutputTokens);
     method public com.google.firebase.ai.type.GenerationConfig.Builder setPresencePenalty(Float? presencePenalty);
     method public com.google.firebase.ai.type.GenerationConfig.Builder setResponseMimeType(String? responseMimeType);
@@ -475,6 +498,7 @@ package com.google.firebase.ai.type {
     method public com.google.firebase.ai.type.GenerationConfig.Builder setTopP(Float? topP);
     field public Integer? candidateCount;
     field public Float? frequencyPenalty;
+    field public com.google.firebase.ai.type.ImageConfig? imageConfig;
     field public Integer? maxOutputTokens;
     field public Float? presencePenalty;
     field public String? responseMimeType;
@@ -622,12 +646,36 @@ package com.google.firebase.ai.type {
   public static final class HarmSeverity.Companion {
   }
 
+  public final class ImageConfig {
+  }
+
+  public static final class ImageConfig.Builder {
+    ctor public ImageConfig.Builder();
+    method public com.google.firebase.ai.type.ImageConfig build();
+    method public com.google.firebase.ai.type.ImageConfig.Builder setAspectRatio(com.google.firebase.ai.type.AspectRatio? aspectRatio);
+    method public com.google.firebase.ai.type.ImageConfig.Builder setImageSize(com.google.firebase.ai.type.ImageSize imageSize);
+  }
+
+  public final class ImageConfigKt {
+    method public static com.google.firebase.ai.type.ImageConfig imageConfig(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.ImageConfig.Builder,kotlin.Unit> init);
+  }
+
   public final class ImagePart implements com.google.firebase.ai.type.Part {
     ctor public ImagePart(android.graphics.Bitmap image);
     method public android.graphics.Bitmap getImage();
     method public boolean isThought();
     property public final android.graphics.Bitmap image;
     property public boolean isThought;
+  }
+
+  public final class ImageSize {
+    field public static final com.google.firebase.ai.type.ImageSize.Companion Companion;
+    field public static final com.google.firebase.ai.type.ImageSize SIZE_1K;
+    field public static final com.google.firebase.ai.type.ImageSize SIZE_2K;
+    field public static final com.google.firebase.ai.type.ImageSize SIZE_4K;
+  }
+
+  public static final class ImageSize.Companion {
   }
 
   public final class ImagenAspectRatio {

@@ -92,6 +92,7 @@ private constructor(
   internal val responseSchema: Schema?,
   internal val responseModalities: List<ResponseModality>?,
   internal val thinkingConfig: ThinkingConfig?,
+  internal val imageConfig: ImageConfig?,
 ) {
 
   /**
@@ -137,6 +138,7 @@ private constructor(
     @JvmField public var responseSchema: Schema? = null
     @JvmField public var responseModalities: List<ResponseModality>? = null
     @JvmField public var thinkingConfig: ThinkingConfig? = null
+    @JvmField public var imageConfig: ImageConfig? = null
 
     public fun setTemperature(temperature: Float?): Builder = apply {
       this.temperature = temperature
@@ -170,6 +172,9 @@ private constructor(
     public fun setThinkingConfig(thinkingConfig: ThinkingConfig?): Builder = apply {
       this.thinkingConfig = thinkingConfig
     }
+    public fun setImageConfig(imageConfig: ImageConfig?): Builder = apply {
+      this.imageConfig = imageConfig
+    }
 
     /** Create a new [GenerationConfig] with the attached arguments. */
     public fun build(): GenerationConfig =
@@ -185,7 +190,8 @@ private constructor(
         responseMimeType = responseMimeType,
         responseSchema = responseSchema,
         responseModalities = responseModalities,
-        thinkingConfig = thinkingConfig
+        thinkingConfig = thinkingConfig,
+        imageConfig = imageConfig
       )
   }
 
@@ -202,7 +208,8 @@ private constructor(
       responseMimeType = responseMimeType,
       responseSchema = responseSchema?.toInternalOpenApi(),
       responseModalities = responseModalities?.map { it.toInternal() },
-      thinkingConfig = thinkingConfig?.toInternal()
+      thinkingConfig = thinkingConfig?.toInternal(),
+      imageConfig = imageConfig?.toInternal()
     )
 
   @Serializable
@@ -218,7 +225,8 @@ private constructor(
     @SerialName("frequency_penalty") val frequencyPenalty: Float? = null,
     @SerialName("response_schema") val responseSchema: Schema.InternalOpenAPI? = null,
     @SerialName("response_modalities") val responseModalities: List<String>? = null,
-    @SerialName("thinking_config") val thinkingConfig: ThinkingConfig.Internal? = null
+    @SerialName("thinking_config") val thinkingConfig: ThinkingConfig.Internal? = null,
+    @SerialName("image_config") val imageConfig: ImageConfig.Internal? = null
   )
 
   public companion object {
