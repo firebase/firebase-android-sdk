@@ -127,10 +127,15 @@ public class SchemaSymbolProcessor(
       val kdocString = type.declaration.docString ?: ""
       val baseKdoc = extractBaseKdoc(kdocString)
       val propertyDocs = extractPropertyKdocs(kdocString)
-      val guideClassAnnotation =
-        type.annotations.firstOrNull() { it.shortName.getShortName() == "Guide" }
+      val generableClassAnnotation =
+        type.annotations.firstOrNull() { it.shortName.getShortName() == "Generable" }
       val description =
-        getDescriptionFromAnnotations(guideAnnotation, guideClassAnnotation, description, baseKdoc)
+        getDescriptionFromAnnotations(
+          guideAnnotation,
+          generableClassAnnotation,
+          description,
+          baseKdoc
+        )
       val minimum = getDoubleFromAnnotation(guideAnnotation, "minimum")
       val maximum = getDoubleFromAnnotation(guideAnnotation, "maximum")
       val minItems = getIntFromAnnotation(guideAnnotation, "minItems")
@@ -267,13 +272,13 @@ public class SchemaSymbolProcessor(
 
     private fun getDescriptionFromAnnotations(
       guideAnnotation: KSAnnotation?,
-      guideClassAnnotation: KSAnnotation?,
+      generableClassAnnotation: KSAnnotation?,
       description: String?,
       baseKdoc: String?,
     ): String? {
       val guidePropertyDescription = getStringFromAnnotation(guideAnnotation, "description")
 
-      val guideClassDescription = getStringFromAnnotation(guideClassAnnotation, "description")
+      val guideClassDescription = getStringFromAnnotation(generableClassAnnotation, "description")
 
       return guidePropertyDescription ?: guideClassDescription ?: description ?: baseKdoc
     }

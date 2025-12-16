@@ -27,7 +27,7 @@ package com.google.firebase.ai.annotations
  * @property format the format that a field must conform to
  * @property pattern the regular expression that a string field must conform to
  */
-@Target(AnnotationTarget.CLASS, AnnotationTarget.PROPERTY)
+@Target(AnnotationTarget.PROPERTY)
 @Retention(AnnotationRetention.SOURCE)
 public annotation class Guide(
   public val description: String = "",
