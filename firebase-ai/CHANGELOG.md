@@ -1,4 +1,5 @@
 # Unreleased
+
 - [feature] Added support for configuring the aspect ratio nad image size when generating images
   with the Gemini Image models.
 - [feature] Added FinishReasons which can be returned from Gemini image generation.
