@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Google LLC
+ * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@ package com.google.firebase.dataconnect.testutil
 
 import com.google.protobuf.Value
 import java.util.Objects
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.contract
 
 sealed interface ProtoValuePathComponent {
 
@@ -35,6 +37,8 @@ sealed interface ProtoValuePathComponent {
 
 typealias ProtoValuePath = List<ProtoValuePathComponent>
 
+typealias MutableProtoValuePath = MutableList<ProtoValuePathComponent>
+
 data class ProtoValuePathPair(val path: ProtoValuePath, val value: Value)
 
 fun ProtoValuePath.withAppendedListIndex(index: Int): ProtoValuePath =
@@ -48,3 +52,55 @@ fun ProtoValuePath.withAppendedComponent(component: ProtoValuePathComponent): Pr
     addAll(this@withAppendedComponent)
     add(component)
   }
+
+fun <T> MutableProtoValuePath.withAppendedListIndex(index: Int, block: () -> T): T =
+  withAppendedComponent(ProtoValuePathComponent.ListIndex(index), block)
+
+fun <T> MutableProtoValuePath.withAppendedStructKey(key: String, block: () -> T): T =
+  withAppendedComponent(ProtoValuePathComponent.StructKey(key), block)
+
+fun <T> MutableProtoValuePath.withAppendedComponent(
+  component: ProtoValuePathComponent,
+  block: () -> T
+): T {
+  val originalSize = size
+  add(component)
+  try {
+    return block()
+  } finally {
+    val removedComponent = removeLastOrNull()
+    check(removedComponent === component)
+    check(size == originalSize)
+  }
+}
+
+@OptIn(ExperimentalContracts::class)
+fun ProtoValuePathComponent?.isStructKey(): Boolean {
+  contract { returns(true) implies (this@isStructKey is ProtoValuePathComponent.StructKey) }
+  return this is ProtoValuePathComponent.StructKey
+}
+
+fun ProtoValuePathComponent?.structKeyOrThrow(): String =
+  (this as ProtoValuePathComponent.StructKey).key
+
+fun ProtoValuePath.toPathString(): String = buildString { appendPathString(this@toPathString) }
+
+fun StringBuilder.appendPathString(path: ProtoValuePath): StringBuilder = apply {
+  path.forEach { pathComponent ->
+    when (pathComponent) {
+      is ProtoValuePathComponent.StructKey -> {
+        if (isNotEmpty()) {
+          append('.')
+        }
+        append('"')
+        append(pathComponent.key)
+        append('"')
+      }
+      is ProtoValuePathComponent.ListIndex -> {
+        append('[')
+        append(pathComponent.index)
+        append(']')
+      }
+    }
+  }
+}
