@@ -391,7 +391,9 @@ package com.google.firebase.ai.type {
     property public final int ordinal;
     field public static final com.google.firebase.ai.type.FinishReason BLOCKLIST;
     field public static final com.google.firebase.ai.type.FinishReason.Companion Companion;
+    field public static final com.google.firebase.ai.type.FinishReason IMAGE_OTHER;
     field public static final com.google.firebase.ai.type.FinishReason IMAGE_PROHIBITED_CONTENT;
+    field public static final com.google.firebase.ai.type.FinishReason IMAGE_RECITATION;
     field public static final com.google.firebase.ai.type.FinishReason IMAGE_SAFETY;
     field public static final com.google.firebase.ai.type.FinishReason MALFORMED_FUNCTION_CALL;
     field public static final com.google.firebase.ai.type.FinishReason MAX_TOKENS;
