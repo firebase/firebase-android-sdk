@@ -16,7 +16,7 @@
 
 package com.google.firebase.dataconnect.sqlite
 
-import com.google.firebase.dataconnect.DataConnectPathSegment
+import com.google.firebase.dataconnect.MutableDataConnectPath
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.putSInt32
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.putSInt64
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.putUInt32
@@ -143,7 +143,10 @@ internal class QueryResultEncoder(
     }
   }
 
-  private fun writeList(listValue: ListValue, path: MutableList<DataConnectPathSegment>) {
+  private fun writeList(
+    listValue: ListValue,
+    path: MutableDataConnectPath,
+  ) {
     writer.writeByte(QueryResultCodec.VALUE_LIST)
     writer.writeUInt32(listValue.valuesCount)
     listValue.valuesList.forEachIndexed { listIndex, childValue ->
@@ -151,7 +154,10 @@ internal class QueryResultEncoder(
     }
   }
 
-  private fun writeListOfEntities(listValue: ListValue, path: MutableList<DataConnectPathSegment>) {
+  private fun writeListOfEntities(
+    listValue: ListValue,
+    path: MutableDataConnectPath,
+  ) {
     writer.writeByte(QueryResultCodec.VALUE_LIST_OF_ENTITIES)
     writer.writeUInt32(listValue.valuesCount)
     repeat(listValue.valuesCount) { listIndex ->
@@ -189,17 +195,10 @@ internal class QueryResultEncoder(
       }
     }
 
-  private fun Struct.isEntity(): Boolean =
-    if (entityFieldName === null || !containsFields(entityFieldName)) {
-      false
-    } else {
-      getFieldsOrThrow(entityFieldName)?.kindCase == Value.KindCase.STRING_VALUE
-    }
-
-  private fun Value.isEntity(): Boolean =
-    kindCase == Value.KindCase.STRUCT_VALUE && structValue.isEntity()
-
-  private fun writeStruct(struct: Struct, path: MutableList<DataConnectPathSegment>) {
+  private fun writeStruct(
+    struct: Struct,
+    path: MutableDataConnectPath,
+  ) {
     val entityId = struct.getEntityId()
     if (entityId !== null) {
       writer.writeByte(QueryResultCodec.VALUE_ENTITY)
@@ -216,7 +215,10 @@ internal class QueryResultEncoder(
     }
   }
 
-  private fun writeValue(value: Value, path: MutableList<DataConnectPathSegment>) {
+  private fun writeValue(
+    value: Value,
+    path: MutableDataConnectPath,
+  ) {
     when (value.kindCase) {
       Value.KindCase.NULL_VALUE -> writer.writeByte(QueryResultCodec.VALUE_NULL)
       Value.KindCase.NUMBER_VALUE -> writeDouble(value.numberValue)
@@ -231,7 +233,7 @@ internal class QueryResultEncoder(
   private fun writeEntity(
     entityId: String,
     entity: Struct,
-    path: MutableList<DataConnectPathSegment>
+    path: MutableDataConnectPath,
   ) {
     val encodedEntityId = sha512DigestCalculator.calculate(entityId)
     writer.writeUInt32(encodedEntityId.size)
@@ -242,7 +244,7 @@ internal class QueryResultEncoder(
 
   private fun writeEntitySubStruct(
     struct: Struct,
-    path: MutableList<DataConnectPathSegment>
+    path: MutableDataConnectPath,
   ): Struct {
     writer.writeUInt32(struct.fieldsCount)
     val structBuilder = Struct.newBuilder()
@@ -258,28 +260,7 @@ internal class QueryResultEncoder(
 
   private fun writeEntitySubList(
     listValue: ListValue,
-    path: MutableList<DataConnectPathSegment>
-  ): ListValue? =
-    when (listValue.classifyContents()) {
-      ListValueContentsClassification.AllEntities -> {
-        writeListOfEntities(listValue, path)
-        null
-      }
-      ListValueContentsClassification.AllNonEntities,
-      ListValueContentsClassification.AllValuesAreEmptyLists -> {
-        writeEntitySubListOfAllNonEntities(listValue, path)
-      }
-      ListValueContentsClassification.BothEntitiesAndNonEntities ->
-        throw UnsupportedOperationException(
-          "entity sub-list at ${path.toPathString()} contains both entities and non-entities, " +
-            "which is not supported; only entity sub-lists containing exclusively entities " +
-            "or exclusively non-entities is supported [pvae6pzg2a]"
-        )
-    }
-
-  private fun writeEntitySubListOfAllNonEntities(
-    listValue: ListValue,
-    path: MutableList<DataConnectPathSegment>
+    path: MutableDataConnectPath,
   ): ListValue {
     writer.writeByte(QueryResultCodec.VALUE_LIST)
     writer.writeUInt32(listValue.valuesCount)
@@ -300,7 +281,10 @@ internal class QueryResultEncoder(
     return listValueBuilder.build()
   }
 
-  private fun writeEntityValue(value: Value, path: MutableList<DataConnectPathSegment>): Value? =
+  private fun writeEntityValue(
+    value: Value,
+    path: MutableDataConnectPath,
+  ): Value? =
     when (value.kindCase) {
       Value.KindCase.STRUCT_VALUE -> {
         val subStructEntityId = value.structValue.getEntityId()
@@ -314,7 +298,7 @@ internal class QueryResultEncoder(
         }
       }
       Value.KindCase.LIST_VALUE -> {
-        writeEntitySubList(value.listValue, path)?.toValueProto()
+        writeEntitySubList(value.listValue, path).toValueProto()
       }
       else -> {
         writer.writeByte(QueryResultCodec.VALUE_KIND_NOT_SET)
@@ -393,46 +377,6 @@ internal class QueryResultEncoder(
 
         return Double(value)
       }
-    }
-  }
-
-  private enum class ListValueContentsClassification {
-    AllValuesAreEmptyLists,
-    AllEntities,
-    AllNonEntities,
-    BothEntitiesAndNonEntities,
-  }
-
-  private fun ListValue.classifyContents(): ListValueContentsClassification {
-    var containsEntities = false
-    var containsNonEntities = false
-
-    val queue: MutableList<ListValue> = mutableListOf(this)
-    processLoop@ while (!queue.isEmpty()) {
-      val listValue = queue.removeFirst()
-      for (value in listValue.valuesList) {
-        if (value.isEntity()) {
-          containsEntities = true
-        } else if (value.kindCase != Value.KindCase.LIST_VALUE) {
-          containsNonEntities = true
-        } else {
-          queue.add(value.listValue)
-        }
-
-        if (containsEntities && containsNonEntities) {
-          break@processLoop // short circuit
-        }
-      }
-    }
-
-    return if (containsEntities && containsNonEntities) {
-      ListValueContentsClassification.BothEntitiesAndNonEntities
-    } else if (containsEntities) {
-      ListValueContentsClassification.AllEntities
-    } else if (containsNonEntities) {
-      ListValueContentsClassification.AllNonEntities
-    } else {
-      ListValueContentsClassification.AllValuesAreEmptyLists
     }
   }
 
