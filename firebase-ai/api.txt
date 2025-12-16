@@ -439,6 +439,10 @@ package com.google.firebase.ai.type {
   public abstract class FirebaseAIException extends java.lang.RuntimeException {
   }
 
+  public final class FirebaseAutoFunctionException extends com.google.firebase.ai.type.FirebaseAIException {
+    ctor public FirebaseAutoFunctionException(String message);
+  }
+
   public final class FunctionCallPart implements com.google.firebase.ai.type.Part {
     ctor public FunctionCallPart(String name, java.util.Map<java.lang.String,? extends kotlinx.serialization.json.JsonElement> args);
     ctor public FunctionCallPart(String name, java.util.Map<java.lang.String,? extends kotlinx.serialization.json.JsonElement> args, String? id = null);

@@ -204,6 +204,9 @@ public class ServiceConnectionHandshakeFailedException(message: String, cause: T
 public class PermissionMissingException(message: String, cause: Throwable? = null) :
   FirebaseAIException(message, cause)
 
+/** Thrown when a function invoked by the model has an error that should be returned to the model */
+public class FirebaseAutoFunctionException(message: String) : FirebaseAIException(message)
+
 /** Catch all case for exceptions not explicitly expected. */
 public class UnknownException internal constructor(message: String, cause: Throwable? = null) :
   FirebaseAIException(message, cause)

@@ -27,6 +27,7 @@ import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.CountTokensResponse
 import com.google.firebase.ai.type.FinishReason
 import com.google.firebase.ai.type.FirebaseAIException
+import com.google.firebase.ai.type.FirebaseAutoFunctionException
 import com.google.firebase.ai.type.FunctionCallPart
 import com.google.firebase.ai.type.GenerateContentResponse
 import com.google.firebase.ai.type.GenerationConfig
@@ -50,6 +51,7 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.serializerOrNull
 
@@ -276,7 +278,7 @@ internal constructor(
   internal fun hasFunction(call: FunctionCallPart): Boolean {
     return tools
       ?.flatMap { it.autoFunctionDeclarations?.filterNotNull() ?: emptyList() }
-      ?.firstOrNull { it.name == call.name && it.functionReference != null} != null
+      ?.firstOrNull { it.name == call.name && it.functionReference != null } != null
   }
 
   @OptIn(InternalSerializationApi::class)
@@ -316,7 +318,7 @@ internal constructor(
       }
       return output as JsonObject
     } catch (e: FirebaseAutoFunctionException) {
-      return JsonObject(mapOf("error" to e.message))
+      return JsonObject(mapOf("error" to JsonPrimitive(e.message)))
     }
   }
 
