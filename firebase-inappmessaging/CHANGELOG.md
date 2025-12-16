@@ -374,3 +374,4 @@ The Kotlin extensions library has no additional updates.
 - [feature] The initial public beta release of the Firebase In-App Messaging SDK for Android is now
   available. To learn more, see the
   [Firebase In-App Messaging documentation](/docs/in-app-messaging).
+

@@ -56,7 +56,6 @@
 # 16.0.0-beta03
 
 - [feature] The [appdistro] SDK has been split into two libraries:
-
   - `firebase-appdistribution-api` - The API-only library<br> This new API-only library is
     functional only when the full [appdistro] SDK implementation (`firebase-appdistribution`) is
     present. `firebase-appdistribution-api` can be included in all
