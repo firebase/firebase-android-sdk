@@ -101,9 +101,11 @@ package com.google.firebase.ai {
 package com.google.firebase.ai.annotations {
 
   @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.SOURCE) @kotlin.annotation.Target(allowedTargets=kotlin.annotation.AnnotationTarget.CLASS) public @interface Generable {
+    method public abstract String description() default "";
+    property public abstract String description;
   }
 
-  @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.SOURCE) @kotlin.annotation.Target(allowedTargets={kotlin.annotation.AnnotationTarget.CLASS, kotlin.annotation.AnnotationTarget.PROPERTY}) public @interface Guide {
+  @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.SOURCE) @kotlin.annotation.Target(allowedTargets=kotlin.annotation.AnnotationTarget.PROPERTY) public @interface Guide {
     method public abstract String description() default "";
     method public abstract String format() default "";
     method public abstract int maxItems() default -1;
@@ -498,11 +500,11 @@ package com.google.firebase.ai.type {
   }
 
   public final class GenerationConfig {
+    method public com.google.firebase.ai.type.GenerationConfig.Builder toBuilder();
     field public static final com.google.firebase.ai.type.GenerationConfig.Companion Companion;
   }
 
   public static final class GenerationConfig.Builder {
-    ctor public GenerationConfig.Builder();
     method public com.google.firebase.ai.type.GenerationConfig build();
     method public com.google.firebase.ai.type.GenerationConfig.Builder setCandidateCount(Integer? candidateCount);
     method public com.google.firebase.ai.type.GenerationConfig.Builder setFrequencyPenalty(Float? frequencyPenalty);
@@ -511,6 +513,7 @@ package com.google.firebase.ai.type {
     method public com.google.firebase.ai.type.GenerationConfig.Builder setResponseMimeType(String? responseMimeType);
     method public com.google.firebase.ai.type.GenerationConfig.Builder setResponseModalities(java.util.List<com.google.firebase.ai.type.ResponseModality>? responseModalities);
     method public com.google.firebase.ai.type.GenerationConfig.Builder setResponseSchema(com.google.firebase.ai.type.Schema? responseSchema);
+    method public com.google.firebase.ai.type.GenerationConfig.Builder setResponseSchemaJson(com.google.firebase.ai.type.JsonSchema<? extends java.lang.Object?>? responseSchemaJson);
     method public com.google.firebase.ai.type.GenerationConfig.Builder setStopSequences(java.util.List<java.lang.String>? stopSequences);
     method public com.google.firebase.ai.type.GenerationConfig.Builder setTemperature(Float? temperature);
     method public com.google.firebase.ai.type.GenerationConfig.Builder setThinkingConfig(com.google.firebase.ai.type.ThinkingConfig? thinkingConfig);
@@ -520,6 +523,7 @@ package com.google.firebase.ai.type {
     field public Float? frequencyPenalty;
     field public Integer? maxOutputTokens;
     field public Float? presencePenalty;
+    field public com.google.firebase.ai.type.JsonSchema<? extends java.lang.Object?>? responseJsonSchema;
     field public String? responseMimeType;
     field public java.util.List<com.google.firebase.ai.type.ResponseModality>? responseModalities;
     field public com.google.firebase.ai.type.Schema? responseSchema;
