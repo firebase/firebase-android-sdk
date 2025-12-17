@@ -16,6 +16,7 @@
 
 package com.google.firebase.dataconnect.sqlite
 
+import com.google.firebase.dataconnect.sqlite.QueryResultEncoder.IntermixedEntityAndNonEntityListInEntityException
 import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.EntityTestCase
 import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.calculateExpectedEncodingAsEntityId
 import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.decodingEncodingShouldProduceIdenticalStruct
@@ -33,6 +34,8 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.withIteration
 import com.google.firebase.dataconnect.testutil.property.arbitrary.withIterationsIfNotNull
 import com.google.firebase.dataconnect.testutil.randomlyInsertStruct
 import com.google.firebase.dataconnect.testutil.shouldBe
+import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
+import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import com.google.firebase.dataconnect.testutil.toListValue
 import com.google.firebase.dataconnect.testutil.toValueProto
 import com.google.firebase.dataconnect.testutil.withAppendedListIndex
@@ -42,6 +45,8 @@ import com.google.firebase.dataconnect.testutil.withRandomlyInsertedValues
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
+import io.kotest.assertions.assertSoftly
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
@@ -360,6 +365,44 @@ class QueryResultEncoderUnitTest {
   }
 
   @Test
+  fun `entity contains lists of lists of entities and non-entities should throw`() = runTest {
+    checkAll(
+      propTestConfig,
+      Arb.proto.structKey(),
+      Arb.int(2..10),
+      Arb.int(2..10),
+      Arb.proto.recursivelyEmptyListValue()
+    ) { entityIdFieldName, entityCount, nonEntityCount, recursivelyEmptyListValue ->
+      val nonEntityIdFieldNameArb = Arb.proto.structKey().filterNot { it == entityIdFieldName }
+      val nonEntityArb = Arb.proto.value(structKey = nonEntityIdFieldNameArb)
+      val nonEntities = List(nonEntityCount) { nonEntityArb.bind() }
+      val entities = generateEntities(entityCount, entityIdFieldName).map { it.struct }
+      val listValue =
+        recursivelyEmptyListValue.listValue.withRandomlyInsertedValues(
+          nonEntities + entities.drop(1).map { it.toValueProto() },
+          randomSource().random,
+        )
+      val rootStruct =
+        entities[0].withRandomlyInsertedValue(
+          listValue.toValueProto(),
+          randomSource().random,
+          generateKey = { nonEntityIdFieldNameArb.bind() }
+        )
+
+      val exception =
+        shouldThrow<IntermixedEntityAndNonEntityListInEntityException> {
+          QueryResultEncoder.encode(rootStruct, entityIdFieldName)
+        }
+
+      assertSoftly {
+        exception.message shouldContainWithNonAbuttingText "df9tkx7jk4"
+        exception.message shouldContainWithNonAbuttingTextIgnoringCase
+          "must be all be entities or must all be non-entities"
+      }
+    }
+  }
+
+  @Test
   fun `entity contains lists of lists of non-entities with empty lists interspersed`() = runTest {
     checkAll(
       propTestConfig,
@@ -367,7 +410,6 @@ class QueryResultEncoderUnitTest {
       Arb.int(2..10),
       Arb.proto.recursivelyEmptyListValue()
     ) { entityIdFieldName, nonEntityCount, recursivelyEmptyListValue ->
-      println("zzyzx ${evals()}")
       val nonEntityIdFieldNameArb = Arb.proto.structKey().filterNot { it == entityIdFieldName }
       val nonEntityArb = Arb.proto.value(structKey = nonEntityIdFieldNameArb)
       val nonEntities = List(nonEntityCount) { nonEntityArb.bind() }

@@ -238,8 +238,7 @@ internal class QueryResultEncoder(
     return leafContents?.second
   }
 
-  private class IntermixedEntityAndNonEntityListInEntityException(message: String) :
-    Exception(message)
+  class IntermixedEntityAndNonEntityListInEntityException(message: String) : Exception(message)
 
   private fun writeStruct(
     struct: Struct,
