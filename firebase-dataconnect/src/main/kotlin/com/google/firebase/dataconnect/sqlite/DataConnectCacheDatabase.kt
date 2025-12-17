@@ -189,23 +189,6 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
     }
   }
 
-  class QueryResult(
-    val authUid: String?,
-    val id: ByteArray,
-    /** Values must be either [com.google.protobuf.Value] or [Entity]. */
-    val data: Map<String, Any>,
-  ) {
-
-    @OptIn(ExperimentalStdlibApi::class)
-    override fun toString(): String =
-      "QueryResult(authUid=$authUid, id=${id.toHexString()}, data=$data)"
-
-    class Entity(val id: ByteArray, val data: Struct) {
-      @OptIn(ExperimentalStdlibApi::class)
-      override fun toString(): String = "Entity(id=${id.toHexString()}, data=$data)"
-    }
-  }
-
   private fun SQLiteDatabase.getOrInsertAuthUid(authUid: String?): Long {
     execSQL(logger, "INSERT OR IGNORE INTO users (auth_uid) VALUES (?)", arrayOf(authUid))
     return rawQuery(
@@ -233,17 +216,15 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
   private fun SQLiteDatabase.insertQueryResult(
     userRowId: Long,
     queryId: ByteArray,
-    queryFlags: Int,
-    queryData: ByteArray,
-    sequenceNumber: Long,
+    queryData: ByteArray
   ): Long {
     execSQL(
       """
         INSERT OR REPLACE INTO query_results
-        (user_id, query_id, flags, data, sequence_number)
-        VALUES (?, ?, ?, ?, ?)
+        (user_id, query_id, data)
+        VALUES (?, ?, ?)
       """,
-      arrayOf(userRowId, queryId, queryFlags, queryData, sequenceNumber)
+      arrayOf(userRowId, queryId, queryData)
     )
     return getLastInsertRowId(logger)
   }
@@ -251,17 +232,15 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
   private fun SQLiteDatabase.insertEntity(
     userRowId: Long,
     entityId: ByteArray,
-    entityFlags: Int,
     entityData: ByteArray,
-    sequenceNumber: Long,
   ): Long {
     execSQL(
       """
         INSERT OR REPLACE INTO entities
-        (user_id, entity_id, flags, data, sequence_number)
-        VALUES (?, ?, ?, ?, ?)
+        (user_id, entity_id, data)
+        VALUES (?, ?, ?)
       """,
-      arrayOf(userRowId, entityId, entityFlags, entityData, sequenceNumber)
+      arrayOf(userRowId, entityId, entityData)
     )
     return getLastInsertRowId(logger)
   }
@@ -307,36 +286,34 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
       cursor.moveToNext()
     }
 
-  suspend fun insertQueryResult(queryResult: QueryResult) {
-    runReadWriteTransaction { sqliteDatabase ->
-      val entities = mutableListOf<QueryResult.Entity>()
-      // val encodedQueryResultData = QueryResultCodec.encode(queryResult.data, entities)
-      val encodedQueryResultData: ByteArray = TODO()
+  suspend fun insertQueryResult(authUid: String?, queryId: ByteArray, queryData: Struct) {
+    val encodeResult = QueryResultEncoder.encode(queryData, entityFieldName = "_id")
+    val encodedQueryResultData = encodeResult.byteArray
+    val entities = encodeResult.entities
+    val encodedEntityDataList =
+      entities.map { QueryResultEncoder.encode(it.data, entityFieldName = null).byteArray }
 
-      val userRowId = sqliteDatabase.getOrInsertAuthUid(queryResult.authUid)
-      val sequenceNumber = sqliteDatabase.nextSequenceNumber()
+    runReadWriteTransaction { sqliteDatabase ->
+      val userRowId = sqliteDatabase.getOrInsertAuthUid(authUid)
 
       val queryRowId =
         sqliteDatabase.insertQueryResult(
           userRowId = userRowId,
-          queryId = queryResult.id,
-          queryFlags = 0,
+          queryId = queryId,
           queryData = encodedQueryResultData,
-          sequenceNumber = sequenceNumber,
         )
 
       val entityRowIdsBefore = sqliteDatabase.getEntityIdMappingsForQueryId(queryRowId)
       sqliteDatabase.deleteEntityIdMappingsForQueryId(queryRowId)
 
       val entityRowIdsAfter = mutableListOf<Long>()
-      for (entity in entities) {
+      entities.zip(encodedEntityDataList).forEachIndexed { entityIndex, (entity, encodedEntityData)
+        ->
         val entityRowId =
           sqliteDatabase.insertEntity(
             userRowId = userRowId,
-            entityId = entity.id,
-            entityFlags = 0,
-            entityData = TODO(), // QueryResultCodec.encode(entity.data)
-            sequenceNumber = sequenceNumber,
+            entityId = entity.encodedId,
+            entityData = encodedEntityData,
           )
         entityRowIdsAfter.add(entityRowId)
 

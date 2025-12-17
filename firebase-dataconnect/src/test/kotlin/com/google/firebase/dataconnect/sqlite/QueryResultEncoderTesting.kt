@@ -18,6 +18,8 @@ package com.google.firebase.dataconnect.sqlite
 
 import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.charArbWithCodeGreaterThan255
 import com.google.firebase.dataconnect.testutil.BuildByteArrayDSL
+import com.google.firebase.dataconnect.testutil.MutableProtoValuePath
+import com.google.firebase.dataconnect.testutil.ProtoValuePath
 import com.google.firebase.dataconnect.testutil.beEqualTo
 import com.google.firebase.dataconnect.testutil.property.arbitrary.StringWithEncodingLengthArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.StringWithEncodingLengthArb.Mode.Utf8EncodingLongerThanUtf16
@@ -33,10 +35,14 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.stringWithLon
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
 import com.google.firebase.dataconnect.testutil.property.arbitrary.twoValues
+import com.google.firebase.dataconnect.testutil.property.arbitrary.value
 import com.google.firebase.dataconnect.testutil.structFastEqual
+import com.google.firebase.dataconnect.testutil.toListValue
+import com.google.firebase.dataconnect.testutil.toValueProto
+import com.google.firebase.dataconnect.testutil.withAppendedListIndex
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
-import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
+import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
 import io.kotest.assertions.withClue
@@ -44,6 +50,7 @@ import io.kotest.common.DelicateKotest
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.should
 import io.kotest.property.Arb
+import io.kotest.property.PropertyContext
 import io.kotest.property.arbitrary.char
 import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.constant
@@ -61,6 +68,7 @@ import io.kotest.property.arbitrary.withEdgecases
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
+import kotlin.random.nextInt
 
 object QueryResultEncoderTesting {
 
@@ -121,6 +129,92 @@ object QueryResultEncoderTesting {
           structDepth = structDepth..structDepth,
         )
     }
+  }
+
+  /** Generates an [EntityTestCase] object using the given entity ID field name. */
+  fun PropertyContext.generateEntity(entityIdFieldName: String): EntityTestCase =
+    generateEntities(1, entityIdFieldName).single()
+
+  /**
+   * Generates the given number of [EntityTestCase] objects using the given entity ID field name.
+   */
+  fun PropertyContext.generateEntities(
+    count: Int,
+    entityIdFieldName: String
+  ): List<EntityTestCase> = generateEntities(entityIdFieldName).take(count).toList()
+
+  /** Generates [EntityTestCase] objects using the given entity ID field name. */
+  fun PropertyContext.generateEntities(entityIdFieldName: String): Sequence<EntityTestCase> {
+    val entityValueArb = EntityTestCase.arb(entityIdFieldName = Arb.constant(entityIdFieldName))
+    return generateSequence { entityValueArb.bind() }
+  }
+
+  /**
+   * Generates the given number of [Value] objects that would not be considered to be entities, nor
+   * contain values that would be considered to be entities with the given entity ID field name.
+   */
+  fun PropertyContext.generateNonEntities(count: Int, entityIdFieldName: String): List<Value> =
+    generateNonEntities(entityIdFieldName).take(count).toList()
+
+  /**
+   * Generates [Value] objects that would not be considered to be entities, nor contain values that
+   * would be considered to be entities with the given entity ID field name.
+   */
+  fun PropertyContext.generateNonEntities(entityIdFieldName: String): Sequence<Value> {
+    val nonEntityIdStructKeyArb = Arb.proto.structKey().filterNot { it == entityIdFieldName }
+    val nonEntityValueArb = Arb.proto.value(structKey = nonEntityIdStructKeyArb)
+    return generateSequence { nonEntityValueArb.bind() }
+  }
+
+  data class GenerateListValueOfEntitiesResult(
+    val listValue: ListValue,
+    val generatedListValuePaths: List<ProtoValuePath>,
+  )
+
+  fun PropertyContext.generateListValueOfEntities(
+    depth: Int,
+    entityGenerator: Iterator<Struct>
+  ): GenerateListValueOfEntitiesResult {
+    val generatedListValuePaths: MutableList<ProtoValuePath> = mutableListOf()
+    val listValue =
+      generateListValueOfEntities(
+        depth = depth,
+        entityGenerator = entityGenerator,
+        path = mutableListOf(),
+        generatedListValuePaths = generatedListValuePaths,
+      )
+    return GenerateListValueOfEntitiesResult(listValue, generatedListValuePaths.toList())
+  }
+
+  fun PropertyContext.generateListValueOfEntities(
+    depth: Int,
+    entityGenerator: Iterator<Struct>,
+    path: MutableProtoValuePath,
+    generatedListValuePaths: MutableList<ProtoValuePath>,
+  ): ListValue {
+    require(depth > 0) { "invalid depth: $depth [gwt2a6bbsz]" }
+    val size = randomSource().random.nextInt(1..3)
+    val valuesList =
+      if (depth == 1) {
+        generatedListValuePaths.add(path.toList())
+        val x = entityGenerator.next()
+        List(size) { entityGenerator.next().toValueProto() }
+      } else {
+        val fullDepthIndex = randomSource().random.nextInt(size)
+        List(size) { listIndex ->
+          val childDepth =
+            if (listIndex == fullDepthIndex) {
+              depth - 1
+            } else {
+              randomSource().random.nextInt(1 until depth)
+            }
+          path.withAppendedListIndex(listIndex) {
+            generateListValueOfEntities(childDepth, entityGenerator, path, generatedListValuePaths)
+              .toValueProto()
+          }
+        }
+      }
+    return valuesList.toListValue()
   }
 
   fun charArbWithCodeGreaterThan255(): Arb<Char> {

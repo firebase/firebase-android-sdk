@@ -223,9 +223,7 @@ private constructor(private val sqliteDatabase: SQLiteDatabase, private val logg
         id INTEGER PRIMARY KEY,
         user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
         entity_id BLOB NOT NULL,
-        flags INT NOT NULL,
         data BLOB NOT NULL,
-        sequence_number INT NOT NULL,
         debug_info TEXT,
         UNIQUE (user_id, entity_id)
       )"""
@@ -236,9 +234,7 @@ private constructor(private val sqliteDatabase: SQLiteDatabase, private val logg
         id INTEGER PRIMARY KEY,
         user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
         query_id BLOB NOT NULL,
-        flags INT NOT NULL,
         data BLOB NOT NULL,
-        sequence_number INT NOT NULL,
         debug_info TEXT,
         UNIQUE (user_id, query_id)
       )"""

@@ -20,8 +20,10 @@ import com.google.firebase.dataconnect.sqlite.QueryResultEncoder.IntermixedEntit
 import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.EntityTestCase
 import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.calculateExpectedEncodingAsEntityId
 import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.decodingEncodingShouldProduceIdenticalStruct
-import com.google.firebase.dataconnect.testutil.MutableProtoValuePath
-import com.google.firebase.dataconnect.testutil.ProtoValuePath
+import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.generateEntities
+import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.generateEntity
+import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.generateListValueOfEntities
+import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.generateNonEntities
 import com.google.firebase.dataconnect.testutil.buildByteArray
 import com.google.firebase.dataconnect.testutil.isStructValue
 import com.google.firebase.dataconnect.testutil.map
@@ -41,11 +43,9 @@ import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.toListValue
 import com.google.firebase.dataconnect.testutil.toValueProto
 import com.google.firebase.dataconnect.testutil.walk
-import com.google.firebase.dataconnect.testutil.withAppendedListIndex
 import com.google.firebase.dataconnect.testutil.withRandomlyInsertedStructs
 import com.google.firebase.dataconnect.testutil.withRandomlyInsertedValue
 import com.google.firebase.dataconnect.testutil.withRandomlyInsertedValues
-import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
 import io.kotest.assertions.assertSoftly
@@ -57,10 +57,8 @@ import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.Exhaustive
 import io.kotest.property.PropTestConfig
-import io.kotest.property.PropertyContext
 import io.kotest.property.ShrinkingMode
 import io.kotest.property.arbitrary.choice
-import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.list
@@ -520,96 +518,5 @@ class QueryResultEncoderUnitTest {
         edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.33),
         shrinkingMode = ShrinkingMode.Off,
       )
-
-    /** Generates an [EntityTestCase] object using the given entity ID field name. */
-    fun PropertyContext.generateEntity(entityIdFieldName: String): EntityTestCase =
-      generateEntities(1, entityIdFieldName).single()
-
-    /**
-     * Generates the given number of [EntityTestCase] objects using the given entity ID field name.
-     */
-    fun PropertyContext.generateEntities(
-      count: Int,
-      entityIdFieldName: String
-    ): List<EntityTestCase> = generateEntities(entityIdFieldName).take(count).toList()
-
-    /** Generates [EntityTestCase] objects using the given entity ID field name. */
-    fun PropertyContext.generateEntities(entityIdFieldName: String): Sequence<EntityTestCase> {
-      val entityValueArb = EntityTestCase.arb(entityIdFieldName = Arb.constant(entityIdFieldName))
-      return generateSequence { entityValueArb.bind() }
-    }
-
-    /**
-     * Generates the given number of [Value] objects that would not be considered to be entities,
-     * nor contain values that would be considered to be entities with the given entity ID field
-     * name.
-     */
-    fun PropertyContext.generateNonEntities(count: Int, entityIdFieldName: String): List<Value> =
-      generateNonEntities(entityIdFieldName).take(count).toList()
-
-    /**
-     * Generates [Value] objects that would not be considered to be entities, nor contain values
-     * that would be considered to be entities with the given entity ID field name.
-     */
-    fun PropertyContext.generateNonEntities(entityIdFieldName: String): Sequence<Value> {
-      val nonEntityIdStructKeyArb = Arb.proto.structKey().filterNot { it == entityIdFieldName }
-      val nonEntityValueArb = Arb.proto.value(structKey = nonEntityIdStructKeyArb)
-      return generateSequence { nonEntityValueArb.bind() }
-    }
-
-    data class GenerateListValueOfEntitiesResult(
-      val listValue: ListValue,
-      val generatedListValuePaths: List<ProtoValuePath>,
-    )
-
-    fun PropertyContext.generateListValueOfEntities(
-      depth: Int,
-      entityGenerator: Iterator<Struct>
-    ): GenerateListValueOfEntitiesResult {
-      val generatedListValuePaths: MutableList<ProtoValuePath> = mutableListOf()
-      val listValue =
-        generateListValueOfEntities(
-          depth = depth,
-          entityGenerator = entityGenerator,
-          path = mutableListOf(),
-          generatedListValuePaths = generatedListValuePaths,
-        )
-      return GenerateListValueOfEntitiesResult(listValue, generatedListValuePaths.toList())
-    }
-
-    fun PropertyContext.generateListValueOfEntities(
-      depth: Int,
-      entityGenerator: Iterator<Struct>,
-      path: MutableProtoValuePath,
-      generatedListValuePaths: MutableList<ProtoValuePath>,
-    ): ListValue {
-      require(depth > 0) { "invalid depth: $depth [gwt2a6bbsz]" }
-      val size = randomSource().random.nextInt(1..3)
-      val valuesList =
-        if (depth == 1) {
-          generatedListValuePaths.add(path.toList())
-          List(size) { entityGenerator.next().toValueProto() }
-        } else {
-          val fullDepthIndex = randomSource().random.nextInt(size)
-          List(size) { listIndex ->
-            val childDepth =
-              if (listIndex == fullDepthIndex) {
-                depth - 1
-              } else {
-                randomSource().random.nextInt(1 until depth)
-              }
-            path.withAppendedListIndex(listIndex) {
-              generateListValueOfEntities(
-                  childDepth,
-                  entityGenerator,
-                  path,
-                  generatedListValuePaths
-                )
-                .toValueProto()
-            }
-          }
-        }
-      return valuesList.toListValue()
-    }
   }
 }

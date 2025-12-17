@@ -18,15 +18,14 @@ package com.google.firebase.dataconnect.sqlite
 
 import android.database.sqlite.SQLiteDatabase
 import com.google.firebase.dataconnect.core.Logger
-import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase.QueryResult
-import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase.QueryResult.Entity
 import com.google.firebase.dataconnect.testutil.CleanupsRule
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
+import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
-import com.google.protobuf.Struct
+import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -35,16 +34,12 @@ import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
 import io.kotest.property.ShrinkingMode
-import io.kotest.property.arbitrary.Codepoint
-import io.kotest.property.arbitrary.alphanumeric
-import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.byte
 import io.kotest.property.arbitrary.byteArray
-import io.kotest.property.arbitrary.constant
+import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.orNull
-import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
 import io.mockk.CapturingSlot
 import io.mockk.every
@@ -231,11 +226,16 @@ class DataConnectCacheDatabaseUnitTest {
   }
 
   @Test
-  fun `insertQueryResult() should insert a query result`() = runTest {
+  fun `insertQueryResult() should insert a query result with no entities`() = runTest {
     dataConnectCacheDatabase.initialize()
 
-    checkAll(propTestConfig, queryResultArb()) { queryResult ->
-      dataConnectCacheDatabase.insertQueryResult(queryResult)
+    val structArb = Arb.proto.struct(key = Arb.proto.structKey().filterNot { it == "_id" })
+    checkAll(propTestConfig, authUidArb(), queryIdArb(), structArb) { authUid, queryId, struct ->
+      dataConnectCacheDatabase.insertQueryResult(
+        authUid.authUid,
+        queryId.queryIdCopy(),
+        struct.struct
+      )
     }
   }
 
@@ -249,24 +249,25 @@ class DataConnectCacheDatabaseUnitTest {
         shrinkingMode = ShrinkingMode.Off
       )
 
-    fun entityIdArb(): Arb<ByteArray> = Arb.byteArray(Arb.int(0..50), Arb.byte())
-    fun entityDataArb(): Arb<ByteArray> = Arb.byteArray(Arb.int(0..50), Arb.byte())
-    fun entityFlagsArb(): Arb<Int> = Arb.int()
-    fun queryResultIdArb(): Arb<ByteArray> = Arb.byteArray(Arb.int(0..50), Arb.byte())
-    fun queryResultDataArb(): Arb<ByteArray> = Arb.byteArray(Arb.int(0..50), Arb.byte())
-    fun queryResultFlagsArb(): Arb<Int> = Arb.int()
-    fun authUidArb(): Arb<String?> =
-      Arb.string(0..10, Codepoint.alphanumeric()).orNull(nullProbability = 0.33)
+    data class AuthUidSample(val authUid: String?)
 
-    fun entityArb(
-      id: Arb<ByteArray> = entityIdArb(),
-      data: Arb<Struct> = Arb.proto.struct().map { it.struct },
-    ): Arb<Entity> = Arb.bind(id, data, ::Entity)
+    fun authUidArb(): Arb<AuthUidSample> =
+      Arb.proto.structKey().orNull(nullProbability = 0.33).map(::AuthUidSample)
 
-    fun queryResultArb(
-      authUid: Arb<String?> = authUidArb(),
-      id: Arb<ByteArray> = queryResultIdArb(),
-      data: Arb<Map<String, Any>> = Arb.constant(TODO())
-    ): Arb<QueryResult> = Arb.bind(authUid, id, data, ::QueryResult)
+    class QueryIdSample(queryId: ByteArray) {
+      private val _queryId = queryId.copyOf()
+
+      fun queryIdCopy(): ByteArray = _queryId.copyOf()
+
+      override fun hashCode() = _queryId.contentHashCode()
+
+      override fun equals(other: Any?) =
+        other is QueryIdSample && _queryId.contentEquals(other._queryId)
+
+      override fun toString() = "QueryId(${_queryId.to0xHexString()})"
+    }
+
+    fun queryIdArb(): Arb<QueryIdSample> =
+      Arb.byteArray(Arb.int(0..25), Arb.byte()).map(::QueryIdSample)
   }
 }
