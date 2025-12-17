@@ -68,9 +68,9 @@ import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
 import io.kotest.property.exhaustive.of
+import kotlin.random.nextInt
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
-import kotlin.random.nextInt
 
 class QueryResultEncoderUnitTest {
 

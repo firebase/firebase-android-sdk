@@ -113,7 +113,7 @@ class QueryResultDecoderUnitTest {
         byteArray,
         errorUid = "xg5y5fm2vk",
         callerErrorId = "MagicEOF",
-        whileText = "reading 4 bytes",
+        whileText = "reading 4 bytes of magic",
         gotBytes = sampleByteArray,
         expectedBytesText = null,
         fewerBytesThanExpected = 4 - sampleByteArray.size,
@@ -130,6 +130,8 @@ class QueryResultDecoderUnitTest {
       }
       assertDecodeThrowsUnknownValueTypeIndicatorByteException(
         byteArray,
+        name = "root struct",
+        path = null,
         callerErrorId = "RootStructValueTypeIndicatorByteUnknown",
         unknownValueTypeIndicator = unknownValueTypeIndicator.byte,
       )
@@ -146,6 +148,7 @@ class QueryResultDecoderUnitTest {
       }
       assertDecodeThrowsUnexpectedValueTypeIndicatorByteException(
         byteArray,
+        name = "root struct",
         callerErrorId = "RootStructValueTypeIndicatorByteUnexpected",
         unexpectedValueTypeIndicator = nonRootStructValueTypeIndicatorByte.byte,
       )
@@ -157,6 +160,7 @@ class QueryResultDecoderUnitTest {
     val byteArray = buildByteArray { putInt(QueryResultCodec.QUERY_RESULT_MAGIC) }
     assertDecodeThrowsValueTypeIndicatorEOFException(
       byteArray,
+      name = "root struct",
       callerErrorId = "RootStructValueTypeIndicatorByteEOF",
     )
   }
@@ -175,6 +179,7 @@ class QueryResultDecoderUnitTest {
       val byteArray = makeByteArrayEndingWithStructKeyCount(invalidStructKeyCountByteArray)
       assertDecodeThrowsUInt32DecodeException(
         byteArray,
+        name = "struct key count",
         callerErrorId = "StructKeyCountDecodeFailed",
         uint32ByteArray = invalidStructKeyCountByteArray,
       )
@@ -188,6 +193,7 @@ class QueryResultDecoderUnitTest {
       val byteArray = makeByteArrayEndingWithStructKeyCount(truncatedStructKeyCountByteArray)
       assertDecodeThrowsUInt32EOFException(
         byteArray,
+        name = "struct key count",
         callerErrorId = "StructKeyCountEOF",
         uint32ByteArray = truncatedStructKeyCountByteArray,
       )
@@ -201,7 +207,7 @@ class QueryResultDecoderUnitTest {
       byteArray,
       errorUid = "xg5y5fm2vk",
       callerErrorId = "String1ByteEOF",
-      whileText = "reading 1 bytes",
+      whileText = "reading 1 bytes of string value",
       gotBytes = byteArrayOf(),
       expectedBytesText = null,
       fewerBytesThanExpected = 1,
@@ -219,7 +225,7 @@ class QueryResultDecoderUnitTest {
         byteArray,
         errorUid = "xg5y5fm2vk",
         callerErrorId = "String2ByteEOF",
-        whileText = "reading 2 bytes",
+        whileText = "reading 2 bytes of string value",
         gotBytes = truncated2ByteString,
         expectedBytesText = null,
         fewerBytesThanExpected = 2 - truncated2ByteString.size,
@@ -238,7 +244,7 @@ class QueryResultDecoderUnitTest {
         byteArray,
         errorUid = "xg5y5fm2vk",
         callerErrorId = "String1CharEOF",
-        whileText = "reading 2 bytes",
+        whileText = "reading 2 bytes of string value",
         gotBytes = truncated1CharString,
         expectedBytesText = null,
         fewerBytesThanExpected = 2 - truncated1CharString.size,
@@ -257,7 +263,7 @@ class QueryResultDecoderUnitTest {
         byteArray,
         errorUid = "xg5y5fm2vk",
         callerErrorId = "String2CharEOF",
-        whileText = "reading 4 bytes",
+        whileText = "reading 4 bytes of string value",
         gotBytes = truncated2CharString,
         expectedBytesText = null,
         fewerBytesThanExpected = 4 - truncated2CharString.size,
@@ -275,6 +281,7 @@ class QueryResultDecoderUnitTest {
       }
       assertDecodeThrowsUInt32DecodeException(
         byteArray,
+        name = "string value",
         callerErrorId = "StringUtf8ByteCountDecodeFailed",
         uint32ByteArray = invalidUtf8ByteCountByteArray,
       )
@@ -291,6 +298,7 @@ class QueryResultDecoderUnitTest {
       }
       assertDecodeThrowsUInt32EOFException(
         byteArray,
+        name = "string value",
         callerErrorId = "StringUtf8ByteCountEOF",
         uint32ByteArray = truncatedUtf8ByteCountByteArray,
       )
@@ -308,6 +316,7 @@ class QueryResultDecoderUnitTest {
       }
       assertDecodeThrowsUInt32DecodeException(
         byteArray,
+        name = "string value",
         callerErrorId = "StringUtf8CharCountDecodeFailed",
         uint32ByteArray = invalidUtf8CharCountByteArray,
       )
@@ -325,6 +334,7 @@ class QueryResultDecoderUnitTest {
       }
       assertDecodeThrowsUInt32EOFException(
         byteArray,
+        name = "string value",
         callerErrorId = "StringUtf8CharCountEOF",
         uint32ByteArray = truncatedUtf8CharCountByteArray,
       )
@@ -341,6 +351,7 @@ class QueryResultDecoderUnitTest {
       }
       assertDecodeThrowsUInt32DecodeException(
         byteArray,
+        name = "string value",
         callerErrorId = "StringUtf16CharCountDecodeFailed",
         uint32ByteArray = invalidUtf16CharCountByteArray,
       )
@@ -357,18 +368,19 @@ class QueryResultDecoderUnitTest {
       }
       assertDecodeThrowsUInt32EOFException(
         byteArray,
+        name = "string value",
         callerErrorId = "StringUtf16CharCountEOF",
         uint32ByteArray = truncatedUtf16CharCountByteArray,
       )
     }
   }
 
-  private fun makeByteArrayEndingWithStringValueTypeIndicator(
+  private fun makeByteArrayEndingWithStructKeyStringValueTypeIndicator(
     stringValueTypeIndicator: Byte
   ): ByteArray =
-    makeByteArrayEndingWithStringValueTypeIndicator(byteArrayOf(stringValueTypeIndicator))
+    makeByteArrayEndingWithStructKeyStringValueTypeIndicator(byteArrayOf(stringValueTypeIndicator))
 
-  private fun makeByteArrayEndingWithStringValueTypeIndicator(
+  private fun makeByteArrayEndingWithStructKeyStringValueTypeIndicator(
     stringValueTypeIndicator: ByteArray
   ): ByteArray = buildByteArray {
     putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
@@ -378,12 +390,14 @@ class QueryResultDecoderUnitTest {
   }
 
   @Test
-  fun `string value type indicator byte unknown should throw`() = runTest {
+  fun `struct key string value type indicator byte unknown should throw`() = runTest {
     checkAll(propTestConfig, UnknownValueTypeIndicatorByte.arb()) { unknownValueTypeIndicator ->
       val byteArray =
-        makeByteArrayEndingWithStringValueTypeIndicator(unknownValueTypeIndicator.byte)
+        makeByteArrayEndingWithStructKeyStringValueTypeIndicator(unknownValueTypeIndicator.byte)
       assertDecodeThrowsUnknownValueTypeIndicatorByteException(
         byteArray,
+        name = "struct key",
+        path = null,
         callerErrorId = "StringValueTypeIndicatorByteUnknown",
         unknownValueTypeIndicator = unknownValueTypeIndicator.byte,
       )
@@ -391,13 +405,16 @@ class QueryResultDecoderUnitTest {
   }
 
   @Test
-  fun `string value type indicator byte unexpected should throw`() = runTest {
+  fun `struct key string value type indicator byte unexpected should throw`() = runTest {
     val arb = Exhaustive.collection(ValueTypeIndicatorByte.all - ValueTypeIndicatorByte.strings)
     checkAll(propTestConfig, arb) { nonStringValueTypeIndicatorByte ->
       val byteArray =
-        makeByteArrayEndingWithStringValueTypeIndicator(nonStringValueTypeIndicatorByte.byte)
+        makeByteArrayEndingWithStructKeyStringValueTypeIndicator(
+          nonStringValueTypeIndicatorByte.byte
+        )
       assertDecodeThrowsUnexpectedValueTypeIndicatorByteException(
         byteArray,
+        name = "struct key",
         callerErrorId = "StringValueTypeIndicatorByteUnexpected",
         unexpectedValueTypeIndicator = nonStringValueTypeIndicatorByte.byte,
       )
@@ -405,10 +422,11 @@ class QueryResultDecoderUnitTest {
   }
 
   @Test
-  fun `string value type indicator byte truncated should throw`() {
-    val byteArray = makeByteArrayEndingWithStringValueTypeIndicator(byteArrayOf())
+  fun `struct key string value type indicator byte truncated should throw`() {
+    val byteArray = makeByteArrayEndingWithStructKeyStringValueTypeIndicator(byteArrayOf())
     assertDecodeThrowsValueTypeIndicatorEOFException(
       byteArray,
+      name = "struct key",
       callerErrorId = "StringValueTypeIndicatorByteEOF",
     )
   }
@@ -419,6 +437,8 @@ class QueryResultDecoderUnitTest {
       val byteArray = makeByteArrayEndingWithValue { put(unknownValueTypeIndicator.byte) }
       assertDecodeThrowsUnknownValueTypeIndicatorByteException(
         byteArray,
+        name = "value type",
+        path = "",
         callerErrorId = "ReadValueValueTypeIndicatorByteUnknown",
         unknownValueTypeIndicator = unknownValueTypeIndicator.byte,
       )
@@ -430,6 +450,7 @@ class QueryResultDecoderUnitTest {
     val byteArray = makeByteArrayEndingWithValue {}
     assertDecodeThrowsValueTypeIndicatorEOFException(
       byteArray,
+      name = "value type",
       callerErrorId = "ReadValueValueTypeIndicatorByteEOF",
     )
   }
@@ -450,6 +471,7 @@ class QueryResultDecoderUnitTest {
         makeByteArrayEndingWithEncodedEntityIdSize(invalidEncodedEntityIdSizeByteArray)
       assertDecodeThrowsUInt32DecodeException(
         byteArray,
+        name = "encoded entity ID size",
         callerErrorId = "EncodedEntityIdSizeDecodeFailed",
         uint32ByteArray = invalidEncodedEntityIdSizeByteArray,
       )
@@ -464,6 +486,7 @@ class QueryResultDecoderUnitTest {
         makeByteArrayEndingWithEncodedEntityIdSize(truncatedEncodedEntityIdSizeByteArray)
       assertDecodeThrowsUInt32EOFException(
         byteArray,
+        name = "encoded entity ID size",
         callerErrorId = "EncodedEntityIdSizeEOF",
         uint32ByteArray = truncatedEncodedEntityIdSizeByteArray,
       )
@@ -507,7 +530,7 @@ class QueryResultDecoderUnitTest {
         byteArray,
         errorUid = "dnx886qwmk",
         callerErrorId = null,
-        whileText = "reading byte array of length ${testCase.inflatedByteCount}",
+        whileText = "reading encoded entity ID byte array of length ${testCase.inflatedByteCount}",
         gotBytes = testCaseByteArray,
         expectedBytesText = null,
         fewerBytesThanExpected = testCase.byteCountInflation,
@@ -615,7 +638,7 @@ class QueryResultDecoderUnitTest {
         messageShouldContainWithNonAbuttingTextIgnoringCase("end of input reached prematurely")
         messageShouldContainWithNonAbuttingTextIgnoringCase(
           "reading ${testCase.inflatedCharCount} characters " +
-            "(${testCase.inflatedByteCount} bytes) of a UTF-8 encoded string"
+            "(${testCase.inflatedByteCount} bytes) of a string value UTF-8 encoded string"
         )
         messageShouldContainWithNonAbuttingTextIgnoringCase(
           "got ${testCase.string.length} characters, " +
@@ -709,7 +732,7 @@ class QueryResultDecoderUnitTest {
         messageShouldContainWithNonAbuttingTextIgnoringCase("end of input reached prematurely")
         messageShouldContainWithNonAbuttingTextIgnoringCase(
           "reading ${testCase.inflatedCharCount} characters " +
-            "(${testCase.inflatedCharCount * 2} bytes) of a UTF-16 encoded string"
+            "(${testCase.inflatedCharCount * 2} bytes) of string value UTF-16 encoded string"
         )
         messageShouldContainWithNonAbuttingTextIgnoringCase(
           "got ${testCase.string.length} characters, " +
@@ -732,6 +755,7 @@ class QueryResultDecoderUnitTest {
       }
       assertDecodeThrowsUInt32DecodeException(
         byteArray,
+        name = "list of entities size",
         callerErrorId = "ListOfEntitiesSizeDecodeFailed",
         uint32ByteArray = invalidListSizeByteArray,
       )
@@ -748,6 +772,7 @@ class QueryResultDecoderUnitTest {
       }
       assertDecodeThrowsUInt32EOFException(
         byteArray,
+        name = "list of entities size",
         callerErrorId = "ListOfEntitiesSizeEOF",
         uint32ByteArray = truncatedListSizeByteArray,
       )
@@ -764,7 +789,8 @@ class QueryResultDecoderUnitTest {
       }
       assertDecodeThrowsUInt32DecodeException(
         byteArray,
-        callerErrorId = "ListOfNonEntitiesSizeDecodeFailed",
+        name = "list size",
+        callerErrorId = "ListSizeDecodeFailed",
         uint32ByteArray = invalidListSizeByteArray,
       )
     }
@@ -780,7 +806,8 @@ class QueryResultDecoderUnitTest {
       }
       assertDecodeThrowsUInt32EOFException(
         byteArray,
-        callerErrorId = "ListOfNonEntitiesSizeEOF",
+        name = "list size",
+        callerErrorId = "ListSizeEOF",
         uint32ByteArray = truncatedListSizeByteArray,
       )
     }
@@ -797,7 +824,7 @@ class QueryResultDecoderUnitTest {
         byteArray,
         errorUid = "xg5y5fm2vk",
         callerErrorId = "ReadDoubleValueEOF",
-        whileText = "reading 8 bytes",
+        whileText = "reading 8 bytes of double value",
         gotBytes = truncatedDoubleValue,
         expectedBytesText = null,
         fewerBytesThanExpected = 8 - truncatedDoubleValue.size,
@@ -816,7 +843,7 @@ class QueryResultDecoderUnitTest {
         byteArray,
         errorUid = "xg5y5fm2vk",
         callerErrorId = "ReadFixed32IntValueEOF",
-        whileText = "reading 4 bytes",
+        whileText = "reading 4 bytes of Fixed32Int value",
         gotBytes = truncatedFixed32Value,
         expectedBytesText = null,
         fewerBytesThanExpected = 4 - truncatedFixed32Value.size,
@@ -834,6 +861,7 @@ class QueryResultDecoderUnitTest {
       }
       assertDecodeThrowsUInt32DecodeException(
         byteArray,
+        name = "UInt32 value",
         callerErrorId = "ReadUInt32ValueDecodeError",
         uint32ByteArray = invalidUInt32ValueByteArray,
       )
@@ -850,6 +878,7 @@ class QueryResultDecoderUnitTest {
       }
       assertDecodeThrowsUInt32EOFException(
         byteArray,
+        name = "UInt32 value",
         callerErrorId = "ReadUInt32ValueEOF",
         uint32ByteArray = truncatedUInt32ValueByteArray,
       )
@@ -874,7 +903,9 @@ class QueryResultDecoderUnitTest {
       assertDecodeThrows<UInt64DecodeException>(byteArray) {
         messageShouldContainWithNonAbuttingText("ybydmsykkp")
         messageShouldContainWithNonAbuttingText("decodeErrorId=ReadUInt64ValueDecodeError")
-        messageShouldContainWithNonAbuttingTextIgnoringCase("uint64 decode failed of 10 bytes")
+        messageShouldContainWithNonAbuttingTextIgnoringCase(
+          "UInt64 value uint64 decode failed of 10 bytes"
+        )
         messageShouldContainWithNonAbuttingTextIgnoringCase(
           invalidUInt64Value.byteArraySliceArray(0..9).to0xHexString()
         )
@@ -900,7 +931,9 @@ class QueryResultDecoderUnitTest {
       }
       assertDecodeThrows<UInt64InvalidValueException>(byteArray) {
         messageShouldContainWithNonAbuttingText("pypnp79waw")
-        messageShouldContainRegexMatchIgnoringCase("invalid uint64 value decoded: -[0-9]+\\W")
+        messageShouldContainRegexMatchIgnoringCase(
+          "invalid UInt64 value uint64 value decoded at : -[0-9]+\\W"
+        )
         messageShouldContainWithNonAbuttingTextIgnoringCase(
           "decoded from 10 bytes: " + invalidUInt64ValueByteArray.to0xHexString(length = 10)
         )
@@ -920,7 +953,7 @@ class QueryResultDecoderUnitTest {
         byteArray,
         errorUid = "c439qmdmnk",
         callerErrorId = "ReadUInt64ValueEOF",
-        whileText = "decoding uint64 value",
+        whileText = "decoding UInt64 value uint64 value",
         gotBytes = truncatedUInt64ValueByteArray,
         expectedBytesText = "between 1 and 10",
         fewerBytesThanExpected = null,
@@ -938,7 +971,9 @@ class QueryResultDecoderUnitTest {
       assertDecodeThrows<SInt32DecodeException>(byteArray) {
         messageShouldContainWithNonAbuttingText("ybydmsykkp")
         messageShouldContainWithNonAbuttingText("decodeErrorId=ReadSInt32ValueDecodeError")
-        messageShouldContainWithNonAbuttingTextIgnoringCase("sint32 decode failed of 5 bytes")
+        messageShouldContainWithNonAbuttingTextIgnoringCase(
+          "SInt32 value sint32 decode failed of 5 bytes"
+        )
         messageShouldContainWithNonAbuttingTextIgnoringCase(
           invalidSInt32Value.byteArraySliceArray(0..4).to0xHexString()
         )
@@ -958,7 +993,7 @@ class QueryResultDecoderUnitTest {
         byteArray,
         errorUid = "c439qmdmnk",
         callerErrorId = "ReadSInt32ValueEOF",
-        whileText = "decoding sint32 value",
+        whileText = "decoding SInt32 value sint32 value",
         gotBytes = truncatedSInt32ValueByteArray,
         expectedBytesText = "between 1 and 5",
         fewerBytesThanExpected = null,
@@ -984,7 +1019,9 @@ class QueryResultDecoderUnitTest {
       assertDecodeThrows<SInt64DecodeException>(byteArray) {
         messageShouldContainWithNonAbuttingText("ybydmsykkp")
         messageShouldContainWithNonAbuttingText("decodeErrorId=ReadSInt64ValueDecodeError")
-        messageShouldContainWithNonAbuttingTextIgnoringCase("sint64 decode failed of 10 bytes")
+        messageShouldContainWithNonAbuttingTextIgnoringCase(
+          "SInt64 value sint64 decode failed of 10 bytes"
+        )
         messageShouldContainWithNonAbuttingTextIgnoringCase(
           invalidSInt64Value.byteArraySliceArray(0..9).to0xHexString()
         )
@@ -1004,7 +1041,7 @@ class QueryResultDecoderUnitTest {
         byteArray,
         errorUid = "c439qmdmnk",
         callerErrorId = "ReadSInt64ValueEOF",
-        whileText = "decoding sint64 value",
+        whileText = "decoding SInt64 value sint64 value",
         gotBytes = truncatedSInt64ValueByteArray,
         expectedBytesText = "between 1 and 10",
         fewerBytesThanExpected = null,
@@ -1086,6 +1123,7 @@ class QueryResultDecoderUnitTest {
 
   private fun assertDecodeThrowsUInt32EOFException(
     byteArray: ByteArray,
+    name: String,
     callerErrorId: String,
     uint32ByteArray: ByteArray,
   ) =
@@ -1093,7 +1131,7 @@ class QueryResultDecoderUnitTest {
       byteArray,
       errorUid = "c439qmdmnk",
       callerErrorId = callerErrorId,
-      whileText = "decoding uint32 value",
+      whileText = "decoding $name uint32 value",
       gotBytes = uint32ByteArray,
       expectedBytesText = "between 1 and 5",
       fewerBytesThanExpected = null,
@@ -1101,13 +1139,14 @@ class QueryResultDecoderUnitTest {
 
   private fun assertDecodeThrowsUInt32DecodeException(
     byteArray: ByteArray,
+    name: String,
     callerErrorId: String,
     uint32ByteArray: ByteArray,
   ) =
     assertDecodeThrows<UInt32DecodeException>(byteArray) {
       messageShouldContainWithNonAbuttingText("ybydmsykkp")
       messageShouldContainWithNonAbuttingText("decodeErrorId=$callerErrorId")
-      messageShouldContainWithNonAbuttingTextIgnoringCase("uint32 decode failed of 5 bytes")
+      messageShouldContainWithNonAbuttingTextIgnoringCase("$name uint32 decode failed of 5 bytes")
       messageShouldContainWithNonAbuttingTextIgnoringCase(
         uint32ByteArray.sliceArray(0..4).to0xHexString()
       )
@@ -1115,6 +1154,8 @@ class QueryResultDecoderUnitTest {
 
   private fun assertDecodeThrowsUnknownValueTypeIndicatorByteException(
     byteArray: ByteArray,
+    name: String,
+    path: String?,
     callerErrorId: String,
     unknownValueTypeIndicator: Byte,
   ) =
@@ -1122,12 +1163,15 @@ class QueryResultDecoderUnitTest {
       messageShouldContainWithNonAbuttingText("y6ppbg7ary")
       messageShouldContainWithNonAbuttingText("unknownErrorId=$callerErrorId")
       messageShouldContainWithNonAbuttingTextIgnoringCase(
-        "read unknown value type indicator byte: $unknownValueTypeIndicator"
+        "read unknown $name value type indicator byte" +
+          (if (path !== null) " at $path" else "") +
+          ": $unknownValueTypeIndicator"
       )
     }
 
   private fun assertDecodeThrowsUnexpectedValueTypeIndicatorByteException(
     byteArray: ByteArray,
+    name: String,
     callerErrorId: String,
     unexpectedValueTypeIndicator: Byte,
   ) =
@@ -1135,19 +1179,20 @@ class QueryResultDecoderUnitTest {
       messageShouldContainWithNonAbuttingText("hxtgz4ffem")
       messageShouldContainWithNonAbuttingText("unexpectedErrorId=$callerErrorId")
       messageShouldContainWithNonAbuttingTextIgnoringCase(
-        "read unexpected value type indicator byte: $unexpectedValueTypeIndicator"
+        "read unexpected $name value type indicator byte: $unexpectedValueTypeIndicator"
       )
     }
 
   private fun assertDecodeThrowsValueTypeIndicatorEOFException(
     byteArray: ByteArray,
+    name: String,
     callerErrorId: String,
   ) =
     assertDecodeThrowsEOFException<ValueTypeIndicatorEOFException>(
       byteArray,
       errorUid = "xg5y5fm2vk",
       callerErrorId = callerErrorId,
-      whileText = "reading 1 bytes",
+      whileText = "reading 1 bytes of $name",
       gotBytes = ByteArray(0),
       expectedBytesText = null,
       fewerBytesThanExpected = 1,

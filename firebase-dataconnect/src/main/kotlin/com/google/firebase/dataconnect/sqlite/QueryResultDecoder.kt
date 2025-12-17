@@ -70,7 +70,7 @@ internal class QueryResultDecoder(
     val rootStructValueType =
       readValueType(
         path = emptyList(),
-        name = "root struct value type",
+        name = "root struct",
         eofErrorId = "RootStructValueTypeIndicatorByteEOF",
         unknownErrorId = "RootStructValueTypeIndicatorByteUnknown",
         unexpectedErrorId = "RootStructValueTypeIndicatorByteUnexpected",
@@ -101,8 +101,9 @@ internal class QueryResultDecoder(
       if (!readSome()) {
         val remaining = byteBuffer.remaining()
         throw eofException(
-          "end of input reached prematurely while reading $byteCount bytes of $name " +
-            "at ${path.toPathString()}: got $remaining bytes (${byteBuffer.get0xHexString()}), " +
+          "end of input reached prematurely while reading $byteCount bytes of $name" +
+            (if (path.isEmpty()) "" else " at ${path.toPathString()}") +
+            ": got $remaining bytes (${byteBuffer.get0xHexString()}), " +
             "${byteCount-remaining} fewer bytes than expected " +
             "[xg5y5fm2vk, eofErrorId=$eofErrorId]",
           null
@@ -147,8 +148,9 @@ internal class QueryResultDecoder(
 
           byteBuffer.position(originalPosition)
           throw valueVerifier.exception(
-            "invalid $name $typeName value decoded at ${path.toPathString()}: $decodedValue " +
-              "(decoded from $decodedByteCount bytes: " +
+            "invalid $name $typeName value decoded" +
+              (if (path.isEmpty()) "" else " at ${path.toPathString()}") +
+              ": $decodedValue (decoded from $decodedByteCount bytes: " +
               "${byteBuffer.get0xHexString(length = decodedByteCount)}) " +
               "[pypnp79waw, invalidValueErrorId=${valueVerifier.errorId}]"
           )
@@ -158,8 +160,9 @@ internal class QueryResultDecoder(
 
           if (byteBuffer.remaining() >= maxSize) {
             throw decodeException(
-              "$name $typeName decode failed of $decodedByteCount bytes at " +
-                "${path.toPathString()}: ${byteBuffer.get0xHexString(length=decodedByteCount)} " +
+              "$name $typeName decode failed of $decodedByteCount bytes" +
+                (if (path.isEmpty()) "" else " at ${path.toPathString()}") +
+                ": ${byteBuffer.get0xHexString(length=decodedByteCount)} " +
                 "[ybydmsykkp, decodeErrorId=$decodeErrorId]",
               readResult.exceptionOrNull()
             )
@@ -167,10 +170,10 @@ internal class QueryResultDecoder(
 
           if (!readSome()) {
             throw eofException(
-              "end of input reached prematurely while decoding $name $typeName value at " +
-                "${path.toPathString()}: got ${byteBuffer.remaining()} bytes " +
-                "(${byteBuffer.get0xHexString()}), but expected between 1 and $maxSize bytes " +
-                "[c439qmdmnk, eofErrorId=$eofErrorId]",
+              "end of input reached prematurely while decoding $name $typeName value" +
+                (if (path.isEmpty()) "" else " at ${path.toPathString()}") +
+                ": got ${byteBuffer.remaining()} bytes (${byteBuffer.get0xHexString()}), " +
+                "but expected between 1 and $maxSize bytes [c439qmdmnk, eofErrorId=$eofErrorId]",
               readResult.exceptionOrNull()
             )
           }
@@ -286,8 +289,9 @@ internal class QueryResultDecoder(
             .to0xHexString(length = byteArrayOffset, include0xPrefix = false)
             .ellipsizeMiddle(maxLength = 20)
         throw ByteArrayEOFException(
-          "end of input reached prematurely while reading $name byte array of length $byteCount " +
-            "at ${path.toPathString()} got $byteArrayOffset bytes (0x$byteArrayHexString), " +
+          "end of input reached prematurely while reading $name byte array of length $byteCount" +
+            (if (path.isEmpty()) "" else " at ${path.toPathString()}") +
+            ": got $byteArrayOffset bytes (0x$byteArrayHexString), " +
             "${wantByteCount - byteBuffer.remaining()} fewer bytes than expected [dnx886qwmk]"
         )
       }
@@ -376,8 +380,9 @@ internal class QueryResultDecoder(
     val valueType = ValueType.fromSerializedByte(byte)
     if (valueType === null) {
       throw UnknownValueTypeIndicatorByteException(
-        "read unknown $name value type indicator byte at ${path.toPathString()}: $byte; " +
-          "expected one of " +
+        "read unknown $name value type indicator byte" +
+          (if (path.isEmpty()) "" else " at ${path.toPathString()}") +
+          ": $byte; expected one of " +
           ValueType.entries
             .sortedBy { it.serializedByte }
             .joinToString { "${it.serializedByte} (${it.displayName})" } +
@@ -389,8 +394,9 @@ internal class QueryResultDecoder(
     val mappedType = map[valueType]
     if (mappedType === null) {
       throw UnexpectedValueTypeIndicatorByteException(
-        "read unexpected $name value type indicator byte: $byte (${valueType.displayName}) " +
-          "at ${path.toPathString()}; expected one of " +
+        "read unexpected $name value type indicator byte: $byte (${valueType.displayName})" +
+          (if (path.isEmpty()) "" else " at ${path.toPathString()}") +
+          "; expected one of " +
           map.keys
             .sortedBy { it.serializedByte }
             .joinToString { "${it.serializedByte} (${it.displayName})" } +
@@ -516,8 +522,9 @@ internal class QueryResultDecoder(
         val totalBytesRead = byteBuffer.remaining() + byteCount - bytesRemaining
         throw Utf8EOFException(
           "end of input reached prematurely while reading $charCount characters " +
-            "($byteCount bytes) of a $name UTF-8 encoded string at ${path.toPathString()}: " +
-            "got ${charBuffer.position()} characters, " +
+            "($byteCount bytes) of a $name UTF-8 encoded string" +
+            (if (path.isEmpty()) "" else " at ${path.toPathString()}") +
+            ": got ${charBuffer.position()} characters, " +
             "${charBuffer.remaining()} fewer characters than expected " +
             "($totalBytesRead bytes, $bytesRemaining fewer bytes than expected) [akn3x7p8rm]"
         )
@@ -539,8 +546,9 @@ internal class QueryResultDecoder(
     if (charBuffer.hasRemaining()) {
       throw Utf8IncorrectNumCharactersException(
         "expected to read $charCount characters ($byteCount bytes) of a $name UTF-8 " +
-          "encoded string at ${path.toPathString()}, " +
-          "but only got ${charBuffer.position()} characters, " +
+          "encoded string" +
+          (if (path.isEmpty()) "" else " at ${path.toPathString()}") +
+          ", but only got ${charBuffer.position()} characters, " +
           "${charBuffer.remaining()} fewer characters than expected [dhvzxrcrqe]"
       )
     }
@@ -579,8 +587,9 @@ internal class QueryResultDecoder(
         }
       throw Utf8IncorrectNumCharactersException(
         "expected to read $charCount characters ($byteCount bytes) of a $name UTF-8 " +
-          "encoded string at ${path.toPathString()}; got the expected number of bytes, " +
-          "but got ${decodedString.length} characters, " +
+          "encoded string" +
+          (if (path.isEmpty()) "" else " at ${path.toPathString()}") +
+          "; got the expected number of bytes, but got ${decodedString.length} characters, " +
           "$differenceString characters than expected [chq89pn4j6]"
       )
     }
@@ -606,8 +615,9 @@ internal class QueryResultDecoder(
         val expectedTotalBytesRead = charCount * 2
         throw Utf16EOFException(
           "end of input reached prematurely while reading $charCount characters " +
-            "($expectedTotalBytesRead bytes) of $name UTF-16 encoded string " +
-            "at ${path.toPathString()}: got ${charBuffer.position()} characters, " +
+            "($expectedTotalBytesRead bytes) of $name UTF-16 encoded string" +
+            (if (path.isEmpty()) "" else " at ${path.toPathString()}") +
+            ": got ${charBuffer.position()} characters, " +
             "${charBuffer.remaining()} fewer characters than expected " +
             "($totalBytesRead bytes, ${expectedTotalBytesRead-totalBytesRead} " +
             "fewer bytes than expected) [e399qdvzdz]"
