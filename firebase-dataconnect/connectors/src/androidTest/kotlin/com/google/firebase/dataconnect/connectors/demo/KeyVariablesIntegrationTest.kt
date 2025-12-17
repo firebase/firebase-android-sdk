@@ -117,9 +117,9 @@ class KeyVariablesIntegrationTest : DemoConnectorIntegrationTestBase() {
 
     val key = connector.insertPrimaryKeyIsInt64.execute(foo = id, value = value).data.key
 
-    val queryResult = connector.getPrimaryKeyIsInt64byKey.execute(key)
+    val queryResult = connector.getPrimaryKeyIsInt64ByKey.execute(key)
     queryResult.data.primaryKeyIsInt64 shouldBe
-      GetPrimaryKeyIsInt64byKeyQuery.Data.PrimaryKeyIsInt64(foo = id, value = value)
+      GetPrimaryKeyIsInt64ByKeyQuery.Data.PrimaryKeyIsInt64(foo = id, value = value)
   }
 
   @Test
@@ -160,44 +160,38 @@ class KeyVariablesIntegrationTest : DemoConnectorIntegrationTestBase() {
     val nested6 = createPrimaryKeyNested6(nested3.key, nested4.key)
     val nested7 = createPrimaryKeyNested7(nested5a.key, nested5b.key, nested6.key)
 
-    val queryResult = connector.getPrimaryKeyNested7byKey.execute(nested7.key)
+    val queryResult = connector.getPrimaryKeyNested7ByKey.execute(nested7.key)
 
     queryResult.data shouldBe
-      GetPrimaryKeyNested7byKeyQuery.Data(
-        GetPrimaryKeyNested7byKeyQuery.Data.PrimaryKeyNested7(
+      GetPrimaryKeyNested7ByKeyQuery.Data(
+        GetPrimaryKeyNested7ByKeyQuery.Data.Key(
           nested7.value,
-          GetPrimaryKeyNested7byKeyQuery.Data.PrimaryKeyNested7.Nested5a(
+          GetPrimaryKeyNested7ByKeyQuery.Data.Key.Nested5a(
             nested5a.value,
-            GetPrimaryKeyNested7byKeyQuery.Data.PrimaryKeyNested7.Nested5a.Nested1(
+            GetPrimaryKeyNested7ByKeyQuery.Data.Key.Nested5a.Nested1(
               nested1s[0].key.id,
               nested1s[0].value
             ),
-            GetPrimaryKeyNested7byKeyQuery.Data.PrimaryKeyNested7.Nested5a.Nested2(
+            GetPrimaryKeyNested7ByKeyQuery.Data.Key.Nested5a.Nested2(
               nested2s[0].key.id,
               nested2s[0].value
             ),
           ),
-          GetPrimaryKeyNested7byKeyQuery.Data.PrimaryKeyNested7.Nested5b(
+          GetPrimaryKeyNested7ByKeyQuery.Data.Key.Nested5b(
             nested5b.value,
-            GetPrimaryKeyNested7byKeyQuery.Data.PrimaryKeyNested7.Nested5b.Nested1(
+            GetPrimaryKeyNested7ByKeyQuery.Data.Key.Nested5b.Nested1(
               nested1s[1].key.id,
               nested1s[1].value
             ),
-            GetPrimaryKeyNested7byKeyQuery.Data.PrimaryKeyNested7.Nested5b.Nested2(
+            GetPrimaryKeyNested7ByKeyQuery.Data.Key.Nested5b.Nested2(
               nested2s[1].key.id,
               nested2s[1].value
             ),
           ),
-          GetPrimaryKeyNested7byKeyQuery.Data.PrimaryKeyNested7.Nested6(
+          GetPrimaryKeyNested7ByKeyQuery.Data.Key.Nested6(
             nested6.value,
-            GetPrimaryKeyNested7byKeyQuery.Data.PrimaryKeyNested7.Nested6.Nested3(
-              nested3.key.id,
-              nested3.value
-            ),
-            GetPrimaryKeyNested7byKeyQuery.Data.PrimaryKeyNested7.Nested6.Nested4(
-              nested4.key.id,
-              nested4.value
-            ),
+            GetPrimaryKeyNested7ByKeyQuery.Data.Key.Nested6.Nested3(nested3.key.id, nested3.value),
+            GetPrimaryKeyNested7ByKeyQuery.Data.Key.Nested6.Nested4(nested4.key.id, nested4.value),
           ),
         )
       )
