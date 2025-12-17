@@ -23,6 +23,8 @@ import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.decoding
 import com.google.firebase.dataconnect.testutil.MutableProtoValuePath
 import com.google.firebase.dataconnect.testutil.ProtoValuePath
 import com.google.firebase.dataconnect.testutil.buildByteArray
+import com.google.firebase.dataconnect.testutil.isStructValue
+import com.google.firebase.dataconnect.testutil.map
 import com.google.firebase.dataconnect.testutil.property.arbitrary.listValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.recursivelyEmptyListValue
@@ -38,6 +40,7 @@ import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import com.google.firebase.dataconnect.testutil.toListValue
 import com.google.firebase.dataconnect.testutil.toValueProto
+import com.google.firebase.dataconnect.testutil.walk
 import com.google.firebase.dataconnect.testutil.withAppendedListIndex
 import com.google.firebase.dataconnect.testutil.withRandomlyInsertedStructs
 import com.google.firebase.dataconnect.testutil.withRandomlyInsertedValue
@@ -65,9 +68,9 @@ import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
 import io.kotest.property.exhaustive.of
-import kotlin.random.nextInt
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
+import kotlin.random.nextInt
 
 class QueryResultEncoderUnitTest {
 
@@ -471,6 +474,40 @@ class QueryResultEncoderUnitTest {
       }
 
       rootStruct.decodingEncodingShouldProduceIdenticalStruct(entities, entityIdFieldName)
+    }
+  }
+
+  @Test
+  fun `entity with non-string ID field is treated as a non-entity`() = runTest {
+    checkAll(propTestConfig, Arb.proto.structKey()) { entityIdFieldName ->
+      val nonEntityIdStructKeyArb = Arb.proto.structKey().filterNot { it == entityIdFieldName }
+      val nonStringValueArb =
+        Arb.proto.value(exclude = Value.KindCase.STRING_VALUE, structKey = nonEntityIdStructKeyArb)
+      val struct = Arb.proto.struct(key = nonEntityIdStructKeyArb).bind().struct
+      val structPaths =
+        struct.walk(includeSelf = true).filter { it.value.isStructValue }.map { it.path }.toList()
+      val structPathsWithNonStringEntityIdValue =
+        structPaths
+          .shuffled(randomSource().random)
+          .take(randomSource().random.nextInt(1..structPaths.size))
+          .toSet()
+      val structWithNonStringEntityIdValues =
+        struct.map { path, value ->
+          if (!structPathsWithNonStringEntityIdValue.contains(path)) {
+            value
+          } else {
+            value.structValue
+              .toBuilder()
+              .putFields(entityIdFieldName, nonStringValueArb.bind())
+              .build()
+              .toValueProto()
+          }
+        }
+
+      structWithNonStringEntityIdValues.decodingEncodingShouldProduceIdenticalStruct(
+        emptyList(),
+        entityIdFieldName
+      )
     }
   }
 
