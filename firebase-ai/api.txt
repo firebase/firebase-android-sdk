@@ -73,6 +73,8 @@ package com.google.firebase.ai {
     method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.type.GenerateContentResponse> generateContentStream(com.google.firebase.ai.type.Content prompt, com.google.firebase.ai.type.Content... prompts);
     method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.type.GenerateContentResponse> generateContentStream(String prompt);
     method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.type.GenerateContentResponse> generateContentStream(java.util.List<com.google.firebase.ai.type.Content> prompt);
+    method public suspend <T> Object? generateObject(com.google.firebase.ai.type.JsonSchema<T> jsonSchema, com.google.firebase.ai.type.Content prompt, com.google.firebase.ai.type.Content[] prompts, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.GenerateObjectResponse<T>>);
+    method public suspend <T> Object? generateObject(com.google.firebase.ai.type.JsonSchema<T> jsonSchema, String prompt, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.GenerateObjectResponse<T>>);
     method public com.google.firebase.ai.Chat startChat(java.util.List<com.google.firebase.ai.type.Content> history = emptyList());
   }
 
@@ -497,6 +499,12 @@ package com.google.firebase.ai.type {
     property public final String? text;
     property public final String? thoughtSummary;
     property public final com.google.firebase.ai.type.UsageMetadata? usageMetadata;
+  }
+
+  public final class GenerateObjectResponse<T> {
+    method public T? getObject(int candidateIndex = 0);
+    method public com.google.firebase.ai.type.GenerateContentResponse getResponse();
+    property public final com.google.firebase.ai.type.GenerateContentResponse response;
   }
 
   public final class GenerationConfig {
