@@ -49,7 +49,7 @@ import kotlin.random.Random
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
-class ProtoRandomInsertUnitTest {
+class ProtoStructRandomInsertUnitTest {
 
   @Test
   fun `Struct withRandomlyInsertedValue should insert the value`() = runTest {
