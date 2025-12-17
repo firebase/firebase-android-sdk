@@ -19,10 +19,9 @@ package com.google.firebase.dataconnect.sqlite
 import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.EntityTestCase
 import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.calculateExpectedEncodingAsEntityId
 import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.decodingEncodingShouldProduceIdenticalStruct
+import com.google.firebase.dataconnect.testutil.MutableProtoValuePath
+import com.google.firebase.dataconnect.testutil.ProtoValuePath
 import com.google.firebase.dataconnect.testutil.buildByteArray
-import com.google.firebase.dataconnect.testutil.isListValue
-import com.google.firebase.dataconnect.testutil.isStringValue
-import com.google.firebase.dataconnect.testutil.isStructValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.listValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.recursivelyEmptyListValue
@@ -36,6 +35,7 @@ import com.google.firebase.dataconnect.testutil.randomlyInsertStruct
 import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.testutil.toListValue
 import com.google.firebase.dataconnect.testutil.toValueProto
+import com.google.firebase.dataconnect.testutil.withAppendedListIndex
 import com.google.firebase.dataconnect.testutil.withRandomlyInsertedStructs
 import com.google.firebase.dataconnect.testutil.withRandomlyInsertedValue
 import com.google.firebase.dataconnect.testutil.withRandomlyInsertedValues
@@ -279,14 +279,14 @@ class QueryResultEncoderUnitTest {
       val nonEntityIdFieldNameArb = Arb.proto.structKey().filterNot { it == entityIdFieldName }
       val generateKey: () -> String = { nonEntityIdFieldNameArb.bind() }
       val rootEntityCount = rootEntityCountArb.bind()
-      val subEntityCount = List(rootEntityCount) { subEntityCountArb.bind() }
-      val totalEntityCount = rootEntityCount + subEntityCount.sum()
+      val subEntityCounts = List(rootEntityCount) { subEntityCountArb.bind() }
+      val totalEntityCount = rootEntityCount + subEntityCounts.sum()
       val entities = generateEntities(totalEntityCount, entityIdFieldName).map { it.struct }
       val rootEntities = buildList {
         val entityIterator = entities.iterator()
         repeat(rootEntityCount) { rootEntityIndex ->
           val rootEntityBuilder = entityIterator.next().toBuilder()
-          val subEntityCount = subEntityCount[rootEntityIndex]
+          val subEntityCount = subEntityCounts[rootEntityIndex]
           repeat(subEntityCount) {
             rootEntityBuilder.randomlyInsertStruct(
               entityIterator.next(),
@@ -318,7 +318,7 @@ class QueryResultEncoderUnitTest {
       val entities = mutableListOf<Struct>()
       val entityGenerator =
         generateEntities(entityIdFieldName).map { it.struct }.onEach { entities.add(it) }.iterator()
-      val listValue = generateListValueOfEntities(depth = depth, entityGenerator)
+      val listValue = generateListValueOfEntities(depth = depth, entityGenerator).listValue
       val nonEntityIdFieldNameArb = Arb.proto.structKey().filterNot { it == entityIdFieldName }
       val rootStruct =
         entityGenerator
@@ -330,6 +330,62 @@ class QueryResultEncoderUnitTest {
           )
 
       rootStruct.decodingEncodingShouldProduceIdenticalStruct(entities, entityIdFieldName)
+    }
+  }
+
+  @Test
+  fun `entity contains lists of lists of entities with empty lists interspersed`() = runTest {
+    checkAll(
+      propTestConfig,
+      Arb.proto.structKey(),
+      Arb.int(2..10),
+      Arb.proto.recursivelyEmptyListValue()
+    ) { entityIdFieldName, entityCount, recursivelyEmptyListValue ->
+      val entities = generateEntities(entityCount, entityIdFieldName).map { it.struct }
+      val listValue =
+        recursivelyEmptyListValue.listValue.withRandomlyInsertedValues(
+          entities.drop(1).map { it.toValueProto() },
+          randomSource().random,
+        )
+      val nonEntityIdFieldNameArb = Arb.proto.structKey().filterNot { it == entityIdFieldName }
+      val rootStruct =
+        entities[0].withRandomlyInsertedValue(
+          listValue.toValueProto(),
+          randomSource().random,
+          generateKey = { nonEntityIdFieldNameArb.bind() }
+        )
+
+      rootStruct.decodingEncodingShouldProduceIdenticalStruct(entities, entityIdFieldName)
+    }
+  }
+
+  @Test
+  fun `entity contains lists of lists of non-entities with empty lists interspersed`() = runTest {
+    checkAll(
+      propTestConfig,
+      Arb.proto.structKey(),
+      Arb.int(2..10),
+      Arb.proto.recursivelyEmptyListValue()
+    ) { entityIdFieldName, nonEntityCount, recursivelyEmptyListValue ->
+      println("zzyzx ${evals()}")
+      val nonEntityIdFieldNameArb = Arb.proto.structKey().filterNot { it == entityIdFieldName }
+      val nonEntityArb = Arb.proto.value(structKey = nonEntityIdFieldNameArb)
+      val nonEntities = List(nonEntityCount) { nonEntityArb.bind() }
+      val listValue =
+        recursivelyEmptyListValue.listValue.withRandomlyInsertedValues(
+          nonEntities,
+          randomSource().random,
+        )
+      val rootStruct =
+        generateEntity(entityIdFieldName)
+          .struct
+          .withRandomlyInsertedValue(
+            listValue.toValueProto(),
+            randomSource().random,
+            generateKey = { nonEntityIdFieldNameArb.bind() }
+          )
+
+      rootStruct.decodingEncodingShouldProduceIdenticalStruct(listOf(rootStruct), entityIdFieldName)
     }
   }
 
@@ -386,6 +442,10 @@ class QueryResultEncoderUnitTest {
         shrinkingMode = ShrinkingMode.Off,
       )
 
+    /** Generates an [EntityTestCase] object using the given entity ID field name. */
+    fun PropertyContext.generateEntity(entityIdFieldName: String): EntityTestCase =
+      generateEntities(1, entityIdFieldName).single()
+
     /**
      * Generates the given number of [EntityTestCase] objects using the given entity ID field name.
      */
@@ -418,36 +478,56 @@ class QueryResultEncoderUnitTest {
       return generateSequence { nonEntityValueArb.bind() }
     }
 
-    fun Value.isEntity(entityIdFieldName: String): Boolean =
-      isStructValue &&
-        structValue.containsFields(entityIdFieldName) &&
-        structValue.getFieldsOrThrow(entityIdFieldName).isStringValue
-
-    fun Value.isRecursivelyEmptyList(): Boolean =
-      isListValue &&
-        listValue.let {
-          it.valuesCount == 0 || it.valuesList.all { subList -> subList.isRecursivelyEmptyList() }
-        }
+    data class GenerateListValueOfEntitiesResult(
+      val listValue: ListValue,
+      val generatedListValuePaths: List<ProtoValuePath>,
+    )
 
     fun PropertyContext.generateListValueOfEntities(
       depth: Int,
       entityGenerator: Iterator<Struct>
+    ): GenerateListValueOfEntitiesResult {
+      val generatedListValuePaths: MutableList<ProtoValuePath> = mutableListOf()
+      val listValue =
+        generateListValueOfEntities(
+          depth = depth,
+          entityGenerator = entityGenerator,
+          path = mutableListOf(),
+          generatedListValuePaths = generatedListValuePaths,
+        )
+      return GenerateListValueOfEntitiesResult(listValue, generatedListValuePaths.toList())
+    }
+
+    fun PropertyContext.generateListValueOfEntities(
+      depth: Int,
+      entityGenerator: Iterator<Struct>,
+      path: MutableProtoValuePath,
+      generatedListValuePaths: MutableList<ProtoValuePath>,
     ): ListValue {
       require(depth > 0) { "invalid depth: $depth [gwt2a6bbsz]" }
       val size = randomSource().random.nextInt(1..3)
       val valuesList =
         if (depth == 1) {
+          generatedListValuePaths.add(path.toList())
           List(size) { entityGenerator.next().toValueProto() }
         } else {
           val fullDepthIndex = randomSource().random.nextInt(size)
-          List(size) {
+          List(size) { listIndex ->
             val childDepth =
-              if (it == fullDepthIndex) {
+              if (listIndex == fullDepthIndex) {
                 depth - 1
               } else {
                 randomSource().random.nextInt(1 until depth)
               }
-            generateListValueOfEntities(childDepth, entityGenerator).toValueProto()
+            path.withAppendedListIndex(listIndex) {
+              generateListValueOfEntities(
+                  childDepth,
+                  entityGenerator,
+                  path,
+                  generatedListValuePaths
+                )
+                .toValueProto()
+            }
           }
         }
       return valuesList.toListValue()

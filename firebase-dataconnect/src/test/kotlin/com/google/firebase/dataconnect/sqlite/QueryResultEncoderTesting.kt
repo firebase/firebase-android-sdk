@@ -33,6 +33,7 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.stringWithLon
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
 import com.google.firebase.dataconnect.testutil.property.arbitrary.twoValues
+import com.google.firebase.dataconnect.testutil.structFastEqual
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
@@ -147,7 +148,8 @@ object QueryResultEncoderTesting {
 
     withClue("QueryResultEncoder.encode() entities returned") {
       class StructWrapper(val struct: Struct) {
-        override fun equals(other: Any?) = other is StructWrapper && other.struct == struct
+        override fun equals(other: Any?) =
+          other is StructWrapper && structFastEqual(struct, other.struct)
         override fun hashCode() = struct.hashCode()
         override fun toString() = struct.toCompactString()
       }
