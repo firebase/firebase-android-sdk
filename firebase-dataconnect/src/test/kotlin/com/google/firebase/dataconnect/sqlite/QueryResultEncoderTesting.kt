@@ -197,7 +197,6 @@ object QueryResultEncoderTesting {
     val valuesList =
       if (depth == 1) {
         generatedListValuePaths.add(path.toList())
-        val x = entityGenerator.next()
         List(size) { entityGenerator.next().toValueProto() }
       } else {
         val fullDepthIndex = randomSource().random.nextInt(size)
