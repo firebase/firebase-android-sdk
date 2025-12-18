@@ -16,10 +16,10 @@
 
 package com.google.firebase.dataconnect.sqlite
 
+import com.google.firebase.dataconnect.DataConnectPath
 import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.charArbWithCodeGreaterThan255
 import com.google.firebase.dataconnect.testutil.BuildByteArrayDSL
-import com.google.firebase.dataconnect.testutil.MutableProtoValuePath
-import com.google.firebase.dataconnect.testutil.ProtoValuePath
+import com.google.firebase.dataconnect.testutil.MutableDataConnectPath
 import com.google.firebase.dataconnect.testutil.beEqualTo
 import com.google.firebase.dataconnect.testutil.property.arbitrary.StringWithEncodingLengthArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.StringWithEncodingLengthArb.Mode.Utf8EncodingLongerThanUtf16
@@ -39,9 +39,9 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.value
 import com.google.firebase.dataconnect.testutil.structFastEqual
 import com.google.firebase.dataconnect.testutil.toListValue
 import com.google.firebase.dataconnect.testutil.toValueProto
-import com.google.firebase.dataconnect.testutil.withAppendedListIndex
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
+import com.google.firebase.dataconnect.withAddedListIndex
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
@@ -168,14 +168,14 @@ object QueryResultEncoderTesting {
 
   data class GenerateListValueOfEntitiesResult(
     val listValue: ListValue,
-    val generatedListValuePaths: List<ProtoValuePath>,
+    val generatedListValuePaths: List<DataConnectPath>,
   )
 
   fun PropertyContext.generateListValueOfEntities(
     depth: Int,
     entityGenerator: Iterator<Struct>
   ): GenerateListValueOfEntitiesResult {
-    val generatedListValuePaths: MutableList<ProtoValuePath> = mutableListOf()
+    val generatedListValuePaths: MutableList<DataConnectPath> = mutableListOf()
     val listValue =
       generateListValueOfEntities(
         depth = depth,
@@ -189,8 +189,8 @@ object QueryResultEncoderTesting {
   fun PropertyContext.generateListValueOfEntities(
     depth: Int,
     entityGenerator: Iterator<Struct>,
-    path: MutableProtoValuePath,
-    generatedListValuePaths: MutableList<ProtoValuePath>,
+    path: MutableDataConnectPath,
+    generatedListValuePaths: MutableList<DataConnectPath>,
   ): ListValue {
     require(depth > 0) { "invalid depth: $depth [gwt2a6bbsz]" }
     val size = randomSource().random.nextInt(1..3)
@@ -207,7 +207,7 @@ object QueryResultEncoderTesting {
             } else {
               randomSource().random.nextInt(1 until depth)
             }
-          path.withAppendedListIndex(listIndex) {
+          path.withAddedListIndex(listIndex) {
             generateListValueOfEntities(childDepth, entityGenerator, path, generatedListValuePaths)
               .toValueProto()
           }
