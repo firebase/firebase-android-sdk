@@ -1,6 +1,6 @@
 # Unreleased
 - [changed] Internal refactor for reporting "paths" in response data.
-  [#NNNN](https://github.com/firebase/firebase-android-sdk/pull/NNNN))
+  [#7613](https://github.com/firebase/firebase-android-sdk/pull/7613))
 
 # 17.1.2
 
