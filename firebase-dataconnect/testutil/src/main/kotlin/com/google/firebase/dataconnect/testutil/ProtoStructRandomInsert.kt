@@ -15,6 +15,7 @@
  */
 package com.google.firebase.dataconnect.testutil
 
+import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
@@ -48,26 +49,26 @@ fun Struct.Builder.randomlyInsertStruct(
   struct: Struct,
   random: Random,
   generateKey: () -> String
-): ProtoValuePath = randomlyInsertStructs(listOf(struct), random, generateKey).single()
+): DataConnectPath = randomlyInsertStructs(listOf(struct), random, generateKey).single()
 
 fun Struct.Builder.randomlyInsertStructs(
   structs: List<Struct>,
   random: Random,
   generateKey: () -> String
-): List<ProtoValuePath> =
+): List<DataConnectPath> =
   randomlyInsertValues(this, structs.map { it.toValueProto() }, random, generateKey)
 
 fun Struct.Builder.randomlyInsertValue(
   value: Value,
   random: Random,
   generateKey: () -> String
-): ProtoValuePath = randomlyInsertValues(listOf(value), random, generateKey).single()
+): DataConnectPath = randomlyInsertValues(listOf(value), random, generateKey).single()
 
 fun Struct.Builder.randomlyInsertValues(
   values: List<Value>,
   random: Random,
   generateKey: () -> String
-): List<ProtoValuePath> = randomlyInsertValues(this, values, random, generateKey)
+): List<DataConnectPath> = randomlyInsertValues(this, values, random, generateKey)
 
 @JvmName("withRandomlyInsertedValuesInternal")
 private fun withRandomlyInsertedValues(
@@ -87,26 +88,26 @@ private fun randomlyInsertValues(
   values: List<Value>,
   random: Random,
   generateKey: () -> String
-): List<ProtoValuePath> {
-  val candidateInsertionPoints: List<ProtoValuePathPair> =
+): List<DataConnectPath> {
+  val candidateInsertionPoints: List<DataConnectPathValuePair> =
     structBuilder
       .build()
       .walk(includeSelf = true)
       .filter { it.value.isStructValue }
       .toList()
-      .sortedWith(ProtoValuePathPairPathComparator)
+      .sortedWith(DataConnectPathValuePairPathComparator)
 
-  val insertionPoints: List<ProtoValuePathPair> =
+  val insertionPoints: List<DataConnectPathValuePair> =
     List(values.size) { candidateInsertionPoints.random(random) }
 
-  val insertions: List<ProtoValuePathPair> = run {
-    val generatedKeysByPath: Map<ProtoValuePath, MutableSet<String>> = buildMap {
+  val insertions: List<DataConnectPathValuePair> = run {
+    val generatedKeysByPath: Map<DataConnectPath, MutableSet<String>> = buildMap {
       candidateInsertionPoints.forEach { (path, value) ->
         put(path, value.structValue.fieldsMap.keys.toMutableSet())
       }
     }
 
-    fun generateKeyForInsertionPointAt(path: ProtoValuePath): String {
+    fun generateKeyForInsertionPointAt(path: DataConnectPath): String {
       val unavailableKeys = generatedKeysByPath[path]!!
       while (true) {
         val key = generateKey()
@@ -120,7 +121,7 @@ private fun randomlyInsertValues(
     List(insertionPoints.size) {
       val insertionPoint = insertionPoints[it]
       val key = generateKeyForInsertionPointAt(insertionPoint.path)
-      ProtoValuePathPair(insertionPoint.path.withAppendedStructKey(key), values[it])
+      DataConnectPathValuePair(insertionPoint.path.withAddedField(key), values[it])
     }
   }
 
@@ -129,18 +130,18 @@ private fun randomlyInsertValues(
   return insertions.map { it.path }
 }
 
-private fun insertValue(structBuilder: Struct.Builder, path: ProtoValuePath, value: Value) {
+private fun insertValue(structBuilder: Struct.Builder, path: DataConnectPath, value: Value) {
   require(path.isNotEmpty()) { "internal error rmeq3c634e: path is empty" }
-  val pathComponent = path[0]
-  require(pathComponent is ProtoValuePathComponent.StructKey) {
-    "internal error pt77babwtk: path[0] is ${pathComponent::class.qualifiedName}, " +
-      "but expected ProtoValuePathComponent.StructKey: $pathComponent"
+  val pathSegment = path[0]
+  require(pathSegment is DataConnectPathSegment.Field) {
+    "internal error pt77babwtk: path[0] is ${pathSegment::class.qualifiedName}, " +
+      "but expected DataConnectPathSegment.Field: $pathSegment"
   }
-  val key = pathComponent.key
+  val key = pathSegment.field
 
   if (path.size == 1) {
     require(!structBuilder.containsFields(key)) {
-      "internal error x5kr8f9mqx: the only component of path $path ($pathComponent) " +
+      "internal error x5kr8f9mqx: the only segment of path $path ($pathSegment) " +
         "is already contained in the struct: ${structBuilder.build()}"
     }
     structBuilder.putFields(key, value)
@@ -148,7 +149,7 @@ private fun insertValue(structBuilder: Struct.Builder, path: ProtoValuePath, val
   }
 
   require(structBuilder.containsFields(key)) {
-    "internal error sykypwq2h7: the first component of path $path ($pathComponent) " +
+    "internal error sykypwq2h7: the first segment of path $path ($pathSegment) " +
       "should be contained in the struct, but it is not: ${structBuilder.build()}"
   }
   val oldValue: Value = structBuilder.getFieldsOrThrow(key)
@@ -156,19 +157,19 @@ private fun insertValue(structBuilder: Struct.Builder, path: ProtoValuePath, val
   structBuilder.putFields(key, newValue)
 }
 
-private fun insertValue(listValueBuilder: ListValue.Builder, path: ProtoValuePath, value: Value) {
+private fun insertValue(listValueBuilder: ListValue.Builder, path: DataConnectPath, value: Value) {
   require(path.size > 1) {
-    "internal error en68kvkb83: path.size is ${path.size}, " + "but expected a value greater than 1"
+    "internal error en68kvkb83: path.size is ${path.size}, but expected a value greater than 1"
   }
-  val pathComponent = path[0]
-  require(pathComponent is ProtoValuePathComponent.ListIndex) {
-    "internal error kgxfp9j7ee: path[0] is ${pathComponent::class.qualifiedName}, " +
-      "but expected ProtoValuePathComponent.ListIndex: $pathComponent"
+  val pathSegment = path[0]
+  require(pathSegment is DataConnectPathSegment.ListIndex) {
+    "internal error kgxfp9j7ee: path[0] is ${pathSegment::class.qualifiedName}, " +
+      "but expected DataConnectPathSegment.ListIndex: $pathSegment"
   }
-  val index = pathComponent.index
+  val index = pathSegment.index
 
   require(index >= 0 && index < listValueBuilder.valuesCount) {
-    "internal error pcdar4t98b: the first component of path $path ($pathComponent) " +
+    "internal error pcdar4t98b: the first segment of path $path ($pathSegment) " +
       "is not a valid index: $index (list size is ${listValueBuilder.valuesCount})"
   }
   val oldValue: Value = listValueBuilder.getValues(index)
@@ -176,7 +177,7 @@ private fun insertValue(listValueBuilder: ListValue.Builder, path: ProtoValuePat
   listValueBuilder.setValues(index, newValue)
 }
 
-private fun insertValue(oldValue: Value, path: ProtoValuePath, value: Value) =
+private fun insertValue(oldValue: Value, path: DataConnectPath, value: Value) =
   if (oldValue.isStructValue) {
     val oldValueBuilder = oldValue.structValue.toBuilder()
     insertValue(oldValueBuilder, path, value)

@@ -19,13 +19,13 @@ import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
 
-fun Struct.walk(includeSelf: Boolean = false): Sequence<ProtoValuePathPair> =
+fun Struct.walk(includeSelf: Boolean = false): Sequence<DataConnectPathValuePair> =
   toValueProto().walk(includeSelf = includeSelf)
 
-fun ListValue.walk(includeSelf: Boolean = false): Sequence<ProtoValuePathPair> =
+fun ListValue.walk(includeSelf: Boolean = false): Sequence<DataConnectPathValuePair> =
   toValueProto().walk(includeSelf = includeSelf)
 
-fun Value.walk(includeSelf: Boolean = true): Sequence<ProtoValuePathPair> =
+fun Value.walk(includeSelf: Boolean = true): Sequence<DataConnectPathValuePair> =
   valueWalk(this, includeSelf = includeSelf)
 
 fun Struct.walkValues(includeSelf: Boolean = false): Sequence<Value> =
@@ -37,18 +37,18 @@ fun ListValue.walkValues(includeSelf: Boolean = false): Sequence<Value> =
 fun Value.walkValues(includeSelf: Boolean = true): Sequence<Value> =
   walk(includeSelf = includeSelf).map { it.value }
 
-fun Struct.walkPaths(includeSelf: Boolean = false): Sequence<ProtoValuePath> =
+fun Struct.walkPaths(includeSelf: Boolean = false): Sequence<DataConnectPath> =
   walk(includeSelf = includeSelf).map { it.path }
 
-fun ListValue.walkPaths(includeSelf: Boolean = false): Sequence<ProtoValuePath> =
+fun ListValue.walkPaths(includeSelf: Boolean = false): Sequence<DataConnectPath> =
   walk(includeSelf = includeSelf).map { it.path }
 
-fun Value.walkPaths(includeSelf: Boolean = true): Sequence<ProtoValuePath> =
+fun Value.walkPaths(includeSelf: Boolean = true): Sequence<DataConnectPath> =
   walk(includeSelf = includeSelf).map { it.path }
 
 private fun valueWalk(value: Value, includeSelf: Boolean) = sequence {
-  val rootProtoValuePathPair = ProtoValuePathPair(emptyList(), value)
-  val queue = ArrayDeque<ProtoValuePathPair>()
+  val rootProtoValuePathPair = DataConnectPathValuePair(emptyList(), value)
+  val queue = ArrayDeque<DataConnectPathValuePair>()
   queue.add(rootProtoValuePathPair)
 
   while (queue.isNotEmpty()) {
@@ -61,11 +61,11 @@ private fun valueWalk(value: Value, includeSelf: Boolean) = sequence {
 
     if (value.kindCase == Value.KindCase.STRUCT_VALUE) {
       value.structValue.fieldsMap.entries.forEach { (key, childValue) ->
-        queue.add(ProtoValuePathPair(path.withAppendedStructKey(key), childValue))
+        queue.add(DataConnectPathValuePair(path.withAddedField(key), childValue))
       }
     } else if (value.kindCase == Value.KindCase.LIST_VALUE) {
       value.listValue.valuesList.forEachIndexed { index, childValue ->
-        queue.add(ProtoValuePathPair(path.withAppendedListIndex(index), childValue))
+        queue.add(DataConnectPathValuePair(path.withAddedListIndex(index), childValue))
       }
     }
   }

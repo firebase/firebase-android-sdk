@@ -18,11 +18,11 @@
 
 package com.google.firebase.dataconnect.testutil.property.arbitrary
 
-import com.google.firebase.dataconnect.testutil.ProtoValuePath
-import com.google.firebase.dataconnect.testutil.ProtoValuePathComponent
-import com.google.firebase.dataconnect.testutil.ProtoValuePathPair
+import com.google.firebase.dataconnect.DataConnectPathSegment
+import com.google.firebase.dataconnect.testutil.DataConnectPath
+import com.google.firebase.dataconnect.testutil.DataConnectPathValuePair
 import com.google.firebase.dataconnect.testutil.toValueProto
-import com.google.firebase.dataconnect.testutil.withAppendedComponent
+import com.google.firebase.dataconnect.testutil.withAddedPathSegment
 import com.google.protobuf.ListValue
 import com.google.protobuf.NullValue
 import com.google.protobuf.Struct
@@ -50,7 +50,7 @@ object ProtoArb {
   data class StructInfo(
     val struct: Struct,
     val depth: Int,
-    val descendants: List<ProtoValuePathPair>,
+    val descendants: List<DataConnectPathValuePair>,
   ) {
     fun toValueProto(): Value = struct.toValueProto()
   }
@@ -58,7 +58,7 @@ object ProtoArb {
   data class ListValueInfo(
     val listValue: ListValue,
     val depth: Int,
-    val descendants: List<ProtoValuePathPair>,
+    val descendants: List<DataConnectPathValuePair>,
   ) {
     fun toValueProto(): Value = listValue.toValueProto()
   }
@@ -363,9 +363,9 @@ fun ProtoArb.struct(
 private typealias GenerateCompositeValueFunc<V> =
   (
     rs: RandomSource,
-    path: ProtoValuePath,
+    path: DataConnectPath,
     depth: Int,
-    descendants: MutableList<ProtoValuePathPair>,
+    descendants: MutableList<DataConnectPathValuePair>,
     structSizeEdgeCaseProbability: Float,
     listSizeEdgeCaseProbability: Float,
     structKeyEdgeCaseProbability: Float,
@@ -438,7 +438,7 @@ private abstract class CompositeValueArb<V, I>(
     nestedProbability: Float,
   ): I {
     val depth = depthArb.next(rs, depthEdgeCaseProbability)
-    val descendants: MutableList<ProtoValuePathPair> = mutableListOf()
+    val descendants: MutableList<DataConnectPathValuePair> = mutableListOf()
     val generatedValue =
       generateCompositeValueFunc(
         rs,
@@ -461,7 +461,7 @@ private abstract class CompositeValueArb<V, I>(
   protected abstract fun sampleFromValue(
     value: V,
     depth: Int,
-    descendants: List<ProtoValuePathPair>
+    descendants: List<DataConnectPathValuePair>
   ): I
 
   private enum class EdgeCase {
@@ -496,8 +496,11 @@ private class StructArb(
   override fun getGenerateValueFunc(generator: StructOrListValueGenerator) =
     generator::generateStruct
 
-  override fun sampleFromValue(value: Struct, depth: Int, descendants: List<ProtoValuePathPair>) =
-    ProtoArb.StructInfo(value, depth, descendants)
+  override fun sampleFromValue(
+    value: Struct,
+    depth: Int,
+    descendants: List<DataConnectPathValuePair>
+  ) = ProtoArb.StructInfo(value, depth, descendants)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -525,7 +528,7 @@ private class ListValueArb(
   override fun sampleFromValue(
     value: ListValue,
     depth: Int,
-    descendants: List<ProtoValuePathPair>
+    descendants: List<DataConnectPathValuePair>
   ) = ProtoArb.ListValueInfo(value, depth, descendants)
 }
 
@@ -570,9 +573,9 @@ private class StructOrListValueGenerator(
 ) {
   fun generateStruct(
     rs: RandomSource,
-    path: ProtoValuePath,
+    path: DataConnectPath,
     depth: Int,
-    descendants: MutableList<ProtoValuePathPair>,
+    descendants: MutableList<DataConnectPathValuePair>,
     structSizeEdgeCaseProbability: Float,
     listSizeEdgeCaseProbability: Float,
     structKeyEdgeCaseProbability: Float,
@@ -583,10 +586,10 @@ private class StructOrListValueGenerator(
 
     val structBuilder = Struct.newBuilder()
 
-    val childPathComponentGenerator =
+    val childPathSegmentGenerator =
       generateSequence { structKey.next(rs, structKeyEdgeCaseProbability) }
         .filterNot { structBuilder.containsFields(it) }
-        .map(ProtoValuePathComponent::StructKey)
+        .map(DataConnectPathSegment::Field)
         .iterator()
 
     generateCompositeValue(
@@ -601,9 +604,9 @@ private class StructOrListValueGenerator(
       structKeyEdgeCaseProbability = structKeyEdgeCaseProbability,
       scalarValueEdgeCaseProbability = scalarValueEdgeCaseProbability,
       nestedProbability = nestedProbability,
-      childPathComponentForIndex = { childPathComponentGenerator.next() },
-      onChildGenerated = { childPathComponent, value ->
-        structBuilder.putFields(childPathComponent.key, value)
+      childPathSegmentForIndex = { childPathSegmentGenerator.next() },
+      onChildGenerated = { childPathSegment, value ->
+        structBuilder.putFields(childPathSegment.field, value)
       },
     )
 
@@ -612,9 +615,9 @@ private class StructOrListValueGenerator(
 
   fun generateListValue(
     rs: RandomSource,
-    path: ProtoValuePath,
+    path: DataConnectPath,
     depth: Int,
-    descendants: MutableList<ProtoValuePathPair>,
+    descendants: MutableList<DataConnectPathValuePair>,
     structSizeEdgeCaseProbability: Float,
     listSizeEdgeCaseProbability: Float,
     structKeyEdgeCaseProbability: Float,
@@ -637,27 +640,27 @@ private class StructOrListValueGenerator(
       structKeyEdgeCaseProbability = structKeyEdgeCaseProbability,
       scalarValueEdgeCaseProbability = scalarValueEdgeCaseProbability,
       nestedProbability = nestedProbability,
-      childPathComponentForIndex = ProtoValuePathComponent::ListIndex,
+      childPathSegmentForIndex = DataConnectPathSegment::ListIndex,
       onChildGenerated = { _, value -> listValueBuilder.addValues(value) },
     )
 
     return listValueBuilder.build()
   }
 
-  private inline fun <P : ProtoValuePathComponent> generateCompositeValue(
+  private inline fun <P : DataConnectPathSegment> generateCompositeValue(
     rs: RandomSource,
-    path: ProtoValuePath,
+    path: DataConnectPath,
     depth: Int,
     sizeRange: IntRange,
     sizeEdgeCaseProbability: Float,
-    descendants: MutableList<ProtoValuePathPair>,
+    descendants: MutableList<DataConnectPathValuePair>,
     structSizeEdgeCaseProbability: Float,
     listSizeEdgeCaseProbability: Float,
     structKeyEdgeCaseProbability: Float,
     scalarValueEdgeCaseProbability: Float,
     nestedProbability: Float,
-    childPathComponentForIndex: (index: Int) -> P,
-    onChildGenerated: (pathComponent: P, value: Value) -> Unit,
+    childPathSegmentForIndex: (index: Int) -> P,
+    onChildGenerated: (pathSegment: P, value: Value) -> Unit,
   ) {
     val size =
       calculateSize(
@@ -669,8 +672,8 @@ private class StructOrListValueGenerator(
     val maxDepthIndex = calculateMaxDepthIndex(rs, depth = depth, size = size)
 
     repeat(size) { valueIndex ->
-      val childPathComponent = childPathComponentForIndex(valueIndex)
-      val childPath = path.withAppendedComponent(childPathComponent)
+      val childPathSegment = childPathSegmentForIndex(valueIndex)
+      val childPath = path.withAddedPathSegment(childPathSegment)
 
       val childDepth =
         calculateChildDepth(
@@ -695,16 +698,16 @@ private class StructOrListValueGenerator(
           nestedProbability = nestedProbability,
         )
 
-      descendants.add(ProtoValuePathPair(childPath, value))
-      onChildGenerated(childPathComponent, value)
+      descendants.add(DataConnectPathValuePair(childPath, value))
+      onChildGenerated(childPathSegment, value)
     }
   }
 
   fun generateValue(
     rs: RandomSource,
-    path: ProtoValuePath,
+    path: DataConnectPath,
     depth: Int,
-    descendants: MutableList<ProtoValuePathPair>,
+    descendants: MutableList<DataConnectPathValuePair>,
     structSizeEdgeCaseProbability: Float,
     listSizeEdgeCaseProbability: Float,
     structKeyEdgeCaseProbability: Float,

@@ -197,7 +197,7 @@ class ProtoListValueRandomInsertUnitTest {
     fun ListValue.shouldBeListValueWithValueInserted(
       originalListValue: ListValue,
       insertedValue: Value
-    ): ProtoValuePath {
+    ): DataConnectPath {
       val insertedValuePaths = findPathsWithValue(insertedValue, identityEqual)
       val insertedValuePath = insertedValuePaths.shouldHaveSize(1).single()
       val thisWithoutInsertedValue = map { path, value ->
@@ -210,7 +210,7 @@ class ProtoListValueRandomInsertUnitTest {
     fun ListValue.shouldBeListValueWithValuesInserted(
       originalListValue: ListValue,
       insertedValues: List<Value>
-    ): List<ProtoValuePath> {
+    ): List<DataConnectPath> {
       val insertedValuesPaths =
         insertedValues.map { insertedValue ->
           val insertedValuePaths = findPathsWithValue(insertedValue, identityEqual)
@@ -226,7 +226,7 @@ class ProtoListValueRandomInsertUnitTest {
     inline fun ListValue.findPathsWithValue(
       value: Value,
       crossinline isEqual: (Value, Value) -> Boolean
-    ): Set<ProtoValuePath> =
+    ): Set<DataConnectPath> =
       walk().mapNotNull { (path, curValue) -> if (isEqual(value, curValue)) path else null }.toSet()
 
     val identityEqual: (Value, Value) -> Boolean = { value1, value2 -> value1 === value2 }

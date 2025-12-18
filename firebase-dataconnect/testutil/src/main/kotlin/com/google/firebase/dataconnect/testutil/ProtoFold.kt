@@ -15,12 +15,13 @@
  */
 package com.google.firebase.dataconnect.testutil
 
+import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
 
 private typealias ProtoValueFoldCallback<R> =
-  (foldedValue: R, path: ProtoValuePath, value: Value) -> R
+  (foldedValue: R, path: DataConnectPath, value: Value) -> R
 
 fun <R> Struct.fold(initial: R, foldCallback: ProtoValueFoldCallback<R>): R =
   toValueProto().fold(initial, foldCallback)
@@ -31,9 +32,9 @@ fun <R> ListValue.fold(initial: R, foldCallback: ProtoValueFoldCallback<R>): R =
 fun <R> Value.fold(initial: R, foldCallback: ProtoValueFoldCallback<R>): R =
   foldValue(this, initial, foldCallback)
 
-private data class FoldValueQueueElement(val path: ProtoValuePath, val value: Value)
+private data class FoldValueQueueElement(val path: DataConnectPath, val value: Value)
 
-private fun MutableList<FoldValueQueueElement>.add(path: ProtoValuePath, value: Value) {
+private fun MutableList<FoldValueQueueElement>.add(path: DataConnectPath, value: Value) {
   add(FoldValueQueueElement(path.toList(), value))
 }
 
@@ -52,16 +53,16 @@ private fun <R> foldValue(
 
     if (value.kindCase == Value.KindCase.STRUCT_VALUE) {
       val childPath = path.toMutableList()
-      childPath.add(ProtoValuePathComponent.ListIndex(-1))
+      childPath.add(DataConnectPathSegment.ListIndex(-1))
       value.structValue.fieldsMap.entries.forEach { (key, value) ->
-        childPath[childPath.lastIndex] = ProtoValuePathComponent.StructKey(key)
+        childPath[childPath.lastIndex] = DataConnectPathSegment.Field(key)
         queue.add(childPath, value)
       }
     } else if (value.kindCase == Value.KindCase.LIST_VALUE) {
       val childPath = path.toMutableList()
-      childPath.add(ProtoValuePathComponent.ListIndex(-1))
+      childPath.add(DataConnectPathSegment.ListIndex(-1))
       value.listValue.valuesList.forEachIndexed { index, value ->
-        childPath[childPath.lastIndex] = ProtoValuePathComponent.ListIndex(index)
+        childPath[childPath.lastIndex] = DataConnectPathSegment.ListIndex(index)
         queue.add(childPath, value)
       }
     }

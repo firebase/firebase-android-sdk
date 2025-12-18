@@ -16,6 +16,7 @@
 
 package com.google.firebase.dataconnect.testutil
 
+import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.testutil.Difference.StructUnexpectedKey
 import com.google.firebase.dataconnect.testutil.property.arbitrary.RememberArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
@@ -77,7 +78,7 @@ class ProtoStructRandomInsertUnitTest {
       val result = struct.withRandomlyInsertedValue(value, random, { structKeyArb.bind() })
 
       val insertPath = result.shouldBeStructWithValueInserted(struct, value)
-      insertPath.shouldHaveFinalComponentWithKeyIn(structKeyArb.generatedValues)
+      insertPath.shouldHaveFinalSegmentWithFieldIn(structKeyArb.generatedValues)
     }
   }
 
@@ -139,7 +140,7 @@ class ProtoStructRandomInsertUnitTest {
 
       val path = structBuilder.randomlyInsertValue(value, random, { structKeyArb.bind() })
 
-      path.shouldHaveFinalComponentWithKeyIn(structKeyArb.generatedValues)
+      path.shouldHaveFinalSegmentWithFieldIn(structKeyArb.generatedValues)
     }
   }
 
@@ -183,7 +184,7 @@ class ProtoStructRandomInsertUnitTest {
       val insertPaths = result.shouldBeStructWithValuesInserted(struct, values)
       insertPaths.forEachIndexed { index, insertPath ->
         withClue("insertPaths[$index]=$insertPath") {
-          insertPath.shouldHaveFinalComponentWithKeyIn(structKeyArb.generatedValues)
+          insertPath.shouldHaveFinalSegmentWithFieldIn(structKeyArb.generatedValues)
         }
       }
     }
@@ -248,7 +249,7 @@ class ProtoStructRandomInsertUnitTest {
       val insertPaths = structBuilder.build().shouldBeStructWithValuesInserted(struct, values)
       insertPaths.forEachIndexed { index, insertPath ->
         withClue("insertPaths[$index]=$insertPath") {
-          insertPath.shouldHaveFinalComponentWithKeyIn(structKeyArb.generatedValues)
+          insertPath.shouldHaveFinalSegmentWithFieldIn(structKeyArb.generatedValues)
         }
       }
     }
@@ -290,20 +291,20 @@ class ProtoStructRandomInsertUnitTest {
     fun Struct.shouldBeStructWithValueInserted(
       originalStruct: Struct,
       insertedValue: Value
-    ): ProtoValuePath {
+    ): DataConnectPath {
       val differences = structDiff(originalStruct, this).toList()
       withClue("differences=$differences") { differences shouldHaveSize 1 }
       differences.single().asClue { (path, difference) ->
         difference.shouldBeInstanceOf<StructUnexpectedKey>()
         difference.value shouldBeSameInstanceAs insertedValue
-        return path.withAppendedStructKey(difference.key)
+        return path.withAddedField(difference.key)
       }
     }
 
     fun Struct.shouldBeStructWithValuesInserted(
       originalStruct: Struct,
       insertedValues: List<Value>
-    ): List<ProtoValuePath> {
+    ): List<DataConnectPath> {
       val differences = structDiff(originalStruct, this).toList()
       withClue("differences.size=${differences.size}, differences=$differences") {
         differences shouldHaveSize insertedValues.size
@@ -319,7 +320,7 @@ class ProtoStructRandomInsertUnitTest {
             }
             .toMutableList()
 
-        val insertPaths: MutableList<ProtoValuePath> = mutableListOf()
+        val insertPaths: MutableList<DataConnectPath> = mutableListOf()
         insertedValues.forEach { insertedValue ->
           val unexpectedKeyDifferencesIndex =
             unexpectedKeyDifferences.indexOfFirst { it.difference.value === insertedValue }
@@ -329,17 +330,17 @@ class ProtoStructRandomInsertUnitTest {
             unexpectedKeyDifferencesIndex shouldBeGreaterThanOrEqualTo 0
           }
           val (path, difference) = unexpectedKeyDifferences.removeAt(unexpectedKeyDifferencesIndex)
-          insertPaths.add(path.withAppendedStructKey(difference.key))
+          insertPaths.add(path.withAddedField(difference.key))
         }
 
         return insertPaths.toList()
       }
     }
 
-    fun ProtoValuePath.shouldHaveFinalComponentWithKeyIn(expectedKeys: Collection<String>) {
+    fun DataConnectPath.shouldHaveFinalSegmentWithFieldIn(expectedFields: Collection<String>) {
       withClue("path=${this.toPathString()}") {
-        val finalComponent = lastOrNull().shouldBeInstanceOf<ProtoValuePathComponent.StructKey>()
-        withClue("finalComponent=$finalComponent") { expectedKeys shouldContain finalComponent.key }
+        val finalSegment = lastOrNull().shouldBeInstanceOf<DataConnectPathSegment.Field>()
+        withClue("finalSegment=$finalSegment") { expectedFields shouldContain finalSegment.field }
       }
     }
 

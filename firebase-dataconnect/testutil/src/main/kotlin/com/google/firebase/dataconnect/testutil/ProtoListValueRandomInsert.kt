@@ -15,6 +15,7 @@
  */
 package com.google.firebase.dataconnect.testutil
 
+import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
@@ -34,12 +35,12 @@ fun ListValue.withRandomlyInsertedValues(
 fun ListValue.Builder.randomlyInsertValue(
   value: Value,
   random: Random,
-): ProtoValuePath = randomlyInsertValues(listOf(value), random).single()
+): DataConnectPath = randomlyInsertValues(listOf(value), random).single()
 
 fun ListValue.Builder.randomlyInsertValues(
   values: List<Value>,
   random: Random,
-): List<ProtoValuePath> = randomlyInsertValues(this, values, random)
+): List<DataConnectPath> = randomlyInsertValues(this, values, random)
 
 @JvmName("withRandomlyInsertedValuesInternal")
 private fun withRandomlyInsertedValues(
@@ -57,45 +58,45 @@ private fun randomlyInsertValues(
   listValueBuilder: ListValue.Builder,
   values: List<Value>,
   random: Random,
-): List<ProtoValuePath> {
-  val listValuePaths: List<ProtoValuePath> =
+): List<DataConnectPath> {
+  val listValuePaths: List<DataConnectPath> =
     listValueBuilder
       .build()
       .walk(includeSelf = true)
       .filter { it.value.isListValue }
       .map { it.path }
       .toList()
-      .sortedWith(ProtoValuePathComparator)
+      .sortedWith(DataConnectPathComparator)
 
   val insertionListValuePaths = MutableList(values.size) { listValuePaths.random(random) }
-  val insertedPaths: MutableList<ProtoValuePath> = mutableListOf()
+  val insertedPaths: MutableList<DataConnectPath> = mutableListOf()
 
   values.forEachIndexed { index, valueToInsert ->
     val insertionListValuePath = insertionListValuePaths[index]
     val insertIndex =
       insertValue(listValueBuilder, valueToInsert, insertionListValuePath, 0, random)
-    val insertedPath = insertionListValuePath.withAppendedListIndex(insertIndex)
+    val insertedPath = insertionListValuePath.withAddedListIndex(insertIndex)
 
-    fun ProtoValuePath.bumpIndex(): ProtoValuePath {
-      val componentIndex = insertionListValuePath.size
-      return if (size <= componentIndex) {
+    fun DataConnectPath.bumpIndex(): DataConnectPath {
+      val segmentIndex = insertionListValuePath.size
+      return if (size <= segmentIndex) {
         this
-      } else if (subList(0, componentIndex) != insertionListValuePath) {
+      } else if (subList(0, segmentIndex) != insertionListValuePath) {
         this
       } else {
-        val listIndexComponent = get(componentIndex)
-        check(listIndexComponent is ProtoValuePathComponent.ListIndex)
-        if (listIndexComponent.index < insertIndex) {
+        val listIndexSegment = get(segmentIndex)
+        check(listIndexSegment is DataConnectPathSegment.ListIndex)
+        if (listIndexSegment.index < insertIndex) {
           this
         } else {
-          subList(0, componentIndex) +
-            listOf(ProtoValuePathComponent.ListIndex(listIndexComponent.index + 1)) +
-            subList(componentIndex + 1, size)
+          subList(0, segmentIndex) +
+            listOf(DataConnectPathSegment.ListIndex(listIndexSegment.index + 1)) +
+            subList(segmentIndex + 1, size)
         }
       }
     }
 
-    fun MutableList<ProtoValuePath>.bumpIndexes() {
+    fun MutableList<DataConnectPath>.bumpIndexes() {
       indices.forEach { set(it, get(it).bumpIndex()) }
     }
 
@@ -110,7 +111,7 @@ private fun randomlyInsertValues(
 private fun insertValue(
   listValueBuilder: ListValue.Builder,
   valueToInsert: Value,
-  insertionListValuePath: ProtoValuePath,
+  insertionListValuePath: DataConnectPath,
   insertionListValuePathIndex: Int,
   random: Random,
 ): Int {
@@ -122,9 +123,9 @@ private fun insertValue(
 
   val index =
     insertionListValuePath[insertionListValuePathIndex].let {
-      check(it is ProtoValuePathComponent.ListIndex) {
+      check(it is DataConnectPathSegment.ListIndex) {
         "internal error cj7kz86pyd: path ${insertionListValuePath.toPathString()} should have " +
-          "a ListIndex as component $insertionListValuePathIndex, but got: $it"
+          "a ListIndex as segment $insertionListValuePathIndex, but got: $it"
       }
       it.index
     }
@@ -173,7 +174,7 @@ private fun insertValue(
 private fun insertValue(
   structBuilder: Struct.Builder,
   valueToInsert: Value,
-  insertionListValuePath: ProtoValuePath,
+  insertionListValuePath: DataConnectPath,
   insertionListValuePathIndex: Int,
   random: Random,
 ): Int {
@@ -185,11 +186,11 @@ private fun insertValue(
 
   val key =
     insertionListValuePath[insertionListValuePathIndex].let {
-      check(it is ProtoValuePathComponent.StructKey) {
+      check(it is DataConnectPathSegment.Field) {
         "internal error zazshp58ax: path ${insertionListValuePath.toPathString()} should have " +
-          "a StructKey as component $insertionListValuePathIndex, but got: $it"
+          "a Field as segment $insertionListValuePathIndex, but got: $it"
       }
-      it.key
+      it.field
     }
 
   val childValue = structBuilder.getFieldsOrThrow(key)
