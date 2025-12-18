@@ -18,10 +18,13 @@
 
 package com.google.firebase.dataconnect
 
+import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.dataConnectPath as dataConnectPathArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.fieldPathSegment as fieldPathSegmentArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.listIndexPathSegment as listIndexPathSegmentArb
+import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.pathSegment as dataConnectPathSegmentArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import io.kotest.common.ExperimentalKotest
+import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeSameInstanceAs
@@ -30,6 +33,9 @@ import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
 import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.int
+import io.kotest.property.arbitrary.list
+import io.kotest.property.arbitrary.map
+import io.kotest.property.arbitrary.pair
 import io.kotest.property.arbitrary.string
 import io.kotest.property.assume
 import io.kotest.property.checkAll
@@ -223,4 +229,333 @@ class DataConnectPathSegmentListIndexUnitTest {
       pathSegment1.hashCode() shouldNotBe pathSegment2.hashCode()
     }
   }
+}
+
+/** Unit tests for extension functions of [DataConnectPathSegment] */
+class DataConnectPathSegmentExtensionFunctionsUnitTest {
+
+  @Test
+  fun `toPathString on empty path`() {
+    val emptyPath: DataConnectPath = emptyList()
+    emptyPath.toPathString() shouldBe ""
+  }
+
+  @Test
+  fun `toPathString on single field`() = runTest {
+    checkAll(propTestConfig, Arb.dataConnect.string()) { fieldName ->
+      val path = listOf(DataConnectPathSegment.Field(fieldName))
+      path.toPathString() shouldBe fieldName
+    }
+  }
+
+  @Test
+  fun `toPathString on single list index`() = runTest {
+    checkAll(propTestConfig, Arb.int()) { listIndex ->
+      val path = listOf(DataConnectPathSegment.ListIndex(listIndex))
+      path.toPathString() shouldBe "[$listIndex]"
+    }
+  }
+
+  @Test
+  fun `toPathString on path of all fields`() = runTest {
+    checkAll(propTestConfig, Arb.list(fieldPathSegmentArb(), 2..5)) { path ->
+      path.toPathString() shouldBe path.joinToString(".") { it.field }
+    }
+  }
+
+  @Test
+  fun `toPathString on path of all list indexes`() = runTest {
+    checkAll(propTestConfig, Arb.list(listIndexPathSegmentArb(), 2..5)) { path ->
+      path.toPathString() shouldBe path.joinToString("") { "[${it.index}]" }
+    }
+  }
+
+  @Test
+  fun `toPathString on path of alternating fields and list indexes`() = runTest {
+    val arb = Arb.list(Arb.pair(fieldPathSegmentArb(), listIndexPathSegmentArb()), 1..5)
+    checkAll(propTestConfig, arb) { pairs ->
+      val path = pairs.flatMap { it.toList() }
+
+      val pathString = path.toPathString()
+
+      val expectedPathString = buildString {
+        pairs.forEachIndexed { index, (fieldSegment, indexSegment) ->
+          if (index > 0) {
+            append('.')
+          }
+          append(fieldSegment.field)
+          append('[')
+          append(indexSegment.index)
+          append(']')
+        }
+      }
+      pathString shouldBe expectedPathString
+    }
+  }
+
+  @Test
+  fun `toPathString on path of alternating list indexes and fields`() = runTest {
+    val arb = Arb.list(Arb.pair(listIndexPathSegmentArb(), fieldPathSegmentArb()), 1..5)
+    checkAll(propTestConfig, arb) { pairs ->
+      val path = pairs.flatMap { it.toList() }
+
+      val pathString = path.toPathString()
+
+      val expectedPathString = buildString {
+        pairs.forEach { (indexSegment, fieldSegment) ->
+          append('[')
+          append(indexSegment.index)
+          append(']')
+          append('.')
+          append(fieldSegment.field)
+        }
+      }
+      pathString shouldBe expectedPathString
+    }
+  }
+
+  @Test
+  fun `appendPathStringTo on empty StringBuilder`() = runTest {
+    checkAll(propTestConfig, dataConnectPathArb()) { path ->
+      val sb = StringBuilder()
+
+      path.appendPathStringTo(sb)
+
+      sb.toString() shouldBe path.toPathString()
+    }
+  }
+
+  @Test
+  fun `appendPathStringTo on non-empty StringBuilder`() = runTest {
+    checkAll(propTestConfig, Arb.string(), dataConnectPathArb()) { prefix, path ->
+      val sb = StringBuilder(prefix)
+
+      path.appendPathStringTo(sb)
+
+      sb.toString() shouldBe prefix + path.toPathString()
+    }
+  }
+
+  @Test
+  fun `MutableList addField should add a field path segment`() = runTest {
+    checkAll(propTestConfig, dataConnectPathArb(), Arb.dataConnect.string()) { path, fieldName ->
+      val mutablePath = path.toMutableList()
+
+      mutablePath.addField(fieldName)
+
+      val expected = buildList {
+        addAll(path)
+        add(DataConnectPathSegment.Field(fieldName))
+      }
+      mutablePath shouldContainExactly expected
+    }
+  }
+
+  @Test
+  fun `MutableList addField should return the added path segment`() = runTest {
+    checkAll(propTestConfig, dataConnectPathArb(), Arb.dataConnect.string()) { path, fieldName ->
+      val mutablePath = path.toMutableList()
+
+      val returnValue = mutablePath.addField(fieldName)
+
+      returnValue shouldBe DataConnectPathSegment.Field(fieldName)
+    }
+  }
+
+  @Test
+  fun `MutableList addListIndex should add a list index path segment`() = runTest {
+    checkAll(propTestConfig, dataConnectPathArb(), Arb.int()) { path, listIndex ->
+      val mutablePath = path.toMutableList()
+
+      mutablePath.addListIndex(listIndex)
+
+      val expected = buildList {
+        addAll(path)
+        add(DataConnectPathSegment.ListIndex(listIndex))
+      }
+      mutablePath shouldContainExactly expected
+    }
+  }
+
+  @Test
+  fun `MutableList addListIndex should return the added path segment`() = runTest {
+    checkAll(propTestConfig, dataConnectPathArb(), Arb.int()) { path, listIndex ->
+      val mutablePath = path.toMutableList()
+
+      val returnValue = mutablePath.addListIndex(listIndex)
+
+      returnValue shouldBe DataConnectPathSegment.ListIndex(listIndex)
+    }
+  }
+
+  @Test
+  fun `MutableList withAddedPathSegment should run the given block with the path segment added`() =
+    runTest {
+      checkAll(propTestConfig, dataConnectPathArb(), dataConnectPathSegmentArb()) {
+        path,
+        pathSegment ->
+        val mutablePath = path.toMutableList()
+        val expectedPathInBlock = buildList {
+          addAll(path)
+          add(pathSegment)
+        }
+        mutablePath.withAddedPathSegment(pathSegment) {
+          mutablePath shouldContainExactly expectedPathInBlock
+        }
+      }
+    }
+
+  @Test
+  fun `MutableList withAddedField should run the given block with the field added`() = runTest {
+    checkAll(propTestConfig, dataConnectPathArb(), Arb.dataConnect.string()) { path, fieldName ->
+      val mutablePath = path.toMutableList()
+
+      mutablePath.withAddedField(fieldName) {
+        mutablePath shouldContainExactly path.toMutableList().also { it.addField(fieldName) }
+      }
+    }
+  }
+
+  @Test
+  fun `MutableList withAddedListIndex should run the given block with the list index added`() =
+    runTest {
+      checkAll(propTestConfig, dataConnectPathArb(), Arb.int()) { path, listIndex ->
+        val mutablePath = path.toMutableList()
+
+        mutablePath.withAddedListIndex(listIndex) {
+          mutablePath shouldContainExactly path.toMutableList().also { it.addListIndex(listIndex) }
+        }
+      }
+    }
+
+  @Test
+  fun `MutableList withAddedPathSegment should remove the added path segment before returning`() =
+    runTest {
+      checkAll(propTestConfig, dataConnectPathArb(), dataConnectPathSegmentArb()) {
+        path,
+        pathSegment ->
+        val mutablePath = path.toMutableList()
+
+        mutablePath.withAddedPathSegment(pathSegment) {}
+
+        mutablePath shouldContainExactly path
+      }
+    }
+
+  @Test
+  fun `MutableList withAddedField should remove the added path segment before returning`() =
+    runTest {
+      checkAll(propTestConfig, dataConnectPathArb(), Arb.dataConnect.string()) { path, fieldName ->
+        val mutablePath = path.toMutableList()
+
+        mutablePath.withAddedField(fieldName) {}
+
+        mutablePath shouldContainExactly path
+      }
+    }
+
+  @Test
+  fun `MutableList withAddedListIndex should remove the added path segment before returning`() =
+    runTest {
+      checkAll(propTestConfig, dataConnectPathArb(), Arb.int()) { path, listIndex ->
+        val mutablePath = path.toMutableList()
+
+        mutablePath.withAddedListIndex(listIndex) {}
+
+        mutablePath shouldContainExactly path
+      }
+    }
+
+  @Test
+  fun `MutableList withAddedPathSegment should return whatever the block returns`() = runTest {
+    data class ReturnValue(val value: Int)
+    checkAll(
+      propTestConfig,
+      dataConnectPathArb(),
+      dataConnectPathSegmentArb(),
+      Arb.int().map(::ReturnValue)
+    ) { path, pathSegment, returnValue ->
+      val mutablePath = path.toMutableList()
+
+      val actualReturnValue = mutablePath.withAddedPathSegment(pathSegment) { returnValue }
+
+      actualReturnValue shouldBeSameInstanceAs returnValue
+    }
+  }
+
+  @Test
+  fun `MutableList withAddedField should return whatever the block returns`() = runTest {
+    data class ReturnValue(val value: Int)
+    checkAll(
+      propTestConfig,
+      dataConnectPathArb(),
+      Arb.dataConnect.string(),
+      Arb.int().map(::ReturnValue)
+    ) { path, fieldName, returnValue ->
+      val mutablePath = path.toMutableList()
+
+      val actualReturnValue = mutablePath.withAddedField(fieldName) { returnValue }
+
+      actualReturnValue shouldBeSameInstanceAs returnValue
+    }
+  }
+
+  @Test
+  fun `MutableList withAddedListIndex should return whatever the block returns`() = runTest {
+    data class ReturnValue(val value: Int)
+    checkAll(propTestConfig, dataConnectPathArb(), Arb.int(), Arb.int().map(::ReturnValue)) {
+      path,
+      listIndex,
+      returnValue ->
+      val mutablePath = path.toMutableList()
+
+      val actualReturnValue = mutablePath.withAddedListIndex(listIndex) { returnValue }
+
+      actualReturnValue shouldBeSameInstanceAs returnValue
+    }
+  }
+
+  @Test
+  fun `List withAddedPathSegment should return the receiving path with the given segment added`() =
+    runTest {
+      checkAll(propTestConfig, dataConnectPathArb(), dataConnectPathSegmentArb()) {
+        path,
+        pathSegment ->
+        val result = path.withAddedPathSegment(pathSegment)
+
+        val expected = buildList {
+          addAll(path)
+          add(pathSegment)
+        }
+        result shouldContainExactly expected
+      }
+    }
+
+  @Test
+  fun `List withAddedField should return the receiving path with a field segment added`() =
+    runTest {
+      checkAll(propTestConfig, dataConnectPathArb(), Arb.dataConnect.string()) { path, fieldName ->
+        val result = path.withAddedField(fieldName)
+
+        val expected = buildList {
+          addAll(path)
+          add(DataConnectPathSegment.Field(fieldName))
+        }
+        result shouldContainExactly expected
+      }
+    }
+
+  @Test
+  fun `List withAddedListIndex should return the receiving path with a field segment added`() =
+    runTest {
+      checkAll(propTestConfig, dataConnectPathArb(), Arb.int()) { path, listIndex ->
+        val result = path.withAddedListIndex(listIndex)
+
+        val expected = buildList {
+          addAll(path)
+          add(DataConnectPathSegment.ListIndex(listIndex))
+        }
+        result shouldContainExactly expected
+      }
+    }
 }

@@ -21,8 +21,7 @@ package com.google.firebase.dataconnect.core
 
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.core.DataConnectOperationFailureResponseImpl.ErrorInfoImpl
-import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.errorPath as errorPathArb
-import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.fieldPathSegment as fieldPathSegmentArb
+import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.dataConnectPath as dataConnectPathArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.listIndexPathSegment as listIndexPathSegmentArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.operationData
@@ -31,6 +30,7 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.operationErro
 import com.google.firebase.dataconnect.testutil.property.arbitrary.operationFailureResponseImpl
 import com.google.firebase.dataconnect.testutil.property.arbitrary.operationRawData
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
+import com.google.firebase.dataconnect.toPathString
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
@@ -41,10 +41,9 @@ import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
-import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.choice
+import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.int
-import io.kotest.property.arbitrary.list
 import io.kotest.property.arbitrary.string
 import io.kotest.property.assume
 import io.kotest.property.checkAll
@@ -95,7 +94,7 @@ class DataConnectOperationFailureResponseImplErrorInfoImplUnitTest {
 
   @Test
   fun `constructor should set properties to the given values`() = runTest {
-    checkAll(propTestConfig, Arb.dataConnect.string(), errorPathArb()) { message, path ->
+    checkAll(propTestConfig, Arb.dataConnect.string(), dataConnectPathArb()) { message, path ->
       val errorInfo = ErrorInfoImpl(message, path)
       errorInfo.message shouldBeSameInstanceAs message
       errorInfo.path shouldBeSameInstanceAs path
@@ -109,7 +108,7 @@ class DataConnectOperationFailureResponseImplErrorInfoImplUnitTest {
   }
 
   @Test
-  fun `toString() should return the message if message is non-empty and path is empty`() = runTest {
+  fun `toString() should return just the message if the path is empty`() = runTest {
     checkAll(propTestConfig, Arb.dataConnect.string()) { message ->
       val errorInfo = ErrorInfoImpl(message, emptyList())
       errorInfo.toString() shouldBe message
@@ -117,121 +116,14 @@ class DataConnectOperationFailureResponseImplErrorInfoImplUnitTest {
   }
 
   @Test
-  fun `toString() should not do anything different with an empty message`() = runTest {
-    checkAll(propTestConfig, errorPathArb()) { path ->
-      assume(path.isNotEmpty())
-      val errorInfo = ErrorInfoImpl("", path)
-      val errorInfoToStringResult = errorInfo.toString()
-      errorInfoToStringResult shouldEndWith ": "
-      path.forEachIndexed { index, pathSegment ->
-        withClue("path[$index]") {
-          errorInfoToStringResult shouldContainWithNonAbuttingText pathSegment.toString()
-        }
-      }
-    }
-  }
-
-  @Test
-  fun `toString() should print field path segments separated by dots`() = runTest {
-    checkAll(propTestConfig, Arb.dataConnect.string(), Arb.list(fieldPathSegmentArb(), 1..10)) {
-      message,
-      path ->
-      val errorInfo = ErrorInfoImpl(message, path)
-      errorInfo.toString() shouldBe path.joinToString(".") + ": $message"
-    }
-  }
-
-  @Test
-  fun `toString() should print list index path segments separated by dots`() = runTest {
+  fun `toString() should return the expected string when path is non-empty`() = runTest {
     checkAll(
       propTestConfig,
       Arb.dataConnect.string(),
-      Arb.list(listIndexPathSegmentArb(), 1..10)
+      dataConnectPathArb().filterNot { it.toPathString().isEmpty() }
     ) { message, path ->
       val errorInfo = ErrorInfoImpl(message, path)
-      errorInfo.toString() shouldBe path.joinToString("") { "[${it.index}]" } + ": $message"
-    }
-  }
-
-  @Test
-  fun `toString() for path is field, listIndex`() = runTest {
-    checkAll(propTestConfig, Arb.dataConnect.string(), MyArb.samplePathSegments()) {
-      message,
-      segments ->
-      val path = listOf(segments.field1, segments.listIndex1)
-      val errorInfo = ErrorInfoImpl(message, path)
-      errorInfo.toString() shouldBe "${segments.field1.field}[${segments.listIndex1}]: $message"
-    }
-  }
-
-  @Test
-  fun `toString() for path is listIndex, field`() = runTest {
-    checkAll(propTestConfig, Arb.dataConnect.string(), MyArb.samplePathSegments()) {
-      message,
-      segments ->
-      val path = listOf(segments.listIndex1, segments.field1)
-      val errorInfo = ErrorInfoImpl(message, path)
-      errorInfo.toString() shouldBe "[${segments.listIndex1}].${segments.field1.field}: $message"
-    }
-  }
-
-  @Test
-  fun `toString() for path is field, listIndex, field`() = runTest {
-    checkAll(propTestConfig, Arb.dataConnect.string(), MyArb.samplePathSegments()) {
-      message,
-      segments ->
-      val path = listOf(segments.field1, segments.listIndex1, segments.field2)
-      val errorInfo = ErrorInfoImpl(message, path)
-      errorInfo.toString() shouldBe
-        "${segments.field1.field}[${segments.listIndex1}].${segments.field2.field}: $message"
-    }
-  }
-
-  @Test
-  fun `toString() for path is field, listIndex, listIndex`() = runTest {
-    checkAll(propTestConfig, Arb.dataConnect.string(), MyArb.samplePathSegments()) {
-      message,
-      segments ->
-      val path = listOf(segments.field1, segments.listIndex1, segments.listIndex2)
-      val errorInfo = ErrorInfoImpl(message, path)
-      errorInfo.toString() shouldBe
-        "${segments.field1.field}[${segments.listIndex1}][${segments.listIndex2}]: $message"
-    }
-  }
-
-  @Test
-  fun `toString() for path is field, field, listIndex`() = runTest {
-    checkAll(propTestConfig, Arb.dataConnect.string(), MyArb.samplePathSegments()) {
-      message,
-      segments ->
-      val path = listOf(segments.field1, segments.field2, segments.listIndex1)
-      val errorInfo = ErrorInfoImpl(message, path)
-      errorInfo.toString() shouldBe
-        "${segments.field1.field}.${segments.field2.field}[${segments.listIndex1}]: $message"
-    }
-  }
-
-  @Test
-  fun `toString() for path is field, listIndex, field, listIndex`() = runTest {
-    checkAll(propTestConfig, Arb.dataConnect.string(), MyArb.samplePathSegments()) {
-      message,
-      segments ->
-      val path = listOf(segments.field1, segments.listIndex1, segments.field2, segments.listIndex2)
-      val errorInfo = ErrorInfoImpl(message, path)
-      errorInfo.toString() shouldBe
-        "${segments.field1.field}[${segments.listIndex1}].${segments.field2.field}[${segments.listIndex2}]: $message"
-    }
-  }
-
-  @Test
-  fun `toString() for path is field, listIndex, listIndex, field`() = runTest {
-    checkAll(propTestConfig, Arb.dataConnect.string(), MyArb.samplePathSegments()) {
-      message,
-      segments ->
-      val path = listOf(segments.field1, segments.listIndex1, segments.listIndex2, segments.field2)
-      val errorInfo = ErrorInfoImpl(message, path)
-      errorInfo.toString() shouldBe
-        "${segments.field1.field}[${segments.listIndex1}][${segments.listIndex2}].${segments.field2.field}: $message"
+      errorInfo.toString() shouldBe path.toPathString() + ": " + message
     }
   }
 
@@ -281,7 +173,7 @@ class DataConnectOperationFailureResponseImplErrorInfoImplUnitTest {
 
   @Test
   fun `equals() should return false when path differs`() = runTest {
-    checkAll(propTestConfig, Arb.dataConnect.operationErrorInfo(), errorPathArb()) {
+    checkAll(propTestConfig, Arb.dataConnect.operationErrorInfo(), dataConnectPathArb()) {
       errorInfo1: ErrorInfoImpl,
       otherPath: List<DataConnectPathSegment> ->
       assume(errorInfo1.path != otherPath)
@@ -321,7 +213,7 @@ class DataConnectOperationFailureResponseImplErrorInfoImplUnitTest {
 
   @Test
   fun `hashCode() should return a different value if path is different`() = runTest {
-    checkAll(propTestConfig, Arb.dataConnect.operationErrorInfo(), errorPathArb()) {
+    checkAll(propTestConfig, Arb.dataConnect.operationErrorInfo(), dataConnectPathArb()) {
       errorInfo1: ErrorInfoImpl,
       otherPath: List<DataConnectPathSegment> ->
       assume(errorInfo1.path.hashCode() != otherPath.hashCode())
@@ -329,22 +221,4 @@ class DataConnectOperationFailureResponseImplErrorInfoImplUnitTest {
       errorInfo1.equals(errorInfo2) shouldBe false
     }
   }
-}
-
-private object MyArb {
-
-  fun samplePathSegments(
-    field: Arb<DataConnectPathSegment.Field> = fieldPathSegmentArb(),
-    listIndex: Arb<DataConnectPathSegment.ListIndex> = listIndexPathSegmentArb(),
-  ): Arb<SamplePathSegments> =
-    Arb.bind(field, field, listIndex, listIndex) { field1, field2, listIndex1, listIndex2 ->
-      SamplePathSegments(field1, field2, listIndex1, listIndex2)
-    }
-
-  data class SamplePathSegments(
-    val field1: DataConnectPathSegment.Field,
-    val field2: DataConnectPathSegment.Field,
-    val listIndex1: DataConnectPathSegment.ListIndex,
-    val listIndex2: DataConnectPathSegment.ListIndex,
-  )
 }
