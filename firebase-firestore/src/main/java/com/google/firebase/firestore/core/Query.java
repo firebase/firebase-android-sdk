@@ -624,16 +624,6 @@ public final class Query {
   }
 
   // Many Pipelines require first parameter to be separated out from rest.
-  private static <T> T[] skipFirstToArray(List<T> list, IntFunction<T[]> generator) {
-    int size = list.size();
-    T[] result = generator.apply(size - 1);
-    for (int i = 1; i < size; i++) {
-      result[i - 1] = list.get(i);
-    }
-    return result;
-  }
-
-  // Many Pipelines require first parameter to be separated out from rest.
   private static <T, R> R[] skipFirstToArray(
       List<T> list, IntFunction<R[]> generator, Function<T, R> map) {
     int size = list.size();

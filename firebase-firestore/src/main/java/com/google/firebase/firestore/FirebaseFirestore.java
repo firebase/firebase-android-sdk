@@ -27,6 +27,7 @@ import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
+import com.google.common.annotations.Beta;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.annotations.PreviewApi;
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider;
@@ -913,6 +914,7 @@ public class FirebaseFirestore {
    *
    * @return A {@code PipelineSource} to begin defining the pipeline's stages.
    */
+  @Beta
   @NonNull
   public PipelineSource pipeline() {
     clientProvider.ensureConfigured();
@@ -924,9 +926,8 @@ public class FirebaseFirestore {
    *
    * NOTE: RealtimePipeline utilizes the Firestore realtime backend and SDK cache to provide final
    * results, this is the equivalent to classic Firestore {@link Query}, but with more features
-   * supported. However, its feature set is only a subset of {@code Pipeline}. If you need features
-   * unavailable in {@code RealtimePipeline} and realtime or SDK cache access are not a must, use
-   * {@code pipeline()} instead.
+   * supported. For features that aren't available in {@code RealtimePipeline} or if
+   * the SDK cache access isn't required, use {@code pipeline()} instead.
    *
    * @return {@code RealtimePipelineSource} for this Firestore instance.
    */

@@ -1148,17 +1148,18 @@ private constructor(
     @JvmStatic fun withPercentage(percentage: Double) = SampleStage(percentage, Mode.PERCENT)
 
     /**
-     * Creates [SampleStage] with size limited to number of documents.
+     * Creates [SampleStage] with the specified number of results returned.
      *
-     * The [documents] parameter represents the target number of documents to produce and must be a
-     * non-negative integer value. If the previous stage produces less than size documents, the
-     * entire previous results are returned. If the previous stage produces more than size, this
-     * outputs a sample of exactly size entries where any sample is equally likely.
+     * The [results] parameter represents the number of results to produce and must be a
+     * non-negative integer value. If the previous stage produces less than the specified number,
+     * the entire previous results are returned. If the previous stage produces more than the
+     * specified number, this stage samples the specified number of documents from the previous
+     * stage, with equal probability for each result.
      *
-     * @param documents The number of documents to emit.
+     * @param results The number of documents to emit.
      * @return [SampleStage] with specified [documents].
      */
-    @JvmStatic fun withDocLimit(documents: Int) = SampleStage(documents, Mode.DOCUMENTS)
+    @JvmStatic fun withDocLimit(results: Int) = SampleStage(results, Mode.DOCUMENTS)
   }
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     sequenceOf(encodeValue(size), mode.proto)

@@ -16,6 +16,7 @@ package com.google.firebase.firestore
 
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.TaskCompletionSource
+import com.google.common.annotations.Beta
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.model.Document
 import com.google.firebase.firestore.model.DocumentKey
@@ -65,6 +66,22 @@ import com.google.firestore.v1.Pipeline as ProtoPipeline
 import com.google.firestore.v1.StructuredPipeline
 import com.google.firestore.v1.Value
 
+/**
+ * A `Pipeline` is composed of a sequence of stages. Each stage processes the output from the
+ * previous one, and the final stage's output is the result of the pipeline's execution.
+ *
+ * <p><b>Example usage:</b> <pre>{@code Pipeline pipeline = firestore.pipeline()
+ * .collection("books") .where(Field("rating").isGreaterThan(4.5))
+ * .sort(Field("rating").descending()) .limit(2); }</pre>
+ *
+ * <p><b>Note on Execution:</b> The stages are conceptual. The Firestore backend may optimize
+ * execution (e.g., reordering or merging stages) as long as the final result remains the same.
+ *
+ * <p><b>Important Limitations:</b> <ul> <li>Pipelines operate on a <b>request/response basis
+ * only</b>. <li>They do <b>not</b> utilize or update the local SDK cache. <li>They do <b>not</b>
+ * support realtime snapshot listeners. </ul>
+ */
+@Beta
 class Pipeline
 internal constructor(
   private val firestore: FirebaseFirestore,
@@ -212,7 +229,7 @@ internal constructor(
    * This method provides a way to call stages that are supported by the Firestore backend but that
    * are not implemented in the SDK version being used.
    *
-   * @param rawStage An [RawStage] object that specifies stage name and parameters.
+   * @param rawStage A [RawStage] object that specifies stage name and parameters.
    * @return A new [Pipeline] object with this stage appended to the stage list.
    */
   fun rawStage(rawStage: RawStage): Pipeline = append(rawStage)
@@ -288,7 +305,7 @@ internal constructor(
   /**
    * Selects or creates a set of fields from the outputs of previous stages.
    *
-   * The selected fields are defined using [Selectable] expressions, which can be:
+   * The selected fields are defined using [Selectable] expressions or strings, which can be:
    *
    * - [String]: Name of an existing field
    * - [Field]: Reference to an existing field.
@@ -599,28 +616,11 @@ internal constructor(
 
   /**
    * Performs a vector similarity search, ordering the result set by most similar to least similar,
-   * and returning the first N documents in the result set.
-   *
-   * @param vectorField A [Field] that contains vector to search on.
-   * @param vectorValue The [VectorValue] in array form that is used to measure the distance from
-   * [vectorField] values in the documents.
-   * @param distanceMeasure specifies what type of distance is calculated when performing the
-   * search.
-   * @return A new [Pipeline] object with this stage appended to the stage list.
-   */
-  fun findNearest(
-    vectorField: Field,
-    vectorValue: DoubleArray,
-    distanceMeasure: FindNearestStage.DistanceMeasure,
-  ): Pipeline = append(FindNearestStage.of(vectorField, vectorValue, distanceMeasure))
-
-  /**
-   * Performs a vector similarity search, ordering the result set by most similar to least similar,
-   * and returning the first N documents in the result set.
+   * and returning the full set in the order of similarity.
    *
    * @param vectorField A [String] specifying the vector field to search on.
-   * @param vectorValue The [VectorValue] in array form that is used to measure the distance from
-   * [vectorField] values in the documents.
+   * @param vectorValue The [DoubleArray] that is used to measure the distance from [vectorField]
+   * values in the documents.
    * @param distanceMeasure specifies what type of distance is calculated when performing the
    * search.
    * @return A new [Pipeline] object with this stage appended to the stage list.
@@ -633,58 +633,25 @@ internal constructor(
 
   /**
    * Performs a vector similarity search, ordering the result set by most similar to least similar,
-   * and returning the first N documents in the result set.
+   * and returning the full set in the order of similarity.
    *
    * @param vectorField A [Field] that contains vector to search on.
-   * @param vectorValue The [VectorValue] used to measure the distance from [vectorField] values in
-   * the documents.
+   * @param vectorValue The [DoubleArray] that is used to measure the distance from [vectorField]
+   * values in the documents.
    * @param distanceMeasure specifies what type of distance is calculated. when performing the
    * search.
    * @return A new [Pipeline] object with this stage appended to the stage list.
    */
   fun findNearest(
     vectorField: Field,
-    vectorValue: VectorValue,
+    vectorValue: DoubleArray,
     distanceMeasure: FindNearestStage.DistanceMeasure,
   ): Pipeline = append(FindNearestStage.of(vectorField, vectorValue, distanceMeasure))
 
   /**
    * Performs a vector similarity search, ordering the result set by most similar to least similar,
-   * and returning the first N documents in the result set.
-   *
-   * @param vectorField A [String] specifying the vector field to search on.
-   * @param vectorValue The [VectorValue] used to measure the distance from [vectorField] values in
-   * the documents.
-   * @param distanceMeasure specifies what type of distance is calculated when performing the
-   * search.
-   * @return A new [Pipeline] object with this stage appended to the stage list.
-   */
-  fun findNearest(
-    vectorField: String,
-    vectorValue: VectorValue,
-    distanceMeasure: FindNearestStage.DistanceMeasure,
-  ): Pipeline = append(FindNearestStage.of(vectorField, vectorValue, distanceMeasure))
-
-  /**
-   * Performs a vector similarity search, ordering the result set by most similar to least similar,
-   * and returning the first N documents in the result set.
-   *
-   * @param vectorField A [Field] that contains vector to search on.
-   * @param vectorValue The [Expression] that should evaluate to a [VectorValue] used to measure the
-   * distance from [vectorField] values in the documents.
-   * @param distanceMeasure specifies what type of distance is calculated when performing the
-   * search.
-   * @return A new [Pipeline] object with this stage appended to the stage list.
-   */
-  fun findNearest(
-    vectorField: String,
-    vectorValue: Expression,
-    distanceMeasure: FindNearestStage.DistanceMeasure
-  ): Pipeline = findNearest(vectorField, vectorValue, distanceMeasure, FindNearestOptions())
-
-  /**
-   * Performs a vector similarity search, ordering the result set by most similar to least similar,
-   * and returning the first N documents in the result set.
+   * and returning the first N documents (specified by [FindNearestOptions.withLimit]) in the result
+   * set.
    *
    * Example:
    * ```
@@ -696,8 +663,8 @@ internal constructor(
    *          .withDistanceField("distance"));
    * ```
    *
-   * @param vectorField A [Field] that contains vector to search on.
-   * @param vectorValue The [Expression] that should evaluate to a [VectorValue] used to measure the
+   * @param vectorField A field name that contains vector to search on.
+   * @param vectorValue The [Expression] that should evaluate to a vector used to measure the
    * distance from [vectorField] values in the documents.
    * @param distanceMeasure specifies what type of distance is calculated when performing the
    * search.
@@ -933,6 +900,7 @@ internal constructor(
 }
 
 /** Start of a Firestore Pipeline */
+@Beta
 class PipelineSource internal constructor(private val firestore: FirebaseFirestore) {
 
   /**
@@ -1079,6 +1047,11 @@ class PipelineSource internal constructor(private val firestore: FirebaseFiresto
   }
 }
 
+/**
+ * Represents the results of a Pipeline query, including the data and metadata. It is usually
+ * accessed via [Pipeline.Snapshot].
+ */
+@Beta
 class PipelineResult
 internal constructor(
   private val userDataWriter: UserDataWriter,
@@ -1110,17 +1083,11 @@ internal constructor(
   val updateTime: Timestamp? = updateTime
 
   /**
-   * The reference to the document, if the query returns the `__name__` field for a document. The
-   * name field will be returned by default if querying a document.
+   * The reference to the document, if the query returns the document id for a document. The name
+   * field will be returned by default if querying a document.
    *
-   * The `__name__` field will not be returned if the query projects away this field. For example:
-   * ```
-   *   // this query does not select the `__name__` field as part of the select stage,
-   *   // so the __name__ field will not be in the output docs from this stage
-   *   db.pipeline().collection("books").select("title", "desc")
-   * ```
-   *
-   * The `__name__` field will not be returned from queries with aggregate or distinct stages.
+   * Document ids will not be returned if certain pipeline stages omit the document id. For example,
+   * [Pipeline.select], [Pipeline.removeFields] and [Pipeline.aggregate] can omit the document id.
    *
    * @return [DocumentReference] Reference to the document, if applicable.
    */
