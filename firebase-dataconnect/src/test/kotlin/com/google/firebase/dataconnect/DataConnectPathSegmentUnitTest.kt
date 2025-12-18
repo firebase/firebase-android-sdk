@@ -546,7 +546,7 @@ class DataConnectPathSegmentExtensionFunctionsUnitTest {
     }
 
   @Test
-  fun `List withAddedListIndex should return the receiving path with a field segment added`() =
+  fun `List withAddedListIndex should return the receiving path with a list index segment added`() =
     runTest {
       checkAll(propTestConfig, dataConnectPathArb(), Arb.int()) { path, listIndex ->
         val result = path.withAddedListIndex(listIndex)
