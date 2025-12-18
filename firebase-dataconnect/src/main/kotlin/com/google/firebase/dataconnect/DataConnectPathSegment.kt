@@ -124,8 +124,7 @@ internal fun List<DataConnectPathSegment>.withAddedListIndex(
 
 internal fun List<DataConnectPathSegment>.withAddedPathSegment(
   pathSegment: DataConnectPathSegment
-): List<DataConnectPathSegment> {
-  val mutableList = toMutableList()
-  mutableList.add(pathSegment)
-  return mutableList.toList()
+): List<DataConnectPathSegment> = buildList {
+  addAll(this@withAddedPathSegment)
+  add(pathSegment)
 }

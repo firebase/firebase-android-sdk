@@ -42,8 +42,8 @@ internal class DataConnectOperationFailureResponseImpl<Data>(
     override fun hashCode(): Int = Objects.hash("ErrorInfoImpl", message, path)
 
     override fun toString(): String = buildString {
-      if (path.isNotEmpty()) {
-        path.appendPathStringTo(this)
+      path.appendPathStringTo(this)
+      if (isNotEmpty()) {
         append(": ")
       }
       append(message)

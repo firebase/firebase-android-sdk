@@ -606,5 +606,5 @@ private class MapKeyDecoder(
       "The only valid method call on MapKeyDecoder is decodeString()"
     )
 
-  override fun toString() = "MapKeyDecoder{path=${path.toPathString()}"
+  override fun toString() = "MapKeyDecoder{path=${path.toPathString()}}"
 }

@@ -86,7 +86,7 @@ internal fun DataConnectArb.dataConnectGrpcMetadata(
 
 internal fun DataConnectArb.operationErrorInfo(
   message: Arb<String> = string(),
-  path: Arb<List<DataConnectPathSegment>> = errorPath(),
+  path: Arb<List<DataConnectPathSegment>> = dataConnectPath(),
 ): Arb<ErrorInfoImpl> =
   Arb.bind(message, path) { message0, path0 -> ErrorInfoImpl(message0, path0) }
 
