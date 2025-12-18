@@ -1,4 +1,5 @@
 # Unreleased
+
 - [changed] Internal refactor for reporting "paths" in response data.
   [#7613](https://github.com/firebase/firebase-android-sdk/pull/7613))
 
