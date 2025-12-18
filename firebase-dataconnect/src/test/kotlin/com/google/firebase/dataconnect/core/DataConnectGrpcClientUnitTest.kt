@@ -509,7 +509,7 @@ class DataConnectGrpcClientUnitTest {
     val errorInfo: ErrorInfoImpl,
   ) {
     companion object {
-      private val randomPathComponents =
+      private val randomPathSegments =
         Arb.string(
             minSize = 1,
             maxSize = 8,
@@ -528,13 +528,13 @@ class DataConnectGrpcClientUnitTest {
         val graphqlErrorPath = ListValue.newBuilder()
         repeat(6) {
           if (rs.random.nextFloat() < 0.33f) {
-            val pathComponent = randomInts.next(rs)
-            dataConnectErrorPath.add(DataConnectPathSegment.ListIndex(pathComponent))
-            graphqlErrorPath.addValues(Value.newBuilder().setNumberValue(pathComponent.toDouble()))
+            val pathSegment = randomInts.next(rs)
+            dataConnectErrorPath.add(DataConnectPathSegment.ListIndex(pathSegment))
+            graphqlErrorPath.addValues(Value.newBuilder().setNumberValue(pathSegment.toDouble()))
           } else {
-            val pathComponent = randomPathComponents.next(rs)
-            dataConnectErrorPath.add(DataConnectPathSegment.Field(pathComponent))
-            graphqlErrorPath.addValues(Value.newBuilder().setStringValue(pathComponent))
+            val pathSegment = randomPathSegments.next(rs)
+            dataConnectErrorPath.add(DataConnectPathSegment.Field(pathSegment))
+            graphqlErrorPath.addValues(Value.newBuilder().setStringValue(pathSegment))
           }
         }
 
