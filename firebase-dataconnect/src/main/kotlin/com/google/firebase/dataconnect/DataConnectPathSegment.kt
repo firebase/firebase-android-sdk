@@ -54,3 +54,75 @@ public sealed interface DataConnectPathSegment {
     override fun toString(): String = index.toString()
   }
 }
+
+internal typealias DataConnectPath = List<DataConnectPathSegment>
+
+internal fun <T : DataConnectPathSegment> List<T>.toPathString(): String = buildString {
+  appendPathStringTo(this)
+}
+
+internal fun <T : DataConnectPathSegment> List<T>.appendPathStringTo(sb: StringBuilder) {
+  forEachIndexed { segmentIndex, segment ->
+    when (segment) {
+      is DataConnectPathSegment.Field -> {
+        if (segmentIndex != 0) {
+          sb.append('.')
+        }
+        sb.append(segment.field)
+      }
+      is DataConnectPathSegment.ListIndex -> {
+        sb.append('[')
+        sb.append(segment.index)
+        sb.append(']')
+      }
+    }
+  }
+}
+
+internal fun MutableList<in DataConnectPathSegment.Field>.addField(
+  field: String
+): DataConnectPathSegment.Field = DataConnectPathSegment.Field(field).also { add(it) }
+
+internal fun MutableList<in DataConnectPathSegment.ListIndex>.addListIndex(
+  index: Int
+): DataConnectPathSegment.ListIndex = DataConnectPathSegment.ListIndex(index).also { add(it) }
+
+internal inline fun <T> MutableList<in DataConnectPathSegment.Field>.withAddedField(
+  field: String,
+  block: () -> T
+): T = withAddedPathSegment(DataConnectPathSegment.Field(field), block)
+
+internal inline fun <T> MutableList<in DataConnectPathSegment.ListIndex>.withAddedListIndex(
+  index: Int,
+  block: () -> T
+): T = withAddedPathSegment(DataConnectPathSegment.ListIndex(index), block)
+
+internal inline fun <T, S : DataConnectPathSegment> MutableList<in S>.withAddedPathSegment(
+  pathSegment: S,
+  block: () -> T
+): T {
+  add(pathSegment)
+  try {
+    return block()
+  } finally {
+    val removedSegment = removeLastOrNull()
+    check(removedSegment === pathSegment) {
+      "internal error x6tzdsszmc: removed $removedSegment, but expected $pathSegment"
+    }
+  }
+}
+
+internal fun List<DataConnectPathSegment>.withAddedField(
+  field: String
+): List<DataConnectPathSegment> = withAddedPathSegment(DataConnectPathSegment.Field(field))
+
+internal fun List<DataConnectPathSegment>.withAddedListIndex(
+  index: Int
+): List<DataConnectPathSegment> = withAddedPathSegment(DataConnectPathSegment.ListIndex(index))
+
+internal fun List<DataConnectPathSegment>.withAddedPathSegment(
+  pathSegment: DataConnectPathSegment
+): List<DataConnectPathSegment> = buildList {
+  addAll(this@withAddedPathSegment)
+  add(pathSegment)
+}
