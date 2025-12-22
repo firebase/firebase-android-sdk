@@ -588,8 +588,7 @@ class QueryResultDecoderUnitTest {
         put(QueryResultCodec.VALUE_KIND_NOT_SET)
       }
       val entity =
-        QueryResultCodec.Entity(
-          id = "",
+        QueryResultDecoder.Entity(
           encodedId = testCase.veryLongEncodedEntityId,
           data = Struct.newBuilder().putFields("", testCase.randomValue.toValueProto()).build()
         )

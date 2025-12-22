@@ -41,8 +41,11 @@ internal class SQLiteStatementBuilder : Appendable, CharSequence {
 
   class Result(
     val sql: String,
-    val bindings: Array<Any>,
-  )
+    val bindings: Array<Any?>,
+  ) {
+    operator fun component1() = sql
+    operator fun component2() = bindings
+  }
 
   fun build(): Result = Result(sql = sb.toString(), bindings = bindings.toTypedArray())
 

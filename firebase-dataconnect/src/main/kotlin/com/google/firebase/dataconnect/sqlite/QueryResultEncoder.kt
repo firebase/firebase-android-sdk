@@ -22,9 +22,10 @@ import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.putSInt32
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.putSInt64
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.putUInt32
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.putUInt64
-import com.google.firebase.dataconnect.sqlite.QueryResultCodec.Entity
 import com.google.firebase.dataconnect.toPathString
+import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
+import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
 import com.google.firebase.dataconnect.withAddedField
 import com.google.firebase.dataconnect.withAddedListIndex
 import com.google.protobuf.ListValue
@@ -39,6 +40,7 @@ import java.nio.channels.WritableByteChannel
 import java.nio.charset.CoderResult
 import java.nio.charset.CodingErrorAction
 import java.security.MessageDigest
+import java.util.Objects
 import kotlin.math.absoluteValue
 
 /**
@@ -476,6 +478,25 @@ internal class QueryResultEncoder(
         return Double(value)
       }
     }
+  }
+
+  class Entity(
+    val id: String,
+    val encodedId: ByteArray,
+    val data: Struct,
+  ) {
+
+    override fun hashCode(): Int =
+      Objects.hash(Entity::class.java, id, encodedId.contentHashCode(), data)
+
+    override fun equals(other: Any?): Boolean =
+      other is Entity &&
+        other.id == id &&
+        other.encodedId.contentEquals(encodedId) &&
+        other.data == data
+
+    override fun toString(): String =
+      "Entity(id=$id, encodedId=${encodedId.to0xHexString()}, data=${data.toCompactString()})"
   }
 
   companion object {

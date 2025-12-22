@@ -22,8 +22,8 @@ import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.getSInt32
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.getSInt64
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.getUInt32
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.getUInt64
-import com.google.firebase.dataconnect.sqlite.QueryResultCodec.Entity
 import com.google.firebase.dataconnect.toPathString
+import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.firebase.dataconnect.util.StringUtil.ellipsizeMiddle
 import com.google.firebase.dataconnect.util.StringUtil.get0xHexString
@@ -41,6 +41,7 @@ import java.nio.CharBuffer
 import java.nio.channels.Channels
 import java.nio.channels.ReadableByteChannel
 import java.nio.charset.CodingErrorAction
+import java.util.Objects
 
 /**
  * This class is NOT thread safe. The behavior of an instance of this class when used concurrently
@@ -1046,6 +1047,21 @@ internal class QueryResultDecoder(
 
   class EntityNotFoundException(message: String, cause: Throwable? = null) :
     DecodeException(message, cause)
+
+  class Entity(
+    val encodedId: ByteArray,
+    val data: Struct,
+  ) {
+
+    override fun hashCode(): Int =
+      Objects.hash(Entity::class.java, encodedId.contentHashCode(), data)
+
+    override fun equals(other: Any?): Boolean =
+      other is Entity && other.encodedId.contentEquals(encodedId) && other.data == data
+
+    override fun toString(): String =
+      "Entity(encodedId=${encodedId.to0xHexString()}, data=${data.toCompactString()})"
+  }
 
   companion object {
 

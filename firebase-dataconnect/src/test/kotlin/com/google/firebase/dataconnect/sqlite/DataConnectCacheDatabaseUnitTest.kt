@@ -23,6 +23,7 @@ import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
+import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
@@ -230,12 +231,19 @@ class DataConnectCacheDatabaseUnitTest {
     dataConnectCacheDatabase.initialize()
 
     val structArb = Arb.proto.struct(key = Arb.proto.structKey().filterNot { it == "_id" })
-    checkAll(propTestConfig, authUidArb(), queryIdArb(), structArb) { authUid, queryId, struct ->
+    checkAll(propTestConfig, authUidArb(), QueryIdSample.arb(), structArb) {
+      authUid,
+      queryId,
+      struct ->
       dataConnectCacheDatabase.insertQueryResult(
         authUid.authUid,
         queryId.queryIdCopy(),
         struct.struct
       )
+
+      val structFromDb =
+        dataConnectCacheDatabase.getQueryResult(authUid.authUid, queryId.queryIdCopy())
+      structFromDb shouldBe struct.struct
     }
   }
 
@@ -265,9 +273,12 @@ class DataConnectCacheDatabaseUnitTest {
         other is QueryIdSample && _queryId.contentEquals(other._queryId)
 
       override fun toString() = "QueryId(${_queryId.to0xHexString()})"
-    }
 
-    fun queryIdArb(): Arb<QueryIdSample> =
-      Arb.byteArray(Arb.int(0..25), Arb.byte()).map(::QueryIdSample)
+      companion object {
+
+        fun arb(): Arb<QueryIdSample> =
+          Arb.byteArray(Arb.int(0..25), Arb.byte()).map(::QueryIdSample)
+      }
+    }
   }
 }

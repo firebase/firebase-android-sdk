@@ -256,7 +256,14 @@ object QueryResultEncoderTesting {
       actualEntities shouldContainExactlyInAnyOrder expectedEntities
     }
 
-    val decodeResult = QueryResultDecoder.decode(encodeResult.byteArray, encodeResult.entities)
+    val decodeEntities =
+      encodeResult.entities.map {
+        QueryResultDecoder.Entity(
+          encodedId = it.encodedId,
+          data = it.data,
+        )
+      }
+    val decodeResult = QueryResultDecoder.decode(encodeResult.byteArray, decodeEntities)
 
     withClue("QueryResultDecoder.decode() return value") {
       decodeResult should beEqualTo(this, structPrinter = { it.toCompactString() })
