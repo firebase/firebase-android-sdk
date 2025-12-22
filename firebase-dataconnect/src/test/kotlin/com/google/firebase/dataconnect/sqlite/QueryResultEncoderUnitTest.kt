@@ -279,12 +279,12 @@ class QueryResultEncoderUnitTest {
 
   @Test
   fun `entity contains nested entities in struct keys`() = runTest {
-    val rootEntityCountArb = Arb.int(1..3)
     val subEntityCountArb = Arb.int(1..10)
-    checkAll(propTestConfig, Arb.proto.structKey()) { entityIdFieldName ->
+    checkAll(propTestConfig, Arb.proto.structKey(), Arb.int(1..3)) {
+      entityIdFieldName,
+      rootEntityCount ->
       val nonEntityIdFieldNameArb = Arb.proto.structKey().filterNot { it == entityIdFieldName }
       val generateKey: () -> String = { nonEntityIdFieldNameArb.bind() }
-      val rootEntityCount = rootEntityCountArb.bind()
       val subEntityCounts = List(rootEntityCount) { subEntityCountArb.bind() }
       val totalEntityCount = rootEntityCount + subEntityCounts.sum()
       val entities = generateEntities(totalEntityCount, entityIdFieldName).map { it.struct }
@@ -374,15 +374,14 @@ class QueryResultEncoderUnitTest {
       Arb.int(2..10),
       Arb.proto.recursivelyEmptyListValue()
     ) { entityIdFieldName, entityCount, nonEntityCount, recursivelyEmptyListValue ->
-      val nonEntityIdFieldNameArb = Arb.proto.structKey().filterNot { it == entityIdFieldName }
-      val nonEntityArb = Arb.proto.value(structKey = nonEntityIdFieldNameArb)
-      val nonEntities = List(nonEntityCount) { nonEntityArb.bind() }
+      val nonEntities = generateNonEntities(nonEntityCount, entityIdFieldName)
       val entities = generateEntities(entityCount, entityIdFieldName).map { it.struct }
       val listValue =
         recursivelyEmptyListValue.listValue.withRandomlyInsertedValues(
           nonEntities + entities.drop(1).map { it.toValueProto() },
           randomSource().random,
         )
+      val nonEntityIdFieldNameArb = Arb.proto.structKey().filterNot { it == entityIdFieldName }
       val rootStruct =
         entities[0].withRandomlyInsertedValue(
           listValue.toValueProto(),
@@ -411,14 +410,13 @@ class QueryResultEncoderUnitTest {
       Arb.int(2..10),
       Arb.proto.recursivelyEmptyListValue()
     ) { entityIdFieldName, nonEntityCount, recursivelyEmptyListValue ->
-      val nonEntityIdFieldNameArb = Arb.proto.structKey().filterNot { it == entityIdFieldName }
-      val nonEntityArb = Arb.proto.value(structKey = nonEntityIdFieldNameArb)
-      val nonEntities = List(nonEntityCount) { nonEntityArb.bind() }
+      val nonEntities = generateNonEntities(nonEntityCount, entityIdFieldName)
       val listValue =
         recursivelyEmptyListValue.listValue.withRandomlyInsertedValues(
           nonEntities,
           randomSource().random,
         )
+      val nonEntityIdFieldNameArb = Arb.proto.structKey().filterNot { it == entityIdFieldName }
       val rootStruct =
         generateEntity(entityIdFieldName)
           .struct

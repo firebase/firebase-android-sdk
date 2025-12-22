@@ -85,3 +85,5 @@ fun ListValue.isRecursivelyEmpty(): Boolean {
   }
   return true
 }
+
+fun Value.isRecursivelyEmptyListValue(): Boolean = isListValue && listValue.isRecursivelyEmpty()

@@ -21,6 +21,7 @@ import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.charArbW
 import com.google.firebase.dataconnect.testutil.BuildByteArrayDSL
 import com.google.firebase.dataconnect.testutil.MutableDataConnectPath
 import com.google.firebase.dataconnect.testutil.beEqualTo
+import com.google.firebase.dataconnect.testutil.isRecursivelyEmptyListValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.StringWithEncodingLengthArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.StringWithEncodingLengthArb.Mode.Utf8EncodingLongerThanUtf16
 import com.google.firebase.dataconnect.testutil.property.arbitrary.StringWithEncodingLengthArb.Mode.Utf8EncodingShorterThanOrEqualToUtf16
@@ -162,7 +163,10 @@ object QueryResultEncoderTesting {
    */
   fun PropertyContext.generateNonEntities(entityIdFieldName: String): Sequence<Value> {
     val nonEntityIdStructKeyArb = Arb.proto.structKey().filterNot { it == entityIdFieldName }
-    val nonEntityValueArb = Arb.proto.value(structKey = nonEntityIdStructKeyArb)
+    val nonEntityValueArb =
+      Arb.proto.value(structKey = nonEntityIdStructKeyArb).filterNot {
+        it.isRecursivelyEmptyListValue()
+      }
     return generateSequence { nonEntityValueArb.bind() }
   }
 
