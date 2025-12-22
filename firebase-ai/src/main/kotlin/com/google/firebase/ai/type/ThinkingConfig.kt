@@ -29,7 +29,7 @@ public class ThinkingConfig
 private constructor(
   internal val thinkingBudget: Int? = null,
   internal val includeThoughts: Boolean? = null,
-  internal val thinkingLevel: ThinkingLevel? = null
+  internal val thinkingLevel: ThinkingLevel? = null,
 ) {
 
   public class Builder() {
