@@ -20,6 +20,7 @@ import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.testutil.DataConnectPathValuePair
 import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
 import com.google.firebase.dataconnect.testutil.isListValue
+import com.google.firebase.dataconnect.testutil.isRecursivelyEmpty
 import com.google.firebase.dataconnect.testutil.isStructValue
 import com.google.firebase.dataconnect.testutil.listValueOrNull
 import com.google.firebase.dataconnect.testutil.toValueProto
@@ -271,9 +272,7 @@ class protoUnitTest {
   @Test
   fun `recursivelyEmptyListValue() should generate recursively empty ListValue values`() = runTest {
     checkAll(propTestConfig, Arb.proto.recursivelyEmptyListValue()) { sample ->
-      sample.listValue.walk(includeSelf = true).forEach { (path, value) ->
-        withClue("path=$path") { value.kindCase shouldBe Value.KindCase.LIST_VALUE }
-      }
+      sample.listValue.isRecursivelyEmpty() shouldBe true
     }
   }
 

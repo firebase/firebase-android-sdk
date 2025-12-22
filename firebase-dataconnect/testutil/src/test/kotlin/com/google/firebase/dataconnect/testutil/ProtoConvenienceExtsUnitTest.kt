@@ -18,12 +18,15 @@ package com.google.firebase.dataconnect.testutil
 import com.google.firebase.dataconnect.testutil.property.arbitrary.boolValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.kindNotSetValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.listValue
+import com.google.firebase.dataconnect.testutil.property.arbitrary.maxDepth
+import com.google.firebase.dataconnect.testutil.property.arbitrary.next
 import com.google.firebase.dataconnect.testutil.property.arbitrary.nullValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.numberValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.stringValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.property.arbitrary.value
+import com.google.protobuf.ListValue
 import com.google.protobuf.Value
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.collections.shouldContainExactly
@@ -33,13 +36,16 @@ import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.Exhaustive
 import io.kotest.property.PropTestConfig
+import io.kotest.property.PropertyContext
 import io.kotest.property.ShrinkingMode
 import io.kotest.property.arbitrary.double
+import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.list
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
 import io.kotest.property.exhaustive.boolean
+import io.kotest.property.exhaustive.ints
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
@@ -271,6 +277,80 @@ class ProtoConvenienceExtsUnitTest {
     }
   }
 
+  @Test
+  fun `ListValue isRecursivelyEmpty should return true for an empty list`() {
+    ListValue.getDefaultInstance().isRecursivelyEmpty() shouldBe true
+  }
+
+  @Test
+  fun `ListValue isRecursivelyEmpty should return true for a list containing empty lists`() =
+    runTest {
+      checkAll(propTestConfig, Exhaustive.ints(1..100)) { emptyListCount ->
+        val listValue =
+          ListValue.newBuilder().let { listValueBuilder ->
+            repeat(emptyListCount) {
+              listValueBuilder.addValues(ListValue.newBuilder().build().toValueProto())
+            }
+            listValueBuilder.build()
+          }
+
+        listValue.isRecursivelyEmpty() shouldBe true
+      }
+    }
+
+  @Test
+  fun `ListValue isRecursivelyEmpty should return true for a list containing recursively empty lists`() =
+    runTest {
+      checkAll(propTestConfig, Arb.int(1..5)) { depth ->
+        val listValue = generateRecursivelyEmptyListValue(sizeArb = Arb.int(1..5), depth = depth)
+        check(listValue.maxDepth() == depth + 1) {
+          "internal error axxcyzcd2h: " +
+            "listValue.maxDepth()=${listValue.maxDepth()}, but expected ${depth+1}"
+        }
+
+        listValue.isRecursivelyEmpty() shouldBe true
+      }
+    }
+
+  @Test
+  fun `ListValue isRecursivelyEmpty should return false if containing only non-list values`() =
+    runTest {
+      val nonListValueArb = Arb.proto.value(exclude = Value.KindCase.LIST_VALUE)
+      val nonListValuesArb = Arb.list(nonListValueArb, 1..10)
+      checkAll(propTestConfig, nonListValuesArb) { values ->
+        val listValue = ListValue.newBuilder().addAllValues(values).build()
+
+        listValue.isRecursivelyEmpty() shouldBe false
+      }
+    }
+
+  @Test
+  fun `ListValue isRecursivelyEmpty should return false if containing just one non-list value`() =
+    runTest {
+      val nonListValueArb = Arb.proto.value(exclude = Value.KindCase.LIST_VALUE)
+      checkAll(propTestConfig, Arb.int(1..5), nonListValueArb) { depth, nonListValue ->
+        val listValue = generateRecursivelyEmptyListValue(sizeArb = Arb.int(1..5), depth = depth)
+        val listValueWithRandomlyInsertedNonListValue =
+          listValue.withRandomlyInsertedValue(nonListValue, randomSource().random)
+
+        listValueWithRandomlyInsertedNonListValue.isRecursivelyEmpty() shouldBe false
+      }
+    }
+
+  @Test
+  fun `ListValue isRecursivelyEmpty should return false if containing some non-list values`() =
+    runTest {
+      val nonListValueArb = Arb.proto.value(exclude = Value.KindCase.LIST_VALUE)
+      val nonListValuesArb = Arb.list(nonListValueArb, 1..10)
+      checkAll(propTestConfig, Arb.int(1..5), nonListValuesArb) { depth, nonListValues ->
+        val listValue = generateRecursivelyEmptyListValue(sizeArb = Arb.int(1..5), depth = depth)
+        val listValueWithRandomlyInsertedNonListValue =
+          listValue.withRandomlyInsertedValues(nonListValues, randomSource().random)
+
+        listValueWithRandomlyInsertedNonListValue.isRecursivelyEmpty() shouldBe false
+      }
+    }
+
   private companion object {
     @OptIn(ExperimentalKotest::class)
     val propTestConfig =
@@ -279,5 +359,35 @@ class ProtoConvenienceExtsUnitTest {
         edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.33),
         shrinkingMode = ShrinkingMode.Off,
       )
+
+    fun PropertyContext.generateRecursivelyEmptyListValue(
+      sizeArb: Arb<Int>,
+      depth: Int
+    ): ListValue {
+      val size = sizeArb.bind()
+      require(depth > 0 && size > 0) { "depth=$depth, size=$size, but both must be non-zero" }
+      val maxDepthIndex = randomSource().random.nextInt(size)
+
+      val listValueBuilder = ListValue.newBuilder()
+      repeat(size) { index ->
+        val childDepth =
+          if (index == maxDepthIndex) {
+            depth - 1
+          } else {
+            randomSource().random.nextInt(depth)
+          }
+
+        val childListValue =
+          if (childDepth == 0) {
+            ListValue.newBuilder().build()
+          } else {
+            generateRecursivelyEmptyListValue(sizeArb, childDepth)
+          }
+
+        listValueBuilder.addValues(childListValue.toValueProto())
+      }
+
+      return listValueBuilder.build()
+    }
   }
 }

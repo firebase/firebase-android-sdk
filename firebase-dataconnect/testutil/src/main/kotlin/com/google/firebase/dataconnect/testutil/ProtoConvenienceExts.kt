@@ -69,3 +69,19 @@ val Value.structValueOrNull: Struct?
 
 val Value.listValueOrNull: ListValue?
   get() = if (isListValue) listValue else null
+
+fun ListValue.isRecursivelyEmpty(): Boolean {
+  val queue = ArrayDeque<ListValue>()
+  queue.add(this)
+  while (queue.isNotEmpty()) {
+    val listValue = queue.removeFirst()
+    repeat(listValue.valuesCount) { index ->
+      val value = listValue.getValues(index)
+      if (!value.isListValue) {
+        return false
+      }
+      queue.add(value.listValue)
+    }
+  }
+  return true
+}
