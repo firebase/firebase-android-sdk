@@ -53,19 +53,11 @@ private constructor(
      * depends on the model.
      */
     public fun setThinkingBudget(thinkingBudget: Int): Builder = apply {
-      if (thinkingLevel != null)
-        throw IllegalArgumentException(
-          "`thinkingLevel` already set. Cannot set both `thinkingBudget` and `thinkingLevel`"
-        )
       this.thinkingBudget = thinkingBudget
     }
 
     /** Indicates the thinking budget based in Levels. */
     public fun setThinkingLevel(thinkingLevel: ThinkingLevel): Builder = apply {
-      if (thinkingBudget != null)
-        throw IllegalArgumentException(
-          "`thinkingBudget` already set. Cannot set both `thinkingBudget` and `thinkingLevel`"
-        )
       this.thinkingLevel = thinkingLevel
     }
 
@@ -81,12 +73,17 @@ private constructor(
       this.includeThoughts = includeThoughts
     }
 
-    public fun build(): ThinkingConfig =
-      ThinkingConfig(
+    public fun build(): ThinkingConfig {
+      if (thinkingBudget != null && thinkingLevel != null)
+        throw IllegalArgumentException(
+          "`thinkingBudget` already set. Cannot set both `thinkingBudget` and `thinkingLevel`"
+        )
+      return ThinkingConfig(
         thinkingBudget = thinkingBudget,
         includeThoughts = includeThoughts,
         thinkingLevel = thinkingLevel
       )
+    }
   }
 
   internal fun toInternal() = Internal(thinkingBudget, includeThoughts, thinkingLevel?.toInternal())
