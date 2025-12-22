@@ -1,5 +1,7 @@
 # Unreleased
 
+- [changed] Added `equals()` function to `GenerativeBackend`.
+
 # 17.7.0
 
 - [changed] Added `LiveAudioConversationConfig` to control different aspects of the conversation
