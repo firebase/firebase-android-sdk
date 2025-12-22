@@ -99,7 +99,7 @@ class DataConnectCacheDatabaseUnitTest {
     try {
       SQLiteDatabase.openDatabase(dbFile.absolutePath, null, 0).use { sqliteDatabase ->
         // Run a query that would fail if initialization had not occurred.
-        sqliteDatabase.rawQuery("SELECT * FROM metadata", null).close()
+        sqliteDatabase.rawQuery("SELECT * FROM users", null).close()
       }
     } finally {
       dataConnectCacheDatabase.close()
