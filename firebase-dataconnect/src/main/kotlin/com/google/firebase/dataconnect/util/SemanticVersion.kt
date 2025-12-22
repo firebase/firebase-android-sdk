@@ -67,3 +67,5 @@ internal data class SemanticVersion(val major: Int, val minor: Int, val patch: I
     }
   }
 }
+
+internal fun Int.decodeSemanticVersion(): SemanticVersion = SemanticVersion.decodeFromInt(this)

@@ -16,36 +16,30 @@
 
 package com.google.firebase.dataconnect.sqlite
 
-import android.database.sqlite.SQLiteDatabase
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabaseMigrator.InvalidApplicationIdException
-import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabaseMigrator.InvalidSchemaVersionException
-import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabaseMigrator.InvalidUserVersionException
+import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabaseMigrator.UnsupportedUserVersionException
 import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.getApplicationId
 import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.setApplicationId
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
+import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
+import com.google.firebase.dataconnect.testutil.property.arbitrary.semanticVersion
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
+import com.google.firebase.dataconnect.util.SemanticVersion
 import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
-import io.github.z4kn4fein.semver.toVersion
+import com.google.firebase.dataconnect.util.decodeSemanticVersion
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
-import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
-import io.kotest.property.arbitrary.Codepoint
-import io.kotest.property.arbitrary.alphanumeric
-import io.kotest.property.arbitrary.bind
-import io.kotest.property.arbitrary.choice
+import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.int
-import io.kotest.property.arbitrary.map
-import io.kotest.property.arbitrary.nonNegativeInt
-import io.kotest.property.arbitrary.string
 import io.kotest.property.assume
 import io.kotest.property.checkAll
 import io.mockk.mockk
@@ -76,7 +70,7 @@ class DataConnectCacheDatabaseMigratorUnitTest {
   }
 
   @Test
-  fun `migrate() application_id should set the value in a new database`() {
+  fun `migrate() should set application_id on a new database`() {
     val mockLogger: Logger = mockk(relaxed = true)
     val applicationId =
       DataConnectSQLiteDatabaseOpener.open(dbFile, mockLogger).use { db ->
@@ -87,7 +81,7 @@ class DataConnectCacheDatabaseMigratorUnitTest {
   }
 
   @Test
-  fun `migrate() application_id should leave value alone if already correct`() {
+  fun `migrate() leave application_id alone if already correct`() {
     val mockLogger: Logger = mockk(relaxed = true)
     val applicationId =
       DataConnectSQLiteDatabaseOpener.open(dbFile, mockLogger).use { db ->
@@ -99,7 +93,7 @@ class DataConnectCacheDatabaseMigratorUnitTest {
   }
 
   @Test
-  fun `migrate() application_id should throw if the value is invalid`() = runTest {
+  fun `migrate() should throw if application_id is invalid`() = runTest {
     checkAll(propTestConfig, Arb.int()) { applicationId ->
       assume(applicationId != 0 && applicationId != 0x7f1bc816)
       val mockLogger: Logger = mockk(relaxed = true)
@@ -125,144 +119,63 @@ class DataConnectCacheDatabaseMigratorUnitTest {
   }
 
   @Test
-  fun `migrate() user_version should set the value in a new database`() {
+  fun `migrate() should set user_version on a new database`() {
     val mockLogger: Logger = mockk(relaxed = true)
     val userVersion =
       DataConnectSQLiteDatabaseOpener.open(dbFile, mockLogger).use { db ->
         DataConnectCacheDatabaseMigrator.migrate(db, mockLogger)
         db.version
       }
-    userVersion shouldBe 1
+    withClue("userVersion=$userVersion") {
+      userVersion.decodeSemanticVersion() shouldBe SemanticVersion(1, 0, 0)
+    }
   }
 
   @Test
-  fun `migrate() user_version should leave value alone if already correct`() {
-    val mockLogger: Logger = mockk(relaxed = true)
-    val userVersion =
-      DataConnectSQLiteDatabaseOpener.open(dbFile, mockLogger).use { db ->
-        DataConnectCacheDatabaseMigrator.migrate(db, mockLogger)
-        DataConnectCacheDatabaseMigrator.migrate(db, mockLogger)
-        db.version
-      }
-    userVersion shouldBe 1
-  }
-
-  @Test
-  fun `migrate() user_version should throw if the value is invalid`() = runTest {
-    checkAll(propTestConfig, Arb.int()) { userVersion ->
-      assume(userVersion != 0 && userVersion != 1)
+  fun `migrate() should leave user_version if major version is 1`() = runTest {
+    val semanticVersionArb =
+      Arb.dataConnect.semanticVersion(
+        major = Arb.constant(1),
+        minor = Arb.int(0..999),
+        patch = Arb.int(0..999),
+      )
+    checkAll(propTestConfig, semanticVersionArb) { userVersion ->
       val mockLogger: Logger = mockk(relaxed = true)
+      val userVersionAfter =
+        DataConnectSQLiteDatabaseOpener.open(null, mockLogger).use { db ->
+          db.version = userVersion.encodeToInt()
+          DataConnectCacheDatabaseMigrator.migrate(db, mockLogger)
+          db.version
+        }
+      userVersionAfter shouldBe userVersion.encodeToInt()
+    }
+  }
 
+  @Test
+  fun `migrate() should throw if user_version has a different major version`() = runTest {
+    val semanticVersionArb =
+      Arb.dataConnect.semanticVersion(
+        major = Arb.int(0..999).filterNot { it == 1 },
+        minor = Arb.int(0..999),
+        patch = Arb.int(0..999),
+      )
+    checkAll(propTestConfig, semanticVersionArb) { userVersion ->
+      val mockLogger: Logger = mockk(relaxed = true)
       val exception =
         DataConnectSQLiteDatabaseOpener.open(null, mockLogger).use { db ->
-          db.version = userVersion
-          shouldThrow<InvalidUserVersionException> {
+          db.version = userVersion.encodeToInt()
+          shouldThrow<UnsupportedUserVersionException> {
             DataConnectCacheDatabaseMigrator.migrate(db, mockLogger)
           }
         }
 
       assertSoftly {
+        exception.message shouldContainWithNonAbuttingText "szetvza49k"
         exception.message shouldContainWithNonAbuttingText "user_version"
-        exception.message shouldContainWithNonAbuttingText "0"
-        exception.message shouldContainWithNonAbuttingText "1"
-        exception.message shouldContainWithNonAbuttingTextIgnoringCase userVersion.to0xHexString()
+        exception.message shouldContainWithNonAbuttingTextIgnoringCase userVersion.major.toString()
+        exception.message shouldContainWithNonAbuttingTextIgnoringCase
+          userVersion.encodeToInt().toString()
         exception.message shouldContainWithNonAbuttingText userVersion.toString()
-        exception.message shouldContainWithNonAbuttingTextIgnoringCase "unknown"
-        exception.message shouldContainWithNonAbuttingTextIgnoringCase "aborting"
-      }
-    }
-  }
-
-  @Test
-  fun `migrate() schema_version should set the value in a new database`() {
-    val mockLogger: Logger = mockk(relaxed = true)
-
-    val schemaVersion =
-      DataConnectSQLiteDatabaseOpener.open(dbFile, mockLogger).use { db ->
-        DataConnectCacheDatabaseMigrator.migrate(db, mockLogger)
-        getSchemaVersion(db)
-      }
-
-    val parsedSchemaVersion =
-      withClue("schemaVersion") { schemaVersion.shouldNotBeNull().toVersion() }
-    withClue("parsedSchemaVersion.major") { parsedSchemaVersion.major shouldBe 1 }
-  }
-
-  @Test
-  fun `migrate() schema_version should leave value alone if already set`() {
-    val mockLogger: Logger = mockk(relaxed = true)
-    DataConnectSQLiteDatabaseOpener.open(dbFile, mockLogger).use { db ->
-      DataConnectCacheDatabaseMigrator.migrate(db, mockLogger)
-      val schemaVersion1 = withClue("getSchemaVersion1") { getSchemaVersion(db).shouldNotBeNull() }
-      DataConnectCacheDatabaseMigrator.migrate(db, mockLogger)
-      val schemaVersion2 = withClue("getSchemaVersion2") { getSchemaVersion(db).shouldNotBeNull() }
-      schemaVersion1 shouldBe schemaVersion2
-    }
-  }
-
-  @Test
-  fun `migrate() schema_version should throw if the schema version is invalid`() = runTest {
-    val invalidMajorVersionArb = Arb.int(2..Int.MAX_VALUE).map { "$it.2.3" }
-    val invalidSemanticVersionArb =
-      Arb.string(0..10, Codepoint.alphanumeric()).filterNot { it.startsWith("1.") }
-    val invalidSchemaVersionArb = Arb.choice(invalidMajorVersionArb, invalidSemanticVersionArb)
-    checkAll(propTestConfig, invalidSchemaVersionArb) { schemaVersion ->
-      val mockLogger: Logger = mockk(relaxed = true)
-
-      val exception =
-        DataConnectSQLiteDatabaseOpener.open(null, mockLogger).use { db ->
-          DataConnectCacheDatabaseMigrator.migrate(db, mockLogger)
-          setSchemaVersion(db, schemaVersion)
-
-          shouldThrow<InvalidSchemaVersionException> {
-            DataConnectCacheDatabaseMigrator.migrate(db, mockLogger)
-          }
-        }
-
-      assertSoftly {
-        exception.message shouldContainWithNonAbuttingText "schema_version"
-        exception.message shouldContainWithNonAbuttingText schemaVersion
-        exception.message shouldContainWithNonAbuttingTextIgnoringCase "unknown"
-        exception.message shouldContainWithNonAbuttingTextIgnoringCase "aborting"
-      }
-    }
-  }
-
-  @Test
-  fun `migrate() schema_version should throw if the schema version is not set`() {
-    val mockLogger: Logger = mockk(relaxed = true)
-
-    val exception =
-      DataConnectSQLiteDatabaseOpener.open(null, mockLogger).use { db ->
-        DataConnectCacheDatabaseMigrator.migrate(db, mockLogger)
-        unsetSchemaVersion(db)
-
-        shouldThrow<InvalidSchemaVersionException> {
-          DataConnectCacheDatabaseMigrator.migrate(db, mockLogger)
-        }
-      }
-
-    assertSoftly {
-      exception.message shouldContainWithNonAbuttingText "schema_version"
-      exception.message shouldContainWithNonAbuttingTextIgnoringCase "null"
-      exception.message shouldContainWithNonAbuttingTextIgnoringCase "aborting"
-    }
-  }
-
-  @Test
-  fun `migrate() schema_version should accept higher minor and-or patch versions`() = runTest {
-    val mockLogger: Logger = mockk(relaxed = true)
-    DataConnectSQLiteDatabaseOpener.open(dbFile, mockLogger).use { db ->
-      DataConnectCacheDatabaseMigrator.migrate(db, mockLogger)
-      val originalSchemaVersion =
-        withClue("getSchemaVersion") { getSchemaVersion(db).shouldNotBeNull() }
-      checkAll(propTestConfig, higherMinorAndOrPatchVersionArb(originalSchemaVersion)) {
-        newSchemaVersion ->
-        setSchemaVersion(db, newSchemaVersion)
-
-        DataConnectCacheDatabaseMigrator.migrate(db, mockLogger)
-
-        getSchemaVersion(db) shouldBe newSchemaVersion
       }
     }
   }
@@ -275,44 +188,5 @@ class DataConnectCacheDatabaseMigratorUnitTest {
         iterations = 10,
         edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.33)
       )
-
-    fun getSchemaVersion(db: SQLiteDatabase): String? {
-      db.rawQuery("SELECT text FROM metadata WHERE name = 'schema_version'", null).use { cursor ->
-        return if (cursor.moveToNext()) cursor.getString(0) else null
-      }
-    }
-
-    fun setSchemaVersion(db: SQLiteDatabase, value: String) {
-      db.execSQL(
-        "INSERT OR REPLACE INTO metadata (name, text) VALUES ('schema_version', ?)",
-        arrayOf(value)
-      )
-    }
-
-    fun unsetSchemaVersion(db: SQLiteDatabase) {
-      db.execSQL("DELETE FROM metadata WHERE name = 'schema_version'")
-    }
-
-    /**
-     * Creates and returns an [Arb] that generates whose values are semantic versions that have the
-     * same major version as the given version, but a higher minor and/or patch version.
-     */
-    fun higherMinorAndOrPatchVersionArb(version: String): Arb<String> {
-      val parsedVersion = version.toVersion(strict = false)
-
-      val higherMinorVersionArb =
-        Arb.bind(Arb.int(parsedVersion.minor + 1..Int.MAX_VALUE), Arb.nonNegativeInt()) {
-          minor,
-          patch ->
-          parsedVersion.copy(minor = minor, patch = patch).toString()
-        }
-
-      val higherPatchVersionArb =
-        Arb.int(parsedVersion.patch + 1..Int.MAX_VALUE).map { patch ->
-          parsedVersion.copy(patch = patch).toString()
-        }
-
-      return Arb.choice(higherMinorVersionArb, higherPatchVersionArb)
-    }
   }
 }

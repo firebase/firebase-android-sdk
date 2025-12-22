@@ -27,7 +27,6 @@ import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
-import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.int
 import io.kotest.property.checkAll
@@ -59,6 +58,13 @@ class SemanticVersionUnitTest {
       val intEncoding = semanticVersion.encodeToInt()
       val decodedSemanticVersion = SemanticVersion.decodeFromInt(intEncoding)
       withClue("intEncoding=$intEncoding") { decodedSemanticVersion shouldBe semanticVersion }
+    }
+  }
+
+  @Test
+  fun `decodeSemanticVersion() returns the correct value`() = runTest {
+    checkAll(propTestConfig, Arb.int()) { intEncoding ->
+      intEncoding.decodeSemanticVersion() shouldBe SemanticVersion.decodeFromInt(intEncoding)
     }
   }
 
