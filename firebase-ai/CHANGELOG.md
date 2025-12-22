@@ -2,6 +2,7 @@
 
 - [feature] Added support for configuring thinking levels with Gemini 3 series
   models and onwards. (#7599)
+- [changed] Added `equals()` function to `GenerativeBackend`.
 
 # 17.7.0
 
