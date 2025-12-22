@@ -247,6 +247,33 @@ class DataConnectCacheDatabaseUnitTest {
     }
   }
 
+  @Test
+  fun `insertQueryResult() should overwrite a previous query result with no entities`() = runTest {
+    dataConnectCacheDatabase.initialize()
+
+    val structArb = Arb.proto.struct(key = Arb.proto.structKey().filterNot { it == "_id" })
+    checkAll(propTestConfig, authUidArb(), QueryIdSample.arb(), structArb, structArb) {
+      authUid,
+      queryId,
+      struct1,
+      struct2 ->
+      dataConnectCacheDatabase.insertQueryResult(
+        authUid.authUid,
+        queryId.queryIdCopy(),
+        struct1.struct
+      )
+      dataConnectCacheDatabase.insertQueryResult(
+        authUid.authUid,
+        queryId.queryIdCopy(),
+        struct2.struct
+      )
+
+      val structFromDb =
+        dataConnectCacheDatabase.getQueryResult(authUid.authUid, queryId.queryIdCopy())
+      structFromDb shouldBe struct2.struct
+    }
+  }
+
   private companion object {
 
     @OptIn(ExperimentalKotest::class)
