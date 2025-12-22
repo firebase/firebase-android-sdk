@@ -306,7 +306,6 @@ internal class GenerativeModelTesting {
     request.shouldBeInstanceOf<TextContent>()
 
     request.text.let {
-      print(request.text)
       it shouldContainJsonKey "generation_config"
       it.shouldContainJsonKeyValue("$.generation_config.thinking_config.thinking_level", "MEDIUM")
     }
