@@ -298,7 +298,7 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
         append("SELECT id, entity_id, data FROM entities WHERE ")
         entityRowIds.forEachIndexed { index, entityRowId ->
           if (index > 0) {
-            append(" OR")
+            append(" OR ")
           }
           append("id=").appendBinding(entityRowId)
         }

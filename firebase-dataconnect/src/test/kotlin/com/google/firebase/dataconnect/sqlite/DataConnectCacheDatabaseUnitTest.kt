@@ -18,6 +18,8 @@ package com.google.firebase.dataconnect.sqlite
 
 import android.database.sqlite.SQLiteDatabase
 import com.google.firebase.dataconnect.core.Logger
+import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.EntityTestCase
+import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.generateEntities
 import com.google.firebase.dataconnect.testutil.CleanupsRule
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.property.arbitrary.distinctPair
@@ -28,6 +30,7 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.twoValues
 import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
+import com.google.firebase.dataconnect.testutil.withRandomlyInsertedStructs
 import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
 import com.google.protobuf.Struct
 import io.kotest.assertions.assertSoftly
@@ -39,9 +42,11 @@ import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
+import io.kotest.property.PropertyContext
 import io.kotest.property.ShrinkingMode
 import io.kotest.property.arbitrary.byte
 import io.kotest.property.arbitrary.byteArray
+import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.map
@@ -235,20 +240,19 @@ class DataConnectCacheDatabaseUnitTest {
   fun `insertQueryResult() should insert a query result with no entities`() = runTest {
     dataConnectCacheDatabase.initialize()
 
-    val structArb = Arb.proto.struct(key = Arb.proto.structKey().filterNot { it == "_id" })
-    checkAll(propTestConfig, authUidArb(), QueryIdSample.arb(), structArb) {
+    checkAll(propTestConfig, authUidArb(), QueryIdSample.arb(), nonEntityStructArb()) {
       authUid,
       queryId,
       struct ->
       dataConnectCacheDatabase.insertQueryResult(
         authUid.authUid,
         queryId.queryIdCopy(),
-        struct.struct
+        struct,
       )
 
       val structFromDb =
         dataConnectCacheDatabase.getQueryResult(authUid.authUid, queryId.queryIdCopy())
-      structFromDb shouldBe struct.struct
+      structFromDb shouldBe struct
     }
   }
 
@@ -256,14 +260,14 @@ class DataConnectCacheDatabaseUnitTest {
   fun `insertQueryResult() should overwrite a previous query result with no entities`() = runTest {
     dataConnectCacheDatabase.initialize()
 
-    val structArb = Arb.proto.struct(key = Arb.proto.structKey().filterNot { it == "_id" })
+    val nonEntityStructArb = nonEntityStructArb()
     checkAll(propTestConfig, authUidArb(), QueryIdSample.arb(), Arb.int(2..10)) {
       authUid,
       queryId,
       structCount ->
       lateinit var lastStruct: Struct
       repeat(structCount) {
-        val struct = structArb.bind().struct
+        val struct = nonEntityStructArb.bind()
         dataConnectCacheDatabase.insertQueryResult(authUid.authUid, queryId.queryIdCopy(), struct)
         lastStruct = struct
       }
@@ -278,22 +282,21 @@ class DataConnectCacheDatabaseUnitTest {
   fun `insertQueryResult() should separate distinct auth uids`() = runTest {
     dataConnectCacheDatabase.initialize()
 
-    val structArb = Arb.proto.struct(key = Arb.proto.structKey().filterNot { it == "_id" })
     checkAll(
       propTestConfig,
       authUidArb().distinctPair(),
       QueryIdSample.arb(),
-      Arb.twoValues(structArb)
+      Arb.twoValues(nonEntityStructArb())
     ) { (authUid1, authUid2), queryId, (struct1, struct2) ->
       dataConnectCacheDatabase.insertQueryResult(
         authUid1.authUid,
         queryId.queryIdCopy(),
-        struct1.struct,
+        struct1,
       )
       dataConnectCacheDatabase.insertQueryResult(
         authUid2.authUid,
         queryId.queryIdCopy(),
-        struct2.struct,
+        struct2,
       )
 
       val struct1FromDb =
@@ -301,8 +304,8 @@ class DataConnectCacheDatabaseUnitTest {
       val struct2FromDb =
         dataConnectCacheDatabase.getQueryResult(authUid2.authUid, queryId.queryIdCopy())
       assertSoftly {
-        withClue("struct1FromDb") { struct1FromDb shouldBe struct1.struct }
-        withClue("struct2FromDb") { struct2FromDb shouldBe struct2.struct }
+        withClue("struct1FromDb") { struct1FromDb shouldBe struct1 }
+        withClue("struct2FromDb") { struct2FromDb shouldBe struct2 }
       }
     }
   }
@@ -311,22 +314,21 @@ class DataConnectCacheDatabaseUnitTest {
   fun `insertQueryResult() should separate distinct query IDs`() = runTest {
     dataConnectCacheDatabase.initialize()
 
-    val structArb = Arb.proto.struct(key = Arb.proto.structKey().filterNot { it == "_id" })
     checkAll(
       propTestConfig,
       authUidArb(),
       QueryIdSample.arb().distinctPair(),
-      Arb.twoValues(structArb)
+      Arb.twoValues(nonEntityStructArb())
     ) { authUid, (queryId1, queryId2), (struct1, struct2) ->
       dataConnectCacheDatabase.insertQueryResult(
         authUid.authUid,
         queryId1.queryIdCopy(),
-        struct1.struct,
+        struct1,
       )
       dataConnectCacheDatabase.insertQueryResult(
         authUid.authUid,
         queryId2.queryIdCopy(),
-        struct2.struct,
+        struct2,
       )
 
       val struct1FromDb =
@@ -334,9 +336,39 @@ class DataConnectCacheDatabaseUnitTest {
       val struct2FromDb =
         dataConnectCacheDatabase.getQueryResult(authUid.authUid, queryId2.queryIdCopy())
       assertSoftly {
-        withClue("struct1FromDb") { struct1FromDb shouldBe struct1.struct }
-        withClue("struct2FromDb") { struct2FromDb shouldBe struct2.struct }
+        withClue("struct1FromDb") { struct1FromDb shouldBe struct1 }
+        withClue("struct2FromDb") { struct2FromDb shouldBe struct2 }
       }
+    }
+  }
+
+  @Test
+  fun `insertQueryResult() should store entities`() = runTest {
+    dataConnectCacheDatabase.initialize()
+
+    checkAll(
+      propTestConfig,
+      authUidArb(),
+      QueryIdSample.arb(),
+      nonEntityStructArb(),
+      Arb.int(1..5),
+    ) { authUid, queryId, struct, entityCount ->
+      val entities = generateEntities(entityCount)
+      val rootStruct =
+        struct.withRandomlyInsertedStructs(
+          entities,
+          randomSource().random,
+          generateNonEntityIdFieldNameFunc()
+        )
+      dataConnectCacheDatabase.insertQueryResult(
+        authUid.authUid,
+        queryId.queryIdCopy(),
+        rootStruct,
+      )
+
+      val structFromDb =
+        dataConnectCacheDatabase.getQueryResult(authUid.authUid, queryId.queryIdCopy())
+      structFromDb shouldBe rootStruct
     }
   }
 
@@ -351,6 +383,19 @@ class DataConnectCacheDatabaseUnitTest {
       )
 
     data class AuthUidSample(val authUid: String?)
+
+    fun nonEntityStructArb(): Arb<Struct> =
+      Arb.proto.struct(key = Arb.proto.structKey().filterNot { it == "_id" }).map { it.struct }
+
+    fun entityStructArb(): Arb<Struct> =
+      EntityTestCase.arb(entityIdFieldName = Arb.constant("_id")).map { it.struct }
+
+    fun nonEntityIdFieldNameArb(): Arb<String> = Arb.proto.structKey().filterNot { it == "_id" }
+
+    fun PropertyContext.generateNonEntityIdFieldNameFunc(): (() -> String) {
+      val nonEntityIdFieldNameArb = nonEntityIdFieldNameArb()
+      return { nonEntityIdFieldNameArb.bind() }
+    }
 
     fun authUidArb(): Arb<AuthUidSample> =
       Arb.proto.structKey().orNull(nullProbability = 0.33).map(::AuthUidSample)
@@ -373,5 +418,8 @@ class DataConnectCacheDatabaseUnitTest {
           Arb.byteArray(Arb.int(0..25), Arb.byte()).map(::QueryIdSample)
       }
     }
+
+    fun PropertyContext.generateEntities(count: Int): List<Struct> =
+      generateEntities(count, "_id").map { it.struct }
   }
 }
