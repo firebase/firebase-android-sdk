@@ -17,15 +17,7 @@
 package com.google.firebase.dataconnect.testutil.property.arbitrary
 
 import com.google.firebase.dataconnect.testutil.randomPartitions
-import io.kotest.property.Arb
-import io.kotest.property.EdgeConfig
 import io.kotest.property.PropertyContext
-import io.kotest.property.Sample
-
-fun <T> PropertyContext.sampleFromArb(arb: Arb<T>, edgeCaseProbability: Double): Sample<T> {
-  val edgeConfig = EdgeConfig(edgecasesGenerationProbability = edgeCaseProbability)
-  return arb.generate(randomSource(), edgeConfig).first()
-}
 
 fun <T> PropertyContext.randomPartitions(list: List<T>, partitionCount: Int): List<List<T>> =
   list.randomPartitions(partitionCount, randomSource().random)
