@@ -669,7 +669,8 @@ private class StructOrListValueGenerator(
         sizeRange = sizeRange,
         edgeCaseProbability = sizeEdgeCaseProbability,
       )
-    val maxDepthIndex = calculateMaxDepthIndex(rs, depth = depth, size = size)
+
+    val maxDepthIndex = if (size == 0 || depth == 1) -1 else rs.random.nextInt(size)
 
     repeat(size) { valueIndex ->
       val childPathSegment = childPathSegmentForIndex(valueIndex)
@@ -815,18 +816,15 @@ private class StructOrListValueGenerator(
         }
       }
     }
-  }
 
-  private fun calculateMaxDepthIndex(rs: RandomSource, depth: Int, size: Int): Int =
-    if (size == 0 || depth == 1) -1 else rs.random.nextInt(size)
+    private fun IntRange.isNonEmptyExcluding(value: Int): Boolean =
+      if (isEmpty()) {
+        false
+      } else if (!contains(value)) {
+        true
+      } else {
+        val size = (last - first) + 1
+        size > 1
+      }
+  }
 }
-
-private fun IntRange.isNonEmptyExcluding(value: Int): Boolean =
-  if (isEmpty()) {
-    false
-  } else if (!contains(value)) {
-    true
-  } else {
-    val size = (last - first) + 1
-    size > 1
-  }
