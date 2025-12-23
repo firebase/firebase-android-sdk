@@ -51,7 +51,11 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
 private val propTestConfig =
-  PropTestConfig(iterations = 20, edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.25))
+  PropTestConfig(
+    iterations = 20,
+    edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.25),
+    maxDiscardPercentage = 80,
+  )
 
 /** Unit tests for [DataConnectOperationFailureResponseImpl] */
 class DataConnectOperationFailureResponseImplUnitTest {
