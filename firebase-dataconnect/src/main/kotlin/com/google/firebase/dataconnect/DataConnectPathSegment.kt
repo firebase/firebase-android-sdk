@@ -57,6 +57,8 @@ public sealed interface DataConnectPathSegment {
 
 internal typealias DataConnectPath = List<DataConnectPathSegment>
 
+internal typealias MutableDataConnectPath = MutableList<DataConnectPathSegment>
+
 internal fun <T : DataConnectPathSegment> List<T>.toPathString(): String = buildString {
   appendPathStringTo(this)
 }

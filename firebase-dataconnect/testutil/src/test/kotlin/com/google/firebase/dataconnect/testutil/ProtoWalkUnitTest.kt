@@ -45,7 +45,7 @@ class ProtoWalkUnitTest {
   fun `walk Value scalars`() = runTest {
     checkAll(propTestConfig, Arb.proto.scalarValue()) { value: Value ->
       val walkResult = value.walk().toList()
-      walkResult.shouldContainExactly(ProtoValuePathPair(path = emptyList(), value = value))
+      walkResult.shouldContainExactly(DataConnectPathValuePair(path = emptyList(), value = value))
     }
   }
 
@@ -55,7 +55,7 @@ class ProtoWalkUnitTest {
       val walkResult = value.walk().toList()
 
       val expectedWalkResult = buildList {
-        add(ProtoValuePathPair(emptyList(), value))
+        add(DataConnectPathValuePair(emptyList(), value))
         addAll(value.listValue.walk().toList())
       }
       walkResult shouldContainExactlyInAnyOrder expectedWalkResult
@@ -68,7 +68,7 @@ class ProtoWalkUnitTest {
       val walkResult = value.walk().toList()
 
       val expectedWalkResult = buildList {
-        add(ProtoValuePathPair(emptyList(), value))
+        add(DataConnectPathValuePair(emptyList(), value))
         addAll(value.structValue.walk().toList())
       }
       walkResult shouldContainExactlyInAnyOrder expectedWalkResult

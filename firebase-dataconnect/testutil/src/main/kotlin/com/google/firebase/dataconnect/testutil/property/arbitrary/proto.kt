@@ -18,11 +18,11 @@
 
 package com.google.firebase.dataconnect.testutil.property.arbitrary
 
-import com.google.firebase.dataconnect.testutil.ProtoValuePath
-import com.google.firebase.dataconnect.testutil.ProtoValuePathPair
+import com.google.firebase.dataconnect.testutil.DataConnectPath
+import com.google.firebase.dataconnect.testutil.DataConnectPathValuePair
 import com.google.firebase.dataconnect.testutil.toValueProto
-import com.google.firebase.dataconnect.testutil.withAppendedListIndex
-import com.google.firebase.dataconnect.testutil.withAppendedStructKey
+import com.google.firebase.dataconnect.testutil.withAddedField
+import com.google.firebase.dataconnect.testutil.withAddedListIndex
 import com.google.protobuf.ListValue
 import com.google.protobuf.NullValue
 import com.google.protobuf.Struct
@@ -52,7 +52,7 @@ object ProtoArb {
   data class StructInfo(
     val struct: Struct,
     val depth: Int,
-    val descendants: List<ProtoValuePathPair>,
+    val descendants: List<DataConnectPathValuePair>,
   ) {
     fun toValueProto(): Value = struct.toValueProto()
   }
@@ -60,7 +60,7 @@ object ProtoArb {
   data class ListValueInfo(
     val listValue: ListValue,
     val depth: Int,
-    val descendants: List<ProtoValuePathPair>,
+    val descendants: List<DataConnectPathValuePair>,
   ) {
     fun toValueProto(): Value = listValue.toValueProto()
   }
@@ -300,7 +300,7 @@ private class StructArb(
 
   fun sample(
     rs: RandomSource,
-    path: ProtoValuePath,
+    path: DataConnectPath,
     depth: Int,
     sizeEdgeCaseProbability: Float,
     keyEdgeCaseProbability: Float,
@@ -315,7 +315,7 @@ private class StructArb(
     }
     val forcedDepthIndex = if (size == 0 || depth <= 1) -1 else rs.random.nextInt(size)
 
-    fun RandomSource.nextNestedValue(depth: Int, curPath: ProtoValuePath) =
+    fun RandomSource.nextNestedValue(depth: Int, curPath: DataConnectPath) =
       nextNestedValue(
         structArb = this@StructArb,
         listValueArb = this@StructArb.listValueArb,
@@ -327,7 +327,7 @@ private class StructArb(
         nestedProbability = nestedProbability,
       )
 
-    val descendants = mutableListOf<ProtoValuePathPair>()
+    val descendants = mutableListOf<DataConnectPathValuePair>()
     fun NextNestedValueResult.extractValue(): Value {
       descendants.addAll(this.descendants)
       return value
@@ -339,7 +339,7 @@ private class StructArb(
       if (structBuilder.containsFields(key)) {
         continue
       }
-      val curPath = path.withAppendedStructKey(key)
+      val curPath = path.withAddedField(key)
       val value =
         if (depth > 1 && structBuilder.fieldsCount == forcedDepthIndex) {
           rs.nextNestedValue(depth - 1, curPath).extractValue()
@@ -349,7 +349,7 @@ private class StructArb(
           scalarValueArb.next(rs, valueEdgeCaseProbability)
         }
 
-      descendants.add(ProtoValuePathPair(curPath, value))
+      descendants.add(DataConnectPathValuePair(curPath, value))
       structBuilder.putFields(key, value)
     }
 
@@ -459,7 +459,7 @@ private class ListValueArb(
 
   fun sample(
     rs: RandomSource,
-    path: ProtoValuePath,
+    path: DataConnectPath,
     depth: Int,
     sizeEdgeCaseProbability: Float,
     structKeyEdgeCaseProbability: Float,
@@ -468,7 +468,7 @@ private class ListValueArb(
   ): ProtoArb.ListValueInfo {
     require(depth > 0) { "invalid depth: $depth (must be greater than zero)" }
 
-    fun RandomSource.nextNestedValue(depth: Int, curPath: ProtoValuePath) =
+    fun RandomSource.nextNestedValue(depth: Int, curPath: DataConnectPath) =
       nextNestedValue(
         structArb = this@ListValueArb.structArb,
         listValueArb = this@ListValueArb,
@@ -487,14 +487,14 @@ private class ListValueArb(
 
     val forcedDepthIndex = if (size == 0 || depth <= 1) -1 else rs.random.nextInt(size)
     val values = mutableListOf<Value>()
-    val descendants = mutableListOf<ProtoValuePathPair>()
+    val descendants = mutableListOf<DataConnectPathValuePair>()
     fun NextNestedValueResult.extractValue(): Value {
       descendants.addAll(this.descendants)
       return value
     }
 
     repeat(size) { index ->
-      val curPath = path.withAppendedListIndex(index)
+      val curPath = path.withAddedListIndex(index)
       val value =
         if (depth > 1 && index == forcedDepthIndex) {
           rs.nextNestedValue(depth - 1, curPath).extractValue()
@@ -504,7 +504,7 @@ private class ListValueArb(
           scalarValueArb.next(rs, valueEdgeCaseProbability)
         }
 
-      descendants.add(ProtoValuePathPair(curPath, value))
+      descendants.add(DataConnectPathValuePair(curPath, value))
       values.add(value)
     }
 
@@ -577,7 +577,7 @@ fun Value.maxDepth(): Int =
 
 private class NextNestedValueResult(
   val value: Value,
-  val descendants: List<ProtoValuePathPair>,
+  val descendants: List<DataConnectPathValuePair>,
 )
 
 private enum class NextNestedValueCase {
@@ -588,7 +588,7 @@ private enum class NextNestedValueCase {
 private fun RandomSource.nextNestedValue(
   structArb: StructArb,
   listValueArb: ListValueArb,
-  path: ProtoValuePath,
+  path: DataConnectPath,
   depth: Int,
   sizeEdgeCaseProbability: Float,
   structKeyEdgeCaseProbability: Float,
