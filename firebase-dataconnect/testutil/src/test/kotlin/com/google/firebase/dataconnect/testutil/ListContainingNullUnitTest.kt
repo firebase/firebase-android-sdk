@@ -17,7 +17,7 @@
 package com.google.firebase.dataconnect.testutil
 
 import com.google.firebase.dataconnect.testutil.property.arbitrary.listContainingNull
-import com.google.firebase.dataconnect.testutil.property.arbitrary.sampleFromArb
+import com.google.firebase.dataconnect.testutil.property.arbitrary.next
 import io.kotest.assertions.asClue
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
@@ -40,8 +40,8 @@ class ListContainingNullUnitTest {
   fun `listContainingNull generates values with lengths in the given range`() = runTest {
     checkAll(NUM_ITERATIONS, listLengthsArb) { lengthRange ->
       val arb = Arb.listContainingNull(valuesGen, lengthRange)
-      val sample = sampleFromArb(arb, edgeCaseProbability = 0.5)
-      sample.value.asClue {
+      val value = arb.next(randomSource(), edgeCaseProbability = 0.5f)
+      value.asClue {
         assertSoftly {
           it.size shouldBeGreaterThanOrEqual lengthRange.first
           it.size shouldBeLessThanOrEqual lengthRange.last
@@ -54,8 +54,8 @@ class ListContainingNullUnitTest {
   fun `listContainingNull generates values from the given arb`() = runTest {
     checkAll(NUM_ITERATIONS, listLengthsArb) { lengthRange ->
       val arb = Arb.listContainingNull(valuesGen, lengthRange)
-      val sample = sampleFromArb(arb, edgeCaseProbability = 0.5)
-      sample.value.asClue {
+      val value = arb.next(randomSource(), edgeCaseProbability = 0.5f)
+      value.asClue {
         assertSoftly {
           it.forEachIndexed { index, value ->
             if (value !== null) {
@@ -71,8 +71,8 @@ class ListContainingNullUnitTest {
   fun `listContainingNull generates lists that always contain null`() = runTest {
     checkAll(NUM_ITERATIONS, listLengthsArb) { lengthRange ->
       val arb = Arb.listContainingNull(valuesGen, lengthRange)
-      val sample = sampleFromArb(arb, edgeCaseProbability = 0.5)
-      sample.value.asClue { it shouldContain null }
+      val value = arb.next(randomSource(), edgeCaseProbability = 0.5f)
+      value.asClue { it shouldContain null }
     }
   }
 
