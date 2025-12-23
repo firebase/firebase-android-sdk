@@ -71,7 +71,7 @@ fun valueFastEqual(value1: Value, value2: Value): Boolean {
   }
 }
 
-data class DifferencePathPair<T : Difference>(val path: ProtoValuePath, val difference: T)
+data class DifferencePathPair<T : Difference>(val path: DataConnectPath, val difference: T)
 
 sealed interface Difference {
   data class KindCase(val value1: Value, val value2: Value) : Difference
@@ -87,7 +87,7 @@ sealed interface Difference {
 fun structDiff(
   struct1: Struct,
   struct2: Struct,
-  path: MutableProtoValuePath = mutableListOf(),
+  path: MutableDataConnectPath = mutableListOf(),
   differences: MutableList<DifferencePathPair<*>> = mutableListOf(),
 ): MutableList<DifferencePathPair<*>> {
   val map1 = struct1.fieldsMap
@@ -97,7 +97,7 @@ fun structDiff(
     if (key !in map2) {
       differences.add(path, Difference.StructMissingKey(key, value))
     } else {
-      path.withAppendedStructKey(key) { valueDiff(value, map2[key]!!, path, differences) }
+      path.withAddedField(key) { valueDiff(value, map2[key]!!, path, differences) }
     }
   }
 
@@ -113,13 +113,13 @@ fun structDiff(
 fun listValueDiff(
   listValue1: ListValue,
   listValue2: ListValue,
-  path: MutableProtoValuePath = mutableListOf(),
+  path: MutableDataConnectPath = mutableListOf(),
   differences: MutableList<DifferencePathPair<*>> = mutableListOf(),
 ): MutableList<DifferencePathPair<*>> {
   repeat(listValue1.valuesCount.coerceAtMost(listValue2.valuesCount)) {
     val value1 = listValue1.getValues(it)
     val value2 = listValue2.getValues(it)
-    path.withAppendedListIndex(it) { valueDiff(value1, value2, path, differences) }
+    path.withAddedListIndex(it) { valueDiff(value1, value2, path, differences) }
   }
 
   if (listValue1.valuesCount > listValue2.valuesCount) {
@@ -138,7 +138,7 @@ fun listValueDiff(
 fun valueDiff(
   value1: Value,
   value2: Value,
-  path: MutableProtoValuePath = mutableListOf(),
+  path: MutableDataConnectPath = mutableListOf(),
   differences: MutableList<DifferencePathPair<*>> = mutableListOf(),
 ): MutableList<DifferencePathPair<*>> {
   if (value1.kindCase != value2.kindCase) {
@@ -171,7 +171,7 @@ fun valueDiff(
 }
 
 private fun MutableCollection<DifferencePathPair<*>>.add(
-  path: MutableProtoValuePath,
+  path: MutableDataConnectPath,
   difference: Difference
 ) {
   add(DifferencePathPair(path.toList(), difference))
@@ -188,7 +188,7 @@ fun Collection<DifferencePathPair<*>>.toSummaryString(): String = buildString {
       append('\n')
       append(index + 1)
       append(": ")
-      appendPathString(path)
+      path.appendPathStringTo(this)
       append('=')
       append(difference)
     }
