@@ -43,6 +43,7 @@ import io.kotest.property.arbitrary.string
 import io.kotest.property.asSample
 import io.kotest.property.exhaustive.constant
 import io.kotest.property.exhaustive.of
+import kotlin.random.Random
 import kotlin.random.nextInt
 
 object ProtoArb {
@@ -251,11 +252,7 @@ private typealias GenerateCompositeValueFunc<V> =
     path: DataConnectPath,
     depth: Int,
     descendants: MutableList<DataConnectPathValuePair>,
-    structSizeEdgeCaseProbability: Float,
-    listSizeEdgeCaseProbability: Float,
-    structKeyEdgeCaseProbability: Float,
-    scalarValueEdgeCaseProbability: Float,
-    nestedProbability: Float,
+    probabilities: GenerateCompositeValueProbabilities,
   ) -> V
 
 private abstract class CompositeValueArb<V, I>(
@@ -281,11 +278,7 @@ private abstract class CompositeValueArb<V, I>(
     generate(
         rs,
         depthEdgeCaseProbability = rs.random.nextFloat(),
-        structSizeEdgeCaseProbability = rs.random.nextFloat(),
-        listSizeEdgeCaseProbability = rs.random.nextFloat(),
-        structKeyEdgeCaseProbability = rs.random.nextFloat(),
-        scalarValueEdgeCaseProbability = rs.random.nextFloat(),
-        nestedProbability = rs.random.nextFloat(),
+        GenerateCompositeValueProbabilities(rs)
       )
       .asSample()
 
@@ -305,22 +298,20 @@ private abstract class CompositeValueArb<V, I>(
     return generate(
       rs,
       depthEdgeCaseProbability = depthEdgeCaseProbability,
-      structSizeEdgeCaseProbability = structSizeEdgeCaseProbability,
-      listSizeEdgeCaseProbability = listSizeEdgeCaseProbability,
-      structKeyEdgeCaseProbability = structKeyEdgeCaseProbability,
-      scalarValueEdgeCaseProbability = scalarValueEdgeCaseProbability,
-      nestedProbability = nestedProbability,
+      GenerateCompositeValueProbabilities(
+        structSizeEdgeCase = structSizeEdgeCaseProbability,
+        listSizeEdgeCase = listSizeEdgeCaseProbability,
+        structKeyEdgeCase = structKeyEdgeCaseProbability,
+        scalarValueEdgeCase = scalarValueEdgeCaseProbability,
+        nested = nestedProbability,
+      ),
     )
   }
 
   private fun generate(
     rs: RandomSource,
     depthEdgeCaseProbability: Float,
-    structSizeEdgeCaseProbability: Float,
-    listSizeEdgeCaseProbability: Float,
-    structKeyEdgeCaseProbability: Float,
-    scalarValueEdgeCaseProbability: Float,
-    nestedProbability: Float,
+    probabilities: GenerateCompositeValueProbabilities,
   ): I {
     val depth = depthArb.next(rs, depthEdgeCaseProbability)
     val descendants: MutableList<DataConnectPathValuePair> = mutableListOf()
@@ -330,11 +321,7 @@ private abstract class CompositeValueArb<V, I>(
         emptyList(),
         depth,
         descendants,
-        structSizeEdgeCaseProbability,
-        listSizeEdgeCaseProbability,
-        structKeyEdgeCaseProbability,
-        scalarValueEdgeCaseProbability,
-        nestedProbability,
+        probabilities,
       )
     return sampleFromValue(generatedValue, depth, descendants.toList())
   }
@@ -450,6 +437,26 @@ fun Value.maxDepth(): Int =
     else -> 1
   }
 
+private data class GenerateCompositeValueProbabilities(
+  val structSizeEdgeCase: Float,
+  val listSizeEdgeCase: Float,
+  val structKeyEdgeCase: Float,
+  val scalarValueEdgeCase: Float,
+  val nested: Float,
+) {
+  constructor(
+    random: Random
+  ) : this(
+    random.nextFloat(),
+    random.nextFloat(),
+    random.nextFloat(),
+    random.nextFloat(),
+    random.nextFloat(),
+  )
+
+  constructor(rs: RandomSource) : this(rs.random)
+}
+
 private class StructOrListValueGenerator(
   private val scalarValue: Arb<Value>,
   private val structKey: Arb<String>,
@@ -461,18 +468,14 @@ private class StructOrListValueGenerator(
     path: DataConnectPath,
     depth: Int,
     descendants: MutableList<DataConnectPathValuePair>,
-    structSizeEdgeCaseProbability: Float,
-    listSizeEdgeCaseProbability: Float,
-    structKeyEdgeCaseProbability: Float,
-    scalarValueEdgeCaseProbability: Float,
-    nestedProbability: Float,
+    probabilities: GenerateCompositeValueProbabilities,
   ): Struct {
     require(depth > 0) { "invalid depth: $depth (must be greater than zero)" }
 
     val structBuilder = Struct.newBuilder()
 
     val childPathSegmentGenerator =
-      generateSequence { structKey.next(rs, structKeyEdgeCaseProbability) }
+      generateSequence { structKey.next(rs, probabilities.structKeyEdgeCase) }
         .filterNot { structBuilder.containsFields(it) }
         .map(DataConnectPathSegment::Field)
         .iterator()
@@ -482,13 +485,9 @@ private class StructOrListValueGenerator(
       path = path,
       depth = depth,
       sizeRange = structSize,
-      sizeEdgeCaseProbability = structSizeEdgeCaseProbability,
+      sizeEdgeCaseProbability = probabilities.structSizeEdgeCase,
       descendants = descendants,
-      structSizeEdgeCaseProbability = structSizeEdgeCaseProbability,
-      listSizeEdgeCaseProbability = listSizeEdgeCaseProbability,
-      structKeyEdgeCaseProbability = structKeyEdgeCaseProbability,
-      scalarValueEdgeCaseProbability = scalarValueEdgeCaseProbability,
-      nestedProbability = nestedProbability,
+      probabilities = probabilities,
       childPathSegmentForIndex = { childPathSegmentGenerator.next() },
       onChildGenerated = { childPathSegment, value ->
         structBuilder.putFields(childPathSegment.field, value)
@@ -503,11 +502,7 @@ private class StructOrListValueGenerator(
     path: DataConnectPath,
     depth: Int,
     descendants: MutableList<DataConnectPathValuePair>,
-    structSizeEdgeCaseProbability: Float,
-    listSizeEdgeCaseProbability: Float,
-    structKeyEdgeCaseProbability: Float,
-    scalarValueEdgeCaseProbability: Float,
-    nestedProbability: Float,
+    probabilities: GenerateCompositeValueProbabilities,
   ): ListValue {
     require(depth > 0) { "invalid depth: $depth (must be greater than zero)" }
 
@@ -518,13 +513,9 @@ private class StructOrListValueGenerator(
       path = path,
       depth = depth,
       sizeRange = listSize,
-      sizeEdgeCaseProbability = listSizeEdgeCaseProbability,
+      sizeEdgeCaseProbability = probabilities.listSizeEdgeCase,
       descendants = descendants,
-      structSizeEdgeCaseProbability = structSizeEdgeCaseProbability,
-      listSizeEdgeCaseProbability = listSizeEdgeCaseProbability,
-      structKeyEdgeCaseProbability = structKeyEdgeCaseProbability,
-      scalarValueEdgeCaseProbability = scalarValueEdgeCaseProbability,
-      nestedProbability = nestedProbability,
+      probabilities = probabilities,
       childPathSegmentForIndex = DataConnectPathSegment::ListIndex,
       onChildGenerated = { _, value -> listValueBuilder.addValues(value) },
     )
@@ -539,11 +530,7 @@ private class StructOrListValueGenerator(
     sizeRange: IntRange,
     sizeEdgeCaseProbability: Float,
     descendants: MutableList<DataConnectPathValuePair>,
-    structSizeEdgeCaseProbability: Float,
-    listSizeEdgeCaseProbability: Float,
-    structKeyEdgeCaseProbability: Float,
-    scalarValueEdgeCaseProbability: Float,
-    nestedProbability: Float,
+    probabilities: GenerateCompositeValueProbabilities,
     childPathSegmentForIndex: (index: Int) -> P,
     onChildGenerated: (pathSegment: P, value: Value) -> Unit,
   ) {
@@ -567,7 +554,7 @@ private class StructOrListValueGenerator(
           parentDepth = depth,
           index = valueIndex,
           maxDepthIndex = maxDepthIndex,
-          nestedProbability = nestedProbability,
+          nestedProbability = probabilities.nested,
         )
       check(childDepth < depth) // avoid infinite recursion
 
@@ -577,11 +564,7 @@ private class StructOrListValueGenerator(
           path = childPath,
           depth = childDepth,
           descendants = descendants,
-          structSizeEdgeCaseProbability = structSizeEdgeCaseProbability,
-          listSizeEdgeCaseProbability = listSizeEdgeCaseProbability,
-          structKeyEdgeCaseProbability = structKeyEdgeCaseProbability,
-          scalarValueEdgeCaseProbability = scalarValueEdgeCaseProbability,
-          nestedProbability = nestedProbability,
+          probabilities = probabilities,
         )
 
       descendants.add(DataConnectPathValuePair(childPath, value))
@@ -594,14 +577,10 @@ private class StructOrListValueGenerator(
     path: DataConnectPath,
     depth: Int,
     descendants: MutableList<DataConnectPathValuePair>,
-    structSizeEdgeCaseProbability: Float,
-    listSizeEdgeCaseProbability: Float,
-    structKeyEdgeCaseProbability: Float,
-    scalarValueEdgeCaseProbability: Float,
-    nestedProbability: Float,
+    probabilities: GenerateCompositeValueProbabilities,
   ): Value {
     if (depth == 0) {
-      return scalarValue.next(rs, scalarValueEdgeCaseProbability)
+      return scalarValue.next(rs, probabilities.scalarValueEdgeCase)
     }
 
     val childCanBeStruct = structSize.isNonEmptyExcluding(0)
@@ -626,11 +605,7 @@ private class StructOrListValueGenerator(
           path = path,
           depth = depth,
           descendants = descendants,
-          structSizeEdgeCaseProbability = structSizeEdgeCaseProbability,
-          listSizeEdgeCaseProbability = listSizeEdgeCaseProbability,
-          structKeyEdgeCaseProbability = structKeyEdgeCaseProbability,
-          scalarValueEdgeCaseProbability = scalarValueEdgeCaseProbability,
-          nestedProbability = nestedProbability,
+          probabilities = probabilities,
         )
         .toValueProto()
     } else {
@@ -639,11 +614,7 @@ private class StructOrListValueGenerator(
           path = path,
           depth = depth,
           descendants = descendants,
-          structSizeEdgeCaseProbability = structSizeEdgeCaseProbability,
-          listSizeEdgeCaseProbability = listSizeEdgeCaseProbability,
-          structKeyEdgeCaseProbability = structKeyEdgeCaseProbability,
-          scalarValueEdgeCaseProbability = scalarValueEdgeCaseProbability,
-          nestedProbability = nestedProbability,
+          probabilities = probabilities,
         )
         .toValueProto()
     }
