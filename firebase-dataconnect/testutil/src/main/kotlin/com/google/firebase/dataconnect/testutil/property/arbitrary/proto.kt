@@ -43,7 +43,6 @@ import io.kotest.property.arbitrary.string
 import io.kotest.property.asSample
 import io.kotest.property.exhaustive.constant
 import io.kotest.property.exhaustive.of
-import kotlin.random.Random
 import kotlin.random.nextInt
 
 object ProtoArb {
@@ -278,7 +277,13 @@ private abstract class CompositeValueArb<V, I>(
     generate(
         rs,
         depthEdgeCaseProbability = rs.random.nextFloat(),
-        GenerateCompositeValueProbabilities(rs)
+        GenerateCompositeValueProbabilities(
+          rs.random.nextFloat(),
+          rs.random.nextFloat(),
+          rs.random.nextFloat(),
+          rs.random.nextFloat(),
+          rs.random.nextFloat(),
+        ),
       )
       .asSample()
 
@@ -443,19 +448,7 @@ private data class GenerateCompositeValueProbabilities(
   val structKeyEdgeCase: Float,
   val scalarValueEdgeCase: Float,
   val nested: Float,
-) {
-  constructor(
-    random: Random
-  ) : this(
-    random.nextFloat(),
-    random.nextFloat(),
-    random.nextFloat(),
-    random.nextFloat(),
-    random.nextFloat(),
-  )
-
-  constructor(rs: RandomSource) : this(rs.random)
-}
+)
 
 private class StructOrListValueGenerator(
   private val scalarValue: Arb<Value>,
