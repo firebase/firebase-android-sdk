@@ -20,14 +20,19 @@ import android.database.sqlite.SQLiteDatabase
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.testutil.CleanupsRule
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
+import com.google.firebase.dataconnect.testutil.property.arbitrary.distinctPair
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
+import com.google.firebase.dataconnect.testutil.property.arbitrary.twoValues
 import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
+import com.google.protobuf.Struct
+import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -252,25 +257,86 @@ class DataConnectCacheDatabaseUnitTest {
     dataConnectCacheDatabase.initialize()
 
     val structArb = Arb.proto.struct(key = Arb.proto.structKey().filterNot { it == "_id" })
-    checkAll(propTestConfig, authUidArb(), QueryIdSample.arb(), structArb, structArb) {
+    checkAll(propTestConfig, authUidArb(), QueryIdSample.arb(), Arb.int(2..10)) {
       authUid,
       queryId,
-      struct1,
-      struct2 ->
-      dataConnectCacheDatabase.insertQueryResult(
-        authUid.authUid,
-        queryId.queryIdCopy(),
-        struct1.struct
-      )
-      dataConnectCacheDatabase.insertQueryResult(
-        authUid.authUid,
-        queryId.queryIdCopy(),
-        struct2.struct
-      )
+      structCount ->
+      lateinit var lastStruct: Struct
+      repeat(structCount) {
+        val struct = structArb.bind().struct
+        dataConnectCacheDatabase.insertQueryResult(authUid.authUid, queryId.queryIdCopy(), struct)
+        lastStruct = struct
+      }
 
       val structFromDb =
         dataConnectCacheDatabase.getQueryResult(authUid.authUid, queryId.queryIdCopy())
-      structFromDb shouldBe struct2.struct
+      structFromDb shouldBe lastStruct
+    }
+  }
+
+  @Test
+  fun `insertQueryResult() should separate distinct auth uids`() = runTest {
+    dataConnectCacheDatabase.initialize()
+
+    val structArb = Arb.proto.struct(key = Arb.proto.structKey().filterNot { it == "_id" })
+    checkAll(
+      propTestConfig,
+      authUidArb().distinctPair(),
+      QueryIdSample.arb(),
+      Arb.twoValues(structArb)
+    ) { (authUid1, authUid2), queryId, (struct1, struct2) ->
+      dataConnectCacheDatabase.insertQueryResult(
+        authUid1.authUid,
+        queryId.queryIdCopy(),
+        struct1.struct,
+      )
+      dataConnectCacheDatabase.insertQueryResult(
+        authUid2.authUid,
+        queryId.queryIdCopy(),
+        struct2.struct,
+      )
+
+      val struct1FromDb =
+        dataConnectCacheDatabase.getQueryResult(authUid1.authUid, queryId.queryIdCopy())
+      val struct2FromDb =
+        dataConnectCacheDatabase.getQueryResult(authUid2.authUid, queryId.queryIdCopy())
+      assertSoftly {
+        withClue("struct1FromDb") { struct1FromDb shouldBe struct1.struct }
+        withClue("struct2FromDb") { struct2FromDb shouldBe struct2.struct }
+      }
+    }
+  }
+
+  @Test
+  fun `insertQueryResult() should separate distinct query IDs`() = runTest {
+    dataConnectCacheDatabase.initialize()
+
+    val structArb = Arb.proto.struct(key = Arb.proto.structKey().filterNot { it == "_id" })
+    checkAll(
+      propTestConfig,
+      authUidArb(),
+      QueryIdSample.arb().distinctPair(),
+      Arb.twoValues(structArb)
+    ) { authUid, (queryId1, queryId2), (struct1, struct2) ->
+      dataConnectCacheDatabase.insertQueryResult(
+        authUid.authUid,
+        queryId1.queryIdCopy(),
+        struct1.struct,
+      )
+      dataConnectCacheDatabase.insertQueryResult(
+        authUid.authUid,
+        queryId2.queryIdCopy(),
+        struct2.struct,
+      )
+
+      val struct1FromDb =
+        dataConnectCacheDatabase.getQueryResult(authUid.authUid, queryId1.queryIdCopy())
+      val struct2FromDb =
+        dataConnectCacheDatabase.getQueryResult(authUid.authUid, queryId2.queryIdCopy())
+      assertSoftly {
+        withClue("struct1FromDb") { struct1FromDb shouldBe struct1.struct }
+        withClue("struct2FromDb") { struct2FromDb shouldBe struct2.struct }
+      }
     }
   }
 
