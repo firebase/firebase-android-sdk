@@ -630,7 +630,7 @@ class SQLiteSchema {
               try {
                 Target targetProto = Target.parseFrom(targetProtoBytes);
                 TargetData targetData = serializer.decodeTargetData(targetProto);
-                String updatedCanonicalId = targetData.getTarget().getCanonicalId();
+                String updatedCanonicalId = targetData.getTarget().canonicalId();
                 db.execSQL(
                     "UPDATE targets SET canonical_id  = ? WHERE target_id = ?",
                     new Object[] {updatedCanonicalId, targetId});

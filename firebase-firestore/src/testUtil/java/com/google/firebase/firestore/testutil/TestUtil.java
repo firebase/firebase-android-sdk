@@ -48,6 +48,7 @@ import com.google.firebase.firestore.core.Filter;
 import com.google.firebase.firestore.core.OrderBy;
 import com.google.firebase.firestore.core.OrderBy.Direction;
 import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.core.TargetOrPipeline;
 import com.google.firebase.firestore.core.UserData.ParsedSetData;
 import com.google.firebase.firestore.core.UserData.ParsedUpdateData;
 import com.google.firebase.firestore.local.LocalViewChanges;
@@ -352,7 +353,10 @@ public class TestUtil {
 
   public static TargetData targetData(int targetId, QueryPurpose queryPurpose, String path) {
     return new TargetData(
-        query(path).toTarget(), targetId, ARBITRARY_SEQUENCE_NUMBER, queryPurpose);
+        new TargetOrPipeline.TargetWrapper(query(path).toTarget()),
+        targetId,
+        ARBITRARY_SEQUENCE_NUMBER,
+        queryPurpose);
   }
 
   public static ImmutableSortedMap<DocumentKey, Document> docUpdates(MutableDocument... docs) {
@@ -405,7 +409,10 @@ public class TestUtil {
     for (Integer targetId : targets) {
       TargetData targetData =
           new TargetData(
-              query.toTarget(), targetId, ARBITRARY_SEQUENCE_NUMBER, QueryPurpose.LISTEN);
+              new TargetOrPipeline.TargetWrapper(query.toTarget()),
+              targetId,
+              ARBITRARY_SEQUENCE_NUMBER,
+              QueryPurpose.LISTEN);
       listenMap.put(targetId, targetData);
     }
     return listenMap;
@@ -422,7 +429,10 @@ public class TestUtil {
     for (Integer targetId : targets) {
       TargetData targetData =
           new TargetData(
-              query.toTarget(), targetId, ARBITRARY_SEQUENCE_NUMBER, QueryPurpose.LIMBO_RESOLUTION);
+              new TargetOrPipeline.TargetWrapper(query.toTarget()),
+              targetId,
+              ARBITRARY_SEQUENCE_NUMBER,
+              QueryPurpose.LIMBO_RESOLUTION);
       listenMap.put(targetId, targetData);
     }
     return listenMap;

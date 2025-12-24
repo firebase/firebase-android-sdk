@@ -53,7 +53,7 @@ public class ViewSnapshotTest {
 
     ViewSnapshot snapshot =
         new ViewSnapshot(
-            query,
+            new QueryOrPipeline.QueryWrapper(query),
             docs,
             oldDocs,
             changes,
@@ -63,7 +63,7 @@ public class ViewSnapshotTest {
             excludesMetadataChanges,
             hasCachedResults);
 
-    assertEquals(query, snapshot.getQuery());
+    assertEquals(query, snapshot.getQuery().query());
     assertEquals(docs, snapshot.getDocuments());
     assertEquals(oldDocs, snapshot.getOldDocuments());
     assertEquals(changes, snapshot.getChanges());
