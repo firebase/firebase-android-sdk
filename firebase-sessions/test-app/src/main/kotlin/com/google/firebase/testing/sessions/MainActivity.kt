@@ -17,7 +17,6 @@
 package com.google.firebase.testing.sessions
 
 import android.os.Bundle
-import com.google.firebase.perf.config.ConfigResolver
 import com.google.firebase.testing.sessions.databinding.ActivityMainBinding
 
 class MainActivity : BaseActivity() {
