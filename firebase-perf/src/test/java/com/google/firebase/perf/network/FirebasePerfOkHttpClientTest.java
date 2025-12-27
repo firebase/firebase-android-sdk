@@ -16,10 +16,16 @@ package com.google.firebase.perf.network;
 
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import com.google.firebase.perf.FirebasePerformanceTestBase;
+import com.google.firebase.perf.application.AppStateMonitor;
 import com.google.firebase.perf.metrics.NetworkRequestMetricBuilder;
+import com.google.firebase.perf.session.PerfSession;
+import com.google.firebase.perf.session.SessionManager;
+import com.google.firebase.perf.session.gauges.GaugeManager;
 import com.google.firebase.perf.transport.TransportManager;
+import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.v1.ApplicationProcessState;
 import com.google.firebase.perf.v1.NetworkRequestMetric;
 import com.google.firebase.perf.v1.NetworkRequestMetric.HttpMethod;
@@ -39,6 +45,7 @@ import org.mockito.ArgumentMatchers;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 import org.robolectric.RobolectricTestRunner;
 
 /** Unit tests for {@link com.google.firebase.perf.network.FirebasePerfOkHttpClient}. */
@@ -47,10 +54,16 @@ public class FirebasePerfOkHttpClientTest extends FirebasePerformanceTestBase {
 
   @Mock TransportManager transportManager;
   @Captor ArgumentCaptor<NetworkRequestMetric> networkArgumentCaptor;
+  @Spy private GaugeManager mockGaugeManager = GaugeManager.getInstance();
+  @Spy private AppStateMonitor mockAppStateMonitor = AppStateMonitor.getInstance();
+  private PerfSession session = new PerfSession("sessionId", new Clock());
+  private SessionManager sessionManager =
+          new SessionManager(mockGaugeManager, session, mockAppStateMonitor);
 
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
+    when(mockAppStateMonitor.getSessionManager()).thenReturn(sessionManager);
   }
 
   @Test
@@ -61,7 +74,7 @@ public class FirebasePerfOkHttpClientTest extends FirebasePerformanceTestBase {
     RequestBody requestBody = RequestBody.create(MediaType.parse("text/html"), requestStr);
     HttpUrl url = new HttpUrl.Builder().scheme("https").host("www.google.com").build();
     Request request = new Request.Builder().url(url).method("POST", requestBody).build();
-    NetworkRequestMetricBuilder builder = NetworkRequestMetricBuilder.builder(transportManager);
+    NetworkRequestMetricBuilder builder = NetworkRequestMetricBuilder.builder(transportManager, sessionManager);
     ResponseBody responseBody = ResponseBody.create(MediaType.parse("text/html"), "dummyresponse");
     Response response =
         new Response.Builder()
@@ -99,7 +112,7 @@ public class FirebasePerfOkHttpClientTest extends FirebasePerformanceTestBase {
     HttpUrl url = new HttpUrl.Builder().scheme("https").host("www.google.com").query("?").build();
     RequestBody requestBody = RequestBody.create(MediaType.parse("text/html"), requestStr);
     Request request = new Request.Builder().url(url).method("POST", requestBody).build();
-    NetworkRequestMetricBuilder builder = NetworkRequestMetricBuilder.builder(transportManager);
+    NetworkRequestMetricBuilder builder = NetworkRequestMetricBuilder.builder(transportManager, sessionManager);
     ResponseBody responseBody = ResponseBody.create(MediaType.parse("text/html"), "dummyresponse");
     Response response =
         new Response.Builder()

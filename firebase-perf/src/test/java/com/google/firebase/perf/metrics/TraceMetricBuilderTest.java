@@ -15,10 +15,14 @@
 package com.google.firebase.perf.metrics;
 
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import com.google.firebase.perf.FirebasePerformanceTestBase;
 import com.google.firebase.perf.application.AppStateMonitor;
+import com.google.firebase.perf.session.PerfSession;
+import com.google.firebase.perf.session.SessionManager;
+import com.google.firebase.perf.session.gauges.GaugeManager;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Constants;
@@ -30,6 +34,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.robolectric.RobolectricTestRunner;
@@ -52,6 +57,12 @@ public class TraceMetricBuilderTest extends FirebasePerformanceTestBase {
 
   @Mock private AppStateMonitor appStateMonitor;
 
+  @Spy private GaugeManager mockGaugeManager = GaugeManager.getInstance();
+
+  private PerfSession session = new PerfSession("sessionId", new Clock());
+  private SessionManager sessionManager =
+          new SessionManager(mockGaugeManager, session, appStateMonitor);
+
   @Before
   public void setUp() {
     currentTime = 0;
@@ -65,6 +76,8 @@ public class TraceMetricBuilderTest extends FirebasePerformanceTestBase {
             })
         .when(clock)
         .getTime();
+
+    when(appStateMonitor.getSessionManager()).thenReturn(sessionManager);
   }
 
   @Test

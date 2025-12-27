@@ -18,6 +18,7 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import com.google.firebase.perf.FirebasePerformanceTestBase;
@@ -26,6 +27,7 @@ import com.google.firebase.perf.session.PerfSession;
 import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.session.gauges.GaugeManager;
 import com.google.firebase.perf.transport.TransportManager;
+import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.perf.v1.NetworkRequestMetric;
@@ -37,6 +39,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.robolectric.RobolectricTestRunner;
 
 /** Unit tests for {@link com.google.firebase.perf.metrics.NetworkRequestMetricBuilder}. */
@@ -44,17 +47,26 @@ import org.robolectric.RobolectricTestRunner;
 public class NetworkRequestMetricBuilderTest extends FirebasePerformanceTestBase {
 
   @Mock private TransportManager mockTransportManager;
-  @Mock private GaugeManager mockGaugeManager;
-  @Mock private AppStateMonitor mockAppStateMonitor;
+  @Spy private GaugeManager mockGaugeManager = GaugeManager.getInstance();
+  @Spy private AppStateMonitor mockAppStateMonitor = AppStateMonitor.getInstance();
+  private PerfSession session = new PerfSession("sessionId", new Clock());
+  private SessionManager sessionManager =
+      new SessionManager(mockGaugeManager, session, mockAppStateMonitor);
 
   private NetworkRequestMetricBuilder networkMetricBuilder;
+
+  @Override
+  protected SessionManager provideSessionManager() {
+    return sessionManager;
+  }
 
   @Before
   public void setUp() {
     initMocks(this);
+    when(mockAppStateMonitor.getSessionManager()).thenReturn(sessionManager);
     networkMetricBuilder =
         new NetworkRequestMetricBuilder(
-            mockTransportManager, mockAppStateMonitor, mockGaugeManager);
+            mockTransportManager, mockAppStateMonitor, mockGaugeManager, sessionManager);
   }
 
   @Test
@@ -218,7 +230,7 @@ public class NetworkRequestMetricBuilderTest extends FirebasePerformanceTestBase
   @Test
   public void testSessionIdAdditionInNetworkRequestMetric() {
     NetworkRequestMetricBuilder metricBuilder =
-        NetworkRequestMetricBuilder.builder(mockTransportManager);
+        NetworkRequestMetricBuilder.builder(mockTransportManager, sessionManager);
     metricBuilder.setRequestStartTimeMicros(/* time= */ 2000);
 
     assertThat(this.networkMetricBuilder.getSessions()).isNotNull();
@@ -226,7 +238,7 @@ public class NetworkRequestMetricBuilderTest extends FirebasePerformanceTestBase
 
     int numberOfSessionIds = metricBuilder.getSessions().size();
     PerfSession perfSession = PerfSession.createWithId("testSessionId");
-    SessionManager.getInstance().updatePerfSession(perfSession);
+    sessionManager.updatePerfSession(perfSession);
 
     assertThat(metricBuilder.getSessions().size()).isEqualTo(numberOfSessionIds + 1);
   }
@@ -234,7 +246,7 @@ public class NetworkRequestMetricBuilderTest extends FirebasePerformanceTestBase
   @Test
   public void testSessionIdNotAddedIfPerfSessionIsNull() {
     NetworkRequestMetricBuilder metricBuilder =
-        NetworkRequestMetricBuilder.builder(mockTransportManager);
+        NetworkRequestMetricBuilder.builder(mockTransportManager, sessionManager);
     metricBuilder.setRequestStartTimeMicros(/* time= */ 2000);
 
     assertThat(this.networkMetricBuilder.getSessions()).isNotNull();

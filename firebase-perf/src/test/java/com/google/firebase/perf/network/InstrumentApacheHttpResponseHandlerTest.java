@@ -19,10 +19,17 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.MockitoAnnotations.initMocks;
+import static org.mockito.MockitoAnnotations.openMocks;
 
 import com.google.firebase.perf.FirebasePerformanceTestBase;
+import com.google.firebase.perf.application.AppStateMonitor;
 import com.google.firebase.perf.metrics.NetworkRequestMetricBuilder;
+import com.google.firebase.perf.session.PerfSession;
+import com.google.firebase.perf.session.SessionManager;
+import com.google.firebase.perf.session.gauges.GaugeManager;
 import com.google.firebase.perf.transport.TransportManager;
+import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.perf.v1.ApplicationProcessState;
 import com.google.firebase.perf.v1.NetworkRequestMetric;
@@ -32,16 +39,30 @@ import org.apache.http.ProtocolVersion;
 import org.apache.http.StatusLine;
 import org.apache.http.client.ResponseHandler;
 import org.apache.http.message.BasicHeader;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
+import org.mockito.Spy;
 import org.robolectric.RobolectricTestRunner;
 
 /** Unit tests for {@link InstrumentApacheHttpResponseHandler}. */
 @RunWith(RobolectricTestRunner.class)
 @SuppressWarnings("deprecation")
 public class InstrumentApacheHttpResponseHandlerTest extends FirebasePerformanceTestBase {
+
+    @Spy private GaugeManager mockGaugeManager = GaugeManager.getInstance();
+    @Spy private AppStateMonitor mockAppStateMonitor = AppStateMonitor.getInstance();
+    private PerfSession session = new PerfSession("sessionId", new Clock());
+    private SessionManager sessionManager =
+            new SessionManager(mockGaugeManager, session, mockAppStateMonitor);
+
+    @Before
+    public void setUp() {
+        openMocks(this);
+        when(mockAppStateMonitor.getSessionManager()).thenReturn(sessionManager);
+    }
 
   @Test
   public void testHandleResponse() throws IOException {
@@ -56,7 +77,7 @@ public class InstrumentApacheHttpResponseHandlerTest extends FirebasePerformance
         };
 
     TransportManager transportManager = mock(TransportManager.class);
-    NetworkRequestMetricBuilder builder = NetworkRequestMetricBuilder.builder(transportManager);
+    NetworkRequestMetricBuilder builder = NetworkRequestMetricBuilder.builder(transportManager, sessionManager);
 
     InstrumentApacheHttpResponseHandler<String> instrumentResponseHandler =
         new InstrumentApacheHttpResponseHandler<>(responseHandler, mockTimer(), builder);

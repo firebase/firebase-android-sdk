@@ -21,6 +21,7 @@ import static org.mockito.MockitoAnnotations.initMocks;
 
 import com.google.firebase.perf.FirebasePerformance.HttpMethod;
 import com.google.firebase.perf.FirebasePerformanceTestBase;
+import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.Timer;
@@ -54,7 +55,7 @@ public class HttpMetricTest extends FirebasePerformanceTestBase {
   @Test
   public void startStop() {
     HttpMetric metric =
-        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, timer);
+        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, timer, SessionManager.getInstance());
     metric.start();
     metric.stop();
     verify(transportManager)
@@ -67,7 +68,7 @@ public class HttpMetricTest extends FirebasePerformanceTestBase {
   @Test
   public void setHttpResponseCode() {
     HttpMetric metric =
-        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, timer);
+        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, timer, SessionManager.getInstance());
     metric.start();
     metric.setHttpResponseCode(200);
     metric.stop();
@@ -83,7 +84,7 @@ public class HttpMetricTest extends FirebasePerformanceTestBase {
   @Test
   public void setRequestSize() {
     HttpMetric metric =
-        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, timer);
+        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, timer, SessionManager.getInstance());
     metric.start();
     metric.setRequestPayloadSize(256);
     metric.stop();
@@ -99,7 +100,7 @@ public class HttpMetricTest extends FirebasePerformanceTestBase {
   @Test
   public void setResponseSize() {
     HttpMetric metric =
-        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, timer);
+        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, timer, SessionManager.getInstance());
     metric.start();
     metric.setResponsePayloadSize(256);
     metric.stop();
@@ -115,7 +116,7 @@ public class HttpMetricTest extends FirebasePerformanceTestBase {
   @Test
   public void setResponseContentType() {
     HttpMetric metric =
-        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, timer);
+        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, timer, SessionManager.getInstance());
     metric.start();
     metric.setResponseContentType("text/html");
     metric.stop();
@@ -131,7 +132,7 @@ public class HttpMetricTest extends FirebasePerformanceTestBase {
   @Test
   public void markRequestComplete() {
     HttpMetric metric =
-        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, timer);
+        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, timer, SessionManager.getInstance());
     metric.start();
     metric.markRequestComplete();
     metric.stop();
@@ -151,7 +152,7 @@ public class HttpMetricTest extends FirebasePerformanceTestBase {
   @Test
   public void markResponseStart() {
     HttpMetric metric =
-        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, timer);
+        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, timer, SessionManager.getInstance());
     metric.start();
     metric.markResponseStart();
     metric.stop();
@@ -171,7 +172,7 @@ public class HttpMetricTest extends FirebasePerformanceTestBase {
   @Test
   public void putAttribute() {
     HttpMetric metric =
-        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, timer);
+        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, timer, SessionManager.getInstance());
     metric.start();
     metric.putAttribute("attr1", "free");
     metric.stop();
@@ -192,7 +193,7 @@ public class HttpMetricTest extends FirebasePerformanceTestBase {
   @Test
   public void putInvalidAttribute() {
     HttpMetric metric =
-        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, timer);
+        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, timer, SessionManager.getInstance());
     metric.start();
     metric.putAttribute("_invalidattr1", "free");
     metric.stop();
@@ -212,7 +213,7 @@ public class HttpMetricTest extends FirebasePerformanceTestBase {
   @Test
   public void putAttributeAfterHttpMetricIsStopped() {
     HttpMetric metric =
-        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, timer);
+        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, timer, SessionManager.getInstance());
     metric.start();
     metric.stop();
     metric.putAttribute("attr1", "free");
@@ -232,7 +233,7 @@ public class HttpMetricTest extends FirebasePerformanceTestBase {
   @Test
   public void removeAttribute() {
     HttpMetric metric =
-        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, timer);
+        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, timer, SessionManager.getInstance());
     metric.start();
     metric.putAttribute("attr1", "free");
     Map<String, String> attributes = metric.getAttributes();
@@ -257,7 +258,7 @@ public class HttpMetricTest extends FirebasePerformanceTestBase {
   @Test
   public void removeAttributeAfterStopped() {
     HttpMetric metric =
-        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, timer);
+        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, timer, SessionManager.getInstance());
     metric.start();
     metric.putAttribute("attr1", "free");
     metric.stop();
@@ -279,7 +280,7 @@ public class HttpMetricTest extends FirebasePerformanceTestBase {
   @Test
   public void addAttributeWithSameName() {
     HttpMetric metric =
-        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, timer);
+        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, timer, SessionManager.getInstance());
     metric.start();
     metric.putAttribute("attr1", "free");
     metric.putAttribute("attr1", "paid");
@@ -301,7 +302,7 @@ public class HttpMetricTest extends FirebasePerformanceTestBase {
   @Test
   public void testMaxAttributes() {
     HttpMetric metric =
-        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, timer);
+        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, timer, SessionManager.getInstance());
     metric.start();
     for (int i = 0; i <= Constants.MAX_TRACE_CUSTOM_ATTRIBUTES; i++) {
       metric.putAttribute("dim" + i, "value" + i);
@@ -332,7 +333,7 @@ public class HttpMetricTest extends FirebasePerformanceTestBase {
   @Test
   public void testMoreThanMaxAttributes() {
     HttpMetric metric =
-        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, timer);
+        new HttpMetric("https://www.google.com/", HttpMethod.GET, transportManager, timer, SessionManager.getInstance());
     metric.start();
     for (int i = 0; i <= Constants.MAX_TRACE_CUSTOM_ATTRIBUTES; i++) {
       metric.putAttribute("dim" + i, "value" + i);
