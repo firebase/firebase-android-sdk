@@ -317,14 +317,11 @@ class protoUnitTest {
     }
 
     fun Value.hasNestedKind(kindCase: Value.KindCase): Boolean =
-      if (this@hasNestedKind.kindCase == kindCase) {
-        true
-      } else if (this@hasNestedKind.kindCase == Value.KindCase.LIST_VALUE) {
-        listValue.hasNestedKind(kindCase)
-      } else if (this@hasNestedKind.kindCase == Value.KindCase.STRUCT_VALUE) {
-        structValue.hasNestedKind(kindCase)
-      } else {
-        false
+      when (this@hasNestedKind.kindCase) {
+        kindCase -> true
+        Value.KindCase.LIST_VALUE -> listValue.hasNestedKind(kindCase)
+        Value.KindCase.STRUCT_VALUE -> structValue.hasNestedKind(kindCase)
+        else -> false
       }
 
     fun Value.calculateExpectedDescendants(): List<DataConnectPathValuePair> = buildList {
