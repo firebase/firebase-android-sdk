@@ -35,6 +35,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.core.QueryOrPipeline;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
@@ -446,14 +447,18 @@ public class SQLiteSchemaTest {
     // read time has been set.
     Map<DocumentKey, MutableDocument> results =
         remoteDocumentCache.getDocumentsMatchingQuery(
-            query("coll"), IndexOffset.NONE, new HashSet<DocumentKey>());
+            new QueryOrPipeline.QueryWrapper(query("coll")),
+            IndexOffset.NONE,
+            new HashSet<DocumentKey>());
     assertResultsContain(results, "coll/existing", "coll/old", "coll/current", "coll/new");
 
     // Queries that filter by read time only return documents that were written after the index-free
     // migration.
     results =
         remoteDocumentCache.getDocumentsMatchingQuery(
-            query("coll"), IndexOffset.createSuccessor(version(2), -1), new HashSet<DocumentKey>());
+            new com.google.firebase.firestore.core.QueryOrPipeline.QueryWrapper(query("coll")),
+            IndexOffset.createSuccessor(version(2), -1),
+            new HashSet<DocumentKey>());
     assertResultsContain(results, "coll/new");
   }
 
@@ -550,7 +555,8 @@ public class SQLiteSchemaTest {
     Query filteredQuery = query("colletion").filter(filter("foo", "==", "bar"));
     TargetData initialTargetData =
         new TargetData(
-            filteredQuery.toTarget(),
+            new com.google.firebase.firestore.core.TargetOrPipeline.TargetWrapper(
+                filteredQuery.toTarget()),
             /* targetId= */ 2,
             /* sequenceNumber= */ 1,
             QueryPurpose.LISTEN);
@@ -571,7 +577,14 @@ public class SQLiteSchemaTest {
               try {
                 Target targetProto = Target.parseFrom(targetProtoBytes);
                 TargetData targetData = serializer.decodeTargetData(targetProto);
-                String expectedCanonicalId = targetData.getTarget().getCanonicalId();
+                String expectedCanonicalId =
+                    targetData.getTarget().isTarget()
+                        ? targetData.getTarget().target().getCanonicalId()
+                        : targetData
+                            .getTarget()
+                            .pipeline$com_google_firebase_firebase_firestore()
+                            .canonicalId$com_google_firebase_firebase_firestore()
+                            .toString();
                 assertEquals(expectedCanonicalId, actualCanonicalId);
               } catch (InvalidProtocolBufferException e) {
                 fail("Failed to decode Target data");
@@ -719,7 +732,9 @@ public class SQLiteSchemaTest {
 
     Map<DocumentKey, MutableDocument> results =
         remoteDocumentCache.getDocumentsMatchingQuery(
-            query("coll"), IndexOffset.NONE, new HashSet<DocumentKey>());
+            new QueryOrPipeline.QueryWrapper(query("coll")),
+            IndexOffset.NONE,
+            new HashSet<DocumentKey>());
     assertResultsContain(results, "coll/doc0", "coll/doc1", "coll/doc2");
   }
 

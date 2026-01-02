@@ -33,7 +33,7 @@ import java.util.List;
  * only from our worker thread.
  */
 public class QueryListener {
-  private final Query query;
+  private final QueryOrPipeline query;
 
   private final EventManager.ListenOptions options;
 
@@ -50,13 +50,23 @@ public class QueryListener {
   private @Nullable ViewSnapshot snapshot;
 
   public QueryListener(
-      Query query, EventManager.ListenOptions options, EventListener<ViewSnapshot> listener) {
-    this.query = query;
+      QueryOrPipeline query,
+      EventManager.ListenOptions options,
+      EventListener<ViewSnapshot> listener) {
+    if (query.isPipeline()) {
+      this.query =
+          new QueryOrPipeline.PipelineWrapper(
+              query
+                  .pipeline$com_google_firebase_firebase_firestore()
+                  .withListenOptions$com_google_firebase_firebase_firestore(options));
+    } else {
+      this.query = query;
+    }
     this.listener = listener;
     this.options = options;
   }
 
-  public Query getQuery() {
+  public QueryOrPipeline getQuery() {
     return query;
   }
 

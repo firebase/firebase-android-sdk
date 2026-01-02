@@ -17,7 +17,7 @@ package com.google.firebase.firestore.local;
 import android.util.SparseArray;
 import androidx.annotation.Nullable;
 import com.google.firebase.database.collection.ImmutableSortedSet;
-import com.google.firebase.firestore.core.Target;
+import com.google.firebase.firestore.core.TargetOrPipeline;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.util.Consumer;
@@ -32,7 +32,7 @@ import java.util.Map;
 final class MemoryTargetCache implements TargetCache {
 
   /** Maps a target to the data about that target. */
-  private final Map<Target, TargetData> targets = new HashMap<>();
+  private final Map<TargetOrPipeline, TargetData> targets = new HashMap<>();
 
   /** A ordered bidirectional mapping between documents and the remote target IDs. */
   private final ReferenceSet references = new ReferenceSet();
@@ -117,9 +117,9 @@ final class MemoryTargetCache implements TargetCache {
    */
   int removeQueries(long upperBound, SparseArray<?> activeTargetIds) {
     int removed = 0;
-    for (Iterator<Map.Entry<Target, TargetData>> it = targets.entrySet().iterator();
+    for (Iterator<Map.Entry<TargetOrPipeline, TargetData>> it = targets.entrySet().iterator();
         it.hasNext(); ) {
-      Map.Entry<Target, TargetData> entry = it.next();
+      Map.Entry<TargetOrPipeline, TargetData> entry = it.next();
       int targetId = entry.getValue().getTargetId();
       long sequenceNumber = entry.getValue().getSequenceNumber();
       if (sequenceNumber <= upperBound && activeTargetIds.get(targetId) == null) {
@@ -133,7 +133,7 @@ final class MemoryTargetCache implements TargetCache {
 
   @Nullable
   @Override
-  public TargetData getTargetData(Target target) {
+  public TargetData getTargetData(TargetOrPipeline target) {
     return targets.get(target);
   }
 
@@ -174,7 +174,7 @@ final class MemoryTargetCache implements TargetCache {
 
   long getByteSize(LocalSerializer serializer) {
     long count = 0;
-    for (Map.Entry<Target, TargetData> entry : targets.entrySet()) {
+    for (Map.Entry<TargetOrPipeline, TargetData> entry : targets.entrySet()) {
       count += serializer.encodeTargetData(entry.getValue()).getSerializedSize();
     }
     return count;

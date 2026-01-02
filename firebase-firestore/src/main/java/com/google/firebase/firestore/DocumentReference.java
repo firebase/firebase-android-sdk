@@ -22,6 +22,7 @@ import static java.util.Collections.singletonList;
 import android.app.Activity;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.RestrictTo;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
@@ -30,9 +31,11 @@ import com.google.firebase.firestore.core.ActivityScope;
 import com.google.firebase.firestore.core.AsyncEventListener;
 import com.google.firebase.firestore.core.EventManager.ListenOptions;
 import com.google.firebase.firestore.core.QueryListener;
+import com.google.firebase.firestore.core.QueryOrPipeline;
 import com.google.firebase.firestore.core.UserData.ParsedSetData;
 import com.google.firebase.firestore.core.UserData.ParsedUpdateData;
 import com.google.firebase.firestore.core.ViewSnapshot;
+import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.ResourcePath;
@@ -57,7 +60,7 @@ import java.util.concurrent.Executor;
  * in test mocks. Subclassing is not supported in production code and new SDK releases may break
  * code that does so.
  */
-public class DocumentReference {
+public final class DocumentReference {
 
   private final DocumentKey key;
 
@@ -65,13 +68,11 @@ public class DocumentReference {
 
   DocumentReference(DocumentKey key, FirebaseFirestore firestore) {
     this.key = checkNotNull(key);
-    // TODO: We should checkNotNull(firestore), but tests are currently cheating
-    // and setting it to null.
-    this.firestore = firestore;
+    this.firestore = checkNotNull(firestore);
   }
 
   /** @hide */
-  static DocumentReference forPath(ResourcePath path, FirebaseFirestore firestore) {
+  public static DocumentReference forPath(ResourcePath path, FirebaseFirestore firestore) {
     if (path.length() % 2 != 0) {
       throw new IllegalArgumentException(
           "Invalid document reference. Document references must have an even number "
@@ -118,6 +119,15 @@ public class DocumentReference {
   @NonNull
   public String getPath() {
     return key.getPath().canonicalString();
+  }
+
+  @RestrictTo(RestrictTo.Scope.LIBRARY)
+  @NonNull
+  public String getFullPath() {
+    DatabaseId databaseId = firestore.getDatabaseId();
+    return String.format(
+        "projects/%s/databases/%s/documents/%s",
+        databaseId.getProjectId(), databaseId.getDatabaseId(), getPath());
   }
 
   /**
@@ -533,7 +543,8 @@ public class DocumentReference {
 
     return firestore.callClient(
         client -> {
-          QueryListener queryListener = client.listen(query, options, asyncListener);
+          QueryListener queryListener =
+              client.listen(new QueryOrPipeline.QueryWrapper(query), options, asyncListener);
           return ActivityScope.bind(
               activity,
               () -> {
@@ -562,6 +573,12 @@ public class DocumentReference {
     int result = key.hashCode();
     result = 31 * result + firestore.hashCode();
     return result;
+  }
+
+  @NonNull
+  @Override
+  public String toString() {
+    return "DocumentReference{" + "key=" + key + ", firestore=" + firestore + '}';
   }
 
   private com.google.firebase.firestore.core.Query asQuery() {

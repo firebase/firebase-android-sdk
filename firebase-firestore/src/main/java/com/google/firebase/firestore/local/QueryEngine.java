@@ -20,6 +20,7 @@ import androidx.annotation.VisibleForTesting;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.core.QueryOrPipeline;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.local.IndexManager.IndexType;
 import com.google.firebase.firestore.model.Document;
@@ -93,7 +94,7 @@ public class QueryEngine {
   }
 
   public ImmutableSortedMap<DocumentKey, Document> getDocumentsMatchingQuery(
-      Query query,
+      QueryOrPipeline query,
       SnapshotVersion lastLimboFreeSnapshotVersion,
       ImmutableSortedSet<DocumentKey> remoteKeys) {
     hardAssert(initialized, "initialize() not called");
@@ -120,7 +121,12 @@ public class QueryEngine {
    * Decides whether SDK should create a full matched field index for this query based on query
    * context and query result size.
    */
-  private void createCacheIndexes(Query query, QueryContext context, int resultSize) {
+  private void createCacheIndexes(QueryOrPipeline query, QueryContext context, int resultSize) {
+    if (query.isPipeline()) {
+      Logger.debug(LOG_TAG, "SDK will skip creating cache indexes for pipelines.");
+      return;
+    }
+
     if (context.getDocumentReadCount() < indexAutoCreationMinCollectionSize) {
       Logger.debug(
           LOG_TAG,
@@ -139,7 +145,7 @@ public class QueryEngine {
         resultSize);
 
     if (context.getDocumentReadCount() > relativeIndexReadCostPerDocument * resultSize) {
-      indexManager.createTargetIndexes(query.toTarget());
+      indexManager.createTargetIndexes(query.query().toTarget());
       Logger.debug(
           LOG_TAG,
           "The SDK decides to create cache indexes for query: %s, as using cache indexes "
@@ -152,13 +158,19 @@ public class QueryEngine {
    * Performs an indexed query that evaluates the query based on a collection's persisted index
    * values. Returns {@code null} if an index is not available.
    */
-  private @Nullable ImmutableSortedMap<DocumentKey, Document> performQueryUsingIndex(Query query) {
-    if (query.matchesAllDocuments()) {
+  private @Nullable ImmutableSortedMap<DocumentKey, Document> performQueryUsingIndex(
+      QueryOrPipeline query) {
+    if (query.isPipeline()) {
+      Logger.debug(LOG_TAG, "Skipping using indexes for pipelines.");
+      return null;
+    }
+
+    if (query.query().matchesAllDocuments()) {
       // Don't use indexes for queries that can be executed by scanning the collection.
       return null;
     }
 
-    Target target = query.toTarget();
+    Target target = query.query().toTarget();
     IndexType indexType = indexManager.getIndexType(target);
 
     if (indexType.equals(IndexType.NONE)) {
@@ -166,14 +178,15 @@ public class QueryEngine {
       return null;
     }
 
-    if (query.hasLimit() && indexType.equals(IndexType.PARTIAL)) {
+    if (query.query().hasLimit() && indexType.equals(IndexType.PARTIAL)) {
       // We cannot apply a limit for targets that are served using a partial index.
       // If a partial index will be used to serve the target, the query may return a superset of
       // documents that match the target (for example, if the index doesn't include all the target's
       // filters), or may return the correct set of documents in the wrong order (for example, if
       // the index doesn't include a segment for one of the orderBys). Therefore a limit should not
       // be applied in such cases.
-      return performQueryUsingIndex(query.limitToFirst(Target.NO_LIMIT));
+      return performQueryUsingIndex(
+          new QueryOrPipeline.QueryWrapper(query.query().limitToFirst(Target.NO_LIMIT)));
     }
 
     List<DocumentKey> keys = indexManager.getDocumentsMatchingTarget(target);
@@ -189,7 +202,8 @@ public class QueryEngine {
       // by excluding the limit. This ensures that all documents that match the query's filters are
       // included in the result set. The SDK can then apply the limit once all local edits are
       // incorporated.
-      return performQueryUsingIndex(query.limitToFirst(Target.NO_LIMIT));
+      return performQueryUsingIndex(
+          new QueryOrPipeline.QueryWrapper(query.query().limitToFirst(Target.NO_LIMIT)));
     }
 
     return appendRemainingResults(previousResults, query, offset);
@@ -200,7 +214,7 @@ public class QueryEngine {
    * mapping is not available or cannot be used.
    */
   private @Nullable ImmutableSortedMap<DocumentKey, Document> performQueryUsingRemoteKeys(
-      Query query,
+      QueryOrPipeline query,
       ImmutableSortedSet<DocumentKey> remoteKeys,
       SnapshotVersion lastLimboFreeSnapshotVersion) {
     if (query.matchesAllDocuments()) {
@@ -239,7 +253,7 @@ public class QueryEngine {
 
   /** Applies the query filter and sorting to the provided documents. */
   private ImmutableSortedSet<Document> applyQuery(
-      Query query, ImmutableSortedMap<DocumentKey, Document> documents) {
+      QueryOrPipeline query, ImmutableSortedMap<DocumentKey, Document> documents) {
     // Sort the documents and re-apply the query filter since previously matching documents do not
     // necessarily still match the query.
     ImmutableSortedSet<Document> queryResults =
@@ -267,11 +281,18 @@ public class QueryEngine {
    *     synchronized.
    */
   private boolean needsRefill(
-      Query query,
+      QueryOrPipeline query,
       int expectedDocumentCount,
       ImmutableSortedSet<Document> sortedPreviousResults,
       SnapshotVersion limboFreeSnapshotVersion) {
-    if (!query.hasLimit()) {
+    if (query.isPipeline()) {
+      // TODO(pipeline): For pipelines it is simple for now, we refill for all
+      // limit/offset. we should implement a similar approach like query at some
+      // point.
+      return query.hasLimit();
+    }
+
+    if (!query.query().hasLimit()) {
       // Queries without limits do not need to be refilled.
       return false;
     }
@@ -288,7 +309,7 @@ public class QueryEngine {
     // did not change and documents from cache will continue to be "rejected" by this boundary.
     // Therefore, we can ignore any modifications that don't affect the last document.
     Document documentAtLimitEdge =
-        query.getLimitType() == Query.LimitType.LIMIT_TO_FIRST
+        query.query().getLimitType() == Query.LimitType.LIMIT_TO_FIRST
             ? sortedPreviousResults.getMaxEntry()
             : sortedPreviousResults.getMinEntry();
     if (documentAtLimitEdge == null) {
@@ -300,7 +321,7 @@ public class QueryEngine {
   }
 
   private ImmutableSortedMap<DocumentKey, Document> executeFullCollectionScan(
-      Query query, QueryContext context) {
+      QueryOrPipeline query, QueryContext context) {
     if (Logger.isDebugEnabled()) {
       Logger.debug(LOG_TAG, "Using full collection scan to execute query: %s", query.toString());
     }
@@ -312,7 +333,7 @@ public class QueryEngine {
    * been indexed.
    */
   private ImmutableSortedMap<DocumentKey, Document> appendRemainingResults(
-      Iterable<Document> indexedResults, Query query, IndexOffset offset) {
+      Iterable<Document> indexedResults, QueryOrPipeline query, IndexOffset offset) {
     // Retrieve all results for documents that were updated since the offset.
     ImmutableSortedMap<DocumentKey, Document> remainingResults =
         localDocumentsView.getDocumentsMatchingQuery(query, offset);
