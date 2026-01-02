@@ -1289,10 +1289,24 @@ package com.google.firebase.ai.type {
     method public com.google.firebase.ai.type.ThinkingConfig build();
     method public com.google.firebase.ai.type.ThinkingConfig.Builder setIncludeThoughts(boolean includeThoughts);
     method public com.google.firebase.ai.type.ThinkingConfig.Builder setThinkingBudget(int thinkingBudget);
+    method public com.google.firebase.ai.type.ThinkingConfig.Builder setThinkingLevel(com.google.firebase.ai.type.ThinkingLevel thinkingLevel);
   }
 
   public final class ThinkingConfigKt {
     method public static com.google.firebase.ai.type.ThinkingConfig thinkingConfig(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.ThinkingConfig.Builder,kotlin.Unit> init);
+  }
+
+  public final class ThinkingLevel {
+    method public int getOrdinal();
+    property public final int ordinal;
+    field public static final com.google.firebase.ai.type.ThinkingLevel.Companion Companion;
+    field public static final com.google.firebase.ai.type.ThinkingLevel HIGH;
+    field public static final com.google.firebase.ai.type.ThinkingLevel LOW;
+    field public static final com.google.firebase.ai.type.ThinkingLevel MEDIUM;
+    field public static final com.google.firebase.ai.type.ThinkingLevel MINIMAL;
+  }
+
+  public static final class ThinkingLevel.Companion {
   }
 
   public final class Tool {
