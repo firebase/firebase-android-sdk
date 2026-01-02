@@ -317,7 +317,7 @@ class protoUnitTest {
     }
 
     fun Value.hasNestedKind(kindCase: Value.KindCase): Boolean =
-      when (this@hasNestedKind.kindCase) {
+      when (this.kindCase) {
         kindCase -> true
         Value.KindCase.LIST_VALUE -> listValue.hasNestedKind(kindCase)
         Value.KindCase.STRUCT_VALUE -> structValue.hasNestedKind(kindCase)
