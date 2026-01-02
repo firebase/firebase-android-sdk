@@ -59,6 +59,10 @@ internal typealias DataConnectPath = List<DataConnectPathSegment>
 
 internal typealias MutableDataConnectPath = MutableList<DataConnectPathSegment>
 
+internal fun emptyDataConnectPath(): DataConnectPath = emptyList()
+
+internal fun emptyMutableDataConnectPath(): MutableDataConnectPath = mutableListOf()
+
 internal fun <T : DataConnectPathSegment> List<T>.toPathString(): String = buildString {
   appendPathStringTo(this)
 }

@@ -24,10 +24,12 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectAr
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.pathSegment as dataConnectPathSegmentArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import io.kotest.common.ExperimentalKotest
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeSameInstanceAs
+import io.kotest.matchers.types.shouldNotBeSameInstanceAs
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
@@ -558,4 +560,22 @@ class DataConnectPathSegmentExtensionFunctionsUnitTest {
         result shouldContainExactly expected
       }
     }
+
+  @Test
+  fun `emptyDataConnectPath() returns an empty path`() {
+    emptyDataConnectPath() shouldBe emptyList()
+  }
+
+  @Test
+  fun `emptyMutableDataConnectPath() returns an empty path`() {
+    emptyMutableDataConnectPath().shouldBeEmpty()
+  }
+
+  @Test
+  fun `emptyMutableDataConnectPath() should always return a new instance`() {
+    val path1 = emptyMutableDataConnectPath()
+    val path2 = emptyMutableDataConnectPath()
+
+    path1 shouldNotBeSameInstanceAs path2
+  }
 }
