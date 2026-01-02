@@ -16,17 +16,16 @@
 
 package com.google.firebase.dataconnect.sqlite
 
+import com.google.firebase.dataconnect.emptyDataConnectPath
 import com.google.firebase.dataconnect.sqlite.QueryResultEncoder.IntermixedEntityAndNonEntityListInEntityException
-import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.EntityTestCase
 import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.calculateExpectedEncodingAsEntityId
 import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.decodingEncodingShouldProduceIdenticalStruct
-import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.generateEntities
-import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.generateEntity
-import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.generateListValueOfEntities
-import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.generateNonEntities
+import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.distinctEntityIdArb
+import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.entityIdArb
 import com.google.firebase.dataconnect.testutil.buildByteArray
 import com.google.firebase.dataconnect.testutil.isStructValue
 import com.google.firebase.dataconnect.testutil.map
+import com.google.firebase.dataconnect.testutil.property.arbitrary.iterator
 import com.google.firebase.dataconnect.testutil.property.arbitrary.listValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.recursivelyEmptyListValue
@@ -37,6 +36,7 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.value
 import com.google.firebase.dataconnect.testutil.property.arbitrary.withIterations
 import com.google.firebase.dataconnect.testutil.property.arbitrary.withIterationsIfNotNull
 import com.google.firebase.dataconnect.testutil.randomlyInsertStruct
+import com.google.firebase.dataconnect.testutil.randomlyInsertValues
 import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
@@ -228,9 +228,9 @@ class QueryResultEncoderUnitTest {
   @Test
   fun `entity IDs are encoded using SHA-512`() = runTest {
     checkAll(propTestConfig, StringEncodingTestCase.arb()) { entityId ->
-      val struct = Struct.newBuilder().putFields("entityId", entityId.string.toValueProto()).build()
+      val entityIdByPath = mapOf(emptyDataConnectPath() to entityId.string)
 
-      val encodeResult = QueryResultEncoder.encode(struct, "entityId")
+      val encodeResult = QueryResultEncoder.encode(Struct.getDefaultInstance(), entityIdByPath)
 
       encodeResult.entities shouldHaveSize 1
       val encodedEntityId = encodeResult.entities[0].encodedId
@@ -240,14 +240,10 @@ class QueryResultEncoderUnitTest {
 
   @Test
   fun `entity ID contains code points with 1, 2, 3, and 4 byte UTF-8 encodings`() = runTest {
-    checkAll(propTestConfig, Arb.string(), StringEncodingTestCase.arb()) {
-      entityIdFieldName,
-      entityId ->
-      val struct =
-        Struct.newBuilder().putFields(entityIdFieldName, entityId.string.toValueProto()).build()
+    checkAll(propTestConfig, StringEncodingTestCase.arb(), Arb.proto.struct()) { entityId, struct ->
       struct.decodingEncodingShouldProduceIdenticalStruct(
-        entities = listOf(struct),
-        entityIdFieldName
+        entities = listOf(struct.struct),
+        entityIdByPath = mapOf(emptyDataConnectPath() to entityId.string),
       )
     }
   }
@@ -256,38 +252,35 @@ class QueryResultEncoderUnitTest {
   fun `entity ID are long strings`() = runTest {
     checkAll(
       propTestConfig.withIterations(50),
-      Arb.string(),
       StringEncodingTestCase.longStringsArb().map { it.string },
-    ) { entityIdFieldName, entityId ->
-      val struct = Struct.newBuilder().putFields(entityIdFieldName, entityId.toValueProto()).build()
+      Arb.proto.struct(),
+    ) { entityId, struct ->
       struct.decodingEncodingShouldProduceIdenticalStruct(
-        entities = listOf(struct),
-        entityIdFieldName
+        entities = listOf(struct.struct),
+        entityIdByPath = mapOf(emptyDataConnectPath() to entityId),
       )
     }
   }
 
   @Test
   fun `entity is the entire struct`() = runTest {
-    checkAll(propTestConfig, EntityTestCase.arb()) { sample ->
-      sample.struct.decodingEncodingShouldProduceIdenticalStruct(
-        entities = listOf(sample.struct),
-        sample.entityIdFieldName
+    checkAll(propTestConfig, entityIdArb(), Arb.proto.struct()) { entityId, struct ->
+      struct.decodingEncodingShouldProduceIdenticalStruct(
+        entities = listOf(struct.struct),
+        entityIdByPath = mapOf(emptyDataConnectPath() to entityId.string),
       )
     }
   }
 
   @Test
   fun `entity contains nested entities in struct keys`() = runTest {
+    val structKeyArb = Arb.proto.structKey()
+    val structArb = Arb.proto.struct()
     val subEntityCountArb = Arb.int(1..10)
-    checkAll(propTestConfig, Arb.proto.structKey(), Arb.int(1..3)) {
-      entityIdFieldName,
-      rootEntityCount ->
-      val nonEntityIdFieldNameArb = Arb.proto.structKey().filterNot { it == entityIdFieldName }
-      val generateKey: () -> String = { nonEntityIdFieldNameArb.bind() }
+    checkAll(propTestConfig, Arb.int(1..3)) { rootEntityCount ->
       val subEntityCounts = List(rootEntityCount) { subEntityCountArb.bind() }
       val totalEntityCount = rootEntityCount + subEntityCounts.sum()
-      val entities = generateEntities(totalEntityCount, entityIdFieldName).map { it.struct }
+      val entities = List(totalEntityCount) { structArb.bind().struct }
       val rootEntities = buildList {
         val entityIterator = entities.iterator()
         repeat(rootEntityCount) { rootEntityIndex ->
@@ -297,7 +290,7 @@ class QueryResultEncoderUnitTest {
             rootEntityBuilder.randomlyInsertStruct(
               entityIterator.next(),
               randomSource().random,
-              generateKey
+              { structKeyArb.bind() },
             )
           }
           add(rootEntityBuilder.build())
@@ -305,13 +298,13 @@ class QueryResultEncoderUnitTest {
       }
       val rootStruct =
         Arb.proto
-          .struct(key = nonEntityIdFieldNameArb)
+          .struct()
           .bind()
           .struct
           .withRandomlyInsertedStructs(
             rootEntities,
             randomSource().random,
-            generateKey,
+            { structKeyArb.bind() },
           )
 
       rootStruct.decodingEncodingShouldProduceIdenticalStruct(entities, entityIdFieldName)
@@ -367,6 +360,8 @@ class QueryResultEncoderUnitTest {
 
   @Test
   fun `entity contains lists of lists of entities and non-entities should throw`() = runTest {
+    val structArb = Arb.proto.struct()
+    val structKeyArb = Arb.proto.structKey()
     checkAll(
       propTestConfig,
       Arb.proto.structKey(),
@@ -374,24 +369,34 @@ class QueryResultEncoderUnitTest {
       Arb.int(2..10),
       Arb.proto.recursivelyEmptyListValue()
     ) { entityIdFieldName, entityCount, nonEntityCount, recursivelyEmptyListValue ->
-      val nonEntities = generateNonEntities(nonEntityCount, entityIdFieldName)
-      val entities = generateEntities(entityCount, entityIdFieldName).map { it.struct }
-      val listValue =
-        recursivelyEmptyListValue.listValue.withRandomlyInsertedValues(
-          nonEntities + entities.drop(1).map { it.toValueProto() },
+      val distinctEntityIdArb = distinctEntityIdArb()
+      val structs = List(entityCount + nonEntityCount) { structArb.bind().struct }
+      val listValueBuilder = recursivelyEmptyListValue.listValue.toBuilder()
+      val insertPaths =
+        listValueBuilder.randomlyInsertValues(
+          structs.map { it.toValueProto() },
           randomSource().random,
         )
-      val nonEntityIdFieldNameArb = Arb.proto.structKey().filterNot { it == entityIdFieldName }
+      val listValue = listValueBuilder.build()
       val rootStruct =
-        entities[0].withRandomlyInsertedValue(
-          listValue.toValueProto(),
-          randomSource().random,
-          generateKey = { nonEntityIdFieldNameArb.bind() }
-        )
+        structArb
+          .bind()
+          .struct
+          .withRandomlyInsertedValue(
+            listValue.toValueProto(),
+            randomSource().random,
+            generateKey = { structKeyArb.bind() }
+          )
+      val entityIdByPath = buildMap {
+        insertPaths.shuffled(randomSource().random).take(entityCount).forEach { entityPath ->
+          val entityId = distinctEntityIdArb.bind().string
+          put(entityPath, entityId)
+        }
+      }
 
       val exception =
         shouldThrow<IntermixedEntityAndNonEntityListInEntityException> {
-          QueryResultEncoder.encode(rootStruct, entityIdFieldName)
+          QueryResultEncoder.encode(rootStruct, entityIdByPath)
         }
 
       assertSoftly {

@@ -49,7 +49,7 @@ import kotlin.math.absoluteValue
  */
 internal class QueryResultEncoder(
   channel: WritableByteChannel,
-  private val entityFieldName: String? = null
+  private val entityIdByPath: Map<DataConnectPath, String>? = null,
 ) {
 
   val entities: MutableList<Entity> = mutableListOf()
@@ -157,32 +157,10 @@ internal class QueryResultEncoder(
     }
   }
 
-  private fun Value.isEntity(): Boolean =
-    kindCase == Value.KindCase.STRUCT_VALUE && structValue.isEntity()
+  private fun DataConnectPath.isEntity(): Boolean =
+    entityIdByPath !== null && entityIdByPath.containsKey(this)
 
-  private fun Struct.isEntity(): Boolean =
-    entityFieldName !== null &&
-      containsFields(entityFieldName) &&
-      getFieldsOrThrow(entityFieldName).kindCase == Value.KindCase.STRING_VALUE
-
-  private fun Value.getEntityId(): String? =
-    if (kindCase == Value.KindCase.STRUCT_VALUE) {
-      structValue.getEntityId()
-    } else {
-      null
-    }
-
-  private fun Struct.getEntityId(): String? =
-    if (entityFieldName === null || !containsFields(entityFieldName)) {
-      null
-    } else {
-      val entityIdValue = getFieldsOrThrow(entityFieldName)
-      if (entityIdValue?.kindCase != Value.KindCase.STRING_VALUE) {
-        null
-      } else {
-        entityIdValue.stringValue
-      }
-    }
+  private fun DataConnectPath.getEntityId(): String? = entityIdByPath?.get(this)
 
   private enum class EntitySubListLeafContents {
     Entities,
@@ -207,19 +185,20 @@ internal class QueryResultEncoder(
 
       repeat(listValue.valuesCount) { listIndex ->
         val value = listValue.getValues(listIndex)
+        val valuePath = path.withAddedListIndex(listIndex)
         if (value.kindCase == Value.KindCase.LIST_VALUE) {
-          queue.add(path.withAddedListIndex(listIndex) to value.listValue)
+          queue.add(valuePath to value.listValue)
         } else {
           val valueContents =
-            if (value.isEntity()) {
+            if (value.kindCase == Value.KindCase.STRUCT_VALUE && valuePath.isEntity()) {
               EntitySubListLeafContents.Entities
             } else {
               EntitySubListLeafContents.NonEntities
             }
           if (leafContents === null) {
-            leafContents = path.withAddedListIndex(listIndex) to valueContents
+            leafContents = valuePath to valueContents
           } else if (leafContents.second != valueContents) {
-            val curPath = path.withAddedListIndex(listIndex)
+            val curPath = valuePath
             val (entityPath, nonEntityPath) =
               when (valueContents) {
                 EntitySubListLeafContents.Entities -> Pair(curPath, leafContents.first)
@@ -246,7 +225,7 @@ internal class QueryResultEncoder(
     struct: Struct,
     path: MutableDataConnectPath,
   ) {
-    val entityId = struct.getEntityId()
+    val entityId = path.getEntityId()
     if (entityId !== null) {
       writer.writeByte(QueryResultCodec.VALUE_ENTITY)
       writeEntity(entityId, struct, path)
@@ -330,7 +309,7 @@ internal class QueryResultEncoder(
           )
         checkNotNull(nonEntityValue) {
           "internal error gj26tyh2bj: " +
-            "list at ${path.toPathString()} is an entity with id=${value.getEntityId()}, " +
+            "list at ${path.toPathString()} is an entity with id=${path.getEntityId()}, " +
             "but expected it to not be an entity"
         }
         listValueBuilder.addValues(nonEntityValue)
@@ -375,7 +354,7 @@ internal class QueryResultEncoder(
   ): Value? =
     when (value.kindCase) {
       Value.KindCase.STRUCT_VALUE -> {
-        val subStructEntityId = value.structValue.getEntityId()
+        val subStructEntityId = path.getEntityId()
         if (subStructEntityId !== null) {
           writer.writeByte(QueryResultCodec.VALUE_ENTITY)
           writeEntity(subStructEntityId, value.structValue, path)
@@ -501,11 +480,14 @@ internal class QueryResultEncoder(
 
   companion object {
 
-    fun encode(queryResult: Struct, entityFieldName: String? = null): EncodeResult =
+    fun encode(
+      queryResult: Struct,
+      entityIdByPath: Map<DataConnectPath, String>? = null
+    ): EncodeResult =
       ByteArrayOutputStream().use { byteArrayOutputStream ->
         val entities =
           Channels.newChannel(byteArrayOutputStream).use { writableByteChannel ->
-            val encoder = QueryResultEncoder(writableByteChannel, entityFieldName)
+            val encoder = QueryResultEncoder(writableByteChannel, entityIdByPath)
             encoder.encode(queryResult)
             encoder.flush()
             encoder.entities

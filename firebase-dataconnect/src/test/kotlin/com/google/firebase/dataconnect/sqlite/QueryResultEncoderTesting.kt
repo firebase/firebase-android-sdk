@@ -19,9 +19,7 @@ package com.google.firebase.dataconnect.sqlite
 import com.google.firebase.dataconnect.DataConnectPath
 import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.charArbWithCodeGreaterThan255
 import com.google.firebase.dataconnect.testutil.BuildByteArrayDSL
-import com.google.firebase.dataconnect.testutil.MutableDataConnectPath
 import com.google.firebase.dataconnect.testutil.beEqualTo
-import com.google.firebase.dataconnect.testutil.isRecursivelyEmptyListValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.StringWithEncodingLengthArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.StringWithEncodingLengthArb.Mode.Utf8EncodingLongerThanUtf16
 import com.google.firebase.dataconnect.testutil.property.arbitrary.StringWithEncodingLengthArb.Mode.Utf8EncodingShorterThanOrEqualToUtf16
@@ -30,195 +28,44 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWith
 import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWith3ByteUtf8Encoding
 import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWith4ByteUtf8Encoding
 import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWithEvenNumByteUtf8EncodingDistribution
-import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
-import com.google.firebase.dataconnect.testutil.property.arbitrary.scalarValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.stringWithLoneSurrogates
-import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
-import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
 import com.google.firebase.dataconnect.testutil.property.arbitrary.twoValues
-import com.google.firebase.dataconnect.testutil.property.arbitrary.value
 import com.google.firebase.dataconnect.testutil.structFastEqual
-import com.google.firebase.dataconnect.testutil.toListValue
-import com.google.firebase.dataconnect.testutil.toValueProto
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
-import com.google.firebase.dataconnect.withAddedListIndex
-import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
-import com.google.protobuf.Value
 import io.kotest.assertions.withClue
 import io.kotest.common.DelicateKotest
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.should
 import io.kotest.property.Arb
-import io.kotest.property.PropertyContext
+import io.kotest.property.arbitrary.Codepoint
+import io.kotest.property.arbitrary.alphanumeric
 import io.kotest.property.arbitrary.char
 import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.distinct
 import io.kotest.property.arbitrary.double
 import io.kotest.property.arbitrary.filterNot
-import io.kotest.property.arbitrary.flatMap
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.long
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.of
-import io.kotest.property.arbitrary.pair
 import io.kotest.property.arbitrary.string
 import io.kotest.property.arbitrary.withEdgecases
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
-import kotlin.random.nextInt
 
 object QueryResultEncoderTesting {
 
-  data class EntityTestCase(
-    val entityIdFieldName: String,
-    val entityId: String,
-    val struct: Struct
-  ) {
+  data class EntityIdSample(val string: String)
 
-    override fun toString() =
-      "EntityTestCase(" +
-        "entityIdFieldName=$entityIdFieldName, " +
-        "entityId=$entityId, " +
-        "struct=${struct.toCompactString()})"
+  fun entityIdArb(): Arb<EntityIdSample> =
+    Arb.string(10..10, Codepoint.alphanumeric()).map(::EntityIdSample)
 
-    companion object {
-
-      fun arb(
-        entityIdFieldName: Arb<String> = Arb.proto.structKey(),
-        @OptIn(DelicateKotest::class) entityId: Arb<String> = Arb.proto.structKey().distinct(),
-        scalarValue: Arb<Value> = Arb.proto.scalarValue(),
-        structKey: Arb<String> = Arb.proto.structKey(),
-        structSize: IntRange = 0..5,
-        structDepth: IntRange = 1..3,
-      ): Arb<EntityTestCase> =
-        Arb.pair(entityIdFieldName, entityId).flatMap { (entityIdFieldName, entityId) ->
-          val keyArb = structKey.filterNot { it == entityIdFieldName }
-          Arb.proto
-            .struct(size = structSize, depth = structDepth, key = keyArb, scalarValue = scalarValue)
-            .map { struct ->
-              val newStruct =
-                struct.struct
-                  .toBuilder()
-                  .putFields(entityIdFieldName, entityId.toValueProto())
-                  .build()
-              EntityTestCase(
-                entityIdFieldName = entityIdFieldName,
-                entityId = entityId,
-                struct = newStruct,
-              )
-            }
-        }
-
-      fun arb(
-        entityIdFieldName: Arb<String> = Arb.proto.structKey(),
-        @OptIn(DelicateKotest::class) entityId: Arb<String> = Arb.proto.structKey().distinct(),
-        scalarValue: Arb<Value> = Arb.proto.scalarValue(),
-        structKey: Arb<String> = Arb.proto.structKey(),
-        structSize: IntRange,
-        structDepth: Int,
-      ): Arb<EntityTestCase> =
-        arb(
-          entityIdFieldName = entityIdFieldName,
-          entityId = entityId,
-          scalarValue = scalarValue,
-          structKey = structKey,
-          structSize = structSize,
-          structDepth = structDepth..structDepth,
-        )
-    }
-  }
-
-  /** Generates an [EntityTestCase] object using the given entity ID field name. */
-  fun PropertyContext.generateEntity(entityIdFieldName: String): EntityTestCase =
-    generateEntities(1, entityIdFieldName).single()
-
-  /**
-   * Generates the given number of [EntityTestCase] objects using the given entity ID field name.
-   */
-  fun PropertyContext.generateEntities(
-    count: Int,
-    entityIdFieldName: String
-  ): List<EntityTestCase> = generateEntities(entityIdFieldName).take(count).toList()
-
-  /** Generates [EntityTestCase] objects using the given entity ID field name. */
-  fun PropertyContext.generateEntities(entityIdFieldName: String): Sequence<EntityTestCase> {
-    val entityValueArb = EntityTestCase.arb(entityIdFieldName = Arb.constant(entityIdFieldName))
-    return generateSequence { entityValueArb.bind() }
-  }
-
-  /**
-   * Generates the given number of [Value] objects that would not be considered to be entities, nor
-   * contain values that would be considered to be entities with the given entity ID field name.
-   */
-  fun PropertyContext.generateNonEntities(count: Int, entityIdFieldName: String): List<Value> =
-    generateNonEntities(entityIdFieldName).take(count).toList()
-
-  /**
-   * Generates [Value] objects that would not be considered to be entities, nor contain values that
-   * would be considered to be entities with the given entity ID field name.
-   */
-  fun PropertyContext.generateNonEntities(entityIdFieldName: String): Sequence<Value> {
-    val nonEntityIdStructKeyArb = Arb.proto.structKey().filterNot { it == entityIdFieldName }
-    val nonEntityValueArb =
-      Arb.proto.value(structKey = nonEntityIdStructKeyArb).filterNot {
-        it.isRecursivelyEmptyListValue()
-      }
-    return generateSequence { nonEntityValueArb.bind() }
-  }
-
-  data class GenerateListValueOfEntitiesResult(
-    val listValue: ListValue,
-    val generatedListValuePaths: List<DataConnectPath>,
-  )
-
-  fun PropertyContext.generateListValueOfEntities(
-    depth: Int,
-    entityGenerator: Iterator<Struct>
-  ): GenerateListValueOfEntitiesResult {
-    val generatedListValuePaths: MutableList<DataConnectPath> = mutableListOf()
-    val listValue =
-      generateListValueOfEntities(
-        depth = depth,
-        entityGenerator = entityGenerator,
-        path = mutableListOf(),
-        generatedListValuePaths = generatedListValuePaths,
-      )
-    return GenerateListValueOfEntitiesResult(listValue, generatedListValuePaths.toList())
-  }
-
-  fun PropertyContext.generateListValueOfEntities(
-    depth: Int,
-    entityGenerator: Iterator<Struct>,
-    path: MutableDataConnectPath,
-    generatedListValuePaths: MutableList<DataConnectPath>,
-  ): ListValue {
-    require(depth > 0) { "invalid depth: $depth [gwt2a6bbsz]" }
-    val size = randomSource().random.nextInt(1..3)
-    val valuesList =
-      if (depth == 1) {
-        generatedListValuePaths.add(path.toList())
-        List(size) { entityGenerator.next().toValueProto() }
-      } else {
-        val fullDepthIndex = randomSource().random.nextInt(size)
-        List(size) { listIndex ->
-          val childDepth =
-            if (listIndex == fullDepthIndex) {
-              depth - 1
-            } else {
-              randomSource().random.nextInt(1 until depth)
-            }
-          path.withAddedListIndex(listIndex) {
-            generateListValueOfEntities(childDepth, entityGenerator, path, generatedListValuePaths)
-              .toValueProto()
-          }
-        }
-      }
-    return valuesList.toListValue()
-  }
+  fun distinctEntityIdArb(): Arb<EntityIdSample> =
+    @OptIn(DelicateKotest::class) entityIdArb().distinct()
 
   fun charArbWithCodeGreaterThan255(): Arb<Char> {
     val charRange = 256.toChar()..Char.MAX_VALUE
@@ -239,9 +86,9 @@ object QueryResultEncoderTesting {
 
   fun Struct.decodingEncodingShouldProduceIdenticalStruct(
     entities: List<Struct> = emptyList(),
-    entityIdFieldName: String? = null
+    entityIdByPath: Map<DataConnectPath, String>? = null,
   ) {
-    val encodeResult = QueryResultEncoder.encode(this, entityIdFieldName)
+    val encodeResult = QueryResultEncoder.encode(this, entityIdByPath)
 
     withClue("QueryResultEncoder.encode() entities returned") {
       class StructWrapper(val struct: Struct) {
