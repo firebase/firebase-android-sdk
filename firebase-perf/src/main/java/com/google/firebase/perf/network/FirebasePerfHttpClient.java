@@ -15,7 +15,10 @@
 package com.google.firebase.perf.network;
 
 import androidx.annotation.Keep;
+
+import com.google.firebase.perf.FirebasePerformance;
 import com.google.firebase.perf.metrics.NetworkRequestMetricBuilder;
+import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Timer;
 import java.io.IOException;
@@ -45,7 +48,7 @@ public class FirebasePerfHttpClient {
   @Keep
   public static HttpResponse execute(final HttpClient client, final HttpUriRequest request)
       throws IOException {
-    return execute(client, request, new Timer(), TransportManager.getInstance());
+    return execute(client, request, new Timer(), TransportManager.getInstance(), SessionManager.getInstance());
   }
 
   /**
@@ -58,7 +61,7 @@ public class FirebasePerfHttpClient {
   public static HttpResponse execute(
       final HttpClient client, final HttpUriRequest request, final HttpContext context)
       throws IOException {
-    return execute(client, request, context, new Timer(), TransportManager.getInstance());
+    return execute(client, request, context, new Timer(), TransportManager.getInstance(), SessionManager.getInstance());
   }
 
   /**
@@ -73,7 +76,7 @@ public class FirebasePerfHttpClient {
       final HttpUriRequest request,
       final ResponseHandler<T> responseHandler)
       throws IOException {
-    return execute(client, request, responseHandler, new Timer(), TransportManager.getInstance());
+    return execute(client, request, responseHandler, new Timer(), TransportManager.getInstance(), SessionManager.getInstance());
   }
 
   /**
@@ -90,7 +93,7 @@ public class FirebasePerfHttpClient {
       final HttpContext context)
       throws IOException {
     return execute(
-        client, request, responseHandler, context, new Timer(), TransportManager.getInstance());
+        client, request, responseHandler, context, new Timer(), TransportManager.getInstance(), SessionManager.getInstance());
   }
 
   /**
@@ -103,7 +106,7 @@ public class FirebasePerfHttpClient {
   public static HttpResponse execute(
       final HttpClient client, final HttpHost target, final HttpRequest request)
       throws IOException {
-    return execute(client, target, request, new Timer(), TransportManager.getInstance());
+    return execute(client, target, request, new Timer(), TransportManager.getInstance(), SessionManager.getInstance());
   }
 
   /**
@@ -119,7 +122,7 @@ public class FirebasePerfHttpClient {
       final HttpRequest request,
       final HttpContext context)
       throws IOException {
-    return execute(client, target, request, context, new Timer(), TransportManager.getInstance());
+    return execute(client, target, request, context, new Timer(), TransportManager.getInstance(), SessionManager.getInstance());
   }
 
   /**
@@ -136,7 +139,7 @@ public class FirebasePerfHttpClient {
       final ResponseHandler<? extends T> responseHandler)
       throws IOException {
     return execute(
-        client, target, request, responseHandler, new Timer(), TransportManager.getInstance());
+        client, target, request, responseHandler, new Timer(), TransportManager.getInstance(), SessionManager.getInstance());
   }
 
   /**
@@ -160,7 +163,8 @@ public class FirebasePerfHttpClient {
         responseHandler,
         context,
         new Timer(),
-        TransportManager.getInstance());
+        TransportManager.getInstance(),
+        SessionManager.getInstance());
   }
 
   /**
@@ -173,10 +177,11 @@ public class FirebasePerfHttpClient {
       final HttpClient client,
       final HttpUriRequest request,
       final Timer timer,
-      final TransportManager transportManager)
+      final TransportManager transportManager,
+      final SessionManager sessionManager)
       throws IOException {
     HttpResponse response = null;
-    NetworkRequestMetricBuilder builder = NetworkRequestMetricBuilder.builder(transportManager);
+    NetworkRequestMetricBuilder builder = NetworkRequestMetricBuilder.builder(transportManager, sessionManager);
     try {
       builder.setUrl(request.getURI().toString()).setHttpMethod(request.getMethod());
       Long requestContentLength =
@@ -221,10 +226,11 @@ public class FirebasePerfHttpClient {
       final HttpUriRequest request,
       final HttpContext context,
       final Timer timer,
-      final TransportManager transportManager)
+      final TransportManager transportManager,
+      final SessionManager sessionManager)
       throws IOException {
     HttpResponse response = null;
-    NetworkRequestMetricBuilder builder = NetworkRequestMetricBuilder.builder(transportManager);
+    NetworkRequestMetricBuilder builder = NetworkRequestMetricBuilder.builder(transportManager, sessionManager);
     try {
       builder.setUrl(request.getURI().toString()).setHttpMethod(request.getMethod());
       Long requestContentLength =
@@ -270,9 +276,10 @@ public class FirebasePerfHttpClient {
       final HttpUriRequest request,
       final ResponseHandler<T> responseHandler,
       final Timer timer,
-      final TransportManager transportManager)
+      final TransportManager transportManager,
+      final SessionManager sessionManager)
       throws IOException {
-    NetworkRequestMetricBuilder builder = NetworkRequestMetricBuilder.builder(transportManager);
+    NetworkRequestMetricBuilder builder = NetworkRequestMetricBuilder.builder(transportManager, sessionManager);
     try {
       builder.setUrl(request.getURI().toString()).setHttpMethod(request.getMethod());
       Long requestContentLength =
@@ -307,9 +314,10 @@ public class FirebasePerfHttpClient {
       final ResponseHandler<T> responseHandler,
       final HttpContext context,
       final Timer timer,
-      final TransportManager transportManager)
+      final TransportManager transportManager,
+      final SessionManager sessionManager)
       throws IOException {
-    NetworkRequestMetricBuilder builder = NetworkRequestMetricBuilder.builder(transportManager);
+    NetworkRequestMetricBuilder builder = NetworkRequestMetricBuilder.builder(transportManager, sessionManager);
     try {
       builder.setUrl(request.getURI().toString()).setHttpMethod(request.getMethod());
       Long requestContentLength =
@@ -344,10 +352,11 @@ public class FirebasePerfHttpClient {
       final HttpHost target,
       final HttpRequest request,
       final Timer timer,
-      final TransportManager transportManager)
+      final TransportManager transportManager,
+      final SessionManager sessionManager)
       throws IOException {
     HttpResponse response = null;
-    NetworkRequestMetricBuilder builder = NetworkRequestMetricBuilder.builder(transportManager);
+    NetworkRequestMetricBuilder builder = NetworkRequestMetricBuilder.builder(transportManager, sessionManager);
     try {
       builder
           .setUrl(target.toURI() + request.getRequestLine().getUri())
@@ -396,10 +405,11 @@ public class FirebasePerfHttpClient {
       final HttpRequest request,
       final HttpContext context,
       final Timer timer,
-      final TransportManager transportManager)
+      final TransportManager transportManager,
+      final SessionManager sessionManager)
       throws IOException {
     HttpResponse response = null;
-    NetworkRequestMetricBuilder builder = NetworkRequestMetricBuilder.builder(transportManager);
+    NetworkRequestMetricBuilder builder = NetworkRequestMetricBuilder.builder(transportManager, sessionManager);
     try {
       builder
           .setUrl(target.toURI() + request.getRequestLine().getUri())
@@ -448,9 +458,10 @@ public class FirebasePerfHttpClient {
       final HttpRequest request,
       final ResponseHandler<? extends T> responseHandler,
       final Timer timer,
-      final TransportManager transportManager)
+      final TransportManager transportManager,
+      final SessionManager sessionManager)
       throws IOException {
-    NetworkRequestMetricBuilder builder = NetworkRequestMetricBuilder.builder(transportManager);
+    NetworkRequestMetricBuilder builder = NetworkRequestMetricBuilder.builder(transportManager, sessionManager);
     try {
       builder
           .setUrl(target.toURI() + request.getRequestLine().getUri())
@@ -490,9 +501,10 @@ public class FirebasePerfHttpClient {
       final ResponseHandler<? extends T> responseHandler,
       final HttpContext context,
       final Timer timer,
-      final TransportManager transportManager)
+      final TransportManager transportManager,
+      final SessionManager sessionManager)
       throws IOException {
-    NetworkRequestMetricBuilder builder = NetworkRequestMetricBuilder.builder(transportManager);
+    NetworkRequestMetricBuilder builder = NetworkRequestMetricBuilder.builder(transportManager, sessionManager);
     try {
       builder
           .setUrl(target.toURI() + request.getRequestLine().getUri())

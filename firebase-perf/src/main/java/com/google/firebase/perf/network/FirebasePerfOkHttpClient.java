@@ -16,6 +16,7 @@ package com.google.firebase.perf.network;
 
 import androidx.annotation.Keep;
 import com.google.firebase.perf.metrics.NetworkRequestMetricBuilder;
+import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Timer;
 import java.io.IOException;
@@ -37,7 +38,7 @@ public class FirebasePerfOkHttpClient {
   public static Response execute(final Call call) throws IOException {
     final Response response;
     NetworkRequestMetricBuilder builder =
-        NetworkRequestMetricBuilder.builder(TransportManager.getInstance());
+        NetworkRequestMetricBuilder.builder(TransportManager.getInstance(), /*, sessionManager = */ null);
     Timer timer = new Timer();
     long startTimeMicros = timer.getMicros();
     try {
@@ -65,12 +66,12 @@ public class FirebasePerfOkHttpClient {
   }
 
   @Keep
-  public static void enqueue(final Call call, final Callback callback) {
+  public static void enqueue(final Call call, final Callback callback, final SessionManager sessionManager) {
     Timer timer = new Timer();
     long startTime = timer.getMicros();
     call.enqueue(
         new InstrumentOkHttpEnqueueCallback(
-            callback, TransportManager.getInstance(), timer, startTime));
+            callback, TransportManager.getInstance(), timer, startTime, sessionManager));
   }
 
   static void sendNetworkMetric(
