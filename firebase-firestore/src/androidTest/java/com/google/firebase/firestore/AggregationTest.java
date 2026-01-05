@@ -17,6 +17,7 @@ package com.google.firebase.firestore;
 import static com.google.firebase.firestore.AggregateField.average;
 import static com.google.firebase.firestore.AggregateField.count;
 import static com.google.firebase.firestore.AggregateField.sum;
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.getBackendEdition;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.isRunningAgainstEmulator;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollection;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollectionWithDocs;
@@ -33,6 +34,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeFalse;
+import static org.junit.Assume.assumeTrue;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
@@ -387,6 +389,10 @@ public class AggregationTest {
 
   @Test
   public void testCannotPerformMoreThanMaxAggregations() {
+    assumeTrue(
+        "Standard-only behavior",
+        getBackendEdition() == IntegrationTestUtil.BackendEdition.STANDARD);
+
     CollectionReference collection = testCollectionWithDocs(testDocs1);
     AggregateField f1 = sum("pages");
     AggregateField f2 = average("pages");
@@ -534,12 +540,26 @@ public class AggregationTest {
             "b", map("author", "authorB", "title", "titleB", "rating", Long.MAX_VALUE));
     CollectionReference collection = testCollectionWithDocs(testDocs);
 
-    AggregateQuerySnapshot snapshot =
-        waitFor(collection.aggregate(sum("rating")).get(AggregateSource.SERVER));
+    switch (getBackendEdition()) {
+      case STANDARD:
+        {
+          AggregateQuerySnapshot snapshot =
+              waitFor(collection.aggregate(sum("rating")).get(AggregateSource.SERVER));
 
-    Object sum = snapshot.get(sum("rating"));
-    assertTrue(sum instanceof Double);
-    assertEquals(sum, (double) Long.MAX_VALUE + (double) Long.MAX_VALUE);
+          Object sum = snapshot.get(sum("rating"));
+          assertTrue(sum instanceof Double);
+          assertEquals(sum, (double) Long.MAX_VALUE + (double) Long.MAX_VALUE);
+          break;
+        }
+      case ENTERPRISE:
+        {
+          assertThrows(
+              RuntimeException.class,
+              () -> {
+                waitFor(collection.aggregate(sum("rating")).get(AggregateSource.SERVER));
+              });
+        }
+    }
   }
 
   @Test
@@ -569,10 +589,20 @@ public class AggregationTest {
             "d", map("author", "authorD", "title", "titleD", "rating", -10000));
     CollectionReference collection = testCollectionWithDocs(testDocs);
 
-    AggregateQuerySnapshot snapshot =
-        waitFor(collection.aggregate(sum("rating")).get(AggregateSource.SERVER));
+    switch (getBackendEdition()) {
+      case STANDARD:
+        AggregateQuerySnapshot snapshot =
+            waitFor(collection.aggregate(sum("rating")).get(AggregateSource.SERVER));
 
-    assertEquals(snapshot.get(sum("rating")), -10101L);
+        assertEquals(snapshot.get(sum("rating")), -10101L);
+        break;
+      case ENTERPRISE:
+        assertThrows(
+            RuntimeException.class,
+            () -> {
+              waitFor(collection.aggregate(sum("rating")).get(AggregateSource.SERVER));
+            });
+    }
   }
 
   @Test
@@ -645,7 +675,13 @@ public class AggregationTest {
                 .aggregate(sum("pages"))
                 .get(AggregateSource.SERVER));
 
-    assertEquals(snapshot.get(sum("pages")), 0L);
+    switch (getBackendEdition()) {
+      case STANDARD:
+        assertEquals(snapshot.get(sum("pages")), 0L);
+        break;
+      case ENTERPRISE:
+        assertNull(snapshot.get(sum("pages")));
+    }
   }
 
   @Test
@@ -893,6 +929,9 @@ public class AggregationTest {
             + "Firestore emulator does not use indexes and never fails with a 'missing index'"
             + " error",
         isRunningAgainstEmulator());
+    assumeTrue(
+        "Mandatory index is a Standard-only behavior",
+        getBackendEdition() == IntegrationTestUtil.BackendEdition.STANDARD);
 
     CollectionReference collection = testCollectionWithDocs(Collections.emptyMap());
     Query compositeIndexQuery = collection.whereEqualTo("field1", 42).whereLessThan("field2", 99);

@@ -27,6 +27,7 @@ import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
 import com.google.firebase.firestore.LoadBundleTask;
+import com.google.firebase.firestore.PipelineResultObserver;
 import com.google.firebase.firestore.TransactionOptions;
 import com.google.firebase.firestore.auth.CredentialsProvider;
 import com.google.firebase.firestore.auth.User;
@@ -49,6 +50,7 @@ import com.google.firebase.firestore.remote.RemoteStore;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Function;
 import com.google.firebase.firestore.util.Logger;
+import com.google.firestore.v1.ExecutePipelineRequest;
 import com.google.firestore.v1.Value;
 import java.io.InputStream;
 import java.util.List;
@@ -170,7 +172,7 @@ public final class FirestoreClient {
 
   /** Starts listening to a query. */
   public QueryListener listen(
-      Query query, ListenOptions options, EventListener<ViewSnapshot> listener) {
+      QueryOrPipeline query, ListenOptions options, EventListener<ViewSnapshot> listener) {
     this.verifyNotTerminated();
     QueryListener queryListener = new QueryListener(query, options, listener);
     asyncQueue.enqueueAndForget(() -> eventManager.addQueryListener(queryListener));
@@ -206,7 +208,7 @@ public final class FirestoreClient {
             });
   }
 
-  public Task<ViewSnapshot> getDocumentsFromLocalCache(Query query) {
+  public Task<ViewSnapshot> getDocumentsFromLocalCache(QueryOrPipeline query) {
     this.verifyNotTerminated();
     return asyncQueue.enqueue(
         () -> {
@@ -247,6 +249,10 @@ public final class FirestoreClient {
                 .addOnSuccessListener(data -> result.setResult(data))
                 .addOnFailureListener(e -> result.setException(e)));
     return result.getTask();
+  }
+
+  public void executePipeline(ExecutePipelineRequest request, PipelineResultObserver observer) {
+    asyncQueue.enqueueAndForget(() -> remoteStore.executePipeline(request, observer));
   }
 
   /**
