@@ -123,7 +123,7 @@ public abstract class ArrayTransformOperation implements TransformOperation {
       ArrayValue.Builder result = coercedFieldValuesArray(previousValue);
       for (Value removeElement : getElements()) {
         for (int i = 0; i < result.getValuesCount(); ) {
-          if (Values.equals(result.getValues(i), removeElement)) {
+          if (result.getValues(i).equals(removeElement)) {
             result.removeValues(i);
           } else {
             ++i;

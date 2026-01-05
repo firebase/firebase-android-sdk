@@ -23,7 +23,7 @@ public class QueryContext {
     return documentReadCount;
   }
 
-  public void incrementDocumentReadCount() {
-    documentReadCount++;
+  public void incrementDocumentReadCount(int cnt) {
+    documentReadCount += cnt;
   }
 }

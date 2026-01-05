@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.local;
 
+import static com.google.firebase.firestore.TestUtil.PROJECT_ID;
 import static com.google.firebase.firestore.local.SQLitePersistence.databaseName;
 
 import android.content.Context;
@@ -72,7 +73,7 @@ public final class PersistenceTestHelpers {
   }
 
   public static MemoryPersistence createLRUMemoryPersistence(LruGarbageCollector.Params params) {
-    DatabaseId databaseId = DatabaseId.forProject("projectId");
+    DatabaseId databaseId = DatabaseId.forProject(PROJECT_ID);
     LocalSerializer serializer = new LocalSerializer(new RemoteSerializer(databaseId));
     MemoryPersistence persistence =
         MemoryPersistence.createLruGcMemoryPersistence(params, serializer);
@@ -82,7 +83,7 @@ public final class PersistenceTestHelpers {
 
   private static SQLitePersistence openSQLitePersistence(
       String name, LruGarbageCollector.Params params) {
-    DatabaseId databaseId = DatabaseId.forProject("projectId");
+    DatabaseId databaseId = DatabaseId.forProject(PROJECT_ID);
     LocalSerializer serializer = new LocalSerializer(new RemoteSerializer(databaseId));
     Context context = ApplicationProvider.getApplicationContext();
     SQLitePersistence persistence =

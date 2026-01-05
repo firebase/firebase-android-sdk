@@ -35,6 +35,7 @@ import com.google.firebase.firestore.core.FieldFilter;
 import com.google.firebase.firestore.core.FieldFilter.Operator;
 import com.google.firebase.firestore.core.OrderBy;
 import com.google.firebase.firestore.core.QueryListener;
+import com.google.firebase.firestore.core.QueryOrPipeline;
 import com.google.firebase.firestore.core.ViewSnapshot;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
@@ -964,7 +965,8 @@ public class Query {
     validateHasExplicitOrderByForLimitToLast();
     if (source == Source.CACHE) {
       return firestore
-          .callClient(client -> client.getDocumentsFromLocalCache(query))
+          .callClient(
+              client -> client.getDocumentsFromLocalCache(new QueryOrPipeline.QueryWrapper(query)))
           .continueWith(
               Executors.DIRECT_EXECUTOR,
               (Task<ViewSnapshot> viewSnap) ->
@@ -1182,7 +1184,8 @@ public class Query {
 
     return firestore.callClient(
         client -> {
-          QueryListener queryListener = client.listen(query, options, asyncListener);
+          QueryListener queryListener =
+              client.listen(new QueryOrPipeline.QueryWrapper(query), options, asyncListener);
           return ActivityScope.bind(
               activity,
               () -> {

@@ -54,7 +54,7 @@ public class QueryListenerTest {
   private static QueryListener queryListener(
       Query query, ListenOptions options, List<ViewSnapshot> accumulator) {
     return new QueryListener(
-        query,
+        new QueryOrPipeline.QueryWrapper(query),
         options,
         (value, error) -> {
           assertNull(error);
@@ -82,7 +82,7 @@ public class QueryListenerTest {
     QueryListener listener = queryListener(query, accum);
     QueryListener otherListener = queryListener(query, otherAccum);
 
-    View view = new View(query, DocumentKey.emptyKeySet());
+    View view = new View(new QueryOrPipeline.QueryWrapper(query), DocumentKey.emptyKeySet());
     ViewSnapshot snap1 = applyChanges(view, doc1, doc2);
     ViewSnapshot snap2 = applyChanges(view, doc2prime);
 
@@ -103,7 +103,7 @@ public class QueryListenerTest {
         new ViewSnapshot(
             snap2.getQuery(),
             snap2.getDocuments(),
-            DocumentSet.emptySet(snap2.getQuery().comparator()),
+            DocumentSet.emptySet(query.comparator()),
             asList(change1, change4),
             snap2.isFromCache(),
             snap2.getMutatedKeys(),
@@ -120,7 +120,7 @@ public class QueryListenerTest {
     AtomicBoolean hadEvent = new AtomicBoolean(false);
     QueryListener listener =
         new QueryListener(
-            query,
+            new QueryOrPipeline.QueryWrapper(query),
             new ListenOptions(),
             (value, error) -> {
               assertNull(value);
@@ -140,7 +140,7 @@ public class QueryListenerTest {
 
     QueryListener listener = queryListener(query, accum);
 
-    View view = new View(query, DocumentKey.emptyKeySet());
+    View view = new View(new QueryOrPipeline.QueryWrapper(query), DocumentKey.emptyKeySet());
     ViewSnapshot snap1 = applyChanges(view);
     TargetChange ackTarget = ackTarget();
     ViewSnapshot snap2 =
@@ -167,7 +167,7 @@ public class QueryListenerTest {
     QueryListener filteredListener = queryListener(query, options1, filteredAccum);
     QueryListener fullListener = queryListener(query, options2, fullAccum);
 
-    View view = new View(query, DocumentKey.emptyKeySet());
+    View view = new View(new QueryOrPipeline.QueryWrapper(query), DocumentKey.emptyKeySet());
     ViewSnapshot snap1 = applyChanges(view, doc1);
 
     TargetChange ackTarget = ackTarget(doc1);
@@ -207,7 +207,7 @@ public class QueryListenerTest {
     QueryListener filteredListener = queryListener(query, options1, filteredAccum);
     QueryListener fullListener = queryListener(query, options2, fullAccum);
 
-    View view = new View(query, DocumentKey.emptyKeySet());
+    View view = new View(new QueryOrPipeline.QueryWrapper(query), DocumentKey.emptyKeySet());
     ViewSnapshot snap1 = applyChanges(view, doc1, doc2);
     ViewSnapshot snap2 = applyChanges(view, doc1Prime);
     ViewSnapshot snap3 = applyChanges(view, doc3);
@@ -243,7 +243,7 @@ public class QueryListenerTest {
     options.includeQueryMetadataChanges = true;
     QueryListener fullListener = queryListener(query, options, fullAccum);
 
-    View view = new View(query, DocumentKey.emptyKeySet());
+    View view = new View(new QueryOrPipeline.QueryWrapper(query), DocumentKey.emptyKeySet());
     ViewSnapshot snap1 = applyChanges(view, doc1, doc2);
     ViewSnapshot snap2 = applyChanges(view, doc1Prime);
     ViewSnapshot snap3 = applyChanges(view, doc3);
@@ -287,7 +287,7 @@ public class QueryListenerTest {
     options.includeDocumentMetadataChanges = false;
     QueryListener filteredListener = queryListener(query, options, filteredAccum);
 
-    View view = new View(query, DocumentKey.emptyKeySet());
+    View view = new View(new QueryOrPipeline.QueryWrapper(query), DocumentKey.emptyKeySet());
     ViewSnapshot snap1 = applyChanges(view, doc1, doc2);
     ViewSnapshot snap2 = applyChanges(view, doc1Prime, doc3);
 
@@ -324,7 +324,7 @@ public class QueryListenerTest {
     options.waitForSyncWhenOnline = true;
     QueryListener listener = queryListener(query, options, events);
 
-    View view = new View(query, DocumentKey.emptyKeySet());
+    View view = new View(new QueryOrPipeline.QueryWrapper(query), DocumentKey.emptyKeySet());
     ViewSnapshot snap1 = applyChanges(view, doc1);
     ViewSnapshot snap2 = applyChanges(view, doc2);
     DocumentChanges changes = view.computeDocChanges(docUpdates());
@@ -343,7 +343,7 @@ public class QueryListenerTest {
         new ViewSnapshot(
             snap3.getQuery(),
             snap3.getDocuments(),
-            DocumentSet.emptySet(snap3.getQuery().comparator()),
+            DocumentSet.emptySet(query.comparator()),
             asList(change1, change2),
             /* isFromCache= */ false,
             snap3.getMutatedKeys(),
@@ -365,7 +365,7 @@ public class QueryListenerTest {
     options.waitForSyncWhenOnline = true;
     QueryListener listener = queryListener(query, options, events);
 
-    View view = new View(query, DocumentKey.emptyKeySet());
+    View view = new View(new QueryOrPipeline.QueryWrapper(query), DocumentKey.emptyKeySet());
     ViewSnapshot snap1 = applyChanges(view, doc1);
     ViewSnapshot snap2 = applyChanges(view, doc2);
 
@@ -382,7 +382,7 @@ public class QueryListenerTest {
         new ViewSnapshot(
             snap1.getQuery(),
             snap1.getDocuments(),
-            DocumentSet.emptySet(snap1.getQuery().comparator()),
+            DocumentSet.emptySet(query.comparator()),
             asList(change1),
             /* isFromCache= */ true,
             snap1.getMutatedKeys(),
@@ -411,7 +411,7 @@ public class QueryListenerTest {
 
     QueryListener listener = queryListener(query, new ListenOptions(), events);
 
-    View view = new View(query, DocumentKey.emptyKeySet());
+    View view = new View(new QueryOrPipeline.QueryWrapper(query), DocumentKey.emptyKeySet());
     ViewSnapshot snap1 = applyChanges(view);
 
     listener.onOnlineStateChanged(OnlineState.ONLINE); // no event
@@ -422,7 +422,7 @@ public class QueryListenerTest {
         new ViewSnapshot(
             snap1.getQuery(),
             snap1.getDocuments(),
-            DocumentSet.emptySet(snap1.getQuery().comparator()),
+            DocumentSet.emptySet(query.comparator()),
             asList(),
             /* isFromCache= */ true,
             snap1.getMutatedKeys(),
@@ -439,7 +439,7 @@ public class QueryListenerTest {
 
     QueryListener listener = queryListener(query, new ListenOptions(), events);
 
-    View view = new View(query, DocumentKey.emptyKeySet());
+    View view = new View(new QueryOrPipeline.QueryWrapper(query), DocumentKey.emptyKeySet());
     ViewSnapshot snap1 = applyChanges(view);
 
     listener.onOnlineStateChanged(OnlineState.OFFLINE);
@@ -449,7 +449,7 @@ public class QueryListenerTest {
         new ViewSnapshot(
             snap1.getQuery(),
             snap1.getDocuments(),
-            DocumentSet.emptySet(snap1.getQuery().comparator()),
+            DocumentSet.emptySet(query.comparator()),
             asList(),
             /* isFromCache= */ true,
             snap1.getMutatedKeys(),
