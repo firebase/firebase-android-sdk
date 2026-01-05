@@ -20,9 +20,9 @@ import com.google.firebase.dataconnect.DataConnectPath
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.emptyDataConnectPath
 import com.google.firebase.dataconnect.sqlite.QueryResultEncoder.IntermixedEntityAndNonEntityListInEntityException
+import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.buildEntityIdByPathMap
 import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.calculateExpectedEncodingAsEntityId
 import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.decodingEncodingShouldProduceIdenticalStruct
-import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.distinctEntityIdArb
 import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.entityIdArb
 import com.google.firebase.dataconnect.testutil.buildByteArray
 import com.google.firebase.dataconnect.testutil.isListValue
@@ -253,7 +253,7 @@ class QueryResultEncoderUnitTest {
   }
 
   @Test
-  fun `entity ID are long strings`() = runTest {
+  fun `entity ID is a long strings`() = runTest {
     checkAll(
       propTestConfig.withIterations(50),
       StringEncodingTestCase.longStringsArb().map { it.string },
@@ -320,9 +320,8 @@ class QueryResultEncoderUnitTest {
           }
         }
       }
-      val entityIdByPath = buildMap {
-        val distinctEntityIdArb = distinctEntityIdArb()
-        entityPaths.forEach { entityPath -> put(entityPath, distinctEntityIdArb.bind().string) }
+      val entityIdByPath = buildEntityIdByPathMap {
+        entityPaths.forEach { entityPath -> putWithRandomUniqueEntityId(entityPath) }
       }
 
       rootStruct.decodingEncodingShouldProduceIdenticalStruct(entities, entityIdByPath)
@@ -353,14 +352,10 @@ class QueryResultEncoderUnitTest {
           generateKey = { structKeyArb.bind() }
         )
       val rootStruct = rootStructBuilder.build()
-      val entityIdByPath = buildMap {
-        val distinctEntityIdArb = distinctEntityIdArb()
+      val entityIdByPath = buildEntityIdByPathMap {
         entityPathValuePairs
           .map { it.path }
-          .forEach { entitySubPath ->
-            val entityId = distinctEntityIdArb.bind()
-            put(listValuePath + entitySubPath, entityId.string)
-          }
+          .forEach { entitySubPath -> putWithRandomUniqueEntityId(listValuePath + entitySubPath) }
       }
 
       rootStruct.decodingEncodingShouldProduceIdenticalStruct(entities, entityIdByPath)
@@ -392,12 +387,10 @@ class QueryResultEncoderUnitTest {
           generateKey = { structKeyArb.bind() }
         )
       val rootStruct = rootStructBuilder.build()
-      val entityIdByPath = buildMap {
-        val distinctEntityIdArb = distinctEntityIdArb()
-        put(emptyDataConnectPath(), distinctEntityIdArb.bind().string)
+      val entityIdByPath = buildEntityIdByPathMap {
+        putWithRandomUniqueEntityId(emptyDataConnectPath())
         entitySubPaths.forEach { entitySubPath ->
-          val entityId = distinctEntityIdArb.bind()
-          put(listValuePath + entitySubPath, entityId.string)
+          putWithRandomUniqueEntityId(listValuePath + entitySubPath)
         }
       }
       val entities = buildList {
@@ -467,12 +460,11 @@ class QueryResultEncoderUnitTest {
           generateKey = { structKeyArb.bind() }
         )
       val rootStruct = rootStructBuilder.build()
-      val entityIdByPath = buildMap {
-        val distinctEntityIdArb = distinctEntityIdArb()
-        put(emptyDataConnectPath(), distinctEntityIdArb.bind().string)
+      val entityIdByPath = buildEntityIdByPathMap {
+        putWithRandomUniqueEntityId(emptyDataConnectPath())
         val entityPaths = insertPaths.take(entities.size)
         entityPaths.forEach { entityPath ->
-          put(listValuePath + entityPath, distinctEntityIdArb.bind().string)
+          putWithRandomUniqueEntityId(listValuePath + entityPath)
         }
       }
 
@@ -505,12 +497,9 @@ class QueryResultEncoderUnitTest {
           { structKeyArb.bind() },
         )
       val rootStruct = rootStructBuilder.build()
-      val entityIdByPath = buildMap {
-        val distinctEntityIdArb = distinctEntityIdArb()
+      val entityIdByPath = buildEntityIdByPathMap {
         repeat(entityCount) { entityIndex ->
-          val entityPath = listValuePath.withAddedListIndex(entityIndex)
-          val entityId = distinctEntityIdArb.bind()
-          put(entityPath, entityId.string)
+          putWithRandomUniqueEntityId(listValuePath.withAddedListIndex(entityIndex))
         }
       }
 
@@ -539,12 +528,9 @@ class QueryResultEncoderUnitTest {
           { structKeyArb.bind() },
         )
       val rootStruct = rootStructBuilder.build()
-      val entityIdByPath = buildMap {
-        val distinctEntityIdArb = distinctEntityIdArb()
+      val entityIdByPath = buildEntityIdByPathMap {
         entityIndices.forEach { entityIndex ->
-          val entityPath = listValuePath.withAddedListIndex(entityIndex)
-          val entityId = distinctEntityIdArb.bind()
-          put(entityPath, entityId.string)
+          putWithRandomUniqueEntityId(listValuePath.withAddedListIndex(entityIndex))
         }
       }
 
@@ -558,11 +544,8 @@ class QueryResultEncoderUnitTest {
       val nonStructPaths =
         struct.struct.walk().filterNot { it.value.isStructValue }.map { it.path }.toList()
       assume(nonStructPaths.isNotEmpty())
-      val entityIdByPath = buildMap {
-        val distinctEntityIdArb = distinctEntityIdArb()
-        nonStructPaths.forEach { nonStructPath ->
-          put(nonStructPath, distinctEntityIdArb.bind().string)
-        }
+      val entityIdByPath = buildEntityIdByPathMap {
+        nonStructPaths.forEach { nonStructPath -> putWithRandomUniqueEntityId(nonStructPath) }
       }
 
       struct.struct.decodingEncodingShouldProduceIdenticalStruct(emptyList(), entityIdByPath)
@@ -596,11 +579,8 @@ class QueryResultEncoderUnitTest {
         }
       }
       assume(nonExistentPaths.isNotEmpty())
-      val entityIdByPath = buildMap {
-        val distinctEntityIdArb = distinctEntityIdArb()
-        nonExistentPaths.forEach { nonExistentPath ->
-          put(nonExistentPath, distinctEntityIdArb.bind().string)
-        }
+      val entityIdByPath = buildEntityIdByPathMap {
+        nonExistentPaths.forEach { nonExistentPath -> putWithRandomUniqueEntityId(nonExistentPath) }
       }
 
       struct.struct.decodingEncodingShouldProduceIdenticalStruct(emptyList(), entityIdByPath)

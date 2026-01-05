@@ -39,6 +39,7 @@ import io.kotest.common.DelicateKotest
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.should
 import io.kotest.property.Arb
+import io.kotest.property.PropertyContext
 import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.alphanumeric
 import io.kotest.property.arbitrary.char
@@ -124,6 +125,25 @@ object QueryResultEncoderTesting {
     byteBuffer.flip()
     digest.update(byteBuffer)
     return digest.digest()
+  }
+
+  interface BuildEntityIdByPathContext {
+    fun putWithRandomUniqueEntityId(path: DataConnectPath)
+  }
+
+  fun PropertyContext.buildEntityIdByPathMap(
+    block: BuildEntityIdByPathContext.() -> Unit
+  ): Map<DataConnectPath, String> {
+    val distinctEntityIdArb = distinctEntityIdArb()
+    val entityIdByPath = mutableMapOf<DataConnectPath, String>()
+    val context =
+      object : BuildEntityIdByPathContext {
+        override fun putWithRandomUniqueEntityId(path: DataConnectPath) {
+          entityIdByPath[path] = distinctEntityIdArb.bind().string
+        }
+      }
+    block(context)
+    return entityIdByPath.toMap()
   }
 }
 
