@@ -431,46 +431,44 @@ class QueryResultEncoderUnitTest {
           randomSource().random,
           generateKey = { structKeyArb.bind() }
         )
-      val entities = listOf(struct.struct)
-      val entityIdByPath = mapOf(emptyDataConnectPath() to entityIdArb.bind().string)
 
-      rootStruct.decodingEncodingShouldProduceIdenticalStruct(entities, entityIdByPath)
+      rootStruct.decodingEncodingShouldProduceIdenticalStruct(
+        entities = listOf(rootStruct),
+        entityIdByPath = mapOf(emptyDataConnectPath() to entityIdArb.bind().string),
+      )
     }
   }
 
   @Test
   fun `entity contains lists of lists of entities and non-entities should throw`() = runTest {
-    val structArb = Arb.proto.struct()
     val structKeyArb = Arb.proto.structKey()
     checkAll(
       propTestConfig,
-      Arb.proto.structKey(),
-      Arb.int(2..10),
-      Arb.int(2..10),
-      Arb.proto.recursivelyEmptyListValue()
-    ) { entityIdFieldName, entityCount, nonEntityCount, recursivelyEmptyListValue ->
-      val distinctEntityIdArb = distinctEntityIdArb()
-      val structs = List(entityCount + nonEntityCount) { structArb.bind().struct }
-      val listValueBuilder = recursivelyEmptyListValue.listValue.toBuilder()
-      val insertPaths =
+      Arb.proto.struct(),
+      Arb.proto.listValue().filterNot { it.listValue.isRecursivelyEmpty() },
+      Arb.list(Arb.proto.struct(), 1..10),
+    ) { rootStructBase, listValueBase, entities ->
+      val listValueBuilder = listValueBase.listValue.toBuilder()
+      val entityPaths =
         listValueBuilder.randomlyInsertValues(
-          structs.map { it.toValueProto() },
+          entities.map { it.toValueProto() },
           randomSource().random,
         )
       val listValue = listValueBuilder.build()
-      val rootStruct =
-        structArb
-          .bind()
-          .struct
-          .withRandomlyInsertedValue(
-            listValue.toValueProto(),
-            randomSource().random,
-            generateKey = { structKeyArb.bind() }
-          )
+      val rootStructBuilder = rootStructBase.struct.toBuilder()
+      val listValuePath =
+        rootStructBuilder.randomlyInsertValue(
+          listValue.toValueProto(),
+          randomSource().random,
+          generateKey = { structKeyArb.bind() }
+        )
+      val rootStruct = rootStructBuilder.build()
       val entityIdByPath = buildMap {
-        insertPaths.shuffled(randomSource().random).take(entityCount).forEach { entityPath ->
+        val distinctEntityIdArb = distinctEntityIdArb()
+        put(emptyDataConnectPath(), distinctEntityIdArb.bind().string)
+        entityPaths.forEach { entityPath ->
           val entityId = distinctEntityIdArb.bind().string
-          put(entityPath, entityId)
+          put(listValuePath + entityPath, entityId)
         }
       }
 
