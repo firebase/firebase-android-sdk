@@ -198,11 +198,10 @@ internal class QueryResultEncoder(
           if (leafContents === null) {
             leafContents = valuePath to valueContents
           } else if (leafContents.second != valueContents) {
-            val curPath = valuePath
             val (entityPath, nonEntityPath) =
               when (valueContents) {
-                EntitySubListLeafContents.Entities -> Pair(curPath, leafContents.first)
-                EntitySubListLeafContents.NonEntities -> Pair(leafContents.first, curPath)
+                EntitySubListLeafContents.Entities -> Pair(valuePath, leafContents.first)
+                EntitySubListLeafContents.NonEntities -> Pair(leafContents.first, valuePath)
               }
             throw IntermixedEntityAndNonEntityListInEntityException(
               "Found entity at ${entityPath.toPathString()} " +
