@@ -33,6 +33,7 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.recursivelyEmptyListValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
+import com.google.firebase.dataconnect.testutil.property.arbitrary.value
 import com.google.firebase.dataconnect.testutil.property.arbitrary.withIterations
 import com.google.firebase.dataconnect.testutil.property.arbitrary.withIterationsIfNotNull
 import com.google.firebase.dataconnect.testutil.randomlyInsertStruct
@@ -441,17 +442,20 @@ class QueryResultEncoderUnitTest {
 
   @Test
   fun `entity contains lists of lists of entities and non-entities should throw`() = runTest {
+    val valueExceptRecursivelyEmptyListsArb =
+      Arb.proto.value().filterNot { it.isListValue && it.listValue.isRecursivelyEmpty() }
     val structKeyArb = Arb.proto.structKey()
     checkAll(
       propTestConfig,
       Arb.proto.struct(),
-      Arb.proto.listValue().filterNot { it.listValue.isRecursivelyEmpty() },
+      Arb.proto.recursivelyEmptyListValue(),
       Arb.list(Arb.proto.struct(), 1..10),
-    ) { rootStructBase, listValueBase, entities ->
-      val listValueBuilder = listValueBase.listValue.toBuilder()
-      val entityPaths =
+      Arb.list(valueExceptRecursivelyEmptyListsArb, 1..10),
+    ) { rootStructBase, recursivelyEmptyListValue, entities, nonEntities ->
+      val listValueBuilder = recursivelyEmptyListValue.listValue.toBuilder()
+      val insertPaths =
         listValueBuilder.randomlyInsertValues(
-          entities.map { it.toValueProto() },
+          entities.map { it.toValueProto() } + nonEntities,
           randomSource().random,
         )
       val listValue = listValueBuilder.build()
@@ -466,9 +470,9 @@ class QueryResultEncoderUnitTest {
       val entityIdByPath = buildMap {
         val distinctEntityIdArb = distinctEntityIdArb()
         put(emptyDataConnectPath(), distinctEntityIdArb.bind().string)
+        val entityPaths = insertPaths.take(entities.size)
         entityPaths.forEach { entityPath ->
-          val entityId = distinctEntityIdArb.bind().string
-          put(listValuePath + entityPath, entityId)
+          put(listValuePath + entityPath, distinctEntityIdArb.bind().string)
         }
       }
 
