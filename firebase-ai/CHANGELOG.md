@@ -2,6 +2,9 @@
 
 - [feature] Added `JsonSchema`, `AutoFunctionDeclaration`, support for automatic function calling,
   and the firebase-ai-ksp processor's annotation (`Generable`, `Tool`, and `Guide`)
+- [feature] Added support for configuring thinking levels with Gemini 3 series
+  models and onwards. (#7599)
+- [changed] Added `equals()` function to `GenerativeBackend`.
 
 # 17.7.0
 

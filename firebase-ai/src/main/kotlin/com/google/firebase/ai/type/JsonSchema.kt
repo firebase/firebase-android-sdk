@@ -57,6 +57,7 @@ internal constructor(
      * @param nullable Indicates whether the value can be `null`. Defaults to `false`.
      */
     @JvmStatic
+    @JvmName("bool")
     @JvmOverloads
     public fun boolean(
       description: String? = null,
@@ -194,7 +195,6 @@ internal constructor(
      * @param format An optional pattern that values need to adhere to.
      */
     @JvmStatic
-    @JvmName("str")
     @JvmOverloads
     public fun string(
       description: String? = null,

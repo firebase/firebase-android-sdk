@@ -19,7 +19,7 @@ import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
 
-fun Struct.map(callback: (path: ProtoValuePath, value: Value) -> Value?): Struct {
+fun Struct.map(callback: (path: DataConnectPath, value: Value) -> Value?): Struct {
   val mappedValue = toValueProto().map(callback)
   checkNotNull(mappedValue) {
     "callback returned null for root, " +
@@ -32,7 +32,7 @@ fun Struct.map(callback: (path: ProtoValuePath, value: Value) -> Value?): Struct
   return mappedValue.structValue
 }
 
-fun ListValue.map(callback: (path: ProtoValuePath, value: Value) -> Value?): ListValue {
+fun ListValue.map(callback: (path: DataConnectPath, value: Value) -> Value?): ListValue {
   val mappedValue = toValueProto().map(callback)
   checkNotNull(mappedValue) {
     "callback returned null for root, " +
@@ -46,7 +46,7 @@ fun ListValue.map(callback: (path: ProtoValuePath, value: Value) -> Value?): Lis
 }
 
 fun <V : Value?> Value.map(
-  callback: (path: ProtoValuePath, value: Value) -> V,
+  callback: (path: DataConnectPath, value: Value) -> V,
 ): V =
   mapRecursive(
     value = this,
@@ -56,15 +56,15 @@ fun <V : Value?> Value.map(
 
 private fun <V : Value?> mapRecursive(
   value: Value,
-  path: MutableProtoValuePath,
-  callback: (path: ProtoValuePath, value: Value) -> V,
+  path: MutableDataConnectPath,
+  callback: (path: DataConnectPath, value: Value) -> V,
 ): V {
   val processedValue: Value =
     if (value.isStructValue) {
       Struct.newBuilder().let { structBuilder ->
         value.structValue.fieldsMap.entries.forEach { (key, childValue) ->
           val mappedChildValue =
-            path.withAppendedStructKey(key) { mapRecursive(childValue, path, callback) }
+            path.withAddedField(key) { mapRecursive(childValue, path, callback) }
           if (mappedChildValue !== null) {
             structBuilder.putFields(key, mappedChildValue)
           }
@@ -75,7 +75,7 @@ private fun <V : Value?> mapRecursive(
       ListValue.newBuilder().let { listValueBuilder ->
         value.listValue.valuesList.forEachIndexed { index, childValue ->
           val mappedChildValue =
-            path.withAppendedListIndex(index) { mapRecursive(childValue, path, callback) }
+            path.withAddedListIndex(index) { mapRecursive(childValue, path, callback) }
           if (mappedChildValue !== null) {
             listValueBuilder.addValues(mappedChildValue)
           }

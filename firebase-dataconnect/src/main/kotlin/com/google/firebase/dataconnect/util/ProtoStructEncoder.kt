@@ -19,9 +19,13 @@
 package com.google.firebase.dataconnect.util
 
 import com.google.firebase.dataconnect.AnyValue
+import com.google.firebase.dataconnect.DataConnectPath
 import com.google.firebase.dataconnect.serializers.AnyValueSerializer
+import com.google.firebase.dataconnect.toPathString
 import com.google.firebase.dataconnect.util.ProtoUtil.nullProtoValue
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
+import com.google.firebase.dataconnect.withAddedField
+import com.google.firebase.dataconnect.withAddedListIndex
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
@@ -37,7 +41,7 @@ import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.serializer
 
 internal class ProtoValueEncoder(
-  private val path: String?,
+  private val path: DataConnectPath,
   override val serializersModule: SerializersModule,
   val onValue: (Value) -> Unit
 ) : Encoder {
@@ -115,7 +119,7 @@ internal class ProtoValueEncoder(
 }
 
 private abstract class ProtoCompositeValueEncoder<K>(
-  private val path: String?,
+  private val path: DataConnectPath,
   override val serializersModule: SerializersModule,
   private val onValue: (Value) -> Unit
 ) : CompositeEncoder {
@@ -127,7 +131,7 @@ private abstract class ProtoCompositeValueEncoder<K>(
   }
 
   protected abstract fun keyOf(descriptor: SerialDescriptor, index: Int): K
-  protected abstract fun formattedKeyForElementPath(key: K): String
+  protected abstract fun elementPathForKey(key: K): DataConnectPath
 
   override fun encodeBooleanElement(descriptor: SerialDescriptor, index: Int, value: Boolean) {
     putValue(descriptor, index, value.toValueProto())
@@ -198,9 +202,6 @@ private abstract class ProtoCompositeValueEncoder<K>(
     onValue(Value.newBuilder().also { populate(descriptor, it, valueByKey) }.build())
   }
 
-  private fun elementPathForKey(key: K): String =
-    formattedKeyForElementPath(key).let { if (path === null) it else "$path$it" }
-
   protected abstract fun populate(
     descriptor: SerialDescriptor,
     valueBuilder: Value.Builder,
@@ -209,14 +210,14 @@ private abstract class ProtoCompositeValueEncoder<K>(
 }
 
 private class ProtoListValueEncoder(
-  private val path: String?,
+  private val path: DataConnectPath,
   serializersModule: SerializersModule,
   onValue: (Value) -> Unit
 ) : ProtoCompositeValueEncoder<Int>(path, serializersModule, onValue) {
 
   override fun keyOf(descriptor: SerialDescriptor, index: Int) = index
 
-  override fun formattedKeyForElementPath(key: Int) = "[$key]"
+  override fun elementPathForKey(key: Int): DataConnectPath = path.withAddedListIndex(key)
 
   override fun populate(
     descriptor: SerialDescriptor,
@@ -229,7 +230,7 @@ private class ProtoListValueEncoder(
           listValueBuilder.addValues(
             valueByKey[i]
               ?: throw SerializationException(
-                "$path: list value missing at index $i" +
+                "${path.toPathString()}: list value missing at index $i" +
                   " (have ${valueByKey.size} indexes:" +
                   " ${valueByKey.keys.sorted().joinToString()})"
               )
@@ -241,14 +242,14 @@ private class ProtoListValueEncoder(
 }
 
 private class ProtoStructValueEncoder(
-  path: String?,
+  private val path: DataConnectPath,
   serializersModule: SerializersModule,
   onValue: (Value) -> Unit
 ) : ProtoCompositeValueEncoder<String>(path, serializersModule, onValue) {
 
   override fun keyOf(descriptor: SerialDescriptor, index: Int) = descriptor.getElementName(index)
 
-  override fun formattedKeyForElementPath(key: String) = ".$key"
+  override fun elementPathForKey(key: String): DataConnectPath = path.withAddedField(key)
 
   override fun populate(
     descriptor: SerialDescriptor,
@@ -270,7 +271,7 @@ private class ProtoStructValueEncoder(
 }
 
 private class ProtoMapValueEncoder(
-  private val path: String?,
+  private val path: DataConnectPath,
   override val serializersModule: SerializersModule,
   private val onValue: (Value) -> Unit
 ) : CompositeEncoder {
@@ -336,9 +337,10 @@ private class ProtoMapValueEncoder(
       if (value === null) {
         null
       } else {
-        val subPath = keyByIndex[index - 1] ?: "$index"
+        val key = keyByIndex[index - 1] ?: "$index"
+        val valuePath = path.withAddedField(key)
         var encodedValue: Value? = null
-        val encoder = ProtoValueEncoder(subPath, serializersModule) { encodedValue = it }
+        val encoder = ProtoValueEncoder(valuePath, serializersModule) { encodedValue = it }
         encoder.encodeNullableSerializableValue(serializer, value)
         requireNotNull(encodedValue) { "ProtoValueEncoder should have produced a value" }
         encodedValue
@@ -358,8 +360,9 @@ private class ProtoMapValueEncoder(
       }
       keyByIndex[index] = value
     } else {
-      val subPath = keyByIndex[index - 1] ?: "$index"
-      val encoder = ProtoValueEncoder(subPath, serializersModule) { valueByIndex[index] = it }
+      val key = keyByIndex[index - 1] ?: "$index"
+      val valuePath = path.withAddedField(key)
+      val encoder = ProtoValueEncoder(valuePath, serializersModule) { valueByIndex[index] = it }
       encoder.encodeSerializableValue(serializer, value)
     }
   }

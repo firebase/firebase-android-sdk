@@ -28,7 +28,12 @@ dependencies {
 
 tasks.test { useJUnitPlatform() }
 
-kotlin { jvmToolchain(21) }
+kotlin { jvmToolchain(17) }
+
+java {
+  sourceCompatibility = JavaVersion.VERSION_1_9
+  targetCompatibility = JavaVersion.VERSION_1_9
+}
 
 publishing {
   publications {

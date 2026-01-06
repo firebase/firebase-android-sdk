@@ -22,7 +22,9 @@ import com.google.firebase.ai.type.JsonSchema
  * This annotation is used with the firebase-ai-ksp-processor plugin to generate [JsonSchema] that
  * match an existing kotlin class structure. For more info see:
  * https://github.com/firebase/firebase-android-sdk/blob/main/firebase-ai-ksp-processor/README.md
+ *
+ * @property description a description of the class
  */
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.SOURCE)
-public annotation class Generable
+public annotation class Generable(public val description: String = "")

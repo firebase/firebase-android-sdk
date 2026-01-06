@@ -31,7 +31,7 @@ public class ViewSnapshot {
     SYNCED
   }
 
-  private final Query query;
+  private final QueryOrPipeline query;
   private final DocumentSet documents;
   private final DocumentSet oldDocuments;
   private final List<DocumentViewChange> changes;
@@ -42,7 +42,7 @@ public class ViewSnapshot {
   private boolean hasCachedResults;
 
   public ViewSnapshot(
-      Query query,
+      QueryOrPipeline query,
       DocumentSet documents,
       DocumentSet oldDocuments,
       List<DocumentViewChange> changes,
@@ -64,7 +64,7 @@ public class ViewSnapshot {
 
   /** Returns a view snapshot as if all documents in the snapshot were added. */
   public static ViewSnapshot fromInitialDocuments(
-      Query query,
+      QueryOrPipeline query,
       DocumentSet documents,
       ImmutableSortedSet<DocumentKey> mutatedKeys,
       boolean fromCache,
@@ -86,7 +86,7 @@ public class ViewSnapshot {
         hasCachedResults);
   }
 
-  public Query getQuery() {
+  public QueryOrPipeline getQuery() {
     return query;
   }
 

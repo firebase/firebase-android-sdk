@@ -69,7 +69,6 @@ import org.gradle.kotlin.dsl.register
  * - [RELEASE_GENEATOR_TASK][registerGenerateReleaseConfigFilesTask]
  * - [RELEASE_REPORT_GENERATOR_TASK][registerGenerateReleaseReportFilesTask]
  * - [PUBLISH_RELEASING_LIBS_TO_LOCAL_TASK][registerPublishReleasingLibrariesToMavenLocalTask]
- * - [SEMVER_CHECK_TASK][registerSemverCheckForReleaseTask]
  * - [PUBLISH_ALL_TO_BUILD_TASK][registerPublishAllToBuildDir]
  * - [LIBRARY_GROUPS_TASK][registerLibraryGroupsTask]
  *
@@ -116,7 +115,6 @@ abstract class PublishingPlugin : Plugin<Project> {
 
       registerGenerateReleaseConfigFilesTask(project, libraryGroups, releaseReportTask)
       registerPublishReleasingLibrariesToMavenLocalTask(project, releasingProjects)
-      registerSemverCheckForReleaseTask(project, releasingProjects)
       registerPublishAllToBuildDir(project, allFirebaseLibraries)
       registerPostReleasePlugin(releasingProjects)
       registerLibraryGroupsTask(project, libraryGroups)
@@ -712,25 +710,6 @@ abstract class PublishingPlugin : Plugin<Project> {
     }
 
   /**
-   * Registers the [SEMVER_CHECK_TASK] task.
-   *
-   * A collection of [ApiDiffer] for each releasing project.
-   *
-   * Ensures that the version of a releasing project aligns with the API. That is, if the API shows
-   * signs of a major or minor bump- the version is bumped as expected.
-   */
-  private fun registerSemverCheckForReleaseTask(
-    project: Project,
-    releasingProjects: List<Project>,
-  ) =
-    project.tasks.register(SEMVER_CHECK_TASK) {
-      for (releasingProject in releasingProjects) {
-        val semverCheckTask = releasingProject.tasks.named("semverCheck")
-        dependsOn(semverCheckTask)
-      }
-    }
-
-  /**
    * Registers the [PUBLISH_ALL_TO_BUILD_TASK] task.
    *
    * A collection of [publishMavenAarPublicationToBuildDirRepository][PublishToMavenRepository] for
@@ -770,7 +749,6 @@ abstract class PublishingPlugin : Plugin<Project> {
     const val GENERATE_TUTORIAL_BUNDLE_TASK = "generateTutorialBundle"
     const val VALIDATE_PROJECTS_TO_PUBLISH_TASK = "validateProjectsToPublish"
     const val VALIDATE_LIBRARY_GROUPS_TO_PUBLISH_TASK = "validateLibraryGroupsToPublish"
-    const val SEMVER_CHECK_TASK = "semverCheckForRelease"
     const val RELEASE_GENEATOR_TASK = "generateReleaseConfig"
     const val RELEASE_REPORT_GENERATOR_TASK = "generateReleaseReport"
     const val VALIDATE_POM_TASK = "validatePomForRelease"

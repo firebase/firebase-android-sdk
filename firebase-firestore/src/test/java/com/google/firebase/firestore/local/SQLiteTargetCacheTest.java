@@ -49,7 +49,11 @@ public final class SQLiteTargetCacheTest extends TargetCacheTestCase {
 
     Query query = query("rooms");
     TargetData targetData =
-        new TargetData(query.toTarget(), targetId, originalSequenceNumber, QueryPurpose.LISTEN);
+        new TargetData(
+            new com.google.firebase.firestore.core.TargetOrPipeline.TargetWrapper(query.toTarget()),
+            targetId,
+            originalSequenceNumber,
+            QueryPurpose.LISTEN);
     db1.runTransaction(
         "add query data",
         () -> {

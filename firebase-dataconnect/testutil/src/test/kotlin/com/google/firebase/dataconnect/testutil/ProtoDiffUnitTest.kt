@@ -18,6 +18,7 @@
 
 package com.google.firebase.dataconnect.testutil
 
+import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.testutil.property.arbitrary.distinctPair
 import com.google.firebase.dataconnect.testutil.property.arbitrary.listValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.numberValue
@@ -84,7 +85,7 @@ class ProtoDiffUnitTest {
     checkAll(propTestConfig, structArb, Arb.int(1..5)) { struct1, keyCount ->
       val mutableDifferences = mutableListOf<DifferencePathPair<*>>()
       val struct2 = prepare(struct1, keyCount, mutableDifferences)
-      val expectedDifferences = mutableDifferences
+      val expectedDifferences = mutableDifferences.toList()
 
       structFastEqual(struct1, struct2) shouldBe false
       structFastEqual(struct2, struct1) shouldBe false
@@ -105,9 +106,9 @@ class ProtoDiffUnitTest {
     val structArb = Arb.proto.struct(key = structKeyArb).map { it.struct }
 
     verifyStructDiffReturnsDifferences(structArb) { struct1, keyCount, expectedDifferences ->
-      val structPaths: Set<ProtoValuePath> =
+      val structPaths: Set<DataConnectPath> =
         struct1.walk(includeSelf = true).filter { it.value.isStructValue }.map { it.path }.toSet()
-      val valuesToAddByPath: Map<ProtoValuePath, MutableList<Value>> = buildMap {
+      val valuesToAddByPath: Map<DataConnectPath, MutableList<Value>> = buildMap {
         repeat(keyCount) {
           val path = structPaths.random(randomSource().random)
           getOrPut(path) { mutableListOf() }.add(valueArb.bind())
@@ -146,7 +147,7 @@ class ProtoDiffUnitTest {
         replaceRandomValues(
           struct1,
           keyCount,
-          filter = { it.path.lastOrNull().isStructKey() },
+          filter = { it.path.lastOrNull() is DataConnectPathSegment.Field },
           replacementValue = { _, _ -> null },
         )
       assume(replaceResult.replacements.isNotEmpty())
@@ -156,7 +157,7 @@ class ProtoDiffUnitTest {
           DifferencePathPair(
             replacement.path.dropLast(1),
             Difference.StructMissingKey(
-              replacement.path.last().structKeyOrThrow(),
+              replacement.path.last().fieldOrThrow(),
               replacement.oldValue
             )
           )
@@ -244,7 +245,7 @@ class ProtoDiffUnitTest {
     checkAll(propTestConfig, listValueArb, Arb.int(1..5)) { listValue1, itemCount ->
       val mutableDifferences = mutableListOf<DifferencePathPair<*>>()
       val listValue2 = prepare(listValue1, itemCount, mutableDifferences)
-      val expectedDifferences = mutableDifferences
+      val expectedDifferences = mutableDifferences.toList()
 
       listValueFastEqual(listValue1, listValue2) shouldBe false
       listValueFastEqual(listValue2, listValue1) shouldBe false
@@ -294,9 +295,9 @@ class ProtoDiffUnitTest {
 
     verifyListValueDiffReturnsDifferences(listValueArb) { listValue1, itemCount, expectedDifferences
       ->
-      val listPaths: Set<ProtoValuePath> =
+      val listPaths: Set<DataConnectPath> =
         listValue1.walk(includeSelf = true).filter { it.value.isListValue }.map { it.path }.toSet()
-      val valuesToAddByPath: Map<ProtoValuePath, MutableList<Value>> = buildMap {
+      val valuesToAddByPath: Map<DataConnectPath, MutableList<Value>> = buildMap {
         repeat(itemCount) {
           val path = listPaths.random(randomSource().random)
           getOrPut(path) { mutableListOf() }.add(valueArb.bind())
@@ -512,14 +513,14 @@ class ProtoDiffUnitTest {
     fun PropertyContext.randomPathsToReplace(
       value: Value,
       maxNumPaths: Int,
-      filter: (ProtoValuePathPair) -> Boolean = { true },
-    ): List<ProtoValuePath> = randomSource().random.pathsToReplace(value, maxNumPaths, filter)
+      filter: (DataConnectPathValuePair) -> Boolean = { true },
+    ): List<DataConnectPath> = randomSource().random.pathsToReplace(value, maxNumPaths, filter)
 
     fun Random.pathsToReplace(
       value: Value,
       maxNumPaths: Int,
-      filter: (ProtoValuePathPair) -> Boolean = { true },
-    ): List<ProtoValuePath> {
+      filter: (DataConnectPathValuePair) -> Boolean = { true },
+    ): List<DataConnectPath> {
       val candidatePaths =
         value.walk(includeSelf = false).filter(filter).map { it.path }.toMutableList()
 
@@ -546,7 +547,7 @@ class ProtoDiffUnitTest {
       val replacements: List<Replacement<V>>,
     ) {
       data class Replacement<V : Value?>(
-        val path: ProtoValuePath,
+        val path: DataConnectPath,
         val oldValue: Value,
         val newValue: V,
       )
@@ -555,8 +556,8 @@ class ProtoDiffUnitTest {
     fun <V : Value?> PropertyContext.replaceRandomValues(
       struct: Struct,
       maxNumPaths: Int,
-      filter: (ProtoValuePathPair) -> Boolean = { true },
-      replacementValue: (path: ProtoValuePath, oldValue: Value) -> V,
+      filter: (DataConnectPathValuePair) -> Boolean = { true },
+      replacementValue: (path: DataConnectPath, oldValue: Value) -> V,
     ): ReplaceRandomValuesResult<Struct, V> {
       val pathsToReplace = randomPathsToReplace(struct.toValueProto(), maxNumPaths, filter)
 
@@ -578,8 +579,8 @@ class ProtoDiffUnitTest {
     fun <V : Value?> PropertyContext.replaceRandomValues(
       listValue: ListValue,
       maxNumPaths: Int,
-      filter: (ProtoValuePathPair) -> Boolean = { true },
-      replacementValue: (path: ProtoValuePath, oldValue: Value) -> V,
+      filter: (DataConnectPathValuePair) -> Boolean = { true },
+      replacementValue: (path: DataConnectPath, oldValue: Value) -> V,
     ): ReplaceRandomValuesResult<ListValue, V> {
       val pathsToReplace = randomPathsToReplace(listValue.toValueProto(), maxNumPaths, filter)
 

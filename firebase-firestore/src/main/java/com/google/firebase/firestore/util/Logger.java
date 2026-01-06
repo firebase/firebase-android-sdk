@@ -39,9 +39,9 @@ public class Logger {
 
   private static void doLog(Level level, String tag, String toLog, Object... values) {
     if (level.ordinal() >= Logger.logLevel.ordinal()) {
-      String value =
-          String.format("(%s) [%s]: ", BuildConfig.VERSION_NAME, tag)
-              + String.format(toLog, values);
+      String prefix = String.format("(%s) [%s]: ", BuildConfig.VERSION_NAME, tag);
+      String value = values.length > 0 ? String.format(toLog, values) : toLog;
+      value = prefix + value;
       switch (level) {
         case DEBUG:
           Log.i("Firestore", value);
