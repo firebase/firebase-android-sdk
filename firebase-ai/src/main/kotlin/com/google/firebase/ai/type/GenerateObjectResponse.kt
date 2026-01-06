@@ -21,9 +21,21 @@ import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.serializerOrNull
 
+/**
+ * A [GenerateContentResponse] augmented with class information, use [getObject] to parse the
+ * response and extract the raw object.
+ */
 public class GenerateObjectResponse<T : Any>
 internal constructor(public val response: GenerateContentResponse, internal val clazz: KClass<T>) {
 
+  /**
+   * Deserialize a candidate (default first) and convert it into the type associated with this
+   * response.
+   *
+   * @param candidateIndex which candidate to deserialize
+   * @throws RuntimeException if class is not @Serializable
+   * @throws SerializationException if an error occurs during deserialization
+   */
   @OptIn(InternalSerializationApi::class)
   public fun getObject(candidateIndex: Int = 0): T? {
     val candidate = response.candidates[candidateIndex]

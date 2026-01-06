@@ -16,7 +16,6 @@
 
 package com.google.firebase.ai.ksp
 
-import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.processing.KSPLogger
@@ -58,20 +57,32 @@ public class SchemaSymbolProcessor(
 
   private inner class SchemaSymbolProcessorVisitor() : KSVisitorVoid() {
     private val numberTypes = setOf("kotlin.Int", "kotlin.Long", "kotlin.Double", "kotlin.Float")
-    private val baseKdocRegex = Regex("^\\s*(.*?)((@\\w* .*)|\\z)", RegexOption.DOT_MATCHES_ALL)
+    // This regex extracts everything in the kdocs until it hits either the end of the kdocs, or
+    // the first @<tag> like @property or @see, extracting the main body text of the kdoc
+    private val baseKdocRegex = Regex("""^\s*(.*?)((@\w* .*)|\z)""", RegexOption.DOT_MATCHES_ALL)
+    // This regex extracts two capture groups from @property tags, the first is the name of the
+    // property, and the second is the documentation associated with that property
     private val propertyKdocRegex =
-      Regex("\\s*@property (\\w*) (.*?)(?=@\\w*|\\z)", RegexOption.DOT_MATCHES_ALL)
+      Regex("""\s*@property (\w*) (.*?)(?=@\w*|\z)""", RegexOption.DOT_MATCHES_ALL)
 
     override fun visitClassDeclaration(classDeclaration: KSClassDeclaration, data: Unit) {
       val isDataClass = classDeclaration.modifiers.contains(Modifier.DATA)
       if (!isDataClass) {
         logger.error("${classDeclaration.qualifiedName} is not a data class")
       }
+      val containingFile = classDeclaration.containingFile
+      if (containingFile == null) {
+        logger.error("${classDeclaration.qualifiedName} must be in a file in the build")
+        throw RuntimeException()
+      }
       val generatedSchemaFile = generateFileSpec(classDeclaration)
-      generatedSchemaFile.writeTo(
-        codeGenerator,
-        Dependencies(true, classDeclaration.containingFile!!),
-      )
+
+      classDeclaration.containingFile?.let {
+        generatedSchemaFile.writeTo(
+          codeGenerator,
+          Dependencies(true, containingFile),
+        )
+      }
     }
 
     fun generateFileSpec(classDeclaration: KSClassDeclaration): FileSpec {
@@ -114,16 +125,20 @@ public class SchemaSymbolProcessor(
         .build()
     }
 
-    @OptIn(KspExperimental::class)
     fun generateCodeBlockForSchema(
-      name: String? = null,
-      description: String? = null,
       type: KSType,
+      description: String? = null,
+      name: String? = null,
       parentType: KSType? = null,
       guideAnnotation: KSAnnotation? = null,
     ): CodeBlock {
       val parameterizedName = type.toTypeName() as? ParameterizedTypeName
       val className = parameterizedName?.rawType ?: type.toClassName()
+      val qualifiedName = type.declaration.qualifiedName
+      if (qualifiedName == null) {
+        logger.error("$type has no qualified name.")
+        throw RuntimeException()
+      }
       val kdocString = type.declaration.docString ?: ""
       val baseKdoc = extractBaseKdoc(kdocString)
       val propertyDocs = extractPropertyKdocs(kdocString)
@@ -163,9 +178,17 @@ public class SchemaSymbolProcessor(
           builder.addStatement("JsonSchema.string(").indent()
         }
         "kotlin.collections.List" -> {
-          val listTypeParam = type.arguments.first().type!!.resolve()
+
+          val listTypeParam = type.arguments.first().type
+          if (listTypeParam == null) {
+            logger.error(
+              "${parentType?.toClassName()?.simpleName?.let { "$it." }}$name must be a" +
+                " parameterized list type."
+            )
+            throw RuntimeException()
+          }
           val listParamCodeBlock =
-            generateCodeBlockForSchema(type = listTypeParam, parentType = type)
+            generateCodeBlockForSchema(type = listTypeParam.resolve(), parentType = type)
           builder
             .addStatement("JsonSchema.array(")
             .indent()
@@ -184,7 +207,7 @@ public class SchemaSymbolProcessor(
             builder
               .addStatement("JsonSchema.enumeration(")
               .indent()
-              .addStatement("clazz = ${type.declaration.qualifiedName!!.asString()}::class,")
+              .addStatement("clazz = ${qualifiedName.asString()}::class,")
               .addStatement("values = listOf(")
               .indent()
               .addStatement(enumValues.joinToString { "\"$it\"" })
@@ -194,7 +217,7 @@ public class SchemaSymbolProcessor(
             builder
               .addStatement("JsonSchema.obj(")
               .indent()
-              .addStatement("clazz = ${type.declaration.qualifiedName!!.asString()}::class,")
+              .addStatement("clazz = ${qualifiedName.asString()}::class,")
               .addStatement("properties = mapOf(")
               .indent()
             val properties =
@@ -203,9 +226,9 @@ public class SchemaSymbolProcessor(
                 propertyName to
                   generateCodeBlockForSchema(
                     type = property.type.resolve(),
-                    parentType = type,
                     description = propertyDocs[propertyName],
                     name = propertyName,
+                    parentType = type,
                     guideAnnotation =
                       property.annotations.firstOrNull() { it.shortName.getShortName() == "Guide" },
                   )
