@@ -48,9 +48,13 @@ public class FirebaseSymbolProcessor(
   private val codeGenerator: CodeGenerator,
   private val logger: KSPLogger,
 ) : SymbolProcessor {
-  private val baseKdocRegex = Regex("^\\s*(.*?)((@\\w* .*)|\\z)", RegexOption.DOT_MATCHES_ALL)
+  // This regex extracts everything in the kdocs until it hits either the end of the kdocs, or
+  // the first @<tag> like @property or @see, extracting the main body text of the kdoc
+  private val baseKdocRegex = Regex("""^\s*(.*?)((@\w* .*)|\z)""", RegexOption.DOT_MATCHES_ALL)
+  // This regex extracts two capture groups from @property tags, the first is the name of the
+  // property, and the second is the documentation associated with that property
   private val propertyKdocRegex =
-    Regex("\\s*@property (\\w*) (.*?)(?=@\\w*|\\z)", RegexOption.DOT_MATCHES_ALL)
+    Regex("""\s*@property (\w*) (.*?)(?=@\w*|\z)""", RegexOption.DOT_MATCHES_ALL)
 
   override fun process(resolver: Resolver): List<KSAnnotated> {
     resolver
@@ -227,13 +231,6 @@ public class FirebaseSymbolProcessor(
 
   private inner class SchemaSymbolProcessorVisitor() : KSVisitorVoid() {
     private val numberTypes = setOf("kotlin.Int", "kotlin.Long", "kotlin.Double", "kotlin.Float")
-    // This regex extracts everything in the kdocs until it hits either the end of the kdocs, or
-    // the first @<tag> like @property or @see, extracting the main body text of the kdoc
-    private val baseKdocRegex = Regex("""^\s*(.*?)((@\w* .*)|\z)""", RegexOption.DOT_MATCHES_ALL)
-    // This regex extracts two capture groups from @property tags, the first is the name of the
-    // property, and the second is the documentation associated with that property
-    private val propertyKdocRegex =
-      Regex("""\s*@property (\w*) (.*?)(?=@\w*|\z)""", RegexOption.DOT_MATCHES_ALL)
 
     override fun visitClassDeclaration(classDeclaration: KSClassDeclaration, data: Unit) {
       val isDataClass = classDeclaration.modifiers.contains(Modifier.DATA)
