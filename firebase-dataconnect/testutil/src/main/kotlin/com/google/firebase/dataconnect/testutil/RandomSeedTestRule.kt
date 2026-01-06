@@ -36,8 +36,8 @@ class RandomSeedTestRule(val rs: Lazy<RandomSource>) : TestRule {
         result.onFailure {
           if (rs.isInitialized()) {
             println(
-              "55negqf33k Test ${description.displayName} failed using " +
-                "RandomSource with seed=${rs.value.seed}"
+              "WARNING[55negqf33k]: RandomSeedTestRule: Test failed using " +
+                "RandomSource with seed=${rs.value.seed}: ${description.displayName}"
             )
           }
         }

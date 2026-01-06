@@ -16,8 +16,8 @@
 
 package com.google.firebase.dataconnect.testutil.property.arbitrary
 
-import com.google.firebase.dataconnect.testutil.ProtoValuePathComponent
-import com.google.firebase.dataconnect.testutil.ProtoValuePathPair
+import com.google.firebase.dataconnect.DataConnectPathSegment
+import com.google.firebase.dataconnect.testutil.DataConnectPathValuePair
 import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
 import com.google.firebase.dataconnect.testutil.isListValue
 import com.google.firebase.dataconnect.testutil.isStructValue
@@ -317,19 +317,16 @@ class protoUnitTest {
     }
 
     fun Value.hasNestedKind(kindCase: Value.KindCase): Boolean =
-      if (this@hasNestedKind.kindCase == kindCase) {
-        true
-      } else if (this@hasNestedKind.kindCase == Value.KindCase.LIST_VALUE) {
-        listValue.hasNestedKind(kindCase)
-      } else if (this@hasNestedKind.kindCase == Value.KindCase.STRUCT_VALUE) {
-        structValue.hasNestedKind(kindCase)
-      } else {
-        false
+      when (this.kindCase) {
+        kindCase -> true
+        Value.KindCase.LIST_VALUE -> listValue.hasNestedKind(kindCase)
+        Value.KindCase.STRUCT_VALUE -> structValue.hasNestedKind(kindCase)
+        else -> false
       }
 
-    fun Value.calculateExpectedDescendants(): List<ProtoValuePathPair> = buildList {
-      val queue: MutableList<ProtoValuePathPair> = mutableListOf()
-      queue.add(ProtoValuePathPair(emptyList(), this@calculateExpectedDescendants))
+    fun Value.calculateExpectedDescendants(): List<DataConnectPathValuePair> = buildList {
+      val queue: MutableList<DataConnectPathValuePair> = mutableListOf()
+      queue.add(DataConnectPathValuePair(emptyList(), this@calculateExpectedDescendants))
 
       while (queue.isNotEmpty()) {
         val entry = queue.removeFirst()
@@ -342,17 +339,17 @@ class protoUnitTest {
           value.structValue.fieldsMap.entries.forEach { (key, childValue) ->
             val childPath = buildList {
               addAll(path)
-              add(ProtoValuePathComponent.StructKey(key))
+              add(DataConnectPathSegment.Field(key))
             }
-            queue.add(ProtoValuePathPair(childPath, childValue))
+            queue.add(DataConnectPathValuePair(childPath, childValue))
           }
         } else if (value.isListValue) {
           value.listValue.valuesList.forEachIndexed { index, childValue ->
             val childPath = buildList {
               addAll(path)
-              add(ProtoValuePathComponent.ListIndex(index))
+              add(DataConnectPathSegment.ListIndex(index))
             }
-            queue.add(ProtoValuePathPair(childPath, childValue))
+            queue.add(DataConnectPathValuePair(childPath, childValue))
           }
         }
       }

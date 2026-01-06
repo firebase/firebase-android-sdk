@@ -15,6 +15,7 @@
 package com.google.firebase.firestore;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.getBackendEdition;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.isRunningAgainstEmulator;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollection;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testCollectionWithDocs;
@@ -30,6 +31,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeFalse;
+import static org.junit.Assume.assumeTrue;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.google.android.gms.tasks.Task;
@@ -267,6 +269,10 @@ public class CountTest {
         "Skip this test when running against the Firestore emulator because the Firestore emulator "
             + "does not use indexes and never fails with a 'missing index' error",
         isRunningAgainstEmulator());
+
+    assumeTrue(
+        "Standard-only behavior",
+        getBackendEdition() == IntegrationTestUtil.BackendEdition.STANDARD);
 
     CollectionReference collection = testCollectionWithDocs(Collections.emptyMap());
     Query compositeIndexQuery = collection.whereEqualTo("field1", 42).whereLessThan("field2", 99);

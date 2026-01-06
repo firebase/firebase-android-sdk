@@ -98,7 +98,8 @@ public class TestUtilKtx {
     }
     ViewSnapshot viewSnapshot =
         new ViewSnapshot(
-            com.google.firebase.firestore.testutil.TestUtil.query(path),
+            new com.google.firebase.firestore.core.QueryOrPipeline.QueryWrapper(
+                com.google.firebase.firestore.testutil.TestUtil.query(path)),
             newDocuments,
             oldDocuments,
             documentChanges,

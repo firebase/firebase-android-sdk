@@ -35,80 +35,80 @@ class NestedStructsIntegrationTest : DemoConnectorIntegrationTestBase() {
     val nested1a = createNested1(nested1 = null, nested2Keys)
     val nested1b = createNested1(nested1 = nested1a.key, nested2Keys)
 
-    val queryResult = connector.getNested1byKey.execute(nested1b.key)
+    val queryResult = connector.getNested1ByKey.execute(nested1b.key)
 
     queryResult.data shouldBe
-      GetNested1byKeyQuery.Data(
-        GetNested1byKeyQuery.Data.Nested1(
+      GetNested1ByKeyQuery.Data(
+        GetNested1ByKeyQuery.Data.Nested1(
           id = nested1b.key.id,
           nested1 =
-            GetNested1byKeyQuery.Data.Nested1.Nested1(
+            GetNested1ByKeyQuery.Data.Nested1.Nested1(
               id = nested1a.key.id,
               nested1 = null,
               nested2 =
-                GetNested1byKeyQuery.Data.Nested1.Nested1.Nested2(
+                GetNested1ByKeyQuery.Data.Nested1.Nested1.Nested2(
                   id = nested2s[0].key.id,
                   value = nested2s[0].value,
                   nested3 =
-                    GetNested1byKeyQuery.Data.Nested1.Nested1.Nested2.Nested3(
+                    GetNested1ByKeyQuery.Data.Nested1.Nested1.Nested2.Nested3(
                       id = nested3s[0].key.id,
                       value = nested3s[0].value,
                     ),
                   nested3NullableNull = null,
                   nested3NullableNonNull =
-                    GetNested1byKeyQuery.Data.Nested1.Nested1.Nested2.Nested3nullableNonNull(
+                    GetNested1ByKeyQuery.Data.Nested1.Nested1.Nested2.Nested3NullableNonNull(
                       id = nested3s[1].key.id,
                       value = nested3s[1].value,
                     ),
                 ),
               nested2NullableNull = null,
               nested2NullableNonNull =
-                GetNested1byKeyQuery.Data.Nested1.Nested1.Nested2nullableNonNull(
+                GetNested1ByKeyQuery.Data.Nested1.Nested1.Nested2NullableNonNull(
                   id = nested2s[1].key.id,
                   value = nested2s[1].value,
                   nested3 =
-                    GetNested1byKeyQuery.Data.Nested1.Nested1.Nested2nullableNonNull.Nested3(
+                    GetNested1ByKeyQuery.Data.Nested1.Nested1.Nested2NullableNonNull.Nested3(
                       id = nested3s[2].key.id,
                       value = nested3s[2].value,
                     ),
                   nested3NullableNull = null,
                   nested3NullableNonNull =
-                    GetNested1byKeyQuery.Data.Nested1.Nested1.Nested2nullableNonNull
-                      .Nested3nullableNonNull(
+                    GetNested1ByKeyQuery.Data.Nested1.Nested1.Nested2NullableNonNull
+                      .Nested3NullableNonNull(
                         id = nested3s[3].key.id,
                         value = nested3s[3].value,
                       ),
                 ),
             ),
           nested2 =
-            GetNested1byKeyQuery.Data.Nested1.Nested2(
+            GetNested1ByKeyQuery.Data.Nested1.Nested2(
               id = nested2s[2].key.id,
               value = nested2s[2].value,
               nested3 =
-                GetNested1byKeyQuery.Data.Nested1.Nested2.Nested3(
+                GetNested1ByKeyQuery.Data.Nested1.Nested2.Nested3(
                   id = nested3s[4].key.id,
                   value = nested3s[4].value,
                 ),
               nested3NullableNull = null,
               nested3NullableNonNull =
-                GetNested1byKeyQuery.Data.Nested1.Nested2.Nested3nullableNonNull(
+                GetNested1ByKeyQuery.Data.Nested1.Nested2.Nested3NullableNonNull(
                   id = nested3s[5].key.id,
                   value = nested3s[5].value,
                 ),
             ),
           nested2NullableNull = null,
           nested2NullableNonNull =
-            GetNested1byKeyQuery.Data.Nested1.Nested2nullableNonNull(
+            GetNested1ByKeyQuery.Data.Nested1.Nested2NullableNonNull(
               id = nested2s[3].key.id,
               value = nested2s[3].value,
               nested3 =
-                GetNested1byKeyQuery.Data.Nested1.Nested2nullableNonNull.Nested3(
+                GetNested1ByKeyQuery.Data.Nested1.Nested2NullableNonNull.Nested3(
                   id = nested3s[6].key.id,
                   value = nested3s[6].value,
                 ),
               nested3NullableNull = null,
               nested3NullableNonNull =
-                GetNested1byKeyQuery.Data.Nested1.Nested2nullableNonNull.Nested3nullableNonNull(
+                GetNested1ByKeyQuery.Data.Nested1.Nested2NullableNonNull.Nested3NullableNonNull(
                   id = nested3s[7].key.id,
                   value = nested3s[7].value,
                 ),

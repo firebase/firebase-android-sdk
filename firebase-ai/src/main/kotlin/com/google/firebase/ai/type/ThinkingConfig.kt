@@ -19,11 +19,17 @@ package com.google.firebase.ai.type
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-/** Configuration parameters for thinking features. */
+/**
+ * Gemini 2.5 series models and newer utilize a thinking process before generating a response. This
+ * allows them to reason through complex problems and plan a more coherent and accurate answer. See
+ * the [thinking documentation](https://firebase.google.com/docs/ai-logic/thinking) for more
+ * details.
+ */
 public class ThinkingConfig
 private constructor(
   internal val thinkingBudget: Int? = null,
-  internal val includeThoughts: Boolean? = null
+  internal val includeThoughts: Boolean? = null,
+  internal val thinkingLevel: ThinkingLevel? = null,
 ) {
 
   public class Builder() {
@@ -35,12 +41,24 @@ private constructor(
     @set:JvmSynthetic // hide void setter from Java
     public var includeThoughts: Boolean? = null
 
+    @JvmField
+    @set:JvmSynthetic // hide void setter from Java
+    public var thinkingLevel: ThinkingLevel? = null
+
     /**
-     * Indicates the thinking budget in tokens. `0` is disabled. `-1` is dynamic. The default values
-     * and allowed ranges are model dependent.
+     * Indicates the thinking budget in tokens.
+     *
+     * Use `0` for disabled, and `-1` for dynamic. The range of
+     * [supported thinking budget values](https://firebase.google.com/docs/ai-logic/thinking#supported-thinking-budget-values)
+     * depends on the model.
      */
     public fun setThinkingBudget(thinkingBudget: Int): Builder = apply {
       this.thinkingBudget = thinkingBudget
+    }
+
+    /** Indicates the thinking budget based in Levels. */
+    public fun setThinkingLevel(thinkingLevel: ThinkingLevel): Builder = apply {
+      this.thinkingLevel = thinkingLevel
     }
 
     /**
@@ -55,16 +73,26 @@ private constructor(
       this.includeThoughts = includeThoughts
     }
 
-    public fun build(): ThinkingConfig =
-      ThinkingConfig(thinkingBudget = thinkingBudget, includeThoughts = includeThoughts)
+    public fun build(): ThinkingConfig {
+      if (thinkingBudget != null && thinkingLevel != null)
+        throw IllegalArgumentException(
+          "`thinkingBudget` already set. Cannot set both `thinkingBudget` and `thinkingLevel`"
+        )
+      return ThinkingConfig(
+        thinkingBudget = thinkingBudget,
+        includeThoughts = includeThoughts,
+        thinkingLevel = thinkingLevel
+      )
+    }
   }
 
-  internal fun toInternal() = Internal(thinkingBudget, includeThoughts)
+  internal fun toInternal() = Internal(thinkingBudget, includeThoughts, thinkingLevel?.toInternal())
 
   @Serializable
   internal data class Internal(
     @SerialName("thinking_budget") val thinkingBudget: Int? = null,
-    val includeThoughts: Boolean? = null
+    val includeThoughts: Boolean? = null,
+    @SerialName("thinking_level") val thinkingLevel: ThinkingLevel.Internal? = null,
   )
 }
 

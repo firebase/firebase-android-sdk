@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.local;
 
+import static com.google.firebase.firestore.core.PipelineUtilKt.getPipelineCollection;
 import static com.google.firebase.firestore.model.DocumentCollections.emptyDocumentMap;
 import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
@@ -25,7 +26,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import com.google.firebase.Timestamp;
 import com.google.firebase.database.collection.ImmutableSortedMap;
-import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.core.QueryOrPipeline;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex.IndexOffset;
@@ -266,15 +267,13 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
     BackgroundQueue backgroundQueue = new BackgroundQueue();
     Map<DocumentKey, MutableDocument> results = new HashMap<>();
-    db.query(sql.toString())
-        .binding(bindVars)
-        .forEach(
-            row -> {
-              processRowInBackground(backgroundQueue, results, row, filter);
-              if (context != null) {
-                context.incrementDocumentReadCount();
-              }
-            });
+    int cnt =
+        db.query(sql.toString())
+            .binding(bindVars)
+            .forEach(row -> processRowInBackground(backgroundQueue, results, row, filter));
+    if (context != null) {
+      context.incrementDocumentReadCount(cnt);
+    }
     backgroundQueue.drain();
 
     // Backfill any null "document_type" columns discovered by processRowInBackground().
@@ -331,18 +330,29 @@ final class SQLiteRemoteDocumentCache implements RemoteDocumentCache {
 
   @Override
   public Map<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
-      Query query, IndexOffset offset, @Nonnull Set<DocumentKey> mutatedKeys) {
+      QueryOrPipeline query, IndexOffset offset, @Nonnull Set<DocumentKey> mutatedKeys) {
     return getDocumentsMatchingQuery(query, offset, mutatedKeys, /*context*/ null);
   }
 
   @Override
   public Map<DocumentKey, MutableDocument> getDocumentsMatchingQuery(
-      Query query,
+      QueryOrPipeline query,
       IndexOffset offset,
       @Nonnull Set<DocumentKey> mutatedKeys,
       @Nullable QueryContext context) {
+    ResourcePath path = ResourcePath.EMPTY;
+    if (query.isQuery()) {
+      path = query.query().getPath();
+    } else {
+      String pathString =
+          getPipelineCollection(query.pipeline$com_google_firebase_firebase_firestore());
+      hardAssert(
+          pathString != null,
+          "SQLiteRemoteDocumentCache.getDocumentsMatchingQuery receives pipeline without collection source.");
+      path = ResourcePath.fromString(pathString);
+    }
     return getAll(
-        Collections.singletonList(query.getPath()),
+        Collections.singletonList(path),
         offset,
         Integer.MAX_VALUE,
         // Specify tryFilterDocumentType=FOUND_DOCUMENT to getAll() as an optimization, because

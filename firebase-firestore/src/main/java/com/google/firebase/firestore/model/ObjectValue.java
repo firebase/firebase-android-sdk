@@ -65,14 +65,11 @@ public final class ObjectValue implements Cloneable {
   private final Map<String, Object> overlayMap = new HashMap<>();
 
   public static ObjectValue fromMap(Map<String, Value> value) {
-    return new ObjectValue(
-        Value.newBuilder().setMapValue(MapValue.newBuilder().putAllFields(value)).build());
+    return new ObjectValue(Values.encodeValue(value));
   }
 
   public ObjectValue(Value value) {
-    hardAssert(
-        value.getValueTypeCase() == Value.ValueTypeCase.MAP_VALUE,
-        "ObjectValues should be backed by a MapValue");
+    hardAssert(value.hasMapValue(), "ObjectValues should be backed by a MapValue");
     hardAssert(
         !ServerTimestamps.isServerTimestamp(value),
         "ServerTimestamps should not be used as an ObjectValue");
@@ -237,8 +234,7 @@ public final class ObjectValue implements Cloneable {
       if (currentValue instanceof Map) {
         // Re-use a previously created map
         currentLevel = (Map<String, Object>) currentValue;
-      } else if (currentValue instanceof Value
-          && ((Value) currentValue).getValueTypeCase() == Value.ValueTypeCase.MAP_VALUE) {
+      } else if (currentValue instanceof Value && ((Value) currentValue).hasMapValue()) {
         // Convert the existing Protobuf MapValue into a Java map
         Map<String, Object> nextLevel =
             new HashMap<>(((Value) currentValue).getMapValue().getFieldsMap());
@@ -308,7 +304,7 @@ public final class ObjectValue implements Cloneable {
     if (this == o) {
       return true;
     } else if (o instanceof ObjectValue) {
-      return Values.equals(buildProto(), ((ObjectValue) o).buildProto());
+      return buildProto().equals(((ObjectValue) o).buildProto());
     }
     return false;
   }
