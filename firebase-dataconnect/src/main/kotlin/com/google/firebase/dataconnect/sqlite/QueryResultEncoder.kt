@@ -22,7 +22,6 @@ import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.putSInt32
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.putSInt64
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.putUInt32
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.putUInt64
-import com.google.firebase.dataconnect.toPathString
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
@@ -68,6 +67,52 @@ internal class QueryResultEncoder(
   fun flush() {
     writer.flush()
   }
+
+  private fun DataConnectPath.isEntity(): Boolean =
+    entityIdByPath !== null && entityIdByPath.containsKey(this)
+
+  private fun Struct.pruneDescendantEntities(path: MutableDataConnectPath, entityByPath: MutableMap<DataConnectPath, Struct>): Struct {
+    if (entityIdByPath === null) {
+      return this
+    }
+
+    var structBuilder: Struct.Builder? = null
+    fieldsMap.entries.forEach { (key, value) ->
+      val prunedValue: Value? = when (value.kindCase) {
+        Value.KindCase.STRUCT_VALUE -> {
+          val structBefore = value.structValue
+          val structAfter = path.withAddedField(key) {
+            if (path.isEntity()) {
+              entityByPath[path.toList()] = structBefore
+              null
+            } else {
+              structBefore.pruneDescendantEntities(path, entityByPath)
+            }
+          }
+          if (structAfter === structBefore) {
+            value
+          } else {
+            structAfter?.toValueProto()
+          }
+        }
+        Value.KindCase.LIST_VALUE -> { TODO() }
+        else -> value
+      }
+
+      if (value !== prunedValue) {
+        structBuilder = structBuilder ?: toBuilder()
+        if (prunedValue === null) {
+          structBuilder.removeFields(key)
+        } else {
+          structBuilder.putFields(key, prunedValue)
+        }
+      }
+    }
+
+    return structBuilder?.build() ?: this
+  }
+
+  private fun DataConnectPath.getEntityId(): String? = entityIdByPath?.get(this)
 
   private fun writeBoolean(value: Boolean) {
     val byte = if (value) QueryResultCodec.VALUE_BOOL_TRUE else QueryResultCodec.VALUE_BOOL_FALSE
@@ -146,100 +191,6 @@ internal class QueryResultEncoder(
     }
   }
 
-  private fun writeList(
-    listValue: ListValue,
-    path: MutableDataConnectPath,
-  ) {
-    writer.writeByte(QueryResultCodec.VALUE_LIST)
-    writer.writeUInt32(listValue.valuesCount)
-    listValue.valuesList.forEachIndexed { listIndex, childValue ->
-      path.withAddedListIndex(listIndex) { writeValue(childValue, path) }
-    }
-  }
-
-  private fun DataConnectPath.isEntity(): Boolean =
-    entityIdByPath !== null && entityIdByPath.containsKey(this)
-
-  private fun DataConnectPath.getEntityId(): String? = entityIdByPath?.get(this)
-
-  private enum class EntitySubListLeafContents {
-    Entities,
-    NonEntities,
-  }
-
-  private fun ListValue.calculateEntitySubListLeafContents(
-    path: DataConnectPath
-  ): EntitySubListLeafContents? {
-    val queue = ArrayDeque<Pair<DataConnectPath, ListValue>>()
-    queue.add(path to this)
-    return calculateEntitySubListLeafContentsRecursively(queue)
-  }
-
-  private fun calculateEntitySubListLeafContentsRecursively(
-    queue: ArrayDeque<Pair<DataConnectPath, ListValue>>
-  ): EntitySubListLeafContents? {
-    var leafContents: Pair<DataConnectPath, EntitySubListLeafContents>? = null
-
-    while (queue.isNotEmpty()) {
-      val (path, listValue) = queue.removeFirst()
-
-      repeat(listValue.valuesCount) { listIndex ->
-        val value = listValue.getValues(listIndex)
-        val valuePath = path.withAddedListIndex(listIndex)
-        if (value.kindCase == Value.KindCase.LIST_VALUE) {
-          queue.add(valuePath to value.listValue)
-        } else {
-          val valueContents =
-            if (value.kindCase == Value.KindCase.STRUCT_VALUE && valuePath.isEntity()) {
-              EntitySubListLeafContents.Entities
-            } else {
-              EntitySubListLeafContents.NonEntities
-            }
-          if (leafContents === null) {
-            leafContents = valuePath to valueContents
-          } else if (leafContents.second != valueContents) {
-            val (entityPath, nonEntityPath) =
-              when (valueContents) {
-                EntitySubListLeafContents.Entities -> Pair(valuePath, leafContents.first)
-                EntitySubListLeafContents.NonEntities -> Pair(leafContents.first, valuePath)
-              }
-            throw IntermixedEntityAndNonEntityListInEntityException(
-              "Found entity at ${entityPath.toPathString()} " +
-                "and non-entity at ${nonEntityPath.toPathString()}, " +
-                "both of which are leaf values of a list in an entity, " +
-                "but leaf values of lists in entities must be all be entities " +
-                "or must all be non-entities, but not both [df9tkx7jk4]"
-            )
-          }
-        }
-      }
-    }
-
-    return leafContents?.second
-  }
-
-  class IntermixedEntityAndNonEntityListInEntityException(message: String) : Exception(message)
-
-  private fun writeStruct(
-    struct: Struct,
-    path: MutableDataConnectPath,
-  ) {
-    val entityId = path.getEntityId()
-    if (entityId !== null) {
-      writer.writeByte(QueryResultCodec.VALUE_ENTITY)
-      writeEntity(entityId, struct, path)
-      return
-    }
-
-    val map = struct.fieldsMap
-    writer.writeByte(QueryResultCodec.VALUE_STRUCT)
-    writer.writeUInt32(map.size)
-    map.entries.forEach { (key, value) ->
-      writeString(key)
-      path.withAddedField(key) { writeValue(value, path) }
-    }
-  }
-
   private fun writeValue(
     value: Value,
     path: MutableDataConnectPath,
@@ -249,9 +200,48 @@ internal class QueryResultEncoder(
       Value.KindCase.NUMBER_VALUE -> writeDouble(value.numberValue)
       Value.KindCase.BOOL_VALUE -> writeBoolean(value.boolValue)
       Value.KindCase.STRING_VALUE -> writeString(value.stringValue)
-      Value.KindCase.STRUCT_VALUE -> writeStruct(value.structValue, path)
+      Value.KindCase.STRUCT_VALUE -> writeStructOrEntity(value.structValue, path)
       Value.KindCase.LIST_VALUE -> writeList(value.listValue, path)
       Value.KindCase.KIND_NOT_SET -> writer.writeByte(QueryResultCodec.VALUE_KIND_NOT_SET)
+    }
+  }
+
+  private fun writeStructOrEntity(
+    struct: Struct,
+    path: MutableDataConnectPath,
+  ) {
+    val entityId = path.getEntityId()
+    if (entityId !== null) {
+      writeEntity(entityId, struct, path)
+    } else {
+      writeStruct(struct, path)
+    }
+  }
+
+  private fun writeStruct(
+    struct: Struct,
+    path: MutableDataConnectPath,
+  ) {
+    writer.writeByte(QueryResultCodec.VALUE_STRUCT)
+    writer.writeUInt32(struct.fieldsCount)
+    struct.fieldsMap.entries.forEach { (key, value) ->
+      writeString(key)
+      path.withAddedField(key) {
+        writeValue(value, path)
+      }
+    }
+  }
+
+  private fun writeList(
+    listValue: ListValue,
+    path: MutableDataConnectPath,
+  ) {
+    writer.writeByte(QueryResultCodec.VALUE_LIST)
+    writer.writeUInt32(listValue.valuesCount)
+    repeat(listValue.valuesCount) { listIndex ->
+      path.withAddedListIndex(listIndex) {
+        writeValue(listValue.getValues(listIndex), path)
+      }
     }
   }
 
@@ -260,130 +250,70 @@ internal class QueryResultEncoder(
     entity: Struct,
     path: MutableDataConnectPath,
   ) {
+    writer.writeByte(QueryResultCodec.VALUE_ENTITY)
     val encodedEntityId = sha512DigestCalculator.calculate(entityId)
     writer.writeUInt32(encodedEntityId.size)
     writer.write(ByteBuffer.wrap(encodedEntityId))
-    val struct = writeEntitySubStruct(entity, path)
+    val struct = writeEntityStruct(entity, path)
     entities.add(Entity(entityId, encodedEntityId, struct))
   }
 
-  private fun writeEntitySubStruct(
+  private fun writeEntityStruct(
     struct: Struct,
     path: MutableDataConnectPath,
   ): Struct {
     writer.writeUInt32(struct.fieldsCount)
-    val structBuilder = Struct.newBuilder()
+
+    var structBuilder: Struct.Builder? = null
     struct.fieldsMap.entries.forEach { (key, value) ->
       writeString(key)
-      val entityValue: Value? =
-        path.withAddedField(key) {
-          writeEntityValue(
-            value,
-            path,
-            entitySubListLeafContentsAffinity = EntitySubListLeafContents.NonEntities
-          )
-        }
-      if (entityValue !== null) {
-        structBuilder.putFields(key, entityValue)
+      val entityValue = path.withAddedField(key) {
+        writeEntityValue(value, path)
       }
-    }
-    return structBuilder.build()
-  }
 
-  private fun writeEntitySubListOfNonEntities(
-    listValue: ListValue,
-    path: MutableDataConnectPath,
-  ): ListValue {
-    writer.writeByte(QueryResultCodec.VALUE_LIST)
-    writer.writeUInt32(listValue.valuesCount)
-
-    val listValueBuilder = ListValue.newBuilder()
-    listValue.valuesList.forEachIndexed { index, value ->
-      path.withAddedListIndex(index) {
-        val nonEntityValue =
-          writeEntityValue(
-            value,
-            path,
-            entitySubListLeafContentsAffinity = EntitySubListLeafContents.NonEntities
-          )
-        checkNotNull(nonEntityValue) {
-          "internal error gj26tyh2bj: " +
-            "list at ${path.toPathString()} is an entity with id=${path.getEntityId()}, " +
-            "but expected it to not be an entity"
-        }
-        listValueBuilder.addValues(nonEntityValue)
-      }
-    }
-
-    return listValueBuilder.build()
-  }
-
-  private fun writeEntitySubListOfEntities(
-    listValue: ListValue,
-    path: MutableDataConnectPath,
-  ) {
-    writer.writeByte(QueryResultCodec.VALUE_LIST_OF_ENTITIES)
-    writer.writeUInt32(listValue.valuesCount)
-
-    listValue.valuesList.forEachIndexed { index, value ->
-      path.withAddedListIndex(index) {
-        if (value.kindCase == Value.KindCase.LIST_VALUE) {
-          writeEntitySubListOfEntities(value.listValue, path)
+      if (entityValue !== value) {
+        structBuilder = structBuilder ?: struct.toBuilder()
+        if (entityValue === null) {
+          structBuilder.removeFields(key)
         } else {
-          val entityValue =
-            writeEntityValue(
-              value,
-              path,
-              entitySubListLeafContentsAffinity = EntitySubListLeafContents.Entities
-            )
-          check(entityValue === null) {
-            "internal error p3ae56pn93: " +
-              "value at ${path.toPathString()} is a non-entity of type " +
-              "${entityValue!!.kindCase}, but expected it to be an entity"
-          }
+          structBuilder.putFields(key, entityValue)
         }
       }
     }
+
+    return structBuilder?.build() ?: struct
   }
 
   private fun writeEntityValue(
     value: Value,
     path: MutableDataConnectPath,
-    entitySubListLeafContentsAffinity: EntitySubListLeafContents,
   ): Value? =
     when (value.kindCase) {
       Value.KindCase.STRUCT_VALUE -> {
-        val subStructEntityId = path.getEntityId()
-        if (subStructEntityId !== null) {
-          writer.writeByte(QueryResultCodec.VALUE_ENTITY)
-          writeEntity(subStructEntityId, value.structValue, path)
+        val entityId = path.getEntityId()
+        if (entityId !== null) {
+          writeEntity(entityId, value.structValue, path)
           null
         } else {
-          writer.writeByte(QueryResultCodec.VALUE_STRUCT)
-          writeEntitySubStruct(value.structValue, path).toValueProto()
+          val struct = value.structValue
+          val prunedStruct = struct.pruneDescendantEntities(path, mutableMapOf())
+          if (prunedStruct === struct) {
+            writer.writeByte(QueryResultCodec.VALUE_KIND_NOT_SET)
+            value
+          } else {
+            TODO()
+          }
         }
       }
       Value.KindCase.LIST_VALUE -> {
-        val calculatedEntitySubListLeafContents =
-          value.listValue.calculateEntitySubListLeafContents(path)
-        val effectiveEntitySubListLeafContents =
-          calculatedEntitySubListLeafContents ?: entitySubListLeafContentsAffinity
-        when (effectiveEntitySubListLeafContents) {
-          EntitySubListLeafContents.Entities -> {
-            writeEntitySubListOfEntities(value.listValue, path)
-            null
-          }
-          EntitySubListLeafContents.NonEntities -> {
-            writeEntitySubListOfNonEntities(value.listValue, path).toValueProto()
-          }
-        }
+        TODO()
       }
       else -> {
         writer.writeByte(QueryResultCodec.VALUE_KIND_NOT_SET)
         value
       }
     }
-
+  
   private sealed interface DoubleEncoding {
     data class Double(val value: kotlin.Double) : DoubleEncoding
     object PositiveZero : DoubleEncoding

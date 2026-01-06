@@ -19,7 +19,6 @@ package com.google.firebase.dataconnect.sqlite
 import com.google.firebase.dataconnect.DataConnectPath
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.emptyDataConnectPath
-import com.google.firebase.dataconnect.sqlite.QueryResultEncoder.IntermixedEntityAndNonEntityListInEntityException
 import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.buildEntityIdByPathMap
 import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.calculateExpectedEncodingAsEntityId
 import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.decodingEncodingShouldProduceIdenticalStruct
@@ -468,16 +467,17 @@ class QueryResultEncoderUnitTest {
         }
       }
 
-      val exception =
-        shouldThrow<IntermixedEntityAndNonEntityListInEntityException> {
-          QueryResultEncoder.encode(rootStruct, entityIdByPath)
-        }
-
-      assertSoftly {
-        exception.message shouldContainWithNonAbuttingText "df9tkx7jk4"
-        exception.message shouldContainWithNonAbuttingTextIgnoringCase
-          "must be all be entities or must all be non-entities"
-      }
+      TODO()
+//      val exception =
+//        shouldThrow<IntermixedEntityAndNonEntityListInEntityException> {
+//          QueryResultEncoder.encode(rootStruct, entityIdByPath)
+//        }
+//
+//      assertSoftly {
+//        exception.message shouldContainWithNonAbuttingText "df9tkx7jk4"
+//        exception.message shouldContainWithNonAbuttingTextIgnoringCase
+//          "must be all be entities or must all be non-entities"
+//      }
     }
   }
 
