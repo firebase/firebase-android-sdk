@@ -75,16 +75,24 @@ public class FirebaseSymbolProcessor(
   ) : KSVisitorVoid() {
     override fun visitFunctionDeclaration(function: KSFunctionDeclaration, data: Unit) {
       var shouldError = false
-      val fullFunctionName = function.qualifiedName!!.asString()
+      val fullFunctionName = function.qualifiedName?.asString()
+      if (fullFunctionName == null) {
+        logger.warn("Error extracting function name.")
+        shouldError = true
+      }
       if (!function.isPublic()) {
         logger.warn("$fullFunctionName must be public.")
         shouldError = true
       }
       val containingClass = function.parentDeclaration as? KSClassDeclaration
+      val containingClassQualifiedName = containingClass?.qualifiedName?.asString()
+      if(containingClassQualifiedName == null) {
+        logger.warn("Could not extract name of containing class of $fullFunctionName.")
+        shouldError = true
+      }
       if (containingClass == null || !containingClass.isCompanionObject) {
         logger.warn(
-          "$fullFunctionName must be within a companion object " +
-            containingClass!!.qualifiedName!!.asString()
+          "$fullFunctionName must be within a companion object $containingClassQualifiedName."
         )
         shouldError = true
       }
@@ -126,9 +134,14 @@ public class FirebaseSymbolProcessor(
         logger.error("$fullFunctionName has one or more errors, please resolve them.")
       }
       val generatedFunctionFile = generateFileSpec(function)
+      val containingFile = function.containingFile
+      if (containingFile == null) {
+        logger.error("$fullFunctionName must be in a file in the build.")
+        throw RuntimeException()
+      }
       generatedFunctionFile.writeTo(
         codeGenerator,
-        Dependencies(true, function.containingFile!!),
+        Dependencies(true, containingFile),
       )
     }
 
@@ -235,7 +248,7 @@ public class FirebaseSymbolProcessor(
       val generatedSchemaFile = generateFileSpec(classDeclaration)
       generatedSchemaFile.writeTo(
         codeGenerator,
-        Dependencies(true, classDeclaration.containingFile),
+        Dependencies(true, containingFile),
       )
     }
 
