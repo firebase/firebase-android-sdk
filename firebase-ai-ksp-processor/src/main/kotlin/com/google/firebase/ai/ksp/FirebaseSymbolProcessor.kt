@@ -187,9 +187,10 @@ public class FirebaseSymbolProcessor(
       functionDeclaration: KSFunctionDeclaration
     ): CodeBlock {
       val builder = CodeBlock.builder()
+      val returnType = functionDeclaration.returnType
       val hasTypedOutput =
-        !(functionDeclaration.returnType == null ||
-          functionDeclaration.returnType!!.resolve().toClassName().canonicalName ==
+        !(returnType == null ||
+                returnType.resolve().toClassName().canonicalName ==
             "kotlinx.serialization.json.JsonObject")
       val kdocDescription = functionDeclaration.docString?.let { extractBaseKdoc(it) }
       val annotationDescription =
