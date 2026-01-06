@@ -26,10 +26,14 @@ import com.google.firebase.app
 import com.google.firebase.initialize
 import com.google.firebase.perf.FirebasePerformance.HttpMethod
 import com.google.firebase.perf.application.AppStateMonitor
+import com.google.firebase.perf.config.ConfigResolver
 import com.google.firebase.perf.metrics.HttpMetric
 import com.google.firebase.perf.metrics.Trace
 import com.google.firebase.perf.metrics.getTraceCounter
 import com.google.firebase.perf.metrics.getTraceCounterCount
+import com.google.firebase.perf.session.PerfSession
+import com.google.firebase.perf.session.SessionManager
+import com.google.firebase.perf.session.gauges.GaugeManager
 import com.google.firebase.perf.transport.TransportManager
 import com.google.firebase.perf.util.Clock
 import com.google.firebase.perf.util.Timer
@@ -47,6 +51,7 @@ import org.mockito.ArgumentMatchers.nullable
 import org.mockito.Captor
 import org.mockito.Mock
 import org.mockito.Mockito.doAnswer
+import org.mockito.Mockito.doReturn
 import org.mockito.Mockito.verify
 import org.mockito.Mockito.`when`
 import org.mockito.MockitoAnnotations.initMocks
@@ -103,7 +108,13 @@ class PerformanceTests : BaseTestCase() {
 
   @Mock lateinit var mockClock: Clock
 
+  @Mock lateinit var mockGaugeManager: GaugeManager
+
   @Mock lateinit var mockAppStateMonitor: AppStateMonitor
+
+  private val session = PerfSession("sessionId", Clock())
+
+  private lateinit var sessionManager: SessionManager
 
   @Captor lateinit var argMetricCaptor: ArgumentCaptor<NetworkRequestMetric>
 
@@ -119,6 +130,9 @@ class PerformanceTests : BaseTestCase() {
     `when`(timerMock.getMicros()).thenReturn(1000L)
     `when`(timerMock.getDurationMicros()).thenReturn(2000L).thenReturn(3000L)
     doAnswer { Timer(currentTime) }.`when`(mockClock).getTime()
+
+    sessionManager = SessionManager(mockGaugeManager, session, mockAppStateMonitor)
+    `when`(mockAppStateMonitor.sessionManager).thenReturn(sessionManager)
   }
 
   @Test
@@ -129,7 +143,7 @@ class PerformanceTests : BaseTestCase() {
   @Test
   fun `httpMetric wrapper test `() {
     val metric =
-      HttpMetric("https://www.google.com/", HttpMethod.GET, transportManagerMock, timerMock)
+      HttpMetric("https://www.google.com/", HttpMethod.GET, transportManagerMock, timerMock, sessionManager)
     metric.trace { setHttpResponseCode(200) }
 
     verify(transportManagerMock)
