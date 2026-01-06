@@ -16,7 +16,6 @@
 
 package com.google.firebase.ai.ksp
 
-import com.google.devtools.ksp.KspExperimental
 import com.google.devtools.ksp.isPublic
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
@@ -86,7 +85,7 @@ public class FirebaseSymbolProcessor(
       }
       val containingClass = function.parentDeclaration as? KSClassDeclaration
       val containingClassQualifiedName = containingClass?.qualifiedName?.asString()
-      if(containingClassQualifiedName == null) {
+      if (containingClassQualifiedName == null) {
         logger.warn("Could not extract name of containing class of $fullFunctionName.")
         shouldError = true
       }
@@ -190,7 +189,7 @@ public class FirebaseSymbolProcessor(
       val returnType = functionDeclaration.returnType
       val hasTypedOutput =
         !(returnType == null ||
-                returnType.resolve().toClassName().canonicalName ==
+          returnType.resolve().toClassName().canonicalName ==
             "kotlinx.serialization.json.JsonObject")
       val kdocDescription = functionDeclaration.docString?.let { extractBaseKdoc(it) }
       val annotationDescription =
@@ -463,15 +462,15 @@ public class FirebaseSymbolProcessor(
     }
   }
 
-    private fun getDescriptionFromAnnotations(
-      guideAnnotation: KSAnnotation?,
-      generableClassAnnotation: KSAnnotation?,
-      description: String?,
-      baseKdoc: String?,
-    ): String? {
-      val guidePropertyDescription = getStringFromAnnotation(guideAnnotation, "description")
+  private fun getDescriptionFromAnnotations(
+    guideAnnotation: KSAnnotation?,
+    generableClassAnnotation: KSAnnotation?,
+    description: String?,
+    baseKdoc: String?,
+  ): String? {
+    val guidePropertyDescription = getStringFromAnnotation(guideAnnotation, "description")
 
-      val guideClassDescription = getStringFromAnnotation(generableClassAnnotation, "description")
+    val guideClassDescription = getStringFromAnnotation(generableClassAnnotation, "description")
 
     return guidePropertyDescription ?: guideClassDescription ?: description ?: baseKdoc
   }
