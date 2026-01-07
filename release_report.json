@@ -1,0 +1,545 @@
+{
+    "changesByLibraryName": {
+        "firebase-abt": [
+            {
+                "commitId": "f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prId": "7593",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Replace prettier with flexmark as markdown formatter (#7593)\n\nThere were some issues running prettier, as a node package instead of\njava/kotlin.\n\nReplacing it with flexmark addresses the issue. See\nhttps://github.com/diffplug/spotless/tree/main/plugin-gradle#freshmark\nfor information about flexmark + spotless",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7593"
+            }
+        ],
+        "firebase-ai": [
+            {
+                "commitId": "6dab9361101c9c5de04ad7cf4217e4594b543e9b",
+                "prId": "7599",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Add support for Thinking Levels (#7599)\n\nGemini 3 models support thinking levels, an alternative to thinking\nbudgets. They are preset values that can use to limit how many tokens\nare dedicated to the thinking process.\n\nThe [thinking\ndocumentation](https://firebase.google.com/docs/ai-logic/thinking) gives\nmore details.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/6dab9361101c9c5de04ad7cf4217e4594b543e9b",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7599"
+            },
+            {
+                "commitId": "7887e47404fedb8fe72319b144816a26d736a9f9",
+                "prId": "7597",
+                "author": "Rosário P. Fernandes",
+                "message": "feat(ai): add equals() to GenerativeBackend (#7597)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7887e47404fedb8fe72319b144816a26d736a9f9",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7597"
+            }
+        ],
+        "firebase-appdistribution": [
+            {
+                "commitId": "f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prId": "7593",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Replace prettier with flexmark as markdown formatter (#7593)\n\nThere were some issues running prettier, as a node package instead of\njava/kotlin.\n\nReplacing it with flexmark addresses the issue. See\nhttps://github.com/diffplug/spotless/tree/main/plugin-gradle#freshmark\nfor information about flexmark + spotless",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7593"
+            }
+        ],
+        "firebase-appdistribution-api": [
+            {
+                "commitId": "f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prId": "7593",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Replace prettier with flexmark as markdown formatter (#7593)\n\nThere were some issues running prettier, as a node package instead of\njava/kotlin.\n\nReplacing it with flexmark addresses the issue. See\nhttps://github.com/diffplug/spotless/tree/main/plugin-gradle#freshmark\nfor information about flexmark + spotless",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7593"
+            }
+        ],
+        "firebase-components": [
+            {
+                "commitId": "f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prId": "7593",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Replace prettier with flexmark as markdown formatter (#7593)\n\nThere were some issues running prettier, as a node package instead of\njava/kotlin.\n\nReplacing it with flexmark addresses the issue. See\nhttps://github.com/diffplug/spotless/tree/main/plugin-gradle#freshmark\nfor information about flexmark + spotless",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7593"
+            }
+        ],
+        "firebase-config": [
+            {
+                "commitId": "f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prId": "7593",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Replace prettier with flexmark as markdown formatter (#7593)\n\nThere were some issues running prettier, as a node package instead of\njava/kotlin.\n\nReplacing it with flexmark addresses the issue. See\nhttps://github.com/diffplug/spotless/tree/main/plugin-gradle#freshmark\nfor information about flexmark + spotless",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7593"
+            }
+        ],
+        "firebase-config-interop": [
+            {
+                "commitId": "f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prId": "7593",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Replace prettier with flexmark as markdown formatter (#7593)\n\nThere were some issues running prettier, as a node package instead of\njava/kotlin.\n\nReplacing it with flexmark addresses the issue. See\nhttps://github.com/diffplug/spotless/tree/main/plugin-gradle#freshmark\nfor information about flexmark + spotless",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7593"
+            }
+        ],
+        "firebase-crashlytics": [
+            {
+                "commitId": "f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prId": "7593",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Replace prettier with flexmark as markdown formatter (#7593)\n\nThere were some issues running prettier, as a node package instead of\njava/kotlin.\n\nReplacing it with flexmark addresses the issue. See\nhttps://github.com/diffplug/spotless/tree/main/plugin-gradle#freshmark\nfor information about flexmark + spotless",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7593"
+            }
+        ],
+        "firebase-crashlytics-ndk": [
+            {
+                "commitId": "f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prId": "7593",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Replace prettier with flexmark as markdown formatter (#7593)\n\nThere were some issues running prettier, as a node package instead of\njava/kotlin.\n\nReplacing it with flexmark addresses the issue. See\nhttps://github.com/diffplug/spotless/tree/main/plugin-gradle#freshmark\nfor information about flexmark + spotless",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7593"
+            }
+        ],
+        "firebase-sessions": [
+            {
+                "commitId": "f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prId": "7593",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Replace prettier with flexmark as markdown formatter (#7593)\n\nThere were some issues running prettier, as a node package instead of\njava/kotlin.\n\nReplacing it with flexmark addresses the issue. See\nhttps://github.com/diffplug/spotless/tree/main/plugin-gradle#freshmark\nfor information about flexmark + spotless",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7593"
+            },
+            {
+                "commitId": "813d02b10d84cbaec37911baefce3fb7e83c56f6",
+                "prId": "7318",
+                "author": "Joseph Rodiz",
+                "message": "Restore SessionLifecycleService as no-op (#7318)\n\nIn context of class not found exception:\nhttps://github.com/firebase/firebase-android-sdk/issues/7296\n\nThis PR restore a previously deleted service as no operational\n\n\nThe user reported a crash after upgrading to BoM 34.1.0 only for some\nSamsung and Oppo devices in Android 14/15.\nhttps://firebase.google.com/support/release-notes/android\n\n\n\nThere was a major refactor on the way of monitoring application\nlifecycle events and determining when/if a new session should be\ngenerated. Which was the main purpose for `SessionLifecycleService`.\n[Firebase\nSession](https://github.com/firebase/firebase-android-sdk/blob/main/firebase-sessions/README.md)\nis used by Crashlytics and Performance internally to measure sessions\n\n[The\nrefactor](https://github.com/firebase/firebase-android-sdk/pull/7039/files#diff-ea2eb8012abccd4cb5dccba37ec109f0eaa2a82fe6be852b5be7c32ed8de2b45)\nproposes the elimination of the service `SessionLifecycleService` in\nfavor of `SharedSessionRepository`.\n\nThis refactor was released on version `releases/m167` ([see commit\nhere](https://github.com/firebase/firebase-android-sdk/commit/c9a4a3d749440833a75d4de686d60f825ffd79c8)).\n\nSee diff of m167 with m166\n[here](https://github.com/firebase/firebase-android-sdk/compare/releases/m166...releases/m167).\n\n\n\nLooking for `SessionLifecycleService` usages into the SDK I found just a\nleftover reference in an Android Test Manifest. So I can conclude this\nis not production code.\n\nReviewing the original `SessionLifecycleService` class I found out this\nservice contains a `Binder` implementation\n\nIt sounds like the Android system on those specific devices\n(Samsung/Oppo on Android 14/15) might be trying to recreate the\n`SessionLifecycleService` based on a cached manifest from the previous\nversion of the host app, even though the service class itself is no\nlonger present in the new version. This leads to the\n`ClassNotFoundException`.\n\n\n\n**Conclusions:**\n\nA) Stale Service Connections (I see this as the root cause, I’d like to\nreview g3 code to confirm there is not source code having references to\nthe removed service):\n\nIf any component within the host app (or the SDK itself) was bound to\n`SessionLifecycleService` and the `ServiceConnection` wasn't properly\nreleased or unbound before the app update (or if the system is trying to\nrestore a previous binding state), the system will attempt to call\n`onBind` on the service.\n\nWhen it tries to instantiate `SessionLifecycleService` to do this and\nfinds the class missing, it results in the `ClassNotFoundException`.\n\nThe git diff showed `android:exported=\"false\"` for the service, which is\ngood as it means only the SDK could bind to it.\n\nWhy this still leads to `ClassNotFoundException` on update:\n\nEven if the new code doesn't try to bind to the removed service anymore,\nthe Android system might still attempt to re-establish connections that\nit considers active or pending from the previous app session, especially\nif the app process didn't terminate cleanly or if the system is trying\nto restore the app's state after an update. If a `ServiceConnection` was\nactive when the app was last running the old version, the system might\ntry to call `onServiceConnected` for that connection, which requires\ninstantiating the service.\n\n\n\ntl; dr:\nB) Android /System Caching/State Retention:\n\nThe Android Package Manager or Activity Manager on certain devices/OS\nversions might retain information about previously registered services.\n\nIf the service was started in a \"sticky\" way, the system will try to\nrestart it after it's killed or after an app update if it believes the\nservice should still be running. When it tries to do so with the updated\napp that lacks the service class, it crashes.\n\nC) Stale System State: Sometimes, especially with certain OEM\ncustomizations or newer Android versions, the system's package manager\nor activity manager might not perfectly clear all references to\ncomponents from an old app version immediately upon an update. For users\nexperiencing this: The most reliable fix is often a clean reinstall.\n\nD) OEM Customizations: Samsung and Oppo devices have their own\nmodifications to Android, which can sometimes lead to different\nbehaviors in how app updates and service lifecycles are handled.\n\n\n\n\n**Proposed workaround:**\n\nFuture Service Removals (Refined Mitigation Strategy for Bound\nServices):\n\n**Version N+1** (Graceful Shutdown & Deprecation): Return the service\nclass in the codebase, modify its onBind(Intent intent) method to return\nnull immediately. This signals to any clients attempting to bind that\nthe service is not available or is shutting down. Crucially, mark the\nservice as `android:enabled=\"false\"` in the AndroidManifest.xml. **This\nexplicitly tells the system the service should not be started or\nbound**.\n\n\n\n**Version N+2** (Full Removal): Now that clients have had a version\nwhere the service gracefully refuses bindings and is disabled, it's\nsafer to remove the service class and its manifest entry.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/813d02b10d84cbaec37911baefce3fb7e83c56f6",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7318"
+            }
+        ],
+        "firebase-database": [
+            {
+                "commitId": "f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prId": "7593",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Replace prettier with flexmark as markdown formatter (#7593)\n\nThere were some issues running prettier, as a node package instead of\njava/kotlin.\n\nReplacing it with flexmark addresses the issue. See\nhttps://github.com/diffplug/spotless/tree/main/plugin-gradle#freshmark\nfor information about flexmark + spotless",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7593"
+            }
+        ],
+        "firebase-database-collection": [
+            {
+                "commitId": "f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prId": "7593",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Replace prettier with flexmark as markdown formatter (#7593)\n\nThere were some issues running prettier, as a node package instead of\njava/kotlin.\n\nReplacing it with flexmark addresses the issue. See\nhttps://github.com/diffplug/spotless/tree/main/plugin-gradle#freshmark\nfor information about flexmark + spotless",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7593"
+            }
+        ],
+        "firebase-dataconnect": [
+            {
+                "commitId": "c8ada3ce645798bd8bacd5c9b5cb08bdf7254a34",
+                "prId": "7630",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: testing: freeze mutable lists in tests to improve readability (#7630)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/c8ada3ce645798bd8bacd5c9b5cb08bdf7254a34",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7630"
+            },
+            {
+                "commitId": "f6f500b61c66a0618dd9a8d9a6e376ed3827a8fb",
+                "prId": "7629",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: testing: internal refactor of chain of \"ifs\" to a \"when\" expression (#7629)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f6f500b61c66a0618dd9a8d9a6e376ed3827a8fb",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7629"
+            },
+            {
+                "commitId": "7d35531c68693748f2e4845893790d8a5c282544",
+                "prId": "7628",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: testing: use Arb.choice() instead of Arb.merge() (#7628)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7d35531c68693748f2e4845893790d8a5c282544",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7628"
+            },
+            {
+                "commitId": "e99cb3a932b2a8ea69b1bc455156c7a3d347b1fd",
+                "prId": "7619",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: testing: re-write Struct and ListValue arbs (#7619)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e99cb3a932b2a8ea69b1bc455156c7a3d347b1fd",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7619"
+            },
+            {
+                "commitId": "a9f0d20ac37bed2a243428590d0f00e3cf61ade1",
+                "prId": "7621",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: testing: use Arb.next(RandomSource, edgeCaseProbability) instead of PropertyContext.sampleFromArb() (#7621)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a9f0d20ac37bed2a243428590d0f00e3cf61ade1",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7621"
+            },
+            {
+                "commitId": "f6880d99bd9f482aace6d11352043bded433a7f4",
+                "prId": "7620",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: testing: increase maxDiscardPercentage in DataConnectOperationFailureResponseImplUnitTest.kt (#7620)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f6880d99bd9f482aace6d11352043bded433a7f4",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7620"
+            },
+            {
+                "commitId": "f20992cdf74ca5846119cdc18e2328f179a598c8",
+                "prId": "7618",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: testing: RandomSeedTestRule.kt tiny log message cleanup (#7618)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f20992cdf74ca5846119cdc18e2328f179a598c8",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7618"
+            },
+            {
+                "commitId": "90182b3198e1c8b95c3c0caf82e8c4c8a5213d18",
+                "prId": "7617",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: testing: de-duplicate \"proto value path\" logic (#7617)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/90182b3198e1c8b95c3c0caf82e8c4c8a5213d18",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7617"
+            },
+            {
+                "commitId": "a41dfcf12cbbe0dd269fcfb7f78bb7e69090a494",
+                "prId": "7613",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: internal refactor to use higher-level types to work with proto struct paths (#7613)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a41dfcf12cbbe0dd269fcfb7f78bb7e69090a494",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7613"
+            },
+            {
+                "commitId": "8e6f17f06c07a2b40e45a8ac6e7ee4c978b8fa5f",
+                "prId": "7608",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: ci: upgrade data connect emulator to 15.0.0 (was 14.27.0) and firebase-tools to 15.0.0 (was 14.27.0) (#7608)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/8e6f17f06c07a2b40e45a8ac6e7ee4c978b8fa5f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7608"
+            },
+            {
+                "commitId": "bc2bc5c60b99e621d4e99be1f9a1e9d84a824c6d",
+                "prId": "7607",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: ci: upgrade data connect emulator to 2.17.3 (was 2.15.1) (#7607)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/bc2bc5c60b99e621d4e99be1f9a1e9d84a824c6d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7607"
+            },
+            {
+                "commitId": "ce4aa8759fb1ace6989ac56de85adc0df98ffcc4",
+                "prId": "7604",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: testing: rename ProtoTestUtils.kt to ProtoAssertions.kt (#7604)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ce4aa8759fb1ace6989ac56de85adc0df98ffcc4",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7604"
+            },
+            {
+                "commitId": "68ae3fee744a51bff63435b057146b70ae391ee1",
+                "prId": "7603",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: gradle plugin: fix DataConnectExecutableDownloadTask for arch-specific executable versions (#7603)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/68ae3fee744a51bff63435b057146b70ae391ee1",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7603"
+            },
+            {
+                "commitId": "dcf5c33cc2bb6d3f949a658528e86ce8adc992fb",
+                "prId": "7600",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: fix `updateJson` task to find cli versions whose file name contains its target cpu architecture (#7600)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/dcf5c33cc2bb6d3f949a658528e86ce8adc992fb",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7600"
+            },
+            {
+                "commitId": "6472706841a0852aa08534fbc0dd649a4e005a5d",
+                "prId": "7601",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: testing: shouldBe for Struct and Value improved efficiency and difference reporting (#7601)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/6472706841a0852aa08534fbc0dd649a4e005a5d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7601"
+            },
+            {
+                "commitId": "df21d8bfc0091b97c03406c5fac17c24d9ae533e",
+                "prId": "7589",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: proto Arb improvements for testing (#7589)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/df21d8bfc0091b97c03406c5fac17c24d9ae533e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7589"
+            },
+            {
+                "commitId": "f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prId": "7593",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Replace prettier with flexmark as markdown formatter (#7593)\n\nThere were some issues running prettier, as a node package instead of\njava/kotlin.\n\nReplacing it with flexmark addresses the issue. See\nhttps://github.com/diffplug/spotless/tree/main/plugin-gradle#freshmark\nfor information about flexmark + spotless",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7593"
+            },
+            {
+                "commitId": "3c0af39fa66a32b664e5ff3f01b2714f97a6cb3e",
+                "prId": "7585",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: ci: upgrade data connect emulator to 2.15.1 (was 2.14.0) and firebase-tools to 14.27.0 (was 14.18.0) (#7585)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/3c0af39fa66a32b664e5ff3f01b2714f97a6cb3e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7585"
+            }
+        ],
+        "firebase-datatransport": [
+            {
+                "commitId": "f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prId": "7593",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Replace prettier with flexmark as markdown formatter (#7593)\n\nThere were some issues running prettier, as a node package instead of\njava/kotlin.\n\nReplacing it with flexmark addresses the issue. See\nhttps://github.com/diffplug/spotless/tree/main/plugin-gradle#freshmark\nfor information about flexmark + spotless",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7593"
+            }
+        ],
+        "firebase-firestore": [
+            {
+                "commitId": "b006a573f4404014cc5fef875ca9def84e9e0f99",
+                "prId": "7590",
+                "author": "wu-hui",
+                "message": "Pipelines for Firestore (#7590)\n\nPipelines for Firestore enters Public Preview\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/b006a573f4404014cc5fef875ca9def84e9e0f99",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7590"
+            },
+            {
+                "commitId": "f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prId": "7593",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Replace prettier with flexmark as markdown formatter (#7593)\n\nThere were some issues running prettier, as a node package instead of\njava/kotlin.\n\nReplacing it with flexmark addresses the issue. See\nhttps://github.com/diffplug/spotless/tree/main/plugin-gradle#freshmark\nfor information about flexmark + spotless",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7593"
+            }
+        ],
+        "firebase-functions": [
+            {
+                "commitId": "f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prId": "7593",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Replace prettier with flexmark as markdown formatter (#7593)\n\nThere were some issues running prettier, as a node package instead of\njava/kotlin.\n\nReplacing it with flexmark addresses the issue. See\nhttps://github.com/diffplug/spotless/tree/main/plugin-gradle#freshmark\nfor information about flexmark + spotless",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7593"
+            }
+        ],
+        "firebase-inappmessaging": [
+            {
+                "commitId": "f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prId": "7593",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Replace prettier with flexmark as markdown formatter (#7593)\n\nThere were some issues running prettier, as a node package instead of\njava/kotlin.\n\nReplacing it with flexmark addresses the issue. See\nhttps://github.com/diffplug/spotless/tree/main/plugin-gradle#freshmark\nfor information about flexmark + spotless",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7593"
+            }
+        ],
+        "firebase-inappmessaging-display": [
+            {
+                "commitId": "f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prId": "7593",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Replace prettier with flexmark as markdown formatter (#7593)\n\nThere were some issues running prettier, as a node package instead of\njava/kotlin.\n\nReplacing it with flexmark addresses the issue. See\nhttps://github.com/diffplug/spotless/tree/main/plugin-gradle#freshmark\nfor information about flexmark + spotless",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7593"
+            }
+        ],
+        "firebase-installations": [
+            {
+                "commitId": "f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prId": "7593",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Replace prettier with flexmark as markdown formatter (#7593)\n\nThere were some issues running prettier, as a node package instead of\njava/kotlin.\n\nReplacing it with flexmark addresses the issue. See\nhttps://github.com/diffplug/spotless/tree/main/plugin-gradle#freshmark\nfor information about flexmark + spotless",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7593"
+            }
+        ],
+        "firebase-installations-interop": [
+            {
+                "commitId": "f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prId": "7593",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Replace prettier with flexmark as markdown formatter (#7593)\n\nThere were some issues running prettier, as a node package instead of\njava/kotlin.\n\nReplacing it with flexmark addresses the issue. See\nhttps://github.com/diffplug/spotless/tree/main/plugin-gradle#freshmark\nfor information about flexmark + spotless",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7593"
+            }
+        ],
+        "firebase-messaging": [
+            {
+                "commitId": "f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prId": "7593",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Replace prettier with flexmark as markdown formatter (#7593)\n\nThere were some issues running prettier, as a node package instead of\njava/kotlin.\n\nReplacing it with flexmark addresses the issue. See\nhttps://github.com/diffplug/spotless/tree/main/plugin-gradle#freshmark\nfor information about flexmark + spotless",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7593"
+            }
+        ],
+        "firebase-messaging-directboot": [
+            {
+                "commitId": "f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prId": "7593",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Replace prettier with flexmark as markdown formatter (#7593)\n\nThere were some issues running prettier, as a node package instead of\njava/kotlin.\n\nReplacing it with flexmark addresses the issue. See\nhttps://github.com/diffplug/spotless/tree/main/plugin-gradle#freshmark\nfor information about flexmark + spotless",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7593"
+            }
+        ],
+        "firebase-ml-modeldownloader": [
+            {
+                "commitId": "f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prId": "7593",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Replace prettier with flexmark as markdown formatter (#7593)\n\nThere were some issues running prettier, as a node package instead of\njava/kotlin.\n\nReplacing it with flexmark addresses the issue. See\nhttps://github.com/diffplug/spotless/tree/main/plugin-gradle#freshmark\nfor information about flexmark + spotless",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7593"
+            }
+        ],
+        "firebase-perf": [
+            {
+                "commitId": "f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prId": "7593",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Replace prettier with flexmark as markdown formatter (#7593)\n\nThere were some issues running prettier, as a node package instead of\njava/kotlin.\n\nReplacing it with flexmark addresses the issue. See\nhttps://github.com/diffplug/spotless/tree/main/plugin-gradle#freshmark\nfor information about flexmark + spotless",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7593"
+            },
+            {
+                "commitId": "eeed6cd3ee29d4b39be92d8f52c1e3266e943f45",
+                "prId": "7586",
+                "author": "Denver Coneybeare",
+                "message": "e2e-app.gradle: upgrade guava dependency to 31.0.1 (#7586)\n\nThis fixes a `NoSuchMethodError: No virtual method buildOrThrow()` error\nintroduced when the Truth library was upgraded from 1.4.4 to 1.4.5 in PR\n#7497.\n\nHere is the full stack trace:\n\n```\njava.lang.NoSuchMethodError: No virtual method buildOrThrow()Lcom/google/common/collect/ImmutableMap; in class Lcom/google/common/collect/ImmutableMap$Builder; or its super classes (declaration of 'com.google.common.collect.ImmutableMap$Builder' appears in /data/app/com.google.firebase.testing.fireperf-UwnD88IA3xxKNmt0idI3uA==/base.apk!classes7.dex)\n\tat com.google.common.truth.Subject.<clinit>(Subject.java:1282)\n\tat com.google.common.truth.ComparableSubject.comparables(ComparableSubject.java:182)\n\tat com.google.common.truth.StandardSubjectBuilder.that(StandardSubjectBuilder.java:110)\n\tat com.google.common.truth.Truth.assertThat(Truth.java:153)\n\tat com.google.firebase.testing.fireperf.FirebasePerformanceFragmentScreenTracesTest.scrollAndCycleThroughAllFragments(FirebasePerformanceFragmentScreenTracesTest.java:56)\n```\n\nThis bug was solved with help from Gemini, which gave this insight:\n\n```\nI am getting the crash below in an Android integration tests.\n\nDid Guava remove the ImmutableMap.buildOrThrow() method or something??\n```\n\nLinks:\n*\nhttps://github.com/firebase/firebase-android-sdk/actions/runs/20035701928/job/57464321738?pr=7585\n*\nhttps://firebase.corp.google.com/project/fireescape-c4819/testlab/histories/bh.588330bbc5b76933/matrices/6849433697466807925/executions/bs.356271b0dcb89e85/testcases/1\n\nNo, Guava did not remove the method. In fact, the situation is the exact\nopposite: **buildOrThrow() is a newer method** that was added in Guava\n**31.0**.\n\nThe error NoSuchMethodError is happening because there is a **dependency\nconflict** in your project.\n\n* **The Cause:** Your test library (Google Truth) was compiled against a\n**newer** version of Guava (31.0+) and expects buildOrThrow() to exist.\nHowever, another library in your project (likely a transitive\ndependency) is forcing an **older** version of Guava (older than 31.0)\nonto your classpath at runtime.\n* **The Victim:** com.google.common.truth.Subject is trying to call this\nmethod, but the older Guava JAR loaded by Android doesn't have it yet.\n\nYou need to force your project to use a newer version of Guava that\nincludes this method.\n\nAdd (or update) the Guava dependency explicitly in your module's\nbuild.gradle file within the dependencies block. Make sure to use the\n\\-android flavor:\n\nGroovy\n\ndependencies {\n    // Force a newer version of Guava (31.0 or higher) for your tests\n    androidTestImplementation 'com.google.guava:guava:33.3.1-android'\n}\n\n**Note:** If you are using implementation or api for Guava elsewhere,\nensure those versions are also consistent (31.0+) so you don't get\nruntime crashes in your production app as well.\n\nYou likely upgraded com.google.truth:truth recently.\n\n* **Truth 1.1.4 and newer** started using ImmutableMap.buildOrThrow()\ninternally.\n* If your project pulls in an older library (like an older version of\nthe Android tools or Firebase SDKs) that depends on Guava 28.x or 20.0,\nGradle's conflict resolution might be downgrading Guava to that older\nversion, breaking Truth.\n\nTo confirm which old library is \"poisoning\" your dependency tree, you\ncan run the following command in your terminal:\n\nBash\n\n./gradlew app:dependencies \\--configuration androidTestCompileClasspath\n\n*(Replace app with your module name)*. Look for com.google.guava:guava\nin the output. You will likely see something like 33.3.1-android \\-\\>\n28.1-android, indicating a downgrade happened. Adding the explicit\ndependency above fixes this by telling Gradle \"I really mean it, use the\nnew one.\"",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/eeed6cd3ee29d4b39be92d8f52c1e3266e943f45",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7586"
+            }
+        ],
+        "firebase-storage": [
+            {
+                "commitId": "f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prId": "7593",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Replace prettier with flexmark as markdown formatter (#7593)\n\nThere were some issues running prettier, as a node package instead of\njava/kotlin.\n\nReplacing it with flexmark addresses the issue. See\nhttps://github.com/diffplug/spotless/tree/main/plugin-gradle#freshmark\nfor information about flexmark + spotless",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7593"
+            }
+        ],
+        "appcheck/firebase-appcheck": [
+            {
+                "commitId": "f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prId": "7593",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Replace prettier with flexmark as markdown formatter (#7593)\n\nThere were some issues running prettier, as a node package instead of\njava/kotlin.\n\nReplacing it with flexmark addresses the issue. See\nhttps://github.com/diffplug/spotless/tree/main/plugin-gradle#freshmark\nfor information about flexmark + spotless",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7593"
+            }
+        ],
+        "appcheck/firebase-appcheck-debug": [
+            {
+                "commitId": "f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prId": "7593",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Replace prettier with flexmark as markdown formatter (#7593)\n\nThere were some issues running prettier, as a node package instead of\njava/kotlin.\n\nReplacing it with flexmark addresses the issue. See\nhttps://github.com/diffplug/spotless/tree/main/plugin-gradle#freshmark\nfor information about flexmark + spotless",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7593"
+            }
+        ],
+        "appcheck/firebase-appcheck-debug-testing": [
+            {
+                "commitId": "f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prId": "7593",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Replace prettier with flexmark as markdown formatter (#7593)\n\nThere were some issues running prettier, as a node package instead of\njava/kotlin.\n\nReplacing it with flexmark addresses the issue. See\nhttps://github.com/diffplug/spotless/tree/main/plugin-gradle#freshmark\nfor information about flexmark + spotless",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7593"
+            }
+        ],
+        "appcheck/firebase-appcheck-playintegrity": [
+            {
+                "commitId": "f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prId": "7593",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Replace prettier with flexmark as markdown formatter (#7593)\n\nThere were some issues running prettier, as a node package instead of\njava/kotlin.\n\nReplacing it with flexmark addresses the issue. See\nhttps://github.com/diffplug/spotless/tree/main/plugin-gradle#freshmark\nfor information about flexmark + spotless",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7593"
+            }
+        ],
+        "appcheck/firebase-appcheck-interop": [
+            {
+                "commitId": "f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prId": "7593",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Replace prettier with flexmark as markdown formatter (#7593)\n\nThere were some issues running prettier, as a node package instead of\njava/kotlin.\n\nReplacing it with flexmark addresses the issue. See\nhttps://github.com/diffplug/spotless/tree/main/plugin-gradle#freshmark\nfor information about flexmark + spotless",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7593"
+            }
+        ],
+        "encoders/firebase-decoders-json": [
+            {
+                "commitId": "f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prId": "7593",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Replace prettier with flexmark as markdown formatter (#7593)\n\nThere were some issues running prettier, as a node package instead of\njava/kotlin.\n\nReplacing it with flexmark addresses the issue. See\nhttps://github.com/diffplug/spotless/tree/main/plugin-gradle#freshmark\nfor information about flexmark + spotless",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7593"
+            }
+        ],
+        "encoders/firebase-encoders-json": [
+            {
+                "commitId": "f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prId": "7593",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Replace prettier with flexmark as markdown formatter (#7593)\n\nThere were some issues running prettier, as a node package instead of\njava/kotlin.\n\nReplacing it with flexmark addresses the issue. See\nhttps://github.com/diffplug/spotless/tree/main/plugin-gradle#freshmark\nfor information about flexmark + spotless",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7593"
+            }
+        ],
+        "encoders/firebase-encoders-reflective": [
+            {
+                "commitId": "f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prId": "7593",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Replace prettier with flexmark as markdown formatter (#7593)\n\nThere were some issues running prettier, as a node package instead of\njava/kotlin.\n\nReplacing it with flexmark addresses the issue. See\nhttps://github.com/diffplug/spotless/tree/main/plugin-gradle#freshmark\nfor information about flexmark + spotless",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7593"
+            }
+        ],
+        "firebase-components/firebase-dynamic-module-support": [
+            {
+                "commitId": "f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prId": "7593",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Replace prettier with flexmark as markdown formatter (#7593)\n\nThere were some issues running prettier, as a node package instead of\njava/kotlin.\n\nReplacing it with flexmark addresses the issue. See\nhttps://github.com/diffplug/spotless/tree/main/plugin-gradle#freshmark\nfor information about flexmark + spotless",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7593"
+            }
+        ],
+        "transport/transport-api": [
+            {
+                "commitId": "f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prId": "7593",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Replace prettier with flexmark as markdown formatter (#7593)\n\nThere were some issues running prettier, as a node package instead of\njava/kotlin.\n\nReplacing it with flexmark addresses the issue. See\nhttps://github.com/diffplug/spotless/tree/main/plugin-gradle#freshmark\nfor information about flexmark + spotless",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7593"
+            }
+        ],
+        "transport/transport-backend-cct": [
+            {
+                "commitId": "f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prId": "7593",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Replace prettier with flexmark as markdown formatter (#7593)\n\nThere were some issues running prettier, as a node package instead of\njava/kotlin.\n\nReplacing it with flexmark addresses the issue. See\nhttps://github.com/diffplug/spotless/tree/main/plugin-gradle#freshmark\nfor information about flexmark + spotless",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7593"
+            }
+        ],
+        "transport/transport-runtime": [
+            {
+                "commitId": "f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prId": "7593",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Replace prettier with flexmark as markdown formatter (#7593)\n\nThere were some issues running prettier, as a node package instead of\njava/kotlin.\n\nReplacing it with flexmark addresses the issue. See\nhttps://github.com/diffplug/spotless/tree/main/plugin-gradle#freshmark\nfor information about flexmark + spotless",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7593"
+            }
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":firebase-common"
+    ]
+}
