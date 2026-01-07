@@ -70,7 +70,7 @@ internal constructor(
   private val toolConfig: ToolConfig? = null,
   private val systemInstruction: Content? = null,
   private val generativeBackend: GenerativeBackend = GenerativeBackend.googleAI(),
-  private val controller: APIController,
+  internal val controller: APIController,
 ) {
   internal constructor(
     modelName: String,
@@ -369,6 +369,8 @@ internal constructor(
       return JsonObject(mapOf("error" to JsonPrimitive(e.message)))
     }
   }
+
+  internal fun getTurnLimit(): Int = controller.getTurnLimit()
 
   @OptIn(ExperimentalSerializationApi::class)
   private fun constructRequest(overrideConfig: GenerationConfig? = null, vararg prompt: Content) =

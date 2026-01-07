@@ -1268,6 +1268,7 @@ package com.google.firebase.ai.type {
   public final class RequestOptions {
     ctor public RequestOptions();
     ctor public RequestOptions(long timeoutInMillis = 180.seconds.inWholeMilliseconds);
+    ctor public RequestOptions(long timeoutInMillis = 180.seconds.inWholeMilliseconds, int autoFunctionCallingTurnLimit = 10);
   }
 
   public final class RequestTimeoutException extends com.google.firebase.ai.type.FirebaseAIException {

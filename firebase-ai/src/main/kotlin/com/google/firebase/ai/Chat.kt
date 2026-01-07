@@ -22,6 +22,7 @@ import com.google.firebase.ai.type.FunctionCallPart
 import com.google.firebase.ai.type.FunctionResponsePart
 import com.google.firebase.ai.type.GenerateContentResponse
 import com.google.firebase.ai.type.InvalidStateException
+import com.google.firebase.ai.type.RequestTimeoutException
 import com.google.firebase.ai.type.TextPart
 import com.google.firebase.ai.type.content
 import java.util.LinkedList
@@ -50,6 +51,7 @@ public class Chat(
   public val history: MutableList<Content> = ArrayList()
 ) {
   private var lock = Semaphore(1)
+  private var turns: Int = 0
 
   /**
    * Sends a message using the provided [prompt]; automatically providing the existing [history] as
@@ -67,24 +69,33 @@ public class Chat(
     prompt.assertComesFromUser()
     attemptLock()
     var response: GenerateContentResponse
-    var tempPrompt = prompt
     try {
+      val tempHistory = mutableListOf(prompt)
       while (true) {
-        response = model.generateContent(listOf(*history.toTypedArray(), tempPrompt))
-        val responsePart = response.candidates.first().content.parts.first()
+        response =
+          model.generateContent(listOf(*history.toTypedArray(), *tempHistory.toTypedArray()))
+        tempHistory.add(response.candidates.first().content)
+        val functionCallParts =
+          response.candidates.first().content.parts.filterIsInstance<FunctionCallPart>()
 
-        history.add(tempPrompt)
-        history.add(response.candidates.first().content)
-        if (responsePart is FunctionCallPart && model.hasFunction(responsePart)) {
-          val output = model.executeFunction(responsePart)
-          tempPrompt = Content("function", listOf(FunctionResponsePart(responsePart.name, output)))
+        if (functionCallParts.isNotEmpty()) {
+          if (model.getTurnLimit() < ++turns) {
+            throw RequestTimeoutException("Request took too many turns", history = tempHistory)
+          }
+          if (functionCallParts.all { model.hasFunction(it) }) {
+            val functionResponsePart =
+              functionCallParts.map { FunctionResponsePart(it.name, model.executeFunction(it)) }
+            tempHistory.add(Content("function", functionResponsePart))
+          }
         } else {
           break
         }
       }
+      history.addAll(tempHistory)
       return response
     } finally {
       lock.release()
+      turns = 0
     }
   }
 
@@ -153,6 +164,7 @@ public class Chat(
     return flow
       .transform { response -> automaticFunctionExecutingTransform(this, tempHistory, response) }
       .onCompletion {
+        turns = 0
         lock.release()
         if (it == null) {
           history.addAll(tempHistory)
@@ -210,27 +222,34 @@ public class Chat(
           addTextToHistory(tempHistory, part)
         }
         is FunctionCallPart -> {
-          val functionCall =
-            response.candidates.first().content.parts.first { it is FunctionCallPart }
-              as FunctionCallPart
-          if (model.hasFunction(functionCall)) {
-            val output = model.executeFunction(functionCall)
-            val functionResponse =
-              Content("function", listOf(FunctionResponsePart(functionCall.name, output)))
-            tempHistory.add(response.candidates.first().content)
-            tempHistory.add(functionResponse)
-            model
-              .generateContentStream(listOf(*history.toTypedArray(), *tempHistory.toTypedArray()))
-              .collect { automaticFunctionExecutingTransform(transformer, tempHistory, it) }
-          } else {
-            transformer.emit(response)
-            tempHistory.add(Content("model", listOf(part)))
-          }
+          // do nothing
         }
         else -> {
           transformer.emit(response)
           tempHistory.add(Content("model", listOf(part)))
         }
+      }
+    }
+    val functionCallParts =
+      response.candidates.first().content.parts.filterIsInstance<FunctionCallPart>()
+    if (functionCallParts.isNotEmpty()) {
+      if (functionCallParts.all { model.hasFunction(it) }) {
+        if (model.getTurnLimit() < ++turns) {
+          throw RequestTimeoutException("Request took too many turns", history = tempHistory)
+        }
+        val functionResponses =
+          Content(
+            "function",
+            functionCallParts.map { FunctionResponsePart(it.name, model.executeFunction(it)) }
+          )
+        tempHistory.add(Content("model", functionCallParts))
+        tempHistory.add(functionResponses)
+        model
+          .generateContentStream(listOf(*history.toTypedArray(), *tempHistory.toTypedArray()))
+          .collect { automaticFunctionExecutingTransform(transformer, tempHistory, it) }
+      } else {
+        transformer.emit(response)
+        tempHistory.add(Content("model", functionCallParts))
       }
     }
   }
