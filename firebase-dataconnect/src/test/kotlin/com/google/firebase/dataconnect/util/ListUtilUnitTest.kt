@@ -27,9 +27,9 @@ import io.kotest.property.PropertyContext
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.list
 import io.kotest.property.checkAll
+import kotlin.random.nextInt
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
-import kotlin.random.nextInt
 
 class ListUtilUnitTest {
 
@@ -45,15 +45,14 @@ class ListUtilUnitTest {
     checkAll(propTestConfig, Arb.list(Arb.int(), 1..10)) { list ->
       val prefixLength = randomSource().random.nextInt(1..list.size)
       val prefix = list.take(prefixLength)
-      withClue("prefixLength=$prefixLength") {
-        prefix.isPrefixOf(list) shouldBe true
-      }
+      withClue("prefixLength=$prefixLength") { prefix.isPrefixOf(list) shouldBe true }
     }
   }
 
   @Test
   fun `List isPrefixOf() returns false when the receiver list has a greater size`() = runTest {
-    checkAll(propTestConfig, Arb.list(Arb.int(), 0..10), Arb.list(Arb.int(), 1..10)) { list, extras ->
+    checkAll(propTestConfig, Arb.list(Arb.int(), 0..10), Arb.list(Arb.int(), 1..10)) { list, extras
+      ->
       val prefix = list + extras
       prefix.isPrefixOf(list) shouldBe false
     }
@@ -64,18 +63,22 @@ class ListUtilUnitTest {
     checkAll(propTestConfig, Arb.list(Arb.int(), 1..10)) { list ->
       val prefixLength = randomSource().random.nextInt(1..list.size)
       val prefixDifferingIndexCount = randomSource().random.nextInt(1..prefixLength)
-      val differingIndices = (0 until prefixLength).shuffled(randomSource().random).take(prefixDifferingIndexCount)
-      val prefix = list.take(prefixLength).mapIndexed { index, element ->
-        if (index !in differingIndices) {
-          element
-        } else {
-          randomIntNotEqualTo(element)
+      val differingIndices =
+        (0 until prefixLength).shuffled(randomSource().random).take(prefixDifferingIndexCount)
+      val prefix =
+        list.take(prefixLength).mapIndexed { index, element ->
+          if (index !in differingIndices) {
+            element
+          } else {
+            randomIntNotEqualTo(element)
+          }
         }
-      }
 
-      withClue("prefix=$prefix, prefixLength=$prefixLength, " +
+      withClue(
+        "prefix=$prefix, prefixLength=$prefixLength, " +
           "prefixDifferingIndexCount=$prefixDifferingIndexCount, " +
-          "differingIndices=$differingIndices, ") {
+          "differingIndices=$differingIndices, "
+      ) {
         prefix.isPrefixOf(list) shouldBe false
       }
     }

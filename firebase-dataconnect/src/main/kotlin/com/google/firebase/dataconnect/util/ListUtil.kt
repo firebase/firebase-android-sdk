@@ -37,5 +37,4 @@ internal object ListUtil {
     }
     return true
   }
-
 }
