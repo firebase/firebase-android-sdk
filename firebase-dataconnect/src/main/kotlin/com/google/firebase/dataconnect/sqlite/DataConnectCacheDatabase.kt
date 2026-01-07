@@ -17,6 +17,7 @@
 package com.google.firebase.dataconnect.sqlite
 
 import android.database.sqlite.SQLiteDatabase
+import com.google.firebase.dataconnect.DataConnectPath
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.execSQL
@@ -352,12 +353,17 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
     }
   }
 
-  suspend fun insertQueryResult(authUid: String?, queryId: ByteArray, queryData: Struct) {
-    val encodeResult = QueryResultEncoder.encode(queryData, entityFieldName = "_id")
+  suspend fun insertQueryResult(
+    authUid: String?,
+    queryId: ByteArray,
+    queryData: Struct,
+    entityIdByPath: Map<DataConnectPath, String>,
+  ) {
+    val encodeResult = QueryResultEncoder.encode(queryData, entityIdByPath)
     val encodedQueryResultData = encodeResult.byteArray
     val entities = encodeResult.entities
     val encodedEntityDataList =
-      entities.map { QueryResultEncoder.encode(it.data, entityFieldName = null).byteArray }
+      entities.map { QueryResultEncoder.encode(it.data, entityIdByPath = null).byteArray }
 
     runReadWriteTransaction { sqliteDatabase ->
       val userRowId = sqliteDatabase.getOrInsertAuthUid(authUid)

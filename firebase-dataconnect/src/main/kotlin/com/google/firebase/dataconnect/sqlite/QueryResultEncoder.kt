@@ -17,11 +17,14 @@
 package com.google.firebase.dataconnect.sqlite
 
 import com.google.firebase.dataconnect.DataConnectPath
+import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.MutableDataConnectPath
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.putSInt32
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.putSInt64
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.putUInt32
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.putUInt64
+import com.google.firebase.dataconnect.sqlite.QueryResultEncoder.PruneDescendantEntitiesResult.PrunedEntity
+import com.google.firebase.dataconnect.toPathString
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
@@ -68,36 +71,66 @@ internal class QueryResultEncoder(
     writer.flush()
   }
 
-  private fun DataConnectPath.isEntity(): Boolean =
-    entityIdByPath !== null && entityIdByPath.containsKey(this)
+  data class PruneDescendantEntitiesResult(
+    val prunedStruct: Struct,
+    val prunedEntities: List<PrunedEntity>,
+  ) {
+    data class PrunedEntity(
+      val struct: Struct,
+      val entityId: String,
+      val path: DataConnectPath,
+    )
+  }
 
-  private fun Struct.pruneDescendantEntities(path: MutableDataConnectPath, entityByPath: MutableMap<DataConnectPath, Struct>): Struct {
+  private fun Struct.pruneDescendantEntities(
+    path: MutableDataConnectPath
+  ): PruneDescendantEntitiesResult {
+    val prunedEntities: MutableList<PrunedEntity> = mutableListOf()
+    val prunedStruct = pruneDescendantEntities(path, prunedEntities)
+    return PruneDescendantEntitiesResult(prunedStruct, prunedEntities.toList())
+  }
+
+  private fun Struct.pruneDescendantEntities(
+    path: MutableDataConnectPath,
+    prunedEntities: MutableList<PrunedEntity>
+  ): Struct {
     if (entityIdByPath === null) {
       return this
     }
 
     var structBuilder: Struct.Builder? = null
     fieldsMap.entries.forEach { (key, value) ->
-      val prunedValue: Value? = when (value.kindCase) {
-        Value.KindCase.STRUCT_VALUE -> {
-          val structBefore = value.structValue
-          val structAfter = path.withAddedField(key) {
-            if (path.isEntity()) {
-              entityByPath[path.toList()] = structBefore
-              null
+      val prunedValue: Value? =
+        when (value.kindCase) {
+          Value.KindCase.STRUCT_VALUE -> {
+            val structBefore = value.structValue
+            val structAfter =
+              path.withAddedField(key) {
+                val entityId = path.getEntityId()
+                if (entityId !== null) {
+                  prunedEntities.add(
+                    PrunedEntity(
+                      struct = structBefore,
+                      entityId = entityId,
+                      path = path.toList(),
+                    )
+                  )
+                  null
+                } else {
+                  structBefore.pruneDescendantEntities(path, prunedEntities)
+                }
+              }
+            if (structAfter === structBefore) {
+              value
             } else {
-              structBefore.pruneDescendantEntities(path, entityByPath)
+              structAfter?.toValueProto()
             }
           }
-          if (structAfter === structBefore) {
-            value
-          } else {
-            structAfter?.toValueProto()
+          Value.KindCase.LIST_VALUE -> {
+            TODO()
           }
+          else -> value
         }
-        Value.KindCase.LIST_VALUE -> { TODO() }
-        else -> value
-      }
 
       if (value !== prunedValue) {
         structBuilder = structBuilder ?: toBuilder()
@@ -226,9 +259,7 @@ internal class QueryResultEncoder(
     writer.writeUInt32(struct.fieldsCount)
     struct.fieldsMap.entries.forEach { (key, value) ->
       writeString(key)
-      path.withAddedField(key) {
-        writeValue(value, path)
-      }
+      path.withAddedField(key) { writeValue(value, path) }
     }
   }
 
@@ -239,9 +270,7 @@ internal class QueryResultEncoder(
     writer.writeByte(QueryResultCodec.VALUE_LIST)
     writer.writeUInt32(listValue.valuesCount)
     repeat(listValue.valuesCount) { listIndex ->
-      path.withAddedListIndex(listIndex) {
-        writeValue(listValue.getValues(listIndex), path)
-      }
+      path.withAddedListIndex(listIndex) { writeValue(listValue.getValues(listIndex), path) }
     }
   }
 
@@ -267,9 +296,7 @@ internal class QueryResultEncoder(
     var structBuilder: Struct.Builder? = null
     struct.fieldsMap.entries.forEach { (key, value) ->
       writeString(key)
-      val entityValue = path.withAddedField(key) {
-        writeEntityValue(value, path)
-      }
+      val entityValue = path.withAddedField(key) { writeEntityValue(value, path) }
 
       if (entityValue !== value) {
         structBuilder = structBuilder ?: struct.toBuilder()
@@ -289,22 +316,7 @@ internal class QueryResultEncoder(
     path: MutableDataConnectPath,
   ): Value? =
     when (value.kindCase) {
-      Value.KindCase.STRUCT_VALUE -> {
-        val entityId = path.getEntityId()
-        if (entityId !== null) {
-          writeEntity(entityId, value.structValue, path)
-          null
-        } else {
-          val struct = value.structValue
-          val prunedStruct = struct.pruneDescendantEntities(path, mutableMapOf())
-          if (prunedStruct === struct) {
-            writer.writeByte(QueryResultCodec.VALUE_KIND_NOT_SET)
-            value
-          } else {
-            TODO()
-          }
-        }
-      }
+      Value.KindCase.STRUCT_VALUE -> writeEntityStructValue(value, path)
       Value.KindCase.LIST_VALUE -> {
         TODO()
       }
@@ -313,7 +325,62 @@ internal class QueryResultEncoder(
         value
       }
     }
-  
+
+  private fun writeEntityStructValue(
+    value: Value,
+    path: MutableDataConnectPath,
+  ): Value? {
+    val entityId = path.getEntityId()
+    if (entityId !== null) {
+      writeEntity(entityId, value.structValue, path)
+      return null
+    }
+
+    val struct = value.structValue
+    val (prunedStruct, prunedEntities) = struct.pruneDescendantEntities(path)
+    if (prunedStruct === struct) {
+      check(prunedEntities.isEmpty()) {
+        "internal error qfzt7zxqnq: prunedEntities.size=${prunedEntities.size}, " +
+          "but expected it to be 0 since prunedStruct === struct" +
+          "(path=${path.toPathString()})"
+      }
+      writer.writeByte(QueryResultCodec.VALUE_KIND_NOT_SET)
+      return value
+    }
+
+    check(prunedEntities.isNotEmpty()) {
+      "internal error tkss7dqj9g: prunedEntities.isEmpty(), " +
+        "but expected it to be non-empty since prunedStruct !== struct " +
+        "(path=${path.toPathString()})"
+    }
+
+    writer.writeByte(QueryResultCodec.VALUE_STRUCT)
+    writer.writeUInt32(prunedEntities.size)
+
+    prunedEntities.forEach { (entity, entityId, entityPath) ->
+      val entityRelativePath = entityPath.drop(path.size)
+      check(entityRelativePath.isNotEmpty()) {
+        "internal error gw5zjrbcn3: entityRelativePath.isEmpty(), " +
+          "but expected it to be non-empty " +
+          "(path=${path.toPathString()}, entityPath=${entityPath.toPathString()})"
+      }
+      writePath(entityRelativePath)
+      writeEntity(entityId, entity, entityPath.toMutableList())
+    }
+
+    return prunedStruct.toValueProto()
+  }
+
+  private fun writePath(path: DataConnectPath) {
+    writer.writeUInt32(path.size)
+    path.forEach { pathSegment ->
+      when (pathSegment) {
+        is DataConnectPathSegment.Field -> writeString(pathSegment.field)
+        is DataConnectPathSegment.ListIndex -> writer.writeUInt32(pathSegment.index)
+      }
+    }
+  }
+
   private sealed interface DoubleEncoding {
     data class Double(val value: kotlin.Double) : DoubleEncoding
     object PositiveZero : DoubleEncoding
