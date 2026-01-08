@@ -35,8 +35,6 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
 import com.google.firebase.dataconnect.testutil.property.arbitrary.value
 import com.google.firebase.dataconnect.testutil.property.arbitrary.withIterations
 import com.google.firebase.dataconnect.testutil.property.arbitrary.withIterationsIfNotNull
-import com.google.firebase.dataconnect.testutil.randomlyInsertStruct
-import com.google.firebase.dataconnect.testutil.randomlyInsertStructs
 import com.google.firebase.dataconnect.testutil.randomlyInsertValue
 import com.google.firebase.dataconnect.testutil.randomlyInsertValues
 import com.google.firebase.dataconnect.testutil.shouldBe
@@ -277,53 +275,54 @@ class QueryResultEncoderUnitTest {
 
   @Test
   fun `entity contains nested entities in struct keys`() = runTest {
+    TODO("confirm that this actually produces nested entities")
     val structKeyArb = Arb.proto.structKey()
     val structArb = Arb.proto.struct()
-    val subEntityCountArb = Arb.int(1..10)
-    checkAll(propTestConfig, Arb.int(1..3)) { rootEntityCount ->
-      val subEntityCounts = List(rootEntityCount) { subEntityCountArb.bind() }
-      val totalEntityCount = rootEntityCount + subEntityCounts.sum()
-      val entities = List(totalEntityCount) { structArb.bind().struct }
-      data class RootEntityInfo(val struct: Struct, val subEntityPaths: List<DataConnectPath>)
-      val rootEntities = buildList {
-        val entityIterator = entities.iterator()
-        repeat(rootEntityCount) { rootEntityIndex ->
-          val rootEntityBuilder = entityIterator.next().toBuilder()
-          val subEntityCount = subEntityCounts[rootEntityIndex]
-          val subEntityPaths = mutableListOf<DataConnectPath>()
-          repeat(subEntityCount) {
-            val subEntityPath =
-              rootEntityBuilder.randomlyInsertStruct(
-                entityIterator.next(),
-                randomSource().random,
-                { structKeyArb.bind() },
-              )
-            subEntityPaths.add(subEntityPath)
-          }
-          add(RootEntityInfo(rootEntityBuilder.build(), subEntityPaths.toList()))
-        }
-      }
-      val rootStructBuilder = structArb.bind().struct.toBuilder()
-      val rootEntityPaths =
-        rootStructBuilder.randomlyInsertStructs(
-          rootEntities.map { it.struct },
+    checkAll(propTestConfig, Arb.int(2..5)) { entityCount ->
+      val generateKey = { structKeyArb.bind() }
+      val entities = MutableList(entityCount) { structArb.bind().struct }
+      val entityPaths = mutableListOf<DataConnectPath>()
+      val rootIsEntity = entityCount % 2 != 0
+      val entityIterator = entities.iterator()
+      val rootStructBuilder =
+        (if (rootIsEntity) entityIterator.next() else structArb.bind().struct).toBuilder()
+      val nestedEntityBuilder = entityIterator.next().toBuilder()
+      val nestedEntity2RelativePath =
+        nestedEntityBuilder.randomlyInsertValue(
+          entityIterator.next().toValueProto(),
           randomSource().random,
-          { structKeyArb.bind() },
+          generateKey,
         )
-      val rootStruct = rootStructBuilder.build()
-      val entityPaths = buildList {
-        rootEntityPaths.forEachIndexed { index, rootEntityPath ->
-          add(rootEntityPath)
-          rootEntities[index].subEntityPaths.forEach { subEntityPath ->
-            add(rootEntityPath + subEntityPath)
-          }
-        }
+      val nestedEntity1Path =
+        rootStructBuilder.randomlyInsertValue(
+          nestedEntityBuilder.build().toValueProto(),
+          randomSource().random,
+          generateKey,
+        )
+      entityPaths.add(nestedEntity1Path)
+      entityPaths.add(nestedEntity1Path + nestedEntity2RelativePath)
+      while (entityIterator.hasNext()) {
+        val entity = entityIterator.next()
+        val entityPath =
+          rootStructBuilder.randomlyInsertValue(
+            entity.toValueProto(),
+            randomSource().random,
+            generateKey,
+          )
+        entityPaths.add(entityPath)
       }
+      if (rootIsEntity) {
+        entityPaths.add(emptyDataConnectPath())
+      }
+      val rootStruct = rootStructBuilder.build()
       val entityIdByPath = buildEntityIdByPathMap {
-        entityPaths.forEach { entityPath -> putWithRandomUniqueEntityId(entityPath) }
+        entityPaths.forEach { putWithRandomUniqueEntityId(it) }
       }
 
-      rootStruct.decodingEncodingShouldProduceIdenticalStruct(entities, entityIdByPath)
+      rootStruct.decodingEncodingShouldProduceIdenticalStruct(
+        entities = entities.toList(),
+        entityIdByPath = entityIdByPath,
+      )
     }
   }
 
