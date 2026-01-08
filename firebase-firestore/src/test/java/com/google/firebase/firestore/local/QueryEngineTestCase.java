@@ -589,12 +589,16 @@ public abstract class QueryEngineTestCase {
     assertEquals(docSet(query2.comparator(), doc1, doc2, doc4), result2);
 
     // Query: a>2 || b==1.
-    // This query has an implicit 'order by a'.
-    // doc2 should not be included because it's missing the field 'a'.
     Query query3 = query("coll").filter(orFilters(filter("a", ">", 2), filter("b", "==", 1)));
     DocumentSet result3 =
         expectFullCollectionScan(() -> runQuery(query3, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
-    assertEquals(docSet(query3.comparator(), doc3), result3);
+    if (shouldUsePipeline) {
+      assertEquals(docSet(query3.comparator(), doc2, doc3), result3);
+    } else {
+      // This query has an implicit 'order by a' with standard edition.
+      // doc2 should not be included because it's missing the field 'a'.
+      assertEquals(docSet(query3.comparator(), doc3), result3);
+    }
 
     // Query: a>1 || b==1 order by a order by b.
     // doc6 should not be included because it's missing the field 'b'.
@@ -635,13 +639,18 @@ public abstract class QueryEngineTestCase {
     assertEquals(docSet(query1.comparator(), doc3, doc4, doc6), result1);
 
     // a==2 || (b != 2 && b != 3)
-    // Has implicit "orderBy b"
     Query query2 =
         query("coll")
             .filter(orFilters(filter("a", "==", 2), filter("b", "not-in", Arrays.asList(2, 3))));
     DocumentSet result2 =
         expectFullCollectionScan(() -> runQuery(query2, MISSING_LAST_LIMBO_FREE_SNAPSHOT));
-    assertEquals(docSet(query2.comparator(), doc1, doc2), result2);
+    if (shouldUsePipeline) {
+      // Has implicit "orderBy b" but no "b exists" when converting to pipelines
+      assertEquals(docSet(query2.comparator(), doc6, doc1, doc2), result2);
+    } else {
+      // Has implicit "orderBy b" and "b exists" with standard edition
+      assertEquals(docSet(query2.comparator(), doc1, doc2), result2);
+    }
   }
 
   @Test

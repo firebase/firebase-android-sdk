@@ -155,6 +155,68 @@ public class QueryToPipelineTest {
   }
 
   @Test
+  public void testNotInRemovesExistenceFilter() {
+    CollectionReference collection =
+        testCollectionWithDocs(
+            map(
+                "doc1", map("field", 2),
+                "doc2", map("field", 1),
+                "doc3", map()));
+
+    Query query = collection.whereNotIn("field", asList(1));
+    FirebaseFirestore db = collection.firestore;
+    Pipeline.Snapshot set = waitFor(db.pipeline().createFrom(query).execute());
+    List<String> ids = pipelineSnapshotToIds(set);
+    assertEquals(asList("doc3", "doc1"), ids);
+  }
+
+  @Test
+  public void testNotEqualRemovesExistenceFilter() {
+    CollectionReference collection =
+        testCollectionWithDocs(
+            map(
+                "doc1", map("field", 2),
+                "doc2", map("field", 1),
+                "doc3", map()));
+
+    Query query = collection.whereNotEqualTo("field", 1);
+    FirebaseFirestore db = collection.firestore;
+    Pipeline.Snapshot set = waitFor(db.pipeline().createFrom(query).execute());
+    List<String> ids = pipelineSnapshotToIds(set);
+    assertEquals(asList("doc3", "doc1"), ids);
+  }
+
+  @Test
+  public void testInequalityMaintainsExistenceFilter() {
+    CollectionReference collection =
+        testCollectionWithDocs(
+            map(
+                "doc1", map("field", 0),
+                "doc2", map()));
+
+    Query query = collection.whereLessThan("field", 1);
+    FirebaseFirestore db = collection.firestore;
+    Pipeline.Snapshot set = waitFor(db.pipeline().createFrom(query).execute());
+    List<String> ids = pipelineSnapshotToIds(set);
+    assertEquals(asList("doc1"), ids);
+  }
+
+  @Test
+  public void testExplicitOrderMaintainsExistenceFilter() {
+    CollectionReference collection =
+        testCollectionWithDocs(
+            map(
+                "doc1", map("field", 1),
+                "doc2", map()));
+
+    Query query = collection.orderBy("field");
+    FirebaseFirestore db = collection.firestore;
+    Pipeline.Snapshot set = waitFor(db.pipeline().createFrom(query).execute());
+    List<String> ids = pipelineSnapshotToIds(set);
+    assertEquals(asList("doc1"), ids);
+  }
+
+  @Test
   public void testKeyOrderIsDescendingForDescendingInequality() {
     CollectionReference collection =
         testCollectionWithDocs(
@@ -321,15 +383,14 @@ public class QueryToPipelineTest {
 
     Map<String, Map<String, Object>> allDocs =
         map(
-            "j", docJ, "a", docA, "b", docB, "c", docC, "d", docD, "e", docE, "f", docF, "g", docG,
-            "h", docH, "i", docI);
+            "i", docI, "j", docJ, "a", docA, "b", docB, "c", docC, "d", docD, "e", docE, "f", docF,
+            "g", docG, "h", docH);
     CollectionReference collection = testCollectionWithDocs(allDocs);
     FirebaseFirestore db = collection.firestore;
 
     // Search for zips not matching 98101.
     Map<String, Map<String, Object>> expectedDocsMap = new LinkedHashMap<>(allDocs);
     expectedDocsMap.remove("c");
-    expectedDocsMap.remove("i");
 
     Pipeline.Snapshot snapshot =
         waitFor(db.pipeline().createFrom(collection.whereNotEqualTo("zip", 98101L)).execute());
@@ -338,7 +399,6 @@ public class QueryToPipelineTest {
     // With objects.
     expectedDocsMap = new LinkedHashMap<>(allDocs);
     expectedDocsMap.remove("h");
-    expectedDocsMap.remove("i");
     snapshot =
         waitFor(
             db.pipeline()
@@ -348,7 +408,6 @@ public class QueryToPipelineTest {
 
     // With Null.
     expectedDocsMap = new LinkedHashMap<>(allDocs);
-    expectedDocsMap.remove("i");
     expectedDocsMap.remove("j");
     snapshot = waitFor(db.pipeline().createFrom(collection.whereNotEqualTo("zip", null)).execute());
     assertEquals(Lists.newArrayList(expectedDocsMap.values()), pipelineSnapshotToValues(snapshot));
@@ -356,7 +415,6 @@ public class QueryToPipelineTest {
     // With NaN.
     expectedDocsMap = new LinkedHashMap<>(allDocs);
     expectedDocsMap.remove("a");
-    expectedDocsMap.remove("i");
     snapshot =
         waitFor(db.pipeline().createFrom(collection.whereNotEqualTo("zip", Double.NaN)).execute());
     assertEquals(Lists.newArrayList(expectedDocsMap.values()), pipelineSnapshotToValues(snapshot));
@@ -507,8 +565,8 @@ public class QueryToPipelineTest {
 
     Map<String, Map<String, Object>> allDocs =
         map(
-            "j", docJ, "a", docA, "b", docB, "c", docC, "d", docD, "e", docE, "f", docF, "g", docG,
-            "h", docH, "i", docI);
+            "i", docI, "j", docJ, "a", docA, "b", docB, "c", docC, "d", docD, "e", docE, "f", docF,
+            "g", docG, "h", docH);
     CollectionReference collection = testCollectionWithDocs(allDocs);
     FirebaseFirestore db = collection.firestore;
 
@@ -517,7 +575,6 @@ public class QueryToPipelineTest {
     expectedDocsMap.remove("c");
     expectedDocsMap.remove("d");
     expectedDocsMap.remove("f");
-    expectedDocsMap.remove("i");
 
     Pipeline.Snapshot snapshot =
         waitFor(
@@ -530,7 +587,6 @@ public class QueryToPipelineTest {
     // With objects.
     expectedDocsMap = new LinkedHashMap<>(allDocs);
     expectedDocsMap.remove("h");
-    expectedDocsMap.remove("i");
     snapshot =
         waitFor(
             db.pipeline()
@@ -540,7 +596,6 @@ public class QueryToPipelineTest {
 
     // With Null.
     expectedDocsMap = new LinkedHashMap<>(allDocs);
-    expectedDocsMap.remove("i");
     expectedDocsMap.remove("j");
     snapshot =
         waitFor(db.pipeline().createFrom(collection.whereNotIn("zip", nullList())).execute());
@@ -549,7 +604,6 @@ public class QueryToPipelineTest {
     // With NaN.
     expectedDocsMap = new LinkedHashMap<>(allDocs);
     expectedDocsMap.remove("a");
-    expectedDocsMap.remove("i");
     snapshot =
         waitFor(
             db.pipeline().createFrom(collection.whereNotIn("zip", asList(Double.NaN))).execute());
@@ -559,7 +613,6 @@ public class QueryToPipelineTest {
     expectedDocsMap = new LinkedHashMap<>(allDocs);
     expectedDocsMap.remove("a");
     expectedDocsMap.remove("c");
-    expectedDocsMap.remove("i");
     snapshot =
         waitFor(
             db.pipeline()
