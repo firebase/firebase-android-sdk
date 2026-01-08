@@ -64,7 +64,7 @@ internal class QueryResultEncoder(
 
   fun encode(queryResult: Struct) {
     writer.writeFixed32Int(QueryResultCodec.QUERY_RESULT_MAGIC)
-    writeStruct(queryResult, path = mutableListOf())
+    writeStructOrEntity(queryResult, path = mutableListOf())
   }
 
   fun flush() {
@@ -84,20 +84,29 @@ internal class QueryResultEncoder(
 
   private fun Struct.pruneDescendantEntities(
     path: MutableDataConnectPath
-  ): PruneDescendantEntitiesResult {
+  ): PruneDescendantEntitiesResult? {
+    if (entityIdByPath === null) {
+      return null
+    }
+
     val prunedEntities: MutableList<PrunedEntity> = mutableListOf()
-    val prunedStruct = pruneDescendantEntities(path, prunedEntities)
+    val prunedStruct = pruneDescendantEntitiesRecursive(path, prunedEntities)
+
+    if (prunedStruct === this) {
+      return null
+    }
+
+    check(prunedEntities.isNotEmpty()) {
+      "internal error z2yafzcvca: prunedEntities is empty, but expected it to be non-empty " +
+          "since prunedStruct !== this (path=${path.toPathString()})"
+    }
     return PruneDescendantEntitiesResult(prunedStruct, prunedEntities.toList())
   }
 
-  private fun Struct.pruneDescendantEntities(
+  private fun Struct.pruneDescendantEntitiesRecursive(
     path: MutableDataConnectPath,
     prunedEntities: MutableList<PrunedEntity>
   ): Struct {
-    if (entityIdByPath === null) {
-      return this
-    }
-
     var structBuilder: Struct.Builder? = null
     fieldsMap.entries.forEach { (key, value) ->
       val prunedValue: Value? =
@@ -117,7 +126,7 @@ internal class QueryResultEncoder(
                   )
                   null
                 } else {
-                  structBefore.pruneDescendantEntities(path, prunedEntities)
+                  structBefore.pruneDescendantEntitiesRecursive(path, prunedEntities)
                 }
               }
             if (structAfter === structBefore) {
@@ -146,6 +155,8 @@ internal class QueryResultEncoder(
   }
 
   private fun DataConnectPath.getEntityId(): String? = entityIdByPath?.get(this)
+
+  private fun DataConnectPath.isEntity(): Boolean = entityIdByPath !== null && entityIdByPath.containsKey(this)
 
   private fun writeBoolean(value: Boolean) {
     val byte = if (value) QueryResultCodec.VALUE_BOOL_TRUE else QueryResultCodec.VALUE_BOOL_FALSE
@@ -317,9 +328,7 @@ internal class QueryResultEncoder(
   ): Value? =
     when (value.kindCase) {
       Value.KindCase.STRUCT_VALUE -> writeEntityStructValue(value, path)
-      Value.KindCase.LIST_VALUE -> {
-        TODO()
-      }
+      Value.KindCase.LIST_VALUE -> writeEntityListValue(value, path)
       else -> {
         writer.writeByte(QueryResultCodec.VALUE_KIND_NOT_SET)
         value
@@ -337,24 +346,15 @@ internal class QueryResultEncoder(
     }
 
     val struct = value.structValue
-    val (prunedStruct, prunedEntities) = struct.pruneDescendantEntities(path)
-    if (prunedStruct === struct) {
-      check(prunedEntities.isEmpty()) {
-        "internal error qfzt7zxqnq: prunedEntities.size=${prunedEntities.size}, " +
-          "but expected it to be 0 since prunedStruct === struct" +
-          "(path=${path.toPathString()})"
-      }
+    val pruneDescendantEntitiesResult = struct.pruneDescendantEntities(path)
+    if (pruneDescendantEntitiesResult === null) {
       writer.writeByte(QueryResultCodec.VALUE_KIND_NOT_SET)
       return value
     }
 
-    check(prunedEntities.isNotEmpty()) {
-      "internal error tkss7dqj9g: prunedEntities.isEmpty(), " +
-        "but expected it to be non-empty since prunedStruct !== struct " +
-        "(path=${path.toPathString()})"
-    }
-
     writer.writeByte(QueryResultCodec.VALUE_STRUCT)
+
+    val (prunedStruct, prunedEntities) = pruneDescendantEntitiesResult
     writer.writeUInt32(prunedEntities.size)
 
     prunedEntities.forEach { (entity, entityId, entityPath) ->
@@ -371,6 +371,31 @@ internal class QueryResultEncoder(
     return prunedStruct.toValueProto()
   }
 
+  private fun writeEntityListValue(
+    value: Value,
+    path: MutableDataConnectPath,
+  ): Value? {
+    val listValue = value.listValue
+
+    return when (listValue.classifyLeafContents(path)) {
+      ListValueLeafContentsClassification.RecursivelyEmpty, ListValueLeafContentsClassification.Scalars -> {
+        writer.writeByte(QueryResultCodec.VALUE_KIND_NOT_SET)
+        value
+      }
+      ListValueLeafContentsClassification.Entities, ListValueLeafContentsClassification.MixedEntitiesAndNonEntities -> {
+        writeList(listValue, path)
+        null
+      }
+      ListValueLeafContentsClassification.NonEntities -> writeEntityListValueToEntity(value, path)
+    }
+  }
+
+  private fun writeEntityListValueToEntity(
+    value: Value,
+    path: MutableDataConnectPath,
+  ): Value {
+  }
+
   private fun writePath(path: DataConnectPath) {
     writer.writeUInt32(path.size)
     path.forEach { pathSegment ->
@@ -378,6 +403,86 @@ internal class QueryResultEncoder(
         is DataConnectPathSegment.Field -> writeString(pathSegment.field)
         is DataConnectPathSegment.ListIndex -> writer.writeUInt32(pathSegment.index)
       }
+    }
+  }
+
+  private enum class ListValueLeafContentsClassification {
+    Entities,
+    Scalars,
+    NonEntities,
+    MixedEntitiesAndNonEntities,
+    RecursivelyEmpty,
+  }
+
+  private enum class ListValueLeafContentsClassificationInternal {
+    Entities,
+    Scalars,
+    NonEntities,
+  }
+
+  private fun ListValue.classifyLeafContents(path: MutableDataConnectPath): ListValueLeafContentsClassification {
+    var leafValueClassification: ListValueLeafContentsClassificationInternal? = null
+
+    repeat (valuesCount) { listIndex ->
+      val listElement = getValues(listIndex)
+
+      val listElementClassification = when (listElement.kindCase) {
+        Value.KindCase.STRUCT_VALUE ->
+          path.withAddedListIndex(listIndex) {
+            if (path.isEntity()) {
+              ListValueLeafContentsClassification.Entities
+            } else {
+              ListValueLeafContentsClassification.NonEntities
+            }
+          }
+        Value.KindCase.LIST_VALUE -> path.withAddedListIndex(listIndex) {
+          listElement.listValue.classifyLeafContents(path)
+        }
+        else -> ListValueLeafContentsClassification.Scalars
+      }
+
+      when (listElementClassification) {
+        ListValueLeafContentsClassification.RecursivelyEmpty -> {}
+        ListValueLeafContentsClassification.MixedEntitiesAndNonEntities ->
+          return ListValueLeafContentsClassification.MixedEntitiesAndNonEntities
+        ListValueLeafContentsClassification.Scalars ->
+          when(leafValueClassification) {
+            null -> {
+              leafValueClassification = ListValueLeafContentsClassificationInternal.Scalars
+            }
+            ListValueLeafContentsClassificationInternal.Scalars,
+            ListValueLeafContentsClassificationInternal.NonEntities -> {}
+            ListValueLeafContentsClassificationInternal.Entities ->
+              return ListValueLeafContentsClassification.MixedEntitiesAndNonEntities
+          }
+        ListValueLeafContentsClassification.NonEntities ->
+          when(leafValueClassification) {
+            null, ListValueLeafContentsClassificationInternal.Scalars -> {
+              leafValueClassification = ListValueLeafContentsClassificationInternal.NonEntities
+            }
+            ListValueLeafContentsClassificationInternal.NonEntities -> {}
+            ListValueLeafContentsClassificationInternal.Entities ->
+              return ListValueLeafContentsClassification.MixedEntitiesAndNonEntities
+          }
+        ListValueLeafContentsClassification.Entities ->
+          when(leafValueClassification) {
+            null -> {
+              leafValueClassification = ListValueLeafContentsClassificationInternal.NonEntities
+            }
+            ListValueLeafContentsClassificationInternal.Entities -> {}
+            ListValueLeafContentsClassificationInternal.NonEntities, ListValueLeafContentsClassificationInternal.Scalars -> return ListValueLeafContentsClassification.MixedEntitiesAndNonEntities
+          }
+      }
+    }
+
+    return when(leafValueClassification) {
+      null -> ListValueLeafContentsClassification.RecursivelyEmpty
+      ListValueLeafContentsClassificationInternal.Scalars ->
+        ListValueLeafContentsClassification.Scalars
+      ListValueLeafContentsClassificationInternal.Entities ->
+        ListValueLeafContentsClassification.Entities
+      ListValueLeafContentsClassificationInternal.NonEntities ->
+        ListValueLeafContentsClassification.NonEntities
     }
   }
 
