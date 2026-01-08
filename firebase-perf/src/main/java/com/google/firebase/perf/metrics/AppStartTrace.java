@@ -24,7 +24,6 @@ import android.app.Application.ActivityLifecycleCallbacks;
 import android.content.Context;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.PowerManager;
 import android.os.Process;
 import android.view.View;
 import android.view.ViewTreeObserver;
@@ -77,6 +76,11 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
   private static final @NonNull Timer PERF_CLASS_LOAD_TIME = new Clock().getTime();
   private static final long MAX_LATENCY_BEFORE_UI_INIT = TimeUnit.MINUTES.toMicros(1);
 
+  // If the `mainThreadRunnableTime` was set within this duration, the assumption
+  // is that it was called immediately before `onActivityCreated` in foreground starts on API 34+.
+  // See b/339891952.
+  private static final long MAX_BACKGROUND_RUNNABLE_DELAY = TimeUnit.MILLISECONDS.toMicros(50);
+
   // Core pool size 0 allows threads to shut down if they're idle
   private static final int CORE_POOL_SIZE = 0;
   private static final int MAX_POOL_SIZE = 1; // Only need single thread
@@ -113,6 +117,9 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
   private final @Nullable Timer processStartTime;
   private final @Nullable Timer firebaseClassLoadTime;
   private Timer onCreateTime = null;
+
+  // TODO(b/339891952): Explore simplifying Timers in app start trace to use timestamps.
+  private Timer mainThreadRunnableTime = null;
   private Timer onStartTime = null;
   private Timer onResumeTime = null;
   private Timer firstForegroundTime = null;
@@ -321,8 +328,44 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
     logExperimentTrace(this.experimentTtid);
   }
 
+  /**
+   * Sets the `isStartedFromBackground` flag to `true` if the `mainThreadRunnableTime` was set
+   * from the `StartFromBackgroundRunnable`.
+   * <p>
+   * If it's prior to API 34, it's always set to true if `mainThreadRunnableTime` was set.
+   * <p>
+   * If it's on or after API 34, and it was called less than `MAX_BACKGROUND_RUNNABLE_DELAY`
+   * before `onActivityCreated`, the
+   * assumption is that it was called immediately before the activity lifecycle callbacks in a
+   * foreground start.
+   * See b/339891952.
+   */
+  private void resolveIsStartedFromBackground() {
+    // If the mainThreadRunnableTime is null, either the runnable hasn't run, or this check has
+    // already been made.
+    if (mainThreadRunnableTime == null) {
+      return;
+    }
+
+    // If the `mainThreadRunnableTime` was set prior to API 34, it's always assumed that's it's
+    // a background start.
+    // Otherwise it's assumed to be a background start if the runnable was set more than
+    // `MAX_BACKGROUND_RUNNABLE_DELAY`
+    // before the first `onActivityCreated` call.
+    // TODO(b/339891952): Investigate removing the API check.
+    if ((Build.VERSION.SDK_INT < 34)
+        || (mainThreadRunnableTime.getDurationMicros() > MAX_BACKGROUND_RUNNABLE_DELAY)) {
+      isStartedFromBackground = true;
+    }
+
+    // Set this to null to prevent additional checks.
+    mainThreadRunnableTime = null;
+  }
+
   @Override
   public synchronized void onActivityCreated(Activity activity, Bundle savedInstanceState) {
+    resolveIsStartedFromBackground();
+
     if (isStartedFromBackground || onCreateTime != null // An activity already called onCreate()
     ) {
       return;
@@ -514,21 +557,13 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
     List<ActivityManager.RunningAppProcessInfo> appProcesses = getAppProcesses(appContext);
     if (!appProcesses.isEmpty()) {
       for (ActivityManager.RunningAppProcessInfo appProcess : appProcesses) {
-        if (appProcess.importance == ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND) {
-          boolean isAppInForeground = true;
-
-          // For the case when the app is in foreground and the device transitions to sleep mode,
-          // the importance of the process is set to IMPORTANCE_TOP_SLEEPING. However, this
-          // importance level was introduced in M. Pre M, the process importance is not changed to
-          // IMPORTANCE_TOP_SLEEPING when the display turns off. So we need to rely also on the
-          // state of the display to decide if any app process is really visible.
-          if (Build.VERSION.SDK_INT < 23 /* M */) {
-            isAppInForeground = isScreenOn(appContext);
-          }
-
-          if (isAppInForeground) {
-            return true;
-          }
+        if (appProcess.importance != ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND) {
+          continue;
+        }
+        if (appProcess.processName.equals(appProcessName)
+            || appProcess.processName.startsWith(allowedAppProcessNamePrefix)) {
+          // Returns true if the process with `IMPORTANCE_FOREGROUND` matches current process.
+          return true;
         }
       }
     }
@@ -537,26 +572,11 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
   }
 
   /**
-   * Returns whether the device screen is on.
-   *
-   * @param appContext The application's context.
-   */
-  public static boolean isScreenOn(Context appContext) {
-    PowerManager powerManager = (PowerManager) appContext.getSystemService(Context.POWER_SERVICE);
-    if (powerManager == null) {
-      return true;
-    }
-    return (Build.VERSION.SDK_INT >= 20 /* KITKAT_WATCH */)
-        ? powerManager.isInteractive()
-        : powerManager.isScreenOn();
-  }
-
-  /**
    * We use StartFromBackgroundRunnable to detect if app is started from background or foreground.
    * If app is started from background, we do not generate AppStart trace. This runnable is posted
-   * to main UI thread from FirebasePerfEarly. If app is started from background, this runnable will
-   * be executed before any activity's onCreate() method. If app is started from foreground,
-   * activity's onCreate() method is executed before this runnable.
+   * to main UI thread from FirebasePerfEarly. If `onActivityCreate` has never been called, we
+   * record the timestamp - which allows `onActivityCreate` to determine whether it was a background
+   * app start or not.
    */
   public static class StartFromBackgroundRunnable implements Runnable {
     private final AppStartTrace trace;
@@ -567,9 +587,9 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
 
     @Override
     public void run() {
-      // if no activity has ever been created.
+      // Only set the `mainThreadRunnableTime` if `onActivityCreate` has never been called.
       if (trace.onCreateTime == null) {
-        trace.isStartedFromBackground = true;
+        trace.mainThreadRunnableTime = new Timer();
       }
     }
   }
@@ -609,7 +629,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
   }
 
   @VisibleForTesting
-  void setIsStartFromBackground() {
-    isStartedFromBackground = true;
+  void setMainThreadRunnableTime(Timer timer) {
+    mainThreadRunnableTime = timer;
   }
 }

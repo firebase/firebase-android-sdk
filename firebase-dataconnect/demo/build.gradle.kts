@@ -16,6 +16,7 @@
 
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 import java.nio.charset.StandardCharsets
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
   // Use whichever versions of these dependencies suit your application.
@@ -66,7 +67,7 @@ dokka {
 
 // The remaining code in this file can be omitted from customer facing
 // documentation. It's here just to make things compile and/or configure
-// optional components of the build (e.g. spotless code formatting).
+// optional components of the build (for example, spotless code formatting).
 
 android {
   namespace = "com.google.firebase.dataconnect.minimaldemo"
@@ -83,7 +84,13 @@ android {
     isCoreLibraryDesugaringEnabled = true
   }
   buildFeatures.viewBinding = true
-  kotlinOptions.jvmTarget = "1.8"
+}
+
+kotlin {
+  compilerOptions {
+    jvmTarget = JvmTarget.JVM_1_8
+    optIn.add("kotlin.RequiresOptIn")
+  }
 }
 
 spotless {
@@ -115,7 +122,7 @@ spotless {
     target("**/*.xml")
     targetExclude("build/")
     trimTrailingWhitespace()
-    indentWithSpaces(2)
+    leadingTabsToSpaces(2)
     endWithNewline()
   }
 }

@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     id 'firebase-library'
     id("kotlin-android")
@@ -93,7 +95,6 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
-    kotlinOptions { jvmTarget = "1.8" }
     testOptions {
         unitTests {
             includeAndroidResources = true
@@ -101,9 +102,11 @@ android {
     }
 }
 
+kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_1_8 } }
 
 thirdPartyLicenses {
-    add 'Dagger', "${rootDir}/third_party/licenses/apache-2.0.txt"
+    add 'Apache-2.0', "${rootDir}/third_party/licenses/apache-2.0.txt"
+    add 'Dagger', "${rootDir}/third_party/licenses/dagger.txt"
 }
 
 dependencies {
@@ -117,8 +120,8 @@ dependencies {
          exclude group: 'com.google.firebase', module: 'firebase-common'
          exclude group: 'com.google.firebase', module: 'firebase-components'
      }
-    api("com.google.firebase:firebase-common:22.0.0")
-    api("com.google.firebase:firebase-components:19.0.0")
+    api(libs.firebase.common)
+    api(libs.firebase.components)
     api("com.google.firebase:firebase-datatransport:18.2.0"){
          exclude group: 'com.google.firebase', module: 'firebase-common'
          exclude group: 'com.google.firebase', module: 'firebase-components'

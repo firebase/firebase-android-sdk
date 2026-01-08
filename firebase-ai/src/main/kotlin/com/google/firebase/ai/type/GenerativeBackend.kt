@@ -16,6 +16,8 @@
 
 package com.google.firebase.ai.type
 
+import java.util.Objects
+
 /** Represents a reference to a backend for generative AI. */
 public class GenerativeBackend
 internal constructor(internal val location: String, internal val backend: GenerativeBackendEnum) {
@@ -27,7 +29,7 @@ internal constructor(internal val location: String, internal val backend: Genera
       GenerativeBackend("", GenerativeBackendEnum.GOOGLE_AI)
 
     /**
-     * References the VertexAI Enterprise backend.
+     * References the VertexAI Gemini API backend.
      *
      * @param location passes a valid cloud server location, defaults to "us-central1"
      */
@@ -40,6 +42,22 @@ internal constructor(internal val location: String, internal val backend: Genera
       return GenerativeBackend(location, GenerativeBackendEnum.VERTEX_AI)
     }
   }
+
+  override fun equals(other: Any?): Boolean {
+    if (other is GenerativeBackend) {
+      return when (other.backend) {
+        GenerativeBackendEnum.GOOGLE_AI -> {
+          other.backend == this.backend
+        }
+        GenerativeBackendEnum.VERTEX_AI -> {
+          other.backend == this.backend && other.location == this.location
+        }
+      }
+    }
+    return false
+  }
+
+  override fun hashCode(): Int = Objects.hash(this.backend, this.location)
 }
 
 internal enum class GenerativeBackendEnum {

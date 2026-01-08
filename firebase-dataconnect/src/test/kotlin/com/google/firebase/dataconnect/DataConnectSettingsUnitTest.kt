@@ -98,7 +98,7 @@ class DataConnectSettingsUnitTest {
 
   @Test
   fun `equals() should return false for a different type`() = runTest {
-    val otherTypes = Arb.choice(Arb.string(), Arb.int(), Arb.dataConnect.errorPath())
+    val otherTypes = Arb.choice(Arb.string(), Arb.int(), Arb.dataConnect.dataConnectPath())
     checkAll(propTestConfig, Arb.dataConnect.dataConnectSettings(), otherTypes) { settings, other ->
       settings.equals(other) shouldBe false
     }

@@ -17,7 +17,6 @@
 package com.google.firebase.ai.type
 
 import com.google.firebase.ai.FirebaseAI
-import com.google.firebase.ai.common.FirebaseCommonAIException
 import kotlinx.coroutines.TimeoutCancellationException
 
 /** Parent class for any errors that occur from the [FirebaseAI] SDK. */
@@ -35,36 +34,6 @@ internal constructor(message: String, cause: Throwable? = null) : RuntimeExcepti
     internal fun from(cause: Throwable): FirebaseAIException =
       when (cause) {
         is FirebaseAIException -> cause
-        is FirebaseCommonAIException ->
-          when (cause) {
-            is com.google.firebase.ai.common.SerializationException ->
-              SerializationException(cause.message ?: "", cause.cause)
-            is com.google.firebase.ai.common.ServerException ->
-              ServerException(cause.message ?: "", cause.cause)
-            is com.google.firebase.ai.common.InvalidAPIKeyException ->
-              InvalidAPIKeyException(cause.message ?: "")
-            is com.google.firebase.ai.common.PromptBlockedException ->
-              PromptBlockedException(cause.response?.toPublic(), cause.cause)
-            is com.google.firebase.ai.common.UnsupportedUserLocationException ->
-              UnsupportedUserLocationException(cause.cause)
-            is com.google.firebase.ai.common.InvalidStateException ->
-              InvalidStateException(cause.message ?: "", cause)
-            is com.google.firebase.ai.common.ResponseStoppedException ->
-              ResponseStoppedException(cause.response.toPublic(), cause.cause)
-            is com.google.firebase.ai.common.RequestTimeoutException ->
-              RequestTimeoutException(cause.message ?: "", cause.cause)
-            is com.google.firebase.ai.common.ServiceDisabledException ->
-              ServiceDisabledException(cause.message ?: "", cause.cause)
-            is com.google.firebase.ai.common.UnknownException ->
-              UnknownException(cause.message ?: "", cause.cause)
-            is com.google.firebase.ai.common.ContentBlockedException ->
-              ContentBlockedException(cause.message ?: "", cause.cause)
-            is com.google.firebase.ai.common.QuotaExceededException ->
-              QuotaExceededException(cause.message ?: "", cause.cause)
-            is com.google.firebase.ai.common.APINotConfiguredException ->
-              APINotConfiguredException(cause.cause)
-            else -> UnknownException(cause.message ?: "", cause)
-          }
         is TimeoutCancellationException ->
           RequestTimeoutException("The request failed to complete in the allotted time.")
         else -> UnknownException("Something unexpected happened.", cause)
@@ -152,14 +121,14 @@ public class UnsupportedUserLocationException internal constructor(cause: Throwa
   FirebaseAIException("User location is not supported for the API use.", cause)
 
 /**
- * The user's project does not have the Gemini Developer API enabled in the Firebase Console.
+ * The Firebase project has not been configured and enabled for the selected API.
  *
- * See the Firebase documentation for the
+ * For the Gemini Developer API, see
  * [steps](https://firebase.google.com/docs/ai-logic/faq-and-troubleshooting?api=dev#error-genai-config-not-found)
- * to enable the Gemini Developer API.
  */
-internal class APINotConfiguredException internal constructor(cause: Throwable? = null) :
-  FirebaseAIException("Gemini Developer API not enabled in Firebase console.", cause)
+public class APINotConfiguredException
+internal constructor(message: String, cause: Throwable? = null) :
+  FirebaseAIException(message, cause)
 
 /**
  * Some form of state occurred that shouldn't have.
@@ -231,6 +200,25 @@ public class AudioRecordInitializationFailedException(message: String) :
 public class ServiceConnectionHandshakeFailedException(message: String, cause: Throwable? = null) :
   FirebaseAIException(message, cause)
 
+/** The request is missing a permission that is required to perform the requested operation. */
+public class PermissionMissingException(message: String, cause: Throwable? = null) :
+  FirebaseAIException(message, cause)
+
 /** Catch all case for exceptions not explicitly expected. */
 public class UnknownException internal constructor(message: String, cause: Throwable? = null) :
   FirebaseAIException(message, cause)
+
+internal fun makeMissingCaseException(
+  source: String,
+  ordinal: Int
+): com.google.firebase.ai.type.SerializationException {
+  return com.google.firebase.ai.type.SerializationException(
+    """
+    |Missing case for a $source: $ordinal
+    |This error indicates that one of the `toInternal` conversions needs updating.
+    |If you're a developer seeing this exception, please file an issue on our GitHub repo:
+    |https://github.com/firebase/firebase-android-sdk
+  """
+      .trimMargin()
+  )
+}

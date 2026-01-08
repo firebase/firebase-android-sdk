@@ -18,7 +18,7 @@ on:
 
 env:
   FDC_NODE_VERSION: ${{ inputs.nodeVersion || '20' }}
-  FDC_FIREBASE_TOOLS_VERSION: ${{ inputs.firebaseToolsVersion || '14.12.0' }}
+  FDC_FIREBASE_TOOLS_VERSION: ${{ inputs.firebaseToolsVersion || '15.0.0' }}
   FDC_JAVA_VERSION: ${{ inputs.javaVersion || '17' }}
   FDC_FIREBASE_TOOLS_DIR: ${{ github.workspace }}/firebase-tools
   FDC_FIREBASE_COMMAND: ${{ github.workspace }}/firebase-tools/node_modules/.bin/firebase
@@ -108,6 +108,7 @@ jobs:
           --project-dir firebase-dataconnect/demo \
           ${{ (inputs.gradleInfoLog && '--info') || '' }} \
           --profile \
+          --warning-mode all \
           -PdataConnect.demo.firebaseCommand=${{ env.FDC_FIREBASE_COMMAND }} \
           assemble test
 
@@ -115,6 +116,7 @@ jobs:
         run: |
           set -x
           firebase-dataconnect/demo/gradlew \
+          --warning-mode all \
           --project-dir firebase-dataconnect/demo \
           ${{ (inputs.gradleInfoLog && '--info') || '' }} \
           dokkaGeneratePublicationHtml
@@ -176,6 +178,7 @@ jobs:
         run: |
           set -x
           firebase-dataconnect/demo/gradlew \
+          --warning-mode all \
           --project-dir firebase-dataconnect/demo \
           --no-daemon \
           ${{ (inputs.gradleInfoLog && '--info') || '' }} \

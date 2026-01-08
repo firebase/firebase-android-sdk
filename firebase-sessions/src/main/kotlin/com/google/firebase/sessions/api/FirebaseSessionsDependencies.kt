@@ -30,7 +30,7 @@ import kotlinx.coroutines.sync.withLock
  *
  * This is important because the Sessions SDK starts up before dependent SDKs.
  */
-object FirebaseSessionsDependencies {
+public object FirebaseSessionsDependencies {
   private val dependencies = synchronizedMap(mutableMapOf<SessionSubscriber.Name, Dependency>())
 
   /**
@@ -38,7 +38,7 @@ object FirebaseSessionsDependencies {
    * the Sessions SDK will never generate a session.
    */
   @JvmStatic
-  fun addDependency(subscriberName: SessionSubscriber.Name) {
+  public fun addDependency(subscriberName: SessionSubscriber.Name) {
     if (dependencies.containsKey(subscriberName)) {
       Log.d(TAG, "Dependency $subscriberName already added.")
       return
@@ -54,7 +54,7 @@ object FirebaseSessionsDependencies {
    * return.
    */
   @JvmStatic
-  fun register(subscriber: SessionSubscriber) {
+  public fun register(subscriber: SessionSubscriber) {
     val subscriberName = subscriber.sessionSubscriberName
     val dependency = getDependency(subscriberName)
 

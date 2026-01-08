@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     id 'firebase-library'
     id("kotlin-android")
@@ -56,13 +58,13 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
-    kotlinOptions {
-        jvmTarget = '1.8'
-    }
 }
 
+kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_1_8 } }
+
 thirdPartyLicenses {
-    add 'Tape', "${projectDir}/third_party_licenses/tape/LICENSE"
+    add 'Apache-2.0', "${rootDir}/third_party/licenses/apache-2.0.txt"
+    add 'Tape', "${rootDir}/third_party/licenses/tape.txt"
 }
 
 dependencies {
@@ -70,9 +72,9 @@ dependencies {
 
     api(project(":firebase-sessions"))
     api(libs.playservices.tasks)
-    api("com.google.firebase:firebase-annotations:17.0.0")
-    api("com.google.firebase:firebase-common:22.0.0")
-    api("com.google.firebase:firebase-components:19.0.0")
+    api(libs.firebase.annotations)
+    api(libs.firebase.common)
+    api(libs.firebase.components)
     api("com.google.firebase:firebase-config-interop:16.0.1")
     api("com.google.firebase:firebase-encoders:17.0.0")
     api("com.google.firebase:firebase-encoders-json:18.0.1")

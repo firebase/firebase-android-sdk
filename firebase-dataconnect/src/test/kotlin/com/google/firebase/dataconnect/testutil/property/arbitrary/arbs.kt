@@ -22,7 +22,9 @@ import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.OperationRef
 import com.google.firebase.dataconnect.core.DataConnectAppCheck
+import com.google.firebase.dataconnect.core.DataConnectAppCheck.GetAppCheckTokenResult
 import com.google.firebase.dataconnect.core.DataConnectAuth
+import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
 import com.google.firebase.dataconnect.core.DataConnectGrpcClient
 import com.google.firebase.dataconnect.core.DataConnectGrpcMetadata
 import com.google.firebase.dataconnect.core.DataConnectOperationFailureResponseImpl
@@ -50,14 +52,17 @@ import io.kotest.property.arbitrary.list
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.orNull
 import io.kotest.property.arbitrary.string
+import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.modules.SerializersModule
 
 internal fun DataConnectArb.dataConnectGrpcMetadata(
-  dataConnectAuth: Arb<DataConnectAuth> = Arb.constant(mockk(relaxed = true)),
-  dataConnectAppCheck: Arb<DataConnectAppCheck> = Arb.constant(mockk(relaxed = true)),
+  dataConnectAuth: Arb<DataConnectAuth> =
+    Arb.constant(mockk(relaxed = true) { coEvery { getToken(any()) } returns null }),
+  dataConnectAppCheck: Arb<DataConnectAppCheck> =
+    Arb.constant(mockk(relaxed = true) { coEvery { getToken(any()) } returns null }),
   connectorLocation: Arb<String> = connectorLocation(),
   kotlinVersion: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric()),
   androidVersion: Arb<Int> = Arb.int(0..100),
@@ -80,12 +85,12 @@ internal fun DataConnectArb.dataConnectGrpcMetadata(
 
 internal fun DataConnectArb.operationErrorInfo(
   message: Arb<String> = string(),
-  path: Arb<List<DataConnectPathSegment>> = errorPath(),
+  path: Arb<List<DataConnectPathSegment>> = dataConnectPath(),
 ): Arb<ErrorInfoImpl> =
   Arb.bind(message, path) { message0, path0 -> ErrorInfoImpl(message0, path0) }
 
 internal fun DataConnectArb.operationRawData(): Arb<Map<String, Any?>?> =
-  Arb.proto.struct().map { it.toMap() }.orNull(nullProbability = 0.33)
+  Arb.proto.struct().map { it.struct.toMap() }.orNull(nullProbability = 0.33)
 
 internal data class SampleOperationData(val value: String)
 
@@ -107,7 +112,7 @@ internal fun DataConnectArb.operationFailureResponseImpl(
   }
 
 internal fun DataConnectArb.operationResult(
-  data: Arb<Struct?> = Arb.proto.struct().orNull(nullProbability = 0.2),
+  data: Arb<Struct?> = Arb.proto.struct().map { it.struct }.orNull(nullProbability = 0.2),
   errors: Arb<List<ErrorInfoImpl>> = operationErrors(),
 ) =
   Arb.bind(data, errors) { data0, errors0 -> DataConnectGrpcClient.OperationResult(data0, errors0) }
@@ -326,3 +331,13 @@ internal inline fun <Data, reified Variables> DataConnectArb.operationRefConstru
     variablesSerializersModule = variablesSerializersModule.bind(),
   )
 }
+
+internal fun DataConnectArb.authTokenResult(
+  accessToken: Arb<String?> = accessToken().orNull(nullProbability = 0.33),
+  authUid: Arb<String?> =
+    Arb.string(0..10, Codepoint.alphanumeric()).orNull(nullProbability = 0.33),
+): Arb<GetAuthTokenResult> = Arb.bind(accessToken, authUid, ::GetAuthTokenResult)
+
+internal fun DataConnectArb.appCheckTokenResult(
+  accessToken: Arb<String?> = accessToken().orNull(nullProbability = 0.33),
+): Arb<GetAppCheckTokenResult> = accessToken.map { GetAppCheckTokenResult(it) }

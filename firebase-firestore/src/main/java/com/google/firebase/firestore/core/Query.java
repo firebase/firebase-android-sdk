@@ -14,14 +14,41 @@
 
 package com.google.firebase.firestore.core;
 
+import static com.google.firebase.firestore.pipeline.Expression.and;
+import static com.google.firebase.firestore.pipeline.Expression.or;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.Pipeline;
+import com.google.firebase.firestore.RealtimePipeline;
+import com.google.firebase.firestore.UserDataReader;
 import com.google.firebase.firestore.core.OrderBy.Direction;
+import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.ResourcePath;
+import com.google.firebase.firestore.pipeline.BooleanExpression;
+import com.google.firebase.firestore.pipeline.CollectionGroupOptions;
+import com.google.firebase.firestore.pipeline.CollectionGroupSource;
+import com.google.firebase.firestore.pipeline.CollectionSource;
+import com.google.firebase.firestore.pipeline.DocumentsSource;
+import com.google.firebase.firestore.pipeline.Expression;
+import com.google.firebase.firestore.pipeline.Field;
+import com.google.firebase.firestore.pipeline.FunctionExpression;
+import com.google.firebase.firestore.pipeline.InternalOptions;
+import com.google.firebase.firestore.pipeline.LimitStage;
+import com.google.firebase.firestore.pipeline.Ordering;
+import com.google.firebase.firestore.pipeline.SortStage;
+import com.google.firebase.firestore.pipeline.Stage;
+import com.google.firebase.firestore.pipeline.WhereStage;
+import com.google.firebase.firestore.remote.RemoteSerializer;
+import com.google.firebase.firestore.util.BiFunction;
+import com.google.firebase.firestore.util.Function;
+import com.google.firebase.firestore.util.IntFunction;
+import com.google.firestore.v1.Value;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -499,6 +526,140 @@ public final class Query {
           this.limit,
           newStartAt,
           newEndAt);
+    }
+  }
+
+  @NonNull
+  public Pipeline toPipeline(FirebaseFirestore firestore, UserDataReader userDataReader) {
+    return new Pipeline(firestore, userDataReader, convertToStages(userDataReader));
+  }
+
+  @NonNull
+  public RealtimePipeline toRealtimePipeline(
+      FirebaseFirestore firestore, UserDataReader userDataReader) {
+    return new RealtimePipeline(
+        firestore,
+        new RemoteSerializer(userDataReader.getDatabaseId()),
+        userDataReader,
+        convertToStages(userDataReader),
+        null);
+  }
+
+  private List<Stage<?>> convertToStages(UserDataReader userDataReader) {
+    List<Stage<?>> stages = new ArrayList<>();
+    stages.add(pipelineSource(userDataReader.getDatabaseId()));
+
+    // Filters
+    for (Filter filter : filters) {
+      stages.add(new WhereStage(filter.toPipelineExpr(), InternalOptions.EMPTY));
+    }
+
+    // Orders
+    List<OrderBy> normalizedOrderBy = getNormalizedOrderBy();
+    int size = normalizedOrderBy.size();
+    List<Field> fields = new ArrayList<>(size);
+    List<Ordering> orderings = new ArrayList<>(size);
+    for (OrderBy order : normalizedOrderBy) {
+      Field field = new Field(order.getField());
+      fields.add(field);
+      if (order.getDirection() == Direction.ASCENDING) {
+        orderings.add(field.ascending());
+      } else {
+        orderings.add(field.descending());
+      }
+    }
+
+    if (fields.size() == 1) {
+      stages.add(new WhereStage(fields.get(0).exists(), InternalOptions.EMPTY));
+    } else {
+      BooleanExpression[] conditions =
+          skipFirstToArray(fields, BooleanExpression[]::new, Expression.Companion::exists);
+      stages.add(new WhereStage(and(fields.get(0).exists(), conditions), InternalOptions.EMPTY));
+    }
+
+    if (startAt != null) {
+      stages.add(
+          new WhereStage(
+              whereConditionsFromCursor(startAt, fields, FunctionExpression::greaterThan),
+              InternalOptions.EMPTY));
+    }
+
+    if (endAt != null) {
+      stages.add(
+          new WhereStage(
+              whereConditionsFromCursor(endAt, fields, FunctionExpression::lessThan),
+              InternalOptions.EMPTY));
+    }
+
+    // Cursors, Limit, Offset
+    if (hasLimit()) {
+      // TODO: Handle situation where user enters limit larger than integer.
+      if (limitType == LimitType.LIMIT_TO_FIRST) {
+        stages.add(new SortStage(orderings.toArray(new Ordering[0]), InternalOptions.EMPTY));
+        stages.add(new LimitStage((int) limit, InternalOptions.EMPTY));
+      } else {
+        if (explicitSortOrder.isEmpty()) {
+          throw new IllegalStateException(
+              "limitToLast() queries require specifying at least one orderBy() clause");
+        }
+
+        List<Ordering> reversedOrderings = new ArrayList<>();
+        for (Ordering ordering : orderings) {
+          Ordering reversed =
+              ordering.getDir() == Ordering.Direction.ASCENDING
+                  ? ordering.getExpr().descending()
+                  : ordering.getExpr().ascending();
+          reversedOrderings.add(reversed);
+        }
+        stages.add(
+            new SortStage(reversedOrderings.toArray(new Ordering[0]), InternalOptions.EMPTY));
+        stages.add(new LimitStage((int) limit, InternalOptions.EMPTY));
+        stages.add(new SortStage(orderings.toArray(new Ordering[0]), InternalOptions.EMPTY));
+      }
+    } else {
+      stages.add(new SortStage(orderings.toArray(new Ordering[0]), InternalOptions.EMPTY));
+    }
+
+    return stages;
+  }
+
+  // Many Pipelines require first parameter to be separated out from rest.
+  private static <T, R> R[] skipFirstToArray(
+      List<T> list, IntFunction<R[]> generator, Function<T, R> map) {
+    int size = list.size();
+    R[] result = generator.apply(size - 1);
+    for (int i = 1; i < size; i++) {
+      result[i - 1] = map.apply(list.get(i));
+    }
+    return result;
+  }
+
+  private static BooleanExpression whereConditionsFromCursor(
+      Bound bound, List<Field> fields, BiFunction<Expression, Object, BooleanExpression> cmp) {
+    List<Value> boundPosition = bound.getPosition();
+    int size = boundPosition.size();
+    hardAssert(size <= fields.size(), "Bound positions must not exceed order fields.");
+    int last = size - 1;
+    BooleanExpression condition = cmp.apply(fields.get(last), boundPosition.get(last));
+    if (bound.isInclusive()) {
+      condition = or(condition, Expression.equal(fields.get(last), boundPosition.get(last)));
+    }
+    for (int i = size - 2; i >= 0; i--) {
+      final Field field = fields.get(i);
+      final Value value = boundPosition.get(i);
+      condition = or(cmp.apply(field, value), and(field.equal(value), condition));
+    }
+    return condition;
+  }
+
+  @NonNull
+  private Stage<?> pipelineSource(DatabaseId databaseId) {
+    if (isDocumentQuery()) {
+      return new DocumentsSource(path.canonicalString());
+    } else if (isCollectionGroupQuery()) {
+      return new CollectionGroupSource(collectionGroup, new CollectionGroupOptions());
+    } else {
+      return new CollectionSource(path, new RemoteSerializer(databaseId), InternalOptions.EMPTY);
     }
   }
 

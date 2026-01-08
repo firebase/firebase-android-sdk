@@ -14,21 +14,23 @@
 
 package com.google.firebase.firestore.core;
 
-import static com.google.firebase.firestore.core.Query.LimitType.LIMIT_TO_FIRST;
-import static com.google.firebase.firestore.core.Query.LimitType.LIMIT_TO_LAST;
+import static com.google.firebase.firestore.core.PipelineUtilKt.getLastEffectiveLimit;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
 import com.google.firebase.database.collection.ImmutableSortedMap;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.DocumentViewChange.Type;
+import com.google.firebase.firestore.core.Query.LimitType;
 import com.google.firebase.firestore.core.ViewSnapshot.SyncState;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.DocumentSet;
+import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.remote.TargetChange;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -70,7 +72,21 @@ public class View {
     }
   }
 
-  private final Query query;
+  /** A pair of documents that represent the edges of a limit query. */
+  // TODO(pipeline): This is a direct port from C++. Ideally this should be a sumtype with variances
+  // of
+  // endAt(doc), startAt(doc), and noLimit().
+  private static class LimitEdges {
+    @Nullable final Document first;
+    @Nullable final Document second;
+
+    LimitEdges(@Nullable Document first, @Nullable Document second) {
+      this.first = first;
+      this.second = second;
+    }
+  }
+
+  private final QueryOrPipeline query;
 
   private SyncState syncState;
 
@@ -92,7 +108,7 @@ public class View {
   /** Documents that have local changes */
   private ImmutableSortedSet<DocumentKey> mutatedKeys;
 
-  public View(Query query, ImmutableSortedSet<DocumentKey> remoteDocuments) {
+  public View(QueryOrPipeline query, ImmutableSortedSet<DocumentKey> remoteDocuments) {
     this.query = query;
     syncState = SyncState.NONE;
     documentSet = DocumentSet.emptySet(query.comparator());
@@ -147,14 +163,9 @@ public class View {
     //
     // Note that this should never get used in a refill (when previousChanges is set), because there
     // will only be adds -- no deletes or updates.
-    Document lastDocInLimit =
-        (query.getLimitType().equals(LIMIT_TO_FIRST) && oldDocumentSet.size() == query.getLimit())
-            ? oldDocumentSet.getLastDocument()
-            : null;
-    Document firstDocInLimit =
-        (query.getLimitType().equals(LIMIT_TO_LAST) && oldDocumentSet.size() == query.getLimit())
-            ? oldDocumentSet.getFirstDocument()
-            : null;
+    LimitEdges limitEdges = getLimitEdges(this.query, oldDocumentSet);
+    Document lastDocInLimit = limitEdges.first;
+    Document firstDocInLimit = limitEdges.second;
 
     for (Map.Entry<DocumentKey, Document> entry : docChanges) {
       DocumentKey key = entry.getKey();
@@ -182,9 +193,10 @@ public class View {
             changeSet.addChange(DocumentViewChange.create(Type.MODIFIED, newDoc));
             changeApplied = true;
 
-            if ((lastDocInLimit != null && query.comparator().compare(newDoc, lastDocInLimit) > 0)
+            Comparator<Document> queryComparator = query.comparator();
+            if ((lastDocInLimit != null && queryComparator.compare(newDoc, lastDocInLimit) > 0)
                 || (firstDocInLimit != null
-                    && query.comparator().compare(newDoc, firstDocInLimit) < 0)) {
+                    && queryComparator.compare(newDoc, firstDocInLimit) < 0)) {
               // This doc moved from inside the limit to outside the limit. That means there may be
               // some doc in the local cache that should be included instead.
               needsRefill = true;
@@ -223,15 +235,44 @@ public class View {
     }
 
     // Drop documents out to meet limitToFirst/limitToLast requirement.
-    if (query.hasLimit()) {
-      for (long i = newDocumentSet.size() - query.getLimit(); i > 0; --i) {
-        Document oldDoc =
-            query.getLimitType().equals(LIMIT_TO_FIRST)
-                ? newDocumentSet.getLastDocument()
-                : newDocumentSet.getFirstDocument();
-        newDocumentSet = newDocumentSet.remove(oldDoc.getKey());
-        newMutatedKeys = newMutatedKeys.remove(oldDoc.getKey());
-        changeSet.addChange(DocumentViewChange.create(Type.REMOVED, oldDoc));
+    Long limit = getLimit(this.query);
+    if (limit != null) {
+      if (this.query.isPipeline()) {
+        // TODO(pipeline): Not very efficient obviously, but should be fine for now.
+        // Longer term, limit queries should be evaluated from query engine as well.
+        List<MutableDocument> candidates = new ArrayList<>();
+        for (Document doc : newDocumentSet) {
+          candidates.add((MutableDocument) doc);
+        }
+        List<MutableDocument> results =
+            this.query
+                .pipeline$com_google_firebase_firebase_firestore()
+                .evaluate$com_google_firebase_firebase_firestore(candidates);
+        DocumentSet newResults = DocumentSet.emptySet(query.comparator());
+        for (MutableDocument doc : results) {
+          newResults = newResults.add(doc);
+        }
+
+        for (Document doc : newDocumentSet) {
+          if (!newResults.contains(doc.getKey())) {
+            newMutatedKeys = newMutatedKeys.remove(doc.getKey());
+            changeSet.addChange(DocumentViewChange.create(Type.REMOVED, doc));
+          }
+        }
+
+        newDocumentSet = newResults;
+      } else {
+        long absLimit = Math.abs(limit);
+        LimitType limitType = getLimitType(this.query);
+        for (long i = newDocumentSet.size() - absLimit; i > 0; --i) {
+          Document oldDoc =
+              limitType == LimitType.LIMIT_TO_FIRST
+                  ? newDocumentSet.getLastDocument()
+                  : newDocumentSet.getFirstDocument();
+          newDocumentSet = newDocumentSet.remove(oldDoc.getKey());
+          newMutatedKeys = newMutatedKeys.remove(oldDoc.getKey());
+          changeSet.addChange(DocumentViewChange.create(Type.REMOVED, oldDoc));
+        }
       }
     }
 
@@ -296,15 +337,18 @@ public class View {
     mutatedKeys = docChanges.mutatedKeys;
 
     // Sort changes based on type and query comparator.
+
     List<DocumentViewChange> viewChanges = docChanges.changeSet.getChanges();
+    Comparator<Document> queryComparator = query.comparator();
     Collections.sort(
         viewChanges,
         (DocumentViewChange o1, DocumentViewChange o2) -> {
-          int typeComp = Integer.compare(View.changeTypeOrder(o1), View.changeTypeOrder(o2));
+          int i1 = View.changeTypeOrder(o1);
+          int typeComp = Integer.compare(i1, View.changeTypeOrder(o2));
           if (typeComp != 0) {
             return typeComp;
           }
-          return query.comparator().compare(o1.getDocument(), o2.getDocument());
+          return queryComparator.compare(o1.getDocument(), o2.getDocument());
         });
     applyTargetChange(targetChange);
     List<LimboDocumentChange> limboDocumentChanges =
@@ -458,5 +502,59 @@ public class View {
         return 0;
     }
     throw new IllegalArgumentException("Unknown change type: " + change.getType());
+  }
+
+  @Nullable
+  private static Long getLimit(QueryOrPipeline query) {
+    if (query.isPipeline()) {
+      Integer limit =
+          getLastEffectiveLimit(query.pipeline$com_google_firebase_firebase_firestore());
+      if (limit == null) {
+        return null;
+      }
+      return Long.valueOf(limit);
+    } else {
+      Query q = query.query();
+      if (!q.hasLimit()) {
+        return null;
+      }
+      return q.getLimit();
+    }
+  }
+
+  private static LimitType getLimitType(QueryOrPipeline query) {
+    if (query.isPipeline()) {
+      Long limit = getLimit(query);
+      // Note: A limit of 0 is not a valid pipeline limit.
+      return limit != null && limit > 0 ? LimitType.LIMIT_TO_FIRST : LimitType.LIMIT_TO_LAST;
+    } else {
+      return query.query().getLimitType();
+    }
+  }
+
+  private static LimitEdges getLimitEdges(QueryOrPipeline query, DocumentSet oldDocumentSet) {
+    Long limit = getLimit(query);
+    if (limit == null) {
+      return new LimitEdges(null, null);
+    }
+
+    if (query.isPipeline()) {
+      // The GetLimit function already encodes this as a negative number.
+      if (limit > 0 && oldDocumentSet.size() == limit) {
+        return new LimitEdges(oldDocumentSet.getLastDocument(), null);
+      } else if (limit < 0 && oldDocumentSet.size() == (-limit)) {
+        return new LimitEdges(null, oldDocumentSet.getFirstDocument());
+      }
+    } else {
+      Query q = query.query();
+      if (q.getLimitType() == Query.LimitType.LIMIT_TO_FIRST
+          && oldDocumentSet.size() == q.getLimit()) {
+        return new LimitEdges(oldDocumentSet.getLastDocument(), null);
+      } else if (q.getLimitType() == Query.LimitType.LIMIT_TO_LAST
+          && oldDocumentSet.size() == q.getLimit()) {
+        return new LimitEdges(null, oldDocumentSet.getFirstDocument());
+      }
+    }
+    return new LimitEdges(null, null);
   }
 }

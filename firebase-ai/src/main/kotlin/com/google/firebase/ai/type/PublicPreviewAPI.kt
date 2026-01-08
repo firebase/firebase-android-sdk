@@ -23,4 +23,5 @@ package com.google.firebase.ai.type
     "This API is part of an experimental public preview and may change in " +
       "backwards-incompatible ways without notice.",
 )
+@Target(AnnotationTarget.CLASS, AnnotationTarget.FUNCTION, AnnotationTarget.PROPERTY)
 public annotation class PublicPreviewAPI()

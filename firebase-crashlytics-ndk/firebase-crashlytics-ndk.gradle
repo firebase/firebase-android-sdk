@@ -105,13 +105,14 @@ android {
 }
 
 thirdPartyLicenses {
-    add 'Crashpad', "${rootDir}/third_party/licenses/apache-2.0.txt"
+    add 'Apache-2.0', "${rootDir}/third_party/licenses/apache-2.0.txt"
+    add 'Crashpad', "${rootDir}/third_party/licenses/crashpad.txt"
 }
 
 dependencies {
     api project(':firebase-crashlytics')
-    api "com.google.firebase:firebase-common:22.0.0"
-    api "com.google.firebase:firebase-components:19.0.0"
+    api libs.firebase.common
+    api libs.firebase.components
 
     implementation libs.playservices.basement
 

@@ -24,6 +24,7 @@ import com.google.firebase.ai.common.JSON
 import com.google.firebase.ai.type.Candidate
 import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.GenerateContentResponse
+import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.RequestOptions
 import com.google.firebase.ai.type.TextPart
 import io.ktor.client.engine.mock.MockEngine
@@ -32,7 +33,6 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
 import io.ktor.utils.io.ByteChannel
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.encodeToString
 import org.mockito.Mockito
 
@@ -44,7 +44,7 @@ internal fun prepareStreamingResponse(
   response: List<GenerateContentResponse.Internal>
 ): List<ByteArray> = response.map { "data: ${JSON.encodeToString(it)}$SSE_SEPARATOR".toByteArray() }
 
-@OptIn(ExperimentalSerializationApi::class)
+@OptIn(PublicPreviewAPI::class)
 internal fun createResponses(vararg text: String): List<GenerateContentResponse.Internal> {
   val candidates =
     text.map { Candidate.Internal(Content.Internal(parts = listOf(TextPart.Internal(it)))) }

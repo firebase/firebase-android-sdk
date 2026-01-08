@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
   id("firebase-library")
   id("kotlin-android")
@@ -49,8 +51,6 @@ android {
     targetCompatibility = JavaVersion.VERSION_1_8
   }
 
-  kotlinOptions { jvmTarget = "1.8" }
-
   testOptions {
     targetSdk = targetSdkVersion
     unitTests { isIncludeAndroidResources = true }
@@ -58,10 +58,12 @@ android {
   lint { targetSdk = targetSdkVersion }
 }
 
+kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_1_8 } }
+
 dependencies {
   // Firebase
   api("com.google.firebase:firebase-config-interop:16.0.1")
-  api("com.google.firebase:firebase-annotations:17.0.0")
+  api(libs.firebase.annotations)
   api("com.google.firebase:firebase-installations-interop:17.1.0")
   api("com.google.firebase:firebase-abt:21.1.1") {
     exclude(group = "com.google.firebase", module = "firebase-common")
@@ -71,8 +73,8 @@ dependencies {
     exclude(group = "com.google.firebase", module = "firebase-common")
     exclude(group = "com.google.firebase", module = "firebase-components")
   }
-  api("com.google.firebase:firebase-common:22.0.0")
-  api("com.google.firebase:firebase-components:19.0.0")
+  api(libs.firebase.common)
+  api(libs.firebase.components)
   api("com.google.firebase:firebase-installations:18.0.0") {
     exclude(group = "com.google.firebase", module = "firebase-common-ktx")
   }

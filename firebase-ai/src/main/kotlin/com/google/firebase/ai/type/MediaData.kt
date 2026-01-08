@@ -27,6 +27,7 @@ import kotlinx.serialization.Serializable
  * [Firebase documentation](https://firebase.google.com/docs/vertex-ai/input-file-requirements).
  */
 @PublicPreviewAPI
+@Deprecated("Use `InlineData` instead", ReplaceWith("InlineData"))
 public class MediaData(public val data: ByteArray, public val mimeType: String) {
   @Serializable
   internal class Internal(

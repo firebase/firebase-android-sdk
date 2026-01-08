@@ -35,7 +35,7 @@ android {
 
 dependencies {
   implementation("com.google.firebase:firebase-common:22.0.0")
-  implementation("com.google.firebase:firebase-components:19.0.0")
+  implementation(libs.firebase.components)
   implementation(platform(libs.kotlin.bom))
 
   testImplementation(libs.androidx.core)

@@ -20,6 +20,7 @@ import com.google.firebase.annotations.DeferredApi
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.dataconnect.DataConnectException
+import com.google.firebase.dataconnect.core.DataConnectCredentialsTokenManager.GetTokenResult
 import com.google.firebase.dataconnect.core.Globals.toScrubbedAccessToken
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
@@ -52,7 +53,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /** Base class that shares logic for managing the Auth token and AppCheck token. */
-internal sealed class DataConnectCredentialsTokenManager<T : Any>(
+internal sealed class DataConnectCredentialsTokenManager<T : Any, R : GetTokenResult>(
   private val deferredProvider: com.google.firebase.inject.Deferred<T>,
   parentCoroutineScope: CoroutineScope,
   private val blockingDispatcher: CoroutineDispatcher,
@@ -75,13 +76,13 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any>(
         }
     )
 
-  private sealed interface State<out T> {
+  private sealed interface State<out T, out R : GetTokenResult> {
 
     /**
      * State indicating that the object has just been created and [initialize] has not yet been
      * called.
      */
-    object New : State<Nothing>
+    object New : State<Nothing, Nothing>
 
     /**
      * State indicating that [initialize] has been invoked but the token provider is not (yet?)
@@ -93,33 +94,33 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any>(
     }
 
     /** State indicating that [close] has been invoked. */
-    object Closed : State<Nothing>
+    object Closed : State<Nothing, Nothing>
 
-    sealed interface StateWithForceTokenRefresh<out T> : State<T> {
+    sealed interface StateWithForceTokenRefresh<out T> : State<T, Nothing> {
       /** The value to specify for `forceRefresh` on the next invocation of [getToken]. */
       val forceTokenRefresh: Boolean
     }
 
-    sealed interface StateWithProvider<out T> : State<T> {
+    sealed interface StateWithProvider<out T, out R : GetTokenResult> : State<T, R> {
       /** The token provider, [InternalAuthProvider] or [InteropAppCheckTokenProvider] */
       val provider: T
     }
 
     /** State indicating that there is no outstanding "get token" request. */
     data class Idle<T>(override val provider: T, override val forceTokenRefresh: Boolean) :
-      StateWithProvider<T>, StateWithForceTokenRefresh<T>
+      StateWithProvider<T, Nothing>, StateWithForceTokenRefresh<T>
 
     /** State indicating that there _is_ an outstanding "get token" request. */
-    data class Active<out T>(
+    data class Active<out T, out R : GetTokenResult>(
       override val provider: T,
 
       /** The job that is performing the "get token" request. */
-      val job: Deferred<SequencedReference<Result<GetTokenResult>>>
-    ) : StateWithProvider<T>
+      val job: Deferred<SequencedReference<Result<R>>>
+    ) : StateWithProvider<T, R>
   }
 
   /** The current state of this object. */
-  private val state = MutableStateFlow<State<T>>(State.New)
+  private val state = MutableStateFlow<State<T, R>>(State.New)
 
   /**
    * Adds the token listener to the given provider.
@@ -139,7 +140,7 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any>(
    * Starts an asynchronous task to get a new access token from the given provider, forcing a token
    * refresh if and only if `forceRefresh` is true.
    */
-  protected abstract suspend fun getToken(provider: T, forceRefresh: Boolean): GetTokenResult
+  protected abstract suspend fun getToken(provider: T, forceRefresh: Boolean): R
 
   /**
    * Initializes this object.
@@ -274,7 +275,7 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any>(
     invocationId: String,
     provider: T,
     forceRefresh: Boolean
-  ): State.Active<T> {
+  ): State.Active<T, R> {
     val coroutineName =
       CoroutineName(
         "$instanceId 535gmcvv5a $invocationId getToken(" +
@@ -296,14 +297,14 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any>(
    * @throws DataConnectException if [close] has been called or is called while the operation is in
    * progress.
    */
-  suspend fun getToken(requestId: String): String? {
+  suspend fun getToken(requestId: String): R? {
     val invocationId = "gat" + Random.nextAlphanumericString(length = 8)
     logger.debug { "$invocationId getToken(requestId=$requestId)" }
     while (true) {
       val attemptSequenceNumber = nextSequenceNumber()
       val oldState = state.value
 
-      val newState: State.Active<T> =
+      val newState: State.Active<T, R> =
         when (oldState) {
           is State.New ->
             throw IllegalStateException("initialize() must be called before getToken()")
@@ -381,11 +382,12 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any>(
         }
       }
 
-      val accessToken = sequencedResult!!.ref.getOrThrow().token
+      val tokenResult: R = sequencedResult!!.ref.getOrThrow()
       logger.debug {
-        "$invocationId getToken() returns retrieved token: ${accessToken?.toScrubbedAccessToken()}"
+        "$invocationId getToken() returns retrieved token: " +
+          tokenResult.token?.toScrubbedAccessToken()
       }
-      return accessToken
+      return tokenResult
     }
   }
 
@@ -440,8 +442,9 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any>(
    * strong reference to the [DataConnectCredentialsTokenManager] instance indefinitely, in the case
    * that the callback never occurs.
    */
-  private class DeferredProviderHandlerImpl<T : Any>(
-    private val weakCredentialsTokenManagerRef: WeakReference<DataConnectCredentialsTokenManager<T>>
+  private class DeferredProviderHandlerImpl<T : Any, R : GetTokenResult>(
+    private val weakCredentialsTokenManagerRef:
+      WeakReference<DataConnectCredentialsTokenManager<T, R>>
   ) : DeferredHandler<T> {
     override fun handle(provider: Provider<T>) {
       weakCredentialsTokenManagerRef.get()?.onProviderAvailable(provider.get())
@@ -449,7 +452,7 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any>(
   }
 
   private class CredentialsTokenManagerClosedException(
-    tokenProvider: DataConnectCredentialsTokenManager<*>
+    tokenProvider: DataConnectCredentialsTokenManager<*, *>
   ) :
     DataConnectException(
       "DataConnectCredentialsTokenManager ${tokenProvider.instanceId} was closed (code cqrbq4zfvy)"
@@ -458,7 +461,9 @@ internal sealed class DataConnectCredentialsTokenManager<T : Any>(
   private class GetTokenCancelledException(cause: Throwable) :
     DataConnectException("getToken() was cancelled, likely by close() (code rqdd4jam9d)", cause)
 
-  protected data class GetTokenResult(val token: String?)
+  interface GetTokenResult {
+    val token: String?
+  }
 
   private companion object {
 

@@ -14,32 +14,32 @@
 
 mutation InsertFoo($id: String!, $bar: String)
     @auth(level: PUBLIC) {
-  foo_insert(data: {id: $id, bar: $bar})
+  key: foo_insert(data: {id: $id, bar: $bar})
 }
 
 mutation UpsertFoo($id: String!, $bar: String)
     @auth(level: PUBLIC) {
-  foo_upsert(data: {id: $id, bar: $bar})
+  key: foo_upsert(data: {id: $id, bar: $bar})
 }
 
 mutation DeleteFoo($id: String!)
     @auth(level: PUBLIC) {
-  foo_delete(id: $id)
+  key: foo_delete(id: $id)
 }
 
 mutation DeleteFoosByBar($bar: String!)
     @auth(level: PUBLIC) {
-  foo_deleteMany(where: {bar: {eq: $bar}})
+  count: foo_deleteMany(where: {bar: {eq: $bar}})
 }
 
 mutation UpdateFoo($id: String!, $newBar: String)
     @auth(level: PUBLIC) {
-  foo_update(id: $id, data: {bar: $newBar})
+  key: foo_update(id: $id, data: {bar: $newBar})
 }
 
 mutation UpdateFoosByBar($oldBar: String, $newBar: String)
     @auth(level: PUBLIC) {
-  foo_updateMany(where: {bar: {eq: $oldBar}}, data: {bar: $newBar})
+  count: foo_updateMany(where: {bar: {eq: $oldBar}}, data: {bar: $newBar})
 }
 
 query GetFooById($id: String!)
@@ -59,7 +59,7 @@ query GetFoosByBar($bar: String)
 # This is an example mutation that has no variables, for testing purposes.
 mutation UpsertHardcodedFoo
     @auth(level: PUBLIC) {
-  foo_upsert(data: {id: "18e61f0a-8abc-4b18-9c4c-28c2f4e82c8f", bar: "BAR"})
+  key: foo_upsert(data: {id: "18e61f0a-8abc-4b18-9c4c-28c2f4e82c8f", bar: "BAR"})
 }
 
 # This is an example query that has no variables, for testing purposes.
@@ -70,6 +70,16 @@ query GetHardcodedFoo
   }
 }
 
+# This is an example mutation that has an empty selection set (Googlers see b/448629126).
+mutation UpsertFooEmptySelectionSet($id: String!, $bar: String) @auth(level: PUBLIC) {
+  key: foo_upsert(data: {id: $id, bar: $bar}) @redact
+}
+
+# This is an example query that has an empty selection set (Googlers see b/448629126).
+query GetFooByIdEmptySelectionSet($id: String!) @auth(level: PUBLIC) {
+  foo(id: $id) @redact { bar }
+}
+
 mutation InsertStringVariants(
   $nonNullWithNonEmptyValue: String!,
   $nonNullWithEmptyValue: String!,
@@ -77,7 +87,7 @@ mutation InsertStringVariants(
   $nullableWithNonNullValue: String,
   $nullableWithEmptyValue: String,
 ) @auth(level: PUBLIC) {
-  stringVariants_insert(data: {
+  key: stringVariants_insert(data: {
     nonNullWithNonEmptyValue: $nonNullWithNonEmptyValue,
     nonNullWithEmptyValue: $nonNullWithEmptyValue,
     nullableWithNullValue: $nullableWithNullValue,
@@ -110,7 +120,7 @@ mutation InsertStringVariantsWithHardcodedDefaults(
   $nullableWithNonNullValue: String = "af8k72s98t",
   $nullableWithEmptyValue: String = "",
 ) @auth(level: PUBLIC) {
-  stringVariants_insert(data: {
+  key: stringVariants_insert(data: {
     nonNullWithNonEmptyValue: $nonNullWithNonEmptyValue,
     nonNullWithEmptyValue: $nonNullWithEmptyValue,
     nullableWithNullValue: $nullableWithNullValue,
@@ -142,7 +152,7 @@ mutation InsertIntVariants(
   $nullableWithMaxValue: Int,
   $nullableWithMinValue: Int,
 ) @auth(level: PUBLIC) {
-  intVariants_insert(data: {
+  key: intVariants_insert(data: {
     nonNullWithZeroValue: $nonNullWithZeroValue,
     nonNullWithPositiveValue: $nonNullWithPositiveValue,
     nonNullWithNegativeValue: $nonNullWithNegativeValue,
@@ -170,7 +180,7 @@ mutation InsertIntVariantsWithHardcodedDefaults(
   $nullableWithMaxValue: Int = 2147483647,
   $nullableWithMinValue: Int = -2147483648,
 ) @auth(level: PUBLIC) {
-  intVariants_insert(data: {
+  key: intVariants_insert(data: {
     nonNullWithZeroValue: $nonNullWithZeroValue,
     nonNullWithPositiveValue: $nonNullWithPositiveValue,
     nonNullWithNegativeValue: $nonNullWithNegativeValue,
@@ -247,7 +257,7 @@ mutation InsertFloatVariants(
   $nullableWithMinValue: Float,
   $nullableWithMaxSafeIntegerValue: Float,
 ) @auth(level: PUBLIC) {
-  floatVariants_insert(data: {
+  key: floatVariants_insert(data: {
     nonNullWithZeroValue: $nonNullWithZeroValue,
     nonNullWithNegativeZeroValue: $nonNullWithNegativeZeroValue,
     nonNullWithPositiveValue: $nonNullWithPositiveValue,
@@ -283,7 +293,7 @@ mutation InsertFloatVariantsWithHardcodedDefaults(
   $nullableWithMinValue: Float = 4.9E-324,
   $nullableWithMaxSafeIntegerValue: Float = 9007199254740991.0,
 ) @auth(level: PUBLIC) {
-  floatVariants_insert(data: {
+  key: floatVariants_insert(data: {
     nonNullWithZeroValue: $nonNullWithZeroValue,
     nonNullWithNegativeZeroValue: $nonNullWithNegativeZeroValue,
     nonNullWithPositiveValue: $nonNullWithPositiveValue,
@@ -366,7 +376,7 @@ mutation InsertBooleanVariants(
   $nullableWithTrueValue: Boolean,
   $nullableWithFalseValue: Boolean,
 ) @auth(level: PUBLIC) {
-  booleanVariants_insert(data: {
+  key: booleanVariants_insert(data: {
     nonNullWithTrueValue: $nonNullWithTrueValue,
     nonNullWithFalseValue: $nonNullWithFalseValue,
     nullableWithNullValue: $nullableWithNullValue,
@@ -382,7 +392,7 @@ mutation InsertBooleanVariantsWithHardcodedDefaults(
   $nullableWithTrueValue: Boolean = true,
   $nullableWithFalseValue: Boolean = false,
 ) @auth(level: PUBLIC) {
-  booleanVariants_insert(data: {
+  key: booleanVariants_insert(data: {
     nonNullWithTrueValue: $nonNullWithTrueValue,
     nonNullWithFalseValue: $nonNullWithFalseValue,
     nullableWithNullValue: $nullableWithNullValue,
@@ -431,7 +441,7 @@ mutation InsertInt64Variants(
   $nullableWithMaxValue: Int64,
   $nullableWithMinValue: Int64,
 ) @auth(level: PUBLIC) {
-  int64Variants_insert(data: {
+  key: int64Variants_insert(data: {
     nonNullWithZeroValue: $nonNullWithZeroValue,
     nonNullWithPositiveValue: $nonNullWithPositiveValue,
     nonNullWithNegativeValue: $nonNullWithNegativeValue,
@@ -459,7 +469,7 @@ mutation InsertInt64VariantsWithHardcodedDefaults(
   $nullableWithMaxValue: Int64 = 9223372036854775807,
   $nullableWithMinValue: Int64 = -9223372036854775808,
 ) @auth(level: PUBLIC) {
-  int64Variants_insert(data: {
+  key: int64Variants_insert(data: {
     nonNullWithZeroValue: $nonNullWithZeroValue,
     nonNullWithPositiveValue: $nonNullWithPositiveValue,
     nonNullWithNegativeValue: $nonNullWithNegativeValue,
@@ -524,7 +534,7 @@ mutation InsertUUIDVariants(
   $nullableWithNullValue: UUID,
   $nullableWithNonNullValue: UUID,
 ) @auth(level: PUBLIC) {
-  uUIDVariants_insert(data: {
+  key: uUIDVariants_insert(data: {
     nonNullValue: $nonNullValue,
     nullableWithNullValue: $nullableWithNullValue,
     nullableWithNonNullValue: $nullableWithNonNullValue,
@@ -539,7 +549,7 @@ mutation InsertUUIDVariants(
 #  $nullableWithNullValue: UUID = null,
 #  $nullableWithNonNullValue: UUID = "59ab3886-8b84-4233-a5e6-da58c0e8b97d",
 #) @auth(level: PUBLIC) {
-#  uUIDVariants_insert(data: {
+#  key: uUIDVariants_insert(data: {
 #    nonNullValue: $nonNullValue,
 #    nullableWithNullValue: $nullableWithNullValue,
 #    nullableWithNonNullValue: $nullableWithNonNullValue,
@@ -551,7 +561,7 @@ mutation InsertUUIDVariants(
 # variables. This definition is merely here so that the codegen will generate classes so that the
 # test can still be written in Kotlin and compile, even though it is disabled.
 mutation InsertUUIDVariantsWithHardcodedDefaults @auth(level: PUBLIC) {
-  uUIDVariants_insert(data: {
+  key: uUIDVariants_insert(data: {
     nonNullValue: "7f385800-13d6-491a-98c8-b4dee3fb45cb",
     nullableWithNullValue: null,
     nullableWithNonNullValue: "ede8dc0e-600c-4093-8812-071f2cedc8db",
@@ -580,7 +590,7 @@ query GetUUIDVariantsByKey($key: UUIDVariants_Key!) @auth(level: PUBLIC) {
 }
 
 mutation InsertSyntheticId($value: String!) @auth(level: PUBLIC) {
-  syntheticId_insert(data: { value: $value })
+  key: syntheticId_insert(data: { value: $value })
 }
 
 query GetSyntheticIdById($id: UUID!) @auth(level: PUBLIC) {
@@ -588,7 +598,7 @@ query GetSyntheticIdById($id: UUID!) @auth(level: PUBLIC) {
 }
 
 mutation InsertPrimaryKeyIsString($id: String!, $value: String!) @auth(level: PUBLIC) {
-  primaryKeyIsString_insert(data: {
+  key: primaryKeyIsString_insert(data: {
     id: $id,
     value: $value
   })
@@ -599,7 +609,7 @@ query GetPrimaryKeyIsStringByKey($key: PrimaryKeyIsString_Key!) @auth(level: PUB
 }
 
 mutation InsertPrimaryKeyIsUUID($id: UUID!, $value: String!) @auth(level: PUBLIC) {
-  primaryKeyIsUUID_insert(data: {
+  key: primaryKeyIsUUID_insert(data: {
     id: $id,
     value: $value
   })
@@ -615,7 +625,7 @@ mutation InsertPrimaryKeyIsInt($foo: Int!, $value: String!) @auth(level: PUBLIC)
   # used that already exists, it will just be replaced. There is a minuscule chance that the test
   # that generated the conflicting ID is running concurrently, but that chance is so small that I'm
   # choosing to ignore it.
-  primaryKeyIsInt_upsert(data: {
+  key: primaryKeyIsInt_upsert(data: {
     foo: $foo,
     value: $value
   })
@@ -631,7 +641,7 @@ mutation InsertPrimaryKeyIsFloat($foo: Float!, $value: String!) @auth(level: PUB
   # unlikely case of an value being used that already exists, it will just be replaced. There is a
   # minuscule chance that the test that generated the conflicting ID is running concurrently, but
   # that chance is so small that I'm choosing to ignore it.
-  primaryKeyIsFloat_upsert(data: {
+  key: primaryKeyIsFloat_upsert(data: {
     foo: $foo,
     value: $value
   })
@@ -647,7 +657,7 @@ mutation InsertPrimaryKeyIsDate($foo: Date!, $value: String!) @auth(level: PUBLI
   # unlikely case of an value being used that already exists, it will just be replaced. There is a
   # minuscule chance that the test that generated the conflicting ID is running concurrently, but
   # that chance is so small that I'm choosing to ignore it.
-  primaryKeyIsDate_upsert(data: {
+  key: primaryKeyIsDate_upsert(data: {
     foo: $foo,
     value: $value
   })
@@ -663,7 +673,7 @@ mutation InsertPrimaryKeyIsTimestamp($foo: Timestamp!, $value: String!) @auth(le
   # the unlikely case of an value being used that already exists, it will just be replaced. There is
   # a minuscule chance that the test that generated the conflicting ID is running concurrently, but
   # that chance is so small that I'm choosing to ignore it.
-  primaryKeyIsTimestamp_upsert(data: {
+  key: primaryKeyIsTimestamp_upsert(data: {
     foo: $foo,
     value: $value
   })
@@ -674,7 +684,7 @@ query GetPrimaryKeyIsTimestampByKey($key: PrimaryKeyIsTimestamp_Key!) @auth(leve
 }
 
 mutation InsertPrimaryKeyIsInt64($foo: Int64!, $value: String!) @auth(level: PUBLIC) {
-  primaryKeyIsInt64_upsert(data: {
+  key: primaryKeyIsInt64_upsert(data: {
     foo: $foo,
     value: $value
   })
@@ -685,7 +695,7 @@ query GetPrimaryKeyIsInt64ByKey($key: PrimaryKeyIsInt64_Key!) @auth(level: PUBLI
 }
 
 mutation InsertPrimaryKeyIsComposite($foo: Int!, $bar: String!, $baz: Boolean!, $value: String!) @auth(level: PUBLIC) {
-  primaryKeyIsComposite_insert(data: {
+  key: primaryKeyIsComposite_insert(data: {
     foo: $foo,
     bar: $bar,
     baz: $baz,
@@ -698,19 +708,19 @@ query GetPrimaryKeyIsCompositeByKey($key: PrimaryKeyIsComposite_Key!) @auth(leve
 }
 
 mutation InsertPrimaryKeyNested1($value: String!) @auth(level: PUBLIC) {
-  primaryKeyNested1_insert(data: { value: $value } )
+  key: primaryKeyNested1_insert(data: { value: $value } )
 }
 
 mutation InsertPrimaryKeyNested2($value: String!) @auth(level: PUBLIC) {
-  primaryKeyNested2_insert(data: { value: $value } )
+  key: primaryKeyNested2_insert(data: { value: $value } )
 }
 
 mutation InsertPrimaryKeyNested3($value: String!) @auth(level: PUBLIC) {
-  primaryKeyNested3_insert(data: { value: $value } )
+  key: primaryKeyNested3_insert(data: { value: $value } )
 }
 
 mutation InsertPrimaryKeyNested4($value: String!) @auth(level: PUBLIC) {
-  primaryKeyNested4_insert(data: { value: $value } )
+  key: primaryKeyNested4_insert(data: { value: $value } )
 }
 
 mutation InsertPrimaryKeyNested5(
@@ -718,7 +728,7 @@ mutation InsertPrimaryKeyNested5(
   $nested1: PrimaryKeyNested1_Key!,
   $nested2: PrimaryKeyNested2_Key!
 ) @auth(level: PUBLIC) {
-  primaryKeyNested5_insert(data: {
+  key: primaryKeyNested5_insert(data: {
     value: $value,
     nested1: $nested1,
     nested2: $nested2
@@ -730,7 +740,7 @@ mutation InsertPrimaryKeyNested6(
   $nested3: PrimaryKeyNested3_Key!,
   $nested4: PrimaryKeyNested4_Key!
 ) @auth(level: PUBLIC) {
-  primaryKeyNested6_insert(data: {
+  key: primaryKeyNested6_insert(data: {
     value: $value,
     nested3: $nested3,
     nested4: $nested4
@@ -743,7 +753,7 @@ mutation InsertPrimaryKeyNested7(
   $nested5b: PrimaryKeyNested5_Key!,
   $nested6: PrimaryKeyNested6_Key!
 ) @auth(level: PUBLIC) {
-  primaryKeyNested7_insert(data: {
+  key: primaryKeyNested7_insert(data: {
     value: $value,
     nested5a: $nested5a,
     nested5b: $nested5b,
@@ -752,7 +762,7 @@ mutation InsertPrimaryKeyNested7(
 }
 
 query GetPrimaryKeyNested7ByKey($key: PrimaryKeyNested7_Key!) @auth(level: PUBLIC) {
-  primaryKeyNested7(key: $key) {
+  key: primaryKeyNested7(key: $key) {
     value
     nested5a {
       value
@@ -797,7 +807,7 @@ mutation InsertNested1(
     $nested2NullableNull: Nested2_Key,
     $value: String!
 ) @auth(level: PUBLIC) {
-  nested1_insert(data: {
+  key: nested1_insert(data: {
     nested1: $nested1,
     nested2: $nested2,
     nested2NullableNonNull: $nested2NullableNonNull,
@@ -918,7 +928,7 @@ mutation InsertNested2(
     $nested3NullableNull: Nested3_Key,
     $value: String!
 ) @auth(level: PUBLIC) {
-  nested2_insert(data: {
+  key: nested2_insert(data: {
     nested3: $nested3,
     nested3NullableNonNull: $nested3NullableNonNull,
     nested3NullableNull: $nested3NullableNull,
@@ -927,15 +937,15 @@ mutation InsertNested2(
 }
 
 mutation InsertNested3($value: String!) @auth(level: PUBLIC) {
-  nested3_insert(data: { value: $value })
+  key: nested3_insert(data: { value: $value })
 }
 
 mutation InsertManyToOneParent($child: ManyToOneChild_Key) @auth(level: PUBLIC) {
-  manyToOneParent_insert(data: { child: $child })
+  key: manyToOneParent_insert(data: { child: $child })
 }
 
 mutation InsertManyToOneChild @auth(level: PUBLIC) {
-  manyToOneChild_insert(data: {value: null})
+  key: manyToOneChild_insert(data: {value: null})
 }
 
 query GetManyToOneChildByKey($key: ManyToOneChild_Key!) @auth(level: PUBLIC) {
@@ -947,15 +957,15 @@ query GetManyToOneChildByKey($key: ManyToOneChild_Key!) @auth(level: PUBLIC) {
 }
 
 mutation InsertManyToManyChildA @auth(level: PUBLIC) {
-  manyToManyChildA_insert(data: {})
+  key: manyToManyChildA_insert(data: {})
 }
 
 mutation InsertManyToManyChildB @auth(level: PUBLIC) {
-  manyToManyChildB_insert(data: {})
+  key: manyToManyChildB_insert(data: {})
 }
 
 mutation InsertManyToManyParent($childA: ManyToManyChildA_Key!, $childB: ManyToManyChildB_Key!) @auth(level: PUBLIC) {
-  manyToManyParent_insert(data: {childA: $childA, childB: $childB})
+  key: manyToManyParent_insert(data: {childA: $childA, childB: $childB})
 }
 
 query GetManyToManyChildAByKey($key: ManyToManyChildA_Key!) @auth(level: PUBLIC) {
@@ -967,7 +977,7 @@ query GetManyToManyChildAByKey($key: ManyToManyChildA_Key!) @auth(level: PUBLIC)
 }
 
 mutation InsertManyToOneSelfCustomName($ref: ManyToOneSelfCustomName_Key) @auth(level: PUBLIC) {
-  manyToOneSelfCustomName_insert(data: {ref: $ref})
+  key: manyToOneSelfCustomName_insert(data: {ref: $ref})
 }
 
 query GetManyToOneSelfCustomNameByKey($key: ManyToOneSelfCustomName_Key!) @auth(level: PUBLIC) {
@@ -981,7 +991,7 @@ query GetManyToOneSelfCustomNameByKey($key: ManyToOneSelfCustomName_Key!) @auth(
 }
 
 mutation InsertManyToOneSelfMatchingName($ref: ManyToOneSelfMatchingName_Key) @auth(level: PUBLIC) {
-  manyToOneSelfMatchingName_insert(data: {manyToOneSelfMatchingName: $ref})
+  key: manyToOneSelfMatchingName_insert(data: {manyToOneSelfMatchingName: $ref})
 }
 
 query GetManyToOneSelfMatchingNameByKey($key: ManyToOneSelfMatchingName_Key!) @auth(level: PUBLIC) {
@@ -995,11 +1005,11 @@ query GetManyToOneSelfMatchingNameByKey($key: ManyToOneSelfMatchingName_Key!) @a
 }
 
 mutation InsertManyToManySelfParent($child1: ManyToManySelfChild_Key!, $child2: ManyToManySelfChild_Key!) @auth(level: PUBLIC) {
-  manyToManySelfParent_insert(data: {child1: $child1, child2: $child2})
+  key: manyToManySelfParent_insert(data: {child1: $child1, child2: $child2})
 }
 
 mutation InsertManyToManySelfChild @auth(level: PUBLIC) {
-  manyToManySelfChild_insert(data: {})
+  key: manyToManySelfChild_insert(data: {})
 }
 
 query GetManyToManySelfChildByKey($key: ManyToManySelfChild_Key!) @auth(level: PUBLIC) {
@@ -1017,7 +1027,7 @@ mutation InsertOptionalStrings(
   $nullable3: String,
   $nullableWithSchemaDefault: String,
 ) @auth(level: PUBLIC) {
-  optionalStrings_insert(data: {
+  key: optionalStrings_insert(data: {
     required1: $required1,
     required2: $required2,
     nullable1: $nullable1,
@@ -1048,7 +1058,7 @@ mutation InsertNonNullableLists(
   $dates: [Date!]!,
   $timestamps: [Timestamp!]!,
 ) @auth(level: PUBLIC) {
-  nonNullableLists_insert(data: {
+  key: nonNullableLists_insert(data: {
     strings: $strings,
     ints: $ints,
     floats: $floats,
@@ -1106,7 +1116,7 @@ mutation InsertNullableLists(
   $dates: [Date!],
   $timestamps: [Timestamp!],
 ) @auth(level: PUBLIC) {
-  nullableLists_insert(data: {
+  key: nullableLists_insert(data: {
     strings: $strings,
     ints: $ints,
     floats: $floats,
@@ -1194,18 +1204,18 @@ query DateNonNullable_GetAllByTagAndDefaultValue($tag: String!, $value: Date! = 
 }
 
 mutation DateNonNullable_UpdateByKey($key: DateNonNullable_Key!, $value: Date) @auth(level: PUBLIC) {
-  dateNonNullable_update(key: $key, data: { value: $value })
+  key: dateNonNullable_update(key: $key, data: { value: $value })
 }
 
 mutation DateNonNullable_UpdateByTagAndValue($tag: String!, $value: Date, $newValue: Date) @auth(level: PUBLIC) {
-  dateNonNullable_updateMany(
+  count: dateNonNullable_updateMany(
     where: { value: { eq: $value }, tag: { eq: $tag } },
     data: { value: $newValue }
   )
 }
 
 mutation DateNonNullable_DeleteByTagAndValue($tag: String!, $value: Date) @auth(level: PUBLIC) {
-  dateNonNullable_deleteMany(
+  count: dateNonNullable_deleteMany(
     where: { value: { eq: $value }, tag: { eq: $tag } }
   )
 }
@@ -1263,18 +1273,18 @@ query DateNullable_GetAllByTagAndDefaultValue($tag: String!, $value: Date! = "17
 }
 
 mutation DateNullable_UpdateByKey($key: DateNullable_Key!, $value: Date) @auth(level: PUBLIC) {
-  dateNullable_update(key: $key, data: { value: $value })
+  key: dateNullable_update(key: $key, data: { value: $value })
 }
 
 mutation DateNullable_UpdateByTagAndValue($tag: String!, $value: Date, $newValue: Date) @auth(level: PUBLIC) {
-  dateNullable_updateMany(
+  count: dateNullable_updateMany(
     where: { value: { eq: $value }, tag: { eq: $tag } },
     data: { value: $newValue }
   )
 }
 
 mutation DateNullable_DeleteByTagAndValue($tag: String!, $value: Date) @auth(level: PUBLIC) {
-  dateNullable_deleteMany(
+  count: dateNullable_deleteMany(
     where: { value: { eq: $value }, tag: { eq: $tag } }
   )
 }
@@ -1311,11 +1321,11 @@ query DateNullableWithDefaults_GetByKey($key: DateNullableWithDefaults_Key!) @au
 ###############################################################################
 
 mutation NonNullTimestamp_Insert($value: Timestamp!) @auth(level: PUBLIC) {
-  nonNullTimestamp_insert(data: { value: $value })
+  key: nonNullTimestamp_insert(data: { value: $value })
 }
 
 mutation NonNullTimestamp_UpdateByKey($key: NonNullTimestamp_Key!, $value: Timestamp) @auth(level: PUBLIC) {
-  nonNullTimestamp_update(key: $key, data: { value: $value })
+  key: nonNullTimestamp_update(key: $key, data: { value: $value })
 }
 
 mutation NonNullTimestamp_Insert3($tag: String, $value1: Timestamp!, $value2: Timestamp!, $value3: Timestamp!) @auth(level: PUBLIC) {
@@ -1341,7 +1351,7 @@ query NonNullTimestamp_GetAllByTagAndValue($tag: String, $value: Timestamp!) @au
 ###############################################################################
 
 mutation NonNullTimestampsWithDefaults_Insert($value: Timestamp! = "3575-04-12T10:11:12.541991Z") @auth(level: PUBLIC) {
-  nonNullTimestampsWithDefaults_insert(data: { valueWithVariableDefault: $value })
+  key: nonNullTimestampsWithDefaults_insert(data: { valueWithVariableDefault: $value })
 }
 
 query NonNullTimestampsWithDefaults_GetByKey($key: NonNullTimestampsWithDefaults_Key!) @auth(level: PUBLIC) {
@@ -1355,7 +1365,7 @@ query NonNullTimestampsWithDefaults_GetByKey($key: NonNullTimestampsWithDefaults
 }
 
 mutation InsertNullableTimestamp($value: Timestamp) @auth(level: PUBLIC) {
-  nullableTimestamp_insert(data: { value: $value })
+  key: nullableTimestamp_insert(data: { value: $value })
 }
 
 mutation UpdateNullableTimestamp($key: NullableTimestamp_Key!, $value: Timestamp) @auth(level: PUBLIC) {
@@ -1367,7 +1377,7 @@ query GetNullableTimestampByKey($key: NullableTimestamp_Key!) @auth(level: PUBLI
 }
 
 mutation InsertNullableTimestampsWithDefaults($value: Timestamp = "2554-12-20T13:03:45.110429Z") @auth(level: PUBLIC) {
-  nullableTimestampsWithDefaults_insert(data: { valueWithVariableDefault: $value })
+  key: nullableTimestampsWithDefaults_insert(data: { valueWithVariableDefault: $value })
 }
 
 query GetNullableTimestampsWithDefaultsByKey($key: NullableTimestampsWithDefaults_Key!) @auth(level: PUBLIC) {
@@ -1622,7 +1632,7 @@ query EnumNonNullable_GetAllByTagAndDefaultValue($tag: String!, $value: N5ekmae3
 }
 
 mutation EnumNonNullable_UpdateByKey($key: EnumNonNullable_Key!, $value: N5ekmae3jn) @auth(level: PUBLIC) {
-  enumNonNullable_update(key: $key, data: { value: $value })
+  key: enumNonNullable_update(key: $key, data: { value: $value })
 }
 
 ###############################################################################
@@ -1665,7 +1675,7 @@ query EnumNullable_GetAllByTagAndDefaultValue($tag: String!, $value: N5ekmae3jn 
 }
 
 mutation EnumNullable_UpdateByKey($key: EnumNullable_Key!, $value: N5ekmae3jn) @auth(level: PUBLIC) {
-  enumNullable_update(key: $key, data: { value: $value })
+  key: enumNullable_update(key: $key, data: { value: $value })
 }
 
 ###############################################################################

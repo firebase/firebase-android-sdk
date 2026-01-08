@@ -40,13 +40,6 @@ import kotlinx.serialization.Serializable
  * and the topP value is 0.5, then the model will select either A or B as the next token by using
  * the `temperature` and exclude C as a candidate. Defaults to 0.95 if unset.
  *
- * @property candidateCount The maximum number of generated response messages to return. This value
- * must be between [1, 8], inclusive. If unset, this will default to 1.
- *
- * - Note: Only unique candidates are returned. Higher temperatures are more likely to produce
- * unique candidates. Setting `temperature` to 0 will always produce exactly one candidate
- * regardless of the `candidateCount`.
- *
  * @property presencePenalty Positive penalties.
  *
  * @property frequencyPenalty Frequency penalties.
@@ -60,6 +53,11 @@ import kotlinx.serialization.Serializable
  *
  * @property speechConfig Specifies the voice configuration of the audio response from the server.
  *
+ * @property inputAudioTranscription Specifies the configuration for transcribing input audio.
+ *
+ * @property outputAudioTranscription Specifies the configuration for transcribing output audio from
+ * the model.
+ *
  * Refer to the
  * [Control generated output](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/control-generated-output)
  * guide for more details.
@@ -70,12 +68,13 @@ private constructor(
   internal val temperature: Float?,
   internal val topK: Int?,
   internal val topP: Float?,
-  internal val candidateCount: Int?,
   internal val maxOutputTokens: Int?,
   internal val presencePenalty: Float?,
   internal val frequencyPenalty: Float?,
   internal val responseModality: ResponseModality?,
-  internal val speechConfig: SpeechConfig?
+  internal val speechConfig: SpeechConfig?,
+  internal val inputAudioTranscription: AudioTranscriptionConfig?,
+  internal val outputAudioTranscription: AudioTranscriptionConfig?,
 ) {
 
   /**
@@ -94,33 +93,33 @@ private constructor(
    *
    * @property frequencyPenalty See [LiveGenerationConfig.frequencyPenalty]
    *
-   * @property candidateCount See [LiveGenerationConfig.candidateCount].
-   *
    * @property maxOutputTokens See [LiveGenerationConfig.maxOutputTokens].
    *
    * @property responseModality See [LiveGenerationConfig.responseModality]
    *
    * @property speechConfig See [LiveGenerationConfig.speechConfig]
+   *
+   * @property inputAudioTranscription see [LiveGenerationConfig.inputAudioTranscription]
+   *
+   * @property outputAudioTranscription see [LiveGenerationConfig.outputAudioTranscription]
    */
   public class Builder {
     @JvmField public var temperature: Float? = null
     @JvmField public var topK: Int? = null
     @JvmField public var topP: Float? = null
-    @JvmField public var candidateCount: Int? = null
     @JvmField public var maxOutputTokens: Int? = null
     @JvmField public var presencePenalty: Float? = null
     @JvmField public var frequencyPenalty: Float? = null
     @JvmField public var responseModality: ResponseModality? = null
     @JvmField public var speechConfig: SpeechConfig? = null
+    @JvmField public var inputAudioTranscription: AudioTranscriptionConfig? = null
+    @JvmField public var outputAudioTranscription: AudioTranscriptionConfig? = null
 
     public fun setTemperature(temperature: Float?): Builder = apply {
       this.temperature = temperature
     }
     public fun setTopK(topK: Int?): Builder = apply { this.topK = topK }
     public fun setTopP(topP: Float?): Builder = apply { this.topP = topP }
-    public fun setCandidateCount(candidateCount: Int?): Builder = apply {
-      this.candidateCount = candidateCount
-    }
     public fun setMaxOutputTokens(maxOutputTokens: Int?): Builder = apply {
       this.maxOutputTokens = maxOutputTokens
     }
@@ -137,18 +136,27 @@ private constructor(
       this.speechConfig = speechConfig
     }
 
+    public fun setInputAudioTranscription(config: AudioTranscriptionConfig?): Builder = apply {
+      this.inputAudioTranscription = config
+    }
+
+    public fun setOutputAudioTranscription(config: AudioTranscriptionConfig?): Builder = apply {
+      this.outputAudioTranscription = config
+    }
+
     /** Create a new [LiveGenerationConfig] with the attached arguments. */
     public fun build(): LiveGenerationConfig =
       LiveGenerationConfig(
         temperature = temperature,
         topK = topK,
         topP = topP,
-        candidateCount = candidateCount,
         maxOutputTokens = maxOutputTokens,
         presencePenalty = presencePenalty,
         frequencyPenalty = frequencyPenalty,
         speechConfig = speechConfig,
-        responseModality = responseModality
+        responseModality = responseModality,
+        inputAudioTranscription = inputAudioTranscription,
+        outputAudioTranscription = outputAudioTranscription,
       )
   }
 
@@ -157,7 +165,6 @@ private constructor(
       temperature = temperature,
       topP = topP,
       topK = topK,
-      candidateCount = candidateCount,
       maxOutputTokens = maxOutputTokens,
       frequencyPenalty = frequencyPenalty,
       presencePenalty = presencePenalty,
@@ -172,7 +179,6 @@ private constructor(
     val temperature: Float?,
     @SerialName("top_p") val topP: Float?,
     @SerialName("top_k") val topK: Int?,
-    @SerialName("candidate_count") val candidateCount: Int?,
     @SerialName("max_output_tokens") val maxOutputTokens: Int?,
     @SerialName("presence_penalty") val presencePenalty: Float? = null,
     @SerialName("frequency_penalty") val frequencyPenalty: Float? = null,
@@ -201,7 +207,6 @@ private constructor(
  *   temperature = 0.75f
  *   topP = 0.5f
  *   topK = 30
- *   candidateCount = 4
  *   maxOutputTokens = 300
  *   ...
  * }
