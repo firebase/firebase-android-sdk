@@ -467,17 +467,17 @@ class QueryResultEncoderUnitTest {
         }
       }
 
-      TODO()
-//      val exception =
-//        shouldThrow<IntermixedEntityAndNonEntityListInEntityException> {
-//          QueryResultEncoder.encode(rootStruct, entityIdByPath)
-//        }
-//
-//      assertSoftly {
-//        exception.message shouldContainWithNonAbuttingText "df9tkx7jk4"
-//        exception.message shouldContainWithNonAbuttingTextIgnoringCase
-//          "must be all be entities or must all be non-entities"
-//      }
+      class IntermixedEntityAndNonEntityListInEntityException : Exception()
+      val exception =
+        shouldThrow<IntermixedEntityAndNonEntityListInEntityException> {
+          QueryResultEncoder.encode(rootStruct, entityIdByPath)
+        }
+
+      assertSoftly {
+        exception.message shouldContainWithNonAbuttingText "df9tkx7jk4"
+        exception.message shouldContainWithNonAbuttingTextIgnoringCase
+          "must be all be entities or must all be non-entities"
+      }
     }
   }
 
