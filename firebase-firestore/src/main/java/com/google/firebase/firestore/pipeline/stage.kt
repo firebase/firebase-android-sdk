@@ -272,7 +272,7 @@ class CollectionHints internal constructor(options: InternalOptions) :
   /** Creates a new, empty `CollectionHints` object. */
   constructor() : this(InternalOptions.EMPTY)
 
-  public override fun self(options: InternalOptions): CollectionHints {
+  override fun self(options: InternalOptions): CollectionHints {
     return CollectionHints(options)
   }
 
@@ -297,7 +297,8 @@ class CollectionHints internal constructor(options: InternalOptions) :
   }
 }
 
-class CollectionGroupSource(val collectionId: String, options: InternalOptions) :
+class CollectionGroupSource
+internal constructor(val collectionId: String, options: InternalOptions) :
   Stage<CollectionGroupSource>("collection_group", options) {
 
   internal constructor(
@@ -341,7 +342,7 @@ class CollectionGroupOptions internal constructor(options: InternalOptions) :
   /** Creates a new, empty `CollectionGroupOptions` object. */
   constructor() : this(InternalOptions.EMPTY)
 
-  public override fun self(options: InternalOptions): CollectionGroupOptions {
+  override fun self(options: InternalOptions): CollectionGroupOptions {
     return CollectionGroupOptions(options)
   }
 
@@ -569,7 +570,7 @@ class AggregateHints internal constructor(options: InternalOptions) :
   /** Creates a new, empty `AggregateHints` object. */
   constructor() : this(InternalOptions.EMPTY)
 
-  public override fun self(options: InternalOptions): AggregateHints {
+  override fun self(options: InternalOptions): AggregateHints {
     return AggregateHints(options)
   }
 
@@ -583,7 +584,7 @@ class AggregateOptions internal constructor(options: InternalOptions) :
   /** Creates a new, empty `AggregateOptions` object. */
   constructor() : this(InternalOptions.EMPTY)
 
-  public override fun self(options: InternalOptions): AggregateOptions {
+  override fun self(options: InternalOptions): AggregateOptions {
     return AggregateOptions(options)
   }
 
@@ -787,7 +788,7 @@ class FindNearestOptions private constructor(options: InternalOptions) :
   /** Creates a new, empty `FindNearestOptions` object. */
   constructor() : this(InternalOptions.EMPTY)
 
-  public override fun self(options: InternalOptions): FindNearestOptions {
+  override fun self(options: InternalOptions): FindNearestOptions {
     return FindNearestOptions(options)
   }
 
@@ -1304,7 +1305,7 @@ class UnnestOptions private constructor(options: InternalOptions) :
     return with("index_field", Value.newBuilder().setFieldReferenceValue(indexField).build())
   }
 
-  public override fun self(options: InternalOptions): UnnestOptions {
+  override fun self(options: InternalOptions): UnnestOptions {
     return UnnestOptions(options)
   }
 }
