@@ -1,0 +1,11 @@
+{
+    "name": "m175",
+    "libraries": [
+        ":firebase-ai",
+        ":firebase-dataconnect",
+        ":firebase-firestore",
+        ":firebase-crashlytics",
+        ":firebase-crashlytics-ndk",
+        ":firebase-sessions"
+    ]
+}
