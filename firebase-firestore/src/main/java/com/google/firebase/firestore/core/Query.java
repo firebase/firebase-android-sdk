@@ -556,9 +556,9 @@ public final class Query {
 
     // Orders
     List<OrderBy> normalizedOrderBy = getNormalizedOrderBy();
-    int size = normalizedOrderBy.size();
-    List<Field> fields = new ArrayList<>(size);
-    List<Ordering> orderings = new ArrayList<>(size);
+    List<Field> fields = new ArrayList<>(normalizedOrderBy.size());
+    List<Ordering> orderings = new ArrayList<>(normalizedOrderBy.size());
+
     for (OrderBy order : normalizedOrderBy) {
       Field field = new Field(order.getField());
       fields.add(field);
@@ -569,12 +569,23 @@ public final class Query {
       }
     }
 
-    if (fields.size() == 1) {
-      stages.add(new WhereStage(fields.get(0).exists(), InternalOptions.EMPTY));
-    } else {
+    // Only add existence filters for fields that are explicitly ordered.
+    // Implicit order bys (e.g. from inequality filters) should not generate existence filters
+    // because the inequality filter itself will already generate an existence filter if needed,
+    // or arguably should not if it's a NOT_IN / NOT_EQUAL filter.
+    List<Field> existenceCheckFields = new ArrayList<>();
+    for (OrderBy order : explicitSortOrder) {
+      existenceCheckFields.add(new Field(order.getField()));
+    }
+    if (existenceCheckFields.size() == 1) {
+      stages.add(new WhereStage(existenceCheckFields.get(0).exists(), InternalOptions.EMPTY));
+    } else if (existenceCheckFields.size() > 1) {
       BooleanExpression[] conditions =
-          skipFirstToArray(fields, BooleanExpression[]::new, Expression.Companion::exists);
-      stages.add(new WhereStage(and(fields.get(0).exists(), conditions), InternalOptions.EMPTY));
+          skipFirstToArray(
+              existenceCheckFields, BooleanExpression[]::new, Expression.Companion::exists);
+      stages.add(
+          new WhereStage(
+              and(existenceCheckFields.get(0).exists(), conditions), InternalOptions.EMPTY));
     }
 
     if (startAt != null) {
