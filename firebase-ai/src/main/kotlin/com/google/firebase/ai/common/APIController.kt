@@ -163,7 +163,6 @@ internal constructor(
     } catch (e: Throwable) {
       throw FirebaseAIException.from(e)
     }
-  suspend fun generateObject()
 
   suspend fun templateGenerateContent(
     templateId: String,
