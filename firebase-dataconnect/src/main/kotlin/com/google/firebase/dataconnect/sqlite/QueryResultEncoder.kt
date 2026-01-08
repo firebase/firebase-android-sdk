@@ -558,7 +558,7 @@ internal class QueryResultEncoder(
         ListValueLeafContentsClassification.Entities ->
           when (leafValueClassification) {
             null -> {
-              leafValueClassification = ListValueLeafContentsClassificationInternal.NonEntities
+              leafValueClassification = ListValueLeafContentsClassificationInternal.Entities
             }
             ListValueLeafContentsClassificationInternal.Entities -> {}
             ListValueLeafContentsClassificationInternal.NonEntities,
