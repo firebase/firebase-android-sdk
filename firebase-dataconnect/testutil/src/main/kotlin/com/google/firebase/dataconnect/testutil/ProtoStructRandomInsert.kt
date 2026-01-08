@@ -89,7 +89,7 @@ private fun randomlyInsertValues(
   random: Random,
   generateKey: () -> String
 ): List<DataConnectPath> {
-  val candidateInsertionPoints: List<DataConnectPathValuePair> =
+  val candidateInsertionStructs: List<DataConnectPathValuePair> =
     structBuilder
       .build()
       .walk(includeSelf = true)
@@ -97,37 +97,28 @@ private fun randomlyInsertValues(
       .toList()
       .sortedWith(DataConnectPathValuePairPathComparator)
 
-  val insertionPoints: List<DataConnectPathValuePair> =
-    List(values.size) { candidateInsertionPoints.random(random) }
-
-  val insertions: List<DataConnectPathValuePair> = run {
-    val generatedKeysByPath: Map<DataConnectPath, MutableSet<String>> = buildMap {
-      candidateInsertionPoints.forEach { (path, value) ->
-        put(path, value.structValue.fieldsMap.keys.toMutableSet())
+  val usedKeysByPath: MutableMap<DataConnectPath, MutableSet<String>> = mutableMapOf()
+  fun generateRandomUnusedKey(pathValuePair: DataConnectPathValuePair): String {
+    val usedKeys =
+      usedKeysByPath.getOrPut(pathValuePair.path) {
+        pathValuePair.value.structValue.fieldsMap.keys.toMutableSet()
       }
-    }
-
-    fun generateKeyForInsertionPointAt(path: DataConnectPath): String {
-      val unavailableKeys = generatedKeysByPath[path]!!
-      while (true) {
-        val key = generateKey()
-        if (!unavailableKeys.contains(key)) {
-          unavailableKeys.add(key)
-          return key
-        }
+    while (true) {
+      val key = generateKey()
+      if (usedKeys.add(key)) {
+        return key
       }
-    }
-
-    List(insertionPoints.size) {
-      val insertionPoint = insertionPoints[it]
-      val key = generateKeyForInsertionPointAt(insertionPoint.path)
-      DataConnectPathValuePair(insertionPoint.path.withAddedField(key), values[it])
     }
   }
+  fun DataConnectPathValuePair.generateRandomUnusedKey(): String = generateRandomUnusedKey(this)
 
-  insertions.forEach { insertValue(structBuilder, it.path, it.value) }
-
-  return insertions.map { it.path }
+  return values.map { valueToInsert ->
+    val insertionStruct = candidateInsertionStructs.random(random)
+    val key = insertionStruct.generateRandomUnusedKey()
+    val insertPath = insertionStruct.path.withAddedField(key)
+    insertValue(structBuilder, insertPath, valueToInsert)
+    insertPath
+  }
 }
 
 private fun insertValue(structBuilder: Struct.Builder, path: DataConnectPath, value: Value) {
