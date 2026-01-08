@@ -1,9 +1,4 @@
 # Release Report
-## firebase-abt
-      
-* [Infra] Replace prettier with flexmark as markdown formatter (#7593)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/7593) [commit](https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c)  [Rodrigo Lazo]
-
 ## firebase-ai
       
 * [AI] Add support for Thinking Levels (#7599)   
@@ -11,59 +6,6 @@
 
 * feat(ai): add equals() to GenerativeBackend (#7597)   
   [pr](https://github.com/firebase/firebase-android-sdk/pull/7597) [commit](https://github.com/firebase/firebase-android-sdk/commit/7887e47404fedb8fe72319b144816a26d736a9f9)  [Rosário P. Fernandes]
-
-## firebase-appdistribution
-      
-* [Infra] Replace prettier with flexmark as markdown formatter (#7593)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/7593) [commit](https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c)  [Rodrigo Lazo]
-
-## firebase-appdistribution-api
-      
-* [Infra] Replace prettier with flexmark as markdown formatter (#7593)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/7593) [commit](https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c)  [Rodrigo Lazo]
-
-## firebase-components
-      
-* [Infra] Replace prettier with flexmark as markdown formatter (#7593)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/7593) [commit](https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c)  [Rodrigo Lazo]
-
-## firebase-config
-      
-* [Infra] Replace prettier with flexmark as markdown formatter (#7593)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/7593) [commit](https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c)  [Rodrigo Lazo]
-
-## firebase-config-interop
-      
-* [Infra] Replace prettier with flexmark as markdown formatter (#7593)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/7593) [commit](https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c)  [Rodrigo Lazo]
-
-## firebase-crashlytics
-      
-* [Infra] Replace prettier with flexmark as markdown formatter (#7593)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/7593) [commit](https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c)  [Rodrigo Lazo]
-
-## firebase-crashlytics-ndk
-      
-* [Infra] Replace prettier with flexmark as markdown formatter (#7593)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/7593) [commit](https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c)  [Rodrigo Lazo]
-
-## firebase-sessions
-      
-* [Infra] Replace prettier with flexmark as markdown formatter (#7593)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/7593) [commit](https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c)  [Rodrigo Lazo]
-
-* Restore SessionLifecycleService as no-op (#7318)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/7318) [commit](https://github.com/firebase/firebase-android-sdk/commit/813d02b10d84cbaec37911baefce3fb7e83c56f6)  [Joseph Rodiz]
-
-## firebase-database
-      
-* [Infra] Replace prettier with flexmark as markdown formatter (#7593)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/7593) [commit](https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c)  [Rodrigo Lazo]
-
-## firebase-database-collection
-      
-* [Infra] Replace prettier with flexmark as markdown formatter (#7593)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/7593) [commit](https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c)  [Rodrigo Lazo]
 
 ## firebase-dataconnect
       
@@ -115,138 +57,25 @@
 * dataconnect: proto Arb improvements for testing (#7589)   
   [pr](https://github.com/firebase/firebase-android-sdk/pull/7589) [commit](https://github.com/firebase/firebase-android-sdk/commit/df21d8bfc0091b97c03406c5fac17c24d9ae533e)  [Denver Coneybeare]
 
-* [Infra] Replace prettier with flexmark as markdown formatter (#7593)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/7593) [commit](https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c)  [Rodrigo Lazo]
-
 * dataconnect: ci: upgrade data connect emulator to 2.15.1 (was 2.14.0) and firebase-tools to 14.27.0 (was 14.18.0) (#7585)   
   [pr](https://github.com/firebase/firebase-android-sdk/pull/7585) [commit](https://github.com/firebase/firebase-android-sdk/commit/3c0af39fa66a32b664e5ff3f01b2714f97a6cb3e)  [Denver Coneybeare]
-
-## firebase-datatransport
-      
-* [Infra] Replace prettier with flexmark as markdown formatter (#7593)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/7593) [commit](https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c)  [Rodrigo Lazo]
 
 ## firebase-firestore
       
 * Pipelines for Firestore (#7590)   
   [pr](https://github.com/firebase/firebase-android-sdk/pull/7590) [commit](https://github.com/firebase/firebase-android-sdk/commit/b006a573f4404014cc5fef875ca9def84e9e0f99)  [wu-hui]
 
-* [Infra] Replace prettier with flexmark as markdown formatter (#7593)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/7593) [commit](https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c)  [Rodrigo Lazo]
-
-## firebase-functions
+## firebase-crashlytics
       
-* [Infra] Replace prettier with flexmark as markdown formatter (#7593)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/7593) [commit](https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c)  [Rodrigo Lazo]
 
-## firebase-inappmessaging
+## firebase-crashlytics-ndk
       
-* [Infra] Replace prettier with flexmark as markdown formatter (#7593)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/7593) [commit](https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c)  [Rodrigo Lazo]
 
-## firebase-inappmessaging-display
+## firebase-sessions
       
-* [Infra] Replace prettier with flexmark as markdown formatter (#7593)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/7593) [commit](https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c)  [Rodrigo Lazo]
-
-## firebase-installations
-      
-* [Infra] Replace prettier with flexmark as markdown formatter (#7593)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/7593) [commit](https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c)  [Rodrigo Lazo]
-
-## firebase-installations-interop
-      
-* [Infra] Replace prettier with flexmark as markdown formatter (#7593)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/7593) [commit](https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c)  [Rodrigo Lazo]
-
-## firebase-messaging
-      
-* [Infra] Replace prettier with flexmark as markdown formatter (#7593)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/7593) [commit](https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c)  [Rodrigo Lazo]
-
-## firebase-messaging-directboot
-      
-* [Infra] Replace prettier with flexmark as markdown formatter (#7593)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/7593) [commit](https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c)  [Rodrigo Lazo]
-
-## firebase-ml-modeldownloader
-      
-* [Infra] Replace prettier with flexmark as markdown formatter (#7593)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/7593) [commit](https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c)  [Rodrigo Lazo]
-
-## firebase-perf
-      
-* [Infra] Replace prettier with flexmark as markdown formatter (#7593)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/7593) [commit](https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c)  [Rodrigo Lazo]
-
-* e2e-app.gradle: upgrade guava dependency to 31.0.1 (#7586)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/7586) [commit](https://github.com/firebase/firebase-android-sdk/commit/eeed6cd3ee29d4b39be92d8f52c1e3266e943f45)  [Denver Coneybeare]
-
-## firebase-storage
-      
-* [Infra] Replace prettier with flexmark as markdown formatter (#7593)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/7593) [commit](https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c)  [Rodrigo Lazo]
-
-## appcheck/firebase-appcheck
-      
-* [Infra] Replace prettier with flexmark as markdown formatter (#7593)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/7593) [commit](https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c)  [Rodrigo Lazo]
-
-## appcheck/firebase-appcheck-debug
-      
-* [Infra] Replace prettier with flexmark as markdown formatter (#7593)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/7593) [commit](https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c)  [Rodrigo Lazo]
-
-## appcheck/firebase-appcheck-debug-testing
-      
-* [Infra] Replace prettier with flexmark as markdown formatter (#7593)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/7593) [commit](https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c)  [Rodrigo Lazo]
-
-## appcheck/firebase-appcheck-playintegrity
-      
-* [Infra] Replace prettier with flexmark as markdown formatter (#7593)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/7593) [commit](https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c)  [Rodrigo Lazo]
-
-## appcheck/firebase-appcheck-interop
-      
-* [Infra] Replace prettier with flexmark as markdown formatter (#7593)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/7593) [commit](https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c)  [Rodrigo Lazo]
-
-## encoders/firebase-decoders-json
-      
-* [Infra] Replace prettier with flexmark as markdown formatter (#7593)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/7593) [commit](https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c)  [Rodrigo Lazo]
-
-## encoders/firebase-encoders-json
-      
-* [Infra] Replace prettier with flexmark as markdown formatter (#7593)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/7593) [commit](https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c)  [Rodrigo Lazo]
-
-## encoders/firebase-encoders-reflective
-      
-* [Infra] Replace prettier with flexmark as markdown formatter (#7593)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/7593) [commit](https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c)  [Rodrigo Lazo]
-
-## firebase-components/firebase-dynamic-module-support
-      
-* [Infra] Replace prettier with flexmark as markdown formatter (#7593)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/7593) [commit](https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c)  [Rodrigo Lazo]
-
-## transport/transport-api
-      
-* [Infra] Replace prettier with flexmark as markdown formatter (#7593)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/7593) [commit](https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c)  [Rodrigo Lazo]
-
-## transport/transport-backend-cct
-      
-* [Infra] Replace prettier with flexmark as markdown formatter (#7593)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/7593) [commit](https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c)  [Rodrigo Lazo]
-
-## transport/transport-runtime
-      
-* [Infra] Replace prettier with flexmark as markdown formatter (#7593)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/7593) [commit](https://github.com/firebase/firebase-android-sdk/commit/f9495bcf434226f81e9f1b9a46571eefbd088e2c)  [Rodrigo Lazo]
+* Restore SessionLifecycleService as no-op (#7318)   
+  [pr](https://github.com/firebase/firebase-android-sdk/pull/7318) [commit](https://github.com/firebase/firebase-android-sdk/commit/813d02b10d84cbaec37911baefce3fb7e83c56f6)  [Joseph Rodiz]
 
 
 ## SDKs with changes, but no changelogs
-:firebase-common
+:firebase-perf
