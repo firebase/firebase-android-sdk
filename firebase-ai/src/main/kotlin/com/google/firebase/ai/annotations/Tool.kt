@@ -16,15 +16,15 @@
 
 package com.google.firebase.ai.annotations
 
-import com.google.firebase.ai.type.JsonSchema
+import com.google.firebase.ai.type.AutoFunctionDeclaration
 
 /**
- * This annotation is used with the firebase-ai-ksp-processor plugin to generate [JsonSchema] that
- * match an existing kotlin class structure. For more info see:
+ * This annotation is used with the firebase-ai-ksp-processor plugin to generate
+ * [AutoFunctionDeclaration]s that match an existing kotlin function. For more info see:
  * https://github.com/firebase/firebase-android-sdk/blob/main/firebase-ai-ksp-processor/README.md
  *
- * @property description a description of the class
+ * @property description a description of the function
  */
-@Target(AnnotationTarget.CLASS)
+@Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.SOURCE)
-public annotation class Generable(public val description: String = "")
+public annotation class Tool(public val description: String = "")
