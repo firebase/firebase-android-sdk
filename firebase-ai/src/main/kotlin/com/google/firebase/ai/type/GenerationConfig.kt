@@ -145,6 +145,8 @@ private constructor(
     @JvmField public var responseModalities: List<ResponseModality>? = null
     @JvmField public var thinkingConfig: ThinkingConfig? = null
 
+    public constructor()
+
     internal constructor(
       temperature: Float? = null,
       topK: Int? = null,
@@ -293,7 +295,7 @@ private constructor(
      * val config = GenerationConfig.builder()
      * ```
      */
-    public fun builder(): Builder = Builder()
+    @JvmStatic public fun builder(): Builder = Builder()
   }
 }
 

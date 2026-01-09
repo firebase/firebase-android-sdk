@@ -517,6 +517,7 @@ package com.google.firebase.ai.type {
   }
 
   public final class GenerationConfig {
+    method public static com.google.firebase.ai.type.GenerationConfig.Builder builder();
     method public com.google.firebase.ai.type.GenerationConfig.Builder toBuilder();
     field public static final com.google.firebase.ai.type.GenerationConfig.Companion Companion;
   }
