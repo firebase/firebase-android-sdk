@@ -132,3 +132,32 @@ internal fun List<DataConnectPathSegment>.withAddedPathSegment(
   addAll(this@withAddedPathSegment)
   add(pathSegment)
 }
+
+internal object DataConnectPathComparator : Comparator<DataConnectPath> {
+  override fun compare(o1: DataConnectPath, o2: DataConnectPath): Int {
+    val size = o1.size.coerceAtMost(o2.size)
+    repeat(size) {
+      val segmentComparisonResult = DataConnectPathSegmentComparator.compare(o1[it], o2[it])
+      if (segmentComparisonResult != 0) {
+        return segmentComparisonResult
+      }
+    }
+    return o1.size.compareTo(o2.size)
+  }
+}
+
+internal object DataConnectPathSegmentComparator : Comparator<DataConnectPathSegment> {
+  override fun compare(o1: DataConnectPathSegment, o2: DataConnectPathSegment): Int =
+    when (o1) {
+      is DataConnectPathSegment.Field ->
+        when (o2) {
+          is DataConnectPathSegment.Field -> o1.field.compareTo(o2.field)
+          is DataConnectPathSegment.ListIndex -> -1
+        }
+      is DataConnectPathSegment.ListIndex ->
+        when (o2) {
+          is DataConnectPathSegment.Field -> 1
+          is DataConnectPathSegment.ListIndex -> o1.index.compareTo(o2.index)
+        }
+    }
+}

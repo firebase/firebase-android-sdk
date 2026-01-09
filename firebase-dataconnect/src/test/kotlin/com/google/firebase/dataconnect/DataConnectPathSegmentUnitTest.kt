@@ -23,6 +23,7 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectAr
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.listIndexPathSegment as listIndexPathSegmentArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.pathSegment as dataConnectPathSegmentArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
+import com.google.firebase.dataconnect.testutil.property.arbitrary.twoValues
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactly
@@ -577,5 +578,86 @@ class DataConnectPathSegmentExtensionFunctionsUnitTest {
     val path2 = emptyMutableDataConnectPath()
 
     path1 shouldNotBeSameInstanceAs path2
+  }
+}
+
+/** Unit tests for extension functions of [DataConnectPathSegmentComparator] */
+class DataConnectPathSegmentComparatorUnitTest {
+
+  @Test
+  fun `compare() returns 0 for same object`() = runTest {
+    checkAll(propTestConfig, dataConnectPathSegmentArb()) { pathSegment ->
+      DataConnectPathSegmentComparator.compare(pathSegment, pathSegment) shouldBe 0
+    }
+  }
+
+  @Test
+  fun `compare() returns 0 for equal objects`() = runTest {
+    checkAll(propTestConfig, dataConnectPathSegmentArb()) { pathSegment1 ->
+      val pathSegment2 =
+        when (pathSegment1) {
+          is DataConnectPathSegment.Field -> DataConnectPathSegment.Field(pathSegment1.field)
+          is DataConnectPathSegment.ListIndex ->
+            DataConnectPathSegment.ListIndex(pathSegment1.index)
+        }
+      DataConnectPathSegmentComparator.compare(pathSegment1, pathSegment2) shouldBe 0
+    }
+  }
+
+  @Test
+  fun `compare() is reflexive`() = runTest {
+    checkAll(propTestConfig, Arb.twoValues(dataConnectPathSegmentArb())) {
+      (pathSegment1, pathSegment2) ->
+      val result1 = DataConnectPathSegmentComparator.compare(pathSegment1, pathSegment2)
+      val result2 = DataConnectPathSegmentComparator.compare(pathSegment2, pathSegment1)
+      result1 shouldBe -result2
+    }
+  }
+
+  @Test
+  fun `compare() is a deterministic pure function`() = runTest {
+    checkAll(propTestConfig, Arb.list(dataConnectPathSegmentArb(), 0..20)) { pathSegments ->
+      val pathSegmentsSorted1 = pathSegments.sortedWith(DataConnectPathSegmentComparator)
+      val pathSegmentsSorted2 = pathSegments.sortedWith(DataConnectPathSegmentComparator)
+
+      pathSegmentsSorted1 shouldBe pathSegmentsSorted2
+    }
+  }
+}
+/** Unit tests for extension functions of [DataConnectPathComparator] */
+class DataConnectPathComparatorUnitTest {
+
+  @Test
+  fun `compare() returns 0 for same object`() = runTest {
+    checkAll(propTestConfig, dataConnectPathArb()) { path ->
+      DataConnectPathComparator.compare(path, path) shouldBe 0
+    }
+  }
+
+  @Test
+  fun `compare() returns 0 for equal objects`() = runTest {
+    checkAll(propTestConfig, dataConnectPathArb()) { path1 ->
+      val path2 = path1.toList()
+      DataConnectPathComparator.compare(path1, path2) shouldBe 0
+    }
+  }
+
+  @Test
+  fun `compare() is reflexive`() = runTest {
+    checkAll(propTestConfig, Arb.twoValues(dataConnectPathArb())) { (path1, path2) ->
+      val result1 = DataConnectPathComparator.compare(path1, path2)
+      val result2 = DataConnectPathComparator.compare(path2, path1)
+      result1 shouldBe -result2
+    }
+  }
+
+  @Test
+  fun `compare() is a deterministic pure function`() = runTest {
+    checkAll(propTestConfig, Arb.list(dataConnectPathArb(), 0..20)) { paths ->
+      val pathsSorted1 = paths.sortedWith(DataConnectPathComparator)
+      val pathsSorted2 = paths.sortedWith(DataConnectPathComparator)
+
+      pathsSorted1 shouldBe pathsSorted2
+    }
   }
 }
