@@ -295,8 +295,7 @@ private constructor(
      * val config = GenerationConfig.builder()
      * ```
      */
-    @JvmStatic
-    public fun builder(): Builder = Builder()
+    @JvmStatic public fun builder(): Builder = Builder()
   }
 }
 
