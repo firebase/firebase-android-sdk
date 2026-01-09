@@ -324,21 +324,15 @@ internal class QueryResultEncoder(
   ) {
     val entityId = path.getEntityId()
     if (entityId !== null) {
+      writer.writeByte(QueryResultCodec.VALUE_ENTITY)
       writeEntity(entityId, struct, path)
     } else {
-      writeStruct(struct, path)
-    }
-  }
-
-  private fun writeStruct(
-    struct: Struct,
-    path: MutableDataConnectPath,
-  ) {
-    writer.writeByte(QueryResultCodec.VALUE_STRUCT)
-    writer.writeUInt32(struct.fieldsCount)
-    struct.fieldsMap.entries.forEach { (key, value) ->
-      writeString(key)
-      path.withAddedField(key) { writeValue(value, path) }
+      writer.writeByte(QueryResultCodec.VALUE_STRUCT)
+      writer.writeUInt32(struct.fieldsCount)
+      struct.fieldsMap.entries.forEach { (key, value) ->
+        writeString(key)
+        path.withAddedField(key) { writeValue(value, path) }
+      }
     }
   }
 
@@ -358,7 +352,6 @@ internal class QueryResultEncoder(
     entity: Struct,
     path: MutableDataConnectPath,
   ) {
-    writer.writeByte(QueryResultCodec.VALUE_ENTITY)
     val encodedEntityId = sha512DigestCalculator.calculate(entityId)
     writer.writeUInt32(encodedEntityId.size)
     writer.write(ByteBuffer.wrap(encodedEntityId))
@@ -409,6 +402,7 @@ internal class QueryResultEncoder(
   ): Value? {
     val entityId = path.getEntityId()
     if (entityId !== null) {
+      writer.writeByte(QueryResultCodec.VALUE_ENTITY)
       writeEntity(entityId, value.structValue, path)
       return null
     }
@@ -488,8 +482,14 @@ internal class QueryResultEncoder(
     writer.writeUInt32(path.size)
     path.forEach { pathSegment ->
       when (pathSegment) {
-        is DataConnectPathSegment.Field -> writeString(pathSegment.field)
-        is DataConnectPathSegment.ListIndex -> writer.writeUInt32(pathSegment.index)
+        is DataConnectPathSegment.Field -> {
+          writer.writeByte(QueryResultCodec.VALUE_PATH_SEGMENT_FIELD)
+          writeString(pathSegment.field)
+        }
+        is DataConnectPathSegment.ListIndex -> {
+          writer.writeByte(QueryResultCodec.VALUE_PATH_SEGMENT_LIST_INDEX)
+          writer.writeUInt32(pathSegment.index)
+        }
       }
     }
   }

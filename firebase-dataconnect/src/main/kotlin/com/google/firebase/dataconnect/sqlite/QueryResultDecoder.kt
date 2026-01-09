@@ -17,6 +17,7 @@
 package com.google.firebase.dataconnect.sqlite
 
 import com.google.firebase.dataconnect.DataConnectPath
+import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.MutableDataConnectPath
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.getSInt32
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.getSInt64
@@ -357,7 +358,9 @@ internal class QueryResultDecoder(
     String1Char(QueryResultCodec.VALUE_STRING_1CHAR, "oneCharString"),
     String2Char(QueryResultCodec.VALUE_STRING_2CHAR, "twoCharString"),
     StringUtf8(QueryResultCodec.VALUE_STRING_UTF8, "utf8"),
-    StringUtf16(QueryResultCodec.VALUE_STRING_UTF16, "utf16");
+    StringUtf16(QueryResultCodec.VALUE_STRING_UTF16, "utf16"),
+    PathSegmentField(QueryResultCodec.VALUE_PATH_SEGMENT_FIELD, "fieldPathSegment"),
+    PathSegmentListIndex(QueryResultCodec.VALUE_PATH_SEGMENT_LIST_INDEX, "listIndexPathSegment");
 
     companion object {
       val identityMap = buildMap { ValueType.entries.forEach { put(it, it) } }
@@ -846,7 +849,7 @@ internal class QueryResultDecoder(
       EntitySubStructValueType.Entity -> readEntity(path).toValueProto()
       EntitySubStructValueType.Struct -> {
         val subEntity = getSubEntity().structValue
-        readEntitySubStruct(path, subEntity).toValueProto()
+        patchInPrunedEntities(path, subEntity).toValueProto()
       }
       EntitySubStructValueType.List -> {
         val subEntity = getSubEntity().listValue
@@ -859,6 +862,90 @@ internal class QueryResultDecoder(
     }
   }
 
+  private fun patchInPrunedEntities(path: MutableDataConnectPath, struct: Struct): Struct {
+    val prunedEntityCount =
+      readUInt32(
+        path,
+        name = "pruned entity count",
+        valueVerifier = prunedEntityCountUInt32ValueVerifier,
+        decodeErrorId = "PrunedEntityCountDecodeFailed",
+        eofErrorId = "PrunedEntityCountEOF",
+      )
+
+    val structBuilder = struct.toBuilder()
+    repeat(prunedEntityCount) {
+      val entityRelativePath = readPath(path)
+      val entity = readEntity(path)
+    }
+
+    return structBuilder.build()
+  }
+
+  private fun readPath(path: DataConnectPath): DataConnectPath {
+    val pathSegmentCount =
+      readUInt32(
+        path,
+        name = "path segment count",
+        valueVerifier = PathSegmentCountUInt32ValueVerifier,
+        decodeErrorId = "PathSegmentCountDecodeFailed",
+        eofErrorId = "PathSegmentCountEOF",
+      )
+
+    return buildList {
+      repeat(pathSegmentCount) {
+        val pathSegmentValueType =
+          readValueType(
+            path,
+            name = "path segment type",
+            eofErrorId = "ReadPathPathSegmentValueTypeIndicatorByteEOF",
+            unknownErrorId = "ReadPathPathSegmentValueTypeIndicatorByteUnknown",
+            unexpectedErrorId = "ReadPathPathSegmentValueTypeIndicatorByteUnexpected",
+            map = PathSegmentValueType.instanceByValueType,
+          )
+
+        val pathSegment =
+          when (pathSegmentValueType) {
+            PathSegmentValueType.Field -> {
+              val fieldName = readString(path, name = "field path segment")
+              DataConnectPathSegment.Field(fieldName)
+            }
+            PathSegmentValueType.ListIndex -> {
+              val listIndex =
+                readUInt32(
+                  path,
+                  name = "list index path segment",
+                  valueVerifier = ListIndexPathSegmentUInt32ValueVerifier,
+                  decodeErrorId = "ListIndexPathSegmentDecodeFailed",
+                  eofErrorId = "ListIndexPathSegmentEOF",
+                )
+              DataConnectPathSegment.ListIndex(listIndex)
+            }
+          }
+
+        add(pathSegment)
+      }
+    }
+  }
+
+  private enum class PathSegmentValueType(val valueType: ValueType) {
+    Field(ValueType.PathSegmentField),
+    ListIndex(ValueType.PathSegmentListIndex);
+
+    companion object {
+      val instanceByValueType: Map<ValueType, PathSegmentValueType> = buildMap {
+        PathSegmentValueType.entries.forEach { pathSegmentValueType ->
+          check(pathSegmentValueType.valueType !in this) {
+            "internal error maqjyasdmf: duplicate value type: ${pathSegmentValueType.valueType}"
+          }
+          put(pathSegmentValueType.valueType, pathSegmentValueType)
+        }
+      }
+
+      fun fromValueType(valueType: ValueType): PathSegmentValueType? =
+        entries.firstOrNull { it.valueType == valueType }
+    }
+  }
+
   private fun readValue(path: MutableDataConnectPath): Value {
     val valueType =
       readValueType(
@@ -867,14 +954,14 @@ internal class QueryResultDecoder(
         eofErrorId = "ReadValueValueTypeIndicatorByteEOF",
         unknownErrorId = "ReadValueValueTypeIndicatorByteUnknown",
         unexpectedErrorId = "ReadValueValueTypeIndicatorByteUnexpected",
-        map = ValueType.identityMap,
+        map = ReadValueValueType.instanceByValueType,
       )
 
     val valueBuilder = Value.newBuilder()
 
     when (valueType) {
-      ValueType.Null -> valueBuilder.setNullValue(NullValue.NULL_VALUE)
-      ValueType.Double -> {
+      ReadValueValueType.Null -> valueBuilder.setNullValue(NullValue.NULL_VALUE)
+      ReadValueValueType.Double -> {
         ensureRemaining(
           8,
           path,
@@ -884,9 +971,9 @@ internal class QueryResultDecoder(
         )
         valueBuilder.setNumberValue(byteBuffer.getDouble())
       }
-      ValueType.PositiveZero -> valueBuilder.setNumberValue(0.0)
-      ValueType.NegativeZero -> valueBuilder.setNumberValue(-0.0)
-      ValueType.Fixed32Int -> {
+      ReadValueValueType.PositiveZero -> valueBuilder.setNumberValue(0.0)
+      ReadValueValueType.NegativeZero -> valueBuilder.setNumberValue(-0.0)
+      ReadValueValueType.Fixed32Int -> {
         ensureRemaining(
           4,
           path,
@@ -896,7 +983,7 @@ internal class QueryResultDecoder(
         )
         valueBuilder.setNumberValue(byteBuffer.getInt().toDouble())
       }
-      ValueType.UInt32 ->
+      ReadValueValueType.UInt32 ->
         valueBuilder.setNumberValue(
           readUInt32(
               path,
@@ -907,7 +994,7 @@ internal class QueryResultDecoder(
             )
             .toDouble()
         )
-      ValueType.SInt32 ->
+      ReadValueValueType.SInt32 ->
         valueBuilder.setNumberValue(
           readSInt32(
               path,
@@ -917,7 +1004,7 @@ internal class QueryResultDecoder(
             )
             .toDouble()
         )
-      ValueType.UInt64 ->
+      ReadValueValueType.UInt64 ->
         valueBuilder.setNumberValue(
           readUInt64(
               path,
@@ -928,7 +1015,7 @@ internal class QueryResultDecoder(
             )
             .toDouble()
         )
-      ValueType.SInt64 ->
+      ReadValueValueType.SInt64 ->
         valueBuilder.setNumberValue(
           readSInt64(
               path,
@@ -938,28 +1025,68 @@ internal class QueryResultDecoder(
             )
             .toDouble()
         )
-      ValueType.BoolTrue -> valueBuilder.setBoolValue(true)
-      ValueType.BoolFalse -> valueBuilder.setBoolValue(false)
-      ValueType.List -> valueBuilder.setListValue(readList(path))
-      ValueType.ListOfEntities -> valueBuilder.setListValue(readListOfEntities(path))
-      ValueType.Struct -> valueBuilder.setStructValue(readStruct(path))
-      ValueType.KindNotSet -> {}
-      ValueType.Entity -> valueBuilder.setStructValue(readEntity(path))
-      ValueType.StringEmpty -> valueBuilder.setStringValue("")
-      ValueType.String1Byte ->
+      ReadValueValueType.BoolTrue -> valueBuilder.setBoolValue(true)
+      ReadValueValueType.BoolFalse -> valueBuilder.setBoolValue(false)
+      ReadValueValueType.List -> valueBuilder.setListValue(readList(path))
+      ReadValueValueType.ListOfEntities -> valueBuilder.setListValue(readListOfEntities(path))
+      ReadValueValueType.Struct -> valueBuilder.setStructValue(readStruct(path))
+      ReadValueValueType.KindNotSet -> {}
+      ReadValueValueType.Entity -> valueBuilder.setStructValue(readEntity(path))
+      ReadValueValueType.StringEmpty -> valueBuilder.setStringValue("")
+      ReadValueValueType.String1Byte ->
         valueBuilder.setStringValue(readString1Byte(path, name = "string value"))
-      ValueType.String2Byte ->
+      ReadValueValueType.String2Byte ->
         valueBuilder.setStringValue(readString2Byte(path, name = "string value"))
-      ValueType.String1Char ->
+      ReadValueValueType.String1Char ->
         valueBuilder.setStringValue(readString1Char(path, name = "string value"))
-      ValueType.String2Char ->
+      ReadValueValueType.String2Char ->
         valueBuilder.setStringValue(readString2Char(path, name = "string value"))
-      ValueType.StringUtf8 ->
+      ReadValueValueType.StringUtf8 ->
         valueBuilder.setStringValue(readStringUtf8(path, name = "string value"))
-      ValueType.StringUtf16 ->
+      ReadValueValueType.StringUtf16 ->
         valueBuilder.setStringValue(readStringCustomUtf16(path, name = "string value"))
     }
     return valueBuilder.build()
+  }
+
+  private enum class ReadValueValueType(val valueType: ValueType) {
+    Null(ValueType.Null),
+    Double(ValueType.Double),
+    PositiveZero(ValueType.PositiveZero),
+    NegativeZero(ValueType.NegativeZero),
+    Fixed32Int(ValueType.Fixed32Int),
+    UInt32(ValueType.UInt32),
+    SInt32(ValueType.SInt32),
+    UInt64(ValueType.UInt64),
+    SInt64(ValueType.SInt64),
+    BoolTrue(ValueType.BoolTrue),
+    BoolFalse(ValueType.BoolFalse),
+    KindNotSet(ValueType.KindNotSet),
+    List(ValueType.List),
+    ListOfEntities(ValueType.ListOfEntities),
+    Struct(ValueType.Struct),
+    Entity(ValueType.Entity),
+    StringEmpty(ValueType.StringEmpty),
+    String1Byte(ValueType.String1Byte),
+    String2Byte(ValueType.String2Byte),
+    String1Char(ValueType.String1Char),
+    String2Char(ValueType.String2Char),
+    StringUtf8(ValueType.StringUtf8),
+    StringUtf16(ValueType.StringUtf16);
+
+    companion object {
+      val instanceByValueType: Map<ValueType, ReadValueValueType> = buildMap {
+        ReadValueValueType.entries.forEach { readValueValueType ->
+          check(readValueValueType.valueType !in this) {
+            "internal error vrwejmte9a: duplicate value type: ${readValueValueType.valueType}"
+          }
+          put(readValueValueType.valueType, readValueValueType)
+        }
+      }
+
+      fun fromValueType(valueType: ValueType): ReadValueValueType? =
+        entries.firstOrNull { it.valueType == valueType }
+    }
   }
 
   sealed class DecodeException(message: String, cause: Throwable? = null) :
@@ -1098,6 +1225,15 @@ internal class QueryResultDecoder(
 
     private val entitySubListSizeUInt32ValueVerifier =
       UInt32ValueVerifier("EntitySubListSizeInvalidValue")
+
+    private val prunedEntityCountUInt32ValueVerifier =
+      UInt32ValueVerifier("PrunedEntityCountInvalidValue")
+
+    private val PathSegmentCountUInt32ValueVerifier =
+      UInt32ValueVerifier("PathSegmentCountInvalidValue")
+
+    private val ListIndexPathSegmentUInt32ValueVerifier =
+      UInt32ValueVerifier("ListIndexPathSegmentInvalidValue")
 
     private val readUInt32ValueVerifier = UInt32ValueVerifier("ReadUInt32ValueInvalidValue")
 

@@ -52,4 +52,7 @@ internal object QueryResultCodec {
   const val VALUE_STRING_2CHAR: Byte = 21
   const val VALUE_STRING_UTF8: Byte = 22
   const val VALUE_STRING_UTF16: Byte = 23
+
+  const val VALUE_PATH_SEGMENT_FIELD: Byte = 24
+  const val VALUE_PATH_SEGMENT_LIST_INDEX: Byte = 25
 }
