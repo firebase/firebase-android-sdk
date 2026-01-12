@@ -324,7 +324,7 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
         && cachedToken.getExpireTimeMillis() - clock.currentTimeMillis() > BUFFER_TIME_MILLIS;
   }
 
-  private String getErrorMessageOrDefault(Exception e, String defaultMessage) {
-    return e != null ? e.getMessage() : defaultMessage;
+  private String getErrorMessageOrDefault(@NonNull Exception e, String defaultMessage) {
+    return e.getMessage() != null ? e.getMessage() : defaultMessage;
   }
 }
