@@ -19,6 +19,8 @@ package com.google.firebase.dataconnect.util
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.emptyDataConnectPath
 import com.google.firebase.dataconnect.testutil.DataConnectPath
+import com.google.firebase.dataconnect.testutil.isStructValue
+import com.google.firebase.dataconnect.testutil.map
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.dataConnectPath as dataConnectPathArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
@@ -26,8 +28,10 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
 import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
+import com.google.firebase.dataconnect.testutil.walk
 import com.google.firebase.dataconnect.util.ProtoGraft.withGraftedInStructs
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
+import com.google.firebase.dataconnect.withAddedField
 import com.google.firebase.dataconnect.withAddedListIndex
 import com.google.protobuf.Struct
 import io.kotest.assertions.assertSoftly
@@ -40,6 +44,8 @@ import io.kotest.property.PropTestConfig
 import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.list
+import io.kotest.property.arbitrary.map
+import io.kotest.property.arbitrary.of
 import io.kotest.property.checkAll
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
@@ -113,6 +119,79 @@ class ProtoGraftUnitTest {
           exception.message shouldContainWithNonAbuttingTextIgnoringCase
             "must have a field as the last path segment"
         }
+      }
+    }
+
+  @Test
+  fun `withGraftedInStructs() when structsByPath contains existing destination key in root struct should throw`() =
+    runTest {
+      val structArb = Arb.proto.struct()
+      val nonEmptyStructArb = structArb.filterNot { it.struct.fieldsCount == 0 }
+      checkAll(propTestConfig, nonEmptyStructArb, structArb) { struct, structToGraft ->
+        val destKeyPathSegment =
+          Arb.of(struct.struct.fieldsMap.keys.toList()).map(DataConnectPathSegment::Field).bind()
+        val structsByPath =
+          mapOf<DataConnectPath, Struct>(listOf(destKeyPathSegment) to structToGraft.struct)
+
+        val exception =
+          shouldThrow<ProtoGraft.KeyExistsException> {
+            struct.struct.withGraftedInStructs(structsByPath)
+          }
+
+        assertSoftly {
+          exception.message shouldContainWithNonAbuttingText "z77ec2cznn"
+          exception.message shouldContainWithNonAbuttingTextIgnoringCase
+            "structsByPath contains path=${destKeyPathSegment.field}"
+          exception.message shouldContainWithNonAbuttingTextIgnoringCase "already exists"
+        }
+      }
+    }
+
+  @Test
+  fun `withGraftedInStructs() when structsByPath contains paths of existin structs not including list indexes`() =
+    runTest {
+      val structArb = Arb.proto.struct()
+      checkAll(propTestConfig, structArb, Arb.list(structArb, 1..5)) { struct, structsToGraft ->
+        val usedKeysByPath =
+          struct.struct
+            .walk(includeSelf = true)
+            .filter { (path, _) -> path.all { it is DataConnectPathSegment.Field } }
+            .filter { (_, value) -> value.isStructValue }
+            .map { (path, value) -> Pair(path, value.structValue.fieldsMap.keys.toMutableSet()) }
+            .toList()
+        val insertedKeysByStructPath = mutableMapOf<DataConnectPath, MutableSet<String>>()
+        val structsByPath = buildMap {
+          structsToGraft.forEach { structToGraft ->
+            val (destStructPath, usedKeys) = usedKeysByPath.random(randomSource().random)
+            val destKey = Arb.proto.structKey().filterNot { usedKeys.contains(it) }.bind()
+            put(destStructPath.withAddedField(destKey), structToGraft.struct)
+            usedKeys.add(destKey)
+            insertedKeysByStructPath.getOrPut(destStructPath) { mutableSetOf() }.add(destKey)
+          }
+        }
+
+        val result = struct.struct.withGraftedInStructs(structsByPath)
+
+        var insertedKeysCount = 0
+        val expectedResult =
+          struct.struct.map { path, value ->
+            val insertedKeys = insertedKeysByStructPath[path]
+            if (insertedKeys === null) {
+              value
+            } else {
+              value.structValue.toBuilder().let { structBuilder ->
+                insertedKeys.forEach { insertedKey ->
+                  val insertedStructPath = path.withAddedField(insertedKey)
+                  val insertedStruct = checkNotNull(structsByPath[insertedStructPath])
+                  structBuilder.putFields(insertedKey, insertedStruct.toValueProto())
+                }
+                insertedKeysCount += insertedKeys.size
+                structBuilder.build().toValueProto()
+              }
+            }
+          }
+        check(insertedKeysCount == structsToGraft.size)
+        result shouldBe expectedResult
       }
     }
 

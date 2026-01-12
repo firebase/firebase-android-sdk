@@ -67,8 +67,9 @@ internal object ProtoGraft {
             is DataConnectPathSegment.ListIndex ->
               throw LastInsertPathSegmentNotFieldException(
                 "structsByPath contains path=${fullDestPath.toPathString()} whose last path " +
-                  "segment is list index ${lastPathSegment.index}, but all paths in structsByPath " +
-                  "must have a field as the last path segment, not a list index [qxgass8cvx]"
+                  "segment is list index ${lastPathSegment.index}, but all paths in " +
+                  "structsByPath must have a field as the last path segment, not a list index " +
+                  "[qxgass8cvx]"
               )
           }
 
