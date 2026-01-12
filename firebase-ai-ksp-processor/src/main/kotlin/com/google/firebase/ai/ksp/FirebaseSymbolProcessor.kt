@@ -33,11 +33,9 @@ import com.google.devtools.ksp.symbol.Modifier
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FileSpec
-import com.squareup.kotlinpoet.KModifier
+import com.squareup.kotlinpoet.FunSpec
 import com.squareup.kotlinpoet.ParameterizedTypeName
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
-import com.squareup.kotlinpoet.PropertySpec
-import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.toTypeName
 import com.squareup.kotlinpoet.ksp.writeTo
@@ -67,7 +65,7 @@ public class FirebaseSymbolProcessor(
       .getSymbolsWithAnnotation("com.google.firebase.ai.annotations.Tool")
       .filterIsInstance<KSFunctionDeclaration>()
       .map { it to FunctionSymbolProcessorVisitor(it, resolver) }
-      .forEach { (klass, visitor) -> visitor.visitFunctionDeclaration(klass, Unit) }
+      .forEach { (function, visitor) -> visitor.visitFunctionDeclaration(function, Unit) }
 
     return emptyList()
   }
@@ -149,36 +147,35 @@ public class FirebaseSymbolProcessor(
     }
 
     private fun generateFileSpec(functionDeclaration: KSFunctionDeclaration): FileSpec {
-      val generatedClassName =
+      val functionFileName =
         functionDeclaration.simpleName.asString().replaceFirstChar {
           if (it.isLowerCase()) it.titlecase(Locale.ROOT) else it.toString()
-        } + "GeneratedFunctionDeclaration"
-      return FileSpec.builder(functionDeclaration.packageName.asString(), generatedClassName)
+        } + "FirebaseAISchema"
+      val functionName = functionFileName.replaceFirstChar { it.lowercaseChar() }
+      val containingClassType =
+        ClassName(
+          functionDeclaration.packageName.asString(),
+          functionDeclaration.parentDeclaration!!.parentDeclaration!!.simpleName.asString() +
+            ".Companion"
+        )
+      return FileSpec.builder(functionDeclaration.packageName.asString(), functionFileName)
         .addImport("com.google.firebase.ai.type", "AutoFunctionDeclaration")
-        .addType(
-          TypeSpec.classBuilder(generatedClassName)
+        .addFunction(
+          FunSpec.builder(functionName)
             .addAnnotation(Generated::class)
-            .addType(
-              TypeSpec.companionObjectBuilder()
-                .addProperty(
-                  PropertySpec.builder(
-                      "FUNCTION_DECLARATION",
-                      ClassName("com.google.firebase.ai.type", "AutoFunctionDeclaration")
-                        .parameterizedBy(
-                          functionDeclaration.parameters.first().type.resolve().toClassName(),
-                          functionDeclaration.returnType?.resolve()?.toClassName()
-                            ?: ClassName("kotlinx.serialization.json", "JsonObject")
-                        ),
-                      KModifier.PUBLIC,
-                    )
-                    .mutable(false)
-                    .initializer(
-                      CodeBlock.builder()
-                        .add(generateCodeBlockForFunctionDeclaration(functionDeclaration))
-                        .build()
-                    )
-                    .build()
+            .receiver(containingClassType)
+            .returns(
+              ClassName("com.google.firebase.ai.type", "AutoFunctionDeclaration")
+                .parameterizedBy(
+                  functionDeclaration.parameters.first().type.resolve().toClassName(),
+                  functionDeclaration.returnType?.resolve()?.toClassName()
+                    ?: ClassName("kotlinx.serialization.json", "JsonObject")
                 )
+            )
+            .addCode(
+              CodeBlock.builder()
+                .add("return ")
+                .add(generateCodeBlockForFunctionDeclaration(functionDeclaration))
                 .build()
             )
             .build()
@@ -205,7 +202,7 @@ public class FirebaseSymbolProcessor(
       val inputSchemaName =
         "${
           functionDeclaration.parameters.first().type.resolve().toClassName().canonicalName
-        }GeneratedSchema.SCHEMA"
+        }.firebaseAISchema()"
       builder
         .addStatement("AutoFunctionDeclaration.create(")
         .indent()
@@ -216,7 +213,7 @@ public class FirebaseSymbolProcessor(
         val outputSchemaName =
           "${
             functionDeclaration.returnType!!.resolve().toClassName().canonicalName
-          }GeneratedSchema.SCHEMA"
+          }.firebaseAISchema()"
         builder.addStatement("outputSchema = $outputSchemaName,")
       }
       builder.addStatement(
@@ -255,33 +252,28 @@ public class FirebaseSymbolProcessor(
           "${classDeclaration.simpleName.asString()}GeneratedSchema",
         )
         .addImport("com.google.firebase.ai.type", "JsonSchema")
-        .addType(
-          TypeSpec.classBuilder("${classDeclaration.simpleName.asString()}GeneratedSchema")
-            .addAnnotation(Generated::class)
-            .addType(
-              TypeSpec.companionObjectBuilder()
-                .addProperty(
-                  PropertySpec.builder(
-                      "SCHEMA",
-                      ClassName("com.google.firebase.ai.type", "JsonSchema")
-                        .parameterizedBy(
-                          ClassName(
-                            classDeclaration.packageName.asString(),
-                            classDeclaration.simpleName.asString()
-                          )
-                        ),
-                      KModifier.PUBLIC,
-                    )
-                    .mutable(false)
-                    .initializer(
-                      CodeBlock.builder()
-                        .add(
-                          generateCodeBlockForSchema(type = classDeclaration.asType(emptyList()))
-                        )
-                        .build()
-                    )
-                    .build()
+        .addFunction(
+          FunSpec.builder("firebaseAISchema")
+            .receiver(
+              ClassName(
+                classDeclaration.packageName.asString(),
+                classDeclaration.simpleName.asString() + ".Companion"
+              )
+            )
+            .returns(
+              ClassName("com.google.firebase.ai.type", "JsonSchema")
+                .parameterizedBy(
+                  ClassName(
+                    classDeclaration.packageName.asString(),
+                    classDeclaration.simpleName.asString()
+                  )
                 )
+            )
+            .addAnnotation(Generated::class)
+            .addCode(
+              CodeBlock.builder()
+                .add("return ")
+                .add(generateCodeBlockForSchema(type = classDeclaration.asType(emptyList())))
                 .build()
             )
             .build()
