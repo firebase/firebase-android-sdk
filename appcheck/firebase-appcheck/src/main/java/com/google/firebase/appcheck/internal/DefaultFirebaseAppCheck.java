@@ -213,7 +213,7 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
                         new FirebaseException(
                             getErrorMessageOrDefault(
                                 appCheckTokenTask.getException(),
-                                "Unknown error generating AppCheck token"),
+                                "Unknown error generating App Check token"),
                             appCheckTokenTask.getException())));
               });
         });
@@ -238,7 +238,7 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
                       new FirebaseException(
                           getErrorMessageOrDefault(
                               appCheckTokenTask.getException(),
-                              "Unknown error generating limited use AppCheck token"),
+                              "Unknown error generating limited use App Check token"),
                           appCheckTokenTask.getException())));
             });
   }
