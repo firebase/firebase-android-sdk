@@ -256,7 +256,12 @@ public class Chat(
 
   private fun addTextToHistory(tempHistory: MutableList<Content>, textPart: TextPart) {
     val lastContent = tempHistory.lastOrNull()
-    if (lastContent?.role == "model" && lastContent.parts.any { it is TextPart }) {
+    val lastTextPart = lastContent?.parts?.first { it is TextPart }
+    if (
+      lastContent?.role == "model" &&
+        lastTextPart != null &&
+        lastTextPart.isThought == textPart.isThought
+    ) {
       tempHistory.removeLast()
       val editedContent =
         Content(
@@ -264,7 +269,7 @@ public class Chat(
           lastContent.parts.map {
             when (it) {
               is TextPart -> {
-                TextPart(it.text + textPart.text)
+                TextPart(it.text + textPart.text, textPart.isThought, null)
               }
               else -> {
                 it
