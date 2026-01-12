@@ -58,6 +58,7 @@ val Project.javadocConfig: Configuration
  * Used to fetch the dackka-fat jar at runtime versus needing to explicitly specify it in project
  * dependencies.
  */
+/*
 val Project.dackkaConfig: Configuration
   get() =
     configurations.findByName("dackkaArtifacts")
@@ -66,6 +67,7 @@ val Project.dackkaConfig: Configuration
           this@dackkaConfig.dependencies.create("com.google.devsite:dackka-fat:1.2.0")
         )
       }
+ */
 
 /**
  * The [FirebaseLibraryExtension] for this [Project].

@@ -21,6 +21,14 @@ jobs:
           distribution: temurin
           cache: gradle
 
+      - uses: google-github-actions/setup-gcloud@77e7a554d41e2ee56fc945c52dfd3f33d12def9a # v2.1.4
+
+      - name: Download Dackka
+        env:
+          EXPERIMENTAL_MODE: true
+        run: |
+          gcloud storage cp gs://android-ci/mvn/com/google/devsite/dackka-fat/1.2.0/dackka-fat-1.2.0.jar ./dackka-fat-1.2.0.jar
+
       - name: Perform gradle build
         run: |
           ./gradlew firebasePublish

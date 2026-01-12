@@ -1,7 +1,5 @@
 # Unreleased
 
-# 26.1.0
-
 - [feature] Firestore Pipelines for Enterprise edition enters public preview.
   [#7590](//github.com/firebase/firebase-android-sdk/pull/7590)
 
