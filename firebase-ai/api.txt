@@ -73,6 +73,8 @@ package com.google.firebase.ai {
     method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.type.GenerateContentResponse> generateContentStream(com.google.firebase.ai.type.Content prompt, com.google.firebase.ai.type.Content... prompts);
     method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.type.GenerateContentResponse> generateContentStream(String prompt);
     method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.type.GenerateContentResponse> generateContentStream(java.util.List<com.google.firebase.ai.type.Content> prompt);
+    method public suspend <T> Object? generateObject(com.google.firebase.ai.type.JsonSchema<T> jsonSchema, com.google.firebase.ai.type.Content prompt, com.google.firebase.ai.type.Content[] prompts, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.GenerateObjectResponse<T>>);
+    method public suspend <T> Object? generateObject(com.google.firebase.ai.type.JsonSchema<T> jsonSchema, String prompt, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.GenerateObjectResponse<T>>);
     method public com.google.firebase.ai.Chat startChat(java.util.List<com.google.firebase.ai.type.Content> history = emptyList());
   }
 
@@ -94,6 +96,37 @@ package com.google.firebase.ai {
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class TemplateImagenModel {
     method public suspend Object? generateImages(String templateId, java.util.Map<java.lang.String,?> inputs, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>>);
+  }
+
+}
+
+package com.google.firebase.ai.annotations {
+
+  @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.SOURCE) @kotlin.annotation.Target(allowedTargets=kotlin.annotation.AnnotationTarget.CLASS) public @interface Generable {
+    method public abstract String description() default "";
+    property public abstract String description;
+  }
+
+  @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.SOURCE) @kotlin.annotation.Target(allowedTargets=kotlin.annotation.AnnotationTarget.PROPERTY) public @interface Guide {
+    method public abstract String description() default "";
+    method public abstract String format() default "";
+    method public abstract int maxItems() default -1;
+    method public abstract double maximum() default -1.0;
+    method public abstract int minItems() default -1;
+    method public abstract double minimum() default -1.0;
+    method public abstract String pattern() default "";
+    property public abstract String description;
+    property public abstract String format;
+    property public abstract int maxItems;
+    property public abstract double maximum;
+    property public abstract int minItems;
+    property public abstract double minimum;
+    property public abstract String pattern;
+  }
+
+  @kotlin.annotation.Retention(kotlin.annotation.AnnotationRetention.SOURCE) @kotlin.annotation.Target(allowedTargets=kotlin.annotation.AnnotationTarget.FUNCTION) public @interface Tool {
+    method public abstract String description() default "";
+    property public abstract String description;
   }
 
 }
@@ -216,6 +249,25 @@ package com.google.firebase.ai.type {
 
   public final class AudioTranscriptionConfig {
     ctor public AudioTranscriptionConfig();
+  }
+
+  public final class AutoFunctionDeclaration<I, O> {
+    method public String getDescription();
+    method public kotlin.jvm.functions.Function2<I,kotlin.coroutines.Continuation<? super O>,java.lang.Object?>? getFunctionReference();
+    method public com.google.firebase.ai.type.JsonSchema<I> getInputSchema();
+    method public String getName();
+    method public com.google.firebase.ai.type.JsonSchema<O>? getOutputSchema();
+    property public final String description;
+    property public final kotlin.jvm.functions.Function2<I,kotlin.coroutines.Continuation<? super O>,java.lang.Object?>? functionReference;
+    property public final com.google.firebase.ai.type.JsonSchema<I> inputSchema;
+    property public final String name;
+    property public final com.google.firebase.ai.type.JsonSchema<O>? outputSchema;
+    field public static final com.google.firebase.ai.type.AutoFunctionDeclaration.Companion Companion;
+  }
+
+  public static final class AutoFunctionDeclaration.Companion {
+    method public <I, O> com.google.firebase.ai.type.AutoFunctionDeclaration<I,O> create(String functionName, String description, com.google.firebase.ai.type.JsonSchema<I> inputSchema, com.google.firebase.ai.type.JsonSchema<O> outputSchema, kotlin.jvm.functions.Function1<? super I,? extends O>? functionReference = null);
+    method public <I> com.google.firebase.ai.type.AutoFunctionDeclaration<I,kotlinx.serialization.json.JsonObject> create(String functionName, String description, com.google.firebase.ai.type.JsonSchema<I> inputSchema, kotlin.jvm.functions.Function1<? super I,kotlinx.serialization.json.JsonObject>? functionReference = null);
   }
 
   public final class BlockReason {
@@ -391,6 +443,10 @@ package com.google.firebase.ai.type {
   public abstract class FirebaseAIException extends java.lang.RuntimeException {
   }
 
+  public final class FirebaseAutoFunctionException extends com.google.firebase.ai.type.FirebaseAIException {
+    ctor public FirebaseAutoFunctionException(String message);
+  }
+
   public final class FunctionCallPart implements com.google.firebase.ai.type.Part {
     ctor public FunctionCallPart(String name, java.util.Map<java.lang.String,? extends kotlinx.serialization.json.JsonElement> args);
     ctor public FunctionCallPart(String name, java.util.Map<java.lang.String,? extends kotlinx.serialization.json.JsonElement> args, String? id = null);
@@ -454,12 +510,19 @@ package com.google.firebase.ai.type {
     property public final com.google.firebase.ai.type.UsageMetadata? usageMetadata;
   }
 
+  public final class GenerateObjectResponse<T> {
+    method public T? getObject(int candidateIndex = 0);
+    method public com.google.firebase.ai.type.GenerateContentResponse getResponse();
+    property public final com.google.firebase.ai.type.GenerateContentResponse response;
+  }
+
   public final class GenerationConfig {
+    method public static com.google.firebase.ai.type.GenerationConfig.Builder builder();
+    method public com.google.firebase.ai.type.GenerationConfig.Builder toBuilder();
     field public static final com.google.firebase.ai.type.GenerationConfig.Companion Companion;
   }
 
   public static final class GenerationConfig.Builder {
-    ctor public GenerationConfig.Builder();
     method public com.google.firebase.ai.type.GenerationConfig build();
     method public com.google.firebase.ai.type.GenerationConfig.Builder setCandidateCount(Integer? candidateCount);
     method public com.google.firebase.ai.type.GenerationConfig.Builder setFrequencyPenalty(Float? frequencyPenalty);
@@ -468,6 +531,7 @@ package com.google.firebase.ai.type {
     method public com.google.firebase.ai.type.GenerationConfig.Builder setResponseMimeType(String? responseMimeType);
     method public com.google.firebase.ai.type.GenerationConfig.Builder setResponseModalities(java.util.List<com.google.firebase.ai.type.ResponseModality>? responseModalities);
     method public com.google.firebase.ai.type.GenerationConfig.Builder setResponseSchema(com.google.firebase.ai.type.Schema? responseSchema);
+    method public com.google.firebase.ai.type.GenerationConfig.Builder setResponseSchemaJson(com.google.firebase.ai.type.JsonSchema<? extends java.lang.Object?>? responseSchemaJson);
     method public com.google.firebase.ai.type.GenerationConfig.Builder setStopSequences(java.util.List<java.lang.String>? stopSequences);
     method public com.google.firebase.ai.type.GenerationConfig.Builder setTemperature(Float? temperature);
     method public com.google.firebase.ai.type.GenerationConfig.Builder setThinkingConfig(com.google.firebase.ai.type.ThinkingConfig? thinkingConfig);
@@ -477,6 +541,7 @@ package com.google.firebase.ai.type {
     field public Float? frequencyPenalty;
     field public Integer? maxOutputTokens;
     field public Float? presencePenalty;
+    field public com.google.firebase.ai.type.JsonSchema<? extends java.lang.Object?>? responseJsonSchema;
     field public String? responseMimeType;
     field public java.util.List<com.google.firebase.ai.type.ResponseModality>? responseModalities;
     field public com.google.firebase.ai.type.Schema? responseSchema;
@@ -875,6 +940,161 @@ package com.google.firebase.ai.type {
   public final class InvalidStateException extends com.google.firebase.ai.type.FirebaseAIException {
   }
 
+  public final class JsonSchema<T> {
+    method public static com.google.firebase.ai.type.JsonSchema<java.lang.String> anyOf(java.util.List<? extends com.google.firebase.ai.type.JsonSchema<? extends java.lang.Object?>> schemas);
+    method public static com.google.firebase.ai.type.JsonSchema<java.util.List<? extends java.lang.Object?>> array(com.google.firebase.ai.type.JsonSchema<? extends java.lang.Object?> items);
+    method public static com.google.firebase.ai.type.JsonSchema<java.util.List<? extends java.lang.Object?>> array(com.google.firebase.ai.type.JsonSchema<? extends java.lang.Object?> items, String? description = null);
+    method public static com.google.firebase.ai.type.JsonSchema<java.util.List<? extends java.lang.Object?>> array(com.google.firebase.ai.type.JsonSchema<? extends java.lang.Object?> items, String? description = null, boolean nullable = false);
+    method public static com.google.firebase.ai.type.JsonSchema<java.util.List<? extends java.lang.Object?>> array(com.google.firebase.ai.type.JsonSchema<? extends java.lang.Object?> items, String? description = null, boolean nullable = false, String? title = null);
+    method public static com.google.firebase.ai.type.JsonSchema<java.util.List<? extends java.lang.Object?>> array(com.google.firebase.ai.type.JsonSchema<? extends java.lang.Object?> items, String? description = null, boolean nullable = false, String? title = null, Integer? minItems = null);
+    method public static com.google.firebase.ai.type.JsonSchema<java.util.List<? extends java.lang.Object?>> array(com.google.firebase.ai.type.JsonSchema<? extends java.lang.Object?> items, String? description = null, boolean nullable = false, String? title = null, Integer? minItems = null, Integer? maxItems = null);
+    method public static com.google.firebase.ai.type.JsonSchema<java.lang.Boolean> bool();
+    method public static com.google.firebase.ai.type.JsonSchema<java.lang.Boolean> bool(String? description = null);
+    method public static com.google.firebase.ai.type.JsonSchema<java.lang.Boolean> bool(String? description = null, boolean nullable = false);
+    method public static com.google.firebase.ai.type.JsonSchema<java.lang.Boolean> bool(String? description = null, boolean nullable = false, String? title = null);
+    method public static com.google.firebase.ai.type.JsonSchema<java.lang.String> enumeration(java.util.List<java.lang.String> values);
+    method public static com.google.firebase.ai.type.JsonSchema<java.lang.String> enumeration(java.util.List<java.lang.String> values, String? description = null);
+    method public static com.google.firebase.ai.type.JsonSchema<java.lang.String> enumeration(java.util.List<java.lang.String> values, String? description = null, boolean nullable = false);
+    method public static com.google.firebase.ai.type.JsonSchema<java.lang.String> enumeration(java.util.List<java.lang.String> values, String? description = null, boolean nullable = false, String? title = null);
+    method public static <T> com.google.firebase.ai.type.JsonSchema<T> enumeration(java.util.List<java.lang.String> values, kotlin.reflect.KClass<T> clazz);
+    method public static <T> com.google.firebase.ai.type.JsonSchema<T> enumeration(java.util.List<java.lang.String> values, kotlin.reflect.KClass<T> clazz, String? description = null);
+    method public static <T> com.google.firebase.ai.type.JsonSchema<T> enumeration(java.util.List<java.lang.String> values, kotlin.reflect.KClass<T> clazz, String? description = null, boolean nullable = false);
+    method public static <T> com.google.firebase.ai.type.JsonSchema<T> enumeration(java.util.List<java.lang.String> values, kotlin.reflect.KClass<T> clazz, String? description = null, boolean nullable = false, String? title = null);
+    method public java.util.List<com.google.firebase.ai.type.JsonSchema<? extends java.lang.Object?>>? getAnyOf();
+    method public kotlin.reflect.KClass<T> getClazz();
+    method public String? getDescription();
+    method public java.util.List<java.lang.String>? getEnum();
+    method public String? getFormat();
+    method public com.google.firebase.ai.type.JsonSchema<? extends java.lang.Object?>? getItems();
+    method public Integer? getMaxItems();
+    method public Double? getMaximum();
+    method public Integer? getMinItems();
+    method public Double? getMinimum();
+    method public Boolean? getNullable();
+    method public String? getPattern();
+    method public java.util.Map<java.lang.String,com.google.firebase.ai.type.JsonSchema<? extends java.lang.Object?>>? getProperties();
+    method public java.util.List<java.lang.String>? getRequired();
+    method public String? getTitle();
+    method public String getType();
+    method public static com.google.firebase.ai.type.JsonSchema<java.lang.Double> numDouble();
+    method public static com.google.firebase.ai.type.JsonSchema<java.lang.Double> numDouble(String? description = null);
+    method public static com.google.firebase.ai.type.JsonSchema<java.lang.Double> numDouble(String? description = null, boolean nullable = false);
+    method public static com.google.firebase.ai.type.JsonSchema<java.lang.Double> numDouble(String? description = null, boolean nullable = false, String? title = null);
+    method public static com.google.firebase.ai.type.JsonSchema<java.lang.Double> numDouble(String? description = null, boolean nullable = false, String? title = null, Double? minimum = null);
+    method public static com.google.firebase.ai.type.JsonSchema<java.lang.Double> numDouble(String? description = null, boolean nullable = false, String? title = null, Double? minimum = null, Double? maximum = null);
+    method public static com.google.firebase.ai.type.JsonSchema<java.lang.Float> numFloat();
+    method public static com.google.firebase.ai.type.JsonSchema<java.lang.Float> numFloat(String? description = null);
+    method public static com.google.firebase.ai.type.JsonSchema<java.lang.Float> numFloat(String? description = null, boolean nullable = false);
+    method public static com.google.firebase.ai.type.JsonSchema<java.lang.Float> numFloat(String? description = null, boolean nullable = false, String? title = null);
+    method public static com.google.firebase.ai.type.JsonSchema<java.lang.Float> numFloat(String? description = null, boolean nullable = false, String? title = null, Double? minimum = null);
+    method public static com.google.firebase.ai.type.JsonSchema<java.lang.Float> numFloat(String? description = null, boolean nullable = false, String? title = null, Double? minimum = null, Double? maximum = null);
+    method public static com.google.firebase.ai.type.JsonSchema<java.lang.Integer> numInt();
+    method public static com.google.firebase.ai.type.JsonSchema<java.lang.Integer> numInt(String? description = null);
+    method public static com.google.firebase.ai.type.JsonSchema<java.lang.Integer> numInt(String? description = null, boolean nullable = false);
+    method public static com.google.firebase.ai.type.JsonSchema<java.lang.Integer> numInt(String? description = null, boolean nullable = false, String? title = null);
+    method public static com.google.firebase.ai.type.JsonSchema<java.lang.Integer> numInt(String? description = null, boolean nullable = false, String? title = null, Double? minimum = null);
+    method public static com.google.firebase.ai.type.JsonSchema<java.lang.Integer> numInt(String? description = null, boolean nullable = false, String? title = null, Double? minimum = null, Double? maximum = null);
+    method public static com.google.firebase.ai.type.JsonSchema<java.lang.Long> numLong();
+    method public static com.google.firebase.ai.type.JsonSchema<java.lang.Long> numLong(String? description = null);
+    method public static com.google.firebase.ai.type.JsonSchema<java.lang.Long> numLong(String? description = null, boolean nullable = false);
+    method public static com.google.firebase.ai.type.JsonSchema<java.lang.Long> numLong(String? description = null, boolean nullable = false, String? title = null);
+    method public static com.google.firebase.ai.type.JsonSchema<java.lang.Long> numLong(String? description = null, boolean nullable = false, String? title = null, Double? minimum = null);
+    method public static com.google.firebase.ai.type.JsonSchema<java.lang.Long> numLong(String? description = null, boolean nullable = false, String? title = null, Double? minimum = null, Double? maximum = null);
+    method public static com.google.firebase.ai.type.JsonSchema<kotlinx.serialization.json.JsonObject> obj(java.util.Map<java.lang.String,? extends com.google.firebase.ai.type.JsonSchema<? extends java.lang.Object?>> properties);
+    method public static com.google.firebase.ai.type.JsonSchema<kotlinx.serialization.json.JsonObject> obj(java.util.Map<java.lang.String,? extends com.google.firebase.ai.type.JsonSchema<? extends java.lang.Object?>> properties, java.util.List<java.lang.String> optionalProperties = emptyList());
+    method public static com.google.firebase.ai.type.JsonSchema<kotlinx.serialization.json.JsonObject> obj(java.util.Map<java.lang.String,? extends com.google.firebase.ai.type.JsonSchema<? extends java.lang.Object?>> properties, java.util.List<java.lang.String> optionalProperties = emptyList(), String? description = null);
+    method public static com.google.firebase.ai.type.JsonSchema<kotlinx.serialization.json.JsonObject> obj(java.util.Map<java.lang.String,? extends com.google.firebase.ai.type.JsonSchema<? extends java.lang.Object?>> properties, java.util.List<java.lang.String> optionalProperties = emptyList(), String? description = null, boolean nullable = false);
+    method public static com.google.firebase.ai.type.JsonSchema<kotlinx.serialization.json.JsonObject> obj(java.util.Map<java.lang.String,? extends com.google.firebase.ai.type.JsonSchema<? extends java.lang.Object?>> properties, java.util.List<java.lang.String> optionalProperties = emptyList(), String? description = null, boolean nullable = false, String? title = null);
+    method public static <T> com.google.firebase.ai.type.JsonSchema<T> obj(java.util.Map<java.lang.String,? extends com.google.firebase.ai.type.JsonSchema<? extends java.lang.Object?>> properties, kotlin.reflect.KClass<T> clazz);
+    method public static <T> com.google.firebase.ai.type.JsonSchema<T> obj(java.util.Map<java.lang.String,? extends com.google.firebase.ai.type.JsonSchema<? extends java.lang.Object?>> properties, kotlin.reflect.KClass<T> clazz, java.util.List<java.lang.String> optionalProperties = emptyList());
+    method public static <T> com.google.firebase.ai.type.JsonSchema<T> obj(java.util.Map<java.lang.String,? extends com.google.firebase.ai.type.JsonSchema<? extends java.lang.Object?>> properties, kotlin.reflect.KClass<T> clazz, java.util.List<java.lang.String> optionalProperties = emptyList(), String? description = null);
+    method public static <T> com.google.firebase.ai.type.JsonSchema<T> obj(java.util.Map<java.lang.String,? extends com.google.firebase.ai.type.JsonSchema<? extends java.lang.Object?>> properties, kotlin.reflect.KClass<T> clazz, java.util.List<java.lang.String> optionalProperties = emptyList(), String? description = null, boolean nullable = false);
+    method public static <T> com.google.firebase.ai.type.JsonSchema<T> obj(java.util.Map<java.lang.String,? extends com.google.firebase.ai.type.JsonSchema<? extends java.lang.Object?>> properties, kotlin.reflect.KClass<T> clazz, java.util.List<java.lang.String> optionalProperties = emptyList(), String? description = null, boolean nullable = false, String? title = null);
+    method public static com.google.firebase.ai.type.JsonSchema<java.lang.String> string();
+    method public static com.google.firebase.ai.type.JsonSchema<java.lang.String> string(String? description = null);
+    method public static com.google.firebase.ai.type.JsonSchema<java.lang.String> string(String? description = null, boolean nullable = false);
+    method public static com.google.firebase.ai.type.JsonSchema<java.lang.String> string(String? description = null, boolean nullable = false, com.google.firebase.ai.type.StringFormat? format = null);
+    method public static com.google.firebase.ai.type.JsonSchema<java.lang.String> string(String? description = null, boolean nullable = false, com.google.firebase.ai.type.StringFormat? format = null, String? title = null);
+    property public final java.util.List<com.google.firebase.ai.type.JsonSchema<? extends java.lang.Object?>>? anyOf;
+    property public final kotlin.reflect.KClass<T> clazz;
+    property public final String? description;
+    property public final java.util.List<java.lang.String>? enum;
+    property public final String? format;
+    property public final com.google.firebase.ai.type.JsonSchema<? extends java.lang.Object?>? items;
+    property public final Integer? maxItems;
+    property public final Double? maximum;
+    property public final Integer? minItems;
+    property public final Double? minimum;
+    property public final Boolean? nullable;
+    property public final String? pattern;
+    property public final java.util.Map<java.lang.String,com.google.firebase.ai.type.JsonSchema<? extends java.lang.Object?>>? properties;
+    property public final java.util.List<java.lang.String>? required;
+    property public final String? title;
+    property public final String type;
+    field public static final com.google.firebase.ai.type.JsonSchema.Companion Companion;
+  }
+
+  public static final class JsonSchema.Companion {
+    method public com.google.firebase.ai.type.JsonSchema<java.lang.String> anyOf(java.util.List<? extends com.google.firebase.ai.type.JsonSchema<? extends java.lang.Object?>> schemas);
+    method public com.google.firebase.ai.type.JsonSchema<java.util.List<? extends java.lang.Object?>> array(com.google.firebase.ai.type.JsonSchema<? extends java.lang.Object?> items);
+    method public com.google.firebase.ai.type.JsonSchema<java.util.List<? extends java.lang.Object?>> array(com.google.firebase.ai.type.JsonSchema<? extends java.lang.Object?> items, String? description = null);
+    method public com.google.firebase.ai.type.JsonSchema<java.util.List<? extends java.lang.Object?>> array(com.google.firebase.ai.type.JsonSchema<? extends java.lang.Object?> items, String? description = null, boolean nullable = false);
+    method public com.google.firebase.ai.type.JsonSchema<java.util.List<? extends java.lang.Object?>> array(com.google.firebase.ai.type.JsonSchema<? extends java.lang.Object?> items, String? description = null, boolean nullable = false, String? title = null);
+    method public com.google.firebase.ai.type.JsonSchema<java.util.List<? extends java.lang.Object?>> array(com.google.firebase.ai.type.JsonSchema<? extends java.lang.Object?> items, String? description = null, boolean nullable = false, String? title = null, Integer? minItems = null);
+    method public com.google.firebase.ai.type.JsonSchema<java.util.List<? extends java.lang.Object?>> array(com.google.firebase.ai.type.JsonSchema<? extends java.lang.Object?> items, String? description = null, boolean nullable = false, String? title = null, Integer? minItems = null, Integer? maxItems = null);
+    method public com.google.firebase.ai.type.JsonSchema<java.lang.Boolean> bool();
+    method public com.google.firebase.ai.type.JsonSchema<java.lang.Boolean> bool(String? description = null);
+    method public com.google.firebase.ai.type.JsonSchema<java.lang.Boolean> bool(String? description = null, boolean nullable = false);
+    method public com.google.firebase.ai.type.JsonSchema<java.lang.Boolean> bool(String? description = null, boolean nullable = false, String? title = null);
+    method public com.google.firebase.ai.type.JsonSchema<java.lang.String> enumeration(java.util.List<java.lang.String> values);
+    method public com.google.firebase.ai.type.JsonSchema<java.lang.String> enumeration(java.util.List<java.lang.String> values, String? description = null);
+    method public com.google.firebase.ai.type.JsonSchema<java.lang.String> enumeration(java.util.List<java.lang.String> values, String? description = null, boolean nullable = false);
+    method public com.google.firebase.ai.type.JsonSchema<java.lang.String> enumeration(java.util.List<java.lang.String> values, String? description = null, boolean nullable = false, String? title = null);
+    method public <T> com.google.firebase.ai.type.JsonSchema<T> enumeration(java.util.List<java.lang.String> values, kotlin.reflect.KClass<T> clazz);
+    method public <T> com.google.firebase.ai.type.JsonSchema<T> enumeration(java.util.List<java.lang.String> values, kotlin.reflect.KClass<T> clazz, String? description = null);
+    method public <T> com.google.firebase.ai.type.JsonSchema<T> enumeration(java.util.List<java.lang.String> values, kotlin.reflect.KClass<T> clazz, String? description = null, boolean nullable = false);
+    method public <T> com.google.firebase.ai.type.JsonSchema<T> enumeration(java.util.List<java.lang.String> values, kotlin.reflect.KClass<T> clazz, String? description = null, boolean nullable = false, String? title = null);
+    method public com.google.firebase.ai.type.JsonSchema<java.lang.Double> numDouble();
+    method public com.google.firebase.ai.type.JsonSchema<java.lang.Double> numDouble(String? description = null);
+    method public com.google.firebase.ai.type.JsonSchema<java.lang.Double> numDouble(String? description = null, boolean nullable = false);
+    method public com.google.firebase.ai.type.JsonSchema<java.lang.Double> numDouble(String? description = null, boolean nullable = false, String? title = null);
+    method public com.google.firebase.ai.type.JsonSchema<java.lang.Double> numDouble(String? description = null, boolean nullable = false, String? title = null, Double? minimum = null);
+    method public com.google.firebase.ai.type.JsonSchema<java.lang.Double> numDouble(String? description = null, boolean nullable = false, String? title = null, Double? minimum = null, Double? maximum = null);
+    method public com.google.firebase.ai.type.JsonSchema<java.lang.Float> numFloat();
+    method public com.google.firebase.ai.type.JsonSchema<java.lang.Float> numFloat(String? description = null);
+    method public com.google.firebase.ai.type.JsonSchema<java.lang.Float> numFloat(String? description = null, boolean nullable = false);
+    method public com.google.firebase.ai.type.JsonSchema<java.lang.Float> numFloat(String? description = null, boolean nullable = false, String? title = null);
+    method public com.google.firebase.ai.type.JsonSchema<java.lang.Float> numFloat(String? description = null, boolean nullable = false, String? title = null, Double? minimum = null);
+    method public com.google.firebase.ai.type.JsonSchema<java.lang.Float> numFloat(String? description = null, boolean nullable = false, String? title = null, Double? minimum = null, Double? maximum = null);
+    method public com.google.firebase.ai.type.JsonSchema<java.lang.Integer> numInt();
+    method public com.google.firebase.ai.type.JsonSchema<java.lang.Integer> numInt(String? description = null);
+    method public com.google.firebase.ai.type.JsonSchema<java.lang.Integer> numInt(String? description = null, boolean nullable = false);
+    method public com.google.firebase.ai.type.JsonSchema<java.lang.Integer> numInt(String? description = null, boolean nullable = false, String? title = null);
+    method public com.google.firebase.ai.type.JsonSchema<java.lang.Integer> numInt(String? description = null, boolean nullable = false, String? title = null, Double? minimum = null);
+    method public com.google.firebase.ai.type.JsonSchema<java.lang.Integer> numInt(String? description = null, boolean nullable = false, String? title = null, Double? minimum = null, Double? maximum = null);
+    method public com.google.firebase.ai.type.JsonSchema<java.lang.Long> numLong();
+    method public com.google.firebase.ai.type.JsonSchema<java.lang.Long> numLong(String? description = null);
+    method public com.google.firebase.ai.type.JsonSchema<java.lang.Long> numLong(String? description = null, boolean nullable = false);
+    method public com.google.firebase.ai.type.JsonSchema<java.lang.Long> numLong(String? description = null, boolean nullable = false, String? title = null);
+    method public com.google.firebase.ai.type.JsonSchema<java.lang.Long> numLong(String? description = null, boolean nullable = false, String? title = null, Double? minimum = null);
+    method public com.google.firebase.ai.type.JsonSchema<java.lang.Long> numLong(String? description = null, boolean nullable = false, String? title = null, Double? minimum = null, Double? maximum = null);
+    method public com.google.firebase.ai.type.JsonSchema<kotlinx.serialization.json.JsonObject> obj(java.util.Map<java.lang.String,? extends com.google.firebase.ai.type.JsonSchema<? extends java.lang.Object?>> properties);
+    method public com.google.firebase.ai.type.JsonSchema<kotlinx.serialization.json.JsonObject> obj(java.util.Map<java.lang.String,? extends com.google.firebase.ai.type.JsonSchema<? extends java.lang.Object?>> properties, java.util.List<java.lang.String> optionalProperties = emptyList());
+    method public com.google.firebase.ai.type.JsonSchema<kotlinx.serialization.json.JsonObject> obj(java.util.Map<java.lang.String,? extends com.google.firebase.ai.type.JsonSchema<? extends java.lang.Object?>> properties, java.util.List<java.lang.String> optionalProperties = emptyList(), String? description = null);
+    method public com.google.firebase.ai.type.JsonSchema<kotlinx.serialization.json.JsonObject> obj(java.util.Map<java.lang.String,? extends com.google.firebase.ai.type.JsonSchema<? extends java.lang.Object?>> properties, java.util.List<java.lang.String> optionalProperties = emptyList(), String? description = null, boolean nullable = false);
+    method public com.google.firebase.ai.type.JsonSchema<kotlinx.serialization.json.JsonObject> obj(java.util.Map<java.lang.String,? extends com.google.firebase.ai.type.JsonSchema<? extends java.lang.Object?>> properties, java.util.List<java.lang.String> optionalProperties = emptyList(), String? description = null, boolean nullable = false, String? title = null);
+    method public <T> com.google.firebase.ai.type.JsonSchema<T> obj(java.util.Map<java.lang.String,? extends com.google.firebase.ai.type.JsonSchema<? extends java.lang.Object?>> properties, kotlin.reflect.KClass<T> clazz);
+    method public <T> com.google.firebase.ai.type.JsonSchema<T> obj(java.util.Map<java.lang.String,? extends com.google.firebase.ai.type.JsonSchema<? extends java.lang.Object?>> properties, kotlin.reflect.KClass<T> clazz, java.util.List<java.lang.String> optionalProperties = emptyList());
+    method public <T> com.google.firebase.ai.type.JsonSchema<T> obj(java.util.Map<java.lang.String,? extends com.google.firebase.ai.type.JsonSchema<? extends java.lang.Object?>> properties, kotlin.reflect.KClass<T> clazz, java.util.List<java.lang.String> optionalProperties = emptyList(), String? description = null);
+    method public <T> com.google.firebase.ai.type.JsonSchema<T> obj(java.util.Map<java.lang.String,? extends com.google.firebase.ai.type.JsonSchema<? extends java.lang.Object?>> properties, kotlin.reflect.KClass<T> clazz, java.util.List<java.lang.String> optionalProperties = emptyList(), String? description = null, boolean nullable = false);
+    method public <T> com.google.firebase.ai.type.JsonSchema<T> obj(java.util.Map<java.lang.String,? extends com.google.firebase.ai.type.JsonSchema<? extends java.lang.Object?>> properties, kotlin.reflect.KClass<T> clazz, java.util.List<java.lang.String> optionalProperties = emptyList(), String? description = null, boolean nullable = false, String? title = null);
+    method public com.google.firebase.ai.type.JsonSchema<java.lang.String> string();
+    method public com.google.firebase.ai.type.JsonSchema<java.lang.String> string(String? description = null);
+    method public com.google.firebase.ai.type.JsonSchema<java.lang.String> string(String? description = null, boolean nullable = false);
+    method public com.google.firebase.ai.type.JsonSchema<java.lang.String> string(String? description = null, boolean nullable = false, com.google.firebase.ai.type.StringFormat? format = null);
+    method public com.google.firebase.ai.type.JsonSchema<java.lang.String> string(String? description = null, boolean nullable = false, com.google.firebase.ai.type.StringFormat? format = null, String? title = null);
+  }
+
   @com.google.firebase.ai.type.PublicPreviewAPI public final class LiveAudioConversationConfig {
     field public static final com.google.firebase.ai.type.LiveAudioConversationConfig.Companion Companion;
   }
@@ -1049,6 +1269,7 @@ package com.google.firebase.ai.type {
   public final class RequestOptions {
     ctor public RequestOptions();
     ctor public RequestOptions(long timeoutInMillis = 180.seconds.inWholeMilliseconds);
+    ctor public RequestOptions(long timeoutInMillis = 180.seconds.inWholeMilliseconds, int autoFunctionCallingTurnLimit = 10);
   }
 
   public final class RequestTimeoutException extends com.google.firebase.ai.type.FirebaseAIException {
@@ -1311,7 +1532,8 @@ package com.google.firebase.ai.type {
 
   public final class Tool {
     method public static com.google.firebase.ai.type.Tool codeExecution();
-    method public static com.google.firebase.ai.type.Tool functionDeclarations(java.util.List<com.google.firebase.ai.type.FunctionDeclaration> functionDeclarations);
+    method public static com.google.firebase.ai.type.Tool functionDeclarations(java.util.List<com.google.firebase.ai.type.FunctionDeclaration>? functionDeclarations = null);
+    method public static com.google.firebase.ai.type.Tool functionDeclarations(java.util.List<com.google.firebase.ai.type.FunctionDeclaration>? functionDeclarations = null, java.util.List<? extends com.google.firebase.ai.type.AutoFunctionDeclaration<? extends java.lang.Object?,? extends java.lang.Object?>>? autoFunctionDeclarations);
     method public static com.google.firebase.ai.type.Tool googleSearch(com.google.firebase.ai.type.GoogleSearch googleSearch = com.google.firebase.ai.type.GoogleSearch());
     method @com.google.firebase.ai.type.PublicPreviewAPI public static com.google.firebase.ai.type.Tool urlContext(com.google.firebase.ai.type.UrlContext urlContext = com.google.firebase.ai.type.UrlContext());
     field public static final com.google.firebase.ai.type.Tool.Companion Companion;
@@ -1319,7 +1541,8 @@ package com.google.firebase.ai.type {
 
   public static final class Tool.Companion {
     method public com.google.firebase.ai.type.Tool codeExecution();
-    method public com.google.firebase.ai.type.Tool functionDeclarations(java.util.List<com.google.firebase.ai.type.FunctionDeclaration> functionDeclarations);
+    method public com.google.firebase.ai.type.Tool functionDeclarations(java.util.List<com.google.firebase.ai.type.FunctionDeclaration>? functionDeclarations = null);
+    method public com.google.firebase.ai.type.Tool functionDeclarations(java.util.List<com.google.firebase.ai.type.FunctionDeclaration>? functionDeclarations = null, java.util.List<? extends com.google.firebase.ai.type.AutoFunctionDeclaration<? extends java.lang.Object?,? extends java.lang.Object?>>? autoFunctionDeclarations);
     method public com.google.firebase.ai.type.Tool googleSearch(com.google.firebase.ai.type.GoogleSearch googleSearch = com.google.firebase.ai.type.GoogleSearch());
     method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.type.Tool urlContext(com.google.firebase.ai.type.UrlContext urlContext = com.google.firebase.ai.type.UrlContext());
   }

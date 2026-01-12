@@ -18,18 +18,19 @@ package com.google.firebase.ai
 
 import android.graphics.Bitmap
 import com.google.firebase.ai.type.Content
+import com.google.firebase.ai.type.FunctionCallPart
+import com.google.firebase.ai.type.FunctionResponsePart
 import com.google.firebase.ai.type.GenerateContentResponse
-import com.google.firebase.ai.type.ImagePart
-import com.google.firebase.ai.type.InlineDataPart
 import com.google.firebase.ai.type.InvalidStateException
-import com.google.firebase.ai.type.Part
+import com.google.firebase.ai.type.RequestTimeoutException
 import com.google.firebase.ai.type.TextPart
 import com.google.firebase.ai.type.content
 import java.util.LinkedList
 import java.util.concurrent.Semaphore
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.onCompletion
-import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.transform
 
 /**
  * Representation of a multi-turn interaction with a model.
@@ -50,6 +51,7 @@ public class Chat(
   public val history: MutableList<Content> = ArrayList()
 ) {
   private var lock = Semaphore(1)
+  private var turns: Int = 0
 
   /**
    * Sends a message using the provided [prompt]; automatically providing the existing [history] as
@@ -66,14 +68,34 @@ public class Chat(
   public suspend fun sendMessage(prompt: Content): GenerateContentResponse {
     prompt.assertComesFromUser()
     attemptLock()
+    var response: GenerateContentResponse
     try {
-      val fullPrompt = history + prompt
-      val response = model.generateContent(fullPrompt.first(), *fullPrompt.drop(1).toTypedArray())
-      history.add(prompt)
-      history.add(response.candidates.first().content)
+      val tempHistory = mutableListOf(prompt)
+      while (true) {
+        response =
+          model.generateContent(listOf(*history.toTypedArray(), *tempHistory.toTypedArray()))
+        tempHistory.add(response.candidates.first().content)
+        val functionCallParts =
+          response.candidates.first().content.parts.filterIsInstance<FunctionCallPart>()
+
+        if (functionCallParts.isNotEmpty()) {
+          if (model.getTurnLimit() < ++turns) {
+            throw RequestTimeoutException("Request took too many turns", history = tempHistory)
+          }
+          if (functionCallParts.all { model.hasFunction(it) }) {
+            val functionResponsePart =
+              functionCallParts.map { FunctionResponsePart(it.name, model.executeFunction(it)) }
+            tempHistory.add(Content("function", functionResponsePart))
+          }
+        } else {
+          break
+        }
+      }
+      history.addAll(tempHistory)
       return response
     } finally {
       lock.release()
+      turns = 0
     }
   }
 
@@ -131,10 +153,8 @@ public class Chat(
 
     val fullPrompt = history + prompt
     val flow = model.generateContentStream(fullPrompt.first(), *fullPrompt.drop(1).toTypedArray())
-    val bitmaps = LinkedList<Bitmap>()
-    val inlineDataParts = LinkedList<InlineDataPart>()
-    val text = StringBuilder()
-    val parts = mutableListOf<Part>()
+    val tempHistory = LinkedList<Content>()
+    tempHistory.add(prompt)
 
     /**
      * TODO: revisit when images and inline data are returned. This will cause issues with how
@@ -142,28 +162,12 @@ public class Chat(
      * represented as image/text
      */
     return flow
-      .onEach {
-        for (part in it.candidates.first().content.parts) {
-          when (part) {
-            is TextPart -> text.append(part.text)
-            is ImagePart -> bitmaps.add(part.image)
-            is InlineDataPart -> inlineDataParts.add(part)
-          }
-          parts.add(part)
-        }
-      }
+      .transform { response -> automaticFunctionExecutingTransform(this, tempHistory, response) }
       .onCompletion {
+        turns = 0
         lock.release()
         if (it == null) {
-          val content =
-            content("model") {
-              setParts(
-                parts.filterNot { part -> part is TextPart && !part.hasContent() }.toMutableList()
-              )
-            }
-
-          history.add(prompt)
-          history.add(content)
+          history.addAll(tempHistory)
         }
       }
   }
@@ -204,6 +208,79 @@ public class Chat(
   public fun sendMessageStream(prompt: Bitmap): Flow<GenerateContentResponse> {
     val content = content { image(prompt) }
     return sendMessageStream(content)
+  }
+
+  private suspend fun automaticFunctionExecutingTransform(
+    transformer: FlowCollector<GenerateContentResponse>,
+    tempHistory: MutableList<Content>,
+    response: GenerateContentResponse
+  ) {
+    for (part in response.candidates.first().content.parts) {
+      when (part) {
+        is TextPart -> {
+          transformer.emit(response)
+          addTextToHistory(tempHistory, part)
+        }
+        is FunctionCallPart -> {
+          // do nothing
+        }
+        else -> {
+          transformer.emit(response)
+          tempHistory.add(Content("model", listOf(part)))
+        }
+      }
+    }
+    val functionCallParts =
+      response.candidates.first().content.parts.filterIsInstance<FunctionCallPart>()
+    if (functionCallParts.isNotEmpty()) {
+      if (functionCallParts.all { model.hasFunction(it) }) {
+        if (model.getTurnLimit() < ++turns) {
+          throw RequestTimeoutException("Request took too many turns", history = tempHistory)
+        }
+        val functionResponses =
+          Content(
+            "function",
+            functionCallParts.map { FunctionResponsePart(it.name, model.executeFunction(it)) }
+          )
+        tempHistory.add(Content("model", functionCallParts))
+        tempHistory.add(functionResponses)
+        model
+          .generateContentStream(listOf(*history.toTypedArray(), *tempHistory.toTypedArray()))
+          .collect { automaticFunctionExecutingTransform(transformer, tempHistory, it) }
+      } else {
+        transformer.emit(response)
+        tempHistory.add(Content("model", functionCallParts))
+      }
+    }
+  }
+
+  private fun addTextToHistory(tempHistory: MutableList<Content>, textPart: TextPart) {
+    val lastContent = tempHistory.lastOrNull()
+    val lastTextPart = lastContent?.parts?.first { it is TextPart }
+    if (
+      lastContent?.role == "model" &&
+        lastTextPart != null &&
+        lastTextPart.isThought == textPart.isThought
+    ) {
+      tempHistory.removeLast()
+      val editedContent =
+        Content(
+          "model",
+          lastContent.parts.map {
+            when (it) {
+              is TextPart -> {
+                TextPart(it.text + textPart.text, textPart.isThought, null)
+              }
+              else -> {
+                it
+              }
+            }
+          }
+        )
+      tempHistory.add(editedContent)
+      return
+    }
+    tempHistory.add(Content("model", listOf(textPart)))
   }
 
   private fun Content.assertComesFromUser() {

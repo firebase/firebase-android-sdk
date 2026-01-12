@@ -61,12 +61,14 @@ public class FunctionDeclaration(
   internal val schema: Schema =
     Schema.obj(properties = parameters, optionalProperties = optionalParameters, nullable = false)
 
-  internal fun toInternal() = Internal(name, description, schema.toInternalOpenApi())
+  internal fun toInternal() = Internal(name, description, schema.toInternalOpenApi(), null, null)
 
   @Serializable
   internal data class Internal(
     val name: String,
     val description: String,
-    val parameters: Schema.InternalOpenAPI
+    val parameters: Schema.InternalOpenAPI?,
+    val parametersJsonSchema: Schema.InternalJson?,
+    val responseJsonSchema: Schema.InternalJson?,
   )
 }
