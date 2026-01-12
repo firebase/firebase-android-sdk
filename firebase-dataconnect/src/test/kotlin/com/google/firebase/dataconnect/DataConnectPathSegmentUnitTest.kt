@@ -23,10 +23,15 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectAr
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.listIndexPathSegment as listIndexPathSegmentArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.pathSegment as dataConnectPathSegmentArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
+import com.google.firebase.dataconnect.testutil.property.arbitrary.next
 import com.google.firebase.dataconnect.testutil.property.arbitrary.twoValues
+import io.kotest.assertions.assertSoftly
+import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.comparables.shouldBeLessThan
+import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeSameInstanceAs
@@ -658,6 +663,21 @@ class DataConnectPathComparatorUnitTest {
       val pathsSorted2 = paths.sortedWith(DataConnectPathComparator)
 
       pathsSorted1 shouldBe pathsSorted2
+    }
+  }
+
+  @Test
+  fun `compare() orders prefix before suffix`() = runTest {
+    checkAll(propTestConfig, dataConnectPathArb(), dataConnectPathArb(size = 1..5)) { prefix, suffix
+      ->
+      assertSoftly {
+        withClue("compare(prefix, prefix + suffix)") {
+          DataConnectPathComparator.compare(prefix, prefix + suffix) shouldBeLessThan 0
+        }
+        withClue("compare(prefix + suffix, prefix)") {
+          DataConnectPathComparator.compare(prefix + suffix, prefix) shouldBeGreaterThan 0
+        }
+      }
     }
   }
 }
