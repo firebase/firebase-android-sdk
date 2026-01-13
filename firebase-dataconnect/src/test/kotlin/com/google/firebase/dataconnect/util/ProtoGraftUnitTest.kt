@@ -29,6 +29,7 @@ import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import com.google.firebase.dataconnect.testutil.walk
+import com.google.firebase.dataconnect.toPathString
 import com.google.firebase.dataconnect.util.ProtoGraft.withGraftedInStructs
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.firebase.dataconnect.withAddedField
@@ -114,37 +115,11 @@ class ProtoGraftUnitTest {
 
         assertSoftly {
           exception.message shouldContainWithNonAbuttingText "qxgass8cvx"
+          exception.message shouldContainWithNonAbuttingText graftPath.toPathString()
           exception.message shouldContainWithNonAbuttingTextIgnoringCase
-            "last path segment is list index $graftPathLastSegmentIndex"
+            "last segment is list index $graftPathLastSegmentIndex"
           exception.message shouldContainWithNonAbuttingTextIgnoringCase
-            "must have a field as the last path segment"
-        }
-      }
-    }
-
-  fun `withGraftedInStructs() when structsByPath contains paths starting with an index should throw`() =
-    runTest {
-      val structArb = Arb.proto.struct()
-      checkAll(propTestConfig, structArb, structArb, dataConnectPathArb(), Arb.int()) {
-        struct,
-        structToGraft,
-        graftPathSuffix,
-        graftPathFirstSegmentIndex ->
-        val graftPath =
-          listOf(DataConnectPathSegment.ListIndex(graftPathFirstSegmentIndex)) + graftPathSuffix
-        val structsByPath = mapOf(graftPath to structToGraft.struct)
-
-        val exception =
-          shouldThrow<ProtoGraft.FirstPathSegmentNotFieldException> {
-            struct.struct.withGraftedInStructs(structsByPath)
-          }
-
-        assertSoftly {
-          exception.message shouldContainWithNonAbuttingText "zuh5p2e98y"
-          exception.message shouldContainWithNonAbuttingTextIgnoringCase
-            "first path segment is list index $graftPathFirstSegmentIndex"
-          exception.message shouldContainWithNonAbuttingTextIgnoringCase
-            "must have a field as the first path segment"
+            "last segment must be a field"
         }
       }
     }
@@ -157,8 +132,8 @@ class ProtoGraftUnitTest {
       checkAll(propTestConfig, nonEmptyStructArb, structArb) { struct, structToGraft ->
         val destKeyPathSegment =
           Arb.of(struct.struct.fieldsMap.keys.toList()).map(DataConnectPathSegment::Field).bind()
-        val structsByPath =
-          mapOf<DataConnectPath, Struct>(listOf(destKeyPathSegment) to structToGraft.struct)
+        val path: DataConnectPath = listOf(destKeyPathSegment)
+        val structsByPath = mapOf(path to structToGraft.struct)
 
         val exception =
           shouldThrow<ProtoGraft.KeyExistsException> {
@@ -166,10 +141,13 @@ class ProtoGraftUnitTest {
           }
 
         assertSoftly {
-          exception.message shouldContainWithNonAbuttingText "z77ec2cznn"
+          exception.message shouldContainWithNonAbuttingText "ecgd5r2v4a"
+          exception.message shouldContainWithNonAbuttingText path.toPathString()
+          exception.message shouldContainWithNonAbuttingText path.dropLast(1).toPathString()
           exception.message shouldContainWithNonAbuttingTextIgnoringCase
-            "structsByPath contains path=${destKeyPathSegment.field}"
-          exception.message shouldContainWithNonAbuttingTextIgnoringCase "already exists"
+            "already has a field named ${destKeyPathSegment.field}"
+          exception.message shouldContainWithNonAbuttingTextIgnoringCase
+            "it is required to not already have that key"
         }
       }
     }

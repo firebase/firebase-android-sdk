@@ -90,15 +90,14 @@ internal object ProtoGraft {
       val structToGraft = mutableStructsByPath.getValue(path)
       val parentPath = path.dropLast(1)
 
-      val insertField =
-        when (val finalSegment = path.last()) {
-          is DataConnectPathSegment.Field -> finalSegment.field
+      val lastSegmentField =
+        when (val lastSegment = path.last()) {
+          is DataConnectPathSegment.Field -> lastSegment.field
           is DataConnectPathSegment.ListIndex ->
             throw LastPathSegmentNotFieldException(
-              "structsByPath contains path ${path.toPathString()} whose final segment " +
-                "is list index ${finalSegment.index}, but the final segment " +
-                "must be a field specifying the field to insert into the leaf struct, " +
-                "not a list index [qxgass8cvx]"
+              "structsByPath contains path ${path.toPathString()} whose last segment " +
+                "is list index ${lastSegment.index}, but the last segment " +
+                "must be a field, not a list index [qxgass8cvx]"
             )
         }
 
@@ -144,19 +143,19 @@ internal object ProtoGraft {
         (currentNode as? MutableNode.StructNode)
           ?: throw InsertIntoNonStructException(
             "structsByPath contains path ${path.toPathString()} whose destination struct " +
-              "${parentPath.toPathString()}) has kind case ${currentNode.toValue().kindCase}, " +
+              "(${parentPath.toPathString()}) has kind case ${currentNode.toValue().kindCase}, " +
               "but it is required to be ${Value.KindCase.STRUCT_VALUE} [zcj277ka6a]"
           )
 
-      if (parentStructNode.fields.containsKey(insertField)) {
+      if (parentStructNode.fields.containsKey(lastSegmentField)) {
         throw KeyExistsException(
           "structsByPath contains path ${path.toPathString()} whose destination struct " +
-            "${parentPath.toPathString()}) already has a field named $insertField, " +
+            "${parentPath.toPathString()}) already has a field named $lastSegmentField, " +
             "but it is required to not already have that key defined [ecgd5r2v4a]"
         )
       }
 
-      parentStructNode.fields[insertField] = toMutableNode(structToGraft)
+      parentStructNode.fields[lastSegmentField] = toMutableNode(structToGraft)
     }
 
     return rootNode.toStruct()
