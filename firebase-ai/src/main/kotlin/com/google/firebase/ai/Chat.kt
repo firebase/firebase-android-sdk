@@ -19,13 +19,10 @@ package com.google.firebase.ai
 import android.graphics.Bitmap
 import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.GenerateContentResponse
-import com.google.firebase.ai.type.ImagePart
-import com.google.firebase.ai.type.InlineDataPart
 import com.google.firebase.ai.type.InvalidStateException
 import com.google.firebase.ai.type.Part
 import com.google.firebase.ai.type.TextPart
 import com.google.firebase.ai.type.content
-import java.util.LinkedList
 import java.util.concurrent.Semaphore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.onCompletion
@@ -131,9 +128,6 @@ public class Chat(
 
     val fullPrompt = history + prompt
     val flow = model.generateContentStream(fullPrompt.first(), *fullPrompt.drop(1).toTypedArray())
-    val bitmaps = LinkedList<Bitmap>()
-    val inlineDataParts = LinkedList<InlineDataPart>()
-    val text = StringBuilder()
     val parts = mutableListOf<Part>()
 
     /**
@@ -142,16 +136,7 @@ public class Chat(
      * represented as image/text
      */
     return flow
-      .onEach {
-        for (part in it.candidates.first().content.parts) {
-          when (part) {
-            is TextPart -> text.append(part.text)
-            is ImagePart -> bitmaps.add(part.image)
-            is InlineDataPart -> inlineDataParts.add(part)
-          }
-          parts.add(part)
-        }
-      }
+      .onEach { parts.addAll(it.candidates.first().content.parts) }
       .onCompletion {
         lock.release()
         if (it == null) {
