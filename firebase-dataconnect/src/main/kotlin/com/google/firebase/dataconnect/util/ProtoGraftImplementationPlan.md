@@ -76,31 +76,29 @@ Here are some requirements and restrictions when implementing the withGraftedInS
 
 ## 3. Detailed Execution Plan
 
-1.  **Handle trivial cases:**
-    *   If `structsByPath` is empty, return the receiver `Struct` instance.
-    *   If `structsByPath` contains only the empty path, return the `Struct` associated with it.
+1. **Handle trivial cases:**
+   * If `structsByPath` is empty, return the receiver `Struct` instance.
+   * If `structsByPath` contains only the empty path, return the `Struct` associated with it.
+2. **Initialize the result `Struct`:**
+   * Create a mutable copy of the `structsByPath` map.
+   * Check for the empty path in the mutable map. If present, remove it and use its corresponding `Struct` as the base for the result `Struct.Builder`.
+   * If the empty path is not present, use the receiver `Struct` as the base.
+3. **Sort paths:** Sort the paths in `structsByPath` by their length. This will ensure that parent paths are created before child paths.
+4. **Iterate and graft:** For each `(path, structToGraft)` in the sorted map:
+   a. **Validate path:**
+   * Throw `LastPathSegmentNotFieldException` if the last segment is not a `Field`.
+   * Throw `FirstPathSegmentNotFieldException` if the first segment is not a `Field`. This only applies if the path is not the empty path, which is handled already.
 
-2.  **Initialize the result `Struct`:**
-    *   Create a mutable copy of the `structsByPath` map.
-    *   Check for the empty path in the mutable map. If present, remove it and use its corresponding `Struct` as the base for the result `Struct.Builder`.
-    *   If the empty path is not present, use the receiver `Struct` as the base.
+   b. **Navigate to the parent `Struct`:**
+   *   Start from the root `Struct.Builder`.
+   *   For each segment in the path (except the last one), traverse down the structure.
+   *   If a segment is a `Field`, get the corresponding value. If it's a `Struct`, continue with its builder. If it doesn't exist, create a new empty `Struct`, add it, and continue with its builder. If it exists but is not a `Struct`, throw `InsertIntoNonStructException`.
+   *   If a segment is a `ListIndex`, the parent path segment must refer to a `ListValue`. The element at the `ListIndex` must exist and be a `Struct`; otherwise, throw `GraftingIntoNonStructInListException`. Continue traversal from the `Struct` found in the list.
 
-3.  **Sort paths:** Sort the paths in `structsByPath` by their length. This will ensure that parent paths are created before child paths.
+   c. **Graft the new `Struct`:**
+   *   Get the last segment of the path (which must be a `Field`).
+   *   Check if the key already exists in the parent `Struct.Builder`. If it does, throw `KeyExistsException`.
+   *   Add the `structToGraft` to the parent `Struct.Builder` at the specified key.
 
-4.  **Iterate and graft:** For each `(path, structToGraft)` in the sorted map:
-    a. **Validate path:**
-        *   Throw `LastPathSegmentNotFieldException` if the last segment is not a `Field`.
-        *   Throw `FirstPathSegmentNotFieldException` if the first segment is not a `Field`. This only applies if the path is not the empty path, which is handled already.
+5. **Return the result:** Build the final `Struct` from the `Struct.Builder` and return it.
 
-    b. **Navigate to the parent `Struct`:**
-        *   Start from the root `Struct.Builder`.
-        *   For each segment in the path (except the last one), traverse down the structure.
-        *   If a segment is a `Field`, get the corresponding value. If it's a `Struct`, continue with its builder. If it doesn't exist, create a new empty `Struct`, add it, and continue with its builder. If it exists but is not a `Struct`, throw `InsertIntoNonStructException`.
-        *   If a segment is a `ListIndex`, the parent path segment must refer to a `ListValue`. The element at the `ListIndex` must exist and be a `Struct`; otherwise, throw `GraftingIntoNonStructInListException`. Continue traversal from the `Struct` found in the list.
-
-    c. **Graft the new `Struct`:**
-        *   Get the last segment of the path (which must be a `Field`).
-        *   Check if the key already exists in the parent `Struct.Builder`. If it does, throw `KeyExistsException`.
-        *   Add the `structToGraft` to the parent `Struct.Builder` at the specified key.
-
-5.  **Return the result:** Build the final `Struct` from the `Struct.Builder` and return it.

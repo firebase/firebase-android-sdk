@@ -122,6 +122,33 @@ class ProtoGraftUnitTest {
       }
     }
 
+  fun `withGraftedInStructs() when structsByPath contains paths starting with an index should throw`() =
+    runTest {
+      val structArb = Arb.proto.struct()
+      checkAll(propTestConfig, structArb, structArb, dataConnectPathArb(), Arb.int()) {
+        struct,
+        structToGraft,
+        graftPathSuffix,
+        graftPathFirstSegmentIndex ->
+        val graftPath =
+          listOf(DataConnectPathSegment.ListIndex(graftPathFirstSegmentIndex)) + graftPathSuffix
+        val structsByPath = mapOf(graftPath to structToGraft.struct)
+
+        val exception =
+          shouldThrow<ProtoGraft.FirstPathSegmentNotFieldException> {
+            struct.struct.withGraftedInStructs(structsByPath)
+          }
+
+        assertSoftly {
+          exception.message shouldContainWithNonAbuttingText "zuh5p2e98y"
+          exception.message shouldContainWithNonAbuttingTextIgnoringCase
+            "first path segment is list index $graftPathFirstSegmentIndex"
+          exception.message shouldContainWithNonAbuttingTextIgnoringCase
+            "must have a field as the first path segment"
+        }
+      }
+    }
+
   @Test
   fun `withGraftedInStructs() when structsByPath contains existing destination key in root struct should throw`() =
     runTest {
