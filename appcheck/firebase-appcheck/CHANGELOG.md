@@ -1,5 +1,8 @@
 # Unreleased
 
+- [fixed] Fixed a bug causing custom `AppCheckProvider` returning errors without a message to throw an exception.
+  [#7624](//github.com/firebase/firebase-android-sdk/pull/7624)
+
 # 19.0.1
 
 - [changed] Bumped internal dependencies.
