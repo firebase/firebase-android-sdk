@@ -38,6 +38,9 @@ import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.config.DeviceCacheManager;
 import com.google.firebase.perf.metrics.FrameMetricsCalculator.PerfFrameMetrics;
 import com.google.firebase.perf.metrics.Trace;
+import com.google.firebase.perf.session.PerfSession;
+import com.google.firebase.perf.session.SessionManager;
+import com.google.firebase.perf.session.gauges.GaugeManager;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Constants;
@@ -77,6 +80,9 @@ public class FragmentStateMonitorTest extends FirebasePerformanceTestBase {
   @Mock private Bundle savedInstanceState;
   @Mock private Fragment mockFragment1;
   @Mock private Fragment mockFragment2;
+  @Mock private GaugeManager mockGaugeManager;
+  private PerfSession session = new PerfSession("sessionId", new Clock());
+  private SessionManager sessionManager = new SessionManager(mockGaugeManager, session);
 
   @Captor private ArgumentCaptor<TraceMetric> argTraceMetric;
 
@@ -229,7 +235,7 @@ public class FragmentStateMonitorTest extends FirebasePerformanceTestBase {
   @Test
   public void fragmentTraceCreation_dropsTrace_whenFragmentNameTooLong() {
     AppStateMonitor appStateMonitor =
-        spy(new AppStateMonitor(mockTransportManager, clock, configResolver, true));
+        spy(new AppStateMonitor(mockTransportManager, clock, configResolver, sessionManager, true));
     FragmentStateMonitor fragmentMonitor =
         spy(new FragmentStateMonitor(clock, mockTransportManager, appStateMonitor, recorder));
     when(appStateMonitor.isScreenTraceSupported()).thenReturn(true);
