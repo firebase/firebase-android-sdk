@@ -45,6 +45,7 @@ import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
+import io.kotest.property.PropertyContext
 import io.kotest.property.arbitrary.distinct
 import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.int
@@ -158,30 +159,12 @@ class ProtoGraftUnitTest {
   @Test
   fun `withGraftedInStructs() when structsByPath contains parent paths of existing structs`() =
     runTest {
-      val structKeyArb = Arb.proto.structKey()
       val structArb = Arb.proto.struct()
       checkAll(propTestConfig, structArb, Arb.list(structArb, 1..5)) { struct, structsToGraft ->
-        val structNestedStructsByPath: Map<DataConnectPath, Struct> =
-          struct.struct
-            .walk(includeSelf = true)
-            .filter { (_, value) -> value.isStructValue }
-            .associate { (path, value) -> Pair(path, value.structValue) }
-        val destStructPathArb = Arb.of(structNestedStructsByPath.keys)
-        val destKeyArbByPath = mutableMapOf<DataConnectPath, Arb<String>>()
+        val insertPathGenerator =
+          pathToNonExistentFieldInExistingStructSequence(struct.struct).iterator()
         val structsByPath =
-          structsToGraft
-            .map { it.struct }
-            .associateBy {
-              val destStructPath = destStructPathArb.bind()
-              val destKeyArb =
-                destKeyArbByPath.getOrPut(destStructPath) {
-                  val subStruct = structNestedStructsByPath[destStructPath]!!
-                  @OptIn(DelicateKotest::class)
-                  structKeyArb.filterNot { subStruct.containsFields(it) }.distinct()
-                }
-              val destKey = destKeyArb.bind()
-              destStructPath.withAddedField(destKey)
-            }
+          structsToGraft.map { it.struct }.associateBy { insertPathGenerator.next() }
 
         val result = struct.struct.withGraftedInStructs(structsByPath)
 
@@ -190,6 +173,11 @@ class ProtoGraftUnitTest {
         result shouldBe expectedResult
       }
     }
+
+  @Test
+  fun `withGraftedInStructs() when structsByPath contains missing parent paths`() = runTest {
+    TODO("implement me!")
+  }
 }
 
 @OptIn(ExperimentalKotest::class)
@@ -221,4 +209,42 @@ private fun Struct.toExpectedStructWithStructsGraftedInToExistingStruct(
   }
   check(structsRemaining.isEmpty())
   return result
+}
+
+/**
+ * Searches the receiver [Struct] for all [Struct] values, recursively, including the receiver
+ * [Struct] itself, and returns a map containing each discovered [Struct] with its key being the
+ * [DataConnectPath] to the [Struct].
+ */
+private fun Struct.findNestedStructs(): Map<DataConnectPath, Struct> =
+  walk(includeSelf = true)
+    .filter { (_, value) -> value.isStructValue }
+    .associate { (path, value) -> Pair(path, value.structValue) }
+
+/**
+ * Returns a [Sequence] that generates [DataConnectPath] objects whose values are distinct paths to
+ * [Struct] keys that do not exist. Each path has at least one segment. The path of all segments
+ * _except_ the last segment is the path of a [Struct] in the given [struct]. The final path segment
+ * is a [DataConnectPathSegment.Field] that does _not_ exist.
+ */
+private fun PropertyContext.pathToNonExistentFieldInExistingStructSequence(
+  struct: Struct
+): Sequence<DataConnectPath> = sequence {
+  val nestedStructByPath = struct.findNestedStructs()
+  val destStructPathArb = Arb.of(nestedStructByPath.keys)
+
+  val destKeyArbByPath = mutableMapOf<DataConnectPath, Arb<String>>()
+  fun getDestKeyArbByPath(path: DataConnectPath): Arb<String> =
+    destKeyArbByPath.getOrPut(path) {
+      val subStruct = nestedStructByPath[path]!!
+      @OptIn(DelicateKotest::class)
+      Arb.proto.structKey().filterNot { subStruct.containsFields(it) }.distinct()
+    }
+
+  while (true) {
+    val destStructPath = destStructPathArb.bind()
+    val destKeyArb = getDestKeyArbByPath(destStructPath)
+    val insertPathToExistingStruct = destStructPath.withAddedField(destKeyArb.bind())
+    yield(insertPathToExistingStruct)
+  }
 }
