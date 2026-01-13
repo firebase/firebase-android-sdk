@@ -33,7 +33,12 @@ Read src/test/kotlin/com/google/firebase/dataconnect/util/ProtoGraftUnitTest.kt
 which defines some basic, non-comprehensive unit tests for the withGraftedInStructs()
 function.
 
-## 2. Work Outline
+### ProtoUtil
+
+Read src/main/kotlin/com/google/firebase/dataconnect/util/ProtoUtil.kt and use the helper
+functions/classes defined therein whenever possible.
+
+## 2. Work Parameters
 
 Here are some requirements and restrictions when implementing the withGraftedInStructs() function:
 
@@ -50,20 +55,11 @@ Here are some requirements and restrictions when implementing the withGraftedInS
 
 4. If at any point you need more information, ask me a question.
 
-## 3. Plan The Work
+5. Use a "test-driven-delevlopment" work style. This means write a test for a single scenario, make it pass,
+   then commit that work into Git, then move onto the next scenario. Note that there are already some existing
+   tests in ProtoGraftUnitTest.kt, so the first task is to make those tests pass.
 
-Think hard about a plan to implement the withGraftedInStructs() function.
-Split the work into multiple steps.
-Edit the file src/main/kotlin/com/google/firebase/dataconnect/util/ProtoGraftImplementationPlan.kt
-by adding the detailed steps to the section "4. Detailed Execution Plan".
-
-Ask me to review the plan.
-Ask me if I want any changes to the plan.
-If I say "yes" then apply my changes, and ask me again, until I say "no" I don't want any changes.
-
-Finally, execute the plan that you created.
-
-## 4. Detailed Execution Plan
+## 3. Detailed Execution Plan
 
 1.  **Handle trivial cases:**
     *   If `structsByPath` is empty, return the receiver `Struct` instance.
@@ -85,7 +81,7 @@ Finally, execute the plan that you created.
         *   Start from the root `Struct.Builder`.
         *   For each segment in the path (except the last one), traverse down the structure.
         *   If a segment is a `Field`, get the corresponding value. If it's a `Struct`, continue with its builder. If it doesn't exist, create a new empty `Struct`, add it, and continue with its builder. If it exists but is not a `Struct`, throw `InsertIntoNonStructException`.
-        *   If a segment is a `ListIndex`, this scenario is not supported for grafting. Throw an `IllegalArgumentException`.
+        *   If a segment is a `ListIndex`, the parent path segment must refer to a `ListValue`. The element at the `ListIndex` must exist and be a `Struct`; otherwise, throw `GraftingIntoNonStructInListException`. Continue traversal from the `Struct` found in the list.
 
     c. **Graft the new `Struct`:**
         *   Get the last segment of the path (which must be a `Field`).
