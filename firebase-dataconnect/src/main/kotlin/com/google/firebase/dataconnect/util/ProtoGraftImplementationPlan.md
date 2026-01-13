@@ -38,6 +38,21 @@ function.
 Read src/main/kotlin/com/google/firebase/dataconnect/util/ProtoUtil.kt and use the helper
 functions/classes defined therein whenever possible.
 
+### Kotest Assertions
+
+When writing unit tests, use the kotest assertions library to verify things,
+such as a value being equal to a certain value:
+
+https://kotest.io/docs/assertions/assertions.html
+
+### Avoid kotest property based testing
+
+In the existing unit tests you will find usages of the kotest property based testing library
+(e.g. checkAll, randomSource, Arb), as documented at https://kotest.io/docs/proptest/property-based-testing.html.
+When adding new unit tests do NOT use the kotest property based testing library;
+instead, just use a normal, single example.
+I will manually update the tests later on to use property testing.
+
 ## 2. Work Parameters
 
 Here are some requirements and restrictions when implementing the withGraftedInStructs() function:
