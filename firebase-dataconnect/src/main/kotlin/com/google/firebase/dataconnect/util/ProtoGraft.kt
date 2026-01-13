@@ -22,6 +22,7 @@ import com.google.firebase.dataconnect.emptyDataConnectPath
 import com.google.firebase.dataconnect.toPathString
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.protobuf.Struct
+import com.google.protobuf.Value
 
 /**
  * Holder for "global" functions for grafting values into Proto Struct objects.
@@ -33,70 +34,52 @@ import com.google.protobuf.Struct
  */
 internal object ProtoGraft {
 
-  internal fun Struct.withGraftedInStructs(structsByPath: Map<DataConnectPath, Struct>): Struct =
-    graftInValues(this, structsByPath)
-
-  private fun graftInValues(
-    originalStruct: Struct,
-    structsByPath: Map<DataConnectPath, Struct>,
-  ): Struct {
-    // Short circuit if nothing to graft.
-    if (structsByPath.isEmpty()) {
-      return originalStruct
-    }
-
-    val rootStructBuilder: Struct.Builder = run {
-      val emptyPathStruct = structsByPath[emptyDataConnectPath()]
-      if (emptyPathStruct === null) {
-        originalStruct.toBuilder()
-      } else if (structsByPath.size == 1) {
-        // Short circuit if only graft is replacing the entire struct.
-        return emptyPathStruct
-      } else {
-        emptyPathStruct.toBuilder()
-      }
-    }
-
-    structsByPath.entries
-      .filterNot { it.key.isEmpty() }
-      .forEach { (fullDestPath, structToInsert) ->
-        val destStructPath = fullDestPath.dropLast(1)
-        val destKey =
-          when (val lastPathSegment = fullDestPath.last()) {
-            is DataConnectPathSegment.Field -> lastPathSegment.field
-            is DataConnectPathSegment.ListIndex ->
-              throw LastInsertPathSegmentNotFieldException(
-                "structsByPath contains path=${fullDestPath.toPathString()} whose last path " +
-                  "segment is list index ${lastPathSegment.index}, but all paths in " +
-                  "structsByPath must have a field as the last path segment, not a list index " +
-                  "[qxgass8cvx]"
-              )
-          }
-
-        val destStructBuilder: Struct.Builder =
-          if (destStructPath.isEmpty()) {
-            rootStructBuilder
-          } else {
-            TODO("inserting not into the root struct not yet supported")
-          }
-
-        if (destStructBuilder.containsFields(destKey)) {
-          throw KeyExistsException(
-            "structsByPath contains path=${fullDestPath.toPathString()} which already exists " +
-              "with type=${destStructBuilder.getFieldsOrThrow(destKey).kindCase}, " +
-              "but expected the key to not exist so that it could be grafted in [z77ec2cznn]"
-          )
-        }
-
-        rootStructBuilder.putFields(destKey, structToInsert.toValueProto())
-      }
-
-    return rootStructBuilder.build()
+  /**
+   * Creates and returns a [Struct] that is the receiver [Struct] with the given [Struct] objects
+   * grafted in.
+   *
+   * The [structsByPath] map specifies the [Struct] objects to graft in and the location at which
+   * to graft them. If [structsByPath] is empty then the receiver [Struct] object is returned.
+   *
+   * The receiver [Struct] will be the "root" of the returned object, except in one case:
+   * if [structsByPath] has the empty path as a key then the receiver [Struct] is ignored and the
+   * "root" of the returned object will, instead, be the [Struct] associated with the empty path.
+   * If the size of [structsByPath] is 1 and its only key is the empty path then the [Struct]
+   * associated with the empty path is returned.
+   *
+   * Except for the empty path, every path in [structsByPath] must have a
+   * [DataConnectPathSegment.Field] as its first and last element. If violated, a
+   * [FirstPathSegmentNotFieldException] or [LastPathSegmentNotFieldException] will be thrown,
+   * respectively. A single-element path must have a [DataConnectPathSegment.Field] as its only
+   * element, otherwise a [LastPathSegmentNotFieldException]. The element of a single-element path
+   * specifies the key at which to graft the associated [Struct] into the "root". This key must not
+   * already exist in the root, otherwise a [KeyExistsException] will be thrown.
+   *
+   * For all paths with size greater than 1, the "root" [Struct] will be traversed to find the
+   * [Struct] corresponding with the penultimate element of the path. If the [Value] at this path
+   * is not a [Struct] then [InsertIntoNonStructException] is thrown. Otherwise, the final element
+   * of the path specifies the key at which to insert the [Struct] into the [Struct]. If this key
+   * already exists then [KeyExistsException] is thrown.
+   *
+   * Any elements in the path that are missing along the path from the "root" to the penultimate
+   * elements in the path will be inserted as empty [Struct] objects.
+   *
+   * The returned [Struct] will, therefore, consist of the "root" [Struct] (either the receiver or
+   * the [Struct] associated with the empty path in [structsByPath]) with the [Struct] objects
+   * specified as values in the given [structsByPath] inserted at the path corresponding to their
+   * keys in [structsByPath].
+   */
+  fun Struct.withGraftedInStructs(structsByPath: Map<DataConnectPath, Struct>): Struct {
+    TODO()
   }
 
-  class LastInsertPathSegmentNotFieldException(message: String) : Exception(message)
+  sealed class ProtoGraftException(message: String) : Exception(message)
 
-  class FirstInsertPathSegmentNotFieldException(message: String) : Exception(message)
+  class LastPathSegmentNotFieldException(message: String) : ProtoGraftException(message)
 
-  class KeyExistsException(message: String) : Exception(message)
+  class FirstPathSegmentNotFieldException(message: String) : ProtoGraftException(message)
+
+  class KeyExistsException(message: String) : ProtoGraftException(message)
+
+  class InsertIntoNonStructException(message: String) : ProtoGraftException(message)
 }
