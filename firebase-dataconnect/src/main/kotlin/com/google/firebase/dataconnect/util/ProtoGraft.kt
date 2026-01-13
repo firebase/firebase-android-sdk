@@ -71,8 +71,120 @@ internal object ProtoGraft {
    * keys in [structsByPath].
    */
   fun Struct.withGraftedInStructs(structsByPath: Map<DataConnectPath, Struct>): Struct {
-    TODO()
+    if (structsByPath.isEmpty()) {
+      return this
+    }
+
+    val mutableStructsByPath = structsByPath.toMutableMap()
+    val rootStruct = mutableStructsByPath.remove(emptyDataConnectPath()) ?: this
+    val rootNode = toMutableNode(Value.newBuilder().setStructValue(rootStruct).build())
+
+    val sortedPaths = mutableStructsByPath.keys.sortedWith(DataConnectPathComparator)
+
+    for (path in sortedPaths) {
+      val structToGraft = mutableStructsByPath.getValue(path)
+      val parentPath = path.dropLast(1)
+      val finalSegment = path.last()
+
+      if (finalSegment !is DataConnectPathSegment.Field) {
+        throw LastPathSegmentNotFieldException(
+          "qxgass8cvx: The last path segment is list index ${
+          (finalSegment as DataConnectPathSegment.ListIndex).index
+          }. Must have a field as the last path segment."
+        )
+      }
+
+      var currentNode: MutableNode = rootNode
+      for (segment in parentPath) {
+        currentNode =
+          when (segment) {
+            is DataConnectPathSegment.Field -> {
+              val structNode =
+                (currentNode as? MutableNode.StructNode)
+                  ?: throw InsertIntoNonStructException(
+                    "Attempting to traverse into a non-struct with field '${segment.field}'"
+                  )
+              structNode.fields.getOrPut(segment.field) {
+                MutableNode.StructNode(mutableMapOf())
+              }
+            }
+            is DataConnectPathSegment.ListIndex -> {
+              val listNode =
+                (currentNode as? MutableNode.ListNode)
+                  ?: throw GraftingIntoNonStructInListException(
+                    "Attempting to traverse into a non-list with index '${segment.index}'"
+                  )
+              if (segment.index < 0 || segment.index >= listNode.values.size) {
+                throw IndexOutOfBoundsException(
+                  "Index ${segment.index} is out of bounds for list of size ${listNode.values.size}"
+                )
+              }
+              listNode.values[segment.index]
+            }
+          }
+      }
+
+      val parentStructNode =
+        (currentNode as? MutableNode.StructNode)
+          ?: throw InsertIntoNonStructException("Final destination is not a struct.")
+
+      if (parentStructNode.fields.containsKey(finalSegment.field)) {
+        throw KeyExistsException(
+          "z77ec2cznn: structsByPath contains path=${
+          finalSegment.field
+          } which already exists."
+        )
+      }
+      parentStructNode.fields[finalSegment.field] =
+        toMutableNode(Value.newBuilder().setStructValue(structToGraft).build())
+    }
+
+    return (rootNode.toValue().structValue
+      ?: throw IllegalStateException("Final result is not a struct"))
   }
+
+  private sealed class MutableNode {
+    abstract fun toValue(): Value
+
+    data class StructNode(val fields: MutableMap<String, MutableNode>) : MutableNode() {
+      override fun toValue(): Value {
+        val structBuilder = Struct.newBuilder()
+        for ((key, value) in fields) {
+          structBuilder.putFields(key, value.toValue())
+        }
+        return Value.newBuilder().setStructValue(structBuilder).build()
+      }
+    }
+
+    data class ListNode(val values: MutableList<MutableNode>) : MutableNode() {
+      override fun toValue(): Value {
+        val listBuilder = com.google.protobuf.ListValue.newBuilder()
+        for (value in values) {
+          listBuilder.addValues(value.toValue())
+        }
+        return Value.newBuilder().setListValue(listBuilder).build()
+      }
+    }
+
+    data class ValueNode(val value: Value) : MutableNode() {
+      override fun toValue(): Value = value
+    }
+  }
+
+  private fun toMutableNode(value: Value): MutableNode {
+    return when {
+      value.hasStructValue() ->
+        MutableNode.StructNode(
+          value.structValue.fieldsMap
+            .mapValues { toMutableNode(it.value) }
+            .toMutableMap()
+        )
+      value.hasListValue() ->
+        MutableNode.ListNode(value.listValue.valuesList.map { toMutableNode(it) }.toMutableList())
+      else -> MutableNode.ValueNode(value)
+    }
+  }
+
 
   sealed class ProtoGraftException(message: String) : Exception(message)
 
