@@ -19,6 +19,7 @@ package com.google.firebase.dataconnect.util
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.emptyDataConnectPath
 import com.google.firebase.dataconnect.testutil.DataConnectPath
+import com.google.firebase.dataconnect.testutil.extract
 import com.google.firebase.dataconnect.testutil.isStructValue
 import com.google.firebase.dataconnect.testutil.map
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.dataConnectPath as dataConnectPathArb
@@ -46,7 +47,6 @@ import io.kotest.property.PropTestConfig
 import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.list
-import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.of
 import io.kotest.property.checkAll
 import kotlinx.coroutines.test.runTest
@@ -154,60 +154,67 @@ class ProtoGraftUnitTest {
     }
 
   @Test
-  fun `withGraftedInStructs() when structsByPath contains paths of existin structs not including list indexes`() =
-    runTest {
-      val structArb = Arb.proto.struct()
-      checkAll(propTestConfig, structArb, Arb.list(structArb, 1..5)) { struct, structsToGraft ->
-        val usedKeysByPath =
-          struct.struct
-            .walk(includeSelf = true)
-            .filter { (path, _) -> path.all { it is DataConnectPathSegment.Field } }
-            .filter { (_, value) -> value.isStructValue }
-            .map { (path, value) -> Pair(path, value.structValue.fieldsMap.keys.toMutableSet()) }
-            .toList()
-        val insertedKeysByStructPath = mutableMapOf<DataConnectPath, MutableSet<String>>()
-        val structsByPath = buildMap {
-          structsToGraft.forEach { structToGraft ->
-            val (destStructPath, usedKeys) = usedKeysByPath.random(randomSource().random)
-            val destKey = Arb.proto.structKey().filterNot { usedKeys.contains(it) }.bind()
-            put(destStructPath.withAddedField(destKey), structToGraft.struct)
-            usedKeys.add(destKey)
-            insertedKeysByStructPath.getOrPut(destStructPath) { mutableSetOf() }.add(destKey)
-          }
-        }
-
-        val result = struct.struct.withGraftedInStructs(structsByPath)
-
-        var insertedKeysCount = 0
-        val expectedResult =
-          struct.struct.map { path, value ->
-            val insertedKeys = insertedKeysByStructPath[path]
-            if (insertedKeys === null) {
-              value
-            } else {
-              value.structValue.toBuilder().let { structBuilder ->
-                insertedKeys.forEach { insertedKey ->
-                  val insertedStructPath = path.withAddedField(insertedKey)
-                  val insertedStruct = checkNotNull(structsByPath[insertedStructPath])
-                  structBuilder.putFields(insertedKey, insertedStruct.toValueProto())
-                }
-                insertedKeysCount += insertedKeys.size
-                structBuilder.build().toValueProto()
+  fun `withGraftedInStructs() when structsByPath contains paths of existing structs`() = runTest {
+    val structKeyArb = Arb.proto.structKey()
+    val structArb = Arb.proto.struct()
+    checkAll(propTestConfig, structArb, Arb.list(structArb, 1..5)) { struct, structsToGraft ->
+      val structNestedStructsByPath: Map<DataConnectPath, Struct> =
+        struct.struct
+          .walk(includeSelf = true)
+          .filter { (_, value) -> value.isStructValue }
+          .associate { (path, value) -> Pair(path, value.structValue) }
+      val destStructPathArb = Arb.of(structNestedStructsByPath.keys)
+      val usedKeysByPath = mutableMapOf<DataConnectPath, MutableSet<String>>()
+      val structsByPath =
+        structsToGraft
+          .map { it.struct }
+          .associateBy {
+            val destStructPath = destStructPathArb.bind()
+            val usedKeys =
+              usedKeysByPath.getOrPut(destStructPath) {
+                structNestedStructsByPath[destStructPath]!!.fieldsMap.keys.toMutableSet()
               }
-            }
+            val destKey = structKeyArb.filterNot(usedKeys::contains).bind()
+            usedKeys.add(destKey)
+            destStructPath.withAddedField(destKey)
           }
-        check(insertedKeysCount == structsToGraft.size)
-        result shouldBe expectedResult
+
+      val result = struct.struct.withGraftedInStructs(structsByPath)
+
+      val expectedResult =
+        struct.struct.toExpectedStructWithStructsGraftedInToExistingStruct(structsByPath)
+      result shouldBe expectedResult
+    }
+  }
+}
+
+@OptIn(ExperimentalKotest::class)
+private val propTestConfig =
+  PropTestConfig(iterations = 200, edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.2))
+
+private fun Struct.toExpectedStructWithStructsGraftedInToExistingStruct(
+  structsByPath: Map<DataConnectPath, Struct>
+): Struct {
+  val structsRemaining = structsByPath.entries.toMutableList()
+  val result = map { path, value ->
+    if (!value.isStructValue) {
+      value
+    } else {
+      val curStructs = structsRemaining.extract { _, entry -> path == entry.key.dropLast(1) }
+      if (curStructs.isEmpty()) {
+        value
+      } else {
+        value.structValue.toBuilder().let { structBuilder ->
+          curStructs.forEach { (path, subStruct) ->
+            val field = (path.last() as DataConnectPathSegment.Field).field
+            check(!structBuilder.containsFields(field))
+            structBuilder.putFields(field, subStruct.toValueProto())
+          }
+          structBuilder.build().toValueProto()
+        }
       }
     }
-
-  private companion object {
-
-    @OptIn(ExperimentalKotest::class)
-    val propTestConfig =
-      PropTestConfig(
-        iterations = 200,
-        edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.2)
-      )
   }
+  check(structsRemaining.isEmpty())
+  return result
 }
