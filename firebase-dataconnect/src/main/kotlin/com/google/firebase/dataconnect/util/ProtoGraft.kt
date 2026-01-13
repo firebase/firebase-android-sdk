@@ -150,7 +150,7 @@ internal object ProtoGraft {
       if (parentStructNode.fields.containsKey(lastSegmentField)) {
         throw KeyExistsException(
           "structsByPath contains path ${path.toPathString()} whose destination struct " +
-            "${parentPath.toPathString()}) already has a field named $lastSegmentField, " +
+            "(${parentPath.toPathString()}) already has a field named $lastSegmentField, " +
             "but it is required to not already have that key defined [ecgd5r2v4a]"
         )
       }
