@@ -108,7 +108,7 @@ class ProtoGraftUnitTest {
         val structsByPath = mapOf(graftPath to structToGraft.struct)
 
         val exception =
-          shouldThrow<ProtoGraft.LastInsertPathSegmentNotFieldException> {
+          shouldThrow<ProtoGraft.LastPathSegmentNotFieldException> {
             struct.struct.withGraftedInStructs(structsByPath)
           }
 
