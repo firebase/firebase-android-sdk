@@ -17,6 +17,7 @@
 package com.google.firebase.dataconnect.util
 
 import com.google.firebase.dataconnect.DataConnectPath
+import com.google.firebase.dataconnect.DataConnectPathComparator
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.emptyDataConnectPath
 import com.google.firebase.dataconnect.toPathString
@@ -82,4 +83,6 @@ internal object ProtoGraft {
   class KeyExistsException(message: String) : ProtoGraftException(message)
 
   class InsertIntoNonStructException(message: String) : ProtoGraftException(message)
+
+  class GraftingIntoNonStructInListException(message: String) : ProtoGraftException(message)
 }
