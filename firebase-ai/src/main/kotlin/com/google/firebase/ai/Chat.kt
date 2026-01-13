@@ -136,7 +136,7 @@ public class Chat(
      * represented as image/text
      */
     return flow
-      .onEach { parts.addAll(it.candidates.first().content.parts) }
+      .onEach { parts.addAll(it.candidates.firstOrNull()?.content?.parts.orEmpty()) }
       .onCompletion {
         lock.release()
         if (it == null) {
