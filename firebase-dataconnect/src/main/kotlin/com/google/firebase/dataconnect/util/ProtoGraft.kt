@@ -82,7 +82,7 @@ internal object ProtoGraft {
 
     val mutableStructsByPath = structsByPath.toMutableMap()
     val rootStruct = mutableStructsByPath.remove(emptyDataConnectPath()) ?: this
-    val rootNode = toMutableNode(rootStruct)
+    val rootNode = toMutableNode(rootStruct, parentPathSegment = null)
 
     val sortedPaths = mutableStructsByPath.keys.sortedWith(DataConnectPathComparator)
 
@@ -90,8 +90,9 @@ internal object ProtoGraft {
       val structToGraft = mutableStructsByPath.getValue(path)
       val parentPath = path.dropLast(1)
 
+      val lastSegment = path.last()
       val lastSegmentField =
-        when (val lastSegment = path.last()) {
+        when (lastSegment) {
           is DataConnectPathSegment.Field -> lastSegment.field
           is DataConnectPathSegment.ListIndex ->
             throw LastPathSegmentNotFieldException(
@@ -108,24 +109,26 @@ internal object ProtoGraft {
             is DataConnectPathSegment.Field -> {
               val structNode =
                 (currentNode as? MutableNode.StructNode)
-                  ?: throw InsertIntoNonStructException(
-                    "structsByPath contains path ${path.toPathString()} whose segment " +
-                      "${pathSegmentIndex+1} (field ${pathSegment.field}) is kind " +
-                      "${currentNode.toValue().kindCase}, but required it to be " +
-                      "${Value.KindCase.STRUCT_VALUE} [s3mhtfj2mm]"
+                  ?: throw PathFieldOfNonStructException(
+                    "structsByPath contains path ${path.toPathString()} " +
+                      "whose segment ${pathSegmentIndex} " +
+                      "(${currentNode.parentPathSegment.toFieldOrListIndexString()}) " +
+                      "has kind case ${currentNode.toValue().kindCase}, " +
+                      "but it is required to be ${Value.KindCase.STRUCT_VALUE} [s3mhtfj2mm]"
                   )
               structNode.fields.getOrPut(pathSegment.field) {
-                MutableNode.StructNode(mutableMapOf())
+                MutableNode.StructNode(pathSegment, mutableMapOf())
               }
             }
             is DataConnectPathSegment.ListIndex -> {
               val listNode =
                 (currentNode as? MutableNode.ListNode)
-                  ?: throw GraftingIntoNonStructInListException(
-                    "structsByPath contains path ${path.toPathString()} whose segment " +
-                      "${pathSegmentIndex+1} (list index ${pathSegment.index}) is kind " +
-                      "${currentNode.toValue().kindCase}, but required it to be " +
-                      "${Value.KindCase.LIST_VALUE} [gr7mqk4jnn]"
+                  ?: throw PathListIndexOfNonListException(
+                    "structsByPath contains path ${path.toPathString()} " +
+                      "whose segment ${pathSegmentIndex} " +
+                      "(${currentNode.parentPathSegment.toFieldOrListIndexString()}) " +
+                      "has kind case ${currentNode.toValue().kindCase}, " +
+                      "but it is required to be ${Value.KindCase.LIST_VALUE} [gr7mqk4jnn]"
                   )
               if (pathSegment.index < 0 || pathSegment.index >= listNode.values.size) {
                 throw PathListIndexOutOfBoundsException(
@@ -155,17 +158,19 @@ internal object ProtoGraft {
         )
       }
 
-      parentStructNode.fields[lastSegmentField] = toMutableNode(structToGraft)
+      parentStructNode.fields[lastSegmentField] = toMutableNode(structToGraft, lastSegment)
     }
 
     return rootNode.toStruct()
   }
 
-  private sealed interface MutableNode {
-    fun toValue(): Value
+  private sealed class MutableNode(val parentPathSegment: DataConnectPathSegment?) {
+    abstract fun toValue(): Value
 
-    class StructNode(val fields: MutableMap<String, MutableNode>) : MutableNode {
-
+    class StructNode(
+      parentPathSegment: DataConnectPathSegment?,
+      val fields: MutableMap<String, MutableNode>
+    ) : MutableNode(parentPathSegment) {
       fun toStruct(): Struct =
         Struct.newBuilder().let { structBuilder ->
           for ((key, value) in fields) {
@@ -177,8 +182,10 @@ internal object ProtoGraft {
       override fun toValue(): Value = toStruct().toValueProto()
     }
 
-    class ListNode(val values: MutableList<MutableNode>) : MutableNode {
-
+    class ListNode(
+      parentPathSegment: DataConnectPathSegment?,
+      val values: MutableList<MutableNode>
+    ) : MutableNode(parentPathSegment) {
       fun toListValue(): ListValue =
         ListValue.newBuilder().let { listBuilder ->
           for (value in values) {
@@ -190,23 +197,49 @@ internal object ProtoGraft {
       override fun toValue(): Value = toListValue().toValueProto()
     }
 
-    class ValueNode(val value: Value) : MutableNode {
+    class ValueNode(parentPathSegment: DataConnectPathSegment?, val value: Value) :
+      MutableNode(parentPathSegment) {
       override fun toValue(): Value = value
     }
   }
 
-  private fun toMutableNode(value: Value): MutableNode =
+  private fun toMutableNode(value: Value, parentPathSegment: DataConnectPathSegment?): MutableNode =
     when (value.kindCase) {
-      Value.KindCase.STRUCT_VALUE -> toMutableNode(value.structValue)
-      Value.KindCase.LIST_VALUE -> toMutableNode(value.listValue)
-      else -> MutableNode.ValueNode(value)
+      Value.KindCase.STRUCT_VALUE -> toMutableNode(value.structValue, parentPathSegment)
+      Value.KindCase.LIST_VALUE -> toMutableNode(value.listValue, parentPathSegment)
+      else -> MutableNode.ValueNode(parentPathSegment, value)
     }
 
-  private fun toMutableNode(struct: Struct): MutableNode.StructNode =
-    MutableNode.StructNode(struct.fieldsMap.mapValues { toMutableNode(it.value) }.toMutableMap())
+  private fun toMutableNode(
+    struct: Struct,
+    parentPathSegment: DataConnectPathSegment?,
+  ): MutableNode.StructNode =
+    MutableNode.StructNode(
+      parentPathSegment,
+      struct.fieldsMap
+        .mapValues { toMutableNode(it.value, DataConnectPathSegment.Field(it.key)) }
+        .toMutableMap()
+    )
 
-  private fun toMutableNode(listValue: ListValue): MutableNode.ListNode =
-    MutableNode.ListNode(listValue.valuesList.map { toMutableNode(it) }.toMutableList())
+  private fun toMutableNode(
+    listValue: ListValue,
+    parentPathSegment: DataConnectPathSegment?
+  ): MutableNode.ListNode =
+    MutableNode.ListNode(
+      parentPathSegment,
+      listValue.valuesList
+        .mapIndexed { index, value ->
+          toMutableNode(value, DataConnectPathSegment.ListIndex(index))
+        }
+        .toMutableList()
+    )
+
+  private fun DataConnectPathSegment?.toFieldOrListIndexString(): String =
+    when (this) {
+      null -> "[root object]"
+      is DataConnectPathSegment.Field -> "field $field"
+      is DataConnectPathSegment.ListIndex -> "list index $index"
+    }
 
   sealed class ProtoGraftException(message: String) : Exception(message)
 
@@ -216,7 +249,9 @@ internal object ProtoGraft {
 
   class InsertIntoNonStructException(message: String) : ProtoGraftException(message)
 
-  class GraftingIntoNonStructInListException(message: String) : ProtoGraftException(message)
-
   class PathListIndexOutOfBoundsException(message: String) : ProtoGraftException(message)
+
+  class PathListIndexOfNonListException(message: String) : ProtoGraftException(message)
+
+  class PathFieldOfNonStructException(message: String) : ProtoGraftException(message)
 }
