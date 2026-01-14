@@ -29,6 +29,7 @@ import com.google.firebase.ai.type.FinishReason
 import com.google.firebase.ai.type.FirebaseAIException
 import com.google.firebase.ai.type.FirebaseAutoFunctionException
 import com.google.firebase.ai.type.FunctionCallPart
+import com.google.firebase.ai.type.FunctionResponsePart
 import com.google.firebase.ai.type.GenerateContentResponse
 import com.google.firebase.ai.type.GenerateObjectResponse
 import com.google.firebase.ai.type.GenerationConfig
@@ -330,7 +331,7 @@ internal constructor(
   }
 
   @OptIn(InternalSerializationApi::class)
-  internal suspend fun executeFunction(call: FunctionCallPart): JsonObject {
+  internal suspend fun executeFunction(call: FunctionCallPart): FunctionResponsePart {
     if (tools == null) {
       throw RuntimeException("No registered tools")
     }
@@ -346,9 +347,10 @@ internal constructor(
 
   @OptIn(InternalSerializationApi::class)
   internal suspend fun <I : Any, O : Any> executeFunction(
+    functionName: String,
     functionDeclaration: AutoFunctionDeclaration<I, O>,
     parameter: String
-  ): JsonObject {
+  ): FunctionResponsePart {
     val inputDeserializer =
       functionDeclaration.inputSchema.clazz.serializerOrNull()
         ?: throw RuntimeException(
@@ -362,11 +364,17 @@ internal constructor(
       val output = functionReference.invoke(input)
       val outputSerializer = functionDeclaration.outputSchema?.clazz?.serializerOrNull()
       if (outputSerializer != null) {
-        return Json.encodeToJsonElement(outputSerializer, output).jsonObject
+        return FunctionResponsePart(
+          functionName,
+          Json.encodeToJsonElement(outputSerializer, output).jsonObject
+        )
       }
-      return output as JsonObject
+      return FunctionResponsePart(functionName, output as JsonObject)
     } catch (e: FirebaseAutoFunctionException) {
-      return JsonObject(mapOf("error" to JsonPrimitive(e.message)))
+      return FunctionResponsePart(
+        functionName,
+        JsonObject(mapOf("error" to JsonPrimitive(e.message)))
+      )
     }
   }
 

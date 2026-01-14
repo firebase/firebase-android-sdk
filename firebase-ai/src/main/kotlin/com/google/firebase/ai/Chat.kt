@@ -19,7 +19,6 @@ package com.google.firebase.ai
 import android.graphics.Bitmap
 import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.FunctionCallPart
-import com.google.firebase.ai.type.FunctionResponsePart
 import com.google.firebase.ai.type.GenerateContentResponse
 import com.google.firebase.ai.type.InvalidStateException
 import com.google.firebase.ai.type.RequestTimeoutException
@@ -83,8 +82,7 @@ public class Chat(
             throw RequestTimeoutException("Request took too many turns", history = tempHistory)
           }
           if (functionCallParts.all { model.hasFunction(it) }) {
-            val functionResponsePart =
-              functionCallParts.map { FunctionResponsePart(it.name, model.executeFunction(it)) }
+            val functionResponsePart = functionCallParts.map { model.executeFunction(it) }
             tempHistory.add(Content("function", functionResponsePart))
           }
         } else {
@@ -215,21 +213,6 @@ public class Chat(
     tempHistory: MutableList<Content>,
     response: GenerateContentResponse
   ) {
-    for (part in response.candidates.first().content.parts) {
-      when (part) {
-        is TextPart -> {
-          transformer.emit(response)
-          addTextToHistory(tempHistory, part)
-        }
-        is FunctionCallPart -> {
-          // do nothing
-        }
-        else -> {
-          transformer.emit(response)
-          tempHistory.add(Content("model", listOf(part)))
-        }
-      }
-    }
     val functionCallParts =
       response.candidates.first().content.parts.filterIsInstance<FunctionCallPart>()
     if (functionCallParts.isNotEmpty()) {
@@ -238,10 +221,7 @@ public class Chat(
           throw RequestTimeoutException("Request took too many turns", history = tempHistory)
         }
         val functionResponses =
-          Content(
-            "function",
-            functionCallParts.map { FunctionResponsePart(it.name, model.executeFunction(it)) }
-          )
+          Content("function", functionCallParts.map { model.executeFunction(it) })
         tempHistory.add(Content("model", functionCallParts))
         tempHistory.add(functionResponses)
         model
@@ -251,36 +231,10 @@ public class Chat(
         transformer.emit(response)
         tempHistory.add(Content("model", functionCallParts))
       }
+    } else {
+      transformer.emit(response)
+      tempHistory.add(response.candidates.first().content)
     }
-  }
-
-  private fun addTextToHistory(tempHistory: MutableList<Content>, textPart: TextPart) {
-    val lastContent = tempHistory.lastOrNull()
-    val lastTextPart = lastContent?.parts?.first { it is TextPart }
-    if (
-      lastContent?.role == "model" &&
-        lastTextPart != null &&
-        lastTextPart.isThought == textPart.isThought
-    ) {
-      tempHistory.removeLast()
-      val editedContent =
-        Content(
-          "model",
-          lastContent.parts.map {
-            when (it) {
-              is TextPart -> {
-                TextPart(it.text + textPart.text, textPart.isThought, null)
-              }
-              else -> {
-                it
-              }
-            }
-          }
-        )
-      tempHistory.add(editedContent)
-      return
-    }
-    tempHistory.add(Content("model", listOf(textPart)))
   }
 
   private fun Content.assertComesFromUser() {

@@ -16,6 +16,7 @@
 
 package com.google.firebase.ai
 
+import com.google.firebase.ai.type.AutoFunctionDeclaration
 import com.google.firebase.ai.type.BlockReason
 import com.google.firebase.ai.type.ContentBlockedException
 import com.google.firebase.ai.type.ContentModality
@@ -25,23 +26,29 @@ import com.google.firebase.ai.type.HarmCategory
 import com.google.firebase.ai.type.HarmProbability
 import com.google.firebase.ai.type.HarmSeverity
 import com.google.firebase.ai.type.InvalidAPIKeyException
+import com.google.firebase.ai.type.JsonSchema
 import com.google.firebase.ai.type.PromptBlockedException
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.QuotaExceededException
+import com.google.firebase.ai.type.RequestTimeoutException
 import com.google.firebase.ai.type.ResponseStoppedException
 import com.google.firebase.ai.type.SerializationException
 import com.google.firebase.ai.type.ServerException
 import com.google.firebase.ai.type.ServiceDisabledException
 import com.google.firebase.ai.type.TextPart
+import com.google.firebase.ai.type.Tool
 import com.google.firebase.ai.type.UnsupportedUserLocationException
 import com.google.firebase.ai.type.UrlRetrievalStatus
+import com.google.firebase.ai.util.ResponseInfo
 import com.google.firebase.ai.util.goldenVertexUnaryFile
+import com.google.firebase.ai.util.goldenVertexUnaryFiles
 import com.google.firebase.ai.util.shouldNotBeNullOrEmpty
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.inspectors.forAtLeastOne
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotBeEmpty
+import io.kotest.matchers.equals.shouldBeEqual
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -55,6 +62,8 @@ import io.ktor.http.HttpStatusCode
 import java.util.Calendar
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.withTimeout
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -757,4 +766,188 @@ internal class VertexAIUnarySnapshotTests {
         urlContextMetadata.urlMetadata.last().urlRetrievalStatus.shouldNotBeNull()
       }
     }
+
+  @Serializable
+  data class FetchWeatherRequest(val city: String, val state: String, val date: String)
+
+  private val fetchWeatherRequestSchema =
+    JsonSchema.obj(
+      clazz = FetchWeatherRequest::class,
+      properties =
+        mapOf(
+          "city" to
+            JsonSchema.string(
+              title = "city",
+              description = "The US city of the location.",
+              nullable = false
+            ),
+          "state" to
+            JsonSchema.string(
+              title = "state",
+              description = "The US state of the location.",
+              nullable = false
+            ),
+          "date" to
+            JsonSchema.string(
+              title = "date",
+              description =
+                "The date for which to get the weather. Date must be in the format: YYYY-MM-DD.",
+              nullable = false
+            ),
+        ),
+      description = "the request for fetching the weather",
+      nullable = false
+    )
+
+  @Test
+  fun `function call requested should trigger auto function call`() {
+    var functionCalled = false
+    goldenVertexUnaryFiles(
+      listOf("unary-success-auto-function-call.json", "unary-success-basic-reply-long.json").map {
+        ResponseInfo(it)
+      },
+      tools =
+        listOf(
+          Tool.functionDeclarations(
+            autoFunctionDeclarations =
+              listOf(
+                AutoFunctionDeclaration.create("fetchWeather", "", fetchWeatherRequestSchema) {
+                  request: FetchWeatherRequest ->
+                  functionCalled = true
+                  JsonObject(mapOf())
+                }
+              )
+          )
+        )
+    ) {
+      withTimeout(testTimeout) {
+        model.startChat().sendMessage("")
+        functionCalled shouldBeEqual true
+      }
+    }
+  }
+
+  @Test
+  fun `multiple function calls requested should trigger`() {
+    var weatherFunctionCalled = false
+    var otherFunctionCalled = false
+    goldenVertexUnaryFiles(
+      listOf(
+          "unary-success-parallel-auto-function-call.json",
+          "unary-success-basic-reply-long.json"
+        )
+        .map { ResponseInfo(it) },
+      tools =
+        listOf(
+          Tool.functionDeclarations(
+            autoFunctionDeclarations =
+              listOf(
+                AutoFunctionDeclaration.create("fetchWeather", "", fetchWeatherRequestSchema) {
+                  request: FetchWeatherRequest ->
+                  weatherFunctionCalled = true
+                  JsonObject(mapOf())
+                },
+                AutoFunctionDeclaration.create(
+                  "completelyDifferentFunction",
+                  "",
+                  fetchWeatherRequestSchema
+                ) { request: FetchWeatherRequest ->
+                  otherFunctionCalled = true
+                  JsonObject(mapOf())
+                }
+              )
+          )
+        )
+    ) {
+      withTimeout(testTimeout) {
+        model.startChat().sendMessage("")
+        weatherFunctionCalled shouldBeEqual true
+        otherFunctionCalled shouldBeEqual true
+      }
+    }
+  }
+
+  @Test
+  fun `multiple function should return to user if all aren't registered`() {
+    var weatherFunctionCalled = false
+    var otherFunctionCalled = false
+    goldenVertexUnaryFiles(
+      listOf(
+          "unary-success-parallel-auto-function-call.json",
+          "unary-success-basic-reply-long.json"
+        )
+        .map { ResponseInfo(it) },
+      tools =
+        listOf(
+          Tool.functionDeclarations(
+            autoFunctionDeclarations =
+              listOf(
+                AutoFunctionDeclaration.create("fetchWeather", "", fetchWeatherRequestSchema) {
+                  request: FetchWeatherRequest ->
+                  weatherFunctionCalled = true
+                  JsonObject(mapOf())
+                },
+                AutoFunctionDeclaration.create(
+                  "completelyDifferentFunction",
+                  "",
+                  fetchWeatherRequestSchema,
+                )
+              )
+          )
+        )
+    ) {
+      withTimeout(testTimeout) {
+        val response = model.startChat().sendMessage("")
+        weatherFunctionCalled shouldBeEqual false
+        otherFunctionCalled shouldBeEqual false
+        response.functionCalls.size shouldBeEqual 2
+      }
+    }
+  }
+
+  @Test
+  fun `auto function call loop should hit limit and exit`() {
+    var functionCalled = 0
+    goldenVertexUnaryFiles(
+      listOf(
+          "unary-success-auto-function-call.json",
+          "unary-success-auto-function-call.json",
+          "unary-success-auto-function-call.json",
+          "unary-success-auto-function-call.json",
+          "unary-success-auto-function-call.json",
+          "unary-success-auto-function-call.json",
+          "unary-success-auto-function-call.json",
+          "unary-success-auto-function-call.json",
+          "unary-success-auto-function-call.json",
+          "unary-success-auto-function-call.json",
+          "unary-success-auto-function-call.json",
+          "unary-success-auto-function-call.json",
+          "unary-success-auto-function-call.json",
+          "unary-success-auto-function-call.json",
+          "unary-success-auto-function-call.json",
+          "unary-success-auto-function-call.json",
+          "unary-success-auto-function-call.json",
+          "unary-success-auto-function-call.json",
+        )
+        .map { ResponseInfo(it) },
+      tools =
+        listOf(
+          Tool.functionDeclarations(
+            autoFunctionDeclarations =
+              listOf(
+                AutoFunctionDeclaration.create("fetchWeather", "", fetchWeatherRequestSchema) {
+                  request: FetchWeatherRequest ->
+                  functionCalled++
+                  JsonObject(mapOf())
+                }
+              )
+          )
+        )
+    ) {
+      withTimeout(testTimeout) {
+        shouldThrow<RequestTimeoutException> { model.startChat().sendMessage("") }
+        functionCalled shouldBeEqual 10
+      }
+    }
+  }
 }

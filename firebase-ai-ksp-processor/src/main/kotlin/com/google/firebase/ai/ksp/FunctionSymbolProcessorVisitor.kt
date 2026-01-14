@@ -81,7 +81,7 @@ internal class FunctionSymbolProcessorVisitor(
     val output = function.returnType?.resolve()
     if (
       output != null &&
-        output.toClassName().canonicalName != "kotlinx.serialization.json.JsonObject"
+        output.toClassName().canonicalName != "com.google.firebase.ai.type.FunctionResponsePart"
     ) {
       if (
         output.declaration.annotations.find { it.shortName.getShortName() != "Generable" } == null
@@ -135,7 +135,7 @@ internal class FunctionSymbolProcessorVisitor(
               .parameterizedBy(
                 functionDeclaration.parameters.first().type.resolve().toClassName(),
                 functionDeclaration.returnType?.resolve()?.toClassName()
-                  ?: ClassName("kotlinx.serialization.json", "JsonObject")
+                  ?: ClassName("com.google.firebase.ai.type", "FunctionResponsePart")
               )
           )
           .addCode(
@@ -156,7 +156,8 @@ internal class FunctionSymbolProcessorVisitor(
     val returnType = functionDeclaration.returnType
     val hasTypedOutput =
       !(returnType == null ||
-        returnType.resolve().toClassName().canonicalName == "kotlinx.serialization.json.JsonObject")
+        returnType.resolve().toClassName().canonicalName ==
+          "com.google.firebase.ai.type.FunctionResponsePart")
     val kdocDescription = functionDeclaration.docString?.let { extractBaseKdoc(it) }
     val annotationDescription =
       getStringFromAnnotation(
@@ -165,9 +166,7 @@ internal class FunctionSymbolProcessorVisitor(
       )
     val description = annotationDescription ?: kdocDescription ?: ""
     val inputSchemaName =
-      "${
-                functionDeclaration.parameters.first().type.resolve().toClassName().canonicalName
-            }.firebaseAISchema()"
+      "${functionDeclaration.parameters.first().type.resolve().toClassName().canonicalName}.firebaseAISchema()"
     builder
       .addStatement("AutoFunctionDeclaration.create(")
       .indent()

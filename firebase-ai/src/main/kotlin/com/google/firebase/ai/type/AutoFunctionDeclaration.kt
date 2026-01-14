@@ -16,8 +16,6 @@
 
 package com.google.firebase.ai.type
 
-import kotlinx.serialization.json.JsonObject
-
 /**
  * Defines a function that the model can use as a tool. Including a function references to enable
  * automatic function calling.
@@ -46,8 +44,8 @@ internal constructor(
   public val name: String,
   public val description: String,
   public val inputSchema: JsonSchema<I>,
-  public val outputSchema: JsonSchema<O>? = null,
-  public val functionReference: (suspend (I) -> O)? = null
+  public val outputSchema: JsonSchema<O>?,
+  public val functionReference: (suspend (I) -> O)?
 ) {
   public companion object {
 
@@ -89,9 +87,9 @@ internal constructor(
       functionName: String,
       description: String,
       inputSchema: JsonSchema<I>,
-      functionReference: ((I) -> JsonObject)? = null
-    ): AutoFunctionDeclaration<I, JsonObject> {
-      return AutoFunctionDeclaration<I, JsonObject>(
+      functionReference: ((I) -> FunctionResponsePart)? = null
+    ): AutoFunctionDeclaration<I, FunctionResponsePart> {
+      return AutoFunctionDeclaration<I, FunctionResponsePart>(
         functionName,
         description,
         inputSchema,
