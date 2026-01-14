@@ -1,4 +1,5 @@
 # Unreleased
+- [fixed] fixed typo in message logged when a class is not found during component discovery.
 
 # 19.0.0
 
