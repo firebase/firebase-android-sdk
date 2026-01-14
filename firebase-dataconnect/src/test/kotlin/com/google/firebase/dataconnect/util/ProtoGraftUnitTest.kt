@@ -454,6 +454,15 @@ private fun Struct.withParents(path: List<DataConnectPathSegment.Field>): Struct
   return structBuilder.build()
 }
 
+/**
+ * Returns an [Arb] that produces [Struct] instances guaranteed to contain at least one [Value]
+ * whose [Value.kindCase] is _not_ the specified [kind].
+ *
+ * The returned [Arb] ensures that the generated [Struct] is suitable for tests requiring a [Struct]
+ * with a specific kind of non-matching [Value] somewhere within its structure. It achieves this by
+ * either taking an existing [Struct] that already satisfies the condition or by inserting a new
+ * [Value] of a non-[kind] type at a random insertion point within a generated [Struct].
+ */
 private fun structWithAtLeast1ValueOfNotKindArb(kind: Value.KindCase): Arb<Struct> {
   val structKeyArb = Arb.proto.structKey()
   val valueOfNotKindArb = Arb.proto.value(exclude = kind)
