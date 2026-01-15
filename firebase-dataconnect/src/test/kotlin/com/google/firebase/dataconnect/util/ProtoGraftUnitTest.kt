@@ -16,7 +16,6 @@
 
 package com.google.firebase.dataconnect.util
 
-import com.google.firebase.dataconnect.DataConnectPathComparator
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.emptyDataConnectPath
 import com.google.firebase.dataconnect.testutil.DataConnectPath
@@ -44,7 +43,6 @@ import com.google.firebase.dataconnect.testutil.walkPaths
 import com.google.firebase.dataconnect.testutil.walkValues
 import com.google.firebase.dataconnect.toPathString
 import com.google.firebase.dataconnect.util.ProtoGraft.withGraftedInStructs
-import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.firebase.dataconnect.withAddedField
 import com.google.firebase.dataconnect.withAddedListIndex
@@ -414,48 +412,30 @@ class ProtoGraftUnitTest {
 
   @Test
   fun `withGraftedInStructs() with nested paths`() = runTest {
-    TODO("generalize this test")
     val structKeyArb = Arb.proto.structKey()
     val structArb = Arb.proto.struct(key = structKeyArb)
-    checkAll(propTestConfig, structArb, Arb.int(1..10)) { struct ->
-      val (structAPath, structA) =
-        subStruct1.struct.toBuilder().let { structBuilder ->
-          val insertPath =
-            structBuilder.randomlyInsertValue(
-              subStruct2.toValueProto(),
-              randomSource().random,
-              generateKey = { structKeyArb.bind() },
-            )
-          Pair(insertPath, structBuilder.build())
-        }
-      val (structBPath, structB) =
+    val missingParentsPathArb = Arb.list(fieldPathSegmentArb(string = structKeyArb), 0..3)
+    checkAll(propTestConfig, structArb, Arb.int(1..10)) { struct, subStructCount ->
+      val structsByPath = mutableMapOf<DataConnectPath, Struct>()
+      val expectedResult =
         struct.struct.toBuilder().let { structBuilder ->
-          val insertPath =
-            structBuilder.randomlyInsertValue(
-              structA.toValueProto(),
-              randomSource().random,
-              generateKey = { structKeyArb.bind() },
-            )
-          Pair(insertPath, structBuilder.build())
+          repeat(subStructCount) {
+            val structToGraft = structArb.bind().struct
+            val missingParentsPath = missingParentsPathArb.bind()
+            val graftPath =
+              structBuilder.randomlyInsertValue(
+                structToGraft.withParents(missingParentsPath).toValueProto(),
+                randomSource().random,
+                generateKey = { structKeyArb.bind() },
+              )
+            structsByPath[graftPath + missingParentsPath] = structToGraft
+          }
+          structBuilder.build()
         }
-      val structsByPath =
-        mapOf(
-          structBPath to subStruct1.struct,
-          (structBPath + structAPath) to subStruct2.struct,
-        )
 
       val result = struct.struct.withGraftedInStructs(structsByPath)
 
-      println("===================== ${evals()} =====================")
-      println(
-        "structsByPath.keys=${structsByPath.keys.sortedWith(DataConnectPathComparator).joinToString { it.toPathString() }}"
-      )
-      println("struct=${struct.struct.toCompactString()}")
-      println("subStruct1=${subStruct1.struct.toCompactString()}")
-      println("subStruct2=${subStruct2.struct.toCompactString()}")
-      println("result=${result.toCompactString()}")
-
-      result shouldBe structB
+      result shouldBe expectedResult
     }
   }
 }
