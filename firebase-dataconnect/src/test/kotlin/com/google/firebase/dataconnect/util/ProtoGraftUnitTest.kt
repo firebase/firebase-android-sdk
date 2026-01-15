@@ -412,26 +412,30 @@ class ProtoGraftUnitTest {
 
   @Test
   fun `withGraftedInStructs() with nested paths`() = runTest {
-    val structKeyArb = Arb.proto.structKey()
-    val structArb = Arb.proto.struct(key = structKeyArb)
-    val missingParentsPathArb = Arb.list(fieldPathSegmentArb(string = structKeyArb), 0..3)
+    val structArb = Arb.proto.struct()
     checkAll(propTestConfig, structArb, Arb.int(1..10)) { struct, subStructCount ->
       val structsByPath = mutableMapOf<DataConnectPath, Struct>()
+      val structsToGraft = generateSequence { structArb.bind().struct }.take(subStructCount)
+      val expectedResult = populateStructsByPath(structsByPath, struct.struct, structsToGraft)
+
+      val result = struct.struct.withGraftedInStructs(structsByPath)
+
+      result shouldBe expectedResult
+    }
+  }
+
+  @Test
+  fun `withGraftedInStructs() with nested paths and root replacement`() = runTest {
+    val structArb = Arb.proto.struct()
+    checkAll(propTestConfig, structArb, structArb, Arb.int(1..10)) {
+      struct,
+      rootReplacementStruct,
+      subStructCount ->
+      val structsByPath = mutableMapOf<DataConnectPath, Struct>()
+      val structsToGraft = generateSequence { structArb.bind().struct }.take(subStructCount)
       val expectedResult =
-        struct.struct.toBuilder().let { structBuilder ->
-          repeat(subStructCount) {
-            val structToGraft = structArb.bind().struct
-            val missingParentsPath = missingParentsPathArb.bind()
-            val graftPath =
-              structBuilder.randomlyInsertValue(
-                structToGraft.withParents(missingParentsPath).toValueProto(),
-                randomSource().random,
-                generateKey = { structKeyArb.bind() },
-              )
-            structsByPath[graftPath + missingParentsPath] = structToGraft
-          }
-          structBuilder.build()
-        }
+        populateStructsByPath(structsByPath, rootReplacementStruct.struct, structsToGraft)
+      structsByPath[emptyDataConnectPath()] = rootReplacementStruct.struct
 
       val result = struct.struct.withGraftedInStructs(structsByPath)
 
@@ -443,6 +447,46 @@ class ProtoGraftUnitTest {
 @OptIn(ExperimentalKotest::class)
 private val propTestConfig =
   PropTestConfig(iterations = 200, edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.2))
+
+/**
+ * Creates and returns a new [Struct] that is the result of randomly inserting the [Struct] objects
+ * produced by the given [structsToGraft] sequence into the receiver [Struct] at random points, and
+ * puts entries into the given [structsByPath] map about the paths at which each [Struct] was
+ * grafted.
+ *
+ * This function is used to set up test scenarios where [Struct] objects are grafted into a base
+ * [Struct] at various paths, some of which may require the creation of intermediate parent [Struct]
+ * objects.
+ *
+ * @param structsByPath A mutable map that will be populated with the [DataConnectPath] to each
+ * grafted [Struct]. This map is used to verify the grafting operation in tests.
+ * @param struct The base [Struct] onto which other [Struct] objects will be grafted.
+ * @param structsToGraft A sequence of [Struct] objects to be randomly grafted.
+ * @return A new [Struct] instance that is the receiver [Struct] with all the [structsToGraft]
+ * randomly inserted at various paths.
+ */
+private fun PropertyContext.populateStructsByPath(
+  structsByPath: MutableMap<DataConnectPath, Struct>,
+  struct: Struct,
+  structsToGraft: Sequence<Struct>
+): Struct {
+  val structKeyArb = Arb.proto.structKey()
+  val missingParentsPathArb = Arb.list(fieldPathSegmentArb(string = structKeyArb), 0..3)
+
+  val structBuilder = struct.toBuilder()
+  structsToGraft.forEach { structToGraft ->
+    val missingParentsPath = missingParentsPathArb.bind()
+    val graftPath =
+      structBuilder.randomlyInsertValue(
+        structToGraft.withParents(missingParentsPath).toValueProto(),
+        randomSource().random,
+        generateKey = { structKeyArb.bind() },
+      )
+    structsByPath[graftPath + missingParentsPath] = structToGraft
+  }
+
+  return structBuilder.build()
+}
 
 private fun DataConnectPathSegment.toExpectedDescriptionInExceptionMessages(): String =
   when (this) {
