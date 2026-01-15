@@ -63,7 +63,7 @@ internal constructor(
       description: String,
       inputSchema: JsonSchema<I>,
       outputSchema: JsonSchema<O>,
-      functionReference: ((I) -> O)? = null
+      functionReference: (suspend (I) -> O)? = null
     ): AutoFunctionDeclaration<I, O> {
       return AutoFunctionDeclaration<I, O>(
         functionName,
@@ -87,7 +87,7 @@ internal constructor(
       functionName: String,
       description: String,
       inputSchema: JsonSchema<I>,
-      functionReference: ((I) -> FunctionResponsePart)? = null
+      functionReference: (suspend (I) -> FunctionResponsePart)? = null
     ): AutoFunctionDeclaration<I, FunctionResponsePart> {
       return AutoFunctionDeclaration<I, FunctionResponsePart>(
         functionName,

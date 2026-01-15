@@ -22,6 +22,7 @@ import com.google.firebase.ai.type.ContentBlockedException
 import com.google.firebase.ai.type.ContentModality
 import com.google.firebase.ai.type.FinishReason
 import com.google.firebase.ai.type.FunctionCallPart
+import com.google.firebase.ai.type.FunctionResponsePart
 import com.google.firebase.ai.type.HarmCategory
 import com.google.firebase.ai.type.HarmProbability
 import com.google.firebase.ai.type.HarmSeverity
@@ -814,7 +815,7 @@ internal class VertexAIUnarySnapshotTests {
                 AutoFunctionDeclaration.create("fetchWeather", "", fetchWeatherRequestSchema) {
                   request: FetchWeatherRequest ->
                   functionCalled = true
-                  JsonObject(mapOf())
+                  FunctionResponsePart("fetchWeather", JsonObject(mapOf()))
                 }
               )
           )
@@ -845,7 +846,7 @@ internal class VertexAIUnarySnapshotTests {
                 AutoFunctionDeclaration.create("fetchWeather", "", fetchWeatherRequestSchema) {
                   request: FetchWeatherRequest ->
                   weatherFunctionCalled = true
-                  JsonObject(mapOf())
+                  FunctionResponsePart("fetchWeather", JsonObject(mapOf()))
                 },
                 AutoFunctionDeclaration.create(
                   "completelyDifferentFunction",
@@ -853,7 +854,7 @@ internal class VertexAIUnarySnapshotTests {
                   fetchWeatherRequestSchema
                 ) { request: FetchWeatherRequest ->
                   otherFunctionCalled = true
-                  JsonObject(mapOf())
+                  FunctionResponsePart("completelyDifferentFunction,", JsonObject(mapOf()))
                 }
               )
           )
@@ -871,30 +872,31 @@ internal class VertexAIUnarySnapshotTests {
   fun `multiple function should return to user if all aren't registered`() {
     var weatherFunctionCalled = false
     var otherFunctionCalled = false
+    val tools =
+      listOf(
+        Tool.functionDeclarations(
+          autoFunctionDeclarations =
+            listOf(
+              AutoFunctionDeclaration.create("fetchWeather", "", fetchWeatherRequestSchema) {
+                request: FetchWeatherRequest ->
+                weatherFunctionCalled = true
+                FunctionResponsePart("fetchWeather", JsonObject(mapOf()))
+              },
+              AutoFunctionDeclaration.create(
+                "completelyDifferentFunction",
+                "",
+                fetchWeatherRequestSchema,
+              )
+            )
+        )
+      )
     goldenVertexUnaryFiles(
       listOf(
           "unary-success-parallel-auto-function-call.json",
           "unary-success-basic-reply-long.json"
         )
         .map { ResponseInfo(it) },
-      tools =
-        listOf(
-          Tool.functionDeclarations(
-            autoFunctionDeclarations =
-              listOf(
-                AutoFunctionDeclaration.create("fetchWeather", "", fetchWeatherRequestSchema) {
-                  request: FetchWeatherRequest ->
-                  weatherFunctionCalled = true
-                  JsonObject(mapOf())
-                },
-                AutoFunctionDeclaration.create(
-                  "completelyDifferentFunction",
-                  "",
-                  fetchWeatherRequestSchema,
-                )
-              )
-          )
-        )
+      tools = tools
     ) {
       withTimeout(testTimeout) {
         val response = model.startChat().sendMessage("")
@@ -938,7 +940,7 @@ internal class VertexAIUnarySnapshotTests {
                 AutoFunctionDeclaration.create("fetchWeather", "", fetchWeatherRequestSchema) {
                   request: FetchWeatherRequest ->
                   functionCalled++
-                  JsonObject(mapOf())
+                  FunctionResponsePart("fetchWeather", JsonObject(mapOf()))
                 }
               )
           )

@@ -340,6 +340,7 @@ internal constructor(
       tool.firstOrNull() { it.name == call.name }
         ?: throw RuntimeException("No registered function named ${call.name}")
     return executeFunction<Any, Any>(
+      call.name,
       declaration as AutoFunctionDeclaration<Any, Any>,
       call.args["param"].toString()
     )
@@ -369,7 +370,7 @@ internal constructor(
           Json.encodeToJsonElement(outputSerializer, output).jsonObject
         )
       }
-      return FunctionResponsePart(functionName, output as JsonObject)
+      return output as FunctionResponsePart
     } catch (e: FirebaseAutoFunctionException) {
       return FunctionResponsePart(
         functionName,
