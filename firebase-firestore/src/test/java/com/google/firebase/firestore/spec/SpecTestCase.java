@@ -1163,12 +1163,27 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
               purpose = parseQueryPurpose(queryDataJson.get("targetPurpose"));
             }
 
-            TargetData targetData =
-                new TargetData(
-                    new TargetOrPipeline.TargetWrapper(query.toTarget()),
-                    targetId,
-                    ARBITRARY_SEQUENCE_NUMBER,
-                    purpose);
+            TargetData targetData;
+            if (usePipelineMode && !purpose.equals(QueryPurpose.LIMBO_RESOLUTION)) {
+              targetData =
+                  new TargetData(
+                      new TargetOrPipeline.TargetWrapper(
+                          // We are specifically using the explicit orderBys for pipelines
+                          // because these are the one used in query to pipeline conversions.
+                          // Otherwise the tests will failed due to mismatched expected pipelines,
+                          // despite them being semantically the same.
+                          query.toTarget(query.getExplicitOrderBy())),
+                      targetId,
+                      ARBITRARY_SEQUENCE_NUMBER,
+                      purpose);
+            } else {
+              targetData =
+                  new TargetData(
+                      new TargetOrPipeline.TargetWrapper(query.toTarget()),
+                      targetId,
+                      ARBITRARY_SEQUENCE_NUMBER,
+                      purpose);
+            }
             if (queryDataJson.has("resumeToken")) {
               targetData =
                   targetData.withResumeToken(
