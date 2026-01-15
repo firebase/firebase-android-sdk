@@ -16,6 +16,7 @@
 
 package com.google.firebase.dataconnect.util
 
+import com.google.firebase.dataconnect.DataConnectPathComparator
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.emptyDataConnectPath
 import com.google.firebase.dataconnect.testutil.DataConnectPath
@@ -33,6 +34,7 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
 import com.google.firebase.dataconnect.testutil.property.arbitrary.twoValues
 import com.google.firebase.dataconnect.testutil.property.arbitrary.value
 import com.google.firebase.dataconnect.testutil.property.arbitrary.valueOfKind
+import com.google.firebase.dataconnect.testutil.randomlyInsertValue
 import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
@@ -42,6 +44,7 @@ import com.google.firebase.dataconnect.testutil.walkPaths
 import com.google.firebase.dataconnect.testutil.walkValues
 import com.google.firebase.dataconnect.toPathString
 import com.google.firebase.dataconnect.util.ProtoGraft.withGraftedInStructs
+import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.firebase.dataconnect.withAddedField
 import com.google.firebase.dataconnect.withAddedListIndex
@@ -406,6 +409,53 @@ class ProtoGraftUnitTest {
       assertSoftly {
         validateMessage(exception, graftPath, listValuePath, listValue, outOfRangeListIndex)
       }
+    }
+  }
+
+  @Test
+  fun `withGraftedInStructs() with nested paths`() = runTest {
+    TODO("generalize this test")
+    val structKeyArb = Arb.proto.structKey()
+    val structArb = Arb.proto.struct(key = structKeyArb)
+    checkAll(propTestConfig, structArb, Arb.int(1..10)) { struct ->
+      val (structAPath, structA) =
+        subStruct1.struct.toBuilder().let { structBuilder ->
+          val insertPath =
+            structBuilder.randomlyInsertValue(
+              subStruct2.toValueProto(),
+              randomSource().random,
+              generateKey = { structKeyArb.bind() },
+            )
+          Pair(insertPath, structBuilder.build())
+        }
+      val (structBPath, structB) =
+        struct.struct.toBuilder().let { structBuilder ->
+          val insertPath =
+            structBuilder.randomlyInsertValue(
+              structA.toValueProto(),
+              randomSource().random,
+              generateKey = { structKeyArb.bind() },
+            )
+          Pair(insertPath, structBuilder.build())
+        }
+      val structsByPath =
+        mapOf(
+          structBPath to subStruct1.struct,
+          (structBPath + structAPath) to subStruct2.struct,
+        )
+
+      val result = struct.struct.withGraftedInStructs(structsByPath)
+
+      println("===================== ${evals()} =====================")
+      println(
+        "structsByPath.keys=${structsByPath.keys.sortedWith(DataConnectPathComparator).joinToString { it.toPathString() }}"
+      )
+      println("struct=${struct.struct.toCompactString()}")
+      println("subStruct1=${subStruct1.struct.toCompactString()}")
+      println("subStruct2=${subStruct2.struct.toCompactString()}")
+      println("result=${result.toCompactString()}")
+
+      result shouldBe structB
     }
   }
 }
