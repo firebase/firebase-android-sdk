@@ -257,7 +257,7 @@ object Values {
   }
 
   @JvmStatic
-  fun compare(left: Value, right: Value): Int {
+  fun compare(left: Value?, right: Value?): Int {
     val leftType = typeOrder(left)
     val rightType = typeOrder(right)
 
@@ -265,7 +265,7 @@ object Values {
       return leftType.compareTo(rightType)
     }
 
-    return compareInternal(leftType, left, right)
+    return compareInternal(leftType, left ?: NULL_VALUE, right ?: NULL_VALUE)
   }
 
   private fun compareInternal(leftType: Int, left: Value, right: Value): Int =
