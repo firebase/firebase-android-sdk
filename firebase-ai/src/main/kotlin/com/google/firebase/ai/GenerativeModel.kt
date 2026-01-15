@@ -340,7 +340,7 @@ internal constructor(
       tool.firstOrNull() { it.name == call.name }
         ?: throw RuntimeException("No registered function named ${call.name}")
     return executeFunction<Any, Any>(
-      call.name,
+      call,
       declaration as AutoFunctionDeclaration<Any, Any>,
       call.args["param"].toString()
     )
@@ -348,7 +348,7 @@ internal constructor(
 
   @OptIn(InternalSerializationApi::class)
   internal suspend fun <I : Any, O : Any> executeFunction(
-    functionName: String,
+    functionCall: FunctionCallPart,
     functionDeclaration: AutoFunctionDeclaration<I, O>,
     parameter: String
   ): FunctionResponsePart {
@@ -365,17 +365,15 @@ internal constructor(
       val output = functionReference.invoke(input)
       val outputSerializer = functionDeclaration.outputSchema?.clazz?.serializerOrNull()
       if (outputSerializer != null) {
-        return FunctionResponsePart(
-          functionName,
-          Json.encodeToJsonElement(outputSerializer, output).jsonObject
-        )
+        return FunctionResponsePart.from(
+            Json.encodeToJsonElement(outputSerializer, output).jsonObject
+          )
+          .normalizeAgainstCall(functionCall)
       }
-      return output as FunctionResponsePart
+      return (output as FunctionResponsePart).normalizeAgainstCall(functionCall)
     } catch (e: FirebaseAutoFunctionException) {
-      return FunctionResponsePart(
-        functionName,
-        JsonObject(mapOf("error" to JsonPrimitive(e.message)))
-      )
+      return FunctionResponsePart.from(JsonObject(mapOf("error" to JsonPrimitive(e.message))))
+        .normalizeAgainstCall(functionCall)
     }
   }
 

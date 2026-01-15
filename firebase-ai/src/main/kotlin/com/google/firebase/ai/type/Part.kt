@@ -254,8 +254,18 @@ internal constructor(
     )
   }
 
-  internal fun toInternalFunctionCall(): Internal.FunctionResponse {
+  internal fun toInternalFunctionResponse(): Internal.FunctionResponse {
     return Internal.FunctionResponse(name, response, id)
+  }
+
+  internal fun normalizeAgainstCall(call: FunctionCallPart): FunctionResponsePart {
+    return FunctionResponsePart(call.name, this.response, call.id)
+  }
+
+  public companion object {
+    public fun from(jsonObject: JsonObject): FunctionResponsePart {
+      return FunctionResponsePart("", jsonObject, null)
+    }
   }
 }
 
