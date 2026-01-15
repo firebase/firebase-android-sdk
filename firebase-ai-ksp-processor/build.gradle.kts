@@ -16,7 +16,7 @@
 
 plugins {
   kotlin("jvm")
-  id("java-library")
+  id("firebase-java-library")
   id("maven-publish")
 }
 
@@ -26,6 +26,13 @@ dependencies {
   implementation(libs.kotlinpoet.ksp)
 }
 
+firebaseLibrary {
+  publishJavadoc = false
+  releaseNotes {
+    enabled.set(false)
+  }
+}
+
 tasks.test { useJUnitPlatform() }
 
 kotlin { jvmToolchain(17) }
@@ -33,19 +40,4 @@ kotlin { jvmToolchain(17) }
 java {
   sourceCompatibility = JavaVersion.VERSION_17
   targetCompatibility = JavaVersion.VERSION_17
-}
-
-publishing {
-  publications {
-    create<MavenPublication>("mavenKotlin") {
-      from(components["kotlin"])
-      groupId = "com.google.firebase"
-      artifactId = "firebase-ai-processor"
-      version = "1.0.0"
-    }
-  }
-  repositories {
-    maven { url = uri("m2/") }
-    mavenLocal()
-  }
 }
