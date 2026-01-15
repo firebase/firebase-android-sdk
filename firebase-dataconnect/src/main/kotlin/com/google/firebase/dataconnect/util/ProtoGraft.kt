@@ -130,11 +130,22 @@ internal object ProtoGraft {
                       "has kind case ${currentNode.toValue().kindCase}, " +
                       "but it is required to be ${Value.KindCase.LIST_VALUE} [gr7mqk4jnn]"
                   )
-              if (pathSegment.index < 0 || pathSegment.index >= listNode.values.size) {
-                throw PathListIndexOutOfBoundsException(
+              if (pathSegment.index < 0) {
+                throw NegativePathListIndexException(
                   "structsByPath contains path ${path.toPathString()} whose segment " +
-                    "${pathSegmentIndex+1} (list index ${pathSegment.index}) is outside " +
-                    "the half-open range [0..${listNode.values.size}) [rrk4t44n42]"
+                    "${pathSegmentIndex+1} (list index ${pathSegment.index}) is negative, " +
+                    "but list indices must be greater than or equal to zero " +
+                    "and strictly less than the size of the referent list, that is, " +
+                    "between 0 (inclusive) and ${listNode.values.size} (exclusive) [rrk4t44n42]"
+                )
+              } else if (pathSegment.index >= listNode.values.size) {
+                throw PathListIndexGreaterThanOrEqualToListSizeException(
+                  "structsByPath contains path ${path.toPathString()} whose segment " +
+                    "${pathSegmentIndex+1} (list index ${pathSegment.index}) " +
+                    "is greater than or equal to the size of the list, " +
+                    "but list indices must be greater than or equal to zero " +
+                    "and strictly less than the size of the referent list, that is, " +
+                    "between 0 (inclusive) and ${listNode.values.size} (exclusive) [pdfqm8kb54]"
                 )
               }
               listNode.values[pathSegment.index]
@@ -249,7 +260,13 @@ internal object ProtoGraft {
 
   class InsertIntoNonStructException(message: String) : ProtoGraftException(message)
 
-  class PathListIndexOutOfBoundsException(message: String) : ProtoGraftException(message)
+  sealed class PathListIndexOutOfBoundsException(message: String) : ProtoGraftException(message)
+
+  class PathListIndexGreaterThanOrEqualToListSizeException(message: String) :
+    PathListIndexOutOfBoundsException(message)
+
+  class NegativePathListIndexException(message: String) :
+    PathListIndexOutOfBoundsException(message)
 
   class PathListIndexOfNonListException(message: String) : ProtoGraftException(message)
 

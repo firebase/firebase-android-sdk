@@ -32,6 +32,7 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
 import com.google.firebase.dataconnect.testutil.property.arbitrary.twoValues
 import com.google.firebase.dataconnect.testutil.property.arbitrary.value
+import com.google.firebase.dataconnect.testutil.property.arbitrary.valueOfKind
 import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
@@ -44,6 +45,7 @@ import com.google.firebase.dataconnect.util.ProtoGraft.withGraftedInStructs
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.firebase.dataconnect.withAddedField
 import com.google.firebase.dataconnect.withAddedListIndex
+import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
 import io.kotest.assertions.assertSoftly
@@ -64,6 +66,7 @@ import io.kotest.property.arbitrary.distinct
 import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.list
+import io.kotest.property.arbitrary.negativeInt
 import io.kotest.property.arbitrary.of
 import io.kotest.property.checkAll
 import io.kotest.property.exhaustive.enum
@@ -335,6 +338,81 @@ class ProtoGraftUnitTest {
         }
       }
     }
+
+  @Test
+  fun `withGraftedInStructs() with structsByPath containing paths with a negative list index segment should throw`() =
+    verifyWithGraftedInStructsThrowsPathListIndexOutOfBoundsException<
+      ProtoGraft.NegativePathListIndexException
+    >(
+      outOfRangeListIndexArbFactory = { Arb.negativeInt() }
+    ) { exception, graftPath, listValuePath, listValue, outOfRangeListIndex ->
+      exception.message shouldContainWithNonAbuttingText "rrk4t44n42"
+      exception.message shouldContainWithNonAbuttingText graftPath.toPathString()
+      exception.message shouldContainWithNonAbuttingTextIgnoringCase
+        "whose segment ${listValuePath.size+1} (list index $outOfRangeListIndex) is negative"
+      exception.message shouldContainWithNonAbuttingTextIgnoringCase
+        "between 0 (inclusive) and ${listValue.valuesCount} (exclusive)"
+    }
+
+  @Test
+  fun `withGraftedInStructs() with structsByPath containing paths with a too-large list index segment should throw`() =
+    verifyWithGraftedInStructsThrowsPathListIndexOutOfBoundsException<
+      ProtoGraft.PathListIndexGreaterThanOrEqualToListSizeException
+    >(
+      outOfRangeListIndexArbFactory = { listValue -> Arb.int(min = listValue.valuesCount) }
+    ) { exception, graftPath, listValuePath, listValue, outOfRangeListIndex ->
+      exception.message shouldContainWithNonAbuttingText "pdfqm8kb54"
+      exception.message shouldContainWithNonAbuttingText graftPath.toPathString()
+      exception.message shouldContainWithNonAbuttingTextIgnoringCase
+        "whose segment ${listValuePath.size+1} (list index $outOfRangeListIndex) " +
+          "is greater than or equal to the size of the list"
+      exception.message shouldContainWithNonAbuttingTextIgnoringCase
+        "between 0 (inclusive) and ${listValue.valuesCount} (exclusive)"
+    }
+
+  private inline fun <
+    reified E : ProtoGraft.PathListIndexOutOfBoundsException> verifyWithGraftedInStructsThrowsPathListIndexOutOfBoundsException(
+    crossinline outOfRangeListIndexArbFactory: (ListValue) -> Arb<Int>,
+    crossinline validateMessage:
+      (
+        exception: E,
+        graftPath: DataConnectPath,
+        listValuePath: DataConnectPath,
+        listValue: ListValue,
+        outOfRangeListIndex: Int,
+      ) -> Unit,
+  ) = runTest {
+    val structWithAtLeast1ListValueArb =
+      structWithAtLeast1ValueMatchingArb(Arb.proto.valueOfKind(Value.KindCase.LIST_VALUE)) {
+        it.isListValue
+      }
+
+    checkAll(
+      propTestConfig,
+      structWithAtLeast1ListValueArb,
+      Arb.proto.struct(),
+      dataConnectPathArb(size = 0..5),
+      fieldPathSegmentArb()
+    ) { struct, structToGraft, pathSuffix, fieldSegment ->
+      val listValues = struct.walk().filter { it.value.isListValue }.toList()
+      val (listValuePath, listValueValue) = Arb.of(listValues).bind()
+      val listValue = listValueValue.listValue
+      val outOfRangeListIndex = outOfRangeListIndexArbFactory(listValue).bind()
+      val graftPath = buildList {
+        addAll(listValuePath)
+        add(DataConnectPathSegment.ListIndex(outOfRangeListIndex))
+        addAll(pathSuffix)
+        add(fieldSegment)
+      }
+      val structsByPath = mapOf(graftPath to structToGraft.struct)
+
+      val exception = shouldThrow<E> { struct.withGraftedInStructs(structsByPath) }
+
+      assertSoftly {
+        validateMessage(exception, graftPath, listValuePath, listValue, outOfRangeListIndex)
+      }
+    }
+  }
 }
 
 @OptIn(ExperimentalKotest::class)
@@ -457,24 +535,39 @@ private fun Struct.withParents(path: List<DataConnectPathSegment.Field>): Struct
 /**
  * Returns an [Arb] that produces [Struct] instances guaranteed to contain at least one [Value]
  * whose [Value.kindCase] is _not_ the specified [kind].
- *
- * The returned [Arb] ensures that the generated [Struct] is suitable for tests requiring a [Struct]
- * with a specific kind of non-matching [Value] somewhere within its structure. It achieves this by
- * either taking an existing [Struct] that already satisfies the condition or by inserting a new
- * [Value] of a non-[kind] type at a random insertion point within a generated [Struct].
  */
 private fun structWithAtLeast1ValueOfNotKindArb(kind: Value.KindCase): Arb<Struct> {
-  val structKeyArb = Arb.proto.structKey()
   val valueOfNotKindArb = Arb.proto.value(exclude = kind)
+  return structWithAtLeast1ValueMatchingArb(valueOfNotKindArb) { it.kindCase != kind }
+}
+
+/**
+ * Returns an [Arb] that produces [Struct] instances guaranteed to contain at least one [Value] for
+ * which the given [predicate] returns `true`.
+ */
+private fun structWithAtLeast1ValueMatchingArb(
+  valueArb: Arb<Value>,
+  predicate: (Value) -> Boolean
+): Arb<Struct> {
+  val structKeyArb = Arb.proto.structKey()
   val structArb = Arb.proto.struct(key = structKeyArb)
   return arbitrary { rs ->
     val struct = structArb.bind().struct
-    val hasNotKind = struct.walkValues().any { it.kindCase != kind }
-    if (hasNotKind) {
+    if (struct.walkValues().any(predicate)) {
       struct
     } else {
-      val valueOfNotKind = valueOfNotKindArb.bind()
-      val insertionPoint = struct.walk(includeSelf = true).toList().random(rs.random)
+      val valueMatchingPredicate = valueArb.bind()
+      require(predicate(valueMatchingPredicate)) {
+        "internal error vwbbb2wnbw: valueArb generated a value that does not satisfy " +
+          "the given predicate, but all values generated by valueArb are required " +
+          "to satisfy the given predicate; generated value: $valueMatchingPredicate"
+      }
+      val insertionPoint =
+        struct
+          .walk(includeSelf = true)
+          .filter { it.value.isStructValue || it.value.isListValue }
+          .toList()
+          .random(rs.random)
       val insertionKey =
         insertionPoint.value.structValueOrNull?.let { insertionStruct ->
           structKeyArb.filterNot { insertionStruct.containsFields(it) }.bind()
@@ -489,14 +582,17 @@ private fun structWithAtLeast1ValueOfNotKindArb(kind: Value.KindCase): Arb<Struc
         } else if (value.isStructValue) {
           value.structValue
             .toBuilder()
-            .putFields(insertionKey!!, valueOfNotKind)
+            .putFields(insertionKey!!, valueMatchingPredicate)
             .build()
             .toValueProto()
         } else {
-          check(value.isListValue)
+          check(value.isListValue) {
+            "internal error yj9vteeqma: value.kindCase=${value.kindCase}, " +
+              "but expected ${Value.KindCase.LIST_VALUE} (value=$value)"
+          }
           value.listValue
             .toBuilder()
-            .addValues(insertionIndex!!, valueOfNotKind)
+            .addValues(insertionIndex!!, valueMatchingPredicate)
             .build()
             .toValueProto()
         }
