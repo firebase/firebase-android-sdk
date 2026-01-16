@@ -18,34 +18,25 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import androidx.annotation.Keep;
 import androidx.annotation.VisibleForTesting;
-import com.google.firebase.perf.application.AppStateMonitor;
-import com.google.firebase.perf.application.AppStateUpdateHandler;
 import com.google.firebase.perf.session.gauges.GaugeManager;
-import com.google.firebase.perf.v1.ApplicationProcessState;
 import com.google.firebase.perf.v1.GaugeMetadata;
 import com.google.firebase.perf.v1.GaugeMetric;
 import java.lang.ref.WeakReference;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 /** Session manager to generate sessionIDs and broadcast to the application. */
 @Keep // Needed because of b/117526359.
-public class SessionManager extends AppStateUpdateHandler {
-
+public class SessionManager {
   @SuppressLint("StaticFieldLeak")
   private static final SessionManager instance = new SessionManager();
 
   private final GaugeManager gaugeManager;
-  private final AppStateMonitor appStateMonitor;
   private final Set<WeakReference<SessionAwareObject>> clients = new HashSet<>();
 
   private PerfSession perfSession;
-  private Future syncInitFuture;
 
   /** Returns the singleton instance of SessionManager. */
   public static SessionManager getInstance() {
@@ -58,20 +49,15 @@ public class SessionManager extends AppStateUpdateHandler {
   }
 
   private SessionManager() {
-    // Generate a new sessionID for every cold start.
-    this(
-        GaugeManager.getInstance(),
-        PerfSession.createWithId(UUID.randomUUID().toString()),
-        AppStateMonitor.getInstance());
+    // Creates a legacy session by default. This is a safety net to allow initializing
+    // SessionManager - but the current implementation replaces it immediately.
+    this(GaugeManager.getInstance(), PerfSession.createWithId(null));
   }
 
   @VisibleForTesting
-  public SessionManager(
-      GaugeManager gaugeManager, PerfSession perfSession, AppStateMonitor appStateMonitor) {
+  public SessionManager(GaugeManager gaugeManager, PerfSession perfSession) {
     this.gaugeManager = gaugeManager;
     this.perfSession = perfSession;
-    this.appStateMonitor = appStateMonitor;
-    registerForAppState();
   }
 
   /**
@@ -79,49 +65,7 @@ public class SessionManager extends AppStateUpdateHandler {
    * (currently that is before onResume finishes) to ensure gauge collection starts on time.
    */
   public void setApplicationContext(final Context appContext) {
-    // Get PerfSession in main thread first, because it is possible that app changes fg/bg state
-    // which creates a new perfSession, before the following is executed in background thread
-    final PerfSession appStartSession = perfSession;
-    // TODO(b/258263016): Migrate to go/firebase-android-executors
-    @SuppressLint("ThreadPoolCreation")
-    ExecutorService executorService = Executors.newSingleThreadExecutor();
-    syncInitFuture =
-        executorService.submit(
-            () -> {
-              gaugeManager.initializeGaugeMetadataManager(appContext);
-              if (appStartSession.isGaugeAndEventCollectionEnabled()) {
-                gaugeManager.logGaugeMetadata(
-                    appStartSession.sessionId(), ApplicationProcessState.FOREGROUND);
-              }
-            });
-  }
-
-  @Override
-  public void onUpdateAppState(ApplicationProcessState newAppState) {
-    super.onUpdateAppState(newAppState);
-
-    if (appStateMonitor.isColdStart()) {
-      // We want the Session to remain unchanged if this is a cold start of the app since we already
-      // update the PerfSession in FirebasePerfProvider#onAttachInfo().
-      return;
-    }
-
-    if (newAppState == ApplicationProcessState.FOREGROUND) {
-      // A new foregrounding of app will force a new sessionID generation.
-      PerfSession session = PerfSession.createWithId(UUID.randomUUID().toString());
-      updatePerfSession(session);
-    } else {
-      // If the session is running for too long, generate a new session and collect gauges as
-      // necessary.
-      if (perfSession.isSessionRunningTooLong()) {
-        PerfSession session = PerfSession.createWithId(UUID.randomUUID().toString());
-        updatePerfSession(session);
-      } else {
-        // For any other state change of the application, modify gauge collection state as
-        // necessary.
-        startOrStopCollectingGauges(newAppState);
-      }
-    }
+    gaugeManager.initializeGaugeMetadataManager(appContext);
   }
 
   /**
@@ -145,11 +89,17 @@ public class SessionManager extends AppStateUpdateHandler {
    */
   public void updatePerfSession(PerfSession perfSession) {
     // Do not update the perf session if it is the exact same sessionId.
-    if (perfSession.sessionId() == this.perfSession.sessionId()) {
+    if (Objects.equals(perfSession.sessionId(), this.perfSession.sessionId())) {
       return;
     }
 
     this.perfSession = perfSession;
+
+    // Start or stop the gauge data collection ASAP.
+    startOrStopCollectingGauges();
+
+    // Log gauge metadata.
+    logGaugeMetadataIfCollectionEnabled();
 
     synchronized (clients) {
       for (Iterator<WeakReference<SessionAwareObject>> i = clients.iterator(); i.hasNext(); ) {
@@ -163,12 +113,6 @@ public class SessionManager extends AppStateUpdateHandler {
         }
       }
     }
-
-    // Log the gauge metadata event if data collection is enabled.
-    logGaugeMetadataIfCollectionEnabled(appStateMonitor.getAppState());
-
-    // Start of stop the gauge data collection.
-    startOrStopCollectingGauges(appStateMonitor.getAppState());
   }
 
   /**
@@ -177,9 +121,9 @@ public class SessionManager extends AppStateUpdateHandler {
    * PerfSession} was already initialized a moment ago by getInstance(). Unlike updatePerfSession,
    * this does not reset the perfSession.
    */
+  @Deprecated // TODO(b/394127311): Delete this. AQS early initialization updates the session ASAP.
   public void initializeGaugeCollection() {
-    logGaugeMetadataIfCollectionEnabled(ApplicationProcessState.FOREGROUND);
-    startOrStopCollectingGauges(ApplicationProcessState.FOREGROUND);
+    startOrStopCollectingGauges();
   }
 
   /**
@@ -206,15 +150,15 @@ public class SessionManager extends AppStateUpdateHandler {
     }
   }
 
-  private void logGaugeMetadataIfCollectionEnabled(ApplicationProcessState appState) {
-    if (perfSession.isGaugeAndEventCollectionEnabled()) {
-      gaugeManager.logGaugeMetadata(perfSession.sessionId(), appState);
+  private void logGaugeMetadataIfCollectionEnabled() {
+    if (perfSession.isVerbose()) {
+      gaugeManager.logGaugeMetadata(perfSession.sessionId());
     }
   }
 
-  private void startOrStopCollectingGauges(ApplicationProcessState appState) {
-    if (perfSession.isGaugeAndEventCollectionEnabled()) {
-      gaugeManager.startCollectingGauges(perfSession, appState);
+  private void startOrStopCollectingGauges() {
+    if (perfSession.isVerbose()) {
+      gaugeManager.startCollectingGauges(perfSession);
     } else {
       gaugeManager.stopCollectingGauges();
     }
@@ -223,10 +167,5 @@ public class SessionManager extends AppStateUpdateHandler {
   @VisibleForTesting
   public void setPerfSession(PerfSession perfSession) {
     this.perfSession = perfSession;
-  }
-
-  @VisibleForTesting
-  public Future getSyncInitFuture() {
-    return this.syncInitFuture;
   }
 }
