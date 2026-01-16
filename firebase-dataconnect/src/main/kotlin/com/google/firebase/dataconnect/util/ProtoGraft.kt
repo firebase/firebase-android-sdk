@@ -25,6 +25,8 @@ import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
+import kotlin.collections.component1
+import kotlin.collections.component2
 import kotlin.collections.set
 
 /**
@@ -147,7 +149,7 @@ internal object ProtoGraft {
                     "between 0 (inclusive) and ${listNode.size} (exclusive) [pdfqm8kb54]"
                 )
               }
-              listNode.getChild(pathSegment.index)
+              listNode.getValue(pathSegment.index)
             }
           }
       }
@@ -242,43 +244,46 @@ internal object ProtoGraft {
 
     class ListNode(
       parentPathSegment: DataConnectPathSegment?,
-      private val original: ListValue,
-      private val mutatedValues: MutableMap<Int, MutableNode> = mutableMapOf()
+      private val listValue: ListValue,
     ) : MutableNode(parentPathSegment) {
 
-      fun getChild(index: Int): MutableNode {
-        if (mutatedValues.containsKey(index)) {
-          return mutatedValues.getValue(index)
+      private val lazyMutatedValues =
+        lazy(LazyThreadSafetyMode.NONE) { mutableMapOf<Int, MutableNode>() }
+
+      fun getValue(index: Int): MutableNode {
+        if (lazyMutatedValues.isInitialized()) {
+          lazyMutatedValues.value[index]?.let {
+            return it
+          }
         }
-        val child =
-          toMutableNode(original.getValues(index), DataConnectPathSegment.ListIndex(index))
-        mutatedValues[index] = child
-        return child
+
+        val childParentPathSegment = DataConnectPathSegment.ListIndex(index)
+        val listElement = listValue.getValues(index)
+        val newChildMutableNode = toMutableNode(listElement, childParentPathSegment)
+        lazyMutatedValues.value[index] = newChildMutableNode
+        return newChildMutableNode
       }
 
       val size: Int
-        get() = original.valuesCount
+        get() = listValue.valuesCount
 
-      fun toListValue(): ListValue =
-        ListValue.newBuilder().let { listBuilder ->
-          for (i in 0 until original.valuesCount) {
-            val value =
-              if (mutatedValues.containsKey(i)) {
-                mutatedValues.getValue(i).toValue()
-              } else {
-                original.getValues(i)
-              }
-            listBuilder.addValues(value)
-          }
-          listBuilder.build()
+      fun toListValue(): ListValue {
+        if (!lazyMutatedValues.isInitialized()) {
+          return listValue
         }
+        val listValueBuilder = listValue.toBuilder()
+        lazyMutatedValues.value.entries.forEach { (index, node) ->
+          listValueBuilder.setValues(index, node.toValue())
+        }
+        return listValueBuilder.build()
+      }
 
       override val kind = Value.KindCase.LIST_VALUE
 
       override fun toValue(): Value = toListValue().toValueProto()
     }
 
-    class ValueNode(parentPathSegment: DataConnectPathSegment?, val value: Value) :
+    class ScalarNode(parentPathSegment: DataConnectPathSegment?, val value: Value) :
       MutableNode(parentPathSegment) {
       override val kind
         get() = value.kindCase!!
@@ -290,7 +295,7 @@ internal object ProtoGraft {
     when (value.kindCase) {
       Value.KindCase.STRUCT_VALUE -> toMutableNode(value.structValue, parentPathSegment)
       Value.KindCase.LIST_VALUE -> toMutableNode(value.listValue, parentPathSegment)
-      else -> MutableNode.ValueNode(parentPathSegment, value)
+      else -> MutableNode.ScalarNode(parentPathSegment, value)
     }
 
   private fun toMutableNode(
