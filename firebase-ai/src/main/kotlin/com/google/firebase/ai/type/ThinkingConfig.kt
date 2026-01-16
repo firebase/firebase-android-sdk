@@ -48,15 +48,30 @@ private constructor(
     /**
      * Indicates the thinking budget in tokens.
      *
-     * Use `0` for disabled, and `-1` for dynamic. The range of
+     * The range of
      * [supported thinking budget values](https://firebase.google.com/docs/ai-logic/thinking#supported-thinking-budget-values)
      * depends on the model.
+     * - To disable thinking, when supported by the model, set this value to `0`.
+     * - To use dynamic thinking, allowing the model to decide on the thinking budget based on the
+     * task, set this value to `-1`.
      */
     public fun setThinkingBudget(thinkingBudget: Int): Builder = apply {
       this.thinkingBudget = thinkingBudget
     }
 
-    /** Indicates the thinking budget based in Levels. */
+    /**
+     * Indicates the thinking budget in [ThinkingLevel]s.
+     *
+     * If you don't specify a thinking level, Gemini will use the model's default dynamic thinking
+     * level.
+     *
+     * > Important: Gemini 2.5 series models do not support thinking levels; use [setThinkingBudget]
+     * to set a thinking budget instead.
+     *
+     * @param thinkingLevel A preset that controls the model's "thinking" process. Use
+     * [ThinkingLevel.LOW] for faster responses on less complex tasks, and [ThinkingLevel.HIGH] for
+     * better reasoning on more complex tasks.
+     */
     public fun setThinkingLevel(thinkingLevel: ThinkingLevel): Builder = apply {
       this.thinkingLevel = thinkingLevel
     }
