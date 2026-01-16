@@ -9,7 +9,7 @@ plugins {
 dependencies {
     implementation("com.google.firebase:firebase-bom:<latest-version>")
     implementation("com.google.firebase:firebase-ai")
-    ksp("com.google.firebase:firebase-ai-processor:1.0.0")
+    ksp("com.google.firebase:firebase-ai-ksp-processor:1.0.0")
 }
 ```
 

@@ -16,17 +16,18 @@
 
 package com.google.firebase.ai.type
 
-import kotlin.reflect.KClass
 import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.serializerOrNull
 
 /**
  * A [GenerateContentResponse] augmented with class information, use [getObject] to parse the
  * response and extract the raw object.
  */
 public class GenerateObjectResponse<T : Any>
-internal constructor(public val response: GenerateContentResponse, internal val clazz: KClass<T>) {
+internal constructor(
+  public val response: GenerateContentResponse,
+  internal val schema: JsonSchema<T>
+) {
 
   /**
    * Deserialize a candidate (default first) and convert it into the type associated with this
@@ -39,9 +40,8 @@ internal constructor(public val response: GenerateContentResponse, internal val 
   @OptIn(InternalSerializationApi::class)
   public fun getObject(candidateIndex: Int = 0): T? {
     val candidate = response.candidates[candidateIndex]
-    val deserializer =
-      clazz.serializerOrNull()
-        ?: throw RuntimeException("Object type ${clazz.qualifiedName} is not @Serializable")
+
+    val deserializer = schema.getSerializer()
     val text =
       candidate.content.parts
         .filter { !it.isThought }
@@ -50,6 +50,6 @@ internal constructor(public val response: GenerateContentResponse, internal val 
     if (text.isEmpty()) {
       return null
     }
-    return Json.decodeFromString(deserializer, text)
+    return Json.decodeFromString(deserializer, text) as T?
   }
 }

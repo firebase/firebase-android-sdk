@@ -56,7 +56,6 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.serializerOrNull
 
 /**
  * Represents a multimodal model (like Gemini), capable of generating content based on various input
@@ -153,7 +152,7 @@ internal constructor(
           .generateContent(constructRequest(config, prompt, *prompts))
           .toPublic()
           .validate(),
-        jsonSchema.clazz
+        jsonSchema
       )
     } catch (e: Throwable) {
       throw FirebaseAIException.from(e)
@@ -352,18 +351,14 @@ internal constructor(
     functionDeclaration: AutoFunctionDeclaration<I, O>,
     parameter: String
   ): FunctionResponsePart {
-    val inputDeserializer =
-      functionDeclaration.inputSchema.clazz.serializerOrNull()
-        ?: throw RuntimeException(
-          "Function input type ${functionDeclaration.inputSchema.clazz.qualifiedName} is not @Serializable"
-        )
+    val inputDeserializer = functionDeclaration.inputSchema.getSerializer()
     val input = Json.decodeFromString(inputDeserializer, parameter)
     val functionReference =
       functionDeclaration.functionReference
         ?: throw RuntimeException("Function reference for ${functionDeclaration.name} is missing")
     try {
       val output = functionReference.invoke(input)
-      val outputSerializer = functionDeclaration.outputSchema?.clazz?.serializerOrNull()
+      val outputSerializer = functionDeclaration.outputSchema?.getSerializer()
       if (outputSerializer != null) {
         return FunctionResponsePart.from(
             Json.encodeToJsonElement(outputSerializer, output).jsonObject

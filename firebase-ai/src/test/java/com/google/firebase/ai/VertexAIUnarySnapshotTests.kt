@@ -952,4 +952,30 @@ internal class VertexAIUnarySnapshotTests {
       }
     }
   }
+
+  @Serializable data class ColorScheme(val name: String, val colors: List<String>)
+
+  val colorSchemesSchema =
+    JsonSchema.array(
+      items =
+        JsonSchema.obj(
+          mapOf(
+            "name" to JsonSchema.string(),
+            "colors" to JsonSchema.array(items = JsonSchema.string())
+          ),
+          clazz = ColorScheme::class
+        )
+    )
+
+  @Test
+  fun `generateObject properly decodes things to schema`() =
+    goldenVertexUnaryFile("unary-success-constraint-decoding-json.json") {
+      val response = model.generateObject(colorSchemesSchema, "prompt")
+      val array = response.getObject()!!
+      array.size shouldBe 3
+      for (obj in array) {
+        obj.name.shouldNotBeEmpty()
+        obj.colors.size shouldBe 5
+      }
+    }
 }

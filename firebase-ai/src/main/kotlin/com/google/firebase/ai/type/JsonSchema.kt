@@ -17,7 +17,11 @@
 package com.google.firebase.ai.type
 
 import kotlin.reflect.KClass
+import kotlinx.serialization.InternalSerializationApi
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.serializerOrNull
 
 /**
  * Definition of a data type.
@@ -48,6 +52,23 @@ internal constructor(
   public val maximum: Double? = null,
   public val anyOf: List<JsonSchema<*>>? = null,
 ) {
+
+  @OptIn(InternalSerializationApi::class)
+  public fun getSerializer(): KSerializer<T> {
+    return (if (clazz.simpleName.equals("List")) {
+      val elementClazz = items?.clazz
+      val elementSerializer =
+        elementClazz?.serializerOrNull()
+          ?: throw RuntimeException(
+            "Object type ${elementClazz?.qualifiedName} is not @Serializable"
+          )
+      ListSerializer((elementSerializer as KSerializer<T>))
+    } else {
+      clazz.serializerOrNull()
+        ?: throw RuntimeException("Object type ${clazz.qualifiedName} is not @Serializable")
+    })
+      as KSerializer<T>
+  }
 
   public companion object {
     /**
@@ -318,14 +339,14 @@ internal constructor(
      */
     @JvmStatic
     @JvmOverloads
-    public fun array(
-      items: JsonSchema<*>,
+    public fun <T : Any> array(
+      items: JsonSchema<T>,
       description: String? = null,
       nullable: Boolean = false,
       title: String? = null,
       minItems: Int? = null,
       maxItems: Int? = null,
-    ): JsonSchema<List<*>> =
+    ): JsonSchema<List<T>> =
       JsonSchema(
         description = description,
         nullable = nullable,
@@ -336,6 +357,7 @@ internal constructor(
         maxItems = maxItems,
         clazz = List::class
       )
+        as JsonSchema<List<T>>
 
     /**
      * Returns a [JsonSchema] for an enumeration.
