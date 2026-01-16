@@ -85,7 +85,7 @@ class ProtoDiffUnitTest {
     checkAll(propTestConfig, structArb, Arb.int(1..5)) { struct1, keyCount ->
       val mutableDifferences = mutableListOf<DifferencePathPair<*>>()
       val struct2 = prepare(struct1, keyCount, mutableDifferences)
-      val expectedDifferences = mutableDifferences
+      val expectedDifferences = mutableDifferences.toList()
 
       structFastEqual(struct1, struct2) shouldBe false
       structFastEqual(struct2, struct1) shouldBe false
@@ -245,7 +245,7 @@ class ProtoDiffUnitTest {
     checkAll(propTestConfig, listValueArb, Arb.int(1..5)) { listValue1, itemCount ->
       val mutableDifferences = mutableListOf<DifferencePathPair<*>>()
       val listValue2 = prepare(listValue1, itemCount, mutableDifferences)
-      val expectedDifferences = mutableDifferences
+      val expectedDifferences = mutableDifferences.toList()
 
       listValueFastEqual(listValue1, listValue2) shouldBe false
       listValueFastEqual(listValue2, listValue1) shouldBe false

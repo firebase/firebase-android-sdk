@@ -30,8 +30,10 @@ import com.google.firebase.firestore.bundle.BundleCallback;
 import com.google.firebase.firestore.bundle.BundleMetadata;
 import com.google.firebase.firestore.bundle.NamedQuery;
 import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.core.QueryOrPipeline;
 import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.core.TargetIdGenerator;
+import com.google.firebase.firestore.core.TargetOrPipeline;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.FieldIndex;
@@ -145,7 +147,7 @@ public final class LocalStore implements BundleCallback {
   private final SparseArray<TargetData> queryDataByTarget;
 
   /** Maps a target to its targetID. */
-  private final Map<Target, Integer> targetIdByTarget;
+  private final Map<TargetOrPipeline, Integer> targetIdByTarget;
 
   /** Used to generate targetIds for queries tracked locally. */
   private final TargetIdGenerator targetIdGenerator;
@@ -660,13 +662,16 @@ public final class LocalStore implements BundleCallback {
    * <p>Allocating an already allocated target will return the existing @{code TargetData} for that
    * target.
    */
-  public TargetData allocateTarget(Target target) {
+  public TargetData allocateTarget(TargetOrPipeline target) {
     int targetId;
     TargetData cached = targetCache.getTargetData(target);
     if (cached != null) {
       // This query has been listened to previously, so reuse the previous targetID.
       // TODO: freshen last accessed date?
       targetId = cached.getTargetId();
+      // deserialized target is missing a firestore reference, so we use the one that has it
+      // to replace just to be safe.
+      cached = cached.withTarget(target);
     } else {
       final AllocateQueryHolder holder = new AllocateQueryHolder();
       persistence.runTransaction(
@@ -698,7 +703,7 @@ public final class LocalStore implements BundleCallback {
    */
   @VisibleForTesting
   @Nullable
-  TargetData getTargetData(Target target) {
+  TargetData getTargetData(TargetOrPipeline target) {
     Integer targetId = targetIdByTarget.get(target);
     if (targetId != null) {
       return queryDataByTarget.get(targetId);
@@ -735,7 +740,8 @@ public final class LocalStore implements BundleCallback {
       ImmutableSortedMap<DocumentKey, MutableDocument> documents, String bundleId) {
     // Allocates a target to hold all document keys from the bundle, such that
     // they will not get garbage collected right away.
-    TargetData umbrellaTargetData = allocateTarget(newUmbrellaTarget(bundleId));
+    TargetData umbrellaTargetData =
+        allocateTarget(new TargetOrPipeline.TargetWrapper(newUmbrellaTarget(bundleId)));
 
     return persistence.runTransaction(
         "Apply bundle documents",
@@ -768,7 +774,9 @@ public final class LocalStore implements BundleCallback {
     // if users use it to listen.
     // NOTE: this also means if no corresponding target exists, the new target will remain active
     // and will not get collected, unless users happen to unlisten the query somehow.
-    TargetData existingTargetData = allocateTarget(namedQuery.getBundledQuery().getTarget());
+    TargetData existingTargetData =
+        allocateTarget(
+            new TargetOrPipeline.TargetWrapper(namedQuery.getBundledQuery().getTarget()));
     int targetId = existingTargetData.getTargetId();
 
     persistence.runTransaction(
@@ -864,8 +872,8 @@ public final class LocalStore implements BundleCallback {
    * @param usePreviousResults Whether results from previous executions can be used to optimize this
    *     query execution.
    */
-  public QueryResult executeQuery(Query query, boolean usePreviousResults) {
-    TargetData targetData = getTargetData(query.toTarget());
+  public QueryResult executeQuery(QueryOrPipeline query, boolean usePreviousResults) {
+    TargetData targetData = getTargetData(query.toTargetOrPipeline());
     SnapshotVersion lastLimboFreeSnapshotVersion = SnapshotVersion.NONE;
     ImmutableSortedSet<DocumentKey> remoteKeys = DocumentKey.emptyKeySet();
 

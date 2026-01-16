@@ -141,8 +141,9 @@ public class Util {
     return NumberComparisonHelper.firestoreCompareDoubleWithLong(doubleValue, longValue);
   }
 
-  public static <T extends Comparable<T>> Comparator<T> comparator() {
-    return Comparable::compareTo;
+  private static String getUtf8SafeBytes(String str, int index) {
+    int firstCodePoint = str.codePointAt(index);
+    return str.substring(index, index + Character.charCount(firstCodePoint));
   }
 
   public static FirebaseFirestoreException exceptionFromStatus(Status error) {
@@ -164,15 +165,6 @@ public class Util {
       return exceptionFromStatus(statusRuntimeException.getStatus());
     } else {
       return e;
-    }
-  }
-
-  /** Turns a Throwable into an exception, converting it from a StatusException if necessary. */
-  public static Exception convertThrowableToException(Throwable t) {
-    if (t instanceof Exception) {
-      return Util.convertStatusException((Exception) t);
-    } else {
-      return new Exception(t);
     }
   }
 
