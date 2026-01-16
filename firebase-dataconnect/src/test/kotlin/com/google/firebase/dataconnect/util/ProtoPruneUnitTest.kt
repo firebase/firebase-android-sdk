@@ -23,26 +23,18 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectAr
 import com.google.firebase.dataconnect.testutil.property.arbitrary.listValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
-import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.testutil.walk
-import com.google.firebase.dataconnect.toPathString
 import com.google.firebase.dataconnect.util.ProtoPrune.withDescendantStructsPruned
 import com.google.firebase.dataconnect.withAddedListIndex
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
-import io.kotest.assertions.assertSoftly
-import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
-import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.nulls.shouldBeNull
-import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
-import io.kotest.property.Exhaustive
 import io.kotest.property.PropTestConfig
-import io.kotest.property.arbitrary.pair
 import io.kotest.property.checkAll
-import io.kotest.property.exhaustive.boolean
+import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -55,7 +47,7 @@ class ProtoPruneUnitTest {
   fun `Struct withDescendantStructsPruned() should return null if nothing is pruned`() = runTest {
     checkAll(propTestConfig, Arb.proto.struct(), dataConnectPathArb()) { structSample, path ->
       val struct: Struct = structSample.struct
-      val predicate = mockPredicateThatUnconditionallyReturns(false)
+      val predicate = predicateThatUnconditionallyReturns(false)
 
       val result = struct.withDescendantStructsPruned(path, predicate)
 
@@ -69,7 +61,7 @@ class ProtoPruneUnitTest {
       checkAll(propTestConfig, Arb.proto.listValue(), dataConnectPathArb()) { listValueSample, path
         ->
         val listValue: ListValue = listValueSample.listValue
-        val predicate = mockPredicateThatUnconditionallyReturns(false)
+        val predicate = predicateThatUnconditionallyReturns(false)
 
         val result = listValue.withDescendantStructsPruned(path, predicate)
 
@@ -78,84 +70,39 @@ class ProtoPruneUnitTest {
     }
 
   @Test
-  fun `Struct withDescendantStructsPruned() should call the predicate with all candidate pruning paths`() =
+  fun `Struct withDescendantStructsPruned() should call the predicate with all candidates`() =
     runTest {
       checkAll(propTestConfig, Arb.proto.struct(), dataConnectPathArb()) { structSample, path ->
         val struct: Struct = structSample.struct
-        val predicate = mockPredicateThatUnconditionallyReturns(false)
+        val predicate: PrunePredicate = mockk()
+        every { predicate(any(), any()) } returns false
 
         struct.withDescendantStructsPruned(path, predicate)
 
-        val expectedPaths = struct.calculateExpectedPruneInvocations(path).map { it.path }
-        val actualPaths = mutableListOf<DataConnectPath>()
-        verify(atLeast = 0) { predicate.invoke(capture(actualPaths), any()) }
-        actualPaths shouldContainExactlyInAnyOrder expectedPaths
+        val expectedInvocations = struct.calculateExpectedPruneInvocations(path)
+        expectedInvocations.forEach { (expectedPath, expectedStruct) ->
+          verify(exactly = 1) { predicate(eq(expectedPath), eq(expectedStruct)) }
+        }
+        confirmVerified(predicate)
       }
     }
 
   @Test
-  fun `ListValue withDescendantStructsPruned() should call the predicate with all candidate pruning paths`() =
+  fun `ListValue withDescendantStructsPruned() should call the predicate with all candidates`() =
     runTest {
       checkAll(propTestConfig, Arb.proto.listValue(), dataConnectPathArb()) { listValueSample, path
         ->
         val listValue: ListValue = listValueSample.listValue
-        val predicate = mockPredicateThatUnconditionallyReturns(false)
+        val predicate: PrunePredicate = mockk()
+        every { predicate(any(), any()) } returns false
 
         listValue.withDescendantStructsPruned(path, predicate)
 
-        val expectedPaths = listValue.calculateExpectedPruneInvocations(path).map { it.path }
-        val actualPaths = mutableListOf<DataConnectPath>()
-        verify(atLeast = 0) { predicate.invoke(capture(actualPaths), any()) }
-        actualPaths shouldContainExactlyInAnyOrder expectedPaths
-      }
-    }
-
-  @Test
-  fun `Struct withDescendantStructsPruned() should call the predicate with corresponding path and struct`() =
-    runTest {
-      checkAll(propTestConfig, Arb.proto.struct(), dataConnectPathArb()) { structSample, path ->
-        val struct: Struct = structSample.struct
-        val predicate = mockPredicateThatUnconditionallyReturns(false)
-
-        struct.withDescendantStructsPruned(path, predicate)
-
-        val expectedInvocations =
-          struct.calculateExpectedPruneInvocations(path).associate { it.path to it.struct }
-        val actualPaths = mutableListOf<DataConnectPath>()
-        val actualStructs = mutableListOf<Struct>()
-        verify(atLeast = 0) { predicate.invoke(capture(actualPaths), capture(actualStructs)) }
-        assertSoftly {
-          actualPaths.zip(actualStructs).forEach { (path, actualStruct) ->
-            withClue("path=${path.toPathString()}") {
-              actualStruct shouldBe expectedInvocations[path]
-            }
-          }
+        val expectedInvocations = listValue.calculateExpectedPruneInvocations(path)
+        expectedInvocations.forEach { (expectedPath, expectedStruct) ->
+          verify(exactly = 1) { predicate(eq(expectedPath), eq(expectedStruct)) }
         }
-      }
-    }
-
-  @Test
-  fun `ListValue withDescendantStructsPruned() should call the predicate with corresponding path and struct`() =
-    runTest {
-      checkAll(propTestConfig, Arb.proto.listValue(), dataConnectPathArb()) { listValueSample, path
-        ->
-        val listValue: ListValue = listValueSample.listValue
-        val predicate = mockPredicateThatUnconditionallyReturns(false)
-
-        listValue.withDescendantStructsPruned(path, predicate)
-
-        val expectedInvocations =
-          listValue.calculateExpectedPruneInvocations(path).associate { it.path to it.struct }
-        val actualPaths = mutableListOf<DataConnectPath>()
-        val actualStructs = mutableListOf<Struct>()
-        verify(atLeast = 0) { predicate.invoke(capture(actualPaths), capture(actualStructs)) }
-        assertSoftly {
-          actualPaths.zip(actualStructs).forEach { (path, actualStruct) ->
-            withClue("path=${path.toPathString()}") {
-              actualStruct shouldBe expectedInvocations[path]
-            }
-          }
-        }
+        confirmVerified(predicate)
       }
     }
 }
@@ -166,10 +113,8 @@ private val propTestConfig =
 
 private typealias PrunePredicate = (path: DataConnectPath, struct: Struct) -> Boolean
 
-private fun mockPredicateThatUnconditionallyReturns(returnValue: Boolean): PrunePredicate {
-  val predicate: PrunePredicate = mockk(relaxed = true)
-  every { predicate(any(), any()) } returns returnValue
-  return predicate
+private fun predicateThatUnconditionallyReturns(returnValue: Boolean): PrunePredicate = { _, _ ->
+  returnValue
 }
 
 private data class DataConnectPathStructPair(val path: DataConnectPath, val struct: Struct)
@@ -201,24 +146,4 @@ private fun ListValue.calculateExpectedPruneInvocations(
       )
     }
   }
-}
-
-/** Unit tests for private helper functions defined in this file. */
-class ProtoPruneTestingUnitTest {
-
-  @Test
-  fun `mockPredicateThatUnconditionallyReturns() returns a function that always returns the given value`() =
-    runTest {
-      val pathStructPairArb = Arb.pair(dataConnectPathArb(), Arb.proto.struct())
-      checkAll(propTestConfig, Exhaustive.boolean()) { returnValue ->
-        val predicate = mockPredicateThatUnconditionallyReturns(returnValue)
-
-        repeat(20) { invocationIndex ->
-          val (path, struct) = pathStructPairArb.bind()
-          withClue("invocationIndex=$invocationIndex") {
-            predicate(path, struct.struct) shouldBe returnValue
-          }
-        }
-      }
-    }
 }
