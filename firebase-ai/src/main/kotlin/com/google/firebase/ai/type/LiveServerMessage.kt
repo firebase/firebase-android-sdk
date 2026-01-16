@@ -16,6 +16,7 @@
 
 package com.google.firebase.ai.type
 
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
@@ -32,6 +33,7 @@ import kotlinx.serialization.json.jsonObject
  * @see LiveServerToolCall
  * @see LiveServerToolCallCancellation
  * @see LiveServerSetupComplete
+ * @see LiveServerGoAway
  */
 @PublicPreviewAPI public interface LiveServerMessage
 
@@ -182,6 +184,70 @@ public class LiveServerToolCallCancellation(public val functionIds: List<String>
   }
 }
 
+/**
+ * Notification that the server is initiating a disconnect of the session.
+ *
+ * This message is sent by the server when it needs to close the connection, typically due to
+ * session timeout, resource constraints, or other server-side reasons.
+ *
+ * When this message is received, the client should gracefully close the [LiveSession] by calling
+ * [LiveSession.close].
+ *
+ * @property timeLeft The time remaining before the connection terminates as a duration string
+ * (e.g., "57s", "1.5s"). If null, the connection will terminate immediately. Use [parseTimeLeft] to
+ * convert this to a [kotlin.time.Duration].
+ */
+@PublicPreviewAPI
+public class LiveServerGoAway(public val timeLeft: String?) : LiveServerMessage {
+  /**
+   * Parses the [timeLeft] string into a [kotlin.time.Duration].
+   *
+   * Supports protobuf Duration format: "57s", "1.5s", "0.001s", etc. Nanoseconds are expressed as
+   * fractional seconds (e.g., "1.000000001s").
+   *
+   * @return The parsed duration, or null if [timeLeft] is null or cannot be parsed.
+   */
+  public fun parseTimeLeft(): kotlin.time.Duration? {
+    return timeLeft?.let { parseDurationString(it) }
+  }
+
+  @Serializable internal data class Internal(val timeLeft: String? = null)
+  @Serializable
+  internal data class InternalWrapper(val goAway: Internal) : InternalLiveServerMessage {
+    override fun toPublic() = LiveServerGoAway(goAway.timeLeft)
+  }
+}
+
+/**
+ * Parses a protobuf Duration string (e.g., "57s", "1.5s") into a [kotlin.time.Duration].
+ *
+ * According to the protobuf specification, the JSON representation for Duration is a String that
+ * ends in 's' to indicate seconds, with nanoseconds expressed as fractional seconds.
+ *
+ * @param durationString The duration string to parse (must end with 's').
+ * @return The parsed duration, or null if the string cannot be parsed.
+ * @see <a href="https://protobuf.dev/reference/protobuf/google.protobuf/#duration">Protobuf
+ * Duration</a>
+ */
+private fun parseDurationString(durationString: String): kotlin.time.Duration? {
+  return try {
+    val trimmed = durationString.trim()
+
+    // Protobuf Duration format: always ends with 's' (seconds)
+    if (!trimmed.endsWith("s")) {
+      return null
+    }
+
+    // Remove 's' suffix and parse as double
+    val secondsStr = trimmed.dropLast(1)
+    val seconds = secondsStr.toDoubleOrNull() ?: return null
+
+    seconds.seconds
+  } catch (e: Exception) {
+    null
+  }
+}
+
 @PublicPreviewAPI
 @Serializable(LiveServerMessageSerializer::class)
 internal sealed interface InternalLiveServerMessage {
@@ -202,6 +268,7 @@ internal object LiveServerMessageSerializer :
       "toolCall" in jsonObject -> LiveServerToolCall.InternalWrapper.serializer()
       "toolCallCancellation" in jsonObject ->
         LiveServerToolCallCancellation.InternalWrapper.serializer()
+      "goAway" in jsonObject -> LiveServerGoAway.InternalWrapper.serializer()
       else ->
         throw SerializationException(
           "Unknown LiveServerMessage response type. Keys found: ${jsonObject.keys}"
