@@ -44,6 +44,7 @@ import java.util.concurrent.ThreadFactory
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.coroutines.CoroutineContext
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -93,6 +94,21 @@ internal constructor(
   private var audioScope = CancelledCoroutineScope
 
   /**
+   * Exception handler for unhandled exceptions in background coroutines.
+   *
+   * Logs the exception and attempts to clean up resources to prevent app crashes.
+   */
+  private val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
+    Log.e(TAG, "Unhandled exception in LiveSession", throwable)
+    // Clean up resources to prevent resource leaks
+    try {
+      stopAudioConversation()
+    } catch (e: Exception) {
+      Log.e(TAG, "Error during cleanup in exception handler", e)
+    }
+  }
+
+  /**
    * Playback audio data sent from the model.
    *
    * Effectively, this is what the model is saying.
@@ -118,7 +134,12 @@ internal constructor(
   public suspend fun startAudioConversation(
     functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)? = null
   ) {
-    startAudioConversation(functionCallHandler, false)
+    startAudioConversation(
+      functionCallHandler = functionCallHandler,
+      transcriptHandler = null,
+      goAwayHandler = null,
+      enableInterruptions = false
+    )
   }
 
   /**
@@ -143,6 +164,7 @@ internal constructor(
     startAudioConversation(
       functionCallHandler = functionCallHandler,
       transcriptHandler = null,
+      goAwayHandler = null,
       enableInterruptions = enableInterruptions
     )
   }
@@ -159,6 +181,10 @@ internal constructor(
    * transcript. The first [Transcription] object is the input transcription, and the second is the
    * output transcription.
    *
+   * @param goAwayHandler A callback function that is invoked when the server initiates a disconnect
+   * via a [LiveServerGoAway] message. This allows the application to handle server-initiated
+   * session termination gracefully.
+   *
    * @param enableInterruptions If enabled, allows the user to speak over or interrupt the model's
    * ongoing reply.
    *
@@ -169,12 +195,14 @@ internal constructor(
   public suspend fun startAudioConversation(
     functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)? = null,
     transcriptHandler: ((Transcription?, Transcription?) -> Unit)? = null,
+    goAwayHandler: ((LiveServerGoAway) -> Unit)? = null,
     enableInterruptions: Boolean = false,
   ) {
     startAudioConversation(
       liveAudioConversationConfig {
         this.functionCallHandler = functionCallHandler
         this.transcriptHandler = transcriptHandler
+        this.goAwayHandler = goAwayHandler
         this.enableInterruptions = enableInterruptions
       }
     )
@@ -209,14 +237,20 @@ internal constructor(
         return@catchAsync
       }
       networkScope =
-        CoroutineScope(blockingDispatcher + childJob() + CoroutineName("LiveSession Network"))
-      audioScope = CoroutineScope(audioDispatcher + childJob() + CoroutineName("LiveSession Audio"))
+        CoroutineScope(
+          blockingDispatcher + childJob() + CoroutineName("LiveSession Network") + exceptionHandler
+        )
+      audioScope =
+        CoroutineScope(
+          audioDispatcher + childJob() + CoroutineName("LiveSession Audio") + exceptionHandler
+        )
       audioHelper = AudioHelper.build(liveAudioConversationConfig.initializationHandler)
 
       recordUserAudio()
       processModelResponses(
         liveAudioConversationConfig.functionCallHandler,
-        liveAudioConversationConfig.transcriptHandler
+        liveAudioConversationConfig.transcriptHandler,
+        liveAudioConversationConfig.goAwayHandler
       )
       listenForModelPlayback(liveAudioConversationConfig.enableInterruptions)
     }
@@ -272,9 +306,14 @@ internal constructor(
             response
               .getOrNull()
               ?.let {
-                JSON.decodeFromString<InternalLiveServerMessage>(
-                  it.readBytes().toString(Charsets.UTF_8)
-                )
+                try {
+                  JSON.decodeFromString<InternalLiveServerMessage>(
+                    it.readBytes().toString(Charsets.UTF_8)
+                  )
+                } catch (e: SerializationException) {
+                  Log.w(TAG, "Failed to deserialize server message: ${e.message}")
+                  null // Skip unknown messages instead of crashing
+                }
               }
               ?.let { emit(it.toPublic()) }
             // delay uses a different scheduler in the backend, so it's "stickier" in its
@@ -481,10 +520,15 @@ internal constructor(
    *
    * @param functionCallHandler A callback function that is invoked whenever the server receives a
    * function call.
+   * @param transcriptHandler A callback function that is invoked whenever the server receives a
+   * transcript.
+   * @param goAwayHandler A callback function that is invoked when the server initiates a
+   * disconnect.
    */
   private fun processModelResponses(
     functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)?,
-    transcriptHandler: ((Transcription?, Transcription?) -> Unit)?
+    transcriptHandler: ((Transcription?, Transcription?) -> Unit)?,
+    goAwayHandler: ((LiveServerGoAway) -> Unit)?
   ) {
     receive()
       .onEach {
@@ -531,6 +575,16 @@ internal constructor(
               TAG,
               "The model sent LiveServerSetupComplete after the connection was established."
             )
+          }
+          is LiveServerGoAway -> {
+            val timeLeftMsg = it.timeLeft?.let { duration -> " (time left: $duration)" } ?: ""
+            Log.i(TAG, "Server initiated disconnect$timeLeftMsg")
+
+            // Notify the application
+            goAwayHandler?.invoke(it)
+
+            // Close the session gracefully
+            close()
           }
         }
       }
