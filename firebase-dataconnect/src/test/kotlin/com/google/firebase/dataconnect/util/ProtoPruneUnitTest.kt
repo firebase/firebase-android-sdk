@@ -18,11 +18,13 @@ package com.google.firebase.dataconnect.util
 
 import com.google.firebase.dataconnect.DataConnectPath
 import com.google.firebase.dataconnect.DataConnectPathSegment
+import com.google.firebase.dataconnect.emptyDataConnectPath
 import com.google.firebase.dataconnect.testutil.isStructValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.dataConnectPath as dataConnectPathArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.fieldPathSegment as dataConnectFieldPathSegmentArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.listIndexPathSegment as dataConnectListIndexPathSegmentArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.pathSegment as dataConnectPathSegmentArb
+import com.google.firebase.dataconnect.testutil.property.arbitrary.ProtoArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.listValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
@@ -33,25 +35,32 @@ import com.google.firebase.dataconnect.util.ProtoPrune.withDescendantStructsPrun
 import com.google.firebase.dataconnect.withAddedListIndex
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
+import com.google.protobuf.Value
 import io.kotest.assertions.shouldFail
 import io.kotest.assertions.withClue
 import io.kotest.common.DelicateKotest
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
 import io.kotest.property.PropertyContext
 import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.distinct
+import io.kotest.property.arbitrary.filter
 import io.kotest.property.arbitrary.float
 import io.kotest.property.arbitrary.int
+import io.kotest.property.arbitrary.map
+import io.kotest.property.arbitrary.of
 import io.kotest.property.checkAll
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import kotlin.collections.map
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
@@ -161,6 +170,60 @@ class ProtoPruneUnitTest {
         }
       }
     }
+
+  @Test
+  fun `Struct withDescendantStructsPruned() should return the correct prunedStructsByPath`() =
+    runTest {
+      val structArb =
+        structWithEligiblePruningPathsSampleArb().filter { it.eligiblePaths.isNotEmpty() }
+      checkAll(propTestConfig, structArb, dataConnectPathArb(), Arb.float(0.0f..1.0f)) {
+        structSample,
+        path,
+        pruneProbability ->
+        val struct: Struct = structSample.structInfo.struct
+        val forcedPrunePath = Arb.of(structSample.eligiblePaths).bind()
+        val predicateCalls: MutableList<PredicateCall> = mutableListOf()
+        val predicate =
+          predicateReturningTrueProbabilistically(
+            pruneProbability,
+            predicateCalls,
+            forcedReturnValues = mapOf(path + forcedPrunePath to true)
+          )
+
+        val result = struct.withDescendantStructsPruned(path, predicate)
+
+        val expectedPrunedStructsByPath =
+          predicateCalls.filter { it.returnValue }.associate { it.path to it.struct }
+        result.shouldNotBeNull().prunedStructsByPath shouldBe expectedPrunedStructsByPath
+      }
+    }
+
+  @Test
+  fun `ListValue withDescendantStructsPruned() should return the correct prunedStructsByPath`() =
+    runTest {
+      val listValueArb =
+        listValueWithEligiblePruningPathsSampleArb().filter { it.eligiblePaths.isNotEmpty() }
+      checkAll(propTestConfig, listValueArb, dataConnectPathArb(), Arb.float(0.0f..1.0f)) {
+        listValueSample,
+        path,
+        pruneProbability ->
+        val listValue: ListValue = listValueSample.listValueInfo.listValue
+        val forcedPrunePath = Arb.of(listValueSample.eligiblePaths).bind()
+        val predicateCalls: MutableList<PredicateCall> = mutableListOf()
+        val predicate =
+          predicateReturningTrueProbabilistically(
+            pruneProbability,
+            predicateCalls,
+            forcedReturnValues = mapOf(path + forcedPrunePath to true)
+          )
+
+        val result = listValue.withDescendantStructsPruned(path, predicate)
+
+        val expectedPrunedStructsByPath =
+          predicateCalls.filter { it.returnValue }.associate { it.path to it.struct }
+        result.shouldNotBeNull().prunedStructsByPath shouldBe expectedPrunedStructsByPath
+      }
+    }
 }
 
 @OptIn(ExperimentalKotest::class)
@@ -174,6 +237,7 @@ private fun predicateThatUnconditionallyReturnsFalse(): PrunePredicate = { _, _ 
 
 private data class PredicateCall(
   val path: DataConnectPath,
+  val struct: Struct,
   val returnValue: Boolean,
 )
 
@@ -182,13 +246,17 @@ private data class PredicateCall(
  *
  * This is used for property-based testing to simulate a predicate that sometimes prunes. All calls
  * to the predicate are recorded in the [calls] list.
+ *
+ * The [forcedReturnValues] can be used to override the return value for a given path.
  */
 private fun PropertyContext.predicateReturningTrueProbabilistically(
   trueProbability: Float,
   calls: MutableList<PredicateCall>,
-): PrunePredicate = { path, _ ->
-  val returnValue = randomSource().random.nextFloat() < trueProbability
-  calls.add(PredicateCall(path, returnValue))
+  forcedReturnValues: Map<DataConnectPath, Boolean> = emptyMap()
+): PrunePredicate = { path, struct ->
+  val returnValue =
+    forcedReturnValues[path] ?: (randomSource().random.nextFloat() < trueProbability)
+  calls.add(PredicateCall(path, struct, returnValue))
   returnValue
 }
 
@@ -210,16 +278,25 @@ private fun Struct.calculateExpectedPruneInvocations(
   basePath: DataConnectPath
 ): List<DataConnectPathStructPair> =
   walk()
-    .filter {
-      it.path.isNotEmpty() &&
-        it.value.isStructValue &&
-        it.path.last() is DataConnectPathSegment.Field &&
-        it.path.dropLast(1).lastOrNull().let { penultimateSegment ->
-          penultimateSegment === null || penultimateSegment is DataConnectPathSegment.Field
-        }
-    }
+    .filter { it.path.isEligibleForPruning(it.value) }
     .map { DataConnectPathStructPair(basePath + it.path, it.value.structValue) }
     .toList()
+
+/**
+ * Returns whether the receiver path is eligible for pruning where its value is the given [Value].
+ *
+ * This function assumes that the root element is a [Struct] (namely, not a [ListValue]).
+ *
+ * A path is eligible for pruning if its value is a [Struct] and if it is not a direct element of a
+ * [ListValue] and not the root [Struct] itself.
+ */
+private fun DataConnectPath.isEligibleForPruning(value: Value): Boolean =
+  isNotEmpty() &&
+    value.isStructValue &&
+    last() is DataConnectPathSegment.Field &&
+    dropLast(1).lastOrNull().let { penultimateSegment ->
+      penultimateSegment === null || penultimateSegment is DataConnectPathSegment.Field
+    }
 
 /**
  * Calculates the expected invocations of a [PrunePredicate] that unconditionally returns `false`
@@ -264,6 +341,47 @@ private fun List<DataConnectPath>.shouldNotContainParentsOfAnyElement() {
     }
   }
 }
+
+private data class StructWithEligiblePruningPathsSample(
+  val structInfo: ProtoArb.StructInfo,
+  val eligiblePaths: List<DataConnectPath>,
+)
+
+/**
+ * Returns an [Arb] that generates [Struct] objects along with the list of paths therein
+ * that are eligible for pruning.
+ *
+ * Each sample contains a randomly generated [Struct] and a list of all the paths therein that
+ * are eligible for pruning.
+ */
+private fun structWithEligiblePruningPathsSampleArb(): Arb<StructWithEligiblePruningPathsSample> =
+  Arb.proto.struct().map { structSample ->
+    val eligiblePaths =
+      structSample.struct.calculateExpectedPruneInvocations(emptyDataConnectPath()).map { it.path }
+    StructWithEligiblePruningPathsSample(structSample, eligiblePaths)
+  }
+
+private data class ListValueWithEligiblePruningPathsSample(
+  val listValueInfo: ProtoArb.ListValueInfo,
+  val eligiblePaths: List<DataConnectPath>,
+)
+
+/**
+ * Returns an [Arb] that generates [ListValue] objects along with the list of paths therein
+ * that are eligible for pruning.
+ *
+ * Each sample contains a randomly generated [ListValue] and a list of all the paths therein that
+ * are eligible for pruning.
+ */
+private fun listValueWithEligiblePruningPathsSampleArb():
+  Arb<ListValueWithEligiblePruningPathsSample> =
+  Arb.proto.listValue().map { listValueSample ->
+    val eligiblePaths =
+      listValueSample.listValue.calculateExpectedPruneInvocations(emptyDataConnectPath()).map {
+        it.path
+      }
+    ListValueWithEligiblePruningPathsSample(listValueSample, eligiblePaths)
+  }
 
 /** Unit tests for private helper functions defined in this file. */
 class ProtoPruneTestingUnitTest {
