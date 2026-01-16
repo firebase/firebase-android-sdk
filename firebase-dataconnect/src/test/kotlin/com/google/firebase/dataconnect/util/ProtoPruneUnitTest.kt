@@ -20,16 +20,22 @@ import com.google.firebase.dataconnect.DataConnectPath
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.testutil.isStructValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.dataConnectPath as dataConnectPathArb
+import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.fieldPathSegment as dataConnectFieldPathSegmentArb
+import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.listIndexPathSegment as dataConnectListIndexPathSegmentArb
+import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.pathSegment as dataConnectPathSegmentArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.listValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
+import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
 import com.google.firebase.dataconnect.testutil.walk
 import com.google.firebase.dataconnect.toPathString
 import com.google.firebase.dataconnect.util.ProtoPrune.withDescendantStructsPruned
 import com.google.firebase.dataconnect.withAddedListIndex
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
+import io.kotest.assertions.shouldFail
 import io.kotest.assertions.withClue
+import io.kotest.common.DelicateKotest
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.nulls.shouldBeNull
@@ -37,7 +43,10 @@ import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
 import io.kotest.property.PropertyContext
+import io.kotest.property.arbitrary.bind
+import io.kotest.property.arbitrary.distinct
 import io.kotest.property.arbitrary.float
+import io.kotest.property.arbitrary.int
 import io.kotest.property.checkAll
 import io.mockk.confirmVerified
 import io.mockk.every
@@ -160,6 +169,7 @@ private val propTestConfig =
 
 private typealias PrunePredicate = (path: DataConnectPath, struct: Struct) -> Boolean
 
+/** Returns a [PrunePredicate] that unconditionally returns `false`. */
 private fun predicateThatUnconditionallyReturnsFalse(): PrunePredicate = { _, _ -> false }
 
 private data class PredicateCall(
@@ -167,6 +177,12 @@ private data class PredicateCall(
   val returnValue: Boolean,
 )
 
+/**
+ * Returns a [PrunePredicate] that returns `true` with a given probability.
+ *
+ * This is used for property-based testing to simulate a predicate that sometimes prunes. All calls
+ * to the predicate are recorded in the [calls] list.
+ */
 private fun PropertyContext.predicateReturningTrueProbabilistically(
   trueProbability: Float,
   calls: MutableList<PredicateCall>,
@@ -178,6 +194,18 @@ private fun PropertyContext.predicateReturningTrueProbabilistically(
 
 private data class DataConnectPathStructPair(val path: DataConnectPath, val struct: Struct)
 
+/**
+ * Calculates the expected invocations of a [PrunePredicate] that unconditionally returns `false`
+ * for a [Struct].
+ *
+ * This function walks the [Struct] and returns a list of all the descendant [Struct]s that are
+ * eligible for pruning, along with their corresponding [DataConnectPath].
+ *
+ * A [Struct] is considered eligible for pruning if it is not a direct element of a [ListValue] and
+ * not the root [Struct] itself.
+ *
+ * @param basePath The base path to prepend to the paths of the descendant [Struct]s.
+ */
 private fun Struct.calculateExpectedPruneInvocations(
   basePath: DataConnectPath
 ): List<DataConnectPathStructPair> =
@@ -193,6 +221,17 @@ private fun Struct.calculateExpectedPruneInvocations(
     .map { DataConnectPathStructPair(basePath + it.path, it.value.structValue) }
     .toList()
 
+/**
+ * Calculates the expected invocations of a [PrunePredicate] that unconditionally returns `false`
+ * for a [ListValue].
+ *
+ * This function walks the [ListValue] and returns a list of all the descendant [Struct]s that are
+ * eligible for pruning, along with their corresponding [DataConnectPath].
+ *
+ * A [Struct] is considered eligible for pruning if it is not a direct element of a [ListValue].
+ *
+ * @param basePath The base path to prepend to the paths of the descendant [Struct]s.
+ */
 private fun ListValue.calculateExpectedPruneInvocations(
   basePath: DataConnectPath
 ): List<DataConnectPathStructPair> = buildList {
@@ -207,6 +246,13 @@ private fun ListValue.calculateExpectedPruneInvocations(
   }
 }
 
+/**
+ * Asserts that for every [DataConnectPath] in this list, none of its parent paths are also present
+ * in the list.
+ *
+ * For example, if the list contains the path `a.b.c`, this function will fail if the list also
+ * contains `a.b` or `a`.
+ */
 private fun List<DataConnectPath>.shouldNotContainParentsOfAnyElement() {
   forEachIndexed { index, path ->
     val parentPath = path.toMutableList()
@@ -215,6 +261,52 @@ private fun List<DataConnectPath>.shouldNotContainParentsOfAnyElement() {
       withClue("index=$index, path=${path.toPathString()}") {
         this shouldNotContain parentPath.toList()
       }
+    }
+  }
+}
+
+/** Unit tests for private helper functions defined in this file. */
+class ProtoPruneTestingUnitTest {
+
+  @Test
+  fun `shouldNotContainParentsOfAnyElement() should fail if contains parent`() = runTest {
+    checkAll(propTestConfig, dataConnectPathArb(), dataConnectPathArb(size = 1..5)) { path1, path2
+      ->
+      val paths = listOf(path1, path1 + path2)
+
+      shouldFail { paths.shouldNotContainParentsOfAnyElement() }
+    }
+  }
+
+  @Test
+  @OptIn(DelicateKotest::class)
+  fun `shouldNotContainParentsOfAnyElement() should pass if no overlapping paths`() = runTest {
+    checkAll(propTestConfig, Arb.int(0..5)) { pathCount ->
+      val dataConnectPathArb =
+        dataConnectPathArb(
+          size = 1..5,
+          field = dataConnectFieldPathSegmentArb(Arb.proto.structKey().distinct()),
+          listIndex = dataConnectListIndexPathSegmentArb(Arb.int().distinct()),
+        )
+      val paths = List(pathCount) { dataConnectPathArb.bind() }
+
+      paths.shouldNotContainParentsOfAnyElement()
+    }
+  }
+
+  @Test
+  fun `shouldNotContainParentsOfAnyElement() should pass if paths share same parent`() = runTest {
+    val dataConnectPathArb = dataConnectPathArb()
+    checkAll(propTestConfig, dataConnectPathArb, Arb.int(2..5)) { basePath, siblingCount ->
+      @OptIn(DelicateKotest::class)
+      val siblingPathArb =
+        Arb.bind(dataConnectPathSegmentArb().distinct(), dataConnectPathArb) { segment, pathSuffix
+          ->
+          basePath + listOf(segment) + pathSuffix
+        }
+      val paths = List(siblingCount) { siblingPathArb.bind() }
+
+      paths.shouldNotContainParentsOfAnyElement()
     }
   }
 }
