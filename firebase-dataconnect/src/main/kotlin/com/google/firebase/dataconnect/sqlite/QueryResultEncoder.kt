@@ -24,6 +24,7 @@ import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.putSInt64
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.putUInt32
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.putUInt64
 import com.google.firebase.dataconnect.toPathString
+import com.google.firebase.dataconnect.util.ProtoPrune.withDescendantStructsPruned
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
@@ -75,151 +76,6 @@ internal class QueryResultEncoder(
     val entityId: String,
     val path: DataConnectPath,
   )
-
-  private data class PruneStructDescendantEntitiesResult(
-    val prunedStruct: Struct,
-    val prunedEntities: List<PrunedEntity>,
-  )
-
-  private data class PruneListValueDescendantEntitiesResult(
-    val prunedListValue: ListValue,
-    val prunedEntities: List<PrunedEntity>,
-  )
-
-  private fun Struct.pruneDescendantEntities(
-    path: MutableDataConnectPath
-  ): PruneStructDescendantEntitiesResult? {
-    if (entityIdByPath === null) {
-      return null
-    }
-
-    val prunedEntities = mutableListOf<PrunedEntity>()
-    val prunedStruct = pruneDescendantEntitiesRecursive(path, prunedEntities)
-
-    if (prunedStruct === this) {
-      return null
-    }
-
-    check(prunedEntities.isNotEmpty()) {
-      "internal error z2yafzcvca: prunedEntities is empty, but expected it to be non-empty " +
-        "since prunedStruct !== this (path=${path.toPathString()})"
-    }
-    return PruneStructDescendantEntitiesResult(prunedStruct, prunedEntities.toList())
-  }
-
-  private fun ListValue.pruneDescendantEntities(
-    path: MutableDataConnectPath
-  ): PruneListValueDescendantEntitiesResult? {
-    if (entityIdByPath === null) {
-      return null
-    }
-
-    val prunedEntities = mutableListOf<PrunedEntity>()
-    val prunedListValue = pruneDescendantEntitiesRecursive(path, prunedEntities)
-
-    if (prunedListValue === this) {
-      return null
-    }
-
-    check(prunedEntities.isNotEmpty()) {
-      "internal error wgffkhtrej: prunedEntities is empty, but expected it to be non-empty " +
-        "since prunedListValue !== this (path=${path.toPathString()})"
-    }
-    return PruneListValueDescendantEntitiesResult(prunedListValue, prunedEntities.toList())
-  }
-
-  private fun Struct.pruneDescendantEntitiesRecursive(
-    path: MutableDataConnectPath,
-    prunedEntities: MutableList<PrunedEntity>
-  ): Struct {
-    var structBuilder: Struct.Builder? = null
-    fieldsMap.entries.forEach { (key, value) ->
-      val prunedValue: Value? =
-        when (value.kindCase) {
-          Value.KindCase.STRUCT_VALUE -> {
-            val structBefore = value.structValue
-            val structAfter =
-              path.withAddedField(key) {
-                val entityId = path.getEntityId()
-                if (entityId !== null) {
-                  prunedEntities.add(
-                    PrunedEntity(
-                      struct = structBefore,
-                      entityId = entityId,
-                      path = path.toList(),
-                    )
-                  )
-                  null
-                } else {
-                  structBefore.pruneDescendantEntitiesRecursive(path, prunedEntities)
-                }
-              }
-            if (structAfter === structBefore) {
-              value
-            } else {
-              structAfter?.toValueProto()
-            }
-          }
-          Value.KindCase.LIST_VALUE -> {
-            val listValue = value.listValue
-            val prunedListValue =
-              path.withAddedField(key) {
-                listValue.pruneDescendantEntitiesRecursive(path, prunedEntities)
-              }
-            if (listValue === prunedListValue) value else prunedListValue.toValueProto()
-          }
-          else -> value
-        }
-
-      if (value !== prunedValue) {
-        structBuilder = structBuilder ?: toBuilder()
-        if (prunedValue === null) {
-          structBuilder.removeFields(key)
-        } else {
-          structBuilder.putFields(key, prunedValue)
-        }
-      }
-    }
-
-    return structBuilder?.build() ?: this
-  }
-
-  private fun ListValue.pruneDescendantEntitiesRecursive(
-    path: MutableDataConnectPath,
-    prunedEntities: MutableList<PrunedEntity>
-  ): ListValue {
-    var listValueBuilder: ListValue.Builder? = null
-    repeat(valuesCount) { listIndex ->
-      val value = getValues(listIndex)
-      val prunedValue: Value =
-        when (value.kindCase) {
-          Value.KindCase.STRUCT_VALUE -> {
-            val struct = value.structValue
-            val prunedStruct =
-              path.withAddedListIndex(listIndex) {
-                struct.pruneDescendantEntitiesRecursive(path, prunedEntities)
-              }
-            if (struct === prunedStruct) value else prunedStruct.toValueProto()
-          }
-          Value.KindCase.LIST_VALUE -> {
-            val listValue = value.listValue
-            val prunedListValue =
-              path.withAddedListIndex(listIndex) {
-                listValue.pruneDescendantEntitiesRecursive(path, prunedEntities)
-              }
-            if (listValue === prunedListValue) value else prunedListValue.toValueProto()
-          }
-          else -> value
-        }
-
-      if (value !== prunedValue) {
-        listValueBuilder = listValueBuilder ?: toBuilder()
-        listValueBuilder.setValues(listIndex, prunedValue)
-      }
-    }
-
-    return listValueBuilder?.build() ?: this
-  }
 
   private fun DataConnectPath.getEntityId(): String? = entityIdByPath?.get(this)
 
@@ -400,23 +256,37 @@ internal class QueryResultEncoder(
     value: Value,
     path: MutableDataConnectPath,
   ): Value? {
-    val entityId = path.getEntityId()
-    if (entityId !== null) {
+    path.getEntityId()?.let { entityId ->
       writer.writeByte(QueryResultCodec.VALUE_ENTITY)
       writeEntity(entityId, value.structValue, path)
       return null
     }
 
     val struct = value.structValue
-    val pruneDescendantEntitiesResult = struct.pruneDescendantEntities(path)
-    if (pruneDescendantEntitiesResult === null) {
+    val protoPruneResult =
+      if (entityIdByPath == null) {
+        null
+      } else {
+        struct.withDescendantStructsPruned(path) { subStructPath, _ -> subStructPath.isEntity() }
+      }
+
+    if (protoPruneResult == null) {
       writer.writeByte(QueryResultCodec.VALUE_KIND_NOT_SET)
       return value
     }
 
     writer.writeByte(QueryResultCodec.VALUE_STRUCT)
 
-    val (prunedStruct, prunedEntities) = pruneDescendantEntitiesResult
+    val (prunedStruct, prunedProtoEntities) = protoPruneResult
+    val prunedEntities =
+      prunedProtoEntities.map { (path, struct) ->
+        val entityId =
+          path.getEntityId()
+            ?: throw IllegalStateException(
+              "internal error 2j8v9bczkg: entityId not found for path=${path.toPathString()}"
+            )
+        PrunedEntity(struct, entityId, path)
+      }
     writer.writeUInt32(prunedEntities.size)
 
     prunedEntities.forEach { (entity, entityId, entityPath) ->
@@ -451,14 +321,31 @@ internal class QueryResultEncoder(
         null
       }
       ListValueLeafContentsClassification.NonEntities -> {
-        val pruneDescendantEntitiesResult = listValue.pruneDescendantEntities(path)
-        if (pruneDescendantEntitiesResult === null) {
+        val protoPruneResult =
+          if (entityIdByPath == null) {
+            null
+          } else {
+            listValue.withDescendantStructsPruned(path) { subStructPath, _ ->
+              subStructPath.isEntity()
+            }
+          }
+
+        if (protoPruneResult === null) {
           writer.writeByte(QueryResultCodec.VALUE_KIND_NOT_SET)
           value
         } else {
           writer.writeByte(QueryResultCodec.VALUE_LIST)
 
-          val (prunedListValue, prunedEntities) = pruneDescendantEntitiesResult
+          val (prunedListValue, prunedProtoEntities) = protoPruneResult
+          val prunedEntities =
+            prunedProtoEntities.map { (path, struct) ->
+              val entityId =
+                path.getEntityId()
+                  ?: throw IllegalStateException(
+                    "internal error 2j8v9bczkg: entityId not found for path=${path.toPathString()}"
+                  )
+              PrunedEntity(struct, entityId, path)
+            }
           writer.writeUInt32(prunedEntities.size)
 
           prunedEntities.forEach { (entity, entityId, entityPath) ->
@@ -493,7 +380,6 @@ internal class QueryResultEncoder(
       }
     }
   }
-
   private enum class ListValueLeafContentsClassification {
     Entities,
     Scalars,
@@ -578,7 +464,6 @@ internal class QueryResultEncoder(
         ListValueLeafContentsClassification.NonEntities
     }
   }
-
   private sealed interface DoubleEncoding {
     data class Double(val value: kotlin.Double) : DoubleEncoding
     object PositiveZero : DoubleEncoding
