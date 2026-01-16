@@ -99,8 +99,9 @@ internal object ProtoPrune {
             val structBefore = value.structValue
             val structAfter =
               path.withAddedField(key) {
-                if (predicate(path, structBefore)) {
-                  prunedStructs[path.toList()] = structBefore
+                val immutablePath = path.toList()
+                if (predicate(immutablePath, structBefore)) {
+                  prunedStructs[immutablePath] = structBefore
                   null
                 } else {
                   pruneDescendantEntitiesRecursive(structBefore, path, prunedStructs, predicate)
