@@ -123,17 +123,22 @@ internal constructor(
 public class ImagePart
 internal constructor(
   public val image: Bitmap,
+  public val displayName: String?,
   public override val isThought: Boolean,
   internal val thoughtSignature: String?
 ) : Part {
 
   /** @param image [Bitmap] to convert into a [Part] */
-  public constructor(image: Bitmap) : this(image, false, null)
+  public constructor(
+    image: Bitmap,
+    displayName: String? = null
+  ) : this(image, displayName, false, null)
 
   internal fun toInlineDataPart() =
     InlineDataPart(
       android.util.Base64.decode(encodeBitmapToBase64Jpeg(image), BASE_64_FLAGS),
       "image/jpeg",
+      displayName,
       isThought,
       thoughtSignature
     )
@@ -144,6 +149,7 @@ public class InlineDataPart
 internal constructor(
   public val inlineData: ByteArray,
   public val mimeType: String,
+  public val displayName: String?,
   public override val isThought: Boolean,
   internal val thoughtSignature: String?
 ) : Part {
@@ -155,8 +161,9 @@ internal constructor(
    */
   public constructor(
     inlineData: ByteArray,
-    mimeType: String
-  ) : this(inlineData, mimeType, false, null)
+    mimeType: String,
+    displayName: String? = null,
+  ) : this(inlineData, mimeType, displayName, false, null)
 
   @Serializable
   internal data class Internal(
@@ -170,12 +177,18 @@ internal constructor(
  * Represents binary data with an associated MIME type.
  * @property data the binary data as a [ByteArray]
  * @property mimeType an IANA standard MIME type.
+ * @property displayName the file name
  */
-public class InlineData(public val data: ByteArray, public val mimeType: String) {
-  @Serializable internal data class Internal(val mimeType: String, val data: Base64)
+public class InlineData(
+  public val data: ByteArray,
+  public val mimeType: String,
+  public val displayName: String? = null
+) {
+  @Serializable
+  internal data class Internal(val mimeType: String, val data: Base64, val displayName: String?)
 
   internal fun toInternal() =
-    Internal(mimeType, android.util.Base64.encodeToString(data, BASE_64_FLAGS))
+    Internal(mimeType, android.util.Base64.encodeToString(data, BASE_64_FLAGS), displayName)
 }
 
 /** Represents function call name and params received from requests. */
@@ -246,19 +259,19 @@ internal constructor(
     val functionResponse: FunctionResponse,
     val thought: Boolean? = null,
     val thoughtSignature: String? = null,
-    val parts: List<InternalPart>? = null,
   ) : InternalPart {
 
     @Serializable
     internal data class FunctionResponse(
       val name: String,
       val response: JsonObject,
-      val id: String? = null
+      val id: String? = null,
+      val parts: List<InternalPart>? = null,
     )
   }
 
   internal fun toInternalFunctionResponse(): Internal.FunctionResponse {
-    return Internal.FunctionResponse(name, response, id)
+    return Internal.FunctionResponse(name, response, id, parts?.map { it.toInternal(true) })
   }
 
   internal fun normalizeAgainstCall(call: FunctionCallPart): FunctionResponsePart {
@@ -355,7 +368,7 @@ internal fun Part.toInternal(ignoreThoughtFlag: Boolean = false): InternalPart {
     is TextPart -> TextPart.Internal(text, thought, thoughtSignature)
     is ImagePart ->
       InlineDataPart.Internal(
-        InlineData.Internal("image/jpeg", encodeBitmapToBase64Jpeg(image)),
+        InlineData.Internal("image/jpeg", encodeBitmapToBase64Jpeg(image), displayName),
         thought,
         thoughtSignature
       )
@@ -363,7 +376,8 @@ internal fun Part.toInternal(ignoreThoughtFlag: Boolean = false): InternalPart {
       InlineDataPart.Internal(
         InlineData.Internal(
           mimeType,
-          android.util.Base64.encodeToString(inlineData, BASE_64_FLAGS)
+          android.util.Base64.encodeToString(inlineData, BASE_64_FLAGS),
+          displayName
         ),
         thought,
         thoughtSignature
@@ -376,7 +390,12 @@ internal fun Part.toInternal(ignoreThoughtFlag: Boolean = false): InternalPart {
       )
     is FunctionResponsePart ->
       FunctionResponsePart.Internal(
-        FunctionResponsePart.Internal.FunctionResponse(name, response, id),
+        FunctionResponsePart.Internal.FunctionResponse(
+          name,
+          response,
+          id,
+          parts?.map { it.toInternal(true) }
+        ),
         thought,
         thoughtSignature
       )
@@ -418,9 +437,20 @@ internal fun InternalPart.toPublic(): Part {
     is InlineDataPart.Internal -> {
       val data = android.util.Base64.decode(inlineData.data, BASE_64_FLAGS)
       if (inlineData.mimeType.contains("image")) {
-        ImagePart(decodeBitmapFromImage(data), thought ?: false, thoughtSignature)
+        ImagePart(
+          decodeBitmapFromImage(data),
+          inlineData.displayName,
+          thought ?: false,
+          thoughtSignature
+        )
       } else {
-        InlineDataPart(data, inlineData.mimeType, thought ?: false, thoughtSignature)
+        InlineDataPart(
+          data,
+          inlineData.mimeType,
+          inlineData.displayName,
+          thought ?: false,
+          thoughtSignature
+        )
       }
     }
     is FunctionCallPart.Internal ->
@@ -436,7 +466,7 @@ internal fun InternalPart.toPublic(): Part {
         functionResponse.name,
         functionResponse.response,
         functionResponse.id,
-        parts?.map { it.toPublic() },
+        functionResponse.parts?.map { it.toPublic() },
         thought ?: false,
         thoughtSignature
       )
