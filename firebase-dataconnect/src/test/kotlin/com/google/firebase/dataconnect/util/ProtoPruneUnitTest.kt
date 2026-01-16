@@ -24,15 +24,20 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.listValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.walk
+import com.google.firebase.dataconnect.toPathString
 import com.google.firebase.dataconnect.util.ProtoPrune.withDescendantStructsPruned
 import com.google.firebase.dataconnect.withAddedListIndex
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
+import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
+import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
+import io.kotest.property.PropertyContext
+import io.kotest.property.arbitrary.float
 import io.kotest.property.checkAll
 import io.mockk.confirmVerified
 import io.mockk.every
@@ -47,7 +52,7 @@ class ProtoPruneUnitTest {
   fun `Struct withDescendantStructsPruned() should return null if nothing is pruned`() = runTest {
     checkAll(propTestConfig, Arb.proto.struct(), dataConnectPathArb()) { structSample, path ->
       val struct: Struct = structSample.struct
-      val predicate = predicateThatUnconditionallyReturns(false)
+      val predicate = predicateThatUnconditionallyReturnsFalse()
 
       val result = struct.withDescendantStructsPruned(path, predicate)
 
@@ -61,7 +66,7 @@ class ProtoPruneUnitTest {
       checkAll(propTestConfig, Arb.proto.listValue(), dataConnectPathArb()) { listValueSample, path
         ->
         val listValue: ListValue = listValueSample.listValue
-        val predicate = predicateThatUnconditionallyReturns(false)
+        val predicate = predicateThatUnconditionallyReturnsFalse()
 
         val result = listValue.withDescendantStructsPruned(path, predicate)
 
@@ -105,6 +110,48 @@ class ProtoPruneUnitTest {
         confirmVerified(predicate)
       }
     }
+
+  @Test
+  fun `Struct withDescendantStructsPruned() should not call the predicate with children of pruned structs`() =
+    runTest {
+      checkAll(propTestConfig, Arb.proto.struct(), dataConnectPathArb(), Arb.float(0.0f..1.0f)) {
+        structSample,
+        path,
+        pruneProbability ->
+        val struct: Struct = structSample.struct
+        val predicateCalls: MutableList<PredicateCall> = mutableListOf()
+        val predicate = predicateReturningTrueProbabilistically(pruneProbability, predicateCalls)
+
+        struct.withDescendantStructsPruned(path, predicate)
+
+        val prunedPaths = predicateCalls.filter { it.returnValue }.map { it.path }
+        withClue("prunedPaths={${prunedPaths.joinToString { it.toPathString() }}}") {
+          prunedPaths.shouldNotContainParentsOfAnyElement()
+        }
+      }
+    }
+
+  @Test
+  fun `ListValue withDescendantStructsPruned() should not call the predicate with children of pruned structs`() =
+    runTest {
+      checkAll(
+        propTestConfig,
+        Arb.proto.listValue(),
+        dataConnectPathArb(),
+        Arb.float(0.0f..1.0f)
+      ) { listValueSample, path, pruneProbability ->
+        val listValue: ListValue = listValueSample.listValue
+        val predicateCalls: MutableList<PredicateCall> = mutableListOf()
+        val predicate = predicateReturningTrueProbabilistically(pruneProbability, predicateCalls)
+
+        listValue.withDescendantStructsPruned(path, predicate)
+
+        val prunedPaths = predicateCalls.filter { it.returnValue }.map { it.path }
+        withClue("prunedPaths={${prunedPaths.joinToString { it.toPathString() }}}") {
+          prunedPaths.shouldNotContainParentsOfAnyElement()
+        }
+      }
+    }
 }
 
 @OptIn(ExperimentalKotest::class)
@@ -113,7 +160,19 @@ private val propTestConfig =
 
 private typealias PrunePredicate = (path: DataConnectPath, struct: Struct) -> Boolean
 
-private fun predicateThatUnconditionallyReturns(returnValue: Boolean): PrunePredicate = { _, _ ->
+private fun predicateThatUnconditionallyReturnsFalse(): PrunePredicate = { _, _ -> false }
+
+private data class PredicateCall(
+  val path: DataConnectPath,
+  val returnValue: Boolean,
+)
+
+private fun PropertyContext.predicateReturningTrueProbabilistically(
+  trueProbability: Float,
+  calls: MutableList<PredicateCall>,
+): PrunePredicate = { path, _ ->
+  val returnValue = randomSource().random.nextFloat() < trueProbability
+  calls.add(PredicateCall(path, returnValue))
   returnValue
 }
 
@@ -144,6 +203,18 @@ private fun ListValue.calculateExpectedPruneInvocations(
           basePath.withAddedListIndex(listIndex)
         )
       )
+    }
+  }
+}
+
+private fun List<DataConnectPath>.shouldNotContainParentsOfAnyElement() {
+  forEachIndexed { index, path ->
+    val parentPath = path.toMutableList()
+    while (parentPath.isNotEmpty()) {
+      parentPath.removeLast()
+      withClue("index=$index, path=${path.toPathString()}") {
+        this shouldNotContain parentPath.toList()
+      }
     }
   }
 }
