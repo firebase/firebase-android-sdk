@@ -224,6 +224,16 @@ class ProtoPruneUnitTest {
         result.shouldNotBeNull().prunedStructsByPath shouldBe expectedPrunedStructsByPath
       }
     }
+
+  @Test
+  fun `Struct withDescendantStructsPruned() should return the correct prunedStruct`() = runTest {
+    TODO()
+  }
+
+  @Test
+  fun `ListValue withDescendantStructsPruned() should return the correct prunedStruct`() = runTest {
+    TODO()
+  }
 }
 
 @OptIn(ExperimentalKotest::class)
@@ -348,11 +358,11 @@ private data class StructWithEligiblePruningPathsSample(
 )
 
 /**
- * Returns an [Arb] that generates [Struct] objects along with the list of paths therein
- * that are eligible for pruning.
+ * Returns an [Arb] that generates [Struct] objects along with the list of paths therein that are
+ * eligible for pruning.
  *
- * Each sample contains a randomly generated [Struct] and a list of all the paths therein that
- * are eligible for pruning.
+ * Each sample contains a randomly generated [Struct] and a list of all the paths therein that are
+ * eligible for pruning.
  */
 private fun structWithEligiblePruningPathsSampleArb(): Arb<StructWithEligiblePruningPathsSample> =
   Arb.proto.struct().map { structSample ->
@@ -367,8 +377,8 @@ private data class ListValueWithEligiblePruningPathsSample(
 )
 
 /**
- * Returns an [Arb] that generates [ListValue] objects along with the list of paths therein
- * that are eligible for pruning.
+ * Returns an [Arb] that generates [ListValue] objects along with the list of paths therein that are
+ * eligible for pruning.
  *
  * Each sample contains a randomly generated [ListValue] and a list of all the paths therein that
  * are eligible for pruning.
