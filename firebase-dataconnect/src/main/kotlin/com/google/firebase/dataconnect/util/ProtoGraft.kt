@@ -25,6 +25,7 @@ import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
+import kotlin.collections.set
 
 /**
  * Holder for "global" functions for grafting values into Proto Struct objects.
@@ -82,7 +83,7 @@ internal object ProtoGraft {
 
     val mutableStructsByPath = structsByPath.toMutableMap()
     val rootStruct = mutableStructsByPath.remove(emptyDataConnectPath()) ?: this
-    val rootNode = toMutableNode(rootStruct, parentPathSegment = null) as MutableNode.StructNode
+    val rootNode = toMutableNode(rootStruct, parentPathSegment = null)
 
     val sortedPaths = mutableStructsByPath.keys.sortedWith(DataConnectPathComparator)
 
@@ -116,12 +117,7 @@ internal object ProtoGraft {
                       "has kind case ${currentNode.toValue().kindCase}, " +
                       "but it is required to be ${Value.KindCase.STRUCT_VALUE} [s3mhtfj2mm]"
                   )
-              structNode.getChild(pathSegment.field)
-                ?: let {
-                  val newNode = MutableNode.StructNode(pathSegment, Struct.getDefaultInstance())
-                  structNode.setChild(pathSegment.field, newNode)
-                  newNode
-                }
+              structNode.getField(pathSegment.field)
             }
             is DataConnectPathSegment.ListIndex -> {
               val listNode =
@@ -172,56 +168,74 @@ internal object ProtoGraft {
         )
       }
 
-      parentStructNode.setChild(lastSegmentField, toMutableNode(structToGraft, lastSegment))
+      parentStructNode.setField(
+        lastSegmentField,
+        MutableNode.StructNode(lastSegment, structToGraft)
+      )
     }
 
     return rootNode.toStruct()
   }
 
   private sealed class MutableNode(val parentPathSegment: DataConnectPathSegment?) {
+    abstract val kind: Value.KindCase
     abstract fun toValue(): Value
 
     class StructNode(
       parentPathSegment: DataConnectPathSegment?,
-      private val original: Struct,
-      private val mutatedFields: MutableMap<String, MutableNode> = mutableMapOf()
+      private val struct: Struct,
     ) : MutableNode(parentPathSegment) {
 
-      fun getChild(key: String): MutableNode? {
-        if (mutatedFields.containsKey(key)) {
-          return mutatedFields.getValue(key)
+      private val lazyMutatedFields =
+        lazy(LazyThreadSafetyMode.NONE) { mutableMapOf<String, MutableNode>() }
+
+      fun getField(key: String): MutableNode {
+        if (lazyMutatedFields.isInitialized()) {
+          lazyMutatedFields.value[key]?.let {
+            return it
+          }
         }
-        if (original.containsFields(key)) {
-          val child =
-            toMutableNode(original.getFieldsOrThrow(key), DataConnectPathSegment.Field(key))
-          mutatedFields[key] = child
-          return child
-        }
-        return null
+
+        val childParentPathSegment = DataConnectPathSegment.Field(key)
+        val newChildMutableNode =
+          if (struct.containsFields(key)) {
+            val value = struct.getFieldsOrThrow(key)
+            toMutableNode(value, childParentPathSegment)
+          } else {
+            StructNode(childParentPathSegment, Struct.getDefaultInstance())
+          }
+
+        lazyMutatedFields.value[key] = newChildMutableNode
+        return newChildMutableNode
       }
 
-      fun setChild(key: String, node: MutableNode) {
-        mutatedFields[key] = node
+      fun setField(key: String, node: MutableNode) {
+        val oldNode = lazyMutatedFields.value.put(key, node)
+        require(oldNode === null) {
+          "internal error hzyybby2th: StructNode.setField(key=$key) called, " +
+            "but that key is already assigned to a value of type ${oldNode!!.kind}"
+        }
       }
 
       fun containsKey(key: String): Boolean {
-        return mutatedFields.containsKey(key) || original.containsFields(key)
+        if (lazyMutatedFields.isInitialized() && lazyMutatedFields.value.containsKey(key)) {
+          return true
+        }
+        return struct.containsFields(key)
       }
 
-      fun toStruct(): Struct =
-        Struct.newBuilder().let { structBuilder ->
-          val allKeys = original.fieldsMap.keys + mutatedFields.keys
-          for (key in allKeys) {
-            val value =
-              if (mutatedFields.containsKey(key)) {
-                mutatedFields.getValue(key).toValue()
-              } else {
-                original.getFieldsOrThrow(key)
-              }
-            structBuilder.putFields(key, value)
-          }
-          structBuilder.build()
+      fun toStruct(): Struct {
+        if (!lazyMutatedFields.isInitialized()) {
+          return struct
         }
+        val structBuilder = struct.toBuilder()
+        lazyMutatedFields.value.entries.forEach { (key, node) ->
+          structBuilder.putFields(key, node.toValue())
+        }
+        return structBuilder.build()
+      }
+
+      override val kind = Value.KindCase.STRUCT_VALUE
 
       override fun toValue(): Value = toStruct().toValueProto()
     }
@@ -259,11 +273,15 @@ internal object ProtoGraft {
           listBuilder.build()
         }
 
+      override val kind = Value.KindCase.LIST_VALUE
+
       override fun toValue(): Value = toListValue().toValueProto()
     }
 
     class ValueNode(parentPathSegment: DataConnectPathSegment?, val value: Value) :
       MutableNode(parentPathSegment) {
+      override val kind
+        get() = value.kindCase!!
       override fun toValue(): Value = value
     }
   }
