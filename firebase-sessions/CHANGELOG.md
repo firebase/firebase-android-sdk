@@ -1,5 +1,7 @@
 # Unreleased
 
+# 3.0.4
+
 - [fixed] Fixed a bug when the app foregrounds before Sessions has initialized (#7519)
 - [changed] Restore SessionLifecycleService as no-op
 
