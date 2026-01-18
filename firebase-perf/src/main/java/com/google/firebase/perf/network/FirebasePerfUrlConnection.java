@@ -16,6 +16,7 @@ package com.google.firebase.perf.network;
 
 import androidx.annotation.Keep;
 import com.google.firebase.perf.metrics.NetworkRequestMetricBuilder;
+import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.perf.util.URLWrapper;
@@ -32,7 +33,11 @@ import javax.net.ssl.HttpsURLConnection;
  */
 public class FirebasePerfUrlConnection {
 
-  private FirebasePerfUrlConnection() {}
+  private final SessionManager sessionManager;
+
+  private FirebasePerfUrlConnection(SessionManager sessionManager) {
+    this.sessionManager = sessionManager;
+  }
 
   // Bytecode instrumented functions
   /**
@@ -44,7 +49,7 @@ public class FirebasePerfUrlConnection {
    */
   @Keep
   public static InputStream openStream(final URL url) throws IOException {
-    return openStream(new URLWrapper(url), TransportManager.getInstance(), new Timer());
+    return openStream(new URLWrapper(url), TransportManager.getInstance(), new Timer(), /* sessionManager = */ null);
   }
 
   // Functions to collect information for the Network Request Metric
@@ -56,14 +61,14 @@ public class FirebasePerfUrlConnection {
    * @throws IOException if there is a problem with opening the connection or using the connection
    *     to open a stream
    */
-  static InputStream openStream(URLWrapper wrapper, TransportManager transportManager, Timer timer)
+  static InputStream openStream(URLWrapper wrapper, TransportManager transportManager, Timer timer, SessionManager sessionManager)
       throws IOException {
     if (!TransportManager.getInstance().isInitialized()) {
       return wrapper.openConnection().getInputStream();
     }
     timer.reset();
     long startTime = timer.getMicros();
-    NetworkRequestMetricBuilder builder = NetworkRequestMetricBuilder.builder(transportManager);
+    NetworkRequestMetricBuilder builder = NetworkRequestMetricBuilder.builder(transportManager, sessionManager);
     try {
       URLConnection connection = wrapper.openConnection();
       if (connection instanceof HttpsURLConnection) {
@@ -92,7 +97,7 @@ public class FirebasePerfUrlConnection {
    */
   @Keep
   public static Object getContent(final URL url) throws IOException {
-    return getContent(new URLWrapper(url), TransportManager.getInstance(), new Timer());
+    return getContent(new URLWrapper(url), TransportManager.getInstance(), new Timer(), /* sessionManager = */ null);
   }
 
   /**
@@ -103,9 +108,9 @@ public class FirebasePerfUrlConnection {
    *     to get the content
    */
   @Keep
-  public static Object getContent(final URL url, @SuppressWarnings("rawtypes") final Class[] types)
+  public static Object getContent(final URL url, @SuppressWarnings("rawtypes") final Class[] types, final SessionManager sessionManager)
       throws IOException {
-    return getContent(new URLWrapper(url), types, TransportManager.getInstance(), new Timer());
+    return getContent(new URLWrapper(url), types, TransportManager.getInstance(), new Timer(), sessionManager);
   }
 
   /**
@@ -115,11 +120,11 @@ public class FirebasePerfUrlConnection {
    * @throws IOException if there is a problem with opening the connection or using the connection
    *     to get the content
    */
-  static Object getContent(final URLWrapper wrapper, TransportManager transportManager, Timer timer)
+  static Object getContent(final URLWrapper wrapper, TransportManager transportManager, Timer timer, SessionManager sessionManager)
       throws IOException {
     timer.reset();
     long startTime = timer.getMicros();
-    NetworkRequestMetricBuilder builder = NetworkRequestMetricBuilder.builder(transportManager);
+    NetworkRequestMetricBuilder builder = NetworkRequestMetricBuilder.builder(transportManager, sessionManager);
     try {
       URLConnection connection = wrapper.openConnection();
       if (connection instanceof HttpsURLConnection) {
@@ -150,11 +155,12 @@ public class FirebasePerfUrlConnection {
       final URLWrapper wrapper,
       @SuppressWarnings("rawtypes") final Class[] types,
       TransportManager transportManager,
-      Timer timer)
+      Timer timer,
+      SessionManager sessionManager)
       throws IOException {
     timer.reset();
     long startTime = timer.getMicros();
-    NetworkRequestMetricBuilder builder = NetworkRequestMetricBuilder.builder(transportManager);
+    NetworkRequestMetricBuilder builder = NetworkRequestMetricBuilder.builder(transportManager, sessionManager);
     try {
       URLConnection connection = wrapper.openConnection();
       if (connection instanceof HttpsURLConnection) {
@@ -186,12 +192,12 @@ public class FirebasePerfUrlConnection {
       return new InstrHttpsURLConnection(
           (HttpsURLConnection) connection,
           new Timer(),
-          NetworkRequestMetricBuilder.builder(TransportManager.getInstance()));
+          NetworkRequestMetricBuilder.builder(TransportManager.getInstance(), /* sessionManager = */ null));
     } else if (connection instanceof HttpURLConnection) {
       return new InstrHttpURLConnection(
           (HttpURLConnection) connection,
           new Timer(),
-          NetworkRequestMetricBuilder.builder(TransportManager.getInstance()));
+          NetworkRequestMetricBuilder.builder(TransportManager.getInstance(), /* sessionManager = */ null));
     }
     return connection;
   }
