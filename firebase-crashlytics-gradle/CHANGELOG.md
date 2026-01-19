@@ -37,6 +37,7 @@ native apps and customized builds. This release includes the following API chang
   see [Upgrade to Crashlytics Gradle plugin v3](https://firebase.google.com/docs/crashlytics/upgrade-to-crashlytics-gradle-plugin-v3).
 * {{changed}} **Breaking change**: This release increases the minimum required versions to use
   Crashlytics:
-    * Gradle 8
-    * Android Gradle plugin 8.1
-    * Google-Services plugin 4.4.1
+  * Gradle 8
+  * Android Gradle plugin 8.1
+  * Google-Services plugin 4.4.1
+

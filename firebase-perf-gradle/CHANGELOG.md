@@ -3,6 +3,7 @@
 Refer to [GMaven](https://maven.google.com/web/index.html?q=perf-plug#com.google.firebase:perf-plugin) for the release artifacts and [Firebase Android Release Notes](https://firebase.google.com/support/release-notes/android) for the release info.
 
 ## Example Changelog
+
 ```
 ## vX.Y.Z
 
@@ -29,19 +30,23 @@ Refer to [GMaven](https://maven.google.com/web/index.html?q=perf-plug#com.google
 * {{fixed}} Replaced usage of deprecated GradleVersion APIs to fix (#7092).
 
 ## v1.4.2
+
 * {{fixed}} Upgraded the class bytecode instrumentation APIs to be compatible with [AGP 7.2](https://developer.android.com/studio/releases/gradle-plugin-api-updates#agp-7-2-0).
 
 ## v1.4.1
+
 * {{fixed}} Migrated away from the deprecated Android Gradle plugin APIs.
 * {{fixed}} Filtered out classes in META-INF/ directory from instrumentation.
   ([GitHub Issue #3155](//github.com/firebase/firebase-android-sdk/issues/3155 {:.external})
 
 ## v1.4.0
+
 * {{feature}} Enabled parallel transform by migrating to the new ASM classes transform API.
 
 ## v1.3.5
+
 * {{feature}} Added support for [Configuration Cache](https://docs.gradle.org/current/userguide/configuration_cache.html).
-  
+
 ## v1.3.4
 
 * {{changed}} Added Firebase Datatransport to event instrumentation denylist.
@@ -85,27 +90,32 @@ Refer to [GMaven](https://maven.google.com/web/index.html?q=perf-plug#com.google
   ([GitHub Issue](https://github.com/minsko/FirebasePerformanceTransformIssue))
 
 ## v1.3.2
+
 * {{fixed}} Fixed an `ArrayIndexOutOfBoundsException` when processing Kotlin class files that use both [Inline Functions](https://kotlinlang.org/docs/reference/inline-functions.html#inline-functions) and [Multiplatform Projects](https://kotlinlang.org/docs/reference/whatsnew12.html#multiplatform-projects-experimental) by upgrading to the latest ASM API which contains the [fix](https://gitlab.ow2.org/asm/asm/-/merge_requests/290).
-([GitHub Issue #1556](https://github.com/firebase/firebase-android-sdk/issues/1556))
+  ([GitHub Issue #1556](https://github.com/firebase/firebase-android-sdk/issues/1556))
 
 * {{changed}} Upgraded [`asm`](https://search.maven.org/artifact/org.ow2.asm/asm) POM dependency from v7.0 to v9.0 and added a new POM dependency on [`asm-commons`](https://search.maven.org/artifact/org.ow2.asm/asm-commons) v9.0.
 
 ## v1.3.1
+
 * {{fixed}} This release contains some minor fixes and improvements.
 
 ## v1.3.0
+
 * {{changed}} With this release, you can disable the Firebase Performance Monitoring Gradle plugin for a specific [build variant](https://developer.android.com/studio/build/build-variants) (including [buildTypes](https://developer.android.com/studio/build/build-variants#build-types) or [productFlavors](https://developer.android.com/studio/build/build-variants#product-flavors)). For more details, refer to the [disabling Performance Monitoring documentation](https://firebase.google.com/docs/perf-mon/disable-sdk?platform=android#disable-gradle-plugin).
 
 ## v1.2.1
+
 * {{changed}} With this release, you must [add `perf-plugin` explicitly](https://firebase.google.com/docs/perf-mon/get-started-android) rather than adding it via `firebase-plugins` (which is now deprecated).
 
 ## v1.2.0
-* {{changed}} Updates to the Firebase Gradle Plugins (`firebase-plugins` and `perf-plugin`) for Android Studio 3.x are now available.
-This release:
-   - Provides support for `JDK 11` with ASM API upgrade to "7.0".
-   - Fixes an issue with build failure when the transform is applied but disabled.
-   - Removes the requirement that the Firebase Performance Monitoring plugin must be listed after the Android application plugin for it to work.
-   - Improves the build performance by disabling the instrumentation and making it non-operational when the project property flag `firebasePerformanceInstrumentationEnabled = false` is specified in the `gradle.properties` file.
 
+* {{changed}} Updates to the Firebase Gradle Plugins (`firebase-plugins` and `perf-plugin`) for Android Studio 3.x are now available.
+  This release:
+  - Provides support for `JDK 11` with ASM API upgrade to "7.0".
+  - Fixes an issue with build failure when the transform is applied but disabled.
+  - Removes the requirement that the Firebase Performance Monitoring plugin must be listed after the Android application plugin for it to work.
+  - Improves the build performance by disabling the instrumentation and making it non-operational when the project property flag `firebasePerformanceInstrumentationEnabled = false` is specified in the `gradle.properties` file.
 
 ## v1.1.2
+
