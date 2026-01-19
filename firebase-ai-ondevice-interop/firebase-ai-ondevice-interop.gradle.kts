@@ -65,10 +65,5 @@ kotlin {
 
 dependencies {
   api(libs.firebase.common)
-  implementation(libs.firebase.components)
-  implementation(libs.firebase.annotations)
-  implementation(libs.androidx.annotation)
-  implementation(libs.androidx.core.ktx)
-  implementation(libs.slf4j.nop)
   implementation(libs.kotlinx.coroutines.android)
 }

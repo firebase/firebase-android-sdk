@@ -34,7 +34,7 @@ public interface GenerativeModel {
    *
    * @return `true` if the model is available, `false` otherwise.
    */
-  public fun isAvailable(): Boolean
+  public suspend fun isAvailable(): Boolean
 
   /**
    * Generates new content from the input [GenerateContentRequest] given to the model as a prompt.
