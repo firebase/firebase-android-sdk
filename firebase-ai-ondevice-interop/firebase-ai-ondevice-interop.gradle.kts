@@ -32,7 +32,7 @@ android {
   val targetSdkVersion: Int by rootProject
   val minSdkVersion: Int by rootProject
 
-  namespace = "com.google.firebase.ai.ondevice.api"
+  namespace = "com.google.firebase.ai.ondevice.interop"
   compileSdk = 34
   defaultConfig {
     minSdk = minSdkVersion
