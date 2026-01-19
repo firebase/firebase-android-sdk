@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.firebase.ai.ondevice.api
+package com.google.firebase.ai.ondevice.interop
 
 /**
  * Represents a token counting response from the model.

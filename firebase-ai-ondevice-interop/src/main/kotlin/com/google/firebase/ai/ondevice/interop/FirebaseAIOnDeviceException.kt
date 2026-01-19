@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.firebase.ai.ondevice.api
+package com.google.firebase.ai.ondevice.interop
 
 /** Parent class for any errors that occur from the Firebase AI OnDevice SDK. */
 public abstract class FirebaseAIOnDeviceException
