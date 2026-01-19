@@ -1,0 +1,13 @@
+{
+  "error": {
+    "code": 400,
+    "message": "OOPS!",
+    "status": "FAILED_PRECONDITION",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.rpc.DebugInfo",
+        "detail": "[ORIGINAL ERROR] generic::failed_precondition: com.google.apps.framework.request.FailedPreconditionException Code: FAILED_PRECONDITION [google.rpc.error_details_ext] { message: \"OOPS!\" }"
+      }
+    ]
+  }
+}
