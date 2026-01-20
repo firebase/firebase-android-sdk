@@ -1373,6 +1373,8 @@ package com.google.firebase.ai.type {
 
   public final class UsageMetadata {
     ctor @Deprecated public UsageMetadata(int promptTokenCount, Integer? candidatesTokenCount, int totalTokenCount, java.util.List<com.google.firebase.ai.type.ModalityTokenCount> promptTokensDetails, java.util.List<com.google.firebase.ai.type.ModalityTokenCount> candidatesTokensDetails, int thoughtsTokenCount);
+    method public java.util.List<com.google.firebase.ai.type.ModalityTokenCount> getCacheTokensDetails();
+    method public int getCachedContentTokenCount();
     method public Integer? getCandidatesTokenCount();
     method public java.util.List<com.google.firebase.ai.type.ModalityTokenCount> getCandidatesTokensDetails();
     method public int getPromptTokenCount();
@@ -1381,6 +1383,8 @@ package com.google.firebase.ai.type {
     method public int getToolUsePromptTokenCount();
     method public java.util.List<com.google.firebase.ai.type.ModalityTokenCount> getToolUsePromptTokensDetails();
     method public int getTotalTokenCount();
+    property public final java.util.List<com.google.firebase.ai.type.ModalityTokenCount> cacheTokensDetails;
+    property public final int cachedContentTokenCount;
     property public final Integer? candidatesTokenCount;
     property public final java.util.List<com.google.firebase.ai.type.ModalityTokenCount> candidatesTokensDetails;
     property public final int promptTokenCount;
