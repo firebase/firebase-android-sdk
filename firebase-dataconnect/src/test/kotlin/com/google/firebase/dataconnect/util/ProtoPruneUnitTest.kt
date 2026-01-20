@@ -19,17 +19,24 @@ package com.google.firebase.dataconnect.util
 import com.google.firebase.dataconnect.DataConnectPath
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.emptyDataConnectPath
+import com.google.firebase.dataconnect.testutil.fold
+import com.google.firebase.dataconnect.testutil.isListValue
 import com.google.firebase.dataconnect.testutil.isStructValue
+import com.google.firebase.dataconnect.testutil.map
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.dataConnectPath as dataConnectPathArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.fieldPathSegment as dataConnectFieldPathSegmentArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.listIndexPathSegment as dataConnectListIndexPathSegmentArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.pathSegment as dataConnectPathSegmentArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.ProtoArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.listValue
+import com.google.firebase.dataconnect.testutil.property.arbitrary.next
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
+import com.google.firebase.dataconnect.testutil.randomlyInsertStructs
+import com.google.firebase.dataconnect.testutil.toValueProto
 import com.google.firebase.dataconnect.testutil.walk
+import com.google.firebase.dataconnect.testutil.withRandomlyInsertedStruct
 import com.google.firebase.dataconnect.toPathString
 import com.google.firebase.dataconnect.util.ProtoPrune.withDescendantStructsPruned
 import com.google.firebase.dataconnect.withAddedListIndex
@@ -41,6 +48,7 @@ import io.kotest.assertions.withClue
 import io.kotest.common.DelicateKotest
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.collections.shouldNotContain
+import io.kotest.matchers.comparables.shouldBeGreaterThan
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -48,6 +56,7 @@ import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
 import io.kotest.property.PropertyContext
+import io.kotest.property.RandomSource
 import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.distinct
 import io.kotest.property.arbitrary.filter
@@ -55,12 +64,13 @@ import io.kotest.property.arbitrary.float
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.of
+import io.kotest.property.asSample
 import io.kotest.property.checkAll
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import kotlin.collections.map
+import kotlin.random.nextInt
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
@@ -227,12 +237,71 @@ class ProtoPruneUnitTest {
 
   @Test
   fun `Struct withDescendantStructsPruned() should return the correct prunedStruct`() = runTest {
-    TODO()
+    val structKeyArb = Arb.proto.structKey()
+    val structArb = Arb.proto.struct(key = structKeyArb)
+    checkAll(propTestConfig, structArb, dataConnectPathArb(), Arb.int(1..5)) {
+      struct,
+      path,
+      pruneCount ->
+      val prunePaths: Set<DataConnectPath>
+      val structToBePruned =
+        struct.struct.toBuilder().let { structBuilder ->
+          val randomlyInsertedPaths =
+            structBuilder.randomlyInsertStructs(
+              List(pruneCount) { structArb.bind().struct },
+              randomSource().random,
+              generateKey = { structKeyArb.bind() },
+            )
+          prunePaths = randomlyInsertedPaths.map { path + it }.toSet()
+          structBuilder.build()
+        }
+      val predicate: PrunePredicate = { path, _ -> prunePaths.contains(path) }
+
+      val result = structToBePruned.withDescendantStructsPruned(path, predicate)
+
+      result.shouldNotBeNull().prunedStruct shouldBe struct.struct
+    }
   }
 
   @Test
   fun `ListValue withDescendantStructsPruned() should return the correct prunedStruct`() = runTest {
-    TODO()
+    val structKeyArb = Arb.proto.structKey()
+    val structArb = Arb.proto.struct(key = structKeyArb)
+    checkAll(
+      propTestConfig,
+      ListValueContainingAtLeastOneStructArb(),
+      dataConnectPathArb(),
+      Arb.int(1..5)
+    ) { listValue, path, pruneCount ->
+      val structPaths = listValue.walk().filter { it.value.isStructValue }.map { it.path }.toList()
+      val structPathArb = Arb.of(structPaths)
+      val pruneCountByStructPath =
+        List(pruneCount) { structPathArb.bind() }.groupingBy { it }.eachCount()
+      val prunePaths = mutableSetOf<DataConnectPath>()
+      val listValueToBePruned =
+        listValue.map { valuePath, value ->
+          val pruneCount = pruneCountByStructPath[valuePath]
+          if (pruneCount === null) {
+            value
+          } else {
+            val structsToInsert = List(pruneCount) { structArb.bind().struct }
+            val structBuilder = value.structValue.toBuilder()
+            val insertedPaths =
+              structBuilder.randomlyInsertStructs(
+                structsToInsert,
+                randomSource().random,
+                generateKey = { structKeyArb.bind() },
+              )
+            prunePaths.addAll(insertedPaths.map { path + valuePath + it })
+            structBuilder.build().toValueProto()
+          }
+        }
+      val predicate: PrunePredicate = { path, _ -> prunePaths.contains(path) }
+
+      val result = listValueToBePruned.withDescendantStructsPruned(path, predicate)
+
+      result.shouldNotBeNull().prunedListValue shouldBe listValue
+    }
   }
 }
 
@@ -268,6 +337,66 @@ private fun PropertyContext.predicateReturningTrueProbabilistically(
     forcedReturnValues[path] ?: (randomSource().random.nextFloat() < trueProbability)
   calls.add(PredicateCall(path, struct, returnValue))
   returnValue
+}
+
+/**
+ * An [Arb] that generates [ListValue] objects that are guaranteed to contain at least one [Struct].
+ *
+ * It works by first generating a random [ListValue], then randomly selecting a node within that
+ * list and inserting a new random [Struct] into it.
+ */
+private class ListValueContainingAtLeastOneStructArb(
+  private val listValueArb: Arb<ProtoArb.ListValueInfo> = Arb.proto.listValue()
+) : Arb<ListValue>() {
+
+  private val structKeyArb = Arb.proto.structKey()
+  private val structArb = Arb.proto.struct(key = structKeyArb).map { it.struct }
+
+  override fun edgecase(rs: RandomSource): ListValue {
+    val struct = structArb.next(rs, edgeCase = rs.random.nextBoolean())
+    return ListValue.newBuilder().addValues(struct.toValueProto()).build()
+  }
+
+  override fun sample(rs: RandomSource): io.kotest.property.Sample<ListValue> {
+    val listValueSample = listValueArb.next(rs, edgeCaseProbability = rs.random.nextFloat())
+    val insertPath =
+      listValueSample.listValue
+        .walk(includeSelf = true)
+        .filter { it.value.isStructValue || it.value.isListValue }
+        .map { it.path }
+        .toList()
+        .random(rs.random)
+    return listValueSample.listValue
+      .map { path, value ->
+        if (path != insertPath) {
+          value
+        } else {
+          val structToInsert = structArb.next(rs, edgeCaseProbability = rs.random.nextFloat())
+          if (value.isStructValue) {
+            value.structValue
+              .withRandomlyInsertedStruct(
+                structToInsert,
+                rs.random,
+                generateKey = { structKeyArb.next(rs, edgeCaseProbability = rs.random.nextFloat()) }
+              )
+              .toValueProto()
+          } else if (value.isListValue) {
+            value.listValue.toBuilder().let { listValueBuilder ->
+              val insertIndex = rs.random.nextInt(0..listValueBuilder.valuesCount)
+              listValueBuilder.addValues(insertIndex, structToInsert.toValueProto())
+              listValueBuilder.build().toValueProto()
+            }
+          } else {
+            throw IllegalStateException(
+              "internal error z7gc5tfpxj: value.kindCase=${value.kindCase}, " +
+                "but must be either ${Value.KindCase.STRUCT_VALUE} or " +
+                "${Value.KindCase.LIST_VALUE}"
+            )
+          }
+        }
+      }
+      .asSample()
+  }
 }
 
 private data class DataConnectPathStructPair(val path: DataConnectPath, val struct: Struct)
@@ -437,4 +566,21 @@ class ProtoPruneTestingUnitTest {
       paths.shouldNotContainParentsOfAnyElement()
     }
   }
+
+  @Test
+  fun `ListValueContainingAtLeastOneStructArb should generate ListValues with at least 1 Struct`() =
+    runTest {
+      checkAll(propTestConfig, ListValueContainingAtLeastOneStructArb()) { listValue ->
+        val structCount =
+          listValue.fold(0) { currentCount, _, value ->
+            if (value.isStructValue) {
+              currentCount + 1
+            } else {
+              currentCount
+            }
+          }
+
+        structCount shouldBeGreaterThan 0
+      }
+    }
 }
