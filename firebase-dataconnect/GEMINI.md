@@ -18,13 +18,22 @@ https://github.com/protocolbuffers/protobuf/blob/main/java/util/src/test/java/co
 and
 https://github.com/protocolbuffers/protobuf/blob/main/java/util/src/test/java/com/google/protobuf/util/ValuesTest.java
 
-### DataConnectPath
+## DataConnectPath
 
 The DataConnectPath, DataConnectPathSegment, and extension functions on those classes
 are defined in src/main/kotlin/com/google/firebase/dataconnect/DataConnectPathSegment.kt.
 
 To gain an even further understanding of these classes and function, read their unit tests in the file
 src/test/kotlin/com/google/firebase/dataconnect/DataConnectPathSegmentUnitTest.kt
+
+## QueryResultEncoderUnitTest.kt
+
+When investigating test failures in
+src/test/kotlin/com/google/firebase/dataconnect/sqlite/QueryResultEncoderUnitTest.kt
+look at both the encoding logic in
+src/main/kotlin/com/google/firebase/dataconnect/sqlite/QueryResultEncoder.kt
+and the decoding logic in
+src/main/kotlin/com/google/firebase/dataconnect/sqlite/QueryResultDecoder.kt
 
 ## Gradle Commands
 

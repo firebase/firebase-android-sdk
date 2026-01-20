@@ -17,6 +17,7 @@
 package com.google.firebase.dataconnect.sqlite
 
 import com.google.firebase.dataconnect.DataConnectPath
+import com.google.firebase.dataconnect.DataConnectPathComparator
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.emptyDataConnectPath
 import com.google.firebase.dataconnect.testutil.BuildByteArrayDSL
@@ -34,15 +35,20 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWith
 import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWith4ByteUtf8Encoding
 import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWithEvenNumByteUtf8EncodingDistribution
 import com.google.firebase.dataconnect.testutil.property.arbitrary.listValue
+import com.google.firebase.dataconnect.testutil.property.arbitrary.next
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
+import com.google.firebase.dataconnect.testutil.property.arbitrary.random
+import com.google.firebase.dataconnect.testutil.property.arbitrary.randomSource
 import com.google.firebase.dataconnect.testutil.property.arbitrary.recursivelyEmptyListValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.stringWithLoneSurrogates
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
+import com.google.firebase.dataconnect.testutil.property.arbitrary.threeValues
 import com.google.firebase.dataconnect.testutil.property.arbitrary.twoValues
 import com.google.firebase.dataconnect.testutil.property.arbitrary.value
 import com.google.firebase.dataconnect.testutil.property.arbitrary.withIterations
 import com.google.firebase.dataconnect.testutil.property.arbitrary.withIterationsIfNotNull
+import com.google.firebase.dataconnect.testutil.randomlyInsertStruct
 import com.google.firebase.dataconnect.testutil.randomlyInsertValue
 import com.google.firebase.dataconnect.testutil.randomlyInsertValues
 import com.google.firebase.dataconnect.testutil.shouldBe
@@ -56,6 +62,7 @@ import com.google.firebase.dataconnect.testutil.withAddedListIndex
 import com.google.firebase.dataconnect.testutil.withAddedPathSegment
 import com.google.firebase.dataconnect.testutil.withRandomlyInsertedValue
 import com.google.firebase.dataconnect.testutil.withRandomlyInsertedValues
+import com.google.firebase.dataconnect.toPathString
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
 import com.google.protobuf.Struct
@@ -77,6 +84,7 @@ import io.kotest.property.PropertyContext
 import io.kotest.property.ShrinkingMode
 import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.alphanumeric
+import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.char
 import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.constant
@@ -304,51 +312,13 @@ class QueryResultEncoderUnitTest {
 
   @Test
   fun `entity contains nested entities in struct keys`() = runTest {
-    val structKeyArb = Arb.proto.structKey()
-    val structArb = Arb.proto.struct()
-    checkAll(propTestConfig, Arb.int(2..5)) { entityCount ->
-      val generateKey = { structKeyArb.bind() }
-      val entities = MutableList(entityCount) { structArb.bind().struct }
-      val entityPaths = mutableListOf<DataConnectPath>()
-      val rootIsEntity = entityCount % 2 != 0
-      val entityIterator = entities.iterator()
-      val rootStructBuilder =
-        (if (rootIsEntity) entityIterator.next() else structArb.bind().struct).toBuilder()
-      val nestedEntityBuilder = entityIterator.next().toBuilder()
-      val nestedEntity2RelativePath =
-        nestedEntityBuilder.randomlyInsertValue(
-          entityIterator.next().toValueProto(),
-          randomSource().random,
-          generateKey,
-        )
-      val nestedEntity1Path =
-        rootStructBuilder.randomlyInsertValue(
-          nestedEntityBuilder.build().toValueProto(),
-          randomSource().random,
-          generateKey,
-        )
-      entityPaths.add(nestedEntity1Path)
-      entityPaths.add(nestedEntity1Path + nestedEntity2RelativePath)
-      while (entityIterator.hasNext()) {
-        val entity = entityIterator.next()
-        val entityPath =
-          rootStructBuilder.randomlyInsertValue(
-            entity.toValueProto(),
-            randomSource().random,
-            generateKey,
-          )
-        entityPaths.add(entityPath)
-      }
-      if (rootIsEntity) {
-        entityPaths.add(emptyDataConnectPath())
-      }
-      val rootStruct = rootStructBuilder.build()
+    checkAll(propTestConfig, structWithNestedEntitiesInStructKeysArb()) { sample ->
       val entityIdByPath = buildEntityIdByPathMap {
-        entityPaths.forEach { putWithRandomUniqueEntityId(it) }
+        sample.entityByPath.keys.forEach { path -> putWithRandomUniqueEntityId(path) }
       }
 
-      rootStruct.decodingEncodingShouldProduceIdenticalStruct(
-        expectedEntities = entities.toList(),
+      sample.structWithNestedEntitiesInStructKeys.decodingEncodingShouldProduceIdenticalStruct(
+        expectedEntities = sample.entityByPath.values.toList(),
         entityIdByPath = entityIdByPath,
       )
     }
@@ -1180,5 +1150,53 @@ private data class EntityIdSample(val string: String) {
   companion object {
     fun arb(): Arb<EntityIdSample> =
       Arb.string(10..10, Codepoint.alphanumeric()).map(::EntityIdSample)
+  }
+}
+
+private data class StructWithNestedEntitiesInStructKeysSample(
+  val structWithNestedEntitiesInStructKeys: Struct,
+  val entityByPath: Map<DataConnectPath, Struct>,
+) {
+  override fun toString(): String =
+    "StructWithNestedEntitiesInStructKeysSample(" +
+      "struct=${structWithNestedEntitiesInStructKeys.toCompactString()}, " +
+      "entityByPath.size=${entityByPath.size}, " +
+      "entityByPath.keys=${entityByPath.keys.sortedWith(DataConnectPathComparator).joinToString { it.toPathString() }}" +
+      ")"
+}
+
+private fun structWithNestedEntitiesInStructKeysArb():
+  Arb<StructWithNestedEntitiesInStructKeysSample> {
+  val structKeyArb = Arb.proto.structKey()
+  val structArb = Arb.proto.struct(key = structKeyArb).map { it.struct }
+  val threeStructs = Arb.threeValues(structArb)
+  return Arb.bind(threeStructs, Arb.randomSource(), Arb.list(structArb, 0..3)) {
+    (struct1, struct2, struct3),
+    rs,
+    additionalEntities ->
+    val generateKey = { structKeyArb.next(rs, edgeCaseProbability = rs.random.nextFloat()) }
+    val struct3RelativePath: DataConnectPath
+    val struct2Patched =
+      struct2.toBuilder().let { structBuilder ->
+        struct3RelativePath = structBuilder.randomlyInsertStruct(struct3, rs.random, generateKey)
+        structBuilder.build()
+      }
+
+    val entityByPath = mutableMapOf<DataConnectPath, Struct>()
+    val patchedStruct =
+      struct1.toBuilder().let { structBuilder ->
+        val struct2Path = structBuilder.randomlyInsertStruct(struct2Patched, rs.random, generateKey)
+        entityByPath[struct2Path] = struct2
+        entityByPath[struct2Path + struct3RelativePath] = struct3
+
+        additionalEntities.forEach { entity ->
+          val entityPath = structBuilder.randomlyInsertStruct(entity, rs.random, generateKey)
+          entityByPath[entityPath] = entity
+        }
+
+        structBuilder.build()
+      }
+
+    StructWithNestedEntitiesInStructKeysSample(patchedStruct, entityByPath.toMap())
   }
 }

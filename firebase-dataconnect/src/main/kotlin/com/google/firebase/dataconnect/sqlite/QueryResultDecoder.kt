@@ -24,6 +24,7 @@ import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.getSInt64
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.getUInt32
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.getUInt64
 import com.google.firebase.dataconnect.toPathString
+import com.google.firebase.dataconnect.util.ProtoGraft.withGraftedInStructs
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.firebase.dataconnect.util.StringUtil.ellipsizeMiddle
@@ -872,13 +873,20 @@ internal class QueryResultDecoder(
         eofErrorId = "PrunedEntityCountEOF",
       )
 
-    val structBuilder = struct.toBuilder()
-    repeat(prunedEntityCount) {
-      val entityRelativePath = readPath(path)
-      val entity = readEntity(path)
+    // Avoid doing the work below if there is nothing to graft, as a performance optimization.
+    if (prunedEntityCount == 0) {
+      return struct
     }
 
-    return structBuilder.build()
+    val structsByPath = buildMap {
+      repeat(prunedEntityCount) {
+        val entityRelativePath = readPath(path)
+        val entity = readEntity(path)
+        put(entityRelativePath, entity)
+      }
+    }
+
+    return struct.withGraftedInStructs(structsByPath)
   }
 
   private fun readPath(path: DataConnectPath): DataConnectPath {
