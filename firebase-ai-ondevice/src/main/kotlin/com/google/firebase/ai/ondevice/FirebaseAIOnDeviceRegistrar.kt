@@ -33,7 +33,7 @@ internal class FirebaseAIOnDeviceRegistrar : ComponentRegistrar {
     listOf(
       Component.builder(FirebaseAIOnDeviceGenerativeModelFactory::class.java)
         .name(LIBRARY_NAME)
-        .factory { container -> FirebaseAIOnDeviceComponent() }
+        .factory { FirebaseAIOnDeviceComponent() }
         .build(),
       LibraryVersionComponent.create(LIBRARY_NAME, BuildConfig.VERSION_NAME),
     )
