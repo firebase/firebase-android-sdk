@@ -24,7 +24,7 @@ import com.google.firebase.ai.ondevice.interop.GenerativeModel
  *
  * @hide
  */
-internal class FirebaseAIOnDeviceComponent() : FirebaseAIOnDeviceGenerativeModelFactory {
+internal class FirebaseAIOnDeviceComponent : FirebaseAIOnDeviceGenerativeModelFactory {
 
   override fun getGenerativeModel(): GenerativeModel = GenerativeModelImpl()
 }
