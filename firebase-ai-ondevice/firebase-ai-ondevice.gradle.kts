@@ -70,7 +70,7 @@ dependencies {
   implementation(libs.genai.prompt)
   implementation(project(":firebase-ai-ondevice-interop"))
 
-  api(libs.firebase.common)
+  implementation(libs.firebase.common)
   implementation(libs.firebase.components)
   implementation(libs.firebase.annotations)
   implementation(libs.androidx.annotation)
