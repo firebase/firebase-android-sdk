@@ -19,12 +19,8 @@ package com.google.firebase.dataconnect.sqlite
 import com.google.firebase.dataconnect.DataConnectPath
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.emptyDataConnectPath
-import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.buildEntityIdByPathMap
-import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.calculateExpectedEncodingAsEntityId
-import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.charArbWithCodeGreaterThan255
-import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.decodingEncodingShouldProduceIdenticalStruct
-import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.entityIdArb
 import com.google.firebase.dataconnect.testutil.BuildByteArrayDSL
+import com.google.firebase.dataconnect.testutil.beEqualTo
 import com.google.firebase.dataconnect.testutil.buildByteArray
 import com.google.firebase.dataconnect.testutil.isListValue
 import com.google.firebase.dataconnect.testutil.isRecursivelyEmpty
@@ -52,6 +48,7 @@ import com.google.firebase.dataconnect.testutil.randomlyInsertValues
 import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
+import com.google.firebase.dataconnect.testutil.structFastEqual
 import com.google.firebase.dataconnect.testutil.toListValue
 import com.google.firebase.dataconnect.testutil.toValueProto
 import com.google.firebase.dataconnect.testutil.walk
@@ -59,21 +56,31 @@ import com.google.firebase.dataconnect.testutil.withAddedListIndex
 import com.google.firebase.dataconnect.testutil.withAddedPathSegment
 import com.google.firebase.dataconnect.testutil.withRandomlyInsertedValue
 import com.google.firebase.dataconnect.testutil.withRandomlyInsertedValues
+import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.assertions.withClue
+import io.kotest.common.DelicateKotest
 import io.kotest.common.ExperimentalKotest
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.Exhaustive
 import io.kotest.property.PropTestConfig
+import io.kotest.property.PropertyContext
 import io.kotest.property.ShrinkingMode
+import io.kotest.property.arbitrary.Codepoint
+import io.kotest.property.arbitrary.alphanumeric
+import io.kotest.property.arbitrary.char
 import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.constant
+import io.kotest.property.arbitrary.distinct
 import io.kotest.property.arbitrary.double
 import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.int
@@ -83,11 +90,13 @@ import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.negativeInt
 import io.kotest.property.arbitrary.of
 import io.kotest.property.arbitrary.string
+import io.kotest.property.arbitrary.withEdgecases
 import io.kotest.property.assume
 import io.kotest.property.checkAll
 import io.kotest.property.exhaustive.of
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
+import java.security.MessageDigest
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
@@ -187,7 +196,7 @@ class QueryResultEncoderUnitTest {
         struct.struct.withRandomlyInsertedValues(
           listValues,
           randomSource().random,
-          { structKeyArb.bind() }
+          generateKey = { structKeyArb.bind() }
         )
       structWithListValues.decodingEncodingShouldProduceIdenticalStruct()
     }
@@ -285,7 +294,7 @@ class QueryResultEncoderUnitTest {
 
   @Test
   fun `entity is the entire struct`() = runTest {
-    checkAll(propTestConfig, entityIdArb(), Arb.proto.struct()) { entityId, struct ->
+    checkAll(propTestConfig, EntityIdSample.arb(), Arb.proto.struct()) { entityId, struct ->
       struct.struct.decodingEncodingShouldProduceIdenticalStruct(
         expectedEntities = listOf(struct.struct),
         entityIdByPath = mapOf(emptyDataConnectPath() to entityId.string),
@@ -423,7 +432,7 @@ class QueryResultEncoderUnitTest {
   fun `entity contains lists of lists of non-entities with empty lists interspersed`() = runTest {
     val structKeyArb = Arb.proto.structKey()
     val structArb = Arb.proto.struct()
-    val entityIdArb = entityIdArb()
+    val entityIdArb = EntityIdSample.arb()
 
     checkAll(propTestConfig, structArb, Arb.int(2..10), Arb.proto.recursivelyEmptyListValue()) {
       struct,
@@ -512,7 +521,7 @@ class QueryResultEncoderUnitTest {
         rootStructBuilder.randomlyInsertValue(
           listValue.toValueProto(),
           randomSource().random,
-          { structKeyArb.bind() },
+          generateKey = { structKeyArb.bind() },
         )
       val rootStruct = rootStructBuilder.build()
       val entityIdByPath = buildEntityIdByPathMap {
@@ -543,7 +552,7 @@ class QueryResultEncoderUnitTest {
         rootStructBuilder.randomlyInsertValue(
           listValue.toValueProto(),
           randomSource().random,
-          { structKeyArb.bind() },
+          generateKey = { structKeyArb.bind() },
         )
       val rootStruct = rootStructBuilder.build()
       val entityIdByPath = buildEntityIdByPathMap {
@@ -1035,5 +1044,141 @@ private sealed class StringEncodingTestCase(val string: String) {
             }
           },
       )
+  }
+}
+
+/**
+ * Asserts that encoding the receiver [Struct] and then decoding it results in the same [Struct].
+ *
+ * This method:
+ * 1. Encodes the receiver [Struct] into a byte array using [QueryResultEncoder.encode], using the
+ * given [entityIdByPath].
+ * 2. Verifies that the list of entities returned by the encoder matches the given
+ * [expectedEntities], ignoring order.
+ * 3. Decodes the byte array back into a [Struct] using [QueryResultDecoder.decode], passing along
+ * the entities returned by the encoder in step 1.
+ * 4. Verifies that the decoded [Struct] is equal to the original receiver [Struct].
+ *
+ * @param expectedEntities The entities expected to be extracted during encoding.
+ * @param entityIdByPath A map of paths to entity IDs, used by the encoder to identify which
+ * sub-structures should be treated as entities.
+ */
+private fun Struct.decodingEncodingShouldProduceIdenticalStruct(
+  expectedEntities: List<Struct> = emptyList(),
+  entityIdByPath: Map<DataConnectPath, String>? = null,
+) {
+  val encodeResult = QueryResultEncoder.encode(this, entityIdByPath)
+
+  withClue("QueryResultEncoder.encode() entities returned") {
+    class StructWrapper(val struct: Struct) {
+      override fun equals(other: Any?) =
+        other is StructWrapper && structFastEqual(struct, other.struct)
+      override fun hashCode() = struct.hashCode()
+      override fun toString() = struct.toCompactString()
+    }
+
+    val actualEntitiesWrapped = encodeResult.entities.map { it.data }.map(::StructWrapper)
+    val expectedEntitiesWrapped = expectedEntities.map(::StructWrapper)
+    actualEntitiesWrapped shouldContainExactlyInAnyOrder expectedEntitiesWrapped
+  }
+
+  val decodeEntities =
+    encodeResult.entities.map {
+      QueryResultDecoder.Entity(
+        encodedId = it.encodedId,
+        data = it.data,
+      )
+    }
+  val decodeResult = QueryResultDecoder.decode(encodeResult.byteArray, decodeEntities)
+
+  withClue("QueryResultDecoder.decode() return value") {
+    decodeResult should beEqualTo(this, structPrinter = { it.toCompactString() })
+  }
+}
+
+private interface BuildEntityIdByPathContext {
+  fun putWithRandomUniqueEntityId(path: DataConnectPath)
+}
+
+/**
+ * Builds a map that associates [DataConnectPath] instances with unique, randomly generated entity
+ * IDs.
+ *
+ * This helper function is used within tests to construct the `entityIdByPath` map required by
+ * [QueryResultEncoder.encode]. It ensures that each path specified in the [block] is mapped to a
+ * distinct entity ID string.
+ *
+ * Example usage:
+ * ```
+ * val entityIdByPath = buildEntityIdByPathMap {
+ *   putWithRandomUniqueEntityId(emptyDataConnectPath())
+ *   putWithRandomUniqueEntityId(someOtherPath)
+ * }
+ * ```
+ *
+ * @return A [Map] where each [DataConnectPath] provided in the [block] is associated with a unique
+ * [String] entity ID.
+ */
+private fun PropertyContext.buildEntityIdByPathMap(
+  block: BuildEntityIdByPathContext.() -> Unit
+): Map<DataConnectPath, String> {
+  @OptIn(DelicateKotest::class) val distinctEntityIdArb = EntityIdSample.arb().distinct()
+  val entityIdByPath = mutableMapOf<DataConnectPath, String>()
+  val context =
+    object : BuildEntityIdByPathContext {
+      override fun putWithRandomUniqueEntityId(path: DataConnectPath) {
+        entityIdByPath[path] = distinctEntityIdArb.bind().string
+      }
+    }
+  block(context)
+  return entityIdByPath.toMap()
+}
+
+/**
+ * Calculates and returns the expected byte array encoding for a string being used as an entity ID.
+ *
+ * This function mimics the expected behavior of the [QueryResultEncoder] when it processes an
+ * entity ID. It takes each character of the string, encodes it into a 2-byte representation
+ * (similar to UTF-16BE), and then computes a SHA-512 hash of the resulting byte sequence.
+ */
+private fun String.calculateExpectedEncodingAsEntityId(): ByteArray {
+  val byteBuffer = ByteBuffer.allocate(length * 2)
+  forEach(byteBuffer::putChar)
+  val digest = MessageDigest.getInstance("SHA-512")
+  byteBuffer.flip()
+  digest.update(byteBuffer)
+  return digest.digest()
+}
+
+/**
+ * Creates and returns an [Arb] that generates characters with code points greater than 255.
+ *
+ * This is useful for testing string encoding scenarios where characters cannot be represented as a
+ * single byte. It includes various boundary and surrogate characters as edge cases.
+ */
+private fun charArbWithCodeGreaterThan255(): Arb<Char> {
+  val charRange = 256.toChar()..Char.MAX_VALUE
+  val charEdgeCases: List<Char> =
+    listOf(
+        charRange.first,
+        charRange.last,
+        Char.MIN_VALUE,
+        Char.MAX_VALUE,
+        Char.MIN_HIGH_SURROGATE,
+        Char.MAX_HIGH_SURROGATE,
+        Char.MIN_LOW_SURROGATE,
+        Char.MAX_LOW_SURROGATE,
+      )
+      .flatMap { listOf(it, it + 1, it - 1) }
+      .distinct()
+      .filter { it in charRange }
+
+  return Arb.char(charRange).withEdgecases(charEdgeCases)
+}
+
+private data class EntityIdSample(val string: String) {
+  companion object {
+    fun arb(): Arb<EntityIdSample> =
+      Arb.string(10..10, Codepoint.alphanumeric()).map(::EntityIdSample)
   }
 }
