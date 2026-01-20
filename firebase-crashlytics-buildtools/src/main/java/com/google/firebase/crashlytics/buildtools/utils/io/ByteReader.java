@@ -68,7 +68,6 @@ public class ByteReader implements Closeable {
 
   /**
    * Close this ByteReader along with its underlying stream.
-   * @throws IOException
    */
   @Override
   public void close() throws IOException {

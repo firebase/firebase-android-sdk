@@ -51,7 +51,8 @@ public final class CrashlyticsOptions {
 
   public static final String OPT_HELP = "help";
 
-  @SuppressWarnings("static-access")
+  @SuppressWarnings({"static-access", "ProtectedMembersInFinalClass"})
+  // TODO(b/477050030): Fix error prone warnings
   protected static Options createOptions() {
     Options options = new Options();
 

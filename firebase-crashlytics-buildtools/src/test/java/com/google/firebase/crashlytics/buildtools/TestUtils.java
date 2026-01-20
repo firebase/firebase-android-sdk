@@ -87,6 +87,7 @@ public class TestUtils {
       text.append("\n");
     }
 
+    @SuppressWarnings("DefaultCharset") // TODO(b/477050030): Fix error prone warnings
     PrintWriter writer = new PrintWriter(new FileOutputStream(file));
     writer.append(text.toString());
     writer.close();
