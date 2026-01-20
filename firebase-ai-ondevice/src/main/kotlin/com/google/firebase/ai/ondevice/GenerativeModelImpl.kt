@@ -24,7 +24,7 @@ import com.google.mlkit.genai.prompt.Generation
 import kotlinx.coroutines.flow.Flow
 
 /** Implementation of [GenerativeModel] backed by MLKit's genai prompt SDK. */
-internal class GenerativeModelImpl() : GenerativeModel {
+internal class GenerativeModelImpl : GenerativeModel {
   internal val mlkitModel: com.google.mlkit.genai.prompt.GenerativeModel = Generation.getClient()
 
   override suspend fun isAvailable(): Boolean {
