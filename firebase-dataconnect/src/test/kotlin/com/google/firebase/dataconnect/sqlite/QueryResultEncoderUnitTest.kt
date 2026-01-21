@@ -342,10 +342,10 @@ class QueryResultEncoderUnitTest {
       check(entities.isNotEmpty())
       val listValuePath: DataConnectPath
       val rootStruct =
-        struct.struct.toBuilder().let { builder ->
-          listValuePath = builder.randomlyInsertValue(listValueSample.listValue.toValueProto())
-          builder.build()
-        }
+        struct.struct
+          .toBuilder()
+          .apply { listValuePath = randomlyInsertValue(listValueSample.listValue.toValueProto()) }
+          .build()
       val entityIdByPath = buildEntityIdByPathMap {
         entityPathValuePairs
           .map { it.path }
@@ -365,13 +365,18 @@ class QueryResultEncoderUnitTest {
       subEntityCount,
       recursivelyEmptyListValue ->
       val subEntities = List(subEntityCount) { structArb.bind().struct }
-      val listValueBuilder = recursivelyEmptyListValue.listValue.toBuilder()
-      val entitySubPaths =
-        listValueBuilder.randomlyInsertValues(subEntities.map { it.toValueProto() })
-      val listValue = listValueBuilder.build()
-      val rootStructBuilder = struct.struct.toBuilder()
-      val listValuePath = rootStructBuilder.randomlyInsertValue(listValue.toValueProto())
-      val rootStruct = rootStructBuilder.build()
+      val entitySubPaths: List<DataConnectPath>
+      val listValue =
+        recursivelyEmptyListValue.listValue
+          .toBuilder()
+          .apply { entitySubPaths = randomlyInsertValues(subEntities.map { it.toValueProto() }) }
+          .build()
+      val listValuePath: DataConnectPath
+      val rootStruct =
+        struct.struct
+          .toBuilder()
+          .apply { listValuePath = randomlyInsertValue(listValue.toValueProto()) }
+          .build()
       val entityIdByPath = buildEntityIdByPathMap {
         putWithRandomUniqueEntityId(emptyDataConnectPath())
         entitySubPaths.forEach { entitySubPath ->

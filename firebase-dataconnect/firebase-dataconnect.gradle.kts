@@ -82,12 +82,14 @@ kotlin {
   explicitApi()
 }
 
-// Enable experimental "Context parameters" in unit and integration tests.
+// Enable experimental "Context receivers" in tests, which should be migrated to "Context
+// parameters"
+// once the Kotlin compiler is upgraded to 2.2.X in libs.versions.toml.
 // https://kotlinlang.org/docs/context-parameters.html
 tasks
   .withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>()
   .matching { it.name.contains("UnitTest") || it.name.contains("AndroidTest") }
-  .configureEach { compilerOptions { freeCompilerArgs.add("-Xcontext-parameters") } }
+  .configureEach { compilerOptions { freeCompilerArgs.add("-Xcontext-receivers") } }
 
 protobuf {
   protoc { artifact = "${libs.protoc.get()}" }

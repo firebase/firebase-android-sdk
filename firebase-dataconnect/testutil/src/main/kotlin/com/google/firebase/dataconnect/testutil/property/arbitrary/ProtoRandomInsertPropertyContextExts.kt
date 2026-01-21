@@ -30,97 +30,118 @@ import com.google.protobuf.Value
 import io.kotest.property.Arb
 import io.kotest.property.PropertyContext
 
-context(propertyContext: PropertyContext)
+context(PropertyContext)
+
 fun Struct.withRandomlyInsertedStruct(
   struct: Struct,
   structKeyArb: Arb<String> = Arb.proto.structKey(),
 ): Struct =
   withRandomlyInsertedStruct(
     struct,
-    propertyContext.randomSource().random,
-    generateKey = { propertyContext.run { structKeyArb.bind() } },
+    randomSource().random,
+    generateKey = { structKeyArb.bind() },
   )
 
-context(propertyContext: PropertyContext)
+context(PropertyContext)
+
 fun Struct.withRandomlyInsertedStructs(
   structs: List<Struct>,
   structKeyArb: Arb<String> = Arb.proto.structKey(),
-): Struct = withRandomlyInsertedStructs(
-  structs,
-  propertyContext.randomSource().random,
-  generateKey = { propertyContext.run { structKeyArb.bind() } },
-)
+): Struct =
+  withRandomlyInsertedStructs(
+    structs,
+    randomSource().random,
+    generateKey = { structKeyArb.bind() },
+  )
 
-context(propertyContext: PropertyContext)
+context(PropertyContext)
+
 fun Struct.withRandomlyInsertedValue(
   value: Value,
   structKeyArb: Arb<String> = Arb.proto.structKey(),
-): Struct = withRandomlyInsertedValue(
-  value,
-  propertyContext.randomSource().random,
-  generateKey = { propertyContext.run { structKeyArb.bind() } },
-)
+): Struct =
+  withRandomlyInsertedValue(
+    value,
+    randomSource().random,
+    generateKey = { structKeyArb.bind() },
+  )
 
-context(propertyContext: PropertyContext)
+context(PropertyContext)
+
 fun Struct.withRandomlyInsertedValues(
   values: List<Value>,
   structKeyArb: Arb<String> = Arb.proto.structKey(),
-): Struct = withRandomlyInsertedValues(
-  values,
-  propertyContext.randomSource().random,
-  generateKey = { propertyContext.run { structKeyArb.bind() } },
-)
+): Struct =
+  withRandomlyInsertedValues(
+    values,
+    randomSource().random,
+    generateKey = { structKeyArb.bind() },
+  )
 
-context(propertyContext: PropertyContext)
+context(PropertyContext)
+
 fun Struct.Builder.randomlyInsertStruct(
   struct: Struct,
   structKeyArb: Arb<String> = Arb.proto.structKey(),
-): DataConnectPath = randomlyInsertStruct(
-  struct,
-  propertyContext.randomSource().random,
-  generateKey = { propertyContext.run { structKeyArb.bind() } },
-)
+): DataConnectPath =
+  randomlyInsertStruct(
+    struct,
+    randomSource().random,
+    generateKey = { structKeyArb.bind() },
+  )
 
-context(propertyContext: PropertyContext)
+context(PropertyContext)
+
 fun Struct.Builder.randomlyInsertStructs(
   structs: List<Struct>,
   structKeyArb: Arb<String> = Arb.proto.structKey(),
 ): List<DataConnectPath> =
   randomlyInsertStructs(
     structs,
-    propertyContext.randomSource().random,
-    generateKey = { propertyContext.run { structKeyArb.bind() } },
+    randomSource().random,
+    generateKey = { structKeyArb.bind() },
   )
 
-context(propertyContext: PropertyContext)
+context(PropertyContext)
+
 fun Struct.Builder.randomlyInsertValue(
   value: Value,
   structKeyArb: Arb<String> = Arb.proto.structKey(),
-): DataConnectPath = randomlyInsertValue(
-  value,
-  propertyContext.randomSource().random,
-  generateKey = { propertyContext.run { structKeyArb.bind() } },
-)
+): DataConnectPath =
+  randomlyInsertValue(
+    value,
+    randomSource().random,
+    generateKey = { structKeyArb.bind() },
+  )
 
+context(PropertyContext)
 
-context(propertyContext: PropertyContext)
 fun Struct.Builder.randomlyInsertValues(
   values: List<Value>,
   structKeyArb: Arb<String> = Arb.proto.structKey(),
-): List<DataConnectPath> = randomlyInsertValues(
-  values,
-  propertyContext.randomSource().random,
-  generateKey = { propertyContext.run { structKeyArb.bind() } },
-)
+): List<DataConnectPath> =
+  randomlyInsertValues(
+    values,
+    randomSource().random,
+    generateKey = { structKeyArb.bind() },
+  )
 
-context(propertyContext: PropertyContext)
-fun ListValue.withRandomlyInsertedValue(value: Value): ListValue = withRandomlyInsertedValue(value, propertyContext.randomSource().random)
+context(PropertyContext)
 
-context(propertyContext: PropertyContext)
-fun ListValue.withRandomlyInsertedValues(values: List<Value>): ListValue = withRandomlyInsertedValues(values, propertyContext.randomSource().random)
+fun ListValue.withRandomlyInsertedValue(value: Value): ListValue =
+  withRandomlyInsertedValue(value, randomSource().random)
 
-context(propertyContext: PropertyContext)
-fun ListValue.Builder.randomlyInsertValue(value: Value): DataConnectPath = randomlyInsertValue(value, propertyContext.randomSource().random)
+context(PropertyContext)
 
-context(propertyContext: PropertyContext)
-fun ListValue.Builder.randomlyInsertValues(values: List<Value>): List<DataConnectPath> = randomlyInsertValues(values, propertyContext.randomSource().random)
+fun ListValue.withRandomlyInsertedValues(values: List<Value>): ListValue =
+  withRandomlyInsertedValues(values, randomSource().random)
+
+context(PropertyContext)
+
+fun ListValue.Builder.randomlyInsertValue(value: Value): DataConnectPath =
+  randomlyInsertValue(value, randomSource().random)
+
+context(PropertyContext)
+
+fun ListValue.Builder.randomlyInsertValues(values: List<Value>): List<DataConnectPath> =
+  randomlyInsertValues(values, randomSource().random)

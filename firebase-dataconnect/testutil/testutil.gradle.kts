@@ -59,21 +59,10 @@ kotlin {
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
   compilerOptions {
-    // Enable experimental "Context parameters".
+    // Enable experimental "Context receivers", which should be migrated to "Context parameters"
+    // once the Kotlin compiler is upgraded to 2.2.X in libs.versions.toml.
     // https://kotlinlang.org/docs/context-parameters.html
-    freeCompilerArgs.add("-Xcontext-parameters")
-  }
-}
-
-spotless {
-  kotlin {
-    // Silence spotless' complaints about usage of the experimental Kotlin "Context parameters"
-    // feature.
-    // https://kotlinlang.org/docs/context-parameters.html
-    suppressLintsFor {
-      path =
-        "src/main/kotlin/com/google/firebase/dataconnect/testutil/property/arbitrary/ProtoRandomInsertPropertyContextExts.kt"
-    }
+    freeCompilerArgs.add("-Xcontext-receivers")
   }
 }
 
