@@ -9,12 +9,11 @@ can build responsive apps that work regardless of network latency or Internet co
 Firestore also offers seamless integration with other Firebase and Google Cloud Platform products,
 including Cloud Functions.
 
-## Building
+> **Note**: All Gradle commands listed below must be run from the **monorepo source root** (one level up from this directory).
 
-All Gradle commands should be run from the source root (which is one level up from this folder). See
-the README.md in the source root for instructions on publishing/testing Cloud Firestore.
+## Building 
 
-To build Cloud Firestore, from the source root run:
+To build the Firestore component release archive:
 
 ```bash
 ./gradlew :firebase-firestore:assembleRelease
@@ -22,7 +21,7 @@ To build Cloud Firestore, from the source root run:
 
 ## Unit Testing
 
-To run unit tests for Cloud Firestore, from the source root run:
+To run unit tests:
 
 ```bash
 ./gradlew :firebase-firestore:check
@@ -33,56 +32,75 @@ To run unit tests for Cloud Firestore, from the source root run:
 Running integration tests requires a Firebase project because they would try to connect to the
 Firestore backends.
 
-See [here](../README.md#project-setup) for how to setup a project.
+### 1. Prerequisites
 
-Once you setup the project, download `google-services.json` and place it in the source root.
+Before running integration tests:
 
-Make sure you have created a Firestore instance for your project, before you proceed.
+1. **Project Setup**: Ensure you have a Firebase project with a Firestore instance created.
+2. **Credentials**: Download your `google-services.json` from the Firebase Console and place it in the `firebase-firestore/` directory.
+3. **General Setup**: See the root README for broader project setup instructions.
 
-By default, integration tests run against the Firestore emulator.
+### 2. Test Configuration Flags
+You can configure which backend and database the tests run against using Gradle project properties (`-P`).
 
-### Setting up the Firestore Emulator
+| Flag | Description | Options | Default |
+| :--- | :--- | :--- | :--- |
+| `targetBackend` | Which backend environment to hit. | `"emulator"`, `"qa"`, `"nightly"`, `"prod"` | `"emulator"` |
+| `backendEdition` | The database edition to emulate/use. | `"enterprise"`, `"standard"` | *None* |
+| `targetDatabaseId` | The specific database ID to test against. | *User defined string* | `(default)` |
 
-The integration tests require that the Firestore emulator is running on port 8080, which is default
-when running it via CLI.
+### 3. Running against the Firestore Emulator (Default)
 
-- [Install the Firebase CLI](https://firebase.google.com/docs/cli/).
+By default, integration tests expect the Firestore Emulator to be running on port `8080`.
 
-  ```
-  npm install -g firebase-tools
-  ```
-- [Install the Firestore emulator](https://firebase.google.com/docs/firestore/security/test-rules-emulator#install_the_emulator).
+**Step A: Setup & Start Emulator**
 
-  ```
-  firebase setup:emulators:firestore
-  ```
-- Run the emulator
+1.  **Install Firebase CLI:**
+    ```bash
+    npm install -g firebase-tools
+    ```
+2.  **Initialize Emulator:**
+    ```bash
+    firebase setup:emulators:firestore
+    ```
+3.  **Start Emulator:**
+    ```bash
+    firebase emulators:start --only firestore
+    ```
 
-  ```
-  firebase emulators:start --only firestore
-  ```
-- Select the `Firestore Integration Tests (Firestore Emulator)` run configuration to run all
-  integration tests.
+**Step B: Run Tests**
 
-To run the integration tests against prod, select `FirestoreProdIntegrationTest` run configuration.
-
-### Run on Local Android Emulator
-
-Then simply run:
+Once the emulator is running, execute the tests on your local Android device/emulator:
 
 ```bash
 ./gradlew :firebase-firestore:connectedCheck
 ```
 
-### Run on Firebase Test Lab
+### 4. Running against Production/Nightly
 
-You can also test on Firebase Test Lab, which allow you to run the integration tests on devices
-hosted in Google data center.
+To run tests against a live backend (skipping the local emulator), pass the specific target flags.
 
-See [here](../README.md#running-integration-tests-on-firebase-test-lab) for instructions of how to
-setup Firebase Test Lab for your project.
+**Example:** Run against the "nightly" backend using the "enterprise" edition:
 
-Run:
+```bash
+./gradlew :firebase-firestore:connectedCheck \
+  -PtargetBackend="nightly" \
+  -PbackendEdition="enterprise" \
+  -PtargetDatabaseId="enterprise"
+```
+
+### 5. Execution Environments
+
+#### Local Android Emulator / Device
+
+The commands above use `connectedCheck`, which runs tests on a locally connected Android device or running Android Virtual Device (AVD).
+
+#### Firebase Test Lab
+
+To run the integration tests on physical devices hosted in the Google data center:
+
+1.  Setup Firebase Test Lab for your project (See [Instructions](../README.md#running-integration-tests-on-firebase-test-lab)).
+2.  Run the device check command:
 
 ```bash
 ./gradlew :firebase-firestore:deviceCheck
@@ -99,7 +117,7 @@ Run:
    `gcloud auth list`.
 3. Navigate to the `firebase-firestore` directory, create composite indexes by running:
 
-```
+```bash
 terraform init
 terraform apply -var-file=../google-services.json -auto-approve
 ```
