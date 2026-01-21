@@ -95,7 +95,7 @@ public class CompilationUnitContext {
   }
 
   public long getLowPc() {
-    return Optional.of(lowPc).or(0L);
+    return Optional.fromNullable(lowPc).or(0L);
   }
 
   /**

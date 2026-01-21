@@ -25,8 +25,8 @@ import org.apache.commons.io.filefilter.IOFileFilter;
 import org.apache.commons.io.filefilter.SuffixFileFilter;
 
 public interface NativeSymbolGenerator {
-  String[] SYMBOL_FILE_SUFFIXES = {".so", ".symbols"};
-  IOFileFilter SO_FILE_FILTER = new SuffixFileFilter(SYMBOL_FILE_SUFFIXES, IOCase.INSENSITIVE);
+  IOFileFilter SO_FILE_FILTER =
+      new SuffixFileFilter(/* suffixes= */ new String[] {".so", ".symbols"}, IOCase.INSENSITIVE);
 
   File generateSymbols(File nativeLib, File outputDir) throws IOException, CodeMappingException;
 

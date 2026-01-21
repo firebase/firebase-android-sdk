@@ -97,12 +97,14 @@ buildscript {
 }
 
 ```
+
 To use the Breakpad symbol generator & upload symbols to Crashlytics, run the
 `uploadCrashlyticsSymbolFile<VARIANT>` task as usual, with the following
 additional command-line argument to Gradle:
 `-Pcom.google.firebase.crashlytics.symbolGenerator=breakpad`
 
 For example:
+
 ```
 > ./gradlew app:assembleRelease uploadCrashlyticsSymbolFileRelease \
     -Pcom.google.firebase.crashlytics.symbolGenerator=breakpad
@@ -112,6 +114,7 @@ The above uses a bundled version of the breakpad symbol generator binary. Some
 customers may with to build their own native breakpad `dump_syms` binary. To
 specify a different binary, use the `com.google.firebase.crashlytics.breakpadBinary`
 property. For example:
+
 ```
 > ./gradlew app:assembleRelease uploadCrashlyticsSymbolFileRelease \
     -Pcom.google.firebase.crashlytics.symbolGenerator=breakpad
@@ -120,6 +123,7 @@ property. For example:
 
 Instead of using the properties described above, you can enable the Breakpad
 symbol generator via the app build.gradle file:
+
 ```
 android {
   // ...
@@ -153,4 +157,4 @@ To verify the Crashlytics Gradle plugin actions, you can try run Gradle with the
 
 ## Open Source Software Notice
 
-See LICENSES.txt for the licenses of included open source software. 
+See LICENSES.txt for the licenses of included open source software.

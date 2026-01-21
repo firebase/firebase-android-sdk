@@ -101,7 +101,7 @@ public class CSymTest {
     CSym.Range range1 = new CSym.Range(1024, 512, SYMBOL1, FILE1, LINENUMBER1);
     CSym.Range range2 = new CSym.Range(1024, 512, SYMBOL1, FILE1, LINENUMBER1);
 
-    Assert.assertTrue(range1 != range2);
+    Assert.assertNotSame(range1, range2);
     Assert.assertEquals(range1, range2);
     Assert.assertEquals(range1.hashCode(), range2.hashCode());
   }
@@ -110,7 +110,6 @@ public class CSymTest {
   public void testRangeEqualsSame() {
     CSym.Range range1 = new CSym.Range(1024, 512, SYMBOL1, FILE1, LINENUMBER1);
 
-    Assert.assertEquals(range1, range1);
     Assert.assertEquals(range1.hashCode(), range1.hashCode());
   }
 

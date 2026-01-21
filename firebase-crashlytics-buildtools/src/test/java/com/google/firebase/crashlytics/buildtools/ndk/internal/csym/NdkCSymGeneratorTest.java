@@ -35,9 +35,6 @@ import org.junit.runner.RunWith;
 
 @RunWith(EasyMockRunner.class)
 public class NdkCSymGeneratorTest {
-
-  private NdkCSymGenerator _generatorUnderTest;
-
   private File _ndkOutDir;
 
   @Mock(type = MockType.NICE)
@@ -55,11 +52,10 @@ public class NdkCSymGeneratorTest {
   public void setUp() throws Exception {
     _ndkOutDir = tempFolder.newFolder();
     Buildtools.setLogger(_mockLogger);
-    _generatorUnderTest = new NdkCSymGenerator();
   }
 
   @After
-  public void tearDown() throws Exception {
+  public void tearDown() {
     Buildtools.setLogger(new ConsoleLogger());
   }
 

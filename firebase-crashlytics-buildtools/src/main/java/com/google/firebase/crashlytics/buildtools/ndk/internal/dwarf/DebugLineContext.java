@@ -35,19 +35,11 @@ public class DebugLineContext {
   public DebugLineContext(
       DebugLineHeader header, DebugLineRegisters initialRegisters, int offsetSize) {
     // Directory 0 is current directory.
-    _directories =
-        new ArrayList<String>() {
-          {
-            add("");
-          }
-        };
+    _directories = new ArrayList<>();
+    _directories.add("");
     // Files list is 1-based, so add a dummy file info at 0.
-    _files =
-        new ArrayList<DebugLineFileInfo>() {
-          {
-            add(new DebugLineFileInfo("", "", 0, 0));
-          }
-        };
+    _files = new ArrayList<>();
+    _files.add(new DebugLineFileInfo("", "", 0, 0));
 
     this.header = header;
     this.reg = initialRegisters;

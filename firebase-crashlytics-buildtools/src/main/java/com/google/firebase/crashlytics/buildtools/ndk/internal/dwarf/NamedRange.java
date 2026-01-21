@@ -43,7 +43,10 @@ public class NamedRange implements Comparable<NamedRange> {
     if (this == o) {
       return true;
     }
-    if (o == null || getClass() != o.getClass()) {
+    if (!(o instanceof NamedRange)) {
+      return false;
+    }
+    if (getClass() != o.getClass()) {
       return false;
     }
     NamedRange that = (NamedRange) o;

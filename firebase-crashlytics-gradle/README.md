@@ -81,12 +81,10 @@ To build this distribution:
      -DgroupId=com.google.firebase -DartifactId=firebase-crashlytics-buildtools \
      -Dpackaging=jar -DgeneratePom=true
    ```
-
 5. Build the gradle plugin & install to local maven repo:
    `./gradlew firebase-crashlytics:crashlytics-gradle:publishToMavenLocal`
    or
    `./gradlew -Dorg.gradle.java.home=$JDK8_HOME firebase-crashlytics:crashlytics-gradle:publishToMavenLocal`
-
 6. Copy all necessary files to a convenient location and zip up the distribution:
    (Make sure the version numbers in the README file match the files you just made!)
 
@@ -97,3 +95,4 @@ cp firebase-crashlytics/crashlytics-buildtools/README.md buildtools-dist-temp/cr
   cp firebase-crashlytics/crashlytics-buildtools/src/main/resources/LICENSES.txt buildtools-dist-temp/crashlytics-buildtools
 cd buildtools-dist-temp && zip -r ../crashlytics-buildtools.zip * && cd ../
 ```
+

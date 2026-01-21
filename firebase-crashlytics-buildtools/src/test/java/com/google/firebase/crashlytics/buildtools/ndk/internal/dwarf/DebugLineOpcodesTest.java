@@ -142,8 +142,7 @@ public class DebugLineOpcodesTest {
     DebugLineOpcode opcode = new StandardOpcodeConstAddPC();
 
     long expectedAddr =
-        _context.reg.address
-            + calculateAddressIncrement(255, OPCODE_BASE, LINE_RANGE, MIN_INSTRUCTION_LENGTH);
+        _context.reg.address + calculateAddressIncrement(255, LINE_RANGE, MIN_INSTRUCTION_LENGTH);
     EasyMock.replay(_mockReader);
 
     Assert.assertFalse(opcode.process(_context, _mockReader));
@@ -394,8 +393,7 @@ public class DebugLineOpcodesTest {
     return new DebugLineContext(header, new DebugLineRegisters(true), ADDRESS_SIZE);
   }
 
-  private int calculateAddressIncrement(
-      int opcode, int opcodeBase, int lineRange, int minInstructionLength) {
+  private int calculateAddressIncrement(int opcode, int lineRange, int minInstructionLength) {
     int adjustedOpcode = opcode - OPCODE_BASE;
     return (adjustedOpcode / lineRange) * minInstructionLength;
   }

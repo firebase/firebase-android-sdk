@@ -35,7 +35,7 @@ To test manually, add the plugin to your Android project
 
 1. Create a PR with the changes, and request a review to submit it to `main`. Add the changes in the
    `CHANGELOG.md`.
-1. Once the changes have been submitted to `main` they will be released along with the next Android
+2. Once the changes have been submitted to `main` they will be released along with the next Android
    SDK release.
 
 ### Building the Maven artifact
@@ -80,3 +80,4 @@ command such as:
 ```
 ./gradlew assembleDebug appDistributionUploadDebug
 ```
+
