@@ -1,4 +1,4 @@
-name: Gradle Compatibility Tests
+name: Perf Gradle Compatibility Tests
 
 on:
   schedule:
