@@ -350,7 +350,7 @@ internal class QueryResultDecoder(
     BoolFalse(QueryResultCodec.VALUE_BOOL_FALSE, "false"),
     KindNotSet(QueryResultCodec.VALUE_KIND_NOT_SET, "kindNotSet"),
     List(QueryResultCodec.VALUE_LIST, "list"),
-    ListOfEntities(QueryResultCodec.VALUE_LIST_OF_ENTITIES, "listOfEntities"),
+    PrunedEntityList(QueryResultCodec.VALUE_LIST_WITH_PRUNED_ENTITIES, "prunedEntityList"),
     Struct(QueryResultCodec.VALUE_STRUCT, "struct"),
     Entity(QueryResultCodec.VALUE_ENTITY, "entity"),
     StringEmpty(QueryResultCodec.VALUE_STRING_EMPTY, "emptyString"),
@@ -703,7 +703,7 @@ internal class QueryResultDecoder(
     Entity(ValueType.Entity),
     Struct(ValueType.Struct),
     List(ValueType.List),
-    ListOfEntities(ValueType.ListOfEntities),
+    PrunedEntityList(ValueType.PrunedEntityList),
     Scalar(ValueType.ValueFromEntity);
 
     companion object {
@@ -780,11 +780,11 @@ internal class QueryResultDecoder(
         val subEntity = getSubEntity().structValue
         patchInPrunedEntities(path, subEntity).toValueProto()
       }
-      EntitySubStructValueType.List -> {
+      EntitySubStructValueType.PrunedEntityList -> {
         val subEntity = getSubEntity().listValue
         patchInPrunedEntities(path, subEntity).toValueProto()
       }
-      EntitySubStructValueType.ListOfEntities -> {
+      EntitySubStructValueType.List -> {
         readList(path).toValueProto()
       }
       EntitySubStructValueType.Scalar -> getSubEntity()
@@ -990,7 +990,6 @@ internal class QueryResultDecoder(
       ReadValueValueType.BoolTrue -> valueBuilder.setBoolValue(true)
       ReadValueValueType.BoolFalse -> valueBuilder.setBoolValue(false)
       ReadValueValueType.List -> valueBuilder.setListValue(readList(path))
-      ReadValueValueType.ListOfEntities -> valueBuilder.setListValue(readList(path))
       ReadValueValueType.Struct -> valueBuilder.setStructValue(readStruct(path))
       ReadValueValueType.KindNotSet -> {}
       ReadValueValueType.Entity -> valueBuilder.setStructValue(readEntity(path))
@@ -1025,7 +1024,6 @@ internal class QueryResultDecoder(
     BoolFalse(ValueType.BoolFalse),
     KindNotSet(ValueType.KindNotSet),
     List(ValueType.List),
-    ListOfEntities(ValueType.ListOfEntities),
     Struct(ValueType.Struct),
     Entity(ValueType.Entity),
     StringEmpty(ValueType.StringEmpty),
@@ -1171,9 +1169,6 @@ internal class QueryResultDecoder(
     private val stringUtf16CharCountUInt32ValueVerifier =
       UInt32ValueVerifier("StringUtf16CharCountInvalidValue")
 
-    private val listOfEntitiesSizeUInt32ValueVerifier =
-      UInt32ValueVerifier("ListOfEntitiesSizeInvalidValue")
-
     private val listSizeUInt32ValueVerifier = UInt32ValueVerifier("ListSizeInvalidValue")
 
     private val structKeyCountUInt32ValueVerifier =
@@ -1184,9 +1179,6 @@ internal class QueryResultDecoder(
 
     private val entitySubStructKeyCountUInt32ValueVerifier =
       UInt32ValueVerifier("EntitySubStructKeyCountInvalidValue")
-
-    private val entitySubListSizeUInt32ValueVerifier =
-      UInt32ValueVerifier("EntitySubListSizeInvalidValue")
 
     private val prunedEntityCountUInt32ValueVerifier =
       UInt32ValueVerifier("PrunedEntityCountInvalidValue")

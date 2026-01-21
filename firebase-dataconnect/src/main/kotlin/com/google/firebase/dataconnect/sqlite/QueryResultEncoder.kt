@@ -192,12 +192,8 @@ internal class QueryResultEncoder(
     }
   }
 
-  private fun writeList(
-    listValue: ListValue,
-    path: MutableDataConnectPath,
-    typeByte: Byte = QueryResultCodec.VALUE_LIST,
-  ) {
-    writer.writeByte(typeByte)
+  private fun writeList(listValue: ListValue, path: MutableDataConnectPath) {
+    writer.writeByte(QueryResultCodec.VALUE_LIST)
     writer.writeUInt32(listValue.valuesCount)
     repeat(listValue.valuesCount) { listIndex ->
       path.withAddedListIndex(listIndex) { writeValue(listValue.getValues(listIndex), path) }
@@ -318,7 +314,7 @@ internal class QueryResultEncoder(
       }
       ListValueLeafContentsClassification.Entities,
       ListValueLeafContentsClassification.MixedEntitiesAndNonEntities -> {
-        writeList(listValue, path, typeByte = QueryResultCodec.VALUE_LIST_OF_ENTITIES)
+        writeList(listValue, path)
         null
       }
       ListValueLeafContentsClassification.NonEntities -> {
@@ -335,7 +331,7 @@ internal class QueryResultEncoder(
           writer.writeByte(QueryResultCodec.VALUE_FROM_ENTITY)
           value
         } else {
-          writer.writeByte(QueryResultCodec.VALUE_LIST)
+          writer.writeByte(QueryResultCodec.VALUE_LIST_WITH_PRUNED_ENTITIES)
 
           val (prunedListValue, prunedProtoEntities) = protoPruneResult
           val prunedEntities =
