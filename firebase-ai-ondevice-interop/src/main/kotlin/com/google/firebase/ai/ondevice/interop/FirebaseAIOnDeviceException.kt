@@ -28,6 +28,10 @@ internal constructor(message: String, cause: Throwable? = null) :
  * Prefer using the corresponding `isAvailable()` method on the model to check the status before
  * trying to use it.
  */
-public class FirebaseAIOnDeviceNotAvailable
+public class FirebaseAIOnDeviceNotAvailableException
 internal constructor(message: String, cause: Throwable? = null) :
   FirebaseAIOnDeviceException(message, cause)
+
+/** The parameters used in the request are not valid. */
+public class FirebaseAiOnDeviceInvalidRequestException(cause: Throwable? = null) :
+  FirebaseAIOnDeviceException("Invalid on-device request", cause)
