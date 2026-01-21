@@ -221,6 +221,7 @@ constructor(private val workerExecutor: WorkerExecutor) : GenerateDocumentationT
 
 /**
  * Parameters needs to launch the Dackka fat jar on the command line.
+ * Dackka's fat jar is downloaded from GCP when needed for the build-release-artifacts action.
  *
  * @property args a list of arguments to pass to Dackka- should include the json arguments file
  * @property dackkaFile a [File] of the Dackka fat jar
