@@ -55,4 +55,6 @@ internal object QueryResultCodec {
 
   const val VALUE_PATH_SEGMENT_FIELD: Byte = 24
   const val VALUE_PATH_SEGMENT_LIST_INDEX: Byte = 25
+
+  const val VALUE_FROM_ENTITY: Byte = 26
 }

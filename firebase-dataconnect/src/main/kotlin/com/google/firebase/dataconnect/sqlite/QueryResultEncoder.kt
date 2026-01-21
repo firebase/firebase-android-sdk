@@ -248,7 +248,7 @@ internal class QueryResultEncoder(
       Value.KindCase.STRUCT_VALUE -> writeEntityStructValue(value, path)
       Value.KindCase.LIST_VALUE -> writeEntityListValue(value, path)
       else -> {
-        writer.writeByte(QueryResultCodec.VALUE_KIND_NOT_SET)
+        writer.writeByte(QueryResultCodec.VALUE_FROM_ENTITY)
         value
       }
     }
@@ -272,7 +272,7 @@ internal class QueryResultEncoder(
       }
 
     if (protoPruneResult == null) {
-      writer.writeByte(QueryResultCodec.VALUE_KIND_NOT_SET)
+      writer.writeByte(QueryResultCodec.VALUE_FROM_ENTITY)
       return value
     }
 
@@ -313,7 +313,7 @@ internal class QueryResultEncoder(
     return when (listValue.classifyLeafContents(path)) {
       ListValueLeafContentsClassification.RecursivelyEmpty,
       ListValueLeafContentsClassification.Scalars -> {
-        writer.writeByte(QueryResultCodec.VALUE_KIND_NOT_SET)
+        writer.writeByte(QueryResultCodec.VALUE_FROM_ENTITY)
         value
       }
       ListValueLeafContentsClassification.Entities,
@@ -332,7 +332,7 @@ internal class QueryResultEncoder(
           }
 
         if (protoPruneResult === null) {
-          writer.writeByte(QueryResultCodec.VALUE_KIND_NOT_SET)
+          writer.writeByte(QueryResultCodec.VALUE_FROM_ENTITY)
           value
         } else {
           writer.writeByte(QueryResultCodec.VALUE_LIST)

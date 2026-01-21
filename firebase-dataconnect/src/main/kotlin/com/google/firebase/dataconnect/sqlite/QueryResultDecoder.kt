@@ -361,7 +361,8 @@ internal class QueryResultDecoder(
     StringUtf8(QueryResultCodec.VALUE_STRING_UTF8, "utf8"),
     StringUtf16(QueryResultCodec.VALUE_STRING_UTF16, "utf16"),
     PathSegmentField(QueryResultCodec.VALUE_PATH_SEGMENT_FIELD, "fieldPathSegment"),
-    PathSegmentListIndex(QueryResultCodec.VALUE_PATH_SEGMENT_LIST_INDEX, "listIndexPathSegment");
+    PathSegmentListIndex(QueryResultCodec.VALUE_PATH_SEGMENT_LIST_INDEX, "listIndexPathSegment"),
+    ValueFromEntity(QueryResultCodec.VALUE_FROM_ENTITY, "valueFromEntity");
 
     companion object {
       val identityMap = buildMap { ValueType.entries.forEach { put(it, it) } }
@@ -703,7 +704,7 @@ internal class QueryResultDecoder(
     Struct(ValueType.Struct),
     List(ValueType.List),
     ListOfEntities(ValueType.ListOfEntities),
-    Scalar(ValueType.KindNotSet);
+    Scalar(ValueType.ValueFromEntity);
 
     companion object {
       val instanceByValueType: Map<ValueType, EntitySubStructValueType> = buildMap {
