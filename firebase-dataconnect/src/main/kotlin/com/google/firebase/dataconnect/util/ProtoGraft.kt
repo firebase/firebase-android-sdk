@@ -87,8 +87,9 @@ internal object ProtoGraft {
     val rootStruct = mutableStructsByPath.remove(emptyDataConnectPath()) ?: this
     val rootNode = toMutableNode(rootStruct, parentPathSegment = null)
 
-    return (withGraftedInStructs(rootNode, mutableStructsByPath) as MutableNode.StructNode)
-      .toStruct()
+    graftInStructs(rootNode, mutableStructsByPath)
+
+    return rootNode.toStruct()
   }
 
   fun ListValue.withGraftedInStructs(structsByPath: Map<DataConnectPath, Struct>): ListValue {
@@ -98,13 +99,12 @@ internal object ProtoGraft {
 
     val rootNode = toMutableNode(this, parentPathSegment = null)
 
-    return (withGraftedInStructs(rootNode, structsByPath) as MutableNode.ListNode).toListValue()
+    graftInStructs(rootNode, structsByPath)
+
+    return rootNode.toListValue()
   }
 
-  private fun withGraftedInStructs(
-    rootNode: MutableNode,
-    structsByPath: Map<DataConnectPath, Struct>
-  ): MutableNode {
+  private fun graftInStructs(rootNode: MutableNode, structsByPath: Map<DataConnectPath, Struct>) {
     val sortedPaths = structsByPath.keys.sortedWith(DataConnectPathComparator)
 
     for (path in sortedPaths) {
@@ -117,9 +117,9 @@ internal object ProtoGraft {
           is DataConnectPathSegment.Field -> lastSegment.field
           is DataConnectPathSegment.ListIndex ->
             throw LastPathSegmentNotFieldException(
-              "structsByPath contains path ${path.toPathString()} whose last segment " +
-                "is list index ${lastSegment.index}, but the last segment " +
-                "must be a field, not a list index [qxgass8cvx]"
+              "structsByPath contains path ${path.toPathString()} " +
+                "whose last segment is list index ${lastSegment.index}, " +
+                "but the last segment must be a field, not a list index [qxgass8cvx]"
             )
         }
 
@@ -132,10 +132,10 @@ internal object ProtoGraft {
                 (currentNode as? MutableNode.StructNode)
                   ?: throw PathFieldOfNonStructException(
                     "structsByPath contains path ${path.toPathString()} " +
-                      "whose segment ${pathSegmentIndex} " +
+                      "whose segment $pathSegmentIndex " +
                       "(${currentNode.parentPathSegment.toFieldOrListIndexString()}) " +
-                      "has kind case ${currentNode.toValue().kindCase}, " +
-                      "but it is required to be ${Value.KindCase.STRUCT_VALUE} [s3mhtfj2mm]"
+                      "has kind ${currentNode.toValue().kindCase}, " +
+                      "but it is expected to have kind ${Value.KindCase.STRUCT_VALUE} [s3mhtfj2mm]"
                   )
               structNode.getField(pathSegment.field)
             }
@@ -144,27 +144,27 @@ internal object ProtoGraft {
                 (currentNode as? MutableNode.ListNode)
                   ?: throw PathListIndexOfNonListException(
                     "structsByPath contains path ${path.toPathString()} " +
-                      "whose segment ${pathSegmentIndex} " +
+                      "whose segment $pathSegmentIndex " +
                       "(${currentNode.parentPathSegment.toFieldOrListIndexString()}) " +
-                      "has kind case ${currentNode.toValue().kindCase}, " +
-                      "but it is required to be ${Value.KindCase.LIST_VALUE} [gr7mqk4jnn]"
+                      "has kind ${currentNode.toValue().kindCase}, " +
+                      "but it is expected to have kind ${Value.KindCase.LIST_VALUE} [gr7mqk4jnn]"
                   )
               if (pathSegment.index < 0) {
                 throw NegativePathListIndexException(
-                  "structsByPath contains path ${path.toPathString()} whose segment " +
-                    "${pathSegmentIndex+1} (list index ${pathSegment.index}) is negative, " +
-                    "but list indices must be greater than or equal to zero " +
-                    "and strictly less than the size of the referent list, that is, " +
-                    "between 0 (inclusive) and ${listNode.size} (exclusive) [rrk4t44n42]"
+                  "structsByPath contains path ${path.toPathString()} " +
+                    "whose segment ${pathSegmentIndex+1} (list index ${pathSegment.index}) " +
+                    "is negative, but list indices must be greater than or equal to zero " +
+                    "and strictly less than the size of the referent list, " +
+                    "that is, between 0 (inclusive) and ${listNode.size} (exclusive) [rrk4t44n42]"
                 )
               } else if (pathSegment.index >= listNode.size) {
                 throw PathListIndexGreaterThanOrEqualToListSizeException(
-                  "structsByPath contains path ${path.toPathString()} whose segment " +
-                    "${pathSegmentIndex+1} (list index ${pathSegment.index}) " +
+                  "structsByPath contains path ${path.toPathString()} " +
+                    "whose segment ${pathSegmentIndex+1} (list index ${pathSegment.index}) " +
                     "is greater than or equal to the size of the list, " +
                     "but list indices must be greater than or equal to zero " +
-                    "and strictly less than the size of the referent list, that is, " +
-                    "between 0 (inclusive) and ${listNode.size} (exclusive) [pdfqm8kb54]"
+                    "and strictly less than the size of the referent list, " +
+                    "that is, between 0 (inclusive) and ${listNode.size} (exclusive) [pdfqm8kb54]"
                 )
               }
               listNode.getValue(pathSegment.index)
@@ -175,16 +175,18 @@ internal object ProtoGraft {
       val parentStructNode =
         (currentNode as? MutableNode.StructNode)
           ?: throw InsertIntoNonStructException(
-            "structsByPath contains path ${path.toPathString()} whose destination struct " +
-              "(${parentPath.toPathString()}) has kind case ${currentNode.toValue().kindCase}, " +
-              "but it is required to be ${Value.KindCase.STRUCT_VALUE} [zcj277ka6a]"
+            "structsByPath contains path ${path.toPathString()} " +
+              "whose destination struct (${parentPath.toPathString()}) " +
+              "has kind ${currentNode.toValue().kindCase}, " +
+              "but it is expected to have kind ${Value.KindCase.STRUCT_VALUE} [zcj277ka6a]"
           )
 
       if (parentStructNode.containsKey(lastSegmentField)) {
         throw KeyExistsException(
-          "structsByPath contains path ${path.toPathString()} whose destination struct " +
-            "(${parentPath.toPathString()}) already has a field named $lastSegmentField, " +
-            "but it is required to not already have that key defined [ecgd5r2v4a]"
+          "structsByPath contains path ${path.toPathString()} " +
+            "whose destination struct (${parentPath.toPathString()}) " +
+            "already has a field named $lastSegmentField, " +
+            "but it is required to not already have that field [ecgd5r2v4a]"
         )
       }
 
@@ -193,8 +195,6 @@ internal object ProtoGraft {
         MutableNode.StructNode(lastSegment, structToGraft)
       )
     }
-
-    return rootNode
   }
 
   private sealed class MutableNode(val parentPathSegment: DataConnectPathSegment?) {

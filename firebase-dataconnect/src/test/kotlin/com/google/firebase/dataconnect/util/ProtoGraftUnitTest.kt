@@ -168,7 +168,7 @@ class ProtoGraftUnitTest {
         exception.message shouldContainWithNonAbuttingTextIgnoringCase
           "already has a field named $existingField"
         exception.message shouldContainWithNonAbuttingTextIgnoringCase
-          "it is required to not already have that key"
+          "it is required to not already have that field"
       }
     }
   }
@@ -249,9 +249,9 @@ class ProtoGraftUnitTest {
         exception.message shouldContainWithNonAbuttingText nonStruct.path.toPathString()
         exception.message shouldContainWithNonAbuttingText structToGraftPath.toPathString()
         exception.message shouldContainWithNonAbuttingTextIgnoringCase
-          "has kind case ${nonStruct.value.kindCase}"
+          "has kind ${nonStruct.value.kindCase}"
         exception.message shouldContainWithNonAbuttingTextIgnoringCase
-          "required to be ${Value.KindCase.STRUCT_VALUE}"
+          "expected to have kind ${Value.KindCase.STRUCT_VALUE}"
       }
     }
   }
@@ -288,9 +288,9 @@ class ProtoGraftUnitTest {
             "whose segment ${nonStructPath.size} " +
               "(${nonStructPath.last().toExpectedDescriptionInExceptionMessages()})"
           exception.message shouldContainWithNonAbuttingTextIgnoringCase
-            "has kind case ${nonStructValue.kindCase}"
+            "has kind ${nonStructValue.kindCase}"
           exception.message shouldContainWithNonAbuttingTextIgnoringCase
-            "required to be ${Value.KindCase.STRUCT_VALUE}"
+            "expected to have kind ${Value.KindCase.STRUCT_VALUE}"
         }
       }
     }
@@ -328,9 +328,9 @@ class ProtoGraftUnitTest {
             "whose segment ${nonListValuePath.size} " +
               "(${nonListValuePath.last().toExpectedDescriptionInExceptionMessages()})"
           exception.message shouldContainWithNonAbuttingTextIgnoringCase
-            "has kind case ${nonListValueValue.kindCase}"
+            "has kind ${nonListValueValue.kindCase}"
           exception.message shouldContainWithNonAbuttingTextIgnoringCase
-            "required to be ${Value.KindCase.LIST_VALUE}"
+            "expected to have kind ${Value.KindCase.LIST_VALUE}"
         }
       }
     }
