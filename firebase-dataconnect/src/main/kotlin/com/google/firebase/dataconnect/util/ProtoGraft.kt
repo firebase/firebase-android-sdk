@@ -97,6 +97,15 @@ internal object ProtoGraft {
       return this
     }
 
+    if (structsByPath.containsKey(emptyDataConnectPath())) {
+      throw InsertIntoNonStructException(
+        "structsByPath contains the empty path, " +
+          "but this cannot be grafted because the root has kind ${Value.KindCase.LIST_VALUE}, " +
+          "and the empty path can only be grafted " +
+          "onto a root of kind ${Value.KindCase.STRUCT_VALUE} [cdma83emff]"
+      )
+    }
+
     val rootNode = toMutableNode(this, parentPathSegment = null)
 
     graftInStructs(rootNode, structsByPath)
