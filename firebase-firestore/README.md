@@ -38,7 +38,7 @@ Before running integration tests:
 
 1. **Project Setup**: Ensure you have a Firebase project with a Firestore instance created.
 2. **Credentials**: Download your `google-services.json` from the Firebase Console and place it in the `firebase-firestore/` directory.
-3. **General Setup**: See the root README for broader project setup instructions.
+3. **General Setup**: See the root [README](../README.md#project-setup) for broader project setup instructions.
 
 ### 2. Test Configuration Flags
 You can configure which backend and database the tests run against using Gradle project properties (`-P`).
