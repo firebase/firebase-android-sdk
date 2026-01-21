@@ -13,6 +13,7 @@ big changes, similar to how one would do manual testing via a test matrix.
 Before running the tests, you need to create a `local.properties` file in the root directory of the `firebase-android-buildtools` project with the following properties:
 
 ```properties
+sdk.dir=<path_to_android_sdk>
 firebase.appId=<your_firebase_app_id>
 firebase.projectNumber=<your_project_number>
 ```

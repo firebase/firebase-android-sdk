@@ -721,8 +721,10 @@ class UploadDistributionTaskTest {
   companion object {
     // Latest gradle, AGP and google-services plugin versions. Update this when new releases come
     // out.
-    private const val LATEST_GRADLE_VERSION = "9.2.1"
-    private const val LATEST_AGP_VERSION = "9.0.0-beta01"
+    // Also remember to update the latest AGP/gradle versions in BeePlusGradleProject.java.
+    // https://github.com/FirebasePrivate/firebase-android-buildtools/blob/acca0768ab27fbe20cfb149db25b671cb31ea0dc/firebase-appdistribution/appdistribution-gradle/src/prodTest/java/com/google/firebase/appdistribution/gradle/BeePlusGradleProject.java#L59-L60
+    private const val LATEST_GRADLE_VERSION = "9.3.0"
+    private const val LATEST_AGP_VERSION = "9.1.0-alpha05"
     private const val LATEST_GOOGLE_SERVICES_VERSION = "4.4.4"
     // For tests against Gradle 9, we get the error:
     // "In order to compile Java 9+ source, please set compileSdkVersion to 30 or above"

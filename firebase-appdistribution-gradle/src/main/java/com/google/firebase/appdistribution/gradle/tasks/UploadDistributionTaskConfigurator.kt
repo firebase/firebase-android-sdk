@@ -124,6 +124,7 @@ object UploadDistributionTaskConfigurator {
     val googleServicesOutputDirectory =
       try {
         task.project.tasks.named(googleServicesTaskName).flatMap { googleServicesTask ->
+          task.mustRunAfter(googleServicesTask)
           val resourceDirProp = googleServicesTask.property("intermediateDir") as File
           task.project.objects.directoryProperty().fileValue(resourceDirProp)
         }

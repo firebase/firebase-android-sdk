@@ -70,9 +70,9 @@ class AddTestersTaskTest {
   fun testAddTesters_failsIfTooManyTesters() {
     testGroovyBuild.writeBuildFiles()
     testGradleProject.writeServiceCredentialsFile()
-    val tooManyEmailsBuffer = StringBuffer()
+    val tooManyEmailsBuffer = StringBuilder()
     for (i in 0..1000) {
-      tooManyEmailsBuffer.append("tester" + i + "e.mail\n")
+      tooManyEmailsBuffer.append("tester${i}e.mail\n")
     }
     val tooManyEmailsFile = testGradleProject.createFile("too-many-emails.txt")
     writeFile(tooManyEmailsFile, tooManyEmailsBuffer.toString())
