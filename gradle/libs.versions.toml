@@ -28,6 +28,7 @@ firebaseAnnotations = "17.0.0"
 firebaseCommon = "22.0.1"
 firebaseComponents = "19.0.0"
 firebaseCrashlyticsGradle = "3.0.4"
+genaiPrompt = "1.0.0-alpha1"
 glide = "5.0.5"
 googleApiClient = "2.8.1"
 googleServices = "4.3.15"
@@ -116,6 +117,7 @@ firebase-appdistribution-gradle = { module = "com.google.firebase:firebase-appdi
 firebase-annotations = { module = "com.google.firebase:firebase-annotations", version.ref = "firebaseAnnotations" }
 firebase-common = { module = "com.google.firebase:firebase-common", version.ref = "firebaseCommon" }
 firebase-components = { module = "com.google.firebase:firebase-components", version.ref = "firebaseComponents" }
+genai-prompt = { module = "com.google.mlkit:genai-prompt", version.ref = "genaiPrompt" }
 glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
 google-api-client = { module = "com.google.api-client:google-api-client", version.ref = "googleApiClient" }
 google-dexmaker = { module = "com.google.dexmaker:dexmaker", version.ref = "dexmakerVersion" }
