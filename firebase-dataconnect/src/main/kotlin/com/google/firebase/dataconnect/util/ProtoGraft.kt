@@ -87,10 +87,28 @@ internal object ProtoGraft {
     val rootStruct = mutableStructsByPath.remove(emptyDataConnectPath()) ?: this
     val rootNode = toMutableNode(rootStruct, parentPathSegment = null)
 
-    val sortedPaths = mutableStructsByPath.keys.sortedWith(DataConnectPathComparator)
+    return (withGraftedInStructs(rootNode, mutableStructsByPath) as MutableNode.StructNode)
+      .toStruct()
+  }
+
+  fun ListValue.withGraftedInStructs(structsByPath: Map<DataConnectPath, Struct>): ListValue {
+    if (structsByPath.isEmpty()) {
+      return this
+    }
+
+    val rootNode = toMutableNode(this, parentPathSegment = null)
+
+    return (withGraftedInStructs(rootNode, structsByPath) as MutableNode.ListNode).toListValue()
+  }
+
+  private fun withGraftedInStructs(
+    rootNode: MutableNode,
+    structsByPath: Map<DataConnectPath, Struct>
+  ): MutableNode {
+    val sortedPaths = structsByPath.keys.sortedWith(DataConnectPathComparator)
 
     for (path in sortedPaths) {
-      val structToGraft = mutableStructsByPath.getValue(path)
+      val structToGraft = structsByPath.getValue(path)
       val parentPath = path.dropLast(1)
 
       val lastSegment = path.last()
@@ -176,7 +194,7 @@ internal object ProtoGraft {
       )
     }
 
-    return rootNode.toStruct()
+    return rootNode
   }
 
   private sealed class MutableNode(val parentPathSegment: DataConnectPathSegment?) {

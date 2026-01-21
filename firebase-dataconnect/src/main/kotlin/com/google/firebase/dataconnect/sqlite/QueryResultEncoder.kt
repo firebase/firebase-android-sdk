@@ -195,8 +195,9 @@ internal class QueryResultEncoder(
   private fun writeList(
     listValue: ListValue,
     path: MutableDataConnectPath,
+    typeByte: Byte = QueryResultCodec.VALUE_LIST,
   ) {
-    writer.writeByte(QueryResultCodec.VALUE_LIST)
+    writer.writeByte(typeByte)
     writer.writeUInt32(listValue.valuesCount)
     repeat(listValue.valuesCount) { listIndex ->
       path.withAddedListIndex(listIndex) { writeValue(listValue.getValues(listIndex), path) }
@@ -317,7 +318,7 @@ internal class QueryResultEncoder(
       }
       ListValueLeafContentsClassification.Entities,
       ListValueLeafContentsClassification.MixedEntitiesAndNonEntities -> {
-        writeList(listValue, path)
+        writeList(listValue, path, typeByte = QueryResultCodec.VALUE_LIST_OF_ENTITIES)
         null
       }
       ListValueLeafContentsClassification.NonEntities -> {

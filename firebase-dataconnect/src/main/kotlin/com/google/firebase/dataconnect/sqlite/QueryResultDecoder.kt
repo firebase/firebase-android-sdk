@@ -642,60 +642,6 @@ internal class QueryResultDecoder(
     return charBuffer.toString()
   }
 
-  private enum class ListOfEntitiesValueType(val valueType: ValueType) {
-    Entity(ValueType.Entity),
-    ListOfEntities(ValueType.ListOfEntities);
-
-    companion object {
-      val instanceByValueType: Map<ValueType, ListOfEntitiesValueType> = buildMap {
-        ListOfEntitiesValueType.entries.forEach { listOfEntitiesValueType ->
-          check(listOfEntitiesValueType.valueType !in this) {
-            "internal error ck5t8etfb7: duplicate value type: ${listOfEntitiesValueType.valueType}"
-          }
-          put(listOfEntitiesValueType.valueType, listOfEntitiesValueType)
-        }
-      }
-
-      fun fromValueType(valueType: ValueType): ListOfEntitiesValueType? =
-        entries.firstOrNull { it.valueType == valueType }
-    }
-  }
-
-  private fun readListOfEntities(path: MutableDataConnectPath): ListValue {
-    val size =
-      readUInt32(
-        path,
-        name = "list of entities size",
-        valueVerifier = listOfEntitiesSizeUInt32ValueVerifier,
-        decodeErrorId = "ListOfEntitiesSizeDecodeFailed",
-        eofErrorId = "ListOfEntitiesSizeEOF",
-      )
-
-    val listValueBuilder = ListValue.newBuilder()
-    repeat(size) { listIndex ->
-      val listElement: Value =
-        path.withAddedListIndex(listIndex) {
-          val listElementValueType =
-            readValueType(
-              path,
-              name = "list element",
-              eofErrorId = "ReadListOfEntitiesValueTypeIndicatorByteEOF",
-              unknownErrorId = "ReadListOfEntitiesValueTypeIndicatorByteUnknown",
-              unexpectedErrorId = "ReadListOfEntitiesValueTypeIndicatorByteUnexpected",
-              map = ListOfEntitiesValueType.instanceByValueType,
-            )
-
-          when (listElementValueType) {
-            ListOfEntitiesValueType.Entity -> readEntity(path).toValueProto()
-            ListOfEntitiesValueType.ListOfEntities -> readListOfEntities(path).toValueProto()
-          }
-        }
-
-      listValueBuilder.addValues(listElement)
-    }
-    return listValueBuilder.build()
-  }
-
   private fun readList(path: MutableDataConnectPath): ListValue {
     val size =
       readUInt32(
@@ -813,25 +759,6 @@ internal class QueryResultDecoder(
     return structBuilder.build()
   }
 
-  private fun readEntitySubList(path: MutableDataConnectPath, entity: ListValue): ListValue {
-    val listSize =
-      readUInt32(
-        path,
-        name = "entity sub-list size",
-        valueVerifier = entitySubListSizeUInt32ValueVerifier,
-        decodeErrorId = "EntitySubListSizeDecodeFailed",
-        eofErrorId = "EntitySubListSizeEOF",
-      )
-
-    val listValueBuilder = ListValue.newBuilder()
-    repeat(listSize) { index ->
-      val value =
-        path.withAddedListIndex(index) { readEntityValue(path) { entity.getValues(index) } }
-      listValueBuilder.addValues(value)
-    }
-    return listValueBuilder.build()
-  }
-
   private inline fun readEntityValue(
     path: MutableDataConnectPath,
     getSubEntity: () -> Value
@@ -854,10 +781,10 @@ internal class QueryResultDecoder(
       }
       EntitySubStructValueType.List -> {
         val subEntity = getSubEntity().listValue
-        readEntitySubList(path, subEntity).toValueProto()
+        patchInPrunedEntities(path, subEntity).toValueProto()
       }
       EntitySubStructValueType.ListOfEntities -> {
-        readListOfEntities(path).toValueProto()
+        readList(path).toValueProto()
       }
       EntitySubStructValueType.Scalar -> getSubEntity()
     }
@@ -887,6 +814,32 @@ internal class QueryResultDecoder(
     }
 
     return struct.withGraftedInStructs(structsByPath)
+  }
+
+  private fun patchInPrunedEntities(path: MutableDataConnectPath, listValue: ListValue): ListValue {
+    val prunedEntityCount =
+      readUInt32(
+        path,
+        name = "pruned entity count",
+        valueVerifier = prunedEntityCountUInt32ValueVerifier,
+        decodeErrorId = "PrunedEntityCountDecodeFailed",
+        eofErrorId = "PrunedEntityCountEOF",
+      )
+
+    // Avoid doing the work below if there is nothing to graft, as a performance optimization.
+    if (prunedEntityCount == 0) {
+      return listValue
+    }
+
+    val structsByPath = buildMap {
+      repeat(prunedEntityCount) {
+        val entityRelativePath = readPath(path)
+        val entity = readEntity(path)
+        put(entityRelativePath, entity)
+      }
+    }
+
+    return listValue.withGraftedInStructs(structsByPath)
   }
 
   private fun readPath(path: DataConnectPath): DataConnectPath {
@@ -1036,7 +989,7 @@ internal class QueryResultDecoder(
       ReadValueValueType.BoolTrue -> valueBuilder.setBoolValue(true)
       ReadValueValueType.BoolFalse -> valueBuilder.setBoolValue(false)
       ReadValueValueType.List -> valueBuilder.setListValue(readList(path))
-      ReadValueValueType.ListOfEntities -> valueBuilder.setListValue(readListOfEntities(path))
+      ReadValueValueType.ListOfEntities -> valueBuilder.setListValue(readList(path))
       ReadValueValueType.Struct -> valueBuilder.setStructValue(readStruct(path))
       ReadValueValueType.KindNotSet -> {}
       ReadValueValueType.Entity -> valueBuilder.setStructValue(readEntity(path))
