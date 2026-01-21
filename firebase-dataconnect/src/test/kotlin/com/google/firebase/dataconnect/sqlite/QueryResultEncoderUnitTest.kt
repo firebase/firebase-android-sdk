@@ -37,8 +37,9 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWith
 import com.google.firebase.dataconnect.testutil.property.arbitrary.listValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.next
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
-import com.google.firebase.dataconnect.testutil.property.arbitrary.random
 import com.google.firebase.dataconnect.testutil.property.arbitrary.randomSource
+import com.google.firebase.dataconnect.testutil.property.arbitrary.randomlyInsertValue
+import com.google.firebase.dataconnect.testutil.property.arbitrary.randomlyInsertValues
 import com.google.firebase.dataconnect.testutil.property.arbitrary.recursivelyEmptyListValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.stringWithLoneSurrogates
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
@@ -48,9 +49,8 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.twoValues
 import com.google.firebase.dataconnect.testutil.property.arbitrary.value
 import com.google.firebase.dataconnect.testutil.property.arbitrary.withIterations
 import com.google.firebase.dataconnect.testutil.property.arbitrary.withIterationsIfNotNull
+import com.google.firebase.dataconnect.testutil.property.arbitrary.withRandomlyInsertedValues
 import com.google.firebase.dataconnect.testutil.randomlyInsertStruct
-import com.google.firebase.dataconnect.testutil.randomlyInsertValue
-import com.google.firebase.dataconnect.testutil.randomlyInsertValues
 import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
@@ -326,7 +326,6 @@ class QueryResultEncoderUnitTest {
 
   @Test
   fun `entity contains lists of lists of entities`() = runTest {
-    val structKeyArb = Arb.proto.structKey()
     val structArb = Arb.proto.struct()
     val listValueArb =
       Arb.proto
@@ -340,14 +339,13 @@ class QueryResultEncoderUnitTest {
     checkAll(propTestConfig, structArb, listValueArb) { struct, listValueSample ->
       val entityPathValuePairs = listValueSample.descendants.filterNot { it.value.isListValue }
       val entities = entityPathValuePairs.map { it.value.structValue }
-      val rootStructBuilder = struct.struct.toBuilder()
-      val listValuePath =
-        rootStructBuilder.randomlyInsertValue(
-          listValueSample.listValue.toValueProto(),
-          randomSource().random,
-          generateKey = { structKeyArb.bind() }
-        )
-      val rootStruct = rootStructBuilder.build()
+      check(entities.isNotEmpty())
+      val listValuePath: DataConnectPath
+      val rootStruct =
+        struct.struct.toBuilder().let { builder ->
+          listValuePath = builder.randomlyInsertValue(listValueSample.listValue.toValueProto())
+          builder.build()
+        }
       val entityIdByPath = buildEntityIdByPathMap {
         entityPathValuePairs
           .map { it.path }
@@ -360,7 +358,6 @@ class QueryResultEncoderUnitTest {
 
   @Test
   fun `entity contains lists of lists of entities with empty lists interspersed`() = runTest {
-    val structKeyArb = Arb.proto.structKey()
     val structArb = Arb.proto.struct()
 
     checkAll(propTestConfig, structArb, Arb.int(2..10), Arb.proto.recursivelyEmptyListValue()) {
@@ -370,18 +367,10 @@ class QueryResultEncoderUnitTest {
       val subEntities = List(subEntityCount) { structArb.bind().struct }
       val listValueBuilder = recursivelyEmptyListValue.listValue.toBuilder()
       val entitySubPaths =
-        listValueBuilder.randomlyInsertValues(
-          subEntities.map { it.toValueProto() },
-          randomSource().random,
-        )
+        listValueBuilder.randomlyInsertValues(subEntities.map { it.toValueProto() })
       val listValue = listValueBuilder.build()
       val rootStructBuilder = struct.struct.toBuilder()
-      val listValuePath =
-        rootStructBuilder.randomlyInsertValue(
-          listValue.toValueProto(),
-          randomSource().random,
-          generateKey = { structKeyArb.bind() }
-        )
+      val listValuePath = rootStructBuilder.randomlyInsertValue(listValue.toValueProto())
       val rootStruct = rootStructBuilder.build()
       val entityIdByPath = buildEntityIdByPathMap {
         putWithRandomUniqueEntityId(emptyDataConnectPath())
@@ -409,12 +398,10 @@ class QueryResultEncoderUnitTest {
       nonEntityCount,
       recursivelyEmptyListValue ->
       val nonEntities = List(nonEntityCount) { structArb.bind().struct }
-      val listValueBuilder = recursivelyEmptyListValue.listValue.toBuilder()
-      listValueBuilder.randomlyInsertValues(
-        nonEntities.map { it.toValueProto() },
-        randomSource().random,
-      )
-      val listValue = listValueBuilder.build()
+      val listValue =
+        recursivelyEmptyListValue.listValue.withRandomlyInsertedValues(
+          nonEntities.map { it.toValueProto() }
+        )
       val rootStruct =
         struct.struct.withRandomlyInsertedValue(
           listValue.toValueProto(),
@@ -433,7 +420,6 @@ class QueryResultEncoderUnitTest {
   fun `entity contains lists of lists of entities and non-entities should throw`() = runTest {
     val valueExceptRecursivelyEmptyListsArb =
       Arb.proto.value().filterNot { it.isListValue && it.listValue.isRecursivelyEmpty() }
-    val structKeyArb = Arb.proto.structKey()
     checkAll(
       propTestConfig,
       Arb.proto.struct(),
@@ -441,21 +427,19 @@ class QueryResultEncoderUnitTest {
       Arb.list(Arb.proto.struct(), 1..10),
       Arb.list(valueExceptRecursivelyEmptyListsArb, 1..10),
     ) { rootStructBase, recursivelyEmptyListValue, entities, nonEntities ->
-      val listValueBuilder = recursivelyEmptyListValue.listValue.toBuilder()
-      val insertPaths =
-        listValueBuilder.randomlyInsertValues(
-          entities.map { it.toValueProto() } + nonEntities,
-          randomSource().random,
-        )
-      val listValue = listValueBuilder.build()
-      val rootStructBuilder = rootStructBase.struct.toBuilder()
-      val listValuePath =
-        rootStructBuilder.randomlyInsertValue(
-          listValue.toValueProto(),
-          randomSource().random,
-          generateKey = { structKeyArb.bind() }
-        )
-      val rootStruct = rootStructBuilder.build()
+      val insertPaths: List<DataConnectPath>
+      val listValue =
+        recursivelyEmptyListValue.listValue.toBuilder().let { listValueBuilder ->
+          val valuesToRandomlyInsert = entities.map { it.toValueProto() } + nonEntities
+          insertPaths = listValueBuilder.randomlyInsertValues(valuesToRandomlyInsert)
+          listValueBuilder.build()
+        }
+      val listValuePath: DataConnectPath
+      val rootStruct =
+        rootStructBase.struct.toBuilder().let { rootStructBuilder ->
+          listValuePath = rootStructBuilder.randomlyInsertValue(listValue.toValueProto())
+          rootStructBuilder.build()
+        }
       val entityIdByPath = buildEntityIdByPathMap {
         putWithRandomUniqueEntityId(emptyDataConnectPath())
         val entityPaths = insertPaths.take(entities.size)
@@ -480,20 +464,17 @@ class QueryResultEncoderUnitTest {
 
   @Test
   fun `list containing only entities`() = runTest {
-    val structKeyArb = Arb.proto.structKey()
     val structArb = Arb.proto.struct()
 
     checkAll(propTestConfig, structArb, Arb.int(1..10)) { struct, entityCount ->
       val entities = List(entityCount) { structArb.bind().struct }
       val listValue = entities.map { it.toValueProto() }.toListValue()
-      val rootStructBuilder = struct.struct.toBuilder()
-      val listValuePath =
-        rootStructBuilder.randomlyInsertValue(
-          listValue.toValueProto(),
-          randomSource().random,
-          generateKey = { structKeyArb.bind() },
-        )
-      val rootStruct = rootStructBuilder.build()
+      val listValuePath: DataConnectPath
+      val rootStruct =
+        struct.struct.toBuilder().let { rootStructBuilder ->
+          listValuePath = rootStructBuilder.randomlyInsertValue(listValue.toValueProto())
+          rootStructBuilder.build()
+        }
       val entityIdByPath = buildEntityIdByPathMap {
         repeat(entityCount) { entityIndex ->
           putWithRandomUniqueEntityId(listValuePath.withAddedListIndex(entityIndex))
@@ -506,7 +487,6 @@ class QueryResultEncoderUnitTest {
 
   @Test
   fun `list containing mixed entities and non-entities`() = runTest {
-    val structKeyArb = Arb.proto.structKey()
     val structArb = Arb.proto.struct()
 
     checkAll(propTestConfig, structArb, Arb.int(1..10), Arb.int(1..10)) {
@@ -517,14 +497,12 @@ class QueryResultEncoderUnitTest {
       val entityIndices = listElements.indices.shuffled(randomSource().random).take(entityCount)
       val entities = listElements.filterIndexed { index, _ -> entityIndices.contains(index) }
       val listValue = listElements.map { it.toValueProto() }.toListValue()
-      val rootStructBuilder = struct.struct.toBuilder()
-      val listValuePath =
-        rootStructBuilder.randomlyInsertValue(
-          listValue.toValueProto(),
-          randomSource().random,
-          generateKey = { structKeyArb.bind() },
-        )
-      val rootStruct = rootStructBuilder.build()
+      val listValuePath: DataConnectPath
+      val rootStruct =
+        struct.struct.toBuilder().let { rootStructBuilder ->
+          listValuePath = rootStructBuilder.randomlyInsertValue(listValue.toValueProto())
+          rootStructBuilder.build()
+        }
       val entityIdByPath = buildEntityIdByPathMap {
         entityIndices.forEach { entityIndex ->
           putWithRandomUniqueEntityId(listValuePath.withAddedListIndex(entityIndex))

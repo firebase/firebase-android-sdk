@@ -82,6 +82,13 @@ kotlin {
   explicitApi()
 }
 
+// Enable experimental "Context parameters" in unit and integration tests.
+// https://kotlinlang.org/docs/context-parameters.html
+tasks
+  .withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>()
+  .matching { it.name.contains("UnitTest") || it.name.contains("AndroidTest") }
+  .configureEach { compilerOptions { freeCompilerArgs.add("-Xcontext-parameters") } }
+
 protobuf {
   protoc { artifact = "${libs.protoc.get()}" }
   plugins {

@@ -57,6 +57,26 @@ kotlin {
   }
 }
 
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+  compilerOptions {
+    // Enable experimental "Context parameters".
+    // https://kotlinlang.org/docs/context-parameters.html
+    freeCompilerArgs.add("-Xcontext-parameters")
+  }
+}
+
+spotless {
+  kotlin {
+    // Silence spotless' complaints about usage of the experimental Kotlin "Context parameters"
+    // feature.
+    // https://kotlinlang.org/docs/context-parameters.html
+    suppressLintsFor {
+      path =
+        "src/main/kotlin/com/google/firebase/dataconnect/testutil/property/arbitrary/ProtoRandomInsertPropertyContextExts.kt"
+    }
+  }
+}
+
 dependencies {
   implementation(project(":firebase-dataconnect"))
 
