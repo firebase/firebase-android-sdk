@@ -11,7 +11,7 @@ including Cloud Functions.
 
 > **Note**: All Gradle commands listed below must be run from the **monorepo source root** (one level up from this directory).
 
-## Building 
+## Building
 
 To build the Firestore component release archive:
 
