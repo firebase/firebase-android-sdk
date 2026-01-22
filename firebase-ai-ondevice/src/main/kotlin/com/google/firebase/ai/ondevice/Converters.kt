@@ -57,14 +57,13 @@ private fun Int.toInterop(): FinishReason =
 // ================================================
 internal fun com.google.firebase.ai.ondevice.interop.GenerateContentRequest.toMlKit():
   GenerateContentRequest {
-  val interop = this
   try {
-    return generateContentRequest(text) {
-      temperature = interop.temperature
-      maxOutputTokens = interop.maxOutputTokens
-      candidateCount = interop.candidateCount
-      topK = interop.topK
-      seed = interop.seed
+    return generateContentRequest(text, image) {
+      temperature = this@toMlKit.temperature
+      maxOutputTokens = this@toMlKit.maxOutputTokens
+      candidateCount = this@toMlKit.candidateCount
+      topK = this@toMlKit.topK
+      seed = this@toMlKit.seed
     }
   } catch (e: IllegalArgumentException) {
     throw FirebaseAiOnDeviceInvalidRequestException(e)
