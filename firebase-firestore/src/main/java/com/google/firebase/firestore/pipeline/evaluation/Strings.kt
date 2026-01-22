@@ -22,10 +22,12 @@ import android.icu.lang.UCharacter.toLowerCase
 import android.icu.lang.UCharacter.toUpperCase
 import android.os.Build
 import com.google.common.base.CharMatcher
+import com.google.common.collect.ImmutableList
 import com.google.common.math.IntMath
 import com.google.common.primitives.Ints
 import com.google.firebase.firestore.Blob
 import com.google.firebase.firestore.model.Values.encodeValue
+import com.google.firebase.firestore.util.RegexUtils
 import com.google.firestore.v1.Value
 import com.google.firestore.v1.Value.ValueTypeCase
 import com.google.protobuf.ByteString
@@ -308,6 +310,54 @@ internal val evaluateRegexMatch =
           null
         }
       if (pattern == null) EvaluateResultError else EvaluateResult.boolean(pattern.matches(value))
+    })
+  }
+
+internal val evaluateRegexFind =
+  binaryFunctionConstructorType(
+    ValueTypeCase.STRING_VALUE,
+    Value::getStringValue,
+    ValueTypeCase.STRING_VALUE,
+    Value::getStringValue,
+  ) {
+    ({ value: String, patternString: String ->
+      val pattern =
+        try {
+          Pattern.compile(patternString)
+        } catch (_: Exception) {
+          null
+        }
+
+      if (pattern == null) EvaluateResultError
+      else EvaluateResult.value(RegexUtils.handleMatch(pattern.matcher(value.toByteArray())))
+    })
+  }
+
+internal val evaluateRegexFindAll =
+  binaryFunctionConstructorType(
+    ValueTypeCase.STRING_VALUE,
+    Value::getStringValue,
+    ValueTypeCase.STRING_VALUE,
+    Value::getStringValue,
+  ) {
+    ({ value: String, patternString: String ->
+      val pattern =
+        try {
+          Pattern.compile(patternString)
+        } catch (_: Exception) {
+          null
+        }
+
+      if (pattern == null) {
+        EvaluateResultError
+      } else {
+        val builder = ImmutableList.builder<Value>()
+        val matcher = pattern.matcher(value.toByteArray())
+        while (matcher.find()) {
+          builder.add(RegexUtils.handleMatch(matcher))
+        }
+        EvaluateResult.list(builder.build())
+      }
     })
   }
 

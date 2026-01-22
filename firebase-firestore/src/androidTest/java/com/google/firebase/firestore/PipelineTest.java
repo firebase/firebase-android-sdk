@@ -937,6 +937,50 @@ public class PipelineTest {
   }
 
   @Test
+  public void testRegexFind() {
+    assumeFalse("Regexes are not supported against the emulator.", isRunningAgainstEmulator());
+
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .select(Expression.regexFind("title", "^\\w+").alias("firstWordInTitle"))
+            .select("firstWordInTitle")
+            .sort(field("firstWordInTitle").ascending())
+            .limit(3)
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of("firstWordInTitle", "1984"),
+            ImmutableMap.of("firstWordInTitle", "Crime"),
+            ImmutableMap.of("firstWordInTitle", "Dune"));
+  }
+
+  @Test
+  public void testRegexFindAll() {
+    assumeFalse("Regexes are not supported against the emulator.", isRunningAgainstEmulator());
+
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .select(Expression.regexFindAll("title", "\\w+").alias("wordsInTitle"))
+            .select("wordsInTitle")
+            .sort(field("wordsInTitle").ascending())
+            .limit(3)
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of("wordsInTitle", List.of("1984")),
+            ImmutableMap.of("wordsInTitle", List.of("Crime", "and", "Punishment")),
+            ImmutableMap.of("wordsInTitle", List.of("Dune")));
+  }
+
+  @Test
   public void testRegexMatches() {
     assumeFalse("Regexes are not supported against the emulator.", isRunningAgainstEmulator());
 
