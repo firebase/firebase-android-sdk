@@ -44,6 +44,9 @@ public abstract class EventContext {
     public abstract Builder setExperimentIdsClear(byte[] value);
 
     @NonNull
+    public abstract Builder getExperimentIdsEncryptedList(byte[][] value);
+
+    @NonNull
     public abstract Builder setExperimentIdsEncrypted(byte[] value);
 
     @NonNull

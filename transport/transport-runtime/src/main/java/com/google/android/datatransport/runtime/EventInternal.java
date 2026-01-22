@@ -54,6 +54,9 @@ public abstract class EventInternal {
   @SuppressWarnings("mutable")
   public abstract byte[] getExperimentIdsEncrypted();
 
+  @Nullable
+  public abstract byte[][] getExperimentIdsEncryptedList();
+
   public final Map<String, String> getMetadata() {
     return Collections.unmodifiableMap(getAutoMetadata());
   }
@@ -136,5 +139,6 @@ public abstract class EventInternal {
     }
 
     public abstract EventInternal build();
+
   }
 }

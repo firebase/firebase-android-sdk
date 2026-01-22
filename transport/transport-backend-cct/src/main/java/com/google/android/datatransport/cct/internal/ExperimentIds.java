@@ -26,7 +26,7 @@ public abstract class ExperimentIds {
 
   @SuppressWarnings("mutable")
   @Nullable
-  public abstract byte[] getEncryptedBlob();
+  public abstract byte[][] getEncryptedBlob();
 
   @NonNull
   public static ExperimentIds.Builder builder() {
@@ -39,7 +39,7 @@ public abstract class ExperimentIds {
     public abstract ExperimentIds.Builder setClearBlob(@Nullable byte[] value);
 
     @NonNull
-    public abstract ExperimentIds.Builder setEncryptedBlob(@Nullable byte[] value);
+    public abstract ExperimentIds.Builder setEncryptedBlob(@Nullable byte[][] value);
 
     @NonNull
     public abstract ExperimentIds build();

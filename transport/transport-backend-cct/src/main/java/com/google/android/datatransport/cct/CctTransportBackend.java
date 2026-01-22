@@ -307,8 +307,8 @@ final class CctTransportBackend implements TransportBackend {
           if (eventInternal.getExperimentIdsClear() != null) {
             builder.setClearBlob(eventInternal.getExperimentIdsClear());
           }
-          if (eventInternal.getExperimentIdsEncrypted() != null) {
-            builder.setEncryptedBlob(eventInternal.getExperimentIdsEncrypted());
+          if (eventInternal.getExperimentIdsEncryptedList() != null) {
+            builder.setEncryptedBlob(eventInternal.getExperimentIdsEncryptedList());
           }
           event.setExperimentIds(builder.build());
         }

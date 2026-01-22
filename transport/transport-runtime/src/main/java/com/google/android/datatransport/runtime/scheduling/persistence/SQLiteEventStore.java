@@ -42,6 +42,8 @@ import com.google.android.datatransport.runtime.time.Clock;
 import com.google.android.datatransport.runtime.time.Monotonic;
 import com.google.android.datatransport.runtime.time.WallTime;
 import com.google.android.datatransport.runtime.util.PriorityMapping;
+
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -99,6 +101,34 @@ public class SQLiteEventStore
         });
   }
 
+  private byte[][] deFlattenBlob(byte[] flatBlob) {
+      ByteBuffer buffer = ByteBuffer.wrap(flatBlob);
+      List<byte[]> rows = new ArrayList<>();
+
+      while (buffer.hasRemaining()) {
+          int length = buffer.getInt(); // Read the "Header" first
+          byte[] row = new byte[length];
+          buffer.get(row);              // Read exactly that many bytes
+          rows.add(row);
+      }
+
+      return rows.toArray(new byte[0][]);
+  }
+  private byte[] flattenListBlob(byte[][] input) {
+      int metadataSize = input.length * 4;
+      int totalSize = 0;
+      for (byte[] row : input) {
+          totalSize += row.length;
+      }
+      ByteBuffer buffer = ByteBuffer.allocate(totalSize + metadataSize);
+
+      for (byte[] row : input) {
+          buffer.putInt(row.length); // Write the "Header" (4 bytes)
+          buffer.put(row);           // Write the "Data"
+      }
+      return buffer.array();
+  }
+
   @Override
   @Nullable
   public PersistedEvent persist(TransportContext transportContext, EventInternal event) {
@@ -139,6 +169,7 @@ public class SQLiteEventStore
               values.put("pseudonymous_id", event.getPseudonymousId());
               values.put("experiment_ids_clear_blob", event.getExperimentIdsClear());
               values.put("experiment_ids_encrypted_blob", event.getExperimentIdsEncrypted());
+              values.put("experiment_ids_encrypted_list_blob", flattenListBlob(event.getExperimentIdsEncryptedList()));
               long newEventId = db.insert("events", null, values);
               if (!inline) {
                 int numChunks = (int) Math.ceil((double) payloadBytes.length / maxBlobSizePerRow);
@@ -246,7 +277,6 @@ public class SQLiteEventStore
                 while (cursor.moveToNext()) {
                   int count = cursor.getInt(0);
                   String transportName = cursor.getString(1);
-                  recordLogEventDropped(
                       count, LogEventDropped.Reason.MAX_RETRIES_REACHED, transportName);
                 }
                 return null;
@@ -456,6 +486,7 @@ public class SQLiteEventStore
               "pseudonymous_id",
               "experiment_ids_clear_blob",
               "experiment_ids_encrypted_blob",
+              "experiment_ids_encrypted_list_blob"
             },
             "context_id = ?",
             new String[] {contextId.toString()},
@@ -493,6 +524,9 @@ public class SQLiteEventStore
             }
             if (!cursor.isNull(11)) {
               event.setExperimentIdsEncrypted(cursor.getBlob(11));
+            }
+            if (!cursor.isNull(12)) {
+               event.getExperimentIdsEncryptedList(deFlattenBlob(cursor.getBlob(12)));
             }
             events.add(PersistedEvent.create(id, transportContext, event.build()));
           }
