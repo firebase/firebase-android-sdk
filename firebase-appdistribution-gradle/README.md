@@ -29,7 +29,7 @@ To run integration tests, run:
 
 To test manually, add the plugin to your Android project
 
-`apply plugin: 'com.google.firebase.appdistribution`
+`apply plugin: 'com.google.firebase.appdistribution'`
 
 ## Release Process
 
