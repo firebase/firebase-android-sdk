@@ -5,6 +5,9 @@ on:
     - cron: '0 6 * * *' # Run daily at 6 AM
   workflow_dispatch: # Allow manual triggering
 
+permissions:
+  contents: read
+
 jobs:
   performance-plugin:
     runs-on: ubuntu-latest
