@@ -1,5 +1,10 @@
 # Unreleased
 
+- [changed] Internal refactor for reporting "paths" in response data.
+  [#7613](https://github.com/firebase/firebase-android-sdk/pull/7613))
+
+# 17.1.2
+
 - [changed] Internal refactor for managing Auth and App Check tokens
   [#7485](https://github.com/firebase/firebase-android-sdk/pull/7485))
 
@@ -115,3 +120,4 @@
   ([#6299](https://github.com/firebase/firebase-android-sdk/pull/6299))
 - [changed] Added `equals` and `hashCode` methods to `GeneratedConnector`.
   ([#6177](https://github.com/firebase/firebase-android-sdk/pull/6177))
+

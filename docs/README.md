@@ -35,3 +35,4 @@ idiomatic Kotlin code when using Firebase in your app:
 
 [android-setup]: https://firebase.google.com/docs/android/setup
 [main-readme]: https://github.com/firebase/firebase-android-sdk/blob/main/README.md
+

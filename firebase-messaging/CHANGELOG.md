@@ -432,11 +432,10 @@ and should not be used. A fix for these issues was released on
 - [changed] [messaging_longer] now transitively depends on the [installations_sdk]. After updating
   to the latest dependency versions, make sure that push notifications still work as expected. Also,
   be aware of the following:
-
   - The [messaging] registration tokens of installed instances of your apps might change once after
     updating dependencies to their latest versions. To learn if your apps are affected, review the
     <a href="//github.com/firebase/firebase-android-sdk/blob/main/firebase-installations/FCM_TOKENS_CHANGE.md"
-       class="external">[firebase_installations] documentation</a>. Also, make sure to
+    class="external">[firebase_installations] documentation</a>. Also, make sure to
     <a href="/docs/cloud-messaging/android/client#monitor-token-generation">monitor [messaging]
     registration token generation</a> using the <code>#onNewToken</code> implementation.
 
@@ -525,3 +524,4 @@ and should not be used. A fix for these issues was released on
   [`FirebaseMessaging`](/docs/reference/android/com/google/firebase/messaging/FirebaseMessaging) now
   return a [`Task`](/docs/reference/android/com/google/android/gms/tasks/Task) that can be used to
   see when the request has completed.
+

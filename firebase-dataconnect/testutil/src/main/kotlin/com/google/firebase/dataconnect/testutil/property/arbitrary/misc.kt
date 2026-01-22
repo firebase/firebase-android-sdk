@@ -18,13 +18,9 @@ package com.google.firebase.dataconnect.testutil.property.arbitrary
 
 import com.google.firebase.dataconnect.testutil.withNullAppended
 import io.kotest.property.Arb
-import io.kotest.property.EdgeConfig
 import io.kotest.property.Exhaustive
-import io.kotest.property.PropertyContext
-import io.kotest.property.Sample
 import io.kotest.property.arbitrary.arbitrary
-import io.kotest.property.arbitrary.bind
-import io.kotest.property.arbitrary.filter
+import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.flatMap
 import io.kotest.property.arbitrary.map
 import io.kotest.property.exhaustive.enum
@@ -32,9 +28,10 @@ import io.kotest.property.exhaustive.exhaustive
 import kotlin.random.nextInt
 
 /** Returns a new [Arb] that produces two _unequal_ values of this [Arb]. */
-fun <T> Arb<T>.distinctPair(): Arb<Pair<T, T>> = flatMap { value1 ->
-  this@distinctPair.filter { it != value1 }.map { Pair(value1, it) }
-}
+fun <T> Arb<T>.distinctPair(isEqual: (T, T) -> Boolean = { v1, v2 -> v1 == v2 }): Arb<Pair<T, T>> =
+  flatMap { value1 ->
+    this@distinctPair.filterNot { isEqual(value1, it) }.map { Pair(value1, it) }
+  }
 
 fun Arb<String>.withPrefix(prefix: String): Arb<String> = arbitrary { "$prefix${bind()}" }
 
@@ -87,11 +84,6 @@ private fun pow10(n: Int): Int {
   var result = 1
   repeat(n) { result *= 10 }
   return result
-}
-
-fun <T> PropertyContext.sampleFromArb(arb: Arb<T>, edgeCaseProbability: Double): Sample<T> {
-  val edgeConfig = EdgeConfig(edgecasesGenerationProbability = edgeCaseProbability)
-  return arb.generate(randomSource(), edgeConfig).first()
 }
 
 /**

@@ -24,6 +24,7 @@ import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.FunctionCallPart
 import com.google.firebase.ai.type.FunctionResponsePart
 import com.google.firebase.ai.type.InlineData
+import com.google.firebase.ai.type.LiveAudioConversationConfig
 import com.google.firebase.ai.type.LiveServerMessage
 import com.google.firebase.ai.type.LiveSession
 import com.google.firebase.ai.type.MediaData
@@ -48,6 +49,18 @@ public abstract class LiveSessionFutures internal constructor() {
    */
   @RequiresPermission(RECORD_AUDIO)
   public abstract fun startAudioConversation(): ListenableFuture<Unit>
+
+  /**
+   * Starts an audio conversation with the model, which can only be stopped using
+   * [stopAudioConversation].
+   *
+   * @param liveAudioConversationConfig A [LiveAudioConversationConfig] provided by the user to
+   * control the various aspects of the conversation.
+   */
+  @RequiresPermission(RECORD_AUDIO)
+  public abstract fun startAudioConversation(
+    liveAudioConversationConfig: LiveAudioConversationConfig
+  ): ListenableFuture<Unit>
 
   /**
    * Starts an audio conversation with the model, which can only be stopped using
@@ -197,9 +210,12 @@ public abstract class LiveSessionFutures internal constructor() {
   public abstract fun sendVideoRealtime(video: InlineData): ListenableFuture<Unit>
 
   /**
-   * Sends text data to the server in realtime. Check
-   * https://ai.google.dev/api/live#bidigeneratecontentrealtimeinput for details about the realtime
-   * input usage.
+   * For details about the realtime input usage, see the `BidiGenerateContentRealtimeInput`
+   * documentation (
+   * [Gemini Developer API](https://ai.google.dev/api/live#bidigeneratecontentrealtimeinput) or
+   * [Vertex AI Gemini API](https://docs.cloud.google.com/vertex-ai/generative-ai/docs/model-reference/multimodal-live#bidigeneratecontentrealtimeinput)
+   * ).
+   *
    * @param text The text data to send.
    */
   public abstract fun sendTextRealtime(text: String): ListenableFuture<Unit>
@@ -211,7 +227,7 @@ public abstract class LiveSessionFutures internal constructor() {
    *
    * @param mediaChunks The list of [MediaData] instances representing the media data to be sent.
    */
-  @Deprecated("Use sendAudioRealtime, sendVideoRealtime, or sendTextRealtime instead")
+  @Deprecated("Use `sendAudioRealtime`, `sendVideoRealtime`, or `sendTextRealtime` instead")
   public abstract fun sendMediaStream(mediaChunks: List<MediaData>): ListenableFuture<Unit>
 
   /**
@@ -292,6 +308,12 @@ public abstract class LiveSessionFutures internal constructor() {
     ) =
       SuspendToFutureAdapter.launchFuture {
         session.startAudioConversation(transcriptHandler = transcriptHandler)
+      }
+
+    @RequiresPermission(RECORD_AUDIO)
+    override fun startAudioConversation(liveAudioConversationConfig: LiveAudioConversationConfig) =
+      SuspendToFutureAdapter.launchFuture {
+        session.startAudioConversation(liveAudioConversationConfig)
       }
 
     @RequiresPermission(RECORD_AUDIO)

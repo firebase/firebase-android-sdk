@@ -23,11 +23,20 @@ import com.google.firebase.ai.common.util.doBlocking
 import com.google.firebase.ai.type.Candidate
 import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.GenerateContentResponse
+import com.google.firebase.ai.type.GenerativeBackend
+import com.google.firebase.ai.type.HarmBlockMethod
+import com.google.firebase.ai.type.HarmBlockThreshold
+import com.google.firebase.ai.type.HarmCategory
+import com.google.firebase.ai.type.InvalidStateException
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.RequestOptions
+import com.google.firebase.ai.type.SafetySetting
 import com.google.firebase.ai.type.ServerException
 import com.google.firebase.ai.type.TextPart
+import com.google.firebase.ai.type.ThinkingLevel
 import com.google.firebase.ai.type.content
+import com.google.firebase.ai.type.generationConfig
+import com.google.firebase.ai.type.thinkingConfig
 import io.kotest.assertions.json.shouldContainJsonKey
 import io.kotest.assertions.json.shouldContainJsonKeyValue
 import io.kotest.assertions.throwables.shouldThrow
@@ -146,6 +155,95 @@ internal class GenerativeModelTesting {
     exception.message shouldContain "location"
   }
 
+  @Test
+  fun `exception thrown when using HarmBlockMethod with GoogleAI`() = doBlocking {
+    val mockEngine = MockEngine {
+      respond(
+        generateContentResponseAsJsonString("text response"),
+        HttpStatusCode.OK,
+        headersOf(HttpHeaders.ContentType, "application/json")
+      )
+    }
+
+    val apiController =
+      APIController(
+        "super_cool_test_key",
+        "gemini-2.5-flash",
+        RequestOptions(),
+        mockEngine,
+        TEST_CLIENT_ID,
+        mockFirebaseApp,
+        TEST_VERSION,
+        TEST_APP_ID,
+        null,
+      )
+
+    val safetySettings =
+      listOf(
+        SafetySetting(
+          HarmCategory.HARASSMENT,
+          HarmBlockThreshold.MEDIUM_AND_ABOVE,
+          HarmBlockMethod.SEVERITY
+        )
+      )
+
+    val generativeModel =
+      GenerativeModel(
+        "gemini-2.5-flash",
+        safetySettings = safetySettings,
+        generativeBackend = GenerativeBackend.googleAI(),
+        controller = apiController
+      )
+
+    val exception =
+      shouldThrow<InvalidStateException> { generativeModel.generateContent("my test prompt") }
+
+    exception.message shouldContain "HarmBlockMethod is unsupported by the Google Developer API"
+  }
+
+  @Test
+  fun `exception NOT thrown when using HarmBlockMethod with VertexAI`() = doBlocking {
+    val mockEngine = MockEngine {
+      respond(
+        generateContentResponseAsJsonString("text response"),
+        HttpStatusCode.OK,
+        headersOf(HttpHeaders.ContentType, "application/json")
+      )
+    }
+
+    val apiController =
+      APIController(
+        "super_cool_test_key",
+        "gemini-2.5-flash",
+        RequestOptions(),
+        mockEngine,
+        TEST_CLIENT_ID,
+        mockFirebaseApp,
+        TEST_VERSION,
+        TEST_APP_ID,
+        null,
+      )
+
+    val safetySettings =
+      listOf(
+        SafetySetting(
+          HarmCategory.HARASSMENT,
+          HarmBlockThreshold.MEDIUM_AND_ABOVE,
+          HarmBlockMethod.SEVERITY
+        )
+      )
+
+    val generativeModel =
+      GenerativeModel(
+        "gemini-2.5-flash",
+        safetySettings = safetySettings,
+        generativeBackend = GenerativeBackend.vertexAI("us-central1"),
+        controller = apiController
+      )
+
+    withTimeout(5.seconds) { generativeModel.generateContent("my test prompt") }
+  }
+
   @OptIn(PublicPreviewAPI::class)
   private fun generateContentResponseAsJsonString(text: String): String {
     return JSON.encodeToString(
@@ -153,5 +251,63 @@ internal class GenerativeModelTesting {
         listOf(Candidate.Internal(Content.Internal(parts = listOf(TextPart.Internal(text)))))
       )
     )
+  }
+
+  @Test
+  fun `thinkingLevel and thinkingBudget are mutually exclusive`() = doBlocking {
+    val exception =
+      shouldThrow<IllegalArgumentException> {
+        thinkingConfig {
+          thinkingLevel = ThinkingLevel.MEDIUM
+          thinkingBudget = 1
+        }
+      }
+    exception.message shouldContain "Cannot set both"
+  }
+
+  @Test
+  fun `correctly setting thinkingLevel in request`() = doBlocking {
+    val mockEngine = MockEngine {
+      respond(
+        generateContentResponseAsJsonString("text response"),
+        HttpStatusCode.OK,
+        headersOf(HttpHeaders.ContentType, "application/json")
+      )
+    }
+
+    val apiController =
+      APIController(
+        "super_cool_test_key",
+        "gemini-2.5-flash",
+        RequestOptions(),
+        mockEngine,
+        TEST_CLIENT_ID,
+        mockFirebaseApp,
+        TEST_VERSION,
+        TEST_APP_ID,
+        null,
+      )
+
+    val generativeModel =
+      GenerativeModel(
+        "gemini-2.5-flash",
+        generationConfig =
+          generationConfig {
+            thinkingConfig = thinkingConfig { thinkingLevel = ThinkingLevel.MEDIUM }
+          },
+        controller = apiController
+      )
+
+    withTimeout(5.seconds) { generativeModel.generateContent("my test prompt") }
+
+    mockEngine.requestHistory.shouldNotBeEmpty()
+
+    val request = mockEngine.requestHistory.first().body
+    request.shouldBeInstanceOf<TextContent>()
+
+    request.text.let {
+      it shouldContainJsonKey "generation_config"
+      it.shouldContainJsonKeyValue("$.generation_config.thinking_config.thinking_level", "MEDIUM")
+    }
   }
 }

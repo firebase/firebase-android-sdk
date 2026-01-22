@@ -1,5 +1,7 @@
 # Unreleased
 
+- [fixed] fixed typo in message logged when a class is not found during component discovery.
+
 # 19.0.0
 
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or higher.
@@ -18,3 +20,4 @@ Kotlin extensions library has no additional updates.
 - [changed] Internal changes to ensure only one interface is provided for
   kotlinx.coroutines.CoroutineDispatcher interfaces when both firebase-common and
   firebase-common-ktx provide them.
+

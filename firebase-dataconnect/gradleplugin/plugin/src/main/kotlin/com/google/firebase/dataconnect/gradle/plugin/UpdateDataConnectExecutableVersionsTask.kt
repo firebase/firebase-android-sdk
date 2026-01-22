@@ -130,6 +130,7 @@ abstract class UpdateDataConnectExecutableVersionsTask : DefaultTask() {
   private data class CloudStorageVersionInfo(
     val version: Version,
     val operatingSystem: OperatingSystem,
+    val cpuArchitecture: CpuArchitecture?,
     val blob: Blob,
   )
 
@@ -171,7 +172,7 @@ abstract class UpdateDataConnectExecutableVersionsTask : DefaultTask() {
           return null
         }
 
-    val versionString = match.groups[2]?.value
+    val versionString = match.groups["version"]?.value
     val version = versionString?.toVersionOrNull(strict = false)
     if (version === null) {
       logger.info(
@@ -205,7 +206,7 @@ abstract class UpdateDataConnectExecutableVersionsTask : DefaultTask() {
     }
 
     val operatingSystem =
-      when (val operatingSystemString = match.groups[1]?.value) {
+      when (val operatingSystemString = match.groups["os"]?.value) {
         "linux" -> OperatingSystem.Linux
         "macos" -> OperatingSystem.MacOS
         "windows" -> OperatingSystem.Windows
@@ -221,7 +222,24 @@ abstract class UpdateDataConnectExecutableVersionsTask : DefaultTask() {
         }
       }
 
-    return CloudStorageVersionInfo(version, operatingSystem, blob = this)
+    val cpuArchitecture =
+      when (val cpuArchitectureString = match.groups["arch"]?.value) {
+        null -> null
+        "amd64" -> CpuArchitecture.AMD64
+        "arm64" -> CpuArchitecture.ARM64
+        else -> {
+          logger.info(
+            "WARNING: Ignoring Data Connect executable file: {} " +
+              "(unknown CPU architecture name: {} (in match for regex {}))",
+            name,
+            cpuArchitectureString,
+            fileNameRegex
+          )
+          return null
+        }
+      }
+
+    return CloudStorageVersionInfo(version, operatingSystem, cpuArchitecture, blob = this)
   }
 
   private fun CloudStorageVersionInfo.toRegistryVersionInfo(workDirectory: File): VersionInfo {
@@ -229,7 +247,7 @@ abstract class UpdateDataConnectExecutableVersionsTask : DefaultTask() {
 
     logger.lifecycle(
       "Downloading version {} ({} bytes, created {})",
-      "$version-${operatingSystem.serializedValue}",
+      toLogString(),
       blob.size.toStringWithThousandsSeparator(),
       dateFormatter.format(blob.createTimeOffsetDateTime.atZoneSameInstant(ZoneId.systemDefault()))
     )
@@ -244,31 +262,58 @@ abstract class UpdateDataConnectExecutableVersionsTask : DefaultTask() {
         "never happen; if it _does_ happen it _could_ indicate a compromised " +
         "downloaded binary [y5967yd2cf]"
     }
-    return VersionInfo(version, operatingSystem, fileInfo.sizeInBytes, fileInfo.sha512DigestHex)
+    return VersionInfo(
+      version,
+      operatingSystem,
+      cpuArchitecture,
+      fileInfo.sizeInBytes,
+      fileInfo.sha512DigestHex
+    )
   }
 
   private companion object {
 
     val versionInfoComparator =
-      compareBy<VersionInfo> { it.version }.thenByDescending { it.os.serializedValue }
+      compareBy<VersionInfo> { it.version }
+        .thenByDescending { it.os.serializedValue }
+        .thenBy { it.arch?.serializedValue }
 
     val cloudStorageVersionInfoComparator =
       compareBy<CloudStorageVersionInfo> { it.version }
         .thenByDescending { it.operatingSystem.serializedValue }
+        .thenBy { it.cpuArchitecture?.serializedValue }
 
-    @JvmName("toLogStringCloudStorageVersionInfo")
-    fun Iterable<CloudStorageVersionInfo>.toLogString(): String = joinToString {
-      "${it.version}-${it.operatingSystem.serializedValue}"
-    }
+    @JvmName("iterableOfCloudStorageVersionInfoToLogString")
+    fun Iterable<CloudStorageVersionInfo>.toLogString(): String = joinToString { it.toLogString() }
 
-    @JvmName("toLogStringVersionInfo")
-    fun Iterable<VersionInfo>.toLogString(): String = joinToString {
-      "${it.version}-${it.os.serializedValue}"
+    @JvmName("cloudStorageVersionInfoToLogString")
+    fun CloudStorageVersionInfo.toLogString(): String =
+      createLogStringFromVersionOsArch(version, operatingSystem, cpuArchitecture)
+
+    @JvmName("iterableOfVersionInfoToLogString")
+    fun Iterable<VersionInfo>.toLogString(): String = joinToString { it.toLogString() }
+
+    @JvmName("versionInfoToLogString")
+    fun VersionInfo.toLogString(): String = createLogStringFromVersionOsArch(version, os, arch)
+
+    fun createLogStringFromVersionOsArch(
+      version: Version,
+      operatingSystem: OperatingSystem,
+      cpuArchitecture: CpuArchitecture?
+    ): String = buildString {
+      append(version)
+      append('-')
+      append(operatingSystem.serializedValue)
+      if (cpuArchitecture !== null) {
+        append('-')
+        append(cpuArchitecture.serializedValue)
+      }
     }
 
     val invalidVersions = setOf("1.15.0".toVersion())
     val minVersion = "1.3.4".toVersion()
-    val fileNameRegex = ".*dataconnect-emulator-([^-]+)-v(.*)".toRegex()
+    val fileNameRegex =
+      ".*dataconnect-emulator-(?<os>[^-]+)(-(?<arch>[^-]+))?-v(?<version>.*)".toRegex()
 
     /**
      * Creates and returns a new list that contains all elements of the receiving [Iterable] that
@@ -278,7 +323,9 @@ abstract class UpdateDataConnectExecutableVersionsTask : DefaultTask() {
       registry: DataConnectExecutableVersionsRegistry.Root
     ): List<CloudStorageVersionInfo> = filterNot { cloudStorageVersion ->
       registry.versions.any {
-        it.version == cloudStorageVersion.version && it.os == cloudStorageVersion.operatingSystem
+        it.version == cloudStorageVersion.version &&
+          it.os == cloudStorageVersion.operatingSystem &&
+          it.arch == cloudStorageVersion.cpuArchitecture
       }
     }
 

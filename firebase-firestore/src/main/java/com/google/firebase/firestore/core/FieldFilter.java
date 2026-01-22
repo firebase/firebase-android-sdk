@@ -14,13 +14,19 @@
 
 package com.google.firebase.firestore.core;
 
+import static com.google.firebase.firestore.model.Values.isNanValue;
+import static com.google.firebase.firestore.pipeline.Expression.and;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
+import androidx.annotation.NonNull;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.Values;
+import com.google.firebase.firestore.pipeline.BooleanExpression;
+import com.google.firebase.firestore.pipeline.Field;
 import com.google.firebase.firestore.util.Assert;
 import com.google.firestore.v1.Value;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -172,6 +178,65 @@ public class FieldFilter extends Filter {
   public List<Filter> getFilters() {
     // This is the only filter within this object, so we return a list of size one.
     return Collections.singletonList(this);
+  }
+
+  @Override
+  BooleanExpression toPipelineExpr() {
+    Field x = new Field(field);
+    BooleanExpression exists = x.exists();
+    switch (operator) {
+      case LESS_THAN:
+        return and(exists, x.lessThan(value));
+      case LESS_THAN_OR_EQUAL:
+        return and(exists, x.lessThanOrEqual(value));
+      case EQUAL:
+        return and(exists, x.equal(value));
+      case NOT_EQUAL:
+        // In Enterprise DBs NOT_EQUAL will match a field that does not exist,
+        // therefore we do not want an existence filter for the NOT_EQUAL conversion
+        // so the Query and Pipeline behavior are consistent in Enterprise.
+        return x.notEqual(value);
+      case GREATER_THAN:
+        return and(exists, x.greaterThan(value));
+      case GREATER_THAN_OR_EQUAL:
+        return and(exists, x.greaterThanOrEqual(value));
+      case ARRAY_CONTAINS:
+        return and(exists, x.arrayContains(value));
+      case ARRAY_CONTAINS_ANY:
+        return and(exists, x.arrayContainsAny(value.getArrayValue().getValuesList()));
+      case IN:
+        return and(exists, x.equalAny(value.getArrayValue().getValuesList()));
+      case NOT_IN:
+        {
+          List<Value> list = value.getArrayValue().getValuesList();
+          // In Enterprise DBs NOT_IN will match a field that does not exist,
+          // therefore we do not want an existence filter for the NOT_IN conversion
+          // so the Query and Pipeline behavior are consistent in Enterprise.
+          return x.notEqualAny(list);
+        }
+      default:
+        // Handle OPERATOR_UNSPECIFIED and UNRECOGNIZED cases as needed
+        throw new IllegalArgumentException("Unsupported operator: " + operator);
+    }
+  }
+
+  private static boolean hasNaN(List<Value> list) {
+    for (Value v : list) {
+      if (isNanValue(v)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  @NonNull
+  private static List<Value> filterNaN(List<Value> list) {
+    List<Value> listWithoutNan = new ArrayList<>(list.size() - 1);
+    for (Value v : list) {
+      if (isNanValue(v)) continue;
+      listWithoutNan.add(v);
+    }
+    return listWithoutNan;
   }
 
   @Override

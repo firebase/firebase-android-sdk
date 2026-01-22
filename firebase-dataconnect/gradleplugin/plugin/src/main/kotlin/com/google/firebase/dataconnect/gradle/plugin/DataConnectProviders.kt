@@ -62,6 +62,8 @@ class DataConnectProviders(
 
   val operatingSystem: Provider<OperatingSystem> = project.provider { OperatingSystem.current() }
 
+  val cpuArchitecture: Provider<CpuArchitecture> = project.provider { CpuArchitecture.current() }
+
   val postgresConnectionUrl: Provider<String> = run {
     val gradlePropertyName = "dataconnect.emulator.postgresConnectionUrl"
     val valueFromLocalSettings: Provider<String> = localSettings.postgresConnectionUrl

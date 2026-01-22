@@ -1,5 +1,17 @@
 # Unreleased
 
+- [feature] Added support for configuring thinking levels with Gemini 3 series
+  models and onwards. (#7599)
+- [changed] Added `equals()` function to `GenerativeBackend`.
+
+# 17.7.0
+
+- [changed] Added `LiveAudioConversationConfig` to control different aspects of the conversation
+  while using the `startAudioConversation` function.
+- [fixed] Fixed an issue causing streaming chat interactions to drop thought signatures. (#7562)
+
+# 17.6.0
+
 - [feature] Added support for server templates via `TemplateGenerativeModel` and
   `TemplateImagenModel`. (#7503)
 

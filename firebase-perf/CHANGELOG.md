@@ -1,5 +1,7 @@
 # Unreleased
 
+# 22.0.4
+
 - [fixed] Fixed StrictMode DiskReadViolation prompted by AppStartTrace setup. [#7340]
 
 # 22.0.3
@@ -453,3 +455,4 @@ Kotlin extensions library has no additional updates.
 
 - [fixed] Fixed a `SecurityException` crash on certain devices that do not have Google Play Services
   on them.
+

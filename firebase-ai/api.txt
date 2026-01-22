@@ -165,6 +165,7 @@ package com.google.firebase.ai.java {
     method public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> sendVideoRealtime(com.google.firebase.ai.type.InlineData video);
     method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> startAudioConversation();
     method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> startAudioConversation(boolean enableInterruptions);
+    method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> startAudioConversation(com.google.firebase.ai.type.LiveAudioConversationConfig liveAudioConversationConfig);
     method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> startAudioConversation(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.FunctionCallPart,com.google.firebase.ai.type.FunctionResponsePart>? functionCallHandler);
     method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> startAudioConversation(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.FunctionCallPart,com.google.firebase.ai.type.FunctionResponsePart>? functionCallHandler, boolean enableInterruptions);
     method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public abstract com.google.common.util.concurrent.ListenableFuture<kotlin.Unit> startAudioConversation(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.FunctionCallPart,com.google.firebase.ai.type.FunctionResponsePart>? functionCallHandler, kotlin.jvm.functions.Function2<? super com.google.firebase.ai.type.Transcription?,? super com.google.firebase.ai.type.Transcription?,kotlin.Unit>? transcriptHandler, boolean enableInterruptions);
@@ -874,6 +875,31 @@ package com.google.firebase.ai.type {
   public final class InvalidStateException extends com.google.firebase.ai.type.FirebaseAIException {
   }
 
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class LiveAudioConversationConfig {
+    field public static final com.google.firebase.ai.type.LiveAudioConversationConfig.Companion Companion;
+  }
+
+  public static final class LiveAudioConversationConfig.Builder {
+    ctor public LiveAudioConversationConfig.Builder();
+    method public com.google.firebase.ai.type.LiveAudioConversationConfig build();
+    method public com.google.firebase.ai.type.LiveAudioConversationConfig.Builder setEnableInterruptions(boolean enableInterruptions);
+    method public com.google.firebase.ai.type.LiveAudioConversationConfig.Builder setFunctionCallHandler(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.FunctionCallPart,com.google.firebase.ai.type.FunctionResponsePart>? functionCallHandler);
+    method public com.google.firebase.ai.type.LiveAudioConversationConfig.Builder setInitializationHandler(kotlin.jvm.functions.Function2<? super android.media.AudioRecord.Builder,? super android.media.AudioTrack.Builder,kotlin.Unit>? initializationHandler);
+    method public com.google.firebase.ai.type.LiveAudioConversationConfig.Builder setTranscriptHandler(kotlin.jvm.functions.Function2<? super com.google.firebase.ai.type.Transcription?,? super com.google.firebase.ai.type.Transcription?,kotlin.Unit>? transcriptHandler);
+    field public boolean enableInterruptions;
+    field public kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.FunctionCallPart,com.google.firebase.ai.type.FunctionResponsePart>? functionCallHandler;
+    field public kotlin.jvm.functions.Function2<? super android.media.AudioRecord.Builder,? super android.media.AudioTrack.Builder,kotlin.Unit>? initializationHandler;
+    field public kotlin.jvm.functions.Function2<? super com.google.firebase.ai.type.Transcription?,? super com.google.firebase.ai.type.Transcription?,kotlin.Unit>? transcriptHandler;
+  }
+
+  public static final class LiveAudioConversationConfig.Companion {
+    method public com.google.firebase.ai.type.LiveAudioConversationConfig.Builder builder();
+  }
+
+  public final class LiveAudioConversationConfigKt {
+    method public static com.google.firebase.ai.type.LiveAudioConversationConfig liveAudioConversationConfig(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.LiveAudioConversationConfig.Builder,kotlin.Unit> init);
+  }
+
   @com.google.firebase.ai.type.PublicPreviewAPI public final class LiveGenerationConfig {
     field public static final com.google.firebase.ai.type.LiveGenerationConfig.Companion Companion;
   }
@@ -958,6 +984,7 @@ package com.google.firebase.ai.type {
     method @Deprecated public suspend Object? sendMediaStream(java.util.List<com.google.firebase.ai.type.MediaData> mediaChunks, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public suspend Object? sendTextRealtime(String text, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public suspend Object? sendVideoRealtime(com.google.firebase.ai.type.InlineData video, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public suspend Object? startAudioConversation(com.google.firebase.ai.type.LiveAudioConversationConfig liveAudioConversationConfig, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public suspend Object? startAudioConversation(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.FunctionCallPart,com.google.firebase.ai.type.FunctionResponsePart>? functionCallHandler = null, boolean enableInterruptions = false, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public suspend Object? startAudioConversation(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.FunctionCallPart,com.google.firebase.ai.type.FunctionResponsePart>? functionCallHandler = null, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public suspend Object? startAudioConversation(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.FunctionCallPart,com.google.firebase.ai.type.FunctionResponsePart>? functionCallHandler = null, kotlin.jvm.functions.Function2<? super com.google.firebase.ai.type.Transcription?,? super com.google.firebase.ai.type.Transcription?,kotlin.Unit>? transcriptHandler = null, boolean enableInterruptions = false, kotlin.coroutines.Continuation<? super kotlin.Unit>);
@@ -1262,10 +1289,24 @@ package com.google.firebase.ai.type {
     method public com.google.firebase.ai.type.ThinkingConfig build();
     method public com.google.firebase.ai.type.ThinkingConfig.Builder setIncludeThoughts(boolean includeThoughts);
     method public com.google.firebase.ai.type.ThinkingConfig.Builder setThinkingBudget(int thinkingBudget);
+    method public com.google.firebase.ai.type.ThinkingConfig.Builder setThinkingLevel(com.google.firebase.ai.type.ThinkingLevel thinkingLevel);
   }
 
   public final class ThinkingConfigKt {
     method public static com.google.firebase.ai.type.ThinkingConfig thinkingConfig(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.ThinkingConfig.Builder,kotlin.Unit> init);
+  }
+
+  public final class ThinkingLevel {
+    method public int getOrdinal();
+    property public final int ordinal;
+    field public static final com.google.firebase.ai.type.ThinkingLevel.Companion Companion;
+    field public static final com.google.firebase.ai.type.ThinkingLevel HIGH;
+    field public static final com.google.firebase.ai.type.ThinkingLevel LOW;
+    field public static final com.google.firebase.ai.type.ThinkingLevel MEDIUM;
+    field public static final com.google.firebase.ai.type.ThinkingLevel MINIMAL;
+  }
+
+  public static final class ThinkingLevel.Companion {
   }
 
   public final class Tool {
@@ -1332,6 +1373,8 @@ package com.google.firebase.ai.type {
 
   public final class UsageMetadata {
     ctor @Deprecated public UsageMetadata(int promptTokenCount, Integer? candidatesTokenCount, int totalTokenCount, java.util.List<com.google.firebase.ai.type.ModalityTokenCount> promptTokensDetails, java.util.List<com.google.firebase.ai.type.ModalityTokenCount> candidatesTokensDetails, int thoughtsTokenCount);
+    method public java.util.List<com.google.firebase.ai.type.ModalityTokenCount> getCacheTokensDetails();
+    method public int getCachedContentTokenCount();
     method public Integer? getCandidatesTokenCount();
     method public java.util.List<com.google.firebase.ai.type.ModalityTokenCount> getCandidatesTokensDetails();
     method public int getPromptTokenCount();
@@ -1340,6 +1383,8 @@ package com.google.firebase.ai.type {
     method public int getToolUsePromptTokenCount();
     method public java.util.List<com.google.firebase.ai.type.ModalityTokenCount> getToolUsePromptTokensDetails();
     method public int getTotalTokenCount();
+    property public final java.util.List<com.google.firebase.ai.type.ModalityTokenCount> cacheTokensDetails;
+    property public final int cachedContentTokenCount;
     property public final Integer? candidatesTokenCount;
     property public final java.util.List<com.google.firebase.ai.type.ModalityTokenCount> candidatesTokensDetails;
     property public final int promptTokenCount;
