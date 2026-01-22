@@ -18,8 +18,10 @@
 
 package com.google.firebase.dataconnect.core
 
+import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.QueryRef
+import com.google.firebase.dataconnect.QueryRef.FetchPolicy
 import com.google.firebase.dataconnect.QueryResult
 import com.google.firebase.dataconnect.QuerySubscription
 import java.util.Objects
@@ -49,7 +51,11 @@ internal class QueryRefImpl<Data, Variables>(
     variablesSerializersModule = variablesSerializersModule,
   ) {
   override suspend fun execute(): QueryResultImpl =
-    dataConnect.queryManager.execute(this).let { QueryResultImpl(it.ref.getOrThrow()) }
+    dataConnect.queryManager.execute(this).let {
+      QueryResultImpl(it.ref.getOrThrow(), DataSource.SERVER)
+    }
+
+  override suspend fun execute(fetchPolicy: FetchPolicy): QueryResult<Data, Variables> = TODO()
 
   override fun subscribe(): QuerySubscription<Data, Variables> = QuerySubscriptionImpl(this)
 
@@ -134,16 +140,18 @@ internal class QueryRefImpl<Data, Variables>(
       "variablesSerializersModule=$variablesSerializersModule" +
       ")"
 
-  inner class QueryResultImpl(data: Data) :
+  inner class QueryResultImpl(data: Data, override val dataSource: DataSource) :
     QueryResult<Data, Variables>, OperationRefImpl<Data, Variables>.OperationResultImpl(data) {
 
     override val ref = this@QueryRefImpl
 
     override fun equals(other: Any?) =
-      other is QueryRefImpl<*, *>.QueryResultImpl && super.equals(other)
+      other is QueryRefImpl<*, *>.QueryResultImpl &&
+        super.equals(other) &&
+        other.dataSource == dataSource
 
-    override fun hashCode() = Objects.hash(QueryResultImpl::class, data, ref)
+    override fun hashCode() = Objects.hash(QueryResultImpl::class, data, ref, dataSource)
 
-    override fun toString() = "QueryResultImpl(data=$data, ref=$ref)"
+    override fun toString() = "QueryResultImpl(data=$data, ref=$ref, dataSource=$dataSource)"
   }
 }

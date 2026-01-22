@@ -18,6 +18,7 @@
 
 package com.google.firebase.dataconnect.testutil.property.arbitrary
 
+import com.google.firebase.dataconnect.CacheSettings
 import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.DataConnectSettings
@@ -28,15 +29,18 @@ import io.kotest.property.arbitrary.alphanumeric
 import io.kotest.property.arbitrary.arabic
 import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.ascii
+import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.boolean
 import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.choose
 import io.kotest.property.arbitrary.cyrillic
 import io.kotest.property.arbitrary.double
 import io.kotest.property.arbitrary.egyptianHieroglyphs
+import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.hex
 import io.kotest.property.arbitrary.int
+import io.kotest.property.arbitrary.long
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.orNull
 import io.kotest.property.arbitrary.string
@@ -123,15 +127,23 @@ object DataConnectArb {
       "host_${string.bind()}"
     }
 
+  fun maxCacheSizeBytes(): Arb<Long> = Arb.long(min = 0)
+
+  fun invalidMaxCacheSizeBytes(): Arb<Long> = Arb.long(max = -1)
+
+  fun cacheSettings(
+    storage: Arb<CacheSettings.Storage> = Arb.enum<CacheSettings.Storage>(),
+    maxSizeBytes: Arb<Long> = maxCacheSizeBytes(),
+  ): Arb<CacheSettings> = Arb.bind(storage, maxSizeBytes, ::CacheSettings)
+
   fun dataConnectSettings(
     prefix: String? = null,
     host: Arb<String> = host(),
     sslEnabled: Arb<Boolean> = Arb.boolean(),
+    cacheSettings: Arb<CacheSettings?> = cacheSettings().orNull(nullProbability = 0.33),
   ): Arb<DataConnectSettings> {
     val wrappedHost = prefix?.let { host.withPrefix(it) } ?: host
-    return arbitrary {
-      DataConnectSettings(host = wrappedHost.bind(), sslEnabled = sslEnabled.bind())
-    }
+    return Arb.bind(wrappedHost, sslEnabled, cacheSettings, ::DataConnectSettings)
   }
 
   fun tag(string: Arb<String> = Arb.string(size = 50, Codepoint.alphanumeric())): Arb<String> =
