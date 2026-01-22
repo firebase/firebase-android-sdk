@@ -17,6 +17,7 @@ package com.google.android.datatransport;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.auto.value.AutoValue;
+import java.util.List;
 
 @AutoValue
 public abstract class EventContext {
@@ -31,6 +32,10 @@ public abstract class EventContext {
   @SuppressWarnings("mutable")
   public abstract byte[] getExperimentIdsEncrypted();
 
+  @Nullable
+  @SuppressWarnings("mutable")
+  public abstract List<byte[]> getExperimentIdsEncryptedList();
+
   public static Builder builder() {
     return new AutoValue_EventContext.Builder();
   }
@@ -44,10 +49,10 @@ public abstract class EventContext {
     public abstract Builder setExperimentIdsClear(byte[] value);
 
     @NonNull
-    public abstract Builder getExperimentIdsEncryptedList(byte[][] value);
+    public abstract Builder setExperimentIdsEncrypted(byte[] value);
 
     @NonNull
-    public abstract Builder setExperimentIdsEncrypted(byte[] value);
+    public abstract Builder setExperimentIdsEncryptedList(List<byte[]> value);
 
     @NonNull
     public abstract EventContext build();
