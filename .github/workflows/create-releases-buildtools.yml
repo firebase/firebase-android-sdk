@@ -12,6 +12,9 @@ on:
           - crashlytics
           - performance
 
+permissions:
+  contents: read
+
 env:
   ARTIFACTS: ${{ github.workspace }}/build/artifacts
 
