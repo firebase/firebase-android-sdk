@@ -1,5 +1,7 @@
 # Unreleased
 
+- [fixed] fixed typo in message logged when a class is not found during component discovery.
+
 # 19.0.0
 
 - [changed] **Breaking Change**: Updated minSdkVersion to API level 23 or higher.
