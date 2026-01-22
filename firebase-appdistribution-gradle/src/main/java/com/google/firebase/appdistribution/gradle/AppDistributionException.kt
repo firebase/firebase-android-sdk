@@ -92,7 +92,7 @@ constructor(
     GET_TEST_RETRIEVAL_FAILURE("App Distribution could not retrieve the test."),
     GET_TEST_TIMEOUT("It took longer than expected to process your test, please try again."),
     GET_TEST_FAILED("Automated test failed or was inconclusive."),
-    TEST_CASE_NOT_FOUND("Could not find find test case with ID"),
+    TEST_CASE_NOT_FOUND("Could not find test case with ID"),
     TEST_CASE_WITH_LOGIN_RESOURCES(
       "Username or password resources for automatic login cannot be specified when test cases IDs are set"
     ),

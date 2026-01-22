@@ -182,7 +182,7 @@ class TestGradleProject : ExternalResource() {
    */
   @Throws(IOException::class)
   private fun writeLocalProperties() =
-    writeFile(localProperties, "sdk.dir=${System.getenv("ANDROID_SDK_ROOT")}")
+    writeFile(localProperties, "sdk.dir=${System.getenv("ANDROID_HOME")}")
 
   /** Utility for creating a file in the project dir */
   @Throws(IOException::class) fun createFile(fileName: String?) = projectDir.newFile(fileName)

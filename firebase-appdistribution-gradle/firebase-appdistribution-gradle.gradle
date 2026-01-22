@@ -209,7 +209,6 @@ dependencies {
   testImplementation(gradleApi())
   testImplementation(libs.junit)
   testImplementation("com.android.tools.build:gradle:7.2.0")
-  testImplementation("org.mockito:mockito-core:3.3.3")
   testImplementation("com.github.stefanbirkner:system-rules:1.19.0")
   testImplementation("org.mockito:mockito-core:4.11.0")
   testImplementation("org.mockito.kotlin:mockito-kotlin:4.1.0")

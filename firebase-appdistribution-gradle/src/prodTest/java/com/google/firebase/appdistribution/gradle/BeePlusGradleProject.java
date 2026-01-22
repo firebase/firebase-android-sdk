@@ -56,8 +56,10 @@ class BeePlusGradleProject extends ExternalResource {
   }
 
   static final String PACKAGE_NAME = "com.firebase.appdistribution.prober";
-  static final String LATEST_AGP_VERSION = "9.0.0-beta01";
-  static final String LATEST_GRADLE_VERSION = "9.2.1";
+  // Also remember to update the latest AGP/gradle versions in UploadDistributionTaskTest.kt
+  // firebase-appdistribution-gradle/src/integrationTest/java/com/google/firebase/appdistribution/gradle/UploadDistributionTaskTest.kt#L724-L726
+  static final String LATEST_AGP_VERSION = "9.1.0-alpha05";
+  static final String LATEST_GRADLE_VERSION = "9.3.0";
   // The project number for App Distro Probes. We need to use this project
   // because this is the one that's actually linked to play for BeePlus,
   // which is required for AAB uploads.
@@ -106,7 +108,7 @@ class BeePlusGradleProject extends ExternalResource {
             String.join(",", emails))
         .withPluginClasspath(pluginClasspathFiles)
         .withGradleVersion(LATEST_GRADLE_VERSION)
-        .withEnvironment(ImmutableMap.of("FIREBASE_TOKEN", getToken()))
+        .withEnvironment(getEnvironment())
         .build();
   }
 
@@ -122,7 +124,7 @@ class BeePlusGradleProject extends ExternalResource {
             emailsFile.getAbsolutePath())
         .withPluginClasspath(pluginClasspathFiles)
         .withGradleVersion(LATEST_GRADLE_VERSION)
-        .withEnvironment(ImmutableMap.of("FIREBASE_TOKEN", getToken()))
+        .withEnvironment(getEnvironment())
         .build();
   }
 
@@ -139,7 +141,7 @@ class BeePlusGradleProject extends ExternalResource {
             "--debug")
         .withPluginClasspath(pluginClasspathFiles)
         .withGradleVersion(LATEST_GRADLE_VERSION)
-        .withEnvironment(ImmutableMap.of("FIREBASE_TOKEN", getToken()))
+        .withEnvironment(getEnvironment())
         .build();
   }
 
@@ -156,7 +158,7 @@ class BeePlusGradleProject extends ExternalResource {
             "--debug")
         .withPluginClasspath(pluginClasspathFiles)
         .withGradleVersion(LATEST_GRADLE_VERSION)
-        .withEnvironment(ImmutableMap.of("FIREBASE_TOKEN", getToken()))
+        .withEnvironment(getEnvironment())
         .build();
   }
 
@@ -166,7 +168,7 @@ class BeePlusGradleProject extends ExternalResource {
         .withArguments("assembleDebug", "appDistributionUploadDebug", "--info")
         .withPluginClasspath(pluginClasspathFiles)
         .withGradleVersion(LATEST_GRADLE_VERSION)
-        .withEnvironment(ImmutableMap.of("FIREBASE_TOKEN", getToken()))
+        .withEnvironment(getEnvironment())
         .build();
   }
 
@@ -176,7 +178,7 @@ class BeePlusGradleProject extends ExternalResource {
         .withArguments("bundleDebug", "appDistributionUploadDebug", "--info")
         .withPluginClasspath(pluginClasspathFiles)
         .withGradleVersion(LATEST_GRADLE_VERSION)
-        .withEnvironment(ImmutableMap.of("FIREBASE_TOKEN", getToken()))
+        .withEnvironment(getEnvironment())
         .build();
   }
 
@@ -187,6 +189,18 @@ class BeePlusGradleProject extends ExternalResource {
           "FIREBASE_TOKEN environment variable not set. This is required for production tests.");
     }
     return token;
+  }
+
+  private ImmutableMap<String, String> getEnvironment() {
+    ImmutableMap.Builder<String, String> env = ImmutableMap.builder();
+    env.put("FIREBASE_TOKEN", getToken());
+    String androidHome = System.getenv("ANDROID_HOME");
+    if (isNullOrEmpty(androidHome)) {
+      throw new IllegalStateException(
+          "ANDROID_HOME environment variable not set. This is required for production tests.");
+    }
+    env.put("ANDROID_HOME", androidHome);
+    return env.build();
   }
 
   /** Writes the {@code build.gradle} file for the test project with default build file options */
@@ -222,7 +236,7 @@ class BeePlusGradleProject extends ExternalResource {
                 + "\n"
                 + "android {\n"
                 + "    namespace '%s'\n"
-                + "    compileSdkVersion 27\n"
+                + "    compileSdkVersion 30\n"
                 + "\n"
                 + "    defaultConfig {\n"
                 + "        applicationId '%s'\n"

@@ -51,8 +51,8 @@ public class InstrumentationApiCompatTest {
   private static final String GRADLE_RELEASES_URL =
       "https://api.github.com/repos/gradle/gradle/releases/latest";
   // Latest verified versions. Update these as new versions are released and verified.
-  private static final String VERIFIED_AGP_VERSION = "9.0.0-alpha14";
-  private static final String VERIFIED_GRADLE_VERSION = "9.2.0";
+  private static final String VERIFIED_AGP_VERSION = "9.1.0-alpha03";
+  private static final String VERIFIED_GRADLE_VERSION = "9.2.1";
   private final OkHttpClient client = new OkHttpClient();
 
   @RegisterExtension public GradleBuildProject gradleBuildProject = new GradleBuildProject();
@@ -87,6 +87,14 @@ public class InstrumentationApiCompatTest {
     LOGGER.log(Level.INFO, "Latest Gradle Version: {0}", latestGradleVersion);
     LOGGER.log(Level.INFO, "Latest AGP Version: {0}", latestAgpVersion);
     LOGGER.log(Level.WARNING, "If this test fails, please file an issue or a bug");
+
+    if (latestAgpVersion.equals(VERIFIED_AGP_VERSION)
+        && latestGradleVersion.equals(VERIFIED_GRADLE_VERSION)) {
+      LOGGER.log(
+          Level.INFO,
+          "Latest gradle and AGP versions are identical to verified versions. Skipping test.");
+      return;
+    }
 
     GradleBuildResult result =
         gradleBuildProject
