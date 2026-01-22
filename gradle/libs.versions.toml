@@ -42,9 +42,11 @@ jacksonCore = "2.13.1"
 jacksonDatabind = "2.18.2"
 javalite = "3.25.5"
 jsonassert = "1.5.0"
+junitVintageEngine = "5.10.1"
 kotest = "5.9.0" # Do not use 5.9.1 because it reverts the fix for https://github.com/kotest/kotest/issues/3981
 kotestAssertionsCore = "5.8.1"
-kotlin = "2.0.21"
+kotlin = "2.1.20"
+kotlinCompileTestingExtensions = "2.2.0-1.3.0"
 kotlinpoetKsp = "2.2.0"
 ktorVersion = "3.0.3"
 legacySupportV4 = "1.0.0"
@@ -138,9 +140,11 @@ jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", ver
 javax-annotation-jsr250 = { module = "javax.annotation:jsr250-api", version = "1.0" }
 javax-inject = { module = "javax.inject:javax.inject", version = "1" }
 jsonassert = { module = "org.skyscreamer:jsonassert", version.ref = "jsonassert" }
+junit-vintage-engine = { module = "org.junit.vintage:junit-vintage-engine", version.ref = "junitVintageEngine" }
 kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotestAssertionsCore" }
 kotest-assertions-json = { module = "io.kotest:kotest-assertions-json", version.ref = "kotestAssertionsCore" }
 kotlin-bom = { module = "org.jetbrains.kotlin:kotlin-bom", version.ref = "kotlin" }
+kotlin-compile-testing-extensions = { module = "com.bennyhuo.kotlin:kotlin-compile-testing-extensions", version.ref = "kotlinCompileTestingExtensions" }
 kotlin-coroutines-tasks = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "coroutines" }
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
 kotlin-stdlib-jdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }

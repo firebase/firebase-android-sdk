@@ -21,16 +21,16 @@ plugins {
 }
 
 dependencies {
-  testImplementation(kotlin("test"))
+  testImplementation(libs.junit)
+  testImplementation(libs.kotlin.compile.testing.extensions)
+  testImplementation(libs.junit.vintage.engine)
   implementation(libs.symbol.processing.api)
   implementation(libs.kotlinpoet.ksp)
 }
 
 firebaseLibrary {
   publishJavadoc = false
-  releaseNotes {
-    enabled.set(false)
-  }
+  releaseNotes { enabled.set(false) }
 }
 
 tasks.test { useJUnitPlatform() }
