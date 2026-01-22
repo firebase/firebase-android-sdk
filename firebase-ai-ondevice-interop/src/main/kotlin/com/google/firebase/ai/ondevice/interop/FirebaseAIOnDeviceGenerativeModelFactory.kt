@@ -28,5 +28,5 @@ public interface FirebaseAIOnDeviceGenerativeModelFactory {
    *
    * @return A new [GenerativeModel] instance ready for use.
    */
-  public fun getGenerativeModel(): GenerativeModel
+  public fun newGenerativeModel(): GenerativeModel
 }
