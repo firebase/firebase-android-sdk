@@ -17,6 +17,7 @@
 package com.google.firebase.dataconnect.sqlite
 
 import com.google.firebase.dataconnect.DataConnectPath
+import com.google.firebase.dataconnect.emptyDataConnectPath
 import com.google.firebase.dataconnect.testutil.BuildByteArrayDSL
 import com.google.firebase.dataconnect.testutil.beEqualTo
 import com.google.firebase.dataconnect.testutil.buildByteArray
@@ -29,17 +30,24 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWith
 import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWith3ByteUtf8Encoding
 import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWith4ByteUtf8Encoding
 import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWithEvenNumByteUtf8EncodingDistribution
+import com.google.firebase.dataconnect.testutil.property.arbitrary.listNoRepeat
 import com.google.firebase.dataconnect.testutil.property.arbitrary.listValue
+import com.google.firebase.dataconnect.testutil.property.arbitrary.next
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
+import com.google.firebase.dataconnect.testutil.property.arbitrary.random
+import com.google.firebase.dataconnect.testutil.property.arbitrary.randomSource
+import com.google.firebase.dataconnect.testutil.property.arbitrary.randomlyInsertStruct
 import com.google.firebase.dataconnect.testutil.property.arbitrary.randomlyInsertStructs
 import com.google.firebase.dataconnect.testutil.property.arbitrary.recursivelyEmptyListValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.stringValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.stringWithLoneSurrogates
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
+import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
 import com.google.firebase.dataconnect.testutil.property.arbitrary.twoValues
 import com.google.firebase.dataconnect.testutil.property.arbitrary.withIterations
 import com.google.firebase.dataconnect.testutil.property.arbitrary.withIterationsIfNotNull
 import com.google.firebase.dataconnect.testutil.property.arbitrary.withRandomlyInsertedValues
+import com.google.firebase.dataconnect.testutil.randomlyInsertStruct
 import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.testutil.structOf
 import com.google.firebase.dataconnect.testutil.toValueProto
@@ -70,6 +78,7 @@ import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.distinct
 import io.kotest.property.arbitrary.double
 import io.kotest.property.arbitrary.filterNot
+import io.kotest.property.arbitrary.flatMap
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.list
 import io.kotest.property.arbitrary.long
@@ -323,6 +332,31 @@ class QueryResultEncoderUnitTest {
         structSample.struct.toBuilder().let { structBuilder ->
           val insertPaths = structBuilder.randomlyInsertStructs(entities.map { it.struct })
           entityInfoByPath = insertPaths.zip(entities).toMap()
+          structBuilder.build()
+        }
+
+      rootStruct.decodingEncodingShouldProduceIdenticalStruct(entityInfoByPath)
+    }
+  }
+
+  @Test
+  fun `entities, nested in struct keys`() = runTest {
+    checkAll(propTestConfig, Arb.proto.struct(), nestedEntityArb(nestingLevel = 1..3)) {
+      structSample,
+      nestedEntitySample ->
+      val entityInfoByPath: Map<DataConnectPath, QueryResultEncoder.Entity>
+      val rootStruct =
+        structSample.struct.toBuilder().let { structBuilder ->
+          val rootEntityPath =
+            structBuilder.randomlyInsertStruct(nestedEntitySample.rootEntity.struct)
+
+          entityInfoByPath = buildMap {
+            put(rootEntityPath, nestedEntitySample.rootEntity)
+            nestedEntitySample.nestedEntityByPath.entries.forEach {
+              put(rootEntityPath + it.key, it.value)
+            }
+          }
+
           structBuilder.build()
         }
 
@@ -910,3 +944,50 @@ private fun entityArb(
       structSample.struct
     )
   }
+
+private data class NestedEntitySample(
+  val struct: Struct,
+  val rootEntity: QueryResultEncoder.Entity,
+  val nestedEntityByPath: Map<DataConnectPath, QueryResultEncoder.Entity>,
+)
+
+private fun nestedEntityArb(
+  entityArb: Arb<QueryResultEncoder.Entity> = entityArb(),
+  nestingLevel: IntRange,
+): Arb<NestedEntitySample> {
+  require(nestingLevel.first > 0)
+  require(!nestingLevel.isEmpty())
+
+  val structKeyArb = Arb.proto.structKey()
+  val entitiesArb = Arb.listNoRepeat(entityArb, nestingLevel)
+
+  return Arb.bind(entityArb, entitiesArb, Arb.randomSource()) { rootEntity, otherEntities, rs ->
+    val entitiesRemaining = otherEntities.toMutableList().apply { add(0, rootEntity) }
+    val insertPaths = mutableListOf<DataConnectPath>()
+    var struct = entitiesRemaining.removeLast().struct
+    while (entitiesRemaining.isNotEmpty()) {
+      val parentEntity = entitiesRemaining.removeLast()
+      struct =
+        parentEntity.struct.toBuilder().let { parentEntityStructBuilder ->
+          val insertPath =
+            parentEntityStructBuilder.randomlyInsertStruct(
+              struct,
+              rs.random,
+              generateKey = { structKeyArb.next(rs, edgeCaseProbability = rs.random.nextFloat()) },
+            )
+          insertPaths.add(insertPath)
+          parentEntityStructBuilder.build()
+        }
+    }
+
+    val nestedEntityByPath = buildMap {
+      val pathSoFar = emptyDataConnectPath().toMutableList()
+      insertPaths.zip(otherEntities).forEach { (relativePath, entity) ->
+        pathSoFar.addAll(relativePath)
+        put(pathSoFar.toList(), entity)
+      }
+    }
+
+    NestedEntitySample(struct, rootEntity, nestedEntityByPath)
+  }
+}
