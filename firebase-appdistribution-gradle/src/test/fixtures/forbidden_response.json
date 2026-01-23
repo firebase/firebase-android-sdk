@@ -1,0 +1,18 @@
+{
+  "error": {
+    "code": 403,
+    "message": "Firebase App Distribution API has not been used in project 1003611505072 before or it is disabled. Enable it by visiting https://console.cloud.google.com/apis/api/firebaseappdistribution.googleapis.com/overview?project=fake-project-number then retry. If you enabled this API recently, wait a few minutes for the action to propagate to our systems and retry.",
+    "status": "PERMISSION_DENIED",
+    "details": [
+      {
+        "@type": "type.googleapis.com/google.rpc.Help",
+        "links": [
+          {
+            "description": "Google Cloud Console API activation",
+            "url": "https://console.cloud.google.com/apis/api/firebaseappdistribution.googleapis.com/overview?project=fake-project-number"
+          }
+        ]
+      }
+    ]
+  }
+}
