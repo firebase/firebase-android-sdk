@@ -20,6 +20,7 @@ import com.google.firebase.dataconnect.DataConnectPath
 import com.google.firebase.dataconnect.testutil.BuildByteArrayDSL
 import com.google.firebase.dataconnect.testutil.beEqualTo
 import com.google.firebase.dataconnect.testutil.buildByteArray
+import com.google.firebase.dataconnect.testutil.property.arbitrary.ProtoArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.StringWithEncodingLengthArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.StringWithEncodingLengthArb.Mode.Utf8EncodingLongerThanOrEqualToUtf16
 import com.google.firebase.dataconnect.testutil.property.arbitrary.StringWithEncodingLengthArb.Mode.Utf8EncodingShorterThanUtf16
@@ -62,6 +63,7 @@ import io.kotest.property.PropertyContext
 import io.kotest.property.ShrinkingMode
 import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.alphanumeric
+import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.char
 import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.constant
@@ -310,30 +312,17 @@ class QueryResultEncoderUnitTest {
   */
 
   @Test
-  fun `non-nested entities`() = runTest {
-    val structArb = Arb.proto.struct()
-    checkAll(propTestConfig, structArb, Arb.int(1..3)) { structSample, entityCount ->
-      val entities = List(entityCount) { structArb.bind().struct }
-      @OptIn(DelicateKotest::class) val distinctEntityIdArb = EntityIdSample.arb().distinct()
+  fun `entities, not nested`() = runTest {
+    checkAll(propTestConfig, Arb.proto.struct(), Arb.int(1..3)) { structSample, entityCount ->
+      val entities = run {
+        val entityArb = entityArb()
+        List(entityCount) { entityArb.bind() }
+      }
       val entityInfoByPath: Map<DataConnectPath, QueryResultEncoder.Entity>
       val rootStruct =
         structSample.struct.toBuilder().let { structBuilder ->
-          val insertPaths = structBuilder.randomlyInsertStructs(entities)
-
-          entityInfoByPath = buildMap {
-            insertPaths.zip(entities).forEach { (insertPath, entity) ->
-              val entityId = distinctEntityIdArb.bind().string
-              put(
-                insertPath,
-                QueryResultEncoder.Entity(
-                  entityId,
-                  entityId.calculateUtf16BigEndianSha512Digest(),
-                  entity
-                )
-              )
-            }
-          }
-
+          val insertPaths = structBuilder.randomlyInsertStructs(entities.map { it.struct })
+          entityInfoByPath = insertPaths.zip(entities).toMap()
           structBuilder.build()
         }
 
@@ -899,8 +888,25 @@ private fun charArbWithCodeGreaterThan255(): Arb<Char> {
 }
 
 private data class EntityIdSample(val string: String) {
+
+  val expectedEncoding: ImmutableByteArray = string.calculateUtf16BigEndianSha512Digest()
+
+  operator fun component2(): ImmutableByteArray = expectedEncoding
+
   companion object {
     fun arb(): Arb<EntityIdSample> =
-      Arb.string(10..10, Codepoint.alphanumeric()).map(::EntityIdSample)
+      Arb.string(5..5, Codepoint.alphanumeric()).map(::EntityIdSample)
   }
 }
+
+private fun entityArb(
+  entityIdArb: Arb<EntityIdSample> = @OptIn(DelicateKotest::class) EntityIdSample.arb().distinct(),
+  structArb: Arb<ProtoArb.StructInfo> = Arb.proto.struct(),
+): Arb<QueryResultEncoder.Entity> =
+  Arb.bind(entityIdArb, structArb) { entityIdSample, structSample ->
+    QueryResultEncoder.Entity(
+      entityIdSample.string,
+      entityIdSample.expectedEncoding,
+      structSample.struct
+    )
+  }
