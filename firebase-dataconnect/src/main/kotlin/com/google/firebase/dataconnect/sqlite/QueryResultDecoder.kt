@@ -24,8 +24,8 @@ import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.getSInt64
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.getUInt32
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.getUInt64
 import com.google.firebase.dataconnect.toPathString
+import com.google.firebase.dataconnect.util.ImmutableByteArray
 import com.google.firebase.dataconnect.util.ProtoGraft.withGraftedInStructs
-import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.firebase.dataconnect.util.StringUtil.ellipsizeMiddle
 import com.google.firebase.dataconnect.util.StringUtil.get0xHexString
@@ -43,7 +43,6 @@ import java.nio.CharBuffer
 import java.nio.channels.Channels
 import java.nio.channels.ReadableByteChannel
 import java.nio.charset.CodingErrorAction
-import java.util.Objects
 
 /**
  * This class is NOT thread safe. The behavior of an instance of this class when used concurrently
@@ -51,7 +50,7 @@ import java.util.Objects
  */
 internal class QueryResultDecoder(
   private val channel: ReadableByteChannel,
-  private val entities: List<Entity>,
+  private val entityByEncodedId: Map<ImmutableByteArray, Struct> = emptyMap(),
 ) {
 
   private val charsetDecoder =
@@ -266,7 +265,7 @@ internal class QueryResultDecoder(
     path: DataConnectPath,
     @Suppress("SameParameterValue") name: String,
     byteCount: Int,
-  ): ByteArray {
+  ): ImmutableByteArray {
     val byteArray = ByteArray(byteCount)
     var byteArrayOffset = 0
     while (byteArrayOffset < byteCount) {
@@ -290,7 +289,7 @@ internal class QueryResultDecoder(
       byteArrayOffset += getByteCount
     }
 
-    return byteArray
+    return ImmutableByteArray.adopt(byteArray)
   }
 
   private fun readString(path: DataConnectPath, name: String): String =
@@ -700,11 +699,11 @@ internal class QueryResultDecoder(
 
     val encodedEntityId = readBytes(path, name = "encoded entity ID", encodedEntityIdSize)
     val entity =
-      entities.find { it.encodedId.contentEquals(encodedEntityId) }
+      entityByEncodedId[encodedEntityId]
         ?: throw EntityNotFoundException(
           "could not find entity with encoded id ${encodedEntityId.to0xHexString()} [p583k77y7r]"
         )
-    return readEntitySubStruct(path, entity.data)
+    return readEntitySubStruct(path, entity)
   }
 
   private fun readEntitySubStruct(path: MutableDataConnectPath, entity: Struct): Struct {
@@ -1102,27 +1101,15 @@ internal class QueryResultDecoder(
   class EntityNotFoundException(message: String, cause: Throwable? = null) :
     DecodeException(message, cause)
 
-  class Entity(
-    val encodedId: ByteArray,
-    val data: Struct,
-  ) {
-
-    override fun hashCode(): Int =
-      Objects.hash(Entity::class.java, encodedId.contentHashCode(), data)
-
-    override fun equals(other: Any?): Boolean =
-      other is Entity && other.encodedId.contentEquals(encodedId) && other.data == data
-
-    override fun toString(): String =
-      "Entity(encodedId=${encodedId.to0xHexString()}, data=${data.toCompactString()})"
-  }
-
   companion object {
 
-    fun decode(byteArray: ByteArray, entities: List<Entity>): Struct =
+    fun decode(
+      byteArray: ByteArray,
+      entityByEncodedId: Map<ImmutableByteArray, Struct> = emptyMap()
+    ): Struct =
       ByteArrayInputStream(byteArray).use { byteArrayInputStream ->
         Channels.newChannel(byteArrayInputStream).use { channel ->
-          val decoder = QueryResultDecoder(channel, entities)
+          val decoder = QueryResultDecoder(channel, entityByEncodedId)
           decoder.decode()
         }
       }

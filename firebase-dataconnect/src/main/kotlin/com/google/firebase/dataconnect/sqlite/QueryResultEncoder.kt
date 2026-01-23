@@ -17,12 +17,14 @@
 package com.google.firebase.dataconnect.sqlite
 
 import com.google.firebase.dataconnect.DataConnectPath
+import com.google.firebase.dataconnect.DataConnectPathComparator
 import com.google.firebase.dataconnect.MutableDataConnectPath
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.putSInt32
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.putSInt64
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.putUInt32
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.putUInt64
 import com.google.firebase.dataconnect.toPathString
+import com.google.firebase.dataconnect.util.ImmutableByteArray
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
 import com.google.firebase.dataconnect.withAddedField
@@ -51,13 +53,28 @@ internal class QueryResultEncoder(
   private val entityIdByPath: Map<DataConnectPath, String> = emptyMap(),
 ) {
 
-  val entities: MutableList<Entity> = mutableListOf()
+  val entityByPath = mutableMapOf<DataConnectPath, Entity>()
 
   private val writer = QueryResultChannelWriter(channel)
 
   private val sha512DigestCalculator = Sha512DigestCalculator()
 
-  class EncodeResult(val byteArray: ByteArray, val entities: List<Entity>)
+  data class EncodeResult(
+    val byteArray: ByteArray,
+    val entityByPath: Map<DataConnectPath, Entity>
+  ) {
+    override fun toString() =
+      "EncodeResult(" +
+        "byteArray=${byteArray.contentToString()}, " +
+        "entityByPath[size=${entityByPath.size}]=${entityByPath.toFriendlyString()})"
+
+    override fun equals(other: Any?) =
+      other is EncodeResult &&
+        other.byteArray.contentEquals(byteArray) &&
+        other.entityByPath == entityByPath
+
+    override fun hashCode() = Objects.hash(byteArray, entityByPath)
+  }
 
   fun encode(queryResult: Struct) {
     writer.writeFixed32Int(QueryResultCodec.QUERY_RESULT_MAGIC)
@@ -75,7 +92,7 @@ internal class QueryResultEncoder(
       Value.KindCase.NUMBER_VALUE -> writeDouble(value.numberValue)
       Value.KindCase.BOOL_VALUE -> writeBoolean(value.boolValue)
       Value.KindCase.STRING_VALUE -> writeString(value.stringValue)
-      Value.KindCase.STRUCT_VALUE -> writeStruct(path, value.structValue)
+      Value.KindCase.STRUCT_VALUE -> writeStructOrEntity(path, value.structValue)
       Value.KindCase.LIST_VALUE -> writeList(path, value.listValue)
     }
   }
@@ -170,6 +187,15 @@ internal class QueryResultEncoder(
     }
   }
 
+  private fun writeStructOrEntity(path: MutableDataConnectPath, struct: Struct) {
+    val entityId = path.getEntityId()
+    if (entityId === null) {
+      writeStruct(path, struct)
+    } else {
+      writeEntity(path, entityId, struct)
+    }
+  }
+
   private fun writeStruct(path: MutableDataConnectPath, struct: Struct) {
     writer.writeByte(QueryResultCodec.VALUE_STRUCT)
     writeStructProper(path, struct)
@@ -191,29 +217,42 @@ internal class QueryResultEncoder(
     }
   }
 
+  private fun writeEntity(path: MutableDataConnectPath, entityId: String, struct: Struct) {
+    writer.writeByte(QueryResultCodec.VALUE_ENTITY)
+    val encodedEntityId = writeEntityId(entityId)
+    writer.writeUInt32(struct.fieldsCount)
+
+    struct.fieldsMap.entries.forEach { (key, value) ->
+      writeString(key)
+      writer.writeByte(QueryResultCodec.VALUE_FROM_ENTITY)
+      path.withAddedField(key) { writeValue(path, value) }
+    }
+
+    entityByPath[path.toList()] = Entity(entityId, encodedEntityId, struct)
+  }
+
+  private fun writeEntityId(entityId: String): ImmutableByteArray {
+    val encodedEntityId = sha512DigestCalculator.calculate(entityId)
+    writer.writeUInt32(encodedEntityId.size)
+    writer.write(ByteBuffer.wrap(encodedEntityId))
+    return ImmutableByteArray.adopt(encodedEntityId)
+  }
+
+  private fun DataConnectPath.getEntityId(): String? = entityIdByPath[this]
+
   class Entity(
-    val path: DataConnectPath,
     val id: String,
-    val encodedId: ByteArray,
-    val data: Struct,
+    val encodedId: ImmutableByteArray,
+    val struct: Struct,
   ) {
 
-    override fun hashCode(): Int =
-      Objects.hash(Entity::class.java, path, id, encodedId.contentHashCode(), data)
+    override fun hashCode(): Int = Objects.hash(Entity::class.java, id, encodedId, struct)
 
     override fun equals(other: Any?): Boolean =
-      other is Entity &&
-        other.path == path &&
-        other.id == id &&
-        other.encodedId.contentEquals(encodedId) &&
-        other.data == data
+      other is Entity && other.id == id && other.encodedId == encodedId && other.struct == struct
 
     override fun toString(): String =
-      "Entity(" +
-        "path=${path.toPathString()}, " +
-        "id=$id, " +
-        "encodedId=${encodedId.to0xHexString()}, " +
-        "data=${data.toCompactString()})"
+      "Entity(id=$id, encodedId=${encodedId.to0xHexString()}, data=${struct.toCompactString()})"
   }
 
   companion object {
@@ -223,14 +262,14 @@ internal class QueryResultEncoder(
       entityIdByPath: Map<DataConnectPath, String> = emptyMap()
     ): EncodeResult =
       ByteArrayOutputStream().use { byteArrayOutputStream ->
-        val entities =
+        val entityByPath =
           Channels.newChannel(byteArrayOutputStream).use { writableByteChannel ->
             val encoder = QueryResultEncoder(writableByteChannel, entityIdByPath)
             encoder.encode(queryResult)
             encoder.flush()
-            encoder.entities
+            encoder.entityByPath.toMap()
           }
-        EncodeResult(byteArrayOutputStream.toByteArray(), entities.toList())
+        EncodeResult(byteArrayOutputStream.toByteArray(), entityByPath)
       }
   }
 }
@@ -555,3 +594,10 @@ private sealed interface DoubleEncoding {
     }
   }
 }
+
+private fun Map<DataConnectPath, QueryResultEncoder.Entity>.toFriendlyString(): String =
+  "{" +
+    toSortedMap(DataConnectPathComparator).entries.joinToString { (path, entity) ->
+      path.toPathString() + "=" + entity
+    } +
+    "}"

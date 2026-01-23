@@ -44,13 +44,15 @@ import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.Utf8IncorrectNu
 import com.google.firebase.dataconnect.sqlite.QueryResultDecoder.ValueTypeIndicatorEOFException
 import com.google.firebase.dataconnect.testutil.BuildByteArrayDSL
 import com.google.firebase.dataconnect.testutil.buildByteArray
+import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
+import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
 import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
-import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
+import com.google.firebase.dataconnect.testutil.structOf
+import com.google.firebase.dataconnect.util.ImmutableByteArray
 import com.google.firebase.dataconnect.util.StringUtil.ellipsizeMiddle
 import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
-import com.google.protobuf.Struct
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.common.ExperimentalKotest
@@ -561,7 +563,7 @@ class QueryResultDecoderUnitTest {
   fun `encoded entity id very long should be decodable`() = runTest {
     class VeryLongEncodedEntityIdTestCase(
       val veryLongEncodedEntityId: ByteArray,
-      val randomValue: Int,
+      val randomValue: String,
     ) {
       override fun toString(): String =
         "${this::class.simpleName}(" +
@@ -572,7 +574,7 @@ class QueryResultDecoderUnitTest {
     val arb =
       Arb.bind(
         Arb.byteArray(Arb.int(2000..90000), Arb.byte()),
-        Arb.int(),
+        Arb.proto.structKey(),
         ::VeryLongEncodedEntityIdTestCase
       )
 
@@ -587,15 +589,13 @@ class QueryResultDecoderUnitTest {
         put(QueryResultCodec.VALUE_STRING_EMPTY)
         put(QueryResultCodec.VALUE_KIND_NOT_SET)
       }
-      val entity =
-        QueryResultDecoder.Entity(
-          encodedId = testCase.veryLongEncodedEntityId,
-          data = Struct.newBuilder().putFields("", testCase.randomValue.toValueProto()).build()
-        )
+      val encodedEntityId = ImmutableByteArray.adopt(testCase.veryLongEncodedEntityId)
+      val entity = structOf("", testCase.randomValue)
+      val entityByEncodedId = mapOf(encodedEntityId to entity)
 
-      val decodeResult = decode(byteArray, listOf(entity))
+      val decodeResult = decode(byteArray, entityByEncodedId)
 
-      decodeResult shouldBe entity.data
+      decodeResult shouldBe entity
     }
   }
 
@@ -1039,7 +1039,7 @@ class QueryResultDecoderUnitTest {
   ) {
     val dsl = AssertDecodeThrowsDSL().apply(config)
 
-    val exception = shouldThrow<E> { decode(byteArray, emptyList()) }
+    val exception = shouldThrow<E> { decode(byteArray) }
 
     assertSoftly {
       dsl.messageSubstringsWithNonAbuttingText.forEach {

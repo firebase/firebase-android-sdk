@@ -30,6 +30,7 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWith
 import com.google.firebase.dataconnect.testutil.property.arbitrary.codepointWithEvenNumByteUtf8EncodingDistribution
 import com.google.firebase.dataconnect.testutil.property.arbitrary.listValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
+import com.google.firebase.dataconnect.testutil.property.arbitrary.randomlyInsertStructs
 import com.google.firebase.dataconnect.testutil.property.arbitrary.recursivelyEmptyListValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.stringValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.stringWithLoneSurrogates
@@ -41,6 +42,7 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.withRandomlyI
 import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.testutil.structOf
 import com.google.firebase.dataconnect.testutil.toValueProto
+import com.google.firebase.dataconnect.util.ImmutableByteArray
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
 import com.google.protobuf.ListValue
@@ -49,7 +51,7 @@ import com.google.protobuf.Value
 import io.kotest.assertions.withClue
 import io.kotest.common.DelicateKotest
 import io.kotest.common.ExperimentalKotest
-import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.maps.shouldContainExactly
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
@@ -60,7 +62,6 @@ import io.kotest.property.PropertyContext
 import io.kotest.property.ShrinkingMode
 import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.alphanumeric
-import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.char
 import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.constant
@@ -106,7 +107,7 @@ class QueryResultEncoderUnitTest {
       }
 
       encodeResult.byteArray shouldBe expectedEncodedBytes
-      QueryResultDecoder.decode(encodeResult.byteArray, emptyList()) shouldBe struct
+      QueryResultDecoder.decode(encodeResult.byteArray) shouldBe struct
     }
   }
 
@@ -125,7 +126,7 @@ class QueryResultEncoderUnitTest {
       }
 
       encodeResult.byteArray shouldBe expectedEncodedBytes
-      QueryResultDecoder.decode(encodeResult.byteArray, emptyList()) shouldBe struct
+      QueryResultDecoder.decode(encodeResult.byteArray) shouldBe struct
     }
   }
 
@@ -152,7 +153,7 @@ class QueryResultEncoderUnitTest {
       }
 
       encodeResult.byteArray shouldBe expectedEncodedBytes
-      QueryResultDecoder.decode(encodeResult.byteArray, emptyList()) shouldBe struct
+      QueryResultDecoder.decode(encodeResult.byteArray) shouldBe struct
     }
   }
 
@@ -170,7 +171,7 @@ class QueryResultEncoderUnitTest {
     }
 
     encodeResult.byteArray shouldBe expectedEncodedBytes
-    QueryResultDecoder.decode(encodeResult.byteArray, emptyList()) shouldBe struct
+    QueryResultDecoder.decode(encodeResult.byteArray) shouldBe struct
   }
 
   @Test
@@ -187,7 +188,7 @@ class QueryResultEncoderUnitTest {
     }
 
     encodeResult.byteArray shouldBe expectedEncodedBytes
-    QueryResultDecoder.decode(encodeResult.byteArray, emptyList()) shouldBe struct
+    QueryResultDecoder.decode(encodeResult.byteArray) shouldBe struct
   }
 
   @Test
@@ -236,7 +237,7 @@ class QueryResultEncoderUnitTest {
       }
 
       encodeResult.byteArray shouldBe expectedEncodedBytes
-      QueryResultDecoder.decode(encodeResult.byteArray, emptyList()) shouldBe struct
+      QueryResultDecoder.decode(encodeResult.byteArray) shouldBe struct
     }
   }
 
@@ -307,6 +308,38 @@ class QueryResultEncoderUnitTest {
       }
     }
   */
+
+  @Test
+  fun `non-nested entities`() = runTest {
+    val structArb = Arb.proto.struct()
+    checkAll(propTestConfig, structArb, Arb.int(1..3)) { structSample, entityCount ->
+      val entities = List(entityCount) { structArb.bind().struct }
+      @OptIn(DelicateKotest::class) val distinctEntityIdArb = EntityIdSample.arb().distinct()
+      val entityInfoByPath: Map<DataConnectPath, QueryResultEncoder.Entity>
+      val rootStruct =
+        structSample.struct.toBuilder().let { structBuilder ->
+          val insertPaths = structBuilder.randomlyInsertStructs(entities)
+
+          entityInfoByPath = buildMap {
+            insertPaths.zip(entities).forEach { (insertPath, entity) ->
+              val entityId = distinctEntityIdArb.bind().string
+              put(
+                insertPath,
+                QueryResultEncoder.Entity(
+                  entityId,
+                  entityId.calculateUtf16BigEndianSha512Digest(),
+                  entity
+                )
+              )
+            }
+          }
+
+          structBuilder.build()
+        }
+
+      rootStruct.decodingEncodingShouldProduceIdenticalStruct(entityInfoByPath)
+    }
+  }
 }
 
 @OptIn(ExperimentalKotest::class)
@@ -766,26 +799,28 @@ private sealed class StringEncodingTestCase(val string: String) {
   }
 }
 
-private fun Struct.decodingEncodingShouldProduceIdenticalStruct() {
-  val encodingBytes: ByteArray
-  val prunedEntities: List<QueryResultEncoder.Entity>
-  run {
-    val encodeResult = QueryResultEncoder.encode(this)
-    encodingBytes = encodeResult.byteArray
-    prunedEntities = encodeResult.entities
-  }
+private fun Struct.decodingEncodingShouldProduceIdenticalStruct(
+  entityByPath: Map<DataConnectPath, QueryResultEncoder.Entity> = emptyMap(),
+) {
+  val encodedBytes =
+    withClue("QueryResultEncoder.encode()") {
+      val entityIdByPath = entityByPath.mapValues { it.value.id }
+      val encodeResult = QueryResultEncoder.encode(this, entityIdByPath)
 
-  withClue("QueryResultEncoder.encode().entities") { prunedEntities.shouldBeEmpty() }
+      encodeResult.entityByPath shouldContainExactly entityByPath
 
-  val decodedStruct = QueryResultDecoder.decode(encodingBytes, entities = emptyList())
+      encodeResult.byteArray
+    }
 
-  withClue("QueryResultDecoder.decode() return value") {
+  withClue("QueryResultDecoder.decode()") {
+    val entityByEncodedId = entityByPath.map { it.value.run { encodedId to struct } }.toMap()
+    val decodedStruct = QueryResultDecoder.decode(encodedBytes, entityByEncodedId)
     decodedStruct should beEqualTo(this, structPrinter = { it.toCompactString() })
   }
 }
 
 private interface BuildEntityIdByPathContext {
-  fun putWithRandomUniqueEntityId(path: DataConnectPath)
+  fun putWithRandomUniqueEntityId(path: DataConnectPath): String
 }
 
 /**
@@ -814,8 +849,10 @@ private fun PropertyContext.buildEntityIdByPathMap(
   val entityIdByPath = mutableMapOf<DataConnectPath, String>()
   val context =
     object : BuildEntityIdByPathContext {
-      override fun putWithRandomUniqueEntityId(path: DataConnectPath) {
-        entityIdByPath[path] = distinctEntityIdArb.bind().string
+      override fun putWithRandomUniqueEntityId(path: DataConnectPath): String {
+        val entityId = distinctEntityIdArb.bind().string
+        entityIdByPath[path] = entityId
+        return entityId
       }
     }
   block(context)
@@ -829,13 +866,13 @@ private fun PropertyContext.buildEntityIdByPathMap(
  * entity ID. It takes each character of the string, encodes it into a 2-byte representation
  * (similar to UTF-16BE), and then computes a SHA-512 hash of the resulting byte sequence.
  */
-private fun String.calculateUtf16BigEndianSha512Digest(): ByteArray {
+private fun String.calculateUtf16BigEndianSha512Digest(): ImmutableByteArray {
   val byteBuffer = ByteBuffer.allocate(length * 2)
   forEach(byteBuffer::putChar)
   val digest = MessageDigest.getInstance("SHA-512")
   byteBuffer.flip()
   digest.update(byteBuffer)
-  return digest.digest()
+  return ImmutableByteArray.adopt(digest.digest())
 }
 
 /**

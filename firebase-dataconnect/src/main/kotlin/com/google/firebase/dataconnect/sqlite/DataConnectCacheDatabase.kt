@@ -23,6 +23,7 @@ import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.execSQL
 import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.getLastInsertRowId
 import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.rawQuery
+import com.google.firebase.dataconnect.util.ImmutableByteArray
 import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
 import com.google.protobuf.Struct
 import java.io.File
@@ -289,9 +290,9 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
 
   private fun SQLiteDatabase.getEntitiesByRowIds(
     entityRowIds: Collection<Long>
-  ): List<QueryResultDecoder.Entity> {
+  ): Map<ImmutableByteArray, Struct> {
     if (entityRowIds.isEmpty()) {
-      return emptyList()
+      return emptyMap()
     }
 
     val (sql, bindArgs) =
@@ -306,21 +307,22 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
         build()
       }
 
-    return buildList {
+    return buildMap {
       rawQuery(logger, sql, bindArgs) { cursor ->
         while (cursor.moveToNext()) {
           val rowId = cursor.getLong(0)
-          val entityId = cursor.getBlob(1)
+          val encodedEntityId = ImmutableByteArray.adopt(cursor.getBlob(1))
           val data = cursor.getBlob(2)
 
-          val decodeResult = runCatching { QueryResultDecoder.decode(data, entities = emptyList()) }
+          val decodeResult = runCatching { QueryResultDecoder.decode(data) }
           decodeResult.onFailure { exception ->
             logger.warn(exception) {
               "QueryResultDecoder failed to decode entity ${size+1}/${entityRowIds.size} " +
-                "with rowId=$rowId, encodedEntityId=${entityId.to0xHexString()} [fy74p3278j]"
+                "with rowId=$rowId, encodedEntityId=${encodedEntityId.to0xHexString()} [fy74p3278j]"
             }
           }
-          add(QueryResultDecoder.Entity(entityId, decodeResult.getOrThrow()))
+
+          put(encodedEntityId, decodeResult.getOrThrow())
         }
       }
     }
@@ -359,10 +361,16 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
     queryData: Struct,
     entityIdByPath: Map<DataConnectPath, String>,
   ) {
-    val encodeResult = QueryResultEncoder.encode(queryData, entityIdByPath)
-    val encodedQueryResultData = encodeResult.byteArray
-    val entities = encodeResult.entities
-    val encodedEntityDataList = entities.map { QueryResultEncoder.encode(it.data).byteArray }
+    val encodedQueryData: ByteArray
+    val encodedEntities: List<Pair<ByteArray, ByteArray>>
+    QueryResultEncoder.encode(queryData, entityIdByPath).also { queryDataEncodeResult ->
+      encodedQueryData = queryDataEncodeResult.byteArray
+      encodedEntities =
+        queryDataEncodeResult.entityByPath.values.map {
+          val entityEncodeResult = QueryResultEncoder.encode(it.struct)
+          it.encodedId.disown() to entityEncodeResult.byteArray
+        }
+    }
 
     runReadWriteTransaction { sqliteDatabase ->
       val userRowId = sqliteDatabase.getOrInsertAuthUid(authUid)
@@ -371,16 +379,16 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
         sqliteDatabase.insertQueryResult(
           userRowId = userRowId,
           queryId = queryId,
-          queryData = encodedQueryResultData,
+          queryData = encodedQueryData,
         )
 
       sqliteDatabase.deleteEntityIdMappingsForQueryId(queryRowId)
 
-      entities.zip(encodedEntityDataList).forEach { (entity, encodedEntityData) ->
+      encodedEntities.forEach { (encodedEntityId, encodedEntityData) ->
         val entityRowId =
           sqliteDatabase.insertEntity(
             userRowId = userRowId,
-            entityId = entity.encodedId,
+            entityId = encodedEntityId,
             entityData = encodedEntityData,
           )
 

@@ -47,20 +47,24 @@ import kotlin.random.nextInt
 
 object ProtoArb {
 
-  data class StructInfo(
+  class StructInfo(
     val struct: Struct,
     val depth: Int,
     val descendants: List<DataConnectPathValuePair>,
   ) {
     fun toValueProto(): Value = struct.toValueProto()
+
+    override fun toString() = "StructInfo(struct=$struct, depth=$depth)"
   }
 
-  data class ListValueInfo(
+  class ListValueInfo(
     val listValue: ListValue,
     val depth: Int,
     val descendants: List<DataConnectPathValuePair>,
   ) {
     fun toValueProto(): Value = listValue.toValueProto()
+
+    override fun toString() = "ListValueInfo(listValue=$listValue, depth=$depth)"
   }
 }
 
