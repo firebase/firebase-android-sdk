@@ -1,0 +1,99 @@
+name:  Create release (build tools)
+
+on:
+  workflow_dispatch:
+    inputs:
+      product:
+        description: Which product to make a release of ?
+        required: true
+        type: choice
+        options:
+          - app-distribution
+          - crashlytics
+          - performance
+
+permissions:
+  contents: read
+
+env:
+  ARTIFACTS: ${{ github.workspace }}/build/artifacts
+
+jobs:
+  make-app-distribution-release:
+    runs-on: ubuntu-latest
+    if: inputs.product == 'app-distribution'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Set up JDK 17
+        uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12 # v4.7.0
+        with:
+          java-version: 17
+          distribution: temurin
+          cache: gradle
+      - name: Make release for Firebase App Distribution
+        run: |
+          ./gradlew \
+            -Dorg.gradle.project.buildDir=${ARTIFACTS} \
+            -Dmaven.repo.local=${ARTIFACTS} \
+            :firebase-appdistribution-gradle:publishToMavenLocal
+          cd ${ARTIFACTS}
+          zip -r m2repository.zip com
+      - uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        with:
+          name: artifacts
+          path: ${{ env.ARTIFACTS }}
+
+  make-crashlytics-release:
+    runs-on: ubuntu-latest
+    if: inputs.product == 'crashlytics'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Set up JDK 17
+        uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12 # v4.7.0
+        with:
+          java-version: 17
+          distribution: temurin
+          cache: gradle
+      - name: Make release for Firebase Crashlytics
+        run: |
+          ./gradlew \
+            -Dorg.gradle.project.buildDir=${ARTIFACTS} \
+            -Dmaven.repo.local=${ARTIFACTS} \
+            :firebase-crashlytics-buildtools:publishToMavenLocal
+          ./gradlew \
+            -Dorg.gradle.project.buildDir=${ARTIFACTS} \
+            -Dmaven.repo.local=${ARTIFACTS} \
+            :firebase-crashlytics-gradle:publishToMavenLocal
+          cd ${ARTIFACTS}
+          zip -r m2repository.zip com
+      - uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        with:
+          name: artifacts
+          path: ${{ env.ARTIFACTS }}
+
+  make-performance-release:
+    runs-on: ubuntu-latest
+    if: inputs.product == 'performance'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Set up JDK 17
+        uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12 # v4.7.0
+        with:
+          java-version: 17
+          distribution: temurin
+          cache: gradle
+      - name: Make release for Firebase Performance
+        run: |
+          ./gradlew \
+            -Dorg.gradle.project.buildDir=${ARTIFACTS} \
+            -Dmaven.repo.local=${ARTIFACTS} \
+            :firebase-perf-gradle:publishToMavenLocal
+          cd ${ARTIFACTS}
+          zip -r m2repository.zip com
+      - uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        with:
+          name: artifacts
+          path: ${{ env.ARTIFACTS }}
