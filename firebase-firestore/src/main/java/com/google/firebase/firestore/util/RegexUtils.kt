@@ -16,7 +16,7 @@ internal class RegexUtils {
      *
      * @param matcher The RE2J matcher, which must be currently positioned at a valid match.
      * @return A string [Value] containing the match or captured group, or a null [Value].
-     * @throws AssertionError if the pattern contains more than one capturing group.
+     * @throws IllegalArgumentException if the pattern contains more than one capturing group.
      */
     fun handleMatch(matcher: Matcher): Value {
       if (matcher.groupCount() > 1) {
