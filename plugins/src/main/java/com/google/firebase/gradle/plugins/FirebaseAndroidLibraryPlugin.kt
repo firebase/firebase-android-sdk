@@ -30,7 +30,10 @@ import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.withType
+import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
+import org.jetbrains.kotlin.gradle.dsl.kotlinExtension
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import kotlin.text.set
 
 /**
  * Plugin for Android Firebase Libraries.
@@ -58,6 +61,8 @@ class FirebaseAndroidLibraryPlugin : BaseFirebaseLibraryPlugin() {
     project.tasks.withType<KotlinCompile> {
       kotlinOptions.freeCompilerArgs = listOf("-module-name", kotlinModuleName(project))
       kotlinOptions.jvmTarget = "1.8"
+      kotlinOptions.languageVersion = KotlinVersion.KOTLIN_2_0.version
+      project.kotlinExtension.coreLibrariesVersion = "2.0.21"
     }
 
     project.apply<DackkaPlugin>()
