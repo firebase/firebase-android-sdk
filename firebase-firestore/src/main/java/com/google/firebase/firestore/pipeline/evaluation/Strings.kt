@@ -32,6 +32,7 @@ import com.google.firestore.v1.Value
 import com.google.firestore.v1.Value.ValueTypeCase
 import com.google.protobuf.ByteString
 import com.google.re2j.Pattern
+import java.lang.IllegalArgumentException
 import kotlin.math.max
 import kotlin.math.min
 
@@ -328,8 +329,20 @@ internal val evaluateRegexFind =
           null
         }
 
-      if (pattern == null) EvaluateResultError
-      else EvaluateResult.value(RegexUtils.handleMatch(pattern.matcher(value.toByteArray())))
+      if (pattern == null) {
+        EvaluateResultError
+      } else {
+        val matcher = pattern.matcher(value)
+        if (matcher.find()) {
+          try {
+            EvaluateResult.value(RegexUtils.handleMatch(matcher))
+          } catch (e: IllegalArgumentException) {
+            EvaluateResultError
+          }
+        } else {
+          EvaluateResult.NULL
+        }
+      }
     })
   }
 
@@ -352,11 +365,16 @@ internal val evaluateRegexFindAll =
         EvaluateResultError
       } else {
         val builder = ImmutableList.builder<Value>()
-        val matcher = pattern.matcher(value.toByteArray())
-        while (matcher.find()) {
-          builder.add(RegexUtils.handleMatch(matcher))
+        val matcher = pattern.matcher(value)
+        try {
+          while (matcher.find()) {
+            builder.add(RegexUtils.handleMatch(matcher))
+          }
+
+          EvaluateResult.list(builder.build())
+        } catch (e: kotlin.IllegalArgumentException) {
+          EvaluateResultError
         }
-        EvaluateResult.list(builder.build())
       }
     })
   }

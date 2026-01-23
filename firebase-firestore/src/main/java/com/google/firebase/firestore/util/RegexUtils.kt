@@ -19,7 +19,9 @@ internal class RegexUtils {
      * @throws AssertionError if the pattern contains more than one capturing group.
      */
     fun handleMatch(matcher: Matcher): Value {
-      assert(matcher.groupCount() <= 1) // At most one capture group is supported.
+      if (matcher.groupCount() > 1) {
+        throw IllegalArgumentException("At most one capture group is supported")
+      }
 
       if (matcher.groupCount() == 0) {
         return Values.encodeValue(matcher.group())
