@@ -17,16 +17,13 @@
 package com.google.firebase.dataconnect.sqlite
 
 import com.google.firebase.dataconnect.DataConnectPath
-import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.MutableDataConnectPath
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.putSInt32
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.putSInt64
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.putUInt32
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.putUInt64
 import com.google.firebase.dataconnect.toPathString
-import com.google.firebase.dataconnect.util.ProtoPrune.withDescendantStructsPruned
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
-import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
 import com.google.firebase.dataconnect.withAddedField
 import com.google.firebase.dataconnect.withAddedListIndex
@@ -51,7 +48,7 @@ import kotlin.math.absoluteValue
  */
 internal class QueryResultEncoder(
   channel: WritableByteChannel,
-  private val entityIdByPath: Map<DataConnectPath, String>? = null,
+  private val entityIdByPath: Map<DataConnectPath, String> = emptyMap(),
 ) {
 
   val entities: MutableList<Entity> = mutableListOf()
@@ -64,27 +61,31 @@ internal class QueryResultEncoder(
 
   fun encode(queryResult: Struct) {
     writer.writeFixed32Int(QueryResultCodec.QUERY_RESULT_MAGIC)
-    writeStructOrEntity(queryResult, path = mutableListOf())
+    writeStructProper(path = mutableListOf(), queryResult)
   }
 
   fun flush() {
     writer.flush()
   }
 
-  private data class PrunedEntity(
-    val struct: Struct,
-    val entityId: String,
-    val path: DataConnectPath,
-  )
+  private fun writeValue(path: MutableDataConnectPath, value: Value) {
+    when (value.kindCase) {
+      Value.KindCase.KIND_NOT_SET -> writeKindNotSet()
+      Value.KindCase.NULL_VALUE -> writeNull()
+      Value.KindCase.NUMBER_VALUE -> writeDouble(value.numberValue)
+      Value.KindCase.BOOL_VALUE -> writeBoolean(value.boolValue)
+      Value.KindCase.STRING_VALUE -> writeString(value.stringValue)
+      Value.KindCase.STRUCT_VALUE -> writeStruct(path, value.structValue)
+      Value.KindCase.LIST_VALUE -> writeList(path, value.listValue)
+    }
+  }
 
-  private fun DataConnectPath.getEntityId(): String? = entityIdByPath?.get(this)
+  private fun writeNull() {
+    writer.writeByte(QueryResultCodec.VALUE_NULL)
+  }
 
-  private fun DataConnectPath.isEntity(): Boolean =
-    entityIdByPath !== null && entityIdByPath.containsKey(this)
-
-  private fun writeBoolean(value: Boolean) {
-    val byte = if (value) QueryResultCodec.VALUE_BOOL_TRUE else QueryResultCodec.VALUE_BOOL_FALSE
-    writer.writeByte(byte)
+  private fun writeKindNotSet() {
+    writer.writeByte(QueryResultCodec.VALUE_KIND_NOT_SET)
   }
 
   private fun writeDouble(value: Double) {
@@ -116,6 +117,16 @@ internal class QueryResultEncoder(
         writer.writeSInt64(encoding.value, encoding.size)
       }
     }
+  }
+
+  private fun writeBoolean(value: Boolean) {
+    writer.writeByte(
+      if (value) {
+        QueryResultCodec.VALUE_BOOL_TRUE
+      } else {
+        QueryResultCodec.VALUE_BOOL_FALSE
+      }
+    )
   }
 
   private fun writeString(string: String) {
@@ -150,7 +161,7 @@ internal class QueryResultEncoder(
     val utf8ByteCount: Int? = Utf8.encodedLength(string)
     val utf16ByteCount = string.length * 2
 
-    if (utf8ByteCount !== null && utf8ByteCount <= utf16ByteCount) {
+    if (utf8ByteCount !== null && utf8ByteCount < utf16ByteCount) {
       writer.writeByte(QueryResultCodec.VALUE_STRING_UTF8)
       writer.writeStringUtf8(string, utf8ByteCount)
     } else {
@@ -159,406 +170,57 @@ internal class QueryResultEncoder(
     }
   }
 
-  private fun writeValue(
-    value: Value,
-    path: MutableDataConnectPath,
-  ) {
-    when (value.kindCase) {
-      Value.KindCase.NULL_VALUE -> writer.writeByte(QueryResultCodec.VALUE_NULL)
-      Value.KindCase.NUMBER_VALUE -> writeDouble(value.numberValue)
-      Value.KindCase.BOOL_VALUE -> writeBoolean(value.boolValue)
-      Value.KindCase.STRING_VALUE -> writeString(value.stringValue)
-      Value.KindCase.STRUCT_VALUE -> writeStructOrEntity(value.structValue, path)
-      Value.KindCase.LIST_VALUE -> writeList(value.listValue, path)
-      Value.KindCase.KIND_NOT_SET -> writer.writeByte(QueryResultCodec.VALUE_KIND_NOT_SET)
+  private fun writeStruct(path: MutableDataConnectPath, struct: Struct) {
+    writer.writeByte(QueryResultCodec.VALUE_STRUCT)
+    writeStructProper(path, struct)
+  }
+
+  private fun writeStructProper(path: MutableDataConnectPath, struct: Struct) {
+    writer.writeUInt32(struct.fieldsCount)
+    struct.fieldsMap.entries.forEach { (key, value) ->
+      writeString(key)
+      path.withAddedField(key) { writeValue(path, value) }
     }
   }
 
-  private fun writeStructOrEntity(
-    struct: Struct,
-    path: MutableDataConnectPath,
-  ) {
-    val entityId = path.getEntityId()
-    if (entityId !== null) {
-      writer.writeByte(QueryResultCodec.VALUE_ENTITY)
-      writeEntity(entityId, struct, path)
-    } else {
-      writer.writeByte(QueryResultCodec.VALUE_STRUCT)
-      writer.writeUInt32(struct.fieldsCount)
-      struct.fieldsMap.entries.forEach { (key, value) ->
-        writeString(key)
-        path.withAddedField(key) { writeValue(value, path) }
-      }
-    }
-  }
-
-  private fun writeList(listValue: ListValue, path: MutableDataConnectPath) {
+  private fun writeList(path: MutableDataConnectPath, listValue: ListValue) {
     writer.writeByte(QueryResultCodec.VALUE_LIST)
     writer.writeUInt32(listValue.valuesCount)
     repeat(listValue.valuesCount) { listIndex ->
-      path.withAddedListIndex(listIndex) { writeValue(listValue.getValues(listIndex), path) }
-    }
-  }
-
-  private fun writeEntity(
-    entityId: String,
-    entity: Struct,
-    path: MutableDataConnectPath,
-  ) {
-    val encodedEntityId = sha512DigestCalculator.calculate(entityId)
-    writer.writeUInt32(encodedEntityId.size)
-    writer.write(ByteBuffer.wrap(encodedEntityId))
-    val struct = writeEntityStruct(entity, path)
-    entities.add(Entity(entityId, encodedEntityId, struct))
-  }
-
-  private fun writeEntityStruct(
-    struct: Struct,
-    path: MutableDataConnectPath,
-  ): Struct {
-    writer.writeUInt32(struct.fieldsCount)
-
-    var structBuilder: Struct.Builder? = null
-    struct.fieldsMap.entries.forEach { (key, value) ->
-      writeString(key)
-      val entityValue = path.withAddedField(key) { writeEntityValue(value, path) }
-
-      if (entityValue !== value) {
-        structBuilder = structBuilder ?: struct.toBuilder()
-        if (entityValue === null) {
-          structBuilder.removeFields(key)
-        } else {
-          structBuilder.putFields(key, entityValue)
-        }
-      }
-    }
-
-    return structBuilder?.build() ?: struct
-  }
-
-  private fun writeEntityValue(
-    value: Value,
-    path: MutableDataConnectPath,
-  ): Value? =
-    when (value.kindCase) {
-      Value.KindCase.STRUCT_VALUE -> writeEntityStructValue(value, path)
-      Value.KindCase.LIST_VALUE -> writeEntityListValue(value, path)
-      else -> {
-        writer.writeByte(QueryResultCodec.VALUE_FROM_ENTITY)
-        value
-      }
-    }
-
-  private fun writeEntityStructValue(
-    value: Value,
-    path: MutableDataConnectPath,
-  ): Value? {
-    path.getEntityId()?.let { entityId ->
-      writer.writeByte(QueryResultCodec.VALUE_ENTITY)
-      writeEntity(entityId, value.structValue, path)
-      return null
-    }
-
-    val struct = value.structValue
-    val protoPruneResult =
-      if (entityIdByPath == null) {
-        null
-      } else {
-        struct.withDescendantStructsPruned(path) { subStructPath, _ -> subStructPath.isEntity() }
-      }
-
-    if (protoPruneResult == null) {
-      writer.writeByte(QueryResultCodec.VALUE_FROM_ENTITY)
-      return value
-    }
-
-    writer.writeByte(QueryResultCodec.VALUE_STRUCT)
-
-    val (prunedStruct, prunedProtoEntities) = protoPruneResult
-    val prunedEntities =
-      prunedProtoEntities.map { (path, struct) ->
-        val entityId =
-          path.getEntityId()
-            ?: throw IllegalStateException(
-              "internal error 2j8v9bczkg: entityId not found for path=${path.toPathString()}"
-            )
-        PrunedEntity(struct, entityId, path)
-      }
-    writer.writeUInt32(prunedEntities.size)
-
-    prunedEntities.forEach { (entity, entityId, entityPath) ->
-      val entityRelativePath = entityPath.drop(path.size)
-      check(entityRelativePath.isNotEmpty()) {
-        "internal error gw5zjrbcn3: entityRelativePath.isEmpty(), " +
-          "but expected it to be non-empty " +
-          "(path=${path.toPathString()}, entityPath=${entityPath.toPathString()})"
-      }
-      writePath(entityRelativePath)
-      writeEntity(entityId, entity, entityPath.toMutableList())
-    }
-
-    return prunedStruct.toValueProto()
-  }
-
-  private fun writeEntityListValue(
-    value: Value,
-    path: MutableDataConnectPath,
-  ): Value? {
-    val listValue = value.listValue
-
-    return when (listValue.classifyLeafContents(path)) {
-      ListValueLeafContentsClassification.RecursivelyEmpty,
-      ListValueLeafContentsClassification.Scalars -> {
-        writer.writeByte(QueryResultCodec.VALUE_FROM_ENTITY)
-        value
-      }
-      ListValueLeafContentsClassification.Entities,
-      ListValueLeafContentsClassification.MixedEntitiesAndNonEntities -> {
-        writeList(listValue, path)
-        null
-      }
-      ListValueLeafContentsClassification.NonEntities -> {
-        val protoPruneResult =
-          if (entityIdByPath == null) {
-            null
-          } else {
-            listValue.withDescendantStructsPruned(path) { subStructPath, _ ->
-              subStructPath.isEntity()
-            }
-          }
-
-        if (protoPruneResult === null) {
-          writer.writeByte(QueryResultCodec.VALUE_FROM_ENTITY)
-          value
-        } else {
-          writer.writeByte(QueryResultCodec.VALUE_LIST_WITH_PRUNED_ENTITIES)
-
-          val (prunedListValue, prunedProtoEntities) = protoPruneResult
-          val prunedEntities =
-            prunedProtoEntities.map { (path, struct) ->
-              val entityId =
-                path.getEntityId()
-                  ?: throw IllegalStateException(
-                    "internal error 2j8v9bczkg: entityId not found for path=${path.toPathString()}"
-                  )
-              PrunedEntity(struct, entityId, path)
-            }
-          writer.writeUInt32(prunedEntities.size)
-
-          prunedEntities.forEach { (entity, entityId, entityPath) ->
-            val entityRelativePath = entityPath.drop(path.size)
-            check(entityRelativePath.isNotEmpty()) {
-              "internal error kkkt628af8: entityRelativePath.isEmpty(), " +
-                "but expected it to be non-empty " +
-                "(path=${path.toPathString()}, entityPath=${entityPath.toPathString()})"
-            }
-            writePath(entityRelativePath)
-            writeEntity(entityId, entity, entityPath.toMutableList())
-          }
-
-          prunedListValue.toValueProto()
-        }
-      }
-    }
-  }
-
-  private fun writePath(path: DataConnectPath) {
-    writer.writeUInt32(path.size)
-    path.forEach { pathSegment ->
-      when (pathSegment) {
-        is DataConnectPathSegment.Field -> {
-          writer.writeByte(QueryResultCodec.VALUE_PATH_SEGMENT_FIELD)
-          writeString(pathSegment.field)
-        }
-        is DataConnectPathSegment.ListIndex -> {
-          writer.writeByte(QueryResultCodec.VALUE_PATH_SEGMENT_LIST_INDEX)
-          writer.writeUInt32(pathSegment.index)
-        }
-      }
-    }
-  }
-  private enum class ListValueLeafContentsClassification {
-    Entities,
-    Scalars,
-    NonEntities,
-    MixedEntitiesAndNonEntities,
-    RecursivelyEmpty,
-  }
-
-  private enum class ListValueLeafContentsClassificationInternal {
-    Entities,
-    Scalars,
-    NonEntities,
-  }
-
-  private fun ListValue.classifyLeafContents(
-    path: MutableDataConnectPath
-  ): ListValueLeafContentsClassification {
-    var leafValueClassification: ListValueLeafContentsClassificationInternal? = null
-
-    repeat(valuesCount) { listIndex ->
-      val listElement = getValues(listIndex)
-
-      val listElementClassification =
-        when (listElement.kindCase) {
-          Value.KindCase.STRUCT_VALUE ->
-            path.withAddedListIndex(listIndex) {
-              if (path.isEntity()) {
-                ListValueLeafContentsClassification.Entities
-              } else {
-                ListValueLeafContentsClassification.NonEntities
-              }
-            }
-          Value.KindCase.LIST_VALUE ->
-            path.withAddedListIndex(listIndex) { listElement.listValue.classifyLeafContents(path) }
-          else -> ListValueLeafContentsClassification.Scalars
-        }
-
-      when (listElementClassification) {
-        ListValueLeafContentsClassification.RecursivelyEmpty -> {}
-        ListValueLeafContentsClassification.MixedEntitiesAndNonEntities ->
-          return ListValueLeafContentsClassification.MixedEntitiesAndNonEntities
-        ListValueLeafContentsClassification.Scalars ->
-          when (leafValueClassification) {
-            null -> {
-              leafValueClassification = ListValueLeafContentsClassificationInternal.Scalars
-            }
-            ListValueLeafContentsClassificationInternal.Scalars,
-            ListValueLeafContentsClassificationInternal.NonEntities -> {}
-            ListValueLeafContentsClassificationInternal.Entities ->
-              return ListValueLeafContentsClassification.MixedEntitiesAndNonEntities
-          }
-        ListValueLeafContentsClassification.NonEntities ->
-          when (leafValueClassification) {
-            null,
-            ListValueLeafContentsClassificationInternal.Scalars -> {
-              leafValueClassification = ListValueLeafContentsClassificationInternal.NonEntities
-            }
-            ListValueLeafContentsClassificationInternal.NonEntities -> {}
-            ListValueLeafContentsClassificationInternal.Entities ->
-              return ListValueLeafContentsClassification.MixedEntitiesAndNonEntities
-          }
-        ListValueLeafContentsClassification.Entities ->
-          when (leafValueClassification) {
-            null -> {
-              leafValueClassification = ListValueLeafContentsClassificationInternal.Entities
-            }
-            ListValueLeafContentsClassificationInternal.Entities -> {}
-            ListValueLeafContentsClassificationInternal.NonEntities,
-            ListValueLeafContentsClassificationInternal.Scalars ->
-              return ListValueLeafContentsClassification.MixedEntitiesAndNonEntities
-          }
-      }
-    }
-
-    return when (leafValueClassification) {
-      null -> ListValueLeafContentsClassification.RecursivelyEmpty
-      ListValueLeafContentsClassificationInternal.Scalars ->
-        ListValueLeafContentsClassification.Scalars
-      ListValueLeafContentsClassificationInternal.Entities ->
-        ListValueLeafContentsClassification.Entities
-      ListValueLeafContentsClassificationInternal.NonEntities ->
-        ListValueLeafContentsClassification.NonEntities
-    }
-  }
-  private sealed interface DoubleEncoding {
-    data class Double(val value: kotlin.Double) : DoubleEncoding
-    object PositiveZero : DoubleEncoding
-    object NegativeZero : DoubleEncoding
-
-    data class UInt32(val value: Int, val size: Int) : DoubleEncoding
-    data class SInt32(val value: Int, val size: Int) : DoubleEncoding
-    data class Fixed32Int(val value: Int) : DoubleEncoding
-
-    data class UInt64(val value: Long, val size: Int) : DoubleEncoding
-    data class SInt64(val value: Long, val size: Int) : DoubleEncoding
-
-    companion object {
-      fun calculateOptimalSpaceEfficientEncodingFor(value: kotlin.Double): DoubleEncoding {
-        if (!value.isFinite()) {
-          return Double(value)
-        }
-
-        if (value == 0.0) {
-          value.toBits().also { bits ->
-            return when (bits) {
-              0L -> PositiveZero
-              Long.MIN_VALUE -> NegativeZero
-              else ->
-                throw IllegalStateException("unexpected bits for ${value}: $bits [myedq2mzzg]")
-            }
-          }
-        }
-
-        value.toInt().also { intValue ->
-          if (intValue.toDouble() == value) {
-            return if (intValue < 0) {
-              val sint32Size = CodedIntegers.computeSInt32Size(intValue)
-              if (sint32Size < 4) {
-                SInt32(intValue, sint32Size)
-              } else {
-                Fixed32Int(intValue)
-              }
-            } else {
-              val uint32Size = CodedIntegers.computeUInt32Size(intValue)
-              if (uint32Size < 4) {
-                UInt32(intValue, uint32Size)
-              } else {
-                Fixed32Int(intValue)
-              }
-            }
-          }
-        }
-
-        value.toLong().also { longValue ->
-          if (longValue.toDouble() == value) {
-            return if (longValue < 0) {
-              val sint64Size = CodedIntegers.computeSInt64Size(longValue)
-              if (sint64Size < 8) {
-                SInt64(longValue, sint64Size)
-              } else {
-                Double(value)
-              }
-            } else {
-              val uint64Size = CodedIntegers.computeUInt64Size(longValue)
-              if (uint64Size < 8) {
-                UInt64(longValue, uint64Size)
-              } else {
-                Double(value)
-              }
-            }
-          }
-        }
-
-        return Double(value)
-      }
+      path.withAddedListIndex(listIndex) { writeValue(path, listValue.getValues(listIndex)) }
     }
   }
 
   class Entity(
+    val path: DataConnectPath,
     val id: String,
     val encodedId: ByteArray,
     val data: Struct,
   ) {
 
     override fun hashCode(): Int =
-      Objects.hash(Entity::class.java, id, encodedId.contentHashCode(), data)
+      Objects.hash(Entity::class.java, path, id, encodedId.contentHashCode(), data)
 
     override fun equals(other: Any?): Boolean =
       other is Entity &&
+        other.path == path &&
         other.id == id &&
         other.encodedId.contentEquals(encodedId) &&
         other.data == data
 
     override fun toString(): String =
-      "Entity(id=$id, encodedId=${encodedId.to0xHexString()}, data=${data.toCompactString()})"
+      "Entity(" +
+        "path=${path.toPathString()}, " +
+        "id=$id, " +
+        "encodedId=${encodedId.to0xHexString()}, " +
+        "data=${data.toCompactString()})"
   }
 
   companion object {
 
     fun encode(
       queryResult: Struct,
-      entityIdByPath: Map<DataConnectPath, String>? = null
+      entityIdByPath: Map<DataConnectPath, String> = emptyMap()
     ): EncodeResult =
       ByteArrayOutputStream().use { byteArrayOutputStream ->
         val entities =
@@ -568,7 +230,7 @@ internal class QueryResultEncoder(
             encoder.flush()
             encoder.entities
           }
-        EncodeResult(byteArrayOutputStream.toByteArray(), entities)
+        EncodeResult(byteArrayOutputStream.toByteArray(), entities.toList())
       }
   }
 }
@@ -818,5 +480,78 @@ private class Sha512DigestCalculator {
 
     @Suppress("SpellCheckingInspection")
     fun Char.toByteUshr(shiftAmount: Int): Byte = ((code ushr shiftAmount) and 0xFF).toByte()
+  }
+}
+
+private sealed interface DoubleEncoding {
+  data class Double(val value: kotlin.Double) : DoubleEncoding
+  object PositiveZero : DoubleEncoding
+  object NegativeZero : DoubleEncoding
+
+  data class UInt32(val value: Int, val size: Int) : DoubleEncoding
+  data class SInt32(val value: Int, val size: Int) : DoubleEncoding
+  data class Fixed32Int(val value: Int) : DoubleEncoding
+
+  data class UInt64(val value: Long, val size: Int) : DoubleEncoding
+  data class SInt64(val value: Long, val size: Int) : DoubleEncoding
+
+  companion object {
+    fun calculateOptimalSpaceEfficientEncodingFor(value: kotlin.Double): DoubleEncoding {
+      if (!value.isFinite()) {
+        return Double(value)
+      }
+
+      if (value == 0.0) {
+        value.toBits().also { bits ->
+          return when (bits) {
+            0L -> PositiveZero
+            Long.MIN_VALUE -> NegativeZero
+            else -> throw IllegalStateException("unexpected bits for ${value}: $bits [myedq2mzzg]")
+          }
+        }
+      }
+
+      value.toInt().also { intValue ->
+        if (intValue.toDouble() == value) {
+          return if (intValue < 0) {
+            val sint32Size = CodedIntegers.computeSInt32Size(intValue)
+            if (sint32Size < 4) {
+              SInt32(intValue, sint32Size)
+            } else {
+              Fixed32Int(intValue)
+            }
+          } else {
+            val uint32Size = CodedIntegers.computeUInt32Size(intValue)
+            if (uint32Size < 4) {
+              UInt32(intValue, uint32Size)
+            } else {
+              Fixed32Int(intValue)
+            }
+          }
+        }
+      }
+
+      value.toLong().also { longValue ->
+        if (longValue.toDouble() == value) {
+          return if (longValue < 0) {
+            val sint64Size = CodedIntegers.computeSInt64Size(longValue)
+            if (sint64Size < 8) {
+              SInt64(longValue, sint64Size)
+            } else {
+              Double(value)
+            }
+          } else {
+            val uint64Size = CodedIntegers.computeUInt64Size(longValue)
+            if (uint64Size < 8) {
+              UInt64(longValue, uint64Size)
+            } else {
+              Double(value)
+            }
+          }
+        }
+      }
+
+      return Double(value)
+    }
   }
 }

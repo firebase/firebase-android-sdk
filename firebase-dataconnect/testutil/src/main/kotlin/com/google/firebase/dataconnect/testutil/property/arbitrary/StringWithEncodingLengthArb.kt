@@ -28,14 +28,14 @@ import io.kotest.property.asSample
  * Generates strings that satisfy the specified difference between its UTF-8 encoding and UTF-16
  * encoding.
  *
- * That is, if the given [mode] is [Mode.Utf8EncodingLongerThanUtf16] then the generated strings
- * will all have a UTF-8 encoding is more bytes than its UTF-16 encoding. Conversely, if [mode] is
- * [Mode.Utf8EncodingShorterThanOrEqualToUtf16] then the generated strings will all have a UTF-8
- * encoding that is fewer bytes than, or the same number of bytes as, its UTF-16 encoding.
+ * That is, if the given [mode] is [Mode.Utf8EncodingLongerThanOrEqualToUtf16] then the generated
+ * strings will all have a UTF-8 encoding is more bytes than, or the same number of bytes as, its
+ * UTF-16 encoding. Conversely, if [mode] is [Mode.Utf8EncodingShorterThanUtf16] then the generated
+ * strings will all have a UTF-8 encoding that is fewer bytes than its UTF-16 encoding.
  *
  * This is useful for testing algorithms that behave differently depending on the length of the
  * encodings. For example, an algorithm may choose to use the UTF-8 encoding if it is shorter than
- * or equal in length to the UTF-16 encoding, or the UTF-16 encoding if it is shorter than the UTF-8
+ * the UTF-16 encoding, or the UTF-16 encoding if it is shorter than or equal in length to the UTF-8
  * encoding.
  */
 class StringWithEncodingLengthArb(private val mode: Mode, lengthRange: IntRange) : Arb<String>() {
@@ -118,32 +118,32 @@ class StringWithEncodingLengthArb(private val mode: Mode, lengthRange: IntRange)
         byteCountIsFixable(charCounts[it], utf8ByteCounts[it], utf16ByteCounts[it])
       }
 
-    data object Utf8EncodingLongerThanUtf16 : Mode() {
-      override val minCharCount = 1
-
-      override val fixedByteCountCodepointArbFilter = { arb: CodePointArb ->
-        arb.utf8ByteCount > arb.utf16ByteCount
-      }
-
-      override fun byteCountNeedsFixing(utf8ByteCountsSum: Int, utf16ByteCountsSum: Int) =
-        utf8ByteCountsSum <= utf16ByteCountsSum
-
-      override fun byteCountIsFixable(charCount: Int, utf8ByteCount: Int, utf16ByteCount: Int) =
-        utf8ByteCount <= utf16ByteCount
-    }
-
-    data object Utf8EncodingShorterThanOrEqualToUtf16 : Mode() {
+    data object Utf8EncodingLongerThanOrEqualToUtf16 : Mode() {
       override val minCharCount = 0
 
       override val fixedByteCountCodepointArbFilter = { arb: CodePointArb ->
-        arb.utf8ByteCount <= arb.utf16ByteCount && arb.utf16CharCount == 1
+        arb.utf8ByteCount >= arb.utf16ByteCount && arb.utf16CharCount == 1
       }
 
       override fun byteCountNeedsFixing(utf8ByteCountsSum: Int, utf16ByteCountsSum: Int) =
-        utf8ByteCountsSum > utf16ByteCountsSum
+        utf8ByteCountsSum < utf16ByteCountsSum
 
       override fun byteCountIsFixable(charCount: Int, utf8ByteCount: Int, utf16ByteCount: Int) =
-        utf8ByteCount > utf16ByteCount
+        utf8ByteCount < utf16ByteCount
+    }
+
+    data object Utf8EncodingShorterThanUtf16 : Mode() {
+      override val minCharCount = 1
+
+      override val fixedByteCountCodepointArbFilter = { arb: CodePointArb ->
+        arb.utf8ByteCount < arb.utf16ByteCount
+      }
+
+      override fun byteCountNeedsFixing(utf8ByteCountsSum: Int, utf16ByteCountsSum: Int) =
+        utf8ByteCountsSum >= utf16ByteCountsSum
+
+      override fun byteCountIsFixable(charCount: Int, utf8ByteCount: Int, utf16ByteCount: Int) =
+        utf8ByteCount >= utf16ByteCount
     }
   }
 

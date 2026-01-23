@@ -19,15 +19,19 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.boolValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.kindNotSetValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.listValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.maxDepth
-import com.google.firebase.dataconnect.testutil.property.arbitrary.next
 import com.google.firebase.dataconnect.testutil.property.arbitrary.nullValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.numberValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.stringValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
+import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
 import com.google.firebase.dataconnect.testutil.property.arbitrary.value
 import com.google.protobuf.ListValue
+import com.google.protobuf.NullValue
+import com.google.protobuf.Struct
 import com.google.protobuf.Value
+import io.kotest.assertions.assertSoftly
+import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.nulls.shouldBeNull
@@ -38,6 +42,7 @@ import io.kotest.property.Exhaustive
 import io.kotest.property.PropTestConfig
 import io.kotest.property.PropertyContext
 import io.kotest.property.ShrinkingMode
+import io.kotest.property.arbitrary.boolean
 import io.kotest.property.arbitrary.double
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.list
@@ -76,6 +81,13 @@ class ProtoConvenienceExtsUnitTest {
       value.kindCase shouldBe Value.KindCase.NUMBER_VALUE
       value.numberValue shouldBe double
     }
+  }
+
+  @Test
+  fun `null toValueProto`() {
+    val value = null.toValueProto()
+    value.kindCase shouldBe Value.KindCase.NULL_VALUE
+    value.nullValue shouldBe NullValue.NULL_VALUE
   }
 
   @Test
@@ -351,43 +363,104 @@ class ProtoConvenienceExtsUnitTest {
       }
     }
 
-  private companion object {
-    @OptIn(ExperimentalKotest::class)
-    val propTestConfig =
-      PropTestConfig(
-        iterations = 200,
-        edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.33),
-        shrinkingMode = ShrinkingMode.Off,
-      )
-
-    fun PropertyContext.generateRecursivelyEmptyListValue(
-      sizeArb: Arb<Int>,
-      depth: Int
-    ): ListValue {
-      val size = sizeArb.bind()
-      require(depth > 0 && size > 0) { "depth=$depth, size=$size, but both must be non-zero" }
-      val maxDepthIndex = randomSource().random.nextInt(size)
-
-      val listValueBuilder = ListValue.newBuilder()
-      repeat(size) { index ->
-        val childDepth =
-          if (index == maxDepthIndex) {
-            depth - 1
-          } else {
-            randomSource().random.nextInt(depth)
-          }
-
-        val childListValue =
-          if (childDepth == 0) {
-            ListValue.newBuilder().build()
-          } else {
-            generateRecursivelyEmptyListValue(sizeArb, childDepth)
-          }
-
-        listValueBuilder.addValues(childListValue.toValueProto())
-      }
-
-      return listValueBuilder.build()
+  @Test
+  fun `structOf(String, Value) should return a Struct with the given key-value pair`() = runTest {
+    checkAll(propTestConfig, Arb.proto.structKey(), Arb.proto.value()) { key, value ->
+      structOf(key, value).shouldHaveExactlyOneField(key, value)
     }
   }
+
+  @Test
+  fun `structOf(String, Boolean) should return a Struct with the given key-value pair`() = runTest {
+    checkAll(propTestConfig, Arb.proto.structKey(), Arb.boolean()) { key, value ->
+      val expectedValue = Value.newBuilder().setBoolValue(value).build()
+      structOf(key, value).shouldHaveExactlyOneField(key, expectedValue)
+    }
+  }
+
+  @Test
+  fun `structOf(String, Double) should return a Struct with the given key-value pair`() = runTest {
+    checkAll(propTestConfig, Arb.proto.structKey(), Arb.double()) { key, value ->
+      val expectedValue = Value.newBuilder().setNumberValue(value).build()
+      structOf(key, value).shouldHaveExactlyOneField(key, expectedValue)
+    }
+  }
+
+  @Test
+  fun `structOf(String, String) should return a Struct with the given key-value pair`() = runTest {
+    checkAll(propTestConfig, Arb.proto.structKey(), Arb.string()) { key, value ->
+      val expectedValue = Value.newBuilder().setStringValue(value).build()
+      structOf(key, value).shouldHaveExactlyOneField(key, expectedValue)
+    }
+  }
+
+  @Test
+  fun `structOf(String, null) should return a Struct with the given key-value pair`() = runTest {
+    checkAll(propTestConfig, Arb.proto.structKey()) { key ->
+      val expectedValue = Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build()
+      structOf(key, null).shouldHaveExactlyOneField(key, expectedValue)
+    }
+  }
+
+  @Test
+  fun `structOf(String, Struct) should return a Struct with the given key-value pair`() = runTest {
+    checkAll(propTestConfig, Arb.proto.structKey(), Arb.proto.struct()) { key, value ->
+      val expectedValue = Value.newBuilder().setStructValue(value.struct).build()
+      structOf(key, value.struct).shouldHaveExactlyOneField(key, expectedValue)
+    }
+  }
+
+  @Test
+  fun `structOf(String, ListValue) should return a Struct with the given key-value pair`() =
+    runTest {
+      checkAll(propTestConfig, Arb.proto.structKey(), Arb.proto.listValue()) { key, value ->
+        val expectedValue = Value.newBuilder().setListValue(value.listValue).build()
+        structOf(key, value.listValue).shouldHaveExactlyOneField(key, expectedValue)
+      }
+    }
+}
+
+@OptIn(ExperimentalKotest::class)
+private val propTestConfig =
+  PropTestConfig(
+    iterations = 200,
+    edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.33),
+    shrinkingMode = ShrinkingMode.Off,
+  )
+
+private fun Struct.shouldHaveExactlyOneField(key: String, value: Value) {
+  assertSoftly {
+    withClue("fieldsCount") { fieldsCount shouldBe 1 }
+    withClue("fieldsMap[$key]") { fieldsMap[key] shouldBe value }
+  }
+}
+
+private fun PropertyContext.generateRecursivelyEmptyListValue(
+  sizeArb: Arb<Int>,
+  depth: Int
+): ListValue {
+  val size = sizeArb.bind()
+  require(depth > 0 && size > 0) { "depth=$depth, size=$size, but both must be non-zero" }
+  val maxDepthIndex = randomSource().random.nextInt(size)
+
+  val listValueBuilder = ListValue.newBuilder()
+  repeat(size) { index ->
+    val childDepth =
+      if (index == maxDepthIndex) {
+        depth - 1
+      } else {
+        randomSource().random.nextInt(depth)
+      }
+
+    val childListValue =
+      if (childDepth == 0) {
+        ListValue.newBuilder().build()
+      } else {
+        generateRecursivelyEmptyListValue(sizeArb, childDepth)
+      }
+
+    listValueBuilder.addValues(childListValue.toValueProto())
+  }
+
+  return listValueBuilder.build()
 }

@@ -69,21 +69,7 @@ internal class QueryResultDecoder(
 
   fun decode(): Struct {
     readMagic(path = emptyList())
-
-    val rootStructValueType =
-      readValueType(
-        path = emptyList(),
-        name = "root struct",
-        eofErrorId = "RootStructValueTypeIndicatorByteEOF",
-        unknownErrorId = "RootStructValueTypeIndicatorByteUnknown",
-        unexpectedErrorId = "RootStructValueTypeIndicatorByteUnexpected",
-        map = RootStructValueType.instanceByValueType,
-      )
-
-    return when (rootStructValueType) {
-      RootStructValueType.Struct -> readStruct(path = mutableListOf())
-      RootStructValueType.Entity -> readEntity(path = mutableListOf())
-    }
+    return readStruct(path = mutableListOf())
   }
 
   private fun readSome(): Boolean {
@@ -659,25 +645,6 @@ internal class QueryResultDecoder(
       listValueBuilder.addValues(value)
     }
     return listValueBuilder.build()
-  }
-
-  private enum class RootStructValueType(val valueType: ValueType) {
-    Struct(ValueType.Struct),
-    Entity(ValueType.Entity);
-
-    companion object {
-      val instanceByValueType: Map<ValueType, RootStructValueType> = buildMap {
-        RootStructValueType.entries.forEach { structValueType ->
-          check(structValueType.valueType !in this) {
-            "internal error j6rhkqr37n: duplicate value type: ${structValueType.valueType}"
-          }
-          put(structValueType.valueType, structValueType)
-        }
-      }
-
-      fun fromValueType(valueType: ValueType): RootStructValueType? =
-        entries.firstOrNull { it.valueType == valueType }
-    }
   }
 
   private fun readStruct(path: MutableDataConnectPath): Struct {

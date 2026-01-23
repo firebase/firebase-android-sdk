@@ -17,6 +17,7 @@
 package com.google.firebase.dataconnect.testutil
 
 import com.google.protobuf.ListValue
+import com.google.protobuf.NullValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
 
@@ -25,6 +26,9 @@ fun Boolean.toValueProto(): Value = Value.newBuilder().setBoolValue(this).build(
 fun String.toValueProto(): Value = Value.newBuilder().setStringValue(this).build()
 
 fun Double.toValueProto(): Value = Value.newBuilder().setNumberValue(this).build()
+
+@Suppress("UnusedReceiverParameter")
+fun Nothing?.toValueProto(): Value = Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build()
 
 fun Struct.toValueProto(): Value = Value.newBuilder().setStructValue(this).build()
 
@@ -87,3 +91,18 @@ fun ListValue.isRecursivelyEmpty(): Boolean {
 }
 
 fun Value.isRecursivelyEmptyListValue(): Boolean = isListValue && listValue.isRecursivelyEmpty()
+
+fun structOf(key: String, value: Value): Struct = Struct.newBuilder().putFields(key, value).build()
+
+fun structOf(key: String, value: Boolean): Struct = structOf(key, value.toValueProto())
+
+fun structOf(key: String, value: Double): Struct = structOf(key, value.toValueProto())
+
+fun structOf(key: String, value: String): Struct = structOf(key, value.toValueProto())
+
+fun structOf(key: String, value: Struct): Struct = structOf(key, value.toValueProto())
+
+fun structOf(key: String, value: ListValue): Struct = structOf(key, value.toValueProto())
+
+fun structOf(key: String, @Suppress("unused") value: Nothing?): Struct =
+  structOf(key, null.toValueProto())

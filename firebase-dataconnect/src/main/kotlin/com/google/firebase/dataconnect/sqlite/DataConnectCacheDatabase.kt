@@ -362,8 +362,7 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
     val encodeResult = QueryResultEncoder.encode(queryData, entityIdByPath)
     val encodedQueryResultData = encodeResult.byteArray
     val entities = encodeResult.entities
-    val encodedEntityDataList =
-      entities.map { QueryResultEncoder.encode(it.data, entityIdByPath = null).byteArray }
+    val encodedEntityDataList = entities.map { QueryResultEncoder.encode(it.data).byteArray }
 
     runReadWriteTransaction { sqliteDatabase ->
       val userRowId = sqliteDatabase.getOrInsertAuthUid(authUid)
