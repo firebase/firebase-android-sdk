@@ -18,9 +18,15 @@ import static junit.framework.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.MockitoAnnotations.openMocks;
 
 import com.google.firebase.perf.FirebasePerformanceTestBase;
+import com.google.firebase.perf.application.AppStateMonitor;
+import com.google.firebase.perf.session.PerfSession;
+import com.google.firebase.perf.session.SessionManager;
+import com.google.firebase.perf.session.gauges.GaugeManager;
 import com.google.firebase.perf.transport.TransportManager;
+import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.perf.v1.ApplicationProcessState;
 import com.google.firebase.perf.v1.NetworkRequestMetric;
@@ -35,15 +41,30 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
+
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
+import org.mockito.Spy;
 import org.robolectric.RobolectricTestRunner;
 
 /** Unit tests for {@link com.google.firebase.perf.network.InstrumentOkHttpEnqueueCallback}. */
 @RunWith(RobolectricTestRunner.class)
 public class InstrumentOkHttpEnqueueCallbackTest extends FirebasePerformanceTestBase {
+
+  @Spy private GaugeManager mockGaugeManager = GaugeManager.getInstance();
+  @Spy private AppStateMonitor mockAppStateMonitor = AppStateMonitor.getInstance();
+  private PerfSession session = new PerfSession("sessionId", new Clock());
+  private SessionManager sessionManager =
+          new SessionManager(mockGaugeManager, session, mockAppStateMonitor);
+
+  @Before
+  public void setUp() {
+    openMocks(this);
+    when(mockAppStateMonitor.getSessionManager()).thenReturn(sessionManager);
+  }
 
   @Test
   public void testOnResponse() throws IOException {
@@ -79,7 +100,7 @@ public class InstrumentOkHttpEnqueueCallbackTest extends FirebasePerformanceTest
 
     InstrumentOkHttpEnqueueCallback enqueueCallback =
         new InstrumentOkHttpEnqueueCallback(
-            callback, transportManager, mockTimer(), startTimeMicros);
+            callback, transportManager, mockTimer(), startTimeMicros, sessionManager);
     enqueueCallback.onResponse(call, response);
 
     ArgumentCaptor<NetworkRequestMetric> argument =
@@ -114,7 +135,7 @@ public class InstrumentOkHttpEnqueueCallbackTest extends FirebasePerformanceTest
     long startTime = 1;
 
     InstrumentOkHttpEnqueueCallback enqueueCallback =
-        new InstrumentOkHttpEnqueueCallback(callback, transportManager, mockTimer(), startTime);
+        new InstrumentOkHttpEnqueueCallback(callback, transportManager, mockTimer(), startTime, sessionManager);
     enqueueCallback.onFailure(call, e);
 
     ArgumentCaptor<NetworkRequestMetric> argument =
