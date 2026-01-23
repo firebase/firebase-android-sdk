@@ -1,5 +1,8 @@
 # Unreleased
 
+- [feature] Added support for `regexFind` and `regexFindAll` Pipeline expressions.
+  [#7669](https://github.com/firebase/firebase-android-sdk/pull/7669)
+
 # 26.1.0
 
 - [feature] Firestore Pipelines for Enterprise edition enters public preview.
