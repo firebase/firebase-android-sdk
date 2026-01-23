@@ -26,7 +26,6 @@ import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.getUInt64
 import com.google.firebase.dataconnect.toPathString
 import com.google.firebase.dataconnect.util.ImmutableByteArray
 import com.google.firebase.dataconnect.util.ProtoGraft.withGraftedInStructs
-import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.firebase.dataconnect.util.StringUtil.ellipsizeMiddle
 import com.google.firebase.dataconnect.util.StringUtil.get0xHexString
 import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
@@ -665,29 +664,55 @@ internal class QueryResultDecoder(
     return structBuilder.build()
   }
 
-  private enum class EntitySubStructValueType(val valueType: ValueType) {
+  private enum class EntityValueType(val valueType: ValueType) {
     Entity(ValueType.Entity),
     Struct(ValueType.Struct),
     List(ValueType.List),
     PrunedEntityList(ValueType.PrunedEntityList),
-    Scalar(ValueType.ValueFromEntity);
+    ValueFromEntity(ValueType.ValueFromEntity);
 
     companion object {
-      val instanceByValueType: Map<ValueType, EntitySubStructValueType> = buildMap {
-        EntitySubStructValueType.entries.forEach { entitySubStructValueType ->
-          check(entitySubStructValueType.valueType !in this) {
-            "internal error f2a6c8nqby: duplicate value type: ${entitySubStructValueType.valueType}"
+      val instanceByValueType: Map<ValueType, EntityValueType> = buildMap {
+        EntityValueType.entries.forEach { entityValueType ->
+          check(entityValueType.valueType !in this) {
+            "internal error f2a6c8nqby: duplicate value type: ${entityValueType.valueType}"
           }
-          put(entitySubStructValueType.valueType, entitySubStructValueType)
+          put(entityValueType.valueType, entityValueType)
         }
       }
 
-      fun fromValueType(valueType: ValueType): EntitySubStructValueType? =
+      fun fromValueType(valueType: ValueType): EntityValueType? =
         entries.firstOrNull { it.valueType == valueType }
     }
   }
 
   private fun readEntity(path: MutableDataConnectPath): Struct {
+    val encodedEntityId = readEncodedEntityId(path)
+    val entity =
+      entityByEncodedId[encodedEntityId]
+        ?: throw EntityNotFoundException(
+          "could not find entity with encoded id ${encodedEntityId.to0xHexString()} [p583k77y7r]"
+        )
+
+    val keyCount =
+      readUInt32(
+        path,
+        name = "entity key count",
+        valueVerifier = entityKeyCountUInt32ValueVerifier,
+        decodeErrorId = "EntityKeyCountDecodeFailed",
+        eofErrorId = "EntityKeyCountEOF",
+      )
+
+    val structBuilder = Struct.newBuilder()
+    repeat(keyCount) {
+      val key = readString(path, name = "entity key")
+      val value = path.withAddedField(key) { readEntityValue(path, key, entity) }
+      structBuilder.putFields(key, value)
+    }
+    return structBuilder.build()
+  }
+
+  private fun readEncodedEntityId(path: MutableDataConnectPath): ImmutableByteArray {
     val encodedEntityIdSize =
       readUInt32(
         path,
@@ -697,63 +722,23 @@ internal class QueryResultDecoder(
         eofErrorId = "EncodedEntityIdSizeEOF",
       )
 
-    val encodedEntityId = readBytes(path, name = "encoded entity ID", encodedEntityIdSize)
-    val entity =
-      entityByEncodedId[encodedEntityId]
-        ?: throw EntityNotFoundException(
-          "could not find entity with encoded id ${encodedEntityId.to0xHexString()} [p583k77y7r]"
-        )
-    return readEntitySubStruct(path, entity)
+    return readBytes(path, name = "encoded entity ID", encodedEntityIdSize)
   }
 
-  private fun readEntitySubStruct(path: MutableDataConnectPath, entity: Struct): Struct {
-    val structKeyCount =
-      readUInt32(
-        path,
-        name = "entity sub-struct key count",
-        valueVerifier = entitySubStructKeyCountUInt32ValueVerifier,
-        decodeErrorId = "EntitySubStructKeyCountDecodeFailed",
-        eofErrorId = "EntitySubStructKeyCountEOF",
-      )
-
-    val structBuilder = Struct.newBuilder()
-    repeat(structKeyCount) {
-      val key = readString(path, name = "entity sub-struct key")
-      val value =
-        path.withAddedField(key) { readEntityValue(path) { entity.getFieldsOrThrow(key) } }
-      structBuilder.putFields(key, value)
-    }
-    return structBuilder.build()
-  }
-
-  private inline fun readEntityValue(
-    path: MutableDataConnectPath,
-    getSubEntity: () -> Value
-  ): Value {
-    val entitySubStructValueType =
+  private fun readEntityValue(path: MutableDataConnectPath, key: String, entity: Struct): Value {
+    val valueType =
       readValueType(
         path,
-        name = "entity sub-struct value type",
-        eofErrorId = "EntitySubStructValueTypeIndicatorByteEOF",
-        unknownErrorId = "EntitySubStructValueTypeIndicatorByteUnknown",
-        unexpectedErrorId = "EntitySubStructValueTypeIndicatorByteUnexpected",
-        map = EntitySubStructValueType.instanceByValueType,
+        name = "entity value type",
+        eofErrorId = "EntityValueTypeIndicatorByteEOF",
+        unknownErrorId = "EntityValueTypeIndicatorByteUnknown",
+        unexpectedErrorId = "EntityValueTypeIndicatorByteUnexpected",
+        map = EntityValueType.instanceByValueType,
       )
 
-    return when (entitySubStructValueType) {
-      EntitySubStructValueType.Entity -> readEntity(path).toValueProto()
-      EntitySubStructValueType.Struct -> {
-        val subEntity = getSubEntity().structValue
-        patchInPrunedEntities(path, subEntity).toValueProto()
-      }
-      EntitySubStructValueType.PrunedEntityList -> {
-        val subEntity = getSubEntity().listValue
-        patchInPrunedEntities(path, subEntity).toValueProto()
-      }
-      EntitySubStructValueType.List -> {
-        readList(path).toValueProto()
-      }
-      EntitySubStructValueType.Scalar -> getSubEntity()
+    return when (valueType) {
+      EntityValueType.ValueFromEntity -> entity.getFieldsOrThrow(key)
+      else -> TODO("readEntityValue() valueType=$valueType not implemented [s4ryqxfkhb]")
     }
   }
 
@@ -1131,8 +1116,8 @@ internal class QueryResultDecoder(
     private val encodedEntityIdSizeUInt32ValueVerifier =
       UInt32ValueVerifier("EncodedEntityIdSizeInvalidValue")
 
-    private val entitySubStructKeyCountUInt32ValueVerifier =
-      UInt32ValueVerifier("EntitySubStructKeyCountInvalidValue")
+    private val entityKeyCountUInt32ValueVerifier =
+      UInt32ValueVerifier("EntityKeyCountInvalidValue")
 
     private val prunedEntityCountUInt32ValueVerifier =
       UInt32ValueVerifier("PrunedEntityCountInvalidValue")

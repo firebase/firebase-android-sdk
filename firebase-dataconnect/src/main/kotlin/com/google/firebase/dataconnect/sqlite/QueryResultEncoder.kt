@@ -222,10 +222,9 @@ internal class QueryResultEncoder(
     val encodedEntityId = writeEntityId(entityId)
     writer.writeUInt32(struct.fieldsCount)
 
-    struct.fieldsMap.entries.forEach { (key, value) ->
+    struct.fieldsMap.keys.forEach { key ->
       writeString(key)
       writer.writeByte(QueryResultCodec.VALUE_FROM_ENTITY)
-      path.withAddedField(key) { writeValue(path, value) }
     }
 
     entityByPath[path.toList()] = Entity(entityId, encodedEntityId, struct)
