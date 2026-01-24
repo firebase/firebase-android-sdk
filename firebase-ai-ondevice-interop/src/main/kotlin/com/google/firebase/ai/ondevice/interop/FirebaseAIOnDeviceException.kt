@@ -19,7 +19,16 @@ package com.google.firebase.ai.ondevice.interop
 /** Parent class for any errors that occur from the Firebase AI OnDevice SDK. */
 public abstract class FirebaseAIOnDeviceException
 internal constructor(message: String, cause: Throwable? = null) :
-  RuntimeException(message, cause) {}
+  RuntimeException(message, cause) {
+
+  public companion object {
+    public fun from(cause: Throwable): FirebaseAIOnDeviceException =
+      when (cause) {
+        is FirebaseAIOnDeviceException -> cause
+        else -> FirebaseAIOnDeviceUnknownException("Something unexpected happened.", cause)
+      }
+  }
+}
 
 /**
  * An operation has been requested, but device doesn't support local models, or they are not
@@ -35,3 +44,7 @@ internal constructor(message: String, cause: Throwable? = null) :
 /** The parameters used in the request are not valid. */
 public class FirebaseAiOnDeviceInvalidRequestException(cause: Throwable? = null) :
   FirebaseAIOnDeviceException("Invalid on-device request", cause)
+
+/** Catch all case for exceptions not explicitly expected. */
+public class FirebaseAIOnDeviceUnknownException internal constructor(message: String, cause: Throwable? = null) :
+  FirebaseAIOnDeviceException(message, cause)
