@@ -92,13 +92,10 @@ internal class ConvertersTest {
 
   @Test
   fun `GenerateContentRequest toMlKit should convert correctly optional fields`() {
-    val interopRequest =
-      InteropGenerateContentRequest(
-        text = InteropTextPart("prompt")
-      )
+    val interopRequest = InteropGenerateContentRequest(text = InteropTextPart("prompt"))
     val mlKitRequest = interopRequest.toMlKit()
 
-      // Documented default values
+    // Documented default values
     assertThat(mlKitRequest.text.textString).isEqualTo("prompt")
     assertThat(mlKitRequest.temperature).isEqualTo(0.0f)
     assertThat(mlKitRequest.topK).isEqualTo(3)
