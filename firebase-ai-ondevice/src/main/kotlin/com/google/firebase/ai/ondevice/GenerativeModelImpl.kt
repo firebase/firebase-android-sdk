@@ -22,6 +22,7 @@ import com.google.firebase.ai.ondevice.interop.GenerateContentRequest
 import com.google.firebase.ai.ondevice.interop.GenerateContentResponse
 import com.google.firebase.ai.ondevice.interop.GenerativeModel
 import com.google.mlkit.genai.common.FeatureStatus
+import com.google.mlkit.genai.common.GenAiException
 import com.google.mlkit.genai.prompt.Generation
 import kotlinx.coroutines.flow.Flow
 
@@ -56,14 +57,13 @@ internal class GenerativeModelImpl(
   override suspend fun getTokenLimit(): Int = mlkitModel.getTokenLimit()
 
   /**
-   * Invokes the MLKit `warmup()` method. Catches any exceptions thrown by MLKit during warmup and
-   * re-throws them as a `FirebaseAIOnDeviceException` for consistent error handling within the
-   * xFirebase API.
+   * Invokes the MLKit `warmup()` method. Catches [GenAiException] thrown by MLKitand re-throws them
+   * as a `FirebaseAIOnDeviceException` for consistent error handling within the Firebase API.
    */
   override suspend fun warmup() =
     try {
       mlkitModel.warmup()
-    } catch (e: Exception) {
+    } catch (e: GenAiException) {
       throw FirebaseAIOnDeviceException.from(e)
     }
 }

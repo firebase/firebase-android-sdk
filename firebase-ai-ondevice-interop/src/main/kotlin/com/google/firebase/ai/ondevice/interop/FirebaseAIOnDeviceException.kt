@@ -22,6 +22,12 @@ internal constructor(message: String, cause: Throwable? = null) :
   RuntimeException(message, cause) {
 
   public companion object {
+      /**
+       * Creates a [FirebaseAIOnDeviceException] from a [Throwable].
+       *
+       * If the [cause] is already a [FirebaseAIOnDeviceException], it is returned as is.
+       * Otherwise, a [FirebaseAIOnDeviceUnknownException] is created, wrapping the [cause].
+       */
     public fun from(cause: Throwable): FirebaseAIOnDeviceException =
       when (cause) {
         is FirebaseAIOnDeviceException -> cause
