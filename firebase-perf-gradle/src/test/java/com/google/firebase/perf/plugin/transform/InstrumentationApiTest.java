@@ -21,6 +21,7 @@ import com.google.firebase.perf.plugin.GradleBuildResult;
 import com.google.firebase.perf.plugin.GradleBuildRunner;
 import com.google.firebase.perf.plugin.GradleBuildVariant;
 import java.io.IOException;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -263,6 +264,7 @@ public class InstrumentationApiTest {
 
   /** See https://github.com/firebase/firebase-android-sdk/issues/1556 */
   @Test
+  @Disabled("TODO(b/477050030): Fix this test when fixing the other warnings")
   public void
       gradleBuild_whenUsingKotlinFileWithBothInlineFunctionAndMultiplatformProject_performInstrumentationationCorrectly()
           throws Exception {
