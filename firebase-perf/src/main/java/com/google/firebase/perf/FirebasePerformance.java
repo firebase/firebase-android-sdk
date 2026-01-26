@@ -171,7 +171,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
     FirebaseSessionsEnforcementCheck.setEnforcement(BuildConfig.ENFORCE_LEGACY_SESSIONS);
 
     TransportManager.getInstance()
-        .initialize(firebaseApp, firebaseInstallationsApi, transportFactoryProvider);
+        .initialize(firebaseApp, firebaseInstallationsApi, transportFactoryProvider, sessionManager);
 
     Context appContext = firebaseApp.getApplicationContext();
     mMetadataBundle = extractMetadata(appContext);

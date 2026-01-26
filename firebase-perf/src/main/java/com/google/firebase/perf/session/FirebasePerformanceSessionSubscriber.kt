@@ -20,7 +20,7 @@ import com.google.firebase.perf.config.ConfigResolver
 import com.google.firebase.perf.logging.FirebaseSessionsEnforcementCheck.Companion.checkSession
 import com.google.firebase.sessions.api.SessionSubscriber
 
-class FirebasePerformanceSessionSubscriber(val configResolver: ConfigResolver) : SessionSubscriber {
+class FirebasePerformanceSessionSubscriber(val configResolver: ConfigResolver, private val sessionManager: SessionManager) : SessionSubscriber {
 
   override val sessionSubscriberName: SessionSubscriber.Name = SessionSubscriber.Name.PERFORMANCE
 
@@ -28,11 +28,11 @@ class FirebasePerformanceSessionSubscriber(val configResolver: ConfigResolver) :
     get() = configResolver.isPerformanceCollectionEnabled ?: false
 
   override fun onSessionChanged(sessionDetails: SessionSubscriber.SessionDetails) {
-    val currentPerfSession = SessionManager.getInstance().perfSession()
+    val currentPerfSession = sessionManager.perfSession()
     // TODO(b/394127311): Add logic to deal with app start gauges if necessary.
     checkSession(currentPerfSession.sessionId(), "Existing session in onSessionChanged().")
 
     val updatedSession = PerfSession.createWithId(sessionDetails.sessionId)
-    SessionManager.getInstance().updatePerfSession(updatedSession)
+    sessionManager.updatePerfSession(updatedSession)
   }
 }
