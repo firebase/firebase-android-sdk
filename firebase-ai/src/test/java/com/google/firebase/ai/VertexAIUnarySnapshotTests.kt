@@ -789,35 +789,27 @@ internal class VertexAIUnarySnapshotTests {
       }
     }
 
-  @Serializable
-  data class FetchWeatherRequest(val city: String, val state: String, val date: String)
+  @Serializable data class SumRequest(val x: Int, val y: Int)
 
-  private val fetchWeatherRequestSchema =
+  private val sumRequestResponseSchema =
     JsonSchema.obj(
-      clazz = FetchWeatherRequest::class,
+      clazz = SumRequest::class,
       properties =
         mapOf(
-          "city" to
-            JsonSchema.string(
-              title = "city",
-              description = "The US city of the location.",
+          "x" to
+            JsonSchema.integer(
+              title = "x",
+              description = "The first number to sum",
               nullable = false
             ),
-          "state" to
-            JsonSchema.string(
-              title = "state",
-              description = "The US state of the location.",
-              nullable = false
-            ),
-          "date" to
-            JsonSchema.string(
-              title = "date",
-              description =
-                "The date for which to get the weather. Date must be in the format: YYYY-MM-DD.",
+          "y" to
+            JsonSchema.integer(
+              title = "y",
+              description = "The second number to sum",
               nullable = false
             ),
         ),
-      description = "the request for fetching the weather",
+      description = "the request for summing",
       nullable = false
     )
 
@@ -825,18 +817,20 @@ internal class VertexAIUnarySnapshotTests {
   fun `function call requested should trigger auto function call`() {
     var functionCalled = false
     goldenVertexUnaryFiles(
-      listOf("unary-success-auto-function-call.json", "unary-success-basic-reply-long.json").map {
-        ResponseInfo(it)
-      },
+      listOf(
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-basic-reply-long.json"
+        )
+        .map { ResponseInfo(it) },
       tools =
         listOf(
           Tool.functionDeclarations(
             autoFunctionDeclarations =
               listOf(
-                AutoFunctionDeclaration.create("fetchWeather", "", fetchWeatherRequestSchema) {
-                  request: FetchWeatherRequest ->
+                AutoFunctionDeclaration.create("sum", "", sumRequestResponseSchema) {
+                  request: SumRequest ->
                   functionCalled = true
-                  FunctionResponsePart("fetchWeather", JsonObject(mapOf()))
+                  FunctionResponsePart("sum", JsonObject(mapOf()))
                 }
               )
           )
@@ -851,11 +845,10 @@ internal class VertexAIUnarySnapshotTests {
 
   @Test
   fun `multiple function calls requested should trigger`() {
-    var weatherFunctionCalled = false
-    var otherFunctionCalled = false
+    var sumCalledCount = 0
     goldenVertexUnaryFiles(
       listOf(
-          "unary-success-parallel-auto-function-call.json",
+          "unary-success-function-call-parallel-calls.json",
           "unary-success-basic-reply-long.json"
         )
         .map { ResponseInfo(it) },
@@ -864,18 +857,10 @@ internal class VertexAIUnarySnapshotTests {
           Tool.functionDeclarations(
             autoFunctionDeclarations =
               listOf(
-                AutoFunctionDeclaration.create("fetchWeather", "", fetchWeatherRequestSchema) {
-                  request: FetchWeatherRequest ->
-                  weatherFunctionCalled = true
-                  FunctionResponsePart("fetchWeather", JsonObject(mapOf()))
-                },
-                AutoFunctionDeclaration.create(
-                  "completelyDifferentFunction",
-                  "",
-                  fetchWeatherRequestSchema
-                ) { request: FetchWeatherRequest ->
-                  otherFunctionCalled = true
-                  FunctionResponsePart("completelyDifferentFunction,", JsonObject(mapOf()))
+                AutoFunctionDeclaration.create("sum", "", sumRequestResponseSchema) {
+                  request: SumRequest ->
+                  sumCalledCount++
+                  FunctionResponsePart("sum", JsonObject(mapOf()))
                 }
               )
           )
@@ -883,37 +868,41 @@ internal class VertexAIUnarySnapshotTests {
     ) {
       withTimeout(testTimeout) {
         model.startChat().sendMessage("")
-        weatherFunctionCalled shouldBeEqual true
-        otherFunctionCalled shouldBeEqual true
+        sumCalledCount shouldBe 3
       }
     }
   }
 
   @Test
   fun `multiple function should return to user if all aren't registered`() {
-    var weatherFunctionCalled = false
+    var sumCalled = false
     var otherFunctionCalled = false
     val tools =
       listOf(
         Tool.functionDeclarations(
           autoFunctionDeclarations =
             listOf(
-              AutoFunctionDeclaration.create("fetchWeather", "", fetchWeatherRequestSchema) {
-                request: FetchWeatherRequest ->
-                weatherFunctionCalled = true
-                FunctionResponsePart("fetchWeather", JsonObject(mapOf()))
+              AutoFunctionDeclaration.create("sum", "", sumRequestResponseSchema) {
+                request: SumRequest ->
+                sumCalled = true
+                FunctionResponsePart("sum", JsonObject(mapOf()))
               },
               AutoFunctionDeclaration.create(
-                "completelyDifferentFunction",
+                "multiply",
                 "",
-                fetchWeatherRequestSchema,
+                sumRequestResponseSchema,
+              ),
+              AutoFunctionDeclaration.create(
+                "subtract",
+                "",
+                sumRequestResponseSchema,
               )
             )
         )
       )
     goldenVertexUnaryFiles(
       listOf(
-          "unary-success-parallel-auto-function-call.json",
+          "unary-success-function-call-different-parallel-calls.json",
           "unary-success-basic-reply-long.json"
         )
         .map { ResponseInfo(it) },
@@ -921,9 +910,9 @@ internal class VertexAIUnarySnapshotTests {
     ) {
       withTimeout(testTimeout) {
         val response = model.startChat().sendMessage("")
-        weatherFunctionCalled shouldBeEqual false
+        sumCalled shouldBeEqual false
         otherFunctionCalled shouldBeEqual false
-        response.functionCalls.size shouldBeEqual 2
+        response.functionCalls.size shouldBeEqual 3
       }
     }
   }
@@ -933,24 +922,24 @@ internal class VertexAIUnarySnapshotTests {
     var functionCalled = 0
     goldenVertexUnaryFiles(
       listOf(
-          "unary-success-auto-function-call.json",
-          "unary-success-auto-function-call.json",
-          "unary-success-auto-function-call.json",
-          "unary-success-auto-function-call.json",
-          "unary-success-auto-function-call.json",
-          "unary-success-auto-function-call.json",
-          "unary-success-auto-function-call.json",
-          "unary-success-auto-function-call.json",
-          "unary-success-auto-function-call.json",
-          "unary-success-auto-function-call.json",
-          "unary-success-auto-function-call.json",
-          "unary-success-auto-function-call.json",
-          "unary-success-auto-function-call.json",
-          "unary-success-auto-function-call.json",
-          "unary-success-auto-function-call.json",
-          "unary-success-auto-function-call.json",
-          "unary-success-auto-function-call.json",
-          "unary-success-auto-function-call.json",
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
         )
         .map { ResponseInfo(it) },
       tools =
@@ -958,10 +947,10 @@ internal class VertexAIUnarySnapshotTests {
           Tool.functionDeclarations(
             autoFunctionDeclarations =
               listOf(
-                AutoFunctionDeclaration.create("fetchWeather", "", fetchWeatherRequestSchema) {
-                  request: FetchWeatherRequest ->
+                AutoFunctionDeclaration.create("sum", "", sumRequestResponseSchema) {
+                  request: SumRequest ->
                   functionCalled++
-                  FunctionResponsePart("fetchWeather", JsonObject(mapOf()))
+                  FunctionResponsePart("sum", JsonObject(mapOf()))
                 }
               )
           )

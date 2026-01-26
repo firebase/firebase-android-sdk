@@ -22,9 +22,6 @@ plugins {
 }
 
 dependencies {
-  testImplementation(libs.junit)
-  testImplementation(libs.kotlin.compile.testing.extensions)
-  testImplementation(libs.junit.vintage.engine)
   implementation(libs.symbol.processing.api)
   implementation(libs.kotlinpoet.ksp)
 }
@@ -37,8 +34,6 @@ firebaseLibrary {
 tasks.test { useJUnitPlatform() }
 
 kotlin {
-  coreLibrariesVersion = "2.0.21"
-  compilerOptions.languageVersion.set(KotlinVersion.KOTLIN_2_0)
   jvmToolchain(17)
 }
 

@@ -81,7 +81,7 @@ internal constructor(
      * should be executed automatically
      */
     @JvmStatic
-    public fun functionDeclarations(
+    internal fun functionDeclarations(
       functionDeclarations: List<FunctionDeclaration>? = null,
       autoFunctionDeclarations: List<AutoFunctionDeclaration<*, *>>?
     ): Tool {

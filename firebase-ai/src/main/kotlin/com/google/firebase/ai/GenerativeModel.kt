@@ -341,7 +341,7 @@ internal constructor(
     return executeFunction<Any, Any>(
       call,
       declaration as AutoFunctionDeclaration<Any, Any>,
-      call.args["param"].toString()
+      JsonObject(call.args).toString()
     )
   }
 

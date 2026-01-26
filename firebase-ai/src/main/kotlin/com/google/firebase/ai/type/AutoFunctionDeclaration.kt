@@ -39,7 +39,7 @@ package com.google.firebase.ai.type
  * ```
  * @see JsonSchema
  */
-public class AutoFunctionDeclaration<I : Any, O : Any>
+internal class AutoFunctionDeclaration<I : Any, O : Any>
 internal constructor(
   public val name: String,
   public val description: String,
@@ -104,7 +104,7 @@ internal constructor(
       name,
       description,
       null,
-      JsonSchema.obj(mapOf("param" to inputSchema)).toInternalJson(),
+      inputSchema.toInternalJson(),
       outputSchema?.toInternalJson()
     )
   }

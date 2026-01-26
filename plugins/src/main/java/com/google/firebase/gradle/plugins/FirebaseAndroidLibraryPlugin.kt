@@ -21,7 +21,6 @@ import com.android.build.gradle.LibraryPlugin
 import com.google.firebase.gradle.plugins.LibraryType.ANDROID
 import com.google.firebase.gradle.plugins.ci.device.FirebaseTestServer
 import com.google.firebase.gradle.plugins.license.LicenseResolverPlugin
-import kotlin.text.set
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.gradle.api.attributes.Attribute
@@ -31,8 +30,6 @@ import org.gradle.kotlin.dsl.create
 import org.gradle.kotlin.dsl.getByType
 import org.gradle.kotlin.dsl.register
 import org.gradle.kotlin.dsl.withType
-import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
-import org.jetbrains.kotlin.gradle.dsl.kotlinExtension
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 /**
@@ -61,8 +58,6 @@ class FirebaseAndroidLibraryPlugin : BaseFirebaseLibraryPlugin() {
     project.tasks.withType<KotlinCompile> {
       kotlinOptions.freeCompilerArgs = listOf("-module-name", kotlinModuleName(project))
       kotlinOptions.jvmTarget = "1.8"
-      kotlinOptions.languageVersion = KotlinVersion.KOTLIN_2_0.version
-      project.kotlinExtension.coreLibrariesVersion = "2.0.21"
     }
 
     project.apply<DackkaPlugin>()
