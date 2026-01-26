@@ -21,7 +21,6 @@ import com.google.firebase.perf.plugin.GradleBuildResult;
 import com.google.firebase.perf.plugin.GradleBuildRunner;
 import com.google.firebase.perf.plugin.GradleBuildVariant;
 import java.io.IOException;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
@@ -31,8 +30,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
  */
 public class InstrumentationApiTest {
   @RegisterExtension public GradleBuildProject gradleBuildProject = new GradleBuildProject();
-  private final String TEST_AGP_VERSION = "7.2.0";
-  private final String TEST_GRADLE_VERSION = "7.3.3";
+  private final String TEST_AGP_VERSION = "7.4.1";
+  private final String TEST_GRADLE_VERSION = "7.6.6";
 
   private GradleBuildRunner getJavaRunnerBuilder() throws IOException {
     return gradleBuildProject
@@ -264,7 +263,6 @@ public class InstrumentationApiTest {
 
   /** See https://github.com/firebase/firebase-android-sdk/issues/1556 */
   @Test
-  @Disabled("TODO(b/477050030): Fix this test when fixing the other warnings")
   public void
       gradleBuild_whenUsingKotlinFileWithBothInlineFunctionAndMultiplatformProject_performInstrumentationationCorrectly()
           throws Exception {
