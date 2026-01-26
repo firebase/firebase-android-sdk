@@ -4,7 +4,9 @@ This directory contains tooling used to run Continuous Integration tasks.
 
 ## Prerequisites
 
-- Requires python3.9+ and setuptools to be installed.
+- Install python `3.9`, ideally using [`pyenv`](https://github.com/pyenv/pyenv).
+
+- Install `setuptools`: `pip3 install --upgrade setuptools`
 
 ## Setup
 
