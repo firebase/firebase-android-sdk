@@ -1,0 +1,153 @@
+/*
+ * Copyright 2024 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+plugins {
+  id("java-gradle-plugin")
+  id("maven-publish")
+}
+
+java {
+  sourceCompatibility = JavaVersion.VERSION_1_8
+  targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+group = project.groupId
+version = project.version
+
+gradlePlugin {
+  plugins {
+    perfPlugin {
+      id = "com.google.firebase.firebase-perf"
+      implementationClass = "com.google.firebase.perf.plugin.FirebasePerfPlugin"
+    }
+  }
+}
+
+// Write the plugin's classpath to a file to share with the tests.
+// Refer: https://docs.gradle.org/current/userguide/test_kit.html#sub:test-kit-classpath-injection
+task createClasspathManifest {
+  def outputDir = file("$buildDir/$name")
+
+  inputs.files sourceSets.main.runtimeClasspath
+  outputs.dir outputDir
+
+  doLast {
+    outputDir.mkdirs()
+    file("$outputDir/plugin-classpath.txt").text = sourceSets.main.runtimeClasspath.join("\n")
+  }
+}
+
+dependencies {
+  // Deps required to compile the FirePerf Plugin
+  compileOnly(gradleApi())
+  compileOnly("org.ow2.asm:asm:$project.asmApiVersion")
+  compileOnly("org.ow2.asm:asm-commons:$project.asmApiVersion")
+  compileOnly("com.android.tools.build:gradle:7.2.0")
+  compileOnly("com.android.tools:common:30.0.0")
+  compileOnly("com.android.tools:sdk-common:30.0.0")
+  compileOnly("com.android.support:appcompat-v7:28.0.0")
+  compileOnly("com.google.guava:guava:30.1-jre")
+  compileOnly("commons-io:commons-io:2.6")
+
+  // Deps required to run the tests
+  testRuntimeOnly(files(createClasspathManifest))
+  testImplementation(gradleTestKit())
+  testImplementation("org.ow2.asm:asm:$project.asmApiVersion")
+  testImplementation("com.android.tools.build:gradle:3.4.1")
+  testImplementation("commons-io:commons-io:2.6")
+  testImplementation(platform("org.junit:junit-bom:5.10.0"))
+  testImplementation("org.junit.jupiter:junit-jupiter-api:5.10.0")
+  testImplementation("org.junit.jupiter:junit-jupiter-engine:5.10.0")
+  testImplementation("org.junit.jupiter:junit-jupiter-params:5.10.0")
+  testImplementation("com.google.truth:truth:0.42")
+  testImplementation("org.mockito:mockito-core:3.12.4")
+  testImplementation("org.mockito:mockito-junit-jupiter:3.12.4")
+
+  testImplementation("com.google.android:android:4.1.1.4")
+  testImplementation("com.squareup.okhttp3:okhttp:4.8.1")
+  testImplementation("com.google.code.gson:gson:2.10.1")
+  testImplementation("io.ktor:ktor-client-apache:1.4.0")
+}
+
+def props = new Properties()
+file("src/main/resources/com/google/firebase/perf/plugin/project.properties").withInputStream {
+  props.load(it)
+}
+
+project.version = props.getProperty("pluginVersion")
+
+// Refer https://maven.apache.org/guides/getting-started/index.html#what-is-a-snapshot-version
+if (project.hasProperty("publishMode") && project.getProperty("publishMode").equals("SNAPSHOT")) {
+  project.version += "-SNAPSHOT"
+}
+
+publishing {
+  publications.withType(MavenPublication).configureEach {
+    pom {
+      licenses {
+        license {
+          name = "The Apache License, Version 2.0"
+          url = "http://www.apache.org/licenses/LICENSE-2.0.txt"
+        }
+      }
+    }
+  }
+
+  publications {
+    pluginMaven(MavenPublication) {
+      // Values are defined in the gradle.properties file
+      groupId = project.groupId
+      artifactId = project.artifactId
+      version = project.version
+
+      pom {
+        withXml {
+          // LINT.IfChange
+          def dependenciesNode = asNode().appendNode('dependencies')
+
+          def dependencyNodeAsm = dependenciesNode.appendNode('dependency')
+          dependencyNodeAsm.appendNode('groupId', 'org.ow2.asm')
+          dependencyNodeAsm.appendNode('artifactId', 'asm')
+          dependencyNodeAsm.appendNode('version', project.asmApiVersion)
+
+          def dependencyNodeAsmCommons = dependenciesNode.appendNode('dependency')
+          dependencyNodeAsmCommons.appendNode('groupId', 'org.ow2.asm')
+          dependencyNodeAsmCommons.appendNode('artifactId', 'asm-commons')
+          dependencyNodeAsmCommons.appendNode('version', project.asmApiVersion)
+          // LINT.ThenChange(firebase/firebase-android-sdk/firebase-perf-gradle/\
+          //   src/test/java/com/google/firebase/perf/plugin/GradleBuildRunner.java:pom_dependencies)
+        }
+      }
+    }
+  }
+}
+
+test {
+  testLogging.showExceptions = true
+  useJUnitPlatform()
+  filter {
+    if (project.hasProperty('include-tests')) {
+      includeTestsMatching project.properties['include-tests']
+    }
+    if (project.hasProperty('exclude-tests')) {
+      excludeTestsMatching project.properties['exclude-tests']
+    }
+  }
+}
+
+tasks.withType(ValidatePlugins).configureEach {
+  enableStricterValidation = true
+}
