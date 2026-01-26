@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 plugins {
   kotlin("jvm")
@@ -33,9 +32,7 @@ firebaseLibrary {
 
 tasks.test { useJUnitPlatform() }
 
-kotlin {
-  jvmToolchain(17)
-}
+kotlin { jvmToolchain(17) }
 
 java {
   sourceCompatibility = JavaVersion.VERSION_17
