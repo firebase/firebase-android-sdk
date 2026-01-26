@@ -21,6 +21,7 @@ import com.android.build.gradle.LibraryPlugin
 import com.google.firebase.gradle.plugins.LibraryType.ANDROID
 import com.google.firebase.gradle.plugins.ci.device.FirebaseTestServer
 import com.google.firebase.gradle.plugins.license.LicenseResolverPlugin
+import kotlin.text.set
 import org.gradle.api.JavaVersion
 import org.gradle.api.Project
 import org.gradle.api.attributes.Attribute
@@ -33,7 +34,6 @@ import org.gradle.kotlin.dsl.withType
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 import org.jetbrains.kotlin.gradle.dsl.kotlinExtension
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-import kotlin.text.set
 
 /**
  * Plugin for Android Firebase Libraries.
