@@ -211,7 +211,9 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
                 return Tasks.forResult(
                     DefaultAppCheckTokenResult.constructFromError(
                         new FirebaseException(
-                            appCheckTokenTask.getException().getMessage(),
+                            getErrorMessageOrDefault(
+                                appCheckTokenTask.getException(),
+                                "Unknown error generating App Check token"),
                             appCheckTokenTask.getException())));
               });
         });
@@ -234,7 +236,9 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
               return Tasks.forResult(
                   DefaultAppCheckTokenResult.constructFromError(
                       new FirebaseException(
-                          appCheckTokenTask.getException().getMessage(),
+                          getErrorMessageOrDefault(
+                              appCheckTokenTask.getException(),
+                              "Unknown error generating limited use App Check token"),
                           appCheckTokenTask.getException())));
             });
   }
@@ -318,5 +322,9 @@ public class DefaultFirebaseAppCheck extends FirebaseAppCheck {
   private boolean hasValidToken() {
     return cachedToken != null
         && cachedToken.getExpireTimeMillis() - clock.currentTimeMillis() > BUFFER_TIME_MILLIS;
+  }
+
+  private String getErrorMessageOrDefault(@NonNull Exception e, String defaultMessage) {
+    return e.getMessage() != null ? e.getMessage() : defaultMessage;
   }
 }

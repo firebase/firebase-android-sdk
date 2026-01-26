@@ -192,7 +192,10 @@ public class FieldFilter extends Filter {
       case EQUAL:
         return and(exists, x.equal(value));
       case NOT_EQUAL:
-        return and(exists, x.notEqual(value));
+        // In Enterprise DBs NOT_EQUAL will match a field that does not exist,
+        // therefore we do not want an existence filter for the NOT_EQUAL conversion
+        // so the Query and Pipeline behavior are consistent in Enterprise.
+        return x.notEqual(value);
       case GREATER_THAN:
         return and(exists, x.greaterThan(value));
       case GREATER_THAN_OR_EQUAL:
@@ -206,7 +209,10 @@ public class FieldFilter extends Filter {
       case NOT_IN:
         {
           List<Value> list = value.getArrayValue().getValuesList();
-          return and(exists, x.notEqualAny(list));
+          // In Enterprise DBs NOT_IN will match a field that does not exist,
+          // therefore we do not want an existence filter for the NOT_IN conversion
+          // so the Query and Pipeline behavior are consistent in Enterprise.
+          return x.notEqualAny(list);
         }
       default:
         // Handle OPERATOR_UNSPECIFIED and UNRECOGNIZED cases as needed

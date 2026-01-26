@@ -390,6 +390,27 @@ internal class VertexAIUnarySnapshotTests {
     }
 
   @Test
+  fun `response includes implicit cached metadata`() =
+    goldenVertexUnaryFile("unary-success-implicit-caching.json") {
+      withTimeout(testTimeout) {
+        val response = model.generateContent("prompt")
+
+        response.candidates.isEmpty() shouldBe false
+        response.candidates.first().finishReason shouldBe FinishReason.STOP
+        response.usageMetadata shouldNotBe null
+        response.usageMetadata?.let {
+          it.promptTokenCount shouldBe 12013
+          it.candidatesTokenCount shouldBe 15
+          it.cachedContentTokenCount shouldBe 11243
+          it.cacheTokensDetails.first().let { count ->
+            count.modality shouldBe ContentModality.TEXT
+            count.tokenCount shouldBe 11243
+          }
+        }
+      }
+    }
+
+  @Test
   fun `properly translates json text`() =
     goldenVertexUnaryFile("unary-success-constraint-decoding-json.json") {
       val response = model.generateContent("prompt")
