@@ -96,8 +96,8 @@ jobs:
           if-no-files-found: ignore
 
 
-  named_integ_tests:
-    name: "System Tests With Named DB"
+  enterprise_integ_tests:
+    name: "System Tests With Enterprise DB"
     runs-on: ubuntu-latest
     needs:
       - determine_changed
@@ -162,7 +162,7 @@ jobs:
           rm -f "$output_file"
         continue-on-error: true
 
-      - name: Firestore Named DB Integ Tests
+      - name: Firestore Enterprise DB Integ Tests
         timeout-minutes: 20
         uses: reactivecircus/android-emulator-runner@62dbb605bba737720e10b196cb4220d374026a6d #v2.33.0
         env:
@@ -177,7 +177,7 @@ jobs:
           heap-size: 4096M
           script: |
             adb logcat -v time > logcat.txt &
-            ./gradlew firebase-firestore:connectedCheck withErrorProne -PtargetBackend="prod" -PbackendEdition="standard" -PtargetDatabaseId="(default)"
+            ./gradlew firebase-firestore:connectedCheck withErrorProne -PtargetBackend="prod" -PbackendEdition="enterprise" -PtargetDatabaseId="enterprise"
       - name: Upload logs
         if: failure()
         uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
@@ -328,8 +328,8 @@ jobs:
     runs-on: ubuntu-latest
     if: always()
     name: Check all required Firestore tests results
-    needs: [firestore_emulator_integ_tests]
+    needs: [integ_tests, enterprise_integ_tests]
     steps:
       - name: Check test matrix
-        if: needs.integ_tests.result == 'failure' || needs.named_integ_tests.result == 'failure'
+        if: needs.integ_tests.result == 'failure' || needs.enterprise_integ_tests.result == 'failure'
         run: exit 1
