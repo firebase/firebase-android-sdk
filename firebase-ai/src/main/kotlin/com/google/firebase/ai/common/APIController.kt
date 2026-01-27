@@ -16,6 +16,9 @@
 
 package com.google.firebase.ai.common
 
+import android.content.pm.PackageManager
+import android.content.pm.Signature
+import android.os.Build
 import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
@@ -65,6 +68,9 @@ import io.ktor.http.contentType
 import io.ktor.http.withCharset
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.utils.io.charsets.Charset
+import java.security.MessageDigest
+import java.security.NoSuchAlgorithmException
+import kotlin.collections.isEmpty
 import kotlin.math.max
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -268,6 +274,8 @@ internal constructor(
     contentType(ContentType.Application.Json)
     header("x-goog-api-key", key)
     header("x-goog-api-client", apiClient)
+    header("X-Android-Package", firebaseApp.applicationContext.packageName)
+    header("X-Android-Cert", getSigningCertFingerprint() ?: "")
     if (firebaseApp.isDataCollectionDefaultEnabled) {
       header("X-Firebase-AppId", googleAppId)
       header("X-Firebase-AppVersion", appVersion)
@@ -342,6 +350,54 @@ internal constructor(
 
           flow.collect { send(it) }
         }
+    }
+  }
+
+  @OptIn(ExperimentalStdlibApi::class)
+  private fun getSigningCertFingerprint(): String? {
+    val signature = getCurrentSignature() ?: return null
+    try {
+      val messageDigest = MessageDigest.getInstance("SHA-1")
+      val digest = messageDigest.digest(signature.toByteArray())
+      return digest.toHexString(HexFormat.UpperCase)
+    } catch (e: NoSuchAlgorithmException) {
+      Log.w(TAG, "No support for SHA-1 algorithm found.", e)
+      return null
+    }
+  }
+
+  @Suppress("DEPRECATION")
+  private fun getCurrentSignature(): Signature? {
+    val packageName = firebaseApp.applicationContext.packageName
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
+      val packageInfo =
+        firebaseApp.applicationContext.packageManager.getPackageInfo(
+          packageName,
+          PackageManager.GET_SIGNATURES
+        )
+      val signatures = packageInfo?.signatures ?: return null
+      if (signatures.size > 1) {
+        Log.d(
+          TAG,
+          "Multiple certificates found. On Android < P, certificate order is non-deterministic; an rotated/old cert may be used."
+        )
+      }
+      return signatures.firstOrNull()
+    }
+    val packageInfo =
+      firebaseApp.applicationContext.packageManager.getPackageInfo(
+        packageName,
+        PackageManager.GET_SIGNING_CERTIFICATES
+      )
+    val signingInfo = packageInfo?.signingInfo ?: return null
+    if (signingInfo.hasMultipleSigners()) {
+      Log.d(TAG, "App has been signed with multiple certificates. Defaulting to the first one")
+      return signingInfo.apkContentsSigners.first()
+    } else {
+      // The `signingCertificateHistory` contains a sorted list of certificates used to sign this
+      // artifact, with the original one first, and once it's rotated, the current one is added at
+      // the end of the list. See the method's refdocs for more info.
+      return signingInfo.signingCertificateHistory.lastOrNull()
     }
   }
 

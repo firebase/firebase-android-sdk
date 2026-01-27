@@ -16,6 +16,9 @@
 
 package com.google.firebase.ai
 
+import android.content.Context
+import androidx.test.core.app.ApplicationProvider
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.firebase.FirebaseApp
 import com.google.firebase.ai.common.APIController
 import com.google.firebase.ai.common.JSON
@@ -54,8 +57,10 @@ import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.encodeToString
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
 import org.mockito.Mockito
 
+@RunWith(AndroidJUnit4::class)
 internal class GenerativeModelTesting {
   private val TEST_CLIENT_ID = "test"
   private val TEST_APP_ID = "1:android:12345"
@@ -65,7 +70,9 @@ internal class GenerativeModelTesting {
 
   @Before
   fun setup() {
+    val context = ApplicationProvider.getApplicationContext<Context>()
     Mockito.`when`(mockFirebaseApp.isDataCollectionDefaultEnabled).thenReturn(false)
+    Mockito.`when`(mockFirebaseApp.applicationContext).thenReturn(context)
   }
 
   @Test
