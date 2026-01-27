@@ -31,8 +31,8 @@ import org.junit.jupiter.api.extension.RegisterExtension;
  */
 public class InstrumentationApiTest {
   @RegisterExtension public GradleBuildProject gradleBuildProject = new GradleBuildProject();
-  private final String TEST_AGP_VERSION = "7.2.0";
-  private final String TEST_GRADLE_VERSION = "7.3.3";
+  private final String TEST_AGP_VERSION = "7.4.1";
+  private final String TEST_GRADLE_VERSION = "7.6.6";
 
   private GradleBuildRunner getJavaRunnerBuilder() throws IOException {
     return gradleBuildProject
