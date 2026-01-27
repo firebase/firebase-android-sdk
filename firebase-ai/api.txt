@@ -672,7 +672,8 @@ package com.google.firebase.ai.type {
   }
 
   public final class ImagePart implements com.google.firebase.ai.type.Part {
-    ctor public ImagePart(android.graphics.Bitmap image, String? displayName = null);
+    ctor public ImagePart(android.graphics.Bitmap image);
+    ctor public ImagePart(android.graphics.Bitmap image, String displayName);
     method public String? getDisplayName();
     method public android.graphics.Bitmap getImage();
     method public boolean isThought();
@@ -900,7 +901,8 @@ package com.google.firebase.ai.type {
   }
 
   public final class InlineData {
-    ctor public InlineData(byte[] data, String mimeType, String? displayName = null);
+    ctor public InlineData(byte[] data, String mimeType);
+    ctor public InlineData(byte[] data, String mimeType, String? displayName);
     method public byte[] getData();
     method public String? getDisplayName();
     method public String getMimeType();
@@ -910,7 +912,8 @@ package com.google.firebase.ai.type {
   }
 
   public final class InlineDataPart implements com.google.firebase.ai.type.Part {
-    ctor public InlineDataPart(byte[] inlineData, String mimeType, String? displayName = null);
+    ctor public InlineDataPart(byte[] inlineData, String mimeType);
+    ctor public InlineDataPart(byte[] inlineData, String mimeType, String displayName);
     method public String? getDisplayName();
     method public byte[] getInlineData();
     method public String getMimeType();

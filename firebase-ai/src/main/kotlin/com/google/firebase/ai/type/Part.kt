@@ -129,10 +129,10 @@ internal constructor(
 ) : Part {
 
   /** @param image [Bitmap] to convert into a [Part] */
-  public constructor(
-    image: Bitmap,
-    displayName: String? = null
-  ) : this(image, displayName, false, null)
+  public constructor(image: Bitmap) : this(image, null, false, null)
+
+  /** @param image [Bitmap] to convert into a [Part] */
+  public constructor(image: Bitmap, displayName: String) : this(image, displayName, false, null)
 
   internal fun toInlineDataPart() =
     InlineDataPart(
@@ -162,7 +162,18 @@ internal constructor(
   public constructor(
     inlineData: ByteArray,
     mimeType: String,
-    displayName: String? = null,
+  ) : this(inlineData, mimeType, null, false, null)
+
+  /**
+   * @param inlineData the binary data as a [ByteArray]
+   * @param mimeType an IANA standard MIME type. For supported values, see the
+   * [Firebase documentation](https://firebase.google.com/docs/vertex-ai/input-file-requirements).
+   * @param displayName the name of the file, including the extension
+   */
+  public constructor(
+    inlineData: ByteArray,
+    mimeType: String,
+    displayName: String
   ) : this(inlineData, mimeType, displayName, false, null)
 
   @Serializable
@@ -182,8 +193,11 @@ internal constructor(
 public class InlineData(
   public val data: ByteArray,
   public val mimeType: String,
-  public val displayName: String? = null
+  public val displayName: String?
 ) {
+
+  public constructor(data: ByteArray, mimeType: String) : this(data, mimeType, null)
+
   @Serializable
   internal data class Internal(val mimeType: String, val data: Base64, val displayName: String?)
 
