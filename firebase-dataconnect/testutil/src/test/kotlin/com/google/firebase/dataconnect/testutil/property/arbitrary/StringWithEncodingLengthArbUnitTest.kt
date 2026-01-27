@@ -16,14 +16,15 @@
 
 package com.google.firebase.dataconnect.testutil.property.arbitrary
 
-import com.google.firebase.dataconnect.testutil.property.arbitrary.StringWithEncodingLengthArb.Mode.Utf8EncodingLongerThanUtf16
-import com.google.firebase.dataconnect.testutil.property.arbitrary.StringWithEncodingLengthArb.Mode.Utf8EncodingShorterThanOrEqualToUtf16
+import com.google.firebase.dataconnect.testutil.property.arbitrary.StringWithEncodingLengthArb.Mode.Utf8EncodingLongerThanOrEqualToUtf16
+import com.google.firebase.dataconnect.testutil.property.arbitrary.StringWithEncodingLengthArb.Mode.Utf8EncodingShorterThanUtf16
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
-import io.kotest.matchers.comparables.shouldBeLessThanOrEqualTo
 import io.kotest.matchers.ints.shouldBeGreaterThan
+import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
 import io.kotest.matchers.ints.shouldBeInRange
+import io.kotest.matchers.ints.shouldBeLessThan
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
@@ -44,7 +45,7 @@ class StringWithEncodingLengthArbUnitTest {
     var maxLengthCount = 0
     var midLengthCount = 0
 
-    val modeArb = Arb.of(Utf8EncodingLongerThanUtf16, Utf8EncodingShorterThanOrEqualToUtf16)
+    val modeArb = Arb.of(Utf8EncodingLongerThanOrEqualToUtf16, Utf8EncodingShorterThanUtf16)
     val lengthRangeArb =
       Arb.twoValues(Arb.nonNegativeInt(max = 100)).map { (bound1, bound2) ->
         if (bound1 < bound2) bound1..bound2 else bound2..bound1
@@ -80,7 +81,7 @@ class StringWithEncodingLengthArbUnitTest {
       var utf16EdgeCaseCount = 0
       var utf16NonEdgeCaseCount = 0
 
-      val modeArb = Arb.of(Utf8EncodingLongerThanUtf16, Utf8EncodingShorterThanOrEqualToUtf16)
+      val modeArb = Arb.of(Utf8EncodingLongerThanOrEqualToUtf16, Utf8EncodingShorterThanUtf16)
       val lengthRangeArb = Arb.nonNegativeInt(max = 100).map { it..it }
 
       checkAll(propTestConfig, modeArb, lengthRangeArb) { mode, lengthRange ->
@@ -91,17 +92,17 @@ class StringWithEncodingLengthArbUnitTest {
         val utf16ByteCount = sample.length * 2
 
         when (mode) {
-          Utf8EncodingLongerThanUtf16 -> {
-            utf8ByteCount shouldBeGreaterThan utf16ByteCount
-            if (utf8ByteCount == utf16ByteCount + 1) {
+          Utf8EncodingLongerThanOrEqualToUtf16 -> {
+            utf8ByteCount shouldBeGreaterThanOrEqual utf16ByteCount
+            if (utf8ByteCount == utf16ByteCount) {
               utf16EdgeCaseCount++
             } else {
               utf16NonEdgeCaseCount++
             }
           }
-          Utf8EncodingShorterThanOrEqualToUtf16 -> {
-            utf8ByteCount shouldBeLessThanOrEqualTo utf16ByteCount
-            if (utf8ByteCount == utf16ByteCount) {
+          Utf8EncodingShorterThanUtf16 -> {
+            utf8ByteCount shouldBeLessThan utf16ByteCount
+            if (utf8ByteCount == utf16ByteCount - 1) {
               utf8EdgeCaseCount++
             } else {
               utf8NonEdgeCaseCount++
