@@ -217,7 +217,7 @@ public class CctTransportBackendTest {
             .withRequestBody(
                 matchingJsonPath(
                     String.format(
-                        "$[?(@.logRequest[0].logEvent[1].experimentIds.encryptedBlob == \"%s\")]",
+                        "$[?(@.logRequest[0].logEvent[1].experimentIds.encryptedBlob == [\"%s\"])]",
                         EXPERIMENT_IDS_ENCRYPTED_BYTE64)))
             .withRequestBody(
                 matchingJsonPath(
