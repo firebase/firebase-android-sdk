@@ -20,11 +20,7 @@ package com.google.firebase.dataconnect.testutil.property.arbitrary
 
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.testutil.DataConnectPath
-import com.google.firebase.dataconnect.testutil.DataConnectPathComparator
 import com.google.firebase.dataconnect.testutil.DataConnectPathValuePair
-import com.google.firebase.dataconnect.testutil.MutableDataConnectPath
-import com.google.firebase.dataconnect.testutil.appendPathStringTo
-import com.google.firebase.dataconnect.testutil.randomlyInsertStruct
 import com.google.firebase.dataconnect.testutil.toValueProto
 import com.google.firebase.dataconnect.testutil.withAddedPathSegment
 import com.google.protobuf.ListValue
@@ -69,28 +65,6 @@ object ProtoArb {
     fun toValueProto(): Value = listValue.toValueProto()
 
     override fun toString() = "ListValueInfo(listValue=$listValue, depth=$depth)"
-  }
-
-  class StructNestedInStructKeysSample(
-    val aggregatedStruct: Struct,
-    val prunedStruct: Struct,
-    val childStructs: Map<DataConnectPath, Struct>,
-  ) {
-    override fun toString() = buildString {
-      append("StructNestedInStructKeysSample(aggregatedStruct=").append(aggregatedStruct)
-      append(", prunedStruct=").append(prunedStruct)
-      append(", childStructs.size=").append(childStructs.size)
-      append(", childStructs={")
-      childStructs.keys.sortedWith(DataConnectPathComparator).forEachIndexed { index, path ->
-        if (index > 0) {
-          append(", ")
-        }
-        path.appendPathStringTo(this)
-        append("=")
-        append(childStructs[path]!!)
-      }
-      append("})")
-    }
   }
 }
 
@@ -324,10 +298,7 @@ fun ProtoArb.listValue(
     structSizeRange = structSize,
   )
 
-fun ProtoArb.structKey(lengthRange: IntRange = 1..10): Arb<String> =
-  Arb.string(lengthRange, Codepoint.alphanumeric())
-
-fun ProtoArb.structKey(length: Int): Arb<String> = structKey(length..length)
+fun ProtoArb.structKey(): Arb<String> = Arb.string(1..10, Codepoint.alphanumeric())
 
 fun ProtoArb.struct(
   size: IntRange = 0..5,
@@ -388,13 +359,6 @@ fun ProtoArb.struct(
     scalarValueArb = scalarValue,
     listSizeRange = listSize,
   )
-
-fun ProtoArb.structNestedInStructKeys(
-  nestingRange: IntRange = 1..3,
-  structArb: Arb<ProtoArb.StructInfo> = struct(),
-  structKeyArb: Arb<String> = structKey(),
-): Arb<ProtoArb.StructNestedInStructKeysSample> =
-  StructNestedInStructKeysSampleArb(nestingRange, structArb, structKeyArb)
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // CompositeValueArb class
@@ -830,86 +794,5 @@ private class StructOrListValueGenerator(
         val size = (last - first) + 1
         size > 1
       }
-  }
-}
-
-private class StructNestedInStructKeysSampleArb(
-  private val nestingRange: IntRange,
-  private val structArb: Arb<ProtoArb.StructInfo>,
-  private val structKeyArb: Arb<String>,
-) : Arb<ProtoArb.StructNestedInStructKeysSample>() {
-
-  private val nestingArb =
-    Arb.int(
-      nestingRange.also {
-        require(!it.isEmpty()) {
-          "nestingRange is empty, but it must be non-empty (nestingRange=$nestingRange) [eqsjfnv63e]"
-        }
-        require(it.first > 0) {
-          "nestingRange.first=${nestingRange.first}, " +
-            "but it must be greater than zero (nestingRange=$nestingRange) [kw63xhxjbd]"
-        }
-      }
-    )
-
-  override fun sample(rs: RandomSource) =
-    generate(
-        rs,
-        structEdgeCaseProbability = rs.random.nextFloat(),
-        nestingEdgeCaseProbability = rs.random.nextFloat(),
-      )
-      .asSample()
-
-  override fun edgecase(rs: RandomSource) = run {
-    val edgeCases: Set<EdgeCase> = run {
-      val edgeCaseCount = rs.random.nextInt(1..EdgeCase.entries.size)
-      EdgeCase.entries.shuffled(rs.random).take(edgeCaseCount).toSet()
-    }
-    check(edgeCases.isNotEmpty())
-
-    generate(
-      rs,
-      structEdgeCaseProbability = if (EdgeCase.Struct in edgeCases) 1.0f else 0.0f,
-      nestingEdgeCaseProbability = if (EdgeCase.Nesting in edgeCases) 1.0f else 0.0f,
-    )
-  }
-
-  private fun generate(
-    rs: RandomSource,
-    structEdgeCaseProbability: Float,
-    nestingEdgeCaseProbability: Float,
-  ): ProtoArb.StructNestedInStructKeysSample {
-    val nesting = nestingArb.next(rs, nestingEdgeCaseProbability)
-    check(nesting >= 1) { "internal error x6324kg2ze: nesting==$nesting" }
-    val structs = List(nesting + 1) { structArb.next(rs, structEdgeCaseProbability).struct }
-    val paths = mutableListOf<MutableDataConnectPath>()
-
-    var struct = structs.first()
-    structs.drop(1).forEach { parentStruct ->
-      val parentStructBuilder = parentStruct.toBuilder()
-
-      val insertPath =
-        parentStructBuilder.randomlyInsertStruct(
-          struct,
-          rs.random,
-          generateKey = { structKeyArb.sample(rs).value },
-        )
-
-      paths.forEach { currentPath -> currentPath.addAll(0, insertPath) }
-      paths.add(insertPath.toMutableList())
-
-      struct = parentStructBuilder.build()
-    }
-
-    return ProtoArb.StructNestedInStructKeysSample(
-      aggregatedStruct = struct,
-      prunedStruct = structs.last(),
-      childStructs = paths.map { it.toList() }.zip(structs.dropLast(1)).toMap(),
-    )
-  }
-
-  private enum class EdgeCase {
-    Struct,
-    Nesting,
   }
 }
