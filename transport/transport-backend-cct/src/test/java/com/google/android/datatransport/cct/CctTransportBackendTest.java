@@ -50,6 +50,7 @@ import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
 import java.util.zip.GZIPOutputStream;
 import org.junit.Rule;
@@ -127,6 +128,8 @@ public class CctTransportBackendTest {
                         .setPseudonymousId(PSEUDONYMOUS_ID)
                         .setExperimentIdsClear(EXPERIMENT_IDS_CLEAR.toByteArray())
                         .setExperimentIdsEncrypted(EXPERIMENT_IDS_ENCRYPTED.toByteArray())
+                        .setExperimentIdsEncryptedList(
+                            List.of(EXPERIMENT_IDS_ENCRYPTED.toByteArray()))
                         .build())))
         .setExtras(destination.getExtras())
         .build();
@@ -217,8 +220,8 @@ public class CctTransportBackendTest {
             .withRequestBody(
                 matchingJsonPath(
                     String.format(
-                        "$[?(@.logRequest[0].logEvent[1].experimentIds.encryptedBlob == [\"%s\"])]",
-                        EXPERIMENT_IDS_ENCRYPTED_BYTE64)))
+                        "$[?(@.logRequest[0].logEvent[1].experimentIds.encryptedBlob == [\"%s\",\"%s\"])]",
+                        EXPERIMENT_IDS_ENCRYPTED_BYTE64, EXPERIMENT_IDS_ENCRYPTED_BYTE64)))
             .withRequestBody(
                 matchingJsonPath(
                     String.format(
