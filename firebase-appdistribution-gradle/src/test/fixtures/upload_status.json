@@ -1,0 +1,14 @@
+{
+  "done": true,
+  "response": {
+    "result": "RELEASE_CREATED",
+    "release": {
+      "name": "projects/123456789123/apps/1:123456789123:android:abc1234/releases/release-id",
+      "displayVersion": "2.2",
+      "buildVersion": "3",
+      "firebaseConsoleUri": "firebaseConsoleUri",
+      "testingUri": "testingUri",
+      "binaryDownloadUri": "binaryDownloadUri"
+    }
+  }
+}
