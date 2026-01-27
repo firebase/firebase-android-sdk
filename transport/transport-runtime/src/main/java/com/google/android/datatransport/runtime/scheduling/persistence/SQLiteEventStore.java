@@ -843,6 +843,7 @@ public class SQLiteEventStore
 
   private byte[] flattenListBlob(List<byte[]> blob) {
     if (blob == null) return null;
+
     byte[][] input = blob.toArray(new byte[0][]);
     int metadataSize = input.length * 4;
     int totalSize = 0;
