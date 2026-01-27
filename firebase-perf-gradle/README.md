@@ -7,27 +7,27 @@ that enables instrumentation on developer's app which provides the capability fo
 ## Building the plugin
 
 ```
-firebase-android-buildtools$ ./gradlew :firebase-perf-gradle:build
+firebase-android-sdk$ ./gradlew :firebase-perf-gradle:build
 ```
 
 The build command eventually runs the tests as well. Outputs will get generated into
-`perf-plugin/build` folder.
+`firebase-perf-gradle/build` folder.
 
 ## Testing the plugin
 
 Below command runs both the Unit and Functional Tests:
 
 ```
-firebase-android-buildtools$ ./gradlew :firebase-perf-gradle:test
+firebase-android-sdk$ ./gradlew :firebase-perf-gradle:test
 ```
 
 ## Build without running the tests
 
-`perf-plugin` testing takes ~10-12 minutes because of [Functional Tests](./perf-plugin/src/test/java/com/google/firebase/perf/plugin/FirebasePerfTransformTest.java).
+`perf-plugin` testing takes ~10-12 minutes because of [Functional Tests](./firebase-perf-gradle/src/test/java/com/google/firebase/perf/plugin/FirebasePerfTransformTest.java).
 Building the plugin without executing the tests each time helps speed up the development.
 
 ```
-firebase-android-buildtools$ ./gradlew :firebase-perf-gradle:build -x test
+firebase-android-sdk$ ./gradlew :firebase-perf-gradle:build -x test
 ```
 
 ## Publishing & Releasing
@@ -35,7 +35,7 @@ firebase-android-buildtools$ ./gradlew :firebase-perf-gradle:build -x test
 ### Publish local Maven artifact
 
 ```
-firebase-android-buildtools$ ./gradlew :firebase-perf-gradle:publishToMavenLocal
+firebase-android-sdk$ ./gradlew :firebase-perf-gradle:publishToMavenLocal
 ```
 
 By default the released version will be published. To build a `SNAPSHOT` version for development
