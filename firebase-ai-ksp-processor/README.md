@@ -1,7 +1,9 @@
 ## To Build
-run `./gradlew :firebase-ai-ksp-processor:publishToMavenLocal` 
+
+run `./gradlew :firebase-ai-ksp-processor:publishToMavenLocal`
 
 ## To Integrate
+
 add the following to your app's gradle file:
 
 ```kotlin
@@ -11,16 +13,17 @@ plugins {
 dependencies {
     implementation("com.google.firebase:firebase-bom:<latest-version>")
     implementation("com.google.firebase:firebase-ai")
-    ksp("com.google.firebase:firebase-ai-ksp-processor:1.0.0")
+    ksp("com.google.firebase:firebase-ai-ksp-processor:16.0.0")
 }
 ```
+
 ## To Use
 
 1. Create a data class that expresses the object you want the model to return
 2. Make sure that this data class is @Serializable and @Generable
 3. Ensure that any classes nested within this data class are also @Serializable data classes
 4. Ensure that the data class has a companion object
-5. Add documentation to the class, either with kDocs or the @Guide annotation, to help the model 
+5. Add documentation to the class, either with kDocs or the @Guide annotation, to help the model
    understand it.
 6. You may now access the schema using `<classname>.firebaseAISchema()`
 7. You can use this schema to call `GenerativeModel#generateObject()`
@@ -56,3 +59,4 @@ val objectResponse = model.generateObject(
 
 val carDesign = objectResponse.getObject()
 ```
+

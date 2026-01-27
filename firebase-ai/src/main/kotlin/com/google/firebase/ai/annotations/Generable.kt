@@ -23,7 +23,8 @@ import com.google.firebase.ai.type.JsonSchema
  * match an existing kotlin class structure. For more info see:
  * https://github.com/firebase/firebase-android-sdk/blob/main/firebase-ai-ksp-processor/README.md
  *
- * @property description a description of the class
+ * @property description a description of the class to be forwarded to the model. This will override
+ * a kDoc description.
  */
 @Target(AnnotationTarget.CLASS)
 @Retention(AnnotationRetention.SOURCE)

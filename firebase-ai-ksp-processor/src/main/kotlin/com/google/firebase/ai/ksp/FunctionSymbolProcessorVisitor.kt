@@ -44,17 +44,20 @@ internal class FunctionSymbolProcessorVisitor(
     var shouldError = false
     val fullFunctionName = function.qualifiedName?.asString()
     if (fullFunctionName == null) {
-      logger.warn("Error extracting function name.")
+      logger.warn("Error extracting function name from ${function.containingFile?.filePath}.")
       shouldError = true
     }
     if (!function.isPublic()) {
-      logger.warn("$fullFunctionName must be public.")
+      logger.warn("$fullFunctionName (in ${function.containingFile?.filePath}) must be public.")
       shouldError = true
     }
     val containingClass = function.parentDeclaration as? KSClassDeclaration
     val containingClassQualifiedName = containingClass?.qualifiedName?.asString()
     if (containingClassQualifiedName == null) {
-      logger.warn("Could not extract name of containing class of $fullFunctionName.")
+      logger.warn(
+        "Could not extract name of containing class of $fullFunctionName (in " +
+          "${function.containingFile?.filePath})."
+      )
       shouldError = true
     }
     if (containingClass == null || !containingClass.isCompanionObject) {
@@ -98,7 +101,10 @@ internal class FunctionSymbolProcessorVisitor(
       }
     }
     if (shouldError) {
-      logger.error("$fullFunctionName has one or more errors, please resolve them.")
+      logger.error(
+        "$fullFunctionName (in ${function.containingFile?.filePath}) has one or more " +
+          "errors, please resolve them."
+      )
     }
     val generatedFunctionFile = generateFileSpec(function)
     val containingFile = function.containingFile

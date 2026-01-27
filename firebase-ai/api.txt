@@ -114,14 +114,12 @@ package com.google.firebase.ai.annotations {
     method public abstract double maximum() default -1.0;
     method public abstract int minItems() default -1;
     method public abstract double minimum() default -1.0;
-    method public abstract String pattern() default "";
     property public abstract String description;
     property public abstract String format;
     property public abstract int maxItems;
     property public abstract double maximum;
     property public abstract int minItems;
     property public abstract double minimum;
-    property public abstract String pattern;
   }
 
 }
@@ -458,22 +456,22 @@ package com.google.firebase.ai.type {
   public final class FunctionResponsePart implements com.google.firebase.ai.type.Part {
     ctor public FunctionResponsePart(String name, kotlinx.serialization.json.JsonObject response);
     ctor public FunctionResponsePart(String name, kotlinx.serialization.json.JsonObject response, String? id = null);
-    ctor public FunctionResponsePart(String name, kotlinx.serialization.json.JsonObject response, String? id = null, java.util.List<? extends com.google.firebase.ai.type.Part>? parts = null);
+    ctor public FunctionResponsePart(String name, kotlinx.serialization.json.JsonObject response, String? id = null, java.util.List<? extends com.google.firebase.ai.type.Part> parts = emptyList());
     method public String? getId();
     method public String getName();
-    method public java.util.List<com.google.firebase.ai.type.Part>? getParts();
+    method public java.util.List<com.google.firebase.ai.type.Part> getParts();
     method public kotlinx.serialization.json.JsonObject getResponse();
     method public boolean isThought();
     property public final String? id;
     property public boolean isThought;
     property public final String name;
-    property public final java.util.List<com.google.firebase.ai.type.Part>? parts;
+    property public final java.util.List<com.google.firebase.ai.type.Part> parts;
     property public final kotlinx.serialization.json.JsonObject response;
     field public static final com.google.firebase.ai.type.FunctionResponsePart.Companion Companion;
   }
 
   public static final class FunctionResponsePart.Companion {
-    method public com.google.firebase.ai.type.FunctionResponsePart from(kotlinx.serialization.json.JsonObject jsonObject, java.util.List<? extends com.google.firebase.ai.type.Part>? parts = null);
+    method public com.google.firebase.ai.type.FunctionResponsePart from(kotlinx.serialization.json.JsonObject jsonObject, java.util.List<? extends com.google.firebase.ai.type.Part> parts = emptyList());
   }
 
   public final class GenerateContentResponse {
@@ -964,7 +962,6 @@ package com.google.firebase.ai.type {
     method public Integer? getMinItems();
     method public Double? getMinimum();
     method public Boolean? getNullable();
-    method public String? getPattern();
     method public java.util.Map<java.lang.String,com.google.firebase.ai.type.JsonSchema<? extends java.lang.Object?>>? getProperties();
     method public java.util.List<java.lang.String>? getRequired();
     method public kotlinx.serialization.KSerializer<T> getSerializer();
@@ -1020,7 +1017,6 @@ package com.google.firebase.ai.type {
     property public final Integer? minItems;
     property public final Double? minimum;
     property public final Boolean? nullable;
-    property public final String? pattern;
     property public final java.util.Map<java.lang.String,com.google.firebase.ai.type.JsonSchema<? extends java.lang.Object?>>? properties;
     property public final java.util.List<java.lang.String>? required;
     property public final String? title;
@@ -1526,7 +1522,7 @@ package com.google.firebase.ai.type {
 
   public final class Tool {
     method public static com.google.firebase.ai.type.Tool codeExecution();
-    method public static com.google.firebase.ai.type.Tool functionDeclarations(java.util.List<com.google.firebase.ai.type.FunctionDeclaration>? functionDeclarations = null);
+    method public static com.google.firebase.ai.type.Tool functionDeclarations(java.util.List<com.google.firebase.ai.type.FunctionDeclaration> functionDeclarations);
     method public static com.google.firebase.ai.type.Tool googleSearch(com.google.firebase.ai.type.GoogleSearch googleSearch = com.google.firebase.ai.type.GoogleSearch());
     method @com.google.firebase.ai.type.PublicPreviewAPI public static com.google.firebase.ai.type.Tool urlContext(com.google.firebase.ai.type.UrlContext urlContext = com.google.firebase.ai.type.UrlContext());
     field public static final com.google.firebase.ai.type.Tool.Companion Companion;
@@ -1534,7 +1530,7 @@ package com.google.firebase.ai.type {
 
   public static final class Tool.Companion {
     method public com.google.firebase.ai.type.Tool codeExecution();
-    method public com.google.firebase.ai.type.Tool functionDeclarations(java.util.List<com.google.firebase.ai.type.FunctionDeclaration>? functionDeclarations = null);
+    method public com.google.firebase.ai.type.Tool functionDeclarations(java.util.List<com.google.firebase.ai.type.FunctionDeclaration> functionDeclarations);
     method public com.google.firebase.ai.type.Tool googleSearch(com.google.firebase.ai.type.GoogleSearch googleSearch = com.google.firebase.ai.type.GoogleSearch());
     method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.type.Tool urlContext(com.google.firebase.ai.type.UrlContext urlContext = com.google.firebase.ai.type.UrlContext());
   }

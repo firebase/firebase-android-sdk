@@ -32,7 +32,6 @@ internal data class GuideValues(
   val minItems: Int?,
   val maxItems: Int?,
   val format: String?,
-  val pattern: String?,
   val description: String?
 )
 
@@ -46,7 +45,6 @@ internal fun getGuideValuesFromAnnotation(
     minItems = getIntFromAnnotation(guideAnnotation, "minItems"),
     maxItems = getIntFromAnnotation(guideAnnotation, "maxItems"),
     format = getStringFromAnnotation(guideAnnotation, "format"),
-    pattern = getStringFromAnnotation(guideAnnotation, "pattern"),
     description = description
   )
 

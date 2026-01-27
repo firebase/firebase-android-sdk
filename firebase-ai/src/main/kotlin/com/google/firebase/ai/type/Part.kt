@@ -250,7 +250,7 @@ internal constructor(
   public val name: String,
   public val response: JsonObject,
   public val id: String? = null,
-  public val parts: List<Part>? = null,
+  public val parts: List<Part> = emptyList(),
   public override val isThought: Boolean,
   internal val thoughtSignature: String?
 ) : Part {
@@ -265,7 +265,7 @@ internal constructor(
     name: String,
     response: JsonObject,
     id: String? = null,
-    parts: List<Part>? = null
+    parts: List<Part> = emptyList()
   ) : this(name, response, id, parts, false, null)
 
   @Serializable
@@ -285,7 +285,7 @@ internal constructor(
   }
 
   internal fun toInternalFunctionResponse(): Internal.FunctionResponse {
-    return Internal.FunctionResponse(name, response, id, parts?.map { it.toInternal(true) })
+    return Internal.FunctionResponse(name, response, id, parts.map { it.toInternal(true) })
   }
 
   internal fun normalizeAgainstCall(call: FunctionCallPart): FunctionResponsePart {
@@ -293,7 +293,7 @@ internal constructor(
   }
 
   public companion object {
-    public fun from(jsonObject: JsonObject, parts: List<Part>? = null): FunctionResponsePart {
+    public fun from(jsonObject: JsonObject, parts: List<Part> = emptyList()): FunctionResponsePart {
       return FunctionResponsePart("", jsonObject, null, parts)
     }
   }
@@ -408,7 +408,7 @@ internal fun Part.toInternal(ignoreThoughtFlag: Boolean = false): InternalPart {
           name,
           response,
           id,
-          parts?.map { it.toInternal(true) }
+          parts.map { it.toInternal(true) }
         ),
         thought,
         thoughtSignature
@@ -480,7 +480,7 @@ internal fun InternalPart.toPublic(): Part {
         functionResponse.name,
         functionResponse.response,
         functionResponse.id,
-        functionResponse.parts?.map { it.toPublic() },
+        functionResponse.parts?.map { it.toPublic() } ?: emptyList(),
         thought ?: false,
         thoughtSignature
       )

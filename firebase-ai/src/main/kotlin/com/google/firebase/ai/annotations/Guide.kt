@@ -20,12 +20,11 @@ package com.google.firebase.ai.annotations
  * This annotation is used with the firebase-ai-ksp-processor plugin to provide extra information on
  * generated classes and fields.
  * @property description a description of the field
- * @property minimum the minimum value (exclusive) which the numeric field may contain
- * @property maximum the maximum value (exclusive) which the numeric field may contain
+ * @property minimum the minimum value (inclusive) which the numeric field may contain
+ * @property maximum the maximum value (inclusive) which the numeric field may contain
  * @property minItems the minimum number of items in a list
  * @property maxItems the maximum number of items in a list
  * @property format the format that a field must conform to
- * @property pattern the regular expression that a string field must conform to
  */
 @Target(AnnotationTarget.PROPERTY)
 @Retention(AnnotationRetention.SOURCE)
@@ -36,5 +35,4 @@ public annotation class Guide(
   public val minItems: Int = -1,
   public val maxItems: Int = -1,
   public val format: String = "",
-  public val pattern: String = "",
 )

@@ -42,7 +42,6 @@ jacksonCore = "2.13.1"
 jacksonDatabind = "2.18.2"
 javalite = "3.25.5"
 jsonassert = "1.5.0"
-junitVintageEngine = "5.10.1"
 kotest = "5.9.0" # Do not use 5.9.1 because it reverts the fix for https://github.com/kotest/kotest/issues/3981
 kotestAssertionsCore = "5.8.1"
 kotlin = "2.0.21"
@@ -139,7 +138,6 @@ jackson-databind = { module = "com.fasterxml.jackson.core:jackson-databind", ver
 javax-annotation-jsr250 = { module = "javax.annotation:jsr250-api", version = "1.0" }
 javax-inject = { module = "javax.inject:javax.inject", version = "1" }
 jsonassert = { module = "org.skyscreamer:jsonassert", version.ref = "jsonassert" }
-junit-vintage-engine = { module = "org.junit.vintage:junit-vintage-engine", version.ref = "junitVintageEngine" }
 kotest-assertions-core = { module = "io.kotest:kotest-assertions-core", version.ref = "kotestAssertionsCore" }
 kotest-assertions-json = { module = "io.kotest:kotest-assertions-json", version.ref = "kotestAssertionsCore" }
 kotlin-bom = { module = "org.jetbrains.kotlin:kotlin-bom", version.ref = "kotlin" }

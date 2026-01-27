@@ -49,8 +49,8 @@ internal class SchemaSymbolProcessorVisitor(
     }
     val containingFile = classDeclaration.containingFile
     if (containingFile == null) {
-      logger.error("${classDeclaration.qualifiedName} must be in a file in the build")
-      throw RuntimeException()
+      logger.warn("${classDeclaration.qualifiedName} must be in a file in the build, skipping")
+      return
     }
     val generatedSchemaFile = generateFileSpec(classDeclaration)
     generatedSchemaFile.writeTo(
@@ -112,7 +112,7 @@ internal class SchemaSymbolProcessorVisitor(
     val baseKdoc = extractBaseKdoc(kdocString)
     val propertyDocs = extractPropertyKdocs(kdocString)
     val generableClassAnnotation =
-      type.annotations.firstOrNull() { it.shortName.getShortName() == "Generable" }
+      type.annotations.firstOrNull { it.shortName.getShortName() == "Generable" }
 
     val guideValues =
       getGuideValuesFromAnnotation(
@@ -197,7 +197,7 @@ internal class SchemaSymbolProcessorVisitor(
                   name = propertyName,
                   parentType = type,
                   guideAnnotation =
-                    property.annotations.firstOrNull() { it.shortName.getShortName() == "Guide" },
+                    property.annotations.firstOrNull { it.shortName.getShortName() == "Guide" },
                 )
             }
           properties.entries.forEach {
@@ -233,13 +233,10 @@ internal class SchemaSymbolProcessorVisitor(
           "minItems and maxItems are not valid parameters to specify in @Guide"
       )
     }
-    if (
-      (guideValues.format != null || guideValues.pattern != null) &&
-        className.canonicalName != "kotlin.String"
-    ) {
+    if ((guideValues.format != null) && className.canonicalName != "kotlin.String") {
       logger.warn(
         "${parentType?.toClassName()?.simpleName?.let { "$it." }}$name is not a String type, " +
-          "format and pattern are not a valid parameter to specify in @Guide"
+          "format is not a valid parameter to specify in @Guide"
       )
     }
     guideValues.minimum?.let { builder.addStatement("minimum = %L,", it) }
@@ -248,7 +245,6 @@ internal class SchemaSymbolProcessorVisitor(
 
     guideValues.maxItems?.let { builder.addStatement("maxItems = %L,", it) }
     guideValues.format?.let { builder.addStatement("format = %S,", it) }
-    guideValues.pattern?.let { builder.addStatement("pattern = %S,", it) }
     builder.addStatement("nullable = %L)", className.isNullable).unindent()
     return builder.build()
   }

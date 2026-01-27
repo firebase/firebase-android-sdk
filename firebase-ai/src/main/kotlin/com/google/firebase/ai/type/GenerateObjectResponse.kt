@@ -21,7 +21,7 @@ import kotlinx.serialization.json.Json
 
 /**
  * A [GenerateContentResponse] augmented with class information, use [getObject] to parse the
- * response and extract the raw object.
+ * response and extract the strongly typed object.
  */
 public class GenerateObjectResponse<T : Any>
 internal constructor(

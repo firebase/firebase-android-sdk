@@ -378,7 +378,6 @@ internal constructor(
         outType?.let { listOf(it, "null") },
         description,
         outFormat,
-        null,
         enum?.let {
           buildList {
             addAll(it)
@@ -400,7 +399,6 @@ internal constructor(
       outType,
       description,
       outFormat,
-      null,
       enum,
       properties?.mapValues { it.value.toInternalJson() },
       required,
@@ -439,7 +437,6 @@ internal constructor(
     val type: String? = null,
     val description: String? = null,
     val format: String? = null,
-    val pattern: String? = null,
     val enum: List<String>? = null,
     val properties: Map<String, InternalJson>? = null,
     val required: List<String>? = null,
@@ -457,7 +454,6 @@ internal constructor(
     val type: List<String>? = null,
     val description: String? = null,
     val format: String? = null,
-    val pattern: String? = null,
     val enum: List<String>? = null,
     val properties: Map<String, InternalJson>? = null,
     val required: List<String>? = null,

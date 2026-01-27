@@ -68,7 +68,7 @@ internal constructor(
      */
     @JvmStatic
     public fun functionDeclarations(
-      functionDeclarations: List<FunctionDeclaration>? = null,
+      functionDeclarations: List<FunctionDeclaration>,
     ): Tool {
       @OptIn(PublicPreviewAPI::class) return Tool(functionDeclarations, null, null, null, null)
     }

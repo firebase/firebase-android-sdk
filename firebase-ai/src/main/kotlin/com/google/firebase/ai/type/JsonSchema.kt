@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Google LLC
+ * Copyright 2026 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,6 @@ internal constructor(
   public val clazz: KClass<T>,
   public val description: String? = null,
   public val format: String? = null,
-  public val pattern: String? = null,
   public val nullable: Boolean? = null,
   public val enum: List<String>? = null,
   public val properties: Map<String, JsonSchema<*>>? = null,
@@ -476,7 +475,6 @@ internal constructor(
         outType?.let { listOf(it, "null") },
         description,
         outFormat,
-        pattern,
         enum?.let {
           buildList {
             addAll(it)
@@ -498,7 +496,6 @@ internal constructor(
       outType,
       description,
       outFormat,
-      pattern,
       enum,
       properties?.mapValues { it.value.toInternalJson() },
       required,
