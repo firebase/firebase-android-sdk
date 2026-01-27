@@ -81,7 +81,8 @@ class FirebaseKspProcessorTest {
     val objSchema = rootSchema.properties?.get("objTest")!!
     assertThat(objSchema.clazz).isEqualTo(SecondarySchemaTestClass::class)
     assertThat(objSchema.properties).isNotNull()
-    assertThat(objSchema.description).isEqualTo("class kdoc should be used if property kdocs aren't present")
+    assertThat(objSchema.description)
+      .isEqualTo("class kdoc should be used if property kdocs aren't present")
     assertThat(objSchema.title).isEqualTo("objTest")
     assertThat(objSchema.nullable).isEqualTo(false)
   }
