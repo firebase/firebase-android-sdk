@@ -71,7 +71,6 @@ import io.ktor.utils.io.charsets.Charset
 import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException
 import kotlin.math.max
-import kotlin.math.max
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineName
