@@ -27,4 +27,4 @@ import com.google.firebase.ai.type.AutoFunctionDeclaration
  */
 @Target(AnnotationTarget.FUNCTION)
 @Retention(AnnotationRetention.SOURCE)
-public annotation class Tool(public val description: String = "")
+internal annotation class Tool(public val description: String = "")
