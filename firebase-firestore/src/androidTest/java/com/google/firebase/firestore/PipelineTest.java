@@ -945,7 +945,6 @@ public class PipelineTest {
             .pipeline()
             .collection(randomCol)
             .select(Expression.regexFind("title", "^\\w+").alias("firstWordInTitle"))
-            .select("firstWordInTitle")
             .sort(field("firstWordInTitle").ascending())
             .limit(3)
             .execute();
@@ -967,7 +966,6 @@ public class PipelineTest {
             .pipeline()
             .collection(randomCol)
             .select(Expression.regexFindAll("title", "\\w+").alias("wordsInTitle"))
-            .select("wordsInTitle")
             .sort(field("wordsInTitle").ascending())
             .limit(3)
             .execute();
