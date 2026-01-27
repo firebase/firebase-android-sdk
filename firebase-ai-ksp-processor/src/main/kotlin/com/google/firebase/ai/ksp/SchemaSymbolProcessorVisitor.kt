@@ -213,7 +213,7 @@ internal class SchemaSymbolProcessorVisitor(
       }
     }
     name?.let { builder.addStatement("title = %S,", it) }
-    guideValues.description?.let { builder.addStatement("description = %S,", description) }
+    guideValues.description?.let { builder.addStatement("description = %S,", it) }
 
     if (
       (guideValues.minimum != null || guideValues.maximum != null) &&

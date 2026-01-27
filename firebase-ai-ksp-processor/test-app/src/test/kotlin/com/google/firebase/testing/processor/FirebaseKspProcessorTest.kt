@@ -29,6 +29,7 @@ class FirebaseKspProcessorTest {
     val rootSchema = RootSchemaTestClass.firebaseAISchema()
 
     assertThat(rootSchema.clazz).isEqualTo(RootSchemaTestClass::class)
+    assertThat(rootSchema.description).isEqualTo("A test kdoc")
 
     assertThat(rootSchema.properties?.get("integerTest")).isNotNull()
     val intSchema = rootSchema.properties?.get("integerTest")!!
@@ -61,6 +62,7 @@ class FirebaseKspProcessorTest {
     assertThat(rootSchema.properties?.get("booleanTest")).isNotNull()
     val booleanSchema = rootSchema.properties?.get("booleanTest")!!
     assertThat(booleanSchema.title).isEqualTo("booleanTest")
+    assertThat(booleanSchema.description).isEqualTo("most likely true, very rarely false")
     assertThat(booleanSchema.nullable).isEqualTo(false)
 
     assertThat(rootSchema.properties?.get("stringTest")).isNotNull()
@@ -79,6 +81,7 @@ class FirebaseKspProcessorTest {
     val objSchema = rootSchema.properties?.get("objTest")!!
     assertThat(objSchema.clazz).isEqualTo(SecondarySchemaTestClass::class)
     assertThat(objSchema.properties).isNotNull()
+    assertThat(objSchema.description).isEqualTo("class kdoc should be used if property kdocs aren't present")
     assertThat(objSchema.title).isEqualTo("objTest")
     assertThat(objSchema.nullable).isEqualTo(false)
   }
