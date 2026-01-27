@@ -23,12 +23,16 @@ import com.google.firebase.dataconnect.testutil.isListValue
 import com.google.firebase.dataconnect.testutil.isRecursivelyEmpty
 import com.google.firebase.dataconnect.testutil.isStructValue
 import com.google.firebase.dataconnect.testutil.listValueOrNull
+import com.google.firebase.dataconnect.testutil.map
+import com.google.firebase.dataconnect.testutil.shouldBe
+import com.google.firebase.dataconnect.testutil.toPathString
 import com.google.firebase.dataconnect.testutil.toValueProto
 import com.google.firebase.dataconnect.testutil.walk
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
 import io.kotest.assertions.assertSoftly
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -36,10 +40,15 @@ import io.kotest.matchers.collections.shouldBeIn
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.collections.shouldNotBeEmpty
+import io.kotest.matchers.collections.shouldStartWith
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.ints.shouldBeInRange
+import io.kotest.matchers.maps.shouldNotBeEmpty
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.string.shouldStartWith
+import io.kotest.matchers.types.shouldBeInstanceOf
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.Exhaustive
@@ -51,6 +60,8 @@ import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.intRange
 import io.kotest.property.arbitrary.long
 import io.kotest.property.arbitrary.map
+import io.kotest.property.arbitrary.negativeInt
+import io.kotest.property.arbitrary.nonNegativeInt
 import io.kotest.property.checkAll
 import io.kotest.property.exhaustive.collection
 import kotlinx.coroutines.test.runTest
@@ -318,6 +329,156 @@ class protoUnitTest {
     checkAll(propTestConfig, Arb.randomSource()) { rs ->
       val sample = Arb.proto.recursivelyEmptyListValue().edgecase(rs)
       sample.shouldNotBeNull().edgeCases.shouldNotBeEmpty()
+    }
+  }
+
+  @Test
+  fun `structNestedInStructKeys uses the given nestingRange`() = runTest {
+    checkAll(propTestConfig, Arb.intRange(1..5).filterNot { it.isEmpty() }) { nestingRange ->
+      val arb = Arb.proto.structNestedInStructKeys(nestingRange = nestingRange)
+
+      val sample = arb.bind()
+
+      sample.childStructs.size shouldBeInRange nestingRange
+    }
+  }
+
+  @Test
+  fun `structNestedInStructKeys throws if nestingRange has invalid first`() = runTest {
+    checkAll(propTestConfig, Arb.negativeInt(), Arb.nonNegativeInt()) { first, last ->
+      shouldThrow<IllegalArgumentException> {
+        Arb.proto.structNestedInStructKeys(nestingRange = first..last)
+      }
+    }
+  }
+
+  @Test
+  fun `structNestedInStructKeys throws if nestingRange is empty`() = runTest {
+    checkAll(propTestConfig, Arb.nonNegativeInt()) { first ->
+      shouldThrow<IllegalArgumentException> {
+        Arb.proto.structNestedInStructKeys(nestingRange = first until first)
+      }
+    }
+  }
+
+  @Test
+  fun `structNestedInStructKeys uses the given Struct Arb`() = runTest {
+    val structArb =
+      Arb.proto.struct().map { sample ->
+        val modifiedStruct =
+          sample.struct.toBuilder().putFields("foo", "bar".toValueProto()).build()
+        ProtoArb.StructInfo(modifiedStruct, sample.depth, sample.descendants)
+      }
+    checkAll(propTestConfig, Arb.proto.structNestedInStructKeys(structArb = structArb)) { sample ->
+      assertSoftly {
+        withClue("prunedStruct") {
+          sample.prunedStruct.fieldsMap["foo"].shouldNotBeNull() shouldBe "bar".toValueProto()
+        }
+        sample.childStructs.entries.forEach { (path, childStruct) ->
+          withClue("childStructs[${path.toPathString()}]") {
+            childStruct.fieldsMap["foo"].shouldNotBeNull() shouldBe "bar".toValueProto()
+          }
+        }
+      }
+    }
+  }
+
+  @Test
+  fun `structNestedInStructKeys uses the given Struct key Arb`() = runTest {
+    checkAll(propTestConfig, Arb.proto.structKey()) { prefix ->
+      val structKeyArb = Arb.proto.structKey().map { prefix + it }
+      val arb = Arb.proto.structNestedInStructKeys(structKeyArb = structKeyArb)
+
+      val sample = arb.bind()
+
+      assertSoftly {
+        sample.childStructs.keys.forEach { path ->
+          withClue("path=${path.toPathString()}") {
+            path
+              .shouldNotBeEmpty()
+              .last()
+              .shouldBeInstanceOf<DataConnectPathSegment.Field>()
+              .field
+              .shouldStartWith(prefix)
+          }
+        }
+      }
+    }
+  }
+
+  @Test
+  fun `structNestedInStructKeys childStructs should not be empty`() = runTest {
+    checkAll(propTestConfig, Arb.intRange(1..5).filterNot { it.isEmpty() }) { nestingRange ->
+      val arb = Arb.proto.structNestedInStructKeys(nestingRange = nestingRange)
+
+      val sample = arb.bind()
+
+      sample.childStructs.shouldNotBeEmpty()
+    }
+  }
+
+  @Test
+  fun `structNestedInStructKeys childStructs keys should all be nested`() = runTest {
+    checkAll(propTestConfig, Arb.proto.structNestedInStructKeys(nestingRange = 2..5)) { sample ->
+      val pathsSortedBySize = sample.childStructs.keys.sortedBy { it.size }
+      val pathWindows = pathsSortedBySize.windowed(2)
+      check(pathWindows.isNotEmpty())
+
+      assertSoftly {
+        withClue("pathsSortedBySize=${pathsSortedBySize.joinToString { it.toPathString() }}") {
+          pathWindows.forEachIndexed { index, (parentPath, childPath) ->
+            withClue("index=$index") { childPath shouldStartWith parentPath }
+          }
+        }
+      }
+    }
+  }
+
+  @Test
+  fun `structNestedInStructKeys prunedStruct is the expected Struct`() = runTest {
+    checkAll(propTestConfig, Arb.proto.structNestedInStructKeys()) { sample ->
+      val expectedPrunedStruct =
+        sample.aggregatedStruct.map { path, value ->
+          if (path in sample.childStructs) null else value
+        }
+
+      sample.prunedStruct shouldBe expectedPrunedStruct
+    }
+  }
+
+  @Test
+  fun `structNestedInStructKeys aggregatedStruct is the expected Struct`() = runTest {
+    checkAll(propTestConfig, Arb.proto.structNestedInStructKeys()) { sample ->
+      data class InsertInfo(val field: String, val struct: Struct)
+      val insertInfoByParent =
+        sample.childStructs.entries
+          .associate { (path, struct) ->
+            val parentPath = path.dropLast(1)
+            val field = path.last().shouldBeInstanceOf<DataConnectPathSegment.Field>().field
+            parentPath to InsertInfo(field, struct)
+          }
+          .toMutableMap()
+      var expectedAggregatedStruct = sample.prunedStruct
+      while (insertInfoByParent.isNotEmpty()) {
+        val insertInfoByParentSizeBefore = insertInfoByParent.size
+        expectedAggregatedStruct =
+          expectedAggregatedStruct.map { path, value ->
+            val insertInfo = insertInfoByParent.remove(path)
+            if (insertInfo === null) {
+              value
+            } else {
+              value.structValue
+                .toBuilder()
+                .putFields(insertInfo.field, insertInfo.struct.toValueProto())
+                .build()
+                .toValueProto()
+            }
+          }
+        withClue("insertInfoByParent=$insertInfoByParent") {
+          insertInfoByParent.size shouldNotBe insertInfoByParentSizeBefore
+        }
+      }
+      sample.aggregatedStruct shouldBe expectedAggregatedStruct
     }
   }
 
