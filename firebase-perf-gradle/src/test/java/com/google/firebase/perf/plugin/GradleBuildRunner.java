@@ -59,7 +59,7 @@ public final class GradleBuildRunner {
   // Kotlin Gradle Plugin.
   // Refer https://kotlinlang.org/docs/reference/using-gradle.html#using-gradle
   private static final String KOTLIN_GRADLE_PLUGIN_CLASSPATH_DEP =
-      "org.jetbrains.kotlin:kotlin-gradle-plugin:1.4.10";
+      "org.jetbrains.kotlin:kotlin-gradle-plugin:1.5.20";
 
   // Kotlin Gradle Plugin for Android.
   // Refer https://developer.android.com/kotlin/add-kotlin

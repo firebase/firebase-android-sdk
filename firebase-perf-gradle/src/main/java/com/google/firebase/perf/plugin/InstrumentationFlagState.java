@@ -38,7 +38,6 @@ import org.slf4j.Logger;
  * https://firebase.google.com/docs/perf-mon/disable-sdk?platform=android#extension-property-flag
  */
 public final class InstrumentationFlagState implements Serializable {
-
   private static final Logger logger = FirebasePerfPlugin.getLogger();
 
   // By default bytecode instrumentation is enabled
@@ -61,6 +60,8 @@ public final class InstrumentationFlagState implements Serializable {
    * https://docs.gradle.org/current/javadoc/org/gradle/api/DomainObjectCollection.html#all-org.gradle.api.Action-
    */
   public InstrumentationFlagState(Project project) {
+    // TODO: Explore adding a unit/integration test that verifies the behavior of this directly,
+    // which could significantly reduce the duration of the `InstrumentationApiTest`.
     if (useAppExtension(project)) {
       appExtensionCompat = new AppExtensionCompat(project);
     } else {
