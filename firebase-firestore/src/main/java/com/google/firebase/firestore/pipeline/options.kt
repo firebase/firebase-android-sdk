@@ -28,7 +28,8 @@ import com.google.firestore.v1.Value
  * `ImmutableMap<String></String>, Value>` is an implementation detail, not to be exposed, since
  * more efficient implementations are possible.
  */
-class InternalOptions internal constructor(private val options: ImmutableMap<String, Value>) {
+internal class InternalOptions
+internal constructor(private val options: ImmutableMap<String, Value>) {
   internal fun with(key: String, value: Value): InternalOptions {
     val builder = ImmutableMap.builderWithExpectedSize<String, Value>(options.size + 1)
     builder.putAll(options)
@@ -68,10 +69,10 @@ class InternalOptions internal constructor(private val options: ImmutableMap<Str
     return Value.newBuilder().setMapValue(mapValue).build()
   }
 
-  companion object {
-    @JvmField val EMPTY: InternalOptions = InternalOptions(ImmutableMap.of())
+  internal companion object {
+    @JvmField internal val EMPTY: InternalOptions = InternalOptions(ImmutableMap.of())
 
-    fun of(key: String, value: Value): InternalOptions {
+    internal fun of(key: String, value: Value): InternalOptions {
       return InternalOptions(ImmutableMap.of(key, value))
     }
   }
@@ -82,7 +83,7 @@ internal constructor(internal val options: InternalOptions) {
 
   internal abstract fun self(options: InternalOptions): T
 
-  protected fun with(key: String, value: InternalOptions): T = self(options.with(key, value))
+  internal fun with(key: String, value: InternalOptions): T = self(options.with(key, value))
 
   protected fun with(key: String, value: Value): T = self(options.with(key, value))
 
