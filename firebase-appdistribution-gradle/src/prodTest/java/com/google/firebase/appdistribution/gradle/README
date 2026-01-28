@@ -1,0 +1,33 @@
+# Production Tests
+
+The goal of these production tests is to do end-to-end testing for an actual
+test app, hitting production backend. This test suite tests the common happy
+use cases. For more nuanced testing, including binary path parsing or command
+line flag parsing, rely on the integration tests instead.
+
+These tests are not run in CI. They are meant to be run manually for validating
+big changes, similar to how one would do manual testing via a test matrix.
+
+### How to run
+
+Before running the tests, you need to create a `local.properties` file in the root directory of the `firebase-android-buildtools` project with the following properties:
+
+```properties
+sdk.dir=<path_to_android_sdk>
+firebase.appId=<your_firebase_app_id>
+firebase.projectNumber=<your_project_number>
+```
+
+- `firebase.appId`: The Firebase App ID of the app you want to use for testing.
+- `firebase.projectNumber`: The project number of the Firebase project you want to use for testing.
+
+You also need to set the `FIREBASE_TOKEN` environment variable with your Firebase token, which can be obtained by running `firebase login:ci`.
+
+```bash
+export FIREBASE_TOKEN=<your_firebase_token>
+```
+
+Once you have auth set up, run the tests on the command line:
+```
+./gradlew :firebase-appdistribution-gradle:prodTest
+```

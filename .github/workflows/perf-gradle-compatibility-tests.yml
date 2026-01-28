@@ -1,0 +1,28 @@
+name: Perf Gradle Compatibility Tests
+
+on:
+  schedule:
+    - cron: '0 6 * * *' # Run daily at 6 AM
+  workflow_dispatch: # Allow manual triggering
+
+permissions:
+  contents: read
+
+jobs:
+  performance-plugin:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Set up JDK 17
+        uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12 # v4.7.0
+        with:
+          java-version: 17
+          distribution: temurin
+          cache: gradle
+      - name: Run tests
+        id: tests
+        run: |
+          ./gradlew \
+          :firebase-perf-gradle:test --tests \
+          "com.google.firebase.perf.plugin.transform.InstrumentationApiCompatTest.gradleBuildRunsInstrumentationForAllVariants_latestGradleAndAgp"
