@@ -67,10 +67,12 @@ import kotlinx.serialization.Serializable
  * - `application/json`: JSON response in the candidates.
  *
  * @property responseSchema Output schema of the generated candidate text. If set, a compatible
- * [responseMimeType] must also be set. This is mutually exclusive with [responseJsonSchema].
+ * [responseMimeType] must also be set. This is mutually exclusive with [responseJsonSchema]. Unlike
+ * [responseJsonSchema] this will encode to an OpenAPI schema.
  *
  * @property responseJsonSchema Output schema of the generated candidate text. If set, a compatible
- * [responseMimeType] must also be set. This is mutually exclusive with [responseSchema].
+ * [responseMimeType] must also be set. This is mutually exclusive with [responseSchema].  Unlike
+ * [responseSchema] this will encode to an JsonSchema schema, which is the standard moving forward.
  *
  * Compatible MIME types:
  * - `application/json`: Schema for JSON response.
