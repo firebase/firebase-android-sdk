@@ -17,6 +17,7 @@
 package com.google.firebase.ai
 
 import android.content.Context
+import android.content.pm.PackageManager
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.firebase.FirebaseApp
@@ -25,6 +26,7 @@ import com.google.firebase.ai.common.JSON
 import com.google.firebase.ai.common.util.doBlocking
 import com.google.firebase.ai.type.Candidate
 import com.google.firebase.ai.type.Content
+import com.google.firebase.ai.type.CountTokensResponse
 import com.google.firebase.ai.type.GenerateContentResponse
 import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.HarmBlockMethod
@@ -44,6 +46,7 @@ import io.kotest.assertions.json.shouldContainJsonKey
 import io.kotest.assertions.json.shouldContainJsonKeyValue
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.collections.shouldNotBeEmpty
+import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.client.engine.mock.MockEngine
@@ -53,6 +56,7 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.TextContent
 import io.ktor.http.headersOf
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.encodeToString
 import org.junit.Before
@@ -117,6 +121,104 @@ internal class GenerativeModelTesting {
       it.shouldContainJsonKeyValue("$.system_instruction.role", "system")
       it.shouldContainJsonKeyValue("$.system_instruction.parts[0].text", "system instruction")
     }
+  }
+
+  @Test
+  fun `security headers are included in request`() = doBlocking {
+    val mockEngine = MockEngine {
+      respond(
+        generateContentResponseAsJsonString("text response"),
+        HttpStatusCode.OK,
+        headersOf(HttpHeaders.ContentType, "application/json")
+      )
+    }
+    val generativeModel = generativeModelWithMockEngine(mockEngine)
+
+    withTimeout(5.seconds) { generativeModel.generateContent("my test prompt") }
+
+    val headers = mockEngine.requestHistory.first().headers
+    headers["X-Android-Package"] shouldBe "com.google.firebase.ai.test"
+    // X-Android-Cert will be empty because Robolectric doesn't provide signatures by default
+    headers["X-Android-Cert"] shouldBe ""
+  }
+
+  @Test
+  fun `security headers are included in streaming request`() = doBlocking {
+    val mockEngine = MockEngine {
+      respond(
+        generateContentResponseAsJsonString("text response"),
+        HttpStatusCode.OK,
+        headersOf(HttpHeaders.ContentType, "application/json")
+      )
+    }
+    val generativeModel = generativeModelWithMockEngine(mockEngine)
+
+    withTimeout(5.seconds) { generativeModel.generateContentStream("my test prompt").collect() }
+
+    val headers = mockEngine.requestHistory.first().headers
+    headers["X-Android-Package"] shouldBe "com.google.firebase.ai.test"
+    // X-Android-Cert will be empty because Robolectric doesn't provide signatures by default
+    headers["X-Android-Cert"] shouldBe ""
+  }
+
+  @Test
+  fun `security headers are included in countTokens request`() = doBlocking {
+    val mockEngine = MockEngine {
+      respond(
+        JSON.encodeToString(CountTokensResponse.Internal(totalTokens = 10)),
+        HttpStatusCode.OK,
+        headersOf(HttpHeaders.ContentType, "application/json")
+      )
+    }
+    val generativeModel = generativeModelWithMockEngine(mockEngine)
+
+    withTimeout(5.seconds) { generativeModel.countTokens("my test prompt") }
+
+    val headers = mockEngine.requestHistory.first().headers
+    headers["X-Android-Package"] shouldBe "com.google.firebase.ai.test"
+    // X-Android-Cert will be empty because Robolectric doesn't provide signatures by default
+    headers["X-Android-Cert"] shouldBe ""
+  }
+
+  @Test
+  fun `X-Android-Cert is empty when signatures are missing`() = doBlocking {
+    val mockEngine = MockEngine {
+      respond(
+        generateContentResponseAsJsonString("text response"),
+        HttpStatusCode.OK,
+        headersOf(HttpHeaders.ContentType, "application/json")
+      )
+    }
+
+    val mockPackageManager = Mockito.mock(PackageManager::class.java)
+    val mockContext = Mockito.mock(Context::class.java)
+    Mockito.`when`(mockContext.packageName).thenReturn("com.test.app")
+    Mockito.`when`(mockContext.packageManager).thenReturn(mockPackageManager)
+
+    val mockApp = Mockito.mock(FirebaseApp::class.java)
+    Mockito.`when`(mockApp.applicationContext).thenReturn(mockContext)
+
+    val apiController =
+      APIController(
+        "super_cool_test_key",
+        "gemini-2.5-flash",
+        RequestOptions(),
+        mockEngine,
+        TEST_CLIENT_ID,
+        mockApp,
+        TEST_VERSION,
+        TEST_APP_ID,
+        null,
+      )
+
+    val generativeModel = GenerativeModel("gemini-2.5-flash", controller = apiController)
+
+    withTimeout(5.seconds) { generativeModel.generateContent("my test prompt") }
+
+    val headers = mockEngine.requestHistory.first().headers
+    headers["X-Android-Package"] shouldBe "com.test.app"
+    // X-Android-Cert will be empty because Robolectric doesn't provide signatures by default
+    headers["X-Android-Cert"] shouldBe ""
   }
 
   @Test
@@ -316,5 +418,22 @@ internal class GenerativeModelTesting {
       it shouldContainJsonKey "generation_config"
       it.shouldContainJsonKeyValue("$.generation_config.thinking_config.thinking_level", "MEDIUM")
     }
+  }
+
+  private fun generativeModelWithMockEngine(mockEngine: MockEngine): GenerativeModel {
+    val apiController =
+      APIController(
+        "super_cool_test_key",
+        "gemini-2.5-flash",
+        RequestOptions(),
+        mockEngine,
+        TEST_CLIENT_ID,
+        mockFirebaseApp,
+        TEST_VERSION,
+        TEST_APP_ID,
+        null,
+      )
+
+    return GenerativeModel("gemini-2.5-flash", controller = apiController)
   }
 }
