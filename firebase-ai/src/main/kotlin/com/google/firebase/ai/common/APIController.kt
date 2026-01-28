@@ -143,6 +143,8 @@ internal constructor(
   )
 
   private val model = fullModelName(model)
+  private val appPackageName by lazy { firebaseApp.applicationContext.packageName }
+  private val appSigningCertFingerprint by lazy { getSigningCertFingerprint() }
 
   private val client =
     HttpClient(httpEngine) {
@@ -273,8 +275,8 @@ internal constructor(
     contentType(ContentType.Application.Json)
     header("x-goog-api-key", key)
     header("x-goog-api-client", apiClient)
-    header("X-Android-Package", firebaseApp.applicationContext.packageName)
-    header("X-Android-Cert", getSigningCertFingerprint() ?: "")
+    header("X-Android-Package", appPackageName)
+    header("X-Android-Cert", appSigningCertFingerprint ?: "")
     if (firebaseApp.isDataCollectionDefaultEnabled) {
       header("X-Firebase-AppId", googleAppId)
       header("X-Firebase-AppVersion", appVersion)
@@ -370,10 +372,15 @@ internal constructor(
     val packageName = firebaseApp.applicationContext.packageName
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
       val packageInfo =
-        firebaseApp.applicationContext.packageManager.getPackageInfo(
-          packageName,
-          PackageManager.GET_SIGNATURES
-        )
+        try {
+          firebaseApp.applicationContext.packageManager.getPackageInfo(
+            packageName,
+            PackageManager.GET_SIGNATURES
+          )
+        } catch (e: PackageManager.NameNotFoundException) {
+          Log.d(TAG, "PackageManager couldn't find the package \"$packageName\"")
+          return null
+        }
       val signatures = packageInfo?.signatures ?: return null
       if (signatures.size > 1) {
         Log.d(
@@ -384,10 +391,15 @@ internal constructor(
       return signatures.firstOrNull()
     }
     val packageInfo =
-      firebaseApp.applicationContext.packageManager.getPackageInfo(
-        packageName,
-        PackageManager.GET_SIGNING_CERTIFICATES
-      )
+      try {
+        firebaseApp.applicationContext.packageManager.getPackageInfo(
+          packageName,
+          PackageManager.GET_SIGNING_CERTIFICATES
+        )
+      } catch (e: PackageManager.NameNotFoundException) {
+        Log.d(TAG, "PackageManager couldn't find the package \"$packageName\"")
+        return null
+      }
     val signingInfo = packageInfo?.signingInfo ?: return null
     if (signingInfo.hasMultipleSigners()) {
       Log.d(TAG, "App has been signed with multiple certificates. Defaulting to the first one")
