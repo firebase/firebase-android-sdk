@@ -16,6 +16,9 @@
 
 package com.google.firebase.ai.common
 
+import android.content.Context
+import androidx.test.core.app.ApplicationProvider
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.firebase.FirebaseApp
 import com.google.firebase.ai.BuildConfig
 import com.google.firebase.ai.common.util.commonTest
@@ -56,8 +59,8 @@ import kotlinx.serialization.json.JsonObject
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.junit.runners.Parameterized
 import org.mockito.Mockito
+import org.robolectric.ParameterizedRobolectricTestRunner
 
 private val TEST_CLIENT_ID = "genai-android/test"
 
@@ -65,6 +68,7 @@ private val TEST_APP_ID = "1:android:12345"
 
 private val TEST_VERSION = 1
 
+@RunWith(AndroidJUnit4::class)
 internal class APIControllerTests {
   private val testTimeout = 5.seconds
 
@@ -96,13 +100,16 @@ internal class APIControllerTests {
 }
 
 @OptIn(ExperimentalSerializationApi::class)
+@RunWith(AndroidJUnit4::class)
 internal class RequestFormatTests {
 
   private val mockFirebaseApp = Mockito.mock<FirebaseApp>()
 
   @Before
   fun setup() {
+    val context = ApplicationProvider.getApplicationContext<Context>()
     Mockito.`when`(mockFirebaseApp.isDataCollectionDefaultEnabled).thenReturn(false)
+    Mockito.`when`(mockFirebaseApp.applicationContext).thenReturn(context)
   }
 
   @Test
@@ -454,13 +461,15 @@ internal class RequestFormatTests {
   }
 }
 
-@RunWith(Parameterized::class)
+@RunWith(ParameterizedRobolectricTestRunner::class)
 internal class ModelNamingTests(private val modelName: String, private val actualName: String) {
   private val mockFirebaseApp = Mockito.mock<FirebaseApp>()
 
   @Before
   fun setup() {
+    val context = ApplicationProvider.getApplicationContext<Context>()
     Mockito.`when`(mockFirebaseApp.isDataCollectionDefaultEnabled).thenReturn(false)
+    Mockito.`when`(mockFirebaseApp.applicationContext).thenReturn(context)
   }
 
   @Test
@@ -495,7 +504,7 @@ internal class ModelNamingTests(private val modelName: String, private val actua
 
   companion object {
     @JvmStatic
-    @Parameterized.Parameters
+    @ParameterizedRobolectricTestRunner.Parameters
     fun data() =
       listOf(
         arrayOf("gemini-pro", "models/gemini-pro"),
