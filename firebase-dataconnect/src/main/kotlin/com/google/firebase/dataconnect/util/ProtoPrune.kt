@@ -46,10 +46,10 @@ internal object ProtoPrune {
   )
 
   /**
-   * Returns a new [Struct] with descendant [Struct] objects pruned according to the given
+   * Returns a new [Struct] with descendant [Struct] values pruned according to the given
    * [predicate].
    *
-   * This function performs a depth-first traversal of the [Struct]. For each descendant [Struct]
+   * This function performs a depth-first traversal of the [Struct]. For each [Struct] value
    * encountered that is the value of a field (i.e. not a direct element of a [ListValue]), the
    * [predicate] is invoked.
    *
@@ -60,26 +60,23 @@ internal object ProtoPrune {
    * 3. The traversal descends further into the pruned [Struct] to find more descendant [Struct]s to
    * prune.
    *
-   * If the [predicate] returns `false`, the traversal continues into the descendant [Struct].
-   *
    * **Note:** The [predicate] is *not* invoked for:
    * * The receiver [Struct] itself.
    * * Any [Struct] values that are direct elements of a [ListValue].
    *
-   * @param path The [DataConnectPath] to the receiver [Struct].
    * @param predicate A function that determines whether a descendant [Struct] should be pruned. It
-   * is called with the [DataConnectPath] of the descendant (with the given [path] prepended).
-   * @return A [PruneStructResult] containing the modified [Struct] and a map of pruned [Struct]
-   * objects, namely, the arguments with which the given [predicate] was called and for which it
-   * returned `true`; returns `null` if no pruning occurred.
+   * is called with the [DataConnectPath] to the [Struct] from the receiver [Struct].
+   * @return The pruned receiver [Struct] and a map of pruned [Struct] objects, or `null` if no
+   * pruning occurred. The keys of the map are the paths for which the given [predicate] returned
+   * `true`, and the associated values are the [Struct] objects that were pruned, they themselves
+   * being pruned if one or more of their descendants were pruned.
    */
   fun Struct.withDescendantStructsPruned(
-    path: DataConnectPath,
-    predicate: (path: DataConnectPath) -> Boolean,
+    predicate: (path: DataConnectPath) -> Boolean
   ): PruneStructResult? {
     val prunedStructByPath: MutableMap<DataConnectPath, Struct> = mutableMapOf()
     val prunedStruct =
-      pruneDescendantStructsRecursive(this, path.toMutableList(), prunedStructByPath, predicate)
+      pruneDescendantStructsRecursive(this, mutableListOf(), prunedStructByPath, predicate)
 
     if (prunedStruct === this) {
       return null
@@ -97,7 +94,7 @@ internal object ProtoPrune {
    * Returns a new [ListValue] with descendant [Struct] objects pruned according to the given
    * [predicate].
    *
-   * This function performs a depth-first traversal of the [ListValue]. For each descendant [Struct]
+   * This function performs a depth-first traversal of the [ListValue]. For each [Struct] value
    * encountered that is the value of a field (i.e. not a direct element of a [ListValue]), the
    * [predicate] is invoked.
    *
@@ -108,25 +105,19 @@ internal object ProtoPrune {
    * 3. The traversal descends further into the pruned [Struct] to find more descendant [Struct]s to
    * prune.
    *
-   * If the [predicate] returns `false`, the traversal continues into the descendant [Struct].
-   *
-   * **Note:** The [predicate] is *not* invoked for any [Struct] values that are direct elements of
-   * a [ListValue], including the receiver [ListValue].
-   *
-   * @param path The [DataConnectPath] to the receiver [ListValue].
    * @param predicate A function that determines whether a descendant [Struct] should be pruned. It
-   * is called with the [DataConnectPath] of the descendant (with the given [path] prepended).
-   * @return A [PruneListValueResult] containing the modified [ListValue] and a map of pruned
-   * [Struct] objects, namely, the arguments with which the given [predicate] was called and for
-   * which it returned `true`; returns `null` if no pruning occurred.
+   * is called with the [DataConnectPath] to the [Struct] from the receiver [ListValue].
+   * @return The pruned receiver [ListValue] and a map of pruned [Struct] objects, or `null` if no
+   * pruning occurred. The keys of the map are the paths for which the given [predicate] returned
+   * `true`, and the associated values are the [Struct] objects that were pruned, they themselves
+   * being pruned if one or more of their descendants were pruned.
    */
   fun ListValue.withDescendantStructsPruned(
-    path: DataConnectPath,
-    predicate: (path: DataConnectPath) -> Boolean,
+    predicate: (path: DataConnectPath) -> Boolean
   ): PruneListValueResult? {
     val prunedStructByPath: MutableMap<DataConnectPath, Struct> = mutableMapOf()
     val prunedListValue =
-      pruneDescendantStructsRecursive(this, path.toMutableList(), prunedStructByPath, predicate)
+      pruneDescendantStructsRecursive(this, mutableListOf(), prunedStructByPath, predicate)
 
     if (prunedListValue === this) {
       return null

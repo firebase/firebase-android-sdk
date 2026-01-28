@@ -22,7 +22,6 @@ import com.google.firebase.dataconnect.emptyDataConnectPath
 import com.google.firebase.dataconnect.testutil.isListValue
 import com.google.firebase.dataconnect.testutil.isStructValue
 import com.google.firebase.dataconnect.testutil.map
-import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.dataConnectPath as dataConnectPathArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.ProtoArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.listValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.next
@@ -62,44 +61,36 @@ import org.junit.Test
 class ProtoPruneUnitTest {
 
   @Test
-  fun `Struct withDescendantStructsPruned() on empty Struct returns null and never calls predicate`() =
-    runTest {
-      checkAll(propTestConfig, dataConnectPathArb()) { basePath ->
-        val predicate: PrunePredicate = mockk()
+  fun `Struct withDescendantStructsPruned() on empty Struct returns null and never calls predicate`() {
+    val predicate: PrunePredicate = mockk()
 
-        val result = Struct.getDefaultInstance().withDescendantStructsPruned(basePath, predicate)
+    val result = Struct.getDefaultInstance().withDescendantStructsPruned(predicate)
 
-        assertSoftly {
-          result.shouldBeNull()
-          confirmVerified(predicate)
-        }
-      }
+    assertSoftly {
+      result.shouldBeNull()
+      confirmVerified(predicate)
     }
+  }
 
   @Test
-  fun `ListValue withDescendantStructsPruned() on empty ListValue returns null and never calls predicate`() =
-    runTest {
-      checkAll(propTestConfig, dataConnectPathArb()) { basePath ->
-        val predicate: PrunePredicate = mockk()
+  fun `ListValue withDescendantStructsPruned() on empty ListValue returns null and never calls predicate`() {
+    val predicate: PrunePredicate = mockk()
 
-        val result = ListValue.getDefaultInstance().withDescendantStructsPruned(basePath, predicate)
+    val result = ListValue.getDefaultInstance().withDescendantStructsPruned(predicate)
 
-        assertSoftly {
-          result.shouldBeNull()
-          confirmVerified(predicate)
-        }
-      }
+    assertSoftly {
+      result.shouldBeNull()
+      confirmVerified(predicate)
     }
+  }
 
   @Test
   fun `Struct withDescendantStructsPruned() when no prunable structs returns null and never calls predicate`() =
     runTest {
-      checkAll(propTestConfig, dataConnectPathArb(), nonPrunableStructArb()) {
-        basePath,
-        struct: Struct ->
+      checkAll(propTestConfig, nonPrunableStructArb()) { struct: Struct ->
         val predicate: PrunePredicate = mockk()
 
-        val result = struct.withDescendantStructsPruned(basePath, predicate)
+        val result = struct.withDescendantStructsPruned(predicate)
 
         assertSoftly {
           result.shouldBeNull()
@@ -111,12 +102,10 @@ class ProtoPruneUnitTest {
   @Test
   fun `ListValue withDescendantStructsPruned() when no prunable structs returns null and never calls predicate`() =
     runTest {
-      checkAll(propTestConfig, dataConnectPathArb(), nonPrunableListValueArb()) {
-        basePath,
-        listValue: ListValue ->
+      checkAll(propTestConfig, nonPrunableListValueArb()) { listValue: ListValue ->
         val predicate: PrunePredicate = mockk()
 
-        val result = listValue.withDescendantStructsPruned(basePath, predicate)
+        val result = listValue.withDescendantStructsPruned(predicate)
 
         assertSoftly {
           result.shouldBeNull()
@@ -127,10 +116,10 @@ class ProtoPruneUnitTest {
 
   @Test
   fun `Struct withDescendantStructsPruned() returns null if nothing is pruned`() = runTest {
-    checkAll(propTestConfig, Arb.proto.struct(), dataConnectPathArb()) { structSample, path ->
-      val struct: Struct = structSample.struct
+    checkAll(propTestConfig, Arb.proto.struct()) { sample ->
+      val struct: Struct = sample.struct
 
-      val result = struct.withDescendantStructsPruned(path) { false }
+      val result = struct.withDescendantStructsPruned { false }
 
       result.shouldBeNull()
     }
@@ -138,10 +127,10 @@ class ProtoPruneUnitTest {
 
   @Test
   fun `ListValue withDescendantStructsPruned() returns null if nothing is pruned`() = runTest {
-    checkAll(propTestConfig, Arb.proto.listValue(), dataConnectPathArb()) { listValueSample, path ->
-      val listValue: ListValue = listValueSample.listValue
+    checkAll(propTestConfig, Arb.proto.listValue()) { sample ->
+      val listValue: ListValue = sample.listValue
 
-      val result = listValue.withDescendantStructsPruned(path) { false }
+      val result = listValue.withDescendantStructsPruned { false }
 
       result.shouldBeNull()
     }
@@ -150,20 +139,19 @@ class ProtoPruneUnitTest {
   @Test
   fun `Struct withDescendantStructsPruned() calls the predicate with all paths eligible for pruning`() =
     runTest {
-      checkAll(propTestConfig, Arb.proto.struct(), dataConnectPathArb(), Arb.float(0.0f..1.0f)) {
-        structSample,
-        path,
+      checkAll(propTestConfig, Arb.proto.struct(), Arb.float(0.0f..1.0f)) {
+        sample,
         trueReturnProbability ->
-        val struct: Struct = structSample.struct
+        val struct: Struct = sample.struct
         val predicateCallPaths = mutableListOf<DataConnectPath>()
         val predicate: PrunePredicate = {
           predicateCallPaths.add(it)
           randomSource().random.nextFloat() < trueReturnProbability
         }
 
-        struct.withDescendantStructsPruned(path, predicate)
+        struct.withDescendantStructsPruned(predicate)
 
-        val expectedPredicateCallPaths = struct.pathsEligibleForPruning(path).toList()
+        val expectedPredicateCallPaths = struct.pathsEligibleForPruning().toList()
         predicateCallPaths shouldContainExactlyInAnyOrder expectedPredicateCallPaths
       }
     }
@@ -171,22 +159,19 @@ class ProtoPruneUnitTest {
   @Test
   fun `ListValue withDescendantStructsPruned() calls the predicate with all paths eligible for pruning`() =
     runTest {
-      checkAll(
-        propTestConfig,
-        Arb.proto.listValue(),
-        dataConnectPathArb(),
-        Arb.float(0.0f..1.0f)
-      ) { listValueSample, path, trueReturnProbability ->
-        val listValue: ListValue = listValueSample.listValue
+      checkAll(propTestConfig, Arb.proto.listValue(), Arb.float(0.0f..1.0f)) {
+        sample,
+        trueReturnProbability ->
+        val listValue: ListValue = sample.listValue
         val predicateCallPaths = mutableListOf<DataConnectPath>()
         val predicate: PrunePredicate = {
           predicateCallPaths.add(it)
           randomSource().random.nextFloat() < trueReturnProbability
         }
 
-        listValue.withDescendantStructsPruned(path, predicate)
+        listValue.withDescendantStructsPruned(predicate)
 
-        val expectedPredicateCallPaths = listValue.pathsEligibleForPruning(path).toList()
+        val expectedPredicateCallPaths = listValue.pathsEligibleForPruning().toList()
         predicateCallPaths shouldContainExactlyInAnyOrder expectedPredicateCallPaths
       }
     }
@@ -194,11 +179,10 @@ class ProtoPruneUnitTest {
   @Test
   fun `Struct withDescendantStructsPruned() returns prunedStructByPath whose keys are paths for which the predicate returned true`() =
     runTest {
-      checkAll(propTestConfig, dataConnectPathArb()) { basePath ->
-        val sample = PrunableStructArb(basePath).bind()
+      checkAll(propTestConfig, PrunableStructArb()) { sample ->
         val struct: Struct = sample.struct
 
-        val result = struct.withDescendantStructsPruned(basePath) { it in sample.pathsToPrune }
+        val result = struct.withDescendantStructsPruned { it in sample.pathsToPrune }
 
         val prunedStructByPath = result.shouldNotBeNull().prunedStructByPath
         prunedStructByPath.keys shouldContainExactlyInAnyOrder sample.pathsToPrune
@@ -208,11 +192,10 @@ class ProtoPruneUnitTest {
   @Test
   fun `ListValue withDescendantStructsPruned() returns prunedStructByPath whose keys are paths for which the predicate returned true`() =
     runTest {
-      checkAll(propTestConfig, dataConnectPathArb()) { basePath ->
-        val sample = PrunableListValueArb(basePath).bind()
+      checkAll(propTestConfig, PrunableListValueArb()) { sample ->
         val listValue: ListValue = sample.listValue
 
-        val result = listValue.withDescendantStructsPruned(basePath) { it in sample.pathsToPrune }
+        val result = listValue.withDescendantStructsPruned { it in sample.pathsToPrune }
 
         val prunedStructByPath = result.shouldNotBeNull().prunedStructByPath
         prunedStructByPath.keys shouldContainExactlyInAnyOrder sample.pathsToPrune
@@ -222,11 +205,10 @@ class ProtoPruneUnitTest {
   @Test
   fun `Struct withDescendantStructsPruned() returns prunedStructByPath whose values are the pruned Structs at the paths for which the predicate returned true`() =
     runTest {
-      checkAll(propTestConfig, dataConnectPathArb()) { basePath ->
-        val sample = PrunableStructArb(basePath).bind()
+      checkAll(propTestConfig, PrunableStructArb()) { sample ->
         val struct: Struct = sample.struct
 
-        val result = struct.withDescendantStructsPruned(basePath) { it in sample.pathsToPrune }
+        val result = struct.withDescendantStructsPruned { it in sample.pathsToPrune }
 
         val prunedStructByPath = result.shouldNotBeNull().prunedStructByPath
         val expectedPrunedStructByPath = sample.expectedPruneStructResult.prunedStructByPath
@@ -237,11 +219,10 @@ class ProtoPruneUnitTest {
   @Test
   fun `ListValue withDescendantStructsPruned() returns prunedStructByPath whose values are the pruned Structs at the paths for which the predicate returned true`() =
     runTest {
-      checkAll(propTestConfig, dataConnectPathArb()) { basePath ->
-        val sample = PrunableListValueArb(basePath).bind()
+      checkAll(propTestConfig, PrunableListValueArb()) { sample ->
         val listValue: ListValue = sample.listValue
 
-        val result = listValue.withDescendantStructsPruned(basePath) { it in sample.pathsToPrune }
+        val result = listValue.withDescendantStructsPruned { it in sample.pathsToPrune }
 
         val prunedStructByPath = result.shouldNotBeNull().prunedStructByPath
         val expectedPrunedStructByPath = sample.expectedPruneListValueResult.prunedStructByPath
@@ -252,11 +233,10 @@ class ProtoPruneUnitTest {
   @Test
   fun `Struct withDescendantStructsPruned() returns prunedStruct that is the pruned receiver`() =
     runTest {
-      checkAll(propTestConfig, dataConnectPathArb()) { basePath ->
-        val sample = PrunableStructArb(basePath).bind()
+      checkAll(propTestConfig, PrunableStructArb()) { sample ->
         val struct: Struct = sample.struct
 
-        val result = struct.withDescendantStructsPruned(basePath) { it in sample.pathsToPrune }
+        val result = struct.withDescendantStructsPruned { it in sample.pathsToPrune }
 
         val prunedStruct = result.shouldNotBeNull().prunedStruct
         val expectedPrunedStruct = sample.expectedPruneStructResult.prunedStruct
@@ -267,11 +247,10 @@ class ProtoPruneUnitTest {
   @Test
   fun `ListValue withDescendantStructsPruned() returns prunedStruct that is the pruned receiver`() =
     runTest {
-      checkAll(propTestConfig, dataConnectPathArb()) { basePath ->
-        val sample = PrunableListValueArb(basePath).bind()
+      checkAll(propTestConfig, PrunableListValueArb()) { sample ->
         val listValue: ListValue = sample.listValue
 
-        val result = listValue.withDescendantStructsPruned(basePath) { it in sample.pathsToPrune }
+        val result = listValue.withDescendantStructsPruned { it in sample.pathsToPrune }
 
         val prunedListValue = result.shouldNotBeNull().prunedListValue
         val expectedPrunedListValue = sample.expectedPruneListValueResult.prunedListValue
@@ -301,36 +280,35 @@ private fun DataConnectPath.isEligibleForPruning(value: Value): Boolean =
  * Creates and returns a [Sequence] that generates the paths of the receiver [Struct] that are
  * eligible for pruning, according to [isEligibleForPruning].
  */
-private fun Struct.pathsEligibleForPruning(
-  basePath: DataConnectPath = emptyDataConnectPath()
-): Sequence<DataConnectPath> =
-  walk().filter { it.path.isEligibleForPruning(it.value) }.map { basePath + it.path }
+private fun Struct.pathsEligibleForPruning(): Sequence<DataConnectPath> =
+  walk().filter { it.path.isEligibleForPruning(it.value) }.map { it.path }
 
 /**
  * Creates and returns a [Sequence] that generates the paths of the receiver [ListValue] that are
  * eligible for pruning, according to [isEligibleForPruning].
  */
-private fun ListValue.pathsEligibleForPruning(
-  basePath: DataConnectPath = emptyDataConnectPath()
-): Sequence<DataConnectPath> = sequence {
+private fun ListValue.pathsEligibleForPruning(): Sequence<DataConnectPath> = sequence {
   valuesList.forEachIndexed { listIndex, listElement ->
-    val listElementBasePath = basePath.withAddedListIndex(listIndex)
-    if (listElement.isStructValue) {
-      yieldAll(listElement.structValue.pathsEligibleForPruning(listElementBasePath))
-    } else if (listElement.isListValue) {
-      yieldAll(listElement.listValue.pathsEligibleForPruning(listElementBasePath))
-    }
+    val listElementBasePath = emptyDataConnectPath().withAddedListIndex(listIndex)
+
+    val listElementPathsEligibleForPruning =
+      if (listElement.isStructValue) {
+        listElement.structValue.pathsEligibleForPruning()
+      } else if (listElement.isListValue) {
+        listElement.listValue.pathsEligibleForPruning()
+      } else {
+        emptySequence()
+      }
+
+    yieldAll(listElementPathsEligibleForPruning.map { listElementBasePath + it })
   }
 }
 
 /**
  * An [Arb] that generates a [Struct] objects that have at least one path that is eligible for
  * pruning, according to [isEligibleForPruning].
- *
- * @param basePath The base [DataConnectPath] to prepend to all generated paths.
  */
 private class PrunableStructArb(
-  private val basePath: DataConnectPath = emptyDataConnectPath(),
   private val structKeyArb: Arb<String> = Arb.proto.structKey(length = 4),
   private val structArb: Arb<ProtoArb.StructInfo> = Arb.proto.struct(key = structKeyArb),
 ) : Arb<PrunableStructArb.Sample>() {
@@ -375,7 +353,7 @@ private class PrunableStructArb(
       struct1.withRandomlyInsertedStruct(struct2, rs.random, generateKey)
     }
 
-    val pathsToPrune = run {
+    val pathsToPrune: Set<DataConnectPath> = run {
       val eligiblePaths = struct.pathsEligibleForPruning().toList()
       check(eligiblePaths.isNotEmpty())
       val pruneCountArb = Arb.int(1..eligiblePaths.size)
@@ -397,11 +375,11 @@ private class PrunableStructArb(
 
     return Sample(
       struct = struct,
-      pathsToPrune = pathsToPrune.map { basePath + it }.toSet(),
+      pathsToPrune = pathsToPrune,
       expectedPruneStructResult =
         ProtoPrune.PruneStructResult(
           prunedStruct = prunedStruct,
-          prunedStructByPath = prunedStructByPath.mapKeys { basePath + it.key },
+          prunedStructByPath = prunedStructByPath.toMap(),
         )
     )
   }
@@ -410,11 +388,8 @@ private class PrunableStructArb(
 /**
  * An [Arb] that generates a [ListValue] objects that have at least one path that is eligible for
  * pruning, according to [isEligibleForPruning].
- *
- * @param basePath The base [DataConnectPath] to prepend to all generated paths.
  */
-private class PrunableListValueArb(val basePath: DataConnectPath = emptyDataConnectPath()) :
-  Arb<PrunableListValueArb.Sample>() {
+private class PrunableListValueArb : Arb<PrunableListValueArb.Sample>() {
 
   data class Sample(
     val listValue: ListValue,
@@ -467,7 +442,7 @@ private class PrunableListValueArb(val basePath: DataConnectPath = emptyDataConn
         prunableStructEdgeCaseProbability = prunableStructEdgeCaseProbability,
       )
 
-    val pathsToPrune = run {
+    val pathsToPrune: Set<DataConnectPath> = run {
       val eligiblePaths = listValue.pathsEligibleForPruning().toList()
       check(eligiblePaths.isNotEmpty())
       val pruneCountArb = Arb.int(1..eligiblePaths.size)
@@ -489,11 +464,11 @@ private class PrunableListValueArb(val basePath: DataConnectPath = emptyDataConn
 
     return Sample(
       listValue = listValue,
-      pathsToPrune = pathsToPrune.map { basePath + it }.toSet(),
+      pathsToPrune = pathsToPrune,
       expectedPruneListValueResult =
         ProtoPrune.PruneListValueResult(
           prunedListValue = prunedListValue,
-          prunedStructByPath = prunedStructByPath.mapKeys { basePath + it.key },
+          prunedStructByPath = prunedStructByPath.toMap(),
         )
     )
   }
