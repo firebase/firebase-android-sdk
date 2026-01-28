@@ -18,16 +18,15 @@ package com.google.firebase.ai.ondevice.interop
 
 /** Parent class for any errors that occur from the Firebase AI OnDevice SDK. */
 public abstract class FirebaseAIOnDeviceException
-internal constructor(message: String, cause: Throwable? = null) :
-  RuntimeException(message, cause) {
+internal constructor(message: String, cause: Throwable? = null) : RuntimeException(message, cause) {
 
   public companion object {
-      /**
-       * Creates a [FirebaseAIOnDeviceException] from a [Exception].
-       *
-       * If the [cause] is already a [FirebaseAIOnDeviceException], it is returned as is.
-       * Otherwise, a [FirebaseAIOnDeviceUnknownException] is created, wrapping the [cause].
-       */
+    /**
+     * Creates a [FirebaseAIOnDeviceException] from a [Exception].
+     *
+     * If the [cause] is already a [FirebaseAIOnDeviceException], it is returned as is. Otherwise, a
+     * [FirebaseAIOnDeviceUnknownException] is created, wrapping the [cause].
+     */
     public fun from(cause: Exception): FirebaseAIOnDeviceException =
       when (cause) {
         is FirebaseAIOnDeviceException -> cause
@@ -52,5 +51,6 @@ public class FirebaseAiOnDeviceInvalidRequestException(cause: Exception? = null)
   FirebaseAIOnDeviceException("Invalid on-device request", cause)
 
 /** Catch all case for exceptions not explicitly expected. */
-public class FirebaseAIOnDeviceUnknownException internal constructor(message: String, cause: Exception? = null) :
+public class FirebaseAIOnDeviceUnknownException
+internal constructor(message: String, cause: Exception? = null) :
   FirebaseAIOnDeviceException(message, cause)
