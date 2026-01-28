@@ -224,7 +224,7 @@ public final class NetworkRequestMetricBuilder extends AppStateUpdateHandler
    * point depending upon the current {@link PerfSession} verbosity.
    *
    * @see GaugeManager#collectGaugeMetricOnce(Timer)
-   * @see PerfSession#isGaugeAndEventCollectionEnabled()
+   * @see PerfSession#isVerbose()
    */
   public NetworkRequestMetricBuilder setRequestStartTimeMicros(long time) {
     SessionManager sessionManager = SessionManager.getInstance();
@@ -234,7 +234,7 @@ public final class NetworkRequestMetricBuilder extends AppStateUpdateHandler
     builder.setClientStartTimeUs(time);
     updateSession(perfSession);
 
-    if (perfSession.isGaugeAndEventCollectionEnabled()) {
+    if (perfSession.isVerbose()) {
       gaugeManager.collectGaugeMetricOnce(perfSession.getTimer());
     }
 
@@ -265,12 +265,12 @@ public final class NetworkRequestMetricBuilder extends AppStateUpdateHandler
    * point depending upon the current {@link PerfSession} Verbosity.
    *
    * @see GaugeManager#collectGaugeMetricOnce(Timer)
-   * @see PerfSession#isGaugeAndEventCollectionEnabled()
+   * @see PerfSession#isVerbose()
    */
   public NetworkRequestMetricBuilder setTimeToResponseCompletedMicros(long time) {
     builder.setTimeToResponseCompletedUs(time);
 
-    if (SessionManager.getInstance().perfSession().isGaugeAndEventCollectionEnabled()) {
+    if (SessionManager.getInstance().perfSession().isVerbose()) {
       gaugeManager.collectGaugeMetricOnce(SessionManager.getInstance().perfSession().getTimer());
     }
 
