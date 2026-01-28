@@ -177,8 +177,10 @@ internal fun commonMultiTurnTest(
   responseLoader: suspend (String, ByteChannel) -> Unit,
   block: CommonTest,
 ) = doBlocking {
+  val context = ApplicationProvider.getApplicationContext<Context>()
   val mockFirebaseApp = Mockito.mock<FirebaseApp>()
   Mockito.`when`(mockFirebaseApp.isDataCollectionDefaultEnabled).thenReturn(false)
+  Mockito.`when`(mockFirebaseApp.applicationContext).thenReturn(context)
   var requestCount = 0
   val apiController =
     APIController(
