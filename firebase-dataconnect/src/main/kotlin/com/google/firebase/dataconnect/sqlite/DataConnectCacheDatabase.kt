@@ -344,7 +344,7 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
       val entityRowIds = sqliteDatabase.getEntityRowIdsByQueryRowId(queryRowId)
       val entities = sqliteDatabase.getEntitiesByRowIds(entityRowIds)
 
-      val decodeResult = runCatching { QueryResultDecoder.decode(queryData, entities) }
+      val decodeResult = runCatching { QueryResultDecoder.decode(queryData, entities::get) }
       decodeResult.onFailure {
         logger.warn {
           "QueryResultDecoder failed to decode query results " +
@@ -363,7 +363,7 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
   ) {
     val encodedQueryData: ByteArray
     val encodedEntities: List<Pair<ByteArray, ByteArray>>
-    QueryResultEncoder.encode(queryData, entityIdByPath).also { queryDataEncodeResult ->
+    QueryResultEncoder.encode(queryData, entityIdByPath::get).also { queryDataEncodeResult ->
       encodedQueryData = queryDataEncodeResult.byteArray
       encodedEntities =
         queryDataEncodeResult.entityByPath.values.map {

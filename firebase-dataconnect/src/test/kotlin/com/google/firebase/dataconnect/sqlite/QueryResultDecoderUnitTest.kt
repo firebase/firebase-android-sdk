@@ -593,7 +593,7 @@ class QueryResultDecoderUnitTest {
       val entity = structOf("", testCase.randomValue)
       val entityByEncodedId = mapOf(encodedEntityId to entity)
 
-      val decodeResult = decode(byteArray, entityByEncodedId)
+      val decodeResult = decode(byteArray, entityByEncodedId::get)
 
       decodeResult shouldBe entity
     }

@@ -34,7 +34,6 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.listNoRepeat
 import com.google.firebase.dataconnect.testutil.property.arbitrary.listValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.next
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
-import com.google.firebase.dataconnect.testutil.property.arbitrary.random
 import com.google.firebase.dataconnect.testutil.property.arbitrary.randomSource
 import com.google.firebase.dataconnect.testutil.property.arbitrary.randomlyInsertStruct
 import com.google.firebase.dataconnect.testutil.property.arbitrary.randomlyInsertStructs
@@ -78,7 +77,6 @@ import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.distinct
 import io.kotest.property.arbitrary.double
 import io.kotest.property.arbitrary.filterNot
-import io.kotest.property.arbitrary.flatMap
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.list
 import io.kotest.property.arbitrary.long
@@ -823,21 +821,23 @@ private sealed class StringEncodingTestCase(val string: String) {
 }
 
 private fun Struct.decodingEncodingShouldProduceIdenticalStruct(
-  entityByPath: Map<DataConnectPath, QueryResultEncoder.Entity> = emptyMap(),
+  entityByPath: Map<DataConnectPath, QueryResultEncoder.Entity>? = null,
 ) {
   val encodedBytes =
     withClue("QueryResultEncoder.encode()") {
-      val entityIdByPath = entityByPath.mapValues { it.value.id }
-      val encodeResult = QueryResultEncoder.encode(this, entityIdByPath)
+      val entityIdByPath = entityByPath?.mapValues { it.value.id }
+      val getEntityIdForPath = entityIdByPath?.let { it::get }
+      val encodeResult = QueryResultEncoder.encode(this, getEntityIdForPath)
 
-      encodeResult.entityByPath shouldContainExactly entityByPath
+      encodeResult.entityByPath shouldContainExactly (entityByPath ?: emptyMap())
 
       encodeResult.byteArray
     }
 
   withClue("QueryResultDecoder.decode()") {
-    val entityByEncodedId = entityByPath.map { it.value.run { encodedId to struct } }.toMap()
-    val decodedStruct = QueryResultDecoder.decode(encodedBytes, entityByEncodedId)
+    val entityByEncodedId = entityByPath?.map { it.value.run { encodedId to struct } }?.toMap()
+    val getEntityByEncodedId = entityByEncodedId?.let { it::get }
+    val decodedStruct = QueryResultDecoder.decode(encodedBytes, getEntityByEncodedId)
     decodedStruct should beEqualTo(this, structPrinter = { it.toCompactString() })
   }
 }

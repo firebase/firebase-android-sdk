@@ -43,14 +43,13 @@ import java.nio.channels.Channels
 import java.nio.channels.ReadableByteChannel
 import java.nio.charset.CodingErrorAction
 
+internal typealias GetEntityByEncodedIdFunction = (ImmutableByteArray) -> Struct?
+
 /**
  * This class is NOT thread safe. The behavior of an instance of this class when used concurrently
  * from multiple threads without external synchronization is undefined.
  */
-internal class QueryResultDecoder(
-  private val channel: ReadableByteChannel,
-  private val entityByEncodedId: Map<ImmutableByteArray, Struct> = emptyMap(),
-) {
+internal class QueryResultDecoder(private val channel: ReadableByteChannel) {
 
   private val charsetDecoder =
     Charsets.UTF_8.newDecoder()
@@ -65,9 +64,14 @@ internal class QueryResultDecoder(
 
   private val charArray = CharArray(2)
 
-  fun decode(): Struct {
+  fun decode(getEntityByEncodedId: GetEntityByEncodedIdFunction? = null): Struct {
     readMagic(path = emptyList())
-    return readStruct(path = mutableListOf())
+
+    if (getEntityByEncodedId === null) {
+      return readStruct(path = mutableListOf(), getEntityByEncodedId = null)
+    }
+
+    TODO("not yet implemented nf97rc36ft")
   }
 
   private fun readSome(): Boolean {
@@ -627,7 +631,10 @@ internal class QueryResultDecoder(
     return charBuffer.toString()
   }
 
-  private fun readList(path: MutableDataConnectPath): ListValue {
+  private fun readList(
+    path: MutableDataConnectPath,
+    getEntityByEncodedId: GetEntityByEncodedIdFunction?
+  ): ListValue {
     val size =
       readUInt32(
         path,
@@ -639,13 +646,17 @@ internal class QueryResultDecoder(
 
     val listValueBuilder = ListValue.newBuilder()
     repeat(size) { listIndex ->
-      val value: Value = path.withAddedListIndex(listIndex) { readValue(path) }
+      val value: Value =
+        path.withAddedListIndex(listIndex) { readValue(path, getEntityByEncodedId) }
       listValueBuilder.addValues(value)
     }
     return listValueBuilder.build()
   }
 
-  private fun readStruct(path: MutableDataConnectPath): Struct {
+  private fun readStruct(
+    path: MutableDataConnectPath,
+    getEntityByEncodedId: GetEntityByEncodedIdFunction?
+  ): Struct {
     val keyCount =
       readUInt32(
         path,
@@ -658,7 +669,7 @@ internal class QueryResultDecoder(
     val structBuilder = Struct.newBuilder()
     repeat(keyCount) {
       val key = readString(path, name = "struct key")
-      val value = path.withAddedField(key) { readValue(path) }
+      val value = path.withAddedField(key) { readValue(path, getEntityByEncodedId) }
       structBuilder.putFields(key, value)
     }
     return structBuilder.build()
@@ -686,10 +697,13 @@ internal class QueryResultDecoder(
     }
   }
 
-  private fun readEntity(path: MutableDataConnectPath): Struct {
+  private fun readEntity(
+    path: MutableDataConnectPath,
+    getEntityByEncodedId: GetEntityByEncodedIdFunction
+  ): Struct {
     val encodedEntityId = readEncodedEntityId(path)
     val entity =
-      entityByEncodedId[encodedEntityId]
+      getEntityByEncodedId(encodedEntityId)
         ?: throw EntityNotFoundException(
           "could not find entity with encoded id ${encodedEntityId.to0xHexString()} [p583k77y7r]"
         )
@@ -742,7 +756,11 @@ internal class QueryResultDecoder(
     }
   }
 
-  private fun patchInPrunedEntities(path: MutableDataConnectPath, struct: Struct): Struct {
+  private fun patchInPrunedEntities(
+    path: MutableDataConnectPath,
+    struct: Struct,
+    getEntityByEncodedId: GetEntityByEncodedIdFunction
+  ): Struct {
     val prunedEntityCount =
       readUInt32(
         path,
@@ -760,7 +778,7 @@ internal class QueryResultDecoder(
     val structsByPath = buildMap {
       repeat(prunedEntityCount) {
         val entityRelativePath = readPath(path)
-        val entity = readEntity(path)
+        val entity = readEntity(path, getEntityByEncodedId)
         put(entityRelativePath, entity)
       }
     }
@@ -768,7 +786,11 @@ internal class QueryResultDecoder(
     return struct.withGraftedInStructs(structsByPath)
   }
 
-  private fun patchInPrunedEntities(path: MutableDataConnectPath, listValue: ListValue): ListValue {
+  private fun patchInPrunedEntities(
+    path: MutableDataConnectPath,
+    listValue: ListValue,
+    getEntityByEncodedId: GetEntityByEncodedIdFunction
+  ): ListValue {
     val prunedEntityCount =
       readUInt32(
         path,
@@ -786,7 +808,7 @@ internal class QueryResultDecoder(
     val structsByPath = buildMap {
       repeat(prunedEntityCount) {
         val entityRelativePath = readPath(path)
-        val entity = readEntity(path)
+        val entity = readEntity(path, getEntityByEncodedId)
         put(entityRelativePath, entity)
       }
     }
@@ -859,7 +881,10 @@ internal class QueryResultDecoder(
     }
   }
 
-  private fun readValue(path: MutableDataConnectPath): Value {
+  private fun readValue(
+    path: MutableDataConnectPath,
+    getEntityByEncodedId: GetEntityByEncodedIdFunction?
+  ): Value {
     val valueType =
       readValueType(
         path,
@@ -940,10 +965,18 @@ internal class QueryResultDecoder(
         )
       ReadValueValueType.BoolTrue -> valueBuilder.setBoolValue(true)
       ReadValueValueType.BoolFalse -> valueBuilder.setBoolValue(false)
-      ReadValueValueType.List -> valueBuilder.setListValue(readList(path))
-      ReadValueValueType.Struct -> valueBuilder.setStructValue(readStruct(path))
+      ReadValueValueType.List -> valueBuilder.setListValue(readList(path, getEntityByEncodedId))
+      ReadValueValueType.Struct ->
+        valueBuilder.setStructValue(readStruct(path, getEntityByEncodedId))
       ReadValueValueType.KindNotSet -> {}
-      ReadValueValueType.Entity -> valueBuilder.setStructValue(readEntity(path))
+      ReadValueValueType.Entity -> {
+        if (getEntityByEncodedId === null) {
+          throw IllegalStateException(
+            "TODO: handle getEntityByEncodedId===null, probably should never get here"
+          )
+        }
+        valueBuilder.setStructValue(readEntity(path, getEntityByEncodedId))
+      }
       ReadValueValueType.StringEmpty -> valueBuilder.setStringValue("")
       ReadValueValueType.String1Byte ->
         valueBuilder.setStringValue(readString1Byte(path, name = "string value"))
@@ -1090,12 +1123,12 @@ internal class QueryResultDecoder(
 
     fun decode(
       byteArray: ByteArray,
-      entityByEncodedId: Map<ImmutableByteArray, Struct> = emptyMap()
+      getEntityByEncodedId: GetEntityByEncodedIdFunction? = null,
     ): Struct =
       ByteArrayInputStream(byteArray).use { byteArrayInputStream ->
         Channels.newChannel(byteArrayInputStream).use { channel ->
-          val decoder = QueryResultDecoder(channel, entityByEncodedId)
-          decoder.decode()
+          val decoder = QueryResultDecoder(channel)
+          decoder.decode(getEntityByEncodedId)
         }
       }
 

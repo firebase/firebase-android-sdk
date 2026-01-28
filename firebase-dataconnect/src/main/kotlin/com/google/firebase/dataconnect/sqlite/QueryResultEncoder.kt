@@ -18,6 +18,7 @@ package com.google.firebase.dataconnect.sqlite
 
 import com.google.firebase.dataconnect.DataConnectPath
 import com.google.firebase.dataconnect.DataConnectPathComparator
+import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.MutableDataConnectPath
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.putSInt32
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.putSInt64
@@ -25,8 +26,8 @@ import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.putUInt32
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.putUInt64
 import com.google.firebase.dataconnect.toPathString
 import com.google.firebase.dataconnect.util.ImmutableByteArray
+import com.google.firebase.dataconnect.util.ProtoPrune.withDescendantStructsPruned
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
-import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
 import com.google.firebase.dataconnect.withAddedField
 import com.google.firebase.dataconnect.withAddedListIndex
 import com.google.protobuf.ListValue
@@ -44,16 +45,13 @@ import java.security.MessageDigest
 import java.util.Objects
 import kotlin.math.absoluteValue
 
+internal typealias GetEntityIdForPathFunction = (DataConnectPath) -> String?
+
 /**
  * This class is NOT thread safe. The behavior of an instance of this class when used concurrently
  * from multiple threads without external synchronization is undefined.
  */
-internal class QueryResultEncoder(
-  channel: WritableByteChannel,
-  private val entityIdByPath: Map<DataConnectPath, String> = emptyMap(),
-) {
-
-  val entityByPath = mutableMapOf<DataConnectPath, Entity>()
+internal class QueryResultEncoder(channel: WritableByteChannel) {
 
   private val writer = QueryResultChannelWriter(channel)
 
@@ -76,13 +74,104 @@ internal class QueryResultEncoder(
     override fun hashCode() = Objects.hash(byteArray, entityByPath)
   }
 
-  fun encode(queryResult: Struct) {
+  fun encode(
+    queryResult: Struct,
+    getEntityIdForPath: GetEntityIdForPathFunction? = null
+  ): Map<DataConnectPath, Entity> {
     writer.writeFixed32Int(QueryResultCodec.QUERY_RESULT_MAGIC)
-    writeStructProper(path = mutableListOf(), queryResult)
+
+    if (getEntityIdForPath === null) {
+      writeStructProper(path = mutableListOf(), queryResult)
+      return emptyMap()
+    }
+
+    val (prunedQueryResult, entityByPath) = writeEntities(queryResult, getEntityIdForPath)
+    writeStructProper(path = mutableListOf(), prunedQueryResult)
+    return entityByPath
   }
 
   fun flush() {
     writer.flush()
+  }
+
+  private data class WriteEntitiesResult(
+    val prunedQueryResult: Struct,
+    val entityByPath: Map<DataConnectPath, Entity>,
+  )
+
+  private fun writeEntities(
+    queryResult: Struct,
+    getEntityIdForPath: GetEntityIdForPathFunction
+  ): WriteEntitiesResult {
+    // Cache the entity IDs at each path so that the getEntityIdForPath function is called at most
+    // once for any given path. This avoids the potential situation of the function returning
+    // different values for the same path, which would lead to undefined and difficult-to-debug
+    // behavior.
+    val entityIdByPath = mutableMapOf<DataConnectPath, String?>()
+
+    val prunedResult =
+      queryResult.withDescendantStructsPruned { path ->
+        val entityId =
+          if (path in entityIdByPath) {
+            entityIdByPath[path]
+          } else {
+            val entityId = getEntityIdForPath(path)
+            entityIdByPath[path] = entityId
+            entityId
+          }
+        entityId !== null
+      }
+
+    if (prunedResult === null) {
+      writer.writeUInt32(0)
+      return WriteEntitiesResult(queryResult, emptyMap())
+    }
+
+    val (prunedQueryResult, prunedStructByPath) = prunedResult
+    val entityByPath = mutableMapOf<DataConnectPath, Entity>()
+    writer.writeUInt32(prunedStructByPath.size)
+    prunedStructByPath.entries.forEach { (path, entityStruct) ->
+      val entityId =
+        checkNotNull(entityIdByPath[path]) {
+          "internal error yprt5xr6cf: entityIdByPath[path=${path.toPathString()}] returned null"
+        }
+      writePath(path)
+      val encodedEntityId = writeEntityId(entityId)
+      writer.writeUInt32(entityStruct.fieldsCount)
+      entityStruct.fieldsMap.keys.forEach { writeString(it) }
+      entityByPath[path] = Entity(entityId, encodedEntityId, entityStruct)
+    }
+
+    return WriteEntitiesResult(prunedQueryResult, emptyMap())
+  }
+
+  private fun writePath(path: DataConnectPath) {
+    writer.writeUInt32(path.size)
+    path.forEach(::writePathSegment)
+  }
+
+  private fun writePathSegment(pathSegment: DataConnectPathSegment) {
+    when (pathSegment) {
+      is DataConnectPathSegment.Field -> writeFieldPathSegment(pathSegment)
+      is DataConnectPathSegment.ListIndex -> writeListIndexPathSegment(pathSegment)
+    }
+  }
+
+  private fun writeFieldPathSegment(pathSegment: DataConnectPathSegment.Field) {
+    writer.writeByte(QueryResultCodec.VALUE_PATH_SEGMENT_FIELD)
+    writeString(pathSegment.field)
+  }
+
+  private fun writeListIndexPathSegment(pathSegment: DataConnectPathSegment.ListIndex) {
+    writer.writeByte(QueryResultCodec.VALUE_PATH_SEGMENT_LIST_INDEX)
+    writer.writeUInt32(pathSegment.index)
+  }
+
+  private fun writeEntityId(entityId: String): ImmutableByteArray {
+    val encodedEntityId = sha512DigestCalculator.calculate(entityId)
+    writer.writeUInt32(encodedEntityId.size)
+    writer.write(ByteBuffer.wrap(encodedEntityId))
+    return ImmutableByteArray.adopt(encodedEntityId)
   }
 
   private fun writeValue(path: MutableDataConnectPath, value: Value) {
@@ -92,7 +181,7 @@ internal class QueryResultEncoder(
       Value.KindCase.NUMBER_VALUE -> writeDouble(value.numberValue)
       Value.KindCase.BOOL_VALUE -> writeBoolean(value.boolValue)
       Value.KindCase.STRING_VALUE -> writeString(value.stringValue)
-      Value.KindCase.STRUCT_VALUE -> writeStructOrEntity(path, value.structValue)
+      Value.KindCase.STRUCT_VALUE -> writeStruct(path, value.structValue)
       Value.KindCase.LIST_VALUE -> writeList(path, value.listValue)
     }
   }
@@ -187,15 +276,6 @@ internal class QueryResultEncoder(
     }
   }
 
-  private fun writeStructOrEntity(path: MutableDataConnectPath, struct: Struct) {
-    val entityId = path.getEntityId()
-    if (entityId === null) {
-      writeStruct(path, struct)
-    } else {
-      writeEntity(path, entityId, struct)
-    }
-  }
-
   private fun writeStruct(path: MutableDataConnectPath, struct: Struct) {
     writer.writeByte(QueryResultCodec.VALUE_STRUCT)
     writeStructProper(path, struct)
@@ -217,28 +297,6 @@ internal class QueryResultEncoder(
     }
   }
 
-  private fun writeEntity(path: MutableDataConnectPath, entityId: String, struct: Struct) {
-    writer.writeByte(QueryResultCodec.VALUE_ENTITY)
-    val encodedEntityId = writeEntityId(entityId)
-    writer.writeUInt32(struct.fieldsCount)
-
-    struct.fieldsMap.keys.forEach { key ->
-      writeString(key)
-      writer.writeByte(QueryResultCodec.VALUE_FROM_ENTITY)
-    }
-
-    entityByPath[path.toList()] = Entity(entityId, encodedEntityId, struct)
-  }
-
-  private fun writeEntityId(entityId: String): ImmutableByteArray {
-    val encodedEntityId = sha512DigestCalculator.calculate(entityId)
-    writer.writeUInt32(encodedEntityId.size)
-    writer.write(ByteBuffer.wrap(encodedEntityId))
-    return ImmutableByteArray.adopt(encodedEntityId)
-  }
-
-  private fun DataConnectPath.getEntityId(): String? = entityIdByPath[this]
-
   class Entity(
     val id: String,
     val encodedId: ImmutableByteArray,
@@ -258,15 +316,15 @@ internal class QueryResultEncoder(
 
     fun encode(
       queryResult: Struct,
-      entityIdByPath: Map<DataConnectPath, String> = emptyMap()
+      getEntityIdForPath: GetEntityIdForPathFunction? = null,
     ): EncodeResult =
       ByteArrayOutputStream().use { byteArrayOutputStream ->
         val entityByPath =
           Channels.newChannel(byteArrayOutputStream).use { writableByteChannel ->
-            val encoder = QueryResultEncoder(writableByteChannel, entityIdByPath)
-            encoder.encode(queryResult)
+            val encoder = QueryResultEncoder(writableByteChannel)
+            val entityByPath = encoder.encode(queryResult, getEntityIdForPath)
             encoder.flush()
-            encoder.entityByPath.toMap()
+            entityByPath
           }
         EncodeResult(byteArrayOutputStream.toByteArray(), entityByPath)
       }
