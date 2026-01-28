@@ -298,7 +298,10 @@ fun ProtoArb.listValue(
     structSizeRange = structSize,
   )
 
-fun ProtoArb.structKey(): Arb<String> = Arb.string(1..10, Codepoint.alphanumeric())
+fun ProtoArb.structKey(lengthRange: IntRange = 1..10): Arb<String> =
+  Arb.string(lengthRange, Codepoint.alphanumeric())
+
+fun ProtoArb.structKey(length: Int): Arb<String> = structKey(length..length)
 
 fun ProtoArb.struct(
   size: IntRange = 0..5,
