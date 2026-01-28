@@ -16,6 +16,7 @@
 
 package com.google.firebase.ai
 
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.firebase.ai.type.FinishReason
 import com.google.firebase.ai.type.InvalidAPIKeyException
 import com.google.firebase.ai.type.PublicPreviewAPI
@@ -36,7 +37,9 @@ import io.ktor.http.HttpStatusCode
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.withTimeout
 import org.junit.Test
+import org.junit.runner.RunWith
 
+@RunWith(AndroidJUnit4::class)
 internal class DevAPIUnarySnapshotTests {
   private val testTimeout = 5.seconds
 
