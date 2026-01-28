@@ -18,8 +18,22 @@ package com.google.firebase.ai.ondevice.interop
 
 /** Parent class for any errors that occur from the Firebase AI OnDevice SDK. */
 public abstract class FirebaseAIOnDeviceException
-internal constructor(message: String, cause: Throwable? = null) :
-  RuntimeException(message, cause) {}
+internal constructor(message: String, cause: Throwable? = null) : RuntimeException(message, cause) {
+
+  public companion object {
+    /**
+     * Creates a [FirebaseAIOnDeviceException] from a [Exception].
+     *
+     * If the [cause] is already a [FirebaseAIOnDeviceException], it is returned as is. Otherwise, a
+     * [FirebaseAIOnDeviceUnknownException] is created, wrapping the [cause].
+     */
+    public fun from(cause: Exception): FirebaseAIOnDeviceException =
+      when (cause) {
+        is FirebaseAIOnDeviceException -> cause
+        else -> FirebaseAIOnDeviceUnknownException("Something unexpected happened.", cause)
+      }
+  }
+}
 
 /**
  * An operation has been requested, but device doesn't support local models, or they are not
@@ -29,9 +43,14 @@ internal constructor(message: String, cause: Throwable? = null) :
  * trying to use it.
  */
 public class FirebaseAIOnDeviceNotAvailableException
-internal constructor(message: String, cause: Throwable? = null) :
+internal constructor(message: String, cause: Exception? = null) :
   FirebaseAIOnDeviceException(message, cause)
 
 /** The parameters used in the request are not valid. */
-public class FirebaseAiOnDeviceInvalidRequestException(cause: Throwable? = null) :
+public class FirebaseAiOnDeviceInvalidRequestException(cause: Exception? = null) :
   FirebaseAIOnDeviceException("Invalid on-device request", cause)
+
+/** Catch all case for exceptions not explicitly expected. */
+public class FirebaseAIOnDeviceUnknownException
+internal constructor(message: String, cause: Exception? = null) :
+  FirebaseAIOnDeviceException(message, cause)

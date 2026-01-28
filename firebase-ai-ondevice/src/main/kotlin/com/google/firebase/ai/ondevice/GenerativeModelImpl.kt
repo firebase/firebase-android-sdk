@@ -17,19 +17,26 @@
 package com.google.firebase.ai.ondevice
 
 import com.google.firebase.ai.ondevice.interop.CountTokensResponse
+import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceException
 import com.google.firebase.ai.ondevice.interop.GenerateContentRequest
 import com.google.firebase.ai.ondevice.interop.GenerateContentResponse
 import com.google.firebase.ai.ondevice.interop.GenerativeModel
+import com.google.mlkit.genai.common.FeatureStatus
+import com.google.mlkit.genai.common.GenAiException
 import com.google.mlkit.genai.prompt.Generation
 import kotlinx.coroutines.flow.Flow
 
 /** Implementation of [GenerativeModel] backed by MLKit's genai prompt SDK. */
-internal class GenerativeModelImpl : GenerativeModel {
+internal class GenerativeModelImpl(
   internal val mlkitModel: com.google.mlkit.genai.prompt.GenerativeModel = Generation.getClient()
+) : GenerativeModel {
 
-  override suspend fun isAvailable(): Boolean {
-    TODO("Not yet implemented")
-  }
+  /**
+   * Check whether the model is available to be used.
+   *
+   * Models being actively downloaded are also considered unavailable.
+   */
+  override suspend fun isAvailable(): Boolean = mlkitModel.checkStatus() == FeatureStatus.AVAILABLE
 
   override suspend fun generateContent(request: GenerateContentRequest): GenerateContentResponse {
     TODO("Not yet implemented")
@@ -45,15 +52,18 @@ internal class GenerativeModelImpl : GenerativeModel {
     TODO("Not yet implemented")
   }
 
-  override suspend fun getBaseModelName(): String {
-    TODO("Not yet implemented")
-  }
+  override suspend fun getBaseModelName(): String = mlkitModel.getBaseModelName()
 
-  override suspend fun getTokenLimit(): Int {
-    TODO("Not yet implemented")
-  }
+  override suspend fun getTokenLimit(): Int = mlkitModel.getTokenLimit()
 
-  override suspend fun warmup() {
-    TODO("Not yet implemented")
-  }
+  /**
+   * Invokes the MLKit `warmup()` method. Catches [GenAiException] thrown by MLKitand re-throws them
+   * as a `FirebaseAIOnDeviceException` for consistent error handling within the Firebase API.
+   */
+  override suspend fun warmup() =
+    try {
+      mlkitModel.warmup()
+    } catch (e: GenAiException) {
+      throw FirebaseAIOnDeviceException.from(e)
+    }
 }
