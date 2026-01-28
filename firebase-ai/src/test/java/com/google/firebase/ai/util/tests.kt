@@ -18,6 +18,8 @@
 
 package com.google.firebase.ai.util
 
+import android.content.Context
+import androidx.test.core.app.ApplicationProvider
 import com.google.firebase.FirebaseApp
 import com.google.firebase.ai.GenerativeModel
 import com.google.firebase.ai.ImagenModel
@@ -112,8 +114,10 @@ internal fun commonTest(
   block: CommonTest,
 ) = doBlocking {
   val channel = ByteChannel(autoFlush = true)
+  val context = ApplicationProvider.getApplicationContext<Context>()
   val mockFirebaseApp = Mockito.mock<FirebaseApp>()
   Mockito.`when`(mockFirebaseApp.isDataCollectionDefaultEnabled).thenReturn(false)
+  Mockito.`when`(mockFirebaseApp.applicationContext).thenReturn(context)
   val apiController =
     APIController(
       "super_cool_test_key",
