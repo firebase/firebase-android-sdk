@@ -41,13 +41,14 @@ Before running integration tests:
 3. **General Setup**: See the root [README](../README.md#project-setup) for broader project setup instructions.
 
 ### 2. Test Configuration Flags
+
 You can configure which backend and database the tests run against using Gradle project properties (`-P`).
 
-| Flag | Description | Options | Default |
-| :--- | :--- | :--- | :--- |
-| `targetBackend` | Which backend environment to hit. | `"emulator"`, `"qa"`, `"nightly"`, `"prod"` | `"emulator"` |
-| `backendEdition` | The database edition to emulate/use. | `"enterprise"`, `"standard"` | *None* |
-| `targetDatabaseId` | The specific database ID to test against. | *User defined string* | `(default)` |
+| Flag               | Description                               | Options                                     | Default      |
+|:-------------------|:------------------------------------------|:--------------------------------------------|:-------------|
+| `targetBackend`    | Which backend environment to hit.         | `"emulator"`, `"qa"`, `"nightly"`, `"prod"` | `"emulator"` |
+| `backendEdition`   | The database edition to emulate/use.      | `"enterprise"`, `"standard"`                | *None*       |
+| `targetDatabaseId` | The specific database ID to test against. | *User defined string*                       | `(default)`  |
 
 ### 3. Running against the Firestore Emulator (Default)
 
@@ -55,18 +56,21 @@ By default, integration tests expect the Firestore Emulator to be running on por
 
 **Step A: Setup & Start Emulator**
 
-1.  **Install Firebase CLI:**
-    ```bash
-    npm install -g firebase-tools
-    ```
-2.  **Initialize Emulator:**
-    ```bash
-    firebase setup:emulators:firestore
-    ```
-3.  **Start Emulator:**
-    ```bash
-    firebase emulators:start --only firestore
-    ```
+1. **Install Firebase CLI:**
+
+   ```bash
+   npm install -g firebase-tools
+   ```
+2. **Initialize Emulator:**
+
+   ```bash
+   firebase setup:emulators:firestore
+   ```
+3. **Start Emulator:**
+
+   ```bash
+   firebase emulators:start --only firestore
+   ```
 
 **Step B: Run Tests**
 
@@ -99,8 +103,8 @@ The commands above use `connectedCheck`, which runs tests on a locally connected
 
 To run the integration tests on physical devices hosted in the Google data center:
 
-1.  Setup Firebase Test Lab for your project (See [Instructions](../README.md#running-integration-tests-on-firebase-test-lab)).
-2.  Run the device check command:
+1. Setup Firebase Test Lab for your project (See [Instructions](../README.md#running-integration-tests-on-firebase-test-lab)).
+2. Run the device check command:
 
 ```bash
 ./gradlew :firebase-firestore:deviceCheck
