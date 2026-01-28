@@ -18,6 +18,7 @@ import androidx.annotation.Nullable;
 import com.google.auto.value.AutoValue;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @AutoValue
@@ -54,6 +55,9 @@ public abstract class EventInternal {
   @SuppressWarnings("mutable")
   public abstract byte[] getExperimentIdsEncrypted();
 
+  @Nullable
+  public abstract List<byte[]> getExperimentIdsEncryptedList();
+
   public final Map<String, String> getMetadata() {
     return Collections.unmodifiableMap(getAutoMetadata());
   }
@@ -86,6 +90,7 @@ public abstract class EventInternal {
         .setPseudonymousId(getPseudonymousId())
         .setExperimentIdsClear(getExperimentIdsClear())
         .setExperimentIdsEncrypted(getExperimentIdsEncrypted())
+        .setExperimentIdsEncryptedList(getExperimentIdsEncryptedList())
         .setEncodedPayload(getEncodedPayload())
         .setEventMillis(getEventMillis())
         .setUptimeMillis(getUptimeMillis())
@@ -117,6 +122,8 @@ public abstract class EventInternal {
     public abstract Builder setExperimentIdsClear(byte[] value);
 
     public abstract Builder setExperimentIdsEncrypted(byte[] value);
+
+    public abstract Builder setExperimentIdsEncryptedList(List<byte[]> value);
 
     protected abstract Map<String, String> getAutoMetadata();
 

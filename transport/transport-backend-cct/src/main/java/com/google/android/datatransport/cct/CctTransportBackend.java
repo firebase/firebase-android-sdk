@@ -22,6 +22,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Build;
 import android.telephony.TelephonyManager;
+import android.util.Base64;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.datatransport.Encoding;
@@ -206,6 +207,15 @@ final class CctTransportBackend implements TransportBackend {
     return NetworkConnectionInfo.MobileSubtype.forNumber(subtype) != null ? subtype : 0;
   }
 
+  private List<String> encodeListByteData(List<byte[]> input) {
+    List<String> output = new ArrayList<>(input.size());
+    for (byte[] chunk : input) {
+      String encoded = Base64.encodeToString(chunk, Base64.NO_WRAP);
+      output.add(encoded);
+    }
+    return output;
+  }
+
   private BatchedLogRequest getRequestBody(BackendRequest backendRequest) {
     HashMap<String, List<EventInternal>> eventInternalMap = new HashMap<>();
     for (EventInternal eventInternal : backendRequest.getEvents()) {
@@ -307,8 +317,17 @@ final class CctTransportBackend implements TransportBackend {
           if (eventInternal.getExperimentIdsClear() != null) {
             builder.setClearBlob(eventInternal.getExperimentIdsClear());
           }
-          if (eventInternal.getExperimentIdsEncrypted() != null) {
-            builder.setEncryptedBlob(eventInternal.getExperimentIdsEncrypted());
+          if (eventInternal.getExperimentIdsEncryptedList() != null) {
+            List<String> encodedListByteData =
+                encodeListByteData(eventInternal.getExperimentIdsEncryptedList());
+            if (eventInternal.getExperimentIdsEncrypted() != null) {
+              encodedListByteData.add(
+                  Base64.encodeToString(eventInternal.getExperimentIdsEncrypted(), Base64.NO_WRAP));
+            }
+            builder.setEncryptedBlob(encodedListByteData);
+          } else if (eventInternal.getExperimentIdsEncrypted() != null) {
+            builder.setEncryptedBlob(
+                encodeListByteData(List.of(eventInternal.getExperimentIdsEncrypted())));
           }
           event.setExperimentIds(builder.build());
         }

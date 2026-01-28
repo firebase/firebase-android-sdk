@@ -1,5 +1,7 @@
 # Unreleased
 
+- [feature] Support multiple encrypted experiment IDs.
+
 # 4.0.0
 
 - [changed] Updated protobuf dependency to `3.25.5` to fix
