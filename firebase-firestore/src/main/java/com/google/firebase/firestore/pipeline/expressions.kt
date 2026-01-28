@@ -2306,6 +2306,166 @@ abstract class Expression internal constructor() {
       BooleanFunctionExpression("regex_contains", evaluateRegexContains, fieldName, pattern)
 
     /**
+     * Creates an expression that returns the first substring of a string expression that matches a
+     * specified regular expression.
+     *
+     * This expression uses the [RE2](https://github.com/google/re2/wiki/Syntax) regular expression
+     * syntax.
+     *
+     * ```kotlin
+     * // Extract a substring based on a dynamic pattern field
+     * regexFind(field("email"), field("pattern"))
+     * ```
+     *
+     * @param stringExpression The expression representing the string to search.
+     * @param pattern The regular expression to search for.
+     * @return A new [Expression] representing the regular expression find function.
+     */
+    @JvmStatic
+    fun regexFind(stringExpression: Expression, pattern: Expression): Expression =
+      FunctionExpression("regex_find", evaluateRegexFind, stringExpression, pattern)
+
+    /**
+     * Creates an expression that returns the first substring of a string expression that matches a
+     * specified regular expression.
+     *
+     * This expression uses the [RE2](https://github.com/google/re2/wiki/Syntax) regular expression
+     * syntax.
+     *
+     * ```kotlin
+     * // Extract the domain from a lower-cased email address
+     * regexFind(field("email"), "@[A-Za-z0-9.-]+")
+     * ```
+     *
+     * @param stringExpression The expression representing the string to search.
+     * @param pattern The regular expression to search for.
+     * @return A new [Expression] representing the regular expression find function.
+     */
+    @JvmStatic
+    fun regexFind(stringExpression: Expression, pattern: String): Expression =
+      FunctionExpression("regex_find", evaluateRegexFind, stringExpression, pattern)
+
+    /**
+     * Creates an expression that returns the first substring of a string field that matches a
+     * specified regular expression.
+     *
+     * This expression uses the [RE2](https://github.com/google/re2/wiki/Syntax) regular expression
+     * syntax.
+     *
+     * ```kotlin
+     * // Extract a substring from 'email' based on a pattern stored in another field
+     * regexFind("email", field("pattern"))
+     * ```
+     *
+     * @param fieldName The name of the field containing the string to search.
+     * @param pattern The regular expression to search for.
+     * @return A new [Expression] representing the regular expression find function.
+     */
+    @JvmStatic
+    fun regexFind(fieldName: String, pattern: Expression): Expression =
+      FunctionExpression("regex_find", evaluateRegexFind, fieldName, pattern)
+
+    /**
+     * Creates an expression that returns the first substring of a string field that matches a
+     * specified regular expression.
+     *
+     * This expression uses the [RE2](https://github.com/google/re2/wiki/Syntax) regular expression
+     * syntax.
+     *
+     * ```kotlin
+     * // Extract the domain name from an email field
+     * regexFind("email", "@[A-Za-z0-9.-]+")
+     * ```
+     *
+     * @param fieldName The name of the field containing the string to search.
+     * @param pattern The regular expression to search for.
+     * @return A new [Expression] representing the regular expression find function.
+     */
+    @JvmStatic
+    fun regexFind(fieldName: String, pattern: String): Expression =
+      FunctionExpression("regex_find", evaluateRegexFind, fieldName, pattern)
+
+    /**
+     * Creates an expression that evaluates to a list of all substrings in a string expression that
+     * match a specified regular expression.
+     *
+     * This expression uses the [RE2](https://github.com/google/re2/wiki/Syntax) regular expression
+     * syntax.
+     *
+     * ```kotlin
+     * // Extract all matches based on a dynamic pattern expression
+     * regexFindAll(field("comment"), field("pattern"))
+     * ```
+     *
+     * @param stringExpression The expression representing the string to search.
+     * @param pattern The regular expression to search for.
+     * @return A new [Expression] that evaluates to a list of matched substrings.
+     */
+    @JvmStatic
+    fun regexFindAll(stringExpression: Expression, pattern: Expression): Expression =
+      FunctionExpression("regex_find_all", evaluateRegexFindAll, stringExpression, pattern)
+
+    /**
+     * Creates an expression that evaluates to a list of all substrings in a string expression that
+     * match a specified regular expression.
+     *
+     * This expression uses the [RE2](https://github.com/google/re2/wiki/Syntax) regular expression
+     * syntax.
+     *
+     * ```kotlin
+     * // Extract all mentions from a lower-cased comment
+     * regexFindAll(field("comment"), "@[A-Za-z0-9_]+")
+     * ```
+     *
+     * @param stringExpression The expression representing the string to search.
+     * @param pattern The regular expression to search for.
+     * @return A new [Expression] that evaluates to a list of matched substrings.
+     */
+    @JvmStatic
+    fun regexFindAll(stringExpression: Expression, pattern: String): Expression =
+      FunctionExpression("regex_find_all", evaluateRegexFindAll, stringExpression, pattern)
+
+    /**
+     * Creates an expression that evaluates to a list of all substrings in a string field that match
+     * a specified regular expression.
+     *
+     * This expression uses the [RE2](https://github.com/google/re2/wiki/Syntax) regular expression
+     * syntax.
+     *
+     * ```kotlin
+     * // Extract all matches from 'content' based on a pattern stored in another field
+     * regexFindAll("content", field("pattern"))
+     * ```
+     *
+     * @param fieldName The name of the field containing the string to search.
+     * @param pattern The regular expression to search for.
+     * @return A new [Expression] that evaluates to a list of matched substrings.
+     */
+    @JvmStatic
+    fun regexFindAll(fieldName: String, pattern: Expression): Expression =
+      FunctionExpression("regex_find_all", evaluateRegexFindAll, fieldName, pattern)
+
+    /**
+     * Creates an expression that evaluates to a list of all substrings in a string field that match
+     * a specified regular expression.
+     *
+     * This expression uses the [RE2](https://github.com/google/re2/wiki/Syntax) regular expression
+     * syntax.
+     *
+     * ```kotlin
+     * // Extract all hashtags from a post content field
+     * regexFindAll("content", "#[A-Za-z0-9_]+")
+     * ```
+     *
+     * @param fieldName The name of the field containing the string to search.
+     * @param pattern The regular expression to search for.
+     * @return A new [Expression] that evaluates to a list of matched substrings.
+     */
+    @JvmStatic
+    fun regexFindAll(fieldName: String, pattern: String): Expression =
+      FunctionExpression("regex_find_all", evaluateRegexFindAll, fieldName, pattern)
+
+    /**
      * Creates an expression that checks if a string field matches a specified regular expression.
      *
      * ```kotlin
