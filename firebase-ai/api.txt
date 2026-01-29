@@ -505,6 +505,7 @@ package com.google.firebase.ai.type {
   }
 
   public static final class GenerationConfig.Builder {
+    ctor public GenerationConfig.Builder();
     method public com.google.firebase.ai.type.GenerationConfig build();
     method public com.google.firebase.ai.type.GenerationConfig.Builder setCandidateCount(Integer? candidateCount);
     method public com.google.firebase.ai.type.GenerationConfig.Builder setFrequencyPenalty(Float? frequencyPenalty);

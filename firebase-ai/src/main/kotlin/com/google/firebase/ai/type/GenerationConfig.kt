@@ -150,19 +150,19 @@ private constructor(
     public constructor()
 
     internal constructor(
-      temperature: Float? = null,
-      topK: Int? = null,
-      topP: Float? = null,
-      candidateCount: Int? = null,
-      maxOutputTokens: Int? = null,
-      presencePenalty: Float? = null,
-      frequencyPenalty: Float? = null,
-      stopSequences: List<String>? = null,
-      responseMimeType: String? = null,
-      responseSchema: Schema? = null,
-      responseJsonSchema: JsonSchema<*>? = null,
-      responseModalities: List<ResponseModality>? = null,
-      thinkingConfig: ThinkingConfig? = null,
+      temperature: Float?,
+      topK: Int?,
+      topP: Float?,
+      candidateCount: Int?,
+      maxOutputTokens: Int?,
+      presencePenalty: Float?,
+      frequencyPenalty: Float?,
+      stopSequences: List<String>?,
+      responseMimeType: String?,
+      responseSchema: Schema?,
+      responseJsonSchema: JsonSchema<*>?,
+      responseModalities: List<ResponseModality>?,
+      thinkingConfig: ThinkingConfig?,
     ) {
       this.temperature = temperature
       this.topK = topK
