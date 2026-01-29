@@ -19,7 +19,6 @@ package com.google.firebase.ai.type
 import kotlinx.serialization.Serializable
 
 /** Specifies the URL context configuration. */
-@PublicPreviewAPI
 public class UrlContext {
   @Serializable internal class Internal()
 

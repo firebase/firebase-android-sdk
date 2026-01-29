@@ -1,5 +1,8 @@
 # Unreleased
 
+- [feature] Added support for `regexFind` and `regexFindAll` Pipeline expressions.
+  [#7669](https://github.com/firebase/firebase-android-sdk/pull/7669)
+
 # 26.1.0
 
 - [feature] Firestore Pipelines for Enterprise edition enters public preview.
@@ -16,7 +19,7 @@
   [#7388](//github.com/firebase/firebase-android-sdk/pull/7388)
 - [changed] Improve query performance by using an unsorted HashMap instead of a sorted TreeMap.
   [#7389](//github.com/firebase/firebase-android-sdk/pull/7389)
-* [changed] Add `java.time.Instant` support to `DocumentSnapshot.toObject()`,
+- [changed] Add `java.time.Instant` support to `DocumentSnapshot.toObject()`,
   `DocumentReference.set()`, `DocumentReference.update()`, and similar.
   [#6235](//github.com/firebase/firebase-android-sdk/pull/6235)
 
