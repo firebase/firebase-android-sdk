@@ -75,14 +75,11 @@ fun beEqualToDefaultInstance(): Matcher<MessageLite?> = neverNullMatcher { value
  * Creates and returns a [Matcher] that can be used with kotest assertions for verifying that a
  * proto message is equal to the given proto message.
  */
-fun beEqualTo(
-  other: MessageLite?,
-  messagePrinter: (MessageLite) -> String = { it.print().value }
-): Matcher<MessageLite?> = neverNullMatcher { value ->
+fun beEqualTo(other: MessageLite?): Matcher<MessageLite?> = neverNullMatcher { value ->
   if (other === null) {
     MatcherResult(
       false,
-      { "${value::class.qualifiedName} ${messagePrinter(value)} should be null" },
+      { "${value::class.qualifiedName} ${value.print().value} should be null" },
       { TODO("should not get here (error code: r2kap3te33)") }
     )
   } else {
@@ -93,12 +90,12 @@ fun beEqualTo(
     MatcherResult(
       valueClass == otherClass && valueStr == otherStr,
       {
-        "${valueClass.qualifiedName} ${messagePrinter(value)} should be equal to " +
-          "${otherClass.qualifiedName}: ${messagePrinter(other)}"
+        "${valueClass.qualifiedName} ${value.print().value} should be equal to " +
+          "${otherClass.qualifiedName}: ${other.print().value}"
       },
       {
-        "${valueClass.qualifiedName} ${messagePrinter(value)} should not be equal to " +
-          "${otherClass.qualifiedName}: ${messagePrinter(other)}"
+        "${valueClass.qualifiedName} ${value.print().value} should not be equal to " +
+          "${otherClass.qualifiedName}: ${other.print().value}"
       }
     )
   }
@@ -108,24 +105,21 @@ fun beEqualTo(
  * Creates and returns a [Matcher] that can be used with kotest assertions for verifying that a
  * proto Struct is equal to the given proto Struct.
  */
-fun beEqualTo(
-  other: Struct?,
-  structPrinter: (Struct) -> String = { it.print().value }
-): Matcher<Struct?> = neverNullMatcher { value ->
+fun beEqualTo(other: Struct?): Matcher<Struct?> = neverNullMatcher { value ->
   if (other === null) {
     MatcherResult(
       false,
-      { "${structPrinter(value)} should be null" },
+      { "${value.print().value} should be null" },
       { TODO("should not get here (error code: r2kap3te33)") }
     )
   } else {
     MatcherResult(
       structFastEqual(value, other),
       {
-        "${structPrinter(value)} should be equal to ${structPrinter(other)}, " +
+        "${value.print().value} should be equal to ${other.print().value}, " +
           "but found ${structDiff(other, value).toSummaryString()}"
       },
-      { "${structPrinter(value)} should not be equal to ${structPrinter(other)}" }
+      { "${value.print().value} should not be equal to ${other.print().value}" }
     )
   }
 }
@@ -134,24 +128,21 @@ fun beEqualTo(
  * Creates and returns a [Matcher] that can be used with kotest assertions for verifying that a
  * proto Value is equal to the given proto Value.
  */
-fun beEqualTo(
-  other: Value?,
-  valuePrinter: (Value) -> String = { it.print().value }
-): Matcher<Value?> = neverNullMatcher { value ->
+fun beEqualTo(other: Value?): Matcher<Value?> = neverNullMatcher { value ->
   if (other === null) {
     MatcherResult(
       false,
-      { "${valuePrinter(value)} should be null" },
+      { "${value.print().value} should be null" },
       { TODO("should not get here (error code: r2kap3te33)") }
     )
   } else {
     MatcherResult(
       valueFastEqual(value, other),
       {
-        "${valuePrinter(value)} should be equal to ${valuePrinter(other)}, " +
+        "${value.print().value} should be equal to ${other.print().value}, " +
           "but found ${valueDiff(other, value).toSummaryString()}"
       },
-      { "${valuePrinter(value)} should not be equal to ${valuePrinter(other)}" }
+      { "${value.print().value} should not be equal to ${other.print().value}" }
     )
   }
 }

@@ -27,6 +27,7 @@ import com.google.protobuf.ListValue
 import com.google.protobuf.NullValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
+import io.kotest.assertions.print.print
 import io.kotest.property.Arb
 import io.kotest.property.Exhaustive
 import io.kotest.property.RandomSource
@@ -54,7 +55,7 @@ object ProtoArb {
   ) {
     fun toValueProto(): Value = struct.toValueProto()
 
-    override fun toString() = "StructInfo(struct=$struct, depth=$depth)"
+    override fun toString() = "StructInfo(struct=${struct.print().value}, depth=$depth)"
   }
 
   class ListValueInfo(
@@ -64,7 +65,7 @@ object ProtoArb {
   ) {
     fun toValueProto(): Value = listValue.toValueProto()
 
-    override fun toString() = "ListValueInfo(listValue=$listValue, depth=$depth)"
+    override fun toString() = "ListValueInfo(listValue=${listValue.print().value}, depth=$depth)"
   }
 }
 

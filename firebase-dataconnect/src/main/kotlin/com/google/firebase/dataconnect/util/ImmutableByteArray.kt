@@ -55,7 +55,8 @@ internal class ImmutableByteArray private constructor(private val array: ByteArr
    * @return A string containing the hexadecimal representation of the contents of the underlying
    * byte array.
    */
-  fun to0xHexString(): String = array.to0xHexString()
+  fun to0xHexString(include0xPrefix: Boolean = true): String =
+    array.to0xHexString(include0xPrefix = include0xPrefix)
 
   /**
    * Creates a deep copy of this [ImmutableByteArray].

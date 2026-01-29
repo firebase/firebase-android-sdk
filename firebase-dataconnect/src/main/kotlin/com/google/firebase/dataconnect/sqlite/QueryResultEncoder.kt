@@ -20,6 +20,7 @@ import com.google.firebase.dataconnect.DataConnectPath
 import com.google.firebase.dataconnect.DataConnectPathComparator
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.MutableDataConnectPath
+import com.google.firebase.dataconnect.emptyMutableDataConnectPath
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.putSInt32
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.putSInt64
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.putUInt32
@@ -28,6 +29,7 @@ import com.google.firebase.dataconnect.toPathString
 import com.google.firebase.dataconnect.util.ImmutableByteArray
 import com.google.firebase.dataconnect.util.ProtoPrune.withDescendantStructsPruned
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
+import com.google.firebase.dataconnect.util.StringUtil.ellipsizeMiddle
 import com.google.firebase.dataconnect.withAddedField
 import com.google.firebase.dataconnect.withAddedListIndex
 import com.google.protobuf.ListValue
@@ -81,12 +83,12 @@ internal class QueryResultEncoder(channel: WritableByteChannel) {
     writer.writeFixed32Int(QueryResultCodec.QUERY_RESULT_MAGIC)
 
     if (getEntityIdForPath === null) {
-      writeStructProper(path = mutableListOf(), queryResult)
+      writeStructProper(emptyMutableDataConnectPath(), queryResult)
       return emptyMap()
     }
 
     val (prunedQueryResult, entityByPath) = writeEntities(queryResult, getEntityIdForPath)
-    writeStructProper(path = mutableListOf(), prunedQueryResult)
+    writeStructProper(emptyMutableDataConnectPath(), prunedQueryResult)
     return entityByPath
   }
 
@@ -127,13 +129,13 @@ internal class QueryResultEncoder(channel: WritableByteChannel) {
       return WriteEntitiesResult(queryResult, emptyMap())
     }
 
-    val (prunedQueryResult, prunedStructByPath) = prunedResult
+    val (prunedQueryResult, entityStructByPath) = prunedResult
     val entityByPath = mutableMapOf<DataConnectPath, Entity>()
-    writer.writeUInt32(prunedStructByPath.size)
-    prunedStructByPath.entries.forEach { (path, entityStruct) ->
+    writer.writeUInt32(entityStructByPath.size)
+    entityStructByPath.entries.forEach { (path, entityStruct) ->
       val entityId =
         checkNotNull(entityIdByPath[path]) {
-          "internal error yprt5xr6cf: entityIdByPath[path=${path.toPathString()}] returned null"
+          "internal error yprt5xr6cf: entityStructByPath[path=${path.toPathString()}] returned null"
         }
       writePath(path)
       val encodedEntityId = writeEntityId(entityId)
@@ -142,7 +144,7 @@ internal class QueryResultEncoder(channel: WritableByteChannel) {
       entityByPath[path] = Entity(entityId, encodedEntityId, entityStruct)
     }
 
-    return WriteEntitiesResult(prunedQueryResult, emptyMap())
+    return WriteEntitiesResult(prunedQueryResult, entityByPath.toMap())
   }
 
   private fun writePath(path: DataConnectPath) {
@@ -308,8 +310,12 @@ internal class QueryResultEncoder(channel: WritableByteChannel) {
     override fun equals(other: Any?): Boolean =
       other is Entity && other.id == id && other.encodedId == encodedId && other.struct == struct
 
-    override fun toString(): String =
-      "Entity(id=$id, encodedId=${encodedId.to0xHexString()}, data=${struct.toCompactString()})"
+    override fun toString(): String {
+      val encodedIdHexString = encodedId.to0xHexString(include0xPrefix = false)
+      val encodedIdString = "0x${encodedIdHexString.ellipsizeMiddle(maxLength = 13)}"
+      val structString = struct.toCompactString()
+      return "Entity(id=$id, encodedId=$encodedIdString, struct=$structString)"
+    }
   }
 
   companion object {

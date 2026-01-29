@@ -141,23 +141,6 @@ class QueryResultDecoderUnitTest {
   }
 
   @Test
-  fun `root struct value type indicator byte unexpected should throw`() = runTest {
-    val arb = Exhaustive.collection(ValueTypeIndicatorByte.all - ValueTypeIndicatorByte.rootStructs)
-    checkAll(propTestConfig, arb) { nonRootStructValueTypeIndicatorByte ->
-      val byteArray = buildByteArray {
-        putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
-        put(nonRootStructValueTypeIndicatorByte.byte)
-      }
-      assertDecodeThrowsUnexpectedValueTypeIndicatorByteException(
-        byteArray,
-        name = "root struct",
-        callerErrorId = "RootStructValueTypeIndicatorByteUnexpected",
-        unexpectedValueTypeIndicator = nonRootStructValueTypeIndicatorByte.byte,
-      )
-    }
-  }
-
-  @Test
   fun `root struct value type indicator byte truncated should throw`() {
     val byteArray = buildByteArray { putInt(QueryResultCodec.QUERY_RESULT_MAGIC) }
     assertDecodeThrowsValueTypeIndicatorEOFException(
@@ -461,7 +444,8 @@ class QueryResultDecoderUnitTest {
     encodedEntityIdSize: ByteArray
   ): ByteArray = buildByteArray {
     putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
-    put(QueryResultCodec.VALUE_ENTITY)
+    putUInt32(1) // entity count
+    putUInt32(0) // path segment count
     put(encodedEntityIdSize)
   }
 
@@ -524,7 +508,8 @@ class QueryResultDecoderUnitTest {
       val testCaseByteArray = testCase.byteArrayCopy()
       val byteArray = buildByteArray {
         putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
-        put(QueryResultCodec.VALUE_ENTITY)
+        putUInt32(1) // entity count
+        putUInt32(0) // path segment count
         putUInt32(testCase.inflatedByteCount)
         put(testCaseByteArray)
       }
@@ -547,7 +532,8 @@ class QueryResultDecoderUnitTest {
       val encodedEntityIdByteArray = encodedEntityId.byteArrayCopy()
       val byteArray = buildByteArray {
         putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
-        put(QueryResultCodec.VALUE_ENTITY)
+        putUInt32(1) // entity count
+        putUInt32(0) // path segment count
         putUInt32(encodedEntityIdByteArray.size)
         put(encodedEntityIdByteArray)
       }
@@ -582,7 +568,8 @@ class QueryResultDecoderUnitTest {
       ->
       val byteArray = buildByteArray {
         putInt(QueryResultCodec.QUERY_RESULT_MAGIC)
-        put(QueryResultCodec.VALUE_ENTITY)
+        putUInt32(1) // entity count
+        putUInt32(0) // path segment count
         putUInt32(testCase.veryLongEncodedEntityId.size)
         put(testCase.veryLongEncodedEntityId)
         putUInt32(1) // entity key count
@@ -1219,7 +1206,6 @@ class QueryResultDecoderUnitTest {
       val NULL = ValueTypeIndicatorByte(QueryResultCodec.VALUE_NULL, "VALUE_NULL")
       val KIND_NOT_SET =
         ValueTypeIndicatorByte(QueryResultCodec.VALUE_KIND_NOT_SET, "VALUE_KIND_NOT_SET")
-      val ENTITY = ValueTypeIndicatorByte(QueryResultCodec.VALUE_ENTITY, "VALUE_ENTITY")
       val NUMBER_DOUBLE =
         ValueTypeIndicatorByte(QueryResultCodec.VALUE_NUMBER_DOUBLE, "VALUE_NUMBER_DOUBLE")
       val NUMBER_POSITIVE_ZERO =
@@ -1246,11 +1232,6 @@ class QueryResultDecoderUnitTest {
       val BOOL_FALSE = ValueTypeIndicatorByte(QueryResultCodec.VALUE_BOOL_FALSE, "VALUE_BOOL_FALSE")
       val STRUCT = ValueTypeIndicatorByte(QueryResultCodec.VALUE_STRUCT, "VALUE_STRUCT")
       val LIST = ValueTypeIndicatorByte(QueryResultCodec.VALUE_LIST, "VALUE_LIST")
-      val LIST_WITH_PRUNED_ENTITIES =
-        ValueTypeIndicatorByte(
-          QueryResultCodec.VALUE_LIST_WITH_PRUNED_ENTITIES,
-          "VALUE_LIST_WITH_PRUNED_ENTITIES"
-        )
       val STRING_EMPTY =
         ValueTypeIndicatorByte(QueryResultCodec.VALUE_STRING_EMPTY, "VALUE_STRING_EMPTY")
       val STRING_1BYTE =
@@ -1270,7 +1251,6 @@ class QueryResultDecoderUnitTest {
         setOf(
           NULL,
           KIND_NOT_SET,
-          ENTITY,
           NUMBER_DOUBLE,
           NUMBER_POSITIVE_ZERO,
           NUMBER_NEGATIVE_ZERO,
@@ -1283,7 +1263,6 @@ class QueryResultDecoderUnitTest {
           BOOL_FALSE,
           STRUCT,
           LIST,
-          LIST_WITH_PRUNED_ENTITIES,
           STRING_EMPTY,
           STRING_1BYTE,
           STRING_2BYTE,
@@ -1303,8 +1282,6 @@ class QueryResultDecoderUnitTest {
           STRING_UTF8,
           STRING_UTF16,
         )
-
-      val rootStructs: Set<ValueTypeIndicatorByte> = setOf(STRUCT, ENTITY)
     }
   }
 

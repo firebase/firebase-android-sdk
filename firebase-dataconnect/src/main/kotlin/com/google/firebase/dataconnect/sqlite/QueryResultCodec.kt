@@ -25,36 +25,32 @@ internal object QueryResultCodec {
   // byte is simply a valid "continuation byte" for a multi-byte UTF-8 code point encoding.
   const val QUERY_RESULT_MAGIC: Int = 0xC186F880.toInt()
 
-  const val VALUE_NULL: Byte = 1
-  const val VALUE_KIND_NOT_SET: Byte = 2
-  const val VALUE_ENTITY: Byte = 3
+  const val VALUE_NULL: Byte = 0
+  const val VALUE_KIND_NOT_SET: Byte = 1
 
-  const val VALUE_NUMBER_DOUBLE: Byte = 4
-  const val VALUE_NUMBER_POSITIVE_ZERO: Byte = 5
-  const val VALUE_NUMBER_NEGATIVE_ZERO: Byte = 6
-  const val VALUE_NUMBER_FIXED32: Byte = 7
-  const val VALUE_NUMBER_UINT32: Byte = 8
-  const val VALUE_NUMBER_SINT32: Byte = 9
-  const val VALUE_NUMBER_UINT64: Byte = 10
-  const val VALUE_NUMBER_SINT64: Byte = 11
+  const val VALUE_BOOL_FALSE: Byte = 10
+  const val VALUE_BOOL_TRUE: Byte = 11
 
-  const val VALUE_BOOL_TRUE: Byte = 12
-  const val VALUE_BOOL_FALSE: Byte = 13
+  const val VALUE_NUMBER_DOUBLE: Byte = 20
+  const val VALUE_NUMBER_POSITIVE_ZERO: Byte = 21
+  const val VALUE_NUMBER_NEGATIVE_ZERO: Byte = 22
+  const val VALUE_NUMBER_FIXED32: Byte = 23
+  const val VALUE_NUMBER_UINT32: Byte = 24
+  const val VALUE_NUMBER_SINT32: Byte = 25
+  const val VALUE_NUMBER_UINT64: Byte = 26
+  const val VALUE_NUMBER_SINT64: Byte = 27
 
-  const val VALUE_STRUCT: Byte = 14
-  const val VALUE_LIST: Byte = 15
-  const val VALUE_LIST_WITH_PRUNED_ENTITIES: Byte = 16
+  const val VALUE_STRING_EMPTY: Byte = 30
+  const val VALUE_STRING_1BYTE: Byte = 31
+  const val VALUE_STRING_2BYTE: Byte = 32
+  const val VALUE_STRING_1CHAR: Byte = 33
+  const val VALUE_STRING_2CHAR: Byte = 34
+  const val VALUE_STRING_UTF8: Byte = 35
+  const val VALUE_STRING_UTF16: Byte = 36
 
-  const val VALUE_STRING_EMPTY: Byte = 17
-  const val VALUE_STRING_1BYTE: Byte = 18
-  const val VALUE_STRING_2BYTE: Byte = 19
-  const val VALUE_STRING_1CHAR: Byte = 20
-  const val VALUE_STRING_2CHAR: Byte = 21
-  const val VALUE_STRING_UTF8: Byte = 22
-  const val VALUE_STRING_UTF16: Byte = 23
+  const val VALUE_STRUCT: Byte = 40
+  const val VALUE_LIST: Byte = 41
 
-  const val VALUE_PATH_SEGMENT_FIELD: Byte = 24
-  const val VALUE_PATH_SEGMENT_LIST_INDEX: Byte = 25
-
-  const val VALUE_FROM_ENTITY: Byte = 26
+  const val VALUE_PATH_SEGMENT_FIELD: Byte = 50
+  const val VALUE_PATH_SEGMENT_LIST_INDEX: Byte = 51
 }

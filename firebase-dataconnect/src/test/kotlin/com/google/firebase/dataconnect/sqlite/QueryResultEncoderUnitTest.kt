@@ -19,7 +19,6 @@ package com.google.firebase.dataconnect.sqlite
 import com.google.firebase.dataconnect.DataConnectPath
 import com.google.firebase.dataconnect.emptyDataConnectPath
 import com.google.firebase.dataconnect.testutil.BuildByteArrayDSL
-import com.google.firebase.dataconnect.testutil.beEqualTo
 import com.google.firebase.dataconnect.testutil.buildByteArray
 import com.google.firebase.dataconnect.testutil.property.arbitrary.ProtoArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.StringWithEncodingLengthArb
@@ -47,20 +46,22 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.withIteration
 import com.google.firebase.dataconnect.testutil.property.arbitrary.withIterationsIfNotNull
 import com.google.firebase.dataconnect.testutil.property.arbitrary.withRandomlyInsertedValues
 import com.google.firebase.dataconnect.testutil.randomlyInsertStruct
+import com.google.firebase.dataconnect.testutil.registerDataConnectKotestPrinters
 import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.testutil.structOf
+import com.google.firebase.dataconnect.testutil.toPrintFriendlyMap
 import com.google.firebase.dataconnect.testutil.toValueProto
 import com.google.firebase.dataconnect.util.ImmutableByteArray
-import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
+import io.kotest.assertions.print.print
 import io.kotest.assertions.withClue
 import io.kotest.common.DelicateKotest
 import io.kotest.common.ExperimentalKotest
+import io.kotest.matchers.maps.shouldBeEmpty
 import io.kotest.matchers.maps.shouldContainExactly
-import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
@@ -91,9 +92,15 @@ import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import kotlinx.coroutines.test.runTest
+import org.junit.Before
 import org.junit.Test
 
 class QueryResultEncoderUnitTest {
+
+  @Before
+  fun installProtoPrinter() {
+    registerDataConnectKotestPrinters()
+  }
 
   @Test
   fun `bool values`() = runTest {
@@ -320,35 +327,49 @@ class QueryResultEncoderUnitTest {
 
   @Test
   fun `entities, not nested`() = runTest {
-    checkAll(propTestConfig, Arb.proto.struct(), Arb.int(1..3)) { structSample, entityCount ->
+    val structArb = Arb.proto.struct()
+    checkAll(propTestConfig, structArb, Arb.int(1..3)) { structSample, entityCount ->
       val entities = run {
-        val entityArb = entityArb()
+        val entityArb = entityArb(structArb = structArb)
         List(entityCount) { entityArb.bind() }
       }
-      val entityInfoByPath: Map<DataConnectPath, QueryResultEncoder.Entity>
+      val entityByPath: Map<DataConnectPath, QueryResultEncoder.Entity>
       val rootStruct =
         structSample.struct.toBuilder().let { structBuilder ->
           val insertPaths = structBuilder.randomlyInsertStructs(entities.map { it.struct })
-          entityInfoByPath = insertPaths.zip(entities).toMap()
+          entityByPath = insertPaths.zip(entities).toMap()
           structBuilder.build()
         }
 
-      rootStruct.decodingEncodingShouldProduceIdenticalStruct(entityInfoByPath)
+      rootStruct.decodingEncodingShouldProduceIdenticalStruct(entityByPath)
     }
   }
 
   @Test
   fun `entities, nested in struct keys`() = runTest {
-    checkAll(propTestConfig, Arb.proto.struct(), nestedEntityArb(nestingLevel = 1..3)) {
+    val structKeyArb = Arb.proto.structKey(length = 4)
+    val scalarValueArb = Arb.proto.stringValue(structKeyArb.map { "sca$it" })
+    val structArb =
+      Arb.proto.struct(
+        size = 0..1,
+        listSize = IntRange.EMPTY,
+        key = structKeyArb.map { "sk$it" },
+        scalarValue = scalarValueArb
+      )
+    val entityIdArb = structKeyArb.map { EntityIdSample("eid$it") }
+    val entityArb = entityArb(entityIdArb = entityIdArb, structArb = structArb)
+    val nestedEntityArb = nestedEntityArb(entityArb = entityArb, nestingLevel = 1..3)
+
+    checkAll(propTestConfig.copy(seed = 123), structArb, nestedEntityArb) {
       structSample,
       nestedEntitySample ->
-      val entityInfoByPath: Map<DataConnectPath, QueryResultEncoder.Entity>
+      val entityByPath: Map<DataConnectPath, QueryResultEncoder.Entity>
       val rootStruct =
         structSample.struct.toBuilder().let { structBuilder ->
           val rootEntityPath =
             structBuilder.randomlyInsertStruct(nestedEntitySample.rootEntity.struct)
 
-          entityInfoByPath = buildMap {
+          entityByPath = buildMap {
             put(rootEntityPath, nestedEntitySample.rootEntity)
             nestedEntitySample.nestedEntityByPath.entries.forEach {
               put(rootEntityPath + it.key, it.value)
@@ -358,7 +379,7 @@ class QueryResultEncoderUnitTest {
           structBuilder.build()
         }
 
-      rootStruct.decodingEncodingShouldProduceIdenticalStruct(entityInfoByPath)
+      rootStruct.decodingEncodingShouldProduceIdenticalStruct(entityByPath)
     }
   }
 }
@@ -825,20 +846,38 @@ private fun Struct.decodingEncodingShouldProduceIdenticalStruct(
 ) {
   val encodedBytes =
     withClue("QueryResultEncoder.encode()") {
-      val entityIdByPath = entityByPath?.mapValues { it.value.id }
-      val getEntityIdForPath = entityIdByPath?.let { it::get }
+      val getEntityIdForPath: GetEntityIdForPathFunction? =
+        if (entityByPath === null) {
+          null
+        } else {
+          { path -> entityByPath[path]?.id }
+        }
+
       val encodeResult = QueryResultEncoder.encode(this, getEntityIdForPath)
 
-      encodeResult.entityByPath shouldContainExactly (entityByPath ?: emptyMap())
+      if (entityByPath === null) {
+        encodeResult.entityByPath.toPrintFriendlyMap().shouldBeEmpty()
+      } else {
+        encodeResult.entityByPath.toPrintFriendlyMap() shouldContainExactly
+          entityByPath.toPrintFriendlyMap()
+      }
 
       encodeResult.byteArray
     }
 
   withClue("QueryResultDecoder.decode()") {
-    val entityByEncodedId = entityByPath?.map { it.value.run { encodedId to struct } }?.toMap()
-    val getEntityByEncodedId = entityByEncodedId?.let { it::get }
+    val getEntityByEncodedId: GetEntityByEncodedIdFunction? =
+      if (entityByPath === null) {
+        null
+      } else {
+        { encodedId ->
+          entityByPath.values.filter { it.encodedId == encodedId }.map { it.struct }.singleOrNull()
+        }
+      }
+
     val decodedStruct = QueryResultDecoder.decode(encodedBytes, getEntityByEncodedId)
-    decodedStruct should beEqualTo(this, structPrinter = { it.toCompactString() })
+
+    decodedStruct shouldBe this
   }
 }
 
@@ -928,8 +967,9 @@ private data class EntityIdSample(val string: String) {
   operator fun component2(): ImmutableByteArray = expectedEncoding
 
   companion object {
-    fun arb(): Arb<EntityIdSample> =
-      Arb.string(5..5, Codepoint.alphanumeric()).map(::EntityIdSample)
+    fun arb(
+      stringArb: Arb<String> = Arb.string(5..5, Codepoint.alphanumeric())
+    ): Arb<EntityIdSample> = stringArb.map(::EntityIdSample)
   }
 }
 
@@ -949,7 +989,16 @@ private data class NestedEntitySample(
   val struct: Struct,
   val rootEntity: QueryResultEncoder.Entity,
   val nestedEntityByPath: Map<DataConnectPath, QueryResultEncoder.Entity>,
-)
+) {
+
+  override fun toString() =
+    "NestedEntitySample(" +
+      "struct=${struct.print().value}, " +
+      "rootEntity=${rootEntity.print().value}, " +
+      "nestedEntityByPath.size=${nestedEntityByPath.size}, " +
+      "nestedEntityByPath=${nestedEntityByPath.toPrintFriendlyMap().print().value}" +
+      ")"
+}
 
 private fun nestedEntityArb(
   entityArb: Arb<QueryResultEncoder.Entity> = entityArb(),

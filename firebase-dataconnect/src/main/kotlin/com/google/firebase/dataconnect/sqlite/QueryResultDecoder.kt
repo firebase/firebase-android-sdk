@@ -19,6 +19,8 @@ package com.google.firebase.dataconnect.sqlite
 import com.google.firebase.dataconnect.DataConnectPath
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.MutableDataConnectPath
+import com.google.firebase.dataconnect.emptyDataConnectPath
+import com.google.firebase.dataconnect.emptyMutableDataConnectPath
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.getSInt32
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.getSInt64
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.getUInt32
@@ -65,13 +67,16 @@ internal class QueryResultDecoder(private val channel: ReadableByteChannel) {
   private val charArray = CharArray(2)
 
   fun decode(getEntityByEncodedId: GetEntityByEncodedIdFunction? = null): Struct {
-    readMagic(path = emptyList())
+    readMagic(path = emptyDataConnectPath())
 
     if (getEntityByEncodedId === null) {
-      return readStruct(path = mutableListOf(), getEntityByEncodedId = null)
+      return readStruct(emptyMutableDataConnectPath())
     }
 
-    TODO("not yet implemented nf97rc36ft")
+    val entityStructByPath = readEntities(getEntityByEncodedId)
+    val dehydratedStruct = readStruct(emptyMutableDataConnectPath())
+
+    return dehydratedStruct.withGraftedInStructs(entityStructByPath)
   }
 
   private fun readSome(): Boolean {
@@ -338,9 +343,7 @@ internal class QueryResultDecoder(private val channel: ReadableByteChannel) {
     BoolFalse(QueryResultCodec.VALUE_BOOL_FALSE, "false"),
     KindNotSet(QueryResultCodec.VALUE_KIND_NOT_SET, "kindNotSet"),
     List(QueryResultCodec.VALUE_LIST, "list"),
-    PrunedEntityList(QueryResultCodec.VALUE_LIST_WITH_PRUNED_ENTITIES, "prunedEntityList"),
     Struct(QueryResultCodec.VALUE_STRUCT, "struct"),
-    Entity(QueryResultCodec.VALUE_ENTITY, "entity"),
     StringEmpty(QueryResultCodec.VALUE_STRING_EMPTY, "emptyString"),
     String1Byte(QueryResultCodec.VALUE_STRING_1BYTE, "oneByteString"),
     String2Byte(QueryResultCodec.VALUE_STRING_2BYTE, "twoByteString"),
@@ -349,8 +352,7 @@ internal class QueryResultDecoder(private val channel: ReadableByteChannel) {
     StringUtf8(QueryResultCodec.VALUE_STRING_UTF8, "utf8"),
     StringUtf16(QueryResultCodec.VALUE_STRING_UTF16, "utf16"),
     PathSegmentField(QueryResultCodec.VALUE_PATH_SEGMENT_FIELD, "fieldPathSegment"),
-    PathSegmentListIndex(QueryResultCodec.VALUE_PATH_SEGMENT_LIST_INDEX, "listIndexPathSegment"),
-    ValueFromEntity(QueryResultCodec.VALUE_FROM_ENTITY, "valueFromEntity");
+    PathSegmentListIndex(QueryResultCodec.VALUE_PATH_SEGMENT_LIST_INDEX, "listIndexPathSegment");
 
     companion object {
       val identityMap = buildMap { ValueType.entries.forEach { put(it, it) } }
@@ -631,10 +633,7 @@ internal class QueryResultDecoder(private val channel: ReadableByteChannel) {
     return charBuffer.toString()
   }
 
-  private fun readList(
-    path: MutableDataConnectPath,
-    getEntityByEncodedId: GetEntityByEncodedIdFunction?
-  ): ListValue {
+  private fun readList(path: MutableDataConnectPath): ListValue {
     val size =
       readUInt32(
         path,
@@ -646,17 +645,13 @@ internal class QueryResultDecoder(private val channel: ReadableByteChannel) {
 
     val listValueBuilder = ListValue.newBuilder()
     repeat(size) { listIndex ->
-      val value: Value =
-        path.withAddedListIndex(listIndex) { readValue(path, getEntityByEncodedId) }
+      val value: Value = path.withAddedListIndex(listIndex) { readValue(path) }
       listValueBuilder.addValues(value)
     }
     return listValueBuilder.build()
   }
 
-  private fun readStruct(
-    path: MutableDataConnectPath,
-    getEntityByEncodedId: GetEntityByEncodedIdFunction?
-  ): Struct {
+  private fun readStruct(path: MutableDataConnectPath): Struct {
     val keyCount =
       readUInt32(
         path,
@@ -669,197 +664,164 @@ internal class QueryResultDecoder(private val channel: ReadableByteChannel) {
     val structBuilder = Struct.newBuilder()
     repeat(keyCount) {
       val key = readString(path, name = "struct key")
-      val value = path.withAddedField(key) { readValue(path, getEntityByEncodedId) }
+      val value = path.withAddedField(key) { readValue(path) }
       structBuilder.putFields(key, value)
     }
     return structBuilder.build()
   }
 
-  private enum class EntityValueType(val valueType: ValueType) {
-    Entity(ValueType.Entity),
-    Struct(ValueType.Struct),
-    List(ValueType.List),
-    PrunedEntityList(ValueType.PrunedEntityList),
-    ValueFromEntity(ValueType.ValueFromEntity);
+  private fun readEntities(
+    getEntityByEncodedId: GetEntityByEncodedIdFunction
+  ): Map<DataConnectPath, Struct> {
+    val entityCount =
+      readUInt32(
+        path = emptyDataConnectPath(),
+        name = "entity count",
+        valueVerifier = entityCountUInt32ValueVerifier,
+        decodeErrorId = "EntityCountDecodeFailed",
+        eofErrorId = "EntityCountEOF",
+      )
 
-    companion object {
-      val instanceByValueType: Map<ValueType, EntityValueType> = buildMap {
-        EntityValueType.entries.forEach { entityValueType ->
-          check(entityValueType.valueType !in this) {
-            "internal error f2a6c8nqby: duplicate value type: ${entityValueType.valueType}"
-          }
-          put(entityValueType.valueType, entityValueType)
+    val entityStructByPath =
+      List(entityCount) {
+          val entityGraftPath = readPath()
+          val entityStruct = readEntity(entityGraftPath, getEntityByEncodedId)
+          entityGraftPath to entityStruct
         }
-      }
+        .toMap()
 
-      fun fromValueType(valueType: ValueType): EntityValueType? =
-        entries.firstOrNull { it.valueType == valueType }
-    }
+    return entityStructByPath
   }
 
   private fun readEntity(
-    path: MutableDataConnectPath,
-    getEntityByEncodedId: GetEntityByEncodedIdFunction
+    entityGraftPath: DataConnectPath,
+    getEntityByEncodedId: GetEntityByEncodedIdFunction,
   ): Struct {
-    val encodedEntityId = readEncodedEntityId(path)
-    val entity =
+    val encodedEntityId = readEncodedEntityId(entityGraftPath)
+    val entity: Struct =
       getEntityByEncodedId(encodedEntityId)
         ?: throw EntityNotFoundException(
-          "could not find entity with encoded id ${encodedEntityId.to0xHexString()} [p583k77y7r]"
+          "could not find entity with encoded id ${encodedEntityId.to0xHexString()} " +
+            "for entityGraftPath=${entityGraftPath.toPathString()} [p583k77y7r]"
         )
 
-    val keyCount =
+    val entityFieldCount =
       readUInt32(
-        path,
-        name = "entity key count",
-        valueVerifier = entityKeyCountUInt32ValueVerifier,
-        decodeErrorId = "EntityKeyCountDecodeFailed",
-        eofErrorId = "EntityKeyCountEOF",
+        path = entityGraftPath,
+        name = "entity field count",
+        valueVerifier = entityFieldCountUInt32ValueVerifier,
+        decodeErrorId = "EntityFieldCountDecodeFailed",
+        eofErrorId = "EntityFieldCountEOF",
       )
 
-    val structBuilder = Struct.newBuilder()
-    repeat(keyCount) {
-      val key = readString(path, name = "entity key")
-      val value = path.withAddedField(key) { readEntityValue(path, key, entity) }
-      structBuilder.putFields(key, value)
+    val expectedEntityFieldNames: Set<String> = buildSet {
+      repeat(entityFieldCount) {
+        val fieldName = readString(entityGraftPath, "entity field name $it")
+        add(fieldName)
+      }
     }
+
+    val entityFieldNames: Set<String> = entity.fieldsMap.keys
+    if (entityFieldNames == expectedEntityFieldNames) {
+      return entity
+    }
+
+    val structBuilder = Struct.newBuilder()
+    val entityValueByFieldName = entity.fieldsMap
+    val missingFieldNames = lazy(LazyThreadSafetyMode.NONE) { mutableListOf<String>() }
+
+    expectedEntityFieldNames.forEach { fieldName ->
+      val fieldValue = entityValueByFieldName[fieldName]
+      if (fieldValue === null) {
+        missingFieldNames.value.add(fieldName)
+      } else {
+        structBuilder.putFields(fieldName, fieldValue)
+      }
+    }
+
+    if (missingFieldNames.isInitialized()) {
+      val missingFieldNames = missingFieldNames.value
+      if (missingFieldNames.isNotEmpty()) {
+        throw EntityFieldNotFoundException(
+          "entity with encoded id ${encodedEntityId.to0xHexString()} " +
+            "for entityGraftPath=${entityGraftPath.toPathString()} " +
+            "is missing ${missingFieldNames.size} fields: " +
+            "${missingFieldNames.sorted().joinToString()} [dz55ajrwm8]"
+        )
+      }
+    }
+
     return structBuilder.build()
   }
 
-  private fun readEncodedEntityId(path: MutableDataConnectPath): ImmutableByteArray {
+  private fun readEncodedEntityId(entityGraftPath: DataConnectPath): ImmutableByteArray {
     val encodedEntityIdSize =
       readUInt32(
-        path,
+        path = entityGraftPath,
         name = "encoded entity ID size",
         valueVerifier = encodedEntityIdSizeUInt32ValueVerifier,
         decodeErrorId = "EncodedEntityIdSizeDecodeFailed",
         eofErrorId = "EncodedEntityIdSizeEOF",
       )
 
-    return readBytes(path, name = "encoded entity ID", encodedEntityIdSize)
+    return readBytes(
+      path = entityGraftPath,
+      name = "encoded entity ID",
+      encodedEntityIdSize,
+    )
   }
 
-  private fun readEntityValue(path: MutableDataConnectPath, key: String, entity: Struct): Value {
-    val valueType =
-      readValueType(
-        path,
-        name = "entity value type",
-        eofErrorId = "EntityValueTypeIndicatorByteEOF",
-        unknownErrorId = "EntityValueTypeIndicatorByteUnknown",
-        unexpectedErrorId = "EntityValueTypeIndicatorByteUnexpected",
-        map = EntityValueType.instanceByValueType,
-      )
-
-    return when (valueType) {
-      EntityValueType.ValueFromEntity -> entity.getFieldsOrThrow(key)
-      else -> TODO("readEntityValue() valueType=$valueType not implemented [s4ryqxfkhb]")
-    }
-  }
-
-  private fun patchInPrunedEntities(
-    path: MutableDataConnectPath,
-    struct: Struct,
-    getEntityByEncodedId: GetEntityByEncodedIdFunction
-  ): Struct {
-    val prunedEntityCount =
-      readUInt32(
-        path,
-        name = "pruned entity count",
-        valueVerifier = prunedEntityCountUInt32ValueVerifier,
-        decodeErrorId = "PrunedEntityCountDecodeFailed",
-        eofErrorId = "PrunedEntityCountEOF",
-      )
-
-    // Avoid doing the work below if there is nothing to graft, as a performance optimization.
-    if (prunedEntityCount == 0) {
-      return struct
-    }
-
-    val structsByPath = buildMap {
-      repeat(prunedEntityCount) {
-        val entityRelativePath = readPath(path)
-        val entity = readEntity(path, getEntityByEncodedId)
-        put(entityRelativePath, entity)
-      }
-    }
-
-    return struct.withGraftedInStructs(structsByPath)
-  }
-
-  private fun patchInPrunedEntities(
-    path: MutableDataConnectPath,
-    listValue: ListValue,
-    getEntityByEncodedId: GetEntityByEncodedIdFunction
-  ): ListValue {
-    val prunedEntityCount =
-      readUInt32(
-        path,
-        name = "pruned entity count",
-        valueVerifier = prunedEntityCountUInt32ValueVerifier,
-        decodeErrorId = "PrunedEntityCountDecodeFailed",
-        eofErrorId = "PrunedEntityCountEOF",
-      )
-
-    // Avoid doing the work below if there is nothing to graft, as a performance optimization.
-    if (prunedEntityCount == 0) {
-      return listValue
-    }
-
-    val structsByPath = buildMap {
-      repeat(prunedEntityCount) {
-        val entityRelativePath = readPath(path)
-        val entity = readEntity(path, getEntityByEncodedId)
-        put(entityRelativePath, entity)
-      }
-    }
-
-    return listValue.withGraftedInStructs(structsByPath)
-  }
-
-  private fun readPath(path: DataConnectPath): DataConnectPath {
+  private fun readPath(): DataConnectPath {
     val pathSegmentCount =
       readUInt32(
-        path,
+        path = emptyDataConnectPath(),
         name = "path segment count",
         valueVerifier = PathSegmentCountUInt32ValueVerifier,
         decodeErrorId = "PathSegmentCountDecodeFailed",
         eofErrorId = "PathSegmentCountEOF",
       )
 
-    return buildList {
-      repeat(pathSegmentCount) {
-        val pathSegmentValueType =
-          readValueType(
-            path,
-            name = "path segment type",
-            eofErrorId = "ReadPathPathSegmentValueTypeIndicatorByteEOF",
-            unknownErrorId = "ReadPathPathSegmentValueTypeIndicatorByteUnknown",
-            unexpectedErrorId = "ReadPathPathSegmentValueTypeIndicatorByteUnexpected",
-            map = PathSegmentValueType.instanceByValueType,
-          )
+    return List(pathSegmentCount) { readPathSegment() }
+  }
 
-        val pathSegment =
-          when (pathSegmentValueType) {
-            PathSegmentValueType.Field -> {
-              val fieldName = readString(path, name = "field path segment")
-              DataConnectPathSegment.Field(fieldName)
-            }
-            PathSegmentValueType.ListIndex -> {
-              val listIndex =
-                readUInt32(
-                  path,
-                  name = "list index path segment",
-                  valueVerifier = ListIndexPathSegmentUInt32ValueVerifier,
-                  decodeErrorId = "ListIndexPathSegmentDecodeFailed",
-                  eofErrorId = "ListIndexPathSegmentEOF",
-                )
-              DataConnectPathSegment.ListIndex(listIndex)
-            }
-          }
+  private fun readPathSegment(): DataConnectPathSegment {
+    val pathSegmentValueType =
+      readValueType(
+        path = emptyDataConnectPath(),
+        name = "path segment type",
+        eofErrorId = "ReadPathPathSegmentValueTypeIndicatorByteEOF",
+        unknownErrorId = "ReadPathPathSegmentValueTypeIndicatorByteUnknown",
+        unexpectedErrorId = "ReadPathPathSegmentValueTypeIndicatorByteUnexpected",
+        map = PathSegmentValueType.instanceByValueType,
+      )
 
-        add(pathSegment)
-      }
+    return when (pathSegmentValueType) {
+      PathSegmentValueType.Field -> readFieldPathSegment()
+      PathSegmentValueType.ListIndex -> readListIndexPathSegment()
     }
+  }
+
+  private fun readFieldPathSegment(): DataConnectPathSegment.Field {
+    val fieldName =
+      readString(
+        path = emptyDataConnectPath(),
+        name = "field path segment",
+      )
+
+    return DataConnectPathSegment.Field(fieldName)
+  }
+
+  private fun readListIndexPathSegment(): DataConnectPathSegment.ListIndex {
+    val listIndex =
+      readUInt32(
+        path = emptyDataConnectPath(),
+        name = "list index path segment",
+        valueVerifier = ListIndexPathSegmentUInt32ValueVerifier,
+        decodeErrorId = "ListIndexPathSegmentDecodeFailed",
+        eofErrorId = "ListIndexPathSegmentEOF",
+      )
+
+    return DataConnectPathSegment.ListIndex(listIndex)
   }
 
   private enum class PathSegmentValueType(val valueType: ValueType) {
@@ -881,10 +843,7 @@ internal class QueryResultDecoder(private val channel: ReadableByteChannel) {
     }
   }
 
-  private fun readValue(
-    path: MutableDataConnectPath,
-    getEntityByEncodedId: GetEntityByEncodedIdFunction?
-  ): Value {
+  private fun readValue(path: MutableDataConnectPath): Value {
     val valueType =
       readValueType(
         path,
@@ -965,18 +924,9 @@ internal class QueryResultDecoder(private val channel: ReadableByteChannel) {
         )
       ReadValueValueType.BoolTrue -> valueBuilder.setBoolValue(true)
       ReadValueValueType.BoolFalse -> valueBuilder.setBoolValue(false)
-      ReadValueValueType.List -> valueBuilder.setListValue(readList(path, getEntityByEncodedId))
-      ReadValueValueType.Struct ->
-        valueBuilder.setStructValue(readStruct(path, getEntityByEncodedId))
+      ReadValueValueType.List -> valueBuilder.setListValue(readList(path))
+      ReadValueValueType.Struct -> valueBuilder.setStructValue(readStruct(path))
       ReadValueValueType.KindNotSet -> {}
-      ReadValueValueType.Entity -> {
-        if (getEntityByEncodedId === null) {
-          throw IllegalStateException(
-            "TODO: handle getEntityByEncodedId===null, probably should never get here"
-          )
-        }
-        valueBuilder.setStructValue(readEntity(path, getEntityByEncodedId))
-      }
       ReadValueValueType.StringEmpty -> valueBuilder.setStringValue("")
       ReadValueValueType.String1Byte ->
         valueBuilder.setStringValue(readString1Byte(path, name = "string value"))
@@ -1009,7 +959,6 @@ internal class QueryResultDecoder(private val channel: ReadableByteChannel) {
     KindNotSet(ValueType.KindNotSet),
     List(ValueType.List),
     Struct(ValueType.Struct),
-    Entity(ValueType.Entity),
     StringEmpty(ValueType.StringEmpty),
     String1Byte(ValueType.String1Byte),
     String2Byte(ValueType.String2Byte),
@@ -1119,6 +1068,9 @@ internal class QueryResultDecoder(private val channel: ReadableByteChannel) {
   class EntityNotFoundException(message: String, cause: Throwable? = null) :
     DecodeException(message, cause)
 
+  class EntityFieldNotFoundException(message: String, cause: Throwable? = null) :
+    DecodeException(message, cause)
+
   companion object {
 
     fun decode(
@@ -1149,11 +1101,10 @@ internal class QueryResultDecoder(private val channel: ReadableByteChannel) {
     private val encodedEntityIdSizeUInt32ValueVerifier =
       UInt32ValueVerifier("EncodedEntityIdSizeInvalidValue")
 
-    private val entityKeyCountUInt32ValueVerifier =
-      UInt32ValueVerifier("EntityKeyCountInvalidValue")
+    private val entityCountUInt32ValueVerifier = UInt32ValueVerifier("EntityCountInvalidValue")
 
-    private val prunedEntityCountUInt32ValueVerifier =
-      UInt32ValueVerifier("PrunedEntityCountInvalidValue")
+    private val entityFieldCountUInt32ValueVerifier =
+      UInt32ValueVerifier("EntityFieldCountInvalidValue")
 
     private val PathSegmentCountUInt32ValueVerifier =
       UInt32ValueVerifier("PathSegmentCountInvalidValue")
