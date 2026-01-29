@@ -1,11 +1,12 @@
 # Unreleased
 
+- [feature] Added support for [API Key
+  restrictions](https://docs.cloud.google.com/docs/authentication/api-keys#adding-application-restrictions) (#7679)
+
 # 17.8.0
 
 - [feature] Added support for configuring thinking levels with Gemini 3 series
   models and onwards. (#7599)
-- [feature] Added support for [API Key
-  restrictions](https://docs.cloud.google.com/docs/authentication/api-keys#adding-application-restrictions) (#7679)
 - [changed] Added `equals()` function to `GenerativeBackend`. (#7597)
 
 # 17.7.0
