@@ -164,7 +164,7 @@ internal object ProtoPrune {
   private fun pruneDescendantsRecursive(
     struct: Struct,
     path: MutableDataConnectPath,
-    prunedValues: MutableMap<DataConnectPath, PrunedValue>,
+    prunedValuesByPath: MutableMap<DataConnectPath, PrunedValue>,
     predicate: WithPrunedDescendantsPredicate,
   ): Struct {
     var structBuilder: Struct.Builder? = null
@@ -173,35 +173,41 @@ internal object ProtoPrune {
       val prunedValue: Value? =
         when (value.kindCase) {
           Value.KindCase.STRUCT_VALUE -> {
-            val structBefore = value.structValue
-            val structAfter =
-              path.withAddedField(key) {
-                val immutablePath = path.toList()
-                val recursedStruct =
-                  pruneDescendantsRecursive(structBefore, path, prunedValues, predicate)
-                if (predicate(immutablePath, null)) {
-                  prunedValues[immutablePath] = PrunedStruct(recursedStruct)
-                  null
-                } else {
-                  recursedStruct
-                }
+            val struct = value.structValue
+            path.withAddedField(key) {
+              val recursedStruct =
+                pruneDescendantsRecursive(struct, path, prunedValuesByPath, predicate)
+
+              val immutablePath = path.toList()
+              if (predicate(immutablePath, null)) {
+                prunedValuesByPath[immutablePath] = PrunedStruct(recursedStruct)
+                null
+              } else if (recursedStruct === struct) {
+                value
+              } else {
+                recursedStruct.toValueProto()
               }
-            if (structAfter === structBefore) {
-              value
-            } else {
-              structAfter?.toValueProto()
             }
           }
           Value.KindCase.LIST_VALUE -> {
             val listValue = value.listValue
-            val prunedListValue =
-              path.withAddedField(key) {
-                pruneDescendantsRecursive(listValue, path, prunedValues, predicate)
+            path.withAddedField(key) {
+              val recursedListValue =
+                pruneDescendantsRecursive(listValue, path, prunedValuesByPath, predicate)
+
+              val immutablePath = path.toList()
+              val allElementsAreStructs = recursedListValue.valuesList.all { it.isStructValue() }
+              if (
+                allElementsAreStructs && predicate(immutablePath, recursedListValue.valuesCount)
+              ) {
+                val prunedStructs = recursedListValue.valuesList.map { it.structValue }
+                prunedValuesByPath[immutablePath] = PrunedListValue(prunedStructs)
+                null
+              } else if (recursedListValue === listValue) {
+                value
+              } else {
+                recursedListValue.toValueProto()
               }
-            if (listValue === prunedListValue) {
-              value
-            } else {
-              prunedListValue.toValueProto()
             }
           }
           else -> value
@@ -219,6 +225,8 @@ internal object ProtoPrune {
 
     return structBuilder?.build() ?: struct
   }
+
+  private fun Value.isStructValue(): Boolean = this.kindCase == Value.KindCase.STRUCT_VALUE
 
   private fun pruneDescendantsRecursive(
     listValue: ListValue,
