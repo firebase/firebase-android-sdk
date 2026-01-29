@@ -366,8 +366,8 @@ public class JavaCompileTests {
 
     byte[] bytes = new byte[] {(byte) 0xCA, (byte) 0xFE, (byte) 0xBA, (byte) 0xBE};
     session.sendMediaStream(List.of(new MediaData(bytes, "image/jxl")));
-    session.sendAudioRealtime(new InlineData(bytes, "audio/jxl"));
-    session.sendVideoRealtime(new InlineData(bytes, "image/jxl"));
+    session.sendAudioRealtime(new InlineData(bytes, "audio/jxl", null));
+    session.sendVideoRealtime(new InlineData(bytes, "image/jxl", null));
     session.sendTextRealtime("text");
 
     FunctionResponsePart functionResponse =

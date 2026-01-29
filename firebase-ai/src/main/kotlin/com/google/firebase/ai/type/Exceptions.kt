@@ -156,8 +156,11 @@ internal constructor(public val response: GenerateContentResponse, cause: Throwa
  * Usually occurs due to a user specified [timeout][RequestOptions.timeout].
  */
 public class RequestTimeoutException
-internal constructor(message: String, cause: Throwable? = null) :
-  FirebaseAIException(message, cause)
+internal constructor(
+  message: String,
+  cause: Throwable? = null,
+  history: List<Content> = emptyList()
+) : FirebaseAIException(message, cause)
 
 /**
  * The specified Vertex AI location is invalid.
@@ -203,6 +206,9 @@ public class ServiceConnectionHandshakeFailedException(message: String, cause: T
 /** The request is missing a permission that is required to perform the requested operation. */
 public class PermissionMissingException(message: String, cause: Throwable? = null) :
   FirebaseAIException(message, cause)
+
+/** Thrown when a function invoked by the model has an error that should be returned to the model */
+public class FirebaseAutoFunctionException(message: String) : FirebaseAIException(message)
 
 /** Catch all case for exceptions not explicitly expected. */
 public class UnknownException internal constructor(message: String, cause: Throwable? = null) :

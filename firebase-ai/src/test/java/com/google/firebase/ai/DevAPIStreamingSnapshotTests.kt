@@ -23,7 +23,9 @@ import com.google.firebase.ai.type.PromptBlockedException
 import com.google.firebase.ai.type.ResponseStoppedException
 import com.google.firebase.ai.type.ServerException
 import com.google.firebase.ai.type.content
+import com.google.firebase.ai.util.ResponseInfo
 import com.google.firebase.ai.util.goldenDevAPIStreamingFile
+import com.google.firebase.ai.util.goldenDevAPIStreamingFiles
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldNotBeEmpty
@@ -118,8 +120,13 @@ internal class DevAPIStreamingSnapshotTests {
   @Test
   fun `chat call with history including thought summary and signature`() {
     var capturedRequest: HttpRequestData? = null
-    goldenDevAPIStreamingFile(
-      "streaming-success-thinking-function-call-thought-summary-signature.txt",
+    goldenDevAPIStreamingFiles(
+      responses =
+        listOf(
+            "streaming-success-thinking-function-call-thought-summary-signature.txt",
+            "streaming-success-thinking-function-call-thought-summary-signature.txt"
+          )
+          .map { ResponseInfo(it) },
       requestHandler = { capturedRequest = it }
     ) {
       val chat = model.startChat()
