@@ -28,6 +28,7 @@ import com.google.firebase.ai.type.GroundingChunk
 import com.google.firebase.ai.type.GroundingMetadata
 import com.google.firebase.ai.type.GroundingSupport
 import com.google.firebase.ai.type.ImagenReferenceImage
+import com.google.firebase.ai.type.LiveServerGoAway
 import com.google.firebase.ai.type.ModalityTokenCount
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.Schema
@@ -591,6 +592,25 @@ internal class SerializationTests {
       """
         .trimIndent()
     val actualJson = descriptorToJson(UrlContext.Internal.serializer().descriptor)
+    expectedJsonAsString shouldEqualJson actualJson.toString()
+  }
+
+  @Test
+  fun `test LiveServerGoAway serialization as Json`() {
+    val expectedJsonAsString =
+      """
+      {
+        "id": "LiveServerGoAway",
+        "type": "object",
+        "properties": {
+          "timeLeft": {
+            "type": "string"
+          }
+        }
+      }
+      """
+        .trimIndent()
+    val actualJson = descriptorToJson(LiveServerGoAway.Internal.serializer().descriptor)
     expectedJsonAsString shouldEqualJson actualJson.toString()
   }
 }

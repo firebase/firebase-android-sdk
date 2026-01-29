@@ -16,6 +16,8 @@
 
 package com.google.firebase.ai.type
 
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
@@ -32,6 +34,7 @@ import kotlinx.serialization.json.jsonObject
  * @see LiveServerToolCall
  * @see LiveServerToolCallCancellation
  * @see LiveServerSetupComplete
+ * @see LiveServerGoAway
  */
 @PublicPreviewAPI public interface LiveServerMessage
 
@@ -182,6 +185,33 @@ public class LiveServerToolCallCancellation(public val functionIds: List<String>
   }
 }
 
+/**
+ * Notification that the server is initiating a disconnect of the session.
+ *
+ * This message is sent by the server when it needs to close the connection, typically due to
+ * session timeout, resource constraints, or other server-side reasons.
+ *
+ * When this message is received, the client should gracefully close the [LiveSession] by calling
+ * [LiveSession.close].
+ *
+ * @property timeLeft The time remaining before the connection terminates.
+ */
+@PublicPreviewAPI
+public class LiveServerGoAway(public val timeLeft: Duration?) : LiveServerMessage {
+  @Serializable internal data class Internal(val timeLeft: String? = null)
+
+  @Serializable
+  internal data class InternalWrapper(val goAway: Internal) : InternalLiveServerMessage {
+    override fun toPublic(): LiveServerGoAway {
+      val timeLeftTrimmed = goAway.timeLeft?.trim()
+      // Protobuf Duration format: always ends with 's' (seconds)
+      val parsedDuration =
+        timeLeftTrimmed?.takeIf { it.endsWith("s") }?.dropLast(1)?.toDoubleOrNull()?.seconds
+      return LiveServerGoAway(parsedDuration)
+    }
+  }
+}
+
 @PublicPreviewAPI
 @Serializable(LiveServerMessageSerializer::class)
 internal sealed interface InternalLiveServerMessage {
@@ -202,6 +232,7 @@ internal object LiveServerMessageSerializer :
       "toolCall" in jsonObject -> LiveServerToolCall.InternalWrapper.serializer()
       "toolCallCancellation" in jsonObject ->
         LiveServerToolCallCancellation.InternalWrapper.serializer()
+      "goAway" in jsonObject -> LiveServerGoAway.InternalWrapper.serializer()
       else ->
         throw SerializationException(
           "Unknown LiveServerMessage response type. Keys found: ${jsonObject.keys}"
