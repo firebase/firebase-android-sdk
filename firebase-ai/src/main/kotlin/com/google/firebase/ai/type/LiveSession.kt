@@ -556,9 +556,6 @@ internal constructor(
 
             // Notify the application
             goAwayHandler?.invoke(it)
-
-            // Close the session gracefully
-            close()
           }
         }
       }
