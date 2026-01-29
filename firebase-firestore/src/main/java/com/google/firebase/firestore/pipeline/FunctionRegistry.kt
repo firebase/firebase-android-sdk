@@ -51,6 +51,8 @@ internal object FunctionRegistry {
       "byte_length" to evaluateByteLength,
       "like" to evaluateLike,
       "regex_contains" to evaluateRegexContains,
+      "regex_find" to evaluateRegexFind,
+      "regex_find_all" to evaluateRegexFindAll,
       "regex_match" to evaluateRegexMatch,
       "logical_max" to evaluateLogicalMaximum,
       "logical_min" to evaluateLogicalMinimum,
