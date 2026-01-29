@@ -17,6 +17,7 @@
 package com.google.firebase.dataconnect.sqlite
 
 import com.google.firebase.dataconnect.DataConnectPath
+import com.google.firebase.dataconnect.emptyDataConnectPath
 import com.google.firebase.dataconnect.emptyMutableDataConnectPath
 import com.google.firebase.dataconnect.testutil.BuildByteArrayDSL
 import com.google.firebase.dataconnect.testutil.buildByteArray
@@ -53,6 +54,7 @@ import com.google.firebase.dataconnect.testutil.toPrintFriendlyMap
 import com.google.firebase.dataconnect.testutil.toValueProto
 import com.google.firebase.dataconnect.util.ImmutableByteArray
 import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
+import com.google.firebase.dataconnect.withAddedField
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
@@ -60,6 +62,7 @@ import io.kotest.assertions.print.print
 import io.kotest.assertions.withClue
 import io.kotest.common.DelicateKotest
 import io.kotest.common.ExperimentalKotest
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.maps.shouldBeEmpty
 import io.kotest.matchers.maps.shouldContainExactly
 import io.kotest.matchers.shouldBe
@@ -96,7 +99,7 @@ import org.junit.Test
 class QueryResultEncoderUnitTest {
 
   @Before
-  fun installProtoPrinter() {
+  fun registerPrinters() {
     registerDataConnectKotestPrinters()
   }
 
@@ -281,45 +284,51 @@ class QueryResultEncoderUnitTest {
     }
   }
 
-  /*
+  @Test
+  fun `entity IDs are encoded using SHA-512`() = runTest {
+    checkAll(propTestConfig, StringEncodingTestCase.arb(), Arb.proto.structKey()) {
+      entityId,
+      entityField ->
+      val entityIdArb = Arb.constant(entityId).map { EntityIdSample(it.string) }
+      val entity = entityArb(entityIdArb = entityIdArb).bind()
+      val struct = structOf(entityField, entity.struct)
+      val entityPath = emptyDataConnectPath().withAddedField(entityField)
+      val entityIdByPath = mapOf(entityPath to entityId.string)
 
-    @Test
-    fun `entity IDs are encoded using SHA-512`() = runTest {
-      checkAll(propTestConfig, StringEncodingTestCase.arb()) { entityId ->
-        val entityIdByPath = mapOf(emptyDataConnectPath() to entityId.string)
+      val encodeResult = QueryResultEncoder.encode(struct, entityIdByPath::get)
 
-        val encodeResult = QueryResultEncoder.encode(Struct.getDefaultInstance(), entityIdByPath)
-
-        encodeResult.entities shouldHaveSize 1
-        val encodedEntityId = encodeResult.entities[0].encodedId
-        encodedEntityId shouldBe entityId.string.calculateUtf16BigEndianSha512Digest()
-      }
+      encodeResult.entityByPath.keys shouldContainExactlyInAnyOrder listOf(entityPath)
+      val encodedEntityId = encodeResult.entityByPath.values.single().encodedId
+      encodedEntityId shouldBe entity.encodedId
     }
+  }
 
-    @Test
-    fun `entity ID contains code points with 1, 2, 3, and 4 byte UTF-8 encodings`() = runTest {
-      checkAll(propTestConfig, StringEncodingTestCase.arb(), Arb.proto.struct()) { entityId, struct ->
-        struct.struct.decodingEncodingShouldProduceIdenticalStruct(
-          expectedEntities = listOf(struct.struct),
-          entityIdByPath = mapOf(emptyDataConnectPath() to entityId.string),
-        )
-      }
-    }
+  @Test
+  fun `entity IDs containing code points with 1, 2, 3, and 4 byte UTF-8 encodings round trip`() =
+    verifyEntityIdRoundTrip(StringEncodingTestCase.arb())
 
-    @Test
-    fun `entity ID is a long string`() = runTest {
-      checkAll(
-        propTestConfig.withIterations(50),
-        StringEncodingTestCase.longStringsArb().map { it.string },
-        Arb.proto.struct(),
-      ) { entityId, struct ->
-        struct.struct.decodingEncodingShouldProduceIdenticalStruct(
-          expectedEntities = listOf(struct.struct),
-          entityIdByPath = mapOf(emptyDataConnectPath() to entityId),
-        )
-      }
+  @Test
+  fun `long entity IDs containing code points with 1, 2, 3, and 4 byte UTF-8 encodings round trip`() =
+    verifyEntityIdRoundTrip(StringEncodingTestCase.longStringsArb(), iterations = 50)
+
+  private fun verifyEntityIdRoundTrip(
+    entityIdArb: Arb<StringEncodingTestCase>,
+    iterations: Int? = null
+  ) = runTest {
+    checkAll(
+      propTestConfig.withIterationsIfNotNull(iterations),
+      entityIdArb,
+      Arb.proto.structKey()
+    ) { entityId, entityField ->
+      val entityIdArb = Arb.constant(entityId).map { EntityIdSample(it.string) }
+      val entity = entityArb(entityIdArb = entityIdArb).bind()
+      val struct = structOf(entityField, entity.struct)
+      val entityPath = emptyDataConnectPath().withAddedField(entityField)
+      val entityByPath = mapOf(entityPath to entity)
+
+      struct.decodingEncodingShouldProduceIdenticalStruct(entityByPath)
     }
-  */
+  }
 
   @Test
   fun `entities, not nested`() = runTest {
