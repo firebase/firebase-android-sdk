@@ -2,6 +2,13 @@
 
 - [feature] Added support for [API Key
   restrictions](https://docs.cloud.google.com/docs/authentication/api-keys#adding-application-restrictions) (#7679)
+- [changed] The URL context tool APIs are now GA. (#7686)
+- [feature] Added support for implicit caching (context caching)
+  metadata in GenerateContentResponse. You can now access
+  cachedContentTokenCount and cacheTokensDetails in UsageMetadata to
+  see savings from cached content. See the [caching
+  documentation](https://ai.google.dev/gemini-api/docs/caching) for
+  more details. (#7647)
 
 # 17.8.0
 
@@ -127,4 +134,3 @@ using [specific Gemini models](/docs/vertex-ai/models).
 
 Note: This feature is in Public Preview, which means that it is not subject to any SLA or
 deprecation policy and could change in backwards-incompatible ways.
-
