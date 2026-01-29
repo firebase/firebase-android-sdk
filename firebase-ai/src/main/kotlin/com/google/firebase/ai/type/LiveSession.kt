@@ -341,7 +341,7 @@ internal constructor(
     FirebaseAIException.catchAsync {
       val jsonString =
         Json.encodeToString(
-          BidiGenerateContentToolResponseSetup(functionList.map { it.toInternalFunctionCall() })
+          BidiGenerateContentToolResponseSetup(functionList.map { it.toInternalFunctionResponse() })
             .toInternal()
         )
       session.send(Frame.Text(jsonString))
