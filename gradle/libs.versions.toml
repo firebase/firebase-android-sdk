@@ -45,6 +45,7 @@ jsonassert = "1.5.0"
 kotest = "5.9.0" # Do not use 5.9.1 because it reverts the fix for https://github.com/kotest/kotest/issues/3981
 kotestAssertionsCore = "5.8.1"
 kotlin = "2.0.21"
+kotlinpoetKsp = "2.2.0"
 ktorVersion = "3.0.3"
 legacySupportV4 = "1.0.0"
 lifecycleProcess = "2.3.1"
@@ -69,6 +70,7 @@ rxjava = "2.2.21"
 serialization = "1.7.3"
 slf4jNop = "2.0.17"
 spotless = "7.0.4"
+symbolProcessingApi = "2.2.10-2.0.2"
 testServices = "1.6.0"
 truth = "1.4.5"
 truthProtoExtension = "1.0"
@@ -142,6 +144,7 @@ kotlin-bom = { module = "org.jetbrains.kotlin:kotlin-bom", version.ref = "kotlin
 kotlin-coroutines-tasks = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "coroutines" }
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
 kotlin-stdlib-jdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
+kotlinpoet-ksp = { module = "com.squareup:kotlinpoet-ksp", version.ref = "kotlinpoetKsp" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-coroutines-reactive = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactive", version.ref = "coroutines" }
@@ -203,6 +206,7 @@ rxandroid = { module = "io.reactivex.rxjava2:rxandroid", version.ref = "rxandroi
 rxjava = { module = "io.reactivex.rxjava2:rxjava", version.ref = "rxjava" }
 slf4j-nop = { module = "org.slf4j:slf4j-nop", version.ref = "slf4jNop" }
 spotless-plugin-gradle = { module = "com.diffplug.spotless:spotless-plugin-gradle", version.ref = "spotless" }
+symbol-processing-api = { module = "com.google.devtools.ksp:symbol-processing-api", version.ref = "symbolProcessingApi" }
 truth = { module = "com.google.truth:truth", version.ref = "truth" }
 truth-liteproto-extension = { module = "com.google.truth.extensions:truth-liteproto-extension", version.ref = "truth" }
 truth-proto-extension = { module = "com.google.truth.extensions:truth-proto-extension", version.ref = "truthProtoExtension" }

@@ -16,32 +16,40 @@
 
 package com.google.firebase.ai
 
+import com.google.firebase.ai.type.AutoFunctionDeclaration
 import com.google.firebase.ai.type.BlockReason
 import com.google.firebase.ai.type.ContentBlockedException
 import com.google.firebase.ai.type.ContentModality
 import com.google.firebase.ai.type.FinishReason
 import com.google.firebase.ai.type.FunctionCallPart
+import com.google.firebase.ai.type.FunctionResponsePart
 import com.google.firebase.ai.type.HarmCategory
 import com.google.firebase.ai.type.HarmProbability
 import com.google.firebase.ai.type.HarmSeverity
 import com.google.firebase.ai.type.InvalidAPIKeyException
+import com.google.firebase.ai.type.JsonSchema
 import com.google.firebase.ai.type.PromptBlockedException
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.QuotaExceededException
+import com.google.firebase.ai.type.RequestTimeoutException
 import com.google.firebase.ai.type.ResponseStoppedException
 import com.google.firebase.ai.type.SerializationException
 import com.google.firebase.ai.type.ServerException
 import com.google.firebase.ai.type.ServiceDisabledException
 import com.google.firebase.ai.type.TextPart
+import com.google.firebase.ai.type.Tool
 import com.google.firebase.ai.type.UnsupportedUserLocationException
 import com.google.firebase.ai.type.UrlRetrievalStatus
+import com.google.firebase.ai.util.ResponseInfo
 import com.google.firebase.ai.util.goldenVertexUnaryFile
+import com.google.firebase.ai.util.goldenVertexUnaryFiles
 import com.google.firebase.ai.util.shouldNotBeNullOrEmpty
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.inspectors.forAtLeastOne
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotBeEmpty
+import io.kotest.matchers.equals.shouldBeEqual
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -55,6 +63,8 @@ import io.ktor.http.HttpStatusCode
 import java.util.Calendar
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.withTimeout
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -776,6 +786,206 @@ internal class VertexAIUnarySnapshotTests {
         // Not all the retrievedUrls are null. Only the last 10. We only need to check one.
         urlContextMetadata.urlMetadata.last().retrievedUrl.shouldBeNull()
         urlContextMetadata.urlMetadata.last().urlRetrievalStatus.shouldNotBeNull()
+      }
+    }
+
+  @Serializable data class SumRequest(val x: Int, val y: Int)
+
+  private val sumRequestResponseSchema =
+    JsonSchema.obj(
+      clazz = SumRequest::class,
+      properties =
+        mapOf(
+          "x" to
+            JsonSchema.integer(
+              title = "x",
+              description = "The first number to sum",
+              nullable = false
+            ),
+          "y" to
+            JsonSchema.integer(
+              title = "y",
+              description = "The second number to sum",
+              nullable = false
+            ),
+        ),
+      description = "the request for summing",
+      nullable = false
+    )
+
+  @Test
+  fun `function call requested should trigger auto function call`() {
+    var functionCalled = false
+    goldenVertexUnaryFiles(
+      listOf(
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-basic-reply-long.json"
+        )
+        .map { ResponseInfo(it) },
+      tools =
+        listOf(
+          Tool.functionDeclarations(
+            autoFunctionDeclarations =
+              listOf(
+                AutoFunctionDeclaration.create("sum", "", sumRequestResponseSchema) {
+                  request: SumRequest ->
+                  functionCalled = true
+                  FunctionResponsePart("sum", JsonObject(mapOf()))
+                }
+              )
+          )
+        )
+    ) {
+      withTimeout(testTimeout) {
+        model.startChat().sendMessage("")
+        functionCalled shouldBeEqual true
+      }
+    }
+  }
+
+  @Test
+  fun `multiple function calls requested should trigger`() {
+    var sumCalledCount = 0
+    goldenVertexUnaryFiles(
+      listOf(
+          "unary-success-function-call-parallel-calls.json",
+          "unary-success-basic-reply-long.json"
+        )
+        .map { ResponseInfo(it) },
+      tools =
+        listOf(
+          Tool.functionDeclarations(
+            autoFunctionDeclarations =
+              listOf(
+                AutoFunctionDeclaration.create("sum", "", sumRequestResponseSchema) {
+                  request: SumRequest ->
+                  sumCalledCount++
+                  FunctionResponsePart("sum", JsonObject(mapOf()))
+                }
+              )
+          )
+        )
+    ) {
+      withTimeout(testTimeout) {
+        model.startChat().sendMessage("")
+        sumCalledCount shouldBe 3
+      }
+    }
+  }
+
+  @Test
+  fun `multiple function should return to user if all aren't registered`() {
+    var sumCalled = false
+    var otherFunctionCalled = false
+    val tools =
+      listOf(
+        Tool.functionDeclarations(
+          autoFunctionDeclarations =
+            listOf(
+              AutoFunctionDeclaration.create("sum", "", sumRequestResponseSchema) {
+                request: SumRequest ->
+                sumCalled = true
+                FunctionResponsePart("sum", JsonObject(mapOf()))
+              },
+              AutoFunctionDeclaration.create(
+                "multiply",
+                "",
+                sumRequestResponseSchema,
+              ),
+              AutoFunctionDeclaration.create(
+                "subtract",
+                "",
+                sumRequestResponseSchema,
+              )
+            )
+        )
+      )
+    goldenVertexUnaryFiles(
+      listOf(
+          "unary-success-function-call-different-parallel-calls.json",
+          "unary-success-basic-reply-long.json"
+        )
+        .map { ResponseInfo(it) },
+      tools = tools
+    ) {
+      withTimeout(testTimeout) {
+        val response = model.startChat().sendMessage("")
+        sumCalled shouldBeEqual false
+        otherFunctionCalled shouldBeEqual false
+        response.functionCalls.size shouldBeEqual 3
+      }
+    }
+  }
+
+  @Test
+  fun `auto function call loop should hit limit and exit`() {
+    var functionCalled = 0
+    goldenVertexUnaryFiles(
+      listOf(
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
+        )
+        .map { ResponseInfo(it) },
+      tools =
+        listOf(
+          Tool.functionDeclarations(
+            autoFunctionDeclarations =
+              listOf(
+                AutoFunctionDeclaration.create("sum", "", sumRequestResponseSchema) {
+                  request: SumRequest ->
+                  functionCalled++
+                  FunctionResponsePart("sum", JsonObject(mapOf()))
+                }
+              )
+          )
+        )
+    ) {
+      withTimeout(testTimeout) {
+        shouldThrow<RequestTimeoutException> { model.startChat().sendMessage("") }
+        functionCalled shouldBeEqual 10
+      }
+    }
+  }
+
+  @Serializable data class ColorScheme(val name: String, val colors: List<String>)
+
+  val colorSchemesSchema =
+    JsonSchema.array(
+      items =
+        JsonSchema.obj(
+          mapOf(
+            "name" to JsonSchema.string(),
+            "colors" to JsonSchema.array(items = JsonSchema.string())
+          ),
+          clazz = ColorScheme::class
+        )
+    )
+
+  @Test
+  fun `generateObject properly decodes things to schema`() =
+    goldenVertexUnaryFile("unary-success-constraint-decoding-json.json") {
+      val response = model.generateObject(colorSchemesSchema, "prompt")
+      val array = response.getObject()!!
+      array.size shouldBe 3
+      for (obj in array) {
+        obj.name.shouldNotBeEmpty()
+        obj.colors.size shouldBe 5
       }
     }
 }

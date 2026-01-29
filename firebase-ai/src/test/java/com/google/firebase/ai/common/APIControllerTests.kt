@@ -90,7 +90,7 @@ internal class APIControllerTests {
 
   @Test
   fun `(generateContent) respects a custom timeout`() =
-    commonTest(requestOptions = RequestOptions(2.seconds)) {
+    commonTest(requestOptions = RequestOptions(2.seconds.inWholeMilliseconds, 10)) {
       shouldThrow<RequestTimeoutException> {
         withTimeout(testTimeout) {
           apiController.generateContent(textGenerateContentRequest("test"))
@@ -153,7 +153,11 @@ internal class RequestFormatTests {
       APIController(
         "super_cool_test_key",
         "gemini-pro-2.5",
-        RequestOptions(timeout = 5.seconds, endpoint = "https://my.custom.endpoint"),
+        RequestOptions(
+          timeout = 5.seconds,
+          endpoint = "https://my.custom.endpoint",
+          autoFunctionCallingTurnLimit = 10
+        ),
         mockEngine,
         TEST_CLIENT_ID,
         mockFirebaseApp,
