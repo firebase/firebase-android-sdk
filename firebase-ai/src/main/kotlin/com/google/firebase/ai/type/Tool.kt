@@ -29,7 +29,7 @@ internal constructor(
   internal val functionDeclarations: List<FunctionDeclaration>?,
   internal val googleSearch: GoogleSearch?,
   internal val codeExecution: JsonObject?,
-  @property:PublicPreviewAPI internal val urlContext: UrlContext?,
+  internal val urlContext: UrlContext?,
 ) {
 
   @OptIn(PublicPreviewAPI::class)
@@ -79,7 +79,6 @@ internal constructor(
      * @param urlContext Specifies the URL context configuration.
      * @return A [Tool] configured for URL context.
      */
-    @PublicPreviewAPI
     @JvmStatic
     public fun urlContext(urlContext: UrlContext = UrlContext()): Tool {
       return Tool(null, null, null, urlContext)
