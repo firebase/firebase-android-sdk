@@ -1,5 +1,7 @@
 # Unreleased
 
+# 20.0.4
+
 - [changed] Updated `firebase-sessions` dependency to v3.0.4
 
 # 20.0.3
