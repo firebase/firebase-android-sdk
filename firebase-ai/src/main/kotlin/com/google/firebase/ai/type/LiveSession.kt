@@ -165,6 +165,40 @@ internal constructor(
    * transcript. The first [Transcription] object is the input transcription, and the second is the
    * output transcription.
    *
+   * @param enableInterruptions If enabled, allows the user to speak over or interrupt the model's
+   * ongoing reply.
+   *
+   * **WARNING**: The user interruption feature relies on device-specific support, and may not be
+   * consistently available.
+   */
+  @RequiresPermission(RECORD_AUDIO)
+  public suspend fun startAudioConversation(
+    functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)? = null,
+    transcriptHandler: ((Transcription?, Transcription?) -> Unit)? = null,
+    enableInterruptions: Boolean = false,
+  ) {
+    startAudioConversation(
+      liveAudioConversationConfig {
+        this.functionCallHandler = functionCallHandler
+        this.transcriptHandler = transcriptHandler
+        this.goAwayHandler = null
+        this.enableInterruptions = enableInterruptions
+      }
+    )
+  }
+
+  /**
+   * Starts an audio conversation with the model, which can only be stopped using
+   * [stopAudioConversation] or [close].
+   *
+   * @param functionCallHandler A callback function that is invoked whenever the model receives a
+   * function call. The [FunctionResponsePart] that the callback function returns will be
+   * automatically sent to the model.
+   *
+   * @param transcriptHandler A callback function that is invoked whenever the model receives a
+   * transcript. The first [Transcription] object is the input transcription, and the second is the
+   * output transcription.
+   *
    * @param goAwayHandler A callback function that is invoked when the server initiates a disconnect
    * via a [LiveServerGoAway] message. This allows the application to handle server-initiated
    * session termination gracefully.
