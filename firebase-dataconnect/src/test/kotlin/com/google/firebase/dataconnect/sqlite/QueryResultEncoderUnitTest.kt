@@ -17,7 +17,7 @@
 package com.google.firebase.dataconnect.sqlite
 
 import com.google.firebase.dataconnect.DataConnectPath
-import com.google.firebase.dataconnect.emptyDataConnectPath
+import com.google.firebase.dataconnect.emptyMutableDataConnectPath
 import com.google.firebase.dataconnect.testutil.BuildByteArrayDSL
 import com.google.firebase.dataconnect.testutil.buildByteArray
 import com.google.firebase.dataconnect.testutil.property.arbitrary.ProtoArb
@@ -67,7 +67,6 @@ import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.Exhaustive
 import io.kotest.property.PropTestConfig
-import io.kotest.property.PropertyContext
 import io.kotest.property.ShrinkingMode
 import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.alphanumeric
@@ -79,7 +78,6 @@ import io.kotest.property.arbitrary.distinct
 import io.kotest.property.arbitrary.double
 import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.int
-import io.kotest.property.arbitrary.list
 import io.kotest.property.arbitrary.long
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.of
@@ -221,10 +219,8 @@ class QueryResultEncoderUnitTest {
         Arb.proto.listValue().map { it.listValue },
         Arb.proto.recursivelyEmptyListValue().map { it.listValue },
       )
-    checkAll(propTestConfig, Arb.proto.struct(), Arb.list(listValueArb, 1..3)) {
-      struct,
-      listValueSamples ->
-      val listValues = listValueSamples.map { it.toValueProto() }
+    checkAll(propTestConfig, Arb.proto.struct(), Arb.int(1..3)) { struct, listValueCount ->
+      val listValues = List(listValueCount) { listValueArb.bind().toValueProto() }
       val structWithListValues = struct.struct.withRandomlyInsertedValues(listValues)
       structWithListValues.decodingEncodingShouldProduceIdenticalStruct()
     }
@@ -360,14 +356,11 @@ class QueryResultEncoderUnitTest {
     val entityArb = entityArb(entityIdArb = entityIdArb, structArb = structArb)
     val nestedEntityArb = nestedEntityArb(entityArb = entityArb, nestingLevel = 1..3)
 
-    checkAll(propTestConfig.copy(seed = 123), structArb, nestedEntityArb) {
-      structSample,
-      nestedEntitySample ->
+    checkAll(propTestConfig, structArb, nestedEntityArb) { structSample, nestedEntitySample ->
       val entityByPath: Map<DataConnectPath, QueryResultEncoder.Entity>
       val rootStruct =
         structSample.struct.toBuilder().let { structBuilder ->
-          val rootEntityPath =
-            structBuilder.randomlyInsertStruct(nestedEntitySample.rootEntity.struct)
+          val rootEntityPath = structBuilder.randomlyInsertStruct(nestedEntitySample.struct)
 
           entityByPath = buildMap {
             put(rootEntityPath, nestedEntitySample.rootEntity)
@@ -881,46 +874,6 @@ private fun Struct.decodingEncodingShouldProduceIdenticalStruct(
   }
 }
 
-private interface BuildEntityIdByPathContext {
-  fun putWithRandomUniqueEntityId(path: DataConnectPath): String
-}
-
-/**
- * Builds a map that associates [DataConnectPath] instances with unique, randomly generated entity
- * IDs.
- *
- * This helper function is used within tests to construct the `entityIdByPath` map required by
- * [QueryResultEncoder.encode]. It ensures that each path specified in the [block] is mapped to a
- * distinct entity ID string.
- *
- * Example usage:
- * ```
- * val entityIdByPath = buildEntityIdByPathMap {
- *   putWithRandomUniqueEntityId(emptyDataConnectPath())
- *   putWithRandomUniqueEntityId(someOtherPath)
- * }
- * ```
- *
- * @return A [Map] where each [DataConnectPath] provided in the [block] is associated with a unique
- * [String] entity ID.
- */
-private fun PropertyContext.buildEntityIdByPathMap(
-  block: BuildEntityIdByPathContext.() -> Unit
-): Map<DataConnectPath, String> {
-  @OptIn(DelicateKotest::class) val distinctEntityIdArb = EntityIdSample.arb().distinct()
-  val entityIdByPath = mutableMapOf<DataConnectPath, String>()
-  val context =
-    object : BuildEntityIdByPathContext {
-      override fun putWithRandomUniqueEntityId(path: DataConnectPath): String {
-        val entityId = distinctEntityIdArb.bind().string
-        entityIdByPath[path] = entityId
-        return entityId
-      }
-    }
-  block(context)
-  return entityIdByPath.toMap()
-}
-
 /**
  * Calculates and returns the expected byte array encoding for a string being used as an entity ID.
  *
@@ -1030,8 +983,8 @@ private fun nestedEntityArb(
     }
 
     val nestedEntityByPath = buildMap {
-      val pathSoFar = emptyDataConnectPath().toMutableList()
-      insertPaths.zip(otherEntities).forEach { (relativePath, entity) ->
+      val pathSoFar = emptyMutableDataConnectPath()
+      insertPaths.reversed().zip(otherEntities).forEach { (relativePath, entity) ->
         pathSoFar.addAll(relativePath)
         put(pathSoFar.toList(), entity)
       }
