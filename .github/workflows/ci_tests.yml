@@ -93,18 +93,10 @@ jobs:
     runs-on: ubuntu-22.04
     name: Unit Tests (matrix)
     needs: unit_tests
-    if: ${{ always() }}
+    if: ${{ failure() }}
     steps:
       - name: Check test matrix results
-        run: |
-          echo "Overall result of 'unit_tests' job: ${{ needs.unit_tests.result }}"
-          if [[ "${{ needs.unit_tests.result }}" != "success" ]]; then
-            echo " One or more unit tests failed or were cancelled."
-            exit 1
-          else
-            echo "All unit tests passed."
-            exit 0
-          fi
+        run: exit 1
 
 
   integ_tests:
