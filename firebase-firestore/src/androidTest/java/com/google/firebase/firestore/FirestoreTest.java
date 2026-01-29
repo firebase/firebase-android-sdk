@@ -1993,4 +1993,56 @@ public class FirestoreTest {
 
     checkOnlineAndOfflineResultsMatch(colRef, orderedQuery, expectedDocIds.toArray(new String[0]));
   }
+
+  @Test
+  public void snapshotListenerSortsNumbersSameWayAsServer() {
+    Map<String, Map<String, Object>> testDocs =
+        map(
+            "intMin",
+            map("value", Long.MIN_VALUE),
+            "doubleMin",
+            map("value", ((double) Long.MIN_VALUE) - 100),
+            "intMax",
+            map("value", Long.MAX_VALUE),
+            "doubleMax",
+            map("value", ((double) Long.MAX_VALUE) + 100),
+            "NAN",
+            map("value", Double.NaN),
+            "integerMax",
+            map("value", (long) Integer.MAX_VALUE),
+            "integerMin",
+            map("value", (long) Integer.MIN_VALUE),
+            "negativeInfinity",
+            map("value", Double.NEGATIVE_INFINITY),
+            "positiveInfinity",
+            map("value", Double.POSITIVE_INFINITY));
+
+    CollectionReference colRef = testCollectionWithDocs(testDocs);
+
+    // Run get query
+    Query filteredQuery = colRef.orderBy("value");
+
+    QuerySnapshot getSnapshot = waitFor(filteredQuery.get());
+    List<String> getSnapshotDocIds =
+        getSnapshot.getDocuments().stream().map(ds -> ds.getId()).collect(Collectors.toList());
+
+    // Run query with snapshot listener
+    EventAccumulator<QuerySnapshot> eventAccumulator = new EventAccumulator<QuerySnapshot>();
+    ListenerRegistration registration =
+        filteredQuery.addSnapshotListener(eventAccumulator.listener());
+
+    List<String> watchSnapshotDocIds = new ArrayList<>();
+    try {
+      QuerySnapshot watchSnapshot = eventAccumulator.await();
+      watchSnapshotDocIds =
+          watchSnapshot.getDocuments().stream()
+              .map(documentSnapshot -> documentSnapshot.getId())
+              .collect(Collectors.toList());
+    } finally {
+      registration.remove();
+    }
+
+    // Assert that get and snapshot listener requests sort docs in the same, expected order
+    assertTrue(getSnapshotDocIds.equals(watchSnapshotDocIds));
+  }
 }
