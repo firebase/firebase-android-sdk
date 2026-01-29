@@ -44,7 +44,6 @@ import java.util.concurrent.ThreadFactory
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.coroutines.CoroutineContext
-import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -92,21 +91,6 @@ internal constructor(
    * Makes it easy to stop all the work with [stopAudioConversation] by just cancelling the scope.
    */
   private var audioScope = CancelledCoroutineScope
-
-  /**
-   * Exception handler for unhandled exceptions in background coroutines.
-   *
-   * Logs the exception and attempts to clean up resources to prevent app crashes.
-   */
-  private val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
-    Log.e(TAG, "Unhandled exception in LiveSession", throwable)
-    // Clean up resources to prevent resource leaks
-    try {
-      stopAudioConversation()
-    } catch (e: Exception) {
-      Log.e(TAG, "Error during cleanup in exception handler", e)
-    }
-  }
 
   /**
    * Playback audio data sent from the model.
@@ -237,13 +221,8 @@ internal constructor(
         return@catchAsync
       }
       networkScope =
-        CoroutineScope(
-          blockingDispatcher + childJob() + CoroutineName("LiveSession Network") + exceptionHandler
-        )
-      audioScope =
-        CoroutineScope(
-          audioDispatcher + childJob() + CoroutineName("LiveSession Audio") + exceptionHandler
-        )
+        CoroutineScope(blockingDispatcher + childJob() + CoroutineName("LiveSession Network"))
+      audioScope = CoroutineScope(audioDispatcher + childJob() + CoroutineName("LiveSession Audio"))
       audioHelper = AudioHelper.build(liveAudioConversationConfig.initializationHandler)
 
       recordUserAudio()
@@ -306,14 +285,9 @@ internal constructor(
             response
               .getOrNull()
               ?.let {
-                try {
-                  JSON.decodeFromString<InternalLiveServerMessage>(
-                    it.readBytes().toString(Charsets.UTF_8)
-                  )
-                } catch (e: SerializationException) {
-                  Log.w(TAG, "Failed to deserialize server message: ${e.message}")
-                  null // Skip unknown messages instead of crashing
-                }
+                JSON.decodeFromString<InternalLiveServerMessage>(
+                  it.readBytes().toString(Charsets.UTF_8)
+                )
               }
               ?.let { emit(it.toPublic()) }
             // delay uses a different scheduler in the backend, so it's "stickier" in its
