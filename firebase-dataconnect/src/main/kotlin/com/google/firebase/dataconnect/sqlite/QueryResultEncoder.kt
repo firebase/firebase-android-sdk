@@ -27,7 +27,8 @@ import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.putUInt32
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.putUInt64
 import com.google.firebase.dataconnect.toPathString
 import com.google.firebase.dataconnect.util.ImmutableByteArray
-import com.google.firebase.dataconnect.util.ProtoPrune.withDescendantStructsPruned
+import com.google.firebase.dataconnect.util.ProtoPrune
+import com.google.firebase.dataconnect.util.ProtoPrune.withPrunedDescendants
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.StringUtil.ellipsizeMiddle
 import com.google.firebase.dataconnect.withAddedField
@@ -112,7 +113,7 @@ internal class QueryResultEncoder(channel: WritableByteChannel) {
     val entityIdByPath = mutableMapOf<DataConnectPath, String?>()
 
     val prunedResult =
-      queryResult.withDescendantStructsPruned { path ->
+      queryResult.withPrunedDescendants { path, listSize ->
         val entityId =
           if (path in entityIdByPath) {
             entityIdByPath[path]
@@ -129,8 +130,12 @@ internal class QueryResultEncoder(channel: WritableByteChannel) {
       return WriteEntitiesResult(queryResult, emptyMap())
     }
 
-    val (prunedQueryResult, entityStructByPath) = prunedResult
+    val (prunedQueryResult, prunedValueByPath) = prunedResult
     val entityByPath = mutableMapOf<DataConnectPath, Entity>()
+
+    val entityStructByPath =
+      prunedValueByPath.mapValues { (it.value as ProtoPrune.PrunedStruct).struct }
+
     writer.writeUInt32(entityStructByPath.size)
     entityStructByPath.entries.forEach { (path, entityStruct) ->
       val entityId =
