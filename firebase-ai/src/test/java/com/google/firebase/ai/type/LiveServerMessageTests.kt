@@ -27,69 +27,6 @@ import org.junit.Test
 @OptIn(PublicPreviewAPI::class)
 internal class LiveServerMessageTests {
 
-  // ===== Duration Parsing Tests =====
-
-  @Test
-  fun `parseTimeLeft with integer seconds`() {
-    val goAway = LiveServerGoAway("57s")
-    val duration = goAway.parseTimeLeft()
-
-    duration.shouldNotBeNull()
-    duration.inWholeSeconds shouldBe 57
-  }
-
-  @Test
-  fun `parseTimeLeft with fractional seconds`() {
-    val goAway = LiveServerGoAway("1.5s")
-    val duration = goAway.parseTimeLeft()
-
-    duration.shouldNotBeNull()
-    duration.inWholeMilliseconds shouldBe 1500
-  }
-
-  @Test
-  fun `parseTimeLeft with small fractional seconds (nanoseconds)`() {
-    val goAway = LiveServerGoAway("0.000000001s")
-    val duration = goAway.parseTimeLeft()
-
-    duration.shouldNotBeNull()
-    duration.inWholeNanoseconds shouldBe 1
-  }
-
-  @Test
-  fun `parseTimeLeft with zero seconds`() {
-    val goAway = LiveServerGoAway("0s")
-    val duration = goAway.parseTimeLeft()
-
-    duration.shouldNotBeNull()
-    duration.inWholeSeconds shouldBe 0
-  }
-
-  @Test
-  fun `parseTimeLeft with null timeLeft`() {
-    val goAway = LiveServerGoAway(null)
-    val duration = goAway.parseTimeLeft()
-
-    duration.shouldBeNull()
-  }
-
-  @Test
-  fun `parseTimeLeft with invalid format returns null`() {
-    val goAway = LiveServerGoAway("invalid")
-    val duration = goAway.parseTimeLeft()
-
-    duration.shouldBeNull()
-  }
-
-  @Test
-  fun `parseTimeLeft with non-second units returns null`() {
-    val goAway = LiveServerGoAway("100ms")
-    val duration = goAway.parseTimeLeft()
-
-    // Protobuf Duration only uses 's' suffix
-    duration.shouldBeNull()
-  }
-
   // ===== LiveServerGoAway Deserialization Tests =====
 
   @Test
@@ -108,12 +45,8 @@ internal class LiveServerMessageTests {
     val goAway = message.toPublic()
 
     goAway.shouldBeInstanceOf<LiveServerGoAway>()
-    goAway.timeLeft shouldBe "57s"
-
-    // Test parsing
-    val duration = goAway.parseTimeLeft()
-    duration.shouldNotBeNull()
-    duration.inWholeSeconds shouldBe 57
+    (goAway as LiveServerGoAway).timeLeft.shouldNotBeNull()
+    goAway.timeLeft?.inWholeSeconds shouldBe 57
   }
 
   @Test
@@ -131,11 +64,8 @@ internal class LiveServerMessageTests {
     val message = JSON.decodeFromString<InternalLiveServerMessage>(json)
     val goAway = message.toPublic() as LiveServerGoAway
 
-    goAway.timeLeft shouldBe "1.5s"
-
-    val duration = goAway.parseTimeLeft()
-    duration.shouldNotBeNull()
-    duration.inWholeMilliseconds shouldBe 1500
+    goAway.timeLeft.shouldNotBeNull()
+    goAway.timeLeft?.inWholeMilliseconds shouldBe 1500
   }
 
   @Test
