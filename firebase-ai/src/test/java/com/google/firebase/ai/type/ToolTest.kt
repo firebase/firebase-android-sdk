@@ -28,7 +28,7 @@ internal class ToolTest {
     tool.googleSearch.shouldNotBeNull()
     tool.functionDeclarations.shouldBeNull()
     tool.codeExecution.shouldBeNull()
-    @OptIn(PublicPreviewAPI::class) tool.urlContext.shouldBeNull()
+    tool.urlContext.shouldBeNull()
   }
 
   @Test
@@ -39,7 +39,7 @@ internal class ToolTest {
     tool.functionDeclarations?.first() shouldBe functionDeclaration
     tool.googleSearch.shouldBeNull()
     tool.codeExecution.shouldBeNull()
-    @OptIn(PublicPreviewAPI::class) tool.urlContext.shouldBeNull()
+    tool.urlContext.shouldBeNull()
   }
 
   @Test
@@ -48,7 +48,7 @@ internal class ToolTest {
     tool.codeExecution.shouldNotBeNull()
     tool.functionDeclarations.shouldBeNull()
     tool.googleSearch.shouldBeNull()
-    @OptIn(PublicPreviewAPI::class) tool.urlContext.shouldBeNull()
+    tool.urlContext.shouldBeNull()
   }
 
   @OptIn(PublicPreviewAPI::class)
@@ -59,6 +59,6 @@ internal class ToolTest {
     tool.googleSearch.shouldBeNull()
     tool.functionDeclarations.shouldBeNull()
     tool.codeExecution.shouldBeNull()
-    @OptIn(PublicPreviewAPI::class) tool.urlContext.shouldNotBeNull()
+    tool.urlContext.shouldNotBeNull()
   }
 }
