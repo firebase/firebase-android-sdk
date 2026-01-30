@@ -1,0 +1,11 @@
+{
+    "name": "m176",
+    "libraries": [
+        ":firebase-ai",
+        ":firebase-components",
+        ":appcheck:firebase-appcheck",
+        ":appcheck:firebase-appcheck-debug",
+        ":appcheck:firebase-appcheck-debug-testing",
+        ":appcheck:firebase-appcheck-playintegrity"
+    ]
+}
