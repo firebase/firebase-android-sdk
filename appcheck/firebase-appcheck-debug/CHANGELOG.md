@@ -1,5 +1,7 @@
 # Unreleased
 
+- [unchanged] Updated to keep [app_check] SDK versions aligned.
+
 # 19.0.1
 
 - [changed] Bumped internal dependencies.
@@ -85,4 +87,3 @@
 # 16.0.0-beta01
 
 - [feature] Initial beta release of the [app_check] Debug SDK with abuse reduction features.
-
