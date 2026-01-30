@@ -18,6 +18,8 @@
 
 package com.google.firebase.ai.common.util
 
+import android.content.Context
+import androidx.test.core.app.ApplicationProvider
 import com.google.firebase.FirebaseApp
 import com.google.firebase.ai.common.APIController
 import com.google.firebase.ai.common.JSON
@@ -95,7 +97,9 @@ internal fun commonTest(
   block: CommonTest,
 ) = doBlocking {
   val mockFirebaseApp = Mockito.mock<FirebaseApp>()
+  val context = ApplicationProvider.getApplicationContext<Context>()
   Mockito.`when`(mockFirebaseApp.isDataCollectionDefaultEnabled).thenReturn(false)
+  Mockito.`when`(mockFirebaseApp.applicationContext).thenReturn(context)
 
   val channel = ByteChannel(autoFlush = true)
   val apiController =

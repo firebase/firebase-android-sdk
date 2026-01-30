@@ -35,6 +35,10 @@ import android.media.AudioTrack
  * offers a final opportunity to configure these objects, which will remain valid and effective for
  * the duration of the current audio session.
  *
+ * @property goAwayHandler A callback that is invoked when the server initiates a disconnect via a
+ * [LiveServerGoAway] message. This allows the application to handle server-initiated session
+ * termination gracefully, such as displaying a message to the user or attempting to reconnect.
+ *
  * @property enableInterruptions If enabled, allows the user to speak over or interrupt the model's
  * ongoing reply.
  *
@@ -47,6 +51,7 @@ private constructor(
   internal val functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)?,
   internal val initializationHandler: ((AudioRecord.Builder, AudioTrack.Builder) -> Unit)?,
   internal val transcriptHandler: ((Transcription?, Transcription?) -> Unit)?,
+  internal val goAwayHandler: ((LiveServerGoAway) -> Unit)?,
   internal val enableInterruptions: Boolean
 ) {
 
@@ -62,6 +67,8 @@ private constructor(
    *
    * @property transcriptHandler See [LiveAudioConversationConfig.transcriptHandler].
    *
+   * @property goAwayHandler See [LiveAudioConversationConfig.goAwayHandler].
+   *
    * @property enableInterruptions See [LiveAudioConversationConfig.enableInterruptions].
    */
   public class Builder {
@@ -69,6 +76,7 @@ private constructor(
     @JvmField
     public var initializationHandler: ((AudioRecord.Builder, AudioTrack.Builder) -> Unit)? = null
     @JvmField public var transcriptHandler: ((Transcription?, Transcription?) -> Unit)? = null
+    @JvmField public var goAwayHandler: ((LiveServerGoAway) -> Unit)? = null
     @JvmField public var enableInterruptions: Boolean = false
 
     public fun setFunctionCallHandler(
@@ -83,6 +91,10 @@ private constructor(
       transcriptHandler: ((Transcription?, Transcription?) -> Unit)?
     ): Builder = apply { this.transcriptHandler = transcriptHandler }
 
+    public fun setGoAwayHandler(goAwayHandler: ((LiveServerGoAway) -> Unit)?): Builder = apply {
+      this.goAwayHandler = goAwayHandler
+    }
+
     public fun setEnableInterruptions(enableInterruptions: Boolean): Builder = apply {
       this.enableInterruptions = enableInterruptions
     }
@@ -93,6 +105,7 @@ private constructor(
         functionCallHandler = functionCallHandler,
         initializationHandler = initializationHandler,
         transcriptHandler = transcriptHandler,
+        goAwayHandler = goAwayHandler,
         enableInterruptions = enableInterruptions
       )
   }
