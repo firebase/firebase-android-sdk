@@ -24,6 +24,8 @@ import androidx.annotation.Keep;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+
+import com.google.firebase.perf.FirebasePerformance;
 import com.google.firebase.perf.FirebasePerformanceAttributable;
 import com.google.firebase.perf.application.AppStateMonitor;
 import com.google.firebase.perf.application.AppStateUpdateHandler;
@@ -57,6 +59,7 @@ public class Trace extends AppStateUpdateHandler
 
   private final Trace parent;
   private final GaugeManager gaugeManager;
+  private final SessionManager sessionManager;
   private final String name;
 
   private final Map<String, Counter> counterNameToCounterMap;
@@ -138,6 +141,7 @@ public class Trace extends AppStateUpdateHandler
     transportManager = parent.transportManager;
     sessions = Collections.synchronizedList(new ArrayList<>());
     gaugeManager = this.parent.gaugeManager;
+    sessionManager = this.parent.sessionManager;
   }
 
   /**
@@ -150,7 +154,8 @@ public class Trace extends AppStateUpdateHandler
       @NonNull String name,
       @NonNull TransportManager transportManager,
       @NonNull Clock clock,
-      @NonNull AppStateMonitor appStateMonitor) {
+      @NonNull AppStateMonitor appStateMonitor
+  ) {
     this(name, transportManager, clock, appStateMonitor, GaugeManager.getInstance());
   }
 
@@ -176,10 +181,12 @@ public class Trace extends AppStateUpdateHandler
     this.transportManager = transportManager;
     sessions = Collections.synchronizedList(new ArrayList<>());
     this.gaugeManager = gaugeManager;
+    this.sessionManager = appStateMonitor.getSessionManager();
   }
 
   private Trace(@NonNull Parcel in, boolean isDataOnly) {
     super(isDataOnly ? null : AppStateMonitor.getInstance());
+    this.sessionManager = AppStateMonitor.getInstance().getSessionManager();
     parent = in.readParcelable(Trace.class.getClassLoader());
     name = in.readString();
     subtraces = new ArrayList<>();
@@ -227,9 +234,8 @@ public class Trace extends AppStateUpdateHandler
 
     registerForAppState();
 
-    SessionManager sessionManager = SessionManager.getInstance();
     PerfSession perfSession = sessionManager.perfSession();
-    SessionManager.getInstance().registerForSessionUpdates(sessionAwareObject);
+    sessionManager.registerForSessionUpdates(sessionAwareObject);
 
     updateSession(perfSession);
 
@@ -250,7 +256,7 @@ public class Trace extends AppStateUpdateHandler
       return;
     }
 
-    SessionManager.getInstance().unregisterForSessionUpdates(sessionAwareObject);
+    sessionManager.unregisterForSessionUpdates(sessionAwareObject);
 
     unregisterForAppState();
     endTime = clock.getTime();
@@ -259,9 +265,8 @@ public class Trace extends AppStateUpdateHandler
       if (!name.isEmpty()) {
         transportManager.log(new TraceMetricBuilder(this).build(), getAppState());
 
-        if (SessionManager.getInstance().perfSession().isGaugeAndEventCollectionEnabled()) {
-          gaugeManager.collectGaugeMetricOnce(
-              SessionManager.getInstance().perfSession().getTimer());
+        if (sessionManager.perfSession().isGaugeAndEventCollectionEnabled()) {
+          gaugeManager.collectGaugeMetricOnce(sessionManager.perfSession().getTimer());
         }
       } else {
         logger.error("Trace name is empty, no log is sent to server");
