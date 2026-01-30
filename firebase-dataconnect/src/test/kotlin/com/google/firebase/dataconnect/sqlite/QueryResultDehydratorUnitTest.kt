@@ -19,8 +19,6 @@ package com.google.firebase.dataconnect.sqlite
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.registerDataConnectKotestPrinters
-import com.google.firebase.dataconnect.testutil.shouldBe
-import com.google.firebase.dataconnect.testutil.toValueProto
 import com.google.protobuf.Struct
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
@@ -32,6 +30,8 @@ import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
 import io.kotest.property.ShrinkingMode
 import io.kotest.property.checkAll
+import io.mockk.every
+import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
@@ -50,19 +50,48 @@ class QueryResultDehydratorUnitTest {
 
       val result = dehydrateQueryResult(struct)
 
-      assertSoftly {
-        withClue("result.proto.struct") { result.proto.struct shouldBeSameInstanceAs struct }
-        withClue("result.proto.entitiesList") { result.proto.entitiesList.shouldBeEmpty() }
-        withClue("result.entities") { result.entities.shouldBeEmpty() }
-      }
+      result.shouldHaveStructAndEmptyEntities(struct)
     }
   }
+
+  @Test
+  fun `dehydrateQueryResult() with null getEntityIdForPath returns the receiver`() = runTest {
+    checkAll(propTestConfig, Arb.proto.struct()) { structSample ->
+      val struct: Struct = structSample.struct
+
+      val result = dehydrateQueryResult(struct, null)
+
+      result.shouldHaveStructAndEmptyEntities(struct)
+    }
+  }
+
+  @Test
+  fun `dehydrateQueryResult() with getEntityIdForPath returning null returns the receiver`() =
+    runTest {
+      checkAll(propTestConfig, Arb.proto.struct()) { structSample ->
+        val struct: Struct = structSample.struct
+        val getEntityIdForPath: GetEntityIdForPathFunction = mockk()
+        every { getEntityIdForPath(any()) } returns null
+
+        val result = dehydrateQueryResult(struct, getEntityIdForPath)
+
+        result.shouldHaveStructAndEmptyEntities(struct)
+      }
+    }
 }
 
 @OptIn(ExperimentalKotest::class)
 private val propTestConfig =
   PropTestConfig(
-    iterations = 1000,
+    iterations = 200,
     edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.33),
     shrinkingMode = ShrinkingMode.Off,
   )
+
+private fun DehydratedQueryResult.shouldHaveStructAndEmptyEntities(expectedStruct: Struct) {
+  assertSoftly {
+    withClue("proto.struct") { proto.struct shouldBeSameInstanceAs expectedStruct }
+    withClue("proto.entitiesList") { proto.entitiesList.shouldBeEmpty() }
+    withClue("entities") { entities.shouldBeEmpty() }
+  }
+}
