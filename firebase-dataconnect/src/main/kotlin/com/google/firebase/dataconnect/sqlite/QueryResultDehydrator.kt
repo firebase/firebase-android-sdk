@@ -21,6 +21,7 @@ import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.toPathString
 import com.google.firebase.dataconnect.util.ProtoPrune
 import com.google.firebase.dataconnect.util.ProtoPrune.withPrunedDescendants
+import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.WithPrunedDescendantsPredicate
 import com.google.protobuf.Struct
 import google.firebase.dataconnect.proto.kotlinsdk.Entity
@@ -33,7 +34,9 @@ internal data class DehydratedQueryResult(
   val proto: QueryResult,
   val entities: List<Entity>,
 ) {
-  data class Entity(val entityId: String, val struct: Struct)
+  data class Entity(val entityId: String, val struct: Struct) {
+    override fun toString() = "Entity(entityId=$entityId, struct=${struct.toCompactString()})"
+  }
 }
 
 internal fun dehydrateQueryResult(
