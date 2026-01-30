@@ -18,8 +18,10 @@ package com.google.firebase.dataconnect.sqlite
 
 import com.google.firebase.dataconnect.DataConnectPath
 import com.google.firebase.dataconnect.DataConnectPathSegment
+import com.google.firebase.dataconnect.toPathString
 import com.google.firebase.dataconnect.util.ProtoGraft.withGraftedInStructs
 import com.google.protobuf.Struct
+import com.google.protobuf.Value
 import google.firebase.dataconnect.proto.kotlinsdk.Entity
 import google.firebase.dataconnect.proto.kotlinsdk.EntityOrEntityList
 import google.firebase.dataconnect.proto.kotlinsdk.EntityPath
@@ -48,9 +50,11 @@ private fun List<EntityOrEntityList>.toStructByPathMap(
 private fun EntityOrEntityList.toPathStructPair(
   entityStructById: Map<String, Struct>
 ): Pair<DataConnectPath, Struct>? {
+  val dataConnectPath: DataConnectPath = path.toDataConnectPath()
+
   val struct =
     when (kindCase) {
-      EntityOrEntityList.KindCase.ENTITY -> entity.rehydrateStruct(entityStructById)
+      EntityOrEntityList.KindCase.ENTITY -> entity.rehydrate(dataConnectPath, entityStructById)
       EntityOrEntityList.KindCase.ENTITYLIST ->
         throw IllegalStateException(
           "internal error a5ppf5vkzc: EntityOrEntityList.KindCase.ENTITYLIST not yet supported"
@@ -58,11 +62,49 @@ private fun EntityOrEntityList.toPathStructPair(
       EntityOrEntityList.KindCase.KIND_NOT_SET -> return null
     }
 
-  val dataConnectPath: DataConnectPath = path.toDataConnectPath()
   return Pair(dataConnectPath, struct)
 }
 
-private fun Entity.rehydrateStruct(entityStructById: Map<String, Struct>): Struct {}
+private fun Entity.rehydrate(path: DataConnectPath, entityStructById: Map<String, Struct>): Struct {
+  val struct =
+    entityStructById[entityId]
+      ?: throw EntityIdNotFoundException(
+        "entity with ID $entityId path=${path.toPathString()} not found [f9tcr9fvmg]"
+      )
+
+  val expectedFields = fieldsList.toSet()
+  val fieldValueByName: Map<String, Value> = struct.fieldsMap
+  if (fieldValueByName.keys.toSet() == expectedFields) {
+    return struct
+  }
+
+  val structBuilder = Struct.newBuilder()
+  val missingFields = lazy(LazyThreadSafetyMode.NONE) { mutableSetOf<String>() }
+  expectedFields.forEach { expectedField ->
+    val fieldValue = fieldValueByName[expectedField]
+    if (fieldValue === null) {
+      missingFields.value.add(expectedField)
+    } else {
+      structBuilder.putFields(expectedField, fieldValue)
+    }
+  }
+
+  if (missingFields.isInitialized()) {
+    missingFields.value
+      .takeIf { it.isNotEmpty() }
+      ?.let { missingFields ->
+        throw EntityMissingFieldsException(
+          "entity with ID $entityId for path=${path.toPathString()} " +
+            "is missing ${missingFields.size} of ${expectedFields.size} fields: " +
+            "${missingFields.sorted().joinToString()} " +
+            "(got ${structBuilder.fieldsCount} fields: " +
+            "${structBuilder.fieldsMap.keys.sorted().joinToString()}) [nrtmqzdfy3]"
+        )
+      }
+  }
+
+  return structBuilder.build()
+}
 
 private fun EntityPath.toDataConnectPath(): DataConnectPath =
   segmentsList.mapNotNull { fieldOrListIndex ->
@@ -73,3 +115,9 @@ private fun EntityPath.toDataConnectPath(): DataConnectPath =
       FieldOrListIndex.KindCase.KIND_NOT_SET -> null
     }
   }
+
+internal sealed class QueryRefRehydratorException(message: String) : Exception(message)
+
+internal class EntityIdNotFoundException(message: String) : QueryRefRehydratorException(message)
+
+internal class EntityMissingFieldsException(message: String) : QueryRefRehydratorException(message)
