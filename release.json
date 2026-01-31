@@ -1,0 +1,12 @@
+{
+    "name": "test_test",
+    "libraries": [
+        ":firebase-ai",
+        ":firebase-components",
+        ":firebase-firestore",
+        ":appcheck:firebase-appcheck",
+        ":appcheck:firebase-appcheck-debug",
+        ":appcheck:firebase-appcheck-debug-testing",
+        ":appcheck:firebase-appcheck-playintegrity"
+    ]
+}

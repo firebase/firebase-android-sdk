@@ -1,0 +1,187 @@
+{
+    "changesByLibraryName": {
+        "firebase-ai": [
+            {
+                "commitId": "976a718c27bfd3394bcdedd8466936e1becc825f",
+                "prId": "7688",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Don't end connection early when receiving GoAway (#7688)\n\nInstead of finishing the session when the go away message is received,\nkeeping it open leaves more room for developers to implement different\nstrategies in their callback method. Additionally, it preserves the\ncurrent behaviour.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/976a718c27bfd3394bcdedd8466936e1becc825f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7688"
+            },
+            {
+                "commitId": "753a812a60b76e742dd0fcce8137e9b742116c45",
+                "prId": "7689",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Address missing updates from previous PRs (#7689)\n\n- Update entries in Changelog\n- Update api.txt\n- Update version",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/753a812a60b76e742dd0fcce8137e9b742116c45",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7689"
+            },
+            {
+                "commitId": "338e2203fba8ca95ce71aa0924be1c7bc630de32",
+                "prId": "7523",
+                "author": "David Motsonashvili",
+                "message": "Add Firebase AI KSP Processor (#7523)\n\n* Adds the `Generable` and `Guide` annotations\n* Adds the KSP processor to turn them into firebase AI schema objects\n* Adds publishing plugin to export maven repo for ADMRS\n\n---------\n\nCo-authored-by: David Motsonashvili <davidmotson@google.com>\nCo-authored-by: gemini-code-assist[bot] <176961590+gemini-code-assist[bot]@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/338e2203fba8ca95ce71aa0924be1c7bc630de32",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7523"
+            },
+            {
+                "commitId": "611bc3d11c134799a63203148966e06ae05e85a3",
+                "prId": "7649",
+                "author": "YooJun Hong",
+                "message": "[AI] Fix crash caused by unhandled goAway server message in LiveSession (#7649)\n\n## Description\n\nFixes #7648\n\nThis PR adds support for the `goAway` server message type in LiveSession\nto prevent crashes when the server initiates a disconnect. Previously,\nwhen the server sent a `goAway` message, the app would crash with a\n`SerializationException` because the message type was not recognized by\n`LiveServerMessageSerializer`.\n\n## Changes\n\n### 1. Add LiveServerGoAway message type\n\n- Added `LiveServerGoAway` class to represent server-initiated\ndisconnection\n- Includes `timeLeft: Duration?` field from parsed protobuf format\nstring (e.g., \"57s\", \"1.5s\")\n- Registered `goAway` message in `LiveServerMessageSerializer`\n\n### 2. Robust Handling & API Update\n\n- **Graceful Shutdown:** Implemented logic in `processModelResponses()`\nto recognize `GoAway` signals and automatically close the session,\npreventing zombie connections or further crashes.\n- **Public API:** Added `goAwayHandler` to\n`LiveAudioConversationConfig`.\n- *Rationale:* While internal handling prevents the crash, apps often\nneed to inform the user that the session ended due to server maintenance\nor timeouts. This handler exposes the `timeLeft` information to the\napplication layer.\n\n## Usage Example\n\nApps can now handle server disconnections gracefully using the\n`goAwayHandler`:\n\n```kotlin\nval config = LiveAudioConversationConfig.Builder()\n  .setGoAwayHandler { goAway ->\n    Log.i(TAG, \"Server disconnecting in ${goAway.timeLeft?.inWholeSeconds} seconds\")\n    // Clean up resources, show UI notification, etc.\n  }\n  .build()\n\nliveGenerativeModel.startAudioConversation(config)\n```\n\n## Testing\n\n- unit tests\n- Tested with [real\napp](https://github.com/android/ai-samples/tree/prototype-ai-glasses)\nand confirmed graceful handling of goAway messages (Published to local\nMaven)\n- Spotless formatting applied\n\n## Related Issues\n\n- Android SDK: #7648\n- Flutter SDK: https://github.com/firebase/flutterfire/issues/17836\n\n---------\n\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/611bc3d11c134799a63203148966e06ae05e85a3",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7649"
+            },
+            {
+                "commitId": "55b852df698327cc7e2e7ebc66a883f0663ff509",
+                "prId": "7686",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Graduate UrlContext to GA (#7686)\n\nThe feature is no longer gated behind the opt-in `@PublicPreviewAPI`.\n\nInternal b/441102128",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/55b852df698327cc7e2e7ebc66a883f0663ff509",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7686"
+            },
+            {
+                "commitId": "0532608e7b55a891d01976a9dd307c6fa3ca63da",
+                "prId": "7679",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Include the \"X-Android-Package\" and \"X-Android-Cert\" headers (#7679)\n\nThese headers are necessary to support [API Key\nrestrictions](https://docs.cloud.google.com/docs/authentication/api-keys#adding-application-restrictions).\nThis feature enable you to limit which apps (by matching package name\nand certificate fingerprint) are allowed to make request.\n\n**Important**: We still *strongly* recommend the use of Firebase App\nCheck instead of, or in addition to, API key restrictions.\n\n---------\n\nCo-authored-by: gemini-code-assist[bot] <176961590+gemini-code-assist[bot]@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/0532608e7b55a891d01976a9dd307c6fa3ca63da",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7679"
+            },
+            {
+                "commitId": "8bd67ff03c906a9b9a7764e044cc8f7337fb6684",
+                "prId": "7641",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Documentation improvements to ThinkingConfig (#7641)\n\nAdd more detailed description of the difference between `setThinkingBudget` and `setThinkingLevel`.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/8bd67ff03c906a9b9a7764e044cc8f7337fb6684",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7641"
+            },
+            {
+                "commitId": "0a7f78a24d865291071d21c309fc60df1eb1e96e",
+                "prId": "7647",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Implement cached token count in usage metadata (#7647)\n\n`UsageMetadata` now includes details about cached token usage.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/0a7f78a24d865291071d21c309fc60df1eb1e96e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7647"
+            },
+            {
+                "commitId": "15420e611391ef889c2d890e1c39e765c3fe6f73",
+                "prId": "7642",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Remove dead code from Chat (#7642)\n\nThe code is a reminisce of an old feature since removed.\n\n---------\n\nCo-authored-by: gemini-code-assist[bot] <176961590+gemini-code-assist[bot]@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/15420e611391ef889c2d890e1c39e765c3fe6f73",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7642"
+            }
+        ],
+        "firebase-components": [
+            {
+                "commitId": "55707ccb0d3d0535121e48dea9eecb8789488f05",
+                "prId": "7643",
+                "author": "Rodrigo Lazo",
+                "message": "[Components] Fix typo when logging error (#7643)\n\nThe previous message was \"Class %s is not an found.\" and it should be\n\"\"Class %s was not found.\"",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/55707ccb0d3d0535121e48dea9eecb8789488f05",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7643"
+            }
+        ],
+        "firebase-firestore": [
+            {
+                "commitId": "6404b283750aed647ad7b69ec91fe500debeb9eb",
+                "prId": "7669",
+                "author": "Daniel La Rocque",
+                "message": "[Firestore] Add support for `regexFind` and `regexFindAll` (#7669)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/6404b283750aed647ad7b69ec91fe500debeb9eb",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7669"
+            },
+            {
+                "commitId": "96c0babc0faeef11d4dfa3b5eec3a7282beef4f3",
+                "prId": "7680",
+                "author": "Daniel La Rocque",
+                "message": "[Firestore] Format `README.md` (#7680)\n\nFormats Firestore's `README.md`.\n\nCurrently a CI check is failing because of this.\nhttps://github.com/firebase/firebase-android-sdk/actions/runs/21407430977/job/61635350761?pr=7669",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/96c0babc0faeef11d4dfa3b5eec3a7282beef4f3",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7680"
+            },
+            {
+                "commitId": "396ddbe0cbcae444e34803c898509ed53adf6099",
+                "prId": "7659",
+                "author": "Daniel La Rocque",
+                "message": "[Firestore] Update setup instructions (#7659)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/396ddbe0cbcae444e34803c898509ed53adf6099",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7659"
+            },
+            {
+                "commitId": "d5b66e27585d9a61f459a345d1e8181100564644",
+                "prId": "7634",
+                "author": "wu-hui",
+                "message": "Remove undesired exists() conditions from query-to-pipeline conversion (#7634)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/d5b66e27585d9a61f459a345d1e8181100564644",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7634"
+            }
+        ],
+        "appcheck/firebase-appcheck": [
+            {
+                "commitId": "f1644ff03e283abf877224533f71489ff343879e",
+                "prId": "7640",
+                "author": "Rodrigo Lazo",
+                "message": "[Appcheck] Use default message if getToken exception doesn't include one  (#7640)\n\nThis addresses issue\nhttps://github.com/firebase/firebase-android-sdk/issues/7624.\nPreviously, missing error messages in custom providers would the Task to\nfail with an null argument exception. The app check contract states that\nthe task **will** succeed. In the case of error, the\n`AppCheckTokenResult` object returned will include the error\ninformation.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f1644ff03e283abf877224533f71489ff343879e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7640"
+            }
+        ],
+        "appcheck/firebase-appcheck-debug": [
+            {
+                "commitId": "5bb9b990466203d79e113817376e022c15d6a149",
+                "prId": "7693",
+                "author": "Rodrigo Lazo",
+                "message": "[Plugin] Fix build release artifacts workflow (#7693)\n\nDownloading the dackka binary should happen **before** gradle is run to\nbuild the artifacts, otherwise it doesn't find it and fails.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5bb9b990466203d79e113817376e022c15d6a149",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7693"
+            },
+            {
+                "commitId": "5941763a3ba861d0d907a9ea2b337c5db3db7b41",
+                "prId": "7692",
+                "author": "Rodrigo Lazo",
+                "message": "[AppCheck] Add missing changelog entries. (#7692)\n\nThe change introduced in (#7640) triggers a release of app check, and all SDKs must contain a changelog entry for it.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5941763a3ba861d0d907a9ea2b337c5db3db7b41",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7692"
+            }
+        ],
+        "appcheck/firebase-appcheck-debug-testing": [
+            {
+                "commitId": "5bb9b990466203d79e113817376e022c15d6a149",
+                "prId": "7693",
+                "author": "Rodrigo Lazo",
+                "message": "[Plugin] Fix build release artifacts workflow (#7693)\n\nDownloading the dackka binary should happen **before** gradle is run to\nbuild the artifacts, otherwise it doesn't find it and fails.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5bb9b990466203d79e113817376e022c15d6a149",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7693"
+            },
+            {
+                "commitId": "5941763a3ba861d0d907a9ea2b337c5db3db7b41",
+                "prId": "7692",
+                "author": "Rodrigo Lazo",
+                "message": "[AppCheck] Add missing changelog entries. (#7692)\n\nThe change introduced in (#7640) triggers a release of app check, and all SDKs must contain a changelog entry for it.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5941763a3ba861d0d907a9ea2b337c5db3db7b41",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7692"
+            }
+        ],
+        "appcheck/firebase-appcheck-playintegrity": [
+            {
+                "commitId": "5bb9b990466203d79e113817376e022c15d6a149",
+                "prId": "7693",
+                "author": "Rodrigo Lazo",
+                "message": "[Plugin] Fix build release artifacts workflow (#7693)\n\nDownloading the dackka binary should happen **before** gradle is run to\nbuild the artifacts, otherwise it doesn't find it and fails.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5bb9b990466203d79e113817376e022c15d6a149",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7693"
+            },
+            {
+                "commitId": "5941763a3ba861d0d907a9ea2b337c5db3db7b41",
+                "prId": "7692",
+                "author": "Rodrigo Lazo",
+                "message": "[AppCheck] Add missing changelog entries. (#7692)\n\nThe change introduced in (#7640) triggers a release of app check, and all SDKs must contain a changelog entry for it.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5941763a3ba861d0d907a9ea2b337c5db3db7b41",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7692"
+            }
+        ]
+    },
+    "changedLibrariesWithNoChangelog": []
+}
