@@ -259,8 +259,7 @@ message QosTiersOverride {
 
 message ExperimentIds {
     bytes clear_blob = 1;
-
-    bytes encrypted_blob = 2;
+    repeated bytes encrypted_blob = 2;
 }
 
 message LogResponse {

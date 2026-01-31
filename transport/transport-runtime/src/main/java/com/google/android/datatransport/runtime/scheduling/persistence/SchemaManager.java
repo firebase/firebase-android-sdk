@@ -146,6 +146,7 @@ final class SchemaManager extends SQLiteOpenHelper {
         db.execSQL("ALTER TABLE events ADD COLUMN pseudonymous_id TEXT");
         db.execSQL("ALTER TABLE events ADD COLUMN experiment_ids_clear_blob BLOB");
         db.execSQL("ALTER TABLE events ADD COLUMN experiment_ids_encrypted_blob BLOB");
+        db.execSQL("ALTER TABLE events ADD COLUMN experiment_ids_encrypted_list_blob BLOB");
       };
 
   private static final List<Migration> INCREMENTAL_MIGRATIONS =
