@@ -1533,7 +1533,9 @@ package com.google.firebase.ai.type {
   public final class Tool {
     method public static com.google.firebase.ai.type.Tool codeExecution();
     method public static com.google.firebase.ai.type.Tool functionDeclarations(java.util.List<com.google.firebase.ai.type.FunctionDeclaration> functionDeclarations);
+    method public static com.google.firebase.ai.type.Tool googleSearch();
     method public static com.google.firebase.ai.type.Tool googleSearch(com.google.firebase.ai.type.GoogleSearch googleSearch = com.google.firebase.ai.type.GoogleSearch());
+    method public static com.google.firebase.ai.type.Tool urlContext();
     method public static com.google.firebase.ai.type.Tool urlContext(com.google.firebase.ai.type.UrlContext urlContext = com.google.firebase.ai.type.UrlContext());
     field public static final com.google.firebase.ai.type.Tool.Companion Companion;
   }
@@ -1541,7 +1543,9 @@ package com.google.firebase.ai.type {
   public static final class Tool.Companion {
     method public com.google.firebase.ai.type.Tool codeExecution();
     method public com.google.firebase.ai.type.Tool functionDeclarations(java.util.List<com.google.firebase.ai.type.FunctionDeclaration> functionDeclarations);
+    method public com.google.firebase.ai.type.Tool googleSearch();
     method public com.google.firebase.ai.type.Tool googleSearch(com.google.firebase.ai.type.GoogleSearch googleSearch = com.google.firebase.ai.type.GoogleSearch());
+    method public com.google.firebase.ai.type.Tool urlContext();
     method public com.google.firebase.ai.type.Tool urlContext(com.google.firebase.ai.type.UrlContext urlContext = com.google.firebase.ai.type.UrlContext());
   }
 
