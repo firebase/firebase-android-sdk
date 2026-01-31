@@ -136,22 +136,52 @@ abstract class MakeReleaseNotesTask : DefaultTask() {
   /**
    * Converts a [Change] to a [String] to be used in a release note.
    *
+   * It applies the [CONTENT_FORMATTERS] functions to the content in order to transform it.
+   *
    * @see [MakeReleaseNotesTask]
    * @see [LINK_REGEX]
    */
   private fun Change.toReleaseNote(): String {
     if (message.isBlank()) throw RuntimeException("A changelog entry message can not be blank.")
+    val fixedMessage = CONTENT_FORMATTERS.fold(message) { acc, formatter -> formatter(acc) }
+    return "* {{${type.name.lowercase()}}} $fixedMessage"
+  }
 
-    val fixedMessage =
+  private companion object {
+
+    /**
+     * Formats github issues link.
+     *
+     * Using the regex [LINK_REGEX], this function formats references to github issues or PRs into
+     * actual links.
+     */
+    private fun githubIssueLinkFormatter(message: String): String =
       LINK_REGEX.replace(message) {
         val id = it.firstCapturedValue
         "GitHub [#$id](//github.com/firebase/firebase-android-sdk/issues/$id){: .external}"
       }
 
-    return "* {{${type.name.lowercase()}}} $fixedMessage"
-  }
+    /**
+     * Formats product name references.
+     *
+     * Using the regex [PRODUCT_REF_REGEX], this function formats product names as variables, i.e. a
+     * string between 2 set of brackets.
+     *
+     * See the regex to know more about the assumptions made about the content.
+     */
+    private fun productNameFormatter(message: String): String =
+      PRODUCT_REF_REGEX.replace(message) { "{{${it.firstCapturedValue}}}${it.groupValues[2]}" }
 
-  companion object {
+    /**
+     * List of functions to apply to the content.
+     *
+     * The functions should take the content as modified by the previous function, apply it's own
+     * customization, and then return the value that will be passed to the next formatter, or, if
+     * there are no more, used as the actual content.
+     */
+    private val CONTENT_FORMATTERS: List<(String) -> String> =
+      listOf(::githubIssueLinkFormatter, ::productNameFormatter)
+
     /**
      * Regex for GitHub issue links in change messages.
      *
@@ -194,5 +224,19 @@ abstract class MakeReleaseNotesTask : DefaultTask() {
         "(?:GitHub )?(?:\\[|\\()#(\\d+)(?:\\]|\\))(?:\\(.+?\\))?(?:\\{:\\s*\\.external\\})?",
         RegexOption.MULTILINE,
       )
+
+    /**
+     * Regex for product references in change messages.
+     *
+     * Matches single bracketed product names, for example: `[app-check]`
+     *
+     * The assumption here is that any string between brackets, and not followed by an open
+     * parenthesis, is a product name.
+     *
+     * Groups:
+     * 1. The product name (e.g., `app-check`)
+     * 2. The character following the closing bracket
+     */
+    private val PRODUCT_REF_REGEX = Regex("\\[([\\w-]+)\\]([^(]|$)", RegexOption.MULTILINE)
   }
 }
