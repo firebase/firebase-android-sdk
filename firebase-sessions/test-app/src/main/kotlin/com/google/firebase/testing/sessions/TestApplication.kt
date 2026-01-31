@@ -37,7 +37,12 @@ class TestApplication : MultiDexApplication() {
   override fun onCreate() {
     super.onCreate()
     Log.i(TAG, "TestApplication created on process: $myProcessName")
-    FirebaseApp.initializeApp(this)
+
+    // Initialize firebase for all processes except the default process
+    // The default process will get initialized automatically by FirebaseInitProvider
+    if (myProcessName != packageName) {
+      FirebaseApp.initializeApp(this)
+    }
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
       registerReceiver(
