@@ -21,12 +21,6 @@ jobs:
     steps:
       - name: Checkout firebase-android-sdk
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-      - name: Checkout firebase-android-buildtools
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
-        with:
-          repository: FirebasePrivate/firebase-android-buildtools
-          token: ${{ secrets.OSS_BOT_BUILDTOOLS_CHECKOUT_PAT }}
-          path: firebase-android-buildtools
       - name: Set up JDK 17
         uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12 # v4.7.0
         with:
@@ -48,7 +42,6 @@ jobs:
       - name: Run fireperf end-to-end tests
         run: |
           fireci fireperf_e2e_test \
-            --plugin_repo_dir=firebase-android-buildtools \
             --target_environment=${{ matrix.environment }}
       - name: Notify developers upon failures
         if: ${{ failure() }}
