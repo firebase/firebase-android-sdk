@@ -12,18 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package com.google.firebase.installations;
+package com.google.firebase.installations
 
-import androidx.annotation.NonNull;
-import com.google.firebase.FirebaseException;
+import com.google.firebase.FirebaseException
 
 /**
- * The class for all Exceptions thrown by {@link FirebaseInstallations}.
+ * The class for all Exceptions thrown by [FirebaseInstallations].
  *
  * @hide
  */
-public class FirebaseInstallationsException extends FirebaseException {
-  public enum Status {
+open class FirebaseInstallationsException : FirebaseException {
+
+  enum class Status {
     /**
      * Indicates that the caller is misconfigured, usually with a bad or misconfigured API Key or
      * Project.
@@ -35,27 +35,11 @@ public class FirebaseInstallationsException extends FirebaseException {
      * may be corrected by retrying. We recommend exponential backoff when retrying requests.
      */
     UNAVAILABLE,
+
     /**
      * Firebase servers have received too many requests in a short period of time from the client.
      */
-    TOO_MANY_REQUESTS,
-  }
-
-  @NonNull private final Status status;
-
-  public FirebaseInstallationsException(@NonNull Status status) {
-    this.status = status;
-  }
-
-  public FirebaseInstallationsException(@NonNull String message, @NonNull Status status) {
-    super(message);
-    this.status = status;
-  }
-
-  public FirebaseInstallationsException(
-      @NonNull String message, @NonNull Status status, @NonNull Throwable cause) {
-    super(message, cause);
-    this.status = status;
+    TOO_MANY_REQUESTS
   }
 
   /**
@@ -63,8 +47,18 @@ public class FirebaseInstallationsException extends FirebaseException {
    *
    * @return the status for the FirebaseInstallationsException
    */
-  @NonNull
-  public Status getStatus() {
-    return status;
+  var status: Status = Status.BAD_CONFIG
+    private set
+
+  constructor(status: Status) : super() {
+    this.status = status
+  }
+
+  constructor(message: String, status: Status) : super(message) {
+    this.status = status
+  }
+
+  constructor(message: String, status: Status, cause: Throwable) : super(message, cause) {
+    this.status = status
   }
 }
