@@ -1,12 +1,12 @@
 # Unreleased
 
+- [feature] Added no-argument overloads for `Tool.urlContext()` and `Tool.googleSearch()`.
 - [feature] Added `JsonSchema`, `GenerativeModel#generateObject` and the firebase-ai-ksp processor's
   annotation (`Generable`, and `Guide`). To learn more about how to use them, and the ksp processor
   see the [Firebase KSP Processor Readme](https://github.com/firebase/firebase-android-sdk/blob/main/firebase-ai-ksp-processor/README.md)
 - [feature] Added support for [API Key
   restrictions](https://docs.cloud.google.com/docs/authentication/api-keys#adding-application-restrictions) (#7679)
 - [changed] The URL context tool APIs are now GA. (#7686)
-- [feature] Added no-argument overloads for `Tool.urlContext()` and `Tool.googleSearch()`.
 - [feature] Added support for implicit caching (context caching)
   metadata in GenerateContentResponse. You can now access
   cachedContentTokenCount and cacheTokensDetails in UsageMetadata to
