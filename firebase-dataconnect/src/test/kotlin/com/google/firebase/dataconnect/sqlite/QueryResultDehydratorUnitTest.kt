@@ -23,14 +23,19 @@ import com.google.firebase.dataconnect.testutil.DataConnectPath
 import com.google.firebase.dataconnect.testutil.DataConnectPathValuePair
 import com.google.firebase.dataconnect.testutil.isListValue
 import com.google.firebase.dataconnect.testutil.isStructValue
+import com.google.firebase.dataconnect.testutil.property.arbitrary.next
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
+import com.google.firebase.dataconnect.testutil.randomlyInsertStruct
 import com.google.firebase.dataconnect.testutil.registerDataConnectKotestPrinters
+import com.google.firebase.dataconnect.testutil.shouldBe
+import com.google.firebase.dataconnect.testutil.toPrintFriendlyMap
 import com.google.firebase.dataconnect.testutil.toPrintable
 import com.google.firebase.dataconnect.testutil.walk
 import com.google.protobuf.Struct
 import io.kotest.assertions.assertSoftly
+import io.kotest.assertions.print.print
 import io.kotest.assertions.withClue
 import io.kotest.common.DelicateKotest
 import io.kotest.common.ExperimentalKotest
@@ -41,13 +46,17 @@ import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
+import io.kotest.property.RandomSource
 import io.kotest.property.ShrinkingMode
 import io.kotest.property.arbitrary.distinct
 import io.kotest.property.arbitrary.double
+import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.orNull
+import io.kotest.property.asSample
 import io.kotest.property.checkAll
 import io.mockk.every
 import io.mockk.mockk
+import kotlin.random.nextInt
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
@@ -131,6 +140,30 @@ class QueryResultDehydratorUnitTest {
       actualCapturedPaths shouldContainExactlyInAnyOrder expectedCapturedPaths
     }
   }
+
+  @Test
+  fun `dehydrateQueryResult() returns the dehydrated struct`() = runTest {
+    checkAll(propTestConfig, QueryResultArb(entityCountRange = 1..10)) { sample ->
+      val queryResult: Struct = sample.hydratedStruct
+      val getEntityIdForPath = sample::getEntityIdForPath
+
+      val result = dehydrateQueryResult(queryResult, getEntityIdForPath)
+
+      result.proto.struct shouldBe sample.dehydratedStruct
+    }
+  }
+
+  @Test
+  fun `dehydrateQueryResult() returns the entities`() = runTest {
+    checkAll(propTestConfig, QueryResultArb(entityCountRange = 1..10)) { sample ->
+      val queryResult: Struct = sample.hydratedStruct
+      val getEntityIdForPath = sample::getEntityIdForPath
+
+      val result = dehydrateQueryResult(queryResult, getEntityIdForPath)
+
+      result.entities shouldContainExactlyInAnyOrder sample.entityByPath.values
+    }
+  }
 }
 
 @OptIn(ExperimentalKotest::class)
@@ -172,5 +205,108 @@ private fun Struct.eligibleEntityStructPaths(): Sequence<DataConnectPath> {
 
   return walk(includeSelf = false).onEach(::updateEntityListPaths).filter(::filterEntityPaths).map {
     it.path
+  }
+}
+
+private class QueryResultArb(entityCountRange: IntRange) : Arb<QueryResultArb.Sample>() {
+
+  data class Sample(
+    val hydratedStruct: Struct,
+    val dehydratedStruct: Struct,
+    val entityByPath: Map<DataConnectPath, DehydratedQueryResult.Entity>,
+  ) {
+    fun getEntityIdForPath(path: DataConnectPath): String? = entityByPath[path]?.entityId
+
+    override fun toString(): String =
+      "QueryResultArb.Sample(" +
+        "hydratedStruct=${hydratedStruct.print().value}, " +
+        "dehydratedStruct=${dehydratedStruct.print().value}, " +
+        "entityByPath.size=${entityByPath.size}, " +
+        "entityByPath=${entityByPath.toPrintFriendlyMap().print().value})"
+  }
+
+  override fun sample(rs: RandomSource) =
+    generate(
+        rs,
+        entityCountEdgeCaseProbability = rs.random.nextFloat(),
+        dehydratedStructEdgeCaseProbability = rs.random.nextFloat(),
+        entityStructEdgeCaseProbability = rs.random.nextFloat(),
+      )
+      .asSample()
+
+  override fun edgecase(rs: RandomSource): Sample {
+    val edgeCases =
+      EdgeCase.entries.let {
+        val count = rs.random.nextInt(1..it.size)
+        it.shuffled(rs.random).take(count).toSet()
+      }
+
+    return generate(
+      rs,
+      entityCountEdgeCaseProbability = if (EdgeCase.EntityCount in edgeCases) 1.0f else 0.0f,
+      dehydratedStructEdgeCaseProbability =
+        if (EdgeCase.DehydratedStruct in edgeCases) 1.0f else 0.0f,
+      entityStructEdgeCaseProbability = if (EdgeCase.EntityStruct in edgeCases) 1.0f else 0.0f,
+    )
+  }
+
+  private enum class EdgeCase {
+    EntityCount,
+    DehydratedStruct,
+    EntityStruct,
+  }
+
+  private val entityCountArb =
+    Arb.int(
+      entityCountRange.also {
+        require(!it.isEmpty()) { "entityCountRange is empty: $it" }
+        require(it.first >= 0) {
+          "entityCountRange.first is ${it.first}, but is must be greater than or equal to zero " +
+            "(entityCountRange=$it)"
+        }
+      }
+    )
+
+  private val structKeyArb = Arb.proto.structKey()
+  private val structArb = Arb.proto.struct(key = structKeyArb)
+
+  private fun generate(
+    rs: RandomSource,
+    entityCountEdgeCaseProbability: Float,
+    dehydratedStructEdgeCaseProbability: Float,
+    entityStructEdgeCaseProbability: Float,
+  ): Sample {
+    val entityCount = entityCountArb.next(rs, entityCountEdgeCaseProbability)
+    check(entityCount >= 0)
+
+    val dehydratedStruct = structArb.next(rs, dehydratedStructEdgeCaseProbability).struct
+
+    val entityByPath: Map<DataConnectPath, DehydratedQueryResult.Entity>
+    val hydratedStruct =
+      dehydratedStruct.toBuilder().let { hydratedStructBuilder ->
+        val entityIdArb = structKeyArb.distinct()
+        val entityByPathBuilder = mutableMapOf<DataConnectPath, DehydratedQueryResult.Entity>()
+
+        repeat(entityCount) {
+          val entityStruct = structArb.next(rs, entityStructEdgeCaseProbability).struct
+          val entityId = entityIdArb.sample(rs).value
+          val entityPath =
+            hydratedStructBuilder.randomlyInsertStruct(
+              entityStruct,
+              rs.random,
+              generateKey = { structKeyArb.sample(rs).value }
+            )
+          entityByPathBuilder[entityPath] = DehydratedQueryResult.Entity(entityId, entityStruct)
+        }
+
+        entityByPath = entityByPathBuilder.toMap()
+        hydratedStructBuilder.build()
+      }
+
+    return Sample(
+      hydratedStruct = hydratedStruct,
+      dehydratedStruct = dehydratedStruct,
+      entityByPath = entityByPath,
+    )
   }
 }
