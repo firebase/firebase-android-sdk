@@ -142,7 +142,19 @@ class QueryResultDehydratorUnitTest {
   }
 
   @Test
-  fun `dehydrateQueryResult() returns the dehydrated struct`() = runTest {
+  fun `dehydrateQueryResult() returns the correct entities`() = runTest {
+    checkAll(propTestConfig, QueryResultArb(entityCountRange = 1..10)) { sample ->
+      val queryResult: Struct = sample.hydratedStruct
+      val getEntityIdForPath = sample::getEntityIdForPath
+
+      val result = dehydrateQueryResult(queryResult, getEntityIdForPath)
+
+      result.entities shouldContainExactlyInAnyOrder sample.entityByPath.values
+    }
+  }
+
+  @Test
+  fun `dehydrateQueryResult() returns the correct proto struct`() = runTest {
     checkAll(propTestConfig, QueryResultArb(entityCountRange = 1..10)) { sample ->
       val queryResult: Struct = sample.hydratedStruct
       val getEntityIdForPath = sample::getEntityIdForPath
@@ -154,14 +166,26 @@ class QueryResultDehydratorUnitTest {
   }
 
   @Test
-  fun `dehydrateQueryResult() returns the entities`() = runTest {
+  fun `dehydrateQueryResult() returns the correct proto entities`() = runTest {
     checkAll(propTestConfig, QueryResultArb(entityCountRange = 1..10)) { sample ->
       val queryResult: Struct = sample.hydratedStruct
       val getEntityIdForPath = sample::getEntityIdForPath
 
       val result = dehydrateQueryResult(queryResult, getEntityIdForPath)
 
-      result.entities shouldContainExactlyInAnyOrder sample.entityByPath.values
+      TODO("validate result.proto.entitiesList")
+    }
+  }
+
+  @Test
+  fun `dehydrateQueryResult() handles entity lists correctly`() = runTest {
+    checkAll(propTestConfig, QueryResultArb(entityCountRange = 1..10)) { sample ->
+      val queryResult: Struct = sample.hydratedStruct
+      val getEntityIdForPath = sample::getEntityIdForPath
+
+      val result = dehydrateQueryResult(queryResult, getEntityIdForPath)
+
+      TODO("validate result.proto.entitiesList prunes lists of entities")
     }
   }
 }
