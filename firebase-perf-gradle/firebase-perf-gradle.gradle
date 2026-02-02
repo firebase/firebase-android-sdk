@@ -173,8 +173,7 @@ test {
 }
 
 task functionalTest(type: Test) {
-  sourceCompatibility = JavaVersion.VERSION_1_8
-  targetCompatibility = JavaVersion.VERSION_1_8
+  maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
   testClassesDirs = sourceSets.functionalTest.output.classesDirs
   classpath = sourceSets.functionalTest.runtimeClasspath
   testLogging.showExceptions = true
@@ -191,4 +190,10 @@ task functionalTest(type: Test) {
 
 tasks.withType(ValidatePlugins).configureEach {
   enableStricterValidation = true
+}
+
+afterEvaluate {
+  tasks.named("deviceCheck") {
+    dependsOn(functionalTest)
+  }
 }
