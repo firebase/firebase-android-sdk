@@ -235,7 +235,7 @@ abstract class MakeReleaseNotesTask : DefaultTask() {
      *
      * Groups:
      * 1. The product name (e.g., `app-check`)
-     * 2. The character following the closing bracket
+     * 2. The character following the closing bracket (or an empty string if at the end of the line)
      */
     private val PRODUCT_REF_REGEX = Regex("\\[([\\w-]+)\\]([^(]|$)", RegexOption.MULTILINE)
   }
