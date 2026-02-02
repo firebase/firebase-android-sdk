@@ -192,3 +192,5 @@ class PrintFriendlyDataConnectPath(val path: DataConnectPath) :
   override fun compareTo(other: PrintFriendlyDataConnectPath): Int =
     DataConnectPathComparator.compare(path, other.path)
 }
+
+fun DataConnectPath.toPrintable(): PrintFriendlyDataConnectPath = PrintFriendlyDataConnectPath(this)

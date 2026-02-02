@@ -14,21 +14,37 @@
  * limitations under the License.
  */
 
+@file:OptIn(DelicateKotest::class)
+
 package com.google.firebase.dataconnect.sqlite
 
+import com.google.firebase.dataconnect.DataConnectPathSegment
+import com.google.firebase.dataconnect.testutil.DataConnectPath
+import com.google.firebase.dataconnect.testutil.DataConnectPathValuePair
+import com.google.firebase.dataconnect.testutil.isListValue
+import com.google.firebase.dataconnect.testutil.isStructValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
+import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
 import com.google.firebase.dataconnect.testutil.registerDataConnectKotestPrinters
+import com.google.firebase.dataconnect.testutil.toPrintable
+import com.google.firebase.dataconnect.testutil.walk
 import com.google.protobuf.Struct
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
+import io.kotest.common.DelicateKotest
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldBeUnique
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
 import io.kotest.property.ShrinkingMode
+import io.kotest.property.arbitrary.distinct
+import io.kotest.property.arbitrary.double
+import io.kotest.property.arbitrary.orNull
 import io.kotest.property.checkAll
 import io.mockk.every
 import io.mockk.mockk
@@ -50,7 +66,7 @@ class QueryResultDehydratorUnitTest {
 
       val result = dehydrateQueryResult(struct)
 
-      result.shouldHaveStructAndEmptyEntities(struct)
+      result.shouldHaveEmptyEntitiesAndStruct(struct)
     }
   }
 
@@ -61,7 +77,7 @@ class QueryResultDehydratorUnitTest {
 
       val result = dehydrateQueryResult(struct, null)
 
-      result.shouldHaveStructAndEmptyEntities(struct)
+      result.shouldHaveEmptyEntitiesAndStruct(struct)
     }
   }
 
@@ -75,9 +91,46 @@ class QueryResultDehydratorUnitTest {
 
         val result = dehydrateQueryResult(struct, getEntityIdForPath)
 
-        result.shouldHaveStructAndEmptyEntities(struct)
+        result.shouldHaveEmptyEntitiesAndStruct(struct)
       }
     }
+
+  @Test
+  fun `dehydrateQueryResult() calls getEntityIdForPath at most once for each path`() = runTest {
+    checkAll(propTestConfig, Arb.proto.struct(), Arb.double(0.0..1.0)) {
+      structSample,
+      nullProbability ->
+      val entityIdArb = Arb.proto.structKey().distinct().orNull(nullProbability)
+      val struct: Struct = structSample.struct
+      val getEntityIdForPath: GetEntityIdForPathFunction = mockk()
+      val capturedPaths = mutableListOf<DataConnectPath>()
+      every { getEntityIdForPath(capture(capturedPaths)) } answers { entityIdArb.bind() }
+
+      dehydrateQueryResult(struct, getEntityIdForPath)
+
+      capturedPaths.shouldBeUnique()
+    }
+  }
+
+  @Test
+  fun `dehydrateQueryResult() calls getEntityIdForPath for each eligible entity`() = runTest {
+    checkAll(propTestConfig, Arb.proto.struct(), Arb.double(0.0..1.0)) {
+      structSample,
+      nullProbability ->
+      val entityIdArb = Arb.proto.structKey().distinct().orNull(nullProbability)
+      val struct: Struct = structSample.struct
+      val getEntityIdForPath: GetEntityIdForPathFunction = mockk()
+      val capturedPaths = mutableListOf<DataConnectPath>()
+      every { getEntityIdForPath(capture(capturedPaths)) } answers { entityIdArb.bind() }
+
+      dehydrateQueryResult(struct, getEntityIdForPath)
+
+      val expectedCapturedPaths =
+        struct.eligibleEntityStructPaths().map { it.toPrintable() }.toSet()
+      val actualCapturedPaths = capturedPaths.map { it.toPrintable() }.toSet()
+      actualCapturedPaths shouldContainExactlyInAnyOrder expectedCapturedPaths
+    }
+  }
 }
 
 @OptIn(ExperimentalKotest::class)
@@ -88,10 +141,36 @@ private val propTestConfig =
     shrinkingMode = ShrinkingMode.Off,
   )
 
-private fun DehydratedQueryResult.shouldHaveStructAndEmptyEntities(expectedStruct: Struct) {
+private fun DehydratedQueryResult.shouldHaveEmptyEntitiesAndStruct(expectedStruct: Struct) {
   assertSoftly {
     withClue("proto.struct") { proto.struct shouldBeSameInstanceAs expectedStruct }
     withClue("proto.entitiesList") { proto.entitiesList.shouldBeEmpty() }
     withClue("entities") { entities.shouldBeEmpty() }
+  }
+}
+
+private fun Struct.eligibleEntityStructPaths(): Sequence<DataConnectPath> {
+  val entityListPaths = mutableSetOf<DataConnectPath>()
+
+  fun updateEntityListPaths(pair: DataConnectPathValuePair) {
+    val (path, value) = pair
+    if (value.isListValue) {
+      val containsOnlyStructs = value.listValue.valuesList.all { it.isStructValue }
+      if (containsOnlyStructs) {
+        entityListPaths.add(path)
+      }
+    }
+  }
+
+  fun filterEntityPaths(pair: DataConnectPathValuePair): Boolean {
+    val (path, value) = pair
+    return when (path.last()) {
+      is DataConnectPathSegment.Field -> value.isStructValue
+      is DataConnectPathSegment.ListIndex -> path.dropLast(1) in entityListPaths
+    }
+  }
+
+  return walk(includeSelf = false).onEach(::updateEntityListPaths).filter(::filterEntityPaths).map {
+    it.path
   }
 }
