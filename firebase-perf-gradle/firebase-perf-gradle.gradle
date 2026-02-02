@@ -97,7 +97,9 @@ dependencies {
   functionalTestRuntimeOnly(files(createClasspathManifest))
   functionalTestImplementation(gradleTestKit())
   functionalTestImplementation("org.ow2.asm:asm:$project.asmApiVersion")
-  functionalTestImplementation("com.android.tools.build:gradle:3.4.1")
+  functionalTestImplementation("com.android.tools.build:gradle:7.2.0")
+  functionalTestImplementation("com.android.tools:common:30.0.0")
+  functionalTestImplementation("com.android.tools:sdk-common:30.0.0")
   functionalTestImplementation("commons-io:commons-io:2.6")
   functionalTestImplementation(platform("org.junit:junit-bom:5.10.0"))
   functionalTestImplementation("org.junit.jupiter:junit-jupiter-api:5.10.0")
@@ -109,6 +111,7 @@ dependencies {
   functionalTestImplementation("com.google.android:android:4.1.1.4")
   functionalTestImplementation("com.squareup.okhttp3:okhttp:4.8.1")
   functionalTestImplementation("com.google.code.gson:gson:2.10.1")
+  functionalTestImplementation("com.google.guava:guava:30.1-jre")
   functionalTestImplementation("io.ktor:ktor-client-apache:1.4.0")
 }
 
@@ -166,16 +169,7 @@ publishing {
 }
 
 test {
-  testLogging.showExceptions = true
   useJUnitPlatform()
-  filter {
-    if (project.hasProperty('include-tests')) {
-      includeTestsMatching project.properties['include-tests']
-    }
-    if (project.hasProperty('exclude-tests')) {
-      excludeTestsMatching project.properties['exclude-tests']
-    }
-  }
 }
 
 task functionalTest(type: Test) {
