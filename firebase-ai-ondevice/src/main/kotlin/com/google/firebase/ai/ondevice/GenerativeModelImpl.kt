@@ -18,9 +18,9 @@ package com.google.firebase.ai.ondevice
 
 import com.google.firebase.ai.ondevice.interop.CountTokensResponse
 import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceException
+import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceInvalidRequestException
 import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceNotAvailableException
 import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceUnknownException
-import com.google.firebase.ai.ondevice.interop.FirebaseAiOnDeviceInvalidRequestException
 import com.google.firebase.ai.ondevice.interop.GenerateContentRequest
 import com.google.firebase.ai.ondevice.interop.GenerateContentResponse
 import com.google.firebase.ai.ondevice.interop.GenerativeModel
@@ -92,18 +92,23 @@ internal class GenerativeModelImpl(
    *
    * @param e The exception thrown by the MLKit SDK.
    */
-  private fun getMappingException(e: Throwable): Exception {
-    if (e !is GenAiException) throw FirebaseAIOnDeviceUnknownException("Unknown exception", e)
+  private fun getMappingException(e: Throwable): FirebaseAIOnDeviceException {
+    if (e is FirebaseAIOnDeviceException) return e
+    if (e !is GenAiException) return FirebaseAIOnDeviceUnknownException("Unknown exception", e)
     return when (e.errorCode) {
       ErrorCode.REQUEST_TOO_LARGE,
       ErrorCode.REQUEST_TOO_SMALL,
-      ErrorCode.INVALID_INPUT_IMAGE -> FirebaseAiOnDeviceInvalidRequestException(e)
+      ErrorCode.INVALID_INPUT_IMAGE -> FirebaseAIOnDeviceInvalidRequestException(e)
       ErrorCode.NEEDS_SYSTEM_UPDATE,
       ErrorCode.NOT_AVAILABLE,
       ErrorCode.AICORE_INCOMPATIBLE -> FirebaseAIOnDeviceNotAvailableException(e.message ?: "", e)
       // BUSY, CANCELLED, NOT_ENOUGH_DISK_SPACE, PER_APP_BATTERY_USE_QUOTA_EXCEEDED,
       // BACKGROUND_USE_BLOCKED
-      else -> FirebaseAIOnDeviceException.from(e)
+      else ->
+        FirebaseAIOnDeviceUnknownException(
+          e.message ?: "An exception with unknown code was thrown",
+          e
+        )
     }
   }
 }

@@ -46,7 +46,7 @@ public class FirebaseAIOnDeviceNotAvailableException(message: String, cause: Thr
   FirebaseAIOnDeviceException(message, cause)
 
 /** The parameters used in the request are not valid. */
-public class FirebaseAiOnDeviceInvalidRequestException(cause: Exception? = null) :
+public class FirebaseAIOnDeviceInvalidRequestException(cause: Exception? = null) :
   FirebaseAIOnDeviceException("Invalid on-device request", cause)
 
 /** Catch all case for exceptions not explicitly expected. */

@@ -18,9 +18,9 @@ package com.google.firebase.ai.ondevice
 
 import com.google.firebase.ai.ondevice.interop.FinishReason
 import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceException
+import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceInvalidRequestException
 import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceNotAvailableException
 import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceUnknownException
-import com.google.firebase.ai.ondevice.interop.FirebaseAiOnDeviceInvalidRequestException
 import com.google.firebase.ai.ondevice.interop.GenerateContentRequest as InteropGenerateContentRequest
 import com.google.firebase.ai.ondevice.interop.TextPart as InteropTextPart
 import com.google.mlkit.genai.common.FeatureStatus
@@ -184,7 +184,7 @@ class GenerativeModelImplTest {
     // Since we are testing the exception handlers, it doesn't make much of a difference.
     val generateContentRequest = InteropGenerateContentRequest(InteropTextPart("prompt"))
     val exception =
-      shouldThrow<FirebaseAiOnDeviceInvalidRequestException> {
+      shouldThrow<FirebaseAIOnDeviceInvalidRequestException> {
         model.generateContent(generateContentRequest)
       }
 
@@ -192,7 +192,7 @@ class GenerativeModelImplTest {
   }
 
   @Test
-  fun `handleGenAiException maps NOT_AVAILABLE to NotAvailableException`() = runTest {
+  fun `getMappingException maps NOT_AVAILABLE to NotAvailableException`() = runTest {
     val genAiException = GenAiException("Not available", null, ErrorCode.NOT_AVAILABLE)
     val mlkitModel = mockk<MlKitGenerativeModel> { coEvery { warmup() } throws genAiException }
     val model = GenerativeModelImpl(mlkitModel)

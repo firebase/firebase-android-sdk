@@ -19,7 +19,7 @@ package com.google.firebase.ai.ondevice
 import com.google.firebase.ai.ondevice.interop.Candidate
 import com.google.firebase.ai.ondevice.interop.CountTokensResponse
 import com.google.firebase.ai.ondevice.interop.FinishReason
-import com.google.firebase.ai.ondevice.interop.FirebaseAiOnDeviceInvalidRequestException
+import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceInvalidRequestException
 import com.google.firebase.ai.ondevice.interop.GenerateContentResponse
 import com.google.mlkit.genai.prompt.GenerateContentRequest
 import com.google.mlkit.genai.prompt.ImagePart
@@ -66,7 +66,7 @@ internal fun com.google.firebase.ai.ondevice.interop.GenerateContentRequest.toMl
       seed = this@toMlKit.seed
     }
   } catch (e: IllegalArgumentException) {
-    throw FirebaseAiOnDeviceInvalidRequestException(e)
+    throw FirebaseAIOnDeviceInvalidRequestException(e)
   }
 }
 
