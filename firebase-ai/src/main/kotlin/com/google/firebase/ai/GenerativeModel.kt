@@ -71,6 +71,7 @@ internal constructor(
   private val toolConfig: ToolConfig? = null,
   private val systemInstruction: Content? = null,
   private val generativeBackend: GenerativeBackend = GenerativeBackend.googleAI(),
+  private val onDeviceFactoryProvider: FirebaseAIOnDeviceGenerativeModelFactory? = null,
   private val onDeviceConfig: OnDeviceConfig,
   internal val controller: APIController,
 ) {
@@ -98,6 +99,7 @@ internal constructor(
     toolConfig = toolConfig,
     systemInstruction = systemInstruction,
     generativeBackend = generativeBackend,
+    onDeviceFactoryProvider = onDeviceFactoryProvider,
     onDeviceConfig = onDeviceConfig,
     controller =
       APIController(
@@ -110,7 +112,7 @@ internal constructor(
           TAG,
           useLimitedUseAppCheckTokens,
           appCheckTokenProvider,
-          internalAuthProvider
+          internalAuthProvider,
         ),
       ),
   )

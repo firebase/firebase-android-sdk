@@ -82,7 +82,8 @@ internal constructor(
       tools,
       toolConfig,
       systemInstruction,
-      requestOptions
+      requestOptions,
+      OnDeviceConfig.IN_CLOUD
     )
 
   /**
@@ -141,6 +142,7 @@ internal constructor(
       generativeBackend = backend,
       appCheckTokenProvider = appCheckProvider.get(),
       internalAuthProvider = internalAuthProvider.get(),
+      onDeviceFactoryProvider = onDeviceFactoryProvider.get()
     )
   }
 

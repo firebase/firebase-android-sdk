@@ -104,10 +104,10 @@ public class JavaCompileTests {
             "fake-model-name",
             getGenerationConfig(),
             /* safetySettings */ null,
-            /* requestOptions */ null,
             /* tools */ null,
             /* toolConfig */ null,
             /* systemInstruction */ null,
+            /* requestOptions */ null,
             new OnDeviceConfig(InferenceMode.ONLY_ON_DEVICE, /* maxOutputTokens */ 500));
     LiveGenerativeModel live = vertex.liveModel("fake-model-name", getLiveConfig());
     GenerativeModelFutures futures = GenerativeModelFutures.from(model);
