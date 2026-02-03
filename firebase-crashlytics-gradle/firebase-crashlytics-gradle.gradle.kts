@@ -18,9 +18,16 @@ plugins {
   id("kotlin")
   `java-gradle-plugin`
   id("maven-publish")
+  idea
 }
 
 kotlin { jvmToolchain(17) }
+
+val functionalTestSourceSet =
+  sourceSets.create("functionalTest") {
+    compileClasspath += sourceSets.main.get().output
+    runtimeClasspath += sourceSets.main.get().output
+  }
 
 gradlePlugin {
   plugins {
@@ -30,16 +37,17 @@ gradlePlugin {
       implementationClass = "com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsPlugin"
     }
   }
+  testSourceSets(functionalTestSourceSet)
+}
+
+idea {
+  module {
+    testSources.from(functionalTestSourceSet.allSource.srcDirs)
+    testResources.from(functionalTestSourceSet.resources.srcDirs)
+  }
 }
 
 java { withSourcesJar() }
-
-tasks {
-  // Include source (and KDoc) for only the Crashlytics extension.
-  named<Jar>("sourcesJar") {
-    include("com/google/firebase/crashlytics/buildtools/gradle/CrashlyticsExtension.kt")
-  }
-}
 
 publishing {
   publications.withType(MavenPublication::class.java).configureEach {
@@ -50,12 +58,6 @@ publishing {
           url.set("http://www.apache.org/licenses/LICENSE-2.0.txt")
         }
       }
-    }
-  }
-  publications {
-    create<MavenPublication>("pluginMaven") {
-      val artifactId: String by project
-      this.artifactId = artifactId
     }
   }
 }
@@ -69,23 +71,24 @@ tasks {
   }
 }
 
-tasks { validatePlugins { enableStricterValidation.set(true) } }
-
-dependencies {
-  compileOnly("com.android.tools.build:gradle-api:8.1.4")
-  compileOnly("com.google.gms:google-services:4.4.1")
-  implementation(gradleKotlinDsl())
-  implementation(project(":firebase-crashlytics-buildtools"))
-
-  testImplementation("com.android.tools.build:gradle-api:8.1.4")
-  testImplementation("com.google.truth:truth:1.1.4")
-  testImplementation(platform("org.junit:junit-bom:5.10.0"))
-  testImplementation("org.junit.jupiter:junit-jupiter")
-  testImplementation(gradleTestKit())
-}
+val functionalTestImplementation: Configuration by
+configurations.getting { extendsFrom(configurations.testImplementation.get()) }
 
 tasks {
+  validatePlugins { enableStricterValidation.set(true) }
+
   test {
+    testLogging.showExceptions = true
+    useJUnitPlatform()
+  }
+
+  val functionalTest by
+  registering(Test::class) {
+    description = "Runs the functional tests."
+    group = "verification"
+    testClassesDirs = functionalTestSourceSet.output.classesDirs
+    classpath = functionalTestSourceSet.runtimeClasspath
+
     testLogging.showExceptions = true
     useJUnitPlatform()
 
@@ -99,4 +102,21 @@ tasks {
       systemProperty("crashlytics.maven.artifacts.path", it)
     }
   }
+
+  check { dependsOn(functionalTest) }
+}
+
+dependencies {
+  compileOnly("com.android.tools.build:gradle-api:8.1.4")
+  compileOnly("com.google.gms:google-services:4.4.1")
+  implementation(gradleKotlinDsl())
+  implementation(project(":firebase-crashlytics-buildtools"))
+
+  testImplementation("com.android.tools.build:gradle:8.1.4")
+  testImplementation("com.android.tools.build:gradle-api:8.1.4")
+  testImplementation("com.google.truth:truth:1.1.4")
+  testImplementation(platform("org.junit:junit-bom:5.10.0"))
+  testImplementation("org.junit.jupiter:junit-jupiter")
+
+  functionalTestImplementation(gradleTestKit())
 }
