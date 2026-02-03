@@ -16,6 +16,9 @@
 
 package com.google.firebase.dataconnect
 
+import google.firebase.dataconnect.proto.kotlinsdk.EntityPath as EntityPathProto
+import google.firebase.dataconnect.proto.kotlinsdk.FieldOrListIndex as FieldOrListIndexProto
+
 /** The "segment" of a path to a field in the response data. */
 public sealed interface DataConnectPathSegment {
 
@@ -161,3 +164,31 @@ internal object DataConnectPathSegmentComparator : Comparator<DataConnectPathSeg
         }
     }
 }
+
+internal fun DataConnectPath.toEntityPathProto(): EntityPathProto {
+  val builder = EntityPathProto.newBuilder()
+  forEach { pathSegment -> builder.addSegments(pathSegment.toFieldOrListIndexProto()) }
+  return builder.build()
+}
+
+internal fun EntityPathProto.toDataConnectPath(): DataConnectPath =
+  List(segmentsCount) { getSegments(it).toDataConnectPathSegment() }
+
+internal fun DataConnectPathSegment.toFieldOrListIndexProto(): FieldOrListIndexProto {
+  val builder = FieldOrListIndexProto.newBuilder()
+  when (this) {
+    is DataConnectPathSegment.Field -> builder.setField(field)
+    is DataConnectPathSegment.ListIndex -> builder.setListIndex(index)
+  }
+  return builder.build()
+}
+
+internal fun FieldOrListIndexProto.toDataConnectPathSegment(): DataConnectPathSegment =
+  when (kindCase) {
+    FieldOrListIndexProto.KindCase.FIELD -> DataConnectPathSegment.Field(field)
+    FieldOrListIndexProto.KindCase.LIST_INDEX -> DataConnectPathSegment.ListIndex(listIndex)
+    FieldOrListIndexProto.KindCase.KIND_NOT_SET ->
+      throw IllegalArgumentException(
+        "KIND_NOT_SET cannot be converted to DataConnectPathSegment [dp2pgjhkh3]"
+      )
+  }

@@ -23,6 +23,7 @@ import com.google.firebase.dataconnect.testutil.DataConnectPath
 import com.google.firebase.dataconnect.testutil.DataConnectPathValuePair
 import com.google.firebase.dataconnect.testutil.isListValue
 import com.google.firebase.dataconnect.testutil.isStructValue
+import com.google.firebase.dataconnect.testutil.property.arbitrary.ProtoArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.next
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
@@ -33,7 +34,11 @@ import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.testutil.toPrintFriendlyMap
 import com.google.firebase.dataconnect.testutil.toPrintable
 import com.google.firebase.dataconnect.testutil.walk
+import com.google.firebase.dataconnect.toEntityPathProto
 import com.google.protobuf.Struct
+import google.firebase.dataconnect.proto.kotlinsdk.Entity as EntityProto
+import google.firebase.dataconnect.proto.kotlinsdk.EntityOrEntityList as EntityOrEntityListProto
+import google.firebase.dataconnect.proto.kotlinsdk.QueryResult as QueryResultProto
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.print.print
 import io.kotest.assertions.withClue
@@ -161,7 +166,7 @@ class QueryResultDehydratorUnitTest {
 
       val result = dehydrateQueryResult(queryResult, getEntityIdForPath)
 
-      result.proto.struct shouldBe sample.dehydratedStruct
+      result.proto.struct shouldBe sample.queryResultProto.struct
     }
   }
 
@@ -173,7 +178,7 @@ class QueryResultDehydratorUnitTest {
 
       val result = dehydrateQueryResult(queryResult, getEntityIdForPath)
 
-      TODO("validate result.proto.entitiesList")
+      result.proto.entitiesList shouldContainExactlyInAnyOrder sample.queryResultProto.entitiesList
     }
   }
 
@@ -232,21 +237,25 @@ private fun Struct.eligibleEntityStructPaths(): Sequence<DataConnectPath> {
   }
 }
 
-private class QueryResultArb(entityCountRange: IntRange) : Arb<QueryResultArb.Sample>() {
+private class QueryResultArb(
+  entityCountRange: IntRange,
+  private val structKeyArb: Arb<String> = Arb.proto.structKey(length = 4),
+  private val structArb: Arb<ProtoArb.StructInfo> = Arb.proto.struct(key = structKeyArb),
+) : Arb<QueryResultArb.Sample>() {
 
   data class Sample(
     val hydratedStruct: Struct,
-    val dehydratedStruct: Struct,
     val entityByPath: Map<DataConnectPath, DehydratedQueryResult.Entity>,
+    val queryResultProto: QueryResultProto,
   ) {
     fun getEntityIdForPath(path: DataConnectPath): String? = entityByPath[path]?.entityId
 
     override fun toString(): String =
       "QueryResultArb.Sample(" +
         "hydratedStruct=${hydratedStruct.print().value}, " +
-        "dehydratedStruct=${dehydratedStruct.print().value}, " +
         "entityByPath.size=${entityByPath.size}, " +
-        "entityByPath=${entityByPath.toPrintFriendlyMap().print().value})"
+        "entityByPath=${entityByPath.toPrintFriendlyMap().print().value}, " +
+        "queryResultProto=${queryResultProto.print().value})"
   }
 
   override fun sample(rs: RandomSource) =
@@ -291,9 +300,6 @@ private class QueryResultArb(entityCountRange: IntRange) : Arb<QueryResultArb.Sa
       }
     )
 
-  private val structKeyArb = Arb.proto.structKey()
-  private val structArb = Arb.proto.struct(key = structKeyArb)
-
   private fun generate(
     rs: RandomSource,
     entityCountEdgeCaseProbability: Float,
@@ -306,31 +312,50 @@ private class QueryResultArb(entityCountRange: IntRange) : Arb<QueryResultArb.Sa
     val dehydratedStruct = structArb.next(rs, dehydratedStructEdgeCaseProbability).struct
 
     val entityByPath: Map<DataConnectPath, DehydratedQueryResult.Entity>
-    val hydratedStruct =
-      dehydratedStruct.toBuilder().let { hydratedStructBuilder ->
-        val entityIdArb = structKeyArb.distinct()
-        val entityByPathBuilder = mutableMapOf<DataConnectPath, DehydratedQueryResult.Entity>()
+    val queryResultProto: QueryResultProto
+    val hydratedStruct: Struct
 
-        repeat(entityCount) {
-          val entityStruct = structArb.next(rs, entityStructEdgeCaseProbability).struct
-          val entityId = entityIdArb.sample(rs).value
-          val entityPath =
-            hydratedStructBuilder.randomlyInsertStruct(
-              entityStruct,
-              rs.random,
-              generateKey = { structKeyArb.sample(rs).value }
-            )
-          entityByPathBuilder[entityPath] = DehydratedQueryResult.Entity(entityId, entityStruct)
-        }
+    dehydratedStruct.toBuilder().let { hydratedStructBuilder ->
+      val entityIdArb = structKeyArb.distinct()
+      val entityByPathBuilder = mutableMapOf<DataConnectPath, DehydratedQueryResult.Entity>()
+      val queryResultProtoBuilder = QueryResultProto.newBuilder()
+      queryResultProtoBuilder.setStruct(dehydratedStruct)
 
-        entityByPath = entityByPathBuilder.toMap()
-        hydratedStructBuilder.build()
+      repeat(entityCount) {
+        val entityStruct = structArb.next(rs, entityStructEdgeCaseProbability).struct
+        val entityId = entityIdArb.sample(rs).value
+        val entityPath =
+          hydratedStructBuilder.randomlyInsertStruct(
+            entityStruct,
+            rs.random,
+            generateKey = { structKeyArb.sample(rs).value }
+          )
+
+        entityByPathBuilder[entityPath] = DehydratedQueryResult.Entity(entityId, entityStruct)
+
+        val entityProto =
+          EntityProto.newBuilder().let { entityProtoBuilder ->
+            entityProtoBuilder.setEntityId(entityId)
+            entityProtoBuilder.addAllFields(entityStruct.fieldsMap.keys)
+            entityProtoBuilder.build()
+          }
+        queryResultProtoBuilder.addEntities(
+          EntityOrEntityListProto.newBuilder()
+            .setEntity(entityProto)
+            .setPath(entityPath.toEntityPathProto())
+            .build()
+        )
       }
+
+      entityByPath = entityByPathBuilder.toMap()
+      queryResultProto = queryResultProtoBuilder.build()
+      hydratedStruct = hydratedStructBuilder.build()
+    }
 
     return Sample(
       hydratedStruct = hydratedStruct,
-      dehydratedStruct = dehydratedStruct,
       entityByPath = entityByPath,
+      queryResultProto = queryResultProto,
     )
   }
 }

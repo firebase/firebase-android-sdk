@@ -18,12 +18,17 @@
 
 package com.google.firebase.dataconnect
 
+import com.google.firebase.dataconnect.testutil.fieldOrThrow
+import com.google.firebase.dataconnect.testutil.listIndexOrThrow
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.dataConnectPath as dataConnectPathArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.fieldPathSegment as fieldPathSegmentArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.listIndexPathSegment as listIndexPathSegmentArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.pathSegment as dataConnectPathSegmentArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.twoValues
+import com.google.firebase.dataconnect.testutil.registerDataConnectKotestPrinters
+import google.firebase.dataconnect.proto.kotlinsdk.EntityPath as EntityPathProto
+import google.firebase.dataconnect.proto.kotlinsdk.FieldOrListIndex as FieldOrListIndexProto
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
@@ -47,6 +52,7 @@ import io.kotest.property.arbitrary.string
 import io.kotest.property.assume
 import io.kotest.property.checkAll
 import kotlinx.coroutines.test.runTest
+import org.junit.Before
 import org.junit.Test
 
 private val propTestConfig =
@@ -54,6 +60,11 @@ private val propTestConfig =
 
 /** Unit tests for [DataConnectPathSegment.Field] */
 class DataConnectPathSegmentFieldUnitTest {
+
+  @Before
+  fun registerPrinters() {
+    registerDataConnectKotestPrinters()
+  }
 
   @Test
   fun `constructor should set field property`() = runTest {
@@ -144,6 +155,11 @@ class DataConnectPathSegmentFieldUnitTest {
 
 /** Unit tests for [DataConnectPathSegment.ListIndex] */
 class DataConnectPathSegmentListIndexUnitTest {
+
+  @Before
+  fun registerPrinters() {
+    registerDataConnectKotestPrinters()
+  }
 
   @Test
   fun `constructor should set index property`() = runTest {
@@ -240,6 +256,11 @@ class DataConnectPathSegmentListIndexUnitTest {
 
 /** Unit tests for extension functions of [DataConnectPathSegment] */
 class DataConnectPathSegmentExtensionFunctionsUnitTest {
+
+  @Before
+  fun registerPrinters() {
+    registerDataConnectKotestPrinters()
+  }
 
   @Test
   fun `toPathString on empty path`() {
@@ -583,10 +604,124 @@ class DataConnectPathSegmentExtensionFunctionsUnitTest {
 
     path1 shouldNotBeSameInstanceAs path2
   }
+
+  @Test
+  fun `toEntityPathProto() on empty path`() {
+    val entityPathProto = emptyDataConnectPath().toEntityPathProto()
+
+    entityPathProto shouldBe EntityPathProto.getDefaultInstance()
+  }
+
+  @Test
+  fun `toEntityPathProto() on a path of fields`() = runTest {
+    checkAll(propTestConfig, Arb.list(fieldPathSegmentArb(), 1..5)) { pathSegments ->
+      val entityPathProto = pathSegments.toEntityPathProto()
+
+      val expectedEntityPathProto =
+        EntityPathProto.newBuilder()
+          .addAllSegments(
+            pathSegments.map { FieldOrListIndexProto.newBuilder().setField(it.field).build() }
+          )
+          .build()
+      entityPathProto shouldBe expectedEntityPathProto
+    }
+  }
+
+  @Test
+  fun `toEntityPathProto() on a path of list indices`() = runTest {
+    checkAll(propTestConfig, Arb.list(listIndexPathSegmentArb(), 1..5)) { pathSegments ->
+      val entityPathProto = pathSegments.toEntityPathProto()
+
+      val expectedEntityPathProto =
+        EntityPathProto.newBuilder()
+          .addAllSegments(
+            pathSegments.map { FieldOrListIndexProto.newBuilder().setListIndex(it.index).build() }
+          )
+          .build()
+      entityPathProto shouldBe expectedEntityPathProto
+    }
+  }
+
+  @Test
+  fun `toEntityPathProto() on alternating fields and list indices`() = runTest {
+    val pairArb = Arb.pair(fieldPathSegmentArb(), listIndexPathSegmentArb())
+    checkAll(propTestConfig, Arb.list(pairArb, 1..5)) { pathSegmentPairs ->
+      val pathSegments = pathSegmentPairs.flatMap { it.toList() }
+
+      val entityPathProto = pathSegments.toEntityPathProto()
+
+      val expectedEntityPathProto =
+        EntityPathProto.newBuilder()
+          .addAllSegments(
+            pathSegments.mapIndexed { index, pathSegment ->
+              FieldOrListIndexProto.newBuilder()
+                .let {
+                  if (index % 2 == 0) {
+                    it.setField(pathSegment.fieldOrThrow())
+                  } else {
+                    it.setListIndex(pathSegment.listIndexOrThrow())
+                  }
+                }
+                .build()
+            }
+          )
+          .build()
+      entityPathProto shouldBe expectedEntityPathProto
+    }
+  }
+
+  @Test
+  fun `EntityPathProto toDataConnectPath() returns correct path`() = runTest {
+    checkAll(propTestConfig, dataConnectPathArb()) { path ->
+      val entityPathProto = path.toEntityPathProto()
+
+      val toDataConnectPathResult = entityPathProto.toDataConnectPath()
+
+      toDataConnectPathResult shouldContainExactly path
+    }
+  }
+
+  @Test
+  fun `toFieldOrListIndexProto() on field`() = runTest {
+    checkAll(propTestConfig, fieldPathSegmentArb()) { fieldPathSegment ->
+      val fieldOrListIndexProto = fieldPathSegment.toFieldOrListIndexProto()
+
+      val expectedProto =
+        FieldOrListIndexProto.newBuilder().setField(fieldPathSegment.field).build()
+      fieldOrListIndexProto shouldBe expectedProto
+    }
+  }
+
+  @Test
+  fun `toFieldOrListIndexProto() on list index`() = runTest {
+    checkAll(propTestConfig, listIndexPathSegmentArb()) { listIndexPathSegment ->
+      val fieldOrListIndexProto = listIndexPathSegment.toFieldOrListIndexProto()
+
+      val expectedProto =
+        FieldOrListIndexProto.newBuilder().setListIndex(listIndexPathSegment.index).build()
+      fieldOrListIndexProto shouldBe expectedProto
+    }
+  }
+
+  @Test
+  fun `FieldOrListIndexProto toDataConnectPathSegment() returns correct segment`() = runTest {
+    checkAll(propTestConfig, dataConnectPathSegmentArb()) { dataConnectPathSegment ->
+      val fieldOrListIndexProto = dataConnectPathSegment.toFieldOrListIndexProto()
+
+      val toDataConnectPathSegmentResult = fieldOrListIndexProto.toDataConnectPathSegment()
+
+      toDataConnectPathSegmentResult shouldBe dataConnectPathSegment
+    }
+  }
 }
 
-/** Unit tests for extension functions of [DataConnectPathSegmentComparator] */
+/** Unit tests for [DataConnectPathSegmentComparator] */
 class DataConnectPathSegmentComparatorUnitTest {
+
+  @Before
+  fun registerPrinters() {
+    registerDataConnectKotestPrinters()
+  }
 
   @Test
   fun `compare() returns 0 for same object`() = runTest {
@@ -628,8 +763,14 @@ class DataConnectPathSegmentComparatorUnitTest {
     }
   }
 }
-/** Unit tests for extension functions of [DataConnectPathComparator] */
+
+/** Unit tests for [DataConnectPathComparator] */
 class DataConnectPathComparatorUnitTest {
+
+  @Before
+  fun registerPrinters() {
+    registerDataConnectKotestPrinters()
+  }
 
   @Test
   fun `compare() returns 0 for same object`() = runTest {

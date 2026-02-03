@@ -17,20 +17,17 @@
 package com.google.firebase.dataconnect.sqlite
 
 import com.google.firebase.dataconnect.DataConnectPath
-import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.sqlite.DehydratedQueryResult.Entity
+import com.google.firebase.dataconnect.toEntityPathProto
 import com.google.firebase.dataconnect.toPathString
 import com.google.firebase.dataconnect.util.ProtoPrune
 import com.google.firebase.dataconnect.util.ProtoPrune.withPrunedDescendants
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
-import com.google.firebase.dataconnect.util.WithPrunedDescendantsPredicate
 import com.google.firebase.dataconnect.withAddedListIndex
 import com.google.protobuf.Struct
 import google.firebase.dataconnect.proto.kotlinsdk.Entity as EntityProto
 import google.firebase.dataconnect.proto.kotlinsdk.EntityList as EntityListProto
 import google.firebase.dataconnect.proto.kotlinsdk.EntityOrEntityList as EntityOrEntityListProto
-import google.firebase.dataconnect.proto.kotlinsdk.EntityPath as EntityPathProto
-import google.firebase.dataconnect.proto.kotlinsdk.FieldOrListIndex as FieldOrListIndexProto
 import google.firebase.dataconnect.proto.kotlinsdk.QueryResult as QueryResultProto
 
 internal data class DehydratedQueryResult(
@@ -55,26 +52,28 @@ private fun QueryResultProto.Builder.initialize(
   queryResult: Struct,
   getEntityIdForPath: GetEntityIdForPathFunction?
 ): List<Entity> {
-  val (entityByPath, entityListByPath) =
-    run {
-      val pruneResult = pruneEntities(queryResult, getEntityIdForPath)
-      if (pruneResult === null) {
-        setStruct(queryResult)
-        return emptyList()
-      }
-
-      setStruct(pruneResult.prunedStruct)
-      Pair(pruneResult.entityByPath, pruneResult.entityListByPath)
+  val pruneResult =
+    if (getEntityIdForPath === null) {
+      null
+    } else {
+      pruneEntities(queryResult, EntityIdMemoizer(getEntityIdForPath))
     }
 
-  entityByPath.entries.forEach { (path, entity) ->
+  if (pruneResult === null) {
+    setStruct(queryResult)
+    return emptyList()
+  }
+
+  setStruct(pruneResult.prunedStruct)
+
+  pruneResult.entityByPath.entries.forEach { (path, entity) ->
     addEntities(entity.toEntityOrEntityListProto(path))
   }
-  entityListByPath.entries.forEach { (path, entityList) ->
+  pruneResult.entityListByPath.entries.forEach { (path, entityList) ->
     addEntities(entityList.toEntityOrEntityListProto(path))
   }
 
-  return entityByPath.values.toList()
+  return pruneResult.entityByPath.values.toList()
 }
 
 private fun Entity.toEntityOrEntityListProto(path: DataConnectPath): EntityOrEntityListProto =
@@ -86,8 +85,8 @@ private fun Entity.toEntityOrEntityListProto(path: DataConnectPath): EntityOrEnt
 
 private fun Entity.toEntityProto(): EntityProto =
   EntityProto.newBuilder().run {
-    setEntityId(entityId)
-    struct.fieldsMap.keys.forEach { fieldName -> addFields(fieldName) }
+    setEntityId(this@toEntityProto.entityId)
+    addAllFields(this@toEntityProto.struct.fieldsMap.keys)
     build()
   }
 
@@ -104,21 +103,6 @@ private fun List<Entity>.toEntityListProto(): EntityListProto =
     build()
   }
 
-private fun DataConnectPath.toEntityPathProto(): EntityPathProto {
-  val builder = EntityPathProto.newBuilder()
-  forEach { pathSegment -> builder.addSegments(pathSegment.toFieldOrListIndexProto()) }
-  return builder.build()
-}
-
-private fun DataConnectPathSegment.toFieldOrListIndexProto(): FieldOrListIndexProto {
-  val builder = FieldOrListIndexProto.newBuilder()
-  when (this) {
-    is DataConnectPathSegment.Field -> builder.setField(field)
-    is DataConnectPathSegment.ListIndex -> builder.setListIndex(index)
-  }
-  return builder.build()
-}
-
 private data class PruneEntitiesResult(
   val prunedStruct: Struct,
   val entityByPath: Map<DataConnectPath, Entity>,
@@ -127,42 +111,27 @@ private data class PruneEntitiesResult(
 
 private fun pruneEntities(
   queryResult: Struct,
-  getEntityIdForPath: GetEntityIdForPathFunction?
+  entityIdByPath: EntityIdMemoizer,
 ): PruneEntitiesResult? {
-  if (getEntityIdForPath === null) {
-    return null
-  }
-
-  val entityIdByPath = mutableMapOf<DataConnectPath, String?>()
-
-  fun getOrCalculateEntityId(path: DataConnectPath): String? =
-    if (path in entityIdByPath) {
-      entityIdByPath[path]!!
-    } else {
-      getEntityIdForPath(path).also { entityIdByPath[path] = it }
-    }
-
-  val prunePredicate: WithPrunedDescendantsPredicate = { path, listSize ->
-    if (listSize !== null) {
-      var entityCount = 0
-      var nonEntityCount = 0
-      repeat(listSize) {
-        val listElementPath = path.withAddedListIndex(it)
-        val listElementEntityId = getOrCalculateEntityId(listElementPath)
-        if (listElementEntityId !== null) {
-          entityCount++
-        } else {
-          nonEntityCount++
+  val dehydratedQueryResult =
+    queryResult.withPrunedDescendants { path, listSize ->
+      if (listSize === null) {
+        entityIdByPath.isEntity(path)
+      } else {
+        var entityCount = 0
+        var nonEntityCount = 0
+        repeat(listSize) {
+          val listElementPath = path.withAddedListIndex(it)
+          if (entityIdByPath.isEntity(listElementPath)) {
+            entityCount++
+          } else {
+            nonEntityCount++
+          }
         }
+        entityCount > 0 && nonEntityCount == 0
       }
-      entityCount > 0 && nonEntityCount == 0
-    } else {
-      val entityId = getOrCalculateEntityId(path)
-      entityId !== null
     }
-  }
 
-  val dehydratedQueryResult = queryResult.withPrunedDescendants(prunePredicate)
   if (dehydratedQueryResult === null) {
     return null
   }
@@ -177,10 +146,7 @@ private fun pruneEntities(
     dehydratedQueryResult.prunedValueByPath.entries.forEach { (path, prunedValue) ->
       when (prunedValue) {
         is ProtoPrune.PrunedStruct -> {
-          val entityId = entityIdByPath[path]
-          checkNotNull(entityId) {
-            "internal error namtm83dqx: entityIdByPath[path=${path.toPathString()}] returned null"
-          }
+          val entityId = entityIdByPath.getInitializedEntityId(path)
           val entity = Entity(entityId, prunedValue.struct)
           entityByPathBuilder[path] = entity
         }
@@ -188,11 +154,7 @@ private fun pruneEntities(
           val entities =
             prunedValue.structs.mapIndexed { index, struct ->
               val entityPath = path.withAddedListIndex(index)
-              val entityId = entityIdByPath[entityPath]
-              checkNotNull(entityId) {
-                "internal error yx2293sbrs: " +
-                  "entityIdByPath[path=${entityPath.toPathString()}] returned null"
-              }
+              val entityId = entityIdByPath.getInitializedEntityId(entityPath)
               Entity(entityId, struct)
             }
           entityListByPathBuilder[path] = entities
@@ -205,4 +167,48 @@ private fun pruneEntities(
   }
 
   return PruneEntitiesResult(dehydratedQueryResult.prunedStruct, entityByPath, entityListByPath)
+}
+
+private class EntityIdMemoizer(private val getEntityIdForPath: GetEntityIdForPathFunction) {
+
+  sealed interface EntityId {
+
+    val entityIdOrNull: String?
+
+    object NotAnEntity : EntityId {
+      override val entityIdOrNull: Nothing? = null
+    }
+
+    @JvmInline
+    value class IsAnEntity(val entityId: String) : EntityId {
+      override val entityIdOrNull: String
+        get() = entityId
+    }
+  }
+
+  private val entityIdByPath = mutableMapOf<DataConnectPath, EntityId>()
+
+  private fun ensureInitialized(path: DataConnectPath): EntityId =
+    entityIdByPath.getOrPut(path) {
+      getEntityIdForPath(path)?.let(EntityId::IsAnEntity) ?: EntityId.NotAnEntity
+    }
+
+  fun isEntity(path: DataConnectPath): Boolean =
+    when (ensureInitialized(path)) {
+      is EntityId.IsAnEntity -> true
+      EntityId.NotAnEntity -> false
+    }
+
+  fun getInitializedEntityId(path: DataConnectPath): String {
+    val memoizedValue =
+      entityIdByPath[path]
+        ?: throw IllegalArgumentException(
+          "entity ID for path=${path.toPathString()} is not initialized [d8a8k6bkzh]"
+        )
+    return when (memoizedValue) {
+      is EntityId.IsAnEntity -> memoizedValue.entityId
+      EntityId.NotAnEntity ->
+        throw IllegalArgumentException("path=${path.toPathString()} is not an entity [jserv86jpk]")
+    }
+  }
 }
