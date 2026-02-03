@@ -103,7 +103,9 @@ tasks {
       }
     }
 
-  check { dependsOn(functionalTest) }
+  afterEvaluate {
+    findByName("deviceCheck")?.dependsOn(functionalTest)
+  }
 }
 
 dependencies {
