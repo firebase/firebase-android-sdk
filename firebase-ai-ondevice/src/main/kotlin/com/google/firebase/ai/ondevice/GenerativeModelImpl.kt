@@ -18,13 +18,19 @@ package com.google.firebase.ai.ondevice
 
 import com.google.firebase.ai.ondevice.interop.CountTokensResponse
 import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceException
+import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceInvalidRequestException
+import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceNotAvailableException
+import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceUnknownException
 import com.google.firebase.ai.ondevice.interop.GenerateContentRequest
 import com.google.firebase.ai.ondevice.interop.GenerateContentResponse
 import com.google.firebase.ai.ondevice.interop.GenerativeModel
 import com.google.mlkit.genai.common.FeatureStatus
 import com.google.mlkit.genai.common.GenAiException
+import com.google.mlkit.genai.common.GenAiException.ErrorCode
 import com.google.mlkit.genai.prompt.Generation
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.map
 
 /** Implementation of [GenerativeModel] backed by MLKit's genai prompt SDK. */
 internal class GenerativeModelImpl(
@@ -38,18 +44,29 @@ internal class GenerativeModelImpl(
    */
   override suspend fun isAvailable(): Boolean = mlkitModel.checkStatus() == FeatureStatus.AVAILABLE
 
-  override suspend fun generateContent(request: GenerateContentRequest): GenerateContentResponse {
-    TODO("Not yet implemented")
-  }
+  override suspend fun generateContent(request: GenerateContentRequest): GenerateContentResponse =
+    try {
+      val response = mlkitModel.generateContent(request.toMlKit())
+      response.toInterop()
+    } catch (e: GenAiException) {
+      throw getMappingException(e)
+    }
 
-  override suspend fun countTokens(request: GenerateContentRequest): CountTokensResponse {
-    TODO("Not yet implemented")
-  }
+  override suspend fun countTokens(request: GenerateContentRequest): CountTokensResponse =
+    try {
+      val response = mlkitModel.countTokens(request.toMlKit())
+      response.toInterop()
+    } catch (e: GenAiException) {
+      throw getMappingException(e)
+    }
 
   override fun generateContentStream(
     request: GenerateContentRequest
   ): Flow<GenerateContentResponse> {
-    TODO("Not yet implemented")
+    return mlkitModel
+      .generateContentStream(request.toMlKit())
+      .catch { throw getMappingException(it) }
+      .map { it.toInterop() }
   }
 
   override suspend fun getBaseModelName(): String = mlkitModel.getBaseModelName()
@@ -57,13 +74,41 @@ internal class GenerativeModelImpl(
   override suspend fun getTokenLimit(): Int = mlkitModel.getTokenLimit()
 
   /**
-   * Invokes the MLKit `warmup()` method. Catches [GenAiException] thrown by MLKitand re-throws them
-   * as a `FirebaseAIOnDeviceException` for consistent error handling within the Firebase API.
+   * Invokes the MLKit `warmup()` method. Catches [GenAiException] thrown by MLKit and re-throws
+   * them as a [FirebaseAIOnDeviceException] for consistent error handling within the Firebase API.
    */
   override suspend fun warmup() =
     try {
       mlkitModel.warmup()
     } catch (e: GenAiException) {
-      throw FirebaseAIOnDeviceException.from(e)
+      throw getMappingException(e)
     }
+
+  /**
+   * Throws the [FirebaseAIOnDeviceException] subclass that maps to the input exception.
+   *
+   * To simplify the developer experience, this method maps [GenAiException]s into the corresponding
+   * [FirebaseAIOnDeviceException] subclasses.
+   *
+   * @param e The exception thrown by the MLKit SDK.
+   */
+  private fun getMappingException(e: Throwable): FirebaseAIOnDeviceException {
+    if (e is FirebaseAIOnDeviceException) return e
+    if (e !is GenAiException) return FirebaseAIOnDeviceUnknownException("Unknown exception", e)
+    return when (e.errorCode) {
+      ErrorCode.REQUEST_TOO_LARGE,
+      ErrorCode.REQUEST_TOO_SMALL,
+      ErrorCode.INVALID_INPUT_IMAGE -> FirebaseAIOnDeviceInvalidRequestException(e)
+      ErrorCode.NEEDS_SYSTEM_UPDATE,
+      ErrorCode.NOT_AVAILABLE,
+      ErrorCode.AICORE_INCOMPATIBLE -> FirebaseAIOnDeviceNotAvailableException(e.message ?: "", e)
+      // BUSY, CANCELLED, NOT_ENOUGH_DISK_SPACE, PER_APP_BATTERY_USE_QUOTA_EXCEEDED,
+      // BACKGROUND_USE_BLOCKED
+      else ->
+        FirebaseAIOnDeviceUnknownException(
+          e.message ?: "An exception with unknown code was thrown",
+          e
+        )
+    }
+  }
 }
