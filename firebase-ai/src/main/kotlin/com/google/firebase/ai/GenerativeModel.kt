@@ -112,7 +112,7 @@ internal constructor(
           TAG,
           useLimitedUseAppCheckTokens,
           appCheckTokenProvider,
-          internalAuthProvider,
+          internalAuthProvider
         ),
       ),
   )
