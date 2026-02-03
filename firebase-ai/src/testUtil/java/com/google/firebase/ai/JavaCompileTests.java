@@ -98,16 +98,16 @@ public class JavaCompileTests {
   public void initializeJava() throws Exception {
     OnDeviceConfig odc = OnDeviceConfig.IN_CLOUD;
     FirebaseAI vertex = FirebaseAI.getInstance();
-    GenerativeModel model = vertex.generativeModel("fake-model-name", getConfig());
+    GenerativeModel model = vertex.generativeModel("fake-model-name", getGenerationConfig());
     GenerativeModel modelOnDevice =
         vertex.generativeModel(
             "fake-model-name",
-            getConfig(),
-            null,
-            null,
-            null,
-            null,
-            null,
+            getGenerationConfig(),
+            /* safetySettings */ null,
+            /* requestOptions */ null,
+            /* tools */ null,
+            /* toolConfig */ null,
+            /* systemInstruction */ null,
             new OnDeviceConfig(InferenceMode.ONLY_ON_DEVICE, /* maxOutputTokens */ 500));
     LiveGenerativeModel live = vertex.liveModel("fake-model-name", getLiveConfig());
     GenerativeModelFutures futures = GenerativeModelFutures.from(model);
@@ -116,7 +116,7 @@ public class JavaCompileTests {
     testLiveFutures(liveFutures);
   }
 
-  private GenerationConfig getConfig() {
+  private GenerationConfig getGenerationConfig() {
     return new GenerationConfig.Builder()
         .setTopK(10)
         .setTopP(11.0F)
