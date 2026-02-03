@@ -21,6 +21,7 @@ package com.google.firebase.ai {
     method public com.google.firebase.ai.GenerativeModel generativeModel(String modelName, com.google.firebase.ai.type.GenerationConfig? generationConfig = null, java.util.List<com.google.firebase.ai.type.SafetySetting>? safetySettings = null, java.util.List<com.google.firebase.ai.type.Tool>? tools = null, com.google.firebase.ai.type.ToolConfig? toolConfig = null);
     method public com.google.firebase.ai.GenerativeModel generativeModel(String modelName, com.google.firebase.ai.type.GenerationConfig? generationConfig = null, java.util.List<com.google.firebase.ai.type.SafetySetting>? safetySettings = null, java.util.List<com.google.firebase.ai.type.Tool>? tools = null, com.google.firebase.ai.type.ToolConfig? toolConfig = null, com.google.firebase.ai.type.Content? systemInstruction = null);
     method public com.google.firebase.ai.GenerativeModel generativeModel(String modelName, com.google.firebase.ai.type.GenerationConfig? generationConfig = null, java.util.List<com.google.firebase.ai.type.SafetySetting>? safetySettings = null, java.util.List<com.google.firebase.ai.type.Tool>? tools = null, com.google.firebase.ai.type.ToolConfig? toolConfig = null, com.google.firebase.ai.type.Content? systemInstruction = null, com.google.firebase.ai.type.RequestOptions requestOptions = com.google.firebase.ai.type.RequestOptions());
+    method public com.google.firebase.ai.GenerativeModel generativeModel(String modelName, com.google.firebase.ai.type.GenerationConfig? generationConfig = null, java.util.List<com.google.firebase.ai.type.SafetySetting>? safetySettings = null, java.util.List<com.google.firebase.ai.type.Tool>? tools = null, com.google.firebase.ai.type.ToolConfig? toolConfig = null, com.google.firebase.ai.type.Content? systemInstruction = null, com.google.firebase.ai.type.RequestOptions requestOptions = com.google.firebase.ai.type.RequestOptions(), com.google.firebase.ai.OnDeviceConfig onDeviceConfig = com.google.firebase.ai.OnDeviceConfig.IN_CLOUD);
     method public static com.google.firebase.ai.FirebaseAI getInstance();
     method public static com.google.firebase.ai.FirebaseAI getInstance(com.google.firebase.ai.type.GenerativeBackend backend);
     method public static com.google.firebase.ai.FirebaseAI getInstance(com.google.firebase.ai.type.GenerativeBackend backend, boolean useLimitedUseAppCheckTokens);
@@ -85,8 +86,51 @@ package com.google.firebase.ai {
     method @com.google.firebase.ai.type.PublicPreviewAPI public suspend Object? outpaintImage(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.Dimensions newDimensions, com.google.firebase.ai.type.ImagenImagePlacement newPosition = com.google.firebase.ai.type.ImagenImagePlacement.CENTER, String prompt = "", com.google.firebase.ai.type.ImagenEditingConfig? config = null, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>>);
   }
 
+  public final class InferenceMode {
+    field public static final com.google.firebase.ai.InferenceMode.Companion Companion;
+    field public static final com.google.firebase.ai.InferenceMode ONLY_IN_CLOUD;
+    field public static final com.google.firebase.ai.InferenceMode ONLY_ON_DEVICE;
+    field public static final com.google.firebase.ai.InferenceMode PREFER_IN_CLOUD;
+    field public static final com.google.firebase.ai.InferenceMode PREFER_ON_DEVICE;
+  }
+
+  public static final class InferenceMode.Companion {
+  }
+
+  public final class InferenceSource {
+    field public static final com.google.firebase.ai.InferenceSource.Companion Companion;
+    field public static final com.google.firebase.ai.InferenceSource IN_CLOUD;
+    field public static final com.google.firebase.ai.InferenceSource ON_DEVICE;
+  }
+
+  public static final class InferenceSource.Companion {
+  }
+
   @com.google.firebase.ai.type.PublicPreviewAPI public final class LiveGenerativeModel {
     method public suspend Object? connect(kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.LiveSession>);
+  }
+
+  public final class OnDeviceConfig {
+    ctor public OnDeviceConfig(com.google.firebase.ai.InferenceMode mode);
+    ctor public OnDeviceConfig(com.google.firebase.ai.InferenceMode mode, Integer? maxOutputTokens = null);
+    ctor public OnDeviceConfig(com.google.firebase.ai.InferenceMode mode, Integer? maxOutputTokens = null, Float? temperature = null);
+    ctor public OnDeviceConfig(com.google.firebase.ai.InferenceMode mode, Integer? maxOutputTokens = null, Float? temperature = null, Integer? topK = null);
+    ctor public OnDeviceConfig(com.google.firebase.ai.InferenceMode mode, Integer? maxOutputTokens = null, Float? temperature = null, Integer? topK = null, Integer? seed = null);
+    method public Integer? getMaxOutputTokens();
+    method public com.google.firebase.ai.InferenceMode getMode();
+    method public Integer? getSeed();
+    method public Float? getTemperature();
+    method public Integer? getTopK();
+    property public final Integer? maxOutputTokens;
+    property public final com.google.firebase.ai.InferenceMode mode;
+    property public final Integer? seed;
+    property public final Float? temperature;
+    property public final Integer? topK;
+    field public static final com.google.firebase.ai.OnDeviceConfig.Companion Companion;
+    field public static final com.google.firebase.ai.OnDeviceConfig IN_CLOUD;
+  }
+
+  public static final class OnDeviceConfig.Companion {
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class TemplateGenerativeModel {
@@ -478,6 +522,7 @@ package com.google.firebase.ai.type {
     ctor public GenerateContentResponse(java.util.List<com.google.firebase.ai.type.Candidate> candidates, com.google.firebase.ai.type.PromptFeedback? promptFeedback, com.google.firebase.ai.type.UsageMetadata? usageMetadata);
     method public java.util.List<com.google.firebase.ai.type.Candidate> getCandidates();
     method public java.util.List<com.google.firebase.ai.type.FunctionCallPart> getFunctionCalls();
+    method public com.google.firebase.ai.InferenceSource getInferenceSource();
     method public java.util.List<com.google.firebase.ai.type.InlineDataPart> getInlineDataParts();
     method public com.google.firebase.ai.type.PromptFeedback? getPromptFeedback();
     method public String? getText();
@@ -485,6 +530,7 @@ package com.google.firebase.ai.type {
     method public com.google.firebase.ai.type.UsageMetadata? getUsageMetadata();
     property public final java.util.List<com.google.firebase.ai.type.Candidate> candidates;
     property public final java.util.List<com.google.firebase.ai.type.FunctionCallPart> functionCalls;
+    property public final com.google.firebase.ai.InferenceSource inferenceSource;
     property public final java.util.List<com.google.firebase.ai.type.InlineDataPart> inlineDataParts;
     property public final com.google.firebase.ai.type.PromptFeedback? promptFeedback;
     property public final String? text;
