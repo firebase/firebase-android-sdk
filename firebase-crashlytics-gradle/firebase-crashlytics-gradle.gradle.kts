@@ -72,7 +72,7 @@ tasks {
 }
 
 val functionalTestImplementation: Configuration by
-configurations.getting { extendsFrom(configurations.testImplementation.get()) }
+  configurations.getting { extendsFrom(configurations.testImplementation.get()) }
 
 tasks {
   validatePlugins { enableStricterValidation.set(true) }
@@ -83,25 +83,25 @@ tasks {
   }
 
   val functionalTest by
-  registering(Test::class) {
-    description = "Runs the functional tests."
-    group = "verification"
-    testClassesDirs = functionalTestSourceSet.output.classesDirs
-    classpath = functionalTestSourceSet.runtimeClasspath
+    registering(Test::class) {
+      description = "Runs the functional tests."
+      group = "verification"
+      testClassesDirs = functionalTestSourceSet.output.classesDirs
+      classpath = functionalTestSourceSet.runtimeClasspath
 
-    testLogging.showExceptions = true
-    useJUnitPlatform()
+      testLogging.showExceptions = true
+      useJUnitPlatform()
 
-    // Make the local published build accessible from functional tests.
-    dependsOn(":firebase-crashlytics-gradle:publishToMavenLocal")
-    dependsOn(":firebase-crashlytics-buildtools:publishToMavenLocal")
-    // Make the local published version number accessible from Kotlin code.
-    systemProperty("crashlytics.gradle.plugin.version", version)
-    // Propagate the maven artifacts path, to be used as maven local in Gradle test kit.
-    project.findProperty("maven.artifacts.path")?.let {
-      systemProperty("crashlytics.maven.artifacts.path", it)
+      // Make the local published build accessible from functional tests.
+      dependsOn(":firebase-crashlytics-gradle:publishToMavenLocal")
+      dependsOn(":firebase-crashlytics-buildtools:publishToMavenLocal")
+      // Make the local published version number accessible from Kotlin code.
+      systemProperty("crashlytics.gradle.plugin.version", version)
+      // Propagate the maven artifacts path, to be used as maven local in Gradle test kit.
+      project.findProperty("maven.artifacts.path")?.let {
+        systemProperty("crashlytics.maven.artifacts.path", it)
+      }
     }
-  }
 
   check { dependsOn(functionalTest) }
 }
