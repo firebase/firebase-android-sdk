@@ -65,7 +65,7 @@ abstract class SemVerTask @Inject constructor(private val execOperations: ExecOp
     )
 
     val string = String(stream.toByteArray())
-    val reg = Regex("(.*)\\s+error:\\s+(.*\\s+\\[(.*)\\])")
+    val reg = Regex("""(.*)\s+error:\s+(.*\s+\[(.*)\])""")
     val minorChanges = mutableListOf<String>()
     val majorChanges = mutableListOf<String>()
     for (match in reg.findAll(string)) {

@@ -221,7 +221,7 @@ abstract class MakeReleaseNotesTask : DefaultTask() {
      */
     private val LINK_REGEX =
       Regex(
-        "(?:GitHub )?(?:\\[|\\()#(\\d+)(?:\\]|\\))(?:\\(.+?\\))?(?:\\{:\\s*\\.external\\})?",
+        """(?:GitHub )?(?:\[|\()#(\d+)(?:\]|\))(?:\(.+?\))?(?:\{:\s*\.external\})?""",
         RegexOption.MULTILINE,
       )
 
