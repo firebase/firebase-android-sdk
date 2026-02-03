@@ -22,6 +22,7 @@ import com.google.firebase.ai.common.APIController
 import com.google.firebase.ai.common.AppCheckHeaderProvider
 import com.google.firebase.ai.common.CountTokensRequest
 import com.google.firebase.ai.common.GenerateContentRequest
+import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceGenerativeModelFactory
 import com.google.firebase.ai.type.AutoFunctionDeclaration
 import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.CountTokensResponse
@@ -70,6 +71,8 @@ internal constructor(
   private val toolConfig: ToolConfig? = null,
   private val systemInstruction: Content? = null,
   private val generativeBackend: GenerativeBackend = GenerativeBackend.googleAI(),
+  private val onDeviceFactoryProvider: FirebaseAIOnDeviceGenerativeModelFactory? = null,
+  private val onDeviceConfig: OnDeviceConfig,
   internal val controller: APIController,
 ) {
   internal constructor(
@@ -83,30 +86,35 @@ internal constructor(
     toolConfig: ToolConfig? = null,
     systemInstruction: Content? = null,
     requestOptions: RequestOptions = RequestOptions(),
+    onDeviceConfig: OnDeviceConfig,
     generativeBackend: GenerativeBackend,
     appCheckTokenProvider: InteropAppCheckTokenProvider? = null,
+    onDeviceFactoryProvider: FirebaseAIOnDeviceGenerativeModelFactory? = null,
     internalAuthProvider: InternalAuthProvider? = null
   ) : this(
-    modelName,
-    generationConfig,
-    safetySettings,
-    tools,
-    toolConfig,
-    systemInstruction,
-    generativeBackend,
-    APIController(
-      apiKey,
-      modelName,
-      requestOptions,
-      "gl-kotlin/${KotlinVersion.CURRENT}-ai fire/${BuildConfig.VERSION_NAME}",
-      firebaseApp,
-      AppCheckHeaderProvider(
-        TAG,
-        useLimitedUseAppCheckTokens,
-        appCheckTokenProvider,
-        internalAuthProvider
+    modelName = modelName,
+    generationConfig = generationConfig,
+    safetySettings = safetySettings,
+    tools = tools,
+    toolConfig = toolConfig,
+    systemInstruction = systemInstruction,
+    generativeBackend = generativeBackend,
+    onDeviceFactoryProvider = onDeviceFactoryProvider,
+    onDeviceConfig = onDeviceConfig,
+    controller =
+      APIController(
+        apiKey,
+        modelName,
+        requestOptions,
+        "gl-kotlin/${KotlinVersion.CURRENT}-ai fire/${BuildConfig.VERSION_NAME}",
+        firebaseApp,
+        AppCheckHeaderProvider(
+          TAG,
+          useLimitedUseAppCheckTokens,
+          appCheckTokenProvider,
+          internalAuthProvider
+        ),
       ),
-    ),
   )
 
   /**

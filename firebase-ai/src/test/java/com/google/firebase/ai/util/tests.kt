@@ -23,6 +23,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.google.firebase.FirebaseApp
 import com.google.firebase.ai.GenerativeModel
 import com.google.firebase.ai.ImagenModel
+import com.google.firebase.ai.OnDeviceConfig
 import com.google.firebase.ai.common.APIController
 import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.PublicPreviewAPI
@@ -137,6 +138,7 @@ internal fun commonTest(
     GenerativeModel(
       "cool-model-name",
       generativeBackend = backend,
+      onDeviceConfig = OnDeviceConfig.IN_CLOUD,
       controller = apiController,
       tools = tools
     )
@@ -208,6 +210,7 @@ internal fun commonMultiTurnTest(
     GenerativeModel(
       "cool-model-name",
       generativeBackend = backend,
+      onDeviceConfig = OnDeviceConfig.IN_CLOUD,
       controller = apiController,
       tools = tools
     )

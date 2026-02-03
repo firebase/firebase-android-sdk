@@ -16,6 +16,7 @@
 
 package com.google.firebase.ai.type
 
+import com.google.firebase.ai.InferenceSource
 import kotlinx.serialization.Serializable
 
 /**
@@ -25,12 +26,27 @@ import kotlinx.serialization.Serializable
  * @property promptFeedback Feedback about the prompt send to the model to generate this response.
  * When streaming, it's only populated in the first response.
  * @property usageMetadata Information about the number of tokens in the prompt and in the response.
+ * @property inferenceSource The source of the inference for this response.
  */
-public class GenerateContentResponse(
+public class GenerateContentResponse
+private constructor(
   public val candidates: List<Candidate>,
+  public val inferenceSource: InferenceSource,
   public val promptFeedback: PromptFeedback?,
   public val usageMetadata: UsageMetadata?,
 ) {
+
+  // To maintain backwards compatibility with possible outside usage, we maintain a public
+  // constructor without the `InferenceSource`. Devs shouldn't be instantiating this class as it's
+  // for consumption only.
+  // Since any use previous to adding this parameter was for cloud inference, the source has been
+  // hard-coded to `IN_CLOUD`
+  public constructor(
+    candidates: List<Candidate>,
+    promptFeedback: PromptFeedback?,
+    usageMetadata: UsageMetadata?,
+  ) : this(candidates, InferenceSource.IN_CLOUD, promptFeedback, usageMetadata)
+
   /**
    * Convenience field representing all the text parts in the response as a single string.
    *
@@ -103,6 +119,7 @@ public class GenerateContentResponse(
     internal fun toPublic(): GenerateContentResponse {
       return GenerateContentResponse(
         candidates?.map { it.toPublic() }.orEmpty(),
+        InferenceSource.IN_CLOUD,
         promptFeedback?.toPublic(),
         usageMetadata?.toPublic()
       )

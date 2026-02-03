@@ -110,6 +110,7 @@ internal class GenerativeModelTesting {
       GenerativeModel(
         "gemini-2.5-flash",
         systemInstruction = content { text("system instruction") },
+        onDeviceConfig = OnDeviceConfig.IN_CLOUD,
         controller = apiController
       )
 
@@ -215,7 +216,12 @@ internal class GenerativeModelTesting {
         null,
       )
 
-    val generativeModel = GenerativeModel("gemini-2.5-flash", controller = apiController)
+    val generativeModel =
+      GenerativeModel(
+        "gemini-2.5-flash",
+        onDeviceConfig = OnDeviceConfig.IN_CLOUD,
+        controller = apiController
+      )
 
     withTimeout(5.seconds) { generativeModel.generateContent("my test prompt") }
 
@@ -256,6 +262,7 @@ internal class GenerativeModelTesting {
     val generativeModel =
       GenerativeModel(
         "projects/PROJECTID/locations/INVALID_LOCATION/publishers/google/models/gemini-2.5-flash",
+        onDeviceConfig = OnDeviceConfig.IN_CLOUD,
         controller = apiController
       )
 
@@ -305,6 +312,7 @@ internal class GenerativeModelTesting {
         "gemini-2.5-flash",
         safetySettings = safetySettings,
         generativeBackend = GenerativeBackend.googleAI(),
+        onDeviceConfig = OnDeviceConfig.IN_CLOUD,
         controller = apiController
       )
 
@@ -351,6 +359,7 @@ internal class GenerativeModelTesting {
         "gemini-2.5-flash",
         safetySettings = safetySettings,
         generativeBackend = GenerativeBackend.vertexAI("us-central1"),
+        onDeviceConfig = OnDeviceConfig.IN_CLOUD,
         controller = apiController
       )
 
@@ -408,6 +417,7 @@ internal class GenerativeModelTesting {
           generationConfig {
             thinkingConfig = thinkingConfig { thinkingLevel = ThinkingLevel.MEDIUM }
           },
+        onDeviceConfig = OnDeviceConfig.IN_CLOUD,
         controller = apiController
       )
 
@@ -438,6 +448,10 @@ internal class GenerativeModelTesting {
         null,
       )
 
-    return GenerativeModel("gemini-2.5-flash", controller = apiController)
+    return GenerativeModel(
+      "gemini-2.5-flash",
+      onDeviceConfig = OnDeviceConfig.IN_CLOUD,
+      controller = apiController
+    )
   }
 }
