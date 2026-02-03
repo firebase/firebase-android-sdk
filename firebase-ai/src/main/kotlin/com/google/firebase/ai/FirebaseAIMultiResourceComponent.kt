@@ -18,6 +18,7 @@ package com.google.firebase.ai
 
 import androidx.annotation.GuardedBy
 import com.google.firebase.FirebaseApp
+import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceGenerativeModelFactory
 import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.annotations.concurrent.Blocking
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
@@ -35,6 +36,7 @@ internal class FirebaseAIMultiResourceComponent(
   @Blocking val blockingDispatcher: CoroutineContext,
   private val appCheckProvider: Provider<InteropAppCheckTokenProvider>,
   private val internalAuthProvider: Provider<InternalAuthProvider>,
+  private val onDeviceFactoryProvider: Provider<FirebaseAIOnDeviceGenerativeModelFactory>
 ) {
 
   @GuardedBy("this") private val instances: MutableMap<InstanceKey, FirebaseAI> = mutableMapOf()
@@ -48,6 +50,7 @@ internal class FirebaseAIMultiResourceComponent(
           blockingDispatcher,
           appCheckProvider,
           internalAuthProvider,
+          onDeviceFactoryProvider,
           key.useLimitedUseAppCheckTokens
         )
       }
