@@ -16,10 +16,9 @@
 
 package com.google.firebase.dataconnect.util
 
-import com.google.protobuf.ListValue
+import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
-import kotlin.math.min
 
 /**
  * Holder for "global" functions for overlaying Struct values.
@@ -39,81 +38,71 @@ internal object ProtoOverlay {
    * `{b: true, c: []}`. Then the [Struct] returned from this method would be: `{a: "foo", b: true,
    * c: []}`.
    *
-   * The logic also recurses into descendant [Struct] and [ListValue] values. Any time a value from
-   * a latter [Struct] has a different [Value.KindCase] than the former value then the latter value
-   * simply replaces the former value. However, if they are both [Struct] or both [ListValue] then
-   * they are overlaid recursively, as defined below.
+   * The logic also recurses into descendant [Struct] values. Any time a value from a latter
+   * [Struct] has a different [Value.KindCase] than the former value then the latter value simply
+   * replaces the former value. However, if they are both [Struct] values then they are overlaid
+   * recursively.
    *
-   * When recursing into [ListValue] objects, the first n values, where n is the size of the shorter
-   * list, are recursed. All extraneous values are appended.
+   * If the given collection of [Struct] objects is empty, then an empty [Struct] is returned.
    */
   fun overlay(structs: Iterable<Struct>): Struct {
     if (!structs.iterator().hasNext()) {
       return Struct.getDefaultInstance()
     }
-    return structs.reduce { acc, struct -> overlayStructs(acc, struct) }
+    return structs.reduce { baseStruct, struct -> overlayStructs(baseStruct, struct) }
   }
 
   private fun overlayStructs(base: Struct, overlay: Struct): Struct {
-    val resultBuilder = Struct.newBuilder()
-    val allKeys = base.fieldsMap.keys + overlay.fieldsMap.keys
+    if (overlay.fieldsCount == 0) {
+      return base
+    }
 
-    for (key in allKeys) {
-      val baseValue = base.fieldsMap[key]
-      val overlayValue = overlay.fieldsMap[key]
+    var overlaidStructBuilder: Struct.Builder? = null
 
-      when {
-        baseValue != null && overlayValue != null ->
-          resultBuilder.putFields(key, overlayValues(baseValue, overlayValue))
-        baseValue != null -> resultBuilder.putFields(key, baseValue)
-        overlayValue != null -> resultBuilder.putFields(key, overlayValue)
+    overlay.fieldsMap.entries.forEach { (field, value) ->
+      if (overlaidStructBuilder === null) {
+        val baseValue = if (base.containsFields(field)) base.getFieldsOrThrow(field) else null
+        val overlaidValue: Value =
+          if (baseValue === null) {
+            value
+          } else {
+            overlayValues(baseValue, value)
+          }
+        if (overlaidValue !== baseValue) {
+          overlaidStructBuilder = base.toBuilder()
+          overlaidStructBuilder.putFields(field, overlaidValue)
+        }
+      } else if (!overlaidStructBuilder.containsFields(field)) {
+        overlaidStructBuilder.putFields(field, value)
+      } else {
+        val baseValue = overlaidStructBuilder.getFieldsOrThrow(field)
+        val overlaidValue = overlayValues(baseValue, value)
+        overlaidStructBuilder.putFields(field, overlaidValue)
       }
     }
-    return resultBuilder.build()
+
+    return overlaidStructBuilder?.build() ?: base
   }
 
   private fun overlayValues(base: Value, overlay: Value): Value {
-    if (base.kindCase != overlay.kindCase) {
+    val bothValuesAreStructs =
+      base.kindCase == Value.KindCase.STRUCT_VALUE &&
+        overlay.kindCase == Value.KindCase.STRUCT_VALUE
+    if (!bothValuesAreStructs) {
       return overlay
     }
 
-    return when (overlay.kindCase) {
-      Value.KindCase.STRUCT_VALUE ->
-        Value.newBuilder()
-          .setStructValue(overlayStructs(base.structValue, overlay.structValue))
-          .build()
-      Value.KindCase.LIST_VALUE ->
-        Value.newBuilder().setListValue(overlayLists(base.listValue, overlay.listValue)).build()
-      else ->
-        // For scalar types, the overlay value replaces the base value.
-        overlay
+    val baseStruct = base.structValue
+    val overlayStruct = overlay.structValue
+
+    val overlaidStruct = overlayStructs(baseStruct, overlayStruct)
+
+    return if (overlaidStruct === baseStruct) {
+      base
+    } else if (overlaidStruct === overlayStruct) {
+      overlay
+    } else {
+      overlaidStruct.toValueProto()
     }
-  }
-
-  private fun overlayLists(base: ListValue, overlay: ListValue): ListValue {
-    val resultListBuilder = ListValue.newBuilder()
-    val baseSize = base.valuesCount
-    val overlaySize = overlay.valuesCount
-    val commonSize = min(baseSize, overlaySize)
-
-    // Overlay common elements
-    for (i in 0 until commonSize) {
-      val baseElement = base.getValues(i)
-      val overlayElement = overlay.getValues(i)
-      resultListBuilder.addValues(overlayValues(baseElement, overlayElement))
-    }
-
-    // Add remaining elements from the longer list
-    if (baseSize > overlaySize) {
-      for (i in commonSize until baseSize) {
-        resultListBuilder.addValues(base.getValues(i))
-      }
-    } else if (overlaySize > baseSize) {
-      for (i in commonSize until overlaySize) {
-        resultListBuilder.addValues(overlay.getValues(i))
-      }
-    }
-
-    return resultListBuilder.build()
   }
 }
