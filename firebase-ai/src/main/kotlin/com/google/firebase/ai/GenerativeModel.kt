@@ -290,9 +290,8 @@ internal constructor(
    * @throws [FirebaseAIException] if the request failed.
    * @see [FirebaseAIException] for types of errors.
    */
-  public suspend fun countTokens(prompt: String): CountTokensResponse {
-    return countTokens(listOf(content { text(prompt) }))
-  }
+  public suspend fun countTokens(prompt: String): CountTokensResponse =
+    countTokens(listOf(content { text(prompt) }))
 
   /**
    * Counts the number of tokens in an image prompt using the model's tokenizer.
@@ -302,9 +301,8 @@ internal constructor(
    * @throws [FirebaseAIException] if the request failed.
    * @see [FirebaseAIException] for types of errors.
    */
-  public suspend fun countTokens(prompt: Bitmap): CountTokensResponse {
-    return countTokens(listOf(content { image(prompt) }))
-  }
+  public suspend fun countTokens(prompt: Bitmap): CountTokensResponse =
+    countTokens(listOf(content { image(prompt) }))
 
   internal fun hasFunction(call: FunctionCallPart): Boolean {
     return tools
