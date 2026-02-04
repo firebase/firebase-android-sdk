@@ -57,7 +57,8 @@ private fun EntityOrEntityList.toPathStructPair(
       EntityOrEntityList.KindCase.ENTITY -> entity.rehydrate(dataConnectPath, entityStructById)
       EntityOrEntityList.KindCase.ENTITYLIST ->
         throw IllegalStateException(
-          "internal error a5ppf5vkzc: EntityOrEntityList.KindCase.ENTITYLIST not yet supported"
+          IMPLEMENTME() +
+            "internal error a5ppf5vkzc: EntityOrEntityList.KindCase.ENTITYLIST not yet supported"
         )
       EntityOrEntityList.KindCase.KIND_NOT_SET -> return null
     }

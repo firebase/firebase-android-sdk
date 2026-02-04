@@ -18,8 +18,8 @@
 
 package com.google.firebase.dataconnect.sqlite
 
-import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.registerDataConnectKotestPrinters
+import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.protobuf.Struct
 import google.firebase.dataconnect.proto.kotlinsdk.QueryResult as QueryResultProto
 import io.kotest.common.DelicateKotest
@@ -52,6 +52,17 @@ class QueryResultRehydratorUnitTest {
         result shouldBeSameInstanceAs struct
       }
     }
+
+  @Test
+  fun `rehydrateQueryResult() should return the rehydrated Struct`() = runTest {
+    checkAll(propTestConfig, QueryResultArb(entityCountRange = 1..5)) { sample ->
+      check(sample.queryResultProto.entitiesCount > 0)
+
+      val result = rehydrateQueryResult(sample.queryResultProto, sample.entityStructById)
+
+      result shouldBe sample.hydratedStruct
+    }
+  }
 }
 
 @OptIn(ExperimentalKotest::class)
