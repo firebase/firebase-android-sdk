@@ -58,7 +58,7 @@ class BeePlusGradleProject extends ExternalResource {
   static final String PACKAGE_NAME = "com.firebase.appdistribution.prober";
   // Also remember to update the latest AGP/gradle versions in UploadDistributionTaskTest.kt
   // firebase-appdistribution-gradle/src/integrationTest/java/com/google/firebase/appdistribution/gradle/UploadDistributionTaskTest.kt#L724-L726
-  static final String LATEST_AGP_VERSION = "9.1.0-alpha06";
+  static final String LATEST_AGP_VERSION = "9.1.0-alpha07";
   static final String LATEST_GRADLE_VERSION = "9.3.1";
   // The project number for App Distro Probes. We need to use this project
   // because this is the one that's actually linked to play for BeePlus,

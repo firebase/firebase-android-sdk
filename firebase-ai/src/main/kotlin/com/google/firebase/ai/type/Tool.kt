@@ -104,6 +104,7 @@ internal constructor(
      * @return A [Tool] configured for URL context.
      */
     @JvmStatic
+    @JvmOverloads
     public fun urlContext(urlContext: UrlContext = UrlContext()): Tool {
       return Tool(null, null, null, null, urlContext)
     }
@@ -125,6 +126,7 @@ internal constructor(
      * @return A [Tool] configured for Google Search.
      */
     @JvmStatic
+    @JvmOverloads
     public fun googleSearch(googleSearch: GoogleSearch = GoogleSearch()): Tool {
       @OptIn(PublicPreviewAPI::class) return Tool(null, null, googleSearch, null, null)
     }

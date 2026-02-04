@@ -21,21 +21,26 @@ import com.google.common.truth.Truth.assertThat
 import org.gradle.testfixtures.ProjectBuilder
 import org.junit.jupiter.api.Test
 
-class CrashlyticsPluginTest {
+class CrashlyticsExtensionTest {
 
   @Test
-  fun `plugin registers tasks`() {
+  fun `extension properties have correct default values`() {
     val project = ProjectBuilder.builder().build()
     project.plugins.apply("com.android.application")
+    project.plugins.apply("com.google.firebase.crashlytics")
+
     val android = project.extensions.getByType(ApplicationExtension::class.java)
     android.compileSdk = 33
     android.namespace = "com.google.firebase.crashlytics.test"
-    project.plugins.apply("com.google.firebase.crashlytics")
 
-    // Evaluate the project to trigger task creation
-    project.getTasksByName("preBuild", false)
-
-    assertThat(project.tasks.findByName("injectCrashlyticsMappingFileIdDebug")).isNotNull()
-    assertThat(project.tasks.findByName("injectCrashlyticsVersionControlInfoDebug")).isNotNull()
+    android.buildTypes.getByName("debug") { buildType ->
+      val crashlyticsExtension = buildType.extensions.getByType(CrashlyticsExtension::class.java)
+      assertThat(crashlyticsExtension.mappingFileUploadEnabled).isNull()
+      assertThat(crashlyticsExtension.nativeSymbolUploadEnabled).isNull()
+      assertThat(crashlyticsExtension.unstrippedNativeLibsDir).isNull()
+      assertThat(crashlyticsExtension.symbolGeneratorType).isNull()
+      assertThat(crashlyticsExtension.breakpadBinary).isNull()
+      assertThat(crashlyticsExtension.symbolGenerator).isNull()
+    }
   }
 }
