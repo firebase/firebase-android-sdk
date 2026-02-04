@@ -346,7 +346,8 @@ internal constructor(
     return onDeviceModel
       .generateContentStream(request)
       .catch { throw FirebaseAIException.from(it) }
-      .map { GenerateContentResponse.fromOnDeviceResponse(it).validate() }
+      // TODO: what about `validate` ?
+      .map { GenerateContentResponse.fromOnDeviceResponse(it) }
   }
 
   private suspend fun countTokensInCloud(prompt: List<Content>): CountTokensResponse {
@@ -404,7 +405,8 @@ internal constructor(
 
     return try {
       val response = onDeviceModel.generateContent(request)
-      GenerateContentResponse.fromOnDeviceResponse(response).validate()
+        // TODO: what about `validate` ?
+      GenerateContentResponse.fromOnDeviceResponse(response)
     } catch (e: Throwable) {
       throw FirebaseAIException.from(e)
     }
