@@ -99,7 +99,7 @@ internal class QueryResultArb(
     val hydratedStruct: Struct,
     val entityByPath: Map<DataConnectPath, EntityIdStructPair>,
     val entityListPaths: Set<DataConnectPath>,
-    val entityById: Map<String, Struct>,
+    val entityStructById: Map<String, Struct>,
     val queryResultProto: QueryResultProto,
     val edgeCases: Set<EdgeCase>,
   ) {
@@ -123,16 +123,16 @@ internal class QueryResultArb(
           .map { it.toPathString() }
           .print()
           .value
-      val entityByIdStr =
-        entityById.mapValues { it.value.toCompactString() }.toSortedMap().print().value
+      val entityStructByIdStr =
+        entityStructById.mapValues { it.value.toCompactString() }.toSortedMap().print().value
       return "QueryResultArb.Sample(" +
         "hydratedStruct=${hydratedStruct.print().value}, " +
         "entityByPath.size=${entityByPath.size}, " +
         "entityByPath=$entityByPathStr, " +
         "entityListPaths.size=${entityListPaths.size}, " +
         "entityListPaths=$entityListPathsStr, " +
-        "entityById.size=${entityById.size}, " +
-        "entityById=$entityByIdStr, " +
+        "entityStructById.size=${entityStructById.size}, " +
+        "entityStructById=$entityStructByIdStr, " +
         "queryResultProto=${queryResultProto.print().value}, " +
         "edgeCases.size=${edgeCases.size}, " +
         "edgeCases=${edgeCases.map { it.name }.sorted().print().value})"
@@ -177,9 +177,9 @@ internal class QueryResultArb(
 
     val dehydratedStruct = structArb.next(rs, dehydratedStructEdgeCaseProbability).struct
 
-    val entityById: Map<String, Struct>
+    val entityStructById: Map<String, Struct>
     val entities = run {
-      val entityByIdBuilder = mutableMapOf<String, Struct>()
+      val entityStructByIdBuilder = mutableMapOf<String, Struct>()
       val entityCount = entityCountArb.next(rs, entityCountEdgeCaseProbability)
       check(entityCount >= 0)
       val entityIdArb = structKeyArb.distinct()
@@ -189,10 +189,10 @@ internal class QueryResultArb(
           if (!repeatedEntityId) {
             val entityStruct = structArb.next(rs, entityStructEdgeCaseProbability).struct
             val entityId = entityIdArb.sample(rs).value
-            entityByIdBuilder[entityId] = entityStruct
+            entityStructByIdBuilder[entityId] = entityStruct
             EntityIdStructPair(entityId, entityStruct)
           } else {
-            val (entityId, entityStruct) = entityByIdBuilder.entries.random(rs.random)
+            val (entityId, entityStruct) = entityStructByIdBuilder.entries.random(rs.random)
             val candidatePruneKeys = entityStruct.fieldsMap.keys.shuffled(rs.random)
             val pruneKeyCount =
               Arb.int(0..candidatePruneKeys.size).next(rs, entityPruneKeyCountEdgeCaseProbability)
@@ -211,7 +211,7 @@ internal class QueryResultArb(
             EntityIdStructPair(entityId, pruneEntityStruct)
           }
         }
-      entityById = entityByIdBuilder.toMap()
+      entityStructById = entityStructByIdBuilder.toMap()
       entities
     }
 
@@ -303,7 +303,7 @@ internal class QueryResultArb(
       hydratedStruct = hydratedStruct,
       entityByPath = entityByPath,
       entityListPaths = entityListPaths,
-      entityById = entityById,
+      entityStructById = entityStructById,
       queryResultProto = queryResultProto,
       edgeCases = edgeCases,
     )

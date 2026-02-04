@@ -31,7 +31,7 @@ import google.firebase.dataconnect.proto.kotlinsdk.QueryResult as QueryResultPro
 
 internal data class DehydratedQueryResult(
   val proto: QueryResultProto,
-  val entityById: Map<String, Struct>,
+  val entityStructById: Map<String, Struct>,
 )
 
 internal fun dehydrateQueryResult(

@@ -170,8 +170,8 @@ private object DehydratedQueryResultPrint : Print<DehydratedQueryResult> {
   fun toString(a: DehydratedQueryResult): String {
     return "DehydratedQueryResult(" +
       "proto=${a.proto.print().value}, " +
-      "entityById.size=${a.entityById.size}, " +
-      "entityById=${a.entityById.toSortedMap().print().value})"
+      "entityStructById.size=${a.entityStructById.size}, " +
+      "entityStructById=${a.entityStructById.toSortedMap().print().value})"
   }
 }
 

@@ -138,14 +138,14 @@ class QueryResultDehydratorUnitTest {
   }
 
   @Test
-  fun `dehydrateQueryResult() returns the correct entities`() = runTest {
+  fun `dehydrateQueryResult() returns the correct entityStructById`() = runTest {
     checkAll(propTestConfig, QueryResultArb(entityCountRange = 1..10)) { sample ->
       val queryResult: Struct = sample.hydratedStruct
       val getEntityIdForPath = sample::getEntityIdForPath
 
       val result = dehydrateQueryResult(queryResult, getEntityIdForPath)
 
-      result.entityById shouldContainExactly sample.entityById
+      result.entityStructById shouldContainExactly sample.entityStructById
     }
   }
 
@@ -187,7 +187,8 @@ private val propTestConfig =
  *
  * A [DehydratedQueryResult] is considered to be "empty" by this method if its
  * [QueryResultProto.struct] member is the same instance as [expectedStruct], and both its
- * [QueryResultProto.getEntitiesList] and [DehydratedQueryResult.entityById] members are empty.
+ * [QueryResultProto.getEntitiesList] and [DehydratedQueryResult.entityStructById] members are
+ * empty.
  *
  * This function is used to verify scenarios where no entities should be extracted or modifications
  * made to the original struct during the dehydration process.
@@ -196,7 +197,7 @@ private fun DehydratedQueryResult.shouldHaveEmptyEntitiesAndStruct(expectedStruc
   assertSoftly {
     withClue("proto.struct") { proto.struct shouldBeSameInstanceAs expectedStruct }
     withClue("proto.entitiesList") { proto.entitiesList.shouldBeEmpty() }
-    withClue("entityById") { entityById.shouldBeEmpty() }
+    withClue("entityById") { entityStructById.shouldBeEmpty() }
   }
 }
 
