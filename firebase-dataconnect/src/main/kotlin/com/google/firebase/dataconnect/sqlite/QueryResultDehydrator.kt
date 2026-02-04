@@ -61,19 +61,39 @@ private fun QueryResultProto.Builder.initialize(
 
   setStruct(pruneResult.prunedStruct)
 
+  val entityStructById = mutableMapOf<String, Struct>()
+  fun updateEntityStructByIdWithEntity(entity: EntityIdStructPair) {
+    val (entityId, struct) = entity
+
+    val newStruct =
+      if (!entityStructById.containsKey(entityId)) {
+        struct
+      } else {
+        val oldStruct = entityStructById[entityId]!!
+        if (oldStruct.fieldsMap.keys == struct.fieldsMap.keys) {
+          struct
+        } else {
+          val structBuilder = oldStruct.toBuilder()
+          struct.fieldsMap.entries.forEach { (field, value) ->
+            structBuilder.putFields(field, value)
+          }
+          structBuilder.build()
+        }
+      }
+
+    entityStructById[entityId] = newStruct
+  }
+
   pruneResult.entityByPath.entries.forEach { (path, entity) ->
     addEntities(entity.toEntityOrEntityListProto(path))
+    updateEntityStructByIdWithEntity(entity)
   }
   pruneResult.entityListByPath.entries.forEach { (path, entityList) ->
     addEntities(entityList.toEntityOrEntityListProto(path))
+    entityList.forEach(::updateEntityStructByIdWithEntity)
   }
 
-  val entities =
-    pruneResult.entityByPath.values.toList() + pruneResult.entityListByPath.values.flatten()
-  val entityStructsById = entities.groupBy { it.entityId }.mapValues { it.value.map { it.struct } }
-
-  // TODO: merge together entities that occur multiple times; that is, when single() throws.
-  return entityStructsById.mapValues { it.value.single() }
+  return entityStructById.toMap()
 }
 
 private fun EntityIdStructPair.toEntityOrEntityListProto(
