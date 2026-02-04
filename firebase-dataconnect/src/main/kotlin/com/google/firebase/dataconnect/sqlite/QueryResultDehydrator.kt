@@ -17,7 +17,6 @@
 package com.google.firebase.dataconnect.sqlite
 
 import com.google.firebase.dataconnect.DataConnectPath
-import com.google.firebase.dataconnect.sqlite.DehydratedQueryResult.Entity
 import com.google.firebase.dataconnect.toEntityPathProto
 import com.google.firebase.dataconnect.toPathString
 import com.google.firebase.dataconnect.util.ProtoPrune
@@ -32,26 +31,22 @@ import google.firebase.dataconnect.proto.kotlinsdk.QueryResult as QueryResultPro
 
 internal data class DehydratedQueryResult(
   val proto: QueryResultProto,
-  val entities: List<Entity>,
-) {
-  data class Entity(val entityId: String, val struct: Struct) {
-    override fun toString() = "Entity(entityId=$entityId, struct=${struct.toCompactString()})"
-  }
-}
+  val entityById: Map<String, Struct>,
+)
 
 internal fun dehydrateQueryResult(
   queryResult: Struct,
   getEntityIdForPath: GetEntityIdForPathFunction? = null
 ): DehydratedQueryResult {
   val protoBuilder = QueryResultProto.newBuilder()
-  val entities = protoBuilder.initialize(queryResult, getEntityIdForPath)
-  return DehydratedQueryResult(protoBuilder.build(), entities)
+  val entityById = protoBuilder.initialize(queryResult, getEntityIdForPath)
+  return DehydratedQueryResult(protoBuilder.build(), entityById)
 }
 
 private fun QueryResultProto.Builder.initialize(
   queryResult: Struct,
   getEntityIdForPath: GetEntityIdForPathFunction?
-): List<Entity> {
+): Map<String, Struct> {
   val pruneResult =
     if (getEntityIdForPath === null) {
       null
@@ -61,7 +56,7 @@ private fun QueryResultProto.Builder.initialize(
 
   if (pruneResult === null) {
     setStruct(queryResult)
-    return emptyList()
+    return emptyMap()
   }
 
   setStruct(pruneResult.prunedStruct)
@@ -73,40 +68,57 @@ private fun QueryResultProto.Builder.initialize(
     addEntities(entityList.toEntityOrEntityListProto(path))
   }
 
-  return pruneResult.entityByPath.values.toList() + pruneResult.entityListByPath.values.flatten()
+  val entities =
+    pruneResult.entityByPath.values.toList() + pruneResult.entityListByPath.values.flatten()
+  val entityStructsById = entities.groupBy { it.entityId }.mapValues { it.value.map { it.struct } }
+
+  // TODO: merge together entities that occur multiple times; that is, when single() throws.
+  return entityStructsById.mapValues { it.value.single() }
 }
 
-private fun Entity.toEntityOrEntityListProto(path: DataConnectPath): EntityOrEntityListProto =
+private fun EntityIdStructPair.toEntityOrEntityListProto(
+  path: DataConnectPath
+): EntityOrEntityListProto =
   EntityOrEntityListProto.newBuilder().run {
     setPath(path.toEntityPathProto())
     setEntity(toEntityProto())
     build()
   }
 
-private fun Entity.toEntityProto(): EntityProto =
+private fun EntityIdStructPair.toEntityProto(): EntityProto =
   EntityProto.newBuilder().run {
     setEntityId(this@toEntityProto.entityId)
     addAllFields(this@toEntityProto.struct.fieldsMap.keys)
     build()
   }
 
-private fun List<Entity>.toEntityOrEntityListProto(path: DataConnectPath): EntityOrEntityListProto =
+private fun List<EntityIdStructPair>.toEntityOrEntityListProto(
+  path: DataConnectPath
+): EntityOrEntityListProto =
   EntityOrEntityListProto.newBuilder().run {
     setPath(path.toEntityPathProto())
     setEntityList(toEntityListProto())
     build()
   }
 
-private fun List<Entity>.toEntityListProto(): EntityListProto =
+private fun List<EntityIdStructPair>.toEntityListProto(): EntityListProto =
   EntityListProto.newBuilder().run {
     forEach { addEntities(it.toEntityProto()) }
     build()
   }
 
+internal data class EntityIdStructPair(
+  val entityId: String,
+  val struct: Struct,
+) {
+  override fun toString() =
+    "EntityIdStructPair(entityId=$entityId, struct=${struct.toCompactString()})"
+}
+
 private data class PruneEntitiesResult(
   val prunedStruct: Struct,
-  val entityByPath: Map<DataConnectPath, Entity>,
-  val entityListByPath: Map<DataConnectPath, List<Entity>>,
+  val entityByPath: Map<DataConnectPath, EntityIdStructPair>,
+  val entityListByPath: Map<DataConnectPath, List<EntityIdStructPair>>,
 )
 
 private fun pruneEntities(
@@ -136,18 +148,18 @@ private fun pruneEntities(
     return null
   }
 
-  val entityByPath: Map<DataConnectPath, Entity>
-  val entityListByPath: Map<DataConnectPath, List<Entity>>
+  val entityByPath: Map<DataConnectPath, EntityIdStructPair>
+  val entityListByPath: Map<DataConnectPath, List<EntityIdStructPair>>
 
   run {
-    val entityByPathBuilder = mutableMapOf<DataConnectPath, Entity>()
-    val entityListByPathBuilder = mutableMapOf<DataConnectPath, List<Entity>>()
+    val entityByPathBuilder = mutableMapOf<DataConnectPath, EntityIdStructPair>()
+    val entityListByPathBuilder = mutableMapOf<DataConnectPath, List<EntityIdStructPair>>()
 
     dehydratedQueryResult.prunedValueByPath.entries.forEach { (path, prunedValue) ->
       when (prunedValue) {
         is ProtoPrune.PrunedStruct -> {
           val entityId = entityIdByPath.getInitializedEntityId(path)
-          val entity = Entity(entityId, prunedValue.struct)
+          val entity = EntityIdStructPair(entityId, prunedValue.struct)
           entityByPathBuilder[path] = entity
         }
         is ProtoPrune.PrunedListValue -> {
@@ -155,7 +167,7 @@ private fun pruneEntities(
             prunedValue.structs.mapIndexed { index, struct ->
               val entityPath = path.withAddedListIndex(index)
               val entityId = entityIdByPath.getInitializedEntityId(entityPath)
-              Entity(entityId, struct)
+              EntityIdStructPair(entityId, struct)
             }
           entityListByPathBuilder[path] = entities
         }

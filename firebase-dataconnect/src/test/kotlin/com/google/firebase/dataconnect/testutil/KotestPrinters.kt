@@ -19,7 +19,6 @@ package com.google.firebase.dataconnect.testutil
 import com.google.firebase.dataconnect.DataConnectPathComparator
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.sqlite.DehydratedQueryResult
-import com.google.firebase.dataconnect.testutil.EntityOrEntityListProtoPrint.toStruct
 import com.google.firebase.dataconnect.toPathString
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.ProtoUtil.toListValueProto
@@ -171,7 +170,8 @@ private object DehydratedQueryResultPrint : Print<DehydratedQueryResult> {
   fun toString(a: DehydratedQueryResult): String {
     return "DehydratedQueryResult(" +
       "proto=${a.proto.print().value}, " +
-      "entities=${a.entities.print().value})"
+      "entityById.size=${a.entityById.size}, " +
+      "entityById=${a.entityById.toSortedMap().print().value})"
   }
 }
 

@@ -32,6 +32,7 @@ import com.google.firebase.dataconnect.testutil.toPrintable
 import com.google.firebase.dataconnect.testutil.walk
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
+import google.firebase.dataconnect.proto.kotlinsdk.QueryResult as QueryResultProto
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
 import io.kotest.common.DelicateKotest
@@ -39,6 +40,8 @@ import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldBeUnique
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
+import io.kotest.matchers.maps.shouldBeEmpty
+import io.kotest.matchers.maps.shouldContainExactly
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
@@ -142,7 +145,8 @@ class QueryResultDehydratorUnitTest {
 
       val result = dehydrateQueryResult(queryResult, getEntityIdForPath)
 
-      result.entities shouldContainExactlyInAnyOrder sample.entityByPath.values
+      val expectedEntityById = sample.entityByPath.values.associate { it.entityId to it.struct }
+      result.entityById shouldContainExactly expectedEntityById
     }
   }
 
@@ -180,22 +184,20 @@ private val propTestConfig =
   )
 
 /**
- * Asserts that a [DehydratedQueryResult] is empty, meaning its [DehydratedQueryResult.proto.struct]
- * is the same instance as [expectedStruct], and both [DehydratedQueryResult.proto.entitiesList] and
- * [DehydratedQueryResult.entities] are empty.
+ * Asserts that the receiver [DehydratedQueryResult] is empty.
+ *
+ * A [DehydratedQueryResult] is considered to be "empty" by this method if its
+ * [QueryResultProto.struct] member is the same instance as [expectedStruct], and both its
+ * [QueryResultProto.getEntitiesList] and [DehydratedQueryResult.entityById] members are empty.
  *
  * This function is used to verify scenarios where no entities should be extracted or modifications
  * made to the original struct during the dehydration process.
- *
- * @receiver The [DehydratedQueryResult] instance to check.
- * @param expectedStruct The [Struct] that the [DehydratedQueryResult.proto.struct] is expected to
- * be the same instance as.
  */
 private fun DehydratedQueryResult.shouldHaveEmptyEntitiesAndStruct(expectedStruct: Struct) {
   assertSoftly {
     withClue("proto.struct") { proto.struct shouldBeSameInstanceAs expectedStruct }
     withClue("proto.entitiesList") { proto.entitiesList.shouldBeEmpty() }
-    withClue("entities") { entities.shouldBeEmpty() }
+    withClue("entityById") { entityById.shouldBeEmpty() }
   }
 }
 

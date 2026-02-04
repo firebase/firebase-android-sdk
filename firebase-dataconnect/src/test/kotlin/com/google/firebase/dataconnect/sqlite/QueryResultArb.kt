@@ -96,7 +96,7 @@ internal class QueryResultArb(
 
   data class Sample(
     val hydratedStruct: Struct,
-    val entityByPath: Map<DataConnectPath, DehydratedQueryResult.Entity>,
+    val entityByPath: Map<DataConnectPath, EntityIdStructPair>,
     val entityListPaths: Set<DataConnectPath>,
     val queryResultProto: QueryResultProto,
     val edgeCases: Set<EdgeCase>,
@@ -165,16 +165,16 @@ internal class QueryResultArb(
       List(entityCount) {
         val entityStruct = structArb.next(rs, entityStructEdgeCaseProbability).struct
         val entityId = entityIdArb.sample(rs).value
-        DehydratedQueryResult.Entity(entityId, entityStruct)
+        EntityIdStructPair(entityId, entityStruct)
       }
     }
 
-    val entityByPath: Map<DataConnectPath, DehydratedQueryResult.Entity>
+    val entityByPath: Map<DataConnectPath, EntityIdStructPair>
     val entityListPaths: Set<DataConnectPath>
     val queryResultProto: QueryResultProto
     val hydratedStruct: Struct =
       dehydratedStruct.toBuilder().let { hydratedStructBuilder ->
-        val entityByPathBuilder = mutableMapOf<DataConnectPath, DehydratedQueryResult.Entity>()
+        val entityByPathBuilder = mutableMapOf<DataConnectPath, EntityIdStructPair>()
         val entityListPathsBuilder = mutableSetOf<DataConnectPath>()
         val queryResultProtoBuilder = QueryResultProto.newBuilder()
         queryResultProtoBuilder.setStruct(dehydratedStruct)
