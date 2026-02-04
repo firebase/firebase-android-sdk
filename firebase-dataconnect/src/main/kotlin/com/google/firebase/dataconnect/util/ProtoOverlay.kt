@@ -17,6 +17,7 @@
 package com.google.firebase.dataconnect.util
 
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
+import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
 
@@ -53,7 +54,9 @@ internal object ProtoOverlay {
   }
 
   private fun overlayStructs(base: Struct, overlay: Struct): Struct {
-    if (overlay.fieldsCount == 0) {
+    if (base.fieldsCount == 0) {
+      return overlay
+    } else if (overlay.fieldsCount == 0) {
       return base
     }
 
@@ -85,13 +88,19 @@ internal object ProtoOverlay {
   }
 
   private fun overlayValues(base: Value, overlay: Value): Value {
-    val bothValuesAreStructs =
-      base.kindCase == Value.KindCase.STRUCT_VALUE &&
-        overlay.kindCase == Value.KindCase.STRUCT_VALUE
-    if (!bothValuesAreStructs) {
+    if (base.kindCase != overlay.kindCase) {
       return overlay
     }
 
+    return when (base.kindCase) {
+      Value.KindCase.STRUCT_VALUE -> overlayStructValues(base, overlay)
+      Value.KindCase.LIST_VALUE -> overlayListValueValues(base, overlay)
+      else -> if (base == overlay) base else overlay
+    }
+
+  }
+
+  private fun overlayStructValues(base: Value, overlay: Value): Value {
     val baseStruct = base.structValue
     val overlayStruct = overlay.structValue
 
@@ -103,6 +112,32 @@ internal object ProtoOverlay {
       overlay
     } else {
       overlaidStruct.toValueProto()
+    }
+  }
+
+  private fun overlayListValueValues(base: Value, overlay: Value): Value {
+    val baseListValue = base.listValue
+    val overlayListValue = overlay.listValue
+
+    if (baseListValue.valuesCount != overlayListValue.valuesCount) {
+      return overlay
+    }
+
+    var listValueBuilder: ListValue.Builder? = null
+
+    repeat(baseListValue.valuesCount) { listIndex ->
+      val baseValue = baseListValue.getValues(listIndex)
+      val overlayValue = overlayListValue.getValues(listIndex)
+      if (baseValue.kindCase != overlayValue.kindCase) {
+        return overlay
+      }
+
+      when (baseValue.kindCase) {
+        Value.KindCase.STRUCT_VALUE -> TODO()
+        Value.KindCase.LIST_VALUE -> {
+          val curBaseListValue = baseValue.listValue
+        }
+      }
     }
   }
 }
