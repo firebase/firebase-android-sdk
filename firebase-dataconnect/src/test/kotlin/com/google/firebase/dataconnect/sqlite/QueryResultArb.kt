@@ -18,6 +18,7 @@
 
 package com.google.firebase.dataconnect.sqlite
 
+import com.google.firebase.dataconnect.DataConnectPathComparator
 import com.google.firebase.dataconnect.testutil.DataConnectPath
 import com.google.firebase.dataconnect.testutil.property.arbitrary.ProtoArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.next
@@ -33,6 +34,7 @@ import com.google.firebase.dataconnect.testutil.toPrintFriendlyMap
 import com.google.firebase.dataconnect.testutil.walk
 import com.google.firebase.dataconnect.toEntityPathProto
 import com.google.firebase.dataconnect.toPathString
+import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.firebase.dataconnect.withAddedListIndex
 import com.google.protobuf.ListValue
@@ -49,7 +51,6 @@ import io.kotest.assertions.withClue
 import io.kotest.common.DelicateKotest
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.collections.shouldBeEmpty
-import io.kotest.matchers.collections.shouldBeUnique
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.comparables.shouldBeGreaterThan
 import io.kotest.matchers.ints.shouldBeInRange
@@ -98,6 +99,7 @@ internal class QueryResultArb(
     val hydratedStruct: Struct,
     val entityByPath: Map<DataConnectPath, EntityIdStructPair>,
     val entityListPaths: Set<DataConnectPath>,
+    val entityById: Map<String, Struct>,
     val queryResultProto: QueryResultProto,
     val edgeCases: Set<EdgeCase>,
   ) {
@@ -109,18 +111,32 @@ internal class QueryResultArb(
       EntityStruct,
       EntityList,
       EntityListSize,
+      EntityIdRepeat,
+      EntityPruneKeyCount,
     }
 
-    override fun toString(): String =
-      "QueryResultArb.Sample(" +
+    override fun toString(): String {
+      val entityByPathStr = entityByPath.toPrintFriendlyMap().print().value
+      val entityListPathsStr =
+        entityListPaths
+          .sortedWith(DataConnectPathComparator)
+          .map { it.toPathString() }
+          .print()
+          .value
+      val entityByIdStr =
+        entityById.mapValues { it.value.toCompactString() }.toSortedMap().print().value
+      return "QueryResultArb.Sample(" +
         "hydratedStruct=${hydratedStruct.print().value}, " +
         "entityByPath.size=${entityByPath.size}, " +
-        "entityByPath=${entityByPath.toPrintFriendlyMap().print().value}, " +
+        "entityByPath=$entityByPathStr, " +
         "entityListPaths.size=${entityListPaths.size}, " +
-        "entityListPaths=${entityListPaths.map{it.toPathString()}.print().value}, " +
+        "entityListPaths=$entityListPathsStr, " +
+        "entityById.size=${entityById.size}, " +
+        "entityById=$entityByIdStr, " +
         "queryResultProto=${queryResultProto.print().value}, " +
         "edgeCases.size=${edgeCases.size}, " +
         "edgeCases=${edgeCases.map { it.name }.sorted().print().value})"
+    }
   }
 
   override fun sample(rs: RandomSource) = generate(rs, edgeCases = emptySet()).asSample()
@@ -155,18 +171,48 @@ internal class QueryResultArb(
     val entityStructEdgeCaseProbability = edgeCases.probability(Sample.EdgeCase.EntityStruct)
     val entityListProbability = edgeCases.probability(Sample.EdgeCase.EntityList)
     val entityListSizeEdgeCaseProbability = edgeCases.probability(Sample.EdgeCase.EntityListSize)
+    val entityIdRepeatProbability = edgeCases.probability(Sample.EdgeCase.EntityIdRepeat)
+    val entityPruneKeyCountEdgeCaseProbability =
+      edgeCases.probability(Sample.EdgeCase.EntityPruneKeyCount)
 
     val dehydratedStruct = structArb.next(rs, dehydratedStructEdgeCaseProbability).struct
 
+    val entityById: Map<String, Struct>
     val entities = run {
+      val entityByIdBuilder = mutableMapOf<String, Struct>()
       val entityCount = entityCountArb.next(rs, entityCountEdgeCaseProbability)
       check(entityCount >= 0)
       val entityIdArb = structKeyArb.distinct()
-      List(entityCount) {
-        val entityStruct = structArb.next(rs, entityStructEdgeCaseProbability).struct
-        val entityId = entityIdArb.sample(rs).value
-        EntityIdStructPair(entityId, entityStruct)
-      }
+      val entities =
+        List(entityCount) { listIndex ->
+          val repeatedEntityId = listIndex > 0 && rs.random.nextFloat() < entityIdRepeatProbability
+          if (!repeatedEntityId) {
+            val entityStruct = structArb.next(rs, entityStructEdgeCaseProbability).struct
+            val entityId = entityIdArb.sample(rs).value
+            entityByIdBuilder[entityId] = entityStruct
+            EntityIdStructPair(entityId, entityStruct)
+          } else {
+            val (entityId, entityStruct) = entityByIdBuilder.entries.random(rs.random)
+            val candidatePruneKeys = entityStruct.fieldsMap.keys.shuffled(rs.random)
+            val pruneKeyCount =
+              Arb.int(0..candidatePruneKeys.size).next(rs, entityPruneKeyCountEdgeCaseProbability)
+            val pruneKeys = candidatePruneKeys.take(pruneKeyCount)
+            val pruneEntityStruct =
+              if (pruneKeys.isEmpty()) {
+                entityStruct
+              } else {
+                entityStruct
+                  .toBuilder()
+                  .also { entityStructBuilder ->
+                    pruneKeys.forEach { entityStructBuilder.removeFields(it) }
+                  }
+                  .build()
+              }
+            EntityIdStructPair(entityId, pruneEntityStruct)
+          }
+        }
+      entityById = entityByIdBuilder.toMap()
+      entities
     }
 
     val entityByPath: Map<DataConnectPath, EntityIdStructPair>
@@ -257,6 +303,7 @@ internal class QueryResultArb(
       hydratedStruct = hydratedStruct,
       entityByPath = entityByPath,
       entityListPaths = entityListPaths,
+      entityById = entityById,
       queryResultProto = queryResultProto,
       edgeCases = edgeCases,
     )
@@ -341,47 +388,77 @@ class QueryResultArbUnitTest {
   }
 
   @Test
-  fun `QueryResultArb should generate unique entity IDs`() = runTest {
+  fun `QueryResultArb should generate unique entity IDs sometimes`() = runTest {
+    var uniqueEntityIdsCount = 0
+    var nonUniqueEntityIdsCount = 0
+
     checkAll(propTestConfig, Arb.intRange(0..5).filterNot { it.isEmpty() }) { entityCountRange ->
       val arb = QueryResultArb(entityCountRange = entityCountRange)
 
       val sample = arb.bind()
 
-      sample.entityByPath.values.map { it.entityId }.shouldBeUnique()
+      val entityIds = sample.entityByPath.values.map { it.entityId }
+      if (entityIds == entityIds.distinct()) {
+        uniqueEntityIdsCount++
+      } else {
+        nonUniqueEntityIdsCount++
+      }
+    }
+
+    assertSoftly {
+      withClue("uniqueEntityIdsCount") { uniqueEntityIdsCount shouldBeGreaterThan 0 }
+      withClue("nonUniqueEntityIdsCount") { nonUniqueEntityIdsCount shouldBeGreaterThan 0 }
     }
   }
 
   @Test
   fun `QueryResultArb should generate entity lists sometimes`() = runTest {
     var entityListCount = 0
+    var nonEntityListCount = 0
 
     checkAll(propTestConfig, Arb.intRange(0..5).filterNot { it.isEmpty() }) { entityCountRange ->
       val arb = QueryResultArb(entityCountRange = entityCountRange)
 
       val sample = arb.bind()
 
-      entityListCount += sample.entityListPaths.size
+      if (sample.entityListPaths.isEmpty()) {
+        nonEntityListCount++
+      } else {
+        entityListCount++
+      }
     }
 
-    entityListCount shouldBeGreaterThan 0
+    assertSoftly {
+      withClue("entityListCount") { entityListCount shouldBeGreaterThan 0 }
+      withClue("nonEntityListCount") { nonEntityListCount shouldBeGreaterThan 0 }
+    }
   }
 
   @Test
   fun `QueryResultArb should generate nested entities sometimes`() = runTest {
     var nestedEntityCount = 0
+    var nonNestedEntityCount = 0
 
     checkAll(propTestConfig, Arb.intRange(0..5).filterNot { it.isEmpty() }) { entityCountRange ->
       val arb = QueryResultArb(entityCountRange = entityCountRange)
 
       val sample = arb.bind()
 
-      sample.entityByPath.keys.forEach { path ->
-        val ancestorEntityCount = sample.entityByPath.keys.filterAncestorOf(path).count()
-        nestedEntityCount += ancestorEntityCount
+      val hasNestedEntity =
+        sample.entityByPath.keys.any { path ->
+          sample.entityByPath.keys.filterAncestorOf(path).isNotEmpty()
+        }
+      if (hasNestedEntity) {
+        nestedEntityCount++
+      } else {
+        nonNestedEntityCount++
       }
     }
 
-    nestedEntityCount shouldBeGreaterThan 0
+    assertSoftly {
+      withClue("nestedEntityCount") { nestedEntityCount shouldBeGreaterThan 0 }
+      withClue("nonNestedEntityCount") { nonNestedEntityCount shouldBeGreaterThan 0 }
+    }
   }
 
   @Test

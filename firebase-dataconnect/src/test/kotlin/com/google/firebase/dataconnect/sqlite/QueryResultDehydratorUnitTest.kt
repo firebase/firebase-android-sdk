@@ -145,8 +145,7 @@ class QueryResultDehydratorUnitTest {
 
       val result = dehydrateQueryResult(queryResult, getEntityIdForPath)
 
-      val expectedEntityById = sample.entityByPath.values.associate { it.entityId to it.struct }
-      result.entityById shouldContainExactly expectedEntityById
+      result.entityById shouldContainExactly sample.entityById
     }
   }
 
