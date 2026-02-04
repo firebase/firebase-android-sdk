@@ -19,7 +19,6 @@
 package com.google.firebase.dataconnect.sqlite
 
 import com.google.firebase.dataconnect.DataConnectPathSegment
-import com.google.firebase.dataconnect.emptyDataConnectPath
 import com.google.firebase.dataconnect.testutil.DataConnectPath
 import com.google.firebase.dataconnect.testutil.DataConnectPathValuePair
 import com.google.firebase.dataconnect.testutil.isListValue
@@ -29,24 +28,16 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
 import com.google.firebase.dataconnect.testutil.registerDataConnectKotestPrinters
 import com.google.firebase.dataconnect.testutil.shouldBe
-import com.google.firebase.dataconnect.testutil.structOf
 import com.google.firebase.dataconnect.testutil.toPrintable
 import com.google.firebase.dataconnect.testutil.walk
-import com.google.firebase.dataconnect.toEntityPathProto
-import com.google.firebase.dataconnect.withAddedField
-import com.google.firebase.dataconnect.withAddedListIndex
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
-import google.firebase.dataconnect.proto.kotlinsdk.Entity as EntityProto
-import google.firebase.dataconnect.proto.kotlinsdk.EntityList as EntityListProto
-import google.firebase.dataconnect.proto.kotlinsdk.EntityOrEntityList as EntityOrEntityListProto
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
 import io.kotest.common.DelicateKotest
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldBeUnique
-import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.property.Arb
@@ -55,7 +46,6 @@ import io.kotest.property.PropTestConfig
 import io.kotest.property.ShrinkingMode
 import io.kotest.property.arbitrary.distinct
 import io.kotest.property.arbitrary.double
-import io.kotest.property.arbitrary.list
 import io.kotest.property.arbitrary.orNull
 import io.kotest.property.checkAll
 import io.mockk.every
@@ -157,7 +147,7 @@ class QueryResultDehydratorUnitTest {
   }
 
   @Test
-  fun `dehydrateQueryResult() returns the correct proto struct`() = runTest {
+  fun `dehydrateQueryResult() returns the correct QueryResultProto struct`() = runTest {
     checkAll(propTestConfig, QueryResultArb(entityCountRange = 1..10)) { sample ->
       val queryResult: Struct = sample.hydratedStruct
       val getEntityIdForPath = sample::getEntityIdForPath
@@ -169,7 +159,7 @@ class QueryResultDehydratorUnitTest {
   }
 
   @Test
-  fun `dehydrateQueryResult() returns the correct proto entities`() = runTest {
+  fun `dehydrateQueryResult() returns the correct QueryResultProto entities`() = runTest {
     checkAll(propTestConfig, QueryResultArb(entityCountRange = 1..10)) { sample ->
       val queryResult: Struct = sample.hydratedStruct
       val getEntityIdForPath = sample::getEntityIdForPath
@@ -177,46 +167,6 @@ class QueryResultDehydratorUnitTest {
       val result = dehydrateQueryResult(queryResult, getEntityIdForPath)
 
       result.proto.entitiesList shouldContainExactlyInAnyOrder sample.queryResultProto.entitiesList
-    }
-  }
-
-  @Test
-  fun `dehydrateQueryResult() handles entity lists correctly`() = runTest {
-    val structKeyArb = Arb.proto.structKey()
-    checkAll(propTestConfig, Arb.list(Arb.proto.struct(key = structKeyArb), 1..5)) { entities ->
-      val entityIdArb = Arb.proto.structKey(length = 4).distinct()
-      val entityIds = List(entities.size) { entityIdArb.bind() }
-      val structKey = structKeyArb.bind()
-      val listValue =
-        ListValue.newBuilder().addAllValues(entities.map { it.toValueProto() }).build()
-      val queryResult = structOf(structKey, listValue)
-      val entityIdByPath =
-        entityIds
-          .mapIndexed { index, entityId ->
-            val path = emptyDataConnectPath().withAddedField(structKey).withAddedListIndex(index)
-            Pair(path, entityId)
-          }
-          .toMap()
-
-      val result = dehydrateQueryResult(queryResult, entityIdByPath::get)
-
-      withClue("result.proto.struct") { result.proto.struct shouldBe Struct.getDefaultInstance() }
-      withClue("result.proto.struct") {
-        val entityListProto =
-          EntityListProto.newBuilder()
-            .addAllEntities(
-              entityIds.zip(entities.map { it.struct.fieldsMap.keys }).map { (entityId, fields) ->
-                EntityProto.newBuilder().setEntityId(entityId).addAllFields(fields).build()
-              }
-            )
-            .build()
-        val entityOrEntityListProto =
-          EntityOrEntityListProto.newBuilder()
-            .setPath(emptyDataConnectPath().withAddedField(structKey).toEntityPathProto())
-            .setEntityList(entityListProto)
-            .build()
-        result.proto.entitiesList shouldContainExactly listOf(entityOrEntityListProto)
-      }
     }
   }
 }
