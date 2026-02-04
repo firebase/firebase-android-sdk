@@ -134,13 +134,7 @@ internal constructor(
   public suspend fun generateContent(
     prompt: Content,
     vararg prompts: Content
-  ): GenerateContentResponse =
-    generateContent(
-      buildList {
-        add(prompt)
-        addAll(prompts)
-      }
-    )
+  ): GenerateContentResponse = generateContent(listOf(prompt, *prompts))
 
   /**
    * Generates new content from the text input given to the model as a prompt.
@@ -189,13 +183,7 @@ internal constructor(
   public fun generateContentStream(
     prompt: Content,
     vararg prompts: Content
-  ): Flow<GenerateContentResponse> =
-    generateContentStream(
-      buildList {
-        add(prompt)
-        addAll(prompts)
-      }
-    )
+  ): Flow<GenerateContentResponse> = generateContentStream(listOf(prompt, *prompts))
 
   /**
    * Generates new content as a stream from the text input given to the model as a prompt.
@@ -239,14 +227,7 @@ internal constructor(
         .setResponseMimeType("application/json")
         .build()
     try {
-      val request =
-        buildGenerateContentRequest(
-          buildList {
-            add(prompt)
-            addAll(prompts)
-          },
-          config
-        )
+      val request = buildGenerateContentRequest(listOf(prompt, *prompts), config)
       return GenerateObjectResponse(
         controller.generateContent(request).toPublic().validate(),
         jsonSchema
@@ -299,12 +280,7 @@ internal constructor(
    * @see [FirebaseAIException] for types of errors.
    */
   public suspend fun countTokens(prompt: Content, vararg prompts: Content): CountTokensResponse =
-    countTokens(
-      buildList {
-        add(prompt)
-        addAll(prompts)
-      }
-    )
+    countTokens(listOf(prompt, *prompts))
 
   /**
    * Counts the number of tokens in a text prompt using the model's tokenizer.
