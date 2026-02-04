@@ -17,13 +17,18 @@
 package com.google.firebase.ai
 
 import android.graphics.Bitmap
+import android.util.Log
 import com.google.firebase.FirebaseApp
 import com.google.firebase.ai.common.APIController
 import com.google.firebase.ai.common.AppCheckHeaderProvider
 import com.google.firebase.ai.common.CountTokensRequest
 import com.google.firebase.ai.common.GenerateContentRequest
+import com.google.firebase.ai.hybrid.HybridRouter
 import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceGenerativeModelFactory
+import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceNotAvailableException
+import com.google.firebase.ai.ondevice.interop.GenerateContentRequest as OnDeviceGenerateContentRequest
 import com.google.firebase.ai.type.AutoFunctionDeclaration
+import com.google.firebase.ai.type.Candidate
 import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.CountTokensResponse
 import com.google.firebase.ai.type.FinishReason
@@ -36,6 +41,7 @@ import com.google.firebase.ai.type.GenerateObjectResponse
 import com.google.firebase.ai.type.GenerationConfig
 import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.GenerativeBackendEnum
+import com.google.firebase.ai.type.ImagePart
 import com.google.firebase.ai.type.InvalidStateException
 import com.google.firebase.ai.type.JsonSchema
 import com.google.firebase.ai.type.PromptBlockedException
@@ -43,11 +49,13 @@ import com.google.firebase.ai.type.RequestOptions
 import com.google.firebase.ai.type.ResponseStoppedException
 import com.google.firebase.ai.type.SafetySetting
 import com.google.firebase.ai.type.SerializationException
+import com.google.firebase.ai.type.TextPart
 import com.google.firebase.ai.type.Tool
 import com.google.firebase.ai.type.ToolConfig
 import com.google.firebase.ai.type.content
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
+import kotlin.collections.map
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
@@ -71,7 +79,7 @@ internal constructor(
   private val toolConfig: ToolConfig? = null,
   private val systemInstruction: Content? = null,
   private val generativeBackend: GenerativeBackend = GenerativeBackend.googleAI(),
-  private val onDeviceFactoryProvider: FirebaseAIOnDeviceGenerativeModelFactory? = null,
+  private val onDeviceModel: com.google.firebase.ai.ondevice.interop.GenerativeModel? = null,
   private val onDeviceConfig: OnDeviceConfig,
   internal val controller: APIController,
 ) {
@@ -99,7 +107,7 @@ internal constructor(
     toolConfig = toolConfig,
     systemInstruction = systemInstruction,
     generativeBackend = generativeBackend,
-    onDeviceFactoryProvider = onDeviceFactoryProvider,
+    onDeviceModel = onDeviceFactoryProvider?.newGenerativeModel(),
     onDeviceConfig = onDeviceConfig,
     controller =
       APIController(
@@ -117,6 +125,8 @@ internal constructor(
       ),
   )
 
+  private val hybridRouter = HybridRouter(onDeviceConfig.mode)
+
   /**
    * Generates new content from the input [Content] given to the model as a prompt.
    *
@@ -128,12 +138,7 @@ internal constructor(
   public suspend fun generateContent(
     prompt: Content,
     vararg prompts: Content
-  ): GenerateContentResponse =
-    try {
-      controller.generateContent(constructRequest(null, prompt, *prompts)).toPublic().validate()
-    } catch (e: Throwable) {
-      throw FirebaseAIException.from(e)
-    }
+  ): GenerateContentResponse = generateContent(listOf(prompt) + prompts.toList())
 
   /**
    * Generates an object from the input [Content] given to the model as a prompt.
@@ -149,6 +154,11 @@ internal constructor(
     prompt: Content,
     vararg prompts: Content
   ): GenerateObjectResponse<T> {
+    if (onDeviceConfig.mode != InferenceMode.ONLY_IN_CLOUD) {
+      throw FirebaseAIException.from(
+        IllegalArgumentException("On-device mode is not supported for `generateObject`")
+      )
+    }
     try {
       val config =
         (generationConfig?.toBuilder() ?: GenerationConfig.builder())
@@ -157,7 +167,7 @@ internal constructor(
           .build()
       return GenerateObjectResponse(
         controller
-          .generateContent(constructRequest(config, prompt, *prompts))
+          .generateContent(GenerateContentRequest.fromPrompt(config, prompt, *prompts))
           .toPublic()
           .validate(),
         jsonSchema
@@ -176,10 +186,8 @@ internal constructor(
    * @see [FirebaseAIException] for types of errors.
    */
   public suspend fun generateContent(prompt: List<Content>): GenerateContentResponse =
-    try {
-      controller.generateContent(constructRequest(prompt)).toPublic().validate()
-    } catch (e: Throwable) {
-      throw FirebaseAIException.from(e)
+    hybridRouter.suspendRoute({ generateContentInCloud(prompt) }) {
+      generateContentInOnDevice(prompt)
     }
 
   /**
@@ -193,11 +201,7 @@ internal constructor(
   public fun generateContentStream(
     prompt: Content,
     vararg prompts: Content
-  ): Flow<GenerateContentResponse> =
-    controller
-      .generateContentStream(constructRequest(null, prompt, *prompts))
-      .catch { throw FirebaseAIException.from(it) }
-      .map { it.toPublic().validate() }
+  ): Flow<GenerateContentResponse> = generateContentStream(listOf(prompt) + prompts.toList())
 
   /**
    * Generates new content as a stream from the input [Content] given to the model as a prompt.
@@ -208,10 +212,10 @@ internal constructor(
    * @see [FirebaseAIException] for types of errors.
    */
   public fun generateContentStream(prompt: List<Content>): Flow<GenerateContentResponse> =
-    controller
-      .generateContentStream(constructRequest(prompt))
-      .catch { throw FirebaseAIException.from(it) }
-      .map { it.toPublic().validate() }
+    hybridRouter.route(
+      inCloudCallback = { generateContentStreamInCloud(prompt) },
+      onDeviceCallback = { generateContentStreamInOnDevice(prompt) }
+    )
 
   /**
    * Generates new content from the text input given to the model as a prompt.
@@ -283,13 +287,8 @@ internal constructor(
    * @throws [FirebaseAIException] if the request failed.
    * @see [FirebaseAIException] for types of errors.
    */
-  public suspend fun countTokens(prompt: Content, vararg prompts: Content): CountTokensResponse {
-    try {
-      return controller.countTokens(constructCountTokensRequest(prompt, *prompts)).toPublic()
-    } catch (e: Throwable) {
-      throw FirebaseAIException.from(e)
-    }
-  }
+  public suspend fun countTokens(prompt: Content, vararg prompts: Content): CountTokensResponse =
+    countTokens(listOf(prompt) + prompts)
 
   /**
    * Counts the number of tokens in a prompt using the model's tokenizer.
@@ -299,13 +298,11 @@ internal constructor(
    * @throws [FirebaseAIException] if the request failed.
    * @see [FirebaseAIException] for types of errors.
    */
-  public suspend fun countTokens(prompt: List<Content>): CountTokensResponse {
-    try {
-      return controller.countTokens(constructCountTokensRequest(*prompt.toTypedArray())).toPublic()
-    } catch (e: Throwable) {
-      throw FirebaseAIException.from(e)
-    }
-  }
+  public suspend fun countTokens(prompt: List<Content>): CountTokensResponse =
+    hybridRouter.suspendRoute(
+      inCloudCallback = { countTokensInCloud(prompt) },
+      onDeviceCallback = { countTokensInOnDevice(prompt) }
+    )
 
   /**
    * Counts the number of tokens in a text prompt using the model's tokenizer.
@@ -329,6 +326,88 @@ internal constructor(
    */
   public suspend fun countTokens(prompt: Bitmap): CountTokensResponse {
     return countTokens(content { image(prompt) })
+  }
+
+  private fun generateContentStreamInCloud(prompt: List<Content>): Flow<GenerateContentResponse> =
+    controller
+      .generateContentStream(GenerateContentRequest.fromPrompt(prompt))
+      .catch { throw FirebaseAIException.from(it) }
+      .map { it.toPublic().validate() }
+
+  private fun generateContentStreamInOnDevice(
+    prompt: List<Content>
+  ): Flow<GenerateContentResponse> {
+    if (onDeviceModel == null) {
+      throw FirebaseAIException.from(
+        FirebaseAIOnDeviceNotAvailableException("On-device model is null")
+      )
+    }
+    val request = buildOnDeviceGenerateContentRequest(prompt)
+    return onDeviceModel
+      .generateContentStream(request)
+      .catch { throw FirebaseAIException.from(it) }
+      .map { GenerateContentResponse.fromOnDeviceResponse(it).validate() }
+  }
+
+  private suspend fun countTokensInCloud(prompt: List<Content>): CountTokensResponse {
+    try {
+      return controller
+        .countTokens(CountTokensRequest.fromPrompt(*prompt.toTypedArray()))
+        .toPublic()
+    } catch (e: Throwable) {
+      throw FirebaseAIException.from(e)
+    }
+  }
+
+  private suspend fun countTokensInOnDevice(prompt: List<Content>): CountTokensResponse {
+    if (onDeviceModel == null) {
+      throw FirebaseAIException.from(
+        FirebaseAIOnDeviceNotAvailableException("On-device model is null")
+      )
+    }
+    if (!onDeviceModel.isAvailable()) {
+      throw FirebaseAIException.from(
+        FirebaseAIOnDeviceNotAvailableException("On-device model is not available")
+      )
+    }
+
+    val request = buildOnDeviceGenerateContentRequest(prompt)
+
+    return try {
+      val response = onDeviceModel.countTokens(request)
+      CountTokensResponse(response.totalTokens)
+    } catch (e: Throwable) {
+      throw FirebaseAIException.from(e)
+    }
+  }
+
+  private suspend fun generateContentInCloud(prompt: List<Content>): GenerateContentResponse =
+    try {
+      controller.generateContent(GenerateContentRequest.fromPrompt(prompt)).toPublic().validate()
+    } catch (e: Throwable) {
+      throw FirebaseAIException.from(e)
+    }
+
+  private suspend fun generateContentInOnDevice(prompt: List<Content>): GenerateContentResponse {
+    if (onDeviceModel == null) {
+      throw FirebaseAIException.from(
+        FirebaseAIOnDeviceNotAvailableException("On-device model is null")
+      )
+    }
+    if (!onDeviceModel.isAvailable()) {
+      throw FirebaseAIException.from(
+        FirebaseAIOnDeviceNotAvailableException("On-device model is not available")
+      )
+    }
+
+    val request = buildOnDeviceGenerateContentRequest(prompt)
+
+    return try {
+      val response = onDeviceModel.generateContent(request)
+      GenerateContentResponse.fromOnDeviceResponse(response).validate()
+    } catch (e: Throwable) {
+      throw FirebaseAIException.from(e)
+    }
   }
 
   internal fun hasFunction(call: FunctionCallPart): Boolean {
@@ -383,7 +462,10 @@ internal constructor(
   internal fun getTurnLimit(): Int = controller.getTurnLimit()
 
   @OptIn(ExperimentalSerializationApi::class)
-  private fun constructRequest(overrideConfig: GenerationConfig? = null, vararg prompt: Content) =
+  private fun GenerateContentRequest.Companion.fromPrompt(
+    overrideConfig: GenerationConfig? = null,
+    vararg prompt: Content
+  ) =
     GenerateContentRequest(
       modelName,
       prompt.map { it.toInternal() },
@@ -405,15 +487,80 @@ internal constructor(
       systemInstruction?.copy(role = "system")?.toInternal(),
     )
 
-  private fun constructRequest(prompt: List<Content>) =
-    constructRequest(null, *prompt.toTypedArray())
+  private fun GenerateContentRequest.Companion.fromPrompt(prompt: List<Content>) =
+    GenerateContentRequest.fromPrompt(null, *prompt.toTypedArray())
 
-  private fun constructCountTokensRequest(vararg prompt: Content) =
+  private fun buildOnDeviceGenerateContentRequest(
+    prompt: List<Content>
+  ): OnDeviceGenerateContentRequest {
+    if (onDeviceModel == null) {
+      throw FirebaseAIException.from(
+        FirebaseAIOnDeviceNotAvailableException("On-device model is null")
+      )
+    }
+
+    if (prompt.isEmpty()) {
+      throw FirebaseAIException.from(IllegalArgumentException("Prompt is empty"))
+    }
+    val parts =
+      if (prompt.size == 1) {
+        prompt.first().parts
+      } else {
+        Log.w(TAG, "On-device model does not support multiple prompts, concatenating them instead")
+        prompt.flatMap { it.parts }
+      }
+    val textParts =
+      parts.filterIsInstance<TextPart>().also {
+        if (it.size > 1)
+          Log.w(
+            TAG,
+            "On-device model does not support multiple text parts, concatenating them instead"
+          )
+      }
+    if (textParts.isEmpty()) {
+      throw FirebaseAIException.from(
+        IllegalArgumentException("On-device model requires text as part of the prompt")
+      )
+    }
+    val text = textParts.joinToString("") { it.text }
+    val image =
+      parts
+        .filterIsInstance<ImagePart>()
+        .also {
+          if (it.size > 1)
+            Log.w(
+              TAG,
+              "On-device model does not support multiple image parts, using only the first one"
+            )
+        }
+        .firstOrNull()
+    return OnDeviceGenerateContentRequest(
+      text = com.google.firebase.ai.ondevice.interop.TextPart(text),
+      image = image?.let { com.google.firebase.ai.ondevice.interop.ImagePart(it.image) },
+      temperature = onDeviceConfig.temperature,
+      topK = onDeviceConfig.topK,
+      seed = onDeviceConfig.seed,
+      candidateCount = 1, // TODO: Add candidate count to config
+      maxOutputTokens = onDeviceConfig.maxOutputTokens
+    )
+  }
+
+  private fun GenerateContentResponse.Companion.fromOnDeviceResponse(
+    response: com.google.firebase.ai.ondevice.interop.GenerateContentResponse
+  ) =
+    GenerateContentResponse(
+      response.candidates.map { Candidate.fromInterop(it) },
+      InferenceSource.ON_DEVICE,
+      null,
+      null
+    )
+
+  private fun CountTokensRequest.Companion.fromPrompt(vararg prompt: Content) =
     when (generativeBackend.backend) {
       GenerativeBackendEnum.GOOGLE_AI ->
-        CountTokensRequest.forGoogleAI(constructRequest(null, *prompt))
+        CountTokensRequest.forGoogleAI(GenerateContentRequest.fromPrompt(null, *prompt))
       GenerativeBackendEnum.VERTEX_AI ->
-        CountTokensRequest.forVertexAI(constructRequest(null, *prompt))
+        CountTokensRequest.forVertexAI(GenerateContentRequest.fromPrompt(null, *prompt))
     }
 
   private fun GenerateContentResponse.validate() = apply {

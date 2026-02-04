@@ -32,8 +32,11 @@ public class HybridRouter(public val inferenceMode: InferenceMode) {
    * @param onDeviceCallback The logic to execute for on-device inference.
    * @param inCloudCallback The logic to execute for in-cloud inference.
    */
-  public fun route(onDeviceCallback: () -> Unit, inCloudCallback: () -> Unit) {
-    when (inferenceMode) {
+  public suspend fun <T> suspendRoute(
+    inCloudCallback: suspend () -> T,
+    onDeviceCallback: suspend () -> T
+  ): T {
+    return when (inferenceMode) {
       InferenceMode.ONLY_ON_DEVICE -> onDeviceCallback()
       InferenceMode.ONLY_IN_CLOUD -> inCloudCallback()
       InferenceMode.PREFER_ON_DEVICE -> {
@@ -46,6 +49,29 @@ public class HybridRouter(public val inferenceMode: InferenceMode) {
       }
       // TODO: Implement logic to route to on-device if device is offline.
       InferenceMode.PREFER_IN_CLOUD -> inCloudCallback()
+      else -> {
+        throw IllegalStateException("Unknown inference mode: $inferenceMode")
+      }
+    }
+  }
+
+  public fun <T> route(inCloudCallback: () -> T, onDeviceCallback: () -> T): T {
+    return when (inferenceMode) {
+      InferenceMode.ONLY_ON_DEVICE -> onDeviceCallback()
+      InferenceMode.ONLY_IN_CLOUD -> inCloudCallback()
+      InferenceMode.PREFER_ON_DEVICE -> {
+        try {
+          onDeviceCallback()
+        } catch (e: FirebaseAIOnDeviceException) {
+          Log.i(TAG, "On-device inference failed, falling back to in-cloud.", e)
+          inCloudCallback()
+        }
+      }
+      // TODO: Implement logic to route to on-device if device is offline.
+      InferenceMode.PREFER_IN_CLOUD -> inCloudCallback()
+      else -> {
+        throw IllegalStateException("Unknown inference mode: $inferenceMode")
+      }
     }
   }
 
