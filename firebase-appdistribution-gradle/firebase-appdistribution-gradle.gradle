@@ -161,6 +161,10 @@ task integrationTest(type: Test) {
   classpath = sourceSets.integrationTest.runtimeClasspath
 
   shouldRunAfter(test)
+
+  testLogging {
+    showStandardStreams = true
+  }
 }
 
 check.dependsOn(integrationTest)
