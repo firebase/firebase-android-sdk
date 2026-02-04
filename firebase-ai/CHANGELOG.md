@@ -1,5 +1,6 @@
 # Unreleased
 
+- [feature] Added no-argument overloads for `Tool.urlContext()` and `Tool.googleSearch()`.
 - [feature] Added `JsonSchema`, `GenerativeModel#generateObject` and the firebase-ai-ksp processor's
   annotation (`Generable`, and `Guide`). To learn more about how to use them, and the ksp processor
   see the [Firebase KSP Processor Readme](https://github.com/firebase/firebase-android-sdk/blob/main/firebase-ai-ksp-processor/README.md)
