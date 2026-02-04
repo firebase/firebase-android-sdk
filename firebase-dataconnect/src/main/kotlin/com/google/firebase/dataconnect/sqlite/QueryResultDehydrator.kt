@@ -73,7 +73,7 @@ private fun QueryResultProto.Builder.initialize(
     addEntities(entityList.toEntityOrEntityListProto(path))
   }
 
-  return pruneResult.entityByPath.values.toList()
+  return pruneResult.entityByPath.values.toList() + pruneResult.entityListByPath.values.flatten()
 }
 
 private fun Entity.toEntityOrEntityListProto(path: DataConnectPath): EntityOrEntityListProto =
