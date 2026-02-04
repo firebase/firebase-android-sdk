@@ -229,6 +229,18 @@ private val propTestConfig =
     shrinkingMode = ShrinkingMode.Off,
   )
 
+/**
+ * Asserts that a [DehydratedQueryResult] is empty, meaning its [DehydratedQueryResult.proto.struct]
+ * is the same instance as [expectedStruct], and both [DehydratedQueryResult.proto.entitiesList] and
+ * [DehydratedQueryResult.entities] are empty.
+ *
+ * This function is used to verify scenarios where no entities should be extracted or modifications
+ * made to the original struct during the dehydration process.
+ *
+ * @receiver The [DehydratedQueryResult] instance to check.
+ * @param expectedStruct The [Struct] that the [DehydratedQueryResult.proto.struct] is expected to
+ * be the same instance as.
+ */
 private fun DehydratedQueryResult.shouldHaveEmptyEntitiesAndStruct(expectedStruct: Struct) {
   assertSoftly {
     withClue("proto.struct") { proto.struct shouldBeSameInstanceAs expectedStruct }
@@ -237,15 +249,22 @@ private fun DehydratedQueryResult.shouldHaveEmptyEntitiesAndStruct(expectedStruc
   }
 }
 
+/**
+ * Walks the receiver [Struct] and returns all paths that are eligible for entity extraction.
+ *
+ * A path is "eligible" for entity extraction if its value is a [Struct] and it satisfies one of the
+ * following conditions:
+ * 1. It is a field of another [Struct].
+ * 2. It is an element of a [ListValue] where all elements of the [ListValue] are [Struct] values.
+ */
 private fun Struct.eligibleEntityStructPaths(): Sequence<DataConnectPath> {
-  val entityListPaths = mutableSetOf<DataConnectPath>()
-
-  fun updateEntityListPaths(pair: DataConnectPathValuePair) {
-    val (path, value) = pair
-    if (value.isListValue) {
-      val containsOnlyStructs = value.listValue.valuesList.all { it.isStructValue }
-      if (containsOnlyStructs) {
-        entityListPaths.add(path)
+  val entityListPaths = buildSet {
+    walk().forEach { (path, value) ->
+      if (value.isListValue) {
+        val containsOnlyStructs = value.listValue.valuesList.all { it.isStructValue }
+        if (containsOnlyStructs) {
+          add(path)
+        }
       }
     }
   }
@@ -258,7 +277,5 @@ private fun Struct.eligibleEntityStructPaths(): Sequence<DataConnectPath> {
     }
   }
 
-  return walk(includeSelf = false).onEach(::updateEntityListPaths).filter(::filterEntityPaths).map {
-    it.path
-  }
+  return walk(includeSelf = false).filter(::filterEntityPaths).map { it.path }
 }

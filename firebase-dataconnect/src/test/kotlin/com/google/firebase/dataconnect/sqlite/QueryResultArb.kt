@@ -73,6 +73,21 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
 
+/**
+ * An [Arb] that generates [QueryResultProto] objects.
+ *
+ * Each sample contains a [QueryResultProto] and its "hydrated" [Struct] representation, along with
+ * mappings that link paths to their corresponding entities within the hydrated structure. This
+ * facilitates testing of logic that dehydrates and rehydrates query results.
+ *
+ * The generator intelligently places entities and entity lists at random paths within the
+ * dehydrated struct, ensuring a wide variety of test cases, including nested entities and entity
+ * lists.
+ *
+ * @param entityCountRange The number of entities to generate in each sample.
+ * @param structKeyArb Generator used to generate keys for [Struct] fields.
+ * @param structArb Generator used to generate the base [Struct] instances.
+ */
 internal class QueryResultArb(
   entityCountRange: IntRange,
   private val structKeyArb: Arb<String> = Arb.proto.structKey(length = 4),
@@ -395,6 +410,12 @@ private val propTestConfig =
     shrinkingMode = ShrinkingMode.Off,
   )
 
+/**
+ * Returns a [Sequence] of all ancestor paths for this path, starting from the immediate parent and
+ * moving up to the root.
+ *
+ * For example, for the path `a.b.c`, this will yield `a.b`, then `a`, then ``.
+ */
 private fun DataConnectPath.ancestors(): Sequence<DataConnectPath> = sequence {
   var path = this@ancestors
   while (path.isNotEmpty()) {
@@ -403,6 +424,12 @@ private fun DataConnectPath.ancestors(): Sequence<DataConnectPath> = sequence {
   }
 }
 
+/**
+ * Filters this [Iterable] to only include paths that are ancestors of the given [path].
+ *
+ * This function uses [ancestors] to determine the set of valid ancestors and returns a [List]
+ * containing only the paths from the receiver that are present in the ancestor path set.
+ */
 private fun Iterable<DataConnectPath>.filterAncestorOf(
   path: DataConnectPath
 ): List<DataConnectPath> {
@@ -410,11 +437,17 @@ private fun Iterable<DataConnectPath>.filterAncestorOf(
   return filter { it in ancestors }
 }
 
+/**
+ * Asserts that the value at the given [path] within the `hydratedStruct` is a non-empty list of
+ * entities.
+ */
 private fun QueryResultArb.Sample.shouldBeEntityList(path: DataConnectPath) {
   val entityListValue = hydratedStruct.walk().filter { it.path == path }.single().value
   entityListValue.kindCase shouldBe Value.KindCase.LIST_VALUE
 
   val entityList = entityListValue.listValue
+  withClue("entityList.valuesCount") { entityList.valuesCount shouldBeGreaterThan 0 }
+
   repeat(entityList.valuesCount) { entityListIndex ->
     withClue("entityListIndex=$entityListIndex") {
       val entityListElement = entityList.getValues(entityListIndex)
