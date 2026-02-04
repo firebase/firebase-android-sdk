@@ -20,6 +20,7 @@ import com.google.firebase.dataconnect.DataConnectPath
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.toPathString
 import com.google.firebase.dataconnect.util.ProtoGraft.withGraftedInStructs
+import com.google.firebase.dataconnect.withAddedListIndex
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
 import google.firebase.dataconnect.proto.kotlinsdk.Entity
@@ -30,45 +31,55 @@ import google.firebase.dataconnect.proto.kotlinsdk.QueryResult
 
 internal fun rehydrateQueryResult(
   dehydratedQueryResult: QueryResult,
-  entityStructById: Map<String, Struct>
+  dehydratedEntityStructById: Map<String, Struct>
 ): Struct {
   val struct = dehydratedQueryResult.struct
   if (dehydratedQueryResult.entitiesCount == 0) {
     return struct
   }
 
-  val structByPath: Map<DataConnectPath, Struct> =
-    dehydratedQueryResult.entitiesList.toStructByPathMap(entityStructById)
+  val rehydratedEntityStructById: Map<DataConnectPath, Struct> =
+    dehydratedQueryResult.entitiesList.toRehydratedEntityStructByIdMap(dehydratedEntityStructById)
 
-  return struct.withGraftedInStructs(structByPath)
+  return struct.withGraftedInStructs(rehydratedEntityStructById)
 }
 
-private fun List<EntityOrEntityList>.toStructByPathMap(
-  entityStructById: Map<String, Struct>
-): Map<DataConnectPath, Struct> = mapNotNull { it.toPathStructPair(entityStructById) }.toMap()
+private fun List<EntityOrEntityList>.toRehydratedEntityStructByIdMap(
+  dehydratedEntityStructById: Map<String, Struct>
+): Map<DataConnectPath, Struct> = buildMap {
+  this@toRehydratedEntityStructByIdMap.forEach { entityOrEntityList: EntityOrEntityList ->
+    updateWithRehydratedEntityStruct(entityOrEntityList, dehydratedEntityStructById)
+  }
+}
 
-private fun EntityOrEntityList.toPathStructPair(
-  entityStructById: Map<String, Struct>
-): Pair<DataConnectPath, Struct>? {
-  val dataConnectPath: DataConnectPath = path.toDataConnectPath()
+private fun MutableMap<DataConnectPath, Struct>.updateWithRehydratedEntityStruct(
+  proto: EntityOrEntityList,
+  dehydratedEntityStructById: Map<String, Struct>,
+) {
+  val dataConnectPath: DataConnectPath = proto.path.toDataConnectPath()
 
-  val struct =
-    when (kindCase) {
-      EntityOrEntityList.KindCase.ENTITY -> entity.rehydrate(dataConnectPath, entityStructById)
-      EntityOrEntityList.KindCase.ENTITYLIST ->
-        throw IllegalStateException(
-          IMPLEMENTME() +
-            "internal error a5ppf5vkzc: EntityOrEntityList.KindCase.ENTITYLIST not yet supported"
-        )
-      EntityOrEntityList.KindCase.KIND_NOT_SET -> return null
+  when (proto.kindCase) {
+    EntityOrEntityList.KindCase.ENTITY -> {
+      val rehydratedEntity = proto.entity.rehydrate(dataConnectPath, dehydratedEntityStructById)
+      put(dataConnectPath, rehydratedEntity)
     }
-
-  return Pair(dataConnectPath, struct)
+    EntityOrEntityList.KindCase.ENTITYLIST -> {
+      proto.entityList.entitiesList.forEachIndexed { listIndex, entity ->
+        val listElementPath = dataConnectPath.withAddedListIndex(listIndex)
+        val rehydratedEntity = entity.rehydrate(listElementPath, dehydratedEntityStructById)
+        put(dataConnectPath, rehydratedEntity)
+      }
+    }
+    EntityOrEntityList.KindCase.KIND_NOT_SET -> {}
+  }
 }
 
-private fun Entity.rehydrate(path: DataConnectPath, entityStructById: Map<String, Struct>): Struct {
+private fun Entity.rehydrate(
+  path: DataConnectPath,
+  dehydratedEntityStructById: Map<String, Struct>
+): Struct {
   val struct =
-    entityStructById[entityId]
+    dehydratedEntityStructById[entityId]
       ?: throw EntityIdNotFoundException(
         "entity with ID $entityId path=${path.toPathString()} not found [f9tcr9fvmg]"
       )
@@ -80,28 +91,24 @@ private fun Entity.rehydrate(path: DataConnectPath, entityStructById: Map<String
   }
 
   val structBuilder = Struct.newBuilder()
-  val missingFields = lazy(LazyThreadSafetyMode.NONE) { mutableSetOf<String>() }
+  val missingFields = mutableSetOf<String>()
   expectedFields.forEach { expectedField ->
     val fieldValue = fieldValueByName[expectedField]
     if (fieldValue === null) {
-      missingFields.value.add(expectedField)
+      missingFields.add(expectedField)
     } else {
       structBuilder.putFields(expectedField, fieldValue)
     }
   }
 
-  if (missingFields.isInitialized()) {
-    missingFields.value
-      .takeIf { it.isNotEmpty() }
-      ?.let { missingFields ->
-        throw EntityMissingFieldsException(
-          "entity with ID $entityId for path=${path.toPathString()} " +
-            "is missing ${missingFields.size} of ${expectedFields.size} fields: " +
-            "${missingFields.sorted().joinToString()} " +
-            "(got ${structBuilder.fieldsCount} fields: " +
-            "${structBuilder.fieldsMap.keys.sorted().joinToString()}) [nrtmqzdfy3]"
-        )
-      }
+  if (missingFields.isNotEmpty()) {
+    throw EntityMissingFieldsException(
+      "entity with ID $entityId for path=${path.toPathString()} " +
+        "is missing ${missingFields.size} of ${expectedFields.size} fields: " +
+        "${missingFields.sorted().joinToString()} " +
+        "(got ${structBuilder.fieldsCount} fields: " +
+        "${structBuilder.fieldsMap.keys.sorted().joinToString()}) [nrtmqzdfy3]"
+    )
   }
 
   return structBuilder.build()
