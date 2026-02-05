@@ -19,6 +19,7 @@
 package com.google.firebase.dataconnect.sqlite
 
 import com.google.firebase.dataconnect.testutil.containWithNonAbuttingText
+import com.google.firebase.dataconnect.testutil.property.arbitrary.withIterations
 import com.google.firebase.dataconnect.testutil.registerDataConnectKotestPrinters
 import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
@@ -52,7 +53,7 @@ class QueryResultRehydratorUnitTest {
   }
 
   @Test
-  fun `rehydrateQueryResult() should return the Struct from QueryResultProto if entitiesList is empty`() =
+  fun `rehydrateQueryResult() returns the Struct from QueryResultProto if entitiesList is empty`() =
     runTest {
       checkAll(propTestConfig, QueryResultArb(entityCountRange = 0..5)) { sample ->
         val struct: Struct = sample.hydratedStruct
@@ -65,7 +66,7 @@ class QueryResultRehydratorUnitTest {
     }
 
   @Test
-  fun `rehydrateQueryResult() should return the rehydrated Struct`() = runTest {
+  fun `rehydrateQueryResult() returns the rehydrated Struct`() = runTest {
     checkAll(propTestConfig, QueryResultArb(entityCountRange = 1..5)) { sample ->
       check(sample.queryResultProto.entitiesCount > 0)
 
@@ -76,7 +77,21 @@ class QueryResultRehydratorUnitTest {
   }
 
   @Test
-  fun `rehydrateQueryResult() should throw on missing entity ID`() = runTest {
+  fun `rehydrateQueryResult() correctly rehydrates output of dehydrateQueryResult()`() = runTest {
+    checkAll(propTestConfig.withIterations(1000), QueryResultArb(entityCountRange = 0..20)) { sample
+      ->
+      val queryResult: Struct = sample.hydratedStruct
+      val getEntityIdForPath = sample::getEntityIdForPath
+      val dehydrateResult = dehydrateQueryResult(queryResult, getEntityIdForPath)
+
+      val result = rehydrateQueryResult(dehydrateResult.proto, dehydrateResult.entityStructById)
+
+      result shouldBe queryResult
+    }
+  }
+
+  @Test
+  fun `rehydrateQueryResult() throws on missing entity ID`() = runTest {
     checkAll(propTestConfig, QueryResultArb(entityCountRange = 1..5)) { sample ->
       check(sample.queryResultProto.entitiesCount > 0)
       val missingEntityId = Arb.of(sample.entityStructById.keys.toList()).bind()
@@ -106,7 +121,7 @@ class QueryResultRehydratorUnitTest {
   }
 
   @Test
-  fun `rehydrateQueryResult() should throw on missing entity field`() = runTest {
+  fun `rehydrateQueryResult() throws on missing entity field`() = runTest {
     val queryResultWithAtLeastOneNonEmptyEntityArb =
       QueryResultArb(entityCountRange = 1..5).filter { sample ->
         sample.entityStructById.values.any { it.fieldsCount > 0 }
