@@ -24,6 +24,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
+import androidx.annotation.NonNull;
 import com.google.android.datatransport.Encoding;
 import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.runtime.EncodedPayload;
@@ -826,13 +827,16 @@ public class SQLiteEventStore
     }
   }
 
-  private List<byte[]> deFlattenBlob(byte[] flatBlob) {
+  @NonNull private List<byte[]> deFlattenBlob(byte[] flatBlob) {
     if (flatBlob == null) return List.of();
     ByteBuffer buffer = ByteBuffer.wrap(flatBlob);
     List<byte[]> rows = new ArrayList<>();
 
     while (buffer.hasRemaining()) {
       int length = buffer.getInt(); // Read the "Header" first
+      if(length > buffer.remaining()) {
+          break;
+      }
       byte[] row = new byte[length];
       buffer.get(row); // Read exactly that many bytes
       rows.add(row);
@@ -841,10 +845,11 @@ public class SQLiteEventStore
     return rows;
   }
 
-  private byte[] flattenListBlob(List<byte[]> blob) {
-    if (blob == null) return null;
+  @NonNull private byte[] flattenListBlob(List<byte[]> blob) {
+    if (blob == null) return new byte[0];
 
     byte[][] input = blob.toArray(new byte[0][]);
+    // Prepend a 4-byte length header for each byte array segment.
     int metadataSize = input.length * 4;
     int totalSize = 0;
     for (byte[] row : input) {
