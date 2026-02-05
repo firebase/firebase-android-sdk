@@ -17,8 +17,10 @@
 package com.google.firebase.dataconnect.util
 
 import com.google.firebase.dataconnect.DataConnectPath
+import com.google.firebase.dataconnect.DataConnectPathComparator
 import com.google.firebase.dataconnect.MutableDataConnectPath
 import com.google.firebase.dataconnect.emptyMutableDataConnectPath
+import com.google.firebase.dataconnect.toPathString
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.firebase.dataconnect.withAddedField
@@ -26,6 +28,8 @@ import com.google.firebase.dataconnect.withAddedListIndex
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
+import kotlin.collections.component1
+import kotlin.collections.component2
 
 /**
  * A function that is invoked by [ProtoPrune.withPrunedDescendants] to determine if a value should
@@ -68,12 +72,29 @@ internal object ProtoPrune {
   data class PruneStructResult(
     val prunedStruct: Struct,
     val prunedValueByPath: Map<DataConnectPath, PrunedValue>,
-  )
+  ) {
+    override fun toString(): String =
+      "PruneStructResult(prunedStruct=${prunedStruct.toCompactString()}, " +
+        "prunedValueByPath.size=${prunedValueByPath.size}, " +
+        "prunedValueByPath=${prunedValueByPath.toFriendlyString()})"
+  }
 
   data class PruneListValueResult(
     val prunedListValue: ListValue,
     val prunedValueByPath: Map<DataConnectPath, PrunedValue>,
-  )
+  ) {
+    override fun toString(): String =
+      "PruneListValueResult(prunedListValue=${prunedListValue.toCompactString()}, " +
+        "prunedValueByPath.size=${prunedValueByPath.size}, " +
+        "prunedValueByPath=${prunedValueByPath.toFriendlyString()})"
+  }
+
+  private fun Map<DataConnectPath, PrunedValue>.toFriendlyString(): String =
+    "{" +
+      toSortedMap(DataConnectPathComparator).entries.joinToString { (path, prunedValue) ->
+        "${path.toPathString()}=$prunedValue"
+      } +
+      "}"
 
   /**
    * Returns a new [Struct] with descendant [Struct] and [ListValue] values pruned according to the
