@@ -312,23 +312,22 @@ final class CctTransportBackend implements TransportBackend {
         }
 
         if (eventInternal.getExperimentIdsClear() != null
-            || eventInternal.getExperimentIdsEncrypted() != null) {
+            || eventInternal.getExperimentIdsEncrypted() != null
+            || eventInternal.getExperimentIdsEncryptedList() != null) {
           ExperimentIds.Builder builder = ExperimentIds.builder();
           if (eventInternal.getExperimentIdsClear() != null) {
             builder.setClearBlob(eventInternal.getExperimentIdsClear());
           }
+          List<String> experimentIdsEncrypted = List.of();
           if (eventInternal.getExperimentIdsEncryptedList() != null) {
-            List<String> encodedListByteData =
-                encodeListByteData(eventInternal.getExperimentIdsEncryptedList());
-            if (eventInternal.getExperimentIdsEncrypted() != null) {
-              encodedListByteData.add(
-                  Base64.encodeToString(eventInternal.getExperimentIdsEncrypted(), Base64.NO_WRAP));
-            }
-            builder.setEncryptedBlob(encodedListByteData);
-          } else if (eventInternal.getExperimentIdsEncrypted() != null) {
-            builder.setEncryptedBlob(
-                encodeListByteData(List.of(eventInternal.getExperimentIdsEncrypted())));
+            experimentIdsEncrypted.addAll(
+                encodeListByteData(eventInternal.getExperimentIdsEncryptedList()));
           }
+          if (eventInternal.getExperimentIdsEncrypted() != null) {
+            experimentIdsEncrypted.add(
+                Base64.encodeToString(eventInternal.getExperimentIdsEncrypted(), Base64.NO_WRAP));
+          }
+          builder.setEncryptedBlob(experimentIdsEncrypted);
           event.setExperimentIds(builder.build());
         }
 

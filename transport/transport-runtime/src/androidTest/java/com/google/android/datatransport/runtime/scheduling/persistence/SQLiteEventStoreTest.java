@@ -38,6 +38,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -53,6 +54,16 @@ public class SQLiteEventStoreTest {
       TransportContext.builder().setBackendName("backend2").build();
   private static final Encoding JSON_ENCODING = Encoding.of("json");
   private static final EventInternal EVENT =
+      EventInternal.builder()
+          .setTransportName("42")
+          .setEventMillis(1)
+          .setUptimeMillis(2)
+          .setEncodedPayload(
+              new EncodedPayload(JSON_ENCODING, "Hello".getBytes(Charset.defaultCharset())))
+          .addMetadata("key1", "value1")
+          .addMetadata("key2", "value2")
+          .build();
+  private static final EventInternal EVENTWITHIDS =
       EventInternal.builder()
           .setTransportName("42")
           .setEventMillis(1)
@@ -142,6 +153,24 @@ public class SQLiteEventStoreTest {
 
     assertThat(newEvent.getEvent()).isEqualTo(EVENT);
     assertThat(events).containsExactly(newEvent);
+  }
+
+  @Test
+  public void encryptedIds_storedAndLoadedCorrectly() {
+    byte[] test = "encrypted blob".getBytes(StandardCharsets.UTF_8);
+    PersistedEvent newEvent = store.persist(TRANSPORT_CONTEXT, EVENTWITHIDS);
+    Iterable<PersistedEvent> events = store.loadBatch(TRANSPORT_CONTEXT);
+    assertThat(
+            new String(
+                newEvent.getEvent().getExperimentIdsEncryptedList().get(0), StandardCharsets.UTF_8))
+        .isEqualTo("encrypted blob");
+    Iterator<PersistedEvent> iterator = events.iterator();
+    PersistedEvent firstEvent = iterator.hasNext() ? iterator.next() : null;
+    assertThat(
+            new String(
+                firstEvent.getEvent().getExperimentIdsEncryptedList().get(0),
+                StandardCharsets.UTF_8))
+        .isEqualTo("encrypted blob");
   }
 
   @Test

@@ -20,11 +20,11 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteDatabaseLockedException;
 import android.os.SystemClock;
 import android.util.Base64;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
-import androidx.annotation.NonNull;
 import com.google.android.datatransport.Encoding;
 import com.google.android.datatransport.Priority;
 import com.google.android.datatransport.runtime.EncodedPayload;
@@ -827,15 +827,15 @@ public class SQLiteEventStore
     }
   }
 
-  @NonNull private List<byte[]> deFlattenBlob(byte[] flatBlob) {
-    if (flatBlob == null) return List.of();
+  private List<byte[]> deFlattenBlob(byte[] flatBlob) {
+    if (flatBlob == null || flatBlob.length == 0) return null;
     ByteBuffer buffer = ByteBuffer.wrap(flatBlob);
     List<byte[]> rows = new ArrayList<>();
 
     while (buffer.hasRemaining()) {
       int length = buffer.getInt(); // Read the "Header" first
-      if(length > buffer.remaining()) {
-          break;
+      if (length > buffer.remaining()) {
+        break;
       }
       byte[] row = new byte[length];
       buffer.get(row); // Read exactly that many bytes
@@ -845,7 +845,8 @@ public class SQLiteEventStore
     return rows;
   }
 
-  @NonNull private byte[] flattenListBlob(List<byte[]> blob) {
+  @NonNull
+  private byte[] flattenListBlob(List<byte[]> blob) {
     if (blob == null) return new byte[0];
 
     byte[][] input = blob.toArray(new byte[0][]);
