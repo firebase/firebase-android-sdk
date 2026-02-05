@@ -35,6 +35,8 @@ import com.google.firebase.firestore.pipeline.CollectionGroupSource
 import com.google.firebase.firestore.pipeline.CollectionSource
 import com.google.firebase.firestore.pipeline.CollectionSourceOptions
 import com.google.firebase.firestore.pipeline.DatabaseSource
+import com.google.firebase.firestore.pipeline.DeleteOptions
+import com.google.firebase.firestore.pipeline.DeleteStage
 import com.google.firebase.firestore.pipeline.DistinctStage
 import com.google.firebase.firestore.pipeline.DocumentsSource
 import com.google.firebase.firestore.pipeline.Expression
@@ -43,6 +45,8 @@ import com.google.firebase.firestore.pipeline.Field
 import com.google.firebase.firestore.pipeline.FindNearestOptions
 import com.google.firebase.firestore.pipeline.FindNearestStage
 import com.google.firebase.firestore.pipeline.FunctionExpression
+import com.google.firebase.firestore.pipeline.InsertOptions
+import com.google.firebase.firestore.pipeline.InsertStage
 import com.google.firebase.firestore.pipeline.InternalOptions
 import com.google.firebase.firestore.pipeline.LimitStage
 import com.google.firebase.firestore.pipeline.OffsetStage
@@ -58,6 +62,8 @@ import com.google.firebase.firestore.pipeline.Stage
 import com.google.firebase.firestore.pipeline.UnionStage
 import com.google.firebase.firestore.pipeline.UnnestOptions
 import com.google.firebase.firestore.pipeline.UnnestStage
+import com.google.firebase.firestore.pipeline.UpsertOptions
+import com.google.firebase.firestore.pipeline.UpsertStage
 import com.google.firebase.firestore.pipeline.WhereStage
 import com.google.firebase.firestore.remote.RemoteSerializer
 import com.google.firebase.firestore.util.Logger
@@ -897,6 +903,16 @@ internal constructor(
    * @return A new [Pipeline] object with this stage appended to the stage list.
    */
   fun unnest(unnestStage: UnnestStage): Pipeline = append(unnestStage)
+
+  fun delete(): Pipeline = append(DeleteStage())
+  fun delete(deleteStage: DeleteStage, options: DeleteOptions): Pipeline = append(deleteStage)
+  fun upsert(): Pipeline = append(UpsertStage())
+  fun upsert(collection: CollectionReference): Pipeline = append(UpsertStage())
+  fun upsert(upsertStage: UpsertStage, upsertOptions: UpsertOptions): Pipeline =
+    append(UpsertStage())
+  fun insert(collection: CollectionReference): Pipeline = append(InsertStage())
+  fun insert(insertStage: InsertStage, insertOptions: InsertOptions): Pipeline =
+    append(InsertStage())
 }
 
 /** Start of a Firestore Pipeline */
