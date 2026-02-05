@@ -226,7 +226,7 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
   ): QueryResultsRow? =
     rawQuery(
       logger,
-      "SELECT id, data FROM query_results WHERE user_id=? AND query_id=?",
+      "SELECT id, data FROM queries WHERE user_id=? AND query_id=?",
       bindArgs = arrayOf(user.sqliteRowId, queryId.peek()),
     ) { cursor ->
       if (cursor.moveToNext()) {

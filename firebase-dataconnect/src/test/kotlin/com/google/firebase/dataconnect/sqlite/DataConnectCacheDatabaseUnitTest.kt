@@ -18,21 +18,19 @@ package com.google.firebase.dataconnect.sqlite
 
 import android.database.sqlite.SQLiteDatabase
 import com.google.firebase.dataconnect.core.Logger
-import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.EntityTestCase
-import com.google.firebase.dataconnect.sqlite.QueryResultEncoderTesting.generateEntities
 import com.google.firebase.dataconnect.testutil.CleanupsRule
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.property.arbitrary.distinctPair
+import com.google.firebase.dataconnect.testutil.property.arbitrary.listNoRepeat
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
 import com.google.firebase.dataconnect.testutil.property.arbitrary.twoValues
+import com.google.firebase.dataconnect.testutil.registerDataConnectKotestPrinters
 import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
-import com.google.firebase.dataconnect.testutil.withRandomlyInsertedStructs
-import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
-import com.google.protobuf.Struct
+import com.google.firebase.dataconnect.util.ImmutableByteArray
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
@@ -42,12 +40,9 @@ import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
-import io.kotest.property.PropertyContext
 import io.kotest.property.ShrinkingMode
 import io.kotest.property.arbitrary.byte
 import io.kotest.property.arbitrary.byteArray
-import io.kotest.property.arbitrary.constant
-import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.orNull
@@ -68,6 +63,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.After
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -97,6 +93,11 @@ class DataConnectCacheDatabaseUnitTest {
     if (lazyDataConnectCacheDatabase.isInitialized()) {
       runBlocking { lazyDataConnectCacheDatabase.value.close() }
     }
+  }
+
+  @Before
+  fun registerPrinters() {
+    registerDataConnectKotestPrinters()
   }
 
   @Test
@@ -240,19 +241,19 @@ class DataConnectCacheDatabaseUnitTest {
   fun `insertQueryResult() should insert a query result with no entities`() = runTest {
     dataConnectCacheDatabase.initialize()
 
-    checkAll(propTestConfig, authUidArb(), QueryIdSample.arb(), nonEntityStructArb()) {
+    checkAll(propTestConfig, authUidArb(), queryIdArb(), Arb.proto.struct()) {
       authUid,
       queryId,
-      struct ->
+      structSample ->
       dataConnectCacheDatabase.insertQueryResult(
-        authUid.authUid,
-        queryId.queryIdCopy(),
-        struct,
+        authUid.string,
+        queryId.bytes,
+        structSample.struct,
+        entityIdByPath = emptyMap(),
       )
 
-      val structFromDb =
-        dataConnectCacheDatabase.getQueryResult(authUid.authUid, queryId.queryIdCopy())
-      structFromDb shouldBe struct
+      val structFromDb = dataConnectCacheDatabase.getQueryResult(authUid.string, queryId.bytes)
+      structFromDb shouldBe structSample.struct
     }
   }
 
@@ -260,21 +261,23 @@ class DataConnectCacheDatabaseUnitTest {
   fun `insertQueryResult() should overwrite a previous query result with no entities`() = runTest {
     dataConnectCacheDatabase.initialize()
 
-    val nonEntityStructArb = nonEntityStructArb()
-    checkAll(propTestConfig, authUidArb(), QueryIdSample.arb(), Arb.int(2..10)) {
-      authUid,
-      queryId,
-      structCount ->
-      lateinit var lastStruct: Struct
-      repeat(structCount) {
-        val struct = nonEntityStructArb.bind()
-        dataConnectCacheDatabase.insertQueryResult(authUid.authUid, queryId.queryIdCopy(), struct)
-        lastStruct = struct
+    checkAll(
+      propTestConfig,
+      authUidArb(),
+      queryIdArb(),
+      Arb.listNoRepeat(Arb.proto.struct(), 2..5)
+    ) { authUid, queryId, structSamples ->
+      structSamples.forEach {
+        dataConnectCacheDatabase.insertQueryResult(
+          authUid.string,
+          queryId.bytes,
+          it.struct,
+          entityIdByPath = emptyMap(),
+        )
       }
 
-      val structFromDb =
-        dataConnectCacheDatabase.getQueryResult(authUid.authUid, queryId.queryIdCopy())
-      structFromDb shouldBe lastStruct
+      val structFromDb = dataConnectCacheDatabase.getQueryResult(authUid.string, queryId.bytes)
+      structFromDb shouldBe structSamples.last().struct
     }
   }
 
@@ -285,27 +288,27 @@ class DataConnectCacheDatabaseUnitTest {
     checkAll(
       propTestConfig,
       authUidArb().distinctPair(),
-      QueryIdSample.arb(),
-      Arb.twoValues(nonEntityStructArb())
-    ) { (authUid1, authUid2), queryId, (struct1, struct2) ->
+      queryIdArb(),
+      Arb.twoValues(Arb.proto.struct())
+    ) { (authUid1, authUid2), queryId, (structSample1, structSample2) ->
       dataConnectCacheDatabase.insertQueryResult(
-        authUid1.authUid,
-        queryId.queryIdCopy(),
-        struct1,
+        authUid1.string,
+        queryId.bytes,
+        structSample1.struct,
+        entityIdByPath = emptyMap(),
       )
       dataConnectCacheDatabase.insertQueryResult(
-        authUid2.authUid,
-        queryId.queryIdCopy(),
-        struct2,
+        authUid2.string,
+        queryId.bytes,
+        structSample2.struct,
+        entityIdByPath = emptyMap(),
       )
 
-      val struct1FromDb =
-        dataConnectCacheDatabase.getQueryResult(authUid1.authUid, queryId.queryIdCopy())
-      val struct2FromDb =
-        dataConnectCacheDatabase.getQueryResult(authUid2.authUid, queryId.queryIdCopy())
+      val struct1FromDb = dataConnectCacheDatabase.getQueryResult(authUid1.string, queryId.bytes)
+      val struct2FromDb = dataConnectCacheDatabase.getQueryResult(authUid2.string, queryId.bytes)
       assertSoftly {
-        withClue("struct1FromDb") { struct1FromDb shouldBe struct1 }
-        withClue("struct2FromDb") { struct2FromDb shouldBe struct2 }
+        withClue("struct1FromDb") { struct1FromDb shouldBe structSample1.struct }
+        withClue("struct2FromDb") { struct2FromDb shouldBe structSample2.struct }
       }
     }
   }
@@ -317,27 +320,27 @@ class DataConnectCacheDatabaseUnitTest {
     checkAll(
       propTestConfig,
       authUidArb(),
-      QueryIdSample.arb().distinctPair(),
-      Arb.twoValues(nonEntityStructArb())
-    ) { authUid, (queryId1, queryId2), (struct1, struct2) ->
+      queryIdArb().distinctPair(),
+      Arb.twoValues(Arb.proto.struct())
+    ) { authUid, (queryId1, queryId2), (structSample1, structSample2) ->
       dataConnectCacheDatabase.insertQueryResult(
-        authUid.authUid,
-        queryId1.queryIdCopy(),
-        struct1,
+        authUid.string,
+        queryId1.bytes,
+        structSample1.struct,
+        entityIdByPath = emptyMap(),
       )
       dataConnectCacheDatabase.insertQueryResult(
-        authUid.authUid,
-        queryId2.queryIdCopy(),
-        struct2,
+        authUid.string,
+        queryId2.bytes,
+        structSample2.struct,
+        entityIdByPath = emptyMap(),
       )
 
-      val struct1FromDb =
-        dataConnectCacheDatabase.getQueryResult(authUid.authUid, queryId1.queryIdCopy())
-      val struct2FromDb =
-        dataConnectCacheDatabase.getQueryResult(authUid.authUid, queryId2.queryIdCopy())
+      val struct1FromDb = dataConnectCacheDatabase.getQueryResult(authUid.string, queryId1.bytes)
+      val struct2FromDb = dataConnectCacheDatabase.getQueryResult(authUid.string, queryId2.bytes)
       assertSoftly {
-        withClue("struct1FromDb") { struct1FromDb shouldBe struct1 }
-        withClue("struct2FromDb") { struct2FromDb shouldBe struct2 }
+        withClue("struct2FromDb") { struct2FromDb shouldBe structSample2.struct }
+        withClue("struct1FromDb") { struct1FromDb shouldBe structSample1.struct }
       }
     }
   }
@@ -349,77 +352,36 @@ class DataConnectCacheDatabaseUnitTest {
     checkAll(
       propTestConfig,
       authUidArb(),
-      QueryIdSample.arb(),
-      nonEntityStructArb(),
-      Arb.int(1..5),
-    ) { authUid, queryId, struct, entityCount ->
-      val entities = generateEntities(entityCount)
-      val rootStruct =
-        struct.withRandomlyInsertedStructs(
-          entities,
-          randomSource().random,
-          generateNonEntityIdFieldNameFunc()
-        )
+      queryIdArb(),
+      QueryResultArb(entityCountRange = 1..5),
+    ) { authUid, queryId, queryResult ->
       dataConnectCacheDatabase.insertQueryResult(
-        authUid.authUid,
-        queryId.queryIdCopy(),
-        rootStruct,
+        authUid.string,
+        queryId.bytes,
+        queryResult.hydratedStruct,
+        entityIdByPath = queryResult.entityByPath.mapValues { it.value.entityId },
       )
 
-      val structFromDb =
-        dataConnectCacheDatabase.getQueryResult(authUid.authUid, queryId.queryIdCopy())
-      structFromDb shouldBe rootStruct
+      val structFromDb = dataConnectCacheDatabase.getQueryResult(authUid.string, queryId.bytes)
+      structFromDb shouldBe queryResult.hydratedStruct
     }
-  }
-
-  private companion object {
-
-    @OptIn(ExperimentalKotest::class)
-    val propTestConfig =
-      PropTestConfig(
-        iterations = 100,
-        edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.33),
-        shrinkingMode = ShrinkingMode.Off
-      )
-
-    data class AuthUidSample(val authUid: String?)
-
-    fun nonEntityStructArb(): Arb<Struct> =
-      Arb.proto.struct(key = Arb.proto.structKey().filterNot { it == "_id" }).map { it.struct }
-
-    fun entityStructArb(): Arb<Struct> =
-      EntityTestCase.arb(entityIdFieldName = Arb.constant("_id")).map { it.struct }
-
-    fun nonEntityIdFieldNameArb(): Arb<String> = Arb.proto.structKey().filterNot { it == "_id" }
-
-    fun PropertyContext.generateNonEntityIdFieldNameFunc(): (() -> String) {
-      val nonEntityIdFieldNameArb = nonEntityIdFieldNameArb()
-      return { nonEntityIdFieldNameArb.bind() }
-    }
-
-    fun authUidArb(): Arb<AuthUidSample> =
-      Arb.proto.structKey().orNull(nullProbability = 0.33).map(::AuthUidSample)
-
-    class QueryIdSample(queryId: ByteArray) {
-      private val _queryId = queryId.copyOf()
-
-      fun queryIdCopy(): ByteArray = _queryId.copyOf()
-
-      override fun hashCode() = _queryId.contentHashCode()
-
-      override fun equals(other: Any?) =
-        other is QueryIdSample && _queryId.contentEquals(other._queryId)
-
-      override fun toString() = "QueryId(${_queryId.to0xHexString()})"
-
-      companion object {
-
-        fun arb(): Arb<QueryIdSample> =
-          Arb.byteArray(Arb.int(0..25), Arb.byte()).map(::QueryIdSample)
-      }
-    }
-
-    fun PropertyContext.generateEntities(count: Int): List<Struct> =
-      generateEntities(count, "_id").map { it.struct }
   }
 }
+
+@OptIn(ExperimentalKotest::class)
+private val propTestConfig =
+  PropTestConfig(
+    iterations = 100,
+    edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.33),
+    shrinkingMode = ShrinkingMode.Off
+  )
+
+private data class AuthUidSample(val string: String?)
+
+private fun authUidArb(): Arb<AuthUidSample> =
+  Arb.proto.structKey().orNull(nullProbability = 0.33).map(::AuthUidSample)
+
+private data class QueryIdSample(val bytes: ImmutableByteArray)
+
+private fun queryIdArb(): Arb<QueryIdSample> =
+  Arb.byteArray(Arb.int(0..25), Arb.byte()).map { QueryIdSample(ImmutableByteArray.adopt(it)) }
