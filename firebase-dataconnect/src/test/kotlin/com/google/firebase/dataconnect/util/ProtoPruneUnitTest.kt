@@ -29,6 +29,7 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.next
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
+import com.google.firebase.dataconnect.testutil.registerDataConnectKotestPrinters
 import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.testutil.walk
 import com.google.firebase.dataconnect.testutil.withRandomlyInsertedStruct
@@ -64,9 +65,15 @@ import io.mockk.mockk
 import kotlin.collections.map
 import kotlin.random.nextInt
 import kotlinx.coroutines.test.runTest
+import org.junit.Before
 import org.junit.Test
 
 class ProtoPruneUnitTest {
+
+  @Before
+  fun registerPrinters() {
+    registerDataConnectKotestPrinters()
+  }
 
   @Test
   fun `Struct withPrunedDescendants() on empty Struct returns null and never calls predicate`() {
