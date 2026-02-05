@@ -16,6 +16,7 @@
 
 package com.google.firebase.dataconnect.sqlite
 
+import android.annotation.SuppressLint
 import android.database.sqlite.SQLiteDatabase
 import com.google.firebase.dataconnect.DataConnectPath
 import com.google.firebase.dataconnect.core.Logger
@@ -23,7 +24,7 @@ import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.execSQL
 import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.getLastInsertRowId
 import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.rawQuery
-import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
+import com.google.firebase.dataconnect.util.ImmutableByteArray
 import com.google.protobuf.Struct
 import google.firebase.dataconnect.proto.kotlinsdk.QueryResult as QueryResultProto
 import java.io.File
@@ -79,6 +80,7 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
       // Create a single-threaded dispatcher on which all write transactions will run.
       // This is the recommended approach to avoid SQLITE_BUSY errors and also allows us to
       // run higher-priority write transactions before lower-priority ones.
+      @SuppressLint("ThreadPoolCreation")
       val coroutineDispatcher =
         Executors.newSingleThreadExecutor { runnable -> Thread(runnable, logger.nameWithId) }
           .asCoroutineDispatcher()
@@ -192,7 +194,13 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
     }
   }
 
-  private fun SQLiteDatabase.getOrInsertAuthUid(authUid: String?): Long {
+  @JvmInline value class SqliteUserId(val sqliteRowId: Long)
+
+  @JvmInline value class SqliteQueryId(val sqliteRowId: Long)
+
+  @JvmInline value class SqliteEntityId(val sqliteRowId: Long)
+
+  private fun SQLiteDatabase.getOrInsertAuthUid(authUid: String?): SqliteUserId {
     execSQL(logger, "INSERT OR IGNORE INTO users (auth_uid) VALUES (?)", arrayOf(authUid))
     return rawQuery(
       logger,
@@ -200,31 +208,31 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
       if (authUid === null) emptyArray() else arrayOf(authUid),
     ) { cursor ->
       if (cursor.moveToNext()) {
-        cursor.getLong(0)
+        SqliteUserId(cursor.getLong(0))
       } else {
         throw AuthUidNotFoundException("authUid=$authUid (internal error m5m52ahrxz)")
       }
     }
   }
 
-  class QueryResultsRow(val rowId: Long, val data: ByteArray) {
-    operator fun component1() = rowId
+  class QueryResultsRow(val id: SqliteQueryId, val data: ImmutableByteArray) {
+    operator fun component1() = id
     operator fun component2() = data
   }
 
-  private fun SQLiteDatabase.getQueryResultsRowByQueryId(
-    userRowId: Long,
-    queryId: ByteArray
+  private fun SQLiteDatabase.getQueryResultsRow(
+    user: SqliteUserId,
+    queryId: ImmutableByteArray
   ): QueryResultsRow? =
     rawQuery(
       logger,
       "SELECT id, data FROM query_results WHERE user_id=? AND query_id=?",
-      bindArgs = arrayOf(userRowId, queryId),
+      bindArgs = arrayOf(user.sqliteRowId, queryId.peek()),
     ) { cursor ->
       if (cursor.moveToNext()) {
         QueryResultsRow(
-          rowId = cursor.getLong(0),
-          data = cursor.getBlob(1),
+          id = SqliteQueryId(cursor.getLong(0)),
+          data = ImmutableByteArray.adopt(cursor.getBlob(1)),
         )
       } else {
         null
@@ -233,76 +241,82 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
 
   class AuthUidNotFoundException(message: String) : Exception(message)
 
-  private fun SQLiteDatabase.insertQueryResult(
-    userRowId: Long,
-    queryId: ByteArray,
-    queryData: ByteArray
-  ): Long {
+  private fun SQLiteDatabase.insertQuery(
+    user: SqliteUserId,
+    queryId: ImmutableByteArray,
+    queryData: ImmutableByteArray,
+  ): SqliteQueryId {
     execSQL(
       """
-        INSERT OR REPLACE INTO query_results
-        (user_id, query_id, data)
-        VALUES (?, ?, ?)
+        INSERT OR REPLACE INTO queries
+        (user_id, query_id, data, flags)
+        VALUES (?, ?, ?, 0)
       """,
-      arrayOf(userRowId, queryId, queryData)
+      arrayOf(user.sqliteRowId, queryId.peek(), queryData.peek())
     )
-    return getLastInsertRowId(logger)
+    val rowId = getLastInsertRowId(logger)
+    return SqliteQueryId(rowId)
   }
 
   private fun SQLiteDatabase.insertEntity(
-    userRowId: Long,
+    user: SqliteUserId,
     entityId: String,
-    entityData: ByteArray,
-  ): Long {
+    entityData: ImmutableByteArray,
+  ): SqliteEntityId {
     execSQL(
       """
         INSERT OR REPLACE INTO entities
-        (user_id, entity_id, data)
-        VALUES (?, ?, ?)
+        (user_id, entity_id, data, flags)
+        VALUES (?, ?, ?, 0)
       """,
-      arrayOf(userRowId, entityId, entityData)
+      arrayOf(user.sqliteRowId, entityId, entityData.peek())
     )
-    return getLastInsertRowId(logger)
+    val rowId = getLastInsertRowId(logger)
+    return SqliteEntityId(rowId)
   }
 
-  private fun SQLiteDatabase.insertQueryIdEntityIdMapping(queryRowId: Long, entityRowId: Long) {
+  private fun SQLiteDatabase.insertQueryIdEntityIdMapping(
+    query: SqliteQueryId,
+    entity: SqliteEntityId
+  ) {
     execSQL(
       """
-        INSERT OR IGNORE INTO entity_query_results_map
+        INSERT OR IGNORE INTO entity_query_map
         (query_id, entity_id)
         VALUES (?, ?)
       """,
-      arrayOf(queryRowId, entityRowId)
+      arrayOf(query.sqliteRowId, entity.sqliteRowId)
     )
   }
 
-  private fun SQLiteDatabase.getEntityRowIdsByQueryRowId(queryRowId: Long): List<Long> = buildList {
-    rawQuery(
-      logger,
-      "SELECT entity_id FROM entity_query_results_map WHERE query_id=?",
-      arrayOf(queryRowId)
-    ) { cursor ->
-      while (cursor.moveToNext()) {
-        add(cursor.getLong(0))
+  private fun SQLiteDatabase.getEntityIdsByQuery(query: SqliteQueryId): List<SqliteEntityId> =
+    buildList {
+      rawQuery(
+        logger,
+        "SELECT entity_id FROM entity_query_map WHERE query_id=?",
+        arrayOf(query.sqliteRowId)
+      ) { cursor ->
+        while (cursor.moveToNext()) {
+          add(SqliteEntityId(cursor.getLong(0)))
+        }
       }
     }
-  }
 
-  private fun SQLiteDatabase.getEntitiesByRowIds(
-    entityRowIds: Collection<Long>
+  private fun SQLiteDatabase.getEntities(
+    entities: Collection<SqliteEntityId>
   ): Map<String, Struct> {
-    if (entityRowIds.isEmpty()) {
+    if (entities.isEmpty()) {
       return emptyMap()
     }
 
     val (sql, bindArgs) =
       SQLiteStatementBuilder().run {
         append("SELECT id, entity_id, data FROM entities WHERE ")
-        entityRowIds.forEachIndexed { index, entityRowId ->
+        entities.forEachIndexed { index, entity ->
           if (index > 0) {
             append(" OR ")
           }
-          append("id=").appendBinding(entityRowId)
+          append("id=").appendBinding(entity.sqliteRowId)
         }
         build()
       }
@@ -317,7 +331,7 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
           val parseResult = runCatching { Struct.parseFrom(data) }
           parseResult.onFailure { exception ->
             logger.warn(exception) {
-              "Failed to parse entity Struct ${size+1}/${entityRowIds.size} " +
+              "Failed to parse entity Struct ${size+1}/${entities.size} " +
                 "with rowId=$rowId, entityId=$entityId [fy74p3278j]"
             }
           }
@@ -328,21 +342,21 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
     }
   }
 
-  private fun SQLiteDatabase.deleteEntityIdMappingsForQueryId(queryRowId: Long) {
-    execSQL(logger, "DELETE FROM entity_query_results_map WHERE query_id=?", arrayOf(queryRowId))
+  private fun SQLiteDatabase.deleteEntityIdMappingsForQuery(query: SqliteQueryId) {
+    execSQL(logger, "DELETE FROM entity_query_map WHERE query_id=?", arrayOf(query.sqliteRowId))
   }
 
-  suspend fun getQueryResult(authUid: String?, queryId: ByteArray): Struct? =
+  suspend fun getQueryResult(authUid: String?, queryId: ImmutableByteArray): Struct? =
   // TODO: convert to read-only transaction so it can be run concurrently
   runReadWriteTransaction { sqliteDatabase ->
     val userRowId = sqliteDatabase.getOrInsertAuthUid(authUid)
-    val queryResultsRow = sqliteDatabase.getQueryResultsRowByQueryId(userRowId, queryId)
+    val queryResultsRow = sqliteDatabase.getQueryResultsRow(userRowId, queryId)
     if (queryResultsRow === null) {
       null
     } else {
       val (queryRowId, queryResultProtoBytes) = queryResultsRow
       val queryResultProtoParseResult = runCatching {
-        QueryResultProto.parseFrom(queryResultProtoBytes)
+        QueryResultProto.parseFrom(queryResultProtoBytes.disown())
       }
       queryResultProtoParseResult.onFailure {
         logger.warn {
@@ -352,8 +366,8 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
       }
       val queryResultProto = queryResultProtoParseResult.getOrThrow()
 
-      val entityRowIds = sqliteDatabase.getEntityRowIdsByQueryRowId(queryRowId)
-      val entityStructByEntityId = sqliteDatabase.getEntitiesByRowIds(entityRowIds)
+      val entityRowIds = sqliteDatabase.getEntityIdsByQuery(queryRowId)
+      val entityStructByEntityId = sqliteDatabase.getEntities(entityRowIds)
 
       val rehydrateResult = runCatching {
         rehydrateQueryResult(queryResultProto, entityStructByEntityId)
@@ -370,38 +384,34 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
 
   suspend fun insertQueryResult(
     authUid: String?,
-    queryId: ByteArray,
+    queryId: ImmutableByteArray,
     queryData: Struct,
     entityIdByPath: Map<DataConnectPath, String>,
   ) {
     val (queryResultProto, entityStructById) = dehydrateQueryResult(queryData, entityIdByPath::get)
-    val queryResultProtoEncodedBytes = queryResultProto.toByteArray()
+    val queryResultProtoEncodedBytes = ImmutableByteArray.adopt(queryResultProto.toByteArray())
     val entityStructEncodedBytesByEntityId = entityStructById.mapValues { it.value.toByteArray() }
 
     runReadWriteTransaction { sqliteDatabase ->
-      val userRowId = sqliteDatabase.getOrInsertAuthUid(authUid)
+      val user = sqliteDatabase.getOrInsertAuthUid(authUid)
 
-      val queryRowId =
-        sqliteDatabase.insertQueryResult(
-          userRowId = userRowId,
+      val query =
+        sqliteDatabase.insertQuery(
+          user = user,
           queryId = queryId,
           queryData = queryResultProtoEncodedBytes,
         )
 
-      sqliteDatabase.deleteEntityIdMappingsForQueryId(queryRowId)
+      sqliteDatabase.deleteEntityIdMappingsForQuery(query)
 
       entityStructEncodedBytesByEntityId.forEach { (entityId, entityStructEncodedBytes) ->
-        val entityRowId =
+        val entity =
           sqliteDatabase.insertEntity(
-            userRowId = userRowId,
+            user = user,
             entityId = entityId,
-            entityData = entityStructEncodedBytes,
+            entityData = ImmutableByteArray.adopt(entityStructEncodedBytes),
           )
-
-        sqliteDatabase.insertQueryIdEntityIdMapping(
-          queryRowId = queryRowId,
-          entityRowId = entityRowId,
-        )
+        sqliteDatabase.insertQueryIdEntityIdMapping(query, entity)
       }
     }
   }

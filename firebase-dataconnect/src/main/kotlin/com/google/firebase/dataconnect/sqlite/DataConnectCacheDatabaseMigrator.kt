@@ -127,27 +127,29 @@ private constructor(private val sqliteDatabase: SQLiteDatabase, private val logg
       """CREATE TABLE entities (
         id INTEGER PRIMARY KEY,
         user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
-        entity_id BLOB NOT NULL,
+        entity_id STRING NOT NULL,
         data BLOB NOT NULL,
+        flags INT NOT NULL,
         debug_info TEXT,
         UNIQUE (user_id, entity_id)
       )"""
     )
     sqliteDatabase.execSQL(
       logger,
-      """CREATE TABLE query_results (
+      """CREATE TABLE queries (
         id INTEGER PRIMARY KEY,
         user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
         query_id BLOB NOT NULL,
         data BLOB NOT NULL,
+        flags INT NOT NULL,
         debug_info TEXT,
         UNIQUE (user_id, query_id)
       )"""
     )
     sqliteDatabase.execSQL(
       logger,
-      """CREATE TABLE entity_query_results_map (
-        query_id INTEGER NOT NULL REFERENCES query_results(id) ON DELETE CASCADE ON UPDATE CASCADE,
+      """CREATE TABLE entity_query_map (
+        query_id INTEGER NOT NULL REFERENCES queries(id) ON DELETE CASCADE ON UPDATE CASCADE,
         entity_id INTEGER NOT NULL REFERENCES entities(id) ON DELETE CASCADE ON UPDATE CASCADE,
         PRIMARY KEY (query_id, entity_id)
       )"""
@@ -157,7 +159,7 @@ private constructor(private val sqliteDatabase: SQLiteDatabase, private val logg
     // component of the primary key and, therefore, is implicitly indexed.
     sqliteDatabase.execSQL(
       logger,
-      "CREATE INDEX entity_query_results_map_entity_index ON entity_query_results_map(entity_id)"
+      "CREATE INDEX entity_query_map_entity_index ON entity_query_map(entity_id)"
     )
   }
 
