@@ -18,16 +18,26 @@
 
 package com.google.firebase.dataconnect.sqlite
 
+import com.google.firebase.dataconnect.testutil.containWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.registerDataConnectKotestPrinters
 import com.google.firebase.dataconnect.testutil.shouldBe
+import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
+import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
+import com.google.firebase.dataconnect.toPathString
 import com.google.protobuf.Struct
 import google.firebase.dataconnect.proto.kotlinsdk.QueryResult as QueryResultProto
+import io.kotest.assertions.assertSoftly
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.common.DelicateKotest
 import io.kotest.common.ExperimentalKotest
+import io.kotest.matchers.or
+import io.kotest.matchers.should
 import io.kotest.matchers.types.shouldBeSameInstanceAs
+import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
 import io.kotest.property.ShrinkingMode
+import io.kotest.property.arbitrary.of
 import io.kotest.property.checkAll
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
@@ -61,6 +71,36 @@ class QueryResultRehydratorUnitTest {
       val result = rehydrateQueryResult(sample.queryResultProto, sample.entityStructById)
 
       result shouldBe sample.hydratedStruct
+    }
+  }
+
+  @Test
+  fun `rehydrateQueryResult() should throw on missing entity ID`() = runTest {
+    checkAll(propTestConfig, QueryResultArb(entityCountRange = 1..5)) { sample ->
+      check(sample.queryResultProto.entitiesCount > 0)
+      val missingEntityId = Arb.of(sample.entityStructById.keys.toList()).bind()
+      val entityStructByIdWithMissingEntityId =
+        sample.entityStructById.toMutableMap().run {
+          remove(missingEntityId)
+          toMap()
+        }
+
+      val exception =
+        shouldThrow<EntityIdNotFoundException> {
+          rehydrateQueryResult(sample.queryResultProto, entityStructByIdWithMissingEntityId)
+        }
+
+      val containPathOfMissingEntityIdMatcher =
+        sample.entityByPath.entries
+          .filter { it.value.entityId == missingEntityId }
+          .map { containWithNonAbuttingText(it.key.toPathString()) }
+          .reduce { acc, matcher -> acc or matcher }
+      assertSoftly {
+        exception.message shouldContainWithNonAbuttingText "f9tcr9fvmg"
+        exception.message shouldContainWithNonAbuttingText missingEntityId
+        exception.message shouldContainWithNonAbuttingTextIgnoringCase "not found"
+        exception.message should containPathOfMissingEntityIdMatcher
+      }
     }
   }
 }
