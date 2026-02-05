@@ -1,7 +1,7 @@
 # Unreleased
 
 - [changed] Added logic for use in offline caching.
-  [#NNNN](https://github.com/firebase/firebase-android-sdk/pull/NNNN))
+  [#7714](https://github.com/firebase/firebase-android-sdk/pull/7714))
 
 # 17.1.3
 
