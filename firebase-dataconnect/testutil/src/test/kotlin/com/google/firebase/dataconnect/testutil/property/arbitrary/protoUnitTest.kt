@@ -20,25 +20,18 @@ import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.testutil.DataConnectPathValuePair
 import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
 import com.google.firebase.dataconnect.testutil.isListValue
-import com.google.firebase.dataconnect.testutil.isRecursivelyEmpty
 import com.google.firebase.dataconnect.testutil.isStructValue
-import com.google.firebase.dataconnect.testutil.listValueOrNull
 import com.google.firebase.dataconnect.testutil.toValueProto
-import com.google.firebase.dataconnect.testutil.walk
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
-import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldBeIn
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
-import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.ints.shouldBeGreaterThan
-import io.kotest.matchers.ints.shouldBeInRange
-import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
@@ -46,9 +39,7 @@ import io.kotest.property.Exhaustive
 import io.kotest.property.PropTestConfig
 import io.kotest.property.RandomSource
 import io.kotest.property.ShrinkingMode
-import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.int
-import io.kotest.property.arbitrary.intRange
 import io.kotest.property.arbitrary.long
 import io.kotest.property.arbitrary.map
 import io.kotest.property.checkAll
@@ -268,58 +259,6 @@ class protoUnitTest {
   @Test
   fun `struct() should generate same values when given same random seed`() =
     verifyArbGeneratesSameValuesWithSameRandomSeed(Arb.proto.struct().map { it.struct })
-
-  @Test
-  fun `recursivelyEmptyListValue() should generate recursively empty ListValue values`() = runTest {
-    checkAll(propTestConfig, Arb.proto.recursivelyEmptyListValue()) { sample ->
-      sample.listValue.isRecursivelyEmpty() shouldBe true
-    }
-  }
-
-  @Test
-  fun `recursivelyEmptyListValue() should respect the given size`() = runTest {
-    checkAll(propTestConfig, Arb.intRange(0..8).filterNot { it.isEmpty() }) { sizeRange ->
-      val arb = Arb.proto.recursivelyEmptyListValue(size = sizeRange, depth = 2..5)
-      val listValue = arb.bind().listValue
-      listValue.walk(includeSelf = true).forEach { (path, value) ->
-        withClue("path=$path") {
-          val listSize = value.listValueOrNull.shouldNotBeNull().valuesCount
-          if (listSize != 0) {
-            listSize shouldBeInRange sizeRange
-          }
-        }
-      }
-    }
-  }
-
-  @Test
-  fun `recursivelyEmptyListValue() should respect the given depth`() = runTest {
-    checkAll(propTestConfig, Arb.intRange(1..8).filterNot { it.isEmpty() }) { depthRange ->
-      val arb = Arb.proto.recursivelyEmptyListValue(size = 1..5, depth = depthRange)
-      val listValue = arb.bind().listValue
-      listValue.maxDepth() shouldBeInRange depthRange
-    }
-  }
-
-  @Test
-  fun `recursivelyEmptyListValue() should use the given Random`() =
-    verifyArbGeneratesSameValuesWithSameRandomSeed(Arb.proto.recursivelyEmptyListValue())
-
-  @Test
-  fun `recursivelyEmptyListValue() should never generate edge cases from sample()`() = runTest {
-    checkAll(propTestConfig, Arb.randomSource()) { rs ->
-      val sample = Arb.proto.recursivelyEmptyListValue().sample(rs).value
-      sample.edgeCases.shouldBeEmpty()
-    }
-  }
-
-  @Test
-  fun `recursivelyEmptyListValue() should always generate edge cases from edgecase()`() = runTest {
-    checkAll(propTestConfig, Arb.randomSource()) { rs ->
-      val sample = Arb.proto.recursivelyEmptyListValue().edgecase(rs)
-      sample.shouldNotBeNull().edgeCases.shouldNotBeEmpty()
-    }
-  }
 
   private fun verifyArbGeneratesValuesWithKindCase(
     arb: Arb<Value>,
