@@ -35,6 +35,7 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.twoValues
 import com.google.firebase.dataconnect.testutil.property.arbitrary.value
 import com.google.firebase.dataconnect.testutil.property.arbitrary.valueOfKind
 import com.google.firebase.dataconnect.testutil.randomlyInsertValue
+import com.google.firebase.dataconnect.testutil.registerDataConnectKotestPrinters
 import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
@@ -43,7 +44,7 @@ import com.google.firebase.dataconnect.testutil.walk
 import com.google.firebase.dataconnect.testutil.walkPaths
 import com.google.firebase.dataconnect.testutil.walkValues
 import com.google.firebase.dataconnect.toPathString
-import com.google.firebase.dataconnect.util.ProtoGraft.withGraftedInStructs
+import com.google.firebase.dataconnect.util.ProtoGraft.withGraftedInValues
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.firebase.dataconnect.withAddedField
 import com.google.firebase.dataconnect.withAddedListIndex
@@ -73,92 +74,99 @@ import io.kotest.property.arbitrary.of
 import io.kotest.property.checkAll
 import io.kotest.property.exhaustive.enum
 import kotlinx.coroutines.test.runTest
+import org.junit.Before
 import org.junit.Test
 
 class ProtoGraftUnitTest {
 
+  @Before
+  fun registerPrinters() {
+    registerDataConnectKotestPrinters()
+  }
+
   @Test
-  fun `Struct withGraftedInStructs() with empty structsByPath should return receiver`() = runTest {
+  fun `Struct withGraftedInValues() with empty valueByPath should return receiver`() = runTest {
     checkAll(propTestConfig, Arb.proto.struct()) { structSample ->
       val struct: Struct = structSample.struct
 
-      struct.withGraftedInStructs(emptyMap()) shouldBeSameInstanceAs struct
+      struct.withGraftedInValues(emptyMap()) shouldBeSameInstanceAs struct
     }
   }
 
   @Test
-  fun `ListValue withGraftedInStructs() with empty structsByPath should return receiver`() =
-    runTest {
-      checkAll(propTestConfig, Arb.proto.listValue()) { listValueSample ->
-        val listValue: ListValue = listValueSample.listValue
-
-        listValue.withGraftedInStructs(emptyMap()) shouldBeSameInstanceAs listValue
-      }
-    }
-
-  @Test
-  fun `Struct withGraftedInStructs() with only the empty path should return the mapped Struct`() =
-    runTest {
-      checkAll(propTestConfig, Arb.proto.struct(), Arb.proto.struct()) {
-        structSample,
-        structToGraftSample ->
-        val struct: Struct = structSample.struct
-        val structToGraft: Struct = structToGraftSample.struct
-        val structsByPath = mapOf(emptyDataConnectPath() to structToGraft)
-
-        struct.withGraftedInStructs(structsByPath) shouldBeSameInstanceAs structToGraft
-      }
-    }
-
-  @Test
-  fun `ListValue withGraftedInStructs() with the empty path should throw`() = runTest {
-    val nonEmptyDataConnectPathArb = dataConnectPathArb().filterNot { it.isEmpty() }
-    val structArb = Arb.proto.struct()
-    checkAll(propTestConfig, Arb.proto.listValue(), structArb, Arb.list(structArb, 0..3)) {
-      listValueSample,
-      structToGraftForEmptyPathSample,
-      additionalStructsToGraft ->
+  fun `ListValue withGraftedInValues() with empty valueByPath should return receiver`() = runTest {
+    checkAll(propTestConfig, Arb.proto.listValue()) { listValueSample ->
       val listValue: ListValue = listValueSample.listValue
-      val structsByPath = buildMap {
-        put(emptyDataConnectPath(), structToGraftForEmptyPathSample.struct)
 
-        @OptIn(DelicateKotest::class) val pathArb = nonEmptyDataConnectPathArb.distinct()
-        additionalStructsToGraft.forEach { put(pathArb.bind(), it.struct) }
+      listValue.withGraftedInValues(emptyMap()) shouldBeSameInstanceAs listValue
+    }
+  }
+
+  @Test
+  fun `Struct withGraftedInValues() with the empty path should throw`() = runTest {
+    val dataConnectPathArb = dataConnectPathArb()
+    checkAll(propTestConfig, Arb.proto.struct(), Arb.proto.value(), Arb.int(0..3)) {
+      structSample,
+      valueToGraft,
+      otherPathCount ->
+      val struct: Struct = structSample.struct
+      val valueByPath = buildMap {
+        put(emptyDataConnectPath(), valueToGraft)
+        repeat(otherPathCount) { put(dataConnectPathArb.bind(), valueToGraft) }
       }
 
       val exception =
-        shouldThrow<ProtoGraft.InsertIntoNonStructException> {
-          listValue.withGraftedInStructs(structsByPath)
-        }
+        shouldThrow<IllegalArgumentException> { struct.withGraftedInValues(valueByPath) }
 
       assertSoftly {
-        exception.message shouldContainWithNonAbuttingText "cdma83emff"
-        exception.message shouldContainWithNonAbuttingTextIgnoringCase "the empty path"
-        exception.message shouldContainWithNonAbuttingTextIgnoringCase
-          "root has kind ${Value.KindCase.LIST_VALUE}"
-        exception.message shouldContainWithNonAbuttingTextIgnoringCase
-          "root of kind ${Value.KindCase.STRUCT_VALUE}"
+        exception.message shouldContainWithNonAbuttingText "af5k4an5za"
+        exception.message shouldContainWithNonAbuttingTextIgnoringCase "contains the empty path"
+        exception.message shouldContainWithNonAbuttingTextIgnoringCase "empty path is not allowed"
       }
     }
   }
 
   @Test
-  fun `Struct withGraftedInStructs() with single-segment paths`() = runTest {
-    val structArb = Arb.proto.struct()
-    checkAll(propTestConfig, structArb, Arb.list(structArb, 1..5)) { structSample, structsToGraft ->
+  fun `ListValue withGraftedInValues() with the empty path should throw`() = runTest {
+    val dataConnectPathArb = dataConnectPathArb()
+    checkAll(propTestConfig, Arb.proto.listValue(), Arb.proto.value(), Arb.int(0..3)) {
+      listValueSample,
+      valueToGraft,
+      otherPathCount ->
+      val listValue: ListValue = listValueSample.listValue
+      val valueByPath = buildMap {
+        put(emptyDataConnectPath(), valueToGraft)
+        repeat(otherPathCount) { put(dataConnectPathArb.bind(), valueToGraft) }
+      }
+
+      val exception =
+        shouldThrow<IllegalArgumentException> { listValue.withGraftedInValues(valueByPath) }
+
+      assertSoftly {
+        exception.message shouldContainWithNonAbuttingText "rm45kyhtff"
+        exception.message shouldContainWithNonAbuttingTextIgnoringCase "contains the empty path"
+        exception.message shouldContainWithNonAbuttingTextIgnoringCase "empty path is not allowed"
+      }
+    }
+  }
+
+  @Test
+  fun `Struct withGraftedInValues() with single-segment paths`() = runTest {
+    checkAll(propTestConfig, Arb.proto.struct(), Arb.list(Arb.proto.value(), 1..5)) {
+      structSample,
+      valuesToGraft ->
       val struct: Struct = structSample.struct
       val structKeyArb = Arb.proto.structKey().filterNot { struct.containsFields(it) }
-      val structsByFieldName: Map<String, Struct> =
-        structsToGraft.associate { structKeyArb.bind() to it.struct }
-      val structsByPath: Map<DataConnectPath, Struct> =
-        structsByFieldName.mapKeys { entry -> listOf(DataConnectPathSegment.Field(entry.key)) }
+      val valueByFieldName: Map<String, Value> = valuesToGraft.associateBy { structKeyArb.bind() }
+      val valueByPath: Map<DataConnectPath, Value> =
+        valueByFieldName.mapKeys { entry -> listOf(DataConnectPathSegment.Field(entry.key)) }
 
-      val result = struct.withGraftedInStructs(structsByPath)
+      val result = struct.withGraftedInValues(valueByPath)
 
       val expectedResult: Struct =
         struct.toBuilder().let { structBuilder ->
-          structsByFieldName.entries.forEach { (fieldName, structToGraft) ->
-            structBuilder.putFields(fieldName, structToGraft.toValueProto())
+          valueByFieldName.entries.forEach { (fieldName, valueToGraft) ->
+            structBuilder.putFields(fieldName, valueToGraft)
           }
           structBuilder.build()
         }
@@ -167,53 +175,52 @@ class ProtoGraftUnitTest {
   }
 
   @Test
-  fun `ListValue withGraftedInStructs() with a single field path`() = runTest {
-    checkAll(propTestConfig, Arb.proto.listValue(), fieldPathSegmentArb(), Arb.proto.struct()) {
+  fun `ListValue withGraftedInValues() with a single field path`() = runTest {
+    checkAll(propTestConfig, Arb.proto.listValue(), fieldPathSegmentArb(), Arb.proto.value()) {
       listValueSample,
       fieldPathSegment,
-      structToGraftSample ->
+      valueToGraft ->
       val listValue: ListValue = listValueSample.listValue
       val path = listOf<DataConnectPathSegment>(fieldPathSegment)
-      val structsByPath = mapOf(path to structToGraftSample.struct)
+      val valueByPath = mapOf(path to valueToGraft)
 
       shouldThrow<ProtoGraft.InsertIntoNonStructException> {
-        listValue.withGraftedInStructs(structsByPath)
+        listValue.withGraftedInValues(valueByPath)
       }
     }
   }
 
   @Test
-  fun `ListValue withGraftedInStructs() with a single list index path`() = runTest {
-    checkAll(
-      propTestConfig,
-      Arb.proto.listValue(),
-      listIndexPathSegmentArb(),
-      Arb.proto.struct()
-    ) { listValueSample, listIndexPathSegment, structToGraftSample ->
+  fun `ListValue withGraftedInValues() with a single list index path`() = runTest {
+    checkAll(propTestConfig, Arb.proto.listValue(), listIndexPathSegmentArb(), Arb.proto.value()) {
+      listValueSample,
+      listIndexPathSegment,
+      valueToGraft ->
       val listValue: ListValue = listValueSample.listValue
       val path = listOf<DataConnectPathSegment>(listIndexPathSegment)
-      val structsByPath = mapOf(path to structToGraftSample.struct)
+      val valueByPath = mapOf(path to valueToGraft)
 
       shouldThrow<ProtoGraft.LastPathSegmentNotFieldException> {
-        listValue.withGraftedInStructs(structsByPath)
+        listValue.withGraftedInValues(valueByPath)
       }
     }
   }
 
   @Test
-  fun `Struct withGraftedInStructs() with paths ending with list index should throw`() = runTest {
-    val structArb = Arb.proto.struct()
-    checkAll(propTestConfig, structArb, structArb, dataConnectPathArb(), Arb.int()) {
-      struct,
-      structToGraft,
-      graftPathPrefix,
-      graftPathLastSegmentIndex ->
+  fun `Struct withGraftedInValues() with paths ending with list index should throw`() = runTest {
+    checkAll(
+      propTestConfig,
+      Arb.proto.struct(),
+      Arb.proto.value(),
+      dataConnectPathArb(),
+      Arb.int()
+    ) { struct, valueToGraft, graftPathPrefix, graftPathLastSegmentIndex ->
       val graftPath = graftPathPrefix.withAddedListIndex(graftPathLastSegmentIndex)
-      val structsByPath = mapOf(graftPath to structToGraft.struct)
+      val valueByPath = mapOf(graftPath to valueToGraft)
 
       val exception =
         shouldThrow<ProtoGraft.LastPathSegmentNotFieldException> {
-          struct.struct.withGraftedInStructs(structsByPath)
+          struct.struct.withGraftedInValues(valueByPath)
         }
 
       assertSoftly {
@@ -228,22 +235,21 @@ class ProtoGraftUnitTest {
   }
 
   @Test
-  fun `Struct withGraftedInStructs() with paths ending with an existing key should throw`() =
+  fun `Struct withGraftedInValues() with paths ending with an existing key should throw`() =
     runTest {
-      val structArb = Arb.proto.struct()
-      val nonEmptyStructArb = structArb.filterNot { it.struct.fieldsCount == 0 }
-      checkAll(propTestConfig, nonEmptyStructArb, structArb) { struct, structToGraft ->
+      val nonEmptyStructArb = Arb.proto.struct().filterNot { it.struct.fieldsCount == 0 }
+      checkAll(propTestConfig, nonEmptyStructArb, Arb.proto.value()) { struct, valueToGraft ->
         val existingPaths =
           struct.struct
             .walkPaths()
             .filter { it.lastOrNull() is DataConnectPathSegment.Field }
             .toList()
         val existingPath = Arb.of(existingPaths).bind()
-        val structsByPath = mapOf(existingPath to structToGraft.struct)
+        val valueByPath = mapOf(existingPath to valueToGraft)
 
         val exception =
           shouldThrow<ProtoGraft.KeyExistsException> {
-            struct.struct.withGraftedInStructs(structsByPath)
+            struct.struct.withGraftedInValues(valueByPath)
           }
 
         assertSoftly {
@@ -260,27 +266,29 @@ class ProtoGraftUnitTest {
     }
 
   @Test
-  fun `Struct withGraftedInStructs() with paths whose immediate parent is an existing struct`() =
+  fun `Struct withGraftedInValues() with paths whose immediate parent is an existing struct`() =
     runTest {
-      val structArb = Arb.proto.struct()
-      checkAll(propTestConfig, structArb, Arb.list(structArb, 1..5)) { struct, structsToGraft ->
+      checkAll(propTestConfig, Arb.proto.struct(), Arb.list(Arb.proto.value(), 1..5)) {
+        struct,
+        valuesToGraft ->
         val destPaths = pathToNonExistentFieldInExistingStructSequence(struct.struct).iterator()
-        val structsByPath = structsToGraft.map { it.struct }.associateBy { destPaths.next() }
+        val valueByPath = valuesToGraft.associateBy { destPaths.next() }
 
-        val result = struct.struct.withGraftedInStructs(structsByPath)
+        val result = struct.struct.withGraftedInValues(valueByPath)
 
         val expectedResult =
-          struct.struct.toExpectedStructWithStructsGraftedInToExistingStruct(structsByPath)
+          struct.struct.toExpectedStructWithValuesGraftedInToExistingStruct(valueByPath)
         result shouldBe expectedResult
       }
     }
 
   @Test
-  fun `Struct withGraftedInStructs() with paths whose immediate parent does not exist`() = runTest {
-    val structArb = Arb.proto.struct()
+  fun `Struct withGraftedInValues() with paths whose immediate parent does not exist`() = runTest {
     val fieldPathSegmentArb = fieldPathSegmentArb(Arb.proto.structKey())
     val fieldPathSegmentsSizeArb = Arb.int(1..5)
-    checkAll(propTestConfig, structArb, Arb.list(structArb, 1..5)) { struct, structsToGraft ->
+    checkAll(propTestConfig, Arb.proto.struct(), Arb.list(Arb.proto.value(), 1..5)) {
+      struct,
+      valuesToGraft ->
       data class DestPathInfo(
         val prefix: DataConnectPath,
         val suffix: DataConnectPath,
@@ -293,48 +301,48 @@ class ProtoGraftUnitTest {
             val suffix = List(suffixSize) { fieldPathSegmentArb.bind() }
             DestPathInfo(prefix = it, suffix = suffix, fullPath = it + suffix)
           }
-          .take(structsToGraft.size)
+          .take(valuesToGraft.size)
           .toList()
-      val structsByPath =
-        structsToGraft.zip(destPaths).associate { (struct, destPath) ->
-          Pair(destPath.fullPath, struct.struct)
+      val valueByPath =
+        valuesToGraft.zip(destPaths).associate { (value, destPath) ->
+          Pair(destPath.fullPath, value)
         }
 
-      val result = struct.struct.withGraftedInStructs(structsByPath)
+      val result = struct.struct.withGraftedInValues(valueByPath)
 
-      val prefixedStructsByPath =
-        structsToGraft.zip(destPaths).associate { (struct, destPath) ->
+      val prefixedValuesByPath =
+        valuesToGraft.zip(destPaths).associate { (value, destPath) ->
           val suffix = destPath.suffix.map { it as DataConnectPathSegment.Field }
-          Pair(destPath.prefix, struct.struct.withParents(suffix))
+          Pair(destPath.prefix, value.withParents(suffix).toValueProto())
         }
       val expectedResult =
-        struct.struct.toExpectedStructWithStructsGraftedInToExistingStruct(prefixedStructsByPath)
+        struct.struct.toExpectedStructWithValuesGraftedInToExistingStruct(prefixedValuesByPath)
       result shouldBe expectedResult
     }
   }
 
   @Test
-  fun `Struct withGraftedInStructs() with paths of non-structs should throw`() = runTest {
+  fun `Struct withGraftedInValues() with paths of non-structs should throw`() = runTest {
     checkAll(
       propTestConfig,
       structWithAtLeast1ValueOfNotKindArb(Value.KindCase.STRUCT_VALUE),
-      Arb.proto.struct(),
+      Arb.proto.value(),
       fieldPathSegmentArb()
-    ) { struct, structToGraft, fieldPathSegment ->
+    ) { struct, valueToGraft, fieldPathSegment ->
       val nonStructs = struct.walk().filterNot { it.value.isStructValue }.toList()
       val nonStruct = Arb.of(nonStructs).bind()
-      val structToGraftPath = nonStruct.path + listOf(fieldPathSegment)
-      val structsByPath = mapOf(structToGraftPath to structToGraft.struct)
+      val valueToGraftPath = nonStruct.path + listOf(fieldPathSegment)
+      val valueByPath = mapOf(valueToGraftPath to valueToGraft)
 
       val exception =
         shouldThrow<ProtoGraft.InsertIntoNonStructException> {
-          struct.withGraftedInStructs(structsByPath)
+          struct.withGraftedInValues(valueByPath)
         }
 
       assertSoftly {
         exception.message shouldContainWithNonAbuttingText "zcj277ka6a"
         exception.message shouldContainWithNonAbuttingText nonStruct.path.toPathString()
-        exception.message shouldContainWithNonAbuttingText structToGraftPath.toPathString()
+        exception.message shouldContainWithNonAbuttingText valueToGraftPath.toPathString()
         exception.message shouldContainWithNonAbuttingTextIgnoringCase
           "has kind ${nonStruct.value.kindCase}"
         exception.message shouldContainWithNonAbuttingTextIgnoringCase
@@ -344,15 +352,15 @@ class ProtoGraftUnitTest {
   }
 
   @Test
-  fun `Struct withGraftedInStructs() with paths with a field segment that is not a struct should throw`() =
+  fun `Struct withGraftedInValues() with paths with a field segment that is not a struct should throw`() =
     runTest {
       checkAll(
         propTestConfig,
         structWithAtLeast1ValueOfNotKindArb(Value.KindCase.STRUCT_VALUE),
-        Arb.proto.struct(),
+        Arb.proto.value(),
         dataConnectPathArb(size = 0..5),
         Arb.twoValues(fieldPathSegmentArb())
-      ) { struct, structToGraft, pathSuffix, (fieldSegment1, fieldSegment2) ->
+      ) { struct, valueToGraft, pathSuffix, (fieldSegment1, fieldSegment2) ->
         val nonStructs = struct.walk().filterNot { it.value.isStructValue }.toList()
         val (nonStructPath, nonStructValue) = Arb.of(nonStructs).bind()
         val graftPath = buildList {
@@ -361,11 +369,11 @@ class ProtoGraftUnitTest {
           addAll(pathSuffix)
           add(fieldSegment2)
         }
-        val structsByPath = mapOf(graftPath to structToGraft.struct)
+        val valueByPath = mapOf(graftPath to valueToGraft)
 
         val exception =
           shouldThrow<ProtoGraft.PathFieldOfNonStructException> {
-            struct.withGraftedInStructs(structsByPath)
+            struct.withGraftedInValues(valueByPath)
           }
 
         assertSoftly {
@@ -383,16 +391,16 @@ class ProtoGraftUnitTest {
     }
 
   @Test
-  fun `Struct withGraftedInStructs() with paths with a list index segment that is not a list should throw`() =
+  fun `Struct withGraftedInValues() with paths with a list index segment that is not a list should throw`() =
     runTest {
       checkAll(
         propTestConfig,
         structWithAtLeast1ValueOfNotKindArb(Value.KindCase.LIST_VALUE),
-        Arb.proto.struct(),
+        Arb.proto.value(),
         dataConnectPathArb(size = 0..5),
         listIndexPathSegmentArb(),
         fieldPathSegmentArb()
-      ) { struct, structToGraft, pathSuffix, listIndexSegment, fieldSegment ->
+      ) { struct, valueToGraft, pathSuffix, listIndexSegment, fieldSegment ->
         val nonListValues = struct.walk().filterNot { it.value.isListValue }.toList()
         val (nonListValuePath, nonListValueValue) = Arb.of(nonListValues).bind()
         val graftPath = buildList {
@@ -401,11 +409,11 @@ class ProtoGraftUnitTest {
           addAll(pathSuffix)
           add(fieldSegment)
         }
-        val structsByPath = mapOf(graftPath to structToGraft.struct)
+        val valueByPath = mapOf(graftPath to valueToGraft)
 
         val exception =
           shouldThrow<ProtoGraft.PathListIndexOfNonListException> {
-            struct.withGraftedInStructs(structsByPath)
+            struct.withGraftedInValues(valueByPath)
           }
 
         assertSoftly {
@@ -423,7 +431,7 @@ class ProtoGraftUnitTest {
     }
 
   @Test
-  fun `Struct withGraftedInStructs() with paths with a negative list index segment should throw`() =
+  fun `Struct withGraftedInValues() with paths with a negative list index segment should throw`() =
     verifyWithGraftedInStructsThrowsPathListIndexOutOfBoundsException<
       ProtoGraft.NegativePathListIndexException
     >(
@@ -438,7 +446,7 @@ class ProtoGraftUnitTest {
     }
 
   @Test
-  fun `Struct withGraftedInStructs() with paths with a too-large list index segment should throw`() =
+  fun `Struct withGraftedInValues() with paths with a too-large list index segment should throw`() =
     verifyWithGraftedInStructsThrowsPathListIndexOutOfBoundsException<
       ProtoGraft.PathListIndexGreaterThanOrEqualToListSizeException
     >(
@@ -473,10 +481,10 @@ class ProtoGraftUnitTest {
     checkAll(
       propTestConfig,
       structWithAtLeast1ListValueArb,
-      Arb.proto.struct(),
+      Arb.proto.value(),
       dataConnectPathArb(size = 0..5),
       fieldPathSegmentArb()
-    ) { struct, structToGraft, pathSuffix, fieldSegment ->
+    ) { struct, valueToGraft, pathSuffix, fieldSegment ->
       val listValues = struct.walk().filter { it.value.isListValue }.toList()
       val (listValuePath, listValueValue) = Arb.of(listValues).bind()
       val listValue = listValueValue.listValue
@@ -487,9 +495,9 @@ class ProtoGraftUnitTest {
         addAll(pathSuffix)
         add(fieldSegment)
       }
-      val structsByPath = mapOf(graftPath to structToGraft.struct)
+      val valueByPath = mapOf(graftPath to valueToGraft)
 
-      val exception = shouldThrow<E> { struct.withGraftedInStructs(structsByPath) }
+      val exception = shouldThrow<E> { struct.withGraftedInValues(valueByPath) }
 
       assertSoftly {
         validateMessage(exception, graftPath, listValuePath, listValue, outOfRangeListIndex)
@@ -498,33 +506,14 @@ class ProtoGraftUnitTest {
   }
 
   @Test
-  fun `Struct withGraftedInStructs() with nested paths`() = runTest {
+  fun `Struct withGraftedInValues() with nested paths`() = runTest {
     val structArb = Arb.proto.struct()
     checkAll(propTestConfig, structArb, Arb.int(1..10)) { struct, subStructCount ->
-      val structsByPath = mutableMapOf<DataConnectPath, Struct>()
-      val structsToGraft = generateSequence { structArb.bind().struct }.take(subStructCount)
-      val expectedResult = populateStructsByPath(structsByPath, struct.struct, structsToGraft)
+      val valueByPath = mutableMapOf<DataConnectPath, Value>()
+      val valuesToGraft = generateSequence { structArb.bind().toValueProto() }.take(subStructCount)
+      val expectedResult = populateStructsByPath(valueByPath, struct.struct, valuesToGraft)
 
-      val result = struct.struct.withGraftedInStructs(structsByPath)
-
-      result shouldBe expectedResult
-    }
-  }
-
-  @Test
-  fun `Struct withGraftedInStructs() with nested paths and root replacement`() = runTest {
-    val structArb = Arb.proto.struct()
-    checkAll(propTestConfig, structArb, structArb, Arb.int(1..10)) {
-      struct,
-      rootReplacementStruct,
-      subStructCount ->
-      val structsByPath = mutableMapOf<DataConnectPath, Struct>()
-      val structsToGraft = generateSequence { structArb.bind().struct }.take(subStructCount)
-      val expectedResult =
-        populateStructsByPath(structsByPath, rootReplacementStruct.struct, structsToGraft)
-      structsByPath[emptyDataConnectPath()] = rootReplacementStruct.struct
-
-      val result = struct.struct.withGraftedInStructs(structsByPath)
+      val result = struct.struct.withGraftedInValues(valueByPath)
 
       result shouldBe expectedResult
     }
@@ -536,40 +525,45 @@ private val propTestConfig =
   PropTestConfig(iterations = 200, edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.2))
 
 /**
- * Creates and returns a new [Struct] that is the result of randomly inserting the [Struct] objects
- * produced by the given [structsToGraft] sequence into the receiver [Struct] at random points, and
- * puts entries into the given [structsByPath] map about the paths at which each [Struct] was
- * grafted.
+ * Creates and returns a new [Struct] that is the result of randomly inserting the [Value] objects
+ * produced by the given [valuesToGraft] sequence into the receiver [Struct] at random points, and
+ * puts entries into the given [valueByPath] map about the paths at which each [Struct] was grafted.
  *
  * This function is used to set up test scenarios where [Struct] objects are grafted into a base
  * [Struct] at various paths, some of which may require the creation of intermediate parent [Struct]
  * objects.
  *
- * @param structsByPath A mutable map that will be populated with the [DataConnectPath] to each
- * grafted [Struct]. This map is used to verify the grafting operation in tests.
- * @param struct The base [Struct] onto which other [Struct] objects will be grafted.
- * @param structsToGraft A sequence of [Struct] objects to be randomly grafted.
- * @return A new [Struct] instance that is the receiver [Struct] with all the [structsToGraft]
+ * @param valueByPath A mutable map that will be populated with the [DataConnectPath] to each
+ * grafted [Value]. This map is used to verify the grafting operation in tests.
+ * @param struct The base [Struct] onto which other [Value] objects will be grafted.
+ * @param valuesToGraft A sequence of [Value] objects to be randomly grafted.
+ * @return A new [Struct] instance that is the receiver [Struct] with all the [valuesToGraft]
  * randomly inserted at various paths.
  */
 private fun PropertyContext.populateStructsByPath(
-  structsByPath: MutableMap<DataConnectPath, Struct>,
+  valueByPath: MutableMap<DataConnectPath, Value>,
   struct: Struct,
-  structsToGraft: Sequence<Struct>
+  valuesToGraft: Sequence<Value>
 ): Struct {
   val structKeyArb = Arb.proto.structKey()
   val missingParentsPathArb = Arb.list(fieldPathSegmentArb(string = structKeyArb), 0..3)
 
   val structBuilder = struct.toBuilder()
-  structsToGraft.forEach { structToGraft ->
+  valuesToGraft.forEach { valueToGraft ->
     val missingParentsPath = missingParentsPathArb.bind()
+    val valuesToGraftWithMissingParents =
+      if (missingParentsPath.isEmpty()) {
+        valueToGraft
+      } else {
+        valueToGraft.withParents(missingParentsPath).toValueProto()
+      }
     val graftPath =
       structBuilder.randomlyInsertValue(
-        structToGraft.withParents(missingParentsPath).toValueProto(),
+        valuesToGraftWithMissingParents,
         randomSource().random,
         generateKey = { structKeyArb.bind() },
       )
-    structsByPath[graftPath + missingParentsPath] = structToGraft
+    valueByPath[graftPath + missingParentsPath] = valueToGraft
   }
 
   return structBuilder.build()
@@ -582,47 +576,47 @@ private fun DataConnectPathSegment.toExpectedDescriptionInExceptionMessages(): S
   }
 
 /**
- * Creates a [Struct] by grafting in other [Struct] objects into the receiver [Struct].
+ * Creates a [Struct] by grafting in [Value] objects into the receiver [Struct].
  *
  * This function is intended to construct the expected output [Struct] after a grafting operation.
  * It iterates through the receiver [Struct] and, for any [Struct] values encountered, it checks if
  * there are corresponding [Struct] objects to be grafted in at that path. If so, it grafts them
  * into the existing [Struct] at the specified path.
  *
- * The grafting process ensures that each [Struct] in [structsByPath] is placed at its designated
- * [DataConnectPath] within the receiver [Struct]. It's crucial that the paths in [structsByPath]
+ * The grafting process ensures that each [Value] in [valueByPath] is placed at its designated
+ * [DataConnectPath] within the receiver [Struct]. It's crucial that the paths in [valueByPath]
  * point to non-existent fields within existing [Struct] values in the receiver, or directly to the
  * root if the path is empty.
  *
- * @param structsByPath A map where keys are [DataConnectPath] objects indicating where a [Struct]
- * should be grafted, and values are the [Struct] objects to be grafted.
- * @return A new [Struct] instance that is the receiver [Struct] with the provided [structsByPath]
+ * @param valueByPath A map where keys are [DataConnectPath] objects indicating where a [Value]
+ * should be grafted, and values are the [Value] objects to be grafted.
+ * @return A new [Struct] instance that is the receiver [Struct] with the provided [valueByPath]
  * grafted into it.
  */
-private fun Struct.toExpectedStructWithStructsGraftedInToExistingStruct(
-  structsByPath: Map<DataConnectPath, Struct>
+private fun Struct.toExpectedStructWithValuesGraftedInToExistingStruct(
+  valueByPath: Map<DataConnectPath, Value>
 ): Struct {
-  val structsRemaining = structsByPath.entries.toMutableList()
+  val valuesRemaining = valueByPath.entries.toMutableList()
   val result = map { path, value ->
     if (!value.isStructValue) {
       value
     } else {
-      val curStructs = structsRemaining.extract { _, entry -> path == entry.key.dropLast(1) }
-      if (curStructs.isEmpty()) {
+      val curValues = valuesRemaining.extract { _, entry -> path == entry.key.dropLast(1) }
+      if (curValues.isEmpty()) {
         value
       } else {
         value.structValue.toBuilder().let { structBuilder ->
-          curStructs.forEach { (path, subStruct) ->
+          curValues.forEach { (path, subValue) ->
             val field = (path.last() as DataConnectPathSegment.Field).field
             require(!structBuilder.containsFields(field))
-            structBuilder.putFields(field, subStruct.toValueProto())
+            structBuilder.putFields(field, subValue)
           }
           structBuilder.build().toValueProto()
         }
       }
     }
   }
-  check(structsRemaining.isEmpty())
+  check(valuesRemaining.isEmpty())
   return result
 }
 
@@ -665,21 +659,19 @@ private fun PropertyContext.pathToNonExistentFieldInExistingStructSequence(
 }
 
 /**
- * Wraps the receiver [Struct] in parent [Struct] objects to place it at the given [path].
+ * Wraps the receiver [Value] in parent [Struct] objects to place it at the given [path].
  *
- * For example, if this [Struct] is `{ "key": "value" }` and the path is `["a", "b"]`, the returned
+ * For example, if this [Value] is `{ "key": "value" }` and the path is `["a", "b"]`, the returned
  * struct will be `{ "a": { "b": { "key": "value" } } }`.
  *
- * @param path The path where the receiver [Struct] will be in the returned [Struct].
- * @return A new [Struct] with the receiver [Struct] at the specified path, or this same [Struct]
- * instance if the path is empty.
+ * @param path The path where the receiver [Value] will be in the returned [Struct]; must not be
+ * empty.
+ * @return A new [Struct] with the receiver [Value] at the specified path
  */
-private fun Struct.withParents(path: List<DataConnectPathSegment.Field>): Struct {
-  if (path.isEmpty()) {
-    return this
-  }
+private fun Value.withParents(path: List<DataConnectPathSegment.Field>): Struct {
+  require(path.isNotEmpty())
   var structBuilder = Struct.newBuilder()
-  structBuilder.putFields(path.last().field, toValueProto())
+  structBuilder.putFields(path.last().field, this)
   path.dropLast(1).reversed().forEach {
     val parentStructBuilder = Struct.newBuilder()
     parentStructBuilder.putFields(it.field, structBuilder.build().toValueProto())
@@ -760,100 +752,91 @@ private fun structWithAtLeast1ValueMatchingArb(
 /** Unit tests for private helper functions defined in this file. */
 class ProtoGraftTestingUnitTest {
 
+  @Before
+  fun registerPrinters() {
+    registerDataConnectKotestPrinters()
+  }
+
   @Test
-  fun `withParents() when path is empty should return the receiver struct`() = runTest {
-    checkAll(propTestConfig, Arb.proto.struct()) { struct ->
-      struct.struct.withParents(emptyList()) shouldBeSameInstanceAs struct.struct
+  fun `withParents() when path is empty should throw`() = runTest {
+    checkAll(propTestConfig, Arb.proto.value()) { value ->
+      shouldThrow<IllegalArgumentException> { value.withParents(emptyList()) }
     }
   }
 
   @Test
-  fun `withParents() when path is non-empty should return a struct with the expected paths`() =
-    runTest {
-      val stringArb = Arb.proto.structKey()
-      checkAll(
-        propTestConfig,
-        Arb.proto.struct(key = stringArb),
-        Arb.list(fieldPathSegmentArb(stringArb), 0..5)
-      ) { struct, path ->
-        val result = struct.struct.withParents(path)
+  fun `withParents() should return a struct with the expected paths`() = runTest {
+    checkAll(propTestConfig, Arb.proto.value(), Arb.list(fieldPathSegmentArb(), 1..5)) { value, path
+      ->
+      val result = value.withParents(path)
 
-        val actualPaths = result.walkPaths(includeSelf = false).toList()
-        val expectedPaths = buildList {
-          struct.struct.walkPaths(includeSelf = false).map { path + it }.forEach { add(it) }
-          (1..path.size).forEach { add(path.subList(0, it)) }
-        }
-        actualPaths shouldContainExactlyInAnyOrder expectedPaths
+      val actualPaths = result.walkPaths(includeSelf = false).toList()
+      val expectedPaths = buildList {
+        value.walkPaths(includeSelf = false).map { path + it }.forEach { add(it) }
+        (1..path.size).forEach { add(path.subList(0, it)) }
       }
+      actualPaths shouldContainExactlyInAnyOrder expectedPaths
     }
+  }
 
   @Test
-  fun `withParents() when path is non-empty should contain the receiver at the given path`() =
-    runTest {
-      val stringArb = Arb.proto.structKey()
-      checkAll(
-        propTestConfig,
-        Arb.proto.struct(key = stringArb),
-        Arb.list(fieldPathSegmentArb(stringArb), 0..5)
-      ) { struct, path ->
-        val result = struct.struct.withParents(path)
+  fun `withParents() should contain the receiver at the given path`() = runTest {
+    checkAll(propTestConfig, Arb.proto.value(), Arb.list(fieldPathSegmentArb(), 1..5)) { value, path
+      ->
+      val result = value.withParents(path)
 
-        val value = result.walk(includeSelf = true).filter { it.path == path }.single().value
-        value.structValue shouldBe struct.struct
-      }
+      val valueAtPath = result.walk().filter { it.path == path }.single().value
+      valueAtPath shouldBe value
     }
+  }
 
   @Test
-  fun `toExpectedStructWithStructsGraftedInToExistingStruct() when structsByPath is empty should return the same instance`() =
+  fun `toExpectedStructWithValuesGraftedInToExistingStruct() when valueByPath is empty should return the same instance`() =
     runTest {
       checkAll(propTestConfig, Arb.proto.struct()) { struct ->
-        val result = struct.struct.toExpectedStructWithStructsGraftedInToExistingStruct(emptyMap())
+        val result = struct.struct.toExpectedStructWithValuesGraftedInToExistingStruct(emptyMap())
 
         result shouldBe struct.struct
       }
     }
 
   @Test
-  fun `toExpectedStructWithStructsGraftedInToExistingStruct() when structsByPath contains paths whose immediate parent is an existing struct should graft correctly`() =
+  fun `toExpectedStructWithValuesGraftedInToExistingStruct() when valueByPath contains paths whose immediate parent is an existing struct should graft correctly`() =
     runTest {
-      val structArb = Arb.proto.struct()
-      checkAll(propTestConfig, structArb, Arb.list(structArb, 1..5)) { struct, structsToGraft ->
+      checkAll(propTestConfig, Arb.proto.struct(), Arb.list(Arb.proto.value(), 1..5)) {
+        struct,
+        valuesToGraft ->
         val destPaths = pathToNonExistentFieldInExistingStructSequence(struct.struct).iterator()
-        val structsByPath = structsToGraft.map { it.struct }.associateBy { destPaths.next() }
+        val valueByPath = valuesToGraft.associateBy { destPaths.next() }
 
-        val result =
-          struct.struct.toExpectedStructWithStructsGraftedInToExistingStruct(structsByPath)
+        val result = struct.struct.toExpectedStructWithValuesGraftedInToExistingStruct(valueByPath)
 
-        result.walk(includeSelf = true).forEach { (path, value) ->
-          val expectedStruct = structsByPath[path]
-          if (expectedStruct !== null) {
-            withClue("path=${path.toPathString()}") {
-              value.structValueOrNull shouldBe expectedStruct
-            }
+        result.walk().forEach { (path, value) ->
+          valueByPath[path]?.let { expectedValue ->
+            withClue("path=${path.toPathString()}") { value shouldBe expectedValue }
           }
         }
         val prunedResult =
-          result.map { path, value -> if (structsByPath.containsKey(path)) null else value }
+          result.map { path, value -> if (valueByPath.containsKey(path)) null else value }
         withClue("prunedResult") { prunedResult shouldBe struct.struct }
       }
     }
 
   @Test
-  fun `toExpectedStructWithStructsGraftedInToExistingStruct() when structsByPath contains an existing key should throw`() =
+  fun `toExpectedStructWithValuesGraftedInToExistingStruct() when valueByPath contains an existing key should throw`() =
     runTest {
-      val structArb = Arb.proto.struct()
-      val nonEmptyStructArb = structArb.filterNot { it.struct.fieldsCount == 0 }
-      checkAll(propTestConfig, nonEmptyStructArb, structArb) { struct, structToGraft ->
+      val nonEmptyStructArb = Arb.proto.struct().filterNot { it.struct.fieldsCount == 0 }
+      checkAll(propTestConfig, nonEmptyStructArb, Arb.proto.value()) { struct, valueToGraft ->
         val existingPaths =
           struct.struct
             .walkPaths()
             .filter { it.lastOrNull() is DataConnectPathSegment.Field }
             .toList()
         val existingPath = Arb.of(existingPaths).bind()
-        val structsByPath = mapOf(existingPath to structToGraft.struct)
+        val valueByPath = mapOf(existingPath to valueToGraft)
 
         shouldThrow<IllegalArgumentException> {
-          struct.struct.toExpectedStructWithStructsGraftedInToExistingStruct(structsByPath)
+          struct.struct.toExpectedStructWithValuesGraftedInToExistingStruct(valueByPath)
         }
       }
     }

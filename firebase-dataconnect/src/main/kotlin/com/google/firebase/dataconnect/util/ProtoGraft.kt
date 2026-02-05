@@ -40,84 +40,83 @@ import kotlin.collections.set
 internal object ProtoGraft {
 
   /**
-   * Creates and returns a [Struct] that is the receiver [Struct] with the given [Struct] objects
+   * Creates and returns a [Struct] that is the receiver [Struct] with the given [Value] objects
    * grafted in.
    *
-   * The [structsByPath] map specifies the [Struct] objects to graft in and the location at which to
-   * graft them. If [structsByPath] is empty then the receiver [Struct] object is returned.
+   * The [valueByPath] map specifies the [Value] objects to graft in and the location at which to
+   * graft them. If [valueByPath] is empty then the receiver [Struct] object is returned.
    *
-   * The receiver [Struct] will be the "root" of the returned object, except in one case: if
-   * [structsByPath] has the empty path as a key then the receiver [Struct] is ignored and the
-   * "root" of the returned object will, instead, be the [Struct] associated with the empty path. If
-   * the size of [structsByPath] is 1 and its only key is the empty path then the [Struct]
-   * associated with the empty path is returned.
+   * Every path in [valueByPath] traverses a tree of [Struct]s and [ListValue]s, and must have a
+   * [DataConnectPathSegment.Field] as its last element (otherwise a
+   * [LastPathSegmentNotFieldException] will be thrown). Using the paths, the "root" [Struct] will
+   * be traversed to find the [Struct] identified by the penultimate element of the path. If the
+   * [Value] at this path is not a [Struct] then [InsertIntoNonStructException] is thrown.
+   * Otherwise, the final element of the path specifies the key at which to insert the [Value] into
+   * the [Struct]. If this key already exists then [KeyExistsException] is thrown.
    *
-   * Except for the empty path, every path in [structsByPath] must have a
-   * [DataConnectPathSegment.Field] as its last element, otherwise a
-   * [LastPathSegmentNotFieldException] will be thrown. A single-element path must have a
-   * [DataConnectPathSegment.Field] as its only element, otherwise a
-   * [LastPathSegmentNotFieldException] will be thrown. The element of a single-element path
-   * specifies the key at which to graft the associated [Struct] into the "root". This key must not
-   * already exist in the root, otherwise a [KeyExistsException] will be thrown.
-   *
-   * For all paths with size greater than 1, the "root" [Struct] will be traversed to find the
-   * [Struct] corresponding with the penultimate element of the path. If the [Value] at this path is
-   * not a [Struct] then [InsertIntoNonStructException] is thrown. Otherwise, the final element of
-   * the path specifies the key at which to insert the [Struct] into the [Struct]. If this key
-   * already exists then [KeyExistsException] is thrown.
-   *
-   * Any elements in the path that are missing along the path from the "root" to the penultimate
-   * elements in the path will be inserted as empty [Struct] objects.
-   *
-   * The returned [Struct] will, therefore, consist of the "root" [Struct] (either the receiver or
-   * the [Struct] associated with the empty path in [structsByPath]) with the [Struct] objects
-   * specified as values in the given [structsByPath] inserted at the path corresponding to their
-   * keys in [structsByPath].
+   * Any [DataConnectPathSegment.Field] elements that are missing along the path from the receiver
+   * to the penultimate element in the path will be inserted as empty [Struct] objects.
+   * [DataConnectPathSegment.ListIndex] elements in the path must refer to an existing element in
+   * the list.
    */
-  fun Struct.withGraftedInStructs(structsByPath: Map<DataConnectPath, Struct>): Struct {
-    if (structsByPath.isEmpty()) {
+  fun Struct.withGraftedInValues(valueByPath: Map<DataConnectPath, Value>): Struct {
+    if (valueByPath.isEmpty()) {
       return this
     }
 
-    if (structsByPath.size == 1 && structsByPath.containsKey(emptyDataConnectPath())) {
-      return structsByPath.getValue(emptyDataConnectPath())
+    require(emptyDataConnectPath() !in valueByPath) {
+      "valueByPath contains the empty path, but the empty path is not allowed [af5k4an5za]"
     }
 
-    val mutableStructsByPath = structsByPath.toMutableMap()
-    val rootStruct = mutableStructsByPath.remove(emptyDataConnectPath()) ?: this
-    val rootNode = toMutableNode(rootStruct, parentPathSegment = null)
+    val mutableValueByPath = valueByPath.toMutableMap()
+    val rootNode = toMutableNode(this, parentPathSegment = null)
 
-    graftInStructs(rootNode, mutableStructsByPath)
+    graftInValues(rootNode, mutableValueByPath)
 
     return rootNode.toStruct()
   }
 
-  fun ListValue.withGraftedInStructs(structsByPath: Map<DataConnectPath, Struct>): ListValue {
-    if (structsByPath.isEmpty()) {
+  /**
+   * Creates and returns a [ListValue] that is the receiver [ListValue] with the given [Value]
+   * objects grafted in.
+   *
+   * The [valueByPath] map specifies the [Value] objects to graft in and the location at which to
+   * graft them. If [valueByPath] is empty then the receiver [ListValue] object is returned.
+   *
+   * Every path in [valueByPath] traverses a tree of [Struct]s and [ListValue]s, and must have a
+   * [DataConnectPathSegment.Field] as its last element (otherwise a
+   * [LastPathSegmentNotFieldException] will be thrown). Using the paths, the "root" [ListValue]
+   * will be traversed to find the [Struct] identified by the penultimate element of the path. If
+   * the [Value] at this path is not a [Struct] then [InsertIntoNonStructException] is thrown.
+   * Otherwise, the final element of the path specifies the key at which to insert the [Value] into
+   * the [Struct]. If this key already exists then [KeyExistsException] is thrown.
+   *
+   * Any [DataConnectPathSegment.Field] elements that are missing along the path from the receiver
+   * to the penultimate element in the path will be inserted as empty [Struct] objects.
+   * [DataConnectPathSegment.ListIndex] elements in the path must refer to an existing element in
+   * the list.
+   */
+  fun ListValue.withGraftedInValues(valueByPath: Map<DataConnectPath, Value>): ListValue {
+    if (valueByPath.isEmpty()) {
       return this
     }
 
-    if (structsByPath.containsKey(emptyDataConnectPath())) {
-      throw InsertIntoNonStructException(
-        "structsByPath contains the empty path, " +
-          "but this cannot be grafted because the root has kind ${Value.KindCase.LIST_VALUE}, " +
-          "and the empty path can only be grafted " +
-          "onto a root of kind ${Value.KindCase.STRUCT_VALUE} [cdma83emff]"
-      )
+    require(emptyDataConnectPath() !in valueByPath) {
+      "valueByPath contains the empty path, but the empty path is not allowed [rm45kyhtff]"
     }
 
     val rootNode = toMutableNode(this, parentPathSegment = null)
 
-    graftInStructs(rootNode, structsByPath)
+    graftInValues(rootNode, valueByPath)
 
     return rootNode.toListValue()
   }
 
-  private fun graftInStructs(rootNode: MutableNode, structsByPath: Map<DataConnectPath, Struct>) {
-    val sortedPaths = structsByPath.keys.sortedWith(DataConnectPathComparator)
+  private fun graftInValues(rootNode: MutableNode, valueByPath: Map<DataConnectPath, Value>) {
+    val sortedPaths = valueByPath.keys.sortedWith(DataConnectPathComparator)
 
     for (path in sortedPaths) {
-      val structToGraft = structsByPath.getValue(path)
+      val valueToGraft = valueByPath.getValue(path)
       val parentPath = path.dropLast(1)
 
       val lastSegment = path.last()
@@ -126,7 +125,7 @@ internal object ProtoGraft {
           is DataConnectPathSegment.Field -> lastSegment.field
           is DataConnectPathSegment.ListIndex ->
             throw LastPathSegmentNotFieldException(
-              "structsByPath contains path ${path.toPathString()} " +
+              "valueByPath contains path ${path.toPathString()} " +
                 "whose last segment is list index ${lastSegment.index}, " +
                 "but the last segment must be a field, not a list index [qxgass8cvx]"
             )
@@ -140,7 +139,7 @@ internal object ProtoGraft {
               val structNode =
                 (currentNode as? MutableNode.StructNode)
                   ?: throw PathFieldOfNonStructException(
-                    "structsByPath contains path ${path.toPathString()} " +
+                    "valueByPath contains path ${path.toPathString()} " +
                       "whose segment $pathSegmentIndex " +
                       "(${currentNode.parentPathSegment.toFieldOrListIndexString()}) " +
                       "has kind ${currentNode.toValue().kindCase}, " +
@@ -152,7 +151,7 @@ internal object ProtoGraft {
               val listNode =
                 (currentNode as? MutableNode.ListNode)
                   ?: throw PathListIndexOfNonListException(
-                    "structsByPath contains path ${path.toPathString()} " +
+                    "valueByPath contains path ${path.toPathString()} " +
                       "whose segment $pathSegmentIndex " +
                       "(${currentNode.parentPathSegment.toFieldOrListIndexString()}) " +
                       "has kind ${currentNode.toValue().kindCase}, " +
@@ -160,7 +159,7 @@ internal object ProtoGraft {
                   )
               if (pathSegment.index < 0) {
                 throw NegativePathListIndexException(
-                  "structsByPath contains path ${path.toPathString()} " +
+                  "valueByPath contains path ${path.toPathString()} " +
                     "whose segment ${pathSegmentIndex+1} (list index ${pathSegment.index}) " +
                     "is negative, but list indices must be greater than or equal to zero " +
                     "and strictly less than the size of the referent list, " +
@@ -168,7 +167,7 @@ internal object ProtoGraft {
                 )
               } else if (pathSegment.index >= listNode.size) {
                 throw PathListIndexGreaterThanOrEqualToListSizeException(
-                  "structsByPath contains path ${path.toPathString()} " +
+                  "valueByPath contains path ${path.toPathString()} " +
                     "whose segment ${pathSegmentIndex+1} (list index ${pathSegment.index}) " +
                     "is greater than or equal to the size of the list, " +
                     "but list indices must be greater than or equal to zero " +
@@ -184,7 +183,7 @@ internal object ProtoGraft {
       val parentStructNode =
         (currentNode as? MutableNode.StructNode)
           ?: throw InsertIntoNonStructException(
-            "structsByPath contains path ${path.toPathString()} " +
+            "valueByPath contains path ${path.toPathString()} " +
               "whose destination struct (${parentPath.toPathString()}) " +
               "has kind ${currentNode.toValue().kindCase}, " +
               "but it is expected to have kind ${Value.KindCase.STRUCT_VALUE} [zcj277ka6a]"
@@ -192,17 +191,14 @@ internal object ProtoGraft {
 
       if (parentStructNode.containsKey(lastSegmentField)) {
         throw KeyExistsException(
-          "structsByPath contains path ${path.toPathString()} " +
+          "valueByPath contains path ${path.toPathString()} " +
             "whose destination struct (${parentPath.toPathString()}) " +
             "already has a field named $lastSegmentField, " +
             "but it is required to not already have that field [ecgd5r2v4a]"
         )
       }
 
-      parentStructNode.setField(
-        lastSegmentField,
-        MutableNode.StructNode(lastSegment, structToGraft)
-      )
+      parentStructNode.setField(lastSegmentField, toMutableNode(valueToGraft, lastSegment))
     }
   }
 
