@@ -17,7 +17,7 @@
 package com.google.firebase.dataconnect.sqlite
 
 import com.google.firebase.dataconnect.DataConnectPath
-import com.google.firebase.dataconnect.DataConnectPathSegment
+import com.google.firebase.dataconnect.toDataConnectPath
 import com.google.firebase.dataconnect.toPathString
 import com.google.firebase.dataconnect.util.ProtoGraft.withGraftedInValues
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
@@ -27,8 +27,6 @@ import com.google.protobuf.Struct
 import com.google.protobuf.Value
 import google.firebase.dataconnect.proto.kotlinsdk.Entity
 import google.firebase.dataconnect.proto.kotlinsdk.EntityOrEntityList
-import google.firebase.dataconnect.proto.kotlinsdk.EntityPath
-import google.firebase.dataconnect.proto.kotlinsdk.FieldOrListIndex
 import google.firebase.dataconnect.proto.kotlinsdk.QueryResult
 
 internal fun rehydrateQueryResult(
@@ -117,16 +115,6 @@ private fun Entity.rehydrate(
 
   return structBuilder.build()
 }
-
-private fun EntityPath.toDataConnectPath(): DataConnectPath =
-  segmentsList.mapNotNull { fieldOrListIndex ->
-    when (fieldOrListIndex.kindCase) {
-      FieldOrListIndex.KindCase.FIELD -> DataConnectPathSegment.Field(fieldOrListIndex.field)
-      FieldOrListIndex.KindCase.LIST_INDEX ->
-        DataConnectPathSegment.ListIndex(fieldOrListIndex.listIndex)
-      FieldOrListIndex.KindCase.KIND_NOT_SET -> null
-    }
-  }
 
 internal sealed class QueryRefRehydratorException(message: String) : Exception(message)
 
