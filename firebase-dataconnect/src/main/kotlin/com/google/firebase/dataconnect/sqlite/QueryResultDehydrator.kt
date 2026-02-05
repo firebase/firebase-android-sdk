@@ -29,6 +29,8 @@ import google.firebase.dataconnect.proto.kotlinsdk.EntityList as EntityListProto
 import google.firebase.dataconnect.proto.kotlinsdk.EntityOrEntityList as EntityOrEntityListProto
 import google.firebase.dataconnect.proto.kotlinsdk.QueryResult as QueryResultProto
 
+internal typealias GetEntityIdForPathFunction = (DataConnectPath) -> String?
+
 internal data class DehydratedQueryResult(
   val proto: QueryResultProto,
   val entityStructById: Map<String, Struct>,

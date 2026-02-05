@@ -48,8 +48,6 @@ import java.security.MessageDigest
 import java.util.Objects
 import kotlin.math.absoluteValue
 
-internal typealias GetEntityIdForPathFunction = (DataConnectPath) -> String?
-
 /**
  * This class is NOT thread safe. The behavior of an instance of this class when used concurrently
  * from multiple threads without external synchronization is undefined.
