@@ -75,11 +75,7 @@ private fun QueryResultProto.Builder.initialize(
         if (oldStruct.fieldsMap.keys == struct.fieldsMap.keys) {
           struct
         } else {
-          val structBuilder = oldStruct.toBuilder()
-          struct.fieldsMap.entries.forEach { (field, value) ->
-            structBuilder.putFields(field, value)
-          }
-          structBuilder.build()
+          oldStruct.toBuilder().putAllFields(struct.fieldsMap).build()
         }
       }
 
