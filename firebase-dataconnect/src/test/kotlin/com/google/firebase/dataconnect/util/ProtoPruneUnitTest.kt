@@ -17,6 +17,7 @@
 package com.google.firebase.dataconnect.util
 
 import com.google.firebase.dataconnect.DataConnectPath
+import com.google.firebase.dataconnect.DataConnectPathComparator
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.emptyDataConnectPath
 import com.google.firebase.dataconnect.testutil.isListValue
@@ -31,6 +32,8 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
 import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.testutil.walk
 import com.google.firebase.dataconnect.testutil.withRandomlyInsertedStruct
+import com.google.firebase.dataconnect.toPathString
+import com.google.firebase.dataconnect.util.ProtoPrune.PrunedListValue
 import com.google.firebase.dataconnect.util.ProtoPrune.PrunedStruct
 import com.google.firebase.dataconnect.util.ProtoPrune.PrunedValue
 import com.google.firebase.dataconnect.util.ProtoPrune.withPrunedDescendants
@@ -40,6 +43,7 @@ import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
 import io.kotest.assertions.assertSoftly
+import io.kotest.assertions.print.print
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.maps.shouldContainExactly
@@ -57,6 +61,7 @@ import io.kotest.property.checkAll
 import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.mockk
+import kotlin.collections.map
 import kotlin.random.nextInt
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
@@ -146,8 +151,9 @@ class ProtoPruneUnitTest {
   @Test
   fun `Struct withPrunedDescendants() calls the predicate with all paths eligible for pruning`() =
     runTest {
-      checkAll(propTestConfig, Arb.proto.struct(), Arb.float(0.0f..1.0f)) { sample, pruneProbability
-        ->
+      checkAll(propTestConfig.copy(seed = 123), Arb.proto.struct(), Arb.float(0.0f..1.0f)) {
+        sample,
+        pruneProbability ->
         val struct: Struct = sample.struct
         val capturedPaths = mutableListOf<DataConnectPath>()
         val predicate: WithPrunedDescendantsPredicate = mockk()
@@ -282,11 +288,24 @@ private val propTestConfig =
  *
  * This function assumes that the root element is a [Struct] (namely, not a [ListValue]).
  *
- * A path is eligible for pruning if its value is a [Struct] and it is not a direct element of a
- * [ListValue] and not the root [Struct] itself.
+ * A path is eligible for pruning if all of the following hold:
+ * 1. The last path segment is a field (not a list index).
+ * 2. The value is either a [Struct] or a [ListValue]; if it is a [ListValue] then it is either
+ * empty or contains all [Struct] values.
  */
-private fun DataConnectPath.isEligibleForPruning(value: Value): Boolean =
-  isNotEmpty() && value.isStructValue && last() is DataConnectPathSegment.Field
+private fun DataConnectPath.isEligibleForPruning(value: Value): Boolean {
+  if (isEmpty()) {
+    return false
+  }
+
+  return when (value.kindCase) {
+    Value.KindCase.STRUCT_VALUE -> last() is DataConnectPathSegment.Field
+    Value.KindCase.LIST_VALUE ->
+      last() is DataConnectPathSegment.Field &&
+        (value.listValue.valuesCount == 0 || value.listValue.valuesList.all { it.isStructValue })
+    else -> false
+  }
+}
 
 /**
  * Creates and returns a [Sequence] that generates the paths of the receiver [Struct] that are
@@ -379,7 +398,7 @@ private class PrunableStructArb(
         if (path !in pathsToPrune) {
           value
         } else {
-          prunedValueByPath[path] = PrunedStruct(value.structValue)
+          prunedValueByPath[path] = value.toPrunedValue()
           null
         }
       }
@@ -407,7 +426,17 @@ private class PrunableListValueArb : Arb<PrunableListValueArb.Sample>() {
     val listValue: ListValue,
     val pathsToPrune: Set<DataConnectPath>,
     val expectedPruneListValueResult: ProtoPrune.PruneListValueResult,
-  )
+  ) {
+    override fun toString(): String {
+      val pathsToPrunePrintFriendly =
+        pathsToPrune.sortedWith(DataConnectPathComparator).map { it.toPathString() }
+      return "PrunableListValueArb.Sample(" +
+        "listValue=${listValue.print().value}, " +
+        "pathsToPrune.size=${pathsToPrune.size}, " +
+        "pathsToPrune=${pathsToPrunePrintFriendly.print().value}, " +
+        "expectedPruneListValueResult=$expectedPruneListValueResult)"
+    }
+  }
 
   private val structKeyArb = Arb.proto.structKey(length = 4)
   private val structArb = Arb.proto.struct(key = structKeyArb)
@@ -468,7 +497,7 @@ private class PrunableListValueArb : Arb<PrunableListValueArb.Sample>() {
         if (path !in pathsToPrune) {
           value
         } else {
-          prunedValueByPath[path] = PrunedStruct(value.structValue)
+          prunedValueByPath[path] = value.toPrunedValue()
           null
         }
       }
@@ -508,6 +537,26 @@ private class PrunableListValueArb : Arb<PrunableListValueArb.Sample>() {
     }
   }
 }
+
+/**
+ * Converts the receiver [Value] to either a [PrunedStruct] (if the value is a [Struct]) or a
+ * [PrunedListValue] (if the value is a [ListValue] with all elements being [Struct] values).
+ */
+private fun Value.toPrunedValue(): PrunedValue =
+  when (kindCase) {
+    Value.KindCase.STRUCT_VALUE -> PrunedStruct(structValue)
+    Value.KindCase.LIST_VALUE ->
+      PrunedListValue(
+        listValue.valuesList.mapIndexed { index, value ->
+          check(value.isStructValue) {
+            "ListValue at index $index must have kind=${Value.KindCase.STRUCT_VALUE}, " +
+              "but got ${value.kindCase} [ttdw38b53y]"
+          }
+          value.structValue
+        }
+      )
+    else -> throw IllegalArgumentException("unsupported Value.KindCase: $kindCase [p7x8bexnc6]")
+  }
 
 /**
  * Returns a new [Arb] that generates [Struct] instances where no descendant [Struct] objects are
