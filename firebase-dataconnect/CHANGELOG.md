@@ -1,5 +1,8 @@
 # Unreleased
 
+- [changed] Added logic for use in offline caching.
+  [#NNNN](https://github.com/firebase/firebase-android-sdk/pull/NNNN))
+
 # 17.1.3
 
 - [changed] Internal refactor for reporting "paths" in response data.
