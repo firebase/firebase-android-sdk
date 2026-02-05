@@ -27,7 +27,8 @@ import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.getUInt32
 import com.google.firebase.dataconnect.sqlite.CodedIntegersExts.getUInt64
 import com.google.firebase.dataconnect.toPathString
 import com.google.firebase.dataconnect.util.ImmutableByteArray
-import com.google.firebase.dataconnect.util.ProtoGraft.withGraftedInStructs
+import com.google.firebase.dataconnect.util.ProtoGraft.withGraftedInValues
+import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.firebase.dataconnect.util.StringUtil.ellipsizeMiddle
 import com.google.firebase.dataconnect.util.StringUtil.get0xHexString
 import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
@@ -73,10 +74,10 @@ internal class QueryResultDecoder(private val channel: ReadableByteChannel) {
       return readStruct(emptyMutableDataConnectPath())
     }
 
-    val entityStructByPath = readEntities(getEntityByEncodedId)
+    val valueByPath = readEntities(getEntityByEncodedId)
     val dehydratedStruct = readStruct(emptyMutableDataConnectPath())
 
-    return dehydratedStruct.withGraftedInStructs(entityStructByPath)
+    return dehydratedStruct.withGraftedInValues(valueByPath)
   }
 
   private fun readSome(): Boolean {
@@ -672,7 +673,7 @@ internal class QueryResultDecoder(private val channel: ReadableByteChannel) {
 
   private fun readEntities(
     getEntityByEncodedId: GetEntityByEncodedIdFunction
-  ): Map<DataConnectPath, Struct> {
+  ): Map<DataConnectPath, Value> {
     val entityCount =
       readUInt32(
         path = emptyDataConnectPath(),
@@ -686,7 +687,7 @@ internal class QueryResultDecoder(private val channel: ReadableByteChannel) {
       List(entityCount) {
           val entityGraftPath = readPath()
           val entityStruct = readEntity(entityGraftPath, getEntityByEncodedId)
-          entityGraftPath to entityStruct
+          entityGraftPath to entityStruct.toValueProto()
         }
         .toMap()
 
