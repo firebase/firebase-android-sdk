@@ -251,7 +251,11 @@ fun <T> Arb<T>.next(rs: RandomSource, edgeCaseProbability: Float): T {
 }
 
 fun <T> Arb<T>.next(rs: RandomSource, edgeCase: Boolean): T =
-  if (edgeCase) edgecase(rs)!! else sample(rs).value
+  if (edgeCase) {
+    edgecase(rs) ?: sample(rs).value
+  } else {
+    sample(rs).value
+  }
 
 class ProbabilityArb : Arb<Float>() {
   override fun edgecase(rs: RandomSource) = if (rs.random.nextBoolean()) 1.0f else 0.0f
