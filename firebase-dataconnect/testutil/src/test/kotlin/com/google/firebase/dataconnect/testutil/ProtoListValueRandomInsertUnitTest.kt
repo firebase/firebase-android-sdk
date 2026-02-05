@@ -18,7 +18,6 @@ package com.google.firebase.dataconnect.testutil
 
 import com.google.firebase.dataconnect.testutil.property.arbitrary.listValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
-import com.google.firebase.dataconnect.testutil.property.arbitrary.random
 import com.google.firebase.dataconnect.testutil.property.arbitrary.value
 import com.google.protobuf.ListValue
 import com.google.protobuf.Value
@@ -47,9 +46,8 @@ class ProtoListValueRandomInsertUnitTest {
       propTestConfig,
       Arb.proto.listValue().map { it.listValue },
       Arb.proto.value(),
-      Arb.random(),
-    ) { listValue, value, random ->
-      val result = listValue.withRandomlyInsertedValue(value, random)
+    ) { listValue, value ->
+      val result = listValue.withRandomlyInsertedValue(value, randomSource().random)
       result.shouldBeListValueWithValueInserted(listValue, value)
     }
   }
@@ -69,11 +67,10 @@ class ProtoListValueRandomInsertUnitTest {
       propTestConfig,
       Arb.proto.listValue().map { it.listValue },
       Arb.proto.value(),
-      Arb.random()
-    ) { listValue, value, random ->
+    ) { listValue, value ->
       val listValueBuilder = listValue.toBuilder()
 
-      listValueBuilder.randomlyInsertValue(value, random)
+      listValueBuilder.randomlyInsertValue(value, randomSource().random)
 
       listValueBuilder.build().shouldBeListValueWithValueInserted(listValue, value)
     }
@@ -85,11 +82,10 @@ class ProtoListValueRandomInsertUnitTest {
       propTestConfig,
       Arb.proto.listValue().map { it.listValue },
       Arb.proto.value(),
-      Arb.random()
-    ) { listValue, value, random ->
+    ) { listValue, value ->
       val listValueBuilder = listValue.toBuilder()
 
-      val result = listValueBuilder.randomlyInsertValue(value, random)
+      val result = listValueBuilder.randomlyInsertValue(value, randomSource().random)
 
       val expectedPath =
         listValueBuilder.build().shouldBeListValueWithValueInserted(listValue, value)
@@ -112,11 +108,10 @@ class ProtoListValueRandomInsertUnitTest {
       propTestConfig,
       Arb.proto.listValue().map { it.listValue },
       Arb.int(0..3),
-      Arb.random()
-    ) { listValue, valueCount, random ->
+    ) { listValue, valueCount ->
       val values: List<Value> = List(valueCount) { Arb.proto.value().bind() }
 
-      val result = listValue.withRandomlyInsertedValues(values, random)
+      val result = listValue.withRandomlyInsertedValues(values, randomSource().random)
 
       result.shouldBeListValueWithValuesInserted(listValue, values)
     }
@@ -138,12 +133,11 @@ class ProtoListValueRandomInsertUnitTest {
       propTestConfig,
       Arb.proto.listValue().map { it.listValue },
       Arb.int(0..3),
-      Arb.random()
-    ) { listValue, valueCount, random ->
+    ) { listValue, valueCount ->
       val values: List<Value> = List(valueCount) { Arb.proto.value().bind() }
       val listValueBuilder = listValue.toBuilder()
 
-      listValueBuilder.randomlyInsertValues(values, random)
+      listValueBuilder.randomlyInsertValues(values, randomSource().random)
 
       listValueBuilder.build().shouldBeListValueWithValuesInserted(listValue, values)
     }
@@ -155,12 +149,11 @@ class ProtoListValueRandomInsertUnitTest {
       propTestConfig,
       Arb.proto.listValue().map { it.listValue },
       Arb.int(0..3),
-      Arb.random()
-    ) { listValue, valueCount, random ->
+    ) { listValue, valueCount ->
       val values: List<Value> = List(valueCount) { Arb.proto.value().bind() }
       val listValueBuilder = listValue.toBuilder()
 
-      val result = listValueBuilder.randomlyInsertValues(values, random)
+      val result = listValueBuilder.randomlyInsertValues(values, randomSource().random)
 
       val expectedPaths =
         listValueBuilder.build().shouldBeListValueWithValuesInserted(listValue, values)
