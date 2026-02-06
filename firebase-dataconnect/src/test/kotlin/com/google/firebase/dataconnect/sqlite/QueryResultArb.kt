@@ -225,36 +225,38 @@ internal class QueryResultArb(
     val entityStructById = mutableMapOf<String, Struct>()
     val entityIdArb = structKeyArb.distinct()
 
-    val entities =
-      List(entityCount) {
-        val repeatEntityId =
-          entityStructById.isNotEmpty() && rs.random.nextFloat() < entityIdRepeatProbability
+    fun Struct.withPrunedFields(): Struct {
+      val candidatePruneKeys = fieldsMap.keys.shuffled(rs.random)
+      val pruneKeyCount =
+        Arb.int(0..candidatePruneKeys.size).next(rs, entityPruneKeyCountEdgeCaseProbability)
 
-        if (!repeatEntityId) {
-          val entityStruct = structArb.next(rs, entityStructEdgeCaseProbability).struct
-          val entityId = entityIdArb.sample(rs).value
-          entityStructById[entityId] = entityStruct
-          EntityIdStructPair(entityId, entityStruct)
-        } else {
-          val (entityId, entityStruct) = entityStructById.entries.random(rs.random)
-          val candidatePruneKeys = entityStruct.fieldsMap.keys.shuffled(rs.random)
-          val pruneKeyCount =
-            Arb.int(0..candidatePruneKeys.size).next(rs, entityPruneKeyCountEdgeCaseProbability)
-          val pruneKeys = candidatePruneKeys.take(pruneKeyCount)
-          val pruneEntityStruct =
-            if (pruneKeys.isEmpty()) {
-              entityStruct
-            } else {
-              entityStruct
-                .toBuilder()
-                .also { entityStructBuilder ->
-                  pruneKeys.forEach { entityStructBuilder.removeFields(it) }
-                }
-                .build()
-            }
-          EntityIdStructPair(entityId, pruneEntityStruct)
-        }
+      val pruneKeys = candidatePruneKeys.take(pruneKeyCount)
+      if (pruneKeys.isEmpty()) {
+        return this
       }
+
+      val prunedStructBuilder = toBuilder()
+      pruneKeys.forEach { prunedStructBuilder.removeFields(it) }
+      return prunedStructBuilder.build()
+    }
+
+    fun generateEntity(): EntityIdStructPair {
+      val repeatEntityId =
+        entityStructById.isNotEmpty() && rs.random.nextFloat() < entityIdRepeatProbability
+
+      return if (!repeatEntityId) {
+        val entityStruct = structArb.next(rs, entityStructEdgeCaseProbability).struct
+        val entityId = entityIdArb.sample(rs).value
+        entityStructById[entityId] = entityStruct
+        EntityIdStructPair(entityId, entityStruct)
+      } else {
+        val (entityId, entityStruct) = entityStructById.entries.random(rs.random)
+        val pruneEntityStruct = entityStruct.withPrunedFields()
+        EntityIdStructPair(entityId, pruneEntityStruct)
+      }
+    }
+
+    val entities = List(entityCount) { generateEntity() }
 
     return GenerateEntitiesResult(entities, entityStructById.toMap())
   }
