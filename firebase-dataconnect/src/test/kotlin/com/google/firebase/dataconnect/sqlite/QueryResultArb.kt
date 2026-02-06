@@ -21,6 +21,7 @@ package com.google.firebase.dataconnect.sqlite
 import com.google.firebase.dataconnect.DataConnectPathComparator
 import com.google.firebase.dataconnect.testutil.DataConnectPath
 import com.google.firebase.dataconnect.testutil.property.arbitrary.ProtoArb
+import com.google.firebase.dataconnect.testutil.property.arbitrary.RememberArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.next
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
@@ -52,6 +53,7 @@ import io.kotest.common.DelicateKotest
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldBeUnique
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.comparables.shouldBeGreaterThan
 import io.kotest.matchers.ints.shouldBeInRange
@@ -90,11 +92,13 @@ import org.junit.Test
  *
  * @param entityCountRange The number of entities to generate in each sample.
  * @param structKeyArb Generator used to generate keys for [Struct] fields.
+ * @param entityIdArb Generator used to entity IDs.
  * @param structArb Generator used to generate the base [Struct] instances.
  */
 internal class QueryResultArb(
   entityCountRange: IntRange,
   private val structKeyArb: Arb<String> = Arb.proto.structKey(length = 4),
+  private val entityIdArb: Arb<String> = structKeyArb,
   private val structArb: Arb<ProtoArb.StructInfo> = Arb.proto.struct(key = structKeyArb),
   entityRepeatPolicy: EntityRepeatPolicy = EntityRepeatPolicy.INTRA_SAMPLE,
 ) : Arb<QueryResultArb.Sample>() {
@@ -267,7 +271,7 @@ internal class QueryResultArb(
         } else if (memoizedEntityIds.isNotEmpty()) {
           memoizedEntityIds.removeLast()
         } else {
-          structKeyArb.sample(rs).value
+          entityIdArb.sample(rs).value
         }
 
       return if (entityId in entityStructById) {
@@ -442,6 +446,20 @@ class QueryResultArbUnitTest {
           entityCountRangeWithNegativeFirst.first.toString()
         exception.message shouldContainWithNonAbuttingText "first"
       }
+    }
+  }
+
+  @Test
+  fun `QueryResultArb should respect the given entityIdArb`() = runTest {
+    val structKeyArb = Arb.proto.structKey()
+    checkAll(propTestConfig, Arb.intRange(0..5).filterNot { it.isEmpty() }) { entityCountRange ->
+      val entityIdArb = RememberArb(structKeyArb)
+      val arb = QueryResultArb(entityCountRange = entityCountRange, entityIdArb = entityIdArb)
+
+      val samples = List(5) { arb.bind() }
+
+      val generatedEntityIds = samples.flatMap { it.entityStructById.keys }.toList()
+      generatedEntityIds shouldContainExactlyInAnyOrder entityIdArb.generatedValues
     }
   }
 
