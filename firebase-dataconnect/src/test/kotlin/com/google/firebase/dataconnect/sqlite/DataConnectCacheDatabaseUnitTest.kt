@@ -249,7 +249,7 @@ class DataConnectCacheDatabaseUnitTest {
         authUid.string,
         queryId.bytes,
         structSample.struct,
-        entityIdByPath = emptyMap(),
+        getEntityIdForPath = null,
       )
 
       val structFromDb = dataConnectCacheDatabase.getQueryResult(authUid.string, queryId.bytes)
@@ -272,7 +272,7 @@ class DataConnectCacheDatabaseUnitTest {
           authUid.string,
           queryId.bytes,
           it.struct,
-          entityIdByPath = emptyMap(),
+          getEntityIdForPath = null,
         )
       }
 
@@ -295,13 +295,13 @@ class DataConnectCacheDatabaseUnitTest {
         authUid1.string,
         queryId.bytes,
         structSample1.struct,
-        entityIdByPath = emptyMap(),
+        getEntityIdForPath = null,
       )
       dataConnectCacheDatabase.insertQueryResult(
         authUid2.string,
         queryId.bytes,
         structSample2.struct,
-        entityIdByPath = emptyMap(),
+        getEntityIdForPath = null,
       )
 
       val struct1FromDb = dataConnectCacheDatabase.getQueryResult(authUid1.string, queryId.bytes)
@@ -327,13 +327,13 @@ class DataConnectCacheDatabaseUnitTest {
         authUid.string,
         queryId1.bytes,
         structSample1.struct,
-        entityIdByPath = emptyMap(),
+        getEntityIdForPath = null,
       )
       dataConnectCacheDatabase.insertQueryResult(
         authUid.string,
         queryId2.bytes,
         structSample2.struct,
-        entityIdByPath = emptyMap(),
+        getEntityIdForPath = null,
       )
 
       val struct1FromDb = dataConnectCacheDatabase.getQueryResult(authUid.string, queryId1.bytes)
@@ -359,7 +359,7 @@ class DataConnectCacheDatabaseUnitTest {
         authUid.string,
         queryId.bytes,
         queryResult.hydratedStruct,
-        entityIdByPath = queryResult.entityByPath.mapValues { it.value.entityId },
+        getEntityIdForPath = queryResult::getEntityIdForPath,
       )
 
       val structFromDb = dataConnectCacheDatabase.getQueryResult(authUid.string, queryId.bytes)

@@ -18,7 +18,6 @@ package com.google.firebase.dataconnect.sqlite
 
 import android.annotation.SuppressLint
 import android.database.sqlite.SQLiteDatabase
-import com.google.firebase.dataconnect.DataConnectPath
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.execSQL
@@ -218,33 +217,55 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
 
   class AuthUidNotFoundException(message: String) : Exception(message)
 
-  private class QueryRow(val id: SqliteQueryId, val data: ImmutableByteArray, val flags: ULong) {
-    operator fun component1() = id
-    operator fun component2() = data
-    operator fun component3() = flags
-  }
+  private data class GetQueryResult(
+    val id: SqliteQueryId,
+    val proto: QueryResultProto,
+  )
 
-  private fun SQLiteDatabase.getQuery(user: SqliteUserId, queryId: ImmutableByteArray): QueryRow? =
+  private fun SQLiteDatabase.getQuery(
+    user: SqliteUserId,
+    queryId: ImmutableByteArray
+  ): GetQueryResult? =
     rawQuery(
       logger,
       "SELECT id, data, flags FROM queries WHERE user_id=? AND query_id=?",
       bindArgs = arrayOf(user.sqliteRowId, queryId.peek()),
     ) { cursor ->
-      if (cursor.moveToNext()) {
-        QueryRow(
-          id = SqliteQueryId(cursor.getLong(0)),
-          data = ImmutableByteArray.adopt(cursor.getBlob(1)),
-          flags = cursor.getLong(2).toULong(),
-        )
-      } else {
+      if (!cursor.moveToNext()) {
         null
+      } else {
+        val id = SqliteQueryId(cursor.getLong(0))
+        val protoBytes = cursor.getBlob(1)
+        val flags = cursor.getLong(2).toULong()
+
+        val parseResult = runCatching {
+          // The lower 32 bits of the "flags" are "required". So if there are any flags set there
+          // then fail because we don't know how to handle them.
+          if (flags.toUInt() != 0u) {
+            throw UnsupportedQueryFlagsException(
+              "unsupported least-significant 32 bits of flags: " +
+                "${flags.toUInt().toString(16)} (expected 0)"
+            )
+          }
+
+          QueryResultProto.parseFrom(protoBytes)
+        }
+
+        parseResult.onFailure {
+          logger.warn(it) {
+            "Parsing QueryResultProto failed for id=$id, user=$user, " +
+              "queryId=${queryId.to0xHexString()}, flags=$flags [ykb2vwrcge]"
+          }
+        }
+
+        GetQueryResult(id, parseResult.getOrThrow())
       }
     }
 
   private fun SQLiteDatabase.insertQuery(
     user: SqliteUserId,
     queryId: ImmutableByteArray,
-    queryData: ImmutableByteArray,
+    queryResultProtoBytes: ImmutableByteArray,
   ): SqliteQueryId {
     execSQL(
       """
@@ -252,7 +273,7 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
         (user_id, query_id, data, flags)
         VALUES (?, ?, ?, 0)
       """,
-      arrayOf(user.sqliteRowId, queryId.peek(), queryData.peek())
+      arrayOf(user.sqliteRowId, queryId.peek(), queryResultProtoBytes.peek())
     )
     val rowId = getLastInsertRowId(logger)
     return SqliteQueryId(rowId)
@@ -261,7 +282,7 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
   private fun SQLiteDatabase.insertEntity(
     user: SqliteUserId,
     entityId: String,
-    entityData: ImmutableByteArray,
+    entityStructBytes: ImmutableByteArray,
   ): SqliteEntityId {
     execSQL(
       """
@@ -269,7 +290,7 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
         (user_id, entity_id, data, flags)
         VALUES (?, ?, ?, 0)
       """,
-      arrayOf(user.sqliteRowId, entityId, entityData.peek())
+      arrayOf(user.sqliteRowId, entityId, entityStructBytes.peek())
     )
     val rowId = getLastInsertRowId(logger)
     return SqliteEntityId(rowId)
@@ -354,41 +375,12 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
   // TODO: convert to read-only transaction so it can be run concurrently
   runReadWriteTransaction { sqliteDatabase ->
     val sqliteUserId = sqliteDatabase.getOrInsertAuthUid(authUid)
-    val queryResultsRow = sqliteDatabase.getQuery(sqliteUserId, queryId)
-    if (queryResultsRow === null) {
+    val getQueryResult = sqliteDatabase.getQuery(sqliteUserId, queryId)
+    if (getQueryResult === null) {
       null
     } else {
-      val (sqliteQueryId, queryProtoBytes, queryFlags) = queryResultsRow
-      val queryProtoParseResult = runCatching {
-        // The lower 32 bits of the "flags" are "required". So if there are any flags set there
-        // then fail because we don't know how to handle them.
-        if (queryFlags.toUInt() != 0u) {
-          throw UnsupportedQueryFlagsException(
-            "unsupported least-significant 32 bits of flags: " +
-              "${queryFlags.toUInt().toString(16)} (expected 0)"
-          )
-        }
-
-        QueryResultProto.parseFrom(queryProtoBytes.disown())
-      }
-      queryProtoParseResult.onFailure {
-        logger.warn {
-          "QueryResultProto.parseFrom() failed for " +
-            "id=${sqliteQueryId.sqliteRowId}, queryId=${queryId.to0xHexString()} [ykb2vwrcge]"
-        }
-      }
-      val queryResultProto = queryProtoParseResult.getOrThrow()
-
-      val entityIds = buildSet {
-        queryResultProto.entitiesList.forEach { entityOrEntityList ->
-          when (entityOrEntityList.kindCase) {
-            EntityOrEntityList.KindCase.ENTITY -> add(entityOrEntityList.entity.entityId)
-            EntityOrEntityList.KindCase.ENTITYLIST ->
-              entityOrEntityList.entityList.entitiesList.forEach { entity -> add(entity.entityId) }
-            EntityOrEntityList.KindCase.KIND_NOT_SET -> {}
-          }
-        }
-      }
+      val (sqliteQueryId, queryResultProto) = getQueryResult
+      val entityIds: Set<String> = queryResultProto.referencedEntityIds()
       val entityStructByEntityId = sqliteDatabase.getEntities(sqliteUserId, entityIds)
 
       val rehydrateResult = runCatching {
@@ -408,11 +400,12 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
     authUid: String?,
     queryId: ImmutableByteArray,
     queryData: Struct,
-    entityIdByPath: Map<DataConnectPath, String>,
+    getEntityIdForPath: GetEntityIdForPathFunction?,
   ) {
-    val (queryResultProto, entityStructById) = dehydrateQueryResult(queryData, entityIdByPath::get)
-    val queryResultProtoEncodedBytes = ImmutableByteArray.adopt(queryResultProto.toByteArray())
-    val entityStructEncodedBytesByEntityId = entityStructById.mapValues { it.value.toByteArray() }
+    val (queryResultProto, entityStructById) = dehydrateQueryResult(queryData, getEntityIdForPath)
+    val queryResultProtoBytes = ImmutableByteArray.adopt(queryResultProto.toByteArray())
+    val entityStructBytesByEntityId =
+      entityStructById.mapValues { ImmutableByteArray.adopt(it.value.toByteArray()) }
 
     runReadWriteTransaction { sqliteDatabase ->
       val user = sqliteDatabase.getOrInsertAuthUid(authUid)
@@ -421,18 +414,19 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
         sqliteDatabase.insertQuery(
           user = user,
           queryId = queryId,
-          queryData = queryResultProtoEncodedBytes,
+          queryResultProtoBytes = queryResultProtoBytes,
         )
 
       sqliteDatabase.deleteEntityIdMappingsForQuery(query)
 
-      entityStructEncodedBytesByEntityId.forEach { (entityId, entityStructEncodedBytes) ->
+      entityStructBytesByEntityId.forEach { (entityId, entityStructBytes) ->
         val entity =
           sqliteDatabase.insertEntity(
             user = user,
             entityId = entityId,
-            entityData = ImmutableByteArray.adopt(entityStructEncodedBytes),
+            entityStructBytes = entityStructBytes,
           )
+
         sqliteDatabase.insertQueryIdEntityIdMapping(query, entity)
       }
     }
@@ -497,6 +491,18 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
     sealed interface CloseCalled : State {
       class Closing(val initialized: InitializeCalled.Initialized) : CloseCalled
       object Closed : CloseCalled
+    }
+  }
+}
+
+private fun QueryResultProto.referencedEntityIds(): Set<String> = buildSet {
+  entitiesList.forEach { entityOrEntityList ->
+    when (entityOrEntityList.kindCase) {
+      EntityOrEntityList.KindCase.ENTITY -> add(entityOrEntityList.entity.entityId)
+      EntityOrEntityList.KindCase.ENTITYLIST -> {
+        entityOrEntityList.entityList.entitiesList.forEach { entity -> add(entity.entityId) }
+      }
+      EntityOrEntityList.KindCase.KIND_NOT_SET -> {}
     }
   }
 }
