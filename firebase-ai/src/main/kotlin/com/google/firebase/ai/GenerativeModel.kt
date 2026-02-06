@@ -28,7 +28,6 @@ import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceGenerativeModel
 import com.google.firebase.ai.type.AutoFunctionDeclaration
 import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.CountTokensResponse
-import com.google.firebase.ai.type.FinishReason
 import com.google.firebase.ai.type.FirebaseAIException
 import com.google.firebase.ai.type.FirebaseAutoFunctionException
 import com.google.firebase.ai.type.FunctionCallPart
@@ -39,11 +38,8 @@ import com.google.firebase.ai.type.GenerationConfig
 import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.InvalidStateException
 import com.google.firebase.ai.type.JsonSchema
-import com.google.firebase.ai.type.PromptBlockedException
 import com.google.firebase.ai.type.RequestOptions
-import com.google.firebase.ai.type.ResponseStoppedException
 import com.google.firebase.ai.type.SafetySetting
-import com.google.firebase.ai.type.SerializationException
 import com.google.firebase.ai.type.Tool
 import com.google.firebase.ai.type.ToolConfig
 import com.google.firebase.ai.type.content
@@ -285,17 +281,6 @@ internal constructor(
   }
 
   internal fun getTurnLimit(): Int = controller.getTurnLimit()
-
-  private fun GenerateContentResponse.validate() = apply {
-    if (candidates.isEmpty() && promptFeedback == null) {
-      throw SerializationException("Error deserializing response, found no valid fields")
-    }
-    promptFeedback?.blockReason?.let { throw PromptBlockedException(this) }
-    candidates
-      .mapNotNull { it.finishReason }
-      .firstOrNull { it != FinishReason.STOP }
-      ?.let { throw ResponseStoppedException(this) }
-  }
 
   internal companion object {
     private val TAG = GenerativeModel::class.java.simpleName
