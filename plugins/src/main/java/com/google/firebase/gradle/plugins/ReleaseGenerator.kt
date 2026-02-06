@@ -63,7 +63,7 @@ data class ReleaseReport(
       |${changesByLibraryName.entries.joinToString("\n") {
       """
       |## ${it.key}
-      
+
       |${it.value.joinToString("\n") { it.toString() }}
       """.trimMargin()
       }
@@ -142,7 +142,10 @@ abstract class ReleaseGenerator : DefaultTask() {
   @Throws(Exception::class)
   fun generateReleaseConfig() {
     val rootDir = project.rootDir
-    val availableModules = project.subprojects.filter { it.plugins.hasPlugin("firebase-library") }
+    val availableModules =
+      project.subprojects.filter {
+        it.plugins.hasPlugin("firebase-library") || it.plugins.hasPlugin("firebase-java-library")
+      }
 
     val repo = Git.open(rootDir)
     val headRef = repo.repository.resolve(Constants.HEAD)
