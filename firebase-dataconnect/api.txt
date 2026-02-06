@@ -100,7 +100,7 @@ package com.google.firebase.dataconnect {
 
   public final class DataConnectSettings {
     ctor public DataConnectSettings(String host = "firebasedataconnect.googleapis.com", boolean sslEnabled = true);
-    ctor public DataConnectSettings(String host = "firebasedataconnect.googleapis.com", boolean sslEnabled = true, com.google.firebase.dataconnect.CacheSettings? cacheSettings = null);
+    ctor public DataConnectSettings(String host = "firebasedataconnect.googleapis.com", boolean sslEnabled = true, com.google.firebase.dataconnect.CacheSettings? cacheSettings);
     method public com.google.firebase.dataconnect.CacheSettings? getCacheSettings();
     method public String getHost();
     method public boolean getSslEnabled();
@@ -111,7 +111,7 @@ package com.google.firebase.dataconnect {
 
   public final class DataConnectSettingsKt {
     method public static com.google.firebase.dataconnect.DataConnectSettings copy(com.google.firebase.dataconnect.DataConnectSettings, String host = host, boolean sslEnabled = sslEnabled);
-    method public static com.google.firebase.dataconnect.DataConnectSettings copy(com.google.firebase.dataconnect.DataConnectSettings, String host = host, boolean sslEnabled = sslEnabled, com.google.firebase.dataconnect.CacheSettings? cacheSettings = cacheSettings);
+    method public static com.google.firebase.dataconnect.DataConnectSettings copy(com.google.firebase.dataconnect.DataConnectSettings, String host = host, boolean sslEnabled = sslEnabled, com.google.firebase.dataconnect.CacheSettings? cacheSettings);
   }
 
   public enum DataSource {
