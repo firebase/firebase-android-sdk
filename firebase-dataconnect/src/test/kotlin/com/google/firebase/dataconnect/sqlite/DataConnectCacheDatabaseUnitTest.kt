@@ -18,6 +18,7 @@ package com.google.firebase.dataconnect.sqlite
 
 import android.database.sqlite.SQLiteDatabase
 import com.google.firebase.dataconnect.core.Logger
+import com.google.firebase.dataconnect.sqlite.QueryResultArb.EntityRepeatPolicy.INTER_SAMPLE
 import com.google.firebase.dataconnect.testutil.CleanupsRule
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.property.arbitrary.distinctPair
@@ -34,6 +35,7 @@ import com.google.firebase.dataconnect.util.ImmutableByteArray
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
+import io.kotest.common.DelicateKotest
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -43,6 +45,7 @@ import io.kotest.property.PropTestConfig
 import io.kotest.property.ShrinkingMode
 import io.kotest.property.arbitrary.byte
 import io.kotest.property.arbitrary.byteArray
+import io.kotest.property.arbitrary.distinct
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.orNull
@@ -364,6 +367,39 @@ class DataConnectCacheDatabaseUnitTest {
 
       val structFromDb = dataConnectCacheDatabase.getQueryResult(authUid.string, queryId.bytes)
       structFromDb shouldBe queryResult.hydratedStruct
+    }
+  }
+
+  @Test
+  fun `insertQueryResult() should merge entities with consistent data`() = runTest {
+    dataConnectCacheDatabase.initialize()
+
+    checkAll(
+      propTestConfig,
+      authUidArb(),
+      Arb.int(2..5),
+    ) { authUid, queryCount ->
+      @OptIn(DelicateKotest::class) val queryIdArb = queryIdArb().distinct()
+      val queryIds = List(queryCount) { queryIdArb.bind() }
+      val queryResultArb =
+        QueryResultArb(entityCountRange = 1..5, entityRepeatPolicy = INTER_SAMPLE)
+      val queryResults = queryIds.map { queryResultArb.bind() }
+
+      queryIds.zip(queryResults).forEach { (queryId, queryResult) ->
+        dataConnectCacheDatabase.insertQueryResult(
+          authUid.string,
+          queryId.bytes,
+          queryResult.hydratedStruct,
+          getEntityIdForPath = queryResult::getEntityIdForPath,
+        )
+      }
+
+      queryIds.zip(queryResults).forEachIndexed { index, (queryId, queryResult) ->
+        val structFromDb = dataConnectCacheDatabase.getQueryResult(authUid.string, queryId.bytes)
+        withClue("index=$index size=${queryIds.size}, queryId=${queryId.bytes.to0xHexString()}") {
+          structFromDb shouldBe queryResult.hydratedStruct
+        }
+      }
     }
   }
 }
