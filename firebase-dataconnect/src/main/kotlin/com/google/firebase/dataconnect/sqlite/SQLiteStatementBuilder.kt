@@ -61,7 +61,9 @@ internal class SQLiteStatementBuilder : Appendable, CharSequence {
 
   fun appendBinding(value: ByteArray): SQLiteStatementBuilder = apply { appendObjectBinding(value) }
 
-  fun appendBinding(value: CharSequence): SQLiteStatementBuilder = appendBinding(value)
+  fun appendBinding(value: CharSequence): SQLiteStatementBuilder = apply {
+    appendObjectBinding(value)
+  }
 
   fun appendBinding(value: Int): SQLiteStatementBuilder = apply { appendObjectBinding(value) }
 
