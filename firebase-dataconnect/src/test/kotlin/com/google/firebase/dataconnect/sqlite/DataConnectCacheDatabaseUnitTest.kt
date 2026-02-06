@@ -381,7 +381,9 @@ private data class AuthUidSample(val string: String?)
 private fun authUidArb(): Arb<AuthUidSample> =
   Arb.proto.structKey().orNull(nullProbability = 0.33).map(::AuthUidSample)
 
-private data class QueryIdSample(val bytes: ImmutableByteArray)
+private data class QueryIdSample(val bytes: ImmutableByteArray) {
+  override fun toString() = "QueryIdSample(bytes=${bytes.to0xHexString()})"
+}
 
 private fun queryIdArb(): Arb<QueryIdSample> =
   Arb.byteArray(Arb.int(0..25), Arb.byte()).map { QueryIdSample(ImmutableByteArray.adopt(it)) }
