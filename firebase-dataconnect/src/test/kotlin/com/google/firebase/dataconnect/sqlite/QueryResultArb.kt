@@ -177,43 +177,13 @@ internal class QueryResultArb(
 
     val dehydratedStruct = structArb.next(rs, dehydratedStructEdgeCaseProbability).struct
 
-    val entityStructById: Map<String, Struct>
-    val entities = run {
-      val entityStructByIdBuilder = mutableMapOf<String, Struct>()
-      val entityCount = entityCountArb.next(rs, entityCountEdgeCaseProbability)
-      check(entityCount >= 0)
-      val entityIdArb = structKeyArb.distinct()
-      val entities =
-        List(entityCount) { listIndex ->
-          val repeatedEntityId = listIndex > 0 && rs.random.nextFloat() < entityIdRepeatProbability
-          if (!repeatedEntityId) {
-            val entityStruct = structArb.next(rs, entityStructEdgeCaseProbability).struct
-            val entityId = entityIdArb.sample(rs).value
-            entityStructByIdBuilder[entityId] = entityStruct
-            EntityIdStructPair(entityId, entityStruct)
-          } else {
-            val (entityId, entityStruct) = entityStructByIdBuilder.entries.random(rs.random)
-            val candidatePruneKeys = entityStruct.fieldsMap.keys.shuffled(rs.random)
-            val pruneKeyCount =
-              Arb.int(0..candidatePruneKeys.size).next(rs, entityPruneKeyCountEdgeCaseProbability)
-            val pruneKeys = candidatePruneKeys.take(pruneKeyCount)
-            val pruneEntityStruct =
-              if (pruneKeys.isEmpty()) {
-                entityStruct
-              } else {
-                entityStruct
-                  .toBuilder()
-                  .also { entityStructBuilder ->
-                    pruneKeys.forEach { entityStructBuilder.removeFields(it) }
-                  }
-                  .build()
-              }
-            EntityIdStructPair(entityId, pruneEntityStruct)
-          }
-        }
-      entityStructById = entityStructByIdBuilder.toMap()
-      entities
-    }
+    val (entities, entityStructById) = generateEntities(
+      rs,
+      entityCountEdgeCaseProbability=entityCountEdgeCaseProbability,
+      entityIdRepeatProbability=entityIdRepeatProbability,
+      entityStructEdgeCaseProbability=entityStructEdgeCaseProbability,
+      entityPruneKeyCountEdgeCaseProbability=entityPruneKeyCountEdgeCaseProbability,
+    )
 
     val entityByPath: Map<DataConnectPath, EntityIdStructPair>
     val entityListPaths: Set<DataConnectPath>
@@ -307,6 +277,57 @@ internal class QueryResultArb(
       queryResultProto = queryResultProto,
       edgeCases = edgeCases,
     )
+  }
+
+  private data class GenerateEntitiesResult(
+    val entities: List<EntityIdStructPair>,
+    val entityStructById: Map<String, Struct>,
+  )
+
+  private fun generateEntities(
+    rs: RandomSource,
+    entityCountEdgeCaseProbability: Float,
+    entityIdRepeatProbability: Float,
+    entityStructEdgeCaseProbability: Float,
+    entityPruneKeyCountEdgeCaseProbability: Float,
+  ): GenerateEntitiesResult {
+    val entityCount = entityCountArb.next(rs, entityCountEdgeCaseProbability)
+    check(entityCount >= 0)
+
+    val entityStructById = mutableMapOf<String, Struct>()
+    val entityIdArb = structKeyArb.distinct()
+
+    val entities =
+      List(entityCount) {
+        val repeatEntityId =entityStructById.isNotEmpty() && rs.random.nextFloat() < entityIdRepeatProbability
+
+        if (!repeatEntityId) {
+          val entityStruct = structArb.next(rs, entityStructEdgeCaseProbability).struct
+          val entityId = entityIdArb.sample(rs).value
+          entityStructById[entityId] = entityStruct
+          EntityIdStructPair(entityId, entityStruct)
+        } else {
+          val (entityId, entityStruct) = entityStructById.entries.random(rs.random)
+          val candidatePruneKeys = entityStruct.fieldsMap.keys.shuffled(rs.random)
+          val pruneKeyCount =
+            Arb.int(0..candidatePruneKeys.size).next(rs, entityPruneKeyCountEdgeCaseProbability)
+          val pruneKeys = candidatePruneKeys.take(pruneKeyCount)
+          val pruneEntityStruct =
+            if (pruneKeys.isEmpty()) {
+              entityStruct
+            } else {
+              entityStruct
+                .toBuilder()
+                .also { entityStructBuilder ->
+                  pruneKeys.forEach { entityStructBuilder.removeFields(it) }
+                }
+                .build()
+            }
+          EntityIdStructPair(entityId, pruneEntityStruct)
+        }
+      }
+
+    return GenerateEntitiesResult(entities, entityStructById.toMap())
   }
 }
 
