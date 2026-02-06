@@ -19,6 +19,7 @@
 package com.google.firebase.dataconnect.sqlite
 
 import com.google.firebase.dataconnect.DataConnectPathComparator
+import com.google.firebase.dataconnect.sqlite.QueryResultArb.EntityRepeatPolicy
 import com.google.firebase.dataconnect.testutil.DataConnectPath
 import com.google.firebase.dataconnect.testutil.property.arbitrary.ProtoArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.RememberArb
@@ -26,6 +27,7 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.next
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
+import com.google.firebase.dataconnect.testutil.property.arbitrary.valueOfKind
 import com.google.firebase.dataconnect.testutil.randomlyInsertStruct
 import com.google.firebase.dataconnect.testutil.randomlyInsertValue
 import com.google.firebase.dataconnect.testutil.registerDataConnectKotestPrinters
@@ -67,6 +69,7 @@ import io.kotest.property.RandomSource
 import io.kotest.property.ShrinkingMode
 import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.distinct
+import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.intRange
@@ -100,12 +103,13 @@ internal class QueryResultArb(
   private val structKeyArb: Arb<String> = Arb.proto.structKey(length = 4),
   private val entityIdArb: Arb<String> = structKeyArb,
   private val structArb: Arb<ProtoArb.StructInfo> = Arb.proto.struct(key = structKeyArb),
-  entityRepeatPolicy: EntityRepeatPolicy = EntityRepeatPolicy.INTRA_SAMPLE,
+  private val entityRepeatPolicy: EntityRepeatPolicy = EntityRepeatPolicy.INTRA_SAMPLE,
 ) : Arb<QueryResultArb.Sample>() {
 
   enum class EntityRepeatPolicy {
     INTRA_SAMPLE,
     INTER_SAMPLE,
+    INTER_SAMPLE_MUTATED,
   }
 
   data class Sample(
@@ -118,7 +122,10 @@ internal class QueryResultArb(
   ) {
     fun getEntityIdForPath(path: DataConnectPath): String? = entityByPath[path]?.entityId
 
-    enum class EdgeCase {
+    enum class EdgeCase(
+      val applicableWithEntityRepeatPolicies: Set<EntityRepeatPolicy> =
+        EntityRepeatPolicy.entries.toSet()
+    ) {
       EntityCount,
       DehydratedStruct,
       EntityStruct,
@@ -126,6 +133,14 @@ internal class QueryResultArb(
       EntityListSize,
       EntityIdRepeat,
       EntityPruneKeyCount,
+      FieldMutateCount(setOf(EntityRepeatPolicy.INTER_SAMPLE_MUTATED)),
+      MutatedValue(setOf(EntityRepeatPolicy.INTER_SAMPLE_MUTATED));
+
+      companion object {
+
+        fun entriesApplicableWith(entityRepeatPolicy: EntityRepeatPolicy): List<EdgeCase> =
+          entries.filter { entityRepeatPolicy in it.applicableWithEntityRepeatPolicies }
+      }
     }
 
     override fun toString(): String {
@@ -156,7 +171,7 @@ internal class QueryResultArb(
 
   override fun edgecase(rs: RandomSource): Sample {
     val edgeCases =
-      Sample.EdgeCase.entries.let { allEdgeCases ->
+      Sample.EdgeCase.entriesApplicableWith(entityRepeatPolicy).let { allEdgeCases ->
         val edgeCaseCount = rs.random.nextInt(1..allEdgeCases.size)
         allEdgeCases.shuffled(rs.random).take(edgeCaseCount).toSet()
       }
@@ -187,6 +202,9 @@ internal class QueryResultArb(
     val entityIdRepeatProbability = edgeCases.probability(Sample.EdgeCase.EntityIdRepeat)
     val entityPruneKeyCountEdgeCaseProbability =
       edgeCases.probability(Sample.EdgeCase.EntityPruneKeyCount)
+    val fieldMutateCountEdgeCaseProbability =
+      edgeCases.probability(Sample.EdgeCase.FieldMutateCount)
+    val mutatedValueEdgeCaseProbability = edgeCases.probability(Sample.EdgeCase.MutatedValue)
 
     val (entities, entityStructById) =
       generateEntities(
@@ -195,6 +213,8 @@ internal class QueryResultArb(
         entityIdRepeatProbability = entityIdRepeatProbability,
         entityStructEdgeCaseProbability = entityStructEdgeCaseProbability,
         entityPruneKeyCountEdgeCaseProbability = entityPruneKeyCountEdgeCaseProbability,
+        fieldMutateCountEdgeCaseProbability = fieldMutateCountEdgeCaseProbability,
+        mutatedValueEdgeCaseProbability = mutatedValueEdgeCaseProbability,
       )
 
     val (
@@ -223,7 +243,8 @@ internal class QueryResultArb(
   private val memoizedEntityStructById: MutableMap<String, Struct>? = run {
     when (entityRepeatPolicy) {
       EntityRepeatPolicy.INTRA_SAMPLE -> null
-      EntityRepeatPolicy.INTER_SAMPLE -> mutableMapOf()
+      EntityRepeatPolicy.INTER_SAMPLE,
+      EntityRepeatPolicy.INTER_SAMPLE_MUTATED -> mutableMapOf()
     }
   }
 
@@ -238,6 +259,8 @@ internal class QueryResultArb(
     entityIdRepeatProbability: Float,
     entityStructEdgeCaseProbability: Float,
     entityPruneKeyCountEdgeCaseProbability: Float,
+    fieldMutateCountEdgeCaseProbability: Float,
+    mutatedValueEdgeCaseProbability: Float,
   ): GenerateEntitiesResult {
     val entityCount = entityCountArb.next(rs, entityCountEdgeCaseProbability)
     check(entityCount >= 0)
@@ -278,16 +301,38 @@ internal class QueryResultArb(
         val entityStruct = entityStructById[entityId]!!
         val pruneEntityStruct = entityStruct.withPrunedFields()
         EntityIdStructPair(entityId, pruneEntityStruct)
-      } else if (memoizedEntityStructById !== null && entityId in memoizedEntityStructById) {
-        val entityStruct = memoizedEntityStructById[entityId]!!
-        val pruneEntityStruct = entityStruct.withPrunedFields()
-        entityStructById[entityId] = pruneEntityStruct
-        EntityIdStructPair(entityId, pruneEntityStruct)
-      } else {
+      } else if (memoizedEntityStructById === null || entityId !in memoizedEntityStructById) {
         val entityStruct = structArb.next(rs, entityStructEdgeCaseProbability).struct
         entityStructById[entityId] = entityStruct
         memoizedEntityStructById?.put(entityId, entityStruct)
         EntityIdStructPair(entityId, entityStruct)
+      } else {
+        val entityStruct = memoizedEntityStructById[entityId]!!
+        val prunedEntityStruct = entityStruct.withPrunedFields()
+
+        val prunedMutatedEntityStruct =
+          if (entityRepeatPolicy != EntityRepeatPolicy.INTER_SAMPLE_MUTATED) {
+            prunedEntityStruct
+          } else {
+            val fields = prunedEntityStruct.fieldsMap.keys.shuffled(rs.random)
+            val fieldMutateCount =
+              Arb.int(0..fields.size).next(rs, fieldMutateCountEdgeCaseProbability)
+            val fieldsToMutate = fields.take(fieldMutateCount)
+            val mutatedEntityStructBuilder = entityStruct.toBuilder()
+            val prunedMutatedEntityStructBuilder = prunedEntityStruct.toBuilder()
+            fieldsToMutate.forEach { fieldToMutate ->
+              val oldValue = mutatedEntityStructBuilder.getFieldsOrThrow(fieldToMutate)
+              val newValue =
+                Arb.proto.valueOfKind(oldValue.kindCase).next(rs, mutatedValueEdgeCaseProbability)
+              mutatedEntityStructBuilder.putFields(fieldToMutate, newValue)
+              prunedMutatedEntityStructBuilder.putFields(fieldToMutate, newValue)
+            }
+            memoizedEntityStructById[entityId] = mutatedEntityStructBuilder.build()
+            prunedMutatedEntityStructBuilder.build()
+          }
+
+        entityStructById[entityId] = prunedMutatedEntityStruct
+        EntityIdStructPair(entityId, prunedMutatedEntityStruct)
       }
     }
 
@@ -403,8 +448,13 @@ class QueryResultArbUnitTest {
 
   @Test
   fun `QueryResultArb should respect the given entityCountRange`() = runTest {
-    checkAll(propTestConfig, Arb.intRange(0..5).filterNot { it.isEmpty() }) { entityCountRange ->
-      val arb = QueryResultArb(entityCountRange = entityCountRange)
+    checkAll(
+      propTestConfig,
+      Arb.intRange(0..5).filterNot { it.isEmpty() },
+      Arb.enum<EntityRepeatPolicy>()
+    ) { entityCountRange, entityRepeatPolicy ->
+      val arb =
+        QueryResultArb(entityCountRange = entityCountRange, entityRepeatPolicy = entityRepeatPolicy)
 
       val sample = arb.bind()
 
@@ -452,21 +502,35 @@ class QueryResultArbUnitTest {
   @Test
   fun `QueryResultArb should respect the given entityIdArb`() = runTest {
     val structKeyArb = Arb.proto.structKey()
-    checkAll(propTestConfig, Arb.intRange(0..5).filterNot { it.isEmpty() }) { entityCountRange ->
+    checkAll(
+      propTestConfig,
+      Arb.intRange(0..5).filterNot { it.isEmpty() },
+      Arb.enum<EntityRepeatPolicy>()
+    ) { entityCountRange, entityRepeatPolicy ->
       val entityIdArb = RememberArb(structKeyArb)
-      val arb = QueryResultArb(entityCountRange = entityCountRange, entityIdArb = entityIdArb)
+      val arb =
+        QueryResultArb(
+          entityCountRange = entityCountRange,
+          entityIdArb = entityIdArb,
+          entityRepeatPolicy = entityRepeatPolicy
+        )
 
       val samples = List(5) { arb.bind() }
 
-      val generatedEntityIds = samples.flatMap { it.entityStructById.keys }.toList()
-      generatedEntityIds shouldContainExactlyInAnyOrder entityIdArb.generatedValues
+      val generatedEntityIds = samples.flatMap { it.entityStructById.keys }.toSet()
+      generatedEntityIds shouldContainExactlyInAnyOrder entityIdArb.generatedValues.toSet()
     }
   }
 
   @Test
   fun `QueryResultArb sample() should generate samples with empty edge case set`() = runTest {
-    checkAll(propTestConfig, Arb.intRange(0..5).filterNot { it.isEmpty() }) { entityCountRange ->
-      val arb = QueryResultArb(entityCountRange = entityCountRange)
+    checkAll(
+      propTestConfig,
+      Arb.intRange(0..5).filterNot { it.isEmpty() },
+      Arb.enum<EntityRepeatPolicy>()
+    ) { entityCountRange, entityRepeatPolicy ->
+      val arb =
+        QueryResultArb(entityCountRange = entityCountRange, entityRepeatPolicy = entityRepeatPolicy)
 
       val sample = arb.sample(randomSource()).value
 
@@ -476,8 +540,13 @@ class QueryResultArbUnitTest {
 
   @Test
   fun `QueryResultArb edgecase() should generate samples with non-empty edge case set`() = runTest {
-    checkAll(propTestConfig, Arb.intRange(0..5).filterNot { it.isEmpty() }) { entityCountRange ->
-      val arb = QueryResultArb(entityCountRange = entityCountRange)
+    checkAll(
+      propTestConfig,
+      Arb.intRange(0..5).filterNot { it.isEmpty() },
+      Arb.enum<EntityRepeatPolicy>()
+    ) { entityCountRange, entityRepeatPolicy ->
+      val arb =
+        QueryResultArb(entityCountRange = entityCountRange, entityRepeatPolicy = entityRepeatPolicy)
 
       val sample = arb.edgecase(randomSource())
 
@@ -490,8 +559,13 @@ class QueryResultArbUnitTest {
     var uniqueEntityIdsCount = 0
     var nonUniqueEntityIdsCount = 0
 
-    checkAll(propTestConfig, Arb.intRange(0..5).filterNot { it.isEmpty() }) { entityCountRange ->
-      val arb = QueryResultArb(entityCountRange = entityCountRange)
+    checkAll(
+      propTestConfig,
+      Arb.intRange(0..5).filterNot { it.isEmpty() },
+      Arb.enum<EntityRepeatPolicy>()
+    ) { entityCountRange, entityRepeatPolicy ->
+      val arb =
+        QueryResultArb(entityCountRange = entityCountRange, entityRepeatPolicy = entityRepeatPolicy)
 
       val sample = arb.bind()
 
@@ -514,8 +588,13 @@ class QueryResultArbUnitTest {
     var entityListCount = 0
     var nonEntityListCount = 0
 
-    checkAll(propTestConfig, Arb.intRange(0..5).filterNot { it.isEmpty() }) { entityCountRange ->
-      val arb = QueryResultArb(entityCountRange = entityCountRange)
+    checkAll(
+      propTestConfig,
+      Arb.intRange(0..5).filterNot { it.isEmpty() },
+      Arb.enum<EntityRepeatPolicy>()
+    ) { entityCountRange, entityRepeatPolicy ->
+      val arb =
+        QueryResultArb(entityCountRange = entityCountRange, entityRepeatPolicy = entityRepeatPolicy)
 
       val sample = arb.bind()
 
@@ -537,8 +616,13 @@ class QueryResultArbUnitTest {
     var nestedEntityCount = 0
     var nonNestedEntityCount = 0
 
-    checkAll(propTestConfig, Arb.intRange(0..5).filterNot { it.isEmpty() }) { entityCountRange ->
-      val arb = QueryResultArb(entityCountRange = entityCountRange)
+    checkAll(
+      propTestConfig,
+      Arb.intRange(0..5).filterNot { it.isEmpty() },
+      Arb.enum<EntityRepeatPolicy>()
+    ) { entityCountRange, entityRepeatPolicy ->
+      val arb =
+        QueryResultArb(entityCountRange = entityCountRange, entityRepeatPolicy = entityRepeatPolicy)
 
       val sample = arb.bind()
 
@@ -561,8 +645,13 @@ class QueryResultArbUnitTest {
 
   @Test
   fun `QueryResultArb should generate correct entityListPaths`() = runTest {
-    checkAll(propTestConfig, Arb.intRange(0..5).filterNot { it.isEmpty() }) { entityCountRange ->
-      val arb = QueryResultArb(entityCountRange = entityCountRange)
+    checkAll(
+      propTestConfig,
+      Arb.intRange(0..5).filterNot { it.isEmpty() },
+      Arb.enum<EntityRepeatPolicy>()
+    ) { entityCountRange, entityRepeatPolicy ->
+      val arb =
+        QueryResultArb(entityCountRange = entityCountRange, entityRepeatPolicy = entityRepeatPolicy)
 
       val sample = arb.bind()
 
@@ -587,7 +676,7 @@ class QueryResultArbUnitTest {
           QueryResultArb(
             entityCountRange = entityCountRange,
             structKeyArb = structKeyArb,
-            entityRepeatPolicy = QueryResultArb.EntityRepeatPolicy.INTRA_SAMPLE,
+            entityRepeatPolicy = EntityRepeatPolicy.INTRA_SAMPLE,
           )
 
         repeat(5) {
@@ -606,7 +695,7 @@ class QueryResultArbUnitTest {
         val arb =
           QueryResultArb(
             entityCountRange = entityCountRange,
-            entityRepeatPolicy = QueryResultArb.EntityRepeatPolicy.INTER_SAMPLE,
+            entityRepeatPolicy = EntityRepeatPolicy.INTER_SAMPLE,
           )
 
         val generatedEntityIds = mutableSetOf<String>()
