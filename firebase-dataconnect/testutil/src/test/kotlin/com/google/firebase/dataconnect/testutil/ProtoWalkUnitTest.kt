@@ -131,6 +131,40 @@ class ProtoWalkUnitTest {
     }
   }
 
+  @Test
+  fun `walkPaths Value`() = runTest {
+    checkAll(propTestConfig, Arb.proto.value()) { value ->
+      val walkPathsResult = value.walkPaths().toList()
+
+      val walkResult = value.walk().map { it.path }.toList()
+      walkPathsResult shouldContainExactlyInAnyOrder walkResult
+    }
+  }
+
+  @Test
+  fun `walkPaths ListValue`() = runTest {
+    checkAll(propTestConfig, Arb.proto.listValue()) { listValueSample ->
+      val listValue: ListValue = listValueSample.listValue
+
+      val walkPathsResult = listValue.walkPaths().toList()
+
+      val walkResult = listValue.walk().map { it.path }.toList()
+      walkPathsResult shouldContainExactlyInAnyOrder walkResult
+    }
+  }
+
+  @Test
+  fun `walkPaths Struct`() = runTest {
+    checkAll(propTestConfig, Arb.proto.struct()) { structSample ->
+      val struct: Struct = structSample.struct
+
+      val walkPathsResult = struct.walkPaths().toList()
+
+      val walkResult = struct.walk().map { it.path }.toList()
+      walkPathsResult shouldContainExactlyInAnyOrder walkResult
+    }
+  }
+
   private companion object {
     @OptIn(ExperimentalKotest::class)
     val propTestConfig =
