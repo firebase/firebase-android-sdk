@@ -238,10 +238,9 @@ internal class QueryResultArb(
     val entityCount = entityCountArb.next(rs, entityCountEdgeCaseProbability)
     check(entityCount >= 0)
 
-    val memoizedEntities =
-      memoizedEntityStructById?.entries?.shuffled(rs.random)?.toMutableList() ?: mutableListOf()
+    val memoizedEntityIds =
+      memoizedEntityStructById?.keys?.shuffled(rs.random)?.toMutableList() ?: mutableListOf()
     val entityStructById = mutableMapOf<String, Struct>()
-    val entityIdArb = structKeyArb.distinct()
 
     fun Struct.withPrunedFields(): Struct {
       val candidatePruneKeys = fieldsMap.keys.shuffled(rs.random)
@@ -261,22 +260,32 @@ internal class QueryResultArb(
     fun Random.nextShouldRepeatEntityId(): Boolean =
       entityStructById.isNotEmpty() && nextFloat() < entityIdRepeatProbability
 
-    fun generateEntity(): EntityIdStructPair =
-      if (rs.random.nextShouldRepeatEntityId()) {
-        val (entityId, entityStruct) = entityStructById.entries.random(rs.random)
+    fun generateEntity(): EntityIdStructPair {
+      val entityId =
+        if (rs.random.nextShouldRepeatEntityId()) {
+          entityStructById.keys.random(rs.random)
+        } else if (memoizedEntityIds.isNotEmpty()) {
+          memoizedEntityIds.removeLast()
+        } else {
+          structKeyArb.sample(rs).value
+        }
+
+      return if (entityId in entityStructById) {
+        val entityStruct = entityStructById[entityId]!!
         val pruneEntityStruct = entityStruct.withPrunedFields()
         EntityIdStructPair(entityId, pruneEntityStruct)
-      } else if (memoizedEntities.isNotEmpty()) {
-        val (entityId, entityStruct) = memoizedEntities.removeLast()
+      } else if (memoizedEntityStructById !== null && entityId in memoizedEntityStructById) {
+        val entityStruct = memoizedEntityStructById[entityId]!!
         val pruneEntityStruct = entityStruct.withPrunedFields()
+        entityStructById[entityId] = pruneEntityStruct
         EntityIdStructPair(entityId, pruneEntityStruct)
       } else {
         val entityStruct = structArb.next(rs, entityStructEdgeCaseProbability).struct
-        val entityId = entityIdArb.sample(rs).value
         entityStructById[entityId] = entityStruct
         memoizedEntityStructById?.put(entityId, entityStruct)
         EntityIdStructPair(entityId, entityStruct)
       }
+    }
 
     val entities = List(entityCount) { generateEntity() }
 
