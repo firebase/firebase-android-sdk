@@ -175,99 +175,27 @@ internal class QueryResultArb(
     val entityPruneKeyCountEdgeCaseProbability =
       edgeCases.probability(Sample.EdgeCase.EntityPruneKeyCount)
 
-    val dehydratedStruct = structArb.next(rs, dehydratedStructEdgeCaseProbability).struct
+    val (entities, entityStructById) =
+      generateEntities(
+        rs,
+        entityCountEdgeCaseProbability = entityCountEdgeCaseProbability,
+        entityIdRepeatProbability = entityIdRepeatProbability,
+        entityStructEdgeCaseProbability = entityStructEdgeCaseProbability,
+        entityPruneKeyCountEdgeCaseProbability = entityPruneKeyCountEdgeCaseProbability,
+      )
 
-    val (entities, entityStructById) = generateEntities(
+    val (
+      hydratedStruct,
+      entityByPath,
+      entityListPaths,
+      queryResultProto,
+    ) = generateHydratedStruct(
       rs,
-      entityCountEdgeCaseProbability=entityCountEdgeCaseProbability,
-      entityIdRepeatProbability=entityIdRepeatProbability,
-      entityStructEdgeCaseProbability=entityStructEdgeCaseProbability,
-      entityPruneKeyCountEdgeCaseProbability=entityPruneKeyCountEdgeCaseProbability,
+      entities = entities,
+      dehydratedStructEdgeCaseProbability = dehydratedStructEdgeCaseProbability,
+      entityListProbability = entityListProbability,
+      entityListSizeEdgeCaseProbability = entityListSizeEdgeCaseProbability,
     )
-
-    val entityByPath: Map<DataConnectPath, EntityIdStructPair>
-    val entityListPaths: Set<DataConnectPath>
-    val queryResultProto: QueryResultProto
-    val hydratedStruct: Struct =
-      dehydratedStruct.toBuilder().let { hydratedStructBuilder ->
-        val entityByPathBuilder = mutableMapOf<DataConnectPath, EntityIdStructPair>()
-        val entityListPathsBuilder = mutableSetOf<DataConnectPath>()
-        val queryResultProtoBuilder = QueryResultProto.newBuilder()
-        queryResultProtoBuilder.setStruct(dehydratedStruct)
-
-        var entityIndex = 0
-        while (entityIndex < entities.size) {
-          val isEntityList = rs.random.nextFloat() < entityListProbability
-          val entityOrEntityListProto: EntityOrEntityListProto =
-            if (!isEntityList) {
-              val entity = entities[entityIndex++]
-              val entityPath =
-                hydratedStructBuilder.randomlyInsertStruct(
-                  entity.struct,
-                  rs.random,
-                  generateKey = { structKeyArb.sample(rs).value }
-                )
-
-              entityByPathBuilder[entityPath] = entity
-
-              val entityProto =
-                EntityProto.newBuilder().let { entityProtoBuilder ->
-                  entityProtoBuilder.setEntityId(entity.entityId)
-                  entityProtoBuilder.addAllFields(entity.struct.fieldsMap.keys)
-                  entityProtoBuilder.build()
-                }
-              EntityOrEntityListProto.newBuilder()
-                .setEntity(entityProto)
-                .setPath(entityPath.toEntityPathProto())
-                .build()
-            } else {
-              val entitiesRemaining = entities.size - entityIndex
-              val entityListSize =
-                Arb.int(1..entitiesRemaining).next(rs, entityListSizeEdgeCaseProbability)
-              val entitiesInEntityList = entities.subList(entityIndex, entityIndex + entityListSize)
-              entityIndex += entityListSize
-
-              val listValue =
-                ListValue.newBuilder()
-                  .addAllValues(entitiesInEntityList.map { it.struct.toValueProto() })
-                  .build()
-              val entityListPath =
-                hydratedStructBuilder.randomlyInsertValue(
-                  listValue.toValueProto(),
-                  rs.random,
-                  generateKey = { structKeyArb.sample(rs).value }
-                )
-              entityListPathsBuilder.add(entityListPath)
-              entitiesInEntityList.mapIndexed { index, entity ->
-                entityByPathBuilder[entityListPath.withAddedListIndex(index)] = entity
-              }
-
-              val entityListProto =
-                EntityListProto.newBuilder()
-                  .addAllEntities(
-                    entitiesInEntityList.map {
-                      EntityProto.newBuilder()
-                        .setEntityId(it.entityId)
-                        .addAllFields(it.struct.fieldsMap.keys)
-                        .build()
-                    }
-                  )
-                  .build()
-
-              EntityOrEntityListProto.newBuilder()
-                .setEntityList(entityListProto)
-                .setPath(entityListPath.toEntityPathProto())
-                .build()
-            }
-
-          queryResultProtoBuilder.addEntities(entityOrEntityListProto)
-        }
-
-        entityByPath = entityByPathBuilder.toMap()
-        entityListPaths = entityListPathsBuilder.toSet()
-        queryResultProto = queryResultProtoBuilder.build()
-        hydratedStructBuilder.build()
-      }
 
     return Sample(
       hydratedStruct = hydratedStruct,
@@ -299,7 +227,8 @@ internal class QueryResultArb(
 
     val entities =
       List(entityCount) {
-        val repeatEntityId =entityStructById.isNotEmpty() && rs.random.nextFloat() < entityIdRepeatProbability
+        val repeatEntityId =
+          entityStructById.isNotEmpty() && rs.random.nextFloat() < entityIdRepeatProbability
 
         if (!repeatEntityId) {
           val entityStruct = structArb.next(rs, entityStructEdgeCaseProbability).struct
@@ -328,6 +257,103 @@ internal class QueryResultArb(
       }
 
     return GenerateEntitiesResult(entities, entityStructById.toMap())
+  }
+
+  private data class GenerateHydratedStructResult(
+    val hydratedStruct: Struct,
+    val entityByPath: Map<DataConnectPath, EntityIdStructPair>,
+    val entityListPaths: Set<DataConnectPath>,
+    val queryResultProto: QueryResultProto,
+  )
+
+  private fun generateHydratedStruct(
+    rs: RandomSource,
+    entities: List<EntityIdStructPair>,
+    dehydratedStructEdgeCaseProbability: Float,
+    entityListProbability: Float,
+    entityListSizeEdgeCaseProbability: Float,
+  ): GenerateHydratedStructResult {
+    val dehydratedStruct = structArb.next(rs, dehydratedStructEdgeCaseProbability).struct
+    val hydratedStructBuilder = dehydratedStruct.toBuilder()
+    val entityByPath = mutableMapOf<DataConnectPath, EntityIdStructPair>()
+    val entityListPaths = mutableSetOf<DataConnectPath>()
+    val queryResultProtoBuilder = QueryResultProto.newBuilder()
+    queryResultProtoBuilder.setStruct(dehydratedStruct)
+
+    var entityIndex = 0
+    while (entityIndex < entities.size) {
+      val isEntityList = rs.random.nextFloat() < entityListProbability
+      val entityOrEntityListProto: EntityOrEntityListProto =
+        if (!isEntityList) {
+          val entity = entities[entityIndex++]
+          val entityPath =
+            hydratedStructBuilder.randomlyInsertStruct(
+              entity.struct,
+              rs.random,
+              generateKey = { structKeyArb.sample(rs).value }
+            )
+
+          entityByPath[entityPath] = entity
+
+          val entityProto =
+            EntityProto.newBuilder().let { entityProtoBuilder ->
+              entityProtoBuilder.setEntityId(entity.entityId)
+              entityProtoBuilder.addAllFields(entity.struct.fieldsMap.keys)
+              entityProtoBuilder.build()
+            }
+          EntityOrEntityListProto.newBuilder()
+            .setEntity(entityProto)
+            .setPath(entityPath.toEntityPathProto())
+            .build()
+        } else {
+          val entitiesRemaining = entities.size - entityIndex
+          val entityListSize =
+            Arb.int(1..entitiesRemaining).next(rs, entityListSizeEdgeCaseProbability)
+          val entitiesInEntityList = entities.subList(entityIndex, entityIndex + entityListSize)
+          entityIndex += entityListSize
+
+          val listValue =
+            ListValue.newBuilder()
+              .addAllValues(entitiesInEntityList.map { it.struct.toValueProto() })
+              .build()
+          val entityListPath =
+            hydratedStructBuilder.randomlyInsertValue(
+              listValue.toValueProto(),
+              rs.random,
+              generateKey = { structKeyArb.sample(rs).value }
+            )
+          entityListPaths.add(entityListPath)
+          entitiesInEntityList.mapIndexed { index, entity ->
+            entityByPath[entityListPath.withAddedListIndex(index)] = entity
+          }
+
+          val entityListProto =
+            EntityListProto.newBuilder()
+              .addAllEntities(
+                entitiesInEntityList.map {
+                  EntityProto.newBuilder()
+                    .setEntityId(it.entityId)
+                    .addAllFields(it.struct.fieldsMap.keys)
+                    .build()
+                }
+              )
+              .build()
+
+          EntityOrEntityListProto.newBuilder()
+            .setEntityList(entityListProto)
+            .setPath(entityListPath.toEntityPathProto())
+            .build()
+        }
+
+      queryResultProtoBuilder.addEntities(entityOrEntityListProto)
+    }
+
+    return GenerateHydratedStructResult(
+      hydratedStruct = hydratedStructBuilder.build(),
+      entityByPath = entityByPath.toMap(),
+      entityListPaths = entityListPaths.toSet(),
+      queryResultProto = queryResultProtoBuilder.build(),
+    )
   }
 }
 
