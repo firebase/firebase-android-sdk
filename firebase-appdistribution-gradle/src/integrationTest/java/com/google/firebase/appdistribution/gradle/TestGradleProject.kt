@@ -77,7 +77,6 @@ class TestGradleProject : ExternalResource() {
 
   /** Writes the `service-credentials.json` file for the test project. */
   @Throws(IOException::class)
-  @Throws(IOException::class)
   internal fun writeServiceCredentialsFile() {
     val credentialsPath = System.getProperty("credentials_path")
       ?: throw IllegalStateException("System property 'credentials_path' not found. Please add 'credentials_path' to your local.properties file.")
