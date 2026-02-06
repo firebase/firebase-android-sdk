@@ -16,8 +16,6 @@
 
 package com.google.firebase.dataconnect.util
 
-import java.nio.ByteBuffer
-
 /**
  * Holder for "global" functions related to [String] objects.
  *
@@ -62,38 +60,6 @@ internal object StringUtil {
     }
 
     return to0xHexString(this@to0xHexString, offset, length, include0xPrefix)
-  }
-
-  /**
-   * Converts the remaining bytes in this [ByteBuffer] to a hexadecimal string of the form
-   * 0xA1B2C3D4 where each byte produces two hexadecimal digits. This method _consumes_ all
-   * remaining bytes, as if [ByteBuffer.get] had been called to consume them.
-   *
-   * The implementation of this function is NOT efficient, and should only be used when performance
-   * is not important, such as producing error messages.
-   */
-  fun ByteBuffer.get0xHexString(
-    offset: Int = 0,
-    length: Int = remaining() - offset,
-    include0xPrefix: Boolean = true,
-  ): String = buildString {
-    require(offset >= 0) {
-      "invalid offset: $offset (must be greater than or equal to zero; remaining=${remaining()})"
-    }
-    require(length >= 0) {
-      "invalid length: $length " +
-        "(must be greater than or equal to zero; offset=$offset, remaining=${remaining()})"
-    }
-    require(offset + length in 0..remaining()) {
-      "invalid offset + length: ${offset+length} " +
-        "(must be less than or equal to the remaining; " +
-        "offset=$offset, length=$length, remaining=${remaining()})"
-    }
-
-    repeat(offset) { get() }
-    val byteArray = ByteArray(length)
-    get(byteArray)
-    return to0xHexString(byteArray, offset = 0, length = byteArray.size, include0xPrefix)
   }
 
   @JvmName("to0xHexStringInternal")
