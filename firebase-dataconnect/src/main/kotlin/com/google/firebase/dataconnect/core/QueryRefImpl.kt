@@ -50,12 +50,12 @@ internal class QueryRefImpl<Data, Variables>(
     dataSerializersModule = dataSerializersModule,
     variablesSerializersModule = variablesSerializersModule,
   ) {
-  override suspend fun execute(): QueryResultImpl =
+  override suspend fun execute(): QueryResultImpl = execute(FetchPolicy.PREFER_CACHE)
+
+  override suspend fun execute(fetchPolicy: FetchPolicy): QueryResultImpl =
     dataConnect.queryManager.execute(this).let {
       QueryResultImpl(it.ref.getOrThrow(), DataSource.SERVER)
     }
-
-  override suspend fun execute(fetchPolicy: FetchPolicy): QueryResult<Data, Variables> = TODO()
 
   override fun subscribe(): QuerySubscription<Data, Variables> = QuerySubscriptionImpl(this)
 
