@@ -51,9 +51,11 @@ import io.kotest.assertions.withClue
 import io.kotest.common.DelicateKotest
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldBeUnique
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.comparables.shouldBeGreaterThan
 import io.kotest.matchers.ints.shouldBeInRange
+import io.kotest.matchers.ints.shouldBeLessThanOrEqual
 import io.kotest.matchers.maps.shouldContainKey
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
@@ -69,6 +71,7 @@ import io.kotest.property.arbitrary.intRange
 import io.kotest.property.arbitrary.negativeInt
 import io.kotest.property.asSample
 import io.kotest.property.checkAll
+import kotlin.random.Random
 import kotlin.random.nextInt
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
@@ -93,7 +96,13 @@ internal class QueryResultArb(
   entityCountRange: IntRange,
   private val structKeyArb: Arb<String> = Arb.proto.structKey(length = 4),
   private val structArb: Arb<ProtoArb.StructInfo> = Arb.proto.struct(key = structKeyArb),
+  entityRepeatPolicy: EntityRepeatPolicy = EntityRepeatPolicy.INTRA_SAMPLE,
 ) : Arb<QueryResultArb.Sample>() {
+
+  enum class EntityRepeatPolicy {
+    INTRA_SAMPLE,
+    INTER_SAMPLE,
+  }
 
   data class Sample(
     val hydratedStruct: Struct,
@@ -207,6 +216,13 @@ internal class QueryResultArb(
     )
   }
 
+  private val memoizedEntityStructById: MutableMap<String, Struct>? = run {
+    when (entityRepeatPolicy) {
+      EntityRepeatPolicy.INTRA_SAMPLE -> null
+      EntityRepeatPolicy.INTER_SAMPLE -> mutableMapOf()
+    }
+  }
+
   private data class GenerateEntitiesResult(
     val entities: List<EntityIdStructPair>,
     val entityStructById: Map<String, Struct>,
@@ -222,6 +238,8 @@ internal class QueryResultArb(
     val entityCount = entityCountArb.next(rs, entityCountEdgeCaseProbability)
     check(entityCount >= 0)
 
+    val memoizedEntities =
+      memoizedEntityStructById?.entries?.shuffled(rs.random)?.toMutableList() ?: mutableListOf()
     val entityStructById = mutableMapOf<String, Struct>()
     val entityIdArb = structKeyArb.distinct()
 
@@ -240,21 +258,25 @@ internal class QueryResultArb(
       return prunedStructBuilder.build()
     }
 
-    fun generateEntity(): EntityIdStructPair {
-      val repeatEntityId =
-        entityStructById.isNotEmpty() && rs.random.nextFloat() < entityIdRepeatProbability
+    fun Random.nextShouldRepeatEntityId(): Boolean =
+      entityStructById.isNotEmpty() && nextFloat() < entityIdRepeatProbability
 
-      return if (!repeatEntityId) {
-        val entityStruct = structArb.next(rs, entityStructEdgeCaseProbability).struct
-        val entityId = entityIdArb.sample(rs).value
-        entityStructById[entityId] = entityStruct
-        EntityIdStructPair(entityId, entityStruct)
-      } else {
+    fun generateEntity(): EntityIdStructPair =
+      if (rs.random.nextShouldRepeatEntityId()) {
         val (entityId, entityStruct) = entityStructById.entries.random(rs.random)
         val pruneEntityStruct = entityStruct.withPrunedFields()
         EntityIdStructPair(entityId, pruneEntityStruct)
+      } else if (memoizedEntities.isNotEmpty()) {
+        val (entityId, entityStruct) = memoizedEntities.removeLast()
+        val pruneEntityStruct = entityStruct.withPrunedFields()
+        EntityIdStructPair(entityId, pruneEntityStruct)
+      } else {
+        val entityStruct = structArb.next(rs, entityStructEdgeCaseProbability).struct
+        val entityId = entityIdArb.sample(rs).value
+        entityStructById[entityId] = entityStruct
+        memoizedEntityStructById?.put(entityId, entityStruct)
+        EntityIdStructPair(entityId, entityStruct)
       }
-    }
 
     val entities = List(entityCount) { generateEntity() }
 
@@ -526,6 +548,53 @@ class QueryResultArbUnitTest {
       }
     }
   }
+
+  @Test
+  fun `QueryResultArb with EntityRepeatPolicy INTRA_SAMPLE should not repeat entity IDs across samples`() =
+    runTest {
+      val structKeyArb = Arb.proto.structKey().distinct()
+      val generatedEntityIds = mutableListOf<String>()
+
+      checkAll(propTestConfig, Arb.intRange(0..5).filterNot { it.isEmpty() }) { entityCountRange ->
+        val arb =
+          QueryResultArb(
+            entityCountRange = entityCountRange,
+            structKeyArb = structKeyArb,
+            entityRepeatPolicy = QueryResultArb.EntityRepeatPolicy.INTRA_SAMPLE,
+          )
+
+        repeat(5) {
+          val sample = arb.bind()
+          generatedEntityIds.addAll(sample.entityStructById.keys)
+        }
+      }
+
+      generatedEntityIds.shouldBeUnique()
+    }
+
+  @Test
+  fun `QueryResultArb with EntityRepeatPolicy INTER_SAMPLE should repeat entity IDs across samples`() =
+    runTest {
+      checkAll(propTestConfig, Arb.intRange(0..5).filterNot { it.isEmpty() }) { entityCountRange ->
+        val arb =
+          QueryResultArb(
+            entityCountRange = entityCountRange,
+            entityRepeatPolicy = QueryResultArb.EntityRepeatPolicy.INTER_SAMPLE,
+          )
+
+        val generatedEntityIds = mutableSetOf<String>()
+        repeat(10) {
+          val sample = arb.bind()
+          generatedEntityIds.addAll(sample.entityStructById.keys)
+        }
+
+        assertSoftly {
+          withClue("generatedEntityIds.size") {
+            generatedEntityIds.size shouldBeLessThanOrEqual entityCountRange.last
+          }
+        }
+      }
+    }
 }
 
 @OptIn(ExperimentalKotest::class)
