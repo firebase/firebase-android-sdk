@@ -44,6 +44,10 @@ import com.google.firebase.dataconnect.withAddedListIndex
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
+import google.firebase.dataconnect.proto.kotlinsdk.Entity as EntityProto
+import google.firebase.dataconnect.proto.kotlinsdk.EntityList as EntityListProto
+import google.firebase.dataconnect.proto.kotlinsdk.EntityOrEntityList as EntityOrEntityListProto
+import google.firebase.dataconnect.proto.kotlinsdk.QueryResult as QueryResultProto
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.print.print
 import io.kotest.assertions.throwables.shouldThrow
@@ -53,6 +57,7 @@ import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldBeUnique
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.comparables.shouldBeGreaterThan
 import io.kotest.matchers.ints.shouldBeInRange
@@ -74,15 +79,11 @@ import io.kotest.property.arbitrary.negativeInt
 import io.kotest.property.arbitrary.of
 import io.kotest.property.asSample
 import io.kotest.property.checkAll
+import kotlin.random.Random
+import kotlin.random.nextInt
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
-import kotlin.random.Random
-import kotlin.random.nextInt
-import google.firebase.dataconnect.proto.kotlinsdk.Entity as EntityProto
-import google.firebase.dataconnect.proto.kotlinsdk.EntityList as EntityListProto
-import google.firebase.dataconnect.proto.kotlinsdk.EntityOrEntityList as EntityOrEntityListProto
-import google.firebase.dataconnect.proto.kotlinsdk.QueryResult as QueryResultProto
 
 /**
  * An [Arb] that generates [QueryResultProto] objects.
@@ -693,8 +694,13 @@ class QueryResultArbUnitTest {
   @Test
   fun `QueryResultArb with EntityRepeatPolicy INTER_SAMPLE and INTER_SAMPLE_MUTATED should repeat entity IDs across samples`() =
     runTest {
-      val entityRepeatPolicyArb = Arb.of(EntityRepeatPolicy.INTER_SAMPLE, EntityRepeatPolicy.INTER_SAMPLE_MUTATED)
-      checkAll(propTestConfig, Arb.intRange(0..5).filterNot { it.isEmpty() }, entityRepeatPolicyArb) { entityCountRange, entityRepeatPolicy ->
+      val entityRepeatPolicyArb =
+        Arb.of(EntityRepeatPolicy.INTER_SAMPLE, EntityRepeatPolicy.INTER_SAMPLE_MUTATED)
+      checkAll(
+        propTestConfig,
+        Arb.intRange(0..5).filterNot { it.isEmpty() },
+        entityRepeatPolicyArb
+      ) { entityCountRange, entityRepeatPolicy ->
         val arb =
           QueryResultArb(
             entityCountRange = entityCountRange,
@@ -725,35 +731,82 @@ class QueryResultArbUnitTest {
             entityRepeatPolicy = EntityRepeatPolicy.INTER_SAMPLE,
           )
 
-        val generatedEntities = mutableListOf<Pair<String, Struct>>()
+        val generatedEntities = mutableListOf<Map.Entry<String, Struct>>()
         repeat(10) {
           val sample = arb.bind()
-          sample.entityStructById.forEach { (entityId, entityStruct) ->
-            generatedEntities.add(Pair(entityId, entityStruct))
-          }
+          generatedEntities.addAll(sample.entityStructById.entries)
         }
 
-        val generatedEntitiesByEntityId = generatedEntities.groupBy(
-          keySelector = { it.first },
-          valueTransform = { it.second },
-        )
+        val generatedEntitiesByEntityId =
+          generatedEntities.groupBy(
+            keySelector = { it.key },
+            valueTransform = { it.value },
+          )
         generatedEntitiesByEntityId.entries.forEach { (entityId, entityStructs) ->
           withClue("entityId=$entityId") {
             val referenceStruct = entityStructs.maxBy { it.fieldsCount }
             entityStructs.forEach { entityStruct ->
-              val expectedEntityStruct = referenceStruct.toBuilder().let {
-                referenceStruct.fieldsMap.keys.forEach { field ->
-                  if (!entityStruct.containsFields(field)) {
-                    it.removeFields(field)
+              val expectedEntityStruct =
+                referenceStruct.toBuilder().let {
+                  referenceStruct.fieldsMap.keys.forEach { field ->
+                    if (!entityStruct.containsFields(field)) {
+                      it.removeFields(field)
+                    }
                   }
+                  it.build()
                 }
-                it.build()
-              }
               entityStruct shouldBe expectedEntityStruct
             }
           }
         }
       }
+    }
+
+  @Test
+  fun `QueryResultArb with EntityRepeatPolicy INTER_SAMPLE_MUTATED should mutate entity structs across samples`() =
+    runTest {
+      var mutationCount = 0
+
+      checkAll(propTestConfig, Arb.intRange(0..5).filterNot { it.isEmpty() }) { entityCountRange ->
+        val arb =
+          QueryResultArb(
+            entityCountRange = entityCountRange,
+            entityRepeatPolicy = EntityRepeatPolicy.INTER_SAMPLE_MUTATED,
+          )
+
+        val generatedEntities = mutableListOf<Map.Entry<String, Struct>>()
+        repeat(10) {
+          val sample = arb.bind()
+          generatedEntities.addAll(sample.entityStructById.entries)
+        }
+
+        val generatedEntitiesByEntityId =
+          generatedEntities.groupBy(
+            keySelector = { it.key },
+            valueTransform = { it.value },
+          )
+
+        generatedEntitiesByEntityId.entries.forEach { (entityId, entityStructs) ->
+          withClue("entityId=$entityId") {
+            val valuesByField =
+              entityStructs
+                .flatMap { entityStruct ->
+                  entityStruct.fieldsMap.entries.map { it.key to it.value }
+                }
+                .groupBy(keySelector = { it.first }, valueTransform = { it.second })
+            valuesByField.entries.forEach { (field, values) ->
+              withClue("field=$field") {
+                values.map { it.kindCase }.distinct() shouldHaveSize 1
+                if (values.distinct().size > 1) {
+                  mutationCount++
+                }
+              }
+            }
+          }
+        }
+      }
+
+      withClue("mutationCount") { mutationCount shouldBeGreaterThan 0 }
     }
 }
 
