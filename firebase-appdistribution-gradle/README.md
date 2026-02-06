@@ -27,6 +27,11 @@ To run integration tests, run:
 
 `./gradlew :firebase-appdistribution-gradle:integrationTest`
 
+> **Note:** Integration tests require a valid service account private key to be set in `local.properties`:
+> ```properties
+> credentials_path=firebase-appdistribution-gradle/test-credentials.json
+> ```
+
 To test manually, add the plugin to your Android project
 
 `apply plugin: 'com.google.firebase.appdistribution'`
