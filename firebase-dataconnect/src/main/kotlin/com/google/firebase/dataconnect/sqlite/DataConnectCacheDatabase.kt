@@ -279,19 +279,55 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
     return SqliteQueryId(rowId)
   }
 
+  private fun SQLiteDatabase.updateEntities(
+    user: SqliteUserId,
+    entityStructById: Map<String, Struct>,
+  ): List<SqliteEntityId> {
+    val baseEntityStructById =
+      getEntities(
+        user,
+        entityStructById.keys,
+        EntityParseFailureAction.Ignore,
+      )
+
+    val sqliteEntityIds = mutableListOf<SqliteEntityId>()
+
+    // TODO: Implement some optimizations here, such as (a) eliding the insertEntity() call if the
+    //  overlaidEntityStruct is the same as the baseEntityStruct and (b) eliding the
+    //  baseEntityStruct.toBuilder() call if the fields of entityStruct are a superset of those of
+    //  baseEntityStruct.
+    entityStructById.entries.forEach { (entityId, entityStruct) ->
+      val baseEntityStruct = baseEntityStructById[entityId]
+      val overlaidEntityStruct =
+        if (baseEntityStruct === null) {
+          entityStruct
+        } else {
+          baseEntityStruct.toBuilder().putAllFields(entityStruct.fieldsMap).build()
+        }
+
+      val sqliteEntityId = insertEntity(user, entityId, overlaidEntityStruct)
+      sqliteEntityIds.add(sqliteEntityId)
+    }
+
+    return sqliteEntityIds.toList()
+  }
+
   private fun SQLiteDatabase.insertEntity(
     user: SqliteUserId,
     entityId: String,
-    entityStructBytes: ImmutableByteArray,
+    entityStruct: Struct,
   ): SqliteEntityId {
+    val entityStructBytes = entityStruct.toByteArray()
+
     execSQL(
       """
         INSERT OR REPLACE INTO entities
         (user_id, entity_id, data, flags)
         VALUES (?, ?, ?, 0)
       """,
-      arrayOf(user.sqliteRowId, entityId, entityStructBytes.peek())
+      arrayOf(user.sqliteRowId, entityId, entityStructBytes)
     )
+
     val rowId = getLastInsertRowId(logger)
     return SqliteEntityId(rowId)
   }
@@ -310,9 +346,15 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
     )
   }
 
+  private enum class EntityParseFailureAction {
+    Ignore,
+    Error,
+  }
+
   private fun SQLiteDatabase.getEntities(
     user: SqliteUserId,
-    entityIds: Collection<String>
+    entityIds: Collection<String>,
+    entityParseFailureAction: EntityParseFailureAction,
   ): Map<String, Struct> {
     if (entityIds.isEmpty()) {
       return emptyMap()
@@ -357,7 +399,15 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
             }
           }
 
-          put(entityId, parseResult.getOrThrow())
+          val entityStruct: Struct? =
+            when (entityParseFailureAction) {
+              EntityParseFailureAction.Ignore -> parseResult.getOrNull()
+              EntityParseFailureAction.Error -> parseResult.getOrThrow()
+            }
+
+          if (entityStruct !== null) {
+            put(entityId, entityStruct)
+          }
         }
       }
     }
@@ -381,7 +431,12 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
     } else {
       val (sqliteQueryId, queryResultProto) = getQueryResult
       val entityIds: Set<String> = queryResultProto.referencedEntityIds()
-      val entityStructByEntityId = sqliteDatabase.getEntities(sqliteUserId, entityIds)
+      val entityStructByEntityId =
+        sqliteDatabase.getEntities(
+          sqliteUserId,
+          entityIds,
+          EntityParseFailureAction.Error,
+        )
 
       val rehydrateResult = runCatching {
         rehydrateQueryResult(queryResultProto, entityStructByEntityId)
@@ -404,8 +459,6 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
   ) {
     val (queryResultProto, entityStructById) = dehydrateQueryResult(queryData, getEntityIdForPath)
     val queryResultProtoBytes = ImmutableByteArray.adopt(queryResultProto.toByteArray())
-    val entityStructBytesByEntityId =
-      entityStructById.mapValues { ImmutableByteArray.adopt(it.value.toByteArray()) }
 
     runReadWriteTransaction { sqliteDatabase ->
       val user = sqliteDatabase.getOrInsertAuthUid(authUid)
@@ -417,17 +470,15 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
           queryResultProtoBytes = queryResultProtoBytes,
         )
 
+      val sqliteEntityIds =
+        sqliteDatabase.updateEntities(
+          user = user,
+          entityStructById = entityStructById,
+        )
+
       sqliteDatabase.deleteEntityIdMappingsForQuery(query)
-
-      entityStructBytesByEntityId.forEach { (entityId, entityStructBytes) ->
-        val entity =
-          sqliteDatabase.insertEntity(
-            user = user,
-            entityId = entityId,
-            entityStructBytes = entityStructBytes,
-          )
-
-        sqliteDatabase.insertQueryIdEntityIdMapping(query, entity)
+      sqliteEntityIds.forEach { sqliteEntityId ->
+        sqliteDatabase.insertQueryIdEntityIdMapping(query, sqliteEntityId)
       }
     }
   }
