@@ -31,6 +31,7 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.valueOfKind
 import com.google.firebase.dataconnect.testutil.randomlyInsertStruct
 import com.google.firebase.dataconnect.testutil.randomlyInsertValue
 import com.google.firebase.dataconnect.testutil.registerDataConnectKotestPrinters
+import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import com.google.firebase.dataconnect.testutil.toPrintFriendlyMap
@@ -43,10 +44,6 @@ import com.google.firebase.dataconnect.withAddedListIndex
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
-import google.firebase.dataconnect.proto.kotlinsdk.Entity as EntityProto
-import google.firebase.dataconnect.proto.kotlinsdk.EntityList as EntityListProto
-import google.firebase.dataconnect.proto.kotlinsdk.EntityOrEntityList as EntityOrEntityListProto
-import google.firebase.dataconnect.proto.kotlinsdk.QueryResult as QueryResultProto
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.print.print
 import io.kotest.assertions.throwables.shouldThrow
@@ -74,13 +71,18 @@ import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.intRange
 import io.kotest.property.arbitrary.negativeInt
+import io.kotest.property.arbitrary.of
 import io.kotest.property.asSample
 import io.kotest.property.checkAll
-import kotlin.random.Random
-import kotlin.random.nextInt
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
+import kotlin.random.Random
+import kotlin.random.nextInt
+import google.firebase.dataconnect.proto.kotlinsdk.Entity as EntityProto
+import google.firebase.dataconnect.proto.kotlinsdk.EntityList as EntityListProto
+import google.firebase.dataconnect.proto.kotlinsdk.EntityOrEntityList as EntityOrEntityListProto
+import google.firebase.dataconnect.proto.kotlinsdk.QueryResult as QueryResultProto
 
 /**
  * An [Arb] that generates [QueryResultProto] objects.
@@ -689,13 +691,14 @@ class QueryResultArbUnitTest {
     }
 
   @Test
-  fun `QueryResultArb with EntityRepeatPolicy INTER_SAMPLE should repeat entity IDs across samples`() =
+  fun `QueryResultArb with EntityRepeatPolicy INTER_SAMPLE and INTER_SAMPLE_MUTATED should repeat entity IDs across samples`() =
     runTest {
-      checkAll(propTestConfig, Arb.intRange(0..5).filterNot { it.isEmpty() }) { entityCountRange ->
+      val entityRepeatPolicyArb = Arb.of(EntityRepeatPolicy.INTER_SAMPLE, EntityRepeatPolicy.INTER_SAMPLE_MUTATED)
+      checkAll(propTestConfig, Arb.intRange(0..5).filterNot { it.isEmpty() }, entityRepeatPolicyArb) { entityCountRange, entityRepeatPolicy ->
         val arb =
           QueryResultArb(
             entityCountRange = entityCountRange,
-            entityRepeatPolicy = EntityRepeatPolicy.INTER_SAMPLE,
+            entityRepeatPolicy = entityRepeatPolicy,
           )
 
         val generatedEntityIds = mutableSetOf<String>()
@@ -707,6 +710,47 @@ class QueryResultArbUnitTest {
         assertSoftly {
           withClue("generatedEntityIds.size") {
             generatedEntityIds.size shouldBeLessThanOrEqual entityCountRange.last
+          }
+        }
+      }
+    }
+
+  @Test
+  fun `QueryResultArb with EntityRepeatPolicy INTER_SAMPLE should repeat entity structs across samples`() =
+    runTest {
+      checkAll(propTestConfig, Arb.intRange(0..5).filterNot { it.isEmpty() }) { entityCountRange ->
+        val arb =
+          QueryResultArb(
+            entityCountRange = entityCountRange,
+            entityRepeatPolicy = EntityRepeatPolicy.INTER_SAMPLE,
+          )
+
+        val generatedEntities = mutableListOf<Pair<String, Struct>>()
+        repeat(10) {
+          val sample = arb.bind()
+          sample.entityStructById.forEach { (entityId, entityStruct) ->
+            generatedEntities.add(Pair(entityId, entityStruct))
+          }
+        }
+
+        val generatedEntitiesByEntityId = generatedEntities.groupBy(
+          keySelector = { it.first },
+          valueTransform = { it.second },
+        )
+        generatedEntitiesByEntityId.entries.forEach { (entityId, entityStructs) ->
+          withClue("entityId=$entityId") {
+            val referenceStruct = entityStructs.maxBy { it.fieldsCount }
+            entityStructs.forEach { entityStruct ->
+              val expectedEntityStruct = referenceStruct.toBuilder().let {
+                referenceStruct.fieldsMap.keys.forEach { field ->
+                  if (!entityStruct.containsFields(field)) {
+                    it.removeFields(field)
+                  }
+                }
+                it.build()
+              }
+              entityStruct shouldBe expectedEntityStruct
+            }
           }
         }
       }
