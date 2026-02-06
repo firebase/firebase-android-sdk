@@ -26,6 +26,7 @@ import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.getLastInsertRo
 import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.rawQuery
 import com.google.firebase.dataconnect.util.ImmutableByteArray
 import com.google.protobuf.Struct
+import google.firebase.dataconnect.proto.kotlinsdk.EntityOrEntityList
 import google.firebase.dataconnect.proto.kotlinsdk.QueryResult as QueryResultProto
 import java.io.File
 import java.util.concurrent.Executors
@@ -194,11 +195,11 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
     }
   }
 
-  @JvmInline value class SqliteUserId(val sqliteRowId: Long)
+  @JvmInline private value class SqliteUserId(val sqliteRowId: Long)
 
-  @JvmInline value class SqliteQueryId(val sqliteRowId: Long)
+  @JvmInline private value class SqliteQueryId(val sqliteRowId: Long)
 
-  @JvmInline value class SqliteEntityId(val sqliteRowId: Long)
+  @JvmInline private value class SqliteEntityId(val sqliteRowId: Long)
 
   private fun SQLiteDatabase.getOrInsertAuthUid(authUid: String?): SqliteUserId {
     execSQL(logger, "INSERT OR IGNORE INTO users (auth_uid) VALUES (?)", arrayOf(authUid))
@@ -215,31 +216,30 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
     }
   }
 
-  class QueryResultsRow(val id: SqliteQueryId, val data: ImmutableByteArray) {
+  class AuthUidNotFoundException(message: String) : Exception(message)
+
+  private class QueryRow(val id: SqliteQueryId, val data: ImmutableByteArray, val flags: ULong) {
     operator fun component1() = id
     operator fun component2() = data
+    operator fun component3() = flags
   }
 
-  private fun SQLiteDatabase.getQueryResultsRow(
-    user: SqliteUserId,
-    queryId: ImmutableByteArray
-  ): QueryResultsRow? =
+  private fun SQLiteDatabase.getQuery(user: SqliteUserId, queryId: ImmutableByteArray): QueryRow? =
     rawQuery(
       logger,
-      "SELECT id, data FROM queries WHERE user_id=? AND query_id=?",
+      "SELECT id, data, flags FROM queries WHERE user_id=? AND query_id=?",
       bindArgs = arrayOf(user.sqliteRowId, queryId.peek()),
     ) { cursor ->
       if (cursor.moveToNext()) {
-        QueryResultsRow(
+        QueryRow(
           id = SqliteQueryId(cursor.getLong(0)),
           data = ImmutableByteArray.adopt(cursor.getBlob(1)),
+          flags = cursor.getLong(2).toULong(),
         )
       } else {
         null
       }
     }
-
-  class AuthUidNotFoundException(message: String) : Exception(message)
 
   private fun SQLiteDatabase.insertQuery(
     user: SqliteUserId,
@@ -277,7 +277,7 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
 
   private fun SQLiteDatabase.insertQueryIdEntityIdMapping(
     query: SqliteQueryId,
-    entity: SqliteEntityId
+    entity: SqliteEntityId,
   ) {
     execSQL(
       """
@@ -289,50 +289,50 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
     )
   }
 
-  private fun SQLiteDatabase.getEntityIdsByQuery(query: SqliteQueryId): List<SqliteEntityId> =
-    buildList {
-      rawQuery(
-        logger,
-        "SELECT entity_id FROM entity_query_map WHERE query_id=?",
-        arrayOf(query.sqliteRowId)
-      ) { cursor ->
-        while (cursor.moveToNext()) {
-          add(SqliteEntityId(cursor.getLong(0)))
-        }
-      }
-    }
-
   private fun SQLiteDatabase.getEntities(
-    entities: Collection<SqliteEntityId>
+    user: SqliteUserId,
+    entityIds: Collection<String>
   ): Map<String, Struct> {
-    if (entities.isEmpty()) {
+    if (entityIds.isEmpty()) {
       return emptyMap()
     }
 
     val (sql, bindArgs) =
       SQLiteStatementBuilder().run {
-        append("SELECT id, entity_id, data FROM entities WHERE ")
-        entities.forEachIndexed { index, entity ->
-          if (index > 0) {
-            append(" OR ")
-          }
-          append("id=").appendBinding(entity.sqliteRowId)
+        append("SELECT entity_id, data, flags FROM entities")
+        append(" WHERE user_id=").appendBinding(user.sqliteRowId)
+        append(" AND entity_id IN (")
+        entityIds.forEachIndexed { index, entityId ->
+          if (index > 0) append(", ")
+          appendBinding(entityId)
         }
+        append(")")
         build()
       }
 
     return buildMap {
       rawQuery(logger, sql, bindArgs) { cursor ->
         while (cursor.moveToNext()) {
-          val rowId = cursor.getLong(0)
-          val entityId = cursor.getString(1)
-          val data = cursor.getBlob(2)
+          val entityId = cursor.getString(0)
+          val data = cursor.getBlob(1)
+          val flags = cursor.getLong(2).toULong()
 
-          val parseResult = runCatching { Struct.parseFrom(data) }
+          val parseResult = runCatching {
+            // The lower 32 bits of the "flags" are "required". So if there are any flags set there
+            // then fail because we don't know how to handle them.
+            if (flags.toUInt() != 0u) {
+              throw UnsupportedEntityFlagsException(
+                "unsupported least-significant 32 bits of flags: " +
+                  "${flags.toUInt().toString(16)} (expected 0)"
+              )
+            }
+
+            Struct.parseFrom(data)
+          }
           parseResult.onFailure { exception ->
             logger.warn(exception) {
-              "Failed to parse entity Struct ${size+1}/${entities.size} " +
-                "with rowId=$rowId, entityId=$entityId [fy74p3278j]"
+              "Failed to parse entity Struct ${size+1}/${entityIds.size} " +
+                "with user_id=${user.sqliteRowId}, entity_id=$entityId [fy74p3278j]"
             }
           }
 
@@ -342,6 +342,10 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
     }
   }
 
+  class UnsupportedEntityFlagsException(message: String) : Exception(message)
+
+  class UnsupportedQueryFlagsException(message: String) : Exception(message)
+
   private fun SQLiteDatabase.deleteEntityIdMappingsForQuery(query: SqliteQueryId) {
     execSQL(logger, "DELETE FROM entity_query_map WHERE query_id=?", arrayOf(query.sqliteRowId))
   }
@@ -349,25 +353,43 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
   suspend fun getQueryResult(authUid: String?, queryId: ImmutableByteArray): Struct? =
   // TODO: convert to read-only transaction so it can be run concurrently
   runReadWriteTransaction { sqliteDatabase ->
-    val userRowId = sqliteDatabase.getOrInsertAuthUid(authUid)
-    val queryResultsRow = sqliteDatabase.getQueryResultsRow(userRowId, queryId)
+    val sqliteUserId = sqliteDatabase.getOrInsertAuthUid(authUid)
+    val queryResultsRow = sqliteDatabase.getQuery(sqliteUserId, queryId)
     if (queryResultsRow === null) {
       null
     } else {
-      val (queryRowId, queryResultProtoBytes) = queryResultsRow
-      val queryResultProtoParseResult = runCatching {
-        QueryResultProto.parseFrom(queryResultProtoBytes.disown())
+      val (sqliteQueryId, queryProtoBytes, queryFlags) = queryResultsRow
+      val queryProtoParseResult = runCatching {
+        // The lower 32 bits of the "flags" are "required". So if there are any flags set there
+        // then fail because we don't know how to handle them.
+        if (queryFlags.toUInt() != 0u) {
+          throw UnsupportedQueryFlagsException(
+            "unsupported least-significant 32 bits of flags: " +
+              "${queryFlags.toUInt().toString(16)} (expected 0)"
+          )
+        }
+
+        QueryResultProto.parseFrom(queryProtoBytes.disown())
       }
-      queryResultProtoParseResult.onFailure {
+      queryProtoParseResult.onFailure {
         logger.warn {
           "QueryResultProto.parseFrom() failed for " +
-            "rowId=$queryRowId, queryId=${queryId.to0xHexString()} [ykb2vwrcge]"
+            "id=${sqliteQueryId.sqliteRowId}, queryId=${queryId.to0xHexString()} [ykb2vwrcge]"
         }
       }
-      val queryResultProto = queryResultProtoParseResult.getOrThrow()
+      val queryResultProto = queryProtoParseResult.getOrThrow()
 
-      val entityRowIds = sqliteDatabase.getEntityIdsByQuery(queryRowId)
-      val entityStructByEntityId = sqliteDatabase.getEntities(entityRowIds)
+      val entityIds = buildSet {
+        queryResultProto.entitiesList.forEach { entityOrEntityList ->
+          when (entityOrEntityList.kindCase) {
+            EntityOrEntityList.KindCase.ENTITY -> add(entityOrEntityList.entity.entityId)
+            EntityOrEntityList.KindCase.ENTITYLIST ->
+              entityOrEntityList.entityList.entitiesList.forEach { entity -> add(entity.entityId) }
+            EntityOrEntityList.KindCase.KIND_NOT_SET -> {}
+          }
+        }
+      }
+      val entityStructByEntityId = sqliteDatabase.getEntities(sqliteUserId, entityIds)
 
       val rehydrateResult = runCatching {
         rehydrateQueryResult(queryResultProto, entityStructByEntityId)
@@ -375,7 +397,7 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
       rehydrateResult.onFailure {
         logger.warn {
           "rehydrateQueryResult failed failed for " +
-            "rowId=$queryRowId, queryId=${queryId.to0xHexString()} [knpe3t4f5b]"
+            "id=${sqliteQueryId.sqliteRowId}, queryId=${queryId.to0xHexString()} [knpe3t4f5b]"
         }
       }
       rehydrateResult.getOrThrow()
