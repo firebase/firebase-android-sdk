@@ -48,6 +48,7 @@ import io.kotest.property.arbitrary.byteArray
 import io.kotest.property.arbitrary.distinct
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.map
+import io.kotest.property.arbitrary.of
 import io.kotest.property.arbitrary.orNull
 import io.kotest.property.checkAll
 import io.mockk.CapturingSlot
@@ -398,6 +399,63 @@ class DataConnectCacheDatabaseUnitTest {
         val structFromDb = dataConnectCacheDatabase.getQueryResult(authUid.string, queryId.bytes)
         withClue("index=$index size=${queryIds.size}, queryId=${queryId.bytes.to0xHexString()}") {
           structFromDb shouldBe queryResult.hydratedStruct
+        }
+      }
+    }
+  }
+
+  @Test
+  fun `insertQueryResult() should separate entities by authUid`() = runTest {
+    dataConnectCacheDatabase.initialize()
+
+    checkAll(
+      propTestConfig,
+      authUidArb().distinctPair(),
+      Arb.int(2..5),
+    ) { (authUid1, authUid2), queryCount ->
+      @OptIn(DelicateKotest::class) val queryIdArb = queryIdArb().distinct()
+      val queryIds = List(queryCount) { queryIdArb.bind() }
+      val queryResults1 = run {
+        val queryResultArb = QueryResultArb(entityCountRange = 1..5)
+        queryIds.map { queryResultArb.bind() }
+      }
+      val queryResults2 = run {
+        val entityIds = queryResults1.flatMap { it.entityStructById.keys }.distinct().sorted()
+        val queryResultArb =
+          QueryResultArb(entityCountRange = 1..5, entityIdArb = Arb.of(entityIds))
+        queryIds.map { queryResultArb.bind() }
+      }
+      // Both authUid1 and authUid2 use the same queryIds and entityIds, but with completely
+      // different entities. The entities from different authUids should be distinct.
+      val queryResultsByAuthUid =
+        listOf(
+          authUid1 to queryResults1,
+          authUid2 to queryResults2,
+        )
+
+      queryResultsByAuthUid.forEach { (authUid, queryResults) ->
+        queryIds.zip(queryResults).forEach { (queryId, queryResult) ->
+          dataConnectCacheDatabase.insertQueryResult(
+            authUid.string,
+            queryId.bytes,
+            queryResult.hydratedStruct,
+            getEntityIdForPath = queryResult::getEntityIdForPath,
+          )
+        }
+      }
+
+      queryResultsByAuthUid.forEachIndexed { authUidIndex, (authUid, queryResults) ->
+        withClue("authUidIndex=$authUidIndex, authUid=$authUid") {
+          queryIds.zip(queryResults).forEachIndexed { queryIdIndex, (queryId, queryResult) ->
+            val structFromDb =
+              dataConnectCacheDatabase.getQueryResult(authUid.string, queryId.bytes)
+            withClue(
+              "queryIdIndex=$queryIdIndex size=${queryIds.size}, " +
+                "queryId=${queryId.bytes.to0xHexString()}"
+            ) {
+              structFromDb shouldBe queryResult.hydratedStruct
+            }
+          }
         }
       }
     }
