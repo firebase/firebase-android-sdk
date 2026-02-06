@@ -44,6 +44,7 @@ import com.google.firebase.dataconnect.withAddedListIndex
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
+import com.google.protobuf.field
 import google.firebase.dataconnect.proto.kotlinsdk.Entity as EntityProto
 import google.firebase.dataconnect.proto.kotlinsdk.EntityList as EntityListProto
 import google.firebase.dataconnect.proto.kotlinsdk.EntityOrEntityList as EntityOrEntityListProto
@@ -731,33 +732,14 @@ class QueryResultArbUnitTest {
             entityRepeatPolicy = EntityRepeatPolicy.INTER_SAMPLE,
           )
 
-        val generatedEntities = mutableListOf<Map.Entry<String, Struct>>()
-        repeat(10) {
-          val sample = arb.bind()
-          generatedEntities.addAll(sample.entityStructById.entries)
-        }
+        val samples = List(10) { arb.bind() }
 
         val generatedEntitiesByEntityId =
-          generatedEntities.groupBy(
-            keySelector = { it.key },
-            valueTransform = { it.value },
-          )
+          samples
+            .flatMap { it.entityStructById.entries }
+            .groupBy(keySelector = { it.key }, valueTransform = { it.value })
         generatedEntitiesByEntityId.entries.forEach { (entityId, entityStructs) ->
-          withClue("entityId=$entityId") {
-            val referenceStruct = entityStructs.maxBy { it.fieldsCount }
-            entityStructs.forEach { entityStruct ->
-              val expectedEntityStruct =
-                referenceStruct.toBuilder().let {
-                  referenceStruct.fieldsMap.keys.forEach { field ->
-                    if (!entityStruct.containsFields(field)) {
-                      it.removeFields(field)
-                    }
-                  }
-                  it.build()
-                }
-              entityStruct shouldBe expectedEntityStruct
-            }
-          }
+          withClue("entityId=$entityId") { entityStructs.shouldBeConsistent() }
         }
       }
     }
@@ -774,18 +756,12 @@ class QueryResultArbUnitTest {
             entityRepeatPolicy = EntityRepeatPolicy.INTER_SAMPLE_MUTATED,
           )
 
-        val generatedEntities = mutableListOf<Map.Entry<String, Struct>>()
-        repeat(10) {
-          val sample = arb.bind()
-          generatedEntities.addAll(sample.entityStructById.entries)
-        }
+        val samples = List(10) { arb.bind() }
 
         val generatedEntitiesByEntityId =
-          generatedEntities.groupBy(
-            keySelector = { it.key },
-            valueTransform = { it.value },
-          )
-
+          samples
+            .flatMap { it.entityStructById.entries }
+            .groupBy(keySelector = { it.key }, valueTransform = { it.value })
         generatedEntitiesByEntityId.entries.forEach { (entityId, entityStructs) ->
           withClue("entityId=$entityId") {
             val valuesByField =
@@ -807,6 +783,33 @@ class QueryResultArbUnitTest {
       }
 
       withClue("mutationCount") { mutationCount shouldBeGreaterThan 0 }
+    }
+
+  @Test
+  fun `QueryResultArb with EntityRepeatPolicy INTER_SAMPLE_MUTATED should not mutate entity structs within samples`() =
+    runTest {
+      checkAll(propTestConfig, Arb.intRange(0..5).filterNot { it.isEmpty() }) { entityCountRange ->
+        val arb =
+          QueryResultArb(
+            entityCountRange = entityCountRange,
+            entityRepeatPolicy = EntityRepeatPolicy.INTER_SAMPLE_MUTATED,
+          )
+
+        val samples = List(10) { arb.bind() }
+
+        samples.forEachIndexed { sampleIndex, sample ->
+          withClue("sampleIndex=$sampleIndex") {
+            val entityStructsById =
+              sample.entityByPath.values.groupBy(
+                keySelector = { it.entityId },
+                valueTransform = { it.struct }
+              )
+            entityStructsById.entries.forEach { (entityId, entityStructs) ->
+              withClue("entityId=$entityId") { entityStructs.shouldBeConsistent() }
+            }
+          }
+        }
+      }
     }
 }
 
@@ -862,6 +865,31 @@ private fun QueryResultArb.Sample.shouldBeEntityList(path: DataConnectPath) {
       entityListElement.kindCase shouldBe Value.KindCase.STRUCT_VALUE
       val entityListElementPath = path.withAddedListIndex(entityListIndex)
       entityByPath shouldContainKey entityListElementPath
+    }
+  }
+}
+
+private fun List<Struct>.shouldBeConsistent() {
+  val referenceStruct =
+    Struct.newBuilder().let { referenceStructBuilder ->
+      forEach { referenceStructBuilder.putAllFields(it.fieldsMap) }
+      referenceStructBuilder.build()
+    }
+
+  fun referenceStructWithFields(fields: Collection<String>): Struct {
+    val builder = referenceStruct.toBuilder()
+    referenceStruct.fieldsMap.keys.forEach { field ->
+      if (field !in fields) {
+        builder.removeFields(field)
+      }
+    }
+    return builder.build()
+  }
+
+  forEachIndexed { index, struct ->
+    withClue("index=$index") {
+      val expectedStruct = referenceStructWithFields(struct.fieldsMap.keys)
+      struct shouldBe expectedStruct
     }
   }
 }
