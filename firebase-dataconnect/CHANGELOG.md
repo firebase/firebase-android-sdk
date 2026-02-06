@@ -4,6 +4,8 @@
   [#7716](https://github.com/firebase/firebase-android-sdk/pull/7716))
 - [changed] Added hydration and dehydration logic for use in offline caching.
   [#7714](https://github.com/firebase/firebase-android-sdk/pull/7714))
+- [changed] Added sqlite database logic for use in offline caching.
+  [#NNNN](https://github.com/firebase/firebase-android-sdk/pull/NNNN))
 
 # 17.1.3
 
