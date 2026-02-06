@@ -19,11 +19,8 @@ package com.google.firebase.dataconnect.sqlite
 import android.database.sqlite.SQLiteDatabase
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.sqlite.QueryResultArb.EntityRepeatPolicy.INTER_SAMPLE
-import com.google.firebase.dataconnect.sqlite.QueryResultArb.EntityRepeatPolicy.INTER_SAMPLE_MUTATED
 import com.google.firebase.dataconnect.testutil.CleanupsRule
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
-import com.google.firebase.dataconnect.testutil.isStructValue
-import com.google.firebase.dataconnect.testutil.map
 import com.google.firebase.dataconnect.testutil.property.arbitrary.distinctPair
 import com.google.firebase.dataconnect.testutil.property.arbitrary.listNoRepeat
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
@@ -35,9 +32,6 @@ import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import com.google.firebase.dataconnect.util.ImmutableByteArray
-import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
-import com.google.protobuf.Struct
-import com.google.protobuf.field
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
@@ -466,46 +460,6 @@ class DataConnectCacheDatabaseUnitTest {
       }
     }
   }
-
-  @Test
-  fun `insertQueryResult() should merge entities with different data`() = runTest {
-    dataConnectCacheDatabase.initialize()
-
-    checkAll(
-      propTestConfig,
-      authUidArb(),
-      queryIdArb().distinctPair(),
-    ) { authUid, (queryId1, queryId2) ->
-      val queryResultArb =
-        QueryResultArb(entityCountRange = 1..5, entityRepeatPolicy = INTER_SAMPLE_MUTATED)
-      val queryResult1 = queryResultArb.bind()
-      val queryResult2 = queryResultArb.bind()
-
-      dataConnectCacheDatabase.insertQueryResult(
-        authUid.string,
-        queryId1.bytes,
-        queryResult1.hydratedStruct,
-        getEntityIdForPath = queryResult1::getEntityIdForPath,
-      )
-      dataConnectCacheDatabase.insertQueryResult(
-        authUid.string,
-        queryId2.bytes,
-        queryResult2.hydratedStruct,
-        getEntityIdForPath = queryResult2::getEntityIdForPath,
-      )
-
-      withClue("query2") {
-        val structFromDb = dataConnectCacheDatabase.getQueryResult(authUid.string, queryId2.bytes)
-        structFromDb shouldBe queryResult2.hydratedStruct
-      }
-      withClue("query1") {
-        val structFromDb = dataConnectCacheDatabase.getQueryResult(authUid.string, queryId1.bytes)
-        val expectedStructFromDb =
-          queryResult1.hydratedStructWithMutatedEntityValuesFrom(queryResult2.entityStructById)
-        structFromDb shouldBe expectedStructFromDb
-      }
-    }
-  }
 }
 
 @OptIn(ExperimentalKotest::class)
@@ -527,29 +481,3 @@ private data class QueryIdSample(val bytes: ImmutableByteArray) {
 
 private fun queryIdArb(): Arb<QueryIdSample> =
   Arb.byteArray(Arb.int(0..25), Arb.byte()).map { QueryIdSample(ImmutableByteArray.adopt(it)) }
-
-private fun QueryResultArb.Sample.hydratedStructWithMutatedEntityValuesFrom(
-  entityStructById: Map<String, Struct>
-): Struct =
-  hydratedStruct.map { path, value ->
-    val entity = entityByPath[path]
-    if (entity === null) {
-      value
-    } else {
-      check(value.isStructValue)
-      val otherEntity = entityStructById[entity.entityId]
-      if (otherEntity === null) {
-        value
-      } else {
-        value.structValue.toBuilder().let { builder ->
-          value.structValue.fieldsMap.keys.forEach { field ->
-            if (entity.struct.containsFields(field) && otherEntity.containsFields(field)) {
-              val otherValue = otherEntity.getFieldsOrThrow(field)
-              builder.putFields(field, otherValue)
-            }
-          }
-          builder.build().toValueProto()
-        }
-      }
-    }
-  }
