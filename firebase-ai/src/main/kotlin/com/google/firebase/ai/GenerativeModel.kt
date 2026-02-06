@@ -17,18 +17,15 @@
 package com.google.firebase.ai
 
 import android.graphics.Bitmap
-import android.util.Log
 import com.google.firebase.FirebaseApp
 import com.google.firebase.ai.common.APIController
 import com.google.firebase.ai.common.AppCheckHeaderProvider
-import com.google.firebase.ai.common.CountTokensRequest
 import com.google.firebase.ai.common.GenerateContentRequest
-import com.google.firebase.ai.hybrid.HybridRouter
+import com.google.firebase.ai.generativemodel.GenerativeModelProvider
+import com.google.firebase.ai.generativemodel.MissingOnDeviceModel
+import com.google.firebase.ai.generativemodel.OnDeviceModel
 import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceGenerativeModelFactory
-import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceNotAvailableException
-import com.google.firebase.ai.ondevice.interop.GenerateContentRequest as OnDeviceGenerateContentRequest
 import com.google.firebase.ai.type.AutoFunctionDeclaration
-import com.google.firebase.ai.type.Candidate
 import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.CountTokensResponse
 import com.google.firebase.ai.type.FinishReason
@@ -41,7 +38,6 @@ import com.google.firebase.ai.type.GenerateObjectResponse
 import com.google.firebase.ai.type.GenerationConfig
 import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.GenerativeBackendEnum
-import com.google.firebase.ai.type.ImagePart
 import com.google.firebase.ai.type.InvalidStateException
 import com.google.firebase.ai.type.JsonSchema
 import com.google.firebase.ai.type.PromptBlockedException
@@ -49,7 +45,6 @@ import com.google.firebase.ai.type.RequestOptions
 import com.google.firebase.ai.type.ResponseStoppedException
 import com.google.firebase.ai.type.SafetySetting
 import com.google.firebase.ai.type.SerializationException
-import com.google.firebase.ai.type.TextPart
 import com.google.firebase.ai.type.Tool
 import com.google.firebase.ai.type.ToolConfig
 import com.google.firebase.ai.type.content
@@ -57,8 +52,6 @@ import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
 import kotlin.collections.map
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.map
 import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -71,61 +64,17 @@ import kotlinx.serialization.json.jsonObject
  */
 public class GenerativeModel
 internal constructor(
-  private val modelName: String,
-  private val generationConfig: GenerationConfig? = null,
-  private val safetySettings: List<SafetySetting>? = null,
-  private val tools: List<Tool>? = null,
-  private val toolConfig: ToolConfig? = null,
-  private val systemInstruction: Content? = null,
-  private val generativeBackend: GenerativeBackend = GenerativeBackend.googleAI(),
-  private val onDeviceModel: com.google.firebase.ai.ondevice.interop.GenerativeModel? = null,
-  private val onDeviceConfig: OnDeviceConfig,
-  internal val controller: APIController,
+    private val modelName: String,
+    private val generationConfig: GenerationConfig? = null,
+    private val safetySettings: List<SafetySetting>? = null,
+    private val tools: List<Tool>? = null,
+    private val toolConfig: ToolConfig? = null,
+    private val systemInstruction: Content? = null,
+    private val generativeBackend: GenerativeBackend = GenerativeBackend.googleAI(),
+    private val onDeviceConfig: OnDeviceConfig = OnDeviceConfig.IN_CLOUD,
+    private val actualModel: GenerativeModelProvider,
+    internal val controller: APIController,
 ) {
-  internal constructor(
-    modelName: String,
-    apiKey: String,
-    firebaseApp: FirebaseApp,
-    useLimitedUseAppCheckTokens: Boolean,
-    generationConfig: GenerationConfig? = null,
-    safetySettings: List<SafetySetting>? = null,
-    tools: List<Tool>? = null,
-    toolConfig: ToolConfig? = null,
-    systemInstruction: Content? = null,
-    requestOptions: RequestOptions = RequestOptions(),
-    onDeviceConfig: OnDeviceConfig,
-    generativeBackend: GenerativeBackend,
-    appCheckTokenProvider: InteropAppCheckTokenProvider? = null,
-    onDeviceFactoryProvider: FirebaseAIOnDeviceGenerativeModelFactory? = null,
-    internalAuthProvider: InternalAuthProvider? = null
-  ) : this(
-    modelName = modelName,
-    generationConfig = generationConfig,
-    safetySettings = safetySettings,
-    tools = tools,
-    toolConfig = toolConfig,
-    systemInstruction = systemInstruction,
-    generativeBackend = generativeBackend,
-    onDeviceModel = onDeviceFactoryProvider?.newGenerativeModel(),
-    onDeviceConfig = onDeviceConfig,
-    controller =
-      APIController(
-        apiKey,
-        modelName,
-        requestOptions,
-        "gl-kotlin/${KotlinVersion.CURRENT}-ai fire/${BuildConfig.VERSION_NAME}",
-        firebaseApp,
-        AppCheckHeaderProvider(
-          TAG,
-          useLimitedUseAppCheckTokens,
-          appCheckTokenProvider,
-          internalAuthProvider
-        ),
-      ),
-  )
-
-  private val hybridRouter = HybridRouter(onDeviceConfig.mode)
-
   /**
    * Generates new content from the input [Content] given to the model as a prompt.
    *
@@ -135,9 +84,7 @@ internal constructor(
    * @see [FirebaseAIException] for types of errors.
    */
   public suspend fun generateContent(prompt: List<Content>): GenerateContentResponse =
-    hybridRouter.suspendRoute({ generateContentInCloud(prompt) }) {
-      generateContentInOnDevice(prompt)
-    }
+    actualModel.generateContent(prompt)
 
   /**
    * Generates new content from the input [Content] given to the model as a prompt.
@@ -183,10 +130,7 @@ internal constructor(
    * @see [FirebaseAIException] for types of errors.
    */
   public fun generateContentStream(prompt: List<Content>): Flow<GenerateContentResponse> =
-    hybridRouter.route(
-      inCloudCallback = { generateContentStreamInCloud(prompt) },
-      onDeviceCallback = { generateContentStreamInOnDevice(prompt) }
-    )
+    actualModel.generateContentStream(prompt)
 
   /**
    * Generates new content as a stream from the input [Content] given to the model as a prompt.
@@ -285,10 +229,7 @@ internal constructor(
    * @see [FirebaseAIException] for types of errors.
    */
   public suspend fun countTokens(prompt: List<Content>): CountTokensResponse =
-    hybridRouter.suspendRoute(
-      inCloudCallback = { countTokensInCloud(prompt) },
-      onDeviceCallback = { countTokensInOnDevice(prompt) }
-    )
+    actualModel.countTokens(prompt)
 
   /**
    * Counts the number of tokens in a prompt using the model's tokenizer.
@@ -322,88 +263,6 @@ internal constructor(
    */
   public suspend fun countTokens(prompt: Bitmap): CountTokensResponse =
     countTokens(listOf(content { image(prompt) }))
-
-  private fun generateContentStreamInCloud(prompt: List<Content>): Flow<GenerateContentResponse> =
-    controller
-      .generateContentStream(buildGenerateContentRequest(prompt))
-      .map { it.toPublic().validate() }
-      .catch { throw FirebaseAIException.from(it) }
-
-  private fun generateContentStreamInOnDevice(
-    prompt: List<Content>
-  ): Flow<GenerateContentResponse> {
-    if (onDeviceModel == null) {
-      throw FirebaseAIException.from(
-        FirebaseAIOnDeviceNotAvailableException("On-device model is null")
-      )
-    }
-    val request = buildOnDeviceGenerateContentRequest(prompt)
-    return onDeviceModel
-      .generateContentStream(request)
-      .catch { throw FirebaseAIException.from(it) }
-      // TODO: what about `validate` ?
-      .map { GenerateContentResponse.fromOnDeviceResponse(it) }
-  }
-
-  private suspend fun countTokensInCloud(prompt: List<Content>): CountTokensResponse {
-    try {
-      return controller.countTokens(buildCountTokensRequest(prompt)).toPublic()
-    } catch (e: Throwable) {
-      throw FirebaseAIException.from(e)
-    }
-  }
-
-  private suspend fun countTokensInOnDevice(prompt: List<Content>): CountTokensResponse {
-    if (onDeviceModel == null) {
-      throw FirebaseAIException.from(
-        FirebaseAIOnDeviceNotAvailableException("On-device model is null")
-      )
-    }
-    if (!onDeviceModel.isAvailable()) {
-      throw FirebaseAIException.from(
-        FirebaseAIOnDeviceNotAvailableException("On-device model is not available")
-      )
-    }
-
-    val request = buildOnDeviceGenerateContentRequest(prompt)
-
-    return try {
-      val response = onDeviceModel.countTokens(request)
-      CountTokensResponse(response.totalTokens)
-    } catch (e: Throwable) {
-      throw FirebaseAIException.from(e)
-    }
-  }
-
-  private suspend fun generateContentInCloud(prompt: List<Content>): GenerateContentResponse =
-    try {
-      controller.generateContent(buildGenerateContentRequest(prompt)).toPublic().validate()
-    } catch (e: Throwable) {
-      throw FirebaseAIException.from(e)
-    }
-
-  private suspend fun generateContentInOnDevice(prompt: List<Content>): GenerateContentResponse {
-    if (onDeviceModel == null) {
-      throw FirebaseAIException.from(
-        FirebaseAIOnDeviceNotAvailableException("On-device model is null")
-      )
-    }
-    if (!onDeviceModel.isAvailable()) {
-      throw FirebaseAIException.from(
-        FirebaseAIOnDeviceNotAvailableException("On-device model is not available")
-      )
-    }
-
-    val request = buildOnDeviceGenerateContentRequest(prompt)
-
-    return try {
-      val response = onDeviceModel.generateContent(request)
-        // TODO: what about `validate` ?
-      GenerateContentResponse.fromOnDeviceResponse(response)
-    } catch (e: Throwable) {
-      throw FirebaseAIException.from(e)
-    }
-  }
 
   internal fun hasFunction(call: FunctionCallPart): Boolean {
     return tools
@@ -481,79 +340,6 @@ internal constructor(
       systemInstruction?.copy(role = "system")?.toInternal(),
     )
 
-  private fun buildOnDeviceGenerateContentRequest(
-    prompt: List<Content>
-  ): OnDeviceGenerateContentRequest {
-    if (onDeviceModel == null) {
-      throw FirebaseAIException.from(
-        FirebaseAIOnDeviceNotAvailableException("On-device model is null")
-      )
-    }
-
-    if (prompt.isEmpty()) {
-      throw FirebaseAIException.from(IllegalArgumentException("Prompt is empty"))
-    }
-    val parts =
-      if (prompt.size == 1) {
-        prompt.first().parts
-      } else {
-        Log.w(TAG, "On-device model does not support multiple prompts, concatenating them instead")
-        prompt.flatMap { it.parts }
-      }
-    val textParts =
-      parts.filterIsInstance<TextPart>().also {
-        if (it.size > 1)
-          Log.w(
-            TAG,
-            "On-device model does not support multiple text parts, concatenating them instead"
-          )
-      }
-    if (textParts.isEmpty()) {
-      throw FirebaseAIException.from(
-        IllegalArgumentException("On-device model requires text as part of the prompt")
-      )
-    }
-    val text = textParts.joinToString("") { it.text }
-    val image =
-      parts
-        .filterIsInstance<ImagePart>()
-        .also {
-          if (it.size > 1)
-            Log.w(
-              TAG,
-              "On-device model does not support multiple image parts, using only the first one"
-            )
-        }
-        .firstOrNull()
-    return OnDeviceGenerateContentRequest(
-      text = com.google.firebase.ai.ondevice.interop.TextPart(text),
-      image = image?.let { com.google.firebase.ai.ondevice.interop.ImagePart(it.image) },
-      temperature = onDeviceConfig.temperature,
-      topK = onDeviceConfig.topK,
-      seed = onDeviceConfig.seed,
-      candidateCount = 1, // TODO: Add candidate count to config
-      maxOutputTokens = onDeviceConfig.maxOutputTokens
-    )
-  }
-
-  private fun GenerateContentResponse.Companion.fromOnDeviceResponse(
-    response: com.google.firebase.ai.ondevice.interop.GenerateContentResponse
-  ) =
-    GenerateContentResponse(
-      response.candidates.map { Candidate.fromInterop(it) },
-      InferenceSource.ON_DEVICE,
-      null,
-      null
-    )
-
-  private fun buildCountTokensRequest(prompt: List<Content>) =
-    when (generativeBackend.backend) {
-      GenerativeBackendEnum.GOOGLE_AI ->
-        CountTokensRequest.forGoogleAI(buildGenerateContentRequest(prompt))
-      GenerativeBackendEnum.VERTEX_AI ->
-        CountTokensRequest.forVertexAI(buildGenerateContentRequest(prompt))
-    }
-
   private fun GenerateContentResponse.validate() = apply {
     if (candidates.isEmpty() && promptFeedback == null) {
       throw SerializationException("Error deserializing response, found no valid fields")
@@ -565,7 +351,60 @@ internal constructor(
       ?.let { throw ResponseStoppedException(this) }
   }
 
-  private companion object {
+  internal companion object {
     private val TAG = GenerativeModel::class.java.simpleName
+
+    internal fun create(
+        modelName: String,
+        apiKey: String,
+        firebaseApp: FirebaseApp,
+        useLimitedUseAppCheckTokens: Boolean,
+        generationConfig: GenerationConfig? = null,
+        safetySettings: List<SafetySetting>? = null,
+        tools: List<Tool>? = null,
+        toolConfig: ToolConfig? = null,
+        systemInstruction: Content? = null,
+        requestOptions: RequestOptions = RequestOptions(),
+        onDeviceConfig: OnDeviceConfig,
+        generativeBackend: GenerativeBackend,
+        appCheckTokenProvider: InteropAppCheckTokenProvider? = null,
+        onDeviceFactoryProvider: FirebaseAIOnDeviceGenerativeModelFactory? = null,
+        internalAuthProvider: InternalAuthProvider? = null,
+    ): GenerativeModel {
+      val onDeviceModelInstance = onDeviceFactoryProvider?.newGenerativeModel()
+      val actualModelProvider =
+        if (onDeviceFactoryProvider == null) {
+          MissingOnDeviceModel()
+        } else {
+          OnDeviceModel(onDeviceFactoryProvider.newGenerativeModel(), onDeviceConfig)
+        }
+      val apiController =
+        APIController(
+          apiKey,
+          modelName,
+          requestOptions,
+          "gl-kotlin/${KotlinVersion.CURRENT}-ai fire/${BuildConfig.VERSION_NAME}",
+          firebaseApp,
+          AppCheckHeaderProvider(
+            TAG,
+            useLimitedUseAppCheckTokens,
+            appCheckTokenProvider,
+            internalAuthProvider
+          ),
+        )
+
+      return GenerativeModel(
+        modelName = modelName,
+        generationConfig = generationConfig,
+        safetySettings = safetySettings,
+        tools = tools,
+        toolConfig = toolConfig,
+        systemInstruction = systemInstruction,
+        generativeBackend = generativeBackend,
+        actualModel = actualModelProvider,
+        onDeviceConfig = onDeviceConfig,
+        controller = apiController,
+      )
+    }
   }
 }
