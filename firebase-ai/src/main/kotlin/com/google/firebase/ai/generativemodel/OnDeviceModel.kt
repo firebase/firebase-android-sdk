@@ -29,7 +29,9 @@ import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.CountTokensResponse
 import com.google.firebase.ai.type.FirebaseAIException
 import com.google.firebase.ai.type.GenerateContentResponse
+import com.google.firebase.ai.type.GenerateObjectResponse
 import com.google.firebase.ai.type.ImagePart
+import com.google.firebase.ai.type.JsonSchema
 import com.google.firebase.ai.type.TextPart
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -80,12 +82,12 @@ internal class OnDeviceModel(
   }
 
   override fun generateContentStream(prompt: List<Content>): Flow<GenerateContentResponse> {
-      // TODO: how to handle this?
-//    if (!onDeviceModel.isAvailable()) {
-//      throw FirebaseAIException.from(
-//        FirebaseAIOnDeviceNotAvailableException("On-device model is not available")
-//      )
-//    }
+    // TODO: how to handle this?
+    //    if (!onDeviceModel.isAvailable()) {
+    //      throw FirebaseAIException.from(
+    //        FirebaseAIOnDeviceNotAvailableException("On-device model is not available")
+    //      )
+    //    }
 
     val request = buildOnDeviceGenerateContentRequest(prompt)
 
@@ -100,6 +102,15 @@ internal class OnDeviceModel(
           null
         )
       }
+  }
+
+  override suspend fun <T : Any> generateObject(
+    jsonSchema: JsonSchema<T>,
+    prompt: List<Content>
+  ): GenerateObjectResponse<T> {
+    throw FirebaseAIException.from(
+      IllegalArgumentException("On-device mode is not supported for `generateObject`")
+    )
   }
 
   private fun buildOnDeviceGenerateContentRequest(

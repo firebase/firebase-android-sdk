@@ -23,7 +23,6 @@ import androidx.test.core.app.ApplicationProvider
 import com.google.firebase.FirebaseApp
 import com.google.firebase.ai.GenerativeModel
 import com.google.firebase.ai.ImagenModel
-import com.google.firebase.ai.OnDeviceConfig
 import com.google.firebase.ai.common.APIController
 import com.google.firebase.ai.generativemodel.CloudGenerativeModel
 import com.google.firebase.ai.type.GenerativeBackend
@@ -137,14 +136,13 @@ internal fun commonTest(
     )
   val model =
     GenerativeModel(
-      "cool-model-name",
-      generativeBackend = backend,
-      actualModel = CloudGenerativeModel(
+      actualModel =
+        CloudGenerativeModel(
           "cool-model-name",
           generativeBackend = backend,
           controller = apiController,
           tools = tools
-      ),
+        ),
       controller = apiController,
       tools = tools
     )
@@ -214,14 +212,13 @@ internal fun commonMultiTurnTest(
     )
   val model =
     GenerativeModel(
-      "cool-model-name",
-      generativeBackend = backend,
-      actualModel = CloudGenerativeModel(
+      actualModel =
+        CloudGenerativeModel(
           "cool-model-name",
           generativeBackend = backend,
           controller = apiController,
           tools = tools
-      ),
+        ),
       controller = apiController,
       tools = tools
     )

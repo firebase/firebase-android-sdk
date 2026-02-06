@@ -20,7 +20,7 @@ import android.graphics.Bitmap
 import com.google.firebase.FirebaseApp
 import com.google.firebase.ai.common.APIController
 import com.google.firebase.ai.common.AppCheckHeaderProvider
-import com.google.firebase.ai.common.GenerateContentRequest
+import com.google.firebase.ai.generativemodel.CloudGenerativeModel
 import com.google.firebase.ai.generativemodel.GenerativeModelProvider
 import com.google.firebase.ai.generativemodel.MissingOnDeviceModel
 import com.google.firebase.ai.generativemodel.OnDeviceModel
@@ -37,7 +37,6 @@ import com.google.firebase.ai.type.GenerateContentResponse
 import com.google.firebase.ai.type.GenerateObjectResponse
 import com.google.firebase.ai.type.GenerationConfig
 import com.google.firebase.ai.type.GenerativeBackend
-import com.google.firebase.ai.type.GenerativeBackendEnum
 import com.google.firebase.ai.type.InvalidStateException
 import com.google.firebase.ai.type.JsonSchema
 import com.google.firebase.ai.type.PromptBlockedException
@@ -50,7 +49,6 @@ import com.google.firebase.ai.type.ToolConfig
 import com.google.firebase.ai.type.content
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
-import kotlin.collections.map
 import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.json.Json
@@ -64,16 +62,9 @@ import kotlinx.serialization.json.jsonObject
  */
 public class GenerativeModel
 internal constructor(
-    private val modelName: String,
-    private val generationConfig: GenerationConfig? = null,
-    private val safetySettings: List<SafetySetting>? = null,
-    private val tools: List<Tool>? = null,
-    private val toolConfig: ToolConfig? = null,
-    private val systemInstruction: Content? = null,
-    private val generativeBackend: GenerativeBackend = GenerativeBackend.googleAI(),
-    private val onDeviceConfig: OnDeviceConfig = OnDeviceConfig.IN_CLOUD,
-    private val actualModel: GenerativeModelProvider,
-    internal val controller: APIController,
+  private val tools: List<Tool>? = null,
+  private val actualModel: GenerativeModelProvider,
+  internal val controller: APIController,
 ) {
   /**
    * Generates new content from the input [Content] given to the model as a prompt.
@@ -180,27 +171,7 @@ internal constructor(
     jsonSchema: JsonSchema<T>,
     prompt: Content,
     vararg prompts: Content
-  ): GenerateObjectResponse<T> {
-    if (onDeviceConfig.mode != InferenceMode.ONLY_IN_CLOUD) {
-      throw FirebaseAIException.from(
-        IllegalArgumentException("On-device mode is not supported for `generateObject`")
-      )
-    }
-    val config =
-      (generationConfig?.toBuilder() ?: GenerationConfig.builder())
-        .setResponseSchemaJson(jsonSchema)
-        .setResponseMimeType("application/json")
-        .build()
-    try {
-      val request = buildGenerateContentRequest(listOf(prompt, *prompts), config)
-      return GenerateObjectResponse(
-        controller.generateContent(request).toPublic().validate(),
-        jsonSchema
-      )
-    } catch (e: Throwable) {
-      throw FirebaseAIException.from(e)
-    }
-  }
+  ): GenerateObjectResponse<T> = actualModel.generateObject(jsonSchema, listOf(prompt, *prompts))
 
   /**
    * Generates an object from the text input given to the model as a prompt.
@@ -315,31 +286,6 @@ internal constructor(
 
   internal fun getTurnLimit(): Int = controller.getTurnLimit()
 
-  private fun buildGenerateContentRequest(
-    prompt: List<Content>,
-    overrideConfig: GenerationConfig? = null
-  ) =
-    GenerateContentRequest(
-      modelName,
-      prompt.map { it.toInternal() },
-      safetySettings
-        ?.also { safetySettingList ->
-          if (
-            generativeBackend.backend == GenerativeBackendEnum.GOOGLE_AI &&
-              safetySettingList.any { it.method != null }
-          ) {
-            throw InvalidStateException(
-              "HarmBlockMethod is unsupported by the Google Developer API"
-            )
-          }
-        }
-        ?.map { it.toInternal() },
-      (overrideConfig ?: generationConfig)?.toInternal(),
-      tools?.map { it.toInternal() },
-      toolConfig?.toInternal(),
-      systemInstruction?.copy(role = "system")?.toInternal(),
-    )
-
   private fun GenerateContentResponse.validate() = apply {
     if (candidates.isEmpty() && promptFeedback == null) {
       throw SerializationException("Error deserializing response, found no valid fields")
@@ -355,29 +301,22 @@ internal constructor(
     private val TAG = GenerativeModel::class.java.simpleName
 
     internal fun create(
-        modelName: String,
-        apiKey: String,
-        firebaseApp: FirebaseApp,
-        useLimitedUseAppCheckTokens: Boolean,
-        generationConfig: GenerationConfig? = null,
-        safetySettings: List<SafetySetting>? = null,
-        tools: List<Tool>? = null,
-        toolConfig: ToolConfig? = null,
-        systemInstruction: Content? = null,
-        requestOptions: RequestOptions = RequestOptions(),
-        onDeviceConfig: OnDeviceConfig,
-        generativeBackend: GenerativeBackend,
-        appCheckTokenProvider: InteropAppCheckTokenProvider? = null,
-        onDeviceFactoryProvider: FirebaseAIOnDeviceGenerativeModelFactory? = null,
-        internalAuthProvider: InternalAuthProvider? = null,
+      modelName: String,
+      apiKey: String,
+      firebaseApp: FirebaseApp,
+      useLimitedUseAppCheckTokens: Boolean,
+      generationConfig: GenerationConfig? = null,
+      safetySettings: List<SafetySetting>? = null,
+      tools: List<Tool>? = null,
+      toolConfig: ToolConfig? = null,
+      systemInstruction: Content? = null,
+      requestOptions: RequestOptions = RequestOptions(),
+      onDeviceConfig: OnDeviceConfig,
+      generativeBackend: GenerativeBackend,
+      appCheckTokenProvider: InteropAppCheckTokenProvider? = null,
+      onDeviceFactoryProvider: FirebaseAIOnDeviceGenerativeModelFactory? = null,
+      internalAuthProvider: InternalAuthProvider? = null,
     ): GenerativeModel {
-      val onDeviceModelInstance = onDeviceFactoryProvider?.newGenerativeModel()
-      val actualModelProvider =
-        if (onDeviceFactoryProvider == null) {
-          MissingOnDeviceModel()
-        } else {
-          OnDeviceModel(onDeviceFactoryProvider.newGenerativeModel(), onDeviceConfig)
-        }
       val apiController =
         APIController(
           apiKey,
@@ -393,16 +332,31 @@ internal constructor(
           ),
         )
 
+      val actualModelProvider =
+        when (onDeviceConfig.mode) {
+          InferenceMode.ONLY_IN_CLOUD ->
+            CloudGenerativeModel(
+              modelName = modelName,
+              generationConfig = generationConfig,
+              safetySettings = safetySettings,
+              tools = tools,
+              toolConfig = toolConfig,
+              systemInstruction = systemInstruction,
+              generativeBackend = generativeBackend,
+              controller = apiController,
+            )
+          InferenceMode.ONLY_ON_DEVICE ->
+            if (onDeviceFactoryProvider == null) {
+              MissingOnDeviceModel()
+            } else {
+              OnDeviceModel(onDeviceFactoryProvider.newGenerativeModel(), onDeviceConfig)
+            }
+          else -> throw InvalidStateException("Invalid inference mode")
+        }
+
       return GenerativeModel(
-        modelName = modelName,
-        generationConfig = generationConfig,
-        safetySettings = safetySettings,
         tools = tools,
-        toolConfig = toolConfig,
-        systemInstruction = systemInstruction,
-        generativeBackend = generativeBackend,
         actualModel = actualModelProvider,
-        onDeviceConfig = onDeviceConfig,
         controller = apiController,
       )
     }

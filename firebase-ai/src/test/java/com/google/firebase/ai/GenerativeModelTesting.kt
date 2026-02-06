@@ -109,12 +109,13 @@ internal class GenerativeModelTesting {
 
     val generativeModel =
       GenerativeModel(
-        "gemini-2.5-flash",
-          actualModel = CloudGenerativeModel(
-              "gemini-2.5-flash",
-        systemInstruction = content { text("system instruction") },
-        controller = apiController),
-          controller = apiController
+        actualModel =
+          CloudGenerativeModel(
+            "gemini-2.5-flash",
+            systemInstruction = content { text("system instruction") },
+            controller = apiController
+          ),
+        controller = apiController
       )
 
     withTimeout(5.seconds) { generativeModel.generateContent("my test prompt") }
@@ -221,11 +222,7 @@ internal class GenerativeModelTesting {
 
     val generativeModel =
       GenerativeModel(
-        "gemini-2.5-flash",
-        actualModel = CloudGenerativeModel(
-            "gemini-2.5-flash",
-            controller = apiController
-        ),
+        actualModel = CloudGenerativeModel("gemini-2.5-flash", controller = apiController),
         controller = apiController
       )
 
@@ -267,11 +264,11 @@ internal class GenerativeModelTesting {
     // Creating the
     val generativeModel =
       GenerativeModel(
-        "projects/PROJECTID/locations/INVALID_LOCATION/publishers/google/models/gemini-2.5-flash",
-        actualModel = CloudGenerativeModel(
+        actualModel =
+          CloudGenerativeModel(
             "projects/PROJECTID/locations/INVALID_LOCATION/publishers/google/models/gemini-2.5-flash",
             controller = apiController
-        ),
+          ),
         controller = apiController
       )
 
@@ -318,15 +315,13 @@ internal class GenerativeModelTesting {
 
     val generativeModel =
       GenerativeModel(
-        "gemini-2.5-flash",
-        safetySettings = safetySettings,
-        generativeBackend = GenerativeBackend.googleAI(),
-        actualModel = CloudGenerativeModel(
+        actualModel =
+          CloudGenerativeModel(
             "gemini-2.5-flash",
             safetySettings = safetySettings,
             generativeBackend = GenerativeBackend.googleAI(),
             controller = apiController
-        ),
+          ),
         controller = apiController
       )
 
@@ -370,15 +365,13 @@ internal class GenerativeModelTesting {
 
     val generativeModel =
       GenerativeModel(
-        "gemini-2.5-flash",
-        safetySettings = safetySettings,
-        generativeBackend = GenerativeBackend.vertexAI("us-central1"),
-        actualModel = CloudGenerativeModel(
+        actualModel =
+          CloudGenerativeModel(
             "gemini-2.5-flash",
             safetySettings = safetySettings,
             generativeBackend = GenerativeBackend.vertexAI("us-central1"),
             controller = apiController
-        ),
+          ),
         controller = apiController
       )
 
@@ -431,18 +424,15 @@ internal class GenerativeModelTesting {
 
     val generativeModel =
       GenerativeModel(
-        "gemini-2.5-flash",
-        generationConfig =
-          generationConfig {
-            thinkingConfig = thinkingConfig { thinkingLevel = ThinkingLevel.MEDIUM }
-          },
-        actualModel = CloudGenerativeModel(
+        actualModel =
+          CloudGenerativeModel(
             "gemini-2.5-flash",
             generationConfig =
-                generationConfig {
-                    thinkingConfig = thinkingConfig { thinkingLevel = ThinkingLevel.MEDIUM }
-                },
-            controller = apiController),
+              generationConfig {
+                thinkingConfig = thinkingConfig { thinkingLevel = ThinkingLevel.MEDIUM }
+              },
+            controller = apiController
+          ),
         controller = apiController
       )
 
@@ -474,11 +464,7 @@ internal class GenerativeModelTesting {
       )
 
     return GenerativeModel(
-      "gemini-2.5-flash",
-      actualModel = CloudGenerativeModel(
-          "gemini-2.5-flash",
-          controller = apiController
-      ),
+      actualModel = CloudGenerativeModel("gemini-2.5-flash", controller = apiController),
       controller = apiController
     )
   }

@@ -24,10 +24,12 @@ import com.google.firebase.ai.type.CountTokensResponse
 import com.google.firebase.ai.type.FinishReason
 import com.google.firebase.ai.type.FirebaseAIException
 import com.google.firebase.ai.type.GenerateContentResponse
+import com.google.firebase.ai.type.GenerateObjectResponse
 import com.google.firebase.ai.type.GenerationConfig
 import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.GenerativeBackendEnum
 import com.google.firebase.ai.type.InvalidStateException
+import com.google.firebase.ai.type.JsonSchema
 import com.google.firebase.ai.type.PromptBlockedException
 import com.google.firebase.ai.type.ResponseStoppedException
 import com.google.firebase.ai.type.SafetySetting
@@ -68,6 +70,22 @@ internal class CloudGenerativeModel(
       .generateContentStream(buildGenerateContentRequest(prompt))
       .map { it.toPublic().validate() }
       .catch { throw FirebaseAIException.from(it) }
+
+  override suspend fun <T : Any> generateObject(
+    jsonSchema: JsonSchema<T>,
+    prompt: List<Content>
+  ): GenerateObjectResponse<T> =
+    try {
+      val config =
+        (generationConfig?.toBuilder() ?: GenerationConfig.builder())
+          .setResponseSchemaJson(jsonSchema)
+          .setResponseMimeType("application/json")
+          .build()
+      val request = buildGenerateContentRequest(prompt, config)
+      GenerateObjectResponse(controller.generateContent(request).toPublic().validate(), jsonSchema)
+    } catch (e: Throwable) {
+      throw FirebaseAIException.from(e)
+    }
 
   private fun buildGenerateContentRequest(
     prompt: List<Content>,
