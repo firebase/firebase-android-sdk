@@ -1,6 +1,8 @@
 # Unreleased
 
-- [changed] Added logic for use in offline caching.
+- [changed] Added public APIs for offline caching.
+  [#7716](https://github.com/firebase/firebase-android-sdk/pull/7716))
+- [changed] Added hydration and dehydration logic for use in offline caching.
   [#7714](https://github.com/firebase/firebase-android-sdk/pull/7714))
 
 # 17.1.3
