@@ -89,7 +89,7 @@ private constructor(private val sqliteDatabase: SQLiteDatabase, private val logg
         initializeDatabase()
         val newUserVersion = SemanticVersion(1, 0, 0)
         val newUserVersionInt = newUserVersion.encodeToInt()
-        logger.debug { "setting user_version to newUserVersionInt ($newUserVersion)" }
+        logger.debug { "setting user_version to $newUserVersionInt ($newUserVersion)" }
         sqliteDatabase.version = newUserVersionInt
       } else {
         val decodedUserVersion: SemanticVersion = userVersion.decodeSemanticVersion()
