@@ -82,13 +82,7 @@ internal class OnDeviceModel(
   }
 
   override fun generateContentStream(prompt: List<Content>): Flow<GenerateContentResponse> {
-    // TODO: how to handle this?
-    //    if (!onDeviceModel.isAvailable()) {
-    //      throw FirebaseAIException.from(
-    //        FirebaseAIOnDeviceNotAvailableException("On-device model is not available")
-    //      )
-    //    }
-
+    // TODO: check whether the device is available or not (suspend function)
     val request = buildOnDeviceGenerateContentRequest(prompt)
 
     return onDeviceModel

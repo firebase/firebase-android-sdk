@@ -20,7 +20,9 @@ import android.graphics.Bitmap
 import com.google.firebase.FirebaseApp
 import com.google.firebase.ai.common.APIController
 import com.google.firebase.ai.common.AppCheckHeaderProvider
+import com.google.firebase.ai.generativemodel.CloudFirstGenerativeModel
 import com.google.firebase.ai.generativemodel.CloudGenerativeModel
+import com.google.firebase.ai.generativemodel.FallbackGenerativeModel
 import com.google.firebase.ai.generativemodel.GenerativeModelProvider
 import com.google.firebase.ai.generativemodel.MissingOnDeviceModel
 import com.google.firebase.ai.generativemodel.OnDeviceModel
@@ -317,25 +319,37 @@ internal constructor(
           ),
         )
 
+      val cloudModel =
+        CloudGenerativeModel(
+          modelName = modelName,
+          generationConfig = generationConfig,
+          safetySettings = safetySettings,
+          tools = tools,
+          toolConfig = toolConfig,
+          systemInstruction = systemInstruction,
+          generativeBackend = generativeBackend,
+          controller = apiController,
+        )
+      val onDeviceModel =
+        if (onDeviceFactoryProvider == null) {
+          MissingOnDeviceModel()
+        } else {
+          OnDeviceModel(onDeviceFactoryProvider.newGenerativeModel(), onDeviceConfig)
+        }
+
       val actualModelProvider =
         when (onDeviceConfig.mode) {
-          InferenceMode.ONLY_IN_CLOUD ->
-            CloudGenerativeModel(
-              modelName = modelName,
-              generationConfig = generationConfig,
-              safetySettings = safetySettings,
-              tools = tools,
-              toolConfig = toolConfig,
-              systemInstruction = systemInstruction,
-              generativeBackend = generativeBackend,
-              controller = apiController,
-            )
-          InferenceMode.ONLY_ON_DEVICE ->
-            if (onDeviceFactoryProvider == null) {
-              MissingOnDeviceModel()
-            } else {
-              OnDeviceModel(onDeviceFactoryProvider.newGenerativeModel(), onDeviceConfig)
-            }
+          InferenceMode.ONLY_IN_CLOUD -> cloudModel
+          InferenceMode.ONLY_ON_DEVICE -> onDeviceModel
+          InferenceMode.PREFER_ON_DEVICE -> FallbackGenerativeModel(
+              defaultModel = onDeviceModel,
+              fallbackModel = cloudModel,
+              shouldFallbackInException = true)
+          InferenceMode.PREFER_IN_CLOUD -> FallbackGenerativeModel(
+              defaultModel = cloudModel,
+              fallbackModel = onDeviceModel,
+              // TODO: Add check for precondition (network should be available)
+              shouldFallbackInException = false)
           else -> throw InvalidStateException("Invalid inference mode")
         }
 
