@@ -75,6 +75,18 @@ public class SQLiteEventStoreTest {
           .setExperimentIdsEncryptedList(List.of("encrypted blob".getBytes(StandardCharsets.UTF_8)))
           .build();
 
+  private static final EventInternal EVENTWITHJUSTID =
+      EventInternal.builder()
+          .setTransportName("42")
+          .setEventMillis(1)
+          .setUptimeMillis(2)
+          .setEncodedPayload(
+              new EncodedPayload(JSON_ENCODING, "Hello".getBytes(Charset.defaultCharset())))
+          .addMetadata("key1", "value1")
+          .addMetadata("key2", "value2")
+          .setExperimentIdsEncrypted("encrypted blob".getBytes(StandardCharsets.UTF_8))
+          .build();
+
   private final LogSourceMetrics LOG_SOURCE_METRICS_1 =
       LogSourceMetrics.newBuilder()
           .setLogSource(LOG_SOURCE_1)
@@ -153,6 +165,22 @@ public class SQLiteEventStoreTest {
 
     assertThat(newEvent.getEvent()).isEqualTo(EVENT);
     assertThat(events).containsExactly(newEvent);
+  }
+
+  @Test
+  public void encryptedIdOnly_storedAndLoadedCorrectly() {
+    byte[] test = "encrypted blob".getBytes(StandardCharsets.UTF_8);
+    PersistedEvent newEvent = store.persist(TRANSPORT_CONTEXT, EVENTWITHJUSTID);
+    Iterable<PersistedEvent> events = store.loadBatch(TRANSPORT_CONTEXT);
+    assertThat(new String(newEvent.getEvent().getExperimentIdsEncrypted(), StandardCharsets.UTF_8))
+        .isEqualTo("encrypted blob");
+    Iterator<PersistedEvent> iterator = events.iterator();
+    PersistedEvent firstEvent = iterator.hasNext() ? iterator.next() : null;
+    assertThat(
+            new String(
+                firstEvent.getEvent().getExperimentIdsEncrypted(),
+                StandardCharsets.UTF_8))
+        .isEqualTo("encrypted blob");
   }
 
   @Test
