@@ -118,7 +118,12 @@ internal constructor(
   public suspend fun startAudioConversation(
     functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)? = null
   ) {
-    startAudioConversation(functionCallHandler, false)
+    startAudioConversation(
+      functionCallHandler = functionCallHandler,
+      transcriptHandler = null,
+      goAwayHandler = null,
+      enableInterruptions = false
+    )
   }
 
   /**
@@ -143,6 +148,7 @@ internal constructor(
     startAudioConversation(
       functionCallHandler = functionCallHandler,
       transcriptHandler = null,
+      goAwayHandler = null,
       enableInterruptions = enableInterruptions
     )
   }
@@ -175,6 +181,46 @@ internal constructor(
       liveAudioConversationConfig {
         this.functionCallHandler = functionCallHandler
         this.transcriptHandler = transcriptHandler
+        this.goAwayHandler = null
+        this.enableInterruptions = enableInterruptions
+      }
+    )
+  }
+
+  /**
+   * Starts an audio conversation with the model, which can only be stopped using
+   * [stopAudioConversation] or [close].
+   *
+   * @param functionCallHandler A callback function that is invoked whenever the model receives a
+   * function call. The [FunctionResponsePart] that the callback function returns will be
+   * automatically sent to the model.
+   *
+   * @param transcriptHandler A callback function that is invoked whenever the model receives a
+   * transcript. The first [Transcription] object is the input transcription, and the second is the
+   * output transcription.
+   *
+   * @param goAwayHandler A callback function that is invoked when the server initiates a disconnect
+   * via a [LiveServerGoAway] message. This allows the application to handle server-initiated
+   * session termination gracefully.
+   *
+   * @param enableInterruptions If enabled, allows the user to speak over or interrupt the model's
+   * ongoing reply.
+   *
+   * **WARNING**: The user interruption feature relies on device-specific support, and may not be
+   * consistently available.
+   */
+  @RequiresPermission(RECORD_AUDIO)
+  public suspend fun startAudioConversation(
+    functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)? = null,
+    transcriptHandler: ((Transcription?, Transcription?) -> Unit)? = null,
+    goAwayHandler: ((LiveServerGoAway) -> Unit)? = null,
+    enableInterruptions: Boolean = false,
+  ) {
+    startAudioConversation(
+      liveAudioConversationConfig {
+        this.functionCallHandler = functionCallHandler
+        this.transcriptHandler = transcriptHandler
+        this.goAwayHandler = goAwayHandler
         this.enableInterruptions = enableInterruptions
       }
     )
@@ -216,7 +262,8 @@ internal constructor(
       recordUserAudio()
       processModelResponses(
         liveAudioConversationConfig.functionCallHandler,
-        liveAudioConversationConfig.transcriptHandler
+        liveAudioConversationConfig.transcriptHandler,
+        liveAudioConversationConfig.goAwayHandler
       )
       listenForModelPlayback(liveAudioConversationConfig.enableInterruptions)
     }
@@ -328,7 +375,7 @@ internal constructor(
     FirebaseAIException.catchAsync {
       val jsonString =
         Json.encodeToString(
-          BidiGenerateContentToolResponseSetup(functionList.map { it.toInternalFunctionCall() })
+          BidiGenerateContentToolResponseSetup(functionList.map { it.toInternalFunctionResponse() })
             .toInternal()
         )
       session.send(Frame.Text(jsonString))
@@ -481,10 +528,15 @@ internal constructor(
    *
    * @param functionCallHandler A callback function that is invoked whenever the server receives a
    * function call.
+   * @param transcriptHandler A callback function that is invoked whenever the server receives a
+   * transcript.
+   * @param goAwayHandler A callback function that is invoked when the server initiates a
+   * disconnect.
    */
   private fun processModelResponses(
     functionCallHandler: ((FunctionCallPart) -> FunctionResponsePart)?,
-    transcriptHandler: ((Transcription?, Transcription?) -> Unit)?
+    transcriptHandler: ((Transcription?, Transcription?) -> Unit)?,
+    goAwayHandler: ((LiveServerGoAway) -> Unit)?
   ) {
     receive()
       .onEach {
@@ -531,6 +583,13 @@ internal constructor(
               TAG,
               "The model sent LiveServerSetupComplete after the connection was established."
             )
+          }
+          is LiveServerGoAway -> {
+            val timeLeftMsg = it.timeLeft?.let { duration -> " (time left: $duration)" } ?: ""
+            Log.i(TAG, "Server initiated disconnect$timeLeftMsg")
+
+            // Notify the application
+            goAwayHandler?.invoke(it)
           }
         }
       }

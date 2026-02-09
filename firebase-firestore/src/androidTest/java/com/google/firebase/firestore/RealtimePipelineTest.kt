@@ -51,6 +51,8 @@ import com.google.firebase.firestore.pipeline.Expression.Companion.notEqualAny
 import com.google.firebase.firestore.pipeline.Expression.Companion.or
 import com.google.firebase.firestore.pipeline.Expression.Companion.pow
 import com.google.firebase.firestore.pipeline.Expression.Companion.regexContains
+import com.google.firebase.firestore.pipeline.Expression.Companion.regexFind
+import com.google.firebase.firestore.pipeline.Expression.Companion.regexFindAll
 import com.google.firebase.firestore.pipeline.Expression.Companion.regexMatch
 import com.google.firebase.firestore.pipeline.Expression.Companion.reverse
 import com.google.firebase.firestore.pipeline.Expression.Companion.round
@@ -1268,6 +1270,60 @@ class RealtimePipelineTest {
   fun testRegexContains() = runBlocking {
     val pipeline =
       db.realtimePipeline().collection(collRef.path).where(regexContains("author", "Douglas.*"))
+
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
+    val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
+
+    val firstSnapshot = channel.receive()
+    assertThat(firstSnapshot.metadata.isConsistentBetweenListeners).isFalse()
+    assertThat(firstSnapshot.results).hasSize(1)
+    assertThat(firstSnapshot.results[0].get("title"))
+      .isEqualTo("The Hitchhiker's Guide to the Galaxy")
+
+    val secondSnapshot = channel.receive()
+    assertThat(secondSnapshot.metadata.isConsistentBetweenListeners).isTrue()
+    assertThat(secondSnapshot.results).hasSize(1)
+    assertThat(secondSnapshot.getChanges()).isEmpty()
+
+    job.cancel()
+  }
+
+  @Test
+  @Ignore("Not supported yet")
+  fun testRegexFind() = runBlocking {
+    val pipeline =
+      db
+        .realtimePipeline()
+        .collection(collRef.path)
+        .where(regexFind("author", "^\\w+").equal("Douglas"))
+
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
+    val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
+
+    val firstSnapshot = channel.receive()
+    assertThat(firstSnapshot.metadata.isConsistentBetweenListeners).isFalse()
+    assertThat(firstSnapshot.results).hasSize(1)
+    assertThat(firstSnapshot.results[0].get("title"))
+      .isEqualTo("The Hitchhiker's Guide to the Galaxy")
+
+    val secondSnapshot = channel.receive()
+    assertThat(secondSnapshot.metadata.isConsistentBetweenListeners).isTrue()
+    assertThat(secondSnapshot.results).hasSize(1)
+    assertThat(secondSnapshot.getChanges()).isEmpty()
+
+    job.cancel()
+  }
+
+  @Test
+  @Ignore("Not supported yet")
+  fun testRegexFindAll() = runBlocking {
+    val pipeline =
+      db
+        .realtimePipeline()
+        .collection(collRef.path)
+        .where(regexFindAll("author", "^\\w+").equal("Douglas"))
 
     val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
     val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)

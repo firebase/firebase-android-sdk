@@ -18,6 +18,7 @@
 
 package com.google.firebase.dataconnect.testutil.property.arbitrary
 
+import com.google.firebase.dataconnect.CacheSettings
 import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.DataConnectSettings
@@ -28,12 +29,14 @@ import io.kotest.property.arbitrary.alphanumeric
 import io.kotest.property.arbitrary.arabic
 import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.ascii
+import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.boolean
 import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.choose
 import io.kotest.property.arbitrary.cyrillic
 import io.kotest.property.arbitrary.double
 import io.kotest.property.arbitrary.egyptianHieroglyphs
+import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.hex
 import io.kotest.property.arbitrary.int
@@ -123,15 +126,18 @@ object DataConnectArb {
       "host_${string.bind()}"
     }
 
+  fun cacheSettings(
+    storage: Arb<CacheSettings.Storage> = Arb.enum<CacheSettings.Storage>(),
+  ): Arb<CacheSettings> = storage.map(::CacheSettings)
+
   fun dataConnectSettings(
     prefix: String? = null,
     host: Arb<String> = host(),
     sslEnabled: Arb<Boolean> = Arb.boolean(),
+    cacheSettings: Arb<CacheSettings?> = cacheSettings().orNull(nullProbability = 0.33),
   ): Arb<DataConnectSettings> {
     val wrappedHost = prefix?.let { host.withPrefix(it) } ?: host
-    return arbitrary {
-      DataConnectSettings(host = wrappedHost.bind(), sslEnabled = sslEnabled.bind())
-    }
+    return Arb.bind(wrappedHost, sslEnabled, cacheSettings, ::DataConnectSettings)
   }
 
   fun tag(string: Arb<String> = Arb.string(size = 50, Codepoint.alphanumeric())): Arb<String> =
@@ -251,7 +257,11 @@ fun <T> Arb<T>.next(rs: RandomSource, edgeCaseProbability: Float): T {
 }
 
 fun <T> Arb<T>.next(rs: RandomSource, edgeCase: Boolean): T =
-  if (edgeCase) edgecase(rs)!! else sample(rs).value
+  if (edgeCase) {
+    edgecase(rs) ?: sample(rs).value
+  } else {
+    sample(rs).value
+  }
 
 class ProbabilityArb : Arb<Float>() {
   override fun edgecase(rs: RandomSource) = if (rs.random.nextBoolean()) 1.0f else 0.0f
