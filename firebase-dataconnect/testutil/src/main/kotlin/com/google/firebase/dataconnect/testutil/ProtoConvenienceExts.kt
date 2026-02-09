@@ -17,6 +17,7 @@
 package com.google.firebase.dataconnect.testutil
 
 import com.google.protobuf.ListValue
+import com.google.protobuf.NullValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
 
@@ -26,12 +27,82 @@ fun String.toValueProto(): Value = Value.newBuilder().setStringValue(this).build
 
 fun Double.toValueProto(): Value = Value.newBuilder().setNumberValue(this).build()
 
+@Suppress("UnusedReceiverParameter")
+fun Nothing?.toValueProto(): Value = Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build()
+
 fun Struct.toValueProto(): Value = Value.newBuilder().setStructValue(this).build()
 
 fun ListValue.toValueProto(): Value = Value.newBuilder().setListValue(this).build()
+
+fun Iterable<Value>.toValueProto(): Value = toListValue().toValueProto()
+
+fun Iterable<Value>.toListValue(): ListValue = ListValue.newBuilder().addAllValues(this).build()
+
+val Value.isNullValue: Boolean
+  get() = kindCase == Value.KindCase.NULL_VALUE
+
+val Value.isNumberValue: Boolean
+  get() = kindCase == Value.KindCase.NUMBER_VALUE
+
+val Value.isStringValue: Boolean
+  get() = kindCase == Value.KindCase.STRING_VALUE
+
+val Value.isBoolValue: Boolean
+  get() = kindCase == Value.KindCase.BOOL_VALUE
 
 val Value.isStructValue: Boolean
   get() = kindCase == Value.KindCase.STRUCT_VALUE
 
 val Value.isListValue: Boolean
   get() = kindCase == Value.KindCase.LIST_VALUE
+
+val Value.isKindNotSet: Boolean
+  get() = kindCase == Value.KindCase.KIND_NOT_SET
+
+val Value.numberValueOrNull: Double?
+  get() = if (isNumberValue) numberValue else null
+
+val Value.boolValueOrNull: Boolean?
+  get() = if (isBoolValue) boolValue else null
+
+val Value.stringValueOrNull: String?
+  get() = if (isStringValue) stringValue else null
+
+val Value.structValueOrNull: Struct?
+  get() = if (isStructValue) structValue else null
+
+val Value.listValueOrNull: ListValue?
+  get() = if (isListValue) listValue else null
+
+fun ListValue.isRecursivelyEmpty(): Boolean {
+  val queue = ArrayDeque<ListValue>()
+  queue.add(this)
+  while (queue.isNotEmpty()) {
+    val listValue = queue.removeFirst()
+    repeat(listValue.valuesCount) { index ->
+      val value = listValue.getValues(index)
+      if (!value.isListValue) {
+        return false
+      }
+      queue.add(value.listValue)
+    }
+  }
+  return true
+}
+
+fun Value.isRecursivelyEmptyListValue(): Boolean = isListValue && listValue.isRecursivelyEmpty()
+
+fun structOf(key: String, value: Value): Struct = Struct.newBuilder().putFields(key, value).build()
+
+fun structOf(key: String, value: Boolean): Struct = structOf(key, value.toValueProto())
+
+fun structOf(key: String, value: Double): Struct = structOf(key, value.toValueProto())
+
+fun structOf(key: String, value: String): Struct = structOf(key, value.toValueProto())
+
+fun structOf(key: String, value: Struct): Struct = structOf(key, value.toValueProto())
+
+fun structOf(key: String, value: ListValue): Struct = structOf(key, value.toValueProto())
+
+fun structOf(key: String, @Suppress("unused") value: Nothing?): Struct =
+  structOf(key, null.toValueProto())

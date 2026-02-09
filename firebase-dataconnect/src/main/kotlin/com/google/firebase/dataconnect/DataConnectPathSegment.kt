@@ -16,6 +16,9 @@
 
 package com.google.firebase.dataconnect
 
+import google.firebase.dataconnect.proto.kotlinsdk.EntityPath as EntityPathProto
+import google.firebase.dataconnect.proto.kotlinsdk.FieldOrListIndex as FieldOrListIndexProto
+
 /** The "segment" of a path to a field in the response data. */
 public sealed interface DataConnectPathSegment {
 
@@ -58,6 +61,10 @@ public sealed interface DataConnectPathSegment {
 internal typealias DataConnectPath = List<DataConnectPathSegment>
 
 internal typealias MutableDataConnectPath = MutableList<DataConnectPathSegment>
+
+internal fun emptyDataConnectPath(): DataConnectPath = emptyList()
+
+internal fun emptyMutableDataConnectPath(): MutableDataConnectPath = mutableListOf()
 
 internal fun <T : DataConnectPathSegment> List<T>.toPathString(): String = buildString {
   appendPathStringTo(this)
@@ -128,3 +135,60 @@ internal fun List<DataConnectPathSegment>.withAddedPathSegment(
   addAll(this@withAddedPathSegment)
   add(pathSegment)
 }
+
+internal object DataConnectPathComparator : Comparator<DataConnectPath> {
+  override fun compare(o1: DataConnectPath, o2: DataConnectPath): Int {
+    val size = o1.size.coerceAtMost(o2.size)
+    repeat(size) {
+      val segmentComparisonResult = DataConnectPathSegmentComparator.compare(o1[it], o2[it])
+      if (segmentComparisonResult != 0) {
+        return segmentComparisonResult
+      }
+    }
+    return o1.size.compareTo(o2.size)
+  }
+}
+
+internal object DataConnectPathSegmentComparator : Comparator<DataConnectPathSegment> {
+  override fun compare(o1: DataConnectPathSegment, o2: DataConnectPathSegment): Int =
+    when (o1) {
+      is DataConnectPathSegment.Field ->
+        when (o2) {
+          is DataConnectPathSegment.Field -> o1.field.compareTo(o2.field)
+          is DataConnectPathSegment.ListIndex -> -1
+        }
+      is DataConnectPathSegment.ListIndex ->
+        when (o2) {
+          is DataConnectPathSegment.Field -> 1
+          is DataConnectPathSegment.ListIndex -> o1.index.compareTo(o2.index)
+        }
+    }
+}
+
+internal fun DataConnectPath.toEntityPathProto(): EntityPathProto {
+  val builder = EntityPathProto.newBuilder()
+  forEach { pathSegment -> builder.addSegments(pathSegment.toFieldOrListIndexProto()) }
+  return builder.build()
+}
+
+internal fun EntityPathProto.toDataConnectPath(): DataConnectPath =
+  List(segmentsCount) { getSegments(it).toDataConnectPathSegment() }
+
+internal fun DataConnectPathSegment.toFieldOrListIndexProto(): FieldOrListIndexProto {
+  val builder = FieldOrListIndexProto.newBuilder()
+  when (this) {
+    is DataConnectPathSegment.Field -> builder.setField(field)
+    is DataConnectPathSegment.ListIndex -> builder.setListIndex(index)
+  }
+  return builder.build()
+}
+
+internal fun FieldOrListIndexProto.toDataConnectPathSegment(): DataConnectPathSegment =
+  when (kindCase) {
+    FieldOrListIndexProto.KindCase.FIELD -> DataConnectPathSegment.Field(field)
+    FieldOrListIndexProto.KindCase.LIST_INDEX -> DataConnectPathSegment.ListIndex(listIndex)
+    FieldOrListIndexProto.KindCase.KIND_NOT_SET ->
+      throw IllegalArgumentException(
+        "KIND_NOT_SET cannot be converted to DataConnectPathSegment [dp2pgjhkh3]"
+      )
+  }

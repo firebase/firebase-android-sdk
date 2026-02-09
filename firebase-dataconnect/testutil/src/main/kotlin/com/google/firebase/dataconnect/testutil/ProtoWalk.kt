@@ -37,6 +37,15 @@ fun ListValue.walkValues(includeSelf: Boolean = false): Sequence<Value> =
 fun Value.walkValues(includeSelf: Boolean = true): Sequence<Value> =
   walk(includeSelf = includeSelf).map { it.value }
 
+fun Struct.walkPaths(includeSelf: Boolean = false): Sequence<DataConnectPath> =
+  walk(includeSelf = includeSelf).map { it.path }
+
+fun ListValue.walkPaths(includeSelf: Boolean = false): Sequence<DataConnectPath> =
+  walk(includeSelf = includeSelf).map { it.path }
+
+fun Value.walkPaths(includeSelf: Boolean = true): Sequence<DataConnectPath> =
+  walk(includeSelf = includeSelf).map { it.path }
+
 private fun valueWalk(value: Value, includeSelf: Boolean) = sequence {
   val rootProtoValuePathPair = DataConnectPathValuePair(emptyList(), value)
   val queue = ArrayDeque<DataConnectPathValuePair>()
