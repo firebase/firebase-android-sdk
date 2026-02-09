@@ -1,5 +1,7 @@
 # Unreleased
 
+- [feature] Added no-argument overloads for `Tool.urlContext()` and `Tool.googleSearch()`.
+
 # 17.9.0
 
 - [feature] Added `JsonSchema`, `GenerativeModel#generateObject` and the firebase-ai-ksp processor's
