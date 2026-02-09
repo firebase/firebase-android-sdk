@@ -796,6 +796,7 @@ abstract class PublishingPlugin : Plugin<Project> {
         "com.google.firebase:firebase-perf",
         "com.google.firebase:firebase-storage",
         "com.google.firebase:firebase-ai",
+        "com.google.firebase:firebase-ai-ksp-processor",
       )
 
     /** Artifacts that we use in the tutorial bundle, but _not_ in the bom. */
