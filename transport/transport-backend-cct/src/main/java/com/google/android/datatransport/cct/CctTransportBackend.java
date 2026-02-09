@@ -318,7 +318,7 @@ final class CctTransportBackend implements TransportBackend {
           if (eventInternal.getExperimentIdsClear() != null) {
             builder.setClearBlob(eventInternal.getExperimentIdsClear());
           }
-          List<String> experimentIdsEncrypted = List.of();
+          List<String> experimentIdsEncrypted = new ArrayList<>();
           if (eventInternal.getExperimentIdsEncryptedList() != null) {
             experimentIdsEncrypted.addAll(
                 encodeListByteData(eventInternal.getExperimentIdsEncryptedList()));
@@ -327,7 +327,9 @@ final class CctTransportBackend implements TransportBackend {
             experimentIdsEncrypted.add(
                 Base64.encodeToString(eventInternal.getExperimentIdsEncrypted(), Base64.NO_WRAP));
           }
-          builder.setEncryptedBlob(experimentIdsEncrypted);
+          if (!experimentIdsEncrypted.isEmpty()) {
+            builder.setEncryptedBlob(experimentIdsEncrypted);
+          }
           event.setExperimentIds(builder.build());
         }
 
