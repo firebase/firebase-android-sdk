@@ -52,17 +52,13 @@ internal class CloudGenerativeModelProvider(
 ) : GenerativeModelProvider {
 
   override suspend fun generateContent(prompt: List<Content>): GenerateContentResponse =
-    try {
+    withFirebaseAIExceptionHandling {
       controller.generateContent(buildGenerateContentRequest(prompt)).toPublic().validate()
-    } catch (e: Throwable) {
-      throw FirebaseAIException.from(e)
     }
 
   override suspend fun countTokens(prompt: List<Content>): CountTokensResponse =
-    try {
+    withFirebaseAIExceptionHandling {
       controller.countTokens(buildCountTokensRequest(prompt)).toPublic()
-    } catch (e: Throwable) {
-      throw FirebaseAIException.from(e)
     }
 
   override fun generateContentStream(prompt: List<Content>): Flow<GenerateContentResponse> =
@@ -74,18 +70,23 @@ internal class CloudGenerativeModelProvider(
   override suspend fun <T : Any> generateObject(
     jsonSchema: JsonSchema<T>,
     prompt: List<Content>
-  ): GenerateObjectResponse<T> =
+  ): GenerateObjectResponse<T> = withFirebaseAIExceptionHandling {
+    val config =
+      (generationConfig?.toBuilder() ?: GenerationConfig.builder())
+        .setResponseSchemaJson(jsonSchema)
+        .setResponseMimeType("application/json")
+        .build()
+    val request = buildGenerateContentRequest(prompt, config)
+    GenerateObjectResponse(controller.generateContent(request).toPublic().validate(), jsonSchema)
+  }
+
+  private suspend fun <T> withFirebaseAIExceptionHandling(block: suspend () -> T): T {
     try {
-      val config =
-        (generationConfig?.toBuilder() ?: GenerationConfig.builder())
-          .setResponseSchemaJson(jsonSchema)
-          .setResponseMimeType("application/json")
-          .build()
-      val request = buildGenerateContentRequest(prompt, config)
-      GenerateObjectResponse(controller.generateContent(request).toPublic().validate(), jsonSchema)
+      return block()
     } catch (e: Throwable) {
       throw FirebaseAIException.from(e)
     }
+  }
 
   private fun buildGenerateContentRequest(
     prompt: List<Content>,

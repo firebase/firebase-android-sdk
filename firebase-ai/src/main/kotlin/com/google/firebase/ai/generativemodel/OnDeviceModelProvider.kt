@@ -39,21 +39,33 @@ import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 
+/**
+ * Implementation of [GenerativeModelProvider] that delegates to an on-device generative model.
+ *
+ * This provider handles the conversion between Firebase AI types and the underlying on-device
+ * model types, as well as error handling and availability checks.
+ *
+ * @property onDeviceModel The underlying on-device model to use for generation.
+ * @property onDeviceConfig Configuration options for the on-device model.
+ */
 internal class OnDeviceModelProvider(
   private val onDeviceModel: OnDeviceGenerativeModel,
   private val onDeviceConfig: OnDeviceConfig
 ) : GenerativeModelProvider {
 
-  override suspend fun generateContent(prompt: List<Content>): GenerateContentResponse {
-    if (!onDeviceModel.isAvailable()) {
-      throw FirebaseAIException.from(
-        FirebaseAIOnDeviceNotAvailableException("On-device model is not available")
-      )
-    }
+  /**
+   * Generates content based on the given prompt.
+   *
+   * @param prompt The list of content parts to use as the prompt.
+   * @return The generated response.
+   * @throws FirebaseAIException If the on-device model is unavailable or if generation fails.
+   */
+  override suspend fun generateContent(prompt: List<Content>): GenerateContentResponse =
+    withFirebaseAIExceptionHandling {
+      ensureOnDeviceModelAvailable()
 
-    val request = buildOnDeviceGenerateContentRequest(prompt)
+      val request = buildOnDeviceGenerateContentRequest(prompt)
 
-    return try {
       val response = onDeviceModel.generateContent(request)
       GenerateContentResponse(
         response.candidates.map { Candidate.fromInterop(it) },
@@ -61,28 +73,35 @@ internal class OnDeviceModelProvider(
         null,
         null
       )
-    } catch (e: Throwable) {
-      throw FirebaseAIException.from(e)
-    }
-  }
-
-  override suspend fun countTokens(prompt: List<Content>): CountTokensResponse {
-    if (!onDeviceModel.isAvailable()) {
-      throw FirebaseAIException.from(
-        FirebaseAIOnDeviceNotAvailableException("On-device model is not available")
-      )
     }
 
-    val request = buildOnDeviceGenerateContentRequest(prompt)
+  /**
+   * Counts the number of tokens in the given prompt.
+   *
+   * @param prompt The list of content parts to count tokens for.
+   * @return The count of tokens.
+   * @throws FirebaseAIException If the on-device model is unavailable or if counting tokens fails.
+   */
+  override suspend fun countTokens(prompt: List<Content>): CountTokensResponse =
+    withFirebaseAIExceptionHandling {
+      if (!onDeviceModel.isAvailable()) {
+        throw FirebaseAIException.from(
+          FirebaseAIOnDeviceNotAvailableException("On-device model is not available")
+        )
+      }
 
-    return try {
+      val request = buildOnDeviceGenerateContentRequest(prompt)
+
       val response = onDeviceModel.countTokens(request)
       CountTokensResponse(response.totalTokens)
-    } catch (e: Throwable) {
-      throw FirebaseAIException.from(e)
     }
-  }
 
+  /**
+   * Generates a stream of content based on the given prompt.
+   *
+   * @param prompt The list of content parts to use as the prompt.
+   * @return A flow of generated responses.
+   */
   override fun generateContentStream(prompt: List<Content>): Flow<GenerateContentResponse> = flow {
     if (!onDeviceModel.isAvailable()) {
       throw FirebaseAIException.from(
@@ -107,6 +126,16 @@ internal class OnDeviceModelProvider(
     )
   }
 
+  /**
+   * Generates a structured object based on the given prompt and schema.
+   *
+   * Note: This is currently not supported for on-device models.
+   *
+   * @param jsonSchema The schema defining the structure of the output.
+   * @param prompt The list of content parts to use as the prompt.
+   * @return The generated object response.
+   * @throws FirebaseAIException Always throws as this feature is not supported.
+   */
   override suspend fun <T : Any> generateObject(
     jsonSchema: JsonSchema<T>,
     prompt: List<Content>
@@ -114,6 +143,22 @@ internal class OnDeviceModelProvider(
     throw FirebaseAIException.from(
       IllegalArgumentException("On-device mode is not supported for `generateObject`")
     )
+  }
+
+  private suspend fun <T> withFirebaseAIExceptionHandling(block: suspend () -> T): T {
+    try {
+      return block()
+    } catch (e: Throwable) {
+      throw FirebaseAIException.from(e)
+    }
+  }
+
+  private suspend fun ensureOnDeviceModelAvailable() {
+    if (!onDeviceModel.isAvailable()) {
+      throw FirebaseAIException.from(
+        FirebaseAIOnDeviceNotAvailableException("On-device model is not available")
+      )
+    }
   }
 
   private fun buildOnDeviceGenerateContentRequest(
