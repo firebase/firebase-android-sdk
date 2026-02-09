@@ -70,12 +70,21 @@ import com.google.firebase.firestore.pipeline.AggregateOptions;
 import com.google.firebase.firestore.pipeline.AggregateStage;
 import com.google.firebase.firestore.pipeline.CollectionHints;
 import com.google.firebase.firestore.pipeline.CollectionSourceOptions;
+import com.google.firebase.firestore.pipeline.ConflictResolution;
+import com.google.firebase.firestore.pipeline.DeleteOptions;
+import com.google.firebase.firestore.pipeline.DeleteReturn;
+import com.google.firebase.firestore.pipeline.DeleteStage;
 import com.google.firebase.firestore.pipeline.Expression;
 import com.google.firebase.firestore.pipeline.Field;
 import com.google.firebase.firestore.pipeline.FindNearestOptions;
 import com.google.firebase.firestore.pipeline.FindNearestStage;
+import com.google.firebase.firestore.pipeline.InsertOptions;
+import com.google.firebase.firestore.pipeline.InsertStage;
 import com.google.firebase.firestore.pipeline.RawStage;
 import com.google.firebase.firestore.pipeline.UnnestOptions;
+import com.google.firebase.firestore.pipeline.UpsertOptions;
+import com.google.firebase.firestore.pipeline.UpsertReturn;
+import com.google.firebase.firestore.pipeline.UpsertStage;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
 import java.util.Calendar;
 import java.util.Collections;
@@ -2429,6 +2438,92 @@ public class PipelineTest {
                   .execute();
             });
     assertThat(exception.getMessage()).contains("Duplicate alias: 'dup'");
+  }
+
+  @Test
+  public void testDelete() {
+    firestore
+        .pipeline()
+        .collection(randomCol)
+        .where(equal("title", "The Hitchhiker's Guide to the Galaxy"))
+        .delete()
+        .execute();
+
+    firestore
+        .pipeline()
+        .collection(randomCol)
+        .where(equal("title", "The Hitchhiker's Guide to the Galaxy"))
+        .delete(
+            new DeleteStage().withReturns(DeleteReturn.DOCUMENT_ID),
+            new DeleteOptions().withTransactional(true).with("batch_size", 42))
+        .execute();
+  }
+
+  @Test
+  public void testUpsert() {
+    // Upsert inplace without any transformations, essentially noop.
+    firestore.pipeline().collection(randomCol).upsert().execute();
+
+    // Backup the collection
+    firestore
+        .pipeline()
+        .collection(randomCol)
+        .upsert(firestore.collection("books_backup"))
+        .execute();
+
+    firestore
+        .pipeline()
+        .collection(randomCol)
+        .where(equal("title", "The Hitchhiker's Guide to the Galaxy"))
+        // Note, this new field will get upserted into target collections as well
+        .addFields(currentTimestamp().alias("timestamp"))
+        .upsert(
+            UpsertStage.withCollection(firestore.collection("books_backup"))
+                .withTransformations(
+                    // Nulls out existing rating field
+                    nullValue().alias("rating"),
+                    // Replace title with its uppercase string
+                    field("title").toUpper().alias("title"),
+                    // Create a new field timestamp_seconds
+                    field("timestamp").timestampToUnixSeconds().alias("timestamp_seconds"))
+                .withReturns(UpsertReturn.DOCUMENT_ID),
+            new UpsertOptions()
+                .withTransactional(true)
+                .withConflictResolution(ConflictResolution.MERGE)
+                .with("batch_size", 42))
+        .execute();
+  }
+
+  @Test
+  public void testInsert() {
+    // COMPILATION error, insert has to have a target collection
+    // firestore.pipeline().collection(randomCol).insert().execute();
+
+    // Backup the collection
+    firestore
+        .pipeline()
+        .collection(randomCol)
+        .insert(firestore.collection("books_backup"))
+        .execute();
+
+    firestore
+        .pipeline()
+        .collection(randomCol)
+        .where(equal("title", "The Hitchhiker's Guide to the Galaxy"))
+        // Note, this new field will get inserted into target collections as well
+        .addFields(currentTimestamp().alias("timestamp"))
+        .insert(
+            InsertStage.withCollection(firestore.collection("books_backup"))
+                .withTransformations(
+                    // Nulls out existing rating field
+                    nullValue().alias("rating"),
+                    // Replace title with its uppercase string
+                    field("title").toUpper().alias("title"),
+                    // Create a new field timestamp_seconds
+                    field("timestamp").timestampToUnixSeconds().alias("timestamp_seconds"))
+                .withReturns(UpsertReturn.DOCUMENT_ID),
+            new InsertOptions().withTransactional(true).with("batch_size", 42))
+        .execute();
   }
 
   static <T> Map.Entry<String, T> entry(String key, T value) {

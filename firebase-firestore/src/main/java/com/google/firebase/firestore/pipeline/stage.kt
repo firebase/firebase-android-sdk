@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.pipeline
 
+import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.UserDataReader
 import com.google.firebase.firestore.VectorValue
 import com.google.firebase.firestore.model.Document
@@ -1306,5 +1307,119 @@ class UnnestOptions private constructor(options: InternalOptions) :
 
   public override fun self(options: InternalOptions): UnnestOptions {
     return UnnestOptions(options)
+  }
+}
+
+enum class DeleteReturn {
+  EMPTY,
+  DOCUMENT_ID
+}
+
+abstract class WriteOptions<T : AbstractOptions<T>>(options: InternalOptions) :
+  AbstractOptions<T>(options) {
+  /** Creates a new, empty `UnnestOptions` object. */
+  internal constructor() : this(InternalOptions.EMPTY)
+
+  fun withTransactional(boolean: Boolean): T {
+    TODO("Not yet implemented")
+  }
+}
+
+class DeleteStage internal constructor(options: InternalOptions = InternalOptions.EMPTY) :
+  Stage<DeleteStage>("delete", options) {
+  companion object {
+    @JvmStatic fun withReturns(returns: DeleteReturn) = DeleteStage()
+  }
+  override fun self(options: InternalOptions) = DeleteStage(options)
+  override fun canonicalId(): String {
+    TODO("Not yet implemented")
+  }
+
+  override fun args(userDataReader: UserDataReader): Sequence<Value> = sequenceOf()
+}
+
+class DeleteOptions private constructor(options: InternalOptions) :
+  WriteOptions<DeleteOptions>(options) {
+  /** Creates a new, empty `UnnestOptions` object. */
+  constructor() : this(InternalOptions.EMPTY)
+
+  public override fun self(options: InternalOptions): DeleteOptions {
+    return DeleteOptions(options)
+  }
+}
+
+enum class UpsertReturn {
+  EMPTY,
+  DOCUMENT_ID
+}
+
+class UpsertStage internal constructor(options: InternalOptions = InternalOptions.EMPTY) :
+  Stage<UpsertStage>("upsert", options) {
+  companion object {
+    @JvmStatic
+    fun withCollection(target: CollectionReference): UpsertStage {
+      TODO("Not yet implemented")
+    }
+  }
+  override fun self(options: InternalOptions) = UpsertStage(options)
+  override fun canonicalId(): String {
+    TODO("Not yet implemented")
+  }
+
+  override fun args(userDataReader: UserDataReader): Sequence<Value> = sequenceOf()
+  fun withReturns(returns: UpsertReturn) = UpsertStage()
+  fun withTransformations(vararg transformations: Selectable): UpsertStage {
+    TODO("Not yet implemented")
+  }
+}
+
+enum class ConflictResolution {
+  OVERWRITE,
+  MERGE,
+  FAIL,
+  KEEP
+}
+
+class UpsertOptions private constructor(options: InternalOptions) :
+  WriteOptions<UpsertOptions>(options) {
+  /** Creates a new, empty `UnnestOptions` object. */
+  constructor() : this(InternalOptions.EMPTY)
+
+  public override fun self(options: InternalOptions): UpsertOptions {
+    return UpsertOptions(options)
+  }
+
+  fun withConflictResolution(resolution: ConflictResolution): UpsertOptions {
+    TODO("Not yet implemented")
+  }
+}
+
+class InsertStage internal constructor(options: InternalOptions = InternalOptions.EMPTY) :
+  Stage<InsertStage>("insert", options) {
+  companion object {
+    @JvmStatic
+    fun withCollection(target: CollectionReference): InsertStage {
+      TODO("Not yet implemented")
+    }
+  }
+  override fun self(options: InternalOptions) = InsertStage(options)
+  override fun canonicalId(): String {
+    TODO("Not yet implemented")
+  }
+
+  override fun args(userDataReader: UserDataReader): Sequence<Value> = sequenceOf()
+  fun withReturns(returns: UpsertReturn) = InsertStage()
+  fun withTransformations(vararg transformations: Selectable): InsertStage {
+    TODO("Not yet implemented")
+  }
+}
+
+class InsertOptions private constructor(options: InternalOptions) :
+  WriteOptions<InsertOptions>(options) {
+  /** Creates a new, empty `UnnestOptions` object. */
+  constructor() : this(InternalOptions.EMPTY)
+
+  public override fun self(options: InternalOptions): InsertOptions {
+    return InsertOptions(options)
   }
 }
