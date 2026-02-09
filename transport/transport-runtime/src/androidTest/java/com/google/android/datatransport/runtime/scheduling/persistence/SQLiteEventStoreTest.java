@@ -177,9 +177,7 @@ public class SQLiteEventStoreTest {
     Iterator<PersistedEvent> iterator = events.iterator();
     PersistedEvent firstEvent = iterator.hasNext() ? iterator.next() : null;
     assertThat(
-            new String(
-                firstEvent.getEvent().getExperimentIdsEncrypted(),
-                StandardCharsets.UTF_8))
+            new String(firstEvent.getEvent().getExperimentIdsEncrypted(), StandardCharsets.UTF_8))
         .isEqualTo("encrypted blob");
   }
 
