@@ -35,6 +35,8 @@ import com.google.firebase.ai.type.JsonSchema
 import com.google.firebase.ai.type.TextPart
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 
 internal class OnDeviceModelProvider(
@@ -81,21 +83,28 @@ internal class OnDeviceModelProvider(
     }
   }
 
-  override fun generateContentStream(prompt: List<Content>): Flow<GenerateContentResponse> {
-    // TODO: check whether the device is available or not (suspend function)
+  override fun generateContentStream(prompt: List<Content>): Flow<GenerateContentResponse> = flow {
+    if (!onDeviceModel.isAvailable()) {
+      throw FirebaseAIException.from(
+        FirebaseAIOnDeviceNotAvailableException("On-device model is not available")
+      )
+    }
+
     val request = buildOnDeviceGenerateContentRequest(prompt)
 
-    return onDeviceModel
-      .generateContentStream(request)
-      .catch { throw FirebaseAIException.from(it) }
-      .map {
-        GenerateContentResponse(
-          it.candidates.map { candidate -> Candidate.fromInterop(candidate) },
-          InferenceSource.ON_DEVICE,
-          null,
-          null
-        )
-      }
+    emitAll(
+      onDeviceModel
+        .generateContentStream(request)
+        .catch { throw FirebaseAIException.from(it) }
+        .map {
+          GenerateContentResponse(
+            it.candidates.map { candidate -> Candidate.fromInterop(candidate) },
+            InferenceSource.ON_DEVICE,
+            null,
+            null
+          )
+        }
+    )
   }
 
   override suspend fun <T : Any> generateObject(
@@ -151,7 +160,7 @@ internal class OnDeviceModelProvider(
       temperature = onDeviceConfig.temperature,
       topK = onDeviceConfig.topK,
       seed = onDeviceConfig.seed,
-      candidateCount = 1, // TODO: Add candidate count to config
+      candidateCount = onDeviceConfig.candidateCount,
       maxOutputTokens = onDeviceConfig.maxOutputTokens
     )
   }
