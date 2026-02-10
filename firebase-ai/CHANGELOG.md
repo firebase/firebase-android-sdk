@@ -1,5 +1,6 @@
 # Unreleased
 
+- [feature] Added automatic function calling support with `AutoFunctionDeclaration`.
 - [feature] Added no-argument overloads for `Tool.urlContext()` and `Tool.googleSearch()`.
 
 # 17.9.0
