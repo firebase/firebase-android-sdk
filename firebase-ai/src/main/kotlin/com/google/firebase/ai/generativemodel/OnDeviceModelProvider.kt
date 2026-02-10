@@ -42,8 +42,8 @@ import kotlinx.coroutines.flow.map
 /**
  * Implementation of [GenerativeModelProvider] that delegates to an on-device generative model.
  *
- * This provider handles the conversion between Firebase AI types and the underlying on-device
- * model types, as well as error handling and availability checks.
+ * This provider handles the conversion between Firebase AI types and the underlying on-device model
+ * types, as well as error handling and availability checks.
  *
  * @property onDeviceModel The underlying on-device model to use for generation.
  * @property onDeviceConfig Configuration options for the on-device model.
