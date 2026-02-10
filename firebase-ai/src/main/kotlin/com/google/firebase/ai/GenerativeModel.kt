@@ -232,6 +232,13 @@ internal constructor(
   public suspend fun countTokens(prompt: Bitmap): CountTokensResponse =
     countTokens(listOf(content { image(prompt) }))
 
+  /**
+   * Warms up the model to reduce latency for the first request.
+   *
+   * @throws [FirebaseAIException] if the warmup failed.
+   */
+  public suspend fun warmup(): Unit = actualModel.warmup()
+
   internal fun hasFunction(call: FunctionCallPart): Boolean {
     return tools
       ?.flatMap { it.autoFunctionDeclarations?.filterNotNull() ?: emptyList() }

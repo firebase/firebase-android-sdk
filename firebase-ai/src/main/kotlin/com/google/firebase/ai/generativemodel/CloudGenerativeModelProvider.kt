@@ -80,6 +80,10 @@ internal class CloudGenerativeModelProvider(
     GenerateObjectResponse(controller.generateContent(request).toPublic().validate(), jsonSchema)
   }
 
+  override suspend fun warmup() {
+    // No-op for cloud models
+  }
+
   private suspend fun <T> withFirebaseAIExceptionHandling(block: suspend () -> T): T {
     try {
       return block()

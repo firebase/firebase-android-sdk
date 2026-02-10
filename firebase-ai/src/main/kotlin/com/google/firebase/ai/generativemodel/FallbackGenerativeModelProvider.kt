@@ -68,6 +68,17 @@ internal class FallbackGenerativeModelProvider(
     return withFallback("generateObject") { generateObject(jsonSchema, prompt) }
   }
 
+  // Unlike other fallback methods, `warmup` explicitly checks for an instance of ondevice model
+  // so it's warmed up. Relying on fallback would be brittle as the fallback model could not
+  // implement warmup at all.
+  override suspend fun warmup() {
+    if (defaultModel is OnDeviceGenerativeModelProvider) {
+      defaultModel.warmup()
+    } else {
+      fallbackModel.warmup()
+    }
+  }
+
   private inline fun <T> withFallback(
     methodName: String,
     block: GenerativeModelProvider.() -> T

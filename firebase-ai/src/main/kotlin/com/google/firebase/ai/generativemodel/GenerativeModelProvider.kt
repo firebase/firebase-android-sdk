@@ -39,4 +39,6 @@ internal interface GenerativeModelProvider {
     jsonSchema: JsonSchema<T>,
     prompt: List<Content>
   ): GenerateObjectResponse<T>
+
+  suspend fun warmup()
 }

@@ -53,4 +53,8 @@ internal class MissingOnDeviceGenerativeModelProvider : GenerativeModelProvider 
       FirebaseAIOnDeviceNotAvailableException("On-device model is not available")
     )
   }
+
+  override suspend fun warmup() {
+    // No-op as the model is missing
+  }
 }
