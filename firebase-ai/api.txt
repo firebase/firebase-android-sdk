@@ -1702,4 +1702,3 @@ package com.google.firebase.ai.type {
   }
 
 }
-
