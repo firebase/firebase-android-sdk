@@ -103,7 +103,8 @@ internal class FallbackGenerativeModelProviderTests {
 
   @Test
   fun `generateContent rethrows non-FirebaseAIException`() = runBlocking {
-    coEvery { defaultModel.generateContent(prompt) } throws IllegalArgumentException("critical error")
+    coEvery { defaultModel.generateContent(prompt) } throws
+      IllegalArgumentException("critical error")
 
     val provider = FallbackGenerativeModelProvider(defaultModel, fallbackModel)
 
