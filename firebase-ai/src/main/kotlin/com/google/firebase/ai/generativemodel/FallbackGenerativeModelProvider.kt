@@ -75,7 +75,7 @@ internal class FallbackGenerativeModelProvider(
     if (!precondition()) {
       Log.w(
         TAG,
-        "Precondition was not met, switching to fallback model `${fallbackModel::javaClass.name}`"
+        "Precondition was not met, switching to fallback model `${fallbackModel.javaClass.simpleName}`"
       )
       return fallbackModel.block()
     }
@@ -85,7 +85,7 @@ internal class FallbackGenerativeModelProvider(
       if (shouldFallbackInException) {
         Log.w(
           TAG,
-          "Error running `$methodName` using on `${defaultModel::javaClass.name}`. Switching to `${fallbackModel::javaClass.name}`",
+          "Error running `$methodName` on `${defaultModel.javaClass.simpleName}`. Falling back to `${fallbackModel.javaClass.simpleName}`",
           e
         )
         return fallbackModel.block()
