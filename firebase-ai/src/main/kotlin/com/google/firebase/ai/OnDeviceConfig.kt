@@ -28,6 +28,8 @@ package com.google.firebase.ai
  * [GenerationConfig] for more detail.
  * @property seed The seed to use for generation to ensure reproducibility. See [GenerationConfig]
  * for more detail.
+ * @property candidateCount The number of generated responses to return. See [GenerationConfig] for
+ * more detail. By default it's set to 1.
  */
 public class OnDeviceConfig
 @JvmOverloads
@@ -36,7 +38,8 @@ constructor(
   public val maxOutputTokens: Int? = null,
   public val temperature: Float? = null,
   public val topK: Int? = null,
-  public val seed: Int? = null
+  public val seed: Int? = null,
+  public val candidateCount: Int = 1
 ) {
 
   public companion object {

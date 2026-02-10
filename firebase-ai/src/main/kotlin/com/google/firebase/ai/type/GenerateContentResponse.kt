@@ -29,7 +29,7 @@ import kotlinx.serialization.Serializable
  * @property inferenceSource The source of the inference for this response.
  */
 public class GenerateContentResponse
-private constructor(
+internal constructor(
   public val candidates: List<Candidate>,
   public val inferenceSource: InferenceSource,
   public val promptFeedback: PromptFeedback?,
