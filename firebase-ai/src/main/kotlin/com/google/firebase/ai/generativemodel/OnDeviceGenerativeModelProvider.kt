@@ -145,6 +145,18 @@ internal class OnDeviceGenerativeModelProvider(
     )
   }
 
+  /**
+   * Warms up the on-device model to reduce latency for the first request.
+   *
+   * @throws FirebaseAIException If the on-device model is unavailable or if warmup fails.
+   */
+  override suspend fun warmUp() {
+    withFirebaseAIExceptionHandling {
+      ensureOnDeviceModelAvailable()
+      onDeviceModel.warmup()
+    }
+  }
+
   private suspend fun <T> withFirebaseAIExceptionHandling(block: suspend () -> T): T {
     try {
       return block()

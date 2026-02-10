@@ -68,6 +68,13 @@ internal class FallbackGenerativeModelProvider(
     return withFallback("generateObject") { generateObject(jsonSchema, prompt) }
   }
 
+  // Calling warmup in both `defaultModel` and `fallbackModel` is necessary as it's only meaningful
+  // for on-device model. It's a no-op for cloud models.
+  override suspend fun warmUp() {
+    defaultModel.warmUp()
+    fallbackModel.warmUp()
+  }
+
   private inline fun <T> withFallback(
     methodName: String,
     block: GenerativeModelProvider.() -> T
