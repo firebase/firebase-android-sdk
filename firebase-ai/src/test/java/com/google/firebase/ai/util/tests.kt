@@ -379,12 +379,12 @@ internal fun goldenUnaryFile(
 /**
  * A variant of [commonTest] for performing snapshot tests.
  *
- * Loads the *Golden File* and automatically provides it to the channel.
+ * Loads *Golden Files* and automatically provides them to the channel in sequence.
  *
  * @param responses the names and status codes of the responses in order
  * @param requestOptions An optional set of [RequestOptions] to use
  * @param block The test contents themselves, with a [CommonTestScope] implicitly provided
- * @see goldenStreamingFile
+ * @see goldenUnaryFile
  */
 internal fun goldenVertexUnaryFiles(
   responses: List<ResponseInfo>,
