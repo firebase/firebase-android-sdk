@@ -54,7 +54,7 @@ internal class MissingOnDeviceGenerativeModelProvider : GenerativeModelProvider 
     )
   }
 
-  override suspend fun warmup() {
+  override suspend fun warmUp() {
     // No-op as the model is missing
   }
 }
