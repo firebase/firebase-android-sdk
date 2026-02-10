@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.firebase.ai.generativeModel
+package com.google.firebase.ai.generativemodel
 
 import com.google.firebase.ai.generativemodel.FallbackGenerativeModelProvider
 import com.google.firebase.ai.generativemodel.GenerativeModelProvider
