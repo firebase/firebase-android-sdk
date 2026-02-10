@@ -77,7 +77,7 @@ package com.google.firebase.ai {
     method public suspend <T> Object? generateObject(com.google.firebase.ai.type.JsonSchema<T> jsonSchema, com.google.firebase.ai.type.Content prompt, com.google.firebase.ai.type.Content[] prompts, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.GenerateObjectResponse<T>>);
     method public suspend <T> Object? generateObject(com.google.firebase.ai.type.JsonSchema<T> jsonSchema, String prompt, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.GenerateObjectResponse<T>>);
     method public com.google.firebase.ai.Chat startChat(java.util.List<com.google.firebase.ai.type.Content> history = emptyList());
-    method public suspend Object? warmup(kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public suspend Object? warmUp(kotlin.coroutines.Continuation<? super kotlin.Unit>);
   }
 
   public final class ImagenModel {
