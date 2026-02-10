@@ -49,12 +49,8 @@ internal class OnDeviceGenerativeModelProviderTests {
   @Before
   fun setup() {
     onDeviceModel = mockk<OnDeviceGenerativeModel>()
-    onDeviceConfig = OnDeviceConfig(
-      mode = InferenceMode.ONLY_ON_DEVICE,
-      temperature = 0.5f,
-      topK = 40,
-      seed = 123
-    )
+    onDeviceConfig =
+      OnDeviceConfig(mode = InferenceMode.ONLY_ON_DEVICE, temperature = 0.5f, topK = 40, seed = 123)
     provider = OnDeviceGenerativeModelProvider(onDeviceModel, onDeviceConfig)
   }
 
@@ -62,18 +58,17 @@ internal class OnDeviceGenerativeModelProviderTests {
   fun `generateContent throws when model is not available`(): Unit = runBlocking {
     coEvery { onDeviceModel.isAvailable() } returns false
 
-    val exception = shouldThrow<FirebaseAIException> {
-      provider.generateContent(prompt)
-    }
+    val exception = shouldThrow<FirebaseAIException> { provider.generateContent(prompt) }
     exception.cause!!::class shouldBe FirebaseAIOnDeviceNotAvailableException::class
   }
 
   @Test
   fun `generateContent returns response when successful`(): Unit = runBlocking {
     coEvery { onDeviceModel.isAvailable() } returns true
-    val onDeviceResponse = OnDeviceGenerateContentResponse(
-      listOf(OnDeviceCandidate("generated text", OnDeviceFinishReason.STOP))
-    )
+    val onDeviceResponse =
+      OnDeviceGenerateContentResponse(
+        listOf(OnDeviceCandidate("generated text", OnDeviceFinishReason.STOP))
+      )
     coEvery { onDeviceModel.generateContent(any()) } returns onDeviceResponse
 
     val response = provider.generateContent(prompt)
@@ -96,9 +91,10 @@ internal class OnDeviceGenerativeModelProviderTests {
   @Test
   fun `generateContentStream returns flow when successful`(): Unit = runBlocking {
     coEvery { onDeviceModel.isAvailable() } returns true
-    val onDeviceResponse = OnDeviceGenerateContentResponse(
-      listOf(OnDeviceCandidate("streamed text", OnDeviceFinishReason.STOP))
-    )
+    val onDeviceResponse =
+      OnDeviceGenerateContentResponse(
+        listOf(OnDeviceCandidate("streamed text", OnDeviceFinishReason.STOP))
+      )
     every { onDeviceModel.generateContentStream(any()) } returns flowOf(onDeviceResponse)
 
     val response = provider.generateContentStream(prompt).first()
@@ -111,9 +107,7 @@ internal class OnDeviceGenerativeModelProviderTests {
   fun `generateObject always throws FirebaseAIException`(): Unit = runBlocking {
     val schema = mockk<JsonSchema<Any>>()
 
-    val exception = shouldThrow<FirebaseAIException> {
-      provider.generateObject(schema, prompt)
-    }
+    val exception = shouldThrow<FirebaseAIException> { provider.generateObject(schema, prompt) }
     exception.cause!!::class shouldBe IllegalArgumentException::class
   }
 
@@ -121,9 +115,7 @@ internal class OnDeviceGenerativeModelProviderTests {
   fun `generateContent throws when prompt is empty`(): Unit = runBlocking {
     coEvery { onDeviceModel.isAvailable() } returns true
 
-    val exception = shouldThrow<FirebaseAIException> {
-      provider.generateContent(emptyList())
-    }
+    val exception = shouldThrow<FirebaseAIException> { provider.generateContent(emptyList()) }
     exception.cause!!::class shouldBe IllegalArgumentException::class
   }
 
@@ -132,9 +124,7 @@ internal class OnDeviceGenerativeModelProviderTests {
     coEvery { onDeviceModel.isAvailable() } returns true
     val promptNoText = listOf(Content(parts = emptyList()))
 
-    val exception = shouldThrow<FirebaseAIException> {
-      provider.generateContent(promptNoText)
-    }
+    val exception = shouldThrow<FirebaseAIException> { provider.generateContent(promptNoText) }
     exception.cause!!::class shouldBe IllegalArgumentException::class
   }
 }

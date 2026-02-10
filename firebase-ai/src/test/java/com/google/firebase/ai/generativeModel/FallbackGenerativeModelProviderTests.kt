@@ -16,8 +16,6 @@
 
 package com.google.firebase.ai.generativemodel
 
-import com.google.firebase.ai.generativemodel.FallbackGenerativeModelProvider
-import com.google.firebase.ai.generativemodel.GenerativeModelProvider
 import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.CountTokensResponse
 import com.google.firebase.ai.type.FirebaseAIException
@@ -64,11 +62,8 @@ internal class FallbackGenerativeModelProviderTests {
     val expectedResponse: GenerateContentResponse = mockk()
     coEvery { fallbackModel.generateContent(prompt) } returns expectedResponse
 
-    val provider = FallbackGenerativeModelProvider(
-      defaultModel,
-      fallbackModel,
-      precondition = { false }
-    )
+    val provider =
+      FallbackGenerativeModelProvider(defaultModel, fallbackModel, precondition = { false })
     val response = provider.generateContent(prompt)
 
     response shouldBe expectedResponse
@@ -95,15 +90,14 @@ internal class FallbackGenerativeModelProviderTests {
     val exception = mockk<FirebaseAIException>()
     coEvery { defaultModel.generateContent(prompt) } throws exception
 
-    val provider = FallbackGenerativeModelProvider(
-      defaultModel,
-      fallbackModel,
-      shouldFallbackInException = false
-    )
+    val provider =
+      FallbackGenerativeModelProvider(
+        defaultModel,
+        fallbackModel,
+        shouldFallbackInException = false
+      )
 
-    shouldThrow<FirebaseAIException> {
-      provider.generateContent(prompt)
-    }
+    shouldThrow<FirebaseAIException> { provider.generateContent(prompt) }
     coVerify(exactly = 0) { fallbackModel.generateContent(any()) }
   }
 
@@ -113,9 +107,7 @@ internal class FallbackGenerativeModelProviderTests {
 
     val provider = FallbackGenerativeModelProvider(defaultModel, fallbackModel)
 
-    shouldThrow<RuntimeException> {
-      provider.generateContent(prompt)
-    }
+    shouldThrow<RuntimeException> { provider.generateContent(prompt) }
     coVerify(exactly = 0) { fallbackModel.generateContent(any()) }
   }
 
@@ -134,19 +126,20 @@ internal class FallbackGenerativeModelProviderTests {
   }
 
   @Test
-  fun `generateContentStream falls back when default model throws FirebaseAIException`() = runBlocking {
-    val expectedResponse: GenerateContentResponse = mockk()
-    val fallbackFlow = flowOf(expectedResponse)
-    val exception = mockk<FirebaseAIException>()
-    every { defaultModel.generateContentStream(prompt) } throws exception
-    every { fallbackModel.generateContentStream(prompt) } returns fallbackFlow
+  fun `generateContentStream falls back when default model throws FirebaseAIException`() =
+    runBlocking {
+      val expectedResponse: GenerateContentResponse = mockk()
+      val fallbackFlow = flowOf(expectedResponse)
+      val exception = mockk<FirebaseAIException>()
+      every { defaultModel.generateContentStream(prompt) } throws exception
+      every { fallbackModel.generateContentStream(prompt) } returns fallbackFlow
 
-    val provider = FallbackGenerativeModelProvider(defaultModel, fallbackModel)
-    val responseFlow = provider.generateContentStream(prompt)
+      val provider = FallbackGenerativeModelProvider(defaultModel, fallbackModel)
+      val responseFlow = provider.generateContentStream(prompt)
 
-    responseFlow shouldBe fallbackFlow
-    verify { fallbackModel.generateContentStream(prompt) }
-  }
+      responseFlow shouldBe fallbackFlow
+      verify { fallbackModel.generateContentStream(prompt) }
+    }
 
   @Test
   fun `generateObject falls back when default model throws FirebaseAIException`() = runBlocking {
