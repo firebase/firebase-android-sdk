@@ -78,11 +78,11 @@ class TestGradleProject : ExternalResource() {
   /** Writes the `service-credentials.json` file for the test project. */
   @Throws(IOException::class)
   internal fun writeServiceCredentialsFile() {
-    val credentialsPath = System.getProperty("credentials_path")
-      ?: throw IllegalStateException("System property 'credentials_path' not found. Please add 'credentials_path' to your local.properties file.")
-    val sourceFile = File(credentialsPath)
+    val sourceFile = File(SERVICE_CREDENTIALS_PATH)
     if (!sourceFile.exists()) {
-       throw IllegalStateException("Credentials file at '$credentialsPath' does not exist.")
+      throw IllegalStateException(
+        "Credentials file at '${sourceFile.absolutePath}' does not exist."
+      )
     }
     FileUtils.copyFile(sourceFile, serviceCredentialsFile)
   }
@@ -181,6 +181,7 @@ class TestGradleProject : ExternalResource() {
     private const val DEFAULT_PROJECT_NUMBER = "123"
     private const val DEFAULT_APP_ID = "1:123:android:deadbeef"
     private const val DEFAULT_PACKAGE_NAME = "firebase.app.distribution.plugin.test"
+    private const val SERVICE_CREDENTIALS_PATH = "test-credentials.json"
 
     /** Utility function to write the String `content` in the specified File `destination`. */
     @JvmStatic

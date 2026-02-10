@@ -27,10 +27,19 @@ To run integration tests, run:
 
 `./gradlew :firebase-appdistribution-gradle:integrationTest`
 
-> **Note:** Integration tests require a valid service account private key to be set in `local.properties`:
+Integration tests require a valid service account private key,
+app ID, and project number to be set in `local.properties`, for example:
+
 > ```properties
-> credentials_path=firebase-appdistribution-gradle/test-credentials.json
+> firebase.appId=1:1234567890:android:1234567890
+> firebase.projectNumber=1234567890
 > ```
+
+Integration tests also require a service-credentials.json file to the firebase-appdistribution-gradle folder. To create that file:
+
+- In the Google cloud dashboard, navigate to `IAM & Admin`. From `IAM & Admin` navigate to `Service Accounts`. In Service Accounts, ensure you have an account that is allowed to run.
+  - If you do not, click "Create Service Account", select a name and id of your choosing (e.g., `FAD Gradle Tests` and `fad-gradle-tests`), then Select Firebase App Distribution Admin as a permission for the account.
+  - Once you have a service account, click it to edit it, then navigate to the "keys" header inside the service account. From there, click "Add key", "Create New Key", and select JSON as the key type. Save this file to your firebase app distribution gradle plugin folder in a name called service-credentials.json
 
 To test manually, add the plugin to your Android project
 

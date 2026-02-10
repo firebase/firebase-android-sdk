@@ -4,7 +4,6 @@ build/
 *.iml
 captures/
 local.properties
-firebase-appdistribution-gradle/test-credentials.json
 google-services.json
 _artifacts
 .DS_Store

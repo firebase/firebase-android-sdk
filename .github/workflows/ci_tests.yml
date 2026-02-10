@@ -60,14 +60,24 @@ jobs:
       - name: Clone ai mock responses
         if: matrix.module == ':firebase-ai'
         run: firebase-ai/update_responses.sh
-
+      - name: Add local.properties (for FAD gradle tests)
+        env:
+          INTEG_TESTS_FAD_LOCAL_PROPERTIES: ${{ secrets.INTEG_TESTS_FAD_LOCAL_PROPERTIES }}
+        if: env.INTEG_TESTS_FAD_LOCAL_PROPERTIES != '' && env.INTEG_TESTS_FAD_LOCAL_PROPERTIES != 'null'
+        run: |
+          echo $INTEG_TESTS_FAD_LOCAL_PROPERTIES | base64 -d > local.properties
+      - name: Add FAD test-credentials.json
+        env:
+          INTEG_TESTS_FAD_SERVICE_CREDENTIALS: ${{ secrets.INTEG_TESTS_FAD_SERVICE_CREDENTIALS }}
+        if: env.INTEG_TESTS_FAD_SERVICE_CREDENTIALS != '' && env.INTEG_TESTS_FAD_SERVICE_CREDENTIALS != 'null'
+        run: |
+          echo $INTEG_TESTS_FAD_SERVICE_CREDENTIALS | base64 -d > firebase-appdistribution-gradle/test-credentials.json
       - name: Add google-services.json
         env:
           INTEG_TESTS_GOOGLE_SERVICES: ${{ secrets.INTEG_TESTS_GOOGLE_SERVICES }}
         if: env.INTEG_TESTS_GOOGLE_SERVICES != '' && env.INTEG_TESTS_GOOGLE_SERVICES != 'null'
         run: |
           echo $INTEG_TESTS_GOOGLE_SERVICES | base64 -d > google-services.json
-
       - name: ${{ matrix.module }} Unit Tests
         env:
           FIREBASE_CI: 1
