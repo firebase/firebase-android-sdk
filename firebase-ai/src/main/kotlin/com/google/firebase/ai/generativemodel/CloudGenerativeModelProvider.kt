@@ -80,7 +80,7 @@ internal class CloudGenerativeModelProvider(
     GenerateObjectResponse(controller.generateContent(request).toPublic().validate(), jsonSchema)
   }
 
-  override suspend fun warmup() {
+  override suspend fun warmUp() {
     // No-op for cloud models
   }
 

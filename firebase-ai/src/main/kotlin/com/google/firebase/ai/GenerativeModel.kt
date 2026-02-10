@@ -240,7 +240,7 @@ internal constructor(
    *
    * @throws [FirebaseAIException] if the warmup failed.
    */
-  public suspend fun warmup(): Unit = actualModel.warmup()
+  public suspend fun warmUp(): Unit = actualModel.warmUp()
 
   internal fun hasFunction(call: FunctionCallPart): Boolean {
     return tools
