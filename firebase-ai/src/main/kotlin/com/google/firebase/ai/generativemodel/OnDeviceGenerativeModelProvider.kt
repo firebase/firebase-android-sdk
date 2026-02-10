@@ -150,7 +150,7 @@ internal class OnDeviceGenerativeModelProvider(
    *
    * @throws FirebaseAIException If the on-device model is unavailable or if warmup fails.
    */
-  override suspend fun warmup() {
+  override suspend fun warmUp() {
     withFirebaseAIExceptionHandling {
       ensureOnDeviceModelAvailable()
       onDeviceModel.warmup()

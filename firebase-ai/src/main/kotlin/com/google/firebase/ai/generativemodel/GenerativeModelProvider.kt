@@ -40,5 +40,5 @@ internal interface GenerativeModelProvider {
     prompt: List<Content>
   ): GenerateObjectResponse<T>
 
-  suspend fun warmup()
+  suspend fun warmUp()
 }
