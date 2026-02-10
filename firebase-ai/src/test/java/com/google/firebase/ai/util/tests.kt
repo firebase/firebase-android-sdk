@@ -276,7 +276,7 @@ internal fun goldenVertexStreamingFile(
 /**
  * A variant of [goldenStreamingFile] for testing vertexAI
  *
- * Loads the *Golden File* and automatically parses the messages from it; providing it to the
+ * Loads *Golden Files* and automatically parses the messages from them, providing them to the
  * channel.
  *
  * @param responses the names and status codes of the responses in order
