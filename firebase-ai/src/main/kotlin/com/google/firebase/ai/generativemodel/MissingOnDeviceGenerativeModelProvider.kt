@@ -26,7 +26,7 @@ import com.google.firebase.ai.type.JsonSchema
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
-internal class MissingOnDeviceModelProvider : GenerativeModelProvider {
+internal class MissingOnDeviceGenerativeModelProvider : GenerativeModelProvider {
   override suspend fun generateContent(prompt: List<Content>): GenerateContentResponse {
     throw FirebaseAIException.from(
       FirebaseAIOnDeviceNotAvailableException("On-device model is not available")

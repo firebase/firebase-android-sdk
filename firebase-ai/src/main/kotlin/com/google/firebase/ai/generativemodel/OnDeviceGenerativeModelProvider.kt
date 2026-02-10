@@ -48,7 +48,7 @@ import kotlinx.coroutines.flow.map
  * @property onDeviceModel The underlying on-device model to use for generation.
  * @property onDeviceConfig Configuration options for the on-device model.
  */
-internal class OnDeviceModelProvider(
+internal class OnDeviceGenerativeModelProvider(
   private val onDeviceModel: OnDeviceGenerativeModel,
   private val onDeviceConfig: OnDeviceConfig
 ) : GenerativeModelProvider {
@@ -211,6 +211,6 @@ internal class OnDeviceModelProvider(
   }
 
   private companion object {
-    private val TAG = OnDeviceModelProvider::class.java.simpleName
+    private val TAG = OnDeviceGenerativeModelProvider::class.java.simpleName
   }
 }
