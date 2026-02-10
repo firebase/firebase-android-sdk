@@ -127,7 +127,7 @@ internal constructor(
           .trimIndent(),
       )
     }
-    return GenerativeModel(
+    return GenerativeModel.create(
       modelName = modelUri,
       apiKey = firebaseApp.options.apiKey,
       firebaseApp = firebaseApp,
