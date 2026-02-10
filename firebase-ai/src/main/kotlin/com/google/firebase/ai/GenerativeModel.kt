@@ -16,7 +16,10 @@
 
 package com.google.firebase.ai
 
+import android.content.Context
 import android.graphics.Bitmap
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import com.google.firebase.FirebaseApp
 import com.google.firebase.ai.common.APIController
 import com.google.firebase.ai.common.AppCheckHeaderProvider
@@ -360,7 +363,11 @@ internal constructor(
             FallbackGenerativeModelProvider(
               defaultModel = cloudModel,
               fallbackModel = onDeviceModel,
-              // TODO: Add check for precondition (network should be available)
+              precondition =
+                NetworkStatusChecker(
+                  firebaseApp.applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE)
+                    as ConnectivityManager
+                )::isDeviceOnline,
               shouldFallbackInException = false
             )
           else -> throw InvalidStateException("Invalid inference mode")
@@ -373,4 +380,13 @@ internal constructor(
       )
     }
   }
+}
+
+internal class NetworkStatusChecker(private val connectivityManager: ConnectivityManager) {
+  fun isDeviceOnline(): Boolean =
+    connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)?.let {
+      it.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
+        it.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+    }
+      ?: false
 }
