@@ -31,6 +31,7 @@ import com.google.firebase.ai.type.JsonSchema
 import com.google.firebase.ai.type.PromptBlockedException
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.QuotaExceededException
+import com.google.firebase.ai.type.RequestOptions
 import com.google.firebase.ai.type.RequestTimeoutException
 import com.google.firebase.ai.type.ResponseStoppedException
 import com.google.firebase.ai.type.SerializationException
@@ -41,9 +42,11 @@ import com.google.firebase.ai.type.Tool
 import com.google.firebase.ai.type.UnsupportedUserLocationException
 import com.google.firebase.ai.type.UrlRetrievalStatus
 import com.google.firebase.ai.util.ResponseInfo
+import com.google.firebase.ai.util.goldenVertexStreamingFiles
 import com.google.firebase.ai.util.goldenVertexUnaryFile
 import com.google.firebase.ai.util.goldenVertexUnaryFiles
 import com.google.firebase.ai.util.shouldNotBeNullOrEmpty
+import io.kotest.assertions.throwables.shouldNotThrow
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.inspectors.forAtLeastOne
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -988,4 +991,124 @@ internal class VertexAIUnarySnapshotTests {
         obj.colors.size shouldBe 5
       }
     }
+
+  @Test
+  fun `auto function call should work with streaming`() {
+    var functionCalled = 0
+    goldenVertexStreamingFiles(
+      responses =
+        listOf(
+            "unary-success-function-call-with-arguments.json",
+            "unary-success-basic-reply-short.json"
+          )
+          .map { ResponseInfo(it) },
+      tools =
+        listOf(
+          Tool.functionDeclarations(
+            autoFunctionDeclarations =
+              listOf(
+                AutoFunctionDeclaration.create("sum", "", sumRequestResponseSchema) {
+                  request: SumRequest ->
+                  functionCalled++
+                  FunctionResponsePart("sum", JsonObject(mapOf()))
+                }
+              )
+          )
+        )
+    ) {
+      withTimeout(testTimeout) {
+        shouldNotThrow<RequestTimeoutException> { model.startChat().sendMessage("") }
+        functionCalled shouldBeEqual 1
+      }
+    }
+  }
+
+  @Test
+  fun `auto function call should hit defined limit and exit`() {
+    val functionCallLimit = 3
+    var functionCalled = 0
+    goldenVertexUnaryFiles(
+      responses =
+        (0 until 20).map { ResponseInfo("unary-success-function-call-with-arguments.json") },
+      requestOptions = RequestOptions(autoFunctionCallingTurnLimit = functionCallLimit),
+      tools =
+        listOf(
+          Tool.functionDeclarations(
+            autoFunctionDeclarations =
+              listOf(
+                AutoFunctionDeclaration.create("sum", "", sumRequestResponseSchema) {
+                  request: SumRequest ->
+                  functionCalled++
+                  FunctionResponsePart("sum", JsonObject(mapOf()))
+                }
+              )
+          )
+        )
+    ) {
+      withTimeout(testTimeout) {
+        shouldThrow<RequestTimeoutException> { model.startChat().sendMessage("") }
+        functionCalled shouldBeEqual functionCallLimit
+      }
+    }
+  }
+
+  @Test
+  fun `auto function call should be able to exceed default limit`() {
+    val functionCallLimit = 200
+    var functionCalled = 0
+    goldenVertexUnaryFiles(
+      responses =
+        (0 until 20).map { ResponseInfo("unary-success-function-call-with-arguments.json") } +
+          ResponseInfo("unary-success-basic-reply-short.json"),
+      requestOptions = RequestOptions(autoFunctionCallingTurnLimit = functionCallLimit),
+      tools =
+        listOf(
+          Tool.functionDeclarations(
+            autoFunctionDeclarations =
+              listOf(
+                AutoFunctionDeclaration.create("sum", "", sumRequestResponseSchema) {
+                  request: SumRequest ->
+                  functionCalled++
+                  FunctionResponsePart("sum", JsonObject(mapOf()))
+                }
+              )
+          )
+        )
+    ) {
+      withTimeout(testTimeout) {
+        shouldNotThrow<RequestTimeoutException> { model.startChat().sendMessage("") }
+        functionCalled shouldBeEqual 20
+      }
+    }
+  }
+
+  @Test
+  fun `auto function call should fail with a limit of 0`() {
+    val functionCallLimit = 0
+    goldenVertexUnaryFiles(
+      responses =
+        listOf(
+            "unary-success-function-call-with-arguments.json",
+            "unary-success-basic-reply-short.json"
+          )
+          .map { ResponseInfo(it) },
+      requestOptions = RequestOptions(autoFunctionCallingTurnLimit = functionCallLimit),
+      tools =
+        listOf(
+          Tool.functionDeclarations(
+            autoFunctionDeclarations =
+              listOf(
+                AutoFunctionDeclaration.create("sum", "", sumRequestResponseSchema) {
+                  request: SumRequest ->
+                  FunctionResponsePart("sum", JsonObject(mapOf()))
+                }
+              )
+          )
+        )
+    ) {
+      withTimeout(testTimeout) {
+        shouldThrow<RequestTimeoutException> { model.startChat().sendMessage("") }
+      }
+    }
+  }
 }

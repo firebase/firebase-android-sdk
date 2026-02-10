@@ -274,6 +274,30 @@ internal fun goldenVertexStreamingFile(
   )
 
 /**
+ * A variant of [goldenStreamingFile] for testing vertexAI
+ *
+ * Loads the *Golden File* and automatically parses the messages from it; providing it to the
+ * channel.
+ *
+ * @param responses the names and status codes of the responses in order
+ * @param tools the tools to add to the [GenerativeModel]
+ * @param block The test contents themselves, with a [CommonTestScope] implicitly provided
+ * @see goldenStreamingFile
+ */
+internal fun goldenVertexStreamingFiles(
+  responses: List<ResponseInfo>,
+  tools: List<Tool> = emptyList(),
+  requestHandler: (HttpRequestData) -> Unit = {},
+  block: CommonTest,
+) =
+  goldenStreamingFile(
+    responses = responses.map { ResponseInfo("vertexai/${it.name}", it.statusCode) },
+    tools = tools,
+    requestHandler = requestHandler,
+    block = block
+  )
+
+/**
  * A variant of [goldenStreamingFile] for testing the developer api
  *
  * Loads multiple *Golden File* and automatically parses the messages from it; providing it to the
@@ -340,6 +364,38 @@ internal fun goldenUnaryFile(
 ) = doBlocking {
   commonMultiTurnTest(
     responses = responses,
+    backend = backend,
+    tools = tools,
+    responseLoader = { fileName, channel ->
+      val goldenFile = loadGoldenFile(fileName)
+      val message = goldenFile.readText()
+      channel.send(message.toByteArray())
+    }
+  ) {
+    block()
+  }
+}
+
+/**
+ * A variant of [commonTest] for performing snapshot tests.
+ *
+ * Loads the *Golden File* and automatically provides it to the channel.
+ *
+ * @param responses the names and status codes of the responses in order
+ * @param requestOptions An optional set of [RequestOptions] to use
+ * @param block The test contents themselves, with a [CommonTestScope] implicitly provided
+ * @see goldenStreamingFile
+ */
+internal fun goldenVertexUnaryFiles(
+  responses: List<ResponseInfo>,
+  requestOptions: RequestOptions,
+  backend: GenerativeBackend = GenerativeBackend.vertexAI(),
+  tools: List<Tool> = emptyList(),
+  block: CommonTest,
+) = doBlocking {
+  commonMultiTurnTest(
+    responses = responses.map { ResponseInfo("vertexai/${it.name}", it.statusCode) },
+    requestOptions = requestOptions,
     backend = backend,
     tools = tools,
     responseLoader = { fileName, channel ->
