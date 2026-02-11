@@ -61,6 +61,9 @@ import com.google.firebase.firestore.pipeline.UnnestStage
 import com.google.firebase.firestore.pipeline.WhereStage
 import com.google.firebase.firestore.remote.RemoteSerializer
 import com.google.firebase.firestore.util.Logger
+import com.google.firebase.firestore.pipeline.DefineStage
+import com.google.firebase.firestore.pipeline.evaluation.notImplemented
+import com.google.firebase.firestore.pipeline.SubcollectionSource
 import com.google.firestore.v1.ExecutePipelineRequest
 import com.google.firestore.v1.Pipeline as ProtoPipeline
 import com.google.firestore.v1.StructuredPipeline
@@ -84,8 +87,8 @@ import com.google.firestore.v1.Value
 @Beta
 class Pipeline
 internal constructor(
-  private val firestore: FirebaseFirestore,
-  private val userDataReader: UserDataReader,
+  private val firestore: FirebaseFirestore?,
+  private val userDataReader: UserDataReader?,
   private val stages: List<Stage<*>>
 ) {
   class ExecuteOptions private constructor(options: InternalOptions) :
@@ -133,8 +136,8 @@ internal constructor(
   }
 
   internal constructor(
-    firestore: FirebaseFirestore,
-    userDataReader: UserDataReader,
+    firestore: FirebaseFirestore?,
+    userDataReader: UserDataReader?,
     stage: Stage<*>
   ) : this(firestore, userDataReader, listOf(stage))
 
@@ -142,23 +145,25 @@ internal constructor(
     return Pipeline(firestore, userDataReader, stages.plus(stage))
   }
 
-  private fun toStructuredPipelineProto(options: InternalOptions?): StructuredPipeline {
+  private fun toStructuredPipelineProto(options: InternalOptions?, userDataReader: UserDataReader): StructuredPipeline {
     val builder = StructuredPipeline.newBuilder()
-    builder.pipeline = toPipelineProto()
+    builder.pipeline = toPipelineProto(userDataReader)
     options?.forEach(builder::putOptions)
     return builder.build()
   }
 
-  internal fun toPipelineProto(): ProtoPipeline =
-    ProtoPipeline.newBuilder().addAllStages(stages.map { it.toProtoStage(userDataReader) }).build()
-
-  private fun toExecutePipelineRequest(options: InternalOptions?): ExecutePipelineRequest {
-    val database = firestore!!.databaseId
-    val builder = ExecutePipelineRequest.newBuilder()
-    builder.database = "projects/${database.projectId}/databases/${database.databaseId}"
-    builder.structuredPipeline = toStructuredPipelineProto(options)
-    return builder.build()
+  internal fun toPipelineProto(userDataReader: UserDataReader): ProtoPipeline {
+    return ProtoPipeline.newBuilder().addAllStages(stages.map { it.toProtoStage(userDataReader) }).build()
   }
+
+    private fun toExecutePipelineRequest(options: InternalOptions?): ExecutePipelineRequest {
+        checkNotNull(firestore) { "Cannot execute pipeline without a Firestore instance" }
+        val database = firestore!!.databaseId
+        val builder = ExecutePipelineRequest.newBuilder()
+        builder.database = "projects/${database.projectId}/databases/${database.databaseId}"
+        builder.structuredPipeline = toStructuredPipelineProto(options, firestore.userDataReader)
+        return builder.build()
+    }
 
   /**
    * Executes this pipeline and returns the results as a [Task] of [Snapshot].
@@ -897,6 +902,49 @@ internal constructor(
    * @return A new [Pipeline] object with this stage appended to the stage list.
    */
   fun unnest(unnestStage: UnnestStage): Pipeline = append(unnestStage)
+
+  /**
+   * Binds the given expressions to variables in the pipeline scope.
+   *
+   * @param variables One or more variables to bind.
+   * @return The [Pipeline] with the bound variables.
+   */
+  fun define(vararg variables: AliasedExpression): Pipeline {
+    return append(DefineStage(variables))
+  }
+
+  /**
+   * Converts this pipeline to an expression that evaluates to an array of results.
+   *
+   * @return An [Expression] that executes this pipeline and returns the results as a list.
+   */
+  fun toArrayExpression(): Expression {
+    return FunctionExpression("array", notImplemented, Expression.toExprOrConstant(this))
+  }
+
+  /**
+   * Converts this pipeline to an expression that evaluates to a scalar result.
+   * The pipeline must return exactly one document with one field, or be an aggregation.
+   *
+   * @return An [Expression] that executes this pipeline and returns a single value.
+   */
+  fun toScalarExpression(): Expression {
+    return FunctionExpression("scalar", notImplemented, Expression.toExprOrConstant(this))
+  }
+
+  companion object {
+    /**
+    * Creates a pipeline that processes the documents in the specified subcollection of the current
+    * document.
+    *
+    * @param path The relative path to the subcollection.
+    * @return A new [Pipeline] scoped to the subcollection.
+    */
+    @JvmStatic
+    fun subcollection(path: String): Pipeline {
+        return Pipeline(null, null, SubcollectionSource(path))
+    }
+  }
 }
 
 /** Start of a Firestore Pipeline */
@@ -1044,119 +1092,6 @@ class PipelineSource internal constructor(private val firestore: FirebaseFiresto
       firestore.userDataReader,
       DocumentsSource(documents.map { ResourcePath.fromString(it.path) }.toTypedArray())
     )
-  }
-}
-
-/**
- * Represents the results of a Pipeline query, including the data and metadata. It is usually
- * accessed via [Pipeline.Snapshot].
- */
-@Beta
-class PipelineResult
-internal constructor(
-  private val userDataWriter: UserDataWriter,
-  ref: DocumentReference?,
-  private val fields: Map<String, Value>,
-  createTime: Timestamp?,
-  updateTime: Timestamp?,
-) {
-
-  internal constructor(
-    document: Document,
-    serverTimestampBehavior: DocumentSnapshot.ServerTimestampBehavior,
-    firestore: FirebaseFirestore
-  ) : this(
-    UserDataWriter(firestore, serverTimestampBehavior),
-    DocumentReference(document.key, firestore),
-    document.data.fieldsMap,
-    document.createTime?.timestamp,
-    document.version.timestamp
-  )
-
-  /** The time the document was created. Null if this result is not a document. */
-  val createTime: Timestamp? = createTime
-
-  /**
-   * The time the document was last updated (at the time the snapshot was generated). Null if this
-   * result is not a document.
-   */
-  val updateTime: Timestamp? = updateTime
-
-  /**
-   * The reference to the document, if the query returns the document id for a document. The name
-   * field will be returned by default if querying a document.
-   *
-   * Document ids will not be returned if certain pipeline stages omit the document id. For example,
-   * [Pipeline.select], [Pipeline.removeFields] and [Pipeline.aggregate] can omit the document id.
-   *
-   * @return [DocumentReference] Reference to the document, if applicable.
-   */
-  val ref: DocumentReference? = ref
-
-  /**
-   * Returns the ID of the document represented by this result. Returns null if this result is not
-   * corresponding to a Firestore document.
-   *
-   * @return ID of document, if applicable.
-   */
-  fun getId(): String? = ref?.id
-
-  /**
-   * Retrieves all fields in the result as an object map.
-   *
-   * @return Map of field names to objects.
-   */
-  fun getData(): Map<String, Any?> = userDataWriter.convertObject(fields)
-
-  private fun extractNestedValue(fieldPath: FieldPath): Value? {
-    val segments = fieldPath.internalPath.iterator()
-    if (!segments.hasNext()) {
-      return Values.encodeValue(fields)
-    }
-    val firstSegment = segments.next()
-    if (!fields.containsKey(firstSegment)) {
-      return null
-    }
-    var value: Value? = fields[firstSegment]
-    for (segment in segments) {
-      if (value == null || !value.hasMapValue()) {
-        return null
-      }
-      value = value.mapValue.getFieldsOrDefault(segment, null)
-    }
-    return value
-  }
-
-  /**
-   * Retrieves the field specified by [field].
-   *
-   * @param field The field path (e.g. "foo" or "foo.bar") to a specific field.
-   * @return The data at the specified field location or null if no such field exists.
-   */
-  fun get(field: String): Any? = get(FieldPath.fromDotSeparatedPath(field))
-
-  /**
-   * Retrieves the field specified by [fieldPath].
-   *
-   * @param fieldPath The field path to a specific field.
-   * @return The data at the specified field location or null if no such field exists.
-   */
-  fun get(fieldPath: FieldPath): Any? = userDataWriter.convertValue(extractNestedValue(fieldPath))
-
-  override fun toString() = "PipelineResult{ref=$ref, updateTime=$updateTime}, data=${getData()}"
-  override fun equals(other: Any?): Boolean {
-    if (this === other) return true
-    if (javaClass != other?.javaClass) return false
-    other as PipelineResult
-    if (ref != other.ref) return false
-    if (fields != other.fields) return false
-    return true
-  }
-
-  override fun hashCode(): Int {
-    var result = ref?.hashCode() ?: 0
-    result = 31 * result + fields.hashCode()
-    return result
   }
 }
 

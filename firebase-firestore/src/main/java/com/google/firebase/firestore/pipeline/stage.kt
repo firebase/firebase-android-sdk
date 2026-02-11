@@ -398,6 +398,18 @@ internal constructor(
     documents.asSequence().map(::encodeValue)
 }
 
+class SubcollectionSource(
+    internal val path: String,
+    options: InternalOptions = InternalOptions.EMPTY
+) : Stage<SubcollectionSource>("subcollection", options) {
+
+    override fun self(options: InternalOptions) = SubcollectionSource(path, options)
+
+    override fun canonicalId(): String = "${name}($path)"
+
+    override fun args(userDataReader: UserDataReader): Sequence<Value> = sequenceOf(Values.encodeValue(path))
+}
+
 private fun associateWithoutDuplications(
   fields: Array<out Selectable>,
   userDataReader: UserDataReader
@@ -1192,7 +1204,7 @@ internal constructor(
   }
 
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
-    sequenceOf(Value.newBuilder().setPipelineValue(other.toPipelineProto()).build())
+    sequenceOf(Value.newBuilder().setPipelineValue(other.toPipelineProto(userDataReader)).build())
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
@@ -1306,5 +1318,35 @@ class UnnestOptions private constructor(options: InternalOptions) :
 
   public override fun self(options: InternalOptions): UnnestOptions {
     return UnnestOptions(options)
+  }
+}
+
+internal class DefineStage(
+  private val variables: Array<out AliasedExpression>,
+  options: InternalOptions = InternalOptions.EMPTY
+) : Stage<DefineStage>("define", options) {
+
+  override fun self(options: InternalOptions) = DefineStage(variables, options)
+
+  override fun canonicalId(): String {
+      TODO("Not yet implemented")
+  }
+
+  override fun args(userDataReader: UserDataReader): Sequence<Value> {
+     return sequenceOf(encodeValue(associateWithoutDuplications(variables, userDataReader)))
+  }
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is DefineStage) return false
+    if (!variables.contentEquals(other.variables)) return false
+    if (options != other.options) return false
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = variables.contentHashCode()
+    result = 31 * result + options.hashCode()
+    return result
   }
 }
