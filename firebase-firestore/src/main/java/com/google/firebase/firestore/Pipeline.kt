@@ -18,10 +18,8 @@ import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.TaskCompletionSource
 import com.google.common.annotations.Beta
 import com.google.firebase.Timestamp
-import com.google.firebase.firestore.model.Document
 import com.google.firebase.firestore.model.DocumentKey
 import com.google.firebase.firestore.model.ResourcePath
-import com.google.firebase.firestore.model.Values
 import com.google.firebase.firestore.pipeline.AbstractOptions
 import com.google.firebase.firestore.pipeline.AddFieldsStage
 import com.google.firebase.firestore.pipeline.AggregateFunction
@@ -904,13 +902,31 @@ internal constructor(
   fun unnest(unnestStage: UnnestStage): Pipeline = append(unnestStage)
 
   /**
-   * Binds the given expressions to variables in the pipeline scope.
+   * Defines one or more variables in the pipeline's scope, allowing them to be used in subsequent stages.
    *
-   * @param variables One or more variables to bind.
-   * @return The [Pipeline] with the bound variables.
+   * This stage is useful for declaring reusable values or intermediate calculations that can be referenced
+   * multiple times in later parts of the pipeline, improving readability and maintainability.
+   *
+   * Each variable is defined using an [AliasedExpression], which pairs an expression with a name (alias).
+   * The expression can be a simple constant, a field reference, or a complex computation.
+   *
+   * Example:
+   * ```
+   * firestore.pipeline().collection("products")
+   *   .define(
+   *     multiply(field("price"), 0.9).as("discountedPrice"),
+   *     add(field("stock"), 10).as("newStock")
+   *   )
+   *   .where(lessThan(variable("discountedPrice"), 100))
+   *   .select(field("name"), variable("newStock"));
+   * ```
+   *
+   * @param aliasedExpression The first variable to define, specified as an [AliasedExpression].
+   * @param additionalExpressions Optional additional variables to define, specified as [AliasedExpression]s.
+   * @return A new [Pipeline] object with this stage appended to the stage list.
    */
-  fun define(vararg variables: AliasedExpression): Pipeline {
-    return append(DefineStage(variables))
+  fun define(aliasedExpression: AliasedExpression, vararg additionalExpressions: AliasedExpression): Pipeline {
+    return append(DefineStage(arrayOf(aliasedExpression, *additionalExpressions)))
   }
 
   /**

@@ -1321,31 +1321,32 @@ class UnnestOptions private constructor(options: InternalOptions) :
   }
 }
 
-internal class DefineStage(
-  private val variables: Array<out AliasedExpression>,
-  options: InternalOptions = InternalOptions.EMPTY
+internal class DefineStage
+internal constructor(
+    private val aliasedExpressions: Array<out AliasedExpression>,
+    options: InternalOptions = InternalOptions.EMPTY
 ) : Stage<DefineStage>("define", options) {
 
-  override fun self(options: InternalOptions) = DefineStage(variables, options)
+  override fun self(options: InternalOptions) = DefineStage(aliasedExpressions, options)
 
   override fun canonicalId(): String {
       TODO("Not yet implemented")
   }
 
   override fun args(userDataReader: UserDataReader): Sequence<Value> {
-     return sequenceOf(encodeValue(associateWithoutDuplications(variables, userDataReader)))
+     return sequenceOf(encodeValue(associateWithoutDuplications(aliasedExpressions, userDataReader)))
   }
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other !is DefineStage) return false
-    if (!variables.contentEquals(other.variables)) return false
+    if (!aliasedExpressions.contentEquals(other.aliasedExpressions)) return false
     if (options != other.options) return false
     return true
   }
 
   override fun hashCode(): Int {
-    var result = variables.contentHashCode()
+    var result = aliasedExpressions.contentHashCode()
     result = 31 * result + options.hashCode()
     return result
   }
