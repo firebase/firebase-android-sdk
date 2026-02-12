@@ -63,8 +63,9 @@ import kotlinx.serialization.json.jsonObject
  */
 public class GenerativeModel
 internal constructor(
-  private val tools: List<Tool>? = null,
+  private val tools: List<Tool> = emptyList(),
   private val actualModel: GenerativeModelProvider,
+  internal val requestOptions: RequestOptions,
   internal val controller: APIController,
 ) {
   /**
@@ -245,16 +246,16 @@ internal constructor(
 
   internal fun hasFunction(call: FunctionCallPart): Boolean {
     return tools
-      ?.flatMap { it.autoFunctionDeclarations?.filterNotNull() ?: emptyList() }
-      ?.firstOrNull { it.name == call.name && it.functionReference != null } != null
+      .flatMap { it.autoFunctionDeclarations ?: emptyList() }
+      .firstOrNull { it.name == call.name && it.functionReference != null } != null
   }
 
   @OptIn(InternalSerializationApi::class)
   internal suspend fun executeFunction(call: FunctionCallPart): FunctionResponsePart {
-    if (tools == null) {
+    if (tools.isEmpty()) {
       throw RuntimeException("No registered tools")
     }
-    val tool = tools.flatMap { it.autoFunctionDeclarations?.filterNotNull() ?: emptyList() }
+    val tool = tools.flatMap { it.autoFunctionDeclarations ?: emptyList() }
     val declaration =
       tool.firstOrNull() { it.name == call.name }
         ?: throw RuntimeException("No registered function named ${call.name}")
@@ -292,8 +293,6 @@ internal constructor(
     }
   }
 
-  internal fun getTurnLimit(): Int = controller.getTurnLimit()
-
   internal companion object {
     private val TAG = GenerativeModel::class.java.simpleName
 
@@ -308,7 +307,7 @@ internal constructor(
       onDeviceFactoryProvider: FirebaseAIOnDeviceGenerativeModelFactory? = null,
       generationConfig: GenerationConfig? = null,
       safetySettings: List<SafetySetting>? = null,
-      tools: List<Tool>? = null,
+      tools: List<Tool> = emptyList(),
       toolConfig: ToolConfig? = null,
       systemInstruction: Content? = null,
       requestOptions: RequestOptions = RequestOptions(),
@@ -379,6 +378,7 @@ internal constructor(
         tools = tools,
         actualModel = actualModelProvider,
         controller = apiController,
+        requestOptions = requestOptions
       )
     }
 
@@ -390,7 +390,7 @@ internal constructor(
       useLimitedUseAppCheckTokens: Boolean,
       generationConfig: GenerationConfig? = null,
       safetySettings: List<SafetySetting>? = null,
-      tools: List<Tool>? = null,
+      tools: List<Tool> = emptyList(),
       toolConfig: ToolConfig? = null,
       systemInstruction: Content? = null,
       requestOptions: RequestOptions = RequestOptions(),

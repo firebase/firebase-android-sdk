@@ -1,6 +1,7 @@
 # Unreleased
 
 - [feature] Added experimental support for on-device inference (#7739)
+- [feature] Added automatic function calling support with `AutoFunctionDeclaration`.
 - [feature] Added no-argument overloads for `Tool.urlContext()` and `Tool.googleSearch()`.
 
 # 17.9.0

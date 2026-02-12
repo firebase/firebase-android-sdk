@@ -115,7 +115,8 @@ internal class GenerativeModelTesting {
             systemInstruction = content { text("system instruction") },
             controller = apiController
           ),
-        controller = apiController
+        controller = apiController,
+        requestOptions = RequestOptions()
       )
 
     withTimeout(5.seconds) { generativeModel.generateContent("my test prompt") }
@@ -223,7 +224,8 @@ internal class GenerativeModelTesting {
     val generativeModel =
       GenerativeModel(
         actualModel = CloudGenerativeModelProvider("gemini-2.5-flash", controller = apiController),
-        controller = apiController
+        controller = apiController,
+        requestOptions = RequestOptions()
       )
 
     withTimeout(5.seconds) { generativeModel.generateContent("my test prompt") }
@@ -269,7 +271,8 @@ internal class GenerativeModelTesting {
             "projects/PROJECTID/locations/INVALID_LOCATION/publishers/google/models/gemini-2.5-flash",
             controller = apiController
           ),
-        controller = apiController
+        controller = apiController,
+        requestOptions = RequestOptions()
       )
 
     val exception =
@@ -322,7 +325,8 @@ internal class GenerativeModelTesting {
             generativeBackend = GenerativeBackend.googleAI(),
             controller = apiController
           ),
-        controller = apiController
+        controller = apiController,
+        requestOptions = RequestOptions()
       )
 
     val exception =
@@ -372,7 +376,8 @@ internal class GenerativeModelTesting {
             generativeBackend = GenerativeBackend.vertexAI("us-central1"),
             controller = apiController
           ),
-        controller = apiController
+        controller = apiController,
+        requestOptions = RequestOptions()
       )
 
     withTimeout(5.seconds) { generativeModel.generateContent("my test prompt") }
@@ -433,7 +438,8 @@ internal class GenerativeModelTesting {
               },
             controller = apiController
           ),
-        controller = apiController
+        controller = apiController,
+        requestOptions = RequestOptions()
       )
 
     withTimeout(5.seconds) { generativeModel.generateContent("my test prompt") }
@@ -465,7 +471,8 @@ internal class GenerativeModelTesting {
 
     return GenerativeModel(
       actualModel = CloudGenerativeModelProvider("gemini-2.5-flash", controller = apiController),
-      controller = apiController
+      controller = apiController,
+      requestOptions = RequestOptions()
     )
   }
 }
