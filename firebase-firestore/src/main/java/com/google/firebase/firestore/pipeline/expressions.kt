@@ -7916,7 +7916,7 @@ class Ordering internal constructor(val expr: Expression, val dir: Direction) {
 internal class Variable(val name: String) : Expression() {
   override fun toProto(userDataReader: UserDataReader): Value =
     Value.newBuilder().setVariableReferenceValue(name).build()
-  override fun evaluateFunction(context: EvaluationContext) = { _: MutableDocument ->
+  override fun evaluateFunction(context: EvaluationContext): EvaluateDocument = { _: MutableDocument ->
     throw NotImplementedError("Variable evaluation not implemented")
   }
   override fun canonicalId() = "var($name)"
@@ -7931,7 +7931,7 @@ internal class Variable(val name: String) : Expression() {
 private class PipelineValueExpression(val pipeline: Pipeline) : Expression() {
   override fun toProto(userDataReader: UserDataReader): Value =
     Value.newBuilder().setPipelineValue(pipeline.toPipelineProto(userDataReader)).build()
-  override fun evaluateFunction(context: EvaluationContext) = { _: MutableDocument ->
+  override fun evaluateFunction(context: EvaluationContext): EvaluateDocument = { _: MutableDocument ->
     throw NotImplementedError("Pipeline evaluation not implemented")
   }
   override fun canonicalId() = "pipeline(\${pipeline.hashCode()})"
