@@ -32,6 +32,7 @@ import com.google.firebase.ai.type.GenerateContentResponse
 import com.google.firebase.ai.type.GenerateObjectResponse
 import com.google.firebase.ai.type.ImagePart
 import com.google.firebase.ai.type.JsonSchema
+import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.TextPart
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
@@ -48,6 +49,7 @@ import kotlinx.coroutines.flow.map
  * @property onDeviceModel The underlying on-device model to use for generation.
  * @property onDeviceConfig Configuration options for the on-device model.
  */
+@PublicPreviewAPI
 internal class OnDeviceGenerativeModelProvider(
   private val onDeviceModel: OnDeviceGenerativeModel,
   private val onDeviceConfig: OnDeviceConfig
