@@ -1,5 +1,9 @@
 # Unreleased
 
+- [feature] Added no-argument overloads for `Tool.urlContext()` and `Tool.googleSearch()`.
+
+# 17.9.0
+
 - [feature] Added `JsonSchema`, `GenerativeModel#generateObject` and the firebase-ai-ksp processor's
   annotation (`Generable`, and `Guide`). To learn more about how to use them, and the ksp processor
   see the [Firebase KSP Processor Readme](https://github.com/firebase/firebase-android-sdk/blob/main/firebase-ai-ksp-processor/README.md)
@@ -137,3 +141,4 @@ using [specific Gemini models](/docs/vertex-ai/models).
 
 Note: This feature is in Public Preview, which means that it is not subject to any SLA or
 deprecation policy and could change in backwards-incompatible ways.
+

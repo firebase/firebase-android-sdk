@@ -19,6 +19,7 @@ package com.google.firebase.dataconnect.testutil
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
+import io.kotest.assertions.print.print
 
 fun structFastEqual(struct1: Struct, struct2: Struct): Boolean {
   if (struct1 === struct2) {
@@ -74,14 +75,34 @@ fun valueFastEqual(value1: Value, value2: Value): Boolean {
 data class DifferencePathPair<T : Difference>(val path: DataConnectPath, val difference: T)
 
 sealed interface Difference {
-  data class KindCase(val value1: Value, val value2: Value) : Difference
   data class BoolValue(val value1: Boolean, val value2: Boolean) : Difference
   data class NumberValue(val value1: Double, val value2: Double) : Difference
   data class StringValue(val value1: String, val value2: String) : Difference
-  data class StructMissingKey(val key: String, val value: Value) : Difference
-  data class StructUnexpectedKey(val key: String, val value: Value) : Difference
-  data class ListMissingElement(val index: Int, val value: Value) : Difference
-  data class ListUnexpectedElement(val index: Int, val value: Value) : Difference
+
+  data class KindCase(val value1: Value, val value2: Value) : Difference {
+    override fun toString() =
+      "KindCase(" +
+        "value1.kindCase=${value1.kindCase}, " +
+        "value2.kindCase=${value2.kindCase}, " +
+        "value1=${value1.print().value}, " +
+        "value2=${value2.print().value})"
+  }
+
+  data class StructMissingKey(val key: String, val value: Value) : Difference {
+    override fun toString() = "StructMissingKey(key=$key, value=${value.print().value})"
+  }
+
+  data class StructUnexpectedKey(val key: String, val value: Value) : Difference {
+    override fun toString() = "StructUnexpectedKey(key=$key, value=${value.print().value})"
+  }
+
+  data class ListMissingElement(val index: Int, val value: Value) : Difference {
+    override fun toString() = "ListMissingElement(index=$index, value=${value.print().value})"
+  }
+
+  data class ListUnexpectedElement(val index: Int, val value: Value) : Difference {
+    override fun toString() = "ListUnexpectedElement(index=$index, value=${value.print().value})"
+  }
 }
 
 fun structDiff(

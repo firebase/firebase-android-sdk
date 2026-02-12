@@ -27,6 +27,7 @@ import com.google.protobuf.ListValue
 import com.google.protobuf.NullValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
+import io.kotest.assertions.print.print
 import io.kotest.property.Arb
 import io.kotest.property.Exhaustive
 import io.kotest.property.RandomSource
@@ -47,20 +48,24 @@ import kotlin.random.nextInt
 
 object ProtoArb {
 
-  data class StructInfo(
+  class StructInfo(
     val struct: Struct,
     val depth: Int,
     val descendants: List<DataConnectPathValuePair>,
   ) {
     fun toValueProto(): Value = struct.toValueProto()
+
+    override fun toString() = "StructInfo(struct=${struct.print().value}, depth=$depth)"
   }
 
-  data class ListValueInfo(
+  class ListValueInfo(
     val listValue: ListValue,
     val depth: Int,
     val descendants: List<DataConnectPathValuePair>,
   ) {
     fun toValueProto(): Value = listValue.toValueProto()
+
+    override fun toString() = "ListValueInfo(listValue=${listValue.print().value}, depth=$depth)"
   }
 }
 
@@ -179,7 +184,10 @@ fun ProtoArb.listValue(
     structSizeRange = structSize,
   )
 
-fun ProtoArb.structKey(): Arb<String> = Arb.string(1..10, Codepoint.alphanumeric())
+fun ProtoArb.structKey(lengthRange: IntRange = 1..10): Arb<String> =
+  Arb.string(lengthRange, Codepoint.alphanumeric())
+
+fun ProtoArb.structKey(length: Int): Arb<String> = structKey(length..length)
 
 fun ProtoArb.struct(
   size: IntRange = 0..5,

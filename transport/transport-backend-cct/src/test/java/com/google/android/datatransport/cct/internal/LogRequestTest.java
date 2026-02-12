@@ -18,6 +18,7 @@ import static com.google.android.datatransport.cct.internal.BatchedLogRequest.cr
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.extensions.proto.ProtoTruth.assertThat;
 
+import android.util.Base64;
 import com.google.android.datatransport.cct.proto.BatchedLogRequest;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
@@ -196,7 +197,10 @@ public class LogRequestTest {
             .setExperimentIds(
                 ExperimentIds.builder()
                     .setClearBlob("blob".getBytes(StandardCharsets.UTF_8))
-                    .setEncryptedBlob("encrypted blob".getBytes(StandardCharsets.UTF_8))
+                    .setEncryptedBlob(
+                        List.of(
+                            Base64.encodeToString(
+                                "encrypted blob".getBytes(StandardCharsets.UTF_8), Base64.NO_WRAP)))
                     .build())
             .setNetworkConnectionInfo(
                 NetworkConnectionInfo.builder()
@@ -256,7 +260,7 @@ public class LogRequestTest {
                                 com.google.android.datatransport.cct.proto.ExperimentIds
                                     .newBuilder()
                                     .setClearBlob(ByteString.copyFromUtf8("blob"))
-                                    .setEncryptedBlob(ByteString.copyFromUtf8("encrypted blob")))
+                                    .addEncryptedBlob(ByteString.copyFromUtf8("encrypted blob")))
                             .setNetworkConnectionInfo(
                                 com.google.android.datatransport.cct.proto.NetworkConnectionInfo
                                     .newBuilder()
