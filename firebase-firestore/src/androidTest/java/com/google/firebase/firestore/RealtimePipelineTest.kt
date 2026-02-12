@@ -994,7 +994,7 @@ class RealtimePipelineTest {
 
     // Test isNotNull
     val pipelineIsNotNull =
-      db.realtimePipeline().collection(collRef.path).where(notEqual("rating", nullValue()))
+      db.realtimePipeline().collection(collRef.path).where(field("rating").notEqual(nullValue()))
 
     val channelIsNotNull = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val jobIsNotNull = launch {
