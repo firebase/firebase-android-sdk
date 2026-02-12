@@ -65,10 +65,11 @@ internal constructor(
   private val modelName: String,
   private val generationConfig: GenerationConfig? = null,
   private val safetySettings: List<SafetySetting>? = null,
-  private val tools: List<Tool>? = null,
+  private val tools: List<Tool> = emptyList(),
   private val toolConfig: ToolConfig? = null,
   private val systemInstruction: Content? = null,
   private val generativeBackend: GenerativeBackend = GenerativeBackend.googleAI(),
+  internal val requestOptions: RequestOptions = RequestOptions(),
   internal val controller: APIController,
 ) {
   internal constructor(
@@ -78,7 +79,7 @@ internal constructor(
     useLimitedUseAppCheckTokens: Boolean,
     generationConfig: GenerationConfig? = null,
     safetySettings: List<SafetySetting>? = null,
-    tools: List<Tool>? = null,
+    tools: List<Tool> = emptyList(),
     toolConfig: ToolConfig? = null,
     systemInstruction: Content? = null,
     requestOptions: RequestOptions = RequestOptions(),
@@ -93,6 +94,7 @@ internal constructor(
     toolConfig,
     systemInstruction,
     generativeBackend,
+    requestOptions,
     APIController(
       apiKey,
       modelName,
@@ -306,13 +308,13 @@ internal constructor(
 
   internal fun hasFunction(call: FunctionCallPart): Boolean {
     return tools
-      ?.flatMap { it.autoFunctionDeclarations ?: emptyList() }
-      ?.firstOrNull { it.name == call.name && it.functionReference != null } != null
+      .flatMap { it.autoFunctionDeclarations ?: emptyList() }
+      .firstOrNull { it.name == call.name && it.functionReference != null } != null
   }
 
   @OptIn(InternalSerializationApi::class)
   internal suspend fun executeFunction(call: FunctionCallPart): FunctionResponsePart {
-    if (tools == null) {
+    if (tools.isEmpty()) {
       throw RuntimeException("No registered tools")
     }
     val tool = tools.flatMap { it.autoFunctionDeclarations ?: emptyList() }
@@ -353,8 +355,6 @@ internal constructor(
     }
   }
 
-  internal fun getTurnLimit(): Int = controller.getTurnLimit()
-
   private fun buildGenerateContentRequest(
     prompt: List<Content>,
     overrideConfig: GenerationConfig? = null
@@ -375,7 +375,7 @@ internal constructor(
         }
         ?.map { it.toInternal() },
       (overrideConfig ?: generationConfig)?.toInternal(),
-      tools?.map { it.toInternal() },
+      tools.map { it.toInternal() }.takeIf { it.isNotEmpty() },
       toolConfig?.toInternal(),
       systemInstruction?.copy(role = "system")?.toInternal(),
     )

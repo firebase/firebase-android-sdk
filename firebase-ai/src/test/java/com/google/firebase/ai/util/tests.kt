@@ -209,6 +209,7 @@ internal fun commonMultiTurnTest(
       "cool-model-name",
       generativeBackend = backend,
       controller = apiController,
+      requestOptions = requestOptions,
       tools = tools
     )
   val imagenModel = ImagenModel("cooler-model-name", controller = apiController)
