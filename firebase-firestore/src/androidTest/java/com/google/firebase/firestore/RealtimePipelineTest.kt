@@ -47,7 +47,9 @@ import com.google.firebase.firestore.pipeline.Expression.Companion.log10
 import com.google.firebase.firestore.pipeline.Expression.Companion.mod
 import com.google.firebase.firestore.pipeline.Expression.Companion.multiply
 import com.google.firebase.firestore.pipeline.Expression.Companion.not
+import com.google.firebase.firestore.pipeline.Expression.Companion.notEqual
 import com.google.firebase.firestore.pipeline.Expression.Companion.notEqualAny
+import com.google.firebase.firestore.pipeline.Expression.Companion.nullValue
 import com.google.firebase.firestore.pipeline.Expression.Companion.or
 import com.google.firebase.firestore.pipeline.Expression.Companion.pow
 import com.google.firebase.firestore.pipeline.Expression.Companion.regexContains
@@ -593,7 +595,7 @@ class RealtimePipelineTest {
     collRef.document("book1").update("title", FieldValue.serverTimestamp())
 
     val pipeline =
-      db.realtimePipeline().collection(collRef.path).where(field("title").isNotNull()).limit(1)
+      db.realtimePipeline().collection(collRef.path).where(field("title").notEqual(nullValue())).limit(1)
 
     val channel1 = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job1 = launch {
@@ -988,7 +990,7 @@ class RealtimePipelineTest {
 
     // Test isNotNull
     val pipelineIsNotNull =
-      db.realtimePipeline().collection(collRef.path).where(isNotNull("rating"))
+      db.realtimePipeline().collection(collRef.path).where(notEqual("rating", nullValue()))
 
     val channelIsNotNull = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val jobIsNotNull = launch {
