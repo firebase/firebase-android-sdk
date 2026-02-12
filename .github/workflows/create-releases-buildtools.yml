@@ -1,4 +1,4 @@
-name:  Create release (build tools)
+name: Create release (build tools)
 
 on:
   workflow_dispatch:
@@ -34,15 +34,13 @@ jobs:
       - name: Make release for Firebase App Distribution
         run: |
           ./gradlew \
-            -Dorg.gradle.project.buildDir=${ARTIFACTS} \
             -Dmaven.repo.local=${ARTIFACTS} \
             :firebase-appdistribution-gradle:publishToMavenLocal
-          cd ${ARTIFACTS}
-          zip -r m2repository.zip com
       - uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
         with:
-          name: artifacts
+          name: firebase-appdistribution-gradle
           path: ${{ env.ARTIFACTS }}
+
 
   make-crashlytics-release:
     runs-on: ubuntu-latest
@@ -56,22 +54,25 @@ jobs:
           java-version: 17
           distribution: temurin
           cache: gradle
-      - name: Make release for Firebase Crashlytics
+      - name: Make release for Firebase Crashlytics Buildtools
         run: |
           ./gradlew \
-            -Dorg.gradle.project.buildDir=${ARTIFACTS} \
-            -Dmaven.repo.local=${ARTIFACTS} \
+            -Dmaven.repo.local=${ARTIFACTS}-buildtools \
             :firebase-crashlytics-buildtools:publishToMavenLocal
-          ./gradlew \
-            -Dorg.gradle.project.buildDir=${ARTIFACTS} \
-            -Dmaven.repo.local=${ARTIFACTS} \
-            :firebase-crashlytics-gradle:publishToMavenLocal
-          cd ${ARTIFACTS}
-          zip -r m2repository.zip com
       - uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
         with:
-          name: artifacts
-          path: ${{ env.ARTIFACTS }}
+          name: firebase-crashlytics-buildtools
+          path: ${{ env.ARTIFACTS }}-buildtools
+      - name: Make release for Firebase Crashlytics Gradle Plugin
+        run: |
+          ./gradlew \
+            -Dmaven.repo.local=${ARTIFACTS}-plugin \
+            :firebase-crashlytics-gradle:publishToMavenLocal
+      - uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        with:
+          name: firebase-crashlytics-gradle
+          path: ${{ env.ARTIFACTS }}-plugin
+
 
   make-performance-release:
     runs-on: ubuntu-latest
@@ -88,12 +89,9 @@ jobs:
       - name: Make release for Firebase Performance
         run: |
           ./gradlew \
-            -Dorg.gradle.project.buildDir=${ARTIFACTS} \
             -Dmaven.repo.local=${ARTIFACTS} \
             :firebase-perf-gradle:publishToMavenLocal
-          cd ${ARTIFACTS}
-          zip -r m2repository.zip com
       - uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
         with:
-          name: artifacts
+          name: firebase-perf-gradle
           path: ${{ env.ARTIFACTS }}
