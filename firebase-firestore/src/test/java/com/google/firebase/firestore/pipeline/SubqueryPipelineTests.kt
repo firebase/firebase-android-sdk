@@ -26,7 +26,7 @@ internal class SubqueryPipelineTests {
     val proto = pipeline.toPipelineProto(userDataReader)
     assertThat(proto.stagesCount).isEqualTo(1)
     val stage = proto.getStages(0)
-    assertThat(stage.name).isEqualTo("define")
+    assertThat(stage.name).isEqualTo("let")
     // Verify args or options contains the variable
     // DefineStage puts variables in args as map
     assertThat(stage.argsCount).isEqualTo(1)
