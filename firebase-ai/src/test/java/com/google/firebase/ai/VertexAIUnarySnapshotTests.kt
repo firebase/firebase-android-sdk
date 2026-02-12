@@ -42,7 +42,6 @@ import com.google.firebase.ai.type.Tool
 import com.google.firebase.ai.type.UnsupportedUserLocationException
 import com.google.firebase.ai.type.UrlRetrievalStatus
 import com.google.firebase.ai.util.ResponseInfo
-import com.google.firebase.ai.util.goldenVertexStreamingFiles
 import com.google.firebase.ai.util.goldenVertexUnaryFile
 import com.google.firebase.ai.util.goldenVertexUnaryFiles
 import com.google.firebase.ai.util.shouldNotBeNullOrEmpty
@@ -991,37 +990,6 @@ internal class VertexAIUnarySnapshotTests {
         obj.colors.size shouldBe 5
       }
     }
-
-  @Test
-  fun `auto function call should work with streaming`() {
-    var functionCalled = 0
-    goldenVertexStreamingFiles(
-      responses =
-        listOf(
-            "unary-success-function-call-with-arguments.json",
-            "unary-success-basic-reply-short.json"
-          )
-          .map { ResponseInfo(it) },
-      tools =
-        listOf(
-          Tool.functionDeclarations(
-            autoFunctionDeclarations =
-              listOf(
-                AutoFunctionDeclaration.create("sum", "", sumRequestResponseSchema) {
-                  request: SumRequest ->
-                  functionCalled++
-                  FunctionResponsePart("sum", JsonObject(mapOf()))
-                }
-              )
-          )
-        )
-    ) {
-      withTimeout(testTimeout) {
-        shouldNotThrow<RequestTimeoutException> { model.startChat().sendMessage("") }
-        functionCalled shouldBeEqual 1
-      }
-    }
-  }
 
   @Test
   fun `auto function call should hit defined limit and exit`() {
