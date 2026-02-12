@@ -66,6 +66,7 @@ internal constructor(
    * @return The initialized [GenerativeModel] instance.
    */
   @JvmOverloads
+  @OptIn(PublicPreviewAPI::class)
   public fun generativeModel(
     modelName: String,
     generationConfig: GenerationConfig? = null,
@@ -101,6 +102,7 @@ internal constructor(
    * @param onDeviceConfig Configuration for on-device inference.
    * @return The initialized [GenerativeModel] instance.
    */
+  @PublicPreviewAPI
   public fun generativeModel(
     modelName: String,
     generationConfig: GenerationConfig? = null,
@@ -109,7 +111,7 @@ internal constructor(
     toolConfig: ToolConfig? = null,
     systemInstruction: Content? = null,
     requestOptions: RequestOptions = RequestOptions(),
-    onDeviceConfig: OnDeviceConfig = OnDeviceConfig.IN_CLOUD
+    onDeviceConfig: OnDeviceConfig,
   ): GenerativeModel {
     val modelUri =
       when (backend.backend) {

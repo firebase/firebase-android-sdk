@@ -42,6 +42,7 @@ import com.google.firebase.ai.type.GenerationConfig
 import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.InvalidStateException
 import com.google.firebase.ai.type.JsonSchema
+import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.RequestOptions
 import com.google.firebase.ai.type.SafetySetting
 import com.google.firebase.ai.type.Tool
@@ -240,7 +241,7 @@ internal constructor(
    *
    * @throws [FirebaseAIException] if the warmup failed.
    */
-  public suspend fun warmUp(): Unit = actualModel.warmUp()
+  @PublicPreviewAPI public suspend fun warmUp(): Unit = actualModel.warmUp()
 
   internal fun hasFunction(call: FunctionCallPart): Boolean {
     return tools
@@ -296,21 +297,22 @@ internal constructor(
   internal companion object {
     private val TAG = GenerativeModel::class.java.simpleName
 
+    @PublicPreviewAPI
     internal fun create(
       modelName: String,
       apiKey: String,
       firebaseApp: FirebaseApp,
       useLimitedUseAppCheckTokens: Boolean,
+      onDeviceConfig: OnDeviceConfig,
+      generativeBackend: GenerativeBackend,
+      onDeviceFactoryProvider: FirebaseAIOnDeviceGenerativeModelFactory? = null,
       generationConfig: GenerationConfig? = null,
       safetySettings: List<SafetySetting>? = null,
       tools: List<Tool>? = null,
       toolConfig: ToolConfig? = null,
       systemInstruction: Content? = null,
       requestOptions: RequestOptions = RequestOptions(),
-      onDeviceConfig: OnDeviceConfig,
-      generativeBackend: GenerativeBackend,
       appCheckTokenProvider: InteropAppCheckTokenProvider? = null,
-      onDeviceFactoryProvider: FirebaseAIOnDeviceGenerativeModelFactory? = null,
       internalAuthProvider: InternalAuthProvider? = null,
     ): GenerativeModel {
       val apiController =
@@ -379,6 +381,41 @@ internal constructor(
         controller = apiController,
       )
     }
+
+    @OptIn(PublicPreviewAPI::class)
+    internal fun create(
+      modelName: String,
+      apiKey: String,
+      firebaseApp: FirebaseApp,
+      useLimitedUseAppCheckTokens: Boolean,
+      generationConfig: GenerationConfig? = null,
+      safetySettings: List<SafetySetting>? = null,
+      tools: List<Tool>? = null,
+      toolConfig: ToolConfig? = null,
+      systemInstruction: Content? = null,
+      requestOptions: RequestOptions = RequestOptions(),
+      generativeBackend: GenerativeBackend,
+      appCheckTokenProvider: InteropAppCheckTokenProvider? = null,
+      internalAuthProvider: InternalAuthProvider? = null,
+      onDeviceFactoryProvider: FirebaseAIOnDeviceGenerativeModelFactory,
+    ): GenerativeModel =
+      create(
+        modelName = modelName,
+        apiKey = apiKey,
+        firebaseApp = firebaseApp,
+        useLimitedUseAppCheckTokens = useLimitedUseAppCheckTokens,
+        generationConfig = generationConfig,
+        safetySettings = safetySettings,
+        tools = tools,
+        toolConfig = toolConfig,
+        systemInstruction = systemInstruction,
+        requestOptions = requestOptions,
+        generativeBackend = generativeBackend,
+        appCheckTokenProvider = appCheckTokenProvider,
+        internalAuthProvider = internalAuthProvider,
+        onDeviceConfig = OnDeviceConfig.IN_CLOUD,
+        onDeviceFactoryProvider = onDeviceFactoryProvider
+      )
   }
 }
 

@@ -28,6 +28,7 @@ import com.google.firebase.ai.ondevice.interop.GenerativeModel as OnDeviceGenera
 import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.FirebaseAIException
 import com.google.firebase.ai.type.JsonSchema
+import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.TextPart
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
@@ -40,6 +41,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
 
+@OptIn(PublicPreviewAPI::class)
 internal class OnDeviceGenerativeModelProviderTests {
   private lateinit var onDeviceModel: OnDeviceGenerativeModel
   private lateinit var onDeviceConfig: OnDeviceConfig

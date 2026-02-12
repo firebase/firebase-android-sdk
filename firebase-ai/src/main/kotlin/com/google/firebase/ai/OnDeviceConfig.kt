@@ -16,6 +16,8 @@
 
 package com.google.firebase.ai
 
+import com.google.firebase.ai.type.PublicPreviewAPI
+
 /**
  * Configuration for on-device AI model inference.
  *
@@ -31,6 +33,7 @@ package com.google.firebase.ai
  * @property candidateCount The number of generated responses to return. See [GenerationConfig] for
  * more detail. By default it's set to 1.
  */
+@PublicPreviewAPI
 public class OnDeviceConfig
 @JvmOverloads
 constructor(
@@ -49,6 +52,7 @@ constructor(
 }
 
 /** Specifies how the SDK should choose between on-device and in-cloud inference. */
+@PublicPreviewAPI
 public class InferenceMode private constructor(private val value: String) {
   public companion object {
     /**
@@ -76,6 +80,7 @@ public class InferenceMode private constructor(private val value: String) {
 }
 
 /** Indicates the source of the model inference. */
+@PublicPreviewAPI
 public class InferenceSource private constructor(private val value: String) {
   public companion object {
     /** Inference was performed on the device. */

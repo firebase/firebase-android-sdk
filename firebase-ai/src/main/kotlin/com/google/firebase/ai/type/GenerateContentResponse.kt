@@ -29,6 +29,7 @@ import kotlinx.serialization.Serializable
  * @property inferenceSource The source of the inference for this response.
  */
 public class GenerateContentResponse
+@OptIn(PublicPreviewAPI::class)
 internal constructor(
   public val candidates: List<Candidate>,
   public val inferenceSource: InferenceSource,
@@ -41,6 +42,7 @@ internal constructor(
   // for consumption only.
   // Since any use previous to adding this parameter was for cloud inference, the source has been
   // hard-coded to `IN_CLOUD`
+  @OptIn(PublicPreviewAPI::class)
   public constructor(
     candidates: List<Candidate>,
     promptFeedback: PromptFeedback?,
@@ -111,6 +113,7 @@ internal constructor(
   private fun Candidate.nonThoughtParts(): List<Part> = content.parts.filter { !it.isThought }
 
   @Serializable
+  @OptIn(PublicPreviewAPI::class)
   internal data class Internal(
     val candidates: List<Candidate.Internal>? = null,
     val promptFeedback: PromptFeedback.Internal? = null,
