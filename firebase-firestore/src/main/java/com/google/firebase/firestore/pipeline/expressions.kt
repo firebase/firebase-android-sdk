@@ -5434,10 +5434,10 @@ abstract class Expression internal constructor() {
    * to calculated values.
    *
    * @param alias The alias to assign to this expression.
-   * @return A new [Selectable] (typically an [AliasedExpression]) that wraps this expression and
-   * associates it with the provided alias.
+   * @return A [AliasedExpression] that wraps this expression and associates it with the provided
+   * alias.
    */
-  open fun alias(alias: String): Selectable = AliasedExpression(alias, this)
+  open fun alias(alias: String): AliasedExpression = AliasedExpression(alias, this)
 
   /**
    * Creates an expression that returns the document ID from this path expression.
