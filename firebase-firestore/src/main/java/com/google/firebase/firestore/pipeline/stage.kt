@@ -1326,7 +1326,7 @@ internal class DefineStage
 internal constructor(
   private val aliasedExpressions: Array<out AliasedExpression>,
   options: InternalOptions = InternalOptions.EMPTY
-) : Stage<DefineStage>("define", options) {
+) : Stage<DefineStage>("let", options) {
 
   override fun self(options: InternalOptions) = DefineStage(aliasedExpressions, options)
 
