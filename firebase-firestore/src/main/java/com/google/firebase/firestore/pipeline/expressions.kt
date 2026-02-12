@@ -5581,10 +5581,10 @@ abstract class Expression internal constructor() {
    * to calculated values.
    *
    * @param alias The alias to assign to this expression.
-   * @return A new [Selectable] (typically an [AliasedExpression]) that wraps this expression and
+   * @return A new [AliasedExpression] that wraps this expression and
    * associates it with the provided alias.
    */
-  open fun alias(alias: String): Selectable = AliasedExpression(alias, this)
+  open fun alias(alias: String): AliasedExpression = AliasedExpression(alias, this)
 
   /**
    * Creates an expression that returns the document ID from this path expression.
@@ -7428,6 +7428,24 @@ abstract class Expression internal constructor() {
   internal abstract fun toProto(userDataReader: UserDataReader): Value
 
   internal abstract fun evaluateFunction(context: EvaluationContext): EvaluateDocument
+}
+
+/** Expressions that have an alias are [Selectable] */
+@Beta
+abstract class Selectable : Expression() {
+    internal abstract val alias: String
+    internal abstract val expr: Expression
+
+    internal companion object {
+        fun toSelectable(o: Any): Selectable {
+            return when (o) {
+                is Selectable -> o
+                is String -> field(o)
+                is FieldPath -> field(o)
+                else -> throw IllegalArgumentException("Unknown Selectable type: $o")
+            }
+        }
+    }
 }
 
 /** Represents an expression that will be given the alias in the output document. */
