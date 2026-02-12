@@ -53,7 +53,7 @@ internal constructor(
   private val modelName: String,
   @Blocking private val blockingDispatcher: CoroutineContext,
   private val config: LiveGenerationConfig? = null,
-  private val tools: List<Tool>? = null,
+  private val tools: List<Tool> = emptyList(),
   private val systemInstruction: Content? = null,
   private val location: String,
   private val firebaseApp: FirebaseApp,
@@ -65,7 +65,7 @@ internal constructor(
     firebaseApp: FirebaseApp,
     blockingDispatcher: CoroutineContext,
     config: LiveGenerationConfig? = null,
-    tools: List<Tool>? = null,
+    tools: List<Tool> = emptyList(),
     systemInstruction: Content? = null,
     location: String = "us-central1",
     requestOptions: RequestOptions = RequestOptions(),
@@ -110,7 +110,7 @@ internal constructor(
       LiveClientSetupMessage(
           modelName,
           config?.toInternal(),
-          tools?.map { it.toInternal() },
+          tools.map { it.toInternal() }.takeIf { it.isNotEmpty() },
           systemInstruction?.toInternal(),
           config?.inputAudioTranscription?.toInternal(),
           config?.outputAudioTranscription?.toInternal()

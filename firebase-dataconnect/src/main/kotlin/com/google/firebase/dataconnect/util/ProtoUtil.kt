@@ -152,7 +152,7 @@ internal object ProtoUtil {
 
     val calculateCompactString =
       DeepRecursiveFunction<Value, Unit> {
-        when (val kind = it.kindCase) {
+        when (it.kindCase) {
           KindCase.NULL_VALUE -> out.write("null")
           KindCase.BOOL_VALUE -> out.write(if (it.boolValue) "true" else "false")
           KindCase.NUMBER_VALUE -> out.write(it.numberValue.toString())
@@ -186,7 +186,7 @@ internal object ProtoUtil {
             out.writeIndent()
             out.write("}")
           }
-          else -> throw IllegalArgumentException("unsupported kind: $kind")
+          KindCase.KIND_NOT_SET -> out.write("<KIND_NOT_SET>")
         }
       }
 
