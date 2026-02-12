@@ -1,0 +1,45 @@
+// Signature format: 3.0
+package com.google.firebase.ai.ondevice {
+
+  public abstract class DownloadStatus {
+    ctor public DownloadStatus();
+  }
+
+  public static final class DownloadStatus.DownloadCompleted extends com.google.firebase.ai.ondevice.DownloadStatus {
+    ctor public DownloadStatus.DownloadCompleted();
+  }
+
+  public static final class DownloadStatus.DownloadFailed extends com.google.firebase.ai.ondevice.DownloadStatus {
+    method public com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceException getException();
+    property public final com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceException exception;
+  }
+
+  public static final class DownloadStatus.DownloadInProgress extends com.google.firebase.ai.ondevice.DownloadStatus {
+    method public long getTotalBytesDownloaded();
+    property public final long totalBytesDownloaded;
+  }
+
+  public static final class DownloadStatus.DownloadStarted extends com.google.firebase.ai.ondevice.DownloadStatus {
+    method public long getBytesToDownload();
+    property public final long bytesToDownload;
+  }
+
+  public final class FirebaseAIOnDevice {
+    method public suspend Object? checkStatus(kotlin.coroutines.Continuation<? super com.google.firebase.ai.ondevice.OnDeviceModelStatus>);
+    method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.ondevice.DownloadStatus> download();
+    field public static final com.google.firebase.ai.ondevice.FirebaseAIOnDevice INSTANCE;
+  }
+
+  public final class OnDeviceModelStatus {
+    field public static final com.google.firebase.ai.ondevice.OnDeviceModelStatus AVAILABLE;
+    field public static final com.google.firebase.ai.ondevice.OnDeviceModelStatus.Companion Companion;
+    field public static final com.google.firebase.ai.ondevice.OnDeviceModelStatus DOWNLOADABLE;
+    field public static final com.google.firebase.ai.ondevice.OnDeviceModelStatus DOWNLOADING;
+    field public static final com.google.firebase.ai.ondevice.OnDeviceModelStatus UNAVAILABLE;
+  }
+
+  public static final class OnDeviceModelStatus.Companion {
+  }
+
+}
+
