@@ -796,7 +796,7 @@ package com.google.firebase.firestore.pipeline {
     method public final com.google.firebase.firestore.pipeline.Expression add(Number second);
     method public static final com.google.firebase.firestore.pipeline.Expression add(String numericFieldName, com.google.firebase.firestore.pipeline.Expression second);
     method public static final com.google.firebase.firestore.pipeline.Expression add(String numericFieldName, Number second);
-    method public com.google.firebase.firestore.pipeline.Selectable alias(String alias);
+    method public com.google.firebase.firestore.pipeline.AliasedExpression alias(String alias);
     method public static final com.google.firebase.firestore.pipeline.BooleanExpression and(com.google.firebase.firestore.pipeline.BooleanExpression condition, com.google.firebase.firestore.pipeline.BooleanExpression... conditions);
     method public static final com.google.firebase.firestore.pipeline.Expression array(java.lang.Object?... elements);
     method public static final com.google.firebase.firestore.pipeline.Expression array(java.util.List<? extends java.lang.Object?> elements);
