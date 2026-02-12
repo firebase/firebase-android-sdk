@@ -297,7 +297,8 @@ class CollectionHints internal constructor(options: InternalOptions) :
   }
 }
 
-class CollectionGroupSource(val collectionId: String, options: InternalOptions) :
+class CollectionGroupSource
+internal constructor(val collectionId: String, options: InternalOptions) :
   Stage<CollectionGroupSource>("collection_group", options) {
 
   internal constructor(
@@ -398,10 +399,9 @@ internal constructor(
     documents.asSequence().map(::encodeValue)
 }
 
-class SubcollectionSource(
-  internal val path: String,
-  options: InternalOptions = InternalOptions.EMPTY
-) : Stage<SubcollectionSource>("subcollection", options) {
+class SubcollectionSource
+internal constructor(internal val path: String, options: InternalOptions = InternalOptions.EMPTY) :
+  Stage<SubcollectionSource>("subcollection", options) {
 
   override fun self(options: InternalOptions) = SubcollectionSource(path, options)
 

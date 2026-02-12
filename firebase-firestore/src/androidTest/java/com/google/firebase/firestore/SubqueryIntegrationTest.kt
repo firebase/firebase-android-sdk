@@ -44,7 +44,7 @@ class SubqueryIntegrationTest {
       IntegrationTestUtil.getBackendEdition() == IntegrationTestUtil.BackendEdition.ENTERPRISE
     )
 
-    // Using testFirestore() ensures we get a uniquely configured instance if needed, 
+    // Using testFirestore() ensures we get a uniquely configured instance if needed,
     // but typically we want a clean DB reference.
     // IntegrationTestUtil.testFirestore() is standard.
     val collRef = IntegrationTestUtil.testCollection()
@@ -67,28 +67,35 @@ class SubqueryIntegrationTest {
     waitFor(r1.set(mapOf("name" to "reviewer1")))
 
     // Setup reviews
-    // Using collectionGroup requires consistent collection ID across hierarchy or just any collection with that ID.
+    // Using collectionGroup requires consistent collection ID across hierarchy or just any
+    // collection with that ID.
     // We'll create a top-level collection with the random ID for simplicity.
     val reviewsRef = db.collection(reviewCollectionId)
-    
+
     // Store author as a DocumentReference to match __name__ which is a Reference.
     waitFor(reviewsRef.document("run1_1").set(mapOf("author" to r1, "rating" to 5)))
     waitFor(reviewsRef.document("run1_2").set(mapOf("author" to r1, "rating" to 3)))
 
     // Construct subquery
     // Find reviews where author matches the variable 'author'
-    val subquery = db.pipeline().collectionGroup(reviewCollectionId)
+    val subquery =
+      db
+        .pipeline()
+        .collectionGroup(reviewCollectionId)
         .where(equal("author", variable("author")))
         .aggregate(field("rating").average().alias("avg_rating"))
 
     // Construct main pipeline
-    val pipeline = db.pipeline().collection(reviewerCollectionId)
+    val pipeline =
+      db
+        .pipeline()
+        .collection(reviewerCollectionId)
         .define(field("__name__").alias("author"))
         .addFields(subquery.toScalarExpression().alias("avg_review"))
 
     // Execute
     val results = waitFor(pipeline.execute())
-    
+
     // Check results
     assertThat(results).hasSize(1)
     val doc = results.first()
