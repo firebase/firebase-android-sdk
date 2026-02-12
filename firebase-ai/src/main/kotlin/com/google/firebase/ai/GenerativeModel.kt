@@ -306,7 +306,7 @@ internal constructor(
 
   internal fun hasFunction(call: FunctionCallPart): Boolean {
     return tools
-      ?.flatMap { it.autoFunctionDeclarations?.filterNotNull() ?: emptyList() }
+      ?.flatMap { it.autoFunctionDeclarations ?: emptyList() }
       ?.firstOrNull { it.name == call.name && it.functionReference != null } != null
   }
 
@@ -315,7 +315,7 @@ internal constructor(
     if (tools == null) {
       throw RuntimeException("No registered tools")
     }
-    val tool = tools.flatMap { it.autoFunctionDeclarations?.filterNotNull() ?: emptyList() }
+    val tool = tools.flatMap { it.autoFunctionDeclarations ?: emptyList() }
     val declaration =
       tool.firstOrNull() { it.name == call.name }
         ?: throw RuntimeException("No registered function named ${call.name}")
