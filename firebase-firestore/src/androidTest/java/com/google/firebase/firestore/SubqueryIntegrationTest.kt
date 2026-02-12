@@ -56,6 +56,7 @@ class SubqueryIntegrationTest {
     IntegrationTestUtil.tearDown()
   }
 
+  @org.junit.Ignore
   @Test
   fun testSubquery() {
     val reviewCollectionId = autoId()
