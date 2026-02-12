@@ -6,7 +6,6 @@ import com.google.firebase.firestore.TestUtil
 import com.google.firebase.firestore.pipeline.Expression.Companion.currentDocument
 import com.google.firebase.firestore.pipeline.Expression.Companion.field
 import com.google.firebase.firestore.pipeline.Expression.Companion.variable
-import com.google.firestore.v1.Value
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -20,9 +19,9 @@ internal class SubqueryPipelineTests {
   @Test
   fun `define creates DefineStage in proto`() {
     // Manually construct Pipeline or use a helper
-    // Since Pipeline constructor is internal, we can access it from this internal class in the same module
-    val pipeline = Pipeline(db, userDataReader, emptyList())
-      .define(field("title").alias("t"))
+    // Since Pipeline constructor is internal, we can access it from this internal class in the same
+    // module
+    val pipeline = Pipeline(db, userDataReader, emptyList()).define(field("title").alias("t"))
 
     val proto = pipeline.toPipelineProto(userDataReader)
     assertThat(proto.stagesCount).isEqualTo(1)
@@ -41,7 +40,7 @@ internal class SubqueryPipelineTests {
     val pipeline = Pipeline.subcollection("reviews")
     // We must provide a reader override since "subcollection" uses null internally
     val proto = pipeline.toPipelineProto(userDataReader)
-    
+
     assertThat(proto.stagesCount).isEqualTo(1)
     val stage = proto.getStages(0)
     assertThat(stage.name).isEqualTo("subcollection")
@@ -55,7 +54,7 @@ internal class SubqueryPipelineTests {
   fun `toArrayExpression creates FunctionExpression`() {
     val subPipeline = Pipeline.subcollection("sub_items")
     val expr = subPipeline.toArrayExpression()
-    
+
     val protoValue = expr.toProto(userDataReader)
     assertThat(protoValue.hasFunctionValue()).isTrue()
     assertThat(protoValue.functionValue.name).isEqualTo("array")
@@ -63,12 +62,12 @@ internal class SubqueryPipelineTests {
     val pipelineArg = protoValue.functionValue.getArgs(0)
     assertThat(pipelineArg.hasPipelineValue()).isTrue()
   }
-  
+
   @Test
   fun `toScalarExpression creates FunctionExpression`() {
     val subPipeline = Pipeline.subcollection("sub_items")
     val expr = subPipeline.toScalarExpression()
-    
+
     val protoValue = expr.toProto(userDataReader)
     assertThat(protoValue.hasFunctionValue()).isTrue()
     assertThat(protoValue.functionValue.name).isEqualTo("scalar")

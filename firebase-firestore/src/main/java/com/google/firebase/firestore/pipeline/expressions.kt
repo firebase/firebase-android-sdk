@@ -3091,15 +3091,16 @@ abstract class Expression internal constructor() {
     fun map(elements: Map<String, Any>): Expression =
       map(elements.flatMap { listOf(constant(it.key), toExprOrConstant(it.value)) }.toTypedArray())
 
-      /**
-       * Accesses a field/property of the expression (useful when the expression evaluates to a Map or Document).
-       *
-       * @param key The key of the field to access.
-       * @return An [Expression] representing the value of the field.
-       */
-      @JvmStatic
-      fun getField(expression: Expression, key: String): Expression =
-          FunctionExpression("field", notImplemented, expression, key)
+    /**
+     * Accesses a field/property of the expression (useful when the expression evaluates to a Map or
+     * Document).
+     *
+     * @param key The key of the field to access.
+     * @return An [Expression] representing the value of the field.
+     */
+    @JvmStatic
+    fun getField(expression: Expression, key: String): Expression =
+      FunctionExpression("field", notImplemented, expression, key)
 
     /**
      * Accesses a value from a map (object) field using the provided [key].
@@ -5428,8 +5429,8 @@ abstract class Expression internal constructor() {
      *
      * @return An [Expression] representing the current document.
      */
-    @JvmStatic fun currentDocument(): Expression =
-      FunctionExpression("current_document", notImplemented)
+    @JvmStatic
+    fun currentDocument(): Expression = FunctionExpression("current_document", notImplemented)
   }
 
   /**
@@ -5581,8 +5582,8 @@ abstract class Expression internal constructor() {
    * to calculated values.
    *
    * @param alias The alias to assign to this expression.
-   * @return A new [AliasedExpression] that wraps this expression and
-   * associates it with the provided alias.
+   * @return A new [AliasedExpression] that wraps this expression and associates it with the
+   * provided alias.
    */
   open fun alias(alias: String): AliasedExpression = AliasedExpression(alias, this)
 
@@ -7433,19 +7434,19 @@ abstract class Expression internal constructor() {
 /** Expressions that have an alias are [Selectable] */
 @Beta
 abstract class Selectable : Expression() {
-    internal abstract val alias: String
-    internal abstract val expr: Expression
+  internal abstract val alias: String
+  internal abstract val expr: Expression
 
-    internal companion object {
-        fun toSelectable(o: Any): Selectable {
-            return when (o) {
-                is Selectable -> o
-                is String -> field(o)
-                is FieldPath -> field(o)
-                else -> throw IllegalArgumentException("Unknown Selectable type: $o")
-            }
-        }
+  internal companion object {
+    fun toSelectable(o: Any): Selectable {
+      return when (o) {
+        is Selectable -> o
+        is String -> field(o)
+        is FieldPath -> field(o)
+        else -> throw IllegalArgumentException("Unknown Selectable type: $o")
+      }
     }
+  }
 }
 
 /** Represents an expression that will be given the alias in the output document. */
@@ -7763,7 +7764,11 @@ internal class BooleanFunctionExpression internal constructor(val expr: Expressi
     function: EvaluateFunction,
     fieldName: String,
     vararg params: Any
-  ) : this(name, function, arrayOf(Expression.field(fieldName), *Expression.toArrayOfExprOrConstant(params)))
+  ) : this(
+    name,
+    function,
+    arrayOf(Expression.field(fieldName), *Expression.toArrayOfExprOrConstant(params))
+  )
 
   override fun toProto(userDataReader: UserDataReader): Value = expr.toProto(userDataReader)
 
@@ -7932,4 +7937,3 @@ private class PipelineValueExpression(val pipeline: Pipeline) : Expression() {
   override fun canonicalId() = "pipeline(\${pipeline.hashCode()})"
   override fun toString() = "Pipeline(...)"
 }
-

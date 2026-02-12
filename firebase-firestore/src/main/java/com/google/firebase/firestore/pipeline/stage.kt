@@ -399,15 +399,16 @@ internal constructor(
 }
 
 class SubcollectionSource(
-    internal val path: String,
-    options: InternalOptions = InternalOptions.EMPTY
+  internal val path: String,
+  options: InternalOptions = InternalOptions.EMPTY
 ) : Stage<SubcollectionSource>("subcollection", options) {
 
-    override fun self(options: InternalOptions) = SubcollectionSource(path, options)
+  override fun self(options: InternalOptions) = SubcollectionSource(path, options)
 
-    override fun canonicalId(): String = "${name}($path)"
+  override fun canonicalId(): String = "${name}($path)"
 
-    override fun args(userDataReader: UserDataReader): Sequence<Value> = sequenceOf(Values.encodeValue(path))
+  override fun args(userDataReader: UserDataReader): Sequence<Value> =
+    sequenceOf(Values.encodeValue(path))
 }
 
 private fun associateWithoutDuplications(
@@ -1323,18 +1324,18 @@ class UnnestOptions private constructor(options: InternalOptions) :
 
 internal class DefineStage
 internal constructor(
-    private val aliasedExpressions: Array<out AliasedExpression>,
-    options: InternalOptions = InternalOptions.EMPTY
+  private val aliasedExpressions: Array<out AliasedExpression>,
+  options: InternalOptions = InternalOptions.EMPTY
 ) : Stage<DefineStage>("define", options) {
 
   override fun self(options: InternalOptions) = DefineStage(aliasedExpressions, options)
 
   override fun canonicalId(): String {
-      TODO("Not yet implemented")
+    TODO("Not yet implemented")
   }
 
   override fun args(userDataReader: UserDataReader): Sequence<Value> {
-     return sequenceOf(encodeValue(associateWithoutDuplications(aliasedExpressions, userDataReader)))
+    return sequenceOf(encodeValue(associateWithoutDuplications(aliasedExpressions, userDataReader)))
   }
 
   override fun equals(other: Any?): Boolean {
