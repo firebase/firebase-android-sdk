@@ -250,7 +250,7 @@ class protoUnitTest {
 
   @Test
   fun `listValue() should generate same values when given same random seed`() =
-    verifyArbGeneratesSameValuesWithSameRandomSeed(Arb.proto.listValue())
+    verifyArbGeneratesSameValuesWithSameRandomSeed(Arb.proto.listValue().map { it.listValue })
 
   @Test
   fun `structKey() should generate same values when given same random seed`() =
@@ -258,7 +258,7 @@ class protoUnitTest {
 
   @Test
   fun `struct() should generate same values when given same random seed`() =
-    verifyArbGeneratesSameValuesWithSameRandomSeed(Arb.proto.struct())
+    verifyArbGeneratesSameValuesWithSameRandomSeed(Arb.proto.struct().map { it.struct })
 
   private fun verifyArbGeneratesValuesWithKindCase(
     arb: Arb<Value>,
