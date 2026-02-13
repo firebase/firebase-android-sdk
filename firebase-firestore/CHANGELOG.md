@@ -2,6 +2,10 @@
 
 - [feature] Added support for `regexFind` and `regexFindAll` Pipeline expressions.
   [#7669](https://github.com/firebase/firebase-android-sdk/pull/7669)
+- [changed] Updated `Expression.alias()` to return `AliasedExpression`.
+- [removed] Removed `isNan`, `isNotNan`, `isNull`, and `isNotNull` factory methods from `Expression`.
+  Use `equal(Double.NaN)`, `notEqual(Double.NaN)`, `equal(nullValue())`, and `notEqual(nullValue())`
+  respectively.
 
 # 26.1.0
 
