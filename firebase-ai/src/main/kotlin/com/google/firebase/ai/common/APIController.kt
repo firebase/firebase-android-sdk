@@ -16,19 +16,34 @@
 
 package com.google.firebase.ai.common
 
+import android.content.pm.PackageManager
+import android.content.pm.Signature
+import android.os.Build
 import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.ai.common.util.decodeToFlow
 import com.google.firebase.ai.common.util.fullModelName
+import com.google.firebase.ai.type.APINotConfiguredException
 import com.google.firebase.ai.type.CountTokensResponse
 import com.google.firebase.ai.type.FinishReason
+import com.google.firebase.ai.type.FirebaseAIException
 import com.google.firebase.ai.type.GRpcErrorResponse
 import com.google.firebase.ai.type.GenerateContentResponse
+import com.google.firebase.ai.type.GenerativeBackend
+import com.google.firebase.ai.type.GenerativeBackendEnum
 import com.google.firebase.ai.type.ImagenGenerationResponse
+import com.google.firebase.ai.type.InvalidAPIKeyException
+import com.google.firebase.ai.type.PromptBlockedException
 import com.google.firebase.ai.type.PublicPreviewAPI
+import com.google.firebase.ai.type.QuotaExceededException
 import com.google.firebase.ai.type.RequestOptions
 import com.google.firebase.ai.type.Response
+import com.google.firebase.ai.type.ResponseStoppedException
+import com.google.firebase.ai.type.SerializationException
+import com.google.firebase.ai.type.ServerException
+import com.google.firebase.ai.type.ServiceDisabledException
+import com.google.firebase.ai.type.UnsupportedUserLocationException
 import com.google.firebase.options
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -36,7 +51,7 @@ import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.plugins.websocket.ClientWebSocketSession
+import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.client.plugins.websocket.webSocketSession
 import io.ktor.client.request.HttpRequestBuilder
@@ -53,6 +68,8 @@ import io.ktor.http.contentType
 import io.ktor.http.withCharset
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.utils.io.charsets.Charset
+import java.security.MessageDigest
+import java.security.NoSuchAlgorithmException
 import kotlin.math.max
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -65,6 +82,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.json.ClassDiscriminatorMode
 import kotlinx.serialization.json.Json
 
 @OptIn(ExperimentalSerializationApi::class)
@@ -73,6 +91,7 @@ internal val JSON = Json {
   prettyPrint = false
   isLenient = true
   explicitNulls = false
+  classDiscriminatorMode = ClassDiscriminatorMode.NONE
 }
 
 /**
@@ -99,6 +118,7 @@ internal constructor(
   private val appVersion: Int = 0,
   private val googleAppId: String,
   private val headerProvider: HeaderProvider?,
+  private val backend: GenerativeBackend? = null
 ) {
 
   constructor(
@@ -108,6 +128,7 @@ internal constructor(
     apiClient: String,
     firebaseApp: FirebaseApp,
     headerProvider: HeaderProvider? = null,
+    backend: GenerativeBackend? = null,
   ) : this(
     key,
     model,
@@ -117,10 +138,13 @@ internal constructor(
     firebaseApp,
     getVersionNumber(firebaseApp),
     firebaseApp.options.applicationId,
-    headerProvider
+    headerProvider,
+    backend
   )
 
   private val model = fullModelName(model)
+  private val appPackageName by lazy { firebaseApp.applicationContext.packageName }
+  private val appSigningCertFingerprint by lazy { getSigningCertFingerprint() }
 
   private val client =
     HttpClient(httpEngine) {
@@ -144,8 +168,40 @@ internal constructor(
         .body<GenerateContentResponse.Internal>()
         .validate()
     } catch (e: Throwable) {
-      throw FirebaseCommonAIException.from(e)
+      throw FirebaseAIException.from(e)
     }
+
+  suspend fun templateGenerateContent(
+    templateId: String,
+    request: TemplateGenerateContentRequest
+  ): GenerateContentResponse.Internal =
+    try {
+      client
+        .post(
+          "${requestOptions.endpoint}/${requestOptions.apiVersion}/$templateId:templateGenerateContent"
+        ) {
+          applyCommonConfiguration(request)
+          applyHeaderProvider()
+        }
+        .also { validateResponse(it) }
+        .body<GenerateContentResponse.Internal>()
+        .validate()
+    } catch (e: Throwable) {
+      throw FirebaseAIException.from(e)
+    }
+
+  fun templateGenerateContentStream(
+    templateId: String,
+    request: TemplateGenerateContentRequest
+  ): Flow<GenerateContentResponse.Internal> =
+    client
+      .postStream<GenerateContentResponse.Internal>(
+        "${requestOptions.endpoint}/${requestOptions.apiVersion}/$templateId:templateStreamGenerateContent?alt=sse"
+      ) {
+        applyCommonConfiguration(request)
+      }
+      .map { it.validate() }
+      .catch { throw FirebaseAIException.from(it) }
 
   suspend fun generateImage(request: GenerateImageRequest): ImagenGenerationResponse.Internal =
     try {
@@ -157,13 +213,37 @@ internal constructor(
         .also { validateResponse(it) }
         .body<ImagenGenerationResponse.Internal>()
     } catch (e: Throwable) {
-      throw FirebaseCommonAIException.from(e)
+      throw FirebaseAIException.from(e)
+    }
+
+  suspend fun templateGenerateImage(
+    templateId: String,
+    request: TemplateGenerateImageRequest
+  ): ImagenGenerationResponse.Internal =
+    try {
+      client
+        .post(
+          "${requestOptions.endpoint}/${requestOptions.apiVersion}/$templateId:templatePredict"
+        ) {
+          applyCommonConfiguration(request)
+          applyHeaderProvider()
+        }
+        .also { validateResponse(it) }
+        .body<ImagenGenerationResponse.Internal>()
+    } catch (e: Throwable) {
+      throw FirebaseAIException.from(e)
     }
 
   private fun getBidiEndpoint(location: String): String =
-    "wss://firebasevertexai.googleapis.com/ws/google.firebase.vertexai.v1beta.LlmBidiService/BidiGenerateContent/locations/$location?key=$key"
+    when (backend?.backend) {
+      GenerativeBackendEnum.VERTEX_AI,
+      null ->
+        "wss://firebasevertexai.googleapis.com/ws/google.firebase.vertexai.v1beta.LlmBidiService/BidiGenerateContent/locations/$location?key=$key"
+      GenerativeBackendEnum.GOOGLE_AI ->
+        "wss://firebasevertexai.googleapis.com/ws/google.firebase.vertexai.v1beta.GenerativeService/BidiGenerateContent?key=$key"
+    }
 
-  suspend fun getWebSocketSession(location: String): ClientWebSocketSession =
+  suspend fun getWebSocketSession(location: String): DefaultClientWebSocketSession =
     client.webSocketSession(getBidiEndpoint(location)) { applyCommonHeaders() }
 
   fun generateContentStream(
@@ -176,7 +256,7 @@ internal constructor(
         applyCommonConfiguration(request)
       }
       .map { it.validate() }
-      .catch { throw FirebaseCommonAIException.from(it) }
+      .catch { throw FirebaseAIException.from(it) }
 
   suspend fun countTokens(request: CountTokensRequest): CountTokensResponse.Internal =
     try {
@@ -188,13 +268,15 @@ internal constructor(
         .also { validateResponse(it) }
         .body()
     } catch (e: Throwable) {
-      throw FirebaseCommonAIException.from(e)
+      throw FirebaseAIException.from(e)
     }
 
   private fun HttpRequestBuilder.applyCommonHeaders() {
     contentType(ContentType.Application.Json)
     header("x-goog-api-key", key)
     header("x-goog-api-client", apiClient)
+    header("X-Android-Package", appPackageName)
+    header("X-Android-Cert", appSigningCertFingerprint ?: "")
     if (firebaseApp.isDataCollectionDefaultEnabled) {
       header("X-Firebase-AppId", googleAppId)
       header("X-Firebase-AppVersion", appVersion)
@@ -205,6 +287,8 @@ internal constructor(
       is GenerateContentRequest -> setBody<GenerateContentRequest>(request)
       is CountTokensRequest -> setBody<CountTokensRequest>(request)
       is GenerateImageRequest -> setBody<GenerateImageRequest>(request)
+      is TemplateGenerateContentRequest -> setBody<TemplateGenerateContentRequest>(request)
+      is TemplateGenerateImageRequest -> setBody<TemplateGenerateImageRequest>(request)
     }
     applyCommonHeaders()
   }
@@ -270,6 +354,64 @@ internal constructor(
     }
   }
 
+  @OptIn(ExperimentalStdlibApi::class)
+  private fun getSigningCertFingerprint(): String? {
+    val signature = getCurrentSignature() ?: return null
+    try {
+      val messageDigest = MessageDigest.getInstance("SHA-1")
+      val digest = messageDigest.digest(signature.toByteArray())
+      return digest.toHexString(HexFormat.UpperCase)
+    } catch (e: NoSuchAlgorithmException) {
+      Log.w(TAG, "No support for SHA-1 algorithm found.", e)
+      return null
+    }
+  }
+
+  @Suppress("DEPRECATION")
+  private fun getCurrentSignature(): Signature? {
+    val packageName = firebaseApp.applicationContext.packageName
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
+      val packageInfo =
+        try {
+          firebaseApp.applicationContext.packageManager.getPackageInfo(
+            packageName,
+            PackageManager.GET_SIGNATURES
+          )
+        } catch (e: PackageManager.NameNotFoundException) {
+          Log.d(TAG, "PackageManager couldn't find the package \"$packageName\"")
+          return null
+        }
+      val signatures = packageInfo?.signatures ?: return null
+      if (signatures.size > 1) {
+        Log.d(
+          TAG,
+          "Multiple certificates found. On Android < P, certificate order is non-deterministic; an rotated/old cert may be used."
+        )
+      }
+      return signatures.firstOrNull()
+    }
+    val packageInfo =
+      try {
+        firebaseApp.applicationContext.packageManager.getPackageInfo(
+          packageName,
+          PackageManager.GET_SIGNING_CERTIFICATES
+        )
+      } catch (e: PackageManager.NameNotFoundException) {
+        Log.d(TAG, "PackageManager couldn't find the package \"$packageName\"")
+        return null
+      }
+    val signingInfo = packageInfo?.signingInfo ?: return null
+    if (signingInfo.hasMultipleSigners()) {
+      Log.d(TAG, "App has been signed with multiple certificates. Defaulting to the first one")
+      return signingInfo.apkContentsSigners.first()
+    } else {
+      // The `signingCertificateHistory` contains a sorted list of certificates used to sign this
+      // artifact, with the original one first, and once it's rotated, the current one is added at
+      // the end of the list. See the method's refdocs for more info.
+      return signingInfo.signingCertificateHistory.lastOrNull()
+    }
+  }
+
   companion object {
     private val TAG = APIController::class.java.simpleName
 
@@ -323,6 +465,11 @@ private suspend fun validateResponse(response: HttpResponse) {
   if (message.contains("The prompt could not be submitted")) {
     throw PromptBlockedException(message)
   }
+  if (message.contains("genai config not found")) {
+    throw APINotConfiguredException(
+      "The Gemini Developer API is not enabled, to enable and configure, see https://firebase.google.com/docs/ai-logic/faq-and-troubleshooting?api=dev#error-genai-config-not-found"
+    )
+  }
   getServiceDisabledErrorDetailsOrNull(error)?.let {
     val errorMessage =
       if (it.metadata?.get("service") == "firebasevertexai.googleapis.com") {
@@ -356,9 +503,9 @@ private fun GenerateContentResponse.Internal.validate() = apply {
   if ((candidates?.isEmpty() != false) && promptFeedback == null) {
     throw SerializationException("Error deserializing response, found no valid fields")
   }
-  promptFeedback?.blockReason?.let { throw PromptBlockedException(this) }
+  promptFeedback?.blockReason?.let { throw PromptBlockedException(this.toPublic(), null, null) }
   candidates
     ?.mapNotNull { it.finishReason }
     ?.firstOrNull { it != FinishReason.Internal.STOP }
-    ?.let { throw ResponseStoppedException(this) }
+    ?.let { throw ResponseStoppedException(this.toPublic()) }
 }

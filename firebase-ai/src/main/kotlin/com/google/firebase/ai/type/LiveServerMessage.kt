@@ -16,6 +16,8 @@
 
 package com.google.firebase.ai.type
 
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
@@ -32,6 +34,7 @@ import kotlinx.serialization.json.jsonObject
  * @see LiveServerToolCall
  * @see LiveServerToolCallCancellation
  * @see LiveServerSetupComplete
+ * @see LiveServerGoAway
  */
 @PublicPreviewAPI public interface LiveServerMessage
 
@@ -42,7 +45,9 @@ import kotlinx.serialization.json.jsonObject
  * play it out in realtime.
  */
 @PublicPreviewAPI
-public class LiveServerContent(
+public class LiveServerContent
+@Deprecated("This class should not be constructed, only received from the Server")
+public constructor(
   /**
    * The content that the model has generated as part of the current conversation with the user.
    *
@@ -82,25 +87,43 @@ public class LiveServerContent(
    * [interrupted] -> [turnComplete].
    */
   public val generationComplete: Boolean,
+
+  /**
+   * The input transcription. The transcription is independent to the model turn which means it
+   * doesn't imply any ordering between transcription and model turn.
+   */
+  public val inputTranscription: Transcription?,
+
+  /**
+   * The output transcription. The transcription is independent to the model turn which means it
+   * doesn't imply any ordering between transcription and model turn.
+   */
+  public val outputTranscription: Transcription?
 ) : LiveServerMessage {
   @OptIn(ExperimentalSerializationApi::class)
   @Serializable
   internal data class Internal(
-    val modelTurn: Content.Internal? = null,
-    val interrupted: Boolean = false,
-    val turnComplete: Boolean = false,
-    val generationComplete: Boolean = false
+    val modelTurn: Content.Internal?,
+    val interrupted: Boolean?,
+    val turnComplete: Boolean?,
+    val generationComplete: Boolean?,
+    val inputTranscription: Transcription.Internal?,
+    val outputTranscription: Transcription.Internal?
   )
   @Serializable
   internal data class InternalWrapper(val serverContent: Internal) : InternalLiveServerMessage {
     @OptIn(ExperimentalSerializationApi::class)
-    override fun toPublic() =
-      LiveServerContent(
+    override fun toPublic(): LiveServerContent {
+      // WhenMajor(Revisit the decision to make these have default values)
+      return LiveServerContent(
         serverContent.modelTurn?.toPublic(),
-        serverContent.interrupted,
-        serverContent.turnComplete,
-        serverContent.generationComplete
+        serverContent.interrupted ?: false,
+        serverContent.turnComplete ?: false,
+        serverContent.generationComplete ?: false,
+        serverContent.inputTranscription?.toPublic(),
+        serverContent.outputTranscription?.toPublic()
       )
+    }
   }
 }
 
@@ -135,7 +158,8 @@ public class LiveServerToolCall(public val functionCalls: List<FunctionCallPart>
         toolCall.functionCalls.map { functionCall ->
           FunctionCallPart(
             name = functionCall.name,
-            args = functionCall.args.orEmpty().mapValues { it.value ?: JsonNull }
+            args = functionCall.args.orEmpty().mapValues { it.value ?: JsonNull },
+            id = functionCall.id
           )
         }
       )
@@ -161,6 +185,33 @@ public class LiveServerToolCallCancellation(public val functionIds: List<String>
   }
 }
 
+/**
+ * Notification that the server is initiating a disconnect of the session.
+ *
+ * This message is sent by the server when it needs to close the connection, typically due to
+ * session timeout, resource constraints, or other server-side reasons.
+ *
+ * When this message is received, the client should gracefully close the [LiveSession] by calling
+ * [LiveSession.close].
+ *
+ * @property timeLeft The time remaining before the connection terminates.
+ */
+@PublicPreviewAPI
+public class LiveServerGoAway(public val timeLeft: Duration?) : LiveServerMessage {
+  @Serializable internal data class Internal(val timeLeft: String? = null)
+
+  @Serializable
+  internal data class InternalWrapper(val goAway: Internal) : InternalLiveServerMessage {
+    override fun toPublic(): LiveServerGoAway {
+      val timeLeftTrimmed = goAway.timeLeft?.trim()
+      // Protobuf Duration format: always ends with 's' (seconds)
+      val parsedDuration =
+        timeLeftTrimmed?.takeIf { it.endsWith("s") }?.dropLast(1)?.toDoubleOrNull()?.seconds
+      return LiveServerGoAway(parsedDuration)
+    }
+  }
+}
+
 @PublicPreviewAPI
 @Serializable(LiveServerMessageSerializer::class)
 internal sealed interface InternalLiveServerMessage {
@@ -181,9 +232,10 @@ internal object LiveServerMessageSerializer :
       "toolCall" in jsonObject -> LiveServerToolCall.InternalWrapper.serializer()
       "toolCallCancellation" in jsonObject ->
         LiveServerToolCallCancellation.InternalWrapper.serializer()
+      "goAway" in jsonObject -> LiveServerGoAway.InternalWrapper.serializer()
       else ->
         throw SerializationException(
-          "The given subclass of LiveServerMessage (${javaClass.simpleName}) is not supported in the serialization yet."
+          "Unknown LiveServerMessage response type. Keys found: ${jsonObject.keys}"
         )
     }
   }

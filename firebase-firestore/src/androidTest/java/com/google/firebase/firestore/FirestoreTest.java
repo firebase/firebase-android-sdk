@@ -16,6 +16,7 @@ package com.google.firebase.firestore;
 
 import static com.google.firebase.firestore.AccessHelper.getAsyncQueue;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.checkOnlineAndOfflineResultsMatch;
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.getBackendEdition;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.isRunningAgainstEmulator;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.newTestSettings;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.provider;
@@ -1561,6 +1562,10 @@ public class FirestoreTest {
 
   @Test
   public void snapshotListenerSortsFilteredQueryByDocumentIdsSameAsGetQuery() {
+    assumeTrue(
+        "Standard-only behavior",
+        getBackendEdition() == IntegrationTestUtil.BackendEdition.STANDARD);
+
     Map<String, Map<String, Object>> testDocs =
         map(
             "A", map("a", 1),

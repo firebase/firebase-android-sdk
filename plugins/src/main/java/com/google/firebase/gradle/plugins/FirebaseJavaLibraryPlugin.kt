@@ -17,8 +17,6 @@
 package com.google.firebase.gradle.plugins
 
 import com.google.firebase.gradle.plugins.LibraryType.JAVA
-import com.google.firebase.gradle.plugins.semver.ApiDiffer
-import com.google.firebase.gradle.plugins.semver.GmavenCopier
 import org.gradle.api.Project
 import org.gradle.api.attributes.Attribute
 import org.gradle.api.plugins.JavaLibraryPlugin
@@ -78,43 +76,8 @@ class FirebaseJavaLibraryPlugin : BaseFirebaseLibraryPlugin() {
       version.value(firebaseLibrary.version)
       latestReleasedVersion.value(firebaseLibrary.latestReleasedVersion.orElse(""))
     }
-    project.mkdir("semver")
-    project.tasks.register<GmavenCopier>("copyPreviousArtifacts") {
-      dependsOn("jar")
-      project.file("semver/previous.jar").delete()
-      groupId.value(firebaseLibrary.groupId.get())
-      artifactId.value(firebaseLibrary.artifactId.get())
-      aarAndroidFile.value(false)
-      filePath.value(project.file("semver/previous.jar").absolutePath)
-    }
-    val currentJarFile =
-      project
-        .file("build/libs/${firebaseLibrary.artifactId.get()}-${firebaseLibrary.version}.jar")
-        .absolutePath
-    val previousJarFile = project.file("semver/previous.jar").absolutePath
-    project.tasks.register<ApiDiffer>("semverCheck") {
-      currentJar.value(currentJarFile)
-      previousJar.value(previousJarFile)
-      version.value(firebaseLibrary.version)
-      previousVersionString.value(
-        GmavenHelper(firebaseLibrary.groupId.get(), firebaseLibrary.artifactId.get())
-          .getLatestReleasedVersion()
-      )
 
-      dependsOn("copyPreviousArtifacts")
-    }
-
-    project.tasks.register<CopyApiTask>("copyApiTxtFile") {
-      apiTxtFile.set(project.file("api.txt"))
-      output.set(project.file("new_api.txt"))
-    }
-
-    project.tasks.register<SemVerTask>("metalavaSemver") {
-      apiTxtFile.set(project.file("new_api.txt"))
-      otherApiFile.set(project.file("api.txt"))
-      currentVersionString.value(firebaseLibrary.version)
-      previousVersionString.value(firebaseLibrary.previousVersion)
-    }
+    setupMetalavaSemver(project, firebaseLibrary)
   }
 
   private fun setupApiInformationAnalysis(project: Project) {

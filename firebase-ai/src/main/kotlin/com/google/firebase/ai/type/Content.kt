@@ -17,6 +17,7 @@
 package com.google.firebase.ai.type
 
 import android.graphics.Bitmap
+import kotlin.collections.filterNot
 import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
@@ -86,18 +87,29 @@ constructor(public val role: String? = "user", public val parts: List<Part>) {
   @OptIn(ExperimentalSerializationApi::class)
   internal fun toInternal() = Internal(this.role ?: "user", this.parts.map { it.toInternal() })
 
+  @OptIn(ExperimentalSerializationApi::class)
+  internal fun toTemplateInternal() =
+    Internal(this.role ?: "user", this.parts.map { it.toInternal(true) })
+
   @ExperimentalSerializationApi
   @Serializable
   internal data class Internal(
     @EncodeDefault val role: String? = "user",
-    val parts: List<InternalPart>
+    val parts: List<InternalPart>? = null
   ) {
     internal fun toPublic(): Content {
+      // Return empty if none of the parts is a known part
+      if (parts == null || parts.filterNot { it is UnknownPart.Internal }.isEmpty()) {
+        return Content(role, emptyList())
+      }
+      // From all the known parts, if they are all text and empty, we coalesce them into a single
+      // one-character string part so the backend doesn't fail if we send this back as part of a
+      // multi-turn interaction.
       val returnedParts =
-        parts.map { it.toPublic() }.filterNot { it is TextPart && it.text.isEmpty() }
-      // If all returned parts were text and empty, we coalesce them into a single one-character
-      // string
-      // part so the backend doesn't fail if we send this back as part of a multi-turn interaction.
+        parts
+          .filterNot { it is UnknownPart.Internal }
+          .map { it.toPublic() }
+          .filterNot { it is TextPart && it.text.isEmpty() }
       return Content(role, returnedParts.ifEmpty { listOf(TextPart(" ")) })
     }
   }

@@ -16,9 +16,22 @@
 
 package com.google.firebase.dataconnect.testutil.property.arbitrary
 
+import com.google.firebase.dataconnect.testutil.withNullAppended
 import io.kotest.property.Arb
+import io.kotest.property.Exhaustive
 import io.kotest.property.arbitrary.arbitrary
+import io.kotest.property.arbitrary.filterNot
+import io.kotest.property.arbitrary.flatMap
+import io.kotest.property.arbitrary.map
+import io.kotest.property.exhaustive.enum
+import io.kotest.property.exhaustive.exhaustive
 import kotlin.random.nextInt
+
+/** Returns a new [Arb] that produces two _unequal_ values of this [Arb]. */
+fun <T> Arb<T>.distinctPair(isEqual: (T, T) -> Boolean = { v1, v2 -> v1 == v2 }): Arb<Pair<T, T>> =
+  flatMap { value1 ->
+    this@distinctPair.filterNot { isEqual(value1, it) }.map { Pair(value1, it) }
+  }
 
 fun Arb<String>.withPrefix(prefix: String): Arb<String> = arbitrary { "$prefix${bind()}" }
 
@@ -72,3 +85,9 @@ private fun pow10(n: Int): Int {
   repeat(n) { result *= 10 }
   return result
 }
+
+/**
+ * Creates and returns a new [Exhaustive] whose values are all of the values of [T] and also `null`.
+ */
+inline fun <reified T : Enum<T>> Exhaustive.Companion.enumWithNull(): Exhaustive<T?> =
+  Exhaustive.enum<T>().values.withNullAppended().exhaustive()

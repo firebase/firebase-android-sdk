@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     id 'firebase-library'
     id("kotlin-android")
@@ -75,7 +77,10 @@ android {
         def targetBackend = findProperty("targetBackend") ?: "emulator"
         buildConfigField("String", "TARGET_BACKEND", "\"$targetBackend\"")
 
-        def targetDatabaseId = findProperty('targetDatabaseId') ?: "(default)"
+        def backendEdition = findProperty("backendEdition") ?: "enterprise"
+        buildConfigField("String", "BACKEND_EDITION", "\"$backendEdition\"")
+
+        def targetDatabaseId = findProperty('targetDatabaseId') ?: "enterprise"
         buildConfigField("String", "TARGET_DATABASE_ID", "\"$targetDatabaseId\"")
 
         def localProps = new Properties()
@@ -108,10 +113,11 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
-    kotlinOptions { jvmTarget = "1.8" }
     testOptions.unitTests.includeAndroidResources = true
 
 }
+
+kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_1_8 } }
 
 tasks.withType(Test) {
     maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
@@ -122,15 +128,14 @@ dependencies {
 
     api project(':protolite-well-known-types')
     api libs.playservices.tasks
-    api 'com.google.firebase:firebase-annotations:16.2.0'
+    api libs.firebase.annotations
     api 'com.google.firebase:firebase-appcheck-interop:17.0.0'
     api('com.google.firebase:firebase-auth-interop:19.0.2') {
         exclude group: "com.google.firebase", module: "firebase-common"
     }
 
-    api("com.google.firebase:firebase-common:21.0.0")
-    api("com.google.firebase:firebase-common-ktx:21.0.0")
-    api("com.google.firebase:firebase-components:18.0.0")
+    api(libs.firebase.common)
+    api(libs.firebase.components)
     api('com.google.firebase:firebase-database-collection:18.0.1')
 
     implementation libs.androidx.annotation
@@ -142,6 +147,7 @@ dependencies {
     implementation libs.grpc.stub
     implementation libs.kotlin.stdlib
     implementation libs.kotlinx.coroutines.core
+    implementation 'com.google.re2j:re2j:1.6'
 
     compileOnly libs.autovalue.annotations
     compileOnly libs.javax.annotation.jsr250
@@ -159,7 +165,7 @@ dependencies {
     testImplementation 'com.google.guava:guava-testlib:12.0-rc2'
     testImplementation libs.truth
     testImplementation libs.junit
-    testImplementation libs.hamcrest.junit
+    testImplementation libs.hamcrest
     testImplementation libs.mockito.core
     testImplementation libs.robolectric
 

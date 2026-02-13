@@ -28,7 +28,7 @@ import java.util.concurrent.Executor
 import java.util.concurrent.atomic.AtomicLong
 import okhttp3.Call
 import okhttp3.Callback
-import okhttp3.MediaType
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody
@@ -133,7 +133,7 @@ internal class PublisherStream(
       val configuredClient = options.apply(client)
       val requestBody =
         RequestBody.create(
-          MediaType.parse("application/json"),
+          "application/json".toMediaTypeOrNull(),
           JSONObject(mapOf("data" to serializer.encode(data))).toString()
         )
       val request =
@@ -167,7 +167,7 @@ internal class PublisherStream(
 
           override fun onResponse(call: Call, response: Response) {
             validateResponse(response)
-            val bodyStream = response.body()?.byteStream()
+            val bodyStream = response.body?.byteStream()
             if (bodyStream != null) {
               processSSEStream(bodyStream)
             } else {
@@ -309,21 +309,21 @@ internal class PublisherStream(
 
     val errorMessage: String
     if (
-      response.code() == 404 &&
-        MediaType.parse(response.header("Content-Type") ?: "")?.subtype() == "html"
+      response.code == 404 &&
+        (response.header("Content-Type") ?: "").toMediaTypeOrNull()?.subtype == "html"
     ) {
-      errorMessage = """URL not found. Raw response: ${response.body()?.string()}""".trimMargin()
+      errorMessage = """URL not found. Raw response: ${response.body?.string()}""".trimMargin()
       notifyError(
         FirebaseFunctionsException(
           errorMessage,
-          FirebaseFunctionsException.Code.fromHttpStatus(response.code()),
+          FirebaseFunctionsException.Code.fromHttpStatus(response.code),
           null
         )
       )
       return
     }
 
-    val text = response.body()?.string() ?: ""
+    val text = response.body?.string() ?: ""
     val error: Any?
     try {
       val json = JSONObject(text)

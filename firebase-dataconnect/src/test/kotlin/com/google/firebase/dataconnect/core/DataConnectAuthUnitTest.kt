@@ -49,11 +49,14 @@ import io.kotest.assertions.withClue
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.property.Arb
 import io.kotest.property.RandomSource
+import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.next
+import io.kotest.property.arbs.products.brand
 import io.mockk.coEvery
 import io.mockk.confirmVerified
 import io.mockk.every
@@ -302,12 +305,52 @@ class DataConnectAuthUnitTest {
 
     val result = dataConnectAuth.getToken(requestId)
 
-    withClue("result=$result") { result shouldBe accessToken }
+    withClue("result=$result") { result.shouldNotBeNull().token shouldBe accessToken }
     mockLogger.shouldHaveLoggedExactlyOneMessageContaining(requestId)
     mockLogger.shouldHaveLoggedExactlyOneMessageContaining(
       "returns retrieved token: ${accessToken.toScrubbedAccessToken()}"
     )
     mockLogger.shouldNotHaveLoggedAnyMessagesContaining(accessToken)
+  }
+
+  @Test
+  fun `getToken() should populate authUid from sub claim`() = runTest {
+    val dataConnectAuth = newDataConnectAuth()
+    dataConnectAuth.initialize()
+    advanceUntilIdle()
+    val uid = Arb.brand().map { it.value }.next(rs)
+    coEvery { mockInternalAuthProvider.getAccessToken(any()) } returns
+      taskForToken(accessToken, mapOf("sub" to uid))
+
+    val result = dataConnectAuth.getToken(requestId)
+
+    result.shouldNotBeNull().authUid shouldBe uid
+  }
+
+  @Test
+  fun `getToken() should populate null authUid if sub claim is missing`() = runTest {
+    val dataConnectAuth = newDataConnectAuth()
+    dataConnectAuth.initialize()
+    advanceUntilIdle()
+    coEvery { mockInternalAuthProvider.getAccessToken(any()) } returns
+      taskForToken(accessToken, emptyMap())
+
+    val result = dataConnectAuth.getToken(requestId)
+
+    result.shouldNotBeNull().authUid.shouldBeNull()
+  }
+
+  @Test
+  fun `getToken() should populate null authUid if sub claim is not a String`() = runTest {
+    val dataConnectAuth = newDataConnectAuth()
+    dataConnectAuth.initialize()
+    advanceUntilIdle()
+    coEvery { mockInternalAuthProvider.getAccessToken(any()) } returns
+      taskForToken(accessToken, mapOf("sub" to 42))
+
+    val result = dataConnectAuth.getToken(requestId)
+
+    result.shouldNotBeNull().authUid.shouldBeNull()
   }
 
   @Test
@@ -363,7 +406,7 @@ class DataConnectAuthUnitTest {
     dataConnectAuth.forceRefresh()
     val result = dataConnectAuth.getToken(requestId)
 
-    withClue("result=$result") { result shouldBe accessToken }
+    withClue("result=$result") { result.shouldNotBeNull().token shouldBe accessToken }
     verify(exactly = 1) { mockInternalAuthProvider.getAccessToken(true) }
     verify(exactly = 0) { mockInternalAuthProvider.getAccessToken(false) }
     mockLogger.shouldHaveLoggedExactlyOneMessageContaining(requestId)
@@ -419,7 +462,7 @@ class DataConnectAuthUnitTest {
         taskForToken(accessTokenGenerator.next().also { tokens.add(it) })
       }
 
-    val results = List(5) { dataConnectAuth.getToken(requestId) }
+    val results = List(5) { dataConnectAuth.getToken(requestId)?.token }
 
     results shouldContainExactly tokens
   }
@@ -447,7 +490,7 @@ class DataConnectAuthUnitTest {
         }
       }
 
-    val actualTokens = jobs.map { it.await() }
+    val actualTokens = jobs.map { it.await()?.token }
     actualTokens.forEachIndexed { index, token ->
       withClue("actualTokens[$index]") { tokens shouldContain token }
     }
@@ -481,7 +524,7 @@ class DataConnectAuthUnitTest {
 
     val result = dataConnectAuth.getToken(requestId)
 
-    withClue("result=$result") { result shouldBe tokens.last() }
+    withClue("result=$result") { result.shouldNotBeNull().token shouldBe tokens.last() }
     verify(exactly = 2) { mockInternalAuthProvider.getAccessToken(true) }
     verify(exactly = 1) { mockInternalAuthProvider.getAccessToken(false) }
     mockLogger.shouldHaveLoggedAtLeastOneMessageContaining("retrying due to needs token refresh")
@@ -496,11 +539,7 @@ class DataConnectAuthUnitTest {
     advanceUntilIdle()
     val invocationCount = AtomicInteger(0)
     val tokens = CopyOnWriteArrayList<String>()
-    val getTokenJob2 =
-      async(start = CoroutineStart.LAZY) {
-        val accessToken = dataConnectAuth.getToken(requestId)
-        accessToken
-      }
+    val getTokenJob2 = async(start = CoroutineStart.LAZY) { dataConnectAuth.getToken(requestId) }
     coEvery { mockInternalAuthProvider.getAccessToken(any()) } coAnswers
       {
         if (invocationCount.getAndIncrement() == 0) {
@@ -509,16 +548,15 @@ class DataConnectAuthUnitTest {
           getTokenJob2.start()
           advanceUntilIdle()
         }
-        val rv = taskForToken(accessTokenGenerator.next().also { tokens.add(it) })
-        rv
+        taskForToken(accessTokenGenerator.next().also { tokens.add(it) })
       }
 
     val result1 = dataConnectAuth.getToken(requestId)
     withClue("getTokenJob2.isActive") { getTokenJob2.isActive shouldBe true }
     val result2 = getTokenJob2.await()
 
-    withClue("result1=$result1") { result1 shouldBe tokens[0] }
-    withClue("result2=$result2") { result2 shouldBe tokens[1] }
+    withClue("result1=$result1") { result1.shouldNotBeNull().token shouldBe tokens[0] }
+    withClue("result2=$result2") { result2.shouldNotBeNull().token shouldBe tokens[1] }
     verify(exactly = 2) { mockInternalAuthProvider.getAccessToken(false) }
     verify(exactly = 0) { mockInternalAuthProvider.getAccessToken(true) }
     mockLogger.shouldHaveLoggedExactlyOneMessageContaining("got an old result; retrying")
@@ -617,7 +655,7 @@ class DataConnectAuthUnitTest {
       interval = 100.milliseconds
     }
 
-    fun taskForToken(token: String?): Task<GetTokenResult> =
-      Tasks.forResult(mockk(relaxed = true) { every { getToken() } returns token })
+    fun taskForToken(token: String?, claims: Map<String, Any> = emptyMap()): Task<GetTokenResult> =
+      Tasks.forResult(GetTokenResult(token, claims))
   }
 }

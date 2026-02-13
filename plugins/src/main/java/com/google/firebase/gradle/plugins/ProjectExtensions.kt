@@ -31,7 +31,7 @@ fun Project.isAndroid(): Boolean =
   }
 
 fun toBoolean(value: Any?): Boolean {
-  val trimmed = value?.toString()?.trim()?.toLowerCase()
+  val trimmed = value?.toString()?.trim()?.lowercase()
   return "true" == trimmed || "y" == trimmed || "1" == trimmed
 }
 
@@ -50,21 +50,6 @@ val Project.javadocConfig: Configuration
             it.extendsFrom(this)
           }
         }
-      }
-
-/**
- * Finds or creates the dackkaArtifacts [Configuration].
- *
- * Used to fetch the dackka-fat jar at runtime versus needing to explicitly specify it in project
- * dependencies.
- */
-val Project.dackkaConfig: Configuration
-  get() =
-    configurations.findByName("dackkaArtifacts")
-      ?: configurations.create("dackkaArtifacts") {
-        dependencies.add(
-          this@dackkaConfig.dependencies.create("com.google.devsite:dackka-fat:1.2.0")
-        )
       }
 
 /**

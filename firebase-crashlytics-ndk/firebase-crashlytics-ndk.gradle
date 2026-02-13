@@ -26,7 +26,6 @@ firebaseLibrary {
     releaseNotes {
         name.set("{{crashlytics}} NDK")
         versionName.set("crashlytics-ndk")
-        hasKTX.set(false)
     }
     testLab.enabled = true
     publishJavadoc = false
@@ -106,14 +105,14 @@ android {
 }
 
 thirdPartyLicenses {
-    add 'Crashpad', "${rootDir}/third_party/licenses/apache-2.0.txt"
+    add 'Apache-2.0', "${rootDir}/third_party/licenses/apache-2.0.txt"
+    add 'Crashpad', "${rootDir}/third_party/licenses/crashpad.txt"
 }
 
 dependencies {
     api project(':firebase-crashlytics')
-    api "com.google.firebase:firebase-common:21.0.0"
-    api "com.google.firebase:firebase-common-ktx:21.0.0"
-    api "com.google.firebase:firebase-components:18.0.0"
+    api libs.firebase.common
+    api libs.firebase.components
 
     implementation libs.playservices.basement
 

@@ -16,17 +16,17 @@ package com.google.firebase.firestore.spec;
 
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.FirebaseFirestoreException;
-import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.core.QueryOrPipeline;
 import com.google.firebase.firestore.core.ViewSnapshot;
 
 /** Object that contains exactly one of either a view snapshot or an error for the given query. */
 public class QueryEvent {
-  public Query query;
+  public QueryOrPipeline queryOrPipeline;
   public @Nullable ViewSnapshot view;
   public @Nullable FirebaseFirestoreException error;
 
   @Override
   public String toString() {
-    return "QueryEvent(" + query + ", " + view + ", " + error + ")";
+    return "QueryEvent(" + queryOrPipeline + ", " + view + ", " + error + ")";
   }
 }

@@ -16,29 +16,44 @@
 
 package com.google.firebase.ai
 
+import com.google.firebase.ai.type.AutoFunctionDeclaration
 import com.google.firebase.ai.type.BlockReason
 import com.google.firebase.ai.type.ContentBlockedException
 import com.google.firebase.ai.type.ContentModality
 import com.google.firebase.ai.type.FinishReason
 import com.google.firebase.ai.type.FunctionCallPart
+import com.google.firebase.ai.type.FunctionResponsePart
 import com.google.firebase.ai.type.HarmCategory
 import com.google.firebase.ai.type.HarmProbability
 import com.google.firebase.ai.type.HarmSeverity
 import com.google.firebase.ai.type.InvalidAPIKeyException
+import com.google.firebase.ai.type.JsonSchema
 import com.google.firebase.ai.type.PromptBlockedException
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.QuotaExceededException
+import com.google.firebase.ai.type.RequestOptions
+import com.google.firebase.ai.type.RequestTimeoutException
 import com.google.firebase.ai.type.ResponseStoppedException
 import com.google.firebase.ai.type.SerializationException
 import com.google.firebase.ai.type.ServerException
 import com.google.firebase.ai.type.ServiceDisabledException
 import com.google.firebase.ai.type.TextPart
+import com.google.firebase.ai.type.Tool
 import com.google.firebase.ai.type.UnsupportedUserLocationException
+import com.google.firebase.ai.type.UrlRetrievalStatus
+import com.google.firebase.ai.util.ResponseInfo
 import com.google.firebase.ai.util.goldenVertexUnaryFile
+import com.google.firebase.ai.util.goldenVertexUnaryFiles
 import com.google.firebase.ai.util.shouldNotBeNullOrEmpty
+import io.kotest.assertions.throwables.shouldNotThrow
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.inspectors.forAtLeastOne
+import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotBeEmpty
+import io.kotest.matchers.equals.shouldBeEqual
+import io.kotest.matchers.ints.shouldBeGreaterThan
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
@@ -50,6 +65,8 @@ import io.ktor.http.HttpStatusCode
 import java.util.Calendar
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.withTimeout
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -86,6 +103,19 @@ internal class VertexAIUnarySnapshotTests {
         response.candidates.first().finishReason shouldBe FinishReason.STOP
         response.candidates.first().content.parts.isEmpty() shouldBe false
         response.candidates.first().safetyRatings.isEmpty() shouldBe false
+      }
+    }
+
+  @Test
+  fun `response including an empty part is handled gracefully`() =
+    goldenVertexUnaryFile("unary-success-empty-part.json") {
+      withTimeout(testTimeout) {
+        val response = model.generateContent("prompt")
+
+        response.candidates.isEmpty() shouldBe false
+        response.text.shouldNotBeEmpty()
+        response.candidates.first().finishReason shouldBe FinishReason.STOP
+        response.candidates.first().content.parts.isEmpty() shouldBe false
       }
     }
 
@@ -245,7 +275,9 @@ internal class VertexAIUnarySnapshotTests {
   fun `empty content`() =
     goldenVertexUnaryFile("unary-failure-empty-content.json") {
       withTimeout(testTimeout) {
-        shouldThrow<SerializationException> { model.generateContent("prompt") }
+        val response = model.generateContent("prompt")
+        response.candidates.shouldNotBeEmpty()
+        response.candidates.first().content.parts.shouldBeEmpty()
       }
     }
 
@@ -360,6 +392,27 @@ internal class VertexAIUnarySnapshotTests {
     }
 
   @Test
+  fun `response includes implicit cached metadata`() =
+    goldenVertexUnaryFile("unary-success-implicit-caching.json") {
+      withTimeout(testTimeout) {
+        val response = model.generateContent("prompt")
+
+        response.candidates.isEmpty() shouldBe false
+        response.candidates.first().finishReason shouldBe FinishReason.STOP
+        response.usageMetadata shouldNotBe null
+        response.usageMetadata?.let {
+          it.promptTokenCount shouldBe 12013
+          it.candidatesTokenCount shouldBe 15
+          it.cachedContentTokenCount shouldBe 11243
+          it.cacheTokensDetails.first().let { count ->
+            count.modality shouldBe ContentModality.TEXT
+            count.tokenCount shouldBe 11243
+          }
+        }
+      }
+    }
+
+  @Test
   fun `properly translates json text`() =
     goldenVertexUnaryFile("unary-success-constraint-decoding-json.json") {
       val response = model.generateContent("prompt")
@@ -388,10 +441,12 @@ internal class VertexAIUnarySnapshotTests {
     }
 
   @Test
-  fun `malformed content`() =
+  fun `response including an unknown part is handled gracefully`() =
     goldenVertexUnaryFile("unary-failure-malformed-content.json") {
       withTimeout(testTimeout) {
-        shouldThrow<SerializationException> { model.generateContent("prompt") }
+        val response = model.generateContent("prompt")
+        response.candidates.shouldNotBeEmpty()
+        response.candidates.first().content.parts.shouldBeEmpty()
       }
     }
 
@@ -589,4 +644,439 @@ internal class VertexAIUnarySnapshotTests {
         shouldThrow<PromptBlockedException> { imagenModel.generateImages("prompt") }
       }
     }
+
+  @Test
+  fun `generateImages should contain safety data`() =
+    goldenVertexUnaryFile("unary-success-generate-images-safety_info.json") {
+      withTimeout(testTimeout) {
+        val response = imagenModel.generateImages("prompt")
+        // There is no public API, but if it parses then success
+      }
+    }
+
+  @Test
+  fun `google search grounding metadata is parsed correctly`() =
+    goldenVertexUnaryFile("unary-success-google-search-grounding.json") {
+      withTimeout(testTimeout) {
+        val response = model.generateContent("prompt")
+
+        response.candidates.shouldNotBeEmpty()
+        val candidate = response.candidates.first()
+        candidate.finishReason shouldBe FinishReason.STOP
+
+        val groundingMetadata = candidate.groundingMetadata
+        groundingMetadata.shouldNotBeNull()
+
+        groundingMetadata.webSearchQueries.first() shouldBe "current weather in London"
+        groundingMetadata.searchEntryPoint.shouldNotBeNull()
+        groundingMetadata.searchEntryPoint?.renderedContent.shouldNotBeEmpty()
+
+        groundingMetadata.groundingChunks.shouldNotBeEmpty()
+        val groundingChunk = groundingMetadata.groundingChunks.first()
+        groundingChunk.web.shouldNotBeNull()
+        groundingChunk.web?.uri.shouldNotBeEmpty()
+        groundingChunk.web?.title shouldBe "accuweather.com"
+        groundingChunk.web?.domain.shouldBeNull()
+
+        groundingMetadata.groundingSupports.shouldNotBeEmpty()
+        groundingMetadata.groundingSupports.size shouldBe 3
+        val groundingSupport = groundingMetadata.groundingSupports.first()
+        groundingSupport.segment.shouldNotBeNull()
+        groundingSupport.segment.startIndex shouldBe 0
+        groundingSupport.segment.partIndex shouldBe 0
+        groundingSupport.segment.endIndex shouldBe 56
+        groundingSupport.segment.text shouldBe
+          "The current weather in London, United Kingdom is cloudy."
+        groundingSupport.groundingChunkIndices.first() shouldBe 0
+
+        val secondGroundingSupport = groundingMetadata.groundingSupports[1]
+        secondGroundingSupport.segment.shouldNotBeNull()
+        secondGroundingSupport.segment.startIndex shouldBe 57
+        secondGroundingSupport.segment.partIndex shouldBe 0
+        secondGroundingSupport.segment.endIndex shouldBe 123
+        secondGroundingSupport.segment.text shouldBe
+          "The temperature is 67°F (19°C), but it feels like 75°F (24°C)."
+        secondGroundingSupport.groundingChunkIndices.first() shouldBe 1
+      }
+    }
+
+  @Test
+  fun `url context`() =
+    goldenVertexUnaryFile("unary-success-url-context.json") {
+      withTimeout(testTimeout) {
+        val response = model.generateContent("prompt")
+
+        response.candidates.shouldNotBeEmpty()
+        val candidate = response.candidates.first()
+
+        val urlContextMetadata = candidate.urlContextMetadata
+        urlContextMetadata.shouldNotBeNull()
+
+        urlContextMetadata.urlMetadata.shouldNotBeEmpty()
+        urlContextMetadata.urlMetadata.shouldHaveSize(1)
+        urlContextMetadata.urlMetadata[0].retrievedUrl.shouldBe("https://berkshirehathaway.com")
+        urlContextMetadata.urlMetadata[0].urlRetrievalStatus.shouldBe(UrlRetrievalStatus.SUCCESS)
+
+        val groundingMetadata = candidate.groundingMetadata
+        groundingMetadata.shouldNotBeNull()
+
+        groundingMetadata.groundingChunks.shouldNotBeEmpty()
+        groundingMetadata.groundingChunks.forEach { it.web.shouldNotBeNull() }
+        groundingMetadata.groundingSupports.shouldHaveSize(2)
+
+        val usageMetadata = response.usageMetadata
+
+        usageMetadata.shouldNotBeNull()
+        usageMetadata.toolUsePromptTokenCount.shouldBeGreaterThan(0)
+        usageMetadata.toolUsePromptTokensDetails
+          .shouldBeEmpty() // This isn't yet supported in Vertex AI
+      }
+    }
+
+  @Test
+  fun `url context mixed validity`() =
+    goldenVertexUnaryFile("unary-success-url-context-mixed-validity.json") {
+      withTimeout(testTimeout) {
+        val response = model.generateContent("prompt")
+
+        response.candidates.shouldNotBeEmpty()
+        val candidate = response.candidates.first()
+
+        val urlContextMetadata = candidate.urlContextMetadata
+        urlContextMetadata.shouldNotBeNull()
+
+        urlContextMetadata.urlMetadata.shouldNotBeEmpty()
+        urlContextMetadata.urlMetadata.shouldHaveSize(3)
+        urlContextMetadata.urlMetadata[2]
+          .retrievedUrl
+          .shouldBe("https://a-completely-non-existent-url-for-testing.org")
+        urlContextMetadata.urlMetadata[2].urlRetrievalStatus.shouldBe(UrlRetrievalStatus.ERROR)
+        urlContextMetadata.urlMetadata[1].retrievedUrl.shouldBe("https://ai.google.dev")
+        urlContextMetadata.urlMetadata[1].urlRetrievalStatus.shouldBe(UrlRetrievalStatus.SUCCESS)
+
+        val groundingMetadata = candidate.groundingMetadata
+        groundingMetadata.shouldNotBeNull()
+
+        groundingMetadata.groundingChunks.shouldNotBeEmpty()
+        groundingMetadata.groundingChunks.forEach { it.web.shouldNotBeNull() }
+        groundingMetadata.groundingSupports.shouldHaveSize(6)
+
+        val usageMetadata = response.usageMetadata
+
+        usageMetadata.shouldNotBeNull()
+        usageMetadata.toolUsePromptTokenCount.shouldBeGreaterThan(0)
+        usageMetadata.toolUsePromptTokensDetails
+          .shouldBeEmpty() // This isn't yet supported in Vertex AI
+      }
+    }
+
+  // This test only applies to Vertex AI, since this is a bug in the backend.
+  @Test
+  fun `url context missing retrievedUrl`() =
+    goldenVertexUnaryFile("unary-success-url-context-missing-retrievedurl.json") {
+      withTimeout(testTimeout) {
+        val response = model.generateContent("prompt")
+
+        response.candidates.shouldNotBeEmpty()
+        val candidate = response.candidates.first()
+
+        val urlContextMetadata = candidate.urlContextMetadata
+        urlContextMetadata.shouldNotBeNull()
+
+        urlContextMetadata.urlMetadata.shouldNotBeEmpty()
+        urlContextMetadata.urlMetadata.shouldHaveSize(20)
+        // Not all the retrievedUrls are null. Only the last 10. We only need to check one.
+        urlContextMetadata.urlMetadata.last().retrievedUrl.shouldBeNull()
+        urlContextMetadata.urlMetadata.last().urlRetrievalStatus.shouldNotBeNull()
+      }
+    }
+
+  @Serializable data class SumRequest(val x: Int, val y: Int)
+
+  private val sumRequestResponseSchema =
+    JsonSchema.obj(
+      clazz = SumRequest::class,
+      properties =
+        mapOf(
+          "x" to
+            JsonSchema.integer(
+              title = "x",
+              description = "The first number to sum",
+              nullable = false
+            ),
+          "y" to
+            JsonSchema.integer(
+              title = "y",
+              description = "The second number to sum",
+              nullable = false
+            ),
+        ),
+      description = "the request for summing",
+      nullable = false
+    )
+
+  @Test
+  fun `function call requested should trigger auto function call`() {
+    var functionCalled = false
+    goldenVertexUnaryFiles(
+      listOf(
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-basic-reply-long.json"
+        )
+        .map { ResponseInfo(it) },
+      tools =
+        listOf(
+          Tool.functionDeclarations(
+            autoFunctionDeclarations =
+              listOf(
+                AutoFunctionDeclaration.create("sum", "", sumRequestResponseSchema) {
+                  request: SumRequest ->
+                  functionCalled = true
+                  FunctionResponsePart("sum", JsonObject(mapOf()))
+                }
+              )
+          )
+        )
+    ) {
+      withTimeout(testTimeout) {
+        model.startChat().sendMessage("")
+        functionCalled shouldBeEqual true
+      }
+    }
+  }
+
+  @Test
+  fun `multiple function calls requested should trigger`() {
+    var sumCalledCount = 0
+    goldenVertexUnaryFiles(
+      listOf(
+          "unary-success-function-call-parallel-calls.json",
+          "unary-success-basic-reply-long.json"
+        )
+        .map { ResponseInfo(it) },
+      tools =
+        listOf(
+          Tool.functionDeclarations(
+            autoFunctionDeclarations =
+              listOf(
+                AutoFunctionDeclaration.create("sum", "", sumRequestResponseSchema) {
+                  request: SumRequest ->
+                  sumCalledCount++
+                  FunctionResponsePart("sum", JsonObject(mapOf()))
+                }
+              )
+          )
+        )
+    ) {
+      withTimeout(testTimeout) {
+        model.startChat().sendMessage("")
+        sumCalledCount shouldBe 3
+      }
+    }
+  }
+
+  @Test
+  fun `multiple function should return to user if all aren't registered`() {
+    var sumCalled = false
+    var otherFunctionCalled = false
+    val tools =
+      listOf(
+        Tool.functionDeclarations(
+          autoFunctionDeclarations =
+            listOf(
+              AutoFunctionDeclaration.create("sum", "", sumRequestResponseSchema) {
+                request: SumRequest ->
+                sumCalled = true
+                FunctionResponsePart("sum", JsonObject(mapOf()))
+              },
+              AutoFunctionDeclaration.create(
+                "multiply",
+                "",
+                sumRequestResponseSchema,
+              ),
+              AutoFunctionDeclaration.create(
+                "subtract",
+                "",
+                sumRequestResponseSchema,
+              )
+            )
+        )
+      )
+    goldenVertexUnaryFiles(
+      listOf(
+          "unary-success-function-call-different-parallel-calls.json",
+          "unary-success-basic-reply-long.json"
+        )
+        .map { ResponseInfo(it) },
+      tools = tools
+    ) {
+      withTimeout(testTimeout) {
+        val response = model.startChat().sendMessage("")
+        sumCalled shouldBeEqual false
+        otherFunctionCalled shouldBeEqual false
+        response.functionCalls.size shouldBeEqual 3
+      }
+    }
+  }
+
+  @Test
+  fun `auto function call loop should hit limit and exit`() {
+    var functionCalled = 0
+    goldenVertexUnaryFiles(
+      listOf(
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
+          "unary-success-function-call-with-arguments.json",
+        )
+        .map { ResponseInfo(it) },
+      tools =
+        listOf(
+          Tool.functionDeclarations(
+            autoFunctionDeclarations =
+              listOf(
+                AutoFunctionDeclaration.create("sum", "", sumRequestResponseSchema) {
+                  request: SumRequest ->
+                  functionCalled++
+                  FunctionResponsePart("sum", JsonObject(mapOf()))
+                }
+              )
+          )
+        )
+    ) {
+      withTimeout(testTimeout) {
+        shouldThrow<RequestTimeoutException> { model.startChat().sendMessage("") }
+        functionCalled shouldBeEqual 10
+      }
+    }
+  }
+
+  @Serializable data class ColorScheme(val name: String, val colors: List<String>)
+
+  val colorSchemesSchema =
+    JsonSchema.array(
+      items =
+        JsonSchema.obj(
+          mapOf(
+            "name" to JsonSchema.string(),
+            "colors" to JsonSchema.array(items = JsonSchema.string())
+          ),
+          clazz = ColorScheme::class
+        )
+    )
+
+  @Test
+  fun `generateObject properly decodes things to schema`() =
+    goldenVertexUnaryFile("unary-success-constraint-decoding-json.json") {
+      val response = model.generateObject(colorSchemesSchema, "prompt")
+      val array = response.getObject()!!
+      array.size shouldBe 3
+      for (obj in array) {
+        obj.name.shouldNotBeEmpty()
+        obj.colors.size shouldBe 5
+      }
+    }
+
+  @Test
+  fun `auto function call should hit defined limit and exit`() {
+    val functionCallLimit = 3
+    var functionCalled = 0
+    goldenVertexUnaryFiles(
+      responses =
+        (0 until 20).map { ResponseInfo("unary-success-function-call-with-arguments.json") },
+      requestOptions = RequestOptions(autoFunctionCallingTurnLimit = functionCallLimit),
+      tools =
+        listOf(
+          Tool.functionDeclarations(
+            autoFunctionDeclarations =
+              listOf(
+                AutoFunctionDeclaration.create("sum", "", sumRequestResponseSchema) {
+                  request: SumRequest ->
+                  functionCalled++
+                  FunctionResponsePart("sum", JsonObject(mapOf()))
+                }
+              )
+          )
+        )
+    ) {
+      withTimeout(testTimeout) {
+        shouldThrow<RequestTimeoutException> { model.startChat().sendMessage("") }
+        functionCalled shouldBeEqual functionCallLimit
+      }
+    }
+  }
+
+  @Test
+  fun `auto function call should be able to exceed default limit`() {
+    val functionCallLimit = 200
+    var functionCalled = 0
+    goldenVertexUnaryFiles(
+      responses =
+        (0 until 20).map { ResponseInfo("unary-success-function-call-with-arguments.json") } +
+          ResponseInfo("unary-success-basic-reply-short.json"),
+      requestOptions = RequestOptions(autoFunctionCallingTurnLimit = functionCallLimit),
+      tools =
+        listOf(
+          Tool.functionDeclarations(
+            autoFunctionDeclarations =
+              listOf(
+                AutoFunctionDeclaration.create("sum", "", sumRequestResponseSchema) {
+                  request: SumRequest ->
+                  functionCalled++
+                  FunctionResponsePart("sum", JsonObject(mapOf()))
+                }
+              )
+          )
+        )
+    ) {
+      withTimeout(testTimeout) {
+        shouldNotThrow<RequestTimeoutException> { model.startChat().sendMessage("") }
+        functionCalled shouldBeEqual 20
+      }
+    }
+  }
+
+  @Test
+  fun `auto function call should fail with a limit of 0`() {
+    val functionCallLimit = 0
+    goldenVertexUnaryFiles(
+      responses =
+        listOf(
+            "unary-success-function-call-with-arguments.json",
+            "unary-success-basic-reply-short.json"
+          )
+          .map { ResponseInfo(it) },
+      requestOptions = RequestOptions(autoFunctionCallingTurnLimit = functionCallLimit),
+      tools =
+        listOf(
+          Tool.functionDeclarations(
+            autoFunctionDeclarations =
+              listOf(
+                AutoFunctionDeclaration.create("sum", "", sumRequestResponseSchema) {
+                  request: SumRequest ->
+                  FunctionResponsePart("sum", JsonObject(mapOf()))
+                }
+              )
+          )
+        )
+    ) {
+      withTimeout(testTimeout) {
+        shouldThrow<RequestTimeoutException> { model.startChat().sendMessage("") }
+      }
+    }
+  }
 }

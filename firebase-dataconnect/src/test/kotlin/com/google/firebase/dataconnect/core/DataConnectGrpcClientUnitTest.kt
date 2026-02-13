@@ -68,6 +68,7 @@ import io.kotest.property.arbitrary.alphanumeric
 import io.kotest.property.arbitrary.egyptianHieroglyphs
 import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.int
+import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.merge
 import io.kotest.property.arbitrary.next
 import io.kotest.property.arbitrary.string
@@ -104,7 +105,7 @@ class DataConnectGrpcClientUnitTest {
   private val connectorConfig = Arb.dataConnect.connectorConfig().next(rs)
   private val requestId = Arb.dataConnect.requestId().next(rs)
   private val operationName = Arb.dataConnect.operationName().next(rs)
-  private val variables = Arb.proto.struct().next(rs)
+  private val variables = Arb.proto.struct().next(rs).struct
   private val callerSdkType = Arb.enum<FirebaseDataConnect.CallerSdkType>().next(rs)
 
   private val mockDataConnectAuth: DataConnectAuth =
@@ -193,7 +194,7 @@ class DataConnectGrpcClientUnitTest {
 
   @Test
   fun `executeQuery() should return data and errors`() = runTest {
-    val responseData = Arb.proto.struct().next(rs)
+    val responseData = Arb.proto.struct().next(rs).struct
     val responseErrors = List(3) { GraphqlErrorInfo.random(RandomSource.default()) }
     coEvery { mockDataConnectGrpcRPCs.executeQuery(any(), any(), any()) } returns
       ExecuteQueryResponse.newBuilder()
@@ -210,7 +211,7 @@ class DataConnectGrpcClientUnitTest {
 
   @Test
   fun `executeMutation() should return data and errors`() = runTest {
-    val responseData = Arb.proto.struct().next(rs)
+    val responseData = Arb.proto.struct().next(rs).struct
     val responseErrors = List(3) { GraphqlErrorInfo.random(RandomSource.default()) }
     coEvery { mockDataConnectGrpcRPCs.executeMutation(any(), any(), any()) } returns
       ExecuteMutationResponse.newBuilder()
@@ -253,7 +254,7 @@ class DataConnectGrpcClientUnitTest {
 
   @Test
   fun `executeQuery() should retry with a fresh auth token on UNAUTHENTICATED`() = runTest {
-    val responseData = Arb.proto.struct().next(rs)
+    val responseData = Arb.proto.struct().next(rs).struct
     val forceRefresh = AtomicBoolean(false)
     coEvery { mockDataConnectAuth.forceRefresh() } answers { forceRefresh.set(true) }
     coEvery { mockDataConnectGrpcRPCs.executeQuery(any(), any(), any()) } answers
@@ -284,7 +285,7 @@ class DataConnectGrpcClientUnitTest {
 
   @Test
   fun `executeMutation() should retry with a fresh auth token on UNAUTHENTICATED`() = runTest {
-    val responseData = Arb.proto.struct().next(rs)
+    val responseData = Arb.proto.struct().next(rs).struct
     val forceRefresh = AtomicBoolean(false)
     coEvery { mockDataConnectAuth.forceRefresh() } answers { forceRefresh.set(true) }
     coEvery { mockDataConnectGrpcRPCs.executeMutation(any(), any(), any()) } answers
@@ -315,7 +316,7 @@ class DataConnectGrpcClientUnitTest {
 
   @Test
   fun `executeQuery() should retry with a fresh AppCheck token on UNAUTHENTICATED`() = runTest {
-    val responseData = Arb.proto.struct().next(rs)
+    val responseData = Arb.proto.struct().next(rs).struct
     val forceRefresh = AtomicBoolean(false)
     coEvery { mockDataConnectAppCheck.forceRefresh() } answers { forceRefresh.set(true) }
     coEvery { mockDataConnectGrpcRPCs.executeQuery(any(), any(), any()) } answers
@@ -346,7 +347,7 @@ class DataConnectGrpcClientUnitTest {
 
   @Test
   fun `executeMutation() should retry with a fresh AppCheck token on UNAUTHENTICATED`() = runTest {
-    val responseData = Arb.proto.struct().next(rs)
+    val responseData = Arb.proto.struct().next(rs).struct
     val forceRefresh = AtomicBoolean(false)
     coEvery { mockDataConnectAppCheck.forceRefresh() } answers { forceRefresh.set(true) }
     coEvery { mockDataConnectGrpcRPCs.executeMutation(any(), any(), any()) } answers
@@ -508,7 +509,7 @@ class DataConnectGrpcClientUnitTest {
     val errorInfo: ErrorInfoImpl,
   ) {
     companion object {
-      private val randomPathComponents =
+      private val randomPathSegments =
         Arb.string(
             minSize = 1,
             maxSize = 8,
@@ -527,13 +528,13 @@ class DataConnectGrpcClientUnitTest {
         val graphqlErrorPath = ListValue.newBuilder()
         repeat(6) {
           if (rs.random.nextFloat() < 0.33f) {
-            val pathComponent = randomInts.next(rs)
-            dataConnectErrorPath.add(DataConnectPathSegment.ListIndex(pathComponent))
-            graphqlErrorPath.addValues(Value.newBuilder().setNumberValue(pathComponent.toDouble()))
+            val pathSegment = randomInts.next(rs)
+            dataConnectErrorPath.add(DataConnectPathSegment.ListIndex(pathSegment))
+            graphqlErrorPath.addValues(Value.newBuilder().setNumberValue(pathSegment.toDouble()))
           } else {
-            val pathComponent = randomPathComponents.next(rs)
-            dataConnectErrorPath.add(DataConnectPathSegment.Field(pathComponent))
-            graphqlErrorPath.addValues(Value.newBuilder().setStringValue(pathComponent))
+            val pathSegment = randomPathSegments.next(rs)
+            dataConnectErrorPath.add(DataConnectPathSegment.Field(pathSegment))
+            graphqlErrorPath.addValues(Value.newBuilder().setStringValue(pathSegment))
           }
         }
 
@@ -593,9 +594,9 @@ class DataConnectGrpcClientOperationResultUnitTest {
   fun `deserialize() with non-null data should treat DataConnectUntypedData specially`() = runTest {
     checkAll(propTestConfig, Arb.proto.struct(), Arb.dataConnect.operationErrors()) { data, errors
       ->
-      val operationResult = OperationResult(data, errors)
+      val operationResult = OperationResult(data.struct, errors)
       val result = operationResult.deserialize(DataConnectUntypedData, serializersModule = null)
-      result.shouldHaveDataAndErrors(data, errors)
+      result.shouldHaveDataAndErrors(data.struct, errors)
     }
   }
 
@@ -635,7 +636,7 @@ class DataConnectGrpcClientOperationResultUnitTest {
     runTest {
       checkAll(
         propTestConfig,
-        Arb.proto.struct(),
+        Arb.proto.struct().map { it.struct },
         Arb.dataConnect.operationErrors(range = 1..10)
       ) { dataStruct, errors ->
         val operationResult = OperationResult(dataStruct, errors)
@@ -697,7 +698,7 @@ class DataConnectGrpcClientOperationResultUnitTest {
 
   @Test
   fun `deserialize() should throw if decoding fails and error list is empty`() = runTest {
-    checkAll(propTestConfig, Arb.proto.struct()) { dataStruct ->
+    checkAll(propTestConfig, Arb.proto.struct().map { it.struct }) { dataStruct ->
       assume(!dataStruct.containsFields("foo"))
       val operationResult = OperationResult(dataStruct, emptyList())
       val exception: DataConnectOperationException =

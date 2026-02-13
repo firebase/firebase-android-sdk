@@ -22,14 +22,13 @@ import kotlinx.serialization.Serializable
  * The model's response to a count tokens request.
  *
  * **Important:** The counters in this class do not include billable image, video or other non-text
- * input. See [Vertex AI pricing](https://cloud.google.com/vertex-ai/generative-ai/pricing) for
- * details.
+ * input. See [Pricing](https://firebase.google.com/docs/ai-logic/pricing) for details.
  *
  * @property totalTokens The total number of tokens in the input given to the model as a prompt.
  * @property totalBillableCharacters The total number of billable characters in the text input given
  * to the model as a prompt. **Important:** this property does not include billable image, video or
- * other non-text input. See
- * [Vertex AI pricing](https://cloud.google.com/vertex-ai/generative-ai/pricing) for details.
+ * other non-text input. See [Pricing](https://firebase.google.com/docs/ai-logic/pricing) for
+ * details.
  * @property promptTokensDetails The breakdown, by modality, of how many tokens are consumed by the
  * prompt.
  */

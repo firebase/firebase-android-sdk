@@ -19,7 +19,7 @@ import static com.google.firebase.firestore.util.Preconditions.checkNotNull;
 
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
-import com.google.firebase.Timestamp;
+import com.google.common.base.Function;
 import com.google.firebase.firestore.FieldValue.ArrayRemoveFieldValue;
 import com.google.firebase.firestore.FieldValue.ArrayUnionFieldValue;
 import com.google.firebase.firestore.FieldValue.DeleteFieldValue;
@@ -37,6 +37,7 @@ import com.google.firebase.firestore.model.mutation.ArrayTransformOperation;
 import com.google.firebase.firestore.model.mutation.FieldMask;
 import com.google.firebase.firestore.model.mutation.NumericIncrementTransformOperation;
 import com.google.firebase.firestore.model.mutation.ServerTimestampOperation;
+import com.google.firebase.firestore.pipeline.Expression;
 import com.google.firebase.firestore.util.Assert;
 import com.google.firebase.firestore.util.CustomClassMapper;
 import com.google.firebase.firestore.util.Util;
@@ -44,9 +45,7 @@ import com.google.firestore.v1.ArrayValue;
 import com.google.firestore.v1.MapValue;
 import com.google.firestore.v1.Value;
 import com.google.protobuf.NullValue;
-import com.google.type.LatLng;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -64,6 +63,10 @@ public final class UserDataReader {
 
   public UserDataReader(DatabaseId databaseId) {
     this.databaseId = databaseId;
+  }
+
+  public DatabaseId getDatabaseId() {
+    return databaseId;
   }
 
   /**
@@ -231,7 +234,7 @@ public final class UserDataReader {
 
     Object converted = CustomClassMapper.convertToPlainJavaTypes(input);
     Value parsedValue = parseData(converted, context);
-    if (parsedValue.getValueTypeCase() != Value.ValueTypeCase.MAP_VALUE) {
+    if (!parsedValue.hasMapValue()) {
       throw new IllegalArgumentException(badDocReason + "of type: " + Util.typeName(input));
     }
     return new ObjectValue(parsedValue);
@@ -387,90 +390,38 @@ public final class UserDataReader {
    * @return The parsed value, or {@code null} if the value was a FieldValue sentinel that should
    *     not be included in the resulting parsed data.
    */
-  private Value parseScalarValue(Object input, ParseContext context) {
+  public Value parseScalarValue(Object input, ParseContext context) {
     if (input == null) {
-      return Value.newBuilder().setNullValue(NullValue.NULL_VALUE).build();
-    } else if (input instanceof Integer) {
-      return Value.newBuilder().setIntegerValue((Integer) input).build();
-    } else if (input instanceof Long) {
-      return Value.newBuilder().setIntegerValue((Long) input).build();
-    } else if (input instanceof Float) {
-      return Value.newBuilder().setDoubleValue(((Float) input).doubleValue()).build();
-    } else if (input instanceof Double) {
-      return Value.newBuilder().setDoubleValue((Double) input).build();
-    } else if (input instanceof Boolean) {
-      return Value.newBuilder().setBooleanValue((Boolean) input).build();
-    } else if (input instanceof String) {
-      return Value.newBuilder().setStringValue((String) input).build();
-    } else if (input instanceof Date) {
-      Timestamp timestamp = new Timestamp((Date) input);
-      return parseTimestamp(timestamp);
-    } else if (input instanceof Timestamp) {
-      Timestamp timestamp = (Timestamp) input;
-      return parseTimestamp(timestamp);
-    } else if (input instanceof GeoPoint) {
-      GeoPoint geoPoint = (GeoPoint) input;
-      return Value.newBuilder()
-          .setGeoPointValue(
-              LatLng.newBuilder()
-                  .setLatitude(geoPoint.getLatitude())
-                  .setLongitude(geoPoint.getLongitude()))
-          .build();
-    } else if (input instanceof Blob) {
-      return Value.newBuilder().setBytesValue(((Blob) input).toByteString()).build();
-    } else if (input instanceof DocumentReference) {
-      DocumentReference ref = (DocumentReference) input;
-      // TODO: Rework once pre-converter is ported to Android.
-      if (ref.getFirestore() != null) {
-        DatabaseId otherDb = ref.getFirestore().getDatabaseId();
-        if (!otherDb.equals(databaseId)) {
-          throw context.createError(
-              String.format(
-                  "Document reference is for database %s/%s but should be for database %s/%s",
-                  otherDb.getProjectId(),
-                  otherDb.getDatabaseId(),
-                  databaseId.getProjectId(),
-                  databaseId.getDatabaseId()));
-        }
-      }
-      return Value.newBuilder()
-          .setReferenceValue(
-              String.format(
-                  "projects/%s/databases/%s/documents/%s",
-                  databaseId.getProjectId(),
-                  databaseId.getDatabaseId(),
-                  ((DocumentReference) input).getPath()))
-          .build();
-    } else if (input instanceof VectorValue) {
-      return parseVectorValue(((VectorValue) input), context);
+      return Values.NULL_VALUE;
     } else if (input.getClass().isArray()) {
       throw context.createError("Arrays are not supported; use a List instead");
+    } else if (input instanceof DocumentReference) {
+      DocumentReference ref = (DocumentReference) input;
+      validateDocumentReference(ref, context::createError);
+      return Values.encodeValue(ref);
+    } else if (input instanceof Expression) {
+      throw context.createError("Pipeline expressions are not supported user objects");
     } else {
-      throw context.createError("Unsupported type: " + Util.typeName(input));
+      try {
+        return Values.encodeAnyValue(input);
+      } catch (IllegalArgumentException e) {
+        throw context.createError("Unsupported type: " + Util.typeName(input));
+      }
     }
   }
 
-  private Value parseVectorValue(VectorValue vector, ParseContext context) {
-    MapValue.Builder mapBuilder = MapValue.newBuilder();
-
-    mapBuilder.putFields(Values.TYPE_KEY, Values.VECTOR_VALUE_TYPE);
-    mapBuilder.putFields(Values.VECTOR_MAP_VECTORS_KEY, parseData(vector.toList(), context));
-
-    return Value.newBuilder().setMapValue(mapBuilder).build();
-  }
-
-  private Value parseTimestamp(Timestamp timestamp) {
-    // Firestore backend truncates precision down to microseconds. To ensure offline mode works
-    // the same with regards to truncation, perform the truncation immediately without waiting for
-    // the backend to do that.
-    int truncatedNanoseconds = timestamp.getNanoseconds() / 1000 * 1000;
-
-    return Value.newBuilder()
-        .setTimestampValue(
-            com.google.protobuf.Timestamp.newBuilder()
-                .setSeconds(timestamp.getSeconds())
-                .setNanos(truncatedNanoseconds))
-        .build();
+  public void validateDocumentReference(
+      DocumentReference ref, Function<String, RuntimeException> createError) {
+    DatabaseId otherDb = ref.getFirestore().getDatabaseId();
+    if (!otherDb.equals(databaseId)) {
+      throw createError.apply(
+          String.format(
+              "Document reference is for database %s/%s but should be for database %s/%s",
+              otherDb.getProjectId(),
+              otherDb.getDatabaseId(),
+              databaseId.getProjectId(),
+              databaseId.getDatabaseId()));
+    }
   }
 
   private List<Value> parseArrayTransformElements(List<Object> elements) {

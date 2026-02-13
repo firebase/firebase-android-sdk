@@ -14,6 +14,8 @@
 
 package com.google.firebase.firestore.util;
 
+import static java.lang.Character.isSurrogate;
+
 import android.annotation.SuppressLint;
 import android.os.Handler;
 import android.os.Looper;
@@ -71,68 +73,62 @@ public class Util {
     }
   }
 
-  /**
-   * Utility function to compare integers. Note that we can't use Integer.compare because it's only
-   * available after Android 19.
-   */
-  public static int compareIntegers(int i1, int i2) {
-    if (i1 < i2) {
-      return -1;
-    } else if (i1 > i2) {
-      return 1;
-    } else {
-      return 0;
-    }
-  }
-
   /** Compare strings in UTF-8 encoded byte order */
   public static int compareUtf8Strings(String left, String right) {
-    int i = 0;
-    while (i < left.length() && i < right.length()) {
-      int leftCodePoint = left.codePointAt(i);
-      int rightCodePoint = right.codePointAt(i);
-
-      if (leftCodePoint != rightCodePoint) {
-        if (leftCodePoint < 128 && rightCodePoint < 128) {
-          // ASCII comparison
-          return Integer.compare(leftCodePoint, rightCodePoint);
-        } else {
-          // substring and do UTF-8 encoded byte comparison
-          ByteString leftBytes = ByteString.copyFromUtf8(getUtf8SafeBytes(left, i));
-          ByteString rightBytes = ByteString.copyFromUtf8(getUtf8SafeBytes(right, i));
-          int comp = compareByteStrings(leftBytes, rightBytes);
-          if (comp != 0) {
-            return comp;
-          } else {
-            // EXTREMELY RARE CASE: Code points differ, but their UTF-8 byte representations are
-            // identical. This can happen with malformed input (invalid surrogate pairs), where
-            // Java's encoding leads to unexpected byte sequences. Meanwhile, any invalid surrogate
-            // inputs get converted to "?" by protocol buffer while round tripping, so we almost
-            // never receive invalid strings from backend.
-            // Fallback to code point comparison for graceful handling.
-            return Integer.compare(leftCodePoint, rightCodePoint);
-          }
-        }
-      }
-      // Increment by 2 for surrogate pairs, 1 otherwise.
-      i += Character.charCount(leftCodePoint);
+    // noinspection StringEquality
+    if (left == right) {
+      return 0;
     }
 
-    // Compare lengths if all characters are equal
+    // Find the first differing character (a.k.a. "UTF-16 code unit") in the two strings and,
+    // if found, use that character to determine the relative ordering of the two strings as a
+    // whole. Comparing UTF-16 strings in UTF-8 byte order can be done simply and efficiently by
+    // comparing the UTF-16 code units (chars). This serendipitously works because of the way UTF-8
+    // and UTF-16 happen to represent Unicode code points.
+    //
+    // After finding the first pair of differing characters, there are two cases:
+    //
+    // Case 1: Both characters are non-surrogates (code points less than or equal to 0xFFFF) or
+    // both are surrogates from a surrogate pair (that collectively represent code points greater
+    // than 0xFFFF). In this case their numeric order as UTF-16 code units is the same as the
+    // lexicographical order of their corresponding UTF-8 byte sequences. A direct comparison is
+    // sufficient.
+    //
+    // Case 2: One character is a surrogate and the other is not. In this case the surrogate-
+    // containing string is always ordered after the non-surrogate. This is because surrogates are
+    // used to represent code points greater than 0xFFFF which have 4-byte UTF-8 representations
+    // and are lexicographically greater than the 1, 2, or 3-byte representations of code points
+    // less than or equal to 0xFFFF.
+    //
+    // An example of why Case 2 is required is comparing the following two Unicode code points:
+    //
+    // |-----------------------|------------|---------------------|-----------------|
+    // | Name                  | Code Point | UTF-8 Encoding      | UTF-16 Encoding |
+    // |-----------------------|------------|---------------------|-----------------|
+    // | Replacement Character | U+FFFD     | 0xEF 0xBF 0xBD      | 0xFFFD          |
+    // | Grinning Face         | U+1F600    | 0xF0 0x9F 0x98 0x80 | 0xD83D 0xDE00   |
+    // |-----------------------|------------|---------------------|-----------------|
+    //
+    // A lexicographical comparison of the UTF-8 encodings of these code points would order
+    // "Replacement Character" _before_ "Grinning Face" because 0xEF is less than 0xF0. However, a
+    // direct comparison of the UTF-16 code units, as would be done in case 1, would erroneously
+    // produce the _opposite_ ordering, because 0xFFFD is _greater than_ 0xD83D. As it turns out,
+    // this relative ordering holds for all comparisons of UTF-16 code points requiring a surrogate
+    // pair with those that do not.
+    final int length = Math.min(left.length(), right.length());
+    for (int i = 0; i < length; i++) {
+      final char leftChar = left.charAt(i);
+      final char rightChar = right.charAt(i);
+      if (leftChar != rightChar) {
+        return (isSurrogate(leftChar) == isSurrogate(rightChar))
+            ? Character.compare(leftChar, rightChar)
+            : isSurrogate(leftChar) ? 1 : -1;
+      }
+    }
+
+    // Use the lengths of the strings to determine the overall comparison result since either the
+    // strings were equal or one is a prefix of the other.
     return Integer.compare(left.length(), right.length());
-  }
-
-  private static String getUtf8SafeBytes(String str, int index) {
-    int firstCodePoint = str.codePointAt(index);
-    return str.substring(index, index + Character.charCount(firstCodePoint));
-  }
-
-  /**
-   * Utility function to compare longs. Note that we can't use Long.compare because it's only
-   * available after Android 19.
-   */
-  public static int compareLongs(long i1, long i2) {
-    return NumberComparisonHelper.compareLongs(i1, i2);
   }
 
   /** Utility function to compare doubles (using Firestore semantics for NaN). */
@@ -145,8 +141,9 @@ public class Util {
     return NumberComparisonHelper.firestoreCompareDoubleWithLong(doubleValue, longValue);
   }
 
-  public static <T extends Comparable<T>> Comparator<T> comparator() {
-    return Comparable::compareTo;
+  private static String getUtf8SafeBytes(String str, int index) {
+    int firstCodePoint = str.codePointAt(index);
+    return str.substring(index, index + Character.charCount(firstCodePoint));
   }
 
   public static FirebaseFirestoreException exceptionFromStatus(Status error) {
@@ -168,15 +165,6 @@ public class Util {
       return exceptionFromStatus(statusRuntimeException.getStatus());
     } else {
       return e;
-    }
-  }
-
-  /** Turns a Throwable into an exception, converting it from a StatusException if necessary. */
-  public static Exception convertThrowableToException(Throwable t) {
-    if (t instanceof Exception) {
-      return Util.convertStatusException((Exception) t);
-    } else {
-      return new Exception(t);
     }
   }
 
@@ -272,7 +260,7 @@ public class Util {
       }
       // Byte values are equal, continue with comparison
     }
-    return Util.compareIntegers(left.length, right.length);
+    return Integer.compare(left.length, right.length);
   }
 
   public static int compareByteStrings(ByteString left, ByteString right) {
@@ -288,7 +276,7 @@ public class Util {
       }
       // Byte values are equal, continue with comparison
     }
-    return Util.compareIntegers(left.size(), right.size());
+    return Integer.compare(left.size(), right.size());
   }
 
   public static StringBuilder repeatSequence(

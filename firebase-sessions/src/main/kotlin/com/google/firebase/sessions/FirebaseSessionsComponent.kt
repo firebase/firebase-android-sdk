@@ -17,38 +17,44 @@
 package com.google.firebase.sessions
 
 import android.content.Context
+import android.os.Build
 import android.util.Log
+import androidx.datastore.core.DataMigration
 import androidx.datastore.core.DataStore
+import androidx.datastore.core.DataStoreFactory
+import androidx.datastore.core.MultiProcessDataStoreFactory
+import androidx.datastore.core.Serializer
 import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
-import androidx.datastore.preferences.core.PreferenceDataStoreFactory
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.emptyPreferences
-import androidx.datastore.preferences.preferencesDataStoreFile
+import androidx.datastore.dataStoreFile
 import com.google.android.datatransport.TransportFactory
 import com.google.firebase.FirebaseApp
 import com.google.firebase.annotations.concurrent.Background
 import com.google.firebase.annotations.concurrent.Blocking
 import com.google.firebase.inject.Provider
 import com.google.firebase.installations.FirebaseInstallationsApi
-import com.google.firebase.sessions.ProcessDetailsProvider.getProcessName
+import com.google.firebase.sessions.FirebaseSessions.Companion.TAG
 import com.google.firebase.sessions.settings.CrashlyticsSettingsFetcher
 import com.google.firebase.sessions.settings.LocalOverrideSettings
 import com.google.firebase.sessions.settings.RemoteSettings
 import com.google.firebase.sessions.settings.RemoteSettingsFetcher
+import com.google.firebase.sessions.settings.SessionConfigs
+import com.google.firebase.sessions.settings.SessionConfigsSerializer
 import com.google.firebase.sessions.settings.SessionsSettings
+import com.google.firebase.sessions.settings.SettingsCache
+import com.google.firebase.sessions.settings.SettingsCacheImpl
 import com.google.firebase.sessions.settings.SettingsProvider
 import dagger.Binds
 import dagger.BindsInstance
 import dagger.Component
 import dagger.Module
 import dagger.Provides
+import java.io.File
+import java.io.IOException
+import java.nio.file.Files
 import javax.inject.Qualifier
 import javax.inject.Singleton
 import kotlin.coroutines.CoroutineContext
-
-@Qualifier internal annotation class SessionConfigsDataStore
-
-@Qualifier internal annotation class SessionDetailsDataStore
+import kotlinx.coroutines.CoroutineScope
 
 @Qualifier internal annotation class LocalOverrideSettingsProvider
 
@@ -64,10 +70,10 @@ import kotlin.coroutines.CoroutineContext
 internal interface FirebaseSessionsComponent {
   val firebaseSessions: FirebaseSessions
 
-  val sessionDatastore: SessionDatastore
   val sessionFirelogPublisher: SessionFirelogPublisher
   val sessionGenerator: SessionGenerator
   val sessionsSettings: SessionsSettings
+  val sharedSessionRepository: SharedSessionRepository
 
   @Component.Builder
   interface Builder {
@@ -93,17 +99,9 @@ internal interface FirebaseSessionsComponent {
   interface MainModule {
     @Binds @Singleton fun eventGDTLoggerInterface(impl: EventGDTLogger): EventGDTLoggerInterface
 
-    @Binds @Singleton fun sessionDatastore(impl: SessionDatastoreImpl): SessionDatastore
-
     @Binds
     @Singleton
     fun sessionFirelogPublisher(impl: SessionFirelogPublisherImpl): SessionFirelogPublisher
-
-    @Binds
-    @Singleton
-    fun sessionLifecycleServiceBinder(
-      impl: SessionLifecycleServiceBinderImpl
-    ): SessionLifecycleServiceBinder
 
     @Binds
     @Singleton
@@ -119,9 +117,15 @@ internal interface FirebaseSessionsComponent {
     @RemoteSettingsProvider
     fun remoteSettings(impl: RemoteSettings): SettingsProvider
 
-    companion object {
-      private const val TAG = "FirebaseSessions"
+    @Binds @Singleton fun settingsCache(impl: SettingsCacheImpl): SettingsCache
 
+    @Binds
+    @Singleton
+    fun sharedSessionRepository(impl: SharedSessionRepositoryImpl): SharedSessionRepository
+
+    @Binds @Singleton fun processDataManager(impl: ProcessDataManagerImpl): ProcessDataManager
+
+    companion object {
       @Provides @Singleton fun timeProvider(): TimeProvider = TimeProviderImpl
 
       @Provides @Singleton fun uuidGenerator(): UuidGenerator = UuidGeneratorImpl
@@ -133,31 +137,114 @@ internal interface FirebaseSessionsComponent {
 
       @Provides
       @Singleton
-      @SessionConfigsDataStore
-      fun sessionConfigsDataStore(appContext: Context): DataStore<Preferences> =
-        PreferenceDataStoreFactory.create(
+      fun sessionConfigsDataStore(
+        appContext: Context,
+        @Blocking blockingDispatcher: CoroutineContext,
+      ): DataStore<SessionConfigs> =
+        createDataStore(
+          serializer = SessionConfigsSerializer,
           corruptionHandler =
             ReplaceFileCorruptionHandler { ex ->
-              Log.w(TAG, "CorruptionException in settings DataStore in ${getProcessName()}.", ex)
-              emptyPreferences()
+              Log.w(TAG, "CorruptionException in session configs DataStore", ex)
+              SessionConfigsSerializer.defaultValue
+            },
+          scope = CoroutineScope(blockingDispatcher),
+          produceFile = {
+            appContext.dataStoreFile("firebaseSessions/sessionConfigsDataStore.data").also {
+              prepDataStoreFile(it)
             }
-        ) {
-          appContext.preferencesDataStoreFile(SessionDataStoreConfigs.SETTINGS_CONFIG_NAME)
-        }
+          },
+        )
 
       @Provides
       @Singleton
-      @SessionDetailsDataStore
-      fun sessionDetailsDataStore(appContext: Context): DataStore<Preferences> =
-        PreferenceDataStoreFactory.create(
+      fun sessionDataStore(
+        appContext: Context,
+        @Blocking blockingDispatcher: CoroutineContext,
+        sessionDataSerializer: SessionDataSerializer,
+      ): DataStore<SessionData> =
+        createDataStore(
+          serializer = sessionDataSerializer,
           corruptionHandler =
             ReplaceFileCorruptionHandler { ex ->
-              Log.w(TAG, "CorruptionException in sessions DataStore in ${getProcessName()}.", ex)
-              emptyPreferences()
+              Log.w(TAG, "CorruptionException in session data DataStore", ex)
+              sessionDataSerializer.defaultValue
+            },
+          scope = CoroutineScope(blockingDispatcher),
+          produceFile = {
+            appContext.dataStoreFile("firebaseSessions/sessionDataStore.data").also {
+              prepDataStoreFile(it)
             }
-        ) {
-          appContext.preferencesDataStoreFile(SessionDataStoreConfigs.SESSIONS_CONFIG_NAME)
+          },
+        )
+
+      private fun <T> createDataStore(
+        serializer: Serializer<T>,
+        corruptionHandler: ReplaceFileCorruptionHandler<T>,
+        migrations: List<DataMigration<T>> = listOf(),
+        scope: CoroutineScope,
+        produceFile: () -> File,
+      ): DataStore<T> =
+        if (loadDataStoreSharedCounter()) {
+          MultiProcessDataStoreFactory.create(
+            serializer,
+            corruptionHandler,
+            migrations,
+            scope,
+            produceFile,
+          )
+        } else {
+          DataStoreFactory.create(serializer, corruptionHandler, migrations, scope, produceFile)
         }
+
+      /** This native library in unavailable in some conditions, for example, Robolectric tests */
+      // TODO(mrober): Remove this when b/392626815 is resolved
+      private fun loadDataStoreSharedCounter(): Boolean =
+        try {
+          System.loadLibrary("datastore_shared_counter")
+          true
+        } catch (_: UnsatisfiedLinkError) {
+          false
+        } catch (_: SecurityException) {
+          false
+        }
+
+      /**
+       * Prepares the DataStore file by ensuring its parent directory exists. Throws [IOException]
+       * if the directory could not be created, or if a conflicting file could not be removed.
+       */
+      private fun prepDataStoreFile(dataStoreFile: File) {
+        val parentDir = dataStoreFile.parentFile ?: return
+
+        // Check if something exists at the path, but isn't a directory
+        if (parentDir.exists() && !parentDir.isDirectory) {
+          // Only delete it if it's the specific file we know we can safely remove
+          if (parentDir.name == "firebaseSessions") {
+            if (!parentDir.delete()) {
+              throw IOException("Failed to delete conflicting file: $parentDir")
+            }
+          }
+        }
+
+        if (parentDir.isDirectory) {
+          return
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+          try {
+            Files.createDirectories(parentDir.toPath())
+          } catch (ex: Exception) {
+            throw IOException("Failed to create directory: $parentDir", ex)
+          }
+        } else {
+          if (!parentDir.mkdirs()) {
+            // It's possible another thread created it in the meantime, so we double-check
+            if (!parentDir.isDirectory) {
+              throw IOException("Failed to create directory: $parentDir")
+            }
+          }
+        }
+      }
     }
   }
 }

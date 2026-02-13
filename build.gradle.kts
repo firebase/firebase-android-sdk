@@ -23,6 +23,7 @@ plugins {
   alias(libs.plugins.errorprone)
   alias(libs.plugins.crashlytics) apply false
   id("PublishingPlugin")
+  id("test-report")
   id("firebase-ci")
   id("smoke-tests")
   alias(libs.plugins.google.services)
@@ -33,7 +34,7 @@ extra["targetSdkVersion"] = 34
 
 extra["compileSdkVersion"] = 34
 
-extra["minSdkVersion"] = 21
+extra["minSdkVersion"] = 23
 
 firebaseContinuousIntegration {
   ignorePaths =
@@ -59,6 +60,11 @@ fun Project.applySpotless() {
     kotlinGradle {
       target("*.gradle.kts") // default target for kotlinGradle
       ktfmt("0.41").googleStyle()
+    }
+    flexmark {
+      target("src/**/*.md", "*.md", "docs/**/*.md")
+      targetExclude("**/third_party/**", "src/test/resources/**", "release_report.md")
+      flexmark("0.64.8")
     }
   }
 }

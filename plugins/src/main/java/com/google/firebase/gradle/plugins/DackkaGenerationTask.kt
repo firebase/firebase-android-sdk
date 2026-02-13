@@ -19,6 +19,7 @@ package com.google.firebase.gradle.plugins
 import java.io.File
 import javax.inject.Inject
 import org.gradle.api.DefaultTask
+import org.gradle.api.Project
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ListProperty
@@ -120,7 +121,8 @@ constructor(private val workerExecutor: WorkerExecutor) : GenerateDocumentationT
         "java.lang.Override",
       )
     val annotationsNotToDisplayKotlin = listOf("kotlin.ExtensionFunctionType")
-
+    // A null path disables javadoc generation
+    val javadocPath: String? = "android".takeUnless { publishKotlindocOnly(project) }
     val jsonMap =
       mapOf(
         "moduleName" to "",
@@ -152,7 +154,7 @@ constructor(private val workerExecutor: WorkerExecutor) : GenerateDocumentationT
                 JSONObject(
                     mapOf(
                       "docRootPath" to "/docs/reference/",
-                      "javaDocsPath" to "android",
+                      "javaDocsPath" to javadocPath,
                       "kotlinDocsPath" to "kotlin",
                       "projectPath" to "client/${clientName.get()}",
                       "includedHeadTagsPathJava" to
@@ -171,6 +173,14 @@ constructor(private val workerExecutor: WorkerExecutor) : GenerateDocumentationT
     return JSONObject(jsonMap)
   }
 
+  /**
+   * Checks if the [Project] should only release Kotlindocs
+   *
+   * This is done via the [FirebaseLibraryExtension.onlyPublishKotlindoc] property.
+   */
+  private fun publishKotlindocOnly(project: Project) =
+    project.firebaseLibrary.onlyPublishKotlindoc.get()
+
   private fun createExternalLinks(
     packageLists: ListProperty<File>
   ): List<ExternalDocumentationLink> {
@@ -179,9 +189,10 @@ constructor(private val workerExecutor: WorkerExecutor) : GenerateDocumentationT
         "android" to "https://developer.android.com/reference/kotlin/",
         "androidx" to "https://developer.android.com/reference/kotlin/",
         "google" to "https://developers.google.com/android/reference/",
-        "firebase" to "https://firebase.google.com/docs/reference/kotlin/",
         "coroutines" to "https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/",
+        "firebase" to "https://firebase.google.com/docs/reference/kotlin/",
         "kotlin" to "https://kotlinlang.org/api/latest/jvm/stdlib/",
+        "serialization" to "https://kotlinlang.org/api/kotlinx.serialization/",
       )
 
     return packageLists
@@ -209,7 +220,8 @@ constructor(private val workerExecutor: WorkerExecutor) : GenerateDocumentationT
 }
 
 /**
- * Parameters needs to launch the Dackka fat jar on the command line.
+ * Parameters needs to launch the Dackka fat jar on the command line. Dackka's fat jar is downloaded
+ * from GCP when needed for the build-release-artifacts action.
  *
  * @property args a list of arguments to pass to Dackka- should include the json arguments file
  * @property dackkaFile a [File] of the Dackka fat jar

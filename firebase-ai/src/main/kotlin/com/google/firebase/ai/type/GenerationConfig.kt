@@ -67,7 +67,12 @@ import kotlinx.serialization.Serializable
  * - `application/json`: JSON response in the candidates.
  *
  * @property responseSchema Output schema of the generated candidate text. If set, a compatible
- * [responseMimeType] must also be set.
+ * [responseMimeType] must also be set. This is mutually exclusive with [responseJsonSchema]. Unlike
+ * [responseJsonSchema] this will encode to an OpenAPI schema.
+ *
+ * @property responseJsonSchema Output schema of the generated candidate text. If set, a compatible
+ * [responseMimeType] must also be set. This is mutually exclusive with [responseSchema]. Unlike
+ * [responseSchema] this will encode to an JsonSchema schema, which is the standard moving forward.
  *
  * Compatible MIME types:
  * - `application/json`: Schema for JSON response.
@@ -90,7 +95,9 @@ private constructor(
   internal val stopSequences: List<String>?,
   internal val responseMimeType: String?,
   internal val responseSchema: Schema?,
+  internal val responseJsonSchema: JsonSchema<*>?,
   internal val responseModalities: List<ResponseModality>?,
+  internal val thinkingConfig: ThinkingConfig?,
 ) {
 
   /**
@@ -119,6 +126,8 @@ private constructor(
    *
    * @property responseSchema See [GenerationConfig.responseSchema].
    *
+   * @property responseJsonSchema See [GenerationConfig.responseJsonSchema]
+   *
    * @property responseModalities See [GenerationConfig.responseModalities].
    *
    * @see [generationConfig]
@@ -134,7 +143,41 @@ private constructor(
     @JvmField public var stopSequences: List<String>? = null
     @JvmField public var responseMimeType: String? = null
     @JvmField public var responseSchema: Schema? = null
+    @JvmField public var responseJsonSchema: JsonSchema<*>? = null
     @JvmField public var responseModalities: List<ResponseModality>? = null
+    @JvmField public var thinkingConfig: ThinkingConfig? = null
+
+    public constructor()
+
+    internal constructor(
+      temperature: Float?,
+      topK: Int?,
+      topP: Float?,
+      candidateCount: Int?,
+      maxOutputTokens: Int?,
+      presencePenalty: Float?,
+      frequencyPenalty: Float?,
+      stopSequences: List<String>?,
+      responseMimeType: String?,
+      responseSchema: Schema?,
+      responseJsonSchema: JsonSchema<*>?,
+      responseModalities: List<ResponseModality>?,
+      thinkingConfig: ThinkingConfig?,
+    ) {
+      this.temperature = temperature
+      this.topK = topK
+      this.topP = topP
+      this.candidateCount = candidateCount
+      this.maxOutputTokens = maxOutputTokens
+      this.stopSequences = stopSequences
+      this.presencePenalty = presencePenalty
+      this.frequencyPenalty = frequencyPenalty
+      this.responseMimeType = responseMimeType
+      this.responseSchema = responseSchema
+      this.responseJsonSchema = responseJsonSchema
+      this.responseModalities = responseModalities
+      this.thinkingConfig = thinkingConfig
+    }
 
     public fun setTemperature(temperature: Float?): Builder = apply {
       this.temperature = temperature
@@ -162,13 +205,22 @@ private constructor(
     public fun setResponseSchema(responseSchema: Schema?): Builder = apply {
       this.responseSchema = responseSchema
     }
+    public fun setResponseSchemaJson(responseSchemaJson: JsonSchema<*>?): Builder = apply {
+      this.responseJsonSchema = responseSchemaJson
+    }
     public fun setResponseModalities(responseModalities: List<ResponseModality>?): Builder = apply {
       this.responseModalities = responseModalities
     }
+    public fun setThinkingConfig(thinkingConfig: ThinkingConfig?): Builder = apply {
+      this.thinkingConfig = thinkingConfig
+    }
 
     /** Create a new [GenerationConfig] with the attached arguments. */
-    public fun build(): GenerationConfig =
-      GenerationConfig(
+    public fun build(): GenerationConfig {
+      if (responseSchema != null && responseJsonSchema != null) {
+        throw InvalidStateException("responseSchema and responseJsonSchema are mutually exclusive.")
+      }
+      return GenerationConfig(
         temperature = temperature,
         topK = topK,
         topP = topP,
@@ -179,9 +231,29 @@ private constructor(
         frequencyPenalty = frequencyPenalty,
         responseMimeType = responseMimeType,
         responseSchema = responseSchema,
-        responseModalities = responseModalities
+        responseJsonSchema = responseJsonSchema,
+        responseModalities = responseModalities,
+        thinkingConfig = thinkingConfig
       )
+    }
   }
+
+  public fun toBuilder(): Builder =
+    Builder(
+      temperature = temperature,
+      topK = topK,
+      topP = topP,
+      candidateCount = candidateCount,
+      maxOutputTokens = maxOutputTokens,
+      stopSequences = stopSequences,
+      presencePenalty = presencePenalty,
+      frequencyPenalty = frequencyPenalty,
+      responseMimeType = responseMimeType,
+      responseSchema = responseSchema,
+      responseJsonSchema = responseJsonSchema,
+      responseModalities = responseModalities,
+      thinkingConfig = thinkingConfig
+    )
 
   internal fun toInternal() =
     Internal(
@@ -194,8 +266,10 @@ private constructor(
       frequencyPenalty = frequencyPenalty,
       presencePenalty = presencePenalty,
       responseMimeType = responseMimeType,
-      responseSchema = responseSchema?.toInternal(),
-      responseModalities = responseModalities?.map { it.toInternal() }
+      responseSchema = responseSchema?.toInternalOpenApi(),
+      responseJsonSchema = responseJsonSchema?.toInternalJson(),
+      responseModalities = responseModalities?.map { it.toInternal() },
+      thinkingConfig = thinkingConfig?.toInternal()
     )
 
   @Serializable
@@ -209,8 +283,10 @@ private constructor(
     @SerialName("response_mime_type") val responseMimeType: String? = null,
     @SerialName("presence_penalty") val presencePenalty: Float? = null,
     @SerialName("frequency_penalty") val frequencyPenalty: Float? = null,
-    @SerialName("response_schema") val responseSchema: Schema.Internal? = null,
-    @SerialName("response_modalities") val responseModalities: List<String>? = null
+    @SerialName("response_schema") val responseSchema: Schema.InternalOpenAPI? = null,
+    @SerialName("response_json_schema") val responseJsonSchema: Schema.InternalJson? = null,
+    @SerialName("response_modalities") val responseModalities: List<String>? = null,
+    @SerialName("thinking_config") val thinkingConfig: ThinkingConfig.Internal? = null
   )
 
   public companion object {
@@ -221,7 +297,7 @@ private constructor(
      * val config = GenerationConfig.builder()
      * ```
      */
-    public fun builder(): Builder = Builder()
+    @JvmStatic public fun builder(): Builder = Builder()
   }
 }
 

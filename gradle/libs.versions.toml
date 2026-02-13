@@ -4,39 +4,38 @@
 # needs to match the version of grpc that grpc-kotlin has a transitive dependency on.
 android-lint = "31.3.2"
 androidGradlePlugin = "8.6.1"
-androidx-test-core="1.5.0"
-androidx-test-junit="1.1.5"
+androidx-core = "1.13.1"
+androidx-test-core = "1.5.0"
+androidx-test-junit = "1.1.5"
 androidx-test-truth = "1.6.0"
 appcompat = "1.7.1"
 autoValueParcel = "0.2.6"
 autovalue = "1.10.1"
 awaitility = "3.1.0"
-benchmarkMacro = "1.3.4"
+benchmarkMacro = "1.4.1"
 browser = "1.3.0"
 cardview = "1.0.0"
-checkerQual = "2.5.2"
-constraintlayout = "2.1.4"
-coreKtx = "1.12.0"
-coroutines = "1.7.3"
-dagger = "2.43.2"
-datastore = "1.1.3"
+constraintlayout = "2.2.1"
+coroutines = "1.9.0"
+dagger = "2.51"                 # Don't bump above 2.51 as it causes a bug in AppDistro FeedbackSender JPEG code
+datastore = "1.1.7"
 dexmaker = "2.28.1"
 dexmakerVersion = "1.2"
 espressoCore = "3.6.1"
 featureDelivery = "2.1.0"
 firebaseAppdistributionGradle = "5.1.1"
-firebaseCommon = "21.0.0"
-firebaseComponents = "18.0.1"
+firebaseAnnotations = "17.0.0"
+firebaseCommon = "22.0.1"
+firebaseComponents = "19.0.0"
 firebaseCrashlyticsGradle = "3.0.4"
-glide = "4.16.0"
-googleApiClient = "1.30.9"
+glide = "5.0.5"
+googleApiClient = "2.8.1"
 googleServices = "4.3.15"
 gradleErrorpronePlugin = "4.2.0"
 grpc = "1.62.2"
 grpcKotlin = "1.4.1"
-hamcrest = "2.2"
-hamcrestJunit = "2.0.0.0"
-hamcrestLibrary = "2.2"
+hamcrest = "3.0"
+hamcrestLibrary = "3.0"
 httpclientAndroid = "4.3.5.1"
 integrity = "1.4.0"
 jacksonCore = "2.13.1"
@@ -45,16 +44,16 @@ javalite = "3.25.5"
 jsonassert = "1.5.0"
 kotest = "5.9.0" # Do not use 5.9.1 because it reverts the fix for https://github.com/kotest/kotest/issues/3981
 kotestAssertionsCore = "5.8.1"
-kotlin = "1.8.22"
-ktorVersion = "2.3.2"
+kotlin = "2.0.21"
+kotlinpoetKsp = "2.2.0"
+ktorVersion = "3.0.3"
 legacySupportV4 = "1.0.0"
 lifecycleProcess = "2.3.1"
 material = "1.12.0"
 mavenResolverApi = "1.9.23"
-mavenResolverProvider = "3.9.9"
-mockito = "5.2.0"
-mockitoAndroid = "3.4.0"
-mockk = "1.13.11"
+mavenResolverProvider = "3.9.11"
+mockito = "5.20.0"
+mockk = "1.14.0"                # Do not use 1.14.2 or above due to a bug in spyK and bumps kotlin to 2.1.x
 playServicesCloudMessaging = "17.2.0"
 playServicesStats = "17.0.2"
 playServicesVision = "20.1.3"
@@ -64,15 +63,16 @@ protobufjavautil = "3.25.5"
 protoc = "3.25.5"
 quickcheck = "0.6"
 reactiveStreams = "1.0.4"
-robolectric = "4.12"
+robolectric = "4.12"            # Do not use >4.12 as it breaks the build
 runner = "1.0.2"
 rxandroid = "2.0.2"
-rxjava = "2.1.14"
-serialization = "1.5.1"
-slf4jNop = "2.0.9"
+rxjava = "2.2.21"
+serialization = "1.7.3"
+slf4jNop = "2.0.17"
 spotless = "7.0.4"
-testServices = "1.2.0"
-truth = "1.4.4"
+symbolProcessingApi = "2.2.10-2.0.2"
+testServices = "1.6.0"
+truth = "1.4.5"
 truthProtoExtension = "1.0"
 wiremockStandalone = "2.26.3"
 
@@ -91,8 +91,8 @@ androidx-benchmark-macro = { group = "androidx.benchmark", name = "benchmark-mac
 androidx-browser = { module = "androidx.browser:browser", version.ref = "browser" }
 androidx-cardview = { module = "androidx.cardview:cardview", version.ref = "cardview" }
 androidx-constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version.ref = "constraintlayout" }
-androidx-core = { module = "androidx.core:core", version = "1.13.1" }
-androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
+androidx-core = { module = "androidx.core:core", version.ref = "androidx-core" }
+androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidx-core" }
 androidx-datastore = { module = "androidx.datastore:datastore", version.ref = "datastore" }
 androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "datastore" }
 androidx-espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "espressoCore" }
@@ -107,7 +107,6 @@ auto-value-parcel = { module = "com.ryanharter.auto.value:auto-value-parcel", ve
 autovalue = { module = "com.google.auto.value:auto-value", version.ref = "autovalue" }
 autovalue-annotations = { module = "com.google.auto.value:auto-value-annotations", version.ref = "autovalue" }
 awaitility = { module = "org.awaitility:awaitility", version.ref = "awaitility" }
-checker-qual = { module = "org.checkerframework:checker-qual", version.ref = "checkerQual" }
 compiler = { module = "com.github.bumptech.glide:compiler", version.ref = "glide" }
 dagger-compiler = { module = "com.google.dagger:dagger-compiler", version.ref = "dagger" }
 dagger-dagger = { module = "com.google.dagger:dagger", version.ref = "dagger" }
@@ -116,6 +115,7 @@ errorprone-annotations = { module = "com.google.errorprone:error_prone_annotatio
 feature-delivery = { module = "com.google.android.play:feature-delivery", version.ref = "featureDelivery" }
 findbugs-jsr305 = { module = "com.google.code.findbugs:jsr305", version = "3.0.2" }
 firebase-appdistribution-gradle = { module = "com.google.firebase:firebase-appdistribution-gradle", version.ref = "firebaseAppdistributionGradle" }
+firebase-annotations = { module = "com.google.firebase:firebase-annotations", version.ref = "firebaseAnnotations" }
 firebase-common = { module = "com.google.firebase:firebase-common", version.ref = "firebaseCommon" }
 firebase-components = { module = "com.google.firebase:firebase-components", version.ref = "firebaseComponents" }
 glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
@@ -128,9 +128,8 @@ grpc-protobuf-lite = { module = "io.grpc:grpc-protobuf-lite", version.ref = "grp
 grpc-protoc-gen-java = { module = "io.grpc:protoc-gen-grpc-java", version.ref = "grpc" }
 grpc-protoc-gen-kotlin = { module = "io.grpc:protoc-gen-grpc-kotlin", version.ref = "grpcKotlin" }
 grpc-stub = { module = "io.grpc:grpc-stub", version.ref = "grpc" }
-grpc-testing = { module= "io.grpc:grpc-testing", version.ref="grpc" }
+grpc-testing = { module = "io.grpc:grpc-testing", version.ref = "grpc" }
 hamcrest = { module = "org.hamcrest:hamcrest", version.ref = "hamcrest" }
-hamcrest-junit = { module = "org.hamcrest:hamcrest-junit", version.ref = "hamcrestJunit" }
 hamcrest-library = { module = "org.hamcrest:hamcrest-library", version.ref = "hamcrestLibrary" }
 httpclient-android = { module = "org.apache.httpcomponents:httpclient-android", version.ref = "httpclientAndroid" }
 integrity = { module = "com.google.android.play:integrity", version.ref = "integrity" }
@@ -145,6 +144,7 @@ kotlin-bom = { module = "org.jetbrains.kotlin:kotlin-bom", version.ref = "kotlin
 kotlin-coroutines-tasks = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "coroutines" }
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlin" }
 kotlin-stdlib-jdk8 = { module = "org.jetbrains.kotlin:kotlin-stdlib-jdk8", version.ref = "kotlin" }
+kotlinpoet-ksp = { module = "com.squareup:kotlinpoet-ksp", version.ref = "kotlinpoetKsp" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 kotlinx-coroutines-reactive = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-reactive", version.ref = "coroutines" }
@@ -166,14 +166,14 @@ maven-resolver-provider = { module = "org.apache.maven:maven-resolver-provider",
 maven-resolver-transport-file = { module = "org.apache.maven.resolver:maven-resolver-transport-file", version.ref = "mavenResolverApi" }
 maven-resolver-transport-http = { module = "org.apache.maven.resolver:maven-resolver-transport-http", version.ref = "mavenResolverApi" }
 maven-resolver-util = { module = "org.apache.maven.resolver:maven-resolver-util", version.ref = "mavenResolverApi" }
-okhttp = { module = "com.squareup.okhttp3:okhttp", version = "3.12.13" }
+okhttp = { module = "com.squareup.okhttp3:okhttp", version = "4.12.0" }
 org-json = { module = "org.json:json", version = "20240303" }
 play-services-cloud-messaging = { module = "com.google.android.gms:play-services-cloud-messaging", version.ref = "playServicesCloudMessaging" }
 play-services-stats = { module = "com.google.android.gms:play-services-stats", version.ref = "playServicesStats" }
 play-services-vision = { module = "com.google.android.gms:play-services-vision", version.ref = "playServicesVision" }
-playservices-base = { module = "com.google.android.gms:play-services-base", version = "18.1.0" }
-playservices-basement = { module = "com.google.android.gms:play-services-basement", version = "18.3.0" }
-playservices-tasks = { module = "com.google.android.gms:play-services-tasks", version = "18.1.0" }
+playservices-base = { module = "com.google.android.gms:play-services-base", version = "18.9.0" }
+playservices-basement = { module = "com.google.android.gms:play-services-basement", version = "18.9.0" }
+playservices-tasks = { module = "com.google.android.gms:play-services-tasks", version = "18.4.0" }
 proto-google-common-protos = { module = "com.google.api.grpc:proto-google-common-protos", version.ref = "protoGoogleCommonProtos" }
 protobuf-java = { module = "com.google.protobuf:protobuf-java", version.ref = "javalite" }
 protobuf-java-lite = { module = "com.google.protobuf:protobuf-javalite", version.ref = "javalite" }
@@ -192,10 +192,9 @@ kotest-property = { module = "io.kotest:kotest-property-jvm", version.ref = "kot
 kotest-property-arbs = { module = "io.kotest.extensions:kotest-property-arbs", version = "2.1.2" }
 kotest-runner = { module = "io.kotest:kotest-runner-junit4-jvm", version.ref = "kotest" }
 kotlin-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
-mockito-android = { module = "org.mockito:mockito-android", version.ref = "mockitoAndroid" }
+mockito-android = { module = "org.mockito:mockito-android", version.ref = "mockito" }
 mockito-core = { module = "org.mockito:mockito-core", version.ref = "mockito" }
 mockito-dexmaker = { module = "com.linkedin.dexmaker:dexmaker-mockito", version = "2.28.3" }
-mockito-mockito-inline = { module = "org.mockito:mockito-inline", version.ref = "mockito" }
 mockk = { module = "io.mockk:mockk", version.ref = "mockk" }
 mockk-android = { module = "io.mockk:mockk-android", version.ref = "mockk" }
 protobuf-java-util = { module = "com.google.protobuf:protobuf-java-util", version.ref = "protobufjavautil" }
@@ -207,10 +206,11 @@ rxandroid = { module = "io.reactivex.rxjava2:rxandroid", version.ref = "rxandroi
 rxjava = { module = "io.reactivex.rxjava2:rxjava", version.ref = "rxjava" }
 slf4j-nop = { module = "org.slf4j:slf4j-nop", version.ref = "slf4jNop" }
 spotless-plugin-gradle = { module = "com.diffplug.spotless:spotless-plugin-gradle", version.ref = "spotless" }
+symbol-processing-api = { module = "com.google.devtools.ksp:symbol-processing-api", version.ref = "symbolProcessingApi" }
 truth = { module = "com.google.truth:truth", version.ref = "truth" }
 truth-liteproto-extension = { module = "com.google.truth.extensions:truth-liteproto-extension", version.ref = "truth" }
 truth-proto-extension = { module = "com.google.truth.extensions:truth-proto-extension", version.ref = "truthProtoExtension" }
-turbine = { module = "app.cash.turbine:turbine", version = "1.2.0" }
+turbine = { module = "app.cash.turbine:turbine", version = "1.2.1" }
 
 # Remove three-ten-abp once minSdkVersion is changed to 26 or later, and, instead use the
 # correspondingly-named classes from the java.time package, which should be drop-in replacements.

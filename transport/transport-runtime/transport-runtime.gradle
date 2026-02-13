@@ -97,7 +97,8 @@ android {
 }
 
 thirdPartyLicenses {
-    add 'Dagger', "${rootDir}/third_party/licenses/apache-2.0.txt"
+    add 'Apache-2.0', "${rootDir}/third_party/licenses/apache-2.0.txt"
+    add 'Dagger', "${rootDir}/third_party/licenses/dagger.txt"
 }
 
 dependencies {
@@ -105,7 +106,7 @@ dependencies {
         exclude group: "javax.inject", module: "javax.inject"
     }
 
-    api "com.google.android.datatransport:transport-api:4.0.0"
+    api project(':transport:transport-api')
     api 'com.google.firebase:firebase-encoders:17.0.0'
     api "com.google.firebase:firebase-encoders-proto:16.0.0"
 

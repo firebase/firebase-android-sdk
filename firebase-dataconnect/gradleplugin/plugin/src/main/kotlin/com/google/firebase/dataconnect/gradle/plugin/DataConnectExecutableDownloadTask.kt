@@ -15,17 +15,21 @@
  */
 package com.google.firebase.dataconnect.gradle.plugin
 
+import io.github.z4kn4fein.semver.Version
+import io.github.z4kn4fein.semver.toVersion
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
 import java.security.MessageDigest
 import java.util.regex.Pattern
+import javax.inject.Inject
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 import org.gradle.api.DefaultTask
 import org.gradle.api.Task
 import org.gradle.api.file.DirectoryProperty
+import org.gradle.api.file.FileSystemOperations
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.Input
@@ -34,6 +38,7 @@ import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
+import org.gradle.process.ExecOperations
 
 abstract class DataConnectExecutableDownloadTask : DefaultTask() {
 
@@ -43,26 +48,34 @@ abstract class DataConnectExecutableDownloadTask : DefaultTask() {
 
   @get:Input @get:Optional abstract val operatingSystem: Property<OperatingSystem>
 
+  @get:Input @get:Optional abstract val cpuArchitecture: Property<CpuArchitecture>
+
   @get:Internal abstract val buildDirectory: DirectoryProperty
 
   @get:OutputFile abstract val outputFile: RegularFileProperty
+
+  @get:Inject abstract val fileSystemOperations: FileSystemOperations
+
+  @get:Inject abstract val execOperations: ExecOperations
 
   @TaskAction
   fun run() {
     val inputFile: File? = inputFile.orNull?.asFile
     val version: String? = version.orNull
     val operatingSystem: OperatingSystem = operatingSystem.get()
+    val cpuArchitecture: CpuArchitecture = cpuArchitecture.get()
     val buildDirectory: File = buildDirectory.get().asFile
     val outputFile: File = outputFile.get().asFile
 
     logger.info("inputFile: {}", inputFile)
     logger.info("version: {}", version)
     logger.info("operatingSystem: {}", operatingSystem)
+    logger.info("cpuArchitecture: {}", cpuArchitecture)
     logger.info("buildDirectory: {}", buildDirectory)
     logger.info("outputFile: {}", outputFile)
 
     logger.info("Deleting build directory: {}", buildDirectory)
-    project.delete(buildDirectory)
+    fileSystemOperations.delete { it.delete(buildDirectory) }
 
     if (inputFile !== null && version !== null) {
       throw DataConnectGradleException(
@@ -74,8 +87,15 @@ abstract class DataConnectExecutableDownloadTask : DefaultTask() {
     } else if (inputFile !== null) {
       runWithFile(inputFile = inputFile, outputFile = outputFile)
     } else if (version !== null) {
-      downloadDataConnectExecutable(version, operatingSystem, outputFile)
-      verifyOutputFile(outputFile, operatingSystem, version)
+      val parsedVersion = version.toVersion()
+      downloadDataConnectExecutable(
+        parsedVersion,
+        operatingSystem,
+        cpuArchitecture,
+        outputFile,
+        execOperations,
+      )
+      verifyOutputFile(outputFile, operatingSystem, cpuArchitecture, parsedVersion)
     } else {
       throw DataConnectGradleException(
         "chc94cq7vx",
@@ -88,35 +108,34 @@ abstract class DataConnectExecutableDownloadTask : DefaultTask() {
   private fun verifyOutputFile(
     outputFile: File,
     operatingSystem: OperatingSystem,
-    version: String
+    cpuArchitecture: CpuArchitecture,
+    version: Version
   ) {
     logger.info("Verifying file size and SHA512 digest of file: {}", outputFile)
     val fileInfo = FileInfo.forFile(outputFile)
 
-    val allVersions = DataConnectExecutableVersionsRegistry.load().versions
-    val allVersionNames =
-      allVersions
-        .asSequence()
-        .filter { it.os == operatingSystem }
-        .map { it.version }
-        .distinct()
-        .sorted()
-        .joinToString(", ")
-    val applicableVersions =
-      allVersions.filter { it.version == version && it.os == operatingSystem }
+    val versionsForOsArch: List<DataConnectExecutableVersionsRegistry.VersionInfo> =
+      DataConnectExecutableVersionsRegistry.load().versions.filter {
+        it.os == operatingSystem && (it.arch === null || it.arch == cpuArchitecture)
+      }
+    val applicableVersions = versionsForOsArch.filter { it.version == version }
+    val versionNamesStringForOsArch =
+      versionsForOsArch.map { it.version }.distinct().sorted().joinToString(", ") { it.toString() }
 
+    val osDisplayId: String =
+      operatingSystem.downloadFileNameMoniker + "/" + cpuArchitecture.downloadFileNameMoniker
     if (applicableVersions.isEmpty()) {
       val message =
         "verification information for Data Connect toolkit executable" +
-          " version $version for $operatingSystem is not known;" +
-          " known versions for $operatingSystem are: $allVersionNames" +
+          " version $version for $osDisplayId is not known;" +
+          " known versions for $osDisplayId are: $versionNamesStringForOsArch" +
           " (loaded from ${DataConnectExecutableVersionsRegistry.PATH})"
       logger.error("ERROR: $message")
       throw DataConnectGradleException("ym8assbfgw", message)
     } else if (applicableVersions.size > 1) {
       val message =
         "INTERNAL ERROR: ${applicableVersions.size} verification information records for" +
-          " Data Connect toolkit executable version $version for $operatingSystem were found in" +
+          " Data Connect toolkit executable version $version for $osDisplayId were found in" +
           " ${DataConnectExecutableVersionsRegistry.PATH}, but expected exactly 1"
       logger.error("ERROR: $message")
       throw DataConnectGradleException("zyw5xrky6e", message)
@@ -145,8 +164,8 @@ abstract class DataConnectExecutableDownloadTask : DefaultTask() {
     if (verificationErrors.isNotEmpty()) {
       val errorMessage =
         "Verification of ${outputFile.absolutePath}" +
-          " (version=${versionInfo.version} os=${versionInfo.os}) failed:" +
-          " ${verificationErrors.joinToString(", ")}"
+          " (version=${versionInfo.version} os=${versionInfo.os} arch=${versionInfo.arch})" +
+          " failed: ${verificationErrors.joinToString(", ")}"
       logger.error(errorMessage)
       throw DataConnectGradleException("x9dfwhjr9c", errorMessage)
     }
@@ -184,7 +203,7 @@ abstract class DataConnectExecutableDownloadTask : DefaultTask() {
     }
 
     logger.info("Copying {} to {}", inputFile, outputFile)
-    project.copy {
+    fileSystemOperations.copy {
       it.from(inputFile)
       it.into(outputFile.parentFile)
       it.rename(Pattern.quote(inputFile.name), Pattern.quote(outputFile.name))
@@ -192,23 +211,47 @@ abstract class DataConnectExecutableDownloadTask : DefaultTask() {
   }
 
   companion object {
-    fun Task.downloadDataConnectExecutable(
-      version: String,
-      operatingSystem: OperatingSystem,
-      outputFile: File
-    ) {
-      val osName =
-        when (operatingSystem) {
+
+    private val firstVersionIncludingArchInFileName = "2.16.0".toVersion()
+
+    private val OperatingSystem.downloadFileNameMoniker: String
+      get() =
+        when (this) {
           OperatingSystem.Windows -> "windows"
           OperatingSystem.MacOS -> "macos"
           OperatingSystem.Linux -> "linux"
         }
-      val downloadFileName = "dataconnect-emulator-$osName-v$version"
+
+    private val CpuArchitecture.downloadFileNameMoniker: String
+      get() =
+        when (this) {
+          CpuArchitecture.AMD64 -> "amd64"
+          CpuArchitecture.ARM64 -> "arm64"
+        }
+
+    fun Task.downloadDataConnectExecutable(
+      version: Version,
+      operatingSystem: OperatingSystem,
+      cpuArchitecture: CpuArchitecture,
+      outputFile: File,
+      execOperations: ExecOperations
+    ) {
+      val downloadFileName = buildString {
+        append("dataconnect-emulator")
+        append('-')
+        append(operatingSystem.downloadFileNameMoniker)
+        if (version >= firstVersionIncludingArchInFileName) {
+          append('-')
+          append(cpuArchitecture.downloadFileNameMoniker)
+        }
+        append("-v")
+        append(version)
+      }
       val url =
         URL("https://storage.googleapis.com/firemat-preview-drop/emulator/$downloadFileName")
 
       logger.info("Downloading {} to {}", url, outputFile)
-      project.mkdir(outputFile.parentFile)
+      outputFile.parentFile.mkdirs()
 
       val connection = url.openConnection() as HttpURLConnection
       connection.requestMethod = "GET"
@@ -251,7 +294,7 @@ abstract class DataConnectExecutableDownloadTask : DefaultTask() {
       }
 
       if (operatingSystem != OperatingSystem.Windows) {
-        project.exec { execSpec ->
+        execOperations.exec { execSpec ->
           execSpec.run {
             executable = "chmod"
             args = listOf("a+x", outputFile.absolutePath)

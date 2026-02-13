@@ -110,7 +110,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     void onViewSnapshots(List<ViewSnapshot> snapshotList);
 
     /** Handles the failure of a query. */
-    void onError(Query query, Status error);
+    void onError(QueryOrPipeline query, Status error);
 
     /** Handles a change in online state. */
     void handleOnlineStateChange(OnlineState onlineState);
@@ -123,10 +123,10 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
   private final RemoteStore remoteStore;
 
   /** QueryViews for all active queries, indexed by query. */
-  private final Map<Query, QueryView> queryViewsByQuery;
+  private final Map<QueryOrPipeline, QueryView> queryViewsByQuery;
 
   /** Queries mapped to active targets, indexed by target id. */
-  private final Map<Integer, List<Query>> queriesByTarget;
+  private final Map<Integer, List<QueryOrPipeline>> queriesByTarget;
 
   private final int maxConcurrentLimboResolutions;
 
@@ -200,11 +200,11 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
    *
    * @return the target ID assigned to the query.
    */
-  public int listen(Query query, boolean shouldListenToRemote) {
+  public int listen(QueryOrPipeline query, boolean shouldListenToRemote) {
     assertCallback("listen");
     hardAssert(!queryViewsByQuery.containsKey(query), "We already listen to query: %s", query);
 
-    TargetData targetData = localStore.allocateTarget(query.toTarget());
+    TargetData targetData = localStore.allocateTarget(query.toTargetOrPipeline());
 
     ViewSnapshot viewSnapshot =
         initializeViewAndComputeSnapshot(
@@ -219,7 +219,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
   }
 
   private ViewSnapshot initializeViewAndComputeSnapshot(
-      Query query, int targetId, ByteString resumeToken) {
+      QueryOrPipeline query, int targetId, ByteString resumeToken) {
     QueryResult queryResult = localStore.executeQuery(query, /* usePreviousResults= */ true);
 
     SyncState currentTargetSyncState = SyncState.NONE;
@@ -228,7 +228,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     // If there are already queries mapped to the target id, create a synthesized target change to
     // apply the sync state from those queries to the new query.
     if (this.queriesByTarget.get(targetId) != null) {
-      Query mirrorQuery = this.queriesByTarget.get(targetId).get(0);
+      QueryOrPipeline mirrorQuery = this.queriesByTarget.get(targetId).get(0);
       currentTargetSyncState = this.queryViewsByQuery.get(mirrorQuery).getView().getSyncState();
     }
     synthesizedCurrentChange =
@@ -260,12 +260,12 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
    * Sends the listen to the RemoteStore to get remote data. Invoked when a Query starts listening
    * to the remote store, while already listening to the cache.
    */
-  public void listenToRemoteStore(Query query) {
+  public void listenToRemoteStore(QueryOrPipeline query) {
     assertCallback("listenToRemoteStore");
     hardAssert(
         queryViewsByQuery.containsKey(query), "This is the first listen to query: %s", query);
 
-    TargetData targetData = localStore.allocateTarget(query.toTarget());
+    TargetData targetData = localStore.allocateTarget(query.toTargetOrPipeline());
     remoteStore.listen(targetData);
   }
 
@@ -273,7 +273,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
    * Stops listening to a query previously listened. Un-listen to remote store if there is a watch
    * connection established and stayed open.
    */
-  void stopListening(Query query, boolean shouldUnlistenToRemote) {
+  void stopListening(QueryOrPipeline query, boolean shouldUnlistenToRemote) {
     assertCallback("stopListening");
 
     QueryView queryView = queryViewsByQuery.get(query);
@@ -282,7 +282,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     queryViewsByQuery.remove(query);
 
     int targetId = queryView.getTargetId();
-    List<Query> targetQueries = queriesByTarget.get(targetId);
+    List<QueryOrPipeline> targetQueries = queriesByTarget.get(targetId);
     targetQueries.remove(query);
 
     if (targetQueries.isEmpty()) {
@@ -298,13 +298,13 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
    * Stops listening to a query from watch. Invoked when a Query stops listening to the remote
    * store, while still listening to the cache.
    */
-  void stopListeningToRemoteStore(Query query) {
+  void stopListeningToRemoteStore(QueryOrPipeline query) {
     assertCallback("stopListeningToRemoteStore");
     QueryView queryView = queryViewsByQuery.get(query);
     hardAssert(queryView != null, "Trying to stop listening to a query not found");
 
     int targetId = queryView.getTargetId();
-    List<Query> targetQueries = queriesByTarget.get(targetId);
+    List<QueryOrPipeline> targetQueries = queriesByTarget.get(targetId);
     targetQueries.remove(query);
 
     if (targetQueries.isEmpty()) {
@@ -409,7 +409,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
   public void handleOnlineStateChange(OnlineState onlineState) {
     assertCallback("handleOnlineStateChange");
     ArrayList<ViewSnapshot> newViewSnapshots = new ArrayList<>();
-    for (Map.Entry<Query, QueryView> entry : queryViewsByQuery.entrySet()) {
+    for (Map.Entry<QueryOrPipeline, QueryView> entry : queryViewsByQuery.entrySet()) {
       View view = entry.getValue().getView();
       ViewChange viewChange = view.applyOnlineStateChange(onlineState);
       hardAssert(
@@ -430,7 +430,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     } else {
       ImmutableSortedSet<DocumentKey> remoteKeys = DocumentKey.emptyKeySet();
       if (queriesByTarget.containsKey(targetId)) {
-        for (Query query : queriesByTarget.get(targetId)) {
+        for (QueryOrPipeline query : queriesByTarget.get(targetId)) {
           if (queryViewsByQuery.containsKey(query)) {
             remoteKeys =
                 remoteKeys.unionWith(queryViewsByQuery.get(query).getView().getSyncedDocuments());
@@ -636,7 +636,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
   }
 
   private void removeAndCleanupTarget(int targetId, Status status) {
-    for (Query query : queriesByTarget.get(targetId)) {
+    for (QueryOrPipeline query : queriesByTarget.get(targetId)) {
       queryViewsByQuery.remove(query);
       if (!status.isOk()) {
         syncEngineListener.onError(query, status);
@@ -677,7 +677,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
     List<ViewSnapshot> newSnapshots = new ArrayList<>();
     List<LocalViewChanges> documentChangesInAllViews = new ArrayList<>();
 
-    for (Map.Entry<Query, QueryView> entry : queryViewsByQuery.entrySet()) {
+    for (Map.Entry<QueryOrPipeline, QueryView> entry : queryViewsByQuery.entrySet()) {
       QueryView queryView = entry.getValue();
       View view = queryView.getView();
       View.DocumentChanges viewDocChanges = view.computeDocChanges(changes);
@@ -762,7 +762,7 @@ public class SyncEngine implements RemoteStore.RemoteStoreCallback {
       activeLimboTargetsByKey.put(key, limboTargetId);
       remoteStore.listen(
           new TargetData(
-              Query.atPath(key.getPath()).toTarget(),
+              new TargetOrPipeline.TargetWrapper(Query.atPath(key.getPath()).toTarget()),
               limboTargetId,
               ListenSequence.INVALID,
               QueryPurpose.LIMBO_RESOLUTION));

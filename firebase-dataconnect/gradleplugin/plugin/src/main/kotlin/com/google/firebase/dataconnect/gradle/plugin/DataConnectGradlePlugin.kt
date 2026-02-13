@@ -111,6 +111,7 @@ abstract class DataConnectGradlePlugin : Plugin<Project> {
             )
           )
           operatingSystem.set(dataConnectProviders.operatingSystem)
+          cpuArchitecture.set(dataConnectProviders.cpuArchitecture)
           outputFile.set(
             dataConnectExecutable.map {
               when (it) {
@@ -186,6 +187,7 @@ abstract class DataConnectGradlePlugin : Plugin<Project> {
           connectors.set(dataConnectProviders.connectors)
           buildDirectory.set(baseBuildDirectory.map { it.dir("generateCode") })
           ktfmtJarFile.set(dataConnectProviders.ktfmtJarFile)
+          dataConnectExecutableCallingConvention.set(detectedCallingConvention())
         }
 
       variant.sources.java!!.addGeneratedSourceDirectory(

@@ -21,6 +21,7 @@ import com.google.firebase.ai.common.APIController
 import com.google.firebase.ai.common.AppCheckHeaderProvider
 import com.google.firebase.ai.common.JSON
 import com.google.firebase.ai.type.Content
+import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.LiveClientSetupMessage
 import com.google.firebase.ai.type.LiveGenerationConfig
 import com.google.firebase.ai.type.LiveSession
@@ -31,6 +32,7 @@ import com.google.firebase.ai.type.Tool
 import com.google.firebase.annotations.concurrent.Blocking
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
+import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import io.ktor.websocket.Frame
 import io.ktor.websocket.close
 import io.ktor.websocket.readBytes
@@ -51,9 +53,10 @@ internal constructor(
   private val modelName: String,
   @Blocking private val blockingDispatcher: CoroutineContext,
   private val config: LiveGenerationConfig? = null,
-  private val tools: List<Tool>? = null,
+  private val tools: List<Tool> = emptyList(),
   private val systemInstruction: Content? = null,
   private val location: String,
+  private val firebaseApp: FirebaseApp,
   private val controller: APIController
 ) {
   internal constructor(
@@ -62,12 +65,14 @@ internal constructor(
     firebaseApp: FirebaseApp,
     blockingDispatcher: CoroutineContext,
     config: LiveGenerationConfig? = null,
-    tools: List<Tool>? = null,
+    tools: List<Tool> = emptyList(),
     systemInstruction: Content? = null,
     location: String = "us-central1",
     requestOptions: RequestOptions = RequestOptions(),
     appCheckTokenProvider: InteropAppCheckTokenProvider? = null,
     internalAuthProvider: InternalAuthProvider? = null,
+    generativeBackend: GenerativeBackend,
+    useLimitedUseAppCheckTokens: Boolean,
   ) : this(
     modelName,
     blockingDispatcher,
@@ -75,13 +80,20 @@ internal constructor(
     tools,
     systemInstruction,
     location,
+    firebaseApp,
     APIController(
       apiKey,
       modelName,
       requestOptions,
       "gl-kotlin/${KotlinVersion.CURRENT}-ai fire/${BuildConfig.VERSION_NAME}",
       firebaseApp,
-      AppCheckHeaderProvider(TAG, appCheckTokenProvider, internalAuthProvider),
+      AppCheckHeaderProvider(
+        TAG,
+        useLimitedUseAppCheckTokens,
+        appCheckTokenProvider,
+        internalAuthProvider
+      ),
+      generativeBackend
     ),
   )
 
@@ -98,25 +110,35 @@ internal constructor(
       LiveClientSetupMessage(
           modelName,
           config?.toInternal(),
-          tools?.map { it.toInternal() },
-          systemInstruction?.toInternal()
+          tools.map { it.toInternal() }.takeIf { it.isNotEmpty() },
+          systemInstruction?.toInternal(),
+          config?.inputAudioTranscription?.toInternal(),
+          config?.outputAudioTranscription?.toInternal()
         )
         .toInternal()
     val data: String = Json.encodeToString(clientMessage)
+    var webSession: DefaultClientWebSocketSession? = null
     try {
-      val webSession = controller.getWebSocketSession(location)
+      webSession = controller.getWebSocketSession(location)
       webSession.send(Frame.Text(data))
       val receivedJsonStr = webSession.incoming.receive().readBytes().toString(Charsets.UTF_8)
       val receivedJson = JSON.parseToJsonElement(receivedJsonStr)
 
       return if (receivedJson is JsonObject && "setupComplete" in receivedJson) {
-        LiveSession(session = webSession, blockingDispatcher = blockingDispatcher)
+        LiveSession(
+          session = webSession,
+          blockingDispatcher = blockingDispatcher,
+          firebaseApp = firebaseApp
+        )
       } else {
         webSession.close()
         throw ServiceConnectionHandshakeFailedException("Unable to connect to the server")
       }
     } catch (e: ClosedReceiveChannelException) {
-      throw ServiceConnectionHandshakeFailedException("Channel was closed by the server", e)
+      val reason = webSession?.closeReason?.await()
+      val message =
+        "Channel was closed by the server.${if (reason != null) " Details: ${reason.message}" else ""}"
+      throw ServiceConnectionHandshakeFailedException(message, e)
     }
   }
 
