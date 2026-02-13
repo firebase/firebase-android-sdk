@@ -88,19 +88,16 @@ public class PersistedInstallation {
         if (dataFile == null) {
           // Different FirebaseApp in the same Android application should have the same application
           // context and same dir path
-          dataFile =
-              new File(
-                  firebaseApp.getApplicationContext().getNoBackupFilesDir(),
-                  SETTINGS_FILE_NAME_PREFIX + "." + firebaseApp.getPersistenceKey() + ".json");
+          String fileName =
+              SETTINGS_FILE_NAME_PREFIX + "." + firebaseApp.getPersistenceKey() + ".json";
+          dataFile = new File(firebaseApp.getApplicationContext().getNoBackupFilesDir(), fileName);
           if (dataFile.exists()) {
             return dataFile;
           }
           // Data associated with FID shouldn't be stored in backup directory. Hence if the FID data
           // is present in the backup directory you move it to the non backup directory.
           File dataFileBackup =
-              new File(
-                  firebaseApp.getApplicationContext().getFilesDir(),
-                  SETTINGS_FILE_NAME_PREFIX + "." + firebaseApp.getPersistenceKey() + ".json");
+              new File(firebaseApp.getApplicationContext().getFilesDir(), fileName);
           if (dataFileBackup.exists()) {
             if (!dataFileBackup.renameTo(dataFile)) {
               Log.e(
@@ -115,6 +112,10 @@ public class PersistedInstallation {
     }
 
     return dataFile;
+  }
+
+  public void clearDataFile() {
+    getDataFile().delete();
   }
 
   @NonNull

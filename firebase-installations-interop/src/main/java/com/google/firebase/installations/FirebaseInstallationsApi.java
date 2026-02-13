@@ -56,6 +56,12 @@ public interface FirebaseInstallationsApi {
   Task<Void> delete();
 
   /**
+   * Clears all data associated with the Firebase Installation ID (FID) of the current Firebase App.
+   * @hide
+   */
+  void clearFidCache();
+
+  /**
    * Register a listener to receive fid changes.
    *
    * @param listener implementation of the {@code FidListener} to handle fid changes.

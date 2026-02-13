@@ -1,4 +1,5 @@
 # Unreleased
+
 * [fixed] Mitigated FIS ID duplication issue from backup data. (#7025)
 
 # 19.0.1
@@ -12,6 +13,7 @@
   removed it from the Firebase Android BoM. Instead, use the KTX APIs from the main module. For
   details, see the
   [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration).
+
 >>>>>>> main
 
 # 18.0.0
