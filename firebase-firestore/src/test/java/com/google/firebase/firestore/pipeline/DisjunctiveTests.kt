@@ -1041,7 +1041,7 @@ internal class DisjunctiveTests {
     val pipeline =
       RealtimePipelineSource(db)
         .collection("/users")
-        .where(or(field("a").equal(constant(1L)), field("a").equal(nullValue())))
+        .where(or(field("a").equal(constant(1L)), field("a").equal(Expression.nullValue())))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     // C++ test expects 1.0 to match 1L in this context.
