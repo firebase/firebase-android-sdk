@@ -14,7 +14,6 @@
   details, see the
   [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration).
 
->>>>>>> main
 
 # 18.0.0
 
