@@ -25,12 +25,11 @@ import com.google.firebase.firestore.pipeline.Expression.Companion.arrayContains
 import com.google.firebase.firestore.pipeline.Expression.Companion.constant
 import com.google.firebase.firestore.pipeline.Expression.Companion.equal
 import com.google.firebase.firestore.pipeline.Expression.Companion.equalAny
+import com.google.firebase.firestore.pipeline.Expression.Companion.exists
 import com.google.firebase.firestore.pipeline.Expression.Companion.field
 import com.google.firebase.firestore.pipeline.Expression.Companion.greaterThan
 import com.google.firebase.firestore.pipeline.Expression.Companion.greaterThanOrEqual
 import com.google.firebase.firestore.pipeline.Expression.Companion.isError
-import com.google.firebase.firestore.pipeline.Expression.Companion.isNotNull
-import com.google.firebase.firestore.pipeline.Expression.Companion.isNull
 import com.google.firebase.firestore.pipeline.Expression.Companion.lessThan
 import com.google.firebase.firestore.pipeline.Expression.Companion.lessThanOrEqual
 import com.google.firebase.firestore.pipeline.Expression.Companion.map
@@ -66,7 +65,8 @@ internal class NullSemanticsTests {
     val doc7 = doc("users/7", 1000, mapOf("not-score" to 42L)) // score: missing
     val documents = listOf(doc1, doc2, doc3, doc4, doc5, doc6, doc7)
 
-    val pipeline = RealtimePipelineSource(db).collection("users").where(isNull(field("score")))
+    val pipeline =
+      RealtimePipelineSource(db).collection("users").where(equal(field("score"), nullValue()))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1)
@@ -84,7 +84,10 @@ internal class NullSemanticsTests {
     val doc7 = doc("users/7", 1000, mapOf("not-score" to 42L)) // score: missing
     val documents = listOf(doc1, doc2, doc3, doc4, doc5, doc6, doc7)
 
-    val pipeline = RealtimePipelineSource(db).collection("users").where(isNotNull(field("score")))
+    val pipeline =
+      RealtimePipelineSource(db)
+        .collection("users")
+        .where(and(exists(field("score")), field("score").notEqual(nullValue())))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc2, doc3, doc4, doc5, doc6))
@@ -101,7 +104,12 @@ internal class NullSemanticsTests {
     val pipeline =
       RealtimePipelineSource(db)
         .collection("users")
-        .where(and(isNull(field("score")), isNotNull(field("score"))))
+        .where(
+          and(
+            equal(field("score"), nullValue()),
+            and(exists(field("score")), field("score").notEqual(nullValue()))
+          )
+        )
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).isEmpty()
