@@ -16,27 +16,41 @@
 
 package com.google.firebase.ai
 
+import com.google.firebase.ai.VertexAIUnarySnapshotTests.SumRequest
+import com.google.firebase.ai.type.AutoFunctionDeclaration
 import com.google.firebase.ai.type.BlockReason
 import com.google.firebase.ai.type.FinishReason
+import com.google.firebase.ai.type.FunctionCallPart
+import com.google.firebase.ai.type.FunctionResponsePart
 import com.google.firebase.ai.type.HarmCategory
 import com.google.firebase.ai.type.InvalidAPIKeyException
+import com.google.firebase.ai.type.JsonSchema
 import com.google.firebase.ai.type.PromptBlockedException
+import com.google.firebase.ai.type.RequestTimeoutException
 import com.google.firebase.ai.type.ResponseStoppedException
 import com.google.firebase.ai.type.SerializationException
 import com.google.firebase.ai.type.ServerException
 import com.google.firebase.ai.type.TextPart
+import com.google.firebase.ai.type.Tool
+import com.google.firebase.ai.util.ResponseInfo
 import com.google.firebase.ai.util.goldenVertexStreamingFile
+import com.google.firebase.ai.util.goldenVertexStreamingFiles
+import io.kotest.assertions.throwables.shouldNotThrow
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.equals.shouldBeEqual
 import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.should
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.types.beInstanceOf
 import io.ktor.http.HttpStatusCode
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.withTimeout
+import kotlinx.serialization.json.JsonObject
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -255,4 +269,61 @@ internal class VertexAIStreamingSnapshotTests {
         responseList.first().candidates.first().content.parts.shouldBeEmpty()
       }
     }
+
+  private val sumRequestResponseSchema =
+    JsonSchema.obj(
+      clazz = SumRequest::class,
+      properties =
+        mapOf(
+          "x" to
+            JsonSchema.integer(
+              title = "x",
+              description = "The first number to sum",
+              nullable = false
+            ),
+          "y" to
+            JsonSchema.integer(
+              title = "y",
+              description = "The second number to sum",
+              nullable = false
+            ),
+        ),
+      description = "the request for summing",
+      nullable = false
+    )
+
+  @Test
+  fun `auto function call should work with streaming`() {
+    var functionCalled = 0
+    goldenVertexStreamingFiles(
+      responses =
+        listOf(
+            "unary-success-function-call-with-arguments.json",
+            "unary-success-basic-reply-short.json"
+          )
+          .map { ResponseInfo(it) },
+      tools =
+        listOf(
+          Tool.functionDeclarations(
+            autoFunctionDeclarations =
+              listOf(
+                AutoFunctionDeclaration.create("sum", "", sumRequestResponseSchema) {
+                  request: SumRequest ->
+                  functionCalled++
+                  FunctionResponsePart("sum", JsonObject(mapOf()))
+                }
+              )
+          )
+        )
+    ) {
+      withTimeout(testTimeout) {
+        val chat = model.startChat()
+        shouldNotThrow<RequestTimeoutException> { chat.sendMessage("") }
+        chat.history[1].parts[0] should beInstanceOf<FunctionCallPart>()
+        chat.history[2].parts[0] should beInstanceOf<FunctionResponsePart>()
+        (chat.history[2].parts[0] as FunctionResponsePart).response shouldBe JsonObject(mapOf())
+        functionCalled shouldBeEqual 1
+      }
+    }
+  }
 }

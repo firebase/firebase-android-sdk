@@ -80,7 +80,7 @@ public class Chat(
         if (functionCallParts.isEmpty()) {
           break
         }
-        if (model.getTurnLimit() < ++turns) {
+        if (model.requestOptions.autoFunctionCallingTurnLimit < ++turns) {
           throw RequestTimeoutException("Request took too many turns", history = tempHistory)
         }
         if (!functionCallParts.all { model.hasFunction(it) }) {
@@ -217,7 +217,7 @@ public class Chat(
       response.candidates.first().content.parts.filterIsInstance<FunctionCallPart>()
     if (functionCallParts.isNotEmpty()) {
       if (functionCallParts.all { model.hasFunction(it) }) {
-        if (model.getTurnLimit() < ++turns) {
+        if (model.requestOptions.autoFunctionCallingTurnLimit < ++turns) {
           throw RequestTimeoutException("Request took too many turns", history = tempHistory)
         }
         val functionResponses =

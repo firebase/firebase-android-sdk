@@ -16,6 +16,7 @@
 
 package com.google.firebase.ai.type
 
+import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
 
@@ -45,7 +46,7 @@ internal constructor(
       urlContext = this.urlContext?.toInternal()
     )
 
-  @OptIn(PublicPreviewAPI::class)
+  @OptIn(InternalSerializationApi::class)
   @Serializable
   internal data class Internal(
     val functionDeclarations: List<FunctionDeclaration.Internal>? = null,
@@ -81,7 +82,7 @@ internal constructor(
      * should be executed automatically
      */
     @JvmStatic
-    internal fun functionDeclarations(
+    public fun functionDeclarations(
       functionDeclarations: List<FunctionDeclaration>? = null,
       autoFunctionDeclarations: List<AutoFunctionDeclaration<*, *>>?
     ): Tool {

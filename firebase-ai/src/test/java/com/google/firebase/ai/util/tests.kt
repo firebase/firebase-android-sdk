@@ -209,6 +209,7 @@ internal fun commonMultiTurnTest(
       "cool-model-name",
       generativeBackend = backend,
       controller = apiController,
+      requestOptions = requestOptions,
       tools = tools
     )
   val imagenModel = ImagenModel("cooler-model-name", controller = apiController)
@@ -269,6 +270,30 @@ internal fun goldenVertexStreamingFile(
 ) =
   goldenStreamingFile(
     responses = listOf(ResponseInfo("vertexai/$name", httpStatusCode)),
+    requestHandler = requestHandler,
+    block = block
+  )
+
+/**
+ * A variant of [goldenStreamingFile] for testing vertexAI
+ *
+ * Loads *Golden Files* and automatically parses the messages from them, providing them to the
+ * channel.
+ *
+ * @param responses the names and status codes of the responses in order
+ * @param tools the tools to add to the [GenerativeModel]
+ * @param block The test contents themselves, with a [CommonTestScope] implicitly provided
+ * @see goldenStreamingFile
+ */
+internal fun goldenVertexStreamingFiles(
+  responses: List<ResponseInfo>,
+  tools: List<Tool> = emptyList(),
+  requestHandler: (HttpRequestData) -> Unit = {},
+  block: CommonTest,
+) =
+  goldenStreamingFile(
+    responses = responses.map { ResponseInfo("vertexai/${it.name}", it.statusCode) },
+    tools = tools,
     requestHandler = requestHandler,
     block = block
   )
@@ -340,6 +365,38 @@ internal fun goldenUnaryFile(
 ) = doBlocking {
   commonMultiTurnTest(
     responses = responses,
+    backend = backend,
+    tools = tools,
+    responseLoader = { fileName, channel ->
+      val goldenFile = loadGoldenFile(fileName)
+      val message = goldenFile.readText()
+      channel.send(message.toByteArray())
+    }
+  ) {
+    block()
+  }
+}
+
+/**
+ * A variant of [commonTest] for performing snapshot tests.
+ *
+ * Loads *Golden Files* and automatically provides them to the channel in sequence.
+ *
+ * @param responses the names and status codes of the responses in order
+ * @param requestOptions An optional set of [RequestOptions] to use
+ * @param block The test contents themselves, with a [CommonTestScope] implicitly provided
+ * @see goldenUnaryFile
+ */
+internal fun goldenVertexUnaryFiles(
+  responses: List<ResponseInfo>,
+  requestOptions: RequestOptions,
+  backend: GenerativeBackend = GenerativeBackend.vertexAI(),
+  tools: List<Tool> = emptyList(),
+  block: CommonTest,
+) = doBlocking {
+  commonMultiTurnTest(
+    responses = responses.map { ResponseInfo("vertexai/${it.name}", it.statusCode) },
+    requestOptions = requestOptions,
     backend = backend,
     tools = tools,
     responseLoader = { fileName, channel ->

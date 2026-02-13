@@ -234,8 +234,6 @@ internal constructor(
       throw FirebaseAIException.from(e)
     }
 
-  fun getTurnLimit(): Int = requestOptions.autoFunctionCallingTurnLimit
-
   private fun getBidiEndpoint(location: String): String =
     when (backend?.backend) {
       GenerativeBackendEnum.VERTEX_AI,
