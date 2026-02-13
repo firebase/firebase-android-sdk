@@ -143,7 +143,6 @@ internal fun commonTest(
           controller = apiController,
           tools = tools
         ),
-      controller = apiController,
       requestOptions = RequestOptions(),
       tools = tools
     )
@@ -220,7 +219,6 @@ internal fun commonMultiTurnTest(
           controller = apiController,
           tools = tools
         ),
-      controller = apiController,
       requestOptions = requestOptions,
       tools = tools
     )
