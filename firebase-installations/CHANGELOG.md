@@ -14,7 +14,6 @@
   details, see the
   [FAQ about this initiative](https://firebase.google.com/docs/android/kotlin-migration).
 
-
 # 18.0.0
 
 - [changed] Bump internal dependencies
