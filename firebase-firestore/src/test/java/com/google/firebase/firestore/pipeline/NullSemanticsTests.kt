@@ -65,7 +65,8 @@ internal class NullSemanticsTests {
     val doc7 = doc("users/7", 1000, mapOf("not-score" to 42L)) // score: missing
     val documents = listOf(doc1, doc2, doc3, doc4, doc5, doc6, doc7)
 
-    val pipeline = RealtimePipelineSource(db).collection("users").where(equal(field("score"), nullValue()))
+    val pipeline =
+      RealtimePipelineSource(db).collection("users").where(equal(field("score"), nullValue()))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1)

@@ -522,7 +522,9 @@ internal class NestedPropertiesTests {
     val documents = listOf(doc1, doc2, doc3)
 
     val pipeline =
-      RealtimePipelineSource(db).collection("/users").where(field("address.street").equal(nullValue()))
+      RealtimePipelineSource(db)
+        .collection("/users")
+        .where(field("address.street").equal(nullValue()))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1)
