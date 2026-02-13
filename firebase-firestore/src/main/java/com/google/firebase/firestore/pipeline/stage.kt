@@ -1288,7 +1288,7 @@ internal constructor(
 
 class UnnestOptions private constructor(options: InternalOptions) :
   AbstractOptions<UnnestOptions>(options) {
-  /** Creates a new, empty `UnnestOptions` object. */
+    /** Creates a new, empty `UnnestOptions` object. */
   constructor() : this(InternalOptions.EMPTY)
 
   /**
@@ -1307,4 +1307,84 @@ class UnnestOptions private constructor(options: InternalOptions) :
   public override fun self(options: InternalOptions): UnnestOptions {
     return UnnestOptions(options)
   }
+}
+
+class SearchStage
+internal constructor(
+  options: InternalOptions = InternalOptions.EMPTY
+) : Stage<SearchStage>("search", options) {
+    override fun self(options: InternalOptions) = SearchStage(options)
+    override fun canonicalId(): String {
+        TODO("Not yet implemented")
+    }
+    override fun args(userDataReader: UserDataReader): Sequence<Value> = emptySequence()
+}
+
+class SearchOptions private constructor(options: InternalOptions) :
+    AbstractOptions<SearchOptions>(options) {
+    /** Creates a new, empty `SearchOptions` object. */
+    constructor() : this(InternalOptions.EMPTY)
+
+    fun withQuery(query: Expression): SearchOptions {
+        throw Exception("not implemented");
+    }
+
+    fun withQuery(rquery: String): SearchOptions {
+        throw Exception("not implemented");
+    }
+
+    fun withAddFields(field: Selectable, vararg additionalFields: Selectable): SearchOptions {
+        throw Exception("not implemented");
+    }
+
+    fun withSelect(selection: Selectable, vararg additionalSelections: Any): SearchOptions {
+        throw Exception("not implemented");
+    }
+
+    fun withSelect(fieldName: String, vararg additionalSelections: Any): SearchOptions {
+        throw Exception("not implemented");
+    }
+
+    fun withSort(order: Ordering, vararg additionalOrderings: Ordering): SearchOptions {
+        throw Exception("not implemented");
+    }
+
+    fun withLimit(limit: Long): SearchOptions {
+        throw Exception("not implemented");
+    }
+
+    fun withMaxToScore(maxToScore: Long): SearchOptions {
+        throw Exception("not implemented");
+    }
+
+    fun withOffset(offset: Long): SearchOptions {
+        throw Exception("not implemented");
+    }
+
+    fun withPartition(field: String, value: Any): SearchOptions {
+        throw Exception("not implemented");
+    }
+
+    fun withPartition(fieldToValue: Map<String, Any>): SearchOptions {
+        throw Exception("not implemented");
+    }
+
+    public override fun self(options: InternalOptions): SearchOptions {
+        return SearchOptions(options)
+    }
+}
+
+
+class SearchPartition private constructor(options: InternalOptions) :
+    AbstractOptions<SearchPartition>(options) {
+
+    constructor(key: String, value: String) : this(InternalOptions.EMPTY)
+
+    fun and(key: String, value: String): SearchPartition {
+        throw Exception("not implemented");
+    }
+
+    public override fun self(options: InternalOptions): SearchPartition {
+        return SearchPartition(options)
+    }
 }
