@@ -115,7 +115,6 @@ internal class GenerativeModelTesting {
             systemInstruction = content { text("system instruction") },
             controller = apiController
           ),
-        controller = apiController,
         requestOptions = RequestOptions()
       )
 
@@ -224,7 +223,6 @@ internal class GenerativeModelTesting {
     val generativeModel =
       GenerativeModel(
         actualModel = CloudGenerativeModelProvider("gemini-2.5-flash", controller = apiController),
-        controller = apiController,
         requestOptions = RequestOptions()
       )
 
@@ -271,7 +269,6 @@ internal class GenerativeModelTesting {
             "projects/PROJECTID/locations/INVALID_LOCATION/publishers/google/models/gemini-2.5-flash",
             controller = apiController
           ),
-        controller = apiController,
         requestOptions = RequestOptions()
       )
 
@@ -325,7 +322,6 @@ internal class GenerativeModelTesting {
             generativeBackend = GenerativeBackend.googleAI(),
             controller = apiController
           ),
-        controller = apiController,
         requestOptions = RequestOptions()
       )
 
@@ -376,7 +372,6 @@ internal class GenerativeModelTesting {
             generativeBackend = GenerativeBackend.vertexAI("us-central1"),
             controller = apiController
           ),
-        controller = apiController,
         requestOptions = RequestOptions()
       )
 
@@ -438,7 +433,6 @@ internal class GenerativeModelTesting {
               },
             controller = apiController
           ),
-        controller = apiController,
         requestOptions = RequestOptions()
       )
 
@@ -471,7 +465,6 @@ internal class GenerativeModelTesting {
 
     return GenerativeModel(
       actualModel = CloudGenerativeModelProvider("gemini-2.5-flash", controller = apiController),
-      controller = apiController,
       requestOptions = RequestOptions()
     )
   }
