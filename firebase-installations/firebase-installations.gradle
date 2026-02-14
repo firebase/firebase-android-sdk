@@ -57,7 +57,7 @@ dependencies {
     api libs.firebase.annotations
     api(libs.firebase.common)
     api(libs.firebase.components)
-    api("com.google.firebase:firebase-installations-interop:17.1.1")
+    api(project(":firebase-installations-interop"))
 
     implementation libs.kotlin.stdlib
 
