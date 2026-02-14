@@ -36,6 +36,7 @@ import com.google.firebase.dataconnect.core.OperationRefImpl
 import com.google.firebase.dataconnect.core.QueryRefImpl
 import com.google.firebase.dataconnect.testutil.StubOperationRefImpl
 import com.google.firebase.dataconnect.util.ProtoUtil.toMap
+import com.google.firebase.dataconnect.util.SemanticVersion
 import com.google.protobuf.Struct
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
@@ -341,3 +342,9 @@ internal fun DataConnectArb.authTokenResult(
 internal fun DataConnectArb.appCheckTokenResult(
   accessToken: Arb<String?> = accessToken().orNull(nullProbability = 0.33),
 ): Arb<GetAppCheckTokenResult> = accessToken.map { GetAppCheckTokenResult(it) }
+
+internal fun DataConnectArb.semanticVersion(
+  major: Arb<Int> = Arb.int(),
+  minor: Arb<Int> = Arb.int(),
+  patch: Arb<Int> = Arb.int(),
+): Arb<SemanticVersion> = Arb.bind(major, minor, patch, ::SemanticVersion)
