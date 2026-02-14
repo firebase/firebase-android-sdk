@@ -18,6 +18,7 @@ package com.google.firebase.ai
 
 import androidx.annotation.Keep
 import com.google.firebase.FirebaseApp
+import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceGenerativeModelFactory
 import com.google.firebase.annotations.concurrent.Blocking
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
@@ -44,12 +45,14 @@ internal class FirebaseAIRegistrar : ComponentRegistrar {
         .add(Dependency.required(blockingDispatcher))
         .add(Dependency.optionalProvider(appCheckInterop))
         .add(Dependency.optionalProvider(internalAuthProvider))
+        .add(Dependency.optionalProvider(ondeviceInterop))
         .factory { container ->
           FirebaseAIMultiResourceComponent(
             container[firebaseApp],
             container.get(blockingDispatcher),
             container.getProvider(appCheckInterop),
-            container.getProvider(internalAuthProvider)
+            container.getProvider(internalAuthProvider),
+            container.getProvider(ondeviceInterop)
           )
         }
         .build(),
@@ -62,6 +65,7 @@ internal class FirebaseAIRegistrar : ComponentRegistrar {
     private val firebaseApp = unqualified(FirebaseApp::class.java)
     private val appCheckInterop = unqualified(InteropAppCheckTokenProvider::class.java)
     private val internalAuthProvider = unqualified(InternalAuthProvider::class.java)
+    private val ondeviceInterop = unqualified(FirebaseAIOnDeviceGenerativeModelFactory::class.java)
     private val blockingDispatcher =
       Qualified.qualified(Blocking::class.java, CoroutineDispatcher::class.java)
   }
