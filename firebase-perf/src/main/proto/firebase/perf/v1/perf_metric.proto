@@ -292,7 +292,7 @@ message GaugeMetadata {
 // Additional metadata about an application and its state (including state of
 // the device at runtime) that is not provided by firebase data transport.
 //
-// Next tag: 8
+// Next tag: 9
 message ApplicationInfo {
   // Identifier for the application that has been registered with firebase.
   // Contains pantheon project number, platform and the hash of the (package
@@ -316,6 +316,9 @@ message ApplicationInfo {
 
   // A map of global-level custom attribute names to values.
   map<string, string> custom_attributes = 6;
+
+  // The name of process that initiate the event. Currently only populated for Android apps.
+  optional string process_name = 8;
 }
 
 // Additional metadata about an android application that is not provided by

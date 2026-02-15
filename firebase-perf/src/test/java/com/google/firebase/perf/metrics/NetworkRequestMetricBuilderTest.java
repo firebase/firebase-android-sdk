@@ -242,7 +242,7 @@ public class NetworkRequestMetricBuilderTest extends FirebasePerformanceTestBase
 
     int numberOfSessionIds = metricBuilder.getSessions().size();
 
-    new SessionManager(mock(GaugeManager.class), null, mock(AppStateMonitor.class));
+    new SessionManager(mock(GaugeManager.class), null);
 
     assertThat(metricBuilder.getSessions()).hasSize(numberOfSessionIds);
   }
