@@ -53,6 +53,9 @@ public class FirebasePerformanceTestBase {
   protected static final String FAKE_FIREBASE_PROJECT_ID = "fir-perftestapp";
 
   protected Context appContext;
+  protected SessionManager provideSessionManager() {
+    return SessionManager.getInstance();
+  }
 
   @Before
   public void setUpFirebaseApp() {
@@ -85,19 +88,19 @@ public class FirebasePerformanceTestBase {
     ConfigResolver.getInstance().setMetadataBundle(new ImmutableBundle(bundle));
   }
 
-  protected static void forceVerboseSession() {
+  protected void forceVerboseSession() {
     forceVerboseSessionWithSamplingPercentage(100);
   }
 
-  protected static void forceNonVerboseSession() {
+  protected void forceNonVerboseSession() {
     forceVerboseSessionWithSamplingPercentage(0);
   }
 
-  private static void forceVerboseSessionWithSamplingPercentage(long samplingPercentage) {
+  private void forceVerboseSessionWithSamplingPercentage(long samplingPercentage) {
     Bundle bundle = new Bundle();
     bundle.putFloat("sessions_sampling_percentage", samplingPercentage);
     ConfigResolver.getInstance().setMetadataBundle(new ImmutableBundle(bundle));
 
-    SessionManager.getInstance().setPerfSession(PerfSession.createWithId("sessionId"));
+    provideSessionManager().setPerfSession(PerfSession.createWithId("sessionId"));
   }
 }
