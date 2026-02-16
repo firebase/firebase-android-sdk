@@ -20,11 +20,8 @@ import com.google.firebase.firestore.TestUtil
 import com.google.firebase.firestore.pipeline.Expression.Companion.and
 import com.google.firebase.firestore.pipeline.Expression.Companion.array
 import com.google.firebase.firestore.pipeline.Expression.Companion.constant
+import com.google.firebase.firestore.pipeline.Expression.Companion.exists
 import com.google.firebase.firestore.pipeline.Expression.Companion.field
-import com.google.firebase.firestore.pipeline.Expression.Companion.isNan
-import com.google.firebase.firestore.pipeline.Expression.Companion.isNull
-import com.google.firebase.firestore.pipeline.Expression.Companion.not
-import com.google.firebase.firestore.pipeline.Expression.Companion.nullValue
 import com.google.firebase.firestore.pipeline.Expression.Companion.or
 import com.google.firebase.firestore.runPipeline
 import com.google.firebase.firestore.testutil.TestUtilKtx.doc
@@ -1032,7 +1029,7 @@ internal class DisjunctiveTests {
   }
 
   @Test
-  fun `or isNull and eq on same field`(): Unit = runBlocking {
+  fun `or eq null and eq on same field`(): Unit = runBlocking {
     val doc1 = doc("users/a", 1000, mapOf("a" to 1L))
     val doc2 = doc("users/b", 1000, mapOf("a" to 1.0))
     val doc3 = doc("users/c", 1000, mapOf("a" to 1L, "b" to 1L))
@@ -1044,7 +1041,7 @@ internal class DisjunctiveTests {
     val pipeline =
       RealtimePipelineSource(db)
         .collection("/users")
-        .where(or(field("a").equal(constant(1L)), isNull(field("a"))))
+        .where(or(field("a").equal(constant(1L)), field("a").equal(Expression.nullValue())))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     // C++ test expects 1.0 to match 1L in this context.
@@ -1053,7 +1050,7 @@ internal class DisjunctiveTests {
   }
 
   @Test
-  fun `or isNull and eq on different field`(): Unit = runBlocking {
+  fun `or eq null and eq on different field`(): Unit = runBlocking {
     val doc1 = doc("users/a", 1000, mapOf("a" to 1L))
     val doc2 = doc("users/b", 1000, mapOf("a" to 1.0))
     val doc3 = doc("users/c", 1000, mapOf("a" to 1L, "b" to 1L))
@@ -1065,14 +1062,14 @@ internal class DisjunctiveTests {
     val pipeline =
       RealtimePipelineSource(db)
         .collection("/users")
-        .where(or(field("b").equal(constant(1L)), isNull(field("a"))))
+        .where(or(field("b").equal(constant(1L)), field("a").equal(Expression.nullValue())))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc3, doc4))
   }
 
   @Test
-  fun `or isNotNull and eq on same field`(): Unit = runBlocking {
+  fun `or not eq null and eq on same field`(): Unit = runBlocking {
     val doc1 = doc("users/a", 1000, mapOf("a" to 1L))
     val doc2 = doc("users/b", 1000, mapOf("a" to 1.0))
     val doc3 = doc("users/c", 1000, mapOf("a" to 1L, "b" to 1L))
@@ -1084,7 +1081,12 @@ internal class DisjunctiveTests {
     val pipeline =
       RealtimePipelineSource(db)
         .collection("/users")
-        .where(or(field("a").greaterThan(constant(1L)), not(isNull(field("a")))))
+        .where(
+          or(
+            field("a").greaterThan(constant(1L)),
+            and(exists(field("a")), field("a").notEqual(Expression.nullValue()))
+          )
+        )
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     // a > 1L (none) OR a IS NOT NULL (doc1, doc2, doc3, doc5)
@@ -1092,7 +1094,7 @@ internal class DisjunctiveTests {
   }
 
   @Test
-  fun `or isNotNull and eq on different field`(): Unit = runBlocking {
+  fun `or not eq null and eq on different field`(): Unit = runBlocking {
     val doc1 = doc("users/a", 1000, mapOf("a" to 1L))
     val doc2 = doc("users/b", 1000, mapOf("a" to 1.0))
     val doc3 = doc("users/c", 1000, mapOf("a" to 1L, "b" to 1L))
@@ -1104,7 +1106,12 @@ internal class DisjunctiveTests {
     val pipeline =
       RealtimePipelineSource(db)
         .collection("/users")
-        .where(or(field("b").equal(constant(1L)), not(isNull(field("a")))))
+        .where(
+          or(
+            field("b").equal(constant(1L)),
+            and(exists(field("a")), field("a").notEqual(Expression.nullValue()))
+          )
+        )
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     // b == 1L (doc3) OR a IS NOT NULL (doc1, doc2, doc3, doc5)
@@ -1112,7 +1119,7 @@ internal class DisjunctiveTests {
   }
 
   @Test
-  fun `or isNull and isNaN on same field`(): Unit = runBlocking {
+  fun `or eq null and eq NaN on same field`(): Unit = runBlocking {
     val doc1 = doc("users/a", 1000, mapOf("a" to null))
     val doc2 = doc("users/b", 1000, mapOf("a" to Double.NaN))
     val doc3 = doc("users/c", 1000, mapOf("a" to "abc"))
@@ -1121,14 +1128,14 @@ internal class DisjunctiveTests {
     val pipeline =
       RealtimePipelineSource(db)
         .collection("/users")
-        .where(or(isNull(field("a")), isNan(field("a"))))
+        .where(or(field("a").equal(Expression.nullValue()), field("a").equal(constant(Double.NaN))))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc1, doc2))
   }
 
   @Test
-  fun `or is null and is nan on different field`(): Unit = runBlocking {
+  fun `or eq null and eq NaN on different field`(): Unit = runBlocking {
     val doc1 = doc("users/a", 1000, mapOf("a" to null))
     val doc2 = doc("users/b", 1000, mapOf("a" to Double.NaN))
     val doc3 = doc("users/c", 1000, mapOf("a" to "abc"))
@@ -1140,7 +1147,7 @@ internal class DisjunctiveTests {
     val pipeline =
       RealtimePipelineSource(db)
         .collection("/users")
-        .where(or(field("a").equal(nullValue()), field("b").equal(Double.NaN)))
+        .where(or(field("a").equal(Expression.nullValue()), field("b").equal(constant(Double.NaN))))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactlyElementsIn(listOf(doc1, doc5))

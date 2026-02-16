@@ -665,7 +665,6 @@ package com.google.firebase.firestore.pipeline {
     method public final T with(String key, boolean value);
     method protected final T with(String key, com.google.firebase.firestore.pipeline.AbstractOptions<? extends java.lang.Object?> subSection);
     method public final T with(String key, com.google.firebase.firestore.pipeline.Field value);
-    method protected final T with(String key, com.google.firebase.firestore.pipeline.InternalOptions value);
     method public final T with(String key, com.google.firebase.firestore.pipeline.RawOptions value);
     method public final T with(String key, double value);
     method protected final T with(String key, error.NonExistentClass value);
@@ -714,13 +713,11 @@ package com.google.firebase.firestore.pipeline {
 
   public final class AggregateHints extends com.google.firebase.firestore.pipeline.AbstractOptions<com.google.firebase.firestore.pipeline.AggregateHints> {
     ctor public AggregateHints();
-    method public com.google.firebase.firestore.pipeline.AggregateHints self(com.google.firebase.firestore.pipeline.InternalOptions options);
     method public com.google.firebase.firestore.pipeline.AggregateHints withForceStreamableEnabled();
   }
 
   public final class AggregateOptions extends com.google.firebase.firestore.pipeline.AbstractOptions<com.google.firebase.firestore.pipeline.AggregateOptions> {
     ctor public AggregateOptions();
-    method public com.google.firebase.firestore.pipeline.AggregateOptions self(com.google.firebase.firestore.pipeline.InternalOptions options);
     method public com.google.firebase.firestore.pipeline.AggregateOptions withHints(com.google.firebase.firestore.pipeline.AggregateHints hints);
   }
 
@@ -761,19 +758,16 @@ package com.google.firebase.firestore.pipeline {
 
   public final class CollectionGroupOptions extends com.google.firebase.firestore.pipeline.AbstractOptions<com.google.firebase.firestore.pipeline.CollectionGroupOptions> {
     ctor public CollectionGroupOptions();
-    method public com.google.firebase.firestore.pipeline.CollectionGroupOptions self(com.google.firebase.firestore.pipeline.InternalOptions options);
     method public com.google.firebase.firestore.pipeline.CollectionGroupOptions withHints(com.google.firebase.firestore.pipeline.CollectionHints hints);
   }
 
   public final class CollectionGroupSource extends com.google.firebase.firestore.pipeline.Stage<com.google.firebase.firestore.pipeline.CollectionGroupSource> {
-    ctor public CollectionGroupSource(String collectionId, com.google.firebase.firestore.pipeline.InternalOptions options);
     method public String getCollectionId();
     property public final String collectionId;
   }
 
   public final class CollectionHints extends com.google.firebase.firestore.pipeline.AbstractOptions<com.google.firebase.firestore.pipeline.CollectionHints> {
     ctor public CollectionHints();
-    method public com.google.firebase.firestore.pipeline.CollectionHints self(com.google.firebase.firestore.pipeline.InternalOptions options);
     method public com.google.firebase.firestore.pipeline.CollectionHints withForceIndex(String value);
     method public com.google.firebase.firestore.pipeline.CollectionHints withIgnoreIndexFields(java.lang.String... values);
   }
@@ -796,7 +790,7 @@ package com.google.firebase.firestore.pipeline {
     method public final com.google.firebase.firestore.pipeline.Expression add(Number second);
     method public static final com.google.firebase.firestore.pipeline.Expression add(String numericFieldName, com.google.firebase.firestore.pipeline.Expression second);
     method public static final com.google.firebase.firestore.pipeline.Expression add(String numericFieldName, Number second);
-    method public com.google.firebase.firestore.pipeline.Selectable alias(String alias);
+    method public com.google.firebase.firestore.pipeline.AliasedExpression alias(String alias);
     method public static final com.google.firebase.firestore.pipeline.BooleanExpression and(com.google.firebase.firestore.pipeline.BooleanExpression condition, com.google.firebase.firestore.pipeline.BooleanExpression... conditions);
     method public static final com.google.firebase.firestore.pipeline.Expression array(java.lang.Object?... elements);
     method public static final com.google.firebase.firestore.pipeline.Expression array(java.util.List<? extends java.lang.Object?> elements);
@@ -1559,7 +1553,6 @@ package com.google.firebase.firestore.pipeline {
 
   public final class FindNearestOptions extends com.google.firebase.firestore.pipeline.AbstractOptions<com.google.firebase.firestore.pipeline.FindNearestOptions> {
     ctor public FindNearestOptions();
-    method public com.google.firebase.firestore.pipeline.FindNearestOptions self(com.google.firebase.firestore.pipeline.InternalOptions options);
     method public com.google.firebase.firestore.pipeline.FindNearestOptions withDistanceField(com.google.firebase.firestore.pipeline.Field distanceField);
     method public com.google.firebase.firestore.pipeline.FindNearestOptions? withDistanceField(String? distanceField);
     method public com.google.firebase.firestore.pipeline.FindNearestOptions withLimit(long limit);
@@ -1583,15 +1576,6 @@ package com.google.firebase.firestore.pipeline {
   }
 
   @com.google.common.annotations.Beta public class FunctionExpression extends com.google.firebase.firestore.pipeline.Expression {
-  }
-
-  public final class InternalOptions {
-    field public static final com.google.firebase.firestore.pipeline.InternalOptions.Companion Companion;
-    field public static final com.google.firebase.firestore.pipeline.InternalOptions EMPTY;
-  }
-
-  public static final class InternalOptions.Companion {
-    method public com.google.firebase.firestore.pipeline.InternalOptions of(String key, error.NonExistentClass value);
   }
 
   @com.google.common.annotations.Beta public final class Ordering {
@@ -1675,7 +1659,6 @@ package com.google.firebase.firestore.pipeline {
 
   public final class UnnestOptions extends com.google.firebase.firestore.pipeline.AbstractOptions<com.google.firebase.firestore.pipeline.UnnestOptions> {
     ctor public UnnestOptions();
-    method public com.google.firebase.firestore.pipeline.UnnestOptions self(com.google.firebase.firestore.pipeline.InternalOptions options);
     method public com.google.firebase.firestore.pipeline.UnnestOptions withIndexField(String indexField);
   }
 

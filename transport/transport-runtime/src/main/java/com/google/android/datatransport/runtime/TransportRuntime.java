@@ -178,6 +178,9 @@ public class TransportRuntime implements TransportInternal {
       if (eventContext.getExperimentIdsEncrypted() != null) {
         builder.setExperimentIdsEncrypted(eventContext.getExperimentIdsEncrypted());
       }
+      if (eventContext.getExperimentIdsEncryptedList() != null) {
+        builder.setExperimentIdsEncryptedList(eventContext.getExperimentIdsEncryptedList());
+      }
     }
 
     return builder.build();

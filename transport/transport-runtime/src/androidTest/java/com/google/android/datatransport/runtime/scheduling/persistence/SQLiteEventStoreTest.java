@@ -34,9 +34,12 @@ import com.google.android.datatransport.runtime.time.TestClock;
 import com.google.android.datatransport.runtime.time.UptimeClock;
 import com.google.common.truth.Correspondence;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import javax.inject.Provider;
@@ -59,6 +62,29 @@ public class SQLiteEventStoreTest {
               new EncodedPayload(JSON_ENCODING, "Hello".getBytes(Charset.defaultCharset())))
           .addMetadata("key1", "value1")
           .addMetadata("key2", "value2")
+          .build();
+  private static final EventInternal EVENTWITHIDS =
+      EventInternal.builder()
+          .setTransportName("42")
+          .setEventMillis(1)
+          .setUptimeMillis(2)
+          .setEncodedPayload(
+              new EncodedPayload(JSON_ENCODING, "Hello".getBytes(Charset.defaultCharset())))
+          .addMetadata("key1", "value1")
+          .addMetadata("key2", "value2")
+          .setExperimentIdsEncryptedList(List.of("encrypted blob".getBytes(StandardCharsets.UTF_8)))
+          .build();
+
+  private static final EventInternal EVENTWITHJUSTID =
+      EventInternal.builder()
+          .setTransportName("42")
+          .setEventMillis(1)
+          .setUptimeMillis(2)
+          .setEncodedPayload(
+              new EncodedPayload(JSON_ENCODING, "Hello".getBytes(Charset.defaultCharset())))
+          .addMetadata("key1", "value1")
+          .addMetadata("key2", "value2")
+          .setExperimentIdsEncrypted("encrypted blob".getBytes(StandardCharsets.UTF_8))
           .build();
 
   private final LogSourceMetrics LOG_SOURCE_METRICS_1 =
@@ -139,6 +165,38 @@ public class SQLiteEventStoreTest {
 
     assertThat(newEvent.getEvent()).isEqualTo(EVENT);
     assertThat(events).containsExactly(newEvent);
+  }
+
+  @Test
+  public void encryptedIdOnly_storedAndLoadedCorrectly() {
+    byte[] test = "encrypted blob".getBytes(StandardCharsets.UTF_8);
+    PersistedEvent newEvent = store.persist(TRANSPORT_CONTEXT, EVENTWITHJUSTID);
+    Iterable<PersistedEvent> events = store.loadBatch(TRANSPORT_CONTEXT);
+    assertThat(new String(newEvent.getEvent().getExperimentIdsEncrypted(), StandardCharsets.UTF_8))
+        .isEqualTo("encrypted blob");
+    Iterator<PersistedEvent> iterator = events.iterator();
+    PersistedEvent firstEvent = iterator.hasNext() ? iterator.next() : null;
+    assertThat(
+            new String(firstEvent.getEvent().getExperimentIdsEncrypted(), StandardCharsets.UTF_8))
+        .isEqualTo("encrypted blob");
+  }
+
+  @Test
+  public void encryptedIds_storedAndLoadedCorrectly() {
+    byte[] test = "encrypted blob".getBytes(StandardCharsets.UTF_8);
+    PersistedEvent newEvent = store.persist(TRANSPORT_CONTEXT, EVENTWITHIDS);
+    Iterable<PersistedEvent> events = store.loadBatch(TRANSPORT_CONTEXT);
+    assertThat(
+            new String(
+                newEvent.getEvent().getExperimentIdsEncryptedList().get(0), StandardCharsets.UTF_8))
+        .isEqualTo("encrypted blob");
+    Iterator<PersistedEvent> iterator = events.iterator();
+    PersistedEvent firstEvent = iterator.hasNext() ? iterator.next() : null;
+    assertThat(
+            new String(
+                firstEvent.getEvent().getExperimentIdsEncryptedList().get(0),
+                StandardCharsets.UTF_8))
+        .isEqualTo("encrypted blob");
   }
 
   @Test
