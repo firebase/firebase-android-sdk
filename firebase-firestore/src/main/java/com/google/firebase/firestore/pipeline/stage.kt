@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.pipeline
 
+import com.google.common.annotations.Beta
 import com.google.firebase.firestore.UserDataReader
 import com.google.firebase.firestore.VectorValue
 import com.google.firebase.firestore.model.Document
@@ -30,6 +31,7 @@ import com.google.firestore.v1.Pipeline
 import com.google.firestore.v1.Value
 import javax.annotation.Nonnull
 
+@Beta
 sealed class Stage<T : Stage<T>>(internal val name: String, internal val options: InternalOptions) {
   internal fun toProtoStage(userDataReader: UserDataReader): Pipeline.Stage {
     val builder = Pipeline.Stage.newBuilder()
@@ -108,6 +110,7 @@ sealed class Stage<T : Stage<T>>(internal val name: String, internal val options
  * This class provides a way to call stages that are supported by the Firestore backend but that are
  * not implemented in the SDK version being used.
  */
+@Beta
 class RawStage
 private constructor(
   name: String,
@@ -202,6 +205,7 @@ internal constructor(options: InternalOptions = InternalOptions.EMPTY) :
   }
 }
 
+@Beta
 class CollectionSource
 internal constructor(
   internal val path: ResourcePath,
@@ -249,6 +253,7 @@ internal constructor(
   }
 }
 
+@Beta
 class CollectionSourceOptions internal constructor(options: InternalOptions) :
   AbstractOptions<CollectionSourceOptions>(options) {
   /** Creates a new, empty `CollectionSourceOptions` object. */
@@ -267,12 +272,13 @@ class CollectionSourceOptions internal constructor(options: InternalOptions) :
   }
 }
 
+@Beta
 class CollectionHints internal constructor(options: InternalOptions) :
   AbstractOptions<CollectionHints>(options) {
   /** Creates a new, empty `CollectionHints` object. */
   constructor() : this(InternalOptions.EMPTY)
 
-  public override fun self(options: InternalOptions): CollectionHints {
+  override fun self(options: InternalOptions): CollectionHints {
     return CollectionHints(options)
   }
 
@@ -297,7 +303,9 @@ class CollectionHints internal constructor(options: InternalOptions) :
   }
 }
 
-class CollectionGroupSource(val collectionId: String, options: InternalOptions) :
+@Beta
+class CollectionGroupSource
+internal constructor(val collectionId: String, options: InternalOptions) :
   Stage<CollectionGroupSource>("collection_group", options) {
 
   internal constructor(
@@ -336,12 +344,13 @@ class CollectionGroupSource(val collectionId: String, options: InternalOptions) 
   }
 }
 
+@Beta
 class CollectionGroupOptions internal constructor(options: InternalOptions) :
   AbstractOptions<CollectionGroupOptions>(options) {
   /** Creates a new, empty `CollectionGroupOptions` object. */
   constructor() : this(InternalOptions.EMPTY)
 
-  public override fun self(options: InternalOptions): CollectionGroupOptions {
+  override fun self(options: InternalOptions): CollectionGroupOptions {
     return CollectionGroupOptions(options)
   }
 
@@ -464,6 +473,7 @@ internal constructor(
  * [AggregateFunction.alias] on [AggregateFunction] instances. Each aggregation calculates a value
  * (e.g., sum, average, count) based on the documents within its group.
  */
+@Beta
 class AggregateStage
 private constructor(
   private val accumulators: Map<String, AggregateFunction>,
@@ -564,12 +574,13 @@ private constructor(
   }
 }
 
+@Beta
 class AggregateHints internal constructor(options: InternalOptions) :
   AbstractOptions<AggregateHints>(options) {
   /** Creates a new, empty `AggregateHints` object. */
   constructor() : this(InternalOptions.EMPTY)
 
-  public override fun self(options: InternalOptions): AggregateHints {
+  override fun self(options: InternalOptions): AggregateHints {
     return AggregateHints(options)
   }
 
@@ -578,12 +589,13 @@ class AggregateHints internal constructor(options: InternalOptions) :
   }
 }
 
+@Beta
 class AggregateOptions internal constructor(options: InternalOptions) :
   AbstractOptions<AggregateOptions>(options) {
   /** Creates a new, empty `AggregateOptions` object. */
   constructor() : this(InternalOptions.EMPTY)
 
-  public override fun self(options: InternalOptions): AggregateOptions {
+  override fun self(options: InternalOptions): AggregateOptions {
     return AggregateOptions(options)
   }
 
@@ -636,6 +648,7 @@ internal constructor(
  * Performs a vector similarity search, ordering the result set by most similar to least similar,
  * and returning the first N documents in the result set.
  */
+@Beta
 class FindNearestStage
 internal constructor(
   private val property: Expression,
@@ -782,12 +795,13 @@ internal constructor(
   }
 }
 
+@Beta
 class FindNearestOptions private constructor(options: InternalOptions) :
   AbstractOptions<FindNearestOptions>(options) {
   /** Creates a new, empty `FindNearestOptions` object. */
   constructor() : this(InternalOptions.EMPTY)
 
-  public override fun self(options: InternalOptions): FindNearestOptions {
+  override fun self(options: InternalOptions): FindNearestOptions {
     return FindNearestOptions(options)
   }
 
@@ -1114,6 +1128,7 @@ internal constructor(
  * dictate how the sample is calculated either by specifying a target output size, or by specifying
  * a target percentage of the input size.
  */
+@Beta
 class SampleStage
 private constructor(
   private val size: Number,
@@ -1213,6 +1228,7 @@ internal constructor(
  * Takes a specified array from the input documents and outputs a document for each element with the
  * element stored in a field with name specified by the alias.
  */
+@Beta
 class UnnestStage
 internal constructor(
   private val selectable: Selectable,
@@ -1286,6 +1302,7 @@ internal constructor(
   fun withIndexField(indexField: String): UnnestStage = withOption("index_field", indexField)
 }
 
+@Beta
 class UnnestOptions private constructor(options: InternalOptions) :
   AbstractOptions<UnnestOptions>(options) {
   /** Creates a new, empty `UnnestOptions` object. */
@@ -1304,7 +1321,7 @@ class UnnestOptions private constructor(options: InternalOptions) :
     return with("index_field", Value.newBuilder().setFieldReferenceValue(indexField).build())
   }
 
-  public override fun self(options: InternalOptions): UnnestOptions {
+  override fun self(options: InternalOptions): UnnestOptions {
     return UnnestOptions(options)
   }
 }
