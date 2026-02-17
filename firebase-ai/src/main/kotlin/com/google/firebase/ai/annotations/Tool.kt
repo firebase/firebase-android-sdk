@@ -19,9 +19,9 @@ package com.google.firebase.ai.annotations
 import com.google.firebase.ai.type.AutoFunctionDeclaration
 
 /**
- * This annotation is used with the firebase-ai-ksp-processor plugin to generate
+ * This annotation is used with the `firebase-ai-ksp-processor` plugin to generate
  * [AutoFunctionDeclaration]s that match an existing kotlin function. For more info see:
- * https://github.com/firebase/firebase-android-sdk/blob/main/firebase-ai-ksp-processor/README.md
+ * [Firebase KSP Processor Readme](https://github.com/firebase/firebase-android-sdk/blob/main/firebase-ai-ksp-processor/README.md)
  *
  * @property description a description of the function
  */
