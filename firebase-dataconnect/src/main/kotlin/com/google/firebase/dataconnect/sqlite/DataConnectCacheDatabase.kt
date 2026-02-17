@@ -443,7 +443,7 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
       }
       rehydrateResult.onFailure {
         logger.warn {
-          "rehydrateQueryResult failed failed for id=${sqliteQueryId.sqliteRowId}, " +
+          "rehydrateQueryResult failed for id=${sqliteQueryId.sqliteRowId}, " +
             "queryId=${queryId.to0xHexString()} [knpe3t4f5b]"
         }
       }
