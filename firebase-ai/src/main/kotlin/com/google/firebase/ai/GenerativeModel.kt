@@ -292,6 +292,7 @@ internal constructor(
     }
   }
 
+  @OptIn(PublicPreviewAPI::class)
   internal class Builder(
     private val modelName: String,
     private val apiKey: String,
