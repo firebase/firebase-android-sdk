@@ -19,15 +19,19 @@
 package com.google.firebase.dataconnect.sqlite
 
 import com.google.firebase.dataconnect.DataConnectPathComparator
+import com.google.firebase.dataconnect.sqlite.QueryResultArb.EntityRepeatPolicy
 import com.google.firebase.dataconnect.testutil.DataConnectPath
 import com.google.firebase.dataconnect.testutil.property.arbitrary.ProtoArb
+import com.google.firebase.dataconnect.testutil.property.arbitrary.RememberArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.next
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
+import com.google.firebase.dataconnect.testutil.property.arbitrary.valueOfKind
 import com.google.firebase.dataconnect.testutil.randomlyInsertStruct
 import com.google.firebase.dataconnect.testutil.randomlyInsertValue
 import com.google.firebase.dataconnect.testutil.registerDataConnectKotestPrinters
+import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import com.google.firebase.dataconnect.testutil.toPrintFriendlyMap
@@ -40,6 +44,7 @@ import com.google.firebase.dataconnect.withAddedListIndex
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
+import com.google.protobuf.field
 import google.firebase.dataconnect.proto.kotlinsdk.Entity as EntityProto
 import google.firebase.dataconnect.proto.kotlinsdk.EntityList as EntityListProto
 import google.firebase.dataconnect.proto.kotlinsdk.EntityOrEntityList as EntityOrEntityListProto
@@ -51,9 +56,14 @@ import io.kotest.assertions.withClue
 import io.kotest.common.DelicateKotest
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldBeIn
+import io.kotest.matchers.collections.shouldBeUnique
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.comparables.shouldBeGreaterThan
 import io.kotest.matchers.ints.shouldBeInRange
+import io.kotest.matchers.ints.shouldBeLessThanOrEqual
 import io.kotest.matchers.maps.shouldContainKey
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
@@ -63,12 +73,15 @@ import io.kotest.property.RandomSource
 import io.kotest.property.ShrinkingMode
 import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.distinct
+import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.intRange
 import io.kotest.property.arbitrary.negativeInt
+import io.kotest.property.arbitrary.of
 import io.kotest.property.asSample
 import io.kotest.property.checkAll
+import kotlin.random.Random
 import kotlin.random.nextInt
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
@@ -87,13 +100,24 @@ import org.junit.Test
  *
  * @param entityCountRange The number of entities to generate in each sample.
  * @param structKeyArb Generator used to generate keys for [Struct] fields.
+ * @param entityIdArb Generator used to entity IDs.
  * @param structArb Generator used to generate the base [Struct] instances.
+ * @param entityArb Generator used to generate the entity [Struct] instances.
  */
 internal class QueryResultArb(
   entityCountRange: IntRange,
   private val structKeyArb: Arb<String> = Arb.proto.structKey(length = 4),
+  private val entityIdArb: Arb<String> = structKeyArb,
   private val structArb: Arb<ProtoArb.StructInfo> = Arb.proto.struct(key = structKeyArb),
+  private val entityArb: Arb<ProtoArb.StructInfo> = structArb,
+  private val entityRepeatPolicy: EntityRepeatPolicy = EntityRepeatPolicy.INTRA_SAMPLE,
 ) : Arb<QueryResultArb.Sample>() {
+
+  enum class EntityRepeatPolicy {
+    INTRA_SAMPLE,
+    INTER_SAMPLE,
+    INTER_SAMPLE_MUTATED,
+  }
 
   data class Sample(
     val hydratedStruct: Struct,
@@ -105,7 +129,10 @@ internal class QueryResultArb(
   ) {
     fun getEntityIdForPath(path: DataConnectPath): String? = entityByPath[path]?.entityId
 
-    enum class EdgeCase {
+    enum class EdgeCase(
+      val applicableWithEntityRepeatPolicies: Set<EntityRepeatPolicy> =
+        EntityRepeatPolicy.entries.toSet()
+    ) {
       EntityCount,
       DehydratedStruct,
       EntityStruct,
@@ -113,6 +140,14 @@ internal class QueryResultArb(
       EntityListSize,
       EntityIdRepeat,
       EntityPruneKeyCount,
+      FieldMutateCount(setOf(EntityRepeatPolicy.INTER_SAMPLE_MUTATED)),
+      MutatedValue(setOf(EntityRepeatPolicy.INTER_SAMPLE_MUTATED));
+
+      companion object {
+
+        fun entriesApplicableWith(entityRepeatPolicy: EntityRepeatPolicy): List<EdgeCase> =
+          entries.filter { entityRepeatPolicy in it.applicableWithEntityRepeatPolicies }
+      }
     }
 
     override fun toString(): String {
@@ -143,7 +178,7 @@ internal class QueryResultArb(
 
   override fun edgecase(rs: RandomSource): Sample {
     val edgeCases =
-      Sample.EdgeCase.entries.let { allEdgeCases ->
+      Sample.EdgeCase.entriesApplicableWith(entityRepeatPolicy).let { allEdgeCases ->
         val edgeCaseCount = rs.random.nextInt(1..allEdgeCases.size)
         allEdgeCases.shuffled(rs.random).take(edgeCaseCount).toSet()
       }
@@ -174,130 +209,33 @@ internal class QueryResultArb(
     val entityIdRepeatProbability = edgeCases.probability(Sample.EdgeCase.EntityIdRepeat)
     val entityPruneKeyCountEdgeCaseProbability =
       edgeCases.probability(Sample.EdgeCase.EntityPruneKeyCount)
+    val fieldMutateCountEdgeCaseProbability =
+      edgeCases.probability(Sample.EdgeCase.FieldMutateCount)
+    val mutatedValueEdgeCaseProbability = edgeCases.probability(Sample.EdgeCase.MutatedValue)
 
-    val dehydratedStruct = structArb.next(rs, dehydratedStructEdgeCaseProbability).struct
+    val (entities, entityStructById) =
+      generateEntities(
+        rs,
+        entityCountEdgeCaseProbability = entityCountEdgeCaseProbability,
+        entityIdRepeatProbability = entityIdRepeatProbability,
+        entityStructEdgeCaseProbability = entityStructEdgeCaseProbability,
+        entityPruneKeyCountEdgeCaseProbability = entityPruneKeyCountEdgeCaseProbability,
+        fieldMutateCountEdgeCaseProbability = fieldMutateCountEdgeCaseProbability,
+        mutatedValueEdgeCaseProbability = mutatedValueEdgeCaseProbability,
+      )
 
-    val entityStructById: Map<String, Struct>
-    val entities = run {
-      val entityStructByIdBuilder = mutableMapOf<String, Struct>()
-      val entityCount = entityCountArb.next(rs, entityCountEdgeCaseProbability)
-      check(entityCount >= 0)
-      val entityIdArb = structKeyArb.distinct()
-      val entities =
-        List(entityCount) { listIndex ->
-          val repeatedEntityId = listIndex > 0 && rs.random.nextFloat() < entityIdRepeatProbability
-          if (!repeatedEntityId) {
-            val entityStruct = structArb.next(rs, entityStructEdgeCaseProbability).struct
-            val entityId = entityIdArb.sample(rs).value
-            entityStructByIdBuilder[entityId] = entityStruct
-            EntityIdStructPair(entityId, entityStruct)
-          } else {
-            val (entityId, entityStruct) = entityStructByIdBuilder.entries.random(rs.random)
-            val candidatePruneKeys = entityStruct.fieldsMap.keys.shuffled(rs.random)
-            val pruneKeyCount =
-              Arb.int(0..candidatePruneKeys.size).next(rs, entityPruneKeyCountEdgeCaseProbability)
-            val pruneKeys = candidatePruneKeys.take(pruneKeyCount)
-            val pruneEntityStruct =
-              if (pruneKeys.isEmpty()) {
-                entityStruct
-              } else {
-                entityStruct
-                  .toBuilder()
-                  .also { entityStructBuilder ->
-                    pruneKeys.forEach { entityStructBuilder.removeFields(it) }
-                  }
-                  .build()
-              }
-            EntityIdStructPair(entityId, pruneEntityStruct)
-          }
-        }
-      entityStructById = entityStructByIdBuilder.toMap()
-      entities
-    }
-
-    val entityByPath: Map<DataConnectPath, EntityIdStructPair>
-    val entityListPaths: Set<DataConnectPath>
-    val queryResultProto: QueryResultProto
-    val hydratedStruct: Struct =
-      dehydratedStruct.toBuilder().let { hydratedStructBuilder ->
-        val entityByPathBuilder = mutableMapOf<DataConnectPath, EntityIdStructPair>()
-        val entityListPathsBuilder = mutableSetOf<DataConnectPath>()
-        val queryResultProtoBuilder = QueryResultProto.newBuilder()
-        queryResultProtoBuilder.setStruct(dehydratedStruct)
-
-        var entityIndex = 0
-        while (entityIndex < entities.size) {
-          val isEntityList = rs.random.nextFloat() < entityListProbability
-          val entityOrEntityListProto: EntityOrEntityListProto =
-            if (!isEntityList) {
-              val entity = entities[entityIndex++]
-              val entityPath =
-                hydratedStructBuilder.randomlyInsertStruct(
-                  entity.struct,
-                  rs.random,
-                  generateKey = { structKeyArb.sample(rs).value }
-                )
-
-              entityByPathBuilder[entityPath] = entity
-
-              val entityProto =
-                EntityProto.newBuilder().let { entityProtoBuilder ->
-                  entityProtoBuilder.setEntityId(entity.entityId)
-                  entityProtoBuilder.addAllFields(entity.struct.fieldsMap.keys)
-                  entityProtoBuilder.build()
-                }
-              EntityOrEntityListProto.newBuilder()
-                .setEntity(entityProto)
-                .setPath(entityPath.toEntityPathProto())
-                .build()
-            } else {
-              val entitiesRemaining = entities.size - entityIndex
-              val entityListSize =
-                Arb.int(1..entitiesRemaining).next(rs, entityListSizeEdgeCaseProbability)
-              val entitiesInEntityList = entities.subList(entityIndex, entityIndex + entityListSize)
-              entityIndex += entityListSize
-
-              val listValue =
-                ListValue.newBuilder()
-                  .addAllValues(entitiesInEntityList.map { it.struct.toValueProto() })
-                  .build()
-              val entityListPath =
-                hydratedStructBuilder.randomlyInsertValue(
-                  listValue.toValueProto(),
-                  rs.random,
-                  generateKey = { structKeyArb.sample(rs).value }
-                )
-              entityListPathsBuilder.add(entityListPath)
-              entitiesInEntityList.mapIndexed { index, entity ->
-                entityByPathBuilder[entityListPath.withAddedListIndex(index)] = entity
-              }
-
-              val entityListProto =
-                EntityListProto.newBuilder()
-                  .addAllEntities(
-                    entitiesInEntityList.map {
-                      EntityProto.newBuilder()
-                        .setEntityId(it.entityId)
-                        .addAllFields(it.struct.fieldsMap.keys)
-                        .build()
-                    }
-                  )
-                  .build()
-
-              EntityOrEntityListProto.newBuilder()
-                .setEntityList(entityListProto)
-                .setPath(entityListPath.toEntityPathProto())
-                .build()
-            }
-
-          queryResultProtoBuilder.addEntities(entityOrEntityListProto)
-        }
-
-        entityByPath = entityByPathBuilder.toMap()
-        entityListPaths = entityListPathsBuilder.toSet()
-        queryResultProto = queryResultProtoBuilder.build()
-        hydratedStructBuilder.build()
-      }
+    val (
+      hydratedStruct,
+      entityByPath,
+      entityListPaths,
+      queryResultProto,
+    ) = generateHydratedStruct(
+      rs,
+      entities = entities,
+      dehydratedStructEdgeCaseProbability = dehydratedStructEdgeCaseProbability,
+      entityListProbability = entityListProbability,
+      entityListSizeEdgeCaseProbability = entityListSizeEdgeCaseProbability,
+    )
 
     return Sample(
       hydratedStruct = hydratedStruct,
@@ -306,6 +244,204 @@ internal class QueryResultArb(
       entityStructById = entityStructById,
       queryResultProto = queryResultProto,
       edgeCases = edgeCases,
+    )
+  }
+
+  private val memoizedEntityStructById: MutableMap<String, Struct>? = run {
+    when (entityRepeatPolicy) {
+      EntityRepeatPolicy.INTRA_SAMPLE -> null
+      EntityRepeatPolicy.INTER_SAMPLE,
+      EntityRepeatPolicy.INTER_SAMPLE_MUTATED -> mutableMapOf()
+    }
+  }
+
+  private data class GenerateEntitiesResult(
+    val entities: List<EntityIdStructPair>,
+    val entityStructById: Map<String, Struct>,
+  )
+
+  private fun generateEntities(
+    rs: RandomSource,
+    entityCountEdgeCaseProbability: Float,
+    entityIdRepeatProbability: Float,
+    entityStructEdgeCaseProbability: Float,
+    entityPruneKeyCountEdgeCaseProbability: Float,
+    fieldMutateCountEdgeCaseProbability: Float,
+    mutatedValueEdgeCaseProbability: Float,
+  ): GenerateEntitiesResult {
+    val entityCount = entityCountArb.next(rs, entityCountEdgeCaseProbability)
+    check(entityCount >= 0)
+
+    val memoizedEntityIds =
+      memoizedEntityStructById?.keys?.shuffled(rs.random)?.toMutableList() ?: mutableListOf()
+    val entityStructById = mutableMapOf<String, Struct>()
+
+    fun Struct.withPrunedFields(): Struct {
+      val candidatePruneKeys = fieldsMap.keys.shuffled(rs.random)
+      val pruneKeyCount =
+        Arb.int(0..candidatePruneKeys.size).next(rs, entityPruneKeyCountEdgeCaseProbability)
+
+      val pruneKeys = candidatePruneKeys.take(pruneKeyCount)
+      if (pruneKeys.isEmpty()) {
+        return this
+      }
+
+      val prunedStructBuilder = toBuilder()
+      pruneKeys.forEach { prunedStructBuilder.removeFields(it) }
+      return prunedStructBuilder.build()
+    }
+
+    fun Random.nextShouldRepeatEntityId(): Boolean =
+      entityStructById.isNotEmpty() && nextFloat() < entityIdRepeatProbability
+
+    fun generateEntity(): EntityIdStructPair {
+      val entityId =
+        if (rs.random.nextShouldRepeatEntityId()) {
+          entityStructById.keys.random(rs.random)
+        } else if (memoizedEntityIds.isNotEmpty()) {
+          memoizedEntityIds.removeLast()
+        } else {
+          entityIdArb.sample(rs).value
+        }
+
+      return if (entityId in entityStructById) {
+        val entityStruct = entityStructById[entityId]!!
+        val pruneEntityStruct = entityStruct.withPrunedFields()
+        EntityIdStructPair(entityId, pruneEntityStruct)
+      } else if (memoizedEntityStructById === null || entityId !in memoizedEntityStructById) {
+        val entityStruct = entityArb.next(rs, entityStructEdgeCaseProbability).struct
+        entityStructById[entityId] = entityStruct
+        memoizedEntityStructById?.put(entityId, entityStruct)
+        EntityIdStructPair(entityId, entityStruct)
+      } else {
+        val entityStruct = memoizedEntityStructById[entityId]!!
+        val prunedEntityStruct = entityStruct.withPrunedFields()
+
+        val prunedMutatedEntityStruct =
+          if (entityRepeatPolicy != EntityRepeatPolicy.INTER_SAMPLE_MUTATED) {
+            prunedEntityStruct
+          } else {
+            val fields = prunedEntityStruct.fieldsMap.keys.shuffled(rs.random)
+            val fieldMutateCount =
+              Arb.int(0..fields.size).next(rs, fieldMutateCountEdgeCaseProbability)
+            val fieldsToMutate = fields.take(fieldMutateCount)
+            val mutatedEntityStructBuilder = entityStruct.toBuilder()
+            val prunedMutatedEntityStructBuilder = prunedEntityStruct.toBuilder()
+            fieldsToMutate.forEach { fieldToMutate ->
+              val oldValue = mutatedEntityStructBuilder.getFieldsOrThrow(fieldToMutate)
+              val newValue =
+                Arb.proto.valueOfKind(oldValue.kindCase).next(rs, mutatedValueEdgeCaseProbability)
+              mutatedEntityStructBuilder.putFields(fieldToMutate, newValue)
+              prunedMutatedEntityStructBuilder.putFields(fieldToMutate, newValue)
+            }
+            memoizedEntityStructById[entityId] = mutatedEntityStructBuilder.build()
+            prunedMutatedEntityStructBuilder.build()
+          }
+
+        entityStructById[entityId] = prunedMutatedEntityStruct
+        EntityIdStructPair(entityId, prunedMutatedEntityStruct)
+      }
+    }
+
+    val entities = List(entityCount) { generateEntity() }
+
+    return GenerateEntitiesResult(entities, entityStructById.toMap())
+  }
+
+  private data class GenerateHydratedStructResult(
+    val hydratedStruct: Struct,
+    val entityByPath: Map<DataConnectPath, EntityIdStructPair>,
+    val entityListPaths: Set<DataConnectPath>,
+    val queryResultProto: QueryResultProto,
+  )
+
+  private fun generateHydratedStruct(
+    rs: RandomSource,
+    entities: List<EntityIdStructPair>,
+    dehydratedStructEdgeCaseProbability: Float,
+    entityListProbability: Float,
+    entityListSizeEdgeCaseProbability: Float,
+  ): GenerateHydratedStructResult {
+    val dehydratedStruct = structArb.next(rs, dehydratedStructEdgeCaseProbability).struct
+    val hydratedStructBuilder = dehydratedStruct.toBuilder()
+    val entityByPath = mutableMapOf<DataConnectPath, EntityIdStructPair>()
+    val entityListPaths = mutableSetOf<DataConnectPath>()
+    val queryResultProtoBuilder = QueryResultProto.newBuilder()
+    queryResultProtoBuilder.setStruct(dehydratedStruct)
+
+    var entityIndex = 0
+    while (entityIndex < entities.size) {
+      val isEntityList = rs.random.nextFloat() < entityListProbability
+      val entityOrEntityListProto: EntityOrEntityListProto =
+        if (!isEntityList) {
+          val entity = entities[entityIndex++]
+          val entityPath =
+            hydratedStructBuilder.randomlyInsertStruct(
+              entity.struct,
+              rs.random,
+              generateKey = { structKeyArb.sample(rs).value }
+            )
+
+          entityByPath[entityPath] = entity
+
+          val entityProto =
+            EntityProto.newBuilder().let { entityProtoBuilder ->
+              entityProtoBuilder.setEntityId(entity.entityId)
+              entityProtoBuilder.addAllFields(entity.struct.fieldsMap.keys)
+              entityProtoBuilder.build()
+            }
+          EntityOrEntityListProto.newBuilder()
+            .setEntity(entityProto)
+            .setPath(entityPath.toEntityPathProto())
+            .build()
+        } else {
+          val entitiesRemaining = entities.size - entityIndex
+          val entityListSize =
+            Arb.int(1..entitiesRemaining).next(rs, entityListSizeEdgeCaseProbability)
+          val entitiesInEntityList = entities.subList(entityIndex, entityIndex + entityListSize)
+          entityIndex += entityListSize
+
+          val listValue =
+            ListValue.newBuilder()
+              .addAllValues(entitiesInEntityList.map { it.struct.toValueProto() })
+              .build()
+          val entityListPath =
+            hydratedStructBuilder.randomlyInsertValue(
+              listValue.toValueProto(),
+              rs.random,
+              generateKey = { structKeyArb.sample(rs).value }
+            )
+          entityListPaths.add(entityListPath)
+          entitiesInEntityList.mapIndexed { index, entity ->
+            entityByPath[entityListPath.withAddedListIndex(index)] = entity
+          }
+
+          val entityListProto =
+            EntityListProto.newBuilder()
+              .addAllEntities(
+                entitiesInEntityList.map {
+                  EntityProto.newBuilder()
+                    .setEntityId(it.entityId)
+                    .addAllFields(it.struct.fieldsMap.keys)
+                    .build()
+                }
+              )
+              .build()
+
+          EntityOrEntityListProto.newBuilder()
+            .setEntityList(entityListProto)
+            .setPath(entityListPath.toEntityPathProto())
+            .build()
+        }
+
+      queryResultProtoBuilder.addEntities(entityOrEntityListProto)
+    }
+
+    return GenerateHydratedStructResult(
+      hydratedStruct = hydratedStructBuilder.build(),
+      entityByPath = entityByPath.toMap(),
+      entityListPaths = entityListPaths.toSet(),
+      queryResultProto = queryResultProtoBuilder.build(),
     )
   }
 }
@@ -319,8 +455,13 @@ class QueryResultArbUnitTest {
 
   @Test
   fun `QueryResultArb should respect the given entityCountRange`() = runTest {
-    checkAll(propTestConfig, Arb.intRange(0..5).filterNot { it.isEmpty() }) { entityCountRange ->
-      val arb = QueryResultArb(entityCountRange = entityCountRange)
+    checkAll(
+      propTestConfig,
+      Arb.intRange(0..5).filterNot { it.isEmpty() },
+      Arb.enum<EntityRepeatPolicy>()
+    ) { entityCountRange, entityRepeatPolicy ->
+      val arb =
+        QueryResultArb(entityCountRange = entityCountRange, entityRepeatPolicy = entityRepeatPolicy)
 
       val sample = arb.bind()
 
@@ -366,9 +507,104 @@ class QueryResultArbUnitTest {
   }
 
   @Test
+  fun `QueryResultArb should respect the given entityIdArb`() = runTest {
+    val structKeyArb = Arb.proto.structKey()
+    checkAll(
+      propTestConfig,
+      Arb.intRange(0..5).filterNot { it.isEmpty() },
+      Arb.enum<EntityRepeatPolicy>()
+    ) { entityCountRange, entityRepeatPolicy ->
+      val entityIdArb = RememberArb(structKeyArb)
+      val arb =
+        QueryResultArb(
+          entityCountRange = entityCountRange,
+          entityIdArb = entityIdArb,
+          entityRepeatPolicy = entityRepeatPolicy
+        )
+
+      val samples = List(5) { arb.bind() }
+
+      val generatedEntityIds = samples.flatMap { it.entityStructById.keys }.toSet()
+      generatedEntityIds shouldContainExactlyInAnyOrder entityIdArb.generatedValues.toSet()
+    }
+  }
+
+  @Test
+  fun `QueryResultArb should respect the given structArb`() = runTest {
+    val structArb = Arb.proto.struct()
+    checkAll(
+      propTestConfig,
+      Arb.intRange(0..5).filterNot { it.isEmpty() },
+      Arb.enum<EntityRepeatPolicy>()
+    ) { entityCountRange, entityRepeatPolicy ->
+      val structArb = RememberArb(structArb)
+      val arb =
+        QueryResultArb(
+          entityCountRange = entityCountRange,
+          structArb = structArb,
+          entityRepeatPolicy = entityRepeatPolicy
+        )
+
+      val sample = arb.bind()
+
+      val generatedStructs = structArb.generatedValues.map { it.struct }
+      assertSoftly {
+        withClue("sample.queryResultProto.struct") {
+          sample.queryResultProto.struct shouldBeIn generatedStructs
+        }
+        sample.entityStructById.entries.forEachIndexed { index, (entityId, entityStruct) ->
+          withClue("sample.entityStructById[\"$entityId\"], index=$index") {
+            entityStruct shouldBeIn generatedStructs
+          }
+        }
+      }
+    }
+  }
+
+  @Test
+  fun `QueryResultArb should respect the given entityArb`() = runTest {
+    val structArb = Arb.proto.struct()
+    checkAll(
+      propTestConfig,
+      Arb.intRange(0..5).filterNot { it.isEmpty() },
+      Arb.enum<EntityRepeatPolicy>()
+    ) { entityCountRange, entityRepeatPolicy ->
+      val structArb = RememberArb(structArb)
+      val entityArb = RememberArb(structArb)
+      val arb =
+        QueryResultArb(
+          entityCountRange = entityCountRange,
+          structArb = structArb,
+          entityArb = entityArb,
+          entityRepeatPolicy = entityRepeatPolicy
+        )
+
+      val sample = arb.bind()
+
+      assertSoftly {
+        withClue("sample.queryResultProto.struct") {
+          val generatedStructs = structArb.generatedValues.map { it.struct }
+          sample.queryResultProto.struct shouldBeIn generatedStructs
+        }
+        val generatedEntities = entityArb.generatedValues.map { it.struct }
+        sample.entityStructById.entries.forEachIndexed { index, (entityId, entityStruct) ->
+          withClue("sample.entityStructById[\"$entityId\"], index=$index") {
+            entityStruct shouldBeIn generatedEntities
+          }
+        }
+      }
+    }
+  }
+
+  @Test
   fun `QueryResultArb sample() should generate samples with empty edge case set`() = runTest {
-    checkAll(propTestConfig, Arb.intRange(0..5).filterNot { it.isEmpty() }) { entityCountRange ->
-      val arb = QueryResultArb(entityCountRange = entityCountRange)
+    checkAll(
+      propTestConfig,
+      Arb.intRange(0..5).filterNot { it.isEmpty() },
+      Arb.enum<EntityRepeatPolicy>()
+    ) { entityCountRange, entityRepeatPolicy ->
+      val arb =
+        QueryResultArb(entityCountRange = entityCountRange, entityRepeatPolicy = entityRepeatPolicy)
 
       val sample = arb.sample(randomSource()).value
 
@@ -378,8 +614,13 @@ class QueryResultArbUnitTest {
 
   @Test
   fun `QueryResultArb edgecase() should generate samples with non-empty edge case set`() = runTest {
-    checkAll(propTestConfig, Arb.intRange(0..5).filterNot { it.isEmpty() }) { entityCountRange ->
-      val arb = QueryResultArb(entityCountRange = entityCountRange)
+    checkAll(
+      propTestConfig,
+      Arb.intRange(0..5).filterNot { it.isEmpty() },
+      Arb.enum<EntityRepeatPolicy>()
+    ) { entityCountRange, entityRepeatPolicy ->
+      val arb =
+        QueryResultArb(entityCountRange = entityCountRange, entityRepeatPolicy = entityRepeatPolicy)
 
       val sample = arb.edgecase(randomSource())
 
@@ -392,8 +633,13 @@ class QueryResultArbUnitTest {
     var uniqueEntityIdsCount = 0
     var nonUniqueEntityIdsCount = 0
 
-    checkAll(propTestConfig, Arb.intRange(0..5).filterNot { it.isEmpty() }) { entityCountRange ->
-      val arb = QueryResultArb(entityCountRange = entityCountRange)
+    checkAll(
+      propTestConfig,
+      Arb.intRange(0..5).filterNot { it.isEmpty() },
+      Arb.enum<EntityRepeatPolicy>()
+    ) { entityCountRange, entityRepeatPolicy ->
+      val arb =
+        QueryResultArb(entityCountRange = entityCountRange, entityRepeatPolicy = entityRepeatPolicy)
 
       val sample = arb.bind()
 
@@ -416,8 +662,13 @@ class QueryResultArbUnitTest {
     var entityListCount = 0
     var nonEntityListCount = 0
 
-    checkAll(propTestConfig, Arb.intRange(0..5).filterNot { it.isEmpty() }) { entityCountRange ->
-      val arb = QueryResultArb(entityCountRange = entityCountRange)
+    checkAll(
+      propTestConfig,
+      Arb.intRange(0..5).filterNot { it.isEmpty() },
+      Arb.enum<EntityRepeatPolicy>()
+    ) { entityCountRange, entityRepeatPolicy ->
+      val arb =
+        QueryResultArb(entityCountRange = entityCountRange, entityRepeatPolicy = entityRepeatPolicy)
 
       val sample = arb.bind()
 
@@ -439,8 +690,13 @@ class QueryResultArbUnitTest {
     var nestedEntityCount = 0
     var nonNestedEntityCount = 0
 
-    checkAll(propTestConfig, Arb.intRange(0..5).filterNot { it.isEmpty() }) { entityCountRange ->
-      val arb = QueryResultArb(entityCountRange = entityCountRange)
+    checkAll(
+      propTestConfig,
+      Arb.intRange(0..5).filterNot { it.isEmpty() },
+      Arb.enum<EntityRepeatPolicy>()
+    ) { entityCountRange, entityRepeatPolicy ->
+      val arb =
+        QueryResultArb(entityCountRange = entityCountRange, entityRepeatPolicy = entityRepeatPolicy)
 
       val sample = arb.bind()
 
@@ -463,8 +719,13 @@ class QueryResultArbUnitTest {
 
   @Test
   fun `QueryResultArb should generate correct entityListPaths`() = runTest {
-    checkAll(propTestConfig, Arb.intRange(0..5).filterNot { it.isEmpty() }) { entityCountRange ->
-      val arb = QueryResultArb(entityCountRange = entityCountRange)
+    checkAll(
+      propTestConfig,
+      Arb.intRange(0..5).filterNot { it.isEmpty() },
+      Arb.enum<EntityRepeatPolicy>()
+    ) { entityCountRange, entityRepeatPolicy ->
+      val arb =
+        QueryResultArb(entityCountRange = entityCountRange, entityRepeatPolicy = entityRepeatPolicy)
 
       val sample = arb.bind()
 
@@ -477,6 +738,149 @@ class QueryResultArbUnitTest {
       }
     }
   }
+
+  @Test
+  fun `QueryResultArb with EntityRepeatPolicy INTRA_SAMPLE should not repeat entity IDs across samples`() =
+    runTest {
+      val structKeyArb = Arb.proto.structKey().distinct()
+      val generatedEntityIds = mutableListOf<String>()
+
+      checkAll(propTestConfig, Arb.intRange(0..5).filterNot { it.isEmpty() }) { entityCountRange ->
+        val arb =
+          QueryResultArb(
+            entityCountRange = entityCountRange,
+            structKeyArb = structKeyArb,
+            entityRepeatPolicy = EntityRepeatPolicy.INTRA_SAMPLE,
+          )
+
+        repeat(5) {
+          val sample = arb.bind()
+          generatedEntityIds.addAll(sample.entityStructById.keys)
+        }
+      }
+
+      generatedEntityIds.shouldBeUnique()
+    }
+
+  @Test
+  fun `QueryResultArb with EntityRepeatPolicy INTER_SAMPLE and INTER_SAMPLE_MUTATED should repeat entity IDs across samples`() =
+    runTest {
+      val entityRepeatPolicyArb =
+        Arb.of(EntityRepeatPolicy.INTER_SAMPLE, EntityRepeatPolicy.INTER_SAMPLE_MUTATED)
+      checkAll(
+        propTestConfig,
+        Arb.intRange(0..5).filterNot { it.isEmpty() },
+        entityRepeatPolicyArb
+      ) { entityCountRange, entityRepeatPolicy ->
+        val arb =
+          QueryResultArb(
+            entityCountRange = entityCountRange,
+            entityRepeatPolicy = entityRepeatPolicy,
+          )
+
+        val generatedEntityIds = mutableSetOf<String>()
+        repeat(10) {
+          val sample = arb.bind()
+          generatedEntityIds.addAll(sample.entityStructById.keys)
+        }
+
+        assertSoftly {
+          withClue("generatedEntityIds.size") {
+            generatedEntityIds.size shouldBeLessThanOrEqual entityCountRange.last
+          }
+        }
+      }
+    }
+
+  @Test
+  fun `QueryResultArb with EntityRepeatPolicy INTER_SAMPLE should repeat entity structs across samples`() =
+    runTest {
+      checkAll(propTestConfig, Arb.intRange(0..5).filterNot { it.isEmpty() }) { entityCountRange ->
+        val arb =
+          QueryResultArb(
+            entityCountRange = entityCountRange,
+            entityRepeatPolicy = EntityRepeatPolicy.INTER_SAMPLE,
+          )
+
+        val samples = List(10) { arb.bind() }
+
+        val generatedEntitiesByEntityId =
+          samples
+            .flatMap { it.entityStructById.entries }
+            .groupBy(keySelector = { it.key }, valueTransform = { it.value })
+        generatedEntitiesByEntityId.entries.forEach { (entityId, entityStructs) ->
+          withClue("entityId=$entityId") { entityStructs.shouldBeConsistent() }
+        }
+      }
+    }
+
+  @Test
+  fun `QueryResultArb with EntityRepeatPolicy INTER_SAMPLE_MUTATED should mutate entity structs across samples`() =
+    runTest {
+      var mutationCount = 0
+
+      checkAll(propTestConfig, Arb.intRange(0..5).filterNot { it.isEmpty() }) { entityCountRange ->
+        val arb =
+          QueryResultArb(
+            entityCountRange = entityCountRange,
+            entityRepeatPolicy = EntityRepeatPolicy.INTER_SAMPLE_MUTATED,
+          )
+
+        val samples = List(10) { arb.bind() }
+
+        val generatedEntitiesByEntityId =
+          samples
+            .flatMap { it.entityStructById.entries }
+            .groupBy(keySelector = { it.key }, valueTransform = { it.value })
+        generatedEntitiesByEntityId.entries.forEach { (entityId, entityStructs) ->
+          withClue("entityId=$entityId") {
+            val valuesByField =
+              entityStructs
+                .flatMap { entityStruct ->
+                  entityStruct.fieldsMap.entries.map { it.key to it.value }
+                }
+                .groupBy(keySelector = { it.first }, valueTransform = { it.second })
+            valuesByField.entries.forEach { (field, values) ->
+              withClue("field=$field") {
+                values.map { it.kindCase }.distinct() shouldHaveSize 1
+                if (values.distinct().size > 1) {
+                  mutationCount++
+                }
+              }
+            }
+          }
+        }
+      }
+
+      withClue("mutationCount") { mutationCount shouldBeGreaterThan 0 }
+    }
+
+  @Test
+  fun `QueryResultArb with EntityRepeatPolicy INTER_SAMPLE_MUTATED should not mutate entity structs within samples`() =
+    runTest {
+      checkAll(propTestConfig, Arb.intRange(0..5).filterNot { it.isEmpty() }) { entityCountRange ->
+        val arb =
+          QueryResultArb(
+            entityCountRange = entityCountRange,
+            entityRepeatPolicy = EntityRepeatPolicy.INTER_SAMPLE_MUTATED,
+          )
+
+        val samples = List(10) { arb.bind() }
+
+        samples.forEachIndexed { sampleIndex, sample ->
+          withClue("sampleIndex=$sampleIndex") {
+            val entityStructsById =
+              sample.entityByPath.values.groupBy(
+                keySelector = { it.entityId },
+                valueTransform = { it.struct }
+              )
+            entityStructsById.entries.forEach { (entityId, entityStructs) ->
+              withClue("entityId=$entityId") { entityStructs.shouldBeConsistent() }
+            }
+          }
+        }
+      }
+    }
 }
 
 @OptIn(ExperimentalKotest::class)
@@ -531,6 +935,31 @@ private fun QueryResultArb.Sample.shouldBeEntityList(path: DataConnectPath) {
       entityListElement.kindCase shouldBe Value.KindCase.STRUCT_VALUE
       val entityListElementPath = path.withAddedListIndex(entityListIndex)
       entityByPath shouldContainKey entityListElementPath
+    }
+  }
+}
+
+private fun List<Struct>.shouldBeConsistent() {
+  val referenceStruct =
+    Struct.newBuilder().let { referenceStructBuilder ->
+      forEach { referenceStructBuilder.putAllFields(it.fieldsMap) }
+      referenceStructBuilder.build()
+    }
+
+  fun referenceStructWithFields(fields: Collection<String>): Struct {
+    val builder = referenceStruct.toBuilder()
+    referenceStruct.fieldsMap.keys.forEach { field ->
+      if (field !in fields) {
+        builder.removeFields(field)
+      }
+    }
+    return builder.build()
+  }
+
+  forEachIndexed { index, struct ->
+    withClue("index=$index") {
+      val expectedStruct = referenceStructWithFields(struct.fieldsMap.keys)
+      struct shouldBe expectedStruct
     }
   }
 }
