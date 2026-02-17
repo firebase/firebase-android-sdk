@@ -275,6 +275,15 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   }
 
   /**
+   * Clears all data associated with the Firebase Installation ID (FID) of the current Firebase App.
+   * @hide
+   */
+  @Override
+  public void clearFidCache() {
+    persistedInstallation.clearDataFile();
+  }
+
+  /**
    * Register a callback {@link FidListener} to receive fid changes.
    *
    * @hide
