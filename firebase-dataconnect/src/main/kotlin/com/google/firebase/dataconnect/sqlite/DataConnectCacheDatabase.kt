@@ -268,6 +268,7 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
     queryResultProtoBytes: ImmutableByteArray,
   ): SqliteQueryId {
     execSQL(
+      logger,
       """
         INSERT OR REPLACE INTO queries
         (user_id, query_id, data, flags)
@@ -320,6 +321,7 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
     val entityStructBytes = entityStruct.toByteArray()
 
     execSQL(
+      logger,
       """
         INSERT OR REPLACE INTO entities
         (user_id, entity_id, data, flags)
@@ -337,6 +339,7 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
     entity: SqliteEntityId,
   ) {
     execSQL(
+      logger,
       """
         INSERT OR IGNORE INTO entity_query_map
         (query_id, entity_id)
