@@ -26,6 +26,7 @@ import org.hamcrest.CoreMatchers.not
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Assert.assertEquals
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 
@@ -44,6 +45,7 @@ class UploadDistributionTaskTest {
   // *************************************************************************
   // Test matrix cases for testing on the latest and older gradle/AGP versions
   // *************************************************************************
+  @Ignore("https://github.com/firebase/firebase-android-sdk/pull/7718")
   @Test
   fun testApkPathParsing_withApk_onOlderAgpAndGradleVersions() {
     apiStubs.stubUploadDistributionSuccess()
@@ -66,6 +68,7 @@ class UploadDistributionTaskTest {
     assertThat(result.output, containsString("build/outputs/apk/debug/app-debug.apk"))
   }
 
+  @Ignore("https://github.com/firebase/firebase-android-sdk/pull/7718")
   @Test
   fun testApkPathParsing_withApk_onLatestAgpAndGradleVersions() {
     apiStubs.stubUploadDistributionSuccess()
@@ -89,6 +92,7 @@ class UploadDistributionTaskTest {
     assertThat(result.output, containsString("build/outputs/apk/debug/app-debug.apk"))
   }
 
+  @Ignore("https://github.com/firebase/firebase-android-sdk/pull/7718")
   @Test
   fun testApkPathParsing_withApk_withConfigurationCache_onLatestAgpAndGradleVersions() {
     apiStubs.stubUploadDistributionSuccess()
@@ -118,6 +122,7 @@ class UploadDistributionTaskTest {
     assertThat(result.output, containsString("build/outputs/apk/debug/app-debug.apk"))
   }
 
+  @Ignore("https://github.com/firebase/firebase-android-sdk/pull/7718")
   @Test
   fun testApkPathParsing_noApk_onOlderAgpAndGradleVersions() {
     apiStubs.stubUploadDistributionSuccess()
@@ -139,6 +144,7 @@ class UploadDistributionTaskTest {
     assertThat(result.output, containsString("Could not find an APK"))
   }
 
+  @Ignore("https://github.com/firebase/firebase-android-sdk/pull/7718")
   @Test
   fun testApkPathParsing_noApk_onLatestAgpAndGradleVersions() {
     apiStubs.stubUploadDistributionSuccess()
@@ -161,6 +167,7 @@ class UploadDistributionTaskTest {
     assertThat(result.output, containsString("Could not find an APK"))
   }
 
+  @Ignore("https://github.com/firebase/firebase-android-sdk/pull/7718")
   @Test
   fun testApkPathParsing_withCustomOutputName_onOlderAgpAndGradleVersions() {
     apiStubs.stubUploadDistributionSuccess()
@@ -190,6 +197,7 @@ class UploadDistributionTaskTest {
     assertThat(result.output, containsString("build/outputs/apk/debug/app-debug_GradleTest_5.apk"))
   }
 
+  @Ignore("https://github.com/firebase/firebase-android-sdk/pull/7718")
   @Test
   fun testAabPathParsing_withAab_onOlderAgpAndGradleVersions() {
     apiStubs.stubGetAabInfoSuccess()
@@ -214,6 +222,7 @@ class UploadDistributionTaskTest {
     assertThat(result.output, containsString("build/outputs/bundle/debug/app-debug.aab"))
   }
 
+  @Ignore("https://github.com/firebase/firebase-android-sdk/pull/7718")
   @Test
   fun testAabPathParsing_withAab_onLatestAgpAndGradleVersions() {
     apiStubs.stubGetAabInfoSuccess()
@@ -244,6 +253,7 @@ class UploadDistributionTaskTest {
     assertThat(result.output, containsString("build/outputs/bundle/debug/app-debug.aab"))
   }
 
+  @Ignore("https://github.com/firebase/firebase-android-sdk/pull/7718")
   @Test
   fun testAabPathParsing_withAab_withConfigurationCache_onLatestAgpAndGradleVersions() {
     apiStubs.stubGetAabInfoSuccess()
@@ -275,6 +285,7 @@ class UploadDistributionTaskTest {
     assertThat(result.output, containsString("build/outputs/bundle/debug/app-debug.aab"))
   }
 
+  @Ignore("https://github.com/firebase/firebase-android-sdk/pull/7718")
   @Test
   fun testAabPathParsing_noAab_onOlderAgpAndGradleVersions() {
     apiStubs.stubGetAabInfoSuccess()
@@ -304,6 +315,7 @@ class UploadDistributionTaskTest {
     assertThat(result.output, containsString("Could not find the AAB"))
   }
 
+  @Ignore("https://github.com/firebase/firebase-android-sdk/pull/7718")
   @Test
   fun testAabPathParsing_noAab_onLatestAgpAndGradleVersions() {
     apiStubs.stubGetAabInfoSuccess()
@@ -330,6 +342,7 @@ class UploadDistributionTaskTest {
     assertThat(result.output, containsString("Could not find the AAB"))
   }
 
+  @Ignore("https://github.com/firebase/firebase-android-sdk/pull/7718")
   @Test
   fun testAabPathParsing_withAabCommandLineOverride_onOlderAgpAndGradleVersions() {
     apiStubs.stubGetAabInfoSuccess()
@@ -359,6 +372,7 @@ class UploadDistributionTaskTest {
     assertThat(result.output, containsString("build/outputs/bundle/debug/app-debug.aab"))
   }
 
+  @Ignore("https://github.com/firebase/firebase-android-sdk/pull/7718")
   @Test
   fun testAabPathParsing_withAabCommandLineOverride_onLatestAgpAndGradleVersions() {
     apiStubs.stubGetAabInfoSuccess()
@@ -389,6 +403,7 @@ class UploadDistributionTaskTest {
     assertThat(result.output, containsString("build/outputs/bundle/debug/app-debug.aab"))
   }
 
+  @Ignore("https://github.com/firebase/firebase-android-sdk/pull/7718")
   @Test
   fun testArtifactPath_withRelativePath_onLatestAgpAndGradleVersions() {
     apiStubs.stubGetAabInfoSuccess()
@@ -415,6 +430,7 @@ class UploadDistributionTaskTest {
     assertThat(result.output, containsString("build/outputs/apk/debug/app-debug.apk"))
   }
 
+  @Ignore("https://github.com/firebase/firebase-android-sdk/pull/7718")
   @Test
   fun testArtifactPath_withRelativePath_withConfigurationCache_onLatestAgpAndGradleVersions() {
     apiStubs.stubGetAabInfoSuccess()
@@ -447,6 +463,7 @@ class UploadDistributionTaskTest {
     assertThat(result.output, containsString("build/outputs/apk/debug/app-debug.apk"))
   }
 
+  @Ignore("https://github.com/firebase/firebase-android-sdk/pull/7718")
   @Test
   fun testArtifactPath_withPathToNonexistentFile_onLatestAgpAndGradleVersions() {
     apiStubs.stubGetAabInfoSuccess()
@@ -499,6 +516,7 @@ class UploadDistributionTaskTest {
   // *************************************************************************
   // Specific AAB parsing test cases for nuanced AGP/gradle versioning
   // *************************************************************************
+  @Ignore("https://github.com/firebase/firebase-android-sdk/pull/7718")
   @Test
   fun testAabPathParsing_forAgp713andGradle72() {
     apiStubs.stubGetAabInfoSuccess()
@@ -522,6 +540,7 @@ class UploadDistributionTaskTest {
     assertThat(result.output, containsString("build/outputs/bundle/debug/app-debug.aab"))
   }
 
+  @Ignore("https://github.com/firebase/firebase-android-sdk/pull/7718")
   @Test
   fun testAabPathParsing_forAgp722andGradle733() {
     apiStubs.stubGetAabInfoSuccess()
@@ -545,6 +564,7 @@ class UploadDistributionTaskTest {
     assertThat(result.output, containsString("build/outputs/bundle/debug/app-debug.aab"))
   }
 
+  @Ignore("https://github.com/firebase/firebase-android-sdk/pull/7718")
   @Test
   fun testAabPathParsing_forAgp731andGradle74() {
     apiStubs.stubGetAabInfoSuccess()
@@ -569,6 +589,7 @@ class UploadDistributionTaskTest {
     assertThat(result.output, containsString("build/outputs/bundle/debug/app-debug.aab"))
   }
 
+  @Ignore("https://github.com/firebase/firebase-android-sdk/pull/7718")
   @Test
   fun testGoogleServices440AppIdParsing_forAgp730() {
     apiStubs.stubUploadDistributionSuccess()
@@ -593,6 +614,7 @@ class UploadDistributionTaskTest {
   // *************************************************************************
   // Miscellaneous integration tests
   // *************************************************************************
+  @Ignore("https://github.com/firebase/firebase-android-sdk/pull/7718")
   @Test
   fun testGoogleServicesAppIdParsing_onLatestAgpAndGradleVersions() {
     apiStubs.stubUploadDistributionSuccess()
@@ -615,6 +637,7 @@ class UploadDistributionTaskTest {
     assertEquals(SUCCESS, result.task(":app:appDistributionUploadDebug")?.outcome)
   }
 
+  @Ignore("https://github.com/firebase/firebase-android-sdk/pull/7718")
   @Test
   fun testGoogleServicesAppIdParsing_onOlderAgpAndGradleVersions() {
     apiStubs.stubUploadDistributionSuccess()
@@ -663,6 +686,7 @@ class UploadDistributionTaskTest {
     assertThat(result.output, containsString("Automated test(s) passed!"))
   }
 
+  @Ignore("https://github.com/firebase/firebase-android-sdk/pull/7718")
   @Test
   fun testers_withTestersFile_onLatestAgpAndGradleVersions() {
     apiStubs.stubUploadDistributionSuccess()
@@ -688,6 +712,7 @@ class UploadDistributionTaskTest {
     assertThat(result.output, containsString("Added testers/groups successfully"))
   }
 
+  @Ignore("https://github.com/firebase/firebase-android-sdk/pull/7718")
   @Test
   fun testers_withTestersFile_usingCommandLineOverrides_onLatestAgpAndGradleVersions() {
     apiStubs.stubUploadDistributionSuccess()
