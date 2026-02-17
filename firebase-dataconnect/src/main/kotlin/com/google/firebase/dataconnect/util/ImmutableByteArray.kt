@@ -26,6 +26,10 @@ import com.google.firebase.dataconnect.util.StringUtil.to0xHexString
  */
 internal class ImmutableByteArray private constructor(private val array: ByteArray) {
 
+  /** The size of the underlying byte array. */
+  val size: Int
+    get() = array.size
+
   /**
    * Returns a hash code value for the object.
    *
