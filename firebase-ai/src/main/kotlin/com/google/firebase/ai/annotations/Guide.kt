@@ -17,8 +17,8 @@
 package com.google.firebase.ai.annotations
 
 /**
- * This annotation is used with the firebase-ai-ksp-processor plugin to provide extra information on
- * generated classes and fields.
+ * This annotation is used with the `firebase-ai-ksp-processor` plugin to provide extra information
+ * on generated classes and fields.
  * @property description a description of the field
  * @property minimum the minimum value (inclusive) which the numeric field may contain
  * @property maximum the maximum value (inclusive) which the numeric field may contain
