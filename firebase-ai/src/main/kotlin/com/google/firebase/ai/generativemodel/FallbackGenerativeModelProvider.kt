@@ -17,6 +17,7 @@
 package com.google.firebase.ai.generativemodel
 
 import android.util.Log
+import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceException
 import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.CountTokensResponse
 import com.google.firebase.ai.type.FirebaseAIException
@@ -88,8 +89,10 @@ internal class FallbackGenerativeModelProvider(
     }
     return try {
       defaultModel.block()
-    } catch (e: FirebaseAIException) {
-      if (shouldFallbackInException) {
+    } catch (e: Exception) {
+      if (
+        shouldFallbackInException && (e is FirebaseAIException || e is FirebaseAIOnDeviceException)
+      ) {
         Log.w(
           TAG,
           "Error running `$methodName` on `${defaultModel.javaClass.simpleName}`. Falling back to `${fallbackModel.javaClass.simpleName}`",
