@@ -16,6 +16,8 @@
 
 package com.google.firebase.ai.ondevice.interop
 
+import kotlinx.coroutines.CancellationException
+
 /** Parent class for any errors that occur from the Firebase AI OnDevice SDK. */
 public abstract class FirebaseAIOnDeviceException
 internal constructor(message: String, cause: Throwable? = null) : RuntimeException(message, cause) {
@@ -30,6 +32,7 @@ internal constructor(message: String, cause: Throwable? = null) : RuntimeExcepti
     public fun from(cause: Exception): FirebaseAIOnDeviceException =
       when (cause) {
         is FirebaseAIOnDeviceException -> cause
+        is CancellationException -> throw cause
         else -> FirebaseAIOnDeviceUnknownException("Something unexpected happened.", cause)
       }
   }

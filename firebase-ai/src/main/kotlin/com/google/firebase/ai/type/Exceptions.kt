@@ -18,6 +18,7 @@ package com.google.firebase.ai.type
 
 import com.google.firebase.ai.FirebaseAI
 import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceException
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.TimeoutCancellationException
 
 /** Parent class for any errors that occur from the [FirebaseAI] SDK. */
@@ -46,6 +47,7 @@ internal constructor(message: String, cause: Throwable? = null) : RuntimeExcepti
           }
         is TimeoutCancellationException ->
           RequestTimeoutException("The request failed to complete in the allotted time.")
+        is CancellationException -> throw cause
         else -> UnknownException("Something unexpected happened.", cause)
       }
 
