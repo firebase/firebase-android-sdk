@@ -41,6 +41,13 @@ import org.junit.Test
 class ImmutableByteArrayUnitTest {
 
   @Test
+  fun `ImmutableByteArray size`() = runTest {
+    checkAll(propTestConfig, immutableByteArrayArb()) { sample ->
+      sample.immutableByteArray.size shouldBe sample.byteArray.size
+    }
+  }
+
+  @Test
   fun `ImmutableByteArray hashCode`() = runTest {
     checkAll(propTestConfig, immutableByteArrayArb()) { sample ->
       val hashCode = sample.immutableByteArray.hashCode()

@@ -457,6 +457,9 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
     queryData: Struct,
     getEntityIdForPath: GetEntityIdForPathFunction?,
   ) {
+    require(queryId.size > 0) {
+      "queryId.size=${queryId.size}, but must be greater than zero [ab4em538tb]"
+    }
     val (queryResultProto, entityStructById) = dehydrateQueryResult(queryData, getEntityIdForPath)
     val queryResultProtoBytes = ImmutableByteArray.adopt(queryResultProto.toByteArray())
 
