@@ -484,6 +484,18 @@ package com.google.firebase.ai.type {
   public abstract class FirebaseAIException extends java.lang.RuntimeException {
   }
 
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class FirebaseAIOnDeviceInvalidRequestException extends com.google.firebase.ai.type.FirebaseAIException {
+    ctor public FirebaseAIOnDeviceInvalidRequestException(com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceInvalidRequestException cause);
+  }
+
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class FirebaseAIOnDeviceNotAvailableException extends com.google.firebase.ai.type.FirebaseAIException {
+    ctor public FirebaseAIOnDeviceNotAvailableException(com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceNotAvailableException cause);
+  }
+
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class FirebaseAIOnDeviceUnknownException extends com.google.firebase.ai.type.FirebaseAIException {
+    ctor public FirebaseAIOnDeviceUnknownException(com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceException cause);
+  }
+
   public final class FirebaseAutoFunctionException extends com.google.firebase.ai.type.FirebaseAIException {
     ctor public FirebaseAutoFunctionException(String message);
   }
