@@ -129,23 +129,26 @@ internal constructor(
           .trimIndent(),
       )
     }
-    return GenerativeModel.create(
-      modelName = modelUri,
-      apiKey = firebaseApp.options.apiKey,
-      firebaseApp = firebaseApp,
-      useLimitedUseAppCheckTokens = useLimitedUseAppCheckTokens,
-      generationConfig = generationConfig,
-      safetySettings = safetySettings,
-      tools = tools ?: emptyList(),
-      toolConfig = toolConfig,
-      systemInstruction = systemInstruction,
-      requestOptions = requestOptions,
-      onDeviceConfig = onDeviceConfig,
-      generativeBackend = backend,
-      appCheckTokenProvider = appCheckProvider.get(),
-      internalAuthProvider = internalAuthProvider.get(),
-      onDeviceFactoryProvider = onDeviceFactoryProvider.get()
-    )
+    return GenerativeModel.Builder(
+        modelName = modelUri,
+        apiKey = firebaseApp.options.apiKey,
+        firebaseApp = firebaseApp,
+        useLimitedUseAppCheckTokens = useLimitedUseAppCheckTokens,
+        generativeBackend = backend
+      )
+      .apply {
+        this.generationConfig = generationConfig
+        this.safetySettings = safetySettings
+        this.tools = tools ?: emptyList()
+        this.toolConfig = toolConfig
+        this.systemInstruction = systemInstruction
+        this.requestOptions = requestOptions
+        this.onDeviceConfig = onDeviceConfig
+        this.onDeviceFactoryProvider = this@FirebaseAI.onDeviceFactoryProvider.get()
+        this.internalAuthProvider = this@FirebaseAI.internalAuthProvider.get()
+        this.appCheckTokenProvider = appCheckProvider.get()
+      }
+      .build()
   }
 
   /**

@@ -63,10 +63,9 @@ import kotlinx.serialization.json.jsonObject
  */
 public class GenerativeModel
 internal constructor(
-  private val tools: List<Tool> = emptyList(),
   private val actualModel: GenerativeModelProvider,
   internal val requestOptions: RequestOptions,
-  internal val controller: APIController,
+  private val tools: List<Tool> = emptyList()
 ) {
   /**
    * Generates new content from the input [Content] given to the model as a prompt.
@@ -293,129 +292,103 @@ internal constructor(
     }
   }
 
-  internal companion object {
-    private val TAG = GenerativeModel::class.java.simpleName
+  @OptIn(PublicPreviewAPI::class)
+  internal class Builder(
+    private val modelName: String,
+    private val apiKey: String,
+    private val firebaseApp: FirebaseApp,
+    private val useLimitedUseAppCheckTokens: Boolean,
+    private val generativeBackend: GenerativeBackend,
+  ) {
+    var generationConfig: GenerationConfig? = null
+    var safetySettings: List<SafetySetting>? = null
+    var tools: List<Tool> = mutableListOf()
+    var toolConfig: ToolConfig? = null
+    var systemInstruction: Content? = null
+    var requestOptions: RequestOptions = RequestOptions()
+    var apiClient: String = "gl-kotlin/${KotlinVersion.CURRENT}-ai fire/${BuildConfig.VERSION_NAME}"
+    @PublicPreviewAPI var onDeviceConfig: OnDeviceConfig = OnDeviceConfig.IN_CLOUD
+    var appCheckTokenProvider: InteropAppCheckTokenProvider? = null
+    var internalAuthProvider: InternalAuthProvider? = null
+    var onDeviceFactoryProvider: FirebaseAIOnDeviceGenerativeModelFactory? = null
 
-    @PublicPreviewAPI
-    internal fun create(
-      modelName: String,
-      apiKey: String,
-      firebaseApp: FirebaseApp,
-      useLimitedUseAppCheckTokens: Boolean,
-      onDeviceConfig: OnDeviceConfig,
-      generativeBackend: GenerativeBackend,
-      onDeviceFactoryProvider: FirebaseAIOnDeviceGenerativeModelFactory? = null,
-      generationConfig: GenerationConfig? = null,
-      safetySettings: List<SafetySetting>? = null,
-      tools: List<Tool> = emptyList(),
-      toolConfig: ToolConfig? = null,
-      systemInstruction: Content? = null,
-      requestOptions: RequestOptions = RequestOptions(),
-      appCheckTokenProvider: InteropAppCheckTokenProvider? = null,
-      internalAuthProvider: InternalAuthProvider? = null,
-    ): GenerativeModel {
-      val apiController =
-        APIController(
-          apiKey,
-          modelName,
-          requestOptions,
-          "gl-kotlin/${KotlinVersion.CURRENT}-ai fire/${BuildConfig.VERSION_NAME}",
-          firebaseApp,
-          AppCheckHeaderProvider(
-            TAG,
-            useLimitedUseAppCheckTokens,
-            appCheckTokenProvider,
-            internalAuthProvider
-          ),
-        )
-
-      val cloudModel =
-        CloudGenerativeModelProvider(
-          modelName = modelName,
-          generationConfig = generationConfig,
-          safetySettings = safetySettings,
-          tools = tools,
-          toolConfig = toolConfig,
-          systemInstruction = systemInstruction,
-          generativeBackend = generativeBackend,
-          controller = apiController,
-        )
-      val onDeviceModel =
-        if (onDeviceFactoryProvider == null) {
-          MissingOnDeviceGenerativeModelProvider()
-        } else {
-          OnDeviceGenerativeModelProvider(
-            onDeviceFactoryProvider.newGenerativeModel(),
-            onDeviceConfig
-          )
-        }
-
-      val actualModelProvider =
-        when (onDeviceConfig.mode) {
-          InferenceMode.ONLY_IN_CLOUD -> cloudModel
-          InferenceMode.ONLY_ON_DEVICE -> onDeviceModel
-          InferenceMode.PREFER_ON_DEVICE ->
-            FallbackGenerativeModelProvider(
-              defaultModel = onDeviceModel,
-              fallbackModel = cloudModel,
-              shouldFallbackInException = true
-            )
-          InferenceMode.PREFER_IN_CLOUD ->
-            FallbackGenerativeModelProvider(
-              defaultModel = cloudModel,
-              fallbackModel = onDeviceModel,
-              precondition =
-                NetworkStatusChecker(
-                  firebaseApp.applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE)
-                    as ConnectivityManager
-                )::isDeviceOnline,
-              shouldFallbackInException = false
-            )
-          else -> throw InvalidStateException("Invalid inference mode")
-        }
-
-      return GenerativeModel(
-        tools = tools,
-        actualModel = actualModelProvider,
-        controller = apiController,
-        requestOptions = requestOptions
-      )
-    }
-
-    @OptIn(PublicPreviewAPI::class)
-    internal fun create(
-      modelName: String,
-      apiKey: String,
-      firebaseApp: FirebaseApp,
-      useLimitedUseAppCheckTokens: Boolean,
-      generationConfig: GenerationConfig? = null,
-      safetySettings: List<SafetySetting>? = null,
-      tools: List<Tool> = emptyList(),
-      toolConfig: ToolConfig? = null,
-      systemInstruction: Content? = null,
-      requestOptions: RequestOptions = RequestOptions(),
-      generativeBackend: GenerativeBackend,
-      appCheckTokenProvider: InteropAppCheckTokenProvider? = null,
-      internalAuthProvider: InternalAuthProvider? = null,
-      onDeviceFactoryProvider: FirebaseAIOnDeviceGenerativeModelFactory,
-    ): GenerativeModel =
-      create(
+    /**
+     * Returns a [GenerativeModelProvider] that uses the cloud backend.
+     *
+     * @param isFallback Whether this provider is being used as a fallback for another provider.
+     * @return A [GenerativeModelProvider] that uses the cloud backend.
+     */
+    internal fun buildCloudModelProvider(isFallback: Boolean = false): GenerativeModelProvider {
+      return CloudGenerativeModelProvider(
         modelName = modelName,
-        apiKey = apiKey,
-        firebaseApp = firebaseApp,
-        useLimitedUseAppCheckTokens = useLimitedUseAppCheckTokens,
         generationConfig = generationConfig,
         safetySettings = safetySettings,
         tools = tools,
         toolConfig = toolConfig,
         systemInstruction = systemInstruction,
-        requestOptions = requestOptions,
         generativeBackend = generativeBackend,
-        appCheckTokenProvider = appCheckTokenProvider,
-        internalAuthProvider = internalAuthProvider,
-        onDeviceConfig = OnDeviceConfig.IN_CLOUD,
-        onDeviceFactoryProvider = onDeviceFactoryProvider
+        controller =
+          APIController(
+            apiKey,
+            modelName,
+            requestOptions,
+            if (isFallback) "${apiClient} hybrid" else apiClient,
+            firebaseApp,
+            AppCheckHeaderProvider(
+              TAG,
+              useLimitedUseAppCheckTokens,
+              appCheckTokenProvider,
+              internalAuthProvider
+            ),
+          ),
       )
+    }
+
+    @OptIn(PublicPreviewAPI::class)
+    internal fun buildOnDeviceModelProvider(): GenerativeModelProvider =
+      onDeviceFactoryProvider?.let {
+        OnDeviceGenerativeModelProvider(it.newGenerativeModel(), onDeviceConfig)
+      }
+        ?: MissingOnDeviceGenerativeModelProvider()
+
+    @PublicPreviewAPI
+    internal fun getModelProvider(): GenerativeModelProvider =
+      when (onDeviceConfig.mode) {
+        InferenceMode.ONLY_IN_CLOUD -> buildCloudModelProvider()
+        InferenceMode.ONLY_ON_DEVICE -> buildOnDeviceModelProvider()
+        InferenceMode.PREFER_ON_DEVICE -> {
+          FallbackGenerativeModelProvider(
+            defaultModel = buildOnDeviceModelProvider(),
+            fallbackModel = buildCloudModelProvider(isFallback = true),
+            shouldFallbackInException = true
+          )
+        }
+        InferenceMode.PREFER_IN_CLOUD ->
+          FallbackGenerativeModelProvider(
+            defaultModel = buildCloudModelProvider(),
+            fallbackModel = buildOnDeviceModelProvider(),
+            precondition =
+              NetworkStatusChecker(
+                firebaseApp.applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE)
+                  as ConnectivityManager
+              )::isDeviceOnline,
+            shouldFallbackInException = false
+          )
+        else -> throw InvalidStateException("Invalid inference mode")
+      }
+
+    @OptIn(PublicPreviewAPI::class)
+    internal fun build(): GenerativeModel {
+      return GenerativeModel(
+        tools = tools,
+        actualModel = getModelProvider(),
+        requestOptions = requestOptions
+      )
+    }
+  }
+
+  internal companion object {
+    private val TAG = GenerativeModel::class.java.simpleName
   }
 }
 
