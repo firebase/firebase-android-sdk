@@ -16,16 +16,47 @@
 
 package com.google.firebase.dataconnect.testutil.property.arbitrary
 
+import io.kotest.assertions.print.print
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.bind
 
-data class TwoValues<T>(val value1: T, val value2: T)
+data class TwoValues<T>(val value1: T, val value2: T) {
+  override fun toString() =
+    "TwoValues(" + "value1=${value1.print().value}, " + "value2=${value1.print().value})"
+}
 
-data class ThreeValues<T>(val value1: T, val value2: T, val value3: T)
+data class ThreeValues<T>(val value1: T, val value2: T, val value3: T) {
+  override fun toString() =
+    "ThreeValues(" +
+      "value1=${value1.print().value}, " +
+      "value2=${value2.print().value}, " +
+      "value3=${value3.print().value})"
+}
 
-data class FourValues<T>(val value1: T, val value2: T, val value3: T, val value4: T)
+data class FourValues<T>(val value1: T, val value2: T, val value3: T, val value4: T) {
+  override fun toString() =
+    "ThreeValues(" +
+      "value1=${value1.print().value}, " +
+      "value2=${value2.print().value}, " +
+      "value3=${value3.print().value}, " +
+      "value4=${value4.print().value})"
+}
 
-data class FiveValues<T>(val value1: T, val value2: T, val value3: T, val value4: T, val value5: T)
+data class FiveValues<T>(
+  val value1: T,
+  val value2: T,
+  val value3: T,
+  val value4: T,
+  val value5: T
+) {
+  override fun toString() =
+    "ThreeValues(" +
+      "value1=${value1.print().value}, " +
+      "value2=${value2.print().value}, " +
+      "value3=${value3.print().value}, " +
+      "value4=${value4.print().value}, " +
+      "value5=${value5.print().value})"
+}
 
 fun <T> Arb.Companion.twoValues(arb: Arb<T>): Arb<TwoValues<T>> =
   bind(arb, arb) { value1, value2 -> TwoValues(value1, value2) }

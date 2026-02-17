@@ -36,10 +36,6 @@ import com.google.firebase.firestore.pipeline.Expression.Companion.exp
 import com.google.firebase.firestore.pipeline.Expression.Companion.field
 import com.google.firebase.firestore.pipeline.Expression.Companion.floor
 import com.google.firebase.firestore.pipeline.Expression.Companion.isAbsent
-import com.google.firebase.firestore.pipeline.Expression.Companion.isNan
-import com.google.firebase.firestore.pipeline.Expression.Companion.isNotNan
-import com.google.firebase.firestore.pipeline.Expression.Companion.isNotNull
-import com.google.firebase.firestore.pipeline.Expression.Companion.isNull
 import com.google.firebase.firestore.pipeline.Expression.Companion.like
 import com.google.firebase.firestore.pipeline.Expression.Companion.ln
 import com.google.firebase.firestore.pipeline.Expression.Companion.log
@@ -47,7 +43,9 @@ import com.google.firebase.firestore.pipeline.Expression.Companion.log10
 import com.google.firebase.firestore.pipeline.Expression.Companion.mod
 import com.google.firebase.firestore.pipeline.Expression.Companion.multiply
 import com.google.firebase.firestore.pipeline.Expression.Companion.not
+import com.google.firebase.firestore.pipeline.Expression.Companion.notEqual
 import com.google.firebase.firestore.pipeline.Expression.Companion.notEqualAny
+import com.google.firebase.firestore.pipeline.Expression.Companion.nullValue
 import com.google.firebase.firestore.pipeline.Expression.Companion.or
 import com.google.firebase.firestore.pipeline.Expression.Companion.pow
 import com.google.firebase.firestore.pipeline.Expression.Companion.regexContains
@@ -573,7 +571,8 @@ class RealtimePipelineTest {
 
     collRef.document("book1").update("title", FieldValue.serverTimestamp())
 
-    val pipeline = db.realtimePipeline().collection(collRef.path).where(field("title").isNull())
+    val pipeline =
+      db.realtimePipeline().collection(collRef.path).where(field("title").equal(nullValue()))
 
     val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job = launch { pipeline.snapshots().collect { snapshot -> channel.send(snapshot) } }
@@ -593,7 +592,11 @@ class RealtimePipelineTest {
     collRef.document("book1").update("title", FieldValue.serverTimestamp())
 
     val pipeline =
-      db.realtimePipeline().collection(collRef.path).where(field("title").isNotNull()).limit(1)
+      db
+        .realtimePipeline()
+        .collection(collRef.path)
+        .where(field("title").notEqual(nullValue()))
+        .limit(1)
 
     val channel1 = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val job1 = launch {
@@ -942,7 +945,8 @@ class RealtimePipelineTest {
     collRef.document("book1").update("rating", Double.NaN).await()
 
     // Test isNan
-    val pipelineIsNan = db.realtimePipeline().collection(collRef.path).where(isNan("rating"))
+    val pipelineIsNan =
+      db.realtimePipeline().collection(collRef.path).where(field("rating").equal(Double.NaN))
 
     val channelIsNan = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val jobIsNan = launch {
@@ -956,7 +960,8 @@ class RealtimePipelineTest {
     jobIsNan.cancel()
 
     // Test isNotNan
-    val pipelineIsNotNan = db.realtimePipeline().collection(collRef.path).where(isNotNan("rating"))
+    val pipelineIsNotNan =
+      db.realtimePipeline().collection(collRef.path).where(field("rating").notEqual(Double.NaN))
 
     val channelIsNotNan = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val jobIsNotNan = launch {
@@ -973,7 +978,8 @@ class RealtimePipelineTest {
     collRef.document("book1").update("rating", null).await()
 
     // Test isNull
-    val pipelineIsNull = db.realtimePipeline().collection(collRef.path).where(isNull("rating"))
+    val pipelineIsNull =
+      db.realtimePipeline().collection(collRef.path).where(field("rating").equal(nullValue()))
 
     val channelIsNull = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val jobIsNull = launch {
@@ -988,7 +994,7 @@ class RealtimePipelineTest {
 
     // Test isNotNull
     val pipelineIsNotNull =
-      db.realtimePipeline().collection(collRef.path).where(isNotNull("rating"))
+      db.realtimePipeline().collection(collRef.path).where(field("rating").notEqual(nullValue()))
 
     val channelIsNotNull = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
     val jobIsNotNull = launch {
