@@ -20,8 +20,9 @@ import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.json.Json
 
 /**
- * A [GenerateContentResponse] augmented with class information, use [getObject] to parse the
- * response and extract the strongly typed object.
+ * A [GenerateContentResponse] augmented with class information.
+ *
+ * Use [getObject] to parse the response and extract the strongly typed object.
  */
 public class GenerateObjectResponse<T : Any>
 internal constructor(

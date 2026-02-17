@@ -25,6 +25,7 @@ import io.kotest.matchers.Matcher
 import io.kotest.matchers.MatcherResult
 import io.kotest.matchers.neverNullMatcher
 import io.kotest.matchers.should
+import io.kotest.matchers.shouldNot
 import java.util.UUID
 import java.util.regex.Pattern
 import kotlin.coroutines.CoroutineContext
@@ -83,6 +84,61 @@ infix fun String?.shouldContainWithNonAbuttingText(s: String): String? {
 /** Same as [shouldContainWithNonAbuttingText] but ignoring case. */
 infix fun String?.shouldContainWithNonAbuttingTextIgnoringCase(s: String): String? {
   this should containWithNonAbuttingText(s, ignoreCase = false)
+  return this
+}
+
+/**
+ * Creates and returns a [Matcher] that can be used with kotest assertions for verifying that a
+ * string contains a lone surrogate (lone surrogates do not represent any Unicode character). See
+ * http://goo.gle/4hiU2qs for details.
+ */
+fun containLoneSurrogate(): Matcher<String?> = neverNullMatcher { value ->
+  val loneSurrogateIndices = mutableListOf<Int>()
+  var i = 0
+  while (i < value.length) {
+    val char = value[i]
+    val isLoneSurrogate =
+      if (char.isHighSurrogate()) {
+        if (i + 1 == value.length) {
+          true
+        } else if (value[i + 1].isLowSurrogate()) {
+          i++
+          false
+        } else {
+          true
+        }
+      } else if (char.isLowSurrogate()) {
+        true
+      } else {
+        false
+      }
+
+    if (isLoneSurrogate) {
+      loneSurrogateIndices.add(i)
+    }
+    i++
+  }
+
+  MatcherResult(
+    loneSurrogateIndices.isNotEmpty(),
+    { "${value.print().value} should contain at least one lone surrogate" },
+    {
+      "${value.print().value} should not contain any lone surrogates, but found " +
+        loneSurrogateIndices.size +
+        ": " +
+        loneSurrogateIndices.joinToString { index ->
+          "0x${value[index].code.toString(16)} at index $index"
+        }
+    }
+  )
+}
+
+/**
+ * Asserts that a string does not contain any lone surrogates (lone surrogates do not represent any
+ * Unicode character). See http://goo.gle/4hiU2qs for details.
+ */
+fun String?.shouldNotContainLoneSurrogates(): String? {
+  this shouldNot containLoneSurrogate()
   return this
 }
 
