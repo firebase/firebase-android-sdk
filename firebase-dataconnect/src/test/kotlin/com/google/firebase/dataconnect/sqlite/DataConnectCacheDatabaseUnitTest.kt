@@ -22,7 +22,6 @@ import com.google.firebase.dataconnect.sqlite.QueryResultArb.EntityRepeatPolicy.
 import com.google.firebase.dataconnect.sqlite.QueryResultArb.EntityRepeatPolicy.INTER_SAMPLE_MUTATED
 import com.google.firebase.dataconnect.testutil.CleanupsRule
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
-import com.google.firebase.dataconnect.testutil.map
 import com.google.firebase.dataconnect.testutil.property.arbitrary.distinctPair
 import com.google.firebase.dataconnect.testutil.property.arbitrary.listNoRepeat
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
@@ -474,7 +473,13 @@ class DataConnectCacheDatabaseUnitTest {
       queryIdArb().distinctPair(),
     ) { authUid, (queryId1, queryId2) ->
       val queryResultArb =
-        QueryResultArb(entityCountRange = 1..5, entityRepeatPolicy = INTER_SAMPLE_MUTATED)
+        QueryResultArb(
+          entityCountRange = 1..5,
+          // TODO: Remove the "entityArb" argument, which forces flat entities, by improving
+          // QueryResultArb to avoid entity mutations that break other entities.
+          entityArb = Arb.proto.struct(depth = 1),
+          entityRepeatPolicy = INTER_SAMPLE_MUTATED,
+        )
       val queryResult1 = queryResultArb.bind()
       val queryResult2 = queryResultArb.bind()
 

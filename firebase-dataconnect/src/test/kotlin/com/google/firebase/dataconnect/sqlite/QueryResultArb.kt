@@ -56,6 +56,7 @@ import io.kotest.assertions.withClue
 import io.kotest.common.DelicateKotest
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldBeIn
 import io.kotest.matchers.collections.shouldBeUnique
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.collections.shouldHaveSize
@@ -101,12 +102,14 @@ import org.junit.Test
  * @param structKeyArb Generator used to generate keys for [Struct] fields.
  * @param entityIdArb Generator used to entity IDs.
  * @param structArb Generator used to generate the base [Struct] instances.
+ * @param entityArb Generator used to generate the entity [Struct] instances.
  */
 internal class QueryResultArb(
   entityCountRange: IntRange,
   private val structKeyArb: Arb<String> = Arb.proto.structKey(length = 4),
   private val entityIdArb: Arb<String> = structKeyArb,
   private val structArb: Arb<ProtoArb.StructInfo> = Arb.proto.struct(key = structKeyArb),
+  private val entityArb: Arb<ProtoArb.StructInfo> = structArb,
   private val entityRepeatPolicy: EntityRepeatPolicy = EntityRepeatPolicy.INTRA_SAMPLE,
 ) : Arb<QueryResultArb.Sample>() {
 
@@ -306,7 +309,7 @@ internal class QueryResultArb(
         val pruneEntityStruct = entityStruct.withPrunedFields()
         EntityIdStructPair(entityId, pruneEntityStruct)
       } else if (memoizedEntityStructById === null || entityId !in memoizedEntityStructById) {
-        val entityStruct = structArb.next(rs, entityStructEdgeCaseProbability).struct
+        val entityStruct = entityArb.next(rs, entityStructEdgeCaseProbability).struct
         entityStructById[entityId] = entityStruct
         memoizedEntityStructById?.put(entityId, entityStruct)
         EntityIdStructPair(entityId, entityStruct)
@@ -523,6 +526,73 @@ class QueryResultArbUnitTest {
 
       val generatedEntityIds = samples.flatMap { it.entityStructById.keys }.toSet()
       generatedEntityIds shouldContainExactlyInAnyOrder entityIdArb.generatedValues.toSet()
+    }
+  }
+
+  @Test
+  fun `QueryResultArb should respect the given structArb`() = runTest {
+    val structArb = Arb.proto.struct()
+    checkAll(
+      propTestConfig,
+      Arb.intRange(0..5).filterNot { it.isEmpty() },
+      Arb.enum<EntityRepeatPolicy>()
+    ) { entityCountRange, entityRepeatPolicy ->
+      val structArb = RememberArb(structArb)
+      val arb =
+        QueryResultArb(
+          entityCountRange = entityCountRange,
+          structArb = structArb,
+          entityRepeatPolicy = entityRepeatPolicy
+        )
+
+      val sample = arb.bind()
+
+      val generatedStructs = structArb.generatedValues.map { it.struct }
+      assertSoftly {
+        withClue("sample.queryResultProto.struct") {
+          sample.queryResultProto.struct shouldBeIn generatedStructs
+        }
+        sample.entityStructById.entries.forEachIndexed { index, (entityId, entityStruct) ->
+          withClue("sample.entityStructById[\"$entityId\"], index=$index") {
+            entityStruct shouldBeIn generatedStructs
+          }
+        }
+      }
+    }
+  }
+
+  @Test
+  fun `QueryResultArb should respect the given entityArb`() = runTest {
+    val structArb = Arb.proto.struct()
+    checkAll(
+      propTestConfig,
+      Arb.intRange(0..5).filterNot { it.isEmpty() },
+      Arb.enum<EntityRepeatPolicy>()
+    ) { entityCountRange, entityRepeatPolicy ->
+      val structArb = RememberArb(structArb)
+      val entityArb = RememberArb(structArb)
+      val arb =
+        QueryResultArb(
+          entityCountRange = entityCountRange,
+          structArb = structArb,
+          entityArb = entityArb,
+          entityRepeatPolicy = entityRepeatPolicy
+        )
+
+      val sample = arb.bind()
+
+      assertSoftly {
+        withClue("sample.queryResultProto.struct") {
+          val generatedStructs = structArb.generatedValues.map { it.struct }
+          sample.queryResultProto.struct shouldBeIn generatedStructs
+        }
+        val generatedEntities = entityArb.generatedValues.map { it.struct }
+        sample.entityStructById.entries.forEachIndexed { index, (entityId, entityStruct) ->
+          withClue("sample.entityStructById[\"$entityId\"], index=$index") {
+            entityStruct shouldBeIn generatedEntities
+          }
+        }
+      }
     }
   }
 
