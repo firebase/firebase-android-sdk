@@ -19,6 +19,7 @@ package com.google.firebase.dataconnect.sqlite
 import android.database.sqlite.SQLiteDatabase
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.sqlite.QueryResultArb.EntityRepeatPolicy.INTER_SAMPLE
+import com.google.firebase.dataconnect.sqlite.QueryResultArb.EntityRepeatPolicy.INTER_SAMPLE_MUTATED
 import com.google.firebase.dataconnect.testutil.CleanupsRule
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.property.arbitrary.distinctPair
@@ -32,6 +33,7 @@ import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import com.google.firebase.dataconnect.util.ImmutableByteArray
+import com.google.protobuf.Struct
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
@@ -48,6 +50,7 @@ import io.kotest.property.arbitrary.byteArray
 import io.kotest.property.arbitrary.distinct
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.map
+import io.kotest.property.arbitrary.of
 import io.kotest.property.arbitrary.orNull
 import io.kotest.property.checkAll
 import io.mockk.CapturingSlot
@@ -371,6 +374,63 @@ class DataConnectCacheDatabaseUnitTest {
   }
 
   @Test
+  fun `insertQueryResult() should separate entities by authUid`() = runTest {
+    dataConnectCacheDatabase.initialize()
+
+    checkAll(
+      propTestConfig,
+      authUidArb().distinctPair(),
+      Arb.int(2..5),
+    ) { (authUid1, authUid2), queryCount ->
+      @OptIn(DelicateKotest::class) val queryIdArb = queryIdArb().distinct()
+      val queryIds = List(queryCount) { queryIdArb.bind() }
+      val queryResults1 = run {
+        val queryResultArb = QueryResultArb(entityCountRange = 1..5)
+        queryIds.map { queryResultArb.bind() }
+      }
+      val queryResults2 = run {
+        val entityIds = queryResults1.flatMap { it.entityStructById.keys }.distinct().sorted()
+        val queryResultArb =
+          QueryResultArb(entityCountRange = 1..5, entityIdArb = Arb.of(entityIds))
+        queryIds.map { queryResultArb.bind() }
+      }
+      // Both authUid1 and authUid2 use the same queryIds and entityIds, but with completely
+      // different entities. The entities from different authUids should be distinct.
+      val queryResultsByAuthUid =
+        listOf(
+          authUid1 to queryResults1,
+          authUid2 to queryResults2,
+        )
+
+      queryResultsByAuthUid.forEach { (authUid, queryResults) ->
+        queryIds.zip(queryResults).forEach { (queryId, queryResult) ->
+          dataConnectCacheDatabase.insertQueryResult(
+            authUid.string,
+            queryId.bytes,
+            queryResult.hydratedStruct,
+            getEntityIdForPath = queryResult::getEntityIdForPath,
+          )
+        }
+      }
+
+      queryResultsByAuthUid.forEachIndexed { authUidIndex, (authUid, queryResults) ->
+        withClue("authUidIndex=$authUidIndex, authUid=$authUid") {
+          queryIds.zip(queryResults).forEachIndexed { queryIdIndex, (queryId, queryResult) ->
+            val structFromDb =
+              dataConnectCacheDatabase.getQueryResult(authUid.string, queryId.bytes)
+            withClue(
+              "queryIdIndex=$queryIdIndex size=${queryIds.size}, " +
+                "queryId=${queryId.bytes.to0xHexString()}"
+            ) {
+              structFromDb shouldBe queryResult.hydratedStruct
+            }
+          }
+        }
+      }
+    }
+  }
+
+  @Test
   fun `insertQueryResult() should merge entities with consistent data`() = runTest {
     dataConnectCacheDatabase.initialize()
 
@@ -402,6 +462,52 @@ class DataConnectCacheDatabaseUnitTest {
       }
     }
   }
+
+  @Test
+  fun `insertQueryResult() should merge entities with different data`() = runTest {
+    dataConnectCacheDatabase.initialize()
+
+    checkAll(
+      propTestConfig,
+      authUidArb(),
+      queryIdArb().distinctPair(),
+    ) { authUid, (queryId1, queryId2) ->
+      val queryResultArb =
+        QueryResultArb(
+          entityCountRange = 1..5,
+          // TODO: Remove the "entityArb" argument, which forces flat entities, by improving
+          // QueryResultArb to avoid entity mutations that break other entities.
+          entityArb = Arb.proto.struct(depth = 1),
+          entityRepeatPolicy = INTER_SAMPLE_MUTATED,
+        )
+      val queryResult1 = queryResultArb.bind()
+      val queryResult2 = queryResultArb.bind()
+
+      dataConnectCacheDatabase.insertQueryResult(
+        authUid.string,
+        queryId1.bytes,
+        queryResult1.hydratedStruct,
+        getEntityIdForPath = queryResult1::getEntityIdForPath,
+      )
+      dataConnectCacheDatabase.insertQueryResult(
+        authUid.string,
+        queryId2.bytes,
+        queryResult2.hydratedStruct,
+        getEntityIdForPath = queryResult2::getEntityIdForPath,
+      )
+
+      withClue("query2") {
+        val structFromDb = dataConnectCacheDatabase.getQueryResult(authUid.string, queryId2.bytes)
+        structFromDb shouldBe queryResult2.hydratedStruct
+      }
+      withClue("query1") {
+        val structFromDb = dataConnectCacheDatabase.getQueryResult(authUid.string, queryId1.bytes)
+        val expectedStructFromDb =
+          queryResult1.hydratedStructWithMutatedEntityValuesFrom(queryResult2)
+        structFromDb shouldBe expectedStructFromDb
+      }
+    }
+  }
 }
 
 @OptIn(ExperimentalKotest::class)
@@ -423,3 +529,29 @@ private data class QueryIdSample(val bytes: ImmutableByteArray) {
 
 private fun queryIdArb(): Arb<QueryIdSample> =
   Arb.byteArray(Arb.int(0..25), Arb.byte()).map { QueryIdSample(ImmutableByteArray.adopt(it)) }
+
+private fun QueryResultArb.Sample.hydratedStructWithMutatedEntityValuesFrom(
+  other: QueryResultArb.Sample
+): Struct = hydratedStructWithMutatedEntityValues(this, other)
+
+private fun hydratedStructWithMutatedEntityValues(
+  sample1: QueryResultArb.Sample,
+  sample2: QueryResultArb.Sample,
+): Struct {
+  val dehydratedEntityStructById: Map<String, Struct> = buildMap {
+    putAll(sample1.entityStructById)
+
+    sample2.entityStructById.entries.forEach { (entityId, struct2) ->
+      val struct1 = get(entityId)
+      val mergedStruct =
+        if (struct1 === null) {
+          struct2
+        } else {
+          struct1.toBuilder().putAllFields(struct2.fieldsMap).build()
+        }
+      put(entityId, mergedStruct)
+    }
+  }
+
+  return rehydrateQueryResult(sample1.queryResultProto, dehydratedEntityStructById)
+}
