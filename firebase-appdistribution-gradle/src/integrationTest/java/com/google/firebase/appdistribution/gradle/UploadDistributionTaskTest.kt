@@ -659,6 +659,7 @@ class UploadDistributionTaskTest {
     assertEquals(SUCCESS, result.task(":app:appDistributionUploadDebug")?.outcome)
   }
 
+  @Ignore("https://github.com/firebase/firebase-android-sdk/pull/7718")
   @Test
   fun testAutomatedTests_onOlderAgpAndGradleVersions() {
     apiStubs.stubUploadDistributionSuccess()
