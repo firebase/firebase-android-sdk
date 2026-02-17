@@ -127,7 +127,7 @@ private constructor(private val sqliteDatabase: SQLiteDatabase, private val logg
       """CREATE TABLE entities (
         id INTEGER PRIMARY KEY,
         user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
-        entity_id STRING NOT NULL,
+        entity_id TEXT NOT NULL,
         data BLOB NOT NULL,
         flags INT NOT NULL,
         debug_info TEXT,
