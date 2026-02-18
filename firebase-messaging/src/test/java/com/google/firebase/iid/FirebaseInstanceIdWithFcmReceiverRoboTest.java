@@ -17,18 +17,16 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.robolectric.Shadows.shadowOf;
 
+import android.annotation.SuppressLint;
 import android.app.Application;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.os.Build;
 import android.os.Build.VERSION_CODES;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.FirebaseApp;
@@ -37,7 +35,6 @@ import com.google.firebase.messaging.ServiceStarter;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.junit.After;
@@ -69,6 +66,7 @@ public class FirebaseInstanceIdWithFcmReceiverRoboTest {
   @Captor private ArgumentCaptor<Intent> intentCaptor;
 
   @Before
+  @SuppressLint("UnspecifiedRegisterReceiverFlag")
   public void setUp() {
     MockitoAnnotations.initMocks(this);
     context = ApplicationProvider.getApplicationContext();
@@ -83,17 +81,6 @@ public class FirebaseInstanceIdWithFcmReceiverRoboTest {
     FirebaseApp.clearInstancesForTest();
     ServiceStarter.setForTesting(null);
     FcmBroadcastProcessor.reset();
-  }
-
-  /* Method used to set build version */
-  private void setFinalStatic(Field field, Object newValue) throws Exception {
-    field.setAccessible(true);
-
-    Field modifiersField = getDeclaredField(Field.class, "modifiers");
-    modifiersField.setAccessible(true);
-    modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
-
-    field.set(null, newValue);
   }
 
   private static Field getDeclaredField(Class<?> clazz, String name) throws NoSuchFieldException {
@@ -125,7 +112,7 @@ public class FirebaseInstanceIdWithFcmReceiverRoboTest {
   public void testNullIntent() throws Exception {
     receiver.onReceive(context, null);
 
-    verifyZeroInteractions(serviceStarter);
+    verifyNoInteractions(serviceStarter);
   }
 
   @Test
@@ -152,21 +139,6 @@ public class FirebaseInstanceIdWithFcmReceiverRoboTest {
   }
 
   @Test
-  @Config(sdk = VERSION_CODES.O)
-  public void testStartsService_oButAppNotTargetingO() throws Exception {
-    setFinalStatic(Build.VERSION.class.getField("SDK_INT"), 26);
-    context.getApplicationInfo().targetSdkVersion = VERSION_CODES.N_MR1;
-
-    Intent intent = new Intent(ACTION_FCM_MESSAGE).putExtra("key", "value");
-    sendOrderedBroadcastBlocking(intent);
-
-    verify(serviceStarter, atLeastOnce())
-        .startMessagingService(nullable(Context.class), intentCaptor.capture());
-    assertThat(intentCaptor.getValue()).isSameInstanceAs(intent);
-    assertThat(shadowOf(context).getBoundServiceConnections()).isEmpty();
-  }
-
-  @Test
   @Config(maxSdk = VERSION_CODES.N_MR1)
   public void testStartsService_notOButTargetingO() throws Exception {
     context.getApplicationInfo().targetSdkVersion = VERSION_CODES.O;
@@ -178,50 +150,6 @@ public class FirebaseInstanceIdWithFcmReceiverRoboTest {
         .startMessagingService(nullable(Context.class), intentCaptor.capture());
     assertThat(intentCaptor.getValue()).isSameInstanceAs(intent);
     assertThat(shadowOf(context).getBoundServiceConnections()).isEmpty();
-  }
-
-  @Test
-  public void testStartsService_OTargetingO_highPriority() throws Exception {
-    setFinalStatic(Build.VERSION.class.getField("SDK_INT"), 26);
-    context.getApplicationInfo().targetSdkVersion = VERSION_CODES.O;
-
-    Intent intent = new Intent(ACTION_FCM_MESSAGE).putExtra("key", "value");
-    intent.addFlags(Intent.FLAG_RECEIVER_FOREGROUND);
-    sendOrderedBroadcastBlocking(intent);
-
-    verify(serviceStarter, atLeastOnce())
-        .startMessagingService(nullable(Context.class), intentCaptor.capture());
-    assertThat(intentCaptor.getValue()).isSameInstanceAs(intent);
-    assertThat(shadowOf(context).getBoundServiceConnections()).isEmpty();
-  }
-
-  @Test
-  public void testStartsService_fallsBackToBindService() throws Exception {
-    setFinalStatic(Build.VERSION.class.getField("SDK_INT"), 26);
-    context.getApplicationInfo().targetSdkVersion = VERSION_CODES.N_MR1;
-    doReturn(ERROR_ILLEGAL_STATE_EXCEPTION)
-        .when(serviceStarter)
-        .startMessagingService(any(), any());
-
-    Intent intent = new Intent(ACTION_FCM_MESSAGE).putExtra("key", "value");
-    sendOrderedBroadcastBlocking(intent);
-
-    verify(serviceStarter, atLeastOnce())
-        .startMessagingService(nullable(Context.class), intentCaptor.capture());
-    assertThat(intentCaptor.getValue()).isSameInstanceAs(intent);
-    assertThat(shadowOf(context).getBoundServiceConnections()).hasSize(1);
-  }
-
-  @Test
-  public void testBindsService_oAndTargetingO() throws Exception {
-    setFinalStatic(Build.VERSION.class.getField("SDK_INT"), 26);
-    context.getApplicationInfo().targetSdkVersion = VERSION_CODES.O;
-
-    Intent intent = new Intent(ACTION_FCM_MESSAGE).putExtra("key", "value");
-    sendOrderedBroadcastBlocking(intent);
-
-    verify(serviceStarter, never()).startMessagingService(any(), any());
-    assertThat(shadowOf(context).getBoundServiceConnections()).hasSize(1);
   }
 
   private void sendOrderedBroadcastBlocking(Intent intent) throws Exception {

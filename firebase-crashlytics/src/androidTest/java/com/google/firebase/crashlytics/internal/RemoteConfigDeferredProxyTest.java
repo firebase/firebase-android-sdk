@@ -14,7 +14,7 @@
 
 package com.google.firebase.crashlytics.internal;
 
-import static org.mockito.ArgumentMatchers.anyObject;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 
@@ -22,6 +22,7 @@ import androidx.annotation.NonNull;
 import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.inject.Deferred;
 import com.google.firebase.remoteconfig.interop.FirebaseRemoteConfigInterop;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -33,9 +34,16 @@ public class RemoteConfigDeferredProxyTest {
 
   @Mock private UserMetadata userMetadata;
 
+  private AutoCloseable mocks;
+
   @Before
   public void setUp() throws Exception {
-    MockitoAnnotations.openMocks(this);
+    mocks = MockitoAnnotations.openMocks(this);
+  }
+
+  @After
+  public void tearDown() throws Exception {
+    mocks.close();
   }
 
   @Test
@@ -50,6 +58,6 @@ public class RemoteConfigDeferredProxyTest {
               }
             });
     proxy.setupListener(userMetadata);
-    verify(interop).registerRolloutsStateSubscriber(eq("firebase"), anyObject());
+    verify(interop).registerRolloutsStateSubscriber(eq("firebase"), any());
   }
 }

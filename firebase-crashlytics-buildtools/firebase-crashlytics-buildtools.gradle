@@ -1,0 +1,148 @@
+/*
+ * Copyright 2024 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+
+plugins {
+  id("java-library")
+  id("com.gradleup.shadow") version "8.3.5"
+  id("maven-publish")
+}
+
+jar {
+  // Add "-thin" postfix here, so the shadow jar below can have the expected jar name
+  archiveClassifier.set('thin')
+
+  manifest {
+    attributes(
+        'Main-Class': 'com.google.firebase.crashlytics.buildtools.Buildtools',
+        'Implementation-Title' : project.name,
+        'Implementation-Version' : project.version
+        )
+  }
+}
+
+// Custom task to copy all dependency's LICENSE, etc files to a local build
+// directory so they can be bundled with the uber jar later.
+tasks.register("extractMetaInfForUberJar", Copy) {
+  dependsOn configurations.runtimeClasspath
+  includeEmptyDirs = false
+  from {
+    configurations.runtimeClasspath.findAll {
+      it.name.endsWith('jar')
+    }.collect {
+      zipTree(it).matching {
+        // These will usually be in the META-INF directory, but are
+        // sometimes at the root.
+        include "LICENSE*"
+        include "DEPENDENCIES*"
+        include "NOTICE*"
+        include "META-INF/LICENSE*"
+        include "META-INF/DEPENDENCIES*"
+        include "META-INF/NOTICE*"
+      }
+    }
+  }
+  into layout.buildDirectory.dir("meta-infs")
+  eachFile { FileCopyDetails metaFile ->
+    // Copy the contents of each META-INF into a new META-INF subdir that
+    // contain's the original jar's name. For example, META-INF/LICENSE.txt
+    // will become META-INF/httpclient-4.5.6/META-INF/LICENSE.txt. This
+    // allows the fatjar to be inspected for dependency license files.
+
+    // (File.separator must be used here because the regex input is a
+    // literal string, so Gradle will not substitute the correct separator
+    // when matching.)
+    def pattern = ~"[^\\${File.separator}]*.jar"
+    def jarName = (metaFile.displayName =~ pattern)[0]
+    // drop the ".jar" extension
+    def metaInfDir = "META-INF/${jarName.substring(0, jarName.length() - 4)}"
+    metaFile.setPath(metaInfDir + "/" + metaFile.path)
+  }
+}
+
+// Relocate the packages for all dependencies to avoid conflicts if the customer
+// is explicitly using a different version of the same dependencies
+tasks.named("shadowJar", ShadowJar) {
+  enableRelocation = true
+  relocationPrefix = "com.google.firebase.crashlytics.buildtools.reloc"
+
+  archiveBaseName.set(artifactId)
+  archiveClassifier.set(null)
+  manifest.from(jar.manifest)
+
+  // skip maven-specific info that is packaged in some dependencies
+  exclude("META-INF/maven/**")
+  from {
+    // Bundle each dependencies' extracted META-INFs
+    extractMetaInfForUberJar.outputs
+  }
+}
+
+task sourcesJar(type: Jar) {
+  from sourceSets.main.allJava
+  archiveClassifier.set('sources')
+}
+
+publishing {
+  publications {
+    shadow(MavenPublication) { publication ->
+      project.shadow.component(publication)
+
+      // artifactId & version values are declared in gradle.properties
+      artifactId = project.artifactId
+      version = project.version
+
+      // Run the publish task with -PpublishBuildtoolsSource=true to publish the source jar.
+      // This is useful when using a debugger. See firebase-crashlytics/README.md for details.
+      if (project.hasProperty('publishBuildtoolsSource') && publishBuildtoolsSource) {
+        artifact sourcesJar
+      }
+
+      pom {
+        licenses {
+          license {
+            name = 'The Apache Software License, Version 2.0'
+            url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+            comments = 'This jar includes bundled dependencies. For ' +
+                'bundled OSS software licenses, see the LICENSES ' +
+                'files in the META-INF subdirs of the jar.'
+          }
+        }
+      }
+    }
+  }
+}
+
+dependencies {
+  implementation("org.apache.httpcomponents:httpclient:4.5.6")
+
+  implementation("commons-cli:commons-cli:1.4")
+  implementation("commons-io:commons-io:2.6")
+
+  implementation("com.google.guava:guava:24.1-jre")
+
+  testImplementation(libs.junit)
+  testImplementation("org.easymock:easymock:5.2.0")
+  testImplementation("org.powermock:powermock-api-easymock:1.6.6")
+  testImplementation("org.powermock:powermock-module-junit4:1.6.6")
+  testImplementation("com.github.tomakehurst:wiremock:1.52")
+}
+
+java {
+  sourceCompatibility = JavaVersion.VERSION_1_8
+  targetCompatibility = JavaVersion.VERSION_1_8
+}

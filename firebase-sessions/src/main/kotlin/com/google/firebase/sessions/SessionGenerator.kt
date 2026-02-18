@@ -16,58 +16,31 @@
 
 package com.google.firebase.sessions
 
-import com.google.errorprone.annotations.CanIgnoreReturnValue
-import com.google.firebase.Firebase
-import com.google.firebase.app
-import java.util.UUID
-
-/**
- * [SessionDetails] is a data class responsible for storing information about the current Session.
- */
-internal data class SessionDetails(
-  val sessionId: String,
-  val firstSessionId: String,
-  val sessionIndex: Int,
-  val sessionStartTimestampUs: Long,
-)
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * The [SessionGenerator] is responsible for generating the Session ID, and keeping the
  * [SessionDetails] up to date with the latest values.
  */
-internal class SessionGenerator(
-  private val timeProvider: TimeProvider,
-  private val uuidGenerator: () -> UUID = UUID::randomUUID
-) {
-  private val firstSessionId = generateSessionId()
-  private var sessionIndex = -1
-
-  /** The current generated session, must not be accessed before calling [generateNewSession]. */
-  lateinit var currentSession: SessionDetails
-    private set
-
-  /** Returns if a session has been generated. */
-  val hasGenerateSession: Boolean
-    get() = ::currentSession.isInitialized
-
-  /** Generates a new session. The first session's sessionId will match firstSessionId. */
-  @CanIgnoreReturnValue
-  fun generateNewSession(): SessionDetails {
-    sessionIndex++
-    currentSession =
-      SessionDetails(
-        sessionId = if (sessionIndex == 0) firstSessionId else generateSessionId(),
-        firstSessionId,
-        sessionIndex,
-        sessionStartTimestampUs = timeProvider.currentTimeUs()
-      )
-    return currentSession
+@Singleton
+internal class SessionGenerator
+@Inject
+constructor(private val timeProvider: TimeProvider, private val uuidGenerator: UuidGenerator) {
+  /**
+   * Generates a new session.
+   *
+   * If a current session is provided, will maintain the first session id and appropriate index.
+   */
+  fun generateNewSession(currentSession: SessionDetails?): SessionDetails {
+    val newSessionId = generateSessionId()
+    return SessionDetails(
+      sessionId = newSessionId,
+      firstSessionId = currentSession?.firstSessionId ?: newSessionId,
+      sessionIndex = currentSession?.sessionIndex?.inc() ?: 0,
+      sessionStartTimestampUs = timeProvider.currentTime().us,
+    )
   }
 
-  private fun generateSessionId() = uuidGenerator().toString().replace("-", "").lowercase()
-
-  internal companion object {
-    val instance: SessionGenerator
-      get() = Firebase.app[SessionGenerator::class.java]
-  }
+  private fun generateSessionId() = uuidGenerator.next().toString().replace("-", "").lowercase()
 }

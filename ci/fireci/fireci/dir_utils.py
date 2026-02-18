@@ -15,6 +15,9 @@
 import contextlib
 import logging
 import os
+import pathlib
+import shutil
+import glob
 
 _logger = logging.getLogger('fireci.dir_utils')
 
@@ -30,3 +33,27 @@ def chdir(directory):
   finally:
     _logger.debug(f'Restoring directory to: {original_dir} ...')
     os.chdir(original_dir)
+
+def rmdir(path: str) -> bool:
+  """Recursively deletes a directory, and returns a boolean indicating if the dir was deleted."""
+  dir = pathlib.Path(path)
+  if not dir.exists():
+    _logger.debug(f"Directory already deleted: {dir}")
+    return False
+
+  _logger.debug(f"Deleting directory: {dir}")
+  shutil.rmtree(dir)
+  return True
+
+def rmglob(pattern: str) -> int:
+  """Deletes all files that match a given pattern, and returns the amount of (root) files deleted"""
+  files = glob.glob(os.path.expanduser(pattern))
+  for file in files:
+    path = pathlib.Path(file)
+    if path.is_dir():
+      rmdir(file)
+    else:
+      _logger.debug(f"Deleting file: {path}")
+      os.remove(path)
+  
+  return len(files)

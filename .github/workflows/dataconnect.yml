@@ -1,0 +1,398 @@
+name: Data Connect Integration Tests
+
+on:
+  workflow_dispatch:
+    inputs:
+      javaVersion:
+      androidEmulatorApiLevel:
+      nodeJsVersion:
+      firebaseToolsVersion:
+      gradleInfoLog:
+        type: boolean
+      pythonVersion:
+  pull_request:
+    paths:
+      - .github/workflows/dataconnect.yml
+      - gradlew
+      - build.gradle.kts
+      - gradle.properties
+      - gradlew.bat
+      - settings.gradle.kts
+      - subprojects.cfg
+      - 'gradle/**'
+      - 'plugins/**'
+      - '!plugins/**/*.md'
+      - 'firebase-dataconnect/**'
+      - '!firebase-dataconnect/demo/**'
+      - '!firebase-dataconnect/scripts/**'
+      - '!firebase-dataconnect/**/*.md'
+      - '!firebase-dataconnect/**/*.txt'
+  schedule:
+    - cron: '0 11 * * *' # Run nightly at 11am UTC (3am Pacific, 6am Eastern)
+
+env:
+  FDC_JAVA_VERSION: ${{ inputs.javaVersion || '17' }}
+  FDC_ANDROID_EMULATOR_API_LEVEL: ${{ inputs.androidEmulatorApiLevel || '34' }}
+  FDC_NODEJS_VERSION: ${{ inputs.nodeJsVersion || '20' }}
+  FDC_FIREBASE_TOOLS_VERSION: ${{ inputs.firebaseToolsVersion || '15.6.0' }}
+  FDC_FIREBASE_TOOLS_DIR: /tmp/firebase-tools
+  FDC_FIREBASE_COMMAND: /tmp/firebase-tools/node_modules/.bin/firebase
+  FDC_PYTHON_VERSION: ${{ inputs.pythonVersion || '3.13' }}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  integration-test:
+    continue-on-error: false
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_PASSWORD: password
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          show-progress: false
+
+      - uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12 # v4.7.0
+        with:
+          java-version: ${{ env.FDC_JAVA_VERSION }}
+          distribution: temurin
+
+      - uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
+        with:
+          node-version: ${{ env.FDC_NODEJS_VERSION }}
+
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+        with:
+          python-version: ${{ env.FDC_PYTHON_VERSION }}
+
+      - run: pip install -r firebase-dataconnect/ci/requirements.txt
+
+      - name: Install Firebase Tools ("firebase" command-line tool)
+        run: |
+          set -euo pipefail
+          set -v
+          mkdir -p ${{ env.FDC_FIREBASE_TOOLS_DIR }}
+          cd ${{ env.FDC_FIREBASE_TOOLS_DIR }}
+          echo '{}' > package.json
+          npm install --fund=false --audit=false --save --save-exact firebase-tools@${{ env.FDC_FIREBASE_TOOLS_VERSION }}
+
+      - name: Restore Gradle Cache
+        uses: actions/cache/restore@d4323d4df104b026a6aa633fdb11d772146be0bf # 4.2.2
+        if: github.event_name != 'schedule'
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-cache-jqnvfzw6w7-${{ github.run_id }}
+          restore-keys: |
+            gradle-cache-jqnvfzw6w7-
+
+      - name: Print Command-Line Tool Versions
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+
+          function run_cmd {
+            echo "==============================================================================="
+            echo "Running Command: $*"
+            ("$@" 2>&1) || echo "WARNING: command failed with non-zero exit code $?: $*"
+          }
+
+          run_cmd uname -a
+          run_cmd which java
+          run_cmd java -version
+          run_cmd which javac
+          run_cmd javac -version
+          run_cmd which node
+          run_cmd node --version
+          run_cmd ${{ env.FDC_FIREBASE_COMMAND }} --version
+          run_cmd ./gradlew --version
+
+      - name: Gradle assembleDebugAndroidTest
+        run: |
+          set -euo pipefail
+          set -v
+
+          # Speed up build times and also avoid configuring firebase-crashlytics-ndk
+          # which is finicky integrating with the Android NDK.
+          echo >> gradle.properties
+          echo "org.gradle.configureondemand=true" >> gradle.properties
+
+          ./gradlew \
+            --profile \
+            --warning-mode all \
+            ${{ (inputs.gradleInfoLog && '--info') || '' }} \
+            :firebase-dataconnect:assembleDebugAndroidTest
+
+      - name: Save Gradle Cache
+        uses: actions/cache/save@d4323d4df104b026a6aa633fdb11d772146be0bf # 4.2.2
+        if: github.event_name == 'schedule'
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-cache-jqnvfzw6w7-${{ github.run_id }}
+
+      - name: Enable KVM Group Permissions for Android Emulator
+        run: |
+          set -euo pipefail
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Restore AVD Cache
+        uses: actions/cache/restore@d4323d4df104b026a6aa633fdb11d772146be0bf # 4.2.2
+        if: github.event_name != 'schedule'
+        id: restore-avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-cache-zhdsn586je-api${{ env.FDC_ANDROID_EMULATOR_API_LEVEL }}-${{ github.run_id }}
+          restore-keys: |
+            avd-cache-zhdsn586je-api${{ env.FDC_ANDROID_EMULATOR_API_LEVEL }}-
+
+      - name: Create AVD
+        if: github.event_name == 'schedule' || steps.restore-avd-cache.outputs.cache-matched-key == ''
+        uses: reactivecircus/android-emulator-runner@62dbb605bba737720e10b196cb4220d374026a6d #v2.33.0
+        with:
+          api-level: ${{ env.FDC_ANDROID_EMULATOR_API_LEVEL }}
+          arch: x86_64
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: 'echo "Generated AVD snapshot for caching; event_name=${{ github.event_name }}, cache-matched-key=${{ steps.restore-avd-cache.outputs.cache-matched-key }}"'
+
+      - name: Save AVD Cache
+        uses: actions/cache/save@d4323d4df104b026a6aa633fdb11d772146be0bf # 4.2.2
+        if: github.event_name == 'schedule'
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-cache-zhdsn586je-api${{ env.FDC_ANDROID_EMULATOR_API_LEVEL }}-${{ github.run_id }}
+
+      - name: Start Firebase Emulators
+        run: |
+          set -xveuo pipefail
+
+          # Use the same dataconnect binary as was used for code generation in gradle assemble
+          DATACONNECT_EMULATOR_BINARY_PATH="$(find "$PWD"/firebase-dataconnect/connectors/build/intermediates/dataconnect/debug/executable -type f)"
+          if [[ -z $DATACONNECT_EMULATOR_BINARY_PATH ]] ; then
+            echo "INTERNAL ERROR v7kg2dfhbc: unable to find data connect binary" >&2
+            exit 1
+          fi
+          export DATACONNECT_EMULATOR_BINARY_PATH
+
+          export FIREBASE_DATACONNECT_POSTGRESQL_STRING='postgresql://postgres:password@127.0.0.1:5432?sslmode=disable'
+          cd firebase-dataconnect/emulator
+          ${{ env.FDC_FIREBASE_COMMAND }} emulators:start --only=auth,dataconnect >firebase.emulators.log 2>&1 &
+
+      - name: Start Logcat Capture
+        continue-on-error: true
+        run: |
+          set -xveuo pipefail
+          "$ANDROID_HOME/platform-tools/adb" logcat >logcat.log 2>&1 &
+
+      - name: Gradle connectedCheck
+        id: connectedCheck
+        uses: reactivecircus/android-emulator-runner@62dbb605bba737720e10b196cb4220d374026a6d #v2.33.0
+        # Allow this GitHub Actions "job" to continue even if the tests fail so that logs from a
+        # failed test run get uploaded as "artifacts" and are available to investigate failed runs.
+        # A later step in this "job" will fail the job if this step fails
+        continue-on-error: true
+        with:
+          api-level: ${{ env.FDC_ANDROID_EMULATOR_API_LEVEL }}
+          arch: x86_64
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: |
+            set -eux && ./gradlew --warning-mode all ${{ (inputs.gradleInfoLog && '--info') || '' }} :firebase-dataconnect:connectedCheck :firebase-dataconnect:connectors:connectedCheck
+
+      - name: Upload Log Files
+        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        with:
+          name: integration_test_logs
+          path: "**/*.log"
+          if-no-files-found: warn
+          compression-level: 9
+
+      - name: Upload Gradle Build Reports
+        uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
+        with:
+          name: integration_test_gradle_build_reports
+          path: firebase-dataconnect/**/build/reports/
+          if-no-files-found: warn
+          compression-level: 9
+
+      - name: Verify "Gradle connectedCheck" Step Was Successful
+        if: steps.connectedCheck.outcome != 'success'
+        run: |
+          set -euo pipefail
+
+          if [[ ! -e logcat.log ]] ; then
+            echo "WARNING dsdta43sxk: logcat log file not found; skipping scanning for test failures" >&2
+          else
+            echo "Scanning logcat output for failure details"
+            python firebase-dataconnect/ci/logcat_error_report.py --logcat-file=logcat.log
+            echo
+          fi
+
+          echo 'Failing because the outcome of the "Gradle connectedCheck" step ("${{ steps.connectedCheck.outcome }}") was not successful'
+          exit 1
+
+  # Check this yml file with "actionlint": https://github.com/rhysd/actionlint
+  # To run actionlint yourself, run `brew install actionlint` followed by
+  # `actionlint .github/workflows/dataconnect.yml`
+  actionlint-dataconnect-yml:
+    continue-on-error: false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          show-progress: false
+          sparse-checkout: '.github/'
+      - uses: docker://rhysd/actionlint:1.7.7
+        with:
+          args: -color /github/workspace/.github/workflows/dataconnect.yml
+
+  shellcheck:
+    continue-on-error: false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          show-progress: false
+          sparse-checkout: 'firebase-dataconnect/'
+      - name: shellcheck
+        run: find . -name '*.sh' -print0 | xargs --verbose -0 shellcheck --norc --enable=all --shell=bash
+
+  python-ci-unit-tests:
+    continue-on-error: false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          show-progress: false
+          sparse-checkout: 'firebase-dataconnect/ci/'
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+        with:
+          python-version: ${{ env.FDC_PYTHON_VERSION }}
+      - run: pip install -r firebase-dataconnect/ci/requirements.txt
+      - name: pytest
+        working-directory: firebase-dataconnect/ci
+        run: pytest --verbose --full-trace --color=no --strict-config
+
+  python-ci-lint:
+    continue-on-error: false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          show-progress: false
+          sparse-checkout: 'firebase-dataconnect/ci/'
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+        with:
+          python-version: ${{ env.FDC_PYTHON_VERSION }}
+      - run: pip install -r firebase-dataconnect/ci/requirements.txt
+      - name: ruff check
+        working-directory: firebase-dataconnect/ci
+        run: ruff check --diff --verbose --no-cache --output-format=github --exit-non-zero-on-fix
+
+  python-ci-format:
+    continue-on-error: false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          show-progress: false
+          sparse-checkout: 'firebase-dataconnect/ci/'
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+        with:
+          python-version: ${{ env.FDC_PYTHON_VERSION }}
+      - run: pip install -r firebase-dataconnect/ci/requirements.txt
+      - name: ruff format
+        working-directory: firebase-dataconnect/ci
+        run: ruff format --diff --verbose --no-cache
+
+  python-ci-type-check:
+    continue-on-error: false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          show-progress: false
+          sparse-checkout: 'firebase-dataconnect/ci/'
+      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+        with:
+          python-version: ${{ env.FDC_PYTHON_VERSION }}
+      - run: pip install -r firebase-dataconnect/ci/requirements.txt
+      - name: pyright
+        working-directory: firebase-dataconnect/ci
+        run: pyright --warnings --stats
+
+  # The "send-notifications" job adds a comment to GitHub Issue
+  # https://github.com/firebase/firebase-android-sdk/issues/6857 with the results of the scheduled
+  # nightly runs. Interested parties can then subscribe to that issue to be aprised of the outcome
+  # of the nightly runs.
+  #
+  # When testing the comment-adding logic itself, you can add the line
+  #   trksmnkncd_notification_issue=6863
+  # into the PR's description to instead post a comment to issue #6863, an issue specifically
+  # created for testing, avoiding spamming the main issue to which others are subscribed.
+  send-notifications:
+    needs:
+      - 'integration-test'
+      - 'actionlint-dataconnect-yml'
+      - 'python-ci-unit-tests'
+      - 'python-ci-lint'
+      - 'python-ci-format'
+      - 'python-ci-type-check'
+    if: always()
+    permissions:
+      issues: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          show-progress: false
+          sparse-checkout: |
+            firebase-dataconnect/ci/
+            .github/
+
+      - name: gh auth login
+        run: echo '${{ secrets.GITHUB_TOKEN }}' | gh auth login --with-token
+
+      - name: Create Job Results File
+        run: |
+          set -xveuo pipefail
+          cat >'${{ runner.temp }}/job_results.txt' <<EOF
+          integration-test:${{ needs.integration-test.result }}
+          actionlint-dataconnect-yml:${{ needs.actionlint-dataconnect-yml.result }}
+          python-ci-unit-tests:${{ needs.python-ci-unit-tests.result }}
+          python-ci-lint:${{ needs.python-ci-lint.result }}
+          python-ci-format:${{ needs.python-ci-format.result }}
+          python-ci-type-check:${{ needs.python-ci-type-check.result }}
+          EOF
+
+      - uses: ./.github/actions/dataconnect-send-notifications
+        with:
+          python-version: ${{ env.FDC_PYTHON_VERSION }}
+          github-issue-for-scheduled-runs: "6857"
+          job-results-file: ${{ runner.temp }}/job_results.txt

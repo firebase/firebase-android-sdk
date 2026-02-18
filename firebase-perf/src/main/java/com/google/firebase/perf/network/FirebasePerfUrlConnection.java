@@ -58,6 +58,9 @@ public class FirebasePerfUrlConnection {
    */
   static InputStream openStream(URLWrapper wrapper, TransportManager transportManager, Timer timer)
       throws IOException {
+    if (!TransportManager.getInstance().isInitialized()) {
+      return wrapper.openConnection().getInputStream();
+    }
     timer.reset();
     long startTime = timer.getMicros();
     NetworkRequestMetricBuilder builder = NetworkRequestMetricBuilder.builder(transportManager);

@@ -14,47 +14,48 @@
  * limitations under the License.
  */
 
-plugins {
-    id("firebase-library")
-}
+plugins { id("firebase-library") }
 
 firebaseLibrary {
-    publishSources = true
-    publishJavadoc = false
-    publishReleaseNotes = false
+  publishJavadoc = false
+  releaseNotes { enabled.set(false) }
 }
 
 android {
-    val targetSdkVersion: Int by rootProject
+  val compileSdkVersion: Int by rootProject
+  val targetSdkVersion: Int by rootProject
+  val minSdkVersion: Int by rootProject
 
-    namespace = "com.google.firebase.remoteconfiginterop"
-    compileSdk = 33
+  namespace = "com.google.firebase.remoteconfiginterop"
+  compileSdk = compileSdkVersion
 
-    defaultConfig {
-        minSdk = 16
-        targetSdk = targetSdkVersion
+  defaultConfig {
+    minSdk = minSdkVersion
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-    }
+    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+  }
 
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
-    }
+  compileOptions {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+  }
+
+  testOptions { targetSdk = targetSdkVersion }
+  lint { targetSdk = targetSdkVersion }
 }
 
 dependencies {
-    implementation("com.google.firebase:firebase-encoders-json:18.0.1")
-    implementation("com.google.firebase:firebase-encoders:17.0.0")
+  api("com.google.firebase:firebase-encoders-json:18.0.1")
+  api("com.google.firebase:firebase-encoders:17.0.0")
 
-    compileOnly("com.google.auto.value:auto-value-annotations:1.10.1")
+  compileOnly(libs.autovalue.annotations)
 
-    annotationProcessor("com.google.auto.value:auto-value:1.10.1")
-    annotationProcessor(project(":encoders:firebase-encoders-processor"))
+  annotationProcessor(libs.autovalue)
+  annotationProcessor(project(":encoders:firebase-encoders-processor"))
 
-    testImplementation(libs.junit)
-    testImplementation(libs.truth)
-    testImplementation(libs.robolectric)
+  testImplementation(libs.junit)
+  testImplementation(libs.truth)
+  testImplementation(libs.robolectric)
 
-    androidTestImplementation(libs.androidx.test.junit)
+  androidTestImplementation(libs.androidx.test.junit)
 }

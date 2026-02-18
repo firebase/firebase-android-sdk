@@ -108,7 +108,7 @@ public class UploadTask extends StorageTask<UploadTask.TaskSnapshot> {
             storage.getApp().getApplicationContext(),
             mAuthProvider,
             mAppCheckProvider,
-            storage.getMaxDownloadRetryTimeMillis());
+            storage.getMaxUploadRetryTimeMillis());
   }
 
   UploadTask(

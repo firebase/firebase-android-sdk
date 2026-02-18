@@ -19,12 +19,14 @@ plugins {
 
 firebaseLibrary {
     publishJavadoc = false
-    publishReleaseNotes = false
+    releaseNotes { 
+        enabled.set(false)
+    }
 }
 
 android {
     namespace "com.google.firebase.installations.interop"
-    compileSdkVersion project.targetSdkVersion
+    compileSdkVersion project.compileSdkVersion
     defaultConfig {
         minSdkVersion project.minSdkVersion
         targetSdkVersion project.targetSdkVersion
@@ -35,7 +37,7 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
      }
-     testOptions {
+    testOptions {
         unitTests {
             includeAndroidResources = true
         }
@@ -43,9 +45,11 @@ android {
 }
 
 dependencies {
-    implementation 'com.google.android.gms:play-services-tasks:18.0.1'
-    implementation 'com.google.firebase:firebase-annotations:16.2.0'
+    api libs.firebase.annotations
 
-    compileOnly "com.google.auto.value:auto-value-annotations:1.6.5"
-    annotationProcessor "com.google.auto.value:auto-value:1.6.2"
+    implementation libs.playservices.tasks
+
+    compileOnly libs.autovalue.annotations
+
+    annotationProcessor libs.autovalue
 }

@@ -98,7 +98,7 @@ class FunctionsTests : BaseTestCase() {
 class LibraryVersionTest : BaseTestCase() {
   @Test
   fun `library version should be registered with runtime`() {
-    val publisher = Firebase.app.get(UserAgentPublisher::class.java)
+    Firebase.app.get(UserAgentPublisher::class.java)
   }
 }
 

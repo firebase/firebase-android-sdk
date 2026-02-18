@@ -18,7 +18,7 @@ LOCAL_C_INCLUDES := \
 
 LOCAL_EXPORT_C_INCLUDES := $(LOCAL_PATH)/include
 LOCAL_CPPFLAGS := \
-    -std=c++17 \
+    -std=c++20 \
     -Wall \
     -Os \
     -s \
@@ -38,7 +38,7 @@ LOCAL_CPPFLAGS := \
     -fsingle-precision-constant \
     -ffast-math \
 
-LOCAL_LDFLAGS := -flto -Wl,--gc-sections -Wl,--exclude-libs,ALL -Wl,-z,norelro
+LOCAL_LDFLAGS := -flto -Wl,--gc-sections -Wl,--exclude-libs,ALL -Wl,-z,norelro -Wl,-z,max-page-size=16384
 LOCAL_LDLIBS := -llog -lz -ldl
 
 # Include all .cpp files in /src

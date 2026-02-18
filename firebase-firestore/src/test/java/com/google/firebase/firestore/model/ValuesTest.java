@@ -26,6 +26,7 @@ import static org.junit.Assert.assertEquals;
 
 import com.google.common.testing.EqualsTester;
 import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.testutil.ComparatorTester;
 import com.google.firebase.firestore.testutil.TestUtil;
@@ -34,6 +35,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.TimeZone;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -100,6 +102,8 @@ public class ValuesTest {
         .addEqualityGroup(wrap(Arrays.asList("foo", "bar")), wrap(Arrays.asList("foo", "bar")))
         .addEqualityGroup(wrap(Arrays.asList("foo", "bar", "baz")))
         .addEqualityGroup(wrap(Arrays.asList("foo")))
+        .addEqualityGroup(wrap(FieldValue.vector(new double[] {})))
+        .addEqualityGroup(wrap(FieldValue.vector(new double[] {1, 2.3, -4})))
         .addEqualityGroup(wrap(map("bar", 1, "foo", 2)), wrap(map("foo", 2, "bar", 1)))
         .addEqualityGroup(wrap(map("bar", 2, "foo", 1)))
         .addEqualityGroup(wrap(map("bar", 1)))
@@ -196,6 +200,12 @@ public class ValuesTest {
         .addEqualityGroup(wrap(Arrays.asList("foo", 2)))
         .addEqualityGroup(wrap(Arrays.asList("foo", "0")))
 
+        // vector
+        .addEqualityGroup(wrap(FieldValue.vector(new double[] {})))
+        .addEqualityGroup(wrap(FieldValue.vector(new double[] {100})))
+        .addEqualityGroup(wrap(FieldValue.vector(new double[] {1, 2, 3})))
+        .addEqualityGroup(wrap(FieldValue.vector(new double[] {1, 3, 2})))
+
         // objects
         .addEqualityGroup(wrap(map("bar", 0)))
         .addEqualityGroup(wrap(map("bar", 0, "foo", 1)))
@@ -209,47 +219,58 @@ public class ValuesTest {
   public void testLowerBound() {
     new ComparatorTester()
         // null first
-        .addEqualityGroup(wrap(getLowerBound(Value.ValueTypeCase.NULL_VALUE)), wrap((Object) null))
+        .addEqualityGroup(wrap(getLowerBound(TestUtil.wrap((Object) null))), wrap((Object) null))
 
         // booleans
-        .addEqualityGroup(wrap(false), wrap(getLowerBound(Value.ValueTypeCase.BOOLEAN_VALUE)))
+        .addEqualityGroup(wrap(false), wrap(getLowerBound(TestUtil.wrap(true))))
         .addEqualityGroup(wrap(true))
 
         // numbers
-        .addEqualityGroup(wrap(getLowerBound(Value.ValueTypeCase.DOUBLE_VALUE)), wrap(Double.NaN))
+        .addEqualityGroup(wrap(getLowerBound(TestUtil.wrap(1.0))), wrap(Double.NaN))
         .addEqualityGroup(wrap(Double.NEGATIVE_INFINITY))
         .addEqualityGroup(wrap(Long.MIN_VALUE))
 
         // dates
-        .addEqualityGroup(wrap(getLowerBound(Value.ValueTypeCase.TIMESTAMP_VALUE)))
+        .addEqualityGroup(wrap(getLowerBound(TestUtil.wrap(date1))))
         .addEqualityGroup(wrap(date1))
 
         // strings
-        .addEqualityGroup(wrap(getLowerBound(Value.ValueTypeCase.STRING_VALUE)), wrap(""))
+        .addEqualityGroup(wrap(getLowerBound(TestUtil.wrap("foo"))), wrap(""))
         .addEqualityGroup(wrap("\000"))
 
         // blobs
-        .addEqualityGroup(wrap(getLowerBound(Value.ValueTypeCase.BYTES_VALUE)), wrap(blob()))
+        .addEqualityGroup(wrap(getLowerBound(TestUtil.wrap(blob(1, 2, 3)))), wrap(blob()))
         .addEqualityGroup(wrap(blob(0)))
 
         // resource names
         .addEqualityGroup(
-            wrap(getLowerBound(Value.ValueTypeCase.REFERENCE_VALUE)),
+            wrap(getLowerBound(wrapRef(dbId("foo", "bar"), key("x/y")))),
             wrap(wrapRef(dbId("", ""), key(""))))
         .addEqualityGroup(wrap(wrapRef(dbId("", ""), key("a/a"))))
 
         // geo points
         .addEqualityGroup(
-            wrap(getLowerBound(Value.ValueTypeCase.GEO_POINT_VALUE)), wrap(new GeoPoint(-90, -180)))
+            wrap(getLowerBound(TestUtil.wrap(new GeoPoint(-90, 0)))), wrap(new GeoPoint(-90, -180)))
         .addEqualityGroup(wrap(new GeoPoint(-90, 0)))
 
         // arrays
         .addEqualityGroup(
-            wrap(getLowerBound(Value.ValueTypeCase.ARRAY_VALUE)), wrap(Collections.emptyList()))
+            wrap(getLowerBound(TestUtil.wrap(Collections.singletonList(false)))),
+            wrap(Collections.emptyList()))
         .addEqualityGroup(wrap(Collections.singletonList(false)))
 
+        // vectors
+        .addEqualityGroup(
+            wrap(
+                getLowerBound(
+                    TestUtil.wrap(
+                        map("__type__", "__vector__", "value", Collections.singletonList(1.0))))),
+            wrap(map("__type__", "__vector__", "value", new LinkedList<Double>())))
+        .addEqualityGroup(
+            wrap(map("__type__", "__vector__", "value", Collections.singletonList(1.0))))
+
         // objects
-        .addEqualityGroup(wrap(getLowerBound(Value.ValueTypeCase.MAP_VALUE)), wrap(map()))
+        .addEqualityGroup(wrap(getLowerBound(TestUtil.wrap(map("foo", "bar")))), wrap(map()))
         .testCompare();
   }
 
@@ -258,43 +279,53 @@ public class ValuesTest {
     new ComparatorTester()
         // null first
         .addEqualityGroup(wrap((Object) null))
-        .addEqualityGroup(wrap(getUpperBound(Value.ValueTypeCase.NULL_VALUE)))
+        .addEqualityGroup(wrap(getUpperBound(TestUtil.wrap((Object) null))))
 
         // booleans
         .addEqualityGroup(wrap(true))
-        .addEqualityGroup(wrap(getUpperBound(Value.ValueTypeCase.BOOLEAN_VALUE)))
+        .addEqualityGroup(wrap(getUpperBound(TestUtil.wrap(false))))
 
         // numbers
         .addEqualityGroup(wrap(Long.MAX_VALUE))
         .addEqualityGroup(wrap(Double.POSITIVE_INFINITY))
-        .addEqualityGroup(wrap(getUpperBound(Value.ValueTypeCase.DOUBLE_VALUE)))
+        .addEqualityGroup(wrap(getUpperBound(TestUtil.wrap(1.0))))
 
         // dates
         .addEqualityGroup(wrap(date1))
-        .addEqualityGroup(wrap(getUpperBound(Value.ValueTypeCase.TIMESTAMP_VALUE)))
+        .addEqualityGroup(wrap(getUpperBound(TestUtil.wrap(date1))))
 
         // strings
         .addEqualityGroup(wrap("\000"))
-        .addEqualityGroup(wrap(getUpperBound(Value.ValueTypeCase.STRING_VALUE)))
+        .addEqualityGroup(wrap(getUpperBound(TestUtil.wrap("\000"))))
 
         // blobs
         .addEqualityGroup(wrap(blob(255)))
-        .addEqualityGroup(wrap(getUpperBound(Value.ValueTypeCase.BYTES_VALUE)))
+        .addEqualityGroup(wrap(getUpperBound(TestUtil.wrap(blob(255)))))
 
         // resource names
         .addEqualityGroup(wrap(wrapRef(dbId("", ""), key("a/a"))))
-        .addEqualityGroup(wrap(getUpperBound(Value.ValueTypeCase.REFERENCE_VALUE)))
+        .addEqualityGroup(wrap(getUpperBound(wrapRef(dbId("", ""), key("a/a")))))
 
         // geo points
         .addEqualityGroup(wrap(new GeoPoint(90, 180)))
-        .addEqualityGroup(wrap(getUpperBound(Value.ValueTypeCase.GEO_POINT_VALUE)))
+        .addEqualityGroup(wrap(getUpperBound(TestUtil.wrap(new GeoPoint(90, 180)))))
 
         // arrays
         .addEqualityGroup(wrap(Collections.singletonList(false)))
-        .addEqualityGroup(wrap(getUpperBound(Value.ValueTypeCase.ARRAY_VALUE)))
+        .addEqualityGroup(wrap(getUpperBound(TestUtil.wrap(Collections.singletonList(false)))))
+
+        // vectors
+        .addEqualityGroup(
+            wrap(map("__type__", "__vector__", "value", Collections.singletonList(1.0))))
+        .addEqualityGroup(
+            wrap(
+                getUpperBound(
+                    TestUtil.wrap(
+                        map("__type__", "__vector__", "value", Collections.singletonList(1.0))))))
 
         // objects
         .addEqualityGroup(wrap(map("a", "b")))
+        .addEqualityGroup(wrap(getUpperBound(TestUtil.wrap(map("a", "b")))))
         .testCompare();
   }
 
@@ -337,7 +368,7 @@ public class ValuesTest {
 
     @Override
     public boolean equals(Object o) {
-      return o instanceof EqualsWrapper && Values.equals(proto, ((EqualsWrapper) o).proto);
+      return o instanceof EqualsWrapper && proto.equals(((EqualsWrapper) o).proto);
     }
 
     @Override

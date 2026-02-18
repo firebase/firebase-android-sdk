@@ -14,6 +14,7 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
+import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
@@ -21,17 +22,14 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
+import org.junit.Test;
 
 public class ExecutorUtilsTest extends CrashlyticsTestCase {
-
-  @Override
-  protected void setUp() throws Exception {
-    super.setUp();
-  }
 
   private static final String THREAD_FACTORY_NAME = "TestThreadFactory";
   private static final String FIRST_THREAD_NAME = THREAD_FACTORY_NAME + "1";
 
+  @Test
   public void testBuildSingleThreadExecutorService() throws Exception {
     final ExecutorService service =
         ExecutorUtils.buildSingleThreadExecutorService(THREAD_FACTORY_NAME);
@@ -39,6 +37,7 @@ public class ExecutorUtilsTest extends CrashlyticsTestCase {
     assertEquals(FIRST_THREAD_NAME, future.get());
   }
 
+  @Test
   public void testBuildSingleThreadScheduledExecutorService() throws Exception {
     final ExecutorService service =
         ExecutorUtils.buildSingleThreadScheduledExecutorService(THREAD_FACTORY_NAME);
@@ -46,10 +45,12 @@ public class ExecutorUtilsTest extends CrashlyticsTestCase {
     assertEquals(FIRST_THREAD_NAME, future.get());
   }
 
+  @Test
   public void testGetNamedThreadFactory() throws Exception {
     verifyGetNamedThreadFactory(THREAD_FACTORY_NAME);
   }
 
+  @Test
   public void testGetNamedThreadFactory_nullName() throws Exception {
     verifyGetNamedThreadFactory(null);
   }

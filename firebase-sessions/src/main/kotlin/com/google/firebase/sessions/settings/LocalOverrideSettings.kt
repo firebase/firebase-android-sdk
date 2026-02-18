@@ -19,20 +19,19 @@ package com.google.firebase.sessions.settings
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Bundle
+import javax.inject.Inject
+import javax.inject.Singleton
 import kotlin.time.Duration
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
-internal class LocalOverrideSettings(context: Context) : SettingsProvider {
-  @Suppress("DEPRECATION") // TODO(mrober): Use ApplicationInfoFlags when target sdk set to 33
+@Singleton
+internal class LocalOverrideSettings @Inject constructor(appContext: Context) : SettingsProvider {
   private val metadata =
-    context.packageManager
-      .getApplicationInfo(
-        context.packageName,
-        PackageManager.GET_META_DATA,
-      )
+    appContext.packageManager
+      .getApplicationInfo(appContext.packageName, PackageManager.GET_META_DATA)
       .metaData
-      ?: Bundle.EMPTY // Default to an empty bundle, meaning no cached values.
+      ?: Bundle.EMPTY // Default to an empty bundle
 
   override val sessionEnabled: Boolean?
     get() =

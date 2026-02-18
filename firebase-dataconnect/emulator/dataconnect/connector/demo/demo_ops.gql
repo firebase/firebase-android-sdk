@@ -1,0 +1,1805 @@
+# Copyright 2024 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+mutation InsertFoo($id: String!, $bar: String)
+    @auth(level: PUBLIC) {
+  key: foo_insert(data: {id: $id, bar: $bar})
+}
+
+mutation UpsertFoo($id: String!, $bar: String)
+    @auth(level: PUBLIC) {
+  key: foo_upsert(data: {id: $id, bar: $bar})
+}
+
+mutation DeleteFoo($id: String!)
+    @auth(level: PUBLIC) {
+  key: foo_delete(id: $id)
+}
+
+mutation DeleteFoosByBar($bar: String!)
+    @auth(level: PUBLIC) {
+  count: foo_deleteMany(where: {bar: {eq: $bar}})
+}
+
+mutation UpdateFoo($id: String!, $newBar: String)
+    @auth(level: PUBLIC) {
+  key: foo_update(id: $id, data: {bar: $newBar})
+}
+
+mutation UpdateFoosByBar($oldBar: String, $newBar: String)
+    @auth(level: PUBLIC) {
+  count: foo_updateMany(where: {bar: {eq: $oldBar}}, data: {bar: $newBar})
+}
+
+query GetFooById($id: String!)
+    @auth(level: PUBLIC) {
+  foo(id: $id) {
+    bar
+  }
+}
+
+query GetFoosByBar($bar: String)
+    @auth(level: PUBLIC) {
+  foos(where: {bar: {eq: $bar}}) {
+    id
+  }
+}
+
+# This is an example mutation that has no variables, for testing purposes.
+mutation UpsertHardcodedFoo
+    @auth(level: PUBLIC) {
+  key: foo_upsert(data: {id: "18e61f0a-8abc-4b18-9c4c-28c2f4e82c8f", bar: "BAR"})
+}
+
+# This is an example query that has no variables, for testing purposes.
+query GetHardcodedFoo
+    @auth(level: PUBLIC) {
+  foo(id: "18e61f0a-8abc-4b18-9c4c-28c2f4e82c8f") {
+    bar
+  }
+}
+
+# This is an example mutation that has an empty selection set (Googlers see b/448629126).
+mutation UpsertFooEmptySelectionSet($id: String!, $bar: String) @auth(level: PUBLIC) {
+  key: foo_upsert(data: {id: $id, bar: $bar}) @redact
+}
+
+# This is an example query that has an empty selection set (Googlers see b/448629126).
+query GetFooByIdEmptySelectionSet($id: String!) @auth(level: PUBLIC) {
+  foo(id: $id) @redact { bar }
+}
+
+mutation InsertStringVariants(
+  $nonNullWithNonEmptyValue: String!,
+  $nonNullWithEmptyValue: String!,
+  $nullableWithNullValue: String,
+  $nullableWithNonNullValue: String,
+  $nullableWithEmptyValue: String,
+) @auth(level: PUBLIC) {
+  key: stringVariants_insert(data: {
+    nonNullWithNonEmptyValue: $nonNullWithNonEmptyValue,
+    nonNullWithEmptyValue: $nonNullWithEmptyValue,
+    nullableWithNullValue: $nullableWithNullValue,
+    nullableWithNonNullValue: $nullableWithNonNullValue,
+    nullableWithEmptyValue: $nullableWithEmptyValue,
+  })
+}
+
+mutation UpdateStringVariantsByKey(
+  $key: StringVariants_Key!,
+  $nonNullWithNonEmptyValue: String,
+  $nonNullWithEmptyValue: String,
+  $nullableWithNullValue: String,
+  $nullableWithNonNullValue: String,
+  $nullableWithEmptyValue: String,
+) @auth(level: PUBLIC) {
+  stringVariants_update(key: $key, data: {
+    nonNullWithNonEmptyValue: $nonNullWithNonEmptyValue,
+    nonNullWithEmptyValue: $nonNullWithEmptyValue,
+    nullableWithNullValue: $nullableWithNullValue,
+    nullableWithNonNullValue: $nullableWithNonNullValue,
+    nullableWithEmptyValue: $nullableWithEmptyValue,
+  })
+}
+
+mutation InsertStringVariantsWithHardcodedDefaults(
+  $nonNullWithNonEmptyValue: String! = "pfnk98yqqs",
+  $nonNullWithEmptyValue: String! = "",
+  $nullableWithNullValue: String = null,
+  $nullableWithNonNullValue: String = "af8k72s98t",
+  $nullableWithEmptyValue: String = "",
+) @auth(level: PUBLIC) {
+  key: stringVariants_insert(data: {
+    nonNullWithNonEmptyValue: $nonNullWithNonEmptyValue,
+    nonNullWithEmptyValue: $nonNullWithEmptyValue,
+    nullableWithNullValue: $nullableWithNullValue,
+    nullableWithNonNullValue: $nullableWithNonNullValue,
+    nullableWithEmptyValue: $nullableWithEmptyValue,
+  })
+}
+
+query GetStringVariantsByKey($key: StringVariants_Key!) @auth(level: PUBLIC) {
+  stringVariants(key: $key) {
+    nonNullWithNonEmptyValue
+    nonNullWithEmptyValue
+    nullableWithNullValue
+    nullableWithNonNullValue
+    nullableWithEmptyValue
+  }
+}
+
+mutation InsertIntVariants(
+  $nonNullWithZeroValue: Int!,
+  $nonNullWithPositiveValue: Int!,
+  $nonNullWithNegativeValue: Int!,
+  $nonNullWithMaxValue: Int!,
+  $nonNullWithMinValue: Int!,
+  $nullableWithNullValue: Int,
+  $nullableWithZeroValue: Int,
+  $nullableWithPositiveValue: Int,
+  $nullableWithNegativeValue: Int,
+  $nullableWithMaxValue: Int,
+  $nullableWithMinValue: Int,
+) @auth(level: PUBLIC) {
+  key: intVariants_insert(data: {
+    nonNullWithZeroValue: $nonNullWithZeroValue,
+    nonNullWithPositiveValue: $nonNullWithPositiveValue,
+    nonNullWithNegativeValue: $nonNullWithNegativeValue,
+    nonNullWithMaxValue: $nonNullWithMaxValue,
+    nonNullWithMinValue: $nonNullWithMinValue,
+    nullableWithNullValue: $nullableWithNullValue,
+    nullableWithZeroValue: $nullableWithZeroValue,
+    nullableWithPositiveValue: $nullableWithPositiveValue,
+    nullableWithNegativeValue: $nullableWithNegativeValue,
+    nullableWithMaxValue: $nullableWithMaxValue,
+    nullableWithMinValue: $nullableWithMinValue,
+  })
+}
+
+mutation InsertIntVariantsWithHardcodedDefaults(
+  $nonNullWithZeroValue: Int! = 0,
+  $nonNullWithPositiveValue: Int! = 819425,
+  $nonNullWithNegativeValue: Int! = -435970,
+  $nonNullWithMaxValue: Int! = 2147483647,
+  $nonNullWithMinValue: Int! = -2147483648,
+  $nullableWithNullValue: Int = null,
+  $nullableWithZeroValue: Int = 0,
+  $nullableWithPositiveValue: Int = 635166,
+  $nullableWithNegativeValue: Int = -171993,
+  $nullableWithMaxValue: Int = 2147483647,
+  $nullableWithMinValue: Int = -2147483648,
+) @auth(level: PUBLIC) {
+  key: intVariants_insert(data: {
+    nonNullWithZeroValue: $nonNullWithZeroValue,
+    nonNullWithPositiveValue: $nonNullWithPositiveValue,
+    nonNullWithNegativeValue: $nonNullWithNegativeValue,
+    nonNullWithMaxValue: $nonNullWithMaxValue,
+    nonNullWithMinValue: $nonNullWithMinValue,
+    nullableWithNullValue: $nullableWithNullValue,
+    nullableWithZeroValue: $nullableWithZeroValue,
+    nullableWithPositiveValue: $nullableWithPositiveValue,
+    nullableWithNegativeValue: $nullableWithNegativeValue,
+    nullableWithMaxValue: $nullableWithMaxValue,
+    nullableWithMinValue: $nullableWithMinValue,
+  })
+}
+
+mutation UpdateIntVariantsByKey(
+  $key: IntVariants_Key!,
+  $nonNullWithZeroValue: Int,
+  $nonNullWithPositiveValue: Int,
+  $nonNullWithNegativeValue: Int,
+  $nonNullWithMaxValue: Int,
+  $nonNullWithMinValue: Int,
+  $nullableWithNullValue: Int,
+  $nullableWithZeroValue: Int,
+  $nullableWithPositiveValue: Int,
+  $nullableWithNegativeValue: Int,
+  $nullableWithMaxValue: Int,
+  $nullableWithMinValue: Int,
+) @auth(level: PUBLIC) {
+  intVariants_update(key: $key, data: {
+    nonNullWithZeroValue: $nonNullWithZeroValue,
+    nonNullWithPositiveValue: $nonNullWithPositiveValue,
+    nonNullWithNegativeValue: $nonNullWithNegativeValue,
+    nonNullWithMaxValue: $nonNullWithMaxValue,
+    nonNullWithMinValue: $nonNullWithMinValue,
+    nullableWithNullValue: $nullableWithNullValue,
+    nullableWithZeroValue: $nullableWithZeroValue,
+    nullableWithPositiveValue: $nullableWithPositiveValue,
+    nullableWithNegativeValue: $nullableWithNegativeValue,
+    nullableWithMaxValue: $nullableWithMaxValue,
+    nullableWithMinValue: $nullableWithMinValue,
+  })
+}
+
+query GetIntVariantsByKey($key: IntVariants_Key!) @auth(level: PUBLIC) {
+  intVariants(key: $key) {
+    nonNullWithZeroValue
+    nonNullWithPositiveValue
+    nonNullWithNegativeValue
+    nonNullWithMaxValue
+    nonNullWithMinValue
+    nullableWithNullValue
+    nullableWithZeroValue
+    nullableWithPositiveValue
+    nullableWithNegativeValue
+    nullableWithMaxValue
+    nullableWithMinValue
+  }
+}
+
+mutation InsertFloatVariants(
+  $nonNullWithZeroValue: Float!,
+  $nonNullWithNegativeZeroValue: Float!,
+  $nonNullWithPositiveValue: Float!,
+  $nonNullWithNegativeValue: Float!,
+  $nonNullWithMaxValue: Float!,
+  $nonNullWithMinValue: Float!,
+  $nonNullWithMaxSafeIntegerValue: Float!,
+  $nullableWithNullValue: Float,
+  $nullableWithZeroValue: Float,
+  $nullableWithNegativeZeroValue: Float,
+  $nullableWithPositiveValue: Float,
+  $nullableWithNegativeValue: Float,
+  $nullableWithMaxValue: Float,
+  $nullableWithMinValue: Float,
+  $nullableWithMaxSafeIntegerValue: Float,
+) @auth(level: PUBLIC) {
+  key: floatVariants_insert(data: {
+    nonNullWithZeroValue: $nonNullWithZeroValue,
+    nonNullWithNegativeZeroValue: $nonNullWithNegativeZeroValue,
+    nonNullWithPositiveValue: $nonNullWithPositiveValue,
+    nonNullWithNegativeValue: $nonNullWithNegativeValue,
+    nonNullWithMaxValue: $nonNullWithMaxValue,
+    nonNullWithMinValue: $nonNullWithMinValue,
+    nonNullWithMaxSafeIntegerValue: $nonNullWithMaxSafeIntegerValue,
+    nullableWithNullValue: $nullableWithNullValue,
+    nullableWithZeroValue: $nullableWithZeroValue,
+    nullableWithNegativeZeroValue: $nullableWithNegativeZeroValue,
+    nullableWithPositiveValue: $nullableWithPositiveValue,
+    nullableWithNegativeValue: $nullableWithNegativeValue,
+    nullableWithMaxValue: $nullableWithMaxValue,
+    nullableWithMinValue: $nullableWithMinValue,
+    nullableWithMaxSafeIntegerValue: $nullableWithMaxSafeIntegerValue,
+  })
+}
+
+mutation InsertFloatVariantsWithHardcodedDefaults(
+  $nonNullWithZeroValue: Float! = 0.0,
+  $nonNullWithNegativeZeroValue: Float! = -0.0,
+  $nonNullWithPositiveValue: Float! = 750.452,
+  $nonNullWithNegativeValue: Float! = -598.351,
+  $nonNullWithMaxValue: Float! = 1.7976931348623157E308,
+  $nonNullWithMinValue: Float! = 4.9E-324,
+  $nonNullWithMaxSafeIntegerValue: Float! = 9007199254740991.0,
+  $nullableWithNullValue: Float = null,
+  $nullableWithZeroValue: Float = 0.0,
+  $nullableWithNegativeZeroValue: Float = -0.0,
+  $nullableWithPositiveValue: Float = 597.650,
+  $nullableWithNegativeValue: Float = -181.366,
+  $nullableWithMaxValue: Float = 1.7976931348623157E308,
+  $nullableWithMinValue: Float = 4.9E-324,
+  $nullableWithMaxSafeIntegerValue: Float = 9007199254740991.0,
+) @auth(level: PUBLIC) {
+  key: floatVariants_insert(data: {
+    nonNullWithZeroValue: $nonNullWithZeroValue,
+    nonNullWithNegativeZeroValue: $nonNullWithNegativeZeroValue,
+    nonNullWithPositiveValue: $nonNullWithPositiveValue,
+    nonNullWithNegativeValue: $nonNullWithNegativeValue,
+    nonNullWithMaxValue: $nonNullWithMaxValue,
+    nonNullWithMinValue: $nonNullWithMinValue,
+    nonNullWithMaxSafeIntegerValue: $nonNullWithMaxSafeIntegerValue,
+    nullableWithNullValue: $nullableWithNullValue,
+    nullableWithZeroValue: $nullableWithZeroValue,
+    nullableWithNegativeZeroValue: $nullableWithNegativeZeroValue,
+    nullableWithPositiveValue: $nullableWithPositiveValue,
+    nullableWithNegativeValue: $nullableWithNegativeValue,
+    nullableWithMaxValue: $nullableWithMaxValue,
+    nullableWithMinValue: $nullableWithMinValue,
+    nullableWithMaxSafeIntegerValue: $nullableWithMaxSafeIntegerValue,
+  })
+}
+
+mutation UpdateFloatVariantsByKey(
+  $key: FloatVariants_Key!,
+  $nonNullWithZeroValue: Float,
+  $nonNullWithNegativeZeroValue: Float,
+  $nonNullWithPositiveValue: Float,
+  $nonNullWithNegativeValue: Float,
+  $nonNullWithMaxValue: Float,
+  $nonNullWithMinValue: Float,
+  $nonNullWithMaxSafeIntegerValue: Float,
+  $nullableWithNullValue: Float,
+  $nullableWithZeroValue: Float,
+  $nullableWithNegativeZeroValue: Float,
+  $nullableWithPositiveValue: Float,
+  $nullableWithNegativeValue: Float,
+  $nullableWithMaxValue: Float,
+  $nullableWithMinValue: Float,
+  $nullableWithMaxSafeIntegerValue: Float,
+) @auth(level: PUBLIC) {
+  floatVariants_update(key: $key, data: {
+    nonNullWithZeroValue: $nonNullWithZeroValue,
+    nonNullWithNegativeZeroValue: $nonNullWithNegativeZeroValue,
+    nonNullWithPositiveValue: $nonNullWithPositiveValue,
+    nonNullWithNegativeValue: $nonNullWithNegativeValue,
+    nonNullWithMaxValue: $nonNullWithMaxValue,
+    nonNullWithMinValue: $nonNullWithMinValue,
+    nonNullWithMaxSafeIntegerValue: $nonNullWithMaxSafeIntegerValue,
+    nullableWithNullValue: $nullableWithNullValue,
+    nullableWithZeroValue: $nullableWithZeroValue,
+    nullableWithNegativeZeroValue: $nullableWithNegativeZeroValue,
+    nullableWithPositiveValue: $nullableWithPositiveValue,
+    nullableWithNegativeValue: $nullableWithNegativeValue,
+    nullableWithMaxValue: $nullableWithMaxValue,
+    nullableWithMinValue: $nullableWithMinValue,
+    nullableWithMaxSafeIntegerValue: $nullableWithMaxSafeIntegerValue,
+  })
+}
+
+query GetFloatVariantsByKey($key: FloatVariants_Key!) @auth(level: PUBLIC) {
+  floatVariants(key: $key) {
+    nonNullWithZeroValue
+    nonNullWithNegativeZeroValue
+    nonNullWithPositiveValue
+    nonNullWithNegativeValue
+    nonNullWithMaxValue
+    nonNullWithMinValue
+    nonNullWithMaxSafeIntegerValue
+    nullableWithNullValue
+    nullableWithZeroValue
+    nullableWithNegativeZeroValue
+    nullableWithPositiveValue
+    nullableWithNegativeValue
+    nullableWithMaxValue
+    nullableWithMinValue
+    nullableWithMaxSafeIntegerValue
+  }
+}
+
+mutation InsertBooleanVariants(
+  $nonNullWithTrueValue: Boolean!,
+  $nonNullWithFalseValue: Boolean!,
+  $nullableWithNullValue: Boolean,
+  $nullableWithTrueValue: Boolean,
+  $nullableWithFalseValue: Boolean,
+) @auth(level: PUBLIC) {
+  key: booleanVariants_insert(data: {
+    nonNullWithTrueValue: $nonNullWithTrueValue,
+    nonNullWithFalseValue: $nonNullWithFalseValue,
+    nullableWithNullValue: $nullableWithNullValue,
+    nullableWithTrueValue: $nullableWithTrueValue,
+    nullableWithFalseValue: $nullableWithFalseValue,
+  })
+}
+
+mutation InsertBooleanVariantsWithHardcodedDefaults(
+  $nonNullWithTrueValue: Boolean! = true,
+  $nonNullWithFalseValue: Boolean! = false,
+  $nullableWithNullValue: Boolean = null,
+  $nullableWithTrueValue: Boolean = true,
+  $nullableWithFalseValue: Boolean = false,
+) @auth(level: PUBLIC) {
+  key: booleanVariants_insert(data: {
+    nonNullWithTrueValue: $nonNullWithTrueValue,
+    nonNullWithFalseValue: $nonNullWithFalseValue,
+    nullableWithNullValue: $nullableWithNullValue,
+    nullableWithTrueValue: $nullableWithTrueValue,
+    nullableWithFalseValue: $nullableWithFalseValue,
+  })
+}
+
+mutation UpdateBooleanVariantsByKey(
+  $key: BooleanVariants_Key!,
+  $nonNullWithTrueValue: Boolean,
+  $nonNullWithFalseValue: Boolean,
+  $nullableWithNullValue: Boolean,
+  $nullableWithTrueValue: Boolean,
+  $nullableWithFalseValue: Boolean,
+) @auth(level: PUBLIC) {
+  booleanVariants_update(key: $key, data: {
+    nonNullWithTrueValue: $nonNullWithTrueValue,
+    nonNullWithFalseValue: $nonNullWithFalseValue,
+    nullableWithNullValue: $nullableWithNullValue,
+    nullableWithTrueValue: $nullableWithTrueValue,
+    nullableWithFalseValue: $nullableWithFalseValue,
+  })
+}
+
+query GetBooleanVariantsByKey($key: BooleanVariants_Key!) @auth(level: PUBLIC) {
+  booleanVariants(key: $key) {
+    nonNullWithTrueValue
+    nonNullWithFalseValue
+    nullableWithNullValue
+    nullableWithTrueValue
+    nullableWithFalseValue
+  }
+}
+
+mutation InsertInt64Variants(
+  $nonNullWithZeroValue: Int64!,
+  $nonNullWithPositiveValue: Int64!,
+  $nonNullWithNegativeValue: Int64!,
+  $nonNullWithMaxValue: Int64!,
+  $nonNullWithMinValue: Int64!,
+  $nullableWithNullValue: Int64,
+  $nullableWithZeroValue: Int64,
+  $nullableWithPositiveValue: Int64,
+  $nullableWithNegativeValue: Int64,
+  $nullableWithMaxValue: Int64,
+  $nullableWithMinValue: Int64,
+) @auth(level: PUBLIC) {
+  key: int64Variants_insert(data: {
+    nonNullWithZeroValue: $nonNullWithZeroValue,
+    nonNullWithPositiveValue: $nonNullWithPositiveValue,
+    nonNullWithNegativeValue: $nonNullWithNegativeValue,
+    nonNullWithMaxValue: $nonNullWithMaxValue,
+    nonNullWithMinValue: $nonNullWithMinValue,
+    nullableWithNullValue: $nullableWithNullValue,
+    nullableWithZeroValue: $nullableWithZeroValue,
+    nullableWithPositiveValue: $nullableWithPositiveValue,
+    nullableWithNegativeValue: $nullableWithNegativeValue,
+    nullableWithMaxValue: $nullableWithMaxValue,
+    nullableWithMinValue: $nullableWithMinValue,
+  })
+}
+
+mutation InsertInt64VariantsWithHardcodedDefaults(
+  $nonNullWithZeroValue: Int64! = 0,
+  $nonNullWithPositiveValue: Int64! = 8140262498000722655,
+  $nonNullWithNegativeValue: Int64! = -6722404680598014256,
+  $nonNullWithMaxValue: Int64! = 9223372036854775807,
+  $nonNullWithMinValue: Int64! = -9223372036854775808,
+  $nullableWithNullValue: Int64 = null,
+  $nullableWithZeroValue: Int64 = 0,
+  $nullableWithPositiveValue: Int64 = 2623421399624774761,
+  $nullableWithNegativeValue: Int64 = -1400927531111898547,
+  $nullableWithMaxValue: Int64 = 9223372036854775807,
+  $nullableWithMinValue: Int64 = -9223372036854775808,
+) @auth(level: PUBLIC) {
+  key: int64Variants_insert(data: {
+    nonNullWithZeroValue: $nonNullWithZeroValue,
+    nonNullWithPositiveValue: $nonNullWithPositiveValue,
+    nonNullWithNegativeValue: $nonNullWithNegativeValue,
+    nonNullWithMaxValue: $nonNullWithMaxValue,
+    nonNullWithMinValue: $nonNullWithMinValue,
+    nullableWithNullValue: $nullableWithNullValue,
+    nullableWithZeroValue: $nullableWithZeroValue,
+    nullableWithPositiveValue: $nullableWithPositiveValue,
+    nullableWithNegativeValue: $nullableWithNegativeValue,
+    nullableWithMaxValue: $nullableWithMaxValue,
+    nullableWithMinValue: $nullableWithMinValue,
+  })
+}
+
+mutation UpdateInt64VariantsByKey(
+  $key: Int64Variants_Key!,
+  $nonNullWithZeroValue: Int64,
+  $nonNullWithPositiveValue: Int64,
+  $nonNullWithNegativeValue: Int64,
+  $nonNullWithMaxValue: Int64,
+  $nonNullWithMinValue: Int64,
+  $nullableWithNullValue: Int64,
+  $nullableWithZeroValue: Int64,
+  $nullableWithPositiveValue: Int64,
+  $nullableWithNegativeValue: Int64,
+  $nullableWithMaxValue: Int64,
+  $nullableWithMinValue: Int64,
+) @auth(level: PUBLIC) {
+  int64Variants_update(key: $key, data: {
+    nonNullWithZeroValue: $nonNullWithZeroValue,
+    nonNullWithPositiveValue: $nonNullWithPositiveValue,
+    nonNullWithNegativeValue: $nonNullWithNegativeValue,
+    nonNullWithMaxValue: $nonNullWithMaxValue,
+    nonNullWithMinValue: $nonNullWithMinValue,
+    nullableWithNullValue: $nullableWithNullValue,
+    nullableWithZeroValue: $nullableWithZeroValue,
+    nullableWithPositiveValue: $nullableWithPositiveValue,
+    nullableWithNegativeValue: $nullableWithNegativeValue,
+    nullableWithMaxValue: $nullableWithMaxValue,
+    nullableWithMinValue: $nullableWithMinValue,
+  })
+}
+
+query GetInt64VariantsByKey($key: Int64Variants_Key!) @auth(level: PUBLIC) {
+  int64Variants(key: $key) {
+    nonNullWithZeroValue
+    nonNullWithPositiveValue
+    nonNullWithNegativeValue
+    nonNullWithMaxValue
+    nonNullWithMinValue
+    nullableWithNullValue
+    nullableWithZeroValue
+    nullableWithPositiveValue
+    nullableWithNegativeValue
+    nullableWithMaxValue
+    nullableWithMinValue
+  }
+}
+
+mutation InsertUUIDVariants(
+  $nonNullValue: UUID!,
+  $nullableWithNullValue: UUID,
+  $nullableWithNonNullValue: UUID,
+) @auth(level: PUBLIC) {
+  key: uUIDVariants_insert(data: {
+    nonNullValue: $nonNullValue,
+    nullableWithNullValue: $nullableWithNullValue,
+    nullableWithNonNullValue: $nullableWithNonNullValue,
+  })
+}
+
+# TODO(b/341070491) Uncomment this mutation and enable test "insertUUIDVariantsWithDefaultValues"
+# At the time of writing, default values for UUID variables fails to generate valid SQL.
+# Once fixed, uncomment the definition of "InsertUUIDVariantsWithHardcodedDefaults" below
+#mutation InsertUUIDVariantsWithHardcodedDefaults(
+#  $nonNullValue: UUID! = "66576fdc-1a35-4b59-8c8b-d3beb65956ca",
+#  $nullableWithNullValue: UUID = null,
+#  $nullableWithNonNullValue: UUID = "59ab3886-8b84-4233-a5e6-da58c0e8b97d",
+#) @auth(level: PUBLIC) {
+#  key: uUIDVariants_insert(data: {
+#    nonNullValue: $nonNullValue,
+#    nullableWithNullValue: $nullableWithNullValue,
+#    nullableWithNonNullValue: $nullableWithNonNullValue,
+#  })
+#}
+
+# TODO(b/341070491) Delete this definition of the "InsertUUIDVariantsWithHardcodedDefaults" mutation
+# and uncomment the one above once the emulator is fixed to properly handle default values for UUID
+# variables. This definition is merely here so that the codegen will generate classes so that the
+# test can still be written in Kotlin and compile, even though it is disabled.
+mutation InsertUUIDVariantsWithHardcodedDefaults @auth(level: PUBLIC) {
+  key: uUIDVariants_insert(data: {
+    nonNullValue: "7f385800-13d6-491a-98c8-b4dee3fb45cb",
+    nullableWithNullValue: null,
+    nullableWithNonNullValue: "ede8dc0e-600c-4093-8812-071f2cedc8db",
+  })
+}
+
+mutation UpdateUUIDVariantsByKey(
+  $key: UUIDVariants_Key!,
+  $nonNullValue: UUID,
+  $nullableWithNullValue: UUID,
+  $nullableWithNonNullValue: UUID,
+) @auth(level: PUBLIC) {
+  uUIDVariants_update(key: $key, data: {
+    nonNullValue: $nonNullValue,
+    nullableWithNullValue: $nullableWithNullValue,
+    nullableWithNonNullValue: $nullableWithNonNullValue,
+  })
+}
+
+query GetUUIDVariantsByKey($key: UUIDVariants_Key!) @auth(level: PUBLIC) {
+  uUIDVariants(key: $key) {
+    nonNullValue
+    nullableWithNullValue
+    nullableWithNonNullValue
+  }
+}
+
+mutation InsertSyntheticId($value: String!) @auth(level: PUBLIC) {
+  key: syntheticId_insert(data: { value: $value })
+}
+
+query GetSyntheticIdById($id: UUID!) @auth(level: PUBLIC) {
+  syntheticId(id: $id) { id value }
+}
+
+mutation InsertPrimaryKeyIsString($id: String!, $value: String!) @auth(level: PUBLIC) {
+  key: primaryKeyIsString_insert(data: {
+    id: $id,
+    value: $value
+  })
+}
+
+query GetPrimaryKeyIsStringByKey($key: PrimaryKeyIsString_Key!) @auth(level: PUBLIC) {
+  primaryKeyIsString(key: $key) { id value }
+}
+
+mutation InsertPrimaryKeyIsUUID($id: UUID!, $value: String!) @auth(level: PUBLIC) {
+  key: primaryKeyIsUUID_insert(data: {
+    id: $id,
+    value: $value
+  })
+}
+
+query GetPrimaryKeyIsUUIDByKey($key: PrimaryKeyIsUUID_Key!) @auth(level: PUBLIC) {
+  primaryKeyIsUUID(key: $key) { id value }
+}
+
+mutation InsertPrimaryKeyIsInt($foo: Int!, $value: String!) @auth(level: PUBLIC) {
+  # NOTE: Use "upsert" instead of "insert" in this specific case since Int only has a 32-bit
+  # representation, increasing the likelihood of conflicts. In the unlikely case of an ID being
+  # used that already exists, it will just be replaced. There is a minuscule chance that the test
+  # that generated the conflicting ID is running concurrently, but that chance is so small that I'm
+  # choosing to ignore it.
+  key: primaryKeyIsInt_upsert(data: {
+    foo: $foo,
+    value: $value
+  })
+}
+
+query GetPrimaryKeyIsIntByKey($key: PrimaryKeyIsInt_Key!) @auth(level: PUBLIC) {
+  primaryKeyIsInt(key: $key) { foo value }
+}
+
+mutation InsertPrimaryKeyIsFloat($foo: Float!, $value: String!) @auth(level: PUBLIC) {
+  # NOTE: Use "upsert" instead of "insert" in this specific case since Float values are generated
+  # using a pseudo-random number generator, which has a non-zero chance of conflicts. In the
+  # unlikely case of an value being used that already exists, it will just be replaced. There is a
+  # minuscule chance that the test that generated the conflicting ID is running concurrently, but
+  # that chance is so small that I'm choosing to ignore it.
+  key: primaryKeyIsFloat_upsert(data: {
+    foo: $foo,
+    value: $value
+  })
+}
+
+query GetPrimaryKeyIsFloatByKey($key: PrimaryKeyIsFloat_Key!) @auth(level: PUBLIC) {
+  primaryKeyIsFloat(key: $key) { foo value }
+}
+
+mutation InsertPrimaryKeyIsDate($foo: Date!, $value: String!) @auth(level: PUBLIC) {
+  # NOTE: Use "upsert" instead of "insert" in this specific case since Date values are generated
+  # using a pseudo-random number generator, which has a non-zero chance of conflicts. In the
+  # unlikely case of an value being used that already exists, it will just be replaced. There is a
+  # minuscule chance that the test that generated the conflicting ID is running concurrently, but
+  # that chance is so small that I'm choosing to ignore it.
+  key: primaryKeyIsDate_upsert(data: {
+    foo: $foo,
+    value: $value
+  })
+}
+
+query GetPrimaryKeyIsDateByKey($key: PrimaryKeyIsDate_Key!) @auth(level: PUBLIC) {
+  primaryKeyIsDate(key: $key) { foo value }
+}
+
+mutation InsertPrimaryKeyIsTimestamp($foo: Timestamp!, $value: String!) @auth(level: PUBLIC) {
+  # NOTE: Use "upsert" instead of "insert" in this specific case since Timestamp values are
+  # generated using a pseudo-random number generator, which has a non-zero chance of conflicts. In
+  # the unlikely case of an value being used that already exists, it will just be replaced. There is
+  # a minuscule chance that the test that generated the conflicting ID is running concurrently, but
+  # that chance is so small that I'm choosing to ignore it.
+  key: primaryKeyIsTimestamp_upsert(data: {
+    foo: $foo,
+    value: $value
+  })
+}
+
+query GetPrimaryKeyIsTimestampByKey($key: PrimaryKeyIsTimestamp_Key!) @auth(level: PUBLIC) {
+  primaryKeyIsTimestamp(key: $key) { foo value }
+}
+
+mutation InsertPrimaryKeyIsInt64($foo: Int64!, $value: String!) @auth(level: PUBLIC) {
+  key: primaryKeyIsInt64_upsert(data: {
+    foo: $foo,
+    value: $value
+  })
+}
+
+query GetPrimaryKeyIsInt64ByKey($key: PrimaryKeyIsInt64_Key!) @auth(level: PUBLIC) {
+  primaryKeyIsInt64(key: $key) { foo value }
+}
+
+mutation InsertPrimaryKeyIsComposite($foo: Int!, $bar: String!, $baz: Boolean!, $value: String!) @auth(level: PUBLIC) {
+  key: primaryKeyIsComposite_insert(data: {
+    foo: $foo,
+    bar: $bar,
+    baz: $baz,
+    value: $value
+  })
+}
+
+query GetPrimaryKeyIsCompositeByKey($key: PrimaryKeyIsComposite_Key!) @auth(level: PUBLIC) {
+  primaryKeyIsComposite(key: $key) { foo bar baz value }
+}
+
+mutation InsertPrimaryKeyNested1($value: String!) @auth(level: PUBLIC) {
+  key: primaryKeyNested1_insert(data: { value: $value } )
+}
+
+mutation InsertPrimaryKeyNested2($value: String!) @auth(level: PUBLIC) {
+  key: primaryKeyNested2_insert(data: { value: $value } )
+}
+
+mutation InsertPrimaryKeyNested3($value: String!) @auth(level: PUBLIC) {
+  key: primaryKeyNested3_insert(data: { value: $value } )
+}
+
+mutation InsertPrimaryKeyNested4($value: String!) @auth(level: PUBLIC) {
+  key: primaryKeyNested4_insert(data: { value: $value } )
+}
+
+mutation InsertPrimaryKeyNested5(
+  $value: String!,
+  $nested1: PrimaryKeyNested1_Key!,
+  $nested2: PrimaryKeyNested2_Key!
+) @auth(level: PUBLIC) {
+  key: primaryKeyNested5_insert(data: {
+    value: $value,
+    nested1: $nested1,
+    nested2: $nested2
+  })
+}
+
+mutation InsertPrimaryKeyNested6(
+  $value: String!,
+  $nested3: PrimaryKeyNested3_Key!,
+  $nested4: PrimaryKeyNested4_Key!
+) @auth(level: PUBLIC) {
+  key: primaryKeyNested6_insert(data: {
+    value: $value,
+    nested3: $nested3,
+    nested4: $nested4
+  })
+}
+
+mutation InsertPrimaryKeyNested7(
+  $value: String!,
+  $nested5a: PrimaryKeyNested5_Key!,
+  $nested5b: PrimaryKeyNested5_Key!,
+  $nested6: PrimaryKeyNested6_Key!
+) @auth(level: PUBLIC) {
+  key: primaryKeyNested7_insert(data: {
+    value: $value,
+    nested5a: $nested5a,
+    nested5b: $nested5b,
+    nested6: $nested6
+  })
+}
+
+query GetPrimaryKeyNested7ByKey($key: PrimaryKeyNested7_Key!) @auth(level: PUBLIC) {
+  key: primaryKeyNested7(key: $key) {
+    value
+    nested5a {
+      value
+      nested1 {
+        id
+        value
+      }
+      nested2 {
+        id
+        value
+      }
+    }
+    nested5b {
+      value
+      nested1 {
+        id
+        value
+      }
+      nested2 {
+        id
+        value
+      }
+    }
+    nested6 {
+      value
+      nested3 {
+        id
+        value
+      }
+      nested4 {
+        id
+        value
+      }
+    }
+  }
+}
+
+mutation InsertNested1(
+    $nested1: Nested1_Key,
+    $nested2: Nested2_Key!,
+    $nested2NullableNonNull: Nested2_Key,
+    $nested2NullableNull: Nested2_Key,
+    $value: String!
+) @auth(level: PUBLIC) {
+  key: nested1_insert(data: {
+    nested1: $nested1,
+    nested2: $nested2,
+    nested2NullableNonNull: $nested2NullableNonNull,
+    nested2NullableNull: $nested2NullableNull,
+    value: $value
+  })
+}
+
+query GetNested1ByKey($key: Nested1_Key!) @auth(level: PUBLIC) {
+  nested1(key: $key) {
+    id
+    nested1 {
+      id
+      nested1 { id }
+      nested2 {
+        id
+        value
+        nested3 {
+          id
+          value
+        }
+        nested3NullableNull {
+          id
+          value
+        }
+        nested3NullableNonNull {
+          id
+          value
+        }
+      }
+      nested2NullableNull {
+        id
+        value
+        nested3 {
+          id
+          value
+        }
+        nested3NullableNull {
+          id
+          value
+        }
+        nested3NullableNonNull {
+          id
+          value
+        }
+      }
+      nested2NullableNonNull {
+        id
+        value
+        nested3 {
+          id
+          value
+        }
+        nested3NullableNull {
+          id
+          value
+        }
+        nested3NullableNonNull {
+          id
+          value
+        }
+      }
+    }
+    nested2 {
+      id
+      value
+      nested3 {
+        id
+        value
+      }
+      nested3NullableNull {
+        id
+        value
+      }
+      nested3NullableNonNull {
+        id
+        value
+      }
+    }
+    nested2NullableNonNull {
+      id
+      value
+      nested3 {
+        id
+        value
+      }
+      nested3NullableNull {
+        id
+        value
+      }
+      nested3NullableNonNull {
+        id
+        value
+      }
+    }
+    nested2NullableNull {
+      id
+      value
+      nested3 {
+        id
+        value
+      }
+      nested3NullableNull {
+        id
+        value
+      }
+      nested3NullableNonNull {
+        id
+        value
+      }
+    }
+  }
+}
+
+mutation InsertNested2(
+    $nested3: Nested3_Key!,
+    $nested3NullableNonNull: Nested3_Key,
+    $nested3NullableNull: Nested3_Key,
+    $value: String!
+) @auth(level: PUBLIC) {
+  key: nested2_insert(data: {
+    nested3: $nested3,
+    nested3NullableNonNull: $nested3NullableNonNull,
+    nested3NullableNull: $nested3NullableNull,
+    value: $value
+  })
+}
+
+mutation InsertNested3($value: String!) @auth(level: PUBLIC) {
+  key: nested3_insert(data: { value: $value })
+}
+
+mutation InsertManyToOneParent($child: ManyToOneChild_Key) @auth(level: PUBLIC) {
+  key: manyToOneParent_insert(data: { child: $child })
+}
+
+mutation InsertManyToOneChild @auth(level: PUBLIC) {
+  key: manyToOneChild_insert(data: {value: null})
+}
+
+query GetManyToOneChildByKey($key: ManyToOneChild_Key!) @auth(level: PUBLIC) {
+  manyToOneChild(key: $key) {
+    parents: manyToOneParents_on_child {
+      id
+    }
+  }
+}
+
+mutation InsertManyToManyChildA @auth(level: PUBLIC) {
+  key: manyToManyChildA_insert(data: {})
+}
+
+mutation InsertManyToManyChildB @auth(level: PUBLIC) {
+  key: manyToManyChildB_insert(data: {})
+}
+
+mutation InsertManyToManyParent($childA: ManyToManyChildA_Key!, $childB: ManyToManyChildB_Key!) @auth(level: PUBLIC) {
+  key: manyToManyParent_insert(data: {childA: $childA, childB: $childB})
+}
+
+query GetManyToManyChildAByKey($key: ManyToManyChildA_Key!) @auth(level: PUBLIC) {
+  manyToManyChildA(key: $key) {
+    manyToManyChildBS_via_ManyToManyParent {
+      id
+    }
+  }
+}
+
+mutation InsertManyToOneSelfCustomName($ref: ManyToOneSelfCustomName_Key) @auth(level: PUBLIC) {
+  key: manyToOneSelfCustomName_insert(data: {ref: $ref})
+}
+
+query GetManyToOneSelfCustomNameByKey($key: ManyToOneSelfCustomName_Key!) @auth(level: PUBLIC) {
+  manyToOneSelfCustomName(key: $key) {
+    id
+    ref {
+      id
+      refId
+    }
+  }
+}
+
+mutation InsertManyToOneSelfMatchingName($ref: ManyToOneSelfMatchingName_Key) @auth(level: PUBLIC) {
+  key: manyToOneSelfMatchingName_insert(data: {manyToOneSelfMatchingName: $ref})
+}
+
+query GetManyToOneSelfMatchingNameByKey($key: ManyToOneSelfMatchingName_Key!) @auth(level: PUBLIC) {
+  manyToOneSelfMatchingName(key: $key) {
+    id
+    manyToOneSelfMatchingName {
+      id
+      manyToOneSelfMatchingNameId
+    }
+  }
+}
+
+mutation InsertManyToManySelfParent($child1: ManyToManySelfChild_Key!, $child2: ManyToManySelfChild_Key!) @auth(level: PUBLIC) {
+  key: manyToManySelfParent_insert(data: {child1: $child1, child2: $child2})
+}
+
+mutation InsertManyToManySelfChild @auth(level: PUBLIC) {
+  key: manyToManySelfChild_insert(data: {})
+}
+
+query GetManyToManySelfChildByKey($key: ManyToManySelfChild_Key!) @auth(level: PUBLIC) {
+  manyToManySelfChild(key: $key) {
+    manyToManySelfChildren_via_ManyToManySelfParent_on_child1 { id }
+    manyToManySelfChildren_via_ManyToManySelfParent_on_child2 { id }
+  }
+}
+
+mutation InsertOptionalStrings(
+  $required1: String!,
+  $required2: String!,
+  $nullable1: String,
+  $nullable2: String,
+  $nullable3: String,
+  $nullableWithSchemaDefault: String,
+) @auth(level: PUBLIC) {
+  key: optionalStrings_insert(data: {
+    required1: $required1,
+    required2: $required2,
+    nullable1: $nullable1,
+    nullable2: $nullable2,
+    nullable3: $nullable3,
+    nullableWithSchemaDefault: $nullableWithSchemaDefault,
+  })
+}
+
+query GetOptionalStringsByKey($key: OptionalStrings_Key!) @auth(level: PUBLIC) {
+  optionalStrings(key: $key) {
+    required1
+    required2
+    nullable1
+    nullable2
+    nullable3
+    nullableWithSchemaDefault
+  }
+}
+
+mutation InsertNonNullableLists(
+  $strings: [String!]!,
+  $ints: [Int!]!,
+  $floats: [Float!]!,
+  $booleans: [Boolean!]!,
+  $uuids: [UUID!]!,
+  $int64s: [Int64!]!,
+  $dates: [Date!]!,
+  $timestamps: [Timestamp!]!,
+) @auth(level: PUBLIC) {
+  key: nonNullableLists_insert(data: {
+    strings: $strings,
+    ints: $ints,
+    floats: $floats,
+    booleans: $booleans,
+    uuids: $uuids,
+    int64s: $int64s,
+    dates: $dates,
+    timestamps: $timestamps,
+  })
+}
+
+mutation UpdateNonNullableListsByKey(
+  $key: NonNullableLists_Key!,
+  $strings: [String!],
+  $ints: [Int!],
+  $floats: [Float!],
+  $booleans: [Boolean!],
+  $uuids: [UUID!],
+  $int64s: [Int64!],
+  $dates: [Date!],
+  $timestamps: [Timestamp!],
+) @auth(level: PUBLIC) {
+  nonNullableLists_update(key: $key, data: {
+    strings: $strings,
+    ints: $ints,
+    floats: $floats,
+    booleans: $booleans,
+    uuids: $uuids,
+    int64s: $int64s,
+    dates: $dates,
+    timestamps: $timestamps,
+  })
+}
+
+query GetNonNullableListsByKey($key: NonNullableLists_Key!) @auth(level: PUBLIC) {
+  nonNullableLists(key: $key) {
+    strings
+    ints
+    floats
+    booleans
+    uuids
+    int64s
+    dates
+    timestamps
+  }
+}
+
+mutation InsertNullableLists(
+  $strings: [String!],
+  $ints: [Int!],
+  $floats: [Float!],
+  $booleans: [Boolean!],
+  $uuids: [UUID!],
+  $int64s: [Int64!],
+  $dates: [Date!],
+  $timestamps: [Timestamp!],
+) @auth(level: PUBLIC) {
+  key: nullableLists_insert(data: {
+    strings: $strings,
+    ints: $ints,
+    floats: $floats,
+    booleans: $booleans,
+    uuids: $uuids,
+    int64s: $int64s,
+    dates: $dates,
+    timestamps: $timestamps,
+  })
+}
+
+mutation UpdateNullableListsByKey(
+  $key: NullableLists_Key!,
+  $strings: [String!],
+  $ints: [Int!],
+  $floats: [Float!],
+  $booleans: [Boolean!],
+  $uuids: [UUID!],
+  $int64s: [Int64!],
+  $dates: [Date!],
+  $timestamps: [Timestamp!],
+) @auth(level: PUBLIC) {
+  nullableLists_update(key: $key, data: {
+    strings: $strings,
+    ints: $ints,
+    floats: $floats,
+    booleans: $booleans,
+    uuids: $uuids,
+    int64s: $int64s,
+    dates: $dates,
+    timestamps: $timestamps,
+  })
+}
+
+query GetNullableListsByKey($key: NullableLists_Key!) @auth(level: PUBLIC) {
+  nullableLists(key: $key) {
+    strings
+    ints
+    floats
+    booleans
+    uuids
+    int64s
+    dates
+    timestamps
+  }
+}
+
+###############################################################################
+# Operations for table: DateNonNullable
+###############################################################################
+
+mutation DateNonNullable_Insert($value: Date!) @auth(level: PUBLIC) {
+  key: dateNonNullable_insert(data: { value: $value })
+}
+
+mutation DateNonNullable_Insert3($tag: String!, $value1: Date!, $value2: Date!, $value3: Date!) @auth(level: PUBLIC) {
+  key1: dateNonNullable_insert(data: { value: $value1, tag: $tag })
+  key2: dateNonNullable_insert(data: { value: $value2, tag: $tag })
+  key3: dateNonNullable_insert(data: { value: $value3, tag: $tag })
+}
+
+query DateNonNullable_GetByKey($key: DateNonNullable_Key!) @auth(level: PUBLIC) {
+  item: dateNonNullable(key: $key) { value }
+}
+
+query DateNonNullable_GetAllByTagAndValue($tag: String!, $value: Date!) @auth(level: PUBLIC) {
+  items: dateNonNullables(
+    limit: 5,
+    where: { value: { eq: $value }, tag: { eq: $tag } },
+  ) { id }
+}
+
+query DateNonNullable_GetAllByTagAndMaybeValue($tag: String!, $value: Date) @auth(level: PUBLIC) {
+  items: dateNonNullables(
+    limit: 5,
+    where: { value: { eq: $value }, tag: { eq: $tag } },
+  ) { id }
+}
+
+query DateNonNullable_GetAllByTagAndDefaultValue($tag: String!, $value: Date! = "2692-05-21") @auth(level: PUBLIC) {
+  items: dateNonNullables(
+    limit: 5,
+    where: { value: { eq: $value }, tag: { eq: $tag } },
+  ) { id }
+}
+
+mutation DateNonNullable_UpdateByKey($key: DateNonNullable_Key!, $value: Date) @auth(level: PUBLIC) {
+  key: dateNonNullable_update(key: $key, data: { value: $value })
+}
+
+mutation DateNonNullable_UpdateByTagAndValue($tag: String!, $value: Date, $newValue: Date) @auth(level: PUBLIC) {
+  count: dateNonNullable_updateMany(
+    where: { value: { eq: $value }, tag: { eq: $tag } },
+    data: { value: $newValue }
+  )
+}
+
+mutation DateNonNullable_DeleteByTagAndValue($tag: String!, $value: Date) @auth(level: PUBLIC) {
+  count: dateNonNullable_deleteMany(
+    where: { value: { eq: $value }, tag: { eq: $tag } }
+  )
+}
+
+###############################################################################
+# Operations for table: DateNonNullableWithDefaults
+###############################################################################
+
+mutation DateNonNullableWithDefaults_Insert($value: Date! = "6904-11-30") @auth(level: PUBLIC) {
+  key: dateNonNullableWithDefaults_insert(data: {
+    valueWithVariableDefault: $value
+  })
+}
+
+query DateNonNullableWithDefaults_GetByKey($key: DateNonNullableWithDefaults_Key!) @auth(level: PUBLIC) {
+  item: dateNonNullableWithDefaults(key: $key) {
+    valueWithVariableDefault
+    valueWithSchemaDefault
+    epoch
+    requestTime1
+    requestTime2
+  }
+}
+
+###############################################################################
+# Operations for table: DateNullable
+###############################################################################
+
+mutation DateNullable_Insert($value: Date) @auth(level: PUBLIC) {
+  key: dateNullable_insert(data: { value: $value })
+}
+
+mutation DateNullable_Insert3($tag: String!, $value1: Date, $value2: Date, $value3: Date) @auth(level: PUBLIC) {
+  key1: dateNullable_insert(data: { value: $value1, tag: $tag })
+  key2: dateNullable_insert(data: { value: $value2, tag: $tag })
+  key3: dateNullable_insert(data: { value: $value3, tag: $tag })
+}
+
+query DateNullable_GetByKey($key: DateNullable_Key!) @auth(level: PUBLIC) {
+  item: dateNullable(key: $key) { value }
+}
+
+query DateNullable_GetAllByTagAndValue($tag: String!, $value: Date) @auth(level: PUBLIC) {
+  items: dateNullables(
+    limit: 5,
+    where: { value: { eq: $value }, tag: { eq: $tag } },
+  ) { id }
+}
+
+query DateNullable_GetAllByTagAndDefaultValue($tag: String!, $value: Date! = "1771-10-28") @auth(level: PUBLIC) {
+  items: dateNullables(
+    limit: 5,
+    where: { value: { eq: $value }, tag: { eq: $tag } },
+  ) { id }
+}
+
+mutation DateNullable_UpdateByKey($key: DateNullable_Key!, $value: Date) @auth(level: PUBLIC) {
+  key: dateNullable_update(key: $key, data: { value: $value })
+}
+
+mutation DateNullable_UpdateByTagAndValue($tag: String!, $value: Date, $newValue: Date) @auth(level: PUBLIC) {
+  count: dateNullable_updateMany(
+    where: { value: { eq: $value }, tag: { eq: $tag } },
+    data: { value: $newValue }
+  )
+}
+
+mutation DateNullable_DeleteByTagAndValue($tag: String!, $value: Date) @auth(level: PUBLIC) {
+  count: dateNullable_deleteMany(
+    where: { value: { eq: $value }, tag: { eq: $tag } }
+  )
+}
+
+###############################################################################
+# Operations for table: DateNullableWithDefaults
+###############################################################################
+
+mutation DateNullableWithDefaults_Insert(
+  $valueWithVariableDefault: Date = "8113-02-09",
+  $valueWithVariableNullDefault: Date = null,
+) @auth(level: PUBLIC) {
+  key: dateNullableWithDefaults_insert(data: {
+    valueWithVariableDefault: $valueWithVariableDefault,
+    valueWithVariableNullDefault: $valueWithVariableNullDefault,
+  })
+}
+
+query DateNullableWithDefaults_GetByKey($key: DateNullableWithDefaults_Key!) @auth(level: PUBLIC) {
+  item: dateNullableWithDefaults(key: $key) {
+    valueWithVariableDefault
+    valueWithVariableNullDefault
+    valueWithSchemaDefault
+    valueWithSchemaNullDefault
+    valueWithNoDefault
+    epoch
+    requestTime1
+    requestTime2
+  }
+}
+
+###############################################################################
+# Operations for table: NonNullTimestamp
+###############################################################################
+
+mutation NonNullTimestamp_Insert($value: Timestamp!) @auth(level: PUBLIC) {
+  key: nonNullTimestamp_insert(data: { value: $value })
+}
+
+mutation NonNullTimestamp_UpdateByKey($key: NonNullTimestamp_Key!, $value: Timestamp) @auth(level: PUBLIC) {
+  key: nonNullTimestamp_update(key: $key, data: { value: $value })
+}
+
+mutation NonNullTimestamp_Insert3($tag: String, $value1: Timestamp!, $value2: Timestamp!, $value3: Timestamp!) @auth(level: PUBLIC) {
+  key1: nonNullTimestamp_insert(data: { value: $value1, tag: $tag, position: 1 })
+  key2: nonNullTimestamp_insert(data: { value: $value2, tag: $tag, position: 2 })
+  key3: nonNullTimestamp_insert(data: { value: $value3, tag: $tag, position: 3 })
+}
+
+query NonNullTimestamp_GetByKey($key: NonNullTimestamp_Key!) @auth(level: PUBLIC) {
+  item: nonNullTimestamp(key: $key) { value }
+}
+
+query NonNullTimestamp_GetAllByTagAndValue($tag: String, $value: Timestamp!) @auth(level: PUBLIC) {
+  items: nonNullTimestamps(
+    limit: 5,
+    orderBy: { position: ASC },
+    where: { value: { eq: $value }, tag: { eq: $tag } },
+  ) { id }
+}
+
+###############################################################################
+# Operations for table: NonNullTimestampsWithDefaults
+###############################################################################
+
+mutation NonNullTimestampsWithDefaults_Insert($value: Timestamp! = "3575-04-12T10:11:12.541991Z") @auth(level: PUBLIC) {
+  key: nonNullTimestampsWithDefaults_insert(data: { valueWithVariableDefault: $value })
+}
+
+query NonNullTimestampsWithDefaults_GetByKey($key: NonNullTimestampsWithDefaults_Key!) @auth(level: PUBLIC) {
+  nonNullTimestampsWithDefaults(key: $key) {
+    valueWithVariableDefault
+    valueWithSchemaDefault
+    epoch
+    requestTime1
+    requestTime2
+  }
+}
+
+mutation InsertNullableTimestamp($value: Timestamp) @auth(level: PUBLIC) {
+  key: nullableTimestamp_insert(data: { value: $value })
+}
+
+mutation UpdateNullableTimestamp($key: NullableTimestamp_Key!, $value: Timestamp) @auth(level: PUBLIC) {
+  nullableTimestamp_update(key: $key, data: { value: $value })
+}
+
+query GetNullableTimestampByKey($key: NullableTimestamp_Key!) @auth(level: PUBLIC) {
+  value: nullableTimestamp(key: $key) { value }
+}
+
+mutation InsertNullableTimestampsWithDefaults($value: Timestamp = "2554-12-20T13:03:45.110429Z") @auth(level: PUBLIC) {
+  key: nullableTimestampsWithDefaults_insert(data: { valueWithVariableDefault: $value })
+}
+
+query GetNullableTimestampsWithDefaultsByKey($key: NullableTimestampsWithDefaults_Key!) @auth(level: PUBLIC) {
+  nullableTimestampsWithDefaults(key: $key) {
+    valueWithVariableDefault
+    valueWithSchemaDefault
+    epoch
+    requestTime1
+    requestTime2
+  }
+}
+
+###############################################################################
+# Operations for table: AnyScalarNonNullable
+###############################################################################
+
+mutation AnyScalarNonNullableInsert($tag: String, $value: Any!) @auth(level: PUBLIC) {
+  key: anyScalarNonNullable_insert(data: { tag: $tag, value: $value })
+}
+
+mutation AnyScalarNonNullableInsert3($tag: String, $value1: Any!, $value2: Any!, $value3: Any!) @auth(level: PUBLIC) {
+  key1: anyScalarNonNullable_insert(data: { value: $value1, tag: $tag, position: 1 })
+  key2: anyScalarNonNullable_insert(data: { value: $value2, tag: $tag, position: 2 })
+  key3: anyScalarNonNullable_insert(data: { value: $value3, tag: $tag, position: 3 })
+}
+
+query AnyScalarNonNullableGetByKey($key: AnyScalarNonNullable_Key!) @auth(level: PUBLIC) {
+  item: anyScalarNonNullable(key: $key) { value }
+}
+
+query AnyScalarNonNullableGetAllByTagAndValue($tag: String, $value: Any!) @auth(level: PUBLIC) {
+  items: anyScalarNonNullables(
+    limit: 5,
+    orderBy: { position: ASC },
+    where: { value: { eq: $value }, tag: { eq: $tag } },
+  ) { id }
+}
+
+###############################################################################
+# Operations for table: AnyScalarNullable
+###############################################################################
+
+mutation AnyScalarNullableInsert($tag: String, $value: Any) @auth(level: PUBLIC) {
+  key: anyScalarNullable_insert(data: { tag: $tag, value: $value })
+}
+
+mutation AnyScalarNullableInsert3($tag: String, $value1: Any, $value2: Any, $value3: Any) @auth(level: PUBLIC) {
+  key1: anyScalarNullable_insert(data: { value: $value1, tag: $tag, position: 1 })
+  key2: anyScalarNullable_insert(data: { value: $value2, tag: $tag, position: 2 })
+  key3: anyScalarNullable_insert(data: { value: $value3, tag: $tag, position: 3 })
+}
+
+query AnyScalarNullableGetByKey($key: AnyScalarNullable_Key!) @auth(level: PUBLIC) {
+  item: anyScalarNullable(key: $key) { value }
+}
+
+query AnyScalarNullableGetAllByTagAndValue($tag: String, $value: Any) @auth(level: PUBLIC) {
+  items: anyScalarNullables(
+    limit: 5,
+    orderBy: { position: ASC },
+    where: { value: { eq: $value }, tag: { eq: $tag } },
+  ) { id }
+}
+
+###############################################################################
+# Operations for table: AnyScalarNullableListOfNullable
+###############################################################################
+
+mutation AnyScalarNullableListOfNullableInsert($tag: String, $value: [Any!]) @auth(level: PUBLIC) {
+  key: anyScalarNullableListOfNullable_insert(data: { tag: $tag, value: $value })
+}
+
+mutation AnyScalarNullableListOfNullableInsert3($tag: String, $value1: [Any!], $value2: [Any!], $value3: [Any!]) @auth(level: PUBLIC) {
+  key1: anyScalarNullableListOfNullable_insert(data: { value: $value1, tag: $tag, position: 1 })
+  key2: anyScalarNullableListOfNullable_insert(data: { value: $value2, tag: $tag, position: 2 })
+  key3: anyScalarNullableListOfNullable_insert(data: { value: $value3, tag: $tag, position: 3 })
+}
+
+query AnyScalarNullableListOfNullableGetByKey($key: AnyScalarNullableListOfNullable_Key!) @auth(level: PUBLIC) {
+  item: anyScalarNullableListOfNullable(key: $key) { value }
+}
+
+query AnyScalarNullableListOfNullableGetAllByTagAndValue($tag: String, $value: [Any!]) @auth(level: PUBLIC) {
+  items: anyScalarNullableListOfNullables(
+    limit: 5,
+    orderBy: { position: ASC },
+    where: { value: { includesAll: $value }, tag: { eq: $tag } },
+  ) { id }
+}
+
+###############################################################################
+# Operations for table: AnyScalarNullableListOfNonNullable
+###############################################################################
+
+mutation AnyScalarNullableListOfNonNullableInsert($tag: String, $value: [Any!]) @auth(level: PUBLIC) {
+  key: anyScalarNullableListOfNonNullable_insert(data: { tag: $tag, value: $value })
+}
+
+mutation AnyScalarNullableListOfNonNullableInsert3($tag: String, $value1: [Any!], $value2: [Any!], $value3: [Any!]) @auth(level: PUBLIC) {
+  key1: anyScalarNullableListOfNonNullable_insert(data: { value: $value1, tag: $tag, position: 1 })
+  key2: anyScalarNullableListOfNonNullable_insert(data: { value: $value2, tag: $tag, position: 2 })
+  key3: anyScalarNullableListOfNonNullable_insert(data: { value: $value3, tag: $tag, position: 3 })
+}
+
+query AnyScalarNullableListOfNonNullableGetByKey($key: AnyScalarNullableListOfNonNullable_Key!) @auth(level: PUBLIC) {
+  item: anyScalarNullableListOfNonNullable(key: $key) { value }
+}
+
+query AnyScalarNullableListOfNonNullableGetAllByTagAndValue($tag: String, $value: [Any!]) @auth(level: PUBLIC) {
+  items: anyScalarNullableListOfNonNullables(
+    limit: 5,
+    orderBy: { position: ASC },
+    where: { value: { includesAll: $value }, tag: { eq: $tag } },
+  ) { id }
+}
+
+###############################################################################
+# Operations for table: AnyScalarNonNullableListOfNullable
+###############################################################################
+
+mutation AnyScalarNonNullableListOfNullableInsert($tag: String, $value: [Any!]!) @auth(level: PUBLIC) {
+  key: anyScalarNonNullableListOfNullable_insert(data: { tag: $tag, value: $value })
+}
+
+mutation AnyScalarNonNullableListOfNullableInsert3($tag: String, $value1: [Any!]!, $value2: [Any!]!, $value3: [Any!]!) @auth(level: PUBLIC) {
+  key1: anyScalarNonNullableListOfNullable_insert(data: { value: $value1, tag: $tag, position: 1 })
+  key2: anyScalarNonNullableListOfNullable_insert(data: { value: $value2, tag: $tag, position: 2 })
+  key3: anyScalarNonNullableListOfNullable_insert(data: { value: $value3, tag: $tag, position: 3 })
+}
+
+query AnyScalarNonNullableListOfNullableGetByKey($key: AnyScalarNonNullableListOfNullable_Key!) @auth(level: PUBLIC) {
+  item: anyScalarNonNullableListOfNullable(key: $key) { value }
+}
+
+query AnyScalarNonNullableListOfNullableGetAllByTagAndValue($tag: String, $value: [Any!]!) @auth(level: PUBLIC) {
+  items: anyScalarNonNullableListOfNullables(
+    limit: 5,
+    orderBy: { position: ASC },
+    where: { value: { includesAll: $value }, tag: { eq: $tag } },
+  ) { id }
+}
+
+###############################################################################
+# Operations for table: AnyScalarNonNullableListOfNonNullable
+###############################################################################
+
+mutation AnyScalarNonNullableListOfNonNullableInsert($tag: String, $value: [Any!]!) @auth(level: PUBLIC) {
+  key: anyScalarNonNullableListOfNonNullable_insert(data: { tag: $tag, value: $value })
+}
+
+mutation AnyScalarNonNullableListOfNonNullableInsert3($tag: String, $value1: [Any!]!, $value2: [Any!]!, $value3: [Any!]!) @auth(level: PUBLIC) {
+  key1: anyScalarNonNullableListOfNonNullable_insert(data: { value: $value1, tag: $tag, position: 1 })
+  key2: anyScalarNonNullableListOfNonNullable_insert(data: { value: $value2, tag: $tag, position: 2 })
+  key3: anyScalarNonNullableListOfNonNullable_insert(data: { value: $value3, tag: $tag, position: 3 })
+}
+
+query AnyScalarNonNullableListOfNonNullableGetByKey($key: AnyScalarNonNullableListOfNonNullable_Key!) @auth(level: PUBLIC) {
+  item: anyScalarNonNullableListOfNonNullable(key: $key) { value }
+}
+
+query AnyScalarNonNullableListOfNonNullableGetAllByTagAndValue($tag: String, $value: [Any!]!) @auth(level: PUBLIC) {
+  items: anyScalarNonNullableListOfNonNullables(
+    limit: 5,
+    orderBy: { position: ASC },
+    where: { value: { includesAll: $value }, tag: { eq: $tag } },
+  ) { id }
+}
+
+###############################################################################
+# Operations for table: OrderDirectionTest
+###############################################################################
+
+mutation OrderDirectionTestInsert5(
+  $tag: String!,
+  $value1: Int!,
+  $value2: Int!,
+  $value3: Int!,
+  $value4: Int!,
+  $value5: Int!,
+) @auth(level: PUBLIC) {
+  key1: orderDirectionTest_insert(data: { tag: $tag, value: $value1 })
+  key2: orderDirectionTest_insert(data: { tag: $tag, value: $value2 })
+  key3: orderDirectionTest_insert(data: { tag: $tag, value: $value3 })
+  key4: orderDirectionTest_insert(data: { tag: $tag, value: $value4 })
+  key5: orderDirectionTest_insert(data: { tag: $tag, value: $value5 })
+}
+
+query OrderDirectionTestGetAllByTag(
+  $tag: String!,
+  $orderDirection: OrderDirection,
+) @auth(level: PUBLIC) {
+  items: orderDirectionTests(
+    limit: 10,
+    orderBy: { value: $orderDirection },
+    where: { tag: { eq: $tag } },
+  ) { id }
+}
+
+###############################################################################
+# Operations for table: type ExprValues
+###############################################################################
+
+mutation ExprValues_Insert @auth(level: PUBLIC) {
+  key: exprValues_insert(data: {
+    requestTimeAsDate_expr: "request.time"
+  })
+}
+
+query ExprValues_GetByKey($key: ExprValues_Key!) @auth(level: PUBLIC) {
+  item: exprValues(key: $key) {
+    requestTimeAsDate
+  }
+}
+
+###############################################################################
+# Operations for table: type EnumNonNullable
+###############################################################################
+
+mutation EnumNonNullable_Insert($value: N5ekmae3jn!) @auth(level: PUBLIC) {
+  key: enumNonNullable_insert(data: { value: $value })
+}
+
+mutation EnumNonNullable_Insert3($tag: String!, $value1: N5ekmae3jn!, $value2: N5ekmae3jn!, $value3: N5ekmae3jn!) @auth(level: PUBLIC) {
+  key1: enumNonNullable_insert(data: { value: $value1, tag: $tag })
+  key2: enumNonNullable_insert(data: { value: $value2, tag: $tag })
+  key3: enumNonNullable_insert(data: { value: $value3, tag: $tag })
+}
+
+query EnumNonNullable_GetByKey($key: EnumNonNullable_Key!) @auth(level: PUBLIC) {
+  item: enumNonNullable(key: $key) { value }
+}
+
+query EnumNonNullable_GetAllByTagAndValue($tag: String!, $value: N5ekmae3jn!) @auth(level: PUBLIC) {
+  items: enumNonNullables(
+    limit: 5,
+    where: { value: { eq: $value }, tag: { eq: $tag } },
+  ) { id }
+}
+
+query EnumNonNullable_GetAllByTagAndMaybeValue($tag: String!, $value: N5ekmae3jn) @auth(level: PUBLIC) {
+  items: enumNonNullables(
+    limit: 5,
+    where: { value: { eq: $value }, tag: { eq: $tag } },
+  ) { id }
+}
+
+query EnumNonNullable_GetAllByTagAndDefaultValue($tag: String!, $value: N5ekmae3jn! = XGWGVMYTHJ) @auth(level: PUBLIC) {
+  items: enumNonNullables(
+    limit: 5,
+    where: { value: { eq: $value }, tag: { eq: $tag } },
+  ) { id }
+}
+
+mutation EnumNonNullable_UpdateByKey($key: EnumNonNullable_Key!, $value: N5ekmae3jn) @auth(level: PUBLIC) {
+  key: enumNonNullable_update(key: $key, data: { value: $value })
+}
+
+###############################################################################
+# Operations for table: type EnumNullable
+###############################################################################
+
+mutation EnumNullable_Insert($value: N5ekmae3jn) @auth(level: PUBLIC) {
+  key: enumNullable_insert(data: { value: $value })
+}
+
+mutation EnumNullable_Insert3($tag: String!, $value1: N5ekmae3jn, $value2: N5ekmae3jn, $value3: N5ekmae3jn) @auth(level: PUBLIC) {
+  key1: enumNullable_insert(data: { value: $value1, tag: $tag })
+  key2: enumNullable_insert(data: { value: $value2, tag: $tag })
+  key3: enumNullable_insert(data: { value: $value3, tag: $tag })
+}
+
+query EnumNullable_GetByKey($key: EnumNullable_Key!) @auth(level: PUBLIC) {
+  item: enumNullable(key: $key) { value }
+}
+
+query EnumNullable_GetAllByTagAndValue($tag: String!, $value: N5ekmae3jn) @auth(level: PUBLIC) {
+  items: enumNullables(
+    limit: 5,
+    where: { value: { eq: $value }, tag: { eq: $tag } },
+  ) { id }
+}
+
+query EnumNullable_GetAllByTagAndMaybeValue($tag: String!, $value: N5ekmae3jn) @auth(level: PUBLIC) {
+  items: enumNullables(
+    limit: 5,
+    where: { value: { eq: $value }, tag: { eq: $tag } },
+  ) { id }
+}
+
+query EnumNullable_GetAllByTagAndDefaultValue($tag: String!, $value: N5ekmae3jn = QJX7C7RD5T) @auth(level: PUBLIC) {
+  items: enumNullables(
+    limit: 5,
+    where: { value: { eq: $value }, tag: { eq: $tag } },
+  ) { id }
+}
+
+mutation EnumNullable_UpdateByKey($key: EnumNullable_Key!, $value: N5ekmae3jn) @auth(level: PUBLIC) {
+  key: enumNullable_update(key: $key, data: { value: $value })
+}
+
+###############################################################################
+# Operations for table: type EnumNonNullableTableDefault
+###############################################################################
+
+mutation EnumNonNullableTableDefault_Insert @auth(level: PUBLIC) {
+  key: enumNonNullableTableDefault_insert(data: { })
+}
+
+query EnumNonNullableTableDefault_GetByKey($key: EnumNonNullableTableDefault_Key!) @auth(level: PUBLIC) {
+  item: enumNonNullableTableDefault(key: $key) { value }
+}
+
+###############################################################################
+# Operations for table: type EnumNullableTableDefault
+###############################################################################
+
+mutation EnumNullableTableDefault_Insert @auth(level: PUBLIC) {
+  key: enumNullableTableDefault_insert(data: { })
+}
+
+query EnumNullableTableDefault_GetByKey($key: EnumNullableTableDefault_Key!) @auth(level: PUBLIC) {
+  item: enumNullableTableDefault(key: $key) { value }
+}
+
+###############################################################################
+# Operations for table: type EnumNonNullableListOfNonNullable
+###############################################################################
+
+mutation EnumNonNullableListOfNonNullable_Insert($value: [N5ekmae3jn!]!) @auth(level: PUBLIC) {
+  key: enumNonNullableListOfNonNullable_insert(data: { value: $value })
+}
+
+query EnumNonNullableListOfNonNullable_GetByKey($key: EnumNonNullableListOfNonNullable_Key!) @auth(level: PUBLIC) {
+  item: enumNonNullableListOfNonNullable(key: $key) { value }
+}
+
+###############################################################################
+# Operations for table: type EnumNonNullableListOfNullable
+###############################################################################
+
+mutation EnumNonNullableListOfNullable_Insert($value: [N5ekmae3jn!]!) @auth(level: PUBLIC) {
+  key: enumNonNullableListOfNullable_insert(data: { value: $value })
+}
+
+query EnumNonNullableListOfNullable_GetByKey($key: EnumNonNullableListOfNullable_Key!) @auth(level: PUBLIC) {
+  item: enumNonNullableListOfNullable(key: $key) { value }
+}
+
+###############################################################################
+# Operations for table: type EnumNullableListOfNonNullable
+###############################################################################
+
+mutation EnumNullableListOfNonNullable_Insert($value: [N5ekmae3jn!]) @auth(level: PUBLIC) {
+  key: enumNullableListOfNonNullable_insert(data: { value: $value })
+}
+
+query EnumNullableListOfNonNullable_GetByKey($key: EnumNullableListOfNonNullable_Key!) @auth(level: PUBLIC) {
+  item: enumNullableListOfNonNullable(key: $key) { value }
+}
+
+###############################################################################
+# Operations for table: type EnumNullableListOfNullable
+###############################################################################
+
+mutation EnumNullableListOfNullable_Insert($value: [N5ekmae3jn!]) @auth(level: PUBLIC) {
+  key: enumNullableListOfNullable_insert(data: { value: $value })
+}
+
+query EnumNullableListOfNullable_GetByKey($key: EnumNullableListOfNullable_Key!) @auth(level: PUBLIC) {
+  item: enumNullableListOfNullable(key: $key) { value }
+}
+
+###############################################################################
+# Operations for table: type EnumKotlinKeywords
+###############################################################################
+
+mutation EnumKotlinKeywords_Insert($value: break!) @auth(level: PUBLIC) {
+  key: enumKotlinKeywords_insert(data: { value: $value })
+}
+
+query EnumKotlinKeywords_GetByKey($key: EnumKotlinKeywords_Key!) @auth(level: PUBLIC) {
+  item: enumKotlinKeywords(key: $key) { value }
+}
+
+###############################################################################
+# Operations for table: type EnumSubset
+###############################################################################
+
+# Note: This query is never actually executed in the tests; rather, its generated code is used.
+query EnumSubset_GetByKey($key: EnumSubset_Key!) @auth(level: PUBLIC) {
+  item: enumSubset(key: $key) { value }
+}
+
+###############################################################################
+# Operations for table: type EnumSubsetList
+###############################################################################
+
+# Note: This query is never actually executed in the tests; rather, its generated code is used.
+query EnumSubsetList_GetByKey($key: EnumSubsetList_Key!) @auth(level: PUBLIC) {
+  item: enumSubsetList(key: $key) { value }
+}
+
+###############################################################################
+# Operations for table: type EnumKey
+###############################################################################
+
+mutation EnumKey_Insert($enumValue: N5ekmae3jn!, $tag: String) @auth(level: PUBLIC) {
+  key: enumKey_insert(data: { enumValue: $enumValue, tag: $tag })
+}
+
+query EnumKey_GetByKey($key: EnumKey_Key!) @auth(level: PUBLIC) {
+  item: enumKey(key: $key) { tag }
+}
+
+###############################################################################
+# Operations for table: type MultipleEnumColumns
+###############################################################################
+
+mutation MultipleEnumColumns_Insert($enum1: N5ekmae3jn!, $enum2: S7yayynb25!) @auth(level: PUBLIC) {
+  key: multipleEnumColumns_insert(data: { enum1: $enum1, enum2: $enum2 })
+}
+
+query MultipleEnumColumns_GetByKey($key: MultipleEnumColumns_Key!) @auth(level: PUBLIC) {
+  item: multipleEnumColumns(key: $key) { enum1 enum2 }
+}

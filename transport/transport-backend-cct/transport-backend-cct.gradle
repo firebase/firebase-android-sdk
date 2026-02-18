@@ -18,15 +18,18 @@ plugins {
 }
 
 firebaseLibrary{
+    libraryGroup = "transport"
     publishJavadoc = false
-    publishReleaseNotes = false
+    releaseNotes { 
+        enabled.set(false)
+    }
 }
 
 protobuf {
     // Configure the protoc executable
     protoc {
         // Download from repositories
-        artifact = "com.google.protobuf:protoc:$protocVersion"
+        artifact = libs.protoc.get().toString()
     }
     generateProtoTasks {
         all().each { task ->
@@ -39,7 +42,7 @@ protobuf {
 
 android {
     namespace "com.google.android.datatransport.backend.cct"    
-    compileSdkVersion project.targetSdkVersion
+    compileSdkVersion project.compileSdkVersion
     defaultConfig {
         minSdkVersion project.minSdkVersion
         targetSdkVersion project.targetSdkVersion
@@ -54,25 +57,25 @@ android {
 }
 
 dependencies {
-    implementation project(':transport:transport-api')
-    implementation project(':transport:transport-runtime')
-    implementation 'com.google.firebase:firebase-encoders:17.0.0'
-    implementation 'com.google.firebase:firebase-encoders-json:18.0.0'
+    api "com.google.android.datatransport:transport-api:4.0.0"
+    api project(':transport:transport-runtime')
+    api 'com.google.firebase:firebase-encoders:17.0.0'
+    api 'com.google.firebase:firebase-encoders-json:18.0.0'
+
     implementation 'androidx.annotation:annotation:1.1.0'
 
     compileOnly "com.google.auto.value:auto-value-annotations:1.6.6"
 
-    annotationProcessor "com.google.auto.value:auto-value:1.6.5"
     annotationProcessor project(':encoders:firebase-encoders-processor')
+    annotationProcessor "com.google.auto.value:auto-value:1.6.5"
 
-    testImplementation "com.google.protobuf:protobuf-java-util:$protobufJavaUtilVersion"
-    testImplementation "androidx.test:core:$androidxTestCoreVersion"
-    testImplementation "com.google.truth:truth:$googleTruthVersion"
-    testImplementation 'com.google.truth.extensions:truth-proto-extension:1.0'
+    testImplementation libs.androidx.test.core
     testImplementation 'com.github.tomakehurst:wiremock:3.0.1'
-    // Keep Robolectric to 4.3.1 for httpclient and TelephonyManager compatibility.
-    testImplementation "org.robolectric:robolectric:4.3.1"
+    testImplementation libs.protobuf.java.util
+    testImplementation libs.truth
+    testImplementation 'com.google.truth.extensions:truth-proto-extension:1.0'
     testImplementation 'junit:junit:4.13.1'
+    testImplementation libs.robolectric
 
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'

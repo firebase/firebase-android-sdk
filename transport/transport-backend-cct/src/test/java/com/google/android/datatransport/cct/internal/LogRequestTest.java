@@ -18,11 +18,13 @@ import static com.google.android.datatransport.cct.internal.BatchedLogRequest.cr
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.extensions.proto.ProtoTruth.assertThat;
 
+import android.util.Base64;
 import com.google.android.datatransport.cct.proto.BatchedLogRequest;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 import com.google.protobuf.util.JsonFormat;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.Assert;
@@ -33,7 +35,7 @@ import org.robolectric.RobolectricTestRunner;
 @RunWith(RobolectricTestRunner.class)
 public class LogRequestTest {
 
-  private static byte[] EMPTY_BYTE_ARRAY = new byte[] {};
+  private static final byte[] EMPTY_BYTE_ARRAY = new byte[] {};
 
   @Test
   public void testBuildNetworkConnectionInfo_empty() {
@@ -192,6 +194,14 @@ public class LogRequestTest {
             .setEventTimeMs(100L)
             .setEventUptimeMs(4000L)
             .setTimezoneOffsetSeconds(123)
+            .setExperimentIds(
+                ExperimentIds.builder()
+                    .setClearBlob("blob".getBytes(StandardCharsets.UTF_8))
+                    .setEncryptedBlob(
+                        List.of(
+                            Base64.encodeToString(
+                                "encrypted blob".getBytes(StandardCharsets.UTF_8), Base64.NO_WRAP)))
+                    .build())
             .setNetworkConnectionInfo(
                 NetworkConnectionInfo.builder()
                     .setMobileSubtype(NetworkConnectionInfo.MobileSubtype.EDGE)
@@ -246,6 +256,11 @@ public class LogRequestTest {
                             .setEventUptimeMs(4000L)
                             .setEventTimeMs(100L)
                             .setTimezoneOffsetSeconds(123L)
+                            .setExperimentIds(
+                                com.google.android.datatransport.cct.proto.ExperimentIds
+                                    .newBuilder()
+                                    .setClearBlob(ByteString.copyFromUtf8("blob"))
+                                    .addEncryptedBlob(ByteString.copyFromUtf8("encrypted blob")))
                             .setNetworkConnectionInfo(
                                 com.google.android.datatransport.cct.proto.NetworkConnectionInfo
                                     .newBuilder()

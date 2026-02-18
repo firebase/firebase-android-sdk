@@ -28,6 +28,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import com.google.android.datatransport.Encoding;
 import com.google.android.datatransport.Event;
+import com.google.android.datatransport.EventContext;
 import com.google.android.datatransport.ProductData;
 import com.google.android.datatransport.Transformer;
 import com.google.android.datatransport.Transport;
@@ -46,6 +47,7 @@ import com.google.android.datatransport.runtime.synchronization.SynchronizationG
 import com.google.android.datatransport.runtime.time.Clock;
 import java.nio.charset.Charset;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -74,6 +76,10 @@ public class TransportRuntimeTest {
           return criticalSection.execute();
         }
       };
+  private static final String PSEUDONYMOUS_ID = "pseudonymous id";
+  private byte[] EXPERIMENT_IDS_CLEAR = "experiment ids clear".getBytes(Charset.defaultCharset());
+  private byte[] EXPERIMENT_IDS_ENCRYPTED =
+      "experiment ids encrypted".getBytes(Charset.defaultCharset());
 
   private static class StatefulTransportScheduleCallback implements TransportScheduleCallback {
     public boolean called = false;
@@ -99,7 +105,15 @@ public class TransportRuntimeTest {
         new TransportFactoryImpl(
             Collections.singleton(PROTOBUF_ENCODING), transportContext, transportInternalMock);
     Event<String> event =
-        Event.ofTelemetry("TelemetryData", ProductData.withProductId(TEST_PRODUCT_ID));
+        Event.ofTelemetry(
+            "TelemetryData",
+            ProductData.withProductId(TEST_PRODUCT_ID),
+            EventContext.builder()
+                .setPseudonymousId(PSEUDONYMOUS_ID)
+                .setExperimentIdsClear(EXPERIMENT_IDS_CLEAR)
+                .setExperimentIdsEncrypted(EXPERIMENT_IDS_ENCRYPTED)
+                .setExperimentIdsEncryptedList(List.of(EXPERIMENT_IDS_ENCRYPTED))
+                .build());
     Transformer<String, byte[]> transformer = String::getBytes;
     Transport<String> transport = factory.getTransport(testTransport, String.class, transformer);
 
@@ -141,7 +155,16 @@ public class TransportRuntimeTest {
     Transport<String> transport =
         factory.getTransport(testTransport, String.class, String::getBytes);
     Event<String> stringEvent =
-        Event.ofTelemetry(12, "TelemetryData", ProductData.withProductId(TEST_PRODUCT_ID));
+        Event.ofTelemetry(
+            12,
+            "TelemetryData",
+            ProductData.withProductId(TEST_PRODUCT_ID),
+            EventContext.builder()
+                .setPseudonymousId(PSEUDONYMOUS_ID)
+                .setExperimentIdsClear(EXPERIMENT_IDS_CLEAR)
+                .setExperimentIdsEncrypted(EXPERIMENT_IDS_ENCRYPTED)
+                .setExperimentIdsEncryptedList(List.of(EXPERIMENT_IDS_ENCRYPTED))
+                .build());
     EventInternal expectedEvent =
         EventInternal.builder()
             .setEventMillis(EVENT_MILLIS)
@@ -152,6 +175,10 @@ public class TransportRuntimeTest {
                     PROTOBUF_ENCODING, "TelemetryData".getBytes(Charset.defaultCharset())))
             .setCode(12)
             .setProductId(TEST_PRODUCT_ID)
+            .setPseudonymousId(PSEUDONYMOUS_ID)
+            .setExperimentIdsClear(EXPERIMENT_IDS_CLEAR)
+            .setExperimentIdsEncrypted(EXPERIMENT_IDS_ENCRYPTED)
+            .setExperimentIdsEncryptedList(List.of(EXPERIMENT_IDS_ENCRYPTED))
             .build();
 
     StatefulTransportScheduleCallback callback = new StatefulTransportScheduleCallback();
@@ -189,7 +216,16 @@ public class TransportRuntimeTest {
     Transport<String> transport =
         factory.getTransport(testTransport, String.class, String::getBytes);
     Event<String> stringEvent =
-        Event.ofTelemetry(12, "TelemetryData", ProductData.withProductId(TEST_PRODUCT_ID));
+        Event.ofTelemetry(
+            12,
+            "TelemetryData",
+            ProductData.withProductId(TEST_PRODUCT_ID),
+            EventContext.builder()
+                .setPseudonymousId(PSEUDONYMOUS_ID)
+                .setExperimentIdsClear(EXPERIMENT_IDS_CLEAR)
+                .setExperimentIdsEncrypted(EXPERIMENT_IDS_ENCRYPTED)
+                .setExperimentIdsEncryptedList(List.of(EXPERIMENT_IDS_ENCRYPTED))
+                .build());
 
     StatefulTransportScheduleCallback callback = new StatefulTransportScheduleCallback();
     transport.schedule(stringEvent, callback);
@@ -225,7 +261,16 @@ public class TransportRuntimeTest {
     Transport<String> transport =
         factory.getTransport(testTransport, String.class, String::getBytes);
     Event<String> stringEvent =
-        Event.ofTelemetry(12, "TelemetryData", ProductData.withProductId(TEST_PRODUCT_ID));
+        Event.ofTelemetry(
+            12,
+            "TelemetryData",
+            ProductData.withProductId(TEST_PRODUCT_ID),
+            EventContext.builder()
+                .setPseudonymousId(PSEUDONYMOUS_ID)
+                .setExperimentIdsClear(EXPERIMENT_IDS_CLEAR)
+                .setExperimentIdsEncrypted(EXPERIMENT_IDS_ENCRYPTED)
+                .setExperimentIdsEncryptedList(List.of(EXPERIMENT_IDS_ENCRYPTED))
+                .build());
     EventInternal expectedEvent =
         EventInternal.builder()
             .setEventMillis(EVENT_MILLIS)
@@ -236,6 +281,10 @@ public class TransportRuntimeTest {
                     PROTOBUF_ENCODING, "TelemetryData".getBytes(Charset.defaultCharset())))
             .setCode(12)
             .setProductId(TEST_PRODUCT_ID)
+            .setPseudonymousId(PSEUDONYMOUS_ID)
+            .setExperimentIdsClear(EXPERIMENT_IDS_CLEAR)
+            .setExperimentIdsEncrypted(EXPERIMENT_IDS_ENCRYPTED)
+            .setExperimentIdsEncryptedList(List.of(EXPERIMENT_IDS_ENCRYPTED))
             .build();
 
     StatefulTransportScheduleCallback callback = new StatefulTransportScheduleCallback();

@@ -563,6 +563,7 @@ public final class RemoteConfigManagerTest extends FirebasePerformanceTestBase {
 
     assertThat(testRemoteConfigManager2.getString("some_key").isAvailable()).isFalse();
   }
+
   // endregion.
 
   // region Tests for testing the quirks of depending on Firebase RC v0.
@@ -744,7 +745,7 @@ public final class RemoteConfigManagerTest extends FirebasePerformanceTestBase {
     RemoteConfigManager testRemoteConfigManager =
         setupTestRemoteConfigManager(
             fakeTaskCompletionSource.getTask(),
-            /* initializeFrc = */ true,
+            /* initializeFrc= */ true,
             createDefaultRcConfigMap());
 
     simulateFirebaseRemoteConfigLastFetchStatus(
@@ -772,7 +773,7 @@ public final class RemoteConfigManagerTest extends FirebasePerformanceTestBase {
     RemoteConfigManager testRemoteConfigManager =
         setupTestRemoteConfigManager(
             fakeTaskCompletionSource.getTask(),
-            /* initializeFrc = */ true,
+            /* initializeFrc= */ true,
             createDefaultRcConfigMap());
 
     simulateFirebaseRemoteConfigLastFetchStatus(
@@ -834,20 +835,20 @@ public final class RemoteConfigManagerTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void triggerRemoteConfigFetchIfNecessary_doesNotFetchBeforeAppStartRandomDelay() {
-    long appStartConfigFetchDelay = 5000;
+  public void triggerRemoteConfigFetchIfNecessary_doesNotFetchBeforeRandomDelay() {
+    long remoteConfigFetchDelay = 5000;
     RemoteConfigManager remoteConfigManagerPartialMock =
         spy(
             setupTestRemoteConfigManager(
                 createFakeTaskThatDoesNothing(),
                 true,
                 createDefaultRcConfigMap(),
-                appStartConfigFetchDelay));
+                remoteConfigFetchDelay));
 
     // Simulate time fast forward to some time before fetch time is up
-    long appStartTimeInMs = System.currentTimeMillis();
+    long approxRcmInitTimestampMs = System.currentTimeMillis();
     when(remoteConfigManagerPartialMock.getCurrentSystemTimeMillis())
-        .thenReturn(appStartTimeInMs + appStartConfigFetchDelay - 2000);
+        .thenReturn(approxRcmInitTimestampMs + remoteConfigFetchDelay - 2000);
 
     simulateFirebaseRemoteConfigLastFetchStatus(
         FirebaseRemoteConfig.LAST_FETCH_STATUS_NO_FETCH_YET);
@@ -860,20 +861,20 @@ public final class RemoteConfigManagerTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void triggerRemoteConfigFetchIfNecessary_fetchesAfterAppStartRandomDelay() {
-    long appStartConfigFetchDelay = 5000;
+  public void triggerRemoteConfigFetchIfNecessary_fetchesAfterRandomDelay() {
+    long remoteConfigFetchDelay = 5000;
     RemoteConfigManager remoteConfigManagerPartialMock =
         spy(
             setupTestRemoteConfigManager(
                 createFakeTaskThatDoesNothing(),
                 true,
                 createDefaultRcConfigMap(),
-                appStartConfigFetchDelay));
+                remoteConfigFetchDelay));
 
     // Simulate time fast forward to 2s after fetch delay time is up
-    long appStartTimeInMs = System.currentTimeMillis();
+    long approxRcmInitTimestampInMs = System.currentTimeMillis();
     when(remoteConfigManagerPartialMock.getCurrentSystemTimeMillis())
-        .thenReturn(appStartTimeInMs + appStartConfigFetchDelay + 2000);
+        .thenReturn(approxRcmInitTimestampInMs + remoteConfigFetchDelay + 2000);
 
     simulateFirebaseRemoteConfigLastFetchStatus(
         FirebaseRemoteConfig.LAST_FETCH_STATUS_NO_FETCH_YET);
@@ -917,24 +918,16 @@ public final class RemoteConfigManagerTest extends FirebasePerformanceTestBase {
       Task<Boolean> fakeTask,
       boolean initializeFrc,
       Map<String, FirebaseRemoteConfigValue> configs,
-      long appStartConfigFetchDelayInMs) {
+      long remoteConfigFetchDelayInMs) {
     simulateFirebaseRemoteConfigLastFetchStatus(FirebaseRemoteConfig.LAST_FETCH_STATUS_SUCCESS);
     when(mockFirebaseRemoteConfig.fetchAndActivate()).thenReturn(fakeTask);
     when(mockFirebaseRemoteConfig.getAll()).thenReturn(configs);
     if (initializeFrc) {
       return new RemoteConfigManager(
-          cacheManager,
-          fakeExecutor,
-          mockFirebaseRemoteConfig,
-          appStartConfigFetchDelayInMs,
-          RemoteConfigManager.getInitialStartupMillis());
+          cacheManager, fakeExecutor, mockFirebaseRemoteConfig, remoteConfigFetchDelayInMs);
     } else {
       return new RemoteConfigManager(
-          cacheManager,
-          fakeExecutor,
-          /* firebaseRemoteConfig= */ null,
-          appStartConfigFetchDelayInMs,
-          RemoteConfigManager.getInitialStartupMillis());
+          cacheManager, fakeExecutor, /* firebaseRemoteConfig= */ null, remoteConfigFetchDelayInMs);
     }
   }
 
@@ -1013,7 +1006,7 @@ public final class RemoteConfigManagerTest extends FirebasePerformanceTestBase {
     RemoteConfigManager testRemoteConfigManager =
         setupTestRemoteConfigManager(
             fakeTaskCompletionSource.getTask(),
-            /* initializeFrc = */ true,
+            /* initializeFrc= */ true,
             createDefaultRcConfigMap());
 
     simulateFirebaseRemoteConfigLastFetchStatus(

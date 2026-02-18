@@ -15,27 +15,26 @@
 plugins { id("firebase-library") }
 
 firebaseLibrary {
-  publishSources = true
   publishJavadoc = false
-  publishReleaseNotes = false
+  releaseNotes { enabled.set(false) }
 }
 
 android {
+  val compileSdkVersion: Int by rootProject
   val targetSdkVersion: Int by rootProject
   val minSdkVersion: Int by rootProject
 
-  compileSdk = targetSdkVersion
+  compileSdk = compileSdkVersion
 
   namespace = "com.google.firebase.database.collection"
-  defaultConfig {
-    minSdk = minSdkVersion
-    targetSdk = targetSdkVersion
-  }
+  defaultConfig { minSdk = minSdkVersion }
 
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
   }
+  testOptions { targetSdk = targetSdkVersion }
+  lint { targetSdk = targetSdkVersion }
 }
 
 dependencies {

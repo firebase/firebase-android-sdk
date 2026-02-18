@@ -15,6 +15,5 @@
 
 configure(subprojects) {
     group = 'com.google.firebase'
-    apply plugin: 'com.github.sherter.google-java-format'
 }
 

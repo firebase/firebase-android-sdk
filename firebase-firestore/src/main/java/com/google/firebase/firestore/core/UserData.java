@@ -259,14 +259,14 @@ public class UserData {
 
     public ParseContext childContext(String fieldName) {
       FieldPath childPath = path == null ? null : path.append(fieldName);
-      ParseContext context = new ParseContext(accumulator, childPath, /*arrayElement=*/ false);
+      ParseContext context = new ParseContext(accumulator, childPath, /* arrayElement= */ false);
       context.validatePathSegment(fieldName);
       return context;
     }
 
     public ParseContext childContext(FieldPath fieldPath) {
       FieldPath childPath = path == null ? null : path.append(fieldPath);
-      ParseContext context = new ParseContext(accumulator, childPath, /*arrayElement=*/ false);
+      ParseContext context = new ParseContext(accumulator, childPath, /* arrayElement= */ false);
       context.validatePath();
       return context;
     }
@@ -274,7 +274,7 @@ public class UserData {
     @SuppressWarnings("unused")
     public ParseContext childContext(int arrayIndex) {
       // TODO: We don't support array paths right now; so make path null.
-      return new ParseContext(accumulator, /*path=*/ null, /*arrayElement=*/ true);
+      return new ParseContext(accumulator, /* path= */ null, /* arrayElement= */ true);
     }
 
     /** Adds the given {@code fieldPath} to the accumulated FieldMask. */

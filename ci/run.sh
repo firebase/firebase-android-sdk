@@ -15,7 +15,12 @@
 # limitations under the License.
 
 set -e
+set -x
 
 DIRECTORY=$(cd `dirname $0` && pwd)
-pip3 install -e $DIRECTORY/fireci >> /dev/null
+python3 -m ensurepip --upgrade
+python3 -m pip install --upgrade setuptools
+python3 -m pip install --upgrade pip
+python3 -m pip install --upgrade wheel
+python3 -m pip install -e $DIRECTORY/fireci >> /dev/null
 fireci $@

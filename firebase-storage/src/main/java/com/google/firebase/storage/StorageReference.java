@@ -61,6 +61,7 @@ public class StorageReference implements Comparable<StorageReference> {
     this.mStorageUri = storageUri;
     this.mFirebaseStorage = firebaseStorage;
   }
+
   // endregion
 
   // region Path Operations
@@ -338,6 +339,7 @@ public class StorageReference implements Comparable<StorageReference> {
   public List<FileDownloadTask> getActiveDownloadTasks() {
     return StorageTaskManager.getInstance().getDownloadTasksUnder(this);
   }
+
   // endregion
 
   // region Metadata
@@ -388,6 +390,7 @@ public class StorageReference implements Comparable<StorageReference> {
         .scheduleCommand(new UpdateMetadataTask(this, pendingResult, metadata));
     return pendingResult.getTask();
   }
+
   // endregion
 
   // region Download Operations
@@ -520,6 +523,7 @@ public class StorageReference implements Comparable<StorageReference> {
     task.queue();
     return task;
   }
+
   // endregion
 
   // region Delete

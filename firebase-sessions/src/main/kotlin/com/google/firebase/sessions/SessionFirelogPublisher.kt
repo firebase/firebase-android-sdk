@@ -19,24 +19,27 @@ package com.google.firebase.sessions
 import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
+import com.google.firebase.annotations.concurrent.Background
 import com.google.firebase.app
 import com.google.firebase.installations.FirebaseInstallationsApi
+import com.google.firebase.sessions.FirebaseSessions.Companion.TAG
 import com.google.firebase.sessions.api.FirebaseSessionsDependencies
 import com.google.firebase.sessions.settings.SessionsSettings
+import javax.inject.Inject
+import javax.inject.Singleton
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 
 /** Responsible for uploading session events to Firelog. */
 internal fun interface SessionFirelogPublisher {
 
   /** Asynchronously logs the session represented by the given [SessionDetails] to Firelog. */
-  fun logSession(sessionDetails: SessionDetails)
+  fun mayLogSession(sessionDetails: SessionDetails)
 
   companion object {
     val instance: SessionFirelogPublisher
-      get() = Firebase.app[SessionFirelogPublisher::class.java]
+      get() = Firebase.app[FirebaseSessionsComponent::class.java].sessionFirelogPublisher
   }
 }
 
@@ -45,12 +48,15 @@ internal fun interface SessionFirelogPublisher {
  *
  * @hide
  */
-internal class SessionFirelogPublisherImpl(
+@Singleton
+internal class SessionFirelogPublisherImpl
+@Inject
+constructor(
   private val firebaseApp: FirebaseApp,
   private val firebaseInstallations: FirebaseInstallationsApi,
   private val sessionSettings: SessionsSettings,
   private val eventGDTLogger: EventGDTLoggerInterface,
-  private val backgroundDispatcher: CoroutineContext,
+  @Background private val backgroundDispatcher: CoroutineContext,
 ) : SessionFirelogPublisher {
 
   /**
@@ -59,16 +65,18 @@ internal class SessionFirelogPublisherImpl(
    * This will pull all the necessary information about the device in order to create a full
    * [SessionEvent], and then upload that through the Firelog interface.
    */
-  override fun logSession(sessionDetails: SessionDetails) {
+  override fun mayLogSession(sessionDetails: SessionDetails) {
     CoroutineScope(backgroundDispatcher).launch {
       if (shouldLogSession()) {
+        val installationId = InstallationId.create(firebaseInstallations)
         attemptLoggingSessionEvent(
           SessionEvents.buildSession(
             firebaseApp,
             sessionDetails,
             sessionSettings,
             FirebaseSessionsDependencies.getRegisteredSubscribers(),
-            getFirebaseInstallationId(),
+            firebaseInstallationId = installationId.fid,
+            firebaseAuthenticationToken = installationId.authToken,
           )
         )
       }
@@ -79,7 +87,7 @@ internal class SessionFirelogPublisherImpl(
   private fun attemptLoggingSessionEvent(sessionEvent: SessionEvent) {
     try {
       eventGDTLogger.log(sessionEvent)
-      Log.d(TAG, "Successfully logged Session Start event: ${sessionEvent.sessionData.sessionId}")
+      Log.d(TAG, "Successfully logged Session Start event.")
     } catch (ex: RuntimeException) {
       Log.e(TAG, "Error logging Session Start event to DataTransport: ", ex)
     }
@@ -87,13 +95,16 @@ internal class SessionFirelogPublisherImpl(
 
   /** Determines if the SDK should log a session to Firelog. */
   private suspend fun shouldLogSession(): Boolean {
-    Log.d(TAG, "Data Collection is enabled for at least one Subscriber")
-
+    val subscribers = FirebaseSessionsDependencies.getRegisteredSubscribers()
+    if (subscribers.values.none { it.isDataCollectionEnabled }) {
+      Log.d(TAG, "Sessions SDK disabled through data collection. Events will not be sent.")
+      return false
+    }
     // This will cause remote settings to be fetched if the cache is expired.
     sessionSettings.updateSettings()
 
     if (!sessionSettings.sessionsEnabled) {
-      Log.d(TAG, "Sessions SDK disabled. Events will not be sent.")
+      Log.d(TAG, "Sessions SDK disabled through settings API. Events will not be sent.")
       return false
     }
 
@@ -105,16 +116,6 @@ internal class SessionFirelogPublisherImpl(
     return true
   }
 
-  /** Gets the Firebase Installation ID for the current app installation. */
-  private suspend fun getFirebaseInstallationId() =
-    try {
-      firebaseInstallations.id.await()
-    } catch (ex: Exception) {
-      Log.e(TAG, "Error getting Firebase Installation ID. Using an empty ID", ex)
-      // Use an empty fid if there is any failure.
-      ""
-    }
-
   /** Calculate whether we should sample events using [SessionsSettings] data. */
   private fun shouldCollectEvents(): Boolean {
     // Sampling rate of 1 means the SDK will send every event.
@@ -122,8 +123,6 @@ internal class SessionFirelogPublisherImpl(
   }
 
   internal companion object {
-    private const val TAG = "SessionFirelogPublisher"
-
     private val randomValueForSampling: Double = Math.random()
   }
 }

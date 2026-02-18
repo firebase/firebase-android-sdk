@@ -115,6 +115,7 @@ public class JobInfoScheduler implements WorkScheduler {
     }
 
     long nextCallTime = eventStore.getNextCallTime(transportContext);
+    boolean hasPendingEvents = force && eventStore.hasPendingEventsFor(transportContext);
 
     // Schedule the build.
     JobInfo.Builder builder =
@@ -122,7 +123,8 @@ public class JobInfoScheduler implements WorkScheduler {
             new JobInfo.Builder(jobId, serviceComponent),
             transportContext.getPriority(),
             nextCallTime,
-            attemptNumber);
+            attemptNumber,
+            hasPendingEvents);
 
     PersistableBundle bundle = new PersistableBundle();
     bundle.putInt(ATTEMPT_NUMBER, attemptNumber);
@@ -138,7 +140,8 @@ public class JobInfoScheduler implements WorkScheduler {
         "Scheduling upload for context %s with jobId=%d in %dms(Backend next call timestamp %d). Attempt %d",
         transportContext,
         jobId,
-        config.getScheduleDelay(transportContext.getPriority(), nextCallTime, attemptNumber),
+        config.getScheduleDelay(
+            transportContext.getPriority(), nextCallTime, attemptNumber, hasPendingEvents),
         nextCallTime,
         attemptNumber);
 

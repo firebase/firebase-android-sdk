@@ -1,0 +1,241 @@
+/*
+ * Copyright 2024 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
+plugins {
+  id("groovy")
+  id("java-gradle-plugin")
+  id("org.jetbrains.kotlin.jvm")
+  id("maven-publish")
+}
+
+java {
+  sourceCompatibility = JavaVersion.VERSION_1_8
+  targetCompatibility = JavaVersion.VERSION_1_8
+}
+
+kotlin { jvmToolchain(17) }
+
+gradlePlugin {
+  plugins {
+    appDistro {
+      id = 'com.google.firebase.appdistribution'
+      implementationClass = 'com.google.firebase.appdistribution.gradle.AppDistributionPlugin'
+    }
+  }
+}
+
+publishing {
+  // In the `pluginMaven` block, we modify the artifactId of the main publication. The marker
+  // publication is created in an afterEvaluate block, which we override below. To ensure that
+  // the marker publication picks up the changes to the main publication, we need to modify
+  // the publication outside of the afterEvaluate block.
+  // https://github.com/gradle/gradle/issues/19687
+  publications {
+    pluginMaven(MavenPublication) {
+      // artifactId & version values are declared in gradle.properties
+      artifactId = project.artifactId
+      version = project.version
+
+      pom {
+        licenses {
+          license {
+            name = 'The Apache Software License, Version 2.0'
+            url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+          }
+        }
+      }
+    }
+  }
+  afterEvaluate {
+    publications {
+      appDistroPluginMarkerMaven {
+        pom {
+          licenses {
+            license {
+              name = 'The Apache Software License, Version 2.0'
+              url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+sourceSets {
+  main   {
+    java {
+      srcDirs = ['src/main/java']
+    }
+    kotlin {
+      srcDirs += ['src/main/java']
+    }
+  }
+
+  // Source set for integration tests
+  integrationTest
+
+  prodTest
+
+  // Source set for Gradle Runner test build. Gradle Runner test builds are run in separate
+  // processes i.e. test build does not share same class paths as test process. So we need
+  // to manually make the code under test available at runtime for the test build
+  // We do this by creating a new source set and including the gradle jar into it. We then
+  // create a file with the createClasspathManifest task that uses the classpath from this
+  // source set i.e. the gradle jar. This prevents a whole mess of dependency collisions
+  // since the dependencies are vendored into the jar.
+  gradleRunnerTestBuild
+}
+
+tasks.withType(KotlinCompile).configureEach {
+  compilerOptions.jvmTarget.set(JvmTarget.JVM_1_8)
+}
+
+// Write the gradleRunnerTestBuild runtime classpath to a file. This will be used by the Gradle
+// Runner test build during integration tests
+task createClasspathManifest {
+  def outputDir = file("$buildDir/$name")
+
+  inputs.files(sourceSets.gradleRunnerTestBuild.runtimeClasspath)
+      .withPropertyName("runtimeClasspath")
+      .withNormalizer(ClasspathNormalizer)
+  outputs.dir(outputDir)
+      .withPropertyName("outputDir")
+
+  doLast {
+    outputDir.mkdirs()
+    file("$outputDir/plugin-classpath.txt").text = sourceSets.gradleRunnerTestBuild.runtimeClasspath.join("\n")
+  }
+
+  // The gradleRunnerTestBuild sourceSet has a dependency on the firebase-appdistribution-gradle
+  // jar so make sure it's built before this task is run
+  dependsOn(tasks.publishToMavenLocal)
+}
+
+tasks {
+  jar {
+    manifest {
+      attributes["Implementation-Version"] = project.version
+    }
+  }
+}
+
+task integrationTest(type: Test) {
+  description = 'Runs integration tests.'
+  group = 'verification'
+
+  testClassesDirs = sourceSets.integrationTest.output.classesDirs
+  classpath = sourceSets.integrationTest.runtimeClasspath
+
+  shouldRunAfter(test)
+}
+
+check.dependsOn(integrationTest)
+
+task prodTest(type: Test) {
+  description = 'Runs prod tests.'
+  group = 'verification'
+
+  testClassesDirs = sourceSets.prodTest.output.classesDirs
+  classpath = sourceSets.prodTest.runtimeClasspath
+
+  shouldRunAfter(test)
+
+  doFirst {
+    def localProperties = new Properties()
+    def localPropertiesFile = rootProject.file('local.properties')
+    if (localPropertiesFile.exists()) {
+      localProperties.load(localPropertiesFile.newDataInputStream())
+    }
+
+    [
+      'firebase.appId',
+      'firebase.projectNumber'
+    ].each { propName ->
+      def propValue = localProperties.getProperty(propName)
+      if (propValue) {
+        systemProperty propName, propValue
+      }
+    }
+
+    // Pass the FIREBASE_TOKEN environment variable to the test process
+    def token = System.getenv('FIREBASE_TOKEN')
+    if (token) {
+      environment 'FIREBASE_TOKEN', token
+    }
+  }
+}
+
+test {
+  // Allow com.github.stefanbirkner:system-rules to work until the Java 17+ support is fixed - https://github.com/stefanbirkner/system-rules/issues/87
+  jvmArgs ('--add-opens', 'java.base/java.util=ALL-UNNAMED', '--add-opens', 'java.base/java.lang=ALL-UNNAMED')
+}
+
+dependencies {
+  implementation(gradleApi())
+  implementation(localGroovy())
+
+  compileOnly("com.android.tools.build:gradle:7.2.0")
+
+  implementation("com.google.guava:guava:31.1-jre")
+  implementation("com.google.api-client:google-api-client:2.7.1")
+  implementation("commons-io:commons-io:2.18.0")
+  implementation("commons-cli:commons-cli:1.9.0")
+  implementation("com.google.code.gson:gson:2.11.0")
+  implementation("com.google.auth:google-auth-library-oauth2-http:1.30.1")
+  // Pin versions of io.grpc:grpc-* libraries to avoid issues with AGP tasks
+  // https://github.com/firebase/firebase-android-sdk/issues/6634
+  implementation("io.grpc:grpc-protobuf:1.69.1")
+  implementation("io.grpc:grpc-core:1.69.1")
+  implementation("io.grpc:grpc-stub:1.69.1")
+  implementation("io.grpc:grpc-netty:1.69.1")
+
+  testImplementation(gradleApi())
+  testImplementation(libs.junit)
+  testImplementation("com.android.tools.build:gradle:7.2.0")
+  testImplementation("com.github.stefanbirkner:system-rules:1.19.0")
+  testImplementation("org.mockito:mockito-core:4.11.0")
+  testImplementation("org.mockito.kotlin:mockito-kotlin:4.1.0")
+  testImplementation("org.jetbrains.kotlin:kotlin-test")
+  testImplementation("org.jetbrains.kotlin:kotlin-test-junit")
+
+
+  integrationTestImplementation(gradleApi())
+  integrationTestImplementation(gradleTestKit())
+  integrationTestImplementation("com.android.tools.build:gradle:7.2.0")
+  integrationTestImplementation(libs.junit)
+  integrationTestImplementation("com.github.tomakehurst:wiremock:2.26.3")
+  integrationTestImplementation("com.google.code.gson:gson:2.10.1")
+  integrationTestImplementation("org.jetbrains.kotlin:kotlin-test")
+  integrationTestRuntimeOnly(files(createClasspathManifest))
+
+  prodTestImplementation(gradleApi())
+  prodTestImplementation(gradleTestKit())
+  prodTestImplementation("com.android.tools.build:gradle:7.2.0")
+  prodTestImplementation(libs.junit)
+  prodTestImplementation("com.github.tomakehurst:wiremock:2.26.3")
+  prodTestImplementation("org.hamcrest:hamcrest-all:1.3")
+  prodTestRuntimeOnly files(createClasspathManifest)
+
+  gradleRunnerTestBuildImplementation("com.google.firebase:firebase-appdistribution-gradle:${project.version}")
+}
+
+tasks.withType(ValidatePlugins).configureEach {
+  enableStricterValidation = true
+}

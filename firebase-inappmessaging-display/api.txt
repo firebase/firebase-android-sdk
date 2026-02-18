@@ -1,28 +1,20 @@
-// Signature format: 2.0
+// Signature format: 3.0
 package com.google.firebase.inappmessaging.display {
 
   public class FirebaseInAppMessagingDisplay implements android.app.Application.ActivityLifecycleCallbacks com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplay {
-    method public void displayMessage(com.google.firebase.inappmessaging.model.InAppMessage, com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks);
-    method @NonNull public static com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDisplay getInstance();
-    method public void onActivityCreated(android.app.Activity, android.os.Bundle);
-    method public void onActivityDestroyed(android.app.Activity);
-    method public void onActivityPaused(android.app.Activity);
-    method public void onActivityResumed(android.app.Activity);
-    method public void onActivitySaveInstanceState(android.app.Activity, android.os.Bundle);
-    method public void onActivityStarted(android.app.Activity);
-    method public void onActivityStopped(android.app.Activity);
+    method public void displayMessage(com.google.firebase.inappmessaging.model.InAppMessage!, com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks!);
+    method public static com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDisplay getInstance();
+    method public void onActivityCreated(android.app.Activity!, android.os.Bundle!);
+    method public void onActivityDestroyed(android.app.Activity!);
+    method public void onActivityPaused(android.app.Activity!);
+    method public void onActivityResumed(android.app.Activity!);
+    method public void onActivitySaveInstanceState(android.app.Activity!, android.os.Bundle!);
+    method public void onActivityStarted(android.app.Activity!);
+    method public void onActivityStopped(android.app.Activity!);
   }
 
   public final class InAppMessagingDisplayKt {
-    method @NonNull public static com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDisplay getInAppMessagingDisplay(@NonNull com.google.firebase.Firebase);
-  }
-
-}
-
-package com.google.firebase.inappmessaging.display.ktx {
-
-  public final class InAppMessagingDisplayKt {
-    method @Deprecated @NonNull public static com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDisplay getInAppMessagingDisplay(@NonNull com.google.firebase.ktx.Firebase);
+    method public static com.google.firebase.inappmessaging.display.FirebaseInAppMessagingDisplay getInAppMessagingDisplay(com.google.firebase.Firebase);
   }
 
 }

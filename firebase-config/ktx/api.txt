@@ -1,8 +1,0 @@
-// Signature format: 2.0
-package com.google.firebase.remoteconfig.ktx {
-
-  public final class LoggingKt {
-  }
-
-}
-

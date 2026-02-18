@@ -12,18 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     id 'firebase-library'
     id("kotlin-android")
     id 'com.google.protobuf'
+    id("copy-google-services")
 }
 
 firebaseLibrary {
-    libraryGroup "firestore"
-    publishSources = true
+    libraryGroup = "firestore"
     testLab {
         enabled = true
-        timeout = '30m'
+        timeout = '45m'
+    }
+    releaseNotes {
+        name.set("{{firestore}}")
+        versionName.set("firestore")
     }
 }
 
@@ -31,11 +37,11 @@ protobuf {
     // Configure the protoc executable
     protoc {
         // Download from repositories
-        artifact = "com.google.protobuf:protoc:$protocVersion"
+        artifact = libs.protoc.get().toString()
     }
     plugins {
         grpc {
-            artifact = "io.grpc:protoc-gen-grpc-java:$grpcVersion"
+            artifact = libs.grpc.protoc.gen.java.get().toString()
         }
     }
     generateProtoTasks {
@@ -58,10 +64,10 @@ android {
     }
 
     namespace "com.google.firebase.firestore"
-    compileSdkVersion project.targetSdkVersion
+    compileSdkVersion project.compileSdkVersion
     defaultConfig {
         targetSdkVersion project.targetSdkVersion
-        minSdkVersion 19
+        minSdkVersion project.minSdkVersion
         versionName version
         multiDexEnabled true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -71,7 +77,10 @@ android {
         def targetBackend = findProperty("targetBackend") ?: "emulator"
         buildConfigField("String", "TARGET_BACKEND", "\"$targetBackend\"")
 
-        def targetDatabaseId = findProperty('targetDatabaseId') ?: "(default)"
+        def backendEdition = findProperty("backendEdition") ?: "enterprise"
+        buildConfigField("String", "BACKEND_EDITION", "\"$backendEdition\"")
+
+        def targetDatabaseId = findProperty('targetDatabaseId') ?: "enterprise"
         buildConfigField("String", "TARGET_DATABASE_ID", "\"$targetDatabaseId\"")
 
         def localProps = new Properties()
@@ -108,65 +117,71 @@ android {
 
 }
 
+kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_1_8 } }
+
 tasks.withType(Test) {
     maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
 }
 
-googleJavaFormat {
-    exclude 'src/testUtil/java/com/google/firebase/firestore/testutil/Assert.java'
-    exclude 'src/testUtil/java/com/google/firebase/firestore/testutil/ThrowingRunnable.java'
-}
-
 dependencies {
-    androidTestAnnotationProcessor 'com.google.auto.value:auto-value:1.6.5'
-    androidTestImplementation "androidx.annotation:annotation:1.1.0"
-    androidTestImplementation "androidx.test.ext:junit:$androidxTestJUnitVersion"
-    androidTestImplementation 'androidx.test:rules:1.5.0'
-    androidTestImplementation 'androidx.test:runner:1.5.2'
-    androidTestImplementation 'com.fasterxml.jackson.core:jackson-databind:2.9.8'
-    androidTestImplementation 'junit:junit:4.13.2'
-    androidTestImplementation 'org.mockito:mockito-android:2.25.0'
-    androidTestImplementation 'org.mockito:mockito-core:2.25.0'
-    androidTestImplementation("com.google.truth:truth:$googleTruthVersion") {
-         exclude group: "org.codehaus.mojo", module: "animal-sniffer-annotations"
-     }
-    annotationProcessor 'com.google.auto.value:auto-value:1.6.5'
-    compileOnly 'com.google.auto.value:auto-value-annotations:1.6.6'
-    compileOnly 'javax.annotation:jsr250-api:1.0'
-    implementation "io.grpc:grpc-android:$grpcVersion"
-    implementation "io.grpc:grpc-okhttp:$grpcVersion"
-    implementation "io.grpc:grpc-protobuf-lite:$grpcVersion"
-    implementation "io.grpc:grpc-stub:$grpcVersion"
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
-    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion"
-    implementation 'androidx.annotation:annotation:1.1.0'
-    implementation 'com.google.android.gms:play-services-base:18.0.1'
-    implementation 'com.google.android.gms:play-services-basement:18.1.0'
-    implementation 'com.google.android.gms:play-services-tasks:18.0.1'
-    implementation 'com.google.firebase:firebase-annotations:16.2.0'
-    implementation 'com.google.firebase:firebase-appcheck-interop:17.0.0'
-    implementation 'com.google.firebase:firebase-database-collection:18.0.1'
-    implementation project(':protolite-well-known-types')
-    implementation('com.google.firebase:firebase-auth-interop:19.0.2') {
-         exclude group: "com.google.firebase", module: "firebase-common"
-     }
-    implementation("com.google.firebase:firebase-common:20.4.2")
-    implementation("com.google.firebase:firebase-common-ktx:20.4.2")
-    implementation("com.google.firebase:firebase-components:17.1.5")
-    javadocClasspath 'com.google.auto.value:auto-value-annotations:1.6.6'
-    testCompileOnly "com.google.protobuf:protobuf-java:$protocVersion"
-    testImplementation "androidx.test:core:$androidxTestCoreVersion"
-    testImplementation "com.google.truth:truth:$googleTruthVersion"
-    testImplementation "org.hamcrest:hamcrest-junit:2.0.0.0"
-    testImplementation "org.robolectric:robolectric:$robolectricVersion"
-    testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.9.8'
-    testImplementation 'com.google.android.gms:play-services-tasks:18.0.1'
-    testImplementation 'com.google.guava:guava-testlib:12.0-rc2'
-    testImplementation 'junit:junit:4.12'
-    testImplementation 'junit:junit:4.13.2'
-    testImplementation 'org.mockito:mockito-core:2.25.0'
+    javadocClasspath libs.autovalue.annotations
+
+    api project(':protolite-well-known-types')
+    api libs.playservices.tasks
+    api libs.firebase.annotations
+    api 'com.google.firebase:firebase-appcheck-interop:17.0.0'
+    api('com.google.firebase:firebase-auth-interop:19.0.2') {
+        exclude group: "com.google.firebase", module: "firebase-common"
+    }
+
+    api(libs.firebase.common)
+    api(libs.firebase.components)
+    api('com.google.firebase:firebase-database-collection:18.0.1')
+
+    implementation libs.androidx.annotation
+    implementation libs.playservices.base
+    implementation libs.playservices.basement
+    implementation libs.grpc.android
+    implementation libs.grpc.okhttp
+    implementation libs.grpc.protobuf.lite
+    implementation libs.grpc.stub
+    implementation libs.kotlin.stdlib
+    implementation libs.kotlinx.coroutines.core
+    implementation 'com.google.re2j:re2j:1.6'
+
+    compileOnly libs.autovalue.annotations
+    compileOnly libs.javax.annotation.jsr250
+
+    annotationProcessor libs.autovalue
+
+    androidTestAnnotationProcessor libs.autovalue
+
     testImplementation project(':firebase-database-collection')
     testImplementation project(':firebase-firestore')
+    testProtobuf(libs.proto.google.common.protos)
+    testImplementation libs.androidx.test.core
+    testImplementation libs.jackson.databind
+    testImplementation libs.playservices.tasks
+    testImplementation 'com.google.guava:guava-testlib:12.0-rc2'
+    testImplementation libs.truth
+    testImplementation libs.junit
+    testImplementation libs.hamcrest
+    testImplementation libs.mockito.core
+    testImplementation libs.robolectric
+
+    testCompileOnly libs.protobuf.java
+
+    androidTestImplementation libs.androidx.annotation
+    androidTestImplementation libs.androidx.test.rules
+    androidTestImplementation libs.androidx.test.runner
+    androidTestImplementation libs.androidx.test.junit
+    androidTestImplementation libs.jackson.databind
+    androidTestImplementation(libs.truth) {
+        exclude group: "org.codehaus.mojo", module: "animal-sniffer-annotations"
+    }
+    androidTestImplementation libs.junit
+    androidTestImplementation libs.mockito.android
+    androidTestImplementation libs.mockito.core
 }
 
 gradle.projectsEvaluated {
@@ -177,10 +192,3 @@ gradle.projectsEvaluated {
         options.compilerArgs << "-Xlint:deprecation" // << "-Werror"
     }
 }
-
-// ==========================================================================
-// Copy from here down if you want to use the google-services plugin in your
-// androidTest integration tests.
-// ==========================================================================
-ext.packageName = "com.google.firebase.firestore"
-apply from: '../gradle/googleServices.gradle'

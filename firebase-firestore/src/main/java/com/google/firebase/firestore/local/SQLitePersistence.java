@@ -206,6 +206,11 @@ public final class SQLitePersistence extends Persistence {
   }
 
   @Override
+  GlobalsCache getGlobalsCache() {
+    return new SQLiteGlobalsCache(this);
+  }
+
+  @Override
   void runTransaction(String action, Runnable operation) {
     Logger.debug(TAG, "Starting transaction: %s", action);
     db.beginTransactionWithListener(transactionListener);
@@ -265,7 +270,7 @@ public final class SQLitePersistence extends Persistence {
    * @see "https://www.sqlite.org/pragma.html#pragma_page_size"
    */
   private long getPageSize() {
-    return query("PRAGMA page_size").firstValue(row -> row.getLong(/*column=*/ 0));
+    return query("PRAGMA page_size").firstValue(row -> row.getLong(/* column= */ 0));
   }
 
   /**
@@ -275,7 +280,7 @@ public final class SQLitePersistence extends Persistence {
    * @see "https://www.sqlite.org/pragma.html#pragma_page_count."
    */
   private long getPageCount() {
-    return query("PRAGMA page_count").firstValue(row -> row.getLong(/*column=*/ 0));
+    return query("PRAGMA page_count").firstValue(row -> row.getLong(/* column= */ 0));
   }
 
   /**
@@ -611,7 +616,7 @@ public final class SQLitePersistence extends Persistence {
     // attempt to check for placeholders in the query {@link head}; if it only relied on the number
     // of placeholders it itself generates, in that situation it would still exceed the SQLite
     // limit.
-    private static final int LIMIT = 900;
+    static final int LIMIT = 900;
 
     /**
      * Creates a new {@code LongQuery} with parameters that describe a template for creating each

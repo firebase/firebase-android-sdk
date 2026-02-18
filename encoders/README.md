@@ -1,27 +1,24 @@
 # Firebase Encoders
 
-This project provides libraries and code generation infrastructure that allows
-encoding java classes into various target serialization formats(currently
-supported: **json** and **proto**).
+This project provides libraries and code generation infrastructure that allows encoding java classes
+into various target serialization formats(currently supported: **json** and **proto**).
 
 The project consists of multiple parts:
 
-*   `firebase_encoders` - Core API and Annotations library.
-*   `processor` - Java plugin that automatically generates encoders for
-    `@Encodable` annotated POJOs.
-*   `firebase_encoders_json` - JSON serialization support.
-*   `firebase_encoders_proto` - Protobuf serialization support.
-*   `protoc_gen` - Protobuf compiler plugin that generates encoder-compliant
-    classes. Can be used with `firebase_encoders_proto` and
-    `firebase_encoders_json`.
-*   `reflective` - Can be used to encode any given class via Java
-    reflection(**not recommented**).
+- `firebase_encoders` - Core API and Annotations library.
+- `processor` - Java plugin that automatically generates encoders for `@Encodable` annotated POJOs.
+- `firebase_encoders_json` - JSON serialization support.
+- `firebase_encoders_proto` - Protobuf serialization support.
+- `protoc_gen` - Protobuf compiler plugin that generates encoder-compliant classes. Can be used with
+  `firebase_encoders_proto` and `firebase_encoders_json`.
+- `reflective` - Can be used to encode any given class via Java reflection(**not recommented**).
 
 ### Protobuf gettings started
 
 ##### Step1. Place proto files into **src/main/proto/**
 
-*src/main/proto/my.proto*
+_src/main/proto/my.proto_
+
 ```proto
 syntax = "proto3";
 
@@ -35,10 +32,10 @@ message SimpleProto {
 }
 ```
 
-
 ##### Step2. Add the following configurations into gradle module build file.
 
-*example.gradle*
+_example.gradle_
+
 ```gradle
 plugins {
     id "java-library"
@@ -86,11 +83,14 @@ dependencies {
 
 ##### Step3. Create a code-gen-cfg.textproto file at the module root folder(same location as the gradle module build file).
 
-*code-gen-cfg.textproto* 
+_code-gen-cfg.textproto_
 
 Note:
+
 - The filename must be the same as the filename determined in the gradle build file.
-- Only need to specify the "root" proto object, anything it references will automatically be included.
+- Only need to specify the "root" proto object, anything it references will automatically be
+  included.
+
 ```textproto
 # code_gen_cfg.textproto
 # proto-file: src/main/proto/my.proto
@@ -112,8 +112,7 @@ com.google.google.protobuf.Timestamp
 com.google.google.protobuf.Timestamp$Builder
 ```
 
-Only `root` classes are "encodable" meaning that they have the following
-methods:
+Only `root` classes are "encodable" meaning that they have the following methods:
 
 ```java
 public class SimpleProto {
@@ -124,7 +123,8 @@ public class SimpleProto {
 
 ### Annotation Processing on Kotlin
 
-The default gradle `annotationProcessor` import doesn't run the processor over kotlin code, so we need to use `kapt`
+The default gradle `annotationProcessor` import doesn't run the processor over kotlin code, so we
+need to use `kapt`
 
 1. Add the plugin to your build
 
@@ -146,3 +146,4 @@ dependencies {
     kapt project(":encoders:firebase-encoders-processor")
 }
 ```
+

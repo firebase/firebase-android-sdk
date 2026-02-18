@@ -12,81 +12,88 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
-    id("firebase-library")
-    id("kotlin-android")
+  id("firebase-library")
+  id("kotlin-android")
 }
 
 firebaseLibrary {
-    libraryGroup("common")
-    testLab.enabled = true
-    publishSources = true
+  libraryGroup = "common"
+  testLab.enabled = true
+  releaseNotes { enabled = false }
 }
 
 android {
-  val targetSdkVersion : Int by rootProject
-  val minSdkVersion : Int by rootProject
+  val compileSdkVersion: Int by rootProject
+  val targetSdkVersion: Int by rootProject
+  val minSdkVersion: Int by rootProject
 
-  compileSdk = targetSdkVersion
+  compileSdk = compileSdkVersion
   namespace = "com.google.firebase"
   defaultConfig {
     minSdk = minSdkVersion
-    targetSdk = targetSdkVersion
     multiDexEnabled = true
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     consumerProguardFiles("proguard.txt")
   }
   sourceSets {
-    getByName("androidTest") {
-      java.srcDirs("src/testUtil")
-    }
-    getByName("test") {
-      java.srcDirs("src/testUtil")
-    }
+    getByName("androidTest") { java.srcDirs("src/testUtil") }
+    getByName("test") { java.srcDirs("src/testUtil") }
   }
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
   }
-  testOptions.unitTests.isIncludeAndroidResources = true
+  testOptions {
+    targetSdk = targetSdkVersion
+    unitTests { isIncludeAndroidResources = true }
+  }
+  lint { targetSdk = targetSdkVersion }
 }
 
+kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_1_8 } }
+
 dependencies {
-    api(libs.kotlin.coroutines.tasks)
+  api(libs.kotlin.coroutines.tasks)
 
-    implementation(project(":firebase-components"))
-    implementation("com.google.firebase:firebase-annotations:16.2.0")
-    implementation(libs.androidx.annotation)
-    implementation(libs.androidx.futures)
-    implementation(libs.kotlin.stdlib)
-    implementation(libs.playservices.basement)
-    implementation(libs.playservices.tasks)
+  api(libs.firebase.components)
+  api(libs.firebase.annotations)
+  implementation(libs.androidx.datastore.preferences)
+  implementation(libs.androidx.annotation)
+  implementation(libs.androidx.futures)
+  implementation(libs.kotlin.stdlib)
+  implementation(libs.playservices.basement)
+  implementation(libs.playservices.tasks)
 
-    compileOnly(libs.autovalue.annotations)
-    compileOnly(libs.findbugs.jsr305)
-    compileOnly(libs.kotlin.stdlib)
+  compileOnly(libs.autovalue.annotations)
+  compileOnly(libs.findbugs.jsr305)
+  compileOnly(libs.kotlin.stdlib)
 
-    annotationProcessor(libs.autovalue)
+  annotationProcessor(libs.autovalue)
 
-    testImplementation("com.google.guava:guava-testlib:12.0-rc2")
-    testImplementation(libs.androidx.test.core)
-    testImplementation(libs.androidx.test.junit)
-    testImplementation(libs.androidx.test.runner)
-    testImplementation(libs.junit)
-    testImplementation(libs.kotlin.coroutines.test)
-    testImplementation(libs.mockito.core)
-    testImplementation(libs.org.json)
-    testImplementation(libs.robolectric)
-    testImplementation(libs.truth)
+  testImplementation("com.google.guava:guava-testlib:12.0-rc2")
+  testImplementation(libs.androidx.test.core)
+  testImplementation(libs.androidx.test.junit)
+  testImplementation(libs.androidx.test.runner)
+  testImplementation(libs.junit)
+  testImplementation(libs.kotlin.coroutines.test)
+  testImplementation(libs.mockito.core)
+  testImplementation(libs.org.json)
+  testImplementation(libs.robolectric)
+  testImplementation(libs.truth)
 
-    androidTestImplementation(project(":integ-testing")) {
-        exclude("com.google.firebase","firebase-common")
-        exclude("com.google.firebase","firebase-common-ktx")
-    }
-    androidTestImplementation(libs.androidx.test.junit)
-    androidTestImplementation(libs.androidx.test.runner)
-    androidTestImplementation(libs.junit)
-    androidTestImplementation(libs.mockito.core)
-    androidTestImplementation(libs.mockito.dexmaker)
-    androidTestImplementation(libs.truth)
+  androidTestImplementation(project(":integ-testing")) {
+    exclude("com.google.firebase", "firebase-common")
+  }
+
+  // TODO(Remove when FirbaseAppTest has been modernized to use LiveData)
+  androidTestImplementation("androidx.localbroadcastmanager:localbroadcastmanager:1.1.0")
+  androidTestImplementation(libs.androidx.test.junit)
+  androidTestImplementation(libs.androidx.test.runner)
+  androidTestImplementation(libs.junit)
+  androidTestImplementation(libs.mockito.core)
+  androidTestImplementation(libs.mockito.dexmaker)
+  androidTestImplementation(libs.truth)
 }

@@ -24,7 +24,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.mockito.Mockito.when;
 
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.DocumentSnapshot.ServerTimestampBehavior;
@@ -87,10 +86,6 @@ public class QuerySnapshotTest {
 
   @Test
   public void testToObjects() {
-    // Prevent NPE on trying to access non-existent settings on the mock.
-    when(TestUtil.firestore().getFirestoreSettings())
-        .thenReturn(new FirebaseFirestoreSettings.Builder().build());
-
     ObjectValue objectData =
         ObjectValue.fromMap(map("timestamp", ServerTimestamps.valueOf(Timestamp.now(), null)));
     QuerySnapshot foo =
@@ -125,13 +120,13 @@ public class QuerySnapshotTest {
     com.google.firebase.firestore.core.Query fooQuery = query("foo");
     ViewSnapshot viewSnapshot =
         new ViewSnapshot(
-            fooQuery,
+            new com.google.firebase.firestore.core.QueryOrPipeline.QueryWrapper(fooQuery),
             newDocuments,
             oldDocuments,
             documentChanges,
-            /*isFromCache=*/ false,
-            /*mutatedKeys=*/ keySet(),
-            /*didSyncStateChange=*/ true,
+            /* isFromCache= */ false,
+            /* mutatedKeys= */ keySet(),
+            /* didSyncStateChange= */ true,
             /* excludesMetadataChanges= */ false,
             /* hasCachedResults= */ false);
 
@@ -140,24 +135,24 @@ public class QuerySnapshotTest {
 
     QueryDocumentSnapshot doc1Snap =
         QueryDocumentSnapshot.fromDocument(
-            firestore, doc1New, /*fromCache=*/ false, /*hasPendingWrites=*/ false);
+            firestore, doc1New, /* fromCache= */ false, /* hasPendingWrites= */ false);
     QueryDocumentSnapshot doc2Snap =
         QueryDocumentSnapshot.fromDocument(
-            firestore, doc2New, /*fromCache=*/ false, /*hasPendingWrites=*/ false);
+            firestore, doc2New, /* fromCache= */ false, /* hasPendingWrites= */ false);
 
     assertEquals(1, snapshot.getDocumentChanges().size());
     List<DocumentChange> changesWithoutMetadata =
         Arrays.asList(
             new DocumentChange(
-                doc2Snap, DocumentChange.Type.MODIFIED, /*oldIndex=*/ 1, /*newIndex=*/ 1));
+                doc2Snap, DocumentChange.Type.MODIFIED, /* oldIndex= */ 1, /* newIndex= */ 1));
     assertEquals(changesWithoutMetadata, snapshot.getDocumentChanges());
 
     List<DocumentChange> changesWithMetadata =
         Arrays.asList(
             new DocumentChange(
-                doc1Snap, DocumentChange.Type.MODIFIED, /*oldIndex=*/ 0, /*newIndex=*/ 0),
+                doc1Snap, DocumentChange.Type.MODIFIED, /* oldIndex= */ 0, /* newIndex= */ 0),
             new DocumentChange(
-                doc2Snap, DocumentChange.Type.MODIFIED, /*oldIndex=*/ 1, /*newIndex=*/ 1));
+                doc2Snap, DocumentChange.Type.MODIFIED, /* oldIndex= */ 1, /* newIndex= */ 1));
     assertEquals(changesWithMetadata, snapshot.getDocumentChanges(MetadataChanges.INCLUDE));
   }
 }

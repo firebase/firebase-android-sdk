@@ -24,24 +24,25 @@ import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
+import android.text.TextUtils;
 import android.util.Log;
-import java.util.Collections;
-import java.util.Set;
-import java.util.WeakHashMap;
+import java.util.ArrayDeque;
+import java.util.Queue;
 
 class FcmLifecycleCallbacks implements Application.ActivityLifecycleCallbacks {
 
-  /** Keep a list of intents that we've seen to avoid accidentally logging events twice. */
-  private final Set<Intent> seenIntents =
-      Collections.newSetFromMap(new WeakHashMap<Intent, Boolean>());
+  private static final int RECENTLY_LOGGED_MESSAGE_IDS_MAX_SIZE = 10;
+
+  /** Last N message IDs that have been logged to prevent duplicate logging. */
+  private final Queue<String> recentlyLoggedMessageIds =
+      new ArrayDeque<>(RECENTLY_LOGGED_MESSAGE_IDS_MAX_SIZE);
 
   // TODO(b/258424124): Migrate to go/firebase-android-executors
   @SuppressLint("ThreadPoolCreation")
   @Override
   public void onActivityCreated(Activity createdActivity, Bundle instanceState) {
     Intent startingIntent = createdActivity.getIntent();
-    if (startingIntent == null || !seenIntents.add(startingIntent)) {
-      // already seen (and logged) this, no need to go any further.
+    if (startingIntent == null) {
       return;
     }
 
@@ -57,12 +58,7 @@ class FcmLifecycleCallbacks implements Application.ActivityLifecycleCallbacks {
   }
 
   @Override
-  public void onActivityPaused(Activity pausedActivity) {
-    if (pausedActivity.isFinishing()) {
-      // iff the activity is finished we can remove the intent from our "seen" list
-      seenIntents.remove(pausedActivity.getIntent());
-    }
-  }
+  public void onActivityPaused(Activity pausedActivity) {}
 
   @Override
   public void onActivityDestroyed(Activity destroyedActivity) {}
@@ -84,6 +80,14 @@ class FcmLifecycleCallbacks implements Application.ActivityLifecycleCallbacks {
     try {
       Bundle extras = startingIntent.getExtras();
       if (extras != null) {
+        String messageId = MessagingAnalytics.getMessageId(extras);
+        if (!TextUtils.isEmpty(messageId)) {
+          if (recentlyLoggedMessageIds.contains(messageId)) {
+            // Already logged, don't log again.
+            return;
+          }
+          recentlyLoggedMessageIds.add(messageId);
+        }
         analyticsData = extras.getBundle(Constants.MessageNotificationKeys.ANALYTICS_DATA);
       }
     } catch (RuntimeException e) {

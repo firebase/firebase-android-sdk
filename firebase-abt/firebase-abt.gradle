@@ -18,8 +18,11 @@ plugins {
 
 firebaseLibrary {
     testLab.enabled = false
-    publishSources = true
     publishJavadoc = false
+    releaseNotes {
+        name.set("{{ab_testing}}")
+        versionName.set("ab_testing")
+    }
 }
 
 android {
@@ -29,7 +32,7 @@ android {
     }
 
     namespace "com.google.firebase.abt"
-    compileSdkVersion project.targetSdkVersion
+    compileSdkVersion project.compileSdkVersion
     defaultConfig {
         minSdkVersion project.minSdkVersion
         targetSdkVersion project.targetSdkVersion
@@ -48,17 +51,21 @@ android {
 }
 
 dependencies {
-    implementation 'com.google.firebase:firebase-common:20.4.2'
-    implementation 'com.google.firebase:firebase-components:17.1.5'
+    api libs.firebase.common
+    api libs.firebase.components
+
+    implementation libs.playservices.basement
     implementation ('com.google.firebase:firebase-measurement-connector:18.0.0') {
         exclude group: "com.google.firebase", module: "firebase-common"
     }
-    implementation 'com.google.android.gms:play-services-basement:18.1.0'
-    testImplementation 'org.mockito:mockito-core:2.25.0'
-    testImplementation 'com.google.truth:truth:0.44'
-    testImplementation 'junit:junit:4.13-beta-2'
-    testImplementation 'androidx.test:runner:1.2.0'
-    testImplementation "org.robolectric:robolectric:$robolectricVersion"
-    testImplementation 'io.grpc:grpc-testing:1.12.0'
-    testImplementation 'androidx.test.espresso:espresso-core:3.2.0'
+
+    implementation(libs.kotlin.stdlib.jdk8)
+
+    testImplementation libs.androidx.test.runner
+    testImplementation libs.androidx.espresso.core
+    testImplementation libs.truth
+    testImplementation libs.grpc.testing
+    testImplementation libs.junit
+    testImplementation libs.mockito.core
+    testImplementation libs.robolectric
 }

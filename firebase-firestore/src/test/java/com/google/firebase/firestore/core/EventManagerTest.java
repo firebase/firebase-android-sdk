@@ -17,6 +17,8 @@ package com.google.firebase.firestore.core;
 import static com.google.firebase.firestore.testutil.TestUtil.path;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
@@ -40,12 +42,14 @@ import org.robolectric.annotation.Config;
 @Config(manifest = Config.NONE)
 public class EventManagerTest {
   private static QueryListener queryListener(Query query) {
-    return new QueryListener(query, new ListenOptions(), (value, error) -> {});
+    return new QueryListener(
+        new QueryOrPipeline.QueryWrapper(query), new ListenOptions(), (value, error) -> {});
   }
 
   @Test
   public void testMultipleListensPerQuery() {
     Query query = Query.atPath(path("foo/bar"));
+    QueryOrPipeline qop = new QueryOrPipeline.QueryWrapper(query);
 
     QueryListener listener1 = queryListener(query);
     QueryListener listener2 = queryListener(query);
@@ -58,47 +62,58 @@ public class EventManagerTest {
 
     manager.removeQueryListener(listener1);
     manager.removeQueryListener(listener2);
-    verify(syncSpy, times(1)).listen(query);
-    verify(syncSpy, times(1)).stopListening(query);
+    verify(syncSpy, times(1))
+        .listen(
+            qop,
+            /** shouldListenToRemote= */
+            true);
+    verify(syncSpy, times(1))
+        .stopListening(
+            qop,
+            /** shouldUnlistenToRemote= */
+            true);
   }
 
   @Test
   public void testUnlistensOnUnknownListeners() {
     Query query = Query.atPath(path("foo/bar"));
+    QueryOrPipeline qop = new QueryOrPipeline.QueryWrapper(query);
 
     SyncEngine syncSpy = mock(SyncEngine.class);
 
     EventManager manager = new EventManager(syncSpy);
     manager.removeQueryListener(queryListener(query));
-    verify(syncSpy, never()).stopListening(query);
+    verify(syncSpy, never()).stopListening(eq(qop), anyBoolean());
   }
 
   @Test
   public void testListenCalledInOrder() {
     Query query1 = Query.atPath(path("foo/bar"));
+    QueryOrPipeline qop1 = new QueryOrPipeline.QueryWrapper(query1);
     Query query2 = Query.atPath(path("bar/baz"));
+    QueryOrPipeline qop2 = new QueryOrPipeline.QueryWrapper(query2);
 
     SyncEngine syncSpy = mock(SyncEngine.class);
     EventManager eventManager = new EventManager(syncSpy);
 
     QueryListener spy1 = mock(QueryListener.class);
-    when(spy1.getQuery()).thenReturn(query1);
+    when(spy1.getQuery()).thenReturn(qop1);
     QueryListener spy2 = mock(QueryListener.class);
-    when(spy2.getQuery()).thenReturn(query2);
+    when(spy2.getQuery()).thenReturn(qop2);
     QueryListener spy3 = mock(QueryListener.class);
-    when(spy3.getQuery()).thenReturn(query1);
+    when(spy3.getQuery()).thenReturn(qop1);
     eventManager.addQueryListener(spy1);
     eventManager.addQueryListener(spy2);
     eventManager.addQueryListener(spy3);
 
-    verify(syncSpy, times(1)).listen(query1);
-    verify(syncSpy, times(1)).listen(query2);
+    verify(syncSpy, times(1)).listen(eq(qop1), anyBoolean());
+    verify(syncSpy, times(1)).listen(eq(qop2), anyBoolean());
 
     ViewSnapshot snap1 = mock(ViewSnapshot.class);
-    when(snap1.getQuery()).thenReturn(query1);
+    when(snap1.getQuery()).thenReturn(qop1);
 
     ViewSnapshot snap2 = mock(ViewSnapshot.class);
-    when(snap2.getQuery()).thenReturn(query2);
+    when(snap2.getQuery()).thenReturn(qop2);
 
     eventManager.onViewSnapshots(Arrays.asList(snap1, snap2));
     InOrder inOrder = inOrder(spy1, spy3, spy2);
@@ -110,6 +125,7 @@ public class EventManagerTest {
   @Test
   public void testWillForwardOnOnlineStateChangedCalls() {
     Query query1 = Query.atPath(path("foo/bar"));
+    QueryOrPipeline qop1 = new QueryOrPipeline.QueryWrapper(query1);
 
     SyncEngine syncSpy = mock(SyncEngine.class);
     EventManager eventManager = new EventManager(syncSpy);
@@ -117,7 +133,7 @@ public class EventManagerTest {
     List<Object> events = new ArrayList<>();
 
     QueryListener spy = mock(QueryListener.class);
-    when(spy.getQuery()).thenReturn(query1);
+    when(spy.getQuery()).thenReturn(qop1);
     doAnswer(
             invocation -> {
               events.add(invocation.getArguments()[0]);

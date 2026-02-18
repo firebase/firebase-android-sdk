@@ -40,14 +40,12 @@ import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.testutil.ComparatorTester;
 import com.google.firebase.firestore.util.BackgroundQueue;
-import com.google.firebase.firestore.util.Executors;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executor;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -237,7 +235,7 @@ public class QueryTest {
 
     // Null match.
     document = doc("collection/1", 0, map("zip", null));
-    assertTrue(query.matches(document));
+    assertFalse(query.matches(document));
 
     // NaN match.
     document = doc("collection/1", 0, map("zip", Double.NaN));
@@ -333,7 +331,7 @@ public class QueryTest {
     assertTrue(query.matches(doc3));
     assertTrue(query.matches(doc4));
     assertTrue(query.matches(doc5));
-    assertTrue(query.matches(doc6));
+    assertFalse(query.matches(doc6));
   }
 
   @Test
@@ -991,10 +989,7 @@ public class QueryTest {
 
     while (iterator.hasNext()) {
       MutableDocument doc = iterator.next();
-      // Only put the processing in the backgroundQueue if there are more documents
-      // in the list. This behavior matches SQLiteRemoteDocumentCache.getAll(...)
-      Executor executor = iterator.hasNext() ? backgroundQueue : Executors.DIRECT_EXECUTOR;
-      executor.execute(
+      backgroundQueue.submit(
           () -> {
             // We call query.matches() to indirectly test query.matchesOrderBy()
             boolean result = query.matches(doc);

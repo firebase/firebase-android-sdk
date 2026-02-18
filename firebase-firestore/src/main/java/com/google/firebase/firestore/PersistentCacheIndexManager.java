@@ -28,11 +28,11 @@ import com.google.firebase.firestore.core.FirestoreClient;
  * <p>To get an instance, call {@link FirebaseFirestore#getPersistentCacheIndexManager()}.
  */
 public final class PersistentCacheIndexManager {
-  @NonNull private FirestoreClient client;
+  @NonNull private FirestoreClientProvider client;
 
   /** @hide */
   @RestrictTo(RestrictTo.Scope.LIBRARY)
-  PersistentCacheIndexManager(FirestoreClient client) {
+  PersistentCacheIndexManager(FirestoreClientProvider client) {
     this.client = client;
   }
 
@@ -43,7 +43,7 @@ public final class PersistentCacheIndexManager {
    * <p>This feature is disabled by default.
    */
   public void enableIndexAutoCreation() {
-    client.setIndexAutoCreationEnabled(true);
+    client.procedure(client -> client.setIndexAutoCreationEnabled(true));
   }
 
   /**
@@ -51,7 +51,7 @@ public final class PersistentCacheIndexManager {
    * which have been created by calling {@link #enableIndexAutoCreation()} still take effect.
    */
   public void disableIndexAutoCreation() {
-    client.setIndexAutoCreationEnabled(false);
+    client.procedure(client -> client.setIndexAutoCreationEnabled(false));
   }
 
   /**
@@ -59,6 +59,6 @@ public final class PersistentCacheIndexManager {
    * {@link FirebaseFirestore#setIndexConfiguration(String)}, which is deprecated.
    */
   public void deleteAllIndexes() {
-    client.deleteAllFieldIndexes();
+    client.procedure(FirestoreClient::deleteAllFieldIndexes);
   }
 }

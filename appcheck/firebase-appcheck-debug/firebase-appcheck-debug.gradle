@@ -17,8 +17,11 @@ plugins {
 }
 
 firebaseLibrary {
-    libraryGroup "appcheck"
-    publishSources = true
+    libraryGroup = "appcheck"
+    releaseNotes {
+        name.set("{{app_check}} Debug")
+        versionName.set("appcheck-debug")
+    }
 }
 
 android {
@@ -27,7 +30,7 @@ android {
     }
 
     namespace "com.google.firebase.appcheck.debug"
-    compileSdkVersion project.targetSdkVersion
+    compileSdkVersion project.compileSdkVersion
     defaultConfig {
         targetSdkVersion project.targetSdkVersion
         minSdkVersion project.minSdkVersion
@@ -43,24 +46,25 @@ android {
 }
 
 dependencies {
-    implementation 'com.google.firebase:firebase-annotations:16.2.0'
-    implementation 'com.google.firebase:firebase-common:20.4.2'
-    implementation 'com.google.firebase:firebase-common-ktx:20.4.2'
-    implementation 'com.google.firebase:firebase-components:17.1.5'
-    implementation project(':appcheck:firebase-appcheck')
-    implementation 'com.google.android.gms:play-services-base:18.0.1'
-    implementation 'com.google.android.gms:play-services-tasks:18.0.1'
+    javadocClasspath libs.autovalue.annotations
 
-    javadocClasspath 'com.google.auto.value:auto-value-annotations:1.6.6'
+    api project(':appcheck:firebase-appcheck')
+    api libs.firebase.annotations
+    api libs.firebase.common
+    api libs.firebase.components
+    implementation platform(libs.kotlin.bom)
+
+    implementation libs.playservices.base
+    implementation libs.playservices.tasks
 
     testImplementation(project(":integ-testing")){
         exclude group: 'com.google.firebase', module: 'firebase-common'
         exclude group: 'com.google.firebase', module: 'firebase-components'
     }
-    testImplementation 'junit:junit:4.13-beta-2'
-    testImplementation 'org.mockito:mockito-core:2.25.0'
-    testImplementation "org.robolectric:robolectric:$robolectricVersion"
-    testImplementation "com.google.truth:truth:$googleTruthVersion"
-    testImplementation "androidx.test:core:$androidxTestCoreVersion"
-    testImplementation 'androidx.test:rules:1.2.0'
+    testImplementation libs.androidx.test.core
+    testImplementation libs.androidx.test.rules
+    testImplementation libs.truth
+    testImplementation libs.junit
+    testImplementation libs.mockito.core
+    testImplementation libs.robolectric
 }

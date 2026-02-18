@@ -23,13 +23,9 @@ import android.os.Build
 import android.os.Process
 import com.google.android.gms.common.util.ProcessUtils
 
-/**
- * Provider of ProcessDetails.
- *
- * @hide
- */
+/** Provide [ProcessDetails] for all app processes. */
 internal object ProcessDetailsProvider {
-  /** Gets the details for all of this app's running processes. */
+  /** Gets the details for all the app's running processes. */
   fun getAppProcessDetails(context: Context): List<ProcessDetails> {
     val appUid = context.applicationInfo.uid
     val defaultProcessName = context.applicationInfo.processName
@@ -53,28 +49,20 @@ internal object ProcessDetailsProvider {
   }
 
   /**
-   * Gets this app's current process details.
+   * Gets this process's details.
    *
-   * If the current process details are not found for whatever reason, returns process details with
-   * just the current process name and pid set.
+   * If this process's full details are not found for whatever reason, returns process details with
+   * just the process name and pid set.
    */
-  fun getCurrentProcessDetails(context: Context): ProcessDetails {
+  fun getMyProcessDetails(context: Context): ProcessDetails {
     val pid = Process.myPid()
     return getAppProcessDetails(context).find { it.pid == pid }
-      ?: buildProcessDetails(getProcessName(), pid)
+      ?: ProcessDetails(getProcessName(), pid, importance = 0, isDefaultProcess = false)
   }
 
-  /** Builds a ProcessDetails object. */
-  private fun buildProcessDetails(
-    processName: String,
-    pid: Int = 0,
-    importance: Int = 0,
-    isDefaultProcess: Boolean = false
-  ) = ProcessDetails(processName, pid, importance, isDefaultProcess)
-
   /** Gets the app's current process name. If it could not be found, returns an empty string. */
-  internal fun getProcessName(): String {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+  private fun getProcessName(): String {
+    if (Build.VERSION.SDK_INT > Build.VERSION_CODES.TIRAMISU) {
       return Process.myProcessName()
     }
 

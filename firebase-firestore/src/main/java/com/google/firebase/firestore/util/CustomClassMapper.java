@@ -18,6 +18,8 @@ import static com.google.firebase.firestore.util.ApiUtil.invoke;
 import static com.google.firebase.firestore.util.ApiUtil.newInstance;
 
 import android.net.Uri;
+import android.os.Build;
+import androidx.annotation.RequiresApi;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.Blob;
 import com.google.firebase.firestore.DocumentId;
@@ -29,6 +31,7 @@ import com.google.firebase.firestore.IgnoreExtraProperties;
 import com.google.firebase.firestore.PropertyName;
 import com.google.firebase.firestore.ServerTimestamp;
 import com.google.firebase.firestore.ThrowOnExtraProperties;
+import com.google.firebase.firestore.VectorValue;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -41,6 +44,7 @@ import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
 import java.net.URI;
 import java.net.URL;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -173,8 +177,12 @@ public class CustomClassMapper {
         || o instanceof GeoPoint
         || o instanceof Blob
         || o instanceof DocumentReference
-        || o instanceof FieldValue) {
+        || o instanceof FieldValue
+        || o instanceof VectorValue) {
       return o;
+    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && o instanceof Instant) {
+      Instant instant = (Instant) o;
+      return new Timestamp(instant.getEpochSecond(), instant.getNano());
     } else if (o instanceof Uri || o instanceof URI || o instanceof URL) {
       return o.toString();
     } else {
@@ -235,12 +243,17 @@ public class CustomClassMapper {
       return (T) convertDate(o, context);
     } else if (Timestamp.class.isAssignableFrom(clazz)) {
       return (T) convertTimestamp(o, context);
+    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+        && Instant.class.isAssignableFrom(clazz)) {
+      return (T) convertInstant(o, context);
     } else if (Blob.class.isAssignableFrom(clazz)) {
       return (T) convertBlob(o, context);
     } else if (GeoPoint.class.isAssignableFrom(clazz)) {
       return (T) convertGeoPoint(o, context);
     } else if (DocumentReference.class.isAssignableFrom(clazz)) {
       return (T) convertDocumentReference(o, context);
+    } else if (VectorValue.class.isAssignableFrom(clazz)) {
+      return (T) convertVectorValue(o, context);
     } else if (clazz.isArray()) {
       throw deserializeError(
           context.errorPath, "Converting to Arrays is not supported, please use Lists instead");
@@ -508,6 +521,20 @@ public class CustomClassMapper {
     }
   }
 
+  @RequiresApi(api = Build.VERSION_CODES.O)
+  private static Instant convertInstant(Object o, DeserializeContext context) {
+    if (o instanceof Timestamp) {
+      Timestamp timestamp = (Timestamp) o;
+      return Instant.ofEpochSecond(timestamp.getSeconds(), timestamp.getNanoseconds());
+    } else if (o instanceof Date) {
+      return Instant.ofEpochMilli(((Date) o).getTime());
+    } else {
+      throw deserializeError(
+          context.errorPath,
+          "Failed to convert value of type " + o.getClass().getName() + " to Instant");
+    }
+  }
+
   private static Blob convertBlob(Object o, DeserializeContext context) {
     if (o instanceof Blob) {
       return (Blob) o;
@@ -525,6 +552,16 @@ public class CustomClassMapper {
       throw deserializeError(
           context.errorPath,
           "Failed to convert value of type " + o.getClass().getName() + " to GeoPoint");
+    }
+  }
+
+  private static VectorValue convertVectorValue(Object o, DeserializeContext context) {
+    if (o instanceof VectorValue) {
+      return (VectorValue) o;
+    } else {
+      throw deserializeError(
+          context.errorPath,
+          "Failed to convert value of type " + o.getClass().getName() + " to VectorValue");
     }
   }
 
@@ -919,13 +956,15 @@ public class CustomClassMapper {
     private void applyFieldAnnotations(Field field) {
       if (field.isAnnotationPresent(ServerTimestamp.class)) {
         Class<?> fieldType = field.getType();
-        if (fieldType != Date.class && fieldType != Timestamp.class) {
+        if (fieldType != Date.class
+            && fieldType != Timestamp.class
+            && !(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && fieldType == Instant.class)) {
           throw new IllegalArgumentException(
               "Field "
                   + field.getName()
                   + " is annotated with @ServerTimestamp but is "
                   + fieldType
-                  + " instead of Date or Timestamp.");
+                  + " instead of Date, Timestamp, or Instant.");
         }
         serverTimestamps.add(propertyName(field));
       }
@@ -940,13 +979,15 @@ public class CustomClassMapper {
     private void applyGetterAnnotations(Method method) {
       if (method.isAnnotationPresent(ServerTimestamp.class)) {
         Class<?> returnType = method.getReturnType();
-        if (returnType != Date.class && returnType != Timestamp.class) {
+        if (returnType != Date.class
+            && returnType != Timestamp.class
+            && !(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && returnType == Instant.class)) {
           throw new IllegalArgumentException(
               "Method "
                   + method.getName()
                   + " is annotated with @ServerTimestamp but returns "
                   + returnType
-                  + " instead of Date or Timestamp.");
+                  + " instead of Date, Timestamp, or Instant.");
         }
         serverTimestamps.add(propertyName(method));
       }

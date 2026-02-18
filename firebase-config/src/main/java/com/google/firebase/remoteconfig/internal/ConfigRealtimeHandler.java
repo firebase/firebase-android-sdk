@@ -39,7 +39,7 @@ public class ConfigRealtimeHandler {
   private final ConfigCacheClient activatedCacheClient;
   private final Context context;
   private final String namespace;
-  private final ConfigMetadataClient metadataClient;
+  private final ConfigSharedPrefsClient sharedPrefsClient;
   private final ScheduledExecutorService scheduledExecutorService;
 
   public ConfigRealtimeHandler(
@@ -49,7 +49,7 @@ public class ConfigRealtimeHandler {
       ConfigCacheClient activatedCacheClient,
       Context context,
       String namespace,
-      ConfigMetadataClient metadataClient,
+      ConfigSharedPrefsClient sharedPrefsClient,
       ScheduledExecutorService scheduledExecutorService) {
 
     this.listeners = new LinkedHashSet<>();
@@ -62,7 +62,7 @@ public class ConfigRealtimeHandler {
             context,
             namespace,
             listeners,
-            metadataClient,
+            sharedPrefsClient,
             scheduledExecutorService);
 
     this.firebaseApp = firebaseApp;
@@ -71,7 +71,7 @@ public class ConfigRealtimeHandler {
     this.activatedCacheClient = activatedCacheClient;
     this.context = context;
     this.namespace = namespace;
-    this.metadataClient = metadataClient;
+    this.sharedPrefsClient = sharedPrefsClient;
     this.scheduledExecutorService = scheduledExecutorService;
   }
 
@@ -91,12 +91,9 @@ public class ConfigRealtimeHandler {
   }
 
   public synchronized void setBackgroundState(boolean isInBackground) {
-    configRealtimeHttpClient.setRealtimeBackgroundState(isInBackground);
+    configRealtimeHttpClient.setIsInBackground(isInBackground);
     if (!isInBackground) {
       beginRealtime();
-    } else {
-      // If we're in the background, close the client's real-time server connection.
-      configRealtimeHttpClient.closeRealtimeHttpStream();
     }
   }
 

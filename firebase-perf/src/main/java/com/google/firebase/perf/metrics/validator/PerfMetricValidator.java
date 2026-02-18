@@ -23,9 +23,15 @@ import com.google.firebase.perf.v1.PerfMetric;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /** An abstract class providing an interface to validate PerfMetric */
 public abstract class PerfMetricValidator {
+
+  // Regex to validate Attribute key
+  private static final Pattern ATTRIBUTE_KEY_PATTERN =
+      Pattern.compile("^(?!(firebase_|google_|ga_))[A-Za-z][A-Za-z_0-9]*");
 
   /**
    * Creates a list of PerfMetricValidator classes based on the contents of PerfMetric
@@ -164,7 +170,8 @@ public abstract class PerfMetricValidator {
               Constants.MAX_ATTRIBUTE_VALUE_LENGTH));
     }
 
-    if (!key.matches("^(?!(firebase_|google_|ga_))[A-Za-z][A-Za-z_0-9]*")) {
+    Matcher attributeKeyMatcher = ATTRIBUTE_KEY_PATTERN.matcher(key);
+    if (!attributeKeyMatcher.matches()) {
       throw new IllegalArgumentException(
           "Attribute key must start with letter, must only contain alphanumeric characters and"
               + " underscore and must not start with \"firebase_\", \"google_\" and \"ga_");

@@ -576,7 +576,8 @@ public class MessagingAnalytics {
             .setInstanceId(getInstanceId(extras))
             .setPackageName(getPackageName())
             .setSdkPlatform(MessagingClientEvent.SDKPlatform.ANDROID)
-            .setMessageType(getMessageTypeForFirelog(extras));
+            .setMessageType(getMessageTypeForFirelog(extras))
+            .setPriority(getMessagePriorityForFirelog(extras));
 
     // nullable parameters
     String messageId = getMessageId(extras);

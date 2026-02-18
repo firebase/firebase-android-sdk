@@ -133,7 +133,7 @@ public final class CommonNotificationBuilder {
 
     String body =
         params.getPossiblyLocalizedString(
-            appResources, /* packageName = */ pkgName, /* key= */ MessageNotificationKeys.BODY);
+            appResources, /* packageName= */ pkgName, /* key= */ MessageNotificationKeys.BODY);
     if (!TextUtils.isEmpty(body)) {
       builder.setContentText(body);
       builder.setStyle(new NotificationCompat.BigTextStyle().bigText(body));

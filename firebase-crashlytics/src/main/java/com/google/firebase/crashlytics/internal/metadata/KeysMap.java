@@ -47,11 +47,11 @@ class KeysMap {
     String sanitizedKey = sanitizeKey(key);
     // The entry can be added if we're under the size limit or we're updating an existing entry
     if (keys.size() < maxEntries || keys.containsKey(sanitizedKey)) {
-      String santitizedAttribute = sanitizeString(value, maxEntryLength);
-      if (CommonUtils.nullSafeEquals(keys.get(sanitizedKey), santitizedAttribute)) {
+      String sanitizedAttribute = sanitizeString(value, maxEntryLength);
+      if (CommonUtils.nullSafeEquals(keys.get(sanitizedKey), sanitizedAttribute)) {
         return false;
       }
-      keys.put(sanitizedKey, value == null ? "" : santitizedAttribute);
+      keys.put(sanitizedKey, value == null ? "" : sanitizedAttribute);
       return true;
     }
     Logger.getLogger()

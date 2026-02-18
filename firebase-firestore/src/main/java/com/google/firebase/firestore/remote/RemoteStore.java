@@ -23,6 +23,7 @@ import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.AggregateField;
 import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.PipelineResultObserver;
 import com.google.firebase.firestore.core.OnlineState;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.Transaction;
@@ -43,6 +44,7 @@ import com.google.firebase.firestore.remote.WatchChange.WatchTargetChangeType;
 import com.google.firebase.firestore.util.AsyncQueue;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firebase.firestore.util.Util;
+import com.google.firestore.v1.ExecutePipelineRequest;
 import com.google.firestore.v1.Value;
 import com.google.protobuf.ByteString;
 import io.grpc.Status;
@@ -64,6 +66,9 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
 
   /** The log tag to use for this class. */
   private static final String LOG_TAG = "RemoteStore";
+
+  /** The database ID of the Firestore instance. */
+  private final DatabaseId databaseId;
 
   /** A callback interface for events from RemoteStore. */
   public interface RemoteStoreCallback {
@@ -153,11 +158,13 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
   private final Deque<MutationBatch> writePipeline;
 
   public RemoteStore(
+      DatabaseId databaseId,
       RemoteStoreCallback remoteStoreCallback,
       LocalStore localStore,
       Datastore datastore,
       AsyncQueue workerQueue,
       ConnectivityMonitor connectivityMonitor) {
+    this.databaseId = databaseId;
     this.remoteStoreCallback = remoteStoreCallback;
     this.localStore = localStore;
     this.datastore = datastore;
@@ -443,7 +450,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
     hardAssert(
         shouldStartWatchStream(),
         "startWatchStream() called when shouldStartWatchStream() is false.");
-    watchChangeAggregator = new WatchChangeAggregator(this);
+    watchChangeAggregator = new WatchChangeAggregator(databaseId, this);
     watchStream.start();
 
     onlineStateTracker.handleWatchStreamStart();
@@ -572,7 +579,7 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
                 targetData.getTarget(),
                 targetId,
                 targetData.getSequenceNumber(),
-                /*purpose=*/ entry.getValue());
+                /* purpose= */ entry.getValue());
         this.sendWatchRequest(requestTargetData);
       }
     }
@@ -762,17 +769,22 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
     return this.listenTargets.get(targetId);
   }
 
-  @Override
-  public DatabaseId getDatabaseId() {
-    return this.datastore.getDatabaseInfo().getDatabaseId();
-  }
-
   public Task<Map<String, Value>> runAggregateQuery(
       Query query, List<AggregateField> aggregateFields) {
     if (canUseNetwork()) {
       return datastore.runAggregateQuery(query, aggregateFields);
     } else {
       return Tasks.forException(
+          new FirebaseFirestoreException(
+              "Failed to get result from server.", FirebaseFirestoreException.Code.UNAVAILABLE));
+    }
+  }
+
+  public void executePipeline(ExecutePipelineRequest request, PipelineResultObserver observer) {
+    if (canUseNetwork()) {
+      datastore.executePipeline(request, observer);
+    } else {
+      observer.onError(
           new FirebaseFirestoreException(
               "Failed to get result from server.", FirebaseFirestoreException.Code.UNAVAILABLE));
     }

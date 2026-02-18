@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.core;
 
+import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.local.IndexBackfiller;
 import com.google.firebase.firestore.local.LocalSerializer;
 import com.google.firebase.firestore.local.LruDelegate;
@@ -21,34 +22,35 @@ import com.google.firebase.firestore.local.LruGarbageCollector;
 import com.google.firebase.firestore.local.Persistence;
 import com.google.firebase.firestore.local.SQLitePersistence;
 import com.google.firebase.firestore.local.Scheduler;
-import com.google.firebase.firestore.remote.RemoteSerializer;
 
 /** Provides all components needed for Firestore with SQLite persistence. */
 public class SQLiteComponentProvider extends MemoryComponentProvider {
+
+  public SQLiteComponentProvider(FirebaseFirestoreSettings settings) {
+    super(settings);
+  }
 
   @Override
   protected Scheduler createGarbageCollectionScheduler(Configuration configuration) {
     LruDelegate lruDelegate = ((SQLitePersistence) getPersistence()).getReferenceDelegate();
     LruGarbageCollector gc = lruDelegate.getGarbageCollector();
-    return gc.newScheduler(configuration.getAsyncQueue(), getLocalStore());
+    return gc.newScheduler(configuration.asyncQueue, getLocalStore());
   }
 
   @Override
   protected IndexBackfiller createIndexBackfiller(Configuration configuration) {
-    return new IndexBackfiller(getPersistence(), configuration.getAsyncQueue(), getLocalStore());
+    return new IndexBackfiller(getPersistence(), configuration.asyncQueue, getLocalStore());
   }
 
   @Override
   protected Persistence createPersistence(Configuration configuration) {
-    LocalSerializer serializer =
-        new LocalSerializer(new RemoteSerializer(configuration.getDatabaseInfo().getDatabaseId()));
+    LocalSerializer serializer = new LocalSerializer(getRemoteSerializer());
     LruGarbageCollector.Params params =
-        LruGarbageCollector.Params.WithCacheSizeBytes(
-            configuration.getSettings().getCacheSizeBytes());
+        LruGarbageCollector.Params.WithCacheSizeBytes(settings.getCacheSizeBytes());
     return new SQLitePersistence(
-        configuration.getContext(),
-        configuration.getDatabaseInfo().getPersistenceKey(),
-        configuration.getDatabaseInfo().getDatabaseId(),
+        configuration.context,
+        configuration.databaseInfo.getPersistenceKey(),
+        configuration.databaseInfo.getDatabaseId(),
         serializer,
         params);
   }

@@ -14,23 +14,37 @@
 
 package com.google.firebase.crashlytics.internal.persistence;
 
+import static com.google.common.truth.Truth.assertThat;
 import static com.google.firebase.crashlytics.internal.persistence.FileStore.sanitizeName;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertTrue;
 
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
+import org.junit.Before;
+import org.junit.Test;
 
 @SuppressWarnings("ResultOfMethodCallIgnored") // Convenient use of files.
 public class FileStoreTest extends CrashlyticsTestCase {
   FileStore fileStore;
 
-  @Override
-  protected void setUp() throws Exception {
-    super.setUp();
+  @Before
+  public void setUp() throws Exception {
     fileStore = new FileStore(getContext());
   }
 
+  @Test
+  public void testProcessName() {
+    // If this test fails, the test setup is missing a process name so fileStore is using v1.
+    assertThat(fileStore.processName).isEqualTo("com.google.firebase.crashlytics.test");
+  }
+
+  @Test
   public void testGetCommonFile() {
     File commonFile = fileStore.getCommonFile("testCommonFile");
     assertFalse(commonFile.exists());
@@ -38,6 +52,7 @@ public class FileStoreTest extends CrashlyticsTestCase {
     assertTrue(commonFile.getParentFile().exists());
   }
 
+  @Test
   public void testGetSessionFile() {
     String sessionId = "sessionId";
     String filename = "testSessionFile";
@@ -54,6 +69,7 @@ public class FileStoreTest extends CrashlyticsTestCase {
     assertEquals(sessionFile.getName(), sessionFile2.getName());
   }
 
+  @Test
   public void testGetOpenSessionIds() {
     String[] ids = {"session0", "session1", "session2", "session3"};
     String filename = "testSessionFile";
@@ -66,6 +82,7 @@ public class FileStoreTest extends CrashlyticsTestCase {
     assertEquals(ids.length, openIds.size());
   }
 
+  @Test
   public void testDeleteSessionFiles() throws Exception {
     String[] ids = {"session0", "session1", "session2", "session3"};
     String filename = "testSessionFile";
@@ -90,6 +107,7 @@ public class FileStoreTest extends CrashlyticsTestCase {
     }
   }
 
+  @Test
   public void testGetReports() throws Exception {
     String session1 = "session1";
     String session2 = "session2";
@@ -128,9 +146,15 @@ public class FileStoreTest extends CrashlyticsTestCase {
     assertEquals(0, fileStore.getNativeReports().size());
   }
 
-  public void testSanitizeName() {
-    assertEquals(
-        "com.google.my.awesome.app_big.stuff.Happens_Here123___",
-        sanitizeName("com.google.my.awesome.app:big.stuff.Happens_Here123$%^"));
+  @Test
+  public void testSanitizeShortName() {
+    assertThat(sanitizeName("com.google.Process_Name123$%^"))
+        .isEqualTo("com.google.Process_Name123___");
+  }
+
+  @Test
+  public void testSanitizeLongName() {
+    assertThat(sanitizeName("com.google.my.awesome.app:big.stuff.Happens_Here123$%^"))
+        .isEqualTo("ef6c01fc7a1a8d10ecb062a81707f769d39d4210");
   }
 }

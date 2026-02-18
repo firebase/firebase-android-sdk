@@ -86,6 +86,9 @@ public abstract class Persistence {
   /** Creates a RemoteDocumentCache representing the persisted cache of remote documents. */
   abstract RemoteDocumentCache getRemoteDocumentCache();
 
+  /** Creates GlobalCache that provides access to global values. */
+  abstract GlobalsCache getGlobalsCache();
+
   /** Creates an IndexManager that manages our persisted query indexes. */
   abstract IndexManager getIndexManager(User user);
 

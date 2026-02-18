@@ -23,10 +23,12 @@ import static com.google.firebase.firestore.model.Values.TYPE_ORDER_GEOPOINT;
 import static com.google.firebase.firestore.model.Values.TYPE_ORDER_MAP;
 import static com.google.firebase.firestore.model.Values.TYPE_ORDER_NULL;
 import static com.google.firebase.firestore.model.Values.TYPE_ORDER_NUMBER;
+import static com.google.firebase.firestore.model.Values.TYPE_ORDER_NUMBER_NAN;
 import static com.google.firebase.firestore.model.Values.TYPE_ORDER_REFERENCE;
 import static com.google.firebase.firestore.model.Values.TYPE_ORDER_SERVER_TIMESTAMP;
 import static com.google.firebase.firestore.model.Values.TYPE_ORDER_STRING;
 import static com.google.firebase.firestore.model.Values.TYPE_ORDER_TIMESTAMP;
+import static com.google.firebase.firestore.model.Values.TYPE_ORDER_VECTOR;
 import static com.google.firebase.firestore.model.Values.typeOrder;
 import static com.google.firebase.firestore.util.Assert.fail;
 
@@ -34,6 +36,7 @@ import androidx.annotation.RestrictTo;
 import com.google.firebase.Timestamp;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.DocumentKey;
+import com.google.firebase.firestore.model.Values;
 import com.google.firebase.firestore.util.Logger;
 import com.google.firestore.v1.ArrayValue;
 import com.google.firestore.v1.Value;
@@ -75,8 +78,9 @@ public class UserDataWriter {
         return null;
       case TYPE_ORDER_BOOLEAN:
         return value.getBooleanValue();
+      case TYPE_ORDER_NUMBER_NAN:
       case TYPE_ORDER_NUMBER:
-        return value.getValueTypeCase().equals(Value.ValueTypeCase.INTEGER_VALUE)
+        return value.hasIntegerValue()
             ? (Object) value.getIntegerValue() // Cast to Object to prevent type coercion to double
             : (Object) value.getDoubleValue();
       case TYPE_ORDER_STRING:
@@ -86,6 +90,8 @@ public class UserDataWriter {
       case TYPE_ORDER_GEOPOINT:
         return new GeoPoint(
             value.getGeoPointValue().getLatitude(), value.getGeoPointValue().getLongitude());
+      case TYPE_ORDER_VECTOR:
+        return convertVectorValue(value.getMapValue().getFieldsMap());
       default:
         throw fail("Unknown value type: " + value.getValueTypeCase());
     }
@@ -97,6 +103,18 @@ public class UserDataWriter {
       result.put(entry.getKey(), convertValue(entry.getValue()));
     }
     return result;
+  }
+
+  VectorValue convertVectorValue(Map<String, Value> mapValue) {
+    List<Value> values =
+        mapValue.get(Values.VECTOR_MAP_VECTORS_KEY).getArrayValue().getValuesList();
+
+    double[] doubles = new double[values.size()];
+    for (int i = 0; i < values.size(); i++) {
+      doubles[i] = values.get(i).getDoubleValue();
+    }
+
+    return new VectorValue(doubles);
   }
 
   private Object convertServerTimestamp(Value serverTimestampValue) {

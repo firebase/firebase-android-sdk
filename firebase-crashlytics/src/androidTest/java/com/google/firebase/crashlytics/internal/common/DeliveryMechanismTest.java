@@ -14,15 +14,20 @@
 
 package com.google.firebase.crashlytics.internal.common;
 
+import static org.junit.Assert.assertEquals;
+
 import com.google.firebase.crashlytics.internal.CrashlyticsTestCase;
+import org.junit.Test;
 
 public class DeliveryMechanismTest extends CrashlyticsTestCase {
   private static final String TEST_PACKAGE = "com.google.firebase.test";
 
+  @Test
   public void testDetermineFrom_isAppStore() {
     assertEquals(DeliveryMechanism.APP_STORE, DeliveryMechanism.determineFrom(TEST_PACKAGE));
   }
 
+  @Test
   public void testDetermineFrom_isDeveloper() {
     assertEquals(DeliveryMechanism.DEVELOPER, DeliveryMechanism.determineFrom(null));
   }

@@ -104,7 +104,11 @@ public abstract class LruGarbageCollectorTestCase {
     int targetId = ++previousTargetId;
     long sequenceNumber = persistence.getReferenceDelegate().getCurrentSequenceNumber();
     Query query = query("path" + targetId);
-    return new TargetData(query.toTarget(), targetId, sequenceNumber, QueryPurpose.LISTEN);
+    return new TargetData(
+        new com.google.firebase.firestore.core.TargetOrPipeline.TargetWrapper(query.toTarget()),
+        targetId,
+        sequenceNumber,
+        QueryPurpose.LISTEN);
   }
 
   private void updateTargetInTransaction(TargetData targetData) {

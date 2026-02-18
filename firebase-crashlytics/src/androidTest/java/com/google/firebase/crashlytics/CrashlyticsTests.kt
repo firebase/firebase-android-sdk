@@ -40,7 +40,7 @@ class CrashlyticsTests {
         .setApplicationId(APP_ID)
         .setApiKey(API_KEY)
         .setProjectId(PROJECT_ID)
-        .build()
+        .build(),
     )
   }
 
@@ -56,7 +56,31 @@ class CrashlyticsTests {
 
   @Test
   fun libraryRegistrationAtRuntime() {
-    val publisher = Firebase.app.get(UserAgentPublisher::class.java)
+    Firebase.app.get(UserAgentPublisher::class.java)
+  }
+
+  @Test
+  fun keyValueBuilder() {
+    val keyValueBuilder = KeyValueBuilder()
+    keyValueBuilder.key("string", "world")
+    keyValueBuilder.key("int", Int.MAX_VALUE)
+    keyValueBuilder.key("float", Float.MAX_VALUE)
+    keyValueBuilder.key("boolean", true)
+    keyValueBuilder.key("double", Double.MAX_VALUE)
+    keyValueBuilder.key("long", Long.MAX_VALUE)
+
+    val result: Map<String, String> = keyValueBuilder.build().keysAndValues
+
+    val expectedKeys =
+      mapOf(
+        "string" to "world",
+        "int" to "${Int.MAX_VALUE}",
+        "float" to "${Float.MAX_VALUE}",
+        "boolean" to "${true}",
+        "double" to "${Double.MAX_VALUE}",
+        "long" to "${Long.MAX_VALUE}"
+      )
+    assertThat(result).isEqualTo(expectedKeys)
   }
 
   companion object {

@@ -70,6 +70,7 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   private final Object lock = new Object();
   private final ExecutorService backgroundExecutor;
   private final Executor networkExecutor;
+
   /* FID of this Firebase Installations instance. Cached after successfully registering and
   persisting the FID locally. NOTE: cachedFid resets if FID is deleted.*/
   @GuardedBy("this")
@@ -271,6 +272,15 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
   @Override
   public Task<Void> delete() {
     return Tasks.call(backgroundExecutor, this::deleteFirebaseInstallationId);
+  }
+
+  /**
+   * Clears all data associated with the Firebase Installation ID (FID) of the current Firebase App.
+   * @hide
+   */
+  @Override
+  public void clearFidCache() {
+    persistedInstallation.clearDataFile();
   }
 
   /**
@@ -531,10 +541,10 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
 
     InstallationResponse response =
         serviceClient.createFirebaseInstallation(
-            /*apiKey= */ getApiKey(),
-            /*fid= */ prefs.getFirebaseInstallationId(),
-            /*projectID= */ getProjectIdentifier(),
-            /*appId= */ getApplicationId(),
+            /* apiKey= */ getApiKey(),
+            /* fid= */ prefs.getFirebaseInstallationId(),
+            /* projectID= */ getProjectIdentifier(),
+            /* appId= */ getApplicationId(),
             /* migration-header= */ iidToken);
 
     switch (response.getResponseCode()) {
@@ -564,10 +574,10 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
       @NonNull PersistedInstallationEntry prefs) throws FirebaseInstallationsException {
     TokenResult tokenResult =
         serviceClient.generateAuthToken(
-            /*apiKey= */ getApiKey(),
-            /*fid= */ prefs.getFirebaseInstallationId(),
-            /*projectID= */ getProjectIdentifier(),
-            /*refreshToken= */ prefs.getRefreshToken());
+            /* apiKey= */ getApiKey(),
+            /* fid= */ prefs.getFirebaseInstallationId(),
+            /* projectID= */ getProjectIdentifier(),
+            /* refreshToken= */ prefs.getRefreshToken());
 
     switch (tokenResult.getResponseCode()) {
       case OK:
@@ -599,10 +609,10 @@ public class FirebaseInstallations implements FirebaseInstallationsApi {
     if (entry.isRegistered()) {
       // Call the FIS servers to delete this Firebase Installation Id.
       serviceClient.deleteFirebaseInstallation(
-          /*apiKey= */ getApiKey(),
-          /*fid= */ entry.getFirebaseInstallationId(),
-          /*projectID= */ getProjectIdentifier(),
-          /*refreshToken= */ entry.getRefreshToken());
+          /* apiKey= */ getApiKey(),
+          /* fid= */ entry.getFirebaseInstallationId(),
+          /* projectID= */ getProjectIdentifier(),
+          /* refreshToken= */ entry.getRefreshToken());
     }
     insertOrUpdatePrefs(entry.withNoGeneratedFid());
     return null;

@@ -1,9 +1,9 @@
-// Signature format: 2.0
+// Signature format: 3.0
 package com.google.firebase.appcheck.debug {
 
   public class DebugAppCheckProviderFactory implements com.google.firebase.appcheck.AppCheckProviderFactory {
-    method @NonNull public com.google.firebase.appcheck.AppCheckProvider create(@NonNull com.google.firebase.FirebaseApp);
-    method @NonNull public static com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory getInstance();
+    method public com.google.firebase.appcheck.AppCheckProvider create(com.google.firebase.FirebaseApp);
+    method public static com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory getInstance();
   }
 
 }

@@ -48,12 +48,37 @@
         app:layout_constraintTop_toBottomOf="@id/button_non_fatal" />
 
     <Button
+        android:id="@+id/create_trace"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/create_trace"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/button_anr" />
+
+    <Button
+      android:id="@+id/create_trace_2"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/create_trace_2"
+      app:layout_constraintLeft_toLeftOf="parent"
+      app:layout_constraintTop_toBottomOf="@id/create_trace" />
+
+    <Button
+      android:id="@+id/create_network_trace"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:text="@string/create_network_trace"
+      app:layout_constraintLeft_toLeftOf="parent"
+      app:layout_constraintTop_toBottomOf="@id/create_trace_2" />
+
+
+    <Button
         android:id="@+id/button_foreground_process"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/start_foreground_service_text"
         app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/button_anr" />
+        app:layout_constraintTop_toBottomOf="@id/create_network_trace" />
 
     <Button
         android:id="@+id/start_splitscreen"
@@ -78,6 +103,12 @@
         android:text="@string/next_activity_text"
         app:layout_constraintLeft_toLeftOf="parent"
         app:layout_constraintTop_toBottomOf="@id/start_splitscreen_same" />
+
+    <TextView
+        android:id="@+id/process_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text=""/>
 
     <LinearLayout
         android:layout_width="match_parent"

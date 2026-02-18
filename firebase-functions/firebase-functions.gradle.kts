@@ -12,91 +12,113 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
-    id("firebase-library")
-    id("kotlin-android")
-    id("firebase-vendor")
+  id("LicenseResolverPlugin")
+  id("firebase-library")
+  id("kotlin-android")
+  id("firebase-vendor")
+  id("copy-google-services")
+  kotlin("kapt")
 }
 
 firebaseLibrary {
-    libraryGroup("functions")
-    testLab.enabled = true
-    publishSources = true
+  libraryGroup = "functions"
+  testLab.enabled = true
+  releaseNotes {
+    name.set("{{functions_client}}")
+    versionName.set("functions-client")
+  }
 }
 
 android {
-  val targetSdkVersion : Int by rootProject
+  val compileSdkVersion: Int by rootProject
+  val targetSdkVersion: Int by rootProject
+  val minSdkVersion: Int by rootProject
+
   namespace = "com.google.firebase.functions"
-  compileSdk = targetSdkVersion
+  compileSdk = compileSdkVersion
   defaultConfig {
-    minSdk = 16
-    targetSdk = targetSdkVersion
+    minSdk = minSdkVersion
     multiDexEnabled = true
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     consumerProguardFiles("proguard.txt")
   }
-  sourceSets {
-    getByName("androidTest").java.srcDirs("src/testUtil")
-  }
+  sourceSets { getByName("androidTest").java.srcDirs("src/testUtil") }
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
   }
-  testOptions.unitTests.isIncludeAndroidResources = true
+  testOptions {
+    targetSdk = targetSdkVersion
+    unitTests { isIncludeAndroidResources = true }
+  }
+  lint { targetSdk = targetSdkVersion }
+}
+
+kotlin {
+  compilerOptions { jvmTarget = JvmTarget.JVM_1_8 }
+  explicitApi()
+}
+
+thirdPartyLicenses {
+  add("Apache-2.0", "${rootDir}/third_party/licenses/apache-2.0.txt")
+  add("Dagger", "${rootDir}/third_party/licenses/dagger.txt")
 }
 
 dependencies {
-    javadocClasspath("org.codehaus.mojo:animal-sniffer-annotations:1.21")
-    javadocClasspath(libs.autovalue.annotations)
-    javadocClasspath(libs.findbugs.jsr305)
+  javadocClasspath("org.codehaus.mojo:animal-sniffer-annotations:1.21")
+  javadocClasspath(libs.autovalue.annotations)
+  javadocClasspath(libs.findbugs.jsr305)
 
-    implementation("com.google.firebase:firebase-appcheck-interop:17.1.0")
-    implementation("com.google.firebase:firebase-common:20.4.2")
-    implementation("com.google.firebase:firebase-common-ktx:20.4.2")
-    implementation("com.google.firebase:firebase-components:17.1.5")
-    implementation("com.google.firebase:firebase-annotations:16.2.0")
-    implementation("com.google.firebase:firebase-auth-interop:18.0.0") {
-       exclude(group = "com.google.firebase", module = "firebase-common")
-   }
-    implementation("com.google.firebase:firebase-iid:21.1.0") {
-       exclude(group = "com.google.firebase", module = "firebase-common")
-       exclude(group = "com.google.firebase", module = "firebase-components")
-   }
-    implementation("com.google.firebase:firebase-iid-interop:17.1.0")
-    implementation(libs.androidx.annotation)
-    implementation(libs.javax.inject)
-    implementation(libs.kotlin.stdlib)
-    implementation(libs.okhttp)
-    implementation(libs.playservices.base)
-    implementation(libs.playservices.basement)
-    implementation(libs.playservices.tasks)
+  api("com.google.firebase:firebase-appcheck-interop:17.1.0")
+  api(libs.firebase.common)
+  api(libs.firebase.components)
+  api(libs.firebase.annotations)
+  api("com.google.firebase:firebase-auth-interop:18.0.0") {
+    exclude(group = "com.google.firebase", module = "firebase-common")
+  }
+  api("com.google.firebase:firebase-iid:21.1.0") {
+    exclude(group = "com.google.firebase", module = "firebase-common")
+    exclude(group = "com.google.firebase", module = "firebase-components")
+  }
+  api("com.google.firebase:firebase-iid-interop:17.1.0")
+  api(libs.reactive.streams)
+  api(libs.playservices.tasks)
 
-    annotationProcessor(libs.autovalue)
-    annotationProcessor(libs.dagger.compiler)
+  implementation(libs.kotlin.stdlib)
+  implementation(libs.playservices.base)
+  implementation(libs.playservices.basement)
+  implementation(libs.playservices.tasks)
+  implementation(libs.okhttp)
+  implementation(libs.androidx.annotation)
+  implementation(libs.javax.inject)
+  implementation(libs.kotlin.stdlib)
+  implementation(libs.okhttp)
+  implementation(libs.playservices.base)
+  implementation(libs.playservices.basement)
 
-    testImplementation(libs.androidx.test.core)
-    testImplementation(libs.androidx.test.rules)
-    testImplementation(libs.junit)
-    testImplementation(libs.mockito.core)
-    testImplementation(libs.robolectric)
-    testImplementation(libs.robolectric) {}
-    testImplementation(libs.truth)
-    vendor(libs.dagger.dagger) {
-     exclude(group = "javax.inject", module = "javax.inject")
-   }
+  kapt(libs.autovalue)
+  annotationProcessor(libs.dagger.compiler)
 
-    androidTestImplementation(project(":integ-testing"))
-    androidTestImplementation(libs.androidx.test.junit)
-    androidTestImplementation(libs.androidx.test.runner)
-    androidTestImplementation(libs.junit)
-    androidTestImplementation(libs.mockito.core)
-    androidTestImplementation(libs.mockito.dexmaker)
-    androidTestImplementation(libs.truth)
+  testImplementation(libs.androidx.test.core)
+  testImplementation(libs.androidx.test.rules)
+  testImplementation(libs.junit)
+  testImplementation(libs.mockito.core)
+  testImplementation(libs.robolectric)
+  testImplementation(libs.robolectric) {}
+  testImplementation(libs.truth)
+  vendor(libs.dagger.dagger) { exclude(group = "javax.inject", module = "javax.inject") }
+
+  androidTestImplementation(project(":integ-testing"))
+  androidTestImplementation(libs.junit)
+  androidTestImplementation(libs.truth)
+  androidTestImplementation(libs.androidx.test.runner)
+  androidTestImplementation(libs.androidx.test.junit)
+  androidTestImplementation(libs.kotlinx.coroutines.reactive)
+  androidTestImplementation(libs.mockito.core)
+  androidTestImplementation(libs.mockito.dexmaker)
+  kapt("com.google.dagger:dagger-android-processor:2.43.2")
+  kapt(libs.dagger.compiler)
 }
-
-// ==========================================================================
-// Copy from here down if you want to use the google-services plugin in your
-// androidTest integration tests.
-// ==========================================================================
-extra["packageName"] = "com.google.firebase.functions"
-apply(from = "../gradle/googleServices.gradle")

@@ -18,14 +18,16 @@ plugins {
 
 firebaseLibrary{
     publishJavadoc = false
-    publishReleaseNotes = false
+    releaseNotes { 
+        enabled.set(false)
+    }
 }
 
 android {
     namespace "com.google.android.datatransport"    
-    compileSdkVersion project.targetSdkVersion
+    compileSdkVersion project.compileSdkVersion
     defaultConfig {
-        minSdkVersion 14
+        minSdkVersion project.minSdkVersion
         targetSdkVersion project.targetSdkVersion
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         consumerProguardFiles 'proguard.txt'
@@ -38,9 +40,12 @@ android {
 }
 
 dependencies {
-    compileOnly 'com.google.auto.value:auto-value-annotations:1.6.6'
     implementation 'androidx.annotation:annotation:1.1.0'
+
+    compileOnly 'com.google.auto.value:auto-value-annotations:1.6.6'
+
     annotationProcessor "com.google.auto.value:auto-value:1.6.5"
+
+    testImplementation libs.truth
     testImplementation 'junit:junit:4.13-beta-3'
-    testImplementation "com.google.truth:truth:$googleTruthVersion"
 }

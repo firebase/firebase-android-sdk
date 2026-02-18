@@ -1,7 +1,4 @@
 @file:Suppress("DEPRECATION") // App projects should still use FirebaseTestLabPlugin.
-
-import com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
-
 /*
  * Copyright 2023 Google LLC
  *
@@ -18,21 +15,29 @@ import com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
  * limitations under the License.
  */
 
+import com.google.firebase.gradle.plugins.ci.device.FirebaseTestLabPlugin
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
   id("com.android.application")
   id("org.jetbrains.kotlin.android")
   id("com.google.gms.google-services")
   id("com.google.firebase.crashlytics")
   id("com.google.firebase.firebase-perf")
+  id("copy-google-services")
 }
 
 android {
+  val compileSdkVersion: Int by rootProject
+  val targetSdkVersion: Int by rootProject
+  val minSdkVersion: Int by rootProject
+
   namespace = "com.google.firebase.testing.config"
-  compileSdk = 33
+  compileSdk = compileSdkVersion
   defaultConfig {
     applicationId = "com.google.firebase.testing.config"
-    minSdk = 16
-    targetSdk = 33
+    minSdk = minSdkVersion
+    targetSdk = targetSdkVersion
     versionCode = 1
     versionName = "1.0"
     multiDexEnabled = true
@@ -42,28 +47,28 @@ android {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
   }
-  kotlinOptions { jvmTarget = "1.8" }
 }
+
+kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_1_8 } }
 
 dependencies {
   implementation(project(":firebase-crashlytics")) {
     exclude(group = "com.google.firebase", module = "firebase-config-interop")
   }
-  implementation(project(":firebase-config")) {
-    exclude(group = "com.google.firebase", module = "firebase-config-interop")
-  }
-  implementation(project(":firebase-config:ktx"))
+  implementation(project(":firebase-config"))
 
   // This is required since a `project` dependency on frc does not expose the APIs of its
-  // "implementation" dependencies. The alternative would be to make common an "api" dep of remote-config.
+  // "implementation" dependencies. The alternative would be to make common an "api" dep of
+  // remote-config.
   // Released artifacts don't need these dependencies since they don't use `project` to refer
   // to Remote Config.
-  implementation("com.google.firebase:firebase-common:20.3.3")
-  implementation("com.google.firebase:firebase-common-ktx:20.3.3")
-  implementation("com.google.firebase:firebase-components:17.1.1")
+  implementation("com.google.firebase:firebase-common:22.0.0")
+  implementation(libs.firebase.components)
 
   implementation("com.google.firebase:firebase-installations-interop:17.1.0")
-  runtimeOnly("com.google.firebase:firebase-installations:17.1.4")
+  runtimeOnly("com.google.firebase:firebase-installations:18.0.0") {
+    exclude(group = "com.google.firebase", module = "firebase-common-ktx")
+  }
 
   implementation("com.google.android.gms:play-services-basement:18.1.0")
   implementation("com.google.android.gms:play-services-tasks:18.0.1")
@@ -74,14 +79,9 @@ dependencies {
   implementation("androidx.core:core-ktx:1.9.0")
   implementation("com.google.android.material:material:1.8.0")
 
-  androidTestImplementation("com.google.firebase:firebase-common-ktx:20.3.2")
   androidTestImplementation(libs.androidx.test.junit)
   androidTestImplementation(libs.androidx.test.runner)
   androidTestImplementation(libs.truth)
 }
-
-extra["packageName"] = "com.google.firebase.testing.config"
-
-apply(from = "../../gradle/googleServices.gradle")
 
 apply<FirebaseTestLabPlugin>()

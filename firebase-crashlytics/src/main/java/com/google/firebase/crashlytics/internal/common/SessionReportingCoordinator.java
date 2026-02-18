@@ -24,6 +24,8 @@ import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.Tasks;
 import com.google.firebase.crashlytics.internal.Logger;
+import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers;
+import com.google.firebase.crashlytics.internal.metadata.EventMetadata;
 import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
 import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
@@ -34,6 +36,7 @@ import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.send.DataTransportCrashlyticsReportSender;
 import com.google.firebase.crashlytics.internal.settings.SettingsProvider;
 import com.google.firebase.crashlytics.internal.stacktrace.StackTraceTrimmingStrategy;
+import java.io.BufferedInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -47,10 +50,10 @@ import java.util.SortedSet;
 import java.util.concurrent.Executor;
 
 /**
- * This class handles Crashlytics lifecycle events and coordinates session data capture and
- * persistence, as well as sending of reports to Firebase Crashlytics.
+ * This class coordinates Crashlytics session data capture and persistence, as well as sending of
+ * reports to Firebase Crashlytics.
  */
-public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
+public class SessionReportingCoordinator {
 
   private static final String EVENT_TYPE_CRASH = "crash";
   private static final String EVENT_TYPE_LOGGED = "error";
@@ -68,7 +71,8 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
       StackTraceTrimmingStrategy stackTraceTrimmingStrategy,
       SettingsProvider settingsProvider,
       OnDemandCounter onDemandCounter,
-      CrashlyticsAppQualitySessionsSubscriber sessionsSubscriber) {
+      CrashlyticsAppQualitySessionsSubscriber sessionsSubscriber,
+      CrashlyticsWorkers crashlyticsWorkers) {
     final CrashlyticsReportDataCapture dataCapture =
         new CrashlyticsReportDataCapture(
             context, idManager, appData, stackTraceTrimmingStrategy, settingsProvider);
@@ -77,7 +81,13 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
     final DataTransportCrashlyticsReportSender reportSender =
         DataTransportCrashlyticsReportSender.create(context, settingsProvider, onDemandCounter);
     return new SessionReportingCoordinator(
-        dataCapture, reportPersistence, reportSender, logFileManager, userMetadata, idManager);
+        dataCapture,
+        reportPersistence,
+        reportSender,
+        logFileManager,
+        userMetadata,
+        idManager,
+        crashlyticsWorkers);
   }
 
   private final CrashlyticsReportDataCapture dataCapture;
@@ -87,22 +97,25 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
   private final UserMetadata reportMetadata;
   private final IdManager idManager;
 
+  private final CrashlyticsWorkers crashlyticsWorkers;
+
   SessionReportingCoordinator(
       CrashlyticsReportDataCapture dataCapture,
       CrashlyticsReportPersistence reportPersistence,
       DataTransportCrashlyticsReportSender reportsSender,
       LogFileManager logFileManager,
       UserMetadata reportMetadata,
-      IdManager idManager) {
+      IdManager idManager,
+      CrashlyticsWorkers crashlyticsWorkers) {
     this.dataCapture = dataCapture;
     this.reportPersistence = reportPersistence;
     this.reportsSender = reportsSender;
     this.logFileManager = logFileManager;
     this.reportMetadata = reportMetadata;
     this.idManager = idManager;
+    this.crashlyticsWorkers = crashlyticsWorkers;
   }
 
-  @Override
   public void onBeginSession(@NonNull String sessionId, long timestampSeconds) {
     final CrashlyticsReport capturedReport =
         dataCapture.captureReportData(sessionId, timestampSeconds);
@@ -110,31 +123,17 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
     reportPersistence.persistReport(capturedReport);
   }
 
-  @Override
-  public void onLog(long timestamp, String log) {
-    logFileManager.writeToLog(timestamp, log);
-  }
-
-  @Override
-  public void onCustomKey(String key, String value) {
-    reportMetadata.setCustomKey(key, value);
-  }
-
-  @Override
-  public void onUserId(String userId) {
-    reportMetadata.setUserId(userId);
-  }
-
   public void persistFatalEvent(
       @NonNull Throwable event, @NonNull Thread thread, @NonNull String sessionId, long timestamp) {
     Logger.getLogger().v("Persisting fatal event for session " + sessionId);
-    persistEvent(event, thread, sessionId, EVENT_TYPE_CRASH, timestamp, true);
+    EventMetadata eventMetadata = new EventMetadata(sessionId, timestamp);
+    persistEvent(event, thread, EVENT_TYPE_CRASH, eventMetadata, true);
   }
 
   public void persistNonFatalEvent(
-      @NonNull Throwable event, @NonNull Thread thread, @NonNull String sessionId, long timestamp) {
-    Logger.getLogger().v("Persisting non-fatal event for session " + sessionId);
-    persistEvent(event, thread, sessionId, EVENT_TYPE_LOGGED, timestamp, false);
+      @NonNull Throwable event, @NonNull Thread thread, @NonNull EventMetadata eventMetadata) {
+    Logger.getLogger().v("Persisting non-fatal event for session " + eventMetadata.getSessionId());
+    persistEvent(event, thread, EVENT_TYPE_LOGGED, eventMetadata, false);
   }
 
   @RequiresApi(api = Build.VERSION_CODES.R)
@@ -233,18 +232,22 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
   }
 
   /**
-   * Ensure reportToSend has a populated fid.
+   * Ensure reportToSend has a populated fid and auth token.
    *
    * <p>This is needed because it's possible to capture reports while data collection is disabled,
    * and then upload the report later by calling sendUnsentReports or enabling data collection.
    */
   private CrashlyticsReportWithSessionId ensureHasFid(CrashlyticsReportWithSessionId reportToSend) {
-    // Only do the update if the fid is already missing from the report.
-    if (reportToSend.getReport().getFirebaseInstallationId() == null) {
+    // Only do the update if the fid or auth token is already missing from the report.
+    if (reportToSend.getReport().getFirebaseInstallationId() == null
+        || reportToSend.getReport().getFirebaseAuthenticationToken() == null) {
       // Fetch the true fid, regardless of automatic data collection since it's uploading.
-      String fid = idManager.fetchTrueFid();
+      FirebaseInstallationId firebaseInstallationId = idManager.fetchTrueFid(/* validate= */ true);
       return CrashlyticsReportWithSessionId.create(
-          reportToSend.getReport().withFirebaseInstallationId(fid),
+          reportToSend
+              .getReport()
+              .withFirebaseInstallationId(firebaseInstallationId.getFid())
+              .withFirebaseAuthenticationToken(firebaseInstallationId.getAuthToken()),
           reportToSend.getSessionId(),
           reportToSend.getReportFile());
     }
@@ -253,23 +256,20 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
   }
 
   private CrashlyticsReport.Session.Event addMetaDataToEvent(
-      CrashlyticsReport.Session.Event capturedEvent) {
+      CrashlyticsReport.Session.Event capturedEvent, Map<String, String> eventCustomKeys) {
     CrashlyticsReport.Session.Event eventWithLogsAndCustomKeys =
-        addLogsAndCustomKeysToEvent(capturedEvent, logFileManager, reportMetadata);
+        addLogsCustomKeysAndEventKeysToEvent(
+            capturedEvent, logFileManager, reportMetadata, eventCustomKeys);
     CrashlyticsReport.Session.Event eventWithRollouts =
         addRolloutsStateToEvent(eventWithLogsAndCustomKeys, reportMetadata);
     return eventWithRollouts;
   }
 
-  private CrashlyticsReport.Session.Event addLogsAndCustomKeysToEvent(
-      CrashlyticsReport.Session.Event capturedEvent) {
-    return addLogsAndCustomKeysToEvent(capturedEvent, logFileManager, reportMetadata);
-  }
-
-  private CrashlyticsReport.Session.Event addLogsAndCustomKeysToEvent(
+  private CrashlyticsReport.Session.Event addLogsCustomKeysAndEventKeysToEvent(
       CrashlyticsReport.Session.Event capturedEvent,
       LogFileManager logFileManager,
-      UserMetadata reportMetadata) {
+      UserMetadata reportMetadata,
+      Map<String, String> eventKeys) {
     final CrashlyticsReport.Session.Event.Builder eventBuilder = capturedEvent.toBuilder();
     final String content = logFileManager.getLogString();
 
@@ -284,7 +284,7 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
     // logFileManager.clearLog(); // Clear log to prepare for next event.
 
     final List<CustomAttribute> sortedCustomAttributes =
-        getSortedCustomAttributes(reportMetadata.getCustomKeys());
+        getSortedCustomAttributes(reportMetadata.getCustomKeys(eventKeys));
     final List<CustomAttribute> sortedInternalKeys =
         getSortedCustomAttributes(reportMetadata.getInternalKeys());
 
@@ -297,6 +297,14 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
     }
 
     return eventBuilder.build();
+  }
+
+  private CrashlyticsReport.Session.Event addLogsAndCustomKeysToEvent(
+      CrashlyticsReport.Session.Event capturedEvent,
+      LogFileManager logFileManager,
+      UserMetadata reportMetadata) {
+    return addLogsCustomKeysAndEventKeysToEvent(
+        capturedEvent, logFileManager, reportMetadata, Map.of());
   }
 
   private CrashlyticsReport.Session.Event addRolloutsStateToEvent(
@@ -319,10 +327,9 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
   private void persistEvent(
       @NonNull Throwable event,
       @NonNull Thread thread,
-      @NonNull String sessionId,
       @NonNull String eventType,
-      long timestamp,
-      boolean includeAllThreads) {
+      @NonNull EventMetadata eventMetadata,
+      boolean isFatal) {
 
     final boolean isHighPriority = eventType.equals(EVENT_TYPE_CRASH);
 
@@ -331,12 +338,25 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
             event,
             thread,
             eventType,
-            timestamp,
+            eventMetadata.getTimestamp(),
             EVENT_THREAD_IMPORTANCE,
             MAX_CHAINED_EXCEPTION_DEPTH,
-            includeAllThreads);
+            isFatal);
+    CrashlyticsReport.Session.Event finallizedEvent =
+        addMetaDataToEvent(capturedEvent, eventMetadata.getAdditionalCustomKeys());
 
-    reportPersistence.persistEvent(addMetaDataToEvent(capturedEvent), sessionId, isHighPriority);
+    // Non-fatal, persistence write task we move to diskWriteWorker
+    if (!isFatal) {
+      crashlyticsWorkers.diskWrite.submit(
+          () -> {
+            Logger.getLogger().d("disk worker: log non-fatal event to persistence");
+            reportPersistence.persistEvent(
+                finallizedEvent, eventMetadata.getSessionId(), isHighPriority);
+          });
+      return;
+    }
+
+    reportPersistence.persistEvent(finallizedEvent, eventMetadata.getSessionId(), isHighPriority);
   }
 
   private boolean onReportSendComplete(@NonNull Task<CrashlyticsReportWithSessionId> task) {
@@ -408,13 +428,15 @@ public class SessionReportingCoordinator implements CrashlyticsLifecycleEvents {
   @VisibleForTesting
   @RequiresApi(api = Build.VERSION_CODES.KITKAT)
   public static String convertInputStreamToString(InputStream inputStream) throws IOException {
-    ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-    byte[] bytes = new byte[DEFAULT_BUFFER_SIZE];
-    int length;
-    while ((length = inputStream.read(bytes)) != -1) {
-      byteArrayOutputStream.write(bytes, 0, length);
+    try (BufferedInputStream bufferedInputStream = new BufferedInputStream(inputStream);
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
+      byte[] bytes = new byte[DEFAULT_BUFFER_SIZE];
+      int length;
+      while ((length = bufferedInputStream.read(bytes)) != -1) {
+        byteArrayOutputStream.write(bytes, 0, length);
+      }
+      return byteArrayOutputStream.toString(StandardCharsets.UTF_8.name());
     }
-    return byteArrayOutputStream.toString(StandardCharsets.UTF_8.name());
   }
 
   /** Finds the first ANR ApplicationExitInfo within the session. */

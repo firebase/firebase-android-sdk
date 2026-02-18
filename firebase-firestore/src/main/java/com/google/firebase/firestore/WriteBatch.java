@@ -190,8 +190,8 @@ public class WriteBatch {
   public Task<Void> commit() {
     verifyNotCommitted();
     committed = true;
-    if (mutations.size() > 0) {
-      return firestore.getClient().write(mutations);
+    if (!mutations.isEmpty()) {
+      return firestore.callClient(client -> client.write(mutations));
     } else {
       return Tasks.forResult(null);
     }

@@ -21,7 +21,7 @@ import org.robolectric.annotation.Implements;
 /**
  * Shadow Preconditions class to avoid errors as Robolectric runs everything on the main thread.
  * Reference:
- * https://github.com/firebase/firebase-android-sdk/blob/master/firebase-messaging/src/test/java/com/google/firebase/messaging/shadows/ShadowPreconditions.java
+ * https://github.com/firebase/firebase-android-sdk/blob/main/firebase-messaging/src/test/java/com/google/firebase/messaging/shadows/ShadowPreconditions.java
  */
 @Implements(Preconditions.class)
 public class ShadowPreconditions {

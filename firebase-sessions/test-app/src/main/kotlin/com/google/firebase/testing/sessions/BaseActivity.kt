@@ -18,44 +18,47 @@ package com.google.firebase.testing.sessions
 
 import android.app.ActivityManager
 import android.app.ActivityManager.RunningAppProcessInfo
-import android.app.Application
-import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.google.firebase.FirebaseApp
+import com.google.firebase.perf.FirebasePerformance
+import com.google.firebase.testing.sessions.TestApplication.Companion.TAG
+import com.google.firebase.testing.sessions.TestApplication.Companion.myProcessName
 
 open class BaseActivity : AppCompatActivity() {
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
-    FirebaseApp.initializeApp(this)
-    Log.i(TAG, "onCreate - ${getProcessName()} - ${getImportance()}")
+    setProcessAttribute()
+    logProcessDetails()
+    logFirebaseDetails()
+    Log.i(TAG, "onCreate - $myProcessName - ${getImportance()}")
   }
 
   override fun onPause() {
     super.onPause()
-    Log.i(TAG, "onPause - ${getProcessName()} - ${getImportance()}")
+    Log.i(TAG, "onPause - $myProcessName - ${getImportance()}")
   }
 
   override fun onStop() {
     super.onStop()
-    Log.i(TAG, "onStop - ${getProcessName()} - ${getImportance()}")
+    Log.i(TAG, "onStop - $myProcessName - ${getImportance()}")
   }
 
   override fun onResume() {
     super.onResume()
-    Log.i(TAG, "onResume - ${getProcessName()} - ${getImportance()}")
+    Log.i(TAG, "onResume - $myProcessName - ${getImportance()}")
   }
 
   override fun onStart() {
     super.onStart()
-    Log.i(TAG, "onStart - ${getProcessName()} - ${getImportance()}")
+    Log.i(TAG, "onStart - $myProcessName - ${getImportance()}")
   }
 
   override fun onDestroy() {
     super.onDestroy()
-    Log.i(TAG, "onDestroy - ${getProcessName()} - ${getImportance()}")
+    Log.i(TAG, "onDestroy - $myProcessName - ${getImportance()}")
   }
 
   private fun getImportance(): Int {
@@ -64,10 +67,24 @@ open class BaseActivity : AppCompatActivity() {
     return processInfo.importance
   }
 
-  private fun getProcessName(): String =
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) Application.getProcessName() else "unknown"
+  private fun logProcessDetails() {
+    val pid = android.os.Process.myPid()
+    val uid = android.os.Process.myUid()
+    val activity = javaClass.name
+    Log.i(TAG, "activity: $activity process: $myProcessName, pid: $pid, uid: $uid")
+  }
 
-  companion object {
-    val TAG = "BaseActivity"
+  private fun logFirebaseDetails() {
+    val activity = javaClass.name
+    val firebaseApps = FirebaseApp.getApps(this)
+    val defaultFirebaseApp = FirebaseApp.getInstance()
+    Log.i(
+      TAG,
+      "activity: $activity firebase: ${defaultFirebaseApp.name} appsCount: ${firebaseApps.count()}",
+    )
+  }
+
+  private fun setProcessAttribute() {
+    FirebasePerformance.getInstance().putAttribute("process_name", myProcessName)
   }
 }

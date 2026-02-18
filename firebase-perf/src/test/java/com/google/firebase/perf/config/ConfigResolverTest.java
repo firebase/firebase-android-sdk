@@ -28,7 +28,6 @@ import static org.mockito.MockitoAnnotations.initMocks;
 
 import android.os.Bundle;
 import androidx.test.core.app.ApplicationProvider;
-import com.google.firebase.perf.BuildConfig;
 import com.google.firebase.perf.FirebasePerformanceTestBase;
 import com.google.firebase.perf.util.ImmutableBundle;
 import com.google.firebase.perf.util.Optional;
@@ -170,46 +169,12 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void getIsServiceCollectionEnabled_sdkDisabledVersionIsRed_returnsFalse() {
-    when(mockRemoteConfigManager.isLastFetchFailed()).thenReturn(false);
-    when(mockRemoteConfigManager.getBoolean(FIREBASE_PERFORMANCE_SDK_ENABLED_FRC_KEY))
-        .thenReturn(Optional.of(true));
-
-    // Disable SDK version.
-    setStaticFinalField(
-        BuildConfig.class,
-        /* fieldName= */ "FIREPERF_VERSION_NAME",
-        /* fieldNewValue= */ "1.0.0.111111111");
-    when(mockRemoteConfigManager.getString(FIREBASE_PERFORMANCE_DISABLED_VERSIONS_FRC_KEY))
-        .thenReturn(Optional.of("1.0.0.111111111"));
-
-    assertThat(testConfigResolver.getIsServiceCollectionEnabled()).isFalse();
-  }
-
-  @Test
   public void getIsServiceCollectionEnabled_sdkDisabled_returnsFalse() {
     when(mockRemoteConfigManager.isLastFetchFailed()).thenReturn(false);
     when(mockRemoteConfigManager.getString(FIREBASE_PERFORMANCE_DISABLED_VERSIONS_FRC_KEY))
         .thenReturn(Optional.of(""));
     when(mockRemoteConfigManager.getBoolean(FIREBASE_PERFORMANCE_SDK_ENABLED_FRC_KEY))
         .thenReturn(Optional.of(false));
-
-    assertThat(testConfigResolver.getIsServiceCollectionEnabled()).isFalse();
-  }
-
-  @Test
-  public void getIsServiceCollectionEnabled_sdkDisabledVersionAndSdkDisabled_returnsFalse() {
-    when(mockRemoteConfigManager.isLastFetchFailed()).thenReturn(false);
-    when(mockRemoteConfigManager.getBoolean(FIREBASE_PERFORMANCE_SDK_ENABLED_FRC_KEY))
-        .thenReturn(Optional.of(false));
-
-    // Disable SDK version.
-    setStaticFinalField(
-        BuildConfig.class,
-        /* fieldName= */ "FIREPERF_VERSION_NAME",
-        /* fieldNewValue= */ "1.0.0.111111111");
-    when(mockRemoteConfigManager.getString(FIREBASE_PERFORMANCE_DISABLED_VERSIONS_FRC_KEY))
-        .thenReturn(Optional.of("1.0.0.111111111"));
 
     assertThat(testConfigResolver.getIsServiceCollectionEnabled()).isFalse();
   }
@@ -294,80 +259,6 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void
-      getIsServiceCollectionEnabled_sdkDisabledVersionFlagFetchSucceededFromFrc_returnFrcValue() {
-    // As long as SDK enabled flag is enabled, it depends on SDK disabled version only for
-    // enabled/disabled.
-    when(mockRemoteConfigManager.isLastFetchFailed()).thenReturn(false);
-    when(mockRemoteConfigManager.getBoolean(FIREBASE_PERFORMANCE_SDK_ENABLED_FRC_KEY))
-        .thenReturn(Optional.of(true));
-
-    // Mock that current Fireperf SDK version is disabled.
-    setStaticFinalField(
-        BuildConfig.class,
-        /* fieldName= */ "FIREPERF_VERSION_NAME",
-        /* fieldNewValue= */ "1.0.0.111111111");
-    when(mockRemoteConfigManager.getString(FIREBASE_PERFORMANCE_DISABLED_VERSIONS_FRC_KEY))
-        .thenReturn(Optional.of("1.0.0.111111111"));
-
-    // Assert that final result is false, and FRC value is cached.
-    assertThat(testConfigResolver.getIsServiceCollectionEnabled()).isFalse();
-    verify(mockDeviceCacheManager, times(1))
-        .setValue(eq(FIREBASE_PERFORMANCE_DISABLED_VERSIONS_CACHE_KEY), eq("1.0.0.111111111"));
-  }
-
-  @Test
-  public void
-      getIsServiceCollectionEnabled_sdkDisabledVersionFlagFetchFailedFromFrc_returnFrcValue() {
-    // As long as SDK enabled flag is enabled, it depends on SDK disabled version only for
-    // enabled/disabled.
-    when(mockRemoteConfigManager.getBoolean(FIREBASE_PERFORMANCE_SDK_ENABLED_FRC_KEY))
-        .thenReturn(Optional.absent());
-    when(mockDeviceCacheManager.getBoolean(FIREBASE_PERFORMANCE_SDK_ENABLED_CACHE_KEY))
-        .thenReturn(Optional.absent());
-
-    // Mock that Fireperf SDK version is disabled by FRC, but fetch status is failure.
-    when(mockRemoteConfigManager.isLastFetchFailed()).thenReturn(true);
-    setStaticFinalField(
-        BuildConfig.class,
-        /* fieldName= */ "FIREPERF_VERSION_NAME",
-        /* fieldNewValue= */ "1.0.0.111111111");
-    when(mockRemoteConfigManager.getString(FIREBASE_PERFORMANCE_DISABLED_VERSIONS_FRC_KEY))
-        .thenReturn(Optional.of("1.0.0.111111111"));
-
-    // Assert that final result is false. cache FRC value because it is most recent available value.
-    assertThat(testConfigResolver.getIsServiceCollectionEnabled()).isFalse();
-    verify(mockDeviceCacheManager, times(1))
-        .setValue(eq(FIREBASE_PERFORMANCE_DISABLED_VERSIONS_CACHE_KEY), eq("1.0.0.111111111"));
-  }
-
-  @Test
-  public void getIsServiceCollectionEnabled_sdkDisabledVersionFlagNoFrc_returnCacheValue() {
-    // As long as SDK enabled flag is enabled, it depends on SDK disabled version only for
-    // enabled/disabled.
-    when(mockRemoteConfigManager.getBoolean(FIREBASE_PERFORMANCE_SDK_ENABLED_FRC_KEY))
-        .thenReturn(Optional.absent());
-    when(mockDeviceCacheManager.getBoolean(FIREBASE_PERFORMANCE_SDK_ENABLED_CACHE_KEY))
-        .thenReturn(Optional.absent());
-
-    // Mock that Fireperf SDK version is not set by FRC.
-    when(mockRemoteConfigManager.getString(FIREBASE_PERFORMANCE_DISABLED_VERSIONS_FRC_KEY))
-        .thenReturn(Optional.absent());
-
-    // Mock device caching value that includes current SDK version.
-    setStaticFinalField(
-        BuildConfig.class,
-        /* fieldName= */ "FIREPERF_VERSION_NAME",
-        /* fieldNewValue= */ "1.0.0.111111111");
-    when(mockDeviceCacheManager.getString(FIREBASE_PERFORMANCE_DISABLED_VERSIONS_CACHE_KEY))
-        .thenReturn(Optional.of("1.0.0.111111111"));
-
-    // Assert that final result is false, and no value is cached.
-    assertThat(testConfigResolver.getIsServiceCollectionEnabled()).isFalse();
-    verify(mockDeviceCacheManager, never()).setValue(any(), anyString());
-  }
-
-  @Test
   public void getIsServiceCollectionEnabled_sdkDisabledVersionFlagNoFrc_returnDefaultValue() {
     // As long as SDK enabled flag is enabled, it depends on SDK disabled version only for
     // enabled/disabled.
@@ -390,111 +281,20 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
   }
 
   @Test
-  public void
-      getIsServiceCollectionEnabled_frcFetchSucceedAndFprFlagEnabled_disabledVersionsAreHonored() {
-    // As long as SDK enabled flag is enabled, it depends on SDK disabled version only for
-    // enabled/disabled.
+  public void getIsServiceCollectionEnabled_deviceCacheHasSameValueAsFrc_returnCacheValue() {
     when(mockRemoteConfigManager.getBoolean(FIREBASE_PERFORMANCE_SDK_ENABLED_FRC_KEY))
-        .thenReturn(Optional.absent());
+        .thenReturn(Optional.of(true));
     when(mockDeviceCacheManager.getBoolean(FIREBASE_PERFORMANCE_SDK_ENABLED_CACHE_KEY))
         .thenReturn(Optional.of(true));
-    when(mockRemoteConfigManager.isLastFetchFailed()).thenReturn(false);
 
-    setStaticFinalField(
-        BuildConfig.class,
-        /* fieldName= */ "FIREPERF_VERSION_NAME",
-        /* fieldNewValue= */ "1.0.0.111111111");
-
-    // Handling for empty string.
-    when(mockRemoteConfigManager.getString(FIREBASE_PERFORMANCE_DISABLED_VERSIONS_FRC_KEY))
-        .thenReturn(Optional.of(""));
-    assertThat(testConfigResolver.getIsServiceCollectionEnabled()).isTrue();
-
-    // Handling for random space in empty string.
-    when(mockRemoteConfigManager.getString(FIREBASE_PERFORMANCE_DISABLED_VERSIONS_FRC_KEY))
-        .thenReturn(Optional.of("   "));
-    assertThat(testConfigResolver.getIsServiceCollectionEnabled()).isTrue();
-
-    // Handling for empty string but ";" separated.
-    when(mockRemoteConfigManager.getString(FIREBASE_PERFORMANCE_DISABLED_VERSIONS_FRC_KEY))
-        .thenReturn(Optional.of("  ;   "));
-    assertThat(testConfigResolver.getIsServiceCollectionEnabled()).isTrue();
-
-    // Handling for exact one version.
-    when(mockRemoteConfigManager.getString(FIREBASE_PERFORMANCE_DISABLED_VERSIONS_FRC_KEY))
-        .thenReturn(Optional.of(" 1.0.0.111111111"));
-    assertThat(testConfigResolver.getIsServiceCollectionEnabled()).isFalse();
-    when(mockRemoteConfigManager.getString(FIREBASE_PERFORMANCE_DISABLED_VERSIONS_FRC_KEY))
-        .thenReturn(Optional.of("1.2.0.222222222"));
-    assertThat(testConfigResolver.getIsServiceCollectionEnabled()).isTrue();
-
-    // Handling for multiple ";" separated versions with no space between.
-    when(mockRemoteConfigManager.getString(FIREBASE_PERFORMANCE_DISABLED_VERSIONS_FRC_KEY))
-        .thenReturn(Optional.of("1.2.0.222222222;1.0.0.111111111;1.3.0.333333333"));
-    assertThat(testConfigResolver.getIsServiceCollectionEnabled()).isFalse();
-
-    // Handling for multiple ";" separated versions with random space between.
-    when(mockRemoteConfigManager.getString(FIREBASE_PERFORMANCE_DISABLED_VERSIONS_FRC_KEY))
-        .thenReturn(Optional.of("1.2.0.222222222 ;  1.0.0.111111111; 1.3.0.333333333"));
-    assertThat(testConfigResolver.getIsServiceCollectionEnabled()).isFalse();
-    when(mockRemoteConfigManager.getString(FIREBASE_PERFORMANCE_DISABLED_VERSIONS_FRC_KEY))
-        .thenReturn(Optional.of("; 1.2.0.222222222;   1.3.0.333333333"));
-    assertThat(testConfigResolver.getIsServiceCollectionEnabled()).isTrue();
-  }
-
-  @Test
-  public void
-      getIsServiceCollectionEnabled_noFrcForSdkDisabledVersioned_disabledVersionsOnCacheAreHonored() {
-    // As long as SDK enabled flag is enabled, it depends on SDK disabled version only for
-    // enabled/disabled.
-    when(mockRemoteConfigManager.getBoolean(FIREBASE_PERFORMANCE_SDK_ENABLED_FRC_KEY))
-        .thenReturn(Optional.absent());
-    when(mockDeviceCacheManager.getBoolean(FIREBASE_PERFORMANCE_SDK_ENABLED_CACHE_KEY))
-        .thenReturn(Optional.absent());
-    when(mockRemoteConfigManager.isLastFetchFailed()).thenReturn(false);
-
-    when(mockRemoteConfigManager.getString(FIREBASE_PERFORMANCE_DISABLED_VERSIONS_FRC_KEY))
-        .thenReturn(Optional.absent());
-    setStaticFinalField(
-        BuildConfig.class,
-        /* fieldName= */ "FIREPERF_VERSION_NAME",
-        /* fieldNewValue= */ "1.0.0.111111111");
-
-    // Handling for empty string.
     when(mockDeviceCacheManager.getString(FIREBASE_PERFORMANCE_DISABLED_VERSIONS_CACHE_KEY))
         .thenReturn(Optional.of(""));
-    assertThat(testConfigResolver.getIsServiceCollectionEnabled()).isTrue();
+    when(mockRemoteConfigManager.getString(FIREBASE_PERFORMANCE_DISABLED_VERSIONS_FRC_KEY))
+        .thenReturn(Optional.of(""));
 
-    // Handling for random space in empty string.
-    when(mockDeviceCacheManager.getString(FIREBASE_PERFORMANCE_DISABLED_VERSIONS_CACHE_KEY))
-        .thenReturn(Optional.of("   "));
     assertThat(testConfigResolver.getIsServiceCollectionEnabled()).isTrue();
-
-    // Handling for empty string but ";" separated.
-    when(mockDeviceCacheManager.getString(FIREBASE_PERFORMANCE_DISABLED_VERSIONS_CACHE_KEY))
-        .thenReturn(Optional.of("  ;   "));
-    assertThat(testConfigResolver.getIsServiceCollectionEnabled()).isTrue();
-
-    // Handling for exact one version.
-    when(mockDeviceCacheManager.getString(FIREBASE_PERFORMANCE_DISABLED_VERSIONS_CACHE_KEY))
-        .thenReturn(Optional.of(" 1.0.0.111111111"));
-    assertThat(testConfigResolver.getIsServiceCollectionEnabled()).isFalse();
-    when(mockDeviceCacheManager.getString(FIREBASE_PERFORMANCE_DISABLED_VERSIONS_CACHE_KEY))
-        .thenReturn(Optional.of("1.2.0.222222222"));
-    assertThat(testConfigResolver.getIsServiceCollectionEnabled()).isTrue();
-
-    // Handling for multiple ";" separated versions with no space between.
-    when(mockDeviceCacheManager.getString(FIREBASE_PERFORMANCE_DISABLED_VERSIONS_CACHE_KEY))
-        .thenReturn(Optional.of("1.2.0.222222222;1.0.0.111111111;1.3.0.333333333"));
-    assertThat(testConfigResolver.getIsServiceCollectionEnabled()).isFalse();
-
-    // Handling for multiple ";" separated versions with random space between.
-    when(mockDeviceCacheManager.getString(FIREBASE_PERFORMANCE_DISABLED_VERSIONS_CACHE_KEY))
-        .thenReturn(Optional.of("1.2.0.222222222 ;  1.0.0.111111111; 1.3.0.333333333"));
-    assertThat(testConfigResolver.getIsServiceCollectionEnabled()).isFalse();
-    when(mockDeviceCacheManager.getString(FIREBASE_PERFORMANCE_DISABLED_VERSIONS_CACHE_KEY))
-        .thenReturn(Optional.of("; 1.2.0.222222222;   1.3.0.333333333"));
-    assertThat(testConfigResolver.getIsServiceCollectionEnabled()).isTrue();
+    verify(mockDeviceCacheManager, never()).setValue(any(), anyBoolean());
+    verify(mockDeviceCacheManager, never()).setValue(any(), anyString());
   }
 
   @Test
@@ -2428,65 +2228,6 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
     verify(mockDeviceCacheManager, never()).setValue(anyString(), anyLong());
   }
 
-  @Test
-  public void getAndCacheLogSourceName_noRemoteConfigOrCacheValue_returnsDefaultButNotSaveCache() {
-    setStaticFinalField(BuildConfig.class, "TRANSPORT_LOG_SRC", "FIREPERF");
-    setStaticFinalField(BuildConfig.class, "ENFORCE_DEFAULT_LOG_SRC", Boolean.valueOf(false));
-
-    when(mockRemoteConfigManager.getRemoteConfigValueOrDefault("fpr_log_source", -1L))
-        .thenReturn(-1L);
-    when(mockDeviceCacheManager.getString("com.google.firebase.perf.LogSourceName"))
-        .thenReturn(Optional.of("FIREPERF"));
-
-    assertThat(testConfigResolver.getAndCacheLogSourceName()).isEqualTo("FIREPERF");
-    // Default value is saved at device cache because it can always read from build constant.
-    verify(mockDeviceCacheManager, never())
-        .setValue(eq("com.google.firebase.perf.LogSourceName"), anyString());
-  }
-
-  @Test
-  public void getAndCacheLogSourceName_notNullCacheValue_returnsCache() {
-    setStaticFinalField(BuildConfig.class, "TRANSPORT_LOG_SRC", "FIREPERF");
-    setStaticFinalField(BuildConfig.class, "ENFORCE_DEFAULT_LOG_SRC", Boolean.valueOf(false));
-
-    when(mockRemoteConfigManager.getRemoteConfigValueOrDefault("fpr_log_source", -1L))
-        .thenReturn(-1L);
-    when(mockDeviceCacheManager.getString("com.google.firebase.perf.LogSourceName"))
-        .thenReturn(Optional.of("FIREPERF_INTERNAL_LOW"));
-
-    assertThat(testConfigResolver.getAndCacheLogSourceName()).isEqualTo("FIREPERF_INTERNAL_LOW");
-    verify(mockDeviceCacheManager, never())
-        .setValue(eq("com.google.firebase.perf.LogSourceName"), anyString());
-  }
-
-  @Test
-  public void getAndCacheLogSourceName_nullCacheValue_returnsDefault() {
-    setStaticFinalField(BuildConfig.class, "TRANSPORT_LOG_SRC", "FIREPERF");
-    setStaticFinalField(BuildConfig.class, "ENFORCE_DEFAULT_LOG_SRC", Boolean.valueOf(false));
-
-    when(mockRemoteConfigManager.getRemoteConfigValueOrDefault("fpr_log_source", -1L))
-        .thenReturn(-1L);
-    when(mockDeviceCacheManager.getString("com.google.firebase.perf.LogSourceName"))
-        .thenReturn(Optional.absent());
-
-    assertThat(testConfigResolver.getAndCacheLogSourceName()).isEqualTo("FIREPERF");
-    verify(mockDeviceCacheManager, never())
-        .setValue(eq("com.google.firebase.perf.LogSourceName"), anyString());
-  }
-
-  @Test
-  public void getAndCacheLogSourceName_defaultValueIsNotFireperf_returnsNewDefault() {
-    setStaticFinalField(BuildConfig.class, "TRANSPORT_LOG_SRC", "FIREPERF_INTERNAL_HIGH");
-    setStaticFinalField(BuildConfig.class, "ENFORCE_DEFAULT_LOG_SRC", Boolean.valueOf(false));
-
-    when(mockRemoteConfigManager.getRemoteConfigValueOrDefault("fpr_log_source", -1L))
-        .thenReturn(-1L);
-    when(mockDeviceCacheManager.getString("com.google.firebase.perf.LogSourceName"))
-        .thenReturn(Optional.of("FIREPERF_INTERNAL_HIGH"));
-
-    assertThat(testConfigResolver.getAndCacheLogSourceName()).isEqualTo("FIREPERF_INTERNAL_HIGH");
-  }
-
   // TODO: Commenting out the Flaky test.
   //  This test is failing sometimes because when ":test" is run ReflectionHelpers is not able to
   //  reflectively modify the static fields for "BuildConfig.class". Running ":testDebugUnitTest"
@@ -2508,108 +2249,6 @@ public class ConfigResolverTest extends FirebasePerformanceTestBase {
   //    verify(mockDeviceCacheManager, never())
   //        .setValue(eq("com.google.firebase.perf.LogSourceName"), anyString());
   //  }
-
-  @Test
-  public void getAndCacheLogSourceName_getFromRemoteConfig_returnsCacheAtNextTime() {
-    setStaticFinalField(BuildConfig.class, "TRANSPORT_LOG_SRC", "FIREPERF");
-    setStaticFinalField(BuildConfig.class, "ENFORCE_DEFAULT_LOG_SRC", Boolean.valueOf(false));
-
-    // #1 call: valid remote config value is returned, therefore returns this value and store at
-    // cache.
-    when(mockRemoteConfigManager.getRemoteConfigValueOrDefault("fpr_log_source", -1L))
-        .thenReturn(675L); // FIREPERF_INTERNAL_LOW
-
-    assertThat(testConfigResolver.getAndCacheLogSourceName()).isEqualTo("FIREPERF_INTERNAL_LOW");
-    verify(mockDeviceCacheManager, never()).getString(eq("com.google.firebase.perf.LogSourceName"));
-    verify(mockDeviceCacheManager, times(1))
-        .setValue(eq("com.google.firebase.perf.LogSourceName"), eq("FIREPERF_INTERNAL_LOW"));
-
-    // #2 call: There is no remote config value, therefore returns value stored at cache.
-    when(mockRemoteConfigManager.getRemoteConfigValueOrDefault("fpr_log_source", -1L))
-        .thenReturn(-1L);
-    when(mockDeviceCacheManager.getString("com.google.firebase.perf.LogSourceName"))
-        .thenReturn(Optional.of("FIREPERF_INTERNAL_LOW"));
-
-    assertThat(testConfigResolver.getAndCacheLogSourceName()).isEqualTo("FIREPERF_INTERNAL_LOW");
-    verify(mockDeviceCacheManager, times(1))
-        .getString(eq("com.google.firebase.perf.LogSourceName"));
-    verify(mockDeviceCacheManager, never())
-        .setValue(eq("com.google.firebase.perf.LogSourceName"), eq("FIREPERF"));
-  }
-
-  @Test
-  public void getAndCacheLogSourceName_cacheExistsAndGetNewFromRemoteConfig_cacheUpdated() {
-    setStaticFinalField(BuildConfig.class, "TRANSPORT_LOG_SRC", "FIREPERF");
-    setStaticFinalField(BuildConfig.class, "ENFORCE_DEFAULT_LOG_SRC", Boolean.valueOf(false));
-
-    // #1 call: valid remote config value is returned, therefore returns this value and store at
-    // cache.
-    when(mockRemoteConfigManager.getRemoteConfigValueOrDefault("fpr_log_source", -1L))
-        .thenReturn(461L); // FIREPERF_AUTOPUSH
-
-    assertThat(testConfigResolver.getAndCacheLogSourceName()).isEqualTo("FIREPERF_AUTOPUSH");
-    verify(mockDeviceCacheManager, never()).getString(eq("com.google.firebase.perf.LogSourceName"));
-    verify(mockDeviceCacheManager, times(1))
-        .setValue(eq("com.google.firebase.perf.LogSourceName"), eq("FIREPERF_AUTOPUSH"));
-
-    // #2 call: There is new remote config value, therefore saves new value stored at cache.
-    when(mockRemoteConfigManager.getRemoteConfigValueOrDefault("fpr_log_source", -1L))
-        .thenReturn(675L); // FIREPERF_INTERNAL_LOW
-    when(mockDeviceCacheManager.getString("com.google.firebase.perf.LogSourceName"))
-        .thenReturn(Optional.of("FIREPERF_INTERNAL_LOW"));
-
-    // #3 call: There is no remote config value, returns updated value stored at cache.
-    assertThat(testConfigResolver.getAndCacheLogSourceName()).isEqualTo("FIREPERF_INTERNAL_LOW");
-    verify(mockDeviceCacheManager, never()).getString(eq("com.google.firebase.perf.LogSourceName"));
-    verify(mockDeviceCacheManager, times(1))
-        .setValue(eq("com.google.firebase.perf.LogSourceName"), eq("FIREPERF_INTERNAL_LOW"));
-  }
-
-  @Test
-  public void getAndCacheLogSourceName_invalidRemoteConfigData_returnsDefault() {
-    setStaticFinalField(BuildConfig.class, "TRANSPORT_LOG_SRC", "FIREPERF");
-    setStaticFinalField(BuildConfig.class, "ENFORCE_DEFAULT_LOG_SRC", Boolean.valueOf(false));
-
-    when(mockRemoteConfigManager.getRemoteConfigValueOrDefault("fpr_log_source", -1L))
-        .thenReturn(123L); // invalid log source.
-    when(mockDeviceCacheManager.getString("com.google.firebase.perf.LogSourceName"))
-        .thenReturn(Optional.of("FIREPERF"));
-
-    assertThat(testConfigResolver.getAndCacheLogSourceName()).isEqualTo("FIREPERF");
-    verify(mockDeviceCacheManager, never())
-        .setValue(eq("com.google.firebase.perf.LogSourceName"), anyString());
-  }
-
-  @Test
-  public void getAndCacheLogSourceName_invalidRemoteConfigData_returnsCache() {
-    setStaticFinalField(BuildConfig.class, "TRANSPORT_LOG_SRC", "FIREPERF");
-    setStaticFinalField(BuildConfig.class, "ENFORCE_DEFAULT_LOG_SRC", Boolean.valueOf(false));
-
-    when(mockRemoteConfigManager.getRemoteConfigValueOrDefault("fpr_log_source", -1L))
-        .thenReturn(123L); // invalid log source.
-    when(mockDeviceCacheManager.getString("com.google.firebase.perf.LogSourceName"))
-        .thenReturn(Optional.of("FIREPERF_AUTOPUSH"));
-
-    assertThat(testConfigResolver.getAndCacheLogSourceName()).isEqualTo("FIREPERF_AUTOPUSH");
-    verify(mockDeviceCacheManager, never())
-        .setValue(eq("com.google.firebase.perf.LogSourceName"), anyString());
-  }
-
-  @Test
-  public void
-      getAndCacheLogSourceName_bothRemoteConfigAndCacheExist_returnsAndCacheRemoteConfigData() {
-    setStaticFinalField(BuildConfig.class, "TRANSPORT_LOG_SRC", "FIREPERF");
-    setStaticFinalField(BuildConfig.class, "ENFORCE_DEFAULT_LOG_SRC", Boolean.valueOf(false));
-
-    when(mockRemoteConfigManager.getRemoteConfigValueOrDefault("fpr_log_source", -1L))
-        .thenReturn(675L); // FIREPERF_INTERNAL_LOW.
-    when(mockDeviceCacheManager.getString("com.google.firebase.perf.LogSourceName"))
-        .thenReturn(Optional.of("FIREPERF_INTERNAL_HIGH"));
-
-    assertThat(testConfigResolver.getAndCacheLogSourceName()).isEqualTo("FIREPERF_INTERNAL_LOW");
-    verify(mockDeviceCacheManager, times(1))
-        .setValue(eq("com.google.firebase.perf.LogSourceName"), eq("FIREPERF_INTERNAL_LOW"));
-  }
 
   @Test
   public void getFragmentSamplingRate_validMetadata_returnsMetadata() {

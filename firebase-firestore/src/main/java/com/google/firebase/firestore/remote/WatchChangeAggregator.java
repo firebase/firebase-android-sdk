@@ -20,12 +20,12 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import androidx.annotation.Nullable;
 import com.google.firebase.database.collection.ImmutableSortedSet;
 import com.google.firebase.firestore.core.DocumentViewChange;
-import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.local.QueryPurpose;
 import com.google.firebase.firestore.local.TargetData;
 import com.google.firebase.firestore.model.DatabaseId;
 import com.google.firebase.firestore.model.DocumentKey;
 import com.google.firebase.firestore.model.MutableDocument;
+import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.remote.WatchChange.DocumentChange;
 import com.google.firebase.firestore.remote.WatchChange.ExistenceFilterWatchChange;
@@ -59,9 +59,6 @@ public class WatchChangeAggregator {
      */
     @Nullable
     TargetData getTargetDataForTarget(int targetId);
-
-    /** Returns the database ID of the Firestore instance. */
-    DatabaseId getDatabaseId();
   }
 
   private final TargetMetadataProvider targetMetadataProvider;
@@ -81,6 +78,8 @@ public class WatchChangeAggregator {
    */
   private Map<Integer, QueryPurpose> pendingTargetResets = new HashMap<>();
 
+  private final DatabaseId databaseId;
+
   /** The log tag to use for this class. */
   private static final String LOG_TAG = "WatchChangeAggregator";
 
@@ -91,7 +90,9 @@ public class WatchChangeAggregator {
     FALSE_POSITIVE
   }
 
-  public WatchChangeAggregator(TargetMetadataProvider targetMetadataProvider) {
+  public WatchChangeAggregator(
+      DatabaseId databaseId, TargetMetadataProvider targetMetadataProvider) {
+    this.databaseId = databaseId;
     this.targetMetadataProvider = targetMetadataProvider;
   }
 
@@ -197,14 +198,14 @@ public class WatchChangeAggregator {
 
     TargetData targetData = queryDataForActiveTarget(targetId);
     if (targetData != null) {
-      Target target = targetData.getTarget();
-      if (target.isDocumentQuery()) {
+      ResourcePath singleDocPath = targetData.getTarget().getSingleDocPath();
+      if (singleDocPath != null) {
         if (expectedCount == 0) {
           // The existence filter told us the document does not exist. We deduce that this document
           // does not exist and apply a deleted document to our updates. Without applying this
           // deleted document there might be another query that will raise this document as part of
           // a snapshot  until it is resolved, essentially exposing inconsistency between queries.
-          DocumentKey key = DocumentKey.fromPath(target.getPath());
+          DocumentKey key = DocumentKey.fromPath(singleDocPath);
           MutableDocument result = MutableDocument.newNoDocument(key, SnapshotVersion.NONE);
           removeDocumentFromTarget(targetId, key, result);
         } else {
@@ -240,7 +241,7 @@ public class WatchChangeAggregator {
                   TestingHooks.ExistenceFilterMismatchInfo.from(
                       currentSize,
                       watchChange.getExistenceFilter(),
-                      targetMetadataProvider.getDatabaseId(),
+                      databaseId,
                       bloomFilter,
                       status));
         }
@@ -299,22 +300,22 @@ public class WatchChangeAggregator {
     ImmutableSortedSet<DocumentKey> existingKeys =
         targetMetadataProvider.getRemoteKeysForTarget(targetId);
     int removalCount = 0;
+    String rootDocumentsPath =
+        "projects/"
+            + databaseId.getProjectId()
+            + "/databases/"
+            + databaseId.getDatabaseId()
+            + "/documents/";
     for (DocumentKey key : existingKeys) {
-      DatabaseId databaseId = targetMetadataProvider.getDatabaseId();
-      String documentPath =
-          "projects/"
-              + databaseId.getProjectId()
-              + "/databases/"
-              + databaseId.getDatabaseId()
-              + "/documents/"
-              + key.getPath().canonicalString();
+      String documentPath = rootDocumentsPath + key.getPath().canonicalString();
       if (!bloomFilter.mightContain(documentPath)) {
-        this.removeDocumentFromTarget(targetId, key, /*updatedDocument=*/ null);
+        this.removeDocumentFromTarget(targetId, key, /* updatedDocument= */ null);
         removalCount++;
       }
     }
     return removalCount;
   }
+
   /**
    * Converts the currently accumulated state into a remote event at the provided snapshot version.
    * Resets the accumulated changes before returning.
@@ -328,12 +329,13 @@ public class WatchChangeAggregator {
 
       TargetData targetData = queryDataForActiveTarget(targetId);
       if (targetData != null) {
-        if (targetState.isCurrent() && targetData.getTarget().isDocumentQuery()) {
+        ResourcePath singleDocPath = targetData.getTarget().getSingleDocPath();
+        if (targetState.isCurrent() && singleDocPath != null) {
           // Document queries for document that don't exist can produce an empty result set. To
           // update our local cache, we synthesize a document delete if we have not previously
           // received the document. This resolves the limbo state of the document, removing it from
           // limboDocumentRefs.
-          DocumentKey key = DocumentKey.fromPath(targetData.getTarget().getPath());
+          DocumentKey key = DocumentKey.fromPath(singleDocPath);
           if (pendingDocumentUpdates.get(key) == null && !targetContainsDocument(targetId, key)) {
             MutableDocument result = MutableDocument.newNoDocument(key, snapshotVersion);
             removeDocumentFromTarget(targetId, key, result);

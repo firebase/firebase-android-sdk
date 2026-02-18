@@ -46,7 +46,7 @@ public class TestUtilKtx {
       return DocumentSnapshot.fromNoDocument(FIRESTORE, key(path), isFromCache);
     } else {
       return DocumentSnapshot.fromDocument(
-          FIRESTORE, doc(path, 1L, data), isFromCache, /*hasPendingWrites=*/ false);
+          FIRESTORE, doc(path, 1L, data), isFromCache, /* hasPendingWrites= */ false);
     }
   }
 
@@ -98,7 +98,8 @@ public class TestUtilKtx {
     }
     ViewSnapshot viewSnapshot =
         new ViewSnapshot(
-            com.google.firebase.firestore.testutil.TestUtil.query(path),
+            new com.google.firebase.firestore.core.QueryOrPipeline.QueryWrapper(
+                com.google.firebase.firestore.testutil.TestUtil.query(path)),
             newDocuments,
             oldDocuments,
             documentChanges,

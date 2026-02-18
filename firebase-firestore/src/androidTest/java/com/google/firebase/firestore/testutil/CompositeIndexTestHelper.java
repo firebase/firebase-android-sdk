@@ -15,10 +15,13 @@
 package com.google.firebase.firestore.testutil;
 
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.checkOnlineAndOfflineResultsMatch;
+import static com.google.firebase.firestore.testutil.IntegrationTestUtil.querySnapshotToIds;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.testFirestore;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.writeAllDocs;
 import static com.google.firebase.firestore.util.Util.autoId;
+import static java.util.Arrays.asList;
+import static org.junit.Assert.assertEquals;
 
 import androidx.annotation.NonNull;
 import com.google.android.gms.tasks.Task;
@@ -50,7 +53,7 @@ public class CompositeIndexTestHelper {
   private final String testId;
   private static final String TEST_ID_FIELD = "testId";
   private static final String TTL_FIELD = "expireAt";
-  private static final String COMPOSITE_INDEX_TEST_COLLECTION = "composite-index-test-collection";
+  public static final String COMPOSITE_INDEX_TEST_COLLECTION = "composite-index-test-collection";
 
   // Creates a new instance of the CompositeIndexTestHelper class, with a unique test
   // identifier for data isolation.
@@ -66,7 +69,7 @@ public class CompositeIndexTestHelper {
   // Runs a test with specified documents in the COMPOSITE_INDEX_TEST_COLLECTION.
   @NonNull
   public CollectionReference withTestDocs(@NonNull Map<String, Map<String, Object>> docs) {
-    CollectionReference writer = withTestCollection();
+    CollectionReference writer = testFirestore().collection(COMPOSITE_INDEX_TEST_COLLECTION);
     writeAllDocs(writer, prepareTestDocuments(docs));
     CollectionReference reader = testFirestore().collection(writer.getPath());
     return reader;
@@ -119,8 +122,22 @@ public class CompositeIndexTestHelper {
   // actual document IDs created by the test helper.
   @NonNull
   public void assertOnlineAndOfflineResultsMatch(
-      @NonNull Query query, @NonNull String... expectedDocs) {
-    checkOnlineAndOfflineResultsMatch(query, toHashedIds(expectedDocs));
+      @NonNull CollectionReference collection,
+      @NonNull Query query,
+      @NonNull String... expectedDocs) {
+    // `checkOnlineAndOfflineResultsMatch` first makes sure all documents needed for
+    // `query` are in the cache. It does so making a `get` on the first argument.
+    // Since *all* composite index tests use the same collection, this is very inefficient to do.
+    // Therefore, we should only do so for tests where `TEST_ID_FIELD` matches the current test.
+    checkOnlineAndOfflineResultsMatch(this.query(collection), query, toHashedIds(expectedDocs));
+  }
+
+  // Asserts that the IDs in the query snapshot matches the expected Ids. The expected document
+  // IDs are hashed to match the actual document IDs created by the test helper.
+  @NonNull
+  public void assertSnapshotResultIdsMatch(
+      @NonNull QuerySnapshot snapshot, @NonNull String... expectedIds) {
+    assertEquals(querySnapshotToIds(snapshot), asList(toHashedIds(expectedIds)));
   }
 
   // Adds a filter on test id for a query.

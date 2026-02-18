@@ -1,0 +1,445 @@
+# Copyright 2024 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+type ExprValues @table {
+  requestTimeAsDate: Date!
+}
+
+type Foo @table @index(fields: ["bar"]) {
+  id: String!
+  bar: String
+}
+
+type StringVariants @table {
+  nonNullWithNonEmptyValue: String!
+  nonNullWithEmptyValue: String!
+  nullableWithNullValue: String
+  nullableWithNonNullValue: String
+  nullableWithEmptyValue: String
+}
+
+type IntVariants @table {
+  nonNullWithZeroValue: Int!
+  nonNullWithPositiveValue: Int!
+  nonNullWithNegativeValue: Int!
+  nonNullWithMaxValue: Int!
+  nonNullWithMinValue: Int!
+  nullableWithNullValue: Int
+  nullableWithZeroValue: Int
+  nullableWithPositiveValue: Int
+  nullableWithNegativeValue: Int
+  nullableWithMaxValue: Int
+  nullableWithMinValue: Int
+}
+
+type FloatVariants @table {
+  nonNullWithZeroValue: Float!
+  nonNullWithNegativeZeroValue: Float!
+  nonNullWithPositiveValue: Float!
+  nonNullWithNegativeValue: Float!
+  nonNullWithMaxValue: Float!
+  nonNullWithMinValue: Float!
+  nonNullWithMaxSafeIntegerValue: Float!
+  nullableWithNullValue: Float
+  nullableWithZeroValue: Float
+  nullableWithNegativeZeroValue: Float
+  nullableWithPositiveValue: Float
+  nullableWithNegativeValue: Float
+  nullableWithMaxValue: Float
+  nullableWithMinValue: Float
+  nullableWithMaxSafeIntegerValue: Float
+}
+
+type BooleanVariants @table {
+  nonNullWithTrueValue: Boolean!
+  nonNullWithFalseValue: Boolean!
+  nullableWithNullValue: Boolean
+  nullableWithTrueValue: Boolean
+  nullableWithFalseValue: Boolean
+}
+
+type Int64Variants @table {
+  nonNullWithZeroValue: Int64!
+  nonNullWithPositiveValue: Int64!
+  nonNullWithNegativeValue: Int64!
+  nonNullWithMaxValue: Int64!
+  nonNullWithMinValue: Int64!
+  nullableWithNullValue: Int64
+  nullableWithZeroValue: Int64
+  nullableWithPositiveValue: Int64
+  nullableWithNegativeValue: Int64
+  nullableWithMaxValue: Int64
+  nullableWithMinValue: Int64
+}
+
+type UUIDVariants @table {
+  nonNullValue: UUID!
+  nullableWithNullValue: UUID
+  nullableWithNonNullValue: UUID
+}
+
+type SyntheticId @table {
+  value: String!
+}
+
+type PrimaryKeyIsString @table {
+  id: String!
+  value: String!
+}
+
+type PrimaryKeyIsInt @table(key: ["foo"]) {
+  foo: Int!
+  value: String!
+}
+
+type PrimaryKeyIsFloat @table(key: ["foo"]) {
+  foo: Float!
+  value: String!
+}
+
+type PrimaryKeyIsUUID @table {
+  id: UUID!
+  value: String!
+}
+
+type PrimaryKeyIsDate @table(key: ["foo"]) {
+  foo: Date!
+  value: String!
+}
+
+type PrimaryKeyIsTimestamp @table(key: ["foo"]) {
+  foo: Timestamp!
+  value: String!
+}
+
+type PrimaryKeyIsInt64 @table(key: ["foo"]) {
+  foo: Int64!
+  value: String!
+}
+
+type PrimaryKeyIsComposite @table(key: ["foo", "bar", "baz"]) {
+  foo: Int!
+  bar: String!
+  baz: Boolean!
+  value: String!
+}
+
+type PrimaryKeyNested1 @table {
+  value: String!
+}
+
+type PrimaryKeyNested2 @table {
+  value: String!
+}
+
+type PrimaryKeyNested3 @table {
+  value: String!
+}
+
+type PrimaryKeyNested4 @table {
+  value: String!
+}
+
+type PrimaryKeyNested5 @table(key: ["nested1", "nested2"]) {
+  value: String!
+  nested1: PrimaryKeyNested1! @ref(constraintName: "xc78y5zy8g")
+  nested2: PrimaryKeyNested2! @ref(constraintName: "zhc54nhp9y")
+}
+
+type PrimaryKeyNested6 @table(key: ["nested3", "nested4"]) {
+  value: String!
+  nested3: PrimaryKeyNested3! @ref(constraintName: "ecwmmfw7mc")
+  nested4: PrimaryKeyNested4! @ref(constraintName: "kj6rf4krsy")
+}
+
+type PrimaryKeyNested7 @table(key: ["nested5a", "nested5b", "nested6"]) {
+  value: String!
+  nested5a: PrimaryKeyNested5! @ref(constraintName: "scp8jctndd")
+  nested5b: PrimaryKeyNested5! @ref(constraintName: "vs8pak27zd")
+  nested6: PrimaryKeyNested6! @ref(constraintName: "sgnjjj4j6z")
+}
+
+type Nested1 @table {
+  value: String!
+  nested1: Nested1 @ref(constraintName: "d7ehkzccaf")
+  nested2: Nested2! @ref(constraintName: "3xzv2rnqvx")
+  nested2NullableNull: Nested2 @ref(constraintName: "6ey7mpzmja")
+  nested2NullableNonNull: Nested2! @ref(constraintName: "fy65d2frd4")
+}
+
+type Nested2 @table {
+  value: String!
+  nested3: Nested3!@ref(constraintName: "wf72fzcndy")
+  nested3NullableNull: Nested3 @ref(constraintName: "btzepr3n67")
+  nested3NullableNonNull: Nested3! @ref(constraintName: "tsse8qpwpq")
+}
+
+type Nested3 @table {
+  value: String!
+}
+
+type ManyToOneParent @table {
+  child: ManyToOneChild @ref(constraintName: "y9pbzvyeb5")
+}
+
+type ManyToOneChild @table {
+  value: String
+}
+
+type ManyToManyChildA @table {
+  value: String
+}
+
+type ManyToManyChildB @table {
+  value: String
+}
+
+type ManyToManyParent @table(key: ["childA", "childB"]) {
+  childA: ManyToManyChildA! @ref(constraintName: "kneaq52b9z")
+  childB: ManyToManyChildB! @ref(constraintName: "pj3hs9yrv2")
+}
+
+type ManyToOneSelfCustomName @table {
+  ref: ManyToOneSelfCustomName @ref(constraintName: "aetgz9hzcg")
+}
+
+type ManyToOneSelfMatchingName @table {
+  manyToOneSelfMatchingName: ManyToOneSelfMatchingName @ref(constraintName: "qq6gzw5dfk")
+}
+
+type ManyToManySelfParent @table(key: ["child1", "child2"]) {
+  child1: ManyToManySelfChild! @ref(constraintName: "k2v4gjr95k")
+  child2: ManyToManySelfChild! @ref(constraintName: "tew95zy8m8")
+}
+
+type ManyToManySelfChild @table {
+  value: String
+}
+
+type OptionalStrings @table {
+  required1: String!
+  required2: String!
+  nullable1: String
+  nullable2: String
+  nullable3: String
+  nullableWithSchemaDefault: String @default(value: "pb429m")
+}
+
+type NonNullableLists @table {
+  strings: [String!]!
+  ints: [Int!]!
+  floats: [Float!]!
+  booleans: [Boolean!]!
+  uuids: [UUID!]!
+  int64s: [Int64!]!
+  dates: [Date!]!
+  timestamps: [Timestamp!]!
+}
+
+type NullableLists @table {
+  strings: [String!]
+  ints: [Int!]
+  floats: [Float!]
+  booleans: [Boolean!]
+  uuids: [UUID!]
+  int64s: [Int64!]
+  dates: [Date!]
+  timestamps: [Timestamp!]
+}
+
+type DateNonNullable @table @index(fields: ["tag"]) {
+  value: Date!
+  tag: String
+}
+
+type DateNullable @table @index(fields: ["tag"]) {
+  value: Date
+  tag: String
+}
+
+type DateNonNullableWithDefaults @table {
+  valueWithVariableDefault: Date!
+  valueWithSchemaDefault: Date! @default(value: "2112-01-31")
+  epoch: Date! @default(sql: "'epoch'::date")
+  requestTime1: Date! @default(expr: "request.time")
+  requestTime2: Date! @default(expr: "request.time")
+}
+
+type DateNullableWithDefaults @table {
+  valueWithVariableDefault: Date
+  valueWithVariableNullDefault: Date
+  valueWithSchemaDefault: Date @default(value: "1921-12-02")
+  valueWithSchemaNullDefault: Date @default(value: null)
+  valueWithNoDefault: Date
+  epoch: Date @default(sql: "'epoch'::date")
+  requestTime1: Date @default(expr: "request.time")
+  requestTime2: Date @default(expr: "request.time")
+}
+
+type NonNullTimestamp @table @index(fields: ["tag"]) {
+  value: Timestamp!
+  tag: String
+  position: Int
+}
+
+type NullableTimestamp @table @index(fields: ["tag"]) {
+  value: Timestamp
+  tag: String
+  position: Int
+}
+
+type NonNullTimestampsWithDefaults @table {
+  valueWithVariableDefault: Timestamp!
+  valueWithSchemaDefault: Timestamp! @default(value: "6224-01-31T14:02:45.714214Z")
+  epoch: Timestamp! @default(sql: "'epoch'::timestamptz")
+  requestTime1: Timestamp! @default(expr: "request.time")
+  requestTime2: Timestamp! @default(expr: "request.time")
+}
+
+type NullableTimestampsWithDefaults @table {
+  valueWithVariableDefault: Timestamp
+  valueWithSchemaDefault: Timestamp @default(value: "1621-12-03T01:22:03.513914Z")
+  epoch: Timestamp @default(sql: "'epoch'::timestamptz")
+  requestTime1: Timestamp @default(expr: "request.time")
+  requestTime2: Timestamp @default(expr: "request.time")
+}
+
+type AnyScalarNonNullable @table @index(fields: ["tag"]) {
+  value: Any!
+  tag: String
+  position: Int
+}
+
+type AnyScalarNullable @table @index(fields: ["tag"]) {
+  value: Any
+  tag: String
+  position: Int
+}
+
+type AnyScalarNullableListOfNullable @table @index(fields: ["tag"]) {
+  value: [Any]
+  tag: String
+  position: Int
+}
+
+type AnyScalarNullableListOfNonNullable @table @index(fields: ["tag"]) {
+  value: [Any!]
+  tag: String
+  position: Int
+}
+
+type AnyScalarNonNullableListOfNullable @table @index(fields: ["tag"]) {
+  value: [Any]!
+  tag: String
+  position: Int
+}
+
+type AnyScalarNonNullableListOfNonNullable @table @index(fields: ["tag"]) {
+  value: [Any!]!
+  tag: String
+  position: Int
+}
+
+type OrderDirectionTest @table @index(fields: ["tag"]) {
+  value: Int
+  tag: String
+}
+
+enum N5ekmae3jn {
+  DPSKD6HR3A,
+  XGWGVMYTHJ,
+  QJX7C7RD5T,
+  RGTB44C2M8,
+  ZE6Z5778RV,
+  N3HWNCRWBP,
+}
+
+type EnumNonNullable @table @index(fields: ["tag"]) {
+  value: N5ekmae3jn!
+  tag: String
+}
+
+type EnumNonNullableTableDefault @table {
+  value: N5ekmae3jn! @default(value: RGTB44C2M8)
+}
+
+type EnumNullable @table @index(fields: ["tag"]) {
+  value: N5ekmae3jn
+  tag: String
+}
+
+type EnumNullableTableDefault @table {
+  value: N5ekmae3jn @default(value: ZE6Z5778RV)
+}
+
+type EnumNonNullableListOfNonNullable @table {
+  value: [N5ekmae3jn!]!
+}
+
+type EnumNonNullableListOfNullable @table {
+  value: [N5ekmae3jn]!
+}
+
+type EnumNullableListOfNonNullable @table {
+  value: [N5ekmae3jn!]
+}
+
+type EnumNullableListOfNullable @table {
+  value: [N5ekmae3jn]
+}
+
+# An enum that uses Kotlin keywords to ensure they are correctly escaped.
+enum break {
+  when,
+  super,
+  try,
+}
+
+type EnumKotlinKeywords @table {
+  value: break!
+}
+
+# An enum that has a subset of the values in the N5ekmae3jn enum.
+# This is used for testing unknown enum values.
+enum N5ekmae3jnSubset {
+  DPSKD6HR3A,
+  XGWGVMYTHJ,
+  QJX7C7RD5T,
+}
+
+type EnumSubset @table {
+  value: N5ekmae3jnSubset!
+}
+
+type EnumSubsetList @table {
+  value: [N5ekmae3jnSubset]!
+}
+
+type EnumKey @table(key: ["id", "enumValue"]) {
+  id: UUID! @default(expr: "uuidV4()")
+  enumValue: N5ekmae3jn!
+  tag: String!
+}
+
+enum S7yayynb25 {
+  XJ27ZAXKD3,
+  R36KQ8PT5K,
+  ETCV3FN9GH,
+  NMAJAGZHDS,
+}
+
+type MultipleEnumColumns @table {
+  enum1: N5ekmae3jn!
+  enum2: S7yayynb25!
+}

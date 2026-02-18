@@ -12,21 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     id 'firebase-library'
     id("kotlin-android")
 }
 
 firebaseLibrary {
-    libraryGroup "appdistribution"
+    libraryGroup = "appdistribution"
+    previewMode = "beta"
+    releaseNotes {
+        name.set("{{appdistro}} API")
+        versionName.set("app-distro-api")
+    }
 }
 
 android {
     namespace "com.google.firebase.appdistribution"
-    compileSdkVersion project.targetSdkVersion
-    
+    compileSdkVersion project.compileSdkVersion
+
     defaultConfig {
-        minSdkVersion 16
+        minSdkVersion project.minSdkVersion
         targetSdkVersion project.targetSdkVersion
         multiDexEnabled true
         versionName version
@@ -43,26 +50,30 @@ android {
     }
 }
 
+kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_1_8 } }
+
 dependencies {
-    androidTestImplementation "androidx.test:core:$androidxTestCoreVersion"
-    androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
-    androidTestImplementation "org.mockito:mockito-android:3.4.0"
-    androidTestImplementation 'androidx.test:runner:1.2.0'
-    androidTestImplementation 'junit:junit:4.12'
-    annotationProcessor 'com.google.auto.value:auto-value:1.6.5'
-    compileOnly 'com.google.auto.value:auto-value-annotations:1.6.5'
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
-    implementation 'androidx.annotation:annotation:1.1.0'
-    implementation 'com.google.android.gms:play-services-tasks:18.0.1'
-    implementation("com.google.firebase:firebase-common:20.4.2")
-    implementation("com.google.firebase:firebase-common-ktx:20.4.2")
-    implementation("com.google.firebase:firebase-components:17.1.5")
-    testImplementation "androidx.test:core:$androidxTestCoreVersion"
-    testImplementation "com.google.truth:truth:$googleTruthVersion"
-    testImplementation "org.robolectric:robolectric:$robolectricVersion"
-    testImplementation 'junit:junit:4.12'
-    testImplementation 'junit:junit:4.13.2'
-    testImplementation 'org.mockito:mockito-core:2.25.0'
-    testImplementation 'org.mockito:mockito-inline:3.4.0'
+    api libs.playservices.tasks
+    api(libs.firebase.common)
+    api(libs.firebase.components)
+
+    implementation libs.androidx.annotation
+    implementation libs.kotlin.stdlib
+
+    compileOnly libs.autovalue.annotations
+
+    annotationProcessor libs.autovalue
+
     testImplementation project(':firebase-appdistribution-api')
+    testImplementation libs.androidx.test.core
+    testImplementation libs.truth
+    testImplementation libs.junit
+    testImplementation libs.mockito.core
+    testImplementation libs.robolectric
+
+    androidTestImplementation libs.androidx.test.core
+    androidTestImplementation libs.androidx.test.runner
+    androidTestImplementation libs.truth
+    androidTestImplementation libs.junit
+    androidTestImplementation libs.mockito.android
 }

@@ -1,0 +1,36 @@
+name: Check plugins
+
+on:
+  pull_request:
+    paths:
+      - 'plugins/**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  plugins-check:
+    permissions:
+      checks: write
+      pull-requests: write
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Set up JDK 17
+        uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12 # v4.7.0
+        with:
+          java-version: 17
+          distribution: temurin
+          cache: gradle
+      - name: plugins tests
+        env:
+          FIREBASE_CI: 1
+        run: |
+          ./gradlew plugins:check
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@170bf24d20d201b842d7a52403b73ed297e6645b # v2.18.0
+        if: always()
+        with:
+          files: "**/build/test-results/**/*.xml"
+          check_name: "plugins test results"

@@ -12,29 +12,36 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     id 'firebase-library'
     id("kotlin-android")
     id 'firebase-vendor'
     id 'com.google.protobuf'
+    id("copy-google-services")
 }
 
 firebaseLibrary {
-    libraryGroup "ml-modeldownloader"
+    libraryGroup = "ml-modeldownloader"
     testLab.enabled = true
     publishJavadoc = true
+    releaseNotes {
+        name.set("{{firebase_ml}}")
+        versionName.set("firebaseml-modeldownloader")
+    }
 }
 
 protobuf {
     // Configure the protoc executable
     protoc {
         // Download from repositories
-        artifact = "com.google.protobuf:protoc:$protocVersion"
+        artifact = libs.protoc.get().toString()
     }
     generateProtoTasks {
         all().each { task ->
             task.builtins {
-                java { }
+                java {}
             }
         }
     }
@@ -42,10 +49,10 @@ protobuf {
 
 android {
     namespace "com.google.firebase.ml.modeldownloader"
-    compileSdkVersion project.targetSdkVersion
+    compileSdkVersion project.compileSdkVersion
 
     defaultConfig {
-        minSdkVersion 16
+        minSdkVersion project.minSdkVersion
         targetSdkVersion project.targetSdkVersion
         multiDexEnabled true
         versionName version
@@ -59,71 +66,77 @@ android {
         unitTests {
             includeAndroidResources = true
         }
+
+        unitTests.all {
+            jvmArgs '--add-opens=java.base/java.io=ALL-UNNAMED'
+        }
     }
     lint {
         baseline = file("lint-baseline.xml")
     }
 }
 
+kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_1_8 } }
+
 thirdPartyLicenses {
-    add 'Dagger', "${rootDir}/third_party/licenses/apache-2.0.txt"
+    add 'Apache-2.0', "${rootDir}/third_party/licenses/apache-2.0.txt"
+    add 'Dagger', "${rootDir}/third_party/licenses/dagger.txt"
 }
 
 dependencies {
-    androidTestImplementation "androidx.annotation:annotation:1.1.0"
-    androidTestImplementation "androidx.test.ext:junit:$androidxTestJUnitVersion"
-    androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
-    androidTestImplementation 'androidx.test:runner:1.2.0'
-    androidTestImplementation 'junit:junit:4.13.1'
-    annotationProcessor "com.google.auto.value:auto-value:1.6.5"
-    annotationProcessor libs.dagger.compiler
-    annotationProcessor project(":encoders:firebase-encoders-processor")
-    compileOnly "com.google.auto.value:auto-value-annotations:1.6.6"
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
-    implementation 'androidx.annotation:annotation:1.1.0'
-    implementation 'com.google.android.datatransport:transport-api:3.0.0'
-    implementation 'com.google.android.datatransport:transport-runtime:3.1.8'
-    implementation 'com.google.android.gms:play-services-tasks:18.0.1'
-    implementation 'com.google.auto.service:auto-service-annotations:1.0.1'
-    implementation 'com.google.firebase:firebase-annotations:16.2.0'
-    implementation 'com.google.firebase:firebase-encoders-json:18.0.0'
-    implementation 'com.google.firebase:firebase-encoders:17.0.0'
-    implementation 'com.google.firebase:firebase-installations-interop:17.1.0'
-    implementation 'javax.inject:javax.inject:1'
-    implementation('com.google.firebase:firebase-datatransport:18.2.0'){
+    javadocClasspath libs.findbugs.jsr305
+
+    vendor (libs.dagger.dagger) {
+         exclude group: "javax.inject", module: "javax.inject"
+     }
+
+    api libs.playservices.tasks
+    api libs.firebase.annotations
+    api(libs.firebase.common)
+    api(libs.firebase.components)
+    api('com.google.firebase:firebase-datatransport:18.2.0'){
          exclude group: 'com.google.firebase', module: 'firebase-common'
          exclude group: 'com.google.firebase', module: 'firebase-components'
      }
-    implementation("com.google.firebase:firebase-common:20.4.2")
-    implementation("com.google.firebase:firebase-common-ktx:20.4.2")
-    implementation("com.google.firebase:firebase-components:17.1.5")
-    implementation("com.google.firebase:firebase-installations:17.2.0")
-    javadocClasspath 'com.google.code.findbugs:jsr305:3.0.2'
-    testImplementation "androidx.test.ext:junit:$androidxTestJUnitVersion"
-    testImplementation "androidx.test:core:$androidxTestCoreVersion"
-    testImplementation "com.google.protobuf:protobuf-java-util:$protobufJavaUtilVersion"
-    testImplementation "com.google.truth:truth:$googleTruthVersion"
-    testImplementation "org.robolectric:robolectric:$robolectricVersion"
-    testImplementation 'androidx.test:runner:1.5.1'
-    testImplementation 'com.github.tomakehurst:wiremock-standalone:2.26.3'
-    testImplementation 'com.google.truth.extensions:truth-proto-extension:1.0'
-    testImplementation 'junit:junit:4.13-beta-2'
-    testImplementation 'junit:junit:4.13.2'
-    testImplementation 'org.apache.httpcomponents:httpclient-android:4.3.5.1'
-    testImplementation 'org.mockito:mockito-core:3.3.3'
-    testImplementation 'org.mockito:mockito-core:3.6.0'
+    api 'com.google.firebase:firebase-encoders:17.0.0'
+    api 'com.google.firebase:firebase-encoders-json:18.0.0'
+    api("com.google.firebase:firebase-installations:18.0.0") {
+         exclude group: 'com.google.firebase', module: 'firebase-common-ktx'
+    }
+    api 'com.google.firebase:firebase-installations-interop:17.1.0'
+
+    implementation 'androidx.annotation:annotation:1.1.0'
+    implementation 'com.google.android.datatransport:transport-api:3.0.0'
+    implementation 'com.google.android.datatransport:transport-runtime:3.1.8'
+    implementation 'com.google.auto.service:auto-service-annotations:1.0.1'
+    implementation libs.javax.inject
+    implementation libs.kotlin.stdlib
+
+    compileOnly libs.autovalue.annotations
+
+    annotationProcessor project(":encoders:firebase-encoders-processor")
+    annotationProcessor libs.autovalue
+    annotationProcessor libs.dagger.compiler
+
     testImplementation(project(":integ-testing")) {
         exclude group: 'com.google.firebase', module: 'firebase-common'
         exclude group: 'com.google.firebase', module: 'firebase-components'
     }
-    vendor (libs.dagger.dagger) {
-         exclude group: "javax.inject", module: "javax.inject"
-     }
-}
+    testImplementation libs.androidx.test.core
+    testImplementation libs.androidx.test.runner
+    testImplementation libs.androidx.test.junit
+    testImplementation libs.wiremock.standalone
+    testImplementation libs.protobuf.java.util
+    testImplementation libs.truth
+    testImplementation libs.truth.proto.extension
+    testImplementation libs.junit
+    testImplementation libs.httpclient.android
+    testImplementation libs.mockito.core
+    testImplementation libs.robolectric
 
-// ==========================================================================
-// Copy from here down if you want to use the google-services plugin in your
-// androidTest integration tests.
-// ==========================================================================
-ext.packageName = "com.google.firebase.ml.modeldownloader"
-apply from: '../gradle/googleServices.gradle'
+    androidTestImplementation libs.androidx.annotation
+    androidTestImplementation libs.androidx.test.runner
+    androidTestImplementation libs.androidx.test.junit
+    androidTestImplementation libs.truth
+    androidTestImplementation libs.junit
+}

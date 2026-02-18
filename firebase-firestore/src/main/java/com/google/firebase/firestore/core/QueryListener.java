@@ -19,6 +19,7 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 import androidx.annotation.Nullable;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.ListenSource;
 import com.google.firebase.firestore.core.DocumentViewChange.Type;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,7 +33,7 @@ import java.util.List;
  * only from our worker thread.
  */
 public class QueryListener {
-  private final Query query;
+  private final QueryOrPipeline query;
 
   private final EventManager.ListenOptions options;
 
@@ -49,14 +50,33 @@ public class QueryListener {
   private @Nullable ViewSnapshot snapshot;
 
   public QueryListener(
-      Query query, EventManager.ListenOptions options, EventListener<ViewSnapshot> listener) {
-    this.query = query;
+      QueryOrPipeline query,
+      EventManager.ListenOptions options,
+      EventListener<ViewSnapshot> listener) {
+    if (query.isPipeline()) {
+      this.query =
+          new QueryOrPipeline.PipelineWrapper(
+              query
+                  .pipeline$com_google_firebase_firebase_firestore()
+                  .withListenOptions$com_google_firebase_firebase_firestore(options));
+    } else {
+      this.query = query;
+    }
     this.listener = listener;
     this.options = options;
   }
 
-  public Query getQuery() {
+  public QueryOrPipeline getQuery() {
     return query;
+  }
+
+  public boolean listensToRemoteStore() {
+    if (options != null) {
+      return !options.source.equals(ListenSource.CACHE);
+    }
+    // While not set, source should be default to ListenSource.DEFAULT, which listens to remote
+    // store.
+    return true;
   }
 
   /**
@@ -127,6 +147,11 @@ public class QueryListener {
 
     // Always raise the first event when we're synced
     if (!snapshot.isFromCache()) {
+      return true;
+    }
+
+    // Always raise event if listening to cache
+    if (!this.listensToRemoteStore()) {
       return true;
     }
 

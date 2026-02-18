@@ -25,8 +25,7 @@ public final class AtEmptyAnnotation {
 
   private static final EmptyAnnotation INSTANCE = new EmptyAnnotationImpl();
 
-  private AtEmptyAnnotation() {
-  }
+  private AtEmptyAnnotation() {}
 
   public static AtEmptyAnnotation builder() {
     return BUILDER;
@@ -37,8 +36,7 @@ public final class AtEmptyAnnotation {
   }
 
   private static final class EmptyAnnotationImpl implements EmptyAnnotation {
-    EmptyAnnotationImpl() {
-    }
+    EmptyAnnotationImpl() {}
 
     @Override
     public Class<? extends Annotation> annotationType() {

@@ -450,4 +450,36 @@ public class DefaultFirebaseAppCheckTest {
 
     verify(mockAppCheckProvider).getToken();
   }
+
+  @Test
+  public void getToken_providerThrowsExceptionWithNullMessage_returnsResultWithError()
+      throws Exception {
+    defaultFirebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
+    when(mockAppCheckProvider.getToken())
+        .thenReturn(Tasks.forException(new Exception((String) null)));
+    when(mockAppCheckProvider.getToken())
+        .thenReturn(Tasks.forException(new Exception((String) null)));
+
+    Task<AppCheckTokenResult> tokenTask =
+        defaultFirebaseAppCheck.getToken(/* forceRefresh= */ false);
+
+    assertThat(tokenTask.isComplete()).isTrue();
+    assertThat(tokenTask.isSuccessful()).isTrue();
+    assertThat(tokenTask.getResult().getError()).isNotNull();
+  }
+
+  @Test
+  public void getLimitedUseToken_providerThrowsExceptionWithNullMessage_returnsResultWithError()
+      throws Exception {
+    defaultFirebaseAppCheck.installAppCheckProviderFactory(mockAppCheckProviderFactory);
+    when(mockAppCheckProvider.getToken())
+        .thenReturn(Tasks.forException(new Exception((String) null)));
+    when(mockAppCheckProvider.getToken())
+        .thenReturn(Tasks.forException(new Exception((String) null)));
+
+    Task<AppCheckTokenResult> tokenTask = defaultFirebaseAppCheck.getLimitedUseToken();
+    assertThat(tokenTask.isComplete()).isTrue();
+    assertThat(tokenTask.isSuccessful()).isTrue();
+    assertThat(tokenTask.getResult().getError()).isNotNull();
+  }
 }

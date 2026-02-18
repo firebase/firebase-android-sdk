@@ -20,6 +20,8 @@ import com.google.firebase.FirebaseApp;
 import com.google.firebase.components.Component;
 import com.google.firebase.components.ComponentRegistrar;
 import com.google.firebase.components.Dependency;
+import com.google.firebase.components.Qualified;
+import com.google.firebase.datatransport.TransportBackend;
 import com.google.firebase.events.Subscriber;
 import com.google.firebase.heartbeatinfo.HeartBeatInfo;
 import com.google.firebase.iid.internal.FirebaseInstanceIdInternal;
@@ -43,6 +45,8 @@ public class FirebaseMessagingRegistrar implements ComponentRegistrar {
   @Override
   @Keep
   public List<Component<?>> getComponents() {
+    Qualified<TransportFactory> transportFactory =
+        Qualified.qualified(TransportBackend.class, TransportFactory.class);
     return Arrays.asList(
         Component.builder(FirebaseMessaging.class)
             .name(LIBRARY_NAME)
@@ -50,8 +54,8 @@ public class FirebaseMessagingRegistrar implements ComponentRegistrar {
             .add(Dependency.optional(FirebaseInstanceIdInternal.class))
             .add(Dependency.optionalProvider(UserAgentPublisher.class))
             .add(Dependency.optionalProvider(HeartBeatInfo.class))
-            .add(Dependency.optional(TransportFactory.class))
             .add(Dependency.required(FirebaseInstallationsApi.class))
+            .add(Dependency.optionalProvider(transportFactory))
             .add(Dependency.required(Subscriber.class))
             .factory(
                 container ->
@@ -61,7 +65,7 @@ public class FirebaseMessagingRegistrar implements ComponentRegistrar {
                         container.getProvider(UserAgentPublisher.class),
                         container.getProvider(HeartBeatInfo.class),
                         container.get(FirebaseInstallationsApi.class),
-                        container.get(TransportFactory.class),
+                        container.getProvider(transportFactory),
                         container.get(Subscriber.class)))
             .alwaysEager()
             .build(),

@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.local;
 
+import static com.google.firebase.firestore.TestUtil.DATABASE_ID;
 import static com.google.firebase.firestore.testutil.Assert.assertThrows;
 import static com.google.firebase.firestore.testutil.TestUtil.deleteMutation;
 import static com.google.firebase.firestore.testutil.TestUtil.deletedDoc;
@@ -31,10 +32,13 @@ import static org.junit.Assert.assertTrue;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.RealtimePipeline;
+import com.google.firebase.firestore.RealtimePipelineSource;
 import com.google.firebase.firestore.bundle.BundledQuery;
 import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.Target;
-import com.google.firebase.firestore.model.DatabaseId;
+import com.google.firebase.firestore.core.TargetOrPipeline;
 import com.google.firebase.firestore.model.MutableDocument;
 import com.google.firebase.firestore.model.SnapshotVersion;
 import com.google.firebase.firestore.model.mutation.FieldMask;
@@ -42,6 +46,7 @@ import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.model.mutation.MutationBatch;
 import com.google.firebase.firestore.model.mutation.PatchMutation;
 import com.google.firebase.firestore.model.mutation.SetMutation;
+import com.google.firebase.firestore.pipeline.Expression;
 import com.google.firebase.firestore.proto.WriteBatch;
 import com.google.firebase.firestore.remote.RemoteSerializer;
 import com.google.firebase.firestore.testutil.TestUtil;
@@ -86,7 +91,7 @@ public final class LocalSerializerTest {
     TestWriteBuilder addSet() {
       builder.setUpdate(
           com.google.firestore.v1.Document.newBuilder()
-              .setName("projects/p/databases/d/documents/foo/bar")
+              .setName("projects/projectId/databases/(default)/documents/foo/bar")
               .putFields("a", Value.newBuilder().setStringValue("b").build())
               .putFields("num", Value.newBuilder().setIntegerValue(1).build()));
       return this;
@@ -97,7 +102,7 @@ public final class LocalSerializerTest {
       builder
           .setUpdate(
               com.google.firestore.v1.Document.newBuilder()
-                  .setName("projects/p/databases/d/documents/bar/baz")
+                  .setName("projects/projectId/databases/(default)/documents/bar/baz")
                   .putFields("a", Value.newBuilder().setStringValue("b").build())
                   .putFields("num", Value.newBuilder().setIntegerValue(1).build()))
           .setUpdateMask(DocumentMask.newBuilder().addFieldPaths("a"))
@@ -107,7 +112,7 @@ public final class LocalSerializerTest {
 
     @CanIgnoreReturnValue
     TestWriteBuilder addDelete() {
-      builder.setDelete("projects/p/databases/d/documents/baz/quux");
+      builder.setDelete("projects/projectId/databases/(default)/documents/baz/quux");
       return this;
     }
 
@@ -130,7 +135,7 @@ public final class LocalSerializerTest {
       builder
           .setTransform(
               DocumentTransform.newBuilder()
-                  .setDocument("projects/p/databases/d/documents/docs/1")
+                  .setDocument("projects/projectId/databases/(default)/documents/docs/1")
                   .addFieldTransforms(
                       FieldTransform.newBuilder()
                           .setFieldPath("integer")
@@ -155,8 +160,7 @@ public final class LocalSerializerTest {
 
   @Before
   public void setUp() {
-    DatabaseId databaseId = DatabaseId.forDatabase("p", "d");
-    remoteSerializer = new RemoteSerializer(databaseId);
+    remoteSerializer = new RemoteSerializer(DATABASE_ID);
     serializer = new LocalSerializer(remoteSerializer);
   }
 
@@ -283,7 +287,7 @@ public final class LocalSerializerTest {
         Write.newBuilder()
             .setUpdate(
                 com.google.firestore.v1.Document.newBuilder()
-                    .setName("projects/p/databases/d/documents/foo/bar")
+                    .setName("projects/projectId/databases/(default)/documents/foo/bar")
                     .putFields("a", Value.newBuilder().setStringValue("b").build()))
             .setUpdateMask(DocumentMask.newBuilder().addFieldPaths("a"))
             .build();
@@ -313,7 +317,7 @@ public final class LocalSerializerTest {
         com.google.firebase.firestore.proto.MaybeDocument.newBuilder()
             .setDocument(
                 com.google.firestore.v1.Document.newBuilder()
-                    .setName("projects/p/databases/d/documents/some/path")
+                    .setName("projects/projectId/databases/(default)/documents/some/path")
                     .putFields("foo", Value.newBuilder().setStringValue("bar").build())
                     .setUpdateTime(
                         com.google.protobuf.Timestamp.newBuilder().setSeconds(0).setNanos(42000)))
@@ -332,7 +336,7 @@ public final class LocalSerializerTest {
         com.google.firebase.firestore.proto.MaybeDocument.newBuilder()
             .setNoDocument(
                 com.google.firebase.firestore.proto.NoDocument.newBuilder()
-                    .setName("projects/p/databases/d/documents/some/path")
+                    .setName("projects/projectId/databases/(default)/documents/some/path")
                     .setReadTime(
                         com.google.protobuf.Timestamp.newBuilder().setSeconds(0).setNanos(42000)))
             .build();
@@ -350,7 +354,7 @@ public final class LocalSerializerTest {
         com.google.firebase.firestore.proto.MaybeDocument.newBuilder()
             .setUnknownDocument(
                 com.google.firebase.firestore.proto.UnknownDocument.newBuilder()
-                    .setName("projects/p/databases/d/documents/some/path")
+                    .setName("projects/projectId/databases/(default)/documents/some/path")
                     .setVersion(
                         com.google.protobuf.Timestamp.newBuilder().setSeconds(0).setNanos(42000)))
             .setHasCommittedMutations(true)
@@ -372,7 +376,7 @@ public final class LocalSerializerTest {
 
     TargetData targetData =
         new TargetData(
-            query.toTarget(),
+            new com.google.firebase.firestore.core.TargetOrPipeline.TargetWrapper(query.toTarget()),
             targetId,
             sequenceNumber,
             QueryPurpose.LISTEN,
@@ -415,7 +419,7 @@ public final class LocalSerializerTest {
 
     TargetData targetData =
         new TargetData(
-            query.toTarget(),
+            new com.google.firebase.firestore.core.TargetOrPipeline.TargetWrapper(query.toTarget()),
             targetId,
             sequenceNumber,
             QueryPurpose.LISTEN,
@@ -476,7 +480,7 @@ public final class LocalSerializerTest {
             /* collectionGroup= */ null,
             Collections.emptyList(),
             Collections.emptyList(),
-            /* limit=*/ 42,
+            /* limit= */ 42,
             /* startAt= */ null,
             /* endAt= */ null);
     BundledQuery bundledQuery = new BundledQuery(target, Query.LimitType.LIMIT_TO_LAST);
@@ -485,5 +489,33 @@ public final class LocalSerializerTest {
     BundledQuery decodedBundledQuery = serializer.decodeBundledQuery(encodedBundledQuery);
 
     assertEquals(bundledQuery, decodedBundledQuery);
+  }
+
+  @Test
+  public void encodesTargetDataWithPipeline() {
+    FirebaseFirestore db = com.google.firebase.firestore.TestUtil.firestore();
+    RealtimePipeline pipeline =
+        new RealtimePipelineSource(db)
+            .collection("rooms")
+            .where(Expression.field("name").equal("test room"))
+            .sort(Expression.field("age").descending())
+            .limit(10);
+
+    TargetOrPipeline targetOrPipeline = new TargetOrPipeline.PipelineWrapper(pipeline);
+
+    TargetData targetData =
+        new TargetData(
+            targetOrPipeline,
+            1,
+            2,
+            QueryPurpose.LISTEN,
+            TestUtil.version(100),
+            TestUtil.version(100),
+            ByteString.EMPTY,
+            null);
+
+    com.google.firebase.firestore.proto.Target encoded = serializer.encodeTargetData(targetData);
+    TargetData decoded = serializer.decodeTargetData(encoded);
+    assertEquals(targetData, decoded);
   }
 }

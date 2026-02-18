@@ -48,6 +48,7 @@ import com.google.firebase.firestore.core.Filter;
 import com.google.firebase.firestore.core.OrderBy;
 import com.google.firebase.firestore.core.OrderBy.Direction;
 import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.core.TargetOrPipeline;
 import com.google.firebase.firestore.core.UserData.ParsedSetData;
 import com.google.firebase.firestore.core.UserData.ParsedUpdateData;
 import com.google.firebase.firestore.local.LocalViewChanges;
@@ -352,7 +353,10 @@ public class TestUtil {
 
   public static TargetData targetData(int targetId, QueryPurpose queryPurpose, String path) {
     return new TargetData(
-        query(path).toTarget(), targetId, ARBITRARY_SEQUENCE_NUMBER, queryPurpose);
+        new TargetOrPipeline.TargetWrapper(query(path).toTarget()),
+        targetId,
+        ARBITRARY_SEQUENCE_NUMBER,
+        queryPurpose);
   }
 
   public static ImmutableSortedMap<DocumentKey, Document> docUpdates(MutableDocument... docs) {
@@ -405,7 +409,10 @@ public class TestUtil {
     for (Integer targetId : targets) {
       TargetData targetData =
           new TargetData(
-              query.toTarget(), targetId, ARBITRARY_SEQUENCE_NUMBER, QueryPurpose.LISTEN);
+              new TargetOrPipeline.TargetWrapper(query.toTarget()),
+              targetId,
+              ARBITRARY_SEQUENCE_NUMBER,
+              QueryPurpose.LISTEN);
       listenMap.put(targetId, targetData);
     }
     return listenMap;
@@ -422,7 +429,10 @@ public class TestUtil {
     for (Integer targetId : targets) {
       TargetData targetData =
           new TargetData(
-              query.toTarget(), targetId, ARBITRARY_SEQUENCE_NUMBER, QueryPurpose.LIMBO_RESOLUTION);
+              new TargetOrPipeline.TargetWrapper(query.toTarget()),
+              targetId,
+              ARBITRARY_SEQUENCE_NUMBER,
+              QueryPurpose.LIMBO_RESOLUTION);
       listenMap.put(targetId, targetData);
     }
     return listenMap;
@@ -441,7 +451,8 @@ public class TestUtil {
     TestTargetMetadataProvider testTargetMetadataProvider = new TestTargetMetadataProvider();
     testTargetMetadataProvider.setSyncedKeys(targetData, DocumentKey.emptyKeySet());
 
-    WatchChangeAggregator aggregator = new WatchChangeAggregator(testTargetMetadataProvider);
+    WatchChangeAggregator aggregator =
+        new WatchChangeAggregator(TEST_PROJECT, testTargetMetadataProvider);
 
     WatchChange.WatchTargetChange watchChange =
         new WatchChange.WatchTargetChange(
@@ -462,7 +473,8 @@ public class TestUtil {
     testTargetMetadataProvider.setSyncedKeys(targetData, syncedKeys);
 
     ExistenceFilter existenceFilter = new ExistenceFilter(remoteCount);
-    WatchChangeAggregator aggregator = new WatchChangeAggregator(testTargetMetadataProvider);
+    WatchChangeAggregator aggregator =
+        new WatchChangeAggregator(TEST_PROJECT, testTargetMetadataProvider);
 
     WatchChange.ExistenceFilterWatchChange existenceFilterWatchChange =
         new WatchChange.ExistenceFilterWatchChange(targetId, existenceFilter);
@@ -478,6 +490,7 @@ public class TestUtil {
 
     WatchChangeAggregator aggregator =
         new WatchChangeAggregator(
+            TEST_PROJECT,
             new WatchChangeAggregator.TargetMetadataProvider() {
               @Override
               public ImmutableSortedSet<DocumentKey> getRemoteKeysForTarget(int targetId) {
@@ -488,11 +501,6 @@ public class TestUtil {
               public TargetData getTargetDataForTarget(int targetId) {
                 ResourcePath collectionPath = docs.get(0).getKey().getCollectionPath();
                 return targetData(targetId, QueryPurpose.LISTEN, collectionPath.toString());
-              }
-
-              @Override
-              public DatabaseId getDatabaseId() {
-                return TEST_PROJECT;
               }
             });
 
@@ -529,6 +537,7 @@ public class TestUtil {
         new DocumentChange(updatedInTargets, removedFromTargets, doc.getKey(), doc);
     WatchChangeAggregator aggregator =
         new WatchChangeAggregator(
+            TEST_PROJECT,
             new WatchChangeAggregator.TargetMetadataProvider() {
               @Override
               public ImmutableSortedSet<DocumentKey> getRemoteKeysForTarget(int targetId) {
@@ -540,11 +549,6 @@ public class TestUtil {
                 return activeTargets.contains(targetId)
                     ? targetData(targetId, QueryPurpose.LISTEN, doc.getKey().toString())
                     : null;
-              }
-
-              @Override
-              public DatabaseId getDatabaseId() {
-                return TEST_PROJECT;
               }
             });
     aggregator.handleDocumentChange(change);
@@ -612,7 +616,11 @@ public class TestUtil {
   }
 
   public static DeleteMutation deleteMutation(String path) {
-    return new DeleteMutation(key(path), Precondition.NONE);
+    return deleteMutation(key(path));
+  }
+
+  public static DeleteMutation deleteMutation(DocumentKey key) {
+    return new DeleteMutation(key, Precondition.NONE);
   }
 
   public static VerifyMutation verifyMutation(String path, int micros) {
@@ -713,6 +721,7 @@ public class TestUtil {
       };
     };
   }
+
   /**
    * Asserts that the actual set is equal to the expected one.
    *
@@ -762,7 +771,7 @@ public class TestUtil {
   // TODO: We could probably do some de-duplication between assertFails / expectError.
   /** Expects runnable to throw an exception with a specific error message. */
   public static void expectError(Runnable runnable, String exceptionMessage) {
-    expectError(runnable, exceptionMessage, /*context=*/ null);
+    expectError(runnable, exceptionMessage, /* context= */ null);
   }
 
   /**

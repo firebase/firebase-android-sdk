@@ -17,7 +17,7 @@ package com.google.firebase.perf.session;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import androidx.annotation.Keep;
-import com.google.android.gms.common.util.VisibleForTesting;
+import androidx.annotation.VisibleForTesting;
 import com.google.firebase.perf.application.AppStateMonitor;
 import com.google.firebase.perf.application.AppStateUpdateHandler;
 import com.google.firebase.perf.session.gauges.GaugeManager;

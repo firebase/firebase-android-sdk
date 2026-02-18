@@ -12,14 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     id 'firebase-library'
     id("kotlin-android")
 }
 
 firebaseLibrary {
-    libraryGroup "appcheck"
-    publishSources = true
+    libraryGroup = "appcheck"
+    releaseNotes {
+        name.set("{{app_check}}")
+        versionName.set("appcheck")
+    }
 }
 
 android {
@@ -28,7 +33,7 @@ android {
     }
 
     namespace "com.google.firebase.appcheck"
-    compileSdkVersion project.targetSdkVersion
+    compileSdkVersion project.compileSdkVersion
     defaultConfig {
         targetSdkVersion project.targetSdkVersion
         minSdkVersion project.minSdkVersion
@@ -40,44 +45,46 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
-
     testOptions.unitTests.includeAndroidResources = true
 }
 
+kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_1_8 } }
+
 dependencies {
-    androidTestImplementation "androidx.annotation:annotation:1.0.0"
-    androidTestImplementation "androidx.test.ext:junit:$androidxTestJUnitVersion"
-    androidTestImplementation "androidx.test:core:$androidxTestCoreVersion"
-    androidTestImplementation "com.google.truth:truth:$googleTruthVersion"
-    androidTestImplementation 'androidx.test:runner:1.2.0'
-    androidTestImplementation 'junit:junit:4.12'
-    androidTestImplementation 'org.mockito:mockito-core:2.25.0'
-    androidTestImplementation 'org.mockito:mockito-inline:2.25.0'
+    javadocClasspath libs.autovalue.annotations
+
+    api libs.playservices.tasks
+    api libs.firebase.annotations
+    api "com.google.firebase:firebase-appcheck-interop:17.1.0"
+    api(libs.firebase.common)
+    api(libs.firebase.components)
+
+    implementation libs.androidx.annotation
+    implementation libs.playservices.base
+    implementation libs.kotlin.stdlib
+
+    testImplementation(project(":integ-testing")){
+        exclude group: 'com.google.firebase', module: 'firebase-common'
+        exclude group: 'com.google.firebase', module: 'firebase-components'
+    }
+    testImplementation libs.androidx.test.core
+    testImplementation libs.androidx.test.rules
+    testImplementation libs.truth
+    testImplementation libs.junit
+    testImplementation libs.junit
+    testImplementation libs.mockito.core
+    testImplementation libs.robolectric
+
     androidTestImplementation project(':appcheck:firebase-appcheck')
     androidTestImplementation(project(":integ-testing")){
         exclude group: 'com.google.firebase', module: 'firebase-common'
         exclude group: 'com.google.firebase', module: 'firebase-components'
     }
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
-    implementation 'androidx.annotation:annotation:1.1.0'
-    implementation 'com.google.android.gms:play-services-base:18.1.0'
-    implementation 'com.google.android.gms:play-services-tasks:18.1.0'
-    implementation 'com.google.firebase:firebase-annotations:16.2.0'
-    implementation "com.google.firebase:firebase-appcheck-interop:17.1.0"
-    api("com.google.firebase:firebase-common:20.4.2")
-    implementation("com.google.firebase:firebase-common-ktx:20.4.2")
-    implementation("com.google.firebase:firebase-components:17.1.5")
-    javadocClasspath 'com.google.auto.value:auto-value-annotations:1.6.6'
-    testImplementation "androidx.test:core:$androidxTestCoreVersion"
-    testImplementation "com.google.truth:truth:$googleTruthVersion"
-    testImplementation "org.robolectric:robolectric:$robolectricVersion"
-    testImplementation 'androidx.test:rules:1.2.0'
-    testImplementation 'junit:junit:4.12'
-    testImplementation 'junit:junit:4.13-beta-2'
-    testImplementation 'org.mockito:mockito-core:2.25.0'
-    testImplementation 'org.mockito:mockito-inline:2.25.0'
-    testImplementation(project(":integ-testing")){
-        exclude group: 'com.google.firebase', module: 'firebase-common'
-        exclude group: 'com.google.firebase', module: 'firebase-components'
-    }
+    androidTestImplementation libs.androidx.annotation
+    androidTestImplementation libs.androidx.test.core
+    androidTestImplementation libs.androidx.test.runner
+    androidTestImplementation libs.androidx.test.junit
+    androidTestImplementation libs.truth
+    androidTestImplementation libs.junit
+    androidTestImplementation libs.mockito.core
 }

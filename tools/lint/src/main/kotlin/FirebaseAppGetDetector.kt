@@ -35,19 +35,19 @@ import org.jetbrains.uast.getParentOfType
 class FirebaseAppGetDetector : Detector(), SourceCodeScanner {
   override fun getApplicableMethodNames(): List<String> = listOf("get")
 
-  override fun visitMethodCall(context: JavaContext, call: UCallExpression, method: PsiMethod) {
+  override fun visitMethodCall(context: JavaContext, node: UCallExpression, method: PsiMethod) {
     if (!isFirebaseAppGet(method)) {
       return
     }
 
-    if (withinGetInstance(call)) {
+    if (withinGetInstance(node)) {
       return
     }
-    call.getParentOfType<UMethod>() ?: return
+    node.getParentOfType<UMethod>() ?: return
     context.report(
       ISSUE,
-      call,
-      context.getCallLocation(call, includeReceiver = false, includeArguments = true),
+      node,
+      context.getCallLocation(node, includeReceiver = false, includeArguments = true),
       "Use of FirebaseApp#get(Class) is discouraged, and is only acceptable" +
         " in SDK#getInstance(...) methods. Instead declare dependencies explicitly in" +
         " your ComponentRegistrar and inject."

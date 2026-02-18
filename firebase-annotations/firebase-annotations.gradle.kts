@@ -12,24 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-plugins {
-  id("firebase-java-library")
-}
+plugins { id("firebase-java-library") }
 
 firebaseLibrary {
-  publishSources = true
   publishJavadoc = false
-  publishReleaseNotes = false
+  releaseNotes { enabled.set(false) }
 }
 
 java {
   sourceCompatibility = JavaVersion.VERSION_1_8
   targetCompatibility = JavaVersion.VERSION_1_8
 }
-tasks.withType<JavaCompile> {
-  options.compilerArgs.add("-Werror")
-}
 
-dependencies {
-  implementation(libs.javax.inject)
-}
+tasks.withType<JavaCompile> { options.compilerArgs.addAll(listOf("-Werror", "-Xlint:-options")) }
+
+dependencies { implementation(libs.javax.inject) }

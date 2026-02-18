@@ -602,11 +602,11 @@ public class SqlPersistenceStorageEngineTest {
   public void testResetPreviouslyActiveTrackedQueries() {
 
     TrackedQuery inactive1 =
-        new TrackedQuery(1, defaultQueryAt("a"), 200, false, /*active=*/ false);
-    TrackedQuery active1 = new TrackedQuery(2, defaultQueryAt("b"), 300, false, /*active=*/ true);
+        new TrackedQuery(1, defaultQueryAt("a"), 200, false, /* active= */ false);
+    TrackedQuery active1 = new TrackedQuery(2, defaultQueryAt("b"), 300, false, /* active= */ true);
     TrackedQuery inactive2 =
-        new TrackedQuery(3, defaultQueryAt("c"), 400, false, /*active=*/ false);
-    TrackedQuery active2 = new TrackedQuery(4, defaultQueryAt("d"), 500, false, /*active=*/ true);
+        new TrackedQuery(3, defaultQueryAt("c"), 400, false, /* active= */ false);
+    TrackedQuery active2 = new TrackedQuery(4, defaultQueryAt("d"), 500, false, /* active= */ true);
     saveTrackedQuery(engine, inactive1);
     saveTrackedQuery(engine, active1);
     saveTrackedQuery(engine, inactive2);
@@ -671,7 +671,7 @@ public class SqlPersistenceStorageEngineTest {
           @Override
           public void run() {
             engine.updateTrackedQueryKeys(
-                1, /*added=*/ childKeySet("d", "e"), /*removed=*/ childKeySet("a", "b"));
+                1, /* added= */ childKeySet("d", "e"), /* removed= */ childKeySet("a", "b"));
           }
         });
 
@@ -719,7 +719,7 @@ public class SqlPersistenceStorageEngineTest {
   }
 
   private UserWriteRecord writeRecord(long writeId, Path path, Node node) {
-    return new UserWriteRecord(writeId, path, node, /*visible=*/ true);
+    return new UserWriteRecord(writeId, path, node, /* visible= */ true);
   }
 
   private UserWriteRecord writeRecord(long writeId, Path path, CompoundWrite compoundWrite) {

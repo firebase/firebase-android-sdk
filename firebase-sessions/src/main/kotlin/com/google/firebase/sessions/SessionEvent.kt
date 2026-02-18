@@ -64,10 +64,13 @@ internal data class SessionInfo(
   val eventTimestampUs: Long,
 
   /** Data collection status of the dependent product SDKs. */
-  val dataCollectionStatus: DataCollectionStatus = DataCollectionStatus(),
+  val dataCollectionStatus: DataCollectionStatus,
 
   /** Identifies a unique device+app installation: go/firebase-installations */
-  val firebaseInstallationId: String = "",
+  val firebaseInstallationId: String,
+
+  /** Authentication token for the firebaseInstallationId. */
+  val firebaseAuthenticationToken: String,
 )
 
 /** Contains the data collection state for all dependent SDKs and sampling info */

@@ -1,4 +1,4 @@
-// Signature format: 2.0
+// Signature format: 3.0
 package com.google.firebase.crashlytics {
 
   public class CustomKeysAndValues {
@@ -6,67 +6,50 @@ package com.google.firebase.crashlytics {
 
   public static class CustomKeysAndValues.Builder {
     ctor public CustomKeysAndValues.Builder();
-    method @NonNull public com.google.firebase.crashlytics.CustomKeysAndValues build();
-    method @NonNull public com.google.firebase.crashlytics.CustomKeysAndValues.Builder putBoolean(@NonNull String, boolean);
-    method @NonNull public com.google.firebase.crashlytics.CustomKeysAndValues.Builder putDouble(@NonNull String, double);
-    method @NonNull public com.google.firebase.crashlytics.CustomKeysAndValues.Builder putFloat(@NonNull String, float);
-    method @NonNull public com.google.firebase.crashlytics.CustomKeysAndValues.Builder putInt(@NonNull String, int);
-    method @NonNull public com.google.firebase.crashlytics.CustomKeysAndValues.Builder putLong(@NonNull String, long);
-    method @NonNull public com.google.firebase.crashlytics.CustomKeysAndValues.Builder putString(@NonNull String, @NonNull String);
+    method public com.google.firebase.crashlytics.CustomKeysAndValues build();
+    method public com.google.firebase.crashlytics.CustomKeysAndValues.Builder putBoolean(String, boolean);
+    method public com.google.firebase.crashlytics.CustomKeysAndValues.Builder putDouble(String, double);
+    method public com.google.firebase.crashlytics.CustomKeysAndValues.Builder putFloat(String, float);
+    method public com.google.firebase.crashlytics.CustomKeysAndValues.Builder putInt(String, int);
+    method public com.google.firebase.crashlytics.CustomKeysAndValues.Builder putLong(String, long);
+    method public com.google.firebase.crashlytics.CustomKeysAndValues.Builder putString(String, String);
   }
 
   public class FirebaseCrashlytics {
-    method @NonNull public com.google.android.gms.tasks.Task<java.lang.Boolean> checkForUnsentReports();
+    method public com.google.android.gms.tasks.Task<java.lang.Boolean!> checkForUnsentReports();
     method public void deleteUnsentReports();
     method public boolean didCrashOnPreviousExecution();
-    method @NonNull public static com.google.firebase.crashlytics.FirebaseCrashlytics getInstance();
-    method public void log(@NonNull String);
-    method public void recordException(@NonNull Throwable);
+    method public static com.google.firebase.crashlytics.FirebaseCrashlytics getInstance();
+    method public boolean isCrashlyticsCollectionEnabled();
+    method public void log(String);
+    method public void recordException(Throwable);
+    method public void recordException(Throwable, com.google.firebase.crashlytics.CustomKeysAndValues);
     method public void sendUnsentReports();
     method public void setCrashlyticsCollectionEnabled(boolean);
-    method public void setCrashlyticsCollectionEnabled(@Nullable Boolean);
-    method public void setCustomKey(@NonNull String, boolean);
-    method public void setCustomKey(@NonNull String, double);
-    method public void setCustomKey(@NonNull String, float);
-    method public void setCustomKey(@NonNull String, int);
-    method public void setCustomKey(@NonNull String, long);
-    method public void setCustomKey(@NonNull String, @NonNull String);
-    method public void setCustomKeys(@NonNull com.google.firebase.crashlytics.CustomKeysAndValues);
-    method public void setUserId(@NonNull String);
+    method public void setCrashlyticsCollectionEnabled(Boolean?);
+    method public void setCustomKey(String, boolean);
+    method public void setCustomKey(String, double);
+    method public void setCustomKey(String, float);
+    method public void setCustomKey(String, int);
+    method public void setCustomKey(String, String);
+    method public void setCustomKey(String, long);
+    method public void setCustomKeys(com.google.firebase.crashlytics.CustomKeysAndValues);
+    method public void setUserId(String);
   }
 
   public final class FirebaseCrashlyticsKt {
-    method @NonNull public static com.google.firebase.crashlytics.FirebaseCrashlytics getCrashlytics(@NonNull com.google.firebase.Firebase);
-    method public static void setCustomKeys(@NonNull com.google.firebase.crashlytics.FirebaseCrashlytics, @NonNull kotlin.jvm.functions.Function1<? super com.google.firebase.crashlytics.KeyValueBuilder,kotlin.Unit> init);
+    method public static com.google.firebase.crashlytics.FirebaseCrashlytics getCrashlytics(com.google.firebase.Firebase);
+    method public static void recordException(com.google.firebase.crashlytics.FirebaseCrashlytics, Throwable throwable, kotlin.jvm.functions.Function1<? super com.google.firebase.crashlytics.KeyValueBuilder,kotlin.Unit> init);
+    method public static void setCustomKeys(com.google.firebase.crashlytics.FirebaseCrashlytics, kotlin.jvm.functions.Function1<? super com.google.firebase.crashlytics.KeyValueBuilder,kotlin.Unit> init);
   }
 
   public final class KeyValueBuilder {
-    ctor public KeyValueBuilder(@NonNull com.google.firebase.crashlytics.FirebaseCrashlytics crashlytics);
-    method public void key(@NonNull String key, boolean value);
-    method public void key(@NonNull String key, double value);
-    method public void key(@NonNull String key, float value);
-    method public void key(@NonNull String key, int value);
-    method public void key(@NonNull String key, long value);
-    method public void key(@NonNull String key, @NonNull String value);
-  }
-
-}
-
-package com.google.firebase.crashlytics.ktx {
-
-  public final class FirebaseCrashlyticsKt {
-    method @Deprecated @NonNull public static com.google.firebase.crashlytics.FirebaseCrashlytics getCrashlytics(@NonNull com.google.firebase.ktx.Firebase);
-    method @Deprecated public static void setCustomKeys(@NonNull com.google.firebase.crashlytics.FirebaseCrashlytics, @NonNull kotlin.jvm.functions.Function1<? super com.google.firebase.crashlytics.ktx.KeyValueBuilder,kotlin.Unit> init);
-  }
-
-  @Deprecated public final class KeyValueBuilder {
-    ctor @Deprecated public KeyValueBuilder(@NonNull com.google.firebase.crashlytics.FirebaseCrashlytics crashlytics);
-    method @Deprecated public void key(@NonNull String key, boolean value);
-    method @Deprecated public void key(@NonNull String key, double value);
-    method @Deprecated public void key(@NonNull String key, float value);
-    method @Deprecated public void key(@NonNull String key, int value);
-    method @Deprecated public void key(@NonNull String key, long value);
-    method @Deprecated public void key(@NonNull String key, @NonNull String value);
+    method public void key(String key, boolean value);
+    method public void key(String key, double value);
+    method public void key(String key, float value);
+    method public void key(String key, int value);
+    method public void key(String key, String value);
+    method public void key(String key, long value);
   }
 
 }

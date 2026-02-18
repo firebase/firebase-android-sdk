@@ -27,13 +27,11 @@ import com.google.firebase.sessions.testing.FakeFirebaseApp
 import com.google.firebase.sessions.testing.FakeSessionSubscriber
 import com.google.firebase.sessions.testing.FakeSettingsProvider
 import com.google.firebase.sessions.testing.TestSessionEventData
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
 
-@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
 class SessionEventEncoderTest {
 
@@ -81,7 +79,8 @@ class SessionEventEncoderTest {
                 "crashlytics":2,
                 "sessionSamplingRate":1.0
               },
-              "firebaseInstallationId":""
+              "firebaseInstallationId":"",
+              "firebaseAuthenticationToken":""
             },
             "applicationInfo":{
               "appId":"1:12345:android:app",
@@ -128,6 +127,9 @@ class SessionEventEncoderTest {
             firstSessionId = "",
             sessionIndex = 0,
             eventTimestampUs = 0,
+            dataCollectionStatus = DataCollectionStatus(),
+            firebaseInstallationId = "",
+            firebaseAuthenticationToken = "",
           ),
         applicationInfo =
           ApplicationInfo(
@@ -164,7 +166,8 @@ class SessionEventEncoderTest {
                 "crashlytics":1,
                 "sessionSamplingRate":1.0
               },
-              "firebaseInstallationId":""
+              "firebaseInstallationId":"",
+              "firebaseAuthenticationToken":""
             },
             "applicationInfo":{
               "appId":"",
@@ -201,7 +204,7 @@ class SessionEventEncoderTest {
           EventType.SESSION_START,
           EventType.EVENT_TYPE_UNKNOWN,
           EventType.SESSION_START,
-          EventType.SESSION_START
+          EventType.SESSION_START,
         )
       )
 

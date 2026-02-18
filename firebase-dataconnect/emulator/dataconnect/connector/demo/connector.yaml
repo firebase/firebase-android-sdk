@@ -1,0 +1,6 @@
+connectorId: demo
+authMode: PUBLIC
+generate:
+  kotlinSdk:
+    outputDir: ../../.generated/demo
+    package: com.google.firebase.dataconnect.connectors.demo

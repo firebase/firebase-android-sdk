@@ -21,34 +21,32 @@ import java.io.IOException;
 import java.lang.Override;
 import java.lang.SuppressWarnings;
 
-
 /**
  * @hide */
 @SuppressWarnings("KotlinInternal")
 public final class AutoGenericClassEncoder implements Configurator {
-    public static final int CODEGEN_VERSION = 2;
+  public static final int CODEGEN_VERSION = 2;
 
-    public static final Configurator CONFIG = new AutoGenericClassEncoder();
+  public static final Configurator CONFIG = new AutoGenericClassEncoder();
 
-    private AutoGenericClassEncoder() {
-    }
+  private AutoGenericClassEncoder() {}
+
+  @Override
+  public void configure(EncoderConfig<?> cfg) {
+    cfg.registerEncoder(GenericClass.class, GenericClassEncoder.INSTANCE);
+  }
+
+  private static final class GenericClassEncoder implements ObjectEncoder<GenericClass> {
+    static final GenericClassEncoder INSTANCE = new GenericClassEncoder();
+
+    private static final FieldDescriptor T_DESCRIPTOR = FieldDescriptor.of("t");
+
+    private static final FieldDescriptor U_DESCRIPTOR = FieldDescriptor.of("u");
 
     @Override
-    public void configure(EncoderConfig<?> cfg) {
-        cfg.registerEncoder(GenericClass.class, GenericClassEncoder.INSTANCE);
+    public void encode(GenericClass value, ObjectEncoderContext ctx) throws IOException {
+      ctx.add(T_DESCRIPTOR, value.getT());
+      ctx.add(U_DESCRIPTOR, value.getU());
     }
-
-    private static final class GenericClassEncoder implements ObjectEncoder<GenericClass> {
-        static final GenericClassEncoder INSTANCE = new GenericClassEncoder();
-
-        private static final FieldDescriptor T_DESCRIPTOR = FieldDescriptor.of("t");
-
-        private static final FieldDescriptor U_DESCRIPTOR = FieldDescriptor.of("u");
-
-        @Override
-        public void encode(GenericClass value, ObjectEncoderContext ctx) throws IOException {
-            ctx.add(T_DESCRIPTOR, value.getT());
-            ctx.add(U_DESCRIPTOR, value.getU());
-        }
-    }
+  }
 }

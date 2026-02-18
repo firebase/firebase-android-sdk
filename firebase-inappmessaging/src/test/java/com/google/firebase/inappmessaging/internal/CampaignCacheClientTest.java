@@ -15,7 +15,7 @@
 package com.google.firebase.inappmessaging.internal;
 
 import static com.google.common.truth.Truth.assertThat;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
@@ -94,7 +94,7 @@ public class CampaignCacheClientTest {
   @Test
   public void put_noErrors_cachesInMemory() {
     when(storageClient.write(fetchEligibleCampaignsResponse2)).thenReturn(fakeWrite);
-    when(storageClient.read(any(CampaignResponseParser.class)))
+    when(storageClient.read(any(Parser.class)))
         .thenReturn(Maybe.just(fetchEligibleCampaignsResponse1));
 
     campaignCacheClient.put(fetchEligibleCampaignsResponse2).subscribe();

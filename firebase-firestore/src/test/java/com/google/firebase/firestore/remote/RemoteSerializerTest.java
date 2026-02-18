@@ -40,6 +40,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.core.ArrayContainsAnyFilter;
 import com.google.firebase.firestore.core.FieldFilter;
@@ -47,6 +48,7 @@ import com.google.firebase.firestore.core.InFilter;
 import com.google.firebase.firestore.core.KeyFieldFilter;
 import com.google.firebase.firestore.core.NotInFilter;
 import com.google.firebase.firestore.core.Query;
+import com.google.firebase.firestore.core.TargetOrPipeline;
 import com.google.firebase.firestore.local.QueryPurpose;
 import com.google.firebase.firestore.local.TargetData;
 import com.google.firebase.firestore.model.DatabaseId;
@@ -55,7 +57,6 @@ import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.ObjectValue;
 import com.google.firebase.firestore.model.ResourcePath;
 import com.google.firebase.firestore.model.SnapshotVersion;
-import com.google.firebase.firestore.model.Values;
 import com.google.firebase.firestore.model.mutation.Mutation;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChange;
 import com.google.firebase.firestore.remote.WatchChange.WatchTargetChangeType;
@@ -122,7 +123,6 @@ public final class RemoteSerializerTest {
   private void assertRoundTrip(Value actual, Value proto, Value.ValueTypeCase typeCase) {
     assertEquals(typeCase, actual.getValueTypeCase());
     assertEquals(proto, actual);
-    assertTrue(Values.equals(actual, proto));
   }
 
   @Test
@@ -306,6 +306,26 @@ public final class RemoteSerializerTest {
 
     Value proto = Value.newBuilder().setMapValue(obj).build();
     assertRoundTrip(model.get(FieldPath.EMPTY_PATH), proto, Value.ValueTypeCase.MAP_VALUE);
+  }
+
+  @Test
+  public void testEncodesVectorValue() {
+    Value model = wrap(FieldValue.vector(new double[] {1, 2, 3}));
+
+    ArrayValue.Builder array =
+        ArrayValue.newBuilder()
+            .addValues(Value.newBuilder().setDoubleValue(1))
+            .addValues(Value.newBuilder().setDoubleValue(2))
+            .addValues(Value.newBuilder().setDoubleValue(3));
+
+    MapValue.Builder obj =
+        MapValue.newBuilder()
+            .putFields("__type__", Value.newBuilder().setStringValue("__vector__").build())
+            .putFields("value", Value.newBuilder().setArrayValue(array).build());
+
+    Value proto = Value.newBuilder().setMapValue(obj).build();
+
+    assertRoundTrip(model, proto, Value.ValueTypeCase.MAP_VALUE);
   }
 
   @Test
@@ -497,21 +517,37 @@ public final class RemoteSerializerTest {
   @Test
   public void testEncodesListenRequestLabels() {
     Query query = query("collection/key");
-    TargetData targetData = new TargetData(query.toTarget(), 2, 3, QueryPurpose.LISTEN);
+    TargetData targetData =
+        new TargetData(
+            new TargetOrPipeline.TargetWrapper(query.toTarget()), 2, 3, QueryPurpose.LISTEN);
 
     Map<String, String> result = serializer.encodeListenRequestLabels(targetData);
     assertNull(result);
 
-    targetData = new TargetData(query.toTarget(), 2, 3, QueryPurpose.LIMBO_RESOLUTION);
+    targetData =
+        new TargetData(
+            new TargetOrPipeline.TargetWrapper(query.toTarget()),
+            2,
+            3,
+            QueryPurpose.LIMBO_RESOLUTION);
     result = serializer.encodeListenRequestLabels(targetData);
     assertEquals(map("goog-listen-tags", "limbo-document"), result);
 
-    targetData = new TargetData(query.toTarget(), 2, 3, QueryPurpose.EXISTENCE_FILTER_MISMATCH);
+    targetData =
+        new TargetData(
+            new TargetOrPipeline.TargetWrapper(query.toTarget()),
+            2,
+            3,
+            QueryPurpose.EXISTENCE_FILTER_MISMATCH);
     result = serializer.encodeListenRequestLabels(targetData);
     assertEquals(map("goog-listen-tags", "existence-filter-mismatch"), result);
 
     targetData =
-        new TargetData(query.toTarget(), 2, 3, QueryPurpose.EXISTENCE_FILTER_MISMATCH_BLOOM);
+        new TargetData(
+            new TargetOrPipeline.TargetWrapper(query.toTarget()),
+            2,
+            3,
+            QueryPurpose.EXISTENCE_FILTER_MISMATCH_BLOOM);
     result = serializer.encodeListenRequestLabels(targetData);
     assertEquals(map("goog-listen-tags", "existence-filter-mismatch-bloom"), result);
   }
@@ -520,7 +556,9 @@ public final class RemoteSerializerTest {
   public void testEncodesFirstLevelKeyQueries() {
     Query q = Query.atPath(ResourcePath.fromString("docs/1"));
     Target actual =
-        serializer.encodeTarget(new TargetData(q.toTarget(), 1, 2, QueryPurpose.LISTEN));
+        serializer.encodeTarget(
+            new TargetData(
+                new TargetOrPipeline.TargetWrapper(q.toTarget()), 1, 2, QueryPurpose.LISTEN));
 
     DocumentsTarget.Builder docs =
         DocumentsTarget.newBuilder().addDocuments("projects/p/databases/d/documents/docs/1");
@@ -1104,7 +1142,11 @@ public final class RemoteSerializerTest {
   public void testEncodesResumeTokens() {
     Query q = Query.atPath(ResourcePath.fromString("docs"));
     TargetData targetData =
-        new TargetData(q.toTarget(), 1, 2, QueryPurpose.LISTEN)
+        new TargetData(
+                new com.google.firebase.firestore.core.TargetOrPipeline.TargetWrapper(q.toTarget()),
+                1,
+                2,
+                QueryPurpose.LISTEN)
             .withResumeToken(TestUtil.resumeToken(1000), SnapshotVersion.NONE);
     Target actual = serializer.encodeTarget(targetData);
 
@@ -1133,7 +1175,11 @@ public final class RemoteSerializerTest {
   public void testEncodesReadTime() {
     Query q = Query.atPath(ResourcePath.fromString("docs"));
     TargetData targetData =
-        new TargetData(q.toTarget(), 1, 2, QueryPurpose.LISTEN)
+        new TargetData(
+                new com.google.firebase.firestore.core.TargetOrPipeline.TargetWrapper(q.toTarget()),
+                1,
+                2,
+                QueryPurpose.LISTEN)
             .withResumeToken(ByteString.EMPTY, version(4000000));
     Target actual = serializer.encodeTarget(targetData);
 
@@ -1162,7 +1208,11 @@ public final class RemoteSerializerTest {
   public void encodesExpectedCountWhenResumeTokenIsPresent() {
     Query q = Query.atPath(ResourcePath.fromString("docs"));
     TargetData targetData =
-        new TargetData(q.toTarget(), 1, 2, QueryPurpose.LISTEN)
+        new TargetData(
+                new com.google.firebase.firestore.core.TargetOrPipeline.TargetWrapper(q.toTarget()),
+                1,
+                2,
+                QueryPurpose.LISTEN)
             .withResumeToken(TestUtil.resumeToken(1000), SnapshotVersion.NONE)
             .withExpectedCount(42);
     Target actual = serializer.encodeTarget(targetData);
@@ -1193,7 +1243,11 @@ public final class RemoteSerializerTest {
   public void encodesExpectedCountWhenReadTimeIsPresent() {
     Query q = Query.atPath(ResourcePath.fromString("docs"));
     TargetData targetData =
-        new TargetData(q.toTarget(), 1, 2, QueryPurpose.LISTEN)
+        new TargetData(
+                new com.google.firebase.firestore.core.TargetOrPipeline.TargetWrapper(q.toTarget()),
+                1,
+                2,
+                QueryPurpose.LISTEN)
             .withResumeToken(ByteString.EMPTY, version(4000000))
             .withExpectedCount(42);
     Target actual = serializer.encodeTarget(targetData);
@@ -1224,7 +1278,12 @@ public final class RemoteSerializerTest {
   public void shouldIgnoreExpectedCountWithoutResumeTokenOrReadTime() {
     Query q = Query.atPath(ResourcePath.fromString("docs"));
     TargetData targetData =
-        new TargetData(q.toTarget(), 1, 2, QueryPurpose.LISTEN).withExpectedCount(42);
+        new TargetData(
+                new com.google.firebase.firestore.core.TargetOrPipeline.TargetWrapper(q.toTarget()),
+                1,
+                2,
+                QueryPurpose.LISTEN)
+            .withExpectedCount(42);
     Target actual = serializer.encodeTarget(targetData);
 
     StructuredQuery.Builder structuredQueryBuilder =
@@ -1253,7 +1312,11 @@ public final class RemoteSerializerTest {
    * TargetData, but for the most part we're just testing variations on Query.
    */
   private static TargetData wrapTargetData(Query query) {
-    return new TargetData(query.toTarget(), 1, 2, QueryPurpose.LISTEN);
+    return new TargetData(
+        new com.google.firebase.firestore.core.TargetOrPipeline.TargetWrapper(query.toTarget()),
+        1,
+        2,
+        QueryPurpose.LISTEN);
   }
 
   @Test

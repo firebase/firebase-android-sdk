@@ -35,20 +35,16 @@ import com.google.firebase.messaging.Constants.MessageNotificationKeys;
 import com.google.firebase.messaging.Constants.MessagePayloadKeys;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
  * A remote Firebase Message.
  *
- * <p>Messages will be received via {@link
- * FirebaseMessagingService#onMessageReceived(RemoteMessage)} and can be sent via {@link
- * FirebaseMessaging#send(RemoteMessage)}.
+ * <p>Messages will be received via {@link FirebaseMessagingService#onMessageReceived(RemoteMessage)}.
  *
  * <p>Messages may have a {@link Notification} instance if they are received while the application
  * is in the foreground, otherwise they will be automatically posted to the notification tray.
- *
- * <p>Use the {@link Builder} class for building message instances to send via {@link
- * FirebaseMessaging#send(RemoteMessage)}.
  */
 @SafeParcelable.Reserved({1 /* version field removed by bot go/versionless-safeparcelable */})
 @SafeParcelable.Class(creator = "RemoteMessageCreator")
@@ -115,11 +111,12 @@ public final class RemoteMessage extends AbstractSafeParcelable {
   /**
    * Gets the message destination.
    *
-   * <ul>
-   *   <li>For upstream messages, this will be of the form {@code SENDER_ID@fcm.googleapis.com}.
-   *   <li>For downstream messages, this will be the Firebase installations ID (FID).
-   * </ul>
+   * @deprecated This function is actually <strong>decommissioned</strong> along with all of FCM
+   * upstream messaging. Learn more in the
+   * <a href="https://firebase.google.com/support/faq#fcm-23-deprecation">FAQ about FCM features
+   * deprecated in June 2023</a>.
    */
+  @Deprecated
   @Nullable
   public String getTo() {
     return bundle.getString(MessagePayloadKeys.TO);
@@ -135,7 +132,7 @@ public final class RemoteMessage extends AbstractSafeParcelable {
     if (data == null) {
       data = MessagePayloadKeys.extractDeveloperDefinedPayload(bundle);
     }
-    return data;
+    return new HashMap<>(data);
   }
 
   /** @hide */
@@ -344,6 +341,7 @@ public final class RemoteMessage extends AbstractSafeParcelable {
       this.data.putAll(data);
       return this;
     }
+
     /** @hide */
     @NonNull
     public Map<String, String> getData() {
@@ -372,13 +370,13 @@ public final class RemoteMessage extends AbstractSafeParcelable {
     /** @hide */
     @Nullable
     public String getCollapseKey() {
-      return bundle.getString(MessagePayloadKeys.MESSAGE_TYPE);
+      return bundle.getString(MessagePayloadKeys.COLLAPSE_KEY);
     }
 
     /** @hide */
     @IntRange(from = 0, to = 86400)
     public int getTtl() {
-      return Integer.parseInt(bundle.getString(MessagePayloadKeys.MESSAGE_TYPE, "0"));
+      return Integer.parseInt(bundle.getString(MessagePayloadKeys.TTL, "0"));
     }
 
     /** @hide */

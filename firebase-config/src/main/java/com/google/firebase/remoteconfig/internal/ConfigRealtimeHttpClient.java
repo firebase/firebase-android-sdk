@@ -22,6 +22,7 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.util.Log;
 import androidx.annotation.GuardedBy;
 import androidx.annotation.NonNull;
@@ -56,6 +57,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -97,12 +99,12 @@ public class ConfigRealtimeHttpClient {
   @GuardedBy("this")
   private boolean isRealtimeDisabled;
 
+  /** Flag to indicate whether or not the app is in the background or not. */
+  private boolean isInBackground;
+
   // The HttpUrlConnection and auto-fetcher for this client. Only one of each exist at a time.
   private HttpURLConnection httpURLConnection;
   private ConfigAutoFetch configAutoFetch;
-
-  /** Flag to indicate whether or not the app is in the background or not. */
-  private boolean isInBackground;
 
   private final int ORIGINAL_RETRIES = 8;
   private final ScheduledExecutorService scheduledExecutorService;
@@ -114,7 +116,8 @@ public class ConfigRealtimeHttpClient {
   private final String namespace;
   private final Random random;
   private final Clock clock;
-  private final ConfigMetadataClient metadataClient;
+  private final ConfigSharedPrefsClient sharedPrefsClient;
+  private final Object backgroundLock;
 
   public ConfigRealtimeHttpClient(
       FirebaseApp firebaseApp,
@@ -124,7 +127,7 @@ public class ConfigRealtimeHttpClient {
       Context context,
       String namespace,
       Set<ConfigUpdateListener> listeners,
-      ConfigMetadataClient metadataClient,
+      ConfigSharedPrefsClient sharedPrefsClient,
       ScheduledExecutorService scheduledExecutorService) {
 
     this.listeners = listeners;
@@ -136,7 +139,7 @@ public class ConfigRealtimeHttpClient {
     // Retrieve number of remaining retries from last session. The minimum retry count being one.
     httpRetriesRemaining =
         Math.max(
-            ORIGINAL_RETRIES - metadataClient.getRealtimeBackoffMetadata().getNumFailedStreams(),
+            ORIGINAL_RETRIES - sharedPrefsClient.getRealtimeBackoffMetadata().getNumFailedStreams(),
             1);
     clock = DefaultClock.getInstance();
 
@@ -146,9 +149,10 @@ public class ConfigRealtimeHttpClient {
     this.activatedCache = activatedCache;
     this.context = context;
     this.namespace = namespace;
-    this.metadataClient = metadataClient;
+    this.sharedPrefsClient = sharedPrefsClient;
     this.isRealtimeDisabled = false;
     this.isInBackground = false;
+    this.backgroundLock = new Object();
   }
 
   private static String extractProjectNumberFromAppId(String gmpAppId) {
@@ -234,13 +238,13 @@ public class ConfigRealtimeHttpClient {
   // Used for Tests only.
   @SuppressLint("VisibleForTests")
   public int getNumberOfFailedStreams() {
-    return metadataClient.getRealtimeBackoffMetadata().getNumFailedStreams();
+    return sharedPrefsClient.getRealtimeBackoffMetadata().getNumFailedStreams();
   }
 
   // Used for Tests only.
   @SuppressLint("VisibleForTests")
   public Date getBackoffEndTime() {
-    return metadataClient.getRealtimeBackoffMetadata().getBackoffEndTime();
+    return sharedPrefsClient.getRealtimeBackoffMetadata().getBackoffEndTime();
   }
 
   // TODO(issues/265): Make this an atomic operation within the Metadata class to avoid possible
@@ -252,7 +256,7 @@ public class ConfigRealtimeHttpClient {
    */
   private void updateBackoffMetadataWithLastFailedStreamConnectionTime(
       Date lastFailedRealtimeStreamTime) {
-    int numFailedStreams = metadataClient.getRealtimeBackoffMetadata().getNumFailedStreams();
+    int numFailedStreams = sharedPrefsClient.getRealtimeBackoffMetadata().getNumFailedStreams();
 
     numFailedStreams++;
 
@@ -260,7 +264,7 @@ public class ConfigRealtimeHttpClient {
     Date backoffEndTime =
         new Date(lastFailedRealtimeStreamTime.getTime() + backoffDurationInMillis);
 
-    metadataClient.setRealtimeBackoffMetadata(numFailedStreams, backoffEndTime);
+    sharedPrefsClient.setRealtimeBackoffMetadata(numFailedStreams, backoffEndTime);
   }
 
   /**
@@ -291,20 +295,6 @@ public class ConfigRealtimeHttpClient {
         && !isHttpConnectionRunning
         && !isRealtimeDisabled
         && !isInBackground;
-  }
-
-  /**
-   * The check and set http connection method are combined so that when canMakeHttpStreamConnection
-   * returns true, the same thread can mark isHttpConnectionIsRunning as true to prevent a race
-   * condition with another thread.
-   */
-  private synchronized boolean checkAndSetHttpConnectionFlagIfNotRunning() {
-    boolean canMakeConnection = canMakeHttpStreamConnection();
-    if (canMakeConnection) {
-      setIsHttpConnectionRunning(true);
-    }
-
-    return canMakeConnection;
   }
 
   private String getRealtimeURL(String namespace) {
@@ -380,23 +370,28 @@ public class ConfigRealtimeHttpClient {
     long retrySeconds =
         Math.max(
             0,
-            metadataClient.getRealtimeBackoffMetadata().getBackoffEndTime().getTime()
+            sharedPrefsClient.getRealtimeBackoffMetadata().getBackoffEndTime().getTime()
                 - currentTime.getTime());
     makeRealtimeHttpConnection(retrySeconds);
   }
 
   private synchronized void makeRealtimeHttpConnection(long retryMilliseconds) {
+    if (!canMakeHttpStreamConnection()) {
+      return;
+    }
+
     if (httpRetriesRemaining > 0) {
       httpRetriesRemaining--;
-      scheduledExecutorService.schedule(
-          new Runnable() {
-            @Override
-            public void run() {
-              beginRealtimeHttpStream();
-            }
-          },
-          retryMilliseconds,
-          TimeUnit.MILLISECONDS);
+      ScheduledFuture<?> unused =
+          scheduledExecutorService.schedule(
+              new Runnable() {
+                @Override
+                public void run() {
+                  beginRealtimeHttpStream();
+                }
+              },
+              retryMilliseconds,
+              TimeUnit.MILLISECONDS);
     } else if (!isInBackground) {
       propagateErrors(
           new FirebaseRemoteConfigClientException(
@@ -405,17 +400,45 @@ public class ConfigRealtimeHttpClient {
     }
   }
 
-  void setRealtimeBackgroundState(boolean backgroundState) {
-    isInBackground = backgroundState;
+  public void setIsInBackground(boolean isInBackground) {
+    // Make changes in synchronized block so only one thread sets the background state and calls
+    // disconnect.
+    synchronized (backgroundLock) {
+      this.isInBackground = isInBackground;
 
-    // Propagate to ConfigAutoFetch, too.
-    if (configAutoFetch != null) {
-      this.configAutoFetch.setInBackground(backgroundState);
+      // Propagate to ConfigAutoFetch as well.
+      if (configAutoFetch != null) {
+        configAutoFetch.setIsInBackground(isInBackground);
+      }
+      // Close the connection if the app is in the background and there is an active
+      // HttpUrlConnection.
+      // This is now only done on Android versions >= O (API 26) because
+      // on older versions, background detection callbacks run on the main thread, which
+      // could lead to a NetworkOnMainThreadException when disconnecting the connection.
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        if (isInBackground && httpURLConnection != null) {
+          httpURLConnection.disconnect();
+        }
+      }
     }
   }
 
   private synchronized void resetRetryCount() {
     httpRetriesRemaining = ORIGINAL_RETRIES;
+  }
+
+  /**
+   * The check and set http connection method are combined so that when canMakeHttpStreamConnection
+   * returns true, the same thread can mark isHttpConnectionIsRunning as true to prevent a race
+   * condition with another thread.
+   */
+  private synchronized boolean checkAndSetHttpConnectionFlagIfNotRunning() {
+    boolean canMakeConnection = canMakeHttpStreamConnection();
+    if (canMakeConnection) {
+      setIsHttpConnectionRunning(true);
+    }
+
+    return canMakeConnection;
   }
 
   private synchronized void setIsHttpConnectionRunning(boolean connectionRunning) {
@@ -448,7 +471,8 @@ public class ConfigRealtimeHttpClient {
         activatedCache,
         listeners,
         retryCallback,
-        scheduledExecutorService);
+        scheduledExecutorService,
+        sharedPrefsClient);
   }
 
   // HTTP status code that the Realtime client should retry on.
@@ -492,8 +516,8 @@ public class ConfigRealtimeHttpClient {
       return;
     }
 
-    ConfigMetadataClient.RealtimeBackoffMetadata backoffMetadata =
-        metadataClient.getRealtimeBackoffMetadata();
+    ConfigSharedPrefsClient.RealtimeBackoffMetadata backoffMetadata =
+        sharedPrefsClient.getRealtimeBackoffMetadata();
     Date currentTime = new Date(clock.currentTimeMillis());
     if (currentTime.before(backoffMetadata.getBackoffEndTime())) {
       retryHttpConnectionWhenBackoffEnds();
@@ -508,24 +532,28 @@ public class ConfigRealtimeHttpClient {
             this.scheduledExecutorService,
             (completedHttpUrlConnectionTask) -> {
               Integer responseCode = null;
-              httpURLConnection = null;
+              // Get references to InputStream and ErrorStream before listening on the stream so
+              // that they can be closed without getting them from HttpUrlConnection.
+              InputStream inputStream = null;
+              InputStream errorStream = null;
 
               try {
                 // If HTTP connection task failed throw exception to move to the catch block.
                 if (!httpURLConnectionTask.isSuccessful()) {
                   throw new IOException(httpURLConnectionTask.getException());
                 }
-                setIsHttpConnectionRunning(true);
 
                 // Get HTTP connection and check response code.
                 httpURLConnection = httpURLConnectionTask.getResult();
+                inputStream = httpURLConnection.getInputStream();
+                errorStream = httpURLConnection.getErrorStream();
                 responseCode = httpURLConnection.getResponseCode();
 
                 // If the connection returned a 200 response code, start listening for messages.
                 if (responseCode == HttpURLConnection.HTTP_OK) {
                   // Reset the retries remaining if we opened the connection without an exception.
                   resetRetryCount();
-                  metadataClient.resetRealtimeBackoff();
+                  sharedPrefsClient.resetRealtimeBackoff();
 
                   // Start listening for realtime notifications.
                   configAutoFetch = startAutoFetch(httpURLConnection);
@@ -546,13 +574,8 @@ public class ConfigRealtimeHttpClient {
                       e);
                 }
               } finally {
-                // The connection is closed explicitly when the app is backgrounded. Many methods
-                // on HttpUrlConnection cannot be called twice.
-                if (!isInBackground) {
-                  this.closeRealtimeHttpStream();
-                }
-
-                // Either way indicate the HTTP connection is closed.
+                // Close HTTP connection and associated streams.
+                closeRealtimeHttpConnection(inputStream, errorStream);
                 setIsHttpConnectionRunning(false);
 
                 // Update backoff metadata if the connection failed in the foreground.
@@ -565,7 +588,8 @@ public class ConfigRealtimeHttpClient {
                 }
 
                 // If responseCode is null then no connection was made to server and the SDK should
-                // still retry.
+                // still
+                // retry.
                 if (connectionFailed || responseCode == HttpURLConnection.HTTP_OK) {
                   retryHttpConnectionWhenBackoffEnds();
                 } else {
@@ -574,7 +598,8 @@ public class ConfigRealtimeHttpClient {
                           "Unable to connect to the server. Try again in a few minutes. HTTP status code: %d",
                           responseCode);
                   // Return server message for when the Firebase Remote Config Realtime API is
-                  // disabled and the server returns a 403
+                  // disabled and
+                  // the server returns a 403
                   if (responseCode == 403) {
                     errorMessage =
                         parseForbiddenErrorResponseMessage(httpURLConnection.getErrorStream());
@@ -587,33 +612,34 @@ public class ConfigRealtimeHttpClient {
                 }
               }
 
+              // Reset parameters.
+              httpURLConnection = null;
+              configAutoFetch = null;
+
               return Tasks.forResult(null);
             });
   }
 
-  /** Close the {@link HttpURLConnection} maintained by this client. */
-  public void closeRealtimeHttpStream() {
-    if (httpURLConnection != null) {
-      // Network operations must be off the main thread.
-      this.scheduledExecutorService.execute(
-          () -> {
-            httpURLConnection.disconnect();
-
-            // Explicitly close the input stream due to a bug in the Android okhttp implementation.
-            // See github.com/firebase/firebase-android-sdk/pull/808.
-            try {
-              httpURLConnection.getInputStream().close();
-              if (httpURLConnection.getErrorStream() != null) {
-                httpURLConnection.getErrorStream().close();
-              }
-            } catch (IOException | IllegalStateException e) {
-              // HttpUrlConnection enforces a strict lifecycle. If the connection is closed before
-              // the response is read, it'll throw an IllegalStateException. See docs:
-              // https://android.googlesource.com/platform/external/okhttp/+/602d5e4/okhttp/src/main/java/com/squareup/okhttp/internal/http/HttpConnection.java#43
-            }
-          });
-
-      setIsHttpConnectionRunning(false);
+  private void closeHttpConnectionInputStream(InputStream inputStream) {
+    if (inputStream != null) {
+      try {
+        inputStream.close();
+      } catch (IOException ex) {
+        Log.d(TAG, "Error closing connection stream.", ex);
+      }
     }
+  }
+
+  // Pauses Http stream listening by disconnecting the HttpUrlConnection and underlying InputStream
+  // and ErrorStream if they exist.
+  @VisibleForTesting
+  public void closeRealtimeHttpConnection(InputStream inputStream, InputStream errorStream) {
+    // Disconnect only if the connection is not null and in the foreground.
+    if (httpURLConnection != null && !isInBackground) {
+      httpURLConnection.disconnect();
+    }
+
+    closeHttpConnectionInputStream(inputStream);
+    closeHttpConnectionInputStream(errorStream);
   }
 }

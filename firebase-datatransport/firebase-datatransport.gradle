@@ -18,8 +18,9 @@ plugins {
 
 firebaseLibrary {
     publishJavadoc = false
-    publishReleaseNotes = false
-    publishSources = true
+    releaseNotes { 
+        enabled.set(false)
+    }
 }
 
 android {
@@ -28,7 +29,7 @@ android {
     }
 
     namespace "com.google.firebase.datatransport"
-    compileSdkVersion project.targetSdkVersion
+    compileSdkVersion project.compileSdkVersion
     defaultConfig {
         minSdkVersion project.minSdkVersion
         targetSdkVersion project.targetSdkVersion
@@ -39,6 +40,7 @@ android {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+
     testOptions {
         unitTests {
             includeAndroidResources = true
@@ -47,16 +49,18 @@ android {
 }
 
 dependencies {
-    implementation 'com.google.firebase:firebase-common:20.4.2'
-    implementation 'com.google.firebase:firebase-components:17.1.5'
-    implementation 'com.google.android.datatransport:transport-api:3.1.0'
-    implementation 'com.google.android.datatransport:transport-runtime:3.2.0'
-    implementation 'com.google.android.datatransport:transport-backend-cct:3.2.0'
-    implementation 'androidx.annotation:annotation:1.1.0'
+    api libs.firebase.common
+    api libs.firebase.components
 
-    testImplementation 'androidx.test:runner:1.2.0'
-    testImplementation "org.robolectric:robolectric:$robolectricVersion"
-    testImplementation 'junit:junit:4.12'
-    testImplementation "com.google.truth:truth:$googleTruthVersion"
-    testImplementation "androidx.test:core:$androidxTestCoreVersion"
+    implementation libs.androidx.annotation
+    implementation 'com.google.android.datatransport:transport-api:3.1.0'
+    implementation 'com.google.android.datatransport:transport-backend-cct:3.2.0'
+    implementation 'com.google.android.datatransport:transport-runtime:3.2.0'
+    implementation(libs.kotlin.stdlib.jdk8)
+
+    testImplementation libs.androidx.test.core
+    testImplementation libs.androidx.test.runner
+    testImplementation libs.truth
+    testImplementation libs.junit
+    testImplementation libs.robolectric
 }

@@ -12,9 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-plugins {
-  id("org.jetbrains.kotlin.jvm")
-}
+plugins { id("org.jetbrains.kotlin.jvm") }
 
 dependencies {
   compileOnly(libs.android.lint.api)
@@ -28,7 +26,5 @@ dependencies {
 }
 
 tasks.jar {
-  manifest {
-    attributes("Lint-Registry-v2" to "com.google.firebase.lint.checks.CheckRegistry")
-  }
+  manifest { attributes("Lint-Registry-v2" to "com.google.firebase.lint.checks.CheckRegistry") }
 }

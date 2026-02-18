@@ -29,12 +29,14 @@ import java.util.concurrent.TimeUnit;
 public class LruGarbageCollector {
   /** How long we wait to try running LRU GC after SDK initialization. */
   private static final long INITIAL_GC_DELAY_MS = TimeUnit.MINUTES.toMillis(1);
+
   /** Minimum amount of time between GC checks, after the first one. */
   private static final long REGULAR_GC_DELAY_MS = TimeUnit.MINUTES.toMillis(5);
 
   public static class Params {
     private static final long COLLECTION_DISABLED = FirebaseFirestoreSettings.CACHE_SIZE_UNLIMITED;
     private static final long DEFAULT_CACHE_SIZE_BYTES = 100 * 1024 * 1024; // 100mb
+
     /**
      * The following two constants are estimates for how we want to tune the garbage collector. If
      * we encounter a large cache, we don't want to spend a large chunk of time GCing all of it, we

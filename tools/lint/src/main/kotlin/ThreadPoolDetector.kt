@@ -115,7 +115,7 @@ class ThreadPoolDetector : Detector(), SourceCodeScanner {
           """
                     Please use one of the executors provided by firebase-common.
 
-                    See: https://github.com/firebase/firebase-android-sdk/blob/master/docs/executors.md
+                    See: https://github.com/firebase/firebase-android-sdk/blob/main/docs/executors.md
                 """,
         category = Category.CORRECTNESS,
         priority = 6,

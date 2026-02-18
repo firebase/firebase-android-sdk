@@ -33,6 +33,9 @@ import com.google.firebase.crashlytics.internal.CrashlyticsNativeComponent;
 import com.google.firebase.crashlytics.internal.Logger;
 import com.google.firebase.crashlytics.internal.NativeSessionFileProvider;
 import com.google.firebase.crashlytics.internal.analytics.AnalyticsEventLogger;
+import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsTasks;
+import com.google.firebase.crashlytics.internal.concurrency.CrashlyticsWorkers;
+import com.google.firebase.crashlytics.internal.metadata.EventMetadata;
 import com.google.firebase.crashlytics.internal.metadata.LogFileManager;
 import com.google.firebase.crashlytics.internal.metadata.UserMetadata;
 import com.google.firebase.crashlytics.internal.model.CrashlyticsReport;
@@ -40,18 +43,19 @@ import com.google.firebase.crashlytics.internal.model.StaticSessionData;
 import com.google.firebase.crashlytics.internal.persistence.FileStore;
 import com.google.firebase.crashlytics.internal.settings.Settings;
 import com.google.firebase.crashlytics.internal.settings.SettingsProvider;
+import com.google.firebase.sessions.api.CrashEventReceiver;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.concurrent.Callable;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeoutException;
@@ -67,8 +71,6 @@ class CrashlyticsController {
   static final FilenameFilter APP_EXCEPTION_MARKER_FILTER =
       (directory, filename) -> filename.startsWith(APP_EXCEPTION_MARKER_PREFIX);
 
-  static final String NATIVE_SESSION_DIR = "native-sessions";
-
   static final int FIREBASE_CRASH_TYPE_FATAL = 1;
 
   private static final String GENERATOR_FORMAT = "Crashlytics Android SDK/%s";
@@ -77,12 +79,14 @@ class CrashlyticsController {
   private static final String VERSION_CONTROL_INFO_FILE = "version-control-info.textproto";
   private static final String META_INF_FOLDER = "META-INF/";
 
+  private static final Charset UTF_8 = Charset.forName("UTF-8");
+
   private final Context context;
   private final DataCollectionArbiter dataCollectionArbiter;
   private final CrashlyticsFileMarker crashMarker;
   private final UserMetadata userMetadata;
 
-  private final CrashlyticsBackgroundWorker backgroundWorker;
+  private final CrashlyticsWorkers crashlyticsWorkers;
 
   private final IdManager idManager;
   private final FileStore fileStore;
@@ -116,7 +120,6 @@ class CrashlyticsController {
 
   CrashlyticsController(
       Context context,
-      CrashlyticsBackgroundWorker backgroundWorker,
       IdManager idManager,
       DataCollectionArbiter dataCollectionArbiter,
       FileStore fileStore,
@@ -127,9 +130,9 @@ class CrashlyticsController {
       SessionReportingCoordinator sessionReportingCoordinator,
       CrashlyticsNativeComponent nativeComponent,
       AnalyticsEventLogger analyticsEventLogger,
-      CrashlyticsAppQualitySessionsSubscriber sessionsSubscriber) {
+      CrashlyticsAppQualitySessionsSubscriber sessionsSubscriber,
+      CrashlyticsWorkers crashlyticsWorkers) {
     this.context = context;
-    this.backgroundWorker = backgroundWorker;
     this.idManager = idManager;
     this.dataCollectionArbiter = dataCollectionArbiter;
     this.fileStore = fileStore;
@@ -141,10 +144,7 @@ class CrashlyticsController {
     this.analyticsEventLogger = analyticsEventLogger;
     this.sessionsSubscriber = sessionsSubscriber;
     this.reportingCoordinator = sessionReportingCoordinator;
-  }
-
-  private Context getContext() {
-    return context;
+    this.crashlyticsWorkers = crashlyticsWorkers;
   }
 
   // region Exception handling
@@ -190,12 +190,17 @@ class CrashlyticsController {
     Logger.getLogger()
         .d("Handling uncaught " + "exception \"" + ex + "\" from thread " + thread.getName());
 
+    // Notify the Firebase Sessions SDK that a fatal crash has occurred.
+    if (!isOnDemand) {
+      CrashEventReceiver.notifyCrashOccurred();
+    }
+
     // Capture the time that the crash occurs and close over it so that the time doesn't
     // reflect when we get around to executing the task later.
     final long timestampMillis = System.currentTimeMillis();
 
     final Task<Void> handleUncaughtExceptionTask =
-        backgroundWorker.submitTask(
+        crashlyticsWorkers.common.submitTask(
             new Callable<Task<Void>>() {
               @Override
               public Task<Void> call() throws Exception {
@@ -210,13 +215,12 @@ class CrashlyticsController {
 
                 // We've fatally crashed, so write the marker file that indicates a crash occurred.
                 crashMarker.create();
-
                 reportingCoordinator.persistFatalEvent(
                     ex, thread, currentSessionId, timestampSeconds);
 
                 doWriteAppExceptionMarker(timestampMillis);
                 doCloseSessions(settingsProvider);
-                doOpenSession(new CLSUUID(idManager).toString(), isOnDemand);
+                doOpenSession(new CLSUUID().getSessionId(), isOnDemand);
 
                 // If automatic data collection is disabled, we'll need to wait until the next run
                 // of the app.
@@ -224,12 +228,10 @@ class CrashlyticsController {
                   return Tasks.forResult(null);
                 }
 
-                Executor executor = backgroundWorker.getExecutor();
-
                 return settingsProvider
                     .getSettingsAsync()
                     .onSuccessTask(
-                        executor,
+                        crashlyticsWorkers.common,
                         new SuccessContinuation<Settings, Void>() {
                           @NonNull
                           @Override
@@ -244,15 +246,21 @@ class CrashlyticsController {
                             return Tasks.whenAll(
                                 logAnalyticsAppExceptionEvents(),
                                 reportingCoordinator.sendReports(
-                                    executor, isOnDemand ? currentSessionId : null));
+                                    crashlyticsWorkers.common,
+                                    isOnDemand ? currentSessionId : null));
                           }
                         });
               }
             });
 
+    // Block until the task completes, to prevent the process from ending before logging the report.
+    // There might be other uncaught exception handlers in the chain, so do not block very long.
     try {
-      // TODO(mrober): Don't block the main thread ever for on-demand fatals.
-      Utils.awaitEvenIfOnMainThread(handleUncaughtExceptionTask);
+      // Never block on ODFs, in case they get triggered from the main thread.
+      if (!isOnDemand) {
+        //noinspection deprecation drain the worker instead.
+        Utils.awaitEvenIfOnMainThread(handleUncaughtExceptionTask);
+      }
     } catch (TimeoutException e) {
       Logger.getLogger().e("Cannot send reports. Timed out while fetching settings.");
     } catch (Exception e) {
@@ -299,11 +307,12 @@ class CrashlyticsController {
 
     Logger.getLogger().d("Waiting for send/deleteUnsentReports to be called.");
     // Wait for either the processReports callback to be called, or data collection to be enabled.
-    return Utils.race(collectionEnabled, reportActionProvided.getTask());
+    return CrashlyticsTasks.race(collectionEnabled, reportActionProvided.getTask());
   }
 
   /** This function must be called before opening the first session * */
   boolean didCrashOnPreviousExecution() {
+    CrashlyticsWorkers.checkBackgroundThread(); // To not violate strict mode.
     if (!crashMarker.isPresent()) {
       // Before the first session of this execution is opened, the current session ID still refers
       // to the previous execution's last session, which is what we want.
@@ -340,67 +349,56 @@ class CrashlyticsController {
     return unsentReportsHandled.getTask();
   }
 
-  // TODO(b/261014167): Use an explicit executor in continuations.
-  @SuppressLint("TaskMainThread")
-  Task<Void> submitAllReports(Task<Settings> settingsDataTask) {
+  void submitAllReports(Task<Settings> settingsDataTask) {
     if (!reportingCoordinator.hasReportsToSend()) {
       // Just notify the user that there are no reports and stop.
       Logger.getLogger().v("No crash reports are available to be sent.");
       unsentReportsAvailable.trySetResult(false);
-      return Tasks.forResult(null);
+      return;
     }
     Logger.getLogger().v("Crash reports are available to be sent.");
 
-    return waitForReportAction()
+    waitForReportAction()
         .onSuccessTask(
+            crashlyticsWorkers.common,
             new SuccessContinuation<Boolean, Void>() {
               @NonNull
               @Override
               public Task<Void> then(@Nullable Boolean send) throws Exception {
+                if (!send) {
+                  Logger.getLogger().v("Deleting cached crash reports...");
+                  deleteFiles(listAppExceptionMarkerFiles());
+                  reportingCoordinator.removeAllReports();
+                  unsentReportsHandled.trySetResult(null);
 
-                return backgroundWorker.submitTask(
-                    new Callable<Task<Void>>() {
+                  return Tasks.forResult(null);
+                }
+
+                Logger.getLogger().d("Sending cached crash reports...");
+
+                // waitForReportAction guarantees we got user permission.
+                boolean dataCollectionToken = send;
+
+                // Signal to the settings fetch and onboarding that we have explicit
+                // permission.
+                dataCollectionArbiter.grantDataCollectionPermission(dataCollectionToken);
+                return settingsDataTask.onSuccessTask(
+                    crashlyticsWorkers.common,
+                    new SuccessContinuation<Settings, Void>() {
+                      @NonNull
                       @Override
-                      public Task<Void> call() throws Exception {
-                        if (!send) {
-                          Logger.getLogger().v("Deleting cached crash reports...");
-                          deleteFiles(listAppExceptionMarkerFiles());
-                          reportingCoordinator.removeAllReports();
-                          unsentReportsHandled.trySetResult(null);
+                      public Task<Void> then(@Nullable Settings appSettingsData) throws Exception {
+                        if (appSettingsData == null) {
+                          Logger.getLogger()
+                              .w(
+                                  "Received null app settings at app startup. Cannot send cached reports");
                           return Tasks.forResult(null);
                         }
+                        logAnalyticsAppExceptionEvents();
+                        reportingCoordinator.sendReports(crashlyticsWorkers.common);
+                        unsentReportsHandled.trySetResult(null);
 
-                        Logger.getLogger().d("Sending cached crash reports...");
-
-                        // waitForReportAction guarantees we got user permission.
-                        boolean dataCollectionToken = send;
-
-                        // Signal to the settings fetch and onboarding that we have explicit
-                        // permission.
-                        dataCollectionArbiter.grantDataCollectionPermission(dataCollectionToken);
-
-                        Executor executor = backgroundWorker.getExecutor();
-
-                        return settingsDataTask.onSuccessTask(
-                            executor,
-                            new SuccessContinuation<Settings, Void>() {
-                              @NonNull
-                              @Override
-                              public Task<Void> then(@Nullable Settings appSettingsData)
-                                  throws Exception {
-                                if (appSettingsData == null) {
-                                  Logger.getLogger()
-                                      .w(
-                                          "Received null app settings at app startup. Cannot send cached reports");
-                                  return Tasks.forResult(null);
-                                }
-                                logAnalyticsAppExceptionEvents();
-                                reportingCoordinator.sendReports(executor);
-                                unsentReportsHandled.trySetResult(null);
-
-                                return Tasks.forResult(null);
-                              }
-                            });
+                        return Tasks.forResult(null);
                       }
                     });
               }
@@ -411,41 +409,31 @@ class CrashlyticsController {
 
   /** Log a timestamped string to the log file. */
   void writeToLog(final long timestamp, final String msg) {
-    backgroundWorker.submit(
-        new Callable<Void>() {
-          @Override
-          public Void call() throws Exception {
-            if (!isHandlingException()) {
-              logFileManager.writeToLog(timestamp, msg);
-            }
-            return null;
-          }
-        });
+    if (!isHandlingException()) {
+      logFileManager.writeToLog(timestamp, msg);
+    }
   }
 
   /** Log a caught exception - write out Throwable as event section of protobuf */
-  void writeNonFatalException(@NonNull final Thread thread, @NonNull final Throwable ex) {
+  void writeNonFatalException(
+      @NonNull final Thread thread,
+      @NonNull final Throwable ex,
+      @NonNull Map<String, String> eventKeys) {
     // Capture and close over the current time, so that we get the exact call time,
     // rather than the time at which the task executes.
     final long timestampMillis = System.currentTimeMillis();
 
-    backgroundWorker.submit(
-        new Runnable() {
-          @Override
-          public void run() {
-            if (!isHandlingException()) {
-              long timestampSeconds = getTimestampSeconds(timestampMillis);
-              final String currentSessionId = getCurrentSessionId();
-              if (currentSessionId == null) {
-                Logger.getLogger()
-                    .w("Tried to write a non-fatal exception while no session was open.");
-                return;
-              }
-              reportingCoordinator.persistNonFatalEvent(
-                  ex, thread, currentSessionId, timestampSeconds);
-            }
-          }
-        });
+    if (!isHandlingException()) {
+      long timestampSeconds = getTimestampSeconds(timestampMillis);
+      final String currentSessionId = getCurrentSessionId();
+      if (currentSessionId == null) {
+        Logger.getLogger().w("Tried to write a non-fatal exception while no session was open.");
+        return;
+      }
+      EventMetadata eventMetadata =
+          new EventMetadata(currentSessionId, timestampSeconds, eventKeys);
+      reportingCoordinator.persistNonFatalEvent(ex, thread, eventMetadata);
+    }
   }
 
   void logFatalException(Thread thread, Throwable ex) {
@@ -494,14 +482,8 @@ class CrashlyticsController {
 
   /** Open a new session on the single-threaded executor. */
   void openSession(String sessionIdentifier) {
-    backgroundWorker.submit(
-        new Callable<Void>() {
-          @Override
-          public Void call() throws Exception {
-            doOpenSession(sessionIdentifier, /*isOnDemand=*/ false);
-            return null;
-          }
-        });
+    crashlyticsWorkers.common.submit(
+        () -> doOpenSession(sessionIdentifier, /* isOnDemand= */ false));
   }
 
   /**
@@ -527,7 +509,7 @@ class CrashlyticsController {
    * @param settingsProvider
    */
   boolean finalizeSessions(SettingsProvider settingsProvider) {
-    backgroundWorker.checkRunningOnThread();
+    CrashlyticsWorkers.checkBackgroundThread();
 
     if (isHandlingException()) {
       Logger.getLogger().w("Skipping session finalization because a crash has already occurred.");
@@ -536,7 +518,7 @@ class CrashlyticsController {
 
     Logger.getLogger().v("Finalizing previously open sessions.");
     try {
-      doCloseSessions(true, settingsProvider);
+      doCloseSessions(true, settingsProvider, true);
     } catch (Exception e) {
       Logger.getLogger().e("Unable to finalize previously open sessions.", e);
       return false;
@@ -581,15 +563,18 @@ class CrashlyticsController {
     reportingCoordinator.onBeginSession(sessionIdentifier, startedAtSeconds);
   }
 
+  // This is only used for exception handler close session (we have another close session in
+  // background initialization)
   void doCloseSessions(SettingsProvider settingsProvider) {
-    doCloseSessions(false, settingsProvider);
+    doCloseSessions(false, settingsProvider, false);
   }
 
   /**
-   * Not synchronized/locked. Must be executed from the single thread executor service used by this
-   * class.
+   * Not synchronized/locked. Must be executed from the executor service runs tasks in serial order
    */
-  private void doCloseSessions(boolean skipCurrentSession, SettingsProvider settingsProvider) {
+  private void doCloseSessions(
+      boolean skipCurrentSession, SettingsProvider settingsProvider, boolean isInitProcess) {
+    CrashlyticsWorkers.checkBackgroundThread();
     final int offset = skipCurrentSession ? 1 : 0;
 
     // :TODO HW2021 this implementation can be cleaned up.
@@ -603,13 +588,15 @@ class CrashlyticsController {
 
     final String mostRecentSessionIdToClose = sortedOpenSessions.get(offset);
 
-    if (settingsProvider.getSettingsSync().featureFlagData.collectAnrs) {
+    // We only collect ANR info for finalize report during initialization process
+    if (isInitProcess && settingsProvider.getSettingsSync().featureFlagData.collectAnrs) {
       writeApplicationExitInfoEventIfRelevant(mostRecentSessionIdToClose);
     } else {
       Logger.getLogger().v("ANR feature disabled.");
     }
 
-    if (nativeComponent.hasCrashDataForSession(mostRecentSessionIdToClose)) {
+    // We only collect native crash info for finalize report during initialization process
+    if (isInitProcess && nativeComponent.hasCrashDataForSession(mostRecentSessionIdToClose)) {
       // We only finalize the current session if it's a Java crash, so only finalize native crash
       // data when we aren't including current.
       finalizePreviousNativeSession(mostRecentSessionIdToClose);
@@ -650,13 +637,23 @@ class CrashlyticsController {
   }
 
   String getVersionControlInfo() throws IOException {
-    InputStream is = getResourceAsStream(META_INF_FOLDER + VERSION_CONTROL_INFO_FILE);
-    if (is == null) {
-      return null;
+    // Attempt to read from an Android string resource
+    String versionControlInfo = CommonUtils.getVersionControlInfo(context);
+    if (versionControlInfo != null) {
+      Logger.getLogger().d("Read version control info from string resource");
+      return Base64.encodeToString(versionControlInfo.getBytes(UTF_8), 0);
     }
 
-    Logger.getLogger().d("Read version control info");
-    return Base64.encodeToString(readResource(is), 0);
+    // Fallback to reading the file
+    try (InputStream is = getResourceAsStream(META_INF_FOLDER + VERSION_CONTROL_INFO_FILE)) {
+      if (is != null) {
+        Logger.getLogger().d("Read version control info from file");
+        return Base64.encodeToString(readResource(is), 0);
+      }
+    }
+
+    Logger.getLogger().i("No version control information found");
+    return null;
   }
 
   private InputStream getResourceAsStream(String resource) {
@@ -666,25 +663,19 @@ class CrashlyticsController {
       return null;
     }
 
-    InputStream is = classLoader.getResourceAsStream(resource);
-    if (is == null) {
-      Logger.getLogger().i("No version control information found");
-      return null;
-    }
-
-    return is;
+    return classLoader.getResourceAsStream(resource);
   }
 
   private static byte[] readResource(InputStream is) throws IOException {
-    ByteArrayOutputStream out = new ByteArrayOutputStream();
-    byte[] buffer = new byte[1024];
-    int length;
+    try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+      byte[] buffer = new byte[1024];
+      int length;
 
-    while ((length = is.read(buffer)) != -1) {
-      out.write(buffer, 0, length);
+      while ((length = is.read(buffer)) != -1) {
+        out.write(buffer, 0, length);
+      }
+      return out.toByteArray();
     }
-
-    return out.toByteArray();
   }
 
   private void finalizePreviousNativeSession(String previousSessionId) {
@@ -864,7 +855,7 @@ class CrashlyticsController {
 
   private static boolean firebaseCrashExists() {
     try {
-      final Class clazz = Class.forName("com.google.firebase.crash.FirebaseCrash");
+      final Class<?> clazz = Class.forName("com.google.firebase.crash.FirebaseCrash");
       return true;
     } catch (ClassNotFoundException e) {
       return false;
@@ -934,7 +925,7 @@ class CrashlyticsController {
       if (applicationExitInfoList.size() != 0) {
         final LogFileManager relevantSessionLogManager = new LogFileManager(fileStore, sessionId);
         final UserMetadata relevantUserMetadata =
-            UserMetadata.loadFromExistingSession(sessionId, fileStore, backgroundWorker);
+            UserMetadata.loadFromExistingSession(sessionId, fileStore, crashlyticsWorkers);
         reportingCoordinator.persistRelevantAppExitInfoEvent(
             sessionId, applicationExitInfoList, relevantSessionLogManager, relevantUserMetadata);
       } else {

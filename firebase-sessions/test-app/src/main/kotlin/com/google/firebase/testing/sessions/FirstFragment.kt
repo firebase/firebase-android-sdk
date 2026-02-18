@@ -26,14 +26,24 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import com.google.firebase.crashlytics.FirebaseCrashlytics
+import com.google.firebase.perf.FirebasePerformance
+import com.google.firebase.perf.trace
+import com.google.firebase.testing.sessions.TestApplication.Companion.myProcessName
 import com.google.firebase.testing.sessions.databinding.FragmentFirstBinding
+import java.net.HttpURLConnection
+import java.net.URL
 import java.util.Date
 import java.util.Locale
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 /** A simple [Fragment] subclass as the default destination in the navigation. */
 class FirstFragment : Fragment() {
   val crashlytics = FirebaseCrashlytics.getInstance()
+  val performance = FirebasePerformance.getInstance()
 
   private var _binding: FragmentFirstBinding? = null
 
@@ -45,7 +55,7 @@ class FirstFragment : Fragment() {
   override fun onCreateView(
     inflater: LayoutInflater,
     container: ViewGroup?,
-    savedInstanceState: Bundle?
+    savedInstanceState: Bundle?,
   ): View? {
 
     _binding = FragmentFirstBinding.inflate(inflater, container, false)
@@ -64,31 +74,61 @@ class FirstFragment : Fragment() {
         Thread.sleep(1_000)
       }
     }
+    binding.createTrace.setOnClickListener {
+      lifecycleScope.launch(Dispatchers.IO) {
+        val performanceTrace = performance.newTrace("test_trace")
+        performanceTrace.start()
+        delay(1000)
+        performanceTrace.stop()
+      }
+    }
+    binding.createTrace2.setOnClickListener {
+      lifecycleScope.launch(Dispatchers.IO) {
+        val performanceTrace = performance.newTrace("test_trace_2")
+        performanceTrace.start()
+        delay(1200)
+        performanceTrace.stop()
+      }
+    }
+    binding.createNetworkTrace.setOnClickListener {
+      lifecycleScope.launch(Dispatchers.IO) {
+        val url = URL("https://www.google.com")
+        val metric =
+          performance.newHttpMetric("https://www.google.com", FirebasePerformance.HttpMethod.GET)
+        metric.trace {
+          val conn = url.openConnection() as HttpURLConnection
+          val content = conn.inputStream.bufferedReader().use { it.readText() }
+          setHttpResponseCode(conn.responseCode)
+          setResponsePayloadSize(content.length.toLong())
+          conn.disconnect()
+        }
+      }
+    }
     binding.buttonForegroundProcess.setOnClickListener {
       if (binding.buttonForegroundProcess.getText().startsWith("Start")) {
-        ForegroundService.startService(getContext()!!, "Starting service at ${getDateText()}")
+        ForegroundService.startService(requireContext(), "Starting service at ${getDateText()}")
         binding.buttonForegroundProcess.setText("Stop foreground service")
       } else {
-        ForegroundService.stopService(getContext()!!)
+        ForegroundService.stopService(requireContext())
         binding.buttonForegroundProcess.setText("Start foreground service")
       }
     }
     binding.startSplitscreen.setOnClickListener {
-      val intent = Intent(getContext()!!, SecondActivity::class.java)
+      val intent = Intent(requireContext(), SecondActivity::class.java)
       intent.addFlags(FLAG_ACTIVITY_NEW_TASK or FLAG_ACTIVITY_LAUNCH_ADJACENT)
       startActivity(intent)
-      activity?.finish()
     }
     binding.startSplitscreenSame.setOnClickListener {
-      val intent = Intent(getContext()!!, MainActivity::class.java)
+      val intent = Intent(requireContext(), MainActivity::class.java)
       intent.addFlags(FLAG_ACTIVITY_NEW_TASK or FLAG_ACTIVITY_LAUNCH_ADJACENT)
       startActivity(intent)
     }
     binding.nextActivityButton.setOnClickListener {
-      val intent = Intent(getContext()!!, SecondActivity::class.java)
+      val intent = Intent(requireContext(), SecondActivity::class.java)
       intent.addFlags(FLAG_ACTIVITY_NEW_TASK)
       startActivity(intent)
     }
+    binding.processName.text = myProcessName
   }
 
   override fun onResume() {

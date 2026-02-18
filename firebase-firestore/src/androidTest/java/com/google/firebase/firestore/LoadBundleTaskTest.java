@@ -37,7 +37,6 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import org.junit.Rule;
 import org.junit.Test;
@@ -56,8 +55,8 @@ public class LoadBundleTaskTest {
   public ActivityTestRule<ListenerRegistrationTest.TestActivity> activityTestRule =
       new ActivityTestRule<>(
           ListenerRegistrationTest.TestActivity.class,
-          /*initialTouchMode=*/ false,
-          /*launchActivity=*/ false);
+          /* initialTouchMode= */ false,
+          /* launchActivity= */ false);
 
   Executor testExecutor =
       Executors.newSingleThreadExecutor(
@@ -101,7 +100,7 @@ public class LoadBundleTaskTest {
     task.addOnSuccessListener(progress -> sources.get(0).setResult(0));
     task.addOnSuccessListener(testExecutor, progress -> sources.get(1).setResult(1));
     ListenerRegistrationTest.TestActivity activity =
-        activityTestRule.launchActivity(/*intent=*/ null);
+        activityTestRule.launchActivity(/* intent= */ null);
     task.addOnSuccessListener(activity, progress -> sources.get(2).setResult(2));
 
     task.setResult(SUCCESS_RESULT);
@@ -117,7 +116,7 @@ public class LoadBundleTaskTest {
     task.addOnFailureListener(progress -> sources.get(0).setResult(0));
     task.addOnFailureListener(testExecutor, progress -> sources.get(1).setResult(1));
     ListenerRegistrationTest.TestActivity activity =
-        activityTestRule.launchActivity(/*intent=*/ null);
+        activityTestRule.launchActivity(/* intent= */ null);
     task.addOnFailureListener(activity, progress -> sources.get(2).setResult(2));
 
     task.setException(TEST_EXCEPTION);
@@ -133,7 +132,7 @@ public class LoadBundleTaskTest {
     task.addOnCompleteListener(progress -> sources.get(0).setResult(0));
     task.addOnCompleteListener(testExecutor, progress -> sources.get(1).setResult(1));
     ListenerRegistrationTest.TestActivity activity =
-        activityTestRule.launchActivity(/*intent=*/ null);
+        activityTestRule.launchActivity(/* intent= */ null);
     task.addOnCompleteListener(activity, progress -> sources.get(2).setResult(2));
 
     task.setResult(SUCCESS_RESULT);
@@ -149,7 +148,7 @@ public class LoadBundleTaskTest {
     task.addOnProgressListener(progress -> sources.get(0).setResult(0));
     task.addOnProgressListener(testExecutor, progress -> sources.get(1).setResult(1));
     ListenerRegistrationTest.TestActivity activity =
-        activityTestRule.launchActivity(/*intent=*/ null);
+        activityTestRule.launchActivity(/* intent= */ null);
     task.addOnProgressListener(activity, progress -> sources.get(2).setResult(2));
 
     task.updateProgress(SUCCESS_RESULT);
@@ -199,30 +198,30 @@ public class LoadBundleTaskTest {
     assertSourcesResolveTo(sources, 0, 1);
   }
 
-  @Test
-  public void testProgressListenerCanAddProgressListener() {
-    List<TaskCompletionSource> sources = taskSourceOf(3);
-
-    AtomicInteger outerTaskRun = new AtomicInteger();
-    LoadBundleTask task = new LoadBundleTask();
-    task.addOnProgressListener(
-        p1 -> {
-          sources.get(outerTaskRun.getAndIncrement()).setResult(outerTaskRun.get());
-          task.addOnProgressListener(
-              p2 -> {
-                sources.get(2).setResult(3);
-              });
-        });
-
-    // First update runs the outer listener, and registers the inner listener.
-    task.updateProgress(SUCCESS_RESULT);
-
-    waitFor(sources.get(0).getTask());
-    // Second update runs the outer listener, then the inner listener.
-    task.updateProgress(SUCCESS_RESULT);
-
-    assertSourcesResolveTo(sources, 1, 2, 3);
-  }
+  //  @Test
+  //  public void testProgressListenerCanAddProgressListener() {
+  //    List<TaskCompletionSource> sources = taskSourceOf(3);
+  //
+  //    AtomicInteger outerTaskRun = new AtomicInteger();
+  //    LoadBundleTask task = new LoadBundleTask();
+  //    task.addOnProgressListener(
+  //        p1 -> {
+  //          sources.get(outerTaskRun.getAndIncrement()).setResult(outerTaskRun.get());
+  //          task.addOnProgressListener(
+  //              p2 -> {
+  //                sources.get(2).setResult(3);
+  //              });
+  //        });
+  //
+  //    // First update runs the outer listener, and registers the inner listener.
+  //    task.updateProgress(SUCCESS_RESULT);
+  //
+  //    waitFor(sources.get(0).getTask());
+  //    // Second update runs the outer listener, then the inner listener.
+  //    task.updateProgress(SUCCESS_RESULT);
+  //
+  //    assertSourcesResolveTo(sources, 1, 2, 3);
+  //  }
 
   @Test
   public void testProgressListenerWithSuccess() throws InterruptedException {

@@ -23,8 +23,9 @@ import android.view.MenuInflater
 import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatButton
-import com.google.firebase.appdistribution.ktx.appDistribution
-import com.google.firebase.ktx.Firebase
+import com.google.firebase.appdistribution.appDistribution
+import com.google.firebase.Firebase
+import com.google.firebase.appdistribution.testapp.R
 
 class SecondActivity : AppCompatActivity() {
 

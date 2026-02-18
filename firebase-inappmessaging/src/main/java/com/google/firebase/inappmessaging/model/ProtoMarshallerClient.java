@@ -16,12 +16,11 @@ package com.google.firebase.inappmessaging.model;
 
 import android.text.TextUtils;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import com.google.common.base.Preconditions;
 import com.google.firebase.inappmessaging.MessagesProto;
 import com.google.firebase.inappmessaging.internal.Logging;
 import java.util.Map;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
@@ -38,7 +37,7 @@ public class ProtoMarshallerClient {
   @Inject
   ProtoMarshallerClient() {}
 
-  @Nonnull
+  @NonNull
   private static ModalMessage.Builder from(MessagesProto.ModalMessage in) {
     ModalMessage.Builder builder = ModalMessage.builder();
 
@@ -65,7 +64,7 @@ public class ProtoMarshallerClient {
     return builder;
   }
 
-  @Nonnull
+  @NonNull
   private static ImageOnlyMessage.Builder from(MessagesProto.ImageOnlyMessage in) {
     ImageOnlyMessage.Builder builder = ImageOnlyMessage.builder();
 
@@ -80,7 +79,7 @@ public class ProtoMarshallerClient {
     return builder;
   }
 
-  @Nonnull
+  @NonNull
   private static BannerMessage.Builder from(MessagesProto.BannerMessage in) {
     BannerMessage.Builder builder = BannerMessage.builder();
 
@@ -107,7 +106,7 @@ public class ProtoMarshallerClient {
     return builder;
   }
 
-  @Nonnull
+  @NonNull
   private static CardMessage.Builder from(MessagesProto.CardMessage in) {
     CardMessage.Builder builder = CardMessage.builder();
 
@@ -207,7 +206,7 @@ public class ProtoMarshallerClient {
 
   /** Tranform {@link MessagesProto.Content} proto to an {@link InAppMessage} value object */
   public static InAppMessage decode(
-      @Nonnull MessagesProto.Content in,
+      @NonNull MessagesProto.Content in,
       @NonNull String campaignId,
       @NonNull String campaignName,
       boolean isTestMessage,

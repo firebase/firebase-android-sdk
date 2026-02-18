@@ -169,7 +169,7 @@ public class SynchronousConnection implements PersistentConnection.Delegate {
                         return true;
                       }
                     },
-                    /*tag=*/ null,
+                    /* tag= */ null,
                     new RequestResultCallback() {
                       @Override
                       public void onRequestResult(String optErrorCode, String optErrorMessage) {

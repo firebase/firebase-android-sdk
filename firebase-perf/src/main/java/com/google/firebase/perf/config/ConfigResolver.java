@@ -221,6 +221,7 @@ public class ConfigResolver {
     // 2. If the value exists in device cache, return this value.
     // 3. Otherwise, return default value.
     SdkEnabled config = SdkEnabled.getInstance();
+    Optional<Boolean> deviceCacheValue = getDeviceCacheBoolean(config);
 
     // 1. Reads value from Firebase Remote Config, saves this value in cache layer if fetch status
     // is not failure.
@@ -230,13 +231,19 @@ public class ConfigResolver {
       if (remoteConfigManager.isLastFetchFailed()) {
         return false;
       }
-      // b. Cache and return this value.
-      deviceCacheManager.setValue(config.getDeviceCacheFlag(), rcValue.get());
-      return rcValue.get();
+
+      Boolean newValue = rcValue.get();
+      // b. Only cache and return this value if it is different from the current value.
+      if (deviceCacheValue == null
+          || !deviceCacheValue.isAvailable()
+          || deviceCacheValue.get() != newValue) {
+        deviceCacheManager.setValue(config.getDeviceCacheFlag(), newValue);
+      }
+
+      return newValue;
     }
 
     // 2. If the value exists in device cache, return this value.
-    Optional<Boolean> deviceCacheValue = getDeviceCacheBoolean(config);
     if (deviceCacheValue.isAvailable()) {
       return deviceCacheValue.get();
     }
@@ -257,17 +264,23 @@ public class ConfigResolver {
     // 2. If the value exists in device cache, return this value.
     // 3. Otherwise, return default value.
     SdkDisabledVersions config = SdkDisabledVersions.getInstance();
+    Optional<String> deviceCacheValue = getDeviceCacheString(config);
 
     // 1. Reads value from Firebase Remote Config, cache and return this value.
     Optional<String> rcValue = getRemoteConfigString(config);
     if (rcValue.isAvailable()) {
       // Do not check FRC last fetch status because it is the most recent value device can get.
-      deviceCacheManager.setValue(config.getDeviceCacheFlag(), rcValue.get());
-      return isFireperfSdkVersionInList(rcValue.get());
+      String newValue = rcValue.get();
+      // Only cache and return this value if it is different from the current value.
+      if (deviceCacheValue == null
+          || !deviceCacheValue.isAvailable()
+          || !deviceCacheValue.get().equals(newValue)) {
+        deviceCacheManager.setValue(config.getDeviceCacheFlag(), newValue);
+      }
+      return isFireperfSdkVersionInList(newValue);
     }
 
     // 2. If the value exists in device cache, return this value.
-    Optional<String> deviceCacheValue = getDeviceCacheString(config);
     if (deviceCacheValue.isAvailable()) {
       return isFireperfSdkVersionInList(deviceCacheValue.get());
     }
@@ -807,35 +820,22 @@ public class ConfigResolver {
     return config.getDefault();
   }
 
-  /** Returns if _experiment_app_start_ttid should be captured. */
+  /**
+   * Returns if _experiment_app_start_ttid should be captured. This experiment is disabled.
+   * Therefore, interactions with Remote Config and the cached layer are no longer necessary,
+   * preventing unnecessary StrictMode DiskReadViolation penalties.
+   * {@see https://github.com/firebase/firebase-android-sdk/issues/7340}
+   */
   public boolean getIsExperimentTTIDEnabled() {
-    // Order of precedence is:
-    // 1. If the value exists in Android Manifest, return this value.
-    // 2. If the value exists through Firebase Remote Config, cache and return this value.
-    // 3. If the value exists in device cache, return this value.
-    // 4. Otherwise, return default value.
     ExperimentTTID config = ExperimentTTID.getInstance();
 
-    // 1. Reads value in Android Manifest (it is set by developers during build time).
+    // Reads value in Android Manifest (it is set by developers during build time).
     Optional<Boolean> metadataValue = getMetadataBoolean(config);
     if (metadataValue.isAvailable()) {
       return metadataValue.get();
     }
 
-    // 2. Reads value from Firebase Remote Config, saves this value in cache layer if valid.
-    Optional<Boolean> rcValue = getRemoteConfigBoolean(config);
-    if (rcValue.isAvailable()) {
-      deviceCacheManager.setValue(config.getDeviceCacheFlag(), rcValue.get());
-      return rcValue.get();
-    }
-
-    // 3. Reads value from cache layer.
-    Optional<Boolean> deviceCacheValue = getDeviceCacheBoolean(config);
-    if (deviceCacheValue.isAvailable()) {
-      return deviceCacheValue.get();
-    }
-
-    // 4. Returns default value if there is no valid value from above approaches.
+    // Returns default value if there is no valid value from above approaches.
     return config.getDefault();
   }
 

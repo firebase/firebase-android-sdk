@@ -14,32 +14,20 @@
 
 package com.google.firebase.inappmessaging.display.internal;
 
-// Picasso 's api forces us to listen to errors only using a global listener set on the picasso
-// singleton. Since we initialize picasso from a static context and the in app message param to the
-// logError method is not available statically, we are forced to introduce a error listener with
-// mutable state so that the error from picasso can be translated to a logError on
-// fiam headless, with the in app message as a parameter
-
+import android.graphics.drawable.Drawable;
 import androidx.annotation.Nullable;
 import com.bumptech.glide.load.DataSource;
 import com.bumptech.glide.load.engine.GlideException;
 import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.target.Target;
 import com.google.firebase.inappmessaging.FirebaseInAppMessagingDisplayCallbacks;
-import com.google.firebase.inappmessaging.display.internal.injection.scopes.FirebaseAppScope;
 import com.google.firebase.inappmessaging.model.InAppMessage;
-import javax.inject.Inject;
 
-/** @hide */
-@FirebaseAppScope
-public class GlideErrorListener implements RequestListener<Object> {
-  private InAppMessage inAppMessage;
-  private FirebaseInAppMessagingDisplayCallbacks displayCallbacks;
+public class GlideErrorListener implements RequestListener<Drawable> {
+  private final InAppMessage inAppMessage;
+  private final FirebaseInAppMessagingDisplayCallbacks displayCallbacks;
 
-  @Inject
-  GlideErrorListener() {}
-
-  public void setInAppMessage(
+  public GlideErrorListener(
       InAppMessage inAppMessage, FirebaseInAppMessagingDisplayCallbacks displayCallbacks) {
     this.inAppMessage = inAppMessage;
     this.displayCallbacks = displayCallbacks;
@@ -47,7 +35,7 @@ public class GlideErrorListener implements RequestListener<Object> {
 
   @Override
   public boolean onLoadFailed(
-      @Nullable GlideException e, Object model, Target<Object> target, boolean isFirstResource) {
+      @Nullable GlideException e, Object model, Target<Drawable> target, boolean isFirstResource) {
     Logging.logd("Image Downloading  Error : " + e.getMessage() + ":" + e.getCause());
 
     if (inAppMessage != null && displayCallbacks != null) {
@@ -67,9 +55,9 @@ public class GlideErrorListener implements RequestListener<Object> {
 
   @Override
   public boolean onResourceReady(
-      Object resource,
+      Drawable resource,
       Object model,
-      Target<Object> target,
+      Target<Drawable> target,
       DataSource dataSource,
       boolean isFirstResource) {
     Logging.logd("Image Downloading  Success : " + resource);

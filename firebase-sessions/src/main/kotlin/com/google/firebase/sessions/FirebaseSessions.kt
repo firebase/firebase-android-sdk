@@ -20,25 +20,32 @@ import android.app.Application
 import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
+import com.google.firebase.annotations.concurrent.Background
 import com.google.firebase.app
 import com.google.firebase.sessions.api.FirebaseSessionsDependencies
 import com.google.firebase.sessions.settings.SessionsSettings
+import javax.inject.Inject
+import javax.inject.Singleton
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 /** Responsible for initializing AQS */
-internal class FirebaseSessions(
+@Singleton
+internal class FirebaseSessions
+@Inject
+constructor(
   private val firebaseApp: FirebaseApp,
   private val settings: SessionsSettings,
-  backgroundDispatcher: CoroutineContext,
+  @Background backgroundDispatcher: CoroutineContext,
+  sessionsActivityLifecycleCallbacks: SessionsActivityLifecycleCallbacks,
 ) {
 
   init {
-    Log.d(TAG, "Initializing Firebase Sessions SDK.")
+    Log.d(TAG, "Initializing Firebase Sessions ${BuildConfig.VERSION_NAME}.")
     val appContext = firebaseApp.applicationContext.applicationContext
     if (appContext is Application) {
-      appContext.registerActivityLifecycleCallbacks(SessionsActivityLifecycleCallbacks)
+      appContext.registerActivityLifecycleCallbacks(sessionsActivityLifecycleCallbacks)
 
       CoroutineScope(backgroundDispatcher).launch {
         val subscribers = FirebaseSessionsDependencies.getRegisteredSubscribers()
@@ -49,16 +56,12 @@ internal class FirebaseSessions(
           if (!settings.sessionsEnabled) {
             Log.d(TAG, "Sessions SDK disabled. Not listening to lifecycle events.")
           } else {
-            val lifecycleClient = SessionLifecycleClient(backgroundDispatcher)
-            lifecycleClient.bindToService()
-            SessionsActivityLifecycleCallbacks.lifecycleClient = lifecycleClient
-
             firebaseApp.addLifecycleEventListener { _, _ ->
               Log.w(
                 TAG,
-                "FirebaseApp instance deleted. Sessions library will stop collecting data."
+                "FirebaseApp instance deleted. Sessions library will stop collecting data.",
               )
-              SessionsActivityLifecycleCallbacks.lifecycleClient = null
+              sessionsActivityLifecycleCallbacks.onAppDelete()
             }
           }
         }
@@ -66,13 +69,13 @@ internal class FirebaseSessions(
     } else {
       Log.e(
         TAG,
-        "Failed to register lifecycle callbacks, unexpected context ${appContext.javaClass}."
+        "Failed to register lifecycle callbacks, unexpected context ${appContext.javaClass}.",
       )
     }
   }
 
   companion object {
-    private const val TAG = "FirebaseSessions"
+    internal const val TAG = "FirebaseSessions"
 
     val instance: FirebaseSessions
       get() = Firebase.app[FirebaseSessions::class.java]

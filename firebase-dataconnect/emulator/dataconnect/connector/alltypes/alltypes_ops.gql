@@ -1,0 +1,192 @@
+# Copyright 2024 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+mutation createPrimitive(
+  $id: UUID!,
+  $idFieldNullable: UUID,
+  $intField: Int!,
+  $intFieldNullable: Int,
+  $floatField: Float!,
+  $floatFieldNullable: Float,
+  $booleanField: Boolean!,
+  $booleanFieldNullable: Boolean,
+  $stringField: String!,
+  $stringFieldNullable: String
+) @auth(level: PUBLIC) {
+  primitive_insert(data: {
+    id: $id,
+    idFieldNullable: $idFieldNullable,
+    intField: $intField,
+    intFieldNullable: $intFieldNullable,
+    floatField: $floatField,
+    floatFieldNullable: $floatFieldNullable,
+    booleanField: $booleanField,
+    booleanFieldNullable: $booleanFieldNullable,
+    stringField: $stringField,
+    stringFieldNullable: $stringFieldNullable
+  })
+}
+
+query getPrimitive($id: UUID!) @auth(level: PUBLIC) {
+  primitive(id: $id) {
+    id
+    idFieldNullable
+    intField
+    intFieldNullable
+    floatField
+    floatFieldNullable
+    booleanField
+    booleanFieldNullable
+    stringField
+    stringFieldNullable
+  }
+}
+
+mutation createPrimitiveList(
+  $id: UUID!,
+  $idListNullable: [UUID!],
+  $idListOfNullable: [UUID!],
+  $intList: [Int!]!,
+  $intListNullable: [Int!],
+  $intListOfNullable: [Int!],
+  $floatList: [Float!]!,
+  $floatListNullable: [Float!],
+  $floatListOfNullable: [Float!],
+  $booleanList: [Boolean!]!,
+  $booleanListNullable: [Boolean!],
+  $booleanListOfNullable: [Boolean!],
+  $stringList: [String!]!,
+  $stringListNullable: [String!],
+  $stringListOfNullable: [String!]
+) @auth(level: PUBLIC) {
+  primitiveList_insert(data: {
+    id: $id,
+    idListNullable: $idListNullable,
+    idListOfNullable: $idListOfNullable,
+    intList: $intList,
+    intListNullable: $intListNullable,
+    intListOfNullable: $intListOfNullable,
+    floatList: $floatList,
+    floatListNullable: $floatListNullable,
+    floatListOfNullable: $floatListOfNullable,
+    booleanList: $booleanList,
+    booleanListNullable: $booleanListNullable,
+    booleanListOfNullable: $booleanListOfNullable,
+    stringList: $stringList,
+    stringListNullable: $stringListNullable,
+    stringListOfNullable: $stringListOfNullable
+  })
+}
+
+query getPrimitiveList($id: UUID!) @auth(level: PUBLIC) {
+  primitiveList(id: $id) {
+    id
+    idListNullable
+    idListOfNullable
+    intList
+    intListNullable
+    intListOfNullable
+    floatList
+    floatListNullable
+    floatListOfNullable
+    booleanList
+    booleanListNullable
+    booleanListOfNullable
+    stringList
+    stringListNullable
+    stringListOfNullable
+  }
+}
+
+query getAllPrimitiveLists @auth(level: PUBLIC) {
+  primitiveLists {
+    id
+    idListNullable
+    idListOfNullable
+    intList
+    intListNullable
+    intListOfNullable
+    floatList
+    floatListNullable
+    floatListOfNullable
+    booleanList
+    booleanListNullable
+    booleanListOfNullable
+    stringList
+    stringListNullable
+    stringListOfNullable
+  }
+}
+
+mutation createFarmer(
+  $id: String!,
+  $name: String!,
+  $parentId: String
+) @auth(level: PUBLIC) {
+  farmer_insert(data: {
+    id: $id,
+    name: $name,
+    parentId: $parentId
+  })
+}
+
+mutation createAnimal(
+  $id: String!,
+  $farmId: String!,
+  $name: String!,
+  $species: String!,
+  $age: Int
+) @auth(level: PUBLIC) {
+  animal_insert(data: {
+    id: $id,
+    farmId: $farmId,
+    name: $name,
+    species: $species,
+    age: $age
+  })
+}
+
+mutation createFarm(
+  $id: String!,
+  $name: String!,
+  $farmerId: String!
+) @auth(level: PUBLIC) {
+  farm_insert(data: {
+    id: $id,
+    name: $name,
+    farmerId: $farmerId
+  })
+}
+
+query getFarm($id: String!) @auth(level: PUBLIC) {
+  farm(id: $id) {
+    id
+    name
+    farmer {
+      id
+      name
+      parent {
+        id
+        name
+        parentId
+      }
+    }
+    animals: animals_on_farm {
+      id
+      name
+      species
+      age
+    }
+  }
+}

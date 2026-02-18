@@ -38,8 +38,10 @@ final class WakeLockHolder {
   // Extra to identify a wakeful intent
   private static final String EXTRA_WAKEFUL_INTENT =
       "com.google.firebase.iid.WakeLockHolder.wakefulintent";
+
   /** Release wakelocks after 60s, because we don't expect operations to take longer than that. */
   static final long WAKE_LOCK_ACQUIRE_TIMEOUT_MILLIS = TimeUnit.MINUTES.toMillis(1);
+
   // Object to sync threads
   private static final Object syncObject = new Object();
 

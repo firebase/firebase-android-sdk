@@ -484,6 +484,19 @@ public class DocumentSnapshot {
     return new DocumentReference(key, firestore);
   }
 
+  /**
+   * Returns the value of the field as a {@link VectorValue} or
+   * {@code null} if the field does not exist in the document.
+   *
+   * @param field The path to the field.
+   * @throws RuntimeException if the value is not a {@code VectorValue}.
+   * @return The value of the field.
+   */
+  @Nullable
+  public VectorValue getVectorValue(@NonNull String field) {
+    return (VectorValue) get(field);
+  }
+
   @Nullable
   private <T> T getTypedValue(String field, Class<T> clazz) {
     checkNotNull(field, "Provided field must not be null.");
@@ -542,6 +555,7 @@ public class DocumentSnapshot {
     return hash;
   }
 
+  @NonNull
   @Override
   public String toString() {
     return "DocumentSnapshot{" + "key=" + key + ", metadata=" + metadata + ", doc=" + doc + '}';
