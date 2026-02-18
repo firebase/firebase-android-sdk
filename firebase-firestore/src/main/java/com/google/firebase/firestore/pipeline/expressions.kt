@@ -1756,126 +1756,6 @@ abstract class Expression internal constructor() {
       BooleanFunctionExpression("is_absent", evaluateIsAbsent, fieldName)
 
     /**
-     * Creates an expression that checks if an expression evaluates to 'NaN' (Not a Number).
-     *
-     * ```kotlin
-     * // Check if the result of a calculation is NaN
-     * isNan(divide("value", 0))
-     * ```
-     *
-     * @param expr The expression to check.
-     * @return A new [BooleanExpression] representing the isNan operation.
-     */
-    @JvmStatic
-    internal fun isNan(expr: Expression): BooleanExpression =
-      BooleanFunctionExpression("is_nan", evaluateIsNaN, expr)
-
-    /**
-     * Creates an expression that checks if the field's value evaluates to 'NaN' (Not a Number).
-     *
-     * ```kotlin
-     * // Check if the value of a field is NaN
-     * isNan("value")
-     * ```
-     *
-     * @param fieldName The field to check.
-     * @return A new [BooleanExpression] representing the isNan operation.
-     */
-    @JvmStatic
-    internal fun isNan(fieldName: String): BooleanExpression =
-      BooleanFunctionExpression("is_nan", evaluateIsNaN, fieldName)
-
-    /**
-     * Creates an expression that checks if the results of [expr] is NOT 'NaN' (Not a Number).
-     *
-     * ```kotlin
-     * // Check if the result of a calculation is NOT NaN
-     * isNotNan(divide("value", 0))
-     * ```
-     *
-     * @param expr The expression to check.
-     * @return A new [BooleanExpression] representing the isNotNan operation.
-     */
-    @JvmStatic
-    internal fun isNotNan(expr: Expression): BooleanExpression =
-      BooleanFunctionExpression("is_not_nan", evaluateIsNotNaN, expr)
-
-    /**
-     * Creates an expression that checks if the field's value is NOT 'NaN' (Not a Number).
-     *
-     * ```kotlin
-     * // Check if the value of a field is NOT NaN
-     * isNotNan("value")
-     * ```
-     *
-     * @param fieldName The field to check.
-     * @return A new [BooleanExpression] representing the isNotNan operation.
-     */
-    @JvmStatic
-    internal fun isNotNan(fieldName: String): BooleanExpression =
-      BooleanFunctionExpression("is_not_nan", evaluateIsNotNaN, fieldName)
-
-    /**
-     * Creates an expression that checks if the result of [expr] is null.
-     *
-     * ```kotlin
-     * // Check if the value of the 'name' field is null
-     * isNull("name")
-     * ```
-     *
-     * @param expr The expression to check.
-     * @return A new [BooleanExpression] representing the isNull operation.
-     */
-    @JvmStatic
-    internal fun isNull(expr: Expression): BooleanExpression =
-      BooleanFunctionExpression("is_null", evaluateIsNull, expr)
-
-    /**
-     * Creates an expression that checks if the value of a field is null.
-     *
-     * ```kotlin
-     * // Check if the value of the 'name' field is null
-     * isNull("name")
-     * ```
-     *
-     * @param fieldName The field to check.
-     * @return A new [BooleanExpression] representing the isNull operation.
-     */
-    @JvmStatic
-    internal fun isNull(fieldName: String): BooleanExpression =
-      BooleanFunctionExpression("is_null", evaluateIsNull, fieldName)
-
-    /**
-     * Creates an expression that checks if the result of [expr] is not null.
-     *
-     * ```kotlin
-     * // Check if the value of the 'name' field is not null
-     * isNotNull(field("name"))
-     * ```
-     *
-     * @param expr The expression to check.
-     * @return A new [BooleanExpression] representing the isNotNull operation.
-     */
-    @JvmStatic
-    internal fun isNotNull(expr: Expression): BooleanExpression =
-      BooleanFunctionExpression("is_not_null", evaluateIsNotNull, expr)
-
-    /**
-     * Creates an expression that checks if the value of a field is not null.
-     *
-     * ```kotlin
-     * // Check if the value of the 'name' field is not null
-     * isNotNull("name")
-     * ```
-     *
-     * @param fieldName The field to check.
-     * @return A new [BooleanExpression] representing the isNotNull operation.
-     */
-    @JvmStatic
-    internal fun isNotNull(fieldName: String): BooleanExpression =
-      BooleanFunctionExpression("is_not_null", evaluateIsNotNull, fieldName)
-
-    /**
      * Creates an expression that returns a string indicating the type of the value this expression
      * evaluates to.
      *
@@ -5554,10 +5434,10 @@ abstract class Expression internal constructor() {
    * to calculated values.
    *
    * @param alias The alias to assign to this expression.
-   * @return A new [Selectable] (typically an [AliasedExpression]) that wraps this expression and
-   * associates it with the provided alias.
+   * @return A [AliasedExpression] that wraps this expression and associates it with the provided
+   * alias.
    */
-  open fun alias(alias: String): Selectable = AliasedExpression(alias, this)
+  open fun alias(alias: String): AliasedExpression = AliasedExpression(alias, this)
 
   /**
    * Creates an expression that returns the document ID from this path expression.
@@ -5950,55 +5830,6 @@ abstract class Expression internal constructor() {
    * @return A new [BooleanExpression] representing the isAbsent operation.
    */
   fun isAbsent(): BooleanExpression = Companion.isAbsent(this)
-
-  /**
-   * Creates an expression that checks if this expression evaluates to 'NaN' (Not a Number).
-   *
-   * ```kotlin
-   * // Check if the result of a calculation is NaN
-   * divide("value", 0).isNan()
-   * ```
-   *
-   * @return A new [BooleanExpression] representing the isNan operation.
-   */
-  internal fun isNan(): BooleanExpression = Companion.isNan(this)
-
-  /**
-   * Creates an expression that checks if the results of this expression is NOT 'NaN' (Not a
-   * Number).
-   *
-   * ```kotlin
-   * // Check if the result of a calculation is NOT NaN
-   * divide("value", 0).isNotNan()
-   * ```
-   *
-   * @return A new [BooleanExpression] representing the isNotNan operation.
-   */
-  internal fun isNotNan(): BooleanExpression = Companion.isNotNan(this)
-
-  /**
-   * Creates an expression that checks if the result of this expression is null.
-   *
-   * ```kotlin
-   * // Check if the value of the 'name' field is null
-   * field("name").isNull()
-   * ```
-   *
-   * @return A new [BooleanExpression] representing the isNull operation.
-   */
-  internal fun isNull(): BooleanExpression = Companion.isNull(this)
-
-  /**
-   * Creates an expression that checks if the result of this expression is not null.
-   *
-   * ```kotlin
-   * // Check if the value of the 'name' field is not null
-   * field("name").isNotNull()
-   * ```
-   *
-   * @return A new [BooleanExpression] representing the isNotNull operation.
-   */
-  internal fun isNotNull(): BooleanExpression = Companion.isNotNull(this)
 
   /**
    * Creates an expression that calculates the length of a string, array, map, vector, or blob

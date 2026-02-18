@@ -46,7 +46,8 @@ private constructor(
     public var thinkingLevel: ThinkingLevel? = null
 
     /**
-     * Indicates the thinking budget in tokens.
+     * Sets the amount of thinking the model can do to generate a response, defined as a
+     * <ThinkingBudget> in tokens.
      *
      * The range of
      * [supported thinking budget values](https://firebase.google.com/docs/ai-logic/thinking#supported-thinking-budget-values)
@@ -60,7 +61,8 @@ private constructor(
     }
 
     /**
-     * Indicates the thinking budget in [ThinkingLevel]s.
+     * Sets the amount of thinking the model can do to generate a response, defined as a
+     * <ThinkingLevel>.
      *
      * If you don't specify a thinking level, Gemini will use the model's default dynamic thinking
      * level.
