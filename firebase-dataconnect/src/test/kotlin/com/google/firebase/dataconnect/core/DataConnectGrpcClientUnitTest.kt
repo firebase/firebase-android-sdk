@@ -180,7 +180,7 @@ class DataConnectGrpcClientUnitTest {
       dataConnectGrpcClient.executeQuery(requestId, operationName, variables, callerSdkType)
 
     operationResult shouldBe
-      OperationResult(data = responseData, errors = emptyList(), DataSource.SERVER)
+      OperationResult(data = responseData, errors = emptyList(), DataSource.CACHE)
   }
 
   @Test
