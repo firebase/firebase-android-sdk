@@ -247,9 +247,22 @@ internal class DataConnectGrpcRPCs(
     val cacheInfo = queryCacheInfo(authToken, request)
 
     cacheInfo?.run {
-      val cachedResult = cacheDb.getQueryResult(authUid, queryId)
-      if (cachedResult !== null) {
-        return ExecuteQueryResult.FromCache(cachedResult)
+      when (val cachedResult = cacheDb.getQueryResult(authUid, queryId)) {
+        is DataConnectCacheDatabase.GetQueryResultResult.Found -> {
+          logger.logGrpcReturningFromCache(
+            requestId = requestId,
+            kotlinMethodName = kotlinMethodName,
+            cachedResult = cachedResult,
+          )
+          return ExecuteQueryResult.FromCache(cachedResult.struct)
+        }
+        is DataConnectCacheDatabase.GetQueryResultResult.Stale ->
+          logger.logGrpcIgnoringStaleCache(
+            requestId = requestId,
+            kotlinMethodName = kotlinMethodName,
+            cachedResult = cachedResult,
+          )
+        is DataConnectCacheDatabase.GetQueryResultResult.NotFound -> {}
       }
     }
 
@@ -407,9 +420,20 @@ internal class DataConnectGrpcRPCs(
     fun Logger.logGrpcReturningFromCache(
       requestId: String,
       kotlinMethodName: String,
-      struct: Struct,
+      cachedResult: DataConnectCacheDatabase.GetQueryResultResult.Found,
     ) = debug {
-      "$kotlinMethodName [rid=$requestId] returning result from cache: ${struct.toCompactString()}"
+      "$kotlinMethodName [rid=$requestId] returning result from cache: " +
+        "${cachedResult.struct.toCompactString()} " +
+        "(expires in ${cachedResult.millisUntilStale} milliseconds)"
+    }
+
+    fun Logger.logGrpcIgnoringStaleCache(
+      requestId: String,
+      kotlinMethodName: String,
+      cachedResult: DataConnectCacheDatabase.GetQueryResultResult.Stale,
+    ) = debug {
+      "$kotlinMethodName [rid=$requestId] ignoring result from cache " +
+        "because it expired ${cachedResult.millisStale} milliseconds ago"
     }
 
     fun Logger.logGrpcStarting(

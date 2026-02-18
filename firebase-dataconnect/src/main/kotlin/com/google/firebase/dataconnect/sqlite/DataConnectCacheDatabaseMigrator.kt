@@ -118,7 +118,7 @@ private constructor(private val sqliteDatabase: SQLiteDatabase, private val logg
       logger,
       """CREATE TABLE users (
         id INTEGER PRIMARY KEY,
-        auth_uid TEXT UNIQUE,
+        auth_uid TEXT UNIQUE, -- As provided by the Firebase Auth API
         debug_info TEXT
       )"""
     )
@@ -127,9 +127,9 @@ private constructor(private val sqliteDatabase: SQLiteDatabase, private val logg
       """CREATE TABLE entities (
         id INTEGER PRIMARY KEY,
         user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
-        entity_id TEXT NOT NULL,
-        data BLOB NOT NULL,
-        flags INT NOT NULL,
+        entity_id TEXT NOT NULL, -- An opaque string
+        data BLOB NOT NULL, -- A google.protobuf.Struct proto
+        flags INT NOT NULL, -- Lower 32 bits are required, upper 32 bits are optional
         debug_info TEXT,
         UNIQUE (user_id, entity_id)
       )"""
@@ -139,9 +139,10 @@ private constructor(private val sqliteDatabase: SQLiteDatabase, private val logg
       """CREATE TABLE queries (
         id INTEGER PRIMARY KEY,
         user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE ON UPDATE CASCADE,
-        query_id BLOB NOT NULL,
-        data BLOB NOT NULL,
-        flags INT NOT NULL,
+        query_id BLOB NOT NULL, -- An opaque binary blob
+        data BLOB NOT NULL, -- A google.firebase.dataconnect.kotlinsdk.QueryResult proto
+        flags INT NOT NULL, -- Lower 32 bits are required, upper 32 bits are optional
+        expiry BLOB, -- A google.firebase.dataconnect.kotlinsdk.QueryResultExpiry proto
         debug_info TEXT,
         UNIQUE (user_id, query_id)
       )"""

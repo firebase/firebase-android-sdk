@@ -424,13 +424,24 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
     execSQL(logger, "DELETE FROM entity_query_map WHERE query_id=?", arrayOf(query.sqliteRowId))
   }
 
-  suspend fun getQueryResult(authUid: String?, queryId: ImmutableByteArray): Struct? =
+  sealed interface GetQueryResultResult {
+    data object NotFound : GetQueryResultResult
+
+    data class Stale(val millisStale: Long) : GetQueryResultResult
+
+    data class Found(
+      val struct: Struct,
+      val millisUntilStale: Long?,
+    ) : GetQueryResultResult
+  }
+
+  suspend fun getQueryResult(authUid: String?, queryId: ImmutableByteArray): GetQueryResultResult =
   // TODO: convert to read-only transaction so it can be run concurrently
   runReadWriteTransaction { sqliteDatabase ->
     val sqliteUserId = sqliteDatabase.getOrInsertAuthUid(authUid)
     val getQueryResult = sqliteDatabase.getQuery(sqliteUserId, queryId)
     if (getQueryResult === null) {
-      null
+      GetQueryResultResult.NotFound
     } else {
       val (sqliteQueryId, queryResultProto) = getQueryResult
       val entityIds: Set<String> = queryResultProto.referencedEntityIds()
@@ -450,7 +461,8 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
             "queryId=${queryId.to0xHexString()} [knpe3t4f5b]"
         }
       }
-      rehydrateResult.getOrThrow()
+
+      GetQueryResultResult.Found(rehydrateResult.getOrThrow(), null)
     }
   }
 

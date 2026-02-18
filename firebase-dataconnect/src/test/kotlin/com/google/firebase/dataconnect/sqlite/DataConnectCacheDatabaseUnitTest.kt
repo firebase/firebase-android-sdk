@@ -18,6 +18,7 @@ package com.google.firebase.dataconnect.sqlite
 
 import android.database.sqlite.SQLiteDatabase
 import com.google.firebase.dataconnect.core.Logger
+import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase.GetQueryResultResult.Found
 import com.google.firebase.dataconnect.sqlite.QueryResultArb.EntityRepeatPolicy.INTER_SAMPLE
 import com.google.firebase.dataconnect.sqlite.QueryResultArb.EntityRepeatPolicy.INTER_SAMPLE_MUTATED
 import com.google.firebase.dataconnect.testutil.CleanupsRule
@@ -41,6 +42,7 @@ import io.kotest.common.DelicateKotest
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
@@ -258,7 +260,8 @@ class DataConnectCacheDatabaseUnitTest {
         getEntityIdForPath = null,
       )
 
-      val structFromDb = dataConnectCacheDatabase.getQueryResult(authUid.string, queryId.bytes)
+      val result = dataConnectCacheDatabase.getQueryResult(authUid.string, queryId.bytes)
+      val structFromDb = result.shouldBeInstanceOf<Found>().struct
       structFromDb shouldBe structSample.struct
     }
   }
@@ -282,7 +285,8 @@ class DataConnectCacheDatabaseUnitTest {
         )
       }
 
-      val structFromDb = dataConnectCacheDatabase.getQueryResult(authUid.string, queryId.bytes)
+      val result = dataConnectCacheDatabase.getQueryResult(authUid.string, queryId.bytes)
+      val structFromDb = result.shouldBeInstanceOf<Found>().struct
       structFromDb shouldBe structSamples.last().struct
     }
   }
@@ -310,8 +314,10 @@ class DataConnectCacheDatabaseUnitTest {
         getEntityIdForPath = null,
       )
 
-      val struct1FromDb = dataConnectCacheDatabase.getQueryResult(authUid1.string, queryId.bytes)
-      val struct2FromDb = dataConnectCacheDatabase.getQueryResult(authUid2.string, queryId.bytes)
+      val result1 = dataConnectCacheDatabase.getQueryResult(authUid1.string, queryId.bytes)
+      val struct1FromDb = result1.shouldBeInstanceOf<Found>().struct
+      val result2 = dataConnectCacheDatabase.getQueryResult(authUid2.string, queryId.bytes)
+      val struct2FromDb = result2.shouldBeInstanceOf<Found>().struct
       assertSoftly {
         withClue("struct1FromDb") { struct1FromDb shouldBe structSample1.struct }
         withClue("struct2FromDb") { struct2FromDb shouldBe structSample2.struct }
@@ -342,8 +348,10 @@ class DataConnectCacheDatabaseUnitTest {
         getEntityIdForPath = null,
       )
 
-      val struct1FromDb = dataConnectCacheDatabase.getQueryResult(authUid.string, queryId1.bytes)
-      val struct2FromDb = dataConnectCacheDatabase.getQueryResult(authUid.string, queryId2.bytes)
+      val result1 = dataConnectCacheDatabase.getQueryResult(authUid.string, queryId1.bytes)
+      val struct1FromDb = result1.shouldBeInstanceOf<Found>().struct
+      val result2 = dataConnectCacheDatabase.getQueryResult(authUid.string, queryId2.bytes)
+      val struct2FromDb = result2.shouldBeInstanceOf<Found>().struct
       assertSoftly {
         withClue("struct2FromDb") { struct2FromDb shouldBe structSample2.struct }
         withClue("struct1FromDb") { struct1FromDb shouldBe structSample1.struct }
@@ -368,7 +376,8 @@ class DataConnectCacheDatabaseUnitTest {
         getEntityIdForPath = queryResult::getEntityIdForPath,
       )
 
-      val structFromDb = dataConnectCacheDatabase.getQueryResult(authUid.string, queryId.bytes)
+      val result = dataConnectCacheDatabase.getQueryResult(authUid.string, queryId.bytes)
+      val structFromDb = result.shouldBeInstanceOf<Found>().struct
       structFromDb shouldBe queryResult.hydratedStruct
     }
   }
@@ -416,8 +425,8 @@ class DataConnectCacheDatabaseUnitTest {
       queryResultsByAuthUid.forEachIndexed { authUidIndex, (authUid, queryResults) ->
         withClue("authUidIndex=$authUidIndex, authUid=$authUid") {
           queryIds.zip(queryResults).forEachIndexed { queryIdIndex, (queryId, queryResult) ->
-            val structFromDb =
-              dataConnectCacheDatabase.getQueryResult(authUid.string, queryId.bytes)
+            val result = dataConnectCacheDatabase.getQueryResult(authUid.string, queryId.bytes)
+            val structFromDb = result.shouldBeInstanceOf<Found>().struct
             withClue(
               "queryIdIndex=$queryIdIndex size=${queryIds.size}, " +
                 "queryId=${queryId.bytes.to0xHexString()}"
@@ -455,8 +464,9 @@ class DataConnectCacheDatabaseUnitTest {
       }
 
       queryIds.zip(queryResults).forEachIndexed { index, (queryId, queryResult) ->
-        val structFromDb = dataConnectCacheDatabase.getQueryResult(authUid.string, queryId.bytes)
+        val result = dataConnectCacheDatabase.getQueryResult(authUid.string, queryId.bytes)
         withClue("index=$index size=${queryIds.size}, queryId=${queryId.bytes.to0xHexString()}") {
+          val structFromDb = result.shouldBeInstanceOf<Found>().struct
           structFromDb shouldBe queryResult.hydratedStruct
         }
       }
@@ -497,11 +507,13 @@ class DataConnectCacheDatabaseUnitTest {
       )
 
       withClue("query2") {
-        val structFromDb = dataConnectCacheDatabase.getQueryResult(authUid.string, queryId2.bytes)
+        val result = dataConnectCacheDatabase.getQueryResult(authUid.string, queryId2.bytes)
+        val structFromDb = result.shouldBeInstanceOf<Found>().struct
         structFromDb shouldBe queryResult2.hydratedStruct
       }
       withClue("query1") {
-        val structFromDb = dataConnectCacheDatabase.getQueryResult(authUid.string, queryId1.bytes)
+        val result = dataConnectCacheDatabase.getQueryResult(authUid.string, queryId1.bytes)
+        val structFromDb = result.shouldBeInstanceOf<Found>().struct
         val expectedStructFromDb =
           queryResult1.hydratedStructWithMutatedEntityValuesFrom(queryResult2)
         structFromDb shouldBe expectedStructFromDb

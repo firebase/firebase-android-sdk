@@ -18,6 +18,7 @@ syntax = "proto3";
 
 package google.firebase.dataconnect.kotlinsdk;
 
+import "google/protobuf/duration.proto";
 import "google/protobuf/struct.proto";
 
 option java_package = "google.firebase.dataconnect.proto.kotlinsdk";
@@ -54,4 +55,9 @@ message EntityOrEntityList {
 message QueryResult {
   google.protobuf.Struct struct = 1;
   repeated EntityOrEntityList entities = 2;
+}
+
+message QueryResultExpiry {
+  google.protobuf.Duration max_age = 1;
+  int64 expiry_time_millis = 2;
 }
