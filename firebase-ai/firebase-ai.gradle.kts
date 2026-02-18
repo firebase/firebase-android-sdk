@@ -97,6 +97,7 @@ dependencies {
   implementation("androidx.concurrent:concurrent-futures:1.2.0")
   implementation("androidx.concurrent:concurrent-futures-ktx:1.2.0")
   implementation("com.google.firebase:firebase-auth-interop:18.0.0")
+  implementation(project(":firebase-ai-ondevice-interop"))
 
   testImplementation(libs.kotest.assertions.core)
   testImplementation(libs.kotest.assertions)
@@ -111,6 +112,7 @@ dependencies {
   testImplementation(libs.robolectric)
   testImplementation(libs.truth)
   testImplementation(libs.mockito.core)
+  testImplementation(libs.mockk)
 
   androidTestImplementation(libs.androidx.espresso.core)
   androidTestImplementation(libs.androidx.test.junit)

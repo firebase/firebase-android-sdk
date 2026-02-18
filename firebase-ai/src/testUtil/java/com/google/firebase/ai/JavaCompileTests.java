@@ -22,7 +22,9 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.firebase.ai.FirebaseAI;
 import com.google.firebase.ai.GenerativeModel;
 import com.google.firebase.ai.ImagenModel;
+import com.google.firebase.ai.InferenceMode;
 import com.google.firebase.ai.LiveGenerativeModel;
+import com.google.firebase.ai.OnDeviceConfig;
 import com.google.firebase.ai.java.ChatFutures;
 import com.google.firebase.ai.java.GenerativeModelFutures;
 import com.google.firebase.ai.java.ImagenModelFutures;
@@ -94,8 +96,19 @@ import org.reactivestreams.Subscription;
 public class JavaCompileTests {
 
   public void initializeJava() throws Exception {
+    OnDeviceConfig odc = OnDeviceConfig.IN_CLOUD;
     FirebaseAI vertex = FirebaseAI.getInstance();
-    GenerativeModel model = vertex.generativeModel("fake-model-name", getConfig());
+    GenerativeModel model = vertex.generativeModel("fake-model-name", getGenerationConfig());
+    GenerativeModel modelOnDevice =
+        vertex.generativeModel(
+            "fake-model-name",
+            getGenerationConfig(),
+            /* safetySettings */ null,
+            /* tools */ null,
+            /* toolConfig */ null,
+            /* systemInstruction */ null,
+            /* requestOptions */ null,
+            new OnDeviceConfig(InferenceMode.ONLY_ON_DEVICE, /* maxOutputTokens */ 500));
     LiveGenerativeModel live = vertex.liveModel("fake-model-name", getLiveConfig());
     GenerativeModelFutures futures = GenerativeModelFutures.from(model);
     LiveModelFutures liveFutures = LiveModelFutures.from(live);
@@ -103,7 +116,7 @@ public class JavaCompileTests {
     testLiveFutures(liveFutures);
   }
 
-  private GenerationConfig getConfig() {
+  private GenerationConfig getGenerationConfig() {
     return new GenerationConfig.Builder()
         .setTopK(10)
         .setTopP(11.0F)

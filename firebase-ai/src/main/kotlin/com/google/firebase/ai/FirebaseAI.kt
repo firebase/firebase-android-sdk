@@ -19,6 +19,7 @@ package com.google.firebase.ai
 import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
+import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceGenerativeModelFactory
 import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.GenerationConfig
 import com.google.firebase.ai.type.GenerativeBackend
@@ -46,6 +47,7 @@ internal constructor(
   @Blocking private val blockingDispatcher: CoroutineContext,
   private val appCheckProvider: Provider<InteropAppCheckTokenProvider>,
   private val internalAuthProvider: Provider<InternalAuthProvider>,
+  private val onDeviceFactoryProvider: Provider<FirebaseAIOnDeviceGenerativeModelFactory>,
   private val useLimitedUseAppCheckTokens: Boolean
 ) {
 
@@ -64,6 +66,7 @@ internal constructor(
    * @return The initialized [GenerativeModel] instance.
    */
   @JvmOverloads
+  @OptIn(PublicPreviewAPI::class)
   public fun generativeModel(
     modelName: String,
     generationConfig: GenerationConfig? = null,
@@ -72,6 +75,43 @@ internal constructor(
     toolConfig: ToolConfig? = null,
     systemInstruction: Content? = null,
     requestOptions: RequestOptions = RequestOptions(),
+  ): GenerativeModel =
+    generativeModel(
+      modelName,
+      generationConfig,
+      safetySettings,
+      tools,
+      toolConfig,
+      systemInstruction,
+      requestOptions,
+      OnDeviceConfig.IN_CLOUD
+    )
+
+  /**
+   * Instantiates a new [GenerativeModel] given the provided parameters.
+   *
+   * @param modelName The name of the model to use. See the documentation for a list of
+   * [supported models](https://firebase.google.com/docs/ai-logic/models).
+   * @param generationConfig The configuration parameters to use for content generation.
+   * @param safetySettings The safety bounds the model will abide to during content generation.
+   * @param tools A list of [Tool]s the model may use to generate content.
+   * @param toolConfig The [ToolConfig] that defines how the model handles the tools provided.
+   * @param systemInstruction [Content] instructions that direct the model to behave a certain way.
+   * Currently only text content is supported.
+   * @param requestOptions Configuration options for sending requests to the backend.
+   * @param onDeviceConfig Configuration for on-device inference.
+   * @return The initialized [GenerativeModel] instance.
+   */
+  @PublicPreviewAPI
+  public fun generativeModel(
+    modelName: String,
+    generationConfig: GenerationConfig? = null,
+    safetySettings: List<SafetySetting>? = null,
+    tools: List<Tool>? = null,
+    toolConfig: ToolConfig? = null,
+    systemInstruction: Content? = null,
+    requestOptions: RequestOptions = RequestOptions(),
+    onDeviceConfig: OnDeviceConfig,
   ): GenerativeModel {
     val modelUri =
       when (backend.backend) {
@@ -89,21 +129,26 @@ internal constructor(
           .trimIndent(),
       )
     }
-    return GenerativeModel(
-      modelUri,
-      firebaseApp.options.apiKey,
-      firebaseApp,
-      useLimitedUseAppCheckTokens,
-      generationConfig,
-      safetySettings,
-      tools ?: emptyList(),
-      toolConfig,
-      systemInstruction,
-      requestOptions,
-      backend,
-      appCheckProvider.get(),
-      internalAuthProvider.get(),
-    )
+    return GenerativeModel.Builder(
+        modelName = modelUri,
+        apiKey = firebaseApp.options.apiKey,
+        firebaseApp = firebaseApp,
+        useLimitedUseAppCheckTokens = useLimitedUseAppCheckTokens,
+        generativeBackend = backend
+      )
+      .apply {
+        this.generationConfig = generationConfig
+        this.safetySettings = safetySettings
+        this.tools = tools ?: emptyList()
+        this.toolConfig = toolConfig
+        this.systemInstruction = systemInstruction
+        this.requestOptions = requestOptions
+        this.onDeviceConfig = onDeviceConfig
+        this.onDeviceFactoryProvider = this@FirebaseAI.onDeviceFactoryProvider.get()
+        this.internalAuthProvider = this@FirebaseAI.internalAuthProvider.get()
+        this.appCheckTokenProvider = appCheckProvider.get()
+      }
+      .build()
   }
 
   /**
