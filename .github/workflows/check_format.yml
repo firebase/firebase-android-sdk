@@ -58,7 +58,9 @@ jobs:
 
       - name: ${{ matrix.module }} Check Format
         run: |
-          ./gradlew ${{matrix.module}}:spotlessCheck
+          ./gradlew ${MATRIX_MODULE}:spotlessCheck
+        env:
+          MATRIX_MODULE: ${{matrix.module}}
 
   # A job that fails if any job in the check_format matrix fails,
   # to be used as a required check for merging.
