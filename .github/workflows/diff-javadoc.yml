@@ -31,7 +31,9 @@ jobs:
           echo "run=$(cat modules.json | sed "s/[]\"[]//g" | sed "s/,/\n/g" | xargs printf -- "%s:kotlinDoc ")" >> $GITHUB_OUTPUT
 
       - name: Build
-        run: ./gradlew ${{ steps.changed-modules.outputs.run }}
+        run: ./gradlew ${STEPS_CHANGED_MODULES_OUTPUTS_RUN}
+        env:
+          STEPS_CHANGED_MODULES_OUTPUTS_RUN: ${{ steps.changed-modules.outputs.run }}
 
       - name: Move original docs
         run: mv build ~/diff/modified
@@ -41,7 +43,9 @@ jobs:
           ref: ${{ github.base_ref }}
 
       - name: Build
-        run: ./gradlew ${{ steps.changed-modules.outputs.run }}
+        run: ./gradlew ${STEPS_CHANGED_MODULES_OUTPUTS_RUN}
+        env:
+          STEPS_CHANGED_MODULES_OUTPUTS_RUN: ${{ steps.changed-modules.outputs.run }}
 
       - name: Move modified docs
         run: mv build ~/diff/original
