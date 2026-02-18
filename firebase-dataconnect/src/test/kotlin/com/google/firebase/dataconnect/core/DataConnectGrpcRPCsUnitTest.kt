@@ -290,7 +290,7 @@ private fun QueryResultArb.Sample.toGraphqlResponseExtensions(): GraphqlResponse
     builder.addDataConnect(propertiesBuilder.build())
   }
 
-  return builder.build()
+  return if (builder.dataConnectCount > 0) builder.build() else null
 }
 
 private fun listValueFromPath(path: DataConnectPath): ListValue {
