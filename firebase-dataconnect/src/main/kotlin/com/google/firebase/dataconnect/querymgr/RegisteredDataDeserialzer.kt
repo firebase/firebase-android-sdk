@@ -125,7 +125,7 @@ internal class RegisteredDataDeserializer<T>(
       .collect { update ->
         if (update.sequenceNumber > lastSequenceNumber) {
           lastSequenceNumber = update.sequenceNumber
-          callback(update.mapSuspending { lazy -> lazy.get() })
+          callback(update.mapSuspending { it.get() })
         }
       }
   }
