@@ -17,13 +17,15 @@
 
 package com.google.firebase.dataconnect.core
 
+import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.core.DataConnectGrpcRPCs.CacheSettings
 import com.google.firebase.dataconnect.core.DataConnectGrpcRPCs.ExecuteQueryResult
 import com.google.firebase.dataconnect.sqlite.QueryResultArb
-import com.google.firebase.dataconnect.sqlite.QueryResultArb.EntityRepeatPolicy.INTER_SAMPLE
-import com.google.firebase.dataconnect.testutil.CleanupsRule
+import com.google.firebase.dataconnect.sqlite.QueryResultArb.EntityRepeatPolicy.INTER_SAMPLE_MUTATED
+import com.google.firebase.dataconnect.sqlite.hydratedStructWithMutatedEntityValuesFrom
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
+import com.google.firebase.dataconnect.testutil.DataConnectPath
 import com.google.firebase.dataconnect.testutil.newMockLogger
 import com.google.firebase.dataconnect.testutil.property.arbitrary.ProtoArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
@@ -32,9 +34,14 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.registerDataConnectKotestPrinters
 import com.google.firebase.dataconnect.testutil.shouldBe
+import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
+import com.google.firebase.dataconnect.withAddedListIndex
+import com.google.protobuf.ListValue
 import google.firebase.dataconnect.proto.ConnectorServiceGrpc
 import google.firebase.dataconnect.proto.ExecuteQueryRequest
 import google.firebase.dataconnect.proto.ExecuteQueryResponse
+import google.firebase.dataconnect.proto.GraphqlResponseExtensions
+import google.firebase.dataconnect.proto.GraphqlResponseExtensions.DataConnectProperties
 import io.grpc.InsecureServerCredentials
 import io.grpc.Server
 import io.grpc.okhttp.OkHttpServerBuilder
@@ -69,7 +76,6 @@ import org.robolectric.RuntimeEnvironment
 class DataConnectGrpcRPCsClientUnitTest {
 
   @get:Rule val dataConnectLogLevelRule = DataConnectLogLevelRule()
-  @get:Rule val cleanupsRule = CleanupsRule()
   @get:Rule val temporaryFolder = TemporaryFolder()
 
   private val mockLogger = newMockLogger("s3nx74epqj")
@@ -127,31 +133,21 @@ class DataConnectGrpcRPCsClientUnitTest {
     checkAll(propTestConfig, callerSdkTypeArb) { callerSdkType ->
       startServer().use { server ->
         val queryResultArb =
-          QueryResultArb(entityCountRange = 0..5, entityRepeatPolicy = INTER_SAMPLE)
+          QueryResultArb(entityCountRange = 0..5, entityRepeatPolicy = INTER_SAMPLE_MUTATED)
         val sample1 = queryResultArb.bind()
         val sample2 = queryResultArb.bind()
-        val response1 =
-          ExecuteQueryResponse.newBuilder().let { responseBuilder ->
-            responseBuilder.setData(sample1.hydratedStruct)
-            responseBuilder.build()
-          }
-        val response2 =
-          ExecuteQueryResponse.newBuilder().let { responseBuilder ->
-            responseBuilder.setData(sample2.hydratedStruct)
-            responseBuilder.build()
-          }
         val dataConnectGrpcRPCs = newDataConnectGrpcRPCs(server)
         val distinctExecuteQueryRequestArb = executeQueryRequestArb.distinct()
         val request1 = distinctExecuteQueryRequestArb.bind()
         val request2 = distinctExecuteQueryRequestArb.bind()
 
-        server.nextResponse = response1
+        server.nextResponse = sample1.toExecuteQueryResponse()
         dataConnectGrpcRPCs.executeQuery(
           requestIdArb.bind(),
           request1,
           callerSdkType,
         )
-        server.nextResponse = response2
+        server.nextResponse = sample2.toExecuteQueryResponse()
         dataConnectGrpcRPCs.executeQuery(
           requestIdArb.bind(),
           request2,
@@ -172,7 +168,7 @@ class DataConnectGrpcRPCsClientUnitTest {
 
         withClue("result1") {
           val response1 = result1.shouldBeInstanceOf<ExecuteQueryResult.FromCache>().data
-          response1 shouldBe sample1.hydratedStruct
+          response1 shouldBe sample1.hydratedStructWithMutatedEntityValuesFrom(sample2)
         }
         withClue("result2") {
           val response2 = result2.shouldBeInstanceOf<ExecuteQueryResult.FromCache>().data
@@ -213,8 +209,6 @@ class DataConnectGrpcRPCsClientUnitTest {
         .build()
 
     grpcServer.start()
-
-    cleanupsRule.register { grpcServer.shutdown() }
 
     return StartServerResult(grpcServer, connectorServiceImpl)
   }
@@ -259,3 +253,55 @@ private fun executeQueryRequestArb(
       .setVariables(variables.struct)
       .build()
   }
+
+private fun QueryResultArb.Sample.toExecuteQueryResponse(): ExecuteQueryResponse {
+  val builder = ExecuteQueryResponse.newBuilder()
+  builder.setData(hydratedStruct)
+  toGraphqlResponseExtensions()?.let { builder.setExtensions(it) }
+  return builder.build()
+}
+
+private fun QueryResultArb.Sample.toGraphqlResponseExtensions(): GraphqlResponseExtensions? {
+  val builder = GraphqlResponseExtensions.newBuilder()
+
+  entityByPath.entries.forEach { (path, entity) ->
+    val lastSegment = path.lastOrNull()
+    if (lastSegment is DataConnectPathSegment.Field) {
+      builder.addDataConnect(
+        DataConnectProperties.newBuilder()
+          .setPath(listValueFromPath(path))
+          .setEntityId(entity.entityId)
+          .build()
+      )
+    }
+  }
+
+  entityListPaths.forEach { entityListPath ->
+    val propertiesBuilder = DataConnectProperties.newBuilder()
+    propertiesBuilder.setPath(listValueFromPath(entityListPath))
+
+    var index = 0
+    while (true) {
+      val entityListElementPath = entityListPath.withAddedListIndex(index++)
+      val entity = entityByPath[entityListElementPath] ?: break
+      propertiesBuilder.addEntityIds(entity.entityId)
+    }
+
+    builder.addDataConnect(propertiesBuilder.build())
+  }
+
+  return builder.build()
+}
+
+private fun listValueFromPath(path: DataConnectPath): ListValue {
+  val builder = ListValue.newBuilder()
+  path.forEach { segment ->
+    builder.addValues(
+      when (segment) {
+        is DataConnectPathSegment.Field -> segment.field.toValueProto()
+        is DataConnectPathSegment.ListIndex -> segment.index.toValueProto()
+      }
+    )
+  }
+  return builder.build()
+}
