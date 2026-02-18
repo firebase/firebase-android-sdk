@@ -72,4 +72,6 @@ jobs:
       - name: Trigger firebase-cpp-sdk update
         run: |
           pip install -r scripts/gha/python_requirements.txt
-          python scripts/gha/trigger_workflow.py -t ${{ steps.generate-token.outputs.token }} -w update-dependencies.yml -p updateAndroid 1 -p updateiOS 0 -p comment "[Triggered]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID) by [firebase-android-sdk $(date '+%b %d') release]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/commit/${{ github.sha }})." -s 10 -A
+          python scripts/gha/trigger_workflow.py -t ${STEPS_GENERATE_TOKEN_OUTPUTS_TOKEN} -w update-dependencies.yml -p updateAndroid 1 -p updateiOS 0 -p comment "[Triggered]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID) by [firebase-android-sdk $(date '+%b %d') release]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/commit/${{ github.sha }})." -s 10 -A
+        env:
+          STEPS_GENERATE_TOKEN_OUTPUTS_TOKEN: ${{ steps.generate-token.outputs.token }}

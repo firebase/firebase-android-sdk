@@ -69,12 +69,15 @@ jobs:
       - name: ${{ matrix.module }} Unit Tests
         env:
           FIREBASE_CI: 1
+          MATRIX_MODULE: ${{matrix.module}}
         run: |
-          ./gradlew ${{matrix.module}}:check withErrorProne
+          ./gradlew ${MATRIX_MODULE}:check withErrorProne
       - name: Compute upload file name
         run: |
-          MODULE=${{matrix.module}}
+          MODULE=${MATRIX_MODULE}
           echo "ARTIFACT_NAME=${MODULE//:/_}" >> $GITHUB_ENV
+        env:
+          MATRIX_MODULE: ${{matrix.module}}
       - name: Upload Test Results
         uses: actions/upload-artifact@v4.3.3
         if: always()
@@ -140,8 +143,9 @@ jobs:
           FTL_RESULTS_BUCKET: android-ci
           FTL_RESULTS_DIR: ${{ github.event_name == 'pull_request' && format('pr-logs/pull/{0}/{1}/{2}/{3}_{4}/artifacts/', github.repository, github.event.pull_request.number, github.job, github.run_id, github.run_attempt) || format('logs/{0}/{1}_{2}/artifacts/', github.workflow, github.run_id, github.run_attempt)}}
           FIREBASE_APP_CHECK_DEBUG_SECRET: ${{ secrets.FIREBASE_APP_CHECK_DEBUG_SECRET }}
+          MATRIX_MODULE: ${{matrix.module}}
         run: |
-          ./gradlew ${{matrix.module}}:deviceCheck withErrorProne -PtargetBackend="prod"
+          ./gradlew ${MATRIX_MODULE}:deviceCheck withErrorProne -PtargetBackend="prod"
 
   publish-test-results:
     name: "Publish Tests Results"
