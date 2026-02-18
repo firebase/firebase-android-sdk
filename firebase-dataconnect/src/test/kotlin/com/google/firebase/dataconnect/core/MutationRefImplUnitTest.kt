@@ -21,6 +21,7 @@ package com.google.firebase.dataconnect.core
 import com.google.firebase.dataconnect.DataConnectException
 import com.google.firebase.dataconnect.DataConnectUntypedData
 import com.google.firebase.dataconnect.DataConnectUntypedVariables
+import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.core.DataConnectGrpcClient.OperationResult
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb
@@ -109,7 +110,8 @@ class MutationRefImplUnitTest {
   @Test
   fun `execute() returns the result on success`() = runTest {
     val data = Arb.dataConnect.testData().next()
-    val operationResult = OperationResult(encodeToStruct(data), errors = emptyList())
+    val operationResult =
+      OperationResult(encodeToStruct(data), errors = emptyList(), DataSource.SERVER)
     val dataConnect = dataConnectWithMutationResult(Result.success(operationResult))
     val mutationRefImpl = Arb.dataConnect.mutationRefImpl(dataConnect).next()
 
@@ -125,7 +127,8 @@ class MutationRefImplUnitTest {
   fun `execute() calls executeMutation with the correct arguments`() = runTest {
     @Serializable data class TestSerializableVariables(val foo: String)
     val data = Arb.dataConnect.testData().next()
-    val operationResult = OperationResult(encodeToStruct(data), errors = emptyList())
+    val operationResult =
+      OperationResult(encodeToStruct(data), errors = emptyList(), DataSource.SERVER)
     val requestIdSlot: CapturingSlot<String> = slot()
     val operationNameSlot: CapturingSlot<String> = slot()
     val variablesSlot: CapturingSlot<Struct> = slot()
@@ -183,7 +186,8 @@ class MutationRefImplUnitTest {
     val errors = Arb.dataConnect.operationErrors().next()
     val data = DataConnectUntypedData(mapOf("bar" to 24.0), errors)
     val variablesSlot: CapturingSlot<Struct> = slot()
-    val operationResult = OperationResult(buildStructProto { put("bar", 24.0) }, errors)
+    val operationResult =
+      OperationResult(buildStructProto { put("bar", 24.0) }, errors, DataSource.SERVER)
     val dataConnect =
       dataConnectWithMutationResult(Result.success(operationResult), variablesSlot = variablesSlot)
     val mutationRefImpl =
@@ -204,7 +208,7 @@ class MutationRefImplUnitTest {
 
   @Test
   fun `execute() throws when the data is null`() = runTest {
-    val operationResult = OperationResult(data = null, errors = emptyList())
+    val operationResult = OperationResult(data = null, errors = emptyList(), DataSource.SERVER)
     val dataConnect = dataConnectWithMutationResult(Result.success(operationResult))
     val mutationRefImpl = Arb.dataConnect.mutationRefImpl(dataConnect).next()
 
