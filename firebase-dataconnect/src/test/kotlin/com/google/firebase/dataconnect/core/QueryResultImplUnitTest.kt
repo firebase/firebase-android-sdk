@@ -18,14 +18,11 @@
 
 package com.google.firebase.dataconnect.core
 
-import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
-import com.google.firebase.dataconnect.testutil.property.arbitrary.distinctPair
 import com.google.firebase.dataconnect.testutil.property.arbitrary.queryRefImpl
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import io.kotest.assertions.assertSoftly
-import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -34,11 +31,9 @@ import io.kotest.matchers.string.shouldStartWith
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.property.Arb
 import io.kotest.property.PropTestConfig
-import io.kotest.property.arbitrary.bind
+import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.choice
-import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.int
-import io.kotest.property.arbitrary.map
 import io.kotest.property.assume
 import io.kotest.property.checkAll
 import kotlinx.coroutines.test.runTest
@@ -48,36 +43,35 @@ import org.junit.Test
 class QueryResultImplUnitTest {
 
   @Test
-  fun `properties should be the same objects given to or inferred by the constructor`() = runTest {
-    checkAll(
-      propTestConfig,
-      Arb.dataConnect.queryRefImpl(),
-      Arb.dataConnect.testData(),
-      Arb.enum<DataSource>(),
-    ) { ref, data, dataSource ->
-      val queryResult = ref.QueryResultImpl(data, dataSource)
-      assertSoftly {
-        withClue("ref") { queryResult.ref shouldBeSameInstanceAs ref }
-        withClue("data") { queryResult.data shouldBeSameInstanceAs data }
-        withClue("dataSource") { queryResult.dataSource shouldBeSameInstanceAs dataSource }
-      }
+  fun `'data' should be the same object given to the constructor`() = runTest {
+    checkAll(propTestConfig, Arb.dataConnect.queryRefImpl(), Arb.dataConnect.testData()) {
+      query,
+      data ->
+      val queryResult = query.QueryResultImpl(data)
+      queryResult.data shouldBeSameInstanceAs data
+    }
+  }
+
+  @Test
+  fun `'ref' should be the QueryRefImpl object that was used to create it`() = runTest {
+    checkAll(propTestConfig, Arb.dataConnect.queryRefImpl(), Arb.dataConnect.testData()) {
+      query,
+      data ->
+      val queryResult = query.QueryResultImpl(data)
+      queryResult.ref shouldBeSameInstanceAs query
     }
   }
 
   @Test
   fun `toString() should contain the expected information`() = runTest {
-    checkAll(
-      propTestConfig,
-      Arb.dataConnect.queryRefImpl(),
-      Arb.dataConnect.testData(),
-      Arb.enum<DataSource>(),
-    ) { query, data, dataSource ->
-      val queryResult = query.QueryResultImpl(data, dataSource)
+    checkAll(propTestConfig, Arb.dataConnect.queryRefImpl(), Arb.dataConnect.testData()) {
+      query,
+      data ->
+      val queryResult = query.QueryResultImpl(data)
       val toStringResult = queryResult.toString()
       assertSoftly {
         toStringResult shouldStartWith "QueryResultImpl("
         toStringResult shouldContainWithNonAbuttingText "data=$data"
-        toStringResult shouldContainWithNonAbuttingText "dataSource=$dataSource"
         toStringResult shouldContainWithNonAbuttingText "ref=$query"
         toStringResult shouldEndWith ")"
       }
@@ -93,27 +87,20 @@ class QueryResultImplUnitTest {
 
   @Test
   fun `equals() should return true for an equal instance`() = runTest {
-    checkAll(
-      propTestConfig,
-      Arb.dataConnect.queryRefImpl(),
-      Arb.dataConnect.testData(),
-      Arb.enum<DataSource>(),
-    ) { query, data, dataSource ->
-      val queryResult1 = query.QueryResultImpl(data, dataSource)
-      val queryResult2 = query.QueryResultImpl(data, dataSource)
+    checkAll(propTestConfig, Arb.dataConnect.queryRefImpl(), Arb.dataConnect.testData()) {
+      query,
+      data ->
+      val queryResult1 = query.QueryResultImpl(data)
+      val queryResult2 = query.QueryResultImpl(data)
       queryResult1.equals(queryResult2) shouldBe true
     }
   }
 
   @Test
   fun `equals() should return true if all properties are equal, and 'data' is null`() = runTest {
-    checkAll(
-      propTestConfig,
-      Arb.dataConnect.queryRefImpl(),
-      Arb.enum<DataSource>(),
-    ) { query, dataSource ->
-      val queryResult1 = query.QueryResultImpl(null, dataSource)
-      val queryResult2 = query.QueryResultImpl(null, dataSource)
+    checkAll(propTestConfig, Arb.dataConnect.queryRefImpl()) { query ->
+      val queryResult1 = query.QueryResultImpl(null)
+      val queryResult2 = query.QueryResultImpl(null)
       queryResult1.equals(queryResult2) shouldBe true
     }
   }
@@ -138,25 +125,12 @@ class QueryResultImplUnitTest {
     checkAll(
       propTestConfig,
       Arb.dataConnect.queryRefImpl(),
-      Arb.dataConnect.testData().distinctPair(),
-      Arb.enum<DataSource>(),
-    ) { query, (data1, data2), dataSource ->
-      val queryResult1 = query.QueryResultImpl(data1, dataSource)
-      val queryResult2 = query.QueryResultImpl(data2, dataSource)
-      queryResult1.equals(queryResult2) shouldBe false
-    }
-  }
-
-  @Test
-  fun `equals() should return false when only 'dataSource' differs`() = runTest {
-    checkAll(
-      propTestConfig,
-      Arb.dataConnect.queryRefImpl(),
       Arb.dataConnect.testData(),
-      Arb.enum<DataSource>().distinctPair(),
-    ) { query, data, (dataSource1, dataSource2) ->
-      val queryResult1 = query.QueryResultImpl(data, dataSource1)
-      val queryResult2 = query.QueryResultImpl(data, dataSource2)
+      Arb.dataConnect.testData()
+    ) { query, data1, data2 ->
+      assume(data1 != data2)
+      val queryResult1 = query.QueryResultImpl(data1)
+      val queryResult2 = query.QueryResultImpl(data2)
       queryResult1.equals(queryResult2) shouldBe false
     }
   }
@@ -165,29 +139,27 @@ class QueryResultImplUnitTest {
   fun `equals() should return false when only 'ref' differs`() = runTest {
     checkAll(
       propTestConfig,
-      Arb.dataConnect.queryRefImpl().distinctPair(),
-      Arb.dataConnect.testData(),
-      Arb.enum<DataSource>(),
-    ) { (query1, query2), data, dataSource ->
+      Arb.dataConnect.queryRefImpl(),
+      Arb.dataConnect.queryRefImpl(),
+      Arb.dataConnect.testData()
+    ) { query1, query2, data,
+      ->
       assume(query1 != query2)
-      val queryResult1 = query1.QueryResultImpl(data, dataSource)
-      val queryResult2 = query2.QueryResultImpl(data, dataSource)
+      val queryResult1 = query1.QueryResultImpl(data)
+      val queryResult2 = query2.QueryResultImpl(data)
       queryResult1.equals(queryResult2) shouldBe false
     }
   }
 
   @Test
-  fun `equals() should return false when data of first data is null and second is non-null`() =
+  fun `equals() should return false when data of first object is null and second is non-null`() =
     runTest {
-      checkAll(
-        propTestConfig,
-        Arb.dataConnect.queryRefImpl(),
-        Arb.dataConnect.testData(),
-        Arb.enum<DataSource>(),
-      ) { query, data, dataSource,
+      checkAll(propTestConfig, Arb.dataConnect.queryRefImpl(), Arb.dataConnect.testData()) {
+        query,
+        data,
         ->
-        val queryResult1 = query.QueryResultImpl(null, dataSource)
-        val queryResult2 = query.QueryResultImpl(data, dataSource)
+        val queryResult1 = query.QueryResultImpl(null)
+        val queryResult2 = query.QueryResultImpl(data)
         queryResult1.equals(queryResult2) shouldBe false
       }
     }
@@ -195,15 +167,12 @@ class QueryResultImplUnitTest {
   @Test
   fun `equals() should return false when data of second object is null and first is non-null`() =
     runTest {
-      checkAll(
-        propTestConfig,
-        Arb.dataConnect.queryRefImpl(),
-        Arb.dataConnect.testData(),
-        Arb.enum<DataSource>()
-      ) { query, data, dataSource,
+      checkAll(propTestConfig, Arb.dataConnect.queryRefImpl(), Arb.dataConnect.testData()) {
+        query,
+        data,
         ->
-        val queryResult1 = query.QueryResultImpl(data, dataSource)
-        val queryResult2 = query.QueryResultImpl(null, dataSource)
+        val queryResult1 = query.QueryResultImpl(data)
+        val queryResult2 = query.QueryResultImpl(null)
         queryResult1.equals(queryResult2) shouldBe false
       }
     }
@@ -221,15 +190,12 @@ class QueryResultImplUnitTest {
 
   @Test
   fun `hashCode() should return the same value on equal objects`() = runTest {
-    checkAll(
-      propTestConfig,
-      Arb.dataConnect.queryRefImpl(),
-      Arb.dataConnect.testData(),
-      Arb.enum<DataSource>()
-    ) { query, data, dataSource,
+    checkAll(propTestConfig, Arb.dataConnect.queryRefImpl(), Arb.dataConnect.testData()) {
+      query,
+      data,
       ->
-      val queryResult1 = query.QueryResultImpl(data, dataSource)
-      val queryResult2 = query.QueryResultImpl(data, dataSource)
+      val queryResult1 = query.QueryResultImpl(data)
+      val queryResult2 = query.QueryResultImpl(data)
       queryResult1.hashCode() shouldBe queryResult2.hashCode()
     }
   }
@@ -237,31 +203,15 @@ class QueryResultImplUnitTest {
   @Test
   fun `hashCode() should return a different value if 'data' is different`() = runTest {
     checkAll(
-      hashEqualityPropTestConfig,
-      Arb.dataConnect.queryRefImpl(),
-      Arb.dataConnect.testData().distinctPair(),
-      Arb.enum<DataSource>(),
-    ) { query, (data1, data2), dataSource,
-      ->
-      assume(data1.hashCode() != data2.hashCode())
-      val queryResult1 = query.QueryResultImpl(data1, dataSource)
-      val queryResult2 = query.QueryResultImpl(data2, dataSource)
-      queryResult1.hashCode() shouldNotBe queryResult2.hashCode()
-    }
-  }
-
-  @Test
-  fun `hashCode() should return a different value if 'dataSource' is different`() = runTest {
-    checkAll(
-      hashEqualityPropTestConfig,
+      propTestConfig,
       Arb.dataConnect.queryRefImpl(),
       Arb.dataConnect.testData(),
-      Arb.enum<DataSource>().distinctPair(),
-    ) { query, data, (dataSource1, dataSource2),
+      Arb.dataConnect.testData()
+    ) { query, data1, data2,
       ->
-      assume(dataSource1.hashCode() != dataSource2.hashCode())
-      val queryResult1 = query.QueryResultImpl(data, dataSource1)
-      val queryResult2 = query.QueryResultImpl(data, dataSource2)
+      assume(data1.hashCode() != data2.hashCode())
+      val queryResult1 = query.QueryResultImpl(data1)
+      val queryResult2 = query.QueryResultImpl(data2)
       queryResult1.hashCode() shouldNotBe queryResult2.hashCode()
     }
   }
@@ -269,14 +219,15 @@ class QueryResultImplUnitTest {
   @Test
   fun `hashCode() should return a different value if 'ref' is different`() = runTest {
     checkAll(
-      hashEqualityPropTestConfig,
-      Arb.dataConnect.queryRefImpl().distinctPair(),
-      Arb.dataConnect.testData(),
-      Arb.enum<DataSource>(),
-    ) { (query1, query2), data, dataSource ->
+      propTestConfig,
+      Arb.dataConnect.queryRefImpl(),
+      Arb.dataConnect.queryRefImpl(),
+      Arb.dataConnect.testData()
+    ) { query1, query2, data,
+      ->
       assume(query1.hashCode() != query2.hashCode())
-      val queryResult1 = query1.QueryResultImpl(data, dataSource)
-      val queryResult2 = query2.QueryResultImpl(data, dataSource)
+      val queryResult1 = query1.QueryResultImpl(data)
+      val queryResult2 = query2.QueryResultImpl(data)
       queryResult1.hashCode() shouldNotBe queryResult2.hashCode()
     }
   }
@@ -288,28 +239,21 @@ class QueryResultImplUnitTest {
   private companion object {
     val propTestConfig = PropTestConfig(iterations = 20)
 
-    // Allow a small number of failures to account for the rare, but possible situation where two
-    // distinct instances produce the same hash code.
-    val hashEqualityPropTestConfig =
-      propTestConfig.copy(
-        minSuccess = propTestConfig.iterations!! - 2,
-        maxFailure = 2,
-      )
-
     fun DataConnectArb.testVariables(string: Arb<String> = string()): Arb<TestVariables> =
-      string.map { TestVariables(it) }
+      arbitrary {
+        TestVariables(string.bind())
+      }
 
-    fun DataConnectArb.testData(string: Arb<String> = string()): Arb<TestData> =
-      string.map { TestData(it) }
+    fun DataConnectArb.testData(string: Arb<String> = string()): Arb<TestData> = arbitrary {
+      TestData(string.bind())
+    }
 
     fun DataConnectArb.queryResultImpl(
       query: Arb<QueryRefImpl<TestData?, TestVariables>> = queryRefImpl(),
-      data: Arb<TestData> = testData(),
-      dataSource: Arb<DataSource> = Arb.enum<DataSource>(),
-    ): Arb<QueryRefImpl<TestData?, TestVariables>.QueryResultImpl> =
-      Arb.bind(query, data, dataSource) { query, data, dataSource ->
-        query.QueryResultImpl(data, dataSource)
-      }
+      data: Arb<TestData> = testData()
+    ): Arb<QueryRefImpl<TestData?, TestVariables>.QueryResultImpl> = arbitrary {
+      query.bind().QueryResultImpl(data.bind())
+    }
 
     fun DataConnectArb.queryRefImpl(): Arb<QueryRefImpl<TestData?, TestVariables>> =
       queryRefImpl(Arb.dataConnect.testVariables())

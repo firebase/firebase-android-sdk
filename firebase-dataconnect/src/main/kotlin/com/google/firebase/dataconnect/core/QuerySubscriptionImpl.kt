@@ -18,7 +18,6 @@
 
 package com.google.firebase.dataconnect.core
 
-import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.QuerySubscriptionResult
 import com.google.firebase.dataconnect.util.NullableReference
 import com.google.firebase.dataconnect.util.SequencedReference
@@ -107,7 +106,7 @@ internal class QuerySubscriptionImpl<Data, Variables>(query: QueryRefImpl<Data, 
     override val query: QueryRefImpl<Data, Variables>,
     val sequencedResult: SequencedReference<Result<Data>>
   ) : QuerySubscriptionResult<Data, Variables> {
-    override val result = sequencedResult.ref.map { query.QueryResultImpl(it, DataSource.SERVER) }
+    override val result = sequencedResult.ref.map { query.QueryResultImpl(it) }
 
     override fun equals(other: Any?) =
       other is QuerySubscriptionImpl<*, *>.QuerySubscriptionResultImpl &&

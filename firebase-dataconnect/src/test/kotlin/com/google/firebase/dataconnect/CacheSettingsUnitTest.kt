@@ -38,6 +38,7 @@ import io.kotest.property.PropTestConfig
 import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.int
+import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.shuffle
 import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
@@ -64,7 +65,7 @@ class CacheSettingsUnitTest {
 
   @Test
   fun `toString() returns a string that incorporates all property values`() = runTest {
-    checkAll(propTestConfig, Arb.dataConnect.cacheSettings()) { cacheSettings: CacheSettings ->
+    checkAll(propTestConfig, cacheSettingsArb()) { cacheSettings: CacheSettings ->
       val toStringResult = cacheSettings.toString()
       assertSoftly {
         toStringResult shouldStartWith "CacheSettings("
@@ -76,14 +77,14 @@ class CacheSettingsUnitTest {
 
   @Test
   fun `equals() should return true for the exact same instance`() = runTest {
-    checkAll(propTestConfig, Arb.dataConnect.cacheSettings()) { cacheSettings: CacheSettings ->
+    checkAll(propTestConfig, cacheSettingsArb()) { cacheSettings: CacheSettings ->
       cacheSettings.equals(cacheSettings) shouldBe true
     }
   }
 
   @Test
   fun `equals() should return true for an equal instance`() = runTest {
-    checkAll(propTestConfig, Arb.dataConnect.cacheSettings()) { cacheSettings1: CacheSettings ->
+    checkAll(propTestConfig, cacheSettingsArb()) { cacheSettings1: CacheSettings ->
       val cacheSettings2 = cacheSettings1.copy()
       withClue("cacheSettings1=$cacheSettings1 cacheSettings2=$cacheSettings2") {
         cacheSettings1.equals(cacheSettings2) shouldBe true
@@ -93,7 +94,7 @@ class CacheSettingsUnitTest {
 
   @Test
   fun `equals() should return false for null`() = runTest {
-    checkAll(propTestConfig, Arb.dataConnect.cacheSettings()) { cacheSettings: CacheSettings ->
+    checkAll(propTestConfig, cacheSettingsArb()) { cacheSettings: CacheSettings ->
       cacheSettings.equals(null) shouldBe false
     }
   }
@@ -107,7 +108,7 @@ class CacheSettingsUnitTest {
         Arb.dataConnect.dataConnectPath(),
         Arb.enum<Storage>(),
       )
-    checkAll(propTestConfig, Arb.dataConnect.cacheSettings(), otherArb) {
+    checkAll(propTestConfig, cacheSettingsArb(), otherArb) {
       cacheSettings: CacheSettings,
       other: Any ->
       cacheSettings.equals(other) shouldBe false
@@ -128,7 +129,7 @@ class CacheSettingsUnitTest {
   @Test
   fun `hashCode() should return the same value each time it is invoked on a given object`() =
     runTest {
-      checkAll(propTestConfig, Arb.dataConnect.cacheSettings()) { cacheSettings: CacheSettings ->
+      checkAll(propTestConfig, cacheSettingsArb()) { cacheSettings: CacheSettings ->
         val hashCode1 = cacheSettings.hashCode()
         cacheSettings.hashCode() shouldBe hashCode1
         cacheSettings.hashCode() shouldBe hashCode1
@@ -137,7 +138,7 @@ class CacheSettingsUnitTest {
 
   @Test
   fun `hashCode() should return the same value on equal objects`() = runTest {
-    checkAll(propTestConfig, Arb.dataConnect.cacheSettings()) { cacheSettings1: CacheSettings ->
+    checkAll(propTestConfig, cacheSettingsArb()) { cacheSettings1: CacheSettings ->
       val cacheSettings2 = cacheSettings1.copy()
       withClue("cacheSettings1=$cacheSettings1 cacheSettings2=$cacheSettings2") {
         cacheSettings1.hashCode() shouldBe cacheSettings2.hashCode()
@@ -158,7 +159,7 @@ class CacheSettingsUnitTest {
 
   @Test
   fun `copy with no arguments should create a distinct, but equal object`() = runTest {
-    checkAll(propTestConfig, Arb.dataConnect.cacheSettings()) { cacheSettings1: CacheSettings ->
+    checkAll(propTestConfig, cacheSettingsArb()) { cacheSettings1: CacheSettings ->
       val cacheSettings2 = cacheSettings1.copy()
       withClue("cacheSettings1=$cacheSettings1 cacheSettings2=$cacheSettings2") {
         assertSoftly {
@@ -191,3 +192,8 @@ class CacheSettingsUnitTest {
       )
   }
 }
+
+// TODO: Move to cacheSettingsArb() once cache api goes public
+private fun cacheSettingsArb(
+  storage: Arb<Storage> = Arb.enum<Storage>(),
+): Arb<CacheSettings> = storage.map(::CacheSettings)

@@ -18,10 +18,8 @@
 
 package com.google.firebase.dataconnect.core
 
-import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.QueryRef
-import com.google.firebase.dataconnect.QueryRef.FetchPolicy
 import com.google.firebase.dataconnect.QueryResult
 import com.google.firebase.dataconnect.QuerySubscription
 import java.util.Objects
@@ -50,12 +48,8 @@ internal class QueryRefImpl<Data, Variables>(
     dataSerializersModule = dataSerializersModule,
     variablesSerializersModule = variablesSerializersModule,
   ) {
-  override suspend fun execute(): QueryResultImpl = execute(FetchPolicy.PREFER_CACHE)
-
-  override suspend fun execute(fetchPolicy: FetchPolicy): QueryResultImpl =
-    dataConnect.queryManager.execute(this).let {
-      QueryResultImpl(it.ref.getOrThrow(), DataSource.SERVER)
-    }
+  override suspend fun execute(): QueryResultImpl =
+    dataConnect.queryManager.execute(this).let { QueryResultImpl(it.ref.getOrThrow()) }
 
   override fun subscribe(): QuerySubscription<Data, Variables> = QuerySubscriptionImpl(this)
 
@@ -140,18 +134,16 @@ internal class QueryRefImpl<Data, Variables>(
       "variablesSerializersModule=$variablesSerializersModule" +
       ")"
 
-  inner class QueryResultImpl(data: Data, override val dataSource: DataSource) :
+  inner class QueryResultImpl(data: Data) :
     QueryResult<Data, Variables>, OperationRefImpl<Data, Variables>.OperationResultImpl(data) {
 
     override val ref = this@QueryRefImpl
 
     override fun equals(other: Any?) =
-      other is QueryRefImpl<*, *>.QueryResultImpl &&
-        super.equals(other) &&
-        other.dataSource == dataSource
+      other is QueryRefImpl<*, *>.QueryResultImpl && super.equals(other)
 
-    override fun hashCode() = Objects.hash(QueryResultImpl::class, data, ref, dataSource)
+    override fun hashCode() = Objects.hash(QueryResultImpl::class, data, ref)
 
-    override fun toString() = "QueryResultImpl(data=$data, ref=$ref, dataSource=$dataSource)"
+    override fun toString() = "QueryResultImpl(data=$data, ref=$ref)"
   }
 }
