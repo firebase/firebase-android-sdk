@@ -37,7 +37,10 @@ jobs:
           cache: gradle
       - name: Create release configuration template
         run: |
-          ./gradlew generateReleaseConfig -PcurrentRelease=${{ inputs.name }} -PpastRelease=${{ inputs.past-name }} -PprintOutput=true
+          ./gradlew generateReleaseConfig -PcurrentRelease=${INPUTS_NAME} -PpastRelease=${INPUTS_PAST_NAME} -PprintOutput=true
+        env:
+          INPUTS_NAME: ${{ inputs.name }}
+          INPUTS_PAST_NAME: ${{ inputs.past-name }}
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v4
