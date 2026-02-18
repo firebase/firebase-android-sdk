@@ -26,6 +26,10 @@ plugins {
 firebaseLibrary {
   testLab.enabled = false
   publishJavadoc = false
+  releaseNotes {
+    name.set("{{firebase_ai_logic_ondevice_interop}}")
+    versionName.set("ai_ondevice_interop")
+  }
 }
 
 android {
