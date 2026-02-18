@@ -20,6 +20,7 @@ import android.content.Context
 import com.google.firebase.FirebaseApp
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
+import com.google.firebase.dataconnect.CacheSettings
 import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.DataConnectSettings
 import com.google.firebase.dataconnect.FirebaseDataConnect
@@ -33,6 +34,9 @@ import com.google.firebase.dataconnect.querymgr.LiveQueries
 import com.google.firebase.dataconnect.querymgr.LiveQuery
 import com.google.firebase.dataconnect.querymgr.QueryManager
 import com.google.firebase.dataconnect.querymgr.RegisteredDataDeserializer
+import com.google.firebase.dataconnect.util.AlphanumericStringUtil.toAlphaNumericString
+import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
+import com.google.firebase.dataconnect.util.ProtoUtil.calculateSha512
 import com.google.firebase.util.nextAlphanumericString
 import com.google.protobuf.Struct
 import java.util.concurrent.Executor
@@ -189,14 +193,30 @@ internal class FirebaseDataConnectImpl(
     }
   }
 
+  private data class DataConnectBackendInfo(
+    val host: String,
+    val sslEnabled: Boolean,
+    val isEmulator: Boolean
+  )
+
+  private fun calculateCacheDbUniqueName(backendInfo: DataConnectBackendInfo): String {
+    val struct = buildStructProto {
+      put("projectId", app.options.projectId)
+      put("appName", app.name)
+      put("connectorId", config.connector)
+      put("serviceId", config.serviceId)
+      put("location", config.location)
+      put("host", backendInfo.host)
+      put("sslEnabled", backendInfo.sslEnabled)
+      put("isEmulator", backendInfo.isEmulator)
+    }
+    val sha512Bytes = struct.calculateSha512()
+    return sha512Bytes.toAlphaNumericString()
+  }
+
   private fun createDataConnectGrpcRPCs(
     emulatorSettings: EmulatedServiceSettings?
   ): DataConnectGrpcRPCs {
-    data class DataConnectBackendInfo(
-      val host: String,
-      val sslEnabled: Boolean,
-      val isEmulator: Boolean
-    )
     val backendInfoFromSettings =
       DataConnectBackendInfo(
         host = settings.host,
@@ -220,6 +240,19 @@ internal class FirebaseDataConnectImpl(
         backendInfoFromEmulatorSettings
       }
 
+    val cacheSettings =
+      settings.cacheSettings?.run {
+        val dbFile =
+          when (storage) {
+            CacheSettings.Storage.MEMORY -> null
+            CacheSettings.Storage.PERSISTENT -> {
+              val dbName = "dataconnect_" + calculateCacheDbUniqueName(backendInfo)
+              context.getDatabasePath(dbName)
+            }
+          }
+        DataConnectGrpcRPCs.CacheSettings(dbFile)
+      }
+
     logger.debug { "connecting to Data Connect backend: $backendInfo" }
     val grpcMetadata =
       DataConnectGrpcMetadata.forSystemVersions(
@@ -236,6 +269,7 @@ internal class FirebaseDataConnectImpl(
         sslEnabled = backendInfo.sslEnabled,
         blockingCoroutineDispatcher = blockingDispatcher,
         grpcMetadata = grpcMetadata,
+        cacheSettings = cacheSettings,
         parentLogger = logger,
       )
 

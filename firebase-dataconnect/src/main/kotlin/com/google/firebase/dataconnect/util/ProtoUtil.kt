@@ -16,9 +16,13 @@
 
 package com.google.firebase.dataconnect.util
 
+import com.google.firebase.dataconnect.DataConnectPath
+import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.core.DataConnectGrpcClientGlobals.toErrorInfoImpl
+import com.google.firebase.dataconnect.toPathString
 import com.google.firebase.dataconnect.util.ProtoUtil.nullProtoValue
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
+import com.google.protobuf.Duration
 import com.google.protobuf.ListValue
 import com.google.protobuf.NullValue
 import com.google.protobuf.Struct
@@ -56,13 +60,15 @@ import kotlinx.serialization.serializer
 internal object ProtoUtil {
 
   /** Calculates a SHA-512 digest of a [Struct]. */
-  fun Struct.calculateSha512(): ByteArray =
-    Value.newBuilder().setStructValue(this).build().calculateSha512()
+  fun Struct.calculateSha512(preamble: String = ""): ByteArray =
+    Value.newBuilder().setStructValue(this).build().calculateSha512(preamble = preamble)
 
   /** Calculates a SHA-512 digest of a [Value]. */
-  fun Value.calculateSha512(): ByteArray {
+  fun Value.calculateSha512(preamble: String = ""): ByteArray {
     val digest = MessageDigest.getInstance("SHA-512")
     val out = DataOutputStream(DigestOutputStream(NullOutputStream, digest))
+
+    out.writeUTF(preamble)
 
     val calculateDigest =
       DeepRecursiveFunction<Value, Unit> {
@@ -120,6 +126,15 @@ internal object ProtoUtil {
   fun ListValue.toValueProto(): Value = Value.newBuilder().setListValue(this).build()
 
   fun Struct.toValueProto(): Value = Value.newBuilder().setStructValue(this).build()
+
+  fun ListValue.toDataConnectPath(): DataConnectPath =
+    valuesList.mapNotNull {
+      when (it.kindCase) {
+        KindCase.NUMBER_VALUE -> DataConnectPathSegment.ListIndex(it.numberValue.toInt())
+        KindCase.STRING_VALUE -> DataConnectPathSegment.Field(it.stringValue)
+        else -> null
+      }
+    }
 
   val nullProtoValue: Value
     get() {
@@ -209,6 +224,49 @@ internal object ProtoUtil {
   fun ExecuteQueryResponse.toStructProto(): Struct = buildStructProto {
     if (hasData()) put("data", data)
     putList("errors") { errorsList.forEach { add(it.toErrorInfoImpl().toString()) } }
+
+    if (hasExtensions()) {
+      putStruct("extensions") {
+        putList("data_connect") {
+          extensions.dataConnectList.forEach { dataConnectProperties ->
+            addStruct {
+              if (dataConnectProperties.hasPath()) {
+                put("path", dataConnectProperties.path.toDataConnectPath().toPathString())
+              }
+              dataConnectProperties.entityId
+                .takeIf { it.isNotEmpty() }
+                ?.let { put("entity_id", it) }
+              dataConnectProperties.entityIdsList
+                .takeIf { it.isNotEmpty() }
+                ?.let { putList("entity_ids") { it.forEach(::add) } }
+              if (dataConnectProperties.hasMaxAge()) {
+                put("max_age", dataConnectProperties.maxAge.toHumanFriendlyString())
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  fun Duration.toHumanFriendlyString(): String = humanFriendlyStringForDuration(seconds, nanos)
+
+  private fun humanFriendlyStringForDuration(seconds: Long, nanos: Int): String = buildString {
+    if (nanos != 0) {
+      append(nanos)
+      while (length < 9) {
+        insert(0, '0')
+      }
+      while (get(lastIndex) == '0') {
+        deleteAt(lastIndex)
+      }
+
+      insert(0, '.')
+    }
+
+    insert(0, seconds)
+
+    append(" seconds")
   }
 
   fun ExecuteMutationRequest.toCompactString(): String = toStructProto().toCompactString()
