@@ -1,0 +1,104 @@
+// Signature format: 3.0
+package com.google.firebase.ai.ondevice.interop {
+
+  public final class Candidate {
+    ctor public Candidate(String text, com.google.firebase.ai.ondevice.interop.FinishReason finishReason);
+    method public com.google.firebase.ai.ondevice.interop.FinishReason getFinishReason();
+    method public String getText();
+    property public final com.google.firebase.ai.ondevice.interop.FinishReason finishReason;
+    property public final String text;
+  }
+
+  public final class CountTokensResponse {
+    ctor public CountTokensResponse(int totalTokens);
+    method public int getTotalTokens();
+    property public final int totalTokens;
+  }
+
+  public final class FinishReason {
+    method public String getName();
+    property public final String name;
+    field public static final com.google.firebase.ai.ondevice.interop.FinishReason.Companion Companion;
+    field public static final com.google.firebase.ai.ondevice.interop.FinishReason MAX_TOKENS;
+    field public static final com.google.firebase.ai.ondevice.interop.FinishReason OTHER;
+    field public static final com.google.firebase.ai.ondevice.interop.FinishReason STOP;
+  }
+
+  public static final class FinishReason.Companion {
+  }
+
+  public abstract class FirebaseAIOnDeviceException extends java.lang.RuntimeException {
+    field public static final com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceException.Companion Companion;
+  }
+
+  public static final class FirebaseAIOnDeviceException.Companion {
+    method public com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceException from(Exception cause);
+  }
+
+  public interface FirebaseAIOnDeviceGenerativeModelFactory {
+    method public com.google.firebase.ai.ondevice.interop.GenerativeModel newGenerativeModel();
+  }
+
+  public final class FirebaseAIOnDeviceInvalidRequestException extends com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceException {
+    ctor public FirebaseAIOnDeviceInvalidRequestException(Exception? cause = null);
+  }
+
+  public final class FirebaseAIOnDeviceNotAvailableException extends com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceException {
+    ctor public FirebaseAIOnDeviceNotAvailableException(String message, Throwable? cause = null);
+  }
+
+  public final class FirebaseAIOnDeviceUnknownException extends com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceException {
+    ctor public FirebaseAIOnDeviceUnknownException(String message, Throwable? cause = null);
+  }
+
+  public final class GenerateContentRequest {
+    ctor public GenerateContentRequest(com.google.firebase.ai.ondevice.interop.TextPart text, com.google.firebase.ai.ondevice.interop.ImagePart? image = null, Float? temperature = null, Integer? topK = null, Integer? seed = null, Integer? candidateCount = null, Integer? maxOutputTokens = null);
+    method public Integer? getCandidateCount();
+    method public com.google.firebase.ai.ondevice.interop.ImagePart? getImage();
+    method public Integer? getMaxOutputTokens();
+    method public Integer? getSeed();
+    method public Float? getTemperature();
+    method public com.google.firebase.ai.ondevice.interop.TextPart getText();
+    method public Integer? getTopK();
+    property public final Integer? candidateCount;
+    property public final com.google.firebase.ai.ondevice.interop.ImagePart? image;
+    property public final Integer? maxOutputTokens;
+    property public final Integer? seed;
+    property public final Float? temperature;
+    property public final com.google.firebase.ai.ondevice.interop.TextPart text;
+    property public final Integer? topK;
+  }
+
+  public final class GenerateContentResponse {
+    ctor public GenerateContentResponse(java.util.List<com.google.firebase.ai.ondevice.interop.Candidate> candidates);
+    method public java.util.List<com.google.firebase.ai.ondevice.interop.Candidate> getCandidates();
+    property public final java.util.List<com.google.firebase.ai.ondevice.interop.Candidate> candidates;
+  }
+
+  public interface GenerativeModel {
+    method public suspend Object? countTokens(com.google.firebase.ai.ondevice.interop.GenerateContentRequest request, kotlin.coroutines.Continuation<? super com.google.firebase.ai.ondevice.interop.CountTokensResponse>);
+    method public suspend Object? generateContent(com.google.firebase.ai.ondevice.interop.GenerateContentRequest request, kotlin.coroutines.Continuation<? super com.google.firebase.ai.ondevice.interop.GenerateContentResponse>);
+    method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.ondevice.interop.GenerateContentResponse> generateContentStream(com.google.firebase.ai.ondevice.interop.GenerateContentRequest request);
+    method public suspend Object? getBaseModelName(kotlin.coroutines.Continuation<? super java.lang.String>);
+    method public suspend Object? getTokenLimit(kotlin.coroutines.Continuation<? super java.lang.Integer>);
+    method public suspend Object? isAvailable(kotlin.coroutines.Continuation<? super java.lang.Boolean>);
+    method public suspend Object? warmup(kotlin.coroutines.Continuation<? super kotlin.Unit>);
+  }
+
+  public final class ImagePart implements com.google.firebase.ai.ondevice.interop.Part {
+    ctor public ImagePart(android.graphics.Bitmap bitmap);
+    method public android.graphics.Bitmap getBitmap();
+    property public final android.graphics.Bitmap bitmap;
+  }
+
+  public interface Part {
+  }
+
+  public final class TextPart implements com.google.firebase.ai.ondevice.interop.Part {
+    ctor public TextPart(String text);
+    method public String getText();
+    property public final String text;
+  }
+
+}
+

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Google LLC
+ * Copyright 2026 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,36 +21,28 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
   id("firebase-library")
   id("kotlin-android")
-  id("copy-google-services")
-  alias(libs.plugins.kotlinx.serialization)
 }
 
 firebaseLibrary {
   testLab.enabled = false
   publishJavadoc = true
   releaseNotes {
-    name.set("{{firebase_ai_logic}}")
-    versionName.set("ai")
+    name.set("{{firebase_ai_logic_ondevice}}")
+    versionName.set("ai_ondevice")
   }
 }
 
 android {
   val targetSdkVersion: Int by rootProject
 
-  namespace = "com.google.firebase.ai"
+  namespace = "com.google.firebase.ai.ondevice"
   compileSdk = 34
   defaultConfig {
-    minSdk = rootProject.extra["minSdkVersion"] as Int
-    consumerProguardFiles("consumer-rules.pro")
+    minSdk = 26 // Required by mlkit genai prompt sdk
     multiDexEnabled = true
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
-  buildTypes {
-    release {
-      isMinifyEnabled = false
-      proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-    }
-  }
+  buildTypes { release { isMinifyEnabled = false } }
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
@@ -75,35 +67,22 @@ kotlin {
 }
 
 dependencies {
-  implementation(libs.ktor.client.okhttp)
-  implementation(libs.ktor.client.core)
-  implementation(libs.ktor.client.websockets)
-  implementation(libs.ktor.client.content.negotiation)
-  implementation(libs.ktor.serialization.kotlinx.json)
-  implementation(libs.ktor.client.logging)
+  implementation(libs.genai.prompt)
+  implementation(project(":firebase-ai-ondevice-interop"))
 
-  api(libs.firebase.common)
+  implementation(libs.firebase.common)
   implementation(libs.firebase.components)
   implementation(libs.firebase.annotations)
-  implementation("com.google.firebase:firebase-appcheck-interop:17.1.0")
   implementation(libs.androidx.annotation)
   implementation(libs.kotlinx.serialization.json)
   implementation(libs.androidx.core.ktx)
   implementation(libs.slf4j.nop)
   implementation(libs.kotlinx.coroutines.android)
   implementation(libs.kotlinx.coroutines.reactive)
-  implementation(libs.reactive.streams)
-  implementation("com.google.guava:listenablefuture:1.0")
-  implementation("androidx.concurrent:concurrent-futures:1.2.0")
-  implementation("androidx.concurrent:concurrent-futures-ktx:1.2.0")
-  implementation("com.google.firebase:firebase-auth-interop:18.0.0")
-  implementation(project(":firebase-ai-ondevice-interop"))
 
   testImplementation(libs.kotest.assertions.core)
   testImplementation(libs.kotest.assertions)
   testImplementation(libs.kotest.assertions.json)
-  testImplementation(libs.ktor.client.okhttp)
-  testImplementation(libs.ktor.client.mock)
   testImplementation(libs.org.json)
   testImplementation(libs.androidx.test.junit)
   testImplementation(libs.androidx.test.runner)
