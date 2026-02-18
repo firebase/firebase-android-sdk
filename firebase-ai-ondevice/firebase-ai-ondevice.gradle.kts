@@ -25,7 +25,7 @@ plugins {
 
 firebaseLibrary {
   testLab.enabled = false
-  publishJavadoc = false
+  publishJavadoc = true
   releaseNotes {
     name.set("{{firebase_ai_logic_ondevice}}")
     versionName.set("ai_ondevice")
