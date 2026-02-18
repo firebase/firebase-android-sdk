@@ -22,7 +22,7 @@ import com.google.firebase.dataconnect.util.SequencedReference
 internal class QueryManager(private val liveQueries: LiveQueries) {
   suspend fun <Data, Variables> execute(
     query: QueryRefImpl<Data, Variables>,
-  ): SequencedReference<Result<Data>> =
+  ): SequencedReference<Result<DataSourcePair<Data>>> =
     liveQueries.withLiveQuery(query) {
       it.execute(
         dataDeserializer = query.dataDeserializer,
@@ -34,7 +34,7 @@ internal class QueryManager(private val liveQueries: LiveQueries) {
   suspend fun <Data, Variables> subscribe(
     query: QueryRefImpl<Data, Variables>,
     executeQuery: Boolean,
-    callback: suspend (SequencedReference<Result<Data>>) -> Unit,
+    callback: suspend (SequencedReference<Result<DataSourcePair<Data>>>) -> Unit,
   ): Nothing =
     liveQueries.withLiveQuery(query) { liveQuery ->
       liveQuery.subscribe(
