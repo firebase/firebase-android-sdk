@@ -32,7 +32,9 @@ jobs:
 
       - name: Build
         # Certain SDKs won't export docs, make a blank folder to diff if that's the case
-        run: mkdir build && ./gradlew ${{ steps.changed-modules.outputs.run }}
+        run: mkdir build && ./gradlew ${STEPS_CHANGED_MODULES_OUTPUTS_RUN}
+        env:
+          STEPS_CHANGED_MODULES_OUTPUTS_RUN: ${{ steps.changed-modules.outputs.run }}
 
       - name: Move original docs
         run: mv build ~/diff/modified
@@ -43,7 +45,9 @@ jobs:
 
       - name: Build
         # Certain SDKs won't export docs, make a blank folder to diff if that's the case
-        run: mkdir build && ./gradlew ${{ steps.changed-modules.outputs.run }}
+        run: mkdir build && ./gradlew ${STEPS_CHANGED_MODULES_OUTPUTS_RUN}
+        env:
+          STEPS_CHANGED_MODULES_OUTPUTS_RUN: ${{ steps.changed-modules.outputs.run }}
 
       - name: Move modified docs
         run: mv build ~/diff/original
