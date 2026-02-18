@@ -24,14 +24,15 @@ import java.util.Objects
  *
  * @property storage The type of storage to use to store the cache data.
  */
-public class CacheSettings(
-  public val storage: Storage = Storage.PERSISTENT,
+// TODO: make public when offline caching goes public
+internal class CacheSettings(
+  val storage: Storage = Storage.PERSISTENT,
 ) {
 
   /**
    * The types of cache storage supported by [FirebaseDataConnect] in its [CacheSettings] setting.
    */
-  public enum class Storage {
+  enum class Storage {
     MEMORY,
     PERSISTENT,
   }
@@ -66,7 +67,7 @@ public class CacheSettings(
    * changes.
    *
    * @return a string representation of this object, which includes the class name and the values of
-   * all public properties.
+   * all properties.
    */
   override fun toString(): String {
     return "CacheSettings(storage=$storage)"
@@ -74,6 +75,7 @@ public class CacheSettings(
 }
 
 /** Creates and returns a new [CacheSettings] object with the given property values. */
-public fun CacheSettings.copy(
+// TODO: make public when offline caching goes public
+internal fun CacheSettings.copy(
   storage: CacheSettings.Storage = this.storage,
 ): CacheSettings = CacheSettings(storage = storage)

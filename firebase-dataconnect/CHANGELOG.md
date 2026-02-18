@@ -1,13 +1,11 @@
 # Unreleased
 
-- [changed] Added public APIs for offline caching.
-  [#7716](https://github.com/firebase/firebase-android-sdk/pull/7716))
-- [changed] Added hydration and dehydration logic for use in offline caching.
-  [#7714](https://github.com/firebase/firebase-android-sdk/pull/7714))
-- [changed] Added sqlite database logic for use in offline caching.
-  [#7720](https://github.com/firebase/firebase-android-sdk/pull/7720))
-- [changed] Wired up implementation for serving query responses from cache.
-  [#7759](https://github.com/firebase/firebase-android-sdk/pull/7759))
+- [changed] Internal changes to support future offline caching functionality.
+  [#7716](https://github.com/firebase/firebase-android-sdk/pull/7716)),
+  [#7714](https://github.com/firebase/firebase-android-sdk/pull/7714)),
+  [#7720](https://github.com/firebase/firebase-android-sdk/pull/7720)),
+  [#7759](https://github.com/firebase/firebase-android-sdk/pull/7759)),
+  [#NNNN](https://github.com/firebase/firebase-android-sdk/pull/NNNN))
 
 # 17.1.3
 
