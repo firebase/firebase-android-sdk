@@ -9,7 +9,7 @@
 - [changed] Wired up implementation for serving query responses from cache.
   [#7759](https://github.com/firebase/firebase-android-sdk/pull/7759))
 - [changed] DataSource wired up and entity paths extracted from response.
-  [#NNNN](https://github.com/firebase/firebase-android-sdk/pull/NNNN))
+  [#7814](https://github.com/firebase/firebase-android-sdk/pull/7814))
 
 # 17.1.3
 
