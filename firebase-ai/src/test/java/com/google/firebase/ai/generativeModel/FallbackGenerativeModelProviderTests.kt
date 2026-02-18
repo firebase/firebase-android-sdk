@@ -156,4 +156,29 @@ internal class FallbackGenerativeModelProviderTests {
     response shouldBe expectedResponse
     coVerify { fallbackModel.generateObject(schema, prompt) }
   }
+
+  @Test
+  fun `generateContent rethrows CancellationException and does not fall back`() = runBlocking {
+    val exception = kotlinx.coroutines.CancellationException("cancelled")
+    coEvery { defaultModel.generateContent(prompt) } throws exception
+
+    val provider = FallbackGenerativeModelProvider(defaultModel, fallbackModel)
+
+    shouldThrow<kotlinx.coroutines.CancellationException> { provider.generateContent(prompt) }
+    coVerify(exactly = 0) { fallbackModel.generateContent(any()) }
+  }
+
+  @Test
+  fun `generateContentStream rethrows CancellationException and does not fall back`() =
+    runBlocking {
+      val exception = kotlinx.coroutines.CancellationException("cancelled")
+      every { defaultModel.generateContentStream(prompt) } throws exception
+
+      val provider = FallbackGenerativeModelProvider(defaultModel, fallbackModel)
+
+      shouldThrow<kotlinx.coroutines.CancellationException> {
+        provider.generateContentStream(prompt)
+      }
+      verify(exactly = 0) { fallbackModel.generateContentStream(any()) }
+    }
 }
