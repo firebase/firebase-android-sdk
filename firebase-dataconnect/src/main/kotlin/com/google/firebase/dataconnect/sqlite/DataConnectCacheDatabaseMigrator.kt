@@ -142,7 +142,7 @@ private constructor(private val sqliteDatabase: SQLiteDatabase, private val logg
         query_id BLOB NOT NULL, -- An opaque binary blob
         data BLOB NOT NULL, -- A google.firebase.dataconnect.kotlinsdk.QueryResult proto
         flags INT NOT NULL, -- Lower 32 bits are required, upper 32 bits are optional
-        expiry BLOB, -- A google.firebase.dataconnect.kotlinsdk.QueryResultExpiry proto
+        expiry BLOB NOT NULL, -- A google.firebase.dataconnect.kotlinsdk.QueryResultExpiry proto
         debug_info TEXT,
         UNIQUE (user_id, query_id)
       )"""

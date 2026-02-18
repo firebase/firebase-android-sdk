@@ -24,11 +24,16 @@ import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.execSQL
 import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.getLastInsertRowId
 import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.rawQuery
 import com.google.firebase.dataconnect.util.ImmutableByteArray
+import com.google.protobuf.Duration
 import com.google.protobuf.Struct
 import google.firebase.dataconnect.proto.kotlinsdk.EntityOrEntityList
 import google.firebase.dataconnect.proto.kotlinsdk.QueryResult as QueryResultProto
+import google.firebase.dataconnect.proto.kotlinsdk.QueryResultExpiry
 import java.io.File
 import java.util.concurrent.Executors
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.nanoseconds
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -266,15 +271,21 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
     user: SqliteUserId,
     queryId: ImmutableByteArray,
     queryResultProtoBytes: ImmutableByteArray,
+    expiryProtoBytes: ImmutableByteArray,
   ): SqliteQueryId {
     execSQL(
       logger,
       """
         INSERT OR REPLACE INTO queries
-        (user_id, query_id, data, flags)
-        VALUES (?, ?, ?, 0)
+        (user_id, query_id, data, expiry, flags)
+        VALUES (?, ?, ?, ?, 0)
       """,
-      arrayOf(user.sqliteRowId, queryId.peek(), queryResultProtoBytes.peek())
+      arrayOf(
+        user.sqliteRowId,
+        queryId.peek(),
+        queryResultProtoBytes.peek(),
+        expiryProtoBytes.peek()
+      )
     )
     val rowId = getLastInsertRowId(logger)
     return SqliteQueryId(rowId)
@@ -470,6 +481,7 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
     authUid: String?,
     queryId: ImmutableByteArray,
     queryData: Struct,
+    maxAge: Duration,
     getEntityIdForPath: GetEntityIdForPathFunction?,
   ) {
     require(queryId.size > 0) {
@@ -477,6 +489,17 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
     }
     val (queryResultProto, entityStructById) = dehydrateQueryResult(queryData, getEntityIdForPath)
     val queryResultProtoBytes = ImmutableByteArray.adopt(queryResultProto.toByteArray())
+
+    val expiryProtoBytes =
+      QueryResultExpiry.newBuilder().let {
+        val expiryTime =
+          System.currentTimeMillis().milliseconds +
+            maxAge.seconds.seconds +
+            maxAge.nanos.nanoseconds
+        it.setMaxAge(maxAge)
+        it.setExpiryTimeMillis(expiryTime.inWholeMilliseconds)
+        ImmutableByteArray.adopt(it.build().toByteArray())
+      }
 
     runReadWriteTransaction { sqliteDatabase ->
       val user = sqliteDatabase.getOrInsertAuthUid(authUid)
@@ -486,6 +509,7 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
           user = user,
           queryId = queryId,
           queryResultProtoBytes = queryResultProtoBytes,
+          expiryProtoBytes = expiryProtoBytes,
         )
 
       val sqliteEntityIds =

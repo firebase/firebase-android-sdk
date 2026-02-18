@@ -35,6 +35,7 @@ import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.ProtoUtil.toDataConnectPath
 import com.google.firebase.dataconnect.util.ProtoUtil.toStructProto
 import com.google.firebase.dataconnect.util.SuspendingLazy
+import com.google.protobuf.Duration
 import com.google.protobuf.Struct
 import google.firebase.dataconnect.proto.ConnectorServiceGrpc
 import google.firebase.dataconnect.proto.ConnectorServiceGrpcKt
@@ -91,7 +92,12 @@ internal class DataConnectGrpcRPCs(
   private val mutex = Mutex()
   private var closed = false
 
-  data class CacheSettings(val dbFile: File?)
+  data class CacheSettings(val dbFile: File?, val maxAge: kotlin.time.Duration)
+
+  private data class CacheDbSettingsPair(
+    val db: DataConnectCacheDatabase,
+    val maxAge: Duration,
+  )
 
   // Use the non-main-thread CoroutineDispatcher to avoid blocking operations on the main thread.
   private val lazyCacheDb =
@@ -101,12 +107,17 @@ internal class DataConnectGrpcRPCs(
         NullableReference()
       } else {
         logger.debug { "Creating GRPC ManagedChannel for host=$host sslEnabled=$sslEnabled" }
+
+        val maxAge = cacheSettings.maxAge.toComponents { seconds, nanos ->
+          Duration.newBuilder().setSeconds(seconds).setNanos(nanos).build()
+        }
+
         val dbFile = cacheSettings.dbFile
         val cacheLogger = Logger("DataConnectCacheDatabase")
-        cacheLogger.debug { "created by ${logger.nameWithId} with dbFile=$dbFile" }
+        cacheLogger.debug { "created by ${logger.nameWithId} with dbFile=$dbFile maxAge=${cacheSettings.maxAge}" }
         val cacheDb = DataConnectCacheDatabase(dbFile, cacheLogger)
         cacheDb.initialize()
-        NullableReference(cacheDb)
+        NullableReference(CacheDbSettingsPair(cacheDb, maxAge))
       }
     }
 
@@ -213,17 +224,19 @@ internal class DataConnectGrpcRPCs(
     val cacheDb: DataConnectCacheDatabase,
     val authUid: String?,
     val queryId: ImmutableByteArray,
+    val maxAge: Duration,
   )
 
   private suspend fun queryCacheInfo(
     authToken: DataConnectAuth.GetAuthTokenResult?,
     request: ExecuteQueryRequest,
   ) =
-    lazyCacheDb.get().ref?.let { cacheDb ->
+    lazyCacheDb.get().ref?.let { (cacheDb, maxAge) ->
       QueryCacheInfo(
         cacheDb,
         authUid = authToken?.authUid,
         queryId = request.toQueryId(),
+        maxAge = maxAge,
       )
     }
 
@@ -281,6 +294,7 @@ internal class DataConnectGrpcRPCs(
           authUid,
           queryId,
           queryData = response.data,
+          maxAge = maxAge,
           getEntityIdForPath = response.getEntityIdForPathFunction(),
         )
       }
@@ -384,7 +398,7 @@ internal class DataConnectGrpcRPCs(
         grpcChannel?.shutdownNow()
         grpcChannel?.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS)
       }
-      val cacheDbCloseResult = runCatching { cacheDb?.close() }
+      val cacheDbCloseResult = runCatching { cacheDb?.db?.close() }
 
       grpcChannelShutdownResult.getOrThrow()
       cacheDbCloseResult.getOrThrow()

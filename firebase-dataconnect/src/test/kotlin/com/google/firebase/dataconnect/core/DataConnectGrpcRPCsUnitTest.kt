@@ -71,6 +71,7 @@ import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
+import kotlin.time.Duration.Companion.hours
 
 @RunWith(RobolectricTestRunner::class)
 class DataConnectGrpcRPCsClientUnitTest {
@@ -235,7 +236,7 @@ class DataConnectGrpcRPCsClientUnitTest {
       sslEnabled = false,
       blockingCoroutineDispatcher = Dispatchers.IO,
       grpcMetadata = grpcMetadataArb.bind(),
-      cacheSettings = CacheSettings(newDbFile()),
+      cacheSettings = CacheSettings(newDbFile(), maxAge = 1.hours),
       parentLogger = mockLogger,
     )
 }
