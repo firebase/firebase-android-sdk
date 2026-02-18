@@ -6,6 +6,8 @@
   [#7714](https://github.com/firebase/firebase-android-sdk/pull/7714))
 - [changed] Added sqlite database logic for use in offline caching.
   [#7720](https://github.com/firebase/firebase-android-sdk/pull/7720))
+- [changed] Wired up implementation for serving query responses from cache.
+  [#7759](https://github.com/firebase/firebase-android-sdk/pull/7759))
 
 # 17.1.3
 
