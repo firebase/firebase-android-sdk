@@ -15,17 +15,21 @@
 package com.google.firebase.dataconnect
 
 import java.util.Objects
+import kotlin.time.Duration
 
 /**
  * The local caching settings used by a [FirebaseDataConnect] object, as specified in its
  * [DataConnectSettings].
  *
  * @param storage The value to set for the [CacheSettings.storage] property.
+ * @param maxAge The maximum age of cached query results to use before considering them to be
+ * "stale".
  *
  * @property storage The type of storage to use to store the cache data.
  */
 public class CacheSettings(
   public val storage: Storage = Storage.PERSISTENT,
+  public val maxAge: Duration = Duration.ZERO,
 ) {
 
   /**
@@ -44,7 +48,8 @@ public class CacheSettings(
    * properties compare equal using the `==` operator to the corresponding properties of this
    * object.
    */
-  override fun equals(other: Any?): Boolean = other is CacheSettings && other.storage == storage
+  override fun equals(other: Any?): Boolean =
+    other is CacheSettings && other.storage == storage && other.maxAge == maxAge
 
   /**
    * Calculates and returns the hash code for this object.
@@ -54,7 +59,7 @@ public class CacheSettings(
    * @return the hash code for this object, that incorporates the values of this object's public
    * properties.
    */
-  override fun hashCode(): Int = Objects.hash(CacheSettings::class, storage)
+  override fun hashCode(): Int = Objects.hash(CacheSettings::class, storage, maxAge)
 
   /**
    * Returns a string representation of this object, useful for debugging.
@@ -69,11 +74,12 @@ public class CacheSettings(
    * all public properties.
    */
   override fun toString(): String {
-    return "CacheSettings(storage=$storage)"
+    return "CacheSettings(storage=$storage, maxAge=$maxAge)"
   }
 }
 
 /** Creates and returns a new [CacheSettings] object with the given property values. */
 public fun CacheSettings.copy(
   storage: CacheSettings.Storage = this.storage,
-): CacheSettings = CacheSettings(storage = storage)
+  maxAge: Duration = this.maxAge,
+): CacheSettings = CacheSettings(storage = storage, maxAge = maxAge)
