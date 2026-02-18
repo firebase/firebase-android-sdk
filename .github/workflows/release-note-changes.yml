@@ -40,7 +40,9 @@ jobs:
       id: generate-comment
       if: ${{ steps.install-fireci.outcome == 'success' }}
       run: |
-        fireci changelog_comment -c "${{ steps.changed-files.outputs.all_changed_files }}" -o ./changelog_comment.md
+        fireci changelog_comment -c "${STEPS_CHANGED_FILES_OUTPUTS_ALL_CHANGED_FILES}" -o ./changelog_comment.md
+      env:
+        STEPS_CHANGED_FILES_OUTPUTS_ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
 
     - name: Add PR Comment
       uses: mshick/add-pr-comment@v2.8.1
