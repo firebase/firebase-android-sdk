@@ -76,18 +76,30 @@ internal class DataConnectGrpcMetadata(
     return components.joinToString(" ")
   }
 
-  suspend fun get(requestId: String, callerSdkType: FirebaseDataConnect.CallerSdkType): Metadata {
+  data class GetGrpcMetadataResult(
+    val metadata: Metadata,
+    val authToken: DataConnectAuth.GetAuthTokenResult?,
+  )
+
+  suspend fun get(
+    requestId: String,
+    callerSdkType: FirebaseDataConnect.CallerSdkType
+  ): GetGrpcMetadataResult {
     val authToken = dataConnectAuth.getToken(requestId)
     val appCheckToken = dataConnectAppCheck.getToken(requestId)
-    return Metadata().also {
-      it.put(googRequestParamsHeader, googRequestParamsHeaderValue)
-      it.put(googApiClientHeader, googApiClientHeaderValue(callerSdkType))
-      if (appId.isNotBlank()) {
-        it.put(gmpAppIdHeader, appId)
+
+    val metadata =
+      Metadata().also {
+        it.put(googRequestParamsHeader, googRequestParamsHeaderValue)
+        it.put(googApiClientHeader, googApiClientHeaderValue(callerSdkType))
+        if (appId.isNotBlank()) {
+          it.put(gmpAppIdHeader, appId)
+        }
+        authToken?.token?.let { token -> it.put(firebaseAuthTokenHeader, token) }
+        appCheckToken?.token?.let { token -> it.put(firebaseAppCheckTokenHeader, token) }
       }
-      authToken?.token?.let { token -> it.put(firebaseAuthTokenHeader, token) }
-      appCheckToken?.token?.let { token -> it.put(firebaseAppCheckTokenHeader, token) }
-    }
+
+    return GetGrpcMetadataResult(metadata, authToken)
   }
 
   companion object {

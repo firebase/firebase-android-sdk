@@ -116,7 +116,7 @@ class DataConnectGrpcClientUnitTest {
   private val mockDataConnectGrpcRPCs: DataConnectGrpcRPCs =
     mockk(relaxed = true, name = "mockDataConnectGrpcRPCs-zfbhma6tyh") {
       coEvery { executeQuery(any(), any(), any()) } returns
-        ExecuteQueryResponse.getDefaultInstance()
+        DataConnectGrpcRPCs.ExecuteQueryResult.FromServer(ExecuteQueryResponse.getDefaultInstance())
       coEvery { executeMutation(any(), any(), any()) } returns
         ExecuteMutationResponse.getDefaultInstance()
     }
@@ -170,9 +170,21 @@ class DataConnectGrpcClientUnitTest {
   }
 
   @Test
+  fun `executeQuery() should return data and empty errors if response is from cache`() = runTest {
+    val responseData = Arb.proto.struct().next(rs).struct
+    coEvery { mockDataConnectGrpcRPCs.executeQuery(any(), any(), any()) } returns
+      DataConnectGrpcRPCs.ExecuteQueryResult.FromCache(responseData)
+
+    val operationResult =
+      dataConnectGrpcClient.executeQuery(requestId, operationName, variables, callerSdkType)
+
+    operationResult shouldBe OperationResult(data = responseData, errors = emptyList())
+  }
+
+  @Test
   fun `executeQuery() should return null data and empty errors if response is empty`() = runTest {
     coEvery { mockDataConnectGrpcRPCs.executeQuery(any(), any(), any()) } returns
-      ExecuteQueryResponse.getDefaultInstance()
+      DataConnectGrpcRPCs.ExecuteQueryResult.FromServer(ExecuteQueryResponse.getDefaultInstance())
 
     val operationResult =
       dataConnectGrpcClient.executeQuery(requestId, operationName, variables, callerSdkType)
@@ -197,10 +209,12 @@ class DataConnectGrpcClientUnitTest {
     val responseData = Arb.proto.struct().next(rs).struct
     val responseErrors = List(3) { GraphqlErrorInfo.random(RandomSource.default()) }
     coEvery { mockDataConnectGrpcRPCs.executeQuery(any(), any(), any()) } returns
-      ExecuteQueryResponse.newBuilder()
-        .setData(responseData)
-        .addAllErrors(responseErrors.map { it.graphqlError })
-        .build()
+      DataConnectGrpcRPCs.ExecuteQueryResult.FromServer(
+        ExecuteQueryResponse.newBuilder()
+          .setData(responseData)
+          .addAllErrors(responseErrors.map { it.graphqlError })
+          .build()
+      )
 
     val operationResult =
       dataConnectGrpcClient.executeQuery(requestId, operationName, variables, callerSdkType)
@@ -260,7 +274,9 @@ class DataConnectGrpcClientUnitTest {
     coEvery { mockDataConnectGrpcRPCs.executeQuery(any(), any(), any()) } answers
       {
         if (forceRefresh.get()) {
-          ExecuteQueryResponse.newBuilder().setData(responseData).build()
+          DataConnectGrpcRPCs.ExecuteQueryResult.FromServer(
+            ExecuteQueryResponse.newBuilder().setData(responseData).build()
+          )
         } else {
           // Use a custom description to ensure that DataConnectGrpcClient is checking for just
           // the code, and not the entire equality of Status.UNAUTHENTICATED.
@@ -322,7 +338,9 @@ class DataConnectGrpcClientUnitTest {
     coEvery { mockDataConnectGrpcRPCs.executeQuery(any(), any(), any()) } answers
       {
         if (forceRefresh.get()) {
-          ExecuteQueryResponse.newBuilder().setData(responseData).build()
+          DataConnectGrpcRPCs.ExecuteQueryResult.FromServer(
+            ExecuteQueryResponse.newBuilder().setData(responseData).build()
+          )
         } else {
           // Use a custom description to ensure that DataConnectGrpcClient is checking for just
           // the code, and not the entire equality of Status.UNAUTHENTICATED.

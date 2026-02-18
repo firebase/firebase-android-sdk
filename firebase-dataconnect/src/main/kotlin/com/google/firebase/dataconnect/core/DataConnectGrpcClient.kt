@@ -68,15 +68,12 @@ internal class DataConnectGrpcClient(
       this.variables = variables
     }
 
-    val response =
+    val executeQueryResult =
       grpcRPCs.retryOnGrpcUnauthenticatedError(requestId, "executeQuery") {
         executeQuery(requestId, request, callerSdkType)
       }
 
-    return OperationResult(
-      data = if (response.hasData()) response.data else null,
-      errors = response.errorsList.map { it.toErrorInfoImpl() }
-    )
+    return executeQueryResult.toOperationResult()
   }
 
   suspend fun executeMutation(
@@ -127,6 +124,21 @@ internal class DataConnectGrpcClient(
     }
   }
 }
+
+private fun DataConnectGrpcRPCs.ExecuteQueryResult.toOperationResult():
+  DataConnectGrpcClient.OperationResult =
+  when (this) {
+    is DataConnectGrpcRPCs.ExecuteQueryResult.FromCache ->
+      DataConnectGrpcClient.OperationResult(
+        data = data,
+        errors = emptyList(),
+      )
+    is DataConnectGrpcRPCs.ExecuteQueryResult.FromServer ->
+      DataConnectGrpcClient.OperationResult(
+        data = if (response.hasData()) response.data else null,
+        errors = response.errorsList.map { it.toErrorInfoImpl() },
+      )
+  }
 
 /**
  * Holder for "global" functions related to [DataConnectGrpcClient].
