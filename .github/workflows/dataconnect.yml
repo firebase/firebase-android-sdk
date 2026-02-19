@@ -50,7 +50,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres
+        image: index.docker.io/library/postgres@sha256:b6b4d0b75c699a2c94dfc5a94fe09f38630f3b67ab0e1653ede1b7ac8e13c197 # ratchet:postgres
         env:
           POSTGRES_PASSWORD: password
         options: >-
@@ -268,7 +268,7 @@ jobs:
         with:
           show-progress: false
           sparse-checkout: '.github/'
-      - uses: docker://rhysd/actionlint:1.7.7
+      - uses: docker://index.docker.io/rhysd/actionlint@sha256:887a259a5a534f3c4f36cb02dca341673c6089431057242cdc931e9f133147e9 # ratchet:docker://rhysd/actionlint:1.7.7
         with:
           args: -color /github/workspace/.github/workflows/dataconnect.yml
 
