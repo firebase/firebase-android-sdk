@@ -1,0 +1,16 @@
+{
+    "name": "m177",
+    "libraries": [
+        ":firebase-ai",
+        ":firebase-ai-ksp-processor",
+        ":firebase-ai-ondevice",
+        ":firebase-ai-ondevice-interop",
+        ":firebase-dataconnect",
+        ":firebase-firestore",
+        ":firebase-installations",
+        ":firebase-installations-interop",
+        ":transport:transport-api",
+        ":transport:transport-backend-cct",
+        ":transport:transport-runtime"
+    ]
+}
