@@ -24,21 +24,6 @@ package com.google.firebase.dataconnect {
     method public static com.google.firebase.dataconnect.AnyValue? fromNullableAny(com.google.firebase.dataconnect.AnyValue.Companion, Object? value);
   }
 
-  public final class CacheSettings {
-    ctor public CacheSettings(com.google.firebase.dataconnect.CacheSettings.Storage storage = com.google.firebase.dataconnect.CacheSettings.Storage.PERSISTENT);
-    method public com.google.firebase.dataconnect.CacheSettings.Storage getStorage();
-    property public final com.google.firebase.dataconnect.CacheSettings.Storage storage;
-  }
-
-  public enum CacheSettings.Storage {
-    enum_constant public static final com.google.firebase.dataconnect.CacheSettings.Storage MEMORY;
-    enum_constant public static final com.google.firebase.dataconnect.CacheSettings.Storage PERSISTENT;
-  }
-
-  public final class CacheSettingsKt {
-    method public static com.google.firebase.dataconnect.CacheSettings copy(com.google.firebase.dataconnect.CacheSettings, com.google.firebase.dataconnect.CacheSettings.Storage storage = storage);
-  }
-
   public final class ConnectorConfig {
     ctor public ConnectorConfig(String connector, String location, String serviceId);
     method public String getConnector();
@@ -100,23 +85,14 @@ package com.google.firebase.dataconnect {
 
   public final class DataConnectSettings {
     ctor public DataConnectSettings(String host = "firebasedataconnect.googleapis.com", boolean sslEnabled = true);
-    ctor public DataConnectSettings(String host = "firebasedataconnect.googleapis.com", boolean sslEnabled = true, com.google.firebase.dataconnect.CacheSettings? cacheSettings);
-    method public com.google.firebase.dataconnect.CacheSettings? getCacheSettings();
     method public String getHost();
     method public boolean getSslEnabled();
-    property public final com.google.firebase.dataconnect.CacheSettings? cacheSettings;
     property public final String host;
     property public final boolean sslEnabled;
   }
 
   public final class DataConnectSettingsKt {
     method public static com.google.firebase.dataconnect.DataConnectSettings copy(com.google.firebase.dataconnect.DataConnectSettings, String host = host, boolean sslEnabled = sslEnabled);
-    method public static com.google.firebase.dataconnect.DataConnectSettings copy(com.google.firebase.dataconnect.DataConnectSettings, String host = host, boolean sslEnabled = sslEnabled, com.google.firebase.dataconnect.CacheSettings? cacheSettings);
-  }
-
-  public enum DataSource {
-    enum_constant public static final com.google.firebase.dataconnect.DataSource CACHE;
-    enum_constant public static final com.google.firebase.dataconnect.DataSource SERVER;
   }
 
   public sealed interface EnumValue<T extends java.lang.Enum<? extends T>> {
@@ -304,23 +280,14 @@ package com.google.firebase.dataconnect {
 
   public interface QueryRef<Data, Variables> extends com.google.firebase.dataconnect.OperationRef<Data,Variables> {
     method @com.google.firebase.dataconnect.ExperimentalFirebaseDataConnect public com.google.firebase.dataconnect.QueryRef<Data,Variables> copy(String operationName, Variables variables, kotlinx.serialization.DeserializationStrategy<? extends Data> dataDeserializer, kotlinx.serialization.SerializationStrategy<? super Variables> variablesSerializer, com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType callerSdkType, kotlinx.serialization.modules.SerializersModule? dataSerializersModule, kotlinx.serialization.modules.SerializersModule? variablesSerializersModule);
-    method public suspend Object? execute(com.google.firebase.dataconnect.QueryRef.FetchPolicy fetchPolicy, kotlin.coroutines.Continuation<? super com.google.firebase.dataconnect.QueryResult<Data,Variables>>);
     method public suspend Object? execute(kotlin.coroutines.Continuation<? super com.google.firebase.dataconnect.QueryResult<Data,Variables>>);
     method public com.google.firebase.dataconnect.QuerySubscription<Data,Variables> subscribe();
     method @com.google.firebase.dataconnect.ExperimentalFirebaseDataConnect public <NewData> com.google.firebase.dataconnect.QueryRef<NewData,Variables> withDataDeserializer(kotlinx.serialization.DeserializationStrategy<? extends NewData> dataDeserializer, kotlinx.serialization.modules.SerializersModule? dataSerializersModule);
     method @com.google.firebase.dataconnect.ExperimentalFirebaseDataConnect public <NewVariables> com.google.firebase.dataconnect.QueryRef<Data,NewVariables> withVariablesSerializer(NewVariables variables, kotlinx.serialization.SerializationStrategy<? super NewVariables> variablesSerializer, kotlinx.serialization.modules.SerializersModule? variablesSerializersModule);
   }
 
-  public enum QueryRef.FetchPolicy {
-    enum_constant public static final com.google.firebase.dataconnect.QueryRef.FetchPolicy CACHE_ONLY;
-    enum_constant public static final com.google.firebase.dataconnect.QueryRef.FetchPolicy PREFER_CACHE;
-    enum_constant public static final com.google.firebase.dataconnect.QueryRef.FetchPolicy SERVER_ONLY;
-  }
-
   public interface QueryResult<Data, Variables> extends com.google.firebase.dataconnect.OperationResult<Data,Variables> {
-    method public com.google.firebase.dataconnect.DataSource getDataSource();
     method public com.google.firebase.dataconnect.QueryRef<Data,Variables> getRef();
-    property public abstract com.google.firebase.dataconnect.DataSource dataSource;
     property public abstract com.google.firebase.dataconnect.QueryRef<Data,Variables> ref;
   }
 

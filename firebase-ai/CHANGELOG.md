@@ -1,5 +1,6 @@
 # Unreleased
 
+- [feature] Added experimental support for on-device inference (#7739)
 - [feature] Added automatic function calling support with `AutoFunctionDeclaration`.
 - [feature] Added no-argument overloads for `Tool.urlContext()` and `Tool.googleSearch()`.
 
@@ -142,4 +143,3 @@ using [specific Gemini models](/docs/vertex-ai/models).
 
 Note: This feature is in Public Preview, which means that it is not subject to any SLA or
 deprecation policy and could change in backwards-incompatible ways.
-

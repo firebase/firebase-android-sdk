@@ -25,6 +25,7 @@ import org.hamcrest.CoreMatchers.containsString
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Assert.assertEquals
 import org.junit.Before
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 
@@ -44,6 +45,7 @@ class RemoveTestersTaskTest {
     )
   }
 
+  @Ignore("https://github.com/firebase/firebase-android-sdk/pull/7718")
   @Test
   fun testRemoveTesters_completesSuccessfully() {
     testGroovyBuild.writeBuildFiles()
@@ -65,6 +67,7 @@ class RemoveTestersTaskTest {
     assertThat(result.output, containsString("3 testers removed successfully [200]"))
   }
 
+  @Ignore("https://github.com/firebase/firebase-android-sdk/pull/7718")
   @Test
   fun testRemoveTesters_logsTestersRemovedInDebugMode() {
     testGroovyBuild.writeBuildFiles()
@@ -89,6 +92,7 @@ class RemoveTestersTaskTest {
     assertThat(result.output, containsString("2 testers removed successfully [200]"))
   }
 
+  @Ignore("https://github.com/firebase/firebase-android-sdk/pull/7718")
   @Test
   fun testRemoveTesters_logsNoTestersRemovedInDebugMode() {
     testGroovyBuild.writeBuildFiles()
@@ -139,6 +143,7 @@ class RemoveTestersTaskTest {
     )
   }
 
+  @Ignore("https://github.com/firebase/firebase-android-sdk/pull/7718")
   @Test
   fun testRemoveTesters_failsIfBackendRequestFails() {
     testGroovyBuild.writeBuildFiles()

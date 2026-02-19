@@ -33,6 +33,9 @@ import com.google.firebase.dataconnect.querymgr.LiveQueries
 import com.google.firebase.dataconnect.querymgr.LiveQuery
 import com.google.firebase.dataconnect.querymgr.QueryManager
 import com.google.firebase.dataconnect.querymgr.RegisteredDataDeserializer
+import com.google.firebase.dataconnect.util.AlphanumericStringUtil.toAlphaNumericString
+import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
+import com.google.firebase.dataconnect.util.ProtoUtil.calculateSha512
 import com.google.firebase.util.nextAlphanumericString
 import com.google.protobuf.Struct
 import java.util.concurrent.Executor
@@ -189,14 +192,30 @@ internal class FirebaseDataConnectImpl(
     }
   }
 
+  private data class DataConnectBackendInfo(
+    val host: String,
+    val sslEnabled: Boolean,
+    val isEmulator: Boolean
+  )
+
+  private fun calculateCacheDbUniqueName(backendInfo: DataConnectBackendInfo): String {
+    val struct = buildStructProto {
+      put("projectId", app.options.projectId)
+      put("appName", app.name)
+      put("connectorId", config.connector)
+      put("serviceId", config.serviceId)
+      put("location", config.location)
+      put("host", backendInfo.host)
+      put("sslEnabled", backendInfo.sslEnabled)
+      put("isEmulator", backendInfo.isEmulator)
+    }
+    val sha512Bytes = struct.calculateSha512()
+    return sha512Bytes.toAlphaNumericString()
+  }
+
   private fun createDataConnectGrpcRPCs(
     emulatorSettings: EmulatedServiceSettings?
   ): DataConnectGrpcRPCs {
-    data class DataConnectBackendInfo(
-      val host: String,
-      val sslEnabled: Boolean,
-      val isEmulator: Boolean
-    )
     val backendInfoFromSettings =
       DataConnectBackendInfo(
         host = settings.host,
@@ -236,6 +255,7 @@ internal class FirebaseDataConnectImpl(
         sslEnabled = backendInfo.sslEnabled,
         blockingCoroutineDispatcher = blockingDispatcher,
         grpcMetadata = grpcMetadata,
+        cacheSettings = null, // TODO: pass cache settings once implemented
         parentLogger = logger,
       )
 

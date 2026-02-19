@@ -34,42 +34,7 @@ import kotlinx.serialization.modules.SerializersModule
  * might be added to this interface or contracts of the existing methods can be changed.
  */
 public interface QueryRef<Data, Variables> : OperationRef<Data, Variables> {
-
-  /**
-   * Executes this operation with the fetch policy [FetchPolicy.PREFER_CACHE] and returns the
-   * result.
-   */
-  // TODO(BreakingChange) Implement the method here to call execute(PREFER_CACHE) instead of
-  //  having QueryRefImpl do it.
-  public override suspend fun execute(): QueryResult<Data, Variables>
-
-  /** Executes this operation with the given fetch policy, and returns the result. */
-  public suspend fun execute(fetchPolicy: FetchPolicy): QueryResult<Data, Variables>
-
-  /** The caching policy to use in [QueryRef.execute]. */
-  public enum class FetchPolicy {
-
-    /**
-     * If the query has a cached result that has not expired, then return it without any
-     * communication with the server, just as [CACHE_ONLY] would do. Otherwise, if there is no
-     * cached data for the query or the cached data has expired, then get the latest result from the
-     * server, just as [SERVER_ONLY] would do.
-     */
-    PREFER_CACHE,
-
-    /**
-     * Return the query result from the cache without any communication with the server. If there is
-     * no cached data for the query then return an empty/null result, just as the server would have
-     * returned in that case.
-     */
-    CACHE_ONLY,
-
-    /**
-     * Unconditionally get the latest result from the server, even if there is a locally-cached
-     * result for the query. The local cache will be updated with the result, if successful.
-     */
-    SERVER_ONLY,
-  }
+  override suspend fun execute(): QueryResult<Data, Variables>
 
   /**
    * Subscribes to a query to be notified of updates to the query's data when the query is executed.
@@ -122,13 +87,4 @@ public interface QueryRef<Data, Variables> : OperationRef<Data, Variables> {
  */
 public interface QueryResult<Data, Variables> : OperationResult<Data, Variables> {
   override val ref: QueryRef<Data, Variables>
-
-  /** The source of the query results provided by this object. */
-  public val dataSource: DataSource
-}
-
-/** Indicator of the source of a query's results. */
-public enum class DataSource {
-  CACHE,
-  SERVER,
 }

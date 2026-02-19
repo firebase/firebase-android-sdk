@@ -16,16 +16,22 @@
 
 package com.google.firebase.ai
 
+import android.content.Context
 import android.graphics.Bitmap
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import com.google.firebase.FirebaseApp
 import com.google.firebase.ai.common.APIController
 import com.google.firebase.ai.common.AppCheckHeaderProvider
-import com.google.firebase.ai.common.CountTokensRequest
-import com.google.firebase.ai.common.GenerateContentRequest
+import com.google.firebase.ai.generativemodel.CloudGenerativeModelProvider
+import com.google.firebase.ai.generativemodel.FallbackGenerativeModelProvider
+import com.google.firebase.ai.generativemodel.GenerativeModelProvider
+import com.google.firebase.ai.generativemodel.MissingOnDeviceGenerativeModelProvider
+import com.google.firebase.ai.generativemodel.OnDeviceGenerativeModelProvider
+import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceGenerativeModelFactory
 import com.google.firebase.ai.type.AutoFunctionDeclaration
 import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.CountTokensResponse
-import com.google.firebase.ai.type.FinishReason
 import com.google.firebase.ai.type.FirebaseAIException
 import com.google.firebase.ai.type.FirebaseAutoFunctionException
 import com.google.firebase.ai.type.FunctionCallPart
@@ -34,22 +40,17 @@ import com.google.firebase.ai.type.GenerateContentResponse
 import com.google.firebase.ai.type.GenerateObjectResponse
 import com.google.firebase.ai.type.GenerationConfig
 import com.google.firebase.ai.type.GenerativeBackend
-import com.google.firebase.ai.type.GenerativeBackendEnum
 import com.google.firebase.ai.type.InvalidStateException
 import com.google.firebase.ai.type.JsonSchema
-import com.google.firebase.ai.type.PromptBlockedException
+import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.RequestOptions
-import com.google.firebase.ai.type.ResponseStoppedException
 import com.google.firebase.ai.type.SafetySetting
-import com.google.firebase.ai.type.SerializationException
 import com.google.firebase.ai.type.Tool
 import com.google.firebase.ai.type.ToolConfig
 import com.google.firebase.ai.type.content
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.map
 import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -62,54 +63,10 @@ import kotlinx.serialization.json.jsonObject
  */
 public class GenerativeModel
 internal constructor(
-  private val modelName: String,
-  private val generationConfig: GenerationConfig? = null,
-  private val safetySettings: List<SafetySetting>? = null,
-  private val tools: List<Tool> = emptyList(),
-  private val toolConfig: ToolConfig? = null,
-  private val systemInstruction: Content? = null,
-  private val generativeBackend: GenerativeBackend = GenerativeBackend.googleAI(),
-  internal val requestOptions: RequestOptions = RequestOptions(),
-  internal val controller: APIController,
+  private val actualModel: GenerativeModelProvider,
+  internal val requestOptions: RequestOptions,
+  private val tools: List<Tool> = emptyList()
 ) {
-  internal constructor(
-    modelName: String,
-    apiKey: String,
-    firebaseApp: FirebaseApp,
-    useLimitedUseAppCheckTokens: Boolean,
-    generationConfig: GenerationConfig? = null,
-    safetySettings: List<SafetySetting>? = null,
-    tools: List<Tool> = emptyList(),
-    toolConfig: ToolConfig? = null,
-    systemInstruction: Content? = null,
-    requestOptions: RequestOptions = RequestOptions(),
-    generativeBackend: GenerativeBackend,
-    appCheckTokenProvider: InteropAppCheckTokenProvider? = null,
-    internalAuthProvider: InternalAuthProvider? = null
-  ) : this(
-    modelName,
-    generationConfig,
-    safetySettings,
-    tools,
-    toolConfig,
-    systemInstruction,
-    generativeBackend,
-    requestOptions,
-    APIController(
-      apiKey,
-      modelName,
-      requestOptions,
-      "gl-kotlin/${KotlinVersion.CURRENT}-ai fire/${BuildConfig.VERSION_NAME}",
-      firebaseApp,
-      AppCheckHeaderProvider(
-        TAG,
-        useLimitedUseAppCheckTokens,
-        appCheckTokenProvider,
-        internalAuthProvider
-      ),
-    ),
-  )
-
   /**
    * Generates new content from the input [Content] given to the model as a prompt.
    *
@@ -119,11 +76,7 @@ internal constructor(
    * @see [FirebaseAIException] for types of errors.
    */
   public suspend fun generateContent(prompt: List<Content>): GenerateContentResponse =
-    try {
-      controller.generateContent(buildGenerateContentRequest(prompt)).toPublic().validate()
-    } catch (e: Throwable) {
-      throw FirebaseAIException.from(e)
-    }
+    actualModel.generateContent(prompt)
 
   /**
    * Generates new content from the input [Content] given to the model as a prompt.
@@ -169,10 +122,7 @@ internal constructor(
    * @see [FirebaseAIException] for types of errors.
    */
   public fun generateContentStream(prompt: List<Content>): Flow<GenerateContentResponse> =
-    controller
-      .generateContentStream(buildGenerateContentRequest(prompt))
-      .map { it.toPublic().validate() }
-      .catch { throw FirebaseAIException.from(it) }
+    actualModel.generateContentStream(prompt)
 
   /**
    * Generates new content as a stream from the input [Content] given to the model as a prompt.
@@ -222,22 +172,7 @@ internal constructor(
     jsonSchema: JsonSchema<T>,
     prompt: Content,
     vararg prompts: Content
-  ): GenerateObjectResponse<T> {
-    val config =
-      (generationConfig?.toBuilder() ?: GenerationConfig.builder())
-        .setResponseSchemaJson(jsonSchema)
-        .setResponseMimeType("application/json")
-        .build()
-    try {
-      val request = buildGenerateContentRequest(listOf(prompt, *prompts), config)
-      return GenerateObjectResponse(
-        controller.generateContent(request).toPublic().validate(),
-        jsonSchema
-      )
-    } catch (e: Throwable) {
-      throw FirebaseAIException.from(e)
-    }
-  }
+  ): GenerateObjectResponse<T> = actualModel.generateObject(jsonSchema, listOf(prompt, *prompts))
 
   /**
    * Generates an object from the text input given to the model as a prompt.
@@ -265,13 +200,8 @@ internal constructor(
    * @throws [FirebaseAIException] if the request failed.
    * @see [FirebaseAIException] for types of errors.
    */
-  public suspend fun countTokens(prompt: List<Content>): CountTokensResponse {
-    try {
-      return controller.countTokens(buildCountTokensRequest(prompt)).toPublic()
-    } catch (e: Throwable) {
-      throw FirebaseAIException.from(e)
-    }
-  }
+  public suspend fun countTokens(prompt: List<Content>): CountTokensResponse =
+    actualModel.countTokens(prompt)
 
   /**
    * Counts the number of tokens in a prompt using the model's tokenizer.
@@ -305,6 +235,13 @@ internal constructor(
    */
   public suspend fun countTokens(prompt: Bitmap): CountTokensResponse =
     countTokens(listOf(content { image(prompt) }))
+
+  /**
+   * Warms up the model to reduce latency for the first request.
+   *
+   * @throws [FirebaseAIException] if the warmup failed.
+   */
+  @PublicPreviewAPI public suspend fun warmUp(): Unit = actualModel.warmUp()
 
   internal fun hasFunction(call: FunctionCallPart): Boolean {
     return tools
@@ -355,51 +292,111 @@ internal constructor(
     }
   }
 
-  private fun buildGenerateContentRequest(
-    prompt: List<Content>,
-    overrideConfig: GenerationConfig? = null
-  ) =
-    GenerateContentRequest(
-      modelName,
-      prompt.map { it.toInternal() },
-      safetySettings
-        ?.also { safetySettingList ->
-          if (
-            generativeBackend.backend == GenerativeBackendEnum.GOOGLE_AI &&
-              safetySettingList.any { it.method != null }
-          ) {
-            throw InvalidStateException(
-              "HarmBlockMethod is unsupported by the Google Developer API"
-            )
-          }
+  @OptIn(PublicPreviewAPI::class)
+  internal class Builder(
+    private val modelName: String,
+    private val apiKey: String,
+    private val firebaseApp: FirebaseApp,
+    private val useLimitedUseAppCheckTokens: Boolean,
+    private val generativeBackend: GenerativeBackend,
+  ) {
+    var generationConfig: GenerationConfig? = null
+    var safetySettings: List<SafetySetting>? = null
+    var tools: List<Tool> = mutableListOf()
+    var toolConfig: ToolConfig? = null
+    var systemInstruction: Content? = null
+    var requestOptions: RequestOptions = RequestOptions()
+    var apiClient: String = "gl-kotlin/${KotlinVersion.CURRENT}-ai fire/${BuildConfig.VERSION_NAME}"
+    @PublicPreviewAPI var onDeviceConfig: OnDeviceConfig = OnDeviceConfig.IN_CLOUD
+    var appCheckTokenProvider: InteropAppCheckTokenProvider? = null
+    var internalAuthProvider: InternalAuthProvider? = null
+    var onDeviceFactoryProvider: FirebaseAIOnDeviceGenerativeModelFactory? = null
+
+    /**
+     * Returns a [GenerativeModelProvider] that uses the cloud backend.
+     *
+     * @param isFallback Whether this provider is being used as a fallback for another provider.
+     * @return A [GenerativeModelProvider] that uses the cloud backend.
+     */
+    internal fun buildCloudModelProvider(isFallback: Boolean = false): GenerativeModelProvider {
+      return CloudGenerativeModelProvider(
+        modelName = modelName,
+        generationConfig = generationConfig,
+        safetySettings = safetySettings,
+        tools = tools,
+        toolConfig = toolConfig,
+        systemInstruction = systemInstruction,
+        generativeBackend = generativeBackend,
+        controller =
+          APIController(
+            apiKey,
+            modelName,
+            requestOptions,
+            if (isFallback) "${apiClient} hybrid" else apiClient,
+            firebaseApp,
+            AppCheckHeaderProvider(
+              TAG,
+              useLimitedUseAppCheckTokens,
+              appCheckTokenProvider,
+              internalAuthProvider
+            ),
+          ),
+      )
+    }
+
+    @OptIn(PublicPreviewAPI::class)
+    internal fun buildOnDeviceModelProvider(): GenerativeModelProvider =
+      onDeviceFactoryProvider?.let {
+        OnDeviceGenerativeModelProvider(it.newGenerativeModel(), onDeviceConfig)
+      }
+        ?: MissingOnDeviceGenerativeModelProvider()
+
+    @PublicPreviewAPI
+    internal fun getModelProvider(): GenerativeModelProvider =
+      when (onDeviceConfig.mode) {
+        InferenceMode.ONLY_IN_CLOUD -> buildCloudModelProvider()
+        InferenceMode.ONLY_ON_DEVICE -> buildOnDeviceModelProvider()
+        InferenceMode.PREFER_ON_DEVICE -> {
+          FallbackGenerativeModelProvider(
+            defaultModel = buildOnDeviceModelProvider(),
+            fallbackModel = buildCloudModelProvider(isFallback = true),
+            shouldFallbackInException = true
+          )
         }
-        ?.map { it.toInternal() },
-      (overrideConfig ?: generationConfig)?.toInternal(),
-      tools.map { it.toInternal() }.takeIf { it.isNotEmpty() },
-      toolConfig?.toInternal(),
-      systemInstruction?.copy(role = "system")?.toInternal(),
-    )
+        InferenceMode.PREFER_IN_CLOUD ->
+          FallbackGenerativeModelProvider(
+            defaultModel = buildCloudModelProvider(),
+            fallbackModel = buildOnDeviceModelProvider(),
+            precondition =
+              NetworkStatusChecker(
+                firebaseApp.applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE)
+                  as ConnectivityManager
+              )::isDeviceOnline,
+            shouldFallbackInException = false
+          )
+        else -> throw InvalidStateException("Invalid inference mode")
+      }
 
-  private fun buildCountTokensRequest(prompt: List<Content>) =
-    when (generativeBackend.backend) {
-      GenerativeBackendEnum.GOOGLE_AI ->
-        CountTokensRequest.forGoogleAI(buildGenerateContentRequest(prompt))
-      GenerativeBackendEnum.VERTEX_AI ->
-        CountTokensRequest.forVertexAI(buildGenerateContentRequest(prompt))
+    @OptIn(PublicPreviewAPI::class)
+    internal fun build(): GenerativeModel {
+      return GenerativeModel(
+        tools = tools,
+        actualModel = getModelProvider(),
+        requestOptions = requestOptions
+      )
     }
-
-  private fun GenerateContentResponse.validate() = apply {
-    if (candidates.isEmpty() && promptFeedback == null) {
-      throw SerializationException("Error deserializing response, found no valid fields")
-    }
-    promptFeedback?.blockReason?.let { throw PromptBlockedException(this) }
-    candidates
-      .mapNotNull { it.finishReason }
-      .firstOrNull { it != FinishReason.STOP }
-      ?.let { throw ResponseStoppedException(this) }
   }
 
-  private companion object {
+  internal companion object {
     private val TAG = GenerativeModel::class.java.simpleName
   }
+}
+
+internal class NetworkStatusChecker(private val connectivityManager: ConnectivityManager) {
+  fun isDeviceOnline(): Boolean =
+    connectivityManager.getNetworkCapabilities(connectivityManager.activeNetwork)?.let {
+      it.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
+        it.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+    }
+      ?: false
 }

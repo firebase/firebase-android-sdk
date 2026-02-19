@@ -23,7 +23,12 @@ import com.google.firebase.dataconnect.core.DataConnectGrpcMetadata.Companion.to
 import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
+import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase
+import com.google.firebase.dataconnect.sqlite.GetEntityIdForPathFunction
+import com.google.firebase.dataconnect.util.ImmutableByteArray
+import com.google.firebase.dataconnect.util.NullableReference
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
+import com.google.firebase.dataconnect.util.ProtoUtil.calculateSha512
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.ProtoUtil.toStructProto
 import com.google.firebase.dataconnect.util.SuspendingLazy
@@ -44,6 +49,7 @@ import io.grpc.ManagedChannelBuilder
 import io.grpc.Metadata
 import io.grpc.MethodDescriptor
 import io.grpc.android.AndroidChannelBuilder
+import java.io.File
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
@@ -62,6 +68,7 @@ internal class DataConnectGrpcRPCs(
   sslEnabled: Boolean,
   private val blockingCoroutineDispatcher: CoroutineDispatcher,
   private val grpcMetadata: DataConnectGrpcMetadata,
+  private val cacheSettings: CacheSettings?,
   parentLogger: Logger,
 ) {
   private val logger =
@@ -70,6 +77,7 @@ internal class DataConnectGrpcRPCs(
         "created by ${parentLogger.nameWithId} with" +
           " host=$host" +
           " sslEnabled=$sslEnabled" +
+          " cacheSettings=$cacheSettings" +
           " grpcMetadata=${grpcMetadata.instanceId}"
       }
     }
@@ -78,6 +86,25 @@ internal class DataConnectGrpcRPCs(
 
   private val mutex = Mutex()
   private var closed = false
+
+  data class CacheSettings(val dbFile: File?)
+
+  // Use the non-main-thread CoroutineDispatcher to avoid blocking operations on the main thread.
+  private val lazyCacheDb =
+    SuspendingLazy(mutex = mutex, coroutineContext = blockingCoroutineDispatcher) {
+      check(!closed) { "DataConnectGrpcRPCs ${logger.nameWithId} instance has been closed" }
+      if (cacheSettings === null) {
+        NullableReference()
+      } else {
+        logger.debug { "Creating GRPC ManagedChannel for host=$host sslEnabled=$sslEnabled" }
+        val dbFile = cacheSettings.dbFile
+        val cacheLogger = Logger("DataConnectCacheDatabase")
+        cacheLogger.debug { "created by ${logger.nameWithId} with dbFile=$dbFile" }
+        val cacheDb = DataConnectCacheDatabase(dbFile, cacheLogger)
+        cacheDb.initialize()
+        NullableReference(cacheDb)
+      }
+    }
 
   // Use the non-main-thread CoroutineDispatcher to avoid blocking operations on the main thread.
   private val lazyGrpcChannel =
@@ -139,7 +166,7 @@ internal class DataConnectGrpcRPCs(
     request: ExecuteMutationRequest,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
   ): ExecuteMutationResponse {
-    val metadata = grpcMetadata.get(requestId, callerSdkType)
+    val metadata = grpcMetadata.get(requestId, callerSdkType).metadata
     val kotlinMethodName = "executeMutation(${request.operationName})"
 
     logger.logGrpcSending(
@@ -172,12 +199,36 @@ internal class DataConnectGrpcRPCs(
     return result.getOrThrow()
   }
 
+  sealed interface ExecuteQueryResult {
+    @JvmInline value class FromCache(val data: Struct) : ExecuteQueryResult
+
+    @JvmInline value class FromServer(val response: ExecuteQueryResponse) : ExecuteQueryResult
+  }
+
+  private class QueryCacheInfo(
+    val cacheDb: DataConnectCacheDatabase,
+    val authUid: String?,
+    val queryId: ImmutableByteArray,
+  )
+
+  private suspend fun queryCacheInfo(
+    authToken: DataConnectAuth.GetAuthTokenResult?,
+    request: ExecuteQueryRequest,
+  ) =
+    lazyCacheDb.get().ref?.let { cacheDb ->
+      QueryCacheInfo(
+        cacheDb,
+        authUid = authToken?.authUid,
+        queryId = request.toQueryId(),
+      )
+    }
+
   suspend fun executeQuery(
     requestId: String,
     request: ExecuteQueryRequest,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
-  ): ExecuteQueryResponse {
-    val metadata = grpcMetadata.get(requestId, callerSdkType)
+  ): ExecuteQueryResult {
+    val (metadata, authToken) = grpcMetadata.get(requestId, callerSdkType)
     val kotlinMethodName = "executeQuery(${request.operationName})"
 
     logger.logGrpcSending(
@@ -189,16 +240,35 @@ internal class DataConnectGrpcRPCs(
       requestTypeName = "ExecuteQueryRequest",
     )
 
+    val cacheInfo = queryCacheInfo(authToken, request)
+
+    cacheInfo?.run {
+      val cachedResult = cacheDb.getQueryResult(authUid, queryId)
+      if (cachedResult !== null) {
+        return ExecuteQueryResult.FromCache(cachedResult)
+      }
+    }
+
     val result = lazyGrpcStub.get().runCatching { executeQuery(request, metadata) }
 
-    result.onSuccess {
+    result.onSuccess { response ->
       logger.logGrpcReceived(
         requestId = requestId,
         kotlinMethodName = kotlinMethodName,
-        response = it.toStructProto(),
+        response = response.toStructProto(),
         responseTypeName = "ExecuteQueryResponse",
       )
+
+      cacheInfo?.run {
+        cacheDb.insertQueryResult(
+          authUid,
+          queryId,
+          queryData = response.data,
+          getEntityIdForPath = response.getEntityIdForPathFunction(),
+        )
+      }
     }
+
     result.onFailure {
       logger.logGrpcFailed(
         requestId = requestId,
@@ -207,7 +277,7 @@ internal class DataConnectGrpcRPCs(
       )
     }
 
-    return result.getOrThrow()
+    return ExecuteQueryResult.FromServer(result.getOrThrow())
   }
 
   suspend fun getEmulatorInfo(requestId: String): EmulatorInfo {
@@ -283,13 +353,24 @@ internal class DataConnectGrpcRPCs(
     logger.debug { "close()" }
     mutex.withLock { closed = true }
 
-    val grpcChannel = lazyGrpcChannel.initializedValueOrNull ?: return
+    val grpcChannel = lazyGrpcChannel.initializedValueOrNull
+    val cacheDb = lazyCacheDb.initializedValueOrNull?.ref
+
+    if (grpcChannel === null && cacheDb === null) {
+      return
+    }
 
     // Avoid blocking the calling thread by running potentially-blocking code on the dispatcher
     // given to the constructor, which should have similar semantics to [Dispatchers.IO].
     withContext(blockingCoroutineDispatcher) {
-      grpcChannel.shutdownNow()
-      grpcChannel.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS)
+      val grpcChannelShutdownResult = runCatching {
+        grpcChannel?.shutdownNow()
+        grpcChannel?.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS)
+      }
+      val cacheDbCloseResult = runCatching { cacheDb?.close() }
+
+      grpcChannelShutdownResult.getOrThrow()
+      cacheDbCloseResult.getOrThrow()
     }
   }
 
@@ -319,6 +400,14 @@ internal class DataConnectGrpcRPCs(
       "$kotlinMethodName [rid=$requestId] sending: ${struct.toCompactString(keySortSelector)}"
     }
 
+    fun Logger.logGrpcReturningFromCache(
+      requestId: String,
+      kotlinMethodName: String,
+      struct: Struct,
+    ) = debug {
+      "$kotlinMethodName [rid=$requestId] returning result from cache: ${struct.toCompactString()}"
+    }
+
     fun Logger.logGrpcStarting(
       requestId: String,
       kotlinMethodName: String,
@@ -346,4 +435,13 @@ internal class DataConnectGrpcRPCs(
       throwable: Throwable,
     ) = warn(throwable) { "$kotlinMethodName [rid=$requestId] FAILED: $throwable" }
   }
+}
+
+private fun ExecuteQueryRequest.toQueryId(): ImmutableByteArray {
+  val queryId = variables.calculateSha512(preamble = operationName)
+  return ImmutableByteArray.adopt(queryId)
+}
+
+private fun ExecuteQueryResponse.getEntityIdForPathFunction(): GetEntityIdForPathFunction? {
+  return null
 }

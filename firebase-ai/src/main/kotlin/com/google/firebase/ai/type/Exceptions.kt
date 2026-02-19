@@ -17,6 +17,8 @@
 package com.google.firebase.ai.type
 
 import com.google.firebase.ai.FirebaseAI
+import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceException
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.TimeoutCancellationException
 
 /** Parent class for any errors that occur from the [FirebaseAI] SDK. */
@@ -31,11 +33,21 @@ internal constructor(message: String, cause: Throwable? = null) : RuntimeExcepti
      * Will populate default messages as expected, and propagate the provided [cause] through the
      * resulting exception.
      */
+    @OptIn(PublicPreviewAPI::class)
     internal fun from(cause: Throwable): FirebaseAIException =
       when (cause) {
         is FirebaseAIException -> cause
+        is FirebaseAIOnDeviceException ->
+          when (cause) {
+            is com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceNotAvailableException ->
+              FirebaseAIOnDeviceNotAvailableException(cause)
+            is com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceInvalidRequestException ->
+              FirebaseAIOnDeviceInvalidRequestException(cause)
+            else -> FirebaseAIOnDeviceUnknownException(cause)
+          }
         is TimeoutCancellationException ->
           RequestTimeoutException("The request failed to complete in the allotted time.")
+        is CancellationException -> throw cause
         else -> UnknownException("Something unexpected happened.", cause)
       }
 
@@ -209,6 +221,29 @@ public class PermissionMissingException(message: String, cause: Throwable? = nul
 
 /** Thrown when a function invoked by the model has an error that should be returned to the model */
 public class FirebaseAutoFunctionException(message: String) : FirebaseAIException(message)
+
+/**
+ * An operation has been requested, but device doesn't support local models, or they are not
+ * available.
+ *
+ * Prefer using the corresponding `isAvailable()` method on the model to check the status before
+ * trying to use it.
+ */
+@PublicPreviewAPI
+public class FirebaseAIOnDeviceNotAvailableException(
+  cause: com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceNotAvailableException
+) : FirebaseAIException(cause.message ?: "Device doesn't support local models", cause)
+
+/** The parameters used in the request are not valid. */
+@PublicPreviewAPI
+public class FirebaseAIOnDeviceInvalidRequestException(
+  cause: com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceInvalidRequestException
+) : FirebaseAIException(cause.message ?: "Invalid on-device request", cause)
+
+/** Catch all case for exceptions not explicitly expected. */
+@PublicPreviewAPI
+public class FirebaseAIOnDeviceUnknownException(cause: FirebaseAIOnDeviceException) :
+  FirebaseAIException(cause.message ?: "Unknown on-device exception", cause)
 
 /** Catch all case for exceptions not explicitly expected. */
 public class UnknownException internal constructor(message: String, cause: Throwable? = null) :
