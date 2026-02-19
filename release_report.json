@@ -260,61 +260,6 @@
                 "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7827"
             }
         ],
-        "appcheck/firebase-appcheck": [],
-        "appcheck/firebase-appcheck-debug": [
-            {
-                "commitId": "5bb9b990466203d79e113817376e022c15d6a149",
-                "prId": "7693",
-                "author": "Rodrigo Lazo",
-                "message": "[Plugin] Fix build release artifacts workflow (#7693)\n\nDownloading the dackka binary should happen **before** gradle is run to\nbuild the artifacts, otherwise it doesn't find it and fails.",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5bb9b990466203d79e113817376e022c15d6a149",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7693"
-            },
-            {
-                "commitId": "5941763a3ba861d0d907a9ea2b337c5db3db7b41",
-                "prId": "7692",
-                "author": "Rodrigo Lazo",
-                "message": "[AppCheck] Add missing changelog entries. (#7692)\n\nThe change introduced in (#7640) triggers a release of app check, and all SDKs must contain a changelog entry for it.",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5941763a3ba861d0d907a9ea2b337c5db3db7b41",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7692"
-            }
-        ],
-        "appcheck/firebase-appcheck-debug-testing": [
-            {
-                "commitId": "5bb9b990466203d79e113817376e022c15d6a149",
-                "prId": "7693",
-                "author": "Rodrigo Lazo",
-                "message": "[Plugin] Fix build release artifacts workflow (#7693)\n\nDownloading the dackka binary should happen **before** gradle is run to\nbuild the artifacts, otherwise it doesn't find it and fails.",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5bb9b990466203d79e113817376e022c15d6a149",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7693"
-            },
-            {
-                "commitId": "5941763a3ba861d0d907a9ea2b337c5db3db7b41",
-                "prId": "7692",
-                "author": "Rodrigo Lazo",
-                "message": "[AppCheck] Add missing changelog entries. (#7692)\n\nThe change introduced in (#7640) triggers a release of app check, and all SDKs must contain a changelog entry for it.",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5941763a3ba861d0d907a9ea2b337c5db3db7b41",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7692"
-            }
-        ],
-        "appcheck/firebase-appcheck-playintegrity": [
-            {
-                "commitId": "5bb9b990466203d79e113817376e022c15d6a149",
-                "prId": "7693",
-                "author": "Rodrigo Lazo",
-                "message": "[Plugin] Fix build release artifacts workflow (#7693)\n\nDownloading the dackka binary should happen **before** gradle is run to\nbuild the artifacts, otherwise it doesn't find it and fails.",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5bb9b990466203d79e113817376e022c15d6a149",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7693"
-            },
-            {
-                "commitId": "5941763a3ba861d0d907a9ea2b337c5db3db7b41",
-                "prId": "7692",
-                "author": "Rodrigo Lazo",
-                "message": "[AppCheck] Add missing changelog entries. (#7692)\n\nThe change introduced in (#7640) triggers a release of app check, and all SDKs must contain a changelog entry for it.",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5941763a3ba861d0d907a9ea2b337c5db3db7b41",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7692"
-            }
-        ],
         "transport/transport-api": [
             {
                 "commitId": "d37e2fc38944b676ac11307aa83a57a6a888db7f",

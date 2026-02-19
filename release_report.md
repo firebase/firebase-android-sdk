@@ -109,33 +109,6 @@
 * Add FII changelog for m177 (#7827)   
   [pr](https://github.com/firebase/firebase-android-sdk/pull/7827) [commit](https://github.com/firebase/firebase-android-sdk/commit/d6ffd7f09dd4a688a52ca1bcff7262f665651162)  [emilypgoogle]
 
-## appcheck/firebase-appcheck
-
-
-## appcheck/firebase-appcheck-debug
-
-* [Plugin] Fix build release artifacts workflow (#7693)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/7693) [commit](https://github.com/firebase/firebase-android-sdk/commit/5bb9b990466203d79e113817376e022c15d6a149)  [Rodrigo Lazo]
-
-* [AppCheck] Add missing changelog entries. (#7692)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/7692) [commit](https://github.com/firebase/firebase-android-sdk/commit/5941763a3ba861d0d907a9ea2b337c5db3db7b41)  [Rodrigo Lazo]
-
-## appcheck/firebase-appcheck-debug-testing
-
-* [Plugin] Fix build release artifacts workflow (#7693)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/7693) [commit](https://github.com/firebase/firebase-android-sdk/commit/5bb9b990466203d79e113817376e022c15d6a149)  [Rodrigo Lazo]
-
-* [AppCheck] Add missing changelog entries. (#7692)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/7692) [commit](https://github.com/firebase/firebase-android-sdk/commit/5941763a3ba861d0d907a9ea2b337c5db3db7b41)  [Rodrigo Lazo]
-
-## appcheck/firebase-appcheck-playintegrity
-
-* [Plugin] Fix build release artifacts workflow (#7693)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/7693) [commit](https://github.com/firebase/firebase-android-sdk/commit/5bb9b990466203d79e113817376e022c15d6a149)  [Rodrigo Lazo]
-
-* [AppCheck] Add missing changelog entries. (#7692)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/7692) [commit](https://github.com/firebase/firebase-android-sdk/commit/5941763a3ba861d0d907a9ea2b337c5db3db7b41)  [Rodrigo Lazo]
-
 ## transport/transport-api
 
 * add support for experimental ids (#7667)   

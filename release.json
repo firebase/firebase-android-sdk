@@ -11,10 +11,6 @@
         ":firebase-installations-interop",
         ":firebase-messaging",
         ":firebase-messaging-directboot",
-        ":appcheck:firebase-appcheck",
-        ":appcheck:firebase-appcheck-debug",
-        ":appcheck:firebase-appcheck-debug-testing",
-        ":appcheck:firebase-appcheck-playintegrity",
         ":transport:transport-api",
         ":transport:transport-backend-cct",
         ":transport:transport-runtime"
