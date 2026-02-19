@@ -9,8 +9,6 @@
         ":firebase-firestore",
         ":firebase-installations",
         ":firebase-installations-interop",
-        ":firebase-messaging",
-        ":firebase-messaging-directboot",
         ":transport:transport-api",
         ":transport:transport-backend-cct",
         ":transport:transport-runtime"

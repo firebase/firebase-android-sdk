@@ -232,34 +232,6 @@
                 "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7096"
             }
         ],
-        "firebase-messaging": [
-            {
-                "commitId": "ffaca97378296e2f4b440fc4c4f6010814b071e3",
-                "prId": "7826",
-                "author": "Rodrigo Lazo",
-                "message": "[FCM] Fix changelog format (#7826)\n\nThe changes introduced in a previous PR did not include running the\nformatter and caused a malformed file to be modified.",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ffaca97378296e2f4b440fc4c4f6010814b071e3",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7826"
-            },
-            {
-                "commitId": "850ebc528f252a6b8a2ce79699077285600f6ed3",
-                "prId": "5726",
-                "author": "Minseong Kim",
-                "message": "Fix version typo in firebase-messaging/CHANGELOG.md (#5726)\n\nI fixed the typo in the CHANGELOG.md of firebase-messaging module.\n\nCo-authored-by: Rodrigo Lazo <rlazo@users.noreply.github.com>",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/850ebc528f252a6b8a2ce79699077285600f6ed3",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/5726"
-            }
-        ],
-        "firebase-messaging-directboot": [
-            {
-                "commitId": "d6ffd7f09dd4a688a52ca1bcff7262f665651162",
-                "prId": "7827",
-                "author": "emilypgoogle",
-                "message": "Add FII changelog for m177 (#7827)\n\n",
-                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/d6ffd7f09dd4a688a52ca1bcff7262f665651162",
-                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7827"
-            }
-        ],
         "transport/transport-api": [
             {
                 "commitId": "d37e2fc38944b676ac11307aa83a57a6a888db7f",

@@ -96,19 +96,6 @@
 * Fix FIS ID duplication issue from backup data (#7096)   
   [pr](https://github.com/firebase/firebase-android-sdk/pull/7096) [commit](https://github.com/firebase/firebase-android-sdk/commit/b94a35345b6d9a1195f63b9a3bc612105a9ee7eb)  [Vinay Guthal]
 
-## firebase-messaging
-
-* [FCM] Fix changelog format (#7826)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/7826) [commit](https://github.com/firebase/firebase-android-sdk/commit/ffaca97378296e2f4b440fc4c4f6010814b071e3)  [Rodrigo Lazo]
-
-* Fix version typo in firebase-messaging/CHANGELOG.md (#5726)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/5726) [commit](https://github.com/firebase/firebase-android-sdk/commit/850ebc528f252a6b8a2ce79699077285600f6ed3)  [Minseong Kim]
-
-## firebase-messaging-directboot
-
-* Add FII changelog for m177 (#7827)   
-  [pr](https://github.com/firebase/firebase-android-sdk/pull/7827) [commit](https://github.com/firebase/firebase-android-sdk/commit/d6ffd7f09dd4a688a52ca1bcff7262f665651162)  [emilypgoogle]
-
 ## transport/transport-api
 
 * add support for experimental ids (#7667)   
