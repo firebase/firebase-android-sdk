@@ -75,7 +75,7 @@ symbolProcessingApi = "2.2.10-2.0.2"
 testServices = "1.6.0"
 truth = "1.4.5"
 truthProtoExtension = "1.0"
-wiremockStandalone = "2.26.3"
+wiremockStandalone = "3.0.1"
 
 [libraries]
 android-gradlePlugin-builder-test-api = { group = "com.android.tools.build", name = "builder-test-api", version.ref = "androidGradlePlugin" }
