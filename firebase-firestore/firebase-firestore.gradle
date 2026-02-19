@@ -13,6 +13,7 @@
 // limitations under the License.
 
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     id 'firebase-library'
@@ -110,17 +111,31 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        // Java 17 needed for record test cases
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
     testOptions.unitTests.includeAndroidResources = true
 
 }
 
-kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_1_8 } }
+kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_17 } }
+
+tasks.withType(KotlinCompile).configureEach {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_17)
+    }
+}
 
 tasks.withType(Test) {
     maxParallelForks = Runtime.runtime.availableProcessors().intdiv(2) ?: 1
+}
+
+// Needed for testing RecordMapper's constructor selection
+tasks.withType(JavaCompile).configureEach {
+    if (it.name.contains("UnitTest") || it.name.contains("AndroidTest")) {
+        options.compilerArgs.add("-parameters")
+    }
 }
 
 dependencies {
