@@ -8,6 +8,8 @@
   [#7821](https://github.com/firebase/firebase-android-sdk/pull/7821))
 - [changed] Added public APIs for offline caching.
   [#7833](https://github.com/firebase/firebase-android-sdk/pull/7833))
+- [changed] DataSource wired up and entity paths extracted from response.
+  [#7814](https://github.com/firebase/firebase-android-sdk/pull/7814))
 
 # 17.1.3
 

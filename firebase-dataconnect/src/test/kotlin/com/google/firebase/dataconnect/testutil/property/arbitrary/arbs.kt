@@ -19,6 +19,7 @@
 package com.google.firebase.dataconnect.testutil.property.arbitrary
 
 import com.google.firebase.dataconnect.DataConnectPathSegment
+import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.OperationRef
 import com.google.firebase.dataconnect.core.DataConnectAppCheck
@@ -115,8 +116,8 @@ internal fun DataConnectArb.operationFailureResponseImpl(
 internal fun DataConnectArb.operationResult(
   data: Arb<Struct?> = Arb.proto.struct().map { it.struct }.orNull(nullProbability = 0.2),
   errors: Arb<List<ErrorInfoImpl>> = operationErrors(),
-) =
-  Arb.bind(data, errors) { data0, errors0 -> DataConnectGrpcClient.OperationResult(data0, errors0) }
+  source: Arb<DataSource> = Arb.enum(),
+) = Arb.bind(data, errors, source, DataConnectGrpcClient::OperationResult)
 
 internal fun <Data, Variables> DataConnectArb.queryRefImpl(
   variables: Arb<Variables>,
