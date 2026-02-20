@@ -75,7 +75,7 @@ symbolProcessingApi = "2.2.10-2.0.2"
 testServices = "1.6.0"
 truth = "1.4.5"
 truthProtoExtension = "1.0"
-wiremockStandalone = "2.26.3"
+wiremockStandalone = "3.13.2"
 
 [libraries]
 android-gradlePlugin-builder-test-api = { group = "com.android.tools.build", name = "builder-test-api", version.ref = "androidGradlePlugin" }
@@ -219,7 +219,7 @@ turbine = { module = "app.cash.turbine:turbine", version = "1.2.1" }
 # Do not use three-ten-abp in production code (it's only for tests) because it has performance
 # issues.
 testonly-three-ten-abp = { module = "com.jakewharton.threetenabp:threetenabp", version = "1.4.9" }
-wiremock-standalone = { module = "com.github.tomakehurst:wiremock-standalone", version.ref = "wiremockStandalone" }
+wiremock-standalone = { module = "org.wiremock:wiremock-standalone", version.ref = "wiremockStandalone" }
 
 [bundles]
 kotest = ["kotest-runner", "kotest-assertions", "kotest-property", "kotest-property-arbs"]
