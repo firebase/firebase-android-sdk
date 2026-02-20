@@ -225,6 +225,7 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
   private data class GetQueryResult(
     val id: SqliteQueryId,
     val proto: QueryResultProto,
+    val expiryProto: QueryResultExpiry,
   )
 
   private fun SQLiteDatabase.getQuery(
@@ -233,7 +234,7 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
   ): GetQueryResult? =
     rawQuery(
       logger,
-      "SELECT id, data, flags FROM queries WHERE user_id=? AND query_id=?",
+      "SELECT id, data, expiry, flags FROM queries WHERE user_id=? AND query_id=?",
       bindArgs = arrayOf(user.sqliteRowId, queryId.peek()),
     ) { cursor ->
       if (!cursor.moveToNext()) {
@@ -241,7 +242,8 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
       } else {
         val id = SqliteQueryId(cursor.getLong(0))
         val protoBytes = cursor.getBlob(1)
-        val flags = cursor.getLong(2).toULong()
+        val expiryBytes = cursor.getBlob(2)
+        val flags = cursor.getLong(3).toULong()
 
         val parseResult = runCatching {
           // The lower 32 bits of the "flags" are "required". So if there are any flags set there
@@ -263,7 +265,16 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
           }
         }
 
-        GetQueryResult(id, parseResult.getOrThrow())
+        val expiryParseResult = runCatching { QueryResultExpiry.parseFrom(expiryBytes) }
+
+        expiryParseResult.onFailure {
+          logger.warn(it) {
+            "Parsing QueryResultExpiry failed for id=$id, user=$user, " +
+              "queryId=${queryId.to0xHexString()}, flags=$flags [x9k2c3b8y1]"
+          }
+        }
+
+        GetQueryResult(id, parseResult.getOrThrow(), expiryParseResult.getOrThrow())
       }
     }
 
