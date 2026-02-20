@@ -39,6 +39,7 @@ import io.kotest.property.arbitrary.duration
 import io.kotest.property.arbitrary.egyptianHieroglyphs
 import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.filterNot
+import io.kotest.property.arbitrary.flatMap
 import io.kotest.property.arbitrary.hex
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.map
@@ -174,6 +175,31 @@ object DataConnectArb {
       fieldArb = field,
       listIndexArb = listIndex,
     )
+
+  val ZERO_DURATION: com.google.protobuf.Duration =
+    com.google.protobuf.Duration.newBuilder().setSeconds(0).setNanos(0).build()
+
+  fun maxAge(min: com.google.protobuf.Duration = ZERO_DURATION): Arb<com.google.protobuf.Duration> {
+    val minSeconds = min.seconds.also { require(it >= 0) { "invalid min.seconds: $it" } }
+    val minNanos = min.nanos.also { require(it in 0..999_999_999) { "invalid min.nanos: $it" } }
+
+    val secondsArb = Arb.nonNegativeLongWithEvenNumDigitsDistribution(min = min.seconds)
+
+    val allNanosArb = Arb.intWithEvenNumDigitsDistribution(0..999_999_999)
+    val restrictedNanosArb =
+      if (minNanos == 0) {
+        allNanosArb
+      } else {
+        Arb.intWithEvenNumDigitsDistribution(minNanos..999_999_999)
+      }
+
+    return secondsArb.flatMap { seconds ->
+      val nanosArb = if (seconds == minSeconds) restrictedNanosArb else allNanosArb
+      nanosArb.map { nanos ->
+        com.google.protobuf.Duration.newBuilder().setSeconds(seconds).setNanos(nanos).build()
+      }
+    }
+  }
 }
 
 private class DataConnectPathArb(

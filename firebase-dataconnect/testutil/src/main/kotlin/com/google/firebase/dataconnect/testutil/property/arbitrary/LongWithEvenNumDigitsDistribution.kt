@@ -27,8 +27,25 @@ import io.kotest.property.arbitrary.long
  * have an equal probability of having any given number of digits in its base-10 string
  * representation. This is useful for testing int values that get zero padded when they are small.
  */
-fun Arb.Companion.nonNegativeLongWithEvenNumDigitsDistribution(): Arb<Long> =
-  Arb.choice(rangeByNumDigits.map { Arb.long(it) })
+fun Arb.Companion.nonNegativeLongWithEvenNumDigitsDistribution(min: Long = 0): Arb<Long> {
+  require(min >= 0) { "invalid min: $min" }
+  val ranges =
+    if (min == 0L) {
+      rangeByNumDigits
+    } else {
+      rangeByNumDigits.mapNotNull { range ->
+        if (range.first >= min) {
+          range
+        } else if (range.last < min) {
+          null
+        } else {
+          min..range.last
+        }
+      }
+    }
+
+  return Arb.choice(ranges.map { Arb.long(it) })
+}
 
 private val rangeByNumDigits: List<LongRange> = buildList {
   add(0L..9L)

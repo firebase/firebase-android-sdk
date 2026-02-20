@@ -108,13 +108,16 @@ internal class DataConnectGrpcRPCs(
       } else {
         logger.debug { "Creating GRPC ManagedChannel for host=$host sslEnabled=$sslEnabled" }
 
-        val maxAge = cacheSettings.maxAge.toComponents { seconds, nanos ->
-          Duration.newBuilder().setSeconds(seconds).setNanos(nanos).build()
-        }
+        val maxAge =
+          cacheSettings.maxAge.toComponents { seconds, nanos ->
+            Duration.newBuilder().setSeconds(seconds).setNanos(nanos).build()
+          }
 
         val dbFile = cacheSettings.dbFile
         val cacheLogger = Logger("DataConnectCacheDatabase")
-        cacheLogger.debug { "created by ${logger.nameWithId} with dbFile=$dbFile maxAge=${cacheSettings.maxAge}" }
+        cacheLogger.debug {
+          "created by ${logger.nameWithId} with dbFile=$dbFile maxAge=${cacheSettings.maxAge}"
+        }
         val cacheDb = DataConnectCacheDatabase(dbFile, cacheLogger)
         cacheDb.initialize()
         NullableReference(CacheDbSettingsPair(cacheDb, maxAge))

@@ -23,6 +23,7 @@ import com.google.firebase.dataconnect.sqlite.QueryResultArb.EntityRepeatPolicy.
 import com.google.firebase.dataconnect.sqlite.QueryResultArb.EntityRepeatPolicy.INTER_SAMPLE_MUTATED
 import com.google.firebase.dataconnect.testutil.CleanupsRule
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
+import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.distinctPair
 import com.google.firebase.dataconnect.testutil.property.arbitrary.listNoRepeat
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
@@ -34,6 +35,7 @@ import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import com.google.firebase.dataconnect.util.ImmutableByteArray
+import com.google.protobuf.Duration
 import com.google.protobuf.Struct
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
@@ -63,6 +65,7 @@ import io.mockk.spyk
 import io.mockk.unmockkObject
 import io.mockk.verify
 import java.io.File
+import kotlin.time.Duration.Companion.hours
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -249,14 +252,16 @@ class DataConnectCacheDatabaseUnitTest {
   fun `insertQueryResult() should insert a query result with no entities`() = runTest {
     dataConnectCacheDatabase.initialize()
 
-    checkAll(propTestConfig, authUidArb(), queryIdArb(), Arb.proto.struct()) {
+    checkAll(propTestConfig, authUidArb(), queryIdArb(), maxAgeInFuture(), Arb.proto.struct()) {
       authUid,
       queryId,
+      maxAge,
       structSample ->
       dataConnectCacheDatabase.insertQueryResult(
         authUid.string,
         queryId.bytes,
         structSample.struct,
+        maxAge = maxAge,
         getEntityIdForPath = null,
       )
 
@@ -274,13 +279,15 @@ class DataConnectCacheDatabaseUnitTest {
       propTestConfig,
       authUidArb(),
       queryIdArb(),
+      maxAgeInFuture(),
       Arb.listNoRepeat(Arb.proto.struct(), 2..5)
-    ) { authUid, queryId, structSamples ->
+    ) { authUid, queryId, maxAge, structSamples ->
       structSamples.forEach {
         dataConnectCacheDatabase.insertQueryResult(
           authUid.string,
           queryId.bytes,
           it.struct,
+          maxAge = maxAge,
           getEntityIdForPath = null,
         )
       }
@@ -299,18 +306,21 @@ class DataConnectCacheDatabaseUnitTest {
       propTestConfig,
       authUidArb().distinctPair(),
       queryIdArb(),
+      maxAgeInFuture(),
       Arb.twoValues(Arb.proto.struct())
-    ) { (authUid1, authUid2), queryId, (structSample1, structSample2) ->
+    ) { (authUid1, authUid2), queryId, maxAge, (structSample1, structSample2) ->
       dataConnectCacheDatabase.insertQueryResult(
         authUid1.string,
         queryId.bytes,
         structSample1.struct,
+        maxAge = maxAge,
         getEntityIdForPath = null,
       )
       dataConnectCacheDatabase.insertQueryResult(
         authUid2.string,
         queryId.bytes,
         structSample2.struct,
+        maxAge = maxAge,
         getEntityIdForPath = null,
       )
 
@@ -333,18 +343,21 @@ class DataConnectCacheDatabaseUnitTest {
       propTestConfig,
       authUidArb(),
       queryIdArb().distinctPair(),
+      maxAgeInFuture(),
       Arb.twoValues(Arb.proto.struct())
-    ) { authUid, (queryId1, queryId2), (structSample1, structSample2) ->
+    ) { authUid, (queryId1, queryId2), maxAge, (structSample1, structSample2) ->
       dataConnectCacheDatabase.insertQueryResult(
         authUid.string,
         queryId1.bytes,
         structSample1.struct,
+        maxAge = maxAge,
         getEntityIdForPath = null,
       )
       dataConnectCacheDatabase.insertQueryResult(
         authUid.string,
         queryId2.bytes,
         structSample2.struct,
+        maxAge = maxAge,
         getEntityIdForPath = null,
       )
 
@@ -367,12 +380,14 @@ class DataConnectCacheDatabaseUnitTest {
       propTestConfig,
       authUidArb(),
       queryIdArb(),
+      maxAgeInFuture(),
       QueryResultArb(entityCountRange = 1..5),
-    ) { authUid, queryId, queryResult ->
+    ) { authUid, queryId, maxAge, queryResult ->
       dataConnectCacheDatabase.insertQueryResult(
         authUid.string,
         queryId.bytes,
         queryResult.hydratedStruct,
+        maxAge = maxAge,
         getEntityIdForPath = queryResult::getEntityIdForPath,
       )
 
@@ -389,8 +404,9 @@ class DataConnectCacheDatabaseUnitTest {
     checkAll(
       propTestConfig,
       authUidArb().distinctPair(),
+      maxAgeInFuture(),
       Arb.int(2..5),
-    ) { (authUid1, authUid2), queryCount ->
+    ) { (authUid1, authUid2), maxAge, queryCount ->
       @OptIn(DelicateKotest::class) val queryIdArb = queryIdArb().distinct()
       val queryIds = List(queryCount) { queryIdArb.bind() }
       val queryResults1 = run {
@@ -417,6 +433,7 @@ class DataConnectCacheDatabaseUnitTest {
             authUid.string,
             queryId.bytes,
             queryResult.hydratedStruct,
+            maxAge = maxAge,
             getEntityIdForPath = queryResult::getEntityIdForPath,
           )
         }
@@ -446,8 +463,9 @@ class DataConnectCacheDatabaseUnitTest {
     checkAll(
       propTestConfig,
       authUidArb(),
+      maxAgeInFuture(),
       Arb.int(2..5),
-    ) { authUid, queryCount ->
+    ) { authUid, maxAge, queryCount ->
       @OptIn(DelicateKotest::class) val queryIdArb = queryIdArb().distinct()
       val queryIds = List(queryCount) { queryIdArb.bind() }
       val queryResultArb =
@@ -459,6 +477,7 @@ class DataConnectCacheDatabaseUnitTest {
           authUid.string,
           queryId.bytes,
           queryResult.hydratedStruct,
+          maxAge = maxAge,
           getEntityIdForPath = queryResult::getEntityIdForPath,
         )
       }
@@ -480,8 +499,9 @@ class DataConnectCacheDatabaseUnitTest {
     checkAll(
       propTestConfig,
       authUidArb(),
+      maxAgeInFuture(),
       queryIdArb().distinctPair(),
-    ) { authUid, (queryId1, queryId2) ->
+    ) { authUid, maxAge, (queryId1, queryId2) ->
       val queryResultArb =
         QueryResultArb(
           entityCountRange = 1..5,
@@ -497,12 +517,14 @@ class DataConnectCacheDatabaseUnitTest {
         authUid.string,
         queryId1.bytes,
         queryResult1.hydratedStruct,
+        maxAge = maxAge,
         getEntityIdForPath = queryResult1::getEntityIdForPath,
       )
       dataConnectCacheDatabase.insertQueryResult(
         authUid.string,
         queryId2.bytes,
         queryResult2.hydratedStruct,
+        maxAge = maxAge,
         getEntityIdForPath = queryResult2::getEntityIdForPath,
       )
 
@@ -567,3 +589,12 @@ private fun hydratedStructWithMutatedEntityValues(
 
   return rehydrateQueryResult(sample1.queryResultProto, dehydratedEntityStructById)
 }
+
+private val DURATION_IN_FUTURE = Duration.newBuilder().setSeconds(1.hours.inWholeSeconds).build()
+
+/**
+ * Creates and returns an [Arb] that generates [Duration] objects representing at least one hour in
+ * the future. This allows tests to use a max age that ensures that the cached data will not expire
+ * during the test.
+ */
+private fun maxAgeInFuture(): Arb<Duration> = Arb.dataConnect.maxAge(min = DURATION_IN_FUTURE)

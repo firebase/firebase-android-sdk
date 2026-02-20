@@ -62,6 +62,7 @@ import io.kotest.property.checkAll
 import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.time.Duration.Companion.hours
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
@@ -71,7 +72,6 @@ import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
-import kotlin.time.Duration.Companion.hours
 
 @RunWith(RobolectricTestRunner::class)
 class DataConnectGrpcRPCsClientUnitTest {
