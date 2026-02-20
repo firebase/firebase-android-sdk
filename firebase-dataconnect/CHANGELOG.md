@@ -5,6 +5,8 @@
   [#7714](https://github.com/firebase/firebase-android-sdk/pull/7714)),
   [#7720](https://github.com/firebase/firebase-android-sdk/pull/7720)),
   [#7759](https://github.com/firebase/firebase-android-sdk/pull/7759)),
+  [#7821](https://github.com/firebase/firebase-android-sdk/pull/7821))
+- [changed] Added public APIs for offline caching.
   [#NNNN](https://github.com/firebase/firebase-android-sdk/pull/NNNN))
 
 # 17.1.3
