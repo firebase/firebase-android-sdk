@@ -465,7 +465,15 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
     if (getQueryResult === null) {
       GetQueryResultResult.NotFound
     } else {
-      val (sqliteQueryId, queryResultProto) = getQueryResult
+      val (sqliteQueryId, queryResultProto, expiryProto) = getQueryResult
+
+      val currentTimeMillis = System.currentTimeMillis()
+      val expiryTimeMillis = expiryProto.expiryTimeMillis
+      if (currentTimeMillis >= expiryTimeMillis) {
+        val millisStale = currentTimeMillis - expiryTimeMillis
+        return@runReadWriteTransaction GetQueryResultResult.Stale(millisStale)
+      }
+
       val entityIds: Set<String> = queryResultProto.referencedEntityIds()
       val entityStructByEntityId =
         sqliteDatabase.getEntities(
@@ -484,7 +492,8 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
         }
       }
 
-      GetQueryResultResult.Found(rehydrateResult.getOrThrow(), null)
+      val millisUntilStale = expiryTimeMillis - currentTimeMillis
+      GetQueryResultResult.Found(rehydrateResult.getOrThrow(), millisUntilStale)
     }
   }
 
