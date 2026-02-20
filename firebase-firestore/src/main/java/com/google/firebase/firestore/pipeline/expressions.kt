@@ -2972,7 +2972,7 @@ abstract class Expression internal constructor() {
       map(elements.flatMap { listOf(constant(it.key), toExprOrConstant(it.value)) }.toTypedArray())
 
     /**
-     * Accesses a field/property of the expression (useful when the expression evaluates to a Map or
+     * Accesses a field/property of the expression (When the expression evaluates to a Map or
      * Document).
      *
      * @param key The key of the field to access.
@@ -2981,6 +2981,39 @@ abstract class Expression internal constructor() {
     @JvmStatic
     fun getField(expression: Expression, key: String): Expression =
       FunctionExpression("field", notImplemented, expression, key)
+
+    /**
+     * Accesses a field/property of a document field using the provided [key].
+     *
+     * @param fieldName The field name of the map or document field.
+     * @param key The key of the field to access.
+     * @return An [Expression] representing the value of the field.
+     */
+    @JvmStatic
+    fun getField(fieldName: String, key: String): Expression =
+      FunctionExpression("field", notImplemented, fieldName, key)
+
+    /**
+     * Accesses a field/property of the expression using the provided [keyExpression].
+     *
+     * @param expression The expression evaluating to a Map or Document.
+     * @param keyExpression The expression evaluating to the key.
+     * @return A new [Expression] representing the value of the field.
+     */
+    @JvmStatic
+    fun getField(expression: Expression, keyExpression: Expression): Expression =
+      FunctionExpression("field", notImplemented, expression, keyExpression)
+
+    /**
+     * Accesses a field/property of a document field using the provided [keyExpression].
+     *
+     * @param fieldName The field name of the map or document field.
+     * @param keyExpression The expression evaluating to the key.
+     * @return A new [Expression] representing the value of the field.
+     */
+    @JvmStatic
+    fun getField(fieldName: String, keyExpression: Expression): Expression =
+      FunctionExpression("field", notImplemented, fieldName, keyExpression)
 
     /**
      * Accesses a value from a map (object) field using the provided [key].
@@ -6400,6 +6433,22 @@ abstract class Expression internal constructor() {
    */
   fun mapMerge(mapExpr: Expression, vararg otherMaps: Expression) =
     Companion.mapMerge(this, mapExpr, *otherMaps)
+
+  /**
+   * Retrieves the value of a specific field from the document evaluated by this expression.
+   *
+   * @param key The string key to access.
+   * @return A new [Expression] representing the field value.
+   */
+  fun getField(key: String): Expression = Companion.getField(this, key)
+
+  /**
+   * Retrieves the value of a specific field from the document evaluated by this expression.
+   *
+   * @param keyExpression The expression evaluating to the key to access.
+   * @return A new [Expression] representing the field value.
+   */
+  fun getField(keyExpression: Expression): Expression = Companion.getField(this, keyExpression)
 
   /**
    * Creates an expression that removes a key from this map expression.

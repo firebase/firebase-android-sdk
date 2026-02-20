@@ -979,7 +979,12 @@ package com.google.firebase.firestore.pipeline {
     method public final com.google.firebase.firestore.pipeline.Expression floor();
     method public static final com.google.firebase.firestore.pipeline.Expression floor(com.google.firebase.firestore.pipeline.Expression numericExpr);
     method public static final com.google.firebase.firestore.pipeline.Expression floor(String numericField);
+    method public final com.google.firebase.firestore.pipeline.Expression getField(com.google.firebase.firestore.pipeline.Expression keyExpression);
+    method public static final com.google.firebase.firestore.pipeline.Expression getField(com.google.firebase.firestore.pipeline.Expression expression, com.google.firebase.firestore.pipeline.Expression keyExpression);
     method public static final com.google.firebase.firestore.pipeline.Expression getField(com.google.firebase.firestore.pipeline.Expression expression, String key);
+    method public final com.google.firebase.firestore.pipeline.Expression getField(String key);
+    method public static final com.google.firebase.firestore.pipeline.Expression getField(String fieldName, com.google.firebase.firestore.pipeline.Expression keyExpression);
+    method public static final com.google.firebase.firestore.pipeline.Expression getField(String fieldName, String key);
     method public final com.google.firebase.firestore.pipeline.BooleanExpression greaterThan(com.google.firebase.firestore.pipeline.Expression other);
     method public static final com.google.firebase.firestore.pipeline.BooleanExpression greaterThan(com.google.firebase.firestore.pipeline.Expression left, com.google.firebase.firestore.pipeline.Expression right);
     method public static final com.google.firebase.firestore.pipeline.BooleanExpression greaterThan(com.google.firebase.firestore.pipeline.Expression left, Object right);
@@ -1377,7 +1382,10 @@ package com.google.firebase.firestore.pipeline {
     method public com.google.firebase.firestore.pipeline.Field field(String name);
     method public com.google.firebase.firestore.pipeline.Expression floor(com.google.firebase.firestore.pipeline.Expression numericExpr);
     method public com.google.firebase.firestore.pipeline.Expression floor(String numericField);
+    method public com.google.firebase.firestore.pipeline.Expression getField(com.google.firebase.firestore.pipeline.Expression expression, com.google.firebase.firestore.pipeline.Expression keyExpression);
     method public com.google.firebase.firestore.pipeline.Expression getField(com.google.firebase.firestore.pipeline.Expression expression, String key);
+    method public com.google.firebase.firestore.pipeline.Expression getField(String fieldName, com.google.firebase.firestore.pipeline.Expression keyExpression);
+    method public com.google.firebase.firestore.pipeline.Expression getField(String fieldName, String key);
     method public com.google.firebase.firestore.pipeline.BooleanExpression greaterThan(com.google.firebase.firestore.pipeline.Expression left, com.google.firebase.firestore.pipeline.Expression right);
     method public com.google.firebase.firestore.pipeline.BooleanExpression greaterThan(com.google.firebase.firestore.pipeline.Expression left, Object right);
     method public com.google.firebase.firestore.pipeline.BooleanExpression greaterThan(String fieldName, com.google.firebase.firestore.pipeline.Expression expression);
