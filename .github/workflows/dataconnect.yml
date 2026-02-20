@@ -12,6 +12,7 @@ on:
       pythonVersion:
   pull_request:
     paths:
+      - .github/actions/dataconnect-send-notifications
       - .github/workflows/dataconnect.yml
       - gradlew
       - build.gradle.kts
