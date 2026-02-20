@@ -83,6 +83,7 @@ internal object FunctionRegistry {
       "array_contains_all" to evaluateArrayContainsAll,
       "array_get" to evaluateArrayGet,
       "array_length" to evaluateArrayLength,
+      "array_first" to evaluateArrayFirst,
       "timestamp_add" to evaluateTimestampAdd,
       "timestamp_sub" to evaluateTimestampSub,
       "timestamp_to_unix_micros" to evaluateTimestampToUnixMicros,

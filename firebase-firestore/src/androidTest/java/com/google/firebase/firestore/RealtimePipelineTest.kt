@@ -23,6 +23,7 @@ import com.google.firebase.firestore.pipeline.Expression.Companion.add
 import com.google.firebase.firestore.pipeline.Expression.Companion.and
 import com.google.firebase.firestore.pipeline.Expression.Companion.arrayContains
 import com.google.firebase.firestore.pipeline.Expression.Companion.arrayContainsAny
+import com.google.firebase.firestore.pipeline.Expression.Companion.arrayFirst
 import com.google.firebase.firestore.pipeline.Expression.Companion.arrayLength
 import com.google.firebase.firestore.pipeline.Expression.Companion.byteLength
 import com.google.firebase.firestore.pipeline.Expression.Companion.ceil
@@ -2007,6 +2008,27 @@ class RealtimePipelineTest {
     val secondSnapshot = channel.receive()
     assertThat(secondSnapshot.metadata.isConsistentBetweenListeners).isTrue()
     assertThat(secondSnapshot.results).hasSize(10)
+    assertThat(secondSnapshot.getChanges()).isEmpty()
+
+    job.cancel()
+  }
+
+  @Test
+  fun testArrayFirst() = runBlocking {
+    val pipeline =
+      db.realtimePipeline().collection(collRef.path).where(arrayFirst("tags").equal("adventure"))
+
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
+    val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
+
+    val firstSnapshot = channel.receive()
+    assertThat(firstSnapshot.metadata.isConsistentBetweenListeners).isFalse()
+    assertThat(firstSnapshot.results).hasSize(1)
+
+    val secondSnapshot = channel.receive()
+    assertThat(secondSnapshot.metadata.isConsistentBetweenListeners).isTrue()
+    assertThat(secondSnapshot.results).hasSize(1)
     assertThat(secondSnapshot.getChanges()).isEmpty()
 
     job.cancel()

@@ -76,6 +76,10 @@ internal val evaluateArrayLength = unaryFunction { array: List<Value> ->
   EvaluateResult.long(array.size)
 }
 
+internal val evaluateArrayFirst = unaryFunction { array: List<Value> ->
+  if (array.isEmpty()) EvaluateResultUnset else EvaluateResult.value(array.first())
+}
+
 internal val evaluateArrayReverse = unaryFunction { array: List<Value> ->
   EvaluateResult.value(encodeValue(array.reversed()))
 }
