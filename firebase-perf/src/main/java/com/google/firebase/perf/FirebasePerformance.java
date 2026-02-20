@@ -34,6 +34,7 @@ import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.config.RemoteConfigManager;
 import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.logging.ConsoleUrlGenerator;
+import com.google.firebase.perf.logging.FirebaseSessionsEnforcementCheck;
 import com.google.firebase.perf.metrics.HttpMetric;
 import com.google.firebase.perf.metrics.Trace;
 import com.google.firebase.perf.session.SessionManager;
@@ -136,11 +137,6 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
   // to false if it's been force disabled or it is set to null if neither.
   @Nullable private Boolean mPerformanceCollectionForceEnabledState = null;
 
-  private final FirebaseApp firebaseApp;
-  private final Provider<RemoteConfigComponent> firebaseRemoteConfigProvider;
-  private final FirebaseInstallationsApi firebaseInstallationsApi;
-  private final Provider<TransportFactory> transportFactoryProvider;
-
   /**
    * Constructs the FirebasePerformance class and allows injecting dependencies.
    *
@@ -166,23 +162,18 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
       ConfigResolver configResolver,
       SessionManager sessionManager) {
 
-    this.firebaseApp = firebaseApp;
-    this.firebaseRemoteConfigProvider = firebaseRemoteConfigProvider;
-    this.firebaseInstallationsApi = firebaseInstallationsApi;
-    this.transportFactoryProvider = transportFactoryProvider;
-
     if (firebaseApp == null) {
       this.mPerformanceCollectionForceEnabledState = false;
       this.configResolver = configResolver;
       this.mMetadataBundle = new ImmutableBundle(new Bundle());
       return;
     }
+    FirebaseSessionsEnforcementCheck.setEnforcement(BuildConfig.ENFORCE_LEGACY_SESSIONS);
 
     TransportManager.getInstance()
         .initialize(firebaseApp, firebaseInstallationsApi, transportFactoryProvider);
 
     Context appContext = firebaseApp.getApplicationContext();
-    // TODO(b/110178816): Explore moving off of main thread.
     mMetadataBundle = extractMetadata(appContext);
 
     remoteConfigManager.setFirebaseRemoteConfigProvider(firebaseRemoteConfigProvider);
@@ -192,6 +183,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
     sessionManager.setApplicationContext(appContext);
 
     mPerformanceCollectionForceEnabledState = configResolver.getIsPerformanceCollectionEnabled();
+
     if (logger.isLogcatEnabled() && isPerformanceCollectionEnabled()) {
       logger.info(
           String.format(
@@ -282,7 +274,7 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
       return;
     }
 
-    if (configResolver.getIsPerformanceCollectionDeactivated()) {
+    if (Boolean.TRUE.equals(configResolver.getIsPerformanceCollectionDeactivated())) {
       logger.info("Firebase Performance is permanently disabled");
       return;
     }

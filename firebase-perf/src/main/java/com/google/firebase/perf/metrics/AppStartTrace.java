@@ -14,6 +14,8 @@
 
 package com.google.firebase.perf.metrics;
 
+import static com.google.firebase.perf.util.AppProcessesProvider.getAppProcesses;
+
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ActivityManager;
@@ -552,11 +554,8 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
     if (activityManager == null) {
       return true;
     }
-    List<ActivityManager.RunningAppProcessInfo> appProcesses =
-        activityManager.getRunningAppProcesses();
-    if (appProcesses != null) {
-      String appProcessName = appContext.getPackageName();
-      String allowedAppProcessNamePrefix = appProcessName + ":";
+    List<ActivityManager.RunningAppProcessInfo> appProcesses = getAppProcesses(appContext);
+    if (!appProcesses.isEmpty()) {
       for (ActivityManager.RunningAppProcessInfo appProcess : appProcesses) {
         if (appProcess.importance != ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND) {
           continue;

@@ -21,7 +21,8 @@ import com.google.firebase.StartupTime;
 import com.google.firebase.perf.application.AppStateMonitor;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.metrics.AppStartTrace;
-import com.google.firebase.perf.session.SessionManager;
+import com.google.firebase.perf.session.FirebasePerformanceSessionSubscriber;
+import com.google.firebase.sessions.api.FirebaseSessionsDependencies;
 import java.util.concurrent.Executor;
 
 /**
@@ -41,6 +42,10 @@ public class FirebasePerfEarly {
     ConfigResolver configResolver = ConfigResolver.getInstance();
     configResolver.setApplicationContext(context);
 
+    // Register FirebasePerformance as a subscriber ASAP - which will start collecting gauges if the
+    // FirebaseSession is verbose.
+    FirebaseSessionsDependencies.register(new FirebasePerformanceSessionSubscriber(configResolver));
+
     AppStateMonitor appStateMonitor = AppStateMonitor.getInstance();
     appStateMonitor.registerActivityLifecycleCallbacks(context);
     appStateMonitor.registerForAppColdStart(new FirebasePerformanceInitializer());
@@ -50,13 +55,5 @@ public class FirebasePerfEarly {
       appStartTrace.registerActivityLifecycleCallbacks(context);
       uiExecutor.execute(new AppStartTrace.StartFromBackgroundRunnable(appStartTrace));
     }
-
-    // TODO: Bring back Firebase Sessions dependency to watch for updates to sessions.
-
-    // In the case of cold start, we create a session and start collecting gauges as early as
-    // possible.
-    // There is code in SessionManager that prevents us from resetting the session twice in case
-    // of app cold start.
-    SessionManager.getInstance().initializeGaugeCollection();
   }
 }
