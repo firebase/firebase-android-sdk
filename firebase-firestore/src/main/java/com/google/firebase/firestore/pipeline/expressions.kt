@@ -4935,6 +4935,37 @@ abstract class Expression internal constructor() {
       FunctionExpression("array_length", evaluateArrayLength, arrayFieldName)
 
     /**
+     * Creates an expression that returns the first element of an [array] expression.
+     *
+     * ```kotlin
+     * // Get the first element of the 'myArray' field.
+     * arrayFirst(field("myArray"))
+     * ```
+     *
+     * @param array The array expression to get the first element from.
+     * @return A new [Expression] representing the first element.
+     */
+    @JvmStatic
+    fun arrayFirst(array: Expression): Expression =
+      FunctionExpression("array_first", evaluateArrayFirst, array)
+
+    /**
+     * Creates an expression that returns the first element of an array field.
+     *
+     * ```kotlin
+     * // Get the first element of the 'myArray' field.
+     * arrayFirst("myArray")
+     * ```
+     *
+     * @param arrayFieldName The name of the field containing an array to get the first element
+     * from.
+     * @return A new [Expression] representing the first element.
+     */
+    @JvmStatic
+    fun arrayFirst(arrayFieldName: String): Expression =
+      FunctionExpression("array_first", evaluateArrayFirst, arrayFieldName)
+
+    /**
      * Creates an expression that indexes into an array from the beginning or end and return the
      * element. If the offset exceeds the array length, an error is returned. A negative offset,
      * starts from the end.
@@ -6882,6 +6913,18 @@ abstract class Expression internal constructor() {
    * @return A new [Expression] representing the length of the array.
    */
   fun arrayLength() = Companion.arrayLength(this)
+
+  /**
+   * Creates an expression that returns the first element of an array expression.
+   *
+   * ```kotlin
+   * // Get the first element of the 'myArray' field.
+   * field("myArray").arrayFirst()
+   * ```
+   *
+   * @return A new [Expression] representing the first element.
+   */
+  fun arrayFirst() = Companion.arrayFirst(this)
 
   /**
    * Creates an expression that indexes into an array from the beginning or end and return the
