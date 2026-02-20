@@ -749,9 +749,9 @@ class UploadDistributionTaskTest {
     // out.
     // Also remember to update the latest AGP/gradle versions in BeePlusGradleProject.java.
     // firebase-appdistribution-gradle/src/prodTest/java/com/google/firebase/appdistribution/gradle/BeePlusGradleProject.java#L59-L60
-    private const val LATEST_GRADLE_VERSION = "9.3.1"
-    private const val LATEST_AGP_VERSION = "9.1.0-alpha07"
-    private const val LATEST_GOOGLE_SERVICES_VERSION = "4.4.4"
+    private val LATEST_GRADLE_VERSION = VersionUtils.fetchLatestGradleVersion()
+    private val LATEST_AGP_VERSION = VersionUtils.fetchLatestAgpVersion()
+    private val LATEST_GOOGLE_SERVICES_VERSION = VersionUtils.fetchLatestGoogleServicesVersion()
     // For tests against Gradle 9, we get the error:
     // "In order to compile Java 9+ source, please set compileSdkVersion to 30 or above"
     // when we don't set this to at least 30.
@@ -765,5 +765,15 @@ class UploadDistributionTaskTest {
 
     // google-services Gradle plugin 4.3.2 was released in September 2019.
     private const val OLDER_GOOGLE_SERVICES_VERSION = "4.3.2"
+
+    private val LOGGER = java.util.logging.Logger.getLogger(UploadDistributionTaskTest::class.java.name)
+
+    @org.junit.BeforeClass
+    @JvmStatic
+    fun logVersions() {
+      LOGGER.info("Latest Gradle Version: $LATEST_GRADLE_VERSION")
+      LOGGER.info("Latest AGP Version: $LATEST_AGP_VERSION")
+      LOGGER.info("Latest Google Services Version: $LATEST_GOOGLE_SERVICES_VERSION")
+    }
   }
 }
