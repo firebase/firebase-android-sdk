@@ -424,6 +424,7 @@ package com.google.firebase.firestore {
     method public com.google.firebase.firestore.Pipeline aggregate(com.google.firebase.firestore.pipeline.AggregateStage aggregateStage);
     method public com.google.firebase.firestore.Pipeline aggregate(com.google.firebase.firestore.pipeline.AggregateStage aggregateStage, com.google.firebase.firestore.pipeline.AggregateOptions options);
     method public com.google.firebase.firestore.Pipeline aggregate(com.google.firebase.firestore.pipeline.AliasedAggregate accumulator, com.google.firebase.firestore.pipeline.AliasedAggregate... additionalAccumulators);
+    method public com.google.firebase.firestore.Pipeline define(com.google.firebase.firestore.pipeline.AliasedExpression aliasedExpression, com.google.firebase.firestore.pipeline.AliasedExpression... additionalExpressions);
     method public com.google.firebase.firestore.Pipeline distinct(com.google.firebase.firestore.pipeline.Selectable group, java.lang.Object... additionalGroups);
     method public com.google.firebase.firestore.Pipeline distinct(String groupField, java.lang.Object... additionalGroups);
     method public com.google.android.gms.tasks.Task<com.google.firebase.firestore.Pipeline.Snapshot> execute();
@@ -443,12 +444,20 @@ package com.google.firebase.firestore {
     method public com.google.firebase.firestore.Pipeline select(com.google.firebase.firestore.pipeline.Selectable selection, java.lang.Object... additionalSelections);
     method public com.google.firebase.firestore.Pipeline select(String fieldName, java.lang.Object... additionalSelections);
     method public com.google.firebase.firestore.Pipeline sort(com.google.firebase.firestore.pipeline.Ordering order, com.google.firebase.firestore.pipeline.Ordering... additionalOrders);
+    method public static com.google.firebase.firestore.Pipeline subcollection(String path);
+    method public com.google.firebase.firestore.pipeline.Expression toArrayExpression();
+    method public com.google.firebase.firestore.pipeline.Expression toScalarExpression();
     method public com.google.firebase.firestore.Pipeline union(com.google.firebase.firestore.Pipeline other);
     method public com.google.firebase.firestore.Pipeline unnest(com.google.firebase.firestore.pipeline.Selectable arrayWithAlias);
     method public com.google.firebase.firestore.Pipeline unnest(com.google.firebase.firestore.pipeline.Selectable arrayWithAlias, com.google.firebase.firestore.pipeline.UnnestOptions options);
     method public com.google.firebase.firestore.Pipeline unnest(com.google.firebase.firestore.pipeline.UnnestStage unnestStage);
     method public com.google.firebase.firestore.Pipeline unnest(String arrayField, String alias);
     method public com.google.firebase.firestore.Pipeline where(com.google.firebase.firestore.pipeline.BooleanExpression condition);
+    field public static final com.google.firebase.firestore.Pipeline.Companion Companion;
+  }
+
+  public static final class Pipeline.Companion {
+    method public com.google.firebase.firestore.Pipeline subcollection(String path);
   }
 
   public static final class Pipeline.ExecuteOptions extends com.google.firebase.firestore.pipeline.AbstractOptions<com.google.firebase.firestore.Pipeline.ExecuteOptions> {
@@ -711,17 +720,17 @@ package com.google.firebase.firestore.pipeline {
     method public com.google.firebase.firestore.pipeline.AggregateFunction sum(String fieldName);
   }
 
-  public final class AggregateHints extends com.google.firebase.firestore.pipeline.AbstractOptions<com.google.firebase.firestore.pipeline.AggregateHints> {
+  @com.google.common.annotations.Beta public final class AggregateHints extends com.google.firebase.firestore.pipeline.AbstractOptions<com.google.firebase.firestore.pipeline.AggregateHints> {
     ctor public AggregateHints();
     method public com.google.firebase.firestore.pipeline.AggregateHints withForceStreamableEnabled();
   }
 
-  public final class AggregateOptions extends com.google.firebase.firestore.pipeline.AbstractOptions<com.google.firebase.firestore.pipeline.AggregateOptions> {
+  @com.google.common.annotations.Beta public final class AggregateOptions extends com.google.firebase.firestore.pipeline.AbstractOptions<com.google.firebase.firestore.pipeline.AggregateOptions> {
     ctor public AggregateOptions();
     method public com.google.firebase.firestore.pipeline.AggregateOptions withHints(com.google.firebase.firestore.pipeline.AggregateHints hints);
   }
 
-  public final class AggregateStage extends com.google.firebase.firestore.pipeline.Stage<com.google.firebase.firestore.pipeline.AggregateStage> {
+  @com.google.common.annotations.Beta public final class AggregateStage extends com.google.firebase.firestore.pipeline.Stage<com.google.firebase.firestore.pipeline.AggregateStage> {
     method public static com.google.firebase.firestore.pipeline.AggregateStage withAccumulators(com.google.firebase.firestore.pipeline.AliasedAggregate accumulator, com.google.firebase.firestore.pipeline.AliasedAggregate... additionalAccumulators);
     method public com.google.firebase.firestore.pipeline.AggregateStage withGroups(com.google.firebase.firestore.pipeline.Selectable group, java.lang.Object... additionalGroups);
     method public com.google.firebase.firestore.pipeline.AggregateStage withGroups(String groupField, java.lang.Object... additionalGroups);
@@ -756,26 +765,26 @@ package com.google.firebase.firestore.pipeline {
     method public com.google.firebase.firestore.pipeline.BooleanExpression rawFunction(String name, com.google.firebase.firestore.pipeline.Expression... expr);
   }
 
-  public final class CollectionGroupOptions extends com.google.firebase.firestore.pipeline.AbstractOptions<com.google.firebase.firestore.pipeline.CollectionGroupOptions> {
+  @com.google.common.annotations.Beta public final class CollectionGroupOptions extends com.google.firebase.firestore.pipeline.AbstractOptions<com.google.firebase.firestore.pipeline.CollectionGroupOptions> {
     ctor public CollectionGroupOptions();
     method public com.google.firebase.firestore.pipeline.CollectionGroupOptions withHints(com.google.firebase.firestore.pipeline.CollectionHints hints);
   }
 
-  public final class CollectionGroupSource extends com.google.firebase.firestore.pipeline.Stage<com.google.firebase.firestore.pipeline.CollectionGroupSource> {
+  @com.google.common.annotations.Beta public final class CollectionGroupSource extends com.google.firebase.firestore.pipeline.Stage<com.google.firebase.firestore.pipeline.CollectionGroupSource> {
     method public String getCollectionId();
     property public final String collectionId;
   }
 
-  public final class CollectionHints extends com.google.firebase.firestore.pipeline.AbstractOptions<com.google.firebase.firestore.pipeline.CollectionHints> {
+  @com.google.common.annotations.Beta public final class CollectionHints extends com.google.firebase.firestore.pipeline.AbstractOptions<com.google.firebase.firestore.pipeline.CollectionHints> {
     ctor public CollectionHints();
     method public com.google.firebase.firestore.pipeline.CollectionHints withForceIndex(String value);
     method public com.google.firebase.firestore.pipeline.CollectionHints withIgnoreIndexFields(java.lang.String... values);
   }
 
-  public final class CollectionSource extends com.google.firebase.firestore.pipeline.Stage<com.google.firebase.firestore.pipeline.CollectionSource> {
+  @com.google.common.annotations.Beta public final class CollectionSource extends com.google.firebase.firestore.pipeline.Stage<com.google.firebase.firestore.pipeline.CollectionSource> {
   }
 
-  public final class CollectionSourceOptions extends com.google.firebase.firestore.pipeline.AbstractOptions<com.google.firebase.firestore.pipeline.CollectionSourceOptions> {
+  @com.google.common.annotations.Beta public final class CollectionSourceOptions extends com.google.firebase.firestore.pipeline.AbstractOptions<com.google.firebase.firestore.pipeline.CollectionSourceOptions> {
     ctor public CollectionSourceOptions();
     method public com.google.firebase.firestore.pipeline.CollectionSourceOptions withHints(com.google.firebase.firestore.pipeline.CollectionHints hints);
   }
@@ -910,6 +919,7 @@ package com.google.firebase.firestore.pipeline {
     method public static final com.google.firebase.firestore.pipeline.Expression cosineDistance(String vectorFieldName, double[] vector);
     method public final com.google.firebase.firestore.pipeline.AggregateFunction count();
     method public final com.google.firebase.firestore.pipeline.AggregateFunction countDistinct();
+    method public static final com.google.firebase.firestore.pipeline.Expression currentDocument();
     method public static final com.google.firebase.firestore.pipeline.Expression currentTimestamp();
     method public final com.google.firebase.firestore.pipeline.Ordering descending();
     method public final com.google.firebase.firestore.pipeline.Expression divide(com.google.firebase.firestore.pipeline.Expression divisor);
@@ -969,6 +979,12 @@ package com.google.firebase.firestore.pipeline {
     method public final com.google.firebase.firestore.pipeline.Expression floor();
     method public static final com.google.firebase.firestore.pipeline.Expression floor(com.google.firebase.firestore.pipeline.Expression numericExpr);
     method public static final com.google.firebase.firestore.pipeline.Expression floor(String numericField);
+    method public final com.google.firebase.firestore.pipeline.Expression getField(com.google.firebase.firestore.pipeline.Expression keyExpression);
+    method public static final com.google.firebase.firestore.pipeline.Expression getField(com.google.firebase.firestore.pipeline.Expression expression, com.google.firebase.firestore.pipeline.Expression keyExpression);
+    method public static final com.google.firebase.firestore.pipeline.Expression getField(com.google.firebase.firestore.pipeline.Expression expression, String key);
+    method public final com.google.firebase.firestore.pipeline.Expression getField(String key);
+    method public static final com.google.firebase.firestore.pipeline.Expression getField(String fieldName, com.google.firebase.firestore.pipeline.Expression keyExpression);
+    method public static final com.google.firebase.firestore.pipeline.Expression getField(String fieldName, String key);
     method public final com.google.firebase.firestore.pipeline.BooleanExpression greaterThan(com.google.firebase.firestore.pipeline.Expression other);
     method public static final com.google.firebase.firestore.pipeline.BooleanExpression greaterThan(com.google.firebase.firestore.pipeline.Expression left, com.google.firebase.firestore.pipeline.Expression right);
     method public static final com.google.firebase.firestore.pipeline.BooleanExpression greaterThan(com.google.firebase.firestore.pipeline.Expression left, Object right);
@@ -1227,6 +1243,7 @@ package com.google.firebase.firestore.pipeline {
     method public final com.google.firebase.firestore.pipeline.Expression unixSecondsToTimestamp();
     method public static final com.google.firebase.firestore.pipeline.Expression unixSecondsToTimestamp(com.google.firebase.firestore.pipeline.Expression expr);
     method public static final com.google.firebase.firestore.pipeline.Expression unixSecondsToTimestamp(String fieldName);
+    method public static final com.google.firebase.firestore.pipeline.Expression variable(String name);
     method public static final com.google.firebase.firestore.pipeline.Expression vector(com.google.firebase.firestore.VectorValue vector);
     method public static final com.google.firebase.firestore.pipeline.Expression vector(double[] vector);
     method public final com.google.firebase.firestore.pipeline.Expression vectorLength();
@@ -1324,6 +1341,7 @@ package com.google.firebase.firestore.pipeline {
     method public com.google.firebase.firestore.pipeline.Expression cosineDistance(String vectorFieldName, com.google.firebase.firestore.pipeline.Expression vector);
     method public com.google.firebase.firestore.pipeline.Expression cosineDistance(String vectorFieldName, com.google.firebase.firestore.VectorValue vector);
     method public com.google.firebase.firestore.pipeline.Expression cosineDistance(String vectorFieldName, double[] vector);
+    method public com.google.firebase.firestore.pipeline.Expression currentDocument();
     method public com.google.firebase.firestore.pipeline.Expression currentTimestamp();
     method public com.google.firebase.firestore.pipeline.Expression divide(com.google.firebase.firestore.pipeline.Expression dividend, com.google.firebase.firestore.pipeline.Expression divisor);
     method public com.google.firebase.firestore.pipeline.Expression divide(com.google.firebase.firestore.pipeline.Expression dividend, Number divisor);
@@ -1364,6 +1382,10 @@ package com.google.firebase.firestore.pipeline {
     method public com.google.firebase.firestore.pipeline.Field field(String name);
     method public com.google.firebase.firestore.pipeline.Expression floor(com.google.firebase.firestore.pipeline.Expression numericExpr);
     method public com.google.firebase.firestore.pipeline.Expression floor(String numericField);
+    method public com.google.firebase.firestore.pipeline.Expression getField(com.google.firebase.firestore.pipeline.Expression expression, com.google.firebase.firestore.pipeline.Expression keyExpression);
+    method public com.google.firebase.firestore.pipeline.Expression getField(com.google.firebase.firestore.pipeline.Expression expression, String key);
+    method public com.google.firebase.firestore.pipeline.Expression getField(String fieldName, com.google.firebase.firestore.pipeline.Expression keyExpression);
+    method public com.google.firebase.firestore.pipeline.Expression getField(String fieldName, String key);
     method public com.google.firebase.firestore.pipeline.BooleanExpression greaterThan(com.google.firebase.firestore.pipeline.Expression left, com.google.firebase.firestore.pipeline.Expression right);
     method public com.google.firebase.firestore.pipeline.BooleanExpression greaterThan(com.google.firebase.firestore.pipeline.Expression left, Object right);
     method public com.google.firebase.firestore.pipeline.BooleanExpression greaterThan(String fieldName, com.google.firebase.firestore.pipeline.Expression expression);
@@ -1537,6 +1559,7 @@ package com.google.firebase.firestore.pipeline {
     method public com.google.firebase.firestore.pipeline.Expression unixMillisToTimestamp(String fieldName);
     method public com.google.firebase.firestore.pipeline.Expression unixSecondsToTimestamp(com.google.firebase.firestore.pipeline.Expression expr);
     method public com.google.firebase.firestore.pipeline.Expression unixSecondsToTimestamp(String fieldName);
+    method public com.google.firebase.firestore.pipeline.Expression variable(String name);
     method public com.google.firebase.firestore.pipeline.Expression vector(com.google.firebase.firestore.VectorValue vector);
     method public com.google.firebase.firestore.pipeline.Expression vector(double[] vector);
     method public com.google.firebase.firestore.pipeline.Expression vectorLength(com.google.firebase.firestore.pipeline.Expression vectorExpression);
@@ -1551,14 +1574,14 @@ package com.google.firebase.firestore.pipeline {
   public static final class Field.Companion {
   }
 
-  public final class FindNearestOptions extends com.google.firebase.firestore.pipeline.AbstractOptions<com.google.firebase.firestore.pipeline.FindNearestOptions> {
+  @com.google.common.annotations.Beta public final class FindNearestOptions extends com.google.firebase.firestore.pipeline.AbstractOptions<com.google.firebase.firestore.pipeline.FindNearestOptions> {
     ctor public FindNearestOptions();
     method public com.google.firebase.firestore.pipeline.FindNearestOptions withDistanceField(com.google.firebase.firestore.pipeline.Field distanceField);
     method public com.google.firebase.firestore.pipeline.FindNearestOptions? withDistanceField(String? distanceField);
     method public com.google.firebase.firestore.pipeline.FindNearestOptions withLimit(long limit);
   }
 
-  public final class FindNearestStage extends com.google.firebase.firestore.pipeline.Stage<com.google.firebase.firestore.pipeline.FindNearestStage> {
+  @com.google.common.annotations.Beta public final class FindNearestStage extends com.google.firebase.firestore.pipeline.Stage<com.google.firebase.firestore.pipeline.FindNearestStage> {
     field public static final com.google.firebase.firestore.pipeline.FindNearestStage.Companion Companion;
   }
 
@@ -1612,7 +1635,7 @@ package com.google.firebase.firestore.pipeline {
   public static final class RawOptions.Companion {
   }
 
-  public final class RawStage extends com.google.firebase.firestore.pipeline.Stage<com.google.firebase.firestore.pipeline.RawStage> {
+  @com.google.common.annotations.Beta public final class RawStage extends com.google.firebase.firestore.pipeline.Stage<com.google.firebase.firestore.pipeline.RawStage> {
     method public static com.google.firebase.firestore.pipeline.RawStage ofName(String name);
     method public com.google.firebase.firestore.pipeline.RawStage withArguments(java.lang.Object... arguments);
     field public static final com.google.firebase.firestore.pipeline.RawStage.Companion Companion;
@@ -1622,7 +1645,7 @@ package com.google.firebase.firestore.pipeline {
     method public com.google.firebase.firestore.pipeline.RawStage ofName(String name);
   }
 
-  public final class SampleStage extends com.google.firebase.firestore.pipeline.Stage<com.google.firebase.firestore.pipeline.SampleStage> {
+  @com.google.common.annotations.Beta public final class SampleStage extends com.google.firebase.firestore.pipeline.Stage<com.google.firebase.firestore.pipeline.SampleStage> {
     method public static com.google.firebase.firestore.pipeline.SampleStage withDocLimit(int results);
     method public static com.google.firebase.firestore.pipeline.SampleStage withPercentage(double percentage);
     field public static final com.google.firebase.firestore.pipeline.SampleStage.Companion Companion;
@@ -1648,7 +1671,7 @@ package com.google.firebase.firestore.pipeline {
     ctor public Selectable();
   }
 
-  public abstract sealed class Stage<T extends com.google.firebase.firestore.pipeline.Stage<T>> {
+  @com.google.common.annotations.Beta public abstract sealed class Stage<T extends com.google.firebase.firestore.pipeline.Stage<T>> {
     method public final T withOption(String key, boolean value);
     method public final T withOption(String key, com.google.firebase.firestore.pipeline.Field value);
     method public final T withOption(String key, double value);
@@ -1657,12 +1680,15 @@ package com.google.firebase.firestore.pipeline {
     method public final T withOption(String key, long value);
   }
 
-  public final class UnnestOptions extends com.google.firebase.firestore.pipeline.AbstractOptions<com.google.firebase.firestore.pipeline.UnnestOptions> {
+  public final class SubcollectionSource extends com.google.firebase.firestore.pipeline.Stage<com.google.firebase.firestore.pipeline.SubcollectionSource> {
+  }
+
+  @com.google.common.annotations.Beta public final class UnnestOptions extends com.google.firebase.firestore.pipeline.AbstractOptions<com.google.firebase.firestore.pipeline.UnnestOptions> {
     ctor public UnnestOptions();
     method public com.google.firebase.firestore.pipeline.UnnestOptions withIndexField(String indexField);
   }
 
-  public final class UnnestStage extends com.google.firebase.firestore.pipeline.Stage<com.google.firebase.firestore.pipeline.UnnestStage> {
+  @com.google.common.annotations.Beta public final class UnnestStage extends com.google.firebase.firestore.pipeline.Stage<com.google.firebase.firestore.pipeline.UnnestStage> {
     method public static com.google.firebase.firestore.pipeline.UnnestStage withField(com.google.firebase.firestore.pipeline.Selectable arrayWithAlias);
     method public static com.google.firebase.firestore.pipeline.UnnestStage withField(String arrayField, String alias);
     method public com.google.firebase.firestore.pipeline.UnnestStage withIndexField(String indexField);

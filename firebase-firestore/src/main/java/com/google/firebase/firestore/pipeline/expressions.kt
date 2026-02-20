@@ -118,6 +118,7 @@ abstract class Expression internal constructor() {
               .toTypedArray()
           )
         is List<*> -> array(value)
+        is Pipeline -> PipelineValueExpression(value)
         else -> null
       }
     }
@@ -2971,6 +2972,50 @@ abstract class Expression internal constructor() {
       map(elements.flatMap { listOf(constant(it.key), toExprOrConstant(it.value)) }.toTypedArray())
 
     /**
+     * Accesses a field/property of the expression (When the expression evaluates to a Map or
+     * Document).
+     *
+     * @param key The key of the field to access.
+     * @return An [Expression] representing the value of the field.
+     */
+    @JvmStatic
+    fun getField(expression: Expression, key: String): Expression =
+      FunctionExpression("field", notImplemented, expression, key)
+
+    /**
+     * Accesses a field/property of a document field using the provided [key].
+     *
+     * @param fieldName The field name of the map or document field.
+     * @param key The key of the field to access.
+     * @return An [Expression] representing the value of the field.
+     */
+    @JvmStatic
+    fun getField(fieldName: String, key: String): Expression =
+      FunctionExpression("field", notImplemented, fieldName, key)
+
+    /**
+     * Accesses a field/property of the expression using the provided [keyExpression].
+     *
+     * @param expression The expression evaluating to a Map or Document.
+     * @param keyExpression The expression evaluating to the key.
+     * @return A new [Expression] representing the value of the field.
+     */
+    @JvmStatic
+    fun getField(expression: Expression, keyExpression: Expression): Expression =
+      FunctionExpression("field", notImplemented, expression, keyExpression)
+
+    /**
+     * Accesses a field/property of a document field using the provided [keyExpression].
+     *
+     * @param fieldName The field name of the map or document field.
+     * @param keyExpression The expression evaluating to the key.
+     * @return A new [Expression] representing the value of the field.
+     */
+    @JvmStatic
+    fun getField(fieldName: String, keyExpression: Expression): Expression =
+      FunctionExpression("field", notImplemented, fieldName, keyExpression)
+
+    /**
      * Accesses a value from a map (object) field using the provided [key].
      *
      * ```kotlin
@@ -5283,6 +5328,22 @@ abstract class Expression internal constructor() {
      * @return A new [Expression] representing the documentId operation.
      */
     @JvmStatic fun documentId(docRef: DocumentReference): Expression = documentId(constant(docRef))
+
+    /**
+     * Creates an expression that retrieves the value of a variable bound via [Pipeline.define].
+     *
+     * @param name The name of the variable to retrieve.
+     * @return An [Expression] representing the variable's value.
+     */
+    @JvmStatic fun variable(name: String): Expression = Variable(name)
+
+    /**
+     * Creates an expression that represents the current document being processed.
+     *
+     * @return An [Expression] representing the current document.
+     */
+    @JvmStatic
+    fun currentDocument(): Expression = FunctionExpression("current_document", notImplemented)
   }
 
   /**
@@ -6374,6 +6435,22 @@ abstract class Expression internal constructor() {
     Companion.mapMerge(this, mapExpr, *otherMaps)
 
   /**
+   * Retrieves the value of a specific field from the document evaluated by this expression.
+   *
+   * @param key The string key to access.
+   * @return A new [Expression] representing the field value.
+   */
+  fun getField(key: String): Expression = Companion.getField(this, key)
+
+  /**
+   * Retrieves the value of a specific field from the document evaluated by this expression.
+   *
+   * @param keyExpression The expression evaluating to the key to access.
+   * @return A new [Expression] representing the field value.
+   */
+  fun getField(keyExpression: Expression): Expression = Companion.getField(this, keyExpression)
+
+  /**
    * Creates an expression that removes a key from this map expression.
    *
    * ```kotlin
@@ -7409,13 +7486,13 @@ internal constructor(
     name: String,
     function: EvaluateFunction,
     fieldName: String
-  ) : this(name, function, arrayOf(field(fieldName)))
+  ) : this(name, function, arrayOf(Expression.field(fieldName)))
   internal constructor(
     name: String,
     function: EvaluateFunction,
     fieldName: String,
     vararg params: Any
-  ) : this(name, function, arrayOf(field(fieldName), *toArrayOfExprOrConstant(params)))
+  ) : this(name, function, arrayOf(Expression.field(fieldName), *toArrayOfExprOrConstant(params)))
 
   override fun toProto(userDataReader: UserDataReader): Value {
     val builder = ProtoFunction.newBuilder()
@@ -7561,13 +7638,17 @@ internal class BooleanFunctionExpression internal constructor(val expr: Expressi
     name: String,
     function: EvaluateFunction,
     fieldName: String
-  ) : this(name, function, arrayOf(field(fieldName)))
+  ) : this(name, function, arrayOf(Expression.field(fieldName)))
   internal constructor(
     name: String,
     function: EvaluateFunction,
     fieldName: String,
     vararg params: Any
-  ) : this(name, function, arrayOf(field(fieldName), *Expression.toArrayOfExprOrConstant(params)))
+  ) : this(
+    name,
+    function,
+    arrayOf(Expression.field(fieldName), *Expression.toArrayOfExprOrConstant(params))
+  )
 
   override fun toProto(userDataReader: UserDataReader): Value = expr.toProto(userDataReader)
 
@@ -7710,4 +7791,31 @@ class Ordering internal constructor(val expr: Expression, val dir: Direction) {
           .putFields("expression", expr.toProto(userDataReader))
       )
       .build()
+}
+
+internal class Variable(val name: String) : Expression() {
+  override fun toProto(userDataReader: UserDataReader): Value =
+    Value.newBuilder().setVariableReferenceValue(name).build()
+  override fun evaluateFunction(context: EvaluationContext): EvaluateDocument =
+    { _: MutableDocument ->
+      throw NotImplementedError("Variable evaluation not implemented")
+    }
+  override fun canonicalId() = "var($name)"
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is Variable) return false
+    return name == other.name
+  }
+  override fun hashCode(): Int = name.hashCode()
+}
+
+private class PipelineValueExpression(val pipeline: Pipeline) : Expression() {
+  override fun toProto(userDataReader: UserDataReader): Value =
+    Value.newBuilder().setPipelineValue(pipeline.toPipelineProto(userDataReader)).build()
+  override fun evaluateFunction(context: EvaluationContext): EvaluateDocument =
+    { _: MutableDocument ->
+      throw NotImplementedError("Pipeline evaluation not implemented")
+    }
+  override fun canonicalId() = "pipeline(\${pipeline.hashCode()})"
+  override fun toString() = "Pipeline(...)"
 }

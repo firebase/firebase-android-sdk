@@ -35,6 +35,7 @@ import com.google.firebase.firestore.pipeline.CollectionGroupSource
 import com.google.firebase.firestore.pipeline.CollectionSource
 import com.google.firebase.firestore.pipeline.CollectionSourceOptions
 import com.google.firebase.firestore.pipeline.DatabaseSource
+import com.google.firebase.firestore.pipeline.DefineStage
 import com.google.firebase.firestore.pipeline.DistinctStage
 import com.google.firebase.firestore.pipeline.DocumentsSource
 import com.google.firebase.firestore.pipeline.Expression
@@ -55,10 +56,12 @@ import com.google.firebase.firestore.pipeline.SelectStage
 import com.google.firebase.firestore.pipeline.Selectable
 import com.google.firebase.firestore.pipeline.SortStage
 import com.google.firebase.firestore.pipeline.Stage
+import com.google.firebase.firestore.pipeline.SubcollectionSource
 import com.google.firebase.firestore.pipeline.UnionStage
 import com.google.firebase.firestore.pipeline.UnnestOptions
 import com.google.firebase.firestore.pipeline.UnnestStage
 import com.google.firebase.firestore.pipeline.WhereStage
+import com.google.firebase.firestore.pipeline.evaluation.notImplemented
 import com.google.firebase.firestore.remote.RemoteSerializer
 import com.google.firebase.firestore.util.Logger
 import com.google.firestore.v1.ExecutePipelineRequest
@@ -84,8 +87,8 @@ import com.google.firestore.v1.Value
 @Beta
 class Pipeline
 internal constructor(
-  private val firestore: FirebaseFirestore,
-  private val userDataReader: UserDataReader,
+  private val firestore: FirebaseFirestore?,
+  private val userDataReader: UserDataReader?,
   private val stages: List<Stage<*>>
 ) {
   class ExecuteOptions private constructor(options: InternalOptions) :
@@ -133,8 +136,8 @@ internal constructor(
   }
 
   internal constructor(
-    firestore: FirebaseFirestore,
-    userDataReader: UserDataReader,
+    firestore: FirebaseFirestore?,
+    userDataReader: UserDataReader?,
     stage: Stage<*>
   ) : this(firestore, userDataReader, listOf(stage))
 
@@ -142,21 +145,28 @@ internal constructor(
     return Pipeline(firestore, userDataReader, stages.plus(stage))
   }
 
-  private fun toStructuredPipelineProto(options: InternalOptions?): StructuredPipeline {
+  private fun toStructuredPipelineProto(
+    options: InternalOptions?,
+    userDataReader: UserDataReader
+  ): StructuredPipeline {
     val builder = StructuredPipeline.newBuilder()
-    builder.pipeline = toPipelineProto()
+    builder.pipeline = toPipelineProto(userDataReader)
     options?.forEach(builder::putOptions)
     return builder.build()
   }
 
-  internal fun toPipelineProto(): ProtoPipeline =
-    ProtoPipeline.newBuilder().addAllStages(stages.map { it.toProtoStage(userDataReader) }).build()
+  internal fun toPipelineProto(userDataReader: UserDataReader): ProtoPipeline {
+    return ProtoPipeline.newBuilder()
+      .addAllStages(stages.map { it.toProtoStage(userDataReader) })
+      .build()
+  }
 
   private fun toExecutePipelineRequest(options: InternalOptions?): ExecutePipelineRequest {
+    checkNotNull(firestore) { "Cannot execute pipeline without a Firestore instance" }
     val database = firestore!!.databaseId
     val builder = ExecutePipelineRequest.newBuilder()
     builder.database = "projects/${database.projectId}/databases/${database.databaseId}"
-    builder.structuredPipeline = toStructuredPipelineProto(options)
+    builder.structuredPipeline = toStructuredPipelineProto(options, firestore.userDataReader)
     return builder.build()
   }
 
@@ -897,6 +907,73 @@ internal constructor(
    * @return A new [Pipeline] object with this stage appended to the stage list.
    */
   fun unnest(unnestStage: UnnestStage): Pipeline = append(unnestStage)
+
+  /**
+   * Defines one or more variables in the pipeline's scope, allowing them to be used in subsequent
+   * stages.
+   *
+   * This stage is useful for declaring reusable values or intermediate calculations that can be
+   * referenced multiple times in later parts of the pipeline, improving readability and
+   * maintainability.
+   *
+   * Each variable is defined using an [AliasedExpression], which pairs an expression with a name
+   * (alias). The expression can be a simple constant, a field reference, or a complex computation.
+   *
+   * Example:
+   * ```
+   * firestore.pipeline().collection("products")
+   *   .define(
+   *     multiply(field("price"), 0.9).as("discountedPrice"),
+   *     add(field("stock"), 10).as("newStock")
+   *   )
+   *   .where(lessThan(variable("discountedPrice"), 100))
+   *   .select(field("name"), variable("newStock"));
+   * ```
+   *
+   * @param aliasedExpression The first variable to define, specified as an [AliasedExpression].
+   * @param additionalExpressions Optional additional variables to define, specified as
+   * [AliasedExpression]s.
+   * @return A new [Pipeline] object with this stage appended to the stage list.
+   */
+  fun define(
+    aliasedExpression: AliasedExpression,
+    vararg additionalExpressions: AliasedExpression
+  ): Pipeline {
+    return append(DefineStage(arrayOf(aliasedExpression, *additionalExpressions)))
+  }
+
+  /**
+   * Converts this pipeline to an expression that evaluates to an array of results.
+   *
+   * @return An [Expression] that executes this pipeline and returns the results as a list.
+   */
+  fun toArrayExpression(): Expression {
+    return FunctionExpression("array", notImplemented, Expression.toExprOrConstant(this))
+  }
+
+  /**
+   * Converts this pipeline to an expression that evaluates to a scalar result. The pipeline must
+   * return exactly one document with one field, or be an aggregation.
+   *
+   * @return An [Expression] that executes this pipeline and returns a single value.
+   */
+  fun toScalarExpression(): Expression {
+    return FunctionExpression("scalar", notImplemented, Expression.toExprOrConstant(this))
+  }
+
+  companion object {
+    /**
+     * Creates a pipeline that processes the documents in the specified subcollection of the current
+     * document.
+     *
+     * @param path The relative path to the subcollection.
+     * @return A new [Pipeline] scoped to the subcollection.
+     */
+    @JvmStatic
+    fun subcollection(path: String): Pipeline {
+      return Pipeline(null, null, SubcollectionSource(path))
+    }
+  }
 }
 
 /** Start of a Firestore Pipeline */
