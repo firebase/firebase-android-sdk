@@ -31,10 +31,10 @@ runs:
           calculate_github_issue_for_commenting.py
           --issue-output-file=github_issue_number.txt
           --github-repository='${{ github.repository }}'
-          --github-ref='${{ github.ref }}'
+          --github-ref="${GITHUB_REF}"
           --github-event-name='${{ github.event_name }}'
           --pr-body-github-issue-key=trksmnkncd_notification_issue
-          --github-issue-for-scheduled-run='${{ inputs.github-issue-for-scheduled-runs }}'
+          --github-issue-for-scheduled-run="${INPUTS_GITHUB_ISSUE_FOR_SCHEDULED_RUNS}"
         )
         echo "${args[*]}"
         "${args[@]}"
@@ -42,6 +42,8 @@ runs:
         set -xv
         issue="$(cat github_issue_number.txt)"
         echo "issue=$issue" >> "$GITHUB_OUTPUT"
+      env:
+        INPUTS_GITHUB_ISSUE_FOR_SCHEDULED_RUNS: ${{ inputs.github-issue-for-scheduled-runs }}
 
     - name: Post Comment on GitHub Issue
       if: steps.issue-id.outputs.issue != ''
@@ -51,13 +53,13 @@ runs:
         args=(
           python
           post_comment_for_job_results.py
-          --github-issue='${{ steps.issue-id.outputs.issue }}'
-          --github-workflow='${{ github.workflow }}'
+          --github-issue="${STEPS_ISSUE_ID_OUTPUTS_ISSUE}"
+          --github-workflow="${GITHUB_WORKFLOW}"
           --github-repository='${{ github.repository }}'
-          --github-ref='${{ github.ref }}'
+          --github-ref="${GITHUB_REF}"
           --github-event-name='${{ github.event_name }}'
           --github-sha='${{ github.sha }}'
-          --github-repository-html-url='${{ github.event.repository.html_url }}'
+          --github-repository-html-url="${GITHUB_EVENT_REPOSITORY_HTML_URL}"
           --github-run-id='${{ github.run_id }}'
           --github-run-number='${{ github.run_number }}'
           --github-run-attempt='${{ github.run_attempt }}'
@@ -65,7 +67,11 @@ runs:
 
         while read -r line; do
           args=("${args[@]}" "$line")
-        done <'${{ inputs.job-results-file }}'
+        done <"${INPUTS_JOB_RESULTS_FILE}"
 
         echo "${args[*]}"
         exec "${args[@]}"
+      env:
+        STEPS_ISSUE_ID_OUTPUTS_ISSUE: ${{ steps.issue-id.outputs.issue }}
+        GITHUB_EVENT_REPOSITORY_HTML_URL: ${{ github.event.repository.html_url }}
+        INPUTS_JOB_RESULTS_FILE: ${{ inputs.job-results-file }}
