@@ -10,7 +10,7 @@ dependencies = [
   "click==8.1.7",
   "google-cloud-storage==2.18.2",
   "mypy==1.6.0",
-  "numpy==1.24.4",
+  "numpy==2.4.2",
   "pandas==1.5.3",
   "PyGithub==1.58.2",
   "pystache==0.6.0",
