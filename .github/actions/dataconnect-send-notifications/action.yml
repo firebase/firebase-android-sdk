@@ -31,10 +31,10 @@ runs:
           calculate_github_issue_for_commenting.py
           --issue-output-file=github_issue_number.txt
           --github-repository='${{ github.repository }}'
-          --github-ref='${GITHUB_REF}'
+          --github-ref="${GITHUB_REF}"
           --github-event-name='${{ github.event_name }}'
           --pr-body-github-issue-key=trksmnkncd_notification_issue
-          --github-issue-for-scheduled-run='${INPUTS_GITHUB_ISSUE_FOR_SCHEDULED_RUNS}'
+          --github-issue-for-scheduled-run="${INPUTS_GITHUB_ISSUE_FOR_SCHEDULED_RUNS}"
         )
         echo "${args[*]}"
         "${args[@]}"
@@ -53,13 +53,13 @@ runs:
         args=(
           python
           post_comment_for_job_results.py
-          --github-issue='${STEPS_ISSUE_ID_OUTPUTS_ISSUE}'
-          --github-workflow='${GITHUB_WORKFLOW}'
+          --github-issue="${STEPS_ISSUE_ID_OUTPUTS_ISSUE}"
+          --github-workflow="${GITHUB_WORKFLOW}"
           --github-repository='${{ github.repository }}'
-          --github-ref='${GITHUB_REF}'
+          --github-ref="${GITHUB_REF}"
           --github-event-name='${{ github.event_name }}'
           --github-sha='${{ github.sha }}'
-          --github-repository-html-url='${GITHUB_EVENT_REPOSITORY_HTML_URL}'
+          --github-repository-html-url="${GITHUB_EVENT_REPOSITORY_HTML_URL}"
           --github-run-id='${{ github.run_id }}'
           --github-run-number='${{ github.run_number }}'
           --github-run-attempt='${{ github.run_attempt }}'
@@ -67,7 +67,7 @@ runs:
 
         while read -r line; do
           args=("${args[@]}" "$line")
-        done <'${INPUTS_JOB_RESULTS_FILE}'
+        done <"${INPUTS_JOB_RESULTS_FILE}"
 
         echo "${args[*]}"
         exec "${args[@]}"
