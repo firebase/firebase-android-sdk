@@ -118,7 +118,7 @@ internal class DataConnectGrpcRPCs(
         cacheLogger.debug {
           "created by ${logger.nameWithId} with dbFile=$dbFile maxAge=${cacheSettings.maxAge}"
         }
-        val cacheDb = DataConnectCacheDatabase(dbFile, cacheLogger)
+        val cacheDb = DataConnectCacheDatabase(dbFile, cacheLogger, System::currentTimeMillis)
         cacheDb.initialize()
         NullableReference(CacheDbSettingsPair(cacheDb, maxAge))
       }

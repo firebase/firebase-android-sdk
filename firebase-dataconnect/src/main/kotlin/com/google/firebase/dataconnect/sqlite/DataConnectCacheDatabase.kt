@@ -59,7 +59,11 @@ import kotlinx.coroutines.sync.withLock
  * All methods and properties of [DataConnectCacheDatabase] are thread-safe and may be safely called
  * and/or accessed concurrently from multiple threads and/or coroutines.
  */
-internal class DataConnectCacheDatabase(private val dbFile: File?, private val logger: Logger) {
+internal class DataConnectCacheDatabase(
+  private val dbFile: File?,
+  private val logger: Logger,
+  private val getCurrentTimeMillis: () -> Long,
+) {
 
   private val stateMutex = Mutex()
   private var state: State = State.New
@@ -467,9 +471,9 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
     } else {
       val (sqliteQueryId, queryResultProto, expiryProto) = getQueryResult
 
-      val currentTimeMillis = System.currentTimeMillis()
+      val currentTimeMillis = getCurrentTimeMillis()
       val expiryTimeMillis = expiryProto.expiryTimeMillis
-      if (currentTimeMillis >= expiryTimeMillis) {
+      if (currentTimeMillis > expiryTimeMillis) {
         val millisStale = currentTimeMillis - expiryTimeMillis
         return@runReadWriteTransaction GetQueryResultResult.Stale(millisStale)
       }
@@ -513,9 +517,7 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
     val expiryProtoBytes =
       QueryResultExpiry.newBuilder().let {
         val expiryTime =
-          System.currentTimeMillis().milliseconds +
-            maxAge.seconds.seconds +
-            maxAge.nanos.nanoseconds
+          getCurrentTimeMillis().milliseconds + maxAge.seconds.seconds + maxAge.nanos.nanoseconds
         it.setMaxAge(maxAge)
         it.setExpiryTimeMillis(expiryTime.inWholeMilliseconds)
         ImmutableByteArray.adopt(it.build().toByteArray())
