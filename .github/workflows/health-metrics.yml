@@ -34,10 +34,11 @@ jobs:
           java-version: 17
           distribution: temurin
           cache: gradle
-      - name: Set up Python 3.10
-        uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: '3.12'
+          pip-version: '26.0.1'
       - uses: google-github-actions/auth@71f986410dfbc7added4569d411d040a91dc6935 # v2.1.8
         with:
           credentials_json: '${{ secrets.GCP_SERVICE_ACCOUNT }}'
@@ -69,10 +70,11 @@ jobs:
           java-version: 17
           distribution: temurin
           cache: gradle
-      - name: Set up Python 3.10
-        uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: '3.12'
+          pip-version: '26.0.1'
       - uses: google-github-actions/auth@71f986410dfbc7added4569d411d040a91dc6935 # v2.1.8
         with:
           credentials_json: '${{ secrets.GCP_SERVICE_ACCOUNT }}'
@@ -105,10 +107,11 @@ jobs:
           java-version: 17
           distribution: temurin
           cache: gradle
-      - name: Set up Python 3.10
-        uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: '3.12'
+          pip-version: '26.0.1'
       - uses: google-github-actions/auth@71f986410dfbc7added4569d411d040a91dc6935 # v2.1.8
         with:
           credentials_json: '${{ secrets.GCP_SERVICE_ACCOUNT }}'
