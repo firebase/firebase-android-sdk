@@ -55,6 +55,7 @@ import io.grpc.Metadata
 import io.grpc.MethodDescriptor
 import io.grpc.android.AndroidChannelBuilder
 import java.io.File
+import java.lang.System.currentTimeMillis
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
@@ -118,7 +119,7 @@ internal class DataConnectGrpcRPCs(
         cacheLogger.debug {
           "created by ${logger.nameWithId} with dbFile=$dbFile maxAge=${cacheSettings.maxAge}"
         }
-        val cacheDb = DataConnectCacheDatabase(dbFile, cacheLogger, System::currentTimeMillis)
+        val cacheDb = DataConnectCacheDatabase(dbFile, cacheLogger)
         cacheDb.initialize()
         NullableReference(CacheDbSettingsPair(cacheDb, maxAge))
       }
@@ -263,7 +264,7 @@ internal class DataConnectGrpcRPCs(
     val cacheInfo = queryCacheInfo(authToken, request)
 
     cacheInfo?.run {
-      when (val cachedResult = cacheDb.getQueryResult(authUid, queryId)) {
+      when (val cachedResult = cacheDb.getQueryResult(authUid, queryId, currentTimeMillis())) {
         is DataConnectCacheDatabase.GetQueryResultResult.Found -> {
           logger.logGrpcReturningFromCache(
             requestId = requestId,
@@ -298,6 +299,7 @@ internal class DataConnectGrpcRPCs(
           queryId,
           queryData = response.data,
           maxAge = maxAge,
+          currentTimeMillis = currentTimeMillis(),
           getEntityIdForPath = response.getEntityIdForPathFunction(),
         )
       }

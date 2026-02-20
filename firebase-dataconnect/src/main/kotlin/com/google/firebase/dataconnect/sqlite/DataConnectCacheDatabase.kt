@@ -62,7 +62,6 @@ import kotlinx.coroutines.sync.withLock
 internal class DataConnectCacheDatabase(
   private val dbFile: File?,
   private val logger: Logger,
-  private val getCurrentTimeMillis: () -> Long,
 ) {
 
   private val stateMutex = Mutex()
@@ -461,7 +460,11 @@ internal class DataConnectCacheDatabase(
     ) : GetQueryResultResult
   }
 
-  suspend fun getQueryResult(authUid: String?, queryId: ImmutableByteArray): GetQueryResultResult =
+  suspend fun getQueryResult(
+    authUid: String?,
+    queryId: ImmutableByteArray,
+    currentTimeMillis: Long
+  ): GetQueryResultResult =
   // TODO: convert to read-only transaction so it can be run concurrently
   runReadWriteTransaction { sqliteDatabase ->
     val sqliteUserId = sqliteDatabase.getOrInsertAuthUid(authUid)
@@ -471,7 +474,6 @@ internal class DataConnectCacheDatabase(
     } else {
       val (sqliteQueryId, queryResultProto, expiryProto) = getQueryResult
 
-      val currentTimeMillis = getCurrentTimeMillis()
       val expiryTimeMillis = expiryProto.expiryTimeMillis
       if (currentTimeMillis > expiryTimeMillis) {
         val millisStale = currentTimeMillis - expiryTimeMillis
@@ -506,6 +508,7 @@ internal class DataConnectCacheDatabase(
     queryId: ImmutableByteArray,
     queryData: Struct,
     maxAge: Duration,
+    currentTimeMillis: Long,
     getEntityIdForPath: GetEntityIdForPathFunction?,
   ) {
     require(queryId.size > 0) {
@@ -517,7 +520,7 @@ internal class DataConnectCacheDatabase(
     val expiryProtoBytes =
       QueryResultExpiry.newBuilder().let {
         val expiryTime =
-          getCurrentTimeMillis().milliseconds + maxAge.seconds.seconds + maxAge.nanos.nanoseconds
+          currentTimeMillis.milliseconds + maxAge.seconds.seconds + maxAge.nanos.nanoseconds
         it.setMaxAge(maxAge)
         it.setExpiryTimeMillis(expiryTime.inWholeMilliseconds)
         ImmutableByteArray.adopt(it.build().toByteArray())
