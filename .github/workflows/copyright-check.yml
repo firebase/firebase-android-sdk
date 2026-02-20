@@ -14,7 +14,9 @@ jobs:
       - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
         with:
           python-version: '3.12'
+          pip-version: '26.0.1'
       - run: |
+          pip install --upgrade setuptools wheel
           pip install -e "ci/fireci"
       - run: |
           fireci copyright_check \
