@@ -26,7 +26,12 @@ import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import com.google.firebase.perf.FirebasePerformanceTestBase;
+import com.google.firebase.perf.application.AppStateMonitor;
+import com.google.firebase.perf.session.PerfSession;
+import com.google.firebase.perf.session.SessionManager;
+import com.google.firebase.perf.session.gauges.GaugeManager;
 import com.google.firebase.perf.transport.TransportManager;
+import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.perf.v1.ApplicationProcessState;
 import com.google.firebase.perf.v1.NetworkRequestMetric;
@@ -53,6 +58,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Captor;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.robolectric.RobolectricTestRunner;
 
 /** Unit tests for {@link com.google.firebase.perf.network.FirebasePerfHttpClient}. */
@@ -66,11 +72,18 @@ public class FirebasePerfHttpClientTest extends FirebasePerformanceTestBase {
   @Mock private Timer timer;
   @Captor private ArgumentCaptor<NetworkRequestMetric> networkArgumentCaptor;
 
+  @Spy private GaugeManager mockGaugeManager = GaugeManager.getInstance();
+  @Spy private AppStateMonitor mockAppStateMonitor = AppStateMonitor.getInstance();
+  private PerfSession session = new PerfSession("sessionId", new Clock());
+  private SessionManager sessionManager =
+          new SessionManager(mockGaugeManager, session, mockAppStateMonitor);
+
   @Before
   public void setUp() {
     initMocks(this);
     when(timer.getMicros()).thenReturn((long) 1000);
     when(timer.getDurationMicros()).thenReturn((long) 2000);
+    when(mockAppStateMonitor.getSessionManager()).thenReturn(sessionManager);
   }
 
   @Test
@@ -81,7 +94,7 @@ public class FirebasePerfHttpClientTest extends FirebasePerformanceTestBase {
     when(client.execute(request)).thenReturn(response);
 
     HttpResponse httpResponse =
-        FirebasePerfHttpClient.execute(client, request, timer, transportManager);
+        FirebasePerfHttpClient.execute(client, request, timer, transportManager, sessionManager);
 
     assertSame(httpResponse, response);
     verify(timer).reset();
@@ -100,7 +113,7 @@ public class FirebasePerfHttpClientTest extends FirebasePerformanceTestBase {
     when(client.execute(request, context)).thenReturn(response);
 
     HttpResponse httpResponse =
-        FirebasePerfHttpClient.execute(client, request, context, timer, transportManager);
+        FirebasePerfHttpClient.execute(client, request, context, timer, transportManager, sessionManager);
 
     assertSame(httpResponse, response);
     verify(transportManager)
@@ -119,7 +132,7 @@ public class FirebasePerfHttpClientTest extends FirebasePerformanceTestBase {
     when(client.execute(host, request)).thenReturn(response);
 
     HttpResponse httpResponse =
-        FirebasePerfHttpClient.execute(client, host, request, timer, transportManager);
+        FirebasePerfHttpClient.execute(client, host, request, timer, transportManager, sessionManager);
 
     assertSame(httpResponse, response);
     verify(transportManager)
@@ -139,7 +152,7 @@ public class FirebasePerfHttpClientTest extends FirebasePerformanceTestBase {
     when(client.execute(host, request, c)).thenReturn(response);
 
     HttpResponse httpResponse =
-        FirebasePerfHttpClient.execute(client, host, request, c, timer, transportManager);
+        FirebasePerfHttpClient.execute(client, host, request, c, timer, transportManager, sessionManager);
 
     assertSame(httpResponse, response);
     verify(transportManager)
@@ -155,7 +168,7 @@ public class FirebasePerfHttpClientTest extends FirebasePerformanceTestBase {
     HttpUriRequest request = mockHttpUriRequest();
     ResponseHandler<HttpResponse> handler = mock(ResponseHandlerInterface.class);
 
-    FirebasePerfHttpClient.execute(client, request, handler, timer, transportManager);
+    FirebasePerfHttpClient.execute(client, request, handler, timer, transportManager, sessionManager);
 
     ArgumentCaptor<HttpUriRequest> argRequest = ArgumentCaptor.forClass(HttpUriRequest.class);
     ArgumentCaptor<InstrumentApacheHttpResponseHandler> argHandler =
@@ -173,7 +186,7 @@ public class FirebasePerfHttpClientTest extends FirebasePerformanceTestBase {
     HttpContext context = mock(HttpContext.class);
     ResponseHandler<HttpResponse> handler = mock(ResponseHandlerInterface.class);
 
-    FirebasePerfHttpClient.execute(client, request, handler, context, timer, transportManager);
+    FirebasePerfHttpClient.execute(client, request, handler, context, timer, transportManager, sessionManager);
 
     ArgumentCaptor<HttpUriRequest> argRequest = ArgumentCaptor.forClass(HttpUriRequest.class);
     ArgumentCaptor<InstrumentApacheHttpResponseHandler> argHandler =
@@ -193,7 +206,7 @@ public class FirebasePerfHttpClientTest extends FirebasePerformanceTestBase {
     HttpHost host = mockHttpHost();
     ResponseHandler<HttpResponse> handler = mock(ResponseHandlerInterface.class);
 
-    FirebasePerfHttpClient.execute(client, host, request, handler, timer, transportManager);
+    FirebasePerfHttpClient.execute(client, host, request, handler, timer, transportManager, sessionManager);
 
     ArgumentCaptor<HttpHost> argHost = ArgumentCaptor.forClass(HttpHost.class);
     ArgumentCaptor<HttpRequest> argRequest = ArgumentCaptor.forClass(HttpRequest.class);
@@ -215,7 +228,7 @@ public class FirebasePerfHttpClientTest extends FirebasePerformanceTestBase {
     ResponseHandler<HttpResponse> handler = mock(ResponseHandlerInterface.class);
 
     FirebasePerfHttpClient.execute(
-        client, host, request, handler, context, timer, transportManager);
+        client, host, request, handler, context, timer, transportManager, sessionManager);
 
     ArgumentCaptor<HttpHost> argHost = ArgumentCaptor.forClass(HttpHost.class);
     ArgumentCaptor<HttpRequest> argRequest = ArgumentCaptor.forClass(HttpRequest.class);
@@ -244,7 +257,7 @@ public class FirebasePerfHttpClientTest extends FirebasePerformanceTestBase {
         IOException.class,
         () -> {
           HttpResponse httpResponse =
-              FirebasePerfHttpClient.execute(client, request, timer, transportManager);
+              FirebasePerfHttpClient.execute(client, request, timer, transportManager, sessionManager);
           assertSame(httpResponse, response);
         });
     verify(transportManager)
@@ -267,7 +280,7 @@ public class FirebasePerfHttpClientTest extends FirebasePerformanceTestBase {
         IOException.class,
         () -> {
           HttpResponse httpResponse =
-              FirebasePerfHttpClient.execute(client, request, context, timer, transportManager);
+              FirebasePerfHttpClient.execute(client, request, context, timer, transportManager, sessionManager);
           assertSame(httpResponse, response);
         });
     verify(transportManager)
@@ -290,7 +303,7 @@ public class FirebasePerfHttpClientTest extends FirebasePerformanceTestBase {
         IOException.class,
         () -> {
           HttpResponse httpResponse =
-              FirebasePerfHttpClient.execute(client, host, request, timer, transportManager);
+              FirebasePerfHttpClient.execute(client, host, request, timer, transportManager, sessionManager);
           assertSame(httpResponse, response);
         });
     verify(transportManager)
@@ -314,7 +327,7 @@ public class FirebasePerfHttpClientTest extends FirebasePerformanceTestBase {
         IOException.class,
         () -> {
           HttpResponse httpResponse =
-              FirebasePerfHttpClient.execute(client, host, request, c, timer, transportManager);
+              FirebasePerfHttpClient.execute(client, host, request, c, timer, transportManager, sessionManager);
 
           assertSame(httpResponse, response);
         });
@@ -337,7 +350,7 @@ public class FirebasePerfHttpClientTest extends FirebasePerformanceTestBase {
     assertThrows(
         IOException.class,
         () -> {
-          FirebasePerfHttpClient.execute(client, request, handler, timer, transportManager);
+          FirebasePerfHttpClient.execute(client, request, handler, timer, transportManager, sessionManager);
         });
     verify(transportManager)
         .log(networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
@@ -362,7 +375,7 @@ public class FirebasePerfHttpClientTest extends FirebasePerformanceTestBase {
         IOException.class,
         () -> {
           FirebasePerfHttpClient.execute(
-              client, request, handler, context, timer, transportManager);
+              client, request, handler, context, timer, transportManager, sessionManager);
         });
     verify(transportManager)
         .log(networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
@@ -386,7 +399,7 @@ public class FirebasePerfHttpClientTest extends FirebasePerformanceTestBase {
     assertThrows(
         IOException.class,
         () -> {
-          FirebasePerfHttpClient.execute(client, host, request, handler, timer, transportManager);
+          FirebasePerfHttpClient.execute(client, host, request, handler, timer, transportManager, sessionManager);
         });
     verify(transportManager)
         .log(networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));
@@ -413,7 +426,7 @@ public class FirebasePerfHttpClientTest extends FirebasePerformanceTestBase {
         IOException.class,
         () -> {
           FirebasePerfHttpClient.execute(
-              client, host, request, handler, context, timer, transportManager);
+              client, host, request, handler, context, timer, transportManager, sessionManager);
         });
     verify(transportManager)
         .log(networkArgumentCaptor.capture(), ArgumentMatchers.any(ApplicationProcessState.class));

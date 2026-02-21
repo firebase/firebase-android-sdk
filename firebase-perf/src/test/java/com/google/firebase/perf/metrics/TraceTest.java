@@ -24,6 +24,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import android.content.Context;
@@ -49,6 +50,7 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.stubbing.Answer;
 import org.robolectric.RobolectricTestRunner;
 
@@ -64,11 +66,21 @@ public class TraceTest extends FirebasePerformanceTestBase {
 
   @Mock private TransportManager mockTransportManager;
   @Mock private Clock mockClock;
-  @Mock private AppStateMonitor mockAppStateMonitor;
+  @Spy
+  private GaugeManager mockGaugeManager = GaugeManager.getInstance();
+  @Spy private AppStateMonitor mockAppStateMonitor = AppStateMonitor.getInstance();
+  private PerfSession session = new PerfSession("sessionId", new Clock());
+  private SessionManager sessionManager =
+          new SessionManager(mockGaugeManager, session, mockAppStateMonitor);
 
   private ArgumentCaptor<TraceMetric> arguments;
 
   private long currentTime;
+
+  @Override
+  protected SessionManager provideSessionManager() {
+    return sessionManager;
+  }
 
   @Before
   public void setUp() {
@@ -84,6 +96,7 @@ public class TraceTest extends FirebasePerformanceTestBase {
     ConfigResolver configResolver = ConfigResolver.getInstance();
     configResolver.setDeviceCacheManager(new DeviceCacheManager(new FakeDirectExecutorService()));
     configResolver.setApplicationContext(appContext);
+    when(mockAppStateMonitor.getSessionManager()).thenReturn(sessionManager);
   }
 
   @Test

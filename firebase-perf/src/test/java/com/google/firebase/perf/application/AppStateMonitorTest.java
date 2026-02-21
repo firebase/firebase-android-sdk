@@ -39,6 +39,8 @@ import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.config.DeviceCacheManager;
 import com.google.firebase.perf.metrics.NetworkRequestMetricBuilder;
 import com.google.firebase.perf.metrics.Trace;
+import com.google.firebase.perf.session.PerfSession;
+import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.session.gauges.GaugeManager;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Clock;
@@ -72,6 +74,12 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
 
   @Captor private ArgumentCaptor<TraceMetric> argTraceMetric;
 
+  @Mock private GaugeManager mockGaugeManager;
+  @Mock private AppStateMonitor mockAppStateMonitor;
+  private PerfSession session = new PerfSession("sessionId", new Clock());
+  private SessionManager sessionManager =
+          new SessionManager(mockGaugeManager, session, mockAppStateMonitor);
+
   private long currentTime = 0;
 
   private Activity activity1;
@@ -96,6 +104,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
   @Test
   public void foregroundBackgroundEvent_activityStateChanges_fgBgEventsCreated() {
     AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
+    monitor.setSessionManager(sessionManager);
     // activity1 comes to foreground.
     currentTime = 1;
     monitor.incrementCount("counter1", 10);
@@ -156,6 +165,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
   @Test
   public void testIncrementCount() {
     AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
+    monitor.setSessionManager(sessionManager);
 
     monitor.incrementCount("counter1", 10);
     monitor.incrementCount("counter2", 20);
@@ -176,6 +186,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
   @Test
   public void testTwoActivities() {
     AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
+    monitor.setSessionManager(sessionManager);
     // activity1 comes to foreground.
     currentTime = 1;
     monitor.onActivityResumed(activity1);
@@ -250,6 +261,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
   @Test
   public void testAppStateCallbackWithTrace() {
     AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
+    monitor.setSessionManager(sessionManager);
     Trace trace = new Trace("TRACE_1", transportManager, clock, monitor);
     // Trace is not started yet, default state is APPLICATION_PROCESS_STATE_UNKNOWN
     Assert.assertEquals(
@@ -289,10 +301,11 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
   @Test
   public void testAppStateCallbackWithNetworkRequestMetricBuilder() {
     AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
+    monitor.setSessionManager(sessionManager);
     // registerForAppState() is called by NetworkRequestMetricBuilder's constructor.
     NetworkRequestMetricBuilder builder =
         new NetworkRequestMetricBuilder(
-            mock(TransportManager.class), monitor, mock(GaugeManager.class));
+            mock(TransportManager.class), monitor, mock(GaugeManager.class), sessionManager);
     Assert.assertEquals(ApplicationProcessState.BACKGROUND, builder.getAppState());
     // activity1 comes to foreground.
     currentTime = 1;
@@ -320,6 +333,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
   @Test
   public void testRegisterActivityLifecycleCallbacks() {
     AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
+    monitor.setSessionManager(sessionManager);
     Context context = mock(Context.class);
     Application application = mock(Application.class);
     when(context.getApplicationContext()).thenReturn(application);
@@ -334,6 +348,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
   @Test
   public void testUnregisterActivityLifecycleCallbacks() {
     AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
+    monitor.setSessionManager(sessionManager);
     Context context = mock(Context.class);
     Application application = mock(Application.class);
     when(context.getApplicationContext()).thenReturn(application);
@@ -346,6 +361,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
   @Test
   public void testUnregisterActivityLifecycleCallbacksBeforeItWasRegistered() {
     AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
+    monitor.setSessionManager(sessionManager);
     Context context = mock(Context.class);
     Application application = mock(Application.class);
     when(context.getApplicationContext()).thenReturn(application);
@@ -357,6 +373,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
   @Test
   public void screenTrace_twoActivities_traceStartedAndStoppedWithActivityLifecycle() {
     AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
+    monitor.setSessionManager(sessionManager);
 
     Activity[] arr = {activity1, activity2};
     for (int i = 0; i < arr.length; ++i) {
@@ -376,6 +393,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
   @Test
   public void screenTrace_noHardwareAccelerated_noExceptionThrown() {
     AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
+    monitor.setSessionManager(sessionManager);
     Activity activityWithNonHardwareAcceleratedView =
         createFakeActivity(/* isHardwareAccelerated= */ false);
 
@@ -388,6 +406,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
   @Test
   public void screenTrace_perfMonDisabledAtBuildTime_traceNotCreated() {
     AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
+    monitor.setSessionManager(sessionManager);
     Activity activityWithNonHardwareAcceleratedView =
         createFakeActivity(/* isHardwareAccelerated= */ true);
 
@@ -404,6 +423,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
   @Test
   public void screenTrace_perfMonEnabledSwitchAtRuntime_traceCreationDependsOnRuntime() {
     AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
+    monitor.setSessionManager(sessionManager);
     Activity activityWithNonHardwareAcceleratedView =
         createFakeActivity(/* isHardwareAccelerated= */ true);
 
@@ -436,6 +456,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
   @Test
   public void screenTrace_perfMonDeactivated_traceNotCreated() {
     AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
+    monitor.setSessionManager(sessionManager);
     Activity activityWithNonHardwareAcceleratedView =
         createFakeActivity(/* isHardwareAccelerated= */ true);
     ConfigResolver configResolver = ConfigResolver.getInstance();
@@ -458,6 +479,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
   @Test
   public void foregroundTrace_perfMonDisabledAtRuntime_traceNotCreated() {
     AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
+    monitor.setSessionManager(sessionManager);
 
     // activity1 comes to foreground.
     currentTime = 1;
@@ -488,6 +510,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
   @Test
   public void foregroundTrace_perfMonEnabledAtRuntime_traceCreated() {
     AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
+    monitor.setSessionManager(sessionManager);
 
     // Firebase Performance is disabled at build time.
     Bundle bundle = new Bundle();
@@ -525,6 +548,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
   @Test
   public void foregroundTrace_perfMonDeactivated_traceCreated() {
     AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
+    monitor.setSessionManager(sessionManager);
 
     // Firebase Performance is deactivated at build time.
     Bundle bundle = new Bundle();
@@ -560,6 +584,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
   @Test
   public void backgroundTrace_perfMonDisabledAtRuntime_traceNotCreated() {
     AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
+    monitor.setSessionManager(sessionManager);
 
     // activity1 comes to background.
     currentTime = 1;
@@ -593,6 +618,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
   @Test
   public void backgroundTrace_perfMonEnabledAtRuntime_traceCreated() {
     AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
+    monitor.setSessionManager(sessionManager);
 
     // Firebase Performance is disabled at build time.
     Bundle bundle = new Bundle();
@@ -631,6 +657,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
   @Test
   public void backgroundTrace_perfMonDeactivated_traceCreated() {
     AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
+    monitor.setSessionManager(sessionManager);
 
     // Firebase Performance is deactivated at build time.
     Bundle bundle = new Bundle();
@@ -667,6 +694,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
   @Test
   public void activityStateChanges_singleSubscriber_callbackIsCalled() {
     AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
+    monitor.setSessionManager(sessionManager);
     Map<Integer, ApplicationProcessState> subscriberState = new HashMap<>();
 
     // Register callbacks, but note that each callback is saved in a local variable. Otherwise
@@ -687,6 +715,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
   @Test
   public void activityStateChanges_multipleSubscribers_callbackCalledOnEachSubscriber() {
     AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
+    monitor.setSessionManager(sessionManager);
     Map<Integer, ApplicationProcessState> subscriberState = new HashMap<>();
 
     // Register callbacks, but note that each callback is saved in a local variable. Otherwise
@@ -719,6 +748,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
   @Test
   public void appColdStart_singleSubscriber_callbackIsCalled() {
     AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
+    monitor.setSessionManager(sessionManager);
     FirebasePerformanceInitializer mockInitializer = mock(FirebasePerformanceInitializer.class);
     monitor.registerForAppColdStart(mockInitializer);
 
@@ -730,6 +760,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
   @Test
   public void appHotStart_singleSubscriber_callbackIsNotCalled() {
     AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
+    monitor.setSessionManager(sessionManager);
     FirebasePerformanceInitializer mockInitializer = mock(FirebasePerformanceInitializer.class);
     monitor.registerForAppColdStart(mockInitializer);
 
@@ -748,6 +779,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
   @Test
   public void appColdStart_multipleSubscriber_callbackIsCalled() {
     AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
+    monitor.setSessionManager(sessionManager);
     FirebasePerformanceInitializer mockInitializer1 = mock(FirebasePerformanceInitializer.class);
     FirebasePerformanceInitializer mockInitializer2 = mock(FirebasePerformanceInitializer.class);
     monitor.registerForAppColdStart(mockInitializer1);
@@ -762,6 +794,7 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
   @Test
   public void appColdStart_singleSubscriberRegistersForMultipleTimes_oneCallbackIsCalled() {
     AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
+    monitor.setSessionManager(sessionManager);
     FirebasePerformanceInitializer mockInitializer1 = mock(FirebasePerformanceInitializer.class);
     monitor.registerForAppColdStart(mockInitializer1);
     monitor.registerForAppColdStart(mockInitializer1);

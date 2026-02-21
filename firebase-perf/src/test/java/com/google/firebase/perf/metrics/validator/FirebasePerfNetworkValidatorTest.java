@@ -21,6 +21,7 @@ import static org.junit.Assert.assertTrue;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.perf.FirebasePerformanceTestBase;
 import com.google.firebase.perf.metrics.NetworkRequestMetricBuilder;
+import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.v1.NetworkRequestMetric;
 import com.google.firebase.perf.v1.NetworkRequestMetric.HttpMethod;
@@ -98,7 +99,7 @@ public class FirebasePerfNetworkValidatorTest extends FirebasePerformanceTestBas
   @Test
   public void testNullResponseCode() {
     NetworkRequestMetricBuilder metricBuilder =
-        NetworkRequestMetricBuilder.builder(TransportManager.getInstance());
+        NetworkRequestMetricBuilder.builder(TransportManager.getInstance(), SessionManager.getInstance());
 
     // Set all the required fields except response code
     metricBuilder.setUrl("https://www.google.com");
@@ -161,7 +162,7 @@ public class FirebasePerfNetworkValidatorTest extends FirebasePerformanceTestBas
   @Test
   public void testClientStartTimeUs() {
     NetworkRequestMetricBuilder metricBuilder =
-        NetworkRequestMetricBuilder.builder(TransportManager.getInstance());
+        NetworkRequestMetricBuilder.builder(TransportManager.getInstance(), SessionManager.getInstance());
 
     // Set all required fields except clientStartTimeUs
     metricBuilder.setUrl("https://www.google.com");
@@ -294,7 +295,7 @@ public class FirebasePerfNetworkValidatorTest extends FirebasePerformanceTestBas
   @Test
   public void testAbsenceOfUrlFailsValidation() {
     NetworkRequestMetricBuilder metricBuilder =
-        NetworkRequestMetricBuilder.builder(TransportManager.getInstance());
+        NetworkRequestMetricBuilder.builder(TransportManager.getInstance(), SessionManager.getInstance());
 
     // Set all required fields except url
     metricBuilder.setHttpMethod("GET");
@@ -311,7 +312,7 @@ public class FirebasePerfNetworkValidatorTest extends FirebasePerformanceTestBas
   @Test
   public void testAbsenceOfHttpMethodFailsValidation() {
     NetworkRequestMetricBuilder metricBuilder =
-        NetworkRequestMetricBuilder.builder(TransportManager.getInstance());
+        NetworkRequestMetricBuilder.builder(TransportManager.getInstance(), SessionManager.getInstance());
 
     // Set all required fields except httpMethod
     metricBuilder.setUrl("https://www.google.com");
@@ -328,7 +329,7 @@ public class FirebasePerfNetworkValidatorTest extends FirebasePerformanceTestBas
   @Test
   public void testAbsenceOfHttpResponseCodeFailsValidation() {
     NetworkRequestMetricBuilder metricBuilder =
-        NetworkRequestMetricBuilder.builder(TransportManager.getInstance());
+        NetworkRequestMetricBuilder.builder(TransportManager.getInstance(), SessionManager.getInstance());
 
     // Set all required fields except httpResponseCode
     metricBuilder.setUrl("https://www.google.com");
@@ -346,7 +347,7 @@ public class FirebasePerfNetworkValidatorTest extends FirebasePerformanceTestBas
   @Test
   public void testAbsenceOfClientStartTimeUsFailsValidation() {
     NetworkRequestMetricBuilder metricBuilder =
-        NetworkRequestMetricBuilder.builder(TransportManager.getInstance());
+        NetworkRequestMetricBuilder.builder(TransportManager.getInstance(), SessionManager.getInstance());
 
     // Set all required fields except httpResponseCode
     metricBuilder.setUrl("https://www.google.com");
@@ -364,7 +365,7 @@ public class FirebasePerfNetworkValidatorTest extends FirebasePerformanceTestBas
   @Test
   public void testAbsenceOfTimeToResponseCompletedUsFailsValidation() {
     NetworkRequestMetricBuilder metricBuilder =
-        NetworkRequestMetricBuilder.builder(TransportManager.getInstance());
+        NetworkRequestMetricBuilder.builder(TransportManager.getInstance(), SessionManager.getInstance());
 
     // Set all required fields except timeToResponseCompletedUs
     metricBuilder.setUrl("https://www.google.com");
@@ -382,7 +383,7 @@ public class FirebasePerfNetworkValidatorTest extends FirebasePerformanceTestBas
   private NetworkRequestMetricBuilder createNetworkRequestMetricBuilderWithRequiredValuesPresent() {
 
     NetworkRequestMetricBuilder networkRequestMetricBuilder =
-        NetworkRequestMetricBuilder.builder(TransportManager.getInstance());
+        NetworkRequestMetricBuilder.builder(TransportManager.getInstance(), SessionManager.getInstance());
 
     networkRequestMetricBuilder.setUrl("https://www.google.com");
     networkRequestMetricBuilder.setHttpMethod("GET");

@@ -92,6 +92,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
   private final ConfigResolver configResolver;
   private final TraceMetric.Builder experimentTtid;
   private Context appContext;
+  private SessionManager sessionManager;
 
   /**
    * The first time onCreate() of any activity is called, the activity is saved as launchActivity.
@@ -413,7 +414,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
     appStartActivity = new WeakReference<Activity>(activity);
 
     onResumeTime = clock.getTime();
-    this.startSession = SessionManager.getInstance().perfSession();
+    this.startSession = sessionManager.perfSession();
     AndroidLogger.getInstance()
         .debug(
             "onResume(): "
@@ -570,6 +571,10 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
     }
 
     return false;
+  }
+
+  public void setSessionManager(SessionManager sessionManager) {
+    this.sessionManager = sessionManager;
   }
 
   /**

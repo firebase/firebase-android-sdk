@@ -114,6 +114,7 @@ public class TransportManager implements AppStateCallback {
   @Nullable private FirebasePerformance firebasePerformance;
   private FirebaseInstallationsApi firebaseInstallationsApi;
   private Provider<TransportFactory> flgTransportFactoryProvider;
+  private SessionManager sessionManager;
   private FlgTransport flgTransport;
   private ExecutorService executorService;
   private Context appContext;
@@ -197,12 +198,14 @@ public class TransportManager implements AppStateCallback {
   public void initialize(
       @NonNull FirebaseApp firebaseApp,
       @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
-      @NonNull Provider<TransportFactory> flgTransportFactoryProvider) {
+      @NonNull Provider<TransportFactory> flgTransportFactoryProvider,
+      @NonNull SessionManager sessionManager) {
 
     this.firebaseApp = firebaseApp;
     projectId = firebaseApp.getOptions().getProjectId();
     this.firebaseInstallationsApi = firebaseInstallationsApi;
     this.flgTransportFactoryProvider = flgTransportFactoryProvider;
+    this.sessionManager = sessionManager;
 
     // Run initialization in background thread
     this.executorService.execute(this::syncInit);
@@ -382,7 +385,7 @@ public class TransportManager implements AppStateCallback {
       dispatchLog(perfMetric);
 
       // Check if the session is expired. If so, stop gauge collection.
-      SessionManager.getInstance().stopGaugeCollectionIfSessionRunningTooLong();
+      sessionManager.stopGaugeCollectionIfSessionRunningTooLong();
     }
   }
 
@@ -661,7 +664,6 @@ public class TransportManager implements AppStateCallback {
       return ConsoleUrlGenerator.generateCustomTraceUrl(projectId, packageName, traceName);
     }
   }
-
   // endregion
 
   // region Visible for Testing

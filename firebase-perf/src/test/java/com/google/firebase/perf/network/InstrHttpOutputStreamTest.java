@@ -21,8 +21,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.google.firebase.perf.FirebasePerformanceTestBase;
+import com.google.firebase.perf.application.AppStateMonitor;
 import com.google.firebase.perf.metrics.NetworkRequestMetricBuilder;
+import com.google.firebase.perf.session.PerfSession;
+import com.google.firebase.perf.session.SessionManager;
+import com.google.firebase.perf.session.gauges.GaugeManager;
 import com.google.firebase.perf.transport.TransportManager;
+import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.perf.v1.ApplicationProcessState;
 import com.google.firebase.perf.v1.NetworkRequestMetric;
@@ -37,6 +42,7 @@ import org.mockito.ArgumentMatchers;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 import org.robolectric.RobolectricTestRunner;
 
 /** Unit tests for {@link com.google.firebase.perf.network.InstrHttpOutputStream}. */
@@ -47,7 +53,11 @@ public class InstrHttpOutputStreamTest extends FirebasePerformanceTestBase {
   @Mock TransportManager transportManager;
   @Mock Timer timer;
   @Captor ArgumentCaptor<NetworkRequestMetric> networkArgumentCaptor;
-
+  @Spy private GaugeManager mockGaugeManager = GaugeManager.getInstance();
+  @Spy private AppStateMonitor mockAppStateMonitor = AppStateMonitor.getInstance();
+  private PerfSession session = new PerfSession("sessionId", new Clock());
+  private SessionManager sessionManager =
+          new SessionManager(mockGaugeManager, session, mockAppStateMonitor);
   private NetworkRequestMetricBuilder networkMetricBuilder;
 
   @Before
@@ -55,7 +65,8 @@ public class InstrHttpOutputStreamTest extends FirebasePerformanceTestBase {
     MockitoAnnotations.initMocks(this);
     when(timer.getMicros()).thenReturn((long) 1000);
     when(timer.getDurationMicros()).thenReturn((long) 2000);
-    networkMetricBuilder = NetworkRequestMetricBuilder.builder(transportManager);
+    when(mockAppStateMonitor.getSessionManager()).thenReturn(sessionManager);
+    networkMetricBuilder = NetworkRequestMetricBuilder.builder(transportManager, sessionManager);
   }
 
   @Test
