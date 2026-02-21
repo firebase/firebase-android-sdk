@@ -62,7 +62,7 @@ data class Changelog(val releases: List<ReleaseEntry>) {
      * ]
      * ```
      */
-    val RELEASE_VERSION_REGEX = Regex("^# (.+)", RegexOption.MULTILINE)
+    val RELEASE_VERSION_REGEX = Regex("""^# (.+)""", RegexOption.MULTILINE)
 
     /**
      * Parses a [Changelog] from a [String].
@@ -177,7 +177,7 @@ data class ReleaseEntry(
      * "## Kotlin"
      * ```
      */
-    val KOTLIN_TITLE_REGEX = Regex("^## Kotlin\n", RegexOption.MULTILINE)
+    val KOTLIN_TITLE_REGEX = Regex("""^## Kotlin\n""", RegexOption.MULTILINE)
 
     /**
      * Parses a [ReleaseEntry] from a [String], given the version name.
@@ -288,7 +288,7 @@ data class ReleaseContent(val subtext: String, val changes: List<Change>) {
      * "This release contains a known bug. We will address this in a future bugfix."
      * ```
      */
-    val SUBTEXT_REGEX = Regex("^([^\\*\\s][\\s\\S]+?)(\\n\\n|(?![\\s\\S]))")
+    val SUBTEXT_REGEX = Regex("""^([^\*\s][\s\S]+?)(\n\n|(?![\s\S]))""")
 
     /**
      * Parses [ReleaseContent] from a [String].
@@ -350,7 +350,7 @@ data class Change(val type: ChangeType, val message: String) {
      * ]
      * ```
      */
-    val REGEX = Regex("^ ?\\[ ?(?<type>\\w+) ?\\](?<content>[\\s\\S]*)", RegexOption.MULTILINE)
+    val REGEX = Regex("""^ ?\[ ?(?<type>\w+) ?\](?<content>[\s\S]*)""", RegexOption.MULTILINE)
 
     /**
      * Parses [Change] from a [String].

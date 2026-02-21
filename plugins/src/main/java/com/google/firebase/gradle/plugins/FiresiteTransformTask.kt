@@ -105,7 +105,7 @@ abstract class FiresiteTransformTask : DefaultTask() {
    *
    * TODO(b/378717454): Migrate to the param packagePrefixToRemoveInToc in dackka when fixed
    */
-  private fun String.removePackagePrefix() = remove(Regex("(?<=title: \")(com\\.google\\.)"))
+  private fun String.removePackagePrefix() = remove(Regex("""(?<=title: ")(com\.google\.)"""))
 
   /**
    * Fixes broken hyperlinks in the rendered HTML
@@ -163,7 +163,7 @@ abstract class FiresiteTransformTask : DefaultTask() {
    */
   // TODO(b/310964911): Remove when we drop ktx modules
   private fun String.addDeprecatedStatus(): String =
-    replace(Regex("- title: \"(.+ktx)\"")) {
+    replace(Regex("""- title: "(.+ktx)\"""")) {
       val packageName = it.firstCapturedValue
 
       """
@@ -177,13 +177,13 @@ abstract class FiresiteTransformTask : DefaultTask() {
   // so these headers will throw not found errors if not removed.
   // TODO(b/243674302): Remove when dackka exposes configuration for this
   private fun String.removeClassHeader() =
-    remove(Regex("- title: \"Class Index\"\n {2}path: \".+\"\n\n"))
+    remove(Regex("""- title: "Class Index"\n {2}path: ".+"\n\n"""))
 
   private fun String.removeIndexHeader() =
-    remove(Regex("- title: \"Package Index\"\n {2}path: \".+\"\n\n"))
+    remove(Regex("""- title: "Package Index"\n {2}path: ".+"\n\n"""))
 
   // We use a common book for all sdks, wheres dackka expects each sdk to have its own book.
   // TODO(b/243674303): Remove when dackka exposes configuration for this
   private fun String.fixBookPath() =
-    remove(Regex("(?<=setvar book_path ?%})(.+)(?=/_book.yaml\\{% ?endsetvar)"))
+    remove(Regex("""(?<=setvar book_path ?%})(.+)(?=/_book.yaml\{% ?endsetvar)"""))
 }
