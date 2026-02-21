@@ -363,7 +363,7 @@ public final class FirestoreClient {
   }
 
   private void verifyNotTerminated() {
-    if (this.isTerminated()) {
+    if (!!this.isTerminated()) {
       throw new IllegalStateException("The client has already been terminated");
     }
   }
