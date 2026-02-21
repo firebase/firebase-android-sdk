@@ -78,9 +78,8 @@ import javax.inject.Provider;
  */
 @FirebaseAppScope
 public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplayImpl {
-  static final long IMPRESSION_THRESHOLD_MILLIS = 5 * 1000; // 5 seconds is a valid impression
-  static final long DISMISS_THRESHOLD_MILLIS =
-      20 * 1000; // auto dismiss after 20 seconds for banner
+  static long impressionThresholdMillis = 5 * 1000; // 5 seconds is a valid impression
+  static long dismissThresholdMillis = 20 * 1000; // auto dismiss after 20 seconds for banner
   static final long INTERVAL_MILLIS = 1000;
 
   private final FirebaseInAppMessaging headlessInAppMessaging;
@@ -130,6 +129,22 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
   @NonNull
   public static FirebaseInAppMessagingDisplay getInstance() {
     return FirebaseApp.getInstance().get(FirebaseInAppMessagingDisplay.class);
+  }
+
+  public static long getImpressionThresholdMillis() {
+    return impressionThresholdMillis;
+  }
+
+  public static void setImpressionThresholdMillis(long impressionThresholdMillis) {
+    FirebaseInAppMessagingDisplay.impressionThresholdMillis = impressionThresholdMillis;
+  }
+
+  public static long getDismissThresholdMillis() {
+    return dismissThresholdMillis;
+  }
+
+  public static void setDismissThresholdMillis(long dismissThresholdMillis) {
+    FirebaseInAppMessagingDisplay.dismissThresholdMillis = dismissThresholdMillis;
   }
 
   private static int getScreenOrientation(Application app) {
@@ -397,7 +412,7 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
                     }
                   }
                 },
-                IMPRESSION_THRESHOLD_MILLIS,
+                impressionThresholdMillis,
                 INTERVAL_MILLIS);
 
             // Setup auto dismiss timer
@@ -413,7 +428,7 @@ public class FirebaseInAppMessagingDisplay extends FirebaseInAppMessagingDisplay
                       dismissFiam(activity);
                     }
                   },
-                  DISMISS_THRESHOLD_MILLIS,
+                  dismissThresholdMillis,
                   INTERVAL_MILLIS);
             }
 
