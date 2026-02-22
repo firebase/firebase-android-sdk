@@ -82,6 +82,8 @@ import kotlinx.serialization.Serializable
  * guide for more details.
  *
  * @property responseModalities The format of data in which the model should respond with.
+ *
+ * @property speechConfig The configuration for controlling the voice of the model during conversation.
  */
 public class GenerationConfig
 private constructor(
@@ -98,6 +100,7 @@ private constructor(
   internal val responseJsonSchema: JsonSchema<*>?,
   internal val responseModalities: List<ResponseModality>?,
   internal val thinkingConfig: ThinkingConfig?,
+  internal val speechConfig: SpeechConfig?,
 ) {
 
   /**
@@ -130,6 +133,8 @@ private constructor(
    *
    * @property responseModalities See [GenerationConfig.responseModalities].
    *
+   * @property speechConfig See [GenerationConfig.speechConfig].
+   *
    * @see [generationConfig]
    */
   public class Builder {
@@ -146,6 +151,7 @@ private constructor(
     @JvmField public var responseJsonSchema: JsonSchema<*>? = null
     @JvmField public var responseModalities: List<ResponseModality>? = null
     @JvmField public var thinkingConfig: ThinkingConfig? = null
+    @JvmField public var speechConfig: SpeechConfig? = null
 
     public constructor()
 
@@ -163,6 +169,7 @@ private constructor(
       responseJsonSchema: JsonSchema<*>?,
       responseModalities: List<ResponseModality>?,
       thinkingConfig: ThinkingConfig?,
+      speechConfig: SpeechConfig?,
     ) {
       this.temperature = temperature
       this.topK = topK
@@ -177,6 +184,7 @@ private constructor(
       this.responseJsonSchema = responseJsonSchema
       this.responseModalities = responseModalities
       this.thinkingConfig = thinkingConfig
+      this.speechConfig = speechConfig
     }
 
     public fun setTemperature(temperature: Float?): Builder = apply {
@@ -214,6 +222,9 @@ private constructor(
     public fun setThinkingConfig(thinkingConfig: ThinkingConfig?): Builder = apply {
       this.thinkingConfig = thinkingConfig
     }
+    public fun setSpeechConfig(speechConfig: SpeechConfig?): Builder = apply {
+      this.speechConfig = speechConfig
+    }
 
     /** Create a new [GenerationConfig] with the attached arguments. */
     public fun build(): GenerationConfig {
@@ -233,7 +244,8 @@ private constructor(
         responseSchema = responseSchema,
         responseJsonSchema = responseJsonSchema,
         responseModalities = responseModalities,
-        thinkingConfig = thinkingConfig
+        thinkingConfig = thinkingConfig,
+        speechConfig = speechConfig
       )
     }
   }
@@ -252,7 +264,8 @@ private constructor(
       responseSchema = responseSchema,
       responseJsonSchema = responseJsonSchema,
       responseModalities = responseModalities,
-      thinkingConfig = thinkingConfig
+      thinkingConfig = thinkingConfig,
+      speechConfig = speechConfig
     )
 
   internal fun toInternal() =
@@ -269,7 +282,8 @@ private constructor(
       responseSchema = responseSchema?.toInternalOpenApi(),
       responseJsonSchema = responseJsonSchema?.toInternalJson(),
       responseModalities = responseModalities?.map { it.toInternal() },
-      thinkingConfig = thinkingConfig?.toInternal()
+      thinkingConfig = thinkingConfig?.toInternal(),
+      speechConfig = speechConfig?.toInternal()
     )
 
   @Serializable
@@ -286,7 +300,8 @@ private constructor(
     @SerialName("response_schema") val responseSchema: Schema.InternalOpenAPI? = null,
     @SerialName("response_json_schema") val responseJsonSchema: Schema.InternalJson? = null,
     @SerialName("response_modalities") val responseModalities: List<String>? = null,
-    @SerialName("thinking_config") val thinkingConfig: ThinkingConfig.Internal? = null
+    @SerialName("thinking_config") val thinkingConfig: ThinkingConfig.Internal? = null,
+    @SerialName("speech_config") val speechConfig: SpeechConfig.Internal? = null
   )
 
   public companion object {

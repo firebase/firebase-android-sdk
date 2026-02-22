@@ -449,6 +449,99 @@ internal class GenerativeModelTesting {
     }
   }
 
+  @Test
+  fun `correctly setting speechConfig in request`() = doBlocking {
+    val mockEngine = MockEngine {
+      respond(
+        generateContentResponseAsJsonString("text response"),
+        HttpStatusCode.OK,
+        headersOf(HttpHeaders.ContentType, "application/json")
+      )
+    }
+
+    val apiController =
+      APIController(
+        "super_cool_test_key",
+        "gemini-2.5-flash",
+        RequestOptions(),
+        mockEngine,
+        TEST_CLIENT_ID,
+        mockFirebaseApp,
+        TEST_VERSION,
+        TEST_APP_ID,
+        null,
+      )
+
+    val generativeModel =
+      GenerativeModel(
+        actualModel =
+          CloudGenerativeModelProvider(
+            "gemini-2.5-flash",
+            generationConfig =
+              generationConfig {
+                speechConfig =
+                  com.google.firebase.ai.type.speechConfig {
+                    multiSpeakerVoiceConfig =
+                      com.google.firebase.ai.type.multiSpeakerVoiceConfig {
+                        speakerVoiceConfigs =
+                          listOf(
+                            com.google.firebase.ai.type.speakerVoiceConfig {
+                              speaker = "Speaker1"
+                              voiceConfig =
+                                com.google.firebase.ai.type.voiceConfig {
+                                  prebuiltVoiceConfig =
+                                    com.google.firebase.ai.type.prebuiltVoiceConfig {
+                                      voiceName = "Puck"
+                                    }
+                                }
+                            },
+                            com.google.firebase.ai.type.speakerVoiceConfig {
+                              speaker = "Speaker2"
+                              voiceConfig =
+                                com.google.firebase.ai.type.voiceConfig {
+                                  prebuiltVoiceConfig =
+                                    com.google.firebase.ai.type.prebuiltVoiceConfig {
+                                      voiceName = "Charon"
+                                    }
+                                }
+                            }
+                          )
+                      }
+                  }
+              },
+            controller = apiController
+          ),
+        requestOptions = RequestOptions()
+      )
+
+    withTimeout(5.seconds) { generativeModel.generateContent("my test prompt") }
+
+    mockEngine.requestHistory.shouldNotBeEmpty()
+
+    val request = mockEngine.requestHistory.first().body
+    request.shouldBeInstanceOf<TextContent>()
+
+    request.text.let {
+      it shouldContainJsonKey "generation_config"
+      it.shouldContainJsonKeyValue(
+        "$.generation_config.speech_config.multi_speaker_voice_config.speaker_voice_configs[0].speaker",
+        "Speaker1"
+      )
+      it.shouldContainJsonKeyValue(
+        "$.generation_config.speech_config.multi_speaker_voice_config.speaker_voice_configs[0].voice_config.prebuilt_voice_config.voice_name",
+        "Puck"
+      )
+      it.shouldContainJsonKeyValue(
+        "$.generation_config.speech_config.multi_speaker_voice_config.speaker_voice_configs[1].speaker",
+        "Speaker2"
+      )
+      it.shouldContainJsonKeyValue(
+        "$.generation_config.speech_config.multi_speaker_voice_config.speaker_voice_configs[1].voice_config.prebuilt_voice_config.voice_name",
+        "Charon"
+      )
+    }
+  }
+
   private fun generativeModelWithMockEngine(mockEngine: MockEngine): GenerativeModel {
     val apiController =
       APIController(

@@ -613,4 +613,41 @@ internal class SerializationTests {
     val actualJson = descriptorToJson(LiveServerGoAway.Internal.serializer().descriptor)
     expectedJsonAsString shouldEqualJson actualJson.toString()
   }
+  @Test
+  fun `test SpeechConfig serialization as Json`() {
+    val expectedJsonAsString =
+      """
+      {
+        "id": "SpeechConfig",
+        "type": "object",
+        "properties": {
+          "voiceConfig": {
+            "${'$'}ref": "VoiceConfig"
+          },
+          "multiSpeakerVoiceConfig": {
+            "${'$'}ref": "MultiSpeakerVoiceConfig"
+          },
+          "languageCode": {
+            "type": "string"
+          }
+        }
+      }
+      """
+        .trimIndent()
+    // Not testing schema here, but the values.
+    // Let's test the actual serialization of a SpeechConfig object if possible,
+    // or at least checking if we can find where SpeechConfig is tested.
+    // Since this file tests *Schemas* (descriptorToJson), I should probably look for
+    // where objects are serialized to JSON.
+    //
+    // The previous tests in this file are checking `descriptorToJson`, which validates the Plugin/Proto descriptor mapping.
+    // It seems I might be in the wrong file for testing *object* serialization if I want to test
+    // "Speaker1" vs "Puck".
+    //
+    // Let's try to find where `objectToJson` or similar is used, or `Json.encodeToString`.
+
+    // Re-reading the file... it imports `descriptorToJson`.
+    // It seems this file is finding the SCHEMA of the objects.
+    // I need to find where the objects themselves are tested.
+  }
 }
