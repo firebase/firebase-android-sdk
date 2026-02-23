@@ -27,9 +27,9 @@ import java.math.BigInteger
  */
 internal object BigIntegerUtil {
 
-  private val LONG_MAX_VALUE_BIG_INTEGER = Long.MAX_VALUE.toBigInteger()
+  val LONG_MAX_VALUE_BIG_INTEGER = Long.MAX_VALUE.toBigInteger()
 
-  private val LONG_MIN_VALUE_BIG_INTEGER = Long.MIN_VALUE.toBigInteger()
+  val LONG_MIN_VALUE_BIG_INTEGER = Long.MIN_VALUE.toBigInteger()
 
   /**
    * Clamps this [BigInteger] to be within the range of [Long.MIN_VALUE] and [Long.MAX_VALUE].

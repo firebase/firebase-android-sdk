@@ -38,6 +38,7 @@ import io.kotest.assertions.print.Printers
 import io.kotest.assertions.print.print
 import io.kotest.assertions.print.printed
 import java.util.Objects
+import kotlin.time.Duration
 
 @Suppress("SpellCheckingInspection")
 fun registerDataConnectKotestPrinters() {
@@ -51,6 +52,7 @@ fun registerDataConnectKotestPrinters() {
   Printers.add(EntityListProto::class, EntityListProtoPrint)
   Printers.add(EntityPathProto::class, EntityPathProtoPrint)
   Printers.add(DehydratedQueryResult::class, DehydratedQueryResultPrint)
+  Printers.add(Duration::class, KotlinTimeDurationPrint)
 }
 
 private object StructCompactPrint : Print<Struct> {
@@ -76,6 +78,15 @@ private object DurationProtoPrint : Print<DurationProto> {
   @Suppress("OVERRIDE_DEPRECATION")
   override fun print(a: DurationProto): Printed =
     "DurationProto(seconds=${a.seconds}, nanos=${a.nanos})".printed()
+}
+
+private object KotlinTimeDurationPrint : Print<Duration> {
+
+  @Suppress("OVERRIDE_DEPRECATION")
+  override fun print(a: Duration): Printed =
+    a.toComponents { seconds, nanoseconds ->
+      "kotlin.time.Duration(seconds=$seconds, nanos=$nanoseconds)".printed()
+    }
 }
 
 private object QueryResultProtoPrint : Print<QueryResultProto> {

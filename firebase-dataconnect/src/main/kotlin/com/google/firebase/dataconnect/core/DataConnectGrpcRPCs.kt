@@ -443,7 +443,7 @@ internal class DataConnectGrpcRPCs(
     ) = debug {
       "$kotlinMethodName [rid=$requestId] returning result from cache: " +
         "${cachedResult.struct.toCompactString()} " +
-        "(expires in ${cachedResult.millisUntilStale} milliseconds)"
+        "(expires in ${cachedResult.freshnessRemaining})"
     }
 
     fun Logger.logGrpcIgnoringStaleCache(
@@ -452,7 +452,7 @@ internal class DataConnectGrpcRPCs(
       cachedResult: DataConnectCacheDatabase.GetQueryResultResult.Stale,
     ) = debug {
       "$kotlinMethodName [rid=$requestId] ignoring result from cache " +
-        "because it expired ${cachedResult.millisStale} milliseconds ago"
+        "because it expired ${cachedResult.staleness} ago"
     }
 
     fun Logger.logGrpcStarting(

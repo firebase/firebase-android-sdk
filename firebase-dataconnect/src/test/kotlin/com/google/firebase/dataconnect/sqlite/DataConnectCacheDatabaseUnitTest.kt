@@ -37,7 +37,6 @@ import com.google.firebase.dataconnect.testutil.registerDataConnectKotestPrinter
 import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
-import com.google.firebase.dataconnect.util.BigIntegerUtil.clampToLong
 import com.google.firebase.dataconnect.util.ImmutableByteArray
 import com.google.protobuf.Duration
 import com.google.protobuf.Struct
@@ -70,6 +69,9 @@ import io.mockk.spyk
 import io.mockk.unmockkObject
 import io.mockk.verify
 import java.io.File
+import java.math.BigInteger
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.nanoseconds
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -620,7 +622,6 @@ class DataConnectCacheDatabaseUnitTest {
     dataConnectCacheDatabase.initialize()
 
     checkAll(
-      propTestConfig,
       authUidArb(),
       queryIdArb(),
       Arb.twoValues(Arb.long()),
@@ -644,8 +645,8 @@ class DataConnectCacheDatabaseUnitTest {
         )
 
       val staleResult = result.shouldBeInstanceOf<Stale>()
-      val expectedMillisStale = time2.toBigInteger() - time1.toBigInteger()
-      staleResult.millisStale shouldBe expectedMillisStale.clampToLong()
+      val expectedStaleness = durationFromMillis(time2.toBigInteger() - time1.toBigInteger())
+      staleResult.staleness shouldBe expectedStaleness
     }
   }
 }
@@ -695,3 +696,31 @@ private fun hydratedStructWithMutatedEntityValues(
 
   return rehydrateQueryResult(sample1.queryResultProto, dehydratedEntityStructById)
 }
+
+private fun durationFromMillis(millis: BigInteger): kotlin.time.Duration {
+  require(millis.signum() >= 0) { "millis must be non-negative, but it is negative: $millis" }
+  return durationFromNanos(millis * NANOS_IN_MILLIS.toBigInteger())
+}
+
+private fun durationFromNanos(nanos: BigInteger): kotlin.time.Duration {
+  require(nanos.signum() >= 0) { "nanos must be non-negative, but it is negative: $nanos" }
+
+  return if (nanos <= MAX_DURATION_NANOS.toBigInteger()) {
+    nanos.toLong().nanoseconds
+  } else {
+    val milliseconds = nanos / NANOS_IN_MILLIS.toBigInteger()
+    if (milliseconds <= MAX_DURATION_MILLIS.toBigInteger()) {
+      milliseconds.toLong().milliseconds
+    } else {
+      kotlin.time.Duration.INFINITE
+    }
+  }
+}
+
+// The following constants were copied from Duration.kt in the Kotlin standard library.
+private const val NANOS_IN_MILLIS = 1_000_000
+// maximum number duration can store in nanosecond range
+private const val MAX_DURATION_NANOS =
+  Long.MAX_VALUE / 2 / NANOS_IN_MILLIS * NANOS_IN_MILLIS - 1 // ends in ..._999_999
+// maximum number duration can store in millisecond range, also encodes an infinite value
+private const val MAX_DURATION_MILLIS = Long.MAX_VALUE / 2

@@ -185,8 +185,11 @@ object DataConnectArb {
   fun maxAge(min: com.google.protobuf.Duration = ZERO_DURATION): Arb<com.google.protobuf.Duration> {
     val minSeconds = min.seconds.also { require(it >= 0) { "invalid min.seconds: $it" } }
     val minNanos = min.nanos.also { require(it in 0..999_999_999) { "invalid min.nanos: $it" } }
+    return maxAge(minSeconds, minNanos)
+  }
 
-    val secondsArb = Arb.nonNegativeLongWithEvenNumDigitsDistribution(min = min.seconds)
+  private fun maxAge(minSeconds: Long, minNanos: Int): Arb<com.google.protobuf.Duration> {
+    val secondsArb = Arb.nonNegativeLongWithEvenNumDigitsDistribution(min = minSeconds)
 
     val allNanosArb = Arb.intWithEvenNumDigitsDistribution(0..999_999_999)
     val restrictedNanosArb =
