@@ -657,6 +657,7 @@ private fun calculateMillisStale(expiryTimeNanos: String?, currentTimeMillis: Lo
       return 0
     }
 
-  val nanosExpiredByBigInt = nanosBigIntegerFromMillis(currentTimeMillis) - expiryTimeNanosBigInt
-  return nanosExpiredByBigInt.clampToLong()
+  val nanosStaleBigInt = nanosBigIntegerFromMillis(currentTimeMillis) - expiryTimeNanosBigInt
+  val millisStaleBigInt = nanosStaleBigInt / NANOS_FROM_MILLISECONDS_MULTIPLIER
+  return millisStaleBigInt.clampToLong()
 }
