@@ -12,6 +12,9 @@ on:
   pull_request:
     paths:
       - firebase-dataconnect/demo/**
+      - 'firebase-dataconnect/ci/**'
+      - '!firebase-dataconnect/ci/README.md'
+      - .github/actions/dataconnect-send-notifications
       - .github/workflows/dataconnect_demo_app.yml
   schedule:
     - cron: '0 11 * * *' # Run nightly at 11am UTC (3am Pacific, 6am Eastern)
