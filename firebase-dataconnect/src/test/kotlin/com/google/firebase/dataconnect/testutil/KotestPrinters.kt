@@ -22,6 +22,7 @@ import com.google.firebase.dataconnect.sqlite.DehydratedQueryResult
 import com.google.firebase.dataconnect.toPathString
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.ProtoUtil.toListValueProto
+import com.google.protobuf.Duration as DurationProto
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
@@ -43,6 +44,7 @@ fun registerDataConnectKotestPrinters() {
   Printers.add(Struct::class, StructCompactPrint)
   Printers.add(ListValue::class, ListValueCompactPrint)
   Printers.add(Value::class, ValueCompactPrint)
+  Printers.add(DurationProto::class, DurationProtoPrint)
   Printers.add(QueryResultProto::class, QueryResultProtoPrint)
   Printers.add(EntityOrEntityListProto::class, EntityOrEntityListProtoPrint)
   Printers.add(EntityProto::class, EntityProtoPrint)
@@ -67,6 +69,13 @@ private object ValueCompactPrint : Print<Value> {
 
   @Suppress("OVERRIDE_DEPRECATION")
   override fun print(a: Value): Printed = a.toCompactString().printed()
+}
+
+private object DurationProtoPrint : Print<DurationProto> {
+
+  @Suppress("OVERRIDE_DEPRECATION")
+  override fun print(a: DurationProto): Printed =
+    "DurationProto(seconds=${a.seconds}, nanos=${a.nanos})".printed()
 }
 
 private object QueryResultProtoPrint : Print<QueryResultProto> {
