@@ -530,7 +530,7 @@ private data class QueryIdSample(val bytes: ImmutableByteArray) {
 private fun queryIdArb(): Arb<QueryIdSample> =
   Arb.byteArray(Arb.int(1..25), Arb.byte()).map { QueryIdSample(ImmutableByteArray.adopt(it)) }
 
-private fun QueryResultArb.Sample.hydratedStructWithMutatedEntityValuesFrom(
+internal fun QueryResultArb.Sample.hydratedStructWithMutatedEntityValuesFrom(
   other: QueryResultArb.Sample
 ): Struct = hydratedStructWithMutatedEntityValues(this, other)
 

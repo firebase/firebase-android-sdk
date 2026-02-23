@@ -18,6 +18,8 @@ package com.google.firebase.dataconnect.core
 
 import android.content.Context
 import com.google.android.gms.security.ProviderInstaller
+import com.google.firebase.dataconnect.DataConnectPath
+import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.core.DataConnectGrpcMetadata.Companion.toStructProto
 import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
@@ -30,6 +32,7 @@ import com.google.firebase.dataconnect.util.NullableReference
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.firebase.dataconnect.util.ProtoUtil.calculateSha512
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
+import com.google.firebase.dataconnect.util.ProtoUtil.toDataConnectPath
 import com.google.firebase.dataconnect.util.ProtoUtil.toStructProto
 import com.google.firebase.dataconnect.util.SuspendingLazy
 import com.google.protobuf.Struct
@@ -44,6 +47,7 @@ import google.firebase.dataconnect.proto.ExecuteMutationResponse
 import google.firebase.dataconnect.proto.ExecuteQueryRequest
 import google.firebase.dataconnect.proto.ExecuteQueryResponse
 import google.firebase.dataconnect.proto.GetEmulatorInfoRequest
+import google.firebase.dataconnect.proto.GraphqlResponseExtensions.DataConnectProperties
 import google.firebase.dataconnect.proto.StreamEmulatorIssuesRequest
 import io.grpc.ManagedChannelBuilder
 import io.grpc.Metadata
@@ -442,6 +446,54 @@ private fun ExecuteQueryRequest.toQueryId(): ImmutableByteArray {
   return ImmutableByteArray.adopt(queryId)
 }
 
-private fun ExecuteQueryResponse.getEntityIdForPathFunction(): GetEntityIdForPathFunction? {
-  return null
+@JvmName("getEntityIdForPathFunction_ExecuteQueryResponse")
+private fun ExecuteQueryResponse.getEntityIdForPathFunction(): GetEntityIdForPathFunction? =
+  if (extensions.dataConnectCount == 0) {
+    null
+  } else {
+    extensions.dataConnectList.getEntityIdForPathFunction()
+  }
+
+@JvmName("getEntityIdForPathFunction_List_DataConnectProperties")
+private fun List<DataConnectProperties>.getEntityIdForPathFunction(): GetEntityIdForPathFunction? {
+  val entityIdByPath: Map<DataConnectPath, String>
+  val entityIdsByPath: Map<DataConnectPath, List<String>>
+
+  run {
+    val entityIdByPathBuilder = mutableMapOf<DataConnectPath, String>()
+    val entityIdsByPathBuilder = mutableMapOf<DataConnectPath, List<String>>()
+
+    this.filter { it.hasPath() && it.path.valuesCount > 0 }
+      .filter { it.entityId.isNotEmpty() || it.entityIdsCount > 0 }
+      .forEach {
+        if (it.entityId.isNotEmpty()) {
+          entityIdByPathBuilder[it.path.toDataConnectPath()] = it.entityId
+        }
+        if (it.entityIdsCount > 0) {
+          entityIdsByPathBuilder[it.path.toDataConnectPath()] = it.entityIdsList
+        }
+      }
+
+    if (entityIdByPathBuilder.isEmpty() && entityIdsByPathBuilder.isEmpty()) {
+      return null
+    }
+
+    entityIdByPath = entityIdByPathBuilder.toMap()
+    entityIdsByPath = entityIdsByPathBuilder.toMap()
+  }
+
+  fun getEntityIdForPathFunction(path: DataConnectPath): String? {
+    entityIdByPath[path]?.let { entityId ->
+      return entityId
+    }
+
+    val lastSegment = path.lastOrNull() as? DataConnectPathSegment.ListIndex
+    return lastSegment?.index?.let { index ->
+      val parentPath = path.dropLast(1)
+      val entityIds = entityIdsByPath[parentPath]
+      entityIds?.getOrNull(index)
+    }
+  }
+
+  return ::getEntityIdForPathFunction
 }

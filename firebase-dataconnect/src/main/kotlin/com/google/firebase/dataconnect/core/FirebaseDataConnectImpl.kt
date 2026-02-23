@@ -20,6 +20,7 @@ import android.content.Context
 import com.google.firebase.FirebaseApp
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
+import com.google.firebase.dataconnect.CacheSettings
 import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.DataConnectSettings
 import com.google.firebase.dataconnect.FirebaseDataConnect
@@ -239,6 +240,19 @@ internal class FirebaseDataConnectImpl(
         backendInfoFromEmulatorSettings
       }
 
+    val cacheSettings =
+      settings.cacheSettings?.run {
+        val dbFile =
+          when (storage) {
+            CacheSettings.Storage.MEMORY -> null
+            CacheSettings.Storage.PERSISTENT -> {
+              val dbName = "dataconnect_" + calculateCacheDbUniqueName(backendInfo)
+              context.getDatabasePath(dbName)
+            }
+          }
+        DataConnectGrpcRPCs.CacheSettings(dbFile)
+      }
+
     logger.debug { "connecting to Data Connect backend: $backendInfo" }
     val grpcMetadata =
       DataConnectGrpcMetadata.forSystemVersions(
@@ -255,7 +269,7 @@ internal class FirebaseDataConnectImpl(
         sslEnabled = backendInfo.sslEnabled,
         blockingCoroutineDispatcher = blockingDispatcher,
         grpcMetadata = grpcMetadata,
-        cacheSettings = null, // TODO: pass cache settings once implemented
+        cacheSettings = cacheSettings,
         parentLogger = logger,
       )
 

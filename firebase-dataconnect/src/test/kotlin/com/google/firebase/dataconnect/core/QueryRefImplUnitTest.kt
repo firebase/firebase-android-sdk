@@ -16,7 +16,9 @@
 
 package com.google.firebase.dataconnect.core
 
+import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
+import com.google.firebase.dataconnect.querymgr.DataSourcePair
 import com.google.firebase.dataconnect.querymgr.QueryManager
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.OperationRefConstructorArguments
@@ -94,7 +96,8 @@ class QueryRefImplUnitTest {
   fun `execute() should return the result on success`() = runTest {
     val data: TestData = mockk()
     val querySlot = slot<QueryRefImpl<TestData, TestVariables>>()
-    val dataConnect = dataConnectWithQueryResult(Result.success(data), querySlot)
+    val dataConnect =
+      dataConnectWithQueryResult(Result.success(DataSourcePair(data, DataSource.SERVER)), querySlot)
     val queryRefImpl = Arb.dataConnect.queryRefImpl(dataConnect).next()
 
     val queryResult = queryRefImpl.execute()
@@ -572,7 +575,7 @@ class QueryRefImplUnitTest {
       queryRefImpl().map { it.withDataConnect(dataConnect) }
 
     fun <Data, Variables> dataConnectWithQueryResult(
-      result: Result<Data>,
+      result: Result<DataSourcePair<Data>>,
       querySlot: CapturingSlot<QueryRefImpl<Data, Variables>>
     ): FirebaseDataConnectInternal =
       mockk<FirebaseDataConnectInternal>(relaxed = true) {

@@ -18,6 +18,7 @@ package com.google.firebase.dataconnect.core
 
 import com.google.firebase.dataconnect.*
 import com.google.firebase.dataconnect.DataConnectPathSegment
+import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.core.DataConnectGrpcClientGlobals.toErrorInfoImpl
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import com.google.firebase.dataconnect.util.ProtoUtil.decodeFromStruct
@@ -54,6 +55,7 @@ internal class DataConnectGrpcClient(
   data class OperationResult(
     val data: Struct?,
     val errors: List<DataConnectOperationFailureResponseImpl.ErrorInfoImpl>,
+    val source: DataSource,
   )
 
   suspend fun executeQuery(
@@ -95,7 +97,8 @@ internal class DataConnectGrpcClient(
 
     return OperationResult(
       data = if (response.hasData()) response.data else null,
-      errors = response.errorsList.map { it.toErrorInfoImpl() }
+      errors = response.errorsList.map { it.toErrorInfoImpl() },
+      source = DataSource.SERVER,
     )
   }
 
@@ -132,11 +135,13 @@ private fun DataConnectGrpcRPCs.ExecuteQueryResult.toOperationResult():
       DataConnectGrpcClient.OperationResult(
         data = data,
         errors = emptyList(),
+        source = DataSource.CACHE,
       )
     is DataConnectGrpcRPCs.ExecuteQueryResult.FromServer ->
       DataConnectGrpcClient.OperationResult(
         data = if (response.hasData()) response.data else null,
         errors = response.errorsList.map { it.toErrorInfoImpl() },
+        source = DataSource.SERVER,
       )
   }
 

@@ -76,8 +76,9 @@ internal object ProtoUtil {
         out.writeInt(kind.ordinal)
 
         when (kind) {
-          KindCase.NULL_VALUE -> {
-            /* nothing to write for null */
+          KindCase.NULL_VALUE,
+          KindCase.KIND_NOT_SET -> {
+            /* nothing to write for null or kind-not-set */
           }
           KindCase.BOOL_VALUE -> out.writeBoolean(it.boolValue)
           KindCase.NUMBER_VALUE -> out.writeDouble(it.numberValue)
@@ -94,7 +95,6 @@ internal object ProtoUtil {
                 out.writeUTF(key)
                 callRecursive(elementValue)
               }
-          else -> throw IllegalArgumentException("unsupported kind: $kind")
         }
 
         out.writeInt(kind.ordinal)

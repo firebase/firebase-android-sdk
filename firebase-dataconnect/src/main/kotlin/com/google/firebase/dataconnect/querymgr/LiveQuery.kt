@@ -93,7 +93,7 @@ internal class LiveQuery(
     dataDeserializer: DeserializationStrategy<T>,
     dataSerializersModule: SerializersModule?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
-  ): SequencedReference<Result<T>> {
+  ): SequencedReference<Result<DataSourcePair<T>>> {
     // Register the data deserializer _before_ waiting for the current job to complete. This
     // guarantees that the deserializer will be registered by the time the subsequent job (`newJob`
     // below) runs.
@@ -131,7 +131,7 @@ internal class LiveQuery(
     dataSerializersModule: SerializersModule?,
     executeQuery: Boolean,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
-    callback: suspend (SequencedReference<Result<T>>) -> Unit,
+    callback: suspend (SequencedReference<Result<DataSourcePair<T>>>) -> Unit,
   ): Nothing {
     val registeredDataDeserializer =
       registerDataDeserializer(dataDeserializer, dataSerializersModule)
