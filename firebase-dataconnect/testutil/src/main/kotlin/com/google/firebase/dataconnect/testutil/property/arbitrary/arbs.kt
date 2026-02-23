@@ -179,6 +179,9 @@ object DataConnectArb {
   val ZERO_DURATION: com.google.protobuf.Duration =
     com.google.protobuf.Duration.newBuilder().setSeconds(0).setNanos(0).build()
 
+  val MIN_NONZERO_DURATION: com.google.protobuf.Duration =
+    com.google.protobuf.Duration.newBuilder().setSeconds(0).setNanos(1).build()
+
   fun maxAge(min: com.google.protobuf.Duration = ZERO_DURATION): Arb<com.google.protobuf.Duration> {
     val minSeconds = min.seconds.also { require(it >= 0) { "invalid min.seconds: $it" } }
     val minNanos = min.nanos.also { require(it in 0..999_999_999) { "invalid min.nanos: $it" } }

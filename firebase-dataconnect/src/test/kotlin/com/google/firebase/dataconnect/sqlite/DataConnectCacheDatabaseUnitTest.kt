@@ -24,6 +24,7 @@ import com.google.firebase.dataconnect.sqlite.QueryResultArb.EntityRepeatPolicy.
 import com.google.firebase.dataconnect.sqlite.QueryResultArb.EntityRepeatPolicy.INTER_SAMPLE_MUTATED
 import com.google.firebase.dataconnect.testutil.CleanupsRule
 import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
+import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.MIN_NONZERO_DURATION
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.distinctPair
 import com.google.firebase.dataconnect.testutil.property.arbitrary.listNoRepeat
@@ -36,6 +37,7 @@ import com.google.firebase.dataconnect.testutil.registerDataConnectKotestPrinter
 import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
+import com.google.firebase.dataconnect.util.BigIntegerUtil.clampToLong
 import com.google.firebase.dataconnect.util.ImmutableByteArray
 import com.google.protobuf.Duration
 import com.google.protobuf.Struct
@@ -258,7 +260,7 @@ class DataConnectCacheDatabaseUnitTest {
       propTestConfig,
       authUidArb(),
       queryIdArb(),
-      Arb.dataConnect.maxAge(),
+      Arb.dataConnect.maxAge(min = MIN_NONZERO_DURATION),
       Arb.proto.struct()
     ) { authUid, queryId, maxAge, structSample ->
       dataConnectCacheDatabase.insertQueryResult(
@@ -289,7 +291,7 @@ class DataConnectCacheDatabaseUnitTest {
       propTestConfig,
       authUidArb(),
       queryIdArb(),
-      Arb.dataConnect.maxAge(),
+      Arb.dataConnect.maxAge(min = MIN_NONZERO_DURATION),
       Arb.listNoRepeat(Arb.proto.struct(), 2..5)
     ) { authUid, queryId, maxAge, structSamples ->
       structSamples.forEach {
@@ -322,7 +324,7 @@ class DataConnectCacheDatabaseUnitTest {
       propTestConfig,
       authUidArb().distinctPair(),
       queryIdArb(),
-      Arb.dataConnect.maxAge(),
+      Arb.dataConnect.maxAge(min = MIN_NONZERO_DURATION),
       Arb.twoValues(Arb.proto.struct())
     ) { (authUid1, authUid2), queryId, maxAge, (structSample1, structSample2) ->
       dataConnectCacheDatabase.insertQueryResult(
@@ -371,7 +373,7 @@ class DataConnectCacheDatabaseUnitTest {
       propTestConfig,
       authUidArb(),
       queryIdArb().distinctPair(),
-      Arb.dataConnect.maxAge(),
+      Arb.dataConnect.maxAge(min = MIN_NONZERO_DURATION),
       Arb.twoValues(Arb.proto.struct())
     ) { authUid, (queryId1, queryId2), maxAge, (structSample1, structSample2) ->
       dataConnectCacheDatabase.insertQueryResult(
@@ -420,7 +422,7 @@ class DataConnectCacheDatabaseUnitTest {
       propTestConfig,
       authUidArb(),
       queryIdArb(),
-      Arb.dataConnect.maxAge(),
+      Arb.dataConnect.maxAge(min = MIN_NONZERO_DURATION),
       QueryResultArb(entityCountRange = 1..5),
     ) { authUid, queryId, maxAge, queryResult ->
       dataConnectCacheDatabase.insertQueryResult(
@@ -450,7 +452,7 @@ class DataConnectCacheDatabaseUnitTest {
     checkAll(
       propTestConfig,
       authUidArb().distinctPair(),
-      Arb.dataConnect.maxAge(),
+      Arb.dataConnect.maxAge(min = MIN_NONZERO_DURATION),
       Arb.int(2..5),
     ) { (authUid1, authUid2), maxAge, queryCount ->
       @OptIn(DelicateKotest::class) val queryIdArb = queryIdArb().distinct()
@@ -515,7 +517,7 @@ class DataConnectCacheDatabaseUnitTest {
     checkAll(
       propTestConfig,
       authUidArb(),
-      Arb.dataConnect.maxAge(),
+      Arb.dataConnect.maxAge(min = MIN_NONZERO_DURATION),
       Arb.int(2..5),
     ) { authUid, maxAge, queryCount ->
       @OptIn(DelicateKotest::class) val queryIdArb = queryIdArb().distinct()
@@ -557,7 +559,7 @@ class DataConnectCacheDatabaseUnitTest {
     checkAll(
       propTestConfig,
       authUidArb(),
-      Arb.dataConnect.maxAge(),
+      Arb.dataConnect.maxAge(min = MIN_NONZERO_DURATION),
       queryIdArb().distinctPair(),
     ) { authUid, maxAge, (queryId1, queryId2) ->
       val queryResultArb =
@@ -642,7 +644,8 @@ class DataConnectCacheDatabaseUnitTest {
         )
 
       val staleResult = result.shouldBeInstanceOf<Stale>()
-      staleResult.millisStale shouldBe (time2 - time1)
+      val expectedMillisStale = time2.toBigInteger() - time1.toBigInteger()
+      staleResult.millisStale shouldBe expectedMillisStale.clampToLong()
     }
   }
 }

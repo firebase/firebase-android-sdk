@@ -23,15 +23,17 @@ import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.execSQL
 import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.getLastInsertRowId
 import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.rawQuery
+import com.google.firebase.dataconnect.util.BigIntegerUtil.clampToLong
 import com.google.firebase.dataconnect.util.ImmutableByteArray
-import com.google.protobuf.Duration
+import com.google.protobuf.Duration as DurationProto
 import com.google.protobuf.Struct
 import google.firebase.dataconnect.proto.kotlinsdk.EntityOrEntityList
 import google.firebase.dataconnect.proto.kotlinsdk.QueryResult as QueryResultProto
 import google.firebase.dataconnect.proto.kotlinsdk.QueryResultExpiry
 import java.io.File
+import java.math.BigInteger
 import java.util.concurrent.Executors
-import kotlin.time.Duration.Companion.seconds
+import kotlin.math.absoluteValue
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -472,11 +474,8 @@ internal class DataConnectCacheDatabase(
     } else {
       val (sqliteQueryId, queryResultProto, expiryProto) = getQueryResult
 
-      val expiryTimeMillis = expiryProto.expiryTimeMillis
-      if (
-        currentTimeMillis > expiryTimeMillis || expiryProto.maxAge == Duration.getDefaultInstance()
-      ) {
-        val millisStale = currentTimeMillis - expiryTimeMillis
+      val millisStale = expiryProto.calculateMillisStale(currentTimeMillis)
+      if (millisStale > 0 || expiryProto.maxAge == DurationProto.getDefaultInstance()) {
         return@runReadWriteTransaction GetQueryResultResult.Stale(millisStale)
       }
 
@@ -498,7 +497,12 @@ internal class DataConnectCacheDatabase(
         }
       }
 
-      val millisUntilStale = expiryTimeMillis - currentTimeMillis
+      check(millisStale <= 0)
+      val millisUntilStale =
+        when (millisStale) {
+          Long.MIN_VALUE -> Long.MAX_VALUE
+          else -> millisStale.absoluteValue
+        }
       GetQueryResultResult.Found(rehydrateResult.getOrThrow(), millisUntilStale)
     }
   }
@@ -507,7 +511,7 @@ internal class DataConnectCacheDatabase(
     authUid: String?,
     queryId: ImmutableByteArray,
     queryData: Struct,
-    maxAge: Duration,
+    maxAge: DurationProto,
     currentTimeMillis: Long,
     getEntityIdForPath: GetEntityIdForPathFunction?,
   ) {
@@ -519,10 +523,10 @@ internal class DataConnectCacheDatabase(
 
     val expiryProtoBytes =
       QueryResultExpiry.newBuilder().let {
-        val expiryTimeMillis =
-          currentTimeMillis + (maxAge.seconds * 1000L) + (maxAge.nanos / 1_000_000)
+        val expiryTimeNanos =
+          nanosBigIntegerFromMillis(currentTimeMillis) + maxAge.toBigIntegerNanos()
         it.setMaxAge(maxAge)
-        it.setExpiryTimeMillis(expiryTimeMillis)
+        it.setExpiryTimeNanos(expiryTimeNanos.toString(36))
         ImmutableByteArray.adopt(it.build().toByteArray())
       }
 
@@ -623,4 +627,36 @@ private fun QueryResultProto.referencedEntityIds(): Set<String> = buildSet {
       EntityOrEntityList.KindCase.KIND_NOT_SET -> {}
     }
   }
+}
+
+private val NANOS_FROM_SECONDS_MULTIPLIER = 1_000_000_000.toBigInteger()
+
+private val NANOS_FROM_MILLISECONDS_MULTIPLIER = 1_000_000.toBigInteger()
+
+private fun DurationProto.toBigIntegerNanos(): BigInteger {
+  val seconds = seconds.toBigInteger()
+  val nanos = nanos.toBigInteger()
+  return nanos + (seconds * NANOS_FROM_SECONDS_MULTIPLIER)
+}
+
+private fun nanosBigIntegerFromMillis(millis: Long): BigInteger =
+  millis.toBigInteger() * NANOS_FROM_MILLISECONDS_MULTIPLIER
+
+private fun QueryResultExpiry.calculateMillisStale(currentTimeMillis: Long): Long =
+  calculateMillisStale(expiryTimeNanos, currentTimeMillis)
+
+private fun calculateMillisStale(expiryTimeNanos: String?, currentTimeMillis: Long): Long {
+  if (expiryTimeNanos === null) {
+    return 0
+  }
+
+  val expiryTimeNanosBigInt =
+    try {
+      expiryTimeNanos.toBigInteger(36)
+    } catch (_: NumberFormatException) {
+      return 0
+    }
+
+  val nanosExpiredByBigInt = nanosBigIntegerFromMillis(currentTimeMillis) - expiryTimeNanosBigInt
+  return nanosExpiredByBigInt.clampToLong()
 }
