@@ -76,7 +76,7 @@ jobs:
         with:
           node-version: ${{ env.FDC_NODEJS_VERSION }}
 
-      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: ${{ env.FDC_PYTHON_VERSION }}
 
@@ -292,7 +292,7 @@ jobs:
         with:
           show-progress: false
           sparse-checkout: 'firebase-dataconnect/ci/'
-      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: ${{ env.FDC_PYTHON_VERSION }}
       - run: pip install -r firebase-dataconnect/ci/requirements.txt
@@ -308,7 +308,7 @@ jobs:
         with:
           show-progress: false
           sparse-checkout: 'firebase-dataconnect/ci/'
-      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: ${{ env.FDC_PYTHON_VERSION }}
       - run: pip install -r firebase-dataconnect/ci/requirements.txt
@@ -324,7 +324,7 @@ jobs:
         with:
           show-progress: false
           sparse-checkout: 'firebase-dataconnect/ci/'
-      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: ${{ env.FDC_PYTHON_VERSION }}
       - run: pip install -r firebase-dataconnect/ci/requirements.txt
@@ -340,7 +340,7 @@ jobs:
         with:
           show-progress: false
           sparse-checkout: 'firebase-dataconnect/ci/'
-      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: ${{ env.FDC_PYTHON_VERSION }}
       - run: pip install -r firebase-dataconnect/ci/requirements.txt
