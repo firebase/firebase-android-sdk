@@ -22,7 +22,7 @@ import io.kotest.property.arbitrary.bind
 
 data class TwoValues<T>(val value1: T, val value2: T) {
   override fun toString() =
-    "TwoValues(" + "value1=${value1.print().value}, " + "value2=${value1.print().value})"
+    "TwoValues(value1=${value1.print().value}, value2=${value2.print().value})"
 
   fun toList(): List<T> = listOf(value1, value2)
 }
@@ -33,7 +33,7 @@ fun <T> List<T>.toTwoValues(): TwoValues<T> {
 }
 
 fun <T : Comparable<T>> TwoValues<T>.sorted(): TwoValues<T> =
-  if (value1 < value2) this else TwoValues(value2, value1)
+  if (value1 <= value2) this else TwoValues(value2, value1)
 
 data class ThreeValues<T>(val value1: T, val value2: T, val value3: T) {
   override fun toString() =
@@ -46,7 +46,7 @@ data class ThreeValues<T>(val value1: T, val value2: T, val value3: T) {
 }
 
 fun <T : Comparable<T>> ThreeValues<T>.sorted(): ThreeValues<T> {
-  if (value1 < value2 && value2 < value3) {
+  if (value1 <= value2 && value2 <= value3) {
     return this
   }
   val values = mutableListOf(value1, value2, value3)
