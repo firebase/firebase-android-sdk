@@ -31,8 +31,6 @@ import google.firebase.dataconnect.proto.kotlinsdk.QueryResult as QueryResultPro
 import google.firebase.dataconnect.proto.kotlinsdk.QueryResultExpiry
 import java.io.File
 import java.util.concurrent.Executors
-import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.nanoseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineName
@@ -475,7 +473,9 @@ internal class DataConnectCacheDatabase(
       val (sqliteQueryId, queryResultProto, expiryProto) = getQueryResult
 
       val expiryTimeMillis = expiryProto.expiryTimeMillis
-      if (currentTimeMillis > expiryTimeMillis) {
+      if (
+        currentTimeMillis > expiryTimeMillis || expiryProto.maxAge == Duration.getDefaultInstance()
+      ) {
         val millisStale = currentTimeMillis - expiryTimeMillis
         return@runReadWriteTransaction GetQueryResultResult.Stale(millisStale)
       }
@@ -519,10 +519,10 @@ internal class DataConnectCacheDatabase(
 
     val expiryProtoBytes =
       QueryResultExpiry.newBuilder().let {
-        val expiryTime =
-          currentTimeMillis.milliseconds + maxAge.seconds.seconds + maxAge.nanos.nanoseconds
+        val expiryTimeMillis =
+          currentTimeMillis + (maxAge.seconds * 1000L) + (maxAge.nanos / 1_000_000)
         it.setMaxAge(maxAge)
-        it.setExpiryTimeMillis(expiryTime.inWholeMilliseconds)
+        it.setExpiryTimeMillis(expiryTimeMillis)
         ImmutableByteArray.adopt(it.build().toByteArray())
       }
 

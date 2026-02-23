@@ -642,7 +642,7 @@ class DataConnectCacheDatabaseUnitTest {
         )
 
       val staleResult = result.shouldBeInstanceOf<Stale>()
-      staleResult.millisStale shouldBe 0L
+      staleResult.millisStale shouldBe (time2 - time1)
     }
   }
 }
