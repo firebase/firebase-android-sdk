@@ -548,12 +548,12 @@ public class PipelineTest {
         firestore
             .pipeline()
             .collection(randomCol)
-                .where(equal("title", "The Lord of the Rings"))
-                .select(field("tags").arrayFirst().alias("firstTag"))
+            .where(equal("title", "The Lord of the Rings"))
+            .select(field("tags").arrayFirst().alias("firstTag"))
             .execute();
     assertThat(waitFor(execute).getResults())
-            .comparingElementsUsing(DATA_CORRESPONDENCE)
-            .containsExactly(ImmutableMap.of("firstTag", "adventure"));
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(ImmutableMap.of("firstTag", "adventure"));
   }
 
   @Test

@@ -46,16 +46,8 @@ class ArrayFirstTests {
   fun `arrayFirst - general cases`() {
     val testCases =
       listOf(
-        ArrayFirstTestCase(
-          array("1", 42L, true),
-          EvaluateResultValue(encodeValue("1")),
-          "basic"
-        ),
-        ArrayFirstTestCase(
-          array(),
-          EvaluateResultUnset,
-          "empty array"
-        ),
+        ArrayFirstTestCase(array("1", 42L, true), EvaluateResultValue(encodeValue("1")), "basic"),
+        ArrayFirstTestCase(array(), EvaluateResultUnset, "empty array"),
         ArrayFirstTestCase(
           array(null, "second"),
           EvaluateResultValue(NULL_VALUE),
@@ -71,22 +63,16 @@ class ArrayFirstTests {
           EvaluateResultValue(encodeValue("single")),
           "single element"
         ),
-        ArrayFirstTestCase(
-          nullValue(),
-          EvaluateResultValue(NULL_VALUE),
-          "null input"
-        ),
-        ArrayFirstTestCase(
-          field("nonexistent"),
-          EvaluateResultValue(NULL_VALUE),
-          "unset input"
-        )
+        ArrayFirstTestCase(nullValue(), EvaluateResultValue(NULL_VALUE), "null input"),
+        ArrayFirstTestCase(field("nonexistent"), EvaluateResultValue(NULL_VALUE), "unset input")
       )
 
     for (testCase in testCases) {
       val expr = arrayFirst(testCase.array)
       val result = evaluate(expr)
-      assertWithMessage("arrayFirst ${testCase.description}").that(result).isEqualTo(testCase.expected)
+      assertWithMessage("arrayFirst ${testCase.description}")
+        .that(result)
+        .isEqualTo(testCase.expected)
     }
   }
 
@@ -124,7 +110,9 @@ class ArrayFirstTests {
     for (testCase in testCases) {
       val expr = arrayFirst(testCase.array)
       val result = evaluate(expr)
-      assertWithMessage("arrayFirst ${testCase.description}").that(result).isEqualTo(testCase.expected)
+      assertWithMessage("arrayFirst ${testCase.description}")
+        .that(result)
+        .isEqualTo(testCase.expected)
     }
   }
 }
