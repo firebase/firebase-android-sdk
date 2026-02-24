@@ -161,8 +161,6 @@ task integrationTest(type: Test) {
   classpath = sourceSets.integrationTest.runtimeClasspath
 
   shouldRunAfter(test)
-
-  configureTestSystemProperties(it, ['credentials_path'])
 }
 
 check.dependsOn(integrationTest)

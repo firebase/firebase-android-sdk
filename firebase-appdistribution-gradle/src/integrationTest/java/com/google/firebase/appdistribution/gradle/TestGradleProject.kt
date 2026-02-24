@@ -181,7 +181,7 @@ class TestGradleProject : ExternalResource() {
     private const val DEFAULT_PROJECT_NUMBER = "123"
     private const val DEFAULT_APP_ID = "1:123:android:deadbeef"
     private const val DEFAULT_PACKAGE_NAME = "firebase.app.distribution.plugin.test"
-    private const val SERVICE_CREDENTIALS_PATH = "test-credentials.json"
+    private const val SERVICE_CREDENTIALS_PATH = "service-credentials.json"
 
     /** Utility function to write the String `content` in the specified File `destination`. */
     @JvmStatic

@@ -66,12 +66,12 @@ jobs:
         if: env.INTEG_TESTS_FAD_LOCAL_PROPERTIES != '' && env.INTEG_TESTS_FAD_LOCAL_PROPERTIES != 'null'
         run: |
           echo $INTEG_TESTS_FAD_LOCAL_PROPERTIES | base64 -d > local.properties
-      - name: Add FAD test-credentials.json
+      - name: Add FAD service-credentials.json
         env:
           INTEG_TESTS_FAD_SERVICE_CREDENTIALS: ${{ secrets.INTEG_TESTS_FAD_SERVICE_CREDENTIALS }}
         if: env.INTEG_TESTS_FAD_SERVICE_CREDENTIALS != '' && env.INTEG_TESTS_FAD_SERVICE_CREDENTIALS != 'null'
         run: |
-          echo $INTEG_TESTS_FAD_SERVICE_CREDENTIALS | base64 -d > firebase-appdistribution-gradle/test-credentials.json
+          echo $INTEG_TESTS_FAD_SERVICE_CREDENTIALS | base64 -d > firebase-appdistribution-gradle/service-credentials.json
       - name: Add google-services.json
         env:
           INTEG_TESTS_GOOGLE_SERVICES: ${{ secrets.INTEG_TESTS_GOOGLE_SERVICES }}
