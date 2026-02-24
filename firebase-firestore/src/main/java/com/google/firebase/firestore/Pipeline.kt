@@ -909,8 +909,8 @@ internal constructor(
   fun unnest(unnestStage: UnnestStage): Pipeline = append(unnestStage)
 
   /**
-   * Defines one or more variables in the pipeline's scope, allowing them to be used in subsequent
-   * stages.
+   * Defines one or more variables in the pipeline's scope. `define` is used to bind a value to a
+   * variable for internal reuse within the pipeline body (accessed via the `variable()` function).
    *
    * This stage is useful for declaring reusable values or intermediate calculations that can be
    * referenced multiple times in later parts of the pipeline, improving readability and
