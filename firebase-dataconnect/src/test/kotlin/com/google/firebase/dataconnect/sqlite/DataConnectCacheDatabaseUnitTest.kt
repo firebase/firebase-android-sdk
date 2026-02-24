@@ -28,8 +28,8 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectAr
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.distinctPair
 import com.google.firebase.dataconnect.testutil.property.arbitrary.listNoRepeat
+import com.google.firebase.dataconnect.testutil.property.arbitrary.next
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
-import com.google.firebase.dataconnect.testutil.property.arbitrary.sorted
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
 import com.google.firebase.dataconnect.testutil.property.arbitrary.twoValues
@@ -37,6 +37,7 @@ import com.google.firebase.dataconnect.testutil.registerDataConnectKotestPrinter
 import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
+import com.google.firebase.dataconnect.util.BigIntegerUtil.clampToLong
 import com.google.firebase.dataconnect.util.ImmutableByteArray
 import com.google.protobuf.Duration
 import com.google.protobuf.Struct
@@ -51,6 +52,7 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
+import io.kotest.property.RandomSource
 import io.kotest.property.ShrinkingMode
 import io.kotest.property.arbitrary.byte
 import io.kotest.property.arbitrary.byteArray
@@ -60,6 +62,7 @@ import io.kotest.property.arbitrary.long
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.of
 import io.kotest.property.arbitrary.orNull
+import io.kotest.property.asSample
 import io.kotest.property.checkAll
 import io.mockk.CapturingSlot
 import io.mockk.every
@@ -70,6 +73,7 @@ import io.mockk.unmockkObject
 import io.mockk.verify
 import java.io.File
 import java.math.BigInteger
+import kotlin.random.nextInt
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.nanoseconds
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -624,15 +628,16 @@ class DataConnectCacheDatabaseUnitTest {
     checkAll(
       authUidArb(),
       queryIdArb(),
-      Arb.twoValues(Arb.long()),
+      StaleQueryResultArb(),
       QueryResultArb(entityCountRange = 0..3),
-    ) { authUid, queryId, times, queryResult ->
-      val (time1, time2) = times.sorted()
+    ) { authUid, queryId, staleQueryResultSample, queryResult ->
+      val (time1, time2, maxAge, expiryAmount) = staleQueryResultSample
+
       dataConnectCacheDatabase.insertQueryResult(
         authUid.string,
         queryId.bytes,
         queryResult.hydratedStruct,
-        maxAge = Duration.getDefaultInstance(), // Duration.ZERO
+        maxAge = Duration.getDefaultInstance(),
         currentTimeMillis = time1,
         getEntityIdForPath = null,
       )
@@ -644,9 +649,39 @@ class DataConnectCacheDatabaseUnitTest {
           currentTimeMillis = time2
         )
 
-      val staleResult = result.shouldBeInstanceOf<Stale>()
-      val expectedStaleness = durationFromMillis(time2.toBigInteger() - time1.toBigInteger())
-      staleResult.staleness shouldBe expectedStaleness
+      result shouldBe Stale(expiryAmount)
+    }
+  }
+
+  @Test
+  fun `getQueryResult() should return stale after maxAge time has passed`() = runTest {
+    dataConnectCacheDatabase.initialize()
+
+    checkAll(
+      authUidArb(),
+      queryIdArb(),
+      StaleQueryResultArb(),
+      QueryResultArb(entityCountRange = 0..3),
+    ) { authUid, queryId, staleQueryResultSample, queryResult ->
+      val (time1, time2, maxAge, expiryAmount) = staleQueryResultSample
+
+      dataConnectCacheDatabase.insertQueryResult(
+        authUid.string,
+        queryId.bytes,
+        queryResult.hydratedStruct,
+        maxAge = maxAge,
+        currentTimeMillis = time1,
+        getEntityIdForPath = null,
+      )
+
+      val result =
+        dataConnectCacheDatabase.getQueryResult(
+          authUid.string,
+          queryId.bytes,
+          currentTimeMillis = time2
+        )
+
+      result shouldBe Stale(expiryAmount)
     }
   }
 }
@@ -670,6 +705,144 @@ private data class QueryIdSample(val bytes: ImmutableByteArray) {
 
 private fun queryIdArb(): Arb<QueryIdSample> =
   Arb.byteArray(Arb.int(1..25), Arb.byte()).map { QueryIdSample(ImmutableByteArray.adopt(it)) }
+
+private class StaleQueryResultArb : Arb<StaleQueryResultArb.Sample>() {
+
+  data class Sample(
+    val time1: Long,
+    val time2: Long,
+    val maxAge: Duration,
+    val expiryAmount: kotlin.time.Duration,
+    val edgeCases: Set<EdgeCase>,
+    val time1EdgeCaseProbability: Float,
+    val time2EdgeCaseProbability: Float,
+    val maxAgeEdgeCaseProbability: Float,
+    val maxAgeNanosComponentEdgeCaseProbability: Float,
+  ) {
+    init {
+      check(time2 >= time1)
+      check(maxAge.seconds >= 0)
+      check(maxAge.nanos >= 0)
+      check(maxAge.seconds > 0 || maxAge.nanos > 0)
+
+      val maxAgeInMillis =
+        (maxAge.seconds.toBigInteger() * 1000.toBigInteger()) +
+          (maxAge.nanos.toBigInteger() / 1_000_000.toBigInteger())
+      val maxAgeTimeMillis = time1.toBigInteger() + maxAgeInMillis
+      check(maxAgeTimeMillis <= time2.toBigInteger())
+
+      val expiryAmountInMillis =
+        expiryAmount.toComponents { seconds, nanos ->
+          (seconds.toBigInteger() * 1000.toBigInteger()) +
+            (nanos.toBigInteger() / 1_000_000.toBigInteger())
+        }
+      check(
+        time1.toBigInteger() + maxAgeTimeMillis + expiryAmountInMillis == time2.toBigInteger()
+      ) {
+        val sum = time1.toBigInteger() + maxAgeTimeMillis + expiryAmountInMillis
+        "time=$time1, time2=$time2, " +
+          "" +
+          "maxAgeTimeMillis=$maxAgeTimeMillis, expiryAmountInMillis=$expiryAmountInMillis, " +
+          "sum=$sum difference=${time2.toBigInteger() - sum}"
+      }
+    }
+
+    enum class EdgeCase {
+      Time1,
+      Time2,
+      MaxAge,
+      MaxAgeNanosComponent,
+    }
+  }
+
+  override fun sample(rs: RandomSource) =
+    generate(
+        rs,
+        edgeCases = emptySet(),
+        time1EdgeCaseProbability = rs.random.nextFloat(),
+        time2EdgeCaseProbability = rs.random.nextFloat(),
+        maxAgeEdgeCaseProbability = rs.random.nextFloat(),
+        maxAgeNanosComponentEdgeCaseProbability = rs.random.nextFloat(),
+      )
+      .asSample()
+
+  override fun edgecase(rs: RandomSource): Sample {
+    val allEdgeCases = Sample.EdgeCase.entries
+    val edgeCaseCount = rs.random.nextInt(1..allEdgeCases.size)
+    val edgeCases = allEdgeCases.shuffled(rs.random).take(edgeCaseCount).toSet()
+    check(edgeCases.size == edgeCaseCount)
+
+    val time1EdgeCaseProbability = if (Sample.EdgeCase.Time1 in edgeCases) 1.0f else 0.0f
+    val time2EdgeCaseProbability = if (Sample.EdgeCase.Time1 in edgeCases) 1.0f else 0.0f
+    val maxAgeEdgeCaseProbability = if (Sample.EdgeCase.Time1 in edgeCases) 1.0f else 0.0f
+    val maxAgeNanosComponentEdgeCaseProbability =
+      if (Sample.EdgeCase.Time1 in edgeCases) 1.0f else 0.0f
+
+    return generate(
+      rs,
+      edgeCases = edgeCases,
+      time1EdgeCaseProbability = time1EdgeCaseProbability,
+      time2EdgeCaseProbability = time2EdgeCaseProbability,
+      maxAgeEdgeCaseProbability = maxAgeEdgeCaseProbability,
+      maxAgeNanosComponentEdgeCaseProbability = maxAgeNanosComponentEdgeCaseProbability,
+    )
+  }
+
+  private val time1Arb = Arb.long(Long.MIN_VALUE until Long.MAX_VALUE)
+
+  private fun generate(
+    rs: RandomSource,
+    edgeCases: Set<Sample.EdgeCase>,
+    time1EdgeCaseProbability: Float,
+    time2EdgeCaseProbability: Float,
+    maxAgeEdgeCaseProbability: Float,
+    maxAgeNanosComponentEdgeCaseProbability: Float,
+  ): Sample {
+    val time1: Long = time1Arb.next(rs, time1EdgeCaseProbability)
+    val time2: Long = run {
+      val time2Range = (time1 + 1)..Long.MAX_VALUE
+      Arb.long(time2Range).next(rs, time2EdgeCaseProbability)
+    }
+    check(time1 < time2)
+
+    val maxMaxAgeMillis = time2.toBigInteger() - time1.toBigInteger()
+    val maxMaxAgeNanos = maxMaxAgeMillis * 1_000_000.toBigInteger()
+    val maxAge = run {
+      check(maxMaxAgeNanos.signum() == 1)
+      val maxAgeArb =
+        Arb.dataConnect.maxAge(
+          min = MIN_NONZERO_DURATION,
+          max = durationProtoFromNanos(maxMaxAgeNanos),
+        )
+      maxAgeArb.next(rs, maxAgeEdgeCaseProbability)
+    }
+
+    val expiryAmount = run {
+      val maxAgeSecondsComponentNanos = maxAge.seconds.toBigInteger() * 1_000_000_000.toBigInteger()
+      val maxAgeNanosComponentNanos = maxAge.nanos.toBigInteger()
+
+      val expiryNanos = maxMaxAgeNanos - maxAgeSecondsComponentNanos - maxAgeNanosComponentNanos
+      if (expiryNanos <= MAX_DURATION_NANOS.toBigInteger()) {
+        expiryNanos.toLong().nanoseconds
+      } else {
+        val expiryMillis = expiryNanos / 1_000_000.toBigInteger()
+        expiryMillis.clampToLong().milliseconds
+      }
+    }
+
+    return Sample(
+      time1 = time1,
+      time2 = time2,
+      maxAge = maxAge,
+      expiryAmount = expiryAmount,
+      edgeCases = edgeCases,
+      time1EdgeCaseProbability = time1EdgeCaseProbability,
+      time2EdgeCaseProbability = time2EdgeCaseProbability,
+      maxAgeEdgeCaseProbability = maxAgeEdgeCaseProbability,
+      maxAgeNanosComponentEdgeCaseProbability = maxAgeNanosComponentEdgeCaseProbability,
+    )
+  }
+}
 
 internal fun QueryResultArb.Sample.hydratedStructWithMutatedEntityValuesFrom(
   other: QueryResultArb.Sample
@@ -697,11 +870,6 @@ private fun hydratedStructWithMutatedEntityValues(
   return rehydrateQueryResult(sample1.queryResultProto, dehydratedEntityStructById)
 }
 
-private fun durationFromMillis(millis: BigInteger): kotlin.time.Duration {
-  require(millis.signum() >= 0) { "millis must be non-negative, but it is negative: $millis" }
-  return durationFromNanos(millis * NANOS_IN_MILLIS.toBigInteger())
-}
-
 private fun durationFromNanos(nanos: BigInteger): kotlin.time.Duration {
   require(nanos.signum() >= 0) { "nanos must be non-negative, but it is negative: $nanos" }
 
@@ -715,6 +883,23 @@ private fun durationFromNanos(nanos: BigInteger): kotlin.time.Duration {
       kotlin.time.Duration.INFINITE
     }
   }
+}
+
+private fun durationProtoFromNanos(nanos: BigInteger): Duration {
+  require(nanos.signum() >= 0) { "nanos must be non-negative, but it is negative: $nanos" }
+  val secondsFromNanosMultiplier = 1_000_000_000.toBigInteger()
+
+  val secondsComponent = nanos / secondsFromNanosMultiplier
+  check(secondsComponent.signum() >= 0)
+
+  val nanosComponent = nanos - (secondsComponent * secondsFromNanosMultiplier)
+  check(nanosComponent.signum() >= 0)
+  check(nanosComponent <= 999_999_999.toBigInteger())
+
+  return Duration.newBuilder()
+    .setSeconds(secondsComponent.clampToLong())
+    .setNanos(nanosComponent.toInt())
+    .build()
 }
 
 // The following constants were copied from Duration.kt in the Kotlin standard library.
