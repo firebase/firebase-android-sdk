@@ -27,31 +27,31 @@ import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.doubles.shouldBeLessThan
 import io.kotest.matchers.ints.shouldBeGreaterThan
-import io.kotest.matchers.longs.shouldBeGreaterThanOrEqual
+import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
 import io.kotest.matchers.ranges.shouldBeIn
 import io.kotest.property.Arb
 import io.kotest.property.PropTestConfig
-import io.kotest.property.arbitrary.long
+import io.kotest.property.arbitrary.int
 import io.kotest.property.checkAll
 import kotlin.math.pow
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
-class LongWithEvenNumDigitsDistributionUnitTest {
+class IntWithEvenNumDigitsDistributionUnitTest {
 
   @Test
-  fun `longWithEvenNumDigitsDistribution produces both positive and negative values`() = runTest {
+  fun `intWithEvenNumDigitsDistribution produces both positive and negative values`() = runTest {
     var positiveCount = 0
     var negativeCount = 0
     var zeroCount = 0
 
-    checkAll(propTestConfig, Arb.longWithEvenNumDigitsDistribution()) { value ->
+    checkAll(propTestConfig, Arb.intWithEvenNumDigitsDistribution()) { value ->
       if (value > 0) {
         positiveCount++
       } else if (value < 0) {
         negativeCount++
       } else {
-        check(value == 0L)
+        check(value == 0)
         zeroCount++
       }
     }
@@ -64,22 +64,22 @@ class LongWithEvenNumDigitsDistributionUnitTest {
   }
 
   @Test
-  fun `longWithEvenNumDigitsDistribution produces all num digits`() = runTest {
+  fun `intWithEvenNumDigitsDistribution produces all num digits`() = runTest {
     val numDigitsGenerated = mutableSetOf<Int>()
 
-    checkAll(propTestConfig, Arb.longWithEvenNumDigitsDistribution()) { value ->
+    checkAll(propTestConfig, Arb.intWithEvenNumDigitsDistribution()) { value ->
       val numDigits = value.countBase10Digits()
       numDigitsGenerated.add(numDigits)
     }
 
-    numDigitsGenerated shouldContainExactlyInAnyOrder (1..19).toSet()
+    numDigitsGenerated shouldContainExactlyInAnyOrder (1..10).toSet()
   }
 
   @Test
-  fun `longWithEvenNumDigitsDistribution produces a range of num digits`() = runTest {
+  fun `intWithEvenNumDigitsDistribution produces a range of num digits`() = runTest {
     val countByNumDigits = mutableMapOf<Int, Int>()
 
-    checkAll(propTestConfig, Arb.longWithEvenNumDigitsDistribution()) { value ->
+    checkAll(propTestConfig, Arb.intWithEvenNumDigitsDistribution()) { value ->
       val numDigits = value.countBase10Digits()
       val oldCount = countByNumDigits.getOrDefault(numDigits, 0)
       countByNumDigits[numDigits] = oldCount + 1
@@ -92,11 +92,11 @@ class LongWithEvenNumDigitsDistributionUnitTest {
   }
 
   @Test
-  fun `longWithEvenNumDigitsDistribution respects the given range`() = runTest {
-    checkAll(propTestConfig, Arb.twoValues(Arb.long())) { extents ->
+  fun `intWithEvenNumDigitsDistribution respects the given range`() = runTest {
+    checkAll(propTestConfig, Arb.twoValues(Arb.int())) { extents ->
       val (first, last) = extents.sorted()
       val range = first..last
-      val arb = Arb.longWithEvenNumDigitsDistribution(range)
+      val arb = Arb.intWithEvenNumDigitsDistribution(range)
 
       val sample = arb.bind()
 
@@ -105,18 +105,18 @@ class LongWithEvenNumDigitsDistributionUnitTest {
   }
 
   @Test
-  fun `longWithEvenNumDigitsDistribution produces a range of num digits in the given range`() =
+  fun `intWithEvenNumDigitsDistribution produces a range of num digits in the given range`() =
     runTest {
       checkAll(
         propTestConfig,
-        Arb.longWithEvenNumDigitsDistribution().distinctPair { value1, value2 ->
+        Arb.intWithEvenNumDigitsDistribution().distinctPair { value1, value2 ->
           value1.countBase10Digits() == value2.countBase10Digits()
         }
       ) { extents ->
         val (first, last) = extents.toList().sorted()
         check(first.countBase10Digits() != last.countBase10Digits())
         val range = first..last
-        val arb = Arb.longWithEvenNumDigitsDistribution(range)
+        val arb = Arb.intWithEvenNumDigitsDistribution(range)
         val countByNumDigits = mutableMapOf<Int, Int>()
 
         repeat(propTestConfig.iterations!!) {
@@ -137,8 +137,8 @@ class LongWithEvenNumDigitsDistributionUnitTest {
     }
 
   @Test
-  fun `nonNegativeLongWithEvenNumDigitsDistribution produces non-negative values`() = runTest {
-    checkAll(propTestConfig, Arb.nonNegativeLongWithEvenNumDigitsDistribution()) { value ->
+  fun `nonNegativeIntWithEvenNumDigitsDistribution produces non-negative values`() = runTest {
+    checkAll(propTestConfig, Arb.nonNegativeIntWithEvenNumDigitsDistribution()) { value ->
       value shouldBeGreaterThanOrEqual 0
     }
   }
@@ -146,7 +146,7 @@ class LongWithEvenNumDigitsDistributionUnitTest {
 
 private val propTestConfig = PropTestConfig(iterations = 1000)
 
-private fun Long.countBase10Digits(): Int {
+private fun Int.countBase10Digits(): Int {
   val digitCount = toString(10).length
   return if (this >= 0) digitCount else digitCount - 1
 }
