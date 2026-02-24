@@ -22,6 +22,7 @@ import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.testutil.DataConnectPath
 import com.google.firebase.dataconnect.testutil.DataConnectPathValuePair
 import com.google.firebase.dataconnect.testutil.property.arbitrary.ProtoArb.DurationSample
+import com.google.firebase.dataconnect.testutil.property.arbitrary.next
 import com.google.firebase.dataconnect.testutil.toValueProto
 import com.google.firebase.dataconnect.testutil.withAddedPathSegment
 import com.google.protobuf.Duration
@@ -41,13 +42,13 @@ import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.double
 import io.kotest.property.arbitrary.filter
 import io.kotest.property.arbitrary.int
+import io.kotest.property.arbitrary.long
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.string
 import io.kotest.property.asSample
 import io.kotest.property.exhaustive.constant
 import io.kotest.property.exhaustive.of
 import kotlin.random.nextInt
-import kotlin.random.nextLong
 
 object ProtoArb {
 
@@ -76,17 +77,13 @@ object ProtoArb {
     val edgeCases: Set<EdgeCase>,
     val secondsEdgeCaseProbability: Float,
     val nanosEdgeCaseProbability: Float,
-    val secondsIsEdgeCase: Boolean,
-    val nanosIsEdgeCase: Boolean,
   ) {
     override fun toString(): String =
       "DurationSample(" +
         "duration=${duration.print().value}, " +
         "edgeCases=${edgeCases.print().value}, " +
         "secondsEdgeCaseProbability=${secondsEdgeCaseProbability.print().value}, " +
-        "nanosEdgeCaseProbability=${nanosEdgeCaseProbability.print().value}, " +
-        "secondsIsEdgeCase=${secondsIsEdgeCase.print().value}, " +
-        "nanosIsEdgeCase=${nanosIsEdgeCase.print().value})"
+        "nanosEdgeCaseProbability=${nanosEdgeCaseProbability.print().value})"
 
     enum class EdgeCase {
       Seconds,
@@ -776,8 +773,8 @@ private class DurationArb(private val min: Duration?, private val max: Duration?
     secondsEdgeCaseProbability: Float,
     nanosEdgeCaseProbability: Float,
   ): DurationSample {
-    val (seconds, secondsIsEdgeCase) = generateSeconds(rs, secondsEdgeCaseProbability)
-    val (nanos, nanosIsEdgeCase) = generateNanos(rs, seconds, nanosEdgeCaseProbability)
+    val seconds = secondsArb.next(rs, secondsEdgeCaseProbability)
+    val nanos = nanosArbForSeconds(seconds).next(rs, nanosEdgeCaseProbability)
     val duration = Duration.newBuilder().setSeconds(seconds).setNanos(nanos).build()
 
     return DurationSample(
@@ -785,84 +782,45 @@ private class DurationArb(private val min: Duration?, private val max: Duration?
       edgeCases = edgeCases,
       secondsEdgeCaseProbability = secondsEdgeCaseProbability,
       nanosEdgeCaseProbability = nanosEdgeCaseProbability,
-      secondsIsEdgeCase = secondsIsEdgeCase,
-      nanosIsEdgeCase = nanosIsEdgeCase,
     )
   }
 
-  private val secondsRange: LongRange = run {
+  private val secondsArb = run {
     val minSeconds = min?.seconds ?: Long.MIN_VALUE
     val maxSeconds = max?.seconds ?: Long.MAX_VALUE
-    minSeconds..maxSeconds
+    Arb.long(minSeconds..maxSeconds)
   }
 
-  private val secondsEdgeCases = secondsRange.calculateEdgeCases()
+  private val nanosArb = Arb.intWithEvenNumDigitsDistribution(nanosRange)
 
-  private fun generateSeconds(rs: RandomSource, edgeCaseProbability: Float): Pair<Long, Boolean> =
-    if (rs.random.nextFloat() < edgeCaseProbability) {
-      secondsEdgeCases.random(rs.random) to true
-    } else {
-      rs.random.nextLong(secondsRange) to false
-    }
-
-  private val minNanosRange =
+  private val minNanosArb =
     if (min === null) {
-      nanosRange
+      nanosArb
     } else if (max !== null && min.seconds == max.seconds) {
-      min.nanos..max.nanos
+      Arb.intWithEvenNumDigitsDistribution(min.nanos..max.nanos)
     } else {
-      min.nanos..nanosRange.last
+      Arb.intWithEvenNumDigitsDistribution(min.nanos..nanosRange.last)
     }
-  private val minNanosEdgeCases = minNanosRange.calculateEdgeCases()
 
-  private val maxNanosRange =
+  private val maxNanosArb =
     if (max === null) {
-      nanosRange
+      nanosArb
     } else if (min !== null && min.seconds == max.seconds) {
-      check(minNanosRange.first == min.nanos && minNanosRange.last == max.nanos)
-      minNanosRange
+      minNanosArb
     } else {
-      0..max.nanos
+      Arb.intWithEvenNumDigitsDistribution(0..max.nanos)
     }
-  private val maxNanosEdgeCases = maxNanosRange.calculateEdgeCases()
 
-  private fun generateNanos(
-    rs: RandomSource,
-    seconds: Long,
-    edgeCaseProbability: Float
-  ): Pair<Int, Boolean> {
-    val (range, edgeCases) =
-      if (min !== null && seconds == min.seconds) {
-        Pair(minNanosRange, minNanosEdgeCases)
-      } else if (max !== null && seconds == max.seconds) {
-        Pair(maxNanosRange, maxNanosEdgeCases)
-      } else {
-        Pair(nanosRange, nanosEdgeCases)
-      }
-
-    return if (rs.random.nextFloat() < edgeCaseProbability) {
-      edgeCases.random(rs.random) to true
+  private fun nanosArbForSeconds(seconds: Long): Arb<Int> =
+    if (min !== null && seconds == min.seconds) {
+      minNanosArb
+    } else if (max !== null && seconds == max.seconds) {
+      maxNanosArb
     } else {
-      rs.random.nextInt(range) to false
+      nanosArb
     }
-  }
 
   private companion object {
-
-    val nanosRange = 0..999_999_999
-
-    val nanosEdgeCases: List<Int> = nanosRange.calculateEdgeCases()
-
-    fun IntRange.calculateEdgeCases(): List<Int> =
-      listOf(0, 1, -1, first, first + 1, first - 1, last, last + 1, last - 1)
-        .filter { it in this }
-        .distinct()
-        .sorted()
-
-    fun LongRange.calculateEdgeCases(): List<Long> =
-      listOf(0, 1, -1, first, first + 1, first - 1, last, last + 1, last - 1)
-        .filter { it in this }
-        .distinct()
-        .sorted()
+    private val nanosRange = 0..999_999_999
   }
 }

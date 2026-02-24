@@ -341,15 +341,9 @@ class protoUnitTest {
             it.secondsEdgeCaseProbability shouldBe
               if (ProtoArb.DurationSample.EdgeCase.Seconds in it.edgeCases) 1.0f else 0.0f
           }
-          withClue("secondsIsEdgeCase") {
-            it.secondsIsEdgeCase shouldBe (ProtoArb.DurationSample.EdgeCase.Seconds in it.edgeCases)
-          }
           withClue("secondsEdgeCaseProbability") {
             it.nanosEdgeCaseProbability shouldBe
               if (ProtoArb.DurationSample.EdgeCase.Nanos in it.edgeCases) 1.0f else 0.0f
-          }
-          withClue("nanosIsEdgeCase") {
-            it.nanosIsEdgeCase shouldBe (ProtoArb.DurationSample.EdgeCase.Nanos in it.edgeCases)
           }
         }
       }
