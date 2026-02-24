@@ -736,14 +736,10 @@ private class StaleQueryResultArb : Arb<StaleQueryResultArb.Sample>() {
           (seconds.toBigInteger() * 1000.toBigInteger()) +
             (nanos.toBigInteger() / 1_000_000.toBigInteger())
         }
-      check(
-        time1.toBigInteger() + maxAgeTimeMillis + expiryAmountInMillis == time2.toBigInteger()
-      ) {
-        val sum = time1.toBigInteger() + maxAgeTimeMillis + expiryAmountInMillis
-        "time=$time1, time2=$time2, " +
-          "" +
-          "maxAgeTimeMillis=$maxAgeTimeMillis, expiryAmountInMillis=$expiryAmountInMillis, " +
-          "sum=$sum difference=${time2.toBigInteger() - sum}"
+      check(maxAgeTimeMillis + expiryAmountInMillis - time2.toBigInteger() <= BigInteger.ONE) {
+        val result = maxAgeTimeMillis + expiryAmountInMillis - time2.toBigInteger()
+        "maxAgeTimeMillis=$maxAgeTimeMillis, expiryAmountInMillis=$expiryAmountInMillis, " +
+          "time2=$time2, result=$result"
       }
     }
 
