@@ -136,6 +136,23 @@ tasks {
   }
 }
 
+ext.configureTestSystemProperties = { Task task, List<String> propertyNames ->
+  task.doFirst {
+    def localProperties = new Properties()
+    def localPropertiesFile = rootProject.file('local.properties')
+    if (localPropertiesFile.exists()) {
+      localProperties.load(localPropertiesFile.newDataInputStream())
+    }
+
+    propertyNames.each { propName ->
+      def propValue = localProperties.getProperty(propName)
+      if (propValue) {
+        task.systemProperty propName, propValue
+      }
+    }
+  }
+}
+
 task integrationTest(type: Test) {
   description = 'Runs integration tests.'
   group = 'verification'
@@ -144,6 +161,8 @@ task integrationTest(type: Test) {
   classpath = sourceSets.integrationTest.runtimeClasspath
 
   shouldRunAfter(test)
+
+  configureTestSystemProperties(it, ['credentials_path'])
 }
 
 check.dependsOn(integrationTest)
@@ -157,23 +176,9 @@ task prodTest(type: Test) {
 
   shouldRunAfter(test)
 
+  configureTestSystemProperties(it, ['firebase.appId', 'firebase.projectNumber'])
+
   doFirst {
-    def localProperties = new Properties()
-    def localPropertiesFile = rootProject.file('local.properties')
-    if (localPropertiesFile.exists()) {
-      localProperties.load(localPropertiesFile.newDataInputStream())
-    }
-
-    [
-      'firebase.appId',
-      'firebase.projectNumber'
-    ].each { propName ->
-      def propValue = localProperties.getProperty(propName)
-      if (propValue) {
-        systemProperty propName, propValue
-      }
-    }
-
     // Pass the FIREBASE_TOKEN environment variable to the test process
     def token = System.getenv('FIREBASE_TOKEN')
     if (token) {
