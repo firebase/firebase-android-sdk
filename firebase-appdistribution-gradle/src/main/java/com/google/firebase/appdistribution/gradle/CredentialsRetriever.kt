@@ -48,7 +48,11 @@ class CredentialsRetriever(
       return try {
         ServiceAccountCredentials.fromFile(serviceCredentialsFile).googleCredential
       } catch (e: IOException) {
-        throw AppDistributionException(SERVICE_CREDENTIALS_NOT_FOUND, cause = e)
+        throw AppDistributionException(
+          SERVICE_CREDENTIALS_NOT_FOUND,
+          cause = e,
+          extraInformation = serviceCredentialsPath
+        )
       }
     }
 
@@ -93,7 +97,11 @@ class CredentialsRetriever(
           ServiceAccountCredentials.fromFile(serviceCredentialsFile)
         envServiceAccountCredentials.googleCredential
       } catch (e: IOException) {
-        throw AppDistributionException(SERVICE_CREDENTIALS_NOT_FOUND, e)
+        throw AppDistributionException(
+          SERVICE_CREDENTIALS_NOT_FOUND,
+          e,
+          extraInformation = envGoogleCredentialsPath
+        )
       }
     }
 
