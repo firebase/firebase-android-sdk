@@ -20,3 +20,4 @@ vertexai-sdk-test-data/
 .terraform.lock.hcl
 *.tfstate
 *.tfstate.*
+firebase-appdistribution-gradle/service-credentials.json
