@@ -56,9 +56,11 @@ import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
 import io.kotest.property.ShrinkingMode
+import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.byte
 import io.kotest.property.arbitrary.byteArray
 import io.kotest.property.arbitrary.distinct
+import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.flatMap
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.map
@@ -716,10 +718,11 @@ class DataConnectCacheDatabaseUnitTest {
     dataConnectCacheDatabase.initialize()
 
     // Generate two currentTimeMillis values and a maxAge that is the exact number of milliseconds
-    // between the two times.
+    // between the two times, ensuring that maxAge is not zero (as that is covered by another test).
+    val timeArb = Arb.longWithEvenNumDigitsDistribution()
     val timesArb =
-      Arb.twoValues(Arb.longWithEvenNumDigitsDistribution()).map {
-        val (time1, time2) = listOf(it.value1, it.value1 + it.value2).sorted()
+      Arb.bind(timeArb, timeArb.filterNot { it == 0L }) { time, timeDelta ->
+        val (time1, time2) = listOf(time, time + timeDelta).sorted()
         val maxAge = durationProtoFromMillis(time2.toBigInteger() - time1.toBigInteger())
         Triple(time1, time2, maxAge)
       }
