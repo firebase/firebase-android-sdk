@@ -28,6 +28,7 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectAr
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.distinctPair
 import com.google.firebase.dataconnect.testutil.property.arbitrary.listNoRepeat
+import com.google.firebase.dataconnect.testutil.property.arbitrary.longWithEvenNumDigitsDistribution
 import com.google.firebase.dataconnect.testutil.property.arbitrary.next
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
@@ -686,6 +687,40 @@ class DataConnectCacheDatabaseUnitTest {
         )
 
       result shouldBe Stale(expiryAmount)
+    }
+  }
+
+  @Test
+  fun `getQueryResult() should return found at maxAge`() = runTest {
+    dataConnectCacheDatabase.initialize()
+
+    checkAll(
+      propTestConfig,
+      authUidArb(),
+      queryIdArb(),
+      Arb.longWithEvenNumDigitsDistribution().distinctPair(),
+      QueryResultArb(entityCountRange = 0..3),
+    ) { authUid, queryId, times, queryResult ->
+      val (time1, time2) = times.toList().sorted()
+      val maxAge = durationProtoFromNanos(time2.toBigInteger() - time1.toBigInteger())
+
+      dataConnectCacheDatabase.insertQueryResult(
+        authUid.string,
+        queryId.bytes,
+        queryResult.hydratedStruct,
+        maxAge = maxAge,
+        currentTimeMillis = time1,
+        getEntityIdForPath = null,
+      )
+
+      val result =
+        dataConnectCacheDatabase.getQueryResult(
+          authUid.string,
+          queryId.bytes,
+          currentTimeMillis = time2
+        )
+
+      result.shouldBeInstanceOf<Found>().freshnessRemaining shouldBe kotlin.time.Duration.ZERO
     }
   }
 }
