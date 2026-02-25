@@ -306,8 +306,8 @@ internal class QueryResultArb(
 
       return if (entityId in entityStructById) {
         val entityStruct = entityStructById[entityId]!!
-        val pruneEntityStruct = entityStruct.withPrunedFields()
-        EntityIdStructPair(entityId, pruneEntityStruct)
+        val prunedEntityStruct = entityStruct.withPrunedFields()
+        EntityIdStructPair(entityId, prunedEntityStruct)
       } else if (memoizedEntityStructById === null || entityId !in memoizedEntityStructById) {
         val entityStruct = entityArb.next(rs, entityStructEdgeCaseProbability).struct
         entityStructById[entityId] = entityStruct
