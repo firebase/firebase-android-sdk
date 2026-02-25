@@ -40,7 +40,7 @@ import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import com.google.firebase.dataconnect.util.BigIntegerUtil.clampToLong
 import com.google.firebase.dataconnect.util.ImmutableByteArray
-import com.google.protobuf.Duration
+import com.google.protobuf.Duration as DurationProto
 import com.google.protobuf.Struct
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.print.print
@@ -75,6 +75,7 @@ import io.mockk.verify
 import java.io.File
 import java.math.BigInteger
 import kotlin.random.nextInt
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.nanoseconds
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -639,7 +640,7 @@ class DataConnectCacheDatabaseUnitTest {
         authUid.string,
         queryId.bytes,
         queryResult.hydratedStruct,
-        maxAge = Duration.getDefaultInstance(),
+        maxAge = DurationProto.getDefaultInstance(),
         currentTimeMillis = time1,
         getEntityIdForPath = null,
       )
@@ -719,7 +720,7 @@ class DataConnectCacheDatabaseUnitTest {
           currentTimeMillis = time2
         )
 
-      result.shouldBeInstanceOf<Found>().freshnessRemaining shouldBe kotlin.time.Duration.ZERO
+      result.shouldBeInstanceOf<Found>().freshnessRemaining shouldBe Duration.ZERO
     }
   }
 }
@@ -749,8 +750,8 @@ private class StaleQueryResultArb : Arb<StaleQueryResultArb.Sample>() {
   data class Sample(
     val time1: Long,
     val time2: Long,
-    val maxAge: Duration,
-    val expiryAmount: kotlin.time.Duration,
+    val maxAge: DurationProto,
+    val expiryAmount: Duration,
     val edgeCases: Set<EdgeCase>,
     val time1EdgeCaseProbability: Float,
     val time2EdgeCaseProbability: Float,
@@ -779,7 +780,7 @@ private class StaleQueryResultArb : Arb<StaleQueryResultArb.Sample>() {
           if (expectedExpiryAmountInMillis <= MAX_DURATION_MILLIS.toBigInteger()) {
             expectedExpiryAmountInMillis.toLong().milliseconds
           } else {
-            kotlin.time.Duration.INFINITE
+            Duration.INFINITE
           }
         }
       check(expiryAmount == expectedExpiryAmount)
@@ -873,7 +874,7 @@ private class StaleQueryResultArb : Arb<StaleQueryResultArb.Sample>() {
     time1: Long,
     time2: Long,
     edgeCaseProbability: Float
-  ): Duration {
+  ): DurationProto {
     require(time1 < time2)
     val time1Nanos = time1.toBigInteger() * 1_000_000.toBigInteger()
     val time2Nanos = time2.toBigInteger() * 1_000_000.toBigInteger()
@@ -888,11 +889,7 @@ private class StaleQueryResultArb : Arb<StaleQueryResultArb.Sample>() {
     return maxAgeArb.next(rs, edgeCaseProbability)
   }
 
-  private fun calculateExpiryAmount(
-    time1: Long,
-    time2: Long,
-    maxAge: Duration
-  ): kotlin.time.Duration {
+  private fun calculateExpiryAmount(time1: Long, time2: Long, maxAge: DurationProto): Duration {
     require(time1 < time2)
     val time1Nanos = time1.toBigInteger() * 1_000_000.toBigInteger()
     val time2Nanos = time2.toBigInteger() * 1_000_000.toBigInteger()
@@ -934,7 +931,7 @@ private fun hydratedStructWithMutatedEntityValues(
   return rehydrateQueryResult(sample1.queryResultProto, dehydratedEntityStructById)
 }
 
-private fun durationFromNanos(nanos: BigInteger): kotlin.time.Duration {
+private fun durationFromNanos(nanos: BigInteger): Duration {
   require(nanos.signum() >= 0) { "nanos must be non-negative, but it is negative: $nanos" }
   return if (nanos <= MAX_DURATION_NANOS.toBigInteger()) {
     nanos.toLong().nanoseconds
@@ -943,21 +940,21 @@ private fun durationFromNanos(nanos: BigInteger): kotlin.time.Duration {
   }
 }
 
-private fun durationFromMillis(millis: BigInteger): kotlin.time.Duration {
+private fun durationFromMillis(millis: BigInteger): Duration {
   require(millis.signum() >= 0) { "millis must be non-negative, but it is negative: $millis" }
   return if (millis <= MAX_DURATION_MILLIS.toBigInteger()) {
     millis.toLong().milliseconds
   } else {
-    kotlin.time.Duration.INFINITE
+    Duration.INFINITE
   }
 }
 
-private fun durationProtoFromMillis(millis: BigInteger): Duration {
+private fun durationProtoFromMillis(millis: BigInteger): DurationProto {
   require(millis.signum() >= 0) { "millis must be non-negative, but it is negative: $millis" }
   return durationProtoFromNanos(millis * 1_000_000.toBigInteger())
 }
 
-private fun durationProtoFromNanos(nanos: BigInteger): Duration {
+private fun durationProtoFromNanos(nanos: BigInteger): DurationProto {
   require(nanos.signum() >= 0) { "nanos must be non-negative, but it is negative: $nanos" }
   val secondsFromNanosMultiplier = 1_000_000_000.toBigInteger()
 
@@ -968,7 +965,7 @@ private fun durationProtoFromNanos(nanos: BigInteger): Duration {
   check(nanosComponent.signum() >= 0)
   check(nanosComponent <= 999_999_999.toBigInteger())
 
-  return Duration.newBuilder()
+  return DurationProto.newBuilder()
     .setSeconds(secondsComponent.clampToLong())
     .setNanos(nanosComponent.toInt())
     .build()

@@ -35,7 +35,7 @@ import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.ProtoUtil.toDataConnectPath
 import com.google.firebase.dataconnect.util.ProtoUtil.toStructProto
 import com.google.firebase.dataconnect.util.SuspendingLazy
-import com.google.protobuf.Duration
+import com.google.protobuf.Duration as DurationProto
 import com.google.protobuf.Struct
 import google.firebase.dataconnect.proto.ConnectorServiceGrpc
 import google.firebase.dataconnect.proto.ConnectorServiceGrpcKt
@@ -57,6 +57,7 @@ import io.grpc.android.AndroidChannelBuilder
 import java.io.File
 import java.lang.System.currentTimeMillis
 import java.util.concurrent.TimeUnit
+import kotlin.time.Duration
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asExecutor
@@ -93,11 +94,11 @@ internal class DataConnectGrpcRPCs(
   private val mutex = Mutex()
   private var closed = false
 
-  data class CacheSettings(val dbFile: File?, val maxAge: kotlin.time.Duration)
+  data class CacheSettings(val dbFile: File?, val maxAge: Duration)
 
   private data class CacheDbSettingsPair(
     val db: DataConnectCacheDatabase,
-    val maxAge: Duration,
+    val maxAge: DurationProto,
   )
 
   // Use the non-main-thread CoroutineDispatcher to avoid blocking operations on the main thread.
@@ -111,7 +112,7 @@ internal class DataConnectGrpcRPCs(
 
         val maxAge =
           cacheSettings.maxAge.toComponents { seconds, nanos ->
-            Duration.newBuilder().setSeconds(seconds).setNanos(nanos).build()
+            DurationProto.newBuilder().setSeconds(seconds).setNanos(nanos).build()
           }
 
         val dbFile = cacheSettings.dbFile
@@ -228,7 +229,7 @@ internal class DataConnectGrpcRPCs(
     val cacheDb: DataConnectCacheDatabase,
     val authUid: String?,
     val queryId: ImmutableByteArray,
-    val maxAge: Duration,
+    val maxAge: DurationProto,
   )
 
   private suspend fun queryCacheInfo(
