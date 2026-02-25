@@ -30,6 +30,7 @@ fun registerDataConnectKotestTestutilPrinters() {
   Printers.add(Duration::class, KotlinTimeDurationPrint)
   Printers.add(Pair::class, PairPrint)
   Printers.add(Triple::class, TriplePrint)
+  Printers.add(Quadruple::class, QuadruplePrint)
 }
 
 private object DurationProtoPrint : Print<DurationProto> {
@@ -68,4 +69,15 @@ private object TriplePrint : Print<Triple<*, *, *>> {
 
   private val Triple<*, *, *>.printString: String
     get() = "Triple(${first.print().value}, ${second.print().value}, ${third.print().value})"
+}
+
+private object QuadruplePrint : Print<Quadruple<*, *, *, *>> {
+
+  @Suppress("OVERRIDE_DEPRECATION")
+  override fun print(a: Quadruple<*, *, *, *>): Printed = a.printString.printed()
+
+  private val Quadruple<*, *, *, *>.printString: String
+    get() =
+      "Quadruple(${first.print().value}, ${second.print().value}, " +
+        "${third.print().value}, ${fourth.print().value})"
 }
