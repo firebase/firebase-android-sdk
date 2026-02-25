@@ -31,6 +31,7 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.listNoRepeat
 import com.google.firebase.dataconnect.testutil.property.arbitrary.longWithEvenNumDigitsDistribution
 import com.google.firebase.dataconnect.testutil.property.arbitrary.next
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
+import com.google.firebase.dataconnect.testutil.property.arbitrary.sorted
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
 import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
 import com.google.firebase.dataconnect.testutil.property.arbitrary.twoValues
@@ -631,10 +632,10 @@ class DataConnectCacheDatabaseUnitTest {
       propTestConfig,
       authUidArb(),
       queryIdArb(),
-      StaleQueryResultArb(),
+      Arb.twoValues(Arb.longWithEvenNumDigitsDistribution()),
       QueryResultArb(entityCountRange = 0..3),
-    ) { authUid, queryId, staleQueryResultSample, queryResult ->
-      val (time1, time2) = staleQueryResultSample
+    ) { authUid, queryId, times, queryResult ->
+      val (time1, time2) = times.run { listOf(value1, value1 + value2).sorted() }
 
       dataConnectCacheDatabase.insertQueryResult(
         authUid.string,
@@ -694,16 +695,22 @@ class DataConnectCacheDatabaseUnitTest {
   fun `getQueryResult() should return found at maxAge`() = runTest {
     dataConnectCacheDatabase.initialize()
 
+    // Generate two currentTimeMillis values and a maxAge that is the exact number of milliseconds
+    // between the two times.
+    val timesArb =
+      Arb.twoValues(Arb.longWithEvenNumDigitsDistribution()).map {
+        val (time1, time2) = listOf(it.value1, it.value1 + it.value2).sorted()
+        val maxAge = durationProtoFromMillis(time2.toBigInteger() - time1.toBigInteger())
+        Triple(time1, time2, maxAge)
+      }
+
     checkAll(
       propTestConfig,
       authUidArb(),
       queryIdArb(),
-      Arb.longWithEvenNumDigitsDistribution().distinctPair(),
+      timesArb,
       QueryResultArb(entityCountRange = 0..3),
-    ) { authUid, queryId, times, queryResult ->
-      val (time1, time2) = times.toList().sorted()
-      val maxAge = durationProtoFromMillis(time2.toBigInteger() - time1.toBigInteger())
-
+    ) { authUid, queryId, (time1, time2, maxAge), queryResult ->
       dataConnectCacheDatabase.insertQueryResult(
         authUid.string,
         queryId.bytes,
