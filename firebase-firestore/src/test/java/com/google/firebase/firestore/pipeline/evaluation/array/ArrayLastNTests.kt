@@ -19,101 +19,83 @@ import com.google.firebase.firestore.model.Values.NULL_VALUE
 import com.google.firebase.firestore.model.Values.encodeValue
 import com.google.firebase.firestore.pipeline.Expression
 import com.google.firebase.firestore.pipeline.Expression.Companion.array
-import com.google.firebase.firestore.pipeline.Expression.Companion.arrayFirst
+import com.google.firebase.firestore.pipeline.Expression.Companion.arrayLastN
 import com.google.firebase.firestore.pipeline.Expression.Companion.constant
 import com.google.firebase.firestore.pipeline.Expression.Companion.field
-import com.google.firebase.firestore.pipeline.Expression.Companion.map
 import com.google.firebase.firestore.pipeline.Expression.Companion.nullValue
 import com.google.firebase.firestore.pipeline.evaluate
 import com.google.firebase.firestore.pipeline.evaluation.EvaluateResult
 import com.google.firebase.firestore.pipeline.evaluation.EvaluateResultError
-import com.google.firebase.firestore.pipeline.evaluation.EvaluateResultUnset
 import com.google.firebase.firestore.pipeline.evaluation.EvaluateResultValue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
-class ArrayFirstTests {
-  private data class ArrayFirstTestCase(
+class ArrayLastNTests {
+  private data class ArrayLastNTestCase(
     val array: Expression,
+    val n: Expression,
     val expected: EvaluateResult,
     val description: String
   )
 
   @Test
-  fun `arrayFirst - general cases`() {
+  fun `arrayLastN - general cases`() {
     val testCases =
       listOf(
-        ArrayFirstTestCase(array("1", 42L, true), EvaluateResultValue(encodeValue("1")), "basic"),
-        ArrayFirstTestCase(array(), EvaluateResultUnset, "empty array"),
-        ArrayFirstTestCase(
-          array(null, "second"),
-          EvaluateResultValue(NULL_VALUE),
-          "null first element"
+        ArrayLastNTestCase(
+          array(1, 2, 3),
+          constant(2),
+          EvaluateResult.list(listOf(encodeValue(2), encodeValue(3))),
+          "basic last 2"
         ),
-        ArrayFirstTestCase(
-          array(array(1L, 2L), 3L),
-          EvaluateResultValue(encodeValue(listOf(encodeValue(1L), encodeValue(2L)))),
-          "nested arrays"
+        ArrayLastNTestCase(array(1, 2, 3), constant(0), EvaluateResult.list(emptyList()), "last 0"),
+        ArrayLastNTestCase(
+          array(1, 2, 3),
+          constant(5),
+          EvaluateResult.list(listOf(encodeValue(1), encodeValue(2), encodeValue(3))),
+          "last 5 (overflow)"
         ),
-        ArrayFirstTestCase(
-          array("single"),
-          EvaluateResultValue(encodeValue("single")),
-          "single element"
-        ),
-        ArrayFirstTestCase(nullValue(), EvaluateResultValue(NULL_VALUE), "null input"),
-        ArrayFirstTestCase(
+        ArrayLastNTestCase(array(), constant(1), EvaluateResult.list(emptyList()), "empty array"),
+        ArrayLastNTestCase(nullValue(), constant(1), EvaluateResultValue(NULL_VALUE), "null input"),
+        ArrayLastNTestCase(
           field("nonexistent"),
+          constant(1),
           EvaluateResultValue(NULL_VALUE),
           "non-existent input"
         )
       )
 
     for (testCase in testCases) {
-      val expr = arrayFirst(testCase.array)
+      val expr = arrayLastN(testCase.array, testCase.n)
       val result = evaluate(expr)
-      assertWithMessage("arrayFirst ${testCase.description}")
+      assertWithMessage("arrayLastN ${testCase.description}")
         .that(result)
         .isEqualTo(testCase.expected)
     }
   }
 
   @Test
-  fun `arrayFirst - error cases`() {
+  fun `arrayLastN - error cases`() {
     val testCases =
       listOf(
-        ArrayFirstTestCase(
-          Expression.vector(doubleArrayOf(1.0, 2.0)),
+        ArrayLastNTestCase(array(1), nullValue(), EvaluateResultError, "null n"),
+        ArrayLastNTestCase(array(1, 2, 3), constant(-1), EvaluateResultError, "negative n"),
+        ArrayLastNTestCase(
+          constant("not array"),
+          constant(1),
           EvaluateResultError,
-          "received unexpected input type vector"
+          "invalid array type"
         ),
-        ArrayFirstTestCase(
-          constant("notAnArray"),
-          EvaluateResultError,
-          "received unexpected input type string"
-        ),
-        ArrayFirstTestCase(
-          constant(123L),
-          EvaluateResultError,
-          "received unexpected input type long"
-        ),
-        ArrayFirstTestCase(
-          constant(true),
-          EvaluateResultError,
-          "received unexpected input type boolean"
-        ),
-        ArrayFirstTestCase(
-          map(mapOf("a" to 1)),
-          EvaluateResultError,
-          "received unexpected input type map"
-        )
+        ArrayLastNTestCase(array(1), constant("not number"), EvaluateResultError, "invalid n type"),
+        ArrayLastNTestCase(array(1), constant(1.5), EvaluateResultError, "float n type")
       )
 
     for (testCase in testCases) {
-      val expr = arrayFirst(testCase.array)
+      val expr = arrayLastN(testCase.array, testCase.n)
       val result = evaluate(expr)
-      assertWithMessage("arrayFirst ${testCase.description}")
+      assertWithMessage("arrayLastN ${testCase.description}")
         .that(result)
         .isEqualTo(testCase.expected)
     }

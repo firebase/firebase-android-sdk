@@ -24,7 +24,17 @@ import com.google.firebase.firestore.pipeline.Expression.Companion.and
 import com.google.firebase.firestore.pipeline.Expression.Companion.arrayContains
 import com.google.firebase.firestore.pipeline.Expression.Companion.arrayContainsAny
 import com.google.firebase.firestore.pipeline.Expression.Companion.arrayFirst
+import com.google.firebase.firestore.pipeline.Expression.Companion.arrayFirstN
+import com.google.firebase.firestore.pipeline.Expression.Companion.arrayIndexOf
+import com.google.firebase.firestore.pipeline.Expression.Companion.arrayIndexOfAll
+import com.google.firebase.firestore.pipeline.Expression.Companion.arrayLast
+import com.google.firebase.firestore.pipeline.Expression.Companion.arrayLastIndexOf
+import com.google.firebase.firestore.pipeline.Expression.Companion.arrayLastN
 import com.google.firebase.firestore.pipeline.Expression.Companion.arrayLength
+import com.google.firebase.firestore.pipeline.Expression.Companion.arrayMaximum
+import com.google.firebase.firestore.pipeline.Expression.Companion.arrayMaximumN
+import com.google.firebase.firestore.pipeline.Expression.Companion.arrayMinimum
+import com.google.firebase.firestore.pipeline.Expression.Companion.arrayMinimumN
 import com.google.firebase.firestore.pipeline.Expression.Companion.byteLength
 import com.google.firebase.firestore.pipeline.Expression.Companion.ceil
 import com.google.firebase.firestore.pipeline.Expression.Companion.charLength
@@ -212,6 +222,10 @@ class RealtimePipelineTest {
 
   @Before
   fun setUp() {
+    println("Running RealtimePipelineTest on ${IntegrationTestUtil.getTargetBackend()}")
+    println("Running RealtimePipelineTest on ${IntegrationTestUtil.getBackendEdition()}")
+    println("Running RealtimePipelineTest on ${IntegrationTestUtil.testEnvDatabaseId()}")
+
     org.junit.Assume.assumeTrue(
       "Skip RealtimePipelineTest on prod",
       IntegrationTestUtil.isRunningAgainstEmulator()
@@ -2035,6 +2049,271 @@ class RealtimePipelineTest {
   }
 
   @Test
+  fun testArrayFirstN() = runBlocking {
+    val pipeline =
+      db
+        .realtimePipeline()
+        .collection(collRef.path)
+        .where(arrayFirstN("tags", 2).equal("adventure"))
+
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
+    val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
+
+    val firstSnapshot = channel.receive()
+    assertThat(firstSnapshot.metadata.isConsistentBetweenListeners).isFalse()
+    assertThat(firstSnapshot.results).hasSize(1)
+
+    val secondSnapshot = channel.receive()
+    assertThat(secondSnapshot.metadata.isConsistentBetweenListeners).isTrue()
+    assertThat(secondSnapshot.results).hasSize(1)
+    assertThat(secondSnapshot.getChanges()).isEmpty()
+
+    job.cancel()
+  }
+
+  @Test
+  fun testArrayLast() = runBlocking {
+    val pipeline =
+      db.realtimePipeline().collection(collRef.path).where(arrayLast("tags").equal("adventure"))
+
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
+    val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
+
+    val firstSnapshot = channel.receive()
+    assertThat(firstSnapshot.metadata.isConsistentBetweenListeners).isFalse()
+    assertThat(firstSnapshot.results).hasSize(1)
+
+    val secondSnapshot = channel.receive()
+    assertThat(secondSnapshot.metadata.isConsistentBetweenListeners).isTrue()
+    assertThat(secondSnapshot.results).hasSize(1)
+    assertThat(secondSnapshot.getChanges()).isEmpty()
+
+    job.cancel()
+  }
+
+  @Test
+  fun testArrayLastN() = runBlocking {
+    val pipeline =
+      db.realtimePipeline().collection(collRef.path).where(arrayLastN("tags", 2).equal("adventure"))
+
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
+    val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
+
+    val firstSnapshot = channel.receive()
+    assertThat(firstSnapshot.metadata.isConsistentBetweenListeners).isFalse()
+    assertThat(firstSnapshot.results).hasSize(1)
+
+    val secondSnapshot = channel.receive()
+    assertThat(secondSnapshot.metadata.isConsistentBetweenListeners).isTrue()
+    assertThat(secondSnapshot.results).hasSize(1)
+    assertThat(secondSnapshot.getChanges()).isEmpty()
+
+    job.cancel()
+  }
+
+  @Test
+  fun testArrayMinimum() = runBlocking {
+    val pipeline =
+      db.realtimePipeline().collection(collRef.path).where(arrayMinimum("tags").equal("adventure"))
+
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
+    val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
+
+    val firstSnapshot = channel.receive()
+    assertThat(firstSnapshot.metadata.isConsistentBetweenListeners).isFalse()
+    assertThat(firstSnapshot.results).hasSize(1)
+
+    val secondSnapshot = channel.receive()
+    assertThat(secondSnapshot.metadata.isConsistentBetweenListeners).isTrue()
+    assertThat(secondSnapshot.results).hasSize(1)
+    assertThat(secondSnapshot.getChanges()).isEmpty()
+
+    job.cancel()
+  }
+
+  @Test
+  fun testArrayMinimumN() = runBlocking {
+    val pipeline =
+      db
+        .realtimePipeline()
+        .collection(collRef.path)
+        .where(arrayMinimumN("tags", 2).equal("adventure"))
+
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
+    val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
+
+    val firstSnapshot = channel.receive()
+    assertThat(firstSnapshot.metadata.isConsistentBetweenListeners).isFalse()
+    assertThat(firstSnapshot.results).hasSize(1)
+
+    val secondSnapshot = channel.receive()
+    assertThat(secondSnapshot.metadata.isConsistentBetweenListeners).isTrue()
+    assertThat(secondSnapshot.results).hasSize(1)
+    assertThat(secondSnapshot.getChanges()).isEmpty()
+
+    job.cancel()
+  }
+
+  @Test
+  fun testArrayMaximum() = runBlocking {
+    val pipeline =
+      db.realtimePipeline().collection(collRef.path).where(arrayMaximum("tags").equal("adventure"))
+
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
+    val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
+
+    val firstSnapshot = channel.receive()
+    assertThat(firstSnapshot.metadata.isConsistentBetweenListeners).isFalse()
+    assertThat(firstSnapshot.results).hasSize(1)
+
+    val secondSnapshot = channel.receive()
+    assertThat(secondSnapshot.metadata.isConsistentBetweenListeners).isTrue()
+    assertThat(secondSnapshot.results).hasSize(1)
+    assertThat(secondSnapshot.getChanges()).isEmpty()
+
+    job.cancel()
+  }
+
+  @Test
+  fun testArrayMaximumN() = runBlocking {
+    val pipeline =
+      db
+        .realtimePipeline()
+        .collection(collRef.path)
+        .where(arrayMaximumN("tags", 2).equal("adventure"))
+
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
+    val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
+
+    val firstSnapshot = channel.receive()
+    assertThat(firstSnapshot.metadata.isConsistentBetweenListeners).isFalse()
+    assertThat(firstSnapshot.results).hasSize(1)
+
+    val secondSnapshot = channel.receive()
+    assertThat(secondSnapshot.metadata.isConsistentBetweenListeners).isTrue()
+    assertThat(secondSnapshot.results).hasSize(1)
+    assertThat(secondSnapshot.getChanges()).isEmpty()
+
+    job.cancel()
+  }
+
+  @Test
+  fun testArrayIndexOf() = runBlocking {
+    val pipeline =
+      db
+        .realtimePipeline()
+        .collection(collRef.path)
+        .where(arrayIndexOf("tags", "adventure").equal(0))
+
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
+    val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
+
+    val firstSnapshot = channel.receive()
+    assertThat(firstSnapshot.metadata.isConsistentBetweenListeners).isFalse()
+    assertThat(firstSnapshot.results).hasSize(1)
+
+    val secondSnapshot = channel.receive()
+    assertThat(secondSnapshot.metadata.isConsistentBetweenListeners).isTrue()
+    assertThat(secondSnapshot.results).hasSize(1)
+    assertThat(secondSnapshot.getChanges()).isEmpty()
+
+    job.cancel()
+  }
+
+  @Test
+  fun testArrayIndexOfEdgeCases() = runBlocking {
+    // Test missing value (expect -1)
+    var pipeline =
+      db
+        .realtimePipeline()
+        .collection(collRef.path)
+        .where(arrayIndexOf("tags", "nonexistent").equal(-1))
+
+    var options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    var channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
+    var job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
+
+    var snapshot = channel.receive()
+    assertThat(snapshot.results).hasSize(1) // book1 should match
+    var secondSnapshot = channel.receive()
+    assertThat(secondSnapshot.results).hasSize(1)
+    job.cancel()
+
+    // Test missing field (expect null)
+    pipeline =
+      db
+        .realtimePipeline()
+        .collection(collRef.path)
+        .where(arrayIndexOf("nonexistent_field", "val").equal(nullValue()))
+
+    channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
+    job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
+
+    snapshot = channel.receive()
+    assertThat(snapshot.results)
+      .hasSize(1) // book1 should match (result is null, so equals(null) matches)
+    secondSnapshot = channel.receive()
+    assertThat(secondSnapshot.results).hasSize(1)
+    job.cancel()
+  }
+
+  @Test
+  fun testArrayLastIndexOf() = runBlocking {
+    val pipeline =
+      db
+        .realtimePipeline()
+        .collection(collRef.path)
+        .where(arrayLastIndexOf("tags", "adventure").equal(0))
+
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
+    val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
+
+    val firstSnapshot = channel.receive()
+    assertThat(firstSnapshot.metadata.isConsistentBetweenListeners).isFalse()
+    assertThat(firstSnapshot.results).hasSize(1)
+
+    val secondSnapshot = channel.receive()
+    assertThat(secondSnapshot.metadata.isConsistentBetweenListeners).isTrue()
+    assertThat(secondSnapshot.results).hasSize(1)
+    assertThat(secondSnapshot.getChanges()).isEmpty()
+
+    job.cancel()
+  }
+
+  @Test
+  fun testArrayIndexOfAll() = runBlocking {
+    val pipeline =
+      db
+        .realtimePipeline()
+        .collection(collRef.path)
+        .where(arrayIndexOfAll("tags", "adventure").equal(listOf(0L)))
+
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
+    val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
+
+    val firstSnapshot = channel.receive()
+    assertThat(firstSnapshot.metadata.isConsistentBetweenListeners).isFalse()
+    assertThat(firstSnapshot.results).hasSize(1)
+
+    val secondSnapshot = channel.receive()
+    assertThat(secondSnapshot.metadata.isConsistentBetweenListeners).isTrue()
+    assertThat(secondSnapshot.results).hasSize(1)
+    assertThat(secondSnapshot.getChanges()).isEmpty()
+
+    job.cancel()
+  }
+
+  @Test
   fun testSubstring() = runBlocking {
     val pipeline =
       db
@@ -2056,6 +2335,114 @@ class RealtimePipelineTest {
     val secondSnapshot = channel.receive()
     assertThat(secondSnapshot.metadata.isConsistentBetweenListeners).isTrue()
     assertThat(secondSnapshot.results).hasSize(4)
+    assertThat(secondSnapshot.getChanges()).isEmpty()
+
+    job.cancel()
+  }
+  @Test
+  fun testArrayIndexOf() = runBlocking {
+    val pipeline =
+      db
+        .realtimePipeline()
+        .collection(collRef.path)
+        .where(arrayIndexOf("tags", "adventure").equal(0))
+
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
+    val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
+
+    val firstSnapshot = channel.receive()
+    assertThat(firstSnapshot.metadata.isConsistentBetweenListeners).isFalse()
+    assertThat(firstSnapshot.results).hasSize(1)
+
+    val secondSnapshot = channel.receive()
+    assertThat(secondSnapshot.metadata.isConsistentBetweenListeners).isTrue()
+    assertThat(secondSnapshot.results).hasSize(1)
+    assertThat(secondSnapshot.getChanges()).isEmpty()
+
+    job.cancel()
+  }
+
+  @Test
+  fun testArrayIndexOfEdgeCases() = runBlocking {
+    // Test missing value (expect -1)
+    var pipeline =
+      db
+        .realtimePipeline()
+        .collection(collRef.path)
+        .where(arrayIndexOf("tags", "nonexistent").equal(-1))
+
+    var options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    var channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
+    var job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
+
+    var snapshot = channel.receive()
+    assertThat(snapshot.results).hasSize(1) // book1 should match
+    var secondSnapshot = channel.receive()
+    assertThat(secondSnapshot.results).hasSize(1)
+    job.cancel()
+
+    // Test missing field (expect null)
+    pipeline =
+      db
+        .realtimePipeline()
+        .collection(collRef.path)
+        .where(arrayIndexOf("nonexistent_field", "val").equal(nullValue()))
+
+    channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
+    job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
+
+    snapshot = channel.receive()
+    assertThat(snapshot.results)
+      .hasSize(1) // book1 should match (result is null, so equals(null) matches)
+    secondSnapshot = channel.receive()
+    assertThat(secondSnapshot.results).hasSize(1)
+    job.cancel()
+  }
+
+  @Test
+  fun testArrayLastIndexOf() = runBlocking {
+    val pipeline =
+      db
+        .realtimePipeline()
+        .collection(collRef.path)
+        .where(arrayLastIndexOf("tags", "adventure").equal(0))
+
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
+    val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
+
+    val firstSnapshot = channel.receive()
+    assertThat(firstSnapshot.metadata.isConsistentBetweenListeners).isFalse()
+    assertThat(firstSnapshot.results).hasSize(1)
+
+    val secondSnapshot = channel.receive()
+    assertThat(secondSnapshot.metadata.isConsistentBetweenListeners).isTrue()
+    assertThat(secondSnapshot.results).hasSize(1)
+    assertThat(secondSnapshot.getChanges()).isEmpty()
+
+    job.cancel()
+  }
+
+  @Test
+  fun testArrayIndexOfAll() = runBlocking {
+    val pipeline =
+      db
+        .realtimePipeline()
+        .collection(collRef.path)
+        .where(arrayIndexOfAll("tags", "adventure").equal(listOf(0L)))
+
+    val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
+    val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
+    val job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
+
+    val firstSnapshot = channel.receive()
+    assertThat(firstSnapshot.metadata.isConsistentBetweenListeners).isFalse()
+    assertThat(firstSnapshot.results).hasSize(1)
+
+    val secondSnapshot = channel.receive()
+    assertThat(secondSnapshot.metadata.isConsistentBetweenListeners).isTrue()
+    assertThat(secondSnapshot.results).hasSize(1)
     assertThat(secondSnapshot.getChanges()).isEmpty()
 
     job.cancel()

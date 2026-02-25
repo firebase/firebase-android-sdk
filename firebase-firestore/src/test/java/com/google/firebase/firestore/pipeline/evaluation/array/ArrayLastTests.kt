@@ -19,7 +19,7 @@ import com.google.firebase.firestore.model.Values.NULL_VALUE
 import com.google.firebase.firestore.model.Values.encodeValue
 import com.google.firebase.firestore.pipeline.Expression
 import com.google.firebase.firestore.pipeline.Expression.Companion.array
-import com.google.firebase.firestore.pipeline.Expression.Companion.arrayFirst
+import com.google.firebase.firestore.pipeline.Expression.Companion.arrayLast
 import com.google.firebase.firestore.pipeline.Expression.Companion.constant
 import com.google.firebase.firestore.pipeline.Expression.Companion.field
 import com.google.firebase.firestore.pipeline.Expression.Companion.map
@@ -34,36 +34,36 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
-class ArrayFirstTests {
-  private data class ArrayFirstTestCase(
+class ArrayLastTests {
+  private data class ArrayLastTestCase(
     val array: Expression,
     val expected: EvaluateResult,
     val description: String
   )
 
   @Test
-  fun `arrayFirst - general cases`() {
+  fun `arrayLast - general cases`() {
     val testCases =
       listOf(
-        ArrayFirstTestCase(array("1", 42L, true), EvaluateResultValue(encodeValue("1")), "basic"),
-        ArrayFirstTestCase(array(), EvaluateResultUnset, "empty array"),
-        ArrayFirstTestCase(
-          array(null, "second"),
+        ArrayLastTestCase(array("1", 42L, true), EvaluateResultValue(encodeValue(true)), "basic"),
+        ArrayLastTestCase(array(), EvaluateResultUnset, "empty array"),
+        ArrayLastTestCase(
+          array("first", null),
           EvaluateResultValue(NULL_VALUE),
-          "null first element"
+          "null last element"
         ),
-        ArrayFirstTestCase(
-          array(array(1L, 2L), 3L),
+        ArrayLastTestCase(
+          array(array(1L, 2L)),
           EvaluateResultValue(encodeValue(listOf(encodeValue(1L), encodeValue(2L)))),
           "nested arrays"
         ),
-        ArrayFirstTestCase(
+        ArrayLastTestCase(
           array("single"),
           EvaluateResultValue(encodeValue("single")),
           "single element"
         ),
-        ArrayFirstTestCase(nullValue(), EvaluateResultValue(NULL_VALUE), "null input"),
-        ArrayFirstTestCase(
+        ArrayLastTestCase(nullValue(), EvaluateResultValue(NULL_VALUE), "null input"),
+        ArrayLastTestCase(
           field("nonexistent"),
           EvaluateResultValue(NULL_VALUE),
           "non-existent input"
@@ -71,39 +71,39 @@ class ArrayFirstTests {
       )
 
     for (testCase in testCases) {
-      val expr = arrayFirst(testCase.array)
+      val expr = arrayLast(testCase.array)
       val result = evaluate(expr)
-      assertWithMessage("arrayFirst ${testCase.description}")
+      assertWithMessage("arrayLast ${testCase.description}")
         .that(result)
         .isEqualTo(testCase.expected)
     }
   }
 
   @Test
-  fun `arrayFirst - error cases`() {
+  fun `arrayLast - error cases`() {
     val testCases =
       listOf(
-        ArrayFirstTestCase(
+        ArrayLastTestCase(
           Expression.vector(doubleArrayOf(1.0, 2.0)),
           EvaluateResultError,
           "received unexpected input type vector"
         ),
-        ArrayFirstTestCase(
+        ArrayLastTestCase(
           constant("notAnArray"),
           EvaluateResultError,
           "received unexpected input type string"
         ),
-        ArrayFirstTestCase(
+        ArrayLastTestCase(
           constant(123L),
           EvaluateResultError,
           "received unexpected input type long"
         ),
-        ArrayFirstTestCase(
+        ArrayLastTestCase(
           constant(true),
           EvaluateResultError,
           "received unexpected input type boolean"
         ),
-        ArrayFirstTestCase(
+        ArrayLastTestCase(
           map(mapOf("a" to 1)),
           EvaluateResultError,
           "received unexpected input type map"
@@ -111,9 +111,9 @@ class ArrayFirstTests {
       )
 
     for (testCase in testCases) {
-      val expr = arrayFirst(testCase.array)
+      val expr = arrayLast(testCase.array)
       val result = evaluate(expr)
-      assertWithMessage("arrayFirst ${testCase.description}")
+      assertWithMessage("arrayLast ${testCase.description}")
         .that(result)
         .isEqualTo(testCase.expected)
     }

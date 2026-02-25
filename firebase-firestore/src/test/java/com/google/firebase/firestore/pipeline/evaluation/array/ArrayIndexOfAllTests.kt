@@ -19,7 +19,7 @@ import com.google.firebase.firestore.model.Values.NULL_VALUE
 import com.google.firebase.firestore.model.Values.encodeValue
 import com.google.firebase.firestore.pipeline.Expression
 import com.google.firebase.firestore.pipeline.Expression.Companion.array
-import com.google.firebase.firestore.pipeline.Expression.Companion.arrayFirst
+import com.google.firebase.firestore.pipeline.Expression.Companion.arrayIndexOfAll
 import com.google.firebase.firestore.pipeline.Expression.Companion.constant
 import com.google.firebase.firestore.pipeline.Expression.Companion.field
 import com.google.firebase.firestore.pipeline.Expression.Companion.map
@@ -27,93 +27,129 @@ import com.google.firebase.firestore.pipeline.Expression.Companion.nullValue
 import com.google.firebase.firestore.pipeline.evaluate
 import com.google.firebase.firestore.pipeline.evaluation.EvaluateResult
 import com.google.firebase.firestore.pipeline.evaluation.EvaluateResultError
-import com.google.firebase.firestore.pipeline.evaluation.EvaluateResultUnset
 import com.google.firebase.firestore.pipeline.evaluation.EvaluateResultValue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
-class ArrayFirstTests {
-  private data class ArrayFirstTestCase(
+class ArrayIndexOfAllTests {
+  private data class ArrayIndexOfAllTestCase(
     val array: Expression,
+    val value: Expression,
     val expected: EvaluateResult,
     val description: String
   )
 
   @Test
-  fun `arrayFirst - general cases`() {
+  fun `arrayIndexOfAll - general cases`() {
     val testCases =
       listOf(
-        ArrayFirstTestCase(array("1", 42L, true), EvaluateResultValue(encodeValue("1")), "basic"),
-        ArrayFirstTestCase(array(), EvaluateResultUnset, "empty array"),
-        ArrayFirstTestCase(
-          array(null, "second"),
+        ArrayIndexOfAllTestCase(
+          array("1", 42L, true),
+          constant("1"),
+          EvaluateResultValue(encodeValue(listOf(0L).map { encodeValue(it) })),
+          "basic match single element"
+        ),
+        ArrayIndexOfAllTestCase(
+          array("1", 42L, true, 42L),
+          constant(42L),
+          EvaluateResultValue(encodeValue(listOf(1L, 3L).map { encodeValue(it) })),
+          "basic match multiple elements"
+        ),
+        ArrayIndexOfAllTestCase(
+          array("1", 42L, true),
+          constant("missing"),
+          EvaluateResultValue(encodeValue(emptyList<Long>().map { encodeValue(it) })),
+          "no match"
+        ),
+        ArrayIndexOfAllTestCase(
+          array(1L, 1L, 1L),
+          constant(1L),
+          EvaluateResultValue(encodeValue(listOf(0L, 1L, 2L).map { encodeValue(it) })),
+          "match all duplicates"
+        ),
+        ArrayIndexOfAllTestCase(
+          array(),
+          constant("anything"),
+          EvaluateResultValue(encodeValue(emptyList<Long>().map { encodeValue(it) })),
+          "empty array"
+        ),
+        ArrayIndexOfAllTestCase(
+          array("1", null, true, null),
+          nullValue(),
+          EvaluateResultValue(encodeValue(listOf(1L, 3L).map { encodeValue(it) })),
+          "match null element"
+        ),
+        ArrayIndexOfAllTestCase(
+          nullValue(),
+          constant("anything"),
           EvaluateResultValue(NULL_VALUE),
-          "null first element"
+          "null input array"
         ),
-        ArrayFirstTestCase(
-          array(array(1L, 2L), 3L),
-          EvaluateResultValue(encodeValue(listOf(encodeValue(1L), encodeValue(2L)))),
-          "nested arrays"
+        ArrayIndexOfAllTestCase(
+          field("nonexistent"),
+          constant("anything"),
+          EvaluateResultValue(NULL_VALUE),
+          "unset input array"
         ),
-        ArrayFirstTestCase(
-          array("single"),
-          EvaluateResultValue(encodeValue("single")),
-          "single element"
-        ),
-        ArrayFirstTestCase(nullValue(), EvaluateResultValue(NULL_VALUE), "null input"),
-        ArrayFirstTestCase(
+        ArrayIndexOfAllTestCase(
+          array("1", 2L),
           field("nonexistent"),
           EvaluateResultValue(NULL_VALUE),
-          "non-existent input"
+          "unset input value"
         )
       )
 
     for (testCase in testCases) {
-      val expr = arrayFirst(testCase.array)
+      val expr = arrayIndexOfAll(testCase.array, testCase.value)
       val result = evaluate(expr)
-      assertWithMessage("arrayFirst ${testCase.description}")
+      assertWithMessage("arrayIndexOfAll ${testCase.description}")
         .that(result)
         .isEqualTo(testCase.expected)
     }
   }
 
   @Test
-  fun `arrayFirst - error cases`() {
+  fun `arrayIndexOfAll - error cases`() {
     val testCases =
       listOf(
-        ArrayFirstTestCase(
+        ArrayIndexOfAllTestCase(
           Expression.vector(doubleArrayOf(1.0, 2.0)),
+          constant(1.0),
           EvaluateResultError,
           "received unexpected input type vector"
         ),
-        ArrayFirstTestCase(
+        ArrayIndexOfAllTestCase(
           constant("notAnArray"),
+          constant("a"),
           EvaluateResultError,
           "received unexpected input type string"
         ),
-        ArrayFirstTestCase(
+        ArrayIndexOfAllTestCase(
+          constant(123L),
           constant(123L),
           EvaluateResultError,
           "received unexpected input type long"
         ),
-        ArrayFirstTestCase(
+        ArrayIndexOfAllTestCase(
+          constant(true),
           constant(true),
           EvaluateResultError,
           "received unexpected input type boolean"
         ),
-        ArrayFirstTestCase(
+        ArrayIndexOfAllTestCase(
           map(mapOf("a" to 1)),
+          constant("a"),
           EvaluateResultError,
           "received unexpected input type map"
         )
       )
 
     for (testCase in testCases) {
-      val expr = arrayFirst(testCase.array)
+      val expr = arrayIndexOfAll(testCase.array, testCase.value)
       val result = evaluate(expr)
-      assertWithMessage("arrayFirst ${testCase.description}")
+      assertWithMessage("arrayIndexOfAll ${testCase.description}")
         .that(result)
         .isEqualTo(testCase.expected)
     }
