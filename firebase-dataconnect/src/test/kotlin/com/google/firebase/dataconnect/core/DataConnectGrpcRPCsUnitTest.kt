@@ -62,6 +62,7 @@ import io.kotest.property.checkAll
 import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.time.Duration.Companion.hours
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
@@ -235,7 +236,7 @@ class DataConnectGrpcRPCsClientUnitTest {
       sslEnabled = false,
       blockingCoroutineDispatcher = Dispatchers.IO,
       grpcMetadata = grpcMetadataArb.bind(),
-      cacheSettings = CacheSettings(newDbFile()),
+      cacheSettings = CacheSettings(newDbFile(), maxAge = 1.hours),
       parentLogger = mockLogger,
     )
 }

@@ -40,6 +40,7 @@ import java.util.Objects
 
 @Suppress("SpellCheckingInspection")
 fun registerDataConnectKotestPrinters() {
+  registerDataConnectKotestTestutilPrinters()
   Printers.add(Struct::class, StructCompactPrint)
   Printers.add(ListValue::class, ListValueCompactPrint)
   Printers.add(Value::class, ValueCompactPrint)
