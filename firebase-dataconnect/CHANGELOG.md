@@ -11,7 +11,7 @@
 - [changed] DataSource wired up and entity paths extracted from response.
   [#7814](https://github.com/firebase/firebase-android-sdk/pull/7814))
 - [changed] Offline caching now respects maxAge.
-  [#NNNN](https://github.com/firebase/firebase-android-sdk/pull/NNNN))
+  [#7848](https://github.com/firebase/firebase-android-sdk/pull/7848))
 
 # 17.1.3
 
