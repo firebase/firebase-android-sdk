@@ -25,6 +25,9 @@ import com.google.firebase.ai.type.GenerateContentResponse
 import com.google.firebase.ai.type.GenerateObjectResponse
 import com.google.firebase.ai.type.JsonSchema
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.onEach
 
 /**
  * A [GenerativeModelProvider] that delegates requests to a `defaultModel` and falls back to a
@@ -59,7 +62,7 @@ internal class FallbackGenerativeModelProvider(
   }
 
   override fun generateContentStream(prompt: List<Content>): Flow<GenerateContentResponse> {
-    return withFallback("generateContentStream") { generateContentStream(prompt) }
+    return withFlowFallback("generateContentStream") { generateContentStream(prompt) }
   }
 
   override suspend fun <T : Any> generateObject(
@@ -101,6 +104,49 @@ internal class FallbackGenerativeModelProvider(
         return fallbackModel.block()
       }
       throw e
+    }
+  }
+
+  // Flow-based fallback differs significantly from regular call fallback, primarily due to:
+  //
+  // 1. Exception Timing: Exceptions are thrown during *flow collection*, not at flow creation.
+  //    Therefore, a *wrapper flow* is utilized to manage emitting either default or fallback
+  //    elements.
+  // 2. Partial Collection Rule: If a flow collection has *successfully started* before an exception
+  //    occurs, *no fallback* should be triggered. This prevents inconsistent or mixed responses,
+  //    where partial data from one source could be combined with data from another.
+  private inline fun <T> withFlowFallback(
+    methodName: String,
+    crossinline block: GenerativeModelProvider.() -> Flow<T>
+  ): Flow<T> {
+    if (!precondition()) {
+      Log.w(
+        TAG,
+        "Precondition was not met, switching to fallback model `${fallbackModel.javaClass.simpleName}`"
+      )
+      return fallbackModel.block()
+    }
+    return flow {
+      var hasEmitted = false
+      val defaultFlow = defaultModel.block().onEach { hasEmitted = true }
+      try {
+        emitAll(defaultFlow)
+      } catch (e: Exception) {
+        if (
+          !hasEmitted &&
+            shouldFallbackInException &&
+            (e is FirebaseAIException || e is FirebaseAIOnDeviceException)
+        ) {
+          Log.w(
+            TAG,
+            "Error running `$methodName` on `${defaultModel.javaClass.simpleName}`. Falling back to `${fallbackModel.javaClass.simpleName}`",
+            e
+          )
+          emitAll(fallbackModel.block())
+        } else {
+          throw e
+        }
+      }
     }
   }
 
