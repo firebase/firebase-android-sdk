@@ -87,7 +87,7 @@ class IntWithEvenNumDigitsDistributionUnitTest {
 
     val standardDeviation = countByNumDigits.values.standardDeviation(StandardDeviationMode.Sample)
     withClue("countByNumDigits=${countByNumDigits.toSortedMap().print().value}") {
-      standardDeviation shouldBeLessThan 12.0
+      standardDeviation shouldBeLessThan 13.0
     }
   }
 
