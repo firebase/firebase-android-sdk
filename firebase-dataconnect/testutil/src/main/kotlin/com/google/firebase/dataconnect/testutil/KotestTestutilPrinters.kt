@@ -20,6 +20,7 @@ import com.google.protobuf.Duration as DurationProto
 import io.kotest.assertions.print.Print
 import io.kotest.assertions.print.Printed
 import io.kotest.assertions.print.Printers
+import io.kotest.assertions.print.print
 import io.kotest.assertions.print.printed
 import kotlin.time.Duration
 
@@ -27,20 +28,44 @@ import kotlin.time.Duration
 fun registerDataConnectKotestTestutilPrinters() {
   Printers.add(DurationProto::class, DurationProtoPrint)
   Printers.add(Duration::class, KotlinTimeDurationPrint)
+  Printers.add(Pair::class, PairPrint)
+  Printers.add(Triple::class, TriplePrint)
 }
 
 private object DurationProtoPrint : Print<DurationProto> {
 
   @Suppress("OVERRIDE_DEPRECATION")
-  override fun print(a: DurationProto): Printed =
-    "DurationProto(seconds=${a.seconds}, nanos=${a.nanos})".printed()
+  override fun print(a: DurationProto): Printed = a.printString.printed()
+
+  private val DurationProto.printString: String
+    get() = "DurationProto(seconds=$seconds, nanos=$nanos)"
 }
 
 private object KotlinTimeDurationPrint : Print<Duration> {
 
   @Suppress("OVERRIDE_DEPRECATION")
-  override fun print(a: Duration): Printed =
-    a.toComponents { seconds, nanoseconds ->
-      "kotlin.time.Duration(seconds=$seconds, nanos=$nanoseconds)".printed()
+  override fun print(a: Duration): Printed = a.printString.printed()
+
+  private val Duration.printString: String
+    get() = toComponents { seconds, nanos ->
+      "kotlin.time.Duration(seconds=$seconds, nanos=$nanos)"
     }
+}
+
+private object PairPrint : Print<Pair<*, *>> {
+
+  @Suppress("OVERRIDE_DEPRECATION")
+  override fun print(a: Pair<*, *>): Printed = a.printString.printed()
+
+  private val Pair<*, *>.printString: String
+    get() = "Pair(${first.print().value}, ${second.print().value})"
+}
+
+private object TriplePrint : Print<Triple<*, *, *>> {
+
+  @Suppress("OVERRIDE_DEPRECATION")
+  override fun print(a: Triple<*, *, *>): Printed = a.printString.printed()
+
+  private val Triple<*, *, *>.printString: String
+    get() = "Triple(${first.print().value}, ${second.print().value}, ${third.print().value})"
 }
