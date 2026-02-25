@@ -19,16 +19,24 @@ package com.google.firebase.ai.generativemodel
 import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.CountTokensResponse
 import com.google.firebase.ai.type.FirebaseAIException
+import com.google.firebase.ai.type.FirebaseAIOnDeviceInvalidRequestException
 import com.google.firebase.ai.type.GenerateContentResponse
 import com.google.firebase.ai.type.GenerateObjectResponse
 import com.google.firebase.ai.type.JsonSchema
+import com.google.firebase.ai.type.PromptBlockedException
+import com.google.firebase.ai.type.PublicPreviewAPI
+import io.kotest.assertions.throwables.shouldNotThrowAnyUnit
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.assertions.throwables.shouldThrowUnit
 import io.kotest.matchers.shouldBe
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
@@ -51,10 +59,12 @@ internal class FallbackGenerativeModelProviderTests {
     coEvery { defaultModel.generateContent(prompt) } returns expectedResponse
 
     val provider = FallbackGenerativeModelProvider(defaultModel, fallbackModel)
-    val response = provider.generateContent(prompt)
+    shouldNotThrowAnyUnit {
+      val response = provider.generateContent(prompt)
 
-    response shouldBe expectedResponse
-    coVerify(exactly = 0) { fallbackModel.generateContent(any()) }
+      response shouldBe expectedResponse
+      coVerify(exactly = 0) { fallbackModel.generateContent(any()) }
+    }
   }
 
   @Test
@@ -64,26 +74,64 @@ internal class FallbackGenerativeModelProviderTests {
 
     val provider =
       FallbackGenerativeModelProvider(defaultModel, fallbackModel, precondition = { false })
-    val response = provider.generateContent(prompt)
+    shouldNotThrowAnyUnit {
+      val response = provider.generateContent(prompt)
 
-    response shouldBe expectedResponse
-    coVerify(exactly = 0) { defaultModel.generateContent(any()) }
-    coVerify { fallbackModel.generateContent(prompt) }
+      response shouldBe expectedResponse
+      coVerify(exactly = 0) { defaultModel.generateContent(any()) }
+      coVerify { fallbackModel.generateContent(prompt) }
+    }
   }
 
   @Test
   fun `generateContent falls back when default model throws FirebaseAIException`() = runBlocking {
     val expectedResponse: GenerateContentResponse = mockk()
-    val exception = mockk<FirebaseAIException>()
+    // Test using an exception that extends FirebaseAIException
+    val exception = mockk<PromptBlockedException>()
     coEvery { defaultModel.generateContent(prompt) } throws exception
     coEvery { fallbackModel.generateContent(prompt) } returns expectedResponse
 
     val provider = FallbackGenerativeModelProvider(defaultModel, fallbackModel)
-    val response = provider.generateContent(prompt)
+    shouldNotThrowAnyUnit {
+      val response = provider.generateContent(prompt)
 
-    response shouldBe expectedResponse
-    coVerify { fallbackModel.generateContent(prompt) }
+      response shouldBe expectedResponse
+      coVerify { fallbackModel.generateContent(prompt) }
+    }
   }
+
+  @OptIn(PublicPreviewAPI::class)
+  @Test
+  fun `generateContent shouldn't falls back when default model throws unrelated exception`(): Unit =
+    runBlocking {
+      val expectedResponse: GenerateContentResponse = mockk()
+      // Test using an exception that extends FirebaseAIOnDeviceException
+      val exception = mockk<ArithmeticException>()
+      coEvery { defaultModel.generateContent(prompt) } throws exception
+      coEvery { fallbackModel.generateContent(prompt) } returns expectedResponse
+
+      val provider = FallbackGenerativeModelProvider(defaultModel, fallbackModel)
+      shouldThrowUnit<ArithmeticException> { provider.generateContent(prompt) }
+    }
+
+  @OptIn(PublicPreviewAPI::class)
+  @Test
+  fun `generateContent falls back when default model throws FirebaseAIOnDeviceException`() =
+    runBlocking {
+      val expectedResponse: GenerateContentResponse = mockk()
+      // Test using an exception that extends FirebaseAIOnDeviceException
+      val exception = mockk<FirebaseAIOnDeviceInvalidRequestException>()
+      coEvery { defaultModel.generateContent(prompt) } throws exception
+      coEvery { fallbackModel.generateContent(prompt) } returns expectedResponse
+
+      val provider = FallbackGenerativeModelProvider(defaultModel, fallbackModel)
+      shouldNotThrowAnyUnit {
+        val response = provider.generateContent(prompt)
+
+        response shouldBe expectedResponse
+        coVerify { fallbackModel.generateContent(prompt) }
+      }
+    }
 
   @Test
   fun `generateContent rethrows FirebaseAIException when fallback is disabled`() = runBlocking {
@@ -120,10 +168,12 @@ internal class FallbackGenerativeModelProviderTests {
     coEvery { fallbackModel.countTokens(prompt) } returns expectedResponse
 
     val provider = FallbackGenerativeModelProvider(defaultModel, fallbackModel)
-    val response = provider.countTokens(prompt)
+    shouldNotThrowAnyUnit {
+      val response = provider.countTokens(prompt)
 
-    response shouldBe expectedResponse
-    coVerify { fallbackModel.countTokens(prompt) }
+      response shouldBe expectedResponse
+      coVerify { fallbackModel.countTokens(prompt) }
+    }
   }
 
   @Test
@@ -131,30 +181,95 @@ internal class FallbackGenerativeModelProviderTests {
     runBlocking {
       val expectedResponse: GenerateContentResponse = mockk()
       val fallbackFlow = flowOf(expectedResponse)
-      val exception = mockk<FirebaseAIException>()
-      every { defaultModel.generateContentStream(prompt) } throws exception
+      // Test using an exception that extends FirebaseAIOnException
+      val exception = mockk<PromptBlockedException>()
+      // throw the exception during the flow collection
+      every { defaultModel.generateContentStream(prompt) } returns flow { throw exception }
       every { fallbackModel.generateContentStream(prompt) } returns fallbackFlow
 
       val provider = FallbackGenerativeModelProvider(defaultModel, fallbackModel)
-      val responseFlow = provider.generateContentStream(prompt)
+      shouldNotThrowAnyUnit {
+        val responseFlow = provider.generateContentStream(prompt)
 
-      responseFlow shouldBe fallbackFlow
-      verify { fallbackModel.generateContentStream(prompt) }
+        responseFlow.first() shouldBe expectedResponse
+        verify { fallbackModel.generateContentStream(prompt) }
+      }
     }
+
+  @OptIn(PublicPreviewAPI::class)
+  @Test
+  fun `generateContentStream falls back when default model throws FirebaseAIOnDeviceException`() =
+    runBlocking {
+      val expectedResponse: GenerateContentResponse = mockk()
+      val fallbackFlow = flowOf(expectedResponse)
+      // Test using an exception that extends FirebaseAIOnDeviceException
+      val exception = mockk<FirebaseAIOnDeviceInvalidRequestException>()
+      // throw the exception during the flow collection
+      every { defaultModel.generateContentStream(prompt) } returns flow { throw exception }
+      every { fallbackModel.generateContentStream(prompt) } returns fallbackFlow
+
+      val provider = FallbackGenerativeModelProvider(defaultModel, fallbackModel)
+      shouldNotThrowAnyUnit {
+        val responseFlow = provider.generateContentStream(prompt)
+
+        responseFlow.first() shouldBe expectedResponse
+        verify { fallbackModel.generateContentStream(prompt) }
+      }
+    }
+
+  @Test
+  fun `generateContentStream rethrows non-FirebaseAIException`() = runBlocking {
+    val expectedResponse: GenerateContentResponse = mockk()
+    val fallbackFlow = flowOf(expectedResponse)
+    val exception = mockk<ArithmeticException>()
+    // throw the exception during the flow collection
+    every { defaultModel.generateContentStream(prompt) } returns flow { throw exception }
+    every { fallbackModel.generateContentStream(prompt) } returns fallbackFlow
+
+    val provider = FallbackGenerativeModelProvider(defaultModel, fallbackModel)
+    shouldThrow<ArithmeticException> { provider.generateContentStream(prompt).first() }
+
+    verify(exactly = 0) { fallbackModel.generateContentStream(prompt) }
+  }
+
+  @Test
+  fun `generateContentStream rethrows exception if a value was already emitted`() = runBlocking {
+    val expectedResponse: GenerateContentResponse = mockk()
+    val fallbackFlow = flowOf(expectedResponse)
+    val exception = mockk<PromptBlockedException>()
+    // throw the exception during the flow collection
+    every { defaultModel.generateContentStream(prompt) } returns
+      flow {
+        emit(expectedResponse)
+        throw exception
+      }
+    every { fallbackModel.generateContentStream(prompt) } returns fallbackFlow
+
+    val provider = FallbackGenerativeModelProvider(defaultModel, fallbackModel)
+    // Even though it's an exception we can fall back from, we don't since a value has been
+    // generated
+    // already.
+    shouldThrow<PromptBlockedException> { provider.generateContentStream(prompt).collect() }
+
+    verify(exactly = 0) { fallbackModel.generateContentStream(prompt) }
+  }
 
   @Test
   fun `generateObject falls back when default model throws FirebaseAIException`() = runBlocking {
     val schema: JsonSchema<Any> = mockk()
     val expectedResponse: GenerateObjectResponse<Any> = mockk()
+    // Test using an exception that extends
     val exception = mockk<FirebaseAIException>()
     coEvery { defaultModel.generateObject(schema, prompt) } throws exception
     coEvery { fallbackModel.generateObject(schema, prompt) } returns expectedResponse
 
     val provider = FallbackGenerativeModelProvider(defaultModel, fallbackModel)
-    val response = provider.generateObject(schema, prompt)
+    shouldNotThrowAnyUnit {
+      val response = provider.generateObject(schema, prompt)
 
-    response shouldBe expectedResponse
-    coVerify { fallbackModel.generateObject(schema, prompt) }
+      response shouldBe expectedResponse
+      coVerify { fallbackModel.generateObject(schema, prompt) }
+    }
   }
 
   @Test
@@ -172,12 +287,12 @@ internal class FallbackGenerativeModelProviderTests {
   fun `generateContentStream rethrows CancellationException and does not fall back`() =
     runBlocking {
       val exception = kotlinx.coroutines.CancellationException("cancelled")
-      every { defaultModel.generateContentStream(prompt) } throws exception
+      every { defaultModel.generateContentStream(prompt) } returns flow { throw exception }
 
       val provider = FallbackGenerativeModelProvider(defaultModel, fallbackModel)
 
       shouldThrow<kotlinx.coroutines.CancellationException> {
-        provider.generateContentStream(prompt)
+        provider.generateContentStream(prompt).first()
       }
       verify(exactly = 0) { fallbackModel.generateContentStream(any()) }
     }

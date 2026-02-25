@@ -26,7 +26,6 @@ import org.hamcrest.CoreMatchers.containsString
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Assert.assertEquals
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 
@@ -46,7 +45,6 @@ class AddTestersTaskTest {
     )
   }
 
-  @Ignore("https://github.com/firebase/firebase-android-sdk/pull/7718")
   @Test
   fun testAddTesters_completesSuccessfully() {
     testGroovyBuild.writeBuildFiles()
@@ -96,7 +94,6 @@ class AddTestersTaskTest {
     )
   }
 
-  @Ignore("https://github.com/firebase/firebase-android-sdk/pull/7718")
   @Test
   fun testAddTesters_failsIfBackendRequestFails() {
     testGroovyBuild.writeBuildFiles()

@@ -23,7 +23,6 @@ pluginManagement {
     mavenLocal()
     mavenCentral()
     gradlePluginPortal()
-    maven("https://storage.googleapis.com/android-ci/mvn/") { metadataSources { artifact() } }
   }
 
   includeBuild("./plugins")
@@ -37,7 +36,6 @@ dependencyResolutionManagement {
     google()
     mavenLocal()
     mavenCentral()
-    maven("https://storage.googleapis.com/android-ci/mvn/") { metadataSources { artifact() } }
   }
 }
 
