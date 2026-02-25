@@ -30,6 +30,7 @@ import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
 import io.kotest.matchers.ranges.shouldBeIn
 import io.kotest.property.Arb
+import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
 import io.kotest.property.arbitrary.int
 import io.kotest.property.checkAll
@@ -144,7 +145,8 @@ class IntWithEvenNumDigitsDistributionUnitTest {
   }
 }
 
-private val propTestConfig = PropTestConfig(iterations = 1000)
+private val propTestConfig =
+  PropTestConfig(iterations = 1000, edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.2))
 
 private fun Int.countBase10Digits(): Int {
   val digitCount = toString(10).length
