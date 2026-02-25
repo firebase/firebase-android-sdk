@@ -668,9 +668,10 @@ private fun QueryResultExpiry.calculateStaleness(currentTimeMillis: Long): Stale
   val nanosExpired = nanosFromMillis(currentTimeMillis) - expiryTimeNanos
   val staleness = nanosExpired.signedDurationFromNanoseconds()
 
-  val maxAge = this.maxAge
-  if (maxAge.seconds == 0L && maxAge.nanos == 0) {
-    return Staleness.Stale(staleness = staleness.duration)
+  maxAge.run {
+    if (seconds == 0L && nanos == 0) {
+      return Staleness.Stale(staleness = staleness.duration)
+    }
   }
 
   return when (staleness) {

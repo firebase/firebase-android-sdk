@@ -60,7 +60,6 @@ import io.kotest.property.arbitrary.byte
 import io.kotest.property.arbitrary.byteArray
 import io.kotest.property.arbitrary.distinct
 import io.kotest.property.arbitrary.int
-import io.kotest.property.arbitrary.long
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.of
 import io.kotest.property.arbitrary.orNull
@@ -702,7 +701,7 @@ class DataConnectCacheDatabaseUnitTest {
       QueryResultArb(entityCountRange = 0..3),
     ) { authUid, queryId, times, queryResult ->
       val (time1, time2) = times.toList().sorted()
-      val maxAge = durationProtoFromNanos(time2.toBigInteger() - time1.toBigInteger())
+      val maxAge = durationProtoFromMillis(time2.toBigInteger() - time1.toBigInteger())
 
       dataConnectCacheDatabase.insertQueryResult(
         authUid.string,
@@ -834,7 +833,7 @@ private class StaleQueryResultArb : Arb<StaleQueryResultArb.Sample>() {
     )
   }
 
-  private val time1Arb = Arb.long(Long.MIN_VALUE until Long.MAX_VALUE)
+  private val time1Arb = Arb.longWithEvenNumDigitsDistribution(Long.MIN_VALUE until Long.MAX_VALUE)
 
   private fun generate(
     rs: RandomSource,
@@ -866,7 +865,7 @@ private class StaleQueryResultArb : Arb<StaleQueryResultArb.Sample>() {
   private fun generateTime2(rs: RandomSource, time1: Long, edgeCaseProbability: Float): Long {
     require(time1 < Long.MAX_VALUE)
     val time2Range = (time1 + 1)..Long.MAX_VALUE
-    return Arb.long(time2Range).next(rs, edgeCaseProbability)
+    return Arb.longWithEvenNumDigitsDistribution(time2Range).next(rs, edgeCaseProbability)
   }
 
   private fun generateMaxAge(
@@ -951,6 +950,11 @@ private fun durationFromMillis(millis: BigInteger): kotlin.time.Duration {
   } else {
     kotlin.time.Duration.INFINITE
   }
+}
+
+private fun durationProtoFromMillis(millis: BigInteger): Duration {
+  require(millis.signum() >= 0) { "millis must be non-negative, but it is negative: $millis" }
+  return durationProtoFromNanos(millis * 1_000_000.toBigInteger())
 }
 
 private fun durationProtoFromNanos(nanos: BigInteger): Duration {
