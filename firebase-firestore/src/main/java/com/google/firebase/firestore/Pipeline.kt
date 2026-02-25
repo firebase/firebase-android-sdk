@@ -943,6 +943,38 @@ internal constructor(
   }
 
   /**
+   * Defines one or more variables in the pipeline's scope using a [DefineStage] object.
+   *
+   * This stage allows you to bind a value to a variable for internal reuse within the pipeline body
+   * (accessed via the `variable()` function). It is useful for declaring reusable values or
+   * intermediate calculations that can be referenced multiple times in later parts of the pipeline,
+   * improving readability and maintainability.
+   *
+   * You can specify:
+   *
+   * - **Variables:** One or more variables using [AliasedExpression] which pairs an expression with
+   * a name (alias). The expression can be a simple constant, a field reference, or a complex
+   * computation.
+   *
+   * Example:
+   * ```
+   * firestore.pipeline().collection("products")
+   *   .define(
+   *     DefineStage.withVariables(
+   *       multiply(field("price"), 0.9).as("discountedPrice"),
+   *       add(field("stock"), 10).as("newStock")
+   *     )
+   *   )
+   *   .where(lessThan(variable("discountedPrice"), 100))
+   *   .select(field("name"), variable("newStock"));
+   * ```
+   *
+   * @param stage A [DefineStage] object that specifies the variables to define.
+   * @return A new [Pipeline] object with this stage appended to the stage list.
+   */
+  fun define(stage: DefineStage): Pipeline = append(stage)
+
+  /**
    * Converts this pipeline to an expression that evaluates to an array of results.
    *
    * @return An [Expression] that executes this pipeline and returns the results as a list.
@@ -952,10 +984,98 @@ internal constructor(
   }
 
   /**
-   * Converts this pipeline to an expression that evaluates to a scalar result. The pipeline must
-   * return exactly one document with one field, or be an aggregation.
+   * Converts this Pipeline into an expression that evaluates to a single scalar result. Used for
+   * 1:1 lookups or Aggregations when the subquery is expected to return a single value or object.
    *
-   * @return An [Expression] that executes this pipeline and returns a single value.
+   * **Runtime Validation:** The runtime will validate that the result set contains exactly one
+   * item. It throws a runtime error if the result has more than one item, and evaluates to `null`
+   * if the pipeline has zero results.
+   *
+   * **Result Unwrapping:** For simpler access, scalar subqueries producing a single field
+   * automatically unwrap that value to the top level, ignoring the inner alias. If the subquery
+   * returns multiple fields, they are preserved as a map.
+   *
+   * **Example 1: Single field unwrapping**
+   * ```kotlin
+   * // Calculate average rating for each restaurant using a subquery
+   * db.pipeline().collection("restaurants")
+   * .define(field("id").alias("rid"))
+   * .addFields(
+   *   db.pipeline().collection("reviews")
+   *   .where(field("restaurant_id").equal(variable("rid")))
+   *   // Inner aggregation returns a single document
+   *   .aggregate(AggregateFunction.average("rating").alias("value"))
+   *   // Convert Pipeline -> Scalar Expression (validates result is 1 item)
+   *   .toScalarExpression()
+   *   .alias("average_rating")
+   * )
+   * ```
+   *
+   * *The result set is unwrapped twice: from `"average_rating": [{ "value": 4.5 }]` to
+   * `"average_rating": { "value": 4.5 }`, and finally to `"average_rating": 4.5`.*
+   *
+   * ```json
+   * // Output Document:
+   * [
+   *   {
+   *     "id": "123",
+   *     "name": "The Burger Joint",
+   *     "cuisine": "American",
+   *     "average_rating": 4.5
+   *   },
+   *   {
+   *     "id": "456",
+   *     "name": "Sushi World",
+   *     "cuisine": "Japanese",
+   *     "average_rating": 4.8
+   *   }
+   * ]
+   * ```
+   *
+   * **Example 2: Multiple fields (Map)**
+   * ```kotlin
+   * // For each restaurant, calculate review statistics (average rating AND total count)
+   * db.pipeline().collection("restaurants")
+   * .define(field("id").alias("rid"))
+   * .addFields(
+   *   db.pipeline().collection("reviews")
+   *   .where(field("restaurant_id").equal(variable("rid")))
+   *   .aggregate(
+   *     AggregateFunction.average("rating").alias("avg_score"),
+   *     AggregateFunction.countAll().alias("review_count")
+   *   )
+   *   .toScalarExpression()
+   *   .alias("stats")
+   * )
+   * ```
+   *
+   * *When the subquery produces multiple fields, they are wrapped in a map:*
+   *
+   * ```json
+   * // Output Document:
+   * [
+   *   {
+   *     "id": "123",
+   *     "name": "The Burger Joint",
+   *     "cuisine": "American",
+   *     "stats": {
+   *       "avg_score": 4.0,
+   *       "review_count": 3
+   *     }
+   *   },
+   *   {
+   *     "id": "456",
+   *     "name": "Sushi World",
+   *     "cuisine": "Japanese",
+   *     "stats": {
+   *       "avg_score": 4.8,
+   *       "review_count": 120
+   *     }
+   *   }
+   * ]
+   * ```
+   *
+   * @return An [Expression] representing the execution of this pipeline.
    */
   fun toScalarExpression(): Expression {
     return FunctionExpression("scalar", notImplemented, Expression.toExprOrConstant(this))

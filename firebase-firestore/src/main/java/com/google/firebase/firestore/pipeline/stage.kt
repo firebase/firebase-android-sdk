@@ -1338,11 +1338,24 @@ class UnnestOptions private constructor(options: InternalOptions) :
   }
 }
 
-internal class DefineStage
+@Beta
+class DefineStage
 internal constructor(
-  private val aliasedExpressions: Array<out AliasedExpression>,
+  internal val aliasedExpressions: Array<out AliasedExpression>,
   options: InternalOptions = InternalOptions.EMPTY
 ) : Stage<DefineStage>("let", options) {
+  companion object {
+    /**
+     * Creates a DefineStage with at least one aliased expression.
+     */
+    @JvmStatic
+    fun withVariables(
+        aliasedExpression: AliasedExpression,
+        vararg additionalExpressions: AliasedExpression
+    ): DefineStage {
+       return DefineStage(arrayOf(aliasedExpression, *additionalExpressions))
+    }
+  }
 
   override fun self(options: InternalOptions) = DefineStage(aliasedExpressions, options)
 
@@ -1367,4 +1380,5 @@ internal constructor(
     result = 31 * result + options.hashCode()
     return result
   }
+
 }

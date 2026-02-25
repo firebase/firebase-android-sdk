@@ -425,6 +425,7 @@ package com.google.firebase.firestore {
     method public com.google.firebase.firestore.Pipeline aggregate(com.google.firebase.firestore.pipeline.AggregateStage aggregateStage, com.google.firebase.firestore.pipeline.AggregateOptions options);
     method public com.google.firebase.firestore.Pipeline aggregate(com.google.firebase.firestore.pipeline.AliasedAggregate accumulator, com.google.firebase.firestore.pipeline.AliasedAggregate... additionalAccumulators);
     method public com.google.firebase.firestore.Pipeline define(com.google.firebase.firestore.pipeline.AliasedExpression aliasedExpression, com.google.firebase.firestore.pipeline.AliasedExpression... additionalExpressions);
+    method public com.google.firebase.firestore.Pipeline define(com.google.firebase.firestore.pipeline.DefineStage stage);
     method public com.google.firebase.firestore.Pipeline distinct(com.google.firebase.firestore.pipeline.Selectable group, java.lang.Object... additionalGroups);
     method public com.google.firebase.firestore.Pipeline distinct(String groupField, java.lang.Object... additionalGroups);
     method public com.google.android.gms.tasks.Task<com.google.firebase.firestore.Pipeline.Snapshot> execute();
@@ -787,6 +788,15 @@ package com.google.firebase.firestore.pipeline {
   @com.google.common.annotations.Beta public final class CollectionSourceOptions extends com.google.firebase.firestore.pipeline.AbstractOptions<com.google.firebase.firestore.pipeline.CollectionSourceOptions> {
     ctor public CollectionSourceOptions();
     method public com.google.firebase.firestore.pipeline.CollectionSourceOptions withHints(com.google.firebase.firestore.pipeline.CollectionHints hints);
+  }
+
+  @com.google.common.annotations.Beta public final class DefineStage extends com.google.firebase.firestore.pipeline.Stage<com.google.firebase.firestore.pipeline.DefineStage> {
+    method public static com.google.firebase.firestore.pipeline.DefineStage withVariables(com.google.firebase.firestore.pipeline.AliasedExpression aliasedExpression, com.google.firebase.firestore.pipeline.AliasedExpression... additionalExpressions);
+    field public static final com.google.firebase.firestore.pipeline.DefineStage.Companion Companion;
+  }
+
+  public static final class DefineStage.Companion {
+    method public com.google.firebase.firestore.pipeline.DefineStage withVariables(com.google.firebase.firestore.pipeline.AliasedExpression aliasedExpression, com.google.firebase.firestore.pipeline.AliasedExpression... additionalExpressions);
   }
 
   @com.google.common.annotations.Beta public abstract class Expression {
