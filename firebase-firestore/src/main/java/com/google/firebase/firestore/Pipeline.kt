@@ -1090,8 +1090,20 @@ internal constructor(
      * @return A new [Pipeline] scoped to the subcollection.
      */
     @JvmStatic
-    fun subcollection(path: String): Pipeline {
-      return Pipeline(null, null, SubcollectionSource(path))
+    internal fun subcollection(path: String): Pipeline {
+      return Pipeline(null, null, SubcollectionSource.of(path))
+    }
+
+    /**
+     * Creates a pipeline that processes the documents in the specified subcollection of the current
+     * document.
+     *
+     * @param source The subcollection that will be the source of this pipeline.
+     * @return A new [Pipeline] scoped to the subcollection.
+     */
+    @JvmStatic
+    internal fun subcollection(source: SubcollectionSource): Pipeline {
+      return Pipeline(null, null, source)
     }
   }
 }

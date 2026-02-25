@@ -407,9 +407,20 @@ internal constructor(
     documents.asSequence().map(::encodeValue)
 }
 
-class SubcollectionSource
-internal constructor(internal val path: String, options: InternalOptions = InternalOptions.EMPTY) :
+internal class SubcollectionSource
+private constructor(internal val path: String, options: InternalOptions = InternalOptions.EMPTY) :
   Stage<SubcollectionSource>("subcollection", options) {
+  companion object {
+    /**
+     * Creates a SubcollectionSource with the given path.
+     *
+     * @param path The path of the subcollection that will be the source of this pipeline.
+     */
+    @JvmStatic
+    internal fun of(path: String): SubcollectionSource {
+      return SubcollectionSource(path)
+    }
+  }
 
   override fun self(options: InternalOptions) = SubcollectionSource(path, options)
 
@@ -1345,15 +1356,13 @@ internal constructor(
   options: InternalOptions = InternalOptions.EMPTY
 ) : Stage<DefineStage>("let", options) {
   companion object {
-    /**
-     * Creates a DefineStage with at least one aliased expression.
-     */
+    /** Creates a DefineStage with at least one aliased expression. */
     @JvmStatic
     fun withVariables(
-        aliasedExpression: AliasedExpression,
-        vararg additionalExpressions: AliasedExpression
+      aliasedExpression: AliasedExpression,
+      vararg additionalExpressions: AliasedExpression
     ): DefineStage {
-       return DefineStage(arrayOf(aliasedExpression, *additionalExpressions))
+      return DefineStage(arrayOf(aliasedExpression, *additionalExpressions))
     }
   }
 
@@ -1380,5 +1389,4 @@ internal constructor(
     result = 31 * result + options.hashCode()
     return result
   }
-
 }
