@@ -32,7 +32,12 @@ fun registerDataConnectKotestTestutilPrinters() {
   Printers.add(Pair::class, PairPrint)
   Printers.add(Triple::class, TriplePrint)
   Printers.add(Quadruple::class, QuadruplePrint)
-  Printers.add(SignificanceResult::class, SignificanceResultPrint)
+
+  try {
+    Printers.add(SignificanceResult::class, SignificanceResultPrint)
+  } catch (e: NoClassDefFoundError) {
+    // ignore, since org.apache.commons:commons-statistics-inference is a compileOnly dependency
+  }
 }
 
 private object DurationProtoPrint : Print<DurationProto> {
