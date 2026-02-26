@@ -68,7 +68,7 @@ public class FunctionDeclaration(
     val name: String,
     val description: String,
     val parameters: Schema.InternalOpenAPI?,
-    val parametersJsonSchema: Schema.InternalJson?,
-    val responseJsonSchema: Schema.InternalJson?,
+    val parametersJsonSchema: Schema.InternalJson? = null,
+    val responseJsonSchema: Schema.InternalJson? = null,
   )
 }
