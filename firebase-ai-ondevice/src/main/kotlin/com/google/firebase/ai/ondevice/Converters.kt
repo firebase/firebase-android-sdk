@@ -16,6 +16,7 @@
 
 package com.google.firebase.ai.ondevice
 
+import android.graphics.Bitmap
 import com.google.firebase.ai.ondevice.interop.Candidate
 import com.google.firebase.ai.ondevice.interop.CountTokensResponse
 import com.google.firebase.ai.ondevice.interop.FinishReason
@@ -24,6 +25,7 @@ import com.google.firebase.ai.ondevice.interop.GenerateContentResponse
 import com.google.mlkit.genai.prompt.GenerateContentRequest
 import com.google.mlkit.genai.prompt.ImagePart
 import com.google.mlkit.genai.prompt.TextPart
+import kotlin.math.min
 
 // ====================================
 // `Part` converter extension functions
@@ -31,7 +33,7 @@ import com.google.mlkit.genai.prompt.TextPart
 internal fun com.google.firebase.ai.ondevice.interop.TextPart.toMlKit(): TextPart = TextPart(text)
 
 internal fun com.google.firebase.ai.ondevice.interop.ImagePart.toMlKit(): ImagePart =
-  ImagePart(bitmap)
+  ImagePart(downsizeBitmapIfNeeded(bitmap))
 
 // ============================================
 // `CountTokens*` converter extension functions
@@ -86,4 +88,25 @@ private fun generateContentRequest(
     }
   builder.init()
   return builder.build()
+}
+
+private fun downsizeBitmapIfNeeded(bitmap: Bitmap): Bitmap {
+  val IMAGE_SHORTER_DIMENSION_MAX_VALUE: Int = 768
+  val width = bitmap.width
+  val height = bitmap.height
+  val shorterDimension: Int = min(width, height)
+  if (shorterDimension <= IMAGE_SHORTER_DIMENSION_MAX_VALUE) {
+    return bitmap
+  }
+
+  val scaleFactor = (IMAGE_SHORTER_DIMENSION_MAX_VALUE.toDouble()) / shorterDimension
+
+  val newWidth = (width * scaleFactor).toInt()
+  val newHeight = (height * scaleFactor).toInt()
+
+  val resizedBitmap = Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, /* filter= */ false)
+  if (resizedBitmap != bitmap) {
+    bitmap.recycle()
+  }
+  return resizedBitmap
 }
