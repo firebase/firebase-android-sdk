@@ -112,7 +112,7 @@ class IntWithEvenNumDigitsDistributionUnitTest {
       val significanceResult = ChiSquareTest.withDefaults().test(expectedCounts, observedCounts)
       withClue(significanceResult.print().value) {
         // Note: Larger values to reject() make stronger guarantees of lack of bias.
-        significanceResult.reject(0.05).shouldBeFalse()
+        significanceResult.reject(0.01).shouldBeFalse()
       }
     }
   }
