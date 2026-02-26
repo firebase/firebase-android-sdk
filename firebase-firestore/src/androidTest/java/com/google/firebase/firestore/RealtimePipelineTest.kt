@@ -2054,7 +2054,7 @@ class RealtimePipelineTest {
       db
         .realtimePipeline()
         .collection(collRef.path)
-        .where(arrayFirstN("tags", 2).equal("adventure"))
+        .where(arrayFirstN("tags", 2).equal(listOf("adventure", "magic")))
 
     val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
     val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
@@ -2075,7 +2075,7 @@ class RealtimePipelineTest {
   @Test
   fun testArrayLast() = runBlocking {
     val pipeline =
-      db.realtimePipeline().collection(collRef.path).where(arrayLast("tags").equal("adventure"))
+      db.realtimePipeline().collection(collRef.path).where(arrayLast("tags").equal("epic"))
 
     val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
     val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
@@ -2096,7 +2096,10 @@ class RealtimePipelineTest {
   @Test
   fun testArrayLastN() = runBlocking {
     val pipeline =
-      db.realtimePipeline().collection(collRef.path).where(arrayLastN("tags", 2).equal("adventure"))
+      db
+        .realtimePipeline()
+        .collection(collRef.path)
+        .where(arrayLastN("tags", 2).equal(listOf("magic", "epic")))
 
     val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
     val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
@@ -2125,11 +2128,11 @@ class RealtimePipelineTest {
 
     val firstSnapshot = channel.receive()
     assertThat(firstSnapshot.metadata.isConsistentBetweenListeners).isFalse()
-    assertThat(firstSnapshot.results).hasSize(1)
+    assertThat(firstSnapshot.results).hasSize(2)
 
     val secondSnapshot = channel.receive()
     assertThat(secondSnapshot.metadata.isConsistentBetweenListeners).isTrue()
-    assertThat(secondSnapshot.results).hasSize(1)
+    assertThat(secondSnapshot.results).hasSize(2)
     assertThat(secondSnapshot.getChanges()).isEmpty()
 
     job.cancel()
@@ -2141,7 +2144,7 @@ class RealtimePipelineTest {
       db
         .realtimePipeline()
         .collection(collRef.path)
-        .where(arrayMinimumN("tags", 2).equal("adventure"))
+        .where(arrayMinimumN("tags", 2).equal(listOf("adventure", "epic")))
 
     val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
     val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
@@ -2162,7 +2165,7 @@ class RealtimePipelineTest {
   @Test
   fun testArrayMaximum() = runBlocking {
     val pipeline =
-      db.realtimePipeline().collection(collRef.path).where(arrayMaximum("tags").equal("adventure"))
+      db.realtimePipeline().collection(collRef.path).where(arrayMaximum("tags").equal("magic"))
 
     val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
     val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
@@ -2186,7 +2189,7 @@ class RealtimePipelineTest {
       db
         .realtimePipeline()
         .collection(collRef.path)
-        .where(arrayMaximumN("tags", 2).equal("adventure"))
+        .where(arrayMaximumN("tags", 2).equal(listOf("magic", "epic")))
 
     val options = ListenOptions().withMetadataChanges(MetadataChanges.INCLUDE)
     val channel = Channel<RealtimePipeline.Snapshot>(Channel.UNLIMITED)
@@ -2242,9 +2245,9 @@ class RealtimePipelineTest {
     var job = launch { pipeline.snapshots(options).collect { snapshot -> channel.send(snapshot) } }
 
     var snapshot = channel.receive()
-    assertThat(snapshot.results).hasSize(1) // book1 should match
+    assertThat(snapshot.results).hasSize(10) // all books should match
     var secondSnapshot = channel.receive()
-    assertThat(secondSnapshot.results).hasSize(1)
+    assertThat(secondSnapshot.results).hasSize(10)
     job.cancel()
 
     // Test missing field (expect null)
@@ -2259,9 +2262,9 @@ class RealtimePipelineTest {
 
     snapshot = channel.receive()
     assertThat(snapshot.results)
-      .hasSize(1) // book1 should match (result is null, so equals(null) matches)
+      .hasSize(10) // all books should match (result is null, so equals(null) matches)
     secondSnapshot = channel.receive()
-    assertThat(secondSnapshot.results).hasSize(1)
+    assertThat(secondSnapshot.results).hasSize(10)
     job.cancel()
   }
 

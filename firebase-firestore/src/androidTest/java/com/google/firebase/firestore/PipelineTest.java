@@ -1095,7 +1095,7 @@ public class PipelineTest {
                 map(
                     ImmutableMap.of(
                         "arr",
-                        ImmutableList.of(1, Expression.nullValue(), 3, 2, 1),
+                        ImmutableList.of(1, Expression.nullValue(), 3, Expression.nullValue(), 1),
                         "nullArr",
                         Expression.nullValue())))
             .select(
@@ -1105,7 +1105,7 @@ public class PipelineTest {
             .execute();
 
     expectedData = new LinkedHashMap<>();
-    expectedData.put("indices", ImmutableList.of(1L));
+    expectedData.put("indices", ImmutableList.of(1L, 3L));
     expectedData.put("indicesNull", null);
     expectedData.put("indicesNonExistentArray", null);
     assertThat(waitFor(execute).getResults())

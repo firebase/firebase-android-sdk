@@ -5270,8 +5270,8 @@ abstract class Expression internal constructor() {
     /**
      * Creates an expression that returns the first `n` largest elements of the [array].
      *
-     * Returns the n largest non-null elements in the array, in descending order. This does not use
-     * a stable sort, meaning the order of equivalent elements is undefined.
+     * Note: Returns the n largest non-null elements in the array, in descending order. This does
+     * not use a stable sort, meaning the order of equivalent elements is undefined.
      *
      * ```kotlin
      * // Get the 3 largest elements of the 'myArray' field.
@@ -5289,8 +5289,8 @@ abstract class Expression internal constructor() {
     /**
      * Creates an expression that returns the first `n` largest elements of the [array].
      *
-     * Returns the n largest non-null elements in the array, in descending order. This does not use
-     * a stable sort, meaning the order of equivalent elements is undefined.
+     * Note: Returns the n largest non-null elements in the array, in descending order. This does
+     * not use a stable sort, meaning the order of equivalent elements is undefined.
      *
      * ```kotlin
      * // Get the n largest elements of the 'myArray' field.
@@ -5308,8 +5308,8 @@ abstract class Expression internal constructor() {
     /**
      * Creates an expression that returns the first `n` largest elements of the [array].
      *
-     * Returns the n largest non-null elements in the array, in descending order. This does not use
-     * a stable sort, meaning the order of equivalent elements is undefined.
+     * Note: Returns the n largest non-null elements in the array, in descending order. This does
+     * not use a stable sort, meaning the order of equivalent elements is undefined.
      *
      * ```kotlin
      * // Get the 3 largest elements of the 'myArray' field.
@@ -5328,8 +5328,8 @@ abstract class Expression internal constructor() {
     /**
      * Creates an expression that returns the first `n` largest elements of the [array].
      *
-     * Returns the n largest non-null elements in the array, in descending order. This does not use
-     * a stable sort, meaning the order of equivalent elements is undefined.
+     * Note: Returns the n largest non-null elements in the array, in descending order. This does
+     * not use a stable sort, meaning the order of equivalent elements is undefined.
      *
      * ```kotlin
      * // Get the n largest elements of the 'myArray' field.
@@ -7568,8 +7568,8 @@ abstract class Expression internal constructor() {
   /**
    * Creates an expression that returns the first `n` largest elements of the [array].
    *
-   * Returns the n largest non-null elements in the array, in descending order. This does not use a
-   * stable sort, meaning the order of equivalent elements is undefined.
+   * Note: Returns the n largest non-null elements in the array, in descending order. This does not
+   * use a stable sort, meaning the order of equivalent elements is undefined.
    *
    * ```kotlin
    * // Get the 3 largest elements of the 'myArray' field.
@@ -7584,8 +7584,8 @@ abstract class Expression internal constructor() {
   /**
    * Creates an expression that returns the first `n` largest elements of the [array].
    *
-   * Returns the n largest non-null elements in the array, in descending order. This does not use a
-   * stable sort, meaning the order of equivalent elements is undefined.
+   * Note: Returns the n largest non-null elements in the array, in descending order. This does not
+   * use a stable sort, meaning the order of equivalent elements is undefined.
    *
    * ```kotlin
    * // Get the n largest elements of the 'myArray' field.
