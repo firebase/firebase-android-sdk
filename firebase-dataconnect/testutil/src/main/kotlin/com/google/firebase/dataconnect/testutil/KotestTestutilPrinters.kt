@@ -23,6 +23,7 @@ import io.kotest.assertions.print.Printers
 import io.kotest.assertions.print.print
 import io.kotest.assertions.print.printed
 import kotlin.time.Duration
+import org.apache.commons.statistics.inference.SignificanceResult
 
 @Suppress("SpellCheckingInspection")
 fun registerDataConnectKotestTestutilPrinters() {
@@ -31,6 +32,7 @@ fun registerDataConnectKotestTestutilPrinters() {
   Printers.add(Pair::class, PairPrint)
   Printers.add(Triple::class, TriplePrint)
   Printers.add(Quadruple::class, QuadruplePrint)
+  Printers.add(SignificanceResult::class, SignificanceResultPrint)
 }
 
 private object DurationProtoPrint : Print<DurationProto> {
@@ -80,4 +82,14 @@ private object QuadruplePrint : Print<Quadruple<*, *, *, *>> {
     get() =
       "Quadruple(${first.print().value}, ${second.print().value}, " +
         "${third.print().value}, ${fourth.print().value})"
+}
+
+private object SignificanceResultPrint : Print<SignificanceResult> {
+
+  @Suppress("OVERRIDE_DEPRECATION")
+  override fun print(a: SignificanceResult): Printed = a.printString.printed()
+
+  private val SignificanceResult.printString: String
+    get() =
+      "SignificanceResult(statistic=${statistic.print().value}, pValue=${pValue.print().value})"
 }
