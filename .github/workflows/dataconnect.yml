@@ -14,13 +14,13 @@ on:
     paths:
       - .github/actions/dataconnect-send-notifications
       - .github/workflows/dataconnect.yml
-      - gradle/libs.versions.toml
       - gradlew
       - build.gradle.kts
       - gradle.properties
       - gradlew.bat
       - settings.gradle.kts
       - subprojects.cfg
+      - 'gradle/**'
       - 'plugins/**'
       - '!plugins/**/*.md'
       - 'firebase-dataconnect/**'
