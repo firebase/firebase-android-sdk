@@ -574,9 +574,6 @@ class DataConnectCacheDatabaseUnitTest {
       val queryResultArb =
         QueryResultArb(
           entityCountRange = 1..5,
-          // TODO: Remove the "entityArb" argument, which forces flat entities, by improving
-          // QueryResultArb to avoid entity mutations that break other entities.
-          entityArb = Arb.proto.struct(depth = 1),
           entityRepeatPolicy = INTER_SAMPLE_MUTATED,
         )
       val queryResult1 = queryResultArb.bind()
