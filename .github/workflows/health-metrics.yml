@@ -6,6 +6,10 @@ concurrency:
 
 on:
   pull_request:
+    paths:
+      - '!.github/workflows/dataconnect.yml'
+      - '!.github/workflows/dataconnect_demo_app.yml'
+      - '!.github/actions/dataconnect-send-notifications/action.yml'
   push:
     branches:
       - main
