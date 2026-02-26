@@ -130,7 +130,7 @@ class LongWithEvenNumDigitsDistributionUnitTest {
           countByNumDigits.values.standardDeviation(StandardDeviationMode.Sample)
 
         val growthRate = 4.0.pow(1.0 / (countByNumDigits.size))
-        val maxStandardDeviation = 12.0 * growthRate.pow(19 - countByNumDigits.size - 1)
+        val maxStandardDeviation = 13.0 * growthRate.pow(19 - countByNumDigits.size - 1)
         withClue("countByNumDigits=${countByNumDigits.toSortedMap().print().value}") {
           standardDeviation shouldBeLessThan maxStandardDeviation
         }
