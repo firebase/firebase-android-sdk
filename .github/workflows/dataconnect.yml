@@ -14,6 +14,7 @@ on:
     paths:
       - .github/actions/dataconnect-send-notifications
       - .github/workflows/dataconnect.yml
+      - gradle/libs.versions.toml
       - gradlew
       - build.gradle.kts
       - gradle.properties
