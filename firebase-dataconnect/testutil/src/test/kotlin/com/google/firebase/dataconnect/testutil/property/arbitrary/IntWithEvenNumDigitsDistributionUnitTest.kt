@@ -18,27 +18,43 @@
 
 package com.google.firebase.dataconnect.testutil.property.arbitrary
 
-import com.google.firebase.dataconnect.testutil.StandardDeviationMode
-import com.google.firebase.dataconnect.testutil.standardDeviation
+import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
+import com.google.firebase.dataconnect.testutil.countBase10Digits
+import com.google.firebase.dataconnect.testutil.registerDataConnectKotestTestutilPrinters
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.print.print
 import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
-import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
-import io.kotest.matchers.doubles.shouldBeLessThan
+import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
 import io.kotest.matchers.ranges.shouldBeIn
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
+import io.kotest.property.RandomSource
+import io.kotest.property.ShrinkingMode
+import io.kotest.property.arbitrary.filter
 import io.kotest.property.arbitrary.int
+import io.kotest.property.arbitrary.map
 import io.kotest.property.checkAll
-import kotlin.math.pow
+import kotlin.math.sign
 import kotlinx.coroutines.test.runTest
+import org.apache.commons.statistics.inference.ChiSquareTest
+import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 
 class IntWithEvenNumDigitsDistributionUnitTest {
+
+  @get:Rule(order = Int.MIN_VALUE) val randomSeedTestRule = RandomSeedTestRule()
+
+  private val rs: RandomSource by randomSeedTestRule.rs
+
+  @Before
+  fun registerPrinters() {
+    registerDataConnectKotestTestutilPrinters()
+  }
 
   @Test
   fun `intWithEvenNumDigitsDistribution produces both positive and negative values`() = runTest {
@@ -65,38 +81,14 @@ class IntWithEvenNumDigitsDistributionUnitTest {
   }
 
   @Test
-  fun `intWithEvenNumDigitsDistribution produces all num digits`() = runTest {
-    val numDigitsGenerated = mutableSetOf<Int>()
-
-    checkAll(propTestConfig, Arb.intWithEvenNumDigitsDistribution()) { value ->
-      val numDigits = value.countBase10Digits()
-      numDigitsGenerated.add(numDigits)
-    }
-
-    numDigitsGenerated shouldContainExactlyInAnyOrder (1..10).toSet()
-  }
-
-  @Test
-  fun `intWithEvenNumDigitsDistribution produces a range of num digits`() = runTest {
-    val countByNumDigits = mutableMapOf<Int, Int>()
-
-    checkAll(propTestConfig, Arb.intWithEvenNumDigitsDistribution()) { value ->
-      val numDigits = value.countBase10Digits()
-      val oldCount = countByNumDigits.getOrDefault(numDigits, 0)
-      countByNumDigits[numDigits] = oldCount + 1
-    }
-
-    val standardDeviation = countByNumDigits.values.standardDeviation(StandardDeviationMode.Sample)
-    withClue("countByNumDigits=${countByNumDigits.toSortedMap().print().value}") {
-      standardDeviation shouldBeLessThan 13.0
-    }
-  }
-
-  @Test
   fun `intWithEvenNumDigitsDistribution respects the given range`() = runTest {
-    checkAll(propTestConfig, Arb.twoValues(Arb.int())) { extents ->
-      val (first, last) = extents.sorted()
-      val range = first..last
+    val rangeArb =
+      Arb.twoValues(Arb.int()).map {
+        val (first, last) = listOf(it.value1, it.value1 + it.value2).sorted()
+        first..last
+      }
+
+    checkAll(propTestConfig, rangeArb) { range ->
       val arb = Arb.intWithEvenNumDigitsDistribution(range)
 
       val sample = arb.bind()
@@ -106,33 +98,72 @@ class IntWithEvenNumDigitsDistributionUnitTest {
   }
 
   @Test
-  fun `intWithEvenNumDigitsDistribution produces a range of num digits in the given range`() =
+  fun `intWithEvenNumDigitsDistribution produces the full unbiased range of num digits`() {
+    val iterations = 1_000_000
+    val observedCounts = LongArray(10)
+
+    Arb.intWithEvenNumDigitsDistribution().samples(rs).take(iterations).forEach {
+      observedCounts[it.value.countBase10Digits() - 1]++
+    }
+
+    withClue("observedCounts=${observedCounts.print().value}") {
+      val expectedObservedCount = iterations.toDouble() / observedCounts.size
+      val expectedCounts = DoubleArray(observedCounts.size) { expectedObservedCount }
+      val significanceResult = ChiSquareTest.withDefaults().test(expectedCounts, observedCounts)
+      withClue(significanceResult.print().value) {
+        // Note: Larger values to reject() make stronger guarantees of lack of bias.
+        significanceResult.reject(0.05).shouldBeFalse()
+      }
+    }
+  }
+
+  @Test
+  fun `intWithEvenNumDigitsDistribution produces an unbiased range of num digits within the given range`() =
     runTest {
-      checkAll(
-        propTestConfig,
-        Arb.intWithEvenNumDigitsDistribution().distinctPair { value1, value2 ->
-          value1.countBase10Digits() == value2.countBase10Digits()
+      fun IntRange.containsMultipleDigits(): Boolean =
+        when {
+          first in -9..9 && last in -9..9 -> false
+          first.sign != last.sign -> true
+          else -> first.countBase10Digits() != last.countBase10Digits()
         }
-      ) { extents ->
-        val (first, last) = extents.toList().sorted()
-        check(first.countBase10Digits() != last.countBase10Digits())
-        val range = first..last
-        val arb = Arb.intWithEvenNumDigitsDistribution(range)
-        val countByNumDigits = mutableMapOf<Int, Int>()
+      val rangeArb =
+        Arb.twoValues(Arb.int())
+          .map {
+            val (first, last) = listOf(it.value1, it.value1 + it.value2).sorted()
+            first..last
+          }
+          .filter { it.containsMultipleDigits() }
 
-        repeat(propTestConfig.iterations!!) {
-          val numDigits = arb.bind().countBase10Digits()
-          val oldCount = countByNumDigits.getOrDefault(numDigits, 0)
-          countByNumDigits[numDigits] = oldCount + 1
-        }
+      checkAll(propTestConfig.withIterations(100), rangeArb) { range ->
+        val iterations = 100_000
+        val observedCounts = LongArray(10)
 
-        val standardDeviation =
-          countByNumDigits.values.standardDeviation(StandardDeviationMode.Sample)
+        Arb.intWithEvenNumDigitsDistribution(range)
+          .samples(randomSource())
+          .take(iterations)
+          .forEach { observedCounts[it.value.countBase10Digits() - 1]++ }
 
-        val growthRate = 4.0.pow(1.0 / (countByNumDigits.size))
-        val maxStandardDeviation = 12.0 * growthRate.pow(19 - countByNumDigits.size - 1)
-        withClue("countByNumDigits=${countByNumDigits.toSortedMap().print().value}") {
-          standardDeviation shouldBeLessThan maxStandardDeviation
+        val observationCountByDigitCount =
+          observedCounts
+            .mapIndexed { index, observationCount -> Pair(index, observationCount) }
+            .filter { it.second > 0 }
+            .associate { (index, observationCount) -> Pair(index + 1, observationCount) }
+            .toSortedMap()
+        withClue(
+          "observations.size=${observationCountByDigitCount.size}, observations=${observationCountByDigitCount.print().value}"
+        ) {
+          val nonZeroObservedCount = observedCounts.filter { it != 0L }.toLongArray()
+          check(nonZeroObservedCount.size > 1)
+          val expectedObservedCount = iterations.toDouble() / nonZeroObservedCount.size
+          val expectedCounts = DoubleArray(nonZeroObservedCount.size) { expectedObservedCount }
+          val significanceResult =
+            ChiSquareTest.withDefaults().test(expectedCounts, nonZeroObservedCount)
+          withClue(
+            "expectedObservedCount=$expectedObservedCount, ${significanceResult.print().value}"
+          ) {
+            // Note: Larger values to reject() make stronger guarantees of lack of bias.
+            significanceResult.reject(0.0001).shouldBeFalse()
+          }
         }
       }
     }
@@ -146,9 +177,8 @@ class IntWithEvenNumDigitsDistributionUnitTest {
 }
 
 private val propTestConfig =
-  PropTestConfig(iterations = 1000, edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.2))
-
-private fun Int.countBase10Digits(): Int {
-  val digitCount = toString(10).length
-  return if (this >= 0) digitCount else digitCount - 1
-}
+  PropTestConfig(
+    iterations = 1000,
+    edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.2),
+    shrinkingMode = ShrinkingMode.Off,
+  )
