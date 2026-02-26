@@ -21,7 +21,6 @@ on:
       - gradlew.bat
       - settings.gradle.kts
       - subprojects.cfg
-      - 'gradle/**'
       - 'plugins/**'
       - '!plugins/**/*.md'
       - 'firebase-dataconnect/**'
