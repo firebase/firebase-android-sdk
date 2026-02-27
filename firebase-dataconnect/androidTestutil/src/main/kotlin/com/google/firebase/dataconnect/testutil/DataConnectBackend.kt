@@ -18,17 +18,14 @@ package com.google.firebase.dataconnect.testutil
 
 import androidx.annotation.VisibleForTesting
 import com.google.firebase.FirebaseApp
+import com.google.firebase.dataconnect.CacheSettings
 import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.DataConnectSettings
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.copy
 import com.google.firebase.dataconnect.getInstance
-import com.google.firebase.dataconnect.testutil.DataConnectBackend.Autopush
+import com.google.firebase.dataconnect.testutil.DataConnectBackend.Companion.INSTRUMENTATION_ARGUMENT
 import com.google.firebase.dataconnect.testutil.DataConnectBackend.Companion.fromInstrumentationArguments
-import com.google.firebase.dataconnect.testutil.DataConnectBackend.Custom
-import com.google.firebase.dataconnect.testutil.DataConnectBackend.Emulator
-import com.google.firebase.dataconnect.testutil.DataConnectBackend.Production
-import com.google.firebase.dataconnect.testutil.DataConnectBackend.Staging
 import java.net.MalformedURLException
 import java.net.URI
 import java.net.URISyntaxException
@@ -56,8 +53,8 @@ import java.net.URL
  * ```
  * -Pandroid.testInstrumentationRunnerArguments.DATA_CONNECT_BACKEND=[backend]
  * ```
- * where `[backend]` is one of the values specified above. For example, to run against production,
- * the tests could be run as follows:
+ * where `backend` is one of the values specified above. For example, to run against production, the
+ * tests could be run as follows:
  * ```
  * ./gradlew :firebase-dataconnect:connectedDebugAndroidTest \
  *   -Pandroid.testInstrumentationRunnerArguments.DATA_CONNECT_BACKEND=prod
@@ -89,26 +86,34 @@ import java.net.URL
  */
 sealed interface DataConnectBackend {
 
-  val dataConnectSettings: DataConnectSettings
   val authBackend: FirebaseAuthBackend
 
-  fun getDataConnect(app: FirebaseApp, config: ConnectorConfig): FirebaseDataConnect =
-    FirebaseDataConnect.getInstance(app, config, dataConnectSettings)
+  fun getDataConnectSettings(cacheSettings: CacheSettings?): DataConnectSettings
+
+  fun getDataConnect(
+    app: FirebaseApp,
+    config: ConnectorConfig,
+    cacheSettings: CacheSettings?
+  ): FirebaseDataConnect =
+    FirebaseDataConnect.getInstance(app, config, getDataConnectSettings(cacheSettings))
 
   /** The "production" Data Connect server, which is used by customers. */
   object Production : DataConnectBackend {
-    override val dataConnectSettings
-      get() = DataConnectSettings()
     override val authBackend: FirebaseAuthBackend
       get() = FirebaseAuthBackend.Production
+
+    override fun getDataConnectSettings(cacheSettings: CacheSettings?) =
+      DataConnectSettings().copy(cacheSettings = cacheSettings)
+
     override fun toString() = "DataConnectBackend.Production"
   }
 
   sealed class PredefinedDataConnectBackend(val host: String) : DataConnectBackend {
-    override val dataConnectSettings
-      get() = DataConnectSettings().copy(host = host, sslEnabled = true)
     override val authBackend: FirebaseAuthBackend
       get() = FirebaseAuthBackend.Production
+
+    override fun getDataConnectSettings(cacheSettings: CacheSettings?) =
+      DataConnectSettings().copy(host = host, sslEnabled = true, cacheSettings = cacheSettings)
   }
 
   /**
@@ -135,23 +140,32 @@ sealed interface DataConnectBackend {
 
   /** A custom Data Connect server. */
   data class Custom(val host: String, val sslEnabled: Boolean) : DataConnectBackend {
-    override val dataConnectSettings
-      get() = DataConnectSettings().copy(host = host, sslEnabled = sslEnabled)
     override val authBackend: FirebaseAuthBackend
       get() = FirebaseAuthBackend.Production
+
+    override fun getDataConnectSettings(cacheSettings: CacheSettings?) =
+      DataConnectSettings()
+        .copy(host = host, sslEnabled = sslEnabled, cacheSettings = cacheSettings)
+
     override fun toString() = "DataConnectBackend.Custom(host=$host, sslEnabled=$sslEnabled)"
   }
 
   /** The Data Connect emulator. */
   data class Emulator(val host: String? = null, val port: Int? = null) : DataConnectBackend {
-    override val dataConnectSettings
-      get() = DataConnectSettings()
     override val authBackend: FirebaseAuthBackend
       get() = FirebaseAuthBackend.Emulator()
+
+    override fun getDataConnectSettings(cacheSettings: CacheSettings?) =
+      DataConnectSettings().copy(cacheSettings = cacheSettings)
+
     override fun toString() = "DataConnectBackend.Emulator(host=$host, port=$port)"
 
-    override fun getDataConnect(app: FirebaseApp, config: ConnectorConfig): FirebaseDataConnect =
-      super.getDataConnect(app, config).apply {
+    override fun getDataConnect(
+      app: FirebaseApp,
+      config: ConnectorConfig,
+      cacheSettings: CacheSettings?
+    ): FirebaseDataConnect =
+      super.getDataConnect(app, config, cacheSettings).apply {
         if (host !== null && port !== null) {
           useEmulator(host = host, port = port)
         } else if (host !== null) {

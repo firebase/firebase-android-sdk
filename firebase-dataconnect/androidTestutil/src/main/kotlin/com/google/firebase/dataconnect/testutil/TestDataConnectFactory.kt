@@ -34,6 +34,18 @@ class TestDataConnectFactory(val firebaseAppFactory: TestFirebaseAppFactory) :
       newInstance(Params(connector = connector, location = location, serviceId = serviceId))
     }
 
+  fun newInstance(config: ConnectorConfig, cacheSettings: CacheSettings?): FirebaseDataConnect =
+    config.run {
+      newInstance(
+        Params(
+          connector = connector,
+          location = location,
+          serviceId = serviceId,
+          cacheSettings = cacheSettings,
+        )
+      )
+    }
+
   fun newInstance(backend: DataConnectBackend): FirebaseDataConnect =
     newInstance(Params(backend = backend))
 
@@ -44,6 +56,21 @@ class TestDataConnectFactory(val firebaseAppFactory: TestFirebaseAppFactory) :
         connector = config.connector,
         location = config.location,
         serviceId = config.serviceId
+      )
+    )
+
+  fun newInstance(
+    firebaseApp: FirebaseApp,
+    config: ConnectorConfig,
+    cacheSettings: CacheSettings?
+  ): FirebaseDataConnect =
+    newInstance(
+      Params(
+        firebaseApp = firebaseApp,
+        connector = config.connector,
+        location = config.location,
+        serviceId = config.serviceId,
+        cacheSettings = cacheSettings
       )
     )
 
@@ -60,7 +87,7 @@ class TestDataConnectFactory(val firebaseAppFactory: TestFirebaseAppFactory) :
       )
 
     val backend = params?.backend ?: DataConnectBackend.fromInstrumentationArguments()
-    return backend.getDataConnect(firebaseApp, connectorConfig)
+    return backend.getDataConnect(firebaseApp, connectorConfig, params?.cacheSettings)
   }
 
   override fun destroyInstance(instance: FirebaseDataConnect) {
@@ -73,5 +100,6 @@ class TestDataConnectFactory(val firebaseAppFactory: TestFirebaseAppFactory) :
     val location: String? = null,
     val serviceId: String? = null,
     val backend: DataConnectBackend? = null,
+    val cacheSettings: CacheSettings? = null,
   )
 }

@@ -32,6 +32,7 @@ fun registerDataConnectKotestTestutilPrinters() {
   Printers.add(Pair::class, PairPrint)
   Printers.add(Triple::class, TriplePrint)
   Printers.add(Quadruple::class, QuadruplePrint)
+  Printers.add(Quintuple::class, QuintuplePrint)
 
   try {
     Printers.add(SignificanceResult::class, SignificanceResultPrint)
@@ -87,6 +88,17 @@ private object QuadruplePrint : Print<Quadruple<*, *, *, *>> {
     get() =
       "Quadruple(${first.print().value}, ${second.print().value}, " +
         "${third.print().value}, ${fourth.print().value})"
+}
+
+private object QuintuplePrint : Print<Quintuple<*, *, *, *, *>> {
+
+  @Suppress("OVERRIDE_DEPRECATION")
+  override fun print(a: Quintuple<*, *, *, *, *>): Printed = a.printString.printed()
+
+  private val Quintuple<*, *, *, *, *>.printString: String
+    get() =
+      "Quintuple(${first.print().value}, ${second.print().value}, " +
+        "${third.print().value}, ${fourth.print().value}, ${fifth.print().value})"
 }
 
 private object SignificanceResultPrint : Print<SignificanceResult> {
