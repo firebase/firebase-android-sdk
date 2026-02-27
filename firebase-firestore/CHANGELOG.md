@@ -1,5 +1,8 @@
 # Unreleased
 
+- [feature] Added support for Pipeline expressions `arrayFirst`, `arrayFirstN`, `arrayLast`,
+  `arrayLastN`, `arrayMinimum`, `arrayMinimumN`, `arrayMaximum`, `arrayMaximumN`, `arrayIndexOf`,
+  `arrayLastIndexOf` and `arrayIndexOfAll`.
 - [feature] Added support for `regexFind` and `regexFindAll` Pipeline expressions.
   [#7669](https://github.com/firebase/firebase-android-sdk/pull/7669)
 - [changed] Updated `Expression.alias()` to return `AliasedExpression`.
