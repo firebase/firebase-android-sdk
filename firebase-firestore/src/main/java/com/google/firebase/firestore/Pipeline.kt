@@ -1089,8 +1089,29 @@ internal constructor(
      * @param path The relative path to the subcollection.
      * @return A new [Pipeline] scoped to the subcollection.
      */
+    /**
+     * Initializes a pipeline scoped to a subcollection.
+     *
+     * This method allows you to start a new pipeline that operates on a subcollection of the
+     * current document. It is intended to be used as a subquery.
+     *
+     * **Note:** A pipeline created with `subcollection` cannot be executed directly using
+     * [Pipeline.snapshot]. It must be used within a parent pipeline.
+     *
+     * Example:
+     * ```
+     * firestore.pipeline().collection("books")
+     *     .addFields(
+     *         Pipeline.subcollection("reviews")
+     *             .aggregate(AggregateFunction.average("rating").as("avg_rating"))
+     *             .toScalarExpression().as("average_rating"));
+     * ```
+     *
+     * @param path The path of the subcollection.
+     * @return A new [Pipeline] instance scoped to the subcollection.
+     */
     @JvmStatic
-    internal fun subcollection(path: String): Pipeline {
+    fun subcollection(path: String): Pipeline {
       return Pipeline(null, null, SubcollectionSource.of(path))
     }
 

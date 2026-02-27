@@ -5332,6 +5332,14 @@ abstract class Expression internal constructor() {
     /**
      * Creates an expression that retrieves the value of a variable bound via [Pipeline.define].
      *
+     * Example:
+     * ```
+     * // Define a variable "discountedPrice" and use it in a filter
+     * firestore.pipeline().collection("products")
+     *     .define(Constant(100).as("threshold"))
+     *     .where(lessThan(variable("discountedPrice"), variable("threshold")));
+     * ```
+     *
      * @param name The name of the variable to retrieve.
      * @return An [Expression] representing the variable's value.
      */
@@ -5339,6 +5347,15 @@ abstract class Expression internal constructor() {
 
     /**
      * Creates an expression that represents the current document being processed.
+     *
+     * Example:
+     * ```
+     * // Define the current document as a variable "doc"
+     * firestore.pipeline().collection("books")
+     *     .define(currentDocument().as("doc"))
+     *     // Access a field from the defined document variable
+     *     .select(variable("doc").getField("title"));
+     * ```
      *
      * @return An [Expression] representing the current document.
      */
