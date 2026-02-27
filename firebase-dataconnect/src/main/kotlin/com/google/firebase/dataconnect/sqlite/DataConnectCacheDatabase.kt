@@ -23,12 +23,19 @@ import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.execSQL
 import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.getLastInsertRowId
 import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.rawQuery
+import com.google.firebase.dataconnect.util.BigIntegerUtil.LONG_MAX_VALUE_BIG_INTEGER
 import com.google.firebase.dataconnect.util.ImmutableByteArray
+import com.google.protobuf.Duration as DurationProto
 import com.google.protobuf.Struct
 import google.firebase.dataconnect.proto.kotlinsdk.EntityOrEntityList
 import google.firebase.dataconnect.proto.kotlinsdk.QueryResult as QueryResultProto
+import google.firebase.dataconnect.proto.kotlinsdk.QueryResultExpiry
 import java.io.File
+import java.math.BigInteger
 import java.util.concurrent.Executors
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.nanoseconds
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -54,7 +61,10 @@ import kotlinx.coroutines.sync.withLock
  * All methods and properties of [DataConnectCacheDatabase] are thread-safe and may be safely called
  * and/or accessed concurrently from multiple threads and/or coroutines.
  */
-internal class DataConnectCacheDatabase(private val dbFile: File?, private val logger: Logger) {
+internal class DataConnectCacheDatabase(
+  private val dbFile: File?,
+  private val logger: Logger,
+) {
 
   private val stateMutex = Mutex()
   private var state: State = State.New
@@ -220,6 +230,7 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
   private data class GetQueryResult(
     val id: SqliteQueryId,
     val proto: QueryResultProto,
+    val expiryProto: QueryResultExpiry,
   )
 
   private fun SQLiteDatabase.getQuery(
@@ -228,7 +239,7 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
   ): GetQueryResult? =
     rawQuery(
       logger,
-      "SELECT id, data, flags FROM queries WHERE user_id=? AND query_id=?",
+      "SELECT id, data, expiry, flags FROM queries WHERE user_id=? AND query_id=?",
       bindArgs = arrayOf(user.sqliteRowId, queryId.peek()),
     ) { cursor ->
       if (!cursor.moveToNext()) {
@@ -236,7 +247,8 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
       } else {
         val id = SqliteQueryId(cursor.getLong(0))
         val protoBytes = cursor.getBlob(1)
-        val flags = cursor.getLong(2).toULong()
+        val expiryBytes = cursor.getBlob(2)
+        val flags = cursor.getLong(3).toULong()
 
         val parseResult = runCatching {
           // The lower 32 bits of the "flags" are "required". So if there are any flags set there
@@ -258,7 +270,16 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
           }
         }
 
-        GetQueryResult(id, parseResult.getOrThrow())
+        val expiryParseResult = runCatching { QueryResultExpiry.parseFrom(expiryBytes) }
+
+        expiryParseResult.onFailure {
+          logger.warn(it) {
+            "Parsing QueryResultExpiry failed for id=$id, user=$user, " +
+              "queryId=${queryId.to0xHexString()}, flags=$flags [x9k2c3b8y1]"
+          }
+        }
+
+        GetQueryResult(id, parseResult.getOrThrow(), expiryParseResult.getOrThrow())
       }
     }
 
@@ -266,15 +287,21 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
     user: SqliteUserId,
     queryId: ImmutableByteArray,
     queryResultProtoBytes: ImmutableByteArray,
+    expiryProtoBytes: ImmutableByteArray,
   ): SqliteQueryId {
     execSQL(
       logger,
       """
         INSERT OR REPLACE INTO queries
-        (user_id, query_id, data, flags)
-        VALUES (?, ?, ?, 0)
+        (user_id, query_id, data, expiry, flags)
+        VALUES (?, ?, ?, ?, 0)
       """,
-      arrayOf(user.sqliteRowId, queryId.peek(), queryResultProtoBytes.peek())
+      arrayOf(
+        user.sqliteRowId,
+        queryId.peek(),
+        queryResultProtoBytes.peek(),
+        expiryProtoBytes.peek()
+      )
     )
     val rowId = getLastInsertRowId(logger)
     return SqliteQueryId(rowId)
@@ -424,15 +451,47 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
     execSQL(logger, "DELETE FROM entity_query_map WHERE query_id=?", arrayOf(query.sqliteRowId))
   }
 
-  suspend fun getQueryResult(authUid: String?, queryId: ImmutableByteArray): Struct? =
+  sealed interface GetQueryResultResult {
+    data object NotFound : GetQueryResultResult
+
+    data class Stale(val staleness: Duration) : GetQueryResultResult
+
+    data class Found(
+      val struct: Struct,
+      val freshnessRemaining: Duration,
+    ) : GetQueryResultResult
+  }
+
+  suspend fun getQueryResult(
+    authUid: String?,
+    queryId: ImmutableByteArray,
+    currentTimeMillis: Long
+  ): GetQueryResultResult =
   // TODO: convert to read-only transaction so it can be run concurrently
   runReadWriteTransaction { sqliteDatabase ->
     val sqliteUserId = sqliteDatabase.getOrInsertAuthUid(authUid)
     val getQueryResult = sqliteDatabase.getQuery(sqliteUserId, queryId)
     if (getQueryResult === null) {
-      null
+      GetQueryResultResult.NotFound
     } else {
-      val (sqliteQueryId, queryResultProto) = getQueryResult
+      val (sqliteQueryId, queryResultProto, expiryProto) = getQueryResult
+
+      val staleness = expiryProto.calculateStaleness(currentTimeMillis)
+      val staleDuration =
+        when (staleness) {
+          is Staleness.Stale -> staleness.staleness
+          Staleness.Invalid -> Duration.ZERO
+          Staleness.Unspecified -> Duration.ZERO
+          is Staleness.Fresh -> null
+        }
+      if (staleDuration !== null) {
+        return@runReadWriteTransaction GetQueryResultResult.Stale(staleDuration)
+      }
+      check(staleness is Staleness.Fresh) {
+        "internal error h4v35rdhh4: staleness=$staleness (${staleness::class.qualifiedName}), " +
+          "but expected Staleness.Fresh (${Staleness.Fresh::class.qualifiedName})"
+      }
+
       val entityIds: Set<String> = queryResultProto.referencedEntityIds()
       val entityStructByEntityId =
         sqliteDatabase.getEntities(
@@ -450,7 +509,8 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
             "queryId=${queryId.to0xHexString()} [knpe3t4f5b]"
         }
       }
-      rehydrateResult.getOrThrow()
+
+      GetQueryResultResult.Found(rehydrateResult.getOrThrow(), staleness.freshnessRemaining)
     }
   }
 
@@ -458,6 +518,8 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
     authUid: String?,
     queryId: ImmutableByteArray,
     queryData: Struct,
+    maxAge: DurationProto,
+    currentTimeMillis: Long,
     getEntityIdForPath: GetEntityIdForPathFunction?,
   ) {
     require(queryId.size > 0) {
@@ -465,6 +527,14 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
     }
     val (queryResultProto, entityStructById) = dehydrateQueryResult(queryData, getEntityIdForPath)
     val queryResultProtoBytes = ImmutableByteArray.adopt(queryResultProto.toByteArray())
+
+    val expiryProtoBytes =
+      QueryResultExpiry.newBuilder().let {
+        val expiryTimeNanos = nanosFromMillis(currentTimeMillis) + maxAge.toBigIntegerNanos()
+        it.setMaxAge(maxAge)
+        it.setExpiryTimeNanos(expiryTimeNanos.toString(36))
+        ImmutableByteArray.adopt(it.build().toByteArray())
+      }
 
     runReadWriteTransaction { sqliteDatabase ->
       val user = sqliteDatabase.getOrInsertAuthUid(authUid)
@@ -474,6 +544,7 @@ internal class DataConnectCacheDatabase(private val dbFile: File?, private val l
           user = user,
           queryId = queryId,
           queryResultProtoBytes = queryResultProtoBytes,
+          expiryProtoBytes = expiryProtoBytes,
         )
 
       val sqliteEntityIds =
@@ -560,6 +631,118 @@ private fun QueryResultProto.referencedEntityIds(): Set<String> = buildSet {
         entityOrEntityList.entityList.entitiesList.forEach { entity -> add(entity.entityId) }
       }
       EntityOrEntityList.KindCase.KIND_NOT_SET -> {}
+    }
+  }
+}
+
+private val NANOS_FROM_SECONDS_MULTIPLIER = 1_000_000_000.toBigInteger()
+
+private val NANOS_FROM_MILLISECONDS_MULTIPLIER = 1_000_000.toBigInteger()
+
+private fun DurationProto.toBigIntegerNanos(): BigInteger {
+  val seconds = seconds.toBigInteger()
+  val nanos = nanos.toBigInteger()
+  return nanos + (seconds * NANOS_FROM_SECONDS_MULTIPLIER)
+}
+
+private fun nanosFromMillis(millis: Long): BigInteger =
+  millis.toBigInteger() * NANOS_FROM_MILLISECONDS_MULTIPLIER
+
+private sealed interface Staleness {
+  data object Unspecified : Staleness
+  data object Invalid : Staleness
+  data class Fresh(val freshnessRemaining: Duration) : Staleness
+  data class Stale(val staleness: Duration) : Staleness
+}
+
+private fun QueryResultExpiry.calculateStaleness(currentTimeMillis: Long): Staleness {
+  val expiryTimeNanosString = this.expiryTimeNanos ?: return Staleness.Unspecified
+
+  val expiryTimeNanos: BigInteger =
+    try {
+      expiryTimeNanosString.toBigInteger(36)
+    } catch (_: NumberFormatException) {
+      return Staleness.Invalid
+    }
+
+  val nanosExpired = nanosFromMillis(currentTimeMillis) - expiryTimeNanos
+  val staleness = nanosExpired.signedDurationFromNanoseconds()
+
+  maxAge.run {
+    if (seconds == 0L && nanos == 0) {
+      return Staleness.Stale(staleness = staleness.duration)
+    }
+  }
+
+  return when (staleness) {
+    SignedDuration.Zero -> Staleness.Fresh(freshnessRemaining = Duration.ZERO)
+    is SignedDuration.NonZero ->
+      if (staleness.sign.isPositive) {
+        Staleness.Stale(staleness = staleness.duration)
+      } else {
+        Staleness.Fresh(freshnessRemaining = staleness.duration)
+      }
+  }
+}
+
+private sealed interface SignedDuration {
+  val duration: Duration
+
+  data object Zero : SignedDuration {
+    override val duration = Duration.ZERO
+  }
+
+  data class NonZero(override val duration: Duration, val sign: Sign) : SignedDuration {
+    enum class Sign(val isPositive: Boolean) {
+      Positive(true),
+      Negative(false);
+
+      val isNegative: Boolean
+        get() = !isPositive
+    }
+  }
+}
+
+private fun BigInteger.signedDurationFromNanoseconds(): SignedDuration {
+  when {
+    this < BigInteger.ZERO -> {
+      val positiveSignedDuration = abs().signedDurationFromNanoseconds()
+      check(positiveSignedDuration is SignedDuration.NonZero)
+      check(positiveSignedDuration.sign == SignedDuration.NonZero.Sign.Positive)
+      return positiveSignedDuration.copy(sign = SignedDuration.NonZero.Sign.Negative)
+    }
+    this > BigInteger.ZERO -> {
+      if (this <= LONG_MAX_VALUE_BIG_INTEGER) {
+        val duration = toLong().nanoseconds
+        if (!duration.isInfinite()) {
+          check(duration.isPositive()) {
+            "internal error cktj247ham: duration.isPositive() returned false (duration=$duration)"
+          }
+          return SignedDuration.NonZero(duration, SignedDuration.NonZero.Sign.Positive)
+        }
+      }
+
+      val milliseconds = this / NANOS_FROM_MILLISECONDS_MULTIPLIER
+      val duration =
+        if (milliseconds > LONG_MAX_VALUE_BIG_INTEGER) {
+          Duration.INFINITE
+        } else {
+          milliseconds.toLong().milliseconds
+        }
+
+      check(duration.isPositive()) {
+        "internal error t89g2eccdq: duration.isPositive() returned false (duration=$duration)"
+      }
+
+      val normalizedDuration = if (duration.isInfinite()) Duration.INFINITE else duration
+
+      return SignedDuration.NonZero(normalizedDuration, SignedDuration.NonZero.Sign.Positive)
+    }
+    else -> {
+      check(this == BigInteger.ZERO) {
+        "internal error c9mv7fgcdm: this==$this, but expected BigInteger.ZERO"
+      }
+      return SignedDuration.Zero
     }
   }
 }

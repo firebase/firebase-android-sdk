@@ -35,6 +35,7 @@ import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.choose
 import io.kotest.property.arbitrary.cyrillic
 import io.kotest.property.arbitrary.double
+import io.kotest.property.arbitrary.duration
 import io.kotest.property.arbitrary.egyptianHieroglyphs
 import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.filterNot
@@ -46,6 +47,7 @@ import io.kotest.property.arbitrary.string
 import io.kotest.property.asSample
 import io.mockk.mockk
 import kotlin.random.nextInt
+import kotlin.time.Duration
 import kotlinx.serialization.modules.SerializersModule
 
 @Suppress("MemberVisibilityCanBePrivate")
@@ -128,7 +130,8 @@ object DataConnectArb {
 
   fun cacheSettings(
     storage: Arb<CacheSettings.Storage> = Arb.enum<CacheSettings.Storage>(),
-  ): Arb<CacheSettings> = storage.map(::CacheSettings)
+    maxAge: Arb<Duration> = Arb.duration(),
+  ): Arb<CacheSettings> = Arb.bind(storage, maxAge, ::CacheSettings)
 
   fun dataConnectSettings(
     prefix: String? = null,
@@ -171,6 +174,18 @@ object DataConnectArb {
       fieldArb = field,
       listIndexArb = listIndex,
     )
+
+  val ZERO_DURATION: com.google.protobuf.Duration =
+    com.google.protobuf.Duration.newBuilder().setSeconds(0).setNanos(0).build()
+
+  val MIN_NONZERO_DURATION: com.google.protobuf.Duration =
+    com.google.protobuf.Duration.newBuilder().setSeconds(0).setNanos(1).build()
+
+  fun maxAge(
+    min: com.google.protobuf.Duration = ZERO_DURATION,
+    max: com.google.protobuf.Duration? = null,
+  ): Arb<com.google.protobuf.Duration> =
+    Arb.proto.duration(min = min, max = max).map { it.duration }
 }
 
 private class DataConnectPathArb(

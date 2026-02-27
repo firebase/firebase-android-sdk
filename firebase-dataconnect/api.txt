@@ -25,8 +25,10 @@ package com.google.firebase.dataconnect {
   }
 
   public final class CacheSettings {
-    ctor public CacheSettings(com.google.firebase.dataconnect.CacheSettings.Storage storage = com.google.firebase.dataconnect.CacheSettings.Storage.PERSISTENT);
+    ctor public CacheSettings(com.google.firebase.dataconnect.CacheSettings.Storage storage = com.google.firebase.dataconnect.CacheSettings.Storage.PERSISTENT, long maxAge = kotlin.time.Duration.ZERO);
+    method public long getMaxAge();
     method public com.google.firebase.dataconnect.CacheSettings.Storage getStorage();
+    property public final long maxAge;
     property public final com.google.firebase.dataconnect.CacheSettings.Storage storage;
   }
 
@@ -36,7 +38,7 @@ package com.google.firebase.dataconnect {
   }
 
   public final class CacheSettingsKt {
-    method public static com.google.firebase.dataconnect.CacheSettings copy(com.google.firebase.dataconnect.CacheSettings, com.google.firebase.dataconnect.CacheSettings.Storage storage = storage);
+    method public static com.google.firebase.dataconnect.CacheSettings copy(com.google.firebase.dataconnect.CacheSettings, com.google.firebase.dataconnect.CacheSettings.Storage storage = storage, long maxAge = maxAge);
   }
 
   public final class ConnectorConfig {

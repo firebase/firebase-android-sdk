@@ -250,7 +250,7 @@ internal class FirebaseDataConnectImpl(
               context.getDatabasePath(dbName)
             }
           }
-        DataConnectGrpcRPCs.CacheSettings(dbFile)
+        DataConnectGrpcRPCs.CacheSettings(dbFile, maxAge)
       }
 
     logger.debug { "connecting to Data Connect backend: $backendInfo" }
