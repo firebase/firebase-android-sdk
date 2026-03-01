@@ -16,6 +16,7 @@
 
 package com.google.firebase.ai.type
 
+import android.Manifest
 import android.Manifest.permission.RECORD_AUDIO
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
@@ -73,6 +74,7 @@ internal constructor(
   private val session: DefaultClientWebSocketSession,
   @Blocking private val blockingDispatcher: CoroutineContext,
   private var audioHelper: AudioHelper? = null,
+  private var videoHelper: VideoHelper? = null,
   private val firebaseApp: FirebaseApp,
 ) {
   /**
@@ -286,6 +288,66 @@ internal constructor(
 
       audioHelper?.release()
       audioHelper = null
+      videoHelper?.release()
+      videoHelper = null
+    }
+  }
+
+  /**
+   * Stops the video conversation with the model.
+   *
+   * This only needs to be called after a previous call to [startVideoConversation].
+   *
+   * If there is no video conversation currently active, this function does nothing.
+   */
+  public fun stopVideoConversation() {
+    FirebaseAIException.catch {
+      if (!startedReceiving.getAndSet(false)) return@catch
+
+      scope.cancel()
+
+      videoHelper?.release()
+      videoHelper = null
+    }
+  }
+
+  /**
+   * Starts a video conversation with the model, which can only be stopped using
+   * [stopVideoConversation] or [close].
+   *
+   * @param cameraId The ID of the camera to use for the video stream.
+   */
+  @RequiresPermission(Manifest.permission.CAMERA)
+  public suspend fun startVideoConversation(cameraId: String) {
+    val context = firebaseApp.applicationContext
+    if (
+      ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) !=
+        PackageManager.PERMISSION_GRANTED
+    ) {
+      throw PermissionMissingException("Camera access not provided by the user")
+    }
+
+    FirebaseAIException.catchAsync {
+      if (scope.isActive) {
+        Log.w(
+          TAG,
+          "startVideoConversation called after a conversation has already started. " +
+            "Call stopVideoConversation to close the previous connection."
+        )
+        return@catchAsync
+      }
+
+      scope = CoroutineScope(blockingDispatcher + childJob())
+      val cameraManager =
+        context.getSystemService(android.content.Context.CAMERA_SERVICE)
+          as android.hardware.camera2.CameraManager
+      videoHelper = VideoHelper.build(cameraManager)
+      videoHelper
+        ?.start(cameraId)
+        ?.buffer(UNLIMITED)
+        ?.onEach { sendMediaStream(listOf(MediaData(it, "image/jpeg"))) }
+        ?.catch { throw FirebaseAIException.from(it) }
+        ?.launchIn(scope)
     }
   }
 
@@ -294,6 +356,9 @@ internal constructor(
 
   /** Indicates whether an audio conversation is being used for this session object. */
   public fun isAudioConversationActive(): Boolean = (audioHelper != null)
+
+  /** Indicates whether a video conversation is being used for this session object. */
+  public fun isVideoConversationActive(): Boolean = (videoHelper != null)
 
   /**
    * Receives responses from the model for both streaming and standard requests.
@@ -498,6 +563,7 @@ internal constructor(
     FirebaseAIException.catchAsync {
       session.close()
       stopAudioConversation()
+      stopVideoConversation()
     }
   }
 
