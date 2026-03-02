@@ -1,29 +1,28 @@
 # Unreleased
 
+- [changed] Added offline caching APIs
+  ([#7814](https://github.com/firebase/firebase-android-sdk/pull/7814),
+  [#7833](https://github.com/firebase/firebase-android-sdk/pull/7833),
+  [#7848](https://github.com/firebase/firebase-android-sdk/pull/7848))
+
 # 17.1.4
 
 - [changed] Internal changes to support future offline caching functionality.
-  [#7716](https://github.com/firebase/firebase-android-sdk/pull/7716)),
-  [#7714](https://github.com/firebase/firebase-android-sdk/pull/7714)),
-  [#7720](https://github.com/firebase/firebase-android-sdk/pull/7720)),
-  [#7759](https://github.com/firebase/firebase-android-sdk/pull/7759)),
+  ([#7716](https://github.com/firebase/firebase-android-sdk/pull/7716),
+  [#7714](https://github.com/firebase/firebase-android-sdk/pull/7714),
+  [#7720](https://github.com/firebase/firebase-android-sdk/pull/7720),
+  [#7759](https://github.com/firebase/firebase-android-sdk/pull/7759),
   [#7821](https://github.com/firebase/firebase-android-sdk/pull/7821))
-- [changed] Added public APIs for offline caching.
-  [#7833](https://github.com/firebase/firebase-android-sdk/pull/7833))
-- [changed] DataSource wired up and entity paths extracted from response.
-  [#7814](https://github.com/firebase/firebase-android-sdk/pull/7814))
-- [changed] Offline caching now respects maxAge.
-  [#7848](https://github.com/firebase/firebase-android-sdk/pull/7848))
 
 # 17.1.3
 
 - [changed] Internal refactor for reporting "paths" in response data.
-  [#7613](https://github.com/firebase/firebase-android-sdk/pull/7613))
+  ([#7613](https://github.com/firebase/firebase-android-sdk/pull/7613))
 
 # 17.1.2
 
 - [changed] Internal refactor for managing Auth and App Check tokens
-  [#7485](https://github.com/firebase/firebase-android-sdk/pull/7485))
+  ([#7485](https://github.com/firebase/firebase-android-sdk/pull/7485))
 
 # 17.1.1
 
