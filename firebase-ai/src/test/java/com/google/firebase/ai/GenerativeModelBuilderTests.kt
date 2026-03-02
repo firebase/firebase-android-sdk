@@ -21,7 +21,6 @@ import android.net.ConnectivityManager
 import com.google.firebase.FirebaseApp
 import com.google.firebase.ai.generativemodel.CloudGenerativeModelProvider
 import com.google.firebase.ai.generativemodel.FallbackGenerativeModelProvider
-import com.google.firebase.ai.generativemodel.GenerativeModelProvider
 import com.google.firebase.ai.type.GenerativeBackend
 import com.google.firebase.ai.type.PublicPreviewAPI
 import io.kotest.matchers.string.shouldContain
@@ -61,13 +60,12 @@ internal class GenerativeModelBuilderTests {
     val provider = builder.getModelProvider()
 
     provider.shouldBeInstanceOf<FallbackGenerativeModelProvider>()
-    val fallbackModel = provider.getPrivateField<GenerativeModelProvider>("fallbackModel")
+    val fallbackModel = provider.fallbackModel
 
     fallbackModel.shouldBeInstanceOf<CloudGenerativeModelProvider>()
-    val controller =
-      fallbackModel.getPrivateField<com.google.firebase.ai.common.APIController>("controller")
+    val controller = fallbackModel.controller
 
-    val apiClient = controller.getPrivateField<String>("apiClient")
+    val apiClient = controller.apiClient
     apiClient shouldContain " hybrid"
   }
 
@@ -86,13 +84,12 @@ internal class GenerativeModelBuilderTests {
     val provider = builder.getModelProvider()
 
     provider.shouldBeInstanceOf<FallbackGenerativeModelProvider>()
-    val defaultModel = provider.getPrivateField<GenerativeModelProvider>("defaultModel")
+    val defaultModel = provider.defaultModel
 
     defaultModel.shouldBeInstanceOf<CloudGenerativeModelProvider>()
-    val controller =
-      defaultModel.getPrivateField<com.google.firebase.ai.common.APIController>("controller")
+    val controller = defaultModel.controller
 
-    val apiClient = controller.getPrivateField<String>("apiClient")
+    val apiClient = controller.apiClient
     apiClient shouldContain " hybrid"
   }
 
@@ -111,16 +108,9 @@ internal class GenerativeModelBuilderTests {
     val provider = builder.getModelProvider()
 
     provider.shouldBeInstanceOf<CloudGenerativeModelProvider>()
-    val controller =
-      provider.getPrivateField<com.google.firebase.ai.common.APIController>("controller")
+    val controller = provider.controller
 
-    val apiClient = controller.getPrivateField<String>("apiClient")
+    val apiClient = controller.apiClient
     apiClient shouldNotContain " hybrid"
   }
-}
-
-private fun <T> Any.getPrivateField(name: String): T {
-  val field = this.javaClass.getDeclaredField(name)
-  field.isAccessible = true
-  @Suppress("UNCHECKED_CAST") return field.get(this) as T
 }
