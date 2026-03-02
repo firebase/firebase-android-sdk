@@ -48,15 +48,15 @@ internal class GenerativeModelBuilderTests {
 
   @Test
   fun `getModelProvider uses hybrid suffix in PREFER_ON_DEVICE mode`() {
-    val builder = GenerativeModel.Builder(
-      modelName = "gemini-1.5-flash",
-      apiKey = "apiKey",
-      firebaseApp = firebaseApp,
-      useLimitedUseAppCheckTokens = false,
-      generativeBackend = GenerativeBackend.googleAI()
-    ).apply {
-      onDeviceConfig = OnDeviceConfig(InferenceMode.PREFER_ON_DEVICE)
-    }
+    val builder =
+      GenerativeModel.Builder(
+          modelName = "gemini-1.5-flash",
+          apiKey = "apiKey",
+          firebaseApp = firebaseApp,
+          useLimitedUseAppCheckTokens = false,
+          generativeBackend = GenerativeBackend.googleAI()
+        )
+        .apply { onDeviceConfig = OnDeviceConfig(InferenceMode.PREFER_ON_DEVICE) }
 
     val provider = builder.getModelProvider()
 
@@ -64,7 +64,8 @@ internal class GenerativeModelBuilderTests {
     val fallbackModel = provider.getPrivateField<GenerativeModelProvider>("fallbackModel")
 
     fallbackModel.shouldBeInstanceOf<CloudGenerativeModelProvider>()
-    val controller = fallbackModel.getPrivateField<com.google.firebase.ai.common.APIController>("controller")
+    val controller =
+      fallbackModel.getPrivateField<com.google.firebase.ai.common.APIController>("controller")
 
     val apiClient = controller.getPrivateField<String>("apiClient")
     apiClient shouldContain " hybrid"
@@ -72,15 +73,15 @@ internal class GenerativeModelBuilderTests {
 
   @Test
   fun `getModelProvider uses hybrid suffix in PREFER_IN_CLOUD mode`() {
-    val builder = GenerativeModel.Builder(
-      modelName = "gemini-1.5-flash",
-      apiKey = "apiKey",
-      firebaseApp = firebaseApp,
-      useLimitedUseAppCheckTokens = false,
-      generativeBackend = GenerativeBackend.googleAI()
-    ).apply {
-      onDeviceConfig = OnDeviceConfig(InferenceMode.PREFER_IN_CLOUD)
-    }
+    val builder =
+      GenerativeModel.Builder(
+          modelName = "gemini-1.5-flash",
+          apiKey = "apiKey",
+          firebaseApp = firebaseApp,
+          useLimitedUseAppCheckTokens = false,
+          generativeBackend = GenerativeBackend.googleAI()
+        )
+        .apply { onDeviceConfig = OnDeviceConfig(InferenceMode.PREFER_IN_CLOUD) }
 
     val provider = builder.getModelProvider()
 
@@ -88,7 +89,8 @@ internal class GenerativeModelBuilderTests {
     val defaultModel = provider.getPrivateField<GenerativeModelProvider>("defaultModel")
 
     defaultModel.shouldBeInstanceOf<CloudGenerativeModelProvider>()
-    val controller = defaultModel.getPrivateField<com.google.firebase.ai.common.APIController>("controller")
+    val controller =
+      defaultModel.getPrivateField<com.google.firebase.ai.common.APIController>("controller")
 
     val apiClient = controller.getPrivateField<String>("apiClient")
     apiClient shouldContain " hybrid"
@@ -96,20 +98,21 @@ internal class GenerativeModelBuilderTests {
 
   @Test
   fun `getModelProvider does NOT use hybrid suffix in ONLY_IN_CLOUD mode`() {
-    val builder = GenerativeModel.Builder(
-      modelName = "gemini-1.5-flash",
-      apiKey = "apiKey",
-      firebaseApp = firebaseApp,
-      useLimitedUseAppCheckTokens = false,
-      generativeBackend = GenerativeBackend.googleAI()
-    ).apply {
-      onDeviceConfig = OnDeviceConfig.IN_CLOUD
-    }
+    val builder =
+      GenerativeModel.Builder(
+          modelName = "gemini-1.5-flash",
+          apiKey = "apiKey",
+          firebaseApp = firebaseApp,
+          useLimitedUseAppCheckTokens = false,
+          generativeBackend = GenerativeBackend.googleAI()
+        )
+        .apply { onDeviceConfig = OnDeviceConfig.IN_CLOUD }
 
     val provider = builder.getModelProvider()
 
     provider.shouldBeInstanceOf<CloudGenerativeModelProvider>()
-    val controller = provider.getPrivateField<com.google.firebase.ai.common.APIController>("controller")
+    val controller =
+      provider.getPrivateField<com.google.firebase.ai.common.APIController>("controller")
 
     val apiClient = controller.getPrivateField<String>("apiClient")
     apiClient shouldNotContain " hybrid"
@@ -119,6 +122,5 @@ internal class GenerativeModelBuilderTests {
 private fun <T> Any.getPrivateField(name: String): T {
   val field = this.javaClass.getDeclaredField(name)
   field.isAccessible = true
-  @Suppress("UNCHECKED_CAST")
-  return field.get(this) as T
+  @Suppress("UNCHECKED_CAST") return field.get(this) as T
 }
