@@ -1,0 +1,181 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+###############################################################################
+# CachingString
+###############################################################################
+
+mutation CachingString_Insert($string: String!, $tag: String) @auth(level: PUBLIC) {
+  key: cachingString_insert(data: {string: $string, tag: $tag})
+}
+
+mutation CachingString_Update($key: CachingString_Key!, $string: String!) @auth(level: PUBLIC) {
+  count: cachingString_update(key: $key, data: {string: $string})
+}
+
+query CachingString_GetByKey($key: CachingString_Key!) @auth(level: PUBLIC) {
+  item: cachingString(key: $key) { string }
+}
+
+query CachingString_GetByKey2($key: CachingString_Key!) @auth(level: PUBLIC) {
+  item: cachingString(key: $key) { string }
+}
+
+query CachingString_GetByTag($tag: String!) @auth(level: PUBLIC) {
+  items: cachingStrings(where: {tag: {eq: $tag}}) { id string }
+}
+
+query CachingString_GetByTag2($tag: String!) @auth(level: PUBLIC) {
+  items: cachingStrings(where: {tag: {eq: $tag}}) { id string }
+}
+
+###############################################################################
+# CachingNullableString
+###############################################################################
+
+mutation CachingNullableString_Insert($string: String, $tag: String) @auth(level: PUBLIC) {
+  key: cachingNullableString_insert(data: {string: $string, tag: $tag})
+}
+
+mutation CachingNullableString_Update($key: CachingNullableString_Key!, $string: String) @auth(level: PUBLIC) {
+  count: cachingNullableString_update(key: $key, data: {string: $string})
+}
+
+query CachingNullableString_GetByKey($key: CachingNullableString_Key!) @auth(level: PUBLIC) {
+  item: cachingNullableString(key: $key) { string }
+}
+
+query CachingNullableString_GetByKey2($key: CachingNullableString_Key!) @auth(level: PUBLIC) {
+  item: cachingNullableString(key: $key) { string }
+}
+
+query CachingNullableString_GetByTag($tag: String!) @auth(level: PUBLIC) {
+  items: cachingNullableStrings(where: {tag: {eq: $tag}}) { id string }
+}
+
+query CachingNullableString_GetByTag2($tag: String!) @auth(level: PUBLIC) {
+  items: cachingNullableStrings(where: {tag: {eq: $tag}}) { id string }
+}
+
+###############################################################################
+# CachingFloat
+###############################################################################
+
+mutation CachingFloat_Insert($float: Float, $tag: String) @auth(level: PUBLIC) {
+  key: cachingFloat_insert(data: {float: $float, tag: $tag})
+}
+
+mutation CachingFloat_Update($key: CachingFloat_Key!, $float: Float) @auth(level: PUBLIC) {
+  count: cachingFloat_update(key: $key, data: {float: $float})
+}
+
+query CachingFloat_GetByKey($key: CachingFloat_Key!) @auth(level: PUBLIC) {
+  item: cachingFloat(key: $key) { float }
+}
+
+query CachingFloat_GetByKey2($key: CachingFloat_Key!) @auth(level: PUBLIC) {
+  item: cachingFloat(key: $key) { float }
+}
+
+query CachingFloat_GetByTag($tag: String!) @auth(level: PUBLIC) {
+  items: cachingFloats(where: {tag: {eq: $tag}}) { id float }
+}
+
+query CachingFloat_GetByTag2($tag: String!) @auth(level: PUBLIC) {
+  items: cachingFloats(where: {tag: {eq: $tag}}) { id float }
+}
+
+###############################################################################
+# CachingNullableFloat
+###############################################################################
+
+mutation CachingNullableFloat_Insert($float: Float, $tag: String) @auth(level: PUBLIC) {
+  key: cachingNullableFloat_insert(data: {float: $float, tag: $tag})
+}
+
+mutation CachingNullableFloat_Update($key: CachingNullableFloat_Key!, $float: Float) @auth(level: PUBLIC) {
+  count: cachingNullableFloat_update(key: $key, data: {float: $float})
+}
+
+query CachingNullableFloat_GetByKey($key: CachingNullableFloat_Key!) @auth(level: PUBLIC) {
+  item: cachingNullableFloat(key: $key) { float }
+}
+
+query CachingNullableFloat_GetByKey2($key: CachingNullableFloat_Key!) @auth(level: PUBLIC) {
+  item: cachingNullableFloat(key: $key) { float }
+}
+
+query CachingNullableFloat_GetByTag($tag: String!) @auth(level: PUBLIC) {
+  items: cachingNullableFloats(where: {tag: {eq: $tag}}) { id float }
+}
+
+query CachingNullableFloat_GetByTag2($tag: String!) @auth(level: PUBLIC) {
+  items: cachingNullableFloats(where: {tag: {eq: $tag}}) { id float }
+}
+
+###############################################################################
+# CachingBoolean
+###############################################################################
+
+mutation CachingBoolean_Insert($boolean: Boolean, $tag: String) @auth(level: PUBLIC) {
+  key: cachingBoolean_insert(data: {boolean: $boolean, tag: $tag})
+}
+
+mutation CachingBoolean_Update($key: CachingBoolean_Key!, $boolean: Boolean) @auth(level: PUBLIC) {
+  count: cachingBoolean_update(key: $key, data: {boolean: $boolean})
+}
+
+query CachingBoolean_GetByKey($key: CachingBoolean_Key!) @auth(level: PUBLIC) {
+  item: cachingBoolean(key: $key) { boolean }
+}
+
+query CachingBoolean_GetByKey2($key: CachingBoolean_Key!) @auth(level: PUBLIC) {
+  item: cachingBoolean(key: $key) { boolean }
+}
+
+query CachingBoolean_GetByTag($tag: String!) @auth(level: PUBLIC) {
+  items: cachingBooleans(where: {tag: {eq: $tag}}) { id boolean }
+}
+
+query CachingBoolean_GetByTag2($tag: String!) @auth(level: PUBLIC) {
+  items: cachingBooleans(where: {tag: {eq: $tag}}) { id boolean }
+}
+
+###############################################################################
+# CachingNullableBoolean
+###############################################################################
+
+mutation CachingNullableBoolean_Insert($boolean: Boolean, $tag: String) @auth(level: PUBLIC) {
+  key: cachingNullableBoolean_insert(data: {boolean: $boolean, tag: $tag})
+}
+
+mutation CachingNullableBoolean_Update($key: CachingNullableBoolean_Key!, $boolean: Boolean) @auth(level: PUBLIC) {
+  count: cachingNullableBoolean_update(key: $key, data: {boolean: $boolean})
+}
+
+query CachingNullableBoolean_GetByKey($key: CachingNullableBoolean_Key!) @auth(level: PUBLIC) {
+  item: cachingNullableBoolean(key: $key) { boolean }
+}
+
+query CachingNullableBoolean_GetByKey2($key: CachingNullableBoolean_Key!) @auth(level: PUBLIC) {
+  item: cachingNullableBoolean(key: $key) { boolean }
+}
+
+query CachingNullableBoolean_GetByTag($tag: String!) @auth(level: PUBLIC) {
+  items: cachingNullableBooleans(where: {tag: {eq: $tag}}) { id boolean }
+}
+
+query CachingNullableBoolean_GetByTag2($tag: String!) @auth(level: PUBLIC) {
+  items: cachingNullableBooleans(where: {tag: {eq: $tag}}) { id boolean }
+}
