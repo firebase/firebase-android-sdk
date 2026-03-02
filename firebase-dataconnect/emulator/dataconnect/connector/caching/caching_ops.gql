@@ -72,11 +72,11 @@ query CachingNullableString_GetByTag2($tag: String!) @auth(level: PUBLIC) {
 # CachingFloat
 ###############################################################################
 
-mutation CachingFloat_Insert($float: Float, $tag: String) @auth(level: PUBLIC) {
+mutation CachingFloat_Insert($float: Float!, $tag: String) @auth(level: PUBLIC) {
   key: cachingFloat_insert(data: {float: $float, tag: $tag})
 }
 
-mutation CachingFloat_Update($key: CachingFloat_Key!, $float: Float) @auth(level: PUBLIC) {
+mutation CachingFloat_Update($key: CachingFloat_Key!, $float: Float!) @auth(level: PUBLIC) {
   count: cachingFloat_update(key: $key, data: {float: $float})
 }
 
@@ -128,11 +128,11 @@ query CachingNullableFloat_GetByTag2($tag: String!) @auth(level: PUBLIC) {
 # CachingBoolean
 ###############################################################################
 
-mutation CachingBoolean_Insert($boolean: Boolean, $tag: String) @auth(level: PUBLIC) {
+mutation CachingBoolean_Insert($boolean: Boolean!, $tag: String) @auth(level: PUBLIC) {
   key: cachingBoolean_insert(data: {boolean: $boolean, tag: $tag})
 }
 
-mutation CachingBoolean_Update($key: CachingBoolean_Key!, $boolean: Boolean) @auth(level: PUBLIC) {
+mutation CachingBoolean_Update($key: CachingBoolean_Key!, $boolean: Boolean!) @auth(level: PUBLIC) {
   count: cachingBoolean_update(key: $key, data: {boolean: $boolean})
 }
 
