@@ -29,16 +29,25 @@ import io.kotest.matchers.string.shouldNotContain
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.mockk.every
 import io.mockk.mockk
+import org.junit.Before
 import org.junit.Test
 
 @OptIn(PublicPreviewAPI::class)
 internal class GenerativeModelBuilderTests {
 
+  val firebaseApp = mockk<FirebaseApp>(relaxed = true)
+
+  @Before
+  fun setUp() {
+    every { firebaseApp.options.applicationId } returns "1:12345:android:67890"
+    val context = mockk<Context>(relaxed = true)
+    val connectivityManager = mockk<ConnectivityManager>(relaxed = true)
+    every { firebaseApp.applicationContext } returns context
+    every { context.getSystemService(Context.CONNECTIVITY_SERVICE) } returns connectivityManager
+  }
+
   @Test
   fun `getModelProvider uses hybrid suffix in PREFER_ON_DEVICE mode`() {
-    val firebaseApp = mockk<FirebaseApp>(relaxed = true)
-    every { firebaseApp.options.applicationId } returns "1:12345:android:67890"
-
     val builder = GenerativeModel.Builder(
       modelName = "gemini-1.5-flash",
       apiKey = "apiKey",
@@ -63,13 +72,6 @@ internal class GenerativeModelBuilderTests {
 
   @Test
   fun `getModelProvider uses hybrid suffix in PREFER_IN_CLOUD mode`() {
-    val firebaseApp = mockk<FirebaseApp>(relaxed = true)
-    every { firebaseApp.options.applicationId } returns "1:12345:android:67890"
-    val context = mockk<Context>(relaxed = true)
-    val connectivityManager = mockk<ConnectivityManager>(relaxed = true)
-    every { firebaseApp.applicationContext } returns context
-    every { context.getSystemService(Context.CONNECTIVITY_SERVICE) } returns connectivityManager
-
     val builder = GenerativeModel.Builder(
       modelName = "gemini-1.5-flash",
       apiKey = "apiKey",
@@ -94,9 +96,6 @@ internal class GenerativeModelBuilderTests {
 
   @Test
   fun `getModelProvider does NOT use hybrid suffix in ONLY_IN_CLOUD mode`() {
-    val firebaseApp = mockk<FirebaseApp>(relaxed = true)
-    every { firebaseApp.options.applicationId } returns "1:12345:android:67890"
-
     val builder = GenerativeModel.Builder(
       modelName = "gemini-1.5-flash",
       apiKey = "apiKey",
