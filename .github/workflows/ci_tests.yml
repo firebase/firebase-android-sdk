@@ -58,7 +58,7 @@ jobs:
           cache: gradle
 
       - name: Clone ai mock responses
-        if: matrix.module == ':firebase-ai'
+        if: matrix.module == ':ai-logic:firebase-ai'
         run: ai-logic/firebase-ai/update_responses.sh
       - name: Add local.properties (for FAD gradle tests)
         env:
