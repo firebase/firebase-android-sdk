@@ -315,10 +315,10 @@ internal constructor(
     /**
      * Returns a [GenerativeModelProvider] that uses the cloud backend.
      *
-     * @param isFallback Whether this provider is being used as a fallback for another provider.
+     * @param isHybrid Whether this provider is being used in a hybrid configuration.
      * @return A [GenerativeModelProvider] that uses the cloud backend.
      */
-    internal fun buildCloudModelProvider(isFallback: Boolean = false): GenerativeModelProvider {
+    internal fun buildCloudModelProvider(isHybrid: Boolean = false): GenerativeModelProvider {
       return CloudGenerativeModelProvider(
         modelName = modelName,
         generationConfig = generationConfig,
@@ -332,7 +332,7 @@ internal constructor(
             apiKey,
             modelName,
             requestOptions,
-            if (isFallback) "${apiClient} hybrid" else apiClient,
+            if (isHybrid) "${apiClient} hybrid" else apiClient,
             firebaseApp,
             AppCheckHeaderProvider(
               TAG,
@@ -359,13 +359,13 @@ internal constructor(
         InferenceMode.PREFER_ON_DEVICE -> {
           FallbackGenerativeModelProvider(
             defaultModel = buildOnDeviceModelProvider(),
-            fallbackModel = buildCloudModelProvider(isFallback = true),
+            fallbackModel = buildCloudModelProvider(isHybrid = true),
             shouldFallbackInException = true
           )
         }
         InferenceMode.PREFER_IN_CLOUD ->
           FallbackGenerativeModelProvider(
-            defaultModel = buildCloudModelProvider(),
+            defaultModel = buildCloudModelProvider(isHybrid = true),
             fallbackModel = buildOnDeviceModelProvider(),
             precondition =
               NetworkStatusChecker(

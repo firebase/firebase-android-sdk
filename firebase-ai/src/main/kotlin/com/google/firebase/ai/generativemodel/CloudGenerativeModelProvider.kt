@@ -48,7 +48,7 @@ internal class CloudGenerativeModelProvider(
   private val toolConfig: ToolConfig? = null,
   private val systemInstruction: Content? = null,
   private val generativeBackend: GenerativeBackend = GenerativeBackend.googleAI(),
-  private val controller: APIController,
+  internal val controller: APIController,
 ) : GenerativeModelProvider {
 
   override suspend fun generateContent(prompt: List<Content>): GenerateContentResponse =

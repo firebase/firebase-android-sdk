@@ -97,7 +97,7 @@ dependencies {
   implementation("androidx.concurrent:concurrent-futures:1.2.0")
   implementation("androidx.concurrent:concurrent-futures-ktx:1.2.0")
   implementation("com.google.firebase:firebase-auth-interop:18.0.0")
-  implementation(project(":firebase-ai-ondevice-interop"))
+  implementation("com.google.firebase:firebase-ai-ondevice-interop:16.0.0-beta01")
 
   testImplementation(libs.kotest.assertions.core)
   testImplementation(libs.kotest.assertions)

@@ -1,6 +1,8 @@
 # Unreleased
 
-* [fixed] Mitigated FIS ID duplication issue from backup data. (#7025)
+# 19.1.0
+
+- [fixed] Mitigated FIS ID duplication issue from backup data. (#7025)
 
 # 19.0.1
 
