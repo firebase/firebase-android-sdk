@@ -44,8 +44,8 @@ android {
 kotlin { compilerOptions { jvmTarget = JvmTarget.JVM_1_8 } }
 
 dependencies {
-  implementation(project(":firebase-ai"))
-  ksp(project(":firebase-ai-ksp-processor"))
+  implementation(project(":ai-logic:firebase-ai"))
+  ksp(project(":ai-logic:firebase-ai-ksp-processor"))
 
   implementation("com.google.firebase:firebase-common:22.0.0")
   implementation(libs.firebase.components)
