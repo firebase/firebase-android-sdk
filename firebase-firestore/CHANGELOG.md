@@ -1,5 +1,7 @@
 # Unreleased
 
+# 26.1.1
+
 - [feature] Added support for `regexFind` and `regexFindAll` Pipeline expressions.
   [#7669](https://github.com/firebase/firebase-android-sdk/pull/7669)
 - [changed] Updated `Expression.alias()` to return `AliasedExpression`.
