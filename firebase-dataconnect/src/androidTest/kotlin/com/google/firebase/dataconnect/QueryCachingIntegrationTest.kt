@@ -336,8 +336,7 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
   fun normalizedFloat() = runTest {
     val connector = newCachingConnector()
     val floatsArb = Arb.dataConnect.float().quintuple()
-    checkAll(propTestConfig.copy(seed = 3064298334157170386), floatsArb) {
-      (float1, float2, float3, float4, float5) ->
+    checkAll(propTestConfig, floatsArb) { (float1, float2, float3, float4, float5) ->
       val tag = randomTag()
       val key = connector.insertFloat(float1.float, tag)
       connector.verifyGetFloat(key, "query1a", float1.roundTripFloat, SERVER)
