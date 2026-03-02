@@ -113,7 +113,7 @@ internal constructor(
   model: String,
   private val requestOptions: RequestOptions,
   httpEngine: HttpClientEngine,
-  private val apiClient: String,
+  internal val apiClient: String,
   private val firebaseApp: FirebaseApp,
   private val appVersion: Int = 0,
   private val googleAppId: String,

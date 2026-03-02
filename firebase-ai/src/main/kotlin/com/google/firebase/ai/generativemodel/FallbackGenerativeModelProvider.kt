@@ -47,8 +47,8 @@ import kotlinx.coroutines.flow.onEach
  * Defaults to `true`.
  */
 internal class FallbackGenerativeModelProvider(
-  private val defaultModel: GenerativeModelProvider,
-  private val fallbackModel: GenerativeModelProvider,
+  internal val defaultModel: GenerativeModelProvider,
+  internal val fallbackModel: GenerativeModelProvider,
   private val precondition: () -> Boolean = { true },
   private val shouldFallbackInException: Boolean = true
 ) : GenerativeModelProvider {
