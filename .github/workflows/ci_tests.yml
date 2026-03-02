@@ -59,7 +59,7 @@ jobs:
 
       - name: Clone ai mock responses
         if: matrix.module == ':firebase-ai'
-        run: firebase-ai/update_responses.sh
+        run: ai-logic/firebase-ai/update_responses.sh
       - name: Add local.properties (for FAD gradle tests)
         env:
           INTEG_TESTS_FAD_LOCAL_PROPERTIES: ${{ secrets.INTEG_TESTS_FAD_LOCAL_PROPERTIES }}
