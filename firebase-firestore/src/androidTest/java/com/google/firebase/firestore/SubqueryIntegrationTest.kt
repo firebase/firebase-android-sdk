@@ -211,158 +211,6 @@ class SubqueryIntegrationTest {
   }
 
   @Test
-  fun testScalarSubqueryZeroResults() {
-    val reviewsCollName = "reviews_zero_" + autoId()
-
-    // No reviews for "1984"
-
-    val reviewsSub =
-      db
-        .pipeline()
-        .collection(reviewsCollName)
-        .where(
-          equal(
-            "bookTitle",
-            com.google.firebase.firestore.pipeline.Expression.variable("book_title")
-          )
-        )
-        .aggregate(
-          com.google.firebase.firestore.pipeline.AggregateFunction.average("rating").alias("avg")
-        )
-
-    val results =
-      waitFor(
-        db
-          .pipeline()
-          .collection(collection.path)
-          .where(equal("title", "1984")) // "1984" exists in the main collection from setup
-          .define(field("title").alias("book_title"))
-          .addFields(reviewsSub.toScalarExpression().alias("average_rating"))
-          .select("title", "average_rating")
-          .execute()
-      )
-
-    assertThat(results.map { it.getData() })
-      .containsExactly(mapOf("title" to "1984", "average_rating" to null))
-  }
-
-  @Test
-  fun testScalarSubquerySingleAggregationUnwrapping() {
-    val reviewsCollName = "reviews_agg_single_" + autoId()
-
-    val reviewsCollection = db.collection(reviewsCollName)
-    waitFor(reviewsCollection.document("r1").set(mapOf("bookTitle" to "1984", "rating" to 4)))
-    waitFor(reviewsCollection.document("r2").set(mapOf("bookTitle" to "1984", "rating" to 5)))
-
-    val reviewsSub =
-      db
-        .pipeline()
-        .collection(reviewsCollName)
-        .where(
-          equal(
-            "bookTitle",
-            com.google.firebase.firestore.pipeline.Expression.variable("book_title")
-          )
-        )
-        .aggregate(
-          com.google.firebase.firestore.pipeline.AggregateFunction.average("rating").alias("val")
-        )
-
-    val results =
-      waitFor(
-        db
-          .pipeline()
-          .collection(collection.path)
-          .where(equal("title", "1984"))
-          .define(field("title").alias("book_title"))
-          .addFields(reviewsSub.toScalarExpression().alias("average_rating"))
-          .select("title", "average_rating")
-          .execute()
-      )
-
-    assertThat(results.map { it.getData() })
-      .containsExactly(mapOf("title" to "1984", "average_rating" to 4.5))
-  }
-
-  @Test
-  fun testScalarSubqueryMultipleAggregationsMapWrapping() {
-    val reviewsCollName = "reviews_agg_multi_" + autoId()
-
-    val reviewsCollection = db.collection(reviewsCollName)
-    waitFor(reviewsCollection.document("r1").set(mapOf("bookTitle" to "1984", "rating" to 4)))
-    waitFor(reviewsCollection.document("r2").set(mapOf("bookTitle" to "1984", "rating" to 5)))
-
-    val reviewsSub =
-      db
-        .pipeline()
-        .collection(reviewsCollName)
-        .where(
-          equal(
-            "bookTitle",
-            com.google.firebase.firestore.pipeline.Expression.variable("book_title")
-          )
-        )
-        .aggregate(
-          com.google.firebase.firestore.pipeline.AggregateFunction.average("rating").alias("avg"),
-          com.google.firebase.firestore.pipeline.AggregateFunction.countAll().alias("count")
-        )
-
-    val results =
-      waitFor(
-        db
-          .pipeline()
-          .collection(collection.path)
-          .where(equal("title", "1984"))
-          .define(field("title").alias("book_title"))
-          .addFields(reviewsSub.toScalarExpression().alias("stats"))
-          .select("title", "stats")
-          .execute()
-      )
-
-    assertThat(results.map { it.getData() })
-      .containsExactly(mapOf("title" to "1984", "stats" to mapOf("avg" to 4.5, "count" to 2L)))
-  }
-
-  @Test
-  fun testScalarSubqueryMultipleResultsRuntimeError() {
-    val reviewsCollName = "reviews_multiple_" + autoId()
-
-    val reviewsCollection = db.collection(reviewsCollName)
-    waitFor(reviewsCollection.document("r1").set(mapOf("bookTitle" to "1984", "rating" to 4)))
-    waitFor(reviewsCollection.document("r2").set(mapOf("bookTitle" to "1984", "rating" to 5)))
-
-    // This subquery will return 2 documents, which is invalid for toScalarExpression()
-    val reviewsSub =
-      db
-        .pipeline()
-        .collection(reviewsCollName)
-        .where(
-          equal(
-            "bookTitle",
-            com.google.firebase.firestore.pipeline.Expression.variable("book_title")
-          )
-        )
-
-    val exception =
-      org.junit.Assert.assertThrows(RuntimeException::class.java) {
-        waitFor(
-          db
-            .pipeline()
-            .collection(collection.path)
-            .where(equal("title", "1984"))
-            .define(field("title").alias("book_title"))
-            .addFields(reviewsSub.toScalarExpression().alias("review_data"))
-            .execute()
-        )
-      }
-
-    // Assert that it's an API error from the backend complaining about multiple results
-    assertThat(exception.cause?.message).contains("Subpipeline returned multiple results.")
-  }
-
-  // Batch 2: Array Subqueries & Joins
-
-  @Test
   fun testArraySubqueryJoinAndEmptyResult() {
     val reviewsCollName = "book_reviews_" + autoId()
     val reviewsDocs =
@@ -534,6 +382,202 @@ class SubqueryIntegrationTest {
   }
 
   @Test
+  fun testArraySubqueryInWhereStageOnBooks() {
+    val reviewsCollName = "reviews_where_" + autoId()
+    val reviewsCollection = db.collection(reviewsCollName)
+
+    waitFor(
+      reviewsCollection.document("r1").set(mapOf("bookTitle" to "Dune", "reviewer" to "Paul"))
+    )
+    waitFor(
+      reviewsCollection.document("r2").set(mapOf("bookTitle" to "Foundation", "reviewer" to "Hari"))
+    )
+
+    val reviewsSub =
+      db
+        .pipeline()
+        .collection(reviewsCollName)
+        .where(
+          equal(
+            "bookTitle",
+            com.google.firebase.firestore.pipeline.Expression.variable("book_title")
+          )
+        )
+        .select(field("reviewer").alias("reviewer"))
+
+    val results =
+      waitFor(
+        db
+          .pipeline()
+          .collection(collection.path)
+          .where(
+            com.google.firebase.firestore.pipeline.Expression.or(
+              equal("title", "Dune"),
+              equal("title", "The Great Gatsby")
+            )
+          )
+          .define(field("title").alias("book_title"))
+          .where(reviewsSub.toArrayExpression().arrayContains("Paul"))
+          .select("title")
+          .execute()
+      )
+
+    assertThat(results.map { it.getData() }).containsExactly(mapOf("title" to "Dune"))
+  }
+
+  @Test
+  fun testScalarSubquerySingleAggregationUnwrapping() {
+    val reviewsCollName = "reviews_agg_single_" + autoId()
+
+    val reviewsCollection = db.collection(reviewsCollName)
+    waitFor(reviewsCollection.document("r1").set(mapOf("bookTitle" to "1984", "rating" to 4)))
+    waitFor(reviewsCollection.document("r2").set(mapOf("bookTitle" to "1984", "rating" to 5)))
+
+    val reviewsSub =
+      db
+        .pipeline()
+        .collection(reviewsCollName)
+        .where(
+          equal(
+            "bookTitle",
+            com.google.firebase.firestore.pipeline.Expression.variable("book_title")
+          )
+        )
+        .aggregate(
+          com.google.firebase.firestore.pipeline.AggregateFunction.average("rating").alias("val")
+        )
+
+    val results =
+      waitFor(
+        db
+          .pipeline()
+          .collection(collection.path)
+          .where(equal("title", "1984"))
+          .define(field("title").alias("book_title"))
+          .addFields(reviewsSub.toScalarExpression().alias("average_rating"))
+          .select("title", "average_rating")
+          .execute()
+      )
+
+    assertThat(results.map { it.getData() })
+      .containsExactly(mapOf("title" to "1984", "average_rating" to 4.5))
+  }
+
+  @Test
+  fun testScalarSubqueryMultipleAggregationsMapWrapping() {
+    val reviewsCollName = "reviews_agg_multi_" + autoId()
+
+    val reviewsCollection = db.collection(reviewsCollName)
+    waitFor(reviewsCollection.document("r1").set(mapOf("bookTitle" to "1984", "rating" to 4)))
+    waitFor(reviewsCollection.document("r2").set(mapOf("bookTitle" to "1984", "rating" to 5)))
+
+    val reviewsSub =
+      db
+        .pipeline()
+        .collection(reviewsCollName)
+        .where(
+          equal(
+            "bookTitle",
+            com.google.firebase.firestore.pipeline.Expression.variable("book_title")
+          )
+        )
+        .aggregate(
+          com.google.firebase.firestore.pipeline.AggregateFunction.average("rating").alias("avg"),
+          com.google.firebase.firestore.pipeline.AggregateFunction.countAll().alias("count")
+        )
+
+    val results =
+      waitFor(
+        db
+          .pipeline()
+          .collection(collection.path)
+          .where(equal("title", "1984"))
+          .define(field("title").alias("book_title"))
+          .addFields(reviewsSub.toScalarExpression().alias("stats"))
+          .select("title", "stats")
+          .execute()
+      )
+
+    assertThat(results.map { it.getData() })
+      .containsExactly(mapOf("title" to "1984", "stats" to mapOf("avg" to 4.5, "count" to 2L)))
+  }
+
+  @Test
+  fun testScalarSubqueryZeroResults() {
+    val reviewsCollName = "reviews_zero_" + autoId()
+
+    // No reviews for "1984"
+
+    val reviewsSub =
+      db
+        .pipeline()
+        .collection(reviewsCollName)
+        .where(
+          equal(
+            "bookTitle",
+            com.google.firebase.firestore.pipeline.Expression.variable("book_title")
+          )
+        )
+        .aggregate(
+          com.google.firebase.firestore.pipeline.AggregateFunction.average("rating").alias("avg")
+        )
+
+    val results =
+      waitFor(
+        db
+          .pipeline()
+          .collection(collection.path)
+          .where(equal("title", "1984")) // "1984" exists in the main collection from setup
+          .define(field("title").alias("book_title"))
+          .addFields(reviewsSub.toScalarExpression().alias("average_rating"))
+          .select("title", "average_rating")
+          .execute()
+      )
+
+    assertThat(results.map { it.getData() })
+      .containsExactly(mapOf("title" to "1984", "average_rating" to null))
+  }
+
+  @Test
+  fun testScalarSubqueryMultipleResultsRuntimeError() {
+    val reviewsCollName = "reviews_multiple_" + autoId()
+
+    val reviewsCollection = db.collection(reviewsCollName)
+    waitFor(reviewsCollection.document("r1").set(mapOf("bookTitle" to "1984", "rating" to 4)))
+    waitFor(reviewsCollection.document("r2").set(mapOf("bookTitle" to "1984", "rating" to 5)))
+
+    // This subquery will return 2 documents, which is invalid for toScalarExpression()
+    val reviewsSub =
+      db
+        .pipeline()
+        .collection(reviewsCollName)
+        .where(
+          equal(
+            "bookTitle",
+            com.google.firebase.firestore.pipeline.Expression.variable("book_title")
+          )
+        )
+
+    val exception =
+      org.junit.Assert.assertThrows(RuntimeException::class.java) {
+        waitFor(
+          db
+            .pipeline()
+            .collection(collection.path)
+            .where(equal("title", "1984"))
+            .define(field("title").alias("book_title"))
+            .addFields(reviewsSub.toScalarExpression().alias("review_data"))
+            .execute()
+        )
+      }
+
+    // Assert that it's an API error from the backend complaining about multiple results
+    assertThat(exception.cause?.message).contains("Subpipeline returned multiple results.")
+  }
+
+  // Batch 2: Array Subqueries & Joins
+
+  @Test
   fun testMixedScalarAndArraySubqueries() {
     val reviewsCollName = "reviews_mixed_" + autoId()
     val reviewsCollection = db.collection(reviewsCollName)
@@ -598,127 +642,6 @@ class SubqueryIntegrationTest {
       .containsExactly(
         mapOf("title" to "1984", "all_reviewers" to listOf("Alice", "Bob"), "average_rating" to 4.5)
       )
-  }
-
-  @Test
-  fun test3LevelDeepJoin() {
-    val publishersCollName = "publishers_" + autoId()
-    val booksCollName = "books_" + autoId()
-    val reviewsCollName = "reviews_" + autoId()
-
-    waitFor(
-      db
-        .collection(publishersCollName)
-        .document("p1")
-        .set(mapOf("publisherId" to "pub1", "name" to "Penguin"))
-    )
-
-    waitFor(
-      db
-        .collection(booksCollName)
-        .document("b1")
-        .set(mapOf("bookId" to "book1", "publisherId" to "pub1", "title" to "1984"))
-    )
-
-    waitFor(
-      db
-        .collection(reviewsCollName)
-        .document("r1")
-        .set(mapOf("bookId" to "book1", "reviewer" to "Alice"))
-    )
-
-    // reviews need to know if the publisher is Penguin
-    val reviewsSub =
-      db
-        .pipeline()
-        .collection(reviewsCollName)
-        .where(
-          com.google.firebase.firestore.pipeline.Expression.and(
-            equal("bookId", com.google.firebase.firestore.pipeline.Expression.variable("book_id")),
-            equal(
-              com.google.firebase.firestore.pipeline.Expression.variable("pub_name"),
-              "Penguin"
-            ) // accessing top-level pub_name
-          )
-        )
-        .select(field("reviewer").alias("reviewer"))
-
-    val booksSub =
-      db
-        .pipeline()
-        .collection(booksCollName)
-        .where(
-          equal("publisherId", com.google.firebase.firestore.pipeline.Expression.variable("pub_id"))
-        )
-        .define(field("bookId").alias("book_id"))
-        .addFields(reviewsSub.toArrayExpression().alias("reviews"))
-        .select("title", "reviews")
-
-    val results =
-      waitFor(
-        db
-          .pipeline()
-          .collection(publishersCollName)
-          .where(equal("publisherId", "pub1"))
-          .define(field("publisherId").alias("pub_id"), field("name").alias("pub_name"))
-          .addFields(booksSub.toArrayExpression().alias("books"))
-          .select("name", "books")
-          .execute()
-      )
-
-    assertThat(results.map { it.getData() })
-      .containsExactly(
-        mapOf(
-          "name" to "Penguin",
-          "books" to listOf(mapOf("title" to "1984", "reviews" to listOf("Alice")))
-        )
-      )
-  }
-
-  // Batch 3: Scope & Variables
-
-  @Test
-  fun testArraySubqueryInWhereStageOnBooks() {
-    val reviewsCollName = "reviews_where_" + autoId()
-    val reviewsCollection = db.collection(reviewsCollName)
-
-    waitFor(
-      reviewsCollection.document("r1").set(mapOf("bookTitle" to "Dune", "reviewer" to "Paul"))
-    )
-    waitFor(
-      reviewsCollection.document("r2").set(mapOf("bookTitle" to "Foundation", "reviewer" to "Hari"))
-    )
-
-    val reviewsSub =
-      db
-        .pipeline()
-        .collection(reviewsCollName)
-        .where(
-          equal(
-            "bookTitle",
-            com.google.firebase.firestore.pipeline.Expression.variable("book_title")
-          )
-        )
-        .select(field("reviewer").alias("reviewer"))
-
-    val results =
-      waitFor(
-        db
-          .pipeline()
-          .collection(collection.path)
-          .where(
-            com.google.firebase.firestore.pipeline.Expression.or(
-              equal("title", "Dune"),
-              equal("title", "The Great Gatsby")
-            )
-          )
-          .define(field("title").alias("book_title"))
-          .where(reviewsSub.toArrayExpression().arrayContains("Paul"))
-          .select("title")
-          .execute()
-      )
-
-    assertThat(results.map { it.getData() }).containsExactly(mapOf("title" to "Dune"))
   }
 
   @Test
@@ -991,6 +914,83 @@ class SubqueryIntegrationTest {
   }
 
   // Batch 4: Complex & Edge Cases
+
+  @Test
+  fun test3LevelDeepJoin() {
+    val publishersCollName = "publishers_" + autoId()
+    val booksCollName = "books_" + autoId()
+    val reviewsCollName = "reviews_" + autoId()
+
+    waitFor(
+      db
+        .collection(publishersCollName)
+        .document("p1")
+        .set(mapOf("publisherId" to "pub1", "name" to "Penguin"))
+    )
+
+    waitFor(
+      db
+        .collection(booksCollName)
+        .document("b1")
+        .set(mapOf("bookId" to "book1", "publisherId" to "pub1", "title" to "1984"))
+    )
+
+    waitFor(
+      db
+        .collection(reviewsCollName)
+        .document("r1")
+        .set(mapOf("bookId" to "book1", "reviewer" to "Alice"))
+    )
+
+    // reviews need to know if the publisher is Penguin
+    val reviewsSub =
+      db
+        .pipeline()
+        .collection(reviewsCollName)
+        .where(
+          com.google.firebase.firestore.pipeline.Expression.and(
+            equal("bookId", com.google.firebase.firestore.pipeline.Expression.variable("book_id")),
+            equal(
+              com.google.firebase.firestore.pipeline.Expression.variable("pub_name"),
+              "Penguin"
+            ) // accessing top-level pub_name
+          )
+        )
+        .select(field("reviewer").alias("reviewer"))
+
+    val booksSub =
+      db
+        .pipeline()
+        .collection(booksCollName)
+        .where(
+          equal("publisherId", com.google.firebase.firestore.pipeline.Expression.variable("pub_id"))
+        )
+        .define(field("bookId").alias("book_id"))
+        .addFields(reviewsSub.toArrayExpression().alias("reviews"))
+        .select("title", "reviews")
+
+    val results =
+      waitFor(
+        db
+          .pipeline()
+          .collection(publishersCollName)
+          .where(equal("publisherId", "pub1"))
+          .define(field("publisherId").alias("pub_id"), field("name").alias("pub_name"))
+          .addFields(booksSub.toArrayExpression().alias("books"))
+          .select("name", "books")
+          .execute()
+      )
+
+    assertThat(results.map { it.getData() })
+      .containsExactly(
+        mapOf(
+          "name" to "Penguin",
+          "books" to listOf(mapOf("title" to "1984", "reviews" to listOf("Alice")))
+        )
+      )
+  }
+
+  // Batch 3: Scope & Variables
 
   @Test
   fun testDeepAggregation() {
