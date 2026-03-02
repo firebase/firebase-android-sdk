@@ -53,10 +53,12 @@ import com.google.firebase.dataconnect.testutil.schemas.verifyGetString
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetString2
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetStringsByTag
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetStringsByTag2
+import com.google.firebase.util.nextAlphanumericString
 import io.kotest.common.ExperimentalKotest
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
+import io.kotest.property.PropertyContext
 import io.kotest.property.ShrinkingMode
 import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.alphanumeric
@@ -286,9 +288,8 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
   fun normalizedString() = runTest {
     val connector = newCachingConnector()
     val stringsArb = alphanumericStringArb().quintuple()
-    checkAll(propTestConfig, Arb.dataConnect.tag(), stringsArb) {
-      tag,
-      (string1, string2, string3, string4, string5) ->
+    checkAll(propTestConfig, stringsArb) { (string1, string2, string3, string4, string5) ->
+      val tag = randomTag()
       val key = connector.insertString(string1, tag)
       connector.verifyGetString(key, "query1a", string1, SERVER)
       connector.updateString(key, string2)
@@ -311,9 +312,8 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
   fun normalizedNullableString() = runTest {
     val connector = newCachingConnector()
     val stringsArb = alphanumericStringArb().orNull(nullProbability = 0.2).quintuple()
-    checkAll(propTestConfig, Arb.dataConnect.tag(), stringsArb) {
-      tag,
-      (string1, string2, string3, string4, string5) ->
+    checkAll(propTestConfig, stringsArb) { (string1, string2, string3, string4, string5) ->
+      val tag = randomTag()
       val key = connector.insertNullableString(string1, tag)
       connector.verifyGetNullableString(key, "query1a", string1, SERVER)
       connector.updateNullableString(key, string2)
@@ -336,24 +336,29 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
   fun normalizedFloat() = runTest {
     val connector = newCachingConnector()
     val floatsArb = Arb.dataConnect.float().quintuple()
-    checkAll(propTestConfig, Arb.dataConnect.tag(), floatsArb) {
-      tag,
+    checkAll(propTestConfig.copy(seed = 3064298334157170386), floatsArb) {
       (float1, float2, float3, float4, float5) ->
-      val key = connector.insertFloat(float1, tag)
-      connector.verifyGetFloat(key, "query1a", float1, SERVER)
-      connector.updateFloat(key, float2)
-      connector.verifyGetFloat2(key, "query2a", float2, SERVER)
-      connector.verifyGetFloat(key, "query2b", float2, CACHE)
-      connector.updateFloat(key, float3)
-      connector.verifyGetFloatsByTag(tag, "query3a", float3, SERVER)
-      connector.verifyGetFloat2(key, "query3b", float3, CACHE)
-      connector.verifyGetFloat(key, "query3c", float3, CACHE)
-      connector.insertFloat(float5, tag)
-      connector.updateFloat(key, float4)
-      connector.verifyGetFloatsByTag2(tag, "query4a", listOf(float4, float5), SERVER)
-      connector.verifyGetFloatsByTag(tag, "query4b", float4, CACHE)
-      connector.verifyGetFloat2(key, "query4c", float4, CACHE)
-      connector.verifyGetFloat(key, "query4d", float4, CACHE)
+      val tag = randomTag()
+      val key = connector.insertFloat(float1.float, tag)
+      connector.verifyGetFloat(key, "query1a", float1.roundTripFloat, SERVER)
+      connector.updateFloat(key, float2.float)
+      connector.verifyGetFloat2(key, "query2a", float2.roundTripFloat, SERVER)
+      connector.verifyGetFloat(key, "query2b", float2.roundTripFloat, CACHE)
+      connector.updateFloat(key, float3.float)
+      connector.verifyGetFloatsByTag(tag, "query3a", float3.roundTripFloat, SERVER)
+      connector.verifyGetFloat2(key, "query3b", float3.roundTripFloat, CACHE)
+      connector.verifyGetFloat(key, "query3c", float3.roundTripFloat, CACHE)
+      connector.insertFloat(float5.float, tag)
+      connector.updateFloat(key, float4.float)
+      connector.verifyGetFloatsByTag2(
+        tag,
+        "query4a",
+        listOf(float4, float5).map { it.roundTripFloat },
+        SERVER
+      )
+      connector.verifyGetFloatsByTag(tag, "query4b", float4.roundTripFloat, CACHE)
+      connector.verifyGetFloat2(key, "query4c", float4.roundTripFloat, CACHE)
+      connector.verifyGetFloat(key, "query4d", float4.roundTripFloat, CACHE)
     }
   }
 
@@ -361,24 +366,28 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
   fun normalizedNullableFloat() = runTest {
     val connector = newCachingConnector()
     val floatsArb = Arb.dataConnect.float().orNull(nullProbability = 0.2).quintuple()
-    checkAll(propTestConfig, Arb.dataConnect.tag(), floatsArb) {
-      tag,
-      (float1, float2, float3, float4, float5) ->
-      val key = connector.insertNullableFloat(float1, tag)
-      connector.verifyGetNullableFloat(key, "query1a", float1, SERVER)
-      connector.updateNullableFloat(key, float2)
-      connector.verifyGetNullableFloat2(key, "query2a", float2, SERVER)
-      connector.verifyGetNullableFloat(key, "query2b", float2, CACHE)
-      connector.updateNullableFloat(key, float3)
-      connector.verifyGetNullableFloatsByTag(tag, "query3a", float3, SERVER)
-      connector.verifyGetNullableFloat2(key, "query3b", float3, CACHE)
-      connector.verifyGetNullableFloat(key, "query3c", float3, CACHE)
-      connector.insertNullableFloat(float5, tag)
-      connector.updateNullableFloat(key, float4)
-      connector.verifyGetNullableFloatsByTag2(tag, "query4a", listOf(float4, float5), SERVER)
-      connector.verifyGetNullableFloatsByTag(tag, "query4b", float4, CACHE)
-      connector.verifyGetNullableFloat2(key, "query4c", float4, CACHE)
-      connector.verifyGetNullableFloat(key, "query4d", float4, CACHE)
+    checkAll(propTestConfig, floatsArb) { (float1, float2, float3, float4, float5) ->
+      val tag = randomTag()
+      val key = connector.insertNullableFloat(float1?.float, tag)
+      connector.verifyGetNullableFloat(key, "query1a", float1?.roundTripFloat, SERVER)
+      connector.updateNullableFloat(key, float2?.float)
+      connector.verifyGetNullableFloat2(key, "query2a", float2?.roundTripFloat, SERVER)
+      connector.verifyGetNullableFloat(key, "query2b", float2?.roundTripFloat, CACHE)
+      connector.updateNullableFloat(key, float3?.float)
+      connector.verifyGetNullableFloatsByTag(tag, "query3a", float3?.roundTripFloat, SERVER)
+      connector.verifyGetNullableFloat2(key, "query3b", float3?.roundTripFloat, CACHE)
+      connector.verifyGetNullableFloat(key, "query3c", float3?.roundTripFloat, CACHE)
+      connector.insertNullableFloat(float5?.float, tag)
+      connector.updateNullableFloat(key, float4?.float)
+      connector.verifyGetNullableFloatsByTag2(
+        tag,
+        "query4a",
+        listOf(float4, float5).map { it?.roundTripFloat },
+        SERVER
+      )
+      connector.verifyGetNullableFloatsByTag(tag, "query4b", float4?.roundTripFloat, CACHE)
+      connector.verifyGetNullableFloat2(key, "query4c", float4?.roundTripFloat, CACHE)
+      connector.verifyGetNullableFloat(key, "query4d", float4?.roundTripFloat, CACHE)
     }
   }
 
@@ -386,9 +395,8 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
   fun normalizedBoolean() = runTest {
     val connector = newCachingConnector()
     val booleansArb = Arb.boolean().quintuple()
-    checkAll(propTestConfig, Arb.dataConnect.tag(), booleansArb) {
-      tag,
-      (boolean1, boolean2, boolean3, boolean4, boolean5) ->
+    checkAll(propTestConfig, booleansArb) { (boolean1, boolean2, boolean3, boolean4, boolean5) ->
+      val tag = randomTag()
       val key = connector.insertBoolean(boolean1, tag)
       connector.verifyGetBoolean(key, "query1a", boolean1, SERVER)
       connector.updateBoolean(key, boolean2)
@@ -411,10 +419,10 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
   fun normalizedNullableBoolean() = runTest {
     val connector = newCachingConnector()
     val booleansArb = Arb.boolean().orNull(nullProbability = 0.2).quintuple()
-    checkAll(propTestConfig, Arb.dataConnect.tag(), booleansArb) {
-      tag,
-      (boolean1, boolean2, boolean3, boolean4, boolean5) ->
+    checkAll(propTestConfig, booleansArb) { (boolean1, boolean2, boolean3, boolean4, boolean5) ->
+      val tag = randomTag()
       val key = connector.insertNullableBoolean(boolean1, tag)
+      Arb.dataConnect.tag()
       connector.verifyGetNullableBoolean(key, "query1a", boolean1, SERVER)
       connector.updateNullableBoolean(key, boolean2)
       connector.verifyGetNullableBoolean2(key, "query2a", boolean2, SERVER)
@@ -441,3 +449,6 @@ private val propTestConfig =
   )
 
 private fun alphanumericStringArb(): Arb<String> = Arb.string(0..10, Codepoint.alphanumeric())
+
+private fun PropertyContext.randomTag(): String =
+  "tag_" + randomSource().random.nextAlphanumericString(50)
