@@ -1,5 +1,7 @@
 # Unreleased
 
+- [changed] Added the `hybrid` component to request headers coming from `prefer_in_cloud` configurations (#7857)
+
 # 17.10.0
 
 - [feature] Added experimental support for on-device inference (#7739)
