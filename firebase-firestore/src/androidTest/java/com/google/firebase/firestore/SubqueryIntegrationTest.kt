@@ -1029,6 +1029,6 @@ class SubqueryIntegrationTest {
         sub.execute()
       }
 
-    assertThat(exception.message).contains("Cannot execute pipeline without a Firestore instance")
+    assertThat(exception.message).contains("Cannot execute a relative subcollection pipeline directly")
   }
 }
