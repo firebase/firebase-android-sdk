@@ -2975,6 +2975,7 @@ abstract class Expression internal constructor() {
      * Accesses a field/property of the expression (When the expression evaluates to a Map or
      * Document).
      *
+     * @param expression The expression evaluating to a map or document.
      * @param key The key of the field to access.
      * @return An [Expression] representing the value of the field.
      */
@@ -2983,7 +2984,7 @@ abstract class Expression internal constructor() {
       FunctionExpression("field", notImplemented, expression, key)
 
     /**
-     * Accesses a field/property of a document field using the provided [key].
+     * Accesses a field/property of a document or Map using the provided [key].
      *
      * @param fieldName The field name of the map or document field.
      * @param key The key of the field to access.
@@ -3005,7 +3006,7 @@ abstract class Expression internal constructor() {
       FunctionExpression("field", notImplemented, expression, keyExpression)
 
     /**
-     * Accesses a field/property of a document field using the provided [keyExpression].
+     * Accesses a field/property of a document or Map using the provided [keyExpression].
      *
      * @param fieldName The field name of the map or document field.
      * @param keyExpression The expression evaluating to the key.
@@ -5336,7 +5337,7 @@ abstract class Expression internal constructor() {
      * ```
      * // Define a variable "discountedPrice" and use it in a filter
      * firestore.pipeline().collection("products")
-     *     .define(Constant(100).as("threshold"))
+     *     .define(Constant(100).alias("threshold"))
      *     .where(lessThan(variable("discountedPrice"), variable("threshold")));
      * ```
      *
@@ -5352,7 +5353,7 @@ abstract class Expression internal constructor() {
      * ```
      * // Define the current document as a variable "doc"
      * firestore.pipeline().collection("books")
-     *     .define(currentDocument().as("doc"))
+     *     .define(currentDocument().alias("doc"))
      *     // Access a field from the defined document variable
      *     .select(variable("doc").getField("title"));
      * ```
@@ -7503,13 +7504,13 @@ internal constructor(
     name: String,
     function: EvaluateFunction,
     fieldName: String
-  ) : this(name, function, arrayOf(Expression.field(fieldName)))
+  ) : this(name, function, arrayOf(field(fieldName)))
   internal constructor(
     name: String,
     function: EvaluateFunction,
     fieldName: String,
     vararg params: Any
-  ) : this(name, function, arrayOf(Expression.field(fieldName), *toArrayOfExprOrConstant(params)))
+  ) : this(name, function, arrayOf(field(fieldName), *toArrayOfExprOrConstant(params)))
 
   override fun toProto(userDataReader: UserDataReader): Value {
     val builder = ProtoFunction.newBuilder()
@@ -7655,17 +7656,13 @@ internal class BooleanFunctionExpression internal constructor(val expr: Expressi
     name: String,
     function: EvaluateFunction,
     fieldName: String
-  ) : this(name, function, arrayOf(Expression.field(fieldName)))
+  ) : this(name, function, arrayOf(field(fieldName)))
   internal constructor(
     name: String,
     function: EvaluateFunction,
     fieldName: String,
     vararg params: Any
-  ) : this(
-    name,
-    function,
-    arrayOf(Expression.field(fieldName), *Expression.toArrayOfExprOrConstant(params))
-  )
+  ) : this(name, function, arrayOf(field(fieldName), *Expression.toArrayOfExprOrConstant(params)))
 
   override fun toProto(userDataReader: UserDataReader): Value = expr.toProto(userDataReader)
 
@@ -7810,7 +7807,7 @@ class Ordering internal constructor(val expr: Expression, val dir: Direction) {
       .build()
 }
 
-internal class Variable(val name: String) : Expression() {
+private class Variable(val name: String) : Expression() {
   override fun toProto(userDataReader: UserDataReader): Value =
     Value.newBuilder().setVariableReferenceValue(name).build()
   override fun evaluateFunction(context: EvaluationContext): EvaluateDocument =

@@ -407,7 +407,8 @@ internal constructor(
     documents.asSequence().map(::encodeValue)
 }
 
-internal class SubcollectionSource
+@Beta
+class SubcollectionSource
 private constructor(internal val path: String, options: InternalOptions = InternalOptions.EMPTY) :
   Stage<SubcollectionSource>("subcollection", options) {
   companion object {
@@ -417,7 +418,7 @@ private constructor(internal val path: String, options: InternalOptions = Intern
      * @param path The path of the subcollection that will be the source of this pipeline.
      */
     @JvmStatic
-    internal fun of(path: String): SubcollectionSource {
+    fun of(path: String): SubcollectionSource {
       return SubcollectionSource(path)
     }
   }
@@ -1369,7 +1370,7 @@ internal constructor(
   override fun self(options: InternalOptions) = DefineStage(aliasedExpressions, options)
 
   override fun canonicalId(): String {
-    TODO("Not yet implemented")
+    return "${name}(${aliasedExpressions.joinToString(",") { "${it.alias}=${it.expr.canonicalId()}" }})"
   }
 
   override fun args(userDataReader: UserDataReader): Sequence<Value> {

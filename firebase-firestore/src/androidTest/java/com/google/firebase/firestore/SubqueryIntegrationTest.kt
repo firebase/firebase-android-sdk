@@ -18,8 +18,12 @@ package com.google.firebase.firestore
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
+import com.google.firebase.firestore.pipeline.Expression.Companion.and
+import com.google.firebase.firestore.pipeline.Expression.Companion.constant
+import com.google.firebase.firestore.pipeline.Expression.Companion.currentDocument
 import com.google.firebase.firestore.pipeline.Expression.Companion.equal
 import com.google.firebase.firestore.pipeline.Expression.Companion.field
+import com.google.firebase.firestore.pipeline.Expression.Companion.or
 import com.google.firebase.firestore.pipeline.Expression.Companion.variable
 import com.google.firebase.firestore.testutil.IntegrationTestUtil
 import com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor
@@ -183,8 +187,6 @@ class SubqueryIntegrationTest {
     IntegrationTestUtil.tearDown()
   }
 
-  // Batch 1: Scalar Subqueries
-
   @Test
   fun testZeroResultScalarReturnsNull() {
     val testDocs = mapOf("book1" to mapOf("title" to "A Book Title"))
@@ -197,7 +199,7 @@ class SubqueryIntegrationTest {
         .pipeline()
         .collection(collection.document("book1").collection("reviews").path)
         .where(equal("reviewer", "Alice"))
-        .select(com.google.firebase.firestore.pipeline.Expression.currentDocument().alias("data"))
+        .select(currentDocument().alias("data"))
 
     val results =
       waitFor(
@@ -208,6 +210,8 @@ class SubqueryIntegrationTest {
           .limit(1)
           .execute()
       )
+
+    assertThat(results.map { it.getData() }).containsExactly(mapOf("first_review_data" to null))
   }
 
   @Test
@@ -228,12 +232,7 @@ class SubqueryIntegrationTest {
       db
         .pipeline()
         .collection(reviewsCollName)
-        .where(
-          equal(
-            "bookTitle",
-            com.google.firebase.firestore.pipeline.Expression.variable("book_title")
-          )
-        )
+        .where(equal("bookTitle", variable("book_title")))
         .select(field("reviewer").alias("reviewer"))
         .sort(field("reviewer").ascending())
 
@@ -243,7 +242,7 @@ class SubqueryIntegrationTest {
           .pipeline()
           .collection(collection.path)
           .where(
-            com.google.firebase.firestore.pipeline.Expression.or(
+            or(
               equal("title", "The Hitchhiker's Guide to the Galaxy"),
               equal("title", "Pride and Prejudice")
             )
@@ -286,24 +285,14 @@ class SubqueryIntegrationTest {
       db
         .pipeline()
         .collection(reviewsCollName)
-        .where(
-          equal(
-            "bookTitle",
-            com.google.firebase.firestore.pipeline.Expression.variable("book_title")
-          )
-        )
+        .where(equal("bookTitle", variable("book_title")))
         .select(field("rating").alias("rating"))
 
     val authorsSub =
       db
         .pipeline()
         .collection(authorsCollName)
-        .where(
-          equal(
-            "authorName",
-            com.google.firebase.firestore.pipeline.Expression.variable("author_name")
-          )
-        )
+        .where(equal("authorName", variable("author_name")))
         .select(field("nationality").alias("nationality"))
 
     val results =
@@ -347,12 +336,7 @@ class SubqueryIntegrationTest {
       db
         .pipeline()
         .collection(reviewsCollName)
-        .where(
-          equal(
-            "bookTitle",
-            com.google.firebase.firestore.pipeline.Expression.variable("book_title")
-          )
-        )
+        .where(equal("bookTitle", variable("book_title")))
         .select(field("reviewer").alias("reviewer"), field("rating").alias("rating"))
         .sort(field("reviewer").ascending())
 
@@ -397,12 +381,7 @@ class SubqueryIntegrationTest {
       db
         .pipeline()
         .collection(reviewsCollName)
-        .where(
-          equal(
-            "bookTitle",
-            com.google.firebase.firestore.pipeline.Expression.variable("book_title")
-          )
-        )
+        .where(equal("bookTitle", variable("book_title")))
         .select(field("reviewer").alias("reviewer"))
 
     val results =
@@ -410,12 +389,7 @@ class SubqueryIntegrationTest {
         db
           .pipeline()
           .collection(collection.path)
-          .where(
-            com.google.firebase.firestore.pipeline.Expression.or(
-              equal("title", "Dune"),
-              equal("title", "The Great Gatsby")
-            )
-          )
+          .where(or(equal("title", "Dune"), equal("title", "The Great Gatsby")))
           .define(field("title").alias("book_title"))
           .where(reviewsSub.toArrayExpression().arrayContains("Paul"))
           .select("title")
@@ -437,12 +411,7 @@ class SubqueryIntegrationTest {
       db
         .pipeline()
         .collection(reviewsCollName)
-        .where(
-          equal(
-            "bookTitle",
-            com.google.firebase.firestore.pipeline.Expression.variable("book_title")
-          )
-        )
+        .where(equal("bookTitle", variable("book_title")))
         .aggregate(
           com.google.firebase.firestore.pipeline.AggregateFunction.average("rating").alias("val")
         )
@@ -475,12 +444,7 @@ class SubqueryIntegrationTest {
       db
         .pipeline()
         .collection(reviewsCollName)
-        .where(
-          equal(
-            "bookTitle",
-            com.google.firebase.firestore.pipeline.Expression.variable("book_title")
-          )
-        )
+        .where(equal("bookTitle", variable("book_title")))
         .aggregate(
           com.google.firebase.firestore.pipeline.AggregateFunction.average("rating").alias("avg"),
           com.google.firebase.firestore.pipeline.AggregateFunction.countAll().alias("count")
@@ -512,12 +476,7 @@ class SubqueryIntegrationTest {
       db
         .pipeline()
         .collection(reviewsCollName)
-        .where(
-          equal(
-            "bookTitle",
-            com.google.firebase.firestore.pipeline.Expression.variable("book_title")
-          )
-        )
+        .where(equal("bookTitle", variable("book_title")))
         .aggregate(
           com.google.firebase.firestore.pipeline.AggregateFunction.average("rating").alias("avg")
         )
@@ -548,15 +507,7 @@ class SubqueryIntegrationTest {
 
     // This subquery will return 2 documents, which is invalid for toScalarExpression()
     val reviewsSub =
-      db
-        .pipeline()
-        .collection(reviewsCollName)
-        .where(
-          equal(
-            "bookTitle",
-            com.google.firebase.firestore.pipeline.Expression.variable("book_title")
-          )
-        )
+      db.pipeline().collection(reviewsCollName).where(equal("bookTitle", variable("book_title")))
 
     val exception =
       org.junit.Assert.assertThrows(RuntimeException::class.java) {
@@ -574,8 +525,6 @@ class SubqueryIntegrationTest {
     // Assert that it's an API error from the backend complaining about multiple results
     assertThat(exception.cause?.message).contains("Subpipeline returned multiple results.")
   }
-
-  // Batch 2: Array Subqueries & Joins
 
   @Test
   fun testMixedScalarAndArraySubqueries() {
@@ -599,12 +548,7 @@ class SubqueryIntegrationTest {
       db
         .pipeline()
         .collection(reviewsCollName)
-        .where(
-          equal(
-            "bookTitle",
-            com.google.firebase.firestore.pipeline.Expression.variable("book_title")
-          )
-        )
+        .where(equal("bookTitle", variable("book_title")))
         .select(field("reviewer").alias("reviewer"))
         .sort(field("reviewer").ascending())
 
@@ -613,12 +557,7 @@ class SubqueryIntegrationTest {
       db
         .pipeline()
         .collection(reviewsCollName)
-        .where(
-          equal(
-            "bookTitle",
-            com.google.firebase.firestore.pipeline.Expression.variable("book_title")
-          )
-        )
+        .where(equal("bookTitle", variable("book_title")))
         .aggregate(
           com.google.firebase.firestore.pipeline.AggregateFunction.average("rating").alias("val")
         )
@@ -655,9 +594,7 @@ class SubqueryIntegrationTest {
           .pipeline()
           .collection(collName)
           .define(field("price").multiply(0.8).alias("discount"))
-          .where(
-            com.google.firebase.firestore.pipeline.Expression.variable("discount").lessThan(50.0)
-          )
+          .where(variable("discount").lessThan(50.0))
           .select("price")
           .execute()
       )
@@ -672,9 +609,7 @@ class SubqueryIntegrationTest {
           .pipeline()
           .collection(collName)
           .define(field("price").multiply(0.8).alias("discount"))
-          .where(
-            com.google.firebase.firestore.pipeline.Expression.variable("discount").lessThan(50.0)
-          )
+          .where(variable("discount").lessThan(50.0))
           .select("price")
           .execute()
       )
@@ -701,7 +636,7 @@ class SubqueryIntegrationTest {
       db
         .pipeline()
         .collection(reviewsCollName)
-        .where(equal("bookId", com.google.firebase.firestore.pipeline.Expression.variable("rid")))
+        .where(equal("bookId", variable("rid")))
         .select(field("reviewer").alias("reviewer"))
 
     val results =
@@ -742,12 +677,7 @@ class SubqueryIntegrationTest {
       db
         .pipeline()
         .collection(reviewsCollName)
-        .where(
-          com.google.firebase.firestore.pipeline.Expression.and(
-            equal("bookId", com.google.firebase.firestore.pipeline.Expression.variable("rid")),
-            equal("category", com.google.firebase.firestore.pipeline.Expression.variable("rcat"))
-          )
-        )
+        .where(and(equal("bookId", variable("rid")), equal("category", variable("rcat"))))
         .select(field("reviewer").alias("reviewer"))
 
     val results =
@@ -788,12 +718,7 @@ class SubqueryIntegrationTest {
       db
         .pipeline()
         .collection(reviewsCollName)
-        .where(
-          equal(
-            "authorName",
-            com.google.firebase.firestore.pipeline.Expression.variable("doc").mapGet("author")
-          )
-        )
+        .where(equal("authorName", variable("doc").mapGet("author")))
         .select(field("reviewer").alias("reviewer"))
 
     val results =
@@ -802,7 +727,7 @@ class SubqueryIntegrationTest {
           .pipeline()
           .collection(outerCollName)
           .where(equal("title", "1984"))
-          .define(com.google.firebase.firestore.pipeline.Expression.currentDocument().alias("doc"))
+          .define(currentDocument().alias("doc"))
           .addFields(reviewsSub.toArrayExpression().alias("reviews"))
           .select("title", "reviews")
           .execute()
@@ -822,12 +747,7 @@ class SubqueryIntegrationTest {
           db
             .pipeline()
             .collection(outerCollName)
-            .where(
-              equal(
-                "title",
-                com.google.firebase.firestore.pipeline.Expression.variable("unknown_var")
-              )
-            )
+            .where(equal("title", variable("unknown_var")))
             .execute()
         )
       }
@@ -849,8 +769,8 @@ class SubqueryIntegrationTest {
       db
         .pipeline()
         .collection(innerCollName)
-        .define(com.google.firebase.firestore.pipeline.Expression.constant("inner_val").alias("x"))
-        .select(com.google.firebase.firestore.pipeline.Expression.variable("x").alias("val"))
+        .define(constant("inner_val").alias("x"))
+        .select(variable("x").alias("val"))
 
     // Outer pipeline defines variable "x" to be "outer_val"
     val results =
@@ -860,9 +780,7 @@ class SubqueryIntegrationTest {
           .collection(outerCollName)
           .where(equal("title", "1984"))
           .limit(1)
-          .define(
-            com.google.firebase.firestore.pipeline.Expression.constant("outer_val").alias("x")
-          )
+          .define(constant("outer_val").alias("x"))
           .addFields(sub.toArrayExpression().alias("shadowed"))
           .select("shadowed")
           .execute()
@@ -891,13 +809,7 @@ class SubqueryIntegrationTest {
       db
         .pipeline()
         .collection(reviewsCollName)
-        .where(
-          equal(
-            "bookId",
-            com.google.firebase.firestore.pipeline.Expression.variable("doc")
-              .mapGet("does_not_exist")
-          )
-        )
+        .where(equal("bookId", variable("doc").mapGet("does_not_exist")))
         .select(field("reviewer").alias("reviewer"))
 
     val results =
@@ -906,14 +818,12 @@ class SubqueryIntegrationTest {
           .pipeline()
           .collection(outerCollName)
           .where(equal("title", "1984"))
-          .define(com.google.firebase.firestore.pipeline.Expression.currentDocument().alias("doc"))
+          .define(currentDocument().alias("doc"))
           .addFields(reviewsSub.toArrayExpression().alias("reviews"))
           .select("title", "reviews")
           .execute()
       )
   }
-
-  // Batch 4: Complex & Edge Cases
 
   @Test
   fun test3LevelDeepJoin() {
@@ -948,12 +858,9 @@ class SubqueryIntegrationTest {
         .pipeline()
         .collection(reviewsCollName)
         .where(
-          com.google.firebase.firestore.pipeline.Expression.and(
-            equal("bookId", com.google.firebase.firestore.pipeline.Expression.variable("book_id")),
-            equal(
-              com.google.firebase.firestore.pipeline.Expression.variable("pub_name"),
-              "Penguin"
-            ) // accessing top-level pub_name
+          and(
+            equal("bookId", variable("book_id")),
+            equal(variable("pub_name"), "Penguin") // accessing top-level pub_name
           )
         )
         .select(field("reviewer").alias("reviewer"))
@@ -962,9 +869,7 @@ class SubqueryIntegrationTest {
       db
         .pipeline()
         .collection(booksCollName)
-        .where(
-          equal("publisherId", com.google.firebase.firestore.pipeline.Expression.variable("pub_id"))
-        )
+        .where(equal("publisherId", variable("pub_id")))
         .define(field("bookId").alias("book_id"))
         .addFields(reviewsSub.toArrayExpression().alias("reviews"))
         .select("title", "reviews")
@@ -990,8 +895,6 @@ class SubqueryIntegrationTest {
       )
   }
 
-  // Batch 3: Scope & Variables
-
   @Test
   fun testDeepAggregation() {
     val outerColl = "outer_agg_" + autoId()
@@ -1010,7 +913,7 @@ class SubqueryIntegrationTest {
       db
         .pipeline()
         .collection(innerColl)
-        .where(equal("outer_id", com.google.firebase.firestore.pipeline.Expression.variable("oid")))
+        .where(equal("outer_id", variable("oid")))
         .aggregate(
           com.google.firebase.firestore.pipeline.AggregateFunction.average("score").alias("s")
         )
@@ -1098,18 +1001,14 @@ class SubqueryIntegrationTest {
 
     // Notably NO subcollections are added to doc1
 
-    val missingSub =
-      Pipeline.subcollection("does_not_exist")
-        .select(com.google.firebase.firestore.pipeline.Expression.variable("p").alias("sub_p"))
+    val missingSub = Pipeline.subcollection("does_not_exist").select(variable("p").alias("sub_p"))
 
     val results =
       waitFor(
         db
           .pipeline()
           .collection(collName)
-          .define(
-            com.google.firebase.firestore.pipeline.Expression.variable("parentDoc").alias("p")
-          )
+          .define(variable("parentDoc").alias("p"))
           .select(missingSub.toArrayExpression().alias("missing_data"))
           .limit(1)
           .execute()

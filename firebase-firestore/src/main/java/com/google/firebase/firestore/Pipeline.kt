@@ -162,7 +162,7 @@ internal constructor(
   }
 
   private fun toExecutePipelineRequest(options: InternalOptions?): ExecutePipelineRequest {
-    checkNotNull(firestore) { "Cannot execute pipeline without a Firestore instance" }
+    checkNotNull(firestore) { "Cannot execute a relative subcollection pipeline directly" }
     val database = firestore!!.databaseId
     val builder = ExecutePipelineRequest.newBuilder()
     builder.database = "projects/${database.projectId}/databases/${database.databaseId}"
@@ -975,7 +975,65 @@ internal constructor(
   fun define(stage: DefineStage): Pipeline = append(stage)
 
   /**
-   * Converts this pipeline to an expression that evaluates to an array of results.
+   * Converts this Pipeline into an expression that evaluates to an array of results.
+   *
+   * **Result Unwrapping:**
+   * - If the items have a single field, their values are unwrapped and returned directly in the
+   * array.
+   * - If the items have multiple fields, they are returned as Maps in the array.
+   *
+   * Example:
+   * ```kotlin
+   * // Get a list of reviewers for each book
+   * db.pipeline().collection("books")
+   *     .define(field("id").alias("book_id"))
+   *     .addFields(
+   *         db.pipeline().collection("reviews")
+   *             .where(field("book_id").equal(variable("book_id")))
+   *             .select(field("reviewer"))
+   *             .toArrayExpression()
+   *             .alias("reviewers"))
+   * ```
+   *
+   * Output:
+   * ```json
+   * [
+   *   {
+   *     "id": "1",
+   *     "title": "1984",
+   *     "reviewers": ["Alice", "Bob"]
+   *   }
+   * ]
+   * ```
+   *
+   * Example (Multiple Fields):
+   * ```kotlin
+   * // Get a list of reviews (reviewer and rating) for each book
+   * db.pipeline().collection("books")
+   *     .define(field("id").alias("book_id"))
+   *     .addFields(
+   *         db.pipeline().collection("reviews")
+   *             .where(field("book_id").equal(variable("book_id")))
+   *             .select(field("reviewer"), field("rating"))
+   *             .toArrayExpression()
+   *             .alias("reviews"))
+   * ```
+   *
+   * *When the subquery produces multiple fields, they are kept as objects in the array:*
+   *
+   * Output:
+   * ```json
+   * [
+   *   {
+   *     "id": "1",
+   *     "title": "1984",
+   *     "reviews": [
+   *       { "reviewer": "Alice", "rating": 5 },
+   *       { "reviewer": "Bob", "rating": 4 }
+   *     ]
+   *   }
+   * ]
+   * ```
    *
    * @return An [Expression] that executes this pipeline and returns the results as a list.
    */
@@ -984,98 +1042,62 @@ internal constructor(
   }
 
   /**
-   * Converts this Pipeline into an expression that evaluates to a single scalar result. Used for
-   * 1:1 lookups or Aggregations when the subquery is expected to return a single value or object.
+   * Converts this Pipeline into an expression that evaluates to a single scalar result.
    *
-   * **Runtime Validation:** The runtime will validate that the result set contains exactly one
-   * item. It throws a runtime error if the result has more than one item, and evaluates to `null`
-   * if the pipeline has zero results.
+   * **Runtime Validation:** The runtime validates that the result set contains zero or one item. If
+   * zero items, it evaluates to `null`.
    *
-   * **Result Unwrapping:** For simpler access, scalar subqueries producing a single field
-   * automatically unwrap that value to the top level, ignoring the inner alias. If the subquery
-   * returns multiple fields, they are preserved as a map.
+   * **Result Unwrapping:** If the result contains exactly one item:
+   * - If the item has a single field, its value is unwrapped and returned directly.
+   * - If the item has multiple fields, they are returned as a Map.
    *
-   * **Example 1: Single field unwrapping**
+   * Example:
    * ```kotlin
-   * // Calculate average rating for each restaurant using a subquery
-   * db.pipeline().collection("restaurants")
-   * .define(field("id").alias("rid"))
-   * .addFields(
+   * // Calculate average rating for a restaurant
+   * db.pipeline().collection("restaurants").addFields(
    *   db.pipeline().collection("reviews")
-   *   .where(field("restaurant_id").equal(variable("rid")))
-   *   // Inner aggregation returns a single document
-   *   .aggregate(AggregateFunction.average("rating").alias("value"))
-   *   // Convert Pipeline -> Scalar Expression (validates result is 1 item)
-   *   .toScalarExpression()
-   *   .alias("average_rating")
+   *     .where(field("restaurant_id").equal(variable("rid")))
+   *     .aggregate(AggregateFunction.average("rating").alias("avg"))
+   *     // Unwraps the single "avg" field to a scalar double
+   *     .toScalarExpression().alias("average_rating")
    * )
    * ```
    *
-   * *The result set is unwrapped twice: from `"average_rating": [{ "value": 4.5 }]` to
-   * `"average_rating": { "value": 4.5 }`, and finally to `"average_rating": 4.5`.*
-   *
+   * Output:
    * ```json
-   * // Output Document:
-   * [
-   *   {
-   *     "id": "123",
-   *     "name": "The Burger Joint",
-   *     "cuisine": "American",
-   *     "average_rating": 4.5
-   *   },
-   *   {
-   *     "id": "456",
-   *     "name": "Sushi World",
-   *     "cuisine": "Japanese",
-   *     "average_rating": 4.8
-   *   }
-   * ]
+   * {
+   *   "name": "The Burger Joint",
+   *   "average_rating": 4.5
+   * }
    * ```
    *
-   * **Example 2: Multiple fields (Map)**
+   * Example (Multiple Fields):
    * ```kotlin
-   * // For each restaurant, calculate review statistics (average rating AND total count)
-   * db.pipeline().collection("restaurants")
-   * .define(field("id").alias("rid"))
-   * .addFields(
+   * // Calculate average rating AND count for a restaurant
+   * db.pipeline().collection("restaurants").addFields(
    *   db.pipeline().collection("reviews")
-   *   .where(field("restaurant_id").equal(variable("rid")))
-   *   .aggregate(
-   *     AggregateFunction.average("rating").alias("avg_score"),
-   *     AggregateFunction.countAll().alias("review_count")
-   *   )
-   *   .toScalarExpression()
-   *   .alias("stats")
+   *     .where(field("restaurant_id").equal(variable("rid")))
+   *     .aggregate(
+   *       AggregateFunction.average("rating").alias("avg"),
+   *       AggregateFunction.count().alias("count")
+   *     )
+   *     // Returns a Map with "avg" and "count" fields
+   *     .toScalarExpression().alias("stats")
    * )
    * ```
    *
-   * *When the subquery produces multiple fields, they are wrapped in a map:*
-   *
+   * Output:
    * ```json
-   * // Output Document:
-   * [
-   *   {
-   *     "id": "123",
-   *     "name": "The Burger Joint",
-   *     "cuisine": "American",
-   *     "stats": {
-   *       "avg_score": 4.0,
-   *       "review_count": 3
-   *     }
-   *   },
-   *   {
-   *     "id": "456",
-   *     "name": "Sushi World",
-   *     "cuisine": "Japanese",
-   *     "stats": {
-   *       "avg_score": 4.8,
-   *       "review_count": 120
-   *     }
+   * {
+   *   "name": "The Burger Joint",
+   *   "stats": {
+   *     "avg": 4.5,
+   *     "count": 100
    *   }
-   * ]
+   * }
    * ```
    *
-   * @return An [Expression] representing the execution of this pipeline.
+   * @return An [Expression] representing the scalar result.
    */
   fun toScalarExpression(): Expression {
     return FunctionExpression("scalar", notImplemented, Expression.toExprOrConstant(this))
@@ -1083,20 +1105,13 @@ internal constructor(
 
   companion object {
     /**
-     * Creates a pipeline that processes the documents in the specified subcollection of the current
-     * document.
-     *
-     * @param path The relative path to the subcollection.
-     * @return A new [Pipeline] scoped to the subcollection.
-     */
-    /**
      * Initializes a pipeline scoped to a subcollection.
      *
      * This method allows you to start a new pipeline that operates on a subcollection of the
      * current document. It is intended to be used as a subquery.
      *
-     * **Note:** A pipeline created with `subcollection` cannot be executed directly using
-     * [Pipeline.snapshot]. It must be used within a parent pipeline.
+     * **Note:** A pipeline created with `subcollection` cannot be executed directly. It must be
+     * used within a parent pipeline.
      *
      * Example:
      * ```
@@ -1119,11 +1134,20 @@ internal constructor(
      * Creates a pipeline that processes the documents in the specified subcollection of the current
      * document.
      *
+     * Example:
+     * ```
+     * firestore.pipeline().collection("books")
+     *     .addFields(
+     *         Pipeline.subcollection(SubcollectionSource.of("reviews"))
+     *             .aggregate(AggregateFunction.average("rating").as("avg_rating"))
+     *             .toScalarExpression().as("average_rating"));
+     * ```
+     *
      * @param source The subcollection that will be the source of this pipeline.
      * @return A new [Pipeline] scoped to the subcollection.
      */
     @JvmStatic
-    internal fun subcollection(source: SubcollectionSource): Pipeline {
+    fun subcollection(source: SubcollectionSource): Pipeline {
       return Pipeline(null, null, source)
     }
   }
