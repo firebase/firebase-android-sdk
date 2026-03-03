@@ -21,7 +21,7 @@ mutation CachingString_Insert($string: String!, $tag: String) @auth(level: PUBLI
 }
 
 mutation CachingString_Update($key: CachingString_Key!, $string: String!) @auth(level: PUBLIC) {
-  count: cachingString_update(key: $key, data: {string: $string})
+  cachingString_update(key: $key, data: {string: $string})
 }
 
 query CachingString_GetByKey($key: CachingString_Key!) @auth(level: PUBLIC) {
@@ -49,7 +49,7 @@ mutation CachingNullableString_Insert($string: String, $tag: String) @auth(level
 }
 
 mutation CachingNullableString_Update($key: CachingNullableString_Key!, $string: String) @auth(level: PUBLIC) {
-  count: cachingNullableString_update(key: $key, data: {string: $string})
+  cachingNullableString_update(key: $key, data: {string: $string})
 }
 
 query CachingNullableString_GetByKey($key: CachingNullableString_Key!) @auth(level: PUBLIC) {
@@ -69,6 +69,126 @@ query CachingNullableString_GetByTag2($tag: String!) @auth(level: PUBLIC) {
 }
 
 ###############################################################################
+# CachingStringList
+###############################################################################
+
+mutation CachingStringList_Insert($strings: [String!]!, $tag: String) @auth(level: PUBLIC) {
+  key: cachingStringList_insert(data: {strings: $strings, tag: $tag})
+}
+
+mutation CachingStringList_Update($key: CachingStringList_Key!, $strings: [String!]!) @auth(level: PUBLIC) {
+  cachingStringList_update(key: $key, data: {strings: $strings})
+}
+
+query CachingStringList_GetByKey($key: CachingStringList_Key!) @auth(level: PUBLIC) {
+  item: cachingStringList(key: $key) { strings }
+}
+
+query CachingStringList_GetByKey2($key: CachingStringList_Key!) @auth(level: PUBLIC) {
+  item: cachingStringList(key: $key) { strings }
+}
+
+query CachingStringList_GetByTag($tag: String!) @auth(level: PUBLIC) {
+  items: cachingStringLists(where: {tag: {eq: $tag}}) { id strings }
+}
+
+query CachingStringList_GetByTag2($tag: String!) @auth(level: PUBLIC) {
+  items: cachingStringLists(where: {tag: {eq: $tag}}) { id strings }
+}
+
+###############################################################################
+# CachingNullableStringList
+###############################################################################
+
+# NOTE: FDC forces the type of $strings to be [String!], even though it's inconsistent with
+# the data type [String]! from the schema.
+mutation CachingNullableStringList_Insert($strings: [String!], $tag: String) @auth(level: PUBLIC) {
+  key: cachingNullableStringList_insert(data: {strings: $strings, tag: $tag})
+}
+
+# NOTE: FDC forces the type of $strings to be [String!], even though it's inconsistent with
+# the data type [String]! from the schema.
+mutation CachingNullableStringList_Update($key: CachingNullableStringList_Key!, $strings: [String!]) @auth(level: PUBLIC) {
+  cachingNullableStringList_update(key: $key, data: {strings: $strings})
+}
+
+query CachingNullableStringList_GetByKey($key: CachingNullableStringList_Key!) @auth(level: PUBLIC) {
+  item: cachingNullableStringList(key: $key) { strings }
+}
+
+query CachingNullableStringList_GetByKey2($key: CachingNullableStringList_Key!) @auth(level: PUBLIC) {
+  item: cachingNullableStringList(key: $key) { strings }
+}
+
+query CachingNullableStringList_GetByTag($tag: String!) @auth(level: PUBLIC) {
+  items: cachingNullableStringLists(where: {tag: {eq: $tag}}) { id strings }
+}
+
+query CachingNullableStringList_GetByTag2($tag: String!) @auth(level: PUBLIC) {
+  items: cachingNullableStringLists(where: {tag: {eq: $tag}}) { id strings }
+}
+
+###############################################################################
+# CachingStringNullableList
+###############################################################################
+
+mutation CachingStringNullableList_Insert($strings: [String!], $tag: String) @auth(level: PUBLIC) {
+  key: cachingStringNullableList_insert(data: {strings: $strings, tag: $tag})
+}
+
+mutation CachingStringNullableList_Update($key: CachingStringNullableList_Key!, $strings: [String!]) @auth(level: PUBLIC) {
+  cachingStringNullableList_update(key: $key, data: {strings: $strings})
+}
+
+query CachingStringNullableList_GetByKey($key: CachingStringNullableList_Key!) @auth(level: PUBLIC) {
+  item: cachingStringNullableList(key: $key) { strings }
+}
+
+query CachingStringNullableList_GetByKey2($key: CachingStringNullableList_Key!) @auth(level: PUBLIC) {
+  item: cachingStringNullableList(key: $key) { strings }
+}
+
+query CachingStringNullableList_GetByTag($tag: String!) @auth(level: PUBLIC) {
+  items: cachingStringNullableLists(where: {tag: {eq: $tag}}) { id strings }
+}
+
+query CachingStringNullableList_GetByTag2($tag: String!) @auth(level: PUBLIC) {
+  items: cachingStringNullableLists(where: {tag: {eq: $tag}}) { id strings }
+}
+
+###############################################################################
+# CachingNullableStringNullableList
+###############################################################################
+
+# NOTE: FDC forces the type of $strings to be [String!], even though it's inconsistent with
+# the data type [String] from the schema.
+mutation CachingNullableStringNullableList_Insert($strings: [String!], $tag: String) @auth(level: PUBLIC) {
+  key: cachingNullableStringNullableList_insert(data: {strings: $strings, tag: $tag})
+}
+
+# NOTE: FDC forces the type of $strings to be [String!], even though it's inconsistent with
+# the data type [String] from the schema.
+mutation CachingNullableStringNullableList_Update($key: CachingNullableStringNullableList_Key!, $strings: [String!]) @auth(level: PUBLIC) {
+  cachingNullableStringNullableList_update(key: $key, data: {strings: $strings})
+}
+
+query CachingNullableStringNullableList_GetByKey($key: CachingNullableStringNullableList_Key!) @auth(level: PUBLIC) {
+  item: cachingNullableStringNullableList(key: $key) { strings }
+}
+
+query CachingNullableStringNullableList_GetByKey2($key: CachingNullableStringNullableList_Key!) @auth(level: PUBLIC) {
+  item: cachingNullableStringNullableList(key: $key) { strings }
+}
+
+query CachingNullableStringNullableList_GetByTag($tag: String!) @auth(level: PUBLIC) {
+  items: cachingNullableStringNullableLists(where: {tag: {eq: $tag}}) { id strings }
+}
+
+query CachingNullableStringNullableList_GetByTag2($tag: String!) @auth(level: PUBLIC) {
+  items: cachingNullableStringNullableLists(where: {tag: {eq: $tag}}) { id strings }
+}
+
+###############################################################################
 # CachingFloat
 ###############################################################################
 
@@ -77,7 +197,7 @@ mutation CachingFloat_Insert($float: Float!, $tag: String) @auth(level: PUBLIC) 
 }
 
 mutation CachingFloat_Update($key: CachingFloat_Key!, $float: Float!) @auth(level: PUBLIC) {
-  count: cachingFloat_update(key: $key, data: {float: $float})
+  cachingFloat_update(key: $key, data: {float: $float})
 }
 
 query CachingFloat_GetByKey($key: CachingFloat_Key!) @auth(level: PUBLIC) {
@@ -105,7 +225,7 @@ mutation CachingNullableFloat_Insert($float: Float, $tag: String) @auth(level: P
 }
 
 mutation CachingNullableFloat_Update($key: CachingNullableFloat_Key!, $float: Float) @auth(level: PUBLIC) {
-  count: cachingNullableFloat_update(key: $key, data: {float: $float})
+  cachingNullableFloat_update(key: $key, data: {float: $float})
 }
 
 query CachingNullableFloat_GetByKey($key: CachingNullableFloat_Key!) @auth(level: PUBLIC) {
@@ -133,7 +253,7 @@ mutation CachingBoolean_Insert($boolean: Boolean!, $tag: String) @auth(level: PU
 }
 
 mutation CachingBoolean_Update($key: CachingBoolean_Key!, $boolean: Boolean!) @auth(level: PUBLIC) {
-  count: cachingBoolean_update(key: $key, data: {boolean: $boolean})
+  cachingBoolean_update(key: $key, data: {boolean: $boolean})
 }
 
 query CachingBoolean_GetByKey($key: CachingBoolean_Key!) @auth(level: PUBLIC) {
@@ -161,7 +281,7 @@ mutation CachingNullableBoolean_Insert($boolean: Boolean, $tag: String) @auth(le
 }
 
 mutation CachingNullableBoolean_Update($key: CachingNullableBoolean_Key!, $boolean: Boolean) @auth(level: PUBLIC) {
-  count: cachingNullableBoolean_update(key: $key, data: {boolean: $boolean})
+  cachingNullableBoolean_update(key: $key, data: {boolean: $boolean})
 }
 
 query CachingNullableBoolean_GetByKey($key: CachingNullableBoolean_Key!) @auth(level: PUBLIC) {
@@ -178,4 +298,60 @@ query CachingNullableBoolean_GetByTag($tag: String!) @auth(level: PUBLIC) {
 
 query CachingNullableBoolean_GetByTag2($tag: String!) @auth(level: PUBLIC) {
   items: cachingNullableBooleans(where: {tag: {eq: $tag}}) { id boolean }
+}
+
+###############################################################################
+# CachingAny
+###############################################################################
+
+mutation CachingAny_Insert($any: Any!, $tag: String) @auth(level: PUBLIC) {
+  key: cachingAny_insert(data: {any: $any, tag: $tag})
+}
+
+mutation CachingAny_Update($key: CachingAny_Key!, $any: Any!) @auth(level: PUBLIC) {
+  cachingAny_update(key: $key, data: {any: $any})
+}
+
+query CachingAny_GetByKey($key: CachingAny_Key!) @auth(level: PUBLIC) {
+  item: cachingAny(key: $key) { any }
+}
+
+query CachingAny_GetByKey2($key: CachingAny_Key!) @auth(level: PUBLIC) {
+  item: cachingAny(key: $key) { any }
+}
+
+query CachingAny_GetByTag($tag: String!) @auth(level: PUBLIC) {
+  items: cachingAnies(where: {tag: {eq: $tag}}) { id any }
+}
+
+query CachingAny_GetByTag2($tag: String!) @auth(level: PUBLIC) {
+  items: cachingAnies(where: {tag: {eq: $tag}}) { id any }
+}
+
+###############################################################################
+# CachingNullableAny
+###############################################################################
+
+mutation CachingNullableAny_Insert($any: Any, $tag: String) @auth(level: PUBLIC) {
+  key: cachingNullableAny_insert(data: {any: $any, tag: $tag})
+}
+
+mutation CachingNullableAny_Update($key: CachingNullableAny_Key!, $any: Any) @auth(level: PUBLIC) {
+  cachingNullableAny_update(key: $key, data: {any: $any})
+}
+
+query CachingNullableAny_GetByKey($key: CachingNullableAny_Key!) @auth(level: PUBLIC) {
+  item: cachingNullableAny(key: $key) { any }
+}
+
+query CachingNullableAny_GetByKey2($key: CachingNullableAny_Key!) @auth(level: PUBLIC) {
+  item: cachingNullableAny(key: $key) { any }
+}
+
+query CachingNullableAny_GetByTag($tag: String!) @auth(level: PUBLIC) {
+  items: cachingNullableAnies(where: {tag: {eq: $tag}}) { id any }
+}
+
+query CachingNullableAny_GetByTag2($tag: String!) @auth(level: PUBLIC) {
+  items: cachingNullableAnies(where: {tag: {eq: $tag}}) { id any }
 }
