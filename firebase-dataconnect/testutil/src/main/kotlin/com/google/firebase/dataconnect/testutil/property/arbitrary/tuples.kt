@@ -61,7 +61,7 @@ fun <T> List<T>.toThreeValues(): ThreeValues<T> {
 
 data class FourValues<T>(val value1: T, val value2: T, val value3: T, val value4: T) {
   override fun toString() =
-    "ThreeValues(" +
+    "FourValues(" +
       "value1=${value1.print().value}, " +
       "value2=${value2.print().value}, " +
       "value3=${value3.print().value}, " +
@@ -92,7 +92,7 @@ data class FiveValues<T>(
   val value5: T
 ) {
   override fun toString() =
-    "ThreeValues(" +
+    "FiveValues(" +
       "value1=${value1.print().value}, " +
       "value2=${value2.print().value}, " +
       "value3=${value3.print().value}, " +
@@ -119,15 +119,23 @@ fun <T : Comparable<T>> FiveValues<T>.sorted(): FiveValues<T> {
 fun <T> Arb.Companion.twoValues(arb: Arb<T>): Arb<TwoValues<T>> =
   bind(arb, arb) { value1, value2 -> TwoValues(value1, value2) }
 
+fun <T> Arb<T>.pair(): Arb<TwoValues<T>> = Arb.twoValues(this)
+
 fun <T> Arb.Companion.threeValues(arb: Arb<T>): Arb<ThreeValues<T>> =
   bind(arb, arb, arb) { value1, value2, value3 -> ThreeValues(value1, value2, value3) }
+
+fun <T> Arb<T>.triple(): Arb<ThreeValues<T>> = Arb.threeValues(this)
 
 fun <T> Arb.Companion.fourValues(arb: Arb<T>): Arb<FourValues<T>> =
   bind(arb, arb, arb, arb) { value1, value2, value3, value4 ->
     FourValues(value1, value2, value3, value4)
   }
 
+fun <T> Arb<T>.quadruple(): Arb<FourValues<T>> = Arb.fourValues(this)
+
 fun <T> Arb.Companion.fiveValues(arb: Arb<T>): Arb<FiveValues<T>> =
   bind(arb, arb, arb, arb, arb) { value1, value2, value3, value4, value5 ->
     FiveValues(value1, value2, value3, value4, value5)
   }
+
+fun <T> Arb<T>.quintuple(): Arb<FiveValues<T>> = Arb.fiveValues(this)
