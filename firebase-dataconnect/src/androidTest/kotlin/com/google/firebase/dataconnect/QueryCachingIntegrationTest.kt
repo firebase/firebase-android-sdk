@@ -25,10 +25,18 @@ import com.google.firebase.dataconnect.DataSource.CACHE
 import com.google.firebase.dataconnect.DataSource.SERVER
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.Quintuple
+import com.google.firebase.dataconnect.testutil.expectedAnyScalarDoubleRoundTripValue
+import com.google.firebase.dataconnect.testutil.map
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.distinctPair
+import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.quintuple
+import com.google.firebase.dataconnect.testutil.property.arbitrary.value
 import com.google.firebase.dataconnect.testutil.schemas.CachingConnector
+import com.google.firebase.dataconnect.testutil.schemas.verifyGetAnyValue
+import com.google.firebase.dataconnect.testutil.schemas.verifyGetAnyValue2
+import com.google.firebase.dataconnect.testutil.schemas.verifyGetAnyValuesByTag
+import com.google.firebase.dataconnect.testutil.schemas.verifyGetAnyValuesByTag2
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetBoolean
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetBoolean2
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetBooleansByTag
@@ -37,6 +45,10 @@ import com.google.firebase.dataconnect.testutil.schemas.verifyGetFloat
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetFloat2
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetFloatsByTag
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetFloatsByTag2
+import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableAnyValue
+import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableAnyValue2
+import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableAnyValuesByTag
+import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableAnyValuesByTag2
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableBoolean
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableBoolean2
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableBooleansByTag
@@ -47,13 +59,31 @@ import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableFloatsB
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableFloatsByTag2
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableString
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableString2
+import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableStringList
+import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableStringList2
+import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableStringListsByTag
+import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableStringListsByTag2
+import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableStringNullableList
+import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableStringNullableList2
+import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableStringNullableListsByTag
+import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableStringNullableListsByTag2
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableStringsByTag
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableStringsByTag2
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetString
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetString2
+import com.google.firebase.dataconnect.testutil.schemas.verifyGetStringList
+import com.google.firebase.dataconnect.testutil.schemas.verifyGetStringList2
+import com.google.firebase.dataconnect.testutil.schemas.verifyGetStringListsByTag
+import com.google.firebase.dataconnect.testutil.schemas.verifyGetStringListsByTag2
+import com.google.firebase.dataconnect.testutil.schemas.verifyGetStringNullableList
+import com.google.firebase.dataconnect.testutil.schemas.verifyGetStringNullableList2
+import com.google.firebase.dataconnect.testutil.schemas.verifyGetStringNullableListsByTag
+import com.google.firebase.dataconnect.testutil.schemas.verifyGetStringNullableListsByTag2
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetStringsByTag
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetStringsByTag2
 import com.google.firebase.util.nextAlphanumericString
+import com.google.protobuf.Value as ValueProto
+import io.kotest.assertions.print.print
 import io.kotest.common.ExperimentalKotest
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
@@ -63,9 +93,12 @@ import io.kotest.property.ShrinkingMode
 import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.alphanumeric
 import io.kotest.property.arbitrary.boolean
+import io.kotest.property.arbitrary.list
+import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.orNull
 import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
+import kotlin.random.Random
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.nanoseconds
@@ -333,6 +366,123 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
   }
 
   @Test
+  fun normalizedStringList() = runTest {
+    val connector = newCachingConnector()
+    val stringListArb = Arb.list(alphanumericStringArb(), 0..5)
+    val stringListsArb = stringListArb.quintuple()
+    checkAll(propTestConfig, stringListsArb) { (strings1, strings2, strings3, strings4, strings5) ->
+      val tag = randomTag()
+      val key = connector.insertStringList(strings1, tag)
+      connector.verifyGetStringList(key, "query1a", strings1, SERVER)
+      connector.updateStringList(key, strings2)
+      connector.verifyGetStringList2(key, "query2a", strings2, SERVER)
+      connector.verifyGetStringList(key, "query2b", strings2, CACHE)
+      connector.updateStringList(key, strings3)
+      connector.verifyGetStringListsByTag(tag, "query3a", strings3, SERVER)
+      connector.verifyGetStringList2(key, "query3b", strings3, CACHE)
+      connector.verifyGetStringList(key, "query3c", strings3, CACHE)
+      connector.insertStringList(strings5, tag)
+      connector.updateStringList(key, strings4)
+      connector.verifyGetStringListsByTag2(tag, "query4a", listOf(strings4, strings5), SERVER)
+      connector.verifyGetStringListsByTag(tag, "query4b", strings4, CACHE)
+      connector.verifyGetStringList2(key, "query4c", strings4, CACHE)
+      connector.verifyGetStringList(key, "query4d", strings4, CACHE)
+    }
+  }
+
+  @Test
+  fun normalizedNullableStringList() = runTest {
+    val connector = newCachingConnector()
+    val stringListArb = Arb.list(alphanumericStringArb().orNull(nullProbability = 0.2), 0..5)
+    val stringListsArb = stringListArb.quintuple()
+    checkAll(propTestConfig, stringListsArb) { (strings1, strings2, strings3, strings4, strings5) ->
+      val tag = randomTag()
+      val key = connector.insertNullableStringList(strings1, tag)
+      connector.verifyGetNullableStringList(key, "query1a", strings1, SERVER)
+      connector.updateNullableStringList(key, strings2)
+      connector.verifyGetNullableStringList2(key, "query2a", strings2, SERVER)
+      connector.verifyGetNullableStringList(key, "query2b", strings2, CACHE)
+      connector.updateNullableStringList(key, strings3)
+      connector.verifyGetNullableStringListsByTag(tag, "query3a", strings3, SERVER)
+      connector.verifyGetNullableStringList2(key, "query3b", strings3, CACHE)
+      connector.verifyGetNullableStringList(key, "query3c", strings3, CACHE)
+      connector.insertNullableStringList(strings5, tag)
+      connector.updateNullableStringList(key, strings4)
+      connector.verifyGetNullableStringListsByTag2(
+        tag,
+        "query4a",
+        listOf(strings4, strings5),
+        SERVER
+      )
+      connector.verifyGetNullableStringListsByTag(tag, "query4b", strings4, CACHE)
+      connector.verifyGetNullableStringList2(key, "query4c", strings4, CACHE)
+      connector.verifyGetNullableStringList(key, "query4d", strings4, CACHE)
+    }
+  }
+
+  @Test
+  fun normalizedStringNullableList() = runTest {
+    val connector = newCachingConnector()
+    val stringListArb = Arb.list(alphanumericStringArb(), 0..5).orNull(nullProbability = 0.2)
+    val stringListsArb = stringListArb.quintuple()
+    checkAll(propTestConfig, stringListsArb) { (strings1, strings2, strings3, strings4, strings5) ->
+      val tag = randomTag()
+      val key = connector.insertStringNullableList(strings1, tag)
+      connector.verifyGetStringNullableList(key, "query1a", strings1, SERVER)
+      connector.updateStringNullableList(key, strings2)
+      connector.verifyGetStringNullableList2(key, "query2a", strings2, SERVER)
+      connector.verifyGetStringNullableList(key, "query2b", strings2, CACHE)
+      connector.updateStringNullableList(key, strings3)
+      connector.verifyGetStringNullableListsByTag(tag, "query3a", strings3, SERVER)
+      connector.verifyGetStringNullableList2(key, "query3b", strings3, CACHE)
+      connector.verifyGetStringNullableList(key, "query3c", strings3, CACHE)
+      connector.insertStringNullableList(strings5, tag)
+      connector.updateStringNullableList(key, strings4)
+      connector.verifyGetStringNullableListsByTag2(
+        tag,
+        "query4a",
+        listOf(strings4, strings5),
+        SERVER
+      )
+      connector.verifyGetStringNullableListsByTag(tag, "query4b", strings4, CACHE)
+      connector.verifyGetStringNullableList2(key, "query4c", strings4, CACHE)
+      connector.verifyGetStringNullableList(key, "query4d", strings4, CACHE)
+    }
+  }
+
+  @Test
+  fun normalizedNullableStringNullableList() = runTest {
+    val connector = newCachingConnector()
+    val stringListArb =
+      Arb.list(alphanumericStringArb().orNull(nullProbability = 0.2), 0..5)
+        .orNull(nullProbability = 0.2)
+    val stringListsArb = stringListArb.quintuple()
+    checkAll(propTestConfig, stringListsArb) { (strings1, strings2, strings3, strings4, strings5) ->
+      val tag = randomTag()
+      val key = connector.insertNullableStringNullableList(strings1, tag)
+      connector.verifyGetNullableStringNullableList(key, "query1a", strings1, SERVER)
+      connector.updateNullableStringNullableList(key, strings2)
+      connector.verifyGetNullableStringNullableList2(key, "query2a", strings2, SERVER)
+      connector.verifyGetNullableStringNullableList(key, "query2b", strings2, CACHE)
+      connector.updateNullableStringNullableList(key, strings3)
+      connector.verifyGetNullableStringNullableListsByTag(tag, "query3a", strings3, SERVER)
+      connector.verifyGetNullableStringNullableList2(key, "query3b", strings3, CACHE)
+      connector.verifyGetNullableStringNullableList(key, "query3c", strings3, CACHE)
+      connector.insertNullableStringNullableList(strings5, tag)
+      connector.updateNullableStringNullableList(key, strings4)
+      connector.verifyGetNullableStringNullableListsByTag2(
+        tag,
+        "query4a",
+        listOf(strings4, strings5),
+        SERVER
+      )
+      connector.verifyGetNullableStringNullableListsByTag(tag, "query4b", strings4, CACHE)
+      connector.verifyGetNullableStringNullableList2(key, "query4c", strings4, CACHE)
+      connector.verifyGetNullableStringNullableList(key, "query4d", strings4, CACHE)
+    }
+  }
+
+  @Test
   fun normalizedFloat() = runTest {
     val connector = newCachingConnector()
     val floatsArb = Arb.dataConnect.float().quintuple()
@@ -421,7 +571,6 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
     checkAll(propTestConfig, booleansArb) { (boolean1, boolean2, boolean3, boolean4, boolean5) ->
       val tag = randomTag()
       val key = connector.insertNullableBoolean(boolean1, tag)
-      Arb.dataConnect.tag()
       connector.verifyGetNullableBoolean(key, "query1a", boolean1, SERVER)
       connector.updateNullableBoolean(key, boolean2)
       connector.verifyGetNullableBoolean2(key, "query2a", boolean2, SERVER)
@@ -438,6 +587,64 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
       connector.verifyGetNullableBoolean(key, "query4d", boolean4, CACHE)
     }
   }
+
+  @Test
+  fun normalizedAnyValue() = runTest {
+    val connector = newCachingConnector()
+    val anyValueArb = anyValueArb().quintuple()
+    checkAll(propTestConfig, anyValueArb) { (any1, any2, any3, any4, any5) ->
+      val tag = randomTag()
+      val key = connector.insertAnyValue(any1.value, tag)
+      connector.verifyGetAnyValue(key, "query1a", any1.roundTripValue, SERVER)
+      connector.updateAnyValue(key, any2.value)
+      connector.verifyGetAnyValue2(key, "query2a", any2.roundTripValue, SERVER)
+      connector.verifyGetAnyValue(key, "query2b", any2.roundTripValue, CACHE)
+      connector.updateAnyValue(key, any3.value)
+      connector.verifyGetAnyValuesByTag(tag, "query3a", any3.roundTripValue, SERVER)
+      connector.verifyGetAnyValue2(key, "query3b", any3.roundTripValue, CACHE)
+      connector.verifyGetAnyValue(key, "query3c", any3.roundTripValue, CACHE)
+      connector.insertAnyValue(any5.value, tag)
+      connector.updateAnyValue(key, any4.value)
+      connector.verifyGetAnyValuesByTag2(
+        tag,
+        "query4a",
+        listOf(any4, any5).map { it.roundTripValue },
+        SERVER
+      )
+      connector.verifyGetAnyValuesByTag(tag, "query4b", any4.roundTripValue, CACHE)
+      connector.verifyGetAnyValue2(key, "query4c", any4.roundTripValue, CACHE)
+      connector.verifyGetAnyValue(key, "query4d", any4.roundTripValue, CACHE)
+    }
+  }
+
+  @Test
+  fun normalizedNullableAnyValue() = runTest {
+    val connector = newCachingConnector()
+    val anyValueArb = anyValueArb().orNull(nullProbability = 0.2).quintuple()
+    checkAll(propTestConfig, anyValueArb) { (any1, any2, any3, any4, any5) ->
+      val tag = randomTag()
+      val key = connector.insertNullableAnyValue(any1?.value, tag)
+      connector.verifyGetNullableAnyValue(key, "query1a", any1?.roundTripValue, SERVER)
+      connector.updateNullableAnyValue(key, any2?.value)
+      connector.verifyGetNullableAnyValue2(key, "query2a", any2?.roundTripValue, SERVER)
+      connector.verifyGetNullableAnyValue(key, "query2b", any2?.roundTripValue, CACHE)
+      connector.updateNullableAnyValue(key, any3?.value)
+      connector.verifyGetNullableAnyValuesByTag(tag, "query3a", any3?.roundTripValue, SERVER)
+      connector.verifyGetNullableAnyValue2(key, "query3b", any3?.roundTripValue, CACHE)
+      connector.verifyGetNullableAnyValue(key, "query3c", any3?.roundTripValue, CACHE)
+      connector.insertNullableAnyValue(any5?.value, tag)
+      connector.updateNullableAnyValue(key, any4?.value)
+      connector.verifyGetNullableAnyValuesByTag2(
+        tag,
+        "query4a",
+        listOf(any4, any5).map { it?.roundTripValue },
+        SERVER
+      )
+      connector.verifyGetNullableAnyValuesByTag(tag, "query4b", any4?.roundTripValue, CACHE)
+      connector.verifyGetNullableAnyValue2(key, "query4c", any4?.roundTripValue, CACHE)
+      connector.verifyGetNullableAnyValue(key, "query4d", any4?.roundTripValue, CACHE)
+    }
+  }
 }
 
 private val propTestConfig =
@@ -449,5 +656,38 @@ private val propTestConfig =
 
 private fun alphanumericStringArb(): Arb<String> = Arb.string(0..10, Codepoint.alphanumeric())
 
-private fun PropertyContext.randomTag(): String =
-  "tag_" + randomSource().random.nextAlphanumericString(50)
+private fun randomTag(): String = "tag_" + Random.nextAlphanumericString(50)
+
+private data class AnyValueRoundTrip(val value: AnyValue) {
+  val roundTripValue: AnyValue = value.expectedAnyScalarRoundTripValue()
+
+  override fun toString() =
+    "AnyValueRoundTrip(value=${value.print().value}, " +
+      "roundTripValue=${roundTripValue.print().value})"
+
+  companion object {
+
+    fun AnyValue.expectedAnyScalarRoundTripValue(): AnyValue =
+      AnyValue(protoValue.expectedAnyScalarRoundTripValue())
+
+    fun ValueProto.expectedAnyScalarRoundTripValue(): ValueProto = map { _, value ->
+      if (value.kindCase != ValueProto.KindCase.NUMBER_VALUE) {
+        value
+      } else {
+        expectedAnyScalarDoubleRoundTripValue(value.numberValue).toValueProto()
+      }
+    }
+  }
+}
+
+private val anyValueArbValueProtoArbRecursiveExcludes =
+  setOf(
+    ValueProto.KindCase.NULL_VALUE, // AnyValue uses null directly instead of NULL_VALUE
+    ValueProto.KindCase.KIND_NOT_SET, // AnyValue does not support KIND_NOT_SET
+  )
+
+private fun anyValueArb(): Arb<AnyValueRoundTrip> =
+  Arb.proto
+    .value(recursiveExcludes = anyValueArbValueProtoArbRecursiveExcludes)
+    .map(::AnyValue)
+    .map(::AnyValueRoundTrip)

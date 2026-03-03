@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+###############################################################################
+# String scalars
+###############################################################################
+
 type CachingString @table {
   string: String!
   tag: String
@@ -21,6 +25,30 @@ type CachingNullableString @table {
   string: String
   tag: String
 }
+
+type CachingStringList @table {
+  strings: [String!]!
+  tag: String
+}
+
+type CachingNullableStringList @table {
+  strings: [String]!
+  tag: String
+}
+
+type CachingStringNullableList @table {
+  strings: [String!]
+  tag: String
+}
+
+type CachingNullableStringNullableList @table {
+  strings: [String]
+  tag: String
+}
+
+###############################################################################
+# Float scalars
+###############################################################################
 
 type CachingFloat @table {
   float: Float!
@@ -32,6 +60,10 @@ type CachingNullableFloat @table {
   tag: String
 }
 
+###############################################################################
+# Boolean scalars
+###############################################################################
+
 type CachingBoolean @table {
   boolean: Boolean!
   tag: String
@@ -39,5 +71,19 @@ type CachingBoolean @table {
 
 type CachingNullableBoolean @table {
   boolean: Boolean
+  tag: String
+}
+
+###############################################################################
+# Any scalars
+###############################################################################
+
+type CachingAny @table {
+  any: Any!
+  tag: String
+}
+
+type CachingNullableAny @table {
+  any: Any
   tag: String
 }

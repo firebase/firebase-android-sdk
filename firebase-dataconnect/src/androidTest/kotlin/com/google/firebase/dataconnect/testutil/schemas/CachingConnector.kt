@@ -16,6 +16,7 @@
 
 package com.google.firebase.dataconnect.testutil.schemas
 
+import com.google.firebase.dataconnect.AnyValue
 import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.OptionalVariable
@@ -147,6 +148,270 @@ class CachingConnector(val dataConnect: FirebaseDataConnect) {
         operationName,
         variables,
         serializer<Data.NullableStringGetMany>(),
+        serializer()
+      )
+    return queryRef.execute()
+  }
+
+  suspend fun insertStringList(strings: List<String>, tag: String? = null): Key {
+    val variables = Variables.StringListInsert(strings = strings, tag = tag)
+    val mutationRef =
+      dataConnect.mutation(
+        "CachingStringList_Insert",
+        variables,
+        serializer<Data.Insert>(),
+        serializer()
+      )
+
+    val result = mutationRef.execute()
+
+    return result.data.key
+  }
+
+  suspend fun updateStringList(key: Key, strings: List<String>) {
+    val variables = Variables.StringListUpdate(key, strings)
+    val mutationRef =
+      dataConnect.mutation("CachingStringList_Update", variables, serializer<Unit>(), serializer())
+    mutationRef.execute()
+  }
+
+  suspend fun getStringList(key: Key) = getStringList("CachingStringList_GetByKey", key)
+
+  suspend fun getStringList2(key: Key) = getStringList("CachingStringList_GetByKey2", key)
+
+  private suspend fun getStringList(
+    operationName: String,
+    key: Key
+  ): QueryResult<Data.StringListGet, Variables.GetByKey> {
+    val variables = Variables.GetByKey(key)
+    val queryRef =
+      dataConnect.query(operationName, variables, serializer<Data.StringListGet>(), serializer())
+    return queryRef.execute()
+  }
+
+  suspend fun getStringListsByTag(tag: String) =
+    getStringListsByTag("CachingStringList_GetByTag", tag)
+
+  suspend fun getStringListsByTag2(tag: String) =
+    getStringListsByTag("CachingStringList_GetByTag2", tag)
+
+  private suspend fun getStringListsByTag(
+    operationName: String,
+    tag: String
+  ): QueryResult<Data.StringListGetMany, Variables.GetByTag> {
+    val variables = Variables.GetByTag(tag)
+    val queryRef =
+      dataConnect.query(
+        operationName,
+        variables,
+        serializer<Data.StringListGetMany>(),
+        serializer()
+      )
+    return queryRef.execute()
+  }
+
+  suspend fun insertNullableStringList(strings: List<String?>, tag: String? = null): Key {
+    val variables = Variables.NullableStringListInsert(strings = strings, tag = tag)
+    val mutationRef =
+      dataConnect.mutation(
+        "CachingNullableStringList_Insert",
+        variables,
+        serializer<Data.Insert>(),
+        serializer()
+      )
+
+    val result = mutationRef.execute()
+
+    return result.data.key
+  }
+
+  suspend fun updateNullableStringList(key: Key, strings: List<String?>) {
+    val variables = Variables.NullableStringListUpdate(key, strings)
+    val mutationRef =
+      dataConnect.mutation(
+        "CachingNullableStringList_Update",
+        variables,
+        serializer<Unit>(),
+        serializer()
+      )
+    mutationRef.execute()
+  }
+
+  suspend fun getNullableStringList(key: Key) =
+    getNullableStringList("CachingNullableStringList_GetByKey", key)
+
+  suspend fun getNullableStringList2(key: Key) =
+    getNullableStringList("CachingNullableStringList_GetByKey2", key)
+
+  private suspend fun getNullableStringList(
+    operationName: String,
+    key: Key
+  ): QueryResult<Data.NullableStringListGet, Variables.GetByKey> {
+    val variables = Variables.GetByKey(key)
+    val queryRef =
+      dataConnect.query(
+        operationName,
+        variables,
+        serializer<Data.NullableStringListGet>(),
+        serializer()
+      )
+    return queryRef.execute()
+  }
+
+  suspend fun getNullableStringListsByTag(tag: String) =
+    getNullableStringListsByTag("CachingNullableStringList_GetByTag", tag)
+
+  suspend fun getNullableStringListsByTag2(tag: String) =
+    getNullableStringListsByTag("CachingNullableStringList_GetByTag2", tag)
+
+  private suspend fun getNullableStringListsByTag(
+    operationName: String,
+    tag: String
+  ): QueryResult<Data.NullableStringListGetMany, Variables.GetByTag> {
+    val variables = Variables.GetByTag(tag)
+    val queryRef =
+      dataConnect.query(
+        operationName,
+        variables,
+        serializer<Data.NullableStringListGetMany>(),
+        serializer()
+      )
+    return queryRef.execute()
+  }
+
+  suspend fun insertStringNullableList(strings: List<String>?, tag: String? = null): Key {
+    val variables = Variables.StringNullableListInsert(strings = strings, tag = tag)
+    val mutationRef =
+      dataConnect.mutation(
+        "CachingStringNullableList_Insert",
+        variables,
+        serializer<Data.Insert>(),
+        serializer()
+      )
+
+    val result = mutationRef.execute()
+
+    return result.data.key
+  }
+
+  suspend fun updateStringNullableList(key: Key, strings: List<String>?) {
+    val variables = Variables.StringNullableListUpdate(key, strings)
+    val mutationRef =
+      dataConnect.mutation(
+        "CachingStringNullableList_Update",
+        variables,
+        serializer<Unit>(),
+        serializer()
+      )
+    mutationRef.execute()
+  }
+
+  suspend fun getStringNullableList(key: Key) =
+    getStringNullableList("CachingStringNullableList_GetByKey", key)
+
+  suspend fun getStringNullableList2(key: Key) =
+    getStringNullableList("CachingStringNullableList_GetByKey2", key)
+
+  private suspend fun getStringNullableList(
+    operationName: String,
+    key: Key
+  ): QueryResult<Data.StringNullableListGet, Variables.GetByKey> {
+    val variables = Variables.GetByKey(key)
+    val queryRef =
+      dataConnect.query(
+        operationName,
+        variables,
+        serializer<Data.StringNullableListGet>(),
+        serializer()
+      )
+    return queryRef.execute()
+  }
+
+  suspend fun getStringNullableListsByTag(tag: String) =
+    getStringNullableListsByTag("CachingStringNullableList_GetByTag", tag)
+
+  suspend fun getStringNullableListsByTag2(tag: String) =
+    getStringNullableListsByTag("CachingStringNullableList_GetByTag2", tag)
+
+  private suspend fun getStringNullableListsByTag(
+    operationName: String,
+    tag: String
+  ): QueryResult<Data.StringNullableListGetMany, Variables.GetByTag> {
+    val variables = Variables.GetByTag(tag)
+    val queryRef =
+      dataConnect.query(
+        operationName,
+        variables,
+        serializer<Data.StringNullableListGetMany>(),
+        serializer()
+      )
+    return queryRef.execute()
+  }
+
+  suspend fun insertNullableStringNullableList(strings: List<String?>?, tag: String? = null): Key {
+    val variables = Variables.NullableStringNullableListInsert(strings = strings, tag = tag)
+    val mutationRef =
+      dataConnect.mutation(
+        "CachingNullableStringNullableList_Insert",
+        variables,
+        serializer<Data.Insert>(),
+        serializer()
+      )
+
+    val result = mutationRef.execute()
+
+    return result.data.key
+  }
+
+  suspend fun updateNullableStringNullableList(key: Key, strings: List<String?>?) {
+    val variables = Variables.NullableStringNullableListUpdate(key, strings)
+    val mutationRef =
+      dataConnect.mutation(
+        "CachingNullableStringNullableList_Update",
+        variables,
+        serializer<Unit>(),
+        serializer()
+      )
+    mutationRef.execute()
+  }
+
+  suspend fun getNullableStringNullableList(key: Key) =
+    getNullableStringNullableList("CachingNullableStringNullableList_GetByKey", key)
+
+  suspend fun getNullableStringNullableList2(key: Key) =
+    getNullableStringNullableList("CachingNullableStringNullableList_GetByKey2", key)
+
+  private suspend fun getNullableStringNullableList(
+    operationName: String,
+    key: Key
+  ): QueryResult<Data.NullableStringNullableListGet, Variables.GetByKey> {
+    val variables = Variables.GetByKey(key)
+    val queryRef =
+      dataConnect.query(
+        operationName,
+        variables,
+        serializer<Data.NullableStringNullableListGet>(),
+        serializer()
+      )
+    return queryRef.execute()
+  }
+
+  suspend fun getNullableStringNullableListsByTag(tag: String) =
+    getNullableStringNullableListsByTag("CachingNullableStringNullableList_GetByTag", tag)
+
+  suspend fun getNullableStringNullableListsByTag2(tag: String) =
+    getNullableStringNullableListsByTag("CachingNullableStringNullableList_GetByTag2", tag)
+
+  private suspend fun getNullableStringNullableListsByTag(
+    operationName: String,
+    tag: String
+  ): QueryResult<Data.NullableStringNullableListGetMany, Variables.GetByTag> {
+    val variables = Variables.GetByTag(tag)
+    val queryRef =
+      dataConnect.query(
+        operationName,
+        variables,
+        serializer<Data.NullableStringNullableListGetMany>(),
         serializer()
       )
     return queryRef.execute()
@@ -383,7 +648,120 @@ class CachingConnector(val dataConnect: FirebaseDataConnect) {
     return queryRef.execute()
   }
 
+  suspend fun insertAnyValue(any: AnyValue, tag: String? = null): Key {
+    val variables = Variables.AnyValueInsert(any = any, tag = tag)
+    val mutationRef =
+      dataConnect.mutation("CachingAny_Insert", variables, serializer<Data.Insert>(), serializer())
+
+    val result = mutationRef.execute()
+
+    return result.data.key
+  }
+
+  suspend fun updateAnyValue(key: Key, any: AnyValue) {
+    val variables = Variables.AnyValueUpdate(key, any)
+    val mutationRef =
+      dataConnect.mutation("CachingAny_Update", variables, serializer<Unit>(), serializer())
+    mutationRef.execute()
+  }
+
+  suspend fun getAnyValue(key: Key) = getAnyValue("CachingAny_GetByKey", key)
+
+  suspend fun getAnyValue2(key: Key) = getAnyValue("CachingAny_GetByKey2", key)
+
+  private suspend fun getAnyValue(
+    operationName: String,
+    key: Key
+  ): QueryResult<Data.AnyValueGet, Variables.GetByKey> {
+    val variables = Variables.GetByKey(key)
+    val queryRef =
+      dataConnect.query(operationName, variables, serializer<Data.AnyValueGet>(), serializer())
+    return queryRef.execute()
+  }
+
+  suspend fun getAnyValuesByTag(tag: String) = getAnyValuesByTag("CachingAny_GetByTag", tag)
+
+  suspend fun getAnyValuesByTag2(tag: String) = getAnyValuesByTag("CachingAny_GetByTag2", tag)
+
+  private suspend fun getAnyValuesByTag(
+    operationName: String,
+    tag: String
+  ): QueryResult<Data.AnyValueGetMany, Variables.GetByTag> {
+    val variables = Variables.GetByTag(tag)
+    val queryRef =
+      dataConnect.query(operationName, variables, serializer<Data.AnyValueGetMany>(), serializer())
+    return queryRef.execute()
+  }
+
+  suspend fun insertNullableAnyValue(any: AnyValue?, tag: String? = null): Key {
+    val variables = Variables.NullableAnyValueInsert(any = any, tag = tag)
+    val mutationRef =
+      dataConnect.mutation(
+        "CachingNullableAny_Insert",
+        variables,
+        serializer<Data.Insert>(),
+        serializer()
+      )
+
+    val result = mutationRef.execute()
+
+    return result.data.key
+  }
+
+  suspend fun updateNullableAnyValue(key: Key, any: AnyValue?) {
+    val variables = Variables.NullableAnyValueUpdate(key, any)
+    val mutationRef =
+      dataConnect.mutation("CachingNullableAny_Update", variables, serializer<Unit>(), serializer())
+    mutationRef.execute()
+  }
+
+  suspend fun getNullableAnyValue(key: Key) =
+    getNullableAnyValue("CachingNullableAny_GetByKey", key)
+
+  suspend fun getNullableAnyValue2(key: Key) =
+    getNullableAnyValue("CachingNullableAny_GetByKey2", key)
+
+  private suspend fun getNullableAnyValue(
+    operationName: String,
+    key: Key
+  ): QueryResult<Data.NullableAnyValueGet, Variables.GetByKey> {
+    val variables = Variables.GetByKey(key)
+    val queryRef =
+      dataConnect.query(
+        operationName,
+        variables,
+        serializer<Data.NullableAnyValueGet>(),
+        serializer()
+      )
+    return queryRef.execute()
+  }
+
+  suspend fun getNullableAnyValuesByTag(tag: String) =
+    getNullableAnyValuesByTag("CachingNullableAny_GetByTag", tag)
+
+  suspend fun getNullableAnyValuesByTag2(tag: String) =
+    getNullableAnyValuesByTag("CachingNullableAny_GetByTag2", tag)
+
+  private suspend fun getNullableAnyValuesByTag(
+    operationName: String,
+    tag: String
+  ): QueryResult<Data.NullableAnyValueGetMany, Variables.GetByTag> {
+    val variables = Variables.GetByTag(tag)
+    val queryRef =
+      dataConnect.query(
+        operationName,
+        variables,
+        serializer<Data.NullableAnyValueGetMany>(),
+        serializer()
+      )
+    return queryRef.execute()
+  }
+
   object Variables {
+
+    @Serializable data class GetByKey(val key: Key)
+
+    @Serializable data class GetByTag(val tag: String)
 
     @Serializable data class StringUpdate(val key: Key, val string: String)
 
@@ -411,9 +789,67 @@ class CachingConnector(val dataConnect: FirebaseDataConnect) {
       )
     }
 
-    @Serializable data class GetByKey(val key: Key)
+    @Serializable data class StringListUpdate(val key: Key, val strings: List<String>)
 
-    @Serializable data class GetByTag(val tag: String)
+    @Serializable
+    data class StringListInsert(val strings: List<String>, val tag: OptionalVariable<String?>) {
+      constructor(
+        strings: List<String>,
+        tag: String?
+      ) : this(
+        strings = strings,
+        tag = if (tag === null) Undefined else Value(tag),
+      )
+    }
+
+    @Serializable data class NullableStringListUpdate(val key: Key, val strings: List<String?>)
+
+    @Serializable
+    data class NullableStringListInsert(
+      val strings: List<String?>,
+      val tag: OptionalVariable<String?>
+    ) {
+      constructor(
+        strings: List<String?>,
+        tag: String?
+      ) : this(
+        strings = strings,
+        tag = if (tag === null) Undefined else Value(tag),
+      )
+    }
+
+    @Serializable data class StringNullableListUpdate(val key: Key, val strings: List<String>?)
+
+    @Serializable
+    data class StringNullableListInsert(
+      val strings: List<String>?,
+      val tag: OptionalVariable<String?>
+    ) {
+      constructor(
+        strings: List<String>?,
+        tag: String?
+      ) : this(
+        strings = strings,
+        tag = if (tag === null) Undefined else Value(tag),
+      )
+    }
+
+    @Serializable
+    data class NullableStringNullableListUpdate(val key: Key, val strings: List<String?>?)
+
+    @Serializable
+    data class NullableStringNullableListInsert(
+      val strings: List<String?>?,
+      val tag: OptionalVariable<String?>
+    ) {
+      constructor(
+        strings: List<String?>?,
+        tag: String?
+      ) : this(
+        strings = strings,
+        tag = if (tag === null) Undefined else Value(tag),
+      )
+    }
 
     @Serializable data class FloatUpdate(val key: Key, val float: Double)
 
@@ -466,6 +902,32 @@ class CachingConnector(val dataConnect: FirebaseDataConnect) {
         tag = if (tag === null) Undefined else Value(tag),
       )
     }
+
+    @Serializable data class AnyValueUpdate(val key: Key, val any: AnyValue)
+
+    @Serializable
+    data class AnyValueInsert(val any: AnyValue, val tag: OptionalVariable<String?>) {
+      constructor(
+        any: AnyValue,
+        tag: String?
+      ) : this(
+        any = any,
+        tag = if (tag === null) Undefined else Value(tag),
+      )
+    }
+
+    @Serializable data class NullableAnyValueUpdate(val key: Key, val any: AnyValue?)
+
+    @Serializable
+    data class NullableAnyValueInsert(val any: AnyValue?, val tag: OptionalVariable<String?>) {
+      constructor(
+        any: AnyValue?,
+        tag: String?
+      ) : this(
+        any = any,
+        tag = if (tag === null) Undefined else Value(tag),
+      )
+    }
   }
 
   object Data {
@@ -497,6 +959,62 @@ class CachingConnector(val dataConnect: FirebaseDataConnect) {
       data class Item(
         val id: @Serializable(with = UUIDSerializer::class) UUID,
         val string: String?,
+      )
+    }
+
+    @Serializable
+    data class StringListGet(val item: Item?) {
+      @Serializable data class Item(val strings: List<String>)
+    }
+
+    @Serializable
+    data class StringListGetMany(val items: List<Item>) {
+      @Serializable
+      data class Item(
+        val id: @Serializable(with = UUIDSerializer::class) UUID,
+        val strings: List<String>,
+      )
+    }
+
+    @Serializable
+    data class NullableStringListGet(val item: Item?) {
+      @Serializable data class Item(val strings: List<String?>)
+    }
+
+    @Serializable
+    data class NullableStringListGetMany(val items: List<Item>) {
+      @Serializable
+      data class Item(
+        val id: @Serializable(with = UUIDSerializer::class) UUID,
+        val strings: List<String?>,
+      )
+    }
+
+    @Serializable
+    data class StringNullableListGet(val item: Item?) {
+      @Serializable data class Item(val strings: List<String>?)
+    }
+
+    @Serializable
+    data class StringNullableListGetMany(val items: List<Item>) {
+      @Serializable
+      data class Item(
+        val id: @Serializable(with = UUIDSerializer::class) UUID,
+        val strings: List<String>?,
+      )
+    }
+
+    @Serializable
+    data class NullableStringNullableListGet(val item: Item?) {
+      @Serializable data class Item(val strings: List<String?>?)
+    }
+
+    @Serializable
+    data class NullableStringNullableListGetMany(val items: List<Item>) {
+      @Serializable
+      data class Item(
+        val id: @Serializable(with = UUIDSerializer::class) UUID,
+        val strings: List<String?>?,
       )
     }
 
@@ -555,6 +1073,34 @@ class CachingConnector(val dataConnect: FirebaseDataConnect) {
         val boolean: Boolean?,
       )
     }
+
+    @Serializable
+    data class AnyValueGet(val item: Item?) {
+      @Serializable data class Item(val any: AnyValue)
+    }
+
+    @Serializable
+    data class AnyValueGetMany(val items: List<Item>) {
+      @Serializable
+      data class Item(
+        val id: @Serializable(with = UUIDSerializer::class) UUID,
+        val any: AnyValue,
+      )
+    }
+
+    @Serializable
+    data class NullableAnyValueGet(val item: Item?) {
+      @Serializable data class Item(val any: AnyValue?)
+    }
+
+    @Serializable
+    data class NullableAnyValueGetMany(val items: List<Item>) {
+      @Serializable
+      data class Item(
+        val id: @Serializable(with = UUIDSerializer::class) UUID,
+        val any: AnyValue?,
+      )
+    }
   }
 
   @Serializable data class Key(val id: @Serializable(with = UUIDSerializer::class) UUID)
@@ -600,6 +1146,88 @@ fun QueryResult<CachingConnector.Data.NullableStringGetMany, CachingConnector.Va
   .shouldBe(strings: Collection<String?>, dataSource: DataSource) {
   assertSoftly {
     this.data.items.map { it.string } shouldContainExactlyInAnyOrder strings
+    this.dataSource shouldBe dataSource
+  }
+}
+
+@JvmName("QueryResult_StringListGet_shouldBe")
+fun QueryResult<CachingConnector.Data.StringListGet, CachingConnector.Variables.GetByKey>.shouldBe(
+  strings: List<String>,
+  dataSource: DataSource
+) {
+  assertSoftly {
+    this.data.item.shouldNotBeNull().strings shouldBe strings
+    this.dataSource shouldBe dataSource
+  }
+}
+
+@JvmName("QueryResult_StringListGetMany_shouldBe")
+fun QueryResult<CachingConnector.Data.StringListGetMany, CachingConnector.Variables.GetByTag>
+  .shouldBe(stringLists: Collection<List<String>>, dataSource: DataSource) {
+  assertSoftly {
+    this.data.items.map { it.strings } shouldContainExactlyInAnyOrder stringLists
+    this.dataSource shouldBe dataSource
+  }
+}
+
+@JvmName("QueryResult_NullableStringListGet_shouldBe")
+fun QueryResult<CachingConnector.Data.NullableStringListGet, CachingConnector.Variables.GetByKey>
+  .shouldBe(strings: List<String?>, dataSource: DataSource) {
+  assertSoftly {
+    this.data.item.shouldNotBeNull().strings shouldBe strings
+    this.dataSource shouldBe dataSource
+  }
+}
+
+@JvmName("QueryResult_NullableStringListGetMany_shouldBe")
+fun QueryResult<
+  CachingConnector.Data.NullableStringListGetMany, CachingConnector.Variables.GetByTag
+>
+  .shouldBe(stringLists: Collection<List<String?>>, dataSource: DataSource) {
+  assertSoftly {
+    this.data.items.map { it.strings } shouldContainExactlyInAnyOrder stringLists
+    this.dataSource shouldBe dataSource
+  }
+}
+
+@JvmName("QueryResult_StringNullableListGet_shouldBe")
+fun QueryResult<CachingConnector.Data.StringNullableListGet, CachingConnector.Variables.GetByKey>
+  .shouldBe(strings: List<String>?, dataSource: DataSource) {
+  assertSoftly {
+    this.data.item.shouldNotBeNull().strings shouldBe strings
+    this.dataSource shouldBe dataSource
+  }
+}
+
+@JvmName("QueryResult_StringNullableListGetMany_shouldBe")
+fun QueryResult<
+  CachingConnector.Data.StringNullableListGetMany, CachingConnector.Variables.GetByTag
+>
+  .shouldBe(stringLists: Collection<List<String>?>, dataSource: DataSource) {
+  assertSoftly {
+    this.data.items.map { it.strings } shouldContainExactlyInAnyOrder stringLists
+    this.dataSource shouldBe dataSource
+  }
+}
+
+@JvmName("QueryResult_NullableStringNullableListGet_shouldBe")
+fun QueryResult<
+  CachingConnector.Data.NullableStringNullableListGet, CachingConnector.Variables.GetByKey
+>
+  .shouldBe(strings: List<String?>?, dataSource: DataSource) {
+  assertSoftly {
+    this.data.item.shouldNotBeNull().strings shouldBe strings
+    this.dataSource shouldBe dataSource
+  }
+}
+
+@JvmName("QueryResult_NullableStringNullableListGetMany_shouldBe")
+fun QueryResult<
+  CachingConnector.Data.NullableStringNullableListGetMany, CachingConnector.Variables.GetByTag
+>
+  .shouldBe(stringLists: Collection<List<String?>?>, dataSource: DataSource) {
+  assertSoftly {
+    this.data.items.map { it.strings } shouldContainExactlyInAnyOrder stringLists
     this.dataSource shouldBe dataSource
   }
 }
@@ -680,6 +1308,44 @@ fun QueryResult<CachingConnector.Data.NullableBooleanGetMany, CachingConnector.V
   .shouldBe(booleans: Collection<Boolean?>, dataSource: DataSource) {
   assertSoftly {
     this.data.items.map { it.boolean } shouldContainExactlyInAnyOrder booleans
+    this.dataSource shouldBe dataSource
+  }
+}
+
+@JvmName("QueryResult_AnyValueGet_shouldBe")
+fun QueryResult<CachingConnector.Data.AnyValueGet, CachingConnector.Variables.GetByKey>.shouldBe(
+  any: AnyValue,
+  dataSource: DataSource
+) {
+  assertSoftly {
+    this.data.item.shouldNotBeNull().any shouldBe any
+    this.dataSource shouldBe dataSource
+  }
+}
+
+@JvmName("QueryResult_AnyValueGetMany_shouldBe")
+fun QueryResult<CachingConnector.Data.AnyValueGetMany, CachingConnector.Variables.GetByTag>
+  .shouldBe(anys: Collection<AnyValue>, dataSource: DataSource) {
+  assertSoftly {
+    this.data.items.map { it.any } shouldContainExactlyInAnyOrder anys
+    this.dataSource shouldBe dataSource
+  }
+}
+
+@JvmName("QueryResult_NullableAnyValueGet_shouldBe")
+fun QueryResult<CachingConnector.Data.NullableAnyValueGet, CachingConnector.Variables.GetByKey>
+  .shouldBe(any: AnyValue?, dataSource: DataSource) {
+  assertSoftly {
+    this.data.item.shouldNotBeNull().any shouldBe any
+    this.dataSource shouldBe dataSource
+  }
+}
+
+@JvmName("QueryResult_NullableAnyValueGetMany_shouldBe")
+fun QueryResult<CachingConnector.Data.NullableAnyValueGetMany, CachingConnector.Variables.GetByTag>
+  .shouldBe(anys: Collection<AnyValue?>, dataSource: DataSource) {
+  assertSoftly {
+    this.data.items.map { it.any } shouldContainExactlyInAnyOrder anys
     this.dataSource shouldBe dataSource
   }
 }
@@ -774,6 +1440,213 @@ suspend fun CachingConnector.verifyGetNullableStringsByTag2(
   expectedDataSource: DataSource
 ) {
   withClue(clue) { getNullableStringsByTag2(tag).shouldBe(expectedStrings, expectedDataSource) }
+}
+
+suspend fun CachingConnector.verifyGetStringList(
+  key: CachingConnector.Key,
+  clue: String,
+  expectedStringList: List<String>,
+  expectedDataSource: DataSource
+) {
+  withClue(clue) { getStringList(key).shouldBe(expectedStringList, expectedDataSource) }
+}
+
+suspend fun CachingConnector.verifyGetStringList2(
+  key: CachingConnector.Key,
+  clue: String,
+  expectedStringList: List<String>,
+  expectedDataSource: DataSource
+) {
+  withClue(clue) { getStringList2(key).shouldBe(expectedStringList, expectedDataSource) }
+}
+
+suspend fun CachingConnector.verifyGetStringListsByTag(
+  tag: String,
+  clue: String,
+  expectedStringList: List<String>,
+  expectedDataSource: DataSource
+) {
+  withClue(clue) {
+    getStringListsByTag(tag).shouldBe(listOf(expectedStringList), expectedDataSource)
+  }
+}
+
+suspend fun CachingConnector.verifyGetStringListsByTag2(
+  tag: String,
+  clue: String,
+  expectedStringList: List<String>,
+  expectedDataSource: DataSource
+) {
+  verifyGetStringListsByTag2(tag, clue, listOf(expectedStringList), expectedDataSource)
+}
+
+suspend fun CachingConnector.verifyGetStringListsByTag2(
+  tag: String,
+  clue: String,
+  expectedStringLists: Collection<List<String>>,
+  expectedDataSource: DataSource
+) {
+  withClue(clue) { getStringListsByTag2(tag).shouldBe(expectedStringLists, expectedDataSource) }
+}
+
+suspend fun CachingConnector.verifyGetNullableStringList(
+  key: CachingConnector.Key,
+  clue: String,
+  expectedStringList: List<String?>,
+  expectedDataSource: DataSource
+) {
+  withClue(clue) { getNullableStringList(key).shouldBe(expectedStringList, expectedDataSource) }
+}
+
+suspend fun CachingConnector.verifyGetNullableStringList2(
+  key: CachingConnector.Key,
+  clue: String,
+  expectedStringList: List<String?>,
+  expectedDataSource: DataSource
+) {
+  withClue(clue) { getNullableStringList2(key).shouldBe(expectedStringList, expectedDataSource) }
+}
+
+suspend fun CachingConnector.verifyGetNullableStringListsByTag(
+  tag: String,
+  clue: String,
+  expectedStringList: List<String?>,
+  expectedDataSource: DataSource
+) {
+  withClue(clue) {
+    getNullableStringListsByTag(tag).shouldBe(listOf(expectedStringList), expectedDataSource)
+  }
+}
+
+suspend fun CachingConnector.verifyGetNullableStringListsByTag2(
+  tag: String,
+  clue: String,
+  expectedStringList: List<String?>,
+  expectedDataSource: DataSource
+) {
+  verifyGetNullableStringListsByTag2(tag, clue, listOf(expectedStringList), expectedDataSource)
+}
+
+suspend fun CachingConnector.verifyGetNullableStringListsByTag2(
+  tag: String,
+  clue: String,
+  expectedStringLists: Collection<List<String?>>,
+  expectedDataSource: DataSource
+) {
+  withClue(clue) {
+    getNullableStringListsByTag2(tag).shouldBe(expectedStringLists, expectedDataSource)
+  }
+}
+
+suspend fun CachingConnector.verifyGetStringNullableList(
+  key: CachingConnector.Key,
+  clue: String,
+  expectedStringList: List<String>?,
+  expectedDataSource: DataSource
+) {
+  withClue(clue) { getStringNullableList(key).shouldBe(expectedStringList, expectedDataSource) }
+}
+
+suspend fun CachingConnector.verifyGetStringNullableList2(
+  key: CachingConnector.Key,
+  clue: String,
+  expectedStringList: List<String>?,
+  expectedDataSource: DataSource
+) {
+  withClue(clue) { getStringNullableList2(key).shouldBe(expectedStringList, expectedDataSource) }
+}
+
+suspend fun CachingConnector.verifyGetStringNullableListsByTag(
+  tag: String,
+  clue: String,
+  expectedStringList: List<String>?,
+  expectedDataSource: DataSource
+) {
+  withClue(clue) {
+    getStringNullableListsByTag(tag).shouldBe(listOf(expectedStringList), expectedDataSource)
+  }
+}
+
+suspend fun CachingConnector.verifyGetStringNullableListsByTag2(
+  tag: String,
+  clue: String,
+  expectedStringList: List<String>?,
+  expectedDataSource: DataSource
+) {
+  verifyGetStringNullableListsByTag2(tag, clue, listOf(expectedStringList), expectedDataSource)
+}
+
+suspend fun CachingConnector.verifyGetStringNullableListsByTag2(
+  tag: String,
+  clue: String,
+  expectedStringLists: Collection<List<String>?>,
+  expectedDataSource: DataSource
+) {
+  withClue(clue) {
+    getStringNullableListsByTag2(tag).shouldBe(expectedStringLists, expectedDataSource)
+  }
+}
+
+suspend fun CachingConnector.verifyGetNullableStringNullableList(
+  key: CachingConnector.Key,
+  clue: String,
+  expectedNullableStringNullableList: List<String?>?,
+  expectedDataSource: DataSource
+) {
+  withClue(clue) {
+    getNullableStringNullableList(key)
+      .shouldBe(expectedNullableStringNullableList, expectedDataSource)
+  }
+}
+
+suspend fun CachingConnector.verifyGetNullableStringNullableList2(
+  key: CachingConnector.Key,
+  clue: String,
+  expectedNullableStringNullableList: List<String?>?,
+  expectedDataSource: DataSource
+) {
+  withClue(clue) {
+    getNullableStringNullableList2(key)
+      .shouldBe(expectedNullableStringNullableList, expectedDataSource)
+  }
+}
+
+suspend fun CachingConnector.verifyGetNullableStringNullableListsByTag(
+  tag: String,
+  clue: String,
+  expectedNullableStringNullableList: List<String?>?,
+  expectedDataSource: DataSource
+) {
+  withClue(clue) {
+    getNullableStringNullableListsByTag(tag)
+      .shouldBe(listOf(expectedNullableStringNullableList), expectedDataSource)
+  }
+}
+
+suspend fun CachingConnector.verifyGetNullableStringNullableListsByTag2(
+  tag: String,
+  clue: String,
+  expectedNullableStringNullableList: List<String?>?,
+  expectedDataSource: DataSource
+) {
+  verifyGetNullableStringNullableListsByTag2(
+    tag,
+    clue,
+    listOf(expectedNullableStringNullableList),
+    expectedDataSource
+  )
+}
+
+suspend fun CachingConnector.verifyGetNullableStringNullableListsByTag2(
+  tag: String,
+  clue: String,
+  expectedNullableStringNullableLists: Collection<List<String?>?>,
+  expectedDataSource: DataSource
+) {
+  withClue(clue) {
+    getNullableStringNullableListsByTag2(tag)
+      .shouldBe(expectedNullableStringNullableLists, expectedDataSource)
+  }
 }
 
 suspend fun CachingConnector.verifyGetFloat(
@@ -956,4 +1829,96 @@ suspend fun CachingConnector.verifyGetNullableBooleansByTag2(
   expectedDataSource: DataSource
 ) {
   withClue(clue) { getNullableBooleansByTag2(tag).shouldBe(expectedBooleans, expectedDataSource) }
+}
+
+suspend fun CachingConnector.verifyGetAnyValue(
+  key: CachingConnector.Key,
+  clue: String,
+  expectedAnyValue: AnyValue,
+  expectedDataSource: DataSource
+) {
+  withClue(clue) { getAnyValue(key).shouldBe(expectedAnyValue, expectedDataSource) }
+}
+
+suspend fun CachingConnector.verifyGetAnyValue2(
+  key: CachingConnector.Key,
+  clue: String,
+  expectedAnyValue: AnyValue,
+  expectedDataSource: DataSource
+) {
+  withClue(clue) { getAnyValue2(key).shouldBe(expectedAnyValue, expectedDataSource) }
+}
+
+suspend fun CachingConnector.verifyGetAnyValuesByTag(
+  tag: String,
+  clue: String,
+  expectedAnyValue: AnyValue,
+  expectedDataSource: DataSource
+) {
+  withClue(clue) { getAnyValuesByTag(tag).shouldBe(listOf(expectedAnyValue), expectedDataSource) }
+}
+
+suspend fun CachingConnector.verifyGetAnyValuesByTag2(
+  tag: String,
+  clue: String,
+  expectedAnyValue: AnyValue,
+  expectedDataSource: DataSource
+) {
+  verifyGetAnyValuesByTag2(tag, clue, listOf(expectedAnyValue), expectedDataSource)
+}
+
+suspend fun CachingConnector.verifyGetAnyValuesByTag2(
+  tag: String,
+  clue: String,
+  expectedAnyValues: Collection<AnyValue>,
+  expectedDataSource: DataSource
+) {
+  withClue(clue) { getAnyValuesByTag2(tag).shouldBe(expectedAnyValues, expectedDataSource) }
+}
+
+suspend fun CachingConnector.verifyGetNullableAnyValue(
+  key: CachingConnector.Key,
+  clue: String,
+  expectedAnyValue: AnyValue?,
+  expectedDataSource: DataSource
+) {
+  withClue(clue) { getNullableAnyValue(key).shouldBe(expectedAnyValue, expectedDataSource) }
+}
+
+suspend fun CachingConnector.verifyGetNullableAnyValue2(
+  key: CachingConnector.Key,
+  clue: String,
+  expectedAnyValue: AnyValue?,
+  expectedDataSource: DataSource
+) {
+  withClue(clue) { getNullableAnyValue2(key).shouldBe(expectedAnyValue, expectedDataSource) }
+}
+
+suspend fun CachingConnector.verifyGetNullableAnyValuesByTag(
+  tag: String,
+  clue: String,
+  expectedAnyValue: AnyValue?,
+  expectedDataSource: DataSource
+) {
+  withClue(clue) {
+    getNullableAnyValuesByTag(tag).shouldBe(listOf(expectedAnyValue), expectedDataSource)
+  }
+}
+
+suspend fun CachingConnector.verifyGetNullableAnyValuesByTag2(
+  tag: String,
+  clue: String,
+  expectedAnyValue: AnyValue?,
+  expectedDataSource: DataSource
+) {
+  verifyGetNullableAnyValuesByTag2(tag, clue, listOf(expectedAnyValue), expectedDataSource)
+}
+
+suspend fun CachingConnector.verifyGetNullableAnyValuesByTag2(
+  tag: String,
+  clue: String,
+  expectedAnyValues: Collection<AnyValue?>,
+  expectedDataSource: DataSource
+) {
+  withClue(clue) { getNullableAnyValuesByTag2(tag).shouldBe(expectedAnyValues, expectedDataSource) }
 }
