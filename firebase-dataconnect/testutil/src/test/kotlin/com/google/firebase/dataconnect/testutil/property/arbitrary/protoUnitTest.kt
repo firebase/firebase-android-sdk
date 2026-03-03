@@ -21,17 +21,26 @@ import com.google.firebase.dataconnect.testutil.DataConnectPathValuePair
 import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
 import com.google.firebase.dataconnect.testutil.isListValue
 import com.google.firebase.dataconnect.testutil.isStructValue
+import com.google.firebase.dataconnect.testutil.registerDataConnectKotestTestutilPrinters
 import com.google.firebase.dataconnect.testutil.toValueProto
+import com.google.protobuf.Duration
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
+import io.kotest.assertions.asClue
 import io.kotest.assertions.assertSoftly
+import io.kotest.assertions.print.print
 import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldBeIn
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
+import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.ints.shouldBeGreaterThan
+import io.kotest.matchers.ints.shouldBeInRange
+import io.kotest.matchers.longs.shouldBeInRange
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
@@ -39,12 +48,15 @@ import io.kotest.property.Exhaustive
 import io.kotest.property.PropTestConfig
 import io.kotest.property.RandomSource
 import io.kotest.property.ShrinkingMode
+import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.long
 import io.kotest.property.arbitrary.map
+import io.kotest.property.arbitrary.orNull
 import io.kotest.property.checkAll
 import io.kotest.property.exhaustive.collection
 import kotlinx.coroutines.test.runTest
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
@@ -54,6 +66,11 @@ class protoUnitTest {
   @get:Rule val randomSeedTestRule = RandomSeedTestRule()
 
   private val rs: RandomSource by randomSeedTestRule.rs
+
+  @Before
+  fun registerPrinters() {
+    registerDataConnectKotestTestutilPrinters()
+  }
 
   @Test
   fun `nullValue() should produce Values with kindCase NULL_VALUE`() =
@@ -278,6 +295,142 @@ class protoUnitTest {
     }
   }
 
+  @Test
+  fun `duration() produces Duration objects with valid values`() = runTest {
+    checkAll(propTestConfig, durationMinMaxArb()) { (min, max) ->
+      val arb = Arb.proto.duration(min = min, max = max)
+
+      val sample = arb.bind()
+
+      sample.duration.nanos shouldBeInRange 0..999_999_999
+    }
+  }
+
+  @Test
+  fun `duration() sample() produces empty edgeCases`() = runTest {
+    checkAll(propTestConfig, durationMinMaxArb()) { (min, max) ->
+      val arb = Arb.proto.duration(min = min, max = max)
+
+      val sample = arb.sample(randomSource())
+
+      sample.asClue { it.value.edgeCases.shouldBeEmpty() }
+    }
+  }
+
+  @Test
+  fun `duration() edgecase() produces non-empty edgeCases`() = runTest {
+    checkAll(propTestConfig, durationMinMaxArb()) { (min, max) ->
+      val arb = Arb.proto.duration(min = min, max = max)
+
+      val sample = arb.edgecase(randomSource())
+
+      sample.asClue { it.shouldNotBeNull().edgeCases.shouldNotBeEmpty() }
+    }
+  }
+
+  @Test
+  fun `duration() edgecase() probabilities should match edgeCases`() = runTest {
+    checkAll(propTestConfig, durationMinMaxArb()) { (min, max) ->
+      val arb = Arb.proto.duration(min = min, max = max)
+
+      val sample = arb.edgecase(randomSource()).shouldNotBeNull()
+
+      sample.asClue {
+        assertSoftly {
+          withClue("secondsEdgeCaseProbability") {
+            it.secondsEdgeCaseProbability shouldBe
+              if (ProtoArb.DurationSample.EdgeCase.Seconds in it.edgeCases) 1.0f else 0.0f
+          }
+          withClue("secondsEdgeCaseProbability") {
+            it.nanosEdgeCaseProbability shouldBe
+              if (ProtoArb.DurationSample.EdgeCase.Nanos in it.edgeCases) 1.0f else 0.0f
+          }
+        }
+      }
+    }
+  }
+
+  @Test
+  fun `duration() respects the given min`() = runTest {
+    checkAll(propTestConfig, durationArb()) { min ->
+      val arb = Arb.proto.duration(min = min)
+
+      val sample = arb.bind()
+
+      withClue("seconds") { sample.duration.seconds shouldBeInRange min.seconds..Long.MAX_VALUE }
+      withClue("nanos") {
+        if (sample.duration.seconds == min.seconds) {
+          sample.duration.nanos shouldBeInRange min.nanos..999_999_999
+        }
+      }
+    }
+  }
+
+  @Test
+  fun `duration() respects the given max`() = runTest {
+    checkAll(propTestConfig, durationArb()) { max ->
+      val arb = Arb.proto.duration(max = max)
+
+      val sample = arb.bind()
+
+      withClue("seconds") { sample.duration.seconds shouldBeInRange Long.MIN_VALUE..max.seconds }
+      withClue("nanos") {
+        if (sample.duration.seconds == max.seconds) {
+          sample.duration.nanos shouldBeInRange 0..max.nanos
+        }
+      }
+    }
+  }
+
+  @Test
+  fun `duration() respects the given min and max, seconds not equal`() = runTest {
+    val durationMinMaxArb =
+      Arb.bind(Arb.long().distinctPair(), Arb.twoValues(Arb.int(0..999_999_999))) {
+        secondsValues,
+        (nanos1, nanos2) ->
+        val (seconds1, seconds2) = secondsValues.toList().sorted()
+        val min = makeDuration(seconds1, nanos1)
+        val max = makeDuration(seconds2, nanos2)
+        Pair(min, max)
+      }
+    checkAll(propTestConfig, durationMinMaxArb) { (min, max) ->
+      check(min.seconds < max.seconds)
+      val arb = Arb.proto.duration(min = min, max = max)
+
+      val sample = arb.bind()
+
+      withClue("seconds") { sample.duration.seconds shouldBeInRange min.seconds..max.seconds }
+      withClue("nanos") {
+        if (sample.duration.seconds == min.seconds) {
+          sample.duration.nanos shouldBeInRange min.nanos..999_999_999
+        } else if (sample.duration.seconds == max.seconds) {
+          sample.duration.nanos shouldBeInRange 0..max.nanos
+        }
+      }
+    }
+  }
+
+  @Test
+  fun `duration() respects the given min and max, seconds equal`() = runTest {
+    val durationMinMaxArb =
+      Arb.bind(Arb.long(), Arb.int(0..999_999_999).distinctPair()) { seconds, nanosValues ->
+        val (nanos1, nanos2) = nanosValues.toList().sorted()
+        val min = makeDuration(seconds, nanos1)
+        val max = makeDuration(seconds, nanos2)
+        Pair(min, max)
+      }
+    checkAll(propTestConfig, durationMinMaxArb) { (min, max) ->
+      check(min.seconds == max.seconds)
+      check(min.nanos <= max.nanos)
+      val arb = Arb.proto.duration(min = min, max = max)
+
+      val sample = arb.bind()
+
+      withClue("seconds") { sample.duration.seconds shouldBe min.seconds }
+      withClue("nanos") { sample.duration.nanos shouldBeInRange min.nanos..max.nanos }
+    }
+  }
+
   private companion object {
 
     @OptIn(ExperimentalKotest::class)
@@ -354,5 +507,42 @@ class protoUnitTest {
         }
       }
     }
+
+    data class DurationMinMaxSample(val min: Duration?, val max: Duration?) {
+      override fun toString() =
+        "DurationMinMaxSample(" + "min=${min?.print()?.value}, max=${max?.print()?.value})"
+    }
+
+    fun durationMinMaxArb(
+      seconds: Arb<Long> = Arb.long(),
+      nanos: Arb<Int> = Arb.int(0..999_999_999),
+      nullProbability: Double = 0.33,
+    ): Arb<DurationMinMaxSample> {
+      val durationArb = durationArb(seconds, nanos).orNull(nullProbability)
+      return Arb.bind(durationArb, durationArb) { duration1, duration2 ->
+        if (duration1 == null || duration2 == null) {
+          DurationMinMaxSample(duration1, duration2)
+        } else if (duration1.seconds < duration2.seconds) {
+          DurationMinMaxSample(duration1, duration2)
+        } else if (duration1.seconds > duration2.seconds) {
+          DurationMinMaxSample(duration2, duration1)
+        } else if (duration1.nanos < duration2.nanos) {
+          DurationMinMaxSample(duration1, duration2)
+        } else if (duration1.nanos > duration2.nanos) {
+          DurationMinMaxSample(duration2, duration1)
+        } else {
+          check(duration1.seconds == duration2.seconds && duration1.nanos == duration2.nanos)
+          DurationMinMaxSample(duration1, duration2)
+        }
+      }
+    }
+
+    fun durationArb(
+      seconds: Arb<Long> = Arb.long(),
+      nanos: Arb<Int> = Arb.int(0..999_999_999),
+    ): Arb<Duration> = Arb.bind(seconds, nanos, ::makeDuration)
+
+    fun makeDuration(seconds: Long, nanos: Int): Duration =
+      Duration.newBuilder().setSeconds(seconds).setNanos(nanos).build()
   }
 }

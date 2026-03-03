@@ -108,6 +108,7 @@ auto-value-parcel = { module = "com.ryanharter.auto.value:auto-value-parcel", ve
 autovalue = { module = "com.google.auto.value:auto-value", version.ref = "autovalue" }
 autovalue-annotations = { module = "com.google.auto.value:auto-value-annotations", version.ref = "autovalue" }
 awaitility = { module = "org.awaitility:awaitility", version.ref = "awaitility" }
+commons-statistics-inference = { module = "org.apache.commons:commons-statistics-inference", version = "1.2" }
 compiler = { module = "com.github.bumptech.glide:compiler", version.ref = "glide" }
 dagger-compiler = { module = "com.google.dagger:dagger-compiler", version.ref = "dagger" }
 dagger-dagger = { module = "com.google.dagger:dagger", version.ref = "dagger" }
