@@ -28,6 +28,7 @@ firebaseAnnotations = "17.0.0"
 firebaseCommon = "22.0.1"
 firebaseComponents = "19.0.0"
 firebaseCrashlyticsGradle = "3.0.4"
+genaiPrompt = "1.0.0-alpha1"
 glide = "5.0.5"
 googleApiClient = "2.8.1"
 googleServices = "4.3.15"
@@ -74,7 +75,7 @@ symbolProcessingApi = "2.2.10-2.0.2"
 testServices = "1.6.0"
 truth = "1.4.5"
 truthProtoExtension = "1.0"
-wiremockStandalone = "2.26.3"
+wiremockStandalone = "3.13.2"
 
 [libraries]
 android-gradlePlugin-builder-test-api = { group = "com.android.tools.build", name = "builder-test-api", version.ref = "androidGradlePlugin" }
@@ -107,6 +108,7 @@ auto-value-parcel = { module = "com.ryanharter.auto.value:auto-value-parcel", ve
 autovalue = { module = "com.google.auto.value:auto-value", version.ref = "autovalue" }
 autovalue-annotations = { module = "com.google.auto.value:auto-value-annotations", version.ref = "autovalue" }
 awaitility = { module = "org.awaitility:awaitility", version.ref = "awaitility" }
+commons-statistics-inference = { module = "org.apache.commons:commons-statistics-inference", version = "1.2" }
 compiler = { module = "com.github.bumptech.glide:compiler", version.ref = "glide" }
 dagger-compiler = { module = "com.google.dagger:dagger-compiler", version.ref = "dagger" }
 dagger-dagger = { module = "com.google.dagger:dagger", version.ref = "dagger" }
@@ -118,6 +120,7 @@ firebase-appdistribution-gradle = { module = "com.google.firebase:firebase-appdi
 firebase-annotations = { module = "com.google.firebase:firebase-annotations", version.ref = "firebaseAnnotations" }
 firebase-common = { module = "com.google.firebase:firebase-common", version.ref = "firebaseCommon" }
 firebase-components = { module = "com.google.firebase:firebase-components", version.ref = "firebaseComponents" }
+genai-prompt = { module = "com.google.mlkit:genai-prompt", version.ref = "genaiPrompt" }
 glide = { module = "com.github.bumptech.glide:glide", version.ref = "glide" }
 google-api-client = { module = "com.google.api-client:google-api-client", version.ref = "googleApiClient" }
 google-dexmaker = { module = "com.google.dexmaker:dexmaker", version.ref = "dexmakerVersion" }
@@ -217,7 +220,7 @@ turbine = { module = "app.cash.turbine:turbine", version = "1.2.1" }
 # Do not use three-ten-abp in production code (it's only for tests) because it has performance
 # issues.
 testonly-three-ten-abp = { module = "com.jakewharton.threetenabp:threetenabp", version = "1.4.9" }
-wiremock-standalone = { module = "com.github.tomakehurst:wiremock-standalone", version.ref = "wiremockStandalone" }
+wiremock-standalone = { module = "org.wiremock:wiremock-standalone", version.ref = "wiremockStandalone" }
 
 [bundles]
 kotest = ["kotest-runner", "kotest-assertions", "kotest-property", "kotest-property-arbs"]

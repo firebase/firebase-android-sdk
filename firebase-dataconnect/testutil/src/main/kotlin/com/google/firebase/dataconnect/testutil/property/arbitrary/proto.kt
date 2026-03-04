@@ -21,8 +21,11 @@ package com.google.firebase.dataconnect.testutil.property.arbitrary
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.testutil.DataConnectPath
 import com.google.firebase.dataconnect.testutil.DataConnectPathValuePair
+import com.google.firebase.dataconnect.testutil.property.arbitrary.ProtoArb.DurationSample
+import com.google.firebase.dataconnect.testutil.property.arbitrary.next
 import com.google.firebase.dataconnect.testutil.toValueProto
 import com.google.firebase.dataconnect.testutil.withAddedPathSegment
+import com.google.protobuf.Duration
 import com.google.protobuf.ListValue
 import com.google.protobuf.NullValue
 import com.google.protobuf.Struct
@@ -39,6 +42,7 @@ import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.double
 import io.kotest.property.arbitrary.filter
 import io.kotest.property.arbitrary.int
+import io.kotest.property.arbitrary.long
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.string
 import io.kotest.property.asSample
@@ -67,6 +71,25 @@ object ProtoArb {
 
     override fun toString() = "ListValueInfo(listValue=${listValue.print().value}, depth=$depth)"
   }
+
+  data class DurationSample(
+    val duration: Duration,
+    val edgeCases: Set<EdgeCase>,
+    val secondsEdgeCaseProbability: Float,
+    val nanosEdgeCaseProbability: Float,
+  ) {
+    override fun toString(): String =
+      "DurationSample(" +
+        "duration=${duration.print().value}, " +
+        "edgeCases=${edgeCases.print().value}, " +
+        "secondsEdgeCaseProbability=${secondsEdgeCaseProbability.print().value}, " +
+        "nanosEdgeCaseProbability=${nanosEdgeCaseProbability.print().value})"
+
+    enum class EdgeCase {
+      Seconds,
+      Nanos,
+    }
+  }
 }
 
 val Arb.Companion.proto: ProtoArb
@@ -88,10 +111,7 @@ fun ProtoArb.valueOfKind(kindCase: Value.KindCase): Arb<Value> =
     Value.KindCase.LIST_VALUE -> listValue().map { it.toValueProto() }
   }
 
-fun ProtoArb.value(
-  exclude: Value.KindCase? = null,
-  structKey: Arb<String> = structKey()
-): Arb<Value> {
+fun ProtoArb.value(exclude: Value.KindCase): Arb<Value> {
   val arbs = buildList {
     if (exclude != Value.KindCase.KIND_NOT_SET) {
       add(kindNotSetValue())
@@ -109,13 +129,49 @@ fun ProtoArb.value(
       add(boolValue())
     }
     if (exclude != Value.KindCase.STRUCT_VALUE) {
-      add(struct(key = structKey).map { it.toValueProto() })
+      add(struct().map { it.toValueProto() })
     }
     if (exclude != Value.KindCase.LIST_VALUE) {
-      add(listValue(structKey = structKey).map { it.toValueProto() })
+      add(listValue().map { it.toValueProto() })
     }
   }
   return Arb.choice(arbs)
+}
+
+fun ProtoArb.value(
+  recursiveExcludes: Set<Value.KindCase> = emptySet(),
+  structKey: Arb<String> = structKey()
+): Arb<Value> {
+  val scalarArbs = buildList {
+    if (Value.KindCase.KIND_NOT_SET !in recursiveExcludes) {
+      add(kindNotSetValue())
+    }
+    if (Value.KindCase.NULL_VALUE !in recursiveExcludes) {
+      add(nullValue())
+    }
+    if (Value.KindCase.NUMBER_VALUE !in recursiveExcludes) {
+      add(numberValue())
+    }
+    if (Value.KindCase.STRING_VALUE !in recursiveExcludes) {
+      add(stringValue())
+    }
+    if (Value.KindCase.BOOL_VALUE !in recursiveExcludes) {
+      add(boolValue())
+    }
+  }
+
+  val scalarValueArb = Arb.choice(scalarArbs)
+
+  val compositeArbs = buildList {
+    if (Value.KindCase.STRUCT_VALUE !in recursiveExcludes) {
+      add(struct(key = structKey, scalarValue = scalarValueArb).map { it.toValueProto() })
+    }
+    if (Value.KindCase.LIST_VALUE !in recursiveExcludes) {
+      add(listValue(structKey = structKey, scalarValue = scalarValueArb).map { it.toValueProto() })
+    }
+  }
+
+  return Arb.choice(scalarArbs + compositeArbs)
 }
 
 fun ProtoExhaustive.nullValue(): Exhaustive<Value> =
@@ -248,6 +304,11 @@ fun ProtoArb.struct(
     scalarValueArb = scalarValue,
     listSizeRange = listSize,
   )
+
+fun ProtoArb.duration(
+  min: Duration? = null,
+  max: Duration? = null,
+): Arb<DurationSample> = DurationArb(min, max)
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // CompositeValueArb class
@@ -683,5 +744,116 @@ private class StructOrListValueGenerator(
         val size = (last - first) + 1
         size > 1
       }
+  }
+}
+
+private class DurationArb(private val min: Duration?, private val max: Duration?) :
+  Arb<DurationSample>() {
+
+  init {
+    if (min !== null && max !== null) {
+      val minSeconds = min.seconds
+      val maxSeconds = max.seconds
+      require(minSeconds <= maxSeconds) {
+        "min.seconds must be less than or equal to max.seconds, " +
+          "but min.seconds is $minSeconds and max.seconds is $maxSeconds, " +
+          "making min.seconds greater than max.seconds by ${maxSeconds - minSeconds} [r6ys67cpdz]"
+      }
+      if (minSeconds == maxSeconds) {
+        val minNanos = min.nanos
+        val maxNanos = max.nanos
+        require(minNanos <= maxNanos) {
+          "since min.seconds is equal to max.seconds ($maxSeconds), " +
+            "min.nanos must be less than or equal to max.nanos, " +
+            "but min.nanos is $minNanos and max.nanos is $maxNanos, " +
+            "makign min.nanos greater than max.nanos by ${maxNanos - minNanos} [nks29mtww5]"
+        }
+      }
+    }
+  }
+
+  override fun sample(rs: RandomSource) =
+    generate(
+        rs,
+        edgeCases = emptySet(),
+        secondsEdgeCaseProbability = rs.random.nextFloat(),
+        nanosEdgeCaseProbability = rs.random.nextFloat(),
+      )
+      .asSample()
+
+  override fun edgecase(rs: RandomSource): DurationSample {
+    val edgeCases = run {
+      val allEdgeCases = DurationSample.EdgeCase.entries.sorted()
+      val edgeCaseCount = rs.random.nextInt(1..allEdgeCases.size)
+      allEdgeCases.shuffled(rs.random).take(edgeCaseCount).toSet()
+    }
+
+    val secondsEdgeCaseProbability =
+      if (DurationSample.EdgeCase.Seconds in edgeCases) 1.0f else 0.0f
+    val nanosEdgeCaseProbability = if (DurationSample.EdgeCase.Nanos in edgeCases) 1.0f else 0.0f
+
+    return generate(
+      rs,
+      edgeCases = edgeCases,
+      secondsEdgeCaseProbability = secondsEdgeCaseProbability,
+      nanosEdgeCaseProbability = nanosEdgeCaseProbability,
+    )
+  }
+
+  private fun generate(
+    rs: RandomSource,
+    edgeCases: Set<DurationSample.EdgeCase>,
+    secondsEdgeCaseProbability: Float,
+    nanosEdgeCaseProbability: Float,
+  ): DurationSample {
+    val seconds = secondsArb.next(rs, secondsEdgeCaseProbability)
+    val nanos = nanosArbForSeconds(seconds).next(rs, nanosEdgeCaseProbability)
+    val duration = Duration.newBuilder().setSeconds(seconds).setNanos(nanos).build()
+
+    return DurationSample(
+      duration = duration,
+      edgeCases = edgeCases,
+      secondsEdgeCaseProbability = secondsEdgeCaseProbability,
+      nanosEdgeCaseProbability = nanosEdgeCaseProbability,
+    )
+  }
+
+  private val secondsArb = run {
+    val minSeconds = min?.seconds ?: Long.MIN_VALUE
+    val maxSeconds = max?.seconds ?: Long.MAX_VALUE
+    Arb.long(minSeconds..maxSeconds)
+  }
+
+  private val nanosArb = Arb.intWithEvenNumDigitsDistribution(nanosRange)
+
+  private val minNanosArb =
+    if (min === null) {
+      nanosArb
+    } else if (max !== null && min.seconds == max.seconds) {
+      Arb.intWithEvenNumDigitsDistribution(min.nanos..max.nanos)
+    } else {
+      Arb.intWithEvenNumDigitsDistribution(min.nanos..nanosRange.last)
+    }
+
+  private val maxNanosArb =
+    if (max === null) {
+      nanosArb
+    } else if (min !== null && min.seconds == max.seconds) {
+      minNanosArb
+    } else {
+      Arb.intWithEvenNumDigitsDistribution(0..max.nanos)
+    }
+
+  private fun nanosArbForSeconds(seconds: Long): Arb<Int> =
+    if (min !== null && seconds == min.seconds) {
+      minNanosArb
+    } else if (max !== null && seconds == max.seconds) {
+      maxNanosArb
+    } else {
+      nanosArb
+    }
+
+  private companion object {
+    private val nanosRange = 0..999_999_999
   }
 }
