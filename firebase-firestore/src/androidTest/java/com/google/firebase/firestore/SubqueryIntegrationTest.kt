@@ -1029,6 +1029,7 @@ class SubqueryIntegrationTest {
         sub.execute()
       }
 
-    assertThat(exception.message).contains("Cannot execute a relative subcollection pipeline directly")
+    assertThat(exception.message)
+      .contains("Cannot execute a relative subcollection pipeline directly")
   }
 }
