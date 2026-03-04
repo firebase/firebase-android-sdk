@@ -26,10 +26,12 @@ import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.session.PerfSession;
 import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.session.gauges.GaugeCounter;
+import com.google.firebase.perf.session.gauges.GaugeManager;
+import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.ImmutableBundle;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.BeforeClass;
+import org.mockito.Mock;
 import org.robolectric.shadows.ShadowPackageManager;
 
 public class FirebasePerformanceTestBase {
@@ -53,14 +55,11 @@ public class FirebasePerformanceTestBase {
   protected static final String FAKE_FIREBASE_API_KEY = "AIzaSyBcE-OOIbhjyR83gm4r2MFCu4MJmprNXsw";
   protected static final String FAKE_FIREBASE_DB_URL = "https://fir-perftestapp.firebaseio.com";
   protected static final String FAKE_FIREBASE_PROJECT_ID = "fir-perftestapp";
+  @Mock private GaugeManager mockGaugeManager;
+  private PerfSession session = new PerfSession("sessionId", new Clock());
+  protected SessionManager sessionManager = new SessionManager(mockGaugeManager, session);
 
   protected Context appContext;
-
-  @BeforeClass
-  public static void setUpBeforeClass() {
-    // TODO(b/394127311): Explore removing this.
-    GaugeCounter.resetCounter();
-  }
 
   @Before
   public void setUpFirebaseApp() {
@@ -85,6 +84,7 @@ public class FirebasePerformanceTestBase {
   @After
   public void tearDownFirebaseApp() {
     FirebaseApp.clearInstancesForTest();
+    GaugeCounter.resetCounter();
   }
 
   protected static void forceSessionsFeatureDisabled() {
@@ -93,19 +93,23 @@ public class FirebasePerformanceTestBase {
     ConfigResolver.getInstance().setMetadataBundle(new ImmutableBundle(bundle));
   }
 
-  protected static void forceVerboseSession() {
+  protected void forceVerboseSession() {
     forceVerboseSessionWithSamplingPercentage(100);
   }
 
-  protected static void forceNonVerboseSession() {
+  protected void forceNonVerboseSession() {
     forceVerboseSessionWithSamplingPercentage(0);
   }
 
-  private static void forceVerboseSessionWithSamplingPercentage(long samplingPercentage) {
+  private void forceVerboseSessionWithSamplingPercentage(long samplingPercentage) {
     Bundle bundle = new Bundle();
     bundle.putFloat("sessions_sampling_percentage", samplingPercentage);
     ConfigResolver.getInstance().setMetadataBundle(new ImmutableBundle(bundle));
 
-    SessionManager.getInstance().setPerfSession(PerfSession.createWithId("sessionId"));
+    provideSessionManager().setPerfSession(PerfSession.createWithId("sessionId"));
+  }
+
+  protected SessionManager provideSessionManager() {
+    return sessionManager;
   }
 }

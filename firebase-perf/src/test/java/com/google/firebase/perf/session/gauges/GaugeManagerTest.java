@@ -47,6 +47,7 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -75,6 +76,13 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
   private GaugeMetadataManager fakeGaugeMetadataManager = null;
   private CpuGaugeCollector fakeCpuGaugeCollector = null;
   private MemoryGaugeCollector fakeMemoryGaugeCollector = null;
+
+  @BeforeClass
+  public static void setUpBeforeClass() {
+    // TODO(b/394127311): Explore removing this.
+    GaugeCounter.resetCounter();
+  }
+
 
   @Before
   public void setUp() {

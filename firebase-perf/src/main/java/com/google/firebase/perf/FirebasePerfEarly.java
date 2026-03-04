@@ -22,6 +22,7 @@ import com.google.firebase.perf.application.AppStateMonitor;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.metrics.AppStartTrace;
 import com.google.firebase.perf.session.FirebasePerformanceSessionSubscriber;
+import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.sessions.api.FirebaseSessionsDependencies;
 import java.util.concurrent.Executor;
 
@@ -35,7 +36,7 @@ import java.util.concurrent.Executor;
 public class FirebasePerfEarly {
 
   public FirebasePerfEarly(
-      FirebaseApp app, @Nullable StartupTime startupTime, Executor uiExecutor) {
+          FirebaseApp app, @Nullable StartupTime startupTime, Executor uiExecutor, SessionManager sessionManager) {
     Context context = app.getApplicationContext();
 
     // Initialize ConfigResolver early for accessing device caching layer.
@@ -44,14 +45,14 @@ public class FirebasePerfEarly {
 
     // Register FirebasePerformance as a subscriber ASAP - which will start collecting gauges if the
     // FirebaseSession is verbose.
-    FirebaseSessionsDependencies.register(new FirebasePerformanceSessionSubscriber(configResolver));
+    FirebaseSessionsDependencies.register(new FirebasePerformanceSessionSubscriber(configResolver, sessionManager));
 
     AppStateMonitor appStateMonitor = AppStateMonitor.getInstance();
     appStateMonitor.registerActivityLifecycleCallbacks(context);
     appStateMonitor.registerForAppColdStart(new FirebasePerformanceInitializer());
 
     if (startupTime != null) {
-      AppStartTrace appStartTrace = AppStartTrace.getInstance();
+      AppStartTrace appStartTrace = AppStartTrace.getInstance(sessionManager);
       appStartTrace.registerActivityLifecycleCallbacks(context);
       uiExecutor.execute(new AppStartTrace.StartFromBackgroundRunnable(appStartTrace));
     }

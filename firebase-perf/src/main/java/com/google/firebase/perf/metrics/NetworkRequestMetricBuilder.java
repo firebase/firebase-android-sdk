@@ -57,6 +57,7 @@ public final class NetworkRequestMetricBuilder extends AppStateUpdateHandler
   private final List<PerfSession> sessions;
   private final GaugeManager gaugeManager;
   private final TransportManager transportManager;
+  private final SessionManager sessionManager;
 
   private final NetworkRequestMetric.Builder builder = NetworkRequestMetric.newBuilder();
   private final WeakReference<SessionAwareObject> weakReference = new WeakReference<>(this);
@@ -89,7 +90,7 @@ public final class NetworkRequestMetricBuilder extends AppStateUpdateHandler
    * initialize them.
    */
   private NetworkRequestMetricBuilder(TransportManager transportManager) {
-    this(transportManager, AppStateMonitor.getInstance(), GaugeManager.getInstance());
+    this(transportManager, AppStateMonitor.getInstance(), GaugeManager.getInstance(), SessionManager.getInstance());
   }
 
   /**
@@ -99,11 +100,13 @@ public final class NetworkRequestMetricBuilder extends AppStateUpdateHandler
   public NetworkRequestMetricBuilder(
       TransportManager transportManager,
       AppStateMonitor appStateMonitor,
-      GaugeManager gaugeManager) {
+      GaugeManager gaugeManager,
+      SessionManager sessionManager) {
     super(appStateMonitor);
 
     this.transportManager = transportManager;
     this.gaugeManager = gaugeManager;
+    this.sessionManager = sessionManager;
     sessions = Collections.synchronizedList(new ArrayList<>());
 
     registerForAppState();
@@ -227,9 +230,8 @@ public final class NetworkRequestMetricBuilder extends AppStateUpdateHandler
    * @see PerfSession#isVerbose()
    */
   public NetworkRequestMetricBuilder setRequestStartTimeMicros(long time) {
-    SessionManager sessionManager = SessionManager.getInstance();
     PerfSession perfSession = sessionManager.perfSession();
-    SessionManager.getInstance().registerForSessionUpdates(weakReference);
+    sessionManager.registerForSessionUpdates(weakReference);
 
     builder.setClientStartTimeUs(time);
     updateSession(perfSession);
@@ -270,8 +272,8 @@ public final class NetworkRequestMetricBuilder extends AppStateUpdateHandler
   public NetworkRequestMetricBuilder setTimeToResponseCompletedMicros(long time) {
     builder.setTimeToResponseCompletedUs(time);
 
-    if (SessionManager.getInstance().perfSession().isVerbose()) {
-      gaugeManager.collectGaugeMetricOnce(SessionManager.getInstance().perfSession().getTimer());
+    if (sessionManager.perfSession().isVerbose()) {
+      gaugeManager.collectGaugeMetricOnce(sessionManager.perfSession().getTimer());
     }
 
     return this;
@@ -309,7 +311,7 @@ public final class NetworkRequestMetricBuilder extends AppStateUpdateHandler
 
   /** Builds the current {@link NetworkRequestMetric}. */
   public NetworkRequestMetric build() {
-    SessionManager.getInstance().unregisterForSessionUpdates(weakReference);
+    sessionManager.unregisterForSessionUpdates(weakReference);
     unregisterForAppState();
 
     com.google.firebase.perf.v1.PerfSession[] perfSessions =
