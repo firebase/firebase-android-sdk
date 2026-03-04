@@ -100,9 +100,9 @@ public class FirebasePerformanceTest {
     sharedPreferences.edit().clear().commit();
     DeviceCacheManager.clearInstance();
 
-    spyRemoteConfigManager = spy(RemoteConfigManager.getInstance());
     ConfigResolver.clearInstance();
     spyConfigResolver = spy(ConfigResolver.getInstance());
+    spyRemoteConfigManager = spy(ConfigResolver.getInstance().getRemoteConfigManager());
 
     spySessionManager = spy(SessionManager.getInstance());
     fakeDirectExecutorService = new FakeDirectExecutorService();
