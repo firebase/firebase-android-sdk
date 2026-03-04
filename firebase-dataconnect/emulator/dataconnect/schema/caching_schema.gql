@@ -87,3 +87,23 @@ type CachingNullableAny @table {
   any: Any
   tag: String
 }
+
+###############################################################################
+# Mixed scalars
+###############################################################################
+
+type CachingMixed @table {
+  string: String!
+  stringNullable: String
+  float: Float!
+  floatNullable: Float
+  boolean: Boolean!
+  booleanNullable: Boolean
+  any: Any!
+  anyNullable: Any
+  stringList: [String]
+  floatList: [Float]
+  booleanList: [Boolean]
+  anyList: [Any]
+  tag: String
+}

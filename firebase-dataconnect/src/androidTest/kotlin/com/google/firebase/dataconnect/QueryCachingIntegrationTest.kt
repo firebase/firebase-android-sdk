@@ -19,6 +19,7 @@
 package com.google.firebase.dataconnect
 
 import com.google.firebase.FirebaseApp
+import com.google.firebase.dataconnect.AnyValueRoundTrip.Companion.dataConnectRoundTripValue
 import com.google.firebase.dataconnect.CacheSettings.Storage.MEMORY
 import com.google.firebase.dataconnect.CacheSettings.Storage.PERSISTENT
 import com.google.firebase.dataconnect.DataSource.CACHE
@@ -27,6 +28,7 @@ import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.Quintuple
 import com.google.firebase.dataconnect.testutil.expectedAnyScalarDoubleRoundTripValue
 import com.google.firebase.dataconnect.testutil.map
+import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.FloatRoundTrip
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.distinctPair
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
@@ -45,6 +47,10 @@ import com.google.firebase.dataconnect.testutil.schemas.verifyGetFloat
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetFloat2
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetFloatsByTag
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetFloatsByTag2
+import com.google.firebase.dataconnect.testutil.schemas.verifyGetMixed
+import com.google.firebase.dataconnect.testutil.schemas.verifyGetMixed2
+import com.google.firebase.dataconnect.testutil.schemas.verifyGetMixedsByTag
+import com.google.firebase.dataconnect.testutil.schemas.verifyGetMixedsByTag2
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableAnyValue
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableAnyValue2
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableAnyValuesByTag
@@ -91,12 +97,14 @@ import io.kotest.property.PropTestConfig
 import io.kotest.property.ShrinkingMode
 import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.alphanumeric
+import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.boolean
 import io.kotest.property.arbitrary.list
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.orNull
 import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
+import java.util.UUID
 import kotlin.random.Random
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
@@ -644,6 +652,34 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
       connector.verifyGetNullableAnyValue(key, "query4d", any4?.roundTripValue, CACHE)
     }
   }
+
+  @Test
+  fun normalizedMixed() = runTest {
+    val connector = newCachingConnector()
+    checkAll(propTestConfig, mixedArb().quintuple()) { (mixed1, mixed2, mixed3, mixed4, mixed5) ->
+      val tag = randomTag()
+      val key = connector.insertMixed(mixed1.toInsertVariables(tag))
+      connector.verifyGetMixed(key, "query1a", mixed1.toGetItem(), SERVER)
+      connector.updateMixed(key, mixed2.toUpdateBuilder())
+      connector.verifyGetMixed2(key, "query2a", mixed2.toGetItem(), SERVER)
+      connector.verifyGetMixed(key, "query2b", mixed2.toGetItem(), CACHE)
+      connector.updateMixed(key, mixed3.toUpdateBuilder())
+      connector.verifyGetMixedsByTag(tag, "query3a", mixed3.toGetManyItem(key), SERVER)
+      connector.verifyGetMixed2(key, "query3b", mixed3.toGetItem(), CACHE)
+      connector.verifyGetMixed(key, "query3c", mixed3.toGetItem(), CACHE)
+      val key2 = connector.insertMixed(mixed5.toInsertVariables(tag))
+      connector.updateMixed(key, mixed4.toUpdateBuilder())
+      connector.verifyGetMixedsByTag2(
+        tag,
+        "query4a",
+        listOf(mixed4.toGetManyItem(key), mixed5.toGetManyItem(key2)),
+        SERVER
+      )
+      connector.verifyGetMixedsByTag(tag, "query4b", mixed4.toGetManyItem(key), CACHE)
+      connector.verifyGetMixed2(key, "query4c", mixed4.toGetItem(), CACHE)
+      connector.verifyGetMixed(key, "query4d", mixed4.toGetItem(), CACHE)
+    }
+  }
 }
 
 private val propTestConfig =
@@ -658,18 +694,41 @@ private fun alphanumericStringArb(): Arb<String> = Arb.string(0..10, Codepoint.a
 private fun randomTag(): String = "tag_" + Random.nextAlphanumericString(50)
 
 private data class AnyValueRoundTrip(val value: AnyValue) {
-  val roundTripValue: AnyValue = value.expectedAnyScalarRoundTripValue()
+
+  val roundTripValue = value.dataConnectRoundTripValue()
 
   override fun toString() =
     "AnyValueRoundTrip(value=${value.print().value}, " +
-      "roundTripValue=${roundTripValue.print().value})"
+      "roundTripValue=${value.dataConnectRoundTripValue().print().value})"
 
   companion object {
 
-    fun AnyValue.expectedAnyScalarRoundTripValue(): AnyValue =
-      AnyValue(protoValue.expectedAnyScalarRoundTripValue())
+    @JvmName("dataConnectRoundTripValue_AnyValue")
+    fun AnyValue.dataConnectRoundTripValue(): AnyValue =
+      AnyValue(protoValue.anyScalarRoundTripValue())
 
-    fun ValueProto.expectedAnyScalarRoundTripValue(): ValueProto = map { _, value ->
+    @JvmName("dataConnectRoundTripValue_NullableAnyValue")
+    fun AnyValue?.dataConnectRoundTripValue(): AnyValue? = this?.dataConnectRoundTripValue()
+
+    @JvmName("dataConnectRoundTripValue_List_AnyValue")
+    fun List<AnyValue>.dataConnectRoundTripValue(): List<AnyValue> = map {
+      it.dataConnectRoundTripValue()
+    }
+
+    @JvmName("dataConnectRoundTripValue_NullableList_AnyValue")
+    fun List<AnyValue>?.dataConnectRoundTripValue(): List<AnyValue>? =
+      this?.map { it.dataConnectRoundTripValue() }
+
+    @JvmName("dataConnectRoundTripValue_List_NullableAnyValue")
+    fun List<AnyValue?>.dataConnectRoundTripValue(): List<AnyValue?> = map {
+      it?.dataConnectRoundTripValue()
+    }
+
+    @JvmName("dataConnectRoundTripValue_NullableList_NullableAnyValue")
+    fun List<AnyValue?>?.dataConnectRoundTripValue(): List<AnyValue?>? =
+      this?.map { it?.dataConnectRoundTripValue() }
+
+    fun ValueProto.anyScalarRoundTripValue(): ValueProto = map { _, value ->
       if (value.kindCase != ValueProto.KindCase.NUMBER_VALUE) {
         value
       } else {
@@ -678,6 +737,31 @@ private data class AnyValueRoundTrip(val value: AnyValue) {
     }
   }
 }
+
+@JvmName("dataConnectRoundTripValue_AnyValueRoundTrip")
+private fun AnyValueRoundTrip.dataConnectRoundTripValue(): AnyValue = roundTripValue
+
+@JvmName("dataConnectRoundTripValue_NullableAnyValueRoundTrip")
+private fun AnyValueRoundTrip?.dataConnectRoundTripValue(): AnyValue? =
+  this?.dataConnectRoundTripValue()
+
+@JvmName("dataConnectRoundTripValue_List_AnyValueRoundTrip")
+private fun List<AnyValueRoundTrip>.dataConnectRoundTripValue(): List<AnyValue> = map {
+  it.dataConnectRoundTripValue()
+}
+
+@JvmName("dataConnectRoundTripValue_List_NullableAnyValueRoundTrip")
+private fun List<AnyValueRoundTrip?>.dataConnectRoundTripValue(): List<AnyValue?> = map {
+  it.dataConnectRoundTripValue()
+}
+
+@JvmName("dataConnectRoundTripValue_NullableList_AnyValueRoundTrip")
+private fun List<AnyValueRoundTrip>?.dataConnectRoundTripValue(): List<AnyValue>? =
+  this?.map { it.dataConnectRoundTripValue() }
+
+@JvmName("dataConnectRoundTripValue_NullableList_NullableAnyValueRoundTrip")
+private fun List<AnyValueRoundTrip?>?.dataConnectRoundTripValue(): List<AnyValue?>? =
+  this?.map { it.dataConnectRoundTripValue() }
 
 private val anyValueArbValueProtoArbRecursiveExcludes =
   setOf(
@@ -690,3 +774,122 @@ private fun anyValueArb(): Arb<AnyValueRoundTrip> =
     .value(recursiveExcludes = anyValueArbValueProtoArbRecursiveExcludes)
     .map(::AnyValue)
     .map(::AnyValueRoundTrip)
+
+private data class MixedArbSample(
+  val string: String,
+  val stringNullable: String?,
+  val float: FloatRoundTrip,
+  val floatNullable: FloatRoundTrip?,
+  val boolean: Boolean,
+  val booleanNullable: Boolean?,
+  val any: AnyValueRoundTrip,
+  val anyNullable: AnyValueRoundTrip?,
+  val stringList: List<String?>?,
+  val floatList: List<FloatRoundTrip?>?,
+  val booleanList: List<Boolean?>?,
+  val anyList: List<AnyValueRoundTrip?>?,
+)
+
+private fun MixedArbSample.toInsertVariables(tag: String) =
+  CachingConnector.Variables.MixedInsert(
+    string,
+    stringNullable,
+    float.float,
+    floatNullable?.float,
+    boolean,
+    booleanNullable,
+    any.value,
+    anyNullable?.value,
+    stringList,
+    floatList?.map { it?.float },
+    booleanList,
+    anyList?.map { it?.value },
+    OptionalVariable.Value(tag),
+  )
+
+private fun MixedArbSample.toUpdateBuilder():
+  (CachingConnector.Variables.MixedUpdate.Builder.() -> Unit) {
+  return {
+    string = this@toUpdateBuilder.string
+    stringNullable = this@toUpdateBuilder.stringNullable
+    float = this@toUpdateBuilder.float.roundTripFloat
+    floatNullable = this@toUpdateBuilder.floatNullable?.roundTripFloat
+    boolean = this@toUpdateBuilder.boolean
+    booleanNullable = this@toUpdateBuilder.booleanNullable
+    any = this@toUpdateBuilder.any.value
+    anyNullable = this@toUpdateBuilder.anyNullable?.value
+    stringList = this@toUpdateBuilder.stringList
+    floatList = this@toUpdateBuilder.floatList?.map { it?.roundTripFloat }
+    booleanList = this@toUpdateBuilder.booleanList
+    anyList = this@toUpdateBuilder.anyList?.map { it?.value }
+  }
+}
+
+private fun MixedArbSample.toGetItem() =
+  CachingConnector.Data.MixedGet.Item(
+    string,
+    stringNullable,
+    float.roundTripFloat,
+    floatNullable?.roundTripFloat,
+    boolean,
+    booleanNullable,
+    any.dataConnectRoundTripValue(),
+    anyNullable.dataConnectRoundTripValue(),
+    stringList,
+    floatList?.map { it?.roundTripFloat },
+    booleanList,
+    anyList.dataConnectRoundTripValue(),
+  )
+
+private fun MixedArbSample.toGetManyItem(key: CachingConnector.Key) = toGetManyItem(key.id)
+
+private fun MixedArbSample.toGetManyItem(id: UUID) =
+  CachingConnector.Data.MixedGetMany.Item(
+    id,
+    string,
+    stringNullable,
+    float.roundTripFloat,
+    floatNullable?.roundTripFloat,
+    boolean,
+    booleanNullable,
+    any.dataConnectRoundTripValue(),
+    anyNullable.dataConnectRoundTripValue(),
+    stringList,
+    floatList?.map { it?.roundTripFloat },
+    booleanList,
+    anyList.dataConnectRoundTripValue(),
+  )
+
+private fun mixedArb(
+  stringArb: Arb<String> = alphanumericStringArb(),
+  stringNullableArb: Arb<String?> = stringArb.orNull(nullProbability = 0.2),
+  floatArb: Arb<FloatRoundTrip> = Arb.dataConnect.float(),
+  floatNullableArb: Arb<FloatRoundTrip?> = floatArb.orNull(nullProbability = 0.2),
+  booleanArb: Arb<Boolean> = Arb.boolean(),
+  booleanNullableArb: Arb<Boolean?> = booleanArb.orNull(nullProbability = 0.2),
+  anyArb: Arb<AnyValueRoundTrip> = anyValueArb(),
+  anyNullableArb: Arb<AnyValueRoundTrip?> = anyArb.orNull(nullProbability = 0.2),
+  stringListArb: Arb<List<String?>?> =
+    Arb.list(stringNullableArb, 0..3).orNull(nullProbability = 0.2),
+  floatListArb: Arb<List<FloatRoundTrip?>?> =
+    Arb.list(floatNullableArb, 0..3).orNull(nullProbability = 0.2),
+  booleanListArb: Arb<List<Boolean?>?> =
+    Arb.list(booleanNullableArb, 0..3).orNull(nullProbability = 0.2),
+  anyListArb: Arb<List<AnyValueRoundTrip?>?> =
+    Arb.list(anyNullableArb, 0..3).orNull(nullProbability = 0.2),
+): Arb<MixedArbSample> =
+  Arb.bind(
+    stringArb,
+    stringNullableArb,
+    floatArb,
+    floatNullableArb,
+    booleanArb,
+    booleanNullableArb,
+    anyArb,
+    anyNullableArb,
+    stringListArb,
+    floatListArb,
+    booleanListArb,
+    anyListArb,
+    ::MixedArbSample
+  )
