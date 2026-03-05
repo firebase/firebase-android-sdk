@@ -50,43 +50,50 @@ private object LongEvenNumDigitsDistribution :
     maxDigits = 19,
     fullRange = Long.MIN_VALUE..Long.MAX_VALUE
   ) {
-  private val POWERS_OF_TEN =
-    longArrayOf(
-      1L,
-      10L,
-      100L,
-      1_000L,
-      10_000L,
-      100_000L,
-      1_000_000L,
-      10_000_000L,
-      100_000_000L,
-      1_000_000_000L,
-      10_000_000_000L,
-      100_000_000_000L,
-      1_000_000_000_000L,
-      10_000_000_000_000L,
-      100_000_000_000_000L,
-      1_000_000_000_000_000L,
-      10_000_000_000_000_000L,
-      100_000_000_000_000_000L,
-      1_000_000_000_000_000_000L
+  private val RANGES_BY_DIGIT_COUNT =
+    mapOf(
+      -1 to -9L..-1L,
+      -2 to -99L..-10L,
+      -3 to -999L..-100L,
+      -4 to -9_999L..-1_000L,
+      -5 to -99_999L..-10_000L,
+      -6 to -999_999L..-100_000L,
+      -7 to -9_999_999L..-1_000_000L,
+      -8 to -99_999_999L..-10_000_000L,
+      -9 to -999_999_999L..-100_000_000L,
+      -10 to -9_999_999_999L..-1_000_000_000L,
+      -11 to -99_999_999_999L..-10_000_000_000L,
+      -12 to -999_999_999_999L..-100_000_000_000L,
+      -13 to -9_999_999_999_999L..-1_000_000_000_000L,
+      -14 to -99_999_999_999_999L..-10_000_000_000_000L,
+      -15 to -999_999_999_999_999L..-100_000_000_000_000L,
+      -16 to -9_999_999_999_999_999L..-1_000_000_000_000_000L,
+      -17 to -99_999_999_999_999_999L..-10_000_000_000_000_000L,
+      -18 to -999_999_999_999_999_999L..-100_000_000_000_000_000L,
+      -19 to Long.MIN_VALUE..-1_000_000_000_000_000_000L,
+      1 to 0L..9L,
+      2 to 10L..99L,
+      3 to 100L..999L,
+      4 to 1_000L..9_999L,
+      5 to 10_000L..99_999L,
+      6 to 100_000L..999_999L,
+      7 to 1_000_000L..9_999_999L,
+      8 to 10_000_000L..99_999_999L,
+      9 to 100_000_000L..999_999_999L,
+      10 to 1_000_000_000L..9_999_999_999L,
+      11 to 10_000_000_000L..99_999_999_999L,
+      12 to 100_000_000_000L..999_999_999_999L,
+      13 to 1_000_000_000_000L..9_999_999_999_999L,
+      14 to 10_000_000_000_000L..99_999_999_999_999L,
+      15 to 100_000_000_000_000L..999_999_999_999_999L,
+      16 to 1_000_000_000_000_000L..9_999_999_999_999_999L,
+      17 to 10_000_000_000_000_000L..99_999_999_999_999_999L,
+      18 to 100_000_000_000_000_000L..999_999_999_999_999_999L,
+      19 to 1_000_000_000_000_000_000L..Long.MAX_VALUE
     )
 
-  override fun getTheoreticalBounds(digitCount: Int): LongRange {
-    val positive = digitCount > 0
-    val count = kotlin.math.abs(digitCount)
-    if (positive) {
-      if (count == 1) return 0L..9L
-      val min = POWERS_OF_TEN[count - 1]
-      val max = if (count == 19) Long.MAX_VALUE else POWERS_OF_TEN[count] - 1L
-      return min..max
-    } else {
-      val max = -POWERS_OF_TEN[count - 1]
-      val min = if (count == 19) Long.MIN_VALUE else -(POWERS_OF_TEN[count] - 1L)
-      return min..max
-    }
-  }
+  override fun getTheoreticalBounds(digitCount: Int): LongRange =
+    RANGES_BY_DIGIT_COUNT.getValue(digitCount)
   override fun intersect(r1: LongRange, r2: LongRange): LongRange = r1 intersect r2
   override fun isEmpty(range: LongRange): Boolean = range.isEmpty()
   override fun createArb(range: LongRange): Arb<Long> = Arb.long(range)

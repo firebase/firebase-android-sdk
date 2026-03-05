@@ -50,34 +50,32 @@ private object IntEvenNumDigitsDistribution :
     maxDigits = 10,
     fullRange = Int.MIN_VALUE..Int.MAX_VALUE
   ) {
-  private val POWERS_OF_TEN =
-    intArrayOf(
-      1,
-      10,
-      100,
-      1_000,
-      10_000,
-      100_000,
-      1_000_000,
-      10_000_000,
-      100_000_000,
-      1_000_000_000
+  private val RANGES_BY_DIGIT_COUNT =
+    mapOf(
+      -1 to -9..-1,
+      -2 to -99..-10,
+      -3 to -999..-100,
+      -4 to -9_999..-1_000,
+      -5 to -99_999..-10_000,
+      -6 to -999_999..-100_000,
+      -7 to -9_999_999..-1_000_000,
+      -8 to -99_999_999..-10_000_000,
+      -9 to -999_999_999..-100_000_000,
+      -10 to Int.MIN_VALUE..-1_000_000_000,
+      1 to 0..9,
+      2 to 10..99,
+      3 to 100..999,
+      4 to 1_000..9_999,
+      5 to 10_000..99_999,
+      6 to 100_000..999_999,
+      7 to 1_000_000..9_999_999,
+      8 to 10_000_000..99_999_999,
+      9 to 100_000_000..999_999_999,
+      10 to 1_000_000_000..Int.MAX_VALUE
     )
 
-  override fun getTheoreticalBounds(digitCount: Int): IntRange {
-    val positive = digitCount > 0
-    val count = kotlin.math.abs(digitCount)
-    if (positive) {
-      if (count == 1) return 0..9
-      val min = POWERS_OF_TEN[count - 1]
-      val max = if (count == 10) Int.MAX_VALUE else POWERS_OF_TEN[count] - 1
-      return min..max
-    } else {
-      val max = -POWERS_OF_TEN[count - 1]
-      val min = if (count == 10) Int.MIN_VALUE else -(POWERS_OF_TEN[count] - 1)
-      return min..max
-    }
-  }
+  override fun getTheoreticalBounds(digitCount: Int): IntRange =
+    RANGES_BY_DIGIT_COUNT.getValue(digitCount)
   override fun intersect(r1: IntRange, r2: IntRange): IntRange = r1 intersect r2
   override fun isEmpty(range: IntRange): Boolean = range.isEmpty()
   override fun createArb(range: IntRange): Arb<Int> = Arb.int(range)
