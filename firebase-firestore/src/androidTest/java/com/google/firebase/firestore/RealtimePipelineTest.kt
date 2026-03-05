@@ -222,10 +222,6 @@ class RealtimePipelineTest {
 
   @Before
   fun setUp() {
-    println("Running RealtimePipelineTest on ${IntegrationTestUtil.getTargetBackend()}")
-    println("Running RealtimePipelineTest on ${IntegrationTestUtil.getBackendEdition()}")
-    println("Running RealtimePipelineTest on ${IntegrationTestUtil.testEnvDatabaseId()}")
-
     org.junit.Assume.assumeTrue(
       "Skip RealtimePipelineTest on prod",
       IntegrationTestUtil.isRunningAgainstEmulator()
