@@ -22,6 +22,7 @@ import com.google.firebase.dataconnect.CacheSettings
 import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.DataConnectSettings
+import io.kotest.assertions.print.print
 import io.kotest.property.Arb
 import io.kotest.property.RandomSource
 import io.kotest.property.arbitrary.Codepoint
@@ -35,6 +36,7 @@ import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.choose
 import io.kotest.property.arbitrary.cyrillic
 import io.kotest.property.arbitrary.double
+import io.kotest.property.arbitrary.duration
 import io.kotest.property.arbitrary.egyptianHieroglyphs
 import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.filterNot
@@ -46,6 +48,7 @@ import io.kotest.property.arbitrary.string
 import io.kotest.property.asSample
 import io.mockk.mockk
 import kotlin.random.nextInt
+import kotlin.time.Duration
 import kotlinx.serialization.modules.SerializersModule
 
 @Suppress("MemberVisibilityCanBePrivate")
@@ -67,7 +70,46 @@ object DataConnectArb {
   fun string(length: IntRange = 0..100, codepoints: Arb<Codepoint>? = null): Arb<String> =
     Arb.string(length, codepoints ?: DataConnectArb.codepoints)
 
-  fun float(): Arb<Double> = Arb.double().filterNot { it.isNaN() || it.isInfinite() }
+  data class FloatRoundTrip(val float: Double) {
+
+    val roundTripFloat: Double = roundTripFloat(float)
+
+    override fun toString() =
+      "FloatRoundTrip(float=${float.print().value}, roundTripFloat=${roundTripFloat.print().value})"
+
+    companion object {
+
+      // -0.0 gets coerced to 0.0 due to lack of JSONB support for -0.0 (see b/339440054).
+      fun roundTripFloat(float: Double): Double = if (float != -0.0) float else 0.0
+
+      @JvmName("dataConnectRoundTripValue_Double")
+      fun Double.dataConnectRoundTripValue(): Double = roundTripFloat(this)
+
+      @JvmName("dataConnectRoundTripValue_NullableDouble")
+      fun Double?.dataConnectRoundTripValue(): Double? = this?.dataConnectRoundTripValue()
+
+      @JvmName("dataConnectRoundTripValue_List_Double")
+      fun List<Double>.dataConnectRoundTripValue(): List<Double> = map {
+        it.dataConnectRoundTripValue()
+      }
+
+      @JvmName("dataConnectRoundTripValue_NullableList_Double")
+      fun List<Double>?.dataConnectRoundTripValue(): List<Double>? =
+        this?.map { it.dataConnectRoundTripValue() }
+
+      @JvmName("dataConnectRoundTripValue_List_NullableDouble")
+      fun List<Double?>.dataConnectRoundTripValue(): List<Double?> = map {
+        it?.dataConnectRoundTripValue()
+      }
+
+      @JvmName("dataConnectRoundTripValue_NullableList_NullableDouble")
+      fun List<Double?>?.dataConnectRoundTripValue(): List<Double?>? =
+        this?.map { it?.dataConnectRoundTripValue() }
+    }
+  }
+
+  fun float(): Arb<FloatRoundTrip> =
+    Arb.double().filterNot { it.isNaN() || it.isInfinite() }.map(::FloatRoundTrip)
 
   fun id(length: Int = 20): Arb<String> = Arb.string(size = length, Codepoint.alphanumeric())
 
@@ -128,7 +170,8 @@ object DataConnectArb {
 
   fun cacheSettings(
     storage: Arb<CacheSettings.Storage> = Arb.enum<CacheSettings.Storage>(),
-  ): Arb<CacheSettings> = storage.map(::CacheSettings)
+    maxAge: Arb<Duration> = Arb.duration(),
+  ): Arb<CacheSettings> = Arb.bind(storage, maxAge, ::CacheSettings)
 
   fun dataConnectSettings(
     prefix: String? = null,
@@ -171,6 +214,18 @@ object DataConnectArb {
       fieldArb = field,
       listIndexArb = listIndex,
     )
+
+  val ZERO_DURATION: com.google.protobuf.Duration =
+    com.google.protobuf.Duration.newBuilder().setSeconds(0).setNanos(0).build()
+
+  val MIN_NONZERO_DURATION: com.google.protobuf.Duration =
+    com.google.protobuf.Duration.newBuilder().setSeconds(0).setNanos(1).build()
+
+  fun maxAge(
+    min: com.google.protobuf.Duration = ZERO_DURATION,
+    max: com.google.protobuf.Duration? = null,
+  ): Arb<com.google.protobuf.Duration> =
+    Arb.proto.duration(min = min, max = max).map { it.duration }
 }
 
 private class DataConnectPathArb(

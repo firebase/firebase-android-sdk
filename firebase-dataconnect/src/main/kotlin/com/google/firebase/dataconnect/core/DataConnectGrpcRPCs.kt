@@ -35,6 +35,7 @@ import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.ProtoUtil.toDataConnectPath
 import com.google.firebase.dataconnect.util.ProtoUtil.toStructProto
 import com.google.firebase.dataconnect.util.SuspendingLazy
+import com.google.protobuf.Duration as DurationProto
 import com.google.protobuf.Struct
 import google.firebase.dataconnect.proto.ConnectorServiceGrpc
 import google.firebase.dataconnect.proto.ConnectorServiceGrpcKt
@@ -54,7 +55,9 @@ import io.grpc.Metadata
 import io.grpc.MethodDescriptor
 import io.grpc.android.AndroidChannelBuilder
 import java.io.File
+import java.lang.System.currentTimeMillis
 import java.util.concurrent.TimeUnit
+import kotlin.time.Duration
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.asExecutor
@@ -91,7 +94,12 @@ internal class DataConnectGrpcRPCs(
   private val mutex = Mutex()
   private var closed = false
 
-  data class CacheSettings(val dbFile: File?)
+  data class CacheSettings(val dbFile: File?, val maxAge: Duration)
+
+  private data class CacheDbSettingsPair(
+    val db: DataConnectCacheDatabase,
+    val maxAge: DurationProto,
+  )
 
   // Use the non-main-thread CoroutineDispatcher to avoid blocking operations on the main thread.
   private val lazyCacheDb =
@@ -101,12 +109,20 @@ internal class DataConnectGrpcRPCs(
         NullableReference()
       } else {
         logger.debug { "Creating GRPC ManagedChannel for host=$host sslEnabled=$sslEnabled" }
+
+        val maxAge =
+          cacheSettings.maxAge.toComponents { seconds, nanos ->
+            DurationProto.newBuilder().setSeconds(seconds).setNanos(nanos).build()
+          }
+
         val dbFile = cacheSettings.dbFile
         val cacheLogger = Logger("DataConnectCacheDatabase")
-        cacheLogger.debug { "created by ${logger.nameWithId} with dbFile=$dbFile" }
+        cacheLogger.debug {
+          "created by ${logger.nameWithId} with dbFile=$dbFile maxAge=${cacheSettings.maxAge}"
+        }
         val cacheDb = DataConnectCacheDatabase(dbFile, cacheLogger)
         cacheDb.initialize()
-        NullableReference(cacheDb)
+        NullableReference(CacheDbSettingsPair(cacheDb, maxAge))
       }
     }
 
@@ -213,17 +229,19 @@ internal class DataConnectGrpcRPCs(
     val cacheDb: DataConnectCacheDatabase,
     val authUid: String?,
     val queryId: ImmutableByteArray,
+    val maxAge: DurationProto,
   )
 
   private suspend fun queryCacheInfo(
     authToken: DataConnectAuth.GetAuthTokenResult?,
     request: ExecuteQueryRequest,
   ) =
-    lazyCacheDb.get().ref?.let { cacheDb ->
+    lazyCacheDb.get().ref?.let { (cacheDb, maxAge) ->
       QueryCacheInfo(
         cacheDb,
         authUid = authToken?.authUid,
         queryId = request.toQueryId(),
+        maxAge = maxAge,
       )
     }
 
@@ -247,9 +265,22 @@ internal class DataConnectGrpcRPCs(
     val cacheInfo = queryCacheInfo(authToken, request)
 
     cacheInfo?.run {
-      val cachedResult = cacheDb.getQueryResult(authUid, queryId)
-      if (cachedResult !== null) {
-        return ExecuteQueryResult.FromCache(cachedResult)
+      when (val cachedResult = cacheDb.getQueryResult(authUid, queryId, currentTimeMillis())) {
+        is DataConnectCacheDatabase.GetQueryResultResult.Found -> {
+          logger.logGrpcReturningFromCache(
+            requestId = requestId,
+            kotlinMethodName = kotlinMethodName,
+            cachedResult = cachedResult,
+          )
+          return ExecuteQueryResult.FromCache(cachedResult.struct)
+        }
+        is DataConnectCacheDatabase.GetQueryResultResult.Stale ->
+          logger.logGrpcIgnoringStaleCache(
+            requestId = requestId,
+            kotlinMethodName = kotlinMethodName,
+            cachedResult = cachedResult,
+          )
+        is DataConnectCacheDatabase.GetQueryResultResult.NotFound -> {}
       }
     }
 
@@ -268,6 +299,8 @@ internal class DataConnectGrpcRPCs(
           authUid,
           queryId,
           queryData = response.data,
+          maxAge = maxAge,
+          currentTimeMillis = currentTimeMillis(),
           getEntityIdForPath = response.getEntityIdForPathFunction(),
         )
       }
@@ -371,7 +404,7 @@ internal class DataConnectGrpcRPCs(
         grpcChannel?.shutdownNow()
         grpcChannel?.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS)
       }
-      val cacheDbCloseResult = runCatching { cacheDb?.close() }
+      val cacheDbCloseResult = runCatching { cacheDb?.db?.close() }
 
       grpcChannelShutdownResult.getOrThrow()
       cacheDbCloseResult.getOrThrow()
@@ -407,9 +440,20 @@ internal class DataConnectGrpcRPCs(
     fun Logger.logGrpcReturningFromCache(
       requestId: String,
       kotlinMethodName: String,
-      struct: Struct,
+      cachedResult: DataConnectCacheDatabase.GetQueryResultResult.Found,
     ) = debug {
-      "$kotlinMethodName [rid=$requestId] returning result from cache: ${struct.toCompactString()}"
+      "$kotlinMethodName [rid=$requestId] returning result from cache: " +
+        "${cachedResult.struct.toCompactString()} " +
+        "(expires in ${cachedResult.freshnessRemaining})"
+    }
+
+    fun Logger.logGrpcIgnoringStaleCache(
+      requestId: String,
+      kotlinMethodName: String,
+      cachedResult: DataConnectCacheDatabase.GetQueryResultResult.Stale,
+    ) = debug {
+      "$kotlinMethodName [rid=$requestId] ignoring result from cache " +
+        "because it expired ${cachedResult.staleness} ago"
     }
 
     fun Logger.logGrpcStarting(

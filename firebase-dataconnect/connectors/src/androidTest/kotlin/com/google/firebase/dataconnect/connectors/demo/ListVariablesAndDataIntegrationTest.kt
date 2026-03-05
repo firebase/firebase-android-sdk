@@ -481,7 +481,7 @@ class ListVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
     fun withRoundTripValues(): Lists =
       copy(
         // -0.0 gets coerced to 0.0 due to lack of JSONB support for -0.0 (see b/339440054).
-        floats = floats.map { if (it != -0.0) it else 0.0 },
+        floats = floats.map(DataConnectArb.FloatRoundTrip::roundTripFloat),
         timestamps = timestamps.map { it.withMicrosecondPrecision() },
       )
 
@@ -541,7 +541,7 @@ class ListVariablesAndDataIntegrationTest : DemoConnectorIntegrationTestBase() {
     fun DataConnectArb.nonEmptyLists(
       strings: Arb<List<String>> = Arb.list(Arb.dataConnect.string(), 1..100),
       ints: Arb<List<Int>> = Arb.list(Arb.int(), 1..100),
-      floats: Arb<List<Double>> = Arb.list(Arb.dataConnect.float(), 1..100),
+      floats: Arb<List<Double>> = Arb.list(Arb.dataConnect.float().map { it.float }, 1..100),
       booleans: Arb<List<Boolean>> = Arb.list(Arb.boolean(), 1..100),
       uuids: Arb<List<UUID>> = Arb.list(Arb.uuid(), 1..100),
       int64s: Arb<List<Long>> = Arb.list(Arb.long(), 1..100),
