@@ -105,35 +105,43 @@ internal constructor(
    * connection with the server.
    */
   @OptIn(ExperimentalSerializationApi::class)
-  public suspend fun connect(): LiveSession {
-    val clientMessage =
-      LiveClientSetupMessage(
-          modelName,
-          config?.toInternal(),
-          tools.map { it.toInternal() }.takeIf { it.isNotEmpty() },
-          systemInstruction?.toInternal(),
-          config?.inputAudioTranscription?.toInternal(),
-          config?.outputAudioTranscription?.toInternal()
-        )
-        .toInternal()
-    val data: String = Json.encodeToString(clientMessage)
-    var webSession: DefaultClientWebSocketSession? = null
-    try {
-      webSession = controller.getWebSocketSession(location)
+  public suspend fun connect(sessionResumption: SessionResumptionConfig? = null): LiveSession {
+    val connectFactory: suspend (SessionResumptionConfig?) -> DefaultClientWebSocketSession = { newResumption ->
+      val clientMessage =
+        LiveClientSetupMessage(
+            modelName,
+            config?.toInternal(),
+            tools.map { it.toInternal() }.takeIf { it.isNotEmpty() },
+            systemInstruction?.toInternal(),
+            config?.inputAudioTranscription?.toInternal(),
+            config?.outputAudioTranscription?.toInternal(),
+            newResumption?.toInternal(),
+            config?.contextWindowCompression?.toInternal()
+          )
+          .toInternal()
+      val data: String = Json.encodeToString(clientMessage)
+      val webSession = controller.getWebSocketSession(location)
       webSession.send(Frame.Text(data))
       val receivedJsonStr = webSession.incoming.receive().readBytes().toString(Charsets.UTF_8)
       val receivedJson = JSON.parseToJsonElement(receivedJsonStr)
 
-      return if (receivedJson is JsonObject && "setupComplete" in receivedJson) {
-        LiveSession(
-          session = webSession,
-          blockingDispatcher = blockingDispatcher,
-          firebaseApp = firebaseApp
-        )
+      if (receivedJson is JsonObject && "setupComplete" in receivedJson) {
+        webSession
       } else {
         webSession.close()
         throw ServiceConnectionHandshakeFailedException("Unable to connect to the server")
       }
+    }
+
+    var webSession: DefaultClientWebSocketSession? = null
+    try {
+      webSession = connectFactory(sessionResumption)
+      return LiveSession(
+        session = webSession,
+        blockingDispatcher = blockingDispatcher,
+        firebaseApp = firebaseApp,
+        connectionFactory = connectFactory
+      )
     } catch (e: ClosedReceiveChannelException) {
       val reason = webSession?.closeReason?.await()
       val message =
