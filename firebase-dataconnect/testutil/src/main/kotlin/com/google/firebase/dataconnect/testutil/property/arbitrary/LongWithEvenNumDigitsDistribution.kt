@@ -20,7 +20,6 @@ package com.google.firebase.dataconnect.testutil.property.arbitrary
 
 import com.google.firebase.dataconnect.testutil.intersect
 import io.kotest.property.Arb
-import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.long
 
 /**
@@ -30,11 +29,8 @@ import io.kotest.property.arbitrary.long
  * Note that the negative sign does _not_ contribute to the digit count. For example both 22 and -22
  * are considered to have 2 digits.
  */
-fun Arb.Companion.longWithEvenNumDigitsDistribution(range: LongRange? = null): Arb<Long> {
-  val ranges = calculateDigitRangesForRange(range)
-  val arbs = ranges.map { Arb.choice(it.map { range -> Arb.long(range) }) }
-  return Arb.choice(arbs)
-}
+fun Arb.Companion.longWithEvenNumDigitsDistribution(range: LongRange? = null): Arb<Long> =
+  LongEvenNumDigitsDistribution.generate(range)
 
 /**
  * Returns an [Arb] identical to [Arb.Companion.nonNegativeLong] except that the values it produces
@@ -49,60 +45,48 @@ fun Arb.Companion.nonNegativeLongWithEvenNumDigitsDistribution(min: Long = 0): A
   return longWithEvenNumDigitsDistribution(min..Long.MAX_VALUE)
 }
 
-private fun calculateDigitRangesForRange(range: LongRange? = null): List<List<LongRange>> =
-  if (range === null) {
-    rangesGroupedByDigitCount
-  } else {
-    rangesGroupedByDigitCount
-      .map { ranges -> ranges.map { it intersect range }.filterNot { it.isEmpty() } }
-      .filterNot { it.isEmpty() }
+private object LongEvenNumDigitsDistribution :
+  AbstractEvenNumDigitsDistribution<Long, LongRange>(
+    maxDigits = 19,
+    fullRange = Long.MIN_VALUE..Long.MAX_VALUE
+  ) {
+  private val POWERS_OF_TEN =
+    longArrayOf(
+      1L,
+      10L,
+      100L,
+      1_000L,
+      10_000L,
+      100_000L,
+      1_000_000L,
+      10_000_000L,
+      100_000_000L,
+      1_000_000_000L,
+      10_000_000_000L,
+      100_000_000_000L,
+      1_000_000_000_000L,
+      10_000_000_000_000L,
+      100_000_000_000_000L,
+      1_000_000_000_000_000L,
+      10_000_000_000_000_000L,
+      100_000_000_000_000_000L,
+      1_000_000_000_000_000_000L
+    )
+
+  override fun getTheoreticalBounds(digitCount: Int, positive: Boolean): LongRange {
+    if (positive) {
+      if (digitCount == 1) return 0L..9L
+      val min = POWERS_OF_TEN[digitCount - 1]
+      val max = if (digitCount == 19) Long.MAX_VALUE else POWERS_OF_TEN[digitCount] - 1L
+      return min..max
+    } else {
+      val max = -POWERS_OF_TEN[digitCount - 1]
+      val min = if (digitCount == 19) Long.MIN_VALUE else -(POWERS_OF_TEN[digitCount] - 1L)
+      return min..max
+    }
   }
 
-private val negativeRanges: List<LongRange> =
-  listOf(
-    -9L..-1L,
-    -99L..-10L,
-    -999L..-100L,
-    -9_999L..-1_000L,
-    -99_999L..-10_000L,
-    -999_999L..-100_000L,
-    -9_999_999L..-1_000_000L,
-    -99_999_999L..-10_000_000L,
-    -999_999_999L..-100_000_000L,
-    -9_999_999_999L..-1_000_000_000L,
-    -99_999_999_999L..-10_000_000_000L,
-    -999_999_999_999L..-100_000_000_000L,
-    -9_999_999_999_999L..-1_000_000_000_000L,
-    -99_999_999_999_999L..-10_000_000_000_000L,
-    -999_999_999_999_999L..-100_000_000_000_000L,
-    -9_999_999_999_999_999L..-1_000_000_000_000_000L,
-    -99_999_999_999_999_999L..-10_000_000_000_000_000L,
-    -999_999_999_999_999_999L..-100_000_000_000_000_000L,
-    Long.MIN_VALUE..-1_000_000_000_000_000_000L,
-  )
-
-private val nonNegativeRanges: List<LongRange> =
-  listOf(
-    0L..9L,
-    10L..99L,
-    100L..999L,
-    1_000L..9_999L,
-    10_000L..99_999L,
-    100_000L..999_999L,
-    1_000_000L..9_999_999L,
-    10_000_000L..99_999_999L,
-    100_000_000L..999_999_999L,
-    1_000_000_000L..9_999_999_999L,
-    10_000_000_000L..99_999_999_999L,
-    100_000_000_000L..999_999_999_999L,
-    1_000_000_000_000L..9_999_999_999_999L,
-    10_000_000_000_000L..99_999_999_999_999L,
-    100_000_000_000_000L..999_999_999_999_999L,
-    1_000_000_000_000_000L..9_999_999_999_999_999L,
-    10_000_000_000_000_000L..99_999_999_999_999_999L,
-    100_000_000_000_000_000L..999_999_999_999_999_999L,
-    1_000_000_000_000_000_000L..Long.MAX_VALUE,
-  )
-
-private val rangesGroupedByDigitCount: List<List<LongRange>> =
-  negativeRanges.zip(nonNegativeRanges).map { (range1, range2) -> listOf(range1, range2) }
+  override fun intersect(r1: LongRange, r2: LongRange): LongRange = r1 intersect r2
+  override fun isEmpty(range: LongRange): Boolean = range.isEmpty()
+  override fun createArb(range: LongRange): Arb<Long> = Arb.long(range)
+}
