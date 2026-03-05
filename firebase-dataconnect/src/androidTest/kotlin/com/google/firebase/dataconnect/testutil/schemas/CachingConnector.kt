@@ -757,6 +757,55 @@ class CachingConnector(val dataConnect: FirebaseDataConnect) {
     return queryRef.execute()
   }
 
+  suspend fun insertMixed(variables: Variables.MixedInsert): Key {
+    val mutationRef =
+      dataConnect.mutation(
+        "CachingMixed_Insert",
+        variables,
+        serializer<Data.Insert>(),
+        serializer()
+      )
+
+    val result = mutationRef.execute()
+
+    return result.data.key
+  }
+
+  suspend fun updateMixed(key: Key, block: Variables.MixedUpdate.Builder.() -> Unit) {
+    val variables = Variables.MixedUpdate.build(key, block)
+    val mutationRef =
+      dataConnect.mutation("CachingMixed_Update", variables, serializer<Unit>(), serializer())
+    mutationRef.execute()
+  }
+
+  suspend fun getMixed(key: Key) = getMixed("CachingMixed_GetByKey", key)
+
+  suspend fun getMixed2(key: Key) = getMixed("CachingMixed_GetByKey2", key)
+
+  private suspend fun getMixed(
+    operationName: String,
+    key: Key
+  ): QueryResult<Data.MixedGet, Variables.GetByKey> {
+    val variables = Variables.GetByKey(key)
+    val queryRef =
+      dataConnect.query(operationName, variables, serializer<Data.MixedGet>(), serializer())
+    return queryRef.execute()
+  }
+
+  suspend fun getMixedsByTag(tag: String) = getMixedsByTag("CachingMixed_GetByTag", tag)
+
+  suspend fun getMixedsByTag2(tag: String) = getMixedsByTag("CachingMixed_GetByTag2", tag)
+
+  private suspend fun getMixedsByTag(
+    operationName: String,
+    tag: String
+  ): QueryResult<Data.MixedGetMany, Variables.GetByTag> {
+    val variables = Variables.GetByTag(tag)
+    val queryRef =
+      dataConnect.query(operationName, variables, serializer<Data.MixedGetMany>(), serializer())
+    return queryRef.execute()
+  }
+
   object Variables {
 
     @Serializable data class GetByKey(val key: Key)
@@ -928,6 +977,169 @@ class CachingConnector(val dataConnect: FirebaseDataConnect) {
         tag = if (tag === null) Undefined else Value(tag),
       )
     }
+
+    @Serializable
+    data class MixedUpdate(
+      val key: Key,
+      val string: OptionalVariable<String>,
+      val stringNullable: OptionalVariable<String?>,
+      val float: OptionalVariable<Double>,
+      val floatNullable: OptionalVariable<Double?>,
+      val boolean: OptionalVariable<Boolean>,
+      val booleanNullable: OptionalVariable<Boolean?>,
+      val any: OptionalVariable<AnyValue>,
+      val anyNullable: OptionalVariable<AnyValue?>,
+      val stringList: OptionalVariable<List<String?>?>,
+      val floatList: OptionalVariable<List<Double?>?>,
+      val booleanList: OptionalVariable<List<Boolean?>?>,
+      val anyList: OptionalVariable<List<AnyValue?>?>,
+    ) {
+
+      @DslMarker annotation class BuilderDsl
+
+      @BuilderDsl
+      interface Builder {
+        var string: String
+        var stringNullable: String?
+        var float: Double
+        var floatNullable: Double?
+        var boolean: Boolean
+        var booleanNullable: Boolean?
+        var any: AnyValue
+        var anyNullable: AnyValue?
+        var stringList: List<String?>?
+        var floatList: List<Double?>?
+        var booleanList: List<Boolean?>?
+        var anyList: List<AnyValue?>?
+      }
+
+      companion object {
+
+        fun build(key: Key, block: Builder.() -> Unit): MixedUpdate {
+          var string: OptionalVariable<String> = Undefined
+          var stringNullable: OptionalVariable<String?> = Undefined
+          var float: OptionalVariable<Double> = Undefined
+          var floatNullable: OptionalVariable<Double?> = Undefined
+          var boolean: OptionalVariable<Boolean> = Undefined
+          var booleanNullable: OptionalVariable<Boolean?> = Undefined
+          var any: OptionalVariable<AnyValue> = Undefined
+          var anyNullable: OptionalVariable<AnyValue?> = Undefined
+          var stringList: OptionalVariable<List<String?>?> = Undefined
+          var floatList: OptionalVariable<List<Double?>?> = Undefined
+          var booleanList: OptionalVariable<List<Boolean?>?> = Undefined
+          var anyList: OptionalVariable<List<AnyValue?>?> = Undefined
+
+          return object : Builder {
+              override var string: String
+                get() = string.valueOrThrow()
+                set(value) {
+                  string = Value(value)
+                }
+
+              override var stringNullable: String?
+                get() = stringNullable.valueOrThrow()
+                set(value) {
+                  stringNullable = Value(value)
+                }
+
+              override var float: Double
+                get() = float.valueOrThrow()
+                set(value) {
+                  float = Value(value)
+                }
+
+              override var floatNullable: Double?
+                get() = floatNullable.valueOrThrow()
+                set(value) {
+                  floatNullable = Value(value)
+                }
+
+              override var boolean: Boolean
+                get() = boolean.valueOrThrow()
+                set(value) {
+                  boolean = Value(value)
+                }
+
+              override var booleanNullable: Boolean?
+                get() = booleanNullable.valueOrThrow()
+                set(value) {
+                  booleanNullable = Value(value)
+                }
+
+              override var any: AnyValue
+                get() = any.valueOrThrow()
+                set(value) {
+                  any = Value(value)
+                }
+
+              override var anyNullable: AnyValue?
+                get() = anyNullable.valueOrThrow()
+                set(value) {
+                  anyNullable = Value(value)
+                }
+
+              override var stringList: List<String?>?
+                get() = stringList.valueOrThrow()
+                set(value) {
+                  stringList = Value(value)
+                }
+
+              override var floatList: List<Double?>?
+                get() = floatList.valueOrThrow()
+                set(value) {
+                  floatList = Value(value)
+                }
+
+              override var booleanList: List<Boolean?>?
+                get() = booleanList.valueOrThrow()
+                set(value) {
+                  booleanList = Value(value)
+                }
+
+              override var anyList: List<AnyValue?>?
+                get() = anyList.valueOrThrow()
+                set(value) {
+                  anyList = Value(value)
+                }
+            }
+            .apply(block)
+            .let {
+              MixedUpdate(
+                key = key,
+                string = string,
+                stringNullable = stringNullable,
+                float = float,
+                floatNullable = floatNullable,
+                boolean = boolean,
+                booleanNullable = booleanNullable,
+                any = any,
+                anyNullable = anyNullable,
+                stringList = stringList,
+                floatList = floatList,
+                booleanList = booleanList,
+                anyList = anyList,
+              )
+            }
+        }
+      }
+    }
+
+    @Serializable
+    data class MixedInsert(
+      val string: String,
+      val stringNullable: String?,
+      val float: Double,
+      val floatNullable: Double?,
+      val boolean: Boolean,
+      val booleanNullable: Boolean?,
+      val any: AnyValue,
+      val anyNullable: AnyValue?,
+      val stringList: List<String?>?,
+      val floatList: List<Double?>?,
+      val booleanList: List<Boolean?>?,
+      val anyList: List<AnyValue?>?,
+      val tag: OptionalVariable<String>,
+    )
   }
 
   object Data {
@@ -1099,6 +1311,45 @@ class CachingConnector(val dataConnect: FirebaseDataConnect) {
       data class Item(
         val id: @Serializable(with = UUIDSerializer::class) UUID,
         val any: AnyValue?,
+      )
+    }
+
+    @Serializable
+    data class MixedGet(val item: Item?) {
+      @Serializable
+      data class Item(
+        val string: String,
+        val stringNullable: String?,
+        val float: Double,
+        val floatNullable: Double?,
+        val boolean: Boolean,
+        val booleanNullable: Boolean?,
+        val any: AnyValue,
+        val anyNullable: AnyValue?,
+        val stringList: List<String?>?,
+        val floatList: List<Double?>?,
+        val booleanList: List<Boolean?>?,
+        val anyList: List<AnyValue?>?,
+      )
+    }
+
+    @Serializable
+    data class MixedGetMany(val items: List<Item>) {
+      @Serializable
+      data class Item(
+        val id: @Serializable(with = UUIDSerializer::class) UUID,
+        val string: String,
+        val stringNullable: String?,
+        val float: Double,
+        val floatNullable: Double?,
+        val boolean: Boolean,
+        val booleanNullable: Boolean?,
+        val any: AnyValue,
+        val anyNullable: AnyValue?,
+        val stringList: List<String?>?,
+        val floatList: List<Double?>?,
+        val booleanList: List<Boolean?>?,
+        val anyList: List<AnyValue?>?,
       )
     }
   }
@@ -1346,6 +1597,28 @@ fun QueryResult<CachingConnector.Data.NullableAnyValueGetMany, CachingConnector.
   .shouldBe(anys: Collection<AnyValue?>, dataSource: DataSource) {
   assertSoftly {
     this.data.items.map { it.any } shouldContainExactlyInAnyOrder anys
+    this.dataSource shouldBe dataSource
+  }
+}
+
+@JvmName("QueryResult_MixedGet_shouldBe")
+fun QueryResult<CachingConnector.Data.MixedGet, CachingConnector.Variables.GetByKey>.shouldBe(
+  item: CachingConnector.Data.MixedGet.Item,
+  dataSource: DataSource
+) {
+  assertSoftly {
+    this.data.item.shouldNotBeNull() shouldBe item
+    this.dataSource shouldBe dataSource
+  }
+}
+
+@JvmName("QueryResult_MixedGetMany_shouldBe")
+fun QueryResult<CachingConnector.Data.MixedGetMany, CachingConnector.Variables.GetByTag>.shouldBe(
+  items: Collection<CachingConnector.Data.MixedGetMany.Item>,
+  dataSource: DataSource
+) {
+  assertSoftly {
+    this.data.items shouldContainExactlyInAnyOrder items
     this.dataSource shouldBe dataSource
   }
 }
@@ -1921,4 +2194,49 @@ suspend fun CachingConnector.verifyGetNullableAnyValuesByTag2(
   expectedDataSource: DataSource
 ) {
   withClue(clue) { getNullableAnyValuesByTag2(tag).shouldBe(expectedAnyValues, expectedDataSource) }
+}
+
+suspend fun CachingConnector.verifyGetMixed(
+  key: CachingConnector.Key,
+  clue: String,
+  expectedItem: CachingConnector.Data.MixedGet.Item,
+  expectedDataSource: DataSource
+) {
+  withClue(clue) { getMixed(key).shouldBe(expectedItem, expectedDataSource) }
+}
+
+suspend fun CachingConnector.verifyGetMixed2(
+  key: CachingConnector.Key,
+  clue: String,
+  expectedItem: CachingConnector.Data.MixedGet.Item,
+  expectedDataSource: DataSource
+) {
+  withClue(clue) { getMixed2(key).shouldBe(expectedItem, expectedDataSource) }
+}
+
+suspend fun CachingConnector.verifyGetMixedsByTag(
+  tag: String,
+  clue: String,
+  expectedItem: CachingConnector.Data.MixedGetMany.Item,
+  expectedDataSource: DataSource
+) {
+  withClue(clue) { getMixedsByTag(tag).shouldBe(listOf(expectedItem), expectedDataSource) }
+}
+
+suspend fun CachingConnector.verifyGetMixedsByTag2(
+  tag: String,
+  clue: String,
+  expectedItem: CachingConnector.Data.MixedGetMany.Item,
+  expectedDataSource: DataSource
+) {
+  verifyGetMixedsByTag2(tag, clue, listOf(expectedItem), expectedDataSource)
+}
+
+suspend fun CachingConnector.verifyGetMixedsByTag2(
+  tag: String,
+  clue: String,
+  expectedItems: Collection<CachingConnector.Data.MixedGetMany.Item>,
+  expectedDataSource: DataSource
+) {
+  withClue(clue) { getMixedsByTag2(tag).shouldBe(expectedItems, expectedDataSource) }
 }
