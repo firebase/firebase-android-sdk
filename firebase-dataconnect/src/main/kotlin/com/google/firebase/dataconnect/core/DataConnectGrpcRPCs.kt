@@ -18,6 +18,7 @@ package com.google.firebase.dataconnect.core
 
 import android.content.Context
 import com.google.android.gms.security.ProviderInstaller
+import com.google.firebase.dataconnect.CachedDataNotFoundException
 import com.google.firebase.dataconnect.DataConnectPath
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.FirebaseDataConnect
@@ -290,9 +291,12 @@ internal class DataConnectGrpcRPCs(
     }
 
     if (fetchPolicy == FetchPolicy.CACHE_ONLY) {
-      val message =
-        "Query data for operation '${request.operationName}' was not found in the local cache or has expired."
-      val exception = com.google.firebase.dataconnect.CachedDataNotFoundException(message)
+      val exception =
+        CachedDataNotFoundException(
+          "Query data for operation \"${request.operationName}\" " +
+            "and variables=${request.variables.toCompactString()} " +
+            "was not found in the local cache [cck6p3fmd5]"
+        )
       logger.logGrpcFailed(
         requestId = requestId,
         kotlinMethodName = kotlinMethodName,

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Google LLC
+ * Copyright 2026 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,5 +20,5 @@ package com.google.firebase.dataconnect
  * The exception thrown when a query is executed with the [QueryRef.FetchPolicy.CACHE_ONLY] fetch
  * policy but the query's data is not present in the local cache or has expired.
  */
-public class CachedDataNotFoundException(message: String, cause: Throwable? = null) :
+internal class CachedDataNotFoundException(message: String, cause: Throwable? = null) :
   DataConnectException(message, cause)
