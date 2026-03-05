@@ -47,7 +47,7 @@ fun Arb.Companion.nonNegativeLongWithEvenNumDigitsDistribution(min: Long = 0): A
 
 private object LongEvenNumDigitsDistribution :
   AbstractEvenNumDigitsDistribution<Long, LongRange>(
-    maxDigits = 19,
+    maxDigitCount = 19,
     fullRange = Long.MIN_VALUE..Long.MAX_VALUE
   ) {
   private val RANGES_BY_DIGIT_COUNT =

@@ -20,7 +20,7 @@ import io.kotest.property.Arb
 import io.kotest.property.arbitrary.choice
 
 internal abstract class AbstractEvenNumDigitsDistribution<T : Comparable<T>, R : ClosedRange<T>>(
-  private val maxDigits: Int,
+  private val maxDigitCount: Int,
   private val fullRange: R
 ) {
   abstract fun getTheoreticalBounds(digitCount: Int): R
@@ -29,11 +29,11 @@ internal abstract class AbstractEvenNumDigitsDistribution<T : Comparable<T>, R :
   abstract fun createArb(range: R): Arb<T>
 
   private val rangesGroupedByDigitCount: List<List<R>> by lazy {
-    (1..maxDigits).mapNotNull { digitCount ->
+    (1..maxDigitCount).mapNotNull { digitCount ->
       val positiveRange = intersect(getTheoreticalBounds(digitCount), fullRange)
       val negativeRange = intersect(getTheoreticalBounds(-digitCount), fullRange)
       val validRanges = listOf(negativeRange, positiveRange).filterNot { isEmpty(it) }
-      if (validRanges.isEmpty()) null else validRanges
+      validRanges.ifEmpty { null }
     }
   }
   fun generate(userRange: R? = null): Arb<T> {

@@ -47,7 +47,7 @@ fun Arb.Companion.nonNegativeIntWithEvenNumDigitsDistribution(min: Int = 0): Arb
 
 private object IntEvenNumDigitsDistribution :
   AbstractEvenNumDigitsDistribution<Int, IntRange>(
-    maxDigits = 10,
+    maxDigitCount = 10,
     fullRange = Int.MIN_VALUE..Int.MAX_VALUE
   ) {
   private val RANGES_BY_DIGIT_COUNT =
