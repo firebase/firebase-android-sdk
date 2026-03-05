@@ -42,7 +42,7 @@ internal abstract class AbstractEvenNumDigitsDistribution<T : Comparable<T>, R :
         rangesGroupedByDigitCount
       } else {
         rangesGroupedByDigitCount
-          .map { it.map { intersect(it, userRange) }.filterNot(::isEmpty) }
+          .map { ranges -> ranges.map { intersect(it, userRange) }.filterNot(::isEmpty) }
           .filterNot { it.isEmpty() }
       }
     val arbs = ranges.map { Arb.choice(it.map(::createArb)) }
