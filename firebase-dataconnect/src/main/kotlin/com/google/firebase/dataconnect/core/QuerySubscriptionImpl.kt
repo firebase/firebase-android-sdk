@@ -71,7 +71,11 @@ internal class QuerySubscriptionImpl<Data, Variables>(query: QueryRefImpl<Data, 
 
   override suspend fun reload() {
     val query = query // save query to a local variable in case it changes.
-    val sequencedResult = query.dataConnect.queryManager.execute(query)
+    val sequencedResult =
+      query.dataConnect.queryManager.execute(
+        query,
+        com.google.firebase.dataconnect.QueryRef.FetchPolicy.PREFER_CACHE
+      )
     updateLastResult(QuerySubscriptionResultImpl(query, sequencedResult))
     sequencedResult.ref.getOrThrow()
   }

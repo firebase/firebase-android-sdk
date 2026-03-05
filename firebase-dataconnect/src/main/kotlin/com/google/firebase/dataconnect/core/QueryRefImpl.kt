@@ -53,7 +53,7 @@ internal class QueryRefImpl<Data, Variables>(
   override suspend fun execute(): QueryResultImpl = execute(FetchPolicy.PREFER_CACHE)
 
   override suspend fun execute(fetchPolicy: FetchPolicy): QueryResultImpl =
-    dataConnect.queryManager.execute(this).let {
+    dataConnect.queryManager.execute(this, fetchPolicy).let {
       val (data, source) = it.ref.getOrThrow()
       QueryResultImpl(data, source)
     }

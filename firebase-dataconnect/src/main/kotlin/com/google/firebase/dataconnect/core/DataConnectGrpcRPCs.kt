@@ -249,7 +249,11 @@ internal class DataConnectGrpcRPCs(
     requestId: String,
     request: ExecuteQueryRequest,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
+    fetchPolicy: com.google.firebase.dataconnect.QueryRef.FetchPolicy,
   ): ExecuteQueryResult {
+    require(fetchPolicy == com.google.firebase.dataconnect.QueryRef.FetchPolicy.PREFER_CACHE) {
+      "Only PREFER_CACHE is supported for now"
+    }
     val (metadata, authToken) = grpcMetadata.get(requestId, callerSdkType)
     val kotlinMethodName = "executeQuery(${request.operationName})"
 

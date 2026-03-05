@@ -63,6 +63,7 @@ internal class DataConnectGrpcClient(
     operationName: String,
     variables: Struct,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
+    fetchPolicy: com.google.firebase.dataconnect.QueryRef.FetchPolicy,
   ): OperationResult {
     val request = executeQueryRequest {
       this.name = requestName
@@ -72,7 +73,7 @@ internal class DataConnectGrpcClient(
 
     val executeQueryResult =
       grpcRPCs.retryOnGrpcUnauthenticatedError(requestId, "executeQuery") {
-        executeQuery(requestId, request, callerSdkType)
+        executeQuery(requestId, request, callerSdkType, fetchPolicy)
       }
 
     return executeQueryResult.toOperationResult()

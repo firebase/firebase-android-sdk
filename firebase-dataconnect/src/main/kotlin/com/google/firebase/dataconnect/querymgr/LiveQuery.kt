@@ -93,6 +93,7 @@ internal class LiveQuery(
     dataDeserializer: DeserializationStrategy<T>,
     dataSerializersModule: SerializersModule?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
+    fetchPolicy: com.google.firebase.dataconnect.QueryRef.FetchPolicy,
   ): SequencedReference<Result<DataSourcePair<T>>> {
     // Register the data deserializer _before_ waiting for the current job to complete. This
     // guarantees that the deserializer will be registered by the time the subsequent job (`newJob`
@@ -116,7 +117,9 @@ internal class LiveQuery(
             currentJob
           } else {
             logger.debug { "creating new job to execute query" }
-            coroutineScope.async { doExecute(callerSdkType) }.also { newJob -> job = newJob }
+            coroutineScope
+              .async { doExecute(callerSdkType, fetchPolicy) }
+              .also { newJob -> job = newJob }
           }
         }
       }
@@ -152,7 +155,14 @@ internal class LiveQuery(
     // executes.
     if (executeQuery) {
       coroutineScope.launch {
-        runCatching { execute(dataDeserializer, dataSerializersModule, callerSdkType) }
+        runCatching {
+          execute(
+            dataDeserializer,
+            dataSerializersModule,
+            callerSdkType,
+            com.google.firebase.dataconnect.QueryRef.FetchPolicy.PREFER_CACHE
+          )
+        }
       }
     }
 
@@ -163,7 +173,10 @@ internal class LiveQuery(
     }
   }
 
-  private suspend fun doExecute(callerSdkType: FirebaseDataConnect.CallerSdkType) {
+  private suspend fun doExecute(
+    callerSdkType: FirebaseDataConnect.CallerSdkType,
+    fetchPolicy: com.google.firebase.dataconnect.QueryRef.FetchPolicy,
+  ) {
     val requestId = "qry" + Random.nextAlphanumericString(length = 10)
     val sequenceNumber = nextSequenceNumber()
 
@@ -177,6 +190,7 @@ internal class LiveQuery(
           operationName = operationName,
           variables = variables,
           callerSdkType = callerSdkType,
+          fetchPolicy = fetchPolicy,
         )
       }
 
