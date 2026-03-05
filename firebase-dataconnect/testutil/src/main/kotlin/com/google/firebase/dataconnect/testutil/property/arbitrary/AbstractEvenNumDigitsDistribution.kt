@@ -23,20 +23,19 @@ internal abstract class AbstractEvenNumDigitsDistribution<T : Comparable<T>, R :
   private val maxDigits: Int,
   private val fullRange: R
 ) {
-  abstract fun getTheoreticalBounds(digitCount: Int, positive: Boolean): R
+  abstract fun getTheoreticalBounds(digitCount: Int): R
   abstract fun intersect(r1: R, r2: R): R
   abstract fun isEmpty(range: R): Boolean
   abstract fun createArb(range: R): Arb<T>
 
   private val rangesGroupedByDigitCount: List<List<R>> by lazy {
     (1..maxDigits).mapNotNull { digitCount ->
-      val positiveRange = intersect(getTheoreticalBounds(digitCount, true), fullRange)
-      val negativeRange = intersect(getTheoreticalBounds(digitCount, false), fullRange)
+      val positiveRange = intersect(getTheoreticalBounds(digitCount), fullRange)
+      val negativeRange = intersect(getTheoreticalBounds(-digitCount), fullRange)
       val validRanges = listOf(negativeRange, positiveRange).filterNot { isEmpty(it) }
       if (validRanges.isEmpty()) null else validRanges
     }
   }
-
   fun generate(userRange: R? = null): Arb<T> {
     val ranges =
       if (userRange == null) {

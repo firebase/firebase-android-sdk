@@ -64,19 +64,20 @@ private object IntEvenNumDigitsDistribution :
       1_000_000_000
     )
 
-  override fun getTheoreticalBounds(digitCount: Int, positive: Boolean): IntRange {
+  override fun getTheoreticalBounds(digitCount: Int): IntRange {
+    val positive = digitCount > 0
+    val count = kotlin.math.abs(digitCount)
     if (positive) {
-      if (digitCount == 1) return 0..9
-      val min = POWERS_OF_TEN[digitCount - 1]
-      val max = if (digitCount == 10) Int.MAX_VALUE else POWERS_OF_TEN[digitCount] - 1
+      if (count == 1) return 0..9
+      val min = POWERS_OF_TEN[count - 1]
+      val max = if (count == 10) Int.MAX_VALUE else POWERS_OF_TEN[count] - 1
       return min..max
     } else {
-      val max = -POWERS_OF_TEN[digitCount - 1]
-      val min = if (digitCount == 10) Int.MIN_VALUE else -(POWERS_OF_TEN[digitCount] - 1)
+      val max = -POWERS_OF_TEN[count - 1]
+      val min = if (count == 10) Int.MIN_VALUE else -(POWERS_OF_TEN[count] - 1)
       return min..max
     }
   }
-
   override fun intersect(r1: IntRange, r2: IntRange): IntRange = r1 intersect r2
   override fun isEmpty(range: IntRange): Boolean = range.isEmpty()
   override fun createArb(range: IntRange): Arb<Int> = Arb.int(range)

@@ -73,19 +73,20 @@ private object LongEvenNumDigitsDistribution :
       1_000_000_000_000_000_000L
     )
 
-  override fun getTheoreticalBounds(digitCount: Int, positive: Boolean): LongRange {
+  override fun getTheoreticalBounds(digitCount: Int): LongRange {
+    val positive = digitCount > 0
+    val count = kotlin.math.abs(digitCount)
     if (positive) {
-      if (digitCount == 1) return 0L..9L
-      val min = POWERS_OF_TEN[digitCount - 1]
-      val max = if (digitCount == 19) Long.MAX_VALUE else POWERS_OF_TEN[digitCount] - 1L
+      if (count == 1) return 0L..9L
+      val min = POWERS_OF_TEN[count - 1]
+      val max = if (count == 19) Long.MAX_VALUE else POWERS_OF_TEN[count] - 1L
       return min..max
     } else {
-      val max = -POWERS_OF_TEN[digitCount - 1]
-      val min = if (digitCount == 19) Long.MIN_VALUE else -(POWERS_OF_TEN[digitCount] - 1L)
+      val max = -POWERS_OF_TEN[count - 1]
+      val min = if (count == 19) Long.MIN_VALUE else -(POWERS_OF_TEN[count] - 1L)
       return min..max
     }
   }
-
   override fun intersect(r1: LongRange, r2: LongRange): LongRange = r1 intersect r2
   override fun isEmpty(range: LongRange): Boolean = range.isEmpty()
   override fun createArb(range: LongRange): Arb<Long> = Arb.long(range)
