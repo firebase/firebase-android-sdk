@@ -29,10 +29,10 @@ internal abstract class AbstractEvenNumDigitsDistribution<T : Comparable<T>, R :
   abstract fun createArb(range: R): Arb<T>
 
   private val rangesGroupedByDigitCount: List<List<R>> by lazy {
-    (1..maxDigitCount).mapNotNull { digitCount ->
-      val positiveRange = intersect(getTheoreticalBounds(digitCount), fullRange)
-      val negativeRange = intersect(getTheoreticalBounds(-digitCount), fullRange)
-      val validRanges = listOf(negativeRange, positiveRange).filterNot { isEmpty(it) }
+    (1..maxDigitCount).mapNotNull {
+      val positiveRange = intersect(getTheoreticalBounds(it), fullRange)
+      val negativeRange = intersect(getTheoreticalBounds(-it), fullRange)
+      val validRanges = listOf(negativeRange, positiveRange).filterNot(::isEmpty)
       validRanges.ifEmpty { null }
     }
   }
@@ -42,10 +42,10 @@ internal abstract class AbstractEvenNumDigitsDistribution<T : Comparable<T>, R :
         rangesGroupedByDigitCount
       } else {
         rangesGroupedByDigitCount
-          .map { group -> group.map { intersect(it, userRange) }.filterNot { isEmpty(it) } }
+          .map { it.map { intersect(it, userRange) }.filterNot(::isEmpty) }
           .filterNot { it.isEmpty() }
       }
-    val arbs = ranges.map { group -> Arb.choice(group.map { createArb(it) }) }
+    val arbs = ranges.map { Arb.choice(it.map(::createArb)) }
     return Arb.choice(arbs)
   }
 }
