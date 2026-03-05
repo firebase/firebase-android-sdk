@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-@file:Suppress("UnusedReceiverParameter")
-
 package com.google.firebase.dataconnect.testutil.property.arbitrary
 
 import com.google.firebase.dataconnect.testutil.intersect

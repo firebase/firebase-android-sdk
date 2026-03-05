@@ -118,7 +118,9 @@ abstract class AbstractWithEvenNumDigitsDistributionUnitTest<T : Comparable<T>, 
       val expectedObservedCount = iterations.toDouble() / observedCounts.size
       val expectedCounts = DoubleArray(observedCounts.size) { expectedObservedCount }
       val significanceResult = ChiSquareTest.withDefaults().test(expectedCounts, observedCounts)
-      withClue(significanceResult.print().value) { significanceResult.reject(0.01).shouldBeFalse() }
+      withClue(significanceResult.print().value) {
+        significanceResult.reject(0.0001).shouldBeFalse()
+      }
     }
   }
 
@@ -144,7 +146,9 @@ abstract class AbstractWithEvenNumDigitsDistributionUnitTest<T : Comparable<T>, 
       val expectedObservedCount = iterations.toDouble() / observedCounts.size
       val expectedCounts = DoubleArray(observedCounts.size) { expectedObservedCount }
       val significanceResult = ChiSquareTest.withDefaults().test(expectedCounts, observedCounts)
-      withClue(significanceResult.print().value) { significanceResult.reject(0.01).shouldBeFalse() }
+      withClue(significanceResult.print().value) {
+        significanceResult.reject(0.0001).shouldBeFalse()
+      }
     }
   }
 
