@@ -16,13 +16,14 @@
 
 package com.google.firebase.dataconnect.querymgr
 
+import com.google.firebase.dataconnect.QueryRef.FetchPolicy
 import com.google.firebase.dataconnect.core.QueryRefImpl
 import com.google.firebase.dataconnect.util.SequencedReference
 
 internal class QueryManager(private val liveQueries: LiveQueries) {
   suspend fun <Data, Variables> execute(
     query: QueryRefImpl<Data, Variables>,
-    fetchPolicy: com.google.firebase.dataconnect.QueryRef.FetchPolicy,
+    fetchPolicy: FetchPolicy,
   ): SequencedReference<Result<DataSourcePair<Data>>> =
     liveQueries.withLiveQuery(query) {
       it.execute(

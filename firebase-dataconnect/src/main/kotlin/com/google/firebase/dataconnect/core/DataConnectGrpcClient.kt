@@ -19,6 +19,7 @@ package com.google.firebase.dataconnect.core
 import com.google.firebase.dataconnect.*
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.DataSource
+import com.google.firebase.dataconnect.QueryRef.FetchPolicy
 import com.google.firebase.dataconnect.core.DataConnectGrpcClientGlobals.toErrorInfoImpl
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import com.google.firebase.dataconnect.util.ProtoUtil.decodeFromStruct
@@ -63,7 +64,7 @@ internal class DataConnectGrpcClient(
     operationName: String,
     variables: Struct,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
-    fetchPolicy: com.google.firebase.dataconnect.QueryRef.FetchPolicy,
+    fetchPolicy: FetchPolicy,
   ): OperationResult {
     val request = executeQueryRequest {
       this.name = requestName

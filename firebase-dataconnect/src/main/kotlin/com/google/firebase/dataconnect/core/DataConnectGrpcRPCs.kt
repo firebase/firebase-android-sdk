@@ -21,6 +21,7 @@ import com.google.android.gms.security.ProviderInstaller
 import com.google.firebase.dataconnect.DataConnectPath
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.FirebaseDataConnect
+import com.google.firebase.dataconnect.QueryRef.FetchPolicy
 import com.google.firebase.dataconnect.core.DataConnectGrpcMetadata.Companion.toStructProto
 import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
@@ -249,11 +250,9 @@ internal class DataConnectGrpcRPCs(
     requestId: String,
     request: ExecuteQueryRequest,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
-    fetchPolicy: com.google.firebase.dataconnect.QueryRef.FetchPolicy,
+    fetchPolicy: FetchPolicy,
   ): ExecuteQueryResult {
-    require(fetchPolicy == com.google.firebase.dataconnect.QueryRef.FetchPolicy.PREFER_CACHE) {
-      "Only PREFER_CACHE is supported for now"
-    }
+    require(fetchPolicy == FetchPolicy.PREFER_CACHE) { "Only PREFER_CACHE is supported for now" }
     val (metadata, authToken) = grpcMetadata.get(requestId, callerSdkType)
     val kotlinMethodName = "executeQuery(${request.operationName})"
 

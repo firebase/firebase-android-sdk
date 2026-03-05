@@ -17,6 +17,7 @@
 package com.google.firebase.dataconnect.querymgr
 
 import com.google.firebase.dataconnect.FirebaseDataConnect
+import com.google.firebase.dataconnect.QueryRef.FetchPolicy
 import com.google.firebase.dataconnect.core.DataConnectGrpcClient
 import com.google.firebase.dataconnect.core.DataConnectGrpcClient.OperationResult
 import com.google.firebase.dataconnect.core.Logger
@@ -93,7 +94,7 @@ internal class LiveQuery(
     dataDeserializer: DeserializationStrategy<T>,
     dataSerializersModule: SerializersModule?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
-    fetchPolicy: com.google.firebase.dataconnect.QueryRef.FetchPolicy,
+    fetchPolicy: FetchPolicy,
   ): SequencedReference<Result<DataSourcePair<T>>> {
     // Register the data deserializer _before_ waiting for the current job to complete. This
     // guarantees that the deserializer will be registered by the time the subsequent job (`newJob`
@@ -156,12 +157,7 @@ internal class LiveQuery(
     if (executeQuery) {
       coroutineScope.launch {
         runCatching {
-          execute(
-            dataDeserializer,
-            dataSerializersModule,
-            callerSdkType,
-            com.google.firebase.dataconnect.QueryRef.FetchPolicy.PREFER_CACHE
-          )
+          execute(dataDeserializer, dataSerializersModule, callerSdkType, FetchPolicy.PREFER_CACHE)
         }
       }
     }
@@ -175,7 +171,7 @@ internal class LiveQuery(
 
   private suspend fun doExecute(
     callerSdkType: FirebaseDataConnect.CallerSdkType,
-    fetchPolicy: com.google.firebase.dataconnect.QueryRef.FetchPolicy,
+    fetchPolicy: FetchPolicy,
   ) {
     val requestId = "qry" + Random.nextAlphanumericString(length = 10)
     val sequenceNumber = nextSequenceNumber()
