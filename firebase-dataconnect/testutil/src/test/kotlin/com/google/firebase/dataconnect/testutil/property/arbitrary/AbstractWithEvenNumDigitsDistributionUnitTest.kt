@@ -150,13 +150,11 @@ abstract class AbstractWithEvenNumDigitsDistributionUnitTest<T : Comparable<T>, 
       assertGreaterThanOrEqual(value, zero)
     }
   }
-
-  companion object {
-    internal val propTestConfig =
-      PropTestConfig(
-        iterations = 1000,
-        edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.2),
-        shrinkingMode = ShrinkingMode.Off,
-      )
-  }
 }
+
+private val propTestConfig =
+  PropTestConfig(
+    iterations = 1000,
+    edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.2),
+    shrinkingMode = ShrinkingMode.Off,
+  )
