@@ -22,6 +22,7 @@ import com.google.firebase.dataconnect.CacheSettings
 import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.DataConnectSettings
+import io.kotest.assertions.print.print
 import io.kotest.property.Arb
 import io.kotest.property.RandomSource
 import io.kotest.property.arbitrary.Codepoint
@@ -69,7 +70,46 @@ object DataConnectArb {
   fun string(length: IntRange = 0..100, codepoints: Arb<Codepoint>? = null): Arb<String> =
     Arb.string(length, codepoints ?: DataConnectArb.codepoints)
 
-  fun float(): Arb<Double> = Arb.double().filterNot { it.isNaN() || it.isInfinite() }
+  data class FloatRoundTrip(val float: Double) {
+
+    val roundTripFloat: Double = roundTripFloat(float)
+
+    override fun toString() =
+      "FloatRoundTrip(float=${float.print().value}, roundTripFloat=${roundTripFloat.print().value})"
+
+    companion object {
+
+      // -0.0 gets coerced to 0.0 due to lack of JSONB support for -0.0 (see b/339440054).
+      fun roundTripFloat(float: Double): Double = if (float != -0.0) float else 0.0
+
+      @JvmName("dataConnectRoundTripValue_Double")
+      fun Double.dataConnectRoundTripValue(): Double = roundTripFloat(this)
+
+      @JvmName("dataConnectRoundTripValue_NullableDouble")
+      fun Double?.dataConnectRoundTripValue(): Double? = this?.dataConnectRoundTripValue()
+
+      @JvmName("dataConnectRoundTripValue_List_Double")
+      fun List<Double>.dataConnectRoundTripValue(): List<Double> = map {
+        it.dataConnectRoundTripValue()
+      }
+
+      @JvmName("dataConnectRoundTripValue_NullableList_Double")
+      fun List<Double>?.dataConnectRoundTripValue(): List<Double>? =
+        this?.map { it.dataConnectRoundTripValue() }
+
+      @JvmName("dataConnectRoundTripValue_List_NullableDouble")
+      fun List<Double?>.dataConnectRoundTripValue(): List<Double?> = map {
+        it?.dataConnectRoundTripValue()
+      }
+
+      @JvmName("dataConnectRoundTripValue_NullableList_NullableDouble")
+      fun List<Double?>?.dataConnectRoundTripValue(): List<Double?>? =
+        this?.map { it?.dataConnectRoundTripValue() }
+    }
+  }
+
+  fun float(): Arb<FloatRoundTrip> =
+    Arb.double().filterNot { it.isNaN() || it.isInfinite() }.map(::FloatRoundTrip)
 
   fun id(length: Int = 20): Arb<String> = Arb.string(size = length, Codepoint.alphanumeric())
 

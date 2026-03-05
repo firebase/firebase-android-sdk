@@ -167,6 +167,14 @@ internal class ProtoValueDecoder(
     decodeNull(valueProto, path)
     return null
   }
+
+  override fun <T> decodeSerializableValue(deserializer: DeserializationStrategy<T>): T =
+    if (deserializer is AnyValueSerializer) {
+      @Suppress("UNCHECKED_CAST")
+      AnyValue(valueProto) as T
+    } else {
+      super.decodeSerializableValue(deserializer)
+    }
 }
 
 private class ProtoStructValueDecoder(

@@ -4,6 +4,8 @@
   ([#7814](https://github.com/firebase/firebase-android-sdk/pull/7814),
   [#7833](https://github.com/firebase/firebase-android-sdk/pull/7833),
   [#7848](https://github.com/firebase/firebase-android-sdk/pull/7848))
+- [fixed] Fix UnsupportedOperationException when serializing lists of *nullable* AnyValue.
+  ([#7864](https://github.com/firebase/firebase-android-sdk/pull/7864))
 
 # 17.1.4
 

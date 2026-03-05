@@ -111,10 +111,7 @@ fun ProtoArb.valueOfKind(kindCase: Value.KindCase): Arb<Value> =
     Value.KindCase.LIST_VALUE -> listValue().map { it.toValueProto() }
   }
 
-fun ProtoArb.value(
-  exclude: Value.KindCase? = null,
-  structKey: Arb<String> = structKey()
-): Arb<Value> {
+fun ProtoArb.value(exclude: Value.KindCase): Arb<Value> {
   val arbs = buildList {
     if (exclude != Value.KindCase.KIND_NOT_SET) {
       add(kindNotSetValue())
@@ -132,13 +129,49 @@ fun ProtoArb.value(
       add(boolValue())
     }
     if (exclude != Value.KindCase.STRUCT_VALUE) {
-      add(struct(key = structKey).map { it.toValueProto() })
+      add(struct().map { it.toValueProto() })
     }
     if (exclude != Value.KindCase.LIST_VALUE) {
-      add(listValue(structKey = structKey).map { it.toValueProto() })
+      add(listValue().map { it.toValueProto() })
     }
   }
   return Arb.choice(arbs)
+}
+
+fun ProtoArb.value(
+  recursiveExcludes: Set<Value.KindCase> = emptySet(),
+  structKey: Arb<String> = structKey()
+): Arb<Value> {
+  val scalarArbs = buildList {
+    if (Value.KindCase.KIND_NOT_SET !in recursiveExcludes) {
+      add(kindNotSetValue())
+    }
+    if (Value.KindCase.NULL_VALUE !in recursiveExcludes) {
+      add(nullValue())
+    }
+    if (Value.KindCase.NUMBER_VALUE !in recursiveExcludes) {
+      add(numberValue())
+    }
+    if (Value.KindCase.STRING_VALUE !in recursiveExcludes) {
+      add(stringValue())
+    }
+    if (Value.KindCase.BOOL_VALUE !in recursiveExcludes) {
+      add(boolValue())
+    }
+  }
+
+  val scalarValueArb = Arb.choice(scalarArbs)
+
+  val compositeArbs = buildList {
+    if (Value.KindCase.STRUCT_VALUE !in recursiveExcludes) {
+      add(struct(key = structKey, scalarValue = scalarValueArb).map { it.toValueProto() })
+    }
+    if (Value.KindCase.LIST_VALUE !in recursiveExcludes) {
+      add(listValue(structKey = structKey, scalarValue = scalarValueArb).map { it.toValueProto() })
+    }
+  }
+
+  return Arb.choice(scalarArbs + compositeArbs)
 }
 
 fun ProtoExhaustive.nullValue(): Exhaustive<Value> =

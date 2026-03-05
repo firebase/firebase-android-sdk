@@ -21,12 +21,10 @@ package com.google.firebase.dataconnect.testutil.property.arbitrary
 import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
 import com.google.firebase.dataconnect.testutil.countBase10Digits
 import com.google.firebase.dataconnect.testutil.registerDataConnectKotestTestutilPrinters
-import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.print.print
 import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.booleans.shouldBeFalse
-import io.kotest.matchers.comparables.shouldBeGreaterThan
 import io.kotest.matchers.longs.shouldBeGreaterThanOrEqual
 import io.kotest.matchers.ranges.shouldBeIn
 import io.kotest.property.Arb
@@ -60,23 +58,26 @@ class LongWithEvenNumDigitsDistributionUnitTest {
   fun `longWithEvenNumDigitsDistribution produces both positive and negative values`() = runTest {
     var positiveCount = 0
     var negativeCount = 0
-    var zeroCount = 0
 
     checkAll(propTestConfig, Arb.longWithEvenNumDigitsDistribution()) { value ->
       if (value > 0) {
         positiveCount++
       } else if (value < 0) {
         negativeCount++
-      } else {
-        check(value == 0L)
-        zeroCount++
       }
     }
 
-    assertSoftly {
-      withClue("positiveCount") { positiveCount shouldBeGreaterThan 0 }
-      withClue("negativeCount") { negativeCount shouldBeGreaterThan 0 }
-      withClue("zeroCount") { zeroCount shouldBeGreaterThan 0 }
+    check(positiveCount > 0 && negativeCount > 0)
+    withClue("positiveCount=$positiveCount, negativeCount=$negativeCount") {
+      val iterations = positiveCount + negativeCount
+      val observedCounts = longArrayOf(positiveCount.toLong(), negativeCount.toLong())
+      val expectedObservedCount = iterations.toDouble() / observedCounts.size
+      val expectedCounts = DoubleArray(observedCounts.size) { expectedObservedCount }
+      val significanceResult = ChiSquareTest.withDefaults().test(expectedCounts, observedCounts)
+      withClue(significanceResult.print().value) {
+        // Note: Larger values to reject() make stronger guarantees of lack of bias.
+        significanceResult.reject(0.01).shouldBeFalse()
+      }
     }
   }
 
