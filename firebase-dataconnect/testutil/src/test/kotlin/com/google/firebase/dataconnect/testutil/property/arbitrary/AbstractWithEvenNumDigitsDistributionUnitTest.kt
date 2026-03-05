@@ -61,10 +61,19 @@ abstract class AbstractWithEvenNumDigitsDistributionUnitTest<T : Comparable<T>, 
     registerDataConnectKotestTestutilPrinters()
   }
 
-  /** Returns the sign of the given [value] (-1, 0, or 1). */
+  /**
+   * Returns the sign of the given [value] (-1, 0, or 1).
+   *
+   * The returned value must have the same semantics as [Int.sign] and [Long.sign].
+   */
   abstract fun getSign(value: T): Int
 
-  /** Returns the number of base-10 digits in the given [value]. */
+  /**
+   * Returns the number of base-10 digits in the given [value].
+   *
+   * If the value is negative, the returned count should be the number of digits in the absolute
+   * value (e.g., -123 should return 3).
+   */
   abstract fun countBase10Digits(value: T): Int
 
   /** Returns an [Arb] for the distribution being tested. */
