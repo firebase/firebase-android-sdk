@@ -52,13 +52,10 @@ abstract class AbstractWithEvenNumDigitsDistributionUnitTest<T : Comparable<T>, 
   private val maxDigitCount: Int,
   private val zero: T
 ) {
-  /** A JUnit rule that handles random seeding for property-based tests. */
   @get:Rule(order = Int.MIN_VALUE) val randomSeedTestRule = RandomSeedTestRule()
 
-  /** The [RandomSource] provided by the [randomSeedTestRule]. */
   protected val rs: RandomSource by randomSeedTestRule.rs
 
-  /** Registers custom Kotest printers before each test. */
   @Before
   fun registerPrinters() {
     registerDataConnectKotestTestutilPrinters()
