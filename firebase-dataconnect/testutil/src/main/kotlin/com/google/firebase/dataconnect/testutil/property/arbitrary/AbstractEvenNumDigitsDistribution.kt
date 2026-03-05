@@ -24,7 +24,7 @@ internal abstract class AbstractEvenNumDigitsDistribution<T : Comparable<T>, R :
   private val fullRange: R
 ) {
   abstract fun getTheoreticalBounds(digitCount: Int): R
-  abstract fun intersect(r1: R, r2: R): R
+  abstract fun intersect(range1: R, range2: R): R
   abstract fun isEmpty(range: R): Boolean
   abstract fun createArb(range: R): Arb<T>
 
