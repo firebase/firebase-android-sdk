@@ -252,7 +252,9 @@ internal class DataConnectGrpcRPCs(
     callerSdkType: FirebaseDataConnect.CallerSdkType,
     fetchPolicy: FetchPolicy,
   ): ExecuteQueryResult {
-    require(fetchPolicy == FetchPolicy.PREFER_CACHE) { "Only PREFER_CACHE is supported for now" }
+    require(fetchPolicy == FetchPolicy.PREFER_CACHE || fetchPolicy == FetchPolicy.CACHE_ONLY) {
+      "Only PREFER_CACHE and CACHE_ONLY are supported for now"
+    }
     val (metadata, authToken) = grpcMetadata.get(requestId, callerSdkType)
     val kotlinMethodName = "executeQuery(${request.operationName})"
 
@@ -285,6 +287,18 @@ internal class DataConnectGrpcRPCs(
           )
         is DataConnectCacheDatabase.GetQueryResultResult.NotFound -> {}
       }
+    }
+
+    if (fetchPolicy == FetchPolicy.CACHE_ONLY) {
+      val message =
+        "Query data for operation '${request.operationName}' was not found in the local cache or has expired."
+      val exception = com.google.firebase.dataconnect.CachedDataNotFoundException(message)
+      logger.logGrpcFailed(
+        requestId = requestId,
+        kotlinMethodName = kotlinMethodName,
+        throwable = exception,
+      )
+      throw exception
     }
 
     val result = lazyGrpcStub.get().runCatching { executeQuery(request, metadata) }
