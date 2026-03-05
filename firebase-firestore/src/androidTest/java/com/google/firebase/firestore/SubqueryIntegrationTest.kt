@@ -718,7 +718,7 @@ class SubqueryIntegrationTest {
       db
         .pipeline()
         .collection(reviewsCollName)
-        .where(equal("authorName", variable("doc").mapGet("author")))
+        .where(equal("authorName", variable("doc").getField("author")))
         .select(field("reviewer").alias("reviewer"))
 
     val results =
@@ -809,7 +809,7 @@ class SubqueryIntegrationTest {
       db
         .pipeline()
         .collection(reviewsCollName)
-        .where(equal("bookId", variable("doc").mapGet("does_not_exist")))
+        .where(equal("bookId", variable("doc").getField("does_not_exist")))
         .select(field("reviewer").alias("reviewer"))
 
     val results =
@@ -823,6 +823,9 @@ class SubqueryIntegrationTest {
           .select("title", "reviews")
           .execute()
       )
+
+    assertThat(results.map { it.getData() })
+      .containsExactly(mapOf("title" to "1984", "reviews" to emptyList<Any>()))
   }
 
   @Test
