@@ -36,27 +36,59 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
+/**
+ * An abstract base class for unit testing [Arb]s that generate numbers with a distribution that is
+ * even across the number of digits.
+ *
+ * This class provides a common set of tests to ensure that the distribution is unbiased across
+ * digit counts and respects given ranges.
+ *
+ * @param T The numeric type (e.g., [Int], [Long]).
+ * @param R The range type (e.g., [IntRange], [LongRange]).
+ * @property maxDigitCount The maximum number of base-10 digits supported by the type [T].
+ * @property zero The value representing zero for the type [T].
+ */
 abstract class AbstractWithEvenNumDigitsDistributionUnitTest<T : Comparable<T>, R : ClosedRange<T>>(
   private val maxDigitCount: Int,
   private val zero: T
 ) {
+  /** A JUnit rule that handles random seeding for property-based tests. */
   @get:Rule(order = Int.MIN_VALUE) val randomSeedTestRule = RandomSeedTestRule()
 
+  /** The [RandomSource] provided by the [randomSeedTestRule]. */
   protected val rs: RandomSource by randomSeedTestRule.rs
 
+  /** Registers custom Kotest printers before each test. */
   @Before
   fun registerPrinters() {
     registerDataConnectKotestTestutilPrinters()
   }
 
+  /** Returns the sign of the given [value] (-1, 0, or 1). */
   abstract fun getSign(value: T): Int
+
+  /** Returns the number of base-10 digits in the given [value]. */
   abstract fun countBase10Digits(value: T): Int
+
+  /** Returns an [Arb] for the distribution being tested. */
   abstract fun arbDistribution(): Arb<T>
+
+  /** Returns an [Arb] for the distribution restricted to the given [range]. */
   abstract fun arbDistribution(range: R): Arb<T>
+
+  /** Returns an [Arb] for the distribution that only produces non-negative values. */
   abstract fun arbNonNegativeDistribution(): Arb<T>
+
+  /** Returns an [Arb] that generates valid ranges [R] for the type [T]. */
   abstract fun arbRange(): Arb<R>
+
+  /** Returns an [Arb] that generates ranges [R] spanning multiple digit counts. */
   abstract fun arbMultipleDigitsRange(): Arb<R>
+
+  /** Asserts that the given [value] is within the specified [range]. */
   abstract fun assertIn(value: T, range: R)
+
+  /** Asserts that the given [value] is greater than or equal to the [limit]. */
   abstract fun assertGreaterThanOrEqual(value: T, limit: T)
 
   @Test
