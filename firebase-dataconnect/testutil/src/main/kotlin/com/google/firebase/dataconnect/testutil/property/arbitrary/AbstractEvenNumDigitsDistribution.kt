@@ -19,13 +19,48 @@ package com.google.firebase.dataconnect.testutil.property.arbitrary
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.choice
 
+/**
+ * An abstract base class for generating Kotest [Arb] (Arbitraries) that produce numbers with a
+ * uniform distribution across their number of digits (in base-10 string representation).
+ *
+ * This class ensures that a 1-digit number has the same probability of being generated as a
+ * 10-digit number. It achieves this by dynamically calculating the valid ranges for each possible
+ * digit count, clamping them to the requested boundaries, and then using [Arb.choice] to first
+ * uniformly pick a digit count, and then pick a value within that count.
+ *
+ * @param T The numeric type (e.g., [Int], [Long]).
+ * @param R The range type (e.g., [IntRange], [LongRange]).
+ * @property maxDigitCount The maximum number of digits possible for the numeric type [T] (e.g., 10
+ * for [Int], 19 for [Long]).
+ * @property fullRange The absolute minimum and maximum bounds for the numeric type [T] (e.g.,
+ * `Int.MIN_VALUE..Int.MAX_VALUE`).
+ */
 internal abstract class AbstractEvenNumDigitsDistribution<T : Comparable<T>, R : ClosedRange<T>>(
   private val maxDigitCount: Int,
   private val fullRange: R
 ) {
+  /**
+   * Returns the theoretical numeric bounds for a given [digitCount].
+   *
+   * The [digitCount] is signed; a positive value requests the bounds for positive numbers with that
+   * many digits, while a negative value requests the bounds for negative numbers. For example, a
+   * `digitCount` of `2` should return the range `10..99`, and `-2` should return `-99..-10`.
+   */
   abstract fun getTheoreticalBounds(digitCount: Int): R
+
+  /**
+   * Returns the mathematical intersection of [range1] and [range2]. If the ranges do not overlap,
+   * an empty range should be returned.
+   */
   abstract fun intersect(range1: R, range2: R): R
+
+  /** Returns true if the given [range] is empty (contains no elements). */
   abstract fun isEmpty(range: R): Boolean
+
+  /**
+   * Creates an [Arb] that generates values uniformly distributed within the given [range]. This
+   * typically delegates to standard Kotest arbitraries like [io.kotest.property.arbitrary.int].
+   */
   abstract fun createArb(range: R): Arb<T>
 
   private val rangesGroupedByDigitCount: List<List<R>> by lazy {
@@ -36,6 +71,13 @@ internal abstract class AbstractEvenNumDigitsDistribution<T : Comparable<T>, R :
       validRanges.ifEmpty { null }
     }
   }
+
+  /**
+   * Generates the final [Arb] that produces values uniformly across digit counts.
+   *
+   * @param userRange An optional explicit range to restrict the generated values to. If provided,
+   * the internal digit-grouped ranges will be intersected with this range.
+   */
   fun generate(userRange: R? = null): Arb<T> {
     val ranges =
       if (userRange == null) {
