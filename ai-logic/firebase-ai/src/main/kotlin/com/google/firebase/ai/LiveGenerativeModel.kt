@@ -105,7 +105,7 @@ internal constructor(
    * connection with the server.
    */
   @OptIn(ExperimentalSerializationApi::class)
-  public suspend fun connect(): LiveSession {
+  public suspend fun connect(sessionResumption: SessionResumptionConfig? = null): LiveSession {
     val clientMessage =
       LiveClientSetupMessage(
           modelName,
@@ -113,7 +113,9 @@ internal constructor(
           tools.map { it.toInternal() }.takeIf { it.isNotEmpty() },
           systemInstruction?.toInternal(),
           config?.inputAudioTranscription?.toInternal(),
-          config?.outputAudioTranscription?.toInternal()
+          config?.outputAudioTranscription?.toInternal(),
+          sessionResumption?.toInternal(),
+          config?.contextWindowCompression?.toInternal()
         )
         .toInternal()
     val data: String = Json.encodeToString(clientMessage)
