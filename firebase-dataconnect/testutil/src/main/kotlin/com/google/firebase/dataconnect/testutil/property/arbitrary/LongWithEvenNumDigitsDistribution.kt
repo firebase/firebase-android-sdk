@@ -92,9 +92,8 @@ private object LongEvenNumDigitsDistribution :
       19 to 1_000_000_000_000_000_000L..Long.MAX_VALUE
     )
 
-  override fun getTheoreticalBounds(digitCount: Int): LongRange =
-    RANGES_BY_DIGIT_COUNT.getValue(digitCount)
-  override fun intersect(range1: LongRange, range2: LongRange): LongRange = range1 intersect range2
-  override fun isEmpty(range: LongRange): Boolean = range.isEmpty()
-  override fun createArb(range: LongRange): Arb<Long> = Arb.long(range)
+  override fun getTheoreticalBounds(digitCount: Int) = RANGES_BY_DIGIT_COUNT.getValue(digitCount)
+  override fun intersect(range1: LongRange, range2: LongRange) = range1 intersect range2
+  override fun isEmpty(range: LongRange) = range.isEmpty()
+  override fun createArb(range: LongRange) = Arb.long(range)
 }

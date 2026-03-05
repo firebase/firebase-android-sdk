@@ -74,9 +74,8 @@ private object IntEvenNumDigitsDistribution :
       10 to 1_000_000_000..Int.MAX_VALUE
     )
 
-  override fun getTheoreticalBounds(digitCount: Int): IntRange =
-    RANGES_BY_DIGIT_COUNT.getValue(digitCount)
-  override fun intersect(range1: IntRange, range2: IntRange): IntRange = range1 intersect range2
-  override fun isEmpty(range: IntRange): Boolean = range.isEmpty()
-  override fun createArb(range: IntRange): Arb<Int> = Arb.int(range)
+  override fun getTheoreticalBounds(digitCount: Int) = RANGES_BY_DIGIT_COUNT.getValue(digitCount)
+  override fun intersect(range1: IntRange, range2: IntRange) = range1 intersect range2
+  override fun isEmpty(range: IntRange) = range.isEmpty()
+  override fun createArb(range: IntRange) = Arb.int(range)
 }
