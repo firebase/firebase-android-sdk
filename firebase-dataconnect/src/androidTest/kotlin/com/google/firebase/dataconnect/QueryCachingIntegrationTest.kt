@@ -359,6 +359,75 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
     return CachingConnector(dataConnect)
   }
 
+  /**
+   * Performs a standardized property-based test to verify normalization and caching behavior for a
+   * specific data type.
+   *
+   * This function ensures that when data is inserted, updated, and queried using various methods
+   * (get by key, get by tag, using different query operations), the caching mechanism correctly
+   * returns the expected values from the appropriate data source (SERVER or CACHE).
+   *
+   * The test follows this sequence for each generated set of values:
+   * 1. **Initial Insert**: Inserts `value1` with a random `tag`.
+   * 2. **Query 1**: Fetches the value by key using `getValue`. Asserts it matches `value1` and
+   * ```
+   *    comes from `SERVER`.
+   * ```
+   * 3. **Update 1**: Updates the record to `value2`.
+   * 4. **Query 2a**: Fetches the value by key using `getValue2`. Asserts it matches `value2` and
+   * ```
+   *    comes from `SERVER` (since it's a new query operation).
+   * ```
+   * 5. **Query 2b**: Fetches the value by key using `getValue`. Asserts it matches `value2` and
+   * ```
+   *    comes from `CACHE` (as it was updated by the server in the previous step).
+   * ```
+   * 6. **Update 2**: Updates the record to `value3`.
+   * 7. **Query 3a**: Fetches values by tag using `getValuesByTag`. Asserts it contains `value3`
+   * ```
+   *    and comes from `SERVER`.
+   * ```
+   * 8. **Query 3b & 3c**: Fetches the value by key using `getValue2` and `getValue`. Asserts
+   * ```
+   *    they match `value3` and come from `CACHE`.
+   * ```
+   * 9. **Insert & Update**: Inserts a new record with `value5` and the same `tag`, and updates
+   * ```
+   *    the first record to `value4`.
+   * ```
+   * 10. **Query 4a**: Fetches values by tag using `getValuesByTag2`. Asserts it contains
+   * ```
+   *     `value4` and `value5` and comes from `SERVER`.
+   * ```
+   * 11. **Query 4b, 4c, 4d**: Fetches values by tag/key using `getValuesByTag`, `getValue2`,
+   * ```
+   *     and `getValue`. Asserts they match `value4` and come from `CACHE`.
+   *
+   * @param T
+   * ```
+   * The raw data type being tested (e.g., [String], [Float]).
+   * @param D The data type returned by single-item queries (e.g., [CachingConnector.Data.StringGet]
+   * ).
+   * @param DMany The data type returned by multi-item queries (e.g.,
+   * [CachingConnector.Data.StringGetMany]).
+   * @param valueArb An [Arb] that generates random values of type [T].
+   * @param insertValue A function that inserts a value of type [T] with a given tag into the
+   * database and returns its [CachingConnector.Key].
+   * @param updateValue A function that updates the record associated with a [CachingConnector.Key]
+   * to a new value of type [T].
+   * @param getValue A function that retrieves a single record by its [CachingConnector.Key] using
+   * the first "get by key" query operation.
+   * @param getValue2 A function that retrieves a single record by its [CachingConnector.Key] using
+   * the second "get by key" query operation.
+   * @param getValuesByTag A function that retrieves all records associated with a tag using the
+   * first "get by tag" query operation.
+   * @param getValuesByTag2 A function that retrieves all records associated with a tag using the
+   * second "get by tag" query operation.
+   * @param shouldBe An assertion function that verifies a [QueryResult] of type [D] matches the
+   * expected value of type [T] and came from the expected [DataSource].
+   * @param shouldBeMany An assertion function that verifies a [QueryResult] of type [DMany]
+   * contains the expected collection of values of type [T] and came from the expected [DataSource].
+   */
   private fun <T, D, DMany> testNormalizedValue(
     valueArb: Arb<T>,
     insertValue: suspend CachingConnector.(value: T, tag: String) -> CachingConnector.Key,
