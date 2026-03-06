@@ -35,18 +35,10 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.quintuple
 import com.google.firebase.dataconnect.testutil.property.arbitrary.value
 import com.google.firebase.dataconnect.testutil.schemas.CachingConnector
 import com.google.firebase.dataconnect.testutil.schemas.shouldBe
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetAnyValue
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetAnyValue2
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetAnyValuesByTag
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetAnyValuesByTag2
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetMixed
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetMixed2
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetMixedsByTag
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetMixedsByTag2
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableAnyValue
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableAnyValue2
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableAnyValuesByTag
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableAnyValuesByTag2
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetString
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.util.nextAlphanumericString
@@ -561,130 +553,36 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
     )
 
   @Test
-  fun normalizedAnyValue() = runTest {
-    val connector = newCachingConnector()
-    val anyValueArb = anyValueArb().quintuple()
-    checkAll(propTestConfig, anyValueArb) { (any1, any2, any3, any4, any5) ->
-      val tag = randomTag()
-      val key = connector.insertAnyValue(any1.value, tag)
-      connector.verifyGetAnyValue(key, fetchPolicy = null, "query1a", any1.roundTripValue, SERVER)
-      connector.updateAnyValue(key, any2.value)
-      connector.verifyGetAnyValue2(key, fetchPolicy = null, "query2a", any2.roundTripValue, SERVER)
-      connector.verifyGetAnyValue(key, fetchPolicy = null, "query2b", any2.roundTripValue, CACHE)
-      connector.updateAnyValue(key, any3.value)
-      connector.verifyGetAnyValuesByTag(
-        tag,
-        fetchPolicy = null,
-        "query3a",
-        any3.roundTripValue,
-        SERVER
-      )
-      connector.verifyGetAnyValue2(key, fetchPolicy = null, "query3b", any3.roundTripValue, CACHE)
-      connector.verifyGetAnyValue(key, fetchPolicy = null, "query3c", any3.roundTripValue, CACHE)
-      connector.insertAnyValue(any5.value, tag)
-      connector.updateAnyValue(key, any4.value)
-      connector.verifyGetAnyValuesByTag2(
-        tag,
-        fetchPolicy = null,
-        "query4a",
-        listOf(any4, any5).map { it.roundTripValue },
-        SERVER
-      )
-      connector.verifyGetAnyValuesByTag(
-        tag,
-        fetchPolicy = null,
-        "query4b",
-        any4.roundTripValue,
-        CACHE
-      )
-      connector.verifyGetAnyValue2(key, fetchPolicy = null, "query4c", any4.roundTripValue, CACHE)
-      connector.verifyGetAnyValue(key, fetchPolicy = null, "query4d", any4.roundTripValue, CACHE)
-    }
-  }
+  fun normalizedAnyValue() =
+    testNormalizedValue(
+      valueArb = anyValueArb(),
+      insertValue = { value, tag -> insertAnyValue(value.value, tag) },
+      updateValue = { key, newValue -> updateAnyValue(key, newValue.value) },
+      getValue = CachingConnector::getAnyValue,
+      getValue2 = CachingConnector::getAnyValue2,
+      getValuesByTag = CachingConnector::getAnyValuesByTag,
+      getValuesByTag2 = CachingConnector::getAnyValuesByTag2,
+      shouldBe = { expected, dataSource -> shouldBe(expected.roundTripValue, dataSource) },
+      shouldBeMany = { expected, dataSource ->
+        shouldBe(expected.map { it.roundTripValue }, dataSource)
+      },
+    )
 
   @Test
-  fun normalizedNullableAnyValue() = runTest {
-    val connector = newCachingConnector()
-    val anyValueArb = anyValueArb().orNull(nullProbability = 0.2).quintuple()
-    checkAll(propTestConfig, anyValueArb) { (any1, any2, any3, any4, any5) ->
-      val tag = randomTag()
-      val key = connector.insertNullableAnyValue(any1?.value, tag)
-      connector.verifyGetNullableAnyValue(
-        key,
-        fetchPolicy = null,
-        "query1a",
-        any1?.roundTripValue,
-        SERVER
-      )
-      connector.updateNullableAnyValue(key, any2?.value)
-      connector.verifyGetNullableAnyValue2(
-        key,
-        fetchPolicy = null,
-        "query2a",
-        any2?.roundTripValue,
-        SERVER
-      )
-      connector.verifyGetNullableAnyValue(
-        key,
-        fetchPolicy = null,
-        "query2b",
-        any2?.roundTripValue,
-        CACHE
-      )
-      connector.updateNullableAnyValue(key, any3?.value)
-      connector.verifyGetNullableAnyValuesByTag(
-        tag,
-        fetchPolicy = null,
-        "query3a",
-        any3?.roundTripValue,
-        SERVER
-      )
-      connector.verifyGetNullableAnyValue2(
-        key,
-        fetchPolicy = null,
-        "query3b",
-        any3?.roundTripValue,
-        CACHE
-      )
-      connector.verifyGetNullableAnyValue(
-        key,
-        fetchPolicy = null,
-        "query3c",
-        any3?.roundTripValue,
-        CACHE
-      )
-      connector.insertNullableAnyValue(any5?.value, tag)
-      connector.updateNullableAnyValue(key, any4?.value)
-      connector.verifyGetNullableAnyValuesByTag2(
-        tag,
-        fetchPolicy = null,
-        "query4a",
-        listOf(any4, any5).map { it?.roundTripValue },
-        SERVER
-      )
-      connector.verifyGetNullableAnyValuesByTag(
-        tag,
-        fetchPolicy = null,
-        "query4b",
-        any4?.roundTripValue,
-        CACHE
-      )
-      connector.verifyGetNullableAnyValue2(
-        key,
-        fetchPolicy = null,
-        "query4c",
-        any4?.roundTripValue,
-        CACHE
-      )
-      connector.verifyGetNullableAnyValue(
-        key,
-        fetchPolicy = null,
-        "query4d",
-        any4?.roundTripValue,
-        CACHE
-      )
-    }
-  }
+  fun normalizedNullableAnyValue() =
+    testNormalizedValue(
+      valueArb = anyValueArb().orNull(nullProbability = 0.2),
+      insertValue = { value, tag -> insertNullableAnyValue(value?.value, tag) },
+      updateValue = { key, newValue -> updateNullableAnyValue(key, newValue?.value) },
+      getValue = CachingConnector::getNullableAnyValue,
+      getValue2 = CachingConnector::getNullableAnyValue2,
+      getValuesByTag = CachingConnector::getNullableAnyValuesByTag,
+      getValuesByTag2 = CachingConnector::getNullableAnyValuesByTag2,
+      shouldBe = { expected, dataSource -> shouldBe(expected?.roundTripValue, dataSource) },
+      shouldBeMany = { expected, dataSource ->
+        shouldBe(expected.map { it?.roundTripValue }, dataSource)
+      },
+    )
 
   @Test
   fun normalizedMixed() = runTest {
