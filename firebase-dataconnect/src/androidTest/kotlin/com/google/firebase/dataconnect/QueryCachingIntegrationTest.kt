@@ -263,7 +263,7 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
   }
 
   @Test
-  fun `reminderToUpdateNextTestOnceSERVER_ONLYIsSupported`() {
+  fun reminderToUpdateNextTestOnceSERVER_ONLYIsSupported() {
     assumeTrue(
       "Add FetchPolicy.SERVER_ONLY to fetchPolicy1Arb in the following test " +
         "once it is supported [ksb8a94zkq]",
@@ -278,20 +278,15 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
    * performs the following steps within a property-based test:
    * 1. Inserts a row into a table with a randomly-generated `string1`.
    * 2. Executes a query to retrieve the newly-inserted row asserts its data and data source equal
-   * ```
-   *    [CreateQueryUpdateQueryTestConfig.query1String] and
-   *    [CreateQueryUpdateQueryTestConfig.query1DataSource], respectively.
-   * ```
+   * [CreateQueryUpdateQueryTestConfig.query1String] and
+   * [CreateQueryUpdateQueryTestConfig.query1DataSource], respectively.
    * 3. Updates the row's string to `string2`.
    * 4. Executes the same query again asserts its data and data source equal
-   * ```
-   *    [CreateQueryUpdateQueryTestConfig.query2String] and
-   *    [CreateQueryUpdateQueryTestConfig.query2DataSource], respectively.
+   * [CreateQueryUpdateQueryTestConfig.query2String] and
+   * [CreateQueryUpdateQueryTestConfig.query2DataSource], respectively.
    *
-   * @param cacheSettings
-   * ```
-   * The [CacheSettings] to use for the [FirebaseDataConnect] instance; this value is passed
-   * directly to [getInstance].
+   * @param cacheSettings The [CacheSettings] to use for the [FirebaseDataConnect] instance; this
+   * value is passed directly to [getInstance].
    * @param configBlock A lambda that configures a [CreateQueryUpdateQueryTestConfig.Builder]
    * instance. The `string1` and `string2` parameters are the strings that will be used in the
    * initial insert of the person and the subsequent update, respectively.
