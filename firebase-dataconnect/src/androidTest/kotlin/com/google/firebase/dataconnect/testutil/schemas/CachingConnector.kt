@@ -1432,7 +1432,7 @@ private suspend fun <Data, Variables> QueryRef<Data, Variables>.executeWithFetch
   }
 
 @JvmName("QueryResult_StringGet_shouldBe")
-fun QueryResult<CachingConnector.Data.StringGet, CachingConnector.Variables.GetByKey>.shouldBe(
+fun QueryResult<CachingConnector.Data.StringGet, *>.shouldBe(
   string: String,
   dataSource: DataSource
 ) {
@@ -1443,7 +1443,7 @@ fun QueryResult<CachingConnector.Data.StringGet, CachingConnector.Variables.GetB
 }
 
 @JvmName("QueryResult_StringGetMany_shouldBe")
-fun QueryResult<CachingConnector.Data.StringGetMany, CachingConnector.Variables.GetByTag>.shouldBe(
+fun QueryResult<CachingConnector.Data.StringGetMany, *>.shouldBe(
   strings: Collection<String>,
   dataSource: DataSource
 ) {
@@ -1454,8 +1454,10 @@ fun QueryResult<CachingConnector.Data.StringGetMany, CachingConnector.Variables.
 }
 
 @JvmName("QueryResult_NullableStringGet_shouldBe")
-fun QueryResult<CachingConnector.Data.NullableStringGet, CachingConnector.Variables.GetByKey>
-  .shouldBe(string: String?, dataSource: DataSource) {
+fun QueryResult<CachingConnector.Data.NullableStringGet, *>.shouldBe(
+  string: String?,
+  dataSource: DataSource
+) {
   assertSoftly {
     this.data.item.shouldNotBeNull().string shouldBe string
     this.dataSource shouldBe dataSource
@@ -1463,8 +1465,10 @@ fun QueryResult<CachingConnector.Data.NullableStringGet, CachingConnector.Variab
 }
 
 @JvmName("QueryResult_NullableStringGetMany_shouldBe")
-fun QueryResult<CachingConnector.Data.NullableStringGetMany, CachingConnector.Variables.GetByTag>
-  .shouldBe(strings: Collection<String?>, dataSource: DataSource) {
+fun QueryResult<CachingConnector.Data.NullableStringGetMany, *>.shouldBe(
+  strings: Collection<String?>,
+  dataSource: DataSource
+) {
   assertSoftly {
     this.data.items.map { it.string } shouldContainExactlyInAnyOrder strings
     this.dataSource shouldBe dataSource
@@ -1472,7 +1476,7 @@ fun QueryResult<CachingConnector.Data.NullableStringGetMany, CachingConnector.Va
 }
 
 @JvmName("QueryResult_StringListGet_shouldBe")
-fun QueryResult<CachingConnector.Data.StringListGet, CachingConnector.Variables.GetByKey>.shouldBe(
+fun QueryResult<CachingConnector.Data.StringListGet, *>.shouldBe(
   strings: List<String>,
   dataSource: DataSource
 ) {
@@ -1483,8 +1487,10 @@ fun QueryResult<CachingConnector.Data.StringListGet, CachingConnector.Variables.
 }
 
 @JvmName("QueryResult_StringListGetMany_shouldBe")
-fun QueryResult<CachingConnector.Data.StringListGetMany, CachingConnector.Variables.GetByTag>
-  .shouldBe(stringLists: Collection<List<String>>, dataSource: DataSource) {
+fun QueryResult<CachingConnector.Data.StringListGetMany, *>.shouldBe(
+  stringLists: Collection<List<String>>,
+  dataSource: DataSource
+) {
   assertSoftly {
     this.data.items.map { it.strings } shouldContainExactlyInAnyOrder stringLists
     this.dataSource shouldBe dataSource
@@ -1492,8 +1498,10 @@ fun QueryResult<CachingConnector.Data.StringListGetMany, CachingConnector.Variab
 }
 
 @JvmName("QueryResult_NullableStringListGet_shouldBe")
-fun QueryResult<CachingConnector.Data.NullableStringListGet, CachingConnector.Variables.GetByKey>
-  .shouldBe(strings: List<String?>, dataSource: DataSource) {
+fun QueryResult<CachingConnector.Data.NullableStringListGet, *>.shouldBe(
+  strings: List<String?>,
+  dataSource: DataSource
+) {
   assertSoftly {
     this.data.item.shouldNotBeNull().strings shouldBe strings
     this.dataSource shouldBe dataSource
@@ -1501,10 +1509,10 @@ fun QueryResult<CachingConnector.Data.NullableStringListGet, CachingConnector.Va
 }
 
 @JvmName("QueryResult_NullableStringListGetMany_shouldBe")
-fun QueryResult<
-  CachingConnector.Data.NullableStringListGetMany, CachingConnector.Variables.GetByTag
->
-  .shouldBe(stringLists: Collection<List<String?>>, dataSource: DataSource) {
+fun QueryResult<CachingConnector.Data.NullableStringListGetMany, *>.shouldBe(
+  stringLists: Collection<List<String?>>,
+  dataSource: DataSource
+) {
   assertSoftly {
     this.data.items.map { it.strings } shouldContainExactlyInAnyOrder stringLists
     this.dataSource shouldBe dataSource
@@ -1512,8 +1520,10 @@ fun QueryResult<
 }
 
 @JvmName("QueryResult_StringNullableListGet_shouldBe")
-fun QueryResult<CachingConnector.Data.StringNullableListGet, CachingConnector.Variables.GetByKey>
-  .shouldBe(strings: List<String>?, dataSource: DataSource) {
+fun QueryResult<CachingConnector.Data.StringNullableListGet, *>.shouldBe(
+  strings: List<String>?,
+  dataSource: DataSource
+) {
   assertSoftly {
     this.data.item.shouldNotBeNull().strings shouldBe strings
     this.dataSource shouldBe dataSource
@@ -1521,10 +1531,10 @@ fun QueryResult<CachingConnector.Data.StringNullableListGet, CachingConnector.Va
 }
 
 @JvmName("QueryResult_StringNullableListGetMany_shouldBe")
-fun QueryResult<
-  CachingConnector.Data.StringNullableListGetMany, CachingConnector.Variables.GetByTag
->
-  .shouldBe(stringLists: Collection<List<String>?>, dataSource: DataSource) {
+fun QueryResult<CachingConnector.Data.StringNullableListGetMany, *>.shouldBe(
+  stringLists: Collection<List<String>?>,
+  dataSource: DataSource
+) {
   assertSoftly {
     this.data.items.map { it.strings } shouldContainExactlyInAnyOrder stringLists
     this.dataSource shouldBe dataSource
@@ -1532,10 +1542,10 @@ fun QueryResult<
 }
 
 @JvmName("QueryResult_NullableStringNullableListGet_shouldBe")
-fun QueryResult<
-  CachingConnector.Data.NullableStringNullableListGet, CachingConnector.Variables.GetByKey
->
-  .shouldBe(strings: List<String?>?, dataSource: DataSource) {
+fun QueryResult<CachingConnector.Data.NullableStringNullableListGet, *>.shouldBe(
+  strings: List<String?>?,
+  dataSource: DataSource
+) {
   assertSoftly {
     this.data.item.shouldNotBeNull().strings shouldBe strings
     this.dataSource shouldBe dataSource
@@ -1543,10 +1553,10 @@ fun QueryResult<
 }
 
 @JvmName("QueryResult_NullableStringNullableListGetMany_shouldBe")
-fun QueryResult<
-  CachingConnector.Data.NullableStringNullableListGetMany, CachingConnector.Variables.GetByTag
->
-  .shouldBe(stringLists: Collection<List<String?>?>, dataSource: DataSource) {
+fun QueryResult<CachingConnector.Data.NullableStringNullableListGetMany, *>.shouldBe(
+  stringLists: Collection<List<String?>?>,
+  dataSource: DataSource
+) {
   assertSoftly {
     this.data.items.map { it.strings } shouldContainExactlyInAnyOrder stringLists
     this.dataSource shouldBe dataSource
@@ -1554,10 +1564,7 @@ fun QueryResult<
 }
 
 @JvmName("QueryResult_FloatGet_shouldBe")
-fun QueryResult<CachingConnector.Data.FloatGet, CachingConnector.Variables.GetByKey>.shouldBe(
-  float: Double,
-  dataSource: DataSource
-) {
+fun QueryResult<CachingConnector.Data.FloatGet, *>.shouldBe(float: Double, dataSource: DataSource) {
   assertSoftly {
     this.data.item.shouldNotBeNull().float shouldBe float
     this.dataSource shouldBe dataSource
@@ -1565,7 +1572,7 @@ fun QueryResult<CachingConnector.Data.FloatGet, CachingConnector.Variables.GetBy
 }
 
 @JvmName("QueryResult_FloatGetMany_shouldBe")
-fun QueryResult<CachingConnector.Data.FloatGetMany, CachingConnector.Variables.GetByTag>.shouldBe(
+fun QueryResult<CachingConnector.Data.FloatGetMany, *>.shouldBe(
   floats: Collection<Double>,
   dataSource: DataSource
 ) {
@@ -1576,8 +1583,10 @@ fun QueryResult<CachingConnector.Data.FloatGetMany, CachingConnector.Variables.G
 }
 
 @JvmName("QueryResult_NullableFloatGet_shouldBe")
-fun QueryResult<CachingConnector.Data.NullableFloatGet, CachingConnector.Variables.GetByKey>
-  .shouldBe(float: Double?, dataSource: DataSource) {
+fun QueryResult<CachingConnector.Data.NullableFloatGet, *>.shouldBe(
+  float: Double?,
+  dataSource: DataSource
+) {
   assertSoftly {
     this.data.item.shouldNotBeNull().float shouldBe float
     this.dataSource shouldBe dataSource
@@ -1585,8 +1594,10 @@ fun QueryResult<CachingConnector.Data.NullableFloatGet, CachingConnector.Variabl
 }
 
 @JvmName("QueryResult_NullableFloatGetMany_shouldBe")
-fun QueryResult<CachingConnector.Data.NullableFloatGetMany, CachingConnector.Variables.GetByTag>
-  .shouldBe(floats: Collection<Double?>, dataSource: DataSource) {
+fun QueryResult<CachingConnector.Data.NullableFloatGetMany, *>.shouldBe(
+  floats: Collection<Double?>,
+  dataSource: DataSource
+) {
   assertSoftly {
     this.data.items.map { it.float } shouldContainExactlyInAnyOrder floats
     this.dataSource shouldBe dataSource
@@ -1594,7 +1605,7 @@ fun QueryResult<CachingConnector.Data.NullableFloatGetMany, CachingConnector.Var
 }
 
 @JvmName("QueryResult_BooleanGet_shouldBe")
-fun QueryResult<CachingConnector.Data.BooleanGet, CachingConnector.Variables.GetByKey>.shouldBe(
+fun QueryResult<CachingConnector.Data.BooleanGet, *>.shouldBe(
   boolean: Boolean,
   dataSource: DataSource
 ) {
@@ -1605,7 +1616,7 @@ fun QueryResult<CachingConnector.Data.BooleanGet, CachingConnector.Variables.Get
 }
 
 @JvmName("QueryResult_BooleanGetMany_shouldBe")
-fun QueryResult<CachingConnector.Data.BooleanGetMany, CachingConnector.Variables.GetByTag>.shouldBe(
+fun QueryResult<CachingConnector.Data.BooleanGetMany, *>.shouldBe(
   booleans: Collection<Boolean>,
   dataSource: DataSource
 ) {
@@ -1616,8 +1627,10 @@ fun QueryResult<CachingConnector.Data.BooleanGetMany, CachingConnector.Variables
 }
 
 @JvmName("QueryResult_NullableBooleanGet_shouldBe")
-fun QueryResult<CachingConnector.Data.NullableBooleanGet, CachingConnector.Variables.GetByKey>
-  .shouldBe(boolean: Boolean?, dataSource: DataSource) {
+fun QueryResult<CachingConnector.Data.NullableBooleanGet, *>.shouldBe(
+  boolean: Boolean?,
+  dataSource: DataSource
+) {
   assertSoftly {
     this.data.item.shouldNotBeNull().boolean shouldBe boolean
     this.dataSource shouldBe dataSource
@@ -1625,8 +1638,10 @@ fun QueryResult<CachingConnector.Data.NullableBooleanGet, CachingConnector.Varia
 }
 
 @JvmName("QueryResult_NullableBooleanGetMany_shouldBe")
-fun QueryResult<CachingConnector.Data.NullableBooleanGetMany, CachingConnector.Variables.GetByTag>
-  .shouldBe(booleans: Collection<Boolean?>, dataSource: DataSource) {
+fun QueryResult<CachingConnector.Data.NullableBooleanGetMany, *>.shouldBe(
+  booleans: Collection<Boolean?>,
+  dataSource: DataSource
+) {
   assertSoftly {
     this.data.items.map { it.boolean } shouldContainExactlyInAnyOrder booleans
     this.dataSource shouldBe dataSource
@@ -1634,7 +1649,7 @@ fun QueryResult<CachingConnector.Data.NullableBooleanGetMany, CachingConnector.V
 }
 
 @JvmName("QueryResult_AnyValueGet_shouldBe")
-fun QueryResult<CachingConnector.Data.AnyValueGet, CachingConnector.Variables.GetByKey>.shouldBe(
+fun QueryResult<CachingConnector.Data.AnyValueGet, *>.shouldBe(
   any: AnyValue,
   dataSource: DataSource
 ) {
@@ -1645,8 +1660,10 @@ fun QueryResult<CachingConnector.Data.AnyValueGet, CachingConnector.Variables.Ge
 }
 
 @JvmName("QueryResult_AnyValueGetMany_shouldBe")
-fun QueryResult<CachingConnector.Data.AnyValueGetMany, CachingConnector.Variables.GetByTag>
-  .shouldBe(anys: Collection<AnyValue>, dataSource: DataSource) {
+fun QueryResult<CachingConnector.Data.AnyValueGetMany, *>.shouldBe(
+  anys: Collection<AnyValue>,
+  dataSource: DataSource
+) {
   assertSoftly {
     this.data.items.map { it.any } shouldContainExactlyInAnyOrder anys
     this.dataSource shouldBe dataSource
@@ -1654,8 +1671,10 @@ fun QueryResult<CachingConnector.Data.AnyValueGetMany, CachingConnector.Variable
 }
 
 @JvmName("QueryResult_NullableAnyValueGet_shouldBe")
-fun QueryResult<CachingConnector.Data.NullableAnyValueGet, CachingConnector.Variables.GetByKey>
-  .shouldBe(any: AnyValue?, dataSource: DataSource) {
+fun QueryResult<CachingConnector.Data.NullableAnyValueGet, *>.shouldBe(
+  any: AnyValue?,
+  dataSource: DataSource
+) {
   assertSoftly {
     this.data.item.shouldNotBeNull().any shouldBe any
     this.dataSource shouldBe dataSource
@@ -1663,8 +1682,10 @@ fun QueryResult<CachingConnector.Data.NullableAnyValueGet, CachingConnector.Vari
 }
 
 @JvmName("QueryResult_NullableAnyValueGetMany_shouldBe")
-fun QueryResult<CachingConnector.Data.NullableAnyValueGetMany, CachingConnector.Variables.GetByTag>
-  .shouldBe(anys: Collection<AnyValue?>, dataSource: DataSource) {
+fun QueryResult<CachingConnector.Data.NullableAnyValueGetMany, *>.shouldBe(
+  anys: Collection<AnyValue?>,
+  dataSource: DataSource
+) {
   assertSoftly {
     this.data.items.map { it.any } shouldContainExactlyInAnyOrder anys
     this.dataSource shouldBe dataSource
@@ -1672,7 +1693,7 @@ fun QueryResult<CachingConnector.Data.NullableAnyValueGetMany, CachingConnector.
 }
 
 @JvmName("QueryResult_MixedGet_shouldBe")
-fun QueryResult<CachingConnector.Data.MixedGet, CachingConnector.Variables.GetByKey>.shouldBe(
+fun QueryResult<CachingConnector.Data.MixedGet, *>.shouldBe(
   item: CachingConnector.Data.MixedGet.Item,
   dataSource: DataSource
 ) {
@@ -1683,7 +1704,7 @@ fun QueryResult<CachingConnector.Data.MixedGet, CachingConnector.Variables.GetBy
 }
 
 @JvmName("QueryResult_MixedGetMany_shouldBe")
-fun QueryResult<CachingConnector.Data.MixedGetMany, CachingConnector.Variables.GetByTag>.shouldBe(
+fun QueryResult<CachingConnector.Data.MixedGetMany, *>.shouldBe(
   items: Collection<CachingConnector.Data.MixedGetMany.Item>,
   dataSource: DataSource
 ) {
