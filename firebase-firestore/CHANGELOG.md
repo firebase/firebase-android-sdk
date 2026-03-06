@@ -1,5 +1,10 @@
 # Unreleased
 
+- [feature] Added support for Pipeline expressions `arrayFirst`, `arrayFirstN`, `arrayLast`,
+  `arrayLastN`, `arrayMinimum`, `arrayMinimumN`, `arrayMaximum`, `arrayMaximumN`, `arrayIndexOf`,
+  `arrayLastIndexOf` and `arrayIndexOfAll`.
+  [#7836](//github.com/firebase/firebase-android-sdk/pull/7836)
+
 # 26.1.1
 
 - [feature] Added support for `regexFind` and `regexFindAll` Pipeline expressions.
