@@ -63,8 +63,6 @@ import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableFloat
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableFloat2
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableFloatsByTag
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableFloatsByTag2
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableString
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableString2
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableStringList
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableStringList2
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableStringListsByTag
@@ -73,8 +71,6 @@ import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableStringN
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableStringNullableList2
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableStringNullableListsByTag
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableStringNullableListsByTag2
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableStringsByTag
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableStringsByTag2
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetString
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetStringList
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetStringList2
@@ -464,34 +460,18 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
     )
 
   @Test
-  fun normalizedNullableString() = runTest {
-    val connector = newCachingConnector()
-    val stringsArb = alphanumericStringArb().orNull(nullProbability = 0.2).quintuple()
-    checkAll(propTestConfig, stringsArb) { (string1, string2, string3, string4, string5) ->
-      val tag = randomTag()
-      val key = connector.insertNullableString(string1, tag)
-      connector.verifyGetNullableString(key, fetchPolicy = null, "query1a", string1, SERVER)
-      connector.updateNullableString(key, string2)
-      connector.verifyGetNullableString2(key, fetchPolicy = null, "query2a", string2, SERVER)
-      connector.verifyGetNullableString(key, fetchPolicy = null, "query2b", string2, CACHE)
-      connector.updateNullableString(key, string3)
-      connector.verifyGetNullableStringsByTag(tag, fetchPolicy = null, "query3a", string3, SERVER)
-      connector.verifyGetNullableString2(key, fetchPolicy = null, "query3b", string3, CACHE)
-      connector.verifyGetNullableString(key, fetchPolicy = null, "query3c", string3, CACHE)
-      connector.insertNullableString(string5, tag)
-      connector.updateNullableString(key, string4)
-      connector.verifyGetNullableStringsByTag2(
-        tag,
-        fetchPolicy = null,
-        "query4a",
-        listOf(string4, string5),
-        SERVER
-      )
-      connector.verifyGetNullableStringsByTag(tag, fetchPolicy = null, "query4b", string4, CACHE)
-      connector.verifyGetNullableString2(key, fetchPolicy = null, "query4c", string4, CACHE)
-      connector.verifyGetNullableString(key, fetchPolicy = null, "query4d", string4, CACHE)
-    }
-  }
+  fun normalizedNullableString() =
+    testNormalizedValue(
+      valueArb = alphanumericStringArb().orNull(nullProbability = 0.2),
+      insertValue = CachingConnector::insertNullableString,
+      updateValue = CachingConnector::updateNullableString,
+      getValue = CachingConnector::getNullableString,
+      getValue2 = CachingConnector::getNullableString2,
+      getValuesByTag = CachingConnector::getNullableStringsByTag,
+      getValuesByTag2 = CachingConnector::getNullableStringsByTag2,
+      shouldBe = QueryResult<CachingConnector.Data.NullableStringGet, *>::shouldBe,
+      shouldBeMany = QueryResult<CachingConnector.Data.NullableStringGetMany, *>::shouldBe,
+    )
 
   @Test
   fun normalizedStringList() = runTest {
