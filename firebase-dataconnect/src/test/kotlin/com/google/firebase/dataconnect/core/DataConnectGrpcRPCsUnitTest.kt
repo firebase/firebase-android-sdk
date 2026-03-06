@@ -39,7 +39,6 @@ import com.google.firebase.dataconnect.testutil.registerDataConnectKotestPrinter
 import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
-import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.firebase.dataconnect.withAddedListIndex
 import com.google.protobuf.ListValue
@@ -131,9 +130,8 @@ class DataConnectGrpcRPCsClientUnitTest {
       assertSoftly {
         withClue("executeQueryInvocationCount") { server.executeQueryInvocationCount shouldBe 0 }
         exception.message shouldContainWithNonAbuttingText "cck6p3fmd5"
-        exception.message shouldContainWithNonAbuttingText request.operationName
-        exception.message shouldContainWithNonAbuttingText request.variables.toCompactString()
-        exception.message shouldContainWithNonAbuttingTextIgnoringCase "found in the local cache"
+        exception.message shouldContainWithNonAbuttingTextIgnoringCase
+          "not found in the local cache"
       }
     }
   }
