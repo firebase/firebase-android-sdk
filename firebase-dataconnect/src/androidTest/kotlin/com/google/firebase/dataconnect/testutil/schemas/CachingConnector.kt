@@ -22,6 +22,8 @@ import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.OptionalVariable
 import com.google.firebase.dataconnect.OptionalVariable.Undefined
 import com.google.firebase.dataconnect.OptionalVariable.Value
+import com.google.firebase.dataconnect.QueryRef
+import com.google.firebase.dataconnect.QueryRef.FetchPolicy
 import com.google.firebase.dataconnect.QueryResult
 import com.google.firebase.dataconnect.serializers.UUIDSerializer
 import io.kotest.assertions.assertSoftly
@@ -57,32 +59,38 @@ class CachingConnector(val dataConnect: FirebaseDataConnect) {
     mutationRef.execute()
   }
 
-  suspend fun getString(key: Key) = getString("CachingString_GetByKey", key)
+  suspend fun getString(key: Key, fetchPolicy: FetchPolicy?) =
+    getString("CachingString_GetByKey", key, fetchPolicy)
 
-  suspend fun getString2(key: Key) = getString("CachingString_GetByKey2", key)
+  suspend fun getString2(key: Key, fetchPolicy: FetchPolicy?) =
+    getString("CachingString_GetByKey2", key, fetchPolicy)
 
   private suspend fun getString(
     operationName: String,
-    key: Key
+    key: Key,
+    fetchPolicy: FetchPolicy?,
   ): QueryResult<Data.StringGet, Variables.GetByKey> {
     val variables = Variables.GetByKey(key)
     val queryRef =
       dataConnect.query(operationName, variables, serializer<Data.StringGet>(), serializer())
-    return queryRef.execute()
+    return queryRef.executeWithFetchPolicyIfNotNull(fetchPolicy)
   }
 
-  suspend fun getStringsByTag(tag: String) = getStringsByTag("CachingString_GetByTag", tag)
+  suspend fun getStringsByTag(tag: String, fetchPolicy: FetchPolicy?) =
+    getStringsByTag("CachingString_GetByTag", tag, fetchPolicy)
 
-  suspend fun getStringsByTag2(tag: String) = getStringsByTag("CachingString_GetByTag2", tag)
+  suspend fun getStringsByTag2(tag: String, fetchPolicy: FetchPolicy?) =
+    getStringsByTag("CachingString_GetByTag2", tag, fetchPolicy)
 
   private suspend fun getStringsByTag(
     operationName: String,
-    tag: String
+    tag: String,
+    fetchPolicy: FetchPolicy?,
   ): QueryResult<Data.StringGetMany, Variables.GetByTag> {
     val variables = Variables.GetByTag(tag)
     val queryRef =
       dataConnect.query(operationName, variables, serializer<Data.StringGetMany>(), serializer())
-    return queryRef.execute()
+    return queryRef.executeWithFetchPolicyIfNotNull(fetchPolicy)
   }
 
   suspend fun insertNullableString(string: String?, tag: String? = null): Key {
@@ -112,14 +120,16 @@ class CachingConnector(val dataConnect: FirebaseDataConnect) {
     mutationRef.execute()
   }
 
-  suspend fun getNullableString(key: Key) = getNullableString("CachingNullableString_GetByKey", key)
+  suspend fun getNullableString(key: Key, fetchPolicy: FetchPolicy?) =
+    getNullableString("CachingNullableString_GetByKey", key, fetchPolicy)
 
-  suspend fun getNullableString2(key: Key) =
-    getNullableString("CachingNullableString_GetByKey2", key)
+  suspend fun getNullableString2(key: Key, fetchPolicy: FetchPolicy?) =
+    getNullableString("CachingNullableString_GetByKey2", key, fetchPolicy)
 
   private suspend fun getNullableString(
     operationName: String,
-    key: Key
+    key: Key,
+    fetchPolicy: FetchPolicy?,
   ): QueryResult<Data.NullableStringGet, Variables.GetByKey> {
     val variables = Variables.GetByKey(key)
     val queryRef =
@@ -129,18 +139,19 @@ class CachingConnector(val dataConnect: FirebaseDataConnect) {
         serializer<Data.NullableStringGet>(),
         serializer()
       )
-    return queryRef.execute()
+    return queryRef.executeWithFetchPolicyIfNotNull(fetchPolicy)
   }
 
-  suspend fun getNullableStringsByTag(tag: String) =
-    getNullableStringsByTag("CachingNullableString_GetByTag", tag)
+  suspend fun getNullableStringsByTag(tag: String, fetchPolicy: FetchPolicy?) =
+    getNullableStringsByTag("CachingNullableString_GetByTag", tag, fetchPolicy)
 
-  suspend fun getNullableStringsByTag2(tag: String) =
-    getNullableStringsByTag("CachingNullableString_GetByTag2", tag)
+  suspend fun getNullableStringsByTag2(tag: String, fetchPolicy: FetchPolicy?) =
+    getNullableStringsByTag("CachingNullableString_GetByTag2", tag, fetchPolicy)
 
   private suspend fun getNullableStringsByTag(
     operationName: String,
-    tag: String
+    tag: String,
+    fetchPolicy: FetchPolicy?,
   ): QueryResult<Data.NullableStringGetMany, Variables.GetByTag> {
     val variables = Variables.GetByTag(tag)
     val queryRef =
@@ -150,7 +161,7 @@ class CachingConnector(val dataConnect: FirebaseDataConnect) {
         serializer<Data.NullableStringGetMany>(),
         serializer()
       )
-    return queryRef.execute()
+    return queryRef.executeWithFetchPolicyIfNotNull(fetchPolicy)
   }
 
   suspend fun insertStringList(strings: List<String>, tag: String? = null): Key {
@@ -175,29 +186,33 @@ class CachingConnector(val dataConnect: FirebaseDataConnect) {
     mutationRef.execute()
   }
 
-  suspend fun getStringList(key: Key) = getStringList("CachingStringList_GetByKey", key)
+  suspend fun getStringList(key: Key, fetchPolicy: FetchPolicy?) =
+    getStringList("CachingStringList_GetByKey", key, fetchPolicy)
 
-  suspend fun getStringList2(key: Key) = getStringList("CachingStringList_GetByKey2", key)
+  suspend fun getStringList2(key: Key, fetchPolicy: FetchPolicy?) =
+    getStringList("CachingStringList_GetByKey2", key, fetchPolicy)
 
   private suspend fun getStringList(
     operationName: String,
-    key: Key
+    key: Key,
+    fetchPolicy: FetchPolicy?,
   ): QueryResult<Data.StringListGet, Variables.GetByKey> {
     val variables = Variables.GetByKey(key)
     val queryRef =
       dataConnect.query(operationName, variables, serializer<Data.StringListGet>(), serializer())
-    return queryRef.execute()
+    return queryRef.executeWithFetchPolicyIfNotNull(fetchPolicy)
   }
 
-  suspend fun getStringListsByTag(tag: String) =
-    getStringListsByTag("CachingStringList_GetByTag", tag)
+  suspend fun getStringListsByTag(tag: String, fetchPolicy: FetchPolicy?) =
+    getStringListsByTag("CachingStringList_GetByTag", tag, fetchPolicy)
 
-  suspend fun getStringListsByTag2(tag: String) =
-    getStringListsByTag("CachingStringList_GetByTag2", tag)
+  suspend fun getStringListsByTag2(tag: String, fetchPolicy: FetchPolicy?) =
+    getStringListsByTag("CachingStringList_GetByTag2", tag, fetchPolicy)
 
   private suspend fun getStringListsByTag(
     operationName: String,
-    tag: String
+    tag: String,
+    fetchPolicy: FetchPolicy?,
   ): QueryResult<Data.StringListGetMany, Variables.GetByTag> {
     val variables = Variables.GetByTag(tag)
     val queryRef =
@@ -207,7 +222,7 @@ class CachingConnector(val dataConnect: FirebaseDataConnect) {
         serializer<Data.StringListGetMany>(),
         serializer()
       )
-    return queryRef.execute()
+    return queryRef.executeWithFetchPolicyIfNotNull(fetchPolicy)
   }
 
   suspend fun insertNullableStringList(strings: List<String?>, tag: String? = null): Key {
@@ -237,15 +252,16 @@ class CachingConnector(val dataConnect: FirebaseDataConnect) {
     mutationRef.execute()
   }
 
-  suspend fun getNullableStringList(key: Key) =
-    getNullableStringList("CachingNullableStringList_GetByKey", key)
+  suspend fun getNullableStringList(key: Key, fetchPolicy: FetchPolicy?) =
+    getNullableStringList("CachingNullableStringList_GetByKey", key, fetchPolicy)
 
-  suspend fun getNullableStringList2(key: Key) =
-    getNullableStringList("CachingNullableStringList_GetByKey2", key)
+  suspend fun getNullableStringList2(key: Key, fetchPolicy: FetchPolicy?) =
+    getNullableStringList("CachingNullableStringList_GetByKey2", key, fetchPolicy)
 
   private suspend fun getNullableStringList(
     operationName: String,
-    key: Key
+    key: Key,
+    fetchPolicy: FetchPolicy?,
   ): QueryResult<Data.NullableStringListGet, Variables.GetByKey> {
     val variables = Variables.GetByKey(key)
     val queryRef =
@@ -255,18 +271,19 @@ class CachingConnector(val dataConnect: FirebaseDataConnect) {
         serializer<Data.NullableStringListGet>(),
         serializer()
       )
-    return queryRef.execute()
+    return queryRef.executeWithFetchPolicyIfNotNull(fetchPolicy)
   }
 
-  suspend fun getNullableStringListsByTag(tag: String) =
-    getNullableStringListsByTag("CachingNullableStringList_GetByTag", tag)
+  suspend fun getNullableStringListsByTag(tag: String, fetchPolicy: FetchPolicy?) =
+    getNullableStringListsByTag("CachingNullableStringList_GetByTag", tag, fetchPolicy)
 
-  suspend fun getNullableStringListsByTag2(tag: String) =
-    getNullableStringListsByTag("CachingNullableStringList_GetByTag2", tag)
+  suspend fun getNullableStringListsByTag2(tag: String, fetchPolicy: FetchPolicy?) =
+    getNullableStringListsByTag("CachingNullableStringList_GetByTag2", tag, fetchPolicy)
 
   private suspend fun getNullableStringListsByTag(
     operationName: String,
-    tag: String
+    tag: String,
+    fetchPolicy: FetchPolicy?,
   ): QueryResult<Data.NullableStringListGetMany, Variables.GetByTag> {
     val variables = Variables.GetByTag(tag)
     val queryRef =
@@ -276,7 +293,7 @@ class CachingConnector(val dataConnect: FirebaseDataConnect) {
         serializer<Data.NullableStringListGetMany>(),
         serializer()
       )
-    return queryRef.execute()
+    return queryRef.executeWithFetchPolicyIfNotNull(fetchPolicy)
   }
 
   suspend fun insertStringNullableList(strings: List<String>?, tag: String? = null): Key {
@@ -306,15 +323,16 @@ class CachingConnector(val dataConnect: FirebaseDataConnect) {
     mutationRef.execute()
   }
 
-  suspend fun getStringNullableList(key: Key) =
-    getStringNullableList("CachingStringNullableList_GetByKey", key)
+  suspend fun getStringNullableList(key: Key, fetchPolicy: FetchPolicy?) =
+    getStringNullableList("CachingStringNullableList_GetByKey", key, fetchPolicy)
 
-  suspend fun getStringNullableList2(key: Key) =
-    getStringNullableList("CachingStringNullableList_GetByKey2", key)
+  suspend fun getStringNullableList2(key: Key, fetchPolicy: FetchPolicy?) =
+    getStringNullableList("CachingStringNullableList_GetByKey2", key, fetchPolicy)
 
   private suspend fun getStringNullableList(
     operationName: String,
-    key: Key
+    key: Key,
+    fetchPolicy: FetchPolicy?,
   ): QueryResult<Data.StringNullableListGet, Variables.GetByKey> {
     val variables = Variables.GetByKey(key)
     val queryRef =
@@ -324,18 +342,19 @@ class CachingConnector(val dataConnect: FirebaseDataConnect) {
         serializer<Data.StringNullableListGet>(),
         serializer()
       )
-    return queryRef.execute()
+    return queryRef.executeWithFetchPolicyIfNotNull(fetchPolicy)
   }
 
-  suspend fun getStringNullableListsByTag(tag: String) =
-    getStringNullableListsByTag("CachingStringNullableList_GetByTag", tag)
+  suspend fun getStringNullableListsByTag(tag: String, fetchPolicy: FetchPolicy?) =
+    getStringNullableListsByTag("CachingStringNullableList_GetByTag", tag, fetchPolicy)
 
-  suspend fun getStringNullableListsByTag2(tag: String) =
-    getStringNullableListsByTag("CachingStringNullableList_GetByTag2", tag)
+  suspend fun getStringNullableListsByTag2(tag: String, fetchPolicy: FetchPolicy?) =
+    getStringNullableListsByTag("CachingStringNullableList_GetByTag2", tag, fetchPolicy)
 
   private suspend fun getStringNullableListsByTag(
     operationName: String,
-    tag: String
+    tag: String,
+    fetchPolicy: FetchPolicy?,
   ): QueryResult<Data.StringNullableListGetMany, Variables.GetByTag> {
     val variables = Variables.GetByTag(tag)
     val queryRef =
@@ -345,7 +364,7 @@ class CachingConnector(val dataConnect: FirebaseDataConnect) {
         serializer<Data.StringNullableListGetMany>(),
         serializer()
       )
-    return queryRef.execute()
+    return queryRef.executeWithFetchPolicyIfNotNull(fetchPolicy)
   }
 
   suspend fun insertNullableStringNullableList(strings: List<String?>?, tag: String? = null): Key {
@@ -375,15 +394,16 @@ class CachingConnector(val dataConnect: FirebaseDataConnect) {
     mutationRef.execute()
   }
 
-  suspend fun getNullableStringNullableList(key: Key) =
-    getNullableStringNullableList("CachingNullableStringNullableList_GetByKey", key)
+  suspend fun getNullableStringNullableList(key: Key, fetchPolicy: FetchPolicy?) =
+    getNullableStringNullableList("CachingNullableStringNullableList_GetByKey", key, fetchPolicy)
 
-  suspend fun getNullableStringNullableList2(key: Key) =
-    getNullableStringNullableList("CachingNullableStringNullableList_GetByKey2", key)
+  suspend fun getNullableStringNullableList2(key: Key, fetchPolicy: FetchPolicy?) =
+    getNullableStringNullableList("CachingNullableStringNullableList_GetByKey2", key, fetchPolicy)
 
   private suspend fun getNullableStringNullableList(
     operationName: String,
-    key: Key
+    key: Key,
+    fetchPolicy: FetchPolicy?,
   ): QueryResult<Data.NullableStringNullableListGet, Variables.GetByKey> {
     val variables = Variables.GetByKey(key)
     val queryRef =
@@ -393,18 +413,27 @@ class CachingConnector(val dataConnect: FirebaseDataConnect) {
         serializer<Data.NullableStringNullableListGet>(),
         serializer()
       )
-    return queryRef.execute()
+    return queryRef.executeWithFetchPolicyIfNotNull(fetchPolicy)
   }
 
-  suspend fun getNullableStringNullableListsByTag(tag: String) =
-    getNullableStringNullableListsByTag("CachingNullableStringNullableList_GetByTag", tag)
+  suspend fun getNullableStringNullableListsByTag(tag: String, fetchPolicy: FetchPolicy?) =
+    getNullableStringNullableListsByTag(
+      "CachingNullableStringNullableList_GetByTag",
+      tag,
+      fetchPolicy
+    )
 
-  suspend fun getNullableStringNullableListsByTag2(tag: String) =
-    getNullableStringNullableListsByTag("CachingNullableStringNullableList_GetByTag2", tag)
+  suspend fun getNullableStringNullableListsByTag2(tag: String, fetchPolicy: FetchPolicy?) =
+    getNullableStringNullableListsByTag(
+      "CachingNullableStringNullableList_GetByTag2",
+      tag,
+      fetchPolicy
+    )
 
   private suspend fun getNullableStringNullableListsByTag(
     operationName: String,
-    tag: String
+    tag: String,
+    fetchPolicy: FetchPolicy?,
   ): QueryResult<Data.NullableStringNullableListGetMany, Variables.GetByTag> {
     val variables = Variables.GetByTag(tag)
     val queryRef =
@@ -414,7 +443,7 @@ class CachingConnector(val dataConnect: FirebaseDataConnect) {
         serializer<Data.NullableStringNullableListGetMany>(),
         serializer()
       )
-    return queryRef.execute()
+    return queryRef.executeWithFetchPolicyIfNotNull(fetchPolicy)
   }
 
   suspend fun insertFloat(float: Double, tag: String? = null): Key {
@@ -439,32 +468,38 @@ class CachingConnector(val dataConnect: FirebaseDataConnect) {
     mutationRef.execute()
   }
 
-  suspend fun getFloat(key: Key) = getFloat("CachingFloat_GetByKey", key)
+  suspend fun getFloat(key: Key, fetchPolicy: FetchPolicy?) =
+    getFloat("CachingFloat_GetByKey", key, fetchPolicy)
 
-  suspend fun getFloat2(key: Key) = getFloat("CachingFloat_GetByKey2", key)
+  suspend fun getFloat2(key: Key, fetchPolicy: FetchPolicy?) =
+    getFloat("CachingFloat_GetByKey2", key, fetchPolicy)
 
   private suspend fun getFloat(
     operationName: String,
-    key: Key
+    key: Key,
+    fetchPolicy: FetchPolicy?,
   ): QueryResult<Data.FloatGet, Variables.GetByKey> {
     val variables = Variables.GetByKey(key)
     val queryRef =
       dataConnect.query(operationName, variables, serializer<Data.FloatGet>(), serializer())
-    return queryRef.execute()
+    return queryRef.executeWithFetchPolicyIfNotNull(fetchPolicy)
   }
 
-  suspend fun getFloatsByTag(tag: String) = getFloatsByTag("CachingFloat_GetByTag", tag)
+  suspend fun getFloatsByTag(tag: String, fetchPolicy: FetchPolicy?) =
+    getFloatsByTag("CachingFloat_GetByTag", tag, fetchPolicy)
 
-  suspend fun getFloatsByTag2(tag: String) = getFloatsByTag("CachingFloat_GetByTag2", tag)
+  suspend fun getFloatsByTag2(tag: String, fetchPolicy: FetchPolicy?) =
+    getFloatsByTag("CachingFloat_GetByTag2", tag, fetchPolicy)
 
   private suspend fun getFloatsByTag(
     operationName: String,
-    tag: String
+    tag: String,
+    fetchPolicy: FetchPolicy?,
   ): QueryResult<Data.FloatGetMany, Variables.GetByTag> {
     val variables = Variables.GetByTag(tag)
     val queryRef =
       dataConnect.query(operationName, variables, serializer<Data.FloatGetMany>(), serializer())
-    return queryRef.execute()
+    return queryRef.executeWithFetchPolicyIfNotNull(fetchPolicy)
   }
 
   suspend fun insertNullableFloat(float: Double?, tag: String? = null): Key {
@@ -494,29 +529,33 @@ class CachingConnector(val dataConnect: FirebaseDataConnect) {
     mutationRef.execute()
   }
 
-  suspend fun getNullableFloat(key: Key) = getNullableFloat("CachingNullableFloat_GetByKey", key)
+  suspend fun getNullableFloat(key: Key, fetchPolicy: FetchPolicy?) =
+    getNullableFloat("CachingNullableFloat_GetByKey", key, fetchPolicy)
 
-  suspend fun getNullableFloat2(key: Key) = getNullableFloat("CachingNullableFloat_GetByKey2", key)
+  suspend fun getNullableFloat2(key: Key, fetchPolicy: FetchPolicy?) =
+    getNullableFloat("CachingNullableFloat_GetByKey2", key, fetchPolicy)
 
   private suspend fun getNullableFloat(
     operationName: String,
-    key: Key
+    key: Key,
+    fetchPolicy: FetchPolicy?,
   ): QueryResult<Data.NullableFloatGet, Variables.GetByKey> {
     val variables = Variables.GetByKey(key)
     val queryRef =
       dataConnect.query(operationName, variables, serializer<Data.NullableFloatGet>(), serializer())
-    return queryRef.execute()
+    return queryRef.executeWithFetchPolicyIfNotNull(fetchPolicy)
   }
 
-  suspend fun getNullableFloatsByTag(tag: String) =
-    getNullableFloatsByTag("CachingNullableFloat_GetByTag", tag)
+  suspend fun getNullableFloatsByTag(tag: String, fetchPolicy: FetchPolicy?) =
+    getNullableFloatsByTag("CachingNullableFloat_GetByTag", tag, fetchPolicy)
 
-  suspend fun getNullableFloatsByTag2(tag: String) =
-    getNullableFloatsByTag("CachingNullableFloat_GetByTag2", tag)
+  suspend fun getNullableFloatsByTag2(tag: String, fetchPolicy: FetchPolicy?) =
+    getNullableFloatsByTag("CachingNullableFloat_GetByTag2", tag, fetchPolicy)
 
   private suspend fun getNullableFloatsByTag(
     operationName: String,
-    tag: String
+    tag: String,
+    fetchPolicy: FetchPolicy?,
   ): QueryResult<Data.NullableFloatGetMany, Variables.GetByTag> {
     val variables = Variables.GetByTag(tag)
     val queryRef =
@@ -526,7 +565,7 @@ class CachingConnector(val dataConnect: FirebaseDataConnect) {
         serializer<Data.NullableFloatGetMany>(),
         serializer()
       )
-    return queryRef.execute()
+    return queryRef.executeWithFetchPolicyIfNotNull(fetchPolicy)
   }
 
   suspend fun insertBoolean(boolean: Boolean, tag: String? = null): Key {
@@ -551,32 +590,38 @@ class CachingConnector(val dataConnect: FirebaseDataConnect) {
     mutationRef.execute()
   }
 
-  suspend fun getBoolean(key: Key) = getBoolean("CachingBoolean_GetByKey", key)
+  suspend fun getBoolean(key: Key, fetchPolicy: FetchPolicy?) =
+    getBoolean("CachingBoolean_GetByKey", key, fetchPolicy)
 
-  suspend fun getBoolean2(key: Key) = getBoolean("CachingBoolean_GetByKey2", key)
+  suspend fun getBoolean2(key: Key, fetchPolicy: FetchPolicy?) =
+    getBoolean("CachingBoolean_GetByKey2", key, fetchPolicy)
 
   private suspend fun getBoolean(
     operationName: String,
-    key: Key
+    key: Key,
+    fetchPolicy: FetchPolicy?,
   ): QueryResult<Data.BooleanGet, Variables.GetByKey> {
     val variables = Variables.GetByKey(key)
     val queryRef =
       dataConnect.query(operationName, variables, serializer<Data.BooleanGet>(), serializer())
-    return queryRef.execute()
+    return queryRef.executeWithFetchPolicyIfNotNull(fetchPolicy)
   }
 
-  suspend fun getBooleansByTag(tag: String) = getBooleansByTag("CachingBoolean_GetByTag", tag)
+  suspend fun getBooleansByTag(tag: String, fetchPolicy: FetchPolicy?) =
+    getBooleansByTag("CachingBoolean_GetByTag", tag, fetchPolicy)
 
-  suspend fun getBooleansByTag2(tag: String) = getBooleansByTag("CachingBoolean_GetByTag2", tag)
+  suspend fun getBooleansByTag2(tag: String, fetchPolicy: FetchPolicy?) =
+    getBooleansByTag("CachingBoolean_GetByTag2", tag, fetchPolicy)
 
   private suspend fun getBooleansByTag(
     operationName: String,
-    tag: String
+    tag: String,
+    fetchPolicy: FetchPolicy?,
   ): QueryResult<Data.BooleanGetMany, Variables.GetByTag> {
     val variables = Variables.GetByTag(tag)
     val queryRef =
       dataConnect.query(operationName, variables, serializer<Data.BooleanGetMany>(), serializer())
-    return queryRef.execute()
+    return queryRef.executeWithFetchPolicyIfNotNull(fetchPolicy)
   }
 
   suspend fun insertNullableBoolean(boolean: Boolean?, tag: String? = null): Key {
@@ -606,15 +651,16 @@ class CachingConnector(val dataConnect: FirebaseDataConnect) {
     mutationRef.execute()
   }
 
-  suspend fun getNullableBoolean(key: Key) =
-    getNullableBoolean("CachingNullableBoolean_GetByKey", key)
+  suspend fun getNullableBoolean(key: Key, fetchPolicy: FetchPolicy?) =
+    getNullableBoolean("CachingNullableBoolean_GetByKey", key, fetchPolicy)
 
-  suspend fun getNullableBoolean2(key: Key) =
-    getNullableBoolean("CachingNullableBoolean_GetByKey2", key)
+  suspend fun getNullableBoolean2(key: Key, fetchPolicy: FetchPolicy?) =
+    getNullableBoolean("CachingNullableBoolean_GetByKey2", key, fetchPolicy)
 
   private suspend fun getNullableBoolean(
     operationName: String,
-    key: Key
+    key: Key,
+    fetchPolicy: FetchPolicy?,
   ): QueryResult<Data.NullableBooleanGet, Variables.GetByKey> {
     val variables = Variables.GetByKey(key)
     val queryRef =
@@ -624,18 +670,19 @@ class CachingConnector(val dataConnect: FirebaseDataConnect) {
         serializer<Data.NullableBooleanGet>(),
         serializer()
       )
-    return queryRef.execute()
+    return queryRef.executeWithFetchPolicyIfNotNull(fetchPolicy)
   }
 
-  suspend fun getNullableBooleansByTag(tag: String) =
-    getNullableBooleansByTag("CachingNullableBoolean_GetByTag", tag)
+  suspend fun getNullableBooleansByTag(tag: String, fetchPolicy: FetchPolicy?) =
+    getNullableBooleansByTag("CachingNullableBoolean_GetByTag", tag, fetchPolicy)
 
-  suspend fun getNullableBooleansByTag2(tag: String) =
-    getNullableBooleansByTag("CachingNullableBoolean_GetByTag2", tag)
+  suspend fun getNullableBooleansByTag2(tag: String, fetchPolicy: FetchPolicy?) =
+    getNullableBooleansByTag("CachingNullableBoolean_GetByTag2", tag, fetchPolicy)
 
   private suspend fun getNullableBooleansByTag(
     operationName: String,
-    tag: String
+    tag: String,
+    fetchPolicy: FetchPolicy?,
   ): QueryResult<Data.NullableBooleanGetMany, Variables.GetByTag> {
     val variables = Variables.GetByTag(tag)
     val queryRef =
@@ -645,7 +692,7 @@ class CachingConnector(val dataConnect: FirebaseDataConnect) {
         serializer<Data.NullableBooleanGetMany>(),
         serializer()
       )
-    return queryRef.execute()
+    return queryRef.executeWithFetchPolicyIfNotNull(fetchPolicy)
   }
 
   suspend fun insertAnyValue(any: AnyValue, tag: String? = null): Key {
@@ -665,32 +712,38 @@ class CachingConnector(val dataConnect: FirebaseDataConnect) {
     mutationRef.execute()
   }
 
-  suspend fun getAnyValue(key: Key) = getAnyValue("CachingAny_GetByKey", key)
+  suspend fun getAnyValue(key: Key, fetchPolicy: FetchPolicy?) =
+    getAnyValue("CachingAny_GetByKey", key, fetchPolicy)
 
-  suspend fun getAnyValue2(key: Key) = getAnyValue("CachingAny_GetByKey2", key)
+  suspend fun getAnyValue2(key: Key, fetchPolicy: FetchPolicy?) =
+    getAnyValue("CachingAny_GetByKey2", key, fetchPolicy)
 
   private suspend fun getAnyValue(
     operationName: String,
-    key: Key
+    key: Key,
+    fetchPolicy: FetchPolicy?,
   ): QueryResult<Data.AnyValueGet, Variables.GetByKey> {
     val variables = Variables.GetByKey(key)
     val queryRef =
       dataConnect.query(operationName, variables, serializer<Data.AnyValueGet>(), serializer())
-    return queryRef.execute()
+    return queryRef.executeWithFetchPolicyIfNotNull(fetchPolicy)
   }
 
-  suspend fun getAnyValuesByTag(tag: String) = getAnyValuesByTag("CachingAny_GetByTag", tag)
+  suspend fun getAnyValuesByTag(tag: String, fetchPolicy: FetchPolicy?) =
+    getAnyValuesByTag("CachingAny_GetByTag", tag, fetchPolicy)
 
-  suspend fun getAnyValuesByTag2(tag: String) = getAnyValuesByTag("CachingAny_GetByTag2", tag)
+  suspend fun getAnyValuesByTag2(tag: String, fetchPolicy: FetchPolicy?) =
+    getAnyValuesByTag("CachingAny_GetByTag2", tag, fetchPolicy)
 
   private suspend fun getAnyValuesByTag(
     operationName: String,
-    tag: String
+    tag: String,
+    fetchPolicy: FetchPolicy?,
   ): QueryResult<Data.AnyValueGetMany, Variables.GetByTag> {
     val variables = Variables.GetByTag(tag)
     val queryRef =
       dataConnect.query(operationName, variables, serializer<Data.AnyValueGetMany>(), serializer())
-    return queryRef.execute()
+    return queryRef.executeWithFetchPolicyIfNotNull(fetchPolicy)
   }
 
   suspend fun insertNullableAnyValue(any: AnyValue?, tag: String? = null): Key {
@@ -715,15 +768,16 @@ class CachingConnector(val dataConnect: FirebaseDataConnect) {
     mutationRef.execute()
   }
 
-  suspend fun getNullableAnyValue(key: Key) =
-    getNullableAnyValue("CachingNullableAny_GetByKey", key)
+  suspend fun getNullableAnyValue(key: Key, fetchPolicy: FetchPolicy?) =
+    getNullableAnyValue("CachingNullableAny_GetByKey", key, fetchPolicy)
 
-  suspend fun getNullableAnyValue2(key: Key) =
-    getNullableAnyValue("CachingNullableAny_GetByKey2", key)
+  suspend fun getNullableAnyValue2(key: Key, fetchPolicy: FetchPolicy?) =
+    getNullableAnyValue("CachingNullableAny_GetByKey2", key, fetchPolicy)
 
   private suspend fun getNullableAnyValue(
     operationName: String,
-    key: Key
+    key: Key,
+    fetchPolicy: FetchPolicy?,
   ): QueryResult<Data.NullableAnyValueGet, Variables.GetByKey> {
     val variables = Variables.GetByKey(key)
     val queryRef =
@@ -733,18 +787,19 @@ class CachingConnector(val dataConnect: FirebaseDataConnect) {
         serializer<Data.NullableAnyValueGet>(),
         serializer()
       )
-    return queryRef.execute()
+    return queryRef.executeWithFetchPolicyIfNotNull(fetchPolicy)
   }
 
-  suspend fun getNullableAnyValuesByTag(tag: String) =
-    getNullableAnyValuesByTag("CachingNullableAny_GetByTag", tag)
+  suspend fun getNullableAnyValuesByTag(tag: String, fetchPolicy: FetchPolicy?) =
+    getNullableAnyValuesByTag("CachingNullableAny_GetByTag", tag, fetchPolicy)
 
-  suspend fun getNullableAnyValuesByTag2(tag: String) =
-    getNullableAnyValuesByTag("CachingNullableAny_GetByTag2", tag)
+  suspend fun getNullableAnyValuesByTag2(tag: String, fetchPolicy: FetchPolicy?) =
+    getNullableAnyValuesByTag("CachingNullableAny_GetByTag2", tag, fetchPolicy)
 
   private suspend fun getNullableAnyValuesByTag(
     operationName: String,
-    tag: String
+    tag: String,
+    fetchPolicy: FetchPolicy?,
   ): QueryResult<Data.NullableAnyValueGetMany, Variables.GetByTag> {
     val variables = Variables.GetByTag(tag)
     val queryRef =
@@ -754,7 +809,7 @@ class CachingConnector(val dataConnect: FirebaseDataConnect) {
         serializer<Data.NullableAnyValueGetMany>(),
         serializer()
       )
-    return queryRef.execute()
+    return queryRef.executeWithFetchPolicyIfNotNull(fetchPolicy)
   }
 
   suspend fun insertMixed(variables: Variables.MixedInsert): Key {
@@ -778,32 +833,38 @@ class CachingConnector(val dataConnect: FirebaseDataConnect) {
     mutationRef.execute()
   }
 
-  suspend fun getMixed(key: Key) = getMixed("CachingMixed_GetByKey", key)
+  suspend fun getMixed(key: Key, fetchPolicy: FetchPolicy?) =
+    getMixed("CachingMixed_GetByKey", key, fetchPolicy)
 
-  suspend fun getMixed2(key: Key) = getMixed("CachingMixed_GetByKey2", key)
+  suspend fun getMixed2(key: Key, fetchPolicy: FetchPolicy?) =
+    getMixed("CachingMixed_GetByKey2", key, fetchPolicy)
 
   private suspend fun getMixed(
     operationName: String,
-    key: Key
+    key: Key,
+    fetchPolicy: FetchPolicy?,
   ): QueryResult<Data.MixedGet, Variables.GetByKey> {
     val variables = Variables.GetByKey(key)
     val queryRef =
       dataConnect.query(operationName, variables, serializer<Data.MixedGet>(), serializer())
-    return queryRef.execute()
+    return queryRef.executeWithFetchPolicyIfNotNull(fetchPolicy)
   }
 
-  suspend fun getMixedsByTag(tag: String) = getMixedsByTag("CachingMixed_GetByTag", tag)
+  suspend fun getMixedsByTag(tag: String, fetchPolicy: FetchPolicy?) =
+    getMixedsByTag("CachingMixed_GetByTag", tag, fetchPolicy)
 
-  suspend fun getMixedsByTag2(tag: String) = getMixedsByTag("CachingMixed_GetByTag2", tag)
+  suspend fun getMixedsByTag2(tag: String, fetchPolicy: FetchPolicy?) =
+    getMixedsByTag("CachingMixed_GetByTag2", tag, fetchPolicy)
 
   private suspend fun getMixedsByTag(
     operationName: String,
-    tag: String
+    tag: String,
+    fetchPolicy: FetchPolicy?,
   ): QueryResult<Data.MixedGetMany, Variables.GetByTag> {
     val variables = Variables.GetByTag(tag)
     val queryRef =
       dataConnect.query(operationName, variables, serializer<Data.MixedGetMany>(), serializer())
-    return queryRef.execute()
+    return queryRef.executeWithFetchPolicyIfNotNull(fetchPolicy)
   }
 
   object Variables {
@@ -1361,6 +1422,15 @@ class CachingConnector(val dataConnect: FirebaseDataConnect) {
   }
 }
 
+private suspend fun <Data, Variables> QueryRef<Data, Variables>.executeWithFetchPolicyIfNotNull(
+  fetchPolicy: FetchPolicy?
+): QueryResult<Data, Variables> =
+  if (fetchPolicy !== null) {
+    execute(fetchPolicy)
+  } else {
+    execute()
+  }
+
 @JvmName("QueryResult_StringGet_shouldBe")
 fun QueryResult<CachingConnector.Data.StringGet, CachingConnector.Variables.GetByKey>.shouldBe(
   string: String,
@@ -1625,285 +1695,353 @@ fun QueryResult<CachingConnector.Data.MixedGetMany, CachingConnector.Variables.G
 
 suspend fun CachingConnector.verifyGetString(
   key: CachingConnector.Key,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedString: String,
   expectedDataSource: DataSource
 ) {
-  withClue(clue) { getString(key).shouldBe(expectedString, expectedDataSource) }
+  withClue(clue) { getString(key, fetchPolicy).shouldBe(expectedString, expectedDataSource) }
 }
 
 suspend fun CachingConnector.verifyGetString2(
   key: CachingConnector.Key,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedString: String,
   expectedDataSource: DataSource
 ) {
-  withClue(clue) { getString2(key).shouldBe(expectedString, expectedDataSource) }
+  withClue(clue) { getString2(key, fetchPolicy).shouldBe(expectedString, expectedDataSource) }
 }
 
 suspend fun CachingConnector.verifyGetStringsByTag(
   tag: String,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedString: String,
   expectedDataSource: DataSource
 ) {
-  withClue(clue) { getStringsByTag(tag).shouldBe(listOf(expectedString), expectedDataSource) }
+  withClue(clue) {
+    getStringsByTag(tag, fetchPolicy).shouldBe(listOf(expectedString), expectedDataSource)
+  }
 }
 
 suspend fun CachingConnector.verifyGetStringsByTag2(
   tag: String,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedString: String,
   expectedDataSource: DataSource
 ) {
-  verifyGetStringsByTag2(tag, clue, listOf(expectedString), expectedDataSource)
+  verifyGetStringsByTag2(tag, fetchPolicy, clue, listOf(expectedString), expectedDataSource)
 }
 
 suspend fun CachingConnector.verifyGetStringsByTag2(
   tag: String,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedStrings: Collection<String>,
   expectedDataSource: DataSource
 ) {
-  withClue(clue) { getStringsByTag2(tag).shouldBe(expectedStrings, expectedDataSource) }
+  withClue(clue) {
+    getStringsByTag2(tag, fetchPolicy).shouldBe(expectedStrings, expectedDataSource)
+  }
 }
 
 suspend fun CachingConnector.verifyGetNullableString(
   key: CachingConnector.Key,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedString: String?,
   expectedDataSource: DataSource
 ) {
-  withClue(clue) { getNullableString(key).shouldBe(expectedString, expectedDataSource) }
+  withClue(clue) {
+    getNullableString(key, fetchPolicy).shouldBe(expectedString, expectedDataSource)
+  }
 }
 
 suspend fun CachingConnector.verifyGetNullableString2(
   key: CachingConnector.Key,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedString: String?,
   expectedDataSource: DataSource
 ) {
-  withClue(clue) { getNullableString2(key).shouldBe(expectedString, expectedDataSource) }
+  withClue(clue) {
+    getNullableString2(key, fetchPolicy).shouldBe(expectedString, expectedDataSource)
+  }
 }
 
 suspend fun CachingConnector.verifyGetNullableStringsByTag(
   tag: String,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedString: String?,
   expectedDataSource: DataSource
 ) {
   withClue(clue) {
-    getNullableStringsByTag(tag).shouldBe(listOf(expectedString), expectedDataSource)
+    getNullableStringsByTag(tag, fetchPolicy).shouldBe(listOf(expectedString), expectedDataSource)
   }
 }
 
 suspend fun CachingConnector.verifyGetNullableStringsByTag2(
   tag: String,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedString: String?,
   expectedDataSource: DataSource
 ) {
-  verifyGetNullableStringsByTag2(tag, clue, listOf(expectedString), expectedDataSource)
+  verifyGetNullableStringsByTag2(tag, fetchPolicy, clue, listOf(expectedString), expectedDataSource)
 }
 
 suspend fun CachingConnector.verifyGetNullableStringsByTag2(
   tag: String,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedStrings: Collection<String?>,
   expectedDataSource: DataSource
 ) {
-  withClue(clue) { getNullableStringsByTag2(tag).shouldBe(expectedStrings, expectedDataSource) }
+  withClue(clue) {
+    getNullableStringsByTag2(tag, fetchPolicy).shouldBe(expectedStrings, expectedDataSource)
+  }
 }
 
 suspend fun CachingConnector.verifyGetStringList(
   key: CachingConnector.Key,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedStringList: List<String>,
   expectedDataSource: DataSource
 ) {
-  withClue(clue) { getStringList(key).shouldBe(expectedStringList, expectedDataSource) }
+  withClue(clue) {
+    getStringList(key, fetchPolicy).shouldBe(expectedStringList, expectedDataSource)
+  }
 }
 
 suspend fun CachingConnector.verifyGetStringList2(
   key: CachingConnector.Key,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedStringList: List<String>,
   expectedDataSource: DataSource
 ) {
-  withClue(clue) { getStringList2(key).shouldBe(expectedStringList, expectedDataSource) }
+  withClue(clue) {
+    getStringList2(key, fetchPolicy).shouldBe(expectedStringList, expectedDataSource)
+  }
 }
 
 suspend fun CachingConnector.verifyGetStringListsByTag(
   tag: String,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedStringList: List<String>,
   expectedDataSource: DataSource
 ) {
   withClue(clue) {
-    getStringListsByTag(tag).shouldBe(listOf(expectedStringList), expectedDataSource)
+    getStringListsByTag(tag, fetchPolicy).shouldBe(listOf(expectedStringList), expectedDataSource)
   }
 }
 
 suspend fun CachingConnector.verifyGetStringListsByTag2(
   tag: String,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedStringList: List<String>,
   expectedDataSource: DataSource
 ) {
-  verifyGetStringListsByTag2(tag, clue, listOf(expectedStringList), expectedDataSource)
+  verifyGetStringListsByTag2(tag, fetchPolicy, clue, listOf(expectedStringList), expectedDataSource)
 }
 
 suspend fun CachingConnector.verifyGetStringListsByTag2(
   tag: String,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedStringLists: Collection<List<String>>,
   expectedDataSource: DataSource
 ) {
-  withClue(clue) { getStringListsByTag2(tag).shouldBe(expectedStringLists, expectedDataSource) }
+  withClue(clue) {
+    getStringListsByTag2(tag, fetchPolicy).shouldBe(expectedStringLists, expectedDataSource)
+  }
 }
 
 suspend fun CachingConnector.verifyGetNullableStringList(
   key: CachingConnector.Key,
-  clue: String,
-  expectedStringList: List<String?>,
-  expectedDataSource: DataSource
-) {
-  withClue(clue) { getNullableStringList(key).shouldBe(expectedStringList, expectedDataSource) }
-}
-
-suspend fun CachingConnector.verifyGetNullableStringList2(
-  key: CachingConnector.Key,
-  clue: String,
-  expectedStringList: List<String?>,
-  expectedDataSource: DataSource
-) {
-  withClue(clue) { getNullableStringList2(key).shouldBe(expectedStringList, expectedDataSource) }
-}
-
-suspend fun CachingConnector.verifyGetNullableStringListsByTag(
-  tag: String,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedStringList: List<String?>,
   expectedDataSource: DataSource
 ) {
   withClue(clue) {
-    getNullableStringListsByTag(tag).shouldBe(listOf(expectedStringList), expectedDataSource)
+    getNullableStringList(key, fetchPolicy).shouldBe(expectedStringList, expectedDataSource)
+  }
+}
+
+suspend fun CachingConnector.verifyGetNullableStringList2(
+  key: CachingConnector.Key,
+  fetchPolicy: FetchPolicy?,
+  clue: String,
+  expectedStringList: List<String?>,
+  expectedDataSource: DataSource
+) {
+  withClue(clue) {
+    getNullableStringList2(key, fetchPolicy).shouldBe(expectedStringList, expectedDataSource)
+  }
+}
+
+suspend fun CachingConnector.verifyGetNullableStringListsByTag(
+  tag: String,
+  fetchPolicy: FetchPolicy?,
+  clue: String,
+  expectedStringList: List<String?>,
+  expectedDataSource: DataSource
+) {
+  withClue(clue) {
+    getNullableStringListsByTag(tag, fetchPolicy)
+      .shouldBe(listOf(expectedStringList), expectedDataSource)
   }
 }
 
 suspend fun CachingConnector.verifyGetNullableStringListsByTag2(
   tag: String,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedStringList: List<String?>,
   expectedDataSource: DataSource
 ) {
-  verifyGetNullableStringListsByTag2(tag, clue, listOf(expectedStringList), expectedDataSource)
+  verifyGetNullableStringListsByTag2(
+    tag,
+    fetchPolicy,
+    clue,
+    listOf(expectedStringList),
+    expectedDataSource
+  )
 }
 
 suspend fun CachingConnector.verifyGetNullableStringListsByTag2(
   tag: String,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedStringLists: Collection<List<String?>>,
   expectedDataSource: DataSource
 ) {
   withClue(clue) {
-    getNullableStringListsByTag2(tag).shouldBe(expectedStringLists, expectedDataSource)
+    getNullableStringListsByTag2(tag, fetchPolicy).shouldBe(expectedStringLists, expectedDataSource)
   }
 }
 
 suspend fun CachingConnector.verifyGetStringNullableList(
   key: CachingConnector.Key,
-  clue: String,
-  expectedStringList: List<String>?,
-  expectedDataSource: DataSource
-) {
-  withClue(clue) { getStringNullableList(key).shouldBe(expectedStringList, expectedDataSource) }
-}
-
-suspend fun CachingConnector.verifyGetStringNullableList2(
-  key: CachingConnector.Key,
-  clue: String,
-  expectedStringList: List<String>?,
-  expectedDataSource: DataSource
-) {
-  withClue(clue) { getStringNullableList2(key).shouldBe(expectedStringList, expectedDataSource) }
-}
-
-suspend fun CachingConnector.verifyGetStringNullableListsByTag(
-  tag: String,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedStringList: List<String>?,
   expectedDataSource: DataSource
 ) {
   withClue(clue) {
-    getStringNullableListsByTag(tag).shouldBe(listOf(expectedStringList), expectedDataSource)
+    getStringNullableList(key, fetchPolicy).shouldBe(expectedStringList, expectedDataSource)
+  }
+}
+
+suspend fun CachingConnector.verifyGetStringNullableList2(
+  key: CachingConnector.Key,
+  fetchPolicy: FetchPolicy?,
+  clue: String,
+  expectedStringList: List<String>?,
+  expectedDataSource: DataSource
+) {
+  withClue(clue) {
+    getStringNullableList2(key, fetchPolicy).shouldBe(expectedStringList, expectedDataSource)
+  }
+}
+
+suspend fun CachingConnector.verifyGetStringNullableListsByTag(
+  tag: String,
+  fetchPolicy: FetchPolicy?,
+  clue: String,
+  expectedStringList: List<String>?,
+  expectedDataSource: DataSource
+) {
+  withClue(clue) {
+    getStringNullableListsByTag(tag, fetchPolicy)
+      .shouldBe(listOf(expectedStringList), expectedDataSource)
   }
 }
 
 suspend fun CachingConnector.verifyGetStringNullableListsByTag2(
   tag: String,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedStringList: List<String>?,
   expectedDataSource: DataSource
 ) {
-  verifyGetStringNullableListsByTag2(tag, clue, listOf(expectedStringList), expectedDataSource)
+  verifyGetStringNullableListsByTag2(
+    tag,
+    fetchPolicy,
+    clue,
+    listOf(expectedStringList),
+    expectedDataSource
+  )
 }
 
 suspend fun CachingConnector.verifyGetStringNullableListsByTag2(
   tag: String,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedStringLists: Collection<List<String>?>,
   expectedDataSource: DataSource
 ) {
   withClue(clue) {
-    getStringNullableListsByTag2(tag).shouldBe(expectedStringLists, expectedDataSource)
+    getStringNullableListsByTag2(tag, fetchPolicy).shouldBe(expectedStringLists, expectedDataSource)
   }
 }
 
 suspend fun CachingConnector.verifyGetNullableStringNullableList(
   key: CachingConnector.Key,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedNullableStringNullableList: List<String?>?,
   expectedDataSource: DataSource
 ) {
   withClue(clue) {
-    getNullableStringNullableList(key)
+    getNullableStringNullableList(key, fetchPolicy)
       .shouldBe(expectedNullableStringNullableList, expectedDataSource)
   }
 }
 
 suspend fun CachingConnector.verifyGetNullableStringNullableList2(
   key: CachingConnector.Key,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedNullableStringNullableList: List<String?>?,
   expectedDataSource: DataSource
 ) {
   withClue(clue) {
-    getNullableStringNullableList2(key)
+    getNullableStringNullableList2(key, fetchPolicy)
       .shouldBe(expectedNullableStringNullableList, expectedDataSource)
   }
 }
 
 suspend fun CachingConnector.verifyGetNullableStringNullableListsByTag(
   tag: String,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedNullableStringNullableList: List<String?>?,
   expectedDataSource: DataSource
 ) {
   withClue(clue) {
-    getNullableStringNullableListsByTag(tag)
+    getNullableStringNullableListsByTag(tag, fetchPolicy)
       .shouldBe(listOf(expectedNullableStringNullableList), expectedDataSource)
   }
 }
 
 suspend fun CachingConnector.verifyGetNullableStringNullableListsByTag2(
   tag: String,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedNullableStringNullableList: List<String?>?,
   expectedDataSource: DataSource
 ) {
   verifyGetNullableStringNullableListsByTag2(
     tag,
+    fetchPolicy,
     clue,
     listOf(expectedNullableStringNullableList),
     expectedDataSource
@@ -1912,331 +2050,408 @@ suspend fun CachingConnector.verifyGetNullableStringNullableListsByTag2(
 
 suspend fun CachingConnector.verifyGetNullableStringNullableListsByTag2(
   tag: String,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedNullableStringNullableLists: Collection<List<String?>?>,
   expectedDataSource: DataSource
 ) {
   withClue(clue) {
-    getNullableStringNullableListsByTag2(tag)
+    getNullableStringNullableListsByTag2(tag, fetchPolicy)
       .shouldBe(expectedNullableStringNullableLists, expectedDataSource)
   }
 }
 
 suspend fun CachingConnector.verifyGetFloat(
   key: CachingConnector.Key,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedFloat: Double,
   expectedDataSource: DataSource
 ) {
-  withClue(clue) { getFloat(key).shouldBe(expectedFloat, expectedDataSource) }
+  withClue(clue) { getFloat(key, fetchPolicy).shouldBe(expectedFloat, expectedDataSource) }
 }
 
 suspend fun CachingConnector.verifyGetFloat2(
   key: CachingConnector.Key,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedFloat: Double,
   expectedDataSource: DataSource
 ) {
-  withClue(clue) { getFloat2(key).shouldBe(expectedFloat, expectedDataSource) }
+  withClue(clue) { getFloat2(key, fetchPolicy).shouldBe(expectedFloat, expectedDataSource) }
 }
 
 suspend fun CachingConnector.verifyGetFloatsByTag(
   tag: String,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedFloat: Double,
   expectedDataSource: DataSource
 ) {
-  withClue(clue) { getFloatsByTag(tag).shouldBe(listOf(expectedFloat), expectedDataSource) }
+  withClue(clue) {
+    getFloatsByTag(tag, fetchPolicy).shouldBe(listOf(expectedFloat), expectedDataSource)
+  }
 }
 
 suspend fun CachingConnector.verifyGetFloatsByTag2(
   tag: String,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedFloat: Double,
   expectedDataSource: DataSource
 ) {
-  verifyGetFloatsByTag2(tag, clue, listOf(expectedFloat), expectedDataSource)
+  verifyGetFloatsByTag2(tag, fetchPolicy, clue, listOf(expectedFloat), expectedDataSource)
 }
 
 suspend fun CachingConnector.verifyGetFloatsByTag2(
   tag: String,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedFloats: Collection<Double>,
   expectedDataSource: DataSource
 ) {
-  withClue(clue) { getFloatsByTag2(tag).shouldBe(expectedFloats, expectedDataSource) }
+  withClue(clue) { getFloatsByTag2(tag, fetchPolicy).shouldBe(expectedFloats, expectedDataSource) }
 }
 
 suspend fun CachingConnector.verifyGetNullableFloat(
   key: CachingConnector.Key,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedFloat: Double?,
   expectedDataSource: DataSource
 ) {
-  withClue(clue) { getNullableFloat(key).shouldBe(expectedFloat, expectedDataSource) }
+  withClue(clue) { getNullableFloat(key, fetchPolicy).shouldBe(expectedFloat, expectedDataSource) }
 }
 
 suspend fun CachingConnector.verifyGetNullableFloat2(
   key: CachingConnector.Key,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedFloat: Double?,
   expectedDataSource: DataSource
 ) {
-  withClue(clue) { getNullableFloat2(key).shouldBe(expectedFloat, expectedDataSource) }
+  withClue(clue) { getNullableFloat2(key, fetchPolicy).shouldBe(expectedFloat, expectedDataSource) }
 }
 
 suspend fun CachingConnector.verifyGetNullableFloatsByTag(
   tag: String,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedFloat: Double?,
   expectedDataSource: DataSource
 ) {
-  withClue(clue) { getNullableFloatsByTag(tag).shouldBe(listOf(expectedFloat), expectedDataSource) }
+  withClue(clue) {
+    getNullableFloatsByTag(tag, fetchPolicy).shouldBe(listOf(expectedFloat), expectedDataSource)
+  }
 }
 
 suspend fun CachingConnector.verifyGetNullableFloatsByTag2(
   tag: String,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedFloat: Double?,
   expectedDataSource: DataSource
 ) {
-  verifyGetNullableFloatsByTag2(tag, clue, listOf(expectedFloat), expectedDataSource)
+  verifyGetNullableFloatsByTag2(tag, fetchPolicy, clue, listOf(expectedFloat), expectedDataSource)
 }
 
 suspend fun CachingConnector.verifyGetNullableFloatsByTag2(
   tag: String,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedFloats: Collection<Double?>,
   expectedDataSource: DataSource
 ) {
-  withClue(clue) { getNullableFloatsByTag2(tag).shouldBe(expectedFloats, expectedDataSource) }
+  withClue(clue) {
+    getNullableFloatsByTag2(tag, fetchPolicy).shouldBe(expectedFloats, expectedDataSource)
+  }
 }
 
 suspend fun CachingConnector.verifyGetBoolean(
   key: CachingConnector.Key,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedBoolean: Boolean,
   expectedDataSource: DataSource
 ) {
-  withClue(clue) { getBoolean(key).shouldBe(expectedBoolean, expectedDataSource) }
+  withClue(clue) { getBoolean(key, fetchPolicy).shouldBe(expectedBoolean, expectedDataSource) }
 }
 
 suspend fun CachingConnector.verifyGetBoolean2(
   key: CachingConnector.Key,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedBoolean: Boolean,
   expectedDataSource: DataSource
 ) {
-  withClue(clue) { getBoolean2(key).shouldBe(expectedBoolean, expectedDataSource) }
+  withClue(clue) { getBoolean2(key, fetchPolicy).shouldBe(expectedBoolean, expectedDataSource) }
 }
 
 suspend fun CachingConnector.verifyGetBooleansByTag(
   tag: String,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedBoolean: Boolean,
   expectedDataSource: DataSource
 ) {
-  withClue(clue) { getBooleansByTag(tag).shouldBe(listOf(expectedBoolean), expectedDataSource) }
+  withClue(clue) {
+    getBooleansByTag(tag, fetchPolicy).shouldBe(listOf(expectedBoolean), expectedDataSource)
+  }
 }
 
 suspend fun CachingConnector.verifyGetBooleansByTag2(
   tag: String,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedBoolean: Boolean,
   expectedDataSource: DataSource
 ) {
-  verifyGetBooleansByTag2(tag, clue, listOf(expectedBoolean), expectedDataSource)
+  verifyGetBooleansByTag2(tag, fetchPolicy, clue, listOf(expectedBoolean), expectedDataSource)
 }
 
 suspend fun CachingConnector.verifyGetBooleansByTag2(
   tag: String,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedBooleans: Collection<Boolean>,
   expectedDataSource: DataSource
 ) {
-  withClue(clue) { getBooleansByTag2(tag).shouldBe(expectedBooleans, expectedDataSource) }
+  withClue(clue) {
+    getBooleansByTag2(tag, fetchPolicy).shouldBe(expectedBooleans, expectedDataSource)
+  }
 }
 
 suspend fun CachingConnector.verifyGetNullableBoolean(
   key: CachingConnector.Key,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedBoolean: Boolean?,
   expectedDataSource: DataSource
 ) {
-  withClue(clue) { getNullableBoolean(key).shouldBe(expectedBoolean, expectedDataSource) }
+  withClue(clue) {
+    getNullableBoolean(key, fetchPolicy).shouldBe(expectedBoolean, expectedDataSource)
+  }
 }
 
 suspend fun CachingConnector.verifyGetNullableBoolean2(
   key: CachingConnector.Key,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedBoolean: Boolean?,
   expectedDataSource: DataSource
 ) {
-  withClue(clue) { getNullableBoolean2(key).shouldBe(expectedBoolean, expectedDataSource) }
+  withClue(clue) {
+    getNullableBoolean2(key, fetchPolicy).shouldBe(expectedBoolean, expectedDataSource)
+  }
 }
 
 suspend fun CachingConnector.verifyGetNullableBooleansByTag(
   tag: String,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedBoolean: Boolean?,
   expectedDataSource: DataSource
 ) {
   withClue(clue) {
-    getNullableBooleansByTag(tag).shouldBe(listOf(expectedBoolean), expectedDataSource)
+    getNullableBooleansByTag(tag, fetchPolicy).shouldBe(listOf(expectedBoolean), expectedDataSource)
   }
 }
 
 suspend fun CachingConnector.verifyGetNullableBooleansByTag2(
   tag: String,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedBoolean: Boolean?,
   expectedDataSource: DataSource
 ) {
-  verifyGetNullableBooleansByTag2(tag, clue, listOf(expectedBoolean), expectedDataSource)
+  verifyGetNullableBooleansByTag2(
+    tag,
+    fetchPolicy,
+    clue,
+    listOf(expectedBoolean),
+    expectedDataSource
+  )
 }
 
 suspend fun CachingConnector.verifyGetNullableBooleansByTag2(
   tag: String,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedBooleans: Collection<Boolean?>,
   expectedDataSource: DataSource
 ) {
-  withClue(clue) { getNullableBooleansByTag2(tag).shouldBe(expectedBooleans, expectedDataSource) }
+  withClue(clue) {
+    getNullableBooleansByTag2(tag, fetchPolicy).shouldBe(expectedBooleans, expectedDataSource)
+  }
 }
 
 suspend fun CachingConnector.verifyGetAnyValue(
   key: CachingConnector.Key,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedAnyValue: AnyValue,
   expectedDataSource: DataSource
 ) {
-  withClue(clue) { getAnyValue(key).shouldBe(expectedAnyValue, expectedDataSource) }
+  withClue(clue) { getAnyValue(key, fetchPolicy).shouldBe(expectedAnyValue, expectedDataSource) }
 }
 
 suspend fun CachingConnector.verifyGetAnyValue2(
   key: CachingConnector.Key,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedAnyValue: AnyValue,
   expectedDataSource: DataSource
 ) {
-  withClue(clue) { getAnyValue2(key).shouldBe(expectedAnyValue, expectedDataSource) }
+  withClue(clue) { getAnyValue2(key, fetchPolicy).shouldBe(expectedAnyValue, expectedDataSource) }
 }
 
 suspend fun CachingConnector.verifyGetAnyValuesByTag(
   tag: String,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedAnyValue: AnyValue,
   expectedDataSource: DataSource
 ) {
-  withClue(clue) { getAnyValuesByTag(tag).shouldBe(listOf(expectedAnyValue), expectedDataSource) }
+  withClue(clue) {
+    getAnyValuesByTag(tag, fetchPolicy).shouldBe(listOf(expectedAnyValue), expectedDataSource)
+  }
 }
 
 suspend fun CachingConnector.verifyGetAnyValuesByTag2(
   tag: String,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedAnyValue: AnyValue,
   expectedDataSource: DataSource
 ) {
-  verifyGetAnyValuesByTag2(tag, clue, listOf(expectedAnyValue), expectedDataSource)
+  verifyGetAnyValuesByTag2(tag, fetchPolicy, clue, listOf(expectedAnyValue), expectedDataSource)
 }
 
 suspend fun CachingConnector.verifyGetAnyValuesByTag2(
   tag: String,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedAnyValues: Collection<AnyValue>,
   expectedDataSource: DataSource
 ) {
-  withClue(clue) { getAnyValuesByTag2(tag).shouldBe(expectedAnyValues, expectedDataSource) }
+  withClue(clue) {
+    getAnyValuesByTag2(tag, fetchPolicy).shouldBe(expectedAnyValues, expectedDataSource)
+  }
 }
 
 suspend fun CachingConnector.verifyGetNullableAnyValue(
   key: CachingConnector.Key,
-  clue: String,
-  expectedAnyValue: AnyValue?,
-  expectedDataSource: DataSource
-) {
-  withClue(clue) { getNullableAnyValue(key).shouldBe(expectedAnyValue, expectedDataSource) }
-}
-
-suspend fun CachingConnector.verifyGetNullableAnyValue2(
-  key: CachingConnector.Key,
-  clue: String,
-  expectedAnyValue: AnyValue?,
-  expectedDataSource: DataSource
-) {
-  withClue(clue) { getNullableAnyValue2(key).shouldBe(expectedAnyValue, expectedDataSource) }
-}
-
-suspend fun CachingConnector.verifyGetNullableAnyValuesByTag(
-  tag: String,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedAnyValue: AnyValue?,
   expectedDataSource: DataSource
 ) {
   withClue(clue) {
-    getNullableAnyValuesByTag(tag).shouldBe(listOf(expectedAnyValue), expectedDataSource)
+    getNullableAnyValue(key, fetchPolicy).shouldBe(expectedAnyValue, expectedDataSource)
+  }
+}
+
+suspend fun CachingConnector.verifyGetNullableAnyValue2(
+  key: CachingConnector.Key,
+  fetchPolicy: FetchPolicy?,
+  clue: String,
+  expectedAnyValue: AnyValue?,
+  expectedDataSource: DataSource
+) {
+  withClue(clue) {
+    getNullableAnyValue2(key, fetchPolicy).shouldBe(expectedAnyValue, expectedDataSource)
+  }
+}
+
+suspend fun CachingConnector.verifyGetNullableAnyValuesByTag(
+  tag: String,
+  fetchPolicy: FetchPolicy?,
+  clue: String,
+  expectedAnyValue: AnyValue?,
+  expectedDataSource: DataSource
+) {
+  withClue(clue) {
+    getNullableAnyValuesByTag(tag, fetchPolicy)
+      .shouldBe(listOf(expectedAnyValue), expectedDataSource)
   }
 }
 
 suspend fun CachingConnector.verifyGetNullableAnyValuesByTag2(
   tag: String,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedAnyValue: AnyValue?,
   expectedDataSource: DataSource
 ) {
-  verifyGetNullableAnyValuesByTag2(tag, clue, listOf(expectedAnyValue), expectedDataSource)
+  verifyGetNullableAnyValuesByTag2(
+    tag,
+    fetchPolicy,
+    clue,
+    listOf(expectedAnyValue),
+    expectedDataSource
+  )
 }
 
 suspend fun CachingConnector.verifyGetNullableAnyValuesByTag2(
   tag: String,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedAnyValues: Collection<AnyValue?>,
   expectedDataSource: DataSource
 ) {
-  withClue(clue) { getNullableAnyValuesByTag2(tag).shouldBe(expectedAnyValues, expectedDataSource) }
+  withClue(clue) {
+    getNullableAnyValuesByTag2(tag, fetchPolicy).shouldBe(expectedAnyValues, expectedDataSource)
+  }
 }
 
 suspend fun CachingConnector.verifyGetMixed(
   key: CachingConnector.Key,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedItem: CachingConnector.Data.MixedGet.Item,
   expectedDataSource: DataSource
 ) {
-  withClue(clue) { getMixed(key).shouldBe(expectedItem, expectedDataSource) }
+  withClue(clue) { getMixed(key, fetchPolicy).shouldBe(expectedItem, expectedDataSource) }
 }
 
 suspend fun CachingConnector.verifyGetMixed2(
   key: CachingConnector.Key,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedItem: CachingConnector.Data.MixedGet.Item,
   expectedDataSource: DataSource
 ) {
-  withClue(clue) { getMixed2(key).shouldBe(expectedItem, expectedDataSource) }
+  withClue(clue) { getMixed2(key, fetchPolicy).shouldBe(expectedItem, expectedDataSource) }
 }
 
 suspend fun CachingConnector.verifyGetMixedsByTag(
   tag: String,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedItem: CachingConnector.Data.MixedGetMany.Item,
   expectedDataSource: DataSource
 ) {
-  withClue(clue) { getMixedsByTag(tag).shouldBe(listOf(expectedItem), expectedDataSource) }
+  withClue(clue) {
+    getMixedsByTag(tag, fetchPolicy).shouldBe(listOf(expectedItem), expectedDataSource)
+  }
 }
 
 suspend fun CachingConnector.verifyGetMixedsByTag2(
   tag: String,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedItem: CachingConnector.Data.MixedGetMany.Item,
   expectedDataSource: DataSource
 ) {
-  verifyGetMixedsByTag2(tag, clue, listOf(expectedItem), expectedDataSource)
+  verifyGetMixedsByTag2(tag, fetchPolicy, clue, listOf(expectedItem), expectedDataSource)
 }
 
 suspend fun CachingConnector.verifyGetMixedsByTag2(
   tag: String,
+  fetchPolicy: FetchPolicy?,
   clue: String,
   expectedItems: Collection<CachingConnector.Data.MixedGetMany.Item>,
   expectedDataSource: DataSource
 ) {
-  withClue(clue) { getMixedsByTag2(tag).shouldBe(expectedItems, expectedDataSource) }
+  withClue(clue) { getMixedsByTag2(tag, fetchPolicy).shouldBe(expectedItems, expectedDataSource) }
 }
