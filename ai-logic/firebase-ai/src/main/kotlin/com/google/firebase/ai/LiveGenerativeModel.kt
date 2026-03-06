@@ -40,7 +40,6 @@ import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 
 /**
@@ -116,7 +115,7 @@ internal constructor(
           config?.outputAudioTranscription?.toInternal()
         )
         .toInternal()
-    val data: String = Json.encodeToString(clientMessage)
+    val data: String = JSON.encodeToString(clientMessage)
     var webSession: DefaultClientWebSocketSession? = null
     try {
       webSession = controller.getWebSocketSession(location)
