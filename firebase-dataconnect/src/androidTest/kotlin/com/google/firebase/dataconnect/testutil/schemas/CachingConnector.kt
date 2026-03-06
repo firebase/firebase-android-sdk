@@ -1709,7 +1709,9 @@ fun QueryResult<CachingConnector.Data.MixedGetMany, *>.shouldBe(
   dataSource: DataSource
 ) {
   assertSoftly {
-    this.data.items shouldContainExactlyInAnyOrder items
+    val dummyId = UUID(0, 0)
+    this.data.items.map { it.copy(id = dummyId) } shouldContainExactlyInAnyOrder
+      items.map { it.copy(id = dummyId) }
     this.dataSource shouldBe dataSource
   }
 }

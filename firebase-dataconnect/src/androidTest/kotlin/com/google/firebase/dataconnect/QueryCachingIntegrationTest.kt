@@ -35,10 +35,6 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.quintuple
 import com.google.firebase.dataconnect.testutil.property.arbitrary.value
 import com.google.firebase.dataconnect.testutil.schemas.CachingConnector
 import com.google.firebase.dataconnect.testutil.schemas.shouldBe
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetMixed
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetMixed2
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetMixedsByTag
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetMixedsByTag2
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetString
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.util.nextAlphanumericString
@@ -585,45 +581,20 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
     )
 
   @Test
-  fun normalizedMixed() = runTest {
-    val connector = newCachingConnector()
-    checkAll(propTestConfig, mixedArb().quintuple()) { (mixed1, mixed2, mixed3, mixed4, mixed5) ->
-      val tag = randomTag()
-      val key = connector.insertMixed(mixed1.toInsertVariables(tag))
-      connector.verifyGetMixed(key, fetchPolicy = null, "query1a", mixed1.toGetItem(), SERVER)
-      connector.updateMixed(key, mixed2.toUpdateBuilder())
-      connector.verifyGetMixed2(key, fetchPolicy = null, "query2a", mixed2.toGetItem(), SERVER)
-      connector.verifyGetMixed(key, fetchPolicy = null, "query2b", mixed2.toGetItem(), CACHE)
-      connector.updateMixed(key, mixed3.toUpdateBuilder())
-      connector.verifyGetMixedsByTag(
-        tag,
-        fetchPolicy = null,
-        "query3a",
-        mixed3.toGetManyItem(key),
-        SERVER
-      )
-      connector.verifyGetMixed2(key, fetchPolicy = null, "query3b", mixed3.toGetItem(), CACHE)
-      connector.verifyGetMixed(key, fetchPolicy = null, "query3c", mixed3.toGetItem(), CACHE)
-      val key2 = connector.insertMixed(mixed5.toInsertVariables(tag))
-      connector.updateMixed(key, mixed4.toUpdateBuilder())
-      connector.verifyGetMixedsByTag2(
-        tag,
-        fetchPolicy = null,
-        "query4a",
-        listOf(mixed4.toGetManyItem(key), mixed5.toGetManyItem(key2)),
-        SERVER
-      )
-      connector.verifyGetMixedsByTag(
-        tag,
-        fetchPolicy = null,
-        "query4b",
-        mixed4.toGetManyItem(key),
-        CACHE
-      )
-      connector.verifyGetMixed2(key, fetchPolicy = null, "query4c", mixed4.toGetItem(), CACHE)
-      connector.verifyGetMixed(key, fetchPolicy = null, "query4d", mixed4.toGetItem(), CACHE)
-    }
-  }
+  fun normalizedMixed() =
+    testNormalizedValue(
+      valueArb = mixedArb(),
+      insertValue = { value, tag -> insertMixed(value.toInsertVariables(tag)) },
+      updateValue = { key, newValue -> updateMixed(key, newValue.toUpdateBuilder()) },
+      getValue = CachingConnector::getMixed,
+      getValue2 = CachingConnector::getMixed2,
+      getValuesByTag = CachingConnector::getMixedsByTag,
+      getValuesByTag2 = CachingConnector::getMixedsByTag2,
+      shouldBe = { expected, dataSource -> shouldBe(expected.toGetItem(), dataSource) },
+      shouldBeMany = { expected, dataSource ->
+        shouldBe(expected.map { it.toGetManyItem(UUID(0, 0)) }, dataSource)
+      },
+    )
 }
 
 private val propTestConfig =
