@@ -139,8 +139,7 @@ class DataConnectGrpcRPCsClientUnitTest {
   @Test
   fun `REMINDER - update the next test once SERVER_ONLY is supported`() = runTest {
     assumeTrue(
-      "Add FetchPolicy.SERVER_ONLY to fetchPolicy1Arb in the following tests " +
-        "once it is supported",
+      "Add FetchPolicy.SERVER_ONLY to fetchPolicy1Arb in the following tests once it is supported",
       false
     )
   }
