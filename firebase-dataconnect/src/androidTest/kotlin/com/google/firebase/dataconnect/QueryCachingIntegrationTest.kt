@@ -35,7 +35,6 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.quintuple
 import com.google.firebase.dataconnect.testutil.property.arbitrary.value
 import com.google.firebase.dataconnect.testutil.schemas.CachingConnector
 import com.google.firebase.dataconnect.testutil.schemas.shouldBe
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetString
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.util.nextAlphanumericString
 import com.google.protobuf.Value as ValueProto
@@ -58,7 +57,6 @@ import io.kotest.property.arbitrary.orNull
 import io.kotest.property.arbitrary.pair
 import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
-import java.util.UUID
 import kotlin.random.Random
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
@@ -269,7 +267,10 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
         config
 
       val key = connector.insertString(string1)
-      connector.verifyGetString(key, fetchPolicy1, "query1", query1String, query1DataSource)
+      withClue("query1") {
+        val result = connector.getString(key, fetchPolicy1)
+        result.shouldBe(query1String, query1DataSource)
+      }
       connector.updateString(key, string2)
 
       connector =
@@ -284,11 +285,15 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
           }
         }
 
-      if (fetchPolicy2 == FetchPolicy.CACHE_ONLY && query2DataSource == SERVER) {
-        val exception = shouldThrow<DataConnectException> { connector.getString(key, fetchPolicy2) }
-        exception.message shouldContainWithNonAbuttingText CACHED_DATA_NOT_FOUND_ERROR_ID
-      } else {
-        connector.verifyGetString(key, fetchPolicy2, "query2", query2String, query2DataSource)
+      withClue("query2") {
+        if (fetchPolicy2 == FetchPolicy.CACHE_ONLY && query2DataSource == SERVER) {
+          val exception =
+            shouldThrow<DataConnectException> { connector.getString(key, fetchPolicy2) }
+          exception.message shouldContainWithNonAbuttingText CACHED_DATA_NOT_FOUND_ERROR_ID
+        } else {
+          val result = connector.getString(key, fetchPolicy2)
+          result.shouldBe(query2String, query2DataSource)
+        }
       }
     }
   }
@@ -592,7 +597,7 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
       getValuesByTag2 = CachingConnector::getMixedsByTag2,
       shouldBe = { expected, dataSource -> shouldBe(expected.toGetItem(), dataSource) },
       shouldBeMany = { expected, dataSource ->
-        shouldBe(expected.map { it.toGetManyItem(UUID(0, 0)) }, dataSource)
+        shouldBe(expected.map { it.toGetItem() }, dataSource)
       },
     )
 }
@@ -709,25 +714,6 @@ private fun MixedArbSample.toUpdateBuilder():
 
 private fun MixedArbSample.toGetItem() =
   CachingConnector.Data.MixedGet.Item(
-    string,
-    stringNullable,
-    float.roundTripFloat,
-    floatNullable?.roundTripFloat,
-    boolean,
-    booleanNullable,
-    any.dataConnectRoundTripValue(),
-    anyNullable.dataConnectRoundTripValue(),
-    stringList,
-    floatList?.map { it?.roundTripFloat },
-    booleanList,
-    anyList.dataConnectRoundTripValue(),
-  )
-
-private fun MixedArbSample.toGetManyItem(key: CachingConnector.Key) = toGetManyItem(key.id)
-
-private fun MixedArbSample.toGetManyItem(id: UUID) =
-  CachingConnector.Data.MixedGetMany.Item(
-    id,
     string,
     stringNullable,
     float.roundTripFloat,
