@@ -18,9 +18,11 @@ package com.google.firebase.dataconnect.core
 
 import android.content.Context
 import com.google.android.gms.security.ProviderInstaller
+import com.google.firebase.dataconnect.CachedDataNotFoundException
 import com.google.firebase.dataconnect.DataConnectPath
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.FirebaseDataConnect
+import com.google.firebase.dataconnect.QueryRef.FetchPolicy
 import com.google.firebase.dataconnect.core.DataConnectGrpcMetadata.Companion.toStructProto
 import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
@@ -249,7 +251,11 @@ internal class DataConnectGrpcRPCs(
     requestId: String,
     request: ExecuteQueryRequest,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
+    fetchPolicy: FetchPolicy,
   ): ExecuteQueryResult {
+    require(fetchPolicy == FetchPolicy.PREFER_CACHE || fetchPolicy == FetchPolicy.CACHE_ONLY) {
+      "Only PREFER_CACHE and CACHE_ONLY are supported for now"
+    }
     val (metadata, authToken) = grpcMetadata.get(requestId, callerSdkType)
     val kotlinMethodName = "executeQuery(${request.operationName})"
 
@@ -282,6 +288,17 @@ internal class DataConnectGrpcRPCs(
           )
         is DataConnectCacheDatabase.GetQueryResultResult.NotFound -> {}
       }
+    }
+
+    if (fetchPolicy == FetchPolicy.CACHE_ONLY) {
+      val exception =
+        CachedDataNotFoundException("query was not found in the local cache [cck6p3fmd5]")
+      logger.logGrpcFailed(
+        requestId = requestId,
+        kotlinMethodName = kotlinMethodName,
+        throwable = exception,
+      )
+      throw exception
     }
 
     val result = lazyGrpcStub.get().runCatching { executeQuery(request, metadata) }

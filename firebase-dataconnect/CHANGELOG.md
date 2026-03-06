@@ -3,7 +3,8 @@
 - [changed] Added offline caching APIs
   ([#7814](https://github.com/firebase/firebase-android-sdk/pull/7814),
   [#7833](https://github.com/firebase/firebase-android-sdk/pull/7833),
-  [#7848](https://github.com/firebase/firebase-android-sdk/pull/7848))
+  [#7848](https://github.com/firebase/firebase-android-sdk/pull/7848),
+  [#7875](https://github.com/firebase/firebase-android-sdk/pull/7875))
 - [fixed] Fix UnsupportedOperationException when serializing lists of *nullable* AnyValue.
   ([#7864](https://github.com/firebase/firebase-android-sdk/pull/7864))
 
