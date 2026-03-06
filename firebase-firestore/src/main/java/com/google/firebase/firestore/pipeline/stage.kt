@@ -407,6 +407,30 @@ internal constructor(
     documents.asSequence().map(::encodeValue)
 }
 
+@Beta
+class SubcollectionSource
+private constructor(internal val path: String, options: InternalOptions = InternalOptions.EMPTY) :
+  Stage<SubcollectionSource>("subcollection", options) {
+  companion object {
+    /**
+     * Creates a SubcollectionSource with the given path.
+     *
+     * @param path The path of the subcollection that will be the source of this pipeline.
+     */
+    @JvmStatic
+    fun of(path: String): SubcollectionSource {
+      return SubcollectionSource(path)
+    }
+  }
+
+  override fun self(options: InternalOptions) = SubcollectionSource(path, options)
+
+  override fun canonicalId(): String = "${name}($path)"
+
+  override fun args(userDataReader: UserDataReader): Sequence<Value> =
+    sequenceOf(Values.encodeValue(path))
+}
+
 private fun associateWithoutDuplications(
   fields: Array<out Selectable>,
   userDataReader: UserDataReader
@@ -1207,7 +1231,7 @@ internal constructor(
   }
 
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
-    sequenceOf(Value.newBuilder().setPipelineValue(other.toPipelineProto()).build())
+    sequenceOf(Value.newBuilder().setPipelineValue(other.toPipelineProto(userDataReader)).build())
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
@@ -1323,5 +1347,47 @@ class UnnestOptions private constructor(options: InternalOptions) :
 
   override fun self(options: InternalOptions): UnnestOptions {
     return UnnestOptions(options)
+  }
+}
+
+@Beta
+class DefineStage
+internal constructor(
+  internal val aliasedExpressions: Array<out AliasedExpression>,
+  options: InternalOptions = InternalOptions.EMPTY
+) : Stage<DefineStage>("let", options) {
+  companion object {
+    /** Creates a DefineStage with at least one aliased expression. */
+    @JvmStatic
+    fun withVariables(
+      aliasedExpression: AliasedExpression,
+      vararg additionalExpressions: AliasedExpression
+    ): DefineStage {
+      return DefineStage(arrayOf(aliasedExpression, *additionalExpressions))
+    }
+  }
+
+  override fun self(options: InternalOptions) = DefineStage(aliasedExpressions, options)
+
+  override fun canonicalId(): String {
+    return "${name}(${aliasedExpressions.joinToString(",") { "${it.alias}=${it.expr.canonicalId()}" }})"
+  }
+
+  override fun args(userDataReader: UserDataReader): Sequence<Value> {
+    return sequenceOf(encodeValue(associateWithoutDuplications(aliasedExpressions, userDataReader)))
+  }
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is DefineStage) return false
+    if (!aliasedExpressions.contentEquals(other.aliasedExpressions)) return false
+    if (options != other.options) return false
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = aliasedExpressions.contentHashCode()
+    result = 31 * result + options.hashCode()
+    return result
   }
 }
