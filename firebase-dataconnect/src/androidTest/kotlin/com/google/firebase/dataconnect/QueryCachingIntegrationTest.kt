@@ -34,6 +34,7 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.quintuple
 import com.google.firebase.dataconnect.testutil.property.arbitrary.value
 import com.google.firebase.dataconnect.testutil.schemas.CachingConnector
+import com.google.firebase.dataconnect.testutil.schemas.shouldBe
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetAnyValue
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetAnyValue2
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetAnyValuesByTag
@@ -75,7 +76,6 @@ import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableStringN
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableStringsByTag
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableStringsByTag2
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetString
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetString2
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetStringList
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetStringList2
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetStringListsByTag
@@ -84,13 +84,12 @@ import com.google.firebase.dataconnect.testutil.schemas.verifyGetStringNullableL
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetStringNullableList2
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetStringNullableListsByTag
 import com.google.firebase.dataconnect.testutil.schemas.verifyGetStringNullableListsByTag2
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetStringsByTag
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetStringsByTag2
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.util.nextAlphanumericString
 import com.google.protobuf.Value as ValueProto
 import io.kotest.assertions.print.print
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
@@ -360,35 +359,79 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
     return CachingConnector(dataConnect)
   }
 
-  @Test
-  fun normalizedString() = runTest {
+  private fun <T, D, DMany> testNormalizedValue(
+    valueArb: Arb<T>,
+    insertValue: suspend CachingConnector.(value: T, tag: String) -> CachingConnector.Key,
+    updateValue: suspend CachingConnector.(CachingConnector.Key, newValue: T) -> Unit,
+    getValue: suspend CachingConnector.(CachingConnector.Key, FetchPolicy?) -> QueryResult<D, *>,
+    getValue2: suspend CachingConnector.(CachingConnector.Key, FetchPolicy?) -> QueryResult<D, *>,
+    getValuesByTag: suspend CachingConnector.(String, FetchPolicy?) -> QueryResult<DMany, *>,
+    getValuesByTag2: suspend CachingConnector.(String, FetchPolicy?) -> QueryResult<DMany, *>,
+    shouldBe: QueryResult<D, *>.(T, DataSource) -> Unit,
+    shouldBeMany: QueryResult<DMany, *>.(Collection<T>, DataSource) -> Unit,
+  ) = runTest {
     val connector = newCachingConnector()
-    val stringsArb = alphanumericStringArb().quintuple()
-    checkAll(propTestConfig, stringsArb) { (string1, string2, string3, string4, string5) ->
+    val fetchPolicy = null
+    checkAll(propTestConfig, valueArb.quintuple()) { (value1, value2, value3, value4, value5) ->
       val tag = randomTag()
-      val key = connector.insertString(string1, tag)
-      connector.verifyGetString(key, fetchPolicy = null, "query1a", string1, SERVER)
-      connector.updateString(key, string2)
-      connector.verifyGetString2(key, fetchPolicy = null, "query2a", string2, SERVER)
-      connector.verifyGetString(key, fetchPolicy = null, "query2b", string2, CACHE)
-      connector.updateString(key, string3)
-      connector.verifyGetStringsByTag(tag, fetchPolicy = null, "query3a", string3, SERVER)
-      connector.verifyGetString2(key, fetchPolicy = null, "query3b", string3, CACHE)
-      connector.verifyGetString(key, fetchPolicy = null, "query3c", string3, CACHE)
-      connector.insertString(string5, tag)
-      connector.updateString(key, string4)
-      connector.verifyGetStringsByTag2(
-        tag,
-        fetchPolicy = null,
-        "query4a",
-        listOf(string4, string5),
-        SERVER
-      )
-      connector.verifyGetStringsByTag(tag, fetchPolicy = null, "query4b", string4, CACHE)
-      connector.verifyGetString2(key, fetchPolicy = null, "query4c", string4, CACHE)
-      connector.verifyGetString(key, fetchPolicy = null, "query4d", string4, CACHE)
+      val key = connector.insertValue(value1, tag)
+
+      suspend fun getAndVerifyValue(expectedValue: T, expectedDataSource: DataSource) {
+        val result = connector.getValue(key, fetchPolicy)
+        result.shouldBe(expectedValue, expectedDataSource)
+      }
+
+      suspend fun getAndVerifyValue2(expectedValue: T, expectedDataSource: DataSource) {
+        val result = connector.getValue2(key, fetchPolicy)
+        result.shouldBe(expectedValue, expectedDataSource)
+      }
+
+      suspend fun getAndVerifyValues(
+        expectedValues: Collection<T>,
+        expectedDataSource: DataSource
+      ) {
+        val result = connector.getValuesByTag(tag, fetchPolicy)
+        result.shouldBeMany(expectedValues, expectedDataSource)
+      }
+
+      suspend fun getAndVerifyValues2(
+        expectedValues: Collection<T>,
+        expectedDataSource: DataSource
+      ) {
+        val result = connector.getValuesByTag2(tag, fetchPolicy)
+        result.shouldBeMany(expectedValues, expectedDataSource)
+      }
+
+      withClue("query1") { getAndVerifyValue(value1, SERVER) }
+      connector.updateValue(key, value2)
+      withClue("query2a") { getAndVerifyValue2(value2, SERVER) }
+      withClue("query2b") { getAndVerifyValue(value2, CACHE) }
+      connector.updateValue(key, value3)
+      withClue("query3a") { getAndVerifyValues(listOf(value3), SERVER) }
+      withClue("query3b") { getAndVerifyValue2(value3, CACHE) }
+      withClue("query3c") { getAndVerifyValue(value3, CACHE) }
+      connector.insertValue(value5, tag)
+      connector.updateValue(key, value4)
+      withClue("query4a") { getAndVerifyValues2(listOf(value4, value5), SERVER) }
+      withClue("query4b") { getAndVerifyValues(listOf(value4), CACHE) }
+      withClue("query4c") { getAndVerifyValue2(value4, CACHE) }
+      withClue("query4d") { getAndVerifyValue(value4, CACHE) }
     }
   }
+
+  @Test
+  fun normalizedString() =
+    testNormalizedValue(
+      valueArb = alphanumericStringArb(),
+      insertValue = CachingConnector::insertString,
+      updateValue = CachingConnector::updateString,
+      getValue = CachingConnector::getString,
+      getValue2 = CachingConnector::getString2,
+      getValuesByTag = CachingConnector::getStringsByTag,
+      getValuesByTag2 = CachingConnector::getStringsByTag2,
+      shouldBe = QueryResult<CachingConnector.Data.StringGet, *>::shouldBe,
+      shouldBeMany = QueryResult<CachingConnector.Data.StringGetMany, *>::shouldBe,
+    )
 
   @Test
   fun normalizedNullableString() = runTest {
