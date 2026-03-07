@@ -101,13 +101,17 @@ class DataConnectGrpcRPCsClientUnitTest {
   }
 
   @Test
-  fun `executeQuery(fetchPolicy=SERVER_ONLY) unconditionally returns results from server`() =
-    runTest {
-      assumeTrue("Implement this test once executeQuery supports fetchPolicy=SERVER_ONLY", false)
-    }
+  fun `REMINDER - add tests for various maxAge values, expired, not expired, 0, exact`() {
+    assumeTrue("REMINDER - add tests for various maxAge values", false)
+  }
 
   @Test
-  fun `executeQuery(fetchPolicy=SERVER_ONLY) updates cached entities`() = runTest {
+  fun `executeQuery(fetchPolicy=SERVER_ONLY) unconditionally returns results from server`() {
+    assumeTrue("Implement this test once executeQuery supports fetchPolicy=SERVER_ONLY", false)
+  }
+
+  @Test
+  fun `executeQuery(fetchPolicy=SERVER_ONLY) updates cached entities`() {
     assumeTrue("Implement this test once executeQuery supports fetchPolicy=SERVER_ONLY", false)
   }
 
@@ -137,7 +141,7 @@ class DataConnectGrpcRPCsClientUnitTest {
   }
 
   @Test
-  fun `REMINDER - update the next test once SERVER_ONLY is supported`() = runTest {
+  fun `REMINDER - update the next test once SERVER_ONLY is supported`() {
     assumeTrue(
       "Add FetchPolicy.SERVER_ONLY to fetchPolicy1Arb in the following tests once it is supported",
       false
