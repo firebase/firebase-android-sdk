@@ -540,26 +540,12 @@ public class AggregationTest {
             "b", map("author", "authorB", "title", "titleB", "rating", Long.MAX_VALUE));
     CollectionReference collection = testCollectionWithDocs(testDocs);
 
-    switch (getBackendEdition()) {
-      case STANDARD:
-        {
-          AggregateQuerySnapshot snapshot =
-              waitFor(collection.aggregate(sum("rating")).get(AggregateSource.SERVER));
+    AggregateQuerySnapshot snapshot =
+        waitFor(collection.aggregate(sum("rating")).get(AggregateSource.SERVER));
 
-          Object sum = snapshot.get(sum("rating"));
-          assertTrue(sum instanceof Double);
-          assertEquals(sum, (double) Long.MAX_VALUE + (double) Long.MAX_VALUE);
-          break;
-        }
-      case ENTERPRISE:
-        {
-          assertThrows(
-              RuntimeException.class,
-              () -> {
-                waitFor(collection.aggregate(sum("rating")).get(AggregateSource.SERVER));
-              });
-        }
-    }
+    Object sum = snapshot.get(sum("rating"));
+    assertTrue(sum instanceof Double);
+    assertEquals(sum, (double) Long.MAX_VALUE + (double) Long.MAX_VALUE);
   }
 
   @Test
@@ -589,20 +575,10 @@ public class AggregationTest {
             "d", map("author", "authorD", "title", "titleD", "rating", -10000));
     CollectionReference collection = testCollectionWithDocs(testDocs);
 
-    switch (getBackendEdition()) {
-      case STANDARD:
-        AggregateQuerySnapshot snapshot =
-            waitFor(collection.aggregate(sum("rating")).get(AggregateSource.SERVER));
+    AggregateQuerySnapshot snapshot =
+        waitFor(collection.aggregate(sum("rating")).get(AggregateSource.SERVER));
 
-        assertEquals(snapshot.get(sum("rating")), -10101L);
-        break;
-      case ENTERPRISE:
-        assertThrows(
-            RuntimeException.class,
-            () -> {
-              waitFor(collection.aggregate(sum("rating")).get(AggregateSource.SERVER));
-            });
-    }
+    assertEquals(snapshot.get(sum("rating")), -10101L);
   }
 
   @Test
@@ -675,13 +651,7 @@ public class AggregationTest {
                 .aggregate(sum("pages"))
                 .get(AggregateSource.SERVER));
 
-    switch (getBackendEdition()) {
-      case STANDARD:
-        assertEquals(snapshot.get(sum("pages")), 0L);
-        break;
-      case ENTERPRISE:
-        assertNull(snapshot.get(sum("pages")));
-    }
+    assertEquals(snapshot.get(sum("pages")), 0L);
   }
 
   @Test
