@@ -156,7 +156,7 @@ abstract class UpdatePinnedDependenciesTask : DefaultTask() {
      * ```
      */
     val DEPENDENCY_REGEX =
-      Regex("(?<=\\s{1,20}\\w{1,20}(?:\\s|\\())project\\((?:'|\")(:\\S+)(?:'|\")\\)")
+      Regex("""(?<=\s{1,20}\w{1,20}(?:\s|\())project\((?:'|")(:\\S+)(?:'|\")\)""")
 
     val DEPENDENCIES_TO_IGNORE = listOf(":protolite-well-known-types")
   }
