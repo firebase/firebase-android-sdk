@@ -70,6 +70,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   private final TransportManager transportManager;
   private final ConfigResolver configResolver;
   private final Clock clock;
+  private final SessionManager sessionManager;
   private final boolean screenPerformanceRecordingSupported;
 
   private Timer resumeTime; // The time app comes to foreground
@@ -84,18 +85,19 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     if (instance == null) {
       synchronized (AppStateMonitor.class) {
         if (instance == null) {
-          instance = new AppStateMonitor(TransportManager.getInstance(), new Clock());
+          instance = new AppStateMonitor(TransportManager.getInstance(), new Clock(), SessionManager.getInstance());
         }
       }
     }
     return instance;
   }
 
-  AppStateMonitor(TransportManager transportManager, Clock clock) {
+  AppStateMonitor(TransportManager transportManager, Clock clock, SessionManager sessionManager) {
     this(
         transportManager,
         clock,
         ConfigResolver.getInstance(),
+        sessionManager,
         isScreenPerformanceRecordingSupported());
   }
 
@@ -104,10 +106,12 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
       TransportManager transportManager,
       Clock clock,
       ConfigResolver configResolver,
+      SessionManager sessionManager,
       boolean screenPerformanceRecordingSupported) {
     this.transportManager = transportManager;
     this.clock = clock;
     this.configResolver = configResolver;
+    this.sessionManager = sessionManager;
     this.screenPerformanceRecordingSupported = screenPerformanceRecordingSupported;
   }
 
@@ -379,7 +383,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
             .setName(name)
             .setClientStartTimeUs(startTime.getMicros())
             .setDurationUs(startTime.getDurationMicros(endTime))
-            .addPerfSessions(SessionManager.getInstance().perfSession().build());
+            .addPerfSessions(sessionManager.perfSession().build());
     // Atomically get mTsnsCount and set it to zero.
     int tsnsCount = this.tsnsCount.getAndSet(0);
     synchronized (metricToCountMap) {

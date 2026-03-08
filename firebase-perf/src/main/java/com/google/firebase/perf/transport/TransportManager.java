@@ -14,6 +14,9 @@
 
 package com.google.firebase.perf.transport;
 
+import static com.google.firebase.perf.logging.FirebaseSessionsEnforcementCheck.checkSession;
+import static com.google.firebase.perf.logging.FirebaseSessionsEnforcementCheck.checkSessionsList;
+import static com.google.firebase.perf.util.AppProcessesProvider.getProcessName;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
 
@@ -123,6 +126,7 @@ public class TransportManager implements AppStateCallback {
   private ApplicationInfo.Builder applicationInfoBuilder;
   private String packageName;
   private String projectId;
+  private SessionManager sessionManager;
 
   private boolean isForegroundState = false;
 
@@ -197,9 +201,11 @@ public class TransportManager implements AppStateCallback {
   public void initialize(
       @NonNull FirebaseApp firebaseApp,
       @NonNull FirebaseInstallationsApi firebaseInstallationsApi,
-      @NonNull Provider<TransportFactory> flgTransportFactoryProvider) {
+      @NonNull Provider<TransportFactory> flgTransportFactoryProvider,
+      @NonNull SessionManager sessionManager) {
 
     this.firebaseApp = firebaseApp;
+    this.sessionManager = sessionManager;
     projectId = firebaseApp.getOptions().getProjectId();
     this.firebaseInstallationsApi = firebaseInstallationsApi;
     this.flgTransportFactoryProvider = flgTransportFactoryProvider;
@@ -230,6 +236,7 @@ public class TransportManager implements AppStateCallback {
     applicationInfoBuilder = ApplicationInfo.newBuilder();
     applicationInfoBuilder
         .setGoogleAppId(firebaseApp.getOptions().getApplicationId())
+        .setProcessName(getProcessName(appContext))
         .setAndroidAppInfo(
             AndroidApplicationInfo.newBuilder()
                 .setPackageName(packageName)
@@ -297,6 +304,7 @@ public class TransportManager implements AppStateCallback {
    * {@link #isAllowedToDispatch(PerfMetric)}).
    */
   public void log(final TraceMetric traceMetric, final ApplicationProcessState appState) {
+    checkSessionsList(traceMetric.getPerfSessionsList(), traceMetric.getName());
     executorService.execute(
         () -> syncLog(PerfMetric.newBuilder().setTraceMetric(traceMetric), appState));
   }
@@ -325,6 +333,7 @@ public class TransportManager implements AppStateCallback {
    */
   public void log(
       final NetworkRequestMetric networkRequestMetric, final ApplicationProcessState appState) {
+    checkSessionsList(networkRequestMetric.getPerfSessionsList(), networkRequestMetric.getUrl());
     executorService.execute(
         () ->
             syncLog(
@@ -354,6 +363,7 @@ public class TransportManager implements AppStateCallback {
    * {@link #isAllowedToDispatch(PerfMetric)}).
    */
   public void log(final GaugeMetric gaugeMetric, final ApplicationProcessState appState) {
+    checkSession(gaugeMetric.getSessionId(), "log(GaugeMetric)");
     executorService.execute(
         () -> syncLog(PerfMetric.newBuilder().setGaugeMetric(gaugeMetric), appState));
   }
@@ -382,7 +392,7 @@ public class TransportManager implements AppStateCallback {
       dispatchLog(perfMetric);
 
       // Check if the session is expired. If so, stop gauge collection.
-      SessionManager.getInstance().stopGaugeCollectionIfSessionRunningTooLong();
+      sessionManager.stopGaugeCollectionIfSessionRunningTooLong();
     }
   }
 
