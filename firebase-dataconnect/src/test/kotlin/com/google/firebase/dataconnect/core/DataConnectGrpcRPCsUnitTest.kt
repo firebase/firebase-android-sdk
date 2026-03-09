@@ -32,6 +32,8 @@ import com.google.firebase.dataconnect.testutil.newMockLogger
 import com.google.firebase.dataconnect.testutil.property.arbitrary.ProtoArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnectGrpcMetadata
+import com.google.firebase.dataconnect.testutil.property.arbitrary.distinctPair
+import com.google.firebase.dataconnect.testutil.property.arbitrary.pair
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.quadruple
 import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
@@ -41,7 +43,8 @@ import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.firebase.dataconnect.withAddedListIndex
-import com.google.protobuf.ListValue
+import com.google.protobuf.ListValue as ListValueProto
+import com.google.protobuf.Struct as StructProto
 import google.firebase.dataconnect.proto.ConnectorServiceGrpc
 import google.firebase.dataconnect.proto.ExecuteQueryRequest
 import google.firebase.dataconnect.proto.ExecuteQueryResponse
@@ -106,13 +109,82 @@ class DataConnectGrpcRPCsClientUnitTest {
   }
 
   @Test
-  fun `executeQuery(fetchPolicy=SERVER_ONLY) unconditionally returns results from server`() {
-    assumeTrue("Implement this test once executeQuery supports fetchPolicy=SERVER_ONLY", false)
-  }
+  fun `executeQuery(fetchPolicy=SERVER_ONLY) unconditionally returns results from server`() =
+    runTest {
+      val fetchPolicy1Arb = Arb.of(FetchPolicy.PREFER_CACHE, FetchPolicy.SERVER_ONLY)
+      checkAll(propTestConfig, QueryResultArb(entityCountRange = 0..5).pair(), fetchPolicy1Arb) {
+        (sample1, sample2),
+        fetchPolicy1 ->
+        val response1 = sample1.hydratedStruct.toExecuteQueryResponse()
+        val response2 = sample2.hydratedStruct.toExecuteQueryResponse()
+
+        startServer().use { server ->
+          val dataConnectGrpcRPCs = newDataConnectGrpcRPCs(server)
+          val request = executeQueryRequestArb.bind()
+
+          server.nextResponse = response1
+          dataConnectGrpcRPCs.executeQuery(
+            requestIdArb.bind(),
+            request,
+            callerSdkTypeArb.bind(),
+            fetchPolicy1,
+          )
+          server.nextResponse = response2
+          val result2 =
+            dataConnectGrpcRPCs.executeQuery(
+              requestIdArb.bind(),
+              request,
+              callerSdkTypeArb.bind(),
+              FetchPolicy.SERVER_ONLY,
+            )
+
+          result2.shouldBeInstanceOf<ExecuteQueryResult.FromServer>().response shouldBe response2
+          withClue("executeQueryInvocationCount") { server.executeQueryInvocationCount shouldBe 2 }
+        }
+      }
+    }
 
   @Test
-  fun `executeQuery(fetchPolicy=SERVER_ONLY) updates cached entities`() {
-    assumeTrue("Implement this test once executeQuery supports fetchPolicy=SERVER_ONLY", false)
+  fun `executeQuery(fetchPolicy=SERVER_ONLY) should update cached entities`() = runTest {
+    val fetchPolicy1Arb = Arb.of(FetchPolicy.PREFER_CACHE, FetchPolicy.SERVER_ONLY)
+    val fetchPolicy2Arb = Arb.of(FetchPolicy.PREFER_CACHE, FetchPolicy.CACHE_ONLY)
+    val fetchPoliciesArb = Arb.pair(fetchPolicy1Arb, fetchPolicy2Arb)
+    checkAll(propTestConfig, fetchPoliciesArb) { (fetchPolicy1, fetchPolicy2) ->
+      val (sample1, sample2) =
+        QueryResultArb(entityCountRange = 0..5, entityRepeatPolicy = INTER_SAMPLE_MUTATED)
+          .pair()
+          .bind()
+      val (request1, request2) = executeQueryRequestArb.distinctPair().bind()
+
+      startServer().use { server ->
+        val dataConnectGrpcRPCs = newDataConnectGrpcRPCs(server)
+
+        server.nextResponse = sample1.toExecuteQueryResponse()
+        dataConnectGrpcRPCs.executeQuery(
+          requestIdArb.bind(),
+          request1,
+          callerSdkTypeArb.bind(),
+          fetchPolicy1,
+        )
+        server.nextResponse = sample2.toExecuteQueryResponse()
+        dataConnectGrpcRPCs.executeQuery(
+          requestIdArb.bind(),
+          request2,
+          callerSdkTypeArb.bind(),
+          FetchPolicy.SERVER_ONLY,
+        )
+        val result =
+          dataConnectGrpcRPCs.executeQuery(
+            requestIdArb.bind(),
+            request1,
+            callerSdkTypeArb.bind(),
+            fetchPolicy2,
+          )
+
+        val expectedData = sample1.hydratedStructWithMutatedEntityValuesFrom(sample2)
+        result.shouldBeInstanceOf<ExecuteQueryResult.FromCache>().data shouldBe expectedData
+      }
+    }
   }
 
   @Test
@@ -141,29 +213,16 @@ class DataConnectGrpcRPCsClientUnitTest {
   }
 
   @Test
-  fun `REMINDER - update the next test once SERVER_ONLY is supported`() {
-    assumeTrue(
-      "Add FetchPolicy.SERVER_ONLY to fetchPolicy1Arb in the following tests once it is supported",
-      false
-    )
-  }
-
-  @Test
   fun `executeQuery(fetchPolicy!=SERVER_ONLY) returns non-normalized query results from cache`() =
     runTest {
-      // TODO: Add SERVER_ONLY to fetchPolicy1Arb once SERVER_ONLY is supported
-      val fetchPolicy1Arb = Arb.of(FetchPolicy.PREFER_CACHE)
+      val fetchPolicy1Arb = Arb.of(FetchPolicy.PREFER_CACHE, FetchPolicy.SERVER_ONLY)
       val fetchPolicy2Arb = Arb.of(FetchPolicy.entries.filterNot { it == FetchPolicy.SERVER_ONLY })
       val fetchPoliciesArb = Arb.pair(fetchPolicy1Arb, fetchPolicy2Arb)
       checkAll(propTestConfig, QueryResultArb(entityCountRange = 0..5), fetchPoliciesArb) {
         sample,
         (fetchPolicy1, fetchPolicy2) ->
         startServer().use { server ->
-          val response =
-            ExecuteQueryResponse.newBuilder().let { responseBuilder ->
-              responseBuilder.setData(sample.hydratedStruct)
-              responseBuilder.build()
-            }
+          val response = sample.hydratedStruct.toExecuteQueryResponse()
           server.nextResponse = response
           val dataConnectGrpcRPCs = newDataConnectGrpcRPCs(server)
           val request = executeQueryRequestArb.bind()
@@ -199,8 +258,7 @@ class DataConnectGrpcRPCsClientUnitTest {
   @Test
   fun `executeQuery(fetchPolicy!=SERVER_ONLY) returns normalized query results from cache`() =
     runTest {
-      // TODO: Add SERVER_ONLY to fetchPolicy1Arb once SERVER_ONLY is supported
-      val fetchPolicy1Arb = Arb.of(FetchPolicy.PREFER_CACHE)
+      val fetchPolicy1Arb = Arb.of(FetchPolicy.PREFER_CACHE, FetchPolicy.SERVER_ONLY)
       val fetchPolicy2Arb = Arb.of(FetchPolicy.entries.filterNot { it == FetchPolicy.SERVER_ONLY })
       val fetchPoliciesArb =
         Arb.quadruple(fetchPolicy1Arb, fetchPolicy1Arb, fetchPolicy2Arb, fetchPolicy2Arb)
@@ -333,6 +391,9 @@ private fun executeQueryRequestArb(
       .build()
   }
 
+private fun StructProto.toExecuteQueryResponse(): ExecuteQueryResponse =
+  ExecuteQueryResponse.newBuilder().setData(this@toExecuteQueryResponse).build()
+
 private fun QueryResultArb.Sample.toExecuteQueryResponse(): ExecuteQueryResponse {
   val builder = ExecuteQueryResponse.newBuilder()
   builder.setData(hydratedStruct)
@@ -372,8 +433,8 @@ private fun QueryResultArb.Sample.toGraphqlResponseExtensions(): GraphqlResponse
   return if (builder.dataConnectCount > 0) builder.build() else null
 }
 
-private fun listValueFromPath(path: DataConnectPath): ListValue {
-  val builder = ListValue.newBuilder()
+private fun listValueFromPath(path: DataConnectPath): ListValueProto {
+  val builder = ListValueProto.newBuilder()
   path.forEach { segment ->
     builder.addValues(
       when (segment) {
