@@ -30,18 +30,23 @@ import com.google.firebase.dataconnect.testutil.map
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.FloatRoundTrip
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.distinctPair
+import com.google.firebase.dataconnect.testutil.property.arbitrary.pair
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.quintuple
 import com.google.firebase.dataconnect.testutil.property.arbitrary.value
 import com.google.firebase.dataconnect.testutil.schemas.CachingConnector
 import com.google.firebase.dataconnect.testutil.schemas.shouldBe
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
+import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import com.google.firebase.util.nextAlphanumericString
 import com.google.protobuf.Value as ValueProto
+import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.print.print
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
@@ -50,6 +55,7 @@ import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.alphanumeric
 import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.boolean
+import io.kotest.property.arbitrary.duration
 import io.kotest.property.arbitrary.list
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.of
@@ -57,10 +63,13 @@ import io.kotest.property.arbitrary.orNull
 import io.kotest.property.arbitrary.pair
 import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
+import java.util.UUID
 import kotlin.random.Random
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.nanoseconds
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.test.runTest
 import org.junit.Assume.assumeTrue
 import org.junit.Test
@@ -212,6 +221,133 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
   }
 
   @Test
+  fun fetchPolicyPreferCacheReturnsCachedDataIfMaxAgeNotPassed() =
+    verifyQueryReturnsCachedData(maxAge = 1.hours, FetchPolicy.PREFER_CACHE)
+
+  @Test
+  fun fetchPolicyPreferCacheReturnsServerDataIfMaxAgePassed() =
+    verifyQueryReturnsServerData(maxAge = 1.milliseconds, FetchPolicy.PREFER_CACHE)
+
+  @Test
+  fun fetchPolicyPreferCacheReturnsServerDataIfMaxAgeZero() =
+    verifyQueryReturnsServerData(maxAge = Duration.ZERO, FetchPolicy.PREFER_CACHE)
+
+  @Test
+  fun fetchPolicyPreferCacheReturnsCachedDataIfMaxAgeInfinite() =
+    verifyQueryReturnsCachedData(maxAge = Duration.INFINITE, FetchPolicy.PREFER_CACHE)
+
+  @Test
+  fun fetchPolicyPreferCacheReturnsServerDataIfNoCachedData() =
+    verifyQueryReturnsServerDataIfNoCachedData(FetchPolicy.PREFER_CACHE)
+
+  @Test
+  fun fetchPolicyDefaultReturnsCachedDataIfMaxAgeNotPassed() =
+    verifyQueryReturnsCachedData(maxAge = 1.hours, fetchPolicy = null)
+
+  @Test
+  fun fetchPolicyDefaultReturnsServerDataIfMaxAgePassed() =
+    verifyQueryReturnsServerData(maxAge = 1.milliseconds, fetchPolicy = null)
+
+  @Test
+  fun fetchPolicyDefaultReturnsServerDataIfMaxAgeZero() =
+    verifyQueryReturnsServerData(maxAge = Duration.ZERO, fetchPolicy = null)
+
+  @Test
+  fun fetchPolicyDefaultReturnsCachedDataIfMaxAgeInfinite() =
+    verifyQueryReturnsCachedData(maxAge = Duration.INFINITE, fetchPolicy = null)
+
+  @Test
+  fun fetchPolicyDefaultReturnsServerDataIfNoCachedData() =
+    verifyQueryReturnsServerDataIfNoCachedData(fetchPolicy = null)
+
+  @Test
+  fun fetchPolicyCacheOnlyReturnsCachedDataIfMaxAgeNotPassed() =
+    verifyQueryReturnsCachedData(maxAge = 1.hours, FetchPolicy.CACHE_ONLY)
+
+  @Test
+  fun fetchPolicyCacheOnlyReturnsCachedDataIfMaxAgePassed() =
+    verifyQueryReturnsCachedData(maxAge = 1.milliseconds, FetchPolicy.CACHE_ONLY)
+
+  @Test
+  fun fetchPolicyCacheOnlyReturnsCachedDataIfMaxAgeZero() =
+    verifyQueryReturnsCachedData(maxAge = Duration.ZERO, FetchPolicy.CACHE_ONLY)
+
+  @Test
+  fun fetchPolicyCacheOnlyReturnsCachedDataIfMaxAgeInfinite() =
+    verifyQueryReturnsCachedData(maxAge = Duration.INFINITE, FetchPolicy.CACHE_ONLY)
+
+  @Test
+  fun fetchPolicyCacheOnlyThrowsIfNoCachedData() =
+    verifyQueryThrowsIfNoCachedData(FetchPolicy.CACHE_ONLY)
+
+  private fun verifyQueryReturnsCachedData(maxAge: Duration, fetchPolicy: FetchPolicy?) = runTest {
+    val connector = newCachingConnector(cacheSettings = CacheSettings(maxAge = maxAge))
+    checkAll(propTestConfig, alphanumericStringArb().pair()) { (string1, string2) ->
+      val key = connector.insertString(string1)
+      connector.getString(key) // populate cache
+      connector.updateString(key, string2)
+
+      val result = connector.getString(key, fetchPolicy)
+
+      assertSoftly {
+        result.data.item.shouldNotBeNull().string shouldBe string1
+        result.dataSource shouldBe CACHE
+      }
+    }
+  }
+
+  private fun verifyQueryReturnsServerData(maxAge: Duration, fetchPolicy: FetchPolicy?) = runTest {
+    val connector = newCachingConnector(cacheSettings = CacheSettings(maxAge = maxAge))
+    checkAll(propTestConfig, alphanumericStringArb().pair()) { (string1, string2) ->
+      val key = connector.insertString(string1)
+      connector.getString(key) // populate cache
+      connector.updateString(key, string2)
+
+      val result = connector.getString(key, fetchPolicy)
+
+      assertSoftly {
+        result.data.item.shouldNotBeNull().string shouldBe string2
+        result.dataSource shouldBe SERVER
+      }
+    }
+  }
+
+  private fun verifyQueryThrowsIfNoCachedData(
+    @Suppress("SameParameterValue") fetchPolicy: FetchPolicy?
+  ) = runTest {
+    checkAll(propTestConfig, maxAgeArb()) { maxAge ->
+      val connector = newCachingConnector(cacheSettings = CacheSettings(maxAge = maxAge))
+      val key = CachingConnector.Key(UUID.randomUUID())
+
+      val exception = shouldThrow<DataConnectException> { connector.getString(key, fetchPolicy) }
+
+      assertSoftly {
+        exception.message shouldContainWithNonAbuttingText CACHED_DATA_NOT_FOUND_ERROR_ID
+        exception.message shouldContainWithNonAbuttingTextIgnoringCase
+          "query was not found in the local cache"
+      }
+
+      connector.dataConnect.suspendingClose()
+    }
+  }
+
+  private fun verifyQueryReturnsServerDataIfNoCachedData(fetchPolicy: FetchPolicy?) = runTest {
+    checkAll(propTestConfig, alphanumericStringArb(), maxAgeArb()) { string, maxAge ->
+      val connector = newCachingConnector(cacheSettings = CacheSettings(maxAge = maxAge))
+      val key = connector.insertString(string)
+
+      val result = connector.getString(key, fetchPolicy)
+
+      assertSoftly {
+        result.data.item.shouldNotBeNull().string shouldBe string
+        result.dataSource shouldBe SERVER
+      }
+
+      connector.dataConnect.suspendingClose()
+    }
+  }
+
+  @Test
   fun reminderToUpdateNextTestOnceSERVER_ONLYIsSupported() {
     assumeTrue(
       "Add FetchPolicy.SERVER_ONLY to fetchPolicy1Arb in the following test " +
@@ -246,8 +382,8 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
       CreateQueryUpdateQueryTestConfig.Builder.(string1: String, string2: String) -> Unit,
   ) = runTest {
     // TODO: Add SERVER_ONLY to fetchPolicy1Arb once SERVER_ONLY is supported [ksb8a94zkq]
-    val fetchPolicy1Arb = Arb.of(FetchPolicy.PREFER_CACHE)
-    val fetchPolicy2Arb = Arb.of(FetchPolicy.entries.filterNot { it == FetchPolicy.SERVER_ONLY })
+    val fetchPolicy1Arb = Arb.of(null, FetchPolicy.PREFER_CACHE)
+    val fetchPolicy2Arb = Arb.of(null, FetchPolicy.PREFER_CACHE)
     val fetchPoliciesArb = Arb.pair(fetchPolicy1Arb, fetchPolicy2Arb)
     val stringsArb = alphanumericStringArb().distinctPair()
     val stringsAndConfigArb =
@@ -286,14 +422,8 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
         }
 
       withClue("query2") {
-        if (fetchPolicy2 == FetchPolicy.CACHE_ONLY && query2DataSource == SERVER) {
-          val exception =
-            shouldThrow<DataConnectException> { connector.getString(key, fetchPolicy2) }
-          exception.message shouldContainWithNonAbuttingText CACHED_DATA_NOT_FOUND_ERROR_ID
-        } else {
-          val result = connector.getString(key, fetchPolicy2)
-          result.shouldBe(query2String, query2DataSource)
-        }
+        val result = connector.getString(key, fetchPolicy2)
+        result.shouldBe(query2String, query2DataSource)
       }
     }
   }
@@ -761,3 +891,5 @@ private fun mixedArb(
     anyListArb,
     ::MixedArbSample
   )
+
+private fun maxAgeArb(): Arb<Duration> = Arb.duration((0.seconds)..Int.MAX_VALUE.seconds)
