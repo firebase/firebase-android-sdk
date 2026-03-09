@@ -58,7 +58,7 @@ class CachingConnector(val dataConnect: FirebaseDataConnect) {
     mutationRef.execute()
   }
 
-  suspend fun getString(key: Key, fetchPolicy: FetchPolicy?) =
+  suspend fun getString(key: Key, fetchPolicy: FetchPolicy? = null) =
     getString("CachingString_GetByKey", key, fetchPolicy)
 
   suspend fun getString2(key: Key, fetchPolicy: FetchPolicy?) =
