@@ -260,19 +260,19 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
     verifyQueryThrowsIfNoCachedData(FetchPolicy.CACHE_ONLY)
 
   @Test
-  fun fetchPolicyServerOnlyReturnsCachedDataIfMaxAgeNotPassed() =
+  fun fetchPolicyServerOnlyReturnsServerDataIfMaxAgeNotPassed() =
     verifyQueryReturnsServerData(maxAge = 1.hours, FetchPolicy.SERVER_ONLY)
 
   @Test
-  fun fetchPolicyServerOnlyReturnsCachedDataIfMaxAgePassed() =
+  fun fetchPolicyServerOnlyReturnsServerDataIfMaxAgePassed() =
     verifyQueryReturnsServerData(maxAge = 1.milliseconds, FetchPolicy.SERVER_ONLY)
 
   @Test
-  fun fetchPolicyServerOnlyReturnsCachedDataIfMaxAgeZero() =
+  fun fetchPolicyServerOnlyReturnsServerDataIfMaxAgeZero() =
     verifyQueryReturnsServerData(maxAge = Duration.ZERO, FetchPolicy.SERVER_ONLY)
 
   @Test
-  fun fetchPolicyServerOnlyReturnsCachedDataIfMaxAgeInfinite() =
+  fun fetchPolicyServerOnlyReturnsServerDataIfMaxAgeInfinite() =
     verifyQueryReturnsServerData(maxAge = Duration.INFINITE, FetchPolicy.SERVER_ONLY)
 
   @Test
