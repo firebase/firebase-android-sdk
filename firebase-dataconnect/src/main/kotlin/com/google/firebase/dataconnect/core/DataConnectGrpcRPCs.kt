@@ -18,9 +18,11 @@ package com.google.firebase.dataconnect.core
 
 import android.content.Context
 import com.google.android.gms.security.ProviderInstaller
+import com.google.firebase.dataconnect.CachedDataNotFoundException
 import com.google.firebase.dataconnect.DataConnectPath
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.FirebaseDataConnect
+import com.google.firebase.dataconnect.QueryRef.FetchPolicy
 import com.google.firebase.dataconnect.core.DataConnectGrpcMetadata.Companion.toStructProto
 import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
@@ -249,7 +251,11 @@ internal class DataConnectGrpcRPCs(
     requestId: String,
     request: ExecuteQueryRequest,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
+    fetchPolicy: FetchPolicy,
   ): ExecuteQueryResult {
+    require(fetchPolicy == FetchPolicy.PREFER_CACHE || fetchPolicy == FetchPolicy.CACHE_ONLY) {
+      "Only PREFER_CACHE and CACHE_ONLY are supported for now"
+    }
     val (metadata, authToken) = grpcMetadata.get(requestId, callerSdkType)
     val kotlinMethodName = "executeQuery(${request.operationName})"
 
@@ -264,25 +270,15 @@ internal class DataConnectGrpcRPCs(
 
     val cacheInfo = queryCacheInfo(authToken, request)
 
-    cacheInfo?.run {
-      when (val cachedResult = cacheDb.getQueryResult(authUid, queryId, currentTimeMillis())) {
-        is DataConnectCacheDatabase.GetQueryResultResult.Found -> {
-          logger.logGrpcReturningFromCache(
-            requestId = requestId,
-            kotlinMethodName = kotlinMethodName,
-            cachedResult = cachedResult,
-          )
-          return ExecuteQueryResult.FromCache(cachedResult.struct)
-        }
-        is DataConnectCacheDatabase.GetQueryResultResult.Stale ->
-          logger.logGrpcIgnoringStaleCache(
-            requestId = requestId,
-            kotlinMethodName = kotlinMethodName,
-            cachedResult = cachedResult,
-          )
-        is DataConnectCacheDatabase.GetQueryResultResult.NotFound -> {}
+    cacheInfo
+      ?.executeQueryAgainstCache(
+        requestId = requestId,
+        kotlinMethodName = kotlinMethodName,
+        fetchPolicy = fetchPolicy,
+      )
+      ?.let {
+        return it
       }
-    }
 
     val result = lazyGrpcStub.get().runCatching { executeQuery(request, metadata) }
 
@@ -315,6 +311,54 @@ internal class DataConnectGrpcRPCs(
     }
 
     return ExecuteQueryResult.FromServer(result.getOrThrow())
+  }
+
+  private suspend fun QueryCacheInfo.executeQueryAgainstCache(
+    requestId: String,
+    kotlinMethodName: String,
+    fetchPolicy: FetchPolicy,
+  ): ExecuteQueryResult.FromCache? {
+    val staleResult =
+      when (fetchPolicy) {
+        FetchPolicy.CACHE_ONLY -> DataConnectCacheDatabase.GetQueryResultResult.Found::class
+        else -> DataConnectCacheDatabase.GetQueryResultResult.Stale::class
+      }
+
+    val cachedResult = cacheDb.getQueryResult(authUid, queryId, currentTimeMillis(), staleResult)
+
+    val cachedData: Struct? =
+      when (cachedResult) {
+        is DataConnectCacheDatabase.GetQueryResultResult.Found -> {
+          logger.logGrpcReturningFromCache(
+            requestId = requestId,
+            kotlinMethodName = kotlinMethodName,
+            cachedResult = cachedResult,
+          )
+          cachedResult.struct
+        }
+        is DataConnectCacheDatabase.GetQueryResultResult.Stale -> {
+          logger.logGrpcIgnoringStaleCache(
+            requestId = requestId,
+            kotlinMethodName = kotlinMethodName,
+            cachedResult = cachedResult,
+          )
+          null
+        }
+        is DataConnectCacheDatabase.GetQueryResultResult.NotFound -> null
+      }
+
+    if (cachedData === null && fetchPolicy == FetchPolicy.CACHE_ONLY) {
+      val exception =
+        CachedDataNotFoundException("query was not found in the local cache [cck6p3fmd5]")
+      logger.logGrpcFailed(
+        requestId = requestId,
+        kotlinMethodName = kotlinMethodName,
+        throwable = exception,
+      )
+      throw exception
+    }
+
+    return cachedData?.let(ExecuteQueryResult::FromCache)
   }
 
   suspend fun getEmulatorInfo(requestId: String): EmulatorInfo {
