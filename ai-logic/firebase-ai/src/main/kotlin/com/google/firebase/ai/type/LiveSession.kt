@@ -371,14 +371,10 @@ internal constructor(
    * response from the client.
    */
   public suspend fun sendFunctionResponse(functionList: List<FunctionResponsePart>) {
-    FirebaseAIException.catchAsync {
-      val jsonString =
-        JSON.encodeToString(
-          BidiGenerateContentToolResponseSetup(functionList.map { it.toInternalFunctionResponse() })
-            .toInternal()
-        )
-      session.send(Frame.Text(jsonString))
-    }
+    internalSend(
+      BidiGenerateContentToolResponseSetup(functionList.map { it.toInternalFunctionResponse() })
+        .toInternal()
+    )
   }
 
   /**
@@ -392,11 +388,7 @@ internal constructor(
    * results, send 16-bit PCM audio at 24kHz.
    */
   public suspend fun sendAudioRealtime(audio: InlineData) {
-    FirebaseAIException.catchAsync {
-      val jsonString =
-        JSON.encodeToString(BidiGenerateContentRealtimeInputSetup(audio = audio).toInternal())
-      session.send(Frame.Text(jsonString))
-    }
+    internalSend(BidiGenerateContentRealtimeInputSetup(audio = audio).toInternal())
   }
 
   /**
@@ -414,11 +406,7 @@ internal constructor(
    * data (for example, `image/png`, `image/jpeg`, etc.).
    */
   public suspend fun sendVideoRealtime(video: InlineData) {
-    FirebaseAIException.catchAsync {
-      val jsonString =
-        JSON.encodeToString(BidiGenerateContentRealtimeInputSetup(video = video).toInternal())
-      session.send(Frame.Text(jsonString))
-    }
+    internalSend(BidiGenerateContentRealtimeInputSetup(video = video).toInternal())
   }
 
   /**
@@ -427,11 +415,7 @@ internal constructor(
    * @param text Text content to append to the current client's conversation.
    */
   public suspend fun sendTextRealtime(text: String) {
-    FirebaseAIException.catchAsync {
-      val jsonString =
-        JSON.encodeToString(BidiGenerateContentRealtimeInputSetup(text = text).toInternal())
-      session.send(Frame.Text(jsonString))
-    }
+    internalSend(BidiGenerateContentRealtimeInputSetup(text = text).toInternal())
   }
 
   /**
@@ -445,16 +429,10 @@ internal constructor(
   public suspend fun sendMediaStream(
     mediaChunks: List<MediaData>,
   ) {
-    FirebaseAIException.catchAsync {
-      val jsonString =
-        JSON.encodeToString(
-          BidiGenerateContentRealtimeInputSetup(
-              mediaChunks.map { InlineData(it.data, it.mimeType) }
-            )
-            .toInternal()
-        )
-      session.send(Frame.Text(jsonString))
-    }
+    internalSend(
+      BidiGenerateContentRealtimeInputSetup(mediaChunks.map { InlineData(it.data, it.mimeType) })
+        .toInternal()
+    )
   }
 
   /**
@@ -465,14 +443,24 @@ internal constructor(
    * @param content Client [Content] to be sent to the model.
    */
   public suspend fun send(content: Content) {
+    internalSend(
+      BidiGenerateContentClientContentSetup(listOf(content.toInternal()), true).toInternal()
+    )
+  }
+
+  /**
+   * Encodes the provided data to a JSON string and sends it over the WebSocket session.
+   *
+   * If an exception is thrown, it will be handled by [FirebaseAIException.catchAsync]
+   *
+   * @param T The type of the data to be sent, which must be serializable.
+   * @param data The data object to be encoded and sent.
+   */
+  private suspend inline fun <reified T> internalSend(data: T) =
     FirebaseAIException.catchAsync {
-      val jsonString =
-        JSON.encodeToString(
-          BidiGenerateContentClientContentSetup(listOf(content.toInternal()), true).toInternal()
-        )
+      val jsonString = JSON.encodeToString(data)
       session.send(Frame.Text(jsonString))
     }
-  }
 
   /**
    * Sends text to the model.
