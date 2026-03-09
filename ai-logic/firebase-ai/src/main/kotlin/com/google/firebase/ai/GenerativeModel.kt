@@ -272,7 +272,7 @@ internal constructor(
     parameter: String
   ): FunctionResponsePart {
     val inputDeserializer = functionDeclaration.inputSchema.getSerializer()
-    val input = Json.decodeFromString(inputDeserializer, parameter)
+    val input = JSON.decodeFromString(inputDeserializer, parameter)
     val functionReference =
       functionDeclaration.functionReference
         ?: throw RuntimeException("Function reference for ${functionDeclaration.name} is missing")
@@ -281,7 +281,7 @@ internal constructor(
       val outputSerializer = functionDeclaration.outputSchema?.getSerializer()
       if (outputSerializer != null) {
         return FunctionResponsePart.from(
-            Json.encodeToJsonElement(outputSerializer, output).jsonObject
+            JSON.encodeToJsonElement(outputSerializer, output).jsonObject
           )
           .normalizeAgainstCall(functionCall)
       }

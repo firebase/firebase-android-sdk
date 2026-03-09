@@ -96,7 +96,7 @@ internal constructor(
     inputs: Map<String, Any>
   ): TemplateGenerateImageRequest {
     return TemplateGenerateImageRequest(
-      Json.parseToJsonElement(JSONObject(inputs).toString()).jsonObject
+      JSON.parseToJsonElement(JSONObject(inputs).toString()).jsonObject
     )
   }
 
