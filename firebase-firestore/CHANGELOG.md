@@ -1,5 +1,8 @@
 # Unreleased
 
+- [feature] Added support for `rand` and `trunc` Pipeline expressions.
+  [#7886](https://github.com/firebase/firebase-android-sdk/pull/7886)
+
 # 26.1.1
 
 - [feature] Added support for `regexFind` and `regexFindAll` Pipeline expressions.
