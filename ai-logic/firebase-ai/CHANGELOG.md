@@ -1,6 +1,6 @@
 # Unreleased
 
-- [fixed] Fixed an issue causing Live API to fail when using the `GoogleAI` backend
+- [fixed] Fixed an issue causing Live API to fail when using the `GoogleAI` backend (#7880)
 - [changed] Added the `hybrid` component to request headers coming from `prefer_in_cloud` configurations (#7857)
 
 # 17.10.0
