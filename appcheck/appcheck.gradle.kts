@@ -13,6 +13,6 @@
 // limitations under the License.
 
 
-configure(subprojects) {
-    group = 'com.google.firebase'
+subprojects {
+    group = "com.google.firebase"
 }
