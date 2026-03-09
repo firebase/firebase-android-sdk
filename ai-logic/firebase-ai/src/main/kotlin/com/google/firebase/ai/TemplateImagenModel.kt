@@ -19,6 +19,7 @@ package com.google.firebase.ai
 import com.google.firebase.FirebaseApp
 import com.google.firebase.ai.common.APIController
 import com.google.firebase.ai.common.AppCheckHeaderProvider
+import com.google.firebase.ai.common.JSON
 import com.google.firebase.ai.common.TemplateGenerateImageRequest
 import com.google.firebase.ai.type.FirebaseAIException
 import com.google.firebase.ai.type.ImagenGenerationResponse
