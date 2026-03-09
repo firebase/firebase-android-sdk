@@ -71,16 +71,14 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.nanoseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.test.runTest
-import org.junit.Assume.assumeTrue
 import org.junit.Test
 
 class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
 
   @Test
   fun cachingDisabledAlwaysReturnsFromServer() =
-    executeCreateQueryUpdateQueryTest(cacheSettings = null) { string1, string2 ->
-      query1ResultShouldBe(string1, SERVER)
-      query2ResultShouldBe(string2, SERVER)
+    executeCreateQueryUpdateQueryTest(cacheSettings = null) { strings ->
+      query2ResultShouldBe(strings.postUpdateValue, SERVER)
       useSameDataConnectInstanceForQuery2()
     }
 
@@ -88,9 +86,8 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
   fun cachingMemoryReturnsFromCacheBeforeMaxAge() =
     executeCreateQueryUpdateQueryTest(
       cacheSettings = CacheSettings(storage = MEMORY, maxAge = 1.hours)
-    ) { string1, _ ->
-      query1ResultShouldBe(string1, SERVER)
-      query2ResultShouldBe(string1, CACHE)
+    ) { strings ->
+      query2ResultShouldBe(strings.preUpdateValue, CACHE)
       useSameDataConnectInstanceForQuery2()
     }
 
@@ -98,9 +95,8 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
   fun cachingPersistentReturnsFromCacheBeforeMaxAge() =
     executeCreateQueryUpdateQueryTest(
       cacheSettings = CacheSettings(storage = PERSISTENT, maxAge = 1.hours)
-    ) { string1, _ ->
-      query1ResultShouldBe(string1, SERVER)
-      query2ResultShouldBe(string1, CACHE)
+    ) { strings ->
+      query2ResultShouldBe(strings.preUpdateValue, CACHE)
       useSameDataConnectInstanceForQuery2()
     }
 
@@ -108,9 +104,8 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
   fun cachingMemoryReturnsFromServerAfterMaxAge() =
     executeCreateQueryUpdateQueryTest(
       cacheSettings = CacheSettings(storage = MEMORY, maxAge = 1.nanoseconds)
-    ) { string1, string2 ->
-      query1ResultShouldBe(string1, SERVER)
-      query2ResultShouldBe(string2, SERVER)
+    ) { strings ->
+      query2ResultShouldBe(strings.postUpdateValue, SERVER)
       useSameDataConnectInstanceForQuery2()
     }
 
@@ -118,9 +113,8 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
   fun cachingPersistentReturnsFromServerAfterMaxAge() =
     executeCreateQueryUpdateQueryTest(
       cacheSettings = CacheSettings(storage = PERSISTENT, maxAge = 1.nanoseconds)
-    ) { string1, string2 ->
-      query1ResultShouldBe(string1, SERVER)
-      query2ResultShouldBe(string2, SERVER)
+    ) { strings ->
+      query2ResultShouldBe(strings.postUpdateValue, SERVER)
       useSameDataConnectInstanceForQuery2()
     }
 
@@ -128,9 +122,8 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
   fun cachingMemoryReturnsFromServerWhenMaxAgeIsZero() =
     executeCreateQueryUpdateQueryTest(
       cacheSettings = CacheSettings(storage = MEMORY, maxAge = Duration.ZERO)
-    ) { string1, string2 ->
-      query1ResultShouldBe(string1, SERVER)
-      query2ResultShouldBe(string2, SERVER)
+    ) { strings ->
+      query2ResultShouldBe(strings.postUpdateValue, SERVER)
       useSameDataConnectInstanceForQuery2()
     }
 
@@ -138,9 +131,8 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
   fun cachingPersistentReturnsFromServerWhenMaxAgeIsZero() =
     executeCreateQueryUpdateQueryTest(
       cacheSettings = CacheSettings(storage = PERSISTENT, maxAge = Duration.ZERO)
-    ) { string1, string2 ->
-      query1ResultShouldBe(string1, SERVER)
-      query2ResultShouldBe(string2, SERVER)
+    ) { strings ->
+      query2ResultShouldBe(strings.postUpdateValue, SERVER)
       useSameDataConnectInstanceForQuery2()
     }
 
@@ -148,9 +140,8 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
   fun cachingMemoryIsClearedBetweenDataConnectInstances() =
     executeCreateQueryUpdateQueryTest(
       cacheSettings = CacheSettings(storage = MEMORY, maxAge = 1.hours)
-    ) { string1, string2 ->
-      query1ResultShouldBe(string1, SERVER)
-      query2ResultShouldBe(string2, SERVER)
+    ) { strings ->
+      query2ResultShouldBe(strings.postUpdateValue, SERVER)
       useNewDataConnectInstanceForQuery2()
     }
 
@@ -158,15 +149,12 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
   fun cachingPersistentPersistsBetweenDataConnectInstances() =
     executeCreateQueryUpdateQueryTest(
       cacheSettings = CacheSettings(storage = PERSISTENT, maxAge = 1.hours)
-    ) { string1, _ ->
-      query1ResultShouldBe(string1, SERVER)
-      query2ResultShouldBe(string1, CACHE)
+    ) { strings ->
+      query2ResultShouldBe(strings.preUpdateValue, CACHE)
       useNewDataConnectInstanceForQuery2()
     }
 
   private data class CreateQueryUpdateQueryTestConfig(
-    val query1String: String,
-    val query1DataSource: DataSource,
     val query2String: String,
     val query2DataSource: DataSource,
     val query2DataConnectInstance: DataConnectInstance,
@@ -184,17 +172,10 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
     }
 
     class Builder(
-      var query1String: String? = null,
-      var query1DataSource: DataSource? = null,
       var query2String: String? = null,
       var query2DataSource: DataSource? = null,
       var query2DataConnectInstance: DataConnectInstance? = null,
     ) {
-
-      fun query1ResultShouldBe(string: String, dataSource: DataSource) {
-        query1String = string
-        query1DataSource = dataSource
-      }
 
       fun query2ResultShouldBe(string: String, dataSource: DataSource) {
         query2String = string
@@ -211,8 +192,6 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
 
       fun build(): CreateQueryUpdateQueryTestConfig =
         CreateQueryUpdateQueryTestConfig(
-          checkNotNull(query1String),
-          checkNotNull(query1DataSource),
           checkNotNull(query2String),
           checkNotNull(query2DataSource),
           checkNotNull(query2DataConnectInstance),
@@ -279,6 +258,26 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
   @Test
   fun fetchPolicyCacheOnlyThrowsIfNoCachedData() =
     verifyQueryThrowsIfNoCachedData(FetchPolicy.CACHE_ONLY)
+
+  @Test
+  fun fetchPolicyServerOnlyReturnsServerDataIfMaxAgeNotPassed() =
+    verifyQueryReturnsServerData(maxAge = 1.hours, FetchPolicy.SERVER_ONLY)
+
+  @Test
+  fun fetchPolicyServerOnlyReturnsServerDataIfMaxAgePassed() =
+    verifyQueryReturnsServerData(maxAge = 1.milliseconds, FetchPolicy.SERVER_ONLY)
+
+  @Test
+  fun fetchPolicyServerOnlyReturnsServerDataIfMaxAgeZero() =
+    verifyQueryReturnsServerData(maxAge = Duration.ZERO, FetchPolicy.SERVER_ONLY)
+
+  @Test
+  fun fetchPolicyServerOnlyReturnsServerDataIfMaxAgeInfinite() =
+    verifyQueryReturnsServerData(maxAge = Duration.INFINITE, FetchPolicy.SERVER_ONLY)
+
+  @Test
+  fun fetchPolicyServerOnlyReturnsServerDataIfNoCachedData() =
+    verifyQueryReturnsServerDataIfNoCachedData(fetchPolicy = FetchPolicy.SERVER_ONLY)
 
   private fun verifyQueryReturnsCachedData(maxAge: Duration, fetchPolicy: FetchPolicy?) = runTest {
     val connector = newCachingConnector(cacheSettings = CacheSettings(maxAge = maxAge))
@@ -347,14 +346,13 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
     }
   }
 
-  @Test
-  fun reminderToUpdateNextTestOnceSERVER_ONLYIsSupported() {
-    assumeTrue(
-      "Add FetchPolicy.SERVER_ONLY to fetchPolicy1Arb in the following test " +
-        "once it is supported [ksb8a94zkq]",
-      false
-    )
-  }
+  /** The string values that are used by [executeCreateQueryUpdateQueryTest]. */
+  private data class ExecuteCreateQueryUpdateQueryTestStrings(
+    /** The string value used in the row during its initial insert. */
+    val preUpdateValue: String,
+    /** The string value to which the row is updated. */
+    val postUpdateValue: String,
+  )
 
   /**
    * Executes a series of create, query, and update operations to test query caching behavior.
@@ -363,8 +361,7 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
    * performs the following steps within a property-based test:
    * 1. Inserts a row into a table with a randomly-generated `string1`.
    * 2. Executes a query to retrieve the newly-inserted row asserts its data and data source equal
-   * [CreateQueryUpdateQueryTestConfig.query1String] and
-   * [CreateQueryUpdateQueryTestConfig.query1DataSource], respectively.
+   * `string1` and [DataSource.SERVER], respectively.
    * 3. Updates the row's string to `string2`.
    * 4. Executes the same query again asserts its data and data source equal
    * [CreateQueryUpdateQueryTestConfig.query2String] and
@@ -373,23 +370,21 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
    * @param cacheSettings The [CacheSettings] to use for the [FirebaseDataConnect] instance; this
    * value is passed directly to [getInstance].
    * @param configBlock A lambda that configures a [CreateQueryUpdateQueryTestConfig.Builder]
-   * instance. The `string1` and `string2` parameters are the strings that will be used in the
-   * initial insert of the person and the subsequent update, respectively.
+   * instance..
    */
   private fun executeCreateQueryUpdateQueryTest(
     cacheSettings: CacheSettings?,
     configBlock:
-      CreateQueryUpdateQueryTestConfig.Builder.(string1: String, string2: String) -> Unit,
+      CreateQueryUpdateQueryTestConfig.Builder.(ExecuteCreateQueryUpdateQueryTestStrings) -> Unit,
   ) = runTest {
-    // TODO: Add SERVER_ONLY to fetchPolicy1Arb once SERVER_ONLY is supported [ksb8a94zkq]
-    val fetchPolicy1Arb = Arb.of(null, FetchPolicy.PREFER_CACHE)
+    val fetchPolicy1Arb = Arb.of(null, FetchPolicy.PREFER_CACHE, FetchPolicy.SERVER_ONLY)
     val fetchPolicy2Arb = Arb.of(null, FetchPolicy.PREFER_CACHE)
     val fetchPoliciesArb = Arb.pair(fetchPolicy1Arb, fetchPolicy2Arb)
     val stringsArb = alphanumericStringArb().distinctPair()
     val stringsAndConfigArb =
       stringsArb.map { (string1, string2) ->
         val configBuilder = CreateQueryUpdateQueryTestConfig.Builder()
-        configBlock(configBuilder, string1, string2)
+        configBlock(configBuilder, ExecuteCreateQueryUpdateQueryTestStrings(string1, string2))
         Triple(string1, string2, configBuilder.build())
       }
 
@@ -398,14 +393,12 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
     checkAll(propTestConfig, stringsAndConfigArb, fetchPoliciesArb) {
       (string1, string2, config),
       (fetchPolicy1, fetchPolicy2) ->
-      val (
-        query1String, query1DataSource, query2String, query2DataSource, query2DataConnectInstance) =
-        config
+      val (query2String, query2DataSource, query2DataConnectInstance) = config
 
       val key = connector.insertString(string1)
       withClue("query1") {
         val result = connector.getString(key, fetchPolicy1)
-        result.shouldBe(query1String, query1DataSource)
+        result.shouldBe(string1, SERVER)
       }
       connector.updateString(key, string2)
 
@@ -487,18 +480,28 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
     shouldBe: QueryResult<D, *>.(T, DataSource) -> Unit,
     shouldBeMany: QueryResult<DMany, *>.(Collection<T>, DataSource) -> Unit,
   ) = runTest {
+    val cacheFetchPolicyArb = Arb.of(null, FetchPolicy.PREFER_CACHE, FetchPolicy.CACHE_ONLY)
+    val serverFetchPolicyArb = Arb.of(null, FetchPolicy.PREFER_CACHE, FetchPolicy.SERVER_ONLY)
+    fun fetchPolicyArbFor(dataSource: DataSource): Arb<FetchPolicy?> =
+      when (dataSource) {
+        CACHE -> cacheFetchPolicyArb
+        SERVER -> serverFetchPolicyArb
+      }
+
     val connector = newCachingConnector()
-    val fetchPolicy = null
+
     checkAll(propTestConfig, valueArb.quintuple()) { (value1, value2, value3, value4, value5) ->
       val tag = randomTag()
       val key = connector.insertValue(value1, tag)
 
       suspend fun getAndVerifyValue(expectedValue: T, expectedDataSource: DataSource) {
+        val fetchPolicy = fetchPolicyArbFor(expectedDataSource).bind()
         val result = connector.getValue(key, fetchPolicy)
         result.shouldBe(expectedValue, expectedDataSource)
       }
 
       suspend fun getAndVerifyValue2(expectedValue: T, expectedDataSource: DataSource) {
+        val fetchPolicy = fetchPolicyArbFor(expectedDataSource).bind()
         val result = connector.getValue2(key, fetchPolicy)
         result.shouldBe(expectedValue, expectedDataSource)
       }
@@ -507,6 +510,7 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
         expectedValues: Collection<T>,
         expectedDataSource: DataSource
       ) {
+        val fetchPolicy = fetchPolicyArbFor(expectedDataSource).bind()
         val result = connector.getValuesByTag(tag, fetchPolicy)
         result.shouldBeMany(expectedValues, expectedDataSource)
       }
@@ -515,6 +519,7 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
         expectedValues: Collection<T>,
         expectedDataSource: DataSource
       ) {
+        val fetchPolicy = fetchPolicyArbFor(expectedDataSource).bind()
         val result = connector.getValuesByTag2(tag, fetchPolicy)
         result.shouldBeMany(expectedValues, expectedDataSource)
       }

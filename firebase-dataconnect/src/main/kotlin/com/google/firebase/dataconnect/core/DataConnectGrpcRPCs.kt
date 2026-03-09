@@ -253,8 +253,12 @@ internal class DataConnectGrpcRPCs(
     callerSdkType: FirebaseDataConnect.CallerSdkType,
     fetchPolicy: FetchPolicy,
   ): ExecuteQueryResult {
-    require(fetchPolicy == FetchPolicy.PREFER_CACHE || fetchPolicy == FetchPolicy.CACHE_ONLY) {
-      "Only PREFER_CACHE and CACHE_ONLY are supported for now"
+    require(
+      fetchPolicy == FetchPolicy.PREFER_CACHE ||
+        fetchPolicy == FetchPolicy.CACHE_ONLY ||
+        fetchPolicy == FetchPolicy.SERVER_ONLY
+    ) {
+      "Only PREFER_CACHE, CACHE_ONLY, and SERVER_ONLY are supported for now"
     }
     val (metadata, authToken) = grpcMetadata.get(requestId, callerSdkType)
     val kotlinMethodName = "executeQuery(${request.operationName})"
@@ -270,15 +274,17 @@ internal class DataConnectGrpcRPCs(
 
     val cacheInfo = queryCacheInfo(authToken, request)
 
-    cacheInfo
-      ?.executeQueryAgainstCache(
-        requestId = requestId,
-        kotlinMethodName = kotlinMethodName,
-        fetchPolicy = fetchPolicy,
-      )
-      ?.let {
-        return it
+    if (fetchPolicy != FetchPolicy.SERVER_ONLY) {
+      val cachedResult: ExecuteQueryResult.FromCache? =
+        cacheInfo?.executeQueryAgainstCache(
+          requestId = requestId,
+          kotlinMethodName = kotlinMethodName,
+          fetchPolicy = fetchPolicy,
+        )
+      if (cachedResult !== null) {
+        return cachedResult
       }
+    }
 
     val result = lazyGrpcStub.get().runCatching { executeQuery(request, metadata) }
 
