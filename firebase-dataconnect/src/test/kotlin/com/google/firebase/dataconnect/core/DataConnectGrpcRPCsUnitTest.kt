@@ -87,7 +87,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 
 @RunWith(RobolectricTestRunner::class)
-class DataConnectGrpcRPCsClientUnitTest {
+class DataConnectGrpcRPCsUnitTest {
 
   @get:Rule val dataConnectLogLevelRule = DataConnectLogLevelRule()
   @get:Rule val temporaryFolder = TemporaryFolder()
