@@ -19,6 +19,7 @@ package com.google.firebase.ai
 import com.google.firebase.FirebaseApp
 import com.google.firebase.ai.common.APIController
 import com.google.firebase.ai.common.AppCheckHeaderProvider
+import com.google.firebase.ai.common.JSON
 import com.google.firebase.ai.common.TemplateGenerateImageRequest
 import com.google.firebase.ai.type.FirebaseAIException
 import com.google.firebase.ai.type.ImagenGenerationResponse
@@ -27,7 +28,6 @@ import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.RequestOptions
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import org.json.JSONObject
 

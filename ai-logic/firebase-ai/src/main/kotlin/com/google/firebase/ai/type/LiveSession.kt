@@ -63,7 +63,6 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 
 /** Represents a live WebSocket session capable of streaming content to and from the server. */
 @PublicPreviewAPI
@@ -374,7 +373,7 @@ internal constructor(
   public suspend fun sendFunctionResponse(functionList: List<FunctionResponsePart>) {
     FirebaseAIException.catchAsync {
       val jsonString =
-        Json.encodeToString(
+        JSON.encodeToString(
           BidiGenerateContentToolResponseSetup(functionList.map { it.toInternalFunctionResponse() })
             .toInternal()
         )
@@ -395,7 +394,7 @@ internal constructor(
   public suspend fun sendAudioRealtime(audio: InlineData) {
     FirebaseAIException.catchAsync {
       val jsonString =
-        Json.encodeToString(BidiGenerateContentRealtimeInputSetup(audio = audio).toInternal())
+        JSON.encodeToString(BidiGenerateContentRealtimeInputSetup(audio = audio).toInternal())
       session.send(Frame.Text(jsonString))
     }
   }
@@ -417,7 +416,7 @@ internal constructor(
   public suspend fun sendVideoRealtime(video: InlineData) {
     FirebaseAIException.catchAsync {
       val jsonString =
-        Json.encodeToString(BidiGenerateContentRealtimeInputSetup(video = video).toInternal())
+        JSON.encodeToString(BidiGenerateContentRealtimeInputSetup(video = video).toInternal())
       session.send(Frame.Text(jsonString))
     }
   }
@@ -430,7 +429,7 @@ internal constructor(
   public suspend fun sendTextRealtime(text: String) {
     FirebaseAIException.catchAsync {
       val jsonString =
-        Json.encodeToString(BidiGenerateContentRealtimeInputSetup(text = text).toInternal())
+        JSON.encodeToString(BidiGenerateContentRealtimeInputSetup(text = text).toInternal())
       session.send(Frame.Text(jsonString))
     }
   }
@@ -448,7 +447,7 @@ internal constructor(
   ) {
     FirebaseAIException.catchAsync {
       val jsonString =
-        Json.encodeToString(
+        JSON.encodeToString(
           BidiGenerateContentRealtimeInputSetup(
               mediaChunks.map { InlineData(it.data, it.mimeType) }
             )
@@ -468,7 +467,7 @@ internal constructor(
   public suspend fun send(content: Content) {
     FirebaseAIException.catchAsync {
       val jsonString =
-        Json.encodeToString(
+        JSON.encodeToString(
           BidiGenerateContentClientContentSetup(listOf(content.toInternal()), true).toInternal()
         )
       session.send(Frame.Text(jsonString))
