@@ -1,5 +1,9 @@
 # Unreleased
 
+- [fixed] Fix a performance regression in `ObjectValue.equals()` that caused exponential execution
+  time for large or deeply nested documents.
+  [#7877](https://github.com/firebase/firebase-android-sdk/issues/7877)
+
 # 26.1.1
 
 - [feature] Added support for `regexFind` and `regexFindAll` Pipeline expressions.
