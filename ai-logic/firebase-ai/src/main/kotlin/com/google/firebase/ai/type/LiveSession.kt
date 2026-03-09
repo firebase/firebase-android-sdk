@@ -371,7 +371,7 @@ internal constructor(
    * response from the client.
    */
   public suspend fun sendFunctionResponse(functionList: List<FunctionResponsePart>) {
-    internalSend(
+    sendFrame(
       BidiGenerateContentToolResponseSetup(functionList.map { it.toInternalFunctionResponse() })
         .toInternal()
     )
@@ -388,7 +388,7 @@ internal constructor(
    * results, send 16-bit PCM audio at 24kHz.
    */
   public suspend fun sendAudioRealtime(audio: InlineData) {
-    internalSend(BidiGenerateContentRealtimeInputSetup(audio = audio).toInternal())
+    sendFrame(BidiGenerateContentRealtimeInputSetup(audio = audio).toInternal())
   }
 
   /**
@@ -406,7 +406,7 @@ internal constructor(
    * data (for example, `image/png`, `image/jpeg`, etc.).
    */
   public suspend fun sendVideoRealtime(video: InlineData) {
-    internalSend(BidiGenerateContentRealtimeInputSetup(video = video).toInternal())
+    sendFrame(BidiGenerateContentRealtimeInputSetup(video = video).toInternal())
   }
 
   /**
@@ -415,7 +415,7 @@ internal constructor(
    * @param text Text content to append to the current client's conversation.
    */
   public suspend fun sendTextRealtime(text: String) {
-    internalSend(BidiGenerateContentRealtimeInputSetup(text = text).toInternal())
+    sendFrame(BidiGenerateContentRealtimeInputSetup(text = text).toInternal())
   }
 
   /**
@@ -429,7 +429,7 @@ internal constructor(
   public suspend fun sendMediaStream(
     mediaChunks: List<MediaData>,
   ) {
-    internalSend(
+    sendFrame(
       BidiGenerateContentRealtimeInputSetup(mediaChunks.map { InlineData(it.data, it.mimeType) })
         .toInternal()
     )
@@ -443,7 +443,7 @@ internal constructor(
    * @param content Client [Content] to be sent to the model.
    */
   public suspend fun send(content: Content) {
-    internalSend(
+    sendFrame(
       BidiGenerateContentClientContentSetup(listOf(content.toInternal()), true).toInternal()
     )
   }
@@ -456,7 +456,7 @@ internal constructor(
    * @param T The type of the data to be sent, which must be serializable.
    * @param data The data object to be encoded and sent.
    */
-  private suspend inline fun <reified T> internalSend(data: T) =
+  private suspend inline fun <reified T> sendFrame(data: T) =
     FirebaseAIException.catchAsync {
       val jsonString = JSON.encodeToString(data)
       session.send(Frame.Text(jsonString))
