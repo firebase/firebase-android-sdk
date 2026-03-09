@@ -23,7 +23,6 @@ import android.net.NetworkCapabilities
 import com.google.firebase.FirebaseApp
 import com.google.firebase.ai.common.APIController
 import com.google.firebase.ai.common.AppCheckHeaderProvider
-import com.google.firebase.ai.common.JSON
 import com.google.firebase.ai.generativemodel.CloudGenerativeModelProvider
 import com.google.firebase.ai.generativemodel.FallbackGenerativeModelProvider
 import com.google.firebase.ai.generativemodel.GenerativeModelProvider
