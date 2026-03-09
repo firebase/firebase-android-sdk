@@ -480,18 +480,28 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
     shouldBe: QueryResult<D, *>.(T, DataSource) -> Unit,
     shouldBeMany: QueryResult<DMany, *>.(Collection<T>, DataSource) -> Unit,
   ) = runTest {
+    val cacheFetchPolicyArb = Arb.of(null, FetchPolicy.PREFER_CACHE, FetchPolicy.CACHE_ONLY)
+    val serverFetchPolicyArb = Arb.of(null, FetchPolicy.PREFER_CACHE, FetchPolicy.SERVER_ONLY)
+    fun fetchPolicyArbFor(dataSource: DataSource): Arb<FetchPolicy?> =
+      when (dataSource) {
+        CACHE -> cacheFetchPolicyArb
+        SERVER -> serverFetchPolicyArb
+      }
+
     val connector = newCachingConnector()
-    val fetchPolicy = null
+
     checkAll(propTestConfig, valueArb.quintuple()) { (value1, value2, value3, value4, value5) ->
       val tag = randomTag()
       val key = connector.insertValue(value1, tag)
 
       suspend fun getAndVerifyValue(expectedValue: T, expectedDataSource: DataSource) {
+        val fetchPolicy = fetchPolicyArbFor(expectedDataSource).bind()
         val result = connector.getValue(key, fetchPolicy)
         result.shouldBe(expectedValue, expectedDataSource)
       }
 
       suspend fun getAndVerifyValue2(expectedValue: T, expectedDataSource: DataSource) {
+        val fetchPolicy = fetchPolicyArbFor(expectedDataSource).bind()
         val result = connector.getValue2(key, fetchPolicy)
         result.shouldBe(expectedValue, expectedDataSource)
       }
@@ -500,6 +510,7 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
         expectedValues: Collection<T>,
         expectedDataSource: DataSource
       ) {
+        val fetchPolicy = fetchPolicyArbFor(expectedDataSource).bind()
         val result = connector.getValuesByTag(tag, fetchPolicy)
         result.shouldBeMany(expectedValues, expectedDataSource)
       }
@@ -508,6 +519,7 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
         expectedValues: Collection<T>,
         expectedDataSource: DataSource
       ) {
+        val fetchPolicy = fetchPolicyArbFor(expectedDataSource).bind()
         val result = connector.getValuesByTag2(tag, fetchPolicy)
         result.shouldBeMany(expectedValues, expectedDataSource)
       }
