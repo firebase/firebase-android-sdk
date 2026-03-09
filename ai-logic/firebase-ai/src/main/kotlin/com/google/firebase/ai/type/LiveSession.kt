@@ -62,6 +62,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.encodeToString
 
 /** Represents a live WebSocket session capable of streaming content to and from the server. */
@@ -372,6 +373,7 @@ internal constructor(
    */
   public suspend fun sendFunctionResponse(functionList: List<FunctionResponsePart>) {
     sendFrame(
+      BidiGenerateContentToolResponseSetup.Internal.serializer(),
       BidiGenerateContentToolResponseSetup(functionList.map { it.toInternalFunctionResponse() })
         .toInternal()
     )
@@ -388,7 +390,10 @@ internal constructor(
    * results, send 16-bit PCM audio at 24kHz.
    */
   public suspend fun sendAudioRealtime(audio: InlineData) {
-    sendFrame(BidiGenerateContentRealtimeInputSetup(audio = audio).toInternal())
+    sendFrame(
+      BidiGenerateContentRealtimeInputSetup.Internal.serializer(),
+      BidiGenerateContentRealtimeInputSetup(audio = audio).toInternal()
+    )
   }
 
   /**
@@ -406,7 +411,10 @@ internal constructor(
    * data (for example, `image/png`, `image/jpeg`, etc.).
    */
   public suspend fun sendVideoRealtime(video: InlineData) {
-    sendFrame(BidiGenerateContentRealtimeInputSetup(video = video).toInternal())
+    sendFrame(
+      BidiGenerateContentRealtimeInputSetup.Internal.serializer(),
+      BidiGenerateContentRealtimeInputSetup(video = video).toInternal()
+    )
   }
 
   /**
@@ -415,7 +423,10 @@ internal constructor(
    * @param text Text content to append to the current client's conversation.
    */
   public suspend fun sendTextRealtime(text: String) {
-    sendFrame(BidiGenerateContentRealtimeInputSetup(text = text).toInternal())
+    sendFrame(
+      BidiGenerateContentRealtimeInputSetup.Internal.serializer(),
+      BidiGenerateContentRealtimeInputSetup(text = text).toInternal()
+    )
   }
 
   /**
@@ -430,6 +441,7 @@ internal constructor(
     mediaChunks: List<MediaData>,
   ) {
     sendFrame(
+      BidiGenerateContentRealtimeInputSetup.Internal.serializer(),
       BidiGenerateContentRealtimeInputSetup(mediaChunks.map { InlineData(it.data, it.mimeType) })
         .toInternal()
     )
@@ -444,6 +456,7 @@ internal constructor(
    */
   public suspend fun send(content: Content) {
     sendFrame(
+      BidiGenerateContentClientContentSetup.Internal.serializer(),
       BidiGenerateContentClientContentSetup(listOf(content.toInternal()), true).toInternal()
     )
   }
@@ -456,9 +469,9 @@ internal constructor(
    * @param T The type of the data to be sent, which must be serializable.
    * @param data The data object to be encoded and sent.
    */
-  private suspend inline fun <reified T> sendFrame(data: T) =
+  private suspend fun <T> sendFrame(serializer: SerializationStrategy<T>, data: T) =
     FirebaseAIException.catchAsync {
-      val jsonString = JSON.encodeToString(data)
+      val jsonString = JSON.encodeToString(serializer, data)
       session.send(Frame.Text(jsonString))
     }
 
