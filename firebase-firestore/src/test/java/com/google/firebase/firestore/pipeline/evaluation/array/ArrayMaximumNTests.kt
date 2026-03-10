@@ -47,20 +47,6 @@ class ArrayMaximumNTests {
           EvaluateResult.list(listOf(encodeValue(3), encodeValue(2))),
           "basic max 2 (descending)"
         ),
-        // The strictCompare function doesn't handle mixed types.
-        // TODO: Uncomment when the comparison function is fixed.
-        //        TestCase(
-        //          array(1, null),
-        //          constant(2),
-        //          EvaluateResult.list(listOf(encodeValue(1), NULL_VALUE)),
-        //          "null value"
-        //        ),
-        //        TestCase(
-        //          array(1, "a"),
-        //          constant(2),
-        //          EvaluateResult.list(listOf(encodeValue("a"), encodeValue(1))),
-        //          "number < string"
-        //        ),
         TestCase(array(1, 2), constant(0), EvaluateResult.list(emptyList()), "n=0"),
         TestCase(
           array(1, 2),

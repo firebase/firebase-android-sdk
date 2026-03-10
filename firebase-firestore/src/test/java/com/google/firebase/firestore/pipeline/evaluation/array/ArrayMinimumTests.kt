@@ -49,13 +49,6 @@ class ArrayMinimumTests {
         TestCase(array(), EvaluateResultValue(NULL_VALUE), "empty array"),
         TestCase(array(1, null), EvaluateResultValue(encodeValue(1)), "null vs number"),
         TestCase(array("b", "a"), EvaluateResultValue(encodeValue("a")), "strings"),
-        // The strictCompare function doesn't handle mixed types.
-        // TODO: Uncomment when the comparison function is fixed.
-        //        TestCase(
-        //          array("2",1, 3, "10"),
-        //          EvaluateResultValue(encodeValue(1)),
-        //          "number vs string"
-        //        ),
         TestCase(nullValue(), EvaluateResultValue(NULL_VALUE), "null input (Unset)"),
         TestCase(field("nonexistent"), EvaluateResultValue(NULL_VALUE), "unset input")
       )

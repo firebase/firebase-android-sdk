@@ -47,20 +47,6 @@ class ArrayMinimumNTests {
           EvaluateResult.list(listOf(encodeValue(1), encodeValue(2))),
           "basic min 2"
         ),
-        // The strictCompare function doesn't handle mixed types.
-        // TODO: Uncomment when the comparison function is fixed.
-        //        TestCase(
-        //          array(1, null),
-        //          constant(2),
-        //          EvaluateResult.list(listOf(NULL_VALUE, encodeValue(1))),
-        //          "null value"
-        //        ),
-        //        TestCase(
-        //          array(1, "a"),
-        //          constant(2),
-        //          EvaluateResult.list(listOf(encodeValue(1), encodeValue("a"))),
-        //          "number < string"
-        //        ),
         TestCase(array(1, 2), constant(0), EvaluateResult.list(emptyList()), "n=0"),
         TestCase(
           array(1, 2),
