@@ -1350,8 +1350,7 @@ class UnnestOptions private constructor(options: InternalOptions) :
   }
 }
 
-@Beta
-class DefineStage
+internal class DefineStage
 internal constructor(
   internal val aliasedExpressions: Array<out AliasedExpression>,
   options: InternalOptions = InternalOptions.EMPTY

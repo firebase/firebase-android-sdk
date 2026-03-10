@@ -943,38 +943,6 @@ internal constructor(
   }
 
   /**
-   * Defines one or more variables in the pipeline's scope using a [DefineStage] object.
-   *
-   * This stage allows you to bind a value to a variable for internal reuse within the pipeline body
-   * (accessed via the `variable()` function). It is useful for declaring reusable values or
-   * intermediate calculations that can be referenced multiple times in later parts of the pipeline,
-   * improving readability and maintainability.
-   *
-   * You can specify:
-   *
-   * - **Variables:** One or more variables using [AliasedExpression] which pairs an expression with
-   * a name (alias). The expression can be a simple constant, a field reference, or a complex
-   * computation.
-   *
-   * Example:
-   * ```
-   * firestore.pipeline().collection("products")
-   *   .define(
-   *     DefineStage.withVariables(
-   *       multiply(field("price"), 0.9).as("discountedPrice"),
-   *       add(field("stock"), 10).as("newStock")
-   *     )
-   *   )
-   *   .where(lessThan(variable("discountedPrice"), 100))
-   *   .select(field("name"), variable("newStock"));
-   * ```
-   *
-   * @param stage A [DefineStage] object that specifies the variables to define.
-   * @return A new [Pipeline] object with this stage appended to the stage list.
-   */
-  fun define(stage: DefineStage): Pipeline = append(stage)
-
-  /**
    * Converts this Pipeline into an expression that evaluates to an array of results.
    *
    * **Result Unwrapping:**
