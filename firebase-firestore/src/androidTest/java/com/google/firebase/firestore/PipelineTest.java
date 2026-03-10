@@ -561,46 +561,34 @@ public class PipelineTest {
             .pipeline()
             .collection(randomCol)
             .where(equal("title", "The Lord of the Rings"))
-            .select(field("tags").arrayFirst().alias("firstTag"))
+            .select(
+                field("tags").arrayFirst().alias("firstTagInstanceMethod"),
+                arrayFirst("tags").alias("firstTagStaticMethod"))
             .execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
-        .containsExactly(ImmutableMap.of("firstTag", "adventure"));
-
-    execute =
-        firestore
-            .pipeline()
-            .collection(randomCol)
-            .where(equal("title", "The Lord of the Rings"))
-            .select(arrayFirst("tags").alias("firstTag"))
-            .execute();
-    assertThat(waitFor(execute).getResults())
-        .comparingElementsUsing(DATA_CORRESPONDENCE)
-        .containsExactly(ImmutableMap.of("firstTag", "adventure"));
+        .containsExactly(
+            ImmutableMap.of(
+                "firstTagInstanceMethod", "adventure", "firstTagStaticMethod", "adventure"));
 
     // Test with empty/null/non-existent arrays
     execute =
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(equal("title", "The Lord of the Rings"))
+            .limit(1)
             .replaceWith(
-                Expression.map(
-                    ImmutableMap.of("empty", emptyList(), "nullval", Expression.nullValue())))
+                map(ImmutableMap.of("empty", emptyList(), "nullval", Expression.nullValue())))
             .select(
                 arrayFirst("empty").alias("emptyResult"),
                 arrayFirst("nullval").alias("nullResult"),
                 arrayFirst("nonExistent").alias("absentResult"))
             .execute();
 
-    Map<String, Object> expectedData = new LinkedHashMap<>();
-    // no emptyResult as arrayFirst returns UNSET for empty arrays
-    expectedData.put("nullResult", null);
-    expectedData.put("absentResult", null);
-
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
-        .containsExactly(expectedData);
+        .containsExactly(mapOfEntries(entry("nullResult", null), entry("absentResult", null)));
+    // no emptyResult as arrayFirst returns UNSET for empty arrays
   }
 
   @Test
@@ -610,47 +598,40 @@ public class PipelineTest {
             .pipeline()
             .collection(randomCol)
             .where(equal("title", "The Lord of the Rings"))
-            .select(field("tags").arrayFirstN(2).alias("firstTags"))
-            .execute();
-    assertThat(waitFor(execute).getResults())
-        .comparingElementsUsing(DATA_CORRESPONDENCE)
-        .containsExactly(ImmutableMap.of("firstTags", ImmutableList.of("adventure", "magic")));
-
-    execute =
-        firestore
-            .pipeline()
-            .collection(randomCol)
-            .where(equal("title", "The Lord of the Rings"))
-            .select(arrayFirstN("tags", constant(4)).alias("firstTags"))
+            .select(
+                field("tags").arrayFirstN(2).alias("firstTagsInstanceMethod"),
+                arrayFirstN("tags", constant(4)).alias("firstTagsStaticMethod"))
             .execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
         .containsExactly(
-            ImmutableMap.of("firstTags", ImmutableList.of("adventure", "magic", "epic")));
+            ImmutableMap.of(
+                "firstTagsInstanceMethod",
+                ImmutableList.of("adventure", "magic"),
+                "firstTagsStaticMethod",
+                ImmutableList.of("adventure", "magic", "epic")));
 
     // Test with empty/null/non-existent arrays
     execute =
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(equal("title", "The Lord of the Rings"))
+            .limit(1)
             .replaceWith(
-                Expression.map(
-                    ImmutableMap.of("empty", emptyList(), "nullval", Expression.nullValue())))
+                map(ImmutableMap.of("empty", emptyList(), "nullval", Expression.nullValue())))
             .select(
                 arrayFirstN("empty", 1).alias("emptyResult"),
                 arrayFirstN("nullval", 1).alias("nullResult"),
                 arrayFirstN("nonExistent", 1).alias("absentResult"))
             .execute();
 
-    Map<String, Object> expectedData = new LinkedHashMap<>();
-    expectedData.put("emptyResult", emptyList());
-    expectedData.put("nullResult", null);
-    expectedData.put("absentResult", null);
-
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
-        .containsExactly(expectedData);
+        .containsExactly(
+            mapOfEntries(
+                entry("emptyResult", emptyList()),
+                entry("nullResult", null),
+                entry("absentResult", null)));
   }
 
   @Test
@@ -660,46 +641,33 @@ public class PipelineTest {
             .pipeline()
             .collection(randomCol)
             .where(equal("title", "The Lord of the Rings"))
-            .select(field("tags").arrayLast().alias("lastTag"))
+            .select(
+                field("tags").arrayLast().alias("lastTagInstanceMethod"),
+                arrayLast("tags").alias("lastTagStaticMethod"))
             .execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
-        .containsExactly(ImmutableMap.of("lastTag", "epic"));
-
-    execute =
-        firestore
-            .pipeline()
-            .collection(randomCol)
-            .where(equal("title", "The Lord of the Rings"))
-            .select(arrayLast("tags").alias("lastTag"))
-            .execute();
-    assertThat(waitFor(execute).getResults())
-        .comparingElementsUsing(DATA_CORRESPONDENCE)
-        .containsExactly(ImmutableMap.of("lastTag", "epic"));
+        .containsExactly(
+            ImmutableMap.of("lastTagInstanceMethod", "epic", "lastTagStaticMethod", "epic"));
 
     // Test with empty/null/non-existent arrays
     execute =
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(equal("title", "The Lord of the Rings"))
+            .limit(1)
             .replaceWith(
-                Expression.map(
-                    ImmutableMap.of("empty", emptyList(), "nullval", Expression.nullValue())))
+                map(ImmutableMap.of("empty", emptyList(), "nullval", Expression.nullValue())))
             .select(
                 arrayLast("empty").alias("emptyResult"),
                 arrayLast("nullval").alias("nullResult"),
                 arrayLast("nonExistent").alias("absentResult"))
             .execute();
 
-    Map<String, Object> expectedData = new LinkedHashMap<>();
-    // no emptyResult as arrayLast returns UNSET for empty arrays
-    expectedData.put("nullResult", null);
-    expectedData.put("absentResult", null);
-
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
-        .containsExactly(expectedData);
+        .containsExactly(mapOfEntries(entry("nullResult", null), entry("absentResult", null)));
+    // no emptyResult as arrayLast returns UNSET for empty arrays
   }
 
   @Test
@@ -709,47 +677,40 @@ public class PipelineTest {
             .pipeline()
             .collection(randomCol)
             .where(equal("title", "The Lord of the Rings"))
-            .select(field("tags").arrayLastN(2).alias("lastTags"))
-            .execute();
-    assertThat(waitFor(execute).getResults())
-        .comparingElementsUsing(DATA_CORRESPONDENCE)
-        .containsExactly(ImmutableMap.of("lastTags", ImmutableList.of("magic", "epic")));
-
-    execute =
-        firestore
-            .pipeline()
-            .collection(randomCol)
-            .where(equal("title", "The Lord of the Rings"))
-            .select(arrayLastN("tags", constant(4)).alias("lastTags"))
+            .select(
+                field("tags").arrayLastN(2).alias("lastTagsInstanceMethod"),
+                arrayLastN("tags", constant(4)).alias("lastTagsStaticMethod"))
             .execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
         .containsExactly(
-            ImmutableMap.of("lastTags", ImmutableList.of("adventure", "magic", "epic")));
+            ImmutableMap.of(
+                "lastTagsInstanceMethod",
+                ImmutableList.of("magic", "epic"),
+                "lastTagsStaticMethod",
+                ImmutableList.of("adventure", "magic", "epic")));
 
     // Test with empty/null/non-existent arrays
     execute =
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(equal("title", "The Lord of the Rings"))
+            .limit(1)
             .replaceWith(
-                Expression.map(
-                    ImmutableMap.of("empty", emptyList(), "nullval", Expression.nullValue())))
+                map(ImmutableMap.of("empty", emptyList(), "nullval", Expression.nullValue())))
             .select(
                 arrayLastN("empty", 1).alias("emptyResult"),
                 arrayLastN("nullval", 1).alias("nullResult"),
                 arrayLastN("nonExistent", 1).alias("absentResult"))
             .execute();
 
-    Map<String, Object> expectedData = new LinkedHashMap<>();
-    expectedData.put("emptyResult", emptyList());
-    expectedData.put("nullResult", null);
-    expectedData.put("absentResult", null);
-
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
-        .containsExactly(expectedData);
+        .containsExactly(
+            mapOfEntries(
+                entry("emptyResult", emptyList()),
+                entry("nullResult", null),
+                entry("absentResult", null)));
   }
 
   @Test
@@ -759,38 +720,31 @@ public class PipelineTest {
             .pipeline()
             .collection(randomCol)
             .where(equal("title", "The Lord of the Rings"))
-            .select(field("tags").arrayMinimum().alias("minimumTag"))
+            .select(
+                field("tags").arrayMinimum().alias("minimumTagInstanceMethod"),
+                arrayMinimum("tags").alias("minimumTagStaticMethod"))
             .execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
-        .containsExactly(ImmutableMap.of("minimumTag", "adventure"));
-
-    execute =
-        firestore
-            .pipeline()
-            .collection(randomCol)
-            .where(equal("title", "The Lord of the Rings"))
-            .select(arrayMinimum("tags").alias("minimumTag"))
-            .execute();
-    assertThat(waitFor(execute).getResults())
-        .comparingElementsUsing(DATA_CORRESPONDENCE)
-        .containsExactly(ImmutableMap.of("minimumTag", "adventure"));
+        .containsExactly(
+            ImmutableMap.of(
+                "minimumTagInstanceMethod", "adventure", "minimumTagStaticMethod", "adventure"));
 
     // Test with empty/null/non-existent and mixed types
     execute =
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(equal("title", "The Lord of the Rings"))
+            .limit(1)
             .replaceWith(
-                Expression.map(
+                map(
                     ImmutableMap.of(
                         "empty",
                         emptyList(),
                         "nullval",
                         Expression.nullValue(),
                         "mixed",
-                        ImmutableList.of(1, "2", 3, "10"))))
+                        ImmutableList.of(1, "2", 3, "10")))) // Numbers < Strings in Firestore.
             .select(
                 arrayMinimum("empty").alias("emptyResult"),
                     arrayMinimum("nullval").alias("nullResult"),
@@ -798,15 +752,14 @@ public class PipelineTest {
                     arrayMinimum("mixed").alias("mixedResult"))
             .execute();
 
-    Map<String, Object> expectedData = new LinkedHashMap<>();
-    expectedData.put("emptyResult", null);
-    expectedData.put("nullResult", null);
-    expectedData.put("absentResult", null);
-    expectedData.put("mixedResult", 1); // Numbers < Strings in Firestore. 1 < 3 < "10" < "2"
-
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
-        .containsExactly(expectedData);
+        .containsExactly(
+            mapOfEntries(
+                entry("emptyResult", null),
+                entry("nullResult", null),
+                entry("absentResult", null),
+                entry("mixedResult", 1)));
   }
 
   @Test
@@ -816,23 +769,18 @@ public class PipelineTest {
             .pipeline()
             .collection(randomCol)
             .where(equal("title", "The Lord of the Rings"))
-            .select(field("tags").arrayMinimumN(2).alias("minimumTags"))
-            .execute();
-    assertThat(waitFor(execute).getResults())
-        .comparingElementsUsing(DATA_CORRESPONDENCE)
-        .containsExactly(ImmutableMap.of("minimumTags", ImmutableList.of("adventure", "epic")));
-
-    execute =
-        firestore
-            .pipeline()
-            .collection(randomCol)
-            .where(equal("title", "The Lord of the Rings"))
-            .select(arrayMinimumN("tags", 4).alias("minimumTags"))
+            .select(
+                field("tags").arrayMinimumN(2).alias("minimumTagsInstanceMethod"),
+                arrayMinimumN("tags", constant(4)).alias("minimumTagsStaticMethod"))
             .execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
         .containsExactly(
-            ImmutableMap.of("minimumTags", ImmutableList.of("adventure", "epic", "magic")));
+            ImmutableMap.of(
+                "minimumTagsInstanceMethod",
+                ImmutableList.of("adventure", "epic"),
+                "minimumTagsStaticMethod",
+                ImmutableList.of("adventure", "epic", "magic")));
   }
 
   @Test
@@ -842,38 +790,31 @@ public class PipelineTest {
             .pipeline()
             .collection(randomCol)
             .where(equal("title", "The Lord of the Rings"))
-            .select(field("tags").arrayMaximum().alias("maximumTag"))
+            .select(
+                field("tags").arrayMaximum().alias("maximumTagInstanceMethod"),
+                arrayMaximum("tags").alias("maximumTagStaticMethod"))
             .execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
-        .containsExactly(ImmutableMap.of("maximumTag", "magic"));
-
-    execute =
-        firestore
-            .pipeline()
-            .collection(randomCol)
-            .where(equal("title", "The Lord of the Rings"))
-            .select(arrayMaximum("tags").alias("maximumTag"))
-            .execute();
-    assertThat(waitFor(execute).getResults())
-        .comparingElementsUsing(DATA_CORRESPONDENCE)
-        .containsExactly(ImmutableMap.of("maximumTag", "magic"));
+        .containsExactly(
+            ImmutableMap.of(
+                "maximumTagInstanceMethod", "magic", "maximumTagStaticMethod", "magic"));
 
     // Test with empty/null/non-existent and mixed types
     execute =
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(equal("title", "The Lord of the Rings"))
+            .limit(1)
             .replaceWith(
-                Expression.map(
+                map(
                     ImmutableMap.of(
                         "empty",
                         emptyList(),
                         "nullval",
                         Expression.nullValue(),
                         "mixed",
-                        ImmutableList.of(1, "2", 3, "10"))))
+                        ImmutableList.of(1, "2", 3, "10")))) // Strings > Numbers in Firestore.
             .select(
                 arrayMaximum("empty").alias("emptyResult"),
                     arrayMaximum("nullval").alias("nullResult"),
@@ -881,15 +822,14 @@ public class PipelineTest {
                     arrayMaximum("mixed").alias("mixedResult"))
             .execute();
 
-    Map<String, Object> expectedData = new LinkedHashMap<>();
-    expectedData.put("emptyResult", null);
-    expectedData.put("nullResult", null);
-    expectedData.put("absentResult", null);
-    expectedData.put("mixedResult", "2"); // Strings > Numbers in Firestore. "2" > "10" > 3 > 1
-
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
-        .containsExactly(expectedData);
+        .containsExactly(
+            mapOfEntries(
+                entry("emptyResult", null),
+                entry("nullResult", null),
+                entry("absentResult", null),
+                entry("mixedResult", "2")));
   }
 
   @Test
@@ -899,23 +839,18 @@ public class PipelineTest {
             .pipeline()
             .collection(randomCol)
             .where(equal("title", "The Lord of the Rings"))
-            .select(field("tags").arrayMaximumN(2).alias("maximumTags"))
-            .execute();
-    assertThat(waitFor(execute).getResults())
-        .comparingElementsUsing(DATA_CORRESPONDENCE)
-        .containsExactly(ImmutableMap.of("maximumTags", ImmutableList.of("magic", "epic")));
-
-    execute =
-        firestore
-            .pipeline()
-            .collection(randomCol)
-            .where(equal("title", "The Lord of the Rings"))
-            .select(arrayMaximumN("tags", 4).alias("maximumTags"))
+            .select(
+                field("tags").arrayMaximumN(2).alias("maximumTagsInstanceMethod"),
+                arrayMaximumN("tags", constant(4)).alias("maximumTagsStaticMethod"))
             .execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
         .containsExactly(
-            ImmutableMap.of("maximumTags", ImmutableList.of("magic", "epic", "adventure")));
+            ImmutableMap.of(
+                "maximumTagsInstanceMethod",
+                ImmutableList.of("magic", "epic"),
+                "maximumTagsStaticMethod",
+                ImmutableList.of("magic", "epic", "adventure")));
   }
 
   @Test
@@ -933,15 +868,15 @@ public class PipelineTest {
                 arrayIndexOf("empty", "anything").alias("indexEmpty"))
             .execute();
 
-    Map<String, Object> expectedData = new LinkedHashMap<>();
-    expectedData.put("indexFirst", 0);
-    expectedData.put("indexSecond", 1);
-    expectedData.put("indexLast", 2);
-    expectedData.put("indexNone", -1);
-    expectedData.put("indexEmpty", null);
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
-        .containsExactly(expectedData);
+        .containsExactly(
+            mapOfEntries(
+                entry("indexFirst", 0),
+                entry("indexSecond", 1),
+                entry("indexLast", 2),
+                entry("indexNone", -1),
+                entry("indexEmpty", null)));
 
     // Test with duplicate values
     execute =
@@ -975,12 +910,9 @@ public class PipelineTest {
                 arrayIndexOf("nullArr", null).alias("firstIndexNull"))
             .execute();
 
-    expectedData = new LinkedHashMap<>();
-    expectedData.put("firstIndex", 1);
-    expectedData.put("firstIndexNull", null);
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
-        .containsExactly(expectedData);
+        .containsExactly(mapOfEntries(entry("firstIndex", 1), entry("firstIndexNull", null)));
   }
 
   @Test
@@ -998,15 +930,15 @@ public class PipelineTest {
                 arrayLastIndexOf("empty", "anything").alias("lastIndexEmpty"))
             .execute();
 
-    Map<String, Object> expectedData = new LinkedHashMap<>();
-    expectedData.put("lastIndexFirst", 0);
-    expectedData.put("lastIndexSecond", 1);
-    expectedData.put("lastIndexLast", 2);
-    expectedData.put("lastIndexNone", -1);
-    expectedData.put("lastIndexEmpty", null);
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
-        .containsExactly(expectedData);
+        .containsExactly(
+            mapOfEntries(
+                entry("lastIndexFirst", 0),
+                entry("lastIndexSecond", 1),
+                entry("lastIndexLast", 2),
+                entry("lastIndexNone", -1),
+                entry("lastIndexEmpty", null)));
 
     // Test with duplicate values
     execute =
@@ -1040,12 +972,9 @@ public class PipelineTest {
                 arrayLastIndexOf("nullArr", null).alias("lastIndexNull"))
             .execute();
 
-    expectedData = new LinkedHashMap<>();
-    expectedData.put("lastIndex", 1);
-    expectedData.put("lastIndexNull", null);
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
-        .containsExactly(expectedData);
+        .containsExactly(mapOfEntries(entry("lastIndex", 1), entry("lastIndexNull", null)));
   }
 
   @Test
@@ -1062,14 +991,14 @@ public class PipelineTest {
                 arrayIndexOfAll("tags", "nonexistent").alias("indicesNone"))
             .execute();
 
-    Map<String, Object> expectedData = new HashMap<>();
-    expectedData.put("indicesFirst", ImmutableList.of(0L));
-    expectedData.put("indicesSecond", ImmutableList.of(1L));
-    expectedData.put("indicesLast", ImmutableList.of(2L));
-    expectedData.put("indicesNone", emptyList());
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
-        .containsExactly(expectedData);
+        .containsExactly(
+            mapOfEntries(
+                entry("indicesFirst", ImmutableList.of(0L)),
+                entry("indicesSecond", ImmutableList.of(1L)),
+                entry("indicesLast", ImmutableList.of(2L)),
+                entry("indicesNone", emptyList())));
 
     // Test with duplicate values
     execute =
@@ -1104,13 +1033,13 @@ public class PipelineTest {
                 arrayIndexOfAll("nonExistentArray", null).alias("indicesNonExistentArray"))
             .execute();
 
-    expectedData = new LinkedHashMap<>();
-    expectedData.put("indices", ImmutableList.of(1L, 3L));
-    expectedData.put("indicesNull", null);
-    expectedData.put("indicesNonExistentArray", null);
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
-        .containsExactly(expectedData);
+        .containsExactly(
+            mapOfEntries(
+                entry("indices", ImmutableList.of(1L, 3L)),
+                entry("indicesNull", null),
+                entry("indicesNonExistentArray", null)));
   }
 
   @Test
