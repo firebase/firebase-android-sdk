@@ -19,78 +19,34 @@
 package com.google.firebase.dataconnect
 
 import com.google.firebase.FirebaseApp
-import com.google.firebase.dataconnect.AnyValueRoundTrip.Companion.dataConnectRoundTripValue
 import com.google.firebase.dataconnect.CacheSettings.Storage.MEMORY
 import com.google.firebase.dataconnect.CacheSettings.Storage.PERSISTENT
 import com.google.firebase.dataconnect.DataSource.CACHE
 import com.google.firebase.dataconnect.DataSource.SERVER
+import com.google.firebase.dataconnect.QueryRef.FetchPolicy
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
-import com.google.firebase.dataconnect.testutil.Quintuple
 import com.google.firebase.dataconnect.testutil.expectedAnyScalarDoubleRoundTripValue
 import com.google.firebase.dataconnect.testutil.map
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.FloatRoundTrip
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.distinctPair
+import com.google.firebase.dataconnect.testutil.property.arbitrary.pair
 import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.quintuple
 import com.google.firebase.dataconnect.testutil.property.arbitrary.value
 import com.google.firebase.dataconnect.testutil.schemas.CachingConnector
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetAnyValue
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetAnyValue2
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetAnyValuesByTag
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetAnyValuesByTag2
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetBoolean
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetBoolean2
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetBooleansByTag
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetBooleansByTag2
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetFloat
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetFloat2
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetFloatsByTag
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetFloatsByTag2
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetMixed
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetMixed2
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetMixedsByTag
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetMixedsByTag2
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableAnyValue
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableAnyValue2
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableAnyValuesByTag
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableAnyValuesByTag2
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableBoolean
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableBoolean2
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableBooleansByTag
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableBooleansByTag2
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableFloat
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableFloat2
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableFloatsByTag
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableFloatsByTag2
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableString
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableString2
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableStringList
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableStringList2
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableStringListsByTag
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableStringListsByTag2
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableStringNullableList
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableStringNullableList2
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableStringNullableListsByTag
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableStringNullableListsByTag2
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableStringsByTag
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetNullableStringsByTag2
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetString
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetString2
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetStringList
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetStringList2
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetStringListsByTag
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetStringListsByTag2
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetStringNullableList
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetStringNullableList2
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetStringNullableListsByTag
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetStringNullableListsByTag2
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetStringsByTag
-import com.google.firebase.dataconnect.testutil.schemas.verifyGetStringsByTag2
+import com.google.firebase.dataconnect.testutil.schemas.shouldBe
+import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
+import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import com.google.firebase.util.nextAlphanumericString
 import com.google.protobuf.Value as ValueProto
+import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.print.print
+import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
@@ -99,16 +55,21 @@ import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.alphanumeric
 import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.boolean
+import io.kotest.property.arbitrary.duration
 import io.kotest.property.arbitrary.list
 import io.kotest.property.arbitrary.map
+import io.kotest.property.arbitrary.of
 import io.kotest.property.arbitrary.orNull
+import io.kotest.property.arbitrary.pair
 import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
 import java.util.UUID
 import kotlin.random.Random
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.nanoseconds
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
@@ -116,9 +77,8 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
 
   @Test
   fun cachingDisabledAlwaysReturnsFromServer() =
-    executeCreateQueryUpdateQueryTest(cacheSettings = null) { string1, string2 ->
-      query1ResultShouldBe(string1, SERVER)
-      query2ResultShouldBe(string2, SERVER)
+    executeCreateQueryUpdateQueryTest(cacheSettings = null) { strings ->
+      query2ResultShouldBe(strings.postUpdateValue, SERVER)
       useSameDataConnectInstanceForQuery2()
     }
 
@@ -126,9 +86,8 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
   fun cachingMemoryReturnsFromCacheBeforeMaxAge() =
     executeCreateQueryUpdateQueryTest(
       cacheSettings = CacheSettings(storage = MEMORY, maxAge = 1.hours)
-    ) { string1, _ ->
-      query1ResultShouldBe(string1, SERVER)
-      query2ResultShouldBe(string1, CACHE)
+    ) { strings ->
+      query2ResultShouldBe(strings.preUpdateValue, CACHE)
       useSameDataConnectInstanceForQuery2()
     }
 
@@ -136,9 +95,8 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
   fun cachingPersistentReturnsFromCacheBeforeMaxAge() =
     executeCreateQueryUpdateQueryTest(
       cacheSettings = CacheSettings(storage = PERSISTENT, maxAge = 1.hours)
-    ) { string1, _ ->
-      query1ResultShouldBe(string1, SERVER)
-      query2ResultShouldBe(string1, CACHE)
+    ) { strings ->
+      query2ResultShouldBe(strings.preUpdateValue, CACHE)
       useSameDataConnectInstanceForQuery2()
     }
 
@@ -146,9 +104,8 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
   fun cachingMemoryReturnsFromServerAfterMaxAge() =
     executeCreateQueryUpdateQueryTest(
       cacheSettings = CacheSettings(storage = MEMORY, maxAge = 1.nanoseconds)
-    ) { string1, string2 ->
-      query1ResultShouldBe(string1, SERVER)
-      query2ResultShouldBe(string2, SERVER)
+    ) { strings ->
+      query2ResultShouldBe(strings.postUpdateValue, SERVER)
       useSameDataConnectInstanceForQuery2()
     }
 
@@ -156,9 +113,8 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
   fun cachingPersistentReturnsFromServerAfterMaxAge() =
     executeCreateQueryUpdateQueryTest(
       cacheSettings = CacheSettings(storage = PERSISTENT, maxAge = 1.nanoseconds)
-    ) { string1, string2 ->
-      query1ResultShouldBe(string1, SERVER)
-      query2ResultShouldBe(string2, SERVER)
+    ) { strings ->
+      query2ResultShouldBe(strings.postUpdateValue, SERVER)
       useSameDataConnectInstanceForQuery2()
     }
 
@@ -166,9 +122,8 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
   fun cachingMemoryReturnsFromServerWhenMaxAgeIsZero() =
     executeCreateQueryUpdateQueryTest(
       cacheSettings = CacheSettings(storage = MEMORY, maxAge = Duration.ZERO)
-    ) { string1, string2 ->
-      query1ResultShouldBe(string1, SERVER)
-      query2ResultShouldBe(string2, SERVER)
+    ) { strings ->
+      query2ResultShouldBe(strings.postUpdateValue, SERVER)
       useSameDataConnectInstanceForQuery2()
     }
 
@@ -176,9 +131,8 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
   fun cachingPersistentReturnsFromServerWhenMaxAgeIsZero() =
     executeCreateQueryUpdateQueryTest(
       cacheSettings = CacheSettings(storage = PERSISTENT, maxAge = Duration.ZERO)
-    ) { string1, string2 ->
-      query1ResultShouldBe(string1, SERVER)
-      query2ResultShouldBe(string2, SERVER)
+    ) { strings ->
+      query2ResultShouldBe(strings.postUpdateValue, SERVER)
       useSameDataConnectInstanceForQuery2()
     }
 
@@ -186,9 +140,8 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
   fun cachingMemoryIsClearedBetweenDataConnectInstances() =
     executeCreateQueryUpdateQueryTest(
       cacheSettings = CacheSettings(storage = MEMORY, maxAge = 1.hours)
-    ) { string1, string2 ->
-      query1ResultShouldBe(string1, SERVER)
-      query2ResultShouldBe(string2, SERVER)
+    ) { strings ->
+      query2ResultShouldBe(strings.postUpdateValue, SERVER)
       useNewDataConnectInstanceForQuery2()
     }
 
@@ -196,18 +149,15 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
   fun cachingPersistentPersistsBetweenDataConnectInstances() =
     executeCreateQueryUpdateQueryTest(
       cacheSettings = CacheSettings(storage = PERSISTENT, maxAge = 1.hours)
-    ) { string1, _ ->
-      query1ResultShouldBe(string1, SERVER)
-      query2ResultShouldBe(string1, CACHE)
+    ) { strings ->
+      query2ResultShouldBe(strings.preUpdateValue, CACHE)
       useNewDataConnectInstanceForQuery2()
     }
 
   private data class CreateQueryUpdateQueryTestConfig(
-    var query1Name: String? = null,
-    var query1DataSource: DataSource? = null,
-    var query2Name: String? = null,
-    var query2DataSource: DataSource? = null,
-    var query2DataConnectInstance: DataConnectInstance? = null,
+    val query2String: String,
+    val query2DataSource: DataSource,
+    val query2DataConnectInstance: DataConnectInstance,
   ) {
 
     enum class DataConnectInstance {
@@ -221,73 +171,235 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
       New,
     }
 
-    fun query1ResultShouldBe(name: String, dataSource: DataSource) {
-      query1Name = name
-      query1DataSource = dataSource
-    }
+    class Builder(
+      var query2String: String? = null,
+      var query2DataSource: DataSource? = null,
+      var query2DataConnectInstance: DataConnectInstance? = null,
+    ) {
 
-    fun query2ResultShouldBe(name: String, dataSource: DataSource) {
-      query2Name = name
-      query2DataSource = dataSource
-    }
+      fun query2ResultShouldBe(string: String, dataSource: DataSource) {
+        query2String = string
+        query2DataSource = dataSource
+      }
 
-    fun useSameDataConnectInstanceForQuery2() {
-      query2DataConnectInstance = DataConnectInstance.Same
-    }
+      fun useSameDataConnectInstanceForQuery2() {
+        query2DataConnectInstance = DataConnectInstance.Same
+      }
 
-    fun useNewDataConnectInstanceForQuery2() {
-      query2DataConnectInstance = DataConnectInstance.New
-    }
+      fun useNewDataConnectInstanceForQuery2() {
+        query2DataConnectInstance = DataConnectInstance.New
+      }
 
-    fun verify(): Quintuple<String, DataSource, String, DataSource, DataConnectInstance> {
-      val query1Name = checkNotNull(query1Name)
-      val query1DataSource = checkNotNull(query1DataSource)
-      val query2Name = checkNotNull(query2Name)
-      val query2DataSource = checkNotNull(query2DataSource)
-      val query2DataConnectInstance = checkNotNull(query2DataConnectInstance)
-      return Quintuple(
-        query1Name,
-        query1DataSource,
-        query2Name,
-        query2DataSource,
-        query2DataConnectInstance
-      )
+      fun build(): CreateQueryUpdateQueryTestConfig =
+        CreateQueryUpdateQueryTestConfig(
+          checkNotNull(query2String),
+          checkNotNull(query2DataSource),
+          checkNotNull(query2DataConnectInstance),
+        )
     }
   }
+
+  @Test
+  fun fetchPolicyPreferCacheReturnsCachedDataIfMaxAgeNotPassed() =
+    verifyQueryReturnsCachedData(maxAge = 1.hours, FetchPolicy.PREFER_CACHE)
+
+  @Test
+  fun fetchPolicyPreferCacheReturnsServerDataIfMaxAgePassed() =
+    verifyQueryReturnsServerData(maxAge = 1.milliseconds, FetchPolicy.PREFER_CACHE)
+
+  @Test
+  fun fetchPolicyPreferCacheReturnsServerDataIfMaxAgeZero() =
+    verifyQueryReturnsServerData(maxAge = Duration.ZERO, FetchPolicy.PREFER_CACHE)
+
+  @Test
+  fun fetchPolicyPreferCacheReturnsCachedDataIfMaxAgeInfinite() =
+    verifyQueryReturnsCachedData(maxAge = Duration.INFINITE, FetchPolicy.PREFER_CACHE)
+
+  @Test
+  fun fetchPolicyPreferCacheReturnsServerDataIfNoCachedData() =
+    verifyQueryReturnsServerDataIfNoCachedData(FetchPolicy.PREFER_CACHE)
+
+  @Test
+  fun fetchPolicyDefaultReturnsCachedDataIfMaxAgeNotPassed() =
+    verifyQueryReturnsCachedData(maxAge = 1.hours, fetchPolicy = null)
+
+  @Test
+  fun fetchPolicyDefaultReturnsServerDataIfMaxAgePassed() =
+    verifyQueryReturnsServerData(maxAge = 1.milliseconds, fetchPolicy = null)
+
+  @Test
+  fun fetchPolicyDefaultReturnsServerDataIfMaxAgeZero() =
+    verifyQueryReturnsServerData(maxAge = Duration.ZERO, fetchPolicy = null)
+
+  @Test
+  fun fetchPolicyDefaultReturnsCachedDataIfMaxAgeInfinite() =
+    verifyQueryReturnsCachedData(maxAge = Duration.INFINITE, fetchPolicy = null)
+
+  @Test
+  fun fetchPolicyDefaultReturnsServerDataIfNoCachedData() =
+    verifyQueryReturnsServerDataIfNoCachedData(fetchPolicy = null)
+
+  @Test
+  fun fetchPolicyCacheOnlyReturnsCachedDataIfMaxAgeNotPassed() =
+    verifyQueryReturnsCachedData(maxAge = 1.hours, FetchPolicy.CACHE_ONLY)
+
+  @Test
+  fun fetchPolicyCacheOnlyReturnsCachedDataIfMaxAgePassed() =
+    verifyQueryReturnsCachedData(maxAge = 1.milliseconds, FetchPolicy.CACHE_ONLY)
+
+  @Test
+  fun fetchPolicyCacheOnlyReturnsCachedDataIfMaxAgeZero() =
+    verifyQueryReturnsCachedData(maxAge = Duration.ZERO, FetchPolicy.CACHE_ONLY)
+
+  @Test
+  fun fetchPolicyCacheOnlyReturnsCachedDataIfMaxAgeInfinite() =
+    verifyQueryReturnsCachedData(maxAge = Duration.INFINITE, FetchPolicy.CACHE_ONLY)
+
+  @Test
+  fun fetchPolicyCacheOnlyThrowsIfNoCachedData() =
+    verifyQueryThrowsIfNoCachedData(FetchPolicy.CACHE_ONLY)
+
+  @Test
+  fun fetchPolicyServerOnlyReturnsServerDataIfMaxAgeNotPassed() =
+    verifyQueryReturnsServerData(maxAge = 1.hours, FetchPolicy.SERVER_ONLY)
+
+  @Test
+  fun fetchPolicyServerOnlyReturnsServerDataIfMaxAgePassed() =
+    verifyQueryReturnsServerData(maxAge = 1.milliseconds, FetchPolicy.SERVER_ONLY)
+
+  @Test
+  fun fetchPolicyServerOnlyReturnsServerDataIfMaxAgeZero() =
+    verifyQueryReturnsServerData(maxAge = Duration.ZERO, FetchPolicy.SERVER_ONLY)
+
+  @Test
+  fun fetchPolicyServerOnlyReturnsServerDataIfMaxAgeInfinite() =
+    verifyQueryReturnsServerData(maxAge = Duration.INFINITE, FetchPolicy.SERVER_ONLY)
+
+  @Test
+  fun fetchPolicyServerOnlyReturnsServerDataIfNoCachedData() =
+    verifyQueryReturnsServerDataIfNoCachedData(fetchPolicy = FetchPolicy.SERVER_ONLY)
+
+  private fun verifyQueryReturnsCachedData(maxAge: Duration, fetchPolicy: FetchPolicy?) = runTest {
+    val connector = newCachingConnector(cacheSettings = CacheSettings(maxAge = maxAge))
+    checkAll(propTestConfig, alphanumericStringArb().pair()) { (string1, string2) ->
+      val key = connector.insertString(string1)
+      connector.getString(key) // populate cache
+      connector.updateString(key, string2)
+
+      val result = connector.getString(key, fetchPolicy)
+
+      assertSoftly {
+        result.data.item.shouldNotBeNull().string shouldBe string1
+        result.dataSource shouldBe CACHE
+      }
+    }
+  }
+
+  private fun verifyQueryReturnsServerData(maxAge: Duration, fetchPolicy: FetchPolicy?) = runTest {
+    val connector = newCachingConnector(cacheSettings = CacheSettings(maxAge = maxAge))
+    checkAll(propTestConfig, alphanumericStringArb().pair()) { (string1, string2) ->
+      val key = connector.insertString(string1)
+      connector.getString(key) // populate cache
+      connector.updateString(key, string2)
+
+      val result = connector.getString(key, fetchPolicy)
+
+      assertSoftly {
+        result.data.item.shouldNotBeNull().string shouldBe string2
+        result.dataSource shouldBe SERVER
+      }
+    }
+  }
+
+  private fun verifyQueryThrowsIfNoCachedData(
+    @Suppress("SameParameterValue") fetchPolicy: FetchPolicy?
+  ) = runTest {
+    checkAll(propTestConfig, maxAgeArb()) { maxAge ->
+      val connector = newCachingConnector(cacheSettings = CacheSettings(maxAge = maxAge))
+      val key = CachingConnector.Key(UUID.randomUUID())
+
+      val exception = shouldThrow<DataConnectException> { connector.getString(key, fetchPolicy) }
+
+      assertSoftly {
+        exception.message shouldContainWithNonAbuttingText CACHED_DATA_NOT_FOUND_ERROR_ID
+        exception.message shouldContainWithNonAbuttingTextIgnoringCase
+          "query was not found in the local cache"
+      }
+
+      connector.dataConnect.suspendingClose()
+    }
+  }
+
+  private fun verifyQueryReturnsServerDataIfNoCachedData(fetchPolicy: FetchPolicy?) = runTest {
+    checkAll(propTestConfig, alphanumericStringArb(), maxAgeArb()) { string, maxAge ->
+      val connector = newCachingConnector(cacheSettings = CacheSettings(maxAge = maxAge))
+      val key = connector.insertString(string)
+
+      val result = connector.getString(key, fetchPolicy)
+
+      assertSoftly {
+        result.data.item.shouldNotBeNull().string shouldBe string
+        result.dataSource shouldBe SERVER
+      }
+
+      connector.dataConnect.suspendingClose()
+    }
+  }
+
+  /** The string values that are used by [executeCreateQueryUpdateQueryTest]. */
+  private data class ExecuteCreateQueryUpdateQueryTestStrings(
+    /** The string value used in the row during its initial insert. */
+    val preUpdateValue: String,
+    /** The string value to which the row is updated. */
+    val postUpdateValue: String,
+  )
 
   /**
    * Executes a series of create, query, and update operations to test query caching behavior.
    *
    * This function sets up a [FirebaseDataConnect] instance with the given [cacheSettings], then
    * performs the following steps within a property-based test:
-   * 1. Inserts a row into the `Person` table with a randomly-generated `string1`.
-   * 2. Executes a query to retrieve the person and asserts its data and data source based on
-   * [CreateQueryUpdateQueryTestConfig.query1Name] and
-   * [CreateQueryUpdateQueryTestConfig.query1DataSource].
-   * 3. Updates the person's name to `string2`.
-   * 4. Executes the same query again and asserts its data and data source based on
-   * [CreateQueryUpdateQueryTestConfig.query2Name] and
-   * [CreateQueryUpdateQueryTestConfig.query2DataSource].
+   * 1. Inserts a row into a table with a randomly-generated `string1`.
+   * 2. Executes a query to retrieve the newly-inserted row asserts its data and data source equal
+   * `string1` and [DataSource.SERVER], respectively.
+   * 3. Updates the row's string to `string2`.
+   * 4. Executes the same query again asserts its data and data source equal
+   * [CreateQueryUpdateQueryTestConfig.query2String] and
+   * [CreateQueryUpdateQueryTestConfig.query2DataSource], respectively.
    *
    * @param cacheSettings The [CacheSettings] to use for the [FirebaseDataConnect] instance; this
    * value is passed directly to [getInstance].
-   * @param configBlock A lambda that configures a [CreateQueryUpdateQueryTestConfig] instance. The
-   * `string1` and `string2` parameters are the names that will be used in the initial insert of the
-   * person and the subsequent update, respectively.
+   * @param configBlock A lambda that configures a [CreateQueryUpdateQueryTestConfig.Builder]
+   * instance..
    */
   private fun executeCreateQueryUpdateQueryTest(
     cacheSettings: CacheSettings?,
-    configBlock: CreateQueryUpdateQueryTestConfig.(string1: String, string2: String) -> Unit,
+    configBlock:
+      CreateQueryUpdateQueryTestConfig.Builder.(ExecuteCreateQueryUpdateQueryTestStrings) -> Unit,
   ) = runTest {
+    val fetchPolicy1Arb = Arb.of(null, FetchPolicy.PREFER_CACHE, FetchPolicy.SERVER_ONLY)
+    val fetchPolicy2Arb = Arb.of(null, FetchPolicy.PREFER_CACHE)
+    val fetchPoliciesArb = Arb.pair(fetchPolicy1Arb, fetchPolicy2Arb)
+    val stringsArb = alphanumericStringArb().distinctPair()
+    val stringsAndConfigArb =
+      stringsArb.map { (string1, string2) ->
+        val configBuilder = CreateQueryUpdateQueryTestConfig.Builder()
+        configBlock(configBuilder, ExecuteCreateQueryUpdateQueryTestStrings(string1, string2))
+        Triple(string1, string2, configBuilder.build())
+      }
+
     var connector = newCachingConnector(cacheSettings = cacheSettings)
 
-    checkAll(propTestConfig, alphanumericStringArb().distinctPair()) { (string1, string2) ->
-      val (
-        query1String, query1DataSource, query2String, query2DataSource, query2DataConnectInstance) =
-        CreateQueryUpdateQueryTestConfig().also { configBlock(it, string1, string2) }.verify()
+    checkAll(propTestConfig, stringsAndConfigArb, fetchPoliciesArb) {
+      (string1, string2, config),
+      (fetchPolicy1, fetchPolicy2) ->
+      val (query2String, query2DataSource, query2DataConnectInstance) = config
 
       val key = connector.insertString(string1)
-      connector.verifyGetString(key, "query1", query1String, query1DataSource)
+      withClue("query1") {
+        val result = connector.getString(key, fetchPolicy1)
+        result.shouldBe(string1, SERVER)
+      }
       connector.updateString(key, string2)
 
       connector =
@@ -302,7 +414,10 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
           }
         }
 
-      connector.verifyGetString(key, "query2", query2String, query2DataSource)
+      withClue("query2") {
+        val result = connector.getString(key, fetchPolicy2)
+        result.shouldBe(query2String, query2DataSource)
+      }
     }
   }
 
@@ -324,362 +439,302 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
     return CachingConnector(dataConnect)
   }
 
-  @Test
-  fun normalizedString() = runTest {
+  /**
+   * Verifies normalization and caching behavior for a specific data type.
+   *
+   * This function ensures that when data is inserted, updated, and queried using various methods
+   * (get by key, get by tag, using different query operations), the caching mechanism correctly
+   * returns the expected values from the appropriate data source (SERVER or CACHE).
+   *
+   * @param T The raw data type being tested (e.g., [String], [Float]).
+   * @param D The data type returned by single-item queries (e.g. [CachingConnector.Data.StringGet]
+   * ).
+   * @param DMany The data type returned by multi-item queries (e.g.
+   * [CachingConnector.Data.StringGetMany]).
+   * @param valueArb An [Arb] that generates random values of type [T].
+   * @param insertValue A function that inserts a value of type [T] with a given tag into the
+   * database and returns its [CachingConnector.Key].
+   * @param updateValue A function that updates the record associated with a [CachingConnector.Key]
+   * to a new value of type [T].
+   * @param getValue A function that retrieves a single record by its [CachingConnector.Key] using
+   * the first "get by key" query operation.
+   * @param getValue2 A function that retrieves a single record by its [CachingConnector.Key] using
+   * the second "get by key" query operation.
+   * @param getValuesByTag A function that retrieves all records associated with a tag using the
+   * first "get by tag" query operation.
+   * @param getValuesByTag2 A function that retrieves all records associated with a tag using the
+   * second "get by tag" query operation.
+   * @param shouldBe An assertion function that verifies a [QueryResult] of type [D] matches the
+   * expected value of type [T] and came from the expected [DataSource].
+   * @param shouldBeMany An assertion function that verifies a [QueryResult] of type [DMany]
+   * contains the expected collection of values of type [T] and came from the expected [DataSource].
+   */
+  private fun <T, D, DMany> testNormalizedValue(
+    valueArb: Arb<T>,
+    insertValue: suspend CachingConnector.(value: T, tag: String) -> CachingConnector.Key,
+    updateValue: suspend CachingConnector.(CachingConnector.Key, newValue: T) -> Unit,
+    getValue: suspend CachingConnector.(CachingConnector.Key, FetchPolicy?) -> QueryResult<D, *>,
+    getValue2: suspend CachingConnector.(CachingConnector.Key, FetchPolicy?) -> QueryResult<D, *>,
+    getValuesByTag: suspend CachingConnector.(String, FetchPolicy?) -> QueryResult<DMany, *>,
+    getValuesByTag2: suspend CachingConnector.(String, FetchPolicy?) -> QueryResult<DMany, *>,
+    shouldBe: QueryResult<D, *>.(T, DataSource) -> Unit,
+    shouldBeMany: QueryResult<DMany, *>.(Collection<T>, DataSource) -> Unit,
+  ) = runTest {
+    val cacheFetchPolicyArb = Arb.of(null, FetchPolicy.PREFER_CACHE, FetchPolicy.CACHE_ONLY)
+    val serverFetchPolicyArb = Arb.of(null, FetchPolicy.PREFER_CACHE, FetchPolicy.SERVER_ONLY)
+    fun fetchPolicyArbFor(dataSource: DataSource): Arb<FetchPolicy?> =
+      when (dataSource) {
+        CACHE -> cacheFetchPolicyArb
+        SERVER -> serverFetchPolicyArb
+      }
+
     val connector = newCachingConnector()
-    val stringsArb = alphanumericStringArb().quintuple()
-    checkAll(propTestConfig, stringsArb) { (string1, string2, string3, string4, string5) ->
+
+    checkAll(propTestConfig, valueArb.quintuple()) { (value1, value2, value3, value4, value5) ->
       val tag = randomTag()
-      val key = connector.insertString(string1, tag)
-      connector.verifyGetString(key, "query1a", string1, SERVER)
-      connector.updateString(key, string2)
-      connector.verifyGetString2(key, "query2a", string2, SERVER)
-      connector.verifyGetString(key, "query2b", string2, CACHE)
-      connector.updateString(key, string3)
-      connector.verifyGetStringsByTag(tag, "query3a", string3, SERVER)
-      connector.verifyGetString2(key, "query3b", string3, CACHE)
-      connector.verifyGetString(key, "query3c", string3, CACHE)
-      connector.insertString(string5, tag)
-      connector.updateString(key, string4)
-      connector.verifyGetStringsByTag2(tag, "query4a", listOf(string4, string5), SERVER)
-      connector.verifyGetStringsByTag(tag, "query4b", string4, CACHE)
-      connector.verifyGetString2(key, "query4c", string4, CACHE)
-      connector.verifyGetString(key, "query4d", string4, CACHE)
+      val key = connector.insertValue(value1, tag)
+
+      suspend fun getAndVerifyValue(expectedValue: T, expectedDataSource: DataSource) {
+        val fetchPolicy = fetchPolicyArbFor(expectedDataSource).bind()
+        val result = connector.getValue(key, fetchPolicy)
+        result.shouldBe(expectedValue, expectedDataSource)
+      }
+
+      suspend fun getAndVerifyValue2(expectedValue: T, expectedDataSource: DataSource) {
+        val fetchPolicy = fetchPolicyArbFor(expectedDataSource).bind()
+        val result = connector.getValue2(key, fetchPolicy)
+        result.shouldBe(expectedValue, expectedDataSource)
+      }
+
+      suspend fun getAndVerifyValues(
+        expectedValues: Collection<T>,
+        expectedDataSource: DataSource
+      ) {
+        val fetchPolicy = fetchPolicyArbFor(expectedDataSource).bind()
+        val result = connector.getValuesByTag(tag, fetchPolicy)
+        result.shouldBeMany(expectedValues, expectedDataSource)
+      }
+
+      suspend fun getAndVerifyValues2(
+        expectedValues: Collection<T>,
+        expectedDataSource: DataSource
+      ) {
+        val fetchPolicy = fetchPolicyArbFor(expectedDataSource).bind()
+        val result = connector.getValuesByTag2(tag, fetchPolicy)
+        result.shouldBeMany(expectedValues, expectedDataSource)
+      }
+
+      withClue("query1") { getAndVerifyValue(value1, SERVER) }
+      connector.updateValue(key, value2)
+      withClue("query2a") { getAndVerifyValue2(value2, SERVER) }
+      withClue("query2b") { getAndVerifyValue(value2, CACHE) }
+      connector.updateValue(key, value3)
+      withClue("query3a") { getAndVerifyValues(listOf(value3), SERVER) }
+      withClue("query3b") { getAndVerifyValue2(value3, CACHE) }
+      withClue("query3c") { getAndVerifyValue(value3, CACHE) }
+      connector.insertValue(value5, tag)
+      connector.updateValue(key, value4)
+      withClue("query4a") { getAndVerifyValues2(listOf(value4, value5), SERVER) }
+      withClue("query4b") { getAndVerifyValues(listOf(value4), CACHE) }
+      withClue("query4c") { getAndVerifyValue2(value4, CACHE) }
+      withClue("query4d") { getAndVerifyValue(value4, CACHE) }
     }
   }
 
   @Test
-  fun normalizedNullableString() = runTest {
-    val connector = newCachingConnector()
-    val stringsArb = alphanumericStringArb().orNull(nullProbability = 0.2).quintuple()
-    checkAll(propTestConfig, stringsArb) { (string1, string2, string3, string4, string5) ->
-      val tag = randomTag()
-      val key = connector.insertNullableString(string1, tag)
-      connector.verifyGetNullableString(key, "query1a", string1, SERVER)
-      connector.updateNullableString(key, string2)
-      connector.verifyGetNullableString2(key, "query2a", string2, SERVER)
-      connector.verifyGetNullableString(key, "query2b", string2, CACHE)
-      connector.updateNullableString(key, string3)
-      connector.verifyGetNullableStringsByTag(tag, "query3a", string3, SERVER)
-      connector.verifyGetNullableString2(key, "query3b", string3, CACHE)
-      connector.verifyGetNullableString(key, "query3c", string3, CACHE)
-      connector.insertNullableString(string5, tag)
-      connector.updateNullableString(key, string4)
-      connector.verifyGetNullableStringsByTag2(tag, "query4a", listOf(string4, string5), SERVER)
-      connector.verifyGetNullableStringsByTag(tag, "query4b", string4, CACHE)
-      connector.verifyGetNullableString2(key, "query4c", string4, CACHE)
-      connector.verifyGetNullableString(key, "query4d", string4, CACHE)
-    }
-  }
+  fun normalizedString() =
+    testNormalizedValue(
+      valueArb = alphanumericStringArb(),
+      insertValue = CachingConnector::insertString,
+      updateValue = CachingConnector::updateString,
+      getValue = CachingConnector::getString,
+      getValue2 = CachingConnector::getString2,
+      getValuesByTag = CachingConnector::getStringsByTag,
+      getValuesByTag2 = CachingConnector::getStringsByTag2,
+      shouldBe = QueryResult<CachingConnector.Data.StringGet, *>::shouldBe,
+      shouldBeMany = QueryResult<CachingConnector.Data.StringGetMany, *>::shouldBe,
+    )
 
   @Test
-  fun normalizedStringList() = runTest {
-    val connector = newCachingConnector()
-    val stringListArb = Arb.list(alphanumericStringArb(), 0..5)
-    val stringListsArb = stringListArb.quintuple()
-    checkAll(propTestConfig, stringListsArb) { (strings1, strings2, strings3, strings4, strings5) ->
-      val tag = randomTag()
-      val key = connector.insertStringList(strings1, tag)
-      connector.verifyGetStringList(key, "query1a", strings1, SERVER)
-      connector.updateStringList(key, strings2)
-      connector.verifyGetStringList2(key, "query2a", strings2, SERVER)
-      connector.verifyGetStringList(key, "query2b", strings2, CACHE)
-      connector.updateStringList(key, strings3)
-      connector.verifyGetStringListsByTag(tag, "query3a", strings3, SERVER)
-      connector.verifyGetStringList2(key, "query3b", strings3, CACHE)
-      connector.verifyGetStringList(key, "query3c", strings3, CACHE)
-      connector.insertStringList(strings5, tag)
-      connector.updateStringList(key, strings4)
-      connector.verifyGetStringListsByTag2(tag, "query4a", listOf(strings4, strings5), SERVER)
-      connector.verifyGetStringListsByTag(tag, "query4b", strings4, CACHE)
-      connector.verifyGetStringList2(key, "query4c", strings4, CACHE)
-      connector.verifyGetStringList(key, "query4d", strings4, CACHE)
-    }
-  }
+  fun normalizedNullableString() =
+    testNormalizedValue(
+      valueArb = alphanumericStringArb().orNull(nullProbability = 0.2),
+      insertValue = CachingConnector::insertNullableString,
+      updateValue = CachingConnector::updateNullableString,
+      getValue = CachingConnector::getNullableString,
+      getValue2 = CachingConnector::getNullableString2,
+      getValuesByTag = CachingConnector::getNullableStringsByTag,
+      getValuesByTag2 = CachingConnector::getNullableStringsByTag2,
+      shouldBe = QueryResult<CachingConnector.Data.NullableStringGet, *>::shouldBe,
+      shouldBeMany = QueryResult<CachingConnector.Data.NullableStringGetMany, *>::shouldBe,
+    )
 
   @Test
-  fun normalizedNullableStringList() = runTest {
-    val connector = newCachingConnector()
-    val stringListArb = Arb.list(alphanumericStringArb().orNull(nullProbability = 0.2), 0..5)
-    val stringListsArb = stringListArb.quintuple()
-    checkAll(propTestConfig, stringListsArb) { (strings1, strings2, strings3, strings4, strings5) ->
-      val tag = randomTag()
-      val key = connector.insertNullableStringList(strings1, tag)
-      connector.verifyGetNullableStringList(key, "query1a", strings1, SERVER)
-      connector.updateNullableStringList(key, strings2)
-      connector.verifyGetNullableStringList2(key, "query2a", strings2, SERVER)
-      connector.verifyGetNullableStringList(key, "query2b", strings2, CACHE)
-      connector.updateNullableStringList(key, strings3)
-      connector.verifyGetNullableStringListsByTag(tag, "query3a", strings3, SERVER)
-      connector.verifyGetNullableStringList2(key, "query3b", strings3, CACHE)
-      connector.verifyGetNullableStringList(key, "query3c", strings3, CACHE)
-      connector.insertNullableStringList(strings5, tag)
-      connector.updateNullableStringList(key, strings4)
-      connector.verifyGetNullableStringListsByTag2(
-        tag,
-        "query4a",
-        listOf(strings4, strings5),
-        SERVER
-      )
-      connector.verifyGetNullableStringListsByTag(tag, "query4b", strings4, CACHE)
-      connector.verifyGetNullableStringList2(key, "query4c", strings4, CACHE)
-      connector.verifyGetNullableStringList(key, "query4d", strings4, CACHE)
-    }
-  }
+  fun normalizedStringList() =
+    testNormalizedValue(
+      valueArb = Arb.list(alphanumericStringArb(), 0..5),
+      insertValue = CachingConnector::insertStringList,
+      updateValue = CachingConnector::updateStringList,
+      getValue = CachingConnector::getStringList,
+      getValue2 = CachingConnector::getStringList2,
+      getValuesByTag = CachingConnector::getStringListsByTag,
+      getValuesByTag2 = CachingConnector::getStringListsByTag2,
+      shouldBe = QueryResult<CachingConnector.Data.StringListGet, *>::shouldBe,
+      shouldBeMany = QueryResult<CachingConnector.Data.StringListGetMany, *>::shouldBe,
+    )
 
   @Test
-  fun normalizedStringNullableList() = runTest {
-    val connector = newCachingConnector()
-    val stringListArb = Arb.list(alphanumericStringArb(), 0..5).orNull(nullProbability = 0.2)
-    val stringListsArb = stringListArb.quintuple()
-    checkAll(propTestConfig, stringListsArb) { (strings1, strings2, strings3, strings4, strings5) ->
-      val tag = randomTag()
-      val key = connector.insertStringNullableList(strings1, tag)
-      connector.verifyGetStringNullableList(key, "query1a", strings1, SERVER)
-      connector.updateStringNullableList(key, strings2)
-      connector.verifyGetStringNullableList2(key, "query2a", strings2, SERVER)
-      connector.verifyGetStringNullableList(key, "query2b", strings2, CACHE)
-      connector.updateStringNullableList(key, strings3)
-      connector.verifyGetStringNullableListsByTag(tag, "query3a", strings3, SERVER)
-      connector.verifyGetStringNullableList2(key, "query3b", strings3, CACHE)
-      connector.verifyGetStringNullableList(key, "query3c", strings3, CACHE)
-      connector.insertStringNullableList(strings5, tag)
-      connector.updateStringNullableList(key, strings4)
-      connector.verifyGetStringNullableListsByTag2(
-        tag,
-        "query4a",
-        listOf(strings4, strings5),
-        SERVER
-      )
-      connector.verifyGetStringNullableListsByTag(tag, "query4b", strings4, CACHE)
-      connector.verifyGetStringNullableList2(key, "query4c", strings4, CACHE)
-      connector.verifyGetStringNullableList(key, "query4d", strings4, CACHE)
-    }
-  }
+  fun normalizedNullableStringList() =
+    testNormalizedValue(
+      valueArb = Arb.list(alphanumericStringArb().orNull(nullProbability = 0.2), 0..5),
+      insertValue = CachingConnector::insertNullableStringList,
+      updateValue = CachingConnector::updateNullableStringList,
+      getValue = CachingConnector::getNullableStringList,
+      getValue2 = CachingConnector::getNullableStringList2,
+      getValuesByTag = CachingConnector::getNullableStringListsByTag,
+      getValuesByTag2 = CachingConnector::getNullableStringListsByTag2,
+      shouldBe = QueryResult<CachingConnector.Data.NullableStringListGet, *>::shouldBe,
+      shouldBeMany = QueryResult<CachingConnector.Data.NullableStringListGetMany, *>::shouldBe,
+    )
 
   @Test
-  fun normalizedNullableStringNullableList() = runTest {
-    val connector = newCachingConnector()
-    val stringListArb =
-      Arb.list(alphanumericStringArb().orNull(nullProbability = 0.2), 0..5)
-        .orNull(nullProbability = 0.2)
-    val stringListsArb = stringListArb.quintuple()
-    checkAll(propTestConfig, stringListsArb) { (strings1, strings2, strings3, strings4, strings5) ->
-      val tag = randomTag()
-      val key = connector.insertNullableStringNullableList(strings1, tag)
-      connector.verifyGetNullableStringNullableList(key, "query1a", strings1, SERVER)
-      connector.updateNullableStringNullableList(key, strings2)
-      connector.verifyGetNullableStringNullableList2(key, "query2a", strings2, SERVER)
-      connector.verifyGetNullableStringNullableList(key, "query2b", strings2, CACHE)
-      connector.updateNullableStringNullableList(key, strings3)
-      connector.verifyGetNullableStringNullableListsByTag(tag, "query3a", strings3, SERVER)
-      connector.verifyGetNullableStringNullableList2(key, "query3b", strings3, CACHE)
-      connector.verifyGetNullableStringNullableList(key, "query3c", strings3, CACHE)
-      connector.insertNullableStringNullableList(strings5, tag)
-      connector.updateNullableStringNullableList(key, strings4)
-      connector.verifyGetNullableStringNullableListsByTag2(
-        tag,
-        "query4a",
-        listOf(strings4, strings5),
-        SERVER
-      )
-      connector.verifyGetNullableStringNullableListsByTag(tag, "query4b", strings4, CACHE)
-      connector.verifyGetNullableStringNullableList2(key, "query4c", strings4, CACHE)
-      connector.verifyGetNullableStringNullableList(key, "query4d", strings4, CACHE)
-    }
-  }
+  fun normalizedStringNullableList() =
+    testNormalizedValue(
+      valueArb = Arb.list(alphanumericStringArb(), 0..5).orNull(nullProbability = 0.2),
+      insertValue = CachingConnector::insertStringNullableList,
+      updateValue = CachingConnector::updateStringNullableList,
+      getValue = CachingConnector::getStringNullableList,
+      getValue2 = CachingConnector::getStringNullableList2,
+      getValuesByTag = CachingConnector::getStringNullableListsByTag,
+      getValuesByTag2 = CachingConnector::getStringNullableListsByTag2,
+      shouldBe = QueryResult<CachingConnector.Data.StringNullableListGet, *>::shouldBe,
+      shouldBeMany = QueryResult<CachingConnector.Data.StringNullableListGetMany, *>::shouldBe,
+    )
 
   @Test
-  fun normalizedFloat() = runTest {
-    val connector = newCachingConnector()
-    val floatsArb = Arb.dataConnect.float().quintuple()
-    checkAll(propTestConfig, floatsArb) { (float1, float2, float3, float4, float5) ->
-      val tag = randomTag()
-      val key = connector.insertFloat(float1.float, tag)
-      connector.verifyGetFloat(key, "query1a", float1.roundTripFloat, SERVER)
-      connector.updateFloat(key, float2.float)
-      connector.verifyGetFloat2(key, "query2a", float2.roundTripFloat, SERVER)
-      connector.verifyGetFloat(key, "query2b", float2.roundTripFloat, CACHE)
-      connector.updateFloat(key, float3.float)
-      connector.verifyGetFloatsByTag(tag, "query3a", float3.roundTripFloat, SERVER)
-      connector.verifyGetFloat2(key, "query3b", float3.roundTripFloat, CACHE)
-      connector.verifyGetFloat(key, "query3c", float3.roundTripFloat, CACHE)
-      connector.insertFloat(float5.float, tag)
-      connector.updateFloat(key, float4.float)
-      connector.verifyGetFloatsByTag2(
-        tag,
-        "query4a",
-        listOf(float4, float5).map { it.roundTripFloat },
-        SERVER
-      )
-      connector.verifyGetFloatsByTag(tag, "query4b", float4.roundTripFloat, CACHE)
-      connector.verifyGetFloat2(key, "query4c", float4.roundTripFloat, CACHE)
-      connector.verifyGetFloat(key, "query4d", float4.roundTripFloat, CACHE)
-    }
-  }
+  fun normalizedNullableStringNullableList() =
+    testNormalizedValue(
+      valueArb =
+        Arb.list(alphanumericStringArb().orNull(nullProbability = 0.2), 0..5)
+          .orNull(nullProbability = 0.2),
+      insertValue = CachingConnector::insertNullableStringNullableList,
+      updateValue = CachingConnector::updateNullableStringNullableList,
+      getValue = CachingConnector::getNullableStringNullableList,
+      getValue2 = CachingConnector::getNullableStringNullableList2,
+      getValuesByTag = CachingConnector::getNullableStringNullableListsByTag,
+      getValuesByTag2 = CachingConnector::getNullableStringNullableListsByTag2,
+      shouldBe = QueryResult<CachingConnector.Data.NullableStringNullableListGet, *>::shouldBe,
+      shouldBeMany =
+        QueryResult<CachingConnector.Data.NullableStringNullableListGetMany, *>::shouldBe,
+    )
 
   @Test
-  fun normalizedNullableFloat() = runTest {
-    val connector = newCachingConnector()
-    val floatsArb = Arb.dataConnect.float().orNull(nullProbability = 0.2).quintuple()
-    checkAll(propTestConfig, floatsArb) { (float1, float2, float3, float4, float5) ->
-      val tag = randomTag()
-      val key = connector.insertNullableFloat(float1?.float, tag)
-      connector.verifyGetNullableFloat(key, "query1a", float1?.roundTripFloat, SERVER)
-      connector.updateNullableFloat(key, float2?.float)
-      connector.verifyGetNullableFloat2(key, "query2a", float2?.roundTripFloat, SERVER)
-      connector.verifyGetNullableFloat(key, "query2b", float2?.roundTripFloat, CACHE)
-      connector.updateNullableFloat(key, float3?.float)
-      connector.verifyGetNullableFloatsByTag(tag, "query3a", float3?.roundTripFloat, SERVER)
-      connector.verifyGetNullableFloat2(key, "query3b", float3?.roundTripFloat, CACHE)
-      connector.verifyGetNullableFloat(key, "query3c", float3?.roundTripFloat, CACHE)
-      connector.insertNullableFloat(float5?.float, tag)
-      connector.updateNullableFloat(key, float4?.float)
-      connector.verifyGetNullableFloatsByTag2(
-        tag,
-        "query4a",
-        listOf(float4, float5).map { it?.roundTripFloat },
-        SERVER
-      )
-      connector.verifyGetNullableFloatsByTag(tag, "query4b", float4?.roundTripFloat, CACHE)
-      connector.verifyGetNullableFloat2(key, "query4c", float4?.roundTripFloat, CACHE)
-      connector.verifyGetNullableFloat(key, "query4d", float4?.roundTripFloat, CACHE)
-    }
-  }
+  fun normalizedFloat() =
+    testNormalizedValue(
+      valueArb = Arb.dataConnect.float(),
+      insertValue = { value, tag -> insertFloat(value.float, tag) },
+      updateValue = { key, newValue -> updateFloat(key, newValue.float) },
+      getValue = CachingConnector::getFloat,
+      getValue2 = CachingConnector::getFloat2,
+      getValuesByTag = CachingConnector::getFloatsByTag,
+      getValuesByTag2 = CachingConnector::getFloatsByTag2,
+      shouldBe = { expected, dataSource -> shouldBe(expected.roundTripFloat, dataSource) },
+      shouldBeMany = { expected, dataSource ->
+        shouldBe(expected.map { it.roundTripFloat }, dataSource)
+      },
+    )
 
   @Test
-  fun normalizedBoolean() = runTest {
-    val connector = newCachingConnector()
-    val booleansArb = Arb.boolean().quintuple()
-    checkAll(propTestConfig, booleansArb) { (boolean1, boolean2, boolean3, boolean4, boolean5) ->
-      val tag = randomTag()
-      val key = connector.insertBoolean(boolean1, tag)
-      connector.verifyGetBoolean(key, "query1a", boolean1, SERVER)
-      connector.updateBoolean(key, boolean2)
-      connector.verifyGetBoolean2(key, "query2a", boolean2, SERVER)
-      connector.verifyGetBoolean(key, "query2b", boolean2, CACHE)
-      connector.updateBoolean(key, boolean3)
-      connector.verifyGetBooleansByTag(tag, "query3a", boolean3, SERVER)
-      connector.verifyGetBoolean2(key, "query3b", boolean3, CACHE)
-      connector.verifyGetBoolean(key, "query3c", boolean3, CACHE)
-      connector.insertBoolean(boolean5, tag)
-      connector.updateBoolean(key, boolean4)
-      connector.verifyGetBooleansByTag2(tag, "query4a", listOf(boolean4, boolean5), SERVER)
-      connector.verifyGetBooleansByTag(tag, "query4b", boolean4, CACHE)
-      connector.verifyGetBoolean2(key, "query4c", boolean4, CACHE)
-      connector.verifyGetBoolean(key, "query4d", boolean4, CACHE)
-    }
-  }
+  fun normalizedNullableFloat() =
+    testNormalizedValue(
+      valueArb = Arb.dataConnect.float().orNull(nullProbability = 0.2),
+      insertValue = { value, tag -> insertNullableFloat(value?.float, tag) },
+      updateValue = { key, newValue -> updateNullableFloat(key, newValue?.float) },
+      getValue = CachingConnector::getNullableFloat,
+      getValue2 = CachingConnector::getNullableFloat2,
+      getValuesByTag = CachingConnector::getNullableFloatsByTag,
+      getValuesByTag2 = CachingConnector::getNullableFloatsByTag2,
+      shouldBe = { expected, dataSource -> shouldBe(expected?.roundTripFloat, dataSource) },
+      shouldBeMany = { expected, dataSource ->
+        shouldBe(expected.map { it?.roundTripFloat }, dataSource)
+      },
+    )
 
   @Test
-  fun normalizedNullableBoolean() = runTest {
-    val connector = newCachingConnector()
-    val booleansArb = Arb.boolean().orNull(nullProbability = 0.2).quintuple()
-    checkAll(propTestConfig, booleansArb) { (boolean1, boolean2, boolean3, boolean4, boolean5) ->
-      val tag = randomTag()
-      val key = connector.insertNullableBoolean(boolean1, tag)
-      connector.verifyGetNullableBoolean(key, "query1a", boolean1, SERVER)
-      connector.updateNullableBoolean(key, boolean2)
-      connector.verifyGetNullableBoolean2(key, "query2a", boolean2, SERVER)
-      connector.verifyGetNullableBoolean(key, "query2b", boolean2, CACHE)
-      connector.updateNullableBoolean(key, boolean3)
-      connector.verifyGetNullableBooleansByTag(tag, "query3a", boolean3, SERVER)
-      connector.verifyGetNullableBoolean2(key, "query3b", boolean3, CACHE)
-      connector.verifyGetNullableBoolean(key, "query3c", boolean3, CACHE)
-      connector.insertNullableBoolean(boolean5, tag)
-      connector.updateNullableBoolean(key, boolean4)
-      connector.verifyGetNullableBooleansByTag2(tag, "query4a", listOf(boolean4, boolean5), SERVER)
-      connector.verifyGetNullableBooleansByTag(tag, "query4b", boolean4, CACHE)
-      connector.verifyGetNullableBoolean2(key, "query4c", boolean4, CACHE)
-      connector.verifyGetNullableBoolean(key, "query4d", boolean4, CACHE)
-    }
-  }
+  fun normalizedBoolean() =
+    testNormalizedValue(
+      valueArb = Arb.boolean(),
+      insertValue = CachingConnector::insertBoolean,
+      updateValue = CachingConnector::updateBoolean,
+      getValue = CachingConnector::getBoolean,
+      getValue2 = CachingConnector::getBoolean2,
+      getValuesByTag = CachingConnector::getBooleansByTag,
+      getValuesByTag2 = CachingConnector::getBooleansByTag2,
+      shouldBe = QueryResult<CachingConnector.Data.BooleanGet, *>::shouldBe,
+      shouldBeMany = QueryResult<CachingConnector.Data.BooleanGetMany, *>::shouldBe,
+    )
 
   @Test
-  fun normalizedAnyValue() = runTest {
-    val connector = newCachingConnector()
-    val anyValueArb = anyValueArb().quintuple()
-    checkAll(propTestConfig, anyValueArb) { (any1, any2, any3, any4, any5) ->
-      val tag = randomTag()
-      val key = connector.insertAnyValue(any1.value, tag)
-      connector.verifyGetAnyValue(key, "query1a", any1.roundTripValue, SERVER)
-      connector.updateAnyValue(key, any2.value)
-      connector.verifyGetAnyValue2(key, "query2a", any2.roundTripValue, SERVER)
-      connector.verifyGetAnyValue(key, "query2b", any2.roundTripValue, CACHE)
-      connector.updateAnyValue(key, any3.value)
-      connector.verifyGetAnyValuesByTag(tag, "query3a", any3.roundTripValue, SERVER)
-      connector.verifyGetAnyValue2(key, "query3b", any3.roundTripValue, CACHE)
-      connector.verifyGetAnyValue(key, "query3c", any3.roundTripValue, CACHE)
-      connector.insertAnyValue(any5.value, tag)
-      connector.updateAnyValue(key, any4.value)
-      connector.verifyGetAnyValuesByTag2(
-        tag,
-        "query4a",
-        listOf(any4, any5).map { it.roundTripValue },
-        SERVER
-      )
-      connector.verifyGetAnyValuesByTag(tag, "query4b", any4.roundTripValue, CACHE)
-      connector.verifyGetAnyValue2(key, "query4c", any4.roundTripValue, CACHE)
-      connector.verifyGetAnyValue(key, "query4d", any4.roundTripValue, CACHE)
-    }
-  }
+  fun normalizedNullableBoolean() =
+    testNormalizedValue(
+      valueArb = Arb.boolean().orNull(nullProbability = 0.2),
+      insertValue = CachingConnector::insertNullableBoolean,
+      updateValue = CachingConnector::updateNullableBoolean,
+      getValue = CachingConnector::getNullableBoolean,
+      getValue2 = CachingConnector::getNullableBoolean2,
+      getValuesByTag = CachingConnector::getNullableBooleansByTag,
+      getValuesByTag2 = CachingConnector::getNullableBooleansByTag2,
+      shouldBe = QueryResult<CachingConnector.Data.NullableBooleanGet, *>::shouldBe,
+      shouldBeMany = QueryResult<CachingConnector.Data.NullableBooleanGetMany, *>::shouldBe,
+    )
 
   @Test
-  fun normalizedNullableAnyValue() = runTest {
-    val connector = newCachingConnector()
-    val anyValueArb = anyValueArb().orNull(nullProbability = 0.2).quintuple()
-    checkAll(propTestConfig, anyValueArb) { (any1, any2, any3, any4, any5) ->
-      val tag = randomTag()
-      val key = connector.insertNullableAnyValue(any1?.value, tag)
-      connector.verifyGetNullableAnyValue(key, "query1a", any1?.roundTripValue, SERVER)
-      connector.updateNullableAnyValue(key, any2?.value)
-      connector.verifyGetNullableAnyValue2(key, "query2a", any2?.roundTripValue, SERVER)
-      connector.verifyGetNullableAnyValue(key, "query2b", any2?.roundTripValue, CACHE)
-      connector.updateNullableAnyValue(key, any3?.value)
-      connector.verifyGetNullableAnyValuesByTag(tag, "query3a", any3?.roundTripValue, SERVER)
-      connector.verifyGetNullableAnyValue2(key, "query3b", any3?.roundTripValue, CACHE)
-      connector.verifyGetNullableAnyValue(key, "query3c", any3?.roundTripValue, CACHE)
-      connector.insertNullableAnyValue(any5?.value, tag)
-      connector.updateNullableAnyValue(key, any4?.value)
-      connector.verifyGetNullableAnyValuesByTag2(
-        tag,
-        "query4a",
-        listOf(any4, any5).map { it?.roundTripValue },
-        SERVER
-      )
-      connector.verifyGetNullableAnyValuesByTag(tag, "query4b", any4?.roundTripValue, CACHE)
-      connector.verifyGetNullableAnyValue2(key, "query4c", any4?.roundTripValue, CACHE)
-      connector.verifyGetNullableAnyValue(key, "query4d", any4?.roundTripValue, CACHE)
-    }
-  }
+  fun normalizedAnyValue() =
+    testNormalizedValue(
+      valueArb = anyValueArb(),
+      insertValue = { value, tag -> insertAnyValue(value.value, tag) },
+      updateValue = { key, newValue -> updateAnyValue(key, newValue.value) },
+      getValue = CachingConnector::getAnyValue,
+      getValue2 = CachingConnector::getAnyValue2,
+      getValuesByTag = CachingConnector::getAnyValuesByTag,
+      getValuesByTag2 = CachingConnector::getAnyValuesByTag2,
+      shouldBe = { expected, dataSource -> shouldBe(expected.roundTripValue, dataSource) },
+      shouldBeMany = { expected, dataSource ->
+        shouldBe(expected.map { it.roundTripValue }, dataSource)
+      },
+    )
 
   @Test
-  fun normalizedMixed() = runTest {
-    val connector = newCachingConnector()
-    checkAll(propTestConfig, mixedArb().quintuple()) { (mixed1, mixed2, mixed3, mixed4, mixed5) ->
-      val tag = randomTag()
-      val key = connector.insertMixed(mixed1.toInsertVariables(tag))
-      connector.verifyGetMixed(key, "query1a", mixed1.toGetItem(), SERVER)
-      connector.updateMixed(key, mixed2.toUpdateBuilder())
-      connector.verifyGetMixed2(key, "query2a", mixed2.toGetItem(), SERVER)
-      connector.verifyGetMixed(key, "query2b", mixed2.toGetItem(), CACHE)
-      connector.updateMixed(key, mixed3.toUpdateBuilder())
-      connector.verifyGetMixedsByTag(tag, "query3a", mixed3.toGetManyItem(key), SERVER)
-      connector.verifyGetMixed2(key, "query3b", mixed3.toGetItem(), CACHE)
-      connector.verifyGetMixed(key, "query3c", mixed3.toGetItem(), CACHE)
-      val key2 = connector.insertMixed(mixed5.toInsertVariables(tag))
-      connector.updateMixed(key, mixed4.toUpdateBuilder())
-      connector.verifyGetMixedsByTag2(
-        tag,
-        "query4a",
-        listOf(mixed4.toGetManyItem(key), mixed5.toGetManyItem(key2)),
-        SERVER
-      )
-      connector.verifyGetMixedsByTag(tag, "query4b", mixed4.toGetManyItem(key), CACHE)
-      connector.verifyGetMixed2(key, "query4c", mixed4.toGetItem(), CACHE)
-      connector.verifyGetMixed(key, "query4d", mixed4.toGetItem(), CACHE)
-    }
-  }
+  fun normalizedNullableAnyValue() =
+    testNormalizedValue(
+      valueArb = anyValueArb().orNull(nullProbability = 0.2),
+      insertValue = { value, tag -> insertNullableAnyValue(value?.value, tag) },
+      updateValue = { key, newValue -> updateNullableAnyValue(key, newValue?.value) },
+      getValue = CachingConnector::getNullableAnyValue,
+      getValue2 = CachingConnector::getNullableAnyValue2,
+      getValuesByTag = CachingConnector::getNullableAnyValuesByTag,
+      getValuesByTag2 = CachingConnector::getNullableAnyValuesByTag2,
+      shouldBe = { expected, dataSource -> shouldBe(expected?.roundTripValue, dataSource) },
+      shouldBeMany = { expected, dataSource ->
+        shouldBe(expected.map { it?.roundTripValue }, dataSource)
+      },
+    )
+
+  @Test
+  fun normalizedMixed() =
+    testNormalizedValue(
+      valueArb = mixedArb(),
+      insertValue = { value, tag -> insertMixed(value.toInsertVariables(tag)) },
+      updateValue = { key, newValue -> updateMixed(key, newValue.toUpdateBuilder()) },
+      getValue = CachingConnector::getMixed,
+      getValue2 = CachingConnector::getMixed2,
+      getValuesByTag = CachingConnector::getMixedsByTag,
+      getValuesByTag2 = CachingConnector::getMixedsByTag2,
+      shouldBe = { expected, dataSource -> shouldBe(expected.toGetItem(), dataSource) },
+      shouldBeMany = { expected, dataSource ->
+        shouldBe(expected.map { it.toGetItem() }, dataSource)
+      },
+    )
 }
 
 private val propTestConfig =
@@ -688,6 +743,8 @@ private val propTestConfig =
     edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.2),
     shrinkingMode = ShrinkingMode.Off,
   )
+
+private const val CACHED_DATA_NOT_FOUND_ERROR_ID = "cck6p3fmd5"
 
 private fun alphanumericStringArb(): Arb<String> = Arb.string(0..10, Codepoint.alphanumeric())
 
@@ -707,27 +764,6 @@ private data class AnyValueRoundTrip(val value: AnyValue) {
     fun AnyValue.dataConnectRoundTripValue(): AnyValue =
       AnyValue(protoValue.anyScalarRoundTripValue())
 
-    @JvmName("dataConnectRoundTripValue_NullableAnyValue")
-    fun AnyValue?.dataConnectRoundTripValue(): AnyValue? = this?.dataConnectRoundTripValue()
-
-    @JvmName("dataConnectRoundTripValue_List_AnyValue")
-    fun List<AnyValue>.dataConnectRoundTripValue(): List<AnyValue> = map {
-      it.dataConnectRoundTripValue()
-    }
-
-    @JvmName("dataConnectRoundTripValue_NullableList_AnyValue")
-    fun List<AnyValue>?.dataConnectRoundTripValue(): List<AnyValue>? =
-      this?.map { it.dataConnectRoundTripValue() }
-
-    @JvmName("dataConnectRoundTripValue_List_NullableAnyValue")
-    fun List<AnyValue?>.dataConnectRoundTripValue(): List<AnyValue?> = map {
-      it?.dataConnectRoundTripValue()
-    }
-
-    @JvmName("dataConnectRoundTripValue_NullableList_NullableAnyValue")
-    fun List<AnyValue?>?.dataConnectRoundTripValue(): List<AnyValue?>? =
-      this?.map { it?.dataConnectRoundTripValue() }
-
     fun ValueProto.anyScalarRoundTripValue(): ValueProto = map { _, value ->
       if (value.kindCase != ValueProto.KindCase.NUMBER_VALUE) {
         value
@@ -744,20 +780,6 @@ private fun AnyValueRoundTrip.dataConnectRoundTripValue(): AnyValue = roundTripV
 @JvmName("dataConnectRoundTripValue_NullableAnyValueRoundTrip")
 private fun AnyValueRoundTrip?.dataConnectRoundTripValue(): AnyValue? =
   this?.dataConnectRoundTripValue()
-
-@JvmName("dataConnectRoundTripValue_List_AnyValueRoundTrip")
-private fun List<AnyValueRoundTrip>.dataConnectRoundTripValue(): List<AnyValue> = map {
-  it.dataConnectRoundTripValue()
-}
-
-@JvmName("dataConnectRoundTripValue_List_NullableAnyValueRoundTrip")
-private fun List<AnyValueRoundTrip?>.dataConnectRoundTripValue(): List<AnyValue?> = map {
-  it.dataConnectRoundTripValue()
-}
-
-@JvmName("dataConnectRoundTripValue_NullableList_AnyValueRoundTrip")
-private fun List<AnyValueRoundTrip>?.dataConnectRoundTripValue(): List<AnyValue>? =
-  this?.map { it.dataConnectRoundTripValue() }
 
 @JvmName("dataConnectRoundTripValue_NullableList_NullableAnyValueRoundTrip")
 private fun List<AnyValueRoundTrip?>?.dataConnectRoundTripValue(): List<AnyValue?>? =
@@ -841,25 +863,6 @@ private fun MixedArbSample.toGetItem() =
     anyList.dataConnectRoundTripValue(),
   )
 
-private fun MixedArbSample.toGetManyItem(key: CachingConnector.Key) = toGetManyItem(key.id)
-
-private fun MixedArbSample.toGetManyItem(id: UUID) =
-  CachingConnector.Data.MixedGetMany.Item(
-    id,
-    string,
-    stringNullable,
-    float.roundTripFloat,
-    floatNullable?.roundTripFloat,
-    boolean,
-    booleanNullable,
-    any.dataConnectRoundTripValue(),
-    anyNullable.dataConnectRoundTripValue(),
-    stringList,
-    floatList?.map { it?.roundTripFloat },
-    booleanList,
-    anyList.dataConnectRoundTripValue(),
-  )
-
 private fun mixedArb(
   stringArb: Arb<String> = alphanumericStringArb(),
   stringNullableArb: Arb<String?> = stringArb.orNull(nullProbability = 0.2),
@@ -893,3 +896,5 @@ private fun mixedArb(
     anyListArb,
     ::MixedArbSample
   )
+
+private fun maxAgeArb(): Arb<Duration> = Arb.duration((0.seconds)..Int.MAX_VALUE.seconds)
