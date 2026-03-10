@@ -31,7 +31,7 @@ import com.google.firebase.ai.type.PublicPreviewAPI
  * @property seed The seed to use for generation to ensure reproducibility. See [GenerationConfig]
  * for more detail.
  * @property candidateCount The number of generated responses to return. See [GenerationConfig] for
- * more detail. By default it's set to 1.
+ * more detail. By default it's set to `1`.
  */
 @PublicPreviewAPI
 public class OnDeviceConfig
