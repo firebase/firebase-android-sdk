@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Google LLC
+ * Copyright 2025 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,6 @@ import com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor
 import com.google.firebase.firestore.util.Util.autoId
 import org.junit.After
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -962,7 +961,6 @@ class SubqueryIntegrationTest {
     assertThat(results).isNotEmpty()
   }
 
-  @Ignore("Pending backend support")
   @Test
   fun testStandardSubcollectionQuery() {
     val collName = "subcoll_test_" + autoId()
@@ -993,10 +991,9 @@ class SubqueryIntegrationTest {
       )
 
     assertThat(results.map { it.getData() })
-      .containsExactly(mapOf("title" to "1984", "reviews" to listOf(mapOf("reviewer" to "Alice"))))
+      .containsExactly(mapOf("title" to "1984", "reviews" to listOf("Alice")))
   }
 
-  @Ignore("Pending backend support")
   @Test
   fun testMissingSubcollection() {
     val collName = "subcoll_missing_" + autoId()
@@ -1013,7 +1010,7 @@ class SubqueryIntegrationTest {
         db
           .pipeline()
           .collection(collName)
-          .define(variable("parentDoc").alias("p"))
+          .define(currentDocument().alias("p"))
           .select(missingSub.toArrayExpression().alias("missing_data"))
           .limit(1)
           .execute()
