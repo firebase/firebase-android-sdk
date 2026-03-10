@@ -20,6 +20,17 @@ import static com.google.firebase.firestore.pipeline.Expression.and;
 import static com.google.firebase.firestore.pipeline.Expression.array;
 import static com.google.firebase.firestore.pipeline.Expression.arrayContains;
 import static com.google.firebase.firestore.pipeline.Expression.arrayContainsAny;
+import static com.google.firebase.firestore.pipeline.Expression.arrayFirst;
+import static com.google.firebase.firestore.pipeline.Expression.arrayFirstN;
+import static com.google.firebase.firestore.pipeline.Expression.arrayIndexOf;
+import static com.google.firebase.firestore.pipeline.Expression.arrayIndexOfAll;
+import static com.google.firebase.firestore.pipeline.Expression.arrayLast;
+import static com.google.firebase.firestore.pipeline.Expression.arrayLastIndexOf;
+import static com.google.firebase.firestore.pipeline.Expression.arrayLastN;
+import static com.google.firebase.firestore.pipeline.Expression.arrayMaximum;
+import static com.google.firebase.firestore.pipeline.Expression.arrayMaximumN;
+import static com.google.firebase.firestore.pipeline.Expression.arrayMinimum;
+import static com.google.firebase.firestore.pipeline.Expression.arrayMinimumN;
 import static com.google.firebase.firestore.pipeline.Expression.collectionId;
 import static com.google.firebase.firestore.pipeline.Expression.concat;
 import static com.google.firebase.firestore.pipeline.Expression.constant;
@@ -56,6 +67,7 @@ import static com.google.firebase.firestore.pipeline.Ordering.descending;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.isRunningAgainstEmulator;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitForException;
+import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
@@ -543,6 +555,494 @@ public class PipelineTest {
             .where(equal("tagsCount", 3))
             .execute();
     assertThat(waitFor(execute).getResults()).hasSize(10);
+  }
+
+  @Test
+  public void arrayFirstWorks() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "The Lord of the Rings"))
+            .select(
+                field("tags").arrayFirst().alias("firstTagInstanceMethod"),
+                arrayFirst("tags").alias("firstTagStaticMethod"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of(
+                "firstTagInstanceMethod", "adventure", "firstTagStaticMethod", "adventure"));
+
+    // Test with empty/null/non-existent arrays
+    execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(
+                map(ImmutableMap.of("empty", emptyList(), "nullval", Expression.nullValue())))
+            .select(
+                arrayFirst("empty").alias("emptyResult"),
+                arrayFirst("nullval").alias("nullResult"),
+                arrayFirst("nonExistent").alias("absentResult"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(mapOfEntries(entry("nullResult", null), entry("absentResult", null)));
+    // no emptyResult as arrayFirst returns UNSET for empty arrays
+  }
+
+  @Test
+  public void arrayFirstNWorks() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "The Lord of the Rings"))
+            .select(
+                field("tags").arrayFirstN(2).alias("firstTagsInstanceMethod"),
+                arrayFirstN("tags", constant(4)).alias("firstTagsStaticMethod"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of(
+                "firstTagsInstanceMethod",
+                ImmutableList.of("adventure", "magic"),
+                "firstTagsStaticMethod",
+                ImmutableList.of("adventure", "magic", "epic")));
+
+    // Test with empty/null/non-existent arrays
+    execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(
+                map(ImmutableMap.of("empty", emptyList(), "nullval", Expression.nullValue())))
+            .select(
+                arrayFirstN("empty", 1).alias("emptyResult"),
+                arrayFirstN("nullval", 1).alias("nullResult"),
+                arrayFirstN("nonExistent", 1).alias("absentResult"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            mapOfEntries(
+                entry("emptyResult", emptyList()),
+                entry("nullResult", null),
+                entry("absentResult", null)));
+  }
+
+  @Test
+  public void arrayLastWorks() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "The Lord of the Rings"))
+            .select(
+                field("tags").arrayLast().alias("lastTagInstanceMethod"),
+                arrayLast("tags").alias("lastTagStaticMethod"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of("lastTagInstanceMethod", "epic", "lastTagStaticMethod", "epic"));
+
+    // Test with empty/null/non-existent arrays
+    execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(
+                map(ImmutableMap.of("empty", emptyList(), "nullval", Expression.nullValue())))
+            .select(
+                arrayLast("empty").alias("emptyResult"),
+                arrayLast("nullval").alias("nullResult"),
+                arrayLast("nonExistent").alias("absentResult"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(mapOfEntries(entry("nullResult", null), entry("absentResult", null)));
+    // no emptyResult as arrayLast returns UNSET for empty arrays
+  }
+
+  @Test
+  public void arrayLastNWorks() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "The Lord of the Rings"))
+            .select(
+                field("tags").arrayLastN(2).alias("lastTagsInstanceMethod"),
+                arrayLastN("tags", constant(4)).alias("lastTagsStaticMethod"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of(
+                "lastTagsInstanceMethod",
+                ImmutableList.of("magic", "epic"),
+                "lastTagsStaticMethod",
+                ImmutableList.of("adventure", "magic", "epic")));
+
+    // Test with empty/null/non-existent arrays
+    execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(
+                map(ImmutableMap.of("empty", emptyList(), "nullval", Expression.nullValue())))
+            .select(
+                arrayLastN("empty", 1).alias("emptyResult"),
+                arrayLastN("nullval", 1).alias("nullResult"),
+                arrayLastN("nonExistent", 1).alias("absentResult"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            mapOfEntries(
+                entry("emptyResult", emptyList()),
+                entry("nullResult", null),
+                entry("absentResult", null)));
+  }
+
+  @Test
+  public void arrayMinimumWorks() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "The Lord of the Rings"))
+            .select(
+                field("tags").arrayMinimum().alias("minimumTagInstanceMethod"),
+                arrayMinimum("tags").alias("minimumTagStaticMethod"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of(
+                "minimumTagInstanceMethod", "adventure", "minimumTagStaticMethod", "adventure"));
+
+    // Test with empty/null/non-existent and mixed types
+    execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(
+                map(
+                    ImmutableMap.of(
+                        "empty",
+                        emptyList(),
+                        "nullval",
+                        Expression.nullValue(),
+                        "mixed",
+                        ImmutableList.of(1, "2", 3, "10")))) // Numbers < Strings in Firestore.
+            .select(
+                arrayMinimum("empty").alias("emptyResult"),
+                    arrayMinimum("nullval").alias("nullResult"),
+                arrayMinimum("nonExistent").alias("absentResult"),
+                    arrayMinimum("mixed").alias("mixedResult"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            mapOfEntries(
+                entry("emptyResult", null),
+                entry("nullResult", null),
+                entry("absentResult", null),
+                entry("mixedResult", 1)));
+  }
+
+  @Test
+  public void arrayMinimumNWorks() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "The Lord of the Rings"))
+            .select(
+                field("tags").arrayMinimumN(2).alias("minimumTagsInstanceMethod"),
+                arrayMinimumN("tags", constant(4)).alias("minimumTagsStaticMethod"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of(
+                "minimumTagsInstanceMethod",
+                ImmutableList.of("adventure", "epic"),
+                "minimumTagsStaticMethod",
+                ImmutableList.of("adventure", "epic", "magic")));
+  }
+
+  @Test
+  public void arrayMaximumWorks() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "The Lord of the Rings"))
+            .select(
+                field("tags").arrayMaximum().alias("maximumTagInstanceMethod"),
+                arrayMaximum("tags").alias("maximumTagStaticMethod"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of(
+                "maximumTagInstanceMethod", "magic", "maximumTagStaticMethod", "magic"));
+
+    // Test with empty/null/non-existent and mixed types
+    execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(
+                map(
+                    ImmutableMap.of(
+                        "empty",
+                        emptyList(),
+                        "nullval",
+                        Expression.nullValue(),
+                        "mixed",
+                        ImmutableList.of(1, "2", 3, "10")))) // Strings > Numbers in Firestore.
+            .select(
+                arrayMaximum("empty").alias("emptyResult"),
+                    arrayMaximum("nullval").alias("nullResult"),
+                arrayMaximum("nonExistent").alias("absentResult"),
+                    arrayMaximum("mixed").alias("mixedResult"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            mapOfEntries(
+                entry("emptyResult", null),
+                entry("nullResult", null),
+                entry("absentResult", null),
+                entry("mixedResult", "2")));
+  }
+
+  @Test
+  public void arrayMaximumNWorks() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "The Lord of the Rings"))
+            .select(
+                field("tags").arrayMaximumN(2).alias("maximumTagsInstanceMethod"),
+                arrayMaximumN("tags", constant(4)).alias("maximumTagsStaticMethod"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of(
+                "maximumTagsInstanceMethod",
+                ImmutableList.of("magic", "epic"),
+                "maximumTagsStaticMethod",
+                ImmutableList.of("magic", "epic", "adventure")));
+  }
+
+  @Test
+  public void arrayIndexOfWorks() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "The Lord of the Rings"))
+            .select(
+                arrayIndexOf(field("tags"), "adventure").alias("indexFirst"),
+                arrayIndexOf("tags", "magic").alias("indexSecond"),
+                field("tags").arrayIndexOf("epic").alias("indexLast"),
+                arrayIndexOf("tags", "nonexistent").alias("indexNone"),
+                arrayIndexOf("empty", "anything").alias("indexEmpty"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            mapOfEntries(
+                entry("indexFirst", 0),
+                entry("indexSecond", 1),
+                entry("indexLast", 2),
+                entry("indexNone", -1),
+                entry("indexEmpty", null)));
+
+    // Test with duplicate values
+    execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(map(ImmutableMap.of("arr", ImmutableList.of(1, 2, 3, 2, 1))))
+            .select(arrayIndexOf("arr", 2).alias("firstIndex"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(ImmutableMap.of("firstIndex", 1));
+
+    // Test with null value
+    execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(
+                map(
+                    ImmutableMap.of(
+                        "arr",
+                        ImmutableList.of(1, Expression.nullValue(), 3, 2, 1),
+                        "nullArr",
+                        Expression.nullValue())))
+            .select(
+                arrayIndexOf("arr", null).alias("firstIndex"),
+                arrayIndexOf("nullArr", null).alias("firstIndexNull"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(mapOfEntries(entry("firstIndex", 1), entry("firstIndexNull", null)));
+  }
+
+  @Test
+  public void arrayLastIndexOfWorks() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "The Lord of the Rings"))
+            .select(
+                arrayLastIndexOf(field("tags"), "adventure").alias("lastIndexFirst"),
+                arrayLastIndexOf("tags", "magic").alias("lastIndexSecond"),
+                field("tags").arrayLastIndexOf("epic").alias("lastIndexLast"),
+                arrayLastIndexOf("tags", "nonexistent").alias("lastIndexNone"),
+                arrayLastIndexOf("empty", "anything").alias("lastIndexEmpty"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            mapOfEntries(
+                entry("lastIndexFirst", 0),
+                entry("lastIndexSecond", 1),
+                entry("lastIndexLast", 2),
+                entry("lastIndexNone", -1),
+                entry("lastIndexEmpty", null)));
+
+    // Test with duplicate values
+    execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(map(ImmutableMap.of("arr", ImmutableList.of(1, 2, 3, 2, 1))))
+            .select(arrayLastIndexOf("arr", 2).alias("lastIndex"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(ImmutableMap.of("lastIndex", 3));
+
+    // Test with null value
+    execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(
+                map(
+                    ImmutableMap.of(
+                        "arr",
+                        ImmutableList.of(1, Expression.nullValue(), 3, 2, 1),
+                        "nullArr",
+                        Expression.nullValue())))
+            .select(
+                arrayLastIndexOf("arr", null).alias("lastIndex"),
+                arrayLastIndexOf("nullArr", null).alias("lastIndexNull"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(mapOfEntries(entry("lastIndex", 1), entry("lastIndexNull", null)));
+  }
+
+  @Test
+  public void arrayIndexOfAllWorks() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "The Lord of the Rings"))
+            .select(
+                arrayIndexOfAll(field("tags"), "adventure").alias("indicesFirst"),
+                arrayIndexOfAll("tags", "magic").alias("indicesSecond"),
+                field("tags").arrayIndexOfAll("epic").alias("indicesLast"),
+                arrayIndexOfAll("tags", "nonexistent").alias("indicesNone"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            mapOfEntries(
+                entry("indicesFirst", ImmutableList.of(0L)),
+                entry("indicesSecond", ImmutableList.of(1L)),
+                entry("indicesLast", ImmutableList.of(2L)),
+                entry("indicesNone", emptyList())));
+
+    // Test with duplicate values
+    execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(map(ImmutableMap.of("arr", ImmutableList.of(1, 2, 3, 2, 1))))
+            .select(arrayIndexOfAll("arr", 2).alias("indices"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(ImmutableMap.of("indices", ImmutableList.of(1L, 3L)));
+
+    // Test with null value
+    execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(
+                map(
+                    ImmutableMap.of(
+                        "arr",
+                        ImmutableList.of(1, Expression.nullValue(), 3, Expression.nullValue(), 1),
+                        "nullArr",
+                        Expression.nullValue())))
+            .select(
+                arrayIndexOfAll("arr", null).alias("indices"),
+                arrayIndexOfAll("nullArr", null).alias("indicesNull"),
+                arrayIndexOfAll("nonExistentArray", null).alias("indicesNonExistentArray"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            mapOfEntries(
+                entry("indices", ImmutableList.of(1L, 3L)),
+                entry("indicesNull", null),
+                entry("indicesNonExistentArray", null)));
   }
 
   @Test

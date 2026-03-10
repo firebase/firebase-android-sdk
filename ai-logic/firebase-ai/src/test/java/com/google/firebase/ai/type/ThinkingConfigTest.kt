@@ -16,10 +16,10 @@
 
 package com.google.firebase.ai.type
 
+import com.google.firebase.ai.common.JSON
 import io.kotest.assertions.json.shouldEqualJson
 import io.kotest.matchers.equals.shouldBeEqual
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import org.junit.Test
 
 internal class ThinkingConfigTest {
@@ -36,7 +36,7 @@ internal class ThinkingConfigTest {
       """
         .trimIndent()
 
-    Json.encodeToString(thinkingConfig.toInternal()).shouldEqualJson(expectedJson)
+    JSON.encodeToString(thinkingConfig.toInternal()).shouldEqualJson(expectedJson)
   }
 
   @Test
@@ -51,7 +51,7 @@ internal class ThinkingConfigTest {
       """
         .trimIndent()
 
-    Json.encodeToString(thinkingConfig.toInternal()).shouldEqualJson(expectedJson)
+    JSON.encodeToString(thinkingConfig.toInternal()).shouldEqualJson(expectedJson)
   }
 
   @Test

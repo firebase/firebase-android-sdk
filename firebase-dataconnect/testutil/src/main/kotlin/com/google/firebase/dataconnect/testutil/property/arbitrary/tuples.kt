@@ -16,6 +16,8 @@
 
 package com.google.firebase.dataconnect.testutil.property.arbitrary
 
+import com.google.firebase.dataconnect.testutil.Quadruple
+import com.google.firebase.dataconnect.testutil.Quintuple
 import io.kotest.assertions.print.print
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.bind
@@ -139,3 +141,18 @@ fun <T> Arb.Companion.fiveValues(arb: Arb<T>): Arb<FiveValues<T>> =
   }
 
 fun <T> Arb<T>.quintuple(): Arb<FiveValues<T>> = Arb.fiveValues(this)
+
+fun <A, B, C, D> Arb.Companion.quadruple(
+  a: Arb<A>,
+  b: Arb<B>,
+  c: Arb<C>,
+  d: Arb<D>
+): Arb<Quadruple<A, B, C, D>> = Arb.bind(a, b, c, d, ::Quadruple)
+
+fun <A, B, C, D, E> Arb.Companion.quintuple(
+  a: Arb<A>,
+  b: Arb<B>,
+  c: Arb<C>,
+  d: Arb<D>,
+  e: Arb<E>
+): Arb<Quintuple<A, B, C, D, E>> = Arb.bind(a, b, c, d, e, ::Quintuple)
