@@ -304,7 +304,7 @@ public final class ObjectValue implements Cloneable {
     if (this == o) {
       return true;
     } else if (o instanceof ObjectValue) {
-      return buildProto().equals(((ObjectValue) o).buildProto());
+      return Values.equals(buildProto(), ((ObjectValue) o).buildProto());
     }
     return false;
   }
