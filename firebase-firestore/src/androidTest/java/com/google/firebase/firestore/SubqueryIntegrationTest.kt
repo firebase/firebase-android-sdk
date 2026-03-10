@@ -978,7 +978,8 @@ class SubqueryIntegrationTest {
         .set(mapOf("reviewer" to "Alice"))
     )
 
-    val reviewsSub = Pipeline.subcollection("reviews").select(field("reviewer").alias("reviewer"))
+    val reviewsSub =
+      PipelineSource.subcollection("reviews").select(field("reviewer").alias("reviewer"))
 
     val results =
       waitFor(
@@ -1004,7 +1005,8 @@ class SubqueryIntegrationTest {
 
     // Notably NO subcollections are added to doc1
 
-    val missingSub = Pipeline.subcollection("does_not_exist").select(variable("p").alias("sub_p"))
+    val missingSub =
+      PipelineSource.subcollection("does_not_exist").select(variable("p").alias("sub_p"))
 
     val results =
       waitFor(
@@ -1024,7 +1026,7 @@ class SubqueryIntegrationTest {
 
   @Test
   fun testDirectExecutionOfSubcollectionPipeline() {
-    val sub = Pipeline.subcollection("reviews")
+    val sub = PipelineSource.subcollection("reviews")
 
     val exception =
       org.junit.Assert.assertThrows(IllegalStateException::class.java) {
