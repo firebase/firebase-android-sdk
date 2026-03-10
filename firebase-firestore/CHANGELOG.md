@@ -2,6 +2,10 @@
 
 - [feature] Added support for `first`, `last`, `arrayAgg`, and `arrayAggDistinct` Pipeline expressions.
   [#7893](https://github.com/firebase/firebase-android-sdk/pull/7893)
+- [feature] Added support for Pipeline expressions `arrayFirst`, `arrayFirstN`, `arrayLast`,
+  `arrayLastN`, `arrayMinimum`, `arrayMinimumN`, `arrayMaximum`, `arrayMaximumN`, `arrayIndexOf`,
+  `arrayLastIndexOf` and `arrayIndexOfAll`.
+  [#7836](//github.com/firebase/firebase-android-sdk/pull/7836)
 - [fixed] Fix a performance regression in `ObjectValue.equals()` that caused exponential execution
   time for large or deeply nested documents.
   [#7877](https://github.com/firebase/firebase-android-sdk/issues/7877)
