@@ -18,6 +18,7 @@
 
 package com.google.firebase.dataconnect.core
 
+import com.google.firebase.dataconnect.QueryRef.FetchPolicy
 import com.google.firebase.dataconnect.QuerySubscriptionResult
 import com.google.firebase.dataconnect.querymgr.DataSourcePair
 import com.google.firebase.dataconnect.util.NullableReference
@@ -71,7 +72,7 @@ internal class QuerySubscriptionImpl<Data, Variables>(query: QueryRefImpl<Data, 
 
   override suspend fun reload() {
     val query = query // save query to a local variable in case it changes.
-    val sequencedResult = query.dataConnect.queryManager.execute(query)
+    val sequencedResult = query.dataConnect.queryManager.execute(query, FetchPolicy.PREFER_CACHE)
     updateLastResult(QuerySubscriptionResultImpl(query, sequencedResult))
     sequencedResult.ref.getOrThrow()
   }

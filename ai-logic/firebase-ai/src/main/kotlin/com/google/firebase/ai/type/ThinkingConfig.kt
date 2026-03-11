@@ -47,10 +47,10 @@ private constructor(
 
     /**
      * Sets the amount of thinking the model can do to generate a response, defined as a
-     * <ThinkingBudget> in tokens.
+     * [ThinkingBudget] in tokens.
      *
      * The range of
-     * [supported thinking budget values](https://firebase.google.com/docs/ai-logic/thinking#supported-thinking-budget-values)
+     * [supported thinking budget values](https://firebase.google.com/docs/ai-logic/thinking)
      * depends on the model.
      * - To disable thinking, when supported by the model, set this value to `0`.
      * - To use dynamic thinking, allowing the model to decide on the thinking budget based on the
