@@ -1,0 +1,11 @@
+{
+    "name": "m178",
+    "libraries": [
+        ":firebase-dataconnect",
+        ":firebase-firestore",
+        ":ai-logic:firebase-ai",
+        ":ai-logic:firebase-ai-ksp-processor",
+        ":ai-logic:firebase-ai-ondevice",
+        ":ai-logic:firebase-ai-ondevice-interop"
+    ]
+}
