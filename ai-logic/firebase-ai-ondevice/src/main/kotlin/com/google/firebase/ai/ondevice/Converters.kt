@@ -16,7 +16,6 @@
 
 package com.google.firebase.ai.ondevice
 
-import android.graphics.Bitmap
 import com.google.firebase.ai.ondevice.interop.Candidate
 import com.google.firebase.ai.ondevice.interop.CountTokensResponse
 import com.google.firebase.ai.ondevice.interop.FinishReason
@@ -25,7 +24,6 @@ import com.google.firebase.ai.ondevice.interop.GenerateContentResponse
 import com.google.mlkit.genai.prompt.GenerateContentRequest
 import com.google.mlkit.genai.prompt.ImagePart
 import com.google.mlkit.genai.prompt.TextPart
-import kotlin.math.min
 
 // ====================================
 // `Part` converter extension functions
