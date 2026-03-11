@@ -913,6 +913,110 @@ abstract class Expression internal constructor() {
       FunctionExpression("round", evaluateRoundToPrecision, numericField, decimalPlace)
 
     /**
+     * Creates an expression that truncates [numericExpr] to an integer.
+     *
+     * ```kotlin
+     * // Truncate the value of the 'rating' field.
+     * trunc(field("rating"))
+     * ```
+     *
+     * @param numericExpr An expression that returns number when evaluated.
+     * @return A new [Expression] representing the truncate operation.
+     */
+    @JvmStatic
+    fun trunc(numericExpr: Expression): Expression =
+      FunctionExpression("trunc", notImplemented, numericExpr)
+
+    /**
+     * Creates an expression that truncates [numericField] to an integer.
+     *
+     * ```kotlin
+     * // Truncate the value of the 'rating' field.
+     * trunc("rating")
+     * ```
+     *
+     * @param numericField Name of field that returns number when evaluated.
+     * @return A new [Expression] representing the truncate operation.
+     */
+    @JvmStatic
+    fun trunc(numericField: String): Expression =
+      FunctionExpression("trunc", notImplemented, numericField)
+
+    /**
+     * Creates an expression that truncates [numericExpr] to [decimalPlace] decimal places if
+     * [decimalPlace] is positive, truncates digits to the left of the decimal point if
+     * [decimalPlace] is negative.
+     *
+     * ```kotlin
+     * // Truncate the value of the 'rating' field to 2 decimal places.
+     * truncToPrecision(field("rating"), 2)
+     * ```
+     *
+     * @param numericExpr An expression that returns number when evaluated.
+     * @param decimalPlace The number of decimal places to truncate.
+     * @return A new [Expression] representing the truncate operation.
+     */
+    @JvmStatic
+    fun truncToPrecision(numericExpr: Expression, decimalPlace: Int): Expression =
+      FunctionExpression("trunc", notImplemented, numericExpr, constant(decimalPlace))
+
+    /**
+     * Creates an expression that truncates [numericField] to [decimalPlace] decimal places if
+     * [decimalPlace] is positive, truncates digits to the left of the decimal point if
+     * [decimalPlace] is negative.
+     *
+     * ```kotlin
+     * // Truncate the value of the 'rating' field to 2 decimal places.
+     * truncToPrecision("rating", 2)
+     * ```
+     *
+     * @param numericField Name of field that returns number when evaluated.
+     * @param decimalPlace The number of decimal places to truncate.
+     * @return A new [Expression] representing the truncate operation.
+     */
+    @JvmStatic
+    fun truncToPrecision(numericField: String, decimalPlace: Int): Expression =
+      FunctionExpression("trunc", notImplemented, numericField, constant(decimalPlace))
+
+    /**
+     * Creates an expression that truncates [numericExpr] to [decimalPlace] decimal places if
+     * [decimalPlace] is positive, truncates digits to the left of the decimal point if
+     * [decimalPlace] is negative.
+     *
+     * ```kotlin
+     * // Truncate the value of the 'rating' field to the number of decimal places specified in the
+     * // 'precision' field.
+     * truncToPrecision(field("rating"), field("precision"))
+     * ```
+     *
+     * @param numericExpr An expression that returns number when evaluated.
+     * @param decimalPlace The number of decimal places to truncate.
+     * @return A new [Expression] representing the truncate operation.
+     */
+    @JvmStatic
+    fun truncToPrecision(numericExpr: Expression, decimalPlace: Expression): Expression =
+      FunctionExpression("trunc", notImplemented, numericExpr, decimalPlace)
+
+    /**
+     * Creates an expression that truncates [numericField] to [decimalPlace] decimal places if
+     * [decimalPlace] is positive, truncates digits to the left of the decimal point if
+     * [decimalPlace] is negative.
+     *
+     * ```kotlin
+     * // Truncate the value of the 'rating' field to the number of decimal places specified in the
+     * // 'precision' field.
+     * truncToPrecision("rating", field("precision"))
+     * ```
+     *
+     * @param numericField Name of field that returns number when evaluated.
+     * @param decimalPlace The number of decimal places to truncate.
+     * @return A new [Expression] representing the truncate operation.
+     */
+    @JvmStatic
+    fun truncToPrecision(numericField: String, decimalPlace: Expression): Expression =
+      FunctionExpression("trunc", notImplemented, numericField, decimalPlace)
+
+    /**
      * Creates an expression that returns the smallest integer that isn't less than [numericExpr].
      *
      * ```kotlin
@@ -2115,7 +2219,7 @@ abstract class Expression internal constructor() {
      *
      * @return A new [Expression] representing the random number operation.
      */
-    @JvmStatic internal fun rand(): Expression = FunctionExpression("rand", notImplemented)
+    @JvmStatic fun rand(): Expression = FunctionExpression("rand", notImplemented)
 
     /**
      * Creates an expression that checks if a string expression contains a specified regular
@@ -6215,6 +6319,51 @@ abstract class Expression internal constructor() {
    */
   fun roundToPrecision(decimalPlace: Expression): Expression =
     Companion.roundToPrecision(this, decimalPlace)
+
+  /**
+   * Creates an expression that truncates this numeric expression to an integer.
+   *
+   * ```kotlin
+   * // Truncate the value of the 'rating' field.
+   * field("rating").trunc()
+   * ```
+   *
+   * @return A new [Expression] representing the truncate operation.
+   */
+  fun trunc(): Expression = Companion.trunc(this)
+
+  /**
+   * Creates an expression that truncates this numeric expression to [decimalPlace] decimal places
+   * if [decimalPlace] is positive, truncates digits to the left of the decimal point if
+   * [decimalPlace] is negative.
+   *
+   * ```kotlin
+   * // Truncate the value of the 'rating' field to 2 decimal places.
+   * field("rating").truncToPrecision(2)
+   * ```
+   *
+   * @param decimalPlace The number of decimal places to truncate.
+   * @return A new [Expression] representing the truncate operation.
+   */
+  fun truncToPrecision(decimalPlace: Int): Expression =
+    Companion.truncToPrecision(this, decimalPlace)
+
+  /**
+   * Creates an expression that truncates this numeric expression to [decimalPlace] decimal places
+   * if [decimalPlace] is positive, truncates digits to the left of the decimal point if
+   * [decimalPlace] is negative.
+   *
+   * ```kotlin
+   * // Truncate the value of the 'rating' field to the number of decimal places specified in the
+   * // 'precision' field.
+   * field("rating").truncToPrecision(field("precision"))
+   * ```
+   *
+   * @param decimalPlace The number of decimal places to truncate.
+   * @return A new [Expression] representing the truncate operation.
+   */
+  fun truncToPrecision(decimalPlace: Expression): Expression =
+    Companion.truncToPrecision(this, decimalPlace)
 
   /**
    * Creates an expression that returns the smallest integer that isn't less than this numeric

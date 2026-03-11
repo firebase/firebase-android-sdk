@@ -54,10 +54,13 @@ import static com.google.firebase.firestore.pipeline.Expression.not;
 import static com.google.firebase.firestore.pipeline.Expression.notEqual;
 import static com.google.firebase.firestore.pipeline.Expression.nullValue;
 import static com.google.firebase.firestore.pipeline.Expression.or;
+import static com.google.firebase.firestore.pipeline.Expression.rand;
 import static com.google.firebase.firestore.pipeline.Expression.split;
 import static com.google.firebase.firestore.pipeline.Expression.startsWith;
 import static com.google.firebase.firestore.pipeline.Expression.stringConcat;
 import static com.google.firebase.firestore.pipeline.Expression.subtract;
+import static com.google.firebase.firestore.pipeline.Expression.trunc;
+import static com.google.firebase.firestore.pipeline.Expression.truncToPrecision;
 import static com.google.firebase.firestore.pipeline.Expression.vector;
 import static com.google.firebase.firestore.pipeline.Ordering.ascending;
 import static com.google.firebase.firestore.pipeline.Ordering.descending;
@@ -2604,6 +2607,115 @@ public class PipelineTest {
     assertThat((Double) result.get("ln_rating")).isWithin(0.00001).of(1.54756);
     assertThat((Double) result.get("log_rating")).isWithin(0.00001).of(0.67209);
     assertThat((Double) result.get("log10_rating")).isWithin(0.00001).of(0.67209);
+  }
+
+  @Test
+  public void testRand() {
+    assumeFalse("Rand is not supported against the emulator.", isRunningAgainstEmulator());
+
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .select(rand().alias("randomNumber"))
+            .limit(1)
+            .execute();
+
+    List<PipelineResult> results = waitFor(execute).getResults();
+
+    assertThat(results).hasSize(1);
+    Object randomNumber = results.get(0).getData().get("randomNumber");
+    assertThat(randomNumber).isInstanceOf(Double.class);
+    assertThat((Double) randomNumber).isAtLeast(0.0);
+    assertThat((Double) randomNumber).isLessThan(1.0);
+  }
+
+  @Test
+  public void testTrunc() {
+    assumeFalse("Trunc is not supported against the emulator.", isRunningAgainstEmulator());
+
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(field("title").equal("Pride and Prejudice"))
+            .limit(1)
+            .select(trunc("rating").alias("truncatedRating"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(ImmutableMap.of("truncatedRating", 4.0));
+  }
+
+  @Test
+  public void testTruncWithInstanceMethod() {
+    assumeFalse("Trunc is not supported against the emulator.", isRunningAgainstEmulator());
+
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(field("title").equal("Pride and Prejudice"))
+            .limit(1)
+            .select(field("rating").trunc().alias("truncatedRating"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(ImmutableMap.of("truncatedRating", 4.0));
+  }
+
+  @Test
+  public void testTruncToPrecision() {
+    assumeFalse("Trunc is not supported against the emulator.", isRunningAgainstEmulator());
+
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .select(
+                truncToPrecision(constant(4.123456), 0).alias("p0"),
+                truncToPrecision(constant(4.123456), 1).alias("p1"),
+                truncToPrecision(constant(4.123456), 2).alias("p2"),
+                truncToPrecision(constant(4.123456), 4).alias("p4"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of(
+                "p0", 4.0,
+                "p1", 4.1,
+                "p2", 4.12,
+                "p4", 4.1234));
+  }
+
+  @Test
+  public void testTruncToPrecisionWithInstanceMethod() {
+    assumeFalse("Trunc is not supported against the emulator.", isRunningAgainstEmulator());
+
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .select(
+                constant(4.123456).truncToPrecision(0).alias("p0"),
+                constant(4.123456).truncToPrecision(1).alias("p1"),
+                constant(4.123456).truncToPrecision(constant(2)).alias("p2"),
+                constant(4.123456).truncToPrecision(4).alias("p4"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of(
+                "p0", 4.0,
+                "p1", 4.1,
+                "p2", 4.12,
+                "p4", 4.1234));
   }
 
   @Test

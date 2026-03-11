@@ -1158,6 +1158,7 @@ package com.google.firebase.firestore.pipeline {
     method public final com.google.firebase.firestore.pipeline.Expression pow(Number exponent);
     method public static final com.google.firebase.firestore.pipeline.Expression pow(String numericField, com.google.firebase.firestore.pipeline.Expression exponent);
     method public static final com.google.firebase.firestore.pipeline.Expression pow(String numericField, Number exponent);
+    method public static final com.google.firebase.firestore.pipeline.Expression rand();
     method public static final com.google.firebase.firestore.pipeline.Expression rawFunction(String name, com.google.firebase.firestore.pipeline.Expression... expr);
     method public final com.google.firebase.firestore.pipeline.BooleanExpression regexContains(com.google.firebase.firestore.pipeline.Expression pattern);
     method public static final com.google.firebase.firestore.pipeline.BooleanExpression regexContains(com.google.firebase.firestore.pipeline.Expression stringExpression, com.google.firebase.firestore.pipeline.Expression pattern);
@@ -1280,6 +1281,15 @@ package com.google.firebase.firestore.pipeline {
     method public static final com.google.firebase.firestore.pipeline.Expression trimValue(com.google.firebase.firestore.pipeline.Expression stringExpression, com.google.firebase.firestore.pipeline.Expression valueToTrim);
     method public final com.google.firebase.firestore.pipeline.Expression trimValue(String valueToTrim);
     method public static final com.google.firebase.firestore.pipeline.Expression trimValue(String fieldName, String valueToTrim);
+    method public final com.google.firebase.firestore.pipeline.Expression trunc();
+    method public static final com.google.firebase.firestore.pipeline.Expression trunc(com.google.firebase.firestore.pipeline.Expression numericExpr);
+    method public static final com.google.firebase.firestore.pipeline.Expression trunc(String numericField);
+    method public final com.google.firebase.firestore.pipeline.Expression truncToPrecision(com.google.firebase.firestore.pipeline.Expression decimalPlace);
+    method public static final com.google.firebase.firestore.pipeline.Expression truncToPrecision(com.google.firebase.firestore.pipeline.Expression numericExpr, com.google.firebase.firestore.pipeline.Expression decimalPlace);
+    method public static final com.google.firebase.firestore.pipeline.Expression truncToPrecision(com.google.firebase.firestore.pipeline.Expression numericExpr, int decimalPlace);
+    method public final com.google.firebase.firestore.pipeline.Expression truncToPrecision(int decimalPlace);
+    method public static final com.google.firebase.firestore.pipeline.Expression truncToPrecision(String numericField, com.google.firebase.firestore.pipeline.Expression decimalPlace);
+    method public static final com.google.firebase.firestore.pipeline.Expression truncToPrecision(String numericField, int decimalPlace);
     method public final com.google.firebase.firestore.pipeline.Expression type();
     method public static final com.google.firebase.firestore.pipeline.Expression type(com.google.firebase.firestore.pipeline.Expression expr);
     method public static final com.google.firebase.firestore.pipeline.Expression type(String fieldName);
@@ -1541,6 +1551,7 @@ package com.google.firebase.firestore.pipeline {
     method public com.google.firebase.firestore.pipeline.Expression pow(com.google.firebase.firestore.pipeline.Expression numericExpr, Number exponent);
     method public com.google.firebase.firestore.pipeline.Expression pow(String numericField, com.google.firebase.firestore.pipeline.Expression exponent);
     method public com.google.firebase.firestore.pipeline.Expression pow(String numericField, Number exponent);
+    method public com.google.firebase.firestore.pipeline.Expression rand();
     method public com.google.firebase.firestore.pipeline.Expression rawFunction(String name, com.google.firebase.firestore.pipeline.Expression... expr);
     method public com.google.firebase.firestore.pipeline.BooleanExpression regexContains(com.google.firebase.firestore.pipeline.Expression stringExpression, com.google.firebase.firestore.pipeline.Expression pattern);
     method public com.google.firebase.firestore.pipeline.BooleanExpression regexContains(com.google.firebase.firestore.pipeline.Expression stringExpression, String pattern);
@@ -1624,6 +1635,12 @@ package com.google.firebase.firestore.pipeline {
     method public com.google.firebase.firestore.pipeline.Expression trim(String fieldName);
     method public com.google.firebase.firestore.pipeline.Expression trimValue(com.google.firebase.firestore.pipeline.Expression stringExpression, com.google.firebase.firestore.pipeline.Expression valueToTrim);
     method public com.google.firebase.firestore.pipeline.Expression trimValue(String fieldName, String valueToTrim);
+    method public com.google.firebase.firestore.pipeline.Expression trunc(com.google.firebase.firestore.pipeline.Expression numericExpr);
+    method public com.google.firebase.firestore.pipeline.Expression trunc(String numericField);
+    method public com.google.firebase.firestore.pipeline.Expression truncToPrecision(com.google.firebase.firestore.pipeline.Expression numericExpr, com.google.firebase.firestore.pipeline.Expression decimalPlace);
+    method public com.google.firebase.firestore.pipeline.Expression truncToPrecision(com.google.firebase.firestore.pipeline.Expression numericExpr, int decimalPlace);
+    method public com.google.firebase.firestore.pipeline.Expression truncToPrecision(String numericField, com.google.firebase.firestore.pipeline.Expression decimalPlace);
+    method public com.google.firebase.firestore.pipeline.Expression truncToPrecision(String numericField, int decimalPlace);
     method public com.google.firebase.firestore.pipeline.Expression type(com.google.firebase.firestore.pipeline.Expression expr);
     method public com.google.firebase.firestore.pipeline.Expression type(String fieldName);
     method public com.google.firebase.firestore.pipeline.Expression unixMicrosToTimestamp(com.google.firebase.firestore.pipeline.Expression expr);
