@@ -158,7 +158,7 @@ abstract class MakeReleaseNotesTask : DefaultTask() {
     private fun githubIssueLinkFormatter(message: String): String =
       LINK_REGEX.replace(message) {
         val id = it.firstCapturedValue
-        "GitHub [#$id](//github.com/firebase/firebase-android-sdk/issues/$id){: .external}"
+        "(GitHub [#$id](//github.com/firebase/firebase-android-sdk/issues/$id){: .external})"
       }
 
     /**
