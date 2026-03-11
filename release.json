@@ -1,0 +1,8 @@
+{
+    "name": "m178",
+    "libraries": [
+        ":firebase-dataconnect",
+        ":firebase-firestore",
+        ":ai-logic:firebase-ai"
+    ]
+}

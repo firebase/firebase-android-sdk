@@ -1,0 +1,209 @@
+{
+    "changesByLibraryName": {
+        "firebase-dataconnect": [
+            {
+                "commitId": "171b67c3ab4716085f65bf386de3e55a7ae2b64a",
+                "prId": "7887",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(change): Implement FetchPolicy.SERVER_ONLY (#7887)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/171b67c3ab4716085f65bf386de3e55a7ae2b64a",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7887"
+            },
+            {
+                "commitId": "0bb2eecf8a7b2d9827b0f71cccd45ee46d7f045a",
+                "prId": "7885",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(change): Change CACHE_ONLY behavior to return stale data instead of throwing (#7885)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/0bb2eecf8a7b2d9827b0f71cccd45ee46d7f045a",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7885"
+            },
+            {
+                "commitId": "93eaa8fd3193185ba0aab686cfd16d123ed99687",
+                "prId": "7878",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(test): QueryCachingIntegrationTest.kt: add some FetchPolicy coverage (#7878)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/93eaa8fd3193185ba0aab686cfd16d123ed99687",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7878"
+            },
+            {
+                "commitId": "537bb20b6034d52515eb52fb3acb494326902356",
+                "prId": "7873",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(test): Deduplicate logic in \"EvenNumDigitsDistribution\" classes and associated unit tests (#7873)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/537bb20b6034d52515eb52fb3acb494326902356",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7873"
+            },
+            {
+                "commitId": "93a18a08d053c98550091c8eaad19d5b6447d1f0",
+                "prId": "7875",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(change): Implement FetchPolicy.CACHE_ONLY (#7875)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/93a18a08d053c98550091c8eaad19d5b6447d1f0",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7875"
+            },
+            {
+                "commitId": "8c267de0a036ca0af7539c7c6beaa99e4d28a448",
+                "prId": "7871",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: ci: upgrade data connect emulator to 3.2.1 (was 3.1.3) and firebase-tools to 15.8.0 (was 15.6.0) (#7871)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/8c267de0a036ca0af7539c7c6beaa99e4d28a448",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7871"
+            },
+            {
+                "commitId": "b0b2a73546a77e60eeae37aeb85403fe85ec5817",
+                "prId": "7869",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(test): QueryCachingIntegrationTest.kt updated with normalized caching tests for a multi-value entity. (#7869)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/b0b2a73546a77e60eeae37aeb85403fe85ec5817",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7869"
+            },
+            {
+                "commitId": "a2525c30a450ff4eb3d7160bc2236c7c4fb890f2",
+                "prId": "7865",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(test): IntWithEvenNumDigitsDistributionUnitTest: fix test that checked for both positive and negative values (#7865)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a2525c30a450ff4eb3d7160bc2236c7c4fb890f2",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7865"
+            },
+            {
+                "commitId": "0f67e32ca554c8cd2c34e853c88f9b3d522fed34",
+                "prId": "7864",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(fix): Fix serialization of *nullable* AnyValue (#7864)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/0f67e32ca554c8cd2c34e853c88f9b3d522fed34",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7864"
+            },
+            {
+                "commitId": "c27fd43ae9650d755efb5e329d36043e2715605e",
+                "prId": "7863",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(test): QueryCachingIntegrationTest.kt updated with normalized caching tests for string lists and Any scalars (#7863)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/c27fd43ae9650d755efb5e329d36043e2715605e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7863"
+            },
+            {
+                "commitId": "d1974d7823c489bb9dbb1dc95c3e3d8039623626",
+                "prId": "7859",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(test): QueryCachingIntegrationTest.kt updated with normalized caching tests for standard scalars (#7859)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/d1974d7823c489bb9dbb1dc95c3e3d8039623626",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7859"
+            },
+            {
+                "commitId": "e510f5d2c4277b2fa3915a35fcbaed713a30d391",
+                "prId": "7860",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(chore): Clean up CHANGELOG.md (#7860)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e510f5d2c4277b2fa3915a35fcbaed713a30d391",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7860"
+            },
+            {
+                "commitId": "f6b7f425f0254ffa4f58122d113706ea5b4a02da",
+                "prId": "7854",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(test): QueryCachingIntegrationTest.kt added (#7854)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/f6b7f425f0254ffa4f58122d113706ea5b4a02da",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7854"
+            },
+            {
+                "commitId": "185b4ce45a02d1a01c13663cd8cdfbed496519bb",
+                "prId": "7848",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: maxAge implemented for offline caching (#7848)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/185b4ce45a02d1a01c13663cd8cdfbed496519bb",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7848"
+            },
+            {
+                "commitId": "9abe6f3a151c06353c9732eae453de0e3a5af226",
+                "prId": "7814",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: wire up DataSource for caching and extract entity IDs from response extensions (#7814)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/9abe6f3a151c06353c9732eae453de0e3a5af226",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7814"
+            },
+            {
+                "commitId": "d6f859afd8d2d207ddc814f05dfede71f430bbab",
+                "prId": "7833",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: add back public apis for offline caching (#7833)\n\n",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/d6f859afd8d2d207ddc814f05dfede71f430bbab",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7833"
+            }
+        ],
+        "firebase-firestore": [
+            {
+                "commitId": "ed4ef90e1b86349f87f39e526fe8ff121410b4d0",
+                "prId": "7836",
+                "author": "Mila",
+                "message": "feat(firestore): Add array expressions (#7836)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/ed4ef90e1b86349f87f39e526fe8ff121410b4d0",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7836"
+            },
+            {
+                "commitId": "2a81fadd0cb844afd0d4af67621d8d571aa8046e",
+                "prId": "7884",
+                "author": "wu-hui",
+                "message": "Fix performance issue in ObjectValue.equals for large documents (#7884)\n\nRevert to using Values.equals() instead of buildProto().equals() to\navoid exponential execution time on large/deeply nested documents. Fixes\n#7877",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/2a81fadd0cb844afd0d4af67621d8d571aa8046e",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7884"
+            }
+        ],
+        "ai-logic/firebase-ai": [
+            {
+                "commitId": "7bc9a5fd97ef3ee186a87b79ca6b81a02f42aead",
+                "prId": "7891",
+                "author": "emilypgoogle",
+                "message": "m177 documentation changes (#7891)\n\nSome of the requested changes were out of date, the rest were applied\nhere.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7bc9a5fd97ef3ee186a87b79ca6b81a02f42aead",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7891"
+            },
+            {
+                "commitId": "2db8764ca66e21857243a04a5f6bbe7ce6e0dcc6",
+                "prId": "7880",
+                "author": "Andrew Heard",
+                "message": "[AI] Use common `JSON` encoder in `LiveGenerativeModel` (#7880)\n\nSwitched from the default `kotlinx.serialization.json.Json` encoder to\n`com.google.firebase.ai.common.JSON` in `LiveGenerativeModel`. `JSON`\nsets [`explicitNulls =\nfalse`](https://github.com/firebase/firebase-android-sdk/blob/537bb20b6034d52515eb52fb3acb494326902356/ai-logic/firebase-ai/src/main/kotlin/com/google/firebase/ai/common/APIController.kt#L93),\nwhich should prevent `parameters` and `parametersJsonSchema` from both\nbeing specified (one as `null`) in the serialized JSON.\n\n---------\n\nCo-authored-by: Rodrigo Lazo Paz <rlazo@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/2db8764ca66e21857243a04a5f6bbe7ce6e0dcc6",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7880"
+            },
+            {
+                "commitId": "7bb9d37fb5d15a5674c3aff0c2db2949a91a1609",
+                "prId": "7861",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Re-arrange ai SDKs (#7861)\n\nMoved the Firebase AI Logic SDKs to a common directory to keep the top\nlevel directory cleaner. This follows the same pattern of `appcheck`",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7bb9d37fb5d15a5674c3aff0c2db2949a91a1609",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7861"
+            }
+        ],
+        "ai-logic/firebase-ai-ksp-processor": [
+            {
+                "commitId": "7bb9d37fb5d15a5674c3aff0c2db2949a91a1609",
+                "prId": "7861",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Re-arrange ai SDKs (#7861)\n\nMoved the Firebase AI Logic SDKs to a common directory to keep the top\nlevel directory cleaner. This follows the same pattern of `appcheck`",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7bb9d37fb5d15a5674c3aff0c2db2949a91a1609",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7861"
+            }
+        ],
+        "ai-logic/firebase-ai-ondevice": [
+            {
+                "commitId": "7bb9d37fb5d15a5674c3aff0c2db2949a91a1609",
+                "prId": "7861",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Re-arrange ai SDKs (#7861)\n\nMoved the Firebase AI Logic SDKs to a common directory to keep the top\nlevel directory cleaner. This follows the same pattern of `appcheck`",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7bb9d37fb5d15a5674c3aff0c2db2949a91a1609",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7861"
+            }
+        ],
+        "ai-logic/firebase-ai-ondevice-interop": [
+            {
+                "commitId": "7bb9d37fb5d15a5674c3aff0c2db2949a91a1609",
+                "prId": "7861",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Re-arrange ai SDKs (#7861)\n\nMoved the Firebase AI Logic SDKs to a common directory to keep the top\nlevel directory cleaner. This follows the same pattern of `appcheck`",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7bb9d37fb5d15a5674c3aff0c2db2949a91a1609",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7861"
+            }
+        ]
+    },
+    "changedLibrariesWithNoChangelog": []
+}
