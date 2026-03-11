@@ -50,7 +50,7 @@ internal constructor(
   public companion object {
 
     /**
-     * Create a strongly typed function declaration with an associated function reference.
+     * Creates a strongly typed function declaration with an associated function reference.
      *
      * @param functionName the name of the function (to the model)
      * @param description the description of the function
@@ -75,13 +75,13 @@ internal constructor(
     }
 
     /**
-     * Create a strongly typed function declaration with an associated function reference. This
+     * Creates a strongly typed function declaration with an associated function reference. This
      * version allows an arbitrary JsonObject as output rather than a strict schema.
      *
      * @param functionName the name of the function (to the model)
      * @param description the description of the function
      * @param inputSchema the object the model must provide to you as input
-     * @param functionReference the function that will be executed when requested by the model.
+     * @param functionReference the function that will be executed when requested by the model
      */
     public fun <I : Any> create(
       functionName: String,
