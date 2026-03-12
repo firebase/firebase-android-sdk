@@ -157,8 +157,14 @@ abstract class MakeReleaseNotesTask : DefaultTask() {
      */
     private fun githubIssueLinkFormatter(message: String): String =
       LINK_REGEX.replace(message) {
-        val id = it.firstCapturedValue
-        "(GitHub [#$id](//github.com/firebase/firebase-android-sdk/issues/$id){: .external})"
+        val result = StringBuilder()
+        val prefix = it.groups[1]?.value.orEmpty().trim()
+        if (!prefix.isEmpty()) {
+          result.append("${prefix}\n")
+        }
+        val id = it.groups[2]?.value.orEmpty()
+        result.append("  (GitHub [#$id](//github.com/firebase/firebase-android-sdk/issues/$id){: .external})")
+        result.toString()
       }
 
     /**
@@ -221,7 +227,7 @@ abstract class MakeReleaseNotesTask : DefaultTask() {
      */
     private val LINK_REGEX =
       Regex(
-        "(?:GitHub )?(?:\\[|\\()#(\\d+)(?:\\]|\\))(?:\\(.+?\\))?(?:\\{:\\s*\\.external\\})?",
+        "(.*)(?:GitHub )?(?:\\[|\\()#(\\d+)(?:\\]|\\))(?:\\(.+?\\))?(?:\\{:\\s*\\.external\\})?",
         RegexOption.MULTILINE,
       )
 

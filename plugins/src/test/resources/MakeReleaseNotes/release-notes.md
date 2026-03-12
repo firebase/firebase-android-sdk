@@ -11,12 +11,14 @@ Note: We did some super cool stuff here!
 
 * {{feature}} {{storage}} now supports linking {{storage}} with {{storage}}
 
-* {{fixed}} An issue on GitHub [#123](//github.com/firebase/firebase-android-sdk/issues/123){: .external}
+* {{fixed}} An issue on GitHub
+  (GitHub [#123](//github.com/firebase/firebase-android-sdk/issues/123){: .external})
 
-* {{removed}} Removed some old stuff from {{firebase_storage_full}} GitHub [#562](//github.com/firebase/firebase-android-sdk/issues/562){: .external}
+* {{removed}} Removed some old stuff from {{firebase_storage_full}}
+  (GitHub [#562](//github.com/firebase/firebase-android-sdk/issues/562){: .external})
 
 * {{feature}} Added this thing we wanted
-  GitHub [#444](//github.com/firebase/firebase-android-sdk/issues/444){: .external}
+  (GitHub [#444](//github.com/firebase/firebase-android-sdk/issues/444){: .external})
 
 * {{feature}} Added
   [`Query.snapshots()`](/docs/reference/kotlin/com/google/firebase/firestore/ktx/package-summary#snapshots_1)
