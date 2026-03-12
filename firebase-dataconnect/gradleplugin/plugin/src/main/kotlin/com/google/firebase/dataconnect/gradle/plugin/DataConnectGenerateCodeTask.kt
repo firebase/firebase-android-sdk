@@ -18,7 +18,6 @@ package com.google.firebase.dataconnect.gradle.plugin
 import com.google.firebase.dataconnect.gradle.plugin.DataConnectGenerateCodeTask.CallingConvention
 import java.io.File
 import javax.inject.Inject
-import kotlin.collections.joinToString
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
