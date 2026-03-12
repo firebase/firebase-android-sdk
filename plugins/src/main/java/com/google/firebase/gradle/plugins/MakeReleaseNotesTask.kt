@@ -187,8 +187,8 @@ abstract class MakeReleaseNotesTask : DefaultTask() {
     /**
      * Determines the prefix for a link based on its position in the text.
      *
-     * If the link is preceded by non-blank content on the same line, it returns a newline
-     * with indentation to ensure the link appears on a new line.
+     * If the link is preceded by non-blank content on the same line, it returns a newline with
+     * indentation to ensure the link appears on a new line.
      */
     private fun getLinkPrefix(linkPrefixRegex: Regex, text: String): String {
       val linkPrefixMatch = linkPrefixRegex.find(text) ?: return text
@@ -260,16 +260,16 @@ abstract class MakeReleaseNotesTask : DefaultTask() {
       )
 
     /**
-     * Regex used to identify the text preceding a single GitHub link on the same line.
-     * This helps determine if the link should be moved to a new line with indentation.
+     * Regex used to identify the text preceding a single GitHub link on the same line. This helps
+     * determine if the link should be moved to a new line with indentation.
      */
     private val LINK_PREFIX_REGEX = Regex("(^.*?)" + LINK_REGEX.pattern, RegexOption.MULTILINE)
 
     /**
      * Regex for multiple GitHub issue links in change messages.
      *
-     * Matches a comma-separated list of issue numbers within brackets or parentheses.
-     * For example: `(#123, #456)` or `[#123, #456, #789]`
+     * Matches a comma-separated list of issue numbers within brackets or parentheses. For example:
+     * `(#123, #456)` or `[#123, #456, #789]`
      *
      * Will find the following groups:
      * ```kotlin
@@ -289,8 +289,8 @@ abstract class MakeReleaseNotesTask : DefaultTask() {
       Regex("\\s*(?:\\[|\\()(#\\d+(\\s*,\\s*#\\d+)+)(?:\\]|\\))", RegexOption.MULTILINE)
 
     /**
-     * Regex used to identify the text preceding a list of GitHub links on the same line.
-     * This helps determine if the list should be moved to a new line with indentation.
+     * Regex used to identify the text preceding a list of GitHub links on the same line. This helps
+     * determine if the list should be moved to a new line with indentation.
      */
     private val MULTI_LINK_PREFIX_REGEX =
       Regex("(^.*?)" + MULTI_LINK_REGEX.pattern, RegexOption.MULTILINE)
