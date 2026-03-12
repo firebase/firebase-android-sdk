@@ -1117,6 +1117,7 @@ package com.google.firebase.firestore.pipeline {
     method public final com.google.firebase.firestore.pipeline.Expression multiply(Number second);
     method public static final com.google.firebase.firestore.pipeline.Expression multiply(String numericFieldName, com.google.firebase.firestore.pipeline.Expression second);
     method public static final com.google.firebase.firestore.pipeline.Expression multiply(String numericFieldName, Number second);
+    method public static final com.google.firebase.firestore.pipeline.BooleanExpression nor(com.google.firebase.firestore.pipeline.BooleanExpression condition, com.google.firebase.firestore.pipeline.BooleanExpression... conditions);
     method public static final com.google.firebase.firestore.pipeline.BooleanExpression not(com.google.firebase.firestore.pipeline.BooleanExpression condition);
     method public final com.google.firebase.firestore.pipeline.BooleanExpression notEqual(com.google.firebase.firestore.pipeline.Expression other);
     method public static final com.google.firebase.firestore.pipeline.BooleanExpression notEqual(com.google.firebase.firestore.pipeline.Expression left, com.google.firebase.firestore.pipeline.Expression right);
@@ -1217,6 +1218,7 @@ package com.google.firebase.firestore.pipeline {
     method public static final com.google.firebase.firestore.pipeline.Expression subtract(String numericFieldName, com.google.firebase.firestore.pipeline.Expression subtrahend);
     method public static final com.google.firebase.firestore.pipeline.Expression subtract(String numericFieldName, Number subtrahend);
     method public final com.google.firebase.firestore.pipeline.AggregateFunction sum();
+    method public static final com.google.firebase.firestore.pipeline.Expression switchOn(com.google.firebase.firestore.pipeline.BooleanExpression condition, Object result, java.lang.Object... others);
     method public final com.google.firebase.firestore.pipeline.Expression timestampAdd(com.google.firebase.firestore.pipeline.Expression unit, com.google.firebase.firestore.pipeline.Expression amount);
     method public static final com.google.firebase.firestore.pipeline.Expression timestampAdd(com.google.firebase.firestore.pipeline.Expression timestamp, com.google.firebase.firestore.pipeline.Expression unit, com.google.firebase.firestore.pipeline.Expression amount);
     method public static final com.google.firebase.firestore.pipeline.Expression timestampAdd(com.google.firebase.firestore.pipeline.Expression timestamp, String unit, long amount);
@@ -1516,6 +1518,7 @@ package com.google.firebase.firestore.pipeline {
     method public com.google.firebase.firestore.pipeline.Expression multiply(com.google.firebase.firestore.pipeline.Expression first, Number second);
     method public com.google.firebase.firestore.pipeline.Expression multiply(String numericFieldName, com.google.firebase.firestore.pipeline.Expression second);
     method public com.google.firebase.firestore.pipeline.Expression multiply(String numericFieldName, Number second);
+    method public com.google.firebase.firestore.pipeline.BooleanExpression nor(com.google.firebase.firestore.pipeline.BooleanExpression condition, com.google.firebase.firestore.pipeline.BooleanExpression... conditions);
     method public com.google.firebase.firestore.pipeline.BooleanExpression not(com.google.firebase.firestore.pipeline.BooleanExpression condition);
     method public com.google.firebase.firestore.pipeline.BooleanExpression notEqual(com.google.firebase.firestore.pipeline.Expression left, com.google.firebase.firestore.pipeline.Expression right);
     method public com.google.firebase.firestore.pipeline.BooleanExpression notEqual(com.google.firebase.firestore.pipeline.Expression left, Object right);
@@ -1585,6 +1588,7 @@ package com.google.firebase.firestore.pipeline {
     method public com.google.firebase.firestore.pipeline.Expression subtract(com.google.firebase.firestore.pipeline.Expression minuend, Number subtrahend);
     method public com.google.firebase.firestore.pipeline.Expression subtract(String numericFieldName, com.google.firebase.firestore.pipeline.Expression subtrahend);
     method public com.google.firebase.firestore.pipeline.Expression subtract(String numericFieldName, Number subtrahend);
+    method public com.google.firebase.firestore.pipeline.Expression switchOn(com.google.firebase.firestore.pipeline.BooleanExpression condition, Object result, java.lang.Object... others);
     method public com.google.firebase.firestore.pipeline.Expression timestampAdd(com.google.firebase.firestore.pipeline.Expression timestamp, com.google.firebase.firestore.pipeline.Expression unit, com.google.firebase.firestore.pipeline.Expression amount);
     method public com.google.firebase.firestore.pipeline.Expression timestampAdd(com.google.firebase.firestore.pipeline.Expression timestamp, String unit, long amount);
     method public com.google.firebase.firestore.pipeline.Expression timestampAdd(String fieldName, com.google.firebase.firestore.pipeline.Expression unit, com.google.firebase.firestore.pipeline.Expression amount);
