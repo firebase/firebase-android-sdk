@@ -195,7 +195,8 @@ private constructor(
     @JvmStatic fun last(fieldName: String) = AggregateFunction("last", fieldName)
 
     /**
-     * Creates an aggregation that finds the last value of an expression across multiple stage inputs.
+     * Creates an aggregation that finds the last value of an expression across multiple stage
+     * inputs.
      *
      * @param expression The expression to find the last value of.
      * @return A new [AggregateFunction] representing the last aggregation.
@@ -203,8 +204,8 @@ private constructor(
     @JvmStatic fun last(expression: Expression) = AggregateFunction("last", expression)
 
     /**
-     * Creates an aggregation that collects all values of a field across multiple stage inputs into an
-     * array.
+     * Creates an aggregation that collects all values of a field across multiple stage inputs into
+     * an array.
      *
      * If the expression resolves to an absent value, it is converted to `null`. The order of
      * elements in the output array is not stable and shouldn't be relied upon.
@@ -240,8 +241,8 @@ private constructor(
     fun arrayAggDistinct(fieldName: String) = AggregateFunction("array_agg_distinct", fieldName)
 
     /**
-     * Creates an aggregation that collects all distinct values of an expression across multiple stage
-     * inputs into an array.
+     * Creates an aggregation that collects all distinct values of an expression across multiple
+     * stage inputs into an array.
      *
      * If the expression resolves to an absent value, it is converted to `null`. The order of
      * elements in the output array is not stable and shouldn't be relied upon.
@@ -250,7 +251,8 @@ private constructor(
      * @return A new [AggregateFunction] representing the array_agg_distinct aggregation.
      */
     @JvmStatic
-    fun arrayAggDistinct(expression: Expression) = AggregateFunction("array_agg_distinct", expression)
+    fun arrayAggDistinct(expression: Expression) =
+      AggregateFunction("array_agg_distinct", expression)
   }
 
   /**

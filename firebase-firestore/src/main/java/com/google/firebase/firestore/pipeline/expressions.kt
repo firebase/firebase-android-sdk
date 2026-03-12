@@ -7886,8 +7886,8 @@ abstract class Expression internal constructor() {
    * Creates an aggregation that collects all values of this expression across multiple stage inputs
    * into an array.
    *
-   * If the expression resolves to an absent value, it is converted to `null`. The order of
-   * elements in the output array is not stable and shouldn't be relied upon.
+   * If the expression resolves to an absent value, it is converted to `null`. The order of elements
+   * in the output array is not stable and shouldn't be relied upon.
    *
    * @return A new [AggregateFunction] representing the array_agg aggregation.
    */
@@ -7897,8 +7897,8 @@ abstract class Expression internal constructor() {
    * Creates an aggregation that collects all distinct values of this expression across multiple
    * stage inputs into an array.
    *
-   * If the expression resolves to an absent value, it is converted to `null`. The order of
-   * elements in the output array is not stable and shouldn't be relied upon.
+   * If the expression resolves to an absent value, it is converted to `null`. The order of elements
+   * in the output array is not stable and shouldn't be relied upon.
    *
    * @return A new [AggregateFunction] representing the array_agg_distinct aggregation.
    */
