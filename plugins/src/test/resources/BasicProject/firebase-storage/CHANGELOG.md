@@ -15,6 +15,8 @@ Note: We did some super cool stuff here!
 
 - [removed] Removed some old stuff from [firebase_storage_full] (#562)
 
+- [changed] Added offline caching APIs. (#7814, #7833, #7848, #7875, #7885, #7887)
+
 - [feature] Added this thing we wanted
   [#444](//github.com/firebase/firebase-android-sdk/issues/number){:.external}
 
