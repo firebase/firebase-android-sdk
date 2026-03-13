@@ -22,9 +22,11 @@ import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
 import com.google.firebase.dataconnect.*
 import com.google.firebase.inject.Deferred
+import java.security.SecureRandom
 import java.util.concurrent.Executor
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
+import kotlin.random.asKotlinRandom
 
 internal class FirebaseDataConnectFactory(
   private val context: Context,
@@ -85,6 +87,7 @@ internal class FirebaseDataConnectFactory(
       deferredAppCheckProvider = deferredAppCheckProvider,
       creator = this@FirebaseDataConnectFactory,
       settings = settings ?: DataConnectSettings(),
+      secureRandom = SecureRandom().asKotlinRandom(),
     )
 
   fun remove(instance: FirebaseDataConnect) {
