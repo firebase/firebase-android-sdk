@@ -1,0 +1,22 @@
+{
+  "project_info": {
+    "project_number": "11111111111",
+    "project_id": "aaaaaaaaaaa"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:11111111111:android:aaaaaaaaaaaaaaaaaaaaaa",
+        "android_client_info": {
+          "package_name": "com.google.firebase.firestore.testapp"
+        }
+      },
+      "api_key": [
+        {
+          "current_key": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        }
+      ]
+    }
+  ],
+  "configuration_version": "1"
+}
