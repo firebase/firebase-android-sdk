@@ -21,6 +21,7 @@ import com.google.firebase.ai.type.ImagenEditMode
 import com.google.firebase.ai.type.ImagenEditingConfig
 import com.google.firebase.ai.type.ImagenRawImage
 import com.google.firebase.ai.type.PublicPreviewAPI
+import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.runBlocking
 import org.junit.Ignore
 import org.junit.Test
@@ -42,7 +43,7 @@ class ImagenTests {
           "A cat flying through space",
           ImagenEditingConfig(ImagenEditMode.INPAINT_INSERTION)
         )
-      assert(editedCatImage.images.size == 1)
+      editedCatImage.images.size shouldBe 1
     }
   }
 }
