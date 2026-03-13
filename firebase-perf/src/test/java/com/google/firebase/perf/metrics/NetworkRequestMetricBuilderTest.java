@@ -26,6 +26,7 @@ import com.google.firebase.perf.session.PerfSession;
 import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.session.gauges.GaugeManager;
 import com.google.firebase.perf.transport.TransportManager;
+import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.Timer;
 import com.google.firebase.perf.v1.NetworkRequestMetric;
@@ -37,6 +38,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.robolectric.RobolectricTestRunner;
 
 /** Unit tests for {@link com.google.firebase.perf.metrics.NetworkRequestMetricBuilder}. */
@@ -44,8 +46,15 @@ import org.robolectric.RobolectricTestRunner;
 public class NetworkRequestMetricBuilderTest extends FirebasePerformanceTestBase {
 
   @Mock private TransportManager mockTransportManager;
-  @Mock private GaugeManager mockGaugeManager;
-  @Mock private AppStateMonitor mockAppStateMonitor;
+  @Spy private GaugeManager mockGaugeManager = GaugeManager.getInstance();
+  @Spy private AppStateMonitor mockAppStateMonitor = AppStateMonitor.getInstance();
+  private PerfSession session = new PerfSession("sessionId", new Clock());
+  private SessionManager sessionManager = new SessionManager(mockGaugeManager, session);
+
+  @Override
+  protected SessionManager provideSessionManager() {
+    return sessionManager;
+  }
 
   private NetworkRequestMetricBuilder networkMetricBuilder;
 
@@ -54,7 +63,7 @@ public class NetworkRequestMetricBuilderTest extends FirebasePerformanceTestBase
     initMocks(this);
     networkMetricBuilder =
         new NetworkRequestMetricBuilder(
-            mockTransportManager, mockAppStateMonitor, mockGaugeManager);
+            mockTransportManager, mockAppStateMonitor, mockGaugeManager, sessionManager);
   }
 
   @Test
@@ -242,7 +251,7 @@ public class NetworkRequestMetricBuilderTest extends FirebasePerformanceTestBase
 
     int numberOfSessionIds = metricBuilder.getSessions().size();
 
-    new SessionManager(mock(GaugeManager.class), null, mock(AppStateMonitor.class));
+    new SessionManager(mock(GaugeManager.class), null);
 
     assertThat(metricBuilder.getSessions()).hasSize(numberOfSessionIds);
   }

@@ -14,6 +14,8 @@
 
 package com.google.firebase.perf.metrics;
 
+import static com.google.firebase.perf.util.AppProcessesProvider.getAppProcesses;
+
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.ActivityManager;
@@ -90,6 +92,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
   private final TransportManager transportManager;
   private final Clock clock;
   private final ConfigResolver configResolver;
+  private final SessionManager sessionManager;
   private final TraceMetric.Builder experimentTtid;
   private Context appContext;
 
@@ -164,13 +167,13 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
     // no-op, for backward compatibility with old version plugin.
   }
 
-  public static AppStartTrace getInstance() {
-    return instance != null ? instance : getInstance(TransportManager.getInstance(), new Clock());
+  public static AppStartTrace getInstance(SessionManager sessionManager) {
+    return instance != null ? instance : getInstance(TransportManager.getInstance(), new Clock(), sessionManager);
   }
 
   // TODO(b/258263016): Migrate to go/firebase-android-executors
   @SuppressLint("ThreadPoolCreation")
-  static AppStartTrace getInstance(TransportManager transportManager, Clock clock) {
+  static AppStartTrace getInstance(TransportManager transportManager, Clock clock, SessionManager sessionManager) {
     if (instance == null) {
       synchronized (AppStartTrace.class) {
         if (instance == null) {
@@ -179,6 +182,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
                   transportManager,
                   clock,
                   ConfigResolver.getInstance(),
+                  sessionManager,
                   new ThreadPoolExecutor(
                       CORE_POOL_SIZE,
                       MAX_POOL_SIZE,
@@ -196,10 +200,12 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
       @NonNull TransportManager transportManager,
       @NonNull Clock clock,
       @NonNull ConfigResolver configResolver,
+      @NonNull SessionManager sessionManager,
       @NonNull ExecutorService executorService) {
     this.transportManager = transportManager;
     this.clock = clock;
     this.configResolver = configResolver;
+    this.sessionManager = sessionManager;
     this.executorService = executorService;
     this.experimentTtid = TraceMetric.newBuilder().setName("_experiment_app_start_ttid");
     // Set the timestamp for process-start (beginning of BIND_APPLICATION), if available
@@ -413,7 +419,7 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
     appStartActivity = new WeakReference<Activity>(activity);
 
     onResumeTime = clock.getTime();
-    this.startSession = SessionManager.getInstance().perfSession();
+    this.startSession = sessionManager.perfSession();
     AndroidLogger.getInstance()
         .debug(
             "onResume(): "
@@ -552,20 +558,17 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
     if (activityManager == null) {
       return true;
     }
-    List<ActivityManager.RunningAppProcessInfo> appProcesses =
-        activityManager.getRunningAppProcesses();
-    if (appProcesses != null) {
-      String appProcessName = appContext.getPackageName();
-      String allowedAppProcessNamePrefix = appProcessName + ":";
+    List<ActivityManager.RunningAppProcessInfo> appProcesses = getAppProcesses(appContext);
+    if (!appProcesses.isEmpty()) {
       for (ActivityManager.RunningAppProcessInfo appProcess : appProcesses) {
         if (appProcess.importance != ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND) {
           continue;
         }
-        if (appProcess.processName.equals(appProcessName)
-            || appProcess.processName.startsWith(allowedAppProcessNamePrefix)) {
-          // Returns true if the process with `IMPORTANCE_FOREGROUND` matches current process.
-          return true;
-        }
+//        if (appProcess.processName.equals(appProcessName)
+//            || appProcess.processName.startsWith(allowedAppProcessNamePrefix)) {
+//          // Returns true if the process with `IMPORTANCE_FOREGROUND` matches current process.
+//          return true;
+//        }
       }
     }
 
