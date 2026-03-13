@@ -163,6 +163,22 @@ public class FirebaseMessagingService extends EnhancedIntentService {
   @WorkerThread
   public void onNewToken(@NonNull String token) {}
 
+  /**
+   * Called when this service is evaluating whether a given RemoteMessage should use standard
+   * behavior when it has a notification payload - that is, automatically show a Notification in the
+   * system tray and do not invoke {@link onMessageReceived} when the app is backgrounded.
+   *
+   * <p>A subclass can override this to return false for specific classes of messages if it wishes
+   * to suppress the default system tray behavior and handle display itself via onMessageReceived.
+   *
+   * @param message The messge object that has been parsed from an incoming push payload.
+   * @return True if default behavior should be used; false if no system tray Notification should be
+   *     displayed and onMessageReceived should be invoked while backgrounded.
+   */
+  public boolean shouldUseDefaultNotificationBehavior(@NonNull RemoteMessage message) {
+    return true;
+  }
+
   /** @hide */
   @Override
   protected Intent getStartCommandIntent(Intent originalIntent) {
@@ -231,7 +247,8 @@ public class FirebaseMessagingService extends EnhancedIntentService {
     // First remove any parameters that shouldn't be passed to the app
     // * The wakelock ID set by the WakefulBroadcastReceiver
     data.remove("androidx.content.wakelockid");
-    if (NotificationParams.isNotification(data)) {
+    RemoteMessage message = new RemoteMessage(data);
+    if (shouldUseDefaultNotificationBehavior(message) && NotificationParams.isNotification(data)) {
       NotificationParams params = new NotificationParams(data);
 
       ExecutorService executor = FcmExecutors.newNetworkIOExecutor();
@@ -251,7 +268,7 @@ public class FirebaseMessagingService extends EnhancedIntentService {
         MessagingAnalytics.logNotificationForeground(intent);
       }
     }
-    onMessageReceived(new RemoteMessage(data));
+    onMessageReceived(message);
   }
 
   private boolean alreadyReceivedMessage(String messageId) {
