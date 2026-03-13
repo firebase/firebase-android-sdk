@@ -30,12 +30,14 @@ class AIModels {
     var flash2Model: GenerativeModel? = null
     var flash2LiteModel: GenerativeModel? = null
 
+    var googleAIFlash2Model: GenerativeModel? = null
+
     /** Returns a list of general purpose models to test */
     fun getModels(): List<GenerativeModel> {
       if (flash2Model == null) {
         setup()
       }
-      return listOf(flash2Model!!, flash2LiteModel!!)
+      return listOf(flash2Model!!, flash2LiteModel!!, googleAIFlash2Model!!)
     }
 
     fun app(): FirebaseApp {
@@ -57,6 +59,11 @@ class AIModels {
         FirebaseAI.getInstance(app!!, GenerativeBackend.vertexAI())
           .generativeModel(
             modelName = "gemini-2.5-flash-lite",
+          )
+      googleAIFlash2Model =
+        FirebaseAI.getInstance(app!!, GenerativeBackend.googleAI())
+          .generativeModel(
+            modelName = "gemini-2.5-flash",
           )
     }
   }

@@ -18,6 +18,7 @@ package com.google.firebase.ai
 import android.graphics.Bitmap
 import com.google.firebase.ai.AIModels.Companion.getModels
 import com.google.firebase.ai.type.Content
+import io.kotest.matchers.string.shouldContainIgnoringCase
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 
@@ -49,7 +50,7 @@ class GenerateContentTests {
       runBlocking {
         val response = model.generateContent("what color is created when red and yellow are mixed?")
         validator.validateResponse(response)
-        assert(response.text!!.contains("orange", true))
+        response.text.shouldContainIgnoringCase("orange")
       }
     }
   }
