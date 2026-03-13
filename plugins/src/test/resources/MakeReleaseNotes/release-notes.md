@@ -11,12 +11,22 @@ Note: We did some super cool stuff here!
 
 * {{feature}} {{storage}} now supports linking {{storage}} with {{storage}}
 
-* {{fixed}} An issue on GitHub [#123](//github.com/firebase/firebase-android-sdk/issues/123){: .external}
+* {{fixed}} An issue on
+  (GitHub [#123](//github.com/firebase/firebase-android-sdk/issues/123){: .external})
 
-* {{removed}} Removed some old stuff from {{firebase_storage_full}} GitHub [#562](//github.com/firebase/firebase-android-sdk/issues/562){: .external}
+* {{removed}} Removed some old stuff from {{firebase_storage_full}}
+  (GitHub [#562](//github.com/firebase/firebase-android-sdk/issues/562){: .external})
+
+* {{changed}} Added offline caching APIs.
+  (GitHub [#7814](//github.com/firebase/firebase-android-sdk/issues/7814){: .external},
+  GitHub [#7833](//github.com/firebase/firebase-android-sdk/issues/7833){: .external},
+  GitHub [#7848](//github.com/firebase/firebase-android-sdk/issues/7848){: .external},
+  GitHub [#7875](//github.com/firebase/firebase-android-sdk/issues/7875){: .external},
+  GitHub [#7885](//github.com/firebase/firebase-android-sdk/issues/7885){: .external},
+  GitHub [#7887](//github.com/firebase/firebase-android-sdk/issues/7887){: .external})
 
 * {{feature}} Added this thing we wanted
-  GitHub [#444](//github.com/firebase/firebase-android-sdk/issues/444){: .external}
+  (GitHub [#444](//github.com/firebase/firebase-android-sdk/issues/444){: .external})
 
 * {{feature}} Added
   [`Query.snapshots()`](/docs/reference/kotlin/com/google/firebase/firestore/ktx/package-summary#snapshots_1)
