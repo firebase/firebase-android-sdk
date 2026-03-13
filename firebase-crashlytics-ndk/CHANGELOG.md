@@ -1,5 +1,8 @@
 # Unreleased
 
+- [fixed] Fixed a runtime crash that could occur in minified native apps when using the Crashlytics
+  C++ header 
+
 # 20.0.4
 
 - [changed] Updated `firebase-crashlytics` dependency to 20.0.4
