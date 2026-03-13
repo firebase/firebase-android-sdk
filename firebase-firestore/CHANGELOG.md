@@ -1,5 +1,7 @@
 # Unreleased
 
+- [feature] Added support for Pipeline expressions `nor` and `switchOn`.
+  [#7903](https://github.com/firebase/firebase-android-sdk/pull/7903)
 - [feature] Added support for `rand` and `trunc` Pipeline expressions.
   [#7886](https://github.com/firebase/firebase-android-sdk/pull/7886)
 - [feature] Added support for Pipeline expressions `arrayFirst`, `arrayFirstN`, `arrayLast`,
