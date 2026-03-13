@@ -26,6 +26,7 @@ import java.security.SecureRandom
 import java.util.concurrent.Executor
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
+import kotlin.random.Random
 import kotlin.random.asKotlinRandom
 
 internal class FirebaseDataConnectFactory(
@@ -44,6 +45,7 @@ internal class FirebaseDataConnectFactory(
   private val lock = ReentrantLock()
   private val instances = mutableMapOf<FirebaseDataConnectInstanceKey, FirebaseDataConnect>()
   private var closed = false
+  private val secureRandom by lazy(LazyThreadSafetyMode.NONE) { SecureRandom() }
 
   fun get(config: ConnectorConfig, settings: DataConnectSettings?): FirebaseDataConnect {
     val key =
@@ -66,7 +68,12 @@ internal class FirebaseDataConnectFactory(
         return cachedInstance
       }
 
-      val newInstance = FirebaseDataConnect.newInstance(config, settings)
+      val newInstance =
+        FirebaseDataConnect.newInstance(
+          config,
+          settings,
+          secureRandom.asKotlinRandom(),
+        )
       instances[key] = newInstance
       return newInstance
     }
@@ -74,7 +81,8 @@ internal class FirebaseDataConnectFactory(
 
   private fun FirebaseDataConnect.Companion.newInstance(
     config: ConnectorConfig,
-    settings: DataConnectSettings?
+    settings: DataConnectSettings?,
+    secureRandom: Random,
   ) =
     FirebaseDataConnectImpl(
       context = context,
@@ -87,7 +95,7 @@ internal class FirebaseDataConnectFactory(
       deferredAppCheckProvider = deferredAppCheckProvider,
       creator = this@FirebaseDataConnectFactory,
       settings = settings ?: DataConnectSettings(),
-      secureRandom = SecureRandom().asKotlinRandom(),
+      secureRandom = secureRandom,
     )
 
   fun remove(instance: FirebaseDataConnect) {
