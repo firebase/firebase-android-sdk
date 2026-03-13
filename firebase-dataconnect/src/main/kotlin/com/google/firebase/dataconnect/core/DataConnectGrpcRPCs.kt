@@ -449,15 +449,25 @@ internal class DataConnectGrpcRPCs(
 
     // Avoid blocking the calling thread by running potentially-blocking code on the dispatcher
     // given to the constructor, which should have similar semantics to [Dispatchers.IO].
+    val grpcChannelShutdownResult: Result<*>
+    val cacheDbCloseResult: Result<*>
     withContext(blockingCoroutineDispatcher) {
-      val grpcChannelShutdownResult = runCatching {
+      grpcChannelShutdownResult = runCatching {
         grpcChannel?.shutdownNow()
         grpcChannel?.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS)
       }
-      val cacheDbCloseResult = runCatching { cacheDb?.db?.close() }
+      cacheDbCloseResult = runCatching { cacheDb?.db?.close() }
+    }
 
-      grpcChannelShutdownResult.getOrThrow()
-      cacheDbCloseResult.getOrThrow()
+    // Bundle together any exceptions that were thrown.
+    val exceptions =
+      listOf(
+          grpcChannelShutdownResult,
+          cacheDbCloseResult,
+        )
+        .mapNotNull { it.exceptionOrNull() }
+    if (exceptions.isNotEmpty()) {
+      throw exceptions.reduce { acc, next -> acc.apply { addSuppressed(next) } }
     }
   }
 
