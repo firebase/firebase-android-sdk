@@ -87,7 +87,7 @@ data class CommitDiff(
   companion object {
     // This is a meant to capture the PR number from PR Titles
     // ex: "Fix a problem (#1234)" -> "1234"
-    private val PR_ID_EXTRACTOR = Regex(".*\\(#(\\d+)\\).*")
+    private val PR_ID_EXTRACTOR = Regex(""".*\(#(\d+)\).*""")
 
     public fun fromRevCommit(commit: RevCommit): CommitDiff {
       val commitId = commit.id.name

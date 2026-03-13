@@ -66,7 +66,7 @@ class FirebaseTestController(val rootDirectory: TemporaryFolder) {
    * @see pom
    */
   fun Project.pomOrNull(): Pom? {
-    val regex = Regex(".*/${group.replace('.', '/')}/$name/$expectedVersion.*/.*\\.pom$")
+    val regex = Regex(""".*/${group.replace('.', '/')}/$name/$expectedVersion.*/.*\.pom$""")
     val repository = rootDirectory.root.childFile("build/m2repository")
     val pomFile = repository.walk().find { it.isFile && it.path.matches(regex) }
 

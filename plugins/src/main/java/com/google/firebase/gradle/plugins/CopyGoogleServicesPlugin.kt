@@ -69,7 +69,7 @@ abstract class CopyGoogleServicesPlugin : Plugin<Project> {
       val library = project.extensions.getByType<BaseExtension>()
 
       val targetPackageLine = "\"package_name\": \"${library.namespace}\""
-      val packageLineRegex = Regex("\"package_name\":\\s+\".*\"")
+      val packageLineRegex = Regex("""\"package_name":\s+".*\"""")
 
       from(path)
       into(project.projectDir)
