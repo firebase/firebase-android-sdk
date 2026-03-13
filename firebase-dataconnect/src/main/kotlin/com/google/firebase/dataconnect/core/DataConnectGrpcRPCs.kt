@@ -467,7 +467,7 @@ internal class DataConnectGrpcRPCs(
         )
         .mapNotNull { it.exceptionOrNull() }
     if (exceptions.isNotEmpty()) {
-      throw exceptions.reduce { acc, next -> acc.apply { addSuppressed(next) } }
+      throw exceptions.first().apply { exceptions.drop(1).forEach { addSuppressed(it) } }
     }
   }
 
