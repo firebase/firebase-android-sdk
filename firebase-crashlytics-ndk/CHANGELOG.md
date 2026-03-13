@@ -1,7 +1,7 @@
 # Unreleased
 
 - [fixed] Fixed a runtime crash that could occur in minified native apps when using the Crashlytics
-  C++ header 
+  C++ header (#7906)
 
 # 20.0.4
 
