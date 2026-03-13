@@ -39,6 +39,8 @@ abstract class DataConnectRunEmulatorTask : DefaultTask() {
 
   @get:Optional @get:Input abstract val schemaExtensionsOutputEnabled: Property<Boolean>
 
+  @get:Optional @get:Input abstract val previewFlags: Property<Collection<String>>
+
   @get:Internal abstract val buildDirectory: DirectoryProperty
 
   @get:Inject abstract val execOperations: ExecOperations
@@ -49,12 +51,14 @@ abstract class DataConnectRunEmulatorTask : DefaultTask() {
     val configDirectory: File = configDirectory.get().asFile
     val postgresConnectionUrl: String = postgresConnectionUrl.get()
     val schemaExtensionsOutputEnabled: Boolean = schemaExtensionsOutputEnabled.orNull ?: false
+    val previewFlags: List<String> = previewFlags.orNull?.toList() ?: emptyList()
     val buildDirectory: File = buildDirectory.get().asFile
 
     logger.info("dataConnectExecutable={}", dataConnectExecutable.absolutePath)
     logger.info("configDirectory={}", configDirectory.absolutePath)
     logger.info("postgresConnectionUrl={}", postgresConnectionUrl)
     logger.info("schemaExtensionsOutputEnabled={}", schemaExtensionsOutputEnabled)
+    logger.info("previewFlags={}", previewFlags.joinToString())
     logger.info("buildDirectory={}", buildDirectory)
 
     runDataConnectExecutable(
@@ -62,6 +66,7 @@ abstract class DataConnectRunEmulatorTask : DefaultTask() {
       subCommand = listOf("dev"),
       configDirectory = configDirectory,
       execOperations = execOperations,
+      previewFlags = previewFlags,
     ) {
       this.listen = "127.0.0.1:9399"
       this.localConnectionString = postgresConnectionUrl

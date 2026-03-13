@@ -30,7 +30,10 @@ jobs:
         with:
           java-version: 17
           distribution: temurin
-          cache: gradle
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
+
       - name: Make release for Firebase App Distribution
         run: |
           ./gradlew \
@@ -53,7 +56,10 @@ jobs:
         with:
           java-version: 17
           distribution: temurin
-          cache: gradle
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
+
       - name: Make release for Firebase Crashlytics Buildtools
         run: |
           ./gradlew \
@@ -85,7 +91,10 @@ jobs:
         with:
           java-version: 17
           distribution: temurin
-          cache: gradle
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
+
       - name: Make release for Firebase Performance
         run: |
           ./gradlew \

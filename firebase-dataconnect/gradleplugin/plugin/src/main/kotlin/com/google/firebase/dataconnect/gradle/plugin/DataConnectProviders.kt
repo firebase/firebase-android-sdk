@@ -153,6 +153,14 @@ class DataConnectProviders(
     valueFromVariant.orElse(valueFromProject)
   }
 
+  val previewFlags: Provider<Collection<String>> = run {
+    val valueFromVariant: Provider<Collection<String>> = variantExtension.previewFlags
+    val valueFromProject: Provider<Collection<String>> =
+      project.provider { projectExtension.previewFlags }
+
+    valueFromVariant.orElse(valueFromProject)
+  }
+
   val connectors: Provider<Collection<String>> = run {
     val valueFromVariant: Provider<Collection<String>> = variantExtension.codegen.connectors
     val valueFromProject: Provider<Collection<String>> =
