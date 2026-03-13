@@ -1,5 +1,7 @@
 # Unreleased
 
+- [changed] Bump internal dependencies.
+
 # 16.0.0-beta17
 
 - [changed] Bumped internal dependencies.
