@@ -9,6 +9,8 @@
   [#7887](https://github.com/firebase/firebase-android-sdk/pull/7887))
 - [fixed] Fix UnsupportedOperationException when serializing lists of *nullable* AnyValue.
   ([#7864](https://github.com/firebase/firebase-android-sdk/pull/7864))
+- [changed] Ensured exceptions are not silently ignored in networking internals.
+  ([#NNNN](https://github.com/firebase/firebase-android-sdk/pull/NNNN)
 
 # 17.1.4
 
