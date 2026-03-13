@@ -10,7 +10,7 @@
 - [fixed] Fix UnsupportedOperationException when serializing lists of *nullable* AnyValue.
   ([#7864](https://github.com/firebase/firebase-android-sdk/pull/7864))
 - [changed] Internal change to use `SecureRandom` when generating operation IDs.
-  ([#NNNN](https://github.com/firebase/firebase-android-sdk/pull/NNNN))
+  ([#7910](https://github.com/firebase/firebase-android-sdk/pull/7910))
 
 # 17.1.4
 
