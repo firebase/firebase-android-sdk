@@ -72,6 +72,9 @@ jobs:
           java-version: ${{ env.FDC_JAVA_VERSION }}
           distribution: temurin
 
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
+
       - uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
         with:
           node-version: ${{ env.FDC_NODEJS_VERSION }}
