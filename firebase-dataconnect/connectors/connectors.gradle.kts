@@ -59,6 +59,7 @@ android {
 
   dataconnect {
     configDir = file("../emulator/dataconnect")
+    previewFlags = listOf("refresh")
     codegen { connectors = listOf("demo", "keywords") }
   }
 }

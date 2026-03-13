@@ -13,6 +13,7 @@ connectorDirs: [
   "./connector/demo",
   "./connector/alltypes",
   "./connector/keywords",
+  "./connector/pasta",
   "./connector/person",
   "./connector/posts",
 ]
