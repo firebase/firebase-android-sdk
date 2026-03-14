@@ -1693,7 +1693,7 @@ public class PipelineTest {
         .containsExactly(
             mapOfEntries(
                 entry("title", "The Hitchhiker's Guide to the Galaxy"), entry("nested", true)),
-            mapOfEntries(entry("title", "Dune")));
+            mapOfEntries(entry("title", "Dune"), entry("nested", null)));
   }
 
   @Test
