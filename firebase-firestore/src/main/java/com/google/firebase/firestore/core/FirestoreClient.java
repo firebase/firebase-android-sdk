@@ -227,13 +227,27 @@ public final class FirestoreClient {
     return source.getTask();
   }
 
-  /** Tries to execute the transaction in updateFunction. */
+  /**
+   * Takes an updateFunction in which a set of reads and writes can be performed atomically. In the
+   * updateFunction, the client can read and write values using the supplied transaction object.
+   * After the updateFunction, all changes will be committed. If a retryable error occurs (ex: some
+   * other client has changed any of the data referenced), then the updateFunction will be called
+   * again after a backoff. If the updateFunction still fails after all retries, then the
+   * transaction will be rejected.
+   *
+   * <p>The transaction object passed to the updateFunction contains methods for accessing documents
+   * and collections. Unlike other datastore access, data accessed with the transaction will not
+   * reflect local changes that have not been committed. For this reason, it is required that all
+   * reads are performed before any writes. Transactions must be performed while online.
+   *
+   * <p>The Task returned is resolved when the transaction is fully committed.
+   */
   public <TResult> Task<TResult> transaction(
       TransactionOptions options, Function<Transaction, Task<TResult>> updateFunction) {
     this.verifyNotTerminated();
     return AsyncQueue.callTask(
         asyncQueue.getExecutor(),
-        () -> syncEngine.transaction(asyncQueue, options, updateFunction));
+        () -> new TransactionRunner<>(asyncQueue, remoteStore, options, updateFunction).run());
   }
 
   // TODO(b/261013682): Use an explicit executor in continuations.
@@ -244,7 +258,7 @@ public final class FirestoreClient {
     final TaskCompletionSource<Map<String, Value>> result = new TaskCompletionSource<>();
     asyncQueue.enqueueAndForget(
         () ->
-            syncEngine
+            remoteStore
                 .runAggregateQuery(query, aggregateFields)
                 .addOnSuccessListener(data -> result.setResult(data))
                 .addOnFailureListener(e -> result.setException(e)));
