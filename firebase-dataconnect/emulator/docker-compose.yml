@@ -1,6 +1,7 @@
 services:
   postgres:
     # https://hub.docker.com/layers/library/postgres/15/images/sha256-087b60e4987f313e00220957009a1ad57c76b26ed6d6919e5d9b047d5048a757
+    # Keep this image in sync with .github/workflows/dataconnect.yml
     image: docker.io/library/postgres@sha256:f30e3de0ac9cc938dac627ef2231099867c694b5f949fadb924c8c977428c399
     environment:
       - POSTGRES_HOST_AUTH_METHOD=trust

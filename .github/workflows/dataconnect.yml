@@ -51,9 +51,10 @@ jobs:
 
     services:
       postgres:
-        image: index.docker.io/library/postgres@sha256:b6b4d0b75c699a2c94dfc5a94fe09f38630f3b67ab0e1653ede1b7ac8e13c197 # ratchet:postgres
+        # Keep this image in sync with firebase-dataconnect/emulator/docker-compose.yml
+        image: docker.io/library/postgres@sha256:f30e3de0ac9cc938dac627ef2231099867c694b5f949fadb924c8c977428c399 # ratchet:postgres
         env:
-          POSTGRES_PASSWORD: password
+          POSTGRES_HOST_AUTH_METHOD: trust
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -203,7 +204,7 @@ jobs:
           fi
           export DATACONNECT_EMULATOR_BINARY_PATH
 
-          export FIREBASE_DATACONNECT_POSTGRESQL_STRING='postgresql://postgres:password@127.0.0.1:5432?sslmode=disable'
+          export FIREBASE_DATACONNECT_POSTGRESQL_STRING='postgresql://127.0.0.1:5432?sslmode=disable'
           cd firebase-dataconnect/emulator
           ${{ env.FDC_FIREBASE_COMMAND }} emulators:start --only=auth,dataconnect >firebase.emulators.log 2>&1 &
 
