@@ -189,11 +189,8 @@ jobs:
 
           docker compose up -d
 
-          # Print example output from docker compose ps to help with debugging the "jq" command below.
-          docker compose ps --format=json
-
           function is_postgres_healthy {
-            docker compose ps --format=json | jq -e '.[] | select(.Labels["com.docker.compose.service"] == "postgres") | .Status | contains("(healthy)")' > /dev/null
+            docker compose ps --format=json | jq -e 'select(.Service == "postgres") | .Status | contains("healthy")' > /dev/null
           }
 
           set +xv
@@ -202,6 +199,7 @@ jobs:
           while ! is_postgres_healthy ; do
             attempt=$((attempt + 1))
             if [[ $attempt == "30" ]] ; then
+              docker compose ps --format=json
               echo "ERROR: postgres service does not appear to be healthy after $attempt seconds" >&2
               exit 1
             fi
