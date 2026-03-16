@@ -110,6 +110,10 @@ jobs:
           run_cmd javac -version
           run_cmd which node
           run_cmd node --version
+          run_cmd which jq
+          run_cmd jq --version
+          run_cmd which docker
+          run_cmd docker --version
           run_cmd ${{ env.FDC_FIREBASE_COMMAND }} --version
           run_cmd ./gradlew --version
 
@@ -185,8 +189,17 @@ jobs:
 
           docker compose up -d
 
+          # Print example output from docker compose ps to help with debugging the "jq" command below.
+          docker compose ps --format=json
+
+          function is_postgres_healthy {
+            docker compose ps --format=json | jq -e '.[] | select(.Labels["com.docker.compose.service"] == "postgres") | .Status | contains("(healthy)")' > /dev/null
+          }
+
+          set +xv
+
           attempt=0
-          while ! docker compose ps --format=json | jq -e '.[] | select(.Labels["com.docker.compose.service"] == "postgres") | .Status | contains("(healthy)")' > /dev/null ; do
+          while ! is_postgres_healthy ; do
             attempt=$((attempt + 1))
             if [[ $attempt == "30" ]] ; then
               echo "ERROR: postgres service does not appear to be healthy after $attempt seconds" >&2
