@@ -2054,6 +2054,101 @@ public class PipelineTest {
   }
 
   @Test
+  public void testFirstAndLastAccumulators() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(greaterThan(field("published"), 0))
+            .sort(ascending(field("published")))
+            .aggregate(
+                AggregateFunction.first("rating").alias("firstBookRating"),
+                field("title").first().alias("firstBookTitle"),
+                AggregateFunction.last("rating").alias("lastBookRating"),
+                field("title").last().alias("lastBookTitle"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of(
+                "firstBookRating",
+                4.5,
+                "firstBookTitle",
+                "Pride and Prejudice",
+                "lastBookRating",
+                4.1,
+                "lastBookTitle",
+                "The Handmaid's Tale"));
+  }
+
+  @Test
+  public void testArrayAggAccumulators() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(greaterThan(field("published"), 0))
+            .sort(ascending(field("published")))
+            .aggregate(AggregateFunction.arrayAgg("rating").alias("allRatings"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of(
+                "allRatings", ImmutableList.of(4.5, 4.3, 4.0, 4.2, 4.7, 4.2, 4.6, 4.3, 4.2, 4.1)));
+  }
+
+  @Test
+  public void testArrayAggAccumulatorsWithInstanceMethod() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(greaterThan(field("published"), 0))
+            .sort(ascending(field("published")))
+            .aggregate(field("rating").arrayAgg().alias("allRatings"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of(
+                "allRatings", ImmutableList.of(4.5, 4.3, 4.0, 4.2, 4.7, 4.2, 4.6, 4.3, 4.2, 4.1)));
+  }
+
+  @Test
+  public void testArrayAggDistinctAccumulators() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(greaterThan(field("published"), 0))
+            .aggregate(AggregateFunction.arrayAggDistinct("rating").alias("allDistinctRatings"))
+            .execute();
+
+    Map<String, Object> result = waitFor(execute).getResults().get(0).getData();
+    List<?> distinctRatings = (List<?>) result.get("allDistinctRatings");
+    assertThat(distinctRatings).containsExactly(4.0, 4.1, 4.2, 4.3, 4.5, 4.6, 4.7);
+  }
+
+  @Test
+  public void testArrayAggDistinctAccumulatorsWithInstanceMethod() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(greaterThan(field("published"), 0))
+            .aggregate(field("rating").arrayAggDistinct().alias("allDistinctRatings"))
+            .execute();
+
+    Map<String, Object> result = waitFor(execute).getResults().get(0).getData();
+    List<?> distinctRatings = (List<?>) result.get("allDistinctRatings");
+    assertThat(distinctRatings).containsExactly(4.0, 4.1, 4.2, 4.3, 4.5, 4.6, 4.7);
+  }
+
+  @Test
   public void testStringFunctions() {
     Task<Pipeline.Snapshot> execute =
         firestore
