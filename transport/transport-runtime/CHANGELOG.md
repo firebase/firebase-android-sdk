@@ -1,5 +1,7 @@
 # Unreleased
 
+- [changed] Bumped internal dependencies.
+
 # 4.1.0
 
 - [feature] Support multiple encrypted experiment IDs.
