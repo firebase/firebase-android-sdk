@@ -84,8 +84,8 @@ function parse_args {
   export DATA_CONNECT_PREVIEW="${preview_flags}"
 
   if [[ ${wipe_and_restart_postgres_pod} == "1" ]] ; then
-    run_command "${SCRIPT_DIR}/wipe_postgres_db.sh"
-    run_command "${SCRIPT_DIR}/start_postgres_pod.sh"
+    run_command podman compose down -v
+    run_command podman compose up -d
   fi
 }
 
@@ -124,8 +124,8 @@ function print_help {
   echo
   echo "  -w"
   echo "    If specified, then a local PostgreSQL container is wiped and restarted"
-  echo "    before launching the emulators. This is accomplished by running the scripts"
-  echo "    ./wipe_postgres_db.sh followed by ./start_postgres_pod.sh."
+  echo "    before launching the emulators. This is accomplished by running:"
+  echo "    podman compose down -v && podman compose up -d"
   echo
   echo "  -h"
   echo "    Print this help screen and exit, as if successful."

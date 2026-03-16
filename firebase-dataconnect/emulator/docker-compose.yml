@@ -1,0 +1,26 @@
+services:
+  postgres:
+    image: docker.io/library/postgres:15
+    environment:
+      - POSTGRES_HOST_AUTH_METHOD=trust
+    ports:
+      - "5432:5432"
+    volumes:
+      - dataconnect_pgdata:/var/lib/postgresql/data
+
+  pgadmin:
+    image: docker.io/dpage/pgadmin4
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@google.com
+      - PGADMIN_DEFAULT_PASSWORD=password
+    ports:
+      - "8888:80"
+    volumes:
+      - ./servers.json:/pgadmin4/servers.json:ro
+      - dataconnect_pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+
+volumes:
+  dataconnect_pgdata:
+  dataconnect_pgadmin_data:
