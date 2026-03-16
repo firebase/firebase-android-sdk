@@ -16,13 +16,12 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(dirname "$0")"
-readonly SCRIPT_DIR
 readonly SELF_EXECUTABLE="$0"
 readonly LOG_PREFIX="[$0] "
 readonly DEFAULT_POSTGRESQL_STRING='postgresql://postgres:postgres@localhost:5432?sslmode=disable'
 
 function main {
+  cd "$(dirname "$0")"
   parse_args "$@"
   log "FIREBASE_DATACONNECT_POSTGRESQL_STRING=${FIREBASE_DATACONNECT_POSTGRESQL_STRING}"
   log "DATACONNECT_EMULATOR_BINARY_PATH=${DATACONNECT_EMULATOR_BINARY_PATH}"
@@ -68,8 +67,8 @@ function parse_args {
   if [[ ${emulator_binary} != "gradle" ]] ; then
     export DATACONNECT_EMULATOR_BINARY_PATH="${emulator_binary}"
   else
-    run_command "${SCRIPT_DIR}/../../gradlew" -p "${SCRIPT_DIR}/../.." --configure-on-demand :firebase-dataconnect:connectors:downloadDebugDataConnectExecutable
-    local gradle_emulator_binaries=("${SCRIPT_DIR}"/../connectors/build/intermediates/dataconnect/debug/executable/*)
+    run_command "../../gradlew" -p ../.. --configure-on-demand :firebase-dataconnect:connectors:downloadDebugDataConnectExecutable
+    local gradle_emulator_binaries=(../connectors/build/intermediates/dataconnect/debug/executable/*)
     if [[ ${#gradle_emulator_binaries[@]} -ne 1 ]]; then
       log_error_and_exit "expected exactly 1 emulator binary from gradle, but got ${#gradle_emulator_binaries[@]}: ${gradle_emulator_binaries[*]}"
     fi
@@ -86,6 +85,12 @@ function parse_args {
   if [[ ${wipe_and_restart_postgres_pod} == "1" ]] ; then
     run_command podman compose down -v
     run_command podman compose up -d
+
+    while ! podman compose ps --format=json | jq -e '.[] | select(.Labels["com.docker.compose.service"] == "postgres") | .Status | contains("(healthy)")' > /dev/null ; do
+      echo "Waiting for postgres server to be healthy..."
+      sleep 1s
+    done
+    echo 'Postgres server is now healthy!'
   fi
 }
 

@@ -29,6 +29,12 @@ services:
       - dataconnect_pgadmin_data:/var/lib/pgadmin
     depends_on:
       - postgres
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider http://localhost"]
+      start_period: 30s
+      interval: 1s
+      timeout: 5s
+      retries: 5
 
 volumes:
   dataconnect_pgdata:
