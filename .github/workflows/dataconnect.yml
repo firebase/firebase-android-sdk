@@ -49,20 +49,6 @@ jobs:
     continue-on-error: false
     runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        # Keep this image in sync with firebase-dataconnect/emulator/docker-compose.yml
-        image: docker.io/library/postgres@sha256:f30e3de0ac9cc938dac627ef2231099867c694b5f949fadb924c8c977428c399 # ratchet:postgres
-        env:
-          POSTGRES_HOST_AUTH_METHOD: trust
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -191,6 +177,26 @@ jobs:
             ~/.android/avd/*
             ~/.android/adb*
           key: avd-cache-zhdsn586je-api${{ env.FDC_ANDROID_EMULATOR_API_LEVEL }}-${{ github.run_id }}
+
+      - name: Start Postgres Server
+        working-directory: firebase-dataconnect/emulator
+        run: |
+          set -xveuo pipefail
+
+          docker compose up -d
+
+          attempt=0
+          while ! docker compose ps --format=json | jq -e '.[] | select(.Labels["com.docker.compose.service"] == "postgres") | .Status | contains("(healthy)")' > /dev/null ; do
+            attempt=$((attempt + 1))
+            if [[ $attempt == "30" ]] ; then
+              echo "ERROR: postgres service does not appear to be healthy after $attempt seconds" >&2
+              exit 1
+            fi
+            echo "Waiting for postgres server to be healthy (attempt $attempt)"
+            sleep 1s
+          done
+
+          echo 'Postgres server is now healthy!'
 
       - name: Start Firebase Emulators
         run: |
