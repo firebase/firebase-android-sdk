@@ -27,17 +27,17 @@ class AIModels {
     private val PROJECT_ID: String = "fireescape-integ-tests"
     // General purpose models
     var app: FirebaseApp? = null
-    var flash2Model: GenerativeModel? = null
-    var flash2LiteModel: GenerativeModel? = null
-
-    var googleAIFlash2Model: GenerativeModel? = null
+    lateinit var vertexAIFlashModel: GenerativeModel
+    lateinit var vertexAIFlashLiteModel: GenerativeModel
+    lateinit var googleAIFlashModel: GenerativeModel
+    lateinit var googleAIFlashLiteModel: GenerativeModel
 
     /** Returns a list of general purpose models to test */
     fun getModels(): List<GenerativeModel> {
-      if (flash2Model == null) {
+      if (app == null) {
         setup()
       }
-      return listOf(flash2Model!!, flash2LiteModel!!, googleAIFlash2Model!!)
+      return listOf(vertexAIFlashModel, vertexAIFlashLiteModel, googleAIFlashModel, googleAIFlashLiteModel)
     }
 
     fun app(): FirebaseApp {
@@ -50,20 +50,25 @@ class AIModels {
     fun setup() {
       val context = InstrumentationRegistry.getInstrumentation().context
       app = FirebaseApp.initializeApp(context)
-      flash2Model =
+      vertexAIFlashModel =
         FirebaseAI.getInstance(app!!, GenerativeBackend.vertexAI())
           .generativeModel(
             modelName = "gemini-2.5-flash",
           )
-      flash2LiteModel =
+      vertexAIFlashLiteModel =
         FirebaseAI.getInstance(app!!, GenerativeBackend.vertexAI())
           .generativeModel(
             modelName = "gemini-2.5-flash-lite",
           )
-      googleAIFlash2Model =
+      googleAIFlashModel =
         FirebaseAI.getInstance(app!!, GenerativeBackend.googleAI())
           .generativeModel(
             modelName = "gemini-2.5-flash",
+          )
+      googleAIFlashLiteModel =
+        FirebaseAI.getInstance(app!!, GenerativeBackend.googleAI())
+          .generativeModel(
+            modelName = "gemini-2.5-flash-lite",
           )
     }
   }
