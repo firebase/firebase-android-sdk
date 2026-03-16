@@ -7,10 +7,10 @@ and `firebase-tools` dependencies used in github actions to their latest version
 Follow these steps sequentially:
 
 1. **Backup Versions JSON:**
-   Copy `./firebase-dataconnect/gradleplugin/plugin/src/main/resources/com/google/firebase/dataconnect/gradle/plugin/DataConnectExecutableVersions.json` to `./firebase-dataconnect/gradleplugin/plugin/src/main/resources/com/google/firebase/dataconnect/gradle/plugin/DataConnectExecutableVersions.old.json`. 
+   Copy `./gradleplugin/plugin/src/main/resources/com/google/firebase/dataconnect/gradle/plugin/DataConnectExecutableVersions.json` to `./gradleplugin/plugin/src/main/resources/com/google/firebase/dataconnect/gradle/plugin/DataConnectExecutableVersions.old.json`. 
 
 2. **Update Emulator Versions JSON:**
-   Run the update script to update the versions JSON file `DataConnectExecutableVersions.json`. Use `run_shell_command` to execute: `./firebase-dataconnect/scripts/update_versions_json.sh`
+   Run the update script to update the versions JSON file `DataConnectExecutableVersions.json`. Use `run_shell_command` to execute: `./scripts/update_versions_json.sh`
 
 3. **Determine Changed Default Emulator Version:**
    Determine if the `defaultVersion` in `DataConnectExecutableVersions.json` changed.
@@ -37,7 +37,7 @@ Follow these steps sequentially:
    Determine the latest release version number of the `firebase-tools` repository using the `gh` CLI or `get_latest_release` for `Firebase/firebase-tools`. Do not include the 'v' prefix in the version number (e.g., use `15.8.0` instead of `v15.8.0`).
 
 8. **Update GitHub Actions YAML Files:**
-   Edit `.github/workflows/dataconnect.yml` and `.github/workflows/dataconnect_demo_app.yml`. Change the default `FDC_FIREBASE_TOOLS_VERSION` value to the latest release version number determined in the previous step. Note what the previous version was.
+   Edit `../.github/workflows/dataconnect.yml` and `../.github/workflows/dataconnect_demo_app.yml`. Change the default `FDC_FIREBASE_TOOLS_VERSION` value to the latest release version number determined in the previous step. Note what the previous version was.
 
 9. **Commit firebase-tools Update:**
    Add the YAML files and git commit the changes using a commit message that conforms exactly to this template:
