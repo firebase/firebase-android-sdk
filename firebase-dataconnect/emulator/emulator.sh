@@ -91,13 +91,13 @@ function parse_args {
     while : ; do
       postgres_health_check_number=$((postgres_health_check_number + 1))
       status="$(print_postgres_status)"
-      echo "postgres health check ${postgres_health_check_number} status: $status"
-      if [[ $status =~ "healthy" ]] ; then
-        echo "Postgres server appears to be healthy after $postgres_health_check_number seconds"
+      echo "postgres health check ${postgres_health_check_number} status: ${status}"
+      if [[ ${status} =~ "healthy" ]] ; then
+        echo "Postgres server appears to be healthy after ${postgres_health_check_number} seconds"
         break
-      elif [[ $postgres_health_check_number == 30 ]] ; then
+      elif [[ ${postgres_health_check_number} == 30 ]] ; then
         print_podman_compose_status
-        echo "ERROR: postgres service does not appear to be healthy after $postgres_health_check_number seconds" >&2
+        echo "ERROR: postgres service does not appear to be healthy after ${postgres_health_check_number} seconds" >&2
         exit 1
       fi
 
