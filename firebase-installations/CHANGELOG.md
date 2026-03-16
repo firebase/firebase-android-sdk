@@ -1,5 +1,9 @@
 # Unreleased
 
+# 19.1.0
+
+- [fixed] Mitigated FIS ID duplication issue from backup data. (#7025)
+
 # 19.0.1
 
 - [changed] Bumped internal dependencies.
@@ -53,3 +57,4 @@ The Kotlin extensions library has no additional updates.
 - [changed] Internal changes to ensure functionality alignment with other SDK releases. For more
   details, refer to the
   [Firebase Instance ID v21.1.0 release notes](/support/release-notes/android#iid_v21-1-0).
+

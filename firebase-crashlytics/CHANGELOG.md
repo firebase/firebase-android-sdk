@@ -1,5 +1,9 @@
 # Unreleased
 
+# 20.0.4
+
+- [changed] Updated `firebase-sessions` dependency to v3.0.4
+
 # 20.0.3
 
 - [fixed] Made creating DataStore files more resilient [#7440]
@@ -694,3 +698,4 @@ name change. The following release notes describe changes in the new SDK.
   app from Fabric, remove the Fabric API key from your `AndroidManifest.xml` file.
 - [removed] The `fabric.properties` and `crashlytics.properties` files are no longer supported.
   Remove them from your app.
+

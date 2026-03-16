@@ -1,7 +1,41 @@
 # Unreleased
 
+- [changed] Added offline caching APIs
+  ([#7814](https://github.com/firebase/firebase-android-sdk/pull/7814),
+  [#7833](https://github.com/firebase/firebase-android-sdk/pull/7833),
+  [#7848](https://github.com/firebase/firebase-android-sdk/pull/7848),
+  [#7875](https://github.com/firebase/firebase-android-sdk/pull/7875),
+  [#7885](https://github.com/firebase/firebase-android-sdk/pull/7885),
+  [#7887](https://github.com/firebase/firebase-android-sdk/pull/7887))
+- [fixed] Fix UnsupportedOperationException when serializing lists of *nullable* AnyValue.
+  ([#7864](https://github.com/firebase/firebase-android-sdk/pull/7864))
+- [changed] Ensure exceptions are not silently ignored when closing
+  `FirebaseDataConnect` instances.
+  ([#7909](https://github.com/firebase/firebase-android-sdk/pull/7909)
+
+# 17.1.4
+
+- [changed] Internal changes to support future offline caching functionality.
+  ([#7716](https://github.com/firebase/firebase-android-sdk/pull/7716),
+  [#7714](https://github.com/firebase/firebase-android-sdk/pull/7714),
+  [#7720](https://github.com/firebase/firebase-android-sdk/pull/7720),
+  [#7759](https://github.com/firebase/firebase-android-sdk/pull/7759),
+  [#7821](https://github.com/firebase/firebase-android-sdk/pull/7821))
+
+# 17.1.3
+
+- [changed] Internal refactor for reporting "paths" in response data.
+  ([#7613](https://github.com/firebase/firebase-android-sdk/pull/7613))
+
+# 17.1.2
+
 - [changed] Internal refactor for managing Auth and App Check tokens
-  ([#7184](https://github.com/firebase/firebase-android-sdk/pull/7184))
+  ([#7485](https://github.com/firebase/firebase-android-sdk/pull/7485))
+
+# 17.1.1
+
+- [changed] Internal refactor for managing Auth and App Check tokens
+  ([#7484](https://github.com/firebase/firebase-android-sdk/pull/7484)
 
 # 17.1.0
 
@@ -110,3 +144,4 @@
   ([#6299](https://github.com/firebase/firebase-android-sdk/pull/6299))
 - [changed] Added `equals` and `hashCode` methods to `GeneratedConnector`.
   ([#6177](https://github.com/firebase/firebase-android-sdk/pull/6177))
+

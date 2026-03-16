@@ -19,6 +19,7 @@
 package com.google.firebase.dataconnect.testutil.property.arbitrary
 
 import com.google.firebase.dataconnect.DataConnectPathSegment
+import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.OperationRef
 import com.google.firebase.dataconnect.core.DataConnectAppCheck
@@ -36,6 +37,7 @@ import com.google.firebase.dataconnect.core.OperationRefImpl
 import com.google.firebase.dataconnect.core.QueryRefImpl
 import com.google.firebase.dataconnect.testutil.StubOperationRefImpl
 import com.google.firebase.dataconnect.util.ProtoUtil.toMap
+import com.google.firebase.dataconnect.util.SemanticVersion
 import com.google.protobuf.Struct
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
@@ -85,12 +87,12 @@ internal fun DataConnectArb.dataConnectGrpcMetadata(
 
 internal fun DataConnectArb.operationErrorInfo(
   message: Arb<String> = string(),
-  path: Arb<List<DataConnectPathSegment>> = errorPath(),
+  path: Arb<List<DataConnectPathSegment>> = dataConnectPath(),
 ): Arb<ErrorInfoImpl> =
   Arb.bind(message, path) { message0, path0 -> ErrorInfoImpl(message0, path0) }
 
 internal fun DataConnectArb.operationRawData(): Arb<Map<String, Any?>?> =
-  Arb.proto.struct().map { it.toMap() }.orNull(nullProbability = 0.33)
+  Arb.proto.struct().map { it.struct.toMap() }.orNull(nullProbability = 0.33)
 
 internal data class SampleOperationData(val value: String)
 
@@ -112,10 +114,10 @@ internal fun DataConnectArb.operationFailureResponseImpl(
   }
 
 internal fun DataConnectArb.operationResult(
-  data: Arb<Struct?> = Arb.proto.struct().orNull(nullProbability = 0.2),
+  data: Arb<Struct?> = Arb.proto.struct().map { it.struct }.orNull(nullProbability = 0.2),
   errors: Arb<List<ErrorInfoImpl>> = operationErrors(),
-) =
-  Arb.bind(data, errors) { data0, errors0 -> DataConnectGrpcClient.OperationResult(data0, errors0) }
+  source: Arb<DataSource> = Arb.enum(),
+) = Arb.bind(data, errors, source, DataConnectGrpcClient::OperationResult)
 
 internal fun <Data, Variables> DataConnectArb.queryRefImpl(
   variables: Arb<Variables>,
@@ -333,9 +335,17 @@ internal inline fun <Data, reified Variables> DataConnectArb.operationRefConstru
 }
 
 internal fun DataConnectArb.authTokenResult(
-  accessToken: Arb<String> = accessToken()
-): Arb<GetAuthTokenResult> = accessToken.map { GetAuthTokenResult(it) }
+  accessToken: Arb<String?> = accessToken().orNull(nullProbability = 0.33),
+  authUid: Arb<String?> =
+    Arb.string(0..10, Codepoint.alphanumeric()).orNull(nullProbability = 0.33),
+): Arb<GetAuthTokenResult> = Arb.bind(accessToken, authUid, ::GetAuthTokenResult)
 
 internal fun DataConnectArb.appCheckTokenResult(
-  accessToken: Arb<String> = accessToken()
+  accessToken: Arb<String?> = accessToken().orNull(nullProbability = 0.33),
 ): Arb<GetAppCheckTokenResult> = accessToken.map { GetAppCheckTokenResult(it) }
+
+internal fun DataConnectArb.semanticVersion(
+  major: Arb<Int> = Arb.int(),
+  minor: Arb<Int> = Arb.int(),
+  patch: Arb<Int> = Arb.int(),
+): Arb<SemanticVersion> = Arb.bind(major, minor, patch, ::SemanticVersion)

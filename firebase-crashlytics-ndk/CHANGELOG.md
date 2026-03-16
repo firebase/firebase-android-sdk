@@ -1,5 +1,12 @@
 # Unreleased
 
+- [fixed] Fixed a runtime crash that could occur in minified native apps when using the Crashlytics
+  C++ header (#7906)
+
+# 20.0.4
+
+- [changed] Updated `firebase-crashlytics` dependency to 20.0.4
+
 # 20.0.3
 
 - [changed] Bumped internal dependencies.
@@ -317,3 +324,4 @@ the new SDK.
   [crashlytics] servers. See the
   [[crashlytics] Gradle plugin documentation](/docs/crashlytics/ndk-reports-new-sdk) for more
   information.
+

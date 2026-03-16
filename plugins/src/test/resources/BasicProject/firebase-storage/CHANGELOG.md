@@ -9,9 +9,13 @@ Note: We did some super cool stuff here!
   `Task<T>.await()` suspend function to convert a
   [`Task`](https://developers.google.com/android/guides/tasks) into a Kotlin coroutine.
 
+- [feature] [storage] now supports linking [storage] with [storage]
+
 - [fixed] An issue on GitHub [#123](//github.com/firebase/firebase-android-sdk/issues/number)
 
-- [removed] Removed some old stuff (#562)
+- [removed] Removed some old stuff from [firebase_storage_full] (#562)
+
+- [changed] Added offline caching APIs. (#7814, #7833, #7848, #7875, #7885, #7887)
 
 - [feature] Added this thing we wanted
   [#444](//github.com/firebase/firebase-android-sdk/issues/number){:.external}

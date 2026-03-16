@@ -204,9 +204,9 @@ abstract class DackkaPlugin : Plugin<Project> {
   private fun GenerateDocumentationTask.applyCommonConfigurations() {
     dependsOnAndMustRunAfter("createFullJarRelease")
 
-    val dackkaFile = project.layout.projectDirectory.file(project.dackkaConfig.singleFile.path)
+    val dackkaFile = project.rootProject.file("dackka-fat-1.2.0.jar")
 
-    dackkaJarFile.convention(dackkaFile)
+    dackkaJarFile.fileValue(dackkaFile)
     clientName.set(project.firebaseLibrary.artifactId)
   }
 

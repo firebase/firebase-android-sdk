@@ -146,3 +146,4 @@ dependencies {
     kapt project(":encoders:firebase-encoders-processor")
 }
 ```
+

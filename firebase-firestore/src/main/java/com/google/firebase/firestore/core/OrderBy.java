@@ -17,11 +17,10 @@ package com.google.firebase.firestore.core;
 import com.google.firebase.firestore.model.Document;
 import com.google.firebase.firestore.model.FieldPath;
 import com.google.firebase.firestore.model.Values;
-import com.google.firebase.firestore.util.Assert;
 import com.google.firestore.v1.Value;
 
 /** Represents a sort order for a Firestore Query */
-public class OrderBy {
+public final class OrderBy {
   /** The direction of the ordering */
   public enum Direction {
     ASCENDING(1),
@@ -64,8 +63,6 @@ public class OrderBy {
     } else {
       Value v1 = d1.getField(field);
       Value v2 = d2.getField(field);
-      Assert.hardAssert(
-          v1 != null && v2 != null, "Trying to compare documents on fields that don't exist.");
       return direction.getComparisonModifier() * Values.compare(v1, v2);
     }
   }

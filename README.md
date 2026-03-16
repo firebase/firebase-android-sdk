@@ -8,18 +8,18 @@ More information about Firebase can be found at https://firebase.google.com.
 ## Table of contents
 
 1. [Getting Started](#getting-started)
-1. [Testing](#testing)
+2. [Testing](#testing)
    1. [Unit Testing](#unit-testing)
-   1. [Integration Testing](#integration-testing)
-1. [Proguarding](#proguarding)
+   2. [Integration Testing](#integration-testing)
+3. [Proguarding](#proguarding)
    1. [APIs used via reflection](#APIs-used-via-reflection)
-   1. [APIs intended for developer consumption](#APIs-intended-for-developer-consumption)
-   1. [APIs intended for other Firebase SDKs](#APIs-intended-for-other-firebase-sdks)
-1. [Publishing](#publishing)
+   2. [APIs intended for developer consumption](#APIs-intended-for-developer-consumption)
+   3. [APIs intended for other Firebase SDKs](#APIs-intended-for-other-firebase-sdks)
+4. [Publishing](#publishing)
    1. [Dependencies](#dependencies)
-   1. [Commands](#commands)
-1. [Code Formatting](#code-formatting)
-1. [Contributing](#contributing)
+   2. [Commands](#commands)
+5. [Code Formatting](#code-formatting)
+6. [Contributing](#contributing)
 
 ## Getting Started
 

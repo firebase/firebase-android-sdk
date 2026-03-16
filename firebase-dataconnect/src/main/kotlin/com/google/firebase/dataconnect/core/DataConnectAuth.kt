@@ -49,13 +49,22 @@ internal class DataConnectAuth(
     provider.removeIdTokenListener(idTokenListener)
 
   override suspend fun getToken(provider: InternalAuthProvider, forceRefresh: Boolean) =
-    provider.getAccessToken(forceRefresh).await().let { GetAuthTokenResult(it.token) }
+    provider.getAccessToken(forceRefresh).await().let {
+      GetAuthTokenResult(it.token, it.getAuthUid())
+    }
 
-  data class GetAuthTokenResult(override val token: String?) : GetTokenResult
+  data class GetAuthTokenResult(override val token: String?, val authUid: String?) : GetTokenResult
 
   private class IdTokenListenerImpl(private val logger: Logger) : IdTokenListener {
     override fun onIdTokenChanged(tokenResult: InternalTokenResult) {
       logger.debug { "onIdTokenChanged(token=${tokenResult.token?.toScrubbedAccessToken()})" }
     }
+  }
+
+  private companion object {
+
+    // The "sub" claim is documented to be "a non-empty string and must be the uid of the user or
+    // device". See http://goo.gle/4oGjEQt for the relevant Firebase documentation.
+    fun com.google.firebase.auth.GetTokenResult.getAuthUid(): String? = claims["sub"] as? String
   }
 }

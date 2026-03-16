@@ -14,9 +14,10 @@
 
 package com.google.firebase.firestore;
 
+import static com.google.cloud.datastore.core.number.NumberComparisonHelper.firestoreCompareDoubles;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import com.google.firebase.firestore.util.Util;
 
 /** Immutable class representing a {@code GeoPoint} in Cloud Firestore */
 public class GeoPoint implements Comparable<GeoPoint> {
@@ -52,9 +53,9 @@ public class GeoPoint implements Comparable<GeoPoint> {
 
   @Override
   public int compareTo(@NonNull GeoPoint other) {
-    int comparison = Util.compareDoubles(latitude, other.latitude);
+    int comparison = firestoreCompareDoubles(latitude, other.latitude);
     if (comparison == 0) {
-      return Util.compareDoubles(longitude, other.longitude);
+      return firestoreCompareDoubles(longitude, other.longitude);
     } else {
       return comparison;
     }

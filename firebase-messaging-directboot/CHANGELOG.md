@@ -1,5 +1,7 @@
 # Unreleased
 
+- [unchanged] Updated to keep messaging SDK versions aligned.
+
 # 25.0.1
 
 - [unchanged] Updated to keep messaging SDK versions aligned.
@@ -170,3 +172,4 @@ issue was released on July 08, 2020 (see
   messages in Direct Boot mode. See
   [Receive FCM messages in direct boot mode](/docs/cloud-messaging/android/receive#receive_fcm_messages_in_direct_boot_mode)
   for more information.
+

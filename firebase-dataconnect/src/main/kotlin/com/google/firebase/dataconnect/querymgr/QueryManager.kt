@@ -16,25 +16,28 @@
 
 package com.google.firebase.dataconnect.querymgr
 
+import com.google.firebase.dataconnect.QueryRef.FetchPolicy
 import com.google.firebase.dataconnect.core.QueryRefImpl
 import com.google.firebase.dataconnect.util.SequencedReference
 
 internal class QueryManager(private val liveQueries: LiveQueries) {
   suspend fun <Data, Variables> execute(
     query: QueryRefImpl<Data, Variables>,
-  ): SequencedReference<Result<Data>> =
+    fetchPolicy: FetchPolicy,
+  ): SequencedReference<Result<DataSourcePair<Data>>> =
     liveQueries.withLiveQuery(query) {
       it.execute(
         dataDeserializer = query.dataDeserializer,
         dataSerializersModule = query.dataSerializersModule,
         callerSdkType = query.callerSdkType,
+        fetchPolicy = fetchPolicy,
       )
     }
 
   suspend fun <Data, Variables> subscribe(
     query: QueryRefImpl<Data, Variables>,
     executeQuery: Boolean,
-    callback: suspend (SequencedReference<Result<Data>>) -> Unit,
+    callback: suspend (SequencedReference<Result<DataSourcePair<Data>>>) -> Unit,
   ): Nothing =
     liveQueries.withLiveQuery(query) { liveQuery ->
       liveQuery.subscribe(

@@ -12,6 +12,7 @@ on:
       pythonVersion:
   pull_request:
     paths:
+      - .github/actions/dataconnect-send-notifications
       - .github/workflows/dataconnect.yml
       - gradlew
       - build.gradle.kts
@@ -34,7 +35,7 @@ env:
   FDC_JAVA_VERSION: ${{ inputs.javaVersion || '17' }}
   FDC_ANDROID_EMULATOR_API_LEVEL: ${{ inputs.androidEmulatorApiLevel || '34' }}
   FDC_NODEJS_VERSION: ${{ inputs.nodeJsVersion || '20' }}
-  FDC_FIREBASE_TOOLS_VERSION: ${{ inputs.firebaseToolsVersion || '14.18.0' }}
+  FDC_FIREBASE_TOOLS_VERSION: ${{ inputs.firebaseToolsVersion || '15.8.0' }}
   FDC_FIREBASE_TOOLS_DIR: /tmp/firebase-tools
   FDC_FIREBASE_COMMAND: /tmp/firebase-tools/node_modules/.bin/firebase
   FDC_PYTHON_VERSION: ${{ inputs.pythonVersion || '3.13' }}
@@ -50,7 +51,7 @@ jobs:
 
     services:
       postgres:
-        image: postgres
+        image: index.docker.io/library/postgres@sha256:b6b4d0b75c699a2c94dfc5a94fe09f38630f3b67ab0e1653ede1b7ac8e13c197 # ratchet:postgres
         env:
           POSTGRES_PASSWORD: password
         options: >-
@@ -71,11 +72,14 @@ jobs:
           java-version: ${{ env.FDC_JAVA_VERSION }}
           distribution: temurin
 
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
+
       - uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
         with:
           node-version: ${{ env.FDC_NODEJS_VERSION }}
 
-      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: ${{ env.FDC_PYTHON_VERSION }}
 
@@ -268,7 +272,7 @@ jobs:
         with:
           show-progress: false
           sparse-checkout: '.github/'
-      - uses: docker://rhysd/actionlint:1.7.7
+      - uses: docker://index.docker.io/rhysd/actionlint@sha256:887a259a5a534f3c4f36cb02dca341673c6089431057242cdc931e9f133147e9 # ratchet:docker://rhysd/actionlint:1.7.7
         with:
           args: -color /github/workspace/.github/workflows/dataconnect.yml
 
@@ -291,7 +295,7 @@ jobs:
         with:
           show-progress: false
           sparse-checkout: 'firebase-dataconnect/ci/'
-      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: ${{ env.FDC_PYTHON_VERSION }}
       - run: pip install -r firebase-dataconnect/ci/requirements.txt
@@ -307,7 +311,7 @@ jobs:
         with:
           show-progress: false
           sparse-checkout: 'firebase-dataconnect/ci/'
-      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: ${{ env.FDC_PYTHON_VERSION }}
       - run: pip install -r firebase-dataconnect/ci/requirements.txt
@@ -323,7 +327,7 @@ jobs:
         with:
           show-progress: false
           sparse-checkout: 'firebase-dataconnect/ci/'
-      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: ${{ env.FDC_PYTHON_VERSION }}
       - run: pip install -r firebase-dataconnect/ci/requirements.txt
@@ -339,7 +343,7 @@ jobs:
         with:
           show-progress: false
           sparse-checkout: 'firebase-dataconnect/ci/'
-      - uses: actions/setup-python@42375524e23c412d93fb67b49958b491fce71c38 # v5.4.0
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: ${{ env.FDC_PYTHON_VERSION }}
       - run: pip install -r firebase-dataconnect/ci/requirements.txt

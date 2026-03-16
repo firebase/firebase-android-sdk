@@ -1,5 +1,9 @@
 # Unreleased
 
+# 19.0.2
+
+- [unchanged] Updated to keep [app_check] SDK versions aligned.
+
 # 19.0.1
 
 - [changed] Bumped internal dependencies.
@@ -56,3 +60,4 @@
 
 - [feature] Added support for [Play Integrity](https://developer.android.com/google/play/integrity)
   as an attestation provider.
+

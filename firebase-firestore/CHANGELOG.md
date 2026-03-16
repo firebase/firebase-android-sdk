@@ -1,5 +1,29 @@
 # Unreleased
 
+- [feature] Added support for `rand` and `trunc` Pipeline expressions.
+  [#7886](https://github.com/firebase/firebase-android-sdk/pull/7886)
+- [feature] Added support for Pipeline expressions `arrayFirst`, `arrayFirstN`, `arrayLast`,
+  `arrayLastN`, `arrayMinimum`, `arrayMinimumN`, `arrayMaximum`, `arrayMaximumN`, `arrayIndexOf`,
+  `arrayLastIndexOf` and `arrayIndexOfAll`.
+  [#7836](//github.com/firebase/firebase-android-sdk/pull/7836)
+- [fixed] Fix a performance regression in `ObjectValue.equals()` that caused exponential execution
+  time for large or deeply nested documents.
+  [#7877](https://github.com/firebase/firebase-android-sdk/issues/7877)
+
+# 26.1.1
+
+- [feature] Added support for `regexFind` and `regexFindAll` Pipeline expressions.
+  [#7669](https://github.com/firebase/firebase-android-sdk/pull/7669)
+- [changed] Updated `Expression.alias()` to return `AliasedExpression`.
+- [removed] Removed `isNan`, `isNotNan`, `isNull`, and `isNotNull` factory methods from `Expression`.
+  Use `equal(Double.NaN)`, `notEqual(Double.NaN)`, `equal(nullValue())`, and `notEqual(nullValue())`
+  respectively.
+
+# 26.1.0
+
+- [feature] Firestore Pipelines for Enterprise edition enters public preview.
+  [#7590](//github.com/firebase/firebase-android-sdk/pull/7590)
+
 # 26.0.2
 
 - [changed] Improve query performance in large result sets by replacing the deprecated AsyncTask
@@ -11,8 +35,7 @@
   [#7388](//github.com/firebase/firebase-android-sdk/pull/7388)
 - [changed] Improve query performance by using an unsorted HashMap instead of a sorted TreeMap.
   [#7389](//github.com/firebase/firebase-android-sdk/pull/7389)
-
-* [changed] Add `java.time.Instant` support to `DocumentSnapshot.toObject()`,
+- [changed] Add `java.time.Instant` support to `DocumentSnapshot.toObject()`,
   `DocumentReference.set()`, `DocumentReference.update()`, and similar.
   [#6235](//github.com/firebase/firebase-android-sdk/pull/6235)
 
@@ -1010,3 +1033,4 @@ Kotlin extensions library has no additional updates.
   or
   [`FieldValue.serverTimestamp()`](</docs/reference/android/com/google/firebase/firestore/FieldValue.html#serverTimestamp()>)
   values.
+

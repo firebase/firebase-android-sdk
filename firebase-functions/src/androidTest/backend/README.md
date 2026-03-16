@@ -13,3 +13,4 @@ firebase use $PROJECT_ID
 echo $(cd functions && npm install)
 firebase deploy --only functions
 ```
+

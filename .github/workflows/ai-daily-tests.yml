@@ -29,7 +29,9 @@ jobs:
         with:
           java-version: 17
           distribution: temurin
-          cache: gradle
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
 
       - name: Add google-services.json
         env:
@@ -56,7 +58,7 @@ jobs:
           heap-size: 4096M
           script: |
             adb logcat -v time > logcat.txt &
-            ./gradlew firebase-ai:connectedCheck withErrorProne -PtargetBackend="prod"
+            ./gradlew ai-logic:firebase-ai:connectedCheck withErrorProne -PtargetBackend="prod"
 
       - name: Upload logs
         if: failure()

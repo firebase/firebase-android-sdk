@@ -1,5 +1,9 @@
 # Unreleased
 
+# 4.1.0
+
+- [feature] Support multiple encrypted experiment IDs.
+
 # 4.0.0
 
 - [changed] Updated protobuf dependency to `3.25.5` to fix
@@ -18,3 +22,4 @@ Kotlin extensions library has no additional updates.
 
 - [unchanged] Updated internal Dagger dependency.
 - [feature] Added support for product id.
+

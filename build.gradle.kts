@@ -23,6 +23,7 @@ plugins {
   alias(libs.plugins.errorprone)
   alias(libs.plugins.crashlytics) apply false
   id("PublishingPlugin")
+  id("test-report")
   id("firebase-ci")
   id("smoke-tests")
   alias(libs.plugins.google.services)
@@ -60,10 +61,10 @@ fun Project.applySpotless() {
       target("*.gradle.kts") // default target for kotlinGradle
       ktfmt("0.41").googleStyle()
     }
-    format("styling") {
+    flexmark {
       target("src/**/*.md", "*.md", "docs/**/*.md")
       targetExclude("**/third_party/**", "src/test/resources/**", "release_report.md")
-      prettier().config(mapOf("printWidth" to 100, "proseWrap" to "always"))
+      flexmark("0.64.8")
     }
   }
 }

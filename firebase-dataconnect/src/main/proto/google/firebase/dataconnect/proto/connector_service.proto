@@ -21,6 +21,7 @@ syntax = "proto3";
 package google.firebase.dataconnect.v1;
 
 import "google/firebase/dataconnect/proto/graphql_error.proto";
+import "google/firebase/dataconnect/proto/graphql_response_extensions.proto";
 import "google/protobuf/struct.proto";
 
 option java_package = "google.firebase.dataconnect.proto";
@@ -93,6 +94,8 @@ message ExecuteQueryResponse {
   google.protobuf.Struct data = 1;
   // Errors of this response.
   repeated GraphqlError errors = 2;
+  // Additional response information.
+  GraphqlResponseExtensions extensions = 3;
 }
 
 // The ExecuteMutation response from Firebase Data Connect.

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 Google LLC
+ * Copyright 2026 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,91 +14,66 @@
  * limitations under the License.
  */
 
-@file:Suppress("UnusedReceiverParameter")
-
 package com.google.firebase.dataconnect.testutil.property.arbitrary
 
-import com.google.common.primitives.Ints.min
+import com.google.firebase.dataconnect.testutil.intersect
 import io.kotest.property.Arb
-import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.int
 
 /**
  * Returns an [Arb] identical to [Arb.Companion.int] except that the values it produces have an
- * equal probability of having any given number of digits in its base-10 string representation. This
- * is useful for testing int values that get zero padded when they are small. The negative sign is
- * _not_ included in the "number of digits" count.
+ * equal probability of having any given number of digits in its base-10 string representation.
  *
- * @param range The range of values to produce; if `null` (the default) then use the entire range of
- * integers (formally, `Int.MIN_VALUE..Int.MAX_VALUE`).
- *
- * @see intWithEvenNumDigitsDistribution
+ * Note that the negative sign does _not_ contribute to the digit count. For example both 22 and -22
+ * are considered to have 2 digits.
  */
-@JvmName("intWithEvenNumDigitsDistributionNonNullRange")
-fun Arb.Companion.intWithEvenNumDigitsDistribution(range: IntRange): Arb<Int> {
-  require(!range.isEmpty()) { "range must not be empty: $range (error code tmvy8ysdjy)" }
-  val intRangesByNumDigits = mutableMapOf<Int, MutableList<IntRange>>()
-
-  var first = range.first
-  while (first <= range.last) {
-    val numDigits = "$first".trimStart('-').length
-    val numDigitsKey = if (first >= 0) numDigits else (-numDigits)
-    val numDigitsRange = rangeByNumDigits[numDigitsKey]
-    checkNotNull(numDigitsRange) {
-      "internal error: rangeByNumDigits[numDigitsKey] returned null " +
-        "(first=$first, numDigitsKey=$numDigitsKey, rangeByNumDigits=$rangeByNumDigits, " +
-        "error code 3z37g9zfy8)"
-    }
-
-    val last = min(range.last, numDigitsRange.last)
-    val curIntRangesByNumDigits = intRangesByNumDigits.getOrPut(numDigits) { mutableListOf() }
-    curIntRangesByNumDigits.add(first..last)
-    if (last == Int.MAX_VALUE) {
-      break
-    }
-    first = last + 1
-  }
-
-  val arbLists: List<List<Arb<Int>>> =
-    intRangesByNumDigits.values.map { intRanges -> intRanges.map { intRange -> Arb.int(intRange) } }
-  val arbs: List<Arb<Int>> = arbLists.map { if (it.size == 1) it.single() else Arb.choice(it) }
-  return Arb.choice(arbs)
-}
+fun Arb.Companion.intWithEvenNumDigitsDistribution(range: IntRange? = null): Arb<Int> =
+  IntEvenNumDigitsDistribution.generate(range)
 
 /**
- * Returns an [Arb] identical to [Arb.Companion.int] except that the values it produces have an
- * equal probability of having any given number of digits in its base-10 string representation. This
- * is useful for testing int values that get zero padded when they are small. The negative sign is
- * _not_ included in the "number of digits" count.
+ * Returns an [Arb] identical to [Arb.Companion.nonNegativeInt] except that the values it produces
+ * have an equal probability of having any given number of digits in its base-10 string
+ * representation.
  *
- * @param range The range of values to produce; if `null` (the default) then use the entire range of
- * integers (formally, `Int.MIN_VALUE..Int.MAX_VALUE`).
- *
- * @see intWithEvenNumDigitsDistribution
+ * Note that the negative sign does _not_ contribute to the digit count. For example both 22 and -22
+ * are considered to have 2 digits.
  */
-@JvmName("intWithEvenNumDigitsDistributionNullableRange")
-fun Arb.Companion.intWithEvenNumDigitsDistribution(range: IntRange? = null): Arb<Int> =
-  intWithEvenNumDigitsDistribution(range ?: Int.MIN_VALUE..Int.MAX_VALUE)
+fun Arb.Companion.nonNegativeIntWithEvenNumDigitsDistribution(min: Int = 0): Arb<Int> {
+  require(min >= 0) { "invalid min: $min (must be greater than or equal to zero)" }
+  return intWithEvenNumDigitsDistribution(min..Int.MAX_VALUE)
+}
 
-private val rangeByNumDigits: Map<Int, IntRange> = buildMap {
-  put(1, 0..9)
-  put(2, 10..99)
-  put(3, 100..999)
-  put(4, 1_000..9_999)
-  put(5, 10_000..99_999)
-  put(6, 100_000..999_999)
-  put(7, 1_000_000..9_999_999)
-  put(8, 10_000_000..99_999_999)
-  put(9, 100_000_000..999_999_999)
-  put(10, 1_000_000_000..Int.MAX_VALUE)
-  put(-1, -9..-1)
-  put(-2, -99..-10)
-  put(-3, -999..-100)
-  put(-4, -9_999..-1_000)
-  put(-5, -99_999..-10_000)
-  put(-6, -999_999..-100_000)
-  put(-7, -9_999_999..-1_000_000)
-  put(-8, -99_999_999..-10_000_000)
-  put(-9, -999_999_999..-100_000_000)
-  put(-10, Int.MIN_VALUE..-1_000_000_000)
+private object IntEvenNumDigitsDistribution :
+  AbstractEvenNumDigitsDistribution<Int, IntRange>(
+    maxDigitCount = 10,
+    fullRange = Int.MIN_VALUE..Int.MAX_VALUE
+  ) {
+  private val RANGES_BY_DIGIT_COUNT =
+    mapOf(
+      -1 to -9..-1,
+      -2 to -99..-10,
+      -3 to -999..-100,
+      -4 to -9_999..-1_000,
+      -5 to -99_999..-10_000,
+      -6 to -999_999..-100_000,
+      -7 to -9_999_999..-1_000_000,
+      -8 to -99_999_999..-10_000_000,
+      -9 to -999_999_999..-100_000_000,
+      -10 to Int.MIN_VALUE..-1_000_000_000,
+      1 to 0..9,
+      2 to 10..99,
+      3 to 100..999,
+      4 to 1_000..9_999,
+      5 to 10_000..99_999,
+      6 to 100_000..999_999,
+      7 to 1_000_000..9_999_999,
+      8 to 10_000_000..99_999_999,
+      9 to 100_000_000..999_999_999,
+      10 to 1_000_000_000..Int.MAX_VALUE
+    )
+
+  override fun getTheoreticalBounds(digitCount: Int) = RANGES_BY_DIGIT_COUNT.getValue(digitCount)
+  override fun intersect(range1: IntRange, range2: IntRange) = range1 intersect range2
+  override fun isEmpty(range: IntRange) = range.isEmpty()
+  override fun createArb(range: IntRange) = Arb.int(range)
 }

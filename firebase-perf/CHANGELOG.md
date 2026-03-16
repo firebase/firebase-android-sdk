@@ -1,5 +1,11 @@
 # Unreleased
 
+# 22.0.4
+
+- [fixed] Fixed StrictMode DiskReadViolation prompted by AppStartTrace setup. [#7340]
+
+# 22.0.3
+
 - [changed] Bumped dependency on OkHTTP to version 4.12.0 from version 3.12.13. If your app depends
   on OkHTTP version 3.x the change is both binary- and Java source-compatible, with a few small
   exceptions. See https://square.github.io/okhttp/changelogs/upgrading_to_okhttp_4/ for more
@@ -449,3 +455,4 @@ Kotlin extensions library has no additional updates.
 
 - [fixed] Fixed a `SecurityException` crash on certain devices that do not have Google Play Services
   on them.
+

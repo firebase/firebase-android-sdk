@@ -1,5 +1,9 @@
 # Unreleased
 
+# 4.1.0
+
+- [feature] Support multiple encrypted experiment IDs.
+
 # 4.0.0
 
 - [changed] Updated protobuf dependency to `3.25.5` to fix
@@ -17,3 +21,4 @@ extensions library has no additional updates.
 # 3.1.0
 
 - [feature] Added new APIs to support passing a product id when logging an event.
+

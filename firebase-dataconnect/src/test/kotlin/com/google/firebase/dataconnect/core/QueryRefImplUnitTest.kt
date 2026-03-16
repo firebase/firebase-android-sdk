@@ -16,7 +16,10 @@
 
 package com.google.firebase.dataconnect.core
 
+import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
+import com.google.firebase.dataconnect.QueryRef.FetchPolicy
+import com.google.firebase.dataconnect.querymgr.DataSourcePair
 import com.google.firebase.dataconnect.querymgr.QueryManager
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.OperationRefConstructorArguments
@@ -92,17 +95,55 @@ class QueryRefImplUnitTest {
 
   @Test
   fun `execute() should return the result on success`() = runTest {
-    val data: TestData = mockk()
-    val querySlot = slot<QueryRefImpl<TestData, TestVariables>>()
-    val dataConnect = dataConnectWithQueryResult(Result.success(data), querySlot)
-    val queryRefImpl = Arb.dataConnect.queryRefImpl(dataConnect).next()
+    checkAll(propTestConfig, Arb.enum<DataSource>()) { dataSource ->
+      val data: TestData = mockk()
+      val querySlot = slot<QueryRefImpl<TestData, TestVariables>>()
+      val fetchPolicySlot = slot<FetchPolicy>()
+      val dataConnect =
+        dataConnectWithQueryResult(
+          Result.success(DataSourcePair(data, dataSource)),
+          querySlot,
+          fetchPolicySlot
+        )
+      val queryRefImpl = Arb.dataConnect.queryRefImpl(dataConnect).next()
 
-    val queryResult = queryRefImpl.execute()
+      val queryResult = queryRefImpl.execute()
 
-    assertSoftly {
-      queryResult.ref shouldBeSameInstanceAs queryRefImpl
-      queryResult.data shouldBe data
-      querySlot.captured shouldBeSameInstanceAs queryRefImpl
+      assertSoftly {
+        queryResult.ref shouldBeSameInstanceAs queryRefImpl
+        queryResult.data shouldBe data
+        queryResult.dataSource shouldBe dataSource
+        querySlot.captured shouldBeSameInstanceAs queryRefImpl
+        fetchPolicySlot.captured shouldBe FetchPolicy.PREFER_CACHE
+      }
+    }
+  }
+
+  @Test
+  fun `execute(FetchPolicy) should return the result on success`() = runTest {
+    checkAll(propTestConfig, Arb.enum<FetchPolicy>(), Arb.enum<DataSource>()) {
+      fetchPolicy,
+      dataSource ->
+      val data: TestData = mockk()
+      val querySlot = slot<QueryRefImpl<TestData, TestVariables>>()
+      val fetchPolicySlot = slot<FetchPolicy>()
+      val dataConnect =
+        dataConnectWithQueryResult(
+          Result.success(DataSourcePair(data, dataSource)),
+          querySlot,
+          fetchPolicySlot
+        )
+      val queryRefImpl = Arb.dataConnect.queryRefImpl(dataConnect).next()
+
+      val queryResult = queryRefImpl.execute(fetchPolicy)
+
+      assertSoftly {
+        queryResult.ref shouldBeSameInstanceAs queryRefImpl
+        queryResult.data shouldBe data
+        queryResult.dataSource shouldBe dataSource
+        querySlot.captured shouldBeSameInstanceAs queryRefImpl
+        fetchPolicySlot.captured shouldBe fetchPolicy
+      }
     }
   }
 
@@ -110,7 +151,9 @@ class QueryRefImplUnitTest {
   fun `execute() should throw on failure`() = runTest {
     val exception = Exception("forced exception h4sab92yy8")
     val querySlot = slot<QueryRefImpl<TestData, TestVariables>>()
-    val dataConnect = dataConnectWithQueryResult(Result.failure(exception), querySlot)
+    val fetchPolicySlot = slot<FetchPolicy>()
+    val dataConnect =
+      dataConnectWithQueryResult(Result.failure(exception), querySlot, fetchPolicySlot)
     val queryRefImpl = Arb.dataConnect.queryRefImpl(dataConnect).next()
 
     val thrownException = shouldThrow<Exception> { queryRefImpl.execute() }
@@ -118,6 +161,27 @@ class QueryRefImplUnitTest {
     assertSoftly {
       thrownException shouldBeSameInstanceAs exception
       querySlot.captured shouldBeSameInstanceAs queryRefImpl
+      fetchPolicySlot.captured shouldBe FetchPolicy.PREFER_CACHE
+    }
+  }
+
+  @Test
+  fun `execute(FetchPolicy) should throw on failure`() = runTest {
+    checkAll(propTestConfig, Arb.enum<FetchPolicy>()) { fetchPolicy ->
+      val exception = Exception("forced exception b95wa63yba")
+      val querySlot = slot<QueryRefImpl<TestData, TestVariables>>()
+      val fetchPolicySlot = slot<FetchPolicy>()
+      val dataConnect =
+        dataConnectWithQueryResult(Result.failure(exception), querySlot, fetchPolicySlot)
+      val queryRefImpl = Arb.dataConnect.queryRefImpl(dataConnect).next()
+
+      val thrownException = shouldThrow<Exception> { queryRefImpl.execute(fetchPolicy) }
+
+      assertSoftly {
+        thrownException shouldBeSameInstanceAs exception
+        querySlot.captured shouldBeSameInstanceAs queryRefImpl
+        fetchPolicySlot.captured shouldBe fetchPolicy
+      }
     }
   }
 
@@ -572,13 +636,15 @@ class QueryRefImplUnitTest {
       queryRefImpl().map { it.withDataConnect(dataConnect) }
 
     fun <Data, Variables> dataConnectWithQueryResult(
-      result: Result<Data>,
-      querySlot: CapturingSlot<QueryRefImpl<Data, Variables>>
+      result: Result<DataSourcePair<Data>>,
+      querySlot: CapturingSlot<QueryRefImpl<Data, Variables>>,
+      fetchPolicySlot: CapturingSlot<FetchPolicy>,
     ): FirebaseDataConnectInternal =
       mockk<FirebaseDataConnectInternal>(relaxed = true) {
         every { queryManager } returns
           mockk<QueryManager> {
-            coEvery { execute(capture(querySlot)) } returns SequencedReference(123, result)
+            coEvery { execute(capture(querySlot), capture(fetchPolicySlot)) } returns
+              SequencedReference(123, result)
           }
       }
   }

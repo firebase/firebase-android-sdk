@@ -1,0 +1,7 @@
+{
+  "testCertificate": {
+    "hashMd5": "test-cert-md5-hash",
+    "hashSha1": "test-cert-sha1-hash",
+    "hashSha256": "test-cert-sha256-hash"
+  }
+}

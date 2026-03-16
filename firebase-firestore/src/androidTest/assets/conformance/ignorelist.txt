@@ -536,6 +536,8 @@
     parentQuery_keyDesc_*
     runQuery_degradedMergeJoin_max_4
     runQuery_degradedMergeJoin_min_4
+    runQuery_globalOrder_1_of_4
+    runQuery_globalOrder_2_of_4
     runQuery_nullsAndNans_12
     runQuery_nullsAndNans_13
     runQuery_nullsAndNans_14

@@ -136,22 +136,86 @@ abstract class MakeReleaseNotesTask : DefaultTask() {
   /**
    * Converts a [Change] to a [String] to be used in a release note.
    *
+   * It applies the [CONTENT_FORMATTERS] functions to the content in order to transform it.
+   *
    * @see [MakeReleaseNotesTask]
    * @see [LINK_REGEX]
    */
   private fun Change.toReleaseNote(): String {
     if (message.isBlank()) throw RuntimeException("A changelog entry message can not be blank.")
-
-    val fixedMessage =
-      LINK_REGEX.replace(message) {
-        val id = it.firstCapturedValue
-        "GitHub [#$id](//github.com/firebase/firebase-android-sdk/issues/$id){: .external}"
-      }
-
+    val fixedMessage = CONTENT_FORMATTERS.fold(message) { acc, formatter -> formatter(acc) }
     return "* {{${type.name.lowercase()}}} $fixedMessage"
   }
 
-  companion object {
+  private companion object {
+
+    /**
+     * Formats GitHub issues link.
+     *
+     * Using the regex [LINK_REGEX], this function formats references to GitHub issues or PRs into
+     * actual links.
+     */
+    private fun githubIssueLinkFormatter(message: String): String {
+      val prefix = getLinkPrefix(LINK_PREFIX_REGEX, message)
+      return LINK_REGEX.replace(message) {
+        val id = it.firstCapturedValue
+        "${prefix}(GitHub [#$id](//github.com/firebase/firebase-android-sdk/issues/$id){: .external})"
+      }
+    }
+
+    /**
+     * Formats lists of GitHub issue links.
+     *
+     * Using the regex [LINK_REGEX], this function formats references to GitHub issues or PRs into
+     * actual links.
+     */
+    private fun githubMultiIssueLinkFormatter(message: String): String {
+      val prefix = getLinkPrefix(MULTI_LINK_PREFIX_REGEX, message)
+      return MULTI_LINK_REGEX.replace(message) {
+        val result =
+          it.firstCapturedValue
+            .split(",")
+            .map { it.trim().removePrefix("#") }
+            .joinToString(",\n") { id ->
+              "  GitHub [#$id](//github.com/firebase/firebase-android-sdk/issues/$id){: .external}"
+            }
+
+        "${prefix}(${result.trim()})"
+      }
+    }
+
+    /**
+     * Determines the prefix for a link based on its position in the text.
+     *
+     * If the link is preceded by non-blank content on the same line, it returns a newline with
+     * indentation to ensure the link appears on a new line.
+     */
+    private fun getLinkPrefix(linkPrefixRegex: Regex, text: String): String {
+      val linkPrefixMatch = linkPrefixRegex.find(text) ?: return text
+      return if (linkPrefixMatch.firstCapturedValue.isNotBlank()) "\n  " else ""
+    }
+
+    /**
+     * Formats product name references.
+     *
+     * Using the regex [PRODUCT_REF_REGEX], this function formats product names as variables, i.e. a
+     * string between 2 set of brackets.
+     *
+     * See the regex to know more about the assumptions made about the content.
+     */
+    private fun productNameFormatter(message: String): String =
+      PRODUCT_REF_REGEX.replace(message) { "{{${it.firstCapturedValue}}}${it.groupValues[2]}" }
+
+    /**
+     * List of functions to apply to the content.
+     *
+     * The functions should take the content as modified by the previous function, apply it's own
+     * customization, and then return the value that will be passed to the next formatter, or, if
+     * there are no more, used as the actual content.
+     */
+    private val CONTENT_FORMATTERS: List<(String) -> String> =
+      listOf(::githubIssueLinkFormatter, ::githubMultiIssueLinkFormatter, ::productNameFormatter)
+
     /**
      * Regex for GitHub issue links in change messages.
      *
@@ -191,8 +255,58 @@ abstract class MakeReleaseNotesTask : DefaultTask() {
      */
     private val LINK_REGEX =
       Regex(
-        "(?:GitHub )?(?:\\[|\\()#(\\d+)(?:\\]|\\))(?:\\(.+?\\))?(?:\\{:\\s*\\.external\\})?",
+        "\\s*(?:GitHub )?(?:\\[|\\()#(\\d+)(?:\\]|\\))(?:\\(.+?\\))?(?:\\{:\\s*\\.external\\})?",
         RegexOption.MULTILINE,
       )
+
+    /**
+     * Regex used to identify the text preceding a single GitHub link on the same line. This helps
+     * determine if the link should be moved to a new line with indentation.
+     */
+    private val LINK_PREFIX_REGEX = Regex("(^.*?)" + LINK_REGEX.pattern, RegexOption.MULTILINE)
+
+    /**
+     * Regex for multiple GitHub issue links in change messages.
+     *
+     * Matches a comma-separated list of issue numbers within brackets or parentheses. For example:
+     * `(#123, #456)` or `[#123, #456, #789]`
+     *
+     * Will find the following groups:
+     * ```kotlin
+     * [
+     *   "#123, #456"
+     * ]
+     * ```
+     *
+     * But will *match* the following:
+     * ```kotlin
+     * "(#123, #456)"
+     * ```
+     *
+     * @see [Change.toReleaseNote]
+     */
+    private val MULTI_LINK_REGEX =
+      Regex("\\s*(?:\\[|\\()(#\\d+(\\s*,\\s*#\\d+)+)(?:\\]|\\))", RegexOption.MULTILINE)
+
+    /**
+     * Regex used to identify the text preceding a list of GitHub links on the same line. This helps
+     * determine if the list should be moved to a new line with indentation.
+     */
+    private val MULTI_LINK_PREFIX_REGEX =
+      Regex("(^.*?)" + MULTI_LINK_REGEX.pattern, RegexOption.MULTILINE)
+
+    /**
+     * Regex for product references in change messages.
+     *
+     * Matches single bracketed product names, for example: `[app-check]`
+     *
+     * The assumption here is that any string between brackets, and not followed by an open
+     * parenthesis, is a product name.
+     *
+     * Groups:
+     * 1. The product name (e.g., `app-check`)
+     * 2. The character following the closing bracket (or an empty string if at the end of the line)
+     */
+    private val PRODUCT_REF_REGEX = Regex("""\[([\w-]+)\]([^(]|$)""", RegexOption.MULTILINE)
   }
 }

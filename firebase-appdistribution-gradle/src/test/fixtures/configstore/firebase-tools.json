@@ -1,0 +1,14 @@
+{
+  "tokens": {
+    "expires_at": 1564683550949,
+    "refresh_token": "fake-refresh-token",
+    "access_token": "fake-access-token",
+    "expires_in": 3600,
+    "scope": "fake-scope-1 fake-scope-2",
+    "token_type": "Bearer",
+    "id_token": "fake-id-token"
+  },
+  "activeProjects": {
+    "undefined": "my-project-123"
+  }
+}

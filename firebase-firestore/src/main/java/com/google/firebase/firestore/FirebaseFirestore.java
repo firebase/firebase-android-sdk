@@ -27,6 +27,7 @@ import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
+import com.google.common.annotations.Beta;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.annotations.PreviewApi;
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider;
@@ -850,10 +851,12 @@ public class FirebaseFirestore {
     return clientProvider.call(call);
   }
 
+  @NonNull
   DatabaseId getDatabaseId() {
     return databaseId;
   }
 
+  @NonNull
   UserDataReader getUserDataReader() {
     return userDataReader;
   }
@@ -880,5 +883,57 @@ public class FirebaseFirestore {
   @Keep
   static void setClientLanguage(@NonNull String languageToken) {
     FirestoreChannel.setClientLanguage(languageToken);
+  }
+
+  /**
+   * Creates a new {@link PipelineSource} to build and execute a data pipeline.
+   *
+   * <p>A pipeline is composed of a sequence of stages. Each stage processes the
+   * output from the previous one, and the final stage's output is the result of the
+   * pipeline's execution.
+   *
+   * <p><b>Example usage:</b>
+   * <pre>{@code
+   * Pipeline pipeline = firestore.pipeline()
+   * .collection("books")
+   * .where(Field("rating").isGreaterThan(4.5))
+   * .sort(Field("rating").descending())
+   * .limit(2);
+   * }</pre>
+   *
+   * <p><b>Note on Execution:</b> The stages are conceptual. The Firestore backend may
+   * optimize execution (e.g., reordering or merging stages) as long as the
+   * final result remains the same.
+   *
+   * <p><b>Important Limitations:</b>
+   * <ul>
+   * <li>Pipelines operate on a <b>request/response basis only</b>.
+   * <li>They do <b>not</b> utilize or update the local SDK cache.
+   * <li>They do <b>not</b> support realtime snapshot listeners.
+   * </ul>
+   *
+   * @return A {@code PipelineSource} to begin defining the pipeline's stages.
+   */
+  @Beta
+  @NonNull
+  public PipelineSource pipeline() {
+    clientProvider.ensureConfigured();
+    return new PipelineSource(this);
+  }
+
+  /**
+   * Build a new RealtimePipeline from this Firestore instance.
+   *
+   * NOTE: RealtimePipeline utilizes the Firestore realtime backend and SDK cache to provide final
+   * results, this is the equivalent to classic Firestore {@link Query}, but with more features
+   * supported. For features that aren't available in {@code RealtimePipeline} or if
+   * the SDK cache access isn't required, use {@code pipeline()} instead.
+   *
+   * @return {@code RealtimePipelineSource} for this Firestore instance.
+   */
+  @NonNull
+  RealtimePipelineSource realtimePipeline() {
+    clientProvider.ensureConfigured();
+    return new RealtimePipelineSource(this);
   }
 }

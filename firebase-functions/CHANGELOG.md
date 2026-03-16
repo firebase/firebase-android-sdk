@@ -1,5 +1,7 @@
 # Unreleased
 
+# 22.1.0
+
 - [changed] Bumped dependency on OkHTTP to version 4.12.0 from version 3.12.13. If your app depends
   on OkHTTP version 3.x the change is both binary- and Java source-compatible, with a few small
   exceptions. See https://square.github.io/okhttp/changelogs/upgrading_to_okhttp_4/ for more
@@ -261,3 +263,4 @@ Kotlin extensions library has no additional updates.
   the default "us-central1".
 - [feature] New `useFunctionsEmulator` method allows testing against a local instance of the
   [Cloud Functions Emulator](https://firebase.google.com/docs/functions/local-emulator).
+

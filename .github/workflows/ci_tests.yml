@@ -26,7 +26,9 @@ jobs:
         with:
           java-version: 17
           distribution: temurin
-          cache: gradle
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
 
       - id: changed-modules
         run: |
@@ -55,12 +57,25 @@ jobs:
         with:
           java-version: 17
           distribution: temurin
-          cache: gradle
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
 
       - name: Clone ai mock responses
-        if: matrix.module == ':firebase-ai'
-        run: firebase-ai/update_responses.sh
-
+        if: matrix.module == ':ai-logic:firebase-ai'
+        run: ai-logic/firebase-ai/update_responses.sh
+      - name: Add local.properties (for FAD gradle tests)
+        env:
+          INTEG_TESTS_FAD_LOCAL_PROPERTIES: ${{ secrets.INTEG_TESTS_FAD_LOCAL_PROPERTIES }}
+        if: env.INTEG_TESTS_FAD_LOCAL_PROPERTIES != '' && env.INTEG_TESTS_FAD_LOCAL_PROPERTIES != 'null'
+        run: |
+          echo $INTEG_TESTS_FAD_LOCAL_PROPERTIES | base64 -d > local.properties
+      - name: Add FAD service-credentials.json
+        env:
+          INTEG_TESTS_FAD_SERVICE_CREDENTIALS: ${{ secrets.INTEG_TESTS_FAD_SERVICE_CREDENTIALS }}
+        if: env.INTEG_TESTS_FAD_SERVICE_CREDENTIALS != '' && env.INTEG_TESTS_FAD_SERVICE_CREDENTIALS != 'null'
+        run: |
+          echo $INTEG_TESTS_FAD_SERVICE_CREDENTIALS | base64 -d > firebase-appdistribution-gradle/service-credentials.json
       - name: Add google-services.json
         env:
           INTEG_TESTS_GOOGLE_SERVICES: ${{ secrets.INTEG_TESTS_GOOGLE_SERVICES }}
@@ -71,13 +86,16 @@ jobs:
       - name: ${{ matrix.module }} Unit Tests
         env:
           FIREBASE_CI: 1
+          MATRIX_MODULE: ${{matrix.module}}
         run: |
-          ./gradlew ${{matrix.module}}:check withErrorProne
+          ./gradlew ${MATRIX_MODULE}:check withErrorProne
       - name: Compute upload file name
         if: always()
         run: |
-          MODULE=${{matrix.module}}
+          MODULE=${MATRIX_MODULE}
           echo "ARTIFACT_NAME=${MODULE//:/_}" >> $GITHUB_ENV
+        env:
+          MATRIX_MODULE: ${{matrix.module}}
       - name: Upload Test Results
         uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
         if: always()
@@ -125,7 +143,9 @@ jobs:
         with:
           java-version: 17
           distribution: temurin
-          cache: gradle
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
 
       - name: Add google-services.json
         env:
@@ -143,8 +163,9 @@ jobs:
           FTL_RESULTS_BUCKET: android-ci
           FTL_RESULTS_DIR: ${{ github.event_name == 'pull_request' && format('pr-logs/pull/{0}/{1}/{2}/{3}_{4}/artifacts/', github.repository, github.event.pull_request.number, github.job, github.run_id, github.run_attempt) || format('logs/{0}/{1}_{2}/artifacts/', github.workflow, github.run_id, github.run_attempt)}}
           FIREBASE_APP_CHECK_DEBUG_SECRET: ${{ secrets.FIREBASE_APP_CHECK_DEBUG_SECRET }}
+          MATRIX_MODULE: ${{matrix.module}}
         run: |
-          ./gradlew ${{matrix.module}}:deviceCheck withErrorProne -PtargetBackend="prod"
+          ./gradlew ${MATRIX_MODULE}:deviceCheck withErrorProne -PtargetBackend="prod"
 
   publish-test-results:
     name: "Publish Tests Results"

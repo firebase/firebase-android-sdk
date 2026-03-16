@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.model;
 
+import androidx.annotation.NonNull;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -36,7 +37,7 @@ public final class ResourcePath extends BasePath<ResourcePath> {
     return segments.isEmpty() ? ResourcePath.EMPTY : new ResourcePath(segments);
   }
 
-  public static ResourcePath fromString(String path) {
+  public static ResourcePath fromString(@NonNull String path) {
     // NOTE: The client is ignorant of any path segments containing escape
     // sequences (for example, __id123__) and just passes them through raw (they exist
     // for legacy reasons and should not be used frequently).

@@ -1,0 +1,21 @@
+{
+  "name": "projects/123456789123/apps/1:123456789123:android:abc1234/releases/release-id/testCases/test-case-id",
+  "deviceExecutions":  [
+    {
+      "crawlGraphUri": "http://example.com/crawlGraphUri",
+      "device": {
+        "model": "pixel",
+        "locale": "US"
+      },
+      "resultsStoragePath": "http://example.com/resultsStoragePath",
+      "roboStats": {
+        "actionsPerformed": 25,
+        "distinctVisitedScreens": 8
+      },
+      "state": "PASSED"
+    }
+  ],
+  "loginCredential": {
+    "google": true
+  }
+}
