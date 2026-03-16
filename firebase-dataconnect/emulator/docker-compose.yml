@@ -1,6 +1,7 @@
 services:
   postgres:
-    image: docker.io/library/postgres:15
+    # https://hub.docker.com/layers/library/postgres/15/images/sha256-087b60e4987f313e00220957009a1ad57c76b26ed6d6919e5d9b047d5048a757
+    image: docker.io/library/postgres@sha256:f30e3de0ac9cc938dac627ef2231099867c694b5f949fadb924c8c977428c399
     environment:
       - POSTGRES_HOST_AUTH_METHOD=trust
     ports:
@@ -9,7 +10,8 @@ services:
       - dataconnect_pgdata:/var/lib/postgresql/data
 
   pgadmin:
-    image: docker.io/dpage/pgadmin4
+    # https://hub.docker.com/layers/dpage/pgadmin4/9.13.0/images/sha256-30caa6f4dac04d25eaa99a920c3095eea5f1d96d919a93994182e57442b4900a
+    image: docker.io/dpage/pgadmin4@sha256:d243a4bcc02d2ee6b447c601692813531d2d0fbca18b583d9f7f9658da835d81
     environment:
       - PGADMIN_DEFAULT_EMAIL=admin@google.com
       - PGADMIN_DEFAULT_PASSWORD=password
