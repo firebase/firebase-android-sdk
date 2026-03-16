@@ -46,7 +46,7 @@ Follow these steps sequentially:
 
 10. **Push Changes to GitHub:**
    Push the changes up to the remote origin by running this exact command, substituting `Emulator_X_Y_Z` appropriately:
-   `git push -u origin Emulator_X_Y_Z:dconeybe/dataconnect/Emulator_X_Y_Z`
+   `git push -u origin Emulator_X_Y_Z:dataconnect/Emulator_X_Y_Z`
 
 11. **Create GitHub Pull Request:**
    Create a GitHub pull request by running this exact command (substitute the correct version variables):
