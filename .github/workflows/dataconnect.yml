@@ -189,25 +189,33 @@ jobs:
 
           docker compose up -d
 
-          function is_postgres_healthy {
-            docker compose ps --format=json | jq -e 'select(.Service == "postgres") | .Status | contains("healthy")' > /dev/null
-          }
-
           set +xv
 
-          attempt=0
-          while ! is_postgres_healthy ; do
-            attempt=$((attempt + 1))
-            if [[ $attempt == "30" ]] ; then
-              docker compose ps --format=json
-              echo "ERROR: postgres service does not appear to be healthy after $attempt seconds" >&2
+          function print_docker_compose_status {
+            docker compose ps --format=json
+          }
+
+          function print_postgres_status {
+            print_docker_compose_status | jq -e 'select(.Service == "postgres") | .Status'
+          }
+
+          echo "Waiting for postgres service to appear to be healthy..."
+          postgres_health_check_number=0
+          while : ; do
+            postgres_health_check_number=$((postgres_health_check_number + 1))
+            status="$(print_postgres_status)"
+            echo "postgres health check ${postgres_health_check_number} status: $status"
+            if [[ $status =~ "healthy" ]] ; then
+              echo "Postgres server appears to be healthy after $postgres_health_check_number seconds"
+              break
+            elif [[ $postgres_health_check_number == 30 ]] ; then
+              print_docker_compose_status
+              echo "ERROR: postgres service does not appear to be healthy after $postgres_health_check_number seconds" >&2
               exit 1
             fi
-            echo "Waiting for postgres server to be healthy (attempt $attempt)"
+
             sleep 1s
           done
-
-          echo 'Postgres server is now healthy!'
 
       - name: Start Firebase Emulators
         run: |

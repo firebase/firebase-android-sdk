@@ -86,17 +86,37 @@ function parse_args {
     run_command podman compose down -v
     run_command podman compose up -d
 
-    while ! podman compose ps --format=json | jq -e '.[] | select(.Labels["com.docker.compose.service"] == "postgres") | .Status | contains("(healthy)")' > /dev/null ; do
-      echo "Waiting for postgres server to be healthy..."
+    echo "Waiting for postgres service to appear to be healthy..."
+    postgres_health_check_number=0
+    while : ; do
+      postgres_health_check_number=$((postgres_health_check_number + 1))
+      status="$(print_postgres_status)"
+      echo "postgres health check ${postgres_health_check_number} status: $status"
+      if [[ $status =~ "healthy" ]] ; then
+        echo "Postgres server appears to be healthy after $postgres_health_check_number seconds"
+        break
+      elif [[ $postgres_health_check_number == 30 ]] ; then
+        print_podman_compose_status
+        echo "ERROR: postgres service does not appear to be healthy after $postgres_health_check_number seconds" >&2
+        exit 1
+      fi
+
       sleep 1s
     done
-    echo 'Postgres server is now healthy!'
   fi
 }
 
 function run_command {
   log "Running command: $*"
   "$@"
+}
+
+function print_podman_compose_status {
+  podman compose ps --format=json
+}
+
+function print_postgres_status {
+  print_podman_compose_status | jq -e '.[] | select(.Labels["com.docker.compose.service"] == "postgres") | .Status'
 }
 
 function print_help {
