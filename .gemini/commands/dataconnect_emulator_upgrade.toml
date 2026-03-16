@@ -1,0 +1,56 @@
+description = "Automates updating the firebase-dataconnect emulator and firebase-tools version in CI, including creating a branch, committing the updates, pushing to GitHub, and creating a pull request."
+
+prompt = """
+Update the `firebase-dataconnect` module's dataconnect emulator using during builds and code generation
+and `firebase-tools` dependencies used in github actions to their latest versions.
+
+Follow these steps sequentially:
+
+1. **Backup Versions JSON:**
+   Copy `./firebase-dataconnect/gradleplugin/plugin/src/main/resources/com/google/firebase/dataconnect/gradle/plugin/DataConnectExecutableVersions.json` to `./firebase-dataconnect/gradleplugin/plugin/src/main/resources/com/google/firebase/dataconnect/gradle/plugin/DataConnectExecutableVersions.old.json`. 
+
+2. **Update Emulator Versions JSON:**
+   Run the update script to update the versions JSON file `DataConnectExecutableVersions.json`. Use `run_shell_command` to execute: `./firebase-dataconnect/scripts/update_versions_json.sh`
+
+3. **Determine Changed Default Emulator Version:**
+   Determine if the `defaultVersion` in `DataConnectExecutableVersions.json` changed.
+   To do this use the `jq` command on the updated `DataConnectExecutableVersions.json` and its backup `DataConnectExecutableVersions.old.json`.
+   Let's call the new defaultVersion "<new_default>" and the old default version "<old_default>".
+   If the default version did not change, then you are done: delete the backup `DataConnectExecutableVersions.old.json`, report to the user that the default version did not change, and abort.
+
+4. **Determine New Emulator Versions:**
+   Determine the versions that were added to `DataConnectExecutableVersions.json`.
+   To list the versions from a json file, run this command:`jq -r '.versions[].version' <path to json file> | sort -u`.
+   List the versions in the updated `DataConnectExecutableVersions.json` and its backup `DataConnectExecutableVersions.old.json`.
+   Let's call the list of new versions "<added_versions_list>".
+   Delete the backup `DataConnectExecutableVersions.old.json`.
+
+5. **Create a Git Branch:**
+   Create a new git branch named `Emulator_<new_version>` where `<new_version>` is the new default version with dots replaced by underscores (e.g., `Emulator_3_2_1`).
+
+6. **Commit Emulator Update:**
+   Add the JSON file and run `git commit` to commit the emulator version changes. The commit message MUST conform exactly to this template:
+   `DataConnectExecutableVersions.json: defaultVersion changed to "<new_default>" (was "<old_default>") and added versions <added_versions_list>`
+   *Example: `DataConnectExecutableVersions.json: defaultVersion changed to "3.2.1" (was "3.1.3") and added versions 3.1.4, 3.2.0, and 3.2.1`*
+
+7. **Fetch Latest firebase-tools Version:**
+   Determine the latest release version number of the `firebase-tools` repository using the `gh` CLI or `get_latest_release` for `Firebase/firebase-tools`. Do not include the 'v' prefix in the version number (e.g., use `15.8.0` instead of `v15.8.0`).
+
+8. **Update GitHub Actions YAML Files:**
+   Edit `.github/workflows/dataconnect.yml` and `.github/workflows/dataconnect_demo_app.yml`. Change the default `FDC_FIREBASE_TOOLS_VERSION` value to the latest release version number determined in the previous step. Note what the previous version was.
+
+9. **Commit firebase-tools Update:**
+   Add the YAML files and git commit the changes using a commit message that conforms exactly to this template:
+   `dataconnect.yml/dataconnect_demo_app.yml: updated firebase-tools to <new_tools_version> (was <old_tools_version>)`
+   *Example: `dataconnect.yml/dataconnect_demo_app.yml: updated firebase-tools to 15.8.0 (was 15.6.0)`*
+
+10. **Push Changes to GitHub:**
+   Push the changes up to the remote origin by running this exact command, substituting `Emulator_X_Y_Z` appropriately:
+   `git push -u origin Emulator_X_Y_Z:dconeybe/dataconnect/Emulator_X_Y_Z`
+
+11. **Create GitHub Pull Request:**
+   Create a GitHub pull request by running this exact command (substitute the correct version variables):
+   `gh pr create --body "" --title "dataconnect: ci: upgrade data connect emulator to <new_default> (was <old_default>) and firebase-tools to <new_tools_version> (was <old_tools_version>)" --assignee '@me' --label "api: dataconnect" --label "main-merge-ack" --label "no-changelog"`
+
+Follow the steps systematically and do not summarize output unprompted. Wait for completion at each step where needed before continuing. If any errors occur then abort. Delete the backup JSON file when this task is completed, either successfully or unsuccessfully.
+"""
