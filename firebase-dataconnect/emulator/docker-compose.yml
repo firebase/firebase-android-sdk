@@ -13,8 +13,8 @@ services:
     # https://hub.docker.com/layers/dpage/pgadmin4/9.13.0/images/sha256-30caa6f4dac04d25eaa99a920c3095eea5f1d96d919a93994182e57442b4900a
     image: docker.io/dpage/pgadmin4@sha256:d243a4bcc02d2ee6b447c601692813531d2d0fbca18b583d9f7f9658da835d81
     environment:
-      - PGADMIN_DEFAULT_EMAIL=admin@google.com
-      - PGADMIN_DEFAULT_PASSWORD=password
+      - PGADMIN_DEFAULT_EMAIL=${PGADMIN_DEFAULT_EMAIL:-admin@google.com}
+      - PGADMIN_DEFAULT_PASSWORD=${PGADMIN_DEFAULT_PASSWORD:-hyh5tttjj5}
     ports:
       - "8888:80"
     volumes:
