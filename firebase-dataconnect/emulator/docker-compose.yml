@@ -9,6 +9,12 @@ services:
       - "5432:5432"
     volumes:
       - dataconnect_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready"]
+      start_period: 10s
+      interval: 1s
+      timeout: 5s
+      retries: 5
 
   pgadmin:
     # https://hub.docker.com/layers/dpage/pgadmin4/9.13.0/images/sha256-30caa6f4dac04d25eaa99a920c3095eea5f1d96d919a93994182e57442b4900a
