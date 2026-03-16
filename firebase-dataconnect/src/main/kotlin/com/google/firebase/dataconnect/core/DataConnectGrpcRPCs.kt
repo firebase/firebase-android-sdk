@@ -41,6 +41,8 @@ import com.google.protobuf.Duration as DurationProto
 import com.google.protobuf.Struct
 import google.firebase.dataconnect.proto.ConnectorServiceGrpc
 import google.firebase.dataconnect.proto.ConnectorServiceGrpcKt
+import google.firebase.dataconnect.proto.ConnectorStreamServiceGrpc
+import google.firebase.dataconnect.proto.ConnectorStreamServiceGrpcKt
 import google.firebase.dataconnect.proto.EmulatorInfo
 import google.firebase.dataconnect.proto.EmulatorIssuesResponse
 import google.firebase.dataconnect.proto.EmulatorServiceGrpc
@@ -49,9 +51,13 @@ import google.firebase.dataconnect.proto.ExecuteMutationRequest
 import google.firebase.dataconnect.proto.ExecuteMutationResponse
 import google.firebase.dataconnect.proto.ExecuteQueryRequest
 import google.firebase.dataconnect.proto.ExecuteQueryResponse
+import google.firebase.dataconnect.proto.ExecuteRequest
 import google.firebase.dataconnect.proto.GetEmulatorInfoRequest
+import google.firebase.dataconnect.proto.GraphqlError
 import google.firebase.dataconnect.proto.GraphqlResponseExtensions.DataConnectProperties
 import google.firebase.dataconnect.proto.StreamEmulatorIssuesRequest
+import google.firebase.dataconnect.proto.StreamRequest
+import google.firebase.dataconnect.proto.StreamResponse
 import io.grpc.ManagedChannelBuilder
 import io.grpc.Metadata
 import io.grpc.MethodDescriptor
@@ -59,14 +65,31 @@ import io.grpc.android.AndroidChannelBuilder
 import java.io.File
 import java.lang.System.currentTimeMillis
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.time.Duration
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asExecutor
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.shareIn
+import kotlinx.coroutines.flow.transformWhile
+import kotlinx.coroutines.job
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -92,6 +115,17 @@ internal class DataConnectGrpcRPCs(
     }
   val instanceId: String
     get() = logger.nameWithId
+
+  private val connectCoroutineScope =
+    CoroutineScope(
+      SupervisorJob() +
+        CoroutineName("$instanceId-connect") +
+        CoroutineExceptionHandler { context, throwable ->
+          logger.warn(throwable) {
+            "uncaught exception from a coroutine named ${context[CoroutineName]} [nqn32z7x79]"
+          }
+        }
+    )
 
   private val mutex = Mutex()
   private var closed = false
@@ -177,11 +211,152 @@ internal class DataConnectGrpcRPCs(
       ConnectorServiceGrpcKt.ConnectorServiceCoroutineStub(lazyGrpcChannel.getLocked())
     }
 
+  private val lazyStreamGrpcStub =
+    SuspendingLazy(mutex) {
+      check(!closed) { "DataConnectGrpcRPCs ${logger.nameWithId} instance has been closed" }
+      ConnectorStreamServiceGrpcKt.ConnectorStreamServiceCoroutineStub(lazyGrpcChannel.getLocked())
+    }
+
   private val lazyEmulatorGrpcStub =
     SuspendingLazy(mutex) {
       check(!closed) { "DataConnectGrpcRPCs ${logger.nameWithId} instance has been closed" }
       EmulatorServiceGrpcKt.EmulatorServiceCoroutineStub(lazyGrpcChannel.getLocked())
     }
+
+  /**
+   * An active bidirectional stream connection to the Data Connect service.
+   *
+   * This class encapsulates the communication channels used to multiplex multiple query
+   * subscriptions over a single gRPC stream.
+   *
+   * @property outgoingRequests Sends requests to the server, such as subscription initiations and
+   * cancellations.
+   * @property incomingResponses Emits responses received from the server, which must be later
+   * dispatched to individual subscribers based on their request IDs.
+   */
+  class DataConnectStream(
+    private val outgoingRequests: SendChannel<StreamRequest>,
+    private val incomingResponses: SharedFlow<StreamResponse>
+  ) {
+
+    fun subscribe(requestId: String, operationName: String, variables: Struct?): Flow<Response> =
+      incomingResponses
+        .filter { it.requestId == requestId }
+        .onStart { sendSubscribeRequest(requestId, operationName, variables) }
+        .transformWhile {
+          val response = it.toDataConnectStreamResponse()
+          if (response !== null) {
+            emit(response)
+          }
+          !it.cancelled
+        }
+
+    private suspend fun sendSubscribeRequest(
+      requestId: String,
+      operationName: String,
+      variables: Struct?
+    ) {
+      val streamRequest =
+        StreamRequest.newBuilder()
+          .apply {
+            setRequestId(requestId)
+            setSubscribe(
+              ExecuteRequest.newBuilder().apply {
+                setOperationName(operationName)
+                if (variables !== null) {
+                  setVariables(variables)
+                }
+              }
+            )
+          }
+          .build()
+
+      outgoingRequests.send(streamRequest)
+    }
+
+    data class Response(
+      val data: Struct?,
+      val errors: List<GraphqlError>,
+      val extensionProperties: List<DataConnectProperties>,
+    )
+  }
+
+  suspend fun connect(
+    streamId: String,
+    callerSdkType: FirebaseDataConnect.CallerSdkType,
+    name: String,
+  ): DataConnectStream {
+    val metadata = grpcMetadata.get(streamId, callerSdkType)
+    val kotlinMethodName = "connect()"
+    val initRequest = StreamRequest.newBuilder().setName(name).setRequestId("init").build()
+
+    fun logOutgoingRequest(request: StreamRequest) {
+      if (request === initRequest) {
+        logger.logGrpcSending(
+          requestId = streamId,
+          kotlinMethodName = kotlinMethodName,
+          grpcMethod = ConnectorStreamServiceGrpc.getConnectMethod(),
+          metadata = metadata.metadata,
+          request = initRequest.toStructProto(),
+          requestTypeName = "StreamRequest",
+        )
+      } else {
+        logger.logGrpcSendingStreaming(
+          streamId = streamId,
+          requestId = request.requestId,
+          kotlinMethodName = kotlinMethodName,
+          request = request,
+        )
+      }
+    }
+
+    fun logIncomingResponse(response: StreamResponse) {
+      logger.logGrpcReceivedStreaming(
+        streamId = streamId,
+        requestId = response.requestId,
+        kotlinMethodName = kotlinMethodName,
+        response = response,
+      )
+    }
+
+    fun logCompletion(exception: Throwable?) {
+      if (exception === null || exception is CancellationException) {
+        logger.logGrpcCompleted(requestId = streamId, kotlinMethodName = kotlinMethodName)
+      } else {
+        logger.logGrpcFailed(
+          requestId = streamId,
+          kotlinMethodName = kotlinMethodName,
+          throwable = exception,
+        )
+      }
+    }
+
+    val requestChannel = Channel<StreamRequest>(Channel.UNLIMITED)
+    val outgoingRequests = run {
+      val collected = AtomicBoolean(false)
+      flow {
+        check(collected.compareAndSet(false, true)) {
+          "internal error h37dft6hbp: outgoingRequests may only be collected once " +
+            "(streamId=$streamId)"
+        }
+        emit(initRequest)
+        emitAll(requestChannel.receiveAsFlow())
+      }
+    }
+
+    val incomingResponses =
+      lazyStreamGrpcStub
+        .get()
+        .connect(outgoingRequests.onEach { logOutgoingRequest(it) }, metadata.metadata)
+        .onEach { logIncomingResponse(it) }
+        .onCompletion { logCompletion(it) }
+        .shareIn(
+          scope = connectCoroutineScope,
+          started = SharingStarted.Lazily,
+        )
+
+    return DataConnectStream(requestChannel, incomingResponses)
+  }
 
   suspend fun executeMutation(
     requestId: String,
@@ -440,6 +615,11 @@ internal class DataConnectGrpcRPCs(
     logger.debug { "close()" }
     mutex.withLock { closed = true }
 
+    val connectCoroutineScopeCancelResult = runCatching {
+      connectCoroutineScope.cancel("close() called")
+      connectCoroutineScope.coroutineContext.job.join()
+    }
+
     val grpcChannel = lazyGrpcChannel.initializedValueOrNull
     val cacheDb = lazyCacheDb.initializedValueOrNull?.ref
 
@@ -462,6 +642,7 @@ internal class DataConnectGrpcRPCs(
     // Bundle together any exceptions that were thrown.
     val exceptions =
       listOf(
+          connectCoroutineScopeCancelResult,
           grpcChannelShutdownResult,
           cacheDbCloseResult,
         )
@@ -495,6 +676,26 @@ internal class DataConnectGrpcRPCs(
         }
       }
       "$kotlinMethodName [rid=$requestId] sending: ${struct.toCompactString(keySortSelector)}"
+    }
+
+    fun Logger.logGrpcSendingStreaming(
+      streamId: String,
+      requestId: String,
+      kotlinMethodName: String,
+      request: StreamRequest,
+    ) = debug {
+      "$kotlinMethodName [sid=$streamId, rid=$requestId] sending StreamRequest: " +
+        request.toCompactString()
+    }
+
+    fun Logger.logGrpcReceivedStreaming(
+      streamId: String,
+      requestId: String,
+      kotlinMethodName: String,
+      response: StreamResponse,
+    ) = debug {
+      "$kotlinMethodName [sid=$streamId, rid=$requestId] received StreamResponse: " +
+        response.toCompactString()
     }
 
     fun Logger.logGrpcReturningFromCache(
@@ -600,4 +801,28 @@ private fun List<DataConnectProperties>.getEntityIdForPathFunction(): GetEntityI
   }
 
   return ::getEntityIdForPathFunction
+}
+
+private fun StreamResponse.toDataConnectStreamResponse():
+  DataConnectGrpcRPCs.DataConnectStream.Response? {
+  val data = if (hasData()) data.structValue else null
+  val errors = if (errorsCount > 0) errorsList else emptyList()
+
+  val extensionProperties =
+    if (hasExtensions()) {
+      val extensions = extensions
+      if (extensions.dataConnectCount > 0) {
+        extensions.dataConnectList
+      } else {
+        emptyList()
+      }
+    } else {
+      emptyList()
+    }
+
+  return if (data !== null || errors.isNotEmpty() || extensionProperties.isNotEmpty()) {
+    DataConnectGrpcRPCs.DataConnectStream.Response(data, errors, extensionProperties)
+  } else {
+    null
+  }
 }

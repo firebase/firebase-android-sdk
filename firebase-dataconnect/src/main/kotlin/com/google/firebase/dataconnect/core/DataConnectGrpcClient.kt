@@ -16,6 +16,7 @@
 
 package com.google.firebase.dataconnect.core
 
+import androidx.annotation.VisibleForTesting
 import com.google.firebase.dataconnect.*
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.DataSource
@@ -52,6 +53,10 @@ internal class DataConnectGrpcClient(
       "locations/${connector.location}" +
       "/services/${connector.serviceId}" +
       "/connectors/${connector.connector}"
+
+  @VisibleForTesting
+  internal val requestNameForTesting: String
+    get() = requestName
 
   data class OperationResult(
     val data: Struct?,

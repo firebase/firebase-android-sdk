@@ -17,6 +17,7 @@
 package com.google.firebase.dataconnect.core
 
 import android.content.Context
+import androidx.annotation.VisibleForTesting
 import com.google.firebase.FirebaseApp
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
@@ -193,6 +194,14 @@ internal class FirebaseDataConnectImpl(
       State.Closed -> throw IllegalStateException("FirebaseDataConnect instance has been closed")
     }
   }
+
+  @VisibleForTesting
+  internal val dataConnectGrpcRPCsForTesting: DataConnectGrpcRPCs
+    get() = (state.value as State.Initialized).grpcRPCs
+
+  @VisibleForTesting
+  internal val dataConnectGrpcClientForTesting: DataConnectGrpcClient
+    get() = (state.value as State.Initialized).grpcClient
 
   private data class DataConnectBackendInfo(
     val host: String,
