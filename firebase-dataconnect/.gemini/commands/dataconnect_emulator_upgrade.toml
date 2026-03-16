@@ -16,14 +16,13 @@ Follow these steps sequentially:
    Determine if the `defaultVersion` in `DataConnectExecutableVersions.json` changed.
    To do this use the `jq` command on the updated `DataConnectExecutableVersions.json` and its backup `DataConnectExecutableVersions.old.json`.
    Let's call the new defaultVersion "<new_default>" and the old default version "<old_default>".
-   If the default version did not change, then you are done: delete the backup `DataConnectExecutableVersions.old.json`, report to the user that the default version did not change, and abort.
+   If the default version did not change, then you are done: report to the user that the default version did not change, and abort.
 
 4. **Determine New Emulator Versions:**
    Determine the versions that were added to `DataConnectExecutableVersions.json`.
    To list the versions from a json file, run this command:`jq -r '.versions[].version' <path to json file> | sort -u`.
    List the versions in the updated `DataConnectExecutableVersions.json` and its backup `DataConnectExecutableVersions.old.json`.
    Let's call the list of new versions "<added_versions_list>".
-   Delete the backup `DataConnectExecutableVersions.old.json`.
 
 5. **Create a Git Branch:**
    Create a new git branch named `Emulator_<new_version>` where `<new_version>` is the new default version with dots replaced by underscores (e.g., `Emulator_3_2_1`).
@@ -52,5 +51,5 @@ Follow these steps sequentially:
    Create a GitHub pull request by running this exact command (substitute the correct version variables):
    `gh pr create --body "" --title "dataconnect: ci: upgrade data connect emulator to <new_default> (was <old_default>) and firebase-tools to <new_tools_version> (was <old_tools_version>)" --assignee '@me' --label "api: dataconnect" --label "main-merge-ack" --label "no-changelog"`
 
-Follow the steps systematically and do not summarize output unprompted. Wait for completion at each step where needed before continuing. If any errors occur then abort. Delete the backup JSON file when this task is completed, either successfully or unsuccessfully.
+Follow the steps systematically and do not summarize output unprompted. Wait for completion at each step where needed before continuing. If any errors occur then abort. Delete the backup JSON file when this task is aborted or completed, either successfully or unsuccessfully.
 """
