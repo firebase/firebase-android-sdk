@@ -1,5 +1,7 @@
 # Unreleased
 
+- [changed] Bumped internal dependencies.
+
 # 22.1.0
 
 - [changed] Bumped dependency on OkHTTP to version 4.12.0 from version 3.12.13. If your app depends
