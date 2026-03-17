@@ -37,7 +37,12 @@ class AIModels {
       if (app == null) {
         setup()
       }
-      return listOf(vertexAIFlashModel, vertexAIFlashLiteModel, googleAIFlashModel, googleAIFlashLiteModel)
+      return listOf(
+        vertexAIFlashModel,
+        vertexAIFlashLiteModel,
+        googleAIFlashModel,
+        googleAIFlashLiteModel
+      )
     }
 
     fun app(): FirebaseApp {
