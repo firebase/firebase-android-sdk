@@ -114,6 +114,9 @@ dependencies {
   testImplementation(libs.mockito.core)
   testImplementation(libs.mockk)
 
+  androidTestImplementation(libs.kotest.assertions.core)
+  androidTestImplementation(libs.kotest.assertions)
+  androidTestImplementation(libs.kotest.assertions.json)
   androidTestImplementation(libs.androidx.espresso.core)
   androidTestImplementation(libs.androidx.test.junit)
   androidTestImplementation(libs.androidx.test.runner)

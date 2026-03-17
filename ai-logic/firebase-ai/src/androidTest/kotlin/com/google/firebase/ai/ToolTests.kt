@@ -25,6 +25,12 @@ import com.google.firebase.ai.type.Schema
 import com.google.firebase.ai.type.Tool
 import com.google.firebase.ai.type.ToolConfig
 import com.google.firebase.ai.type.content
+import io.kotest.assertions.fail
+import io.kotest.matchers.booleans.shouldBeTrue
+import io.kotest.matchers.collections.shouldContainAll
+import io.kotest.matchers.collections.shouldNotContain
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
 import io.ktor.util.toLowerCasePreservingASCIIRules
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.JsonArray
@@ -89,9 +95,9 @@ class ToolTests {
           "I'm imagining a video game character whose name is sam, but I can't think of the rest of their traits, could you make them up for me and figure out the character's favorite color?"
         )
       validator.validateResponse((response))
-      assert(response.functionCalls.size == 1)
+      response.functionCalls.size shouldBe 1
       val call = response.functionCalls[0]
-      assert(call.name == "getFavoriteColor")
+      call.name shouldBe "getFavoriteColor"
       validateSchema(schema, call.args)
     }
   }
@@ -119,9 +125,9 @@ class ToolTests {
     runBlocking {
       val response = model.generateContent("what is amy's favorite color?")
       validator.validateResponse((response))
-      assert(response.functionCalls.size == 1)
+      response.functionCalls.size shouldBe 1
       val call = response.functionCalls[0]
-      assert(call.name == "getFavoriteColor")
+      call.name shouldBe "getFavoriteColor"
       validateSchema(schema, call.args)
     }
   }
@@ -145,13 +151,12 @@ class ToolTests {
       val question = content { text("what's bob's favorite color?") }
       val response = model.generateContent(question)
       validator.validateResponse((response))
-      assert(response.functionCalls.size == 1)
+      response.functionCalls.size shouldBe 1
       for (call in response.functionCalls) {
-        assert(call.name == "getFavoriteColor")
+        call.name shouldBe "getFavoriteColor"
         validateSchema(schema, call.args)
-        assert(
-          call.args["character"]!!.jsonPrimitive.content.toLowerCasePreservingASCIIRules() == "bob"
-        )
+        call.args["character"]!!.jsonPrimitive.content.toLowerCasePreservingASCIIRules() shouldBe
+          "bob"
         model.generateContent(
           question,
           Content(
@@ -204,10 +209,10 @@ class ToolTests {
     runBlocking {
       val question = content { text("what color is john's birth month") }
       val response = model.generateContent(question)
-      assert(response.functionCalls.size == 1)
+      response.functionCalls.size shouldBe 1
       val call = response.functionCalls[0]
-      assert(call.name == "getBirthMonth")
-      assert(call.args["name"]!!.jsonPrimitive.content.toLowerCasePreservingASCIIRules() == "john")
+      call.name shouldBe "getBirthMonth"
+      call.args["name"]!!.jsonPrimitive.content.toLowerCasePreservingASCIIRules() shouldBe "john"
       validateSchema(nameSchema, call.args)
       val response2 =
         model.generateContent(
@@ -231,19 +236,17 @@ class ToolTests {
           )
         )
       validator.validateResponse((response))
-      assert(response2.functionCalls.size == 1)
+      response2.functionCalls.size shouldBe 1
       val call2 = response2.functionCalls[0]
-      assert(call2.name == "getMonthColor")
-      assert(
-        call2.args["month"]!!.jsonPrimitive.content.toLowerCasePreservingASCIIRules() == "june"
-      )
+      call2.name shouldBe "getMonthColor"
+      call2.args["month"]!!.jsonPrimitive.content.toLowerCasePreservingASCIIRules() shouldBe "june"
       validateSchema(monthSchema, call2.args)
     }
   }
 
   fun validateSchema(schema: Map<String, Schema>, args: Map<String, JsonElement>) {
     // Model should not call the function with unspecified arguments
-    assert(schema.keys.containsAll(args.keys))
+    schema.keys.shouldContainAll(args.keys)
     for (entry in schema) {
       validateSchema(entry.value, args.get(entry.key))
     }
@@ -252,40 +255,40 @@ class ToolTests {
   /** Simple schema validation. Not comprehensive, but should detect notable inaccuracy. */
   fun validateSchema(schema: Schema, json: JsonElement?) {
     if (json == null) {
-      assert(schema.nullable == true)
+      schema.nullable shouldBe true
       return
     }
     when (json) {
       is JsonNull -> {
-        assert(schema.nullable == true)
+        schema.nullable shouldBe true
       }
       is JsonPrimitive -> {
         if (schema.type == "INTEGER") {
-          assert(json.intOrNull != null)
+          json.intOrNull.shouldNotBeNull()
         } else if (schema.type == "NUMBER") {
-          assert(json.doubleOrNull != null)
+          json.doubleOrNull.shouldNotBeNull()
         } else if (schema.type == "BOOLEAN") {
-          assert(json.booleanOrNull != null)
+          json.booleanOrNull.shouldNotBeNull()
         } else if (schema.type == "STRING") {
-          assert(json.isString)
+          json.isString.shouldBeTrue()
         } else {
-          assert(false)
+          fail("Unexpected schema type: ${schema.type}")
         }
       }
       is JsonObject -> {
-        assert(schema.type == "OBJECT")
+        schema.type shouldBe "OBJECT"
         val required = schema.required ?: listOf()
         val obj = json.jsonObject
         for (entry in schema.properties!!) {
           if (obj.containsKey(entry.key)) {
             validateSchema(entry.value, obj.get(entry.key))
           } else {
-            assert(!required.contains(entry.key))
+            required shouldNotContain entry.key
           }
         }
       }
       is JsonArray -> {
-        assert(schema.type == "ARRAY")
+        schema.type shouldBe "ARRAY"
         for (e in json.jsonArray) {
           validateSchema(schema.items!!, e)
         }

@@ -16,13 +16,12 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(dirname "$0")"
-readonly SCRIPT_DIR
 readonly SELF_EXECUTABLE="$0"
 readonly LOG_PREFIX="[$0] "
 readonly DEFAULT_POSTGRESQL_STRING='postgresql://postgres:postgres@localhost:5432?sslmode=disable'
 
 function main {
+  cd "$(dirname "$0")"
   parse_args "$@"
   log "FIREBASE_DATACONNECT_POSTGRESQL_STRING=${FIREBASE_DATACONNECT_POSTGRESQL_STRING}"
   log "DATACONNECT_EMULATOR_BINARY_PATH=${DATACONNECT_EMULATOR_BINARY_PATH}"
@@ -68,8 +67,8 @@ function parse_args {
   if [[ ${emulator_binary} != "gradle" ]] ; then
     export DATACONNECT_EMULATOR_BINARY_PATH="${emulator_binary}"
   else
-    run_command "${SCRIPT_DIR}/../../gradlew" -p "${SCRIPT_DIR}/../.." --configure-on-demand :firebase-dataconnect:connectors:downloadDebugDataConnectExecutable
-    local gradle_emulator_binaries=("${SCRIPT_DIR}"/../connectors/build/intermediates/dataconnect/debug/executable/*)
+    run_command "../../gradlew" -p ../.. --configure-on-demand :firebase-dataconnect:connectors:downloadDebugDataConnectExecutable
+    local gradle_emulator_binaries=(../connectors/build/intermediates/dataconnect/debug/executable/*)
     if [[ ${#gradle_emulator_binaries[@]} -ne 1 ]]; then
       log_error_and_exit "expected exactly 1 emulator binary from gradle, but got ${#gradle_emulator_binaries[@]}: ${gradle_emulator_binaries[*]}"
     fi
@@ -84,14 +83,41 @@ function parse_args {
   export DATA_CONNECT_PREVIEW="${preview_flags}"
 
   if [[ ${wipe_and_restart_postgres_pod} == "1" ]] ; then
-    run_command "${SCRIPT_DIR}/wipe_postgres_db.sh"
-    run_command "${SCRIPT_DIR}/start_postgres_pod.sh"
+    run_command podman compose down -v
+    run_command podman compose up -d
+
+    echo "Waiting for Postgres service to appear to be healthy..."
+    postgres_health_check_number=0
+    while : ; do
+      postgres_health_check_number=$((postgres_health_check_number + 1))
+      postgres_service_status="$(print_postgres_status)"
+      echo "Postgres service health check ${postgres_health_check_number}: ${postgres_service_status}"
+
+      if [[ ${postgres_service_status} =~ "healthy" ]] ; then
+        echo "Postgres service appears to be healthy after ${postgres_health_check_number} seconds"
+        break
+      elif [[ ${postgres_health_check_number} == 30 ]] ; then
+        print_podman_compose_status
+        echo "ERROR: Postgres service does not appear to be healthy after ${postgres_health_check_number} seconds" >&2
+        exit 1
+      fi
+
+      sleep 1s
+    done
   fi
 }
 
 function run_command {
   log "Running command: $*"
   "$@"
+}
+
+function print_podman_compose_status {
+  podman compose ps --format=json
+}
+
+function print_postgres_status {
+  print_podman_compose_status | jq -e '.[] | select(.Labels["com.docker.compose.service"] == "postgres") | .Status'
 }
 
 function print_help {
@@ -124,8 +150,8 @@ function print_help {
   echo
   echo "  -w"
   echo "    If specified, then a local PostgreSQL container is wiped and restarted"
-  echo "    before launching the emulators. This is accomplished by running the scripts"
-  echo "    ./wipe_postgres_db.sh followed by ./start_postgres_pod.sh."
+  echo "    before launching the emulators. This is accomplished by running:"
+  echo "    podman compose down -v && podman compose up -d"
   echo
   echo "  -h"
   echo "    Print this help screen and exit, as if successful."
