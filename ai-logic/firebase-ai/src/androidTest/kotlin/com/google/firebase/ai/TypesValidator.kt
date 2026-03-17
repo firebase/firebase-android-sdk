@@ -19,15 +19,19 @@ import com.google.firebase.ai.type.Candidate
 import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.GenerateContentResponse
 import com.google.firebase.ai.type.TextPart
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
+import io.kotest.matchers.string.shouldNotBeEmpty
 
 /** Performs structural validation of various API types */
 class TypesValidator {
 
   fun validateResponse(response: GenerateContentResponse) {
     if (response.candidates.isNotEmpty() && hasText(response.candidates[0].content)) {
-      assert(response.text!!.isNotEmpty())
+      response.text.shouldNotBeNull().shouldNotBeEmpty()
     } else if (response.candidates.isNotEmpty()) {
-      assert(!hasText(response.candidates[0].content))
+      hasText(response.candidates[0].content) shouldBe false
     }
     response.candidates.forEach { validateCandidate(it) }
   }
@@ -37,7 +41,7 @@ class TypesValidator {
   }
 
   fun validateContent(content: Content) {
-    assert(content.role != "user")
+    content.role shouldNotBe "user"
   }
 
   fun hasText(content: Content): Boolean {

@@ -53,6 +53,7 @@ internal class LiveQuery(
   nonBlockingCoroutineDispatcher: CoroutineDispatcher,
   private val grpcClient: DataConnectGrpcClient,
   private val registeredDataDeserializerFactory: RegisteredDataDeserializerFactory,
+  private val secureRandom: Random,
   parentLogger: Logger,
 ) : AutoCloseable {
   private val logger =
@@ -173,7 +174,7 @@ internal class LiveQuery(
     callerSdkType: FirebaseDataConnect.CallerSdkType,
     fetchPolicy: FetchPolicy,
   ) {
-    val requestId = "qry" + Random.nextAlphanumericString(length = 10)
+    val requestId = "qry" + secureRandom.nextAlphanumericString(length = 10)
     val sequenceNumber = nextSequenceNumber()
 
     val executeQueryResult =

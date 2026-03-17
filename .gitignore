@@ -21,3 +21,6 @@ vertexai-sdk-test-data/
 *.tfstate
 *.tfstate.*
 firebase-appdistribution-gradle/service-credentials.json
+
+# Ignore generated credentials from google-github-actions/auth
+gha-creds-*.json

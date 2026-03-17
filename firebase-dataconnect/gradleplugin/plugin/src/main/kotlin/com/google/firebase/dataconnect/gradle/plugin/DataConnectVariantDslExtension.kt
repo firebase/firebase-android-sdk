@@ -89,6 +89,18 @@ abstract class DataConnectVariantDslExtension(
     )
   }
 
+  /** @see DataConnectDslExtension.previewFlags */
+  abstract val previewFlags: Property<Collection<String>>
+  init {
+    previewFlags.setFrom(
+      variant,
+      buildTypeExtension,
+      productFlavorExtensions,
+      "previewFlags",
+      DataConnectDslExtension::previewFlags,
+    )
+  }
+
   /** @see DataConnectDslExtension.codegen */
   val codegen: DataConnectCodegenVariantDslExtension =
     objectFactory.newInstance(

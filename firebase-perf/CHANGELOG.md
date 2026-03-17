@@ -1,5 +1,7 @@
 # Unreleased
 
+- [changed] Bumped internal dependencies.
+
 # 22.0.4
 
 - [fixed] Fixed StrictMode DiskReadViolation prompted by AppStartTrace setup. [#7340]
