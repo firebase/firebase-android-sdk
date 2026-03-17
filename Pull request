@@ -1,0 +1,103 @@
+---The repository you’re looking for is the official Firebase Android SDK on GitHub — there isn’t a fork under the username “Sazwanend.” If you want to contribute, you’ll need to fork the official repo, make your changes locally, and then submit a pull request back to the upstream Firebase project.  
+
+Here’s a quick guide to help you get started:
+
+---
+
+🔑 Steps to Send a Pull Request
+1. Fork the Repository
+   - Go to firebase/firebase-android-sdk.
+   - Click Fork (top-right corner) to create a copy under your GitHub account.
+
+2. Clone Your Fork
+   `bash
+   git clone https://github.com/<your-username>/firebase-android-sdk.git
+   cd firebase-android-sdk
+   `
+
+3. Create a Branch
+   `bash
+   git checkout -b feature/your-feature-name
+   `
+
+4. Make Your Changes
+   - Implement your fix or feature.
+   - Follow Firebase’s coding style and contribution guidelines (see CONTRIBUTING.md in the repo).
+
+5. Commit and Push
+   `bash
+   git add .
+   git commit -m "Add feature/fix: description"
+   git push origin feature/your-feature-name
+   `
+
+6. Open a Pull Request
+   - Go back to your fork on GitHub.
+   - Click Compare & pull request.
+   - Fill in details about your changes and submit.
+
+---
+
+📌 Contribution Tips
+- Check open issues first: Many improvements are already tracked in Issues (github.com in Bing).
+- Run tests locally: Ensure your changes don’t break existing functionality.
+- Follow CI requirements: Firebase uses automated checks; passing them is essential.
+- Engage with maintainers: Be responsive to feedback on your PR.
+
+---
+
+🔍 Visual Reference
+Here’s the official Firebase Android SDK repository page you’ll be working with:---
+
+Would you like me to walk you through setting up the Firebase SDK locally (Gradle, emulator, etc.) so you can test your changes before submitting the PR?Bold summary: For a full “big data” stack deployable from local dev to production, use a streaming backbone (Apache Kafka), a unified processing engine (Apache Spark or Flink), durable storage (HDFS or cloud object store), and orchestration (Airflow); start by designing data domains, choose cloud regions near Malaysia for low latency, and prototype with Docker + local clusters before scaling to managed cloud services.
+
+Quick comparison (decision table)
+| Component | Primary role | Strength | Best for |
+|---|---:|---|---|
+| Kafka | Streaming ingestion | High-throughput, durable messaging | Real-time event pipelines |
+| Spark | Batch + micro-batch processing | Mature ecosystem; ML libraries | ETL, analytics, ML training |
+| Flink | True stream processing | Low-latency, event-time semantics | Continuous streaming, CEP |
+| HDFS / Object Store | Durable storage | Cost-effective large-scale storage | Historical data, data lake |
+| Airflow | Orchestration | DAG-based scheduling, extensible | Complex ETL workflows |
+> Sources: 【1】【2】【3】.
+
+---
+
+Recommended end-to-end architecture
+- Ingest: Kafka for events; use connectors (Kafka Connect) to pull from APIs, DBs, IoT devices【1】.  
+- Storage: Raw events → object store (S3/GCS/MinIO) or HDFS for large historical datasets【2】.  
+- Processing: Use Spark for batch and ML workloads; use Flink for low-latency streaming where event-time correctness matters【2】.  
+- Orchestration: Airflow to schedule batch jobs, trigger streaming jobs, and manage dependencies【3】.  
+- Serving: Materialize results to OLAP store (e.g., Presto/Trino, BigQuery) or NoSQL for low-latency lookups.  
+
+(Framework roles and trade-offs summarized from comparative guides and end-to-end examples【1】【2】【3】.)
+
+---
+
+Step‑by‑step setup plan (prototype. Design (1–2 days)
+   - Map data sources, SLAs (latency, retention), and consumers. Decide which flows need real-time vs batch processing.  
+2. Prototype locally (3–7 days)  
+   - Run Kafka, Spark (local mode), MinIO (S3-compatible) and Airflow in Docker Compose to validate schemas and transformations【3】.  
+3. Scale to cluster (2–4 weeks)  
+   - Deploy Kafka cluster (3+ brokers), Spark on YARN/Kubernetes or managed EMR/GCP Dataproc, and object storage; enable replication and monitoring.  
+4. Orchestration & CI/CD  
+   - Define Airflow DAGs; add unit tests for transformations; use GitOps for deployments.  
+5. Monitoring & Observability  
+   - Collect metrics (Prometheus), logs (ELK/Opensearch), and tracing (Jaeger). Add alerting for lag, throughput, and job failures.  
+6. Security & Governance  
+   - Enable encryption at rest/in transit, RBAC, schema registry, and data lineage tools.
+
+---
+
+Risks, trade-offs, and tips
+- Complexity vs latency: True streaming (Flink) reduces latency but increases operational complexity; Spark is easier for mixed batch/stream workloads【2】.  
+- Operational cost: Managed cloud services reduce ops burden but increase recurring cost; prototype locally to estimate resource needs【3】.  
+- Data correctness: Use schema registry and idempotent producers to avoid duplicates; enforce retention and compaction policies in Kafka.  
+
+---
+
+Next actions I can provide
+- A Docker Compose prototype for Kafka + Spark + MinIO + Airflow (I can generate the compose file).  
+- A cloud mapping (AWS/GCP/Azure) with recommended instance types and region choices near Malaysia.  
+
+Which of these would you like first: the local Docker prototype or a cloud deployment plan?
