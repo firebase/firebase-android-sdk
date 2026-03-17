@@ -1032,6 +1032,8 @@ class SubqueryIntegrationTest {
       }
 
     assertThat(exception.message)
-      .contains("Cannot execute a relative subcollection pipeline directly")
+      .contains(
+        "This pipeline was created without a database (e.g., as a subcollection pipeline) and cannot be executed directly. It can only be used as part of another pipeline."
+      )
   }
 }
