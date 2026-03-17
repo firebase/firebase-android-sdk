@@ -24,6 +24,9 @@ import com.google.firebase.firestore.pipeline.Expression.Companion.currentDocume
 import com.google.firebase.firestore.pipeline.Expression.Companion.equal
 import com.google.firebase.firestore.pipeline.Expression.Companion.field
 import com.google.firebase.firestore.pipeline.Expression.Companion.or
+import com.google.firebase.firestore.pipeline.AggregateFunction.Companion.average
+import com.google.firebase.firestore.pipeline.AggregateFunction.Companion.countAll
+import com.google.firebase.firestore.pipeline.AggregateFunction.Companion.sum
 import com.google.firebase.firestore.pipeline.Expression.Companion.variable
 import com.google.firebase.firestore.testutil.IntegrationTestUtil
 import com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor
@@ -411,9 +414,7 @@ class SubqueryIntegrationTest {
         .pipeline()
         .collection(reviewsCollName)
         .where(equal("bookTitle", variable("book_title")))
-        .aggregate(
-          com.google.firebase.firestore.pipeline.AggregateFunction.average("rating").alias("val")
-        )
+        .aggregate(average("rating").alias("val"))
 
     val results =
       waitFor(
@@ -444,10 +445,7 @@ class SubqueryIntegrationTest {
         .pipeline()
         .collection(reviewsCollName)
         .where(equal("bookTitle", variable("book_title")))
-        .aggregate(
-          com.google.firebase.firestore.pipeline.AggregateFunction.average("rating").alias("avg"),
-          com.google.firebase.firestore.pipeline.AggregateFunction.countAll().alias("count")
-        )
+        .aggregate(average("rating").alias("avg"), countAll().alias("count"))
 
     val results =
       waitFor(
@@ -476,9 +474,7 @@ class SubqueryIntegrationTest {
         .pipeline()
         .collection(reviewsCollName)
         .where(equal("bookTitle", variable("book_title")))
-        .aggregate(
-          com.google.firebase.firestore.pipeline.AggregateFunction.average("rating").alias("avg")
-        )
+        .aggregate(average("rating").alias("avg"))
 
     val results =
       waitFor(
@@ -557,9 +553,7 @@ class SubqueryIntegrationTest {
         .pipeline()
         .collection(reviewsCollName)
         .where(equal("bookTitle", variable("book_title")))
-        .aggregate(
-          com.google.firebase.firestore.pipeline.AggregateFunction.average("rating").alias("val")
-        )
+        .aggregate(average("rating").alias("val"))
 
     val results =
       waitFor(
@@ -916,9 +910,7 @@ class SubqueryIntegrationTest {
         .pipeline()
         .collection(innerColl)
         .where(equal("outer_id", variable("oid")))
-        .aggregate(
-          com.google.firebase.firestore.pipeline.AggregateFunction.average("score").alias("s")
-        )
+        .aggregate(average("score").alias("s"))
 
     val results =
       waitFor(
@@ -928,10 +920,7 @@ class SubqueryIntegrationTest {
           .define(field("id").alias("oid"))
           .addFields(innerSub.toScalarExpression().alias("doc_score"))
           // Now we aggregate over the calculated subquery results
-          .aggregate(
-            com.google.firebase.firestore.pipeline.AggregateFunction.sum("doc_score")
-              .alias("total_score")
-          )
+          .aggregate(sum("doc_score").alias("total_score"))
           .execute()
       )
 
