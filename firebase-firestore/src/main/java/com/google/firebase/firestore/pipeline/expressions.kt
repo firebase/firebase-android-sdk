@@ -441,9 +441,9 @@ abstract class Expression internal constructor() {
      * // Return "Active" if field "status" is 1, "Pending" if field "status" is 2,
      * // and default to "Unknown" if none of the conditions are true.
      * switchOn(
-     *   field("status").equal(1), "Active",
-     *   field("status").equal(2), "Pending",
-     *   "Unknown"
+     *   field("status").equal(1), constant("Active"),
+     *   field("status").equal(2), constant("Pending"),
+     *   constant("Unknown")
      * )
      * ```
      *
