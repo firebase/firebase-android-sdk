@@ -17,6 +17,7 @@
 
 package com.google.firebase.dataconnect.core
 
+import androidx.annotation.VisibleForTesting
 import com.google.firebase.dataconnect.DataConnectUntypedVariables
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.MutationRef
@@ -43,6 +44,7 @@ internal class MutationRefImpl<Data, Variables>(
   callerSdkType: FirebaseDataConnect.CallerSdkType,
   dataSerializersModule: SerializersModule?,
   variablesSerializersModule: SerializersModule?,
+  private val secureRandom: Random,
 ) :
   MutationRef<Data, Variables>,
   OperationRefImpl<Data, Variables>(
@@ -58,8 +60,11 @@ internal class MutationRefImpl<Data, Variables>(
 
   internal val logger = Logger("MutationRefImpl[$operationName]")
 
+  @VisibleForTesting
+  internal fun randomRequestId(): String = "mut" + secureRandom.nextAlphanumericString(length = 10)
+
   override suspend fun execute(): MutationResultImpl {
-    val requestId = "mut" + Random.nextAlphanumericString(length = 10)
+    val requestId = randomRequestId()
     return dataConnect.grpcClient
       .executeMutation(
         requestId = requestId,
@@ -98,6 +103,7 @@ internal class MutationRefImpl<Data, Variables>(
       callerSdkType = callerSdkType,
       dataSerializersModule = dataSerializersModule,
       variablesSerializersModule = variablesSerializersModule,
+      secureRandom = secureRandom,
     )
 
   override fun copy(
@@ -118,6 +124,7 @@ internal class MutationRefImpl<Data, Variables>(
       callerSdkType = callerSdkType,
       dataSerializersModule = dataSerializersModule,
       variablesSerializersModule = variablesSerializersModule,
+      secureRandom = secureRandom,
     )
 
   override fun <NewVariables> withVariablesSerializer(
@@ -134,6 +141,7 @@ internal class MutationRefImpl<Data, Variables>(
       callerSdkType = callerSdkType,
       dataSerializersModule = dataSerializersModule,
       variablesSerializersModule = variablesSerializersModule,
+      secureRandom = secureRandom,
     )
 
   override fun <NewData> withDataDeserializer(
@@ -149,6 +157,7 @@ internal class MutationRefImpl<Data, Variables>(
       callerSdkType = callerSdkType,
       dataSerializersModule = dataSerializersModule,
       variablesSerializersModule = variablesSerializersModule,
+      secureRandom = secureRandom,
     )
 
   override fun hashCode(): Int = Objects.hash("MutationRefImpl", super.hashCode())
