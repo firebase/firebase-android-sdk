@@ -81,6 +81,30 @@ object DataConnectArb {
 
       // -0.0 gets coerced to 0.0 due to lack of JSONB support for -0.0 (see b/339440054).
       fun roundTripFloat(float: Double): Double = if (float != -0.0) float else 0.0
+
+      @JvmName("dataConnectRoundTripValue_Double")
+      fun Double.dataConnectRoundTripValue(): Double = roundTripFloat(this)
+
+      @JvmName("dataConnectRoundTripValue_NullableDouble")
+      fun Double?.dataConnectRoundTripValue(): Double? = this?.dataConnectRoundTripValue()
+
+      @JvmName("dataConnectRoundTripValue_List_Double")
+      fun List<Double>.dataConnectRoundTripValue(): List<Double> = map {
+        it.dataConnectRoundTripValue()
+      }
+
+      @JvmName("dataConnectRoundTripValue_NullableList_Double")
+      fun List<Double>?.dataConnectRoundTripValue(): List<Double>? =
+        this?.map { it.dataConnectRoundTripValue() }
+
+      @JvmName("dataConnectRoundTripValue_List_NullableDouble")
+      fun List<Double?>.dataConnectRoundTripValue(): List<Double?> = map {
+        it?.dataConnectRoundTripValue()
+      }
+
+      @JvmName("dataConnectRoundTripValue_NullableList_NullableDouble")
+      fun List<Double?>?.dataConnectRoundTripValue(): List<Double?>? =
+        this?.map { it?.dataConnectRoundTripValue() }
     }
   }
 

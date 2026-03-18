@@ -37,6 +37,7 @@ import io.kotest.property.RandomSource
 import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.next
 import io.mockk.mockk
+import kotlin.random.Random
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.Dispatchers
@@ -256,6 +257,7 @@ class FirebaseDataConnectImplUnitTest {
         deferredAppCheckProvider = deferredAppCheckProvider,
         creator = mockk(relaxed = true),
         settings = Arb.dataConnect.dataConnectSettings().next(rs),
+        secureRandom = Random,
       )
       .also { cleanups.register("close FirebaseDataConnectImpl") { it.close() } }
   }

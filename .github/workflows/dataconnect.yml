@@ -35,7 +35,7 @@ env:
   FDC_JAVA_VERSION: ${{ inputs.javaVersion || '17' }}
   FDC_ANDROID_EMULATOR_API_LEVEL: ${{ inputs.androidEmulatorApiLevel || '34' }}
   FDC_NODEJS_VERSION: ${{ inputs.nodeJsVersion || '20' }}
-  FDC_FIREBASE_TOOLS_VERSION: ${{ inputs.firebaseToolsVersion || '15.6.0' }}
+  FDC_FIREBASE_TOOLS_VERSION: ${{ inputs.firebaseToolsVersion || '15.8.0' }}
   FDC_FIREBASE_TOOLS_DIR: /tmp/firebase-tools
   FDC_FIREBASE_COMMAND: /tmp/firebase-tools/node_modules/.bin/firebase
   FDC_PYTHON_VERSION: ${{ inputs.pythonVersion || '3.13' }}
@@ -49,19 +49,6 @@ jobs:
     continue-on-error: false
     runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: index.docker.io/library/postgres@sha256:b6b4d0b75c699a2c94dfc5a94fe09f38630f3b67ab0e1653ede1b7ac8e13c197 # ratchet:postgres
-        env:
-          POSTGRES_PASSWORD: password
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -71,6 +58,9 @@ jobs:
         with:
           java-version: ${{ env.FDC_JAVA_VERSION }}
           distribution: temurin
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
 
       - uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4.3.0
         with:
@@ -120,6 +110,10 @@ jobs:
           run_cmd javac -version
           run_cmd which node
           run_cmd node --version
+          run_cmd which jq
+          run_cmd jq --version
+          run_cmd which docker
+          run_cmd docker --version
           run_cmd ${{ env.FDC_FIREBASE_COMMAND }} --version
           run_cmd ./gradlew --version
 
@@ -188,6 +182,43 @@ jobs:
             ~/.android/adb*
           key: avd-cache-zhdsn586je-api${{ env.FDC_ANDROID_EMULATOR_API_LEVEL }}-${{ github.run_id }}
 
+      - name: Start Postgres Server
+        working-directory: firebase-dataconnect/emulator
+        run: |
+          set -xveuo pipefail
+          docker compose up -d --quiet-pull
+
+      - name: Wait for Postgres Server to be Ready
+        working-directory: firebase-dataconnect/emulator
+        run: |
+          set -euo pipefail
+
+          function print_docker_compose_status {
+            docker compose ps --format=json
+          }
+
+          function print_postgres_status {
+            print_docker_compose_status | jq -e 'select(.Service == "postgres") | .Status'
+          }
+
+          postgres_health_check_number=0
+          while : ; do
+            postgres_health_check_number=$((postgres_health_check_number + 1))
+            postgres_service_status="$(print_postgres_status)"
+            echo "Postgres service health check ${postgres_health_check_number}: ${postgres_service_status}"
+
+            if [[ ${postgres_service_status} =~ "healthy" ]] ; then
+              echo "Postgres service appears to be healthy after ${postgres_health_check_number} seconds"
+              break
+            elif [[ ${postgres_health_check_number} == 30 ]] ; then
+              print_docker_compose_status
+              echo "ERROR: Postgres service does not appear to be healthy after ${postgres_health_check_number} seconds" >&2
+              exit 1
+            fi
+
+            sleep 1s
+          done
+
       - name: Start Firebase Emulators
         run: |
           set -xveuo pipefail
@@ -200,7 +231,7 @@ jobs:
           fi
           export DATACONNECT_EMULATOR_BINARY_PATH
 
-          export FIREBASE_DATACONNECT_POSTGRESQL_STRING='postgresql://postgres:password@127.0.0.1:5432?sslmode=disable'
+          export FIREBASE_DATACONNECT_POSTGRESQL_STRING='postgresql://postgres@127.0.0.1:5432?sslmode=disable'
           cd firebase-dataconnect/emulator
           ${{ env.FDC_FIREBASE_COMMAND }} emulators:start --only=auth,dataconnect >firebase.emulators.log 2>&1 &
 

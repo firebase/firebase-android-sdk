@@ -355,3 +355,140 @@ query CachingNullableAny_GetByTag($tag: String!) @auth(level: PUBLIC) {
 query CachingNullableAny_GetByTag2($tag: String!) @auth(level: PUBLIC) {
   items: cachingNullableAnies(where: {tag: {eq: $tag}}) { id any }
 }
+
+###############################################################################
+# CachingMixed
+###############################################################################
+
+mutation CachingMixed_Insert(
+  $string: String!,
+  $stringNullable: String,
+  $float: Float!,
+  $floatNullable: Float,
+  $boolean: Boolean!,
+  $booleanNullable: Boolean,
+  $any: Any!,
+  $anyNullable: Any,
+  $stringList: [String!],
+  $floatList: [Float!],
+  $booleanList: [Boolean!],
+  $anyList: [Any!],
+  $tag: String,
+) @auth(level: PUBLIC) {
+  key: cachingMixed_insert(data: {
+    string: $string,
+    stringNullable: $stringNullable,
+    float: $float,
+    floatNullable: $floatNullable,
+    boolean: $boolean,
+    booleanNullable: $booleanNullable,
+    any: $any,
+    anyNullable: $anyNullable,
+    stringList: $stringList,
+    floatList: $floatList,
+    booleanList: $booleanList,
+    anyList: $anyList,
+    tag: $tag,
+  })
+}
+
+mutation CachingMixed_Update(
+  $key: CachingMixed_Key!,
+  $string: String,
+  $stringNullable: String,
+  $float: Float,
+  $floatNullable: Float,
+  $boolean: Boolean,
+  $booleanNullable: Boolean,
+  $any: Any,
+  $anyNullable: Any,
+  $stringList: [String!],
+  $floatList: [Float!],
+  $booleanList: [Boolean!],
+  $anyList: [Any!]
+) @auth(level: PUBLIC) {
+  cachingMixed_update(key: $key, data: {
+    string: $string,
+    stringNullable: $stringNullable,
+    float: $float,
+    floatNullable: $floatNullable,
+    boolean: $boolean,
+    booleanNullable: $booleanNullable,
+    any: $any,
+    anyNullable: $anyNullable,
+    stringList: $stringList,
+    floatList: $floatList,
+    booleanList: $booleanList,
+    anyList: $anyList,
+  })
+}
+
+query CachingMixed_GetByKey( $key: CachingMixed_Key!) @auth(level: PUBLIC) {
+  item: cachingMixed(key: $key) {
+    string
+    stringNullable
+    float
+    floatNullable
+    boolean
+    booleanNullable
+    any
+    anyNullable
+    stringList
+    floatList
+    booleanList
+    anyList
+  }
+}
+
+query CachingMixed_GetByKey2( $key: CachingMixed_Key!) @auth(level: PUBLIC) {
+  item: cachingMixed(key: $key) {
+    string
+    stringNullable
+    float
+    floatNullable
+    boolean
+    booleanNullable
+    any
+    anyNullable
+    stringList
+    floatList
+    booleanList
+    anyList
+  }
+}
+
+query CachingMixed_GetByTag($tag: String!) @auth(level: PUBLIC) {
+  items: cachingMixeds(where: {tag: {eq: $tag}}) {
+    id
+    string
+    stringNullable
+    float
+    floatNullable
+    boolean
+    booleanNullable
+    any
+    anyNullable
+    stringList
+    floatList
+    booleanList
+    anyList
+  }
+}
+
+query CachingMixed_GetByTag2($tag: String!) @auth(level: PUBLIC) {
+  items: cachingMixeds(where: {tag: {eq: $tag}}) {
+    id
+    string
+    stringNullable
+    float
+    floatNullable
+    boolean
+    booleanNullable
+    any
+    anyNullable
+    stringList
+    floatList
+    booleanList
+    anyList
+  }
+}

@@ -18,7 +18,9 @@ package com.google.firebase.dataconnect.sqlite
 
 import android.database.sqlite.SQLiteDatabase
 import com.google.firebase.dataconnect.core.Logger
+import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase.GetQueryResultResult
 import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase.GetQueryResultResult.Found
+import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase.GetQueryResultResult.NotFound
 import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase.GetQueryResultResult.Stale
 import com.google.firebase.dataconnect.sqlite.QueryResultArb.EntityRepeatPolicy.INTER_SAMPLE
 import com.google.firebase.dataconnect.sqlite.QueryResultArb.EntityRepeatPolicy.INTER_SAMPLE_MUTATED
@@ -76,6 +78,7 @@ import io.mockk.unmockkObject
 import io.mockk.verify
 import java.io.File
 import java.math.BigInteger
+import kotlin.reflect.KClass
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.nanoseconds
@@ -285,7 +288,8 @@ class DataConnectCacheDatabaseUnitTest {
         dataConnectCacheDatabase.getQueryResult(
           authUid.string,
           queryId.bytes,
-          currentTimeMillis = 0L
+          currentTimeMillis = 0L,
+          staleResult = Stale::class,
         )
       val structFromDb = result.shouldBeInstanceOf<Found>().struct
       structFromDb shouldBe structSample.struct
@@ -318,7 +322,8 @@ class DataConnectCacheDatabaseUnitTest {
         dataConnectCacheDatabase.getQueryResult(
           authUid.string,
           queryId.bytes,
-          currentTimeMillis = 0L
+          currentTimeMillis = 0L,
+          staleResult = Stale::class,
         )
       val structFromDb = result.shouldBeInstanceOf<Found>().struct
       structFromDb shouldBe structSamples.last().struct
@@ -357,14 +362,16 @@ class DataConnectCacheDatabaseUnitTest {
         dataConnectCacheDatabase.getQueryResult(
           authUid1.string,
           queryId.bytes,
-          currentTimeMillis = 0L
+          currentTimeMillis = 0L,
+          staleResult = Stale::class,
         )
       val struct1FromDb = result1.shouldBeInstanceOf<Found>().struct
       val result2 =
         dataConnectCacheDatabase.getQueryResult(
           authUid2.string,
           queryId.bytes,
-          currentTimeMillis = 0L
+          currentTimeMillis = 0L,
+          staleResult = Stale::class,
         )
       val struct2FromDb = result2.shouldBeInstanceOf<Found>().struct
       assertSoftly {
@@ -406,14 +413,16 @@ class DataConnectCacheDatabaseUnitTest {
         dataConnectCacheDatabase.getQueryResult(
           authUid.string,
           queryId1.bytes,
-          currentTimeMillis = 0L
+          currentTimeMillis = 0L,
+          staleResult = Stale::class,
         )
       val struct1FromDb = result1.shouldBeInstanceOf<Found>().struct
       val result2 =
         dataConnectCacheDatabase.getQueryResult(
           authUid.string,
           queryId2.bytes,
-          currentTimeMillis = 0L
+          currentTimeMillis = 0L,
+          staleResult = Stale::class,
         )
       val struct2FromDb = result2.shouldBeInstanceOf<Found>().struct
       assertSoftly {
@@ -447,7 +456,8 @@ class DataConnectCacheDatabaseUnitTest {
         dataConnectCacheDatabase.getQueryResult(
           authUid.string,
           queryId.bytes,
-          currentTimeMillis = 0L
+          currentTimeMillis = 0L,
+          staleResult = Stale::class,
         )
       val structFromDb = result.shouldBeInstanceOf<Found>().struct
       structFromDb shouldBe queryResult.hydratedStruct
@@ -504,7 +514,8 @@ class DataConnectCacheDatabaseUnitTest {
               dataConnectCacheDatabase.getQueryResult(
                 authUid.string,
                 queryId.bytes,
-                currentTimeMillis = 0L
+                currentTimeMillis = 0L,
+                staleResult = Stale::class,
               )
             val structFromDb = result.shouldBeInstanceOf<Found>().struct
             withClue(
@@ -551,7 +562,8 @@ class DataConnectCacheDatabaseUnitTest {
           dataConnectCacheDatabase.getQueryResult(
             authUid.string,
             queryId.bytes,
-            currentTimeMillis = 0L
+            currentTimeMillis = 0L,
+            staleResult = Stale::class,
           )
         withClue("index=$index size=${queryIds.size}, queryId=${queryId.bytes.to0xHexString()}") {
           val structFromDb = result.shouldBeInstanceOf<Found>().struct
@@ -601,7 +613,8 @@ class DataConnectCacheDatabaseUnitTest {
           dataConnectCacheDatabase.getQueryResult(
             authUid.string,
             queryId2.bytes,
-            currentTimeMillis = 0L
+            currentTimeMillis = 0L,
+            staleResult = Stale::class,
           )
         val structFromDb = result.shouldBeInstanceOf<Found>().struct
         structFromDb shouldBe queryResult2.hydratedStruct
@@ -611,7 +624,8 @@ class DataConnectCacheDatabaseUnitTest {
           dataConnectCacheDatabase.getQueryResult(
             authUid.string,
             queryId1.bytes,
-            currentTimeMillis = 0L
+            currentTimeMillis = 0L,
+            staleResult = Stale::class,
           )
         val structFromDb = result.shouldBeInstanceOf<Found>().struct
         val expectedStructFromDb =
@@ -622,7 +636,32 @@ class DataConnectCacheDatabaseUnitTest {
   }
 
   @Test
-  fun `getQueryResult() should return stale when maxAge is zero`() = runTest {
+  fun `getQueryResult() when maxAge is zero and staleResult=Stale should return Stale`() =
+    testQueryResultInsertedWithMaxAgeZero(
+      staleResult = Stale::class,
+      verifyResult = { result, _, expectedStaleness -> result shouldBe Stale(expectedStaleness) }
+    )
+
+  @Test
+  fun `getQueryResult() when maxAge is zero and staleResult=Found should return Found`() =
+    testQueryResultInsertedWithMaxAgeZero(
+      staleResult = Found::class,
+      verifyResult = { result, insertedData, expectedStaleness ->
+        result shouldBe Found(insertedData, -expectedStaleness)
+      }
+    )
+
+  @Test
+  fun `getQueryResult() when maxAge is zero and staleResult=NotFound should return NotFound`() =
+    testQueryResultInsertedWithMaxAgeZero(
+      staleResult = NotFound::class,
+      verifyResult = { result, _, _ -> result shouldBe NotFound }
+    )
+
+  private fun testQueryResultInsertedWithMaxAgeZero(
+    staleResult: KClass<out GetQueryResultResult>,
+    verifyResult: (GetQueryResultResult, insertedData: Struct, expectedStaleness: Duration) -> Unit,
+  ) = runTest {
     dataConnectCacheDatabase.initialize()
 
     checkAll(
@@ -633,30 +672,49 @@ class DataConnectCacheDatabaseUnitTest {
       QueryResultArb(entityCountRange = 0..3),
     ) { authUid, queryId, times, queryResult ->
       val (time1, time2) = times.run { listOf(value1, value1 + value2).sorted() }
-
-      dataConnectCacheDatabase.insertQueryResult(
-        authUid.string,
-        queryId.bytes,
-        queryResult.hydratedStruct,
+      testGetQueryResultReturnValueWhenCachedData(
+        authUid = authUid,
+        queryId = queryId,
+        queryResultData = queryResult.hydratedStruct,
         maxAge = DurationProto.getDefaultInstance(),
-        currentTimeMillis = time1,
-        getEntityIdForPath = null,
+        time1 = time1,
+        time2 = time2,
+        staleResult = staleResult,
+        verifyResult = {
+          val expectedStaleness = durationFromMillis(time2.toBigInteger() - time1.toBigInteger())
+          verifyResult(it, queryResult.hydratedStruct, expectedStaleness)
+        },
       )
-
-      val result =
-        dataConnectCacheDatabase.getQueryResult(
-          authUid.string,
-          queryId.bytes,
-          currentTimeMillis = time2
-        )
-
-      val expectedStaleness = durationFromMillis(time2.toBigInteger() - time1.toBigInteger())
-      result shouldBe Stale(expectedStaleness)
     }
   }
 
   @Test
-  fun `getQueryResult() should return stale after maxAge time has passed`() = runTest {
+  fun `getQueryResult() after maxAge time has passed and staleResult=Stale should return Stale`() =
+    testGetQueryResultAfterMaxAgeTimeHasPassed(
+      staleResult = Stale::class,
+      verifyResult = { result, _, expectedStaleness -> result shouldBe Stale(expectedStaleness) }
+    )
+
+  @Test
+  fun `getQueryResult() after maxAge time has passed and staleResult=Found should return Found`() =
+    testGetQueryResultAfterMaxAgeTimeHasPassed(
+      staleResult = Found::class,
+      verifyResult = { result, insertedData, expectedStaleness ->
+        result shouldBe Found(insertedData, -expectedStaleness)
+      }
+    )
+
+  @Test
+  fun `getQueryResult() after maxAge time has passed and staleResult=NotFound should return NotFound`() =
+    testGetQueryResultAfterMaxAgeTimeHasPassed(
+      staleResult = NotFound::class,
+      verifyResult = { result, _, _ -> result shouldBe NotFound }
+    )
+
+  private fun testGetQueryResultAfterMaxAgeTimeHasPassed(
+    staleResult: KClass<out GetQueryResultResult>,
+    verifyResult: (GetQueryResultResult, insertedData: Struct, expectedStaleness: Duration) -> Unit,
+  ) = runTest {
     dataConnectCacheDatabase.initialize()
 
     // Generate two currentTimeMillis values and a maxAge that is after time1 but before time2.
@@ -689,29 +747,22 @@ class DataConnectCacheDatabaseUnitTest {
       queryIdArb(),
       timesArb,
       QueryResultArb(entityCountRange = 0..3),
-    ) { authUid, queryId, (time1, time2, maxAge, staleness), queryResult ->
-      dataConnectCacheDatabase.insertQueryResult(
-        authUid.string,
-        queryId.bytes,
-        queryResult.hydratedStruct,
+    ) { authUid, queryId, (time1, time2, maxAge, expectedStaleness), queryResult ->
+      testGetQueryResultReturnValueWhenCachedData(
+        authUid = authUid,
+        queryId = queryId,
+        queryResultData = queryResult.hydratedStruct,
         maxAge = maxAge,
-        currentTimeMillis = time1,
-        getEntityIdForPath = null,
+        time1 = time1,
+        time2 = time2,
+        staleResult = staleResult,
+        verifyResult = { verifyResult(it, queryResult.hydratedStruct, expectedStaleness) },
       )
-
-      val result =
-        dataConnectCacheDatabase.getQueryResult(
-          authUid.string,
-          queryId.bytes,
-          currentTimeMillis = time2
-        )
-
-      result shouldBe Stale(staleness)
     }
   }
 
   @Test
-  fun `getQueryResult() should return found at maxAge`() = runTest {
+  fun `getQueryResult() at maxAge for all staleResult values should return Found`() = runTest {
     dataConnectCacheDatabase.initialize()
 
     // Generate two currentTimeMillis values and a maxAge that is the exact number of milliseconds
@@ -728,83 +779,102 @@ class DataConnectCacheDatabaseUnitTest {
       propTestConfig,
       authUidArb(),
       queryIdArb(),
+      staleResultArb(),
       timesArb,
       QueryResultArb(entityCountRange = 0..3),
-    ) { authUid, queryId, (time1, time2, maxAge), queryResult ->
-      dataConnectCacheDatabase.insertQueryResult(
-        authUid.string,
-        queryId.bytes,
-        queryResult.hydratedStruct,
+    ) { authUid, queryId, staleResult, (time1, time2, maxAge), queryResult ->
+      testGetQueryResultReturnValueWhenCachedData(
+        authUid = authUid,
+        queryId = queryId,
+        queryResultData = queryResult.hydratedStruct,
         maxAge = maxAge,
-        currentTimeMillis = time1,
-        getEntityIdForPath = null,
+        time1 = time1,
+        time2 = time2,
+        staleResult = staleResult,
+        verifyResult = { it shouldBe Found(queryResult.hydratedStruct, Duration.ZERO) },
       )
-
-      val result =
-        dataConnectCacheDatabase.getQueryResult(
-          authUid.string,
-          queryId.bytes,
-          currentTimeMillis = time2
-        )
-
-      result.shouldBeInstanceOf<Found>().freshnessRemaining shouldBe Duration.ZERO
     }
   }
 
   @Test
-  fun `getQueryResult() should return found after maxAge`() = runTest {
-    dataConnectCacheDatabase.initialize()
+  fun `getQueryResult() before maxAge time has passed for all staleResult values should return Found`() =
+    runTest {
+      dataConnectCacheDatabase.initialize()
 
-    // Generate two currentTimeMillis values and a maxAge that is after the last time.
-    val time1Range = Long.MIN_VALUE until Long.MAX_VALUE
-    val timesArb =
-      Arb.longWithEvenNumDigitsDistribution(time1Range).flatMap { time1 ->
-        check(time1 < Long.MAX_VALUE)
-        val maxTimeDelta = Long.MAX_VALUE.toBigInteger() - time1.toBigInteger()
-        val timeDeltaRange = 0 until maxTimeDelta.clampToLong()
-        Arb.longWithEvenNumDigitsDistribution(timeDeltaRange).flatMap { timeDelta ->
-          val time2 = time1 + timeDelta
-          check(time1 <= time2)
-          check(time2 < Long.MAX_VALUE)
+      // Generate two currentTimeMillis values and a maxAge that is after the last time.
+      val time1Range = Long.MIN_VALUE until Long.MAX_VALUE
+      val timesArb =
+        Arb.longWithEvenNumDigitsDistribution(time1Range).flatMap { time1 ->
+          check(time1 < Long.MAX_VALUE)
+          val maxTimeDelta = Long.MAX_VALUE.toBigInteger() - time1.toBigInteger()
+          val timeDeltaRange = 0 until maxTimeDelta.clampToLong()
+          Arb.longWithEvenNumDigitsDistribution(timeDeltaRange).flatMap { timeDelta ->
+            val time2 = time1 + timeDelta
+            check(time1 <= time2)
+            check(time2 < Long.MAX_VALUE)
 
-          val minMaxAge =
-            durationProtoFromNanos(
-              (timeDelta.toBigInteger() * 1_000_000.toBigInteger()) + BigInteger.ONE
-            )
-          val maxMaxAge =
-            durationProtoFromMillis(Long.MAX_VALUE.toBigInteger() - time1.toBigInteger())
-          Arb.proto.duration(min = minMaxAge, max = maxMaxAge).map { maxAge ->
-            val freshnessRemaining = calculateFreshnessRemaining(time1, time2, maxAge.duration)
-            Quadruple(time1, time2, maxAge.duration, freshnessRemaining)
+            val minMaxAge =
+              durationProtoFromNanos(
+                (timeDelta.toBigInteger() * 1_000_000.toBigInteger()) + BigInteger.ONE
+              )
+            val maxMaxAge =
+              durationProtoFromMillis(Long.MAX_VALUE.toBigInteger() - time1.toBigInteger())
+            Arb.proto.duration(min = minMaxAge, max = maxMaxAge).map { maxAge ->
+              val freshnessRemaining = calculateFreshnessRemaining(time1, time2, maxAge.duration)
+              Quadruple(time1, time2, maxAge.duration, freshnessRemaining)
+            }
           }
         }
-      }
 
-    checkAll(
-      propTestConfig,
-      authUidArb(),
-      queryIdArb(),
-      timesArb,
-      QueryResultArb(entityCountRange = 0..3),
-    ) { authUid, queryId, (time1, time2, maxAge, freshnessRemaining), queryResult ->
-      dataConnectCacheDatabase.insertQueryResult(
+      checkAll(
+        propTestConfig,
+        authUidArb(),
+        queryIdArb(),
+        staleResultArb(),
+        timesArb,
+        QueryResultArb(entityCountRange = 0..3),
+      ) { authUid, queryId, staleResult, (time1, time2, maxAge, freshnessRemaining), queryResult ->
+        testGetQueryResultReturnValueWhenCachedData(
+          authUid = authUid,
+          queryId = queryId,
+          queryResultData = queryResult.hydratedStruct,
+          maxAge = maxAge,
+          time1 = time1,
+          time2 = time2,
+          staleResult = staleResult,
+          verifyResult = { it shouldBe Found(queryResult.hydratedStruct, freshnessRemaining) },
+        )
+      }
+    }
+
+  private suspend fun testGetQueryResultReturnValueWhenCachedData(
+    authUid: AuthUidSample,
+    queryId: QueryIdSample,
+    queryResultData: Struct,
+    maxAge: DurationProto,
+    time1: Long,
+    time2: Long,
+    staleResult: KClass<out GetQueryResultResult>,
+    verifyResult: (GetQueryResultResult) -> Unit,
+  ) {
+    dataConnectCacheDatabase.insertQueryResult(
+      authUid.string,
+      queryId.bytes,
+      queryResultData,
+      maxAge = maxAge,
+      currentTimeMillis = time1,
+      getEntityIdForPath = null,
+    )
+
+    val result =
+      dataConnectCacheDatabase.getQueryResult(
         authUid.string,
         queryId.bytes,
-        queryResult.hydratedStruct,
-        maxAge = maxAge,
-        currentTimeMillis = time1,
-        getEntityIdForPath = null,
+        currentTimeMillis = time2,
+        staleResult,
       )
 
-      val result =
-        dataConnectCacheDatabase.getQueryResult(
-          authUid.string,
-          queryId.bytes,
-          currentTimeMillis = time2
-        )
-
-      result.shouldBeInstanceOf<Found>().freshnessRemaining shouldBe freshnessRemaining
-    }
+    verifyResult(result)
   }
 }
 
@@ -923,6 +993,9 @@ private fun calculateStaleness(time1: Long, time2: Long, maxAge: DurationProto):
   }
   return durationFromNanos(stalenessInNanos)
 }
+
+private fun staleResultArb(): Arb<KClass<out GetQueryResultResult>> =
+  Arb.of(Stale::class, Found::class, NotFound::class)
 
 // The following constants were copied from Duration.kt in the Kotlin standard library.
 private const val NANOS_IN_MILLIS = 1_000_000

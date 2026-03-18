@@ -48,7 +48,7 @@ public abstract class FieldValue {
     }
   }
 
-  /* {@code FieldValue} class for {@link #arrayUnion()} transforms. */
+  /** {@code FieldValue} class for {@link #arrayUnion()} transforms. */
   static class ArrayUnionFieldValue extends FieldValue {
     private final List<Object> elements;
 
@@ -66,7 +66,7 @@ public abstract class FieldValue {
     }
   }
 
-  /* {@code FieldValue} class for {@link #arrayRemove()} transforms. */
+  /** {@code FieldValue} class for {@link #arrayRemove()} transforms. */
   static class ArrayRemoveFieldValue extends FieldValue {
     private final List<Object> elements;
 
@@ -84,7 +84,7 @@ public abstract class FieldValue {
     }
   }
 
-  /* {@code FieldValue} class for {@link #increment()} transforms. */
+  /** {@code FieldValue} class for {@link #increment()} transforms. */
   static class NumericIncrementFieldValue extends FieldValue {
     private final Number operand;
 
