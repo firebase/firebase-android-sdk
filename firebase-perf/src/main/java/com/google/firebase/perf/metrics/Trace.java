@@ -162,8 +162,20 @@ public class Trace extends AppStateUpdateHandler
           @NonNull Clock clock,
           @NonNull AppStateMonitor appStateMonitor,
           @NonNull GaugeManager gaugeManager) {
-    this(name, transportManager, clock, appStateMonitor, gaugeManager, SessionManager.getInstance());
+    this(
+        name,
+        transportManager,
+        clock,
+        appStateMonitor,
+        gaugeManager,
+        sessionManagerFrom(appStateMonitor));
   }
+
+  private static SessionManager sessionManagerFrom(AppStateMonitor appStateMonitor) {
+    SessionManager sm = appStateMonitor.getSessionManager();
+    return sm != null ? sm : new SessionManager(null, PerfSession.createWithId(null));
+  }
+
   /**
    * Creates a Trace object with the given name. TransportManager, Clock and GaugeManager instances
    * are for testing.
@@ -213,7 +225,7 @@ public class Trace extends AppStateUpdateHandler
       clock = new Clock();
       gaugeManager = GaugeManager.getInstance();
     }
-    sessionManager = SessionManager.getInstance();
+    sessionManager = TransportManager.getInstance().getSessionManager();
   }
 
   /** Starts this trace. */
