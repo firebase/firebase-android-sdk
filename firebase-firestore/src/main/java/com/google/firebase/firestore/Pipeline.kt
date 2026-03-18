@@ -1140,7 +1140,7 @@ class PipelineSource internal constructor(private val firestore: FirebaseFiresto
   fun collection(ref: CollectionReference, options: CollectionSourceOptions): Pipeline {
     if (
       ref.firestore.databaseId != firestore.databaseId ||
-        ref.firestore.app.options.projectId != firestore.app.options.projectId
+        ref.firestore.app?.options?.projectId != firestore.app?.options?.projectId
     ) {
       throw IllegalArgumentException(
         "Invalid CollectionReference. The Firestore instance of the CollectionReference must match the Firestore instance of the PipelineSource."
