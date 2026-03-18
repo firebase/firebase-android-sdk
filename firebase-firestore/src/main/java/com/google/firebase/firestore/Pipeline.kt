@@ -165,7 +165,7 @@ internal constructor(
     checkNotNull(firestore) {
       "This pipeline was created without a database (e.g., as a subcollection pipeline) and cannot be executed directly. It can only be used as part of another pipeline."
     }
-    val database = firestore!!.databaseId
+    val database = firestore.databaseId
     val builder = ExecutePipelineRequest.newBuilder()
     builder.database = "projects/${database.projectId}/databases/${database.databaseId}"
     builder.structuredPipeline = toStructuredPipelineProto(options, firestore.userDataReader)
@@ -915,14 +915,14 @@ internal constructor(
    * variable for internal reuse within the pipeline body (accessed via the `variable()` function).
    *
    * This stage is useful for declaring reusable values or intermediate calculations that can be
-   * referenced multiple times in later parts of the pipeline, improving readability and
-   * maintainability.
+   * referenced multiple times in later parts of the pipeline.
    *
    * Each variable is defined using an [AliasedExpression], which pairs an expression with a name
-   * (alias). The expression can be a simple constant, a field reference, or a complex computation.
+   * (alias). The expression can be a simple constant, a field reference, or a function evaluation
+   * (such as a mathematical operation).
    *
    * Example:
-   * ```
+   * ```kotlin
    * firestore.pipeline().collection("products")
    *   .define(
    *     multiply(field("price"), 0.9).as("discountedPrice"),
@@ -1140,7 +1140,7 @@ class PipelineSource internal constructor(private val firestore: FirebaseFiresto
   fun collection(ref: CollectionReference, options: CollectionSourceOptions): Pipeline {
     if (
       ref.firestore.databaseId != firestore.databaseId ||
-        ref.firestore.app?.options?.projectId != firestore.app?.options?.projectId
+        ref.firestore.app.options.projectId != firestore.app.options.projectId
     ) {
       throw IllegalArgumentException(
         "Invalid CollectionReference. The Firestore instance of the CollectionReference must match the Firestore instance of the PipelineSource."

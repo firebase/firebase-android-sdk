@@ -3076,8 +3076,7 @@ abstract class Expression internal constructor() {
       map(elements.flatMap { listOf(constant(it.key), toExprOrConstant(it.value)) }.toTypedArray())
 
     /**
-     * Accesses a field/property of the expression (When the expression evaluates to a Map or
-     * Document).
+     * Accesses a field/property of a document or Map using the provided [key].
      *
      * @param expression The expression evaluating to a map or document.
      * @param key The key of the field to access.
@@ -3099,7 +3098,7 @@ abstract class Expression internal constructor() {
       FunctionExpression("field", notImplemented, fieldName, key)
 
     /**
-     * Accesses a field/property of the expression using the provided [keyExpression].
+     * Accesses a field/property of a document or Map using the provided [keyExpression].
      *
      * @param expression The expression evaluating to a Map or Document.
      * @param keyExpression The expression evaluating to the key.
@@ -5988,11 +5987,14 @@ abstract class Expression internal constructor() {
      * Creates an expression that retrieves the value of a variable bound via [Pipeline.define].
      *
      * Example:
-     * ```
-     * // Define a variable "discountedPrice" and use it in a filter
+     * ```kotlin
      * firestore.pipeline().collection("products")
-     *     .define(Constant(100).alias("threshold"))
-     *     .where(lessThan(variable("discountedPrice"), variable("threshold")));
+     *     .define(
+     *         multiply(field("price"), 0.9).as("discountedPrice"),
+     *         add(field("stock"), 10).as("newStock")
+     *     )
+     *     .where(lessThan(variable("discountedPrice"), 100))
+     *     .select(field("name"), variable("newStock"));
      * ```
      *
      * @param name The name of the variable to retrieve.
@@ -7152,18 +7154,18 @@ abstract class Expression internal constructor() {
     Companion.mapMerge(this, mapExpr, *otherMaps)
 
   /**
-   * Retrieves the value of a specific field from the document evaluated by this expression.
+   * Accesses a field/property of a document or Map using the provided [key].
    *
    * @param key The string key to access.
-   * @return A new [Expression] representing the field value.
+   * @return A new [Expression] representing the value of the field.
    */
   fun getField(key: String): Expression = Companion.getField(this, key)
 
   /**
-   * Retrieves the value of a specific field from the document evaluated by this expression.
+   * Accesses a field/property of a document or Map using the provided [keyExpression].
    *
    * @param keyExpression The expression evaluating to the key to access.
-   * @return A new [Expression] representing the field value.
+   * @return A new [Expression] representing the value of the field.
    */
   fun getField(keyExpression: Expression): Expression = Companion.getField(this, keyExpression)
 
@@ -8376,7 +8378,7 @@ class Field internal constructor(internal val fieldPath: ModelFieldPath) : Selec
         EvaluateResult.timestamp(getLocalWriteTime(fieldValue))
       DocumentSnapshot.ServerTimestampBehavior.PREVIOUS -> {
         val previousValue = getPreviousValue(fieldValue)
-        if (previousValue == null) EvaluateResult.NULL else EvaluateResultValue(previousValue!!)
+        if (previousValue == null) EvaluateResult.NULL else EvaluateResultValue(previousValue)
       }
     }
   }

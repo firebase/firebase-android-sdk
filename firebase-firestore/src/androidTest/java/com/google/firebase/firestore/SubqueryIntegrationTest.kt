@@ -18,15 +18,15 @@ package com.google.firebase.firestore
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
+import com.google.firebase.firestore.pipeline.AggregateFunction.Companion.average
+import com.google.firebase.firestore.pipeline.AggregateFunction.Companion.countAll
+import com.google.firebase.firestore.pipeline.AggregateFunction.Companion.sum
 import com.google.firebase.firestore.pipeline.Expression.Companion.and
 import com.google.firebase.firestore.pipeline.Expression.Companion.constant
 import com.google.firebase.firestore.pipeline.Expression.Companion.currentDocument
 import com.google.firebase.firestore.pipeline.Expression.Companion.equal
 import com.google.firebase.firestore.pipeline.Expression.Companion.field
 import com.google.firebase.firestore.pipeline.Expression.Companion.or
-import com.google.firebase.firestore.pipeline.AggregateFunction.Companion.average
-import com.google.firebase.firestore.pipeline.AggregateFunction.Companion.countAll
-import com.google.firebase.firestore.pipeline.AggregateFunction.Companion.sum
 import com.google.firebase.firestore.pipeline.Expression.Companion.variable
 import com.google.firebase.firestore.testutil.IntegrationTestUtil
 import com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor
