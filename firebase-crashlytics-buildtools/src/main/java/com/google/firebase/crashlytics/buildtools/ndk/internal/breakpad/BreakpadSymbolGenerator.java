@@ -106,7 +106,7 @@ public class BreakpadSymbolGenerator implements NativeSymbolGenerator {
    */
   private static boolean isLocalFileLatest(File localFile, String rawResourcesFilePath) {
     try {
-      Path localFilePath = Paths.get(localFile.getPath());
+      final Path localFilePath = Paths.get(localFile.getPath());
       final Path resourcesFilePath = Paths.get(rawResourcesFilePath);
 
       final FileTime resourceFileTimeCreation =
