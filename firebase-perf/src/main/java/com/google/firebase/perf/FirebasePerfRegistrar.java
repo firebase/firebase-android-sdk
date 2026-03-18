@@ -88,7 +88,9 @@ public class FirebasePerfRegistrar implements ComponentRegistrar {
                         container.get(SessionManager.class)))
             .build(),
         Component.builder(SessionManager.class)
-            .factory(container -> SessionManager.getInstance())
+            .factory(
+                container ->
+                    new SessionManager(GaugeManager.getInstance(), PerfSession.createWithId(null)))
             .build(),
         /**
          * Fireperf SDK is lazily by {@link FirebasePerformanceInitializer} during {@link
