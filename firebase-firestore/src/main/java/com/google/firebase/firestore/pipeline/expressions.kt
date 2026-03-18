@@ -6006,7 +6006,7 @@ abstract class Expression internal constructor() {
      * Creates an expression that represents the current document being processed.
      *
      * Example:
-     * ```
+     * ```kotlin
      * // Define the current document as a variable "doc"
      * firestore.pipeline().collection("books")
      *     .define(currentDocument().alias("doc"))

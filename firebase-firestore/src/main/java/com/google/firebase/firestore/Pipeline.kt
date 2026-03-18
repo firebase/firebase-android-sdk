@@ -1232,7 +1232,7 @@ class PipelineSource internal constructor(private val firestore: FirebaseFiresto
      * used within a parent pipeline.
      *
      * Example:
-     * ```
+     * ```kotlin
      * firestore.pipeline().collection("books")
      *     .addFields(
      *         PipelineSource.subcollection("reviews")
@@ -1253,7 +1253,7 @@ class PipelineSource internal constructor(private val firestore: FirebaseFiresto
      * document.
      *
      * Example:
-     * ```
+     * ```kotlin
      * firestore.pipeline().collection("books")
      *     .addFields(
      *         PipelineSource.subcollection(SubcollectionSource.of("reviews"))
