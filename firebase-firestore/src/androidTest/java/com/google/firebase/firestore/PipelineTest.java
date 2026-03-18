@@ -538,7 +538,7 @@ public class PipelineTest {
 
   @Test
   public void selectWithSwitchOn() {
-    Task<Pipeline.Snapshot> execute1 =
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
@@ -559,12 +559,14 @@ public class PipelineTest {
                         constant("NA"))
                     .alias("result3"))
             .execute();
-    assertThat(waitFor(execute1).getResults())
+    assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
         .containsExactly(ImmutableMap.of("result1", "two", "result2", "NA", "result3", "two"));
+  }
 
-    // throws exception when no default value is provided and no condition matches
-    Task<Pipeline.Snapshot> execute3 =
+  @Test
+  public void testSwitchOnWithNoDefaultValue() {
+    Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
@@ -578,7 +580,7 @@ public class PipelineTest {
                         constant("two"))
                     .alias("result"))
             .execute();
-    Exception exception = assertThrows(Exception.class, () -> waitFor(execute3));
+    Exception exception = assertThrows(Exception.class, () -> waitFor(execute));
     assertThat(exception).hasMessageThat().contains("all switch cases evaluate to false");
   }
 
