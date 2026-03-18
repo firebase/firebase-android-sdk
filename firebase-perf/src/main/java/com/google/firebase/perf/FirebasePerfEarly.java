@@ -47,7 +47,7 @@ public class FirebasePerfEarly {
     // FirebaseSession is verbose.
     FirebaseSessionsDependencies.register(new FirebasePerformanceSessionSubscriber(configResolver, sessionManager));
 
-    AppStateMonitor appStateMonitor = AppStateMonitor.getInstance();
+    AppStateMonitor appStateMonitor = AppStateMonitor.getInstance(sessionManager);
     appStateMonitor.registerActivityLifecycleCallbacks(context);
     appStateMonitor.registerForAppColdStart(new FirebasePerformanceInitializer());
 
