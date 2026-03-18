@@ -74,7 +74,7 @@ public class BreakpadSymbolGenerator implements NativeSymbolGenerator {
         final File outputFile =
                 new File(destPath, OS_WINDOWS.equals(osString) ? "dump_syms.exe" : "dump_syms.bin");
 
-        if (outputFile.exists() && compareNewestFile(outputFile, resource)) {
+        if (outputFile.exists() && isLocalFileLatest(outputFile, resource)) {
             Buildtools.logD("Skipping dumpsyms extraction, file exists: " + outputFile.getAbsolutePath());
             return outputFile;
         }
@@ -104,22 +104,21 @@ public class BreakpadSymbolGenerator implements NativeSymbolGenerator {
     }
 
     /**
-     * @return true if comparingFile is newest than the file found at provided string path.
+     * @return true if localFile is the most recent compared to resources bin file.
      */
-    private static boolean compareNewestFile(File comparingFile, String resourceStringPath) {
-        final Path resourcePath = Paths.get(resourceStringPath);
-
-        final FileTime resourceTimeCreation;
+    private static boolean isLocalFileLatest(File localFile, String rawResourcesFilePath) {
         try {
-            resourceTimeCreation = Files.readAttributes(resourcePath, BasicFileAttributes.class).creationTime();
+            Path localFilePath = Paths.get(localFile.getPath());
+            final Path resourcesFilePath = Paths.get(rawResourcesFilePath);
 
-            final FileTime comparingFileTimeCreation =
-                    Files.readAttributes(Paths.get(comparingFile.getPath()), BasicFileAttributes.class).creationTime();
+            final FileTime resourceFileTimeCreation = Files.readAttributes(resourcesFilePath, BasicFileAttributes.class).creationTime();
+            final FileTime localFileTimeCreation =
+                    Files.readAttributes(localFilePath, BasicFileAttributes.class).creationTime();
 
-            // The newest file is expected to be bigger.
-            return comparingFile.length() >= Files.size(resourcePath)
+            // The latest file is expected to be bigger.
+            return Files.size(localFilePath) >= Files.size(resourcesFilePath)
                     // When compareTo returns a value greater than 0 it means is a more recent time creation.
-                    && comparingFileTimeCreation.compareTo(resourceTimeCreation) > 0;
+                    && localFileTimeCreation.compareTo(resourceFileTimeCreation) > 0;
         } catch (IOException e) {
             // Fallback value to keep process going forward.
             return false;
