@@ -120,7 +120,7 @@ dependencies {
     annotationProcessor "com.google.auto.value:auto-value:1.6.5"
     annotationProcessor libs.dagger.compiler
 
-    androidTestAnnotationProcessor 'com.google.dagger:dagger-compiler:2.27'
+    androidTestAnnotationProcessor libs.dagger.compiler
 
     testImplementation libs.androidx.test.core
     testImplementation libs.androidx.test.junit

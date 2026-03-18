@@ -26,7 +26,9 @@ jobs:
         with:
           java-version: 17
           distribution: temurin
-          cache: gradle
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
 
       - id: changed-modules
         run: |
@@ -60,7 +62,9 @@ jobs:
         with:
           java-version: 17
           distribution: temurin
-          cache: gradle
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
 
       - name: Add google-services.json
         env:
@@ -123,7 +127,9 @@ jobs:
         with:
           java-version: 17
           distribution: temurin
-          cache: gradle
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
 
       - name: Add google-services.json
         env:
@@ -214,7 +220,9 @@ jobs:
         with:
           java-version: 17
           distribution: temurin
-          cache: gradle
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
 
       - name: Add google-services.json
         env:
@@ -283,7 +291,9 @@ jobs:
         with:
           java-version: 21
           distribution: temurin
-          cache: gradle
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
 
       - uses: google-github-actions/setup-gcloud@77e7a554d41e2ee56fc945c52dfd3f33d12def9a # v2.1.4
 

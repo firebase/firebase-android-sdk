@@ -20,10 +20,18 @@ import com.google.firebase.ai.AIModels.Companion.getModels
 import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.ContentModality
 import com.google.firebase.ai.type.CountTokensResponse
+import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldBeIn
+import io.kotest.matchers.collections.shouldNotBeEmpty
+import io.kotest.matchers.shouldBe
 import java.io.ByteArrayOutputStream
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 
+/**
+ * Tests countTokens results matching with expected. Google AI counts 1 additional token for all
+ * requests, so all checks are one of two values.
+ */
 class CountTokensTests {
 
   /** Ensures that the token count is expected for simple words. */
@@ -32,10 +40,10 @@ class CountTokensTests {
     for (model in getModels()) {
       runBlocking {
         val response = model.countTokens("this is five different words")
-        assert(response.totalTokens == 5)
-        assert(response.promptTokensDetails.size == 1)
-        assert(response.promptTokensDetails[0].modality == ContentModality.TEXT)
-        assert(response.promptTokensDetails[0].tokenCount == 5)
+        response.totalTokens.shouldBeIn(5, 6)
+        response.promptTokensDetails.size shouldBe 1
+        response.promptTokensDetails[0].modality shouldBe ContentModality.TEXT
+        response.promptTokensDetails[0].tokenCount shouldBe response.totalTokens
       }
     }
   }
@@ -47,8 +55,8 @@ class CountTokensTests {
       runBlocking {
         val response = model.countTokens("this is a text prompt")
         checkTokenCountsMatch(response)
-        assert(response.promptTokensDetails.size == 1)
-        assert(containsModality(response, ContentModality.TEXT))
+        response.promptTokensDetails.size shouldBe 1
+        containsModality(response, ContentModality.TEXT) shouldBe true
       }
     }
   }
@@ -61,8 +69,8 @@ class CountTokensTests {
         val bitmap = Bitmap.createBitmap(10, 10, Bitmap.Config.ARGB_8888)
         val response = model.countTokens(bitmap)
         checkTokenCountsMatch(response)
-        assert(response.promptTokensDetails.size == 1)
-        assert(containsModality(response, ContentModality.IMAGE))
+        response.promptTokensDetails.size.shouldBeIn(1, 2)
+        containsModality(response, ContentModality.IMAGE) shouldBe true
       }
     }
   }
@@ -82,9 +90,9 @@ class CountTokensTests {
             Content.Builder().image(bitmap).build()
           )
         checkTokenCountsMatch(response)
-        assert(response.promptTokensDetails.size == 2)
-        assert(containsModality(response, ContentModality.TEXT))
-        assert(containsModality(response, ContentModality.IMAGE))
+        response.promptTokensDetails.size shouldBe 2
+        containsModality(response, ContentModality.TEXT) shouldBe true
+        containsModality(response, ContentModality.IMAGE) shouldBe true
       }
     }
   }
@@ -103,9 +111,9 @@ class CountTokensTests {
             Content.Builder().inlineData("this is text".toByteArray(), "text/plain").build()
           )
         checkTokenCountsMatch(response)
-        assert(response.totalTokens == 3)
-        assert(response.promptTokensDetails.size == 1)
-        assert(containsModality(response, ContentModality.TEXT))
+        response.totalTokens.shouldBeIn(3, 4)
+        response.promptTokensDetails.size shouldBe 1
+        containsModality(response, ContentModality.TEXT) shouldBe true
       }
     }
   }
@@ -125,8 +133,8 @@ class CountTokensTests {
         val array = stream.toByteArray()
         val response = model.countTokens(Content.Builder().inlineData(array, "image/png").build())
         checkTokenCountsMatch(response)
-        assert(response.promptTokensDetails.size == 1)
-        assert(containsModality(response, ContentModality.IMAGE))
+        response.promptTokensDetails.size.shouldBeIn(1, 2)
+        containsModality(response, ContentModality.IMAGE) shouldBe true
       }
     }
   }
@@ -141,9 +149,9 @@ class CountTokensTests {
       runBlocking {
         val response = model.countTokens(Content.Builder().build())
         checkTokenCountsMatch(response)
-        assert(response.totalTokens == 0)
-        assert(response.promptTokensDetails.size == 1)
-        assert(containsModality(response, ContentModality.TEXT))
+        response.totalTokens.shouldBeIn(0, 1)
+        response.promptTokensDetails.size shouldBe 1
+        containsModality(response, ContentModality.TEXT) shouldBe true
       }
     }
   }
@@ -179,14 +187,21 @@ class CountTokensTests {
             Content.Builder().inlineData(json.toByteArray(), "application/json").build()
           )
         checkTokenCountsMatch(response)
-        assert(response.promptTokensDetails.isEmpty())
-        assert(response.totalTokens == 0)
+        if (response.promptTokensDetails.isEmpty()) {
+          // Vertex does not believe JSON is composed of tokens
+          response.promptTokensDetails.shouldBeEmpty()
+          response.totalTokens shouldBe 0
+        } else {
+          // GoogleAI, on the other hand, is a firm believer in tokenated JSON
+          response.promptTokensDetails.shouldNotBeEmpty()
+          response.totalTokens shouldBe 53
+        }
       }
     }
   }
 
   fun checkTokenCountsMatch(response: CountTokensResponse) {
-    assert(sumTokenCount(response) == response.totalTokens)
+    sumTokenCount(response) shouldBe response.totalTokens
   }
 
   fun sumTokenCount(response: CountTokensResponse): Int {

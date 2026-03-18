@@ -10,17 +10,17 @@
     "logs": "firebase functions:log"
   },
   "engines": {
-    "node": "19"
+    "node": "25"
   },
   "main": "index.js",
   "dependencies": {
-    "firebase-admin": "^12.0.0",
-    "firebase-functions": "^4.4.0"
+    "firebase-admin": "^13.0.0",
+    "firebase-functions": "^7.0.0"
   },
   "devDependencies": {
-    "eslint": "7.19.0",
+    "eslint": "10.0.3",
     "eslint-config-google": "0.14.0",
-    "firebase-functions-test": "0.2.3"
+    "firebase-functions-test": "3.4.1"
   },
   "private": true
 }

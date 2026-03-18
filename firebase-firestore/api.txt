@@ -675,6 +675,10 @@ package com.google.firebase.firestore.pipeline {
 
   public final class AggregateFunction {
     method public com.google.firebase.firestore.pipeline.AliasedAggregate alias(String alias);
+    method public static com.google.firebase.firestore.pipeline.AggregateFunction arrayAgg(com.google.firebase.firestore.pipeline.Expression expression);
+    method public static com.google.firebase.firestore.pipeline.AggregateFunction arrayAgg(String fieldName);
+    method public static com.google.firebase.firestore.pipeline.AggregateFunction arrayAggDistinct(com.google.firebase.firestore.pipeline.Expression expression);
+    method public static com.google.firebase.firestore.pipeline.AggregateFunction arrayAggDistinct(String fieldName);
     method public static com.google.firebase.firestore.pipeline.AggregateFunction average(com.google.firebase.firestore.pipeline.Expression expression);
     method public static com.google.firebase.firestore.pipeline.AggregateFunction average(String fieldName);
     method public static com.google.firebase.firestore.pipeline.AggregateFunction count(com.google.firebase.firestore.pipeline.Expression expression);
@@ -683,6 +687,10 @@ package com.google.firebase.firestore.pipeline {
     method public static com.google.firebase.firestore.pipeline.AggregateFunction countDistinct(com.google.firebase.firestore.pipeline.Expression expression);
     method public static com.google.firebase.firestore.pipeline.AggregateFunction countDistinct(String fieldName);
     method public static com.google.firebase.firestore.pipeline.AggregateFunction countIf(com.google.firebase.firestore.pipeline.BooleanExpression condition);
+    method public static com.google.firebase.firestore.pipeline.AggregateFunction first(com.google.firebase.firestore.pipeline.Expression expression);
+    method public static com.google.firebase.firestore.pipeline.AggregateFunction first(String fieldName);
+    method public static com.google.firebase.firestore.pipeline.AggregateFunction last(com.google.firebase.firestore.pipeline.Expression expression);
+    method public static com.google.firebase.firestore.pipeline.AggregateFunction last(String fieldName);
     method public static com.google.firebase.firestore.pipeline.AggregateFunction maximum(com.google.firebase.firestore.pipeline.Expression expression);
     method public static com.google.firebase.firestore.pipeline.AggregateFunction maximum(String fieldName);
     method public static com.google.firebase.firestore.pipeline.AggregateFunction minimum(com.google.firebase.firestore.pipeline.Expression expression);
@@ -694,6 +702,10 @@ package com.google.firebase.firestore.pipeline {
   }
 
   public static final class AggregateFunction.Companion {
+    method public com.google.firebase.firestore.pipeline.AggregateFunction arrayAgg(com.google.firebase.firestore.pipeline.Expression expression);
+    method public com.google.firebase.firestore.pipeline.AggregateFunction arrayAgg(String fieldName);
+    method public com.google.firebase.firestore.pipeline.AggregateFunction arrayAggDistinct(com.google.firebase.firestore.pipeline.Expression expression);
+    method public com.google.firebase.firestore.pipeline.AggregateFunction arrayAggDistinct(String fieldName);
     method public com.google.firebase.firestore.pipeline.AggregateFunction average(com.google.firebase.firestore.pipeline.Expression expression);
     method public com.google.firebase.firestore.pipeline.AggregateFunction average(String fieldName);
     method public com.google.firebase.firestore.pipeline.AggregateFunction count(com.google.firebase.firestore.pipeline.Expression expression);
@@ -702,6 +714,10 @@ package com.google.firebase.firestore.pipeline {
     method public com.google.firebase.firestore.pipeline.AggregateFunction countDistinct(com.google.firebase.firestore.pipeline.Expression expression);
     method public com.google.firebase.firestore.pipeline.AggregateFunction countDistinct(String fieldName);
     method public com.google.firebase.firestore.pipeline.AggregateFunction countIf(com.google.firebase.firestore.pipeline.BooleanExpression condition);
+    method public com.google.firebase.firestore.pipeline.AggregateFunction first(com.google.firebase.firestore.pipeline.Expression expression);
+    method public com.google.firebase.firestore.pipeline.AggregateFunction first(String fieldName);
+    method public com.google.firebase.firestore.pipeline.AggregateFunction last(com.google.firebase.firestore.pipeline.Expression expression);
+    method public com.google.firebase.firestore.pipeline.AggregateFunction last(String fieldName);
     method public com.google.firebase.firestore.pipeline.AggregateFunction maximum(com.google.firebase.firestore.pipeline.Expression expression);
     method public com.google.firebase.firestore.pipeline.AggregateFunction maximum(String fieldName);
     method public com.google.firebase.firestore.pipeline.AggregateFunction minimum(com.google.firebase.firestore.pipeline.Expression expression);
@@ -794,6 +810,8 @@ package com.google.firebase.firestore.pipeline {
     method public static final com.google.firebase.firestore.pipeline.BooleanExpression and(com.google.firebase.firestore.pipeline.BooleanExpression condition, com.google.firebase.firestore.pipeline.BooleanExpression... conditions);
     method public static final com.google.firebase.firestore.pipeline.Expression array(java.lang.Object?... elements);
     method public static final com.google.firebase.firestore.pipeline.Expression array(java.util.List<? extends java.lang.Object?> elements);
+    method public final com.google.firebase.firestore.pipeline.AggregateFunction arrayAgg();
+    method public final com.google.firebase.firestore.pipeline.AggregateFunction arrayAggDistinct();
     method public static final com.google.firebase.firestore.pipeline.Expression arrayConcat(com.google.firebase.firestore.pipeline.Expression firstArray, com.google.firebase.firestore.pipeline.Expression secondArray, java.lang.Object... otherArrays);
     method public static final com.google.firebase.firestore.pipeline.Expression arrayConcat(com.google.firebase.firestore.pipeline.Expression firstArray, Object secondArray, java.lang.Object... otherArrays);
     method public final com.google.firebase.firestore.pipeline.Expression arrayConcat(com.google.firebase.firestore.pipeline.Expression secondArray, java.lang.Object... otherArrays);
@@ -1011,6 +1029,7 @@ package com.google.firebase.firestore.pipeline {
     method public static final com.google.firebase.firestore.pipeline.Expression exp(String numericField);
     method public static final com.google.firebase.firestore.pipeline.Field field(com.google.firebase.firestore.FieldPath fieldPath);
     method public static final com.google.firebase.firestore.pipeline.Field field(String name);
+    method public final com.google.firebase.firestore.pipeline.AggregateFunction first();
     method public final com.google.firebase.firestore.pipeline.Expression floor();
     method public static final com.google.firebase.firestore.pipeline.Expression floor(com.google.firebase.firestore.pipeline.Expression numericExpr);
     method public static final com.google.firebase.firestore.pipeline.Expression floor(String numericField);
@@ -1048,6 +1067,7 @@ package com.google.firebase.firestore.pipeline {
     method public final com.google.firebase.firestore.pipeline.Expression join(String delimiter);
     method public static final com.google.firebase.firestore.pipeline.Expression join(String arrayFieldName, com.google.firebase.firestore.pipeline.Expression delimiterExpression);
     method public static final com.google.firebase.firestore.pipeline.Expression join(String arrayFieldName, String delimiter);
+    method public final com.google.firebase.firestore.pipeline.AggregateFunction last();
     method public final com.google.firebase.firestore.pipeline.Expression length();
     method public static final com.google.firebase.firestore.pipeline.Expression length(com.google.firebase.firestore.pipeline.Expression expr);
     method public static final com.google.firebase.firestore.pipeline.Expression length(String fieldName);

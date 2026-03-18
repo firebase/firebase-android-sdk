@@ -7916,6 +7916,44 @@ abstract class Expression internal constructor() {
   fun maximum(): AggregateFunction = AggregateFunction.maximum(this)
 
   /**
+   * Creates an aggregation that finds the first value of this expression across multiple stage
+   * inputs.
+   *
+   * @return A new [AggregateFunction] representing the first aggregation.
+   */
+  fun first(): AggregateFunction = AggregateFunction.first(this)
+
+  /**
+   * Creates an aggregation that finds the last value of this expression across multiple stage
+   * inputs.
+   *
+   * @return A new [AggregateFunction] representing the last aggregation.
+   */
+  fun last(): AggregateFunction = AggregateFunction.last(this)
+
+  /**
+   * Creates an aggregation that collects all values of this expression across multiple stage inputs
+   * into an array.
+   *
+   * If the expression resolves to an absent value, it is converted to `null`. The order of elements
+   * in the output array is not stable and shouldn't be relied upon.
+   *
+   * @return A new [AggregateFunction] representing the array_agg aggregation.
+   */
+  fun arrayAgg(): AggregateFunction = AggregateFunction.arrayAgg(this)
+
+  /**
+   * Creates an aggregation that collects all distinct values of this expression across multiple
+   * stage inputs into an array.
+   *
+   * If the expression resolves to an absent value, it is converted to `null`. The order of elements
+   * in the output array is not stable and shouldn't be relied upon.
+   *
+   * @return A new [AggregateFunction] representing the array_agg_distinct aggregation.
+   */
+  fun arrayAggDistinct(): AggregateFunction = AggregateFunction.arrayAggDistinct(this)
+
+  /**
    * Create an [Ordering] that sorts documents in ascending order based on value of this expression
    *
    * @return A new [Ordering] object with ascending sort by this expression.
