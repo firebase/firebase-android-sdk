@@ -1,0 +1,9 @@
+connectorId: caching_maxage_memory
+authMode: PUBLIC
+generate:
+  kotlinSdk:
+    outputDir: ../../.generated/caching_maxage_memory
+    package: com.google.firebase.dataconnect.connectors.caching_maxage_memory
+    clientCache:
+      maxAge: 1h
+      storage: memory

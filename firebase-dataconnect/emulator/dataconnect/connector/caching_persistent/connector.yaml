@@ -1,0 +1,8 @@
+connectorId: caching_persistent
+authMode: PUBLIC
+generate:
+  kotlinSdk:
+    outputDir: ../../.generated/caching_persistent
+    package: com.google.firebase.dataconnect.connectors.caching_persistent
+    clientCache:
+      storage: persistent

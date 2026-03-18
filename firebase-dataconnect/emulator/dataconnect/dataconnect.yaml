@@ -10,6 +10,11 @@ schema:
         instanceId: "iidtpktdqb8gxm"
 connectorDirs: [
   "./connector/caching",
+  "./connector/caching_maxage",
+  "./connector/caching_memory",
+  "./connector/caching_persistent",
+  "./connector/caching_maxage_memory",
+  "./connector/caching_maxage_persistent",
   "./connector/demo",
   "./connector/alltypes",
   "./connector/keywords",

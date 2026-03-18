@@ -59,7 +59,19 @@ android {
 
   dataconnect {
     configDir = file("../emulator/dataconnect")
-    codegen { connectors = listOf("demo", "keywords") }
+    codegen {
+      connectors =
+        listOf(
+          "caching",
+          "caching_maxage",
+          "caching_memory",
+          "caching_persistent",
+          "caching_maxage_memory",
+          "caching_maxage_persistent",
+          "demo",
+          "keywords",
+        )
+    }
   }
 }
 
