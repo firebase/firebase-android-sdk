@@ -404,7 +404,6 @@ abstract class PublishingPlugin : Plugin<Project> {
           "com.google.firebase:firebase-messaging-ktx",
           "com.google.firebase:firebase-ml-modeldownloader-ktx",
           "com.google.firebase:firebase-perf-ktx",
-          "com.google.firebase:firebase-pnv",
           "com.google.firebase:firebase-storage-ktx",
           "com.google.firebase:firebase-ai-ondevice",
           "com.google.firebase:firebase-ai-ondevice-interop",
