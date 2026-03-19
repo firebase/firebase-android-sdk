@@ -565,7 +565,7 @@ public class PipelineTest {
   }
 
   @Test
-  public void testSwitchOnWithNoDefaultValue() {
+  public void testSwitchOnWithNoDefaultValueAndNoMatchingCondition() {
     Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
