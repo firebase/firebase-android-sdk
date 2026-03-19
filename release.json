@@ -1,0 +1,33 @@
+{
+    "name": "test",
+    "libraries": [
+        ":firebase-appdistribution",
+        ":firebase-appdistribution-api",
+        ":firebase-components",
+        ":firebase-crashlytics",
+        ":firebase-crashlytics-ndk",
+        ":firebase-sessions",
+        ":firebase-dataconnect",
+        ":firebase-firestore",
+        ":firebase-functions",
+        ":firebase-inappmessaging",
+        ":firebase-inappmessaging-display",
+        ":firebase-installations",
+        ":firebase-installations-interop",
+        ":firebase-messaging",
+        ":firebase-messaging-directboot",
+        ":firebase-ml-modeldownloader",
+        ":firebase-perf",
+        ":ai-logic:firebase-ai",
+        ":ai-logic:firebase-ai-ksp-processor",
+        ":ai-logic:firebase-ai-ondevice",
+        ":ai-logic:firebase-ai-ondevice-interop",
+        ":appcheck:firebase-appcheck",
+        ":appcheck:firebase-appcheck-debug",
+        ":appcheck:firebase-appcheck-debug-testing",
+        ":appcheck:firebase-appcheck-playintegrity",
+        ":transport:transport-api",
+        ":transport:transport-backend-cct",
+        ":transport:transport-runtime"
+    ]
+}
