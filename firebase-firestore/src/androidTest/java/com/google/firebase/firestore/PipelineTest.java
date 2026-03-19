@@ -20,6 +20,7 @@ import static com.google.firebase.firestore.pipeline.Expression.and;
 import static com.google.firebase.firestore.pipeline.Expression.array;
 import static com.google.firebase.firestore.pipeline.Expression.arrayContains;
 import static com.google.firebase.firestore.pipeline.Expression.arrayContainsAny;
+import static com.google.firebase.firestore.pipeline.Expression.arrayFilter;
 import static com.google.firebase.firestore.pipeline.Expression.arrayFirst;
 import static com.google.firebase.firestore.pipeline.Expression.arrayFirstN;
 import static com.google.firebase.firestore.pipeline.Expression.arrayIndexOf;
@@ -31,6 +32,7 @@ import static com.google.firebase.firestore.pipeline.Expression.arrayMaximum;
 import static com.google.firebase.firestore.pipeline.Expression.arrayMaximumN;
 import static com.google.firebase.firestore.pipeline.Expression.arrayMinimum;
 import static com.google.firebase.firestore.pipeline.Expression.arrayMinimumN;
+import static com.google.firebase.firestore.pipeline.Expression.arraySlice;
 import static com.google.firebase.firestore.pipeline.Expression.collectionId;
 import static com.google.firebase.firestore.pipeline.Expression.concat;
 import static com.google.firebase.firestore.pipeline.Expression.constant;
@@ -854,6 +856,80 @@ public class PipelineTest {
                 ImmutableList.of("magic", "epic"),
                 "maximumTagsStaticMethod",
                 ImmutableList.of("magic", "epic", "adventure")));
+  }
+
+@Test
+  public void arrayFilterWorks() {
+      Task<Pipeline.Snapshot> execute = firestore
+              .pipeline()
+              .collection(randomCol)
+              .where(equal("title", "The Lord of the Rings"))
+              .select(
+                      field("tags").arrayFilter("tag", notEqual(variable("tag"), "magic")).alias("notMagicTags"),
+                      arrayFilter("tags", "tag", notEqual(variable("tag"), "epic")).alias("notEpicTags"),
+                      field("tags").arrayFilter("tag", equal(variable("tag"), "romance")).alias("noMatchingTags"),
+                      )
+              .execute();
+      assertThat(waitFor(execute).getResults())
+              .comparingElementsUsing(DATA_CORRESPONDENCE)
+              .containsExactly(
+                      ImmutableMap.of(
+                              "notMagicTags",
+                              ImmutableList.of("adventure", "epic"),
+                              "notEpicTags",
+                              ImmutableList.of("adventure", "magic"),
+                              "noMatchingTags",
+                              ImmutableList.of()));
+  }
+
+  @Test
+  public void arrayFilterWithMixedTypesAndNullsWorks() {
+      Task<Pipeline.Snapshot> execute = firestore
+              .pipeline()
+              .collection(randomCol)
+              .limit(1)
+              .replaceWith(
+                      map(
+                              ImmutableMap.of(
+                                      "arr",
+                                      ImmutableList.of(1, "foo", null, 20.0, "bar", 30, "40", null))))
+              .select(
+                      field("arr")
+                              .arrayFilter("element", greaterThan(variable("element"), 10))
+                              .alias("filtered"))
+              .execute();
+      assertThat(waitFor(execute).getResults())
+              .comparingElementsUsing(DATA_CORRESPONDENCE)
+              .containsExactly(
+                      ImmutableMap.of(
+                              "filtered",
+                              ImmutableList.of("bar", "40")));
+  }
+
+  @Test
+  public void arraySliceWorks() {
+      Task<Pipeline.Snapshot> execute = firestore
+              .pipeline()
+              .collection(randomCol)
+              .where(equal("title", "The Lord of the Rings"))
+              .select(
+                      field("tags").arraySlice(1, 1).alias("instanceMethodSlice"),
+                      arraySlice("tags", 1, 1).alias("staticMethodSlice"),
+                      field("tags").arraySlice(1).alias("instanceMethodSliceToEnd"),
+                      arraySlice("tags", 1).alias("staticMethodSliceToEnd"))
+              .execute();
+      assertThat(waitFor(execute).getResults())
+              .comparingElementsUsing(DATA_CORRESPONDENCE)
+              .containsExactly(
+                      ImmutableMap.of(
+                              "instanceMethodSlice",
+                              ImmutableList.of("magic"),
+                              "staticMethodSlice",
+                              ImmutableList.of("magic"),
+                              "instanceMethodSliceToEnd",
+                              ImmutableList.of("magic", "epic"),
+                              "staticMethodSliceToEnd",
+                              ImmutableList.of("magic", "epic")));
   }
 
   @Test

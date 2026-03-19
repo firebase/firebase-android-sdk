@@ -4754,6 +4754,106 @@ abstract class Expression internal constructor() {
       FunctionExpression("array_reverse", evaluateArrayReverse, arrayFieldName)
 
     /**
+     * Filters an [array] expression based on a predicate.
+     *
+     * ```kotlin
+     * // Filter 'scores' array to include only values greater than 50
+     * arrayFilter(field("scores"), "score", greaterThan(field("score"), 50))
+     * ```
+     *
+     * @param array The array expression to filter.
+     * @param alias The alias to use for the current element in the filter expression.
+     * @param filter The predicate expression used to filter the elements.
+     * @return A new [Expression] representing the arrayFilter operation.
+     */
+    @JvmStatic
+    fun arrayFilter(array: Expression, alias: String, filter: Expression): Expression =
+      FunctionExpression("array_filter", notImplemented, array, constant(alias), filter)
+
+    /**
+     * Filters an array field based on a predicate.
+     *
+     * ```kotlin
+     * // Filter 'scores' array to include only values greater than 50
+     * arrayFilter("scores", "score", greaterThan(field("score"), 50))
+     * ```
+     *
+     * @param arrayFieldName The name of field that contains array to filter.
+     * @param alias The alias to use for the current element in the filter expression.
+     * @param filter The predicate expression used to filter the elements.
+     * @return A new [Expression] representing the arrayFilter operation.
+     */
+    @JvmStatic
+    fun arrayFilter(arrayFieldName: String, alias: String, filter: Expression): Expression =
+      FunctionExpression("array_filter", notImplemented, arrayFieldName, constant(alias), filter)
+
+    /**
+     * Creates an expression that returns a slice of an [array] expression.
+     *
+     * ```kotlin
+     * // Get 5 elements from the 'items' array starting from index 2
+     * arraySlice(field("items"), 2, 5)
+     * ```
+     *
+     * @param array The array expression.
+     * @param offset The starting index.
+     * @param length The number of elements to return.
+     * @return A new [Expression] representing the arraySlice operation.
+     */
+    @JvmStatic
+    fun arraySlice(array: Expression, offset: Any, length: Any): Expression =
+      FunctionExpression("array_slice", notImplemented, array, toExprOrConstant(offset), toExprOrConstant(length))
+
+    /**
+     * Creates an expression that returns a slice of an [array] expression to its end.
+     *
+     * ```kotlin
+     * // Get elements from the 'items' array starting from index 2
+     * arraySlice(field("items"), 2)
+     * ```
+     *
+     * @param array The array expression.
+     * @param offset The starting index.
+     * @return A new [Expression] representing the arraySlice operation.
+     */
+    @JvmStatic
+    fun arraySlice(array: Expression, offset: Any): Expression =
+      FunctionExpression("array_slice", notImplemented, array, toExprOrConstant(offset))
+
+    /**
+     * Creates an expression that returns a slice of an array field.
+     *
+     * ```kotlin
+     * // Get 5 elements from the 'items' array starting from index 2
+     * arraySlice("items", 2, 5)
+     * ```
+     *
+     * @param arrayFieldName The name of field that contains the array.
+     * @param offset The starting index.
+     * @param length The number of elements to return.
+     * @return A new [Expression] representing the arraySlice operation.
+     */
+    @JvmStatic
+    fun arraySlice(arrayFieldName: String, offset: Any, length: Any): Expression =
+      FunctionExpression("array_slice", notImplemented, arrayFieldName, toExprOrConstant(offset), toExprOrConstant(length))
+
+    /**
+     * Creates an expression that returns a slice of an array field to its end.
+     *
+     * ```kotlin
+     * // Get elements from the 'items' array starting from index 2
+     * arraySlice("items", 2)
+     * ```
+     *
+     * @param arrayFieldName The name of field that contains the array.
+     * @param offset The starting index.
+     * @return A new [Expression] representing the arraySlice operation.
+     */
+    @JvmStatic
+    fun arraySlice(arrayFieldName: String, offset: Any): Expression =
+      FunctionExpression("array_slice", notImplemented, arrayFieldName, toExprOrConstant(offset))
+
+    /**
      * Creates an expression that returns the sum of the elements in an array.
      *
      * ```kotlin
@@ -7474,6 +7574,48 @@ abstract class Expression internal constructor() {
    * @return A new [Expression] representing the arrayReverse operation.
    */
   fun arrayReverse() = Companion.arrayReverse(this)
+
+  /**
+   * Filters this array expression based on a predicate.
+   *
+   * ```kotlin
+   * // Filter 'scores' array to include only values greater than 50
+   * field("scores").arrayFilter("score", greaterThan(field("score"), 50))
+   * ```
+   *
+   * @param alias The alias to use for the current element in the filter expression.
+   * @param filter The predicate expression used to filter the elements.
+   * @return A new [Expression] representing the arrayFilter operation.
+   */
+  fun arrayFilter(alias: String, filter: Expression) =
+    Companion.arrayFilter(this, alias, filter)
+
+  /**
+   * Creates an expression that returns a slice of this array expression.
+   *
+   * ```kotlin
+   * // Get 5 elements from the 'items' array starting from index 2
+   * field("items").arraySlice(2, 5)
+   * ```
+   *
+   * @param offset The starting index.
+   * @param length The number of elements to return.
+   * @return A new [Expression] representing the arraySlice operation.
+   */
+  fun arraySlice(offset: Any, length: Any) = Companion.arraySlice(this, offset, length)
+
+  /**
+   * Creates an expression that returns a slice of this array expression to its end.
+   *
+   * ```kotlin
+   * // Get elements from the 'items' array starting from index 2
+   * field("items").arraySlice(2)
+   * ```
+   *
+   * @param offset The starting index.
+   * @return A new [Expression] representing the arraySlice operation.
+   */
+  fun arraySlice(offset: Any) = Companion.arraySlice(this, offset)
 
   /**
    * Creates an expression that returns the sum of the elements in this array expression.
