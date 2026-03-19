@@ -855,11 +855,11 @@ internal constructor(
   private val languageCode: String? = null,
   // TODO add indexPartition here when supported
   private val retrievalDepth: Long? = null,
-  private val sort: List<Ordering>? = null,
+  private val sort: Array<Ordering>? = null,
   private val offset: Long? = null,
   private val limit: Long? = null,
-  private val select: List<Selectable>? = null,
-  private val addFields: List<Selectable>? = null,
+  private val select: Array<Selectable>? = null,
+  private val addFields: Array<Selectable>? = null,
   private val queryEnhancement: QueryEnhancement? = null,
   options: InternalOptions = InternalOptions.EMPTY
 ) : Stage<SearchStage>("search", options) {
@@ -880,6 +880,33 @@ internal constructor(
     TODO("Not yet implemented")
   }
   override fun args(userDataReader: UserDataReader): Sequence<Value> = emptySequence()
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is SearchStage) return false
+    if (languageCode != other.languageCode) return false
+    if (retrievalDepth != other.retrievalDepth) return false
+    if (!sort.contentEquals(other.sort)) return false
+    if (limit != other.limit) return false
+    if (!select.contentEquals(other.select)) return false
+    if (!addFields.contentEquals(other.addFields)) return false
+    if (queryEnhancement != other.queryEnhancement) return false
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = query.hashCode()
+    result = 31 * result + (languageCode?.hashCode() ?: 0)
+    result = 31 * result + (retrievalDepth?.hashCode() ?: 0)
+    result = 31 * result + (sort?.contentHashCode() ?: 0)
+    result = 31 * result + (offset?.hashCode() ?: 0)
+    result = 31 * result + (limit?.hashCode() ?: 0)
+    result = 31 * result + (select?.contentHashCode() ?: 0)
+    result = 31 * result + (addFields?.contentHashCode() ?: 0)
+    result = 31 * result + (queryEnhancement?.hashCode() ?: 0)
+    result = 31 * result + options.hashCode()
+    return result
+  }
 
   override fun toProtoStage(userDataReader: UserDataReader): Pipeline.Stage {
     var completeOptions = options.with("query", query.toProto(userDataReader))
@@ -903,14 +930,14 @@ internal constructor(
       completeOptions =
         completeOptions.with(
           "select",
-          encodeValue(associateWithoutDuplications(select.toTypedArray(), userDataReader))
+          encodeValue(associateWithoutDuplications(select, userDataReader))
         )
     }
     if (addFields != null) {
       completeOptions =
         completeOptions.with(
           "add_fields",
-          encodeValue(associateWithoutDuplications(addFields.toTypedArray(), userDataReader))
+          encodeValue(associateWithoutDuplications(addFields, userDataReader))
         )
     }
     if (queryEnhancement != null) {
@@ -988,7 +1015,7 @@ internal constructor(
 
   /** Specify the fields to add to each document. */
   internal fun withAddFields(field: Selectable, vararg additionalFields: Selectable): SearchStage {
-    val addFields = additionalFields.map(Selectable::toSelectable)
+    val addFields = additionalFields.map(Selectable::toSelectable).toTypedArray()
 
     return SearchStage(
       query,
@@ -1008,6 +1035,7 @@ internal constructor(
     val allSelections =
       listOf(selection, *additionalSelections.map { Selectable.toSelectable(it) }.toTypedArray())
         .map(Selectable::toSelectable)
+        .toTypedArray()
 
     return SearchStage(
       query,
@@ -1029,7 +1057,7 @@ internal constructor(
 
   /** Specify how the returned documents are sorted. One or more ordering are required. */
   fun withSort(order: Ordering, vararg additionalOrderings: Ordering): SearchStage {
-    val allOrderings = listOf(order, *additionalOrderings)
+    val allOrderings = listOf(order, *additionalOrderings).toTypedArray()
     return SearchStage(
       query,
       languageCode,
