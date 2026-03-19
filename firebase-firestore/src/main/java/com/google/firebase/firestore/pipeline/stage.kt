@@ -34,12 +34,23 @@ import javax.annotation.Nonnull
 
 @Beta
 sealed class Stage<T : Stage<T>>(internal val name: String, internal val options: InternalOptions) {
-  internal fun toProtoStage(userDataReader: UserDataReader): Pipeline.Stage {
-    val builder = Pipeline.Stage.newBuilder()
-    builder.setName(name)
-    args(userDataReader).forEach(builder::addArgs)
-    options.forEach(builder::putOptions)
-    return builder.build()
+  companion object {
+    internal fun toProtoStage(
+      name: String,
+      args: Sequence<Value>,
+      options: InternalOptions,
+      userDataReader: UserDataReader
+    ): Pipeline.Stage {
+      val builder = Pipeline.Stage.newBuilder()
+      builder.setName(name)
+      args.forEach(builder::addArgs)
+      options.forEach(builder::putOptions)
+      return builder.build()
+    }
+  }
+
+  internal open fun toProtoStage(userDataReader: UserDataReader): Pipeline.Stage {
+    return Stage.toProtoStage(name, args(userDataReader), options, userDataReader)
   }
 
   internal abstract fun canonicalId(): String
@@ -837,6 +848,283 @@ class FindNearestOptions private constructor(options: InternalOptions) :
   }
 }
 
+@Beta
+class SearchStage
+internal constructor(
+  private val query: BooleanExpression,
+  private val languageCode: String? = null,
+  // TODO add indexPartition here when supported
+  private val retrievalDepth: Long? = null,
+  private val sort: List<Ordering>? = null,
+  private val offset: Long? = null,
+  private val limit: Long? = null,
+  private val select: List<Selectable>? = null,
+  private val addFields: List<Selectable>? = null,
+  private val queryEnhancement: QueryEnhancement? = null,
+  options: InternalOptions = InternalOptions.EMPTY
+) : Stage<SearchStage>("search", options) {
+  override fun self(options: InternalOptions) =
+    SearchStage(
+      query,
+      languageCode,
+      retrievalDepth,
+      sort,
+      offset,
+      limit,
+      select,
+      addFields,
+      queryEnhancement,
+      options
+    )
+  override fun canonicalId(): String {
+    TODO("Not yet implemented")
+  }
+  override fun args(userDataReader: UserDataReader): Sequence<Value> = emptySequence()
+
+  override fun toProtoStage(userDataReader: UserDataReader): Pipeline.Stage {
+    var completeOptions = options.with("query", query.toProto(userDataReader))
+
+    if (languageCode != null) {
+      completeOptions = completeOptions.with("language_code", query.toProto(userDataReader))
+    }
+    if (retrievalDepth != null) {
+      completeOptions = completeOptions.with("retrieval_depth", encodeValue(retrievalDepth))
+    }
+    if (sort != null) {
+      completeOptions = completeOptions.with("sort", sort.map { it.toProto(userDataReader) })
+    }
+    if (offset != null) {
+      completeOptions = completeOptions.with("offset", encodeValue(offset))
+    }
+    if (limit != null) {
+      completeOptions = completeOptions.with("limit", encodeValue(limit))
+    }
+    if (select != null) {
+      completeOptions =
+        completeOptions.with(
+          "select",
+          encodeValue(associateWithoutDuplications(select.toTypedArray(), userDataReader))
+        )
+    }
+    if (addFields != null) {
+      completeOptions =
+        completeOptions.with(
+          "add_fields",
+          encodeValue(associateWithoutDuplications(addFields.toTypedArray(), userDataReader))
+        )
+    }
+    if (queryEnhancement != null) {
+      completeOptions = completeOptions.with("query_enhancement", queryEnhancement.proto)
+    }
+
+    return toProtoStage(name, args(userDataReader), completeOptions, userDataReader)
+  }
+
+  companion object {
+    /**
+     * Create [SearchStage] with an expression search query.
+     *
+     * `query` specifies the search query that will be used to query and score documents by the
+     * search stage.
+     *
+     * The query can be expressed as an `Expression`, which will be used to score and filter the
+     * results. Not all expressions supported by Pipelines are supported in the Search query.
+     *
+     * ```
+     * db.pipeline().collection('restaurants').search({
+     *   query: or(
+     *     documentContainsText("breakfast"),
+     *     field('menu').containsText('waffle AND coffee')
+     *   )
+     * })
+     * ```
+     */
+    @JvmStatic
+    fun withQuery(query: BooleanExpression): SearchStage {
+      return SearchStage(query)
+    }
+
+    /**
+     * Create [SearchStage] with an expression search query.
+     *
+     * `query` specifies the search query that will be used to query and score documents by the
+     * search stage.
+     *
+     * The query can also be expressed as a string in the Search DSL:
+     *
+     * ```
+     * db.pipeline().collection('restaurants').search({
+     *   query: 'menu:(waffle and coffee) OR breakfast'
+     * })
+     * ```
+     */
+    @JvmStatic fun withQuery(rquery: String): SearchStage = withQuery(documentMatches(rquery))
+  }
+
+  /**
+   * Specifies if the `matches` and `snippet` expressions will enhance the user provided query to
+   * perform matching of synonyms, misspellings, lemmatization, stemming.
+   */
+  internal class QueryEnhancement private constructor(internal val proto: Value) {
+    private constructor(protoString: String) : this(encodeValue(protoString))
+
+    companion object {
+      /**
+       * Search will fall back to the un-enhanced, user provided query, if the query enhancement
+       * fails.
+       */
+      @JvmField val PREFERRED = QueryEnhancement("preferred")
+
+      /**
+       * Search will fail if the query enhancement times out or if the query enhancement is not
+       * supported by the project's DRZ compliance requirements.
+       */
+      @JvmField val REQUIRED = QueryEnhancement("required")
+
+      /** Search will use the un-enhanced, user provided query. */
+      @JvmField val DISABLED = QueryEnhancement("disabled")
+    }
+  }
+
+  /** Specify the fields to add to each document. */
+  internal fun withAddFields(field: Selectable, vararg additionalFields: Selectable): SearchStage {
+    val addFields = additionalFields.map(Selectable::toSelectable)
+
+    return SearchStage(
+      query,
+      languageCode,
+      retrievalDepth,
+      sort,
+      offset,
+      limit,
+      select,
+      addFields,
+      queryEnhancement
+    )
+  }
+
+  /** Specify the fields to keep or add to each document. */
+  fun withSelect(selection: Selectable, vararg additionalSelections: Any): SearchStage {
+    val allSelections =
+      listOf(selection, *additionalSelections.map { Selectable.toSelectable(it) }.toTypedArray())
+        .map(Selectable::toSelectable)
+
+    return SearchStage(
+      query,
+      languageCode,
+      retrievalDepth,
+      sort,
+      offset,
+      limit,
+      allSelections,
+      addFields,
+      queryEnhancement
+    )
+  }
+
+  /** Specify the fields to keep or add to each document. */
+  fun withSelect(fieldName: String, vararg additionalSelections: Any): SearchStage {
+    return withSelect(field(fieldName), *additionalSelections)
+  }
+
+  /** Specify how the returned documents are sorted. One or more ordering are required. */
+  fun withSort(order: Ordering, vararg additionalOrderings: Ordering): SearchStage {
+    val allOrderings = listOf(order, *additionalOrderings)
+    return SearchStage(
+      query,
+      languageCode,
+      retrievalDepth,
+      allOrderings,
+      offset,
+      limit,
+      select,
+      addFields,
+      queryEnhancement
+    )
+  }
+
+  /** Specify the maximum number of documents to return from the Search stage. */
+  internal fun withLimit(limit: Long): SearchStage {
+    return SearchStage(
+      query,
+      languageCode,
+      retrievalDepth,
+      sort,
+      offset,
+      limit,
+      select,
+      addFields,
+      queryEnhancement
+    )
+  }
+
+  /**
+   * Specify the maximum number of documents for the search stage to score. Documents will be
+   * processed in the pre-sort order specified by the search index.
+   */
+  internal fun withRetrievalDepth(retrievalDepth: Long): SearchStage {
+    return SearchStage(
+      query,
+      languageCode,
+      retrievalDepth,
+      sort,
+      offset,
+      limit,
+      select,
+      addFields,
+      queryEnhancement
+    )
+  }
+
+  /** Specify the number of documents to skip. */
+  internal fun withOffset(offset: Long): SearchStage {
+    return SearchStage(
+      query,
+      languageCode,
+      retrievalDepth,
+      sort,
+      offset,
+      limit,
+      select,
+      addFields,
+      queryEnhancement
+    )
+  }
+
+  /** Specify the BCP-47 language code of text in the search query, such as, “en-US” or “sr-Latn” */
+  fun withLanguageCode(value: String): SearchStage {
+    return SearchStage(
+      query,
+      languageCode,
+      retrievalDepth,
+      sort,
+      offset,
+      limit,
+      select,
+      addFields,
+      queryEnhancement
+    )
+  }
+
+  /**
+   * Specify the query expansion behavior used by full-text search expressions in this search stage.
+   * Default: `.PREFERRED`
+   */
+  internal fun withQueryEnhancement(queryEnhancement: QueryEnhancement): SearchStage {
+    return SearchStage(
+      query,
+      languageCode,
+      retrievalDepth,
+      sort,
+      offset,
+      limit,
+      select,
+      addFields,
+      queryEnhancement
+    )
+  }
+}
+
 internal class LimitStage
 internal constructor(val limit: Int, options: InternalOptions = InternalOptions.EMPTY) :
   Stage<LimitStage>("limit", options) {
@@ -1306,7 +1594,7 @@ internal constructor(
 @Beta
 class UnnestOptions private constructor(options: InternalOptions) :
   AbstractOptions<UnnestOptions>(options) {
-    /** Creates a new, empty `UnnestOptions` object. */
+  /** Creates a new, empty `UnnestOptions` object. */
   constructor() : this(InternalOptions.EMPTY)
 
   /**
@@ -1325,70 +1613,4 @@ class UnnestOptions private constructor(options: InternalOptions) :
   override fun self(options: InternalOptions): UnnestOptions {
     return UnnestOptions(options)
   }
-}
-
-class SearchStage
-internal constructor(
-  options: InternalOptions = InternalOptions.EMPTY
-) : Stage<SearchStage>("search", options) {
-    override fun self(options: InternalOptions) = SearchStage(options)
-    override fun canonicalId(): String {
-        TODO("Not yet implemented")
-    }
-    override fun args(userDataReader: UserDataReader): Sequence<Value> = emptySequence()
-}
-
-class SearchOptions private constructor(options: InternalOptions) :
-    AbstractOptions<SearchOptions>(options) {
-
-    /** Creates a new, empty `SearchOptions` object. */
-    constructor() : this(InternalOptions.EMPTY)
-
-    fun withQuery(query: Expression): SearchOptions {
-        return with("query", query.toProto())
-    }
-
-    fun withQuery(query: String): SearchOptions {
-        return with("query", documentMatches(query).toProto())
-    }
-
-    fun withAddFields(field: Selectable, vararg additionalFields: Selectable): SearchOptions {
-        val allFields = listOf(field, *additionalFields)
-        return with("add_fields", allFields.map { it.toProto() })
-    }
-
-    fun withSelect(selection: Selectable, vararg additionalSelections: Any): SearchOptions {
-        val allSelections =
-            listOf(selection, *additionalSelections.map { Selectable.toSelectable(it) }.toTypedArray())
-        return with("select", allSelections.map { it.toProto() })
-    }
-
-    fun withSelect(fieldName: String, vararg additionalSelections: Any): SearchOptions {
-        return withSelect(field(fieldName), *additionalSelections)
-    }
-
-    fun withSort(order: Ordering, vararg additionalOrderings: Ordering): SearchOptions {
-        val allOrderings = listOf(order, *additionalOrderings)
-        return with("sort", allOrderings.map { it.toProto() })
-    }
-
-    fun withLimit(limit: Long): SearchOptions {
-        return with("limit", limit)
-    }
-
-    fun withRetrievalDepth(retrievalDepth: Long): SearchOptions {
-        return with("retrieval_depth", retrievalDepth)
-    }
-
-    fun withOffset(offset: Long): SearchOptions {
-        return with("offset", offset)
-    }
-
-    fun withLanguageCode(value: String): SearchOptions {
-        return with("language_code", value)
-    }
-
-    public override fun self(options: InternalOptions): SearchOptions {
-        return SearchOptions(options)
-    }
 }

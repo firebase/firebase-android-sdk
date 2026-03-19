@@ -52,11 +52,9 @@ import com.google.firebase.firestore.pipeline.RemoveFieldsStage
 import com.google.firebase.firestore.pipeline.ReplaceStage
 import com.google.firebase.firestore.pipeline.SampleStage
 import com.google.firebase.firestore.pipeline.SearchStage
-import com.google.firebase.firestore.pipeline.SearchOptions
 import com.google.firebase.firestore.pipeline.SelectStage
 import com.google.firebase.firestore.pipeline.Selectable
 import com.google.firebase.firestore.pipeline.SortStage
-
 import com.google.firebase.firestore.pipeline.Stage
 import com.google.firebase.firestore.pipeline.UnionStage
 import com.google.firebase.firestore.pipeline.UnnestOptions
@@ -902,12 +900,16 @@ internal constructor(
   fun unnest(unnestStage: UnnestStage): Pipeline = append(unnestStage)
 
   /**
-   * @param options - An object that specifies required and optional parameters for the stage.
+   * Add a search stage to the Pipeline.
+   *
+   * This must be the first stage of the pipeline.
+   *
+   * A limited set of expressions are supported in the search stage.
+   *
+   * @param searchStage An object that specifies how search is performed.
    * @return A new `Pipeline` object with this stage appended to the stage list.
    */
-  fun search(options: SearchOptions): Pipeline {
-    throw Exception("not implemented");
-  }
+  fun search(searchStage: SearchStage): Pipeline = append(searchStage)
 }
 
 /** Start of a Firestore Pipeline */
