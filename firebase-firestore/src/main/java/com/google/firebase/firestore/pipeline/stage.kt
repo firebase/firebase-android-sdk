@@ -24,6 +24,7 @@ import com.google.firebase.firestore.model.ResourcePath
 import com.google.firebase.firestore.model.Values
 import com.google.firebase.firestore.model.Values.encodeValue
 import com.google.firebase.firestore.pipeline.Expression.Companion.constant
+import com.google.firebase.firestore.pipeline.Expression.Companion.documentMatches
 import com.google.firebase.firestore.pipeline.Expression.Companion.field
 import com.google.firebase.firestore.pipeline.evaluation.EvaluationContext
 import com.google.firebase.firestore.remote.RemoteSerializer
@@ -1339,69 +1340,55 @@ internal constructor(
 
 class SearchOptions private constructor(options: InternalOptions) :
     AbstractOptions<SearchOptions>(options) {
+
     /** Creates a new, empty `SearchOptions` object. */
     constructor() : this(InternalOptions.EMPTY)
 
     fun withQuery(query: Expression): SearchOptions {
-        throw Exception("not implemented");
+        return with("query", query.toProto())
     }
 
-    fun withQuery(rquery: String): SearchOptions {
-        throw Exception("not implemented");
+    fun withQuery(query: String): SearchOptions {
+        return with("query", documentMatches(query).toProto())
     }
 
     fun withAddFields(field: Selectable, vararg additionalFields: Selectable): SearchOptions {
-        throw Exception("not implemented");
+        val allFields = listOf(field, *additionalFields)
+        return with("add_fields", allFields.map { it.toProto() })
     }
 
     fun withSelect(selection: Selectable, vararg additionalSelections: Any): SearchOptions {
-        throw Exception("not implemented");
+        val allSelections =
+            listOf(selection, *additionalSelections.map { Selectable.toSelectable(it) }.toTypedArray())
+        return with("select", allSelections.map { it.toProto() })
     }
 
     fun withSelect(fieldName: String, vararg additionalSelections: Any): SearchOptions {
-        throw Exception("not implemented");
+        return withSelect(field(fieldName), *additionalSelections)
     }
 
     fun withSort(order: Ordering, vararg additionalOrderings: Ordering): SearchOptions {
-        throw Exception("not implemented");
+        val allOrderings = listOf(order, *additionalOrderings)
+        return with("sort", allOrderings.map { it.toProto() })
     }
 
     fun withLimit(limit: Long): SearchOptions {
-        throw Exception("not implemented");
+        return with("limit", limit)
     }
 
-    fun withMaxToScore(maxToScore: Long): SearchOptions {
-        throw Exception("not implemented");
+    fun withRetrievalDepth(retrievalDepth: Long): SearchOptions {
+        return with("retrieval_depth", retrievalDepth)
     }
 
     fun withOffset(offset: Long): SearchOptions {
-        throw Exception("not implemented");
+        return with("offset", offset)
     }
 
-    fun withPartition(field: String, value: Any): SearchOptions {
-        throw Exception("not implemented");
-    }
-
-    fun withPartition(fieldToValue: Map<String, Any>): SearchOptions {
-        throw Exception("not implemented");
+    fun withLanguageCode(value: String): SearchOptions {
+        return with("language_code", value)
     }
 
     public override fun self(options: InternalOptions): SearchOptions {
         return SearchOptions(options)
-    }
-}
-
-
-class SearchPartition private constructor(options: InternalOptions) :
-    AbstractOptions<SearchPartition>(options) {
-
-    constructor(key: String, value: String) : this(InternalOptions.EMPTY)
-
-    fun and(key: String, value: String): SearchPartition {
-        throw Exception("not implemented");
-    }
-
-    public override fun self(options: InternalOptions): SearchPartition {
-        return SearchPartition(options)
     }
 }

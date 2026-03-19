@@ -17,13 +17,12 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.firebase.firestore.pipeline.Expression
 import com.google.firebase.firestore.pipeline.Expression.Companion.and
 import com.google.firebase.firestore.pipeline.Expression.Companion.constant
-import com.google.firebase.firestore.pipeline.Expression.Companion.documentContainsText
-import com.google.firebase.firestore.pipeline.Expression.Companion.documentSnippet
+import com.google.firebase.firestore.pipeline.Expression.Companion.documentMatches
 import com.google.firebase.firestore.pipeline.Expression.Companion.field
 import com.google.firebase.firestore.pipeline.Expression.Companion.or
 import com.google.firebase.firestore.pipeline.Expression.Companion.snippet
-import com.google.firebase.firestore.pipeline.Expression.Companion.topicalityScore
-import com.google.firebase.firestore.pipeline.Expression.SearchMode
+import com.google.firebase.firestore.pipeline.Expression.Companion.score
+import com.google.firebase.firestore.pipeline.Expression.QueryEnhancement
 import com.google.firebase.firestore.pipeline.SearchOptions
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -39,16 +38,16 @@ class PipelineSearchTest {
         firestore!!.pipeline().collection("books")
             .search(
                 SearchOptions()
-                    .withQuery(documentContainsText("waffles"))
-                    .withSort(topicalityScore().descending())
+                    .withQuery(documentMatches("waffles"))
+                    .withSort(score().descending())
             )
 
         firestore.pipeline()
             .collection("books")
             .search(
                 SearchOptions()
-                    .withQuery(field("menu").searchFor("waffles"))
-                    .withSort(topicalityScore().descending())
+                    .withQuery(field("menu").matches("waffles"))
+                    .withSort(score().descending())
             )
 
         firestore.pipeline()
@@ -67,7 +66,7 @@ class PipelineSearchTest {
             .search(
                 SearchOptions()
                     .withQuery(
-                        field("menu").searchFor("waffles", SearchMode.SEMANTIC_SEARCH)
+                        field("menu").matches("waffles", SearchMode.SEMANTIC_SEARCH)
                     )
             )
 
@@ -79,11 +78,11 @@ class PipelineSearchTest {
                 SearchOptions()
                     .withQuery(
                         and(
-                            field("menu").searchFor("waffles"),
-                            field("description").searchFor("diner")
+                            field("menu").matches("waffles"),
+                            field("description").matches("diner")
                         )
                     )
-                    .withSort(topicalityScore().descending())
+                    .withSort(score().descending())
             )
 
         firestore.pipeline()
@@ -92,27 +91,27 @@ class PipelineSearchTest {
                 SearchOptions()
                     .withQuery(
                         and(
-                            field("menu").searchFor("waffles"),
+                            field("menu").matches("waffles"),
                             field("location")
                                 .geoDistance(GeoPoint(38.989177, -107.065076))
                                 .lessThan(1000 /* meters */)
                         )
                     )
-                    .withSort(topicalityScore().descending())
+                    .withSort(score().descending())
             )
 
         firestore.pipeline()
             .collection("restaurants")
             .search(
                 SearchOptions()
-                    .withQuery(field("menu").searchFor("waffles").not())
+                    .withQuery(field("menu").matches("waffles").not())
             )
 
         firestore.pipeline()
             .collection("restaurants")
             .search(
                 SearchOptions()
-                    .withQuery(documentContainsText("(waffles OR pancakes) AND eggs"))
+                    .withQuery(documentMatches("(waffles OR pancakes) AND eggs"))
             )
 
 
@@ -136,7 +135,7 @@ class PipelineSearchTest {
                 SearchOptions()
                     .withQuery(
                         and(
-                            documentContainsText("gaming laptop"),
+                            documentMatches("gaming laptop"),
                             field("ram").between(32, 48)
                         )
                     )
@@ -146,7 +145,7 @@ class PipelineSearchTest {
             .collection("restaurants")
             .search(
                 SearchOptions()
-                    .withQuery(field("menu").searchFor("-shellfish AND (hamburger OR steak)"))
+                    .withQuery(field("menu").matches("-shellfish AND (hamburger OR steak)"))
             )
 
 
@@ -154,9 +153,9 @@ class PipelineSearchTest {
             .collection("restaurants")
             .search(
                 SearchOptions()
-                    .withQuery(field("menu").searchFor("waffles"))
+                    .withQuery(field("menu").matches("waffles"))
                     .withAddFields(
-                        topicalityScore().alias("searchScore"),
+                        score().alias("searchScore"),
                         snippet("menu", "waffles").alias("snippet")
                     )
             )
@@ -166,7 +165,7 @@ class PipelineSearchTest {
             .collection("restaurants")
             .search(
                 SearchOptions()
-                    .withQuery(field("menu").searchFor("waffles"))
+                    .withQuery(field("menu").matches("waffles"))
                     .withSelect(
                         field("menu"),  // string will be accepted as shorthand for field("location")
 
@@ -174,7 +173,7 @@ class PipelineSearchTest {
 
                         field(FieldPath.documentId()),
 
-                        topicalityScore().alias("searchScore"),
+                        score().alias("searchScore"),
                         snippet("menu", "waffles").alias("snippet")
                     )
             )
@@ -186,7 +185,7 @@ class PipelineSearchTest {
             .collection("restaurants")
             .search(
                 SearchOptions()
-                    .withQuery(field("menu").searchFor("waffles"))
+                    .withQuery(field("menu").matches("waffles"))
             )
 
 
@@ -194,8 +193,8 @@ class PipelineSearchTest {
             .collection("restaurants")
             .search(
                 SearchOptions()
-                    .withQuery(field("menu").searchFor("waffles"))
-                    .withSort(topicalityScore().descending())
+                    .withQuery(field("menu").matches("waffles"))
+                    .withSort(score().descending())
             )
 
         // Find restaurants with "waffles" on the menu, but order the results
@@ -204,7 +203,7 @@ class PipelineSearchTest {
             .collection("restaurants")
             .search(
                 SearchOptions()
-                    .withQuery(field("menu").searchFor("waffles"))
+                    .withQuery(field("menu").matches("waffles"))
                     .withSort(
                         field("location")
                             .geoDistance(GeoPoint(38.989177, -107.065076))
@@ -220,14 +219,14 @@ class PipelineSearchTest {
             .collection("restaurants")
             .search(
                 SearchOptions()
-                    .withQuery(field("menu").searchFor("waffles"))
+                    .withQuery(field("menu").matches("waffles"))
                     .withSort(
                         field("location")
                             .geoDistance(GeoPoint(38.989177, -107.065076))
                             .divide(10000)
                             .floor()
                             .ascending(),
-                        topicalityScore().descending()
+                        score().descending()
                     )
             )
 
@@ -238,8 +237,8 @@ class PipelineSearchTest {
         firestore.pipeline().collection("restaurants")
             .search(
                 SearchOptions()
-                    .withQuery(field("menu").searchFor("waffles"))
-                    .withSort(topicalityScore().descending())
+                    .withQuery(field("menu").matches("waffles"))
+                    .withSort(score().descending())
                     .withLimit(10)
             )
 
@@ -252,10 +251,10 @@ class PipelineSearchTest {
         firestore.pipeline().collection("foodBlogPosts")
             .search(
                 SearchOptions()
-                    .withQuery(documentContainsText("kona coffee"))
-                    .withSort(topicalityScore().descending())
+                    .withQuery(documentMatches("kona coffee"))
+                    .withSort(score().descending())
                     .withLimit(10)
-                    .withMaxToScore(1000)
+                    .withRetrievalDepth(1000)
             )
 
 
@@ -263,7 +262,7 @@ class PipelineSearchTest {
         firestore.pipeline().collection("restaurants")
             .search(
                 SearchOptions()
-                    .withQuery(field("menu").searchFor("waffles"))
+                    .withQuery(field("menu").matches("waffles"))
                     .withLimit(10)
                     .withOffset(10 * (currentPage - 1)) // When implementing paging with offset, it's much cheaper
                 // to sort by the default pre-sort order. Sorting by score
@@ -274,10 +273,12 @@ class PipelineSearchTest {
 
         firestore.pipeline().collection("foodBlogPosts")
             .search(
-                SearchOptions()
-                    .withQuery(field("body").searchFor("kona coffee"))
+                SearchOptions(field("body").matches("kona coffee"))
                     .withAddFields(
                         field("body").snippet("kona coffee").alias("snippet")
+                    )
+                    .withSelect(
+                        field('title'), field('body')
                     )
             )
 
@@ -309,8 +310,8 @@ class PipelineSearchTest {
                 SearchOptions()
                     .withQuery(
                         or(
-                            field("menu").searchFor("waffles"),
-                            field("description").searchFor("\"breakfast all day\"")
+                            field("menu").matches("waffles"),
+                            field("description").matches("\"breakfast all day\"")
                         )
                     )
                     .withAddFields(
@@ -325,14 +326,13 @@ class PipelineSearchTest {
         firestore.pipeline().collection("restaurants")
             .search(
                 SearchOptions()
-                    .withQuery(field("menu").searchFor("waffles", SearchMode.SEMANTIC_SEARCH))
+                    .withQuery(field("menu").matches("waffles", SearchMode.SEMANTIC_SEARCH))
                     .withAddFields(
                         field("menu")
                             .snippet(Expression.SnippetOptions("kona coffee")
                                 .withMaxSnippetWidth(2000)
                                 .withMaxSnippets(2)
-                                .withSeparator("...")
-                                .withSearchMode(SearchMode.SEMANTIC_SEARCH))
+                                .withSeparator("..."))
                             .alias("snippet")
                     )
             )
@@ -340,19 +340,13 @@ class PipelineSearchTest {
         firestore.pipeline().collection("emails")
             .search(
                 SearchOptions()
-                    .withQuery(field("body").searchFor("urgent"))
-                    .withPartition("email", "user@domain")
+                    .withQuery(field("body").matches("urgent")
             )
 
         firestore.pipeline().collection("emails")
             .search(
                 SearchOptions()
-                    .withQuery(field("body").searchFor("urgent"))
-                    .withPartition(mapOf(
-                            "email" to "user@domain",
-                            "folder" to "inbox"
-                        )
-                    )
+                    .withQuery(field("body").matches("urgent"))
             )
     }
 }

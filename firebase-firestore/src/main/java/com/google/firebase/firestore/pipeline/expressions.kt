@@ -5575,7 +5575,7 @@ abstract class Expression internal constructor() {
          */
         @JvmStatic
         fun geoDistance(fieldName: String, location: GeoPoint): Expression =
-            FunctionExpression("geo_distance", notImplemented, field(fieldName), constant(location))
+            geoDistance(field(fieldName), location)
 
         /**
          * Evaluates to the distance in meters between the location in the specified
@@ -5588,7 +5588,7 @@ abstract class Expression internal constructor() {
          * @param location - Compute distance to this GeoPoint.
          */
         @JvmStatic
-        fun geoDistance(expression: Expression, location: GeoPoint): Expression =
+        fun geoDistance(field: Field, location: GeoPoint): Expression =
             FunctionExpression("geo_distance", notImplemented, expression, constant(location))
 
         /**
@@ -5596,40 +5596,44 @@ abstract class Expression internal constructor() {
          *
          * @remarks This Expression can only be used within a `Search` stage.
          *
-         * @param rquery Define the search query using the search DTS (TODO(search) link).
+         * @param rquery Define the search query using the search DTS.
          */
         @JvmStatic
-        fun documentContainsText(rquery: String): BooleanExpression {
-            throw NotImplementedError("Not implemented")
-        }
+        fun documentMatches(rquery: String): BooleanExpression =
+            FunctionExpression("document_matches", notImplemented, constant(rquery))
 
         @JvmStatic
-        fun documentContainsText(rquery: String, searchMode: SearchMode): BooleanExpression {
-            throw NotImplementedError("Not implemented")
-        }
+        fun matches(fieldName: string, rquery: String): BooleanExpression =
+            matches(field(fieldName), rquery)
 
         @JvmStatic
-        fun containsText(field: Field, rquery: String): BooleanExpression {
-            throw NotImplementedError("Not implemented")
-        }
-
-        @JvmStatic
-        fun containsText(field: Field, rquery: String, searchMode: SearchMode): BooleanExpression {
-            throw NotImplementedError("Not implemented")
-        }
+        fun matches(field: Field, rquery: String): BooleanExpression =
+            FunctionExpression("matches", notImplemented, field, constant(rquery))
 
         /**
-         * Evaluates to the search score that refelects the topicality of the document
-         * to all of the text predicates (`containsText` and `documentContainsText`)
+         * Evaluates to the search score that reflects the topicality of the document
+         * to all of the text predicates (`matches` and `documentMatches`)
          * in the search query. If `SearchOptions.query` is not set or does not contain
-         * any text predicates, then this topicality score will always be `0`.
+         * any text predicates, then this score will always be `0`.
          *
          * @remarks This Expression can only be used within a `Search` stage.
          */
         @JvmStatic
-        fun topicalityScore(): Expression {
-            throw NotImplementedError("not implemented")
-        }
+        fun score(): Expression =
+            FunctionExpression("score", notImplemented)
+
+        /**
+         * Evaluates to an HTML-formatted text snippet that highlights terms matching
+         * the search query in `<b>bold</b>`.
+         *
+         * @remarks This Expression can only be used within a `Search` stage.
+         *
+         * @param fieldName Search the specified field for matching terms.
+         * @param rquery Define the search query using the search DTS (TODO(search) link).
+         */
+        @JvmStatic
+        fun snippet(fieldName: String, rquery: String): Expression  =
+            FunctionExpression("snippet", notImplemented, field(fieldName), constant(rquery))
 
         /**
          * Evaluates to an HTML-formatted text snippet that highlights terms matching
@@ -5641,47 +5645,7 @@ abstract class Expression internal constructor() {
          * @param query Define the search query using the search DTS (TODO(search) link).
          */
         @JvmStatic
-        fun snippet(fieldName: String, rquery: String): Expression {
-            throw NotImplementedError("Not implemented")
-        }
-
-        /**
-         * Evaluates to an HTML-formatted text snippet that highlights terms matching
-         * the search query in `<b>bold</b>`.
-         *
-         * @remarks This Expression can only be used within a `Search` stage.
-         *
-         * @param fieldName Search the specified field for matching terms.
-         * @param query Define the search query using the search DTS (TODO(search) link).
-         */
-        @JvmStatic
-        fun snippet(fieldName: String, options: SnippetOptions): Expression {
-            throw NotImplementedError("Not implemented")
-        }
-
-        /**
-         * Evaluates to an HTML-formatted text snippet that highlights terms matching
-         * the search query in `<b>bold</b>`.
-         *
-         * @remarks This Expression can only be used within a `Search` stage.
-         *
-         * @param rquery Define the search query using the search DTS (TODO(search) link).
-         */
-        @JvmStatic
-        fun documentSnippet(rquery: String): Expression {
-            throw NotImplementedError("Not implemented")
-        }
-
-        /**
-         * Evaluates to an HTML-formatted text snippet that highlights terms matching
-         * the search query in `<b>bold</b>`.
-         *
-         * @remarks This Expression can only be used within a `Search` stage.
-         *
-         * @param rquery Define the search query using the search DTS (TODO(search) link).
-         */
-        @JvmStatic
-        fun documentSnippet(options: SnippetOptions): Expression {
+        internal fun snippet(fieldName: String, options: SnippetOptions): Expression {
             throw NotImplementedError("Not implemented")
         }
 
@@ -5690,7 +5654,7 @@ abstract class Expression internal constructor() {
          * the evaluated values for `lowerBound` (inclusive) and `upperBound` (inclusive).
          */
         @JvmStatic
-        fun between(
+        internal fun between(
             fieldName: String,
             lowerBound: Expression,
             upperBound: Expression
@@ -5703,7 +5667,7 @@ abstract class Expression internal constructor() {
          * the values for `lowerBound` (inclusive) and `upperBound` (inclusive).
          */
         @JvmStatic
-        fun between(fieldName: String, lowerBound: Any, upperBound: Any): BooleanExpression {
+        internal fun between(fieldName: String, lowerBound: Any, upperBound: Any): BooleanExpression {
             throw NotImplementedError("Not implemented")
         }
 
@@ -5712,7 +5676,7 @@ abstract class Expression internal constructor() {
          * the results of `lowerBound` (inclusive) and `upperBound` (inclusive).
          */
         @JvmStatic
-        fun between(
+        internal fun between(
             expression: Expression,
             lowerBound: Expression,
             upperBound: Expression
@@ -5725,66 +5689,12 @@ abstract class Expression internal constructor() {
          * the `lowerBound` (inclusive) and `upperBound` (inclusive).
          */
         @JvmStatic
-        fun between(expression: Expression, lowerBound: Any, upperBound: Any): BooleanExpression {
+        internal fun between(expression: Expression, lowerBound: Any, upperBound: Any): BooleanExpression {
             throw NotImplementedError("Not implemented")
-        }
-
-        /**
-         * Perform a full-text search on this field.
-         *
-         * @remarks This Expression can only be used within a `Search` stage.
-         *
-         * @param fieldName Search this field.
-         * @param rquery Define the search query using the rquery DTS.
-         */
-        @JvmStatic
-        fun searchFor(fieldName: String, rquery: String): BooleanExpression {
-            throw NotImplementedError("Not implemented");
-        }
-
-        /**
-         * Perform a full-text search on this field.
-         *
-         * @remarks This Expression can only be used within a `Search` stage.
-         *
-         * @param fieldName Search this field.
-         * @param rquery Define the search query using the rquery DTS.
-         * @param searchMode Specify the mode to use when performing a search.
-         */
-        @JvmStatic
-        fun searchFor(fieldName: String, rquery: String, searchMode: SearchMode): BooleanExpression {
-            throw NotImplementedError("Not implemented");
-        }
-
-        /**
-         * Perform a full-text search on this field.
-         *
-         * @remarks This Expression can only be used within a `Search` stage.
-         *
-         * @param field Search this field.
-         * @param rquery Define the search query using the rquery DTS.
-         */
-        @JvmStatic
-        fun searchFor(field: Field, rquery: String): BooleanExpression {
-            throw NotImplementedError("Not implemented");
-        }
-
-        /**
-         * Perform a full-text search on this field.
-         *
-         * @remarks This Expression can only be used within a `Search` stage.
-         *
-         * @param field Search this field.
-         * @param rquery Define the search query using the rquery DTS.
-         * @param searchMode Specify the mode to use when performing a search.
-         */
-        @JvmStatic
-        fun searchFor(field: Field, rquery: String, searchMode: SearchMode): BooleanExpression {
-            throw NotImplementedError("Not implemented");
         }
     }
 
-    class SnippetOptions private constructor(options: InternalOptions) :
+    internal class SnippetOptions private constructor(options: InternalOptions) :
         AbstractOptions<SnippetOptions>(options) {
         /** Creates a new, empty `SnippetOptions` object. */
         constructor(rquery: String) : this(InternalOptions.EMPTY)
@@ -5801,22 +5711,20 @@ abstract class Expression internal constructor() {
             throw Exception("not implemented");
         }
 
-        fun withSearchMode(searchMode: SearchMode?): SnippetOptions {
-            throw Exception("not implemented");
-        }
-
-        public override fun self(options: InternalOptions): SnippetOptions {
+        internal override fun self(options: InternalOptions): SnippetOptions {
             return SnippetOptions(options)
         }
     }
 
     /**
-     * The mode to use when performing a search.
+     * The query enhancement behavior to use when performing a search.
      */
-    enum class SearchMode {
-        SEMANTIC_SEARCH,
-        STANDARD_SEARCH
+    enum class QueryEnhancement {
+        DISABLED,
+        REQUIRED,
+        PREFERRED
     }
+
 
     /**
      * Creates an expression that applies a bitwise AND operation with other expression.
@@ -8026,9 +7934,8 @@ class Field internal constructor(internal val fieldPath: ModelFieldPath) : Selec
      *
      * @param location - Compute distance to this GeoPoint.
      */
-    fun geoDistance(location: GeoPoint): Expression {
-        throw NotImplementedError("Not implemented");
-    }
+    fun geoDistance(location: GeoPoint): Expression =
+        Expression.Companion.geoDistance(this, location)
 
     /**
      * Perform a full-text search on this field.
@@ -8037,21 +7944,8 @@ class Field internal constructor(internal val fieldPath: ModelFieldPath) : Selec
      *
      * @param rquery Define the search query using the rquery DTS.
      */
-    fun searchFor(rquery: String): BooleanExpression {
-        throw NotImplementedError("Not implemented");
-    }
-
-    /**
-     * Perform a full-text search on this field.
-     *
-     * @remarks This Expression can only be used within a `Search` stage.
-     *
-     * @param rquery Define the search query using the rquery DTS.
-     * @param searchMode Specify the mode to use when performing a search.
-     */
-    fun searchFor(rquery: String, searchMode: SearchMode): BooleanExpression {
-        throw NotImplementedError("Not implemented");
-    }
+    fun matches(rquery: String): BooleanExpression =
+        Expression.Companion.matches(this, rquery)
 }
 
 /**
