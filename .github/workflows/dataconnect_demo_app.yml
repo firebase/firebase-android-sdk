@@ -43,7 +43,7 @@ jobs:
             firebase-dataconnect/demo/
 
       - name: Load CI Version Defaults
-        run: ./firebase-dataconnect/ci/fill_ci_defaults.sh >>${GITHUB_ENV}
+        run: ./firebase-dataconnect/ci/fill_ci_defaults.sh >>"${GITHUB_ENV}"
 
       - name: Create Cache Key Files
         run: |
@@ -164,7 +164,7 @@ jobs:
             firebase-dataconnect/demo/
 
       - name: Load CI Version Defaults
-        run: ./firebase-dataconnect/ci/fill_ci_defaults.sh >>${GITHUB_ENV}
+        run: ./firebase-dataconnect/ci/fill_ci_defaults.sh >>"${GITHUB_ENV}"
 
       - name: Create Cache Key Files
         run: echo "h99ee4egfd" >github_actions_demo_spotless_cache_key.txt
@@ -229,7 +229,7 @@ jobs:
             .github/
 
       - name: Load CI Version Defaults
-        run: ./firebase-dataconnect/ci/fill_ci_defaults.sh >>${GITHUB_ENV}
+        run: ./firebase-dataconnect/ci/fill_ci_defaults.sh >>"${GITHUB_ENV}"
 
       - name: gh auth login
         run: echo '${{ secrets.GITHUB_TOKEN }}' | gh auth login --with-token
