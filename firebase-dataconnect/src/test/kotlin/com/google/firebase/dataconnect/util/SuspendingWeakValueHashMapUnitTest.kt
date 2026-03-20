@@ -22,9 +22,11 @@ import com.google.firebase.dataconnect.testutil.CleanupsRule
 import com.google.firebase.dataconnect.testutil.delayIgnoringTestScheduler
 import com.google.firebase.dataconnect.testutil.property.arbitrary.randomSeed
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.assertions.withClue
 import io.kotest.common.DelicateKotest
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.property.Arb
@@ -34,12 +36,14 @@ import io.kotest.property.arbitrary.distinct
 import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.map
+import io.kotest.property.arbitrary.next
 import io.kotest.property.arbitrary.of
 import io.kotest.property.arbs.usernames
 import io.kotest.property.checkAll
 import java.util.concurrent.ThreadFactory
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.milliseconds
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
@@ -319,7 +323,7 @@ class SuspendingWeakValueHashMapUnitTest {
     checkAll(propTestConfig, Arb.int(0..50), Arb.randomSeed()) { size, randomSeed ->
       val map = SuspendingWeakValueHashMap<Int, Value>(cleanupThreadFactory)
       cleanups.registerSuspending { map.close() }
-      map.populate(size=size, randomSeed=randomSeed)
+      map.populate(size = size, randomSeed = randomSeed)
 
       map.clear()
 
@@ -333,7 +337,7 @@ class SuspendingWeakValueHashMapUnitTest {
     checkAll(propTestConfig, Arb.int(0..50), Arb.randomSeed()) { size, randomSeed ->
       val map = SuspendingWeakValueHashMap<Int, Value>(cleanupThreadFactory)
       cleanups.registerSuspending { map.close() }
-      map.populate(size=size, randomSeed=randomSeed)
+      map.populate(size = size, randomSeed = randomSeed)
 
       map.clear() shouldBe size
 
@@ -342,20 +346,32 @@ class SuspendingWeakValueHashMapUnitTest {
   }
 
   @Test
-  fun `close() causes all other methods to throw IllegalStateException`() = runTest {
+  fun `close() on a new instance causes all other methods to throw`() = runTest {
     val map = SuspendingWeakValueHashMap<Int, Value>(cleanupThreadFactory)
-    // No need to register for cleanup as we're explicitly closing it in the test
     map.close()
 
-    shouldThrow<IllegalStateException> { map.get(1) }
-    shouldThrow<IllegalStateException> { map.put(1, Value("value")) }
-    shouldThrow<IllegalStateException> { map.remove(1) }
-    shouldThrow<IllegalStateException> { map.clear() }
-    shouldThrow<IllegalStateException> { map.size() }
+    map.verifyAllMethodsThrowIllegalStateException()
   }
 
   @Test
-  fun `background thread should clean up garbage collected values`() = runTest {
+  fun `close() on a populated instance causes all other methods to throw`() = runTest {
+    val map = SuspendingWeakValueHashMap<Int, Value>(cleanupThreadFactory)
+    cleanups.registerSuspending { map.close() }
+    map.populate()
+    map.close()
+
+    map.verifyAllMethodsThrowIllegalStateException()
+  }
+
+  @Test
+  fun `close() can be called multiple times`() = runTest {
+    val map = SuspendingWeakValueHashMap<Int, Value>(cleanupThreadFactory)
+
+    repeat(10) { map.close() }
+  }
+
+  @Test
+  fun `cleanup thread cleans up garbage collected values`() = runTest {
     val map = SuspendingWeakValueHashMap<Int, Value>(cleanupThreadFactory)
     cleanups.registerSuspending { map.close() }
 
@@ -368,6 +384,46 @@ class SuspendingWeakValueHashMapUnitTest {
 
     map.size() shouldBe 0
     map.get(1) shouldBe null
+  }
+
+  @Test
+  fun `cleanup thread is not started until first use`() = runTest {
+    val underlyingThreadFactory = cleanupThreadFactory
+    val threadRef = MutableStateFlow(NullableReference<Thread>())
+    val cleanupThreadFactory = ThreadFactory {
+      val thread = underlyingThreadFactory.newThread(it)
+      threadRef.value = NullableReference(thread)
+      thread
+    }
+    val map = SuspendingWeakValueHashMap<Int, Value>(cleanupThreadFactory)
+    cleanups.registerSuspending { map.close() }
+    threadRef.value.ref.shouldBeNull()
+
+    map.put(1, valueArb().next())
+
+    threadRef.value.ref.shouldNotBeNull()
+  }
+
+  @Test
+  fun `cleanup thread is stopped by close()`() = runTest {
+    val underlyingThreadFactory = cleanupThreadFactory
+    val threadRef = MutableStateFlow(NullableReference<Thread>())
+    val cleanupThreadFactory = ThreadFactory {
+      val thread = underlyingThreadFactory.newThread(it)
+      threadRef.value = NullableReference(thread)
+      thread
+    }
+    val map = SuspendingWeakValueHashMap<Int, Value>(cleanupThreadFactory)
+    cleanups.registerSuspending { map.close() }
+    threadRef.value.ref.shouldBeNull()
+    map.put(1, valueArb().next())
+
+    map.close()
+
+    threadRef.value.ref.shouldNotBeNull().let { thread ->
+      thread.join(1000)
+      thread.state shouldBe Thread.State.TERMINATED
+    }
   }
 
   private val cleanupThreadFactory
@@ -399,4 +455,15 @@ private suspend fun SuspendingWeakValueHashMap<Int, Value>.populate(
   }
 
   return insertedValues.toMap()
+}
+
+private suspend fun SuspendingWeakValueHashMap<Int, Value>
+  .verifyAllMethodsThrowIllegalStateException() {
+  val keyArb = Arb.int()
+  val valueArb = valueArb()
+  withClue("get()") { shouldThrow<IllegalStateException> { get(keyArb.next()) } }
+  withClue("put()") { shouldThrow<IllegalStateException> { put(keyArb.next(), valueArb.next()) } }
+  withClue("remove()") { shouldThrow<IllegalStateException> { remove(keyArb.next()) } }
+  withClue("clear()") { shouldThrow<IllegalStateException> { clear() } }
+  withClue("size()") { shouldThrow<IllegalStateException> { size() } }
 }
