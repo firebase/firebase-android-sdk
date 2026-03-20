@@ -150,6 +150,7 @@ internal constructor(
      * @return A [Tool] configured for Google Maps.
      */
     @JvmStatic
+    @JvmOverloads
     public fun googleMaps(googleMaps: GoogleMaps = GoogleMaps()): Tool {
       @OptIn(PublicPreviewAPI::class) return Tool(null, null, null, null, null, googleMaps)
     }

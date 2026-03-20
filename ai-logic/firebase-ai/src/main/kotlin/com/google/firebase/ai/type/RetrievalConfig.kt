@@ -16,6 +16,7 @@
 
 package com.google.firebase.ai.type
 
+import com.google.firebase.ai.type.RetrievalConfig.Builder
 import kotlinx.serialization.Serializable
 
 /**
@@ -68,21 +69,21 @@ internal constructor(
      */
     public fun builder(): Builder = Builder()
   }
+}
 
-  /**
-   * Helper method to construct a [RetrievalConfig] in a DSL-like manner.
-   *
-   * Example Usage:
-   * ```
-   * retrievalConfig {
-   *   latLng = aLatLng
-   *   languageCode = "en_US"
-   *  }
-   * ```
-   */
-  public fun retrievalConfig(init: RetrievalConfig.Builder.() -> Unit): RetrievalConfig {
-    val builder = Builder()
-    init(builder)
-    return builder.build()
-  }
+/**
+ * Helper method to construct a [RetrievalConfig] in a DSL-like manner.
+ *
+ * Example Usage:
+ * ```
+ * retrievalConfig {
+ *   latLng = aLatLng
+ *   languageCode = "en_US"
+ *  }
+ * ```
+ */
+public fun retrievalConfig(init: RetrievalConfig.Builder.() -> Unit): RetrievalConfig {
+  val builder = Builder()
+  init(builder)
+  return builder.build()
 }
