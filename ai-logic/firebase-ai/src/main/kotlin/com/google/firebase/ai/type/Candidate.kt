@@ -336,6 +336,12 @@ public class FinishReason private constructor(public val name: String, public va
  * Vertex AI Gemini API (see [Service Terms](https://cloud.google.com/terms/service-terms) section
  * within the Service Specific Terms).
  *
+ * If using Grounding with Google Maps, you are required to comply with the "Grounding with Google
+ * Maps" usage requirements for your chosen API provider: [Gemini Developer API]
+ * (https://ai.google.dev/gemini-api/terms#grounding-with-google-maps) or Vertex AI Gemini API (see
+ * [Service Terms] (https://cloud.google.com/terms/service-terms) section within the Service
+ * Specific Terms).
+ *
  * @property webSearchQueries The list of web search queries that the model performed to gather the
  * grounding information. These can be used to allow users to explore the search results themselves.
  * @property searchEntryPoint Google Search entry point for web searches. This contains an HTML/CSS
@@ -408,15 +414,44 @@ public class SearchEntryPoint(
  * Represents a chunk of retrieved data that supports a claim in the model's response.
  *
  * @property web Contains details if the grounding chunk is from a web source.
+ * @property maps Contains details if the grounding chunk is from a Google Maps source.
  */
 public class GroundingChunk(
   public val web: WebGroundingChunk?,
+  public val maps: MapsGroundingChunk?,
 ) {
   @Serializable
   internal data class Internal(
     val web: WebGroundingChunk.Internal?,
+    val maps: MapsGroundingChunk.Internal?,
   ) {
-    internal fun toPublic() = GroundingChunk(web = web?.toPublic())
+    internal fun toPublic() = GroundingChunk(web = web?.toPublic(), maps?.toPublic())
+  }
+}
+
+/**
+ * A grounding chunk from Google Maps.
+ *
+ * @property uri The URI of the place.
+ * @property title The title of the place.
+ * @property text The text of the place answer.
+ * @property placeId This Place's resource name, in `places/{place_id}` format. This can be used to
+ * look up the place in the Google Maps API.
+ */
+public class MapsGroundingChunk(
+  public val uri: String?,
+  public val title: String?,
+  public val text: String?,
+  public val placeId: String?,
+) {
+  @Serializable
+  internal data class Internal(
+    internal val uri: String?,
+    internal val title: String?,
+    internal val text: String?,
+    internal val placeId: String?
+  ) {
+    fun toPublic() = MapsGroundingChunk(uri, title, text, placeId)
   }
 }
 

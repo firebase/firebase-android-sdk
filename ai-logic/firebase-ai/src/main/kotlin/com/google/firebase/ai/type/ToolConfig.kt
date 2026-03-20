@@ -25,7 +25,10 @@ import kotlinx.serialization.Serializable
  *
  * @param functionCallingConfig The config for function calling
  */
-public class ToolConfig(internal val functionCallingConfig: FunctionCallingConfig?) {
+public class ToolConfig(
+  internal val functionCallingConfig: FunctionCallingConfig? = null,
+  internal val retrievalConfig: RetrievalConfig? = null,
+) {
 
   internal fun toInternal() =
     Internal(
@@ -38,12 +41,14 @@ public class ToolConfig(internal val functionCallingConfig: FunctionCallingConfi
           },
           it.allowedFunctionNames
         )
-      }
+      },
+      retrievalConfig?.toInternal()
     )
 
   @Serializable
   internal data class Internal(
     @SerialName("function_calling_config")
-    val functionCallingConfig: FunctionCallingConfig.Internal?
+    val functionCallingConfig: FunctionCallingConfig.Internal?,
+    val retrievalConfig: RetrievalConfig.Internal?,
   )
 }
