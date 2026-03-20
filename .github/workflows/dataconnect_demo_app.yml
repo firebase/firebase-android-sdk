@@ -38,7 +38,9 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
-          sparse-checkout: firebase-dataconnect/demo
+          sparse-checkout: |
+            firebase-dataconnect/ci/
+            firebase-dataconnect/demo/
 
       - name: Load CI Version Defaults
         run: ./firebase-dataconnect/ci/fill_ci_defaults.sh
@@ -157,7 +159,9 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
-          sparse-checkout: firebase-dataconnect/demo
+          sparse-checkout: |
+            firebase-dataconnect/ci/
+            firebase-dataconnect/demo/
 
       - name: Load CI Version Defaults
         run: ./firebase-dataconnect/ci/fill_ci_defaults.sh
