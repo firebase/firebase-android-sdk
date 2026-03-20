@@ -43,8 +43,8 @@ internal constructor(
    * @property languageCode See [RetrievalConfig.languageCode].
    */
   public class Builder {
-    @JvmField var latLng: LatLng? = null
-    @JvmField var languageCode: String? = null
+    @JvmField public var latLng: LatLng? = null
+    @JvmField public var languageCode: String? = null
 
     public fun setLatLng(latLng: LatLng?): Builder = apply { this.latLng = latLng }
     public fun setLanguageCode(languageCode: String?): Builder = apply {

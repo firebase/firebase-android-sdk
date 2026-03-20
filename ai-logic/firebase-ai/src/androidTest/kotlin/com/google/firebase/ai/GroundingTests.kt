@@ -62,7 +62,8 @@ class GroundingTests {
 
     fun validateMapsGrounding(response: GenerateContentResponse) {
       response.candidates.isEmpty() shouldBe false
-      response.candidates[0].groundingMetadata?.groundingChunks?.any { it.maps != null } shouldBe true
+      response.candidates[0].groundingMetadata?.groundingChunks?.any { it.maps != null } shouldBe
+        true
     }
     @JvmStatic
     fun setupModel(config: ToolConfig = ToolConfig()): GenerativeModel {
