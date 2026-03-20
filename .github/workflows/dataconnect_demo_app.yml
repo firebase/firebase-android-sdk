@@ -40,6 +40,9 @@ jobs:
         with:
           sparse-checkout: firebase-dataconnect/demo
 
+      - name: Load CI Version Defaults
+        run: ./firebase-dataconnect/ci/fill_ci_defaults.sh
+
       - name: Create Cache Key Files
         run: |
           echo "gmagjr2b9d" >github_actions_demo_test_cache_key.txt
@@ -156,6 +159,9 @@ jobs:
         with:
           sparse-checkout: firebase-dataconnect/demo
 
+      - name: Load CI Version Defaults
+        run: ./firebase-dataconnect/ci/fill_ci_defaults.sh
+
       - name: Create Cache Key Files
         run: echo "h99ee4egfd" >github_actions_demo_spotless_cache_key.txt
 
@@ -217,6 +223,9 @@ jobs:
           sparse-checkout: |
             firebase-dataconnect/ci/
             .github/
+
+      - name: Load CI Version Defaults
+        run: ./firebase-dataconnect/ci/fill_ci_defaults.sh
 
       - name: gh auth login
         run: echo '${{ secrets.GITHUB_TOKEN }}' | gh auth login --with-token
