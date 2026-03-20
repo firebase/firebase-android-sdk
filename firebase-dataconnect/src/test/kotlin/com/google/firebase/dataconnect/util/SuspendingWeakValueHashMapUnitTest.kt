@@ -20,6 +20,7 @@ package com.google.firebase.dataconnect.util
 import com.google.firebase.dataconnect.SuspendingWeakValueHashMap
 import com.google.firebase.dataconnect.testutil.CleanupsRule
 import com.google.firebase.dataconnect.testutil.delayIgnoringTestScheduler
+import com.google.firebase.dataconnect.testutil.property.arbitrary.pair
 import com.google.firebase.dataconnect.testutil.property.arbitrary.randomSeed
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
@@ -40,6 +41,7 @@ import io.kotest.property.arbitrary.next
 import io.kotest.property.arbitrary.of
 import io.kotest.property.arbs.usernames
 import io.kotest.property.checkAll
+import java.lang.ref.WeakReference
 import java.util.concurrent.ThreadFactory
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.milliseconds
@@ -378,8 +380,10 @@ class SuspendingWeakValueHashMapUnitTest {
     map.put(1, Value("gc-test"))
 
     repeat(50) {
-      System.gc()
-      delayIgnoringTestScheduler(50.milliseconds)
+      if (map.size() != 0) {
+        System.gc()
+        delayIgnoringTestScheduler(50.milliseconds)
+      }
     }
 
     map.size() shouldBe 0
@@ -424,6 +428,30 @@ class SuspendingWeakValueHashMapUnitTest {
       thread.join(1000)
       thread.state shouldBe Thread.State.TERMINATED
     }
+  }
+
+  @Test
+  fun `cleanup thread ignores stale values`() = runTest {
+    val map = SuspendingWeakValueHashMap<Int, Value>(cleanupThreadFactory)
+    cleanups.registerSuspending { map.close() }
+    val key = Arb.int().next()
+    val (weakValue1, value2) =
+      run {
+        val (value1, value2) = valueArb().pair().next()
+        map.put(key, value1)
+        map.put(key, value2)
+        Pair(WeakReference(value1), value2)
+      }
+
+    repeat(50) {
+      if (weakValue1.get() !== null) {
+        System.gc()
+        delayIgnoringTestScheduler(50.milliseconds)
+      }
+    }
+
+    map.get(key) shouldBeSameInstanceAs value2
+    weakValue1.get().shouldBeNull()
   }
 
   private val cleanupThreadFactory
