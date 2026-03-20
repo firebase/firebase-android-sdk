@@ -143,7 +143,7 @@ internal constructor(
     return Pipeline(firestore, userDataReader, stages.plus(stage))
   }
 
-  private fun toStructuredPipelineProto(options: InternalOptions?): StructuredPipeline {
+  internal fun toStructuredPipelineProto(options: InternalOptions?): StructuredPipeline {
     val builder = StructuredPipeline.newBuilder()
     builder.pipeline = toPipelineProto()
     options?.forEach(builder::putOptions)
@@ -153,7 +153,7 @@ internal constructor(
   internal fun toPipelineProto(): ProtoPipeline =
     ProtoPipeline.newBuilder().addAllStages(stages.map { it.toProtoStage(userDataReader) }).build()
 
-  private fun toExecutePipelineRequest(options: InternalOptions?): ExecutePipelineRequest {
+  internal fun toExecutePipelineRequest(options: InternalOptions?): ExecutePipelineRequest {
     val database = firestore!!.databaseId
     val builder = ExecutePipelineRequest.newBuilder()
     builder.database = "projects/${database.projectId}/databases/${database.databaseId}"

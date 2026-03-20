@@ -1020,7 +1020,7 @@ internal constructor(
 
   /** Specify the fields to add to each document. */
   fun withAddFields(field: Selectable, vararg additionalFields: Selectable): SearchStage {
-    val addFields = additionalFields.map(Selectable::toSelectable).toTypedArray()
+    val allAddFields = (listOf(field) + additionalFields).toTypedArray()
 
     return SearchStage(
       query,
@@ -1030,17 +1030,16 @@ internal constructor(
       offset,
       limit,
       select,
-      addFields,
-      queryEnhancement
+      allAddFields,
+      queryEnhancement,
+      options
     )
   }
 
   /** Specify the fields to keep or add to each document. */
   fun withSelect(selection: Selectable, vararg additionalSelections: Any): SearchStage {
     val allSelections =
-      listOf(selection, *additionalSelections.map { Selectable.toSelectable(it) }.toTypedArray())
-        .map(Selectable::toSelectable)
-        .toTypedArray()
+      (listOf(selection) + additionalSelections.map { Selectable.toSelectable(it) }).toTypedArray()
 
     return SearchStage(
       query,
@@ -1051,7 +1050,8 @@ internal constructor(
       limit,
       allSelections,
       addFields,
-      queryEnhancement
+      queryEnhancement,
+      options
     )
   }
 
@@ -1062,7 +1062,7 @@ internal constructor(
 
   /** Specify how the returned documents are sorted. One or more ordering are required. */
   fun withSort(order: Ordering, vararg additionalOrderings: Ordering): SearchStage {
-    val allOrderings = listOf(order, *additionalOrderings).toTypedArray()
+    val allOrderings = (listOf(order) + additionalOrderings).toTypedArray()
     return SearchStage(
       query,
       languageCode,
@@ -1072,7 +1072,8 @@ internal constructor(
       limit,
       select,
       addFields,
-      queryEnhancement
+      queryEnhancement,
+      options
     )
   }
 
@@ -1087,7 +1088,8 @@ internal constructor(
       limit,
       select,
       addFields,
-      queryEnhancement
+      queryEnhancement,
+      options
     )
   }
 
@@ -1105,7 +1107,8 @@ internal constructor(
       limit,
       select,
       addFields,
-      queryEnhancement
+      queryEnhancement,
+      options
     )
   }
 
@@ -1120,7 +1123,8 @@ internal constructor(
       limit,
       select,
       addFields,
-      queryEnhancement
+      queryEnhancement,
+      options
     )
   }
 
@@ -1135,7 +1139,8 @@ internal constructor(
       limit,
       select,
       addFields,
-      queryEnhancement
+      queryEnhancement,
+      options
     )
   }
 
@@ -1153,7 +1158,8 @@ internal constructor(
       limit,
       select,
       addFields,
-      queryEnhancement
+      queryEnhancement,
+      options
     )
   }
 }

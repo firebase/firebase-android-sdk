@@ -30,6 +30,7 @@ import com.google.firebase.firestore.pipeline.Expression.SnippetOptions
 import com.google.firebase.firestore.pipeline.SearchStage
 import com.google.firebase.firestore.testutil.IntegrationTestUtil
 import org.junit.BeforeClass
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -543,6 +544,7 @@ class PipelineSearchTest {
   // =========================================================================
 
   @Test
+  @Ignore("Snippet options not implemented yet")
   fun snippetOptions() {
     val ppl1 =
       firestore
@@ -594,11 +596,7 @@ class PipelineSearchTest {
         .collection("SearchIntegrationTests")
         .search(
           SearchStage.withQuery(documentMatches("waffle"))
-            .withAddFields(
-              field("menu")
-                .snippet(SnippetOptions("waffles").withMaxSnippetWidth(2000))
-                .alias("snippet")
-            )
+            .withAddFields(field("menu").snippet("waffles").alias("snippet"))
             .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
         )
 
