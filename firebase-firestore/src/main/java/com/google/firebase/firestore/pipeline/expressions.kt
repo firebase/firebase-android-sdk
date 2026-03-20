@@ -5449,10 +5449,28 @@ abstract class Expression internal constructor() {
     fun documentMatches(rquery: String): BooleanExpression =
       BooleanFunctionExpression("document_matches", notImplemented, constant(rquery))
 
+      /**
+       * Perform a full-text search on the specified field.
+       *
+       * @remarks This Expression can only be used within a `Search` stage.
+       *
+       * @param fieldName Perform search on this field.
+       * @param rquery Define the search query using the rquery DTS.
+       */
+      // TODO(search) this is internal until supported by the backend
     @JvmStatic
     internal fun matches(fieldName: String, rquery: String): BooleanExpression =
       matches(field(fieldName), rquery)
 
+      /**
+       * Perform a full-text search on the specified field.
+       *
+       * @remarks This Expression can only be used within a `Search` stage.
+       *
+       * @param field Perform search on this field.
+       * @param rquery Define the search query using the rquery DTS.
+       */
+      // TODO(search) this is internal until supported by the backend
     @JvmStatic
     internal fun matches(field: Field, rquery: String): BooleanExpression =
       BooleanFunctionExpression("matches", notImplemented, field, constant(rquery))
@@ -5473,10 +5491,10 @@ abstract class Expression internal constructor() {
      * @remarks This Expression can only be used within a `Search` stage.
      *
      * @param fieldName Search the specified field for matching terms.
-     * @param rquery Define the search query using the search DTS (TODO(search) link).
+     * @param rquery Define the search query using the search DTS.
      */
     @JvmStatic
-    internal fun snippet(fieldName: String, rquery: String): Expression =
+    fun snippet(fieldName: String, rquery: String): Expression =
       FunctionExpression("snippet", notImplemented, field(fieldName), constant(rquery))
 
     /**
@@ -5486,8 +5504,9 @@ abstract class Expression internal constructor() {
      * @remarks This Expression can only be used within a `Search` stage.
      *
      * @param fieldName Search the specified field for matching terms.
-     * @param query Define the search query using the search DTS (TODO(search) link).
+     * @param query Define the search query using the search DTS.
      */
+    // TODO(search) snippet with options is internal and unimplemented until supported by the backend
     @JvmStatic
     internal fun snippet(fieldName: String, options: SnippetOptions): Expression {
       throw NotImplementedError("Not implemented")
@@ -5497,6 +5516,7 @@ abstract class Expression internal constructor() {
      * Evaluates if the value in the field specified by `fieldName` is between the evaluated values
      * for `lowerBound` (inclusive) and `upperBound` (inclusive).
      */
+    // TODO(search) between is internal and unimplemented until supported by the backend
     @JvmStatic
     internal fun between(
       fieldName: String,
@@ -5542,6 +5562,7 @@ abstract class Expression internal constructor() {
     }
   }
 
+    // TODO(search) SnippetOptions is internal until supported by the backend
   internal class SnippetOptions private constructor(options: InternalOptions) :
     AbstractOptions<SnippetOptions>(options) {
     /** Creates a new, empty `SnippetOptions` object. */
