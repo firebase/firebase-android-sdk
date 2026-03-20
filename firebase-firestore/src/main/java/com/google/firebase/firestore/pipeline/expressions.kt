@@ -5439,7 +5439,7 @@ abstract class Expression internal constructor() {
       FunctionExpression("geo_distance", notImplemented, field, constant(location))
 
     /**
-     * Perform a full-text search on the the document.
+     * Perform a full-text search on all indexed search fields in the document.
      *
      * @remarks This Expression can only be used within a `Search` stage.
      *
@@ -5449,28 +5449,28 @@ abstract class Expression internal constructor() {
     fun documentMatches(rquery: String): BooleanExpression =
       BooleanFunctionExpression("document_matches", notImplemented, constant(rquery))
 
-      /**
-       * Perform a full-text search on the specified field.
-       *
-       * @remarks This Expression can only be used within a `Search` stage.
-       *
-       * @param fieldName Perform search on this field.
-       * @param rquery Define the search query using the rquery DTS.
-       */
-      // TODO(search) this is internal until supported by the backend
+    /**
+     * Perform a full-text search on the specified field.
+     *
+     * @remarks This Expression can only be used within a `Search` stage.
+     *
+     * @param fieldName Perform search on this field.
+     * @param rquery Define the search query using the rquery DTS.
+     */
+    // TODO(search) this is internal until supported by the backend
     @JvmStatic
     internal fun matches(fieldName: String, rquery: String): BooleanExpression =
       matches(field(fieldName), rquery)
 
-      /**
-       * Perform a full-text search on the specified field.
-       *
-       * @remarks This Expression can only be used within a `Search` stage.
-       *
-       * @param field Perform search on this field.
-       * @param rquery Define the search query using the rquery DTS.
-       */
-      // TODO(search) this is internal until supported by the backend
+    /**
+     * Perform a full-text search on the specified field.
+     *
+     * @remarks This Expression can only be used within a `Search` stage.
+     *
+     * @param field Perform search on this field.
+     * @param rquery Define the search query using the rquery DTS.
+     */
+    // TODO(search) this is internal until supported by the backend
     @JvmStatic
     internal fun matches(field: Field, rquery: String): BooleanExpression =
       BooleanFunctionExpression("matches", notImplemented, field, constant(rquery))
@@ -5488,7 +5488,7 @@ abstract class Expression internal constructor() {
      * Evaluates to an HTML-formatted text snippet that highlights terms matching the search query
      * in `<b>bold</b>`.
      *
-     * @remarks This Expression can only be used within a `Search` stage.
+     * This Expression can only be used within a `Search` stage.
      *
      * @param fieldName Search the specified field for matching terms.
      * @param rquery Define the search query using the search DTS.
@@ -5501,12 +5501,13 @@ abstract class Expression internal constructor() {
      * Evaluates to an HTML-formatted text snippet that highlights terms matching the search query
      * in `<b>bold</b>`.
      *
-     * @remarks This Expression can only be used within a `Search` stage.
+     * This Expression can only be used within a `Search` stage.
      *
      * @param fieldName Search the specified field for matching terms.
-     * @param query Define the search query using the search DTS.
+     * @param options Define how the snippet is generated.
      */
-    // TODO(search) snippet with options is internal and unimplemented until supported by the backend
+    // TODO(search) snippet with options is internal and unimplemented until supported by the
+    // backend
     @JvmStatic
     internal fun snippet(fieldName: String, options: SnippetOptions): Expression {
       throw NotImplementedError("Not implemented")
@@ -5515,6 +5516,10 @@ abstract class Expression internal constructor() {
     /**
      * Evaluates if the value in the field specified by `fieldName` is between the evaluated values
      * for `lowerBound` (inclusive) and `upperBound` (inclusive).
+     *
+     * @param fieldName Determine if this field is between two bounds.
+     * @param lowerBound Lower bound (inclusive).
+     * @param upperBound Upper bound (inclusive).
      */
     // TODO(search) between is internal and unimplemented until supported by the backend
     @JvmStatic
@@ -5522,47 +5527,55 @@ abstract class Expression internal constructor() {
       fieldName: String,
       lowerBound: Expression,
       upperBound: Expression
-    ): BooleanExpression {
-      throw NotImplementedError("Not implemented")
-    }
+    ): BooleanExpression =
+      BooleanFunctionExpression("between", notImplemented, fieldName, lowerBound, upperBound)
 
     /**
      * Evaluates if the value in the field specified by `fieldName` is between the values for
      * `lowerBound` (inclusive) and `upperBound` (inclusive).
+     *
+     * @param fieldName Determine if this field is between two bounds.
+     * @param lowerBound Lower bound (inclusive).
+     * @param upperBound Upper bound (inclusive).
      */
     @JvmStatic
-    internal fun between(fieldName: String, lowerBound: Any, upperBound: Any): BooleanExpression {
-      throw NotImplementedError("Not implemented")
-    }
+    internal fun between(fieldName: String, lowerBound: Any, upperBound: Any): BooleanExpression =
+      between(fieldName, toExprOrConstant(lowerBound), toExprOrConstant(upperBound))
 
     /**
      * Evaluates if the result of the specified `expression` is between the results of `lowerBound`
      * (inclusive) and `upperBound` (inclusive).
+     *
+     * @param expression Determine if the result of this expression is between two bounds.
+     * @param lowerBound Lower bound (inclusive).
+     * @param upperBound Upper bound (inclusive).
      */
     @JvmStatic
     internal fun between(
       expression: Expression,
       lowerBound: Expression,
       upperBound: Expression
-    ): BooleanExpression {
-      throw NotImplementedError("Not implemented")
-    }
+    ): BooleanExpression =
+      BooleanFunctionExpression("between", notImplemented, expression, lowerBound, upperBound)
 
     /**
      * Evaluates if the result of the specified `expression` is between the `lowerBound` (inclusive)
      * and `upperBound` (inclusive).
+     *
+     * @param expression Determine if the result of this expression is between two bounds.
+     * @param lowerBound Lower bound (inclusive).
+     * @param upperBound Upper bound (inclusive).
      */
     @JvmStatic
     internal fun between(
       expression: Expression,
       lowerBound: Any,
       upperBound: Any
-    ): BooleanExpression {
-      throw NotImplementedError("Not implemented")
-    }
+    ): BooleanExpression =
+      between(expression, toExprOrConstant(lowerBound), toExprOrConstant(upperBound))
   }
 
-    // TODO(search) SnippetOptions is internal until supported by the backend
+  // TODO(search) SnippetOptions is internal until supported by the backend
   internal class SnippetOptions private constructor(options: InternalOptions) :
     AbstractOptions<SnippetOptions>(options) {
     /** Creates a new, empty `SnippetOptions` object. */
@@ -7582,9 +7595,11 @@ abstract class Expression internal constructor() {
    * Evaluates to an HTML-formatted text snippet that highlights terms matching the search query in
    * `<b>bold</b>`.
    *
-   * TODO(documentation)
+   * @remarks This Expression can only be used within a `Search` stage.
+   *
+   * @param rquery Define the search query using the search DTS.
    */
-  internal fun snippet(rquery: String): Expression =
+  fun snippet(rquery: String): Expression =
     FunctionExpression(
       "snippet",
       notImplemented,
@@ -7595,6 +7610,10 @@ abstract class Expression internal constructor() {
   /**
    * Evaluates to an HTML-formatted text snippet that highlights terms matching the search query in
    * `<b>bold</b>`.
+   *
+   * @remarks This Expression can only be used within a `Search` stage.
+   *
+   * @param options Define how the snippet is generated.
    *
    * TODO(search) implement snippet with SnippetOptions - out of scope for first release
    */
@@ -7613,20 +7632,17 @@ abstract class Expression internal constructor() {
    *
    * // This is functionally equivalent to
    * and(
-   *   field('tireWidth').greaterThanOrEqual(contant(2.2)),
+   *   field('tireWidth').greaterThanOrEqual(constant(2.2)),
    *   field('tireWidth').lessThanOrEqual(constant(2.4)))
    * ```
    *
-   * @param lowerBound
-   * - Lower bound (inclusive) of the range.
-   * @param upperBound
-   * - Upper bound (inclusive) of the range.
+   * @param lowerBound Lower bound (inclusive).
+   * @param upperBound Upper bound (inclusive).
    *
-   * TODO(search) implement snippet with SnippetOptions - out of scope for first release
+   * TODO(search) publish between - out of scope for first release
    */
-  internal fun between(lowerBound: Expression, upperBound: Expression): BooleanExpression {
-    throw NotImplementedError("Not implemented")
-  }
+  internal fun between(lowerBound: Expression, upperBound: Expression): BooleanExpression =
+    Companion.between(this, lowerBound, upperBound)
 
   /**
    * Evaluates if the result of this `expression` is between the `lowerBound` (inclusive) and
@@ -7643,16 +7659,13 @@ abstract class Expression internal constructor() {
    *   field('tireWidth').lessThanOrEqual(2.4))
    * ```
    *
-   * @param lowerBound
-   * - Lower bound (inclusive) of the range.
-   * @param upperBound
-   * - Upper bound (inclusive) of the range.
+   * @param lowerBound Lower bound (inclusive).
+   * @param upperBound Upper bound (inclusive).
    *
-   * TODO(search) implement snippet with SnippetOptions - out of scope for first release
+   * TODO(search) publish between - out of scope for first release
    */
-  internal fun between(lowerBound: Any, upperBound: Any): BooleanExpression {
-    throw NotImplementedError("Not implemented")
-  }
+  internal fun between(lowerBound: Any, upperBound: Any): BooleanExpression =
+    Companion.between(this, lowerBound, upperBound)
 
   internal abstract fun toProto(userDataReader: UserDataReader): Value
 

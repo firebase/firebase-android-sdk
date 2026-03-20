@@ -160,6 +160,22 @@ class PipelineSearchTest {
 
   // query
   @Test
+  fun searchWithLanguageCode() {
+    val ppl =
+      firestore
+        .pipeline()
+        .collection("SearchIntegrationTests")
+        .search(
+          SearchStage.withQuery("waffles")
+            .withLanguageCode("en")
+            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
+        )
+
+    val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
+    assertResultIds(snapshot, "goldenWaffle")
+  }
+
+  @Test
   fun searchFullDocument() {
     val ppl =
       firestore
