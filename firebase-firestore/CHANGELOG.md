@@ -1,7 +1,27 @@
 # Unreleased
 
+- [feature] Added support for Pipeline expressions `nor` and `switchOn`.
+  [#7903](https://github.com/firebase/firebase-android-sdk/pull/7903)
+- [feature] Added support for `first`, `last`, `arrayAgg`, and `arrayAggDistinct` Pipeline expressions.
+  [#7893](https://github.com/firebase/firebase-android-sdk/pull/7893)
+- [feature] Added support for `rand` and `trunc` Pipeline expressions.
+  [#7886](https://github.com/firebase/firebase-android-sdk/pull/7886)
+- [feature] Added support for Pipeline expressions `arrayFirst`, `arrayFirstN`, `arrayLast`,
+  `arrayLastN`, `arrayMinimum`, `arrayMinimumN`, `arrayMaximum`, `arrayMaximumN`, `arrayIndexOf`,
+  `arrayLastIndexOf` and `arrayIndexOfAll`.
+  [#7836](//github.com/firebase/firebase-android-sdk/pull/7836)
+- [fixed] Fix a performance regression in `ObjectValue.equals()` that caused exponential execution
+  time for large or deeply nested documents.
+  [#7877](https://github.com/firebase/firebase-android-sdk/issues/7877)
+
+# 26.1.1
+
 - [feature] Added support for `regexFind` and `regexFindAll` Pipeline expressions.
   [#7669](https://github.com/firebase/firebase-android-sdk/pull/7669)
+- [changed] Updated `Expression.alias()` to return `AliasedExpression`.
+- [removed] Removed `isNan`, `isNotNan`, `isNull`, and `isNotNull` factory methods from `Expression`.
+  Use `equal(Double.NaN)`, `notEqual(Double.NaN)`, `equal(nullValue())`, and `notEqual(nullValue())`
+  respectively.
 
 # 26.1.0
 

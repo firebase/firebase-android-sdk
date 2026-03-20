@@ -18,12 +18,13 @@ import com.google.common.truth.Truth.assertThat
 import com.google.firebase.firestore.FieldPath as PublicFieldPath
 import com.google.firebase.firestore.RealtimePipelineSource
 import com.google.firebase.firestore.TestUtil
+import com.google.firebase.firestore.pipeline.Expression.Companion.and
 import com.google.firebase.firestore.pipeline.Expression.Companion.constant
 import com.google.firebase.firestore.pipeline.Expression.Companion.exists
 import com.google.firebase.firestore.pipeline.Expression.Companion.field
-import com.google.firebase.firestore.pipeline.Expression.Companion.isNull
 import com.google.firebase.firestore.pipeline.Expression.Companion.map
 import com.google.firebase.firestore.pipeline.Expression.Companion.not
+import com.google.firebase.firestore.pipeline.Expression.Companion.nullValue
 import com.google.firebase.firestore.runPipeline
 import com.google.firebase.firestore.testutil.TestUtilKtx.doc
 import kotlinx.coroutines.runBlocking
@@ -521,7 +522,9 @@ internal class NestedPropertiesTests {
     val documents = listOf(doc1, doc2, doc3)
 
     val pipeline =
-      RealtimePipelineSource(db).collection("/users").where(isNull(field("address.street")))
+      RealtimePipelineSource(db)
+        .collection("/users")
+        .where(field("address.street").equal(nullValue()))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc1)
@@ -556,7 +559,9 @@ internal class NestedPropertiesTests {
     val documents = listOf(doc1, doc2, doc3)
 
     val pipeline =
-      RealtimePipelineSource(db).collection("/users").where(not(isNull(field("address.street"))))
+      RealtimePipelineSource(db)
+        .collection("/users")
+        .where(and(exists(field("address.street")), field("address.street").notEqual(nullValue())))
 
     val result = runPipeline(pipeline, listOf(*documents.toTypedArray())).toList()
     assertThat(result).containsExactly(doc2)

@@ -14,6 +14,7 @@
 
 package com.google.firebase.installations.local;
 
+import android.util.Log;
 import androidx.annotation.NonNull;
 import com.google.firebase.FirebaseApp;
 import java.io.ByteArrayOutputStream;
@@ -33,6 +34,7 @@ import org.json.JSONObject;
 public class PersistedInstallation {
   private File dataFile;
   @NonNull private final FirebaseApp firebaseApp;
+  private static final String TAG = "PersistedInstallation";
 
   // Registration Status of each persisted fid entry
   // NOTE: never change the ordinal of the enum values because the enum values are written to
@@ -81,21 +83,39 @@ public class PersistedInstallation {
   }
 
   private File getDataFile() {
-
     if (dataFile == null) {
       synchronized (this) {
         if (dataFile == null) {
           // Different FirebaseApp in the same Android application should have the same application
           // context and same dir path
-          dataFile =
-              new File(
-                  firebaseApp.getApplicationContext().getFilesDir(),
-                  SETTINGS_FILE_NAME_PREFIX + "." + firebaseApp.getPersistenceKey() + ".json");
+          String fileName =
+              SETTINGS_FILE_NAME_PREFIX + "." + firebaseApp.getPersistenceKey() + ".json";
+          dataFile = new File(firebaseApp.getApplicationContext().getNoBackupFilesDir(), fileName);
+          if (dataFile.exists()) {
+            return dataFile;
+          }
+          // Data associated with FID shouldn't be stored in backup directory. Hence if the FID data
+          // is present in the backup directory you move it to the non backup directory.
+          File dataFileBackup =
+              new File(firebaseApp.getApplicationContext().getFilesDir(), fileName);
+          if (dataFileBackup.exists()) {
+            if (!dataFileBackup.renameTo(dataFile)) {
+              Log.e(
+                  TAG,
+                  "Unable to move the file from back up to non back up directory",
+                  new IOException("Unable to move the file from back up to non back up directory"));
+              return dataFileBackup;
+            }
+          }
         }
       }
     }
 
     return dataFile;
+  }
+
+  public void clearDataFile() {
+    getDataFile().delete();
   }
 
   @NonNull

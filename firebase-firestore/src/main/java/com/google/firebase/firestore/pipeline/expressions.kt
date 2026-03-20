@@ -416,6 +416,55 @@ abstract class Expression internal constructor() {
       BooleanFunctionExpression("or", evaluateOr, condition, *conditions)
 
     /**
+     * Creates an expression that performs a logical 'NOR' operation.
+     *
+     * ```kotlin
+     * // Check if 'status' is neither "new" nor "open"
+     * nor(field("status").equal("new"), field("status").equal("open"))
+     * ```
+     *
+     * @param condition The first [BooleanExpression].
+     * @param conditions Additional [BooleanExpression]s.
+     * @return A new [BooleanExpression] representing the logical 'NOR' operation.
+     */
+    @JvmStatic
+    fun nor(condition: BooleanExpression, vararg conditions: BooleanExpression): BooleanExpression =
+      BooleanFunctionExpression("nor", notImplemented, condition, *conditions)
+
+    /**
+     * Creates an expression that evaluates to the result corresponding to the first true condition.
+     *
+     * This function behaves like a `switch` statement. It accepts an alternating sequence of
+     * conditions and their corresponding results. If an odd number of arguments is provided, the
+     * final argument serves as a default fallback result. If no default is provided and no
+     * condition evaluates to true, it throws an error.
+     *
+     * ```kotlin
+     * // Return "Active" if field "status" is 1, "Pending" if field "status" is 2,
+     * // and default to "Unknown" if none of the conditions are true.
+     * switchOn(
+     *   field("status").equal(1), constant("Active"),
+     *   field("status").equal(2), constant("Pending"),
+     *   constant("Unknown")
+     * )
+     * ```
+     *
+     * @param condition The first condition to check.
+     * @param result The result if the first condition is true.
+     * @param others Additional conditions and results, and optionally a default value.
+     * @return A new [Expression] representing the switch operation.
+     */
+    @JvmStatic
+    fun switchOn(condition: BooleanExpression, result: Any, vararg others: Any): Expression =
+      FunctionExpression(
+        "switch_on",
+        notImplemented,
+        condition,
+        toExprOrConstant(result),
+        *toArrayOfExprOrConstant(others)
+      )
+
+    /**
      * Creates an expression that performs a logical 'XOR' operation.
      *
      * ```kotlin
@@ -913,6 +962,110 @@ abstract class Expression internal constructor() {
     @JvmStatic
     fun roundToPrecision(numericField: String, decimalPlace: Expression): Expression =
       FunctionExpression("round", evaluateRoundToPrecision, numericField, decimalPlace)
+
+    /**
+     * Creates an expression that truncates [numericExpr] to an integer.
+     *
+     * ```kotlin
+     * // Truncate the value of the 'rating' field.
+     * trunc(field("rating"))
+     * ```
+     *
+     * @param numericExpr An expression that returns number when evaluated.
+     * @return A new [Expression] representing the truncate operation.
+     */
+    @JvmStatic
+    fun trunc(numericExpr: Expression): Expression =
+      FunctionExpression("trunc", notImplemented, numericExpr)
+
+    /**
+     * Creates an expression that truncates [numericField] to an integer.
+     *
+     * ```kotlin
+     * // Truncate the value of the 'rating' field.
+     * trunc("rating")
+     * ```
+     *
+     * @param numericField Name of field that returns number when evaluated.
+     * @return A new [Expression] representing the truncate operation.
+     */
+    @JvmStatic
+    fun trunc(numericField: String): Expression =
+      FunctionExpression("trunc", notImplemented, numericField)
+
+    /**
+     * Creates an expression that truncates [numericExpr] to [decimalPlace] decimal places if
+     * [decimalPlace] is positive, truncates digits to the left of the decimal point if
+     * [decimalPlace] is negative.
+     *
+     * ```kotlin
+     * // Truncate the value of the 'rating' field to 2 decimal places.
+     * truncToPrecision(field("rating"), 2)
+     * ```
+     *
+     * @param numericExpr An expression that returns number when evaluated.
+     * @param decimalPlace The number of decimal places to truncate.
+     * @return A new [Expression] representing the truncate operation.
+     */
+    @JvmStatic
+    fun truncToPrecision(numericExpr: Expression, decimalPlace: Int): Expression =
+      FunctionExpression("trunc", notImplemented, numericExpr, constant(decimalPlace))
+
+    /**
+     * Creates an expression that truncates [numericField] to [decimalPlace] decimal places if
+     * [decimalPlace] is positive, truncates digits to the left of the decimal point if
+     * [decimalPlace] is negative.
+     *
+     * ```kotlin
+     * // Truncate the value of the 'rating' field to 2 decimal places.
+     * truncToPrecision("rating", 2)
+     * ```
+     *
+     * @param numericField Name of field that returns number when evaluated.
+     * @param decimalPlace The number of decimal places to truncate.
+     * @return A new [Expression] representing the truncate operation.
+     */
+    @JvmStatic
+    fun truncToPrecision(numericField: String, decimalPlace: Int): Expression =
+      FunctionExpression("trunc", notImplemented, numericField, constant(decimalPlace))
+
+    /**
+     * Creates an expression that truncates [numericExpr] to [decimalPlace] decimal places if
+     * [decimalPlace] is positive, truncates digits to the left of the decimal point if
+     * [decimalPlace] is negative.
+     *
+     * ```kotlin
+     * // Truncate the value of the 'rating' field to the number of decimal places specified in the
+     * // 'precision' field.
+     * truncToPrecision(field("rating"), field("precision"))
+     * ```
+     *
+     * @param numericExpr An expression that returns number when evaluated.
+     * @param decimalPlace The number of decimal places to truncate.
+     * @return A new [Expression] representing the truncate operation.
+     */
+    @JvmStatic
+    fun truncToPrecision(numericExpr: Expression, decimalPlace: Expression): Expression =
+      FunctionExpression("trunc", notImplemented, numericExpr, decimalPlace)
+
+    /**
+     * Creates an expression that truncates [numericField] to [decimalPlace] decimal places if
+     * [decimalPlace] is positive, truncates digits to the left of the decimal point if
+     * [decimalPlace] is negative.
+     *
+     * ```kotlin
+     * // Truncate the value of the 'rating' field to the number of decimal places specified in the
+     * // 'precision' field.
+     * truncToPrecision("rating", field("precision"))
+     * ```
+     *
+     * @param numericField Name of field that returns number when evaluated.
+     * @param decimalPlace The number of decimal places to truncate.
+     * @return A new [Expression] representing the truncate operation.
+     */
+    @JvmStatic
+    fun truncToPrecision(numericField: String, decimalPlace: Expression): Expression =
+      FunctionExpression("trunc", notImplemented, numericField, decimalPlace)
 
     /**
      * Creates an expression that returns the smallest integer that isn't less than [numericExpr].
@@ -1758,126 +1911,6 @@ abstract class Expression internal constructor() {
       BooleanFunctionExpression("is_absent", evaluateIsAbsent, fieldName)
 
     /**
-     * Creates an expression that checks if an expression evaluates to 'NaN' (Not a Number).
-     *
-     * ```kotlin
-     * // Check if the result of a calculation is NaN
-     * isNan(divide("value", 0))
-     * ```
-     *
-     * @param expr The expression to check.
-     * @return A new [BooleanExpression] representing the isNan operation.
-     */
-    @JvmStatic
-    internal fun isNan(expr: Expression): BooleanExpression =
-      BooleanFunctionExpression("is_nan", evaluateIsNaN, expr)
-
-    /**
-     * Creates an expression that checks if the field's value evaluates to 'NaN' (Not a Number).
-     *
-     * ```kotlin
-     * // Check if the value of a field is NaN
-     * isNan("value")
-     * ```
-     *
-     * @param fieldName The field to check.
-     * @return A new [BooleanExpression] representing the isNan operation.
-     */
-    @JvmStatic
-    internal fun isNan(fieldName: String): BooleanExpression =
-      BooleanFunctionExpression("is_nan", evaluateIsNaN, fieldName)
-
-    /**
-     * Creates an expression that checks if the results of [expr] is NOT 'NaN' (Not a Number).
-     *
-     * ```kotlin
-     * // Check if the result of a calculation is NOT NaN
-     * isNotNan(divide("value", 0))
-     * ```
-     *
-     * @param expr The expression to check.
-     * @return A new [BooleanExpression] representing the isNotNan operation.
-     */
-    @JvmStatic
-    internal fun isNotNan(expr: Expression): BooleanExpression =
-      BooleanFunctionExpression("is_not_nan", evaluateIsNotNaN, expr)
-
-    /**
-     * Creates an expression that checks if the field's value is NOT 'NaN' (Not a Number).
-     *
-     * ```kotlin
-     * // Check if the value of a field is NOT NaN
-     * isNotNan("value")
-     * ```
-     *
-     * @param fieldName The field to check.
-     * @return A new [BooleanExpression] representing the isNotNan operation.
-     */
-    @JvmStatic
-    internal fun isNotNan(fieldName: String): BooleanExpression =
-      BooleanFunctionExpression("is_not_nan", evaluateIsNotNaN, fieldName)
-
-    /**
-     * Creates an expression that checks if the result of [expr] is null.
-     *
-     * ```kotlin
-     * // Check if the value of the 'name' field is null
-     * isNull("name")
-     * ```
-     *
-     * @param expr The expression to check.
-     * @return A new [BooleanExpression] representing the isNull operation.
-     */
-    @JvmStatic
-    internal fun isNull(expr: Expression): BooleanExpression =
-      BooleanFunctionExpression("is_null", evaluateIsNull, expr)
-
-    /**
-     * Creates an expression that checks if the value of a field is null.
-     *
-     * ```kotlin
-     * // Check if the value of the 'name' field is null
-     * isNull("name")
-     * ```
-     *
-     * @param fieldName The field to check.
-     * @return A new [BooleanExpression] representing the isNull operation.
-     */
-    @JvmStatic
-    internal fun isNull(fieldName: String): BooleanExpression =
-      BooleanFunctionExpression("is_null", evaluateIsNull, fieldName)
-
-    /**
-     * Creates an expression that checks if the result of [expr] is not null.
-     *
-     * ```kotlin
-     * // Check if the value of the 'name' field is not null
-     * isNotNull(field("name"))
-     * ```
-     *
-     * @param expr The expression to check.
-     * @return A new [BooleanExpression] representing the isNotNull operation.
-     */
-    @JvmStatic
-    internal fun isNotNull(expr: Expression): BooleanExpression =
-      BooleanFunctionExpression("is_not_null", evaluateIsNotNull, expr)
-
-    /**
-     * Creates an expression that checks if the value of a field is not null.
-     *
-     * ```kotlin
-     * // Check if the value of the 'name' field is not null
-     * isNotNull("name")
-     * ```
-     *
-     * @param fieldName The field to check.
-     * @return A new [BooleanExpression] representing the isNotNull operation.
-     */
-    @JvmStatic
-    internal fun isNotNull(fieldName: String): BooleanExpression =
-      BooleanFunctionExpression("is_not_null", evaluateIsNotNull, fieldName)
-
-    /**
      * Creates an expression that returns a string indicating the type of the value this expression
      * evaluates to.
      *
@@ -2237,7 +2270,7 @@ abstract class Expression internal constructor() {
      *
      * @return A new [Expression] representing the random number operation.
      */
-    @JvmStatic internal fun rand(): Expression = FunctionExpression("rand", notImplemented)
+    @JvmStatic fun rand(): Expression = FunctionExpression("rand", notImplemented)
 
     /**
      * Creates an expression that checks if a string expression contains a specified regular
@@ -5057,6 +5090,556 @@ abstract class Expression internal constructor() {
       FunctionExpression("array_length", evaluateArrayLength, arrayFieldName)
 
     /**
+     * Creates an expression that returns the first element of an [array] expression.
+     *
+     * ```kotlin
+     * // Get the first element of the 'myArray' field.
+     * arrayFirst(field("myArray"))
+     * ```
+     *
+     * @param array The array expression to get the first element from.
+     * @return A new [Expression] representing the first element.
+     */
+    @JvmStatic
+    fun arrayFirst(array: Expression): Expression =
+      FunctionExpression("array_first", evaluateArrayFirst, array)
+
+    /**
+     * Creates an expression that returns the first element of an array field.
+     *
+     * ```kotlin
+     * // Get the first element of the 'myArray' field.
+     * arrayFirst("myArray")
+     * ```
+     *
+     * @param arrayFieldName The name of the field containing an array to get the first element
+     * from.
+     * @return A new [Expression] representing the first element.
+     */
+    @JvmStatic
+    fun arrayFirst(arrayFieldName: String): Expression =
+      FunctionExpression("array_first", evaluateArrayFirst, arrayFieldName)
+
+    /**
+     * Creates an expression that returns the first `n` elements of an [array] expression.
+     *
+     * ```kotlin
+     * // Get the first 3 elements of the 'myArray' field.
+     * arrayFirstN(field("myArray"), 3)
+     * ```
+     *
+     * @param array The array expression.
+     * @param n The number of elements to return.
+     * @return A new [Expression] representing the first `n` elements.
+     */
+    @JvmStatic
+    fun arrayFirstN(array: Expression, n: Int): Expression =
+      FunctionExpression("array_first_n", evaluateArrayFirstN, array, constant(n))
+
+    /**
+     * Creates an expression that returns the first `n` elements of an [array] expression.
+     *
+     * ```kotlin
+     * // Get the first n elements of the 'myArray' field.
+     * arrayFirstN(field("myArray"), field("count"))
+     * ```
+     *
+     * @param array The array expression.
+     * @param n An expression evaluating to the number of elements to return.
+     * @return A new [Expression] representing the first `n` elements.
+     */
+    @JvmStatic
+    fun arrayFirstN(array: Expression, n: Expression): Expression =
+      FunctionExpression("array_first_n", evaluateArrayFirstN, array, n)
+
+    /**
+     * Creates an expression that returns the first `n` elements of an array field.
+     *
+     * ```kotlin
+     * // Get the first n elements of the 'myArray' field.
+     * arrayFirstN("myArray", field("count"))
+     * ```
+     *
+     * @param arrayFieldName The name of the field containing an array to get the first `n` elements
+     * from.
+     * @param n An expression evaluating to the number of elements to return.
+     * @return A new [Expression] representing the first `n` elements.
+     */
+    @JvmStatic
+    fun arrayFirstN(arrayFieldName: String, n: Expression): Expression =
+      FunctionExpression("array_first_n", evaluateArrayFirstN, arrayFieldName, n)
+
+    /**
+     * Creates an expression that returns the first `n` elements of an array field.
+     *
+     * ```kotlin
+     * // Get the first n elements of the 'myArray' field.
+     * arrayFirstN("myArray", 3)
+     * ```
+     *
+     * @param arrayFieldName The name of the field containing an array to get the first `n` elements
+     * from.
+     * @param n The number of elements to return.
+     * @return A new [Expression] representing the first `n` elements.
+     */
+    @JvmStatic
+    fun arrayFirstN(arrayFieldName: String, n: Int): Expression =
+      FunctionExpression("array_first_n", evaluateArrayFirstN, arrayFieldName, constant(n))
+
+    /**
+     * Creates an expression that returns the last element of an [array] expression.
+     *
+     * ```kotlin
+     * // Get the last element of the 'myArray' field.
+     * arrayLast(field("myArray"))
+     * ```
+     *
+     * @param array The array expression to get the last element from.
+     * @return A new [Expression] representing the last element.
+     */
+    @JvmStatic
+    fun arrayLast(array: Expression): Expression =
+      FunctionExpression("array_last", evaluateArrayLast, array)
+
+    /**
+     * Creates an expression that returns the last element of an array field.
+     *
+     * ```kotlin
+     * // Get the last element of the 'myArray' field.
+     * arrayLast("myArray")
+     * ```
+     *
+     * @param arrayFieldName The name of the field containing an array to get the last element from.
+     * @return A new [Expression] representing the last element.
+     */
+    @JvmStatic
+    fun arrayLast(arrayFieldName: String): Expression =
+      FunctionExpression("array_last", evaluateArrayLast, arrayFieldName)
+
+    /**
+     * Creates an expression that returns the last `n` elements of an [array] expression.
+     *
+     * ```kotlin
+     * // Get the last 3 elements of the 'myArray' field.
+     * arrayLastN(field("myArray"), 3)
+     * ```
+     *
+     * @param array The array expression.
+     * @param n The number of elements to return.
+     * @return A new [Expression] representing the last `n` elements.
+     */
+    @JvmStatic
+    fun arrayLastN(array: Expression, n: Int): Expression =
+      FunctionExpression("array_last_n", evaluateArrayLastN, array, constant(n))
+
+    /**
+     * Creates an expression that returns the last `n` elements of an [array] expression.
+     *
+     * ```kotlin
+     * // Get the last n elements of the 'myArray' field.
+     * arrayLastN(field("myArray"), field("count"))
+     * ```
+     *
+     * @param array The array expression.
+     * @param n An expression evaluating to the number of elements to return.
+     * @return A new [Expression] representing the last `n` elements.
+     */
+    @JvmStatic
+    fun arrayLastN(array: Expression, n: Expression): Expression =
+      FunctionExpression("array_last_n", evaluateArrayLastN, array, n)
+
+    /**
+     * Creates an expression that returns the last `n` elements of an array field.
+     *
+     * ```kotlin
+     * // Get the last n elements of the 'myArray' field.
+     * arrayLastN("myArray", field("count"))
+     * ```
+     *
+     * @param arrayFieldName The name of the field containing an array to get the last `n` elements
+     * from.
+     * @param n An expression evaluating to the number of elements to return.
+     * @return A new [Expression] representing the last `n` elements.
+     */
+    @JvmStatic
+    fun arrayLastN(arrayFieldName: String, n: Expression): Expression =
+      FunctionExpression("array_last_n", evaluateArrayLastN, arrayFieldName, n)
+
+    /**
+     * Creates an expression that returns the last `n` elements of an array field.
+     *
+     * ```kotlin
+     * // Get the last n elements of the 'myArray' field.
+     * arrayLastN("myArray", 3)
+     * ```
+     *
+     * @param arrayFieldName The name of the field containing an array to get the last `n` elements
+     * from.
+     * @param n The number of elements to return.
+     * @return A new [Expression] representing the last `n` elements.
+     */
+    @JvmStatic
+    fun arrayLastN(arrayFieldName: String, n: Int): Expression =
+      FunctionExpression("array_last_n", evaluateArrayLastN, arrayFieldName, constant(n))
+
+    /**
+     * Creates an expression that returns the minimum element of the [array].
+     *
+     * ```kotlin
+     * // Get the minimum element of the 'myArray' field.
+     * arrayMinimum(field("myArray"))
+     * ```
+     *
+     * @param array The array expression.
+     * @return A new [Expression] representing the minimum element.
+     */
+    @JvmStatic
+    fun arrayMinimum(array: Expression): Expression =
+      FunctionExpression("minimum", evaluateArrayMinimum, array)
+
+    /**
+     * Creates an expression that returns the minimum element of an array field.
+     *
+     * ```kotlin
+     * // Get the minimum element of the 'myArray' field.
+     * arrayMinimum("myArray")
+     * ```
+     *
+     * @param arrayFieldName The name of the field containing an array to get the minimum element
+     * from.
+     * @return A new [Expression] representing the minimum element.
+     */
+    @JvmStatic
+    fun arrayMinimum(arrayFieldName: String): Expression =
+      FunctionExpression("minimum", evaluateArrayMinimum, arrayFieldName)
+
+    /**
+     * Creates an expression that returns the first `n` smallest elements of the [array].
+     *
+     * Note: Returns the n smallest non-null elements in the array, in ascending order. This does
+     * not use a stable sort, meaning the order of equivalent elements is undefined.
+     *
+     * ```kotlin
+     * // Get the 3 smallest elements of the 'myArray' field.
+     * arrayMinimumN(field("myArray"), 3)
+     * ```
+     *
+     * @param array The array expression.
+     * @param n The number of elements to return.
+     * @return A new [Expression] representing the first `n` smallest elements.
+     */
+    @JvmStatic
+    fun arrayMinimumN(array: Expression, n: Int): Expression =
+      FunctionExpression("minimum_n", evaluateArrayMinimumN, array, constant(n))
+
+    /**
+     * Creates an expression that returns the first `n` smallest elements of the [array].
+     *
+     * Note: Returns the n smallest non-null elements in the array, in ascending order. This does
+     * not use a stable sort, meaning the order of equivalent elements is undefined.
+     *
+     * ```kotlin
+     * // Get the n smallest elements of the 'myArray' field.
+     * arrayMinimumN(field("myArray"), field("count"))
+     * ```
+     *
+     * @param array The array expression.
+     * @param n An expression evaluating to the number of elements to return.
+     * @return A new [Expression] representing the first `n` smallest elements.
+     */
+    @JvmStatic
+    fun arrayMinimumN(array: Expression, n: Expression): Expression =
+      FunctionExpression("minimum_n", evaluateArrayMinimumN, array, n)
+
+    /**
+     * Creates an expression that returns the first `n` smallest elements of the [array].
+     *
+     * Note: Returns the n smallest non-null elements in the array, in ascending order. This does
+     * not use a stable sort, meaning the order of equivalent elements is undefined.
+     *
+     * ```kotlin
+     * // Get the n smallest elements of the 'myArray' field.
+     * arrayMinimumN("myArray", field("count"))
+     * ```
+     *
+     * @param arrayFieldName The name of the field containing an array to get the first `n` smallest
+     * elements from.
+     * @param n An expression evaluating to the number of elements to return.
+     * @return A new [Expression] representing the first `n` smallest elements.
+     */
+    @JvmStatic
+    fun arrayMinimumN(arrayFieldName: String, n: Expression): Expression =
+      FunctionExpression("minimum_n", evaluateArrayMinimumN, arrayFieldName, n)
+
+    /**
+     * Creates an expression that returns the first `n` smallest elements of the [array].
+     *
+     * Note: Returns the n smallest non-null elements in the array, in ascending order. This does
+     * not use a stable sort, meaning the order of equivalent elements is undefined.
+     *
+     * ```kotlin
+     * // Get the 3 smallest elements of the 'myArray' field.
+     * arrayMinimumN("myArray", 3)
+     * ```
+     *
+     * @param arrayFieldName The name of the field containing an array to get the first `n` smallest
+     * elements from.
+     * @param n The number of elements to return.
+     * @return A new [Expression] representing the first `n` smallest elements.
+     */
+    @JvmStatic
+    fun arrayMinimumN(arrayFieldName: String, n: Int): Expression =
+      FunctionExpression("minimum_n", evaluateArrayMinimumN, arrayFieldName, constant(n))
+
+    /**
+     * Creates an expression that returns the maximum element of the [array].
+     *
+     * ```kotlin
+     * // Get the maximum element of the 'myArray' field.
+     * arrayMaximum(field("myArray"))
+     * ```
+     *
+     * @param array The array expression.
+     * @return A new [Expression] representing the maximum element.
+     */
+    @JvmStatic
+    fun arrayMaximum(array: Expression): Expression =
+      FunctionExpression("maximum", evaluateArrayMaximum, array)
+
+    /**
+     * Creates an expression that returns the maximum element of an array field.
+     *
+     * ```kotlin
+     * // Get the maximum element of the 'myArray' field.
+     * arrayMaximum("myArray")
+     * ```
+     *
+     * @param arrayFieldName The name of the field containing an array to get the maximum element
+     * from.
+     * @return A new [Expression] representing the maximum element.
+     */
+    @JvmStatic
+    fun arrayMaximum(arrayFieldName: String): Expression =
+      FunctionExpression("maximum", evaluateArrayMaximum, arrayFieldName)
+
+    /**
+     * Creates an expression that returns the first `n` largest elements of the [array].
+     *
+     * Note: Returns the n largest non-null elements in the array, in descending order. This does
+     * not use a stable sort, meaning the order of equivalent elements is undefined.
+     *
+     * ```kotlin
+     * // Get the 3 largest elements of the 'myArray' field.
+     * arrayMaximumN(field("myArray"), 3)
+     * ```
+     *
+     * @param array The array expression.
+     * @param n The number of elements to return.
+     * @return A new [Expression] representing the first `n` largest elements.
+     */
+    @JvmStatic
+    fun arrayMaximumN(array: Expression, n: Int): Expression =
+      FunctionExpression("maximum_n", evaluateArrayMaximumN, array, constant(n))
+
+    /**
+     * Creates an expression that returns the first `n` largest elements of the [array].
+     *
+     * Note: Returns the n largest non-null elements in the array, in descending order. This does
+     * not use a stable sort, meaning the order of equivalent elements is undefined.
+     *
+     * ```kotlin
+     * // Get the n largest elements of the 'myArray' field.
+     * arrayMaximumN(field("myArray"), field("count"))
+     * ```
+     *
+     * @param array The array expression.
+     * @param n An expression evaluating to the number of elements to return.
+     * @return A new [Expression] representing the first `n` largest elements.
+     */
+    @JvmStatic
+    fun arrayMaximumN(array: Expression, n: Expression): Expression =
+      FunctionExpression("maximum_n", evaluateArrayMaximumN, array, n)
+
+    /**
+     * Creates an expression that returns the first `n` largest elements of the [array].
+     *
+     * Note: Returns the n largest non-null elements in the array, in descending order. This does
+     * not use a stable sort, meaning the order of equivalent elements is undefined.
+     *
+     * ```kotlin
+     * // Get the 3 largest elements of the 'myArray' field.
+     * arrayMaximumN("myArray", 3)
+     * ```
+     *
+     * @param arrayFieldName The name of the field containing an array to get the first `n` largest
+     * elements from.
+     * @param n The number of elements to return.
+     * @return A new [Expression] representing the first `n` largest elements.
+     */
+    @JvmStatic
+    fun arrayMaximumN(arrayFieldName: String, n: Int): Expression =
+      FunctionExpression("maximum_n", evaluateArrayMaximumN, arrayFieldName, constant(n))
+
+    /**
+     * Creates an expression that returns the first `n` largest elements of the [array].
+     *
+     * Note: Returns the n largest non-null elements in the array, in descending order. This does
+     * not use a stable sort, meaning the order of equivalent elements is undefined.
+     *
+     * ```kotlin
+     * // Get the n largest elements of the 'myArray' field.
+     * arrayMaximumN("myArray", field("count"))
+     * ```
+     *
+     * @param arrayFieldName The name of the field containing an array to get the first `n` largest
+     * elements from.
+     * @param n An expression evaluating to the number of elements to return.
+     * @return A new [Expression] representing the first `n` largest elements.
+     */
+    @JvmStatic
+    fun arrayMaximumN(arrayFieldName: String, n: Expression): Expression =
+      FunctionExpression("maximum_n", evaluateArrayMaximumN, arrayFieldName, n)
+
+    /**
+     * Creates an expression that returns the index of the first occurrence of the specified [value]
+     * in the [array], or -1 if the value is not found.
+     *
+     * ```kotlin
+     * // Get the index of 'foo' in the 'tags' array field.
+     * arrayIndexOf(field("tags"), "foo")
+     * ```
+     *
+     * @param array The array expression.
+     * @param value The value to search for.
+     * @return A new [Expression] representing the index of the value.
+     */
+    @JvmStatic
+    fun arrayIndexOf(array: Expression, value: Any?): Expression =
+      FunctionExpression(
+        "array_index_of",
+        evaluateArrayIndexOf,
+        array,
+        toExprOrConstant(value),
+        constant("first")
+      )
+
+    /**
+     * Creates an expression that returns the index of the first occurrence of the specified [value]
+     * in the [array], or -1 if the value is not found.
+     *
+     * ```kotlin
+     * // Get the index of 'foo' in the 'tags' array field.
+     * arrayIndexOf(field("tags"), "foo")
+     * ```
+     *
+     * @param arrayFieldName The name of the field containing an array to get the index of the value
+     * from.
+     * @param value The value to search for.
+     * @return A new [Expression] representing the index of the value.
+     */
+    @JvmStatic
+    fun arrayIndexOf(arrayFieldName: String, value: Any?): Expression =
+      FunctionExpression(
+        "array_index_of",
+        evaluateArrayIndexOf,
+        arrayFieldName,
+        toExprOrConstant(value),
+        constant("first")
+      )
+
+    /**
+     * Creates an expression that returns the index of the last occurrence of the specified [value]
+     * in the [array], or -1 if the value is not found.
+     *
+     * ```kotlin
+     * // Get the last index of 'foo' in the 'tags' array field.
+     * arrayLastIndexOf(field("tags"), "foo")
+     * ```
+     *
+     * @param array The array expression.
+     * @param value The value to search for.
+     * @return A new [Expression] representing the last index of the value.
+     */
+    @JvmStatic
+    fun arrayLastIndexOf(array: Expression, value: Any?): Expression =
+      FunctionExpression(
+        "array_index_of",
+        evaluateArrayIndexOf,
+        array,
+        toExprOrConstant(value),
+        constant("last")
+      )
+
+    /**
+     * Creates an expression that returns the index of the last occurrence of the specified [value]
+     * in the [array], or -1 if the value is not found.
+     *
+     * ```kotlin
+     * // Get the last index of 'foo' in the 'tags' array field.
+     * arrayLastIndexOf(field("tags"), "foo")
+     * ```
+     *
+     * @param arrayFieldName The name of the field containing an array to get the last index of the
+     * value from.
+     * @param value The value to search for.
+     * @return A new [Expression] representing the last index of the value.
+     */
+    @JvmStatic
+    fun arrayLastIndexOf(arrayFieldName: String, value: Any?): Expression =
+      FunctionExpression(
+        "array_index_of",
+        evaluateArrayIndexOf,
+        arrayFieldName,
+        toExprOrConstant(value),
+        constant("last")
+      )
+
+    /**
+     * Creates an expression that returns a list of all indices where the specified [value] occurs
+     * in the [array].
+     *
+     * ```kotlin
+     * // Get all indices of 'foo' in the 'tags' array field.
+     * arrayIndexOfAll(field("tags"), "foo")
+     * ```
+     *
+     * @param array The array expression.
+     * @param value The value to search for.
+     * @return A new [Expression] representing the list of indices.
+     */
+    @JvmStatic
+    fun arrayIndexOfAll(array: Expression, value: Any?): Expression =
+      FunctionExpression(
+        "array_index_of_all",
+        evaluateArrayIndexOfAll,
+        array,
+        toExprOrConstant(value)
+      )
+
+    /**
+     * Creates an expression that returns a list of all indices where the specified [value] occurs
+     * in the [array].
+     *
+     * ```kotlin
+     * // Get all indices of 'foo' in the 'tags' array field.
+     * arrayIndexOfAll(field("tags"), "foo")
+     * ```
+     *
+     * @param arrayFieldName The name of the field containing an array to get the indices of the
+     * value from.
+     * @param value The value to search for.
+     * @return A new [Expression] representing the list of indices.
+     */
+    @JvmStatic
+    fun arrayIndexOfAll(arrayFieldName: String, value: Any?): Expression =
+      FunctionExpression(
+        "array_index_of_all",
+        evaluateArrayIndexOfAll,
+        arrayFieldName,
+        toExprOrConstant(value)
+      )
+
+    /**
      * Creates an expression that indexes into an array from the beginning or end and return the
      * element. If the offset exceeds the array length, an error is returned. A negative offset,
      * starts from the end.
@@ -5755,10 +6338,10 @@ abstract class Expression internal constructor() {
    * to calculated values.
    *
    * @param alias The alias to assign to this expression.
-   * @return A new [Selectable] (typically an [AliasedExpression]) that wraps this expression and
-   * associates it with the provided alias.
+   * @return A [AliasedExpression] that wraps this expression and associates it with the provided
+   * alias.
    */
-  open fun alias(alias: String): Selectable = AliasedExpression(alias, this)
+  open fun alias(alias: String): AliasedExpression = AliasedExpression(alias, this)
 
   /**
    * Creates an expression that returns the document ID from this path expression.
@@ -5988,6 +6571,51 @@ abstract class Expression internal constructor() {
     Companion.roundToPrecision(this, decimalPlace)
 
   /**
+   * Creates an expression that truncates this numeric expression to an integer.
+   *
+   * ```kotlin
+   * // Truncate the value of the 'rating' field.
+   * field("rating").trunc()
+   * ```
+   *
+   * @return A new [Expression] representing the truncate operation.
+   */
+  fun trunc(): Expression = Companion.trunc(this)
+
+  /**
+   * Creates an expression that truncates this numeric expression to [decimalPlace] decimal places
+   * if [decimalPlace] is positive, truncates digits to the left of the decimal point if
+   * [decimalPlace] is negative.
+   *
+   * ```kotlin
+   * // Truncate the value of the 'rating' field to 2 decimal places.
+   * field("rating").truncToPrecision(2)
+   * ```
+   *
+   * @param decimalPlace The number of decimal places to truncate.
+   * @return A new [Expression] representing the truncate operation.
+   */
+  fun truncToPrecision(decimalPlace: Int): Expression =
+    Companion.truncToPrecision(this, decimalPlace)
+
+  /**
+   * Creates an expression that truncates this numeric expression to [decimalPlace] decimal places
+   * if [decimalPlace] is positive, truncates digits to the left of the decimal point if
+   * [decimalPlace] is negative.
+   *
+   * ```kotlin
+   * // Truncate the value of the 'rating' field to the number of decimal places specified in the
+   * // 'precision' field.
+   * field("rating").truncToPrecision(field("precision"))
+   * ```
+   *
+   * @param decimalPlace The number of decimal places to truncate.
+   * @return A new [Expression] representing the truncate operation.
+   */
+  fun truncToPrecision(decimalPlace: Expression): Expression =
+    Companion.truncToPrecision(this, decimalPlace)
+
+  /**
    * Creates an expression that returns the smallest integer that isn't less than this numeric
    * expression.
    *
@@ -6151,55 +6779,6 @@ abstract class Expression internal constructor() {
    * @return A new [BooleanExpression] representing the isAbsent operation.
    */
   fun isAbsent(): BooleanExpression = Companion.isAbsent(this)
-
-  /**
-   * Creates an expression that checks if this expression evaluates to 'NaN' (Not a Number).
-   *
-   * ```kotlin
-   * // Check if the result of a calculation is NaN
-   * divide("value", 0).isNan()
-   * ```
-   *
-   * @return A new [BooleanExpression] representing the isNan operation.
-   */
-  internal fun isNan(): BooleanExpression = Companion.isNan(this)
-
-  /**
-   * Creates an expression that checks if the results of this expression is NOT 'NaN' (Not a
-   * Number).
-   *
-   * ```kotlin
-   * // Check if the result of a calculation is NOT NaN
-   * divide("value", 0).isNotNan()
-   * ```
-   *
-   * @return A new [BooleanExpression] representing the isNotNan operation.
-   */
-  internal fun isNotNan(): BooleanExpression = Companion.isNotNan(this)
-
-  /**
-   * Creates an expression that checks if the result of this expression is null.
-   *
-   * ```kotlin
-   * // Check if the value of the 'name' field is null
-   * field("name").isNull()
-   * ```
-   *
-   * @return A new [BooleanExpression] representing the isNull operation.
-   */
-  internal fun isNull(): BooleanExpression = Companion.isNull(this)
-
-  /**
-   * Creates an expression that checks if the result of this expression is not null.
-   *
-   * ```kotlin
-   * // Check if the value of the 'name' field is not null
-   * field("name").isNotNull()
-   * ```
-   *
-   * @return A new [BooleanExpression] representing the isNotNull operation.
-   */
-  internal fun isNotNull(): BooleanExpression = Companion.isNotNull(this)
 
   /**
    * Creates an expression that calculates the length of a string, array, map, vector, or blob
@@ -7254,6 +7833,212 @@ abstract class Expression internal constructor() {
   fun arrayLength() = Companion.arrayLength(this)
 
   /**
+   * Creates an expression that returns the first element of an array expression.
+   *
+   * ```kotlin
+   * // Get the first element of the 'myArray' field.
+   * field("myArray").arrayFirst()
+   * ```
+   *
+   * @return A new [Expression] representing the first element.
+   */
+  fun arrayFirst() = Companion.arrayFirst(this)
+
+  /**
+   * Creates an expression that returns the first N elements of an array expression.
+   *
+   * ```kotlin
+   * // Get the first 2 elements of the 'myArray' field.
+   * field("myArray").arrayFirstN(2)
+   * ```
+   *
+   * @param n The number of elements to return.
+   * @return A new [Expression] representing the first N elements.
+   */
+  fun arrayFirstN(n: Int) = Companion.arrayFirstN(this, n)
+
+  /**
+   * Creates an expression that returns the first N elements of an array expression.
+   *
+   * ```kotlin
+   * // Get the first 2 elements of the 'myArray' field.
+   * field("myArray").arrayFirstN(2)
+   * ```
+   *
+   * @param n The number of elements to return.
+   * @return A new [Expression] representing the first N elements.
+   */
+  fun arrayFirstN(n: Expression) = Companion.arrayFirstN(this, n)
+
+  /**
+   * Creates an expression that returns the last element of an array expression.
+   *
+   * ```kotlin
+   * // Get the last element of the 'myArray' field.
+   * field("myArray").arrayLast()
+   * ```
+   *
+   * @return A new [Expression] representing the last element.
+   */
+  fun arrayLast() = Companion.arrayLast(this)
+
+  /**
+   * Creates an expression that returns the last N elements of an array expression.
+   *
+   * ```kotlin
+   * // Get the last 2 elements of the 'myArray' field.
+   * field("myArray").arrayLastN(2)
+   * ```
+   *
+   * @param n The number of elements to return.
+   * @return A new [Expression] representing the last N elements.
+   */
+  fun arrayLastN(n: Int) = Companion.arrayLastN(this, n)
+
+  /**
+   * Creates an expression that returns the last N elements of an array expression.
+   *
+   * ```kotlin
+   * // Get the last 2 elements of the 'myArray' field.
+   * field("myArray").arrayLastN(2)
+   * ```
+   *
+   * @param n The number of elements to return.
+   * @return A new [Expression] representing the last N elements.
+   */
+  fun arrayLastN(n: Expression) = Companion.arrayLastN(this, n)
+
+  /**
+   * Creates an expression that returns the minimum value of an array expression.
+   *
+   * ```kotlin
+   * // Get the minimum value of the 'myArray' field.
+   * field("myArray").arrayMinimum()
+   * ```
+   *
+   * @return A new [Expression] representing the minimum value.
+   */
+  fun arrayMinimum() = Companion.arrayMinimum(this)
+
+  /**
+   * Creates an expression that returns the maximum value of an array expression.
+   *
+   * ```kotlin
+   * // Get the maximum value of the 'myArray' field.
+   * field("myArray").arrayMaximum()
+   * ```
+   *
+   * @return A new [Expression] representing the maximum value.
+   */
+  fun arrayMaximum() = Companion.arrayMaximum(this)
+
+  /**
+   * Creates an expression that returns the first `n` smallest elements of the [array].
+   *
+   * Note: Returns the n smallest non-null elements in the array, in ascending order. This does not
+   * use a stable sort, meaning the order of equivalent elements is undefined.
+   *
+   * ```kotlin
+   * // Get the 3 smallest elements of the 'myArray' field.
+   * field("myArray").arrayMinimumN(3)
+   * ```
+   *
+   * @param n The number of elements to return.
+   * @return A new [Expression] representing the first `n` smallest elements.
+   */
+  fun arrayMinimumN(n: Int) = Companion.arrayMinimumN(this, n)
+
+  /**
+   * Creates an expression that returns the first `n` smallest elements of the [array].
+   *
+   * Note: Returns the n smallest non-null elements in the array, in ascending order. This does not
+   * use a stable sort, meaning the order of equivalent elements is undefined.
+   *
+   * ```kotlin
+   * // Get the n smallest elements of the 'myArray' field.
+   * field("myArray").arrayMinimumN(field("count"))
+   * ```
+   *
+   * @param n An expression evaluating to the number of elements to return.
+   * @return A new [Expression] representing the first `n` smallest elements.
+   */
+  fun arrayMinimumN(n: Expression) = Companion.arrayMinimumN(this, n)
+
+  /**
+   * Creates an expression that returns the first `n` largest elements of the [array].
+   *
+   * Note: Returns the n largest non-null elements in the array, in descending order. This does not
+   * use a stable sort, meaning the order of equivalent elements is undefined.
+   *
+   * ```kotlin
+   * // Get the 3 largest elements of the 'myArray' field.
+   * field("myArray").arrayMaximumN(3)
+   * ```
+   *
+   * @param n The number of elements to return.
+   * @return A new [Expression] representing the first `n` largest elements.
+   */
+  fun arrayMaximumN(n: Int) = Companion.arrayMaximumN(this, n)
+
+  /**
+   * Creates an expression that returns the first `n` largest elements of the [array].
+   *
+   * Note: Returns the n largest non-null elements in the array, in descending order. This does not
+   * use a stable sort, meaning the order of equivalent elements is undefined.
+   *
+   * ```kotlin
+   * // Get the n largest elements of the 'myArray' field.
+   * field("myArray").arrayMaximumN(field("count"))
+   * ```
+   *
+   * @param n An expression evaluating to the number of elements to return.
+   * @return A new [Expression] representing the first `n` largest elements.
+   */
+  fun arrayMaximumN(n: Expression) = Companion.arrayMaximumN(this, n)
+
+  /**
+   * Creates an expression that returns the first index where the specified [value] occurs in the
+   * [array].
+   *
+   * ```kotlin
+   * // Get the first index of 'foo' in the 'tags' array field.
+   * field("tags").arrayIndexOf("foo")
+   * ```
+   *
+   * @param value The value to search for.
+   * @return A new [Expression] representing the index of the value.
+   */
+  fun arrayIndexOf(value: Any?): Expression = Companion.arrayIndexOf(this, value)
+
+  /**
+   * Creates an expression that returns the last index where the specified [value] occurs in the
+   * [array].
+   *
+   * ```kotlin
+   * // Get the last index of 'foo' in the 'tags' array field.
+   * field("tags").arrayLastIndexOf("foo")
+   * ```
+   *
+   * @param value The value to search for.
+   * @return A new [Expression] representing the index of the value.
+   */
+  fun arrayLastIndexOf(value: Any?): Expression = Companion.arrayLastIndexOf(this, value)
+
+  /**
+   * Creates an expression that returns a list of all indices where the specified [value] occurs in
+   * the [array].
+   *
+   * ```kotlin
+   * // Get all indices of 'foo' in the 'tags' array field.
+   * field("tags").arrayIndexOfAll("foo")
+   * ```
+   *
+   * @param value The value to search for.
+   * @return A new [Expression] representing the list of indices.
+   */
+  fun arrayIndexOfAll(value: Any?): Expression = Companion.arrayIndexOfAll(this, value)
+
+  /**
    * Creates an expression that indexes into an array from the beginning or end and return the
    * element. If the offset exceeds the array length, an error is returned. A negative offset,
    * starts from the end.
@@ -7330,6 +8115,44 @@ abstract class Expression internal constructor() {
    * @return A new [AggregateFunction] representing the maximum aggregation.
    */
   fun maximum(): AggregateFunction = AggregateFunction.maximum(this)
+
+  /**
+   * Creates an aggregation that finds the first value of this expression across multiple stage
+   * inputs.
+   *
+   * @return A new [AggregateFunction] representing the first aggregation.
+   */
+  fun first(): AggregateFunction = AggregateFunction.first(this)
+
+  /**
+   * Creates an aggregation that finds the last value of this expression across multiple stage
+   * inputs.
+   *
+   * @return A new [AggregateFunction] representing the last aggregation.
+   */
+  fun last(): AggregateFunction = AggregateFunction.last(this)
+
+  /**
+   * Creates an aggregation that collects all values of this expression across multiple stage inputs
+   * into an array.
+   *
+   * If the expression resolves to an absent value, it is converted to `null`. The order of elements
+   * in the output array is not stable and shouldn't be relied upon.
+   *
+   * @return A new [AggregateFunction] representing the array_agg aggregation.
+   */
+  fun arrayAgg(): AggregateFunction = AggregateFunction.arrayAgg(this)
+
+  /**
+   * Creates an aggregation that collects all distinct values of this expression across multiple
+   * stage inputs into an array.
+   *
+   * If the expression resolves to an absent value, it is converted to `null`. The order of elements
+   * in the output array is not stable and shouldn't be relied upon.
+   *
+   * @return A new [AggregateFunction] representing the array_agg_distinct aggregation.
+   */
+  fun arrayAggDistinct(): AggregateFunction = AggregateFunction.arrayAggDistinct(this)
 
   /**
    * Create an [Ordering] that sorts documents in ascending order based on value of this expression

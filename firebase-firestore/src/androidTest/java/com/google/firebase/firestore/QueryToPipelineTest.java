@@ -352,7 +352,7 @@ public class QueryToPipelineTest {
   public void testCanQueryWithAndWithoutDocumentKey() {
     CollectionReference collection = testCollection();
     FirebaseFirestore db = collection.firestore;
-    collection.add(map());
+    waitFor(collection.add(map()));
     Task<Pipeline.Snapshot> query1 =
         db.pipeline()
             .createFrom(collection.orderBy(FieldPath.documentId(), Direction.ASCENDING))

@@ -19,6 +19,7 @@
 package com.google.firebase.dataconnect.testutil.property.arbitrary
 
 import com.google.firebase.dataconnect.DataConnectPathSegment
+import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.OperationRef
 import com.google.firebase.dataconnect.core.DataConnectAppCheck
@@ -36,6 +37,7 @@ import com.google.firebase.dataconnect.core.OperationRefImpl
 import com.google.firebase.dataconnect.core.QueryRefImpl
 import com.google.firebase.dataconnect.testutil.StubOperationRefImpl
 import com.google.firebase.dataconnect.util.ProtoUtil.toMap
+import com.google.firebase.dataconnect.util.SemanticVersion
 import com.google.protobuf.Struct
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
@@ -54,6 +56,7 @@ import io.kotest.property.arbitrary.orNull
 import io.kotest.property.arbitrary.string
 import io.mockk.coEvery
 import io.mockk.mockk
+import kotlin.random.Random
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.modules.SerializersModule
@@ -114,8 +117,8 @@ internal fun DataConnectArb.operationFailureResponseImpl(
 internal fun DataConnectArb.operationResult(
   data: Arb<Struct?> = Arb.proto.struct().map { it.struct }.orNull(nullProbability = 0.2),
   errors: Arb<List<ErrorInfoImpl>> = operationErrors(),
-) =
-  Arb.bind(data, errors) { data0, errors0 -> DataConnectGrpcClient.OperationResult(data0, errors0) }
+  source: Arb<DataSource> = Arb.enum(),
+) = Arb.bind(data, errors, source, DataConnectGrpcClient::OperationResult)
 
 internal fun <Data, Variables> DataConnectArb.queryRefImpl(
   variables: Arb<Variables>,
@@ -165,6 +168,7 @@ internal fun <Data, Variables> DataConnectArb.mutationRefImpl(
   callerSdkType: Arb<CallerSdkType> = Arb.enum<CallerSdkType>(),
   variablesSerializersModule: Arb<SerializersModule?> = serializersModule(),
   dataSerializersModule: Arb<SerializersModule?> = serializersModule(),
+  secureRandom: Arb<Random> = Arb.random(),
 ): Arb<MutationRefImpl<Data, Variables>> = arbitrary {
   MutationRefImpl(
     dataConnect = dataConnect.bind(),
@@ -175,12 +179,14 @@ internal fun <Data, Variables> DataConnectArb.mutationRefImpl(
     callerSdkType = callerSdkType.bind(),
     variablesSerializersModule = variablesSerializersModule.bind(),
     dataSerializersModule = dataSerializersModule.bind(),
+    secureRandom = secureRandom.bind(),
   )
 }
 
 internal inline fun <Data, reified Variables> DataConnectArb.mutationRefImpl(
   constructorArguments: Arb<OperationRefConstructorArguments<Data, Variables>> =
     operationRefConstructorArguments(),
+  secureRandom: Arb<Random> = Arb.random(),
 ): Arb<MutationRefImpl<Data, Variables>> = arbitrary {
   val args = constructorArguments.bind()
   MutationRefImpl(
@@ -192,6 +198,7 @@ internal inline fun <Data, reified Variables> DataConnectArb.mutationRefImpl(
     callerSdkType = args.callerSdkType,
     variablesSerializersModule = args.variablesSerializersModule,
     dataSerializersModule = args.dataSerializersModule,
+    secureRandom = secureRandom.bind(),
   )
 }
 
@@ -341,3 +348,9 @@ internal fun DataConnectArb.authTokenResult(
 internal fun DataConnectArb.appCheckTokenResult(
   accessToken: Arb<String?> = accessToken().orNull(nullProbability = 0.33),
 ): Arb<GetAppCheckTokenResult> = accessToken.map { GetAppCheckTokenResult(it) }
+
+internal fun DataConnectArb.semanticVersion(
+  major: Arb<Int> = Arb.int(),
+  minor: Arb<Int> = Arb.int(),
+  patch: Arb<Int> = Arb.int(),
+): Arb<SemanticVersion> = Arb.bind(major, minor, patch, ::SemanticVersion)

@@ -25,12 +25,12 @@ import com.google.firebase.dataconnect.withAddedListIndex
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
-import google.firebase.dataconnect.proto.kotlinsdk.Entity
-import google.firebase.dataconnect.proto.kotlinsdk.EntityOrEntityList
-import google.firebase.dataconnect.proto.kotlinsdk.QueryResult
+import google.firebase.dataconnect.proto.kotlinsdk.Entity as EntityProto
+import google.firebase.dataconnect.proto.kotlinsdk.EntityOrEntityList as EntityOrEntityListProto
+import google.firebase.dataconnect.proto.kotlinsdk.QueryResult as QueryResultProto
 
 internal fun rehydrateQueryResult(
-  dehydratedQueryResult: QueryResult,
+  dehydratedQueryResult: QueryResultProto,
   dehydratedEntityStructById: Map<String, Struct>
 ): Struct {
   val struct = dehydratedQueryResult.struct
@@ -44,26 +44,26 @@ internal fun rehydrateQueryResult(
   return struct.withGraftedInValues(rehydratedEntityById)
 }
 
-private fun List<EntityOrEntityList>.toRehydratedEntityByIdMap(
+private fun List<EntityOrEntityListProto>.toRehydratedEntityByIdMap(
   dehydratedEntityStructById: Map<String, Struct>
 ): Map<DataConnectPath, Value> = buildMap {
-  this@toRehydratedEntityByIdMap.forEach { entityOrEntityList: EntityOrEntityList ->
+  this@toRehydratedEntityByIdMap.forEach { entityOrEntityList: EntityOrEntityListProto ->
     updateWithRehydratedEntity(entityOrEntityList, dehydratedEntityStructById)
   }
 }
 
 private fun MutableMap<DataConnectPath, Value>.updateWithRehydratedEntity(
-  proto: EntityOrEntityList,
+  proto: EntityOrEntityListProto,
   dehydratedEntityStructById: Map<String, Struct>,
 ) {
   val dataConnectPath: DataConnectPath = proto.path.toDataConnectPath()
 
   when (proto.kindCase) {
-    EntityOrEntityList.KindCase.ENTITY -> {
+    EntityOrEntityListProto.KindCase.ENTITY -> {
       val rehydratedEntity = proto.entity.rehydrate(dataConnectPath, dehydratedEntityStructById)
       put(dataConnectPath, rehydratedEntity.toValueProto())
     }
-    EntityOrEntityList.KindCase.ENTITYLIST -> {
+    EntityOrEntityListProto.KindCase.ENTITYLIST -> {
       val listValueBuilder = ListValue.newBuilder()
       proto.entityList.entitiesList.forEachIndexed { listIndex, entity ->
         val listElementPath = dataConnectPath.withAddedListIndex(listIndex)
@@ -72,11 +72,11 @@ private fun MutableMap<DataConnectPath, Value>.updateWithRehydratedEntity(
       }
       put(dataConnectPath, listValueBuilder.build().toValueProto())
     }
-    EntityOrEntityList.KindCase.KIND_NOT_SET -> {}
+    EntityOrEntityListProto.KindCase.KIND_NOT_SET -> {}
   }
 }
 
-private fun Entity.rehydrate(
+private fun EntityProto.rehydrate(
   path: DataConnectPath,
   dehydratedEntityStructById: Map<String, Struct>
 ): Struct {

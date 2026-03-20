@@ -1,5 +1,7 @@
 # Unreleased
 
+# 4.1.0
+
 - [feature] Support multiple encrypted experiment IDs.
 
 # 4.0.0
