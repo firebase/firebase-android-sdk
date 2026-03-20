@@ -103,11 +103,14 @@ internal class SuspendingWeakValueHashMap<K, V : Any>(cleanupThreadFactory: Thre
    * Removes all the mappings from this map. The map will be empty after this call returns. Any weak
    * references will be cleared.
    *
+   * @return the number of key/value pairs removed.
    * @throws IllegalStateException if [close] has been called.
    */
-  suspend fun clear(): Unit = runWithLock {
+  suspend fun clear(): Int = runWithLock {
+    val removeCount = map.size
     map.values.forEach(ValueReference<K, V>::clear)
     map.clear()
+    return removeCount
   }
 
   /**
