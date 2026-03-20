@@ -445,10 +445,10 @@ public class MapsGroundingChunk(
 ) {
   @Serializable
   internal data class Internal(
-    internal val uri: String?,
-    internal val title: String?,
-    internal val text: String?,
-    internal val placeId: String?
+    val uri: String?,
+    val title: String?,
+    val text: String?,
+    val placeId: String?
   ) {
     fun toPublic() = MapsGroundingChunk(uri, title, text, placeId)
   }
