@@ -32,13 +32,13 @@ on:
     - cron: '0 11 * * *' # Run nightly at 11am UTC (3am Pacific, 6am Eastern)
 
 env:
-  FDC_JAVA_VERSION: ${{ inputs.javaVersion || '17' }}
-  FDC_ANDROID_EMULATOR_API_LEVEL: ${{ inputs.androidEmulatorApiLevel || '34' }}
-  FDC_NODEJS_VERSION: ${{ inputs.nodeJsVersion || '20' }}
-  FDC_FIREBASE_TOOLS_VERSION: ${{ inputs.firebaseToolsVersion || '15.8.0' }}
+  FDC_JAVA_VERSION: ${{ inputs.javaVersion }}
+  FDC_ANDROID_EMULATOR_API_LEVEL: ${{ inputs.androidEmulatorApiLevel }}
+  FDC_NODEJS_VERSION: ${{ inputs.nodeJsVersion }}
+  FDC_FIREBASE_TOOLS_VERSION: ${{ inputs.firebaseToolsVersion }}
   FDC_FIREBASE_TOOLS_DIR: /tmp/firebase-tools
   FDC_FIREBASE_COMMAND: /tmp/firebase-tools/node_modules/.bin/firebase
-  FDC_PYTHON_VERSION: ${{ inputs.pythonVersion || '3.13' }}
+  FDC_PYTHON_VERSION: ${{ inputs.pythonVersion }}
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -53,6 +53,9 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           show-progress: false
+
+      - name: Load CI Version Defaults
+        run: ./firebase-dataconnect/ci/fill_ci_defaults.sh >>"${GITHUB_ENV}"
 
       - uses: actions/setup-java@3a4f6e1af504cf6a31855fa899c6aa5355ba6c12 # v4.7.0
         with:
@@ -323,6 +326,8 @@ jobs:
         with:
           show-progress: false
           sparse-checkout: 'firebase-dataconnect/ci/'
+      - name: Load CI Version Defaults
+        run: ./firebase-dataconnect/ci/fill_ci_defaults.sh >>"${GITHUB_ENV}"
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: ${{ env.FDC_PYTHON_VERSION }}
@@ -339,6 +344,8 @@ jobs:
         with:
           show-progress: false
           sparse-checkout: 'firebase-dataconnect/ci/'
+      - name: Load CI Version Defaults
+        run: ./firebase-dataconnect/ci/fill_ci_defaults.sh >>"${GITHUB_ENV}"
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: ${{ env.FDC_PYTHON_VERSION }}
@@ -355,6 +362,8 @@ jobs:
         with:
           show-progress: false
           sparse-checkout: 'firebase-dataconnect/ci/'
+      - name: Load CI Version Defaults
+        run: ./firebase-dataconnect/ci/fill_ci_defaults.sh >>"${GITHUB_ENV}"
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: ${{ env.FDC_PYTHON_VERSION }}
@@ -371,6 +380,8 @@ jobs:
         with:
           show-progress: false
           sparse-checkout: 'firebase-dataconnect/ci/'
+      - name: Load CI Version Defaults
+        run: ./firebase-dataconnect/ci/fill_ci_defaults.sh >>"${GITHUB_ENV}"
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: ${{ env.FDC_PYTHON_VERSION }}
@@ -407,6 +418,9 @@ jobs:
           sparse-checkout: |
             firebase-dataconnect/ci/
             .github/
+
+      - name: Load CI Version Defaults
+        run: ./firebase-dataconnect/ci/fill_ci_defaults.sh >>"${GITHUB_ENV}"
 
       - name: gh auth login
         run: echo '${{ secrets.GITHUB_TOKEN }}' | gh auth login --with-token
