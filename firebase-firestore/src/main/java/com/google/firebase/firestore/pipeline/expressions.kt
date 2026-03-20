@@ -5545,18 +5545,18 @@ abstract class Expression internal constructor() {
   internal class SnippetOptions private constructor(options: InternalOptions) :
     AbstractOptions<SnippetOptions>(options) {
     /** Creates a new, empty `SnippetOptions` object. */
-    constructor(rquery: String) : this(InternalOptions.EMPTY)
+    constructor(rquery: String) : this(InternalOptions.EMPTY.with("query", encodeValue(rquery)))
 
-    fun withMaxSnippetWidth(max: Int?): SnippetOptions {
-      throw Exception("not implemented")
+    fun withMaxSnippetWidth(max: Int): SnippetOptions {
+      return with("max_snippet_width", encodeValue(max))
     }
 
-    fun withMaxSnippets(max: Int?): SnippetOptions {
-      throw Exception("not implemented")
+    fun withMaxSnippets(max: Int): SnippetOptions {
+      return with("max_snippets", encodeValue(max))
     }
 
-    fun withSeparator(separator: String?): SnippetOptions {
-      throw Exception("not implemented")
+    fun withSeparator(separator: String): SnippetOptions {
+      return with("separator", encodeValue(separator))
     }
 
     internal override fun self(options: InternalOptions): SnippetOptions {
@@ -7563,18 +7563,22 @@ abstract class Expression internal constructor() {
    *
    * TODO(documentation)
    */
-  internal fun snippet(rquery: String): Expression {
-    throw NotImplementedError("Not implemented")
-  }
+  internal fun snippet(rquery: String): Expression =
+    FunctionExpression(
+      "snippet",
+      notImplemented,
+      arrayOf(this, constant(rquery)),
+      SnippetOptions(rquery).options
+    )
 
   /**
    * Evaluates to an HTML-formatted text snippet that highlights terms matching the search query in
    * `<b>bold</b>`.
    *
-   * TODO(documentation)
+   * TODO(search) implement snippet with SnippetOptions - out of scope for first release
    */
   internal fun snippet(options: SnippetOptions): Expression {
-    throw NotImplementedError("Not implemented")
+    throw NotImplementedError()
   }
 
   /**
@@ -7596,6 +7600,8 @@ abstract class Expression internal constructor() {
    * - Lower bound (inclusive) of the range.
    * @param upperBound
    * - Upper bound (inclusive) of the range.
+   *
+   * TODO(search) implement snippet with SnippetOptions - out of scope for first release
    */
   internal fun between(lowerBound: Expression, upperBound: Expression): BooleanExpression {
     throw NotImplementedError("Not implemented")
@@ -7620,6 +7626,8 @@ abstract class Expression internal constructor() {
    * - Lower bound (inclusive) of the range.
    * @param upperBound
    * - Upper bound (inclusive) of the range.
+   *
+   * TODO(search) implement snippet with SnippetOptions - out of scope for first release
    */
   internal fun between(lowerBound: Any, upperBound: Any): BooleanExpression {
     throw NotImplementedError("Not implemented")
