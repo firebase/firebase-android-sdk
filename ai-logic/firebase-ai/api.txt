@@ -637,6 +637,10 @@ package com.google.firebase.ai.type {
     method public com.google.firebase.ai.type.GenerativeBackend vertexAI(String location = "us-central1");
   }
 
+  public final class GoogleMaps {
+    ctor public GoogleMaps();
+  }
+
   public final class GoogleSearch {
     ctor public GoogleSearch();
   }
@@ -650,8 +654,10 @@ package com.google.firebase.ai.type {
   }
 
   public final class GroundingChunk {
-    ctor public GroundingChunk(com.google.firebase.ai.type.WebGroundingChunk? web);
+    ctor public GroundingChunk(com.google.firebase.ai.type.WebGroundingChunk? web, com.google.firebase.ai.type.MapsGroundingChunk? maps);
+    method public com.google.firebase.ai.type.MapsGroundingChunk? getMaps();
     method public com.google.firebase.ai.type.WebGroundingChunk? getWeb();
+    property public final com.google.firebase.ai.type.MapsGroundingChunk? maps;
     property public final com.google.firebase.ai.type.WebGroundingChunk? web;
   }
 
@@ -1167,6 +1173,17 @@ package com.google.firebase.ai.type {
     method public com.google.firebase.ai.type.JsonSchema<java.lang.String> string(String? description = null, boolean nullable = false, com.google.firebase.ai.type.StringFormat? format = null, String? title = null);
   }
 
+  @kotlinx.serialization.Serializable public final class LatLng {
+    ctor public LatLng(double latitude, double longitude);
+    method public double component1();
+    method public double component2();
+    method public com.google.firebase.ai.type.LatLng copy(double latitude, double longitude);
+    method public double getLatitude();
+    method public double getLongitude();
+    property public final double latitude;
+    property public final double longitude;
+  }
+
   @com.google.firebase.ai.type.PublicPreviewAPI public final class LiveAudioConversationConfig {
     field public static final com.google.firebase.ai.type.LiveAudioConversationConfig.Companion Companion;
   }
@@ -1293,6 +1310,18 @@ package com.google.firebase.ai.type {
     method public void stopReceiving();
   }
 
+  public final class MapsGroundingChunk {
+    ctor public MapsGroundingChunk(String? uri, String? title, String? text, String? placeId);
+    method public String? getPlaceId();
+    method public String? getText();
+    method public String? getTitle();
+    method public String? getUri();
+    property public final String? placeId;
+    property public final String? text;
+    property public final String? title;
+    property public final String? uri;
+  }
+
   @Deprecated @com.google.firebase.ai.type.PublicPreviewAPI public final class MediaData {
     ctor @Deprecated public MediaData(byte[] data, String mimeType);
     method @Deprecated public byte[] getData();
@@ -1371,6 +1400,24 @@ package com.google.firebase.ai.type {
   public final class ResponseStoppedException extends com.google.firebase.ai.type.FirebaseAIException {
     method public com.google.firebase.ai.type.GenerateContentResponse getResponse();
     property public final com.google.firebase.ai.type.GenerateContentResponse response;
+  }
+
+  public final class RetrievalConfig {
+    method public com.google.firebase.ai.type.RetrievalConfig retrievalConfig(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.RetrievalConfig.Builder,kotlin.Unit> init);
+    field public static final com.google.firebase.ai.type.RetrievalConfig.Companion Companion;
+  }
+
+  public static final class RetrievalConfig.Builder {
+    ctor public RetrievalConfig.Builder();
+    method public com.google.firebase.ai.type.RetrievalConfig build();
+    method public com.google.firebase.ai.type.RetrievalConfig.Builder setLanguageCode(String? languageCode);
+    method public com.google.firebase.ai.type.RetrievalConfig.Builder setLatLng(com.google.firebase.ai.type.LatLng? latLng);
+    field public String? languageCode;
+    field public com.google.firebase.ai.type.LatLng? latLng;
+  }
+
+  public static final class RetrievalConfig.Companion {
+    method public com.google.firebase.ai.type.RetrievalConfig.Builder builder();
   }
 
   public final class SafetyRating {
@@ -1615,6 +1662,7 @@ package com.google.firebase.ai.type {
     method public static com.google.firebase.ai.type.Tool codeExecution();
     method public static com.google.firebase.ai.type.Tool functionDeclarations(java.util.List<com.google.firebase.ai.type.FunctionDeclaration> functionDeclarations);
     method public static com.google.firebase.ai.type.Tool functionDeclarations(java.util.List<com.google.firebase.ai.type.FunctionDeclaration>? functionDeclarations = null, java.util.List<? extends com.google.firebase.ai.type.AutoFunctionDeclaration<? extends java.lang.Object?,? extends java.lang.Object?>>? autoFunctionDeclarations);
+    method public static com.google.firebase.ai.type.Tool googleMaps(com.google.firebase.ai.type.GoogleMaps googleMaps = com.google.firebase.ai.type.GoogleMaps());
     method public static com.google.firebase.ai.type.Tool googleSearch();
     method public static com.google.firebase.ai.type.Tool googleSearch(com.google.firebase.ai.type.GoogleSearch googleSearch = com.google.firebase.ai.type.GoogleSearch());
     method public static com.google.firebase.ai.type.Tool urlContext();
@@ -1626,6 +1674,7 @@ package com.google.firebase.ai.type {
     method public com.google.firebase.ai.type.Tool codeExecution();
     method public com.google.firebase.ai.type.Tool functionDeclarations(java.util.List<com.google.firebase.ai.type.FunctionDeclaration> functionDeclarations);
     method public com.google.firebase.ai.type.Tool functionDeclarations(java.util.List<com.google.firebase.ai.type.FunctionDeclaration>? functionDeclarations = null, java.util.List<? extends com.google.firebase.ai.type.AutoFunctionDeclaration<? extends java.lang.Object?,? extends java.lang.Object?>>? autoFunctionDeclarations);
+    method public com.google.firebase.ai.type.Tool googleMaps(com.google.firebase.ai.type.GoogleMaps googleMaps = com.google.firebase.ai.type.GoogleMaps());
     method public com.google.firebase.ai.type.Tool googleSearch();
     method public com.google.firebase.ai.type.Tool googleSearch(com.google.firebase.ai.type.GoogleSearch googleSearch = com.google.firebase.ai.type.GoogleSearch());
     method public com.google.firebase.ai.type.Tool urlContext();
@@ -1633,7 +1682,7 @@ package com.google.firebase.ai.type {
   }
 
   public final class ToolConfig {
-    ctor public ToolConfig(com.google.firebase.ai.type.FunctionCallingConfig? functionCallingConfig);
+    ctor public ToolConfig(com.google.firebase.ai.type.FunctionCallingConfig? functionCallingConfig = null, com.google.firebase.ai.type.RetrievalConfig? retrievalConfig = null);
   }
 
   public final class Transcription {
