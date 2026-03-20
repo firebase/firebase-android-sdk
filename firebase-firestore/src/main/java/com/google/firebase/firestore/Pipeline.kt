@@ -914,8 +914,9 @@ internal constructor(
    * Defines one or more variables in the pipeline's scope. `define` is used to bind a value to a
    * variable for internal reuse within the pipeline body (accessed via the `variable()` function).
    *
-   * This stage is useful for declaring reusable values or intermediate calculations that can be
-   * referenced multiple times in later parts of the pipeline.
+   * This stage is particularly useful for passing values from an outer pipeline into a subquery,
+   * or for declaring reusable intermediate calculations that can be referenced multiple times
+   * in later parts of the pipeline via `variable()`.
    *
    * Each variable is defined using an [AliasedExpression], which pairs an expression with a name
    * (alias). The expression can be a simple constant, a field reference, or a function evaluation
@@ -924,12 +925,13 @@ internal constructor(
    * Example:
    * ```kotlin
    * firestore.pipeline().collection("products")
-   *   .define(
-   *     multiply(field("price"), 0.9).as("discountedPrice"),
-   *     add(field("stock"), 10).as("newStock")
+   *   .define(field("category").alias("productCategory"))
+   *   .addFields(
+   *      firestore.pipeline().collection("categories")
+   *          .where(field("name").equal(variable("productCategory")))
+   *          .select(field("description"))
+   *          .toScalarExpression().alias("categoryDescription")
    *   )
-   *   .where(lessThan(variable("discountedPrice"), 100))
-   *   .select(field("name"), variable("newStock"));
    * ```
    *
    * @param aliasedExpression The first variable to define, specified as an [AliasedExpression].
@@ -1024,13 +1026,15 @@ internal constructor(
    * Example:
    * ```kotlin
    * // Calculate average rating for a restaurant
-   * db.pipeline().collection("restaurants").addFields(
-   *   db.pipeline().collection("reviews")
-   *     .where(field("restaurant_id").equal(variable("rid")))
-   *     .aggregate(AggregateFunction.average("rating").alias("avg"))
-   *     // Unwraps the single "avg" field to a scalar double
-   *     .toScalarExpression().alias("average_rating")
-   * )
+   * db.pipeline().collection("restaurants")
+   *   .define(field("id").alias("rid"))
+   *   .addFields(
+   *     db.pipeline().collection("reviews")
+   *       .where(field("restaurant_id").equal(variable("rid")))
+   *       .aggregate(AggregateFunction.average("rating").alias("avg"))
+   *       // Unwraps the single "avg" field to a scalar double
+   *       .toScalarExpression().alias("average_rating")
+   *   )
    * ```
    *
    * Output:
@@ -1044,16 +1048,18 @@ internal constructor(
    * Example (Multiple Fields):
    * ```kotlin
    * // Calculate average rating AND count for a restaurant
-   * db.pipeline().collection("restaurants").addFields(
-   *   db.pipeline().collection("reviews")
-   *     .where(field("restaurant_id").equal(variable("rid")))
-   *     .aggregate(
-   *       AggregateFunction.average("rating").alias("avg"),
-   *       AggregateFunction.count().alias("count")
-   *     )
-   *     // Returns a Map with "avg" and "count" fields
-   *     .toScalarExpression().alias("stats")
-   * )
+   * db.pipeline().collection("restaurants")
+   *   .define(field("id").alias("rid"))
+   *   .addFields(
+   *     db.pipeline().collection("reviews")
+   *       .where(field("restaurant_id").equal(variable("rid")))
+   *       .aggregate(
+   *         AggregateFunction.average("rating").alias("avg"),
+   *         AggregateFunction.count().alias("count")
+   *       )
+   *       // Returns a Map with "avg" and "count" fields
+   *       .toScalarExpression().alias("stats")
+   *   )
    * ```
    *
    * Output:
