@@ -41,15 +41,16 @@ import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.modules.SerializersModule
 
-internal data class RemoteQueryKey(
-  val operationName: String,
-  val variablesHash: ImmutableByteArray,
-  val authUid: String?,
-)
+internal data class RemoteQueryKey(val queryId: ImmutableByteArray, val authUid: String?)
+
+internal sealed interface EffectiveFetchPolicy {
+  data object NoLocalCache : EffectiveFetchPolicy
+  data class WithLocalCache(val fetchPolicy: FetchPolicy) : EffectiveFetchPolicy
+}
 
 internal data class LocalQueryKey<Data>(
   val remoteKey: RemoteQueryKey,
-  val fetchPolicy: FetchPolicy,
+  val effectiveFetchPolicy: EffectiveFetchPolicy,
   val deserializer: DeserializationStrategy<Data>,
   val deserializerModule: SerializersModule?,
 )
@@ -89,25 +90,26 @@ internal class QueryManager(
     fetchPolicy: FetchPolicy,
     authUid: String?
   ): QueryResponse = coroutineScope {
-    val effectiveFetchPolicy =
-      if (cacheDb == null) {
+    val effectiveFetchPolicy: EffectiveFetchPolicy =
+      if (cacheDb === null) {
         require(fetchPolicy != FetchPolicy.CACHE_ONLY) {
-          "CACHE_ONLY is not supported when local caching is disabled"
+          "FetchPolicy.CACHE_ONLY is only supported when local caching is enabled [xvfpt4z5g4]"
         }
-        FetchPolicy.SERVER_ONLY
+        EffectiveFetchPolicy.NoLocalCache
       } else {
-        fetchPolicy
+        EffectiveFetchPolicy.WithLocalCache(fetchPolicy)
       }
 
     val variablesStruct = encodeToStruct(variables, variablesSerializer, variablesSerializersModule)
-    val variablesHash = variablesStruct.calculateSha512(preamble = operationName)
-    val remoteKey = RemoteQueryKey(operationName, variablesHash, authUid)
+    val queryId = variablesStruct.calculateSha512(preamble = operationName)
+    val remoteKey = RemoteQueryKey(queryId, authUid)
     val localKey =
       LocalQueryKey(remoteKey, effectiveFetchPolicy, dataDeserializer, dataSerializersModule)
 
     if (
-      effectiveFetchPolicy == FetchPolicy.PREFER_CACHE ||
-        effectiveFetchPolicy == FetchPolicy.CACHE_ONLY
+      effectiveFetchPolicy == EffectiveFetchPolicy.NoLocalCache ||
+        effectiveFetchPolicy == EffectiveFetchPolicy.WithLocalCache(FetchPolicy.PREFER_CACHE) ||
+        effectiveFetchPolicy == EffectiveFetchPolicy.WithLocalCache(FetchPolicy.CACHE_ONLY)
     ) {
       stateMutex.withLock {
         val subscription = activeSubscriptions[localKey]
@@ -116,9 +118,16 @@ internal class QueryManager(
         }
       }
 
-      val cachedData = getFromCache(authUid, variablesHash, effectiveFetchPolicy)
-      if (cachedData != null) {
-        return@coroutineScope QueryResponse.FromCache(cachedData)
+      if (
+        cacheDb !== null &&
+          effectiveFetchPolicy is EffectiveFetchPolicy.WithLocalCache &&
+          effectiveFetchPolicy.fetchPolicy in
+            listOf(FetchPolicy.PREFER_CACHE, FetchPolicy.CACHE_ONLY)
+      ) {
+        val cachedData = getFromCache(cacheDb, authUid, queryId, effectiveFetchPolicy.fetchPolicy)
+        if (cachedData != null) {
+          return@coroutineScope QueryResponse.FromCache(cachedData)
+        }
       }
     }
 
@@ -130,7 +139,7 @@ internal class QueryManager(
         callerSdkType = callerSdkType,
         remoteKey = remoteKey,
         authUid = authUid,
-        variablesHash = variablesHash
+        queryId = queryId,
       )
 
     val data =
@@ -156,10 +165,15 @@ internal class QueryManager(
     authUid: String?
   ): Flow<QueryResponse> = coroutineScope {
     val variablesStruct = encodeToStruct(variables, variablesSerializer, variablesSerializersModule)
-    val variablesHash = variablesStruct.calculateSha512(preamble = operationName)
-    val remoteKey = RemoteQueryKey(operationName, variablesHash, authUid)
+    val queryId = variablesStruct.calculateSha512(preamble = operationName)
+    val remoteKey = RemoteQueryKey(queryId, authUid)
     val localKey =
-      LocalQueryKey(remoteKey, FetchPolicy.PREFER_CACHE, dataDeserializer, dataSerializersModule)
+      LocalQueryKey(
+        remoteKey,
+        EffectiveFetchPolicy.WithLocalCache(FetchPolicy.PREFER_CACHE),
+        dataDeserializer,
+        dataSerializersModule
+      )
 
     stateMutex.withLock {
       val existing = activeSubscriptions[localKey]
@@ -187,7 +201,7 @@ internal class QueryManager(
     callerSdkType: FirebaseDataConnect.CallerSdkType,
     remoteKey: RemoteQueryKey,
     authUid: String?,
-    variablesHash: ImmutableByteArray
+    queryId: ImmutableByteArray,
   ): DataConnectGrpcClient.OperationResult = coroutineScope {
     val deferred =
       stateMutex.withLock {
@@ -225,7 +239,7 @@ internal class QueryManager(
         // 6.
         cacheDb.insertQueryResult(
           authUid = authUid,
-          queryId = variablesHash,
+          queryId = queryId,
           queryData = dataToWrite,
           maxAge = maxAge,
           currentTimeMillis = System.currentTimeMillis(),
@@ -236,32 +250,31 @@ internal class QueryManager(
 
     queryResult
   }
+}
 
-  private suspend fun getFromCache(
-    authUid: String?,
-    queryId: ImmutableByteArray,
-    fetchPolicy: FetchPolicy
-  ): Struct? {
-    if (cacheDb == null) return null
+private suspend fun getFromCache(
+  cacheDb: DataConnectCacheDatabase,
+  authUid: String?,
+  queryId: ImmutableByteArray,
+  fetchPolicy: FetchPolicy
+): Struct? {
+  val staleResult =
+    when (fetchPolicy) {
+      FetchPolicy.CACHE_ONLY -> DataConnectCacheDatabase.GetQueryResultResult.Found::class
+      else -> DataConnectCacheDatabase.GetQueryResultResult.Stale::class
+    }
 
-    val staleResult =
-      when (fetchPolicy) {
-        FetchPolicy.CACHE_ONLY -> DataConnectCacheDatabase.GetQueryResultResult.Found::class
-        else -> DataConnectCacheDatabase.GetQueryResultResult.Stale::class
+  val cachedResult =
+    cacheDb.getQueryResult(authUid, queryId, System.currentTimeMillis(), staleResult)
+
+  return when (cachedResult) {
+    is DataConnectCacheDatabase.GetQueryResultResult.Found -> cachedResult.struct
+    is DataConnectCacheDatabase.GetQueryResultResult.Stale -> null
+    is DataConnectCacheDatabase.GetQueryResultResult.NotFound -> {
+      if (fetchPolicy == FetchPolicy.CACHE_ONLY) {
+        throw CachedDataNotFoundException("query was not found in the local cache [cck6p3fmd5]")
       }
-
-    val cachedResult =
-      cacheDb.getQueryResult(authUid, queryId, System.currentTimeMillis(), staleResult)
-
-    return when (cachedResult) {
-      is DataConnectCacheDatabase.GetQueryResultResult.Found -> cachedResult.struct
-      is DataConnectCacheDatabase.GetQueryResultResult.Stale -> null
-      is DataConnectCacheDatabase.GetQueryResultResult.NotFound -> {
-        if (fetchPolicy == FetchPolicy.CACHE_ONLY) {
-          throw CachedDataNotFoundException("query was not found in the local cache [cck6p3fmd5]")
-        }
-        null
-      }
+      null
     }
   }
 }
