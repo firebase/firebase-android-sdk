@@ -836,6 +836,9 @@ package com.google.firebase.firestore.pipeline {
     method public static final com.google.firebase.firestore.pipeline.BooleanExpression arrayContainsAny(String arrayFieldName, com.google.firebase.firestore.pipeline.Expression arrayExpression);
     method public static final com.google.firebase.firestore.pipeline.BooleanExpression arrayContainsAny(String arrayFieldName, java.util.List<?> values);
     method public final com.google.firebase.firestore.pipeline.BooleanExpression arrayContainsAny(java.util.List<?> values);
+    method public static final com.google.firebase.firestore.pipeline.Expression arrayFilter(com.google.firebase.firestore.pipeline.Expression array, String alias, com.google.firebase.firestore.pipeline.BooleanExpression filter);
+    method public final com.google.firebase.firestore.pipeline.Expression arrayFilter(String alias, com.google.firebase.firestore.pipeline.BooleanExpression filter);
+    method public static final com.google.firebase.firestore.pipeline.Expression arrayFilter(String arrayFieldName, String alias, com.google.firebase.firestore.pipeline.BooleanExpression filter);
     method public final com.google.firebase.firestore.pipeline.Expression arrayFirst();
     method public static final com.google.firebase.firestore.pipeline.Expression arrayFirst(com.google.firebase.firestore.pipeline.Expression array);
     method public static final com.google.firebase.firestore.pipeline.Expression arrayFirst(String arrayFieldName);
@@ -893,6 +896,12 @@ package com.google.firebase.firestore.pipeline {
     method public final com.google.firebase.firestore.pipeline.Expression arrayReverse();
     method public static final com.google.firebase.firestore.pipeline.Expression arrayReverse(com.google.firebase.firestore.pipeline.Expression array);
     method public static final com.google.firebase.firestore.pipeline.Expression arrayReverse(String arrayFieldName);
+    method public static final com.google.firebase.firestore.pipeline.Expression arraySlice(com.google.firebase.firestore.pipeline.Expression array, Object offset);
+    method public static final com.google.firebase.firestore.pipeline.Expression arraySlice(com.google.firebase.firestore.pipeline.Expression array, Object offset, Object length);
+    method public final com.google.firebase.firestore.pipeline.Expression arraySlice(Object offset);
+    method public final com.google.firebase.firestore.pipeline.Expression arraySlice(Object offset, Object length);
+    method public static final com.google.firebase.firestore.pipeline.Expression arraySlice(String arrayFieldName, Object offset);
+    method public static final com.google.firebase.firestore.pipeline.Expression arraySlice(String arrayFieldName, Object offset, Object length);
     method public final com.google.firebase.firestore.pipeline.Expression arraySum();
     method public static final com.google.firebase.firestore.pipeline.Expression arraySum(com.google.firebase.firestore.pipeline.Expression array);
     method public static final com.google.firebase.firestore.pipeline.Expression arraySum(String arrayFieldName);
@@ -1337,6 +1346,8 @@ package com.google.firebase.firestore.pipeline {
     method public com.google.firebase.firestore.pipeline.BooleanExpression arrayContainsAny(com.google.firebase.firestore.pipeline.Expression array, java.util.List<?> values);
     method public com.google.firebase.firestore.pipeline.BooleanExpression arrayContainsAny(String arrayFieldName, com.google.firebase.firestore.pipeline.Expression arrayExpression);
     method public com.google.firebase.firestore.pipeline.BooleanExpression arrayContainsAny(String arrayFieldName, java.util.List<?> values);
+    method public com.google.firebase.firestore.pipeline.Expression arrayFilter(com.google.firebase.firestore.pipeline.Expression array, String alias, com.google.firebase.firestore.pipeline.BooleanExpression filter);
+    method public com.google.firebase.firestore.pipeline.Expression arrayFilter(String arrayFieldName, String alias, com.google.firebase.firestore.pipeline.BooleanExpression filter);
     method public com.google.firebase.firestore.pipeline.Expression arrayFirst(com.google.firebase.firestore.pipeline.Expression array);
     method public com.google.firebase.firestore.pipeline.Expression arrayFirst(String arrayFieldName);
     method public com.google.firebase.firestore.pipeline.Expression arrayFirstN(com.google.firebase.firestore.pipeline.Expression array, com.google.firebase.firestore.pipeline.Expression n);
@@ -1375,6 +1386,10 @@ package com.google.firebase.firestore.pipeline {
     method public com.google.firebase.firestore.pipeline.Expression arrayMinimumN(String arrayFieldName, int n);
     method public com.google.firebase.firestore.pipeline.Expression arrayReverse(com.google.firebase.firestore.pipeline.Expression array);
     method public com.google.firebase.firestore.pipeline.Expression arrayReverse(String arrayFieldName);
+    method public com.google.firebase.firestore.pipeline.Expression arraySlice(com.google.firebase.firestore.pipeline.Expression array, Object offset);
+    method public com.google.firebase.firestore.pipeline.Expression arraySlice(com.google.firebase.firestore.pipeline.Expression array, Object offset, Object length);
+    method public com.google.firebase.firestore.pipeline.Expression arraySlice(String arrayFieldName, Object offset);
+    method public com.google.firebase.firestore.pipeline.Expression arraySlice(String arrayFieldName, Object offset, Object length);
     method public com.google.firebase.firestore.pipeline.Expression arraySum(com.google.firebase.firestore.pipeline.Expression array);
     method public com.google.firebase.firestore.pipeline.Expression arraySum(String arrayFieldName);
     method public com.google.firebase.firestore.pipeline.Expression bitAnd(com.google.firebase.firestore.pipeline.Expression bits, byte[] bitsOther);

@@ -4758,16 +4758,16 @@ abstract class Expression internal constructor() {
      *
      * ```kotlin
      * // Filter 'scores' array to include only values greater than 50
-     * arrayFilter(field("scores"), "score", greaterThan(field("score"), 50))
+     * arrayFilter(field("scores"), "score", greaterThan(variable("score"), 50))
      * ```
      *
      * @param array The array expression to filter.
      * @param alias The alias to use for the current element in the filter expression.
-     * @param filter The predicate expression used to filter the elements.
+     * @param filter The predicate boolean expression used to filter the elements.
      * @return A new [Expression] representing the arrayFilter operation.
      */
     @JvmStatic
-    fun arrayFilter(array: Expression, alias: String, filter: Expression): Expression =
+    fun arrayFilter(array: Expression, alias: String, filter: BooleanExpression): Expression =
       FunctionExpression("array_filter", notImplemented, array, constant(alias), filter)
 
     /**
@@ -4775,16 +4775,16 @@ abstract class Expression internal constructor() {
      *
      * ```kotlin
      * // Filter 'scores' array to include only values greater than 50
-     * arrayFilter("scores", "score", greaterThan(field("score"), 50))
+     * arrayFilter("scores", "score", greaterThan(variable("score"), 50))
      * ```
      *
      * @param arrayFieldName The name of field that contains array to filter.
      * @param alias The alias to use for the current element in the filter expression.
-     * @param filter The predicate expression used to filter the elements.
+     * @param filter The predicate boolean expression used to filter the elements.
      * @return A new [Expression] representing the arrayFilter operation.
      */
     @JvmStatic
-    fun arrayFilter(arrayFieldName: String, alias: String, filter: Expression): Expression =
+    fun arrayFilter(arrayFieldName: String, alias: String, filter: BooleanExpression): Expression =
       FunctionExpression("array_filter", notImplemented, arrayFieldName, constant(alias), filter)
 
     /**
@@ -4802,7 +4802,13 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun arraySlice(array: Expression, offset: Any, length: Any): Expression =
-      FunctionExpression("array_slice", notImplemented, array, toExprOrConstant(offset), toExprOrConstant(length))
+      FunctionExpression(
+        "array_slice",
+        notImplemented,
+        array,
+        toExprOrConstant(offset),
+        toExprOrConstant(length)
+      )
 
     /**
      * Creates an expression that returns a slice of an [array] expression to its end.
@@ -4835,7 +4841,13 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun arraySlice(arrayFieldName: String, offset: Any, length: Any): Expression =
-      FunctionExpression("array_slice", notImplemented, arrayFieldName, toExprOrConstant(offset), toExprOrConstant(length))
+      FunctionExpression(
+        "array_slice",
+        notImplemented,
+        arrayFieldName,
+        toExprOrConstant(offset),
+        toExprOrConstant(length)
+      )
 
     /**
      * Creates an expression that returns a slice of an array field to its end.
@@ -7580,14 +7592,14 @@ abstract class Expression internal constructor() {
    *
    * ```kotlin
    * // Filter 'scores' array to include only values greater than 50
-   * field("scores").arrayFilter("score", greaterThan(field("score"), 50))
+   * field("scores").arrayFilter("score", greaterThan(variable("score"), 50))
    * ```
    *
    * @param alias The alias to use for the current element in the filter expression.
-   * @param filter The predicate expression used to filter the elements.
+   * @param filter The predicate boolean expression used to filter the elements.
    * @return A new [Expression] representing the arrayFilter operation.
    */
-  fun arrayFilter(alias: String, filter: Expression) =
+  fun arrayFilter(alias: String, filter: BooleanExpression) =
     Companion.arrayFilter(this, alias, filter)
 
   /**

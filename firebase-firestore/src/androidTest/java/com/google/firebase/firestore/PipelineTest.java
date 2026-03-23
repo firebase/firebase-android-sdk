@@ -858,78 +858,99 @@ public class PipelineTest {
                 ImmutableList.of("magic", "epic", "adventure")));
   }
 
-@Test
+  @Test
   public void arrayFilterWorks() {
-      Task<Pipeline.Snapshot> execute = firestore
-              .pipeline()
-              .collection(randomCol)
-              .where(equal("title", "The Lord of the Rings"))
-              .select(
-                      field("tags").arrayFilter("tag", notEqual(variable("tag"), "magic")).alias("notMagicTags"),
-                      arrayFilter("tags", "tag", notEqual(variable("tag"), "epic")).alias("notEpicTags"),
-                      field("tags").arrayFilter("tag", equal(variable("tag"), "romance")).alias("noMatchingTags"),
-                      )
-              .execute();
-      assertThat(waitFor(execute).getResults())
-              .comparingElementsUsing(DATA_CORRESPONDENCE)
-              .containsExactly(
-                      ImmutableMap.of(
-                              "notMagicTags",
-                              ImmutableList.of("adventure", "epic"),
-                              "notEpicTags",
-                              ImmutableList.of("adventure", "magic"),
-                              "noMatchingTags",
-                              ImmutableList.of()));
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "The Lord of the Rings"))
+            .select(
+                field("tags")
+                    .arrayFilter("tag", notEqual(field("tag"), "magic"))
+                    .alias("notMagicTags"),
+                arrayFilter("tags", "tag", notEqual(field("tag"), "epic")).alias("notEpicTags"),
+                field("tags")
+                    .arrayFilter("tag", equal(field("tag"), "romance"))
+                    .alias("noMatchingTags"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of(
+                "notMagicTags",
+                ImmutableList.of("adventure", "epic"),
+                "notEpicTags",
+                ImmutableList.of("adventure", "magic"),
+                "noMatchingTags",
+                ImmutableList.of()));
   }
 
   @Test
   public void arrayFilterWithMixedTypesAndNullsWorks() {
-      Task<Pipeline.Snapshot> execute = firestore
-              .pipeline()
-              .collection(randomCol)
-              .limit(1)
-              .replaceWith(
-                      map(
-                              ImmutableMap.of(
-                                      "arr",
-                                      ImmutableList.of(1, "foo", null, 20.0, "bar", 30, "40", null))))
-              .select(
-                      field("arr")
-                              .arrayFilter("element", greaterThan(variable("element"), 10))
-                              .alias("filtered"))
-              .execute();
-      assertThat(waitFor(execute).getResults())
-              .comparingElementsUsing(DATA_CORRESPONDENCE)
-              .containsExactly(
-                      ImmutableMap.of(
-                              "filtered",
-                              ImmutableList.of("bar", "40")));
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(
+                map(
+                    ImmutableMap.of(
+                        "arr", ImmutableList.of(1, "foo", null, 20.0, "bar", 30, "40", null))))
+            .select(
+                field("arr")
+                    .arrayFilter("element", greaterThan(field("element"), 10))
+                    .alias("filtered"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(ImmutableMap.of("filtered", ImmutableList.of("bar", "40")));
   }
 
   @Test
   public void arraySliceWorks() {
-      Task<Pipeline.Snapshot> execute = firestore
-              .pipeline()
-              .collection(randomCol)
-              .where(equal("title", "The Lord of the Rings"))
-              .select(
-                      field("tags").arraySlice(1, 1).alias("instanceMethodSlice"),
-                      arraySlice("tags", 1, 1).alias("staticMethodSlice"),
-                      field("tags").arraySlice(1).alias("instanceMethodSliceToEnd"),
-                      arraySlice("tags", 1).alias("staticMethodSliceToEnd"))
-              .execute();
-      assertThat(waitFor(execute).getResults())
-              .comparingElementsUsing(DATA_CORRESPONDENCE)
-              .containsExactly(
-                      ImmutableMap.of(
-                              "instanceMethodSlice",
-                              ImmutableList.of("magic"),
-                              "staticMethodSlice",
-                              ImmutableList.of("magic"),
-                              "instanceMethodSliceToEnd",
-                              ImmutableList.of("magic", "epic"),
-                              "staticMethodSliceToEnd",
-                              ImmutableList.of("magic", "epic")));
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "The Lord of the Rings"))
+            .select(
+                arraySlice("tags", 1, 1).alias("staticMethodSlice"),
+                arraySlice("tags", 1).alias("staticMethodSliceToEnd"),
+                field("tags").arraySlice(1, 1).alias("instanceMethodSlice"),
+                field("tags").arraySlice(1).alias("instanceMethodSliceToEnd"),
+                field("tags").arraySlice(1, 10).alias("overflowLength"),
+                field("tags").arraySlice(-1, 1).alias("negativeOffset"),
+                field("tags").arraySlice(-1).alias("negativeOffsetSliceToEnd"),
+                field("tags").arraySlice(10).alias("overflowOffset"),
+                field("tags").arraySlice(-10).alias("negativeOverflowOffset"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            mapOfEntries(
+                entry("staticMethodSlice", ImmutableList.of("magic")),
+                entry("staticMethodSliceToEnd", ImmutableList.of("magic", "epic")),
+                entry("instanceMethodSlice", ImmutableList.of("magic")),
+                entry("instanceMethodSliceToEnd", ImmutableList.of("magic", "epic")),
+                entry("overflowLength", ImmutableList.of("magic", "epic")),
+                entry("overflowOffset", ImmutableList.of()),
+                entry("negativeOffset", ImmutableList.of("epic")),
+                entry("negativeOffsetSliceToEnd", ImmutableList.of("epic")),
+                entry("negativeOverflowOffset", ImmutableList.of("adventure", "magic", "epic"))));
+  }
+
+  @Test
+  public void arraySliceThrowsErrorForNegativeLength() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "The Lord of the Rings"))
+            .select(arraySlice("tags", 1, -1).alias("negativeLengthSlice"))
+            .execute();
+    Exception exception = assertThrows(Exception.class, () -> waitFor(execute));
+    assertThat(exception).hasMessageThat().contains("length must be non-negative");
   }
 
   @Test
