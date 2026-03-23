@@ -914,9 +914,9 @@ internal constructor(
    * Defines one or more variables in the pipeline's scope. `define` is used to bind a value to a
    * variable for internal reuse within the pipeline body (accessed via the `variable()` function).
    *
-   * This stage is particularly useful for passing values from an outer pipeline into a subquery,
-   * or for declaring reusable intermediate calculations that can be referenced multiple times
-   * in later parts of the pipeline via `variable()`.
+   * This stage is particularly useful for passing values from an outer pipeline into a subquery, or
+   * for declaring reusable intermediate calculations that can be referenced multiple times in later
+   * parts of the pipeline via `variable()`.
    *
    * Each variable is defined using an [AliasedExpression], which pairs an expression with a name
    * (alias). The expression can be a simple constant, a field reference, or a function evaluation
