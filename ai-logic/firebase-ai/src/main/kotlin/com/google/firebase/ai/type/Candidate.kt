@@ -416,14 +416,17 @@ public class SearchEntryPoint(
  * @property web Contains details if the grounding chunk is from a web source.
  * @property maps Contains details if the grounding chunk is from a Google Maps source.
  */
-public class GroundingChunk(
-  public val web: WebGroundingChunk?,
-  public val maps: MapsGroundingChunk?,
+public class GroundingChunk
+@JvmOverloads
+constructor(
+  public val web: WebGroundingChunk? = null,
+  public val maps: GoogleMapsGroundingChunk? = null,
 ) {
+
   @Serializable
   internal data class Internal(
     val web: WebGroundingChunk.Internal?,
-    val maps: MapsGroundingChunk.Internal?,
+    val maps: GoogleMapsGroundingChunk.Internal?,
   ) {
     internal fun toPublic() = GroundingChunk(web = web?.toPublic(), maps?.toPublic())
   }
@@ -434,24 +437,17 @@ public class GroundingChunk(
  *
  * @property uri The URI of the place.
  * @property title The title of the place.
- * @property text The text of the place answer.
  * @property placeId This Place's resource name, in `places/{place_id}` format. This can be used to
- * look up the place in the Google Maps API.
+ * look up the place using the Google Maps API.
  */
-public class MapsGroundingChunk(
+public class GoogleMapsGroundingChunk(
   public val uri: String?,
   public val title: String?,
-  public val text: String?,
   public val placeId: String?,
 ) {
   @Serializable
-  internal data class Internal(
-    val uri: String?,
-    val title: String?,
-    val text: String?,
-    val placeId: String?
-  ) {
-    fun toPublic() = MapsGroundingChunk(uri, title, text, placeId)
+  internal data class Internal(val uri: String?, val title: String?, val placeId: String?) {
+    fun toPublic() = GoogleMapsGroundingChunk(uri, title, placeId)
   }
 }
 

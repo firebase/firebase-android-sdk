@@ -30,7 +30,7 @@ internal constructor(
   internal val languageCode: String? = null
 ) {
 
-  internal fun toInternal() = Internal(latLng, languageCode)
+  internal fun toInternal() = Internal(latLng?.toInternal(), languageCode)
 
   /**
    * Builder for creating a [RetrievalConfig].
@@ -39,7 +39,6 @@ internal constructor(
    * idiomatic experience.
    *
    * @property latLng See [RetrievalConfig.latLng].
-   *
    * @property languageCode See [RetrievalConfig.languageCode].
    */
   public class Builder {
@@ -58,7 +57,7 @@ internal constructor(
   }
 
   @Serializable
-  internal class Internal(val latLng: LatLng? = null, val languageCode: String? = null) {}
+  internal class Internal(val latLng: LatLng.Internal? = null, val languageCode: String? = null) {}
 
   public companion object {
     /**
@@ -67,7 +66,7 @@ internal constructor(
      * val config = RetrievalConfig.builder()
      * ```
      */
-    public fun builder(): Builder = Builder()
+    @JvmStatic public fun builder(): Builder = Builder()
   }
 }
 

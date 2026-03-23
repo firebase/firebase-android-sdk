@@ -230,7 +230,7 @@ internal class SerializationTests {
       "type": "object",
       "properties": {
         "web": { "${'$'}ref": "WebGroundingChunk" },
-        "maps": { "${'$'}ref": "MapsGroundingChunk" }
+        "maps": { "${'$'}ref": "GoogleMapsGroundingChunk" }
       }
     }
       """

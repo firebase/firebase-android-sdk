@@ -641,6 +641,16 @@ package com.google.firebase.ai.type {
     ctor public GoogleMaps();
   }
 
+  public final class GoogleMapsGroundingChunk {
+    ctor public GoogleMapsGroundingChunk(String? uri, String? title, String? placeId);
+    method public String? getPlaceId();
+    method public String? getTitle();
+    method public String? getUri();
+    property public final String? placeId;
+    property public final String? title;
+    property public final String? uri;
+  }
+
   public final class GoogleSearch {
     ctor public GoogleSearch();
   }
@@ -654,10 +664,12 @@ package com.google.firebase.ai.type {
   }
 
   public final class GroundingChunk {
-    ctor public GroundingChunk(com.google.firebase.ai.type.WebGroundingChunk? web, com.google.firebase.ai.type.MapsGroundingChunk? maps);
-    method public com.google.firebase.ai.type.MapsGroundingChunk? getMaps();
+    ctor public GroundingChunk();
+    ctor public GroundingChunk(com.google.firebase.ai.type.WebGroundingChunk? web = null);
+    ctor public GroundingChunk(com.google.firebase.ai.type.WebGroundingChunk? web = null, com.google.firebase.ai.type.GoogleMapsGroundingChunk? maps = null);
+    method public com.google.firebase.ai.type.GoogleMapsGroundingChunk? getMaps();
     method public com.google.firebase.ai.type.WebGroundingChunk? getWeb();
-    property public final com.google.firebase.ai.type.MapsGroundingChunk? maps;
+    property public final com.google.firebase.ai.type.GoogleMapsGroundingChunk? maps;
     property public final com.google.firebase.ai.type.WebGroundingChunk? web;
   }
 
@@ -1173,7 +1185,7 @@ package com.google.firebase.ai.type {
     method public com.google.firebase.ai.type.JsonSchema<java.lang.String> string(String? description = null, boolean nullable = false, com.google.firebase.ai.type.StringFormat? format = null, String? title = null);
   }
 
-  @kotlinx.serialization.Serializable public final class LatLng {
+  public final class LatLng {
     ctor public LatLng(double latitude, double longitude);
     method public double component1();
     method public double component2();
@@ -1310,18 +1322,6 @@ package com.google.firebase.ai.type {
     method public void stopReceiving();
   }
 
-  public final class MapsGroundingChunk {
-    ctor public MapsGroundingChunk(String? uri, String? title, String? text, String? placeId);
-    method public String? getPlaceId();
-    method public String? getText();
-    method public String? getTitle();
-    method public String? getUri();
-    property public final String? placeId;
-    property public final String? text;
-    property public final String? title;
-    property public final String? uri;
-  }
-
   @Deprecated @com.google.firebase.ai.type.PublicPreviewAPI public final class MediaData {
     ctor @Deprecated public MediaData(byte[] data, String mimeType);
     method @Deprecated public byte[] getData();
@@ -1403,6 +1403,7 @@ package com.google.firebase.ai.type {
   }
 
   public final class RetrievalConfig {
+    method public static com.google.firebase.ai.type.RetrievalConfig.Builder builder();
     field public static final com.google.firebase.ai.type.RetrievalConfig.Companion Companion;
   }
 
@@ -1687,6 +1688,8 @@ package com.google.firebase.ai.type {
   }
 
   public final class ToolConfig {
+    ctor public ToolConfig();
+    ctor public ToolConfig(com.google.firebase.ai.type.FunctionCallingConfig? functionCallingConfig = null);
     ctor public ToolConfig(com.google.firebase.ai.type.FunctionCallingConfig? functionCallingConfig = null, com.google.firebase.ai.type.RetrievalConfig? retrievalConfig = null);
   }
 

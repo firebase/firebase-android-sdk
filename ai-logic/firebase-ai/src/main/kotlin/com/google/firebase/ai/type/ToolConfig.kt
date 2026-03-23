@@ -25,7 +25,9 @@ import kotlinx.serialization.Serializable
  *
  * @param functionCallingConfig The config for function calling
  */
-public class ToolConfig(
+public class ToolConfig
+@JvmOverloads
+constructor(
   internal val functionCallingConfig: FunctionCallingConfig? = null,
   internal val retrievalConfig: RetrievalConfig? = null,
 ) {
