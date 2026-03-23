@@ -36,6 +36,8 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.modules.SerializersModule
 
 internal data class RemoteQueryKey(
   val operationName: String,
@@ -43,11 +45,11 @@ internal data class RemoteQueryKey(
   val authUid: String?,
 )
 
-internal data class LocalQueryKey(
+internal data class LocalQueryKey<Data>(
   val remoteKey: RemoteQueryKey,
   val fetchPolicy: FetchPolicy,
-  val deserializer: Any,
-  val deserializerModule: Any?,
+  val deserializer: DeserializationStrategy<Data>,
+  val deserializerModule: SerializersModule?,
 )
 
 internal sealed interface QueryResponse {
@@ -63,18 +65,19 @@ internal class QueryManager(
   private val maxAge: Duration?
 ) {
   private val stateMutex = Mutex()
-  private val activeSubscriptions = mutableMapOf<LocalQueryKey, MutableSharedFlow<QueryResponse>>()
+  private val activeSubscriptions =
+    mutableMapOf<LocalQueryKey<*>, MutableSharedFlow<QueryResponse>>()
   private val inflightRemoteQueries =
     mutableMapOf<RemoteQueryKey, Deferred<DataConnectGrpcRPCs.ExecuteQueryResult>>()
-  private val entityToSubscriptions = mutableMapOf<String, MutableSet<LocalQueryKey>>()
+  private val entityToSubscriptions = mutableMapOf<String, MutableSet<LocalQueryKey<*>>>()
 
-  suspend fun executeQuery(
+  suspend fun <Data> executeQuery(
     requestId: String,
     request: ExecuteQueryRequest,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
     fetchPolicy: FetchPolicy,
-    deserializer: Any,
-    deserializerModule: Any?,
+    deserializer: DeserializationStrategy<Data>,
+    deserializerModule: SerializersModule?,
     authUid: String?
   ): QueryResponse = coroutineScope {
     val effectiveFetchPolicy =
@@ -119,13 +122,13 @@ internal class QueryManager(
     }
   }
 
-  suspend fun subscribe(
+  suspend fun <Data> subscribe(
     requestId: String,
     request: ExecuteQueryRequest,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
     fetchPolicy: FetchPolicy,
-    deserializer: Any,
-    deserializerModule: Any?,
+    deserializer: DeserializationStrategy<Data>,
+    deserializerModule: SerializersModule?,
     authUid: String?
   ): Flow<QueryResponse> = coroutineScope {
     require(fetchPolicy == FetchPolicy.PREFER_CACHE) {
