@@ -25,9 +25,10 @@ import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase
 import com.google.firebase.dataconnect.util.ImmutableByteArray
 import com.google.firebase.dataconnect.util.ProtoUtil.calculateSha512
 import com.google.firebase.dataconnect.util.ProtoUtil.encodeToStruct
+import com.google.firebase.util.nextAlphanumericString
 import com.google.protobuf.Duration
 import com.google.protobuf.Struct
-import google.firebase.dataconnect.proto.ExecuteQueryRequest
+import kotlin.random.Random
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -37,6 +38,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.modules.SerializersModule
 
 internal data class RemoteQueryKey(
@@ -64,7 +66,8 @@ internal sealed interface QueryResponse {
 internal class QueryManager(
   private val grpcClient: DataConnectGrpcClient,
   private val cacheDb: DataConnectCacheDatabase?,
-  private val maxAge: Duration?
+  private val maxAge: Duration?,
+  private val secureRandom: Random,
 ) {
   private val stateMutex = Mutex()
   private val activeSubscriptions =
@@ -73,9 +76,13 @@ internal class QueryManager(
     mutableMapOf<RemoteQueryKey, Deferred<DataConnectGrpcClient.OperationResult>>()
   private val entityToSubscriptions = mutableMapOf<String, MutableSet<LocalQueryKey<*>>>()
 
-  suspend fun <Data> executeQuery(
-    requestId: String,
-    request: ExecuteQueryRequest,
+  private fun randomRequestId(): String = "qry" + secureRandom.nextAlphanumericString(length = 10)
+
+  suspend fun <Data, Variables> executeQuery(
+    operationName: String,
+    variables: Variables,
+    variablesSerializer: SerializationStrategy<Variables>,
+    variablesSerializersModule: SerializersModule?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
     fetchPolicy: FetchPolicy,
     deserializer: DeserializationStrategy<Data>,
@@ -92,9 +99,9 @@ internal class QueryManager(
         fetchPolicy
       }
 
-    val variablesHash =
-      encodeToStruct(request.variables).calculateSha512(preamble = request.operationName)
-    val remoteKey = RemoteQueryKey(request.operationName, variablesHash, authUid)
+    val variablesStruct = encodeToStruct(variables, variablesSerializer, variablesSerializersModule)
+    val variablesHash = variablesStruct.calculateSha512(preamble = operationName)
+    val remoteKey = RemoteQueryKey(operationName, variablesHash, authUid)
     val localKey = LocalQueryKey(remoteKey, effectiveFetchPolicy, deserializer, deserializerModule)
 
     if (
@@ -115,7 +122,15 @@ internal class QueryManager(
     }
 
     val queryResult =
-      executeRemoteQuery(requestId, request, callerSdkType, remoteKey, authUid, variablesHash)
+      executeRemoteQuery(
+        requestId = randomRequestId(),
+        operationName = operationName,
+        variablesStruct = variablesStruct,
+        callerSdkType = callerSdkType,
+        remoteKey = remoteKey,
+        authUid = authUid,
+        variablesHash = variablesHash
+      )
 
     val data =
       queryResult.data
@@ -129,9 +144,11 @@ internal class QueryManager(
     }
   }
 
-  suspend fun <Data> subscribe(
-    requestId: String,
-    request: ExecuteQueryRequest,
+  suspend fun <Data, Variables> subscribe(
+    operationName: String,
+    variables: Variables,
+    variablesSerializer: SerializationStrategy<Variables>,
+    variablesSerializersModule: SerializersModule?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
     fetchPolicy: FetchPolicy,
     deserializer: DeserializationStrategy<Data>,
@@ -142,9 +159,9 @@ internal class QueryManager(
       "Only PREFER_CACHE is supported for subscriptions"
     }
 
-    val variablesHash =
-      encodeToStruct(request.variables).calculateSha512(preamble = request.operationName)
-    val remoteKey = RemoteQueryKey(request.operationName, variablesHash, authUid)
+    val variablesStruct = encodeToStruct(variables, variablesSerializer, variablesSerializersModule)
+    val variablesHash = variablesStruct.calculateSha512(preamble = operationName)
+    val remoteKey = RemoteQueryKey(operationName, variablesHash, authUid)
     val localKey = LocalQueryKey(remoteKey, fetchPolicy, deserializer, deserializerModule)
 
     stateMutex.withLock {
@@ -168,7 +185,8 @@ internal class QueryManager(
 
   private suspend fun executeRemoteQuery(
     requestId: String,
-    request: ExecuteQueryRequest,
+    operationName: String,
+    variablesStruct: Struct,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
     remoteKey: RemoteQueryKey,
     authUid: String?,
@@ -183,8 +201,8 @@ internal class QueryManager(
           val newDeferred = async {
             grpcClient.executeQuery(
               requestId = requestId,
-              operationName = request.operationName,
-              variables = request.variables,
+              operationName = operationName,
+              variables = variablesStruct,
               callerSdkType = callerSdkType,
               fetchPolicy = FetchPolicy.SERVER_ONLY
             )
