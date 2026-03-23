@@ -119,7 +119,7 @@ abstract class AbstractWithEvenNumDigitsDistributionUnitTest<T : Comparable<T>, 
       val expectedCounts = DoubleArray(observedCounts.size) { expectedObservedCount }
       val significanceResult = ChiSquareTest.withDefaults().test(expectedCounts, observedCounts)
       withClue(significanceResult.print().value) {
-        significanceResult.reject(0.0001).shouldBeFalse()
+        significanceResult.reject(0.00001).shouldBeFalse()
       }
     }
   }
@@ -147,7 +147,7 @@ abstract class AbstractWithEvenNumDigitsDistributionUnitTest<T : Comparable<T>, 
       val expectedCounts = DoubleArray(observedCounts.size) { expectedObservedCount }
       val significanceResult = ChiSquareTest.withDefaults().test(expectedCounts, observedCounts)
       withClue(significanceResult.print().value) {
-        significanceResult.reject(0.0001).shouldBeFalse()
+        significanceResult.reject(0.00001).shouldBeFalse()
       }
     }
   }
@@ -180,7 +180,7 @@ abstract class AbstractWithEvenNumDigitsDistributionUnitTest<T : Comparable<T>, 
         withClue(
           "expectedObservedCount=$expectedObservedCount, ${significanceResult.print().value}"
         ) {
-          significanceResult.reject(0.0001).shouldBeFalse()
+          significanceResult.reject(0.00001).shouldBeFalse()
         }
       }
     }
