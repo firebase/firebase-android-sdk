@@ -29,8 +29,8 @@ import org.junit.Test
 class GroundingTests {
 
   @Test
-  fun groundingTests_canRecognizeAreas() = runBlocking {
-    val model = setupModel()
+  fun groundingTests_canRecognizeAreas(): Unit = runBlocking {
+    val model = setupModel(config = ToolConfig())
     val response = model.generateContent("Where is a good place to grab a coffee near Alameda, CA?")
 
     response.candidates.isEmpty() shouldBe false
@@ -38,7 +38,7 @@ class GroundingTests {
   }
 
   @Test
-  fun groundingTests_canRecognizeLatLng() = runBlocking {
+  fun groundingTests_canRecognizeLatLng(): Unit = runBlocking {
     val model =
       setupModel(
         config =
@@ -59,7 +59,7 @@ class GroundingTests {
   companion object {
 
     @JvmStatic
-    fun setupModel(config: ToolConfig = ToolConfig()): GenerativeModel {
+    fun setupModel(config: ToolConfig): GenerativeModel {
       val model =
         FirebaseAI.getInstance(app(), GenerativeBackend.vertexAI())
           .generativeModel(
