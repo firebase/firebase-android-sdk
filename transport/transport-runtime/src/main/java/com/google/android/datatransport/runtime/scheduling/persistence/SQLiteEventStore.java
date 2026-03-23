@@ -144,6 +144,9 @@ public class SQLiteEventStore
               values.put(
                   "experiment_ids_encrypted_list_blob",
                   flattenListBlob(event.getExperimentIdsEncryptedList()));
+              values.put(
+                  "pseudonymous_id_update_receiver_class_name",
+                  event.getPseudonymousIdUpdateReceiverClassName());
               long newEventId = db.insert("events", null, values);
               if (!inline) {
                 int numChunks = (int) Math.ceil((double) payloadBytes.length / maxBlobSizePerRow);
@@ -461,7 +464,8 @@ public class SQLiteEventStore
               "pseudonymous_id",
               "experiment_ids_clear_blob",
               "experiment_ids_encrypted_blob",
-              "experiment_ids_encrypted_list_blob"
+              "experiment_ids_encrypted_list_blob",
+              "pseudonymous_id_update_receiver_class_name"
             },
             "context_id = ?",
             new String[] {contextId.toString()},
@@ -502,6 +506,9 @@ public class SQLiteEventStore
             }
             if (!cursor.isNull(12)) {
               event.setExperimentIdsEncryptedList(deFlattenBlob(cursor.getBlob(12)));
+            }
+            if (!cursor.isNull(13)) {
+              event.setPseudonymousIdUpdateReceiverClassName(cursor.getString(13));
             }
             events.add(PersistedEvent.create(id, transportContext, event.build()));
           }

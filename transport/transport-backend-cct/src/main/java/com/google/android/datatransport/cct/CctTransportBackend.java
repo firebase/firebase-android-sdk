@@ -342,6 +342,27 @@ final class CctTransportBackend implements TransportBackend {
     return BatchedLogRequest.create(batchedRequests);
   }
 
+  private String getPseudonymousId(HttpURLConnection connection) {
+    String setCookieHeader = connection.getHeaderField("Set-Cookie");
+    if (setCookieHeader != null) {
+      String[] cookieHeaderParts = setCookieHeader.split(";");
+
+      for (String cookieHeaderPart : cookieHeaderParts) {
+        String[] cookieKeyValue = cookieHeaderPart.trim().split("=", 2);
+        if (cookieKeyValue.length != 2) {
+          continue;
+        }
+        String cookieKey = cookieKeyValue[0];
+        String cookieValue = cookieKeyValue[1];
+
+        if (cookieKey.equals("NID")) {
+          return cookieValue;
+        }
+      }
+    }
+    return null;
+  }
+
   private HttpResponse doSend(HttpRequest request) throws IOException {
     Logging.i(LOG_TAG, "Making request to: %s", request.url);
     HttpURLConnection connection = (HttpURLConnection) request.url.openConnection();
@@ -373,10 +394,10 @@ final class CctTransportBackend implements TransportBackend {
           request.requestBody, new BufferedWriter(new OutputStreamWriter(outputStream)));
     } catch (ConnectException | UnknownHostException e) {
       Logging.e(LOG_TAG, "Couldn't open connection, returning with 500", e);
-      return new HttpResponse(500, null, 0);
+      return new HttpResponse(500, null, 0, null);
     } catch (EncodingException | IOException e) {
       Logging.e(LOG_TAG, "Couldn't encode request, returning with 400", e);
-      return new HttpResponse(400, null, 0);
+      return new HttpResponse(400, null, 0, null);
     }
 
     int responseCode = connection.getResponseCode();
@@ -386,10 +407,10 @@ final class CctTransportBackend implements TransportBackend {
 
     if (responseCode == 302 || responseCode == 301 || responseCode == 307) {
       String redirect = connection.getHeaderField("Location");
-      return new HttpResponse(responseCode, new URL(redirect), 0);
+      return new HttpResponse(responseCode, new URL(redirect), 0, null);
     }
     if (responseCode != 200) {
-      return new HttpResponse(responseCode, null, 0);
+      return new HttpResponse(responseCode, null, 0, null);
     }
 
     try (InputStream connStream = connection.getInputStream();
@@ -398,7 +419,7 @@ final class CctTransportBackend implements TransportBackend {
       long nextRequestMillis =
           LogResponse.fromJson(new BufferedReader(new InputStreamReader(inputStream)))
               .getNextRequestWaitMillis();
-      return new HttpResponse(responseCode, null, nextRequestMillis);
+      return new HttpResponse(responseCode, null, nextRequestMillis, getPseudonymousId(connection));
     }
   }
 
@@ -469,7 +490,7 @@ final class CctTransportBackend implements TransportBackend {
               });
 
       if (response.code == 200) {
-        return BackendResponse.ok(response.nextRequestMillis);
+        return BackendResponse.ok(response.nextRequestMillis, response.updatedPseudonymousId);
       } else if (response.code >= 500 || response.code == 404) {
         return BackendResponse.transientError();
       } else if (response.code == 400) {
@@ -493,11 +514,17 @@ final class CctTransportBackend implements TransportBackend {
     final int code;
     @Nullable final URL redirectUrl;
     final long nextRequestMillis;
+    @Nullable final String updatedPseudonymousId;
 
-    HttpResponse(int code, @Nullable URL redirectUrl, long nextRequestMillis) {
+    HttpResponse(
+        int code,
+        @Nullable URL redirectUrl,
+        long nextRequestMillis,
+        @Nullable String updatedPseudonymousId) {
       this.code = code;
       this.redirectUrl = redirectUrl;
       this.nextRequestMillis = nextRequestMillis;
+      this.updatedPseudonymousId = updatedPseudonymousId;
     }
   }
 
