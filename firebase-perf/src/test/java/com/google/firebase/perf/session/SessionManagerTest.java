@@ -61,13 +61,6 @@ public class SessionManagerTest extends FirebasePerformanceTestBase {
     initMocks(this);
     when(mockPerfSession.sessionId()).thenReturn(testSessionId(5));
     when(mockAppStateMonitor.isColdStart()).thenReturn(false);
-    AppStateMonitor.getInstance().setIsColdStart(false);
-  }
-
-  @Test
-  public void testInstanceCreation() {
-    assertThat(SessionManager.getInstance()).isNotNull();
-    assertThat(SessionManager.getInstance()).isEqualTo(SessionManager.getInstance());
   }
 
   @Test

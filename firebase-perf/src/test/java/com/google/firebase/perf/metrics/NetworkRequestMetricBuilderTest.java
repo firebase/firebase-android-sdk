@@ -61,6 +61,8 @@ public class NetworkRequestMetricBuilderTest extends FirebasePerformanceTestBase
   @Before
   public void setUp() {
     initMocks(this);
+    AppStateMonitor.resetInstance();
+    AppStateMonitor.getInstance(sessionManager);
     networkMetricBuilder =
         new NetworkRequestMetricBuilder(
             mockTransportManager, mockAppStateMonitor, mockGaugeManager, sessionManager);
@@ -235,7 +237,7 @@ public class NetworkRequestMetricBuilderTest extends FirebasePerformanceTestBase
 
     int numberOfSessionIds = metricBuilder.getSessions().size();
     PerfSession perfSession = PerfSession.createWithId("testSessionId");
-    SessionManager.getInstance().updatePerfSession(perfSession);
+    sessionManager.updatePerfSession(perfSession);
 
     assertThat(metricBuilder.getSessions().size()).isEqualTo(numberOfSessionIds + 1);
   }

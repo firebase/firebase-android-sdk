@@ -166,7 +166,8 @@ public class TransportManager implements AppStateCallback {
       RateLimiter rateLimiter,
       AppStateMonitor appStateMonitor,
       FlgTransport flgTransport,
-      ExecutorService executorService) {
+      ExecutorService executorService,
+      SessionManager sessionManager) {
 
     this.firebaseApp = firebaseApp;
     this.projectId = firebaseApp.getOptions().getProjectId();
@@ -179,6 +180,7 @@ public class TransportManager implements AppStateCallback {
     this.appStateMonitor = appStateMonitor;
     this.flgTransport = flgTransport;
     this.executorService = executorService;
+    this.sessionManager = sessionManager;
 
     // Re-init the cache, otherwise the cache might get consumed/exhausted after a few tests
     cacheMap.put(KEY_AVAILABLE_TRACES_FOR_CACHING, MAX_TRACE_METRICS_CACHE_SIZE);
@@ -394,6 +396,11 @@ public class TransportManager implements AppStateCallback {
       // Check if the session is expired. If so, stop gauge collection.
       sessionManager.stopGaugeCollectionIfSessionRunningTooLong();
     }
+  }
+
+  /** Returns the {@link SessionManager} associated with this transport. */
+  public SessionManager getSessionManager() {
+    return sessionManager;
   }
 
   @WorkerThread

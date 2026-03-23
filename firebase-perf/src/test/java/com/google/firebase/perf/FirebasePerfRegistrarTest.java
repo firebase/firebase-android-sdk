@@ -24,6 +24,7 @@ import com.google.firebase.components.Component;
 import com.google.firebase.components.Dependency;
 import com.google.firebase.components.Qualified;
 import com.google.firebase.installations.FirebaseInstallationsApi;
+import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.remoteconfig.RemoteConfigComponent;
 import java.util.List;
 import java.util.concurrent.Executor;
@@ -39,7 +40,8 @@ public class FirebasePerfRegistrarTest {
     FirebasePerfRegistrar firebasePerfRegistrar = new FirebasePerfRegistrar();
     List<Component<?>> components = firebasePerfRegistrar.getComponents();
 
-    assertThat(components).hasSize(3);
+    // FirebasePerformance, FirebasePerfEarly, SessionManager, LibraryVersionComponent
+    assertThat(components).hasSize(4);
 
     Component<?> firebasePerfComponent = components.get(0);
 
@@ -49,7 +51,8 @@ public class FirebasePerfRegistrarTest {
             Dependency.requiredProvider(RemoteConfigComponent.class),
             Dependency.required(FirebaseInstallationsApi.class),
             Dependency.requiredProvider(TransportFactory.class),
-            Dependency.required(FirebasePerfEarly.class));
+            Dependency.required(FirebasePerfEarly.class),
+            Dependency.required(SessionManager.class));
 
     assertThat(firebasePerfComponent.isLazy()).isTrue();
 
@@ -59,7 +62,8 @@ public class FirebasePerfRegistrarTest {
         .containsExactly(
             Dependency.required(Qualified.qualified(UiThread.class, Executor.class)),
             Dependency.required(FirebaseApp.class),
-            Dependency.optionalProvider(StartupTime.class));
+            Dependency.optionalProvider(StartupTime.class),
+            Dependency.required(SessionManager.class));
 
     assertThat(firebasePerfEarlyComponent.isLazy()).isFalse();
   }

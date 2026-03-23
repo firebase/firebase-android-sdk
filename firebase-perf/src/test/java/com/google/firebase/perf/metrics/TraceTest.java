@@ -79,6 +79,8 @@ public class TraceTest extends FirebasePerformanceTestBase {
 
     DeviceCacheManager.clearInstance();
     ConfigResolver.clearInstance();
+    AppStateMonitor.resetInstance();
+    AppStateMonitor.getInstance(sessionManager);
 
     appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit().clear().commit();
     ConfigResolver configResolver = ConfigResolver.getInstance();
@@ -1017,7 +1019,7 @@ public class TraceTest extends FirebasePerformanceTestBase {
     int numberOfSessionIds = trace.getSessions().size();
 
     PerfSession perfSession = PerfSession.createWithId("test_session_id");
-    SessionManager.getInstance().updatePerfSession(perfSession);
+    sessionManager.updatePerfSession(perfSession);
     assertThat(trace.getSessions()).hasSize(numberOfSessionIds + 1);
 
     trace.stop();
