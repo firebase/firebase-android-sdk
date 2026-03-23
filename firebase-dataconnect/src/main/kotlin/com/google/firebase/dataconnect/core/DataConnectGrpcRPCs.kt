@@ -417,7 +417,7 @@ internal class DataConnectGrpcRPCs(
       QueryCacheInfo(
         cacheDb,
         authUid = authToken?.authUid,
-        queryId = request.toQueryId(),
+        queryId = request.calculateQueryId(),
         maxAge = maxAge,
       )
     }
@@ -746,10 +746,8 @@ internal class DataConnectGrpcRPCs(
   }
 }
 
-private fun ExecuteQueryRequest.toQueryId(): ImmutableByteArray {
-  val queryId = variables.calculateSha512(preamble = operationName)
-  return ImmutableByteArray.adopt(queryId)
-}
+private fun ExecuteQueryRequest.calculateQueryId(): ImmutableByteArray =
+  variables.calculateSha512(preamble = operationName)
 
 @JvmName("getEntityIdForPathFunction_ExecuteQueryResponse")
 private fun ExecuteQueryResponse.getEntityIdForPathFunction(): GetEntityIdForPathFunction? =

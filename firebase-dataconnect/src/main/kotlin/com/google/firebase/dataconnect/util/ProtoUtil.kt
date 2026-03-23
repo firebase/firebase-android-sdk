@@ -66,11 +66,11 @@ import kotlinx.serialization.serializer
 internal object ProtoUtil {
 
   /** Calculates a SHA-512 digest of a [Struct]. */
-  fun Struct.calculateSha512(preamble: String = ""): ByteArray =
+  fun Struct.calculateSha512(preamble: String = ""): ImmutableByteArray =
     Value.newBuilder().setStructValue(this).build().calculateSha512(preamble = preamble)
 
   /** Calculates a SHA-512 digest of a [Value]. */
-  fun Value.calculateSha512(preamble: String = ""): ByteArray {
+  fun Value.calculateSha512(preamble: String = ""): ImmutableByteArray {
     val digest = MessageDigest.getInstance("SHA-512")
     val out = DataOutputStream(DigestOutputStream(NullOutputStream, digest))
 
@@ -108,7 +108,7 @@ internal object ProtoUtil {
 
     calculateDigest(this)
 
-    return digest.digest()
+    return ImmutableByteArray.adopt(digest.digest())
   }
 
   fun Boolean.toValueProto(): Value = Value.newBuilder().setBoolValue(this).build()
