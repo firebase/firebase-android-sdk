@@ -81,12 +81,12 @@ internal class QueryManager(
   suspend fun <Data, Variables> executeQuery(
     operationName: String,
     variables: Variables,
+    dataDeserializer: DeserializationStrategy<Data>,
     variablesSerializer: SerializationStrategy<Variables>,
-    variablesSerializersModule: SerializersModule?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
+    dataSerializersModule: SerializersModule?,
+    variablesSerializersModule: SerializersModule?,
     fetchPolicy: FetchPolicy,
-    deserializer: DeserializationStrategy<Data>,
-    deserializerModule: SerializersModule?,
     authUid: String?
   ): QueryResponse = coroutineScope {
     val effectiveFetchPolicy =
@@ -102,7 +102,8 @@ internal class QueryManager(
     val variablesStruct = encodeToStruct(variables, variablesSerializer, variablesSerializersModule)
     val variablesHash = variablesStruct.calculateSha512(preamble = operationName)
     val remoteKey = RemoteQueryKey(operationName, variablesHash, authUid)
-    val localKey = LocalQueryKey(remoteKey, effectiveFetchPolicy, deserializer, deserializerModule)
+    val localKey =
+      LocalQueryKey(remoteKey, effectiveFetchPolicy, dataDeserializer, dataSerializersModule)
 
     if (
       effectiveFetchPolicy == FetchPolicy.PREFER_CACHE ||
@@ -147,22 +148,18 @@ internal class QueryManager(
   suspend fun <Data, Variables> subscribe(
     operationName: String,
     variables: Variables,
+    dataDeserializer: DeserializationStrategy<Data>,
     variablesSerializer: SerializationStrategy<Variables>,
-    variablesSerializersModule: SerializersModule?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
-    fetchPolicy: FetchPolicy,
-    deserializer: DeserializationStrategy<Data>,
-    deserializerModule: SerializersModule?,
+    dataSerializersModule: SerializersModule?,
+    variablesSerializersModule: SerializersModule?,
     authUid: String?
   ): Flow<QueryResponse> = coroutineScope {
-    require(fetchPolicy == FetchPolicy.PREFER_CACHE) {
-      "Only PREFER_CACHE is supported for subscriptions"
-    }
-
     val variablesStruct = encodeToStruct(variables, variablesSerializer, variablesSerializersModule)
     val variablesHash = variablesStruct.calculateSha512(preamble = operationName)
     val remoteKey = RemoteQueryKey(operationName, variablesHash, authUid)
-    val localKey = LocalQueryKey(remoteKey, fetchPolicy, deserializer, deserializerModule)
+    val localKey =
+      LocalQueryKey(remoteKey, FetchPolicy.PREFER_CACHE, dataDeserializer, dataSerializersModule)
 
     stateMutex.withLock {
       val existing = activeSubscriptions[localKey]
