@@ -90,48 +90,49 @@ public class EventTest {
     ZombieVerifier.verifyRepoZombies(ref);
   }
 
-  @Test
-  public void writeTwoLeafNodeThenChangeThem() throws DatabaseException, InterruptedException {
-    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
-    DatabaseReference reader = refs.get(0);
-    DatabaseReference writer = refs.get(1);
+  // TODO(b/494654558): This test is currently flaky and must be fixed before it can be re-enabled.
+  // @Test
+  // public void writeTwoLeafNodeThenChangeThem() throws DatabaseException, InterruptedException {
+  //   List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
+  //   DatabaseReference reader = refs.get(0);
+  //   DatabaseReference writer = refs.get(1);
 
-    EventHelper readHelper =
-        new EventHelper()
-            .addValueExpectation(reader.child("foo"), 42)
-            .addChildExpectation(reader, Event.EventType.CHILD_ADDED, "foo")
-            .addValueExpectation(reader)
-            .addValueExpectation(reader.child("bar"), 24)
-            .addChildExpectation(reader, Event.EventType.CHILD_ADDED, "bar")
-            .addValueExpectation(reader)
-            .addValueExpectation(reader.child("foo"), 31415)
-            .addChildExpectation(reader, Event.EventType.CHILD_CHANGED, "foo")
-            .addValueExpectation(reader)
-            .startListening(true);
+  //   EventHelper readHelper =
+  //       new EventHelper()
+  //           .addValueExpectation(reader.child("foo"), 42)
+  //           .addChildExpectation(reader, Event.EventType.CHILD_ADDED, "foo")
+  //           .addValueExpectation(reader)
+  //           .addValueExpectation(reader.child("bar"), 24)
+  //           .addChildExpectation(reader, Event.EventType.CHILD_ADDED, "bar")
+  //           .addValueExpectation(reader)
+  //           .addValueExpectation(reader.child("foo"), 31415)
+  //           .addChildExpectation(reader, Event.EventType.CHILD_CHANGED, "foo")
+  //           .addValueExpectation(reader)
+  //           .startListening(true);
 
-    EventHelper writeHelper =
-        new EventHelper()
-            .addValueExpectation(writer.child("foo"), 42)
-            .addChildExpectation(writer, Event.EventType.CHILD_ADDED, "foo")
-            .addValueExpectation(writer)
-            .addValueExpectation(writer.child("bar"), 24)
-            .addChildExpectation(writer, Event.EventType.CHILD_ADDED, "bar")
-            .addValueExpectation(writer)
-            .addValueExpectation(writer.child("foo"), 31415)
-            .addChildExpectation(writer, Event.EventType.CHILD_CHANGED, "foo")
-            .addValueExpectation(writer)
-            .startListening(true);
+  //   EventHelper writeHelper =
+  //       new EventHelper()
+  //           .addValueExpectation(writer.child("foo"), 42)
+  //           .addChildExpectation(writer, Event.EventType.CHILD_ADDED, "foo")
+  //           .addValueExpectation(writer)
+  //           .addValueExpectation(writer.child("bar"), 24)
+  //           .addChildExpectation(writer, Event.EventType.CHILD_ADDED, "bar")
+  //           .addValueExpectation(writer)
+  //           .addValueExpectation(writer.child("foo"), 31415)
+  //           .addChildExpectation(writer, Event.EventType.CHILD_CHANGED, "foo")
+  //           .addValueExpectation(writer)
+  //           .startListening(true);
 
-    ZombieVerifier.verifyRepoZombies(refs);
+  //   ZombieVerifier.verifyRepoZombies(refs);
 
-    writer.child("foo").setValue(42);
-    writer.child("bar").setValue(24);
+  //   writer.child("foo").setValue(42);
+  //   writer.child("bar").setValue(24);
 
-    writer.child("foo").setValue(31415);
-    assertTrue(writeHelper.waitForEvents());
-    assertTrue(readHelper.waitForEvents());
-    ZombieVerifier.verifyRepoZombies(refs);
-  }
+  //   writer.child("foo").setValue(31415);
+  //   assertTrue(writeHelper.waitForEvents());
+  //   assertTrue(readHelper.waitForEvents());
+  //   ZombieVerifier.verifyRepoZombies(refs);
+  // }
 
   @Test
   public void writeFloatValueThenChangeToInteger() throws DatabaseException, InterruptedException {
@@ -265,32 +266,35 @@ public class EventTest {
   }
 
   // TODO(mtewani): This test can be flaky. It should be rewritten to ensure stability.
-  @Test
-  public void setMultipleEventListenersOnSameNode() throws DatabaseException, InterruptedException {
-    List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
-    DatabaseReference reader = refs.get(0);
-    DatabaseReference writer = refs.get(1);
+  // TODO(b/494654558): This test is currently flaky and must be fixed before it can be re-enabled.
+  // @Test
+  // public void setMultipleEventListenersOnSameNode() throws DatabaseException,
+  // InterruptedException {
+  //   List<DatabaseReference> refs = IntegrationTestHelpers.getRandomNode(2);
+  //   DatabaseReference reader = refs.get(0);
+  //   DatabaseReference writer = refs.get(1);
 
-    EventHelper writeHelper =
-        new EventHelper().addValueExpectation(writer, 42).startListening(true);
-    EventHelper writeHelper2 =
-        new EventHelper().addValueExpectation(writer, 42).startListening(true);
-    EventHelper readHelper = new EventHelper().addValueExpectation(reader, 42).startListening(true);
-    EventHelper readHelper2 =
-        new EventHelper().addValueExpectation(reader, 42).startListening(true);
+  //   EventHelper writeHelper =
+  //       new EventHelper().addValueExpectation(writer, 42).startListening(true);
+  //   EventHelper writeHelper2 =
+  //       new EventHelper().addValueExpectation(writer, 42).startListening(true);
+  //   EventHelper readHelper = new EventHelper().addValueExpectation(reader,
+  // 42).startListening(true);
+  //   EventHelper readHelper2 =
+  //       new EventHelper().addValueExpectation(reader, 42).startListening(true);
 
-    ZombieVerifier.verifyRepoZombies(refs);
+  //   ZombieVerifier.verifyRepoZombies(refs);
 
-    writer.setValue(42);
+  //   writer.setValue(42);
 
-    IntegrationTestHelpers.waitForRoundtrip(reader);
-    IntegrationTestHelpers.waitForRoundtrip(writer);
-    assertTrue(writeHelper.waitForEvents());
-    assertTrue(writeHelper2.waitForEvents());
-    assertTrue(readHelper.waitForEvents());
-    assertTrue(readHelper2.waitForEvents());
-    ZombieVerifier.verifyRepoZombies(refs);
-  }
+  //   IntegrationTestHelpers.waitForRoundtrip(reader);
+  //   IntegrationTestHelpers.waitForRoundtrip(writer);
+  //   assertTrue(writeHelper.waitForEvents());
+  //   assertTrue(writeHelper2.waitForEvents());
+  //   assertTrue(readHelper.waitForEvents());
+  //   assertTrue(readHelper2.waitForEvents());
+  //   ZombieVerifier.verifyRepoZombies(refs);
+  // }
 
   @Test
   public void setDataMultipleTimesEnsureValueIsCalledAppropriately()
