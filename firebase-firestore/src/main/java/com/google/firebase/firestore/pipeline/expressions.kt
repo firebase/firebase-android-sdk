@@ -415,6 +415,55 @@ abstract class Expression internal constructor() {
       BooleanFunctionExpression("or", evaluateOr, condition, *conditions)
 
     /**
+     * Creates an expression that performs a logical 'NOR' operation.
+     *
+     * ```kotlin
+     * // Check if 'status' is neither "new" nor "open"
+     * nor(field("status").equal("new"), field("status").equal("open"))
+     * ```
+     *
+     * @param condition The first [BooleanExpression].
+     * @param conditions Additional [BooleanExpression]s.
+     * @return A new [BooleanExpression] representing the logical 'NOR' operation.
+     */
+    @JvmStatic
+    fun nor(condition: BooleanExpression, vararg conditions: BooleanExpression): BooleanExpression =
+      BooleanFunctionExpression("nor", notImplemented, condition, *conditions)
+
+    /**
+     * Creates an expression that evaluates to the result corresponding to the first true condition.
+     *
+     * This function behaves like a `switch` statement. It accepts an alternating sequence of
+     * conditions and their corresponding results. If an odd number of arguments is provided, the
+     * final argument serves as a default fallback result. If no default is provided and no
+     * condition evaluates to true, it throws an error.
+     *
+     * ```kotlin
+     * // Return "Active" if field "status" is 1, "Pending" if field "status" is 2,
+     * // and default to "Unknown" if none of the conditions are true.
+     * switchOn(
+     *   field("status").equal(1), constant("Active"),
+     *   field("status").equal(2), constant("Pending"),
+     *   constant("Unknown")
+     * )
+     * ```
+     *
+     * @param condition The first condition to check.
+     * @param result The result if the first condition is true.
+     * @param others Additional conditions and results, and optionally a default value.
+     * @return A new [Expression] representing the switch operation.
+     */
+    @JvmStatic
+    fun switchOn(condition: BooleanExpression, result: Any, vararg others: Any): Expression =
+      FunctionExpression(
+        "switch_on",
+        notImplemented,
+        condition,
+        toExprOrConstant(result),
+        *toArrayOfExprOrConstant(others)
+      )
+
+    /**
      * Creates an expression that performs a logical 'XOR' operation.
      *
      * ```kotlin

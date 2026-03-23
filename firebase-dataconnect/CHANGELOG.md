@@ -1,5 +1,7 @@
 # Unreleased
 
+# 17.2.0
+
 - [changed] Added offline caching APIs
   ([#7814](https://github.com/firebase/firebase-android-sdk/pull/7814),
   [#7833](https://github.com/firebase/firebase-android-sdk/pull/7833),

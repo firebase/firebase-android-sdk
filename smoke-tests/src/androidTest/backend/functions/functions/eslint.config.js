@@ -13,12 +13,12 @@ module.exports = [
         exports: "writable",
         module: "readonly",
         require: "readonly",
-      }
+      },
     },
     rules: {
       "valid-jsdoc": "off",
       "require-jsdoc": "off",
-      "quotes": ["error", "double"]
-    }
-  }
+      "quotes": ["error", "double"],
+    },
+  },
 ];
