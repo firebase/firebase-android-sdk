@@ -17,9 +17,10 @@
 package com.google.firebase.dataconnect.querymgr2
 
 import com.google.firebase.dataconnect.CachedDataNotFoundException
+import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.QueryRef.FetchPolicy
-import com.google.firebase.dataconnect.core.DataConnectGrpcRPCs
+import com.google.firebase.dataconnect.core.DataConnectGrpcClient
 import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase
 import com.google.firebase.dataconnect.util.ImmutableByteArray
 import com.google.firebase.dataconnect.util.ProtoUtil.calculateSha512
@@ -27,7 +28,6 @@ import com.google.firebase.dataconnect.util.ProtoUtil.encodeToStruct
 import com.google.protobuf.Duration
 import com.google.protobuf.Struct
 import google.firebase.dataconnect.proto.ExecuteQueryRequest
-import google.firebase.dataconnect.proto.ExecuteQueryResponse
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -55,12 +55,14 @@ internal data class LocalQueryKey<Data>(
 internal sealed interface QueryResponse {
   val data: Struct
   data class FromCache(override val data: Struct) : QueryResponse
-  data class FromServer(override val data: Struct, val response: ExecuteQueryResponse) :
-    QueryResponse
+  data class FromServer(
+    override val data: Struct,
+    val result: DataConnectGrpcClient.OperationResult
+  ) : QueryResponse
 }
 
 internal class QueryManager(
-  private val grpcRPCs: DataConnectGrpcRPCs,
+  private val grpcClient: DataConnectGrpcClient,
   private val cacheDb: DataConnectCacheDatabase?,
   private val maxAge: Duration?
 ) {
@@ -68,7 +70,7 @@ internal class QueryManager(
   private val activeSubscriptions =
     mutableMapOf<LocalQueryKey<*>, MutableSharedFlow<QueryResponse>>()
   private val inflightRemoteQueries =
-    mutableMapOf<RemoteQueryKey, Deferred<DataConnectGrpcRPCs.ExecuteQueryResult>>()
+    mutableMapOf<RemoteQueryKey, Deferred<DataConnectGrpcClient.OperationResult>>()
   private val entityToSubscriptions = mutableMapOf<String, MutableSet<LocalQueryKey<*>>>()
 
   suspend fun <Data> executeQuery(
@@ -114,11 +116,16 @@ internal class QueryManager(
 
     val queryResult =
       executeRemoteQuery(requestId, request, callerSdkType, remoteKey, authUid, variablesHash)
-    when (queryResult) {
-      is DataConnectGrpcRPCs.ExecuteQueryResult.FromCache ->
-        QueryResponse.FromCache(queryResult.data)
-      is DataConnectGrpcRPCs.ExecuteQueryResult.FromServer ->
-        QueryResponse.FromServer(queryResult.response.data, queryResult.response)
+
+    val data =
+      queryResult.data
+        ?: throw IllegalStateException(
+          "operation encountered errors during execution: ${queryResult.errors}"
+        )
+
+    when (queryResult.source) {
+      DataSource.CACHE -> QueryResponse.FromCache(data)
+      DataSource.SERVER -> QueryResponse.FromServer(data, queryResult)
     }
   }
 
@@ -166,7 +173,7 @@ internal class QueryManager(
     remoteKey: RemoteQueryKey,
     authUid: String?,
     variablesHash: ImmutableByteArray
-  ): DataConnectGrpcRPCs.ExecuteQueryResult = coroutineScope {
+  ): DataConnectGrpcClient.OperationResult = coroutineScope {
     val deferred =
       stateMutex.withLock {
         val existing = inflightRemoteQueries[remoteKey]
@@ -174,7 +181,13 @@ internal class QueryManager(
           existing
         } else {
           val newDeferred = async {
-            grpcRPCs.executeQuery(requestId, request, callerSdkType, FetchPolicy.SERVER_ONLY)
+            grpcClient.executeQuery(
+              requestId = requestId,
+              operationName = request.operationName,
+              variables = request.variables,
+              callerSdkType = callerSdkType,
+              fetchPolicy = FetchPolicy.SERVER_ONLY
+            )
           }
           inflightRemoteQueries[remoteKey] = newDeferred
           newDeferred
@@ -191,21 +204,19 @@ internal class QueryManager(
 
     // Write to cache and notify subscriptions
     if (cacheDb != null && maxAge != null) {
-      val dataToWrite =
-        when (queryResult) {
-          is DataConnectGrpcRPCs.ExecuteQueryResult.FromCache -> queryResult.data
-          is DataConnectGrpcRPCs.ExecuteQueryResult.FromServer -> queryResult.response.data
-        }
-      // Note: getEntityIdForPathFunction extraction omitted for brevity, but implemented in phase
-      // 6.
-      cacheDb.insertQueryResult(
-        authUid = authUid,
-        queryId = variablesHash,
-        queryData = dataToWrite,
-        maxAge = maxAge,
-        currentTimeMillis = System.currentTimeMillis(),
-        getEntityIdForPath = null // Should extract from response
-      )
+      val dataToWrite = queryResult.data
+      if (dataToWrite != null) {
+        // Note: getEntityIdForPathFunction extraction omitted for brevity, but implemented in phase
+        // 6.
+        cacheDb.insertQueryResult(
+          authUid = authUid,
+          queryId = variablesHash,
+          queryData = dataToWrite,
+          maxAge = maxAge,
+          currentTimeMillis = System.currentTimeMillis(),
+          getEntityIdForPath = null // Should extract from response
+        )
+      }
     }
 
     queryResult
