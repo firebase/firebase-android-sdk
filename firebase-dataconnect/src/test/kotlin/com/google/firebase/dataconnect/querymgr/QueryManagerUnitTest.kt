@@ -24,6 +24,7 @@ import com.google.firebase.dataconnect.core.DataConnectGrpcRPCs
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.testutil.newMockLogger
 import com.google.firebase.dataconnect.testutil.property.arbitrary.mock
+import com.google.firebase.dataconnect.testutil.property.arbitrary.pair
 import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.firebase.util.nextAlphanumericString
@@ -53,9 +54,13 @@ import kotlin.random.Random
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.Contextual
 import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationStrategy
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.modules.SerializersModule
@@ -131,7 +136,7 @@ class QueryManagerUnitTest {
         executeQueryResponse = overrideValue.encodeToExecuteQueryResponse()
       )
       val queryManager: QueryManager = newQueryManager(dataConnectGrpcRPCs = dataConnectGrpcRPCs)
-      val dataDeserializer = TestDataOverrideSerializer(overrideValue)
+      val dataDeserializer = TestDataOverrideDeserializer(overrideValue)
 
       val result: TestData =
         queryManager.execute(
@@ -169,6 +174,73 @@ class QueryManagerUnitTest {
         variablesSerializer = variablesSerializer,
         dataSerializersModule = args.dataSerializersModule,
         variablesSerializersModule = args.variablesSerializersModule,
+        callerSdkType = args.callerSdkType,
+        fetchPolicy = args.fetchPolicy,
+      )
+
+      val capturedVariables: Struct = executeQueryRequestSlot.captured.variables
+      val expectedVariables: Struct = TestVariables(overrideValue).encodeToStruct()
+      capturedVariables shouldBe expectedVariables
+    }
+  }
+
+  @Test
+  fun `execute() uses the given dataSerializersModule`() = runTest {
+    checkAll(
+      propTestConfig,
+      executeArgumentsArb(),
+      alphanumericStringArb().pair(),
+    ) { args, (responseValue, overrideValue) ->
+      val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk()
+      dataConnectGrpcRPCs.stubExecuteQuery(
+        executeQueryResponse = responseValue.encodeToExecuteQueryResponse()
+      )
+      val queryManager: QueryManager = newQueryManager(dataConnectGrpcRPCs = dataConnectGrpcRPCs)
+      val dataDeserializer = serializer<ContextualTestData>()
+      val dataSerializersModule = SerializersModule {
+        contextual(String::class, HardcodedStringKSerializer(overrideValue))
+      }
+
+      val result: ContextualTestData =
+        queryManager.execute(
+          operationName = args.operationName,
+          variables = args.variables,
+          dataDeserializer = dataDeserializer,
+          variablesSerializer = args.variablesSerializer,
+          dataSerializersModule = dataSerializersModule,
+          variablesSerializersModule = args.variablesSerializersModule,
+          callerSdkType = args.callerSdkType,
+          fetchPolicy = args.fetchPolicy,
+        )
+
+      result shouldBe ContextualTestData(overrideValue)
+    }
+  }
+
+  @Test
+  fun `execute() uses the given variablesSerializersModule`() = runTest {
+    checkAll(
+      propTestConfig,
+      executeArgumentsArb(),
+      alphanumericStringArb().pair(),
+    ) { args, (requestValue, overrideValue) ->
+      val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk()
+      val executeQueryRequestSlot = CapturingSlot<ExecuteQueryRequest>()
+      dataConnectGrpcRPCs.stubExecuteQuery(executeQueryRequestSlot = executeQueryRequestSlot)
+      val queryManager: QueryManager = newQueryManager(dataConnectGrpcRPCs = dataConnectGrpcRPCs)
+      val variables = ContextualTestVariables(requestValue)
+      val variablesSerializer = serializer<ContextualTestVariables>()
+      val variablesSerializersModule = SerializersModule {
+        contextual(String::class, HardcodedStringKSerializer(overrideValue))
+      }
+
+      queryManager.execute(
+        operationName = args.operationName,
+        variables = variables,
+        dataDeserializer = args.dataDeserializer,
+        variablesSerializer = variablesSerializer,
+        dataSerializersModule = args.dataSerializersModule,
+        variablesSerializersModule = variablesSerializersModule,
         callerSdkType = args.callerSdkType,
         fetchPolicy = args.fetchPolicy,
       )
@@ -245,9 +317,13 @@ private data class ExecuteArguments<Data, Variables>(
 
 private fun TestVariables.encodeToStruct(): Struct = buildStructProto { put("value", value) }
 
+@Serializable private data class ContextualTestVariables(@Contextual val value: String)
+
 @Serializable private data class TestData(val value: String)
 
 private fun TestData.encodeToStruct(): Struct = buildStructProto { put("value", value) }
+
+@Serializable private data class ContextualTestData(@Contextual val value: String)
 
 private fun TestData.encodeToExecuteQueryResponse(): ExecuteQueryResponse =
   ExecuteQueryResponse.newBuilder().setData(encodeToStruct()).build()
@@ -305,7 +381,7 @@ private class TestVariablesOverrideSerializer(overrideValue: String) :
     delegate.serialize(encoder, overrideVariables)
 }
 
-private class TestDataOverrideSerializer(overrideValue: String) :
+private class TestDataOverrideDeserializer(overrideValue: String) :
   DeserializationStrategy<TestData> {
   private val overrideData = TestData(overrideValue)
   private val delegate = serializer<TestData>()
@@ -313,6 +389,16 @@ private class TestDataOverrideSerializer(overrideValue: String) :
   override val descriptor by delegate::descriptor
 
   override fun deserialize(decoder: Decoder) = overrideData
+}
+
+private class HardcodedStringKSerializer(private val hardcodedValue: String) : KSerializer<String> {
+  override val descriptor = PrimitiveSerialDescriptor("HardcodedString", PrimitiveKind.STRING)
+
+  override fun serialize(encoder: Encoder, value: String) {
+    encoder.encodeString(hardcodedValue)
+  }
+
+  override fun deserialize(decoder: Decoder): String = hardcodedValue
 }
 
 private fun DataConnectGrpcRPCs.stubExecuteQuery(
