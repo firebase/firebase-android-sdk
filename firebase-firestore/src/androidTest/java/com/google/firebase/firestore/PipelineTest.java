@@ -1792,12 +1792,30 @@ public class PipelineTest {
                 field("nestedField.level.1"),
                 mapGet("nestedField", "level.1").mapGet("level.2").alias("nested"))
             .execute();
+
+    Map<String, Object> hitchhikerResult;
+    Map<String, Object> duneResult;
+
+    switch (IntegrationTestUtil.getTargetBackend()) {
+      case NIGHTLY:
+        hitchhikerResult =
+            mapOfEntries(
+                entry("title", "The Hitchhiker's Guide to the Galaxy"),
+                entry("nestedField.level.1", ImmutableMap.of("level.2", true)),
+                entry("nested", true));
+        duneResult = mapOfEntries(entry("title", "Dune"));
+        break;
+      default:
+        hitchhikerResult =
+            mapOfEntries(
+                entry("title", "The Hitchhiker's Guide to the Galaxy"), entry("nested", true));
+        duneResult = mapOfEntries(entry("title", "Dune"));
+        break;
+    }
+
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
-        .containsExactly(
-            mapOfEntries(
-                entry("title", "The Hitchhiker's Guide to the Galaxy"), entry("nested", true)),
-            mapOfEntries(entry("title", "Dune")));
+        .containsExactly(hitchhikerResult, duneResult);
   }
 
   @Test
