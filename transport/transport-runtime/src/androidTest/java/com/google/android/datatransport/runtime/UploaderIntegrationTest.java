@@ -155,7 +155,7 @@ public class UploaderIntegrationTest {
             .build();
 
     when(mockRegistry.get(mockBackendName)).thenReturn(mockBackend);
-    when(mockBackend.send(any())).thenReturn(BackendResponse.ok(1000));
+    when(mockBackend.send(any())).thenReturn(BackendResponse.ok(1000, null));
     TransportFactory factory = runtime.newFactory(mockBackendName);
     Transport<String> transport =
         factory.getTransport(testTransport, String.class, String::getBytes);
@@ -276,7 +276,7 @@ public class UploaderIntegrationTest {
     byte[] mockExtras = "extras".getBytes(Charset.defaultCharset());
 
     when(mockRegistry.get(mockBackendName)).thenReturn(mockBackend);
-    when(mockBackend.send(any())).thenReturn(BackendResponse.ok(1));
+    when(mockBackend.send(any())).thenReturn(BackendResponse.ok(1, null));
 
     Transport<String> transport =
         runtime
@@ -405,7 +405,7 @@ public class UploaderIntegrationTest {
     String mockBackendName = generateBackendName();
 
     when(mockRegistry.get(mockBackendName)).thenReturn(mockBackend);
-    when(mockBackend.send(any())).thenReturn(BackendResponse.ok(1));
+    when(mockBackend.send(any())).thenReturn(BackendResponse.ok(1, null));
 
     Transport<String> transport =
         runtime
