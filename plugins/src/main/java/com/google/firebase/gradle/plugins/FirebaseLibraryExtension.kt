@@ -265,6 +265,16 @@ constructor(val project: Project, val type: LibraryType) {
   val runtimeClasspath: String =
     if (type == LibraryType.ANDROID) "releaseRuntimeClasspath" else "runtimeClasspath"
 
+  val componentName: String
+    get() {
+      val publishDebugVariant =
+        project.hasProperty("publishDebugVariant") && project.property("publishDebugVariant") == "true"
+      if (type == LibraryType.ANDROID && publishDebugVariant) {
+        return "debug"
+      }
+      return type.componentName
+    }
+
   override fun toString(): String {
     return """FirebaseLibraryExtension{name="$mavenName", project="$path", type="$type"}"""
   }
