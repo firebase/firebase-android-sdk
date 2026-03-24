@@ -56,6 +56,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationStrategy
+import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.serializer
@@ -112,8 +113,39 @@ class QueryManagerUnitTest {
         fetchPolicy = args.fetchPolicy,
       )
 
-      val capturedOperationName: String = executeQueryRequestSlot.captured.operationName
-      capturedOperationName shouldBe args.operationName
+      val capturedVariables: Struct = executeQueryRequestSlot.captured.variables
+      val expectedVariables: Struct = args.variables.encodeToStruct()
+      capturedVariables shouldBe expectedVariables
+    }
+  }
+
+  @Test
+  fun `execute() uses the given dataDeserializer`() = runTest {
+    checkAll(
+      propTestConfig,
+      executeArgumentsArb(),
+      alphanumericStringArb(),
+    ) { args, overrideValue ->
+      val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk()
+      dataConnectGrpcRPCs.stubExecuteQuery(
+        executeQueryResponse = overrideValue.encodeToExecuteQueryResponse()
+      )
+      val queryManager: QueryManager = newQueryManager(dataConnectGrpcRPCs = dataConnectGrpcRPCs)
+      val dataDeserializer = TestDataOverrideSerializer(overrideValue)
+
+      val result: TestData =
+        queryManager.execute(
+          operationName = args.operationName,
+          variables = args.variables,
+          dataDeserializer = dataDeserializer,
+          variablesSerializer = args.variablesSerializer,
+          callerSdkType = args.callerSdkType,
+          dataSerializersModule = args.dataSerializersModule,
+          variablesSerializersModule = args.variablesSerializersModule,
+          fetchPolicy = args.fetchPolicy,
+        )
+
+      result shouldBe TestData(overrideValue)
     }
   }
 
@@ -141,9 +173,9 @@ class QueryManagerUnitTest {
         fetchPolicy = args.fetchPolicy,
       )
 
-      val capturedEncodedVariables: Struct = executeQueryRequestSlot.captured.variables
-      val expectedEncodedVariables: Struct = TestVariables(overrideValue).encodeToStruct()
-      capturedEncodedVariables shouldBe expectedEncodedVariables
+      val capturedVariables: Struct = executeQueryRequestSlot.captured.variables
+      val expectedVariables: Struct = TestVariables(overrideValue).encodeToStruct()
+      capturedVariables shouldBe expectedVariables
     }
   }
 }
@@ -245,6 +277,16 @@ private class TestVariablesOverrideSerializer(overrideValue: String) :
     delegate.serialize(encoder, overrideVariables)
 }
 
+private class TestDataOverrideSerializer(overrideValue: String) :
+  DeserializationStrategy<TestData> {
+  private val overrideData = TestData(overrideValue)
+  private val delegate = serializer<TestData>()
+
+  override val descriptor by delegate::descriptor
+
+  override fun deserialize(decoder: Decoder) = overrideData
+}
+
 private fun DataConnectGrpcRPCs.stubExecuteQuery(
   executeQueryRequestSlot: CapturingSlot<ExecuteQueryRequest> = CapturingSlot(),
   executeQueryResponse: ExecuteQueryResponse? = null
@@ -254,13 +296,5 @@ private fun DataConnectGrpcRPCs.stubExecuteQuery(
       executeQueryResponse
         ?: TestData("data_qhpgbccsar_" + Random.nextAlphanumericString(10))
           .encodeToExecuteQueryResponse()
-    }
-}
-
-private fun mockDataConnectGrpcRPCs(): DataConnectGrpcRPCs = mockk {
-  coEvery { executeQuery(any(), any(), any(), any(), any()) } answers
-    {
-      TestData("data_ytgz4gy5wx_" + Random.nextAlphanumericString(10))
-        .encodeToExecuteQueryResponse()
     }
 }
