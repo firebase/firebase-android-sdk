@@ -160,8 +160,10 @@ internal constructor(
       install(ContentNegotiation) { json(JSON) }
       if (BuildConfig.DEBUG) {
         install(Logging) {
-          sanitizeHeader { header -> header == "X-Android-Cert" }
-          sanitizeHeader { header -> header == "x-goog-api-key" }
+          sanitizeHeader { header ->
+            header.equals("X-Android-Cert", ignoreCase = true) ||
+              header.equals("x-goog-api-key", ignoreCase = true)
+          }
           level = LogLevel.ALL
         }
       }
