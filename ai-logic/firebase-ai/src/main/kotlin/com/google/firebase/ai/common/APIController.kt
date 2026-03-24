@@ -22,6 +22,7 @@ import android.os.Build
 import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
+import com.google.firebase.ai.BuildConfig
 import com.google.firebase.ai.common.util.decodeToFlow
 import com.google.firebase.ai.common.util.fullModelName
 import com.google.firebase.ai.type.APINotConfiguredException
@@ -51,6 +52,8 @@ import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.logging.LogLevel
+import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.client.plugins.websocket.webSocketSession
@@ -155,6 +158,13 @@ internal constructor(
       }
       install(WebSockets)
       install(ContentNegotiation) { json(JSON) }
+      if (BuildConfig.DEBUG) {
+        install(Logging) {
+          sanitizeHeader { header -> header == "X-Android-Cert" }
+          sanitizeHeader { header -> header == "x-goog-api-key" }
+          level = LogLevel.ALL
+        }
+      }
     }
 
   suspend fun generateContent(request: GenerateContentRequest): GenerateContentResponse.Internal =
