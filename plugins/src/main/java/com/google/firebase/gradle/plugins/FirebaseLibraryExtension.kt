@@ -268,7 +268,8 @@ constructor(val project: Project, val type: LibraryType) {
   val componentName: String
     get() {
       val publishDebugVariant =
-        project.hasProperty("publishDebugVariant") && project.property("publishDebugVariant") == "true"
+        project.hasProperty("publishDebugVariant") &&
+          project.property("publishDebugVariant") == "true"
       if (type == LibraryType.ANDROID && publishDebugVariant) {
         return "debug"
       }
