@@ -1,5 +1,7 @@
 # Unreleased
 
+- [feature] Added support for [Maps Grounding](https://ai.google.dev/gemini-api/docs/maps-grounding) (#7950)
+
 # 17.10.1
 
 - [fixed] Fixed an issue causing Live API to fail when using the `GoogleAI` backend (#7880)
