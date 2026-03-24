@@ -172,6 +172,10 @@ public class TransportRuntime implements TransportInternal {
       if (eventContext.getPseudonymousId() != null) {
         builder.setPseudonymousId(eventContext.getPseudonymousId());
       }
+      if (eventContext.getPseudonymousIdUpdateReceiverClassName() != null) {
+        builder.setPseudonymousIdUpdateReceiverClassName(
+            eventContext.getPseudonymousIdUpdateReceiverClassName());
+      }
       if (eventContext.getExperimentIdsClear() != null) {
         builder.setExperimentIdsClear(eventContext.getExperimentIdsClear());
       }
