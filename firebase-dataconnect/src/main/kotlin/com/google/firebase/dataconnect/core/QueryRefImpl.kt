@@ -52,11 +52,21 @@ internal class QueryRefImpl<Data, Variables>(
   ) {
   override suspend fun execute(): QueryResultImpl = execute(FetchPolicy.PREFER_CACHE)
 
-  override suspend fun execute(fetchPolicy: FetchPolicy): QueryResultImpl =
-    dataConnect.queryManager.execute(this, fetchPolicy).let {
-      val (data, source) = it.ref.getOrThrow()
-      QueryResultImpl(data, source)
-    }
+  override suspend fun execute(fetchPolicy: FetchPolicy): QueryResultImpl {
+    val data =
+      dataConnect.queryManager.execute(
+        operationName = operationName,
+        variables = variables,
+        dataDeserializer = dataDeserializer,
+        variablesSerializer = variablesSerializer,
+        callerSdkType = callerSdkType,
+        dataSerializersModule = dataSerializersModule,
+        variablesSerializersModule = variablesSerializersModule,
+        fetchPolicy = fetchPolicy,
+      )
+
+    return QueryResultImpl(data, DataSource.SERVER)
+  }
 
   override fun subscribe(): QuerySubscription<Data, Variables> = QuerySubscriptionImpl(this)
 

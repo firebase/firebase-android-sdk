@@ -29,8 +29,6 @@ import com.google.protobuf.Struct
 import io.grpc.Metadata
 
 internal class DataConnectGrpcMetadata(
-  val dataConnectAuth: DataConnectAuth,
-  val dataConnectAppCheck: DataConnectAppCheck,
   val connectorLocation: String,
   val kotlinVersion: String,
   val androidVersion: Int,
@@ -43,7 +41,6 @@ internal class DataConnectGrpcMetadata(
     Logger("DataConnectGrpcMetadata").apply {
       debug {
         "created by ${parentLogger.nameWithId} with" +
-          " dataConnectAuth=${dataConnectAuth.instanceId}" +
           " connectorLocation=$connectorLocation" +
           " kotlinVersion=$kotlinVersion" +
           " androidVersion=$androidVersion" +
@@ -55,7 +52,6 @@ internal class DataConnectGrpcMetadata(
   val instanceId: String
     get() = logger.nameWithId
 
-  @Suppress("SpellCheckingInspection")
   private val googRequestParamsHeaderValue = "location=${connectorLocation}&frontend=data"
 
   private fun googApiClientHeaderValue(callerSdkType: FirebaseDataConnect.CallerSdkType): String {
@@ -77,18 +73,11 @@ internal class DataConnectGrpcMetadata(
     return components.joinToString(" ")
   }
 
-  data class GetGrpcMetadataResult(
-    val metadata: Metadata,
-    val authToken: DataConnectAuth.GetAuthTokenResult?,
-  )
-
-  suspend fun get(
-    requestId: String,
+  fun get(
+    authToken: String?,
+    appCheckToken: String?,
     callerSdkType: FirebaseDataConnect.CallerSdkType
-  ): GetGrpcMetadataResult {
-    val authToken = dataConnectAuth.getToken(requestId)
-    val appCheckToken = dataConnectAppCheck.getToken(requestId)
-
+  ): Metadata {
     val metadata =
       Metadata().also {
         it.put(googRequestParamsHeader, googRequestParamsHeaderValue)
@@ -96,11 +85,15 @@ internal class DataConnectGrpcMetadata(
         if (appId.isNotBlank()) {
           it.put(gmpAppIdHeader, appId)
         }
-        authToken?.token?.let { token -> it.put(firebaseAuthTokenHeader, token) }
-        appCheckToken?.token?.let { token -> it.put(firebaseAppCheckTokenHeader, token) }
+        if (authToken !== null) {
+          it.put(firebaseAuthTokenHeader, authToken)
+        }
+        if (appCheckToken !== null) {
+          it.put(firebaseAppCheckTokenHeader, appCheckToken)
+        }
       }
 
-    return GetGrpcMetadataResult(metadata, authToken)
+    return metadata
   }
 
   companion object {
@@ -171,11 +164,9 @@ internal class DataConnectGrpcMetadata(
     private val firebaseAppCheckTokenHeader: Metadata.Key<String> =
       Metadata.Key.of("x-firebase-appcheck", Metadata.ASCII_STRING_MARSHALLER)
 
-    @Suppress("SpellCheckingInspection")
     private val googRequestParamsHeader: Metadata.Key<String> =
       Metadata.Key.of("x-goog-request-params", Metadata.ASCII_STRING_MARSHALLER)
 
-    @Suppress("SpellCheckingInspection")
     private val googApiClientHeader: Metadata.Key<String> =
       Metadata.Key.of("x-goog-api-client", Metadata.ASCII_STRING_MARSHALLER)
 
@@ -185,14 +176,10 @@ internal class DataConnectGrpcMetadata(
 
     fun forSystemVersions(
       firebaseApp: FirebaseApp,
-      dataConnectAuth: DataConnectAuth,
-      dataConnectAppCheck: DataConnectAppCheck,
       connectorLocation: String,
       parentLogger: Logger,
     ): DataConnectGrpcMetadata =
       DataConnectGrpcMetadata(
-        dataConnectAuth = dataConnectAuth,
-        dataConnectAppCheck = dataConnectAppCheck,
         connectorLocation = connectorLocation,
         kotlinVersion = "${KotlinVersion.CURRENT}",
         androidVersion = Build.VERSION.SDK_INT,

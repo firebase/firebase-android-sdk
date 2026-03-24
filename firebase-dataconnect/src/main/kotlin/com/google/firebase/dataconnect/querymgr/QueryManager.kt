@@ -16,36 +16,97 @@
 
 package com.google.firebase.dataconnect.querymgr
 
-import com.google.firebase.dataconnect.QueryRef.FetchPolicy
-import com.google.firebase.dataconnect.core.QueryRefImpl
-import com.google.firebase.dataconnect.util.SequencedReference
+import com.google.firebase.dataconnect.FirebaseDataConnect
+import com.google.firebase.dataconnect.QueryRef
+import com.google.firebase.dataconnect.core.DataConnectGrpcRPCs
+import com.google.firebase.dataconnect.core.Logger
+import com.google.firebase.dataconnect.core.LoggerGlobals.debug
+import com.google.firebase.dataconnect.util.ImmutableByteArray
+import com.google.firebase.dataconnect.util.ProtoUtil.calculateSha512
+import com.google.firebase.dataconnect.util.ProtoUtil.encodeToStruct
+import com.google.firebase.dataconnect.util.RequestIdGenerator.nextQueryRequestId
+import google.firebase.dataconnect.proto.ExecuteQueryRequest as ExecuteQueryRequestProto
+import kotlin.random.Random
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.SerializationStrategy
+import kotlinx.serialization.modules.SerializersModule
 
-internal class QueryManager(private val liveQueries: LiveQueries) {
+internal class QueryManager(
+  private val requestName: String,
+  private val dataConnectGrpcRPCs: DataConnectGrpcRPCs,
+  private val cpuBoundDispatcher: CoroutineDispatcher,
+  private val secureRandom: Random,
+  private val logger: Logger,
+) {
+
+  private val mutex = Mutex()
+  private val localQueries = mutableMapOf<LocalKey<*>, LocalQueryState<*>>()
+
   suspend fun <Data, Variables> execute(
-    query: QueryRefImpl<Data, Variables>,
-    fetchPolicy: FetchPolicy,
-  ): SequencedReference<Result<DataSourcePair<Data>>> =
-    liveQueries.withLiveQuery(query) {
-      it.execute(
-        dataDeserializer = query.dataDeserializer,
-        dataSerializersModule = query.dataSerializersModule,
-        callerSdkType = query.callerSdkType,
-        fetchPolicy = fetchPolicy,
-      )
+    operationName: String,
+    variables: Variables,
+    dataDeserializer: DeserializationStrategy<Data>,
+    variablesSerializer: SerializationStrategy<Variables>,
+    callerSdkType: FirebaseDataConnect.CallerSdkType,
+    dataSerializersModule: SerializersModule?,
+    variablesSerializersModule: SerializersModule?,
+    fetchPolicy: QueryRef.FetchPolicy,
+  ): Data {
+    require(fetchPolicy == QueryRef.FetchPolicy.SERVER_ONLY)
+
+    val requestId = secureRandom.nextQueryRequestId()
+    logger.debug { "[rid=$requestId] Executing query with operationName=$operationName" }
+
+    val requestProto: ExecuteQueryRequestProto
+    val queryId: ImmutableByteArray
+    withContext(cpuBoundDispatcher) {
+      val variablesStruct =
+        encodeToStruct(variables, variablesSerializer, variablesSerializersModule)
+      queryId = variablesStruct.calculateSha512(preamble = operationName)
+      requestProto =
+        ExecuteQueryRequestProto.newBuilder()
+          .setName(requestName)
+          .setOperationName(operationName)
+          .setVariables(variablesStruct)
+          .build()
     }
 
-  suspend fun <Data, Variables> subscribe(
-    query: QueryRefImpl<Data, Variables>,
-    executeQuery: Boolean,
-    callback: suspend (SequencedReference<Result<DataSourcePair<Data>>>) -> Unit,
-  ): Nothing =
-    liveQueries.withLiveQuery(query) { liveQuery ->
-      liveQuery.subscribe(
-        dataDeserializer = query.dataDeserializer,
-        dataSerializersModule = query.dataSerializersModule,
-        executeQuery = executeQuery,
-        callerSdkType = query.callerSdkType,
-        callback = callback,
+    val localKey = LocalKey(queryId, dataDeserializer, dataSerializersModule, fetchPolicy)
+    val localState: LocalQueryState<Data> =
+      mutex.withLock {
+        @Suppress("UNCHECKED_CAST")
+        localQueries.getOrPut(localKey) {
+          LocalQueryState(requestProto, dataDeserializer, dataSerializersModule, fetchPolicy)
+        } as LocalQueryState<Data>
+      }
+
+    val response =
+      dataConnectGrpcRPCs.executeQuery(
+        requestId = requestId,
+        requestProto = localState.requestProto,
+        authToken = null,
+        appCheckToken = null,
+        callerSdkType = callerSdkType,
       )
-    }
+
+    TODO()
+  }
+
+  data class LocalKey<Data>(
+    val queryId: ImmutableByteArray,
+    val dataDeserializer: DeserializationStrategy<Data>,
+    val dataSerializersModule: SerializersModule?,
+    val fetchPolicy: QueryRef.FetchPolicy,
+  )
 }
+
+private data class LocalQueryState<Data>(
+  val requestProto: ExecuteQueryRequestProto,
+  val dataDeserializer: DeserializationStrategy<Data>,
+  val dataSerializersModule: SerializersModule?,
+  val fetchPolicy: QueryRef.FetchPolicy,
+)

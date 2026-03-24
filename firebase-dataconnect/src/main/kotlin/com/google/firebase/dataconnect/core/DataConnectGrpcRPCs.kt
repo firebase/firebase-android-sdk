@@ -18,23 +18,15 @@ package com.google.firebase.dataconnect.core
 
 import android.content.Context
 import com.google.android.gms.security.ProviderInstaller
-import com.google.firebase.dataconnect.CachedDataNotFoundException
-import com.google.firebase.dataconnect.DataConnectPath
-import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.FirebaseDataConnect
-import com.google.firebase.dataconnect.QueryRef.FetchPolicy
 import com.google.firebase.dataconnect.core.DataConnectGrpcMetadata.Companion.toStructProto
 import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase
-import com.google.firebase.dataconnect.sqlite.GetEntityIdForPathFunction
-import com.google.firebase.dataconnect.util.ImmutableByteArray
 import com.google.firebase.dataconnect.util.NullableReference
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
-import com.google.firebase.dataconnect.util.ProtoUtil.calculateSha512
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
-import com.google.firebase.dataconnect.util.ProtoUtil.toDataConnectPath
 import com.google.firebase.dataconnect.util.ProtoUtil.toStructProto
 import com.google.firebase.dataconnect.util.SuspendingLazy
 import com.google.protobuf.Duration as DurationProto
@@ -63,7 +55,6 @@ import io.grpc.Metadata
 import io.grpc.MethodDescriptor
 import io.grpc.android.AndroidChannelBuilder
 import java.io.File
-import java.lang.System.currentTimeMillis
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.time.Duration
@@ -283,10 +274,17 @@ internal class DataConnectGrpcRPCs(
 
   suspend fun connect(
     streamId: String,
+    authToken: String?,
+    appCheckToken: String?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
     name: String,
   ): DataConnectStream {
-    val metadata = grpcMetadata.get(streamId, callerSdkType)
+    val metadata =
+      grpcMetadata.get(
+        authToken = authToken,
+        appCheckToken = appCheckToken,
+        callerSdkType = callerSdkType
+      )
     val kotlinMethodName = "connect()"
     val initRequest = StreamRequest.newBuilder().setName(name).setRequestId("init").build()
 
@@ -296,7 +294,7 @@ internal class DataConnectGrpcRPCs(
           requestId = streamId,
           kotlinMethodName = kotlinMethodName,
           grpcMethod = ConnectorStreamServiceGrpc.getConnectMethod(),
-          metadata = metadata.metadata,
+          metadata = metadata,
           request = initRequest.toStructProto(),
           requestTypeName = "StreamRequest",
         )
@@ -347,7 +345,7 @@ internal class DataConnectGrpcRPCs(
     val incomingResponses =
       lazyStreamGrpcStub
         .get()
-        .connect(outgoingRequests.onEach { logOutgoingRequest(it) }, metadata.metadata)
+        .connect(outgoingRequests.onEach { logOutgoingRequest(it) }, metadata)
         .onEach { logIncomingResponse(it) }
         .onCompletion { logCompletion(it) }
         .shareIn(
@@ -360,22 +358,29 @@ internal class DataConnectGrpcRPCs(
 
   suspend fun executeMutation(
     requestId: String,
-    request: ExecuteMutationRequest,
+    requestProto: ExecuteMutationRequest,
+    authToken: String?,
+    appCheckToken: String?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
   ): ExecuteMutationResponse {
-    val metadata = grpcMetadata.get(requestId, callerSdkType).metadata
-    val kotlinMethodName = "executeMutation(${request.operationName})"
+    val metadata =
+      grpcMetadata.get(
+        authToken = authToken,
+        appCheckToken = appCheckToken,
+        callerSdkType = callerSdkType
+      )
+    val kotlinMethodName = "executeMutation(${requestProto.operationName})"
 
     logger.logGrpcSending(
       requestId = requestId,
       kotlinMethodName = kotlinMethodName,
       grpcMethod = ConnectorServiceGrpc.getExecuteMutationMethod(),
       metadata = metadata,
-      request = request.toStructProto(),
+      request = requestProto.toStructProto(),
       requestTypeName = "ExecuteMutationRequest",
     )
 
-    val result = lazyGrpcStub.get().runCatching { executeMutation(request, metadata) }
+    val result = lazyGrpcStub.get().runCatching { executeMutation(requestProto, metadata) }
 
     result.onSuccess {
       logger.logGrpcReceived(
@@ -396,72 +401,31 @@ internal class DataConnectGrpcRPCs(
     return result.getOrThrow()
   }
 
-  sealed interface ExecuteQueryResult {
-    @JvmInline value class FromCache(val data: Struct) : ExecuteQueryResult
-
-    @JvmInline value class FromServer(val response: ExecuteQueryResponse) : ExecuteQueryResult
-  }
-
-  private class QueryCacheInfo(
-    val cacheDb: DataConnectCacheDatabase,
-    val authUid: String?,
-    val queryId: ImmutableByteArray,
-    val maxAge: DurationProto,
-  )
-
-  private suspend fun queryCacheInfo(
-    authToken: DataConnectAuth.GetAuthTokenResult?,
-    request: ExecuteQueryRequest,
-  ) =
-    lazyCacheDb.get().ref?.let { (cacheDb, maxAge) ->
-      QueryCacheInfo(
-        cacheDb,
-        authUid = authToken?.authUid,
-        queryId = request.calculateQueryId(),
-        maxAge = maxAge,
-      )
-    }
-
   suspend fun executeQuery(
     requestId: String,
-    request: ExecuteQueryRequest,
+    requestProto: ExecuteQueryRequest,
+    authToken: String?,
+    appCheckToken: String?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
-    fetchPolicy: FetchPolicy,
-  ): ExecuteQueryResult {
-    require(
-      fetchPolicy == FetchPolicy.PREFER_CACHE ||
-        fetchPolicy == FetchPolicy.CACHE_ONLY ||
-        fetchPolicy == FetchPolicy.SERVER_ONLY
-    ) {
-      "Only PREFER_CACHE, CACHE_ONLY, and SERVER_ONLY are supported for now"
-    }
-    val (metadata, authToken) = grpcMetadata.get(requestId, callerSdkType)
-    val kotlinMethodName = "executeQuery(${request.operationName})"
+  ): ExecuteQueryResponse {
+    val metadata =
+      grpcMetadata.get(
+        authToken = authToken,
+        appCheckToken = appCheckToken,
+        callerSdkType = callerSdkType
+      )
+    val kotlinMethodName = "executeQuery(${requestProto.operationName})"
 
     logger.logGrpcSending(
       requestId = requestId,
       kotlinMethodName = kotlinMethodName,
       grpcMethod = ConnectorServiceGrpc.getExecuteQueryMethod(),
       metadata = metadata,
-      request = request.toStructProto(),
+      request = requestProto.toStructProto(),
       requestTypeName = "ExecuteQueryRequest",
     )
 
-    val cacheInfo = queryCacheInfo(authToken, request)
-
-    if (fetchPolicy != FetchPolicy.SERVER_ONLY) {
-      val cachedResult: ExecuteQueryResult.FromCache? =
-        cacheInfo?.executeQueryAgainstCache(
-          requestId = requestId,
-          kotlinMethodName = kotlinMethodName,
-          fetchPolicy = fetchPolicy,
-        )
-      if (cachedResult !== null) {
-        return cachedResult
-      }
-    }
-
-    val result = lazyGrpcStub.get().runCatching { executeQuery(request, metadata) }
+    val result = lazyGrpcStub.get().runCatching { executeQuery(requestProto, metadata) }
 
     result.onSuccess { response ->
       logger.logGrpcReceived(
@@ -470,17 +434,6 @@ internal class DataConnectGrpcRPCs(
         response = response.toStructProto(),
         responseTypeName = "ExecuteQueryResponse",
       )
-
-      cacheInfo?.run {
-        cacheDb.insertQueryResult(
-          authUid,
-          queryId,
-          queryData = response.data,
-          maxAge = maxAge,
-          currentTimeMillis = currentTimeMillis(),
-          getEntityIdForPath = response.getEntityIdForPathFunction(),
-        )
-      }
     }
 
     result.onFailure {
@@ -491,55 +444,7 @@ internal class DataConnectGrpcRPCs(
       )
     }
 
-    return ExecuteQueryResult.FromServer(result.getOrThrow())
-  }
-
-  private suspend fun QueryCacheInfo.executeQueryAgainstCache(
-    requestId: String,
-    kotlinMethodName: String,
-    fetchPolicy: FetchPolicy,
-  ): ExecuteQueryResult.FromCache? {
-    val staleResult =
-      when (fetchPolicy) {
-        FetchPolicy.CACHE_ONLY -> DataConnectCacheDatabase.GetQueryResultResult.Found::class
-        else -> DataConnectCacheDatabase.GetQueryResultResult.Stale::class
-      }
-
-    val cachedResult = cacheDb.getQueryResult(authUid, queryId, currentTimeMillis(), staleResult)
-
-    val cachedData: Struct? =
-      when (cachedResult) {
-        is DataConnectCacheDatabase.GetQueryResultResult.Found -> {
-          logger.logGrpcReturningFromCache(
-            requestId = requestId,
-            kotlinMethodName = kotlinMethodName,
-            cachedResult = cachedResult,
-          )
-          cachedResult.struct
-        }
-        is DataConnectCacheDatabase.GetQueryResultResult.Stale -> {
-          logger.logGrpcIgnoringStaleCache(
-            requestId = requestId,
-            kotlinMethodName = kotlinMethodName,
-            cachedResult = cachedResult,
-          )
-          null
-        }
-        is DataConnectCacheDatabase.GetQueryResultResult.NotFound -> null
-      }
-
-    if (cachedData === null && fetchPolicy == FetchPolicy.CACHE_ONLY) {
-      val exception =
-        CachedDataNotFoundException("query was not found in the local cache [cck6p3fmd5]")
-      logger.logGrpcFailed(
-        requestId = requestId,
-        kotlinMethodName = kotlinMethodName,
-        throwable = exception,
-      )
-      throw exception
-    }
-
-    return cachedData?.let(ExecuteQueryResult::FromCache)
+    return result.getOrThrow()
   }
 
   suspend fun getEmulatorInfo(requestId: String): EmulatorInfo {
@@ -744,61 +649,6 @@ internal class DataConnectGrpcRPCs(
       throwable: Throwable,
     ) = warn(throwable) { "$kotlinMethodName [rid=$requestId] FAILED: $throwable" }
   }
-}
-
-private fun ExecuteQueryRequest.calculateQueryId(): ImmutableByteArray =
-  variables.calculateSha512(preamble = operationName)
-
-@JvmName("getEntityIdForPathFunction_ExecuteQueryResponse")
-private fun ExecuteQueryResponse.getEntityIdForPathFunction(): GetEntityIdForPathFunction? =
-  if (extensions.dataConnectCount == 0) {
-    null
-  } else {
-    extensions.dataConnectList.getEntityIdForPathFunction()
-  }
-
-@JvmName("getEntityIdForPathFunction_List_DataConnectProperties")
-private fun List<DataConnectProperties>.getEntityIdForPathFunction(): GetEntityIdForPathFunction? {
-  val entityIdByPath: Map<DataConnectPath, String>
-  val entityIdsByPath: Map<DataConnectPath, List<String>>
-
-  run {
-    val entityIdByPathBuilder = mutableMapOf<DataConnectPath, String>()
-    val entityIdsByPathBuilder = mutableMapOf<DataConnectPath, List<String>>()
-
-    this.filter { it.hasPath() && it.path.valuesCount > 0 }
-      .filter { it.entityId.isNotEmpty() || it.entityIdsCount > 0 }
-      .forEach {
-        if (it.entityId.isNotEmpty()) {
-          entityIdByPathBuilder[it.path.toDataConnectPath()] = it.entityId
-        }
-        if (it.entityIdsCount > 0) {
-          entityIdsByPathBuilder[it.path.toDataConnectPath()] = it.entityIdsList
-        }
-      }
-
-    if (entityIdByPathBuilder.isEmpty() && entityIdsByPathBuilder.isEmpty()) {
-      return null
-    }
-
-    entityIdByPath = entityIdByPathBuilder.toMap()
-    entityIdsByPath = entityIdsByPathBuilder.toMap()
-  }
-
-  fun getEntityIdForPathFunction(path: DataConnectPath): String? {
-    entityIdByPath[path]?.let { entityId ->
-      return entityId
-    }
-
-    val lastSegment = path.lastOrNull() as? DataConnectPathSegment.ListIndex
-    return lastSegment?.index?.let { index ->
-      val parentPath = path.dropLast(1)
-      val entityIds = entityIdsByPath[parentPath]
-      entityIds?.getOrNull(index)
-    }
-  }
-
-  return ::getEntityIdForPathFunction
 }
 
 private fun StreamResponse.toDataConnectStreamResponse():

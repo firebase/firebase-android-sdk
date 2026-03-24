@@ -25,6 +25,9 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectAr
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.listIndexPathSegment as listIndexPathSegmentArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb.pathSegment as dataConnectPathSegmentArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
+import com.google.firebase.dataconnect.testutil.property.arbitrary.numberValue
+import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
+import com.google.firebase.dataconnect.testutil.property.arbitrary.stringValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.twoValues
 import com.google.firebase.dataconnect.testutil.registerDataConnectKotestPrinters
 import google.firebase.dataconnect.proto.kotlinsdk.EntityPath as EntityPathProto
@@ -713,6 +716,27 @@ class DataConnectPathSegmentExtensionFunctionsUnitTest {
       toDataConnectPathSegmentResult shouldBe dataConnectPathSegment
     }
   }
+
+  @Test
+  fun `ValueProto toDataConnectPathSegment() returns correct segment for kindCase=STRING_VALUE`() =
+    runTest {
+      checkAll(propTestConfig, Arb.proto.stringValue()) { value ->
+        val toDataConnectPathSegmentResult = value.toDataConnectPathSegment()
+
+        toDataConnectPathSegmentResult shouldBe DataConnectPathSegment.Field(value.stringValue)
+      }
+    }
+
+  @Test
+  fun `ValueProto toDataConnectPathSegment() returns correct segment for kindCase=NUMBER_VALUE`() =
+    runTest {
+      checkAll(propTestConfig, Arb.proto.numberValue()) { value ->
+        val toDataConnectPathSegmentResult = value.toDataConnectPathSegment()
+
+        toDataConnectPathSegmentResult shouldBe
+          DataConnectPathSegment.ListIndex(value.numberValue.toInt())
+      }
+    }
 }
 
 /** Unit tests for [DataConnectPathSegmentComparator] */

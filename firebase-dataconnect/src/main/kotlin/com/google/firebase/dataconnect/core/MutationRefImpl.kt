@@ -17,7 +17,6 @@
 
 package com.google.firebase.dataconnect.core
 
-import androidx.annotation.VisibleForTesting
 import com.google.firebase.dataconnect.DataConnectUntypedVariables
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.MutationRef
@@ -27,7 +26,7 @@ import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import com.google.firebase.dataconnect.util.ProtoUtil.encodeToStruct
 import com.google.firebase.dataconnect.util.ProtoUtil.toStructProto
-import com.google.firebase.util.nextAlphanumericString
+import com.google.firebase.dataconnect.util.RequestIdGenerator.nextMutationRequestId
 import java.util.Objects
 import kotlin.random.Random
 import kotlinx.coroutines.withContext
@@ -60,11 +59,8 @@ internal class MutationRefImpl<Data, Variables>(
 
   internal val logger = Logger("MutationRefImpl[$operationName]")
 
-  @VisibleForTesting
-  internal fun randomRequestId(): String = "mut" + secureRandom.nextAlphanumericString(length = 10)
-
   override suspend fun execute(): MutationResultImpl {
-    val requestId = randomRequestId()
+    val requestId = secureRandom.nextMutationRequestId()
     return dataConnect.grpcClient
       .executeMutation(
         requestId = requestId,
@@ -77,7 +73,9 @@ internal class MutationRefImpl<Data, Variables>(
               encodeToStruct(variables, variablesSerializer, variablesSerializersModule)
             }
           },
-        callerSdkType,
+        authToken = null,
+        appCheckToken = null,
+        callerSdkType = callerSdkType,
       )
       .runCatching {
         withContext(dataConnect.blockingDispatcher) {

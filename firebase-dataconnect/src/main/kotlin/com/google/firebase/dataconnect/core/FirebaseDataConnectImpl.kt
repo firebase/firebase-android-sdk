@@ -31,15 +31,11 @@ import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import com.google.firebase.dataconnect.isDefaultHost
-import com.google.firebase.dataconnect.querymgr.LiveQueries
-import com.google.firebase.dataconnect.querymgr.LiveQuery
 import com.google.firebase.dataconnect.querymgr.QueryManager
-import com.google.firebase.dataconnect.querymgr.RegisteredDataDeserializer
 import com.google.firebase.dataconnect.util.AlphanumericStringUtil.toAlphaNumericString
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.firebase.dataconnect.util.ProtoUtil.calculateSha512
 import com.google.firebase.util.nextAlphanumericString
-import com.google.protobuf.Struct
 import java.util.concurrent.Executor
 import kotlin.random.Random
 import kotlinx.coroutines.CancellationException
@@ -122,6 +118,12 @@ internal class FirebaseDataConnectImpl(
         }
     )
 
+  private val requestName =
+    "projects/$projectId/" +
+      "locations/${config.location}" +
+      "/services/${config.serviceId}" +
+      "/connectors/${config.connector}"
+
   private val dataConnectAuth: DataConnectAuth =
     DataConnectAuth(
         deferredAuthProvider = deferredAuthProvider,
@@ -175,7 +177,7 @@ internal class FirebaseDataConnectImpl(
           is State.New -> {
             val grpcRPCs = createDataConnectGrpcRPCs(currentState.emulatorSettings)
             val grpcClient = createDataConnectGrpcClient(grpcRPCs)
-            val queryManager = createQueryManager(grpcClient)
+            val queryManager = createQueryManager(grpcRPCs)
             State.Initialized(grpcRPCs, grpcClient, queryManager)
           }
           is State.Initialized -> currentState
@@ -267,8 +269,6 @@ internal class FirebaseDataConnectImpl(
     val grpcMetadata =
       DataConnectGrpcMetadata.forSystemVersions(
         firebaseApp = app,
-        dataConnectAuth = dataConnectAuth,
-        dataConnectAppCheck = dataConnectAppCheck,
         connectorLocation = config.location,
         parentLogger = logger,
       )
@@ -301,43 +301,14 @@ internal class FirebaseDataConnectImpl(
       logger = Logger("DataConnectGrpcClient").apply { debug { "created by $instanceId" } },
     )
 
-  private fun createQueryManager(grpcClient: DataConnectGrpcClient): QueryManager {
-    val registeredDataDeserializerFactory =
-      object : LiveQuery.RegisteredDataDeserializerFactory {
-        override fun <T> newInstance(
-          dataDeserializer: DeserializationStrategy<T>,
-          dataSerializersModule: SerializersModule?,
-          parentLogger: Logger
-        ) =
-          RegisteredDataDeserializer(
-            dataDeserializer = dataDeserializer,
-            dataSerializersModule = dataSerializersModule,
-            blockingCoroutineDispatcher = blockingDispatcher,
-            parentLogger = parentLogger,
-          )
-      }
-    val liveQueryFactory =
-      object : LiveQueries.LiveQueryFactory {
-        override fun newLiveQuery(
-          key: LiveQuery.Key,
-          operationName: String,
-          variables: Struct,
-          parentLogger: Logger
-        ) =
-          LiveQuery(
-            key = key,
-            operationName = operationName,
-            variables = variables,
-            parentCoroutineScope = coroutineScope,
-            nonBlockingCoroutineDispatcher = nonBlockingDispatcher,
-            grpcClient = grpcClient,
-            registeredDataDeserializerFactory = registeredDataDeserializerFactory,
-            secureRandom = secureRandom,
-            parentLogger = parentLogger,
-          )
-      }
-    val liveQueries = LiveQueries(liveQueryFactory, blockingDispatcher, parentLogger = logger)
-    return QueryManager(liveQueries)
+  private fun createQueryManager(dataConnectGrpcRPCs: DataConnectGrpcRPCs): QueryManager {
+    return QueryManager(
+      requestName = requestName,
+      dataConnectGrpcRPCs = dataConnectGrpcRPCs,
+      cpuBoundDispatcher = nonBlockingDispatcher,
+      secureRandom = secureRandom,
+      logger = Logger("QueryManager").also { it.debug("created by $instanceId") },
+    )
   }
 
   override fun useEmulator(host: String, port: Int): Unit = runBlocking {

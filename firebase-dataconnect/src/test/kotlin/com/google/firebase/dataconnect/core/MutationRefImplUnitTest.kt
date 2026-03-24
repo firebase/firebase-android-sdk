@@ -45,7 +45,6 @@ import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
-import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldEndWith
@@ -133,10 +132,7 @@ class MutationRefImplUnitTest {
           )
         }
 
-      val requestIds1 = List(5) { mutationRefImpl1.randomRequestId() }
-      val requestIds2 = List(5) { mutationRefImpl2.randomRequestId() }
-
-      requestIds1 shouldContainExactly requestIds2
+      TODO("implement this test [wpvxhb33w8]")
     }
   }
 
@@ -165,6 +161,8 @@ class MutationRefImplUnitTest {
     val requestIdSlot: CapturingSlot<String> = slot()
     val operationNameSlot: CapturingSlot<String> = slot()
     val variablesSlot: CapturingSlot<Struct> = slot()
+    val authTokenSlot: CapturingSlot<String> = slot()
+    val appCheckTokenSlot: CapturingSlot<String> = slot()
     val callerSdkTypeSlot: CapturingSlot<CallerSdkType> = slot()
     val dataConnect =
       dataConnectWithMutationResult(
@@ -172,6 +170,8 @@ class MutationRefImplUnitTest {
         requestIdSlot,
         operationNameSlot,
         variablesSlot,
+        authTokenSlot,
+        appCheckTokenSlot,
         callerSdkTypeSlot,
       )
     val variables = TestSerializableVariables(Arb.dataConnect.string().next())
@@ -188,16 +188,22 @@ class MutationRefImplUnitTest {
     val requestId1 = requestIdSlot.captured
     val operationName1 = operationNameSlot.captured
     val variables1 = variablesSlot.captured
+    val authToken1 = authTokenSlot.captured
+    val appCheckToken1 = appCheckTokenSlot.captured
     val callerSdkType1 = callerSdkTypeSlot.captured
 
     requestIdSlot.clear()
     operationNameSlot.clear()
     variablesSlot.clear()
+    authTokenSlot.clear()
+    appCheckTokenSlot.clear()
     callerSdkTypeSlot.clear()
     mutationRefImpl.execute()
     val requestId2 = requestIdSlot.captured
     val operationName2 = operationNameSlot.captured
     val variables2 = variablesSlot.captured
+    val authToken2 = authTokenSlot.captured
+    val appCheckToken2 = appCheckTokenSlot.captured
     val callerSdkType2 = callerSdkTypeSlot.captured
 
     assertSoftly {
@@ -208,6 +214,10 @@ class MutationRefImplUnitTest {
       operationName2 shouldBe operationName1
       variables1 shouldBe encodeToStruct(variables)
       variables2 shouldBe variables1
+      authToken1 shouldBe Exception("TODO s9rc7admq8")
+      authToken2 shouldBe Exception("TODO s9rc7admq8")
+      appCheckToken1 shouldBe Exception("TODO s9rc7admq8")
+      appCheckToken2 shouldBe Exception("TODO s9rc7admq8")
       callerSdkType1 shouldBe mutationRefImpl.callerSdkType
       callerSdkType2 shouldBe mutationRefImpl.callerSdkType
     }
@@ -705,6 +715,8 @@ class MutationRefImplUnitTest {
       requestIdSlot: CapturingSlot<String> = slot(),
       operationNameSlot: CapturingSlot<String> = slot(),
       variablesSlot: CapturingSlot<Struct> = slot(),
+      authTokenSlot: CapturingSlot<String> = slot(),
+      appCheckTokenSlot: CapturingSlot<String> = slot(),
       callerSdkTypeSlot: CapturingSlot<CallerSdkType> = slot(),
     ): FirebaseDataConnectInternal =
       mockk<FirebaseDataConnectInternal>(relaxed = true) {
@@ -716,9 +728,11 @@ class MutationRefImplUnitTest {
                 capture(requestIdSlot),
                 capture(operationNameSlot),
                 capture(variablesSlot),
+                capture(authTokenSlot),
+                capture(appCheckTokenSlot),
                 capture(callerSdkTypeSlot),
               )
-            } returns result.getOrThrow()
+            } answers { result.getOrThrow() }
           }
       }
   }

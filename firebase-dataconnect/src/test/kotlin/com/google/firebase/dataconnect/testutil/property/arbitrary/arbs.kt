@@ -22,9 +22,7 @@ import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.OperationRef
-import com.google.firebase.dataconnect.core.DataConnectAppCheck
 import com.google.firebase.dataconnect.core.DataConnectAppCheck.GetAppCheckTokenResult
-import com.google.firebase.dataconnect.core.DataConnectAuth
 import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
 import com.google.firebase.dataconnect.core.DataConnectGrpcClient
 import com.google.firebase.dataconnect.core.DataConnectGrpcMetadata
@@ -47,14 +45,12 @@ import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.alphanumeric
 import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.bind
-import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.list
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.orNull
 import io.kotest.property.arbitrary.string
-import io.mockk.coEvery
 import io.mockk.mockk
 import kotlin.random.Random
 import kotlinx.serialization.DeserializationStrategy
@@ -62,10 +58,6 @@ import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.modules.SerializersModule
 
 internal fun DataConnectArb.dataConnectGrpcMetadata(
-  dataConnectAuth: Arb<DataConnectAuth> =
-    Arb.constant(mockk(relaxed = true) { coEvery { getToken(any()) } returns null }),
-  dataConnectAppCheck: Arb<DataConnectAppCheck> =
-    Arb.constant(mockk(relaxed = true) { coEvery { getToken(any()) } returns null }),
   connectorLocation: Arb<String> = connectorLocation(),
   kotlinVersion: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric()),
   androidVersion: Arb<Int> = Arb.int(0..100),
@@ -74,8 +66,6 @@ internal fun DataConnectArb.dataConnectGrpcMetadata(
   appId: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric()),
 ): Arb<DataConnectGrpcMetadata> = arbitrary {
   DataConnectGrpcMetadata(
-    dataConnectAuth = dataConnectAuth.bind(),
-    dataConnectAppCheck = dataConnectAppCheck.bind(),
     connectorLocation = connectorLocation.bind(),
     kotlinVersion = kotlinVersion.bind(),
     androidVersion = androidVersion.bind(),

@@ -18,97 +18,39 @@
 
 package com.google.firebase.dataconnect.core
 
-import com.google.firebase.dataconnect.QueryRef.FetchPolicy
+import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.QuerySubscriptionResult
-import com.google.firebase.dataconnect.querymgr.DataSourcePair
-import com.google.firebase.dataconnect.util.NullableReference
-import com.google.firebase.dataconnect.util.SequencedReference
 import java.util.Objects
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.channelFlow
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
 
 internal class QuerySubscriptionImpl<Data, Variables>(query: QueryRefImpl<Data, Variables>) :
   QuerySubscriptionInternal<Data, Variables> {
-  private val _query = MutableStateFlow(query)
-  override val query: QueryRefImpl<Data, Variables> by _query::value
 
-  private val _lastResult = MutableStateFlow(NullableReference<QuerySubscriptionResultImpl>())
-  override val lastResult: QuerySubscriptionResult<Data, Variables>?
-    get() = _lastResult.value.ref
-
-  // Each collection of this flow triggers an implicit `reload()`.
-  override val flow: Flow<QuerySubscriptionResult<Data, Variables>> = channelFlow {
-    lastResult?.also { send(it) }
-
-    var collectJob: Job? = null
-    _query.collect { query ->
-      // We only need to execute the query upon initially collecting the flow. Subsequent changes to
-      // the variables automatically get a call to reload() by update().
-      val shouldExecuteQuery =
-        collectJob.let {
-          if (it === null) {
-            true
-          } else {
-            it.cancelAndJoin()
-            false
-          }
-        }
-
-      collectJob = launch {
-        val queryManager = query.dataConnect.queryManager
-        queryManager.subscribe(query, executeQuery = shouldExecuteQuery) { sequencedResult ->
-          val querySubscriptionResult = QuerySubscriptionResultImpl(query, sequencedResult)
-          send(querySubscriptionResult)
-          updateLastResult(querySubscriptionResult)
-        }
-      }
-    }
-  }
-
-  override suspend fun reload() {
-    val query = query // save query to a local variable in case it changes.
-    val sequencedResult = query.dataConnect.queryManager.execute(query, FetchPolicy.PREFER_CACHE)
-    updateLastResult(QuerySubscriptionResultImpl(query, sequencedResult))
-    sequencedResult.ref.getOrThrow()
-  }
-
-  override suspend fun update(variables: Variables) {
-    _query.value = _query.value.copy(variables = variables)
-    reload()
-  }
-
-  private fun updateLastResult(prospectiveLastResult: QuerySubscriptionResultImpl) {
-    // TODO: Fix this so that results from an old query do not clobber results from a new query,
-    //  as set by a call to update()
-    _lastResult.update { currentLastResult ->
-      if (
-        currentLastResult.ref != null &&
-          currentLastResult.ref.sequencedResult.sequenceNumber >=
-            prospectiveLastResult.sequencedResult.sequenceNumber
-      ) {
-        currentLastResult
-      } else {
-        NullableReference(prospectiveLastResult)
-      }
-    }
-  }
+  override val query: QueryRef<Data, Variables>
+    get() = TODO("Not yet implemented")
+  override val flow: Flow<QuerySubscriptionResult<Data, Variables>>
+    get() = TODO("Not yet implemented")
 
   override fun equals(other: Any?): Boolean = other === this
 
   override fun hashCode(): Int = System.identityHashCode(this)
 
   override fun toString(): String = "QuerySubscription(query=$query)"
+  override val lastResult: QuerySubscriptionResult<Data, Variables>?
+    get() = TODO("Not yet implemented")
+
+  override suspend fun reload() {
+    TODO("Not yet implemented")
+  }
+
+  override suspend fun update(variables: Variables) {
+    TODO("Not yet implemented")
+  }
 
   private inner class QuerySubscriptionResultImpl(
     override val query: QueryRefImpl<Data, Variables>,
-    val sequencedResult: SequencedReference<Result<DataSourcePair<Data>>>
   ) : QuerySubscriptionResult<Data, Variables> {
-    override val result = sequencedResult.ref.map { query.QueryResultImpl(it.data, it.source) }
+    override val result = TODO()
 
     override fun equals(other: Any?) =
       other is QuerySubscriptionImpl<*, *>.QuerySubscriptionResultImpl &&
