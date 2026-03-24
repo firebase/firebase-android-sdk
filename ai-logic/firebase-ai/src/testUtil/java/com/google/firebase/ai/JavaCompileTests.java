@@ -55,6 +55,7 @@ import com.google.firebase.ai.type.ImagenInlineImage;
 import com.google.firebase.ai.type.ImagenMaskReference;
 import com.google.firebase.ai.type.InlineData;
 import com.google.firebase.ai.type.InlineDataPart;
+import com.google.firebase.ai.type.LatLng;
 import com.google.firebase.ai.type.LiveGenerationConfig;
 import com.google.firebase.ai.type.LiveServerContent;
 import com.google.firebase.ai.type.LiveServerMessage;
@@ -67,10 +68,12 @@ import com.google.firebase.ai.type.Part;
 import com.google.firebase.ai.type.PromptFeedback;
 import com.google.firebase.ai.type.PublicPreviewAPI;
 import com.google.firebase.ai.type.ResponseModality;
+import com.google.firebase.ai.type.RetrievalConfig;
 import com.google.firebase.ai.type.SafetyRating;
 import com.google.firebase.ai.type.Schema;
 import com.google.firebase.ai.type.SpeechConfig;
 import com.google.firebase.ai.type.TextPart;
+import com.google.firebase.ai.type.ToolConfig;
 import com.google.firebase.ai.type.UsageMetadata;
 import com.google.firebase.ai.type.Voice;
 import com.google.firebase.concurrent.FirebaseExecutors;
@@ -105,7 +108,7 @@ public class JavaCompileTests {
             getGenerationConfig(),
             /* safetySettings */ null,
             /* tools */ null,
-            /* toolConfig */ null,
+            /* toolConfig */ new ToolConfig(null),
             /* systemInstruction */ null,
             /* requestOptions */ null,
             new OnDeviceConfig(InferenceMode.ONLY_ON_DEVICE, /* maxOutputTokens */ 500));
@@ -227,6 +230,12 @@ public class JavaCompileTests {
             complete = true;
           }
         });
+  }
+
+  public void testMapsGrounding() {
+    RetrievalConfig retrievalConfig =
+        RetrievalConfig.builder().setLatLng(new LatLng(10, 10)).setLanguageCode("en_US").build();
+    ToolConfig toolConfig = new ToolConfig(null, retrievalConfig);
   }
 
   public void validateCountTokensResponse(CountTokensResponse response) {
