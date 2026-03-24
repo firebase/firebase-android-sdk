@@ -14,6 +14,7 @@
 
 package com.google.android.datatransport.runtime.backends;
 
+import androidx.annotation.Nullable;
 import com.google.auto.value.AutoValue;
 
 /**
@@ -36,19 +37,24 @@ public abstract class BackendResponse {
   /** Time in millis to wait before attempting another request. */
   public abstract long getNextRequestWaitMillis();
 
+  /** Updated pseudonymous id from the backend or {@code null} if there is no update. */
+  @Nullable
+  public abstract String getUpdatedPseudonymousId();
+
   public static BackendResponse transientError() {
-    return new AutoValue_BackendResponse(Status.TRANSIENT_ERROR, -1);
+    return new AutoValue_BackendResponse(Status.TRANSIENT_ERROR, -1, null);
   }
 
   public static BackendResponse fatalError() {
-    return new AutoValue_BackendResponse(Status.FATAL_ERROR, -1);
+    return new AutoValue_BackendResponse(Status.FATAL_ERROR, -1, null);
   }
 
   public static BackendResponse invalidPayload() {
-    return new AutoValue_BackendResponse(Status.INVALID_PAYLOAD, -1);
+    return new AutoValue_BackendResponse(Status.INVALID_PAYLOAD, -1, null);
   }
 
-  public static BackendResponse ok(long nextRequestWaitMillis) {
-    return new AutoValue_BackendResponse(Status.OK, nextRequestWaitMillis);
+  public static BackendResponse ok(
+      long nextRequestWaitMillis, @Nullable String updatedPseudonymousId) {
+    return new AutoValue_BackendResponse(Status.OK, nextRequestWaitMillis, updatedPseudonymousId);
   }
 }
