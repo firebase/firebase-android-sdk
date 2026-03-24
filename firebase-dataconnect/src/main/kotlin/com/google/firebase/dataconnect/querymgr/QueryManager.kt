@@ -53,9 +53,9 @@ internal class QueryManager(
     variables: Variables,
     dataDeserializer: DeserializationStrategy<Data>,
     variablesSerializer: SerializationStrategy<Variables>,
-    callerSdkType: FirebaseDataConnect.CallerSdkType,
     dataSerializersModule: SerializersModule?,
     variablesSerializersModule: SerializersModule?,
+    callerSdkType: FirebaseDataConnect.CallerSdkType,
     fetchPolicy: QueryRef.FetchPolicy,
   ): Data {
     val requestId = secureRandom.nextQueryRequestId()

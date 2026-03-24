@@ -18,7 +18,7 @@
 
 package com.google.firebase.dataconnect.querymgr
 
-import com.google.firebase.dataconnect.FirebaseDataConnect
+import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.core.DataConnectGrpcRPCs
 import com.google.firebase.dataconnect.core.Logger
@@ -80,9 +80,9 @@ class QueryManagerUnitTest {
         variables = args.variables,
         dataDeserializer = args.dataDeserializer,
         variablesSerializer = args.variablesSerializer,
-        callerSdkType = args.callerSdkType,
         dataSerializersModule = args.dataSerializersModule,
         variablesSerializersModule = args.variablesSerializersModule,
+        callerSdkType = args.callerSdkType,
         fetchPolicy = args.fetchPolicy,
       )
 
@@ -107,9 +107,9 @@ class QueryManagerUnitTest {
         variables = args.variables,
         dataDeserializer = args.dataDeserializer,
         variablesSerializer = args.variablesSerializer,
-        callerSdkType = args.callerSdkType,
         dataSerializersModule = args.dataSerializersModule,
         variablesSerializersModule = args.variablesSerializersModule,
+        callerSdkType = args.callerSdkType,
         fetchPolicy = args.fetchPolicy,
       )
 
@@ -139,9 +139,9 @@ class QueryManagerUnitTest {
           variables = args.variables,
           dataDeserializer = dataDeserializer,
           variablesSerializer = args.variablesSerializer,
-          callerSdkType = args.callerSdkType,
           dataSerializersModule = args.dataSerializersModule,
           variablesSerializersModule = args.variablesSerializersModule,
+          callerSdkType = args.callerSdkType,
           fetchPolicy = args.fetchPolicy,
         )
 
@@ -167,15 +167,43 @@ class QueryManagerUnitTest {
         variables = args.variables,
         dataDeserializer = args.dataDeserializer,
         variablesSerializer = variablesSerializer,
-        callerSdkType = args.callerSdkType,
         dataSerializersModule = args.dataSerializersModule,
         variablesSerializersModule = args.variablesSerializersModule,
+        callerSdkType = args.callerSdkType,
         fetchPolicy = args.fetchPolicy,
       )
 
       val capturedVariables: Struct = executeQueryRequestSlot.captured.variables
       val expectedVariables: Struct = TestVariables(overrideValue).encodeToStruct()
       capturedVariables shouldBe expectedVariables
+    }
+  }
+
+  @Test
+  fun `execute() uses the given callerSdkType`() = runTest {
+    checkAll(
+      propTestConfig,
+      executeArgumentsArb(),
+      Arb.enum<CallerSdkType>(),
+    ) { args, callerSdkType ->
+      val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk()
+      val callerSdkTypeSlot = CapturingSlot<CallerSdkType>()
+      dataConnectGrpcRPCs.stubExecuteQuery(callerSdkTypeSlot = callerSdkTypeSlot)
+      val queryManager: QueryManager = newQueryManager(dataConnectGrpcRPCs = dataConnectGrpcRPCs)
+
+      queryManager.execute(
+        operationName = args.operationName,
+        variables = args.variables,
+        dataDeserializer = args.dataDeserializer,
+        variablesSerializer = args.variablesSerializer,
+        dataSerializersModule = args.dataSerializersModule,
+        variablesSerializersModule = args.variablesSerializersModule,
+        callerSdkType = callerSdkType,
+        fetchPolicy = args.fetchPolicy,
+      )
+
+      val capturedCallerSdkType: CallerSdkType = callerSdkTypeSlot.captured
+      capturedCallerSdkType shouldBe callerSdkType
     }
   }
 }
@@ -207,7 +235,7 @@ private data class ExecuteArguments<Data, Variables>(
   val variables: Variables,
   val dataDeserializer: DeserializationStrategy<Data>,
   val variablesSerializer: SerializationStrategy<Variables>,
-  val callerSdkType: FirebaseDataConnect.CallerSdkType,
+  val callerSdkType: CallerSdkType,
   val dataSerializersModule: SerializersModule?,
   val variablesSerializersModule: SerializersModule?,
   val fetchPolicy: QueryRef.FetchPolicy,
@@ -243,7 +271,7 @@ private fun executeArgumentsArb(
   variablesArb: Arb<TestVariables> = testVariablesArb(),
   dataDeserializerArb: Arb<DeserializationStrategy<TestData>> = Arb.constant(serializer()),
   variablesSerializerArb: Arb<SerializationStrategy<TestVariables>> = Arb.constant(serializer()),
-  callerSdkTypeArb: Arb<FirebaseDataConnect.CallerSdkType> = Arb.enum(),
+  callerSdkTypeArb: Arb<CallerSdkType> = Arb.enum(),
   dataSerializersModuleArb: Arb<SerializersModule?> =
     Arb.mock<SerializersModule>().orNull(nullProbability = 0.5),
   variablesSerializersModuleArb: Arb<SerializersModule?> =
@@ -289,9 +317,12 @@ private class TestDataOverrideSerializer(overrideValue: String) :
 
 private fun DataConnectGrpcRPCs.stubExecuteQuery(
   executeQueryRequestSlot: CapturingSlot<ExecuteQueryRequest> = CapturingSlot(),
+  callerSdkTypeSlot: CapturingSlot<CallerSdkType> = CapturingSlot(),
   executeQueryResponse: ExecuteQueryResponse? = null
 ) {
-  coEvery { executeQuery(any(), capture(executeQueryRequestSlot), any(), any(), any()) } answers
+  coEvery {
+    executeQuery(any(), capture(executeQueryRequestSlot), any(), any(), capture(callerSdkTypeSlot))
+  } answers
     {
       executeQueryResponse
         ?: TestData("data_qhpgbccsar_" + Random.nextAlphanumericString(10))
