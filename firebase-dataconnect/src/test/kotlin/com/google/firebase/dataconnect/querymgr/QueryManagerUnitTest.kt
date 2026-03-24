@@ -70,6 +70,35 @@ import org.junit.Test
 class QueryManagerUnitTest {
 
   @Test
+  fun `execute() uses the requestName that was given to the constructor`() = runTest {
+    checkAll(
+      propTestConfig,
+      executeArgumentsArb(),
+      alphanumericStringArb(),
+    ) { args, requestName ->
+      val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk()
+      val executeQueryRequestSlot = CapturingSlot<ExecuteQueryRequest>()
+      dataConnectGrpcRPCs.stubExecuteQuery(executeQueryRequestSlot = executeQueryRequestSlot)
+      val queryManager: QueryManager =
+        newQueryManager(requestName = requestName, dataConnectGrpcRPCs = dataConnectGrpcRPCs)
+
+      queryManager.execute(
+        operationName = args.operationName,
+        variables = args.variables,
+        dataDeserializer = args.dataDeserializer,
+        variablesSerializer = args.variablesSerializer,
+        dataSerializersModule = args.dataSerializersModule,
+        variablesSerializersModule = args.variablesSerializersModule,
+        callerSdkType = args.callerSdkType,
+        fetchPolicy = args.fetchPolicy,
+      )
+
+      val capturedName: String = executeQueryRequestSlot.captured.name
+      capturedName shouldBe requestName
+    }
+  }
+
+  @Test
   fun `execute() uses the given operationName`() = runTest {
     checkAll(
       propTestConfig,
