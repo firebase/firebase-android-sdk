@@ -18,9 +18,11 @@ package com.google.firebase.dataconnect.querymgr
 
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.QueryRef
+import com.google.firebase.dataconnect.core.DataConnectGrpcClientGlobals.deserialize
 import com.google.firebase.dataconnect.core.DataConnectGrpcRPCs
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
+import com.google.firebase.dataconnect.util.DeserializeUtils.deserialize
 import com.google.firebase.dataconnect.util.ImmutableByteArray
 import com.google.firebase.dataconnect.util.ProtoUtil.calculateSha512
 import com.google.firebase.dataconnect.util.ProtoUtil.encodeToStruct
@@ -56,8 +58,6 @@ internal class QueryManager(
     variablesSerializersModule: SerializersModule?,
     fetchPolicy: QueryRef.FetchPolicy,
   ): Data {
-    require(fetchPolicy == QueryRef.FetchPolicy.SERVER_ONLY)
-
     val requestId = secureRandom.nextQueryRequestId()
     logger.debug { "[rid=$requestId] Executing query with operationName=$operationName" }
 
@@ -93,7 +93,9 @@ internal class QueryManager(
         callerSdkType = callerSdkType,
       )
 
-    TODO()
+    return withContext(cpuBoundDispatcher) {
+      response.deserialize(localState.dataDeserializer, localState.dataSerializersModule)
+    }
   }
 
   data class LocalKey<Data>(

@@ -331,7 +331,7 @@ class DataConnectGrpcMetadataUnitTest {
 
 private val propTestConfig =
   PropTestConfig(
-    iterations = 5,
+    iterations = 100,
     edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.2),
     shrinkingMode = ShrinkingMode.Off,
   )

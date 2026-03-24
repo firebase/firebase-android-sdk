@@ -21,7 +21,6 @@ import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.DataConnectOperationException
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.DataConnectUntypedData
-import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.core.DataConnectGrpcClientGlobals.toErrorInfoImpl
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
@@ -63,7 +62,6 @@ internal class DataConnectGrpcClient(
   data class OperationResult(
     val data: Struct?,
     val errors: List<DataConnectOperationFailureResponseImpl.ErrorInfoImpl>,
-    val source: DataSource,
   )
 
   suspend fun executeQuery(
@@ -94,7 +92,6 @@ internal class DataConnectGrpcClient(
     return OperationResult(
       data = if (response.hasData()) response.data else null,
       errors = response.errorsList.map { it.toErrorInfoImpl() },
-      source = DataSource.SERVER,
     )
   }
 
@@ -126,7 +123,6 @@ internal class DataConnectGrpcClient(
     return OperationResult(
       data = if (response.hasData()) response.data else null,
       errors = response.errorsList.map { it.toErrorInfoImpl() },
-      source = DataSource.SERVER,
     )
   }
 
