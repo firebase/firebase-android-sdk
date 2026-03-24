@@ -21,6 +21,7 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import androidx.annotation.VisibleForTesting;
 import com.google.android.datatransport.Encoding;
+import com.google.android.datatransport.PseudonymousIdUpdateReceiver;
 import com.google.android.datatransport.runtime.EncodedPayload;
 import com.google.android.datatransport.runtime.EventInternal;
 import com.google.android.datatransport.runtime.TransportContext;
@@ -40,6 +41,7 @@ import com.google.android.datatransport.runtime.time.Clock;
 import com.google.android.datatransport.runtime.time.Monotonic;
 import com.google.android.datatransport.runtime.time.WallTime;
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
+import java.lang.reflect.Constructor;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -121,7 +123,7 @@ public class Uploader {
     TransportBackend backend = backendRegistry.get(transportContext.getBackendName());
     long maxNextRequestWaitMillis = 0;
 
-    BackendResponse response = BackendResponse.ok(maxNextRequestWaitMillis);
+    BackendResponse response = BackendResponse.ok(maxNextRequestWaitMillis, null);
     while (guard.runCriticalSection(() -> eventStore.hasPendingEventsFor(transportContext))) {
       Iterable<PersistedEvent> persistedEvents =
           guard.runCriticalSection(() -> eventStore.loadBatch(transportContext));
@@ -142,12 +144,19 @@ public class Uploader {
 
         PersistedEvent oldestEvent = persistedEvents.iterator().next();
         String targetPseudonymousId = oldestEvent.getEvent().getPseudonymousId();
+        String targetPseudonymousIdUpdateReceiverClassName =
+            oldestEvent.getEvent().getPseudonymousIdUpdateReceiverClassName();
 
         for (PersistedEvent persistedEvent : persistedEvents) {
           EventInternal event = persistedEvent.getEvent();
           String pseudonymousId = event.getPseudonymousId();
+          String pseudonymousIdUpdateReceiverClassName =
+              event.getPseudonymousIdUpdateReceiverClassName();
 
-          if (Objects.equals(targetPseudonymousId, pseudonymousId)) {
+          if (Objects.equals(targetPseudonymousId, pseudonymousId)
+              && Objects.equals(
+                  targetPseudonymousIdUpdateReceiverClassName,
+                  pseudonymousIdUpdateReceiverClassName)) {
             eventInternals.add(event);
             sentEvents.add(persistedEvent);
           }
@@ -163,6 +172,31 @@ public class Uploader {
                     .setEvents(eventInternals)
                     .setExtras(transportContext.getExtras())
                     .build());
+        if (targetPseudonymousIdUpdateReceiverClassName != null
+            && response.getUpdatedPseudonymousId() != null) {
+          try {
+            Class<?> pseudonymousIdUpdateReceiverClass =
+                Class.forName(targetPseudonymousIdUpdateReceiverClassName);
+
+            if (PseudonymousIdUpdateReceiver.class.isAssignableFrom(
+                pseudonymousIdUpdateReceiverClass)) {
+              Constructor<?> constructor =
+                  pseudonymousIdUpdateReceiverClass.getConstructor(Context.class);
+              PseudonymousIdUpdateReceiver pseudonymousIdUpdateReceiver =
+                  (PseudonymousIdUpdateReceiver) constructor.newInstance(context);
+              if (pseudonymousIdUpdateReceiver != null) {
+                pseudonymousIdUpdateReceiver.setUpdatedPseudonymousId(
+                    response.getUpdatedPseudonymousId());
+              }
+            }
+          } catch (Exception e) {
+            Logging.e(
+                LOG_TAG,
+                "Could not update pseudonymous id via "
+                    + targetPseudonymousIdUpdateReceiverClassName,
+                e);
+          }
+        }
       }
       if (response.getStatus() == BackendResponse.Status.TRANSIENT_ERROR) {
         long finalMaxNextRequestWaitMillis1 = maxNextRequestWaitMillis;
