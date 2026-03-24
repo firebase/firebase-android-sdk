@@ -23,6 +23,7 @@ import com.google.firebase.dataconnect.core.DataConnectGrpcClient.OperationResul
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
+import com.google.firebase.dataconnect.util.ImmutableByteArray
 import com.google.firebase.dataconnect.util.NullableReference
 import com.google.firebase.dataconnect.util.SequencedReference
 import com.google.firebase.dataconnect.util.SequencedReference.Companion.map
@@ -254,7 +255,7 @@ internal class LiveQuery(
           }
       }
 
-  data class Key(val operationName: String, val variablesHash: String)
+  data class Key(val operationName: String, val variablesHash: ImmutableByteArray)
 
   override fun close() {
     logger.debug("close() called")
