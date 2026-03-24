@@ -47,7 +47,10 @@ public class BuildIdInfoCollector {
     BuildIdInfoContentHandler contentHandler = new BuildIdInfoContentHandler(file.getName());
     try {
       ElfDataParser.parse(file, contentHandler, false);
-    } catch (IOException | NegativeArraySizeException | ArithmeticException ex) {
+    } catch (IOException
+        | NegativeArraySizeException
+        | ArithmeticException
+        | IllegalArgumentException ex) {
       // TODO(b/289053263): Make build tools support Go binaries smoother.
       // Ignore any file that doesn't parse, or has unexpected opcodeBase, to avoid breaking builds.
       getLogger().logD("Unable to parse binary: " + file.getPath() + " - " + ex.getMessage());
