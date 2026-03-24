@@ -1,5 +1,11 @@
 # Unreleased
 
+- [changed] Ensure exceptions are not silently ignored when closing
+  `FirebaseDataConnect` instances.
+  ([#7909](https://github.com/firebase/firebase-android-sdk/pull/7909))
+- [changed] Internal change to use `SecureRandom` when generating operation IDs.
+  ([#7910](https://github.com/firebase/firebase-android-sdk/pull/7910))
+
 # 17.2.0
 
 - [changed] Added offline caching APIs
@@ -11,11 +17,6 @@
   [#7887](https://github.com/firebase/firebase-android-sdk/pull/7887))
 - [fixed] Fix UnsupportedOperationException when serializing lists of *nullable* AnyValue.
   ([#7864](https://github.com/firebase/firebase-android-sdk/pull/7864))
-- [changed] Ensure exceptions are not silently ignored when closing
-  `FirebaseDataConnect` instances.
-  ([#7909](https://github.com/firebase/firebase-android-sdk/pull/7909))
-- [changed] Internal change to use `SecureRandom` when generating operation IDs.
-  ([#7910](https://github.com/firebase/firebase-android-sdk/pull/7910))
 
 # 17.1.4
 
