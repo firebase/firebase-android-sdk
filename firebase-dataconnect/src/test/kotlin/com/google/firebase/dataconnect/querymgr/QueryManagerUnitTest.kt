@@ -22,6 +22,7 @@ import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.core.DataConnectGrpcRPCs
 import com.google.firebase.dataconnect.core.Logger
+import com.google.firebase.dataconnect.testutil.CleanupsRule
 import com.google.firebase.dataconnect.testutil.newMockLogger
 import com.google.firebase.dataconnect.testutil.property.arbitrary.mock
 import com.google.firebase.dataconnect.testutil.property.arbitrary.pair
@@ -32,6 +33,8 @@ import com.google.protobuf.Struct
 import google.firebase.dataconnect.proto.ExecuteQueryRequest
 import google.firebase.dataconnect.proto.ExecuteQueryResponse
 import io.kotest.common.ExperimentalKotest
+import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
@@ -50,10 +53,13 @@ import io.kotest.property.checkAll
 import io.mockk.CapturingSlot
 import io.mockk.coEvery
 import io.mockk.mockk
+import java.util.concurrent.Executors
 import kotlin.random.Random
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.KSerializer
@@ -65,9 +71,12 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.serializer
+import org.junit.Rule
 import org.junit.Test
 
 class QueryManagerUnitTest {
+
+  @get:Rule val cleanups = CleanupsRule()
 
   @Test
   fun `execute() uses the requestName that was given to the constructor`() = runTest {
@@ -307,6 +316,39 @@ class QueryManagerUnitTest {
       capturedCallerSdkType shouldBe callerSdkType
     }
   }
+
+  @Test
+  fun `execute() accesses the SecureRandom on the IO dispatcher`() = runTest {
+    checkAll(propTestConfig, executeArgumentsArb()) { args ->
+      val ioExecutor = Executors.newSingleThreadExecutor()
+      cleanups.register { ioExecutor.shutdownNow() }
+      val ioDispatcher = ioExecutor.asCoroutineDispatcher()
+      val ioThread = withContext(ioDispatcher) { Thread.currentThread() }
+      val nextIntThreads = mutableListOf<Thread>()
+      val secureRandom =
+        RandomWrapper(randomSource().random) {
+          synchronized(nextIntThreads) { nextIntThreads.add(Thread.currentThread()) }
+        }
+      val queryManager: QueryManager =
+        newQueryManager(ioDispatcher = ioDispatcher, secureRandom = secureRandom)
+
+      queryManager.execute(
+        operationName = args.operationName,
+        variables = args.variables,
+        dataDeserializer = args.dataDeserializer,
+        variablesSerializer = args.variablesSerializer,
+        dataSerializersModule = args.dataSerializersModule,
+        variablesSerializersModule = args.variablesSerializersModule,
+        callerSdkType = args.callerSdkType,
+        fetchPolicy = args.fetchPolicy,
+      )
+
+      synchronized(nextIntThreads) {
+        nextIntThreads.shouldNotBeEmpty()
+        nextIntThreads.distinct().shouldHaveSize(1).single() shouldBe ioThread
+      }
+    }
+  }
 }
 
 private val propTestConfig =
@@ -318,7 +360,8 @@ private val propTestConfig =
 
 private fun PropertyContext.newQueryManager(
   requestName: String = "requestName" + randomSource().random.nextAlphanumericString(10),
-  dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk(relaxed = true),
+  dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk { stubExecuteQuery() },
+  ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
   cpuBoundDispatcher: CoroutineDispatcher = Dispatchers.Default,
   secureRandom: Random = randomSource().random,
   logger: Logger = newMockLogger("logger" + randomSource().random.nextAlphanumericString(10)),
@@ -326,6 +369,7 @@ private fun PropertyContext.newQueryManager(
   QueryManager(
     requestName = requestName,
     dataConnectGrpcRPCs = dataConnectGrpcRPCs,
+    ioDispatcher = ioDispatcher,
     cpuBoundDispatcher = cpuBoundDispatcher,
     secureRandom = secureRandom,
     logger = logger,
@@ -443,4 +487,15 @@ private fun DataConnectGrpcRPCs.stubExecuteQuery(
         ?: TestData("data_qhpgbccsar_" + Random.nextAlphanumericString(10))
           .encodeToExecuteQueryResponse()
     }
+}
+
+private class RandomWrapper(
+  private val delegate: Random,
+  private val onMethodCalled: () -> Unit,
+) : Random() {
+
+  override fun nextBits(bitCount: Int): Int {
+    onMethodCalled()
+    return delegate.nextBits(bitCount)
+  }
 }

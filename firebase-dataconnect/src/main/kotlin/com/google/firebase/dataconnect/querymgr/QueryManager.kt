@@ -40,6 +40,7 @@ import kotlinx.serialization.modules.SerializersModule
 internal class QueryManager(
   private val requestName: String,
   private val dataConnectGrpcRPCs: DataConnectGrpcRPCs,
+  private val ioDispatcher: CoroutineDispatcher,
   private val cpuBoundDispatcher: CoroutineDispatcher,
   private val secureRandom: Random,
   private val logger: Logger,
@@ -58,7 +59,7 @@ internal class QueryManager(
     callerSdkType: FirebaseDataConnect.CallerSdkType,
     fetchPolicy: QueryRef.FetchPolicy,
   ): Data {
-    val requestId = secureRandom.nextQueryRequestId()
+    val requestId = withContext(ioDispatcher) { secureRandom.nextQueryRequestId() }
     logger.debug { "[rid=$requestId] Executing query with operationName=$operationName" }
 
     val requestProto: ExecuteQueryRequestProto
