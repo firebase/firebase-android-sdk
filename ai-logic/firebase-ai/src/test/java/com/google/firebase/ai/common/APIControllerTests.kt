@@ -31,13 +31,11 @@ import com.google.firebase.ai.type.FunctionCallingConfig
 import com.google.firebase.ai.type.GoogleSearch
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.RequestOptions
-import com.google.firebase.ai.type.RequestTimeoutException
 import com.google.firebase.ai.type.TextPart
 import com.google.firebase.ai.type.Tool
 import com.google.firebase.ai.type.ToolConfig
 import com.google.firebase.ai.type.UrlContext
 import io.kotest.assertions.json.shouldContainJsonKey
-import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.ktor.client.engine.mock.MockEngine
@@ -88,15 +86,8 @@ internal class APIControllerTests {
     }
   }
 
-  @Test
-  fun `(generateContent) respects a custom timeout`() =
-    commonTest(requestOptions = RequestOptions(2.seconds.inWholeMilliseconds, 10)) {
-      shouldThrow<RequestTimeoutException> {
-        withTimeout(testTimeout) {
-          apiController.generateContent(textGenerateContentRequest("test"))
-        }
-      }
-    }
+  // TODO(rlazo): Add a timeout tests once it's supported by ktor, see
+  // https://youtrack.jetbrains.com/issue/KTOR-8271
 }
 
 @OptIn(ExperimentalSerializationApi::class)
