@@ -154,6 +154,28 @@ class AlphanumericStringUtilUnitTest {
     val byteArrayArb = Arb.byteArray(length = Arb.int(0, 100), content = Arb.byte())
     checkAll(100_000, byteArrayArb) { byteArray -> byteArray.toAlphaNumericString() }
   }
+
+  @Test
+  fun `toAlphaNumericString() for ImmutableByteArray returns expected value`() = runTest {
+    val byteArrayArb = Arb.byteArray(length = Arb.int(0, 100), content = Arb.byte())
+    checkAll(100_000, byteArrayArb) { byteArray ->
+      val expected = byteArray.toAlphaNumericString()
+      val actual = ImmutableByteArray.adopt(byteArray).toAlphaNumericString()
+      actual shouldBe expected
+    }
+  }
+
+  @Test
+  fun `toAlphaNumericString() for ImmutableByteArray does not affect underlying array`() = runTest {
+    val byteArrayArb = Arb.byteArray(length = Arb.int(0, 100), content = Arb.byte())
+    checkAll(100, byteArrayArb) { byteArray ->
+      val byteArrayCopy = byteArray.copyOf()
+
+      ImmutableByteArray.adopt(byteArray).toAlphaNumericString()
+
+      byteArray shouldBe byteArrayCopy
+    }
+  }
 }
 
 /*
