@@ -1825,7 +1825,8 @@ public class PipelineTest {
         duneResult =
             mapOfEntries(
                 entry("title", "Dune"),
-                entry("nestedField", ImmutableMap.of("level", ImmutableMap.of())));
+                entry("nestedField", ImmutableMap.of("level", ImmutableMap.of())),
+                entry("nested", null));
         break;
       default:
         hitchhikerResult =
