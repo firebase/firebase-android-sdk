@@ -1820,9 +1820,12 @@ public class PipelineTest {
         hitchhikerResult =
             mapOfEntries(
                 entry("title", "The Hitchhiker's Guide to the Galaxy"),
-                entry("nestedField.level.1", ImmutableMap.of("level.2", true)),
+                entry("nestedField", ImmutableMap.of("level", ImmutableMap.of())),
                 entry("nested", true));
-        duneResult = mapOfEntries(entry("title", "Dune"));
+        duneResult =
+            mapOfEntries(
+                entry("title", "Dune"),
+                entry("nestedField", ImmutableMap.of("level", ImmutableMap.of())));
         break;
       default:
         hitchhikerResult =
