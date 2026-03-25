@@ -1782,7 +1782,8 @@ public class PipelineTest {
             mapOfEntries(
                 entry("title", "The Hitchhiker's Guide to the Galaxy"),
                 entry("awards", ImmutableMap.of("hugo", true)));
-        duneResult = mapOfEntries(entry("title", "Dune"), entry("awards", ImmutableMap.of("hugo", true)));
+        duneResult =
+            mapOfEntries(entry("title", "Dune"), entry("awards", ImmutableMap.of("hugo", true)));
         break;
       default:
         hitchhikerResult =
