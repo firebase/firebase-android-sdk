@@ -1772,11 +1772,23 @@ public class PipelineTest {
             .select("title", "awards.hugo")
             .sort(field("title").descending())
             .execute();
+    Map<String, Object> book1Expected;
+    Map<String, Object> book10Expected;
+    if (IntegrationTestUtil.getTargetBackend() == IntegrationTestUtil.TargetBackend.NIGHTLY) {
+      book1Expected =
+          mapOfEntries(
+              entry("title", "The Hitchhiker's Guide to the Galaxy"),
+              entry("awards", ImmutableMap.of("hugo", true)));
+      book10Expected =
+          mapOfEntries(entry("title", "Dune"), entry("awards", ImmutableMap.of("hugo", true)));
+    } else {
+      book1Expected =
+          ImmutableMap.of("title", "The Hitchhiker's Guide to the Galaxy", "awards.hugo", true);
+      book10Expected = ImmutableMap.of("title", "Dune", "awards.hugo", true);
+    }
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
-        .containsExactly(
-            ImmutableMap.of("title", "The Hitchhiker's Guide to the Galaxy", "awards.hugo", true),
-            ImmutableMap.of("title", "Dune", "awards.hugo", true));
+        .containsExactly(book1Expected, book10Expected);
   }
 
   @Test
@@ -1792,12 +1804,28 @@ public class PipelineTest {
                 field("nestedField.level.1"),
                 mapGet("nestedField", "level.1").mapGet("level.2").alias("nested"))
             .execute();
+    Map<String, Object> book1Expected;
+    Map<String, Object> book10Expected;
+    if (IntegrationTestUtil.getTargetBackend() == IntegrationTestUtil.TargetBackend.NIGHTLY) {
+      book1Expected =
+          mapOfEntries(
+              entry("title", "The Hitchhiker's Guide to the Galaxy"),
+              entry("nestedField", ImmutableMap.of("level", ImmutableMap.of())),
+              entry("nested", true));
+      book10Expected =
+          mapOfEntries(
+              entry("title", "Dune"),
+              entry("nestedField", ImmutableMap.of("level", ImmutableMap.of())),
+              entry("nested", null));
+    } else {
+      book1Expected =
+          mapOfEntries(
+              entry("title", "The Hitchhiker's Guide to the Galaxy"), entry("nested", true));
+      book10Expected = mapOfEntries(entry("title", "Dune"));
+    }
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
-        .containsExactly(
-            mapOfEntries(
-                entry("title", "The Hitchhiker's Guide to the Galaxy"), entry("nested", true)),
-            mapOfEntries(entry("title", "Dune")));
+        .containsExactly(book1Expected, book10Expected);
   }
 
   @Test
