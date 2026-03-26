@@ -8,7 +8,7 @@
 - [feature] Added support for `rand` and `trunc` Pipeline expressions.
   [#7886](https://github.com/firebase/firebase-android-sdk/pull/7886)
 - [feature] Added support for `ltrim`, `rtrim`, `stringIndexOf`, `stringRepeat`, `stringReplaceOne`, and `stringReplaceAll` Pipeline expressions.
-  [#7886](https://github.com/firebase/firebase-android-sdk/pull/7978)
+  [#7978](https://github.com/firebase/firebase-android-sdk/pull/7978)
 
 # 26.1.2
 
