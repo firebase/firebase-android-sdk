@@ -108,7 +108,7 @@ internal class LiveServerMessageTests {
   }
 
   @Test
-  fun `LiveServerMessageSerializer returns LiveServeUnknownMessage for unrecognized message`() {
+  fun `LiveServerMessageSerializer returns LiveServerUnknownMessage for unrecognized message`() {
     val json = """{"unknownType": {"data": "value"}}"""
 
     val message = JSON.decodeFromString<InternalLiveServerMessage>(json)
