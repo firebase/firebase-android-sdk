@@ -163,8 +163,11 @@ public class InstrumentationApiCompatTest {
     }
   }
 
-  /** Compares the hardcoded verified version (which can be a pre-release) with the latest version,
-   * and returns the relevant value. */
+  /**
+   * Compares the hardcoded verified version (which can be pre-release)
+   * with the latest version fetched via API call,
+   * and returns the latest version.
+   */
   private String versionToTest(String verifiedVersion, String latestVersion) {
     ComparableVersion comparableVerifiedVersion = new ComparableVersion(verifiedVersion);
     ComparableVersion comparableLatestVersion = new ComparableVersion(latestVersion);
