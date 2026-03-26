@@ -7614,6 +7614,7 @@ abstract class Expression internal constructor() {
    * @return A new [Expression] representing the rtrim operation.
    */
   fun rtrimValue(characters: Expression): Expression = Companion.rtrimValue(this, characters)
+
   /**
    * Creates an expression that repeats this string expression a given number of times.
    *

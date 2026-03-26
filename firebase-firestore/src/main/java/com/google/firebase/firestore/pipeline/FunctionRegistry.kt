@@ -122,6 +122,5 @@ internal object FunctionRegistry {
       "ltrim" to notImplemented,
       "rtrim" to notImplemented,
       "split" to notImplemented,
-      "substring" to evaluateSubstring,
     )
 }
