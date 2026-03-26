@@ -6,6 +6,8 @@
   [#7893](https://github.com/firebase/firebase-android-sdk/pull/7893)
 - [feature] Added support for `rand` and `trunc` Pipeline expressions.
   [#7886](https://github.com/firebase/firebase-android-sdk/pull/7886)
+- [feature] Add public preview support for full-text search and geo search.
+  [#7949](https://github.com/firebase/firebase-android-sdk/pull/7949)
 
 # 26.1.2
 
@@ -16,8 +18,6 @@
 - [fixed] Fix a performance regression in `ObjectValue.equals()` that caused exponential execution
   time for large or deeply nested documents.
   [#7877](https://github.com/firebase/firebase-android-sdk/issues/7877)
-- [feature] Add beta support for full-text search and geo search.
-  [#7949](https://github.com/firebase/firebase-android-sdk/pull/7949)
 
 # 26.1.1
 
