@@ -119,6 +119,8 @@ internal object FunctionRegistry {
       "split" to evaluateSplit,
       "substring" to evaluateSubstring,
       "ltrim" to evaluateLTrim,
-      "rtrim" to evaluateRTrim
+      "rtrim" to evaluateRTrim,
+      "type" to notImplemented,
+      "is_type" to notImplemented
     )
 }

@@ -1934,7 +1934,54 @@ abstract class Expression internal constructor() {
      * @return A new [Expression] representing the type operation.
      */
     @JvmStatic
-    fun type(fieldName: String): Expression = FunctionExpression("type", notImplemented, fieldName)
+    fun type(fieldName: String): Expression =
+      FunctionExpression("type", notImplemented, field(fieldName))
+
+    /**
+     * Creates an expression that checks if the result of an expression is of the given type.
+     *
+     * Supported values for `type` are: "null", "array", "boolean", "bytes", "timestamp",
+     * "geo_point", "number", "int32", "int64", "float64", "decimal128", "map", "reference",
+     * "string", "vector", "max_key", "min_key", "object_id", "regex", and "request_timestamp".
+     *
+     * ```kotlin
+     * // Check if the 'age' field is an integer
+     * isType(field("age"), "int64")
+     * ```
+     *
+     * @param expr The expression to check the type of.
+     * @param type The type to check for.
+     * @return A new [BooleanExpression] that evaluates to true if the expression's result is of
+     * ```
+     *     the given type, false otherwise.
+     * ```
+     */
+    @JvmStatic
+    fun isType(expr: Expression, type: String): BooleanExpression =
+      BooleanFunctionExpression("is_type", notImplemented, expr, constant(type))
+
+    /**
+     * Creates an expression that checks if the value of a field is of the given type.
+     *
+     * Supported values for `type` are: "null", "array", "boolean", "bytes", "timestamp",
+     * "geo_point", "number", "int32", "int64", "float64", "decimal128", "map", "reference",
+     * "string", "vector", "max_key", "min_key", "object_id", "regex", and "request_timestamp".
+     *
+     * ```kotlin
+     * // Check if the 'age' field is an integer
+     * isType("age", "int64")
+     * ```
+     *
+     * @param fieldName The name of the field to check the type of.
+     * @param type The type to check for.
+     * @return A new [BooleanExpression] that evaluates to true if the expression's result is of
+     * ```
+     *     the given type, false otherwise.
+     * ```
+     */
+    @JvmStatic
+    fun isType(fieldName: String, type: String): BooleanExpression =
+      BooleanFunctionExpression("is_type", notImplemented, field(fieldName), constant(type))
 
     /**
      * Creates an expression that calculates the length of a string, array, map, vector, or blob
@@ -6639,7 +6686,27 @@ abstract class Expression internal constructor() {
    *
    * @return A new [Expression] representing the type operation.
    */
-  fun type(): Expression = type(this)
+  fun type(): Expression = Companion.type(this)
+
+  /**
+   * Creates an expression that checks if the result of this expression is of the given type.
+   *
+   * Supported values for `type` are: "null", "array", "boolean", "bytes", "timestamp", "geo_point",
+   * "number", "int32", "int64", "float64", "decimal128", "map", "reference", "string", "vector",
+   * "max_key", "min_key", "object_id", "regex", and "request_timestamp".
+   *
+   * ```kotlin
+   * // Check if the 'age' field is an integer
+   * field("age").isType("int64")
+   * ```
+   *
+   * @param type The type to check for.
+   * @return A new [BooleanExpression] that evaluates to true if the expression's result is of
+   * ```
+   *     the given type, false otherwise.
+   * ```
+   */
+  fun isType(type: String): BooleanExpression = Companion.isType(this, type)
 
   /**
    * Creates an expression that splits this string or blob expression by a delimiter.

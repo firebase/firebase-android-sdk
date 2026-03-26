@@ -7,6 +7,8 @@
   [#7893](https://github.com/firebase/firebase-android-sdk/pull/7893)
 - [feature] Added support for `rand` and `trunc` Pipeline expressions.
   [#7886](https://github.com/firebase/firebase-android-sdk/pull/7886)
+- [feature] Added support for `isType` Pipeline expression.
+  [#7886](https://github.com/firebase/firebase-android-sdk/pull/7979)
 
 # 26.1.2
 
