@@ -229,8 +229,7 @@ internal class SerializationTests {
       "id": "GroundingChunk",
       "type": "object",
       "properties": {
-        "web": { "${'$'}ref": "WebGroundingChunk" },
-        "maps": { "${'$'}ref": "GoogleMapsGroundingChunk" }
+        "web": { "${'$'}ref": "WebGroundingChunk" }
       }
     }
       """
@@ -507,9 +506,6 @@ internal class SerializationTests {
           },
           "urlContext": {
             "${'$'}ref": "UrlContext"
-          },
-          "googleMaps": {
-            "${'$'}ref": "GoogleMaps"
           }
         }
       }
