@@ -1301,6 +1301,10 @@ package com.google.firebase.ai.type {
     property public final java.util.List<java.lang.String> functionIds;
   }
 
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class LiveServerUnknownMessage implements com.google.firebase.ai.type.LiveServerMessage {
+    ctor public LiveServerUnknownMessage();
+  }
+
   @com.google.firebase.ai.type.PublicPreviewAPI public final class LiveSession {
     method public suspend Object? close(kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public boolean isAudioConversationActive();
