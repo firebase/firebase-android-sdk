@@ -3040,6 +3040,514 @@ abstract class Expression internal constructor() {
       FunctionExpression("trim", notImplemented, fieldName, constant(valueToTrim))
 
     /**
+     * Creates an expression that removes leading whitespace from a string expression.
+     *
+     * ```kotlin
+     * // Trim leading whitespace from the 'text' field.
+     * ltrim(field("text"))
+     * ```
+     *
+     * @param stringExpression The expression representing the string to trim.
+     * @return A new [Expression] representing the ltrim operation.
+     */
+    @JvmStatic
+    fun ltrim(stringExpression: Expression): Expression =
+      FunctionExpression("ltrim", notImplemented, stringExpression)
+
+    /**
+     * Creates an expression that removes leading whitespace from a string field.
+     *
+     * ```kotlin
+     * // Trim leading whitespace from the 'text' field.
+     * ltrim("text")
+     * ```
+     *
+     * @param fieldName The name of the field containing the string to trim.
+     * @return A new [Expression] representing the ltrim operation.
+     */
+    @JvmStatic
+    fun ltrim(fieldName: String): Expression =
+      FunctionExpression("ltrim", notImplemented, field(fieldName))
+
+    /**
+     * Creates an expression that removes specified leading characters from a string expression.
+     *
+     * ```kotlin
+     * // Trim leading '-' or '_' characters from the 'text' field.
+     * ltrimValue(field("text"), "-_")
+     * ```
+     *
+     * @param stringExpression The expression representing the string to trim.
+     * @param characters The string of characters to remove.
+     * @return A new [Expression] representing the ltrim operation.
+     */
+    @JvmStatic
+    fun ltrimValue(stringExpression: Expression, characters: String): Expression =
+      FunctionExpression("ltrim", notImplemented, stringExpression, constant(characters))
+
+    /**
+     * Creates an expression that removes specified leading characters from a string expression.
+     *
+     * ```kotlin
+     * // Trim leading characters defined by the 'chars' field from the 'text' field.
+     * ltrimValue(field("text"), field("chars"))
+     * ```
+     *
+     * @param stringExpression The expression representing the string to trim.
+     * @param characters The expression representing the characters to remove.
+     * @return A new [Expression] representing the ltrim operation.
+     */
+    @JvmStatic
+    fun ltrimValue(stringExpression: Expression, characters: Expression): Expression =
+      FunctionExpression("ltrim", notImplemented, stringExpression, characters)
+
+    /**
+     * Creates an expression that removes specified leading characters from a string field.
+     *
+     * ```kotlin
+     * // Trim leading '-' or '_' characters from the 'text' field.
+     * ltrimValue("text", "-_")
+     * ```
+     *
+     * @param fieldName The name of the field containing the string to trim.
+     * @param characters The string of characters to remove.
+     * @return A new [Expression] representing the ltrim operation.
+     */
+    @JvmStatic
+    fun ltrimValue(fieldName: String, characters: String): Expression =
+      FunctionExpression("ltrim", notImplemented, field(fieldName), constant(characters))
+
+    /**
+     * Creates an expression that removes specified leading characters from a string field.
+     *
+     * ```kotlin
+     * // Trim leading characters defined by the 'chars' field from the 'text' field.
+     * ltrimValue("text", field("chars"))
+     * ```
+     *
+     * @param fieldName The name of the field containing the string to trim.
+     * @param characters The expression representing the characters to remove.
+     * @return A new [Expression] representing the ltrim operation.
+     */
+    @JvmStatic
+    fun ltrimValue(fieldName: String, characters: Expression): Expression =
+      FunctionExpression("ltrim", notImplemented, field(fieldName), characters)
+
+    /**
+     * Creates an expression that removes trailing whitespace from a string expression.
+     *
+     * ```kotlin
+     * // Trim trailing whitespace from the 'text' field.
+     * rtrim(field("text"))
+     * ```
+     *
+     * @param stringExpression The expression representing the string to trim.
+     * @return A new [Expression] representing the rtrim operation.
+     */
+    @JvmStatic
+    fun rtrim(stringExpression: Expression): Expression =
+      FunctionExpression("rtrim", notImplemented, stringExpression)
+
+    /**
+     * Creates an expression that removes trailing whitespace from a string field.
+     *
+     * ```kotlin
+     * // Trim trailing whitespace from the 'text' field.
+     * rtrim("text")
+     * ```
+     *
+     * @param fieldName The name of the field containing the string to trim.
+     * @return A new [Expression] representing the rtrim operation.
+     */
+    @JvmStatic
+    fun rtrim(fieldName: String): Expression =
+      FunctionExpression("rtrim", notImplemented, field(fieldName))
+
+    /**
+     * Creates an expression that removes specified trailing characters from a string expression.
+     *
+     * ```kotlin
+     * // Trim trailing '-' or '_' characters from the 'text' field.
+     * rtrimValue(field("text"), "-_")
+     * ```
+     *
+     * @param stringExpression The expression representing the string to trim.
+     * @param characters The string of characters to remove.
+     * @return A new [Expression] representing the rtrim operation.
+     */
+    @JvmStatic
+    fun rtrimValue(stringExpression: Expression, characters: String): Expression =
+      FunctionExpression("rtrim", notImplemented, stringExpression, constant(characters))
+
+    /**
+     * Creates an expression that removes specified trailing characters from a string expression.
+     *
+     * ```kotlin
+     * // Trim trailing characters defined by the 'chars' field from the 'text' field.
+     * rtrimValue(field("text"), field("chars"))
+     * ```
+     *
+     * @param stringExpression The expression representing the string to trim.
+     * @param characters The expression representing the characters to remove.
+     * @return A new [Expression] representing the rtrim operation.
+     */
+    @JvmStatic
+    fun rtrimValue(stringExpression: Expression, characters: Expression): Expression =
+      FunctionExpression("rtrim", notImplemented, stringExpression, characters)
+
+    /**
+     * Creates an expression that removes specified trailing characters from a string field.
+     *
+     * ```kotlin
+     * // Trim trailing '-' or '_' characters from the 'text' field.
+     * rtrimValue("text", "-_")
+     * ```
+     *
+     * @param fieldName The name of the field containing the string to trim.
+     * @param characters The string of characters to remove.
+     * @return A new [Expression] representing the rtrim operation.
+     */
+    @JvmStatic
+    fun rtrimValue(fieldName: String, characters: String): Expression =
+      FunctionExpression("rtrim", notImplemented, field(fieldName), constant(characters))
+
+    /**
+     * Creates an expression that removes specified trailing characters from a string field.
+     *
+     * ```kotlin
+     * // Trim trailing characters defined by the 'chars' field from the 'text' field.
+     * rtrimValue("text", field("chars"))
+     * ```
+     *
+     * @param fieldName The name of the field containing the string to trim.
+     * @param characters The expression representing the characters to remove.
+     * @return A new [Expression] representing the rtrim operation.
+     */
+    @JvmStatic
+    fun rtrimValue(fieldName: String, characters: Expression): Expression =
+      FunctionExpression("rtrim", notImplemented, field(fieldName), characters)
+
+    /**
+     * Creates an expression that repeats a string expression a given number of times.
+     *
+     * ```kotlin
+     * // Repeat the 'name' field 3 times.
+     * stringRepeat(field("name"), 3)
+     * ```
+     *
+     * @param stringExpression The expression representing the string to repeat.
+     * @param count The number of times to repeat the string.
+     * @return A new [Expression] representing the stringRepeat operation.
+     */
+    @JvmStatic
+    fun stringRepeat(stringExpression: Expression, count: Int): Expression =
+      FunctionExpression("string_repeat", notImplemented, stringExpression, constant(count))
+
+    /**
+     * Creates an expression that repeats a string expression a given number of times.
+     *
+     * ```kotlin
+     * // Repeat the 'name' field the number of times specified in the 'count' field.
+     * stringRepeat(field("name"), field("count"))
+     * ```
+     *
+     * @param stringExpression The expression representing the string to repeat.
+     * @param count The expression representing the number of times to repeat the string.
+     * @return A new [Expression] representing the stringRepeat operation.
+     */
+    @JvmStatic
+    fun stringRepeat(stringExpression: Expression, count: Expression): Expression =
+      FunctionExpression("string_repeat", notImplemented, stringExpression, count)
+
+    /**
+     * Creates an expression that repeats a string field a given number of times.
+     *
+     * ```kotlin
+     * // Repeat the 'name' field 3 times.
+     * stringRepeat("name", 3)
+     * ```
+     *
+     * @param fieldName The name of the field containing the string to repeat.
+     * @param count The number of times to repeat the string.
+     * @return A new [Expression] representing the stringRepeat operation.
+     */
+    @JvmStatic
+    fun stringRepeat(fieldName: String, count: Int): Expression =
+      FunctionExpression("string_repeat", notImplemented, field(fieldName), constant(count))
+
+    /**
+     * Creates an expression that repeats a string field a given number of times.
+     *
+     * ```kotlin
+     * // Repeat the 'name' field the number of times specified in the 'count' field.
+     * stringRepeat("name", field("count"))
+     * ```
+     *
+     * @param fieldName The name of the field containing the string to repeat.
+     * @param count The expression representing the number of times to repeat the string.
+     * @return A new [Expression] representing the stringRepeat operation.
+     */
+    @JvmStatic
+    fun stringRepeat(fieldName: String, count: Expression): Expression =
+      FunctionExpression("string_repeat", notImplemented, field(fieldName), count)
+
+    /**
+     * Creates an expression that replaces all occurrences of a substring with another string.
+     *
+     * ```kotlin
+     * // Replace all occurrences of the 'old' field with the 'new' field in 'text'.
+     * stringReplaceAll(field("text"), field("old"), field("new"))
+     * ```
+     *
+     * @param stringExpression The expression representing the original string.
+     * @param oldValue The expression representing the substring to replace.
+     * @param newValue The expression representing the replacement string.
+     * @return A new [Expression] representing the stringReplaceAll operation.
+     */
+    @JvmStatic
+    fun stringReplaceAll(
+      stringExpression: Expression,
+      oldValue: Expression,
+      newValue: Expression
+    ): Expression =
+      FunctionExpression("string_replace_all", notImplemented, stringExpression, oldValue, newValue)
+
+    /**
+     * Creates an expression that replaces all occurrences of a substring with another string.
+     *
+     * ```kotlin
+     * // Replace all occurrences of "cat" with "dog" in the 'text' field.
+     * stringReplaceAll(field("text"), "cat", "dog")
+     * ```
+     *
+     * @param stringExpression The expression representing the original string.
+     * @param oldValue The substring to replace.
+     * @param newValue The replacement string.
+     * @return A new [Expression] representing the stringReplaceAll operation.
+     */
+    @JvmStatic
+    fun stringReplaceAll(
+      stringExpression: Expression,
+      oldValue: String,
+      newValue: String
+    ): Expression =
+      FunctionExpression(
+        "string_replace_all",
+        notImplemented,
+        stringExpression,
+        constant(oldValue),
+        constant(newValue)
+      )
+
+    /**
+     * Creates an expression that replaces all occurrences of a substring with another string in a
+     * field.
+     *
+     * ```kotlin
+     * // Replace all occurrences of the 'old' field with the 'new' field in 'text'.
+     * stringReplaceAll("text", field("old"), field("new"))
+     * ```
+     *
+     * @param fieldName The name of the field containing the original string.
+     * @param oldValue The expression representing the substring to replace.
+     * @param newValue The expression representing the replacement string.
+     * @return A new [Expression] representing the stringReplaceAll operation.
+     */
+    @JvmStatic
+    fun stringReplaceAll(
+      fieldName: String,
+      oldValue: Expression,
+      newValue: Expression
+    ): Expression =
+      FunctionExpression("string_replace_all", notImplemented, field(fieldName), oldValue, newValue)
+
+    /**
+     * Creates an expression that replaces all occurrences of a substring with another string in a
+     * field.
+     *
+     * ```kotlin
+     * // Replace all occurrences of "cat" with "dog" in the 'text' field.
+     * stringReplaceAll("text", "cat", "dog")
+     * ```
+     *
+     * @param fieldName The name of the field containing the original string.
+     * @param oldValue The substring to replace.
+     * @param newValue The replacement string.
+     * @return A new [Expression] representing the stringReplaceAll operation.
+     */
+    @JvmStatic
+    fun stringReplaceAll(fieldName: String, oldValue: String, newValue: String): Expression =
+      FunctionExpression(
+        "string_replace_all",
+        notImplemented,
+        field(fieldName),
+        constant(oldValue),
+        constant(newValue)
+      )
+
+    /**
+     * Creates an expression that replaces the first occurrence of a substring with another string.
+     *
+     * ```kotlin
+     * // Replace the first occurrence of the 'old' field with the 'new' field in 'text'.
+     * stringReplaceOne(field("text"), field("old"), field("new"))
+     * ```
+     *
+     * @param stringExpression The expression representing the original string.
+     * @param oldValue The expression representing the substring to replace.
+     * @param newValue The expression representing the replacement string.
+     * @return A new [Expression] representing the stringReplaceOne operation.
+     */
+    @JvmStatic
+    fun stringReplaceOne(
+      stringExpression: Expression,
+      oldValue: Expression,
+      newValue: Expression
+    ): Expression =
+      FunctionExpression("string_replace_one", notImplemented, stringExpression, oldValue, newValue)
+
+    /**
+     * Creates an expression that replaces the first occurrence of a substring with another string.
+     *
+     * ```kotlin
+     * // Replace the first occurrence of "cat" with "dog" in the 'text' field.
+     * stringReplaceOne(field("text"), "cat", "dog")
+     * ```
+     *
+     * @param stringExpression The expression representing the original string.
+     * @param oldValue The substring to replace.
+     * @param newValue The replacement string.
+     * @return A new [Expression] representing the stringReplaceOne operation.
+     */
+    @JvmStatic
+    fun stringReplaceOne(
+      stringExpression: Expression,
+      oldValue: String,
+      newValue: String
+    ): Expression =
+      FunctionExpression(
+        "string_replace_one",
+        notImplemented,
+        stringExpression,
+        constant(oldValue),
+        constant(newValue)
+      )
+
+    /**
+     * Creates an expression that replaces the first occurrence of a substring with another string
+     * in a field.
+     *
+     * ```kotlin
+     * // Replace the first occurrence of the 'old' field with the 'new' field in 'text'.
+     * stringReplaceOne("text", field("old"), field("new"))
+     * ```
+     *
+     * @param fieldName The name of the field containing the original string.
+     * @param oldValue The expression representing the substring to replace.
+     * @param newValue The expression representing the replacement string.
+     * @return A new [Expression] representing the stringReplaceOne operation.
+     */
+    @JvmStatic
+    fun stringReplaceOne(
+      fieldName: String,
+      oldValue: Expression,
+      newValue: Expression
+    ): Expression =
+      FunctionExpression("string_replace_one", notImplemented, field(fieldName), oldValue, newValue)
+
+    /**
+     * Creates an expression that replaces the first occurrence of a substring with another string
+     * in a field.
+     *
+     * ```kotlin
+     * // Replace the first occurrence of "cat" with "dog" in the 'text' field.
+     * stringReplaceOne("text", "cat", "dog")
+     * ```
+     *
+     * @param fieldName The name of the field containing the original string.
+     * @param oldValue The substring to replace.
+     * @param newValue The replacement string.
+     * @return A new [Expression] representing the stringReplaceOne operation.
+     */
+    @JvmStatic
+    fun stringReplaceOne(fieldName: String, oldValue: String, newValue: String): Expression =
+      FunctionExpression(
+        "string_replace_one",
+        notImplemented,
+        field(fieldName),
+        constant(oldValue),
+        constant(newValue)
+      )
+
+    /**
+     * Creates an expression that returns the 0-based index of the first occurrence of the specified
+     * substring.
+     *
+     * ```kotlin
+     * // Get the index of the 'search' field within the 'text' field.
+     * stringIndexOf(field("text"), field("search"))
+     * ```
+     *
+     * @param stringExpression The expression representing the string to search within.
+     * @param substring The expression representing the substring to search for.
+     * @return A new [Expression] representing the stringIndexOf operation.
+     */
+    @JvmStatic
+    fun stringIndexOf(stringExpression: Expression, substring: Expression): Expression =
+      FunctionExpression("string_index_of", notImplemented, stringExpression, substring)
+
+    /**
+     * Creates an expression that returns the 0-based index of the first occurrence of the specified
+     * substring.
+     *
+     * ```kotlin
+     * // Get the index of "world" within the 'text' field.
+     * stringIndexOf(field("text"), "world")
+     * ```
+     *
+     * @param stringExpression The expression representing the string to search within.
+     * @param substring The substring to search for.
+     * @return A new [Expression] representing the stringIndexOf operation.
+     */
+    @JvmStatic
+    fun stringIndexOf(stringExpression: Expression, substring: String): Expression =
+      FunctionExpression("string_index_of", notImplemented, stringExpression, constant(substring))
+
+    /**
+     * Creates an expression that returns the 0-based index of the first occurrence of the specified
+     * substring in a field.
+     *
+     * ```kotlin
+     * // Get the index of the 'search' field within the 'text' field.
+     * stringIndexOf("text", field("search"))
+     * ```
+     *
+     * @param fieldName The name of the field containing the string to search within.
+     * @param substring The expression representing the substring to search for.
+     * @return A new [Expression] representing the stringIndexOf operation.
+     */
+    @JvmStatic
+    fun stringIndexOf(fieldName: String, substring: Expression): Expression =
+      FunctionExpression("string_index_of", notImplemented, field(fieldName), substring)
+
+    /**
+     * Creates an expression that returns the 0-based index of the first occurrence of the specified
+     * substring in a field.
+     *
+     * ```kotlin
+     * // Get the index of "world" within the 'text' field.
+     * stringIndexOf("text", "world")
+     * ```
+     *
+     * @param fieldName The name of the field containing the string to search within.
+     * @param substring The substring to search for.
+     * @return A new [Expression] representing the stringIndexOf operation.
+     */
+    @JvmStatic
+    fun stringIndexOf(fieldName: String, substring: String): Expression =
+      FunctionExpression("string_index_of", notImplemented, field(fieldName), constant(substring))
+
+    /**
      * Creates an expression that concatenates string expressions together.
      *
      * ```kotlin
@@ -7030,6 +7538,195 @@ abstract class Expression internal constructor() {
    * @return A new [Expression] representing the trimmed string.
    */
   fun trimValue(valueToTrim: Expression) = Companion.trimValue(this, valueToTrim)
+
+  /**
+   * Creates an expression that removes leading whitespace from this string expression.
+   *
+   * ```kotlin
+   * // Trim leading whitespace from the 'text' field.
+   * field("text").ltrim()
+   * ```
+   *
+   * @return A new [Expression] representing the ltrim operation.
+   */
+  fun ltrim(): Expression = Companion.ltrim(this)
+
+  /**
+   * Creates an expression that removes specified leading characters from this string expression.
+   *
+   * ```kotlin
+   * // Trim leading '-' or '_' characters from the 'text' field.
+   * field("text").ltrimValue("-_")
+   * ```
+   *
+   * @param characters The string of characters to remove.
+   * @return A new [Expression] representing the ltrim operation.
+   */
+  fun ltrimValue(characters: String): Expression = Companion.ltrimValue(this, characters)
+
+  /**
+   * Creates an expression that removes specified leading characters from this string expression.
+   *
+   * ```kotlin
+   * // Trim leading characters defined by the 'chars' field from the 'text' field.
+   * field("text").ltrimValue(field("chars"))
+   * ```
+   *
+   * @param characters The expression representing the characters to remove.
+   * @return A new [Expression] representing the ltrim operation.
+   */
+  fun ltrimValue(characters: Expression): Expression = Companion.ltrimValue(this, characters)
+
+  /**
+   * Creates an expression that removes trailing whitespace from this string expression.
+   *
+   * ```kotlin
+   * // Trim trailing whitespace from the 'text' field.
+   * field("text").rtrim()
+   * ```
+   *
+   * @return A new [Expression] representing the rtrim operation.
+   */
+  fun rtrim(): Expression = Companion.rtrim(this)
+
+  /**
+   * Creates an expression that removes specified trailing characters from this string expression.
+   *
+   * ```kotlin
+   * // Trim trailing '-' or '_' characters from the 'text' field.
+   * field("text").rtrimValue("-_")
+   * ```
+   *
+   * @param characters The string of characters to remove.
+   * @return A new [Expression] representing the rtrim operation.
+   */
+  fun rtrimValue(characters: String): Expression = Companion.rtrimValue(this, characters)
+
+  /**
+   * Creates an expression that removes specified trailing characters from this string expression.
+   *
+   * ```kotlin
+   * // Trim trailing characters defined by the 'chars' field from the 'text' field.
+   * field("text").rtrimValue(field("chars"))
+   * ```
+   *
+   * @param characters The expression representing the characters to remove.
+   * @return A new [Expression] representing the rtrim operation.
+   */
+  fun rtrimValue(characters: Expression): Expression = Companion.rtrimValue(this, characters)
+  /**
+   * Creates an expression that repeats this string expression a given number of times.
+   *
+   * ```kotlin
+   * // Repeat the 'name' field 3 times.
+   * field("name").stringRepeat(3)
+   * ```
+   *
+   * @param count The number of times to repeat the string.
+   * @return A new [Expression] representing the stringRepeat operation.
+   */
+  fun stringRepeat(count: Int): Expression = Companion.stringRepeat(this, count)
+
+  /**
+   * Creates an expression that repeats this string expression a given number of times.
+   *
+   * ```kotlin
+   * // Repeat the 'name' field the number of times specified in the 'count' field.
+   * field("name").stringRepeat(field("count"))
+   * ```
+   *
+   * @param count The expression representing the number of times to repeat the string.
+   * @return A new [Expression] representing the stringRepeat operation.
+   */
+  fun stringRepeat(count: Expression): Expression = Companion.stringRepeat(this, count)
+
+  /**
+   * Creates an expression that replaces all occurrences of a substring with another string.
+   *
+   * ```kotlin
+   * // Replace all occurrences of "cat" with "dog" in the 'text' field.
+   * field("text").stringReplaceAll("cat", "dog")
+   * ```
+   *
+   * @param oldValue The substring to replace.
+   * @param newValue The replacement string.
+   * @return A new [Expression] representing the stringReplaceAll operation.
+   */
+  fun stringReplaceAll(oldValue: String, newValue: String): Expression =
+    Companion.stringReplaceAll(this, oldValue, newValue)
+
+  /**
+   * Creates an expression that replaces all occurrences of a substring with another string.
+   *
+   * ```kotlin
+   * // Replace all occurrences of the 'old' field with the 'new' field in 'text'.
+   * field("text").stringReplaceAll(field("old"), field("new"))
+   * ```
+   *
+   * @param oldValue The expression representing the substring to replace.
+   * @param newValue The expression representing the replacement string.
+   * @return A new [Expression] representing the stringReplaceAll operation.
+   */
+  fun stringReplaceAll(oldValue: Expression, newValue: Expression): Expression =
+    Companion.stringReplaceAll(this, oldValue, newValue)
+
+  /**
+   * Creates an expression that replaces the first occurrence of a substring with another string.
+   *
+   * ```kotlin
+   * // Replace the first occurrence of "cat" with "dog" in the 'text' field.
+   * field("text").stringReplaceOne("cat", "dog")
+   * ```
+   *
+   * @param oldValue The substring to replace.
+   * @param newValue The replacement string.
+   * @return A new [Expression] representing the stringReplaceOne operation.
+   */
+  fun stringReplaceOne(oldValue: String, newValue: String): Expression =
+    Companion.stringReplaceOne(this, oldValue, newValue)
+
+  /**
+   * Creates an expression that replaces the first occurrence of a substring with another string.
+   *
+   * ```kotlin
+   * // Replace the first occurrence of the 'old' field with the 'new' field in 'text'.
+   * field("text").stringReplaceOne(field("old"), field("new"))
+   * ```
+   *
+   * @param oldValue The expression representing the substring to replace.
+   * @param newValue The expression representing the replacement string.
+   * @return A new [Expression] representing the stringReplaceOne operation.
+   */
+  fun stringReplaceOne(oldValue: Expression, newValue: Expression): Expression =
+    Companion.stringReplaceOne(this, oldValue, newValue)
+
+  /**
+   * Creates an expression that returns the 0-based index of the first occurrence of the specified
+   * substring.
+   *
+   * ```kotlin
+   * // Get the index of "world" within the 'text' field.
+   * field("text").stringIndexOf("world")
+   * ```
+   *
+   * @param substring The substring to search for.
+   * @return A new [Expression] representing the stringIndexOf operation.
+   */
+  fun stringIndexOf(substring: String): Expression = Companion.stringIndexOf(this, substring)
+
+  /**
+   * Creates an expression that returns the 0-based index of the first occurrence of the specified
+   * substring.
+   *
+   * ```kotlin
+   * // Get the index of the 'search' field within the 'text' field.
+   * field("text").stringIndexOf(field("search"))
+   * ```
+   *
+   * @param substring The expression representing the substring to search for.
+   * @return A new [Expression] representing the stringIndexOf operation.
+   */
+  fun stringIndexOf(substring: Expression): Expression = Companion.stringIndexOf(this, substring)
 
   /**
    * Creates an expression that concatenates string expressions together.

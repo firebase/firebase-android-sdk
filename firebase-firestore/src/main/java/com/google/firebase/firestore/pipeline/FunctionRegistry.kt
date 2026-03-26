@@ -45,8 +45,6 @@ internal object FunctionRegistry {
       "is_not_nan" to evaluateIsNotNaN,
       "is_null" to evaluateIsNull,
       "is_not_null" to evaluateIsNotNull,
-      "replace_first" to evaluateReplaceFirst,
-      "replace_all" to evaluateReplaceAll,
       "char_length" to evaluateCharLength,
       "byte_length" to evaluateByteLength,
       "like" to evaluateLike,
@@ -116,9 +114,14 @@ internal object FunctionRegistry {
       "cosine_distance" to notImplemented,
       "dot_product" to notImplemented,
       "timestamp_trunc" to notImplemented,
-      "split" to evaluateSplit,
+      "substring" to notImplemented,
+      "string_repeat" to notImplemented,
+      "string_replace_all" to notImplemented,
+      "string_replace_one" to notImplemented,
+      "string_index_of" to notImplemented,
+      "ltrim" to notImplemented,
+      "rtrim" to notImplemented,
+      "split" to notImplemented,
       "substring" to evaluateSubstring,
-      "ltrim" to evaluateLTrim,
-      "rtrim" to evaluateRTrim
     )
 }
