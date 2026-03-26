@@ -188,8 +188,8 @@ class PipelineSearchTest {
         .pipeline()
         .collection("SearchIntegrationTests")
         .search(
-          SearchStage.withQuery("waffles")
-            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
+        //  SearchStage.withQuery("waffles").withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
+            SearchStage(query = documentMatches("waffles"), queryEnhancement = SearchStage.QueryEnhancement.DISABLED)
         )
 
     val snapshot = IntegrationTestUtil.waitFor(ppl.execute())

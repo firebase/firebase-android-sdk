@@ -852,6 +852,17 @@ class FindNearestOptions private constructor(options: InternalOptions) :
  * The Search stage executes full-text search or geo search operations.
  *
  * The Search stage must be the first stage in a Pipeline.
+ *
+ * @example
+ * ```kotlin
+ * db.pipeline().search(
+ *   SearchStage(
+ *     query = documentMatches("waffles OR pancakes"),
+ *     sort = arrayOf(score().descending()),
+ *     limit = 10
+ *   )
+ * )
+ * ```
  */
 @Beta
 class SearchStage
@@ -1095,8 +1106,8 @@ internal constructor(
   }
 
   /**
-   * Specify the maximum number of documents for the search stage to score. Documents will be
-   * processed in the pre-sort order specified by the search index.
+   * Specify the maximum number of documents to retrieve. Documents will be retrieved in the
+   * pre-sort order specified by the search index.
    */
   fun withRetrievalDepth(retrievalDepth: Long): SearchStage {
     return SearchStage(

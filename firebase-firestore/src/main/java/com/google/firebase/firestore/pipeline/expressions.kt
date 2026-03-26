@@ -5993,13 +5993,18 @@ abstract class Expression internal constructor() {
      * Evaluates to the distance in meters between the location in the specified field and the query
      * location.
      *
-     * @remarks This Expression can only be used within a `Search` stage.
+     * Note: This Expression can only be used within a `Search` stage.
      *
-     * @param fieldName
-     * - Specifies the field in the document which contains the first GeoPoint for distance
-     * computation.
-     * @param location
-     * - Compute distance to this GeoPoint.
+     * @example
+     * ```kotlin
+     * db.pipeline().collection("restaurants").search(
+     *   SearchStage(query = documentMatches("waffles"), sort = arrayOf(geoDistance("location", GeoPoint(37.0, -122.0)).ascending()))
+     * )
+     * ```
+     *
+     * @param fieldName Specifies the field in the document which contains the first GeoPoint for
+     * distance computation.
+     * @param location Compute distance to this GeoPoint.
      */
     @Beta
     @JvmStatic
@@ -6010,13 +6015,18 @@ abstract class Expression internal constructor() {
      * Evaluates to the distance in meters between the location in the specified field and the query
      * location.
      *
-     * @remarks This Expression can only be used within a `Search` stage.
+     * Note: This Expression can only be used within a `Search` stage.
      *
-     * @param expression
-     * - Specifies the field in the document which contains the first GeoPoint for distance
+     * @example
+     * ```kotlin
+     * db.pipeline().collection("restaurants").search(
+     *   SearchStage(query = documentMatches("waffles"), sort = arrayOf(geoDistance(field("location"), GeoPoint(37.0, -122.0)).ascending()))
+     * )
+     * ```
+     *
+     * @param field Specifies the field in the document which contains the first GeoPoint for distance
      * computation.
-     * @param location
-     * - Compute distance to this GeoPoint.
+     * @param location Compute distance to this GeoPoint.
      */
     @Beta
     @JvmStatic
@@ -6026,9 +6036,16 @@ abstract class Expression internal constructor() {
     /**
      * Perform a full-text search on all indexed search fields in the document.
      *
-     * @remarks This Expression can only be used within a `Search` stage.
+     * Note: This Expression can only be used within a `Search` stage.
      *
-     * @param rquery Define the search query using the search DTS.
+     * @example
+     * ```kotlin
+     * db.pipeline().collection("restaurants").search(
+     *   SearchStage(query = documentMatches("waffles OR pancakes"))
+     * )
+     * ```
+     *
+     * @param rquery Define the search query using the search DSL.
      */
     @Beta
     @JvmStatic
@@ -6038,10 +6055,17 @@ abstract class Expression internal constructor() {
     /**
      * Perform a full-text search on the specified field.
      *
-     * @remarks This Expression can only be used within a `Search` stage.
+     * Note: This Expression can only be used within a `Search` stage.
+     *
+     * @example
+     * ```kotlin
+     * db.pipeline().collection("restaurants").search(
+     *   SearchStage(query = matches("menu", "waffles"))
+     * )
+     * ```
      *
      * @param fieldName Perform search on this field.
-     * @param rquery Define the search query using the rquery DTS.
+     * @param rquery Define the search query using the search DSL.
      */
     // TODO(search) this is internal until supported by the backend
     @Beta
@@ -6052,10 +6076,17 @@ abstract class Expression internal constructor() {
     /**
      * Perform a full-text search on the specified field.
      *
-     * @remarks This Expression can only be used within a `Search` stage.
+     * Note: This Expression can only be used within a `Search` stage.
+     *
+     * @example
+     * ```kotlin
+     * db.pipeline().collection("restaurants").search(
+     *   SearchStage(query = matches(field("menu"), "waffles"))
+     * )
+     * ```
      *
      * @param field Perform search on this field.
-     * @param rquery Define the search query using the rquery DTS.
+     * @param rquery Define the search query using the search DSL.
      */
     // TODO(search) this is internal until supported by the backend
     @Beta
@@ -6065,10 +6096,16 @@ abstract class Expression internal constructor() {
 
     /**
      * Evaluates to the search score that reflects the topicality of the document to all of the text
-     * predicates (`matches` and `documentMatches`) in the search query. If `SearchOptions.query` is
+     * predicates (for example: `documentMatches`) in the search query. If `SearchOptions.query` is
      * not set or does not contain any text predicates, then this score will always be `0`.
      *
-     * @remarks This Expression can only be used within a `Search` stage.
+     * Note: This Expression can only be used within a `Search` stage.
+     * @example
+     * ```kotlin
+     * db.pipeline().collection("restaurants").search(
+     *   SearchStage(query = documentMatches("waffles"), sort = arrayOf(score().descending()))
+     * )
+     * ```
      */
     @Beta @JvmStatic fun score(): Expression = FunctionExpression("score", notImplemented)
 
@@ -6078,8 +6115,15 @@ abstract class Expression internal constructor() {
      *
      * This Expression can only be used within a `Search` stage.
      *
+     * @example
+     * ```kotlin
+     * db.pipeline().collection("restaurants").search(
+     *   SearchStage(query = documentMatches("waffles"), addFields = arrayOf(snippet("menu", "waffles").alias("snippet")))
+     * )
+     * ```
+     *
      * @param fieldName Search the specified field for matching terms.
-     * @param rquery Define the search query using the search DTS.
+     * @param rquery Define the search query using the search DSL.
      */
     @Beta
     @JvmStatic
@@ -8426,7 +8470,7 @@ abstract class Expression internal constructor() {
    * Evaluates to an HTML-formatted text snippet that highlights terms matching the search query in
    * `<b>bold</b>`.
    *
-   * @remarks This Expression can only be used within a `Search` stage.
+   * Note: This Expression can only be used within a `Search` stage.
    *
    * @param rquery Define the search query using the search DTS.
    */
@@ -8443,7 +8487,7 @@ abstract class Expression internal constructor() {
    * Evaluates to an HTML-formatted text snippet that highlights terms matching the search query in
    * `<b>bold</b>`.
    *
-   * @remarks This Expression can only be used within a `Search` stage.
+   * Note: This Expression can only be used within a `Search` stage.
    *
    * @param options Define how the snippet is generated.
    *
@@ -8631,17 +8675,16 @@ class Field internal constructor(internal val fieldPath: ModelFieldPath) : Selec
    * Evaluates to the distance in meters between the location specified by this field and the query
    * location.
    *
-   * @remarks This Expression can only be used within a `Search` stage.
+   * Note: This Expression can only be used within a `Search` stage.
    *
-   * @param location
-   * - Compute distance to this GeoPoint.
+   * @param location Compute distance to this GeoPoint.
    */
   @Beta fun geoDistance(location: GeoPoint): Expression = geoDistance(this, location)
 
   /**
    * Perform a full-text search on this field.
    *
-   * @remarks This Expression can only be used within a `Search` stage.
+   * Note: This Expression can only be used within a `Search` stage.
    *
    * @param rquery Define the search query using the rquery DTS.
    */
