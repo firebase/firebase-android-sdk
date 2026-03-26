@@ -3157,6 +3157,8 @@ public class PipelineTest {
 
   @Test
   public void testCoalesce() {
+    assumeFalse("Coalesce is not supported against the emulator.", isRunningAgainstEmulator());
+
     Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
