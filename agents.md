@@ -114,6 +114,16 @@ To publish a project locally, you can use the following command:
 ./gradlew -PprojectsToPublish="<firebase-project>" publishReleasingLibrariesToMavenLocal
 ```
 
+By default, the `release` variant is published. To publish the `debug` variant instead, use the
+`publishDebugVariant` property:
+
+```bash
+./gradlew -PprojectsToPublish="<firebase-project>" -PpublishDebugVariant=true publishReleasingLibrariesToMavenLocal
+```
+
+Using the `debug` variant has the advantage of including additional logging information. For example,
+the `ai-logic/firebase-ai` SDK logs the request/response information when the debug variant is used.
+
 ## Development Conventions
 
 ### Code Formatting

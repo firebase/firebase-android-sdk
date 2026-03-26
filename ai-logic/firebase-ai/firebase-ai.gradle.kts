@@ -51,6 +51,7 @@ android {
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
     }
   }
+  buildFeatures { buildConfig = true }
   compileOptions {
     sourceCompatibility = JavaVersion.VERSION_1_8
     targetCompatibility = JavaVersion.VERSION_1_8
@@ -89,7 +90,6 @@ dependencies {
   implementation(libs.androidx.annotation)
   implementation(libs.kotlinx.serialization.json)
   implementation(libs.androidx.core.ktx)
-  implementation(libs.slf4j.nop)
   implementation(libs.kotlinx.coroutines.android)
   implementation(libs.kotlinx.coroutines.reactive)
   implementation(libs.reactive.streams)
@@ -98,6 +98,10 @@ dependencies {
   implementation("androidx.concurrent:concurrent-futures-ktx:1.2.0")
   implementation("com.google.firebase:firebase-auth-interop:18.0.0")
   implementation("com.google.firebase:firebase-ai-ondevice-interop:16.0.0-beta01")
+
+  // Use different logging libraries depending on the variant
+  releaseImplementation(libs.slf4j.nop)
+  debugImplementation(libs.slf4j.simple)
 
   testImplementation(libs.kotest.assertions.core)
   testImplementation(libs.kotest.assertions)
