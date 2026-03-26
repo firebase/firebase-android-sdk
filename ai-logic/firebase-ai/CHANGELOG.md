@@ -3,6 +3,7 @@
 - [feature] Added support for [Maps Grounding](https://ai.google.dev/gemini-api/docs/maps-grounding) (#7950)
 - [fixed] Fixed an issue causing network timeouts to throw the incorrect exception type, instead of
   `RequestTimeoutException` (#7966)
+- [feature] Implemented `toString()` for `InferenceSource` for more descriptive logging in hybrid calls (#7970)
 
 # 17.10.1
 
