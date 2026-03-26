@@ -14,7 +14,6 @@
 
 package com.google.firebase.firestore.pipeline
 
-import com.google.common.annotations.Beta
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.Blob
 import com.google.firebase.firestore.DocumentReference
@@ -57,7 +56,6 @@ import java.util.Date
  * The [Expression] class provides a fluent API for building expressions. You can chain together
  * method calls to create complex expressions.
  */
-@Beta
 abstract class Expression internal constructor() {
 
   internal abstract fun canonicalId(): String
@@ -8227,7 +8225,6 @@ abstract class Expression internal constructor() {
 }
 
 /** Expressions that have an alias are [Selectable] */
-@Beta
 abstract class Selectable : Expression() {
   internal abstract val alias: String
   internal abstract val expr: Expression
@@ -8245,7 +8242,6 @@ abstract class Selectable : Expression() {
 }
 
 /** Represents an expression that will be given the alias in the output document. */
-@Beta
 class AliasedExpression
 internal constructor(override val alias: String, override val expr: Expression) : Selectable() {
   override fun toProto(userDataReader: UserDataReader): Value = expr.toProto(userDataReader)
@@ -8275,7 +8271,6 @@ internal constructor(override val alias: String, override val expr: Expression) 
  *
  * You can create a [Field] instance using the static [Expression.field] method:
  */
-@Beta
 class Field internal constructor(internal val fieldPath: ModelFieldPath) : Selectable() {
   companion object {
 
@@ -8356,7 +8351,6 @@ class Field internal constructor(internal val fieldPath: ModelFieldPath) : Selec
  * [and], [equal], or the methods on [Expression] ([Expression.equal]), [Expression.lessThan], etc)
  * to construct new [FunctionExpression] instances.
  */
-@Beta
 open class FunctionExpression
 internal constructor(
   internal val name: String,
@@ -8445,7 +8439,6 @@ internal constructor(
 }
 
 /** A class that represents a filter condition. */
-@Beta
 abstract class BooleanExpression : Expression() {
 
   /**
@@ -8631,7 +8624,6 @@ internal class BooleanField(val field: Field) : BooleanExpression() {
  *
  * You create [Ordering] instances using the [ascending] and [descending] helper methods.
  */
-@Beta
 class Ordering internal constructor(val expr: Expression, val dir: Direction) {
   internal fun canonicalId(): String {
     val direction = if (dir == Direction.ASCENDING) "asc" else "desc"
