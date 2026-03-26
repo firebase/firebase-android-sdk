@@ -6,6 +6,9 @@
   [#7893](https://github.com/firebase/firebase-android-sdk/pull/7893)
 - [feature] Added support for `rand` and `trunc` Pipeline expressions.
   [#7886](https://github.com/firebase/firebase-android-sdk/pull/7886)
+
+# 26.1.2
+
 - [feature] Added support for Pipeline expressions `arrayFirst`, `arrayFirstN`, `arrayLast`,
   `arrayLastN`, `arrayMinimum`, `arrayMinimumN`, `arrayMaximum`, `arrayMaximumN`, `arrayIndexOf`,
   `arrayLastIndexOf` and `arrayIndexOfAll`.

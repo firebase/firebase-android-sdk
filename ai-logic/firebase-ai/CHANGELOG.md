@@ -1,5 +1,11 @@
 # Unreleased
 
+- [feature] Added support for [Maps Grounding](https://ai.google.dev/gemini-api/docs/maps-grounding) (#7950)
+- [fixed] Fixed an issue causing network timeouts to throw the incorrect exception type, instead of
+  `RequestTimeoutException` (#7966)
+
+# 17.10.1
+
 - [fixed] Fixed an issue causing Live API to fail when using the `GoogleAI` backend (#7880)
 - [changed] Added the `hybrid` component to request headers coming from `prefer_in_cloud` configurations (#7857)
 - [fixed] Fixed documentation errors (#7891)
@@ -149,4 +155,3 @@ using [specific Gemini models](/docs/vertex-ai/models).
 
 Note: This feature is in Public Preview, which means that it is not subject to any SLA or
 deprecation policy and could change in backwards-incompatible ways.
-
