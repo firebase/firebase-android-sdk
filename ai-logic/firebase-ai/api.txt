@@ -1302,7 +1302,6 @@ package com.google.firebase.ai.type {
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class LiveServerUnknownMessage implements com.google.firebase.ai.type.LiveServerMessage {
-    ctor public LiveServerUnknownMessage();
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class LiveSession {

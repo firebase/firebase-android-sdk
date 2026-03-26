@@ -138,7 +138,7 @@ public class LiveServerSetupComplete : LiveServerMessage {
 }
 
 @PublicPreviewAPI
-public class LiveServerUnknownMessage : LiveServerMessage {
+public class LiveServerUnknownMessage private constructor() : LiveServerMessage {
   @Serializable
   internal data class InternalWrapper(@Transient val unused: Unit? = null) :
     InternalLiveServerMessage {
