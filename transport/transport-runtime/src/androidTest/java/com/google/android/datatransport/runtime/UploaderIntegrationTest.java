@@ -31,6 +31,7 @@ import com.google.android.datatransport.Encoding;
 import com.google.android.datatransport.Event;
 import com.google.android.datatransport.EventContext;
 import com.google.android.datatransport.Priority;
+import com.google.android.datatransport.PseudonymousIdUpdateReceiver;
 import com.google.android.datatransport.Transport;
 import com.google.android.datatransport.TransportFactory;
 import com.google.android.datatransport.runtime.backends.BackendRegistry;
@@ -74,6 +75,27 @@ public class UploaderIntegrationTest {
 
   private final WorkScheduler spyScheduler = component.getWorkScheduler();
 
+  /**
+   * Parameter when {@link TestPseudonymousIdUpdateReceiver#setUpdatedPseudonymousId} was last
+   * called.
+   */
+  private static String updatedPseudonymousId = null;
+
+  /**
+   * To be used with {@link EventContext.Builder#setPseudonymousIdUpdateReceiverClassName}.
+   *
+   * <p>Will update the {@link #updatedPseudonymousId} if the {@link TransportBackend} returns an
+   * updated pseudonymous id.
+   */
+  public static class TestPseudonymousIdUpdateReceiver implements PseudonymousIdUpdateReceiver {
+    public TestPseudonymousIdUpdateReceiver(Context context) {}
+
+    @Override
+    public void setUpdatedPseudonymousId(String updatedPseudonymousId) {
+      UploaderIntegrationTest.updatedPseudonymousId = updatedPseudonymousId;
+    }
+  }
+
   @Rule public final TransportRuntimeRule runtimeRule = new TransportRuntimeRule(component);
 
   @Before
@@ -88,6 +110,7 @@ public class UploaderIntegrationTest {
   public void tearDown() {
     component.getEventStore().clearDb();
     component.getEventStore().resetClientMetrics();
+    updatedPseudonymousId = null;
   }
 
   private String generateBackendName() {
@@ -176,6 +199,33 @@ public class UploaderIntegrationTest {
     assertThat(store.loadBatch(transportContext)).isEmpty();
     assertThat(store.getNextCallTime(transportContext)).isAtLeast((long) 1000);
     verify(store, times(1)).cleanUp();
+  }
+
+  @Test
+  public void uploader_okWithPseudonymousIdUpdate_callsPseudonymousIdUpdateReceiver() {
+    TransportRuntime runtime = TransportRuntime.getInstance();
+    String mockBackendName = generateBackendName();
+    when(mockRegistry.get(mockBackendName)).thenReturn(mockBackend);
+    TransportFactory factory = runtime.newFactory(new TestDestination(mockBackendName, null));
+    Transport<String> transport =
+        factory.getTransport(testTransport, String.class, Encoding.of("proto"), String::getBytes);
+
+    // Make the TransportBackend return an updated pseudonymous id.
+    when(mockBackend.send(any())).thenReturn(BackendResponse.ok(1000, "updatedId"));
+
+    Event<String> stringEvent =
+        Event.ofTelemetry(
+            "TelemetryData",
+            EventContext.builder()
+                .setPseudonymousIdUpdateReceiverClassName(
+                    TestPseudonymousIdUpdateReceiver.class.getName())
+                .build());
+    transport.send(stringEvent);
+
+    // The global updatedPseudonymousId field was updated by the uploader calling
+    // TestPseudonymousIdUpdateReceiver.setUpdatedPseudonymousId() because the TransportBackend
+    // returned an updated pseudonymous id.
+    assertThat(updatedPseudonymousId).isEqualTo("updatedId");
   }
 
   @Test

@@ -69,7 +69,7 @@ runner = "1.0.2"
 rxandroid = "2.0.2"
 rxjava = "2.2.21"
 serialization = "1.7.3"
-slf4jNop = "2.0.17"
+slf4j = "2.0.17"
 spotless = "7.0.4"
 symbolProcessingApi = "2.2.10-2.0.2"
 testServices = "1.6.0"
@@ -207,7 +207,8 @@ robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectr
 runner = { module = "com.android.support.test:runner", version.ref = "runner" }
 rxandroid = { module = "io.reactivex.rxjava2:rxandroid", version.ref = "rxandroid" }
 rxjava = { module = "io.reactivex.rxjava2:rxjava", version.ref = "rxjava" }
-slf4j-nop = { module = "org.slf4j:slf4j-nop", version.ref = "slf4jNop" }
+slf4j-nop = { module = "org.slf4j:slf4j-nop", version.ref = "slf4j" }
+slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
 spotless-plugin-gradle = { module = "com.diffplug.spotless:spotless-plugin-gradle", version.ref = "spotless" }
 symbol-processing-api = { module = "com.google.devtools.ksp:symbol-processing-api", version.ref = "symbolProcessingApi" }
 truth = { module = "com.google.truth:truth", version.ref = "truth" }

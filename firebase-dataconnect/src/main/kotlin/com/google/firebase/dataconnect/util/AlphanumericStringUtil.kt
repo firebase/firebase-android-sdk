@@ -31,7 +31,7 @@ internal object AlphanumericStringUtil {
   private const val ALPHANUMERIC_ALPHABET = "23456789abcdefghjkmnopqrstuvwxyz"
 
   /**
-   * Converts this byte array to a base-36 string, which uses the 26 letters from the English
+   * Converts this byte array to a base-32 string, which uses the 26 letters from the English
    * alphabet and the 10 numeric digits.
    */
   fun ByteArray.toAlphaNumericString(): String = buildString {
@@ -70,4 +70,10 @@ internal object AlphanumericStringUtil {
       append(ALPHANUMERIC_ALPHABET[intValue and 0x1f])
     }
   }
+
+  /**
+   * Converts this [ImmutableByteArray] to a base-32 string, which uses the 26 letters from the
+   * English alphabet and the 10 numeric digits.
+   */
+  fun ImmutableByteArray.toAlphaNumericString(): String = peek().toAlphaNumericString()
 }

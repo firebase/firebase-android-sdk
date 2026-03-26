@@ -32,7 +32,6 @@ internal constructor(
   internal val googleSearch: GoogleSearch?,
   internal val codeExecution: JsonObject?,
   internal val urlContext: UrlContext?,
-  internal val googleMaps: GoogleMaps?,
 ) {
 
   @OptIn(PublicPreviewAPI::class)
@@ -44,8 +43,7 @@ internal constructor(
       },
       googleSearch = this.googleSearch?.toInternal(),
       codeExecution = this.codeExecution,
-      urlContext = this.urlContext?.toInternal(),
-      googleMaps = this.googleMaps?.toInternal(),
+      urlContext = this.urlContext?.toInternal()
     )
 
   @OptIn(InternalSerializationApi::class)
@@ -56,13 +54,12 @@ internal constructor(
     // This is a json object because it is not possible to make a data class with no parameters.
     val codeExecution: JsonObject? = null,
     val urlContext: UrlContext.Internal? = null,
-    val googleMaps: GoogleMaps.Internal? = null,
   )
   public companion object {
 
     @OptIn(PublicPreviewAPI::class)
     private val codeExecutionInstance by lazy {
-      Tool(null, null, null, JsonObject(emptyMap()), null, null)
+      Tool(null, null, null, JsonObject(emptyMap()), null)
     }
 
     /**
@@ -74,8 +71,7 @@ internal constructor(
     public fun functionDeclarations(
       functionDeclarations: List<FunctionDeclaration>,
     ): Tool {
-      @OptIn(PublicPreviewAPI::class)
-      return Tool(functionDeclarations, null, null, null, null, null)
+      @OptIn(PublicPreviewAPI::class) return Tool(functionDeclarations, null, null, null, null)
     }
 
     /**
@@ -91,7 +87,7 @@ internal constructor(
       autoFunctionDeclarations: List<AutoFunctionDeclaration<*, *>>?
     ): Tool {
       @OptIn(PublicPreviewAPI::class)
-      return Tool(functionDeclarations, autoFunctionDeclarations, null, null, null, null)
+      return Tool(functionDeclarations, autoFunctionDeclarations, null, null, null)
     }
 
     /** Creates a [Tool] instance that allows the model to use code execution. */
@@ -111,7 +107,7 @@ internal constructor(
     @JvmStatic
     @JvmOverloads
     public fun urlContext(urlContext: UrlContext = UrlContext()): Tool {
-      return Tool(null, null, null, null, urlContext, null)
+      return Tool(null, null, null, null, urlContext)
     }
 
     /**
@@ -133,27 +129,7 @@ internal constructor(
     @JvmStatic
     @JvmOverloads
     public fun googleSearch(googleSearch: GoogleSearch = GoogleSearch()): Tool {
-      @OptIn(PublicPreviewAPI::class) return Tool(null, null, googleSearch, null, null, null)
-    }
-
-    /**
-     * Creates a [Tool] instance that allows the model to use grounding with Google Maps.
-     *
-     * Grounding with Google Maps can be used to allow the model to connect to Google Maps to
-     * incorporate location-based information into its responses.
-     *
-     * When using this feature, you are required to comply with the "Grounding with Google Maps"
-     * usage requirements for your chosen API provider: {@link
-     * https://ai.google.dev/gemini-api/terms#grounding-with-google-maps | Gemini Developer API} or
-     * Vertex AI Gemini API (see {@link https://cloud.google.com/terms/service-terms | Service
-     * Terms} section within the Service Specific Terms).
-     *
-     * @return A [Tool] configured for Google Maps.
-     */
-    @JvmStatic
-    @JvmOverloads
-    public fun googleMaps(googleMaps: GoogleMaps = GoogleMaps()): Tool {
-      @OptIn(PublicPreviewAPI::class) return Tool(null, null, null, null, null, googleMaps)
+      @OptIn(PublicPreviewAPI::class) return Tool(null, null, googleSearch, null, null)
     }
   }
 }
