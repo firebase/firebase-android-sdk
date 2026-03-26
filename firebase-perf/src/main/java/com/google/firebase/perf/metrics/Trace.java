@@ -350,7 +350,13 @@ public class Trace extends AppStateUpdateHandler
     counter.increment(incrementBy);
     if (logger.isLogcatEnabled()) {
       logger.debug(
-          "Incrementing metric '%s' to %d on trace '%s'", metricName, counter.getCount(), name);
+          "Incrementing metric '"
+              + metricName
+              + "' to "
+              + counter.getCount()
+              + " on trace '"
+              + name
+              + "'");
     }
   }
 
