@@ -17,7 +17,6 @@
 package com.google.firebase.ai.type
 
 import com.google.firebase.ai.common.JSON
-import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -109,10 +108,11 @@ internal class LiveServerMessageTests {
   }
 
   @Test
-  fun `LiveServerMessageSerializer throws on unknown message type`() {
+  fun `LiveServerMessageSerializer returns LiveServeUnknownMessage for unrecognized message`() {
     val json = """{"unknownType": {"data": "value"}}"""
 
-    shouldThrow<SerializationException> { JSON.decodeFromString<InternalLiveServerMessage>(json) }
+    val message = JSON.decodeFromString<InternalLiveServerMessage>(json)
+    message.toPublic().shouldBeInstanceOf<LiveServerUnknownMessage>()
   }
 
   @Test
