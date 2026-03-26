@@ -167,6 +167,8 @@ public class InstrumentationApiCompatTest {
    * Compares the hardcoded verified version (which can be pre-release)
    * with the latest version fetched via API call,
    * and returns the latest version.
+   *
+   * @return The latest version based on SemVer comparison.
    */
   private String versionToTest(String verifiedVersion, String latestVersion) {
     VersionNumber comparableVerifiedVersion = VersionNumber.parse(verifiedVersion);
