@@ -306,7 +306,7 @@ internal class FirebaseDataConnectImpl(
       requestName = requestName,
       dataConnectGrpcRPCs = dataConnectGrpcRPCs,
       ioDispatcher = blockingDispatcher,
-      cpuBoundDispatcher = nonBlockingDispatcher,
+      cpuDispatcher = nonBlockingDispatcher,
       secureRandom = secureRandom,
       logger = Logger("QueryManager").also { it.debug("created by $instanceId") },
     )

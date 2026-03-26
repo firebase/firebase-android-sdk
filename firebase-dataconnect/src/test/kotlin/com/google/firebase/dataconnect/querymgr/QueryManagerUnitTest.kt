@@ -23,9 +23,11 @@ import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.core.DataConnectGrpcRPCs
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.testutil.CleanupsRule
+import com.google.firebase.dataconnect.testutil.SuspendingCountDownLatch
 import com.google.firebase.dataconnect.testutil.newMockLogger
 import com.google.firebase.dataconnect.testutil.property.arbitrary.mock
 import com.google.firebase.dataconnect.testutil.property.arbitrary.pair
+import com.google.firebase.dataconnect.testutil.property.arbitrary.withIterations
 import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.firebase.util.nextAlphanumericString
@@ -33,6 +35,7 @@ import com.google.protobuf.Struct
 import google.firebase.dataconnect.proto.ExecuteQueryRequest
 import google.firebase.dataconnect.proto.ExecuteQueryResponse
 import io.kotest.common.ExperimentalKotest
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.shouldBe
@@ -52,12 +55,19 @@ import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
 import io.mockk.CapturingSlot
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.mockk
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.random.Random
+import kotlin.random.nextInt
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Contextual
@@ -349,6 +359,92 @@ class QueryManagerUnitTest {
       }
     }
   }
+
+  @Test
+  fun `execute() deduplicates identical queries`() =
+    verifyExecuteDeduplication(
+      getDataDeserializer = { it },
+      getSerializersModule = { _, _, serializersModule -> serializersModule },
+      verifyResults = { valuePrefix, _, results ->
+        val values = results.map { it.value }
+        values.distinct().shouldContainExactlyInAnyOrder("$valuePrefix 0", "$valuePrefix 1")
+      },
+    )
+
+  private fun <Data> verifyExecuteDeduplication(
+    getDataDeserializer: (DeserializationStrategy<TestData>) -> DeserializationStrategy<Data>,
+    getSerializersModule:
+      (valuePrefixOverride: String, jobIndex: Int, SerializersModule?) -> SerializersModule?,
+    verifyResults: (valuePrefix: String, valuePrefixOverride: String, List<Data>) -> Unit,
+  ) = runTest {
+    checkAll(
+      propTestConfig.withIterations(5),
+      executeArgumentsArb(),
+      alphanumericStringArb().pair()
+    ) { args, (valuePrefix, valuePrefixOverride) ->
+      val latch = SuspendingCountDownLatch(10)
+      val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk {
+        val executeQueryInvocationCount = AtomicInteger(0)
+        coEvery { executeQuery(any(), any(), any(), any(), any()) } coAnswers
+          {
+            val invocationIndex = executeQueryInvocationCount.getAndIncrement()
+            if (invocationIndex == 0) {
+              latch.countDown().await()
+              delay(10.milliseconds)
+            }
+            "$valuePrefix $invocationIndex".encodeToExecuteQueryResponse()
+          }
+      }
+      val queryManager: QueryManager = newQueryManager(dataConnectGrpcRPCs = dataConnectGrpcRPCs)
+      val dataDeserializer = getDataDeserializer(args.dataDeserializer)
+
+      val executeJobIndex = randomSource().random.nextInt(0 until latch.count)
+      val jobs =
+        List(latch.count) { jobIndex ->
+          backgroundScope.async(Dispatchers.IO) {
+            if (jobIndex != executeJobIndex) {
+              latch.countDown().await()
+            }
+            queryManager.execute(
+              operationName = args.operationName,
+              variables = args.variables,
+              dataDeserializer = dataDeserializer,
+              variablesSerializer = args.variablesSerializer,
+              dataSerializersModule =
+                getSerializersModule(valuePrefixOverride, jobIndex, args.dataSerializersModule),
+              variablesSerializersModule = args.variablesSerializersModule,
+              callerSdkType = args.callerSdkType,
+              fetchPolicy = args.fetchPolicy,
+            )
+          }
+        }
+
+      val results = jobs.awaitAll()
+      verifyResults(valuePrefix, valuePrefixOverride, results)
+      coVerify(exactly = 2) { dataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any()) }
+    }
+  }
+
+  private suspend fun PropertyContext.newQueryManager(
+    requestName: String = "requestName" + randomSource().random.nextAlphanumericString(10),
+    dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk { stubExecuteQuery() },
+    ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    cpuDispatcher: CoroutineDispatcher = Dispatchers.Default,
+    secureRandom: Random = randomSource().random,
+    logger: Logger = newMockLogger("logger" + randomSource().random.nextAlphanumericString(10)),
+  ): QueryManager {
+    val queryManager =
+      QueryManager(
+        requestName = requestName,
+        dataConnectGrpcRPCs = dataConnectGrpcRPCs,
+        ioDispatcher = ioDispatcher,
+        cpuDispatcher = cpuDispatcher,
+        secureRandom = secureRandom,
+        logger = logger,
+      )
+    cleanups.registerSuspending { queryManager.close() }
+    return queryManager
+  }
 }
 
 private val propTestConfig =
@@ -356,23 +452,6 @@ private val propTestConfig =
     iterations = 100,
     edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.2),
     shrinkingMode = ShrinkingMode.Off,
-  )
-
-private fun PropertyContext.newQueryManager(
-  requestName: String = "requestName" + randomSource().random.nextAlphanumericString(10),
-  dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk { stubExecuteQuery() },
-  ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
-  cpuBoundDispatcher: CoroutineDispatcher = Dispatchers.Default,
-  secureRandom: Random = randomSource().random,
-  logger: Logger = newMockLogger("logger" + randomSource().random.nextAlphanumericString(10)),
-): QueryManager =
-  QueryManager(
-    requestName = requestName,
-    dataConnectGrpcRPCs = dataConnectGrpcRPCs,
-    ioDispatcher = ioDispatcher,
-    cpuBoundDispatcher = cpuBoundDispatcher,
-    secureRandom = secureRandom,
-    logger = logger,
   )
 
 private data class ExecuteArguments<Data, Variables>(
