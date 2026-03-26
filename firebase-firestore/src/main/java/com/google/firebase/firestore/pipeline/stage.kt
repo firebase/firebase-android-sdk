@@ -855,7 +855,7 @@ class FindNearestOptions private constructor(options: InternalOptions) :
  *
  * @example
  * ```kotlin
- * db.pipeline().search(
+ * db.pipeline().collection('restaurants').search(
  *   SearchStage(
  *     query = documentMatches("waffles OR pancakes"),
  *     sort = arrayOf(score().descending()),

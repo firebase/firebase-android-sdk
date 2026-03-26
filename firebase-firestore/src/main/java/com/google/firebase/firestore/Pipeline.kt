@@ -902,9 +902,20 @@ internal constructor(
   /**
    * Add a search stage to the Pipeline.
    *
-   * This must be the first stage of the pipeline.
+   * Note: This must be the first stage of the pipeline.
    *
    * A limited set of expressions are supported in the search stage.
+   *
+   * @example
+   * ```kotlin
+   * db.pipeline().collection('restaurants').search(
+   *   SearchStage(
+   *     query = documentMatches("waffles OR pancakes"),
+   *     sort = arrayOf(score().descending()),
+   *     limit = 10
+   *   )
+   * )
+   * ```
    *
    * @param searchStage An object that specifies how search is performed.
    * @return A new `Pipeline` object with this stage appended to the stage list.
