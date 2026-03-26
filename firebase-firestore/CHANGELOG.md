@@ -1,5 +1,7 @@
 # Unreleased
 
+- [feature] Added support for Pipeline expressions `ifNull` and `coalesce`.
+  [#7976](https://github.com/firebase/firebase-android-sdk/pull/7976)
 - [feature] Added support for Pipeline expressions `nor` and `switchOn`.
   [#7903](https://github.com/firebase/firebase-android-sdk/pull/7903)
 - [feature] Added support for `first`, `last`, `arrayAgg`, and `arrayAggDistinct` Pipeline expressions.
