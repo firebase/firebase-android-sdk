@@ -348,8 +348,10 @@ public class Trace extends AppStateUpdateHandler
     // thread-safer
     Counter counter = obtainOrCreateCounterByName(metricName.trim());
     counter.increment(incrementBy);
-    logger.debug(
-        "Incrementing metric '%s' to %d on trace '%s'", metricName, counter.getCount(), name);
+    if (logger.isLogcatEnabled()) {
+      logger.debug(
+          "Incrementing metric '%s' to %d on trace '%s'", metricName, counter.getCount(), name);
+    }
   }
 
   /**
