@@ -5924,17 +5924,19 @@ abstract class Expression internal constructor() {
       FunctionExpression("if_absent", notImplemented, ifFieldName, elseValue)
 
     /**
-     * Creates an expression that returns the [elseExpr] argument if [ifExpr] is null or absent, else
-     * return the result of the [ifExpr] argument evaluation.
+     * Creates an expression that returns the [elseExpr] argument if [ifExpr] evaluates to null,
+     * else return the result of the [ifExpr] argument evaluation.
+     *
+     * This function provides a fallback for both absent and explicit null values. In contrast,
+     * [ifAbsent] only triggers for missing fields.
      *
      * ```kotlin
-     * // Returns the value of the 'optional_field', or returns 'default_value'
-     * // if the field is null or absent.
-     * ifNull(field("optional_field"), constant("default_value"))
+     * // Returns the user's preferred name, or if that is null, returns their full name.
+     * ifNull(field("preferredName"), field("fullName"))
      * ```
      *
-     * @param ifExpr The expression to check for null or absence.
-     * @param elseExpr The expression that will be evaluated and returned if [ifExpr] is null or absent.
+     * @param ifExpr The expression to check for null.
+     * @param elseExpr The expression that will be evaluated and returned if [ifExpr] is null.
      * @return A new [Expression] representing the ifNull operation.
      */
     @JvmStatic
@@ -5942,17 +5944,19 @@ abstract class Expression internal constructor() {
       FunctionExpression("if_null", notImplemented, ifExpr, elseExpr)
 
     /**
-     * Creates an expression that returns the [elseValue] argument if [ifExpr] is null or absent, else
-     * return the result of the [ifExpr] argument evaluation.
+     * Creates an expression that returns the [elseValue] argument if [ifExpr] evaluates to null,
+     * else return the result of the [ifExpr] argument evaluation.
+     *
+     * This function provides a fallback for both absent and explicit null values. In contrast,
+     * [ifAbsent] only triggers for missing fields.
      *
      * ```kotlin
-     * // Returns the value of the 'optional_field', or returns 'default_value'
-     * // if the field is null or absent.
-     * ifNull(field("optional_field"), "default_value")
+     * // Returns the user's display name, or returns "Anonymous" if the field is null.
+     * ifNull(field("displayName"), "Anonymous")
      * ```
      *
-     * @param ifExpr The expression to check for null or absence.
-     * @param elseValue The value that will be returned if [ifExpr] evaluates to a null or absent value.
+     * @param ifExpr The expression to check for null.
+     * @param elseValue The value that will be returned if [ifExpr] evaluates to null.
      * @return A new [Expression] representing the ifNull operation.
      */
     @JvmStatic
@@ -5960,18 +5964,16 @@ abstract class Expression internal constructor() {
       FunctionExpression("if_null", notImplemented, ifExpr, elseValue)
 
     /**
-     * Creates an expression that returns the [elseExpr] argument if [ifFieldName] is null or absent, else
-     * return the value of the field.
+     * Creates an expression that returns the [elseExpr] argument if [ifFieldName] field is null,
+     * else return the value of the field.
      *
      * ```kotlin
-     * // Returns the value of the 'optional_field', or returns the value of
-     * // 'default_field' if 'optional_field' is null or absent.
-     * ifNull("optional_field", field("default_field"))
+     * // Returns the user's preferred name, or if that is null, returns their full name.
+     * ifNull("preferredName", field("fullName"))
      * ```
      *
-     * @param ifFieldName The field to check for null or absence.
-     * @param elseExpr The expression that will be evaluated and returned if [ifFieldName] is
-     * null or absent.
+     * @param ifFieldName The field to check for null.
+     * @param elseExpr The expression that will be evaluated and returned if [ifFieldName] is null.
      * @return A new [Expression] representing the ifNull operation.
      */
     @JvmStatic
@@ -5979,17 +5981,16 @@ abstract class Expression internal constructor() {
       FunctionExpression("if_null", notImplemented, ifFieldName, elseExpr)
 
     /**
-     * Creates an expression that returns the [elseValue] argument if [ifFieldName] is null or absent, else
-     * return the value of the field.
+     * Creates an expression that returns the [elseValue] argument if [ifFieldName]field is null,
+     * else return the value of the field.
      *
      * ```kotlin
-     * // Returns the value of the 'optional_field', or returns 'default_value'
-     * // if the field is null or absent.
-     * ifNull("optional_field", "default_value")
+     * // Returns the user's display name, or returns "Anonymous" if the field is null.
+     * ifNull("displayName", "Anonymous")
      * ```
      *
-     * @param ifFieldName The field to check for null or absence.
-     * @param elseValue The value that will be returned if [ifFieldName] is null or absent.
+     * @param ifFieldName The field to check for null.
+     * @param elseValue The value that will be returned if [ifFieldName] is null.
      * @return A new [Expression] representing the ifNull operation.
      */
     @JvmStatic
@@ -5997,12 +5998,14 @@ abstract class Expression internal constructor() {
       FunctionExpression("if_null", notImplemented, ifFieldName, elseValue)
 
     /**
-     * Returns the first non-null, non-absent argument, without evaluating
-     * the rest of the arguments. When all arguments are null or absent, returns the last argument.
+     * Creates an expression that returns the first non-null, non-absent argument, without
+     * evaluating the rest of the arguments. When all arguments are null or absent, returns the last
+     * argument.
      *
      * ```kotlin
-     * // Returns the first non-null/non-absent value among a, b, and "default"
-     * coalesce(field("a"), field("b"), constant("default"))
+     * // Returns the value of the first non-null, non-absent field among 'preferredName', 'fullName',
+     * // or the last argument if all previous fields are null.
+     * coalesce(field("preferredName"), field("fullName"), constant("Anonymous"))
      * ```
      *
      * @param expression The first expression to check for null.
@@ -6015,12 +6018,14 @@ abstract class Expression internal constructor() {
       FunctionExpression("coalesce", notImplemented, expression, replacement, *others)
 
     /**
-     * Returns the first non-null, non-absent argument, without evaluating
-     * the rest of the arguments. When all arguments are null or absent, returns the last argument.
+     * Creates an expression that returns the first non-null, non-absent argument, without
+     * evaluating the rest of the arguments. When all arguments are null or absent, returns the last
+     * argument.
      *
      * ```kotlin
-     * // Returns the first non-null/non-absent value among a, b, and "default"
-     * coalesce("a", field("b"), "default")
+     * // Returns the value of the first non-null, non-absent field among 'preferredName', 'fullName',
+     * // or the last argument if all previous fields are null.
+     * coalesce("preferredName", field("fullName"), constant("Anonymous"))
      * ```
      *
      * @param fieldName The name of the first field to check for null.
@@ -6031,7 +6036,6 @@ abstract class Expression internal constructor() {
     @JvmStatic
     fun coalesce(fieldName: String, replacement: Any, vararg others: Any): Expression =
       FunctionExpression("coalesce", notImplemented, fieldName, replacement, *others)
-
 
     /**
      * Creates an expression that returns the collection ID from a path.
@@ -8306,43 +8310,48 @@ abstract class Expression internal constructor() {
   fun ifAbsent(elseValue: Any): Expression = Companion.ifAbsent(this, elseValue)
 
   /**
-   * Creates an expression that returns the [elseExpression] argument if this expression is null, else
-   * return the result of this expression.
+   * Creates an expression that returns the [elseExpression] argument if this expression evaluates
+   * to null, else return the result of this expression.
+   *
+   * This function provides a fallback for both absent and explicit null values. In contrast,
+   * [ifAbsent] only triggers for missing fields.
    *
    * ```kotlin
-   * // Returns the value of the 'optional_field', or returns 'default_value'
-   * // if the field is null.
-   * field("optional_field").ifNull(constant("default_value"))
+   * // Returns the user's preferred name, or if that is null, returns their full name.
+   * field("preferredName").ifNull(field("fullName"))
    * ```
    *
    * @param elseExpression The expression that will be evaluated and returned if this expression is
-   * null or absent.
+   * null.
    * @return A new [Expression] representing the ifNull operation.
    */
   fun ifNull(elseExpression: Expression): Expression = Companion.ifNull(this, elseExpression)
 
   /**
-   * Creates an expression that returns the [elseValue] argument if this expression is null or absent, else
-   * return the result of this expression.
+   * Creates an expression that returns the [elseValue] argument if this expression evaluates to
+   * null, else return the result of this expression.
+   *
+   * This function provides a fallback for both absent and explicit null values. In contrast,
+   * [ifAbsent] only triggers for missing fields.
    *
    * ```kotlin
-   * // Returns the value of the 'optional_field', or returns 'default_value'
-   * // if the field is null or absent.
-   * field("optional_field").ifNull("default_value")
+   * // Returns the user's display name, or returns "Anonymous" if the field is null.
+   * field("displayName").ifNull("Anonymous")
    * ```
    *
-   * @param elseValue The value that will be returned if this expression evaluates to a null or absent value.
+   * @param elseValue The value that will be returned if this expression evaluates to null.
    * @return A new [Expression] representing the ifNull operation.
    */
   fun ifNull(elseValue: Any): Expression = Companion.ifNull(this, elseValue)
 
   /**
-   * Returns the first non-null, non-absent argument, without evaluating
+   * Creates an expression that returns the first non-null, non-absent argument, without evaluating
    * the rest of the arguments. When all arguments are null or absent, returns the last argument.
    *
    * ```kotlin
-   * // Returns the first non-null/non-absent value among a, b, and "default"
-   * field("a").coalesce(field("b"), "default")
+   * // Returns the value of the first non-null, non-absent field among 'preferredName', 'fullName',
+   * // or the last argument if all previous fields are null.
+   * field("preferredName").coalesce(field("fullName"), "Anonymous")
    * ```
    *
    * @param replacement The fallback expression or value if the first one is null.

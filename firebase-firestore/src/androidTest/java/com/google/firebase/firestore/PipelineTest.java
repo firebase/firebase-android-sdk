@@ -3130,17 +3130,12 @@ public class PipelineTest {
 
   @Test
   public void testIfNull() {
-    Map<String, Object> values = new HashMap<>();
-    values.put("title", "unique_foo_title");
-    values.put("name", null);
-    waitFor(randomCol.document("bookWithNull").set(values));
-
     Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(equal("title", "unique_foo_title"))
             .limit(1)
+            .replaceWith(map(ImmutableMap.of("title", "foo", "name", Expression.nullValue())))
             .select(
                 Expression.ifNull("title", "default title").alias("staticMethod"),
                 field("title").ifNull("default title").alias("instanceMethod"),
@@ -3153,55 +3148,58 @@ public class PipelineTest {
         .comparingElementsUsing(DATA_CORRESPONDENCE)
         .containsExactly(
             mapOfEntries(
-                entry("staticMethod", "unique_foo_title"),
-                entry("instanceMethod", "unique_foo_title"),
-                entry("nameOrTitle", "unique_foo_title"),
+                entry("staticMethod", "foo"),
+                entry("instanceMethod", "foo"),
+                entry("nameOrTitle", "foo"),
                 entry("fieldIsNull", "default name"),
                 entry("fieldIsAbsent", "default name")));
-
-    waitFor(randomCol.document("bookWithNull").delete());
   }
 
   @Test
   public void testCoalesce() {
-    Map<String, Object> values = new HashMap<>();
-    values.put("numberValue", 1L);
-    values.put("stringValue", "unique_coalesce_hello");
-    values.put("booleanValue", false);
-    values.put("nullValue", null);
-    values.put("nullValue2", null);
-    waitFor(randomCol.document("bookWithNull").set(values));
-
     Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
             .collection(randomCol)
-            .where(equal("stringValue", "unique_coalesce_hello"))
             .limit(1)
+            .replaceWith(
+                map(
+                    ImmutableMap.of(
+                        "numberValue",
+                        1L,
+                        "stringValue",
+                        "unique_coalesce_hello",
+                        "booleanValue",
+                        false,
+                        "nullValue",
+                        Expression.nullValue(),
+                        "nullValue2",
+                        Expression.nullValue())))
             .select(
-                Expression.coalesce(field("numberValue"), field("stringValue")).alias("staticMethod"),
+                Expression.coalesce(field("numberValue"), field("stringValue"))
+                    .alias("staticMethod"),
                 field("numberValue").coalesce(field("stringValue")).alias("instanceMethod"),
                 Expression.coalesce(field("nullValue"), field("stringValue")).alias("firstIsNull"),
-                Expression.coalesce(field("nullValue"), field("nullValue2"), field("booleanValue")).alias("lastIsNotNull"),
+                Expression.coalesce(field("nullValue"), field("nullValue2"), field("booleanValue"))
+                    .alias("lastIsNotNull"),
                 Expression.coalesce(field("nullValue"), field("nullValue2")).alias("allFieldsNull"),
-                Expression.coalesce(field("nullValue"), field("nullValue2"), constant("default")).alias("allFieldsNullWithDefault"),
-                Expression.coalesce(field("absentField"), field("numberValue"), constant("default")).alias("withAbsentField"))
+                Expression.coalesce(field("nullValue"), field("nullValue2"), constant("default"))
+                    .alias("allFieldsNullWithDefault"),
+                Expression.coalesce(field("absentField"), field("numberValue"), constant("default"))
+                    .alias("withAbsentField"))
             .execute();
-
-    Map<String, Object> expected = new HashMap<>();
-    expected.put("staticMethod", 1L);
-    expected.put("instanceMethod", 1L);
-    expected.put("firstIsNull", "unique_coalesce_hello");
-    expected.put("lastIsNotNull", false);
-    expected.put("allFieldsNull", null);
-    expected.put("allFieldsNullWithDefault", "default");
-    expected.put("withAbsentField", 1L);
 
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
-        .containsExactly(expected);
-
-    waitFor(randomCol.document("bookWithNull").delete());
+        .containsExactly(
+            mapOfEntries(
+                entry("staticMethod", 1L),
+                entry("instanceMethod", 1L),
+                entry("firstIsNull", "unique_coalesce_hello"),
+                entry("lastIsNotNull", false),
+                entry("allFieldsNull", null),
+                entry("allFieldsNullWithDefault", "default"),
+                entry("withAbsentField", 1L)));
   }
 
   @Test
