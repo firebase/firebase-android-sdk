@@ -53,7 +53,7 @@ public class InstrumentationApiCompatTest {
       "https://api.github.com/repos/gradle/gradle/releases/latest";
   // Latest verified versions. Update these as new versions are released and verified.
   private static final String VERIFIED_AGP_VERSION = "9.2.0-alpha05";
-  private static final String VERIFIED_GRADLE_VERSION = "9.5.0-milestone-4";
+  private static final String VERIFIED_GRADLE_VERSION = "9.5.0-milestone-5";
   private final OkHttpClient client = new OkHttpClient();
 
   @RegisterExtension public GradleBuildProject gradleBuildProject = new GradleBuildProject();
