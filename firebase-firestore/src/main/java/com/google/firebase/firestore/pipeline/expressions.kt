@@ -3309,7 +3309,232 @@ abstract class Expression internal constructor() {
     @JvmStatic
     fun mapRemove(mapField: String, key: String): Expression =
       FunctionExpression("map_remove", notImplemented, mapField, key)
+    /**
+     * Creates an expression that returns a new map with the specified entries added or updated.
+     *
+     * - Only performs shallow updates to the map.
+     * - Setting a value to `null` will retain the key with a `null` value. To remove
+     *   a key entirely, use `mapRemove`.
+     *
+     * ```kotlin
+     * // Set the 'category' key to the value of the 'newCategory' field.
+     * mapSet(field("metadata"), field("keyField"), field("newCategory"))
+     * ```
+     *
+     * @param mapExpr The expression representing the map.
+     * @param key The key to set. Must be an expression representing a string.
+     * @param value The value to set.
+     * @param moreKeyValues Additional key-value pairs to set.
+     * @return A new [Expression] representing the map with the entries set.
+     */
+    @JvmStatic
+    fun mapSet(
+      mapExpr: Expression,
+      key: Expression,
+      value: Expression,
+      vararg moreKeyValues: Expression
+    ): Expression = FunctionExpression("map_set", notImplemented, mapExpr, key, value, *moreKeyValues)
 
+    /**
+     * Creates an expression that returns a new map with the specified entries added or updated.
+     *
+     * - Only performs shallow updates to the map.
+     * - Setting a value to `null` will retain the key with a `null` value. To remove
+     *   a key entirely, use `mapRemove`.
+     *
+     * ```kotlin
+     * // Set the 'category' key to "Electronics" and 'active' to true.
+     * mapSet(field("metadata"), "category", "Electronics", "active", true)
+     * ```
+     *
+     * @param mapExpr The map field to set entries in.
+     * @param key The key to set.
+     * @param value The value to set.
+     * @param moreKeyValues Additional key-value pairs to set.
+     * @return A new [Expression] representing the map with the entries set.
+     */
+    @JvmStatic
+    fun mapSet(
+      mapExpr: Expression,
+      key: String,
+      value: Any?,
+      vararg moreKeyValues: Any
+    ): Expression = FunctionExpression(
+      "map_set",
+      notImplemented,
+      mapExpr,
+      constant(key),
+      toExprOrConstant(value),
+      *toArrayOfExprOrConstant(moreKeyValues)
+    )
+
+    /**
+     * Creates an expression that returns a new map with the specified entries added or updated.
+     *
+     * - Only performs shallow updates to the map.
+     * - Setting a value to `null` will retain the key with a `null` value. To remove
+     *   a key entirely, use `mapRemove`.
+     *
+     * ```kotlin
+     * // Set a dynamic key to a dynamic value in the 'metadata' field map.
+     * mapSet("metadata", field("keyField"), field("valueField"))
+     * ```
+     *
+     * @param mapField The map field to set entries in.
+     * @param key The key to set. Must be an expression representing a string.
+     * @param value The value to set.
+     * @param moreKeyValues Additional key-value pairs to set.
+     * @return A new [Expression] representing the map with the entries set.
+     */
+    @JvmStatic
+    fun mapSet(
+      mapField: String,
+      key: Expression,
+      value: Expression,
+      vararg moreKeyValues: Expression
+    ): Expression = FunctionExpression("map_set", notImplemented, field(mapField), key, value, *moreKeyValues)
+
+    /**
+     * Creates an expression that returns a new map with the specified entries added or updated.
+     *
+     * - Only performs shallow updates to the map.
+     * - Setting a value to `null` will retain the key with a `null` value. To remove
+     *   a key entirely, use `mapRemove`.
+     *
+     * ```kotlin
+     * // Set the 'category' key to "Electronics" in the 'metadata' field map.
+     * mapSet("metadata", "category", "Electronics")
+     * ```
+     *
+     * @param mapField The map field to set entries in.
+     * @param key The key to set. Must be an expression representing a string.
+     * @param value The value to set.
+     * @param moreKeyValues Additional key-value pairs to set.
+     * @return A new [Expression] representing the map with the entries set.
+     */
+    @JvmStatic
+    fun mapSet(
+      mapField: String,
+      key: String,
+      value: Any?,
+      vararg moreKeyValues: Any
+    ): Expression = FunctionExpression(
+      "map_set",
+      notImplemented,
+      field(mapField),
+      constant(key),
+      toExprOrConstant(value),
+      *toArrayOfExprOrConstant(moreKeyValues)
+    )
+
+    /**
+     * Creates an expression that returns the keys of a map.
+     *
+     * While the backend generally preserves insertion order, relying on the order of the output
+     * array is not guaranteed and should be avoided.
+     *
+     * ```kotlin
+     * // Get the keys of a map expression.
+     * mapKeys(map(mapOf("a" to 1, "b" to 2)))
+     * ```
+     *
+     * @param mapExpr The expression representing the map to get the keys of.
+     * @return A new [Expression] representing the keys of the map.
+     */
+    @JvmStatic
+    fun mapKeys(mapExpr: Expression): Expression =
+      FunctionExpression("map_keys", notImplemented, mapExpr)
+
+    /**
+     * Creates an expression that returns the keys of a map.
+     *
+     * While the backend generally preserves insertion order, relying on the order of the output
+     * array is not guaranteed and should be avoided.
+     *
+     * ```kotlin
+     * // Get the keys of the 'metadata' map field.
+     * mapKeys("metadata")
+     * ```
+     *
+     * @param mapField The map field to get the keys of.
+     * @return A new [Expression] representing the keys of the map.
+     */
+    @JvmStatic
+    fun mapKeys(mapField: String): Expression =
+      FunctionExpression("map_keys", notImplemented, field(mapField))
+
+    /**
+     * Creates an expression that returns the values of a map.
+     *
+     * While the backend generally preserves insertion order, relying on the order of the output
+     * array is not guaranteed and should be avoided.
+     *
+     * ```kotlin
+     * // Get the values of a map expression.
+     * mapValues(map(mapOf("a" to 1, "b" to 2)))
+     * ```
+     *
+     * @param mapExpr The expression representing the map to get the values of.
+     * @return A new [Expression] representing the values of the map.
+     */
+    @JvmStatic
+    fun mapValues(mapExpr: Expression): Expression =
+      FunctionExpression("map_values", notImplemented, mapExpr)
+
+    /**
+     * Creates an expression that returns the values of a map.
+     *
+     * While the backend generally preserves insertion order, relying on the order of the output
+     * array is not guaranteed and should be avoided.
+     *
+     * ```kotlin
+     * // Get the values of the 'metadata' map field.
+     * mapValues("metadata")
+     * ```
+     *
+     * @param mapField The map field to get the values of.
+     * @return A new [Expression] representing the values of the map.
+     */
+    @JvmStatic
+    fun mapValues(mapField: String): Expression =
+      FunctionExpression("map_values", notImplemented, field(mapField))
+
+    /**
+     * Creates an expression that returns the entries of a map as an array of maps, where each map
+     * contains a "k" property for the key and a "v" property for the value.
+     *
+     * While the backend generally preserves insertion order, relying on the order of the output
+     * array is not guaranteed and should be avoided.
+     *
+     * ```kotlin
+     * // Get the entries of a map expression.
+     * mapEntries(map(mapOf("a" to 1, "b" to 2)))
+     * ```
+     *
+     * @param mapExpr The expression representing the map to get the entries of.
+     * @return A new [Expression] representing the entries of the map.
+     */
+    @JvmStatic
+    fun mapEntries(mapExpr: Expression): Expression =
+      FunctionExpression("map_entries", notImplemented, mapExpr)
+
+    /**
+     * Creates an expression that returns the entries of a map as an array of maps.
+     *
+     * While the backend generally preserves insertion order, relying on the order of the output
+     * array is not guaranteed and should be avoided.
+     *
+     * ```kotlin
+     * // Get the entries of the 'metadata' map field.
+     * mapEntries("metadata")
+     * ```
+     *
+     * @param mapField The map field to get the entries of.
+     * @return A new [Expression] representing the entries of the map.
+     */
+    @JvmStatic
+    fun mapEntries(mapField: String): Expression =
+      FunctionExpression("map_entries", notImplemented, field(mapField))
     /**
      * Calculates the Cosine distance between two vector expressions.
      *
@@ -7144,6 +7369,88 @@ abstract class Expression internal constructor() {
    * @return A new [Expression] that evaluates to a modified map.
    */
   fun mapRemove(key: String) = Companion.mapRemove(this, key)
+
+  /**
+   * Creates an expression that returns a new map with the specified entries added or updated.
+   *
+   * - Only performs shallow updates to the map.
+   * - Setting a value to `null` will retain the key with a `null` value. To remove
+   *   a key entirely, use `mapRemove`.
+   *
+   * ```kotlin
+   * // Set the 'category' key to the value of the 'newCategory' field.
+   * field("metadata").mapSet(field("keyField"), field("newCategory"))
+   * ```
+   *
+   * @param key The key to set.
+   * @param value The value to set.
+   * @param moreKeyValues Additional key-value pairs to set.
+   * @return A new [Expression] representing the map with the entries set.
+   */
+  fun mapSet(key: Expression, value: Expression, vararg moreKeyValues: Expression): Expression =
+    Companion.mapSet(this, key, value, *moreKeyValues)
+
+  /**
+   * Creates an expression that returns a new map with the specified entries added or updated.
+   *
+   * ```kotlin
+   * // Set the 'category' key to "Electronics" and 'active' to true.
+   * field("metadata").mapSet("category", "Electronics", "active", true)
+   * ```
+   *
+   * @param key The key to set.
+   * @param value The value to set.
+   * @param moreKeyValues Additional key-value pairs to set.
+   * @return A new [Expression] representing the map with the entries set.
+   */
+  fun mapSet(key: String, value: Any?, vararg moreKeyValues: Any): Expression =
+    Companion.mapSet(this, key, value, *moreKeyValues)
+
+  /**
+   * Creates an expression that returns the keys of this map expression.
+   *
+   * While the backend generally preserves insertion order, relying on the order of the output
+   * array is not guaranteed and should be avoided.
+   *
+   * ```kotlin
+   * // Get the keys of the 'metadata' map field.
+   * field("metadata").mapKeys()
+   * ```
+   *
+   * @return A new [Expression] representing the keys of the map.
+   */
+  fun mapKeys(): Expression = Companion.mapKeys(this)
+
+  /**
+   * Creates an expression that returns the values of this map expression.
+   *
+   * While the backend generally preserves insertion order, relying on the order of the output
+   * array is not guaranteed and should be avoided.
+   *
+   * ```kotlin
+   * // Get the values of the 'metadata' map field.
+   * field("metadata").mapValues()
+   * ```
+   *
+   * @return A new [Expression] representing the values of the map.
+   */
+  fun mapValues(): Expression = Companion.mapValues(this)
+
+  /**
+   * Creates an expression that returns the entries of this map expression as an array of maps,
+   * where each map contains a "k" property for the key and a "v" property for the value.
+   *
+   * While the backend generally preserves insertion order, relying on the order of the output
+   * array is not guaranteed and should be avoided.
+   *
+   * ```kotlin
+   * // Get the entries of the 'metadata' map field.
+   * field("metadata").mapEntries()
+   * ```
+   *
+   * @return A new [Expression] representing the entries of the map.
+   */
+  fun mapEntries(): Expression = Companion.mapEntries(this)
 
   /**
    * Calculates the Cosine distance between this and another vector expressions.
