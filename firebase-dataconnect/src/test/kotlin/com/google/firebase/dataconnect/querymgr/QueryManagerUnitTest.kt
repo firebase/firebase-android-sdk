@@ -371,6 +371,24 @@ class QueryManagerUnitTest {
       },
     )
 
+  @Test
+  fun `execute() deduplicates identical queries except for dataSerializersModule`() {
+    val dataDeserializer = serializer<ContextualTestData>()
+    return verifyExecuteDeduplication(
+      getDataDeserializer = { dataDeserializer },
+      getSerializersModule = { valuePrefixOverride, jobIndex, _ ->
+        SerializersModule {
+          contextual(String::class, HardcodedStringKSerializer("$valuePrefixOverride $jobIndex"))
+        }
+      },
+      verifyResults = { _, valuePrefixOverride, results ->
+        val values = results.map { it.value }
+        val expectedResults = List(values.size) { "$valuePrefixOverride $it" }
+        values shouldContainExactlyInAnyOrder expectedResults
+      },
+    )
+  }
+
   private fun <Data> verifyExecuteDeduplication(
     getDataDeserializer: (DeserializationStrategy<TestData>) -> DeserializationStrategy<Data>,
     getSerializersModule:
