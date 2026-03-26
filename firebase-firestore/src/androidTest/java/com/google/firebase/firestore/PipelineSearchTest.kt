@@ -29,6 +29,7 @@ import com.google.firebase.firestore.pipeline.Expression.Companion.snippet
 import com.google.firebase.firestore.pipeline.Expression.SnippetOptions
 import com.google.firebase.firestore.pipeline.SearchStage
 import com.google.firebase.firestore.testutil.IntegrationTestUtil
+import org.junit.Assume
 import org.junit.BeforeClass
 import org.junit.Ignore
 import org.junit.Test
@@ -126,6 +127,10 @@ class PipelineSearchTest {
     @JvmStatic
     @BeforeClass
     fun setupRestaurantDocs() {
+      Assume.assumeTrue(
+        IntegrationTestUtil.getBackendEdition() == IntegrationTestUtil.BackendEdition.ENTERPRISE
+      )
+
       firestore = IntegrationTestUtil.testFirestore()
       restaurantsCollection = firestore.collection("SearchIntegrationTests")
 
