@@ -1772,6 +1772,7 @@ public class PipelineTest {
             .select("title", "awards.hugo")
             .sort(field("title").descending())
             .execute();
+
     Map<String, Object> hitchhikerResult;
     Map<String, Object> duneResult;
 
@@ -1810,6 +1811,7 @@ public class PipelineTest {
                 field("nestedField.level.1"),
                 mapGet("nestedField", "level.1").mapGet("level.2").alias("nested"))
             .execute();
+
     Map<String, Object> hitchhikerResult;
     Map<String, Object> duneResult;
 
