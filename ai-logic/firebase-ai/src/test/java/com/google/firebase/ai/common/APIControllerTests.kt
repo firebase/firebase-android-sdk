@@ -253,8 +253,7 @@ internal class RequestFormatTests {
                 FunctionCallingConfig.Internal(
                   mode = FunctionCallingConfig.Internal.Mode.ANY,
                   allowedFunctionNames = listOf("allowedFunctionName")
-                ),
-                null
+                )
               )
           ),
         )
