@@ -997,6 +997,7 @@ internal constructor(
    * Specifies if the `matches` and `snippet` expressions will enhance the user provided query to
    * perform matching of synonyms, misspellings, lemmatization, stemming.
    */
+  @Beta
   class QueryEnhancement private constructor(internal val proto: Value) {
     private constructor(protoString: String) : this(encodeValue(protoString))
 
