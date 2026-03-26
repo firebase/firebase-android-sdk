@@ -245,7 +245,7 @@ internal object LiveServerMessageSerializer :
       "goAway" in jsonObject -> LiveServerGoAway.InternalWrapper.serializer()
       else -> {
         Log.w(
-          LiveServerMessageSerializer::class.simpleName,
+          "LiveServerMsgSerializer",
           "Ignoring unknown LiveServerMessage response type. Keys found: ${jsonObject.keys}"
         )
         LiveServerUnknownMessage.InternalWrapper.serializer()
