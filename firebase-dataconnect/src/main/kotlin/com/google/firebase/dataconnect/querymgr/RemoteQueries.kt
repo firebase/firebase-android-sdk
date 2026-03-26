@@ -22,43 +22,25 @@ import com.google.firebase.dataconnect.util.ImmutableByteArray
 import google.firebase.dataconnect.proto.ExecuteQueryRequest as ExecuteQueryRequestProto
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.serialization.DeserializationStrategy
-import kotlinx.serialization.modules.SerializersModule
 
-internal class LocalQueries(
+internal class RemoteQueries(
   private val dataConnectGrpcRPCs: DataConnectGrpcRPCs,
   private val cpuDispatcher: CoroutineDispatcher,
   private val coroutineScope: CoroutineScope,
 ) {
 
-  private val localQueries = mutableMapOf<Key<*>, LocalQuery<*>>()
-  private val remoteQueries = RemoteQueries(dataConnectGrpcRPCs, cpuDispatcher, coroutineScope)
+  private val map = mutableMapOf<Key, RemoteQuery>()
 
-  fun <T> getOrPut(
-    key: Key<T>,
+  fun getOrPut(
+    key: Key,
     requestProto: ExecuteQueryRequestProto,
-  ): LocalQuery<T> {
-    val remoteKey = key.toRemoteKey()
-    val remoteQuery = remoteQueries.getOrPut(remoteKey, requestProto)
+  ): RemoteQuery =
+    map.getOrPut(key) {
+      RemoteQuery(dataConnectGrpcRPCs, cpuDispatcher, requestProto, key.fetchPolicy, coroutineScope)
+    }
 
-    val localQuery: LocalQuery<*> =
-      localQueries.getOrPut(key) {
-        LocalQuery(remoteQuery, cpuDispatcher, key.dataDeserializer, key.dataSerializersModule)
-      }
-
-    @Suppress("UNCHECKED_CAST") return localQuery as LocalQuery<T>
-  }
-
-  data class Key<Data>(
+  data class Key(
     val queryId: ImmutableByteArray,
-    val dataDeserializer: DeserializationStrategy<Data>,
-    val dataSerializersModule: SerializersModule?,
     val fetchPolicy: QueryRef.FetchPolicy,
   )
 }
-
-private fun LocalQueries.Key<*>.toRemoteKey(): RemoteQueries.Key =
-  RemoteQueries.Key(
-    queryId = queryId,
-    fetchPolicy = fetchPolicy,
-  )
