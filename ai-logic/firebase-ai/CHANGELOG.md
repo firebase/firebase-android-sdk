@@ -1,4 +1,5 @@
 # Unreleased
+- [feature] Added support for [Maps Grounding](https://ai.google.dev/gemini-api/docs/maps-grounding) (#7950)
 
 - [feature] Added the `turnComplete` argument to multiple `LiveSession.send()` methods.
 - [deprecated] All Imagen models are deprecated and will shut down as early as June 2026.
