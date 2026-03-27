@@ -20,6 +20,8 @@ package com.google.firebase.dataconnect.querymgr
 
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.QueryRef
+import com.google.firebase.dataconnect.core.DataConnectAppCheck
+import com.google.firebase.dataconnect.core.DataConnectAuth
 import com.google.firebase.dataconnect.core.DataConnectGrpcRPCs
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.testutil.CleanupsRule
@@ -57,6 +59,7 @@ import io.mockk.CapturingSlot
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
+import io.mockk.slot
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.random.Random
@@ -96,7 +99,7 @@ class QueryManagerUnitTest {
       alphanumericStringArb(),
     ) { args, requestName ->
       val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk()
-      val executeQueryRequestSlot = CapturingSlot<ExecuteQueryRequest>()
+      val executeQueryRequestSlot = slot<ExecuteQueryRequest>()
       dataConnectGrpcRPCs.stubExecuteQuery(executeQueryRequestSlot = executeQueryRequestSlot)
       val queryManager: QueryManager =
         newQueryManager(requestName = requestName, dataConnectGrpcRPCs = dataConnectGrpcRPCs)
@@ -124,7 +127,7 @@ class QueryManagerUnitTest {
       executeArgumentsArb(),
     ) { args ->
       val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk()
-      val executeQueryRequestSlot = CapturingSlot<ExecuteQueryRequest>()
+      val executeQueryRequestSlot = slot<ExecuteQueryRequest>()
       dataConnectGrpcRPCs.stubExecuteQuery(executeQueryRequestSlot = executeQueryRequestSlot)
       val queryManager: QueryManager = newQueryManager(dataConnectGrpcRPCs = dataConnectGrpcRPCs)
 
@@ -151,7 +154,7 @@ class QueryManagerUnitTest {
       executeArgumentsArb(),
     ) { args ->
       val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk()
-      val executeQueryRequestSlot = CapturingSlot<ExecuteQueryRequest>()
+      val executeQueryRequestSlot = slot<ExecuteQueryRequest>()
       dataConnectGrpcRPCs.stubExecuteQuery(executeQueryRequestSlot = executeQueryRequestSlot)
       val queryManager: QueryManager = newQueryManager(dataConnectGrpcRPCs = dataConnectGrpcRPCs)
 
@@ -210,7 +213,7 @@ class QueryManagerUnitTest {
       alphanumericStringArb(),
     ) { args, overrideValue ->
       val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk()
-      val executeQueryRequestSlot = CapturingSlot<ExecuteQueryRequest>()
+      val executeQueryRequestSlot = slot<ExecuteQueryRequest>()
       dataConnectGrpcRPCs.stubExecuteQuery(executeQueryRequestSlot = executeQueryRequestSlot)
       val queryManager: QueryManager = newQueryManager(dataConnectGrpcRPCs = dataConnectGrpcRPCs)
       val variablesSerializer = TestVariablesOverrideSerializer(overrideValue)
@@ -273,7 +276,7 @@ class QueryManagerUnitTest {
       alphanumericStringArb().pair(),
     ) { args, (requestValue, overrideValue) ->
       val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk()
-      val executeQueryRequestSlot = CapturingSlot<ExecuteQueryRequest>()
+      val executeQueryRequestSlot = slot<ExecuteQueryRequest>()
       dataConnectGrpcRPCs.stubExecuteQuery(executeQueryRequestSlot = executeQueryRequestSlot)
       val queryManager: QueryManager = newQueryManager(dataConnectGrpcRPCs = dataConnectGrpcRPCs)
       val variables = ContextualTestVariables(requestValue)
@@ -307,7 +310,7 @@ class QueryManagerUnitTest {
       Arb.enum<CallerSdkType>(),
     ) { args, callerSdkType ->
       val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk()
-      val callerSdkTypeSlot = CapturingSlot<CallerSdkType>()
+      val callerSdkTypeSlot = slot<CallerSdkType>()
       dataConnectGrpcRPCs.stubExecuteQuery(callerSdkTypeSlot = callerSdkTypeSlot)
       val queryManager: QueryManager = newQueryManager(dataConnectGrpcRPCs = dataConnectGrpcRPCs)
 
@@ -324,6 +327,32 @@ class QueryManagerUnitTest {
 
       val capturedCallerSdkType: CallerSdkType = callerSdkTypeSlot.captured
       capturedCallerSdkType shouldBe callerSdkType
+    }
+  }
+
+  @Test
+  fun `execute() sends no auth token when DataConnectAuth returns null`() = runTest {
+    checkAll(propTestConfig, executeArgumentsArb()) { args ->
+      val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk()
+      val authTokenSlot = slot<String>()
+      dataConnectGrpcRPCs.stubExecuteQuery(authTokenSlot=authTokenSlot)
+      val dataConnectAuth: DataConnectAuth = mockk {
+        coEvery { getToken(any()) } returns null
+      }
+      val queryManager: QueryManager = newQueryManager(dataConnectGrpcRPCs = dataConnectGrpcRPCs, dataConnectAuth=dataConnectAuth)
+
+      queryManager.execute(
+        operationName = args.operationName,
+        variables = args.variables,
+        dataDeserializer = args.dataDeserializer,
+        variablesSerializer = args.variablesSerializer,
+        dataSerializersModule = args.dataSerializersModule,
+        variablesSerializersModule = args.variablesSerializersModule,
+        callerSdkType = args.callerSdkType,
+        fetchPolicy = args.fetchPolicy,
+      )
+
+      authTokenSlot.captured shouldBe null
     }
   }
 
@@ -524,6 +553,8 @@ class QueryManagerUnitTest {
   private suspend fun PropertyContext.newQueryManager(
     requestName: String = "requestName" + randomSource().random.nextAlphanumericString(10),
     dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk { stubExecuteQuery() },
+    dataConnectAuth: DataConnectAuth = mockk(relaxed = true),
+    dataConnectAppCheck: DataConnectAppCheck = mockk(relaxed = true),
     ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
     cpuDispatcher: CoroutineDispatcher = Dispatchers.Default,
     secureRandom: Random = randomSource().random,
@@ -533,6 +564,8 @@ class QueryManagerUnitTest {
       QueryManager(
         requestName = requestName,
         dataConnectGrpcRPCs = dataConnectGrpcRPCs,
+        dataConnectAuth=dataConnectAuth,
+        dataConnectAppCheck=dataConnectAppCheck,
         ioDispatcher = ioDispatcher,
         cpuDispatcher = cpuDispatcher,
         secureRandom = secureRandom,
@@ -650,12 +683,14 @@ private class HardcodedStringKSerializer(private val hardcodedValue: String) : K
 }
 
 private fun DataConnectGrpcRPCs.stubExecuteQuery(
-  executeQueryRequestSlot: CapturingSlot<ExecuteQueryRequest> = CapturingSlot(),
-  callerSdkTypeSlot: CapturingSlot<CallerSdkType> = CapturingSlot(),
+  executeQueryRequestSlot: CapturingSlot<ExecuteQueryRequest> = slot(),
+  authTokenSlot: CapturingSlot<String> = slot(),
+  appCheckTokenSlot: CapturingSlot<String> = slot(),
+  callerSdkTypeSlot: CapturingSlot<CallerSdkType> = slot(),
   executeQueryResponse: ExecuteQueryResponse? = null
 ) {
   coEvery {
-    executeQuery(any(), capture(executeQueryRequestSlot), any(), any(), capture(callerSdkTypeSlot))
+    executeQuery(any(), capture(executeQueryRequestSlot), capture(authTokenSlot), capture(appCheckTokenSlot), capture(callerSdkTypeSlot))
   } answers
     {
       executeQueryResponse

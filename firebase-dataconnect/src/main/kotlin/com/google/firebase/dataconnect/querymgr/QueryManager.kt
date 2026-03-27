@@ -18,6 +18,8 @@ package com.google.firebase.dataconnect.querymgr
 
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.QueryRef
+import com.google.firebase.dataconnect.core.DataConnectAppCheck
+import com.google.firebase.dataconnect.core.DataConnectAuth
 import com.google.firebase.dataconnect.core.DataConnectGrpcRPCs
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
@@ -46,7 +48,9 @@ import kotlinx.serialization.modules.SerializersModule
 
 internal class QueryManager(
   private val requestName: String,
-  private val dataConnectGrpcRPCs: DataConnectGrpcRPCs,
+  dataConnectGrpcRPCs: DataConnectGrpcRPCs,
+  private val dataConnectAuth: DataConnectAuth,
+  private val dataConnectAppCheck: DataConnectAppCheck,
   private val ioDispatcher: CoroutineDispatcher,
   private val cpuDispatcher: CoroutineDispatcher,
   private val secureRandom: Random,
