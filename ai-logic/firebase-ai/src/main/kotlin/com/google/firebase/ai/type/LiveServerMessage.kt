@@ -16,6 +16,7 @@
 
 package com.google.firebase.ai.type
 
+import android.util.Log
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.serialization.DeserializationStrategy
@@ -136,6 +137,15 @@ public class LiveServerSetupComplete : LiveServerMessage {
   }
 }
 
+@PublicPreviewAPI
+public class LiveServerUnknownMessage private constructor() : LiveServerMessage {
+  @Serializable
+  internal data class InternalWrapper(@Transient val unused: Unit? = null) :
+    InternalLiveServerMessage {
+    override fun toPublic() = LiveServerUnknownMessage()
+  }
+}
+
 /**
  * Request for the client to execute the provided [functionCalls].
  *
@@ -233,10 +243,13 @@ internal object LiveServerMessageSerializer :
       "toolCallCancellation" in jsonObject ->
         LiveServerToolCallCancellation.InternalWrapper.serializer()
       "goAway" in jsonObject -> LiveServerGoAway.InternalWrapper.serializer()
-      else ->
-        throw SerializationException(
-          "Unknown LiveServerMessage response type. Keys found: ${jsonObject.keys}"
+      else -> {
+        Log.w(
+          "LiveServerMsgSerializer",
+          "Ignoring unknown LiveServerMessage response type. Keys found: ${jsonObject.keys}"
         )
+        LiveServerUnknownMessage.InternalWrapper.serializer()
+      }
     }
   }
 }

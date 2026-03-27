@@ -1772,11 +1772,30 @@ public class PipelineTest {
             .select("title", "awards.hugo")
             .sort(field("title").descending())
             .execute();
+
+    Map<String, Object> hitchhikerResult;
+    Map<String, Object> duneResult;
+
+    switch (IntegrationTestUtil.getTargetBackend()) {
+      case NIGHTLY:
+        hitchhikerResult =
+            mapOfEntries(
+                entry("title", "The Hitchhiker's Guide to the Galaxy"),
+                entry("awards", ImmutableMap.of("hugo", true)));
+        duneResult =
+            mapOfEntries(entry("title", "Dune"), entry("awards", ImmutableMap.of("hugo", true)));
+        break;
+      default:
+        hitchhikerResult =
+            mapOfEntries(
+                entry("title", "The Hitchhiker's Guide to the Galaxy"), entry("awards.hugo", true));
+        duneResult = mapOfEntries(entry("title", "Dune"), entry("awards.hugo", true));
+        break;
+    }
+
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
-        .containsExactly(
-            ImmutableMap.of("title", "The Hitchhiker's Guide to the Galaxy", "awards.hugo", true),
-            ImmutableMap.of("title", "Dune", "awards.hugo", true));
+        .containsExactly(hitchhikerResult, duneResult);
   }
 
   @Test
@@ -1792,12 +1811,34 @@ public class PipelineTest {
                 field("nestedField.level.1"),
                 mapGet("nestedField", "level.1").mapGet("level.2").alias("nested"))
             .execute();
+
+    Map<String, Object> hitchhikerResult;
+    Map<String, Object> duneResult;
+
+    switch (IntegrationTestUtil.getTargetBackend()) {
+      case NIGHTLY:
+        hitchhikerResult =
+            mapOfEntries(
+                entry("title", "The Hitchhiker's Guide to the Galaxy"),
+                entry("nestedField", ImmutableMap.of("level", ImmutableMap.of())),
+                entry("nested", true));
+        duneResult =
+            mapOfEntries(
+                entry("title", "Dune"),
+                entry("nestedField", ImmutableMap.of("level", ImmutableMap.of())),
+                entry("nested", null));
+        break;
+      default:
+        hitchhikerResult =
+            mapOfEntries(
+                entry("title", "The Hitchhiker's Guide to the Galaxy"), entry("nested", true));
+        duneResult = mapOfEntries(entry("title", "Dune"));
+        break;
+    }
+
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
-        .containsExactly(
-            mapOfEntries(
-                entry("title", "The Hitchhiker's Guide to the Galaxy"), entry("nested", true)),
-            mapOfEntries(entry("title", "Dune")));
+        .containsExactly(hitchhikerResult, duneResult);
   }
 
   @Test
