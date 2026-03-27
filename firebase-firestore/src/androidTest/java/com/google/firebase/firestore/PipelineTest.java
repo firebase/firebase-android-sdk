@@ -52,6 +52,7 @@ import static com.google.firebase.firestore.pipeline.Expression.logicalMaximum;
 import static com.google.firebase.firestore.pipeline.Expression.logicalMinimum;
 import static com.google.firebase.firestore.pipeline.Expression.map;
 import static com.google.firebase.firestore.pipeline.Expression.mapGet;
+import static com.google.firebase.firestore.pipeline.Expression.nor;
 import static com.google.firebase.firestore.pipeline.Expression.not;
 import static com.google.firebase.firestore.pipeline.Expression.notEqual;
 import static com.google.firebase.firestore.pipeline.Expression.nullValue;
@@ -61,6 +62,7 @@ import static com.google.firebase.firestore.pipeline.Expression.split;
 import static com.google.firebase.firestore.pipeline.Expression.startsWith;
 import static com.google.firebase.firestore.pipeline.Expression.stringConcat;
 import static com.google.firebase.firestore.pipeline.Expression.subtract;
+import static com.google.firebase.firestore.pipeline.Expression.switchOn;
 import static com.google.firebase.firestore.pipeline.Expression.trunc;
 import static com.google.firebase.firestore.pipeline.Expression.truncToPrecision;
 import static com.google.firebase.firestore.pipeline.Expression.vector;
@@ -480,6 +482,108 @@ public class PipelineTest {
             ImmutableMap.of("title", "1984"),
             ImmutableMap.of("title", "Pride and Prejudice"),
             ImmutableMap.of("title", "The Handmaid's Tale"));
+  }
+
+  @Test
+  public void whereByNorCondition() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(
+                nor(
+                    equal("genre", "Romance"),
+                    equal("genre", "Dystopian"),
+                    equal("genre", "Fantasy"),
+                    greaterThan("published", 1949)))
+            .select("title")
+            .sort(field("title").ascending())
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactlyElementsIn(
+            Lists.newArrayList(
+                ImmutableMap.of("title", "Crime and Punishment"),
+                ImmutableMap.of("title", "The Great Gatsby"),
+                ImmutableMap.of("title", "Timestamp Book")));
+  }
+
+  @Test
+  public void norConditionWithNull() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(
+                map(
+                    ImmutableMap.of(
+                        "a", false,
+                        "b", false,
+                        "c", true,
+                        "d", Expression.nullValue())))
+            .select(
+                nor(field("a").asBoolean(), field("b").asBoolean()).alias("twoConditions"),
+                nor(field("a").asBoolean(), field("b").asBoolean(), field("c").asBoolean())
+                    .alias("threeConditions"),
+                nor(field("a").asBoolean(), field("b").asBoolean(), field("d").asBoolean())
+                    .alias("threeConditionsWithNull"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            mapOfEntries(
+                entry("twoConditions", true),
+                entry("threeConditions", false),
+                entry("threeConditionsWithNull", null)));
+  }
+
+  @Test
+  public void selectWithSwitchOn() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(map(ImmutableMap.of("value", 2)))
+            .select(
+                switchOn(equal(field("value"), 2), constant("two"), constant("NA"))
+                    .alias("result1"),
+                switchOn(equal(field("value"), 3), constant("three"), constant("NA"))
+                    .alias("result2"),
+                switchOn(
+                        equal(field("value"), 1),
+                        constant("one"),
+                        equal(field("value"), 2),
+                        constant("two"),
+                        equal(field("value"), 3),
+                        constant("three"),
+                        constant("NA"))
+                    .alias("result3"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(ImmutableMap.of("result1", "two", "result2", "NA", "result3", "two"));
+  }
+
+  @Test
+  public void testSwitchOnWithNoDefaultValueAndNoMatchingCondition() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(map(ImmutableMap.of("value", 5)))
+            .select(
+                switchOn(
+                        equal(field("value"), 1),
+                        constant("one"),
+                        equal(field("value"), 2),
+                        constant("two"))
+                    .alias("result"))
+            .execute();
+    Exception exception = assertThrows(Exception.class, () -> waitFor(execute));
+    assertThat(exception).hasMessageThat().contains("all switch cases evaluate to false");
   }
 
   @Test
@@ -1765,11 +1869,30 @@ public class PipelineTest {
             .select("title", "awards.hugo")
             .sort(field("title").descending())
             .execute();
+
+    Map<String, Object> hitchhikerResult;
+    Map<String, Object> duneResult;
+
+    switch (IntegrationTestUtil.getTargetBackend()) {
+      case NIGHTLY:
+        hitchhikerResult =
+            mapOfEntries(
+                entry("title", "The Hitchhiker's Guide to the Galaxy"),
+                entry("awards", ImmutableMap.of("hugo", true)));
+        duneResult =
+            mapOfEntries(entry("title", "Dune"), entry("awards", ImmutableMap.of("hugo", true)));
+        break;
+      default:
+        hitchhikerResult =
+            mapOfEntries(
+                entry("title", "The Hitchhiker's Guide to the Galaxy"), entry("awards.hugo", true));
+        duneResult = mapOfEntries(entry("title", "Dune"), entry("awards.hugo", true));
+        break;
+    }
+
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
-        .containsExactly(
-            ImmutableMap.of("title", "The Hitchhiker's Guide to the Galaxy", "awards.hugo", true),
-            ImmutableMap.of("title", "Dune", "awards.hugo", true));
+        .containsExactly(hitchhikerResult, duneResult);
   }
 
   @Test
@@ -1785,12 +1908,34 @@ public class PipelineTest {
                 field("nestedField.level.1"),
                 mapGet("nestedField", "level.1").mapGet("level.2").alias("nested"))
             .execute();
+
+    Map<String, Object> hitchhikerResult;
+    Map<String, Object> duneResult;
+
+    switch (IntegrationTestUtil.getTargetBackend()) {
+      case NIGHTLY:
+        hitchhikerResult =
+            mapOfEntries(
+                entry("title", "The Hitchhiker's Guide to the Galaxy"),
+                entry("nestedField", ImmutableMap.of("level", ImmutableMap.of())),
+                entry("nested", true));
+        duneResult =
+            mapOfEntries(
+                entry("title", "Dune"),
+                entry("nestedField", ImmutableMap.of("level", ImmutableMap.of())),
+                entry("nested", null));
+        break;
+      default:
+        hitchhikerResult =
+            mapOfEntries(
+                entry("title", "The Hitchhiker's Guide to the Galaxy"), entry("nested", true));
+        duneResult = mapOfEntries(entry("title", "Dune"));
+        break;
+    }
+
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
-        .containsExactly(
-            mapOfEntries(
-                entry("title", "The Hitchhiker's Guide to the Galaxy"), entry("nested", true)),
-            mapOfEntries(entry("title", "Dune")));
+        .containsExactly(hitchhikerResult, duneResult);
   }
 
   @Test

@@ -1,3 +1,8 @@
+### Unreleased
+
+- [changed] Improved efficiency when extracting breakpad binary files.
+- [fixed] Avoid build breaks when handling unsupported native libraries for injectCrashlyticsBuildIds task [#7780]
+
 ### Crashlytics Gradle plugin version 3.0.6
 
 * [fixed] Fixed an incompatibility between Crashlytics and Gradle isolated projects.

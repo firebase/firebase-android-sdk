@@ -14,7 +14,6 @@
 
 package com.google.firebase.firestore.pipeline
 
-import com.google.common.annotations.Beta
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.Blob
 import com.google.firebase.firestore.DocumentReference
@@ -57,7 +56,6 @@ import java.util.Date
  * The [Expression] class provides a fluent API for building expressions. You can chain together
  * method calls to create complex expressions.
  */
-@Beta
 abstract class Expression internal constructor() {
 
   internal abstract fun canonicalId(): String
@@ -118,6 +116,7 @@ abstract class Expression internal constructor() {
               .toTypedArray()
           )
         is List<*> -> array(value)
+        is Pipeline -> PipelineValueExpression(value)
         else -> null
       }
     }
@@ -412,6 +411,55 @@ abstract class Expression internal constructor() {
     @JvmStatic
     fun or(condition: BooleanExpression, vararg conditions: BooleanExpression): BooleanExpression =
       BooleanFunctionExpression("or", evaluateOr, condition, *conditions)
+
+    /**
+     * Creates an expression that performs a logical 'NOR' operation.
+     *
+     * ```kotlin
+     * // Check if 'status' is neither "new" nor "open"
+     * nor(field("status").equal("new"), field("status").equal("open"))
+     * ```
+     *
+     * @param condition The first [BooleanExpression].
+     * @param conditions Additional [BooleanExpression]s.
+     * @return A new [BooleanExpression] representing the logical 'NOR' operation.
+     */
+    @JvmStatic
+    fun nor(condition: BooleanExpression, vararg conditions: BooleanExpression): BooleanExpression =
+      BooleanFunctionExpression("nor", notImplemented, condition, *conditions)
+
+    /**
+     * Creates an expression that evaluates to the result corresponding to the first true condition.
+     *
+     * This function behaves like a `switch` statement. It accepts an alternating sequence of
+     * conditions and their corresponding results. If an odd number of arguments is provided, the
+     * final argument serves as a default fallback result. If no default is provided and no
+     * condition evaluates to true, it throws an error.
+     *
+     * ```kotlin
+     * // Return "Active" if field "status" is 1, "Pending" if field "status" is 2,
+     * // and default to "Unknown" if none of the conditions are true.
+     * switchOn(
+     *   field("status").equal(1), constant("Active"),
+     *   field("status").equal(2), constant("Pending"),
+     *   constant("Unknown")
+     * )
+     * ```
+     *
+     * @param condition The first condition to check.
+     * @param result The result if the first condition is true.
+     * @param others Additional conditions and results, and optionally a default value.
+     * @return A new [Expression] representing the switch operation.
+     */
+    @JvmStatic
+    fun switchOn(condition: BooleanExpression, result: Any, vararg others: Any): Expression =
+      FunctionExpression(
+        "switch_on",
+        notImplemented,
+        condition,
+        toExprOrConstant(result),
+        *toArrayOfExprOrConstant(others)
+      )
 
     /**
      * Creates an expression that performs a logical 'XOR' operation.
@@ -3073,6 +3121,50 @@ abstract class Expression internal constructor() {
     @JvmStatic
     fun map(elements: Map<String, Any>): Expression =
       map(elements.flatMap { listOf(constant(it.key), toExprOrConstant(it.value)) }.toTypedArray())
+
+    /**
+     * Accesses a field/property of a document or Map using the provided [key].
+     *
+     * @param expression The expression evaluating to a map or document.
+     * @param key The key of the field to access.
+     * @return An [Expression] representing the value of the field.
+     */
+    @JvmStatic
+    fun getField(expression: Expression, key: String): Expression =
+      FunctionExpression("field", notImplemented, expression, key)
+
+    /**
+     * Accesses a field/property of a document or Map using the provided [key].
+     *
+     * @param fieldName The field name of the map or document field.
+     * @param key The key of the field to access.
+     * @return An [Expression] representing the value of the field.
+     */
+    @JvmStatic
+    fun getField(fieldName: String, key: String): Expression =
+      FunctionExpression("field", notImplemented, fieldName, key)
+
+    /**
+     * Accesses a field/property of a document or Map using the provided [keyExpression].
+     *
+     * @param expression The expression evaluating to a Map or Document.
+     * @param keyExpression The expression evaluating to the key.
+     * @return A new [Expression] representing the value of the field.
+     */
+    @JvmStatic
+    fun getField(expression: Expression, keyExpression: Expression): Expression =
+      FunctionExpression("field", notImplemented, expression, keyExpression)
+
+    /**
+     * Accesses a field/property of a document or Map using the provided [keyExpression].
+     *
+     * @param fieldName The field name of the map or document field.
+     * @param keyExpression The expression evaluating to the key.
+     * @return A new [Expression] representing the value of the field.
+     */
+    @JvmStatic
+    fun getField(fieldName: String, keyExpression: Expression): Expression =
+      FunctionExpression("field", notImplemented, fieldName, keyExpression)
 
     /**
      * Accesses a value from a map (object) field using the provided [key].
@@ -6049,6 +6141,42 @@ abstract class Expression internal constructor() {
      * @return A new [Expression] representing the documentId operation.
      */
     @JvmStatic fun documentId(docRef: DocumentReference): Expression = documentId(constant(docRef))
+
+    /**
+     * Creates an expression that retrieves the value of a variable bound via [Pipeline.define].
+     *
+     * Example:
+     * ```kotlin
+     * firestore.pipeline().collection("products")
+     *     .define(
+     *         multiply(field("price"), 0.9).as("discountedPrice"),
+     *         add(field("stock"), 10).as("newStock")
+     *     )
+     *     .where(lessThan(variable("discountedPrice"), 100))
+     *     .select(field("name"), variable("newStock"));
+     * ```
+     *
+     * @param name The name of the variable to retrieve.
+     * @return An [Expression] representing the variable's value.
+     */
+    @JvmStatic fun variable(name: String): Expression = Variable(name)
+
+    /**
+     * Creates an expression that represents the current document being processed.
+     *
+     * Example:
+     * ```kotlin
+     * // Define the current document as a variable "doc"
+     * firestore.pipeline().collection("books")
+     *     .define(currentDocument().alias("doc"))
+     *     // Access a field from the defined document variable
+     *     .select(variable("doc").getField("title"));
+     * ```
+     *
+     * @return An [Expression] representing the current document.
+     */
+    @JvmStatic
+    fun currentDocument(): Expression = FunctionExpression("current_document", notImplemented)
   }
 
   /**
@@ -7183,6 +7311,22 @@ abstract class Expression internal constructor() {
    */
   fun mapMerge(mapExpr: Expression, vararg otherMaps: Expression) =
     Companion.mapMerge(this, mapExpr, *otherMaps)
+
+  /**
+   * Accesses a field/property of a document or Map using the provided [key].
+   *
+   * @param key The string key to access.
+   * @return A new [Expression] representing the value of the field.
+   */
+  fun getField(key: String): Expression = Companion.getField(this, key)
+
+  /**
+   * Accesses a field/property of a document or Map using the provided [keyExpression].
+   *
+   * @param keyExpression The expression evaluating to the key to access.
+   * @return A new [Expression] representing the value of the field.
+   */
+  fun getField(keyExpression: Expression): Expression = Companion.getField(this, keyExpression)
 
   /**
    * Creates an expression that removes a key from this map expression.
@@ -8332,7 +8476,6 @@ abstract class Expression internal constructor() {
 }
 
 /** Expressions that have an alias are [Selectable] */
-@Beta
 abstract class Selectable : Expression() {
   internal abstract val alias: String
   internal abstract val expr: Expression
@@ -8350,7 +8493,6 @@ abstract class Selectable : Expression() {
 }
 
 /** Represents an expression that will be given the alias in the output document. */
-@Beta
 class AliasedExpression
 internal constructor(override val alias: String, override val expr: Expression) : Selectable() {
   override fun toProto(userDataReader: UserDataReader): Value = expr.toProto(userDataReader)
@@ -8380,7 +8522,6 @@ internal constructor(override val alias: String, override val expr: Expression) 
  *
  * You can create a [Field] instance using the static [Expression.field] method:
  */
-@Beta
 class Field internal constructor(internal val fieldPath: ModelFieldPath) : Selectable() {
   companion object {
 
@@ -8435,7 +8576,7 @@ class Field internal constructor(internal val fieldPath: ModelFieldPath) : Selec
         EvaluateResult.timestamp(getLocalWriteTime(fieldValue))
       DocumentSnapshot.ServerTimestampBehavior.PREVIOUS -> {
         val previousValue = getPreviousValue(fieldValue)
-        if (previousValue == null) EvaluateResult.NULL else EvaluateResultValue(previousValue!!)
+        if (previousValue == null) EvaluateResult.NULL else EvaluateResultValue(previousValue)
       }
     }
   }
@@ -8461,7 +8602,6 @@ class Field internal constructor(internal val fieldPath: ModelFieldPath) : Selec
  * [and], [equal], or the methods on [Expression] ([Expression.equal]), [Expression.lessThan], etc)
  * to construct new [FunctionExpression] instances.
  */
-@Beta
 open class FunctionExpression
 internal constructor(
   internal val name: String,
@@ -8550,7 +8690,6 @@ internal constructor(
 }
 
 /** A class that represents a filter condition. */
-@Beta
 abstract class BooleanExpression : Expression() {
 
   /**
@@ -8736,7 +8875,6 @@ internal class BooleanField(val field: Field) : BooleanExpression() {
  *
  * You create [Ordering] instances using the [ascending] and [descending] helper methods.
  */
-@Beta
 class Ordering internal constructor(val expr: Expression, val dir: Direction) {
   internal fun canonicalId(): String {
     val direction = if (dir == Direction.ASCENDING) "asc" else "desc"
@@ -8807,4 +8945,31 @@ class Ordering internal constructor(val expr: Expression, val dir: Direction) {
           .putFields("expression", expr.toProto(userDataReader))
       )
       .build()
+}
+
+private class Variable(val name: String) : Expression() {
+  override fun toProto(userDataReader: UserDataReader): Value =
+    Value.newBuilder().setVariableReferenceValue(name).build()
+  override fun evaluateFunction(context: EvaluationContext): EvaluateDocument =
+    { _: MutableDocument ->
+      throw NotImplementedError("Variable evaluation not implemented")
+    }
+  override fun canonicalId() = "var($name)"
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is Variable) return false
+    return name == other.name
+  }
+  override fun hashCode(): Int = name.hashCode()
+}
+
+private class PipelineValueExpression(val pipeline: Pipeline) : Expression() {
+  override fun toProto(userDataReader: UserDataReader): Value =
+    Value.newBuilder().setPipelineValue(pipeline.toPipelineProto(userDataReader)).build()
+  override fun evaluateFunction(context: EvaluationContext): EvaluateDocument =
+    { _: MutableDocument ->
+      throw NotImplementedError("Pipeline evaluation not implemented")
+    }
+  override fun canonicalId() = "pipeline(\${pipeline.hashCode()})"
+  override fun toString() = "Pipeline(...)"
 }
