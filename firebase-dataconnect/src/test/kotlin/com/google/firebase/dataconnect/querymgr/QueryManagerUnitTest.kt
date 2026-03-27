@@ -437,6 +437,17 @@ class QueryManagerUnitTest {
     )
   }
 
+  @Test
+  fun `execute() deduplicates identical queries, even with different callerSdkType`() =
+    verifyExecuteDeduplication(
+      getDataDeserializer = { _, _, dataDeserializer -> dataDeserializer },
+      getCallerSdkType = { random, _ -> CallerSdkType.entries.random(random) },
+      verifyResults = { valuePrefix, _, results ->
+        val values = results.map { it.value }
+        values.distinct().shouldContainExactlyInAnyOrder("$valuePrefix 0", "$valuePrefix 1")
+      },
+    )
+
   private fun <Data> verifyExecuteDeduplication(
     getDataDeserializer:
       (
@@ -456,6 +467,9 @@ class QueryManagerUnitTest {
       { _, serializersModule ->
         serializersModule
       },
+    getCallerSdkType: (Random, CallerSdkType) -> CallerSdkType = { _, callerSdkType ->
+      callerSdkType
+    },
     verifyResults: (valuePrefix: String, valuePrefixOverride: String, List<Data>) -> Unit,
   ) = runTest {
     checkAll(
@@ -495,7 +509,7 @@ class QueryManagerUnitTest {
                 getDataSerializersModule(valuePrefixOverride, jobIndex, args.dataSerializersModule),
               variablesSerializersModule =
                 getVariablesSerializersModule(jobIndex, args.variablesSerializersModule),
-              callerSdkType = args.callerSdkType,
+              callerSdkType = getCallerSdkType(randomSource().random, args.callerSdkType),
               fetchPolicy = args.fetchPolicy,
             )
           }
