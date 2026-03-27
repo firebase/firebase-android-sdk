@@ -16,7 +16,13 @@
 
 package com.google.firebase.ai.type
 
-/** Used for safety filtering. */
+/**
+ * Used for safety filtering.
+ *
+ * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as early
+ * as June 2026. As a replacement, you can
+ * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
+ */
 public class ImagenSafetyFilterLevel private constructor(internal val internalVal: String) {
   public companion object {
     /** Strongest filtering level, most strict blocking. */

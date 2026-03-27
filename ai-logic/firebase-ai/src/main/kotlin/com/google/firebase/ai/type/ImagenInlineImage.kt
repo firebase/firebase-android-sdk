@@ -28,6 +28,10 @@ import kotlinx.serialization.Serializable
  * @property data The raw image bytes in JPEG or PNG format, as specified by [mimeType].
  * @property mimeType The IANA standard MIME type of the image data; either `"image/png"` or
  * `"image/jpeg"`; to request a different format, see [ImagenGenerationConfig.imageFormat].
+ *
+ * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as early
+ * as June 2026. As a replacement, you can
+ * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
  */
 public class ImagenInlineImage
 internal constructor(
@@ -37,6 +41,10 @@ internal constructor(
 
   /**
    * Returns the image as an Android OS native [Bitmap] so that it can be saved or sent to the UI.
+   *
+   * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as
+   * early as June 2026. As a replacement, you can
+   * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
    */
   public fun asBitmap(): Bitmap {
     return BitmapFactory.decodeByteArray(data, 0, data.size)
@@ -50,6 +58,13 @@ internal constructor(
   }
 }
 
+/**
+ * Helper method to convert an Android bitmap to an Imagen inline data image.
+ *
+ * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as early
+ * as June 2026. As a replacement, you can
+ * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
+ */
 @PublicPreviewAPI
 public fun Bitmap.toImagenInlineImage(): ImagenInlineImage {
   val byteArrayOutputStream = ByteArrayOutputStream()

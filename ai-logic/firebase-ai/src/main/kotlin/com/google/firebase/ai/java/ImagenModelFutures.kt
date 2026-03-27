@@ -33,6 +33,10 @@ import com.google.firebase.ai.type.PublicPreviewAPI
  * Wrapper class providing Java compatible methods for [ImagenModel].
  *
  * @see [ImagenModel]
+ *
+ * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as early
+ * as June 2026. As a replacement, you can
+ * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
  */
 @PublicPreviewAPI
 public abstract class ImagenModelFutures internal constructor() {
@@ -40,6 +44,10 @@ public abstract class ImagenModelFutures internal constructor() {
    * Generates an image, returning the result directly to the caller.
    *
    * @param prompt The main text prompt from which the image is generated.
+   *
+   * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as
+   * early as June 2026. As a replacement, you can
+   * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
    */
   public abstract fun generateImages(
     prompt: String,
@@ -52,6 +60,10 @@ public abstract class ImagenModelFutures internal constructor() {
    * @param prompt the text input given to the model as a prompt
    * @param referenceImages the image inputs given to the model as a prompt
    * @param config the editing configuration settings
+   *
+   * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as
+   * early as June 2026. As a replacement, you can
+   * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
    */
   public abstract fun editImage(
     referenceImages: List<ImagenReferenceImage>,
@@ -65,6 +77,10 @@ public abstract class ImagenModelFutures internal constructor() {
    *
    * @param prompt the text input given to the model as a prompt
    * @param referenceImages the image inputs given to the model as a prompt
+   *
+   * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as
+   * early as June 2026. As a replacement, you can
+   * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
    */
   public abstract fun editImage(
     referenceImages: List<ImagenReferenceImage>,
@@ -78,6 +94,10 @@ public abstract class ImagenModelFutures internal constructor() {
    * @param prompt the text input given to the model as a prompt
    * @param mask the mask which defines where in the image can be painted by imagen.
    * @param config the editing configuration settings, it should include an [ImagenEditMode]
+   *
+   * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as
+   * early as June 2026. As a replacement, you can
+   * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
    */
   public abstract fun inpaintImage(
     image: ImagenInlineImage,
@@ -99,6 +119,10 @@ public abstract class ImagenModelFutures internal constructor() {
    * insufficient
    * @param config the editing configuration settings
    * @see [ImagenMaskReference.generateMaskAndPadForOutpainting]
+   *
+   * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as
+   * early as June 2026. As a replacement, you can
+   * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
    */
   public abstract fun outpaintImage(
     image: ImagenInlineImage,
@@ -108,7 +132,13 @@ public abstract class ImagenModelFutures internal constructor() {
     config: ImagenEditingConfig? = null,
   ): ListenableFuture<ImagenGenerationResponse<ImagenInlineImage>>
 
-  /** Returns the [ImagenModel] object wrapped by this object. */
+  /**
+   * Returns the [ImagenModel] object wrapped by this object.
+   *
+   * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as
+   * early as June 2026. As a replacement, you can
+   * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
+   */
   public abstract fun getImageModel(): ImagenModel
 
   private class FuturesImpl(private val model: ImagenModel) : ImagenModelFutures() {
@@ -154,7 +184,13 @@ public abstract class ImagenModelFutures internal constructor() {
 
   public companion object {
 
-    /** @return a [ImagenModelFutures] created around the provided [ImagenModel] */
+    /**
+     * @return a [ImagenModelFutures] created around the provided [ImagenModel]
+     *
+     * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as
+     * early as June 2026. As a replacement, you can
+     * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
+     */
     @JvmStatic public fun from(model: ImagenModel): ImagenModelFutures = FuturesImpl(model)
   }
 }

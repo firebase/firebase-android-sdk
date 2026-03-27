@@ -15,7 +15,13 @@
  */
 package com.google.firebase.ai.type
 
-/** Represents a type for a subject reference, specifying how it should be interpreted. */
+/**
+ * Represents a type for a subject reference, specifying how it should be interpreted.
+ *
+ * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as early
+ * as June 2026. As a replacement, you can
+ * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
+ */
 public class ImagenSubjectReferenceType private constructor(internal val value: String) {
 
   public companion object {

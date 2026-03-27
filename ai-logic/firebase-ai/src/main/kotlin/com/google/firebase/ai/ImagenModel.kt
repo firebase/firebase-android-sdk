@@ -44,6 +44,10 @@ import com.google.firebase.auth.internal.InternalAuthProvider
  *
  * See the documentation for a list of
  * [supported models](https://firebase.google.com/docs/ai-logic/models).
+ *
+ * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as early
+ * as June 2026. As a replacement, you can
+ * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
  */
 public class ImagenModel
 internal constructor(
@@ -86,6 +90,10 @@ internal constructor(
    * Generates an image, returning the result directly to the caller.
    *
    * @param prompt The input(s) given to the model as a prompt.
+   *
+   * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as
+   * early as June 2026. As a replacement, you can
+   * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
    */
   public suspend fun generateImages(prompt: String): ImagenGenerationResponse<ImagenInlineImage> =
     try {
@@ -104,6 +112,10 @@ internal constructor(
    * @param referenceImages the image inputs given to the model as a prompt
    * @param prompt the text input given to the model as a prompt
    * @param config the editing configuration settings
+   *
+   * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as
+   * early as June 2026. As a replacement, you can
+   * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
    */
   @PublicPreviewAPI
   public suspend fun editImage(
@@ -129,6 +141,10 @@ internal constructor(
    * @param prompt the text input given to the model as a prompt
    * @param mask the mask which defines where in the image can be painted by Imagen.
    * @param config the editing configuration settings, it should include an [ImagenEditMode]
+   *
+   * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as
+   * early as June 2026. As a replacement, you can
+   * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
    */
   @PublicPreviewAPI
   public suspend fun inpaintImage(
@@ -154,6 +170,10 @@ internal constructor(
    * insufficient
    * @param config the editing configuration settings
    * @see [ImagenMaskReference.generateMaskAndPadForOutpainting]
+   *
+   * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as
+   * early as June 2026. As a replacement, you can
+   * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
    */
   @PublicPreviewAPI
   public suspend fun outpaintImage(

@@ -26,6 +26,10 @@ import kotlinx.serialization.Serializable
  * @param images contains the generated images
  * @param filteredReason if fewer images were generated than were requested, this field will contain
  * the reason they were filtered out.
+ *
+ * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as early
+ * as June 2026. As a replacement, you can
+ * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
  */
 public class ImagenGenerationResponse<T>
 internal constructor(public val images: List<T>, public val filteredReason: String?) {
@@ -45,6 +49,13 @@ internal constructor(public val images: List<T>, public val filteredReason: Stri
       )
   }
 
+  /**
+   * Represents an image response from Imagen
+   *
+   * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as
+   * early as June 2026. As a replacement, you can
+   * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
+   */
   @Serializable
   internal data class ImagenImageResponse(
     val bytesBase64Encoded: String? = null,
@@ -59,6 +70,13 @@ internal constructor(public val images: List<T>, public val filteredReason: Stri
     internal fun toPublicGCS() = ImagenGCSImage(gcsUri!!, mimeType!!)
   }
 
+  /**
+   * Represents safety attributes for Imagen
+   *
+   * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as
+   * early as June 2026. As a replacement, you can
+   * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
+   */
   @Serializable
   internal data class ImagenSafetyAttributes(
     val categories: List<String>? = null,

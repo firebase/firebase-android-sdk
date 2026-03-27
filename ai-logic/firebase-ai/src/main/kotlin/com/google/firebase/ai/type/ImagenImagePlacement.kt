@@ -18,6 +18,10 @@ package com.google.firebase.ai.type
 /**
  * Represents where the placement of an image is within a new, larger image, usually in the context
  * of an outpainting request.
+ *
+ * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as early
+ * as June 2026. As a replacement, you can
+ * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
  */
 public class ImagenImagePlacement
 private constructor(public val x: Int? = null, public val y: Int? = null) {
@@ -72,6 +76,10 @@ private constructor(public val x: Int? = null, public val y: Int? = null) {
      * coordinates represent the location of the top left corner of the original image.
      * @param x the x coordinate of the top left corner of the original image
      * @param y the y coordinate of the top left corner of the original image
+     *
+     * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as
+     * early as June 2026. As a replacement, you can
+     * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
      */
     @JvmStatic
     public fun fromCoordinate(x: Int, y: Int): ImagenImagePlacement {

@@ -15,6 +15,13 @@
  */
 package com.google.firebase.ai.type
 
+/**
+ * Represents the mask mode for Imagen
+ *
+ * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as early
+ * as June 2026. As a replacement, you can
+ * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
+ */
 internal class ImagenMaskMode private constructor(internal val value: String) {
   companion object {
     val USER_PROVIDED: ImagenMaskMode = ImagenMaskMode("MASK_MODE_USER_PROVIDED")

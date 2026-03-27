@@ -25,6 +25,10 @@ import kotlinx.serialization.Serializable
  * @param compressionQuality an int (1-100) representing the quality of the image; a lower number
  * means the image is permitted to be lower quality to reduce size. This parameter is not relevant
  * for every MIME type.
+ *
+ * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as early
+ * as June 2026. As a replacement, you can
+ * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
  */
 public class ImagenImageFormat
 private constructor(public val mimeType: String, public val compressionQuality: Int?) {
@@ -39,13 +43,23 @@ private constructor(public val mimeType: String, public val compressionQuality: 
      *
      * @param compressionQuality an int (1-100) representing the quality of the image; a lower
      * number means the image is permitted to be lower quality to reduce size.
+     *
+     * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as
+     * early as June 2026. As a replacement, you can
+     * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
      */
     @JvmStatic
     public fun jpeg(compressionQuality: Int? = null): ImagenImageFormat {
       return ImagenImageFormat("image/jpeg", compressionQuality)
     }
 
-    /** An [ImagenImageFormat] representing a PNG image */
+    /**
+     * An [ImagenImageFormat] representing a PNG image
+     *
+     * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as
+     * early as June 2026. As a replacement, you can
+     * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
+     */
     @JvmStatic
     public fun png(): ImagenImageFormat {
       return ImagenImageFormat("image/png", null)

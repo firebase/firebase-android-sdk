@@ -23,7 +23,13 @@ import android.graphics.Rect
 import com.google.firebase.ai.common.GenerateImageRequest
 import kotlinx.serialization.Serializable
 
-/** Represents an reference image for an Imagen editing request */
+/**
+ * Represents an reference image for an Imagen editing request
+ *
+ * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as early
+ * as June 2026. As a replacement, you can
+ * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
+ */
 @PublicPreviewAPI
 public abstract class ImagenReferenceImage
 internal constructor(
@@ -85,6 +91,10 @@ internal constructor(
  * the generated referenced image
  * @param superpixelRuler if type is [ImagenControlType.COLOR_SUPERPIXEL] and [enableComputation] is
  * true, this will control the superpixel smoothness factor for the generated referenced image
+ *
+ * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as early
+ * as June 2026. As a replacement, you can
+ * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
  */
 @PublicPreviewAPI
 public class ImagenControlReference(
@@ -105,6 +115,10 @@ public class ImagenControlReference(
 /**
  * Represents a mask for Imagen editing. This image (generated or provided) should contain only
  * black and white pixels, with black representing parts of the image which should not change.
+ *
+ * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as early
+ * as June 2026. As a replacement, you can
+ * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
  */
 @PublicPreviewAPI
 public abstract class ImagenMaskReference
@@ -124,6 +138,10 @@ internal constructor(maskConfig: ImagenMaskConfig, image: ImagenInlineImage? = n
      * @param newDimensions the new dimensions for outpainting. These new dimensions *must* be more
      * than the original image.
      * @param newPosition the placement of the original image within the new outpainted image.
+     *
+     * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as
+     * early as June 2026. As a replacement, you can
+     * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
      */
     @JvmOverloads
     @JvmStatic
@@ -147,6 +165,10 @@ internal constructor(maskConfig: ImagenMaskConfig, image: ImagenInlineImage? = n
      * than the original image.
      * @param newPosition the placement of the original image within the new outpainted image.
      * @param dilation the dilation for the outpainting mask. See: [ImagenRawMask].
+     *
+     * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as
+     * early as June 2026. As a replacement, you can
+     * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
      */
     @JvmStatic
     public fun generateMaskAndPadForOutpainting(
@@ -214,6 +236,10 @@ internal constructor(maskConfig: ImagenMaskConfig, image: ImagenInlineImage? = n
  * white, and the foreground black
  * @param dilation the amount to dilate the mask. This can help smooth the borders of an edit and
  * make it seem more convincing. For example, `0.05` will dilate the mask 5%.
+ *
+ * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as early
+ * as June 2026. As a replacement, you can
+ * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
  */
 @PublicPreviewAPI
 public class ImagenBackgroundMask(dilation: Double? = null) :
@@ -224,6 +250,10 @@ public class ImagenBackgroundMask(dilation: Double? = null) :
  * black, and the foreground white
  * @param dilation the amount to dilate the mask. This can help smooth the borders of an edit and
  * make it seem more convincing. For example, `0.05` will dilate the mask 5%.
+ *
+ * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as early
+ * as June 2026. As a replacement, you can
+ * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
  */
 @PublicPreviewAPI
 public class ImagenForegroundMask(dilation: Double? = null) :
@@ -236,6 +266,10 @@ public class ImagenForegroundMask(dilation: Double? = null) :
  * @param mask the mask image
  * @param dilation the amount to dilate the mask. This can help smooth the borders of an edit and
  * make it seem more convincing. For example, `0.05` will dilate the mask 5%.
+ *
+ * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as early
+ * as June 2026. As a replacement, you can
+ * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
  */
 @PublicPreviewAPI
 public class ImagenRawMask(mask: ImagenInlineImage, dilation: Double? = null) :
@@ -252,6 +286,10 @@ public class ImagenRawMask(mask: ImagenInlineImage, dilation: Double? = null) :
  * in the Vertex AI documentation.
  * @param dilation the amount to dilate the mask. This can help smooth the borders of an edit and
  * make it seem more convincing. For example, `0.05` will dilate the mask 5%.
+ *
+ * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as early
+ * as June 2026. As a replacement, you can
+ * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
  */
 @PublicPreviewAPI
 public class ImagenSemanticMask(classes: List<Int>, dilation: Double? = null) :
@@ -260,6 +298,10 @@ public class ImagenSemanticMask(classes: List<Int>, dilation: Double? = null) :
 /**
  * Represents a base image for Imagen editing
  * @param image the image
+ *
+ * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as early
+ * as June 2026. As a replacement, you can
+ * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
  */
 @PublicPreviewAPI
 public class ImagenRawImage(image: ImagenInlineImage) : ImagenReferenceImage(image = image) {}
@@ -269,6 +311,10 @@ public class ImagenRawImage(image: ImagenInlineImage) : ImagenReferenceImage(ima
  * @param image the image representing the style you want to transfer to your original images
  * @param referenceId the reference ID you can use to reference this style in your prompt
  * @param description the description you can use to reference this style in your prompt
+ *
+ * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as early
+ * as June 2026. As a replacement, you can
+ * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
  */
 @PublicPreviewAPI
 public class ImagenStyleReference(
@@ -288,6 +334,10 @@ public class ImagenStyleReference(
  * @param referenceId the reference ID you can use to reference this subject in your prompt
  * @param description the description you can use to reference this subject in your prompt
  * @param subjectType the type of the subject
+ *
+ * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as early
+ * as June 2026. As a replacement, you can
+ * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
  */
 @PublicPreviewAPI
 public class ImagenSubjectReference(

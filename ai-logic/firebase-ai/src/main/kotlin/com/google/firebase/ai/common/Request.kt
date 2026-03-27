@@ -91,12 +91,26 @@ internal data class GenerateImageRequest(
   val instances: List<ImagenPrompt>,
   val parameters: ImagenParameters,
 ) : Request {
+  /**
+   * Represents a prompt for Imagen
+   *
+   * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as
+   * early as June 2026. As a replacement, you can
+   * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
+   */
   @Serializable
   internal data class ImagenPrompt(
     val prompt: String?,
     val referenceImages: List<ImagenReferenceImage.Internal>?
   )
 
+  /**
+   * Represents parameters for Imagen
+   *
+   * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as
+   * early as June 2026. As a replacement, you can
+   * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
+   */
   @Serializable
   internal data class ImagenParameters(
     val sampleCount: Int,
