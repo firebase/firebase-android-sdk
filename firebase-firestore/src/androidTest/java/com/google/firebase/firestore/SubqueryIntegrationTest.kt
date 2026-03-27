@@ -41,137 +41,6 @@ class SubqueryIntegrationTest {
   private lateinit var db: FirebaseFirestore
   private lateinit var collection: CollectionReference
 
-  private val bookDocs =
-    mapOf(
-      "book1" to
-        mapOf(
-          "title" to "The Hitchhiker's Guide to the Galaxy",
-          "author" to "Douglas Adams",
-          "genre" to "Science Fiction",
-          "published" to 1979,
-          "rating" to 4.2,
-          "tags" to listOf("comedy", "space", "adventure"),
-          "awards" to mapOf("hugo" to true, "nebula" to false),
-          "embedding" to
-            FieldValue.vector(doubleArrayOf(10.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0))
-        ),
-      "book2" to
-        mapOf(
-          "title" to "Pride and Prejudice",
-          "author" to "Jane Austen",
-          "genre" to "Romance",
-          "published" to 1813,
-          "rating" to 4.5,
-          "tags" to listOf("classic", "social commentary", "love"),
-          "awards" to mapOf("none" to true),
-          "embedding" to
-            FieldValue.vector(doubleArrayOf(1.0, 10.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0))
-        ),
-      "book3" to
-        mapOf(
-          "title" to "One Hundred Years of Solitude",
-          "author" to "Gabriel García Márquez",
-          "genre" to "Magical Realism",
-          "published" to 1967,
-          "rating" to 4.3,
-          "tags" to listOf("family", "history", "fantasy"),
-          "awards" to mapOf("nobel" to true, "nebula" to false),
-          "embedding" to
-            FieldValue.vector(doubleArrayOf(1.0, 1.0, 10.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0))
-        ),
-      "book4" to
-        mapOf(
-          "title" to "The Lord of the Rings",
-          "author" to "J.R.R. Tolkien",
-          "genre" to "Fantasy",
-          "published" to 1954,
-          "rating" to 4.7,
-          "tags" to listOf("adventure", "magic", "epic"),
-          "awards" to mapOf("hugo" to false, "nebula" to false),
-          "cost" to Double.NaN,
-          "embedding" to
-            FieldValue.vector(doubleArrayOf(1.0, 1.0, 1.0, 10.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0))
-        ),
-      "book5" to
-        mapOf(
-          "title" to "The Handmaid's Tale",
-          "author" to "Margaret Atwood",
-          "genre" to "Dystopian",
-          "published" to 1985,
-          "rating" to 4.1,
-          "tags" to listOf("feminism", "totalitarianism", "resistance"),
-          "awards" to mapOf("arthur c. clarke" to true, "booker prize" to false),
-          "embedding" to
-            FieldValue.vector(doubleArrayOf(1.0, 1.0, 1.0, 1.0, 10.0, 1.0, 1.0, 1.0, 1.0, 1.0))
-        ),
-      "book6" to
-        mapOf(
-          "title" to "Crime and Punishment",
-          "author" to "Fyodor Dostoevsky",
-          "genre" to "Psychological Thriller",
-          "published" to 1866,
-          "rating" to 4.3,
-          "tags" to listOf("philosophy", "crime", "redemption"),
-          "awards" to mapOf("none" to true),
-          "embedding" to
-            FieldValue.vector(doubleArrayOf(1.0, 1.0, 1.0, 1.0, 1.0, 10.0, 1.0, 1.0, 1.0, 1.0))
-        ),
-      "book7" to
-        mapOf(
-          "title" to "To Kill a Mockingbird",
-          "author" to "Harper Lee",
-          "genre" to "Southern Gothic",
-          "published" to 1960,
-          "rating" to 4.2,
-          "tags" to listOf("racism", "injustice", "coming-of-age"),
-          "awards" to mapOf("pulitzer" to true),
-          "embedding" to
-            FieldValue.vector(doubleArrayOf(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 10.0, 1.0, 1.0, 1.0))
-        ),
-      "book8" to
-        mapOf(
-          "title" to "1984",
-          "author" to "George Orwell",
-          "genre" to "Dystopian",
-          "published" to 1949,
-          "rating" to 4.2,
-          "tags" to listOf("surveillance", "totalitarianism", "propaganda"),
-          "awards" to mapOf("prometheus" to true),
-          "embedding" to
-            FieldValue.vector(doubleArrayOf(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 10.0, 1.0, 1.0))
-        ),
-      "book9" to
-        mapOf(
-          "title" to "The Great Gatsby",
-          "author" to "F. Scott Fitzgerald",
-          "genre" to "Modernist",
-          "published" to 1925,
-          "rating" to 4.0,
-          "tags" to listOf("wealth", "american dream", "love"),
-          "awards" to mapOf("none" to true),
-          "embedding" to
-            FieldValue.vector(doubleArrayOf(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 10.0, 1.0))
-        ),
-      "book10" to
-        mapOf(
-          "title" to "Dune",
-          "author" to "Frank Herbert",
-          "genre" to "Science Fiction",
-          "published" to 1965,
-          "rating" to 4.6,
-          "tags" to listOf("politics", "desert", "ecology"),
-          "awards" to mapOf("hugo" to true, "nebula" to true),
-          "embedding" to
-            FieldValue.vector(doubleArrayOf(1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 10.0))
-        ),
-      "book11" to
-        mapOf(
-          "title" to "Timestamp Book",
-          "author" to "Timestamp Author",
-          "timestamp" to java.util.Date()
-        )
-    )
-
   @Before
   fun setUp() {
     org.junit.Assume.assumeTrue(
@@ -181,7 +50,7 @@ class SubqueryIntegrationTest {
     )
 
     // Using IntegrationTestUtil.testCollectionWithDocs to populate data
-    collection = IntegrationTestUtil.testCollectionWithDocs(bookDocs)
+    collection = IntegrationTestUtil.testCollectionWithDocs(PipelineTest.bookDocs)
     db = collection.firestore
   }
 
