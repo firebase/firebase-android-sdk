@@ -363,7 +363,7 @@ class QueryManagerUnitTest {
   @Test
   fun `execute() deduplicates identical queries`() =
     verifyExecuteDeduplication(
-      getDataDeserializer = { it },
+      getDataDeserializer = { _, _, dataDeserializer -> dataDeserializer },
       getSerializersModule = { _, _, serializersModule -> serializersModule },
       verifyResults = { valuePrefix, _, results ->
         val values = results.map { it.value }
@@ -372,10 +372,24 @@ class QueryManagerUnitTest {
     )
 
   @Test
+  fun `execute() deduplicates identical queries except for dataDeserializer`() =
+    verifyExecuteDeduplication(
+      getDataDeserializer = { valuePrefixOverride, jobIndex, _ ->
+        TestDataOverrideDeserializer("$valuePrefixOverride $jobIndex")
+      },
+      getSerializersModule = { _, _, serializersModule -> serializersModule },
+      verifyResults = { _, valuePrefixOverride, results ->
+        val values = results.map { it.value }
+        val expectedResults = List(values.size) { "$valuePrefixOverride $it" }
+        values shouldContainExactlyInAnyOrder expectedResults
+      },
+    )
+
+  @Test
   fun `execute() deduplicates identical queries except for dataSerializersModule`() {
     val dataDeserializer = serializer<ContextualTestData>()
     return verifyExecuteDeduplication(
-      getDataDeserializer = { dataDeserializer },
+      getDataDeserializer = { _, _, _ -> dataDeserializer },
       getSerializersModule = { valuePrefixOverride, jobIndex, _ ->
         SerializersModule {
           contextual(String::class, HardcodedStringKSerializer("$valuePrefixOverride $jobIndex"))
@@ -390,7 +404,10 @@ class QueryManagerUnitTest {
   }
 
   private fun <Data> verifyExecuteDeduplication(
-    getDataDeserializer: (DeserializationStrategy<TestData>) -> DeserializationStrategy<Data>,
+    getDataDeserializer:
+      (
+        valuePrefixOverride: String, jobIndex: Int, DeserializationStrategy<TestData>
+      ) -> DeserializationStrategy<Data>,
     getSerializersModule:
       (valuePrefixOverride: String, jobIndex: Int, SerializersModule?) -> SerializersModule?,
     verifyResults: (valuePrefix: String, valuePrefixOverride: String, List<Data>) -> Unit,
@@ -414,7 +431,6 @@ class QueryManagerUnitTest {
           }
       }
       val queryManager: QueryManager = newQueryManager(dataConnectGrpcRPCs = dataConnectGrpcRPCs)
-      val dataDeserializer = getDataDeserializer(args.dataDeserializer)
 
       val executeJobIndex = randomSource().random.nextInt(0 until latch.count)
       val jobs =
@@ -426,7 +442,8 @@ class QueryManagerUnitTest {
             queryManager.execute(
               operationName = args.operationName,
               variables = args.variables,
-              dataDeserializer = dataDeserializer,
+              dataDeserializer =
+                getDataDeserializer(valuePrefixOverride, jobIndex, args.dataDeserializer),
               variablesSerializer = args.variablesSerializer,
               dataSerializersModule =
                 getSerializersModule(valuePrefixOverride, jobIndex, args.dataSerializersModule),
