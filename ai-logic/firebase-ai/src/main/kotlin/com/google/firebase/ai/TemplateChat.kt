@@ -29,7 +29,8 @@ import kotlinx.coroutines.flow.onEach
 
 /** Representation of a multi-turn interaction with a server template model. */
 @PublicPreviewAPI
-public class TemplateChat(
+public class TemplateChat
+internal constructor(
   private val model: TemplateGenerativeModel,
   private val templateId: String,
   private val inputs: Map<String, Any>,
@@ -47,18 +48,11 @@ public class TemplateChat(
   public suspend fun sendMessage(prompt: Content): GenerateContentResponse {
     prompt.assertComesFromUser()
     attemptLock()
-    var response: GenerateContentResponse
     try {
-      val tempHistory = mutableListOf(prompt)
-      response =
-        model.generateContentWithHistory(
-          templateId,
-          inputs,
-          listOf(*history.toTypedArray(), *tempHistory.toTypedArray())
-        )
-      tempHistory.add(response.candidates.first().content)
-      history.addAll(tempHistory)
-      return response
+      return model.generateContentWithHistory(templateId, inputs, history + prompt).also { resp ->
+        history.add(prompt)
+        history.add(resp.candidates.first().content)
+      }
     } finally {
       lock.release()
     }

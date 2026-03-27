@@ -86,15 +86,7 @@ internal constructor(
   public suspend fun generateContent(
     templateId: String,
     inputs: Map<String, Any>,
-  ): GenerateContentResponse =
-    try {
-      controller
-        .templateGenerateContent("$templateUri$templateId", constructRequest(inputs))
-        .toPublic()
-        .validate()
-    } catch (e: Throwable) {
-      throw FirebaseAIException.from(e)
-    }
+  ): GenerateContentResponse = generateContentWithHistory(templateId, inputs, null)
 
   /**
    * Generates content from a prompt template and inputs.
@@ -107,10 +99,10 @@ internal constructor(
    * @see [FirebaseAIException] for types of errors.
    */
   @PublicPreviewAPI
-  public suspend fun generateContentWithHistory(
+  internal suspend fun generateContentWithHistory(
     templateId: String,
     inputs: Map<String, Any>,
-    history: List<Content>? = null
+    history: List<Content>?
   ): GenerateContentResponse =
     try {
       controller
@@ -133,11 +125,7 @@ internal constructor(
   public fun generateContentStream(
     templateId: String,
     inputs: Map<String, Any>
-  ): Flow<GenerateContentResponse> =
-    controller
-      .templateGenerateContentStream("$templateUri$templateId", constructRequest(inputs))
-      .catch { throw FirebaseAIException.from(it) }
-      .map { it.toPublic().validate() }
+  ): Flow<GenerateContentResponse> = generateContentWithHistoryStream(templateId, inputs, null)
 
   /**
    * Generates content as a stream from a prompt template, inputs, and history.
@@ -150,10 +138,10 @@ internal constructor(
    * @see [FirebaseAIException] for types of errors.
    */
   @PublicPreviewAPI
-  public fun generateContentWithHistoryStream(
+  internal fun generateContentWithHistoryStream(
     templateId: String,
     inputs: Map<String, Any>,
-    history: List<Content>? = null
+    history: List<Content>?
   ): Flow<GenerateContentResponse> =
     controller
       .templateGenerateContentStream("$templateUri$templateId", constructRequest(inputs, history))
