@@ -438,7 +438,7 @@ class QueryManagerUnitTest {
   fun `execute() deduplicates identical queries`() =
     verifyExecuteDeduplication(
       getDataDeserializer = { _, _, dataDeserializer -> dataDeserializer },
-      verifyResults = { valuePrefix, _, results ->
+      verifyResults = { valuePrefix, _, _, results ->
         val values = results.map { it.value }
         values.distinct().shouldContainExactlyInAnyOrder("$valuePrefix 0", "$valuePrefix 1")
       },
@@ -450,7 +450,7 @@ class QueryManagerUnitTest {
       getDataDeserializer = { valuePrefixOverride, jobIndex, _ ->
         TestDataOverrideDeserializer("$valuePrefixOverride $jobIndex")
       },
-      verifyResults = { _, valuePrefixOverride, results ->
+      verifyResults = { _, valuePrefixOverride, _, results ->
         val values = results.map { it.value }
         val expectedResults = List(values.size) { "$valuePrefixOverride $it" }
         values shouldContainExactlyInAnyOrder expectedResults
@@ -467,7 +467,7 @@ class QueryManagerUnitTest {
           contextual(String::class, HardcodedStringKSerializer("$valuePrefixOverride $jobIndex"))
         }
       },
-      verifyResults = { _, valuePrefixOverride, results ->
+      verifyResults = { _, valuePrefixOverride, _, results ->
         val values = results.map { it.value }
         val expectedResults = List(values.size) { "$valuePrefixOverride $it" }
         values shouldContainExactlyInAnyOrder expectedResults
@@ -487,7 +487,7 @@ class QueryManagerUnitTest {
     verifyExecuteDeduplication(
       getDataDeserializer = { _, _, dataDeserializer -> dataDeserializer },
       getVariablesSerializer = { DistinctVariablesSerializer(it) },
-      verifyResults = { valuePrefix, _, results ->
+      verifyResults = { valuePrefix, _, _, results ->
         val values = results.map { it.value }
         values.distinct().shouldContainExactlyInAnyOrder("$valuePrefix 0", "$valuePrefix 1")
       },
@@ -504,7 +504,7 @@ class QueryManagerUnitTest {
     verifyExecuteDeduplication(
       getDataDeserializer = { _, _, dataDeserializer -> dataDeserializer },
       getVariablesSerializersModule = { jobIndex, _ -> distinctSerializersModule(jobIndex) },
-      verifyResults = { valuePrefix, _, results ->
+      verifyResults = { valuePrefix, _, _, results ->
         val values = results.map { it.value }
         values.distinct().shouldContainExactlyInAnyOrder("$valuePrefix 0", "$valuePrefix 1")
       },
@@ -516,11 +516,52 @@ class QueryManagerUnitTest {
     verifyExecuteDeduplication(
       getDataDeserializer = { _, _, dataDeserializer -> dataDeserializer },
       getCallerSdkType = { random, _ -> CallerSdkType.entries.random(random) },
-      verifyResults = { valuePrefix, _, results ->
+      verifyResults = { valuePrefix, _, _, results ->
         val values = results.map { it.value }
         values.distinct().shouldContainExactlyInAnyOrder("$valuePrefix 0", "$valuePrefix 1")
       },
     )
+
+  @Test
+  fun `execute() deduplicates identical queries, even with different authToken`() {
+    var dataConnectAuth: DataConnectAuth? = null
+    verifyExecuteDeduplication(
+      getDataDeserializer = { _, _, dataDeserializer -> dataDeserializer },
+      verifyResults = { valuePrefix, _, executeCount, results ->
+        val values = results.map { it.value }
+        values.distinct().shouldContainExactlyInAnyOrder("$valuePrefix 0", "$valuePrefix 1")
+        coVerify(exactly = executeCount) { dataConnectAuth!!.getToken(any()) }
+      },
+      newDataConnectAuth = {
+        val authUid = Arb.dataConnect.authTokenResult().map { it.authUid }.bind()
+        val authTokenResultArb = Arb.dataConnect.authTokenResult(authUid = Arb.constant(authUid))
+        dataConnectAuth = mockk {
+          coEvery { getToken(any()) } answers { authTokenResultArb.bind() }
+        }
+        dataConnectAuth
+      }
+    )
+  }
+
+  @Test
+  fun `execute() deduplicates identical queries, even with different appCheckToken`() {
+    var dataConnectAppCheck: DataConnectAppCheck? = null
+    verifyExecuteDeduplication(
+      getDataDeserializer = { _, _, dataDeserializer -> dataDeserializer },
+      verifyResults = { valuePrefix, _, executeCount, results ->
+        val values = results.map { it.value }
+        values.distinct().shouldContainExactlyInAnyOrder("$valuePrefix 0", "$valuePrefix 1")
+        coVerify(exactly = executeCount) { dataConnectAppCheck!!.getToken(any()) }
+      },
+      newDataConnectAppCheck = {
+        val appCheckTokenResultArb = Arb.dataConnect.appCheckTokenResult()
+        dataConnectAppCheck = mockk {
+          coEvery { getToken(any()) } answers { appCheckTokenResultArb.bind() }
+        }
+        dataConnectAppCheck
+      }
+    )
+  }
 
   private fun <Data> verifyExecuteDeduplication(
     getDataDeserializer:
@@ -544,7 +585,10 @@ class QueryManagerUnitTest {
     getCallerSdkType: (Random, CallerSdkType) -> CallerSdkType = { _, callerSdkType ->
       callerSdkType
     },
-    verifyResults: (valuePrefix: String, valuePrefixOverride: String, List<Data>) -> Unit,
+    verifyResults:
+      (valuePrefix: String, valuePrefixOverride: String, executeCount: Int, List<Data>) -> Unit,
+    newDataConnectAuth: PropertyContext.() -> DataConnectAuth? = { null },
+    newDataConnectAppCheck: PropertyContext.() -> DataConnectAppCheck? = { null },
   ) = runTest {
     checkAll(
       propTestConfig.withIterations(5),
@@ -566,6 +610,8 @@ class QueryManagerUnitTest {
       }
       val queryManager: QueryManager = buildQueryManager {
         setDataConnectGrpcRPCs(dataConnectGrpcRPCs)
+        newDataConnectAuth()?.let { setDataConnectAuth(it) }
+        newDataConnectAppCheck()?.let { setDataConnectAppCheck(it) }
       }
 
       val executeJobIndex = randomSource().random.nextInt(0 until latch.count)
@@ -592,7 +638,7 @@ class QueryManagerUnitTest {
         }
 
       val results = jobs.awaitAll()
-      verifyResults(valuePrefix, valuePrefixOverride, results)
+      verifyResults(valuePrefix, valuePrefixOverride, jobs.size, results)
       coVerify(exactly = 2) { dataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any()) }
     }
   }
