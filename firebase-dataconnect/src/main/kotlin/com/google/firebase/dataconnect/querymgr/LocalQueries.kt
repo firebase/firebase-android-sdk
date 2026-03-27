@@ -50,6 +50,7 @@ internal class LocalQueries(
   }
 
   data class Key<Data>(
+    val authUid: String?,
     val queryId: ImmutableByteArray,
     val dataDeserializer: DeserializationStrategy<Data>,
     val dataSerializersModule: SerializersModule?,

@@ -34,9 +34,18 @@ internal class LocalQuery<Data>(
   suspend fun execute(
     requestId: String,
     sequenceNumber: Long,
+    authToken: String?,
+    appCheckToken: String?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
   ): ExecuteResult<Data> {
-    val remoteResult = remoteQuery.execute(requestId, sequenceNumber, callerSdkType)
+    val remoteResult =
+      remoteQuery.execute(
+        requestId = requestId,
+        sequenceNumber = sequenceNumber,
+        authToken = authToken,
+        appCheckToken = appCheckToken,
+        callerSdkType = callerSdkType,
+      )
 
     val response: ExecuteQueryResponse =
       when (remoteResult) {

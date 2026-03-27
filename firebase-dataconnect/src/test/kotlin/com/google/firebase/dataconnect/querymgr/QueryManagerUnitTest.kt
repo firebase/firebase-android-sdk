@@ -27,6 +27,9 @@ import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.testutil.CleanupsRule
 import com.google.firebase.dataconnect.testutil.SuspendingCountDownLatch
 import com.google.firebase.dataconnect.testutil.newMockLogger
+import com.google.firebase.dataconnect.testutil.property.arbitrary.appCheckTokenResult
+import com.google.firebase.dataconnect.testutil.property.arbitrary.authTokenResult
+import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.mock
 import com.google.firebase.dataconnect.testutil.property.arbitrary.pair
 import com.google.firebase.dataconnect.testutil.property.arbitrary.withIterations
@@ -331,15 +334,17 @@ class QueryManagerUnitTest {
   }
 
   @Test
-  fun `execute() sends no auth token when DataConnectAuth returns null`() = runTest {
+  fun `execute() sends null auth token when DataConnectAuth returns null`() = runTest {
     checkAll(propTestConfig, executeArgumentsArb()) { args ->
       val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk()
-      val authTokenSlot = slot<String>()
-      dataConnectGrpcRPCs.stubExecuteQuery(authTokenSlot=authTokenSlot)
-      val dataConnectAuth: DataConnectAuth = mockk {
-        coEvery { getToken(any()) } returns null
-      }
-      val queryManager: QueryManager = newQueryManager(dataConnectGrpcRPCs = dataConnectGrpcRPCs, dataConnectAuth=dataConnectAuth)
+      val authTokenSlot = slot<String?>()
+      dataConnectGrpcRPCs.stubExecuteQuery(authTokenSlot = authTokenSlot)
+      val dataConnectAuth: DataConnectAuth = mockk { coEvery { getToken(any()) } returns null }
+      val queryManager: QueryManager =
+        newQueryManager(
+          dataConnectGrpcRPCs = dataConnectGrpcRPCs,
+          dataConnectAuth = dataConnectAuth
+        )
 
       queryManager.execute(
         operationName = args.operationName,
@@ -353,6 +358,173 @@ class QueryManagerUnitTest {
       )
 
       authTokenSlot.captured shouldBe null
+    }
+  }
+
+  @Test
+  fun `execute() sends null auth token when DataConnectAuth returns non-null with null token`() =
+    runTest {
+      val authTokenResultArb = Arb.dataConnect.authTokenResult(accessToken = Arb.constant(null))
+      checkAll(propTestConfig, executeArgumentsArb(), authTokenResultArb) { args, authTokenResult ->
+        val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk()
+        val authTokenSlot = slot<String?>()
+        dataConnectGrpcRPCs.stubExecuteQuery(authTokenSlot = authTokenSlot)
+        val dataConnectAuth: DataConnectAuth = mockk {
+          check(authTokenResult.token === null) // precondition check
+          coEvery { getToken(any()) } returns authTokenResult
+        }
+        val queryManager: QueryManager =
+          newQueryManager(
+            dataConnectGrpcRPCs = dataConnectGrpcRPCs,
+            dataConnectAuth = dataConnectAuth
+          )
+
+        queryManager.execute(
+          operationName = args.operationName,
+          variables = args.variables,
+          dataDeserializer = args.dataDeserializer,
+          variablesSerializer = args.variablesSerializer,
+          dataSerializersModule = args.dataSerializersModule,
+          variablesSerializersModule = args.variablesSerializersModule,
+          callerSdkType = args.callerSdkType,
+          fetchPolicy = args.fetchPolicy,
+        )
+
+        authTokenSlot.captured shouldBe null
+      }
+    }
+
+  @Test
+  fun `execute() sends auth token when DataConnectAuth returns non-null token`() = runTest {
+    val authTokenResultArb =
+      Arb.dataConnect.authTokenResult(accessToken = Arb.dataConnect.accessToken())
+    checkAll(propTestConfig, executeArgumentsArb(), authTokenResultArb) { args, authTokenResult ->
+      val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk()
+      val authTokenSlot = slot<String?>()
+      dataConnectGrpcRPCs.stubExecuteQuery(authTokenSlot = authTokenSlot)
+      val dataConnectAuth: DataConnectAuth = mockk {
+        checkNotNull(authTokenResult.token) // precondition check
+        coEvery { getToken(any()) } returns authTokenResult
+      }
+      val queryManager: QueryManager =
+        newQueryManager(
+          dataConnectGrpcRPCs = dataConnectGrpcRPCs,
+          dataConnectAuth = dataConnectAuth
+        )
+
+      queryManager.execute(
+        operationName = args.operationName,
+        variables = args.variables,
+        dataDeserializer = args.dataDeserializer,
+        variablesSerializer = args.variablesSerializer,
+        dataSerializersModule = args.dataSerializersModule,
+        variablesSerializersModule = args.variablesSerializersModule,
+        callerSdkType = args.callerSdkType,
+        fetchPolicy = args.fetchPolicy,
+      )
+
+      authTokenSlot.captured shouldBe authTokenResult.token
+    }
+  }
+
+  @Test
+  fun `execute() sends null app check token when DataConnectAppCheck returns null`() = runTest {
+    checkAll(propTestConfig, executeArgumentsArb()) { args ->
+      val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk()
+      val appCheckTokenSlot = slot<String?>()
+      dataConnectGrpcRPCs.stubExecuteQuery(appCheckTokenSlot = appCheckTokenSlot)
+      val dataConnectAppCheck: DataConnectAppCheck = mockk {
+        coEvery { getToken(any()) } returns null
+      }
+      val queryManager: QueryManager =
+        newQueryManager(
+          dataConnectGrpcRPCs = dataConnectGrpcRPCs,
+          dataConnectAppCheck = dataConnectAppCheck
+        )
+
+      queryManager.execute(
+        operationName = args.operationName,
+        variables = args.variables,
+        dataDeserializer = args.dataDeserializer,
+        variablesSerializer = args.variablesSerializer,
+        dataSerializersModule = args.dataSerializersModule,
+        variablesSerializersModule = args.variablesSerializersModule,
+        callerSdkType = args.callerSdkType,
+        fetchPolicy = args.fetchPolicy,
+      )
+
+      appCheckTokenSlot.captured shouldBe null
+    }
+  }
+
+  @Test
+  fun `execute() sends null appCheck token when DataConnectAppCheck returns non-null with null token`() =
+    runTest {
+      val appCheckTokenResultArb =
+        Arb.dataConnect.appCheckTokenResult(accessToken = Arb.constant(null))
+      checkAll(propTestConfig, executeArgumentsArb(), appCheckTokenResultArb) {
+        args,
+        appCheckTokenResult ->
+        val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk()
+        val appCheckTokenSlot = slot<String?>()
+        dataConnectGrpcRPCs.stubExecuteQuery(appCheckTokenSlot = appCheckTokenSlot)
+        val dataConnectAppCheck: DataConnectAppCheck = mockk {
+          check(appCheckTokenResult.token === null) // precondition check
+          coEvery { getToken(any()) } returns appCheckTokenResult
+        }
+        val queryManager: QueryManager =
+          newQueryManager(
+            dataConnectGrpcRPCs = dataConnectGrpcRPCs,
+            dataConnectAppCheck = dataConnectAppCheck
+          )
+
+        queryManager.execute(
+          operationName = args.operationName,
+          variables = args.variables,
+          dataDeserializer = args.dataDeserializer,
+          variablesSerializer = args.variablesSerializer,
+          dataSerializersModule = args.dataSerializersModule,
+          variablesSerializersModule = args.variablesSerializersModule,
+          callerSdkType = args.callerSdkType,
+          fetchPolicy = args.fetchPolicy,
+        )
+
+        appCheckTokenSlot.captured shouldBe null
+      }
+    }
+
+  @Test
+  fun `execute() sends appCheck token when DataConnectAppCheck returns non-null token`() = runTest {
+    val appCheckTokenResultArb =
+      Arb.dataConnect.appCheckTokenResult(accessToken = Arb.dataConnect.accessToken())
+    checkAll(propTestConfig, executeArgumentsArb(), appCheckTokenResultArb) {
+      args,
+      appCheckTokenResult ->
+      val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk()
+      val appCheckTokenSlot = slot<String?>()
+      dataConnectGrpcRPCs.stubExecuteQuery(appCheckTokenSlot = appCheckTokenSlot)
+      val dataConnectAppCheck: DataConnectAppCheck = mockk {
+        checkNotNull(appCheckTokenResult.token) // precondition check
+        coEvery { getToken(any()) } returns appCheckTokenResult
+      }
+      val queryManager: QueryManager =
+        newQueryManager(
+          dataConnectGrpcRPCs = dataConnectGrpcRPCs,
+          dataConnectAppCheck = dataConnectAppCheck
+        )
+
+      queryManager.execute(
+        operationName = args.operationName,
+        variables = args.variables,
+        dataDeserializer = args.dataDeserializer,
+        variablesSerializer = args.variablesSerializer,
+        dataSerializersModule = args.dataSerializersModule,
+        variablesSerializersModule = args.variablesSerializersModule,
+        callerSdkType = args.callerSdkType,
+        fetchPolicy = args.fetchPolicy,
+      )
+
+      appCheckTokenSlot.captured shouldBe appCheckTokenResult.token
     }
   }
 
@@ -553,8 +725,8 @@ class QueryManagerUnitTest {
   private suspend fun PropertyContext.newQueryManager(
     requestName: String = "requestName" + randomSource().random.nextAlphanumericString(10),
     dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk { stubExecuteQuery() },
-    dataConnectAuth: DataConnectAuth = mockk(relaxed = true),
-    dataConnectAppCheck: DataConnectAppCheck = mockk(relaxed = true),
+    dataConnectAuth: DataConnectAuth = mockDataConnectAuth(),
+    dataConnectAppCheck: DataConnectAppCheck = mockDataConnectAppCheck(),
     ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
     cpuDispatcher: CoroutineDispatcher = Dispatchers.Default,
     secureRandom: Random = randomSource().random,
@@ -564,8 +736,8 @@ class QueryManagerUnitTest {
       QueryManager(
         requestName = requestName,
         dataConnectGrpcRPCs = dataConnectGrpcRPCs,
-        dataConnectAuth=dataConnectAuth,
-        dataConnectAppCheck=dataConnectAppCheck,
+        dataConnectAuth = dataConnectAuth,
+        dataConnectAppCheck = dataConnectAppCheck,
         ioDispatcher = ioDispatcher,
         cpuDispatcher = cpuDispatcher,
         secureRandom = secureRandom,
@@ -684,13 +856,19 @@ private class HardcodedStringKSerializer(private val hardcodedValue: String) : K
 
 private fun DataConnectGrpcRPCs.stubExecuteQuery(
   executeQueryRequestSlot: CapturingSlot<ExecuteQueryRequest> = slot(),
-  authTokenSlot: CapturingSlot<String> = slot(),
-  appCheckTokenSlot: CapturingSlot<String> = slot(),
+  authTokenSlot: CapturingSlot<String?> = slot(),
+  appCheckTokenSlot: CapturingSlot<String?> = slot(),
   callerSdkTypeSlot: CapturingSlot<CallerSdkType> = slot(),
   executeQueryResponse: ExecuteQueryResponse? = null
 ) {
   coEvery {
-    executeQuery(any(), capture(executeQueryRequestSlot), capture(authTokenSlot), capture(appCheckTokenSlot), capture(callerSdkTypeSlot))
+    executeQuery(
+      any(),
+      capture(executeQueryRequestSlot),
+      captureNullable(authTokenSlot),
+      captureNullable(appCheckTokenSlot),
+      capture(callerSdkTypeSlot)
+    )
   } answers
     {
       executeQueryResponse
@@ -709,3 +887,9 @@ private class RandomWrapper(
     return delegate.nextBits(bitCount)
   }
 }
+
+private fun mockDataConnectAuth(): DataConnectAuth =
+  mockk(relaxed = true) { coEvery { getToken(any()) } returns null }
+
+private fun mockDataConnectAppCheck(): DataConnectAppCheck =
+  mockk(relaxed = true) { coEvery { getToken(any()) } returns null }

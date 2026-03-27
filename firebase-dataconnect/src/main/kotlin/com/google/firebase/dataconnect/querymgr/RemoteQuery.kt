@@ -43,9 +43,18 @@ internal class RemoteQuery(
   suspend fun execute(
     requestId: String,
     sequenceNumber: Long,
+    authToken: String?,
+    appCheckToken: String?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
   ): ExecuteResult {
-    val jobSequencedReference = getOrStartExecuteJob(requestId, sequenceNumber, callerSdkType)
+    val jobSequencedReference =
+      getOrStartExecuteJob(
+        requestId = requestId,
+        sequenceNumber = sequenceNumber,
+        authToken = authToken,
+        appCheckToken = appCheckToken,
+        callerSdkType = callerSdkType,
+      )
 
     return if (jobSequencedReference.sequenceNumber < sequenceNumber) {
       jobSequencedReference.ref.join()
@@ -59,6 +68,8 @@ internal class RemoteQuery(
   private suspend fun getOrStartExecuteJob(
     requestId: String,
     sequenceNumber: Long,
+    authToken: String?,
+    appCheckToken: String?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
   ): SequencedReference<Deferred<ExecuteQueryResponse>> =
     mutex.withLock {
@@ -82,8 +93,8 @@ internal class RemoteQuery(
             dataConnectGrpcRPCs.executeQuery(
               requestId = requestId,
               requestProto = requestProto,
-              authToken = null,
-              appCheckToken = null,
+              authToken = authToken,
+              appCheckToken = appCheckToken,
               callerSdkType = callerSdkType,
             )
           }

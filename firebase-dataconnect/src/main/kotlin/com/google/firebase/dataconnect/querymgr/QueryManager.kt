@@ -105,23 +105,54 @@ internal class QueryManager(
           .build()
     }
 
-    val localKey = LocalQueries.Key(queryId, dataDeserializer, dataSerializersModule, fetchPolicy)
-    return execute(requestId, sequenceNumber, localKey, requestProto, callerSdkType)
+    val authTokenResult = dataConnectAuth.getToken(requestId)
+    val appCheckTokenResult = dataConnectAppCheck.getToken(requestId)
+
+    val localKey =
+      LocalQueries.Key(
+        authUid = authTokenResult?.authUid,
+        queryId = queryId,
+        dataDeserializer = dataDeserializer,
+        dataSerializersModule = dataSerializersModule,
+        fetchPolicy = fetchPolicy,
+      )
+
+    return execute(
+      requestId = requestId,
+      sequenceNumber = sequenceNumber,
+      localKey = localKey,
+      authToken = authTokenResult?.token,
+      appCheckToken = appCheckTokenResult?.token,
+      requestProto = requestProto,
+      callerSdkType = callerSdkType,
+    )
   }
 
   private suspend fun <Data> execute(
     requestId: String,
     sequenceNumber: Long,
     localKey: LocalQueries.Key<Data>,
+    authToken: String?,
+    appCheckToken: String?,
     requestProto: ExecuteQueryRequestProto,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
   ): Data {
     val localQuery: LocalQuery<Data> =
       mutex.withLock { localQueries.getOrPut(localKey, requestProto) }
+
     while (true) {
-      when (val result = localQuery.execute(requestId, sequenceNumber, callerSdkType)) {
+      val executeResult =
+        localQuery.execute(
+          requestId = requestId,
+          sequenceNumber = sequenceNumber,
+          authToken = authToken,
+          appCheckToken = appCheckToken,
+          callerSdkType = callerSdkType,
+        )
+
+      when (executeResult) {
         ExecuteResult.Retry -> {}
-        is ExecuteResult.Success<Data> -> return result.data
+        is ExecuteResult.Success<Data> -> return executeResult.data
       }
     }
   }

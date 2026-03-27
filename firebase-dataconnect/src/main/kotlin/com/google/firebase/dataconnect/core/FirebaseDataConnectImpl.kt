@@ -309,8 +309,8 @@ internal class FirebaseDataConnectImpl(
     return QueryManager(
       requestName = requestName,
       dataConnectGrpcRPCs = dataConnectGrpcRPCs,
-      dataConnectAuth=dataConnectAuth,
-      dataConnectAppCheck=dataConnectAppCheck,
+      dataConnectAuth = dataConnectAuth,
+      dataConnectAppCheck = dataConnectAppCheck,
       ioDispatcher = blockingDispatcher,
       cpuDispatcher = nonBlockingDispatcher,
       secureRandom = secureRandom,
