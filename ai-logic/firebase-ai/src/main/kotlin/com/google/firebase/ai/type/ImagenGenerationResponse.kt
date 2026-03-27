@@ -49,13 +49,7 @@ internal constructor(public val images: List<T>, public val filteredReason: Stri
       )
   }
 
-  /**
-   * Represents an image response from Imagen
-   *
-   * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as
-   * early as June 2026. As a replacement, you can
-   * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
-   */
+  /** Represents an image response from Imagen */
   @Serializable
   internal data class ImagenImageResponse(
     val bytesBase64Encoded: String? = null,
@@ -70,13 +64,7 @@ internal constructor(public val images: List<T>, public val filteredReason: Stri
     internal fun toPublicGCS() = ImagenGCSImage(gcsUri!!, mimeType!!)
   }
 
-  /**
-   * Represents safety attributes for Imagen
-   *
-   * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as
-   * early as June 2026. As a replacement, you can
-   * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
-   */
+  /** Represents safety attributes for Imagen */
   @Serializable
   internal data class ImagenSafetyAttributes(
     val categories: List<String>? = null,

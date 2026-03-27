@@ -92,11 +92,10 @@ internal data class GenerateImageRequest(
   val parameters: ImagenParameters,
 ) : Request {
   /**
-   * Represents a prompt for Imagen
+   * Represents an Imagen prompt.
    *
-   * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as
-   * early as June 2026. As a replacement, you can
-   * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
+   * @param prompt the text prompt
+   * @param referenceImages the list of reference images
    */
   @Serializable
   internal data class ImagenPrompt(
@@ -105,11 +104,9 @@ internal data class GenerateImageRequest(
   )
 
   /**
-   * Represents parameters for Imagen
+   * Represents Imagen parameters.
    *
-   * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as
-   * early as June 2026. As a replacement, you can
-   * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
+   * @param sampleCount the number of samples to generate
    */
   @Serializable
   internal data class ImagenParameters(
