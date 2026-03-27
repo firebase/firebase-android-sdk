@@ -137,9 +137,19 @@ package com.google.firebase.ai {
   public static final class OnDeviceConfig.Companion {
   }
 
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class TemplateChat {
+    method public java.util.List<com.google.firebase.ai.type.Content> getHistory();
+    method public suspend Object? sendMessage(com.google.firebase.ai.type.Content prompt, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.GenerateContentResponse>);
+    method public suspend Object? sendMessage(String prompt, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.GenerateContentResponse>);
+    method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.type.GenerateContentResponse> sendMessageStream(com.google.firebase.ai.type.Content prompt);
+    method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.type.GenerateContentResponse> sendMessageStream(String prompt);
+    property public final java.util.List<com.google.firebase.ai.type.Content> history;
+  }
+
   @com.google.firebase.ai.type.PublicPreviewAPI public final class TemplateGenerativeModel {
     method public suspend Object? generateContent(String templateId, java.util.Map<java.lang.String,?> inputs, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.GenerateContentResponse>);
     method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.type.GenerateContentResponse> generateContentStream(String templateId, java.util.Map<java.lang.String,?> inputs);
+    method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.TemplateChat startChat(String templateId, java.util.Map<java.lang.String,?> inputs, java.util.List<com.google.firebase.ai.type.Content> history = emptyList());
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class TemplateImagenModel {
