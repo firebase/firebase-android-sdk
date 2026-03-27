@@ -144,7 +144,7 @@ public class PipelineTest {
     IntegrationTestUtil.tearDown();
   }
 
-  private final Map<String, Map<String, Object>> bookDocs =
+  static final Map<String, Map<String, Object>> bookDocs =
       mapOfEntries(
           entry(
               "book1",
