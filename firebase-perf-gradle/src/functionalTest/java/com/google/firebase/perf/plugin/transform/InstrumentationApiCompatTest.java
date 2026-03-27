@@ -29,6 +29,7 @@ import java.util.regex.Pattern;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import org.gradle.util.internal.VersionNumber;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -51,8 +52,8 @@ public class InstrumentationApiCompatTest {
   private static final String GRADLE_RELEASES_URL =
       "https://api.github.com/repos/gradle/gradle/releases/latest";
   // Latest verified versions. Update these as new versions are released and verified.
-  private static final String VERIFIED_AGP_VERSION = "9.1.0-alpha03";
-  private static final String VERIFIED_GRADLE_VERSION = "9.2.1";
+  private static final String VERIFIED_AGP_VERSION = "9.2.0-alpha05";
+  private static final String VERIFIED_GRADLE_VERSION = "9.5.0-milestone-5";
   private final OkHttpClient client = new OkHttpClient();
 
   @RegisterExtension public GradleBuildProject gradleBuildProject = new GradleBuildProject();
@@ -84,23 +85,22 @@ public class InstrumentationApiCompatTest {
     String latestGradleVersion = latestGradleVersion();
     String latestAgpVersion = latestAgpVersion();
 
-    LOGGER.log(Level.INFO, "Latest Gradle Version: {0}", latestGradleVersion);
-    LOGGER.log(Level.INFO, "Latest AGP Version: {0}", latestAgpVersion);
-    LOGGER.log(Level.WARNING, "If this test fails, please file an issue or a bug");
+    String gradleVersionToTest = versionToTest(VERIFIED_GRADLE_VERSION, latestGradleVersion);
+    String agpVersionToTest = versionToTest(VERIFIED_AGP_VERSION, latestAgpVersion);
 
-    if (latestAgpVersion.equals(VERIFIED_AGP_VERSION)
-        && latestGradleVersion.equals(VERIFIED_GRADLE_VERSION)) {
-      LOGGER.log(
-          Level.INFO,
-          "Latest gradle and AGP versions are identical to verified versions. Skipping test.");
-      return;
-    }
+    LOGGER.log(Level.INFO, "Latest Gradle Version: {0}", latestGradleVersion);
+    LOGGER.log(Level.INFO, "Gradle Version to Test: {0}", gradleVersionToTest);
+
+    LOGGER.log(Level.INFO, "Latest AGP Version: {0}", latestAgpVersion);
+    LOGGER.log(Level.INFO, "AGP Version to test: {0}", agpVersionToTest);
+
+    LOGGER.log(Level.WARNING, "If this test fails, please file an issue or a bug");
 
     GradleBuildResult result =
         gradleBuildProject
             .getJavaRunnerBuilder()
-            .withGradleVersion(latestGradleVersion)
-            .withAndroidGradlePluginVersion(latestAgpVersion)
+            .withGradleVersion(gradleVersionToTest)
+            .withAndroidGradlePluginVersion(agpVersionToTest)
             .build(GradleBuildVariant.ALL);
 
     result.verifyInstrumentationExecutedFor(GradleBuildVariant.DEBUG);
@@ -110,6 +110,10 @@ public class InstrumentationApiCompatTest {
   /**
    * Fetches the latest Gradle version using OkHttp.
    * @return The latest Gradle version as a String.
+   *
+   * @implNote : {@GRADLE_RELEASES_URL} doesn't return pre-release versions,
+   * which can be overridden by updating the {@VERIFIED_GRADLE_VERSION}
+   *
    * @throws RuntimeException if the fetching or parsing fails.
    */
   private String latestGradleVersion() {
@@ -157,5 +161,23 @@ public class InstrumentationApiCompatTest {
       throw new RuntimeException(
           "Failed to fetch or parse latest AGP version: " + e.getMessage(), e);
     }
+  }
+
+  /**
+   * Compares the hardcoded verified version (which can be pre-release)
+   * with the latest version fetched via API call,
+   * and returns the latest version.
+   *
+   * @return The latest version based on SemVer comparison.
+   */
+  private String versionToTest(String verifiedVersion, String latestVersion) {
+    VersionNumber comparableVerifiedVersion = VersionNumber.parse(verifiedVersion);
+    VersionNumber comparableLatestVersion = VersionNumber.parse(latestVersion);
+
+    if (comparableLatestVersion.compareTo(comparableVerifiedVersion) > 0) {
+      return latestVersion;
+    }
+
+    return verifiedVersion;
   }
 }
