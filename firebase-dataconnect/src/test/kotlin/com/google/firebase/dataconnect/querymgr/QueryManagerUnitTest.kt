@@ -283,7 +283,7 @@ class QueryManagerUnitTest {
   }
 
   @Test
-  fun `execute() sends null auth token when DataConnectAuth returns null`() = runTest {
+  fun `execute() when DataConnectAuth returns null sends null authToken`() = runTest {
     checkAll(propTestConfig, executeArgumentsArb()) { args ->
       val authTokenSlot = slot<String?>()
       val queryManager: QueryManager = buildQueryManager {
@@ -298,7 +298,7 @@ class QueryManagerUnitTest {
   }
 
   @Test
-  fun `execute() sends null auth token when DataConnectAuth returns non-null with null token`() =
+  fun `execute() when DataConnectAuth returns non-null with null token sends null authToken`() =
     runTest {
       val authTokenResultArb = Arb.dataConnect.authTokenResult(accessToken = Arb.constant(null))
       checkAll(propTestConfig, executeArgumentsArb(), authTokenResultArb) { args, authTokenResult ->
@@ -320,7 +320,7 @@ class QueryManagerUnitTest {
     }
 
   @Test
-  fun `execute() sends auth token when DataConnectAuth returns non-null token`() = runTest {
+  fun `execute() when DataConnectAuth returns non-null token sends the authToken`() = runTest {
     val authTokenResultArb =
       Arb.dataConnect.authTokenResult(accessToken = Arb.dataConnect.accessToken())
     checkAll(propTestConfig, executeArgumentsArb(), authTokenResultArb) { args, authTokenResult ->
@@ -342,7 +342,7 @@ class QueryManagerUnitTest {
   }
 
   @Test
-  fun `execute() sends null app check token when DataConnectAppCheck returns null`() = runTest {
+  fun `execute() when DataConnectAppCheck returns null sends null appCheckToken`() = runTest {
     checkAll(propTestConfig, executeArgumentsArb()) { args ->
       val appCheckTokenSlot = slot<String?>()
       val queryManager: QueryManager = buildQueryManager {
@@ -357,7 +357,7 @@ class QueryManagerUnitTest {
   }
 
   @Test
-  fun `execute() sends null appCheck token when DataConnectAppCheck returns non-null with null token`() =
+  fun `execute() when DataConnectAppCheck returns non-null with null token sends null appCheckToken`() =
     runTest {
       val appCheckTokenResultArb =
         Arb.dataConnect.appCheckTokenResult(accessToken = Arb.constant(null))
@@ -382,28 +382,29 @@ class QueryManagerUnitTest {
     }
 
   @Test
-  fun `execute() sends appCheck token when DataConnectAppCheck returns non-null token`() = runTest {
-    val appCheckTokenResultArb =
-      Arb.dataConnect.appCheckTokenResult(accessToken = Arb.dataConnect.accessToken())
-    checkAll(propTestConfig, executeArgumentsArb(), appCheckTokenResultArb) {
-      args,
-      appCheckTokenResult ->
-      val appCheckTokenSlot = slot<String?>()
-      val queryManager: QueryManager = buildQueryManager {
-        setDataConnectGrpcRPCs(mockk { stubExecuteQuery(appCheckTokenSlot = appCheckTokenSlot) })
-        setDataConnectAppCheck(
-          mockk {
-            checkNotNull(appCheckTokenResult.token) // precondition check
-            coEvery { getToken(any()) } returns appCheckTokenResult
-          }
-        )
+  fun `execute() when DataConnectAppCheck returns non-null token sends the appCheckToken`() =
+    runTest {
+      val appCheckTokenResultArb =
+        Arb.dataConnect.appCheckTokenResult(accessToken = Arb.dataConnect.accessToken())
+      checkAll(propTestConfig, executeArgumentsArb(), appCheckTokenResultArb) {
+        args,
+        appCheckTokenResult ->
+        val appCheckTokenSlot = slot<String?>()
+        val queryManager: QueryManager = buildQueryManager {
+          setDataConnectGrpcRPCs(mockk { stubExecuteQuery(appCheckTokenSlot = appCheckTokenSlot) })
+          setDataConnectAppCheck(
+            mockk {
+              checkNotNull(appCheckTokenResult.token) // precondition check
+              coEvery { getToken(any()) } returns appCheckTokenResult
+            }
+          )
+        }
+
+        queryManager.execute(args)
+
+        appCheckTokenSlot.captured shouldBe appCheckTokenResult.token
       }
-
-      queryManager.execute(args)
-
-      appCheckTokenSlot.captured shouldBe appCheckTokenResult.token
     }
-  }
 
   @Test
   fun `execute() accesses the SecureRandom on the IO dispatcher`() = runTest {
