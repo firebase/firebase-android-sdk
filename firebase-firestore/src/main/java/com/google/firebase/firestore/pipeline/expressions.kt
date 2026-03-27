@@ -3076,7 +3076,7 @@ abstract class Expression internal constructor() {
      * Note: The values to trim are treated as a **set**, not a substring.
      *
      * ```kotlin
-     * // Trim leading '-' or '_' characters from the 'text' field.
+     * // Trim all leading '-' and '_' characters from the 'text' field.
      * ltrimValue(field("text"), "-_")
      * ```
      *
@@ -3112,7 +3112,7 @@ abstract class Expression internal constructor() {
      * Note: The values to trim are treated as a **set**, not a substring.
      *
      * ```kotlin
-     * // Trim leading '-' or '_' characters from the 'text' field.
+     * // Trim all leading '-' and '_' characters from the 'text' field.
      * ltrimValue("text", "-_")
      * ```
      *
@@ -3178,7 +3178,7 @@ abstract class Expression internal constructor() {
      * Note: The values to trim are treated as a **set**, not a substring.
      *
      * ```kotlin
-     * // Trim trailing '-' or '_' characters from the 'text' field.
+     * // Trim all trailing '-' and '_' characters from the 'text' field.
      * rtrimValue(field("text"), "-_")
      * ```
      *
@@ -3214,7 +3214,7 @@ abstract class Expression internal constructor() {
      * Note: The values to trim are treated as a **set**, not a substring.
      *
      * ```kotlin
-     * // Trim trailing '-' or '_' characters from the 'text' field.
+     * // Trim all trailing '-' and '_' characters from the 'text' field.
      * rtrimValue("text", "-_")
      * ```
      *
@@ -7579,7 +7579,7 @@ abstract class Expression internal constructor() {
    * Note: The values to trim are treated as a **set**, not a substring.
    *
    * ```kotlin
-   * // Trim leading '-' or '_' characters from the 'text' field.
+   * // Trim all leading '-' and '_' characters from the 'text' field.
    * field("text").ltrimValue("-_")
    * ```
    *
@@ -7621,7 +7621,7 @@ abstract class Expression internal constructor() {
    * Note: The values to trim are treated as a **set**, not a substring.
    *
    * ```kotlin
-   * // Trim trailing '-' or '_' characters from the 'text' field.
+   * // Trim all trailing '-' and '_' characters from the 'text' field.
    * field("text").rtrimValue("-_")
    * ```
    *
