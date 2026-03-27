@@ -175,8 +175,9 @@ class SubqueryIntegrationTest {
   @Before
   fun setUp() {
     org.junit.Assume.assumeTrue(
-      "Skip SubqueryIntegrationTest on standard backend",
-      IntegrationTestUtil.getBackendEdition() == IntegrationTestUtil.BackendEdition.ENTERPRISE
+      "Skip SubqueryIntegrationTest on non-nightly enterprise backend",
+      IntegrationTestUtil.getBackendEdition() == IntegrationTestUtil.BackendEdition.ENTERPRISE &&
+        IntegrationTestUtil.getTargetBackend() == IntegrationTestUtil.TargetBackend.NIGHTLY
     )
 
     // Using IntegrationTestUtil.testCollectionWithDocs to populate data
