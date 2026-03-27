@@ -1,6 +1,10 @@
 # Unreleased
 
-- [feature] Added support for [Maps Grounding](https://ai.google.dev/gemini-api/docs/maps-grounding) (#7950)
+- [fixed] Fixed an issue causing network timeouts to throw the incorrect exception type, instead of
+  `RequestTimeoutException` (#7966)
+- [fixed] Fixed missing `toString()` implemenation for `InferenceSource` (#7970)
+- [fixed] Fixed an issue causing the SDK to throw an exception if an unknown message was received
+  from the LiveAPI model, instead of ignoring it (#7975)
 
 # 17.10.1
 
@@ -153,4 +157,3 @@ using [specific Gemini models](/docs/vertex-ai/models).
 
 Note: This feature is in Public Preview, which means that it is not subject to any SLA or
 deprecation policy and could change in backwards-incompatible ways.
-

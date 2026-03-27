@@ -5,6 +5,8 @@
   ([#7909](https://github.com/firebase/firebase-android-sdk/pull/7909))
 - [changed] Internal change to use `SecureRandom` when generating operation IDs.
   ([#7910](https://github.com/firebase/firebase-android-sdk/pull/7910))
+- [changed] Internal refactor to use immutable byte arrays.
+  ([#7957](https://github.com/firebase/firebase-android-sdk/pull/7957))
 
 # 17.2.0
 
