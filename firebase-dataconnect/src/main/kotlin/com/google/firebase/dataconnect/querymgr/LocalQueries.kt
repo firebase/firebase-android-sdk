@@ -60,6 +60,7 @@ internal class LocalQueries(
 
 private fun LocalQueries.Key<*>.toRemoteKey(): RemoteQueries.Key =
   RemoteQueries.Key(
+    authUid = authUid,
     queryId = queryId,
     fetchPolicy = fetchPolicy,
   )

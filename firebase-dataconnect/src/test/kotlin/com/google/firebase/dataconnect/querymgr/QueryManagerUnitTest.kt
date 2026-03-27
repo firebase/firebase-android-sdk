@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalKotest::class)
+@file:OptIn(ExperimentalKotest::class, DelicateKotest::class)
 
 package com.google.firebase.dataconnect.querymgr
 
@@ -39,6 +39,7 @@ import com.google.firebase.util.nextAlphanumericString
 import com.google.protobuf.Struct
 import google.firebase.dataconnect.proto.ExecuteQueryRequest
 import google.firebase.dataconnect.proto.ExecuteQueryResponse
+import io.kotest.common.DelicateKotest
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.collections.shouldHaveSize
@@ -53,6 +54,7 @@ import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.alphanumeric
 import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.constant
+import io.kotest.property.arbitrary.distinct
 import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.orNull
@@ -63,6 +65,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import io.mockk.slot
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.random.Random
@@ -590,6 +593,11 @@ class QueryManagerUnitTest {
       (valuePrefix: String, valuePrefixOverride: String, executeCount: Int, List<Data>) -> Unit,
     newDataConnectAuth: PropertyContext.() -> DataConnectAuth? = { null },
     newDataConnectAppCheck: PropertyContext.() -> DataConnectAppCheck? = { null },
+    calculateExpectedExecuteQueryInvocationCount: (executeCount: Int) -> Int = { 2 },
+    verifyExecuteQueryInvocations:
+      (authTokens: List<String?>, appCheckTokens: List<String?>) -> Unit =
+      { _, _ ->
+      },
   ) = runTest {
     checkAll(
       propTestConfig.withIterations(5),
@@ -640,8 +648,52 @@ class QueryManagerUnitTest {
 
       val results = jobs.awaitAll()
       verifyResults(valuePrefix, valuePrefixOverride, jobs.size, results)
-      coVerify(exactly = 2) { dataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any()) }
+      val capturedAuthTokens = mutableListOf<String?>()
+      val capturedAppCheckTokens = mutableListOf<String?>()
+      val expectedExecuteQueryInvocationCount =
+        calculateExpectedExecuteQueryInvocationCount(jobs.size)
+      coVerify(exactly = expectedExecuteQueryInvocationCount) {
+        dataConnectGrpcRPCs.executeQuery(
+          any(),
+          any(),
+          captureNullable(capturedAuthTokens),
+          captureNullable(capturedAppCheckTokens),
+          any()
+        )
+      }
+      verifyExecuteQueryInvocations(capturedAuthTokens.toList(), capturedAppCheckTokens.toList())
     }
+  }
+
+  @Test
+  fun `execute() does NOT deduplicate queries with distinct authUid`() {
+    val generatedAuthTokens = CopyOnWriteArrayList<String?>()
+
+    verifyExecuteDeduplication(
+      getDataDeserializer = { _, _, dataDeserializer -> dataDeserializer },
+      verifyResults = { valuePrefix, _, executeCount, results ->
+        val values = results.map { it.value }
+        val expectedValues = List(executeCount) { "$valuePrefix $it" }
+        values shouldContainExactlyInAnyOrder expectedValues
+      },
+      newDataConnectAuth = {
+        val distinctAuthUidArb = Arb.dataConnect.authTokenResult().map { it.authUid }.distinct()
+        val authTokenResultArb = Arb.dataConnect.authTokenResult(authUid = distinctAuthUidArb)
+        mockk {
+          coEvery { getToken(any()) } answers
+            {
+              val authTokenResult = authTokenResultArb.bind()
+              generatedAuthTokens.add(authTokenResult.token)
+              authTokenResult
+            }
+        }
+      },
+      calculateExpectedExecuteQueryInvocationCount = { executeCount -> executeCount },
+      verifyExecuteQueryInvocations = { authTokens, _ ->
+        authTokens shouldContainExactlyInAnyOrder generatedAuthTokens.toList()
+        generatedAuthTokens.clear()
+      }
+    )
   }
 
   private suspend fun PropertyContext.buildQueryManager(

@@ -40,6 +40,7 @@ internal class RemoteQueries(
     }
 
   data class Key(
+    val authUid: String?,
     val queryId: ImmutableByteArray,
     val fetchPolicy: QueryRef.FetchPolicy,
   )
