@@ -3012,14 +3012,14 @@ abstract class Expression internal constructor() {
      * ```
      *
      * @param stringExpression The expression representing the string to trim.
-     * @param valuesToTrim The expression evaluated to either a string or a blob. This parameter is
+     * @param valueToTrim The expression evaluated to either a string or a blob. This parameter is
      * treated as a set of characters or bytes that will be matched against the input from both
      * ends.
      * @return A new [Expression] representing the trimmed string or bytes.
      */
     @JvmStatic
-    fun trimValue(stringExpression: Expression, valuesToTrim: Expression): Expression =
-      FunctionExpression("trim", notImplemented, stringExpression, valuesToTrim)
+    fun trimValue(stringExpression: Expression, valueToTrim: Expression): Expression =
+      FunctionExpression("trim", notImplemented, stringExpression, valueToTrim)
 
     /**
      * Creates an expression that removes a set of leading and trailing values from a string field.
@@ -3032,13 +3032,13 @@ abstract class Expression internal constructor() {
      * ```
      *
      * @param fieldName The name of the field containing the string to trim.
-     * @param valuesToTrim This parameter is treated as a set of characters or bytes that will be
+     * @param valueToTrim This parameter is treated as a set of characters or bytes that will be
      * matched against the input from both ends.
      * @return A new [Expression] representing the trimmed string.
      */
     @JvmStatic
-    fun trimValue(fieldName: String, valuesToTrim: String): Expression =
-      FunctionExpression("trim", notImplemented, fieldName, constant(valuesToTrim))
+    fun trimValue(fieldName: String, valueToTrim: String): Expression =
+      FunctionExpression("trim", notImplemented, fieldName, constant(valueToTrim))
 
     /**
      * Creates an expression that removes leading whitespace from a string expression.
@@ -7540,10 +7540,10 @@ abstract class Expression internal constructor() {
    * field("userInput").trimValue("-_")
    * ```
    *
-   * @param valuesToTrim The set of values to trim from the string.
+   * @param valueToTrim The set of values to trim from the string.
    * @return A new [Expression] representing the trimmed string.
    */
-  fun trimValue(valuesToTrim: String) = Companion.trimValue(this, constant(valuesToTrim))
+  fun trimValue(valueToTrim: String) = Companion.trimValue(this, constant(valueToTrim))
 
   /**
    * Creates an expression that removes a set of leading and trailing values from this expression.
@@ -7556,10 +7556,10 @@ abstract class Expression internal constructor() {
    * field("userInput").trimValue(field("trimChars"))
    * ```
    *
-   * @param valuesToTrim The expression representing the set of values to trim from the string.
+   * @param valueToTrim The expression representing the set of values to trim from the string.
    * @return A new [Expression] representing the trimmed string.
    */
-  fun trimValue(valuesToTrim: Expression) = Companion.trimValue(this, valuesToTrim)
+  fun trimValue(valueToTrim: Expression) = Companion.trimValue(this, valueToTrim)
 
   /**
    * Creates an expression that removes leading whitespace from this string expression.

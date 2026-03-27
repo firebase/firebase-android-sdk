@@ -1321,10 +1321,10 @@ package com.google.firebase.firestore.pipeline {
     method public final com.google.firebase.firestore.pipeline.Expression trim();
     method public static final com.google.firebase.firestore.pipeline.Expression trim(com.google.firebase.firestore.pipeline.Expression stringExpression);
     method public static final com.google.firebase.firestore.pipeline.Expression trim(String fieldName);
-    method public final com.google.firebase.firestore.pipeline.Expression trimValue(com.google.firebase.firestore.pipeline.Expression valuesToTrim);
-    method public static final com.google.firebase.firestore.pipeline.Expression trimValue(com.google.firebase.firestore.pipeline.Expression stringExpression, com.google.firebase.firestore.pipeline.Expression valuesToTrim);
-    method public final com.google.firebase.firestore.pipeline.Expression trimValue(String valuesToTrim);
-    method public static final com.google.firebase.firestore.pipeline.Expression trimValue(String fieldName, String valuesToTrim);
+    method public final com.google.firebase.firestore.pipeline.Expression trimValue(com.google.firebase.firestore.pipeline.Expression valueToTrim);
+    method public static final com.google.firebase.firestore.pipeline.Expression trimValue(com.google.firebase.firestore.pipeline.Expression stringExpression, com.google.firebase.firestore.pipeline.Expression valueToTrim);
+    method public final com.google.firebase.firestore.pipeline.Expression trimValue(String valueToTrim);
+    method public static final com.google.firebase.firestore.pipeline.Expression trimValue(String fieldName, String valueToTrim);
     method public final com.google.firebase.firestore.pipeline.Expression trunc();
     method public static final com.google.firebase.firestore.pipeline.Expression trunc(com.google.firebase.firestore.pipeline.Expression numericExpr);
     method public static final com.google.firebase.firestore.pipeline.Expression trunc(String numericField);
@@ -1707,8 +1707,8 @@ package com.google.firebase.firestore.pipeline {
     method public com.google.firebase.firestore.pipeline.Expression toUpper(String fieldName);
     method public com.google.firebase.firestore.pipeline.Expression trim(com.google.firebase.firestore.pipeline.Expression stringExpression);
     method public com.google.firebase.firestore.pipeline.Expression trim(String fieldName);
-    method public com.google.firebase.firestore.pipeline.Expression trimValue(com.google.firebase.firestore.pipeline.Expression stringExpression, com.google.firebase.firestore.pipeline.Expression valuesToTrim);
-    method public com.google.firebase.firestore.pipeline.Expression trimValue(String fieldName, String valuesToTrim);
+    method public com.google.firebase.firestore.pipeline.Expression trimValue(com.google.firebase.firestore.pipeline.Expression stringExpression, com.google.firebase.firestore.pipeline.Expression valueToTrim);
+    method public com.google.firebase.firestore.pipeline.Expression trimValue(String fieldName, String valueToTrim);
     method public com.google.firebase.firestore.pipeline.Expression trunc(com.google.firebase.firestore.pipeline.Expression numericExpr);
     method public com.google.firebase.firestore.pipeline.Expression trunc(String numericField);
     method public com.google.firebase.firestore.pipeline.Expression truncToPrecision(com.google.firebase.firestore.pipeline.Expression numericExpr, com.google.firebase.firestore.pipeline.Expression decimalPlace);
