@@ -1934,8 +1934,7 @@ abstract class Expression internal constructor() {
      * @return A new [Expression] representing the type operation.
      */
     @JvmStatic
-    fun type(fieldName: String): Expression =
-      FunctionExpression("type", notImplemented, field(fieldName))
+    fun type(fieldName: String): Expression = FunctionExpression("type", notImplemented, fieldName)
 
     /**
      * Creates an expression that checks if the result of an expression is of the given type.
@@ -1951,10 +1950,8 @@ abstract class Expression internal constructor() {
      *
      * @param expr The expression to check the type of.
      * @param type The type to check for.
-     * @return A new [BooleanExpression] that evaluates to true if the expression's result is of
-     * ```
-     *     the given type, false otherwise.
-     * ```
+     * @return A new [BooleanExpression] that evaluates to true if the expression's result is of the
+     * given type, false otherwise.
      */
     @JvmStatic
     fun isType(expr: Expression, type: String): BooleanExpression =
@@ -1974,14 +1971,12 @@ abstract class Expression internal constructor() {
      *
      * @param fieldName The name of the field to check the type of.
      * @param type The type to check for.
-     * @return A new [BooleanExpression] that evaluates to true if the expression's result is of
-     * ```
-     *     the given type, false otherwise.
-     * ```
+     * @return A new [BooleanExpression] that evaluates to true if the expression's result is of the
+     * given type, false otherwise.
      */
     @JvmStatic
     fun isType(fieldName: String, type: String): BooleanExpression =
-      BooleanFunctionExpression("is_type", notImplemented, field(fieldName), constant(type))
+      BooleanFunctionExpression("is_type", notImplemented, fieldName, constant(type))
 
     /**
      * Creates an expression that calculates the length of a string, array, map, vector, or blob
