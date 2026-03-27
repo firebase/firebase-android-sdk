@@ -578,6 +578,7 @@ internal constructor(
             // Notify the application
             goAwayHandler?.invoke(it)
           }
+          is LiveServerUnknownMessage -> {} // Ignore. Logging happens at de-serialization time
         }
       }
       .launchIn(networkScope)
