@@ -3131,7 +3131,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun getField(expression: Expression, key: String): Expression =
-      FunctionExpression("field", notImplemented, expression, key)
+      FunctionExpression("get_field", notImplemented, expression, key)
 
     /**
      * Accesses a field/property of a document or Map using the provided [key].
@@ -3142,7 +3142,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun getField(fieldName: String, key: String): Expression =
-      FunctionExpression("field", notImplemented, fieldName, key)
+      FunctionExpression("get_field", notImplemented, fieldName, key)
 
     /**
      * Accesses a field/property of a document or Map using the provided [keyExpression].
@@ -3153,7 +3153,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun getField(expression: Expression, keyExpression: Expression): Expression =
-      FunctionExpression("field", notImplemented, expression, keyExpression)
+      FunctionExpression("get_field", notImplemented, expression, keyExpression)
 
     /**
      * Accesses a field/property of a document or Map using the provided [keyExpression].
@@ -3164,7 +3164,7 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun getField(fieldName: String, keyExpression: Expression): Expression =
-      FunctionExpression("field", notImplemented, fieldName, keyExpression)
+      FunctionExpression("get_field", notImplemented, fieldName, keyExpression)
 
     /**
      * Accesses a value from a map (object) field using the provided [key].
