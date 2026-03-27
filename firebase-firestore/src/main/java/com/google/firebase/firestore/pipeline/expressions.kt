@@ -5979,7 +5979,7 @@ abstract class Expression internal constructor() {
       FunctionExpression("if_null", notImplemented, ifFieldName, elseExpr)
 
     /**
-     * Creates an expression that returns the [elseValue] argument if [ifFieldName]field is null,
+     * Creates an expression that returns the [elseValue] argument if [ifFieldName] field is null,
      * else return the value of the field.
      *
      * ```kotlin
