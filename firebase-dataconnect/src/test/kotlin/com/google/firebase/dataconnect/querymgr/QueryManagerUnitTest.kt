@@ -364,7 +364,6 @@ class QueryManagerUnitTest {
   fun `execute() deduplicates identical queries`() =
     verifyExecuteDeduplication(
       getDataDeserializer = { _, _, dataDeserializer -> dataDeserializer },
-      getSerializersModule = { _, _, serializersModule -> serializersModule },
       verifyResults = { valuePrefix, _, results ->
         val values = results.map { it.value }
         values.distinct().shouldContainExactlyInAnyOrder("$valuePrefix 0", "$valuePrefix 1")
@@ -377,7 +376,6 @@ class QueryManagerUnitTest {
       getDataDeserializer = { valuePrefixOverride, jobIndex, _ ->
         TestDataOverrideDeserializer("$valuePrefixOverride $jobIndex")
       },
-      getSerializersModule = { _, _, serializersModule -> serializersModule },
       verifyResults = { _, valuePrefixOverride, results ->
         val values = results.map { it.value }
         val expectedResults = List(values.size) { "$valuePrefixOverride $it" }
@@ -390,7 +388,7 @@ class QueryManagerUnitTest {
     val dataDeserializer = serializer<ContextualTestData>()
     return verifyExecuteDeduplication(
       getDataDeserializer = { _, _, _ -> dataDeserializer },
-      getSerializersModule = { valuePrefixOverride, jobIndex, _ ->
+      getDataSerializersModule = { valuePrefixOverride, jobIndex, _ ->
         SerializersModule {
           contextual(String::class, HardcodedStringKSerializer("$valuePrefixOverride $jobIndex"))
         }
@@ -403,13 +401,61 @@ class QueryManagerUnitTest {
     )
   }
 
+  @Test
+  fun `execute() deduplicates identical queries, even with different variablesSerializer that produces same Struct`() {
+    class DistinctVariablesSerializer(delegate: SerializationStrategy<TestVariables>) :
+      SerializationStrategy<TestVariables> by delegate
+    run {
+      val delegate = serializer<TestVariables>()
+      check(DistinctVariablesSerializer(delegate) != DistinctVariablesSerializer(delegate))
+    }
+
+    verifyExecuteDeduplication(
+      getDataDeserializer = { _, _, dataDeserializer -> dataDeserializer },
+      getVariablesSerializer = { DistinctVariablesSerializer(it) },
+      verifyResults = { valuePrefix, _, results ->
+        val values = results.map { it.value }
+        values.distinct().shouldContainExactlyInAnyOrder("$valuePrefix 0", "$valuePrefix 1")
+      },
+    )
+  }
+
+  @Test
+  fun `execute() deduplicates identical queries, even with different variablesSerializersModule that produces same Struct`() {
+    fun distinctSerializersModule(key: Int): SerializersModule = SerializersModule {
+      contextual(String::class, HardcodedStringKSerializer(key.toString()))
+    }
+    check(distinctSerializersModule(1) != distinctSerializersModule(2))
+
+    verifyExecuteDeduplication(
+      getDataDeserializer = { _, _, dataDeserializer -> dataDeserializer },
+      getVariablesSerializersModule = { jobIndex, _ -> distinctSerializersModule(jobIndex) },
+      verifyResults = { valuePrefix, _, results ->
+        val values = results.map { it.value }
+        values.distinct().shouldContainExactlyInAnyOrder("$valuePrefix 0", "$valuePrefix 1")
+      },
+    )
+  }
+
   private fun <Data> verifyExecuteDeduplication(
     getDataDeserializer:
       (
         valuePrefixOverride: String, jobIndex: Int, DeserializationStrategy<TestData>
       ) -> DeserializationStrategy<Data>,
-    getSerializersModule:
-      (valuePrefixOverride: String, jobIndex: Int, SerializersModule?) -> SerializersModule?,
+    getVariablesSerializer:
+      (SerializationStrategy<TestVariables>) -> SerializationStrategy<TestVariables> =
+      {
+        it
+      },
+    getDataSerializersModule:
+      (valuePrefixOverride: String, jobIndex: Int, SerializersModule?) -> SerializersModule? =
+      { _, _, serializersModule ->
+        serializersModule
+      },
+    getVariablesSerializersModule: (jobIndex: Int, SerializersModule?) -> SerializersModule? =
+      { _, serializersModule ->
+        serializersModule
+      },
     verifyResults: (valuePrefix: String, valuePrefixOverride: String, List<Data>) -> Unit,
   ) = runTest {
     checkAll(
@@ -444,10 +490,11 @@ class QueryManagerUnitTest {
               variables = args.variables,
               dataDeserializer =
                 getDataDeserializer(valuePrefixOverride, jobIndex, args.dataDeserializer),
-              variablesSerializer = args.variablesSerializer,
+              variablesSerializer = getVariablesSerializer(args.variablesSerializer),
               dataSerializersModule =
-                getSerializersModule(valuePrefixOverride, jobIndex, args.dataSerializersModule),
-              variablesSerializersModule = args.variablesSerializersModule,
+                getDataSerializersModule(valuePrefixOverride, jobIndex, args.dataSerializersModule),
+              variablesSerializersModule =
+                getVariablesSerializersModule(jobIndex, args.variablesSerializersModule),
               callerSdkType = args.callerSdkType,
               fetchPolicy = args.fetchPolicy,
             )
