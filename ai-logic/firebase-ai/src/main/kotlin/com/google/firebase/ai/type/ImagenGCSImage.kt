@@ -21,10 +21,6 @@ package com.google.firebase.ai.type
  *
  * @param gcsUri Contains the `gs://` URI for the image.
  * @param mimeType Contains the MIME type of the image (for example, `"image/png"`).
- *
- * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as early
- * as June 2026. As a replacement, you can
- * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
  */
 internal class ImagenGCSImage
 internal constructor(public val gcsUri: String, public val mimeType: String) {}
