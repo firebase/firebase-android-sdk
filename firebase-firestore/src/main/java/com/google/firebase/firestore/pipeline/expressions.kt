@@ -3309,16 +3309,16 @@ abstract class Expression internal constructor() {
     @JvmStatic
     fun mapRemove(mapField: String, key: String): Expression =
       FunctionExpression("map_remove", notImplemented, mapField, key)
+
     /**
      * Creates an expression that returns a new map with the specified entries added or updated.
      *
-     * - Only performs shallow updates to the map.
-     * - Setting a value to `null` will retain the key with a `null` value. To remove a key
-     * entirely, use `mapRemove`.
+     * Note: This only performs shallow updates to the map. Setting a value to `null` will retain
+     * the key with a `null` value. To remove a key entirely, use `mapRemove`.
      *
      * ```kotlin
-     * // Set the 'category' key to the value of the 'newCategory' field.
-     * mapSet(field("metadata"), field("keyField"), field("newCategory"))
+     * // Set the 'city' to "San Francisco" in the 'address' map
+     * mapSet(field("address"), constant("city"), constant("San Francisco"));
      * ```
      *
      * @param mapExpr The expression representing the map.
@@ -3339,13 +3339,12 @@ abstract class Expression internal constructor() {
     /**
      * Creates an expression that returns a new map with the specified entries added or updated.
      *
-     * - Only performs shallow updates to the map.
-     * - Setting a value to `null` will retain the key with a `null` value. To remove a key
-     * entirely, use `mapRemove`.
+     * Note: This only performs shallow updates to the map. Setting a value to `null` will retain
+     * the key with a `null` value. To remove a key entirely, use `mapRemove`.
      *
      * ```kotlin
-     * // Set the 'category' key to "Electronics" and 'active' to true.
-     * mapSet(field("metadata"), "category", "Electronics", "active", true)
+     * // Set the 'city' to "San Francisco" in the 'address' map
+     * mapSet(field("address"), "city", "San Francisco");
      * ```
      *
      * @param mapExpr The map field to set entries in.
@@ -3373,13 +3372,12 @@ abstract class Expression internal constructor() {
     /**
      * Creates an expression that returns a new map with the specified entries added or updated.
      *
-     * - Only performs shallow updates to the map.
-     * - Setting a value to `null` will retain the key with a `null` value. To remove a key
-     * entirely, use `mapRemove`.
+     * Note: This only performs shallow updates to the map. Setting a value to `null` will retain
+     * the key with a `null` value. To remove a key entirely, use `mapRemove`.
      *
      * ```kotlin
-     * // Set a dynamic key to a dynamic value in the 'metadata' field map.
-     * mapSet("metadata", field("keyField"), field("valueField"))
+     * // Set the 'city' to "San Francisco" in the 'address' map
+     * mapSet("address", constant("city"), constant("San Francisco"));
      * ```
      *
      * @param mapField The map field to set entries in.
@@ -3400,13 +3398,12 @@ abstract class Expression internal constructor() {
     /**
      * Creates an expression that returns a new map with the specified entries added or updated.
      *
-     * - Only performs shallow updates to the map.
-     * - Setting a value to `null` will retain the key with a `null` value. To remove a key
-     * entirely, use `mapRemove`.
+     * Note: This only performs shallow updates to the map. Setting a value to `null` will retain
+     * the key with a `null` value. To remove a key entirely, use `mapRemove`.
      *
      * ```kotlin
-     * // Set the 'category' key to "Electronics" in the 'metadata' field map.
-     * mapSet("metadata", "category", "Electronics")
+     * // Set the 'city' to "San Francisco" in the 'address' map
+     * mapSet("address", "city", "San Francisco");
      * ```
      *
      * @param mapField The map field to set entries in.
@@ -3429,8 +3426,8 @@ abstract class Expression internal constructor() {
     /**
      * Creates an expression that returns the keys of a map.
      *
-     * While the backend generally preserves insertion order, relying on the order of the output
-     * array is not guaranteed and should be avoided.
+     * Note: While the backend generally preserves insertion order, relying on the order of the
+     * output array is not guaranteed and should be avoided.
      *
      * ```kotlin
      * // Get the keys of a map expression.
@@ -3447,8 +3444,8 @@ abstract class Expression internal constructor() {
     /**
      * Creates an expression that returns the keys of a map.
      *
-     * While the backend generally preserves insertion order, relying on the order of the output
-     * array is not guaranteed and should be avoided.
+     * Note: While the backend generally preserves insertion order, relying on the order of the
+     * output array is not guaranteed and should be avoided.
      *
      * ```kotlin
      * // Get the keys of the 'metadata' map field.
@@ -3465,8 +3462,8 @@ abstract class Expression internal constructor() {
     /**
      * Creates an expression that returns the values of a map.
      *
-     * While the backend generally preserves insertion order, relying on the order of the output
-     * array is not guaranteed and should be avoided.
+     * Note: While the backend generally preserves insertion order, relying on the order of the
+     * output array is not guaranteed and should be avoided.
      *
      * ```kotlin
      * // Get the values of a map expression.
@@ -3483,8 +3480,8 @@ abstract class Expression internal constructor() {
     /**
      * Creates an expression that returns the values of a map.
      *
-     * While the backend generally preserves insertion order, relying on the order of the output
-     * array is not guaranteed and should be avoided.
+     * Note: While the backend generally preserves insertion order, relying on the order of the
+     * output array is not guaranteed and should be avoided.
      *
      * ```kotlin
      * // Get the values of the 'metadata' map field.
@@ -3502,8 +3499,8 @@ abstract class Expression internal constructor() {
      * Creates an expression that returns the entries of a map as an array of maps, where each map
      * contains a "k" property for the key and a "v" property for the value.
      *
-     * While the backend generally preserves insertion order, relying on the order of the output
-     * array is not guaranteed and should be avoided.
+     * Note: While the backend generally preserves insertion order, relying on the order of the
+     * output array is not guaranteed and should be avoided.
      *
      * ```kotlin
      * // Get the entries of a map expression.
@@ -3520,8 +3517,8 @@ abstract class Expression internal constructor() {
     /**
      * Creates an expression that returns the entries of a map as an array of maps.
      *
-     * While the backend generally preserves insertion order, relying on the order of the output
-     * array is not guaranteed and should be avoided.
+     * Note: While the backend generally preserves insertion order, relying on the order of the
+     * output array is not guaranteed and should be avoided.
      *
      * ```kotlin
      * // Get the entries of the 'metadata' map field.
