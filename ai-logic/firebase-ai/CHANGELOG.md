@@ -1,5 +1,7 @@
 # Unreleased
 
+- [deprecated] All Imagen models are deprecated and will shut down as early as June 2026.
+  As a replacement, you can migrate [your apps to use Gemini Image models (the "Nano Banana" models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration).
 - [feature] Added support for Chat interactions using server prompt templates (#7986)
 - [fixed] Fixed an issue causing network timeouts to throw the incorrect exception type, instead of
   `RequestTimeoutException` (#7966)
