@@ -159,7 +159,11 @@ internal class FirebaseDataConnectImpl(
       val grpcClient: DataConnectGrpcClient,
       val queryManager: QueryManager
     ) : State
-    data class Closing(val grpcRPCs: DataConnectGrpcRPCs, val closeJob: Deferred<Unit>) : State
+    data class Closing(
+      val grpcRPCs: DataConnectGrpcRPCs,
+      val queryManager: QueryManager,
+      val closeJob: Deferred<Unit>
+    ) : State
     object Closed : State
   }
 
@@ -455,9 +459,13 @@ internal class FirebaseDataConnectImpl(
     dataConnectAuth.close()
     dataConnectAppCheck.close()
 
-    fun createCloseJob(grpcRPCs: DataConnectGrpcRPCs): Deferred<Unit> {
+    fun createCloseJob(grpcRPCs: DataConnectGrpcRPCs, queryManager: QueryManager): Deferred<Unit> {
       @OptIn(DelicateCoroutinesApi::class)
-      val closeJob = GlobalScope.async(start = CoroutineStart.LAZY) { grpcRPCs.close() }
+      val closeJob =
+        GlobalScope.async(start = CoroutineStart.LAZY) {
+          queryManager.close()
+          grpcRPCs.close()
+        }
       closeJob.invokeOnCompletion { exception ->
         if (exception !== null) {
           logger.warn(exception) { "close() failed" }
@@ -483,10 +491,16 @@ internal class FirebaseDataConnectImpl(
         when (currentState) {
           is State.New -> State.Closed
           is State.Initialized ->
-            State.Closing(currentState.grpcRPCs, createCloseJob(currentState.grpcRPCs))
+            State.Closing(
+              currentState.grpcRPCs,
+              currentState.queryManager,
+              createCloseJob(currentState.grpcRPCs, currentState.queryManager)
+            )
           is State.Closing ->
             if (currentState.closeJob.isCancelled) {
-              currentState.copy(closeJob = createCloseJob(currentState.grpcRPCs))
+              currentState.copy(
+                closeJob = createCloseJob(currentState.grpcRPCs, currentState.queryManager)
+              )
             } else {
               currentState
             }
