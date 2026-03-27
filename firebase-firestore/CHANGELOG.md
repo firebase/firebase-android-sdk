@@ -1,5 +1,7 @@
 # Unreleased
 
+- [feature] Added support for `timestampTruncate`, `timestampDiff`, and `timestampExtract` Pipeline expressions.
+  [#7955](https://github.com/firebase/firebase-android-sdk/pull/7955)
 - [feature] Pipeline operations are GA now.
 - [feature] Added support for Pipeline Subqueries, including `define` and `variable` expressions.
   [#7736](https://github.com/firebase/firebase-android-sdk/pull/7736)

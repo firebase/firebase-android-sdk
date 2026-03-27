@@ -4110,7 +4110,7 @@ abstract class Expression internal constructor() {
      * ```kotlin
      * // Truncate the 'createdAt' timestamp to the beginning of the day in "America/Los_Angeles"
      * // timezone.
-     * timestampTruncate(field("createdAt"), "day", "America/Los_Angeles")
+     * timestampTruncateWithTimezone(field("createdAt"), "day", "America/Los_Angeles")
      * ```
      *
      * @param timestamp The timestamp expression.
@@ -4123,7 +4123,7 @@ abstract class Expression internal constructor() {
      * @return A new [Expression] representing the truncated timestamp.
      */
     @JvmStatic
-    fun timestampTruncate(
+    fun timestampTruncateWithTimezone(
       timestamp: Expression,
       granularity: String,
       timezone: String
@@ -4143,7 +4143,7 @@ abstract class Expression internal constructor() {
      * ```kotlin
      * // Truncate the 'createdAt' timestamp to the beginning of the day in "America/Los_Angeles"
      * // timezone.
-     * timestampTruncate(field("createdAt"), field("granularity"), "America/Los_Angeles")
+     * timestampTruncateWithTimezone(field("createdAt"), field("granularity"), "America/Los_Angeles")
      * ```
      *
      * @param timestamp The timestamp expression.
@@ -4156,7 +4156,7 @@ abstract class Expression internal constructor() {
      * @return A new [Expression] representing the truncated timestamp.
      */
     @JvmStatic
-    fun timestampTruncate(
+    fun timestampTruncateWithTimezone(
       timestamp: Expression,
       granularity: Expression,
       timezone: String
@@ -4176,7 +4176,7 @@ abstract class Expression internal constructor() {
      * ```kotlin
      * // Truncate the 'createdAt' timestamp to the beginning of the day in "America/Los_Angeles"
      * // timezone.
-     * timestampTruncate("createdAt", "day", "America/Los_Angeles")
+     * timestampTruncateWithTimezone("createdAt", "day", "America/Los_Angeles")
      * ```
      *
      * @param fieldName The name of the field containing the timestamp.
@@ -4189,7 +4189,11 @@ abstract class Expression internal constructor() {
      * @return A new [Expression] representing the truncated timestamp.
      */
     @JvmStatic
-    fun timestampTruncate(fieldName: String, granularity: String, timezone: String): Expression =
+    fun timestampTruncateWithTimezone(
+      fieldName: String,
+      granularity: String,
+      timezone: String
+    ): Expression =
       FunctionExpression(
         "timestamp_trunc",
         notImplemented,
@@ -4205,7 +4209,7 @@ abstract class Expression internal constructor() {
      * ```kotlin
      * // Truncate the 'createdAt' timestamp to the beginning of the day in "America/Los_Angeles"
      * // timezone.
-     * timestampTruncate("createdAt", field("granularity"), "America/Los_Angeles")
+     * timestampTruncateWithTimezone("createdAt", field("granularity"), "America/Los_Angeles")
      * ```
      *
      * @param fieldName The name of the field containing the timestamp.
@@ -4218,7 +4222,7 @@ abstract class Expression internal constructor() {
      * @return A new [Expression] representing the truncated timestamp.
      */
     @JvmStatic
-    fun timestampTruncate(
+    fun timestampTruncateWithTimezone(
       fieldName: String,
       granularity: Expression,
       timezone: String
@@ -4230,6 +4234,496 @@ abstract class Expression internal constructor() {
         granularity,
         constant(timezone)
       )
+
+    /**
+     * Creates an expression that truncates a timestamp to a specified granularity in a given
+     * timezone.
+     *
+     * ```kotlin
+     * // Truncate the 'createdAt' timestamp to the beginning of the day in timezone specified by
+     * // the 'tz' field.
+     * timestampTruncateWithTimezone(field("createdAt"), "day", field("tz"))
+     * ```
+     *
+     * @param timestamp The timestamp expression.
+     * @param granularity The granularity to truncate to. Valid values are "microsecond",
+     * "millisecond", "second", "minute", "hour", "day", "week", "week(monday)", "week(tuesday)",
+     * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
+     * "isoweek", "month", "quarter", "year", and "isoyear".
+     * @param timezone The timezone expression to use for truncation. Valid values are from the TZ
+     * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1".
+     * @return A new [Expression] representing the truncated timestamp.
+     */
+    @JvmStatic
+    fun timestampTruncateWithTimezone(
+      timestamp: Expression,
+      granularity: String,
+      timezone: Expression
+    ): Expression =
+      FunctionExpression(
+        "timestamp_trunc",
+        notImplemented,
+        timestamp,
+        constant(granularity),
+        timezone
+      )
+
+    /**
+     * Creates an expression that truncates a timestamp to a specified granularity in a given
+     * timezone.
+     *
+     * ```kotlin
+     * // Truncate the 'createdAt' timestamp to the beginning of the day in timezone specified by
+     * // the 'tz' field.
+     * timestampTruncateWithTimezone(field("createdAt"), field("granularity"), field("tz"))
+     * ```
+     *
+     * @param timestamp The timestamp expression.
+     * @param granularity The granularity expression to truncate to. Valid values are "microsecond",
+     * "millisecond", "second", "minute", "hour", "day", "week", "week(monday)", "week(tuesday)",
+     * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
+     * "isoweek", "month", "quarter", "year", and "isoyear".
+     * @param timezone The timezone expression to use for truncation. Valid values are from the TZ
+     * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1".
+     * @return A new [Expression] representing the truncated timestamp.
+     */
+    @JvmStatic
+    fun timestampTruncateWithTimezone(
+      timestamp: Expression,
+      granularity: Expression,
+      timezone: Expression
+    ): Expression =
+      FunctionExpression("timestamp_trunc", notImplemented, timestamp, granularity, timezone)
+
+    /**
+     * Creates an expression that truncates a timestamp to a specified granularity in a given
+     * timezone.
+     *
+     * ```kotlin
+     * // Truncate the 'createdAt' timestamp to the beginning of the day in timezone specified by
+     * // the 'tz' field.
+     * timestampTruncateWithTimezone("createdAt", "day", field("tz"))
+     * ```
+     *
+     * @param fieldName The name of the field containing the timestamp.
+     * @param granularity The granularity to truncate to. Valid values are "microsecond",
+     * "millisecond", "second", "minute", "hour", "day", "week", "week(monday)", "week(tuesday)",
+     * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
+     * "isoweek", "month", "quarter", "year", and "isoyear".
+     * @param timezone The timezone expression to use for truncation. Valid values are from the TZ
+     * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1".
+     * @return A new [Expression] representing the truncated timestamp.
+     */
+    @JvmStatic
+    fun timestampTruncateWithTimezone(
+      fieldName: String,
+      granularity: String,
+      timezone: Expression
+    ): Expression =
+      FunctionExpression(
+        "timestamp_trunc",
+        notImplemented,
+        field(fieldName),
+        constant(granularity),
+        timezone
+      )
+
+    /**
+     * Creates an expression that truncates a timestamp to a specified granularity in a given
+     * timezone.
+     *
+     * ```kotlin
+     * // Truncate the 'createdAt' timestamp to the beginning of the day in timezone specified by
+     * // the 'tz' field.
+     * timestampTruncateWithTimezone("createdAt", field("granularity"), field("tz"))
+     * ```
+     *
+     * @param fieldName The name of the field containing the timestamp.
+     * @param granularity The granularity expression to truncate to. Valid values are "microsecond",
+     * "millisecond", "second", "minute", "hour", "day", "week", "week(monday)", "week(tuesday)",
+     * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
+     * "isoweek", "month", "quarter", "year", and "isoyear".
+     * @param timezone The timezone expression to use for truncation. Valid values are from the TZ
+     * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1".
+     * @return A new [Expression] representing the truncated timestamp.
+     */
+    @JvmStatic
+    fun timestampTruncateWithTimezone(
+      fieldName: String,
+      granularity: Expression,
+      timezone: Expression
+    ): Expression =
+      FunctionExpression("timestamp_trunc", notImplemented, field(fieldName), granularity, timezone)
+
+    /**
+     * Creates an expression that calculates the difference between two timestamps.
+     *
+     * ```kotlin
+     * // Calculate the difference between the fields 'endAt' and the field 'startAt' in unit specified by
+     * // the 'unit' field.
+     * timestampDiff(field("endAt"), field("startAt"), field("unit"))
+     * ```
+     *
+     * @param end The ending timestamp expression.
+     * @param start The starting timestamp expression.
+     * @param unit The unit of time for the difference. Valid values include "microsecond",
+     * "millisecond", "second", "minute", "hour" and "day".
+     * @return A new [Expression] representing the difference.
+     */
+    @JvmStatic
+    fun timestampDiff(end: Expression, start: Expression, unit: Expression): Expression =
+      FunctionExpression("timestamp_diff", notImplemented, end, start, unit)
+
+    /**
+     * Creates an expression that calculates the difference between two timestamps.
+     *
+     * ```kotlin
+     * // Calculate the difference in days between 'endAt' field and 'startAt' field.
+     * timestampDiff(field("endAt"), field("startAt"), "day")
+     * ```
+     *
+     * @param end The ending timestamp expression.
+     * @param start The starting timestamp expression.
+     * @param unit The unit of time for the difference. Valid values include "microsecond",
+     * "millisecond", "second", "minute", "hour" and "day".
+     * @return A new [Expression] representing the difference.
+     */
+    @JvmStatic
+    fun timestampDiff(end: Expression, start: Expression, unit: String): Expression =
+      timestampDiff(end, start, constant(unit))
+
+    /**
+     * Creates an expression that calculates the difference between two timestamps.
+     *
+     * ```kotlin
+     * // Calculate the difference in days between 'endAt' and 'startAt'.
+     * timestampDiff("endAt", "startAt", "day")
+     * ```
+     *
+     * @param endFieldName The ending timestamp field name.
+     * @param startFieldName The starting timestamp field name.
+     * @param unit The unit of time for the difference. Valid values include "microsecond",
+     * "millisecond", "second", "minute", "hour" and "day".
+     * @return A new [Expression] representing the difference.
+     */
+    @JvmStatic
+    fun timestampDiff(endFieldName: String, startFieldName: String, unit: String): Expression =
+      timestampDiff(field(endFieldName), field(startFieldName), constant(unit))
+
+    /**
+     * Creates an expression that calculates the difference between two timestamps.
+     *
+     * ```kotlin
+     * // Calculate the difference in days between 'endAt' and 'startAt'.
+     * timestampDiff("endAt", field("startAt"), "day")
+     * ```
+     *
+     * @param endFieldName The ending timestamp field name.
+     * @param start The starting timestamp expression.
+     * @param unit The unit of time for the difference. Valid values include "microsecond",
+     * "millisecond", "second", "minute", "hour" and "day".
+     * @return A new [Expression] representing the difference.
+     */
+    @JvmStatic
+    fun timestampDiff(endFieldName: String, start: Expression, unit: String): Expression =
+      timestampDiff(field(endFieldName), start, constant(unit))
+
+    /**
+     * Creates an expression that calculates the difference between two timestamps.
+     *
+     * ```kotlin
+     * // Calculate the difference in days between 'endAt' and 'startAt'.
+     * timestampDiff(field("endAt"), "startAt", "day")
+     * ```
+     *
+     * @param end The ending timestamp expression.
+     * @param startFieldName The starting timestamp field name.
+     * @param unit The unit of time for the difference. Valid values include "microsecond",
+     * "millisecond", "second", "minute", "hour" and "day".
+     * @return A new [Expression] representing the difference.
+     */
+    @JvmStatic
+    fun timestampDiff(end: Expression, startFieldName: String, unit: String): Expression =
+      timestampDiff(end, field(startFieldName), constant(unit))
+
+    /**
+     * Creates an expression that extracts a specified part from a timestamp.
+     *
+     * ```kotlin
+     * // Extract the part specified by the field 'part' from 'createdAt'.
+     * timestampExtract(field("createdAt"), field("part"))
+     * ```
+     *
+     * @param timestamp The timestamp expression.
+     * @param part The part to extract from the timestamp. Valid values are "microsecond",
+     * "millisecond", "second", "minute", "hour", "dayofweek", "day", "dayofyear", "week",
+     * "week(monday)", "week(tuesday)", "week(wednesday)", "week(thursday)", "week(friday)",
+     * "week(saturday)", "week(sunday)", "isoweek", "month", "quarter", "year", and "isoyear".
+     * @return A new [Expression] representing the extracted part.
+     */
+    @JvmStatic
+    fun timestampExtract(timestamp: Expression, part: Expression): Expression =
+      FunctionExpression("timestamp_extract", notImplemented, timestamp, part)
+
+    /**
+     * Creates an expression that extracts a specified part from a timestamp.
+     *
+     * ```kotlin
+     * // Extract the day from the timestamp returned by the expression.
+     * timestampExtract(field("createdAt"), "day")
+     * ```
+     *
+     * @param timestamp The timestamp expression.
+     * @param part The part to extract from the timestamp. Valid values are "microsecond",
+     * "millisecond", "second", "minute", "hour", "dayofweek", "day", "dayofyear", "week",
+     * "week(monday)", "week(tuesday)", "week(wednesday)", "week(thursday)", "week(friday)",
+     * "week(saturday)", "week(sunday)", "isoweek", "month", "quarter", "year", and "isoyear".
+     * @return A new [Expression] representing the extracted part.
+     */
+    @JvmStatic
+    fun timestampExtract(timestamp: Expression, part: String): Expression =
+      timestampExtract(timestamp, constant(part))
+
+    /**
+     * Creates an expression that extracts a specified part from a timestamp.
+     *
+     * ```kotlin
+     * // Extract the part specified by the field 'part' from 'createdAt'.
+     * timestampExtract("createdAt", field("part"))
+     * ```
+     *
+     * @param fieldName The name of the field containing the timestamp.
+     * @param part The part to extract from the timestamp. Valid values are "microsecond",
+     * "millisecond", "second", "minute", "hour", "dayofweek", "day", "dayofyear", "week",
+     * "week(monday)", "week(tuesday)", "week(wednesday)", "week(thursday)", "week(friday)",
+     * "week(saturday)", "week(sunday)", "isoweek", "month", "quarter", "year", and "isoyear".
+     * @return A new [Expression] representing the extracted part.
+     */
+    @JvmStatic
+    fun timestampExtract(fieldName: String, part: Expression): Expression =
+      timestampExtract(field(fieldName), part)
+
+    /**
+     * Creates an expression that extracts a specified part from a timestamp.
+     *
+     * ```kotlin
+     * // Extract the day from the timestamp in the 'createdAt' field.
+     * timestampExtract("createdAt", "day")
+     * ```
+     *
+     * @param fieldName The name of the field containing the timestamp.
+     * @param part The part to extract from the timestamp. Valid values are "microsecond",
+     * "millisecond", "second", "minute", "hour", "dayofweek", "day", "dayofyear", "week",
+     * "week(monday)", "week(tuesday)", "week(wednesday)", "week(thursday)", "week(friday)",
+     * "week(saturday)", "week(sunday)", "isoweek", "month", "quarter", "year", and "isoyear".
+     * @return A new [Expression] representing the extracted part.
+     */
+    @JvmStatic
+    fun timestampExtract(fieldName: String, part: String): Expression =
+      timestampExtract(field(fieldName), constant(part))
+
+    /**
+     * Creates an expression that extracts a specified part from a timestamp in a given timezone.
+     *
+     * ```kotlin
+     * // Extract the part specified by the field 'part' from 'createdAt' in the timezone specified by
+     * // the field 'tz'.
+     * timestampExtractWithTimezone(field("createdAt"), field("part"), field("tz"))
+     * ```
+     *
+     * @param timestamp The timestamp expression.
+     * @param part The part to extract from the timestamp. Valid values are "microsecond",
+     * "millisecond", "second", "minute", "hour", "dayofweek", "day", "dayofyear", "week",
+     * "week(monday)", "week(tuesday)", "week(wednesday)", "week(thursday)", "week(friday)",
+     * "week(saturday)", "week(sunday)", "isoweek", "month", "quarter", "year", and "isoyear".
+     * @param timezone The timezone expression to use for extraction.Valid values are from the TZ
+     * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC" if not
+     * specified.
+     * @return A new [Expression] representing the extracted part.
+     */
+    @JvmStatic
+    fun timestampExtractWithTimezone(
+      timestamp: Expression,
+      part: Expression,
+      timezone: Expression
+    ): Expression =
+      FunctionExpression("timestamp_extract", notImplemented, timestamp, part, timezone)
+
+    /**
+     * Creates an expression that extracts a specified part from a timestamp in a given timezone.
+     *
+     * ```kotlin
+     * // Extract the part specified by the field 'part' from 'createdAt' in the timezone "America/Los_Angeles".
+     * timestampExtractWithTimezone(field("createdAt"), field("part"), "America/Los_Angeles")
+     * ```
+     *
+     * @param timestamp The timestamp expression.
+     * @param part The part to extract from the timestamp. Valid values are "microsecond",
+     * "millisecond", "second", "minute", "hour", "dayofweek", "day", "dayofyear", "week",
+     * "week(monday)", "week(tuesday)", "week(wednesday)", "week(thursday)", "week(friday)",
+     * "week(saturday)", "week(sunday)", "isoweek", "month", "quarter", "year", and "isoyear".
+     * @param timezone The timezone expression to use for extraction.Valid values are from the TZ
+     * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC" if not
+     * specified.
+     * @return A new [Expression] representing the extracted part.
+     */
+    @JvmStatic
+    fun timestampExtractWithTimezone(
+      timestamp: Expression,
+      part: Expression,
+      timezone: String
+    ): Expression = timestampExtractWithTimezone(timestamp, part, constant(timezone))
+
+    /**
+     * Creates an expression that extracts a specified part from a timestamp in a given timezone.
+     *
+     * ```kotlin
+     * // Extract the day from the timestamp in the 'createdAt' field in the timezone "America/Los_Angeles".
+     * timestampExtractWithTimezone(field("createdAt"), "day", "America/Los_Angeles")
+     * ```
+     *
+     * @param timestamp The timestamp expression.
+     * @param part The part to extract from the timestamp. Valid values are "microsecond",
+     * "millisecond", "second", "minute", "hour", "dayofweek", "day", "dayofyear", "week",
+     * "week(monday)", "week(tuesday)", "week(wednesday)", "week(thursday)", "week(friday)",
+     * "week(saturday)", "week(sunday)", "isoweek", "month", "quarter", "year", and "isoyear".
+     * @param timezone The timezone expression to use for extraction.Valid values are from the TZ
+     * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC" if not
+     * specified.
+     * @return A new [Expression] representing the extracted part.
+     */
+    @JvmStatic
+    fun timestampExtractWithTimezone(
+      timestamp: Expression,
+      part: String,
+      timezone: String
+    ): Expression = timestampExtractWithTimezone(timestamp, constant(part), constant(timezone))
+
+    /**
+     * Creates an expression that extracts a specified part from a timestamp in a given timezone.
+     *
+     * ```kotlin
+     * // Extract the part specified by the field 'part' from 'createdAt' in the timezone "America/Los_Angeles".
+     * timestampExtractWithTimezone("createdAt", field("part"), "America/Los_Angeles")
+     * ```
+     *
+     * @param fieldName The name of the field containing the timestamp.
+     * @param part The part to extract from the timestamp. Valid values are "microsecond",
+     * "millisecond", "second", "minute", "hour", "dayofweek", "day", "dayofyear", "week",
+     * "week(monday)", "week(tuesday)", "week(wednesday)", "week(thursday)", "week(friday)",
+     * "week(saturday)", "week(sunday)", "isoweek", "month", "quarter", "year", and "isoyear".
+     * @param timezone The timezone expression to use for extraction.Valid values are from the TZ
+     * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC" if not
+     * specified.
+     * @return A new [Expression] representing the extracted part.
+     */
+    @JvmStatic
+    fun timestampExtractWithTimezone(
+      fieldName: String,
+      part: Expression,
+      timezone: String
+    ): Expression = timestampExtractWithTimezone(field(fieldName), part, constant(timezone))
+
+    /**
+     * Creates an expression that extracts a specified part from a timestamp in a given timezone.
+     *
+     * ```kotlin
+     * // Extract the day from the timestamp in the 'createdAt' field in the timezone "America/Los_Angeles".
+     * timestampExtractWithTimezone("createdAt", "day", "America/Los_Angeles")
+     * ```
+     *
+     * @param fieldName The name of the field containing the timestamp.
+     * @param part The part to extract from the timestamp. Valid values are "microsecond",
+     * "millisecond", "second", "minute", "hour", "dayofweek", "day", "dayofyear", "week",
+     * "week(monday)", "week(tuesday)", "week(wednesday)", "week(thursday)", "week(friday)",
+     * "week(saturday)", "week(sunday)", "isoweek", "month", "quarter", "year", and "isoyear".
+     * @param timezone The timezone expression to use for extraction.Valid values are from the TZ
+     * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC" if not
+     * specified.
+     * @return A new [Expression] representing the extracted part.
+     */
+    @JvmStatic
+    fun timestampExtractWithTimezone(
+      fieldName: String,
+      part: String,
+      timezone: String
+    ): Expression =
+      timestampExtractWithTimezone(field(fieldName), constant(part), constant(timezone))
+
+    /**
+     * Creates an expression that extracts a specified part from a timestamp in a given timezone.
+     *
+     * ```kotlin
+     * // Extract the day from the timestamp in the 'createdAt' field in the timezone specified by the 'tz' field.
+     * timestampExtractWithTimezone(field("createdAt"), "day", field("tz"))
+     * ```
+     *
+     * @param timestamp The timestamp expression.
+     * @param part The part to extract from the timestamp. Valid values are "microsecond",
+     * "millisecond", "second", "minute", "hour", "dayofweek", "day", "dayofyear", "week",
+     * "week(monday)", "week(tuesday)", "week(wednesday)", "week(thursday)", "week(friday)",
+     * "week(saturday)", "week(sunday)", "isoweek", "month", "quarter", "year", and "isoyear".
+     * @param timezone The timezone expression to use for extraction.Valid values are from the TZ
+     * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC" if not
+     * specified.
+     * @return A new [Expression] representing the extracted part.
+     */
+    @JvmStatic
+    fun timestampExtractWithTimezone(
+      timestamp: Expression,
+      part: String,
+      timezone: Expression
+    ): Expression = timestampExtractWithTimezone(timestamp, constant(part), timezone)
+
+    /**
+     * Creates an expression that extracts a specified part from a timestamp in a given timezone.
+     *
+     * ```kotlin
+     * // Extract the part specified by the field 'part' from 'createdAt' in the timezone specified by the 'tz' field.
+     * timestampExtractWithTimezone("createdAt", field("part"), field("tz"))
+     * ```
+     *
+     * @param fieldName The name of the field containing the timestamp.
+     * @param part The part to extract from the timestamp. Valid values are "microsecond",
+     * "millisecond", "second", "minute", "hour", "dayofweek", "day", "dayofyear", "week",
+     * "week(monday)", "week(tuesday)", "week(wednesday)", "week(thursday)", "week(friday)",
+     * "week(saturday)", "week(sunday)", "isoweek", "month", "quarter", "year", and "isoyear".
+     * @param timezone The timezone expression to use for extraction.Valid values are from the TZ
+     * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC" if not
+     * specified.
+     * @return A new [Expression] representing the extracted part.
+     */
+    @JvmStatic
+    fun timestampExtractWithTimezone(
+      fieldName: String,
+      part: Expression,
+      timezone: Expression
+    ): Expression = timestampExtractWithTimezone(field(fieldName), part, timezone)
+
+    /**
+     * Creates an expression that extracts a specified part from a timestamp in a given timezone.
+     *
+     * ```kotlin
+     * // Extract the day from the timestamp in the 'createdAt' field in the timezone specified by the 'tz' field.
+     * timestampExtractWithTimezone("createdAt", "day", field("tz"))
+     * ```
+     *
+     * @param fieldName The name of the field containing the timestamp.
+     * @param part The part to extract from the timestamp. Valid values are "microsecond",
+     * "millisecond", "second", "minute", "hour", "dayofweek", "day", "dayofyear", "week",
+     * "week(monday)", "week(tuesday)", "week(wednesday)", "week(thursday)", "week(friday)",
+     * "week(saturday)", "week(sunday)", "isoweek", "month", "quarter", "year", and "isoyear".
+     * @param timezone The timezone expression to use for extraction.Valid values are from the TZ
+     * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC" if not
+     * specified.
+     * @return A new [Expression] representing the extracted part.
+     */
+    @JvmStatic
+    fun timestampExtractWithTimezone(
+      fieldName: String,
+      part: String,
+      timezone: Expression
+    ): Expression = timestampExtractWithTimezone(field(fieldName), constant(part), timezone)
 
     /**
      * Creates an expression that checks if two expressions are equal.
@@ -7514,6 +8008,254 @@ abstract class Expression internal constructor() {
    */
   fun timestampTruncate(granularity: Expression): Expression =
     Expression.timestampTruncate(this, granularity)
+
+  /**
+   * Creates an expression that truncates this timestamp expression to a specified granularity in a
+   * given timezone.
+   *
+   * ```kotlin
+   * // Truncate the 'createdAt' timestamp to the beginning of the day in "America/Los_Angeles"
+   * // timezone.
+   * field("createdAt").timestampTruncateWithTimezone("day", "America/Los_Angeles")
+   * ```
+   *
+   * @param granularity The granularity to truncate to. Valid values are "microsecond",
+   * "millisecond", "second", "minute", "hour", "day", "week", "week(monday)", "week(tuesday)",
+   * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
+   * "isoweek", "month", "quarter", "year", and "isoyear".
+   * @param timezone The timezone to use for truncation. Valid values are from the TZ database
+   * (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1".
+   * @return A new [Expression] representing the truncated timestamp.
+   */
+  fun timestampTruncateWithTimezone(granularity: String, timezone: String): Expression =
+    Expression.timestampTruncateWithTimezone(this, granularity, timezone)
+
+  /**
+   * Creates an expression that truncates this timestamp expression to a specified granularity in a
+   * given timezone.
+   *
+   * ```kotlin
+   * // Truncate the 'createdAt' timestamp to the beginning of the day in "America/Los_Angeles"
+   * // timezone.
+   * field("createdAt").timestampTruncateWithTimezone(field("granularity"), "America/Los_Angeles")
+   * ```
+   *
+   * @param granularity The granularity expression to truncate to. Valid values are "microsecond",
+   * "millisecond", "second", "minute", "hour", "day", "week", "week(monday)", "week(tuesday)",
+   * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
+   * "isoweek", "month", "quarter", "year", and "isoyear".
+   * @param timezone The timezone to use for truncation. Valid values are from the TZ database
+   * (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1".
+   * @return A new [Expression] representing the truncated timestamp.
+   */
+  fun timestampTruncateWithTimezone(granularity: Expression, timezone: String): Expression =
+    Expression.timestampTruncateWithTimezone(this, granularity, timezone)
+
+  /**
+   * Creates an expression that truncates this timestamp expression to a specified granularity in a
+   * given timezone.
+   *
+   * ```kotlin
+   * // Truncate the 'createdAt' timestamp to the beginning of the day in timezone specified by the
+   * // 'tz' field.
+   * field("createdAt").timestampTruncateWithTimezone("day", field("tz"))
+   * ```
+   *
+   * @param granularity The granularity to truncate to. Valid values are "microsecond",
+   * "millisecond", "second", "minute", "hour", "day", "week", "week(monday)", "week(tuesday)",
+   * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
+   * "isoweek", "month", "quarter", "year", and "isoyear".
+   * @param timezone The timezone expression to use for truncation. Valid values are from the TZ
+   * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1".
+   * @return A new [Expression] representing the truncated timestamp.
+   */
+  fun timestampTruncateWithTimezone(granularity: String, timezone: Expression): Expression =
+    Expression.timestampTruncateWithTimezone(this, granularity, timezone)
+
+  /**
+   * Creates an expression that truncates this timestamp expression to a specified granularity in a
+   * given timezone.
+   *
+   * ```kotlin
+   * // Truncate the 'createdAt' timestamp to the beginning of the day in timezone specified by the
+   * // 'tz' field.
+   * field("createdAt").timestampTruncateWithTimezone(field("granularity"), field("tz"))
+   * ```
+   *
+   * @param granularity The granularity expression to truncate to. Valid values are "microsecond",
+   * "millisecond", "second", "minute", "hour", "day", "week", "week(monday)", "week(tuesday)",
+   * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
+   * "isoweek", "month", "quarter", "year", and "isoyear".
+   * @param timezone The timezone expression to use for truncation. Valid values are from the TZ
+   * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1".
+   * @return A new [Expression] representing the truncated timestamp.
+   */
+  fun timestampTruncateWithTimezone(granularity: Expression, timezone: Expression): Expression =
+    Expression.timestampTruncateWithTimezone(this, granularity, timezone)
+
+  /**
+   * Calculates the difference between this timestamp and another timestamp.
+   *
+   * ```kotlin
+   * // Calculate the difference determined by fields 'startAt' and 'unit'.
+   * field("endAt").timestampDiff(field("startAt"), field("unit"))
+   * ```
+   *
+   * @param start The starting timestamp expression.
+   * @param unit The unit of time for the difference. Valid values include "microsecond",
+   * "millisecond", "second", "minute", "hour" and "day".
+   * @return A new [Expression] representing the difference.
+   */
+  fun timestampDiff(start: Expression, unit: Expression): Expression =
+    Expression.timestampDiff(this, start, unit)
+
+  /**
+   * Calculates the difference between this timestamp and another timestamp.
+   *
+   * ```kotlin
+   * // Calculate the difference in days between 'endAt' and 'startAt' fields.
+   * field("endAt").timestampDiff(field("startAt"), "day")
+   * ```
+   *
+   * @param start The starting timestamp expression.
+   * @param unit The unit of time for the difference. Valid values include "microsecond",
+   * "millisecond", "second", "minute", "hour" and "day".
+   * @return A new [Expression] representing the difference.
+   */
+  fun timestampDiff(start: Expression, unit: String): Expression =
+    Expression.timestampDiff(this, start, unit)
+
+  /**
+   * Calculates the difference between this timestamp and another timestamp.
+   *
+   * ```kotlin
+   * // Calculate the difference in days between 'endAt' and 'startAt' fields.
+   * field("endAt").timestampDiff("startAt", "day")
+   * ```
+   *
+   * @param startFieldName The starting timestamp field name.
+   * @param unit The unit of time for the difference. Valid values include "microsecond",
+   * "millisecond", "second", "minute", "hour" and "day".
+   * @return A new [Expression] representing the difference.
+   */
+  fun timestampDiff(startFieldName: String, unit: String): Expression =
+    Expression.timestampDiff(this, startFieldName, unit)
+
+  /**
+   * Creates an expression that extracts a specified part from this timestamp expression.
+   *
+   * ```kotlin
+   * // Extract the part specified by the field 'part' from 'timestamp'.
+   * field("timestamp").timestampExtract(field("part"))
+   * ```
+   *
+   * @param part The part to extract. Valid values are "microsecond", "millisecond", "second",
+   * "minute", "hour", "dayofweek", "day", "dayofyear", "week", "week(monday)", "week(tuesday)",
+   * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
+   * "isoweek", "month", "quarter", "year", and "isoyear".
+   * @return A new [Expression] representing the extracted part.
+   */
+  fun timestampExtract(part: Expression): Expression = Expression.timestampExtract(this, part)
+
+  /**
+   * Creates an expression that extracts a specified part from this timestamp expression.
+   *
+   * ```kotlin
+   * // Extract the day from the timestamp in the 'timestamp' field.
+   * field("timestamp").timestampExtract("day")
+   * ```
+   *
+   * @param part The part to extract. Valid values are "microsecond", "millisecond", "second",
+   * "minute", "hour", "dayofweek", "day", "dayofyear", "week", "week(monday)", "week(tuesday)",
+   * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
+   * "isoweek", "month", "quarter", "year", and "isoyear".
+   * @return A new [Expression] representing the extracted part.
+   */
+  fun timestampExtract(part: String): Expression = Expression.timestampExtract(this, part)
+
+  /**
+   * Creates an expression that extracts a specified part from this timestamp expression in a given
+   * timezone.
+   *
+   * ```kotlin
+   * // Extract the part specified by the field 'part' from 'timestamp' in timezone 'America/Los_Angeles'.
+   * field("timestamp").timestampExtractWithTimezone(field("part"), "America/Los_Angeles")
+   * ```
+   *
+   * @param part The part to extract. Valid values are "microsecond", "millisecond", "second",
+   * "minute", "hour", "dayofweek", "day", "dayofyear", "week", "week(monday)", "week(tuesday)",
+   * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
+   * "isoweek", "month", "quarter", "year", and "isoyear".
+   * @param timezone The timezone to use for extraction. Valid values are from the TZ database
+   * (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC" if not specified.
+   * @return A new [Expression] representing the extracted part.
+   */
+  fun timestampExtractWithTimezone(part: Expression, timezone: String): Expression =
+    Expression.timestampExtractWithTimezone(this, part, timezone)
+
+  /**
+   * Creates an expression that extracts a specified part from this timestamp expression in a given
+   * timezone.
+   *
+   * ```kotlin
+   * // Extract the day from the timestamp in the 'timestamp' field in timezone 'America/Los_Angeles'.
+   * field("timestamp").timestampExtractWithTimezone("day", "America/Los_Angeles")
+   * ```
+   *
+   * @param part The part to extract. Valid values are "microsecond", "millisecond", "second",
+   * "minute", "hour", "dayofweek", "day", "dayofyear", "week", "week(monday)", "week(tuesday)",
+   * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
+   * "isoweek", "month", "quarter", "year", and "isoyear".
+   * @param timezone The timezone to use for extraction. Valid values are from the TZ database
+   * (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC" if not specified.
+   * @return A new [Expression] representing the extracted part.
+   */
+  fun timestampExtractWithTimezone(part: String, timezone: String): Expression =
+    Expression.timestampExtractWithTimezone(this, part, timezone)
+
+  /**
+   * Creates an expression that extracts a specified part from this timestamp expression in a given
+   * timezone.
+   *
+   * ```kotlin
+   * // Extract the part specified by the field 'part' from 'timestamp' in timezone specified by
+   * the field 'tz'.
+   * field("timestamp").timestampExtractWithTimezone(field("part"), field("tz"))
+   * ```
+   *
+   * @param part The part to extract. Valid values are "microsecond", "millisecond", "second",
+   * "minute", "hour", "dayofweek", "day", "dayofyear", "week", "week(monday)", "week(tuesday)",
+   * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
+   * "isoweek", "month", "quarter", "year", and "isoyear".
+   * @param timezone The timezone expression to use for extraction. Valid values are from the TZ
+   * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC" if not
+   * specified.
+   * @return A new [Expression] representing the extracted part.
+   */
+  fun timestampExtractWithTimezone(part: Expression, timezone: Expression): Expression =
+    Expression.timestampExtractWithTimezone(this, part, timezone)
+
+  /**
+   * Creates an expression that extracts a specified part from this timestamp expression in a given
+   * timezone.
+   *
+   * ```kotlin
+   * // Extract the day from the timestamp in the 'timestamp' field in timezone specified by
+   * the field 'tz'.
+   * field("timestamp").timestampExtractWithTimezone("day", field("tz"))
+   * ```
+   *
+   * @param part The part to extract. Valid values are "microsecond", "millisecond", "second",
+   * "minute", "hour", "dayofweek", "day", "dayofyear", "week", "week(monday)", "week(tuesday)",
+   * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
+   * "isoweek", "month", "quarter", "year", and "isoyear".
+   * @param timezone The timezone expression to use for extraction. Valid values are from the TZ
+   * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC" if not
+   * specified.
+   * @return A new [Expression] representing the extracted part.
+   */
+  fun timestampExtractWithTimezone(part: String, timezone: Expression): Expression =
+    Expression.timestampExtractWithTimezone(this, part, timezone)
 
   /**
    * Creates an expression that subtracts a specified amount of time to this timestamp expression.
