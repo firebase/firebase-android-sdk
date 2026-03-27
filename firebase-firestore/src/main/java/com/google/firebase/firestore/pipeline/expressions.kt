@@ -6696,10 +6696,8 @@ abstract class Expression internal constructor() {
    * ```
    *
    * @param type The type to check for.
-   * @return A new [BooleanExpression] that evaluates to true if the expression's result is of
-   * ```
-   *     the given type, false otherwise.
-   * ```
+   * @return A new [BooleanExpression] that evaluates to true if the expression's result is of the
+   * given type, false otherwise.
    */
   fun isType(type: String): BooleanExpression = Companion.isType(this, type)
 
