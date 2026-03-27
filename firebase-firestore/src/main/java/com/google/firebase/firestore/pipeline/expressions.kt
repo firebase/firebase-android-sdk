@@ -3002,8 +3002,9 @@ abstract class Expression internal constructor() {
     fun trim(fieldName: String): Expression = FunctionExpression("trim", evaluateTrim, fieldName)
 
     /**
-     * Creates an expression that removes leading and trailing values from a expression. The
-     * accepted values types are string and blob.
+     * Creates an expression that removes a set of leading and trailing values from an expression.
+     *
+     * Note: The values to trim are treated as a **set**, not a substring.
      *
      * ```kotlin
      * // Trim specified characters from the 'userInput' field
@@ -3011,31 +3012,33 @@ abstract class Expression internal constructor() {
      * ```
      *
      * @param stringExpression The expression representing the string to trim.
-     * @param valueToTrim The expression evaluated to either a string or a blob. This parameter is
+     * @param valuesToTrim The expression evaluated to either a string or a blob. This parameter is
      * treated as a set of characters or bytes that will be matched against the input from both
      * ends.
      * @return A new [Expression] representing the trimmed string or bytes.
      */
     @JvmStatic
-    fun trimValue(stringExpression: Expression, valueToTrim: Expression): Expression =
-      FunctionExpression("trim", notImplemented, stringExpression, valueToTrim)
+    fun trimValue(stringExpression: Expression, valuesToTrim: Expression): Expression =
+      FunctionExpression("trim", notImplemented, stringExpression, valuesToTrim)
 
     /**
-     * Creates an expression that removes leading and trailing characters from a string field.
+     * Creates an expression that removes a set of leading and trailing values from a string field.
+     *
+     * Note: The values to trim are treated as a **set**, not a substring.
      *
      * ```kotlin
-     * // Trim '-', and '_' from the beginning and the end of 'userInput' field
+     * // Trim all '-', and '_' characters from the beginning and the end of 'userInput' field
      * trimValue("userInput", "-_")
      * ```
      *
      * @param fieldName The name of the field containing the string to trim.
-     * @param valueToTrim This parameter is treated as a set of characters or bytes that will be
+     * @param valuesToTrim This parameter is treated as a set of characters or bytes that will be
      * matched against the input from both ends.
      * @return A new [Expression] representing the trimmed string.
      */
     @JvmStatic
-    fun trimValue(fieldName: String, valueToTrim: String): Expression =
-      FunctionExpression("trim", notImplemented, fieldName, constant(valueToTrim))
+    fun trimValue(fieldName: String, valuesToTrim: String): Expression =
+      FunctionExpression("trim", notImplemented, fieldName, constant(valuesToTrim))
 
     /**
      * Creates an expression that removes leading whitespace from a string expression.
@@ -3068,7 +3071,9 @@ abstract class Expression internal constructor() {
       FunctionExpression("ltrim", notImplemented, field(fieldName))
 
     /**
-     * Creates an expression that removes specified leading characters from a string expression.
+     * Creates an expression that removes a set of leading values from a string expression.
+     *
+     * Note: The values to trim are treated as a **set**, not a substring.
      *
      * ```kotlin
      * // Trim leading '-' or '_' characters from the 'text' field.
@@ -3076,15 +3081,17 @@ abstract class Expression internal constructor() {
      * ```
      *
      * @param stringExpression The expression representing the string to trim.
-     * @param characters The string of characters to remove.
+     * @param valuesToTrim The set of values to remove.
      * @return A new [Expression] representing the ltrim operation.
      */
     @JvmStatic
-    fun ltrimValue(stringExpression: Expression, characters: String): Expression =
-      FunctionExpression("ltrim", notImplemented, stringExpression, constant(characters))
+    fun ltrimValue(stringExpression: Expression, valuesToTrim: String): Expression =
+      FunctionExpression("ltrim", notImplemented, stringExpression, constant(valuesToTrim))
 
     /**
-     * Creates an expression that removes specified leading characters from a string expression.
+     * Creates an expression that removes a set of leading values from a string expression.
+     *
+     * Note: The values to trim are treated as a **set**, not a substring.
      *
      * ```kotlin
      * // Trim leading characters defined by the 'chars' field from the 'text' field.
@@ -3092,15 +3099,17 @@ abstract class Expression internal constructor() {
      * ```
      *
      * @param stringExpression The expression representing the string to trim.
-     * @param characters The expression representing the characters to remove.
+     * @param valuesToTrim The expression representing the set of values to remove.
      * @return A new [Expression] representing the ltrim operation.
      */
     @JvmStatic
-    fun ltrimValue(stringExpression: Expression, characters: Expression): Expression =
-      FunctionExpression("ltrim", notImplemented, stringExpression, characters)
+    fun ltrimValue(stringExpression: Expression, valuesToTrim: Expression): Expression =
+      FunctionExpression("ltrim", notImplemented, stringExpression, valuesToTrim)
 
     /**
-     * Creates an expression that removes specified leading characters from a string field.
+     * Creates an expression that removes specified leading values from a string field.
+     *
+     * Note: The values to trim are treated as a **set**, not a substring.
      *
      * ```kotlin
      * // Trim leading '-' or '_' characters from the 'text' field.
@@ -3108,15 +3117,17 @@ abstract class Expression internal constructor() {
      * ```
      *
      * @param fieldName The name of the field containing the string to trim.
-     * @param characters The string of characters to remove.
+     * @param valuesToTrim The set of values to remove.
      * @return A new [Expression] representing the ltrim operation.
      */
     @JvmStatic
-    fun ltrimValue(fieldName: String, characters: String): Expression =
-      FunctionExpression("ltrim", notImplemented, field(fieldName), constant(characters))
+    fun ltrimValue(fieldName: String, valuesToTrim: String): Expression =
+      FunctionExpression("ltrim", notImplemented, field(fieldName), constant(valuesToTrim))
 
     /**
-     * Creates an expression that removes specified leading characters from a string field.
+     * Creates an expression that removes specified leading values from a string field.
+     *
+     * Note: The values to trim are treated as a **set**, not a substring.
      *
      * ```kotlin
      * // Trim leading characters defined by the 'chars' field from the 'text' field.
@@ -3124,12 +3135,12 @@ abstract class Expression internal constructor() {
      * ```
      *
      * @param fieldName The name of the field containing the string to trim.
-     * @param characters The expression representing the characters to remove.
+     * @param valuesToTrim The expression representing the set of values to remove.
      * @return A new [Expression] representing the ltrim operation.
      */
     @JvmStatic
-    fun ltrimValue(fieldName: String, characters: Expression): Expression =
-      FunctionExpression("ltrim", notImplemented, field(fieldName), characters)
+    fun ltrimValue(fieldName: String, valuesToTrim: Expression): Expression =
+      FunctionExpression("ltrim", notImplemented, field(fieldName), valuesToTrim)
 
     /**
      * Creates an expression that removes trailing whitespace from a string expression.
@@ -3162,7 +3173,9 @@ abstract class Expression internal constructor() {
       FunctionExpression("rtrim", notImplemented, field(fieldName))
 
     /**
-     * Creates an expression that removes specified trailing characters from a string expression.
+     * Creates an expression that removes a set of trailing values from a string expression.
+     *
+     * Note: The values to trim are treated as a **set**, not a substring.
      *
      * ```kotlin
      * // Trim trailing '-' or '_' characters from the 'text' field.
@@ -3170,15 +3183,17 @@ abstract class Expression internal constructor() {
      * ```
      *
      * @param stringExpression The expression representing the string to trim.
-     * @param characters The string of characters to remove.
+     * @param valuesToTrim The set of values to remove.
      * @return A new [Expression] representing the rtrim operation.
      */
     @JvmStatic
-    fun rtrimValue(stringExpression: Expression, characters: String): Expression =
-      FunctionExpression("rtrim", notImplemented, stringExpression, constant(characters))
+    fun rtrimValue(stringExpression: Expression, valuesToTrim: String): Expression =
+      FunctionExpression("rtrim", notImplemented, stringExpression, constant(valuesToTrim))
 
     /**
-     * Creates an expression that removes specified trailing characters from a string expression.
+     * Creates an expression that removes a set of trailing values from a string expression.
+     *
+     * Note: The values to trim are treated as a **set**, not a substring.
      *
      * ```kotlin
      * // Trim trailing characters defined by the 'chars' field from the 'text' field.
@@ -3186,15 +3201,17 @@ abstract class Expression internal constructor() {
      * ```
      *
      * @param stringExpression The expression representing the string to trim.
-     * @param characters The expression representing the characters to remove.
+     * @param valuesToTrim The expression representing the set of values to remove.
      * @return A new [Expression] representing the rtrim operation.
      */
     @JvmStatic
-    fun rtrimValue(stringExpression: Expression, characters: Expression): Expression =
-      FunctionExpression("rtrim", notImplemented, stringExpression, characters)
+    fun rtrimValue(stringExpression: Expression, valuesToTrim: Expression): Expression =
+      FunctionExpression("rtrim", notImplemented, stringExpression, valuesToTrim)
 
     /**
-     * Creates an expression that removes specified trailing characters from a string field.
+     * Creates an expression that removes a set of trailing values from a string field.
+     *
+     * Note: The values to trim are treated as a **set**, not a substring.
      *
      * ```kotlin
      * // Trim trailing '-' or '_' characters from the 'text' field.
@@ -3202,15 +3219,17 @@ abstract class Expression internal constructor() {
      * ```
      *
      * @param fieldName The name of the field containing the string to trim.
-     * @param characters The string of characters to remove.
+     * @param valuesToTrim The set of values to remove.
      * @return A new [Expression] representing the rtrim operation.
      */
     @JvmStatic
-    fun rtrimValue(fieldName: String, characters: String): Expression =
-      FunctionExpression("rtrim", notImplemented, field(fieldName), constant(characters))
+    fun rtrimValue(fieldName: String, valuesToTrim: String): Expression =
+      FunctionExpression("rtrim", notImplemented, field(fieldName), constant(valuesToTrim))
 
     /**
-     * Creates an expression that removes specified trailing characters from a string field.
+     * Creates an expression that removes a set of trailing values from a string field.
+     *
+     * Note: The values to trim are treated as a **set**, not a substring.
      *
      * ```kotlin
      * // Trim trailing characters defined by the 'chars' field from the 'text' field.
@@ -3218,12 +3237,12 @@ abstract class Expression internal constructor() {
      * ```
      *
      * @param fieldName The name of the field containing the string to trim.
-     * @param characters The expression representing the characters to remove.
+     * @param valuesToTrim The expression representing the set of values to remove.
      * @return A new [Expression] representing the rtrim operation.
      */
     @JvmStatic
-    fun rtrimValue(fieldName: String, characters: Expression): Expression =
-      FunctionExpression("rtrim", notImplemented, field(fieldName), characters)
+    fun rtrimValue(fieldName: String, valuesToTrim: Expression): Expression =
+      FunctionExpression("rtrim", notImplemented, field(fieldName), valuesToTrim)
 
     /**
      * Creates an expression that repeats a string expression a given number of times.
@@ -7511,31 +7530,36 @@ abstract class Expression internal constructor() {
   fun trim() = Companion.trim(this)
 
   /**
-   * Creates an expression that removes leading and trailing characters from this string expression.
+   * Creates an expression that removes a set of leading and trailing values from this string
+   * expression.
+   *
+   * Note: The values to trim are treated as a **set**, not a substring.
    *
    * ```kotlin
-   * // Trim '_' and '-' from the 'userInput' field
+   * // Trim all '_' and '-' characters from the 'userInput' field
    * field("userInput").trimValue("-_")
    * ```
    *
-   * @param valueToTrim The characters to trim from the string.
+   * @param valuesToTrim The set of values to trim from the string.
    * @return A new [Expression] representing the trimmed string.
    */
-  fun trimValue(valueToTrim: String) = Companion.trimValue(this, constant(valueToTrim))
+  fun trimValue(valuesToTrim: String) = Companion.trimValue(this, constant(valuesToTrim))
 
   /**
-   * Creates an expression that removes leading and trailing value from this expression. The
-   * accepted types are string and blob.
+   * Creates an expression that removes a set of leading and trailing values from this expression.
+   * The accepted types are string and blob.
+   *
+   * Note: The values to trim are treated as a **set**, not a substring.
    *
    * ```kotlin
    * // Trim specified characters from the 'userInput' field
    * field("userInput").trimValue(field("trimChars"))
    * ```
    *
-   * @param valueToTrim The expression representing the characters to trim from the string.
+   * @param valuesToTrim The expression representing the set of values to trim from the string.
    * @return A new [Expression] representing the trimmed string.
    */
-  fun trimValue(valueToTrim: Expression) = Companion.trimValue(this, valueToTrim)
+  fun trimValue(valuesToTrim: Expression) = Companion.trimValue(this, valuesToTrim)
 
   /**
    * Creates an expression that removes leading whitespace from this string expression.
@@ -7550,30 +7574,34 @@ abstract class Expression internal constructor() {
   fun ltrim(): Expression = Companion.ltrim(this)
 
   /**
-   * Creates an expression that removes specified leading characters from this string expression.
+   * Creates an expression that removes a set of leading values from this string expression.
+   *
+   * Note: The values to trim are treated as a **set**, not a substring.
    *
    * ```kotlin
    * // Trim leading '-' or '_' characters from the 'text' field.
    * field("text").ltrimValue("-_")
    * ```
    *
-   * @param characters The string of characters to remove.
+   * @param valuesToTrim The string of characters to remove.
    * @return A new [Expression] representing the ltrim operation.
    */
-  fun ltrimValue(characters: String): Expression = Companion.ltrimValue(this, characters)
+  fun ltrimValue(valuesToTrim: String): Expression = Companion.ltrimValue(this, valuesToTrim)
 
   /**
-   * Creates an expression that removes specified leading characters from this string expression.
+   * Creates an expression that removes a set of leading values from this string expression.
+   *
+   * Note: The values to trim are treated as a **set**, not a substring.
    *
    * ```kotlin
    * // Trim leading characters defined by the 'chars' field from the 'text' field.
    * field("text").ltrimValue(field("chars"))
    * ```
    *
-   * @param characters The expression representing the characters to remove.
+   * @param valuesToTrim The expression representing the set of values to remove.
    * @return A new [Expression] representing the ltrim operation.
    */
-  fun ltrimValue(characters: Expression): Expression = Companion.ltrimValue(this, characters)
+  fun ltrimValue(valuesToTrim: Expression): Expression = Companion.ltrimValue(this, valuesToTrim)
 
   /**
    * Creates an expression that removes trailing whitespace from this string expression.
@@ -7588,30 +7616,34 @@ abstract class Expression internal constructor() {
   fun rtrim(): Expression = Companion.rtrim(this)
 
   /**
-   * Creates an expression that removes specified trailing characters from this string expression.
+   * Creates an expression that removes a set of trailing characters from this string expression.
+   *
+   * Note: The values to trim are treated as a **set**, not a substring.
    *
    * ```kotlin
    * // Trim trailing '-' or '_' characters from the 'text' field.
    * field("text").rtrimValue("-_")
    * ```
    *
-   * @param characters The string of characters to remove.
+   * @param valuesToTrim The set of values to remove.
    * @return A new [Expression] representing the rtrim operation.
    */
-  fun rtrimValue(characters: String): Expression = Companion.rtrimValue(this, characters)
+  fun rtrimValue(valuesToTrim: String): Expression = Companion.rtrimValue(this, valuesToTrim)
 
   /**
-   * Creates an expression that removes specified trailing characters from this string expression.
+   * Creates an expression that removes a set of trailing values from this string expression.
+   *
+   * Note: The values to trim are treated as a **set**, not a substring.
    *
    * ```kotlin
    * // Trim trailing characters defined by the 'chars' field from the 'text' field.
    * field("text").rtrimValue(field("chars"))
    * ```
    *
-   * @param characters The expression representing the characters to remove.
+   * @param valuesToTrim The expression representing the set of values to remove.
    * @return A new [Expression] representing the rtrim operation.
    */
-  fun rtrimValue(characters: Expression): Expression = Companion.rtrimValue(this, characters)
+  fun rtrimValue(valuesToTrim: Expression): Expression = Companion.rtrimValue(this, valuesToTrim)
 
   /**
    * Creates an expression that repeats this string expression a given number of times.
