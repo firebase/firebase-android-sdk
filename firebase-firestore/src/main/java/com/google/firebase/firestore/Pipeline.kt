@@ -16,7 +16,6 @@ package com.google.firebase.firestore
 
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.TaskCompletionSource
-import com.google.common.annotations.Beta
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.model.Document
 import com.google.firebase.firestore.model.DocumentKey
@@ -81,7 +80,6 @@ import com.google.firestore.v1.Value
  * only</b>. <li>They do <b>not</b> utilize or update the local SDK cache. <li>They do <b>not</b>
  * support realtime snapshot listeners. </ul>
  */
-@Beta
 class Pipeline
 internal constructor(
   private val firestore: FirebaseFirestore,
@@ -900,7 +898,6 @@ internal constructor(
 }
 
 /** Start of a Firestore Pipeline */
-@Beta
 class PipelineSource internal constructor(private val firestore: FirebaseFirestore) {
 
   /**
@@ -1051,7 +1048,6 @@ class PipelineSource internal constructor(private val firestore: FirebaseFiresto
  * Represents the results of a Pipeline query, including the data and metadata. It is usually
  * accessed via [Pipeline.Snapshot].
  */
-@Beta
 class PipelineResult
 internal constructor(
   private val userDataWriter: UserDataWriter,
