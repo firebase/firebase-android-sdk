@@ -17,12 +17,17 @@ package com.google.firebase.perf.metrics.validator;
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import com.google.firebase.perf.FirebasePerformanceTestBase;
 import com.google.firebase.perf.application.AppStateMonitor;
 import com.google.firebase.perf.metrics.Trace;
+import com.google.firebase.perf.session.PerfSession;
+import com.google.firebase.perf.session.SessionManager;
+import com.google.firebase.perf.session.gauges.GaugeManager;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Constants;
@@ -35,6 +40,7 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.robolectric.RobolectricTestRunner;
@@ -46,6 +52,8 @@ public class FirebasePerfTraceValidatorTest extends FirebasePerformanceTestBase 
   private long currentTime = 0;
 
   @Mock private Clock clock;
+
+  @Spy private AppStateMonitor appStateMonitor = AppStateMonitor.getInstance();
 
   @Before
   public void setUp() {
@@ -279,7 +287,11 @@ public class FirebasePerfTraceValidatorTest extends FirebasePerformanceTestBase 
     long expectedTraceDuration = 50;
 
     TransportManager transportManager = mock(TransportManager.class);
-    AppStateMonitor appStateMonitor = mock(AppStateMonitor.class);
+    when(appStateMonitor.getSessionManager()).thenReturn(new SessionManager(
+            mock(GaugeManager.class),
+            new PerfSession("sessionId", new Clock()),
+            appStateMonitor
+    ));
     ArgumentCaptor<TraceMetric> argMetric = ArgumentCaptor.forClass(TraceMetric.class);
 
     Trace trace = new Trace(traceName, transportManager, clock, appStateMonitor);

@@ -22,6 +22,7 @@ import com.google.firebase.perf.FirebasePerformance.HttpMethod;
 import com.google.firebase.perf.FirebasePerformanceAttributable;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.logging.AndroidLogger;
+import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.Timer;
@@ -52,12 +53,12 @@ public class HttpMetric implements FirebasePerformanceAttributable {
    * @hide
    */
   public HttpMetric(
-      String url, @HttpMethod String httpMethod, TransportManager transportManager, Timer timer) {
+      String url, @HttpMethod String httpMethod, TransportManager transportManager, Timer timer, SessionManager sessionManager) {
     customAttributesMap = new ConcurrentHashMap<>();
     this.timer = timer;
 
     networkMetricBuilder =
-        NetworkRequestMetricBuilder.builder(transportManager).setUrl(url).setHttpMethod(httpMethod);
+        NetworkRequestMetricBuilder.builder(transportManager, sessionManager).setUrl(url).setHttpMethod(httpMethod);
     networkMetricBuilder.setManualNetworkRequestMetric();
 
     if (!ConfigResolver.getInstance().isPerformanceMonitoringEnabled()) {
@@ -72,8 +73,8 @@ public class HttpMetric implements FirebasePerformanceAttributable {
    * @hide
    */
   public HttpMetric(
-      URL url, @HttpMethod String httpMethod, TransportManager transportManager, Timer timer) {
-    this(url.toString(), httpMethod, transportManager, timer);
+      URL url, @HttpMethod String httpMethod, TransportManager transportManager, Timer timer, SessionManager sessionManager) {
+    this(url.toString(), httpMethod, transportManager, timer, sessionManager);
   }
 
   /**
