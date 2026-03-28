@@ -32,7 +32,6 @@ import com.google.firestore.v1.Pipeline
 import com.google.firestore.v1.Value
 import javax.annotation.Nonnull
 
-@Beta
 sealed class Stage<T : Stage<T>>(internal val name: String, internal val options: InternalOptions) {
   companion object {
     internal fun toProtoStage(
@@ -122,7 +121,6 @@ sealed class Stage<T : Stage<T>>(internal val name: String, internal val options
  * This class provides a way to call stages that are supported by the Firestore backend but that are
  * not implemented in the SDK version being used.
  */
-@Beta
 class RawStage
 private constructor(
   name: String,
@@ -217,7 +215,6 @@ internal constructor(options: InternalOptions = InternalOptions.EMPTY) :
   }
 }
 
-@Beta
 class CollectionSource
 internal constructor(
   internal val path: ResourcePath,
@@ -265,7 +262,6 @@ internal constructor(
   }
 }
 
-@Beta
 class CollectionSourceOptions internal constructor(options: InternalOptions) :
   AbstractOptions<CollectionSourceOptions>(options) {
   /** Creates a new, empty `CollectionSourceOptions` object. */
@@ -284,7 +280,6 @@ class CollectionSourceOptions internal constructor(options: InternalOptions) :
   }
 }
 
-@Beta
 class CollectionHints internal constructor(options: InternalOptions) :
   AbstractOptions<CollectionHints>(options) {
   /** Creates a new, empty `CollectionHints` object. */
@@ -315,7 +310,6 @@ class CollectionHints internal constructor(options: InternalOptions) :
   }
 }
 
-@Beta
 class CollectionGroupSource
 internal constructor(val collectionId: String, options: InternalOptions) :
   Stage<CollectionGroupSource>("collection_group", options) {
@@ -356,7 +350,6 @@ internal constructor(val collectionId: String, options: InternalOptions) :
   }
 }
 
-@Beta
 class CollectionGroupOptions internal constructor(options: InternalOptions) :
   AbstractOptions<CollectionGroupOptions>(options) {
   /** Creates a new, empty `CollectionGroupOptions` object. */
@@ -417,6 +410,29 @@ internal constructor(
   override fun self(options: InternalOptions) = DocumentsSource(documents, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     documents.asSequence().map(::encodeValue)
+}
+
+class SubcollectionSource
+private constructor(internal val path: String, options: InternalOptions = InternalOptions.EMPTY) :
+  Stage<SubcollectionSource>("subcollection", options) {
+  companion object {
+    /**
+     * Creates a SubcollectionSource with the given path.
+     *
+     * @param path The path of the subcollection that will be the source of this pipeline.
+     */
+    @JvmStatic
+    fun of(path: String): SubcollectionSource {
+      return SubcollectionSource(path)
+    }
+  }
+
+  override fun self(options: InternalOptions) = SubcollectionSource(path, options)
+
+  override fun canonicalId(): String = "${name}($path)"
+
+  override fun args(userDataReader: UserDataReader): Sequence<Value> =
+    sequenceOf(Values.encodeValue(path))
 }
 
 private fun associateWithoutDuplications(
@@ -485,7 +501,6 @@ internal constructor(
  * [AggregateFunction.alias] on [AggregateFunction] instances. Each aggregation calculates a value
  * (e.g., sum, average, count) based on the documents within its group.
  */
-@Beta
 class AggregateStage
 private constructor(
   private val accumulators: Map<String, AggregateFunction>,
@@ -586,7 +601,6 @@ private constructor(
   }
 }
 
-@Beta
 class AggregateHints internal constructor(options: InternalOptions) :
   AbstractOptions<AggregateHints>(options) {
   /** Creates a new, empty `AggregateHints` object. */
@@ -601,7 +615,6 @@ class AggregateHints internal constructor(options: InternalOptions) :
   }
 }
 
-@Beta
 class AggregateOptions internal constructor(options: InternalOptions) :
   AbstractOptions<AggregateOptions>(options) {
   /** Creates a new, empty `AggregateOptions` object. */
@@ -660,7 +673,6 @@ internal constructor(
  * Performs a vector similarity search, ordering the result set by most similar to least similar,
  * and returning the first N documents in the result set.
  */
-@Beta
 class FindNearestStage
 internal constructor(
   private val property: Expression,
@@ -807,7 +819,6 @@ internal constructor(
   }
 }
 
-@Beta
 class FindNearestOptions private constructor(options: InternalOptions) :
   AbstractOptions<FindNearestOptions>(options) {
   /** Creates a new, empty `FindNearestOptions` object. */
@@ -1468,7 +1479,6 @@ internal constructor(
  * dictate how the sample is calculated either by specifying a target output size, or by specifying
  * a target percentage of the input size.
  */
-@Beta
 class SampleStage
 private constructor(
   private val size: Number,
@@ -1547,7 +1557,7 @@ internal constructor(
   }
 
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
-    sequenceOf(Value.newBuilder().setPipelineValue(other.toPipelineProto()).build())
+    sequenceOf(Value.newBuilder().setPipelineValue(other.toPipelineProto(userDataReader)).build())
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
@@ -1568,7 +1578,6 @@ internal constructor(
  * Takes a specified array from the input documents and outputs a document for each element with the
  * element stored in a field with name specified by the alias.
  */
-@Beta
 class UnnestStage
 internal constructor(
   private val selectable: Selectable,
@@ -1642,7 +1651,6 @@ internal constructor(
   fun withIndexField(indexField: String): UnnestStage = withOption("index_field", indexField)
 }
 
-@Beta
 class UnnestOptions private constructor(options: InternalOptions) :
   AbstractOptions<UnnestOptions>(options) {
   /** Creates a new, empty `UnnestOptions` object. */
@@ -1663,5 +1671,46 @@ class UnnestOptions private constructor(options: InternalOptions) :
 
   override fun self(options: InternalOptions): UnnestOptions {
     return UnnestOptions(options)
+  }
+}
+
+internal class DefineStage
+internal constructor(
+  internal val aliasedExpressions: Array<out AliasedExpression>,
+  options: InternalOptions = InternalOptions.EMPTY
+) : Stage<DefineStage>("let", options) {
+  companion object {
+    /** Creates a DefineStage with at least one aliased expression. */
+    @JvmStatic
+    fun withVariables(
+      aliasedExpression: AliasedExpression,
+      vararg additionalExpressions: AliasedExpression
+    ): DefineStage {
+      return DefineStage(arrayOf(aliasedExpression, *additionalExpressions))
+    }
+  }
+
+  override fun self(options: InternalOptions) = DefineStage(aliasedExpressions, options)
+
+  override fun canonicalId(): String {
+    return "${name}(${aliasedExpressions.joinToString(",") { "${it.alias}=${it.expr.canonicalId()}" }})"
+  }
+
+  override fun args(userDataReader: UserDataReader): Sequence<Value> {
+    return sequenceOf(encodeValue(associateWithoutDuplications(aliasedExpressions, userDataReader)))
+  }
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is DefineStage) return false
+    if (!aliasedExpressions.contentEquals(other.aliasedExpressions)) return false
+    if (options != other.options) return false
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = aliasedExpressions.contentHashCode()
+    result = 31 * result + options.hashCode()
+    return result
   }
 }
