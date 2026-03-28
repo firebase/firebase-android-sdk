@@ -4880,6 +4880,114 @@ abstract class Expression internal constructor() {
       FunctionExpression("array_filter", notImplemented, arrayFieldName, constant(alias), filter)
 
     /**
+     * Creates an expression that applies a provided transformation to each element in an array.
+     *
+     * ```kotlin
+     * // Transform 'scores' array by multiplying each score by 10
+     * arrayTransform(field("scores"), "score", multiply(variable("score"), 10))
+     * ```
+     *
+     * @param array The array expression to transform.
+     * @param elementAlias The alias to use for the current element in the transform expression.
+     * @param transform The expression used to transform the elements.
+     * @return A new [Expression] representing the arrayTransform operation.
+     */
+    @JvmStatic
+    fun arrayTransform(array: Expression, elementAlias: String, transform: Expression): Expression =
+      FunctionExpression(
+        "array_transform",
+        notImplemented,
+        array,
+        constant(elementAlias),
+        transform
+      )
+
+    /**
+     * Creates an expression that applies a provided transformation to each element in an array.
+     *
+     * ```kotlin
+     * // Transform 'scores' array by multiplying each score by 10
+     * arrayTransform("scores", "score", multiply(variable("score"), 10))
+     * ```
+     *
+     * @param fieldName The name of field that contains array to transform.
+     * @param elementAlias The alias to use for the current element in the transform expression.
+     * @param transform The expression used to transform the elements.
+     * @return A new [Expression] representing the arrayTransform operation.
+     */
+    @JvmStatic
+    fun arrayTransform(fieldName: String, elementAlias: String, transform: Expression): Expression =
+      FunctionExpression(
+        "array_transform",
+        notImplemented,
+        fieldName,
+        constant(elementAlias),
+        transform
+      )
+
+    /**
+     * Creates an expression that applies a provided transformation to each element in an array,
+     * providing the element's index to the transformation expression.
+     *
+     * ```kotlin
+     * // Transform 'scores' array by adding the index
+     * arrayTransformWithIndex(field("scores"), "score", "i", add(variable("score"), variable("i")))
+     * ```
+     *
+     * @param array The array expression to transform.
+     * @param elementAlias The alias to use for the current element in the transform expression.
+     * @param indexAlias The alias to use for the current index.
+     * @param transform The expression used to transform the elements.
+     * @return A new [Expression] representing the arrayTransform operation.
+     */
+    @JvmStatic
+    fun arrayTransformWithIndex(
+      array: Expression,
+      elementAlias: String,
+      indexAlias: String,
+      transform: Expression
+    ): Expression =
+      FunctionExpression(
+        "array_transform",
+        notImplemented,
+        array,
+        constant(elementAlias),
+        constant(indexAlias),
+        transform
+      )
+
+    /**
+     * Creates an expression that applies a provided transformation to each element in an array,
+     * providing the element's index to the transformation expression.
+     *
+     * ```kotlin
+     * // Transform 'scores' array by adding the index
+     * arrayTransformWithIndex("scores", "score", "i", add(variable("score"), variable("i")))
+     * ```
+     *
+     * @param fieldName The name of field that contains array to transform.
+     * @param elementAlias The alias to use for the current element in the transform expression.
+     * @param indexAlias The alias to use for the current index.
+     * @param transform The expression used to transform the elements.
+     * @return A new [Expression] representing the arrayTransform operation.
+     */
+    @JvmStatic
+    fun arrayTransformWithIndex(
+      fieldName: String,
+      elementAlias: String,
+      indexAlias: String,
+      transform: Expression
+    ): Expression =
+      FunctionExpression(
+        "array_transform",
+        notImplemented,
+        fieldName,
+        constant(elementAlias),
+        constant(indexAlias),
+        transform
+      )
+
+    /**
      * Creates an expression that returns a slice of an [array] expression.
      *
      * ```kotlin
@@ -7745,6 +7853,38 @@ abstract class Expression internal constructor() {
    */
   fun arrayFilter(alias: String, filter: BooleanExpression) =
     Companion.arrayFilter(this, alias, filter)
+
+  /**
+   * Creates an expression that applies a provided transformation to each element in an array.
+   *
+   * ```kotlin
+   * // Transform 'scores' array by multiplying each score by 10
+   * field("scores").arrayTransform("score", multiply(variable("score"), 10))
+   * ```
+   *
+   * @param elementAlias The alias to use for the current element in the transform expression.
+   * @param transform The expression used to transform the elements.
+   * @return A new [Expression] representing the arrayTransform operation.
+   */
+  fun arrayTransform(elementAlias: String, transform: Expression) =
+    Companion.arrayTransform(this, elementAlias, transform)
+
+  /**
+   * Creates an expression that applies a provided transformation to each element in an array,
+   * providing the element's index to the transformation expression.
+   *
+   * ```kotlin
+   * // Transform 'scores' array by adding the index
+   * field("scores").arrayTransformWithIndex("score", "i", add(variable("score"), variable("i")))
+   * ```
+   *
+   * @param elementAlias The alias to use for the current element in the transform expression.
+   * @param indexAlias The alias to use for the current index.
+   * @param transform The expression used to transform the elements.
+   * @return A new [Expression] representing the arrayTransform operation.
+   */
+  fun arrayTransformWithIndex(elementAlias: String, indexAlias: String, transform: Expression) =
+    Companion.arrayTransformWithIndex(this, elementAlias, indexAlias, transform)
 
   /**
    * Creates an expression that returns a slice of this array expression.

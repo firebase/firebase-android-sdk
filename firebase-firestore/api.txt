@@ -916,6 +916,12 @@ package com.google.firebase.firestore.pipeline {
     method public final com.google.firebase.firestore.pipeline.Expression arraySum();
     method public static final com.google.firebase.firestore.pipeline.Expression arraySum(com.google.firebase.firestore.pipeline.Expression array);
     method public static final com.google.firebase.firestore.pipeline.Expression arraySum(String arrayFieldName);
+    method public static final com.google.firebase.firestore.pipeline.Expression arrayTransform(com.google.firebase.firestore.pipeline.Expression array, String elementAlias, com.google.firebase.firestore.pipeline.Expression transform);
+    method public final com.google.firebase.firestore.pipeline.Expression arrayTransform(String elementAlias, com.google.firebase.firestore.pipeline.Expression transform);
+    method public static final com.google.firebase.firestore.pipeline.Expression arrayTransform(String fieldName, String elementAlias, com.google.firebase.firestore.pipeline.Expression transform);
+    method public static final com.google.firebase.firestore.pipeline.Expression arrayTransformWithIndex(com.google.firebase.firestore.pipeline.Expression array, String elementAlias, String indexAlias, com.google.firebase.firestore.pipeline.Expression transform);
+    method public final com.google.firebase.firestore.pipeline.Expression arrayTransformWithIndex(String elementAlias, String indexAlias, com.google.firebase.firestore.pipeline.Expression transform);
+    method public static final com.google.firebase.firestore.pipeline.Expression arrayTransformWithIndex(String fieldName, String elementAlias, String indexAlias, com.google.firebase.firestore.pipeline.Expression transform);
     method public final com.google.firebase.firestore.pipeline.BooleanExpression asBoolean();
     method public final com.google.firebase.firestore.pipeline.Ordering ascending();
     method public final com.google.firebase.firestore.pipeline.AggregateFunction average();
@@ -1413,6 +1419,10 @@ package com.google.firebase.firestore.pipeline {
     method public com.google.firebase.firestore.pipeline.Expression arraySlice(String arrayFieldName, Object offset, Object length);
     method public com.google.firebase.firestore.pipeline.Expression arraySum(com.google.firebase.firestore.pipeline.Expression array);
     method public com.google.firebase.firestore.pipeline.Expression arraySum(String arrayFieldName);
+    method public com.google.firebase.firestore.pipeline.Expression arrayTransform(com.google.firebase.firestore.pipeline.Expression array, String elementAlias, com.google.firebase.firestore.pipeline.Expression transform);
+    method public com.google.firebase.firestore.pipeline.Expression arrayTransform(String fieldName, String elementAlias, com.google.firebase.firestore.pipeline.Expression transform);
+    method public com.google.firebase.firestore.pipeline.Expression arrayTransformWithIndex(com.google.firebase.firestore.pipeline.Expression array, String elementAlias, String indexAlias, com.google.firebase.firestore.pipeline.Expression transform);
+    method public com.google.firebase.firestore.pipeline.Expression arrayTransformWithIndex(String fieldName, String elementAlias, String indexAlias, com.google.firebase.firestore.pipeline.Expression transform);
     method public com.google.firebase.firestore.pipeline.Expression bitAnd(com.google.firebase.firestore.pipeline.Expression bits, byte[] bitsOther);
     method public com.google.firebase.firestore.pipeline.Expression bitAnd(com.google.firebase.firestore.pipeline.Expression bits, com.google.firebase.firestore.pipeline.Expression bitsOther);
     method public com.google.firebase.firestore.pipeline.Expression bitAnd(String bitsFieldName, byte[] bitsOther);
