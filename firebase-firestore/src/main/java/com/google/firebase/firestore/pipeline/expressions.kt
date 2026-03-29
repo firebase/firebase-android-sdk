@@ -6598,8 +6598,8 @@ abstract class Expression internal constructor() {
      * )
      * ```
      *
-     * @param field Specifies the field in the document which contains the first GeoPoint for distance
-     * computation.
+     * @param field Specifies the field in the document which contains the first GeoPoint for
+     * distance computation.
      * @param location Compute distance to this GeoPoint.
      */
     @Beta
@@ -6626,47 +6626,47 @@ abstract class Expression internal constructor() {
     fun documentMatches(rquery: String): BooleanExpression =
       BooleanFunctionExpression("document_matches", notImplemented, constant(rquery))
 
-    /**
-     * Perform a full-text search on the specified field.
-     *
-     * Note: This Expression can only be used within a `Search` stage.
-     *
-     * @example
-     * ```kotlin
-     * db.pipeline().collection("restaurants").search(
-     *   SearchStage(query = matches("menu", "waffles"))
-     * )
-     * ```
-     *
-     * @param fieldName Perform search on this field.
-     * @param rquery Define the search query using the search DSL.
-     */
-    // TODO(search) this is internal until supported by the backend
-    @Beta
-    @JvmStatic
-    internal fun matches(fieldName: String, rquery: String): BooleanExpression =
-      matches(field(fieldName), rquery)
-
-    /**
-     * Perform a full-text search on the specified field.
-     *
-     * Note: This Expression can only be used within a `Search` stage.
-     *
-     * @example
-     * ```kotlin
-     * db.pipeline().collection("restaurants").search(
-     *   SearchStage(query = matches(field("menu"), "waffles"))
-     * )
-     * ```
-     *
-     * @param field Perform search on this field.
-     * @param rquery Define the search query using the search DSL.
-     */
-    // TODO(search) this is internal until supported by the backend
-    @Beta
-    @JvmStatic
-    internal fun matches(field: Field, rquery: String): BooleanExpression =
-      BooleanFunctionExpression("matches", notImplemented, field, constant(rquery))
+    //    /**
+    //     * Perform a full-text search on the specified field.
+    //     *
+    //     * Note: This Expression can only be used within a `Search` stage.
+    //     *
+    //     * @example
+    //     * ```kotlin
+    //     * db.pipeline().collection("restaurants").search(
+    //     *   SearchStage(query = matches("menu", "waffles"))
+    //     * )
+    //     * ```
+    //     *
+    //     * @param fieldName Perform search on this field.
+    //     * @param rquery Define the search query using the search DSL.
+    //     */
+    //    // TODO(search) this is internal until supported by the backend
+    //    @Beta
+    //    @JvmStatic
+    //    internal fun matches(fieldName: String, rquery: String): BooleanExpression =
+    //      matches(field(fieldName), rquery)
+    //
+    //    /**
+    //     * Perform a full-text search on the specified field.
+    //     *
+    //     * Note: This Expression can only be used within a `Search` stage.
+    //     *
+    //     * @example
+    //     * ```kotlin
+    //     * db.pipeline().collection("restaurants").search(
+    //     *   SearchStage(query = matches(field("menu"), "waffles"))
+    //     * )
+    //     * ```
+    //     *
+    //     * @param field Perform search on this field.
+    //     * @param rquery Define the search query using the search DSL.
+    //     */
+    //    // TODO(search) this is internal until supported by the backend
+    //    @Beta
+    //    @JvmStatic
+    //    internal fun matches(field: Field, rquery: String): BooleanExpression =
+    //      BooleanFunctionExpression("matches", notImplemented, field, constant(rquery))
 
     /**
      * Evaluates to the search score that reflects the topicality of the document to all of the text
@@ -6683,129 +6683,136 @@ abstract class Expression internal constructor() {
      */
     @Beta @JvmStatic fun score(): Expression = FunctionExpression("score", notImplemented)
 
-    /**
-     * Evaluates to an HTML-formatted text snippet that highlights terms matching the search query
-     * in `<b>bold</b>`.
-     *
-     * This Expression can only be used within a `Search` stage.
-     *
-     * @example
-     * ```kotlin
-     * db.pipeline().collection("restaurants").search(
-     *   SearchStage(query = documentMatches("waffles"), addFields = arrayOf(snippet("menu", "waffles").alias("snippet")))
-     * )
-     * ```
-     *
-     * @param fieldName Search the specified field for matching terms.
-     * @param rquery Define the search query using the search DSL.
-     */
-    @Beta
-    @JvmStatic
-    fun snippet(fieldName: String, rquery: String): Expression =
-      FunctionExpression("snippet", notImplemented, field(fieldName), constant(rquery))
+    //    /**
+    //     * Evaluates to an HTML-formatted text snippet that highlights terms matching the search
+    // query
+    //     * in `<b>bold</b>`.
+    //     *
+    //     * This Expression can only be used within a `Search` stage.
+    //     *
+    //     * @example
+    //     * ```kotlin
+    //     * db.pipeline().collection("restaurants").search(
+    //     *   SearchStage(query = documentMatches("waffles"), addFields = arrayOf(snippet("menu",
+    // "waffles").alias("snippet")))
+    //     * )
+    //     * ```
+    //     *
+    //     * @param fieldName Search the specified field for matching terms.
+    //     * @param rquery Define the search query using the search DSL.
+    //     */
+    //    @Beta
+    //    @JvmStatic
+    //    fun snippet(fieldName: String, rquery: String): Expression =
+    //      FunctionExpression("snippet", notImplemented, field(fieldName), constant(rquery))
 
-    /**
-     * Evaluates to an HTML-formatted text snippet that highlights terms matching the search query
-     * in `<b>bold</b>`.
-     *
-     * This Expression can only be used within a `Search` stage.
-     *
-     * @param fieldName Search the specified field for matching terms.
-     * @param options Define how the snippet is generated.
-     */
-    // TODO(search) snippet with options is internal and unimplemented until supported by the
-    // backend
-    @Beta
-    @JvmStatic
-    internal fun snippet(fieldName: String, options: SnippetOptions): Expression {
-      throw NotImplementedError("Not implemented")
-    }
+    //    /**
+    //     * Evaluates to an HTML-formatted text snippet that highlights terms matching the search
+    // query
+    //     * in `<b>bold</b>`.
+    //     *
+    //     * This Expression can only be used within a `Search` stage.
+    //     *
+    //     * @param fieldName Search the specified field for matching terms.
+    //     * @param options Define how the snippet is generated.
+    //     */
+    //    // TODO(search) snippet with options is internal and unimplemented until supported by the
+    //    // backend
+    //    @Beta
+    //    @JvmStatic
+    //    internal fun snippet(fieldName: String, options: SnippetOptions): Expression {
+    //      throw NotImplementedError("Not implemented")
+    //    }
 
-    /**
-     * Evaluates if the value in the field specified by `fieldName` is between the evaluated values
-     * for `lowerBound` (inclusive) and `upperBound` (inclusive).
-     *
-     * @param fieldName Determine if this field is between two bounds.
-     * @param lowerBound Lower bound (inclusive).
-     * @param upperBound Upper bound (inclusive).
-     */
-    // TODO(search) between is internal and unimplemented until supported by the backend
-    @JvmStatic
-    internal fun between(
-      fieldName: String,
-      lowerBound: Expression,
-      upperBound: Expression
-    ): BooleanExpression =
-      BooleanFunctionExpression("between", notImplemented, fieldName, lowerBound, upperBound)
+    //    /**
+    //     * Evaluates if the value in the field specified by `fieldName` is between the evaluated
+    // values
+    //     * for `lowerBound` (inclusive) and `upperBound` (inclusive).
+    //     *
+    //     * @param fieldName Determine if this field is between two bounds.
+    //     * @param lowerBound Lower bound (inclusive).
+    //     * @param upperBound Upper bound (inclusive).
+    //     */
+    //    // TODO(search) between is internal and unimplemented until supported by the backend
+    //    @JvmStatic
+    //    internal fun between(
+    //      fieldName: String,
+    //      lowerBound: Expression,
+    //      upperBound: Expression
+    //    ): BooleanExpression =
+    //      BooleanFunctionExpression("between", notImplemented, fieldName, lowerBound, upperBound)
 
-    /**
-     * Evaluates if the value in the field specified by `fieldName` is between the values for
-     * `lowerBound` (inclusive) and `upperBound` (inclusive).
-     *
-     * @param fieldName Determine if this field is between two bounds.
-     * @param lowerBound Lower bound (inclusive).
-     * @param upperBound Upper bound (inclusive).
-     */
-    @JvmStatic
-    internal fun between(fieldName: String, lowerBound: Any, upperBound: Any): BooleanExpression =
-      between(fieldName, toExprOrConstant(lowerBound), toExprOrConstant(upperBound))
+    //    /**
+    //     * Evaluates if the value in the field specified by `fieldName` is between the values for
+    //     * `lowerBound` (inclusive) and `upperBound` (inclusive).
+    //     *
+    //     * @param fieldName Determine if this field is between two bounds.
+    //     * @param lowerBound Lower bound (inclusive).
+    //     * @param upperBound Upper bound (inclusive).
+    //     */
+    //    @JvmStatic
+    //    internal fun between(fieldName: String, lowerBound: Any, upperBound: Any):
+    // BooleanExpression =
+    //      between(fieldName, toExprOrConstant(lowerBound), toExprOrConstant(upperBound))
 
-    /**
-     * Evaluates if the result of the specified `expression` is between the results of `lowerBound`
-     * (inclusive) and `upperBound` (inclusive).
-     *
-     * @param expression Determine if the result of this expression is between two bounds.
-     * @param lowerBound Lower bound (inclusive).
-     * @param upperBound Upper bound (inclusive).
-     */
-    @JvmStatic
-    internal fun between(
-      expression: Expression,
-      lowerBound: Expression,
-      upperBound: Expression
-    ): BooleanExpression =
-      BooleanFunctionExpression("between", notImplemented, expression, lowerBound, upperBound)
+    //    /**
+    //     * Evaluates if the result of the specified `expression` is between the results of
+    // `lowerBound`
+    //     * (inclusive) and `upperBound` (inclusive).
+    //     *
+    //     * @param expression Determine if the result of this expression is between two bounds.
+    //     * @param lowerBound Lower bound (inclusive).
+    //     * @param upperBound Upper bound (inclusive).
+    //     */
+    //    @JvmStatic
+    //    internal fun between(
+    //      expression: Expression,
+    //      lowerBound: Expression,
+    //      upperBound: Expression
+    //    ): BooleanExpression =
+    //      BooleanFunctionExpression("between", notImplemented, expression, lowerBound, upperBound)
 
-    /**
-     * Evaluates if the result of the specified `expression` is between the `lowerBound` (inclusive)
-     * and `upperBound` (inclusive).
-     *
-     * @param expression Determine if the result of this expression is between two bounds.
-     * @param lowerBound Lower bound (inclusive).
-     * @param upperBound Upper bound (inclusive).
-     */
-    @JvmStatic
-    internal fun between(
-      expression: Expression,
-      lowerBound: Any,
-      upperBound: Any
-    ): BooleanExpression =
-      between(expression, toExprOrConstant(lowerBound), toExprOrConstant(upperBound))
+    //    /**
+    //     * Evaluates if the result of the specified `expression` is between the `lowerBound`
+    // (inclusive)
+    //     * and `upperBound` (inclusive).
+    //     *
+    //     * @param expression Determine if the result of this expression is between two bounds.
+    //     * @param lowerBound Lower bound (inclusive).
+    //     * @param upperBound Upper bound (inclusive).
+    //     */
+    //    @JvmStatic
+    //    internal fun between(
+    //      expression: Expression,
+    //      lowerBound: Any,
+    //      upperBound: Any
+    //    ): BooleanExpression =
+    //      between(expression, toExprOrConstant(lowerBound), toExprOrConstant(upperBound))
   }
 
-  // TODO(search) SnippetOptions is internal until supported by the backend
-  @Beta
-  internal class SnippetOptions private constructor(options: InternalOptions) :
-    AbstractOptions<SnippetOptions>(options) {
-    /** Creates a new, empty `SnippetOptions` object. */
-    constructor(rquery: String) : this(InternalOptions.EMPTY.with("query", encodeValue(rquery)))
-
-    fun withMaxSnippetWidth(max: Int): SnippetOptions {
-      return with("max_snippet_width", encodeValue(max))
-    }
-
-    fun withMaxSnippets(max: Int): SnippetOptions {
-      return with("max_snippets", encodeValue(max))
-    }
-
-    fun withSeparator(separator: String): SnippetOptions {
-      return with("separator", encodeValue(separator))
-    }
-
-    internal override fun self(options: InternalOptions): SnippetOptions {
-      return SnippetOptions(options)
-    }
-  }
+  //  // TODO(search) SnippetOptions is internal until supported by the backend
+  //  @Beta
+  //  internal class SnippetOptions private constructor(options: InternalOptions) :
+  //    AbstractOptions<SnippetOptions>(options) {
+  //    /** Creates a new, empty `SnippetOptions` object. */
+  //    constructor(rquery: String) : this(InternalOptions.EMPTY.with("query", encodeValue(rquery)))
+  //
+  //    fun withMaxSnippetWidth(max: Int): SnippetOptions {
+  //      return with("max_snippet_width", encodeValue(max))
+  //    }
+  //
+  //    fun withMaxSnippets(max: Int): SnippetOptions {
+  //      return with("max_snippets", encodeValue(max))
+  //    }
+  //
+  //    fun withSeparator(separator: String): SnippetOptions {
+  //      return with("separator", encodeValue(separator))
+  //    }
+  //
+  //    internal override fun self(options: InternalOptions): SnippetOptions {
+  //      return SnippetOptions(options)
+  //    }
+  //  }
 
   /**
    * Creates an expression that applies a bitwise AND operation with other expression.
@@ -9304,84 +9311,86 @@ abstract class Expression internal constructor() {
     }
   }
 
-  /**
-   * Evaluates to an HTML-formatted text snippet that highlights terms matching the search query in
-   * `<b>bold</b>`.
-   *
-   * Note: This Expression can only be used within a `Search` stage.
-   *
-   * @param rquery Define the search query using the search DTS.
-   */
-  @Beta
-  fun snippet(rquery: String): Expression =
-    FunctionExpression(
-      "snippet",
-      notImplemented,
-      arrayOf(this, constant(rquery)),
-      SnippetOptions(rquery).options
-    )
-
-  /**
-   * Evaluates to an HTML-formatted text snippet that highlights terms matching the search query in
-   * `<b>bold</b>`.
-   *
-   * Note: This Expression can only be used within a `Search` stage.
-   *
-   * @param options Define how the snippet is generated.
-   *
-   * TODO(search) implement snippet with SnippetOptions - out of scope for first release
-   */
-  @Beta
-  internal fun snippet(options: SnippetOptions): Expression {
-    throw NotImplementedError()
-  }
-
-  /**
-   * Evaluates if the result of this `expression` is between the `lowerBound` (inclusive) and
-   * `upperBound` (inclusive).
-   *
-   * @example
-   * ```
-   * // Evaluate if the 'tireWidth' is between 2.2 and 2.4
-   * field('tireWidth').between(constant(2.2), constant(2.4))
-   *
-   * // This is functionally equivalent to
-   * and(
-   *   field('tireWidth').greaterThanOrEqual(constant(2.2)),
-   *   field('tireWidth').lessThanOrEqual(constant(2.4)))
-   * ```
-   *
-   * @param lowerBound Lower bound (inclusive).
-   * @param upperBound Upper bound (inclusive).
-   *
-   * TODO(search) publish between - out of scope for first release
-   */
-  internal fun between(lowerBound: Expression, upperBound: Expression): BooleanExpression =
-    Companion.between(this, lowerBound, upperBound)
-
-  /**
-   * Evaluates if the result of this `expression` is between the `lowerBound` (inclusive) and
-   * `upperBound` (inclusive).
-   *
-   * @example
-   * ```
-   * // Evaluate if the 'tireWidth' is between 2.2 and 2.4
-   * field('tireWidth').between(2.2, 2.4)
-   *
-   * // This is functionally equivalent to
-   * and(
-   *   field('tireWidth').greaterThanOrEqual(2.2),
-   *   field('tireWidth').lessThanOrEqual(2.4))
-   * ```
-   *
-   * @param lowerBound Lower bound (inclusive).
-   * @param upperBound Upper bound (inclusive).
-   *
-   * TODO(search) publish between - out of scope for first release
-   */
-  internal fun between(lowerBound: Any, upperBound: Any): BooleanExpression =
-    Companion.between(this, lowerBound, upperBound)
-
+  //  /**
+  //   * Evaluates to an HTML-formatted text snippet that highlights terms matching the search query
+  // in
+  //   * `<b>bold</b>`.
+  //   *
+  //   * Note: This Expression can only be used within a `Search` stage.
+  //   *
+  //   * @param rquery Define the search query using the search DTS.
+  //   */
+  //  @Beta
+  //  fun snippet(rquery: String): Expression =
+  //    FunctionExpression(
+  //      "snippet",
+  //      notImplemented,
+  //      arrayOf(this, constant(rquery)),
+  //      SnippetOptions(rquery).options
+  //    )
+  //
+  //  /**
+  //   * Evaluates to an HTML-formatted text snippet that highlights terms matching the search query
+  // in
+  //   * `<b>bold</b>`.
+  //   *
+  //   * Note: This Expression can only be used within a `Search` stage.
+  //   *
+  //   * @param options Define how the snippet is generated.
+  //   *
+  //   * TODO(search) implement snippet with SnippetOptions - out of scope for first release
+  //   */
+  //  @Beta
+  //  internal fun snippet(options: SnippetOptions): Expression {
+  //    throw NotImplementedError()
+  //  }
+  //
+  //  /**
+  //   * Evaluates if the result of this `expression` is between the `lowerBound` (inclusive) and
+  //   * `upperBound` (inclusive).
+  //   *
+  //   * @example
+  //   * ```
+  //   * // Evaluate if the 'tireWidth' is between 2.2 and 2.4
+  //   * field('tireWidth').between(constant(2.2), constant(2.4))
+  //   *
+  //   * // This is functionally equivalent to
+  //   * and(
+  //   *   field('tireWidth').greaterThanOrEqual(constant(2.2)),
+  //   *   field('tireWidth').lessThanOrEqual(constant(2.4)))
+  //   * ```
+  //   *
+  //   * @param lowerBound Lower bound (inclusive).
+  //   * @param upperBound Upper bound (inclusive).
+  //   *
+  //   * TODO(search) publish between - out of scope for first release
+  //   */
+  //  internal fun between(lowerBound: Expression, upperBound: Expression): BooleanExpression =
+  //    Companion.between(this, lowerBound, upperBound)
+  //
+  //  /**
+  //   * Evaluates if the result of this `expression` is between the `lowerBound` (inclusive) and
+  //   * `upperBound` (inclusive).
+  //   *
+  //   * @example
+  //   * ```
+  //   * // Evaluate if the 'tireWidth' is between 2.2 and 2.4
+  //   * field('tireWidth').between(2.2, 2.4)
+  //   *
+  //   * // This is functionally equivalent to
+  //   * and(
+  //   *   field('tireWidth').greaterThanOrEqual(2.2),
+  //   *   field('tireWidth').lessThanOrEqual(2.4))
+  //   * ```
+  //   *
+  //   * @param lowerBound Lower bound (inclusive).
+  //   * @param upperBound Upper bound (inclusive).
+  //   *
+  //   * TODO(search) publish between - out of scope for first release
+  //   */
+  //  internal fun between(lowerBound: Any, upperBound: Any): BooleanExpression =
+  //    Companion.between(this, lowerBound, upperBound)
+  //
   internal abstract fun toProto(userDataReader: UserDataReader): Value
 
   internal abstract fun evaluateFunction(context: EvaluationContext): EvaluateDocument
@@ -9516,14 +9525,14 @@ class Field internal constructor(internal val fieldPath: ModelFieldPath) : Selec
    */
   @Beta fun geoDistance(location: GeoPoint): Expression = geoDistance(this, location)
 
-  /**
-   * Perform a full-text search on this field.
-   *
-   * Note: This Expression can only be used within a `Search` stage.
-   *
-   * @param rquery Define the search query using the rquery DTS.
-   */
-  @Beta internal fun matches(rquery: String): BooleanExpression = matches(this, rquery)
+  //  /**
+  //   * Perform a full-text search on this field.
+  //   *
+  //   * Note: This Expression can only be used within a `Search` stage.
+  //   *
+  //   * @param rquery Define the search query using the rquery DTS.
+  //   */
+  //  @Beta internal fun matches(rquery: String): BooleanExpression = matches(this, rquery)
 }
 
 /**

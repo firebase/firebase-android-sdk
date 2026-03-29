@@ -1100,8 +1100,7 @@ internal constructor(
    * @param searchStage An object that specifies how search is performed.
    * @return A new `Pipeline` object with this stage appended to the stage list.
    */
-  @Beta
-  fun search(searchStage: SearchStage): Pipeline = append(searchStage)
+  @Beta fun search(searchStage: SearchStage): Pipeline = append(searchStage)
 }
 
 /** Start of a Firestore Pipeline */

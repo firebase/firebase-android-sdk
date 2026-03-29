@@ -39,15 +39,16 @@ class PipelineProtoTest {
         .collection("foo")
         .search(
           SearchStage.withQuery("foo")
-            .withLimit(1)
-            .withRetrievalDepth(2)
-            .withOffset(3)
-            .withQueryEnhancement(SearchStage.QueryEnhancement.REQUIRED)
-            .withLanguageCode("en-US")
+            // TODO(search) enable with backend support
+            // .withLimit(1)
+            // .withRetrievalDepth(2)
+            // .withOffset(3)
+            // .withQueryEnhancement(SearchStage.QueryEnhancement.REQUIRED)
+            // .withLanguageCode("en-US")
             .withSort(field("foo").ascending())
             .withAddFields(constant(true).alias("bar"))
-            .withSelect(field("id"))
-        )
+          // .withSelect(field("id"))
+          )
 
     val request = pipeline.toExecutePipelineRequest(null)
 
@@ -71,24 +72,25 @@ class PipelineProtoTest {
     assertThat(query.functionValue.name).isEqualTo("document_matches")
     assertThat(query.functionValue.getArgs(0).stringValue).isEqualTo("foo")
 
-    // limit
-    assertThat(options["limit"]?.integerValue).isEqualTo(1L)
+    // TODO(search) enable with backend support
+    // // limit
+    // assertThat(options["limit"]?.integerValue).isEqualTo(1L)
 
-    // retrieval_depth
-    assertThat(options["retrieval_depth"]?.integerValue).isEqualTo(2L)
+    // // retrieval_depth
+    // assertThat(options["retrieval_depth"]?.integerValue).isEqualTo(2L)
 
-    // offset
-    assertThat(options["offset"]?.integerValue).isEqualTo(3L)
+    // // offset
+    // assertThat(options["offset"]?.integerValue).isEqualTo(3L)
 
-    // query_enhancement
-    assertThat(options["query_enhancement"]?.stringValue).isEqualTo("required")
+    // // query_enhancement
+    // assertThat(options["query_enhancement"]?.stringValue).isEqualTo("required")
 
-    // language_code
-    assertThat(options["language_code"]?.stringValue).isEqualTo("en-US")
+    // // language_code
+    // assertThat(options["language_code"]?.stringValue).isEqualTo("en-US")
 
-    // select
-    val select = options["select"]!!
-    assertThat(select.mapValue.fieldsMap["id"]?.fieldReferenceValue).isEqualTo("id")
+    // // select
+    // val select = options["select"]!!
+    // assertThat(select.mapValue.fieldsMap["id"]?.fieldReferenceValue).isEqualTo("id")
 
     // sort
     val sort = options["sort"]!!

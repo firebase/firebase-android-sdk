@@ -18,20 +18,13 @@ import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.firestore.pipeline.Expression.Companion.and
-import com.google.firebase.firestore.pipeline.Expression.Companion.concat
-import com.google.firebase.firestore.pipeline.Expression.Companion.constant
 import com.google.firebase.firestore.pipeline.Expression.Companion.documentMatches
 import com.google.firebase.firestore.pipeline.Expression.Companion.field
-import com.google.firebase.firestore.pipeline.Expression.Companion.greaterThanOrEqual
-import com.google.firebase.firestore.pipeline.Expression.Companion.lessThanOrEqual
 import com.google.firebase.firestore.pipeline.Expression.Companion.score
-import com.google.firebase.firestore.pipeline.Expression.Companion.snippet
-import com.google.firebase.firestore.pipeline.Expression.SnippetOptions
 import com.google.firebase.firestore.pipeline.SearchStage
 import com.google.firebase.firestore.testutil.IntegrationTestUtil
 import org.junit.Assume
 import org.junit.BeforeClass
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -40,6 +33,8 @@ class PipelineSearchTest {
   companion object {
     private lateinit var firestore: FirebaseFirestore
     private lateinit var restaurantsCollection: CollectionReference
+
+    private const val COLLECTION_NAME = "TextSearchIntegrationTests"
 
     private val restaurantDocs: Map<String, Map<String, Any>> =
       mapOf(
@@ -132,7 +127,7 @@ class PipelineSearchTest {
       )
 
       firestore = IntegrationTestUtil.testFirestore()
-      restaurantsCollection = firestore.collection("SearchIntegrationTests")
+      restaurantsCollection = firestore.collection(COLLECTION_NAME)
 
       val collectionSnapshot = IntegrationTestUtil.waitFor(restaurantsCollection.get())
       val expectedDocIds = restaurantDocs.keys
@@ -165,242 +160,246 @@ class PipelineSearchTest {
   // --- DISABLE query expansion ---
 
   // query
-  @Test
-  fun searchWithLanguageCode() {
-    val ppl =
-      firestore
-        .pipeline()
-        .collection("SearchIntegrationTests")
-        .search(
-          SearchStage.withQuery("waffles")
-            .withLanguageCode("en")
-            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
-        )
-
-    val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
-    assertResultIds(snapshot, "goldenWaffle")
-  }
+  // TODO(search) enable with backend support
+  //  @Test
+  //  fun searchWithLanguageCode() {
+  //    val ppl =
+  //      firestore
+  //        .pipeline()
+  //        .collection(COLLECTION_NAME)
+  //        .search(
+  //          SearchStage.withQuery("waffles")
+  //            .withLanguageCode("en")
+  //            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
+  //        )
+  //
+  //    val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
+  //    assertResultIds(snapshot, "goldenWaffle")
+  //  }
 
   @Test
   fun searchFullDocument() {
     val ppl =
       firestore
         .pipeline()
-        .collection("SearchIntegrationTests")
+        .collection(COLLECTION_NAME)
         .search(
-        //  SearchStage.withQuery("waffles").withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
-            SearchStage(query = documentMatches("waffles"), queryEnhancement = SearchStage.QueryEnhancement.DISABLED)
+          SearchStage(
+            query = documentMatches("waffles"),
+            //                queryEnhancement = SearchStage.QueryEnhancement.DISABLED
+            )
         )
 
     val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
     assertResultIds(snapshot, "goldenWaffle")
   }
 
-  @Test
-  fun searchSpecificField() {
-    val ppl =
-      firestore
-        .pipeline()
-        .collection("SearchIntegrationTests")
-        .search(
-          SearchStage.withQuery(field("menu").matches("waffles"))
-            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
-        )
-
-    val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
-    assertResultIds(snapshot, "goldenWaffle")
-  }
+  // TODO(search) enable with backend support
+  //  @Test
+  //  fun searchSpecificField() {
+  //    val ppl =
+  //      firestore
+  //        .pipeline()
+  //        .collection(COLLECTION_NAME)
+  //        .search(
+  //          SearchStage.withQuery(field("menu").matches("waffles"))
+  //            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
+  //        )
+  //
+  //    val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
+  //    assertResultIds(snapshot, "goldenWaffle")
+  //  }
 
   @Test
   fun geoNearQuery() {
     val ppl =
       firestore
         .pipeline()
-        .collection("SearchIntegrationTests")
+        .collection(COLLECTION_NAME)
         .search(
           SearchStage.withQuery(
-              field("location").geoDistance(GeoPoint(39.6985, -105.024)).lessThan(1000)
-            )
-            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
-        )
+            field("location").geoDistance(GeoPoint(39.6985, -105.024)).lessThan(1000)
+          )
+          //            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
+          )
 
     val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
     assertResultIds(snapshot, "solTacos")
   }
 
-  @Test
-  fun conjunctionOfTextSearchPredicates() {
-    val ppl =
-      firestore
-        .pipeline()
-        .collection("SearchIntegrationTests")
-        .search(
-          SearchStage.withQuery(
-              and(field("menu").matches("waffles"), field("description").matches("diner"))
-            )
-            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
-        )
+  // TODO(search) enable with backend support
+  //  @Test
+  //  fun conjunctionOfTextSearchPredicates() {
+  //    val ppl =
+  //      firestore
+  //        .pipeline()
+  //        .collection(COLLECTION_NAME)
+  //        .search(
+  //          SearchStage.withQuery(
+  //              and(field("menu").matches("waffles"), field("description").matches("diner"))
+  //            )
+  //            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
+  //        )
+  //
+  //    val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
+  //    assertResultIds(snapshot, "goldenWaffle", "sunnySideUp")
+  //  }
 
-    val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
-    assertResultIds(snapshot, "goldenWaffle", "sunnySideUp")
-  }
-
-  @Test
-  fun conjunctionOfTextSearchAndGeoNear() {
-    val ppl =
-      firestore
-        .pipeline()
-        .collection("SearchIntegrationTests")
-        .search(
-          SearchStage.withQuery(
-              and(
-                field("menu").matches("tacos"),
-                field("location").geoDistance(GeoPoint(39.6985, -105.024)).lessThan(10_000)
-              )
-            )
-            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
-        )
-
-    val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
-    assertResultIds(snapshot, "solTacos")
-  }
+  // TODO(search) enable with backend support
+  //  @Test
+  //  fun conjunctionOfTextSearchAndGeoNear() {
+  //    val ppl =
+  //      firestore
+  //        .pipeline()
+  //        .collection(COLLECTION_NAME)
+  //        .search(
+  //          SearchStage.withQuery(
+  //              and(
+  //                field("menu").matches("tacos"),
+  //                field("location").geoDistance(GeoPoint(39.6985, -105.024)).lessThan(10_000)
+  //              )
+  //            )
+  //            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
+  //        )
+  //
+  //    val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
+  //    assertResultIds(snapshot, "solTacos")
+  //  }
 
   @Test
   fun negateMatch() {
     val ppl =
       firestore
         .pipeline()
-        .collection("SearchIntegrationTests")
+        .collection(COLLECTION_NAME)
         .search(
-          SearchStage.withQuery(field("menu").matches("-waffles"))
-            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
-        )
+          SearchStage.withQuery(documentMatches("coffee -waffles"))
+          //            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
+          )
 
     val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
-    assertResultIds(
-      snapshot,
-      "eastsideTacos",
-      "solTacos",
-      "peakBurgers",
-      "mileHighCatch",
-      "lotusBlossomThai",
-      "sunnySideUp"
-    )
+    assertResultIds(snapshot, "sunnySideUp")
   }
 
-  @Test
-  fun rquerySearchTheDocumentWithConjunctionAndDisjunction() {
-    val ppl =
-      firestore
-        .pipeline()
-        .collection("SearchIntegrationTests")
-        .search(
-          SearchStage.withQuery(documentMatches("(waffles OR pancakes) AND coffee"))
-            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
-        )
-
-    val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
-    assertResultIds(snapshot, "goldenWaffle", "sunnySideUp")
-  }
+  // TODO(search) enable with backend support
+  //  @Test
+  //  fun rquerySearchTheDocumentWithConjunctionAndDisjunction() {
+  //    val ppl =
+  //      firestore
+  //        .pipeline()
+  //        .collection(COLLECTION_NAME)
+  //        .search(
+  //          SearchStage.withQuery(documentMatches("(waffles OR pancakes) AND coffee"))
+  //            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
+  //        )
+  //
+  //    val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
+  //    assertResultIds(snapshot, "goldenWaffle", "sunnySideUp")
+  //  }
 
   @Test
   fun rqueryAsQueryParam() {
     val ppl =
       firestore
         .pipeline()
-        .collection("SearchIntegrationTests")
+        .collection(COLLECTION_NAME)
         .search(
-          SearchStage.withQuery("(waffles OR pancakes) AND coffee")
-            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
-        )
+          SearchStage.withQuery("chicken wings")
+          //            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
+          )
 
     val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
-    assertResultIds(snapshot, "goldenWaffle", "sunnySideUp")
+    assertResultIds(snapshot, "eastsideChicken")
   }
 
-  @Test
-  fun rquerySupportsFieldPaths() {
-    val ppl =
-      firestore
-        .pipeline()
-        .collection("SearchIntegrationTests")
-        .search(
-          SearchStage.withQuery("menu:(waffles OR pancakes) AND description:\"breakfast all day\"")
-            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
-        )
+  // TODO(search) enable with backend support
+  //  @Test
+  //  fun rquerySupportsFieldPaths() {
+  //    val ppl =
+  //      firestore
+  //        .pipeline()
+  //        .collection(COLLECTION_NAME)
+  //        .search(
+  //          SearchStage.withQuery("menu:(waffles OR pancakes) AND description:\"breakfast all
+  // day\"")
+  //            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
+  //        )
+  //
+  //    val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
+  //    assertResultIds(snapshot, "sunnySideUp")
+  //  }
 
-    val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
-    assertResultIds(snapshot, "sunnySideUp")
-  }
-
-  @Test
-  fun conjunctionOfRqueryAndExpression() {
-    val ppl =
-      firestore
-        .pipeline()
-        .collection("SearchIntegrationTests")
-        .search(
-          SearchStage.withQuery(
-              and(
-                documentMatches("tacos"),
-                greaterThanOrEqual(field("average_price_per_person"), 8),
-                lessThanOrEqual(field("average_price_per_person"), 15)
-              )
-            )
-            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
-        )
-
-    val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
-    assertResultIds(snapshot, "solTacos")
-  }
+  // TODO(search) enable with backend support
+  //  @Test
+  //  fun conjunctionOfRqueryAndExpression() {
+  //    val ppl =
+  //      firestore
+  //        .pipeline()
+  //        .collection(COLLECTION_NAME)
+  //        .search(
+  //          SearchStage.withQuery(
+  //              and(
+  //                documentMatches("tacos"),
+  //                greaterThanOrEqual(field("average_price_per_person"), 8),
+  //                lessThanOrEqual(field("average_price_per_person"), 15)
+  //              )
+  //            )
+  //            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
+  //        )
+  //
+  //    val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
+  //    assertResultIds(snapshot, "solTacos")
+  //  }
 
   // --- REQUIRE query expansion ---
 
-  @Test
-  fun requireQueryExpansion_searchFullDocument() {
-    val ppl =
-      firestore
-        .pipeline()
-        .collection("SearchIntegrationTests")
-        .search(
-          SearchStage.withQuery(documentMatches("waffles"))
-            .withQueryEnhancement(SearchStage.QueryEnhancement.REQUIRED)
-        )
+  // TODO(search) enable with backend support
+  //  @Test
+  //  fun requireQueryExpansion_searchFullDocument() {
+  //    val ppl =
+  //      firestore
+  //        .pipeline()
+  //        .collection(COLLECTION_NAME)
+  //        .search(
+  //          SearchStage.withQuery(documentMatches("waffles"))
+  //            .withQueryEnhancement(SearchStage.QueryEnhancement.REQUIRED)
+  //        )
+  //
+  //    val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
+  //    assertResultIds(snapshot, "goldenWaffle", "sunnySideUp")
+  //  }
 
-    val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
-    assertResultIds(snapshot, "goldenWaffle", "sunnySideUp")
-  }
-
-  @Test
-  fun requireQueryExpansion_searchSpecificField() {
-    val ppl =
-      firestore
-        .pipeline()
-        .collection("SearchIntegrationTests")
-        .search(
-          SearchStage.withQuery(field("menu").matches("waffles"))
-            .withQueryEnhancement(SearchStage.QueryEnhancement.REQUIRED)
-        )
-
-    val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
-    assertResultIds(snapshot, "goldenWaffle", "sunnySideUp")
-  }
+  // TODO(search) enable with backend support
+  //  @Test
+  //  fun requireQueryExpansion_searchSpecificField() {
+  //    val ppl =
+  //      firestore
+  //        .pipeline()
+  //        .collection(COLLECTION_NAME)
+  //        .search(
+  //          SearchStage.withQuery(field("menu").matches("waffles"))
+  //            .withQueryEnhancement(SearchStage.QueryEnhancement.REQUIRED)
+  //        )
+  //
+  //    val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
+  //    assertResultIds(snapshot, "goldenWaffle", "sunnySideUp")
+  //  }
 
   // add fields
   @Test
-  fun addFields_topicalityScoreAndSnippet() {
+  fun addFields_score() {
     val ppl =
       firestore
         .pipeline()
-        .collection("SearchIntegrationTests")
+        .collection(COLLECTION_NAME)
         .search(
-          SearchStage.withQuery(field("menu").matches("waffles"))
+          SearchStage.withQuery(documentMatches("waffles"))
             .withAddFields(
               score().alias("searchScore"),
-              field("menu").snippet("waffles").alias("snippet")
-            )
-            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
-        )
+              //              field("menu").snippet("waffles").alias("snippet")
+              )
+          //            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
+          )
         .select("name", "searchScore", "snippet")
 
     val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
@@ -408,50 +407,50 @@ class PipelineSearchTest {
     val result = snapshot.results[0]
     assertThat(result.get("name")).isEqualTo("The Golden Waffle")
     assertThat(result.get("searchScore") as Double).isGreaterThan(0.0)
-    assertThat((result.get("snippet") as String).length).isGreaterThan(0)
+    //    assertThat((result.get("snippet") as String).length).isGreaterThan(0)
   }
 
   // select
-  @Test
-  fun select_topicalityScoreAndSnippet() {
-    val ppl =
-      firestore
-        .pipeline()
-        .collection("SearchIntegrationTests")
-        .search(
-          SearchStage.withQuery(field("menu").matches("waffles"))
-            .withSelect(
-              field("name"),
-              field("location"),
-              score().alias("searchScore"),
-              snippet("menu", "waffles").alias("snippet")
-            )
-            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
-        )
-
-    val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
-    assertThat(snapshot.results).hasSize(1)
-    val result = snapshot.results[0]
-    assertThat(result.get("name")).isEqualTo("The Golden Waffle")
-    assertThat(result.get("location")).isEqualTo(GeoPoint(39.7183, -104.9621))
-    assertThat(result.get("searchScore") as Double).isGreaterThan(0.0)
-    assertThat((result.get("snippet") as String).length).isGreaterThan(0)
-    assertThat(result.getData().keys.sorted())
-      .containsExactly("location", "name", "searchScore", "snippet")
-  }
+  // TODO(search) enable with backend support
+  //  @Test
+  //  fun select_topicalityScoreAndSnippet() {
+  //    val ppl =
+  //      firestore
+  //        .pipeline()
+  //        .collection(COLLECTION_NAME)
+  //        .search(
+  //          SearchStage.withQuery(field("menu").matches("waffles"))
+  //            .withSelect(
+  //              field("name"),
+  //              field("location"),
+  //              score().alias("searchScore"),
+  //              snippet("menu", "waffles").alias("snippet")
+  //            )
+  //            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
+  //        )
+  //
+  //    val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
+  //    assertThat(snapshot.results).hasSize(1)
+  //    val result = snapshot.results[0]
+  //    assertThat(result.get("name")).isEqualTo("The Golden Waffle")
+  //    assertThat(result.get("location")).isEqualTo(GeoPoint(39.7183, -104.9621))
+  //    assertThat(result.get("searchScore") as Double).isGreaterThan(0.0)
+  //    assertThat((result.get("snippet") as String).length).isGreaterThan(0)
+  //    assertThat(result.getData().keys.sorted())
+  //      .containsExactly("location", "name", "searchScore", "snippet")
+  //  }
 
   // sort
   @Test
-  fun sort_byTopicality() {
+  fun sort_byScore() {
     val ppl =
       firestore
         .pipeline()
-        .collection("SearchIntegrationTests")
+        .collection(COLLECTION_NAME)
         .search(
-          SearchStage.withQuery(field("menu").matches("tacos"))
-            .withSort(score().descending())
-            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
-        )
+          SearchStage.withQuery(documentMatches("tacos")).withSort(score().descending())
+          //            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
+          )
 
     val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
     assertResultIds(snapshot, "eastsideTacos", "solTacos")
@@ -462,174 +461,180 @@ class PipelineSearchTest {
     val ppl =
       firestore
         .pipeline()
-        .collection("SearchIntegrationTests")
+        .collection(COLLECTION_NAME)
         .search(
-          SearchStage.withQuery(field("menu").matches("tacos"))
+          SearchStage.withQuery(documentMatches("tacos"))
             .withSort(field("location").geoDistance(GeoPoint(39.6985, -105.024)).ascending())
-            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
-        )
+          //            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
+          )
 
     val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
     assertResultIds(snapshot, "solTacos", "eastsideTacos")
   }
 
-  @Test
-  fun sort_byMultipleOrderings() {
-    val ppl =
-      firestore
-        .pipeline()
-        .collection("SearchIntegrationTests")
-        .search(
-          SearchStage.withQuery(field("menu").matches("tacos OR chicken"))
-            .withSort(
-              field("location").geoDistance(GeoPoint(39.6985, -105.024)).ascending(),
-              score().descending()
-            )
-            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
-        )
-
-    val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
-    assertResultIds(snapshot, "solTacos", "eastsideTacos", "eastsideChicken")
-  }
+  // TODO(search) enable with backend support
+  //  @Test
+  //  fun sort_byMultipleOrderings() {
+  //    val ppl =
+  //      firestore
+  //        .pipeline()
+  //        .collection(COLLECTION_NAME)
+  //        .search(
+  //          SearchStage.withQuery(field("menu").matches("tacos OR chicken"))
+  //            .withSort(
+  //              field("location").geoDistance(GeoPoint(39.6985, -105.024)).ascending(),
+  //              score().descending()
+  //            )
+  //            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
+  //        )
+  //
+  //    val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
+  //    assertResultIds(snapshot, "solTacos", "eastsideTacos", "eastsideChicken")
+  //  }
 
   // limit
-  @Test
-  fun limit_limitsTheNumberOfDocumentsReturned() {
-    val ppl =
-      firestore
-        .pipeline()
-        .collection("SearchIntegrationTests")
-        .search(
-          SearchStage.withQuery(constant(true))
-            .withSort(field("location").geoDistance(GeoPoint(39.6985, -105.024)).ascending())
-            .withLimit(5)
-            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
-        )
+  // TODO(search) enable with backend support
+  //  @Test
+  //  fun limit_limitsTheNumberOfDocumentsReturned() {
+  //    val ppl =
+  //      firestore
+  //        .pipeline()
+  //        .collection(COLLECTION_NAME)
+  //        .search(
+  //          SearchStage.withQuery(constant(true))
+  //            .withSort(field("location").geoDistance(GeoPoint(39.6985, -105.024)).ascending())
+  //            .withLimit(5)
+  //            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
+  //        )
+  //
+  //    val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
+  //    assertResultIds(snapshot, "solTacos", "lotusBlossomThai", "goldenWaffle")
+  //  }
 
-    val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
-    assertResultIds(snapshot, "solTacos", "lotusBlossomThai", "goldenWaffle")
-  }
-
-  @Test
-  fun limit_limitsTheNumberOfDocumentsScored() {
-    val ppl =
-      firestore
-        .pipeline()
-        .collection("SearchIntegrationTests")
-        .search(
-          SearchStage.withQuery(field("menu").matches("chicken OR tacos OR fish OR waffles"))
-            .withRetrievalDepth(6)
-            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
-        )
-
-    val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
-    assertResultIds(snapshot, "eastsideChicken", "eastsideTacos", "solTacos", "mileHighCatch")
-  }
+  // TODO(search) enable with backend support
+  //  @Test
+  //  fun limit_limitsTheNumberOfDocumentsScored() {
+  //    val ppl =
+  //      firestore
+  //        .pipeline()
+  //        .collection(COLLECTION_NAME)
+  //        .search(
+  //          SearchStage.withQuery(field("menu").matches("chicken OR tacos OR fish OR waffles"))
+  //            .withRetrievalDepth(6)
+  //            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
+  //        )
+  //
+  //    val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
+  //    assertResultIds(snapshot, "eastsideChicken", "eastsideTacos", "solTacos", "mileHighCatch")
+  //  }
 
   // offset
-  @Test
-  fun offset_skipsNDocuments() {
-    val ppl =
-      firestore
-        .pipeline()
-        .collection("SearchIntegrationTests")
-        .search(
-          SearchStage.withQuery(constant(true))
-            .withLimit(2)
-            .withOffset(2)
-            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
-        )
-
-    val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
-    assertResultIds(snapshot, "eastsideChicken", "eastsideTacos")
-  }
+  // TODO(search) enable with backend support
+  //  @Test
+  //  fun offset_skipsNDocuments() {
+  //    val ppl =
+  //      firestore
+  //        .pipeline()
+  //        .collection(COLLECTION_NAME)
+  //        .search(
+  //          SearchStage.withQuery(constant(true))
+  //            .withLimit(2)
+  //            .withOffset(2)
+  //            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
+  //        )
+  //
+  //    val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
+  //    assertResultIds(snapshot, "eastsideChicken", "eastsideTacos")
+  //  }
 
   // =========================================================================
   // Snippet
   // =========================================================================
 
-  @Test
-  @Ignore("Snippet options not implemented yet")
-  fun snippetOptions() {
-    val ppl1 =
-      firestore
-        .pipeline()
-        .collection("SearchIntegrationTests")
-        .search(
-          SearchStage.withQuery(field("menu").matches("waffles"))
-            .withAddFields(
-              field("menu")
-                .snippet(SnippetOptions("waffles").withMaxSnippetWidth(10))
-                .alias("snippet")
-            )
-            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
-        )
+  // TODO(search) enable with backend support
+  //  @Test
+  //  @Ignore("Snippet options not implemented yet")
+  //  fun snippetOptions() {
+  //    val ppl1 =
+  //      firestore
+  //        .pipeline()
+  //        .collection(COLLECTION_NAME)
+  //        .search(
+  //          SearchStage.withQuery(field("menu").matches("waffles"))
+  //            .withAddFields(
+  //              field("menu")
+  //                .snippet(SnippetOptions("waffles").withMaxSnippetWidth(10))
+  //                .alias("snippet")
+  //            )
+  //            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
+  //        )
+  //
+  //    val snapshot1 = IntegrationTestUtil.waitFor(ppl1.execute())
+  //    assertThat(snapshot1.results).hasSize(1)
+  //    assertThat(snapshot1.results[0].get("name")).isEqualTo("The Golden Waffle")
+  //    val snip1 = snapshot1.results[0].get("snippet") as String
+  //    assertThat(snip1.length).isGreaterThan(0)
+  //
+  //    val ppl2 =
+  //      firestore
+  //        .pipeline()
+  //        .collection(COLLECTION_NAME)
+  //        .search(
+  //          SearchStage.withQuery(field("menu").matches("waffles"))
+  //            .withAddFields(
+  //              field("menu")
+  //                .snippet(SnippetOptions("waffles").withMaxSnippetWidth(1000))
+  //                .alias("snippet")
+  //            )
+  //            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
+  //        )
+  //
+  //    val snapshot2 = IntegrationTestUtil.waitFor(ppl2.execute())
+  //    assertThat(snapshot2.results).hasSize(1)
+  //    assertThat(snapshot2.results[0].get("name")).isEqualTo("The Golden Waffle")
+  //    val snip2 = snapshot2.results[0].get("snippet") as String
+  //    assertThat(snip2.length).isGreaterThan(snip1.length)
+  //  }
 
-    val snapshot1 = IntegrationTestUtil.waitFor(ppl1.execute())
-    assertThat(snapshot1.results).hasSize(1)
-    assertThat(snapshot1.results[0].get("name")).isEqualTo("The Golden Waffle")
-    val snip1 = snapshot1.results[0].get("snippet") as String
-    assertThat(snip1.length).isGreaterThan(0)
-
-    val ppl2 =
-      firestore
-        .pipeline()
-        .collection("SearchIntegrationTests")
-        .search(
-          SearchStage.withQuery(field("menu").matches("waffles"))
-            .withAddFields(
-              field("menu")
-                .snippet(SnippetOptions("waffles").withMaxSnippetWidth(1000))
-                .alias("snippet")
-            )
-            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
-        )
-
-    val snapshot2 = IntegrationTestUtil.waitFor(ppl2.execute())
-    assertThat(snapshot2.results).hasSize(1)
-    assertThat(snapshot2.results[0].get("name")).isEqualTo("The Golden Waffle")
-    val snip2 = snapshot2.results[0].get("snippet") as String
-    assertThat(snip2.length).isGreaterThan(snip1.length)
-  }
-
-  @Test
-  fun snippetOnMultipleFields() {
-    // Get snippet from 1 field
-    val ppl1 =
-      firestore
-        .pipeline()
-        .collection("SearchIntegrationTests")
-        .search(
-          SearchStage.withQuery(documentMatches("waffle"))
-            .withAddFields(field("menu").snippet("waffles").alias("snippet"))
-            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
-        )
-
-    val snapshot1 = IntegrationTestUtil.waitFor(ppl1.execute())
-    assertThat(snapshot1.results).hasSize(1)
-    assertThat(snapshot1.results[0].get("name")).isEqualTo("The Golden Waffle")
-    val snip1 = snapshot1.results[0].get("snippet") as String
-    assertThat(snip1.length).isGreaterThan(0)
-
-    // Get snippet from 2 fields
-    val ppl2 =
-      firestore
-        .pipeline()
-        .collection("SearchIntegrationTests")
-        .search(
-          SearchStage.withQuery(documentMatches("waffle"))
-            .withAddFields(
-              concat(field("menu"), field("description"))
-                .snippet(SnippetOptions("waffles").withMaxSnippetWidth(2000))
-                .alias("snippet")
-            )
-            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
-        )
-
-    val snapshot2 = IntegrationTestUtil.waitFor(ppl2.execute())
-    assertThat(snapshot2.results).hasSize(1)
-    assertThat(snapshot2.results[0].get("name")).isEqualTo("The Golden Waffle")
-    val snip2 = snapshot2.results[0].get("snippet") as String
-    assertThat(snip2.length).isGreaterThan(snip1.length)
-  }
+  // TODO(search) enable with backend support
+  //  @Test
+  //  fun snippetOnMultipleFields() {
+  //    // Get snippet from 1 field
+  //    val ppl1 =
+  //      firestore
+  //        .pipeline()
+  //        .collection(COLLECTION_NAME)
+  //        .search(
+  //          SearchStage.withQuery(documentMatches("waffle"))
+  //            .withAddFields(field("menu").snippet("waffles").alias("snippet"))
+  //            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
+  //        )
+  //
+  //    val snapshot1 = IntegrationTestUtil.waitFor(ppl1.execute())
+  //    assertThat(snapshot1.results).hasSize(1)
+  //    assertThat(snapshot1.results[0].get("name")).isEqualTo("The Golden Waffle")
+  //    val snip1 = snapshot1.results[0].get("snippet") as String
+  //    assertThat(snip1.length).isGreaterThan(0)
+  //
+  //    // Get snippet from 2 fields
+  //    val ppl2 =
+  //      firestore
+  //        .pipeline()
+  //        .collection(COLLECTION_NAME)
+  //        .search(
+  //          SearchStage.withQuery(documentMatches("waffle"))
+  //            .withAddFields(
+  //              concat(field("menu"), field("description"))
+  //                .snippet(SnippetOptions("waffles").withMaxSnippetWidth(2000))
+  //                .alias("snippet")
+  //            )
+  //            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
+  //        )
+  //
+  //    val snapshot2 = IntegrationTestUtil.waitFor(ppl2.execute())
+  //    assertThat(snapshot2.results).hasSize(1)
+  //    assertThat(snapshot2.results[0].get("name")).isEqualTo("The Golden Waffle")
+  //    val snip2 = snapshot2.results[0].get("snippet") as String
+  //    assertThat(snip2.length).isGreaterThan(snip1.length)
+  //  }
 }
