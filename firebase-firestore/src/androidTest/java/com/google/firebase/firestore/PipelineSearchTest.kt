@@ -417,6 +417,27 @@ class PipelineSearchTest {
     assertThat(result.get("searchScore") as Double).isGreaterThan(0.0)
     //    assertThat((result.get("snippet") as String).length).isGreaterThan(0)
   }
+  @Test
+  fun addFields_geoDistance() {
+    val ppl =
+      firestore
+        .pipeline()
+        .collection(COLLECTION_NAME)
+        .search(
+          SearchStage.withQuery(documentMatches("waffles"))
+            .withAddFields(
+              field("location").geoDistance(GeoPoint(39.6985, -105.024)).alias("distance"),
+            )
+          //            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
+          )
+        .select("name", "distance")
+
+    val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
+    assertThat(snapshot.results).hasSize(1)
+    val result = snapshot.results[0]
+    assertThat(result.get("name")).isEqualTo("The Golden Waffle")
+    assertThat(result.get("distance") as Double).isGreaterThan(0.0)
+  }
 
   // select
   // TODO(search) enable with backend support
