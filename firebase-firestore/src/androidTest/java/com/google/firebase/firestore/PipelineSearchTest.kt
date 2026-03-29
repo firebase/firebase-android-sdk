@@ -14,6 +14,7 @@
 package com.google.firebase.firestore
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks
 import com.google.common.truth.Truth.assertThat
@@ -122,6 +123,13 @@ class PipelineSearchTest {
     @JvmStatic
     @BeforeClass
     fun setupRestaurantDocs() {
+      Assume.assumeTrue(
+        "true".equals(
+          InstrumentationRegistry.getArguments().getString("RUN_SEARCH_TESTS"),
+          ignoreCase = true
+        )
+      )
+
       Assume.assumeTrue(
         IntegrationTestUtil.getBackendEdition() == IntegrationTestUtil.BackendEdition.ENTERPRISE
       )
