@@ -1994,22 +1994,12 @@ public class PipelineTest {
     Map<String, Object> hitchhikerResult;
     Map<String, Object> duneResult;
 
-    switch (IntegrationTestUtil.getTargetBackend()) {
-      case NIGHTLY:
-        hitchhikerResult =
-            mapOfEntries(
-                entry("title", "The Hitchhiker's Guide to the Galaxy"),
-                entry("awards", ImmutableMap.of("hugo", true)));
-        duneResult =
-            mapOfEntries(entry("title", "Dune"), entry("awards", ImmutableMap.of("hugo", true)));
-        break;
-      default:
-        hitchhikerResult =
-            mapOfEntries(
-                entry("title", "The Hitchhiker's Guide to the Galaxy"), entry("awards.hugo", true));
-        duneResult = mapOfEntries(entry("title", "Dune"), entry("awards.hugo", true));
-        break;
-    }
+    hitchhikerResult =
+        mapOfEntries(
+            entry("title", "The Hitchhiker's Guide to the Galaxy"),
+            entry("awards", ImmutableMap.of("hugo", true)));
+    duneResult =
+        mapOfEntries(entry("title", "Dune"), entry("awards", ImmutableMap.of("hugo", true)));
 
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
@@ -2017,7 +2007,7 @@ public class PipelineTest {
   }
 
   @Test
-  public void testMapGetWithFieldNameIncludingNotation() {
+  public void testMapGetWithFieldNameIncludingDotNotation() {
     Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
@@ -2032,27 +2022,16 @@ public class PipelineTest {
 
     Map<String, Object> hitchhikerResult;
     Map<String, Object> duneResult;
-
-    switch (IntegrationTestUtil.getTargetBackend()) {
-      case NIGHTLY:
-        hitchhikerResult =
-            mapOfEntries(
-                entry("title", "The Hitchhiker's Guide to the Galaxy"),
-                entry("nestedField", ImmutableMap.of("level", ImmutableMap.of())),
-                entry("nested", true));
-        duneResult =
-            mapOfEntries(
-                entry("title", "Dune"),
-                entry("nestedField", ImmutableMap.of("level", ImmutableMap.of())),
-                entry("nested", null));
-        break;
-      default:
-        hitchhikerResult =
-            mapOfEntries(
-                entry("title", "The Hitchhiker's Guide to the Galaxy"), entry("nested", true));
-        duneResult = mapOfEntries(entry("title", "Dune"));
-        break;
-    }
+    hitchhikerResult =
+        mapOfEntries(
+            entry("title", "The Hitchhiker's Guide to the Galaxy"),
+            entry("nestedField", ImmutableMap.of("level", ImmutableMap.of())),
+            entry("nested", true));
+    duneResult =
+        mapOfEntries(
+            entry("title", "Dune"),
+            entry("nestedField", ImmutableMap.of("level", ImmutableMap.of())),
+            entry("nested", null));
 
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
