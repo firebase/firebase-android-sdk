@@ -1,5 +1,7 @@
 # Unreleased
 
+- [feature] Added support for `timestampTruncate`, `timestampDiff`, and `timestampExtract` Pipeline expressions.
+  [#7955](https://github.com/firebase/firebase-android-sdk/pull/7955)
 - [feature] Pipeline operations are GA now.
 - [feature] Added support for Pipeline Subqueries, including `define` and `variable` expressions.
   [#7736](https://github.com/firebase/firebase-android-sdk/pull/7736)
@@ -9,6 +11,8 @@
   [#7893](https://github.com/firebase/firebase-android-sdk/pull/7893)
 - [feature] Added support for `rand` and `trunc` Pipeline expressions.
   [#7886](https://github.com/firebase/firebase-android-sdk/pull/7886)
+- [feature] Added support for `mapGet` `mapSet`, `mapEntries`, and `mapKeys` Pipeline expressions.
+  [#7987](https://github.com/firebase/firebase-android-sdk/pull/7987)
 
 # 26.1.2
 
