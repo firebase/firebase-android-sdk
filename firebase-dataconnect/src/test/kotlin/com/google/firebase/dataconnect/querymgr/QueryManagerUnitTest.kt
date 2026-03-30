@@ -530,7 +530,7 @@ class QueryManagerUnitTest {
   fun `execute() deduplicates identical queries, even with different callerSdkType`() =
     verifyExecuteDeduplication(
       transformExecuteArguments = {
-        val callerSdkType = CallerSdkType.entries.random(it.random)
+        val callerSdkType = CallerSdkType.entries.random(randomSource().random)
         it.args.copy(callerSdkType = callerSdkType)
       },
       verifyResults = { valuePrefix, _, _, results ->
@@ -612,17 +612,64 @@ class QueryManagerUnitTest {
     )
   }
 
+  @Test
+  fun `execute() does NOT deduplicate queries with distinct operationName`() {
+    val generatedOperationNames = CopyOnWriteArrayList<String>()
+    verifyExecuteDeduplication(
+      transformExecuteArguments = {
+        val operationName = Arb.constant("${it.args.operationName}${it.jobIndex}").bind()
+        generatedOperationNames.add(operationName)
+        it.args.copy(operationName = operationName)
+      },
+      verifyResults = { valuePrefix, _, executeCount, results ->
+        val values = results.map { it.value }
+        val expectedValues = List(executeCount) { "$valuePrefix $it" }
+        values shouldContainExactlyInAnyOrder expectedValues
+      },
+      calculateExpectedExecuteQueryInvocationCount = { executeCount -> executeCount },
+      verifyExecuteQueryInvocations = { invocations ->
+        val operationNames = invocations.map { it.requestProto.operationName }
+        operationNames shouldContainExactlyInAnyOrder generatedOperationNames.toList()
+        generatedOperationNames.clear()
+      }
+    )
+  }
+
+  @Test
+  fun `execute() does NOT deduplicate queries with distinct variables`() {
+    val generatedVariables = CopyOnWriteArrayList<TestVariables>()
+    verifyExecuteDeduplication(
+      transformExecuteArguments = {
+        val variables = it.args.variables.copy(value = "vars${it.jobIndex}")
+        generatedVariables.add(variables)
+        it.args.copy(variables = variables)
+      },
+      verifyResults = { valuePrefix, _, executeCount, results ->
+        val values = results.map { it.value }
+        val expectedValues = List(executeCount) { "$valuePrefix $it" }
+        values shouldContainExactlyInAnyOrder expectedValues
+      },
+      calculateExpectedExecuteQueryInvocationCount = { executeCount -> executeCount },
+      verifyExecuteQueryInvocations = { invocations ->
+        val variables = invocations.map { it.requestProto.variables }
+        variables shouldContainExactlyInAnyOrder generatedVariables.map { it.encodeToStruct() }
+        generatedVariables.clear()
+      }
+    )
+  }
+
   private data class VerifyExecuteDeduplicationCallbackArguments(
     val valuePrefix: String,
     val valuePrefixOverride: String,
     val jobIndex: Int,
     val args: ExecuteArguments<TestData, TestVariables>,
-    val random: Random,
   )
 
   private fun <Data> verifyExecuteDeduplication(
     transformExecuteArguments:
-      (args: VerifyExecuteDeduplicationCallbackArguments) -> ExecuteArguments<Data, TestVariables>,
+      PropertyContext.(args: VerifyExecuteDeduplicationCallbackArguments) -> ExecuteArguments<
+          Data, TestVariables
+        >,
     verifyResults:
       (valuePrefix: String, valuePrefixOverride: String, executeCount: Int, List<Data>) -> Unit,
     newDataConnectAuth: PropertyContext.() -> DataConnectAuth? = { null },
@@ -641,7 +688,6 @@ class QueryManagerUnitTest {
           valuePrefixOverride = valuePrefixOverride,
           jobIndex = -1,
           args = args,
-          random = randomSource().random,
         )
       val latch = SuspendingCountDownLatch(10)
       val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk {
