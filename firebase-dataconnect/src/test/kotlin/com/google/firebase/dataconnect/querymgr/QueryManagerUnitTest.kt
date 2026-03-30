@@ -20,6 +20,7 @@ package com.google.firebase.dataconnect.querymgr
 
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.QueryRef
+import com.google.firebase.dataconnect.core.AuthUidChangedException
 import com.google.firebase.dataconnect.core.DataConnectAppCheck
 import com.google.firebase.dataconnect.core.DataConnectAuth
 import com.google.firebase.dataconnect.core.DataConnectGrpcRPCs
@@ -34,11 +35,17 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.mock
 import com.google.firebase.dataconnect.testutil.property.arbitrary.pair
 import com.google.firebase.dataconnect.testutil.property.arbitrary.withIterations
 import com.google.firebase.dataconnect.testutil.shouldBe
+import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
+import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.firebase.util.nextAlphanumericString
 import com.google.protobuf.Struct
 import google.firebase.dataconnect.proto.ExecuteQueryRequest
 import google.firebase.dataconnect.proto.ExecuteQueryResponse
+import io.grpc.Status
+import io.grpc.StatusException
+import io.kotest.assertions.assertSoftly
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.common.DelicateKotest
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
@@ -52,6 +59,7 @@ import io.kotest.property.PropertyContext
 import io.kotest.property.ShrinkingMode
 import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.alphanumeric
+import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.distinct
@@ -63,6 +71,8 @@ import io.kotest.property.checkAll
 import io.mockk.CapturingSlot
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.coVerifySequence
+import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import java.util.concurrent.CopyOnWriteArrayList
@@ -656,6 +666,152 @@ class QueryManagerUnitTest {
         generatedVariables.clear()
       }
     )
+  }
+
+  @Test
+  fun `execute() on UNAUTHENTICATED error retries with new tokens`() = runTest {
+    checkAll(
+      propTestConfig,
+      executeArgumentsArb(),
+      alphanumericStringArb(),
+    ) { args, responseString ->
+      val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk {
+        val invocationIndex = AtomicInteger(0)
+        coEvery { executeQuery(any(), any(), any(), any(), any()) } answers
+          {
+            if (invocationIndex.getAndIncrement() == 0) {
+              throw StatusException(Status.UNAUTHENTICATED)
+            }
+            responseString.encodeToExecuteQueryResponse()
+          }
+      }
+      val queryManager: QueryManager = buildQueryManager {
+        setDataConnectGrpcRPCs(dataConnectGrpcRPCs)
+        setDataConnectAuth(
+          mockk {
+            val tokenIndex = AtomicInteger(1)
+            coEvery { getToken(any()) } answers
+              {
+                DataConnectAuth.GetAuthTokenResult(
+                  token = "authToken${tokenIndex.get()}",
+                  authUid = "testAuthUid",
+                )
+              }
+            every { forceRefresh() } answers { tokenIndex.incrementAndGet() }
+          }
+        )
+        setDataConnectAppCheck(
+          mockk {
+            val tokenIndex = AtomicInteger(1)
+            coEvery { getToken(any()) } answers
+              {
+                DataConnectAppCheck.GetAppCheckTokenResult(
+                  token = "appCheckToken${tokenIndex.get()}",
+                )
+              }
+            every { forceRefresh() } answers { tokenIndex.incrementAndGet() }
+          }
+        )
+      }
+
+      val result = queryManager.execute(args)
+
+      result shouldBe TestData(responseString)
+      val capturedRequestIds = mutableListOf<String>()
+      val capturedRequestProtos = mutableListOf<ExecuteQueryRequest>()
+      coVerifySequence {
+        dataConnectGrpcRPCs.executeQuery(
+          capture(capturedRequestIds),
+          capture(capturedRequestProtos),
+          eq("authToken1"),
+          eq("appCheckToken1"),
+          eq(args.callerSdkType)
+        )
+        dataConnectGrpcRPCs.executeQuery(
+          capture(capturedRequestIds),
+          capture(capturedRequestProtos),
+          eq("authToken2"),
+          eq("appCheckToken2"),
+          eq(args.callerSdkType)
+        )
+      }
+      assertSoftly {
+        capturedRequestIds.distinct().shouldHaveSize(1)
+        capturedRequestProtos.distinct().shouldHaveSize(1)
+      }
+    }
+  }
+
+  @Test
+  fun `execute() on UNAUTHENTICATED error does NOT retry when tokens unchanged`() = runTest {
+    checkAll(
+      propTestConfig,
+      executeArgumentsArb(),
+      Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.33),
+      Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.33),
+    ) { args, authTokenResult, appCheckTokenResult ->
+      val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk {
+        coEvery { executeQuery(any(), any(), any(), any(), any()) } throws
+          StatusException(Status.UNAUTHENTICATED)
+      }
+      val queryManager: QueryManager = buildQueryManager {
+        setDataConnectGrpcRPCs(dataConnectGrpcRPCs)
+        setDataConnectAuth(
+          mockk(relaxed = true) { coEvery { getToken(any()) } returns authTokenResult }
+        )
+        setDataConnectAppCheck(
+          mockk(relaxed = true) { coEvery { getToken(any()) } returns appCheckTokenResult }
+        )
+      }
+
+      val statusException = shouldThrow<StatusException> { queryManager.execute(args) }
+
+      statusException.status.code shouldBe Status.UNAUTHENTICATED.code
+      coVerify(exactly = 1) { dataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any()) }
+    }
+  }
+
+  @Test
+  fun `execute() on UNAUTHENTICATED error throws if authUid changes`() = runTest {
+    val authTokenWithDistinctAuthUidArb = run {
+      val nextIndex = AtomicInteger(0)
+      Arb.dataConnect.authTokenResult(
+        accessToken = Arb.dataConnect.accessToken(),
+        authUid = arbitrary { "authToken${nextIndex.incrementAndGet()}" },
+      )
+    }
+    checkAll(
+      propTestConfig,
+      executeArgumentsArb(),
+      authTokenWithDistinctAuthUidArb.pair(),
+      Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.33),
+    ) { args, authTokenResults, appCheckTokenResult ->
+      val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk {
+        coEvery { executeQuery(any(), any(), any(), any(), any()) } throws
+          StatusException(Status.UNAUTHENTICATED)
+      }
+      val queryManager: QueryManager = buildQueryManager {
+        setDataConnectGrpcRPCs(dataConnectGrpcRPCs)
+        setDataConnectAuth(
+          mockk(relaxed = true) {
+            coEvery { getToken(any()) } returnsMany (authTokenResults.toList())
+          }
+        )
+        setDataConnectAppCheck(
+          mockk(relaxed = true) { coEvery { getToken(any()) } returns appCheckTokenResult }
+        )
+      }
+
+      val exception = shouldThrow<AuthUidChangedException> { queryManager.execute(args) }
+
+      assertSoftly {
+        exception.message shouldContainWithNonAbuttingText "x7md4h6atc"
+        exception.message shouldContainWithNonAbuttingText authTokenResults.value1.authUid!!
+        exception.message shouldContainWithNonAbuttingText authTokenResults.value2.authUid!!
+        exception.message shouldContainWithNonAbuttingTextIgnoringCase "authUid changed"
+      }
+      coVerify(exactly = 1) { dataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any()) }
+    }
   }
 
   private data class VerifyExecuteDeduplicationCallbackArguments(

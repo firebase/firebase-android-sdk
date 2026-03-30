@@ -18,6 +18,7 @@ package com.google.firebase.dataconnect.core
 
 import android.content.Context
 import com.google.android.gms.security.ProviderInstaller
+import com.google.firebase.dataconnect.DataConnectException
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.core.DataConnectGrpcMetadata.Companion.toStructProto
 import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
@@ -53,6 +54,8 @@ import google.firebase.dataconnect.proto.StreamResponse
 import io.grpc.ManagedChannelBuilder
 import io.grpc.Metadata
 import io.grpc.MethodDescriptor
+import io.grpc.Status
+import io.grpc.StatusException
 import io.grpc.android.AndroidChannelBuilder
 import java.io.File
 import java.util.concurrent.TimeUnit
@@ -674,3 +677,55 @@ private fun StreamResponse.toDataConnectStreamResponse():
     null
   }
 }
+
+private val StatusException.isGrpcUnauthenticatedError: Boolean
+  get() = status.code == Status.UNAUTHENTICATED.code
+
+internal inline fun <T> retryOnGrpcUnauthenticatedError(
+  requestId: String,
+  getAuthToken: () -> DataConnectAuth.GetAuthTokenResult?,
+  getAppCheckToken: () -> DataConnectAppCheck.GetAppCheckTokenResult?,
+  forceRefreshTokens: () -> Unit,
+  logger: Logger,
+  block: (DataConnectAuth.GetAuthTokenResult?, DataConnectAppCheck.GetAppCheckTokenResult?) -> T,
+): T {
+  val authToken1 = getAuthToken()
+  val appCheckToken1 = getAppCheckToken()
+  val authUid1: String? = authToken1?.authUid
+
+  val statusException: StatusException = run {
+    try {
+      return block(authToken1, appCheckToken1)
+    } catch (e: StatusException) {
+      e
+    }
+  }
+
+  if (!statusException.isGrpcUnauthenticatedError) {
+    throw statusException
+  }
+
+  // TODO(b/356877295) Only invalidate auth or appcheck tokens, but not both, to avoid
+  //  spamming the appcheck attestation provider.
+  forceRefreshTokens()
+
+  val authToken2 = getAuthToken()
+  val appCheckToken2 = getAppCheckToken()
+  if (authToken1?.token == authToken2?.token && appCheckToken1?.token == appCheckToken2?.token) {
+    throw statusException
+  }
+
+  logger.warn(statusException) {
+    "[rid=$requestId] retrying with fresh Auth and/or AppCheck tokens " +
+      "due to UNAUTHENTICATED error"
+  }
+
+  val authUid2 = authToken2?.authUid
+  if (authUid1 != authUid2) {
+    throw AuthUidChangedException("authUid changed from $authUid1 to $authUid2 [x7md4h6atc]")
+  }
+
+  return block(authToken2, appCheckToken2)
+}
+
+internal class AuthUidChangedException(message: String) : DataConnectException(message)

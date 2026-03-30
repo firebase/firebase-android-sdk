@@ -24,6 +24,7 @@ import com.google.firebase.dataconnect.core.DataConnectGrpcRPCs
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
+import com.google.firebase.dataconnect.core.retryOnGrpcUnauthenticatedError
 import com.google.firebase.dataconnect.querymgr.LocalQuery.ExecuteResult
 import com.google.firebase.dataconnect.util.ImmutableByteArray
 import com.google.firebase.dataconnect.util.ProtoUtil.calculateSha512
@@ -87,9 +88,10 @@ internal class QueryManager(
     callerSdkType: FirebaseDataConnect.CallerSdkType,
     fetchPolicy: QueryRef.FetchPolicy,
   ): Data {
-    val sequenceNumber = nextSequenceNumber()
     val requestId = withContext(ioDispatcher) { secureRandom.nextQueryRequestId() }
-    logger.debug { "[rid=$requestId] Executing query with operationName=$operationName" }
+    logger.debug {
+      "[rid=$requestId] Executing query with operationName=$operationName and variables=$variables"
+    }
 
     val requestProto: ExecuteQueryRequestProto
     val queryId: ImmutableByteArray
@@ -105,27 +107,36 @@ internal class QueryManager(
           .build()
     }
 
-    val authTokenResult = dataConnectAuth.getToken(requestId)
-    val appCheckTokenResult = dataConnectAppCheck.getToken(requestId)
-
-    val localKey =
-      LocalQueries.Key(
-        authUid = authTokenResult?.authUid,
-        queryId = queryId,
-        dataDeserializer = dataDeserializer,
-        dataSerializersModule = dataSerializersModule,
-        fetchPolicy = fetchPolicy,
-      )
-
-    return execute(
+    return retryOnGrpcUnauthenticatedError(
       requestId = requestId,
-      sequenceNumber = sequenceNumber,
-      localKey = localKey,
-      authToken = authTokenResult?.token,
-      appCheckToken = appCheckTokenResult?.token,
-      requestProto = requestProto,
-      callerSdkType = callerSdkType,
-    )
+      getAuthToken = { dataConnectAuth.getToken(requestId) },
+      getAppCheckToken = { dataConnectAppCheck.getToken(requestId) },
+      forceRefreshTokens = {
+        // TODO: Deduplicate forceRefresh() calls with other parallel calls
+        dataConnectAuth.forceRefresh()
+        dataConnectAppCheck.forceRefresh()
+      },
+      logger,
+    ) { authTokenResult, appCheckTokenResult ->
+      val localKey =
+        LocalQueries.Key(
+          authUid = authTokenResult?.authUid,
+          queryId = queryId,
+          dataDeserializer = dataDeserializer,
+          dataSerializersModule = dataSerializersModule,
+          fetchPolicy = fetchPolicy,
+        )
+
+      execute(
+        requestId = requestId,
+        sequenceNumber = nextSequenceNumber(),
+        localKey = localKey,
+        authToken = authTokenResult?.token,
+        appCheckToken = appCheckTokenResult?.token,
+        requestProto = requestProto,
+        callerSdkType = callerSdkType,
+      )
+    }
   }
 
   private suspend fun <Data> execute(
