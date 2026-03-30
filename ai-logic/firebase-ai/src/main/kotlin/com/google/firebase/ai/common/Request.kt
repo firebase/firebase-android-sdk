@@ -91,7 +91,6 @@ internal data class GenerateImageRequest(
   val instances: List<ImagenPrompt>,
   val parameters: ImagenParameters,
 ) : Request {
-
   @Serializable
   internal data class ImagenPrompt(
     val prompt: String?,
