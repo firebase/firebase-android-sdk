@@ -20,7 +20,6 @@ import com.google.android.gms.tasks.Tasks
 import com.google.common.truth.Truth.assertThat
 import com.google.firebase.firestore.pipeline.Expression.Companion.and
 import com.google.firebase.firestore.pipeline.Expression.Companion.documentMatches
-import com.google.firebase.firestore.pipeline.Expression.Companion.field
 import com.google.firebase.firestore.pipeline.Expression.Companion.score
 import com.google.firebase.firestore.pipeline.SearchStage
 import com.google.firebase.firestore.testutil.IntegrationTestUtil
@@ -218,22 +217,23 @@ class PipelineSearchTest {
   //    assertResultIds(snapshot, "goldenWaffle")
   //  }
 
-  @Test
-  fun geoNearQuery() {
-    val ppl =
-      firestore
-        .pipeline()
-        .collection(COLLECTION_NAME)
-        .search(
-          SearchStage.withQuery(
-            field("location").geoDistance(GeoPoint(39.6985, -105.024)).lessThan(1000)
-          )
-          //            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
-          )
-
-    val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
-    assertResultIds(snapshot, "solTacos")
-  }
+  // TODO(search) enable with backend support
+  //  @Test
+  //  fun geoNearQuery() {
+  //    val ppl =
+  //      firestore
+  //        .pipeline()
+  //        .collection(COLLECTION_NAME)
+  //        .search(
+  //          SearchStage.withQuery(
+  //            field("location").geoDistance(GeoPoint(39.6985, -105.024)).lessThan(1000)
+  //          )
+  //          //            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
+  //          )
+  //
+  //    val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
+  //    assertResultIds(snapshot, "solTacos")
+  //  }
 
   // TODO(search) enable with backend support
   //  @Test
@@ -417,27 +417,29 @@ class PipelineSearchTest {
     assertThat(result.get("searchScore") as Double).isGreaterThan(0.0)
     //    assertThat((result.get("snippet") as String).length).isGreaterThan(0)
   }
-  @Test
-  fun addFields_geoDistance() {
-    val ppl =
-      firestore
-        .pipeline()
-        .collection(COLLECTION_NAME)
-        .search(
-          SearchStage.withQuery(documentMatches("waffles"))
-            .withAddFields(
-              field("location").geoDistance(GeoPoint(39.6985, -105.024)).alias("distance"),
-            )
-          //            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
-          )
-        .select("name", "distance")
 
-    val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
-    assertThat(snapshot.results).hasSize(1)
-    val result = snapshot.results[0]
-    assertThat(result.get("name")).isEqualTo("The Golden Waffle")
-    assertThat(result.get("distance") as Double).isGreaterThan(0.0)
-  }
+  // TODO(search) enable with backend support
+  //  @Test
+  //  fun addFields_geoDistance() {
+  //    val ppl =
+  //      firestore
+  //        .pipeline()
+  //        .collection(COLLECTION_NAME)
+  //        .search(
+  //          SearchStage.withQuery(documentMatches("waffles"))
+  //            .withAddFields(
+  //              field("location").geoDistance(GeoPoint(39.6985, -105.024)).alias("distance"),
+  //            )
+  //          //            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
+  //          )
+  //        .select("name", "distance")
+  //
+  //    val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
+  //    assertThat(snapshot.results).hasSize(1)
+  //    val result = snapshot.results[0]
+  //    assertThat(result.get("name")).isEqualTo("The Golden Waffle")
+  //    assertThat(result.get("distance") as Double).isGreaterThan(0.0)
+  //  }
 
   // select
   // TODO(search) enable with backend support
@@ -485,21 +487,22 @@ class PipelineSearchTest {
     assertResultIds(snapshot, "eastsideTacos", "solTacos")
   }
 
-  @Test
-  fun sort_byDistance() {
-    val ppl =
-      firestore
-        .pipeline()
-        .collection(COLLECTION_NAME)
-        .search(
-          SearchStage.withQuery(documentMatches("tacos"))
-            .withSort(field("location").geoDistance(GeoPoint(39.6985, -105.024)).ascending())
-          //            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
-          )
-
-    val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
-    assertResultIds(snapshot, "solTacos", "eastsideTacos")
-  }
+  // TODO(search) enable with backend support
+  //  @Test
+  //  fun sort_byDistance() {
+  //    val ppl =
+  //      firestore
+  //        .pipeline()
+  //        .collection(COLLECTION_NAME)
+  //        .search(
+  //          SearchStage.withQuery(documentMatches("tacos"))
+  //            .withSort(field("location").geoDistance(GeoPoint(39.6985, -105.024)).ascending())
+  //          //            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
+  //          )
+  //
+  //    val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
+  //    assertResultIds(snapshot, "solTacos", "eastsideTacos")
+  //  }
 
   // TODO(search) enable with backend support
   //  @Test

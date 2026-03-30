@@ -6563,49 +6563,55 @@ abstract class Expression internal constructor() {
     @JvmStatic
     fun currentDocument(): Expression = FunctionExpression("current_document", notImplemented)
 
-    /**
-     * Evaluates to the distance in meters between the location in the specified field and the query
-     * location.
-     *
-     * Note: This Expression can only be used within a `Search` stage.
-     *
-     * @example
-     * ```kotlin
-     * db.pipeline().collection("restaurants").search(
-     *   SearchStage(query = documentMatches("waffles"), sort = arrayOf(geoDistance("location", GeoPoint(37.0, -122.0)).ascending()))
-     * )
-     * ```
-     *
-     * @param fieldName Specifies the field in the document which contains the first GeoPoint for
-     * distance computation.
-     * @param location Compute distance to this GeoPoint.
-     */
-    @Beta
-    @JvmStatic
-    fun geoDistance(fieldName: String, location: GeoPoint): Expression =
-      geoDistance(field(fieldName), location)
-
-    /**
-     * Evaluates to the distance in meters between the location in the specified field and the query
-     * location.
-     *
-     * Note: This Expression can only be used within a `Search` stage.
-     *
-     * @example
-     * ```kotlin
-     * db.pipeline().collection("restaurants").search(
-     *   SearchStage(query = documentMatches("waffles"), sort = arrayOf(geoDistance(field("location"), GeoPoint(37.0, -122.0)).ascending()))
-     * )
-     * ```
-     *
-     * @param field Specifies the field in the document which contains the first GeoPoint for
-     * distance computation.
-     * @param location Compute distance to this GeoPoint.
-     */
-    @Beta
-    @JvmStatic
-    fun geoDistance(field: Field, location: GeoPoint): Expression =
-      FunctionExpression("geo_distance", notImplemented, field, constant(location))
+    // TODO(search) enable with backend support
+    //    /**
+    //     * Evaluates to the distance in meters between the location in the specified field and the
+    // query
+    //     * location.
+    //     *
+    //     * Note: This Expression can only be used within a `Search` stage.
+    //     *
+    //     * @example
+    //     * ```kotlin
+    //     * db.pipeline().collection("restaurants").search(
+    //     *   SearchStage(query = documentMatches("waffles"), sort =
+    // arrayOf(geoDistance("location", GeoPoint(37.0, -122.0)).ascending()))
+    //     * )
+    //     * ```
+    //     *
+    //     * @param fieldName Specifies the field in the document which contains the first GeoPoint
+    // for
+    //     * distance computation.
+    //     * @param location Compute distance to this GeoPoint.
+    //     */
+    //    @Beta
+    //    @JvmStatic
+    //    fun geoDistance(fieldName: String, location: GeoPoint): Expression =
+    //      geoDistance(field(fieldName), location)
+    //
+    //    /**
+    //     * Evaluates to the distance in meters between the location in the specified field and the
+    // query
+    //     * location.
+    //     *
+    //     * Note: This Expression can only be used within a `Search` stage.
+    //     *
+    //     * @example
+    //     * ```kotlin
+    //     * db.pipeline().collection("restaurants").search(
+    //     *   SearchStage(query = documentMatches("waffles"), sort =
+    // arrayOf(geoDistance(field("location"), GeoPoint(37.0, -122.0)).ascending()))
+    //     * )
+    //     * ```
+    //     *
+    //     * @param field Specifies the field in the document which contains the first GeoPoint for
+    //     * distance computation.
+    //     * @param location Compute distance to this GeoPoint.
+    //     */
+    //    @Beta
+    //    @JvmStatic
+    //    fun geoDistance(field: Field, location: GeoPoint): Expression =
+    //      FunctionExpression("geo_distance", notImplemented, field, constant(location))
 
     /**
      * Perform a full-text search on all indexed search fields in the document.
@@ -9515,15 +9521,17 @@ class Field internal constructor(internal val fieldPath: ModelFieldPath) : Selec
     return fieldPath.hashCode()
   }
 
-  /**
-   * Evaluates to the distance in meters between the location specified by this field and the query
-   * location.
-   *
-   * Note: This Expression can only be used within a `Search` stage.
-   *
-   * @param location Compute distance to this GeoPoint.
-   */
-  @Beta fun geoDistance(location: GeoPoint): Expression = geoDistance(this, location)
+  //  /**
+  //   * Evaluates to the distance in meters between the location specified by this field and the
+  // query
+  //   * location.
+  //   *
+  //   * Note: This Expression can only be used within a `Search` stage.
+  //   *
+  //   * @param location Compute distance to this GeoPoint.
+  //   */
+  // TODO(search) enable with backend support
+  //  @Beta fun geoDistance(location: GeoPoint): Expression = geoDistance(this, location)
 
   //  /**
   //   * Perform a full-text search on this field.

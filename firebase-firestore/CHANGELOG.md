@@ -11,7 +11,7 @@
   [#7893](https://github.com/firebase/firebase-android-sdk/pull/7893)
 - [feature] Added support for `rand` and `trunc` Pipeline expressions.
   [#7886](https://github.com/firebase/firebase-android-sdk/pull/7886)
-- [feature] Add public preview support for full-text search and geo search.
+- [feature] Add public preview support for full-text search.
   [#7949](https://github.com/firebase/firebase-android-sdk/pull/7949)
 
 # 26.1.2
