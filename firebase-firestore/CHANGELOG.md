@@ -1,6 +1,7 @@
 # Unreleased
 
 - [feature] Added support for `parent` Pipeline expression.
+  [#7999](https://github.com/firebase/firebase-android-sdk/pull/7999)
 - [feature] Added support for `timestampTruncate`, `timestampDiff`, and `timestampExtract` Pipeline expressions.
   [#7955](https://github.com/firebase/firebase-android-sdk/pull/7955)
 - [feature] Pipeline operations are GA now.
