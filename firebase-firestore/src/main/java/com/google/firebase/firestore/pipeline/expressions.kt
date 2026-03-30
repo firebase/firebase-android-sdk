@@ -6899,7 +6899,7 @@ abstract class Expression internal constructor() {
      * @return A new [Expression] representing the parent operation.
      */
     @JvmStatic fun parent(docRef: DocumentReference): Expression = parent(constant(docRef))
-    
+
     /**
      * Creates an expression that retrieves the value of a variable bound via [Pipeline.define].
      *
