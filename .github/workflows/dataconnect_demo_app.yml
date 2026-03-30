@@ -86,6 +86,7 @@ jobs:
             firebase-dataconnect/demo/gradle/wrapper/gradle-wrapper.properties
             github_actions_demo_test_cache_key.txt
 
+      # Do not update to version 6, context: https://blog.gradle.org/github-actions-for-gradle-v6
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
 
@@ -170,6 +171,7 @@ jobs:
             firebase-dataconnect/demo/gradle/wrapper/gradle-wrapper.properties
             github_actions_demo_spotless_cache_key.txt
 
+     # Do not update to version 6, context: https://blog.gradle.org/github-actions-for-gradle-v6
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@0723195856401067f7a2779048b490ace7a47d7c # v5.0.2
 
