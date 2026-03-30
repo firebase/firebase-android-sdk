@@ -952,6 +952,9 @@ package com.google.firebase.firestore.pipeline {
     method public final com.google.firebase.firestore.pipeline.Expression charLength();
     method public static final com.google.firebase.firestore.pipeline.Expression charLength(com.google.firebase.firestore.pipeline.Expression expr);
     method public static final com.google.firebase.firestore.pipeline.Expression charLength(String fieldName);
+    method public static final com.google.firebase.firestore.pipeline.Expression coalesce(com.google.firebase.firestore.pipeline.Expression expression, Object replacement, java.lang.Object... others);
+    method public final com.google.firebase.firestore.pipeline.Expression coalesce(Object replacement, java.lang.Object... others);
+    method public static final com.google.firebase.firestore.pipeline.Expression coalesce(String fieldName, Object replacement, java.lang.Object... others);
     method public final com.google.firebase.firestore.pipeline.Expression collectionId();
     method public static final com.google.firebase.firestore.pipeline.Expression collectionId(com.google.firebase.firestore.pipeline.Expression path);
     method public static final com.google.firebase.firestore.pipeline.Expression collectionId(String pathField);
@@ -1074,6 +1077,12 @@ package com.google.firebase.firestore.pipeline {
     method public static final com.google.firebase.firestore.pipeline.Expression ifError(com.google.firebase.firestore.pipeline.Expression tryExpr, com.google.firebase.firestore.pipeline.Expression catchExpr);
     method public static final com.google.firebase.firestore.pipeline.Expression ifError(com.google.firebase.firestore.pipeline.Expression tryExpr, Object catchValue);
     method public final com.google.firebase.firestore.pipeline.Expression ifError(Object catchValue);
+    method public final com.google.firebase.firestore.pipeline.Expression ifNull(com.google.firebase.firestore.pipeline.Expression elseExpression);
+    method public static final com.google.firebase.firestore.pipeline.Expression ifNull(com.google.firebase.firestore.pipeline.Expression ifExpr, com.google.firebase.firestore.pipeline.Expression elseExpr);
+    method public static final com.google.firebase.firestore.pipeline.Expression ifNull(com.google.firebase.firestore.pipeline.Expression ifExpr, Object elseValue);
+    method public final com.google.firebase.firestore.pipeline.Expression ifNull(Object elseValue);
+    method public static final com.google.firebase.firestore.pipeline.Expression ifNull(String ifFieldName, com.google.firebase.firestore.pipeline.Expression elseExpr);
+    method public static final com.google.firebase.firestore.pipeline.Expression ifNull(String ifFieldName, Object elseValue);
     method public final com.google.firebase.firestore.pipeline.BooleanExpression isAbsent();
     method public static final com.google.firebase.firestore.pipeline.BooleanExpression isAbsent(com.google.firebase.firestore.pipeline.Expression value);
     method public static final com.google.firebase.firestore.pipeline.BooleanExpression isAbsent(String fieldName);
@@ -1479,6 +1488,8 @@ package com.google.firebase.firestore.pipeline {
     method public com.google.firebase.firestore.pipeline.Expression ceil(String numericField);
     method public com.google.firebase.firestore.pipeline.Expression charLength(com.google.firebase.firestore.pipeline.Expression expr);
     method public com.google.firebase.firestore.pipeline.Expression charLength(String fieldName);
+    method public com.google.firebase.firestore.pipeline.Expression coalesce(com.google.firebase.firestore.pipeline.Expression expression, Object replacement, java.lang.Object... others);
+    method public com.google.firebase.firestore.pipeline.Expression coalesce(String fieldName, Object replacement, java.lang.Object... others);
     method public com.google.firebase.firestore.pipeline.Expression collectionId(com.google.firebase.firestore.pipeline.Expression path);
     method public com.google.firebase.firestore.pipeline.Expression collectionId(String pathField);
     method public com.google.firebase.firestore.pipeline.Expression concat(com.google.firebase.firestore.pipeline.Expression first, com.google.firebase.firestore.pipeline.Expression second, java.lang.Object... others);
@@ -1563,6 +1574,10 @@ package com.google.firebase.firestore.pipeline {
     method public com.google.firebase.firestore.pipeline.BooleanExpression ifError(com.google.firebase.firestore.pipeline.BooleanExpression tryExpr, com.google.firebase.firestore.pipeline.BooleanExpression catchExpr);
     method public com.google.firebase.firestore.pipeline.Expression ifError(com.google.firebase.firestore.pipeline.Expression tryExpr, com.google.firebase.firestore.pipeline.Expression catchExpr);
     method public com.google.firebase.firestore.pipeline.Expression ifError(com.google.firebase.firestore.pipeline.Expression tryExpr, Object catchValue);
+    method public com.google.firebase.firestore.pipeline.Expression ifNull(com.google.firebase.firestore.pipeline.Expression ifExpr, com.google.firebase.firestore.pipeline.Expression elseExpr);
+    method public com.google.firebase.firestore.pipeline.Expression ifNull(com.google.firebase.firestore.pipeline.Expression ifExpr, Object elseValue);
+    method public com.google.firebase.firestore.pipeline.Expression ifNull(String ifFieldName, com.google.firebase.firestore.pipeline.Expression elseExpr);
+    method public com.google.firebase.firestore.pipeline.Expression ifNull(String ifFieldName, Object elseValue);
     method public com.google.firebase.firestore.pipeline.BooleanExpression isAbsent(com.google.firebase.firestore.pipeline.Expression value);
     method public com.google.firebase.firestore.pipeline.BooleanExpression isAbsent(String fieldName);
     method public com.google.firebase.firestore.pipeline.BooleanExpression isError(com.google.firebase.firestore.pipeline.Expression expr);
