@@ -91,23 +91,13 @@ internal data class GenerateImageRequest(
   val instances: List<ImagenPrompt>,
   val parameters: ImagenParameters,
 ) : Request {
-  /**
-   * Represents an Imagen prompt.
-   *
-   * @param prompt the text prompt
-   * @param referenceImages the list of reference images
-   */
+
   @Serializable
   internal data class ImagenPrompt(
     val prompt: String?,
     val referenceImages: List<ImagenReferenceImage.Internal>?
   )
 
-  /**
-   * Represents Imagen parameters.
-   *
-   * @param sampleCount the number of samples to generate
-   */
   @Serializable
   internal data class ImagenParameters(
     val sampleCount: Int,
