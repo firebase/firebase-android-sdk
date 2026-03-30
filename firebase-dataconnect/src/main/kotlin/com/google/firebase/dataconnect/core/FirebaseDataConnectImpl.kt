@@ -35,6 +35,7 @@ import com.google.firebase.dataconnect.querymgr.QueryManager
 import com.google.firebase.dataconnect.util.AlphanumericStringUtil.toAlphaNumericString
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.firebase.dataconnect.util.ProtoUtil.calculateSha512
+import com.google.firebase.dataconnect.util.RequestIdGenerator
 import com.google.firebase.util.nextAlphanumericString
 import java.util.concurrent.Executor
 import kotlin.random.Random
@@ -69,8 +70,8 @@ internal interface FirebaseDataConnectInternal : FirebaseDataConnect {
   val nonBlockingExecutor: Executor
   val nonBlockingDispatcher: CoroutineDispatcher
 
-  val grpcClient: DataConnectGrpcClient
-  val queryManager: QueryManager
+  fun getQueryManager(): QueryManager
+  fun getMutationManager(): MutationManager
 
   suspend fun awaitAuthReady()
   suspend fun awaitAppCheckReady()
@@ -87,7 +88,7 @@ internal class FirebaseDataConnectImpl(
   deferredAppCheckProvider: com.google.firebase.inject.Deferred<InteropAppCheckTokenProvider>,
   private val creator: FirebaseDataConnectFactory,
   override val settings: DataConnectSettings,
-  private val secureRandom: Random,
+  secureRandom: Random,
 ) : FirebaseDataConnectInternal {
 
   override val logger =
@@ -150,14 +151,16 @@ internal class FirebaseDataConnectImpl(
     dataConnectAppCheck.awaitTokenProvider()
   }
 
+  private val requestIdGenerator = RequestIdGenerator(secureRandom, blockingDispatcher)
+
   private sealed interface State {
     data class New(val emulatorSettings: EmulatedServiceSettings?) : State {
       constructor() : this(null)
     }
     data class Initialized(
       val grpcRPCs: DataConnectGrpcRPCs,
-      val grpcClient: DataConnectGrpcClient,
-      val queryManager: QueryManager
+      val queryManager: QueryManager,
+      val mutationManager: MutationManager,
     ) : State
     data class Closing(
       val grpcRPCs: DataConnectGrpcRPCs,
@@ -169,10 +172,9 @@ internal class FirebaseDataConnectImpl(
 
   private val state = MutableStateFlow<State>(State.New())
 
-  override val grpcClient: DataConnectGrpcClient
-    get() = initialize().grpcClient
-  override val queryManager: QueryManager
-    get() = initialize().queryManager
+  override fun getQueryManager(): QueryManager = initialize().queryManager
+
+  override fun getMutationManager(): MutationManager = initialize().mutationManager
 
   private fun initialize(): State.Initialized {
     val newState =
@@ -180,9 +182,9 @@ internal class FirebaseDataConnectImpl(
         when (currentState) {
           is State.New -> {
             val grpcRPCs = createDataConnectGrpcRPCs(currentState.emulatorSettings)
-            val grpcClient = createDataConnectGrpcClient(grpcRPCs)
             val queryManager = createQueryManager(grpcRPCs)
-            State.Initialized(grpcRPCs, grpcClient, queryManager)
+            val mutationManager = createMutationManager(grpcRPCs)
+            State.Initialized(grpcRPCs, queryManager, mutationManager)
           }
           is State.Initialized -> currentState
           is State.Closing -> currentState
@@ -204,10 +206,6 @@ internal class FirebaseDataConnectImpl(
   @VisibleForTesting
   internal val dataConnectGrpcRPCsForTesting: DataConnectGrpcRPCs
     get() = (state.value as State.Initialized).grpcRPCs
-
-  @VisibleForTesting
-  internal val dataConnectGrpcClientForTesting: DataConnectGrpcClient
-    get() = (state.value as State.Initialized).grpcClient
 
   private data class DataConnectBackendInfo(
     val host: String,
@@ -295,26 +293,27 @@ internal class FirebaseDataConnectImpl(
     return dataConnectGrpcRPCs
   }
 
-  private fun createDataConnectGrpcClient(grpcRPCs: DataConnectGrpcRPCs): DataConnectGrpcClient =
-    DataConnectGrpcClient(
-      projectId = projectId,
-      connector = config,
-      grpcRPCs = grpcRPCs,
-      dataConnectAuth = dataConnectAuth,
-      dataConnectAppCheck = dataConnectAppCheck,
-      logger = Logger("DataConnectGrpcClient").apply { debug { "created by $instanceId" } },
-    )
-
   private fun createQueryManager(dataConnectGrpcRPCs: DataConnectGrpcRPCs): QueryManager {
     return QueryManager(
       requestName = requestName,
       dataConnectGrpcRPCs = dataConnectGrpcRPCs,
       dataConnectAuth = dataConnectAuth,
       dataConnectAppCheck = dataConnectAppCheck,
-      ioDispatcher = blockingDispatcher,
       cpuDispatcher = nonBlockingDispatcher,
-      secureRandom = secureRandom,
+      requestIdGenerator = requestIdGenerator,
       logger = Logger("QueryManager").also { it.debug("created by $instanceId") },
+    )
+  }
+
+  private fun createMutationManager(dataConnectGrpcRPCs: DataConnectGrpcRPCs): MutationManager {
+    return MutationManager(
+      requestName = requestName,
+      dataConnectGrpcRPCs = dataConnectGrpcRPCs,
+      dataConnectAuth = dataConnectAuth,
+      dataConnectAppCheck = dataConnectAppCheck,
+      cpuDispatcher = nonBlockingDispatcher,
+      requestIdGenerator = requestIdGenerator,
+      logger = Logger("MutationManager").also { it.debug("created by $instanceId") },
     )
   }
 
@@ -434,7 +433,6 @@ internal class FirebaseDataConnectImpl(
       callerSdkType = options.callerSdkType ?: FirebaseDataConnect.CallerSdkType.Base,
       variablesSerializersModule = options.variablesSerializersModule,
       dataSerializersModule = options.dataSerializersModule,
-      secureRandom = secureRandom,
     )
   }
 

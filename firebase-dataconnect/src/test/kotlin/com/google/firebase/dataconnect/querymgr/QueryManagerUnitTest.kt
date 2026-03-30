@@ -33,11 +33,13 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.authTokenResu
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.mock
 import com.google.firebase.dataconnect.testutil.property.arbitrary.pair
+import com.google.firebase.dataconnect.testutil.property.arbitrary.requestIdGenerator
 import com.google.firebase.dataconnect.testutil.property.arbitrary.withIterations
 import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
+import com.google.firebase.dataconnect.util.RequestIdGenerator
 import com.google.firebase.util.nextAlphanumericString
 import com.google.protobuf.Struct
 import google.firebase.dataconnect.proto.ExecuteQueryRequest
@@ -46,11 +48,11 @@ import io.grpc.Status
 import io.grpc.StatusException
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.assertions.withClue
 import io.kotest.common.DelicateKotest
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.collections.shouldHaveSize
-import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
@@ -65,6 +67,7 @@ import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.distinct
 import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.map
+import io.kotest.property.arbitrary.next
 import io.kotest.property.arbitrary.orNull
 import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
@@ -76,19 +79,16 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import java.util.concurrent.CopyOnWriteArrayList
-import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.random.Random
 import kotlin.random.nextInt
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.KSerializer
@@ -420,31 +420,32 @@ class QueryManagerUnitTest {
     }
 
   @Test
-  fun `execute() accesses the SecureRandom on the IO dispatcher`() = runTest {
-    checkAll(propTestConfig, executeArgumentsArb()) { args ->
-      val ioDispatcher =
-        Executors.newSingleThreadExecutor().let {
-          val ioExecutor = Executors.newSingleThreadExecutor()
-          cleanups.register { ioExecutor.shutdownNow() }
-          ioExecutor.asCoroutineDispatcher()
-        }
-      val ioThread = withContext(ioDispatcher) { Thread.currentThread() }
-      val nextIntThreads = mutableListOf<Thread>()
-      val secureRandom =
-        RandomWrapper(randomSource().random) {
-          synchronized(nextIntThreads) { nextIntThreads.add(Thread.currentThread()) }
-        }
+  fun `execute() uses the given RequestIdGenerator`() = runTest {
+    checkAll(propTestConfig, executeArgumentsArb(), Arb.dataConnect.requestId()) { args, requestId
+      ->
+      val requestIdGenerator: RequestIdGenerator = mockk {
+        coEvery { nextQueryRequestId() } returns requestId
+      }
+      val grpcRPCsRequestIdSlot: CapturingSlot<String> = slot()
+      val authRequestIdSlot: CapturingSlot<String> = slot()
+      val appCheckRequestIdSlot: CapturingSlot<String> = slot()
       val queryManager: QueryManager = buildQueryManager {
-        setIoDispatcher(ioDispatcher)
-        setSecureRandom(secureRandom)
+        setRequestIdGenerator(requestIdGenerator)
+        setDataConnectGrpcRPCs(mockk { stubExecuteQuery(requestIdSlot = grpcRPCsRequestIdSlot) })
+        setDataConnectAuth(mockk { coEvery { getToken(capture(authRequestIdSlot)) } returns null })
+        setDataConnectAppCheck(
+          mockk { coEvery { getToken(capture(appCheckRequestIdSlot)) } returns null }
+        )
       }
 
       queryManager.execute(args)
 
-      synchronized(nextIntThreads) {
-        nextIntThreads.shouldNotBeEmpty()
-        nextIntThreads.distinct().shouldHaveSize(1).single() shouldBe ioThread
+      assertSoftly {
+        withClue("grpcRPCsRequestId") { grpcRPCsRequestIdSlot.captured shouldBe requestId }
+        withClue("authRequestId") { authRequestIdSlot.captured shouldBe requestId }
+        withClue("appCheckRequestId") { appCheckRequestIdSlot.captured shouldBe requestId }
       }
+      coVerify(exactly = 1) { requestIdGenerator.nextQueryRequestId() }
     }
   }
 
@@ -607,7 +608,7 @@ class QueryManagerUnitTest {
         mockk {
           coEvery { getToken(any()) } answers
             {
-              val authTokenResult = authTokenResultArb.bind()
+              val authTokenResult = authTokenResultArb.next(randomSource())
               generatedAuthTokens.add(authTokenResult.token)
               authTokenResult
             }
@@ -926,9 +927,8 @@ class QueryManagerUnitTest {
         dataConnectGrpcRPCs = mockk { stubExecuteQuery() },
         dataConnectAuth = mockDataConnectAuth(),
         dataConnectAppCheck = mockDataConnectAppCheck(),
-        ioDispatcher = Dispatchers.IO,
         cpuDispatcher = Dispatchers.Default,
-        secureRandom = randomSource().random,
+        requestIdGenerator = Arb.dataConnect.requestIdGenerator().next(randomSource()),
         logger = newMockLogger("logger" + randomSource().random.nextAlphanumericString(10)),
       )
     builder.apply(block)
@@ -1075,6 +1075,7 @@ private class HardcodedStringKSerializer(private val hardcodedValue: String) : K
 }
 
 private fun DataConnectGrpcRPCs.stubExecuteQuery(
+  requestIdSlot: CapturingSlot<String> = slot(),
   executeQueryRequestSlot: CapturingSlot<ExecuteQueryRequest> = slot(),
   authTokenSlot: CapturingSlot<String?> = slot(),
   appCheckTokenSlot: CapturingSlot<String?> = slot(),
@@ -1083,7 +1084,7 @@ private fun DataConnectGrpcRPCs.stubExecuteQuery(
 ) {
   coEvery {
     executeQuery(
-      any(),
+      capture(requestIdSlot),
       capture(executeQueryRequestSlot),
       captureNullable(authTokenSlot),
       captureNullable(appCheckTokenSlot),
@@ -1095,17 +1096,6 @@ private fun DataConnectGrpcRPCs.stubExecuteQuery(
         ?: TestData("data_qhpgbccsar_" + Random.nextAlphanumericString(10))
           .encodeToExecuteQueryResponse()
     }
-}
-
-private class RandomWrapper(
-  private val delegate: Random,
-  private val onMethodCalled: () -> Unit,
-) : Random() {
-
-  override fun nextBits(bitCount: Int): Int {
-    onMethodCalled()
-    return delegate.nextBits(bitCount)
-  }
 }
 
 private fun mockDataConnectAuth(): DataConnectAuth =
@@ -1133,9 +1123,8 @@ private class QueryManagerBuilder(
   private var dataConnectGrpcRPCs: DataConnectGrpcRPCs,
   private var dataConnectAuth: DataConnectAuth,
   private var dataConnectAppCheck: DataConnectAppCheck,
-  private var ioDispatcher: CoroutineDispatcher,
   private var cpuDispatcher: CoroutineDispatcher,
-  private var secureRandom: Random,
+  private var requestIdGenerator: RequestIdGenerator,
   private var logger: Logger,
 ) {
 
@@ -1155,12 +1144,8 @@ private class QueryManagerBuilder(
     dataConnectAppCheck = value
   }
 
-  fun setIoDispatcher(value: CoroutineDispatcher) {
-    ioDispatcher = value
-  }
-
-  fun setSecureRandom(value: Random) {
-    secureRandom = value
+  fun setRequestIdGenerator(value: RequestIdGenerator) {
+    requestIdGenerator = value
   }
 
   fun build(): QueryManager =
@@ -1169,9 +1154,8 @@ private class QueryManagerBuilder(
       dataConnectGrpcRPCs = dataConnectGrpcRPCs,
       dataConnectAuth = dataConnectAuth,
       dataConnectAppCheck = dataConnectAppCheck,
-      ioDispatcher = ioDispatcher,
       cpuDispatcher = cpuDispatcher,
-      secureRandom = secureRandom,
+      requestIdGenerator = requestIdGenerator,
       logger = logger,
     )
 }

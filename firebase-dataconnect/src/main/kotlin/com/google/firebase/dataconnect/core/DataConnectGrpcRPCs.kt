@@ -19,6 +19,7 @@ package com.google.firebase.dataconnect.core
 import android.content.Context
 import com.google.android.gms.security.ProviderInstaller
 import com.google.firebase.dataconnect.DataConnectException
+import com.google.firebase.dataconnect.DataConnectUntypedVariables
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.core.DataConnectGrpcMetadata.Companion.toStructProto
 import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
@@ -27,6 +28,7 @@ import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase
 import com.google.firebase.dataconnect.util.NullableReference
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
+import com.google.firebase.dataconnect.util.ProtoUtil.encodeToStruct
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.ProtoUtil.toStructProto
 import com.google.firebase.dataconnect.util.SuspendingLazy
@@ -87,6 +89,8 @@ import kotlinx.coroutines.job
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.SerializationStrategy
+import kotlinx.serialization.modules.SerializersModule
 
 internal class DataConnectGrpcRPCs(
   context: Context,
@@ -729,3 +733,14 @@ internal inline fun <T> retryOnGrpcUnauthenticatedError(
 }
 
 internal class AuthUidChangedException(message: String) : DataConnectException(message)
+
+internal fun <Variables> encodeVariables(
+  variables: Variables,
+  serializer: SerializationStrategy<Variables>,
+  serializersModule: SerializersModule?,
+): Struct =
+  if (serializer === DataConnectUntypedVariables.Serializer) {
+    (variables as DataConnectUntypedVariables).variables.toStructProto()
+  } else {
+    encodeToStruct(variables, serializer, serializersModule)
+  }

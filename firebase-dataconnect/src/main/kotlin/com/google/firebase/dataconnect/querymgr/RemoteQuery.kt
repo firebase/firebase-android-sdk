@@ -88,7 +88,7 @@ internal class RemoteQuery(
       ) {
         jobSequencedReference
       } else {
-        val job =
+        val job: Deferred<ExecuteQueryResponse> =
           coroutineScope.async(cpuDispatcher) {
             dataConnectGrpcRPCs.executeQuery(
               requestId = requestId,

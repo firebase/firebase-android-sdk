@@ -21,7 +21,9 @@ package com.google.firebase.dataconnect.testutil.property.arbitrary
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.OperationRef
+import com.google.firebase.dataconnect.core.DataConnectAppCheck
 import com.google.firebase.dataconnect.core.DataConnectAppCheck.GetAppCheckTokenResult
+import com.google.firebase.dataconnect.core.DataConnectAuth
 import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
 import com.google.firebase.dataconnect.core.DataConnectGrpcClient
 import com.google.firebase.dataconnect.core.DataConnectGrpcMetadata
@@ -34,6 +36,7 @@ import com.google.firebase.dataconnect.core.OperationRefImpl
 import com.google.firebase.dataconnect.core.QueryRefImpl
 import com.google.firebase.dataconnect.testutil.StubOperationRefImpl
 import com.google.firebase.dataconnect.util.ProtoUtil.toMap
+import com.google.firebase.dataconnect.util.RequestIdGenerator
 import com.google.firebase.dataconnect.util.SemanticVersion
 import com.google.protobuf.Struct
 import io.kotest.assertions.assertSoftly
@@ -44,14 +47,18 @@ import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.alphanumeric
 import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.bind
+import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.list
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.orNull
 import io.kotest.property.arbitrary.string
+import io.mockk.coEvery
 import io.mockk.mockk
 import kotlin.random.Random
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.modules.SerializersModule
@@ -156,7 +163,6 @@ internal fun <Data, Variables> DataConnectArb.mutationRefImpl(
   callerSdkType: Arb<CallerSdkType> = Arb.enum<CallerSdkType>(),
   variablesSerializersModule: Arb<SerializersModule?> = serializersModule(),
   dataSerializersModule: Arb<SerializersModule?> = serializersModule(),
-  secureRandom: Arb<Random> = Arb.random(),
 ): Arb<MutationRefImpl<Data, Variables>> = arbitrary {
   MutationRefImpl(
     dataConnect = dataConnect.bind(),
@@ -167,14 +173,12 @@ internal fun <Data, Variables> DataConnectArb.mutationRefImpl(
     callerSdkType = callerSdkType.bind(),
     variablesSerializersModule = variablesSerializersModule.bind(),
     dataSerializersModule = dataSerializersModule.bind(),
-    secureRandom = secureRandom.bind(),
   )
 }
 
 internal inline fun <Data, reified Variables> DataConnectArb.mutationRefImpl(
   constructorArguments: Arb<OperationRefConstructorArguments<Data, Variables>> =
     operationRefConstructorArguments(),
-  secureRandom: Arb<Random> = Arb.random(),
 ): Arb<MutationRefImpl<Data, Variables>> = arbitrary {
   val args = constructorArguments.bind()
   MutationRefImpl(
@@ -186,7 +190,6 @@ internal inline fun <Data, reified Variables> DataConnectArb.mutationRefImpl(
     callerSdkType = args.callerSdkType,
     variablesSerializersModule = args.variablesSerializersModule,
     dataSerializersModule = args.dataSerializersModule,
-    secureRandom = secureRandom.bind(),
   )
 }
 
@@ -342,3 +345,23 @@ internal fun DataConnectArb.semanticVersion(
   minor: Arb<Int> = Arb.int(),
   patch: Arb<Int> = Arb.int(),
 ): Arb<SemanticVersion> = Arb.bind(major, minor, patch, ::SemanticVersion)
+
+internal fun DataConnectArb.requestIdGenerator(
+  secureRandom: Arb<Random> = Arb.random(),
+  ioDispatcher: Arb<CoroutineDispatcher> = Arb.constant(Dispatchers.IO),
+): Arb<RequestIdGenerator> = Arb.bind(secureRandom, ioDispatcher, ::RequestIdGenerator)
+
+internal fun DataConnectArb.dataConnectAuth(
+  authTokenResult: Arb<GetAuthTokenResult?> = authTokenResult().orNull(nullProbability = 0.2)
+): Arb<DataConnectAuth> =
+  authTokenResult.map { authTokenResult ->
+    mockk { coEvery { getToken(any()) } returns authTokenResult }
+  }
+
+internal fun DataConnectArb.dataConnectAppCheck(
+  appCheckTokenResult: Arb<GetAppCheckTokenResult?> =
+    appCheckTokenResult().orNull(nullProbability = 0.2)
+): Arb<DataConnectAppCheck> =
+  appCheckTokenResult.map { appCheckTokenResult ->
+    mockk { coEvery { getToken(any()) } returns appCheckTokenResult }
+  }

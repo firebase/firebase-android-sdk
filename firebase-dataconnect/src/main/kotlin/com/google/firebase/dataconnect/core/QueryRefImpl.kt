@@ -53,8 +53,10 @@ internal class QueryRefImpl<Data, Variables>(
   override suspend fun execute(): QueryResultImpl = execute(FetchPolicy.PREFER_CACHE)
 
   override suspend fun execute(fetchPolicy: FetchPolicy): QueryResultImpl {
+    val queryManager = dataConnect.getQueryManager()
+
     val data =
-      dataConnect.queryManager.execute(
+      queryManager.execute(
         operationName = operationName,
         variables = variables,
         dataDeserializer = dataDeserializer,

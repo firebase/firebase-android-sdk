@@ -18,18 +18,18 @@ package com.google.firebase.dataconnect.util
 
 import com.google.firebase.util.nextAlphanumericString
 import kotlin.random.Random
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.withContext
 
-/**
- * Holder for "global" functions related to generating request IDs.
- *
- * Technically, these functions _could_ be defined as free functions; however, doing so creates a
- * ProtoStructEncoderKt, ProtoUtilKt, etc. Java class with public visibility, which pollutes the
- * public API. Using an "internal" object, instead, to gather together the top-level functions
- * avoids this public API pollution.
- */
-internal object RequestIdGenerator {
+internal class RequestIdGenerator(
+  private val secureRandom: Random,
+  private val ioDispatcher: CoroutineDispatcher,
+) {
 
-  fun Random.nextQueryRequestId(): String = "qry" + nextAlphanumericString(length = 10)
+  suspend fun nextQueryRequestId(): String = nextRequestId("qry")
 
-  fun Random.nextMutationRequestId(): String = "qry" + nextAlphanumericString(length = 10)
+  suspend fun nextMutationRequestId(): String = nextRequestId("mut")
+
+  private suspend fun nextRequestId(prefix: String): String =
+    withContext(ioDispatcher) { prefix + secureRandom.nextAlphanumericString(length = 10) }
 }

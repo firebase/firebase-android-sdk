@@ -24,15 +24,14 @@ import com.google.firebase.dataconnect.core.DataConnectGrpcRPCs
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
+import com.google.firebase.dataconnect.core.encodeVariables
 import com.google.firebase.dataconnect.core.retryOnGrpcUnauthenticatedError
 import com.google.firebase.dataconnect.querymgr.LocalQuery.ExecuteResult
 import com.google.firebase.dataconnect.util.ImmutableByteArray
 import com.google.firebase.dataconnect.util.ProtoUtil.calculateSha512
-import com.google.firebase.dataconnect.util.ProtoUtil.encodeToStruct
-import com.google.firebase.dataconnect.util.RequestIdGenerator.nextQueryRequestId
+import com.google.firebase.dataconnect.util.RequestIdGenerator
 import com.google.firebase.dataconnect.util.SequencedReference.Companion.nextSequenceNumber
 import google.firebase.dataconnect.proto.ExecuteQueryRequest as ExecuteQueryRequestProto
-import kotlin.random.Random
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineName
@@ -52,9 +51,8 @@ internal class QueryManager(
   dataConnectGrpcRPCs: DataConnectGrpcRPCs,
   private val dataConnectAuth: DataConnectAuth,
   private val dataConnectAppCheck: DataConnectAppCheck,
-  private val ioDispatcher: CoroutineDispatcher,
   private val cpuDispatcher: CoroutineDispatcher,
-  private val secureRandom: Random,
+  private val requestIdGenerator: RequestIdGenerator,
   private val logger: Logger,
 ) {
 
@@ -88,7 +86,7 @@ internal class QueryManager(
     callerSdkType: FirebaseDataConnect.CallerSdkType,
     fetchPolicy: QueryRef.FetchPolicy,
   ): Data {
-    val requestId = withContext(ioDispatcher) { secureRandom.nextQueryRequestId() }
+    val requestId = requestIdGenerator.nextQueryRequestId()
     logger.debug {
       "[rid=$requestId] Executing query with operationName=$operationName and variables=$variables"
     }
@@ -97,7 +95,7 @@ internal class QueryManager(
     val queryId: ImmutableByteArray
     withContext(cpuDispatcher) {
       val variablesStruct =
-        encodeToStruct(variables, variablesSerializer, variablesSerializersModule)
+        encodeVariables(variables, variablesSerializer, variablesSerializersModule)
       queryId = variablesStruct.calculateSha512(preamble = operationName)
       requestProto =
         ExecuteQueryRequestProto.newBuilder()

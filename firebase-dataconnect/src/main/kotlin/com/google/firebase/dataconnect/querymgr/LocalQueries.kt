@@ -18,6 +18,7 @@ package com.google.firebase.dataconnect.querymgr
 
 import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.core.DataConnectGrpcRPCs
+import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.dataconnect.util.ImmutableByteArray
 import google.firebase.dataconnect.proto.ExecuteQueryRequest as ExecuteQueryRequestProto
 import kotlinx.coroutines.CoroutineDispatcher
@@ -43,7 +44,13 @@ internal class LocalQueries(
 
     val localQuery: LocalQuery<*> =
       localQueries.getOrPut(key) {
-        LocalQuery(remoteQuery, cpuDispatcher, key.dataDeserializer, key.dataSerializersModule)
+        LocalQuery(
+          remoteQuery,
+          cpuDispatcher,
+          key.dataDeserializer,
+          key.dataSerializersModule,
+          Logger("LocalQuery")
+        )
       }
 
     @Suppress("UNCHECKED_CAST") return localQuery as LocalQuery<T>

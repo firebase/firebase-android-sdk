@@ -17,6 +17,8 @@
 package com.google.firebase.dataconnect.querymgr
 
 import com.google.firebase.dataconnect.FirebaseDataConnect
+import com.google.firebase.dataconnect.core.Logger
+import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import com.google.firebase.dataconnect.util.DeserializeUtils.deserialize
 import google.firebase.dataconnect.proto.ExecuteQueryResponse
 import kotlinx.coroutines.CoroutineDispatcher
@@ -29,6 +31,7 @@ internal class LocalQuery<Data>(
   private val cpuDispatcher: CoroutineDispatcher,
   private val dataDeserializer: DeserializationStrategy<Data>,
   private val dataSerializersModule: SerializersModule?,
+  private val logger: Logger,
 ) {
 
   suspend fun execute(
@@ -58,10 +61,14 @@ internal class LocalQuery<Data>(
           }
       }
 
-    val data =
-      withContext(cpuDispatcher) { response.deserialize(dataDeserializer, dataSerializersModule) }
+    val dataResult =
+      withContext(cpuDispatcher) {
+        response.runCatching { deserialize(dataDeserializer, dataSerializersModule) }
+      }
 
-    return ExecuteResult.Success(data)
+    dataResult.onFailure { logger.warn(it) { "[rid=$requestId] decoding response data failed" } }
+
+    return ExecuteResult.Success(dataResult.getOrThrow())
   }
 
   sealed interface ExecuteResult<out T> {
