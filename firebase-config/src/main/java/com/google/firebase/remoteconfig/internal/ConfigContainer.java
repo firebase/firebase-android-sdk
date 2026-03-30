@@ -14,6 +14,9 @@
 
 package com.google.firebase.remoteconfig.internal;
 
+import static com.google.firebase.remoteconfig.RemoteConfigConstants.ExperimentDescriptionFieldKey.AFFECTED_PARAMETER_KEYS;
+import static com.google.firebase.remoteconfig.RemoteConfigConstants.ExperimentDescriptionFieldKey.EXPERIMENT_ID;
+
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import java.util.Date;
 import java.util.HashMap;
@@ -37,6 +40,7 @@ public class ConfigContainer {
   static final String ABT_EXPERIMENTS_KEY = "abt_experiments_key";
   static final String PERSONALIZATION_METADATA_KEY = "personalization_metadata_key";
   static final String TEMPLATE_VERSION_NUMBER_KEY = "template_version_number_key";
+  static final String ROLLOUT_ID_PREFIX = "rollout";
   static final String ROLLOUT_METADATA_KEY = "rollout_metadata_key";
   public static final String ROLLOUT_METADATA_AFFECTED_KEYS = "affectedParameterKeys";
   public static final String ROLLOUT_METADATA_ID = "rolloutId";
@@ -220,6 +224,31 @@ public class ConfigContainer {
     return rolloutMetadataMap;
   }
 
+  /** Creates a map where the key is the config key and the value is the experiment description. */
+  private Map<String, JSONObject> createExperimentsMap() throws JSONException {
+    Map<String, JSONObject> experimentsMap = new HashMap<>();
+    JSONArray abtExperiments = this.getAbtExperiments();
+    // Iterate through all experiments to check if it has the `affectedParameterKeys` field.
+    for (int i = 0; i < abtExperiments.length(); i++) {
+      JSONObject experiment = abtExperiments.getJSONObject(i);
+      if (!experiment.has(AFFECTED_PARAMETER_KEYS)
+          || experiment.getString(EXPERIMENT_ID).startsWith(ROLLOUT_ID_PREFIX)) {
+        continue;
+      }
+
+      // Since a config key can only have one experiment associated with it, map the key to the
+      // experiment.
+      JSONArray affectedKeys = experiment.getJSONArray(AFFECTED_PARAMETER_KEYS);
+      for (int j = 0; j < affectedKeys.length(); j++) {
+        String key = affectedKeys.getString(j);
+        JSONObject experimentsCopy = new JSONObject(experiment.toString());
+        experimentsMap.put(key, experimentsCopy);
+      }
+    }
+
+    return experimentsMap;
+  }
+
   /**
    * @param other The other {@link ConfigContainer} against which to compute the diff
    * @return The set of config keys that have changed between the this config and {@code other}
@@ -232,6 +261,10 @@ public class ConfigContainer {
     // Config key to `rolloutMetadata` map.
     Map<String, Map<String, String>> rolloutMetadataMap = this.createRolloutParameterKeyMap();
     Map<String, Map<String, String>> otherRolloutMetadataMap = other.createRolloutParameterKeyMap();
+
+    // Config key to experiments map.
+    Map<String, JSONObject> experimentsMap = this.createExperimentsMap();
+    Map<String, JSONObject> otherExperimentsMap = other.createExperimentsMap();
 
     Set<String> changed = new HashSet<>();
     Iterator<String> keys = this.getConfigs().keys();
@@ -280,6 +313,20 @@ public class ConfigContainer {
       if (rolloutMetadataMap.containsKey(key)
           && otherRolloutMetadataMap.containsKey(key)
           && !rolloutMetadataMap.get(key).equals(otherRolloutMetadataMap.get(key))) {
+        changed.add(key);
+        continue;
+      }
+
+      // If one and only one of the experiments map contains the key, add it to changed.
+      if (experimentsMap.containsKey(key) != otherExperimentsMap.containsKey(key)) {
+        changed.add(key);
+        continue;
+      }
+
+      // If both experiment maps contains the key, compare the experiments to see if it's different.
+      if (otherExperimentsMap.containsKey(key)
+          && experimentsMap.containsKey(key)
+          && !otherExperimentsMap.get(key).toString().equals(experimentsMap.get(key).toString())) {
         changed.add(key);
         continue;
       }
