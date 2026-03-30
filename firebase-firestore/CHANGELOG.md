@@ -1,5 +1,7 @@
 # Unreleased
 
+- [feature] Added support for Pipeline expressions `ifNull` and `coalesce`.
+  [#7976](https://github.com/firebase/firebase-android-sdk/pull/7976)
 - [feature] Added support for `timestampTruncate`, `timestampDiff`, and `timestampExtract` Pipeline expressions.
   [#7955](https://github.com/firebase/firebase-android-sdk/pull/7955)
 - [feature] Pipeline operations are GA now.
@@ -13,6 +15,8 @@
   [#7886](https://github.com/firebase/firebase-android-sdk/pull/7886)
 - [feature] Add public preview support for full-text search and geo search.
   [#7949](https://github.com/firebase/firebase-android-sdk/pull/7949)
+- [feature] Added support for `mapGet` `mapSet`, `mapEntries`, and `mapKeys` Pipeline expressions.
+  [#7987](https://github.com/firebase/firebase-android-sdk/pull/7987)
 
 # 26.1.2
 
