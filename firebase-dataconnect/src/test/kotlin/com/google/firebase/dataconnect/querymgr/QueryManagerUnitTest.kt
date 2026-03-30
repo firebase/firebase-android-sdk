@@ -441,7 +441,7 @@ class QueryManagerUnitTest {
   @Test
   fun `execute() deduplicates identical queries`() =
     verifyExecuteDeduplication(
-      getDataDeserializer = { it.args.dataDeserializer },
+      transformExecuteArguments = { it.args },
       verifyResults = { valuePrefix, _, _, results ->
         val values = results.map { it.value }
         values.distinct().shouldContainExactlyInAnyOrder("$valuePrefix 0", "$valuePrefix 1")
@@ -451,8 +451,10 @@ class QueryManagerUnitTest {
   @Test
   fun `execute() deduplicates identical queries even with different dataDeserializer`() =
     verifyExecuteDeduplication(
-      getDataDeserializer = {
-        TestDataOverrideDeserializer("${it.valuePrefixOverride} ${it.jobIndex}")
+      transformExecuteArguments = {
+        it.args.withDataDeserializer(
+          TestDataOverrideDeserializer("${it.valuePrefixOverride} ${it.jobIndex}")
+        )
       },
       verifyResults = { _, valuePrefixOverride, _, results ->
         val values = results.map { it.value }
@@ -465,14 +467,16 @@ class QueryManagerUnitTest {
   fun `execute() deduplicates identical queries even with different dataSerializersModule`() {
     val dataDeserializer = serializer<ContextualTestData>()
     return verifyExecuteDeduplication(
-      getDataDeserializer = { dataDeserializer },
-      getDataSerializersModule = {
-        SerializersModule {
+      transformExecuteArguments = {
+        val dataSerializersModule = SerializersModule {
           contextual(
             String::class,
             HardcodedStringKSerializer("${it.valuePrefixOverride} ${it.jobIndex}")
           )
         }
+        it.args
+          .withDataDeserializer(dataDeserializer = dataDeserializer)
+          .copy(dataSerializersModule = dataSerializersModule)
       },
       verifyResults = { _, valuePrefixOverride, _, results ->
         val values = results.map { it.value }
@@ -492,8 +496,10 @@ class QueryManagerUnitTest {
     }
 
     verifyExecuteDeduplication(
-      getDataDeserializer = { it.args.dataDeserializer },
-      getVariablesSerializer = { DistinctVariablesSerializer(it.args.variablesSerializer) },
+      transformExecuteArguments = {
+        val variablesSerializer = DistinctVariablesSerializer(it.args.variablesSerializer)
+        it.args.copy(variablesSerializer = variablesSerializer)
+      },
       verifyResults = { valuePrefix, _, _, results ->
         val values = results.map { it.value }
         values.distinct().shouldContainExactlyInAnyOrder("$valuePrefix 0", "$valuePrefix 1")
@@ -509,8 +515,10 @@ class QueryManagerUnitTest {
     check(distinctSerializersModule(1) != distinctSerializersModule(2))
 
     verifyExecuteDeduplication(
-      getDataDeserializer = { it.args.dataDeserializer },
-      getVariablesSerializersModule = { distinctSerializersModule(it.jobIndex) },
+      transformExecuteArguments = {
+        val variablesSerializersModule = distinctSerializersModule(it.jobIndex)
+        it.args.copy(variablesSerializersModule = variablesSerializersModule)
+      },
       verifyResults = { valuePrefix, _, _, results ->
         val values = results.map { it.value }
         values.distinct().shouldContainExactlyInAnyOrder("$valuePrefix 0", "$valuePrefix 1")
@@ -521,8 +529,10 @@ class QueryManagerUnitTest {
   @Test
   fun `execute() deduplicates identical queries, even with different callerSdkType`() =
     verifyExecuteDeduplication(
-      getDataDeserializer = { it.args.dataDeserializer },
-      getCallerSdkType = { CallerSdkType.entries.random(it.random) },
+      transformExecuteArguments = {
+        val callerSdkType = CallerSdkType.entries.random(it.random)
+        it.args.copy(callerSdkType = callerSdkType)
+      },
       verifyResults = { valuePrefix, _, _, results ->
         val values = results.map { it.value }
         values.distinct().shouldContainExactlyInAnyOrder("$valuePrefix 0", "$valuePrefix 1")
@@ -533,7 +543,7 @@ class QueryManagerUnitTest {
   fun `execute() deduplicates identical queries, even with different authToken`() {
     var dataConnectAuth: DataConnectAuth? = null
     verifyExecuteDeduplication(
-      getDataDeserializer = { it.args.dataDeserializer },
+      transformExecuteArguments = { it.args },
       verifyResults = { valuePrefix, _, executeCount, results ->
         val values = results.map { it.value }
         values.distinct().shouldContainExactlyInAnyOrder("$valuePrefix 0", "$valuePrefix 1")
@@ -554,7 +564,7 @@ class QueryManagerUnitTest {
   fun `execute() deduplicates identical queries, even with different appCheckToken`() {
     var dataConnectAppCheck: DataConnectAppCheck? = null
     verifyExecuteDeduplication(
-      getDataDeserializer = { it.args.dataDeserializer },
+      transformExecuteArguments = { it.args },
       verifyResults = { valuePrefix, _, executeCount, results ->
         val values = results.map { it.value }
         values.distinct().shouldContainExactlyInAnyOrder("$valuePrefix 0", "$valuePrefix 1")
@@ -579,26 +589,8 @@ class QueryManagerUnitTest {
   )
 
   private fun <Data> verifyExecuteDeduplication(
-    getDataDeserializer:
-      (args: VerifyExecuteDeduplicationCallbackArguments) -> DeserializationStrategy<Data>,
-    getVariablesSerializer:
-      (args: VerifyExecuteDeduplicationCallbackArguments) -> SerializationStrategy<TestVariables> =
-      {
-        it.args.variablesSerializer
-      },
-    getDataSerializersModule:
-      (args: VerifyExecuteDeduplicationCallbackArguments) -> SerializersModule? =
-      {
-        it.args.dataSerializersModule
-      },
-    getVariablesSerializersModule:
-      (args: VerifyExecuteDeduplicationCallbackArguments) -> SerializersModule? =
-      {
-        it.args.variablesSerializersModule
-      },
-    getCallerSdkType: (args: VerifyExecuteDeduplicationCallbackArguments) -> CallerSdkType = {
-      it.args.callerSdkType
-    },
+    transformExecuteArguments:
+      (args: VerifyExecuteDeduplicationCallbackArguments) -> ExecuteArguments<Data, TestVariables>,
     verifyResults:
       (valuePrefix: String, valuePrefixOverride: String, executeCount: Int, List<Data>) -> Unit,
     newDataConnectAuth: PropertyContext.() -> DataConnectAuth? = { null },
@@ -646,19 +638,13 @@ class QueryManagerUnitTest {
         List(latch.count) { jobIndex ->
           backgroundScope.async(Dispatchers.IO) {
             val callbackArgs = callbackArgsTemplate.copy(jobIndex = jobIndex)
+            val transformedArgs = transformExecuteArguments(callbackArgs)
+
             if (jobIndex != executeJobIndex) {
               latch.countDown().await()
             }
-            queryManager.execute(
-              operationName = args.operationName,
-              variables = args.variables,
-              dataDeserializer = getDataDeserializer(callbackArgs),
-              variablesSerializer = getVariablesSerializer(callbackArgs),
-              dataSerializersModule = getDataSerializersModule(callbackArgs),
-              variablesSerializersModule = getVariablesSerializersModule(callbackArgs),
-              callerSdkType = getCallerSdkType(callbackArgs),
-              fetchPolicy = args.fetchPolicy,
-            )
+
+            queryManager.execute(transformedArgs)
           }
         }
 
@@ -686,7 +672,7 @@ class QueryManagerUnitTest {
     val generatedAuthTokens = CopyOnWriteArrayList<String?>()
 
     verifyExecuteDeduplication(
-      getDataDeserializer = { it.args.dataDeserializer },
+      transformExecuteArguments = { it.args },
       verifyResults = { valuePrefix, _, executeCount, results ->
         val values = results.map { it.value }
         val expectedValues = List(executeCount) { "$valuePrefix $it" }
