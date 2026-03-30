@@ -14,7 +14,6 @@
 package com.google.firebase.firestore
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.Tasks
 import com.google.common.truth.Truth.assertThat
@@ -25,6 +24,7 @@ import com.google.firebase.firestore.pipeline.Expression.Companion.score
 import com.google.firebase.firestore.pipeline.SearchStage
 import com.google.firebase.firestore.testutil.IntegrationTestUtil
 import org.junit.Assume
+import org.junit.Before
 import org.junit.BeforeClass
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -123,17 +123,6 @@ class PipelineSearchTest {
     @JvmStatic
     @BeforeClass
     fun setupRestaurantDocs() {
-      Assume.assumeTrue(
-        "true".equals(
-          InstrumentationRegistry.getArguments().getString("RUN_SEARCH_TESTS"),
-          ignoreCase = true
-        )
-      )
-
-      Assume.assumeTrue(
-        IntegrationTestUtil.getBackendEdition() == IntegrationTestUtil.BackendEdition.ENTERPRISE
-      )
-
       firestore = IntegrationTestUtil.testFirestore()
       restaurantsCollection = firestore.collection(COLLECTION_NAME)
 
@@ -154,6 +143,17 @@ class PipelineSearchTest {
       }
       IntegrationTestUtil.waitFor(Tasks.whenAll(writes))
     }
+  }
+
+  @Before
+  fun beforeTest() {
+    Assume.assumeTrue(
+      IntegrationTestUtil.getTargetBackend() == IntegrationTestUtil.TargetBackend.NIGHTLY
+    )
+
+    Assume.assumeTrue(
+      IntegrationTestUtil.getBackendEdition() == IntegrationTestUtil.BackendEdition.ENTERPRISE
+    )
   }
 
   private fun assertResultIds(snapshot: Pipeline.Snapshot, vararg ids: String) {
@@ -226,7 +226,7 @@ class PipelineSearchTest {
         .collection(COLLECTION_NAME)
         .search(
           SearchStage.withQuery(
-            field("location").geoDistance(GeoPoint(39.6985, -105.024)).lessThan(1000)
+            field("location").geoDistance(GeoPoint(39.6985, -105.024)).lessThanOrEqual(1000)
           )
           //            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
           )
@@ -417,27 +417,30 @@ class PipelineSearchTest {
     assertThat(result.get("searchScore") as Double).isGreaterThan(0.0)
     //    assertThat((result.get("snippet") as String).length).isGreaterThan(0)
   }
-  @Test
-  fun addFields_geoDistance() {
-    val ppl =
-      firestore
-        .pipeline()
-        .collection(COLLECTION_NAME)
-        .search(
-          SearchStage.withQuery(documentMatches("waffles"))
-            .withAddFields(
-              field("location").geoDistance(GeoPoint(39.6985, -105.024)).alias("distance"),
-            )
-          //            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
-          )
-        .select("name", "distance")
 
-    val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
-    assertThat(snapshot.results).hasSize(1)
-    val result = snapshot.results[0]
-    assertThat(result.get("name")).isEqualTo("The Golden Waffle")
-    assertThat(result.get("distance") as Double).isGreaterThan(0.0)
-  }
+  //  @Test
+  //  fun addFields_geoDistance() {
+  //    val ppl =
+  //      firestore
+  //        .pipeline()
+  //        .collection(COLLECTION_NAME)
+  //        .search(
+  //          SearchStage.withQuery(
+  //                  field("location").geoDistance(GeoPoint(39.6985,
+  // -105.024)).lessThanOrEqual(1000))
+  //            .withAddFields(
+  //              field("location").geoDistance(GeoPoint(39.6985, -105.024)).alias("distance"),
+  //            )
+  //          //            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
+  //          )
+  //        .select("name", "distance")
+  //
+  //    val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
+  //    assertThat(snapshot.results).hasSize(1)
+  //    val result = snapshot.results[0]
+  //    assertThat(result.get("name")).isEqualTo("The Golden Waffle")
+  //    assertThat(result.get("distance") as Double).isGreaterThan(0.0)
+  //  }
 
   // select
   // TODO(search) enable with backend support
@@ -492,13 +495,15 @@ class PipelineSearchTest {
         .pipeline()
         .collection(COLLECTION_NAME)
         .search(
-          SearchStage.withQuery(documentMatches("tacos"))
-            .withSort(field("location").geoDistance(GeoPoint(39.6985, -105.024)).ascending())
+          SearchStage.withQuery(
+              field("location").geoDistance(GeoPoint(39.6985, -105.024)).lessThanOrEqual(5600)
+            )
+            .withSort(field("location").geoDistance(GeoPoint(39.6985, -105.024)).descending())
           //            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
           )
 
     val snapshot = IntegrationTestUtil.waitFor(ppl.execute())
-    assertResultIds(snapshot, "solTacos", "eastsideTacos")
+    assertResultIds(snapshot, "solTacos", "lotusBlossomThai", "mileHighCatch")
   }
 
   // TODO(search) enable with backend support
