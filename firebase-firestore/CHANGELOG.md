@@ -2,7 +2,11 @@
 
 - [feature] Added support for Pipeline expressions `ifNull` and `coalesce`.
   [#7976](https://github.com/firebase/firebase-android-sdk/pull/7976)
+- [feature] Added support for `timestampTruncate`, `timestampDiff`, and `timestampExtract` Pipeline expressions.
+  [#7955](https://github.com/firebase/firebase-android-sdk/pull/7955)
 - [feature] Pipeline operations are GA now.
+- [feature] Added support for Pipeline Subqueries, including `define` and `variable` expressions.
+  [#7736](https://github.com/firebase/firebase-android-sdk/pull/7736)
 - [feature] Added support for Pipeline expressions `nor` and `switchOn`.
   [#7903](https://github.com/firebase/firebase-android-sdk/pull/7903)
 - [feature] Added support for `first`, `last`, `arrayAgg`, and `arrayAggDistinct` Pipeline expressions.
