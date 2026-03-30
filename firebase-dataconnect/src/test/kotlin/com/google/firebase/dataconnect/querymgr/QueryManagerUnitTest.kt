@@ -580,6 +580,38 @@ class QueryManagerUnitTest {
     )
   }
 
+  @Test
+  fun `execute() does NOT deduplicate queries with distinct authUid`() {
+    val generatedAuthTokens = CopyOnWriteArrayList<String?>()
+
+    verifyExecuteDeduplication(
+      transformExecuteArguments = { it.args },
+      verifyResults = { valuePrefix, _, executeCount, results ->
+        val values = results.map { it.value }
+        val expectedValues = List(executeCount) { "$valuePrefix $it" }
+        values shouldContainExactlyInAnyOrder expectedValues
+      },
+      newDataConnectAuth = {
+        val distinctAuthUidArb = Arb.dataConnect.authTokenResult().map { it.authUid }.distinct()
+        val authTokenResultArb = Arb.dataConnect.authTokenResult(authUid = distinctAuthUidArb)
+        mockk {
+          coEvery { getToken(any()) } answers
+            {
+              val authTokenResult = authTokenResultArb.bind()
+              generatedAuthTokens.add(authTokenResult.token)
+              authTokenResult
+            }
+        }
+      },
+      calculateExpectedExecuteQueryInvocationCount = { executeCount -> executeCount },
+      verifyExecuteQueryInvocations = { invocations ->
+        val authTokens = invocations.map { it.authToken }
+        authTokens shouldContainExactlyInAnyOrder generatedAuthTokens.toList()
+        generatedAuthTokens.clear()
+      }
+    )
+  }
+
   private data class VerifyExecuteDeduplicationCallbackArguments(
     val valuePrefix: String,
     val valuePrefixOverride: String,
@@ -596,10 +628,7 @@ class QueryManagerUnitTest {
     newDataConnectAuth: PropertyContext.() -> DataConnectAuth? = { null },
     newDataConnectAppCheck: PropertyContext.() -> DataConnectAppCheck? = { null },
     calculateExpectedExecuteQueryInvocationCount: (executeCount: Int) -> Int = { 2 },
-    verifyExecuteQueryInvocations:
-      (authTokens: List<String?>, appCheckTokens: List<String?>) -> Unit =
-      { _, _ ->
-      },
+    verifyExecuteQueryInvocations: (List<ExecuteQueryArguments>) -> Unit = {},
   ) = runTest {
     checkAll(
       propTestConfig.withIterations(5),
@@ -650,52 +679,40 @@ class QueryManagerUnitTest {
 
       val results = jobs.awaitAll()
       verifyResults(valuePrefix, valuePrefixOverride, jobs.size, results)
+
+      val capturedRequestIds = mutableListOf<String>()
+      val capturedRequestProtos = mutableListOf<ExecuteQueryRequest>()
       val capturedAuthTokens = mutableListOf<String?>()
       val capturedAppCheckTokens = mutableListOf<String?>()
+      val capturedCallerSdkTypes = mutableListOf<CallerSdkType>()
       val expectedExecuteQueryInvocationCount =
         calculateExpectedExecuteQueryInvocationCount(jobs.size)
       coVerify(exactly = expectedExecuteQueryInvocationCount) {
         dataConnectGrpcRPCs.executeQuery(
-          any(),
-          any(),
+          capture(capturedRequestIds),
+          capture(capturedRequestProtos),
           captureNullable(capturedAuthTokens),
           captureNullable(capturedAppCheckTokens),
-          any()
+          capture(capturedCallerSdkTypes),
         )
       }
-      verifyExecuteQueryInvocations(capturedAuthTokens.toList(), capturedAppCheckTokens.toList())
-    }
-  }
-
-  @Test
-  fun `execute() does NOT deduplicate queries with distinct authUid`() {
-    val generatedAuthTokens = CopyOnWriteArrayList<String?>()
-
-    verifyExecuteDeduplication(
-      transformExecuteArguments = { it.args },
-      verifyResults = { valuePrefix, _, executeCount, results ->
-        val values = results.map { it.value }
-        val expectedValues = List(executeCount) { "$valuePrefix $it" }
-        values shouldContainExactlyInAnyOrder expectedValues
-      },
-      newDataConnectAuth = {
-        val distinctAuthUidArb = Arb.dataConnect.authTokenResult().map { it.authUid }.distinct()
-        val authTokenResultArb = Arb.dataConnect.authTokenResult(authUid = distinctAuthUidArb)
-        mockk {
-          coEvery { getToken(any()) } answers
-            {
-              val authTokenResult = authTokenResultArb.bind()
-              generatedAuthTokens.add(authTokenResult.token)
-              authTokenResult
-            }
+      check(capturedRequestIds.size == expectedExecuteQueryInvocationCount)
+      check(capturedRequestProtos.size == expectedExecuteQueryInvocationCount)
+      check(capturedAuthTokens.size == expectedExecuteQueryInvocationCount)
+      check(capturedAppCheckTokens.size == expectedExecuteQueryInvocationCount)
+      check(capturedCallerSdkTypes.size == expectedExecuteQueryInvocationCount)
+      val executeQueryInvocations =
+        List(capturedRequestIds.size) {
+          ExecuteQueryArguments(
+            requestId = capturedRequestIds[it],
+            requestProto = capturedRequestProtos[it],
+            authToken = capturedAuthTokens[it],
+            appCheckToken = capturedAppCheckTokens[it],
+            callerSdkType = capturedCallerSdkTypes[it],
+          )
         }
-      },
-      calculateExpectedExecuteQueryInvocationCount = { executeCount -> executeCount },
-      verifyExecuteQueryInvocations = { authTokens, _ ->
-        authTokens shouldContainExactlyInAnyOrder generatedAuthTokens.toList()
-        generatedAuthTokens.clear()
-      }
-    )
+      verifyExecuteQueryInvocations(executeQueryInvocations)
+    }
   }
 
   private suspend fun PropertyContext.buildQueryManager(
@@ -735,6 +752,14 @@ private data class ExecuteArguments<Data, Variables>(
   val dataSerializersModule: SerializersModule?,
   val variablesSerializersModule: SerializersModule?,
   val fetchPolicy: QueryRef.FetchPolicy,
+)
+
+private data class ExecuteQueryArguments(
+  val requestId: String,
+  val requestProto: ExecuteQueryRequest,
+  val authToken: String?,
+  val appCheckToken: String?,
+  val callerSdkType: CallerSdkType,
 )
 
 private fun <NewData, Variables> ExecuteArguments<*, Variables>.withDataDeserializer(
