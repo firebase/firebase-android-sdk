@@ -3356,6 +3356,227 @@ abstract class Expression internal constructor() {
       FunctionExpression("map_remove", notImplemented, mapField, key)
 
     /**
+     * Creates an expression that returns a new map with the specified entries added or updated.
+     *
+     * Note: This only performs shallow updates to the map. Setting a value to `null` will retain
+     * the key with a `null` value. To remove a key entirely, use `mapRemove`.
+     *
+     * ```kotlin
+     * // Set the 'city' to "San Francisco" in the 'address' map
+     * mapSet(field("address"), constant("city"), constant("San Francisco"));
+     * ```
+     *
+     * @param mapExpr The expression representing the map.
+     * @param key The key to set. Must be an expression representing a string.
+     * @param value The value to set.
+     * @param moreKeyValues Additional key-value pairs to set.
+     * @return A new [Expression] representing the map with the entries set.
+     */
+    @JvmStatic
+    fun mapSet(
+      mapExpr: Expression,
+      key: Expression,
+      value: Expression,
+      vararg moreKeyValues: Expression
+    ): Expression =
+      FunctionExpression("map_set", notImplemented, mapExpr, key, value, *moreKeyValues)
+
+    /**
+     * Creates an expression that returns a new map with the specified entries added or updated.
+     *
+     * Note: This only performs shallow updates to the map. Setting a value to `null` will retain
+     * the key with a `null` value. To remove a key entirely, use `mapRemove`.
+     *
+     * ```kotlin
+     * // Set the 'city' to "San Francisco" in the 'address' map
+     * mapSet(field("address"), "city", "San Francisco");
+     * ```
+     *
+     * @param mapExpr The map field to set entries in.
+     * @param key The key to set.
+     * @param value The value to set.
+     * @param moreKeyValues Additional key-value pairs to set.
+     * @return A new [Expression] representing the map with the entries set.
+     */
+    @JvmStatic
+    fun mapSet(
+      mapExpr: Expression,
+      key: String,
+      value: Any?,
+      vararg moreKeyValues: Any
+    ): Expression =
+      FunctionExpression(
+        "map_set",
+        notImplemented,
+        mapExpr,
+        constant(key),
+        toExprOrConstant(value),
+        *toArrayOfExprOrConstant(moreKeyValues)
+      )
+
+    /**
+     * Creates an expression that returns a new map with the specified entries added or updated.
+     *
+     * Note: This only performs shallow updates to the map. Setting a value to `null` will retain
+     * the key with a `null` value. To remove a key entirely, use `mapRemove`.
+     *
+     * ```kotlin
+     * // Set the 'city' to "San Francisco" in the 'address' map
+     * mapSet("address", constant("city"), constant("San Francisco"));
+     * ```
+     *
+     * @param mapField The map field to set entries in.
+     * @param key The key to set. Must be an expression representing a string.
+     * @param value The value to set.
+     * @param moreKeyValues Additional key-value pairs to set.
+     * @return A new [Expression] representing the map with the entries set.
+     */
+    @JvmStatic
+    fun mapSet(
+      mapField: String,
+      key: Expression,
+      value: Expression,
+      vararg moreKeyValues: Expression
+    ): Expression =
+      FunctionExpression("map_set", notImplemented, field(mapField), key, value, *moreKeyValues)
+
+    /**
+     * Creates an expression that returns a new map with the specified entries added or updated.
+     *
+     * Note: This only performs shallow updates to the map. Setting a value to `null` will retain
+     * the key with a `null` value. To remove a key entirely, use `mapRemove`.
+     *
+     * ```kotlin
+     * // Set the 'city' to "San Francisco" in the 'address' map
+     * mapSet("address", "city", "San Francisco");
+     * ```
+     *
+     * @param mapField The map field to set entries in.
+     * @param key The key to set. Must be an expression representing a string.
+     * @param value The value to set.
+     * @param moreKeyValues Additional key-value pairs to set.
+     * @return A new [Expression] representing the map with the entries set.
+     */
+    @JvmStatic
+    fun mapSet(mapField: String, key: String, value: Any?, vararg moreKeyValues: Any): Expression =
+      FunctionExpression(
+        "map_set",
+        notImplemented,
+        field(mapField),
+        constant(key),
+        toExprOrConstant(value),
+        *toArrayOfExprOrConstant(moreKeyValues)
+      )
+
+    /**
+     * Creates an expression that returns the keys of a map.
+     *
+     * Note: While the backend generally preserves insertion order, relying on the order of the
+     * output array is not guaranteed and should be avoided.
+     *
+     * ```kotlin
+     * // Get the keys of a map expression.
+     * mapKeys(map(mapOf("a" to 1, "b" to 2)))
+     * ```
+     *
+     * @param mapExpr The expression representing the map to get the keys of.
+     * @return A new [Expression] representing the keys of the map.
+     */
+    @JvmStatic
+    fun mapKeys(mapExpr: Expression): Expression =
+      FunctionExpression("map_keys", notImplemented, mapExpr)
+
+    /**
+     * Creates an expression that returns the keys of a map.
+     *
+     * Note: While the backend generally preserves insertion order, relying on the order of the
+     * output array is not guaranteed and should be avoided.
+     *
+     * ```kotlin
+     * // Get the keys of the 'metadata' map field.
+     * mapKeys("metadata")
+     * ```
+     *
+     * @param mapField The map field to get the keys of.
+     * @return A new [Expression] representing the keys of the map.
+     */
+    @JvmStatic
+    fun mapKeys(mapField: String): Expression =
+      FunctionExpression("map_keys", notImplemented, field(mapField))
+
+    /**
+     * Creates an expression that returns the values of a map.
+     *
+     * Note: While the backend generally preserves insertion order, relying on the order of the
+     * output array is not guaranteed and should be avoided.
+     *
+     * ```kotlin
+     * // Get the values of a map expression.
+     * mapValues(map(mapOf("a" to 1, "b" to 2)))
+     * ```
+     *
+     * @param mapExpr The expression representing the map to get the values of.
+     * @return A new [Expression] representing the values of the map.
+     */
+    @JvmStatic
+    fun mapValues(mapExpr: Expression): Expression =
+      FunctionExpression("map_values", notImplemented, mapExpr)
+
+    /**
+     * Creates an expression that returns the values of a map.
+     *
+     * Note: While the backend generally preserves insertion order, relying on the order of the
+     * output array is not guaranteed and should be avoided.
+     *
+     * ```kotlin
+     * // Get the values of the 'metadata' map field.
+     * mapValues("metadata")
+     * ```
+     *
+     * @param mapField The map field to get the values of.
+     * @return A new [Expression] representing the values of the map.
+     */
+    @JvmStatic
+    fun mapValues(mapField: String): Expression =
+      FunctionExpression("map_values", notImplemented, field(mapField))
+
+    /**
+     * Creates an expression that returns the entries of a map as an array of maps, where each map
+     * contains a "k" property for the key and a "v" property for the value.
+     *
+     * Note: While the backend generally preserves insertion order, relying on the order of the
+     * output array is not guaranteed and should be avoided.
+     *
+     * ```kotlin
+     * // Get the entries of a map expression.
+     * mapEntries(map(mapOf("a" to 1, "b" to 2)))
+     * ```
+     *
+     * @param mapExpr The expression representing the map to get the entries of.
+     * @return A new [Expression] representing the entries of the map.
+     */
+    @JvmStatic
+    fun mapEntries(mapExpr: Expression): Expression =
+      FunctionExpression("map_entries", notImplemented, mapExpr)
+
+    /**
+     * Creates an expression that returns the entries of a map as an array of maps.
+     *
+     * Note: While the backend generally preserves insertion order, relying on the order of the
+     * output array is not guaranteed and should be avoided.
+     *
+     * ```kotlin
+     * // Get the entries of the 'metadata' map field.
+     * mapEntries("metadata")
+     * ```
+     *
+     * @param mapField The map field to get the entries of.
+     * @return A new [Expression] representing the entries of the map.
+     */
+    @JvmStatic
+    fun mapEntries(mapField: String): Expression =
+      FunctionExpression("map_entries", notImplemented, field(mapField))
+    /**
      * Calculates the Cosine distance between two vector expressions.
      *
      * ```kotlin
@@ -6461,6 +6682,120 @@ abstract class Expression internal constructor() {
       FunctionExpression("if_absent", notImplemented, ifFieldName, elseValue)
 
     /**
+     * Creates an expression that returns the [elseExpr] argument if [ifExpr] evaluates to null,
+     * else return the result of the [ifExpr] argument evaluation.
+     *
+     * This function provides a fallback for both absent and explicit null values. In contrast,
+     * [ifAbsent] only triggers for missing fields.
+     *
+     * ```kotlin
+     * // Returns the user's preferred name, or if that is null, returns their full name.
+     * ifNull(field("preferredName"), field("fullName"))
+     * ```
+     *
+     * @param ifExpr The expression to check for null.
+     * @param elseExpr The expression that will be evaluated and returned if [ifExpr] is null.
+     * @return A new [Expression] representing the ifNull operation.
+     */
+    @JvmStatic
+    fun ifNull(ifExpr: Expression, elseExpr: Expression): Expression =
+      FunctionExpression("if_null", notImplemented, ifExpr, elseExpr)
+
+    /**
+     * Creates an expression that returns the [elseValue] argument if [ifExpr] evaluates to null,
+     * else return the result of the [ifExpr] argument evaluation.
+     *
+     * This function provides a fallback for both absent and explicit null values. In contrast,
+     * [ifAbsent] only triggers for missing fields.
+     *
+     * ```kotlin
+     * // Returns the user's display name, or returns "Anonymous" if the field is null.
+     * ifNull(field("displayName"), "Anonymous")
+     * ```
+     *
+     * @param ifExpr The expression to check for null.
+     * @param elseValue The value that will be returned if [ifExpr] evaluates to null.
+     * @return A new [Expression] representing the ifNull operation.
+     */
+    @JvmStatic
+    fun ifNull(ifExpr: Expression, elseValue: Any): Expression =
+      FunctionExpression("if_null", notImplemented, ifExpr, elseValue)
+
+    /**
+     * Creates an expression that returns the [elseExpr] argument if [ifFieldName] field is null,
+     * else return the value of the field.
+     *
+     * ```kotlin
+     * // Returns the user's preferred name, or if that is null, returns their full name.
+     * ifNull("preferredName", field("fullName"))
+     * ```
+     *
+     * @param ifFieldName The field to check for null.
+     * @param elseExpr The expression that will be evaluated and returned if [ifFieldName] is null.
+     * @return A new [Expression] representing the ifNull operation.
+     */
+    @JvmStatic
+    fun ifNull(ifFieldName: String, elseExpr: Expression): Expression =
+      FunctionExpression("if_null", notImplemented, ifFieldName, elseExpr)
+
+    /**
+     * Creates an expression that returns the [elseValue] argument if [ifFieldName] field is null,
+     * else return the value of the field.
+     *
+     * ```kotlin
+     * // Returns the user's display name, or returns "Anonymous" if the field is null.
+     * ifNull("displayName", "Anonymous")
+     * ```
+     *
+     * @param ifFieldName The field to check for null.
+     * @param elseValue The value that will be returned if [ifFieldName] is null.
+     * @return A new [Expression] representing the ifNull operation.
+     */
+    @JvmStatic
+    fun ifNull(ifFieldName: String, elseValue: Any): Expression =
+      FunctionExpression("if_null", notImplemented, ifFieldName, elseValue)
+
+    /**
+     * Creates an expression that returns the first non-null, non-absent argument, without
+     * evaluating the rest of the arguments. When all arguments are null or absent, returns the last
+     * argument.
+     *
+     * ```kotlin
+     * // Returns the value of the first non-null, non-absent field among 'preferredName', 'fullName',
+     * // or the last argument if all previous fields are null.
+     * coalesce(field("preferredName"), field("fullName"), constant("Anonymous"))
+     * ```
+     *
+     * @param expression The first expression to check for null.
+     * @param replacement The fallback expression or value if the first one is null.
+     * @param others Optional additional expressions to check if previous ones are null.
+     * @return A new [Expression] representing the coalesce operation.
+     */
+    @JvmStatic
+    fun coalesce(expression: Expression, replacement: Any, vararg others: Any): Expression =
+      FunctionExpression("coalesce", notImplemented, expression, replacement, *others)
+
+    /**
+     * Creates an expression that returns the first non-null, non-absent argument, without
+     * evaluating the rest of the arguments. When all arguments are null or absent, returns the last
+     * argument.
+     *
+     * ```kotlin
+     * // Returns the value of the first non-null, non-absent field among 'preferredName', 'fullName',
+     * // or the last argument if all previous fields are null.
+     * coalesce("preferredName", field("fullName"), constant("Anonymous"))
+     * ```
+     *
+     * @param fieldName The name of the first field to check for null.
+     * @param replacement The fallback expression or value if the first one is null.
+     * @param others Optional additional expressions to check if previous ones are null.
+     * @return A new [Expression] representing the coalesce operation.
+     */
+    @JvmStatic
+    fun coalesce(fieldName: String, replacement: Any, vararg others: Any): Expression =
+      FunctionExpression("coalesce", notImplemented, fieldName, replacement, *others)
+
+    /**
      * Creates an expression that returns the collection ID from a path.
      *
      * ```kotlin
@@ -7735,6 +8070,88 @@ abstract class Expression internal constructor() {
    * @return A new [Expression] that evaluates to a modified map.
    */
   fun mapRemove(key: String) = Companion.mapRemove(this, key)
+
+  /**
+   * Creates an expression that returns a new map with the specified entries added or updated.
+   *
+   * - Only performs shallow updates to the map.
+   * - Setting a value to `null` will retain the key with a `null` value. To remove a key entirely,
+   * use `mapRemove`.
+   *
+   * ```kotlin
+   * // Set the 'category' key to the value of the 'newCategory' field.
+   * field("metadata").mapSet(field("keyField"), field("newCategory"))
+   * ```
+   *
+   * @param key The key to set.
+   * @param value The value to set.
+   * @param moreKeyValues Additional key-value pairs to set.
+   * @return A new [Expression] representing the map with the entries set.
+   */
+  fun mapSet(key: Expression, value: Expression, vararg moreKeyValues: Expression): Expression =
+    Companion.mapSet(this, key, value, *moreKeyValues)
+
+  /**
+   * Creates an expression that returns a new map with the specified entries added or updated.
+   *
+   * ```kotlin
+   * // Set the 'category' key to "Electronics" and 'active' to true.
+   * field("metadata").mapSet("category", "Electronics", "active", true)
+   * ```
+   *
+   * @param key The key to set.
+   * @param value The value to set.
+   * @param moreKeyValues Additional key-value pairs to set.
+   * @return A new [Expression] representing the map with the entries set.
+   */
+  fun mapSet(key: String, value: Any?, vararg moreKeyValues: Any): Expression =
+    Companion.mapSet(this, key, value, *moreKeyValues)
+
+  /**
+   * Creates an expression that returns the keys of this map expression.
+   *
+   * While the backend generally preserves insertion order, relying on the order of the output array
+   * is not guaranteed and should be avoided.
+   *
+   * ```kotlin
+   * // Get the keys of the 'metadata' map field.
+   * field("metadata").mapKeys()
+   * ```
+   *
+   * @return A new [Expression] representing the keys of the map.
+   */
+  fun mapKeys(): Expression = Companion.mapKeys(this)
+
+  /**
+   * Creates an expression that returns the values of this map expression.
+   *
+   * While the backend generally preserves insertion order, relying on the order of the output array
+   * is not guaranteed and should be avoided.
+   *
+   * ```kotlin
+   * // Get the values of the 'metadata' map field.
+   * field("metadata").mapValues()
+   * ```
+   *
+   * @return A new [Expression] representing the values of the map.
+   */
+  fun mapValues(): Expression = Companion.mapValues(this)
+
+  /**
+   * Creates an expression that returns the entries of this map expression as an array of maps,
+   * where each map contains a "k" property for the key and a "v" property for the value.
+   *
+   * While the backend generally preserves insertion order, relying on the order of the output array
+   * is not guaranteed and should be avoided.
+   *
+   * ```kotlin
+   * // Get the entries of the 'metadata' map field.
+   * field("metadata").mapEntries()
+   * ```
+   *
+   * @return A new [Expression] representing the entries of the map.
+   */
+  fun mapEntries(): Expression = Companion.mapEntries(this)
 
   /**
    * Calculates the Cosine distance between this and another vector expressions.
@@ -9031,6 +9448,58 @@ abstract class Expression internal constructor() {
    * @return A new [Expression] representing the ifAbsent operation.
    */
   fun ifAbsent(elseValue: Any): Expression = Companion.ifAbsent(this, elseValue)
+
+  /**
+   * Creates an expression that returns the [elseExpression] argument if this expression evaluates
+   * to null, else return the result of this expression.
+   *
+   * This function provides a fallback for both absent and explicit null values. In contrast,
+   * [ifAbsent] only triggers for missing fields.
+   *
+   * ```kotlin
+   * // Returns the user's preferred name, or if that is null, returns their full name.
+   * field("preferredName").ifNull(field("fullName"))
+   * ```
+   *
+   * @param elseExpression The expression that will be evaluated and returned if this expression is
+   * null.
+   * @return A new [Expression] representing the ifNull operation.
+   */
+  fun ifNull(elseExpression: Expression): Expression = Companion.ifNull(this, elseExpression)
+
+  /**
+   * Creates an expression that returns the [elseValue] argument if this expression evaluates to
+   * null, else return the result of this expression.
+   *
+   * This function provides a fallback for both absent and explicit null values. In contrast,
+   * [ifAbsent] only triggers for missing fields.
+   *
+   * ```kotlin
+   * // Returns the user's display name, or returns "Anonymous" if the field is null.
+   * field("displayName").ifNull("Anonymous")
+   * ```
+   *
+   * @param elseValue The value that will be returned if this expression evaluates to null.
+   * @return A new [Expression] representing the ifNull operation.
+   */
+  fun ifNull(elseValue: Any): Expression = Companion.ifNull(this, elseValue)
+
+  /**
+   * Creates an expression that returns the first non-null, non-absent argument, without evaluating
+   * the rest of the arguments. When all arguments are null or absent, returns the last argument.
+   *
+   * ```kotlin
+   * // Returns the value of the first non-null, non-absent field among 'preferredName', 'fullName',
+   * // or the last argument if all previous fields are null.
+   * field("preferredName").coalesce(field("fullName"), "Anonymous")
+   * ```
+   *
+   * @param replacement The fallback expression or value if the first one is null.
+   * @param others Optional additional expressions to check if previous ones are null.
+   * @return A new [Expression] representing the coalesce operation.
+   */
+  fun coalesce(replacement: Any, vararg others: Any): Expression =
+    Companion.coalesce(this, replacement, *others)
 
   /**
    * Creates an expression that checks if this expression produces an error.
