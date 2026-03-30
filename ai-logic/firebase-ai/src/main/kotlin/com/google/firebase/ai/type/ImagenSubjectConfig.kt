@@ -17,7 +17,6 @@ package com.google.firebase.ai.type
 
 import kotlinx.serialization.Serializable
 
-/** Represents the subject configuration for Imagen */
 internal class ImagenSubjectConfig(
   val description: String?,
   val type: ImagenSubjectReferenceType?,

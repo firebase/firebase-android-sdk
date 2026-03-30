@@ -17,7 +17,6 @@ package com.google.firebase.ai.type
 
 import kotlinx.serialization.Serializable
 
-/** Represents the style configuration for Imagen */
 internal class ImagenStyleConfig(val description: String?) {
 
   fun toInternal(): Internal {

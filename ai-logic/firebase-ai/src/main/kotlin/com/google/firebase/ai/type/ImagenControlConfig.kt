@@ -17,7 +17,6 @@ package com.google.firebase.ai.type
 
 import kotlinx.serialization.Serializable
 
-/** Represents the control configuration for Imagen */
 internal class ImagenControlConfig(
   internal val controlType: ImagenControlType,
   internal val enableComputation: Boolean? = null,

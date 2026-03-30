@@ -15,7 +15,6 @@
  */
 package com.google.firebase.ai.type
 
-/** Represents the mask mode for Imagen */
 internal class ImagenMaskMode private constructor(internal val value: String) {
   companion object {
     val USER_PROVIDED: ImagenMaskMode = ImagenMaskMode("MASK_MODE_USER_PROVIDED")

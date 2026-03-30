@@ -17,7 +17,6 @@ package com.google.firebase.ai.type
 
 import kotlinx.serialization.Serializable
 
-/** Represents the mask configuration for Imagen */
 internal class ImagenMaskConfig(
   internal val maskType: ImagenMaskMode,
   internal val dilation: Double? = null,

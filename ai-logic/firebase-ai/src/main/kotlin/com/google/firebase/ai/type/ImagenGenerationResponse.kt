@@ -49,7 +49,6 @@ internal constructor(public val images: List<T>, public val filteredReason: Stri
       )
   }
 
-  /** Represents an image response from Imagen */
   @Serializable
   internal data class ImagenImageResponse(
     val bytesBase64Encoded: String? = null,
@@ -64,7 +63,6 @@ internal constructor(public val images: List<T>, public val filteredReason: Stri
     internal fun toPublicGCS() = ImagenGCSImage(gcsUri!!, mimeType!!)
   }
 
-  /** Represents safety attributes for Imagen */
   @Serializable
   internal data class ImagenSafetyAttributes(
     val categories: List<String>? = null,
