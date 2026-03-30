@@ -1,5 +1,6 @@
 # Unreleased
 
+- [feature] Added support for Chat interactions using server prompt templates (#7986)
 - [fixed] Fixed an issue causing network timeouts to throw the incorrect exception type, instead of
   `RequestTimeoutException` (#7966)
 - [fixed] Fixed missing `toString()` implemenation for `InferenceSource` (#7970)
