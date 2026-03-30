@@ -1153,6 +1153,10 @@ package com.google.firebase.firestore.pipeline {
     method public final com.google.firebase.firestore.pipeline.BooleanExpression notEqualAny(java.util.List<?> values);
     method public static final com.google.firebase.firestore.pipeline.Expression nullValue();
     method public static final com.google.firebase.firestore.pipeline.BooleanExpression or(com.google.firebase.firestore.pipeline.BooleanExpression condition, com.google.firebase.firestore.pipeline.BooleanExpression... conditions);
+    method public final com.google.firebase.firestore.pipeline.Expression parent();
+    method public static final com.google.firebase.firestore.pipeline.Expression parent(com.google.firebase.firestore.DocumentReference docRef);
+    method public static final com.google.firebase.firestore.pipeline.Expression parent(com.google.firebase.firestore.pipeline.Expression documentPath);
+    method public static final com.google.firebase.firestore.pipeline.Expression parent(String documentPath);
     method public final com.google.firebase.firestore.pipeline.Expression pow(com.google.firebase.firestore.pipeline.Expression exponent);
     method public static final com.google.firebase.firestore.pipeline.Expression pow(com.google.firebase.firestore.pipeline.Expression numericExpr, com.google.firebase.firestore.pipeline.Expression exponent);
     method public static final com.google.firebase.firestore.pipeline.Expression pow(com.google.firebase.firestore.pipeline.Expression numericExpr, Number exponent);
@@ -1550,6 +1554,9 @@ package com.google.firebase.firestore.pipeline {
     method public com.google.firebase.firestore.pipeline.BooleanExpression notEqualAny(String fieldName, java.util.List<?> values);
     method public com.google.firebase.firestore.pipeline.Expression nullValue();
     method public com.google.firebase.firestore.pipeline.BooleanExpression or(com.google.firebase.firestore.pipeline.BooleanExpression condition, com.google.firebase.firestore.pipeline.BooleanExpression... conditions);
+    method public com.google.firebase.firestore.pipeline.Expression parent(com.google.firebase.firestore.DocumentReference docRef);
+    method public com.google.firebase.firestore.pipeline.Expression parent(com.google.firebase.firestore.pipeline.Expression documentPath);
+    method public com.google.firebase.firestore.pipeline.Expression parent(String documentPath);
     method public com.google.firebase.firestore.pipeline.Expression pow(com.google.firebase.firestore.pipeline.Expression numericExpr, com.google.firebase.firestore.pipeline.Expression exponent);
     method public com.google.firebase.firestore.pipeline.Expression pow(com.google.firebase.firestore.pipeline.Expression numericExpr, Number exponent);
     method public com.google.firebase.firestore.pipeline.Expression pow(String numericField, com.google.firebase.firestore.pipeline.Expression exponent);
