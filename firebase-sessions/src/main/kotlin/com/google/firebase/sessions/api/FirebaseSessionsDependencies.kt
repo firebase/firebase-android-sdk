@@ -20,8 +20,8 @@ import android.util.Log
 import androidx.annotation.VisibleForTesting
 import com.google.firebase.sessions.FirebaseSessions.Companion.TAG
 import java.util.Collections.synchronizedMap
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
+import java.util.concurrent.CountDownLatch
+import kotlinx.coroutines.runInterruptible
 
 /**
  * [FirebaseSessionsDependencies] determines when a dependent SDK is installed in the app. The
@@ -44,8 +44,8 @@ public object FirebaseSessionsDependencies {
       return
     }
 
-    // The dependency is locked until the subscriber registers itself.
-    dependencies[subscriberName] = Dependency(Mutex(locked = true))
+    // The dependency is latched until the subscriber registers itself.
+    dependencies[subscriberName] = Dependency(CountDownLatch(1))
     Log.d(TAG, "Dependency to $subscriberName added.")
   }
 
@@ -65,15 +65,16 @@ public object FirebaseSessionsDependencies {
     dependency.subscriber = subscriber
     Log.d(TAG, "Subscriber $subscriberName registered.")
 
-    // Unlock to show the subscriber has been registered, it is possible to get it now.
-    dependency.mutex.unlock()
+    // Signal that the subscriber has been registered, it is possible to get it now.
+    dependency.latch.countDown()
   }
 
   /** Gets the subscribers safely, blocks until all the subscribers are registered. */
   internal suspend fun getRegisteredSubscribers(): Map<SessionSubscriber.Name, SessionSubscriber> {
-    // The call to getSubscriber will never throw because the mutex guarantees it's been registered.
+    // The call to getSubscriber will never throw because the latch guarantees it's been registered.
     return dependencies.mapValues { (subscriberName, dependency) ->
-      dependency.mutex.withLock { getSubscriber(subscriberName) }
+      runInterruptible { dependency.latch.await() }
+      getSubscriber(subscriberName)
     }
   }
 
@@ -95,5 +96,5 @@ public object FirebaseSessionsDependencies {
     }
   }
 
-  private data class Dependency(val mutex: Mutex, var subscriber: SessionSubscriber? = null)
+  private data class Dependency(val latch: CountDownLatch, var subscriber: SessionSubscriber? = null)
 }
