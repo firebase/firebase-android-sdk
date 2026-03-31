@@ -498,7 +498,7 @@ class PipelineSearchTest {
           SearchStage.withQuery(
               field("location").geoDistance(GeoPoint(39.6985, -105.024)).lessThanOrEqual(5600)
             )
-            .withSort(field("location").geoDistance(GeoPoint(39.6985, -105.024)).descending())
+            .withSort(field("location").geoDistance(GeoPoint(39.6985, -105.024)).ascending())
           //            .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
           )
 
