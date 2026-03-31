@@ -49,6 +49,7 @@ import com.google.firebase.auth.internal.InternalAuthProvider
  * as June 2026. As a replacement, you can
  * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
  */
+@Deprecated("All Imagen models are deprecated.")
 public class ImagenModel
 internal constructor(
   private val modelName: String,
@@ -95,6 +96,7 @@ internal constructor(
    * early as June 2026. As a replacement, you can
    * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
    */
+  @Deprecated("All Imagen models are deprecated.")
   public suspend fun generateImages(prompt: String): ImagenGenerationResponse<ImagenInlineImage> =
     try {
       controller
@@ -117,6 +119,7 @@ internal constructor(
    * early as June 2026. As a replacement, you can
    * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
    */
+  @Deprecated("All Imagen models are deprecated.")
   @PublicPreviewAPI
   public suspend fun editImage(
     referenceImages: List<ImagenReferenceImage>,
@@ -146,6 +149,7 @@ internal constructor(
    * early as June 2026. As a replacement, you can
    * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
    */
+  @Deprecated("All Imagen models are deprecated.")
   @PublicPreviewAPI
   public suspend fun inpaintImage(
     image: ImagenInlineImage,
@@ -175,6 +179,7 @@ internal constructor(
    * early as June 2026. As a replacement, you can
    * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
    */
+  @Deprecated("All Imagen models are deprecated.")
   @PublicPreviewAPI
   public suspend fun outpaintImage(
     image: ImagenInlineImage,

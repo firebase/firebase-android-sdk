@@ -30,6 +30,7 @@ import kotlinx.serialization.Serializable
  * as June 2026. As a replacement, you can
  * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
  */
+@Deprecated("All Imagen models are deprecated.")
 @PublicPreviewAPI
 public abstract class ImagenReferenceImage
 internal constructor(
@@ -96,6 +97,7 @@ internal constructor(
  * as June 2026. As a replacement, you can
  * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
  */
+@Deprecated("All Imagen models are deprecated.")
 @PublicPreviewAPI
 public class ImagenControlReference(
   type: ImagenControlType,
@@ -120,6 +122,7 @@ public class ImagenControlReference(
  * as June 2026. As a replacement, you can
  * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
  */
+@Deprecated("All Imagen models are deprecated.")
 @PublicPreviewAPI
 public abstract class ImagenMaskReference
 internal constructor(maskConfig: ImagenMaskConfig, image: ImagenInlineImage? = null) :
@@ -143,6 +146,7 @@ internal constructor(maskConfig: ImagenMaskConfig, image: ImagenInlineImage? = n
      * early as June 2026. As a replacement, you can
      * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
      */
+    @Deprecated("All Imagen models are deprecated.")
     @JvmOverloads
     @JvmStatic
     public fun generateMaskAndPadForOutpainting(
@@ -170,6 +174,7 @@ internal constructor(maskConfig: ImagenMaskConfig, image: ImagenInlineImage? = n
      * early as June 2026. As a replacement, you can
      * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
      */
+    @Deprecated("All Imagen models are deprecated.")
     @JvmStatic
     public fun generateMaskAndPadForOutpainting(
       image: ImagenInlineImage,
@@ -241,6 +246,7 @@ internal constructor(maskConfig: ImagenMaskConfig, image: ImagenInlineImage? = n
  * as June 2026. As a replacement, you can
  * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
  */
+@Deprecated("All Imagen models are deprecated.")
 @PublicPreviewAPI
 public class ImagenBackgroundMask(dilation: Double? = null) :
   ImagenMaskReference(maskConfig = ImagenMaskConfig(ImagenMaskMode.BACKGROUND, dilation)) {}
@@ -255,6 +261,7 @@ public class ImagenBackgroundMask(dilation: Double? = null) :
  * as June 2026. As a replacement, you can
  * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
  */
+@Deprecated("All Imagen models are deprecated.")
 @PublicPreviewAPI
 public class ImagenForegroundMask(dilation: Double? = null) :
   ImagenMaskReference(maskConfig = ImagenMaskConfig(ImagenMaskMode.FOREGROUND, dilation)) {}
@@ -271,6 +278,7 @@ public class ImagenForegroundMask(dilation: Double? = null) :
  * as June 2026. As a replacement, you can
  * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
  */
+@Deprecated("All Imagen models are deprecated.")
 @PublicPreviewAPI
 public class ImagenRawMask(mask: ImagenInlineImage, dilation: Double? = null) :
   ImagenMaskReference(
@@ -291,6 +299,7 @@ public class ImagenRawMask(mask: ImagenInlineImage, dilation: Double? = null) :
  * as June 2026. As a replacement, you can
  * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
  */
+@Deprecated("All Imagen models are deprecated.")
 @PublicPreviewAPI
 public class ImagenSemanticMask(classes: List<Int>, dilation: Double? = null) :
   ImagenMaskReference(maskConfig = ImagenMaskConfig(ImagenMaskMode.SEMANTIC, dilation, classes)) {}
@@ -303,6 +312,7 @@ public class ImagenSemanticMask(classes: List<Int>, dilation: Double? = null) :
  * as June 2026. As a replacement, you can
  * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
  */
+@Deprecated("All Imagen models are deprecated.")
 @PublicPreviewAPI
 public class ImagenRawImage(image: ImagenInlineImage) : ImagenReferenceImage(image = image) {}
 
@@ -316,6 +326,7 @@ public class ImagenRawImage(image: ImagenInlineImage) : ImagenReferenceImage(ima
  * as June 2026. As a replacement, you can
  * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
  */
+@Deprecated("All Imagen models are deprecated.")
 @PublicPreviewAPI
 public class ImagenStyleReference(
   image: ImagenInlineImage,
@@ -339,6 +350,7 @@ public class ImagenStyleReference(
  * as June 2026. As a replacement, you can
  * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
  */
+@Deprecated("All Imagen models are deprecated.")
 @PublicPreviewAPI
 public class ImagenSubjectReference(
   image: ImagenInlineImage,

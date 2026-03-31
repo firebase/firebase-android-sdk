@@ -33,6 +33,7 @@ import kotlinx.serialization.Serializable
  * as June 2026. As a replacement, you can
  * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
  */
+@Deprecated("All Imagen models are deprecated.")
 public class ImagenInlineImage
 internal constructor(
   public val data: ByteArray,
@@ -46,6 +47,7 @@ internal constructor(
    * early as June 2026. As a replacement, you can
    * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
    */
+  @Deprecated("All Imagen models are deprecated.")
   public fun asBitmap(): Bitmap {
     return BitmapFactory.decodeByteArray(data, 0, data.size)
   }
@@ -65,6 +67,7 @@ internal constructor(
  * as June 2026. As a replacement, you can
  * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
  */
+@Deprecated("All Imagen models are deprecated.")
 @PublicPreviewAPI
 public fun Bitmap.toImagenInlineImage(): ImagenInlineImage {
   val byteArrayOutputStream = ByteArrayOutputStream()

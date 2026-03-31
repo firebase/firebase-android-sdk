@@ -30,6 +30,7 @@ import kotlinx.serialization.Serializable
  * as June 2026. As a replacement, you can
  * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
  */
+@Deprecated("All Imagen models are deprecated.")
 public class ImagenImageFormat
 private constructor(public val mimeType: String, public val compressionQuality: Int?) {
 
@@ -48,6 +49,7 @@ private constructor(public val mimeType: String, public val compressionQuality: 
      * early as June 2026. As a replacement, you can
      * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
      */
+    @Deprecated("All Imagen models are deprecated.")
     @JvmStatic
     public fun jpeg(compressionQuality: Int? = null): ImagenImageFormat {
       return ImagenImageFormat("image/jpeg", compressionQuality)
@@ -60,6 +62,7 @@ private constructor(public val mimeType: String, public val compressionQuality: 
      * early as June 2026. As a replacement, you can
      * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
      */
+    @Deprecated("All Imagen models are deprecated.")
     @JvmStatic
     public fun png(): ImagenImageFormat {
       return ImagenImageFormat("image/png", null)
