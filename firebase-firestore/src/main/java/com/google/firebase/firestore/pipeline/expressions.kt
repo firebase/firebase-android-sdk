@@ -5625,17 +5625,21 @@ abstract class Expression internal constructor() {
      * arrayTransform("scores", "score", multiply(variable("score"), 10))
      * ```
      *
-     * @param fieldName The name of field that contains array to transform.
+     * @param arrayFieldName The name of field that contains array to transform.
      * @param elementAlias The alias to use for the current element in the transform expression.
      * @param transform The expression used to transform the elements.
      * @return A new [Expression] representing the arrayTransform operation.
      */
     @JvmStatic
-    fun arrayTransform(fieldName: String, elementAlias: String, transform: Expression): Expression =
+    fun arrayTransform(
+      arrayFieldName: String,
+      elementAlias: String,
+      transform: Expression
+    ): Expression =
       FunctionExpression(
         "array_transform",
         notImplemented,
-        fieldName,
+        arrayFieldName,
         constant(elementAlias),
         transform
       )
@@ -5653,7 +5657,7 @@ abstract class Expression internal constructor() {
      * @param elementAlias The alias to use for the current element in the transform expression.
      * @param indexAlias The alias to use for the current index.
      * @param transform The expression used to transform the elements.
-     * @return A new [Expression] representing the arrayTransform operation.
+     * @return A new [Expression] representing the arrayTransformWithIndex operation.
      */
     @JvmStatic
     fun arrayTransformWithIndex(
@@ -5680,15 +5684,15 @@ abstract class Expression internal constructor() {
      * arrayTransformWithIndex("scores", "score", "i", add(variable("score"), variable("i")))
      * ```
      *
-     * @param fieldName The name of field that contains array to transform.
+     * @param arrayFieldName The name of field that contains array to transform.
      * @param elementAlias The alias to use for the current element in the transform expression.
      * @param indexAlias The alias to use for the current index.
      * @param transform The expression used to transform the elements.
-     * @return A new [Expression] representing the arrayTransform operation.
+     * @return A new [Expression] representing the arrayTransformWithIndex operation.
      */
     @JvmStatic
     fun arrayTransformWithIndex(
-      fieldName: String,
+      arrayFieldName: String,
       elementAlias: String,
       indexAlias: String,
       transform: Expression
@@ -5696,11 +5700,75 @@ abstract class Expression internal constructor() {
       FunctionExpression(
         "array_transform",
         notImplemented,
-        fieldName,
+        arrayFieldName,
         constant(elementAlias),
         constant(indexAlias),
         transform
       )
+
+    /**
+     * Creates an expression that returns a slice of an [array] expression to its end.
+     *
+     * ```kotlin
+     * // Get elements from the 'items' array starting from index 2
+     * arraySliceToEnd(field("items"), 2)
+     * ```
+     *
+     * @param array The array expression.
+     * @param offset The starting index.
+     * @return A new [Expression] representing the arraySliceToEnd operation.
+     */
+    @JvmStatic
+    fun arraySliceToEnd(array: Expression, offset: Int): Expression =
+      FunctionExpression("array_slice", notImplemented, array, toExprOrConstant(offset))
+
+    /**
+     * Creates an expression that returns a slice of an [array] expression to its end.
+     *
+     * ```kotlin
+     * // Get elements from the 'items' array starting at an offset defined by a field
+     * arraySliceToEnd(field("items"), field("startIdx"))
+     * ```
+     *
+     * @param array The array expression.
+     * @param offset The starting index.
+     * @return A new [Expression] representing the arraySliceToEnd operation.
+     */
+    @JvmStatic
+    fun arraySliceToEnd(array: Expression, offset: Expression): Expression =
+      FunctionExpression("array_slice", notImplemented, array, toExprOrConstant(offset))
+
+    /**
+     * Creates an expression that returns a slice of an array field to its end.
+     *
+     * ```kotlin
+     * // Get elements from the 'items' array starting from index 2
+     * arraySliceToEnd("items", 2)
+     * ```
+     *
+     * @param arrayFieldName The name of field that contains the array.
+     * @param offset The starting index.
+     * @return A new [Expression] representing the arraySliceToEnd operation.
+     */
+    @JvmStatic
+    fun arraySliceToEnd(arrayFieldName: String, offset: Int): Expression =
+      FunctionExpression("array_slice", notImplemented, arrayFieldName, toExprOrConstant(offset))
+
+    /**
+     * Creates an expression that returns a slice of an array field to its end.
+     *
+     * ```kotlin
+     * // Get elements from the 'items' array starting at an offset defined by a field
+     * arraySliceToEnd("items", field("startIdx"))
+     * ```
+     *
+     * @param arrayFieldName The name of field that contains the array.
+     * @param offset The starting index.
+     * @return A new [Expression] representing the arraySliceToEnd operation.
+     */
+    @JvmStatic
+    fun arraySliceToEnd(arrayFieldName: String, offset: Expression): Expression =
+      FunctionExpression("array_slice", notImplemented, arrayFieldName, toExprOrConstant(offset))
 
     /**
      * Creates an expression that returns a slice of an [array] expression.
@@ -5716,7 +5784,7 @@ abstract class Expression internal constructor() {
      * @return A new [Expression] representing the arraySlice operation.
      */
     @JvmStatic
-    fun arraySlice(array: Expression, offset: Any, length: Any): Expression =
+    fun arraySlice(array: Expression, offset: Int, length: Int): Expression =
       FunctionExpression(
         "array_slice",
         notImplemented,
@@ -5724,22 +5792,6 @@ abstract class Expression internal constructor() {
         toExprOrConstant(offset),
         toExprOrConstant(length)
       )
-
-    /**
-     * Creates an expression that returns a slice of an [array] expression to its end.
-     *
-     * ```kotlin
-     * // Get elements from the 'items' array starting from index 2
-     * arraySlice(field("items"), 2)
-     * ```
-     *
-     * @param array The array expression.
-     * @param offset The starting index.
-     * @return A new [Expression] representing the arraySlice operation.
-     */
-    @JvmStatic
-    fun arraySlice(array: Expression, offset: Any): Expression =
-      FunctionExpression("array_slice", notImplemented, array, toExprOrConstant(offset))
 
     /**
      * Creates an expression that returns a slice of an array field.
@@ -5755,7 +5807,7 @@ abstract class Expression internal constructor() {
      * @return A new [Expression] representing the arraySlice operation.
      */
     @JvmStatic
-    fun arraySlice(arrayFieldName: String, offset: Any, length: Any): Expression =
+    fun arraySlice(arrayFieldName: String, offset: Int, length: Int): Expression =
       FunctionExpression(
         "array_slice",
         notImplemented,
@@ -5765,20 +5817,50 @@ abstract class Expression internal constructor() {
       )
 
     /**
-     * Creates an expression that returns a slice of an array field to its end.
+     * Creates an expression that returns a slice of an [array] expression.
      *
      * ```kotlin
-     * // Get elements from the 'items' array starting from index 2
-     * arraySlice("items", 2)
+     * // Get elements from the 'items' array using expressions for offset and length
+     * arraySlice(field("items"), field("startIdx"), field("length"))
+     * ```
+     *
+     * @param array The array expression.
+     * @param offset The starting index.
+     * @param length The number of elements to return.
+     * @return A new [Expression] representing the arraySlice operation.
+     */
+    @JvmStatic
+    fun arraySlice(array: Expression, offset: Expression, length: Expression): Expression =
+      FunctionExpression(
+        "array_slice",
+        notImplemented,
+        array,
+        toExprOrConstant(offset),
+        toExprOrConstant(length)
+      )
+
+    /**
+     * Creates an expression that returns a slice of an array field.
+     *
+     * ```kotlin
+     * // Get elements from the 'items' array using expressions for offset and length
+     * arraySlice("items", field("startIdx"), field("length"))
      * ```
      *
      * @param arrayFieldName The name of field that contains the array.
      * @param offset The starting index.
+     * @param length The number of elements to return.
      * @return A new [Expression] representing the arraySlice operation.
      */
     @JvmStatic
-    fun arraySlice(arrayFieldName: String, offset: Any): Expression =
-      FunctionExpression("array_slice", notImplemented, arrayFieldName, toExprOrConstant(offset))
+    fun arraySlice(arrayFieldName: String, offset: Expression, length: Expression): Expression =
+      FunctionExpression(
+        "array_slice",
+        notImplemented,
+        arrayFieldName,
+        toExprOrConstant(offset),
+        toExprOrConstant(length)
+      )
 
     /**
      * Creates an expression that returns the sum of the elements in an array.
@@ -9040,10 +9122,36 @@ abstract class Expression internal constructor() {
    * @param elementAlias The alias to use for the current element in the transform expression.
    * @param indexAlias The alias to use for the current index.
    * @param transform The expression used to transform the elements.
-   * @return A new [Expression] representing the arrayTransform operation.
+   * @return A new [Expression] representing the arrayTransformWithIndex operation.
    */
   fun arrayTransformWithIndex(elementAlias: String, indexAlias: String, transform: Expression) =
     Companion.arrayTransformWithIndex(this, elementAlias, indexAlias, transform)
+
+  /**
+   * Creates an expression that returns a slice of this array expression to its end.
+   *
+   * ```kotlin
+   * // Get elements from the 'items' array starting from index 2
+   * field("items").arraySliceToEnd(2)
+   * ```
+   *
+   * @param offset The starting index.
+   * @return A new [Expression] representing the arraySliceToEnd operation.
+   */
+  fun arraySliceToEnd(offset: Int) = Companion.arraySliceToEnd(this, offset)
+
+  /**
+   * Creates an expression that returns a slice of this array expression to its end.
+   *
+   * ```kotlin
+   * // Get elements from the 'items' array starting from the value of the 'offset' field
+   * field("items").arraySliceToEnd(field("offset"))
+   * ```
+   *
+   * @param offset The starting index.
+   * @return A new [Expression] representing the arraySliceToEnd operation.
+   */
+  fun arraySliceToEnd(offset: Expression) = Companion.arraySliceToEnd(this, offset)
 
   /**
    * Creates an expression that returns a slice of this array expression.
@@ -9057,20 +9165,22 @@ abstract class Expression internal constructor() {
    * @param length The number of elements to return.
    * @return A new [Expression] representing the arraySlice operation.
    */
-  fun arraySlice(offset: Any, length: Any) = Companion.arraySlice(this, offset, length)
+  fun arraySlice(offset: Int, length: Int) = Companion.arraySlice(this, offset, length)
 
   /**
-   * Creates an expression that returns a slice of this array expression to its end.
+   * Creates an expression that returns a slice of this array expression.
    *
    * ```kotlin
-   * // Get elements from the 'items' array starting from index 2
-   * field("items").arraySlice(2)
+   * // Get elements from the 'items' array using expressions for offset and length
+   * field("items").arraySlice(field("offset"), field("length"))
    * ```
    *
    * @param offset The starting index.
+   * @param length The number of elements to return.
    * @return A new [Expression] representing the arraySlice operation.
    */
-  fun arraySlice(offset: Any) = Companion.arraySlice(this, offset)
+  fun arraySlice(offset: Expression, length: Expression) =
+    Companion.arraySlice(this, offset, length)
 
   /**
    * Creates an expression that returns the sum of the elements in this array expression.

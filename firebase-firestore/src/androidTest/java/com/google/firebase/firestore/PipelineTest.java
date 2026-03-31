@@ -33,6 +33,7 @@ import static com.google.firebase.firestore.pipeline.Expression.arrayMaximumN;
 import static com.google.firebase.firestore.pipeline.Expression.arrayMinimum;
 import static com.google.firebase.firestore.pipeline.Expression.arrayMinimumN;
 import static com.google.firebase.firestore.pipeline.Expression.arraySlice;
+import static com.google.firebase.firestore.pipeline.Expression.arraySliceToEnd;
 import static com.google.firebase.firestore.pipeline.Expression.arrayTransform;
 import static com.google.firebase.firestore.pipeline.Expression.arrayTransformWithIndex;
 import static com.google.firebase.firestore.pipeline.Expression.collectionId;
@@ -1110,14 +1111,14 @@ public class PipelineTest {
             .where(equal("title", "The Lord of the Rings"))
             .select(
                 arraySlice("tags", 1, 1).alias("staticMethodSlice"),
-                arraySlice("tags", 1).alias("staticMethodSliceToEnd"),
+                arraySliceToEnd("tags", 1).alias("staticMethodSliceToEnd"),
                 field("tags").arraySlice(1, 1).alias("instanceMethodSlice"),
-                field("tags").arraySlice(1).alias("instanceMethodSliceToEnd"),
+                field("tags").arraySliceToEnd(1).alias("instanceMethodSliceToEnd"),
                 field("tags").arraySlice(1, 10).alias("overflowLength"),
                 field("tags").arraySlice(-1, 1).alias("negativeOffset"),
-                field("tags").arraySlice(-1).alias("negativeOffsetSliceToEnd"),
-                field("tags").arraySlice(10).alias("overflowOffset"),
-                field("tags").arraySlice(-10).alias("negativeOverflowOffset"))
+                field("tags").arraySliceToEnd(-1).alias("negativeOffsetSliceToEnd"),
+                field("tags").arraySliceToEnd(10).alias("overflowOffset"),
+                field("tags").arraySliceToEnd(-10).alias("negativeOverflowOffset"))
             .execute();
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
