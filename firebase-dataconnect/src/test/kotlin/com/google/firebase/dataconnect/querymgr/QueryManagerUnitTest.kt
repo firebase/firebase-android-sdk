@@ -998,7 +998,7 @@ class QueryManagerUnitTest {
     }
 
   @Test
-  fun `execute(fetchPolicy=CACHE_ONLY) with cacheSettings=non-null and no cached results throws`() =
+  fun `execute(fetchPolicy=CACHE_ONLY) with cacheSettings and no cached results throws`() =
     runTest {
       checkAll(
         propTestConfig,
@@ -1010,16 +1010,35 @@ class QueryManagerUnitTest {
 
         val exception = shouldThrow<CachedDataNotFoundException> { queryManager.execute(args) }
 
-        assertSoftly {
-          exception.message.let {
-            it shouldContainWithNonAbuttingText "xz3fvh9r39"
-            it shouldContainWithNonAbuttingText "CACHE_ONLY"
-            it shouldContainWithNonAbuttingTextIgnoringCase "no cached results for query"
-          }
-        }
+        exception.messageShouldIndicateNoCachedResults()
         confirmVerified(dataConnectGrpcRPCs)
       }
     }
+
+  @Test
+  fun `execute(fetchPolicy=CACHE_ONLY) with cacheSettings with maxAge=0 succeeds`() = runTest {
+    checkAll(
+      propTestConfig,
+      executeArgumentsArb(),
+      cacheSettingsArb(maxAge = Duration.ZERO),
+      Arb.of(FetchPolicy.PREFER_CACHE, FetchPolicy.SERVER_ONLY),
+      testDataArb(),
+    ) { args, cacheSettings, fetchPolicy1, testData ->
+      val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk {
+        stubExecuteQuery(executeQueryResponse = testData.encodeToExecuteQueryResponse())
+      }
+      val queryManager: QueryManager = buildQueryManager {
+        setDataConnectGrpcRPCs(dataConnectGrpcRPCs)
+        setCacheSettings(cacheSettings)
+      }
+      queryManager.execute(args.copy(fetchPolicy = fetchPolicy1)) // populate cache
+
+      val result = queryManager.execute(args.copy(fetchPolicy = FetchPolicy.CACHE_ONLY))
+
+      result shouldBe QueryManager.ExecuteResult(testData, DataSource.CACHE)
+      coVerify(exactly = 1) { dataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any()) }
+    }
+  }
 
   @Test
   fun `execute(fetchPolicy=SERVER_ONLY) with cacheSettings=non-null always returns from server`() =
@@ -1061,6 +1080,9 @@ class QueryManagerUnitTest {
     file: Arb<File?> = cacheFileArb().orNull(nullProbability = 0.2),
     maxAge: Arb<Duration> = cacheSettingsDurationArb(),
   ): Arb<QueryManager.CacheSettings> = Arb.bind(file, maxAge, QueryManager::CacheSettings)
+
+  private fun cacheSettingsArb(maxAge: Duration): Arb<QueryManager.CacheSettings> =
+    cacheSettingsArb(maxAge = Arb.constant(maxAge))
 
   private suspend fun PropertyContext.buildQueryManager(
     block: QueryManagerBuilder.() -> Unit
@@ -1181,6 +1203,10 @@ private fun testVariablesArb(stringArb: Arb<String> = alphanumericStringArb()): 
 
 private fun testDataArb(stringArb: Arb<String> = alphanumericStringArb()): Arb<TestData> =
   stringArb.map { TestData("data_$it") }
+
+private fun executeQueryResponseArb(
+  testData: Arb<TestData> = testDataArb()
+): Arb<ExecuteQueryResponse> = testData.map { it.encodeToExecuteQueryResponse() }
 
 private fun executeArgumentsArb(
   operationName: Arb<String> = operationNameArb(),
@@ -1305,6 +1331,14 @@ private class QueryManagerBuilder(
     dataConnectGrpcRPCs = value
   }
 
+  fun setDataConnectGrpcRPCsWithResponse(value: ExecuteQueryResponse): DataConnectGrpcRPCs {
+    val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk {
+      stubExecuteQuery(executeQueryResponse = value)
+    }
+    setDataConnectGrpcRPCs(dataConnectGrpcRPCs)
+    return dataConnectGrpcRPCs
+  }
+
   fun setDataConnectAuth(value: DataConnectAuth) {
     dataConnectAuth = value
   }
@@ -1335,3 +1369,13 @@ private class QueryManagerBuilder(
 }
 
 private fun cacheSettingsDurationArb(): Arb<Duration> = Arb.duration(0.seconds..Duration.INFINITE)
+
+private fun Exception.messageShouldIndicateNoCachedResults() {
+  assertSoftly {
+    message.let {
+      it shouldContainWithNonAbuttingText "xz3fvh9r39"
+      it shouldContainWithNonAbuttingText "CACHE_ONLY"
+      it shouldContainWithNonAbuttingTextIgnoringCase "no cached results for query"
+    }
+  }
+}
