@@ -16,6 +16,7 @@ package com.google.firebase.firestore
 
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.TaskCompletionSource
+import com.google.common.annotations.Beta
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.model.Document
 import com.google.firebase.firestore.model.DocumentKey
@@ -34,6 +35,7 @@ import com.google.firebase.firestore.pipeline.CollectionGroupSource
 import com.google.firebase.firestore.pipeline.CollectionSource
 import com.google.firebase.firestore.pipeline.CollectionSourceOptions
 import com.google.firebase.firestore.pipeline.DatabaseSource
+import com.google.firebase.firestore.pipeline.DefineStage
 import com.google.firebase.firestore.pipeline.DistinctStage
 import com.google.firebase.firestore.pipeline.DocumentsSource
 import com.google.firebase.firestore.pipeline.Expression
@@ -50,14 +52,17 @@ import com.google.firebase.firestore.pipeline.RawStage
 import com.google.firebase.firestore.pipeline.RemoveFieldsStage
 import com.google.firebase.firestore.pipeline.ReplaceStage
 import com.google.firebase.firestore.pipeline.SampleStage
+import com.google.firebase.firestore.pipeline.SearchStage
 import com.google.firebase.firestore.pipeline.SelectStage
 import com.google.firebase.firestore.pipeline.Selectable
 import com.google.firebase.firestore.pipeline.SortStage
 import com.google.firebase.firestore.pipeline.Stage
+import com.google.firebase.firestore.pipeline.SubcollectionSource
 import com.google.firebase.firestore.pipeline.UnionStage
 import com.google.firebase.firestore.pipeline.UnnestOptions
 import com.google.firebase.firestore.pipeline.UnnestStage
 import com.google.firebase.firestore.pipeline.WhereStage
+import com.google.firebase.firestore.pipeline.evaluation.notImplemented
 import com.google.firebase.firestore.remote.RemoteSerializer
 import com.google.firebase.firestore.util.Logger
 import com.google.firestore.v1.ExecutePipelineRequest
@@ -82,8 +87,8 @@ import com.google.firestore.v1.Value
  */
 class Pipeline
 internal constructor(
-  private val firestore: FirebaseFirestore,
-  private val userDataReader: UserDataReader,
+  private val firestore: FirebaseFirestore?,
+  private val userDataReader: UserDataReader?,
   private val stages: List<Stage<*>>
 ) {
   class ExecuteOptions private constructor(options: InternalOptions) :
@@ -131,8 +136,8 @@ internal constructor(
   }
 
   internal constructor(
-    firestore: FirebaseFirestore,
-    userDataReader: UserDataReader,
+    firestore: FirebaseFirestore?,
+    userDataReader: UserDataReader?,
     stage: Stage<*>
   ) : this(firestore, userDataReader, listOf(stage))
 
@@ -140,21 +145,30 @@ internal constructor(
     return Pipeline(firestore, userDataReader, stages.plus(stage))
   }
 
-  private fun toStructuredPipelineProto(options: InternalOptions?): StructuredPipeline {
+  internal fun toStructuredPipelineProto(
+    options: InternalOptions?,
+    userDataReader: UserDataReader
+  ): StructuredPipeline {
     val builder = StructuredPipeline.newBuilder()
-    builder.pipeline = toPipelineProto()
+    builder.pipeline = toPipelineProto(userDataReader)
     options?.forEach(builder::putOptions)
     return builder.build()
   }
 
-  internal fun toPipelineProto(): ProtoPipeline =
-    ProtoPipeline.newBuilder().addAllStages(stages.map { it.toProtoStage(userDataReader) }).build()
+  internal fun toPipelineProto(userDataReader: UserDataReader): ProtoPipeline {
+    return ProtoPipeline.newBuilder()
+      .addAllStages(stages.map { it.toProtoStage(userDataReader) })
+      .build()
+  }
 
-  private fun toExecutePipelineRequest(options: InternalOptions?): ExecutePipelineRequest {
-    val database = firestore!!.databaseId
+  internal fun toExecutePipelineRequest(options: InternalOptions?): ExecutePipelineRequest {
+    checkNotNull(firestore) {
+      "This pipeline was created without a database (e.g., as a subcollection pipeline) and cannot be executed directly. It can only be used as part of another pipeline."
+    }
+    val database = firestore.databaseId
     val builder = ExecutePipelineRequest.newBuilder()
     builder.database = "projects/${database.projectId}/databases/${database.databaseId}"
-    builder.structuredPipeline = toStructuredPipelineProto(options)
+    builder.structuredPipeline = toStructuredPipelineProto(options, firestore.userDataReader)
     return builder.build()
   }
 
@@ -895,6 +909,197 @@ internal constructor(
    * @return A new [Pipeline] object with this stage appended to the stage list.
    */
   fun unnest(unnestStage: UnnestStage): Pipeline = append(unnestStage)
+
+  /**
+   * Defines one or more variables in the pipeline's scope. `define` is used to bind a value to a
+   * variable for internal reuse within the pipeline body (accessed via the `variable()` function).
+   *
+   * This stage is particularly useful for passing values from an outer pipeline into a subquery, or
+   * for declaring reusable intermediate calculations that can be referenced multiple times in later
+   * parts of the pipeline via `variable()`.
+   *
+   * Each variable is defined using an [AliasedExpression], which pairs an expression with a name
+   * (alias). The expression can be a simple constant, a field reference, or a function evaluation
+   * (such as a mathematical operation).
+   *
+   * Example:
+   * ```kotlin
+   * firestore.pipeline().collection("products")
+   *   .define(field("category").alias("productCategory"))
+   *   .addFields(
+   *      firestore.pipeline().collection("categories")
+   *          .where(field("name").equal(variable("productCategory")))
+   *          .select(field("description"))
+   *          .toScalarExpression().alias("categoryDescription")
+   *   )
+   * ```
+   *
+   * @param aliasedExpression The first variable to define, specified as an [AliasedExpression].
+   * @param additionalExpressions Optional additional variables to define, specified as
+   * [AliasedExpression]s.
+   * @return A new [Pipeline] object with this stage appended to the stage list.
+   */
+  fun define(
+    aliasedExpression: AliasedExpression,
+    vararg additionalExpressions: AliasedExpression
+  ): Pipeline {
+    return append(DefineStage(arrayOf(aliasedExpression, *additionalExpressions)))
+  }
+
+  /**
+   * Converts this Pipeline into an expression that evaluates to an array of results.
+   *
+   * **Result Unwrapping:**
+   * - If the items have a single field, their values are unwrapped and returned directly in the
+   * array.
+   * - If the items have multiple fields, they are returned as Maps in the array.
+   *
+   * Example:
+   * ```kotlin
+   * // Get a list of reviewers for each book
+   * db.pipeline().collection("books")
+   *     .define(field("id").alias("book_id"))
+   *     .addFields(
+   *         db.pipeline().collection("reviews")
+   *             .where(field("book_id").equal(variable("book_id")))
+   *             .select(field("reviewer"))
+   *             .toArrayExpression()
+   *             .alias("reviewers"))
+   * ```
+   *
+   * Output:
+   * ```json
+   * [
+   *   {
+   *     "id": "1",
+   *     "title": "1984",
+   *     "reviewers": ["Alice", "Bob"]
+   *   }
+   * ]
+   * ```
+   *
+   * Example (Multiple Fields):
+   * ```kotlin
+   * // Get a list of reviews (reviewer and rating) for each book
+   * db.pipeline().collection("books")
+   *     .define(field("id").alias("book_id"))
+   *     .addFields(
+   *         db.pipeline().collection("reviews")
+   *             .where(field("book_id").equal(variable("book_id")))
+   *             .select(field("reviewer"), field("rating"))
+   *             .toArrayExpression()
+   *             .alias("reviews"))
+   * ```
+   *
+   * *When the subquery produces multiple fields, they are kept as objects in the array:*
+   *
+   * Output:
+   * ```json
+   * [
+   *   {
+   *     "id": "1",
+   *     "title": "1984",
+   *     "reviews": [
+   *       { "reviewer": "Alice", "rating": 5 },
+   *       { "reviewer": "Bob", "rating": 4 }
+   *     ]
+   *   }
+   * ]
+   * ```
+   *
+   * @return An [Expression] that executes this pipeline and returns the results as a list.
+   */
+  fun toArrayExpression(): Expression {
+    return FunctionExpression("array", notImplemented, Expression.toExprOrConstant(this))
+  }
+
+  /**
+   * Converts this Pipeline into an expression that evaluates to a single scalar result.
+   *
+   * **Runtime Validation:** The runtime validates that the result set contains zero or one item. If
+   * zero items, it evaluates to `null`.
+   *
+   * **Result Unwrapping:** If the result contains exactly one item:
+   * - If the item has a single field, its value is unwrapped and returned directly.
+   * - If the item has multiple fields, they are returned as a Map.
+   *
+   * Example:
+   * ```kotlin
+   * // Calculate average rating for a restaurant
+   * db.pipeline().collection("restaurants")
+   *   .define(field("id").alias("rid"))
+   *   .addFields(
+   *     db.pipeline().collection("reviews")
+   *       .where(field("restaurant_id").equal(variable("rid")))
+   *       .aggregate(AggregateFunction.average("rating").alias("avg"))
+   *       // Unwraps the single "avg" field to a scalar double
+   *       .toScalarExpression().alias("average_rating")
+   *   )
+   * ```
+   *
+   * Output:
+   * ```json
+   * {
+   *   "name": "The Burger Joint",
+   *   "average_rating": 4.5
+   * }
+   * ```
+   *
+   * Example (Multiple Fields):
+   * ```kotlin
+   * // Calculate average rating AND count for a restaurant
+   * db.pipeline().collection("restaurants")
+   *   .define(field("id").alias("rid"))
+   *   .addFields(
+   *     db.pipeline().collection("reviews")
+   *       .where(field("restaurant_id").equal(variable("rid")))
+   *       .aggregate(
+   *         AggregateFunction.average("rating").alias("avg"),
+   *         AggregateFunction.count().alias("count")
+   *       )
+   *       // Returns a Map with "avg" and "count" fields
+   *       .toScalarExpression().alias("stats")
+   *   )
+   * ```
+   *
+   * Output:
+   * ```json
+   * {
+   *   "name": "The Burger Joint",
+   *   "stats": {
+   *     "avg": 4.5,
+   *     "count": 100
+   *   }
+   * }
+   * ```
+   *
+   * @return An [Expression] representing the scalar result.
+   */
+  fun toScalarExpression(): Expression {
+    return FunctionExpression("scalar", notImplemented, Expression.toExprOrConstant(this))
+  }
+
+  /**
+   * Add a search stage to the Pipeline.
+   *
+   * Note: This must be the first stage of the pipeline.
+   *
+   * A limited set of expressions are supported in the search stage.
+   *
+   * @example
+   * ```kotlin
+   * db.pipeline().collection('restaurants').search(
+   *   SearchStage(
+   *     query = documentMatches("waffles OR pancakes"),
+   *     sort = arrayOf(score().descending())
+   *   )
+   * )
+   * ```
+   *
+   * @param searchStage An object that specifies how search is performed.
+   * @return A new `Pipeline` object with this stage appended to the stage list.
+   */
+  @Beta fun search(searchStage: SearchStage): Pipeline = append(searchStage)
 }
 
 /** Start of a Firestore Pipeline */
@@ -1041,6 +1246,55 @@ class PipelineSource internal constructor(private val firestore: FirebaseFiresto
       firestore.userDataReader,
       DocumentsSource(documents.map { ResourcePath.fromString(it.path) }.toTypedArray())
     )
+  }
+
+  companion object {
+    /**
+     * Initializes a pipeline scoped to a subcollection.
+     *
+     * This method allows you to start a new pipeline that operates on a subcollection of the
+     * current document. It is intended to be used as a subquery.
+     *
+     * **Note:** A pipeline created with `subcollection` cannot be executed directly. It must be
+     * used within a parent pipeline.
+     *
+     * Example:
+     * ```kotlin
+     * firestore.pipeline().collection("books")
+     *     .addFields(
+     *         PipelineSource.subcollection("reviews")
+     *             .aggregate(AggregateFunction.average("rating").as("avg_rating"))
+     *             .toScalarExpression().as("average_rating"));
+     * ```
+     *
+     * @param path The path of the subcollection.
+     * @return A new [Pipeline] instance scoped to the subcollection.
+     */
+    @JvmStatic
+    fun subcollection(path: String): Pipeline {
+      return Pipeline(null, null, SubcollectionSource.of(path))
+    }
+
+    /**
+     * Creates a pipeline that processes the documents in the specified subcollection of the current
+     * document.
+     *
+     * Example:
+     * ```kotlin
+     * firestore.pipeline().collection("books")
+     *     .addFields(
+     *         PipelineSource.subcollection(SubcollectionSource.of("reviews"))
+     *             .aggregate(AggregateFunction.average("rating").as("avg_rating"))
+     *             .toScalarExpression().as("average_rating"));
+     * ```
+     *
+     * @param source The subcollection that will be the source of this pipeline.
+     * @return A new [Pipeline] scoped to the subcollection.
+     */
+    @JvmStatic
+    fun subcollection(source: SubcollectionSource): Pipeline {
+      return Pipeline(null, null, source)
+    }
   }
 }
 
