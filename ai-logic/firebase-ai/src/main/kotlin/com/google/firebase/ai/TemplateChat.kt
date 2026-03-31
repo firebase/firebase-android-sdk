@@ -17,15 +17,15 @@
 package com.google.firebase.ai
 
 import com.google.firebase.ai.type.Content
+import com.google.firebase.ai.type.FunctionCallPart
 import com.google.firebase.ai.type.GenerateContentResponse
 import com.google.firebase.ai.type.InvalidStateException
 import com.google.firebase.ai.type.Part
 import com.google.firebase.ai.type.PublicPreviewAPI
-import com.google.firebase.ai.type.TemplateTool
-import com.google.firebase.ai.type.TemplateToolConfig
 import com.google.firebase.ai.type.content
 import java.util.concurrent.Semaphore
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.FlowCollector
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 
@@ -36,9 +36,7 @@ internal constructor(
   private val model: TemplateGenerativeModel,
   private val templateId: String,
   private val inputs: Map<String, Any>,
-  public val history: MutableList<Content> = ArrayList(),
-  private val tools: List<TemplateTool>? = null,
-  private val toolConfig: TemplateToolConfig? = null,
+  public val history: MutableList<Content> = ArrayList()
 ) {
   private var lock = Semaphore(1)
 
@@ -53,12 +51,7 @@ internal constructor(
     prompt.assertComesFromUser()
     attemptLock()
     try {
-      return model
-        .generateContentWithHistory(templateId, inputs, history + prompt, tools, toolConfig)
-        .also { resp ->
-          history.add(prompt)
-          history.add(resp.candidates.first().content)
-        }
+      return sendMessageWithFunctionHandling(listOf(prompt))
     } finally {
       lock.release()
     }
@@ -109,6 +102,50 @@ internal constructor(
   public fun sendMessageStream(prompt: String): Flow<GenerateContentResponse> {
     val content = content { text(prompt) }
     return sendMessageStream(content)
+  }
+
+  internal suspend fun sendMessageWithFunctionHandling(
+    tempHistory: List<Content>
+  ): GenerateContentResponse {
+    val response = model.generateContentWithHistory(templateId, inputs, history + tempHistory)
+    if (response.functionCalls.isEmpty() || response.functionCalls.any { !model.hasFunction(it) }) {
+      history.addAll(tempHistory + response.candidates.first().content)
+      return response
+    }
+    val functionResponses = response.functionCalls.map { model.executeFunction(it) }
+    return sendMessageWithFunctionHandling(
+      tempHistory + response.candidates.first().content + Content("function", functionResponses)
+    )
+  }
+
+  private suspend fun automaticFunctionExecutingTransform(
+    transformer: FlowCollector<GenerateContentResponse>,
+    tempHistory: MutableList<Content>,
+    response: GenerateContentResponse
+  ) {
+    val functionCallParts =
+      response.candidates.first().content.parts.filterIsInstance<FunctionCallPart>()
+    if (functionCallParts.isNotEmpty()) {
+      if (functionCallParts.all { model.hasFunction(it) }) {
+        val functionResponses =
+          Content("function", functionCallParts.map { model.executeFunction(it) })
+        tempHistory.add(Content("model", functionCallParts))
+        tempHistory.add(functionResponses)
+        model
+          .generateContentWithHistoryStream(
+            templateId,
+            inputs,
+            listOf(*history.toTypedArray(), *tempHistory.toTypedArray())
+          )
+          .collect { automaticFunctionExecutingTransform(transformer, tempHistory, it) }
+      } else {
+        transformer.emit(response)
+        tempHistory.add(Content("model", functionCallParts))
+      }
+    } else {
+      transformer.emit(response)
+      tempHistory.add(response.candidates.first().content)
+    }
   }
 
   private fun Content.assertComesFromUser() {

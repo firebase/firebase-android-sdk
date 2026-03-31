@@ -26,6 +26,7 @@ import com.google.firebase.ai.type.ImagenImageFormat
 import com.google.firebase.ai.type.ImagenReferenceImage
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.SafetySetting
+import com.google.firebase.ai.type.TemplateTool
 import com.google.firebase.ai.type.Tool
 import com.google.firebase.ai.type.ToolConfig
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -50,7 +51,7 @@ internal data class GenerateContentRequest(
 internal data class TemplateGenerateContentRequest(
   val inputs: JsonObject,
   val history: List<Content.Internal>?,
-  val tools: List<Tool.Internal>? = null,
+  val tools: List<TemplateTool.Internal>? = null,
   @SerialName("tool_config") val toolConfig: ToolConfig.Internal? = null,
 ) : Request
 

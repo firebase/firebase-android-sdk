@@ -16,6 +16,8 @@
 
 package com.google.firebase.ai.type
 
+import kotlinx.serialization.Serializable
+
 /**
  * Contains a set of tools (like function declarations) that the server template model has access
  * to.
@@ -24,15 +26,22 @@ public class TemplateTool
 @OptIn(PublicPreviewAPI::class)
 internal constructor(
   internal val functionDeclarations: List<TemplateFunctionDeclaration>?,
+  internal val autoFunctionDeclarations: List<TemplateAutoFunctionDeclaration<*, *>>? = null,
 ) {
-
-  public val templateAutoFunctionDeclarations: List<TemplateAutoFunctionDeclaration<*, *>>
-    get() =
-      functionDeclarations?.filterIsInstance<TemplateAutoFunctionDeclaration<*, *>>() ?: emptyList()
 
   @OptIn(PublicPreviewAPI::class)
   internal fun toInternal() =
-    Tool.Internal(functionDeclarations = functionDeclarations?.map { it.toInternal() })
+    Internal(
+      buildList {
+        functionDeclarations?.let { addAll(it.map { it.toInternal() }) }
+        autoFunctionDeclarations?.let { addAll(it.map { it.toInternal() }) }
+      },
+    )
+
+  @Serializable
+  internal data class Internal(
+    val templateFunctions: List<TemplateFunctionDeclaration.Internal>? = null,
+  )
 
   public companion object {
 
@@ -45,8 +54,9 @@ internal constructor(
     @JvmStatic
     public fun functionDeclarations(
       functionDeclarations: List<TemplateFunctionDeclaration>,
+      autoFunctionDeclarations: List<TemplateAutoFunctionDeclaration<*, *>>? = null,
     ): TemplateTool {
-      return TemplateTool(functionDeclarations)
+      return TemplateTool(functionDeclarations, autoFunctionDeclarations)
     }
   }
 }
@@ -54,33 +64,67 @@ internal constructor(
 /** A function declaration for a template tool. */
 public open class TemplateFunctionDeclaration(
   public val name: String,
-  public val description: String,
-  public val parameters: JsonSchema<out Any>? = null
+  public val inputSchema: JsonSchema<out Any>? = null,
+  public val outputSchema: JsonSchema<out Any>? = null
 ) {
-  internal fun toInternal(): FunctionDeclaration.Internal {
-    return FunctionDeclaration.Internal(
+
+  @Serializable
+  internal data class Internal(
+    val name: String,
+    val inputSchema: Schema.InternalJson? = null,
+    val outputSchema: Schema.InternalJson? = null,
+  )
+
+  internal fun toInternal(): Internal {
+    return Internal(
       name,
-      description,
-      parametersJsonSchema = parameters?.toInternalJson()
+      inputSchema = inputSchema?.toInternalJson(),
+      outputSchema = outputSchema?.toInternalJson()
     )
   }
 }
 
 /** A function declaration for a template tool that can be called by the model automatically. */
-public class TemplateAutoFunctionDeclaration<I : Any, O : Any>(
-  name: String,
-  description: String,
-  inputSchema: JsonSchema<I>,
-  outputSchema: JsonSchema<O>? = null,
-  functionReference: (suspend (I) -> O),
-) :
-  AutoFunctionDeclaration<I, O>(
-    name,
-    description,
-    inputSchema = inputSchema,
-    outputSchema = outputSchema,
-    functionReference = functionReference
-  )
+public class TemplateAutoFunctionDeclaration<I : Any, O : Any>
+internal constructor(
+  public val name: String,
+  public val inputSchema: JsonSchema<I>,
+  public val outputSchema: JsonSchema<O>? = null,
+  public val functionReference: (suspend (I) -> O)?,
+) {
+
+  internal fun toInternal(): TemplateFunctionDeclaration.Internal {
+    return TemplateFunctionDeclaration.Internal(
+      name,
+      inputSchema.toInternalJson(),
+      outputSchema = outputSchema?.toInternalJson()
+    )
+  }
+
+  public companion object {
+    /**
+     * Creates a strongly typed function declaration with an associated function reference.
+     *
+     * @param functionName the name of the function (to the model)
+     * @param inputSchema the object the model must provide to you as input
+     * @param outputSchema the type that will be return to the model when the function is executed
+     * @param functionReference the function that will be executed when requested by the model.
+     */
+    public fun <I : Any, O : Any> create(
+      functionName: String,
+      inputSchema: JsonSchema<I>,
+      outputSchema: JsonSchema<O>,
+      functionReference: (suspend (I) -> O)? = null
+    ): TemplateAutoFunctionDeclaration<I, O> {
+      return TemplateAutoFunctionDeclaration<I, O>(
+        functionName,
+        inputSchema,
+        outputSchema,
+        functionReference
+      )
+    }
+  }
+}
 
 /** Config for template tools to use with server prompts. */
 public class TemplateToolConfig {
