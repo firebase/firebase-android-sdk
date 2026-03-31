@@ -16,6 +16,7 @@ package com.google.firebase.firestore
 
 import com.google.android.gms.tasks.Task
 import com.google.android.gms.tasks.TaskCompletionSource
+import com.google.common.annotations.Beta
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.model.Document
 import com.google.firebase.firestore.model.DocumentKey
@@ -51,6 +52,7 @@ import com.google.firebase.firestore.pipeline.RawStage
 import com.google.firebase.firestore.pipeline.RemoveFieldsStage
 import com.google.firebase.firestore.pipeline.ReplaceStage
 import com.google.firebase.firestore.pipeline.SampleStage
+import com.google.firebase.firestore.pipeline.SearchStage
 import com.google.firebase.firestore.pipeline.SelectStage
 import com.google.firebase.firestore.pipeline.Selectable
 import com.google.firebase.firestore.pipeline.SortStage
@@ -143,7 +145,7 @@ internal constructor(
     return Pipeline(firestore, userDataReader, stages.plus(stage))
   }
 
-  private fun toStructuredPipelineProto(
+  internal fun toStructuredPipelineProto(
     options: InternalOptions?,
     userDataReader: UserDataReader
   ): StructuredPipeline {
@@ -159,7 +161,7 @@ internal constructor(
       .build()
   }
 
-  private fun toExecutePipelineRequest(options: InternalOptions?): ExecutePipelineRequest {
+  internal fun toExecutePipelineRequest(options: InternalOptions?): ExecutePipelineRequest {
     checkNotNull(firestore) {
       "This pipeline was created without a database (e.g., as a subcollection pipeline) and cannot be executed directly. It can only be used as part of another pipeline."
     }
@@ -1076,6 +1078,28 @@ internal constructor(
   fun toScalarExpression(): Expression {
     return FunctionExpression("scalar", notImplemented, Expression.toExprOrConstant(this))
   }
+
+  /**
+   * Add a search stage to the Pipeline.
+   *
+   * Note: This must be the first stage of the pipeline.
+   *
+   * A limited set of expressions are supported in the search stage.
+   *
+   * @example
+   * ```kotlin
+   * db.pipeline().collection('restaurants').search(
+   *   SearchStage(
+   *     query = documentMatches("waffles OR pancakes"),
+   *     sort = arrayOf(score().descending())
+   *   )
+   * )
+   * ```
+   *
+   * @param searchStage An object that specifies how search is performed.
+   * @return A new `Pipeline` object with this stage appended to the stage list.
+   */
+  @Beta fun search(searchStage: SearchStage): Pipeline = append(searchStage)
 }
 
 /** Start of a Firestore Pipeline */
