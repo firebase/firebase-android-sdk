@@ -116,6 +116,7 @@ abstract class Expression internal constructor() {
               .toTypedArray()
           )
         is List<*> -> array(value)
+        is Pipeline -> PipelineValueExpression(value)
         else -> null
       }
     }
@@ -3122,6 +3123,50 @@ abstract class Expression internal constructor() {
       map(elements.flatMap { listOf(constant(it.key), toExprOrConstant(it.value)) }.toTypedArray())
 
     /**
+     * Accesses a field/property of a document or Map using the provided [key].
+     *
+     * @param expression The expression evaluating to a map or document.
+     * @param key The key of the field to access.
+     * @return An [Expression] representing the value of the field.
+     */
+    @JvmStatic
+    fun getField(expression: Expression, key: String): Expression =
+      FunctionExpression("get_field", notImplemented, expression, key)
+
+    /**
+     * Accesses a field/property of a document or Map using the provided [key].
+     *
+     * @param fieldName The field name of the map or document field.
+     * @param key The key of the field to access.
+     * @return An [Expression] representing the value of the field.
+     */
+    @JvmStatic
+    fun getField(fieldName: String, key: String): Expression =
+      FunctionExpression("get_field", notImplemented, fieldName, key)
+
+    /**
+     * Accesses a field/property of a document or Map using the provided [keyExpression].
+     *
+     * @param expression The expression evaluating to a Map or Document.
+     * @param keyExpression The expression evaluating to the key.
+     * @return A new [Expression] representing the value of the field.
+     */
+    @JvmStatic
+    fun getField(expression: Expression, keyExpression: Expression): Expression =
+      FunctionExpression("get_field", notImplemented, expression, keyExpression)
+
+    /**
+     * Accesses a field/property of a document or Map using the provided [keyExpression].
+     *
+     * @param fieldName The field name of the map or document field.
+     * @param keyExpression The expression evaluating to the key.
+     * @return A new [Expression] representing the value of the field.
+     */
+    @JvmStatic
+    fun getField(fieldName: String, keyExpression: Expression): Expression =
+      FunctionExpression("get_field", notImplemented, fieldName, keyExpression)
+
+    /**
      * Accesses a value from a map (object) field using the provided [key].
      *
      * ```kotlin
@@ -3310,6 +3355,227 @@ abstract class Expression internal constructor() {
     fun mapRemove(mapField: String, key: String): Expression =
       FunctionExpression("map_remove", notImplemented, mapField, key)
 
+    /**
+     * Creates an expression that returns a new map with the specified entries added or updated.
+     *
+     * Note: This only performs shallow updates to the map. Setting a value to `null` will retain
+     * the key with a `null` value. To remove a key entirely, use `mapRemove`.
+     *
+     * ```kotlin
+     * // Set the 'city' to "San Francisco" in the 'address' map
+     * mapSet(field("address"), constant("city"), constant("San Francisco"));
+     * ```
+     *
+     * @param mapExpr The expression representing the map.
+     * @param key The key to set. Must be an expression representing a string.
+     * @param value The value to set.
+     * @param moreKeyValues Additional key-value pairs to set.
+     * @return A new [Expression] representing the map with the entries set.
+     */
+    @JvmStatic
+    fun mapSet(
+      mapExpr: Expression,
+      key: Expression,
+      value: Expression,
+      vararg moreKeyValues: Expression
+    ): Expression =
+      FunctionExpression("map_set", notImplemented, mapExpr, key, value, *moreKeyValues)
+
+    /**
+     * Creates an expression that returns a new map with the specified entries added or updated.
+     *
+     * Note: This only performs shallow updates to the map. Setting a value to `null` will retain
+     * the key with a `null` value. To remove a key entirely, use `mapRemove`.
+     *
+     * ```kotlin
+     * // Set the 'city' to "San Francisco" in the 'address' map
+     * mapSet(field("address"), "city", "San Francisco");
+     * ```
+     *
+     * @param mapExpr The map field to set entries in.
+     * @param key The key to set.
+     * @param value The value to set.
+     * @param moreKeyValues Additional key-value pairs to set.
+     * @return A new [Expression] representing the map with the entries set.
+     */
+    @JvmStatic
+    fun mapSet(
+      mapExpr: Expression,
+      key: String,
+      value: Any?,
+      vararg moreKeyValues: Any
+    ): Expression =
+      FunctionExpression(
+        "map_set",
+        notImplemented,
+        mapExpr,
+        constant(key),
+        toExprOrConstant(value),
+        *toArrayOfExprOrConstant(moreKeyValues)
+      )
+
+    /**
+     * Creates an expression that returns a new map with the specified entries added or updated.
+     *
+     * Note: This only performs shallow updates to the map. Setting a value to `null` will retain
+     * the key with a `null` value. To remove a key entirely, use `mapRemove`.
+     *
+     * ```kotlin
+     * // Set the 'city' to "San Francisco" in the 'address' map
+     * mapSet("address", constant("city"), constant("San Francisco"));
+     * ```
+     *
+     * @param mapField The map field to set entries in.
+     * @param key The key to set. Must be an expression representing a string.
+     * @param value The value to set.
+     * @param moreKeyValues Additional key-value pairs to set.
+     * @return A new [Expression] representing the map with the entries set.
+     */
+    @JvmStatic
+    fun mapSet(
+      mapField: String,
+      key: Expression,
+      value: Expression,
+      vararg moreKeyValues: Expression
+    ): Expression =
+      FunctionExpression("map_set", notImplemented, field(mapField), key, value, *moreKeyValues)
+
+    /**
+     * Creates an expression that returns a new map with the specified entries added or updated.
+     *
+     * Note: This only performs shallow updates to the map. Setting a value to `null` will retain
+     * the key with a `null` value. To remove a key entirely, use `mapRemove`.
+     *
+     * ```kotlin
+     * // Set the 'city' to "San Francisco" in the 'address' map
+     * mapSet("address", "city", "San Francisco");
+     * ```
+     *
+     * @param mapField The map field to set entries in.
+     * @param key The key to set. Must be an expression representing a string.
+     * @param value The value to set.
+     * @param moreKeyValues Additional key-value pairs to set.
+     * @return A new [Expression] representing the map with the entries set.
+     */
+    @JvmStatic
+    fun mapSet(mapField: String, key: String, value: Any?, vararg moreKeyValues: Any): Expression =
+      FunctionExpression(
+        "map_set",
+        notImplemented,
+        field(mapField),
+        constant(key),
+        toExprOrConstant(value),
+        *toArrayOfExprOrConstant(moreKeyValues)
+      )
+
+    /**
+     * Creates an expression that returns the keys of a map.
+     *
+     * Note: While the backend generally preserves insertion order, relying on the order of the
+     * output array is not guaranteed and should be avoided.
+     *
+     * ```kotlin
+     * // Get the keys of a map expression.
+     * mapKeys(map(mapOf("a" to 1, "b" to 2)))
+     * ```
+     *
+     * @param mapExpr The expression representing the map to get the keys of.
+     * @return A new [Expression] representing the keys of the map.
+     */
+    @JvmStatic
+    fun mapKeys(mapExpr: Expression): Expression =
+      FunctionExpression("map_keys", notImplemented, mapExpr)
+
+    /**
+     * Creates an expression that returns the keys of a map.
+     *
+     * Note: While the backend generally preserves insertion order, relying on the order of the
+     * output array is not guaranteed and should be avoided.
+     *
+     * ```kotlin
+     * // Get the keys of the 'metadata' map field.
+     * mapKeys("metadata")
+     * ```
+     *
+     * @param mapField The map field to get the keys of.
+     * @return A new [Expression] representing the keys of the map.
+     */
+    @JvmStatic
+    fun mapKeys(mapField: String): Expression =
+      FunctionExpression("map_keys", notImplemented, field(mapField))
+
+    /**
+     * Creates an expression that returns the values of a map.
+     *
+     * Note: While the backend generally preserves insertion order, relying on the order of the
+     * output array is not guaranteed and should be avoided.
+     *
+     * ```kotlin
+     * // Get the values of a map expression.
+     * mapValues(map(mapOf("a" to 1, "b" to 2)))
+     * ```
+     *
+     * @param mapExpr The expression representing the map to get the values of.
+     * @return A new [Expression] representing the values of the map.
+     */
+    @JvmStatic
+    fun mapValues(mapExpr: Expression): Expression =
+      FunctionExpression("map_values", notImplemented, mapExpr)
+
+    /**
+     * Creates an expression that returns the values of a map.
+     *
+     * Note: While the backend generally preserves insertion order, relying on the order of the
+     * output array is not guaranteed and should be avoided.
+     *
+     * ```kotlin
+     * // Get the values of the 'metadata' map field.
+     * mapValues("metadata")
+     * ```
+     *
+     * @param mapField The map field to get the values of.
+     * @return A new [Expression] representing the values of the map.
+     */
+    @JvmStatic
+    fun mapValues(mapField: String): Expression =
+      FunctionExpression("map_values", notImplemented, field(mapField))
+
+    /**
+     * Creates an expression that returns the entries of a map as an array of maps, where each map
+     * contains a "k" property for the key and a "v" property for the value.
+     *
+     * Note: While the backend generally preserves insertion order, relying on the order of the
+     * output array is not guaranteed and should be avoided.
+     *
+     * ```kotlin
+     * // Get the entries of a map expression.
+     * mapEntries(map(mapOf("a" to 1, "b" to 2)))
+     * ```
+     *
+     * @param mapExpr The expression representing the map to get the entries of.
+     * @return A new [Expression] representing the entries of the map.
+     */
+    @JvmStatic
+    fun mapEntries(mapExpr: Expression): Expression =
+      FunctionExpression("map_entries", notImplemented, mapExpr)
+
+    /**
+     * Creates an expression that returns the entries of a map as an array of maps.
+     *
+     * Note: While the backend generally preserves insertion order, relying on the order of the
+     * output array is not guaranteed and should be avoided.
+     *
+     * ```kotlin
+     * // Get the entries of the 'metadata' map field.
+     * mapEntries("metadata")
+     * ```
+     *
+     * @param mapField The map field to get the entries of.
+     * @return A new [Expression] representing the entries of the map.
+     */
+    @JvmStatic
+    fun mapEntries(mapField: String): Expression =
+      FunctionExpression("map_entries", notImplemented, field(mapField))
     /**
      * Calculates the Cosine distance between two vector expressions.
      *
@@ -4065,7 +4331,7 @@ abstract class Expression internal constructor() {
      * ```kotlin
      * // Truncate the 'createdAt' timestamp to the beginning of the day in "America/Los_Angeles"
      * // timezone.
-     * timestampTruncate(field("createdAt"), "day", "America/Los_Angeles")
+     * timestampTruncateWithTimezone(field("createdAt"), "day", "America/Los_Angeles")
      * ```
      *
      * @param timestamp The timestamp expression.
@@ -4078,7 +4344,7 @@ abstract class Expression internal constructor() {
      * @return A new [Expression] representing the truncated timestamp.
      */
     @JvmStatic
-    fun timestampTruncate(
+    fun timestampTruncateWithTimezone(
       timestamp: Expression,
       granularity: String,
       timezone: String
@@ -4098,7 +4364,7 @@ abstract class Expression internal constructor() {
      * ```kotlin
      * // Truncate the 'createdAt' timestamp to the beginning of the day in "America/Los_Angeles"
      * // timezone.
-     * timestampTruncate(field("createdAt"), field("granularity"), "America/Los_Angeles")
+     * timestampTruncateWithTimezone(field("createdAt"), field("granularity"), "America/Los_Angeles")
      * ```
      *
      * @param timestamp The timestamp expression.
@@ -4111,7 +4377,7 @@ abstract class Expression internal constructor() {
      * @return A new [Expression] representing the truncated timestamp.
      */
     @JvmStatic
-    fun timestampTruncate(
+    fun timestampTruncateWithTimezone(
       timestamp: Expression,
       granularity: Expression,
       timezone: String
@@ -4131,7 +4397,7 @@ abstract class Expression internal constructor() {
      * ```kotlin
      * // Truncate the 'createdAt' timestamp to the beginning of the day in "America/Los_Angeles"
      * // timezone.
-     * timestampTruncate("createdAt", "day", "America/Los_Angeles")
+     * timestampTruncateWithTimezone("createdAt", "day", "America/Los_Angeles")
      * ```
      *
      * @param fieldName The name of the field containing the timestamp.
@@ -4144,7 +4410,11 @@ abstract class Expression internal constructor() {
      * @return A new [Expression] representing the truncated timestamp.
      */
     @JvmStatic
-    fun timestampTruncate(fieldName: String, granularity: String, timezone: String): Expression =
+    fun timestampTruncateWithTimezone(
+      fieldName: String,
+      granularity: String,
+      timezone: String
+    ): Expression =
       FunctionExpression(
         "timestamp_trunc",
         notImplemented,
@@ -4160,7 +4430,7 @@ abstract class Expression internal constructor() {
      * ```kotlin
      * // Truncate the 'createdAt' timestamp to the beginning of the day in "America/Los_Angeles"
      * // timezone.
-     * timestampTruncate("createdAt", field("granularity"), "America/Los_Angeles")
+     * timestampTruncateWithTimezone("createdAt", field("granularity"), "America/Los_Angeles")
      * ```
      *
      * @param fieldName The name of the field containing the timestamp.
@@ -4173,7 +4443,7 @@ abstract class Expression internal constructor() {
      * @return A new [Expression] representing the truncated timestamp.
      */
     @JvmStatic
-    fun timestampTruncate(
+    fun timestampTruncateWithTimezone(
       fieldName: String,
       granularity: Expression,
       timezone: String
@@ -4185,6 +4455,496 @@ abstract class Expression internal constructor() {
         granularity,
         constant(timezone)
       )
+
+    /**
+     * Creates an expression that truncates a timestamp to a specified granularity in a given
+     * timezone.
+     *
+     * ```kotlin
+     * // Truncate the 'createdAt' timestamp to the beginning of the day in timezone specified by
+     * // the 'tz' field.
+     * timestampTruncateWithTimezone(field("createdAt"), "day", field("tz"))
+     * ```
+     *
+     * @param timestamp The timestamp expression.
+     * @param granularity The granularity to truncate to. Valid values are "microsecond",
+     * "millisecond", "second", "minute", "hour", "day", "week", "week(monday)", "week(tuesday)",
+     * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
+     * "isoweek", "month", "quarter", "year", and "isoyear".
+     * @param timezone The timezone expression to use for truncation. Valid values are from the TZ
+     * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1".
+     * @return A new [Expression] representing the truncated timestamp.
+     */
+    @JvmStatic
+    fun timestampTruncateWithTimezone(
+      timestamp: Expression,
+      granularity: String,
+      timezone: Expression
+    ): Expression =
+      FunctionExpression(
+        "timestamp_trunc",
+        notImplemented,
+        timestamp,
+        constant(granularity),
+        timezone
+      )
+
+    /**
+     * Creates an expression that truncates a timestamp to a specified granularity in a given
+     * timezone.
+     *
+     * ```kotlin
+     * // Truncate the 'createdAt' timestamp to the beginning of the day in timezone specified by
+     * // the 'tz' field.
+     * timestampTruncateWithTimezone(field("createdAt"), field("granularity"), field("tz"))
+     * ```
+     *
+     * @param timestamp The timestamp expression.
+     * @param granularity The granularity expression to truncate to. Valid values are "microsecond",
+     * "millisecond", "second", "minute", "hour", "day", "week", "week(monday)", "week(tuesday)",
+     * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
+     * "isoweek", "month", "quarter", "year", and "isoyear".
+     * @param timezone The timezone expression to use for truncation. Valid values are from the TZ
+     * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1".
+     * @return A new [Expression] representing the truncated timestamp.
+     */
+    @JvmStatic
+    fun timestampTruncateWithTimezone(
+      timestamp: Expression,
+      granularity: Expression,
+      timezone: Expression
+    ): Expression =
+      FunctionExpression("timestamp_trunc", notImplemented, timestamp, granularity, timezone)
+
+    /**
+     * Creates an expression that truncates a timestamp to a specified granularity in a given
+     * timezone.
+     *
+     * ```kotlin
+     * // Truncate the 'createdAt' timestamp to the beginning of the day in timezone specified by
+     * // the 'tz' field.
+     * timestampTruncateWithTimezone("createdAt", "day", field("tz"))
+     * ```
+     *
+     * @param fieldName The name of the field containing the timestamp.
+     * @param granularity The granularity to truncate to. Valid values are "microsecond",
+     * "millisecond", "second", "minute", "hour", "day", "week", "week(monday)", "week(tuesday)",
+     * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
+     * "isoweek", "month", "quarter", "year", and "isoyear".
+     * @param timezone The timezone expression to use for truncation. Valid values are from the TZ
+     * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1".
+     * @return A new [Expression] representing the truncated timestamp.
+     */
+    @JvmStatic
+    fun timestampTruncateWithTimezone(
+      fieldName: String,
+      granularity: String,
+      timezone: Expression
+    ): Expression =
+      FunctionExpression(
+        "timestamp_trunc",
+        notImplemented,
+        field(fieldName),
+        constant(granularity),
+        timezone
+      )
+
+    /**
+     * Creates an expression that truncates a timestamp to a specified granularity in a given
+     * timezone.
+     *
+     * ```kotlin
+     * // Truncate the 'createdAt' timestamp to the beginning of the day in timezone specified by
+     * // the 'tz' field.
+     * timestampTruncateWithTimezone("createdAt", field("granularity"), field("tz"))
+     * ```
+     *
+     * @param fieldName The name of the field containing the timestamp.
+     * @param granularity The granularity expression to truncate to. Valid values are "microsecond",
+     * "millisecond", "second", "minute", "hour", "day", "week", "week(monday)", "week(tuesday)",
+     * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
+     * "isoweek", "month", "quarter", "year", and "isoyear".
+     * @param timezone The timezone expression to use for truncation. Valid values are from the TZ
+     * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1".
+     * @return A new [Expression] representing the truncated timestamp.
+     */
+    @JvmStatic
+    fun timestampTruncateWithTimezone(
+      fieldName: String,
+      granularity: Expression,
+      timezone: Expression
+    ): Expression =
+      FunctionExpression("timestamp_trunc", notImplemented, field(fieldName), granularity, timezone)
+
+    /**
+     * Creates an expression that calculates the difference between two timestamps.
+     *
+     * ```kotlin
+     * // Calculate the difference between the fields 'endAt' and the field 'startAt' in unit specified by
+     * // the 'unit' field.
+     * timestampDiff(field("endAt"), field("startAt"), field("unit"))
+     * ```
+     *
+     * @param end The ending timestamp expression.
+     * @param start The starting timestamp expression.
+     * @param unit The unit of time for the difference. Valid values include "microsecond",
+     * "millisecond", "second", "minute", "hour" and "day".
+     * @return A new [Expression] representing the difference.
+     */
+    @JvmStatic
+    fun timestampDiff(end: Expression, start: Expression, unit: Expression): Expression =
+      FunctionExpression("timestamp_diff", notImplemented, end, start, unit)
+
+    /**
+     * Creates an expression that calculates the difference between two timestamps.
+     *
+     * ```kotlin
+     * // Calculate the difference in days between 'endAt' field and 'startAt' field.
+     * timestampDiff(field("endAt"), field("startAt"), "day")
+     * ```
+     *
+     * @param end The ending timestamp expression.
+     * @param start The starting timestamp expression.
+     * @param unit The unit of time for the difference. Valid values include "microsecond",
+     * "millisecond", "second", "minute", "hour" and "day".
+     * @return A new [Expression] representing the difference.
+     */
+    @JvmStatic
+    fun timestampDiff(end: Expression, start: Expression, unit: String): Expression =
+      timestampDiff(end, start, constant(unit))
+
+    /**
+     * Creates an expression that calculates the difference between two timestamps.
+     *
+     * ```kotlin
+     * // Calculate the difference in days between 'endAt' and 'startAt'.
+     * timestampDiff("endAt", "startAt", "day")
+     * ```
+     *
+     * @param endFieldName The ending timestamp field name.
+     * @param startFieldName The starting timestamp field name.
+     * @param unit The unit of time for the difference. Valid values include "microsecond",
+     * "millisecond", "second", "minute", "hour" and "day".
+     * @return A new [Expression] representing the difference.
+     */
+    @JvmStatic
+    fun timestampDiff(endFieldName: String, startFieldName: String, unit: String): Expression =
+      timestampDiff(field(endFieldName), field(startFieldName), constant(unit))
+
+    /**
+     * Creates an expression that calculates the difference between two timestamps.
+     *
+     * ```kotlin
+     * // Calculate the difference in days between 'endAt' and 'startAt'.
+     * timestampDiff("endAt", field("startAt"), "day")
+     * ```
+     *
+     * @param endFieldName The ending timestamp field name.
+     * @param start The starting timestamp expression.
+     * @param unit The unit of time for the difference. Valid values include "microsecond",
+     * "millisecond", "second", "minute", "hour" and "day".
+     * @return A new [Expression] representing the difference.
+     */
+    @JvmStatic
+    fun timestampDiff(endFieldName: String, start: Expression, unit: String): Expression =
+      timestampDiff(field(endFieldName), start, constant(unit))
+
+    /**
+     * Creates an expression that calculates the difference between two timestamps.
+     *
+     * ```kotlin
+     * // Calculate the difference in days between 'endAt' and 'startAt'.
+     * timestampDiff(field("endAt"), "startAt", "day")
+     * ```
+     *
+     * @param end The ending timestamp expression.
+     * @param startFieldName The starting timestamp field name.
+     * @param unit The unit of time for the difference. Valid values include "microsecond",
+     * "millisecond", "second", "minute", "hour" and "day".
+     * @return A new [Expression] representing the difference.
+     */
+    @JvmStatic
+    fun timestampDiff(end: Expression, startFieldName: String, unit: String): Expression =
+      timestampDiff(end, field(startFieldName), constant(unit))
+
+    /**
+     * Creates an expression that extracts a specified part from a timestamp.
+     *
+     * ```kotlin
+     * // Extract the part specified by the field 'part' from 'createdAt'.
+     * timestampExtract(field("createdAt"), field("part"))
+     * ```
+     *
+     * @param timestamp The timestamp expression.
+     * @param part The part to extract from the timestamp. Valid values are "microsecond",
+     * "millisecond", "second", "minute", "hour", "dayofweek", "day", "dayofyear", "week",
+     * "week(monday)", "week(tuesday)", "week(wednesday)", "week(thursday)", "week(friday)",
+     * "week(saturday)", "week(sunday)", "isoweek", "month", "quarter", "year", and "isoyear".
+     * @return A new [Expression] representing the extracted part.
+     */
+    @JvmStatic
+    fun timestampExtract(timestamp: Expression, part: Expression): Expression =
+      FunctionExpression("timestamp_extract", notImplemented, timestamp, part)
+
+    /**
+     * Creates an expression that extracts a specified part from a timestamp.
+     *
+     * ```kotlin
+     * // Extract the day from the timestamp returned by the expression.
+     * timestampExtract(field("createdAt"), "day")
+     * ```
+     *
+     * @param timestamp The timestamp expression.
+     * @param part The part to extract from the timestamp. Valid values are "microsecond",
+     * "millisecond", "second", "minute", "hour", "dayofweek", "day", "dayofyear", "week",
+     * "week(monday)", "week(tuesday)", "week(wednesday)", "week(thursday)", "week(friday)",
+     * "week(saturday)", "week(sunday)", "isoweek", "month", "quarter", "year", and "isoyear".
+     * @return A new [Expression] representing the extracted part.
+     */
+    @JvmStatic
+    fun timestampExtract(timestamp: Expression, part: String): Expression =
+      timestampExtract(timestamp, constant(part))
+
+    /**
+     * Creates an expression that extracts a specified part from a timestamp.
+     *
+     * ```kotlin
+     * // Extract the part specified by the field 'part' from 'createdAt'.
+     * timestampExtract("createdAt", field("part"))
+     * ```
+     *
+     * @param fieldName The name of the field containing the timestamp.
+     * @param part The part to extract from the timestamp. Valid values are "microsecond",
+     * "millisecond", "second", "minute", "hour", "dayofweek", "day", "dayofyear", "week",
+     * "week(monday)", "week(tuesday)", "week(wednesday)", "week(thursday)", "week(friday)",
+     * "week(saturday)", "week(sunday)", "isoweek", "month", "quarter", "year", and "isoyear".
+     * @return A new [Expression] representing the extracted part.
+     */
+    @JvmStatic
+    fun timestampExtract(fieldName: String, part: Expression): Expression =
+      timestampExtract(field(fieldName), part)
+
+    /**
+     * Creates an expression that extracts a specified part from a timestamp.
+     *
+     * ```kotlin
+     * // Extract the day from the timestamp in the 'createdAt' field.
+     * timestampExtract("createdAt", "day")
+     * ```
+     *
+     * @param fieldName The name of the field containing the timestamp.
+     * @param part The part to extract from the timestamp. Valid values are "microsecond",
+     * "millisecond", "second", "minute", "hour", "dayofweek", "day", "dayofyear", "week",
+     * "week(monday)", "week(tuesday)", "week(wednesday)", "week(thursday)", "week(friday)",
+     * "week(saturday)", "week(sunday)", "isoweek", "month", "quarter", "year", and "isoyear".
+     * @return A new [Expression] representing the extracted part.
+     */
+    @JvmStatic
+    fun timestampExtract(fieldName: String, part: String): Expression =
+      timestampExtract(field(fieldName), constant(part))
+
+    /**
+     * Creates an expression that extracts a specified part from a timestamp in a given timezone.
+     *
+     * ```kotlin
+     * // Extract the part specified by the field 'part' from 'createdAt' in the timezone specified by
+     * // the field 'tz'.
+     * timestampExtractWithTimezone(field("createdAt"), field("part"), field("tz"))
+     * ```
+     *
+     * @param timestamp The timestamp expression.
+     * @param part The part to extract from the timestamp. Valid values are "microsecond",
+     * "millisecond", "second", "minute", "hour", "dayofweek", "day", "dayofyear", "week",
+     * "week(monday)", "week(tuesday)", "week(wednesday)", "week(thursday)", "week(friday)",
+     * "week(saturday)", "week(sunday)", "isoweek", "month", "quarter", "year", and "isoyear".
+     * @param timezone The timezone expression to use for extraction.Valid values are from the TZ
+     * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC" if not
+     * specified.
+     * @return A new [Expression] representing the extracted part.
+     */
+    @JvmStatic
+    fun timestampExtractWithTimezone(
+      timestamp: Expression,
+      part: Expression,
+      timezone: Expression
+    ): Expression =
+      FunctionExpression("timestamp_extract", notImplemented, timestamp, part, timezone)
+
+    /**
+     * Creates an expression that extracts a specified part from a timestamp in a given timezone.
+     *
+     * ```kotlin
+     * // Extract the part specified by the field 'part' from 'createdAt' in the timezone "America/Los_Angeles".
+     * timestampExtractWithTimezone(field("createdAt"), field("part"), "America/Los_Angeles")
+     * ```
+     *
+     * @param timestamp The timestamp expression.
+     * @param part The part to extract from the timestamp. Valid values are "microsecond",
+     * "millisecond", "second", "minute", "hour", "dayofweek", "day", "dayofyear", "week",
+     * "week(monday)", "week(tuesday)", "week(wednesday)", "week(thursday)", "week(friday)",
+     * "week(saturday)", "week(sunday)", "isoweek", "month", "quarter", "year", and "isoyear".
+     * @param timezone The timezone expression to use for extraction.Valid values are from the TZ
+     * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC" if not
+     * specified.
+     * @return A new [Expression] representing the extracted part.
+     */
+    @JvmStatic
+    fun timestampExtractWithTimezone(
+      timestamp: Expression,
+      part: Expression,
+      timezone: String
+    ): Expression = timestampExtractWithTimezone(timestamp, part, constant(timezone))
+
+    /**
+     * Creates an expression that extracts a specified part from a timestamp in a given timezone.
+     *
+     * ```kotlin
+     * // Extract the day from the timestamp in the 'createdAt' field in the timezone "America/Los_Angeles".
+     * timestampExtractWithTimezone(field("createdAt"), "day", "America/Los_Angeles")
+     * ```
+     *
+     * @param timestamp The timestamp expression.
+     * @param part The part to extract from the timestamp. Valid values are "microsecond",
+     * "millisecond", "second", "minute", "hour", "dayofweek", "day", "dayofyear", "week",
+     * "week(monday)", "week(tuesday)", "week(wednesday)", "week(thursday)", "week(friday)",
+     * "week(saturday)", "week(sunday)", "isoweek", "month", "quarter", "year", and "isoyear".
+     * @param timezone The timezone expression to use for extraction.Valid values are from the TZ
+     * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC" if not
+     * specified.
+     * @return A new [Expression] representing the extracted part.
+     */
+    @JvmStatic
+    fun timestampExtractWithTimezone(
+      timestamp: Expression,
+      part: String,
+      timezone: String
+    ): Expression = timestampExtractWithTimezone(timestamp, constant(part), constant(timezone))
+
+    /**
+     * Creates an expression that extracts a specified part from a timestamp in a given timezone.
+     *
+     * ```kotlin
+     * // Extract the part specified by the field 'part' from 'createdAt' in the timezone "America/Los_Angeles".
+     * timestampExtractWithTimezone("createdAt", field("part"), "America/Los_Angeles")
+     * ```
+     *
+     * @param fieldName The name of the field containing the timestamp.
+     * @param part The part to extract from the timestamp. Valid values are "microsecond",
+     * "millisecond", "second", "minute", "hour", "dayofweek", "day", "dayofyear", "week",
+     * "week(monday)", "week(tuesday)", "week(wednesday)", "week(thursday)", "week(friday)",
+     * "week(saturday)", "week(sunday)", "isoweek", "month", "quarter", "year", and "isoyear".
+     * @param timezone The timezone expression to use for extraction.Valid values are from the TZ
+     * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC" if not
+     * specified.
+     * @return A new [Expression] representing the extracted part.
+     */
+    @JvmStatic
+    fun timestampExtractWithTimezone(
+      fieldName: String,
+      part: Expression,
+      timezone: String
+    ): Expression = timestampExtractWithTimezone(field(fieldName), part, constant(timezone))
+
+    /**
+     * Creates an expression that extracts a specified part from a timestamp in a given timezone.
+     *
+     * ```kotlin
+     * // Extract the day from the timestamp in the 'createdAt' field in the timezone "America/Los_Angeles".
+     * timestampExtractWithTimezone("createdAt", "day", "America/Los_Angeles")
+     * ```
+     *
+     * @param fieldName The name of the field containing the timestamp.
+     * @param part The part to extract from the timestamp. Valid values are "microsecond",
+     * "millisecond", "second", "minute", "hour", "dayofweek", "day", "dayofyear", "week",
+     * "week(monday)", "week(tuesday)", "week(wednesday)", "week(thursday)", "week(friday)",
+     * "week(saturday)", "week(sunday)", "isoweek", "month", "quarter", "year", and "isoyear".
+     * @param timezone The timezone expression to use for extraction.Valid values are from the TZ
+     * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC" if not
+     * specified.
+     * @return A new [Expression] representing the extracted part.
+     */
+    @JvmStatic
+    fun timestampExtractWithTimezone(
+      fieldName: String,
+      part: String,
+      timezone: String
+    ): Expression =
+      timestampExtractWithTimezone(field(fieldName), constant(part), constant(timezone))
+
+    /**
+     * Creates an expression that extracts a specified part from a timestamp in a given timezone.
+     *
+     * ```kotlin
+     * // Extract the day from the timestamp in the 'createdAt' field in the timezone specified by the 'tz' field.
+     * timestampExtractWithTimezone(field("createdAt"), "day", field("tz"))
+     * ```
+     *
+     * @param timestamp The timestamp expression.
+     * @param part The part to extract from the timestamp. Valid values are "microsecond",
+     * "millisecond", "second", "minute", "hour", "dayofweek", "day", "dayofyear", "week",
+     * "week(monday)", "week(tuesday)", "week(wednesday)", "week(thursday)", "week(friday)",
+     * "week(saturday)", "week(sunday)", "isoweek", "month", "quarter", "year", and "isoyear".
+     * @param timezone The timezone expression to use for extraction.Valid values are from the TZ
+     * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC" if not
+     * specified.
+     * @return A new [Expression] representing the extracted part.
+     */
+    @JvmStatic
+    fun timestampExtractWithTimezone(
+      timestamp: Expression,
+      part: String,
+      timezone: Expression
+    ): Expression = timestampExtractWithTimezone(timestamp, constant(part), timezone)
+
+    /**
+     * Creates an expression that extracts a specified part from a timestamp in a given timezone.
+     *
+     * ```kotlin
+     * // Extract the part specified by the field 'part' from 'createdAt' in the timezone specified by the 'tz' field.
+     * timestampExtractWithTimezone("createdAt", field("part"), field("tz"))
+     * ```
+     *
+     * @param fieldName The name of the field containing the timestamp.
+     * @param part The part to extract from the timestamp. Valid values are "microsecond",
+     * "millisecond", "second", "minute", "hour", "dayofweek", "day", "dayofyear", "week",
+     * "week(monday)", "week(tuesday)", "week(wednesday)", "week(thursday)", "week(friday)",
+     * "week(saturday)", "week(sunday)", "isoweek", "month", "quarter", "year", and "isoyear".
+     * @param timezone The timezone expression to use for extraction.Valid values are from the TZ
+     * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC" if not
+     * specified.
+     * @return A new [Expression] representing the extracted part.
+     */
+    @JvmStatic
+    fun timestampExtractWithTimezone(
+      fieldName: String,
+      part: Expression,
+      timezone: Expression
+    ): Expression = timestampExtractWithTimezone(field(fieldName), part, timezone)
+
+    /**
+     * Creates an expression that extracts a specified part from a timestamp in a given timezone.
+     *
+     * ```kotlin
+     * // Extract the day from the timestamp in the 'createdAt' field in the timezone specified by the 'tz' field.
+     * timestampExtractWithTimezone("createdAt", "day", field("tz"))
+     * ```
+     *
+     * @param fieldName The name of the field containing the timestamp.
+     * @param part The part to extract from the timestamp. Valid values are "microsecond",
+     * "millisecond", "second", "minute", "hour", "dayofweek", "day", "dayofyear", "week",
+     * "week(monday)", "week(tuesday)", "week(wednesday)", "week(thursday)", "week(friday)",
+     * "week(saturday)", "week(sunday)", "isoweek", "month", "quarter", "year", and "isoyear".
+     * @param timezone The timezone expression to use for extraction.Valid values are from the TZ
+     * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC" if not
+     * specified.
+     * @return A new [Expression] representing the extracted part.
+     */
+    @JvmStatic
+    fun timestampExtractWithTimezone(
+      fieldName: String,
+      part: String,
+      timezone: Expression
+    ): Expression = timestampExtractWithTimezone(field(fieldName), constant(part), timezone)
 
     /**
      * Creates an expression that checks if two expressions are equal.
@@ -5922,6 +6682,120 @@ abstract class Expression internal constructor() {
       FunctionExpression("if_absent", notImplemented, ifFieldName, elseValue)
 
     /**
+     * Creates an expression that returns the [elseExpr] argument if [ifExpr] evaluates to null,
+     * else return the result of the [ifExpr] argument evaluation.
+     *
+     * This function provides a fallback for both absent and explicit null values. In contrast,
+     * [ifAbsent] only triggers for missing fields.
+     *
+     * ```kotlin
+     * // Returns the user's preferred name, or if that is null, returns their full name.
+     * ifNull(field("preferredName"), field("fullName"))
+     * ```
+     *
+     * @param ifExpr The expression to check for null.
+     * @param elseExpr The expression that will be evaluated and returned if [ifExpr] is null.
+     * @return A new [Expression] representing the ifNull operation.
+     */
+    @JvmStatic
+    fun ifNull(ifExpr: Expression, elseExpr: Expression): Expression =
+      FunctionExpression("if_null", notImplemented, ifExpr, elseExpr)
+
+    /**
+     * Creates an expression that returns the [elseValue] argument if [ifExpr] evaluates to null,
+     * else return the result of the [ifExpr] argument evaluation.
+     *
+     * This function provides a fallback for both absent and explicit null values. In contrast,
+     * [ifAbsent] only triggers for missing fields.
+     *
+     * ```kotlin
+     * // Returns the user's display name, or returns "Anonymous" if the field is null.
+     * ifNull(field("displayName"), "Anonymous")
+     * ```
+     *
+     * @param ifExpr The expression to check for null.
+     * @param elseValue The value that will be returned if [ifExpr] evaluates to null.
+     * @return A new [Expression] representing the ifNull operation.
+     */
+    @JvmStatic
+    fun ifNull(ifExpr: Expression, elseValue: Any): Expression =
+      FunctionExpression("if_null", notImplemented, ifExpr, elseValue)
+
+    /**
+     * Creates an expression that returns the [elseExpr] argument if [ifFieldName] field is null,
+     * else return the value of the field.
+     *
+     * ```kotlin
+     * // Returns the user's preferred name, or if that is null, returns their full name.
+     * ifNull("preferredName", field("fullName"))
+     * ```
+     *
+     * @param ifFieldName The field to check for null.
+     * @param elseExpr The expression that will be evaluated and returned if [ifFieldName] is null.
+     * @return A new [Expression] representing the ifNull operation.
+     */
+    @JvmStatic
+    fun ifNull(ifFieldName: String, elseExpr: Expression): Expression =
+      FunctionExpression("if_null", notImplemented, ifFieldName, elseExpr)
+
+    /**
+     * Creates an expression that returns the [elseValue] argument if [ifFieldName] field is null,
+     * else return the value of the field.
+     *
+     * ```kotlin
+     * // Returns the user's display name, or returns "Anonymous" if the field is null.
+     * ifNull("displayName", "Anonymous")
+     * ```
+     *
+     * @param ifFieldName The field to check for null.
+     * @param elseValue The value that will be returned if [ifFieldName] is null.
+     * @return A new [Expression] representing the ifNull operation.
+     */
+    @JvmStatic
+    fun ifNull(ifFieldName: String, elseValue: Any): Expression =
+      FunctionExpression("if_null", notImplemented, ifFieldName, elseValue)
+
+    /**
+     * Creates an expression that returns the first non-null, non-absent argument, without
+     * evaluating the rest of the arguments. When all arguments are null or absent, returns the last
+     * argument.
+     *
+     * ```kotlin
+     * // Returns the value of the first non-null, non-absent field among 'preferredName', 'fullName',
+     * // or the last argument if all previous fields are null.
+     * coalesce(field("preferredName"), field("fullName"), constant("Anonymous"))
+     * ```
+     *
+     * @param expression The first expression to check for null.
+     * @param replacement The fallback expression or value if the first one is null.
+     * @param others Optional additional expressions to check if previous ones are null.
+     * @return A new [Expression] representing the coalesce operation.
+     */
+    @JvmStatic
+    fun coalesce(expression: Expression, replacement: Any, vararg others: Any): Expression =
+      FunctionExpression("coalesce", notImplemented, expression, replacement, *others)
+
+    /**
+     * Creates an expression that returns the first non-null, non-absent argument, without
+     * evaluating the rest of the arguments. When all arguments are null or absent, returns the last
+     * argument.
+     *
+     * ```kotlin
+     * // Returns the value of the first non-null, non-absent field among 'preferredName', 'fullName',
+     * // or the last argument if all previous fields are null.
+     * coalesce("preferredName", field("fullName"), constant("Anonymous"))
+     * ```
+     *
+     * @param fieldName The name of the first field to check for null.
+     * @param replacement The fallback expression or value if the first one is null.
+     * @param others Optional additional expressions to check if previous ones are null.
+     * @return A new [Expression] representing the coalesce operation.
+     */
+    @JvmStatic
+    fun coalesce(fieldName: String, replacement: Any, vararg others: Any): Expression =
+      FunctionExpression("coalesce", notImplemented, fieldName, replacement, *others)
+
+    /**
      * Creates an expression that returns the collection ID from a path.
      *
      * ```kotlin
@@ -5984,6 +6858,42 @@ abstract class Expression internal constructor() {
      * @return A new [Expression] representing the documentId operation.
      */
     @JvmStatic fun documentId(docRef: DocumentReference): Expression = documentId(constant(docRef))
+
+    /**
+     * Creates an expression that retrieves the value of a variable bound via [Pipeline.define].
+     *
+     * Example:
+     * ```kotlin
+     * firestore.pipeline().collection("products")
+     *     .define(
+     *         multiply(field("price"), 0.9).as("discountedPrice"),
+     *         add(field("stock"), 10).as("newStock")
+     *     )
+     *     .where(lessThan(variable("discountedPrice"), 100))
+     *     .select(field("name"), variable("newStock"));
+     * ```
+     *
+     * @param name The name of the variable to retrieve.
+     * @return An [Expression] representing the variable's value.
+     */
+    @JvmStatic fun variable(name: String): Expression = Variable(name)
+
+    /**
+     * Creates an expression that represents the current document being processed.
+     *
+     * Example:
+     * ```kotlin
+     * // Define the current document as a variable "doc"
+     * firestore.pipeline().collection("books")
+     *     .define(currentDocument().alias("doc"))
+     *     // Access a field from the defined document variable
+     *     .select(variable("doc").getField("title"));
+     * ```
+     *
+     * @return An [Expression] representing the current document.
+     */
+    @JvmStatic
+    fun currentDocument(): Expression = FunctionExpression("current_document", notImplemented)
   }
 
   /**
@@ -7120,6 +8030,22 @@ abstract class Expression internal constructor() {
     Companion.mapMerge(this, mapExpr, *otherMaps)
 
   /**
+   * Accesses a field/property of a document or Map using the provided [key].
+   *
+   * @param key The string key to access.
+   * @return A new [Expression] representing the value of the field.
+   */
+  fun getField(key: String): Expression = Companion.getField(this, key)
+
+  /**
+   * Accesses a field/property of a document or Map using the provided [keyExpression].
+   *
+   * @param keyExpression The expression evaluating to the key to access.
+   * @return A new [Expression] representing the value of the field.
+   */
+  fun getField(keyExpression: Expression): Expression = Companion.getField(this, keyExpression)
+
+  /**
    * Creates an expression that removes a key from this map expression.
    *
    * ```kotlin
@@ -7144,6 +8070,88 @@ abstract class Expression internal constructor() {
    * @return A new [Expression] that evaluates to a modified map.
    */
   fun mapRemove(key: String) = Companion.mapRemove(this, key)
+
+  /**
+   * Creates an expression that returns a new map with the specified entries added or updated.
+   *
+   * - Only performs shallow updates to the map.
+   * - Setting a value to `null` will retain the key with a `null` value. To remove a key entirely,
+   * use `mapRemove`.
+   *
+   * ```kotlin
+   * // Set the 'category' key to the value of the 'newCategory' field.
+   * field("metadata").mapSet(field("keyField"), field("newCategory"))
+   * ```
+   *
+   * @param key The key to set.
+   * @param value The value to set.
+   * @param moreKeyValues Additional key-value pairs to set.
+   * @return A new [Expression] representing the map with the entries set.
+   */
+  fun mapSet(key: Expression, value: Expression, vararg moreKeyValues: Expression): Expression =
+    Companion.mapSet(this, key, value, *moreKeyValues)
+
+  /**
+   * Creates an expression that returns a new map with the specified entries added or updated.
+   *
+   * ```kotlin
+   * // Set the 'category' key to "Electronics" and 'active' to true.
+   * field("metadata").mapSet("category", "Electronics", "active", true)
+   * ```
+   *
+   * @param key The key to set.
+   * @param value The value to set.
+   * @param moreKeyValues Additional key-value pairs to set.
+   * @return A new [Expression] representing the map with the entries set.
+   */
+  fun mapSet(key: String, value: Any?, vararg moreKeyValues: Any): Expression =
+    Companion.mapSet(this, key, value, *moreKeyValues)
+
+  /**
+   * Creates an expression that returns the keys of this map expression.
+   *
+   * While the backend generally preserves insertion order, relying on the order of the output array
+   * is not guaranteed and should be avoided.
+   *
+   * ```kotlin
+   * // Get the keys of the 'metadata' map field.
+   * field("metadata").mapKeys()
+   * ```
+   *
+   * @return A new [Expression] representing the keys of the map.
+   */
+  fun mapKeys(): Expression = Companion.mapKeys(this)
+
+  /**
+   * Creates an expression that returns the values of this map expression.
+   *
+   * While the backend generally preserves insertion order, relying on the order of the output array
+   * is not guaranteed and should be avoided.
+   *
+   * ```kotlin
+   * // Get the values of the 'metadata' map field.
+   * field("metadata").mapValues()
+   * ```
+   *
+   * @return A new [Expression] representing the values of the map.
+   */
+  fun mapValues(): Expression = Companion.mapValues(this)
+
+  /**
+   * Creates an expression that returns the entries of this map expression as an array of maps,
+   * where each map contains a "k" property for the key and a "v" property for the value.
+   *
+   * While the backend generally preserves insertion order, relying on the order of the output array
+   * is not guaranteed and should be avoided.
+   *
+   * ```kotlin
+   * // Get the entries of the 'metadata' map field.
+   * field("metadata").mapEntries()
+   * ```
+   *
+   * @return A new [Expression] representing the entries of the map.
+   */
+  fun mapEntries(): Expression = Companion.mapEntries(this)
 
   /**
    * Calculates the Cosine distance between this and another vector expressions.
@@ -7417,6 +8425,254 @@ abstract class Expression internal constructor() {
    */
   fun timestampTruncate(granularity: Expression): Expression =
     Expression.timestampTruncate(this, granularity)
+
+  /**
+   * Creates an expression that truncates this timestamp expression to a specified granularity in a
+   * given timezone.
+   *
+   * ```kotlin
+   * // Truncate the 'createdAt' timestamp to the beginning of the day in "America/Los_Angeles"
+   * // timezone.
+   * field("createdAt").timestampTruncateWithTimezone("day", "America/Los_Angeles")
+   * ```
+   *
+   * @param granularity The granularity to truncate to. Valid values are "microsecond",
+   * "millisecond", "second", "minute", "hour", "day", "week", "week(monday)", "week(tuesday)",
+   * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
+   * "isoweek", "month", "quarter", "year", and "isoyear".
+   * @param timezone The timezone to use for truncation. Valid values are from the TZ database
+   * (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1".
+   * @return A new [Expression] representing the truncated timestamp.
+   */
+  fun timestampTruncateWithTimezone(granularity: String, timezone: String): Expression =
+    Expression.timestampTruncateWithTimezone(this, granularity, timezone)
+
+  /**
+   * Creates an expression that truncates this timestamp expression to a specified granularity in a
+   * given timezone.
+   *
+   * ```kotlin
+   * // Truncate the 'createdAt' timestamp to the beginning of the day in "America/Los_Angeles"
+   * // timezone.
+   * field("createdAt").timestampTruncateWithTimezone(field("granularity"), "America/Los_Angeles")
+   * ```
+   *
+   * @param granularity The granularity expression to truncate to. Valid values are "microsecond",
+   * "millisecond", "second", "minute", "hour", "day", "week", "week(monday)", "week(tuesday)",
+   * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
+   * "isoweek", "month", "quarter", "year", and "isoyear".
+   * @param timezone The timezone to use for truncation. Valid values are from the TZ database
+   * (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1".
+   * @return A new [Expression] representing the truncated timestamp.
+   */
+  fun timestampTruncateWithTimezone(granularity: Expression, timezone: String): Expression =
+    Expression.timestampTruncateWithTimezone(this, granularity, timezone)
+
+  /**
+   * Creates an expression that truncates this timestamp expression to a specified granularity in a
+   * given timezone.
+   *
+   * ```kotlin
+   * // Truncate the 'createdAt' timestamp to the beginning of the day in timezone specified by the
+   * // 'tz' field.
+   * field("createdAt").timestampTruncateWithTimezone("day", field("tz"))
+   * ```
+   *
+   * @param granularity The granularity to truncate to. Valid values are "microsecond",
+   * "millisecond", "second", "minute", "hour", "day", "week", "week(monday)", "week(tuesday)",
+   * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
+   * "isoweek", "month", "quarter", "year", and "isoyear".
+   * @param timezone The timezone expression to use for truncation. Valid values are from the TZ
+   * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1".
+   * @return A new [Expression] representing the truncated timestamp.
+   */
+  fun timestampTruncateWithTimezone(granularity: String, timezone: Expression): Expression =
+    Expression.timestampTruncateWithTimezone(this, granularity, timezone)
+
+  /**
+   * Creates an expression that truncates this timestamp expression to a specified granularity in a
+   * given timezone.
+   *
+   * ```kotlin
+   * // Truncate the 'createdAt' timestamp to the beginning of the day in timezone specified by the
+   * // 'tz' field.
+   * field("createdAt").timestampTruncateWithTimezone(field("granularity"), field("tz"))
+   * ```
+   *
+   * @param granularity The granularity expression to truncate to. Valid values are "microsecond",
+   * "millisecond", "second", "minute", "hour", "day", "week", "week(monday)", "week(tuesday)",
+   * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
+   * "isoweek", "month", "quarter", "year", and "isoyear".
+   * @param timezone The timezone expression to use for truncation. Valid values are from the TZ
+   * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1".
+   * @return A new [Expression] representing the truncated timestamp.
+   */
+  fun timestampTruncateWithTimezone(granularity: Expression, timezone: Expression): Expression =
+    Expression.timestampTruncateWithTimezone(this, granularity, timezone)
+
+  /**
+   * Calculates the difference between this timestamp and another timestamp.
+   *
+   * ```kotlin
+   * // Calculate the difference determined by fields 'startAt' and 'unit'.
+   * field("endAt").timestampDiff(field("startAt"), field("unit"))
+   * ```
+   *
+   * @param start The starting timestamp expression.
+   * @param unit The unit of time for the difference. Valid values include "microsecond",
+   * "millisecond", "second", "minute", "hour" and "day".
+   * @return A new [Expression] representing the difference.
+   */
+  fun timestampDiff(start: Expression, unit: Expression): Expression =
+    Expression.timestampDiff(this, start, unit)
+
+  /**
+   * Calculates the difference between this timestamp and another timestamp.
+   *
+   * ```kotlin
+   * // Calculate the difference in days between 'endAt' and 'startAt' fields.
+   * field("endAt").timestampDiff(field("startAt"), "day")
+   * ```
+   *
+   * @param start The starting timestamp expression.
+   * @param unit The unit of time for the difference. Valid values include "microsecond",
+   * "millisecond", "second", "minute", "hour" and "day".
+   * @return A new [Expression] representing the difference.
+   */
+  fun timestampDiff(start: Expression, unit: String): Expression =
+    Expression.timestampDiff(this, start, unit)
+
+  /**
+   * Calculates the difference between this timestamp and another timestamp.
+   *
+   * ```kotlin
+   * // Calculate the difference in days between 'endAt' and 'startAt' fields.
+   * field("endAt").timestampDiff("startAt", "day")
+   * ```
+   *
+   * @param startFieldName The starting timestamp field name.
+   * @param unit The unit of time for the difference. Valid values include "microsecond",
+   * "millisecond", "second", "minute", "hour" and "day".
+   * @return A new [Expression] representing the difference.
+   */
+  fun timestampDiff(startFieldName: String, unit: String): Expression =
+    Expression.timestampDiff(this, startFieldName, unit)
+
+  /**
+   * Creates an expression that extracts a specified part from this timestamp expression.
+   *
+   * ```kotlin
+   * // Extract the part specified by the field 'part' from 'timestamp'.
+   * field("timestamp").timestampExtract(field("part"))
+   * ```
+   *
+   * @param part The part to extract. Valid values are "microsecond", "millisecond", "second",
+   * "minute", "hour", "dayofweek", "day", "dayofyear", "week", "week(monday)", "week(tuesday)",
+   * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
+   * "isoweek", "month", "quarter", "year", and "isoyear".
+   * @return A new [Expression] representing the extracted part.
+   */
+  fun timestampExtract(part: Expression): Expression = Expression.timestampExtract(this, part)
+
+  /**
+   * Creates an expression that extracts a specified part from this timestamp expression.
+   *
+   * ```kotlin
+   * // Extract the day from the timestamp in the 'timestamp' field.
+   * field("timestamp").timestampExtract("day")
+   * ```
+   *
+   * @param part The part to extract. Valid values are "microsecond", "millisecond", "second",
+   * "minute", "hour", "dayofweek", "day", "dayofyear", "week", "week(monday)", "week(tuesday)",
+   * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
+   * "isoweek", "month", "quarter", "year", and "isoyear".
+   * @return A new [Expression] representing the extracted part.
+   */
+  fun timestampExtract(part: String): Expression = Expression.timestampExtract(this, part)
+
+  /**
+   * Creates an expression that extracts a specified part from this timestamp expression in a given
+   * timezone.
+   *
+   * ```kotlin
+   * // Extract the part specified by the field 'part' from 'timestamp' in timezone 'America/Los_Angeles'.
+   * field("timestamp").timestampExtractWithTimezone(field("part"), "America/Los_Angeles")
+   * ```
+   *
+   * @param part The part to extract. Valid values are "microsecond", "millisecond", "second",
+   * "minute", "hour", "dayofweek", "day", "dayofyear", "week", "week(monday)", "week(tuesday)",
+   * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
+   * "isoweek", "month", "quarter", "year", and "isoyear".
+   * @param timezone The timezone to use for extraction. Valid values are from the TZ database
+   * (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC" if not specified.
+   * @return A new [Expression] representing the extracted part.
+   */
+  fun timestampExtractWithTimezone(part: Expression, timezone: String): Expression =
+    Expression.timestampExtractWithTimezone(this, part, timezone)
+
+  /**
+   * Creates an expression that extracts a specified part from this timestamp expression in a given
+   * timezone.
+   *
+   * ```kotlin
+   * // Extract the day from the timestamp in the 'timestamp' field in timezone 'America/Los_Angeles'.
+   * field("timestamp").timestampExtractWithTimezone("day", "America/Los_Angeles")
+   * ```
+   *
+   * @param part The part to extract. Valid values are "microsecond", "millisecond", "second",
+   * "minute", "hour", "dayofweek", "day", "dayofyear", "week", "week(monday)", "week(tuesday)",
+   * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
+   * "isoweek", "month", "quarter", "year", and "isoyear".
+   * @param timezone The timezone to use for extraction. Valid values are from the TZ database
+   * (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC" if not specified.
+   * @return A new [Expression] representing the extracted part.
+   */
+  fun timestampExtractWithTimezone(part: String, timezone: String): Expression =
+    Expression.timestampExtractWithTimezone(this, part, timezone)
+
+  /**
+   * Creates an expression that extracts a specified part from this timestamp expression in a given
+   * timezone.
+   *
+   * ```kotlin
+   * // Extract the part specified by the field 'part' from 'timestamp' in timezone specified by
+   * the field 'tz'.
+   * field("timestamp").timestampExtractWithTimezone(field("part"), field("tz"))
+   * ```
+   *
+   * @param part The part to extract. Valid values are "microsecond", "millisecond", "second",
+   * "minute", "hour", "dayofweek", "day", "dayofyear", "week", "week(monday)", "week(tuesday)",
+   * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
+   * "isoweek", "month", "quarter", "year", and "isoyear".
+   * @param timezone The timezone expression to use for extraction. Valid values are from the TZ
+   * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC" if not
+   * specified.
+   * @return A new [Expression] representing the extracted part.
+   */
+  fun timestampExtractWithTimezone(part: Expression, timezone: Expression): Expression =
+    Expression.timestampExtractWithTimezone(this, part, timezone)
+
+  /**
+   * Creates an expression that extracts a specified part from this timestamp expression in a given
+   * timezone.
+   *
+   * ```kotlin
+   * // Extract the day from the timestamp in the 'timestamp' field in timezone specified by
+   * the field 'tz'.
+   * field("timestamp").timestampExtractWithTimezone("day", field("tz"))
+   * ```
+   *
+   * @param part The part to extract. Valid values are "microsecond", "millisecond", "second",
+   * "minute", "hour", "dayofweek", "day", "dayofyear", "week", "week(monday)", "week(tuesday)",
+   * "week(wednesday)", "week(thursday)", "week(friday)", "week(saturday)", "week(sunday)",
+   * "isoweek", "month", "quarter", "year", and "isoyear".
+   * @param timezone The timezone expression to use for extraction. Valid values are from the TZ
+   * database (e.g., "America/Los_Angeles") or in the format "Etc/GMT-1". Defaults to "UTC" if not
+   * specified.
+   * @return A new [Expression] representing the extracted part.
+   */
+  fun timestampExtractWithTimezone(part: String, timezone: Expression): Expression =
+    Expression.timestampExtractWithTimezone(this, part, timezone)
 
   /**
    * Creates an expression that subtracts a specified amount of time to this timestamp expression.
@@ -8194,6 +9450,58 @@ abstract class Expression internal constructor() {
   fun ifAbsent(elseValue: Any): Expression = Companion.ifAbsent(this, elseValue)
 
   /**
+   * Creates an expression that returns the [elseExpression] argument if this expression evaluates
+   * to null, else return the result of this expression.
+   *
+   * This function provides a fallback for both absent and explicit null values. In contrast,
+   * [ifAbsent] only triggers for missing fields.
+   *
+   * ```kotlin
+   * // Returns the user's preferred name, or if that is null, returns their full name.
+   * field("preferredName").ifNull(field("fullName"))
+   * ```
+   *
+   * @param elseExpression The expression that will be evaluated and returned if this expression is
+   * null.
+   * @return A new [Expression] representing the ifNull operation.
+   */
+  fun ifNull(elseExpression: Expression): Expression = Companion.ifNull(this, elseExpression)
+
+  /**
+   * Creates an expression that returns the [elseValue] argument if this expression evaluates to
+   * null, else return the result of this expression.
+   *
+   * This function provides a fallback for both absent and explicit null values. In contrast,
+   * [ifAbsent] only triggers for missing fields.
+   *
+   * ```kotlin
+   * // Returns the user's display name, or returns "Anonymous" if the field is null.
+   * field("displayName").ifNull("Anonymous")
+   * ```
+   *
+   * @param elseValue The value that will be returned if this expression evaluates to null.
+   * @return A new [Expression] representing the ifNull operation.
+   */
+  fun ifNull(elseValue: Any): Expression = Companion.ifNull(this, elseValue)
+
+  /**
+   * Creates an expression that returns the first non-null, non-absent argument, without evaluating
+   * the rest of the arguments. When all arguments are null or absent, returns the last argument.
+   *
+   * ```kotlin
+   * // Returns the value of the first non-null, non-absent field among 'preferredName', 'fullName',
+   * // or the last argument if all previous fields are null.
+   * field("preferredName").coalesce(field("fullName"), "Anonymous")
+   * ```
+   *
+   * @param replacement The fallback expression or value if the first one is null.
+   * @param others Optional additional expressions to check if previous ones are null.
+   * @return A new [Expression] representing the coalesce operation.
+   */
+  fun coalesce(replacement: Any, vararg others: Any): Expression =
+    Companion.coalesce(this, replacement, *others)
+
+  /**
    * Creates an expression that checks if this expression produces an error.
    *
    * ```kotlin
@@ -8325,7 +9633,7 @@ class Field internal constructor(internal val fieldPath: ModelFieldPath) : Selec
         EvaluateResult.timestamp(getLocalWriteTime(fieldValue))
       DocumentSnapshot.ServerTimestampBehavior.PREVIOUS -> {
         val previousValue = getPreviousValue(fieldValue)
-        if (previousValue == null) EvaluateResult.NULL else EvaluateResultValue(previousValue!!)
+        if (previousValue == null) EvaluateResult.NULL else EvaluateResultValue(previousValue)
       }
     }
   }
@@ -8694,4 +10002,31 @@ class Ordering internal constructor(val expr: Expression, val dir: Direction) {
           .putFields("expression", expr.toProto(userDataReader))
       )
       .build()
+}
+
+private class Variable(val name: String) : Expression() {
+  override fun toProto(userDataReader: UserDataReader): Value =
+    Value.newBuilder().setVariableReferenceValue(name).build()
+  override fun evaluateFunction(context: EvaluationContext): EvaluateDocument =
+    { _: MutableDocument ->
+      throw NotImplementedError("Variable evaluation not implemented")
+    }
+  override fun canonicalId() = "var($name)"
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is Variable) return false
+    return name == other.name
+  }
+  override fun hashCode(): Int = name.hashCode()
+}
+
+private class PipelineValueExpression(val pipeline: Pipeline) : Expression() {
+  override fun toProto(userDataReader: UserDataReader): Value =
+    Value.newBuilder().setPipelineValue(pipeline.toPipelineProto(userDataReader)).build()
+  override fun evaluateFunction(context: EvaluationContext): EvaluateDocument =
+    { _: MutableDocument ->
+      throw NotImplementedError("Pipeline evaluation not implemented")
+    }
+  override fun canonicalId() = "pipeline(\${pipeline.hashCode()})"
+  override fun toString() = "Pipeline(...)"
 }
