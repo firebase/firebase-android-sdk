@@ -1091,8 +1091,7 @@ internal constructor(
    * db.pipeline().collection('restaurants').search(
    *   SearchStage(
    *     query = documentMatches("waffles OR pancakes"),
-   *     sort = arrayOf(score().descending()),
-   *     limit = 10
+   *     sort = arrayOf(score().descending())
    *   )
    * )
    * ```

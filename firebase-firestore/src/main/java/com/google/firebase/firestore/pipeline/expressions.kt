@@ -7005,7 +7005,7 @@ abstract class Expression internal constructor() {
 
     /**
      * Evaluates to the search score that reflects the topicality of the document to all of the text
-     * predicates (for example: `documentMatches`) in the search query. If `SearchOptions.query` is
+     * predicates (for example: `documentMatches`) in the search query. If `SearchStage.query` is
      * not set or does not contain any text predicates, then this score will always be `0`.
      *
      * Note: This Expression can only be used within a `Search` stage.
