@@ -16,7 +16,6 @@
 
 package com.google.firebase.dataconnect.querymgr
 
-import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.core.DataConnectGrpcRPCs
 import com.google.firebase.dataconnect.util.ImmutableByteArray
 import google.firebase.dataconnect.proto.ExecuteQueryRequest as ExecuteQueryRequestProto
@@ -36,12 +35,11 @@ internal class RemoteQueries(
     requestProto: ExecuteQueryRequestProto,
   ): RemoteQuery =
     map.getOrPut(key) {
-      RemoteQuery(dataConnectGrpcRPCs, cpuDispatcher, requestProto, key.fetchPolicy, coroutineScope)
+      RemoteQuery(dataConnectGrpcRPCs, cpuDispatcher, requestProto, coroutineScope)
     }
 
   data class Key(
     val authUid: String?,
     val queryId: ImmutableByteArray,
-    val fetchPolicy: QueryRef.FetchPolicy,
   )
 }

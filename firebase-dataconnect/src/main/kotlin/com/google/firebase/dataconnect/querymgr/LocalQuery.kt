@@ -27,8 +27,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.modules.SerializersModule
 
-internal class LocalQuery<Data>(
-  private val remoteQuery: RemoteQuery,
+internal sealed class LocalQuery<Data>(
   private val cpuDispatcher: CoroutineDispatcher,
   private val dataDeserializer: DeserializationStrategy<Data>,
   private val dataSerializersModule: SerializersModule?,
@@ -42,6 +41,74 @@ internal class LocalQuery<Data>(
     appCheckToken: String?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
   ): ExecuteResult<Data> {
+    val response =
+      executeImpl(
+        requestId = requestId,
+        sequenceNumber = sequenceNumber,
+        authToken = authToken,
+        appCheckToken = appCheckToken,
+        callerSdkType = callerSdkType,
+      )
+
+    when (response) {
+      ExecuteImplResult.Retry -> return ExecuteResult.Retry
+      is ExecuteImplResult.Success -> {}
+    }
+
+    if (response.sequenceNumber < sequenceNumber) {
+      return ExecuteResult.Retry
+    }
+
+    val dataDeserializeResult =
+      withContext(cpuDispatcher) {
+        response.data.runCatching { deserialize(dataDeserializer, dataSerializersModule) }
+      }
+
+    dataDeserializeResult.onFailure {
+      logger.warn(it) { "[rid=$requestId] decoding response data failed" }
+    }
+
+    return ExecuteResult.Success(dataDeserializeResult.getOrThrow(), response.source)
+  }
+
+  protected abstract suspend fun executeImpl(
+    requestId: String,
+    sequenceNumber: Long,
+    authToken: String?,
+    appCheckToken: String?,
+    callerSdkType: FirebaseDataConnect.CallerSdkType,
+  ): ExecuteImplResult
+
+  sealed interface ExecuteResult<out T> {
+    data class Success<T>(val data: T, val source: DataSource) : ExecuteResult<T>
+    data object Retry : ExecuteResult<Nothing>
+  }
+
+  protected sealed interface ExecuteImplResult {
+    data class Success(
+      val sequenceNumber: Long,
+      val data: ExecuteQueryResponse,
+      val source: DataSource
+    ) : ExecuteImplResult
+    data object Retry : ExecuteImplResult
+  }
+}
+
+internal class ServerOnlyLocalQuery<Data>(
+  private val remoteQuery: RemoteQuery,
+  cpuDispatcher: CoroutineDispatcher,
+  dataDeserializer: DeserializationStrategy<Data>,
+  dataSerializersModule: SerializersModule?,
+  logger: Logger,
+) : LocalQuery<Data>(cpuDispatcher, dataDeserializer, dataSerializersModule, logger) {
+
+  override suspend fun executeImpl(
+    requestId: String,
+    sequenceNumber: Long,
+    authToken: String?,
+    appCheckToken: String?,
+    callerSdkType: FirebaseDataConnect.CallerSdkType,
+  ): ExecuteImplResult {
     val remoteResult =
       remoteQuery.execute(
         requestId = requestId,
@@ -51,29 +118,14 @@ internal class LocalQuery<Data>(
         callerSdkType = callerSdkType,
       )
 
-    val response: ExecuteQueryResponse =
-      when (remoteResult) {
-        RemoteQuery.ExecuteResult.Retry -> return ExecuteResult.Retry
-        is RemoteQuery.ExecuteResult.Success ->
-          if (remoteResult.response.sequenceNumber < sequenceNumber) {
-            return ExecuteResult.Retry
-          } else {
-            remoteResult.response.ref
-          }
-      }
-
-    val dataResult =
-      withContext(cpuDispatcher) {
-        response.runCatching { deserialize(dataDeserializer, dataSerializersModule) }
-      }
-
-    dataResult.onFailure { logger.warn(it) { "[rid=$requestId] decoding response data failed" } }
-
-    return ExecuteResult.Success(dataResult.getOrThrow(), DataSource.SERVER)
-  }
-
-  sealed interface ExecuteResult<out T> {
-    data class Success<T>(val data: T, val source: DataSource) : ExecuteResult<T>
-    data object Retry : ExecuteResult<Nothing>
+    return when (remoteResult) {
+      RemoteQuery.ExecuteResult.Retry -> ExecuteImplResult.Retry
+      is RemoteQuery.ExecuteResult.Success ->
+        ExecuteImplResult.Success(
+          remoteResult.response.sequenceNumber,
+          remoteResult.response.ref,
+          DataSource.SERVER,
+        )
+    }
   }
 }

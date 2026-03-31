@@ -17,7 +17,6 @@
 package com.google.firebase.dataconnect.querymgr
 
 import com.google.firebase.dataconnect.FirebaseDataConnect
-import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.core.DataConnectGrpcRPCs
 import com.google.firebase.dataconnect.util.SequencedReference
 import google.firebase.dataconnect.proto.ExecuteQueryRequest as ExecuteQueryRequestProto
@@ -32,8 +31,7 @@ import kotlinx.coroutines.sync.withLock
 internal class RemoteQuery(
   private val dataConnectGrpcRPCs: DataConnectGrpcRPCs,
   private val cpuDispatcher: CoroutineDispatcher,
-  private val requestProto: ExecuteQueryRequestProto,
-  private val fetchPolicy: QueryRef.FetchPolicy,
+  val requestProto: ExecuteQueryRequestProto,
   private val coroutineScope: CoroutineScope,
 ) {
   private val mutex = Mutex()

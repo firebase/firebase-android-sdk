@@ -43,7 +43,6 @@ import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
@@ -67,78 +66,28 @@ internal class QueryManager(
   private val cacheSettings: CacheSettings?,
   private val logger: Logger,
 ) {
-  @Volatile
-  private var state: MutableStateFlow<State> = run {
-    val coroutineScope =
-      CoroutineScope(
-        SupervisorJob() +
-          CoroutineName(logger.nameWithId) +
-          CoroutineExceptionHandler { context, throwable ->
-            logger.warn(throwable) {
-              "uncaught exception from a coroutine named ${context[CoroutineName]}: " +
-                "$throwable [emhpq6ag2r]"
-            }
-          }
+  private val state: MutableStateFlow<State> = run {
+    val coroutineScope = createCoroutineScope()
+    val cacheInfo: LocalQueries.CacheInfo? = createLocalQueriesCacheInfo(coroutineScope)
+    MutableStateFlow(
+      State.Open(
+        coroutineScope = coroutineScope,
+        localQueriesMutex = Mutex(),
+        localQueries = LocalQueries(dataConnectGrpcRPCs, cpuDispatcher, cacheInfo, coroutineScope),
+        cacheDb = cacheInfo?.db,
       )
-
-    val localQueries = LocalQueries(dataConnectGrpcRPCs, cpuDispatcher, coroutineScope)
-
-    val openState: State.Open =
-      if (cacheSettings === null) {
-        logger.debug { "Not creating a DataConnectCacheDatabase because cacheSettings==null" }
-        State.OpenNoCache(coroutineScope, Mutex(), localQueries)
-      } else {
-        logger.debug { "Creating a DataConnectCacheDatabase with cacheSettings=$cacheSettings" }
-        val maxAgeProto =
-          cacheSettings.maxAge.toComponents { seconds, nanos ->
-            DurationProto.newBuilder().setSeconds(seconds).setNanos(nanos).build()
-          }
-        val cacheLogger =
-          Logger("DataConnectCacheDatabase").apply { debug { "created by ${logger.nameWithId}" } }
-        val cacheDb = DataConnectCacheDatabase(cacheSettings.dbFile, cacheLogger)
-        val initializeJob =
-          coroutineScope.async(
-            ioDispatcher + CoroutineName("CacheDbInitialize"),
-            start = CoroutineStart.LAZY,
-          ) {
-            cacheDb.initialize()
-          }
-        State.OpenWithCache(
-          coroutineScope,
-          Mutex(),
-          localQueries,
-          cacheDb,
-          maxAgeProto,
-          initializeJob
-        )
-      }
-
-    MutableStateFlow(openState)
+    )
   }
 
   private sealed interface State {
     data object Closed : State
 
-    sealed class Open(
+    class Open(
       val coroutineScope: CoroutineScope,
       val localQueriesMutex: Mutex,
       val localQueries: LocalQueries,
+      val cacheDb: DataConnectCacheDatabase?,
     ) : State
-
-    class OpenNoCache(
-      coroutineScope: CoroutineScope,
-      localQueriesMutex: Mutex,
-      localQueries: LocalQueries,
-    ) : Open(coroutineScope, localQueriesMutex, localQueries)
-
-    class OpenWithCache(
-      coroutineScope: CoroutineScope,
-      localQueriesMutex: Mutex,
-      localQueries: LocalQueries,
-      val cacheDb: DataConnectCacheDatabase,
-      val cacheMaxAge: DurationProto,
-      val cacheInitializeJob: Deferred<Unit>,
-    ) : Open(coroutineScope, localQueriesMutex, localQueries)
   }
 
   suspend fun close() {
@@ -151,12 +100,7 @@ internal class QueryManager(
       }
 
       currentState.run {
-        when (this) {
-          is State.OpenNoCache -> {}
-          is State.OpenWithCache -> {
-            cacheDb.close()
-          }
-        }
+        cacheDb?.close()
         coroutineScope.cancel("close() called")
         coroutineScope.coroutineContext.job.join()
       }
@@ -286,6 +230,45 @@ internal class QueryManager(
         }
       }
     }
+
+  private fun createCoroutineScope(): CoroutineScope =
+    CoroutineScope(
+      SupervisorJob() +
+        CoroutineName(logger.nameWithId) +
+        CoroutineExceptionHandler { context, throwable ->
+          logger.warn(throwable) {
+            "uncaught exception from a coroutine named ${context[CoroutineName]}: " +
+              "$throwable [emhpq6ag2r]"
+          }
+        }
+    )
+
+  private fun createLocalQueriesCacheInfo(coroutineScope: CoroutineScope): LocalQueries.CacheInfo? {
+    if (cacheSettings === null) {
+      logger.debug { "Not creating a DataConnectCacheDatabase because cacheSettings==null" }
+      return null
+    }
+
+    val cacheLogger = Logger("DataConnectCacheDatabase")
+    cacheLogger.debug { "created by ${logger.nameWithId} with cacheSettings=$cacheSettings" }
+
+    val maxAgeProto =
+      cacheSettings.maxAge.toComponents { seconds, nanos ->
+        DurationProto.newBuilder().setSeconds(seconds).setNanos(nanos).build()
+      }
+
+    val cacheDb = DataConnectCacheDatabase(cacheSettings.dbFile, cacheLogger)
+
+    val initializeJob =
+      coroutineScope.async(
+        ioDispatcher + CoroutineName("CacheDbInitialize"),
+        start = CoroutineStart.LAZY,
+      ) {
+        cacheDb.initialize()
+      }
+
+    return LocalQueries.CacheInfo(cacheDb, maxAgeProto, initializeJob)
+  }
 
   data class CacheSettings(val dbFile: File?, val maxAge: Duration)
 }

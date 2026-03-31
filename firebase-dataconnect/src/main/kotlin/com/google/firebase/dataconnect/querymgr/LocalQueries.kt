@@ -19,21 +19,26 @@ package com.google.firebase.dataconnect.querymgr
 import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.core.DataConnectGrpcRPCs
 import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
+import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase
 import com.google.firebase.dataconnect.util.ImmutableByteArray
+import com.google.protobuf.Duration as DurationProto
 import google.firebase.dataconnect.proto.ExecuteQueryRequest as ExecuteQueryRequestProto
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.modules.SerializersModule
 
 internal class LocalQueries(
-  private val dataConnectGrpcRPCs: DataConnectGrpcRPCs,
+  dataConnectGrpcRPCs: DataConnectGrpcRPCs,
   private val cpuDispatcher: CoroutineDispatcher,
-  private val coroutineScope: CoroutineScope,
+  private val cacheInfo: CacheInfo?,
+  coroutineScope: CoroutineScope,
 ) {
 
   private val localQueries = mutableMapOf<Key<*>, LocalQuery<*>>()
   private val remoteQueries = RemoteQueries(dataConnectGrpcRPCs, cpuDispatcher, coroutineScope)
+  private val localQueryLogger = Logger("LocalQuery")
 
   fun <T> getOrPut(
     key: Key<T>,
@@ -44,12 +49,12 @@ internal class LocalQueries(
 
     val localQuery: LocalQuery<*> =
       localQueries.getOrPut(key) {
-        LocalQuery(
+        ServerOnlyLocalQuery(
           remoteQuery,
           cpuDispatcher,
           key.dataDeserializer,
           key.dataSerializersModule,
-          Logger("LocalQuery")
+          localQueryLogger,
         )
       }
 
@@ -63,11 +68,16 @@ internal class LocalQueries(
     val dataSerializersModule: SerializersModule?,
     val fetchPolicy: QueryRef.FetchPolicy,
   )
+
+  class CacheInfo(
+    val db: DataConnectCacheDatabase,
+    val maxAge: DurationProto,
+    val initializeJob: Deferred<Unit>,
+  )
 }
 
 private fun LocalQueries.Key<*>.toRemoteKey(): RemoteQueries.Key =
   RemoteQueries.Key(
     authUid = authUid,
     queryId = queryId,
-    fetchPolicy = fetchPolicy,
   )
