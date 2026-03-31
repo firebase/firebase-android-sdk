@@ -16,7 +16,6 @@
 
 package com.google.firebase.dataconnect.querymgr
 
-import com.google.firebase.dataconnect.CachedDataNotFoundException
 import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.QueryRef
@@ -126,18 +125,6 @@ internal class QueryManager(
     callerSdkType: FirebaseDataConnect.CallerSdkType,
     fetchPolicy: QueryRef.FetchPolicy,
   ): ExecuteResult<Data> {
-    if (fetchPolicy == QueryRef.FetchPolicy.CACHE_ONLY) {
-      if (cacheSettings === null) {
-        throw CachedDataNotFoundException(
-          "CACHE_ONLY fetch policy is unsupported when cache settings is null [m35wype9dt]"
-        )
-      } else {
-        throw CachedDataNotFoundException(
-          "no cached results for query and CACHE_ONLY fetch policy was specified [xz3fvh9r39]"
-        )
-      }
-    }
-
     val requestId = requestIdGenerator.nextQueryRequestId()
     logger.debug {
       "[rid=$requestId] Executing query with operationName=$operationName and variables=$variables"

@@ -113,7 +113,10 @@ import kotlinx.serialization.serializer
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
+@RunWith(RobolectricTestRunner::class)
 class QueryManagerUnitTest {
 
   @get:Rule val cleanups = CleanupsRule()
