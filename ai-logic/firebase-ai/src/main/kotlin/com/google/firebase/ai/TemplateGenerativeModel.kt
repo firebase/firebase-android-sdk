@@ -49,6 +49,8 @@ public class TemplateGenerativeModel
 internal constructor(
   private val templateUri: String,
   private val controller: APIController,
+  private val tools: List<TemplateTool>? = null,
+  private val toolConfig: TemplateToolConfig? = null,
 ) {
 
   internal constructor(
@@ -57,8 +59,10 @@ internal constructor(
     firebaseApp: FirebaseApp,
     useLimitedUseAppCheckTokens: Boolean,
     requestOptions: RequestOptions = RequestOptions(),
+    tools: List<TemplateTool>? = null,
+    toolConfig: TemplateToolConfig? = null,
     appCheckTokenProvider: InteropAppCheckTokenProvider? = null,
-    internalAuthProvider: InternalAuthProvider? = null
+    internalAuthProvider: InternalAuthProvider? = null,
   ) : this(
     templateUri,
     APIController(
@@ -74,6 +78,8 @@ internal constructor(
         internalAuthProvider
       ),
     ),
+    tools,
+    toolConfig
   )
 
   /**
@@ -87,11 +93,9 @@ internal constructor(
    */
   public suspend fun generateContent(
     templateId: String,
-    inputs: Map<String, Any>,
-    tools: List<TemplateTool>? = null,
-    toolConfig: TemplateToolConfig? = null,
+    inputs: Map<String, Any>
   ): GenerateContentResponse =
-    generateContentWithHistory(templateId, inputs, null, tools, toolConfig)
+    generateContentWithHistory(templateId, inputs, null)
 
   /**
    * Generates content from a prompt template and inputs.
@@ -115,7 +119,7 @@ internal constructor(
       controller
         .templateGenerateContent(
           "$templateUri$templateId",
-          constructRequest(inputs, history, tools, toolConfig)
+          constructRequest(inputs, history)
         )
         .toPublic()
         .validate()
@@ -175,9 +179,7 @@ internal constructor(
 
   internal fun constructRequest(
     inputs: Map<String, Any>,
-    history: List<Content>? = null,
-    tools: List<TemplateTool>? = null,
-    toolConfig: TemplateToolConfig? = null
+    history: List<Content>? = null
   ): TemplateGenerateContentRequest {
     return TemplateGenerateContentRequest(
       Json.parseToJsonElement(JSONObject(inputs).toString()).jsonObject,
