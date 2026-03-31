@@ -13,6 +13,8 @@
   [#7893](https://github.com/firebase/firebase-android-sdk/pull/7893)
 - [feature] Added support for `rand` and `trunc` Pipeline expressions.
   [#7886](https://github.com/firebase/firebase-android-sdk/pull/7886)
+- [feature] Added support for `isType` Pipeline expression.
+  [#7985](https://github.com/firebase/firebase-android-sdk/pull/7985)
 - [feature] Add public preview support for full-text search and geo search.
   [#7949](https://github.com/firebase/firebase-android-sdk/pull/7949)
 - [feature] Added support for `ltrim`, `rtrim`, `stringIndexOf`, `stringRepeat`, `stringReplaceOne`, and `stringReplaceAll` Pipeline expressions.

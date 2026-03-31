@@ -3526,6 +3526,84 @@ public class PipelineTest {
   }
 
   @Test
+  public void testIsType() {
+    assumeFalse(
+        "Type expressions are not supported against the emulator.", isRunningAgainstEmulator());
+
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .replaceWith(
+                map(
+                    mapOfEntries(
+                        entry("int", 1),
+                        entry("float", 1.1),
+                        entry("str", "a string"),
+                        entry("bool", true),
+                        entry("null", null),
+                        entry("geoPoint", new GeoPoint(0.1, 0.2)),
+                        entry("timestamp", new Timestamp(123456, 0)),
+                        entry(
+                            "bytes",
+                            com.google.firebase.firestore.Blob.fromBytes(new byte[] {1, 2, 3})),
+                        entry("docRef", randomCol.document("bar")),
+                        entry("vector", FieldValue.vector(new double[] {1.0, 2.0, 3.0})),
+                        entry(
+                            "map",
+                            map(mapOfEntries(entry("numberK", 1), entry("stringK", "a string")))),
+                        entry("array", array(1, 2, true)))))
+            .select(
+                Expression.isType("int", "int64").alias("isInt64"),
+                Expression.isType("int", "number").alias("isInt64IsNumber"),
+                Expression.isType("int", "decimal128").alias("isInt64IsDecimal128"),
+                Expression.isType("float", "float64").alias("isFloat64"),
+                Expression.isType("float", "number").alias("isFloat64IsNumber"),
+                Expression.isType("float", "decimal128").alias("isFloat64IsDecimal128"),
+                Expression.isType("str", "string").alias("isStr"),
+                Expression.isType("str", "int64").alias("isStrNum"),
+                Expression.isType("int", "string").alias("isNumStr"),
+                Expression.isType("bool", "boolean").alias("isBool"),
+                Expression.isType("null", "null").alias("isNull"),
+                Expression.isType("geoPoint", "geo_point").alias("isGeoPoint"),
+                Expression.isType("timestamp", "timestamp").alias("isTimestamp"),
+                Expression.isType("bytes", "bytes").alias("isBytes"),
+                Expression.isType("docRef", "reference").alias("isDocRef"),
+                Expression.isType("vector", "vector").alias("isVector"),
+                Expression.isType("map", "map").alias("isMap"),
+                Expression.isType("array", "array").alias("isArray"),
+                Expression.isType(constant(1), "int64").alias("exprIsInt64"),
+                field("int").isType("int64").alias("staticIsInt64"))
+            .limit(1)
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            mapOfEntries(
+                entry("isInt64", true),
+                entry("isInt64IsNumber", true),
+                entry("isInt64IsDecimal128", false),
+                entry("isFloat64", true),
+                entry("isFloat64IsNumber", true),
+                entry("isFloat64IsDecimal128", false),
+                entry("isStr", true),
+                entry("isStrNum", false),
+                entry("isNumStr", false),
+                entry("isBool", true),
+                entry("isNull", true),
+                entry("isGeoPoint", true),
+                entry("isTimestamp", true),
+                entry("isBytes", true),
+                entry("isDocRef", true),
+                entry("isVector", true),
+                entry("isMap", true),
+                entry("isArray", true),
+                entry("exprIsInt64", true),
+                entry("staticIsInt64", true)));
+  }
+
+  @Test
   public void testVectorLength() {
     Task<Pipeline.Snapshot> execute =
         firestore

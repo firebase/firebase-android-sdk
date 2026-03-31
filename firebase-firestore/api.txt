@@ -1092,6 +1092,9 @@ package com.google.firebase.firestore.pipeline {
     method public static final com.google.firebase.firestore.pipeline.BooleanExpression isAbsent(String fieldName);
     method public final com.google.firebase.firestore.pipeline.BooleanExpression isError();
     method public static final com.google.firebase.firestore.pipeline.BooleanExpression isError(com.google.firebase.firestore.pipeline.Expression expr);
+    method public static final com.google.firebase.firestore.pipeline.BooleanExpression isType(com.google.firebase.firestore.pipeline.Expression expr, String type);
+    method public final com.google.firebase.firestore.pipeline.BooleanExpression isType(String type);
+    method public static final com.google.firebase.firestore.pipeline.BooleanExpression isType(String fieldName, String type);
     method public final com.google.firebase.firestore.pipeline.Expression join(com.google.firebase.firestore.pipeline.Expression delimiterExpression);
     method public static final com.google.firebase.firestore.pipeline.Expression join(com.google.firebase.firestore.pipeline.Expression arrayExpression, com.google.firebase.firestore.pipeline.Expression delimiterExpression);
     method public static final com.google.firebase.firestore.pipeline.Expression join(com.google.firebase.firestore.pipeline.Expression arrayExpression, String delimiter);
@@ -1627,6 +1630,8 @@ package com.google.firebase.firestore.pipeline {
     method public com.google.firebase.firestore.pipeline.BooleanExpression isAbsent(com.google.firebase.firestore.pipeline.Expression value);
     method public com.google.firebase.firestore.pipeline.BooleanExpression isAbsent(String fieldName);
     method public com.google.firebase.firestore.pipeline.BooleanExpression isError(com.google.firebase.firestore.pipeline.Expression expr);
+    method public com.google.firebase.firestore.pipeline.BooleanExpression isType(com.google.firebase.firestore.pipeline.Expression expr, String type);
+    method public com.google.firebase.firestore.pipeline.BooleanExpression isType(String fieldName, String type);
     method public com.google.firebase.firestore.pipeline.Expression join(com.google.firebase.firestore.pipeline.Expression arrayExpression, com.google.firebase.firestore.pipeline.Expression delimiterExpression);
     method public com.google.firebase.firestore.pipeline.Expression join(com.google.firebase.firestore.pipeline.Expression arrayExpression, String delimiter);
     method public com.google.firebase.firestore.pipeline.Expression join(String arrayFieldName, com.google.firebase.firestore.pipeline.Expression delimiterExpression);
