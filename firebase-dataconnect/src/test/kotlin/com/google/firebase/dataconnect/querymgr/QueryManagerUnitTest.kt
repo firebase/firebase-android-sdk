@@ -53,6 +53,7 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.common.DelicateKotest
 import io.kotest.common.ExperimentalKotest
+import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
@@ -1015,6 +1016,38 @@ class QueryManagerUnitTest {
             it shouldContainWithNonAbuttingText "CACHE_ONLY"
             it shouldContainWithNonAbuttingTextIgnoringCase "no cached results for query"
           }
+        }
+        confirmVerified(dataConnectGrpcRPCs)
+      }
+    }
+
+  @Test
+  fun `execute(fetchPolicy=SERVER_ONLY) with cacheSettings=non-null always returns from server`() =
+    runTest {
+      checkAll(
+        propTestConfig,
+        executeArgumentsArb(fetchPolicy = FetchPolicy.SERVER_ONLY),
+        cacheSettingsArb(),
+        Arb.dataConnect.requestName(),
+        Arb.list(testDataArb(), 1..5),
+      ) { args, cacheSettings, requestName, testDataList ->
+        val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk {
+          val responses = testDataList.map { it.encodeToExecuteQueryResponse() }
+          coEvery { executeQuery(any(), any(), any(), any(), any()) } returnsMany responses
+        }
+        val queryManager: QueryManager = buildQueryManager {
+          setDataConnectGrpcRPCs(dataConnectGrpcRPCs)
+          setCacheSettings(cacheSettings)
+          setRequestName(requestName)
+        }
+
+        val results = List(testDataList.size) { queryManager.execute(args) }
+
+        val expectedResults = testDataList.map { QueryManager.ExecuteResult(it, DataSource.SERVER) }
+        results shouldContainExactly expectedResults
+        coVerify(exactly = testDataList.size) {
+          val requestProto = eq(args.encodeToExecuteQueryRequest(requestName))
+          dataConnectGrpcRPCs.executeQuery(any(), requestProto, any(), any(), any())
         }
         confirmVerified(dataConnectGrpcRPCs)
       }
