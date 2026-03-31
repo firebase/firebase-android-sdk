@@ -18,8 +18,9 @@
 
 package com.google.firebase.dataconnect.querymgr
 
+import com.google.firebase.dataconnect.CachedDataNotFoundException
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
-import com.google.firebase.dataconnect.QueryRef
+import com.google.firebase.dataconnect.QueryRef.FetchPolicy
 import com.google.firebase.dataconnect.core.AuthUidChangedException
 import com.google.firebase.dataconnect.core.DataConnectAppCheck
 import com.google.firebase.dataconnect.core.DataConnectAuth
@@ -65,9 +66,11 @@ import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.distinct
+import io.kotest.property.arbitrary.duration
 import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.next
+import io.kotest.property.arbitrary.of
 import io.kotest.property.arbitrary.orNull
 import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
@@ -75,14 +78,18 @@ import io.mockk.CapturingSlot
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.coVerifySequence
+import io.mockk.confirmVerified
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
+import java.io.File
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.random.Random
 import kotlin.random.nextInt
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -102,10 +109,12 @@ import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.serializer
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 
 class QueryManagerUnitTest {
 
   @get:Rule val cleanups = CleanupsRule()
+  @get:Rule val temporaryFolder = TemporaryFolder()
 
   @Test
   fun `execute() uses the requestName that was given to the constructor`() = runTest {
@@ -918,6 +927,85 @@ class QueryManagerUnitTest {
     }
   }
 
+  @Test
+  fun `execute(fetchPolicy=CACHE_ONLY) with cacheSettings=null throws`() = runTest {
+    checkAll(
+      propTestConfig,
+      executeArgumentsArb(fetchPolicy = FetchPolicy.CACHE_ONLY),
+    ) { args ->
+      val queryManager: QueryManager = buildQueryManager {}
+
+      val exception = shouldThrow<CachedDataNotFoundException> { queryManager.execute(args) }
+
+      assertSoftly {
+        exception.message.let {
+          it shouldContainWithNonAbuttingText "m35wype9dt"
+          it shouldContainWithNonAbuttingText "CACHE_ONLY"
+          it shouldContainWithNonAbuttingTextIgnoringCase "cache settings is null"
+        }
+      }
+    }
+  }
+
+  @Test
+  fun `execute(fetchPolicy=SERVER_ONLY or PREFER_CACHE) with cacheSettings=null succeeds`() =
+    runTest {
+      checkAll(
+        propTestConfig,
+        executeArgumentsArb(
+          fetchPolicy = Arb.of(FetchPolicy.SERVER_ONLY, FetchPolicy.PREFER_CACHE)
+        ),
+        testDataArb(),
+      ) { args, testData ->
+        val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk {
+          stubExecuteQuery(executeQueryResponse = testData.encodeToExecuteQueryResponse())
+        }
+        val queryManager: QueryManager = buildQueryManager {
+          setDataConnectGrpcRPCs(dataConnectGrpcRPCs)
+        }
+
+        val result = queryManager.execute(args)
+
+        result shouldBe testData
+        coVerify(exactly = 1) {
+          dataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any())
+        }
+      }
+    }
+
+  @Test
+  fun `execute(fetchPolicy=CACHE_ONLY) with cacheSettings=non-null and no cached results throws`() =
+    runTest {
+      checkAll(
+        propTestConfig,
+        executeArgumentsArb(fetchPolicy = FetchPolicy.CACHE_ONLY),
+        cacheSettingsArb(),
+      ) { args, cacheSettings ->
+        val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk()
+        val queryManager: QueryManager = buildQueryManager { setCacheSettings(cacheSettings) }
+
+        val exception = shouldThrow<CachedDataNotFoundException> { queryManager.execute(args) }
+
+        assertSoftly {
+          exception.message.let {
+            it shouldContainWithNonAbuttingText "xz3fvh9r39"
+            it shouldContainWithNonAbuttingText "CACHE_ONLY"
+            it shouldContainWithNonAbuttingTextIgnoringCase "no cached results for query"
+          }
+        }
+        confirmVerified(dataConnectGrpcRPCs)
+      }
+    }
+
+  private fun cacheFileArb(): Arb<File> = arbitrary {
+    File(temporaryFolder.newFolder(), "db.sqlite")
+  }
+
+  private fun cacheSettingsArb(
+    file: Arb<File?> = cacheFileArb().orNull(nullProbability = 0.2),
+    maxAge: Arb<Duration> = cacheSettingsDurationArb(),
+  ): Arb<QueryManager.CacheSettings> = Arb.bind(file, maxAge, QueryManager::CacheSettings)
+
   private suspend fun PropertyContext.buildQueryManager(
     block: QueryManagerBuilder.() -> Unit
   ): QueryManager {
@@ -929,6 +1017,7 @@ class QueryManagerUnitTest {
         dataConnectAppCheck = mockDataConnectAppCheck(),
         cpuDispatcher = Dispatchers.Default,
         requestIdGenerator = Arb.dataConnect.requestIdGenerator().next(randomSource()),
+        cacheSettings = null,
         logger = newMockLogger("logger" + randomSource().random.nextAlphanumericString(10)),
       )
     builder.apply(block)
@@ -953,7 +1042,7 @@ private data class ExecuteArguments<Data, Variables>(
   val callerSdkType: CallerSdkType,
   val dataSerializersModule: SerializersModule?,
   val variablesSerializersModule: SerializersModule?,
-  val fetchPolicy: QueryRef.FetchPolicy,
+  val fetchPolicy: FetchPolicy,
 )
 
 private data class ExecuteQueryArguments(
@@ -1019,29 +1108,37 @@ private fun operationNameArb(stringArb: Arb<String> = alphanumericStringArb()): 
 private fun testVariablesArb(stringArb: Arb<String> = alphanumericStringArb()): Arb<TestVariables> =
   stringArb.map { TestVariables("vars_$it") }
 
+private fun testDataArb(stringArb: Arb<String> = alphanumericStringArb()): Arb<TestData> =
+  stringArb.map { TestData("data_$it") }
+
 private fun executeArgumentsArb(
-  operationNameArb: Arb<String> = operationNameArb(),
-  variablesArb: Arb<TestVariables> = testVariablesArb(),
-  dataDeserializerArb: Arb<DeserializationStrategy<TestData>> = Arb.constant(serializer()),
-  variablesSerializerArb: Arb<SerializationStrategy<TestVariables>> = Arb.constant(serializer()),
-  callerSdkTypeArb: Arb<CallerSdkType> = Arb.enum(),
-  dataSerializersModuleArb: Arb<SerializersModule?> =
+  operationName: Arb<String> = operationNameArb(),
+  variables: Arb<TestVariables> = testVariablesArb(),
+  dataDeserializer: Arb<DeserializationStrategy<TestData>> = Arb.constant(serializer()),
+  variablesSerializer: Arb<SerializationStrategy<TestVariables>> = Arb.constant(serializer()),
+  callerSdkType: Arb<CallerSdkType> = Arb.enum(),
+  dataSerializersModule: Arb<SerializersModule?> =
     Arb.mock<SerializersModule>().orNull(nullProbability = 0.5),
-  variablesSerializersModuleArb: Arb<SerializersModule?> =
+  variablesSerializersModule: Arb<SerializersModule?> =
     Arb.mock<SerializersModule>().orNull(nullProbability = 0.5),
-  fetchPolicyArb: Arb<QueryRef.FetchPolicy> = Arb.enum(),
+  fetchPolicy: Arb<FetchPolicy> = Arb.enum(),
 ): Arb<ExecuteArguments<TestData, TestVariables>> =
   Arb.bind(
-    operationNameArb,
-    variablesArb,
-    dataDeserializerArb,
-    variablesSerializerArb,
-    callerSdkTypeArb,
-    dataSerializersModuleArb,
-    variablesSerializersModuleArb,
-    fetchPolicyArb,
+    operationName,
+    variables,
+    dataDeserializer,
+    variablesSerializer,
+    callerSdkType,
+    dataSerializersModule,
+    variablesSerializersModule,
+    fetchPolicy,
     ::ExecuteArguments,
   )
+
+private fun executeArgumentsArb(
+  fetchPolicy: FetchPolicy
+): Arb<ExecuteArguments<TestData, TestVariables>> =
+  executeArgumentsArb(fetchPolicy = Arb.constant(fetchPolicy))
 
 private class TestVariablesOverrideSerializer(overrideValue: String) :
   SerializationStrategy<TestVariables> {
@@ -1125,6 +1222,7 @@ private class QueryManagerBuilder(
   private var dataConnectAppCheck: DataConnectAppCheck,
   private var cpuDispatcher: CoroutineDispatcher,
   private var requestIdGenerator: RequestIdGenerator,
+  private var cacheSettings: QueryManager.CacheSettings?,
   private var logger: Logger,
 ) {
 
@@ -1148,6 +1246,10 @@ private class QueryManagerBuilder(
     requestIdGenerator = value
   }
 
+  fun setCacheSettings(value: QueryManager.CacheSettings?) {
+    cacheSettings = value
+  }
+
   fun build(): QueryManager =
     QueryManager(
       requestName = requestName,
@@ -1156,6 +1258,9 @@ private class QueryManagerBuilder(
       dataConnectAppCheck = dataConnectAppCheck,
       cpuDispatcher = cpuDispatcher,
       requestIdGenerator = requestIdGenerator,
+      cacheSettings = cacheSettings,
       logger = logger,
     )
 }
+
+private fun cacheSettingsDurationArb(): Arb<Duration> = Arb.duration(0.seconds..Duration.INFINITE)

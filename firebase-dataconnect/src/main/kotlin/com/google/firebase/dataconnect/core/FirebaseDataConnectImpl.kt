@@ -177,8 +177,9 @@ internal class FirebaseDataConnectImpl(
       state.updateAndGet { currentState ->
         when (currentState) {
           is State.New -> {
-            val grpcRPCs = createDataConnectGrpcRPCs(currentState.emulatorSettings)
-            val queryManager = createQueryManager(grpcRPCs)
+            val backendInfo = calculateBackendInfo(settings, currentState.emulatorSettings, logger)
+            val grpcRPCs = createDataConnectGrpcRPCs(backendInfo)
+            val queryManager = createQueryManager(grpcRPCs, backendInfo)
             val mutationManager = createMutationManager(grpcRPCs)
             State.Initialized(grpcRPCs, queryManager, mutationManager)
           }
@@ -224,32 +225,7 @@ internal class FirebaseDataConnectImpl(
     return sha512Bytes.toAlphaNumericString()
   }
 
-  private fun createDataConnectGrpcRPCs(
-    emulatorSettings: EmulatedServiceSettings?
-  ): DataConnectGrpcRPCs {
-    val backendInfoFromSettings =
-      DataConnectBackendInfo(
-        host = settings.host,
-        sslEnabled = settings.sslEnabled,
-        isEmulator = false
-      )
-    val backendInfoFromEmulatorSettings =
-      emulatorSettings?.run {
-        DataConnectBackendInfo(host = "$host:$port", sslEnabled = false, isEmulator = true)
-      }
-    val backendInfo =
-      if (backendInfoFromEmulatorSettings == null) {
-        backendInfoFromSettings
-      } else {
-        if (!settings.isDefaultHost()) {
-          logger.warn(
-            "Host has been set in DataConnectSettings and useEmulator, " +
-              "emulator host will be used."
-          )
-        }
-        backendInfoFromEmulatorSettings
-      }
-
+  private fun createDataConnectGrpcRPCs(backendInfo: DataConnectBackendInfo): DataConnectGrpcRPCs {
     val cacheSettings =
       settings.cacheSettings?.run {
         val dbFile =
@@ -289,7 +265,23 @@ internal class FirebaseDataConnectImpl(
     return dataConnectGrpcRPCs
   }
 
-  private fun createQueryManager(dataConnectGrpcRPCs: DataConnectGrpcRPCs): QueryManager {
+  private fun createQueryManager(
+    dataConnectGrpcRPCs: DataConnectGrpcRPCs,
+    backendInfo: DataConnectBackendInfo,
+  ): QueryManager {
+    val cacheSettings =
+      settings.cacheSettings?.run {
+        val dbFile =
+          when (storage) {
+            CacheSettings.Storage.MEMORY -> null
+            CacheSettings.Storage.PERSISTENT -> {
+              val dbName = "dataconnect_" + calculateCacheDbUniqueName(backendInfo)
+              context.getDatabasePath(dbName)
+            }
+          }
+        QueryManager.CacheSettings(dbFile, maxAge)
+      }
+
     return QueryManager(
       requestName = requestName,
       dataConnectGrpcRPCs = dataConnectGrpcRPCs,
@@ -297,6 +289,7 @@ internal class FirebaseDataConnectImpl(
       dataConnectAppCheck = dataConnectAppCheck,
       cpuDispatcher = nonBlockingDispatcher,
       requestIdGenerator = requestIdGenerator,
+      cacheSettings = cacheSettings,
       logger = Logger("QueryManager").also { it.debug("created by $instanceId") },
     )
   }
@@ -526,4 +519,42 @@ internal class FirebaseDataConnectImpl(
     "FirebaseDataConnect(app=${app.name}, projectId=$projectId, config=$config, settings=$settings)"
 
   private data class EmulatedServiceSettings(val host: String, val port: Int)
+
+  private companion object {
+
+    fun calculateBackendInfo(
+      settings: DataConnectSettings,
+      emulatorSettings: EmulatedServiceSettings?,
+      logger: Logger,
+    ): DataConnectBackendInfo {
+      if (emulatorSettings === null) {
+        return settings.toDataConnectBackendInfo()
+      }
+
+      val backendInfo = emulatorSettings.toDataConnectBackendInfo()
+
+      if (!settings.isDefaultHost()) {
+        logger.warn(
+          "Host has been set in DataConnectSettings and useEmulator, " +
+            "emulator host will be used."
+        )
+      }
+
+      return backendInfo
+    }
+
+    fun DataConnectSettings.toDataConnectBackendInfo(): DataConnectBackendInfo =
+      DataConnectBackendInfo(
+        host = host,
+        sslEnabled = sslEnabled,
+        isEmulator = false,
+      )
+
+    fun EmulatedServiceSettings.toDataConnectBackendInfo(): DataConnectBackendInfo =
+      DataConnectBackendInfo(
+        host = "$host:$port",
+        sslEnabled = false,
+        isEmulator = true,
+      )
+  }
 }
