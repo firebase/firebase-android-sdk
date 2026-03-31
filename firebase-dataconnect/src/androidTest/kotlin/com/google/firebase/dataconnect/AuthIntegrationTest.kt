@@ -44,6 +44,7 @@ import io.kotest.property.Arb
 import io.kotest.property.arbitrary.next
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.random.Random
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toCollection
 import kotlinx.coroutines.launch
@@ -121,7 +122,8 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
     val grpcServer =
       inProcessDataConnectGrpcServer.newInstance(
         errors = listOf(Status.UNAUTHENTICATED),
-        executeQueryResponse = executeQueryResponse
+        executeQueryResponse = executeQueryResponse,
+        responseDelay = 1.seconds, // avoid getting the same access token from auth emulator
       )
     val authTokens = CopyOnWriteArrayList<String?>()
     backgroundScope.launch {
@@ -150,7 +152,8 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
     val grpcServer =
       inProcessDataConnectGrpcServer.newInstance(
         errors = listOf(Status.UNAUTHENTICATED),
-        executeMutationResponse = executeMutationResponse
+        executeMutationResponse = executeMutationResponse,
+        responseDelay = 1.seconds, // avoid getting the same access token from auth emulator
       )
     val authTokens = CopyOnWriteArrayList<String?>()
     backgroundScope.launch {
@@ -193,6 +196,7 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
     val grpcServer =
       inProcessDataConnectGrpcServer.newInstance(
         errors = listOf(Status.UNAUTHENTICATED, Status.UNAUTHENTICATED),
+        responseDelay = 1.seconds, // avoid getting the same access token from auth emulator
       )
     val dataConnect = dataConnectFactory.newInstance(auth.app, grpcServer)
     val operationName = Arb.dataConnect.operationName().next(rs)
