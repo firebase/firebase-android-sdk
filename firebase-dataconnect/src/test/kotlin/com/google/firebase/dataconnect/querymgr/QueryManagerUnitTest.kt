@@ -19,6 +19,7 @@
 package com.google.firebase.dataconnect.querymgr
 
 import com.google.firebase.dataconnect.CachedDataNotFoundException
+import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.QueryRef.FetchPolicy
 import com.google.firebase.dataconnect.core.AuthUidChangedException
@@ -68,6 +69,7 @@ import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.distinct
 import io.kotest.property.arbitrary.duration
 import io.kotest.property.arbitrary.enum
+import io.kotest.property.arbitrary.list
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.next
 import io.kotest.property.arbitrary.of
@@ -120,7 +122,7 @@ class QueryManagerUnitTest {
   fun `execute() uses the requestName that was given to the constructor`() = runTest {
     checkAll(
       propTestConfig,
-      executeArgumentsArb(),
+      executeArgumentsArb(FetchPolicy.SERVER_ONLY),
       alphanumericStringArb(),
     ) { args, requestName ->
       val executeQueryRequestSlot = slot<ExecuteQueryRequest>()
@@ -142,7 +144,7 @@ class QueryManagerUnitTest {
   fun `execute() uses the given operationName`() = runTest {
     checkAll(
       propTestConfig,
-      executeArgumentsArb(),
+      executeArgumentsArb(FetchPolicy.SERVER_ONLY),
     ) { args ->
       val executeQueryRequestSlot = slot<ExecuteQueryRequest>()
       val queryManager: QueryManager = buildQueryManager {
@@ -162,7 +164,7 @@ class QueryManagerUnitTest {
   fun `execute() uses the given variables`() = runTest {
     checkAll(
       propTestConfig,
-      executeArgumentsArb(),
+      executeArgumentsArb(FetchPolicy.SERVER_ONLY),
     ) { args ->
       val executeQueryRequestSlot = slot<ExecuteQueryRequest>()
       val queryManager: QueryManager = buildQueryManager {
@@ -183,7 +185,7 @@ class QueryManagerUnitTest {
   fun `execute() uses the given dataDeserializer`() = runTest {
     checkAll(
       propTestConfig,
-      executeArgumentsArb(),
+      executeArgumentsArb(FetchPolicy.SERVER_ONLY),
       alphanumericStringArb(),
     ) { args, overrideValue ->
       val queryManager: QueryManager = buildQueryManager {
@@ -195,9 +197,9 @@ class QueryManagerUnitTest {
       }
       val dataDeserializer = TestDataOverrideDeserializer(overrideValue)
 
-      val result: TestData = queryManager.execute(args.copy(dataDeserializer = dataDeserializer))
+      val result = queryManager.execute(args.copy(dataDeserializer = dataDeserializer))
 
-      result shouldBe TestData(overrideValue)
+      result.data shouldBe TestData(overrideValue)
     }
   }
 
@@ -205,7 +207,7 @@ class QueryManagerUnitTest {
   fun `execute() uses the given variablesSerializer`() = runTest {
     checkAll(
       propTestConfig,
-      executeArgumentsArb(),
+      executeArgumentsArb(FetchPolicy.SERVER_ONLY),
       alphanumericStringArb(),
     ) { args, overrideValue ->
       val executeQueryRequestSlot = slot<ExecuteQueryRequest>()
@@ -228,7 +230,7 @@ class QueryManagerUnitTest {
   fun `execute() uses the given dataSerializersModule`() = runTest {
     checkAll(
       propTestConfig,
-      executeArgumentsArb(),
+      executeArgumentsArb(FetchPolicy.SERVER_ONLY),
       alphanumericStringArb().pair(),
     ) { args, (responseValue, overrideValue) ->
       val queryManager: QueryManager = buildQueryManager {
@@ -243,14 +245,14 @@ class QueryManagerUnitTest {
         contextual(String::class, HardcodedStringKSerializer(overrideValue))
       }
 
-      val result: ContextualTestData =
+      val result =
         queryManager.execute(
           args
             .withDataDeserializer(dataDeserializer)
             .copy(dataSerializersModule = dataSerializersModule)
         )
 
-      result shouldBe ContextualTestData(overrideValue)
+      result.data shouldBe ContextualTestData(overrideValue)
     }
   }
 
@@ -258,7 +260,7 @@ class QueryManagerUnitTest {
   fun `execute() uses the given variablesSerializersModule`() = runTest {
     checkAll(
       propTestConfig,
-      executeArgumentsArb(),
+      executeArgumentsArb(FetchPolicy.SERVER_ONLY),
       alphanumericStringArb().pair(),
     ) { args, (requestValue, overrideValue) ->
       val executeQueryRequestSlot = slot<ExecuteQueryRequest>()
@@ -289,7 +291,7 @@ class QueryManagerUnitTest {
   fun `execute() uses the given callerSdkType`() = runTest {
     checkAll(
       propTestConfig,
-      executeArgumentsArb(),
+      executeArgumentsArb(FetchPolicy.SERVER_ONLY),
       Arb.enum<CallerSdkType>(),
     ) { args, callerSdkType ->
       val callerSdkTypeSlot = slot<CallerSdkType>()
@@ -306,7 +308,10 @@ class QueryManagerUnitTest {
 
   @Test
   fun `execute() when DataConnectAuth returns null sends null authToken`() = runTest {
-    checkAll(propTestConfig, executeArgumentsArb()) { args ->
+    checkAll(
+      propTestConfig,
+      executeArgumentsArb(FetchPolicy.SERVER_ONLY),
+    ) { args ->
       val authTokenSlot = slot<String?>()
       val queryManager: QueryManager = buildQueryManager {
         setDataConnectGrpcRPCs(mockk { stubExecuteQuery(authTokenSlot = authTokenSlot) })
@@ -323,7 +328,11 @@ class QueryManagerUnitTest {
   fun `execute() when DataConnectAuth returns non-null with null token sends null authToken`() =
     runTest {
       val authTokenResultArb = Arb.dataConnect.authTokenResult(accessToken = Arb.constant(null))
-      checkAll(propTestConfig, executeArgumentsArb(), authTokenResultArb) { args, authTokenResult ->
+      checkAll(
+        propTestConfig,
+        executeArgumentsArb(FetchPolicy.SERVER_ONLY),
+        authTokenResultArb,
+      ) { args, authTokenResult ->
         val authTokenSlot = slot<String?>()
         val queryManager: QueryManager = buildQueryManager {
           setDataConnectGrpcRPCs(mockk { stubExecuteQuery(authTokenSlot = authTokenSlot) })
@@ -345,7 +354,11 @@ class QueryManagerUnitTest {
   fun `execute() when DataConnectAuth returns non-null token sends the authToken`() = runTest {
     val authTokenResultArb =
       Arb.dataConnect.authTokenResult(accessToken = Arb.dataConnect.accessToken())
-    checkAll(propTestConfig, executeArgumentsArb(), authTokenResultArb) { args, authTokenResult ->
+    checkAll(
+      propTestConfig,
+      executeArgumentsArb(FetchPolicy.SERVER_ONLY),
+      authTokenResultArb,
+    ) { args, authTokenResult ->
       val authTokenSlot = slot<String?>()
       val queryManager: QueryManager = buildQueryManager {
         setDataConnectGrpcRPCs(mockk { stubExecuteQuery(authTokenSlot = authTokenSlot) })
@@ -365,7 +378,10 @@ class QueryManagerUnitTest {
 
   @Test
   fun `execute() when DataConnectAppCheck returns null sends null appCheckToken`() = runTest {
-    checkAll(propTestConfig, executeArgumentsArb()) { args ->
+    checkAll(
+      propTestConfig,
+      executeArgumentsArb(FetchPolicy.SERVER_ONLY),
+    ) { args ->
       val appCheckTokenSlot = slot<String?>()
       val queryManager: QueryManager = buildQueryManager {
         setDataConnectGrpcRPCs(mockk { stubExecuteQuery(appCheckTokenSlot = appCheckTokenSlot) })
@@ -383,9 +399,11 @@ class QueryManagerUnitTest {
     runTest {
       val appCheckTokenResultArb =
         Arb.dataConnect.appCheckTokenResult(accessToken = Arb.constant(null))
-      checkAll(propTestConfig, executeArgumentsArb(), appCheckTokenResultArb) {
-        args,
-        appCheckTokenResult ->
+      checkAll(
+        propTestConfig,
+        executeArgumentsArb(FetchPolicy.SERVER_ONLY),
+        appCheckTokenResultArb
+      ) { args, appCheckTokenResult ->
         val appCheckTokenSlot = slot<String?>()
         val queryManager: QueryManager = buildQueryManager {
           setDataConnectGrpcRPCs(mockk { stubExecuteQuery(appCheckTokenSlot = appCheckTokenSlot) })
@@ -408,9 +426,11 @@ class QueryManagerUnitTest {
     runTest {
       val appCheckTokenResultArb =
         Arb.dataConnect.appCheckTokenResult(accessToken = Arb.dataConnect.accessToken())
-      checkAll(propTestConfig, executeArgumentsArb(), appCheckTokenResultArb) {
-        args,
-        appCheckTokenResult ->
+      checkAll(
+        propTestConfig,
+        executeArgumentsArb(FetchPolicy.SERVER_ONLY),
+        appCheckTokenResultArb,
+      ) { args, appCheckTokenResult ->
         val appCheckTokenSlot = slot<String?>()
         val queryManager: QueryManager = buildQueryManager {
           setDataConnectGrpcRPCs(mockk { stubExecuteQuery(appCheckTokenSlot = appCheckTokenSlot) })
@@ -430,8 +450,11 @@ class QueryManagerUnitTest {
 
   @Test
   fun `execute() uses the given RequestIdGenerator`() = runTest {
-    checkAll(propTestConfig, executeArgumentsArb(), Arb.dataConnect.requestId()) { args, requestId
-      ->
+    checkAll(
+      propTestConfig,
+      executeArgumentsArb(FetchPolicy.SERVER_ONLY),
+      Arb.dataConnect.requestId(),
+    ) { args, requestId ->
       val requestIdGenerator: RequestIdGenerator = mockk {
         coEvery { nextQueryRequestId() } returns requestId
       }
@@ -682,7 +705,7 @@ class QueryManagerUnitTest {
   fun `execute() on UNAUTHENTICATED error retries with new tokens`() = runTest {
     checkAll(
       propTestConfig,
-      executeArgumentsArb(),
+      executeArgumentsArb(FetchPolicy.SERVER_ONLY),
       alphanumericStringArb(),
     ) { args, responseString ->
       val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk {
@@ -726,7 +749,7 @@ class QueryManagerUnitTest {
 
       val result = queryManager.execute(args)
 
-      result shouldBe TestData(responseString)
+      result.data shouldBe TestData(responseString)
       val capturedRequestIds = mutableListOf<String>()
       val capturedRequestProtos = mutableListOf<ExecuteQueryRequest>()
       coVerifySequence {
@@ -756,7 +779,7 @@ class QueryManagerUnitTest {
   fun `execute() on UNAUTHENTICATED error does NOT retry when tokens unchanged`() = runTest {
     checkAll(
       propTestConfig,
-      executeArgumentsArb(),
+      executeArgumentsArb(FetchPolicy.SERVER_ONLY),
       Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.33),
       Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.33),
     ) { args, authTokenResult, appCheckTokenResult ->
@@ -792,7 +815,7 @@ class QueryManagerUnitTest {
     }
     checkAll(
       propTestConfig,
-      executeArgumentsArb(),
+      executeArgumentsArb(FetchPolicy.SERVER_ONLY),
       authTokenWithDistinctAuthUidArb.pair(),
       Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.33),
     ) { args, authTokenResults, appCheckTokenResult ->
@@ -845,7 +868,7 @@ class QueryManagerUnitTest {
   ) = runTest {
     checkAll(
       propTestConfig.withIterations(5),
-      executeArgumentsArb(),
+      executeArgumentsArb(FetchPolicy.SERVER_ONLY),
       alphanumericStringArb().pair()
     ) { args, (valuePrefix, valuePrefixOverride) ->
       val callbackArgsTemplate =
@@ -890,7 +913,7 @@ class QueryManagerUnitTest {
         }
 
       val results = jobs.awaitAll()
-      verifyResults(valuePrefix, valuePrefixOverride, jobs.size, results)
+      verifyResults(valuePrefix, valuePrefixOverride, jobs.size, results.map { it.data })
 
       val capturedRequestIds = mutableListOf<String>()
       val capturedRequestProtos = mutableListOf<ExecuteQueryRequest>()
@@ -966,7 +989,7 @@ class QueryManagerUnitTest {
 
         val result = queryManager.execute(args)
 
-        result shouldBe testData
+        result shouldBe QueryManager.ExecuteResult(testData, DataSource.SERVER)
         coVerify(exactly = 1) {
           dataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any())
         }
@@ -1086,6 +1109,21 @@ private fun <Data, NewVariables> ExecuteArguments<Data, *>.withVariables(
 
 private fun TestVariables.encodeToStruct(): Struct = buildStructProto { put("value", value) }
 
+private fun TestVariables.encodeToExecuteQueryRequest(
+  requestName: String,
+  operationName: String
+): ExecuteQueryRequest =
+  ExecuteQueryRequest.newBuilder()
+    .setVariables(encodeToStruct())
+    .setName(requestName)
+    .setOperationName(operationName)
+    .build()
+
+private fun ExecuteArguments<*, TestVariables>.encodeToExecuteQueryRequest(
+  requestName: String
+): ExecuteQueryRequest =
+  variables.encodeToExecuteQueryRequest(requestName = requestName, operationName = operationName)
+
 @Serializable private data class ContextualTestVariables(@Contextual val value: String)
 
 @Serializable private data class TestData(val value: String)
@@ -1203,7 +1241,7 @@ private fun mockDataConnectAppCheck(): DataConnectAppCheck =
 
 private suspend fun <Data, Variables> QueryManager.execute(
   args: ExecuteArguments<Data, Variables>
-): Data =
+): QueryManager.ExecuteResult<Data> =
   execute(
     operationName = args.operationName,
     variables = args.variables,

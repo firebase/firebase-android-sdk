@@ -17,6 +17,7 @@
 package com.google.firebase.dataconnect.querymgr
 
 import com.google.firebase.dataconnect.CachedDataNotFoundException
+import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.core.DataConnectAppCheck
@@ -27,7 +28,6 @@ import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import com.google.firebase.dataconnect.core.encodeVariables
 import com.google.firebase.dataconnect.core.retryOnGrpcUnauthenticatedError
-import com.google.firebase.dataconnect.querymgr.LocalQuery.ExecuteResult
 import com.google.firebase.dataconnect.util.ImmutableByteArray
 import com.google.firebase.dataconnect.util.ProtoUtil.calculateSha512
 import com.google.firebase.dataconnect.util.RequestIdGenerator
@@ -80,6 +80,11 @@ internal class QueryManager(
     coroutineScope.coroutineContext.job.join()
   }
 
+  data class ExecuteResult<Data>(
+    val data: Data,
+    val source: DataSource,
+  )
+
   suspend fun <Data, Variables> execute(
     operationName: String,
     variables: Variables,
@@ -89,7 +94,7 @@ internal class QueryManager(
     variablesSerializersModule: SerializersModule?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
     fetchPolicy: QueryRef.FetchPolicy,
-  ): Data {
+  ): ExecuteResult<Data> {
     if (fetchPolicy == QueryRef.FetchPolicy.CACHE_ONLY) {
       if (cacheSettings === null) {
         throw CachedDataNotFoundException(
@@ -161,7 +166,7 @@ internal class QueryManager(
     appCheckToken: String?,
     requestProto: ExecuteQueryRequestProto,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
-  ): Data {
+  ): ExecuteResult<Data> {
     val localQuery: LocalQuery<Data> =
       mutex.withLock { localQueries.getOrPut(localKey, requestProto) }
 
@@ -176,8 +181,9 @@ internal class QueryManager(
         )
 
       when (executeResult) {
-        ExecuteResult.Retry -> {}
-        is ExecuteResult.Success<Data> -> return executeResult.data
+        LocalQuery.ExecuteResult.Retry -> {}
+        is LocalQuery.ExecuteResult.Success<Data> ->
+          return ExecuteResult(executeResult.data, executeResult.source)
       }
     }
   }

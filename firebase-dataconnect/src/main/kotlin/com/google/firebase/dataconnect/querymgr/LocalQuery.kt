@@ -16,6 +16,7 @@
 
 package com.google.firebase.dataconnect.querymgr
 
+import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
@@ -68,11 +69,11 @@ internal class LocalQuery<Data>(
 
     dataResult.onFailure { logger.warn(it) { "[rid=$requestId] decoding response data failed" } }
 
-    return ExecuteResult.Success(dataResult.getOrThrow())
+    return ExecuteResult.Success(dataResult.getOrThrow(), DataSource.SERVER)
   }
 
   sealed interface ExecuteResult<out T> {
-    data class Success<T>(val data: T) : ExecuteResult<T>
+    data class Success<T>(val data: T, val source: DataSource) : ExecuteResult<T>
     data object Retry : ExecuteResult<Nothing>
   }
 }
