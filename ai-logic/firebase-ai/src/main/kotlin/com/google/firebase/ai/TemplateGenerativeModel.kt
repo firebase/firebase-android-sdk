@@ -29,6 +29,8 @@ import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.RequestOptions
 import com.google.firebase.ai.type.ResponseStoppedException
 import com.google.firebase.ai.type.SerializationException
+import com.google.firebase.ai.type.TemplateTool
+import com.google.firebase.ai.type.TemplateToolConfig
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
 import kotlinx.coroutines.flow.Flow
@@ -86,7 +88,10 @@ internal constructor(
   public suspend fun generateContent(
     templateId: String,
     inputs: Map<String, Any>,
-  ): GenerateContentResponse = generateContentWithHistory(templateId, inputs, null)
+    tools: List<TemplateTool>? = null,
+    toolConfig: TemplateToolConfig? = null,
+  ): GenerateContentResponse =
+    generateContentWithHistory(templateId, inputs, null, tools, toolConfig)
 
   /**
    * Generates content from a prompt template and inputs.
@@ -102,11 +107,16 @@ internal constructor(
   internal suspend fun generateContentWithHistory(
     templateId: String,
     inputs: Map<String, Any>,
-    history: List<Content>?
+    history: List<Content>?,
+    tools: List<TemplateTool>? = null,
+    toolConfig: TemplateToolConfig? = null
   ): GenerateContentResponse =
     try {
       controller
-        .templateGenerateContent("$templateUri$templateId", constructRequest(inputs, history))
+        .templateGenerateContent(
+          "$templateUri$templateId",
+          constructRequest(inputs, history, tools, toolConfig)
+        )
         .toPublic()
         .validate()
     } catch (e: Throwable) {
@@ -165,11 +175,15 @@ internal constructor(
 
   internal fun constructRequest(
     inputs: Map<String, Any>,
-    history: List<Content>? = null
+    history: List<Content>? = null,
+    tools: List<TemplateTool>? = null,
+    toolConfig: TemplateToolConfig? = null
   ): TemplateGenerateContentRequest {
     return TemplateGenerateContentRequest(
       Json.parseToJsonElement(JSONObject(inputs).toString()).jsonObject,
-      history?.let { it.map { it.toTemplateInternal() } }
+      history?.let { it.map { it.toTemplateInternal() } },
+      tools?.map { it.toInternal() },
+      toolConfig?.toInternal()
     )
   }
 

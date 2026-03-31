@@ -21,6 +21,8 @@ import com.google.firebase.ai.type.GenerateContentResponse
 import com.google.firebase.ai.type.InvalidStateException
 import com.google.firebase.ai.type.Part
 import com.google.firebase.ai.type.PublicPreviewAPI
+import com.google.firebase.ai.type.TemplateTool
+import com.google.firebase.ai.type.TemplateToolConfig
 import com.google.firebase.ai.type.content
 import java.util.concurrent.Semaphore
 import kotlinx.coroutines.flow.Flow
@@ -34,7 +36,9 @@ internal constructor(
   private val model: TemplateGenerativeModel,
   private val templateId: String,
   private val inputs: Map<String, Any>,
-  public val history: MutableList<Content> = ArrayList()
+  public val history: MutableList<Content> = ArrayList(),
+  private val tools: List<TemplateTool>? = null,
+  private val toolConfig: TemplateToolConfig? = null,
 ) {
   private var lock = Semaphore(1)
 
@@ -49,10 +53,12 @@ internal constructor(
     prompt.assertComesFromUser()
     attemptLock()
     try {
-      return model.generateContentWithHistory(templateId, inputs, history + prompt).also { resp ->
-        history.add(prompt)
-        history.add(resp.candidates.first().content)
-      }
+      return model
+        .generateContentWithHistory(templateId, inputs, history + prompt, tools, toolConfig)
+        .also { resp ->
+          history.add(prompt)
+          history.add(resp.candidates.first().content)
+        }
     } finally {
       lock.release()
     }

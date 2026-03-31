@@ -39,7 +39,7 @@ package com.google.firebase.ai.type
  * ```
  * @see JsonSchema
  */
-public class AutoFunctionDeclaration<I : Any, O : Any>
+public open class AutoFunctionDeclaration<I : Any, O : Any>
 internal constructor(
   public val name: String,
   public val description: String,
