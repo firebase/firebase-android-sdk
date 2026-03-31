@@ -118,6 +118,8 @@ internal object FunctionRegistry {
       "cosine_distance" to notImplemented,
       "dot_product" to notImplemented,
       "timestamp_trunc" to notImplemented,
+      "type" to notImplemented,
+      "is_type" to notImplemented,
       "substring" to notImplemented,
       "string_repeat" to notImplemented,
       "string_replace_all" to notImplemented,
