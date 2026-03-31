@@ -25,9 +25,10 @@ import kotlinx.coroutines.sync.withLock
 /**
  * A queue that conflates jobs based on sequence numbers.
  *
- * This class ensures that at most one job is running at any given time. If multiple requests
- * arrive, they are conflated such that only the most recent request (highest sequence number)
- * eventually triggers a new job if the current one is insufficient.
+ * This class ensures that at most one job is running at any given time. If multiple requests arrive
+ * while a job is already in progress, they are conflated such that only one new job is eventually
+ * triggered to satisfy all pending requests. This new job will deterministically use the parameters
+ * associated with the most recent request (highest sequence number) seen prior to starting the job.
  *
  * @param Params The type of the parameters passed to the job.
  * @param Output The type of the output produced by the job.
@@ -38,29 +39,34 @@ internal class SequenceNumberConflatedJobQueue<Params, Output>(
   private val coroutineScope: CoroutineScope,
   private val block: suspend (Params) -> Output,
 ) {
-  /**
-   * Mutex used to synchronize access to [jobSequencedReference] and [maxEnqueuedSequenceNumber].
-   */
+  /** Mutex used to synchronize access to [jobSequencedReference] and [enqueuedJob]. */
   private val mutex = Mutex()
 
   /** The currently active or most recently completed job, paired with its sequence number. */
   private var jobSequencedReference: SequencedReference<Deferred<Output>>? = null
 
-  /** The highest sequence number that has been passed to [execute] so far. */
-  private var maxEnqueuedSequenceNumber: Long? = null
+  /**
+   * The pending job request with the highest sequence number seen so far, paired with its
+   * corresponding parameters. This state is held while waiting for the current job to finish.
+   */
+  private var enqueuedJob: SequencedReference<Params>? = null
 
   /**
    * Executes a job with the given [sequenceNumber] and [params], or waits for an existing one.
    *
    * If an existing job is already running and its sequence number is at least [sequenceNumber],
-   * this method will wait for its completion and return its result.
+   * this method will wait for its completion and return its result, ignoring the given [params].
    *
    * If an existing job is running but its sequence number is *less than* [sequenceNumber], this
    * method will wait for that job to complete and then return [ExecuteResult.Retry], signaling that
    * the caller should call [execute] again to trigger a newer job.
    *
+   * When a new job is eventually started, it will use the [params] associated with the highest
+   * [sequenceNumber] seen while waiting.
+   *
    * @param sequenceNumber A strictly increasing number representing the version of the request.
-   * @param params The parameters to pass to [block] if a new job is started.
+   * @param params The parameters to stash. If this request triggers a new job, these parameters
+   * will be passed to [block] unless a request with an even higher sequence number arrives first.
    * @return An [ExecuteResult] containing either the successful result or a retry signal.
    */
   suspend fun execute(sequenceNumber: Long, params: Params): ExecuteResult<Output> {
@@ -78,11 +84,12 @@ internal class SequenceNumberConflatedJobQueue<Params, Output>(
   /**
    * Internal method to retrieve an existing suitable job or start a new one.
    *
-   * This method ensures that [maxEnqueuedSequenceNumber] is updated and that the returned job is
-   * the most appropriate one to wait on.
+   * This method ensures that [enqueuedJob] safely tracks the highest requested sequence number and
+   * its corresponding parameters. If a new job must be started, it consumes [enqueuedJob] to
+   * guarantee the job runs with the most up-to-date parameters.
    *
    * @param sequenceNumber The sequence number of the current request.
-   * @param params The parameters to use if a new job must be started.
+   * @param params The parameters to use if this request ends up starting the new job.
    * @return A [SequencedReference] containing a [Deferred] job.
    */
   private suspend fun getOrStartExecuteJob(
@@ -90,11 +97,17 @@ internal class SequenceNumberConflatedJobQueue<Params, Output>(
     params: Params
   ): SequencedReference<Deferred<Output>> =
     mutex.withLock {
-      maxEnqueuedSequenceNumber =
-        when (val currentValue = maxEnqueuedSequenceNumber) {
-          null -> sequenceNumber
-          else -> currentValue.coerceAtLeast(sequenceNumber)
+      /**
+       * Stashes the current request into [enqueuedJob] if the current request has a strictly higher
+       * sequence number than the currently-stashed request.
+       */
+      fun enqueueJob() {
+        this.enqueuedJob.let {
+          if (it === null || it.sequenceNumber < sequenceNumber) {
+            this.enqueuedJob = SequencedReference(sequenceNumber, params)
+          }
         }
+      }
 
       val jobSequencedReference = this.jobSequencedReference
 
@@ -103,24 +116,36 @@ internal class SequenceNumberConflatedJobQueue<Params, Output>(
           (jobSequencedReference.sequenceNumber >= sequenceNumber ||
             !jobSequencedReference.ref.isCompleted)
       ) {
-        jobSequencedReference
-      } else {
-        val job: Deferred<Output> = coroutineScope.async { block(params) }
-
-        val jobSequenceNumber =
-          checkNotNull(maxEnqueuedSequenceNumber) {
-            "internal error gjy6gjyth4: maxEnqueuedSequenceNumber is null, " +
-              "but a precondition of this method is that the caller ensures that it is not null"
-          }
-        check(jobSequenceNumber >= sequenceNumber) {
-          "internal error sawv9wj8y4: jobSequenceNumber is $jobSequenceNumber, " +
-            "but a precondition of this method is that the caller ensures that it is " +
-            "at least the specified sequenceNumber, $sequenceNumber"
+        if (jobSequencedReference.sequenceNumber < sequenceNumber) {
+          enqueueJob()
         }
-        val newJobSequencedReference = SequencedReference(jobSequenceNumber, job)
-        this.jobSequencedReference = newJobSequencedReference
-        newJobSequencedReference
+        return@withLock jobSequencedReference
       }
+
+      enqueueJob()
+
+      val (jobSequenceNumber, jobParams) =
+        run {
+          val enqueuedJob =
+            checkNotNull(this.enqueuedJob) {
+              "internal error w73qx9cwcp: this.enqueuedJob should have " +
+                "been set to non-null by enqueueJob()"
+            }
+          this.enqueuedJob = null
+          enqueuedJob
+        }
+
+      check(jobSequenceNumber >= sequenceNumber) {
+        "internal error sawv9wj8y4: jobSequenceNumber=$jobSequenceNumber and " +
+          "sequenceNumber=$sequenceNumber, but jobSequenceNumber should be " +
+          "greater than or equal to sequenceNumber"
+      }
+
+      val newJob: Deferred<Output> = coroutineScope.async { block(jobParams) }
+
+      val newJobSequencedReference = SequencedReference(jobSequenceNumber, newJob)
+      this.jobSequencedReference = newJobSequencedReference
+      newJobSequencedReference
     }
 
   /**
