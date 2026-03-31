@@ -6902,6 +6902,120 @@ abstract class Expression internal constructor() {
       FunctionExpression("if_absent", notImplemented, ifFieldName, elseValue)
 
     /**
+     * Creates an expression that returns the [elseExpr] argument if [ifExpr] evaluates to null,
+     * else return the result of the [ifExpr] argument evaluation.
+     *
+     * This function provides a fallback for both absent and explicit null values. In contrast,
+     * [ifAbsent] only triggers for missing fields.
+     *
+     * ```kotlin
+     * // Returns the user's preferred name, or if that is null, returns their full name.
+     * ifNull(field("preferredName"), field("fullName"))
+     * ```
+     *
+     * @param ifExpr The expression to check for null.
+     * @param elseExpr The expression that will be evaluated and returned if [ifExpr] is null.
+     * @return A new [Expression] representing the ifNull operation.
+     */
+    @JvmStatic
+    fun ifNull(ifExpr: Expression, elseExpr: Expression): Expression =
+      FunctionExpression("if_null", notImplemented, ifExpr, elseExpr)
+
+    /**
+     * Creates an expression that returns the [elseValue] argument if [ifExpr] evaluates to null,
+     * else return the result of the [ifExpr] argument evaluation.
+     *
+     * This function provides a fallback for both absent and explicit null values. In contrast,
+     * [ifAbsent] only triggers for missing fields.
+     *
+     * ```kotlin
+     * // Returns the user's display name, or returns "Anonymous" if the field is null.
+     * ifNull(field("displayName"), "Anonymous")
+     * ```
+     *
+     * @param ifExpr The expression to check for null.
+     * @param elseValue The value that will be returned if [ifExpr] evaluates to null.
+     * @return A new [Expression] representing the ifNull operation.
+     */
+    @JvmStatic
+    fun ifNull(ifExpr: Expression, elseValue: Any): Expression =
+      FunctionExpression("if_null", notImplemented, ifExpr, elseValue)
+
+    /**
+     * Creates an expression that returns the [elseExpr] argument if [ifFieldName] field is null,
+     * else return the value of the field.
+     *
+     * ```kotlin
+     * // Returns the user's preferred name, or if that is null, returns their full name.
+     * ifNull("preferredName", field("fullName"))
+     * ```
+     *
+     * @param ifFieldName The field to check for null.
+     * @param elseExpr The expression that will be evaluated and returned if [ifFieldName] is null.
+     * @return A new [Expression] representing the ifNull operation.
+     */
+    @JvmStatic
+    fun ifNull(ifFieldName: String, elseExpr: Expression): Expression =
+      FunctionExpression("if_null", notImplemented, ifFieldName, elseExpr)
+
+    /**
+     * Creates an expression that returns the [elseValue] argument if [ifFieldName] field is null,
+     * else return the value of the field.
+     *
+     * ```kotlin
+     * // Returns the user's display name, or returns "Anonymous" if the field is null.
+     * ifNull("displayName", "Anonymous")
+     * ```
+     *
+     * @param ifFieldName The field to check for null.
+     * @param elseValue The value that will be returned if [ifFieldName] is null.
+     * @return A new [Expression] representing the ifNull operation.
+     */
+    @JvmStatic
+    fun ifNull(ifFieldName: String, elseValue: Any): Expression =
+      FunctionExpression("if_null", notImplemented, ifFieldName, elseValue)
+
+    /**
+     * Creates an expression that returns the first non-null, non-absent argument, without
+     * evaluating the rest of the arguments. When all arguments are null or absent, returns the last
+     * argument.
+     *
+     * ```kotlin
+     * // Returns the value of the first non-null, non-absent field among 'preferredName', 'fullName',
+     * // or the last argument if all previous fields are null.
+     * coalesce(field("preferredName"), field("fullName"), constant("Anonymous"))
+     * ```
+     *
+     * @param expression The first expression to check for null.
+     * @param replacement The fallback expression or value if the first one is null.
+     * @param others Optional additional expressions to check if previous ones are null.
+     * @return A new [Expression] representing the coalesce operation.
+     */
+    @JvmStatic
+    fun coalesce(expression: Expression, replacement: Any, vararg others: Any): Expression =
+      FunctionExpression("coalesce", notImplemented, expression, replacement, *others)
+
+    /**
+     * Creates an expression that returns the first non-null, non-absent argument, without
+     * evaluating the rest of the arguments. When all arguments are null or absent, returns the last
+     * argument.
+     *
+     * ```kotlin
+     * // Returns the value of the first non-null, non-absent field among 'preferredName', 'fullName',
+     * // or the last argument if all previous fields are null.
+     * coalesce("preferredName", field("fullName"), constant("Anonymous"))
+     * ```
+     *
+     * @param fieldName The name of the first field to check for null.
+     * @param replacement The fallback expression or value if the first one is null.
+     * @param others Optional additional expressions to check if previous ones are null.
+     * @return A new [Expression] representing the coalesce operation.
+     */
+    @JvmStatic
+    fun coalesce(fieldName: String, replacement: Any, vararg others: Any): Expression =
+      FunctionExpression("coalesce", notImplemented, fieldName, replacement, *others)
+
+    /**
      * Creates an expression that returns the collection ID from a path.
      *
      * ```kotlin
@@ -9628,6 +9742,58 @@ abstract class Expression internal constructor() {
    * @return A new [Expression] representing the ifAbsent operation.
    */
   fun ifAbsent(elseValue: Any): Expression = Companion.ifAbsent(this, elseValue)
+
+  /**
+   * Creates an expression that returns the [elseExpression] argument if this expression evaluates
+   * to null, else return the result of this expression.
+   *
+   * This function provides a fallback for both absent and explicit null values. In contrast,
+   * [ifAbsent] only triggers for missing fields.
+   *
+   * ```kotlin
+   * // Returns the user's preferred name, or if that is null, returns their full name.
+   * field("preferredName").ifNull(field("fullName"))
+   * ```
+   *
+   * @param elseExpression The expression that will be evaluated and returned if this expression is
+   * null.
+   * @return A new [Expression] representing the ifNull operation.
+   */
+  fun ifNull(elseExpression: Expression): Expression = Companion.ifNull(this, elseExpression)
+
+  /**
+   * Creates an expression that returns the [elseValue] argument if this expression evaluates to
+   * null, else return the result of this expression.
+   *
+   * This function provides a fallback for both absent and explicit null values. In contrast,
+   * [ifAbsent] only triggers for missing fields.
+   *
+   * ```kotlin
+   * // Returns the user's display name, or returns "Anonymous" if the field is null.
+   * field("displayName").ifNull("Anonymous")
+   * ```
+   *
+   * @param elseValue The value that will be returned if this expression evaluates to null.
+   * @return A new [Expression] representing the ifNull operation.
+   */
+  fun ifNull(elseValue: Any): Expression = Companion.ifNull(this, elseValue)
+
+  /**
+   * Creates an expression that returns the first non-null, non-absent argument, without evaluating
+   * the rest of the arguments. When all arguments are null or absent, returns the last argument.
+   *
+   * ```kotlin
+   * // Returns the value of the first non-null, non-absent field among 'preferredName', 'fullName',
+   * // or the last argument if all previous fields are null.
+   * field("preferredName").coalesce(field("fullName"), "Anonymous")
+   * ```
+   *
+   * @param replacement The fallback expression or value if the first one is null.
+   * @param others Optional additional expressions to check if previous ones are null.
+   * @return A new [Expression] representing the coalesce operation.
+   */
+  fun coalesce(replacement: Any, vararg others: Any): Expression =
+    Companion.coalesce(this, replacement, *others)
 
   /**
    * Creates an expression that checks if this expression produces an error.

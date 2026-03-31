@@ -3710,6 +3710,82 @@ public class PipelineTest {
   }
 
   @Test
+  public void testIfNull() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(map(ImmutableMap.of("title", "foo", "name", Expression.nullValue())))
+            .select(
+                Expression.ifNull("title", "default title").alias("staticMethod"),
+                field("title").ifNull("default title").alias("instanceMethod"),
+                field("name").ifNull(field("title")).alias("nameOrTitle"),
+                field("name").ifNull("default name").alias("fieldIsNull"),
+                field("absent").ifNull("default name").alias("fieldIsAbsent"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            mapOfEntries(
+                entry("staticMethod", "foo"),
+                entry("instanceMethod", "foo"),
+                entry("nameOrTitle", "foo"),
+                entry("fieldIsNull", "default name"),
+                entry("fieldIsAbsent", "default name")));
+  }
+
+  @Test
+  public void testCoalesce() {
+    assumeFalse("Coalesce is not supported against the emulator.", isRunningAgainstEmulator());
+
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(
+                map(
+                    ImmutableMap.of(
+                        "numberValue",
+                        1L,
+                        "stringValue",
+                        "unique_coalesce_hello",
+                        "booleanValue",
+                        false,
+                        "nullValue",
+                        Expression.nullValue(),
+                        "nullValue2",
+                        Expression.nullValue())))
+            .select(
+                Expression.coalesce(field("numberValue"), field("stringValue"))
+                    .alias("staticMethod"),
+                field("numberValue").coalesce(field("stringValue")).alias("instanceMethod"),
+                Expression.coalesce(field("nullValue"), field("stringValue")).alias("firstIsNull"),
+                Expression.coalesce(field("nullValue"), field("nullValue2"), field("booleanValue"))
+                    .alias("lastIsNotNull"),
+                Expression.coalesce(field("nullValue"), field("nullValue2")).alias("allFieldsNull"),
+                Expression.coalesce(field("nullValue"), field("nullValue2"), constant("default"))
+                    .alias("allFieldsNullWithDefault"),
+                Expression.coalesce(field("absentField"), field("numberValue"), constant("default"))
+                    .alias("withAbsentField"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            mapOfEntries(
+                entry("staticMethod", 1L),
+                entry("instanceMethod", 1L),
+                entry("firstIsNull", "unique_coalesce_hello"),
+                entry("lastIsNotNull", false),
+                entry("allFieldsNull", null),
+                entry("allFieldsNullWithDefault", "default"),
+                entry("withAbsentField", 1L)));
+  }
+
+  @Test
   public void testCrossDatabaseRejection() {
     FirebaseFirestore firestore2 = IntegrationTestUtil.testAlternateFirestore();
     CollectionReference collection2 = firestore2.collection("test-collection");

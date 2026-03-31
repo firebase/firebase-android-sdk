@@ -2,6 +2,8 @@
 
 - [feature] Added support for Pipeline expressions `arraySlice`, `arrayFilter`, `arrayTransform` and `arrayTransformWithIndex`.
   [#7989](https://github.com/firebase/firebase-android-sdk/pull/7989)
+- [feature] Added support for Pipeline expressions `ifNull` and `coalesce`.
+  [#7976](https://github.com/firebase/firebase-android-sdk/pull/7976)
 - [feature] Added support for `timestampTruncate`, `timestampDiff`, and `timestampExtract` Pipeline expressions.
   [#7955](https://github.com/firebase/firebase-android-sdk/pull/7955)
 - [feature] Pipeline operations are GA now.
