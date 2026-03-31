@@ -119,7 +119,7 @@ internal object FunctionRegistry {
       "dot_product" to notImplemented,
       "timestamp_trunc" to notImplemented,
       "type" to notImplemented,
-      "is_type" to notImplemented
+      "is_type" to notImplemented,
       "substring" to notImplemented,
       "string_repeat" to notImplemented,
       "string_replace_all" to notImplemented,
@@ -127,6 +127,6 @@ internal object FunctionRegistry {
       "string_index_of" to notImplemented,
       "ltrim" to notImplemented,
       "rtrim" to notImplemented,
-      "split" to notImplemented
+      "split" to notImplemented,
     )
 }
