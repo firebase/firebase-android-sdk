@@ -21,6 +21,8 @@ import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import com.google.firebase.dataconnect.util.DeserializeUtils.deserialize
+import com.google.firebase.dataconnect.util.SequencedReference
+import com.google.firebase.dataconnect.util.SequencedReference.Companion.mapSuspending
 import google.firebase.dataconnect.proto.ExecuteQueryResponse as ExecuteQueryResponseProto
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
@@ -40,29 +42,8 @@ internal sealed class LocalQuery<out Data>(
     authToken: String?,
     appCheckToken: String?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
-  ): ExecuteResult<Data> {
-    val executeImplResult =
-      callExecuteImpl(
-        requestId = requestId,
-        sequenceNumber = sequenceNumber,
-        authToken = authToken,
-        appCheckToken = appCheckToken,
-        callerSdkType = callerSdkType,
-      )
-
-    val (executeQueryResponse, dataSource) = executeImplResult ?: return ExecuteResult.Retry
-
-    return transformExecuteImplResult(requestId, executeQueryResponse, dataSource)
-  }
-
-  private suspend fun callExecuteImpl(
-    requestId: String,
-    sequenceNumber: Long,
-    authToken: String?,
-    appCheckToken: String?,
-    callerSdkType: FirebaseDataConnect.CallerSdkType,
-  ): Pair<ExecuteQueryResponseProto, DataSource>? {
-    val executeImplResult =
+  ): SequencedReference<ExecuteResult<Data>> {
+    val executeImplResultSequencedReference =
       executeImpl(
         requestId = requestId,
         sequenceNumber = sequenceNumber,
@@ -71,23 +52,12 @@ internal sealed class LocalQuery<out Data>(
         callerSdkType = callerSdkType,
       )
 
-    return when (executeImplResult) {
-      ExecuteImplResult.Retry -> null
-      is ExecuteImplResult.Success -> {
-        if (executeImplResult.sequenceNumber < sequenceNumber) {
-          null
-        } else {
-          Pair(executeImplResult.executeQueryResponse, executeImplResult.dataSource)
-        }
-      }
-    }
+    return executeImplResultSequencedReference.mapSuspending { it.toExecuteResult(requestId) }
   }
 
-  private suspend fun transformExecuteImplResult(
+  private suspend fun ExecuteImplResult.toExecuteResult(
     requestId: String,
-    executeQueryResponse: ExecuteQueryResponseProto,
-    dataSource: DataSource,
-  ): ExecuteResult.Success<Data> {
+  ): ExecuteResult<Data> {
     val dataDeserializeResult =
       withContext(cpuDispatcher) {
         executeQueryResponse.runCatching { deserialize(dataDeserializer, dataSerializersModule) }
@@ -97,7 +67,7 @@ internal sealed class LocalQuery<out Data>(
       logger.warn(it) { "[rid=$requestId] decoding response data failed" }
     }
 
-    return ExecuteResult.Success(dataDeserializeResult.getOrThrow(), dataSource)
+    return ExecuteResult(dataDeserializeResult.getOrThrow(), dataSource)
   }
 
   protected abstract suspend fun executeImpl(
@@ -106,19 +76,12 @@ internal sealed class LocalQuery<out Data>(
     authToken: String?,
     appCheckToken: String?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
-  ): ExecuteImplResult
+  ): SequencedReference<ExecuteImplResult>
 
-  sealed interface ExecuteResult<out T> {
-    data class Success<T>(val data: T, val source: DataSource) : ExecuteResult<T>
-    data object Retry : ExecuteResult<Nothing>
-  }
+  data class ExecuteResult<out T>(val data: T, val source: DataSource)
 
-  protected sealed interface ExecuteImplResult {
-    data class Success(
-      val sequenceNumber: Long,
-      val executeQueryResponse: ExecuteQueryResponseProto,
-      val dataSource: DataSource
-    ) : ExecuteImplResult
-    data object Retry : ExecuteImplResult
-  }
+  protected data class ExecuteImplResult(
+    val executeQueryResponse: ExecuteQueryResponseProto,
+    val dataSource: DataSource
+  )
 }

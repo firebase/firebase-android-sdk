@@ -187,22 +187,16 @@ internal class QueryManager(
   ): ExecuteResult<Data> {
     val localQuery = getLocalQuery(localKey, requestProto)
 
-    while (true) {
-      val executeResult =
-        localQuery.execute(
-          requestId = requestId,
-          sequenceNumber = sequenceNumber,
-          authToken = authToken,
-          appCheckToken = appCheckToken,
-          callerSdkType = callerSdkType,
-        )
+    val executeResultSequencedReference =
+      localQuery.execute(
+        requestId = requestId,
+        sequenceNumber = sequenceNumber,
+        authToken = authToken,
+        appCheckToken = appCheckToken,
+        callerSdkType = callerSdkType,
+      )
 
-      when (executeResult) {
-        LocalQuery.ExecuteResult.Retry -> {}
-        is LocalQuery.ExecuteResult.Success<Data> ->
-          return ExecuteResult(executeResult.data, executeResult.source)
-      }
-    }
+    return executeResultSequencedReference.ref.let { ExecuteResult(it.data, it.source) }
   }
 
   private suspend fun <Data> getLocalQuery(

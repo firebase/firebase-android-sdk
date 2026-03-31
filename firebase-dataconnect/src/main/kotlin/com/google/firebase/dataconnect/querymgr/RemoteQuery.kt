@@ -65,7 +65,7 @@ internal class RemoteQuery(
     authToken: String?,
     appCheckToken: String?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
-  ): ExecuteResult {
+  ): SequencedReference<ExecuteQueryResponseProto> {
     val params =
       ExecuteParams(
         requestId = requestId,
@@ -73,10 +73,7 @@ internal class RemoteQuery(
         appCheckToken = appCheckToken,
         callerSdkType = callerSdkType,
       )
-
-    val executeResult = executeSerializer.execute(sequenceNumber, params)
-
-    return executeResult.toRemoteQueryExecuteResult()
+    return executeSerializer.execute(sequenceNumber, params)
   }
 
   sealed interface ExecuteResult {
@@ -84,11 +81,3 @@ internal class RemoteQuery(
     data object Retry : ExecuteResult
   }
 }
-
-private fun SequenceNumberConflatedJobQueue.ExecuteResult<ExecuteQueryResponseProto>
-  .toRemoteQueryExecuteResult(): RemoteQuery.ExecuteResult =
-  when (this) {
-    SequenceNumberConflatedJobQueue.ExecuteResult.Retry -> RemoteQuery.ExecuteResult.Retry
-    is SequenceNumberConflatedJobQueue.ExecuteResult.Success<ExecuteQueryResponseProto> ->
-      RemoteQuery.ExecuteResult.Success(output)
-  }

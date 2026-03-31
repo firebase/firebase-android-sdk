@@ -23,6 +23,7 @@ import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase
 import com.google.firebase.dataconnect.util.ImmutableByteArray
+import com.google.firebase.dataconnect.util.SequencedReference
 import com.google.protobuf.Struct as StructProto
 import google.firebase.dataconnect.proto.ExecuteQueryResponse as ExecuteQueryResponseProto
 import java.lang.System.currentTimeMillis
@@ -48,7 +49,7 @@ internal class CacheOnlyLocalQuery<Data>(
     authToken: String?,
     appCheckToken: String?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
-  ): ExecuteImplResult {
+  ): SequencedReference<ExecuteImplResult> {
     if (!cacheDbInitializeJob.isCompleted) {
       logger.debug { "[rid=$requestId] waiting for cache database initialization" }
       cacheDbInitializeJob.await()
@@ -70,10 +71,12 @@ internal class CacheOnlyLocalQuery<Data>(
           "[rid=$requestId] got query result from cache " +
             "with freshnessRemaining=${result.freshnessRemaining}"
         }
-        ExecuteImplResult.Success(
+        SequencedReference(
           sequenceNumber,
-          result.struct.toExecuteQueryResponseProto(),
-          DataSource.CACHE,
+          ExecuteImplResult(
+            result.struct.toExecuteQueryResponseProto(),
+            DataSource.CACHE,
+          ),
         )
       }
       DataConnectCacheDatabase.GetQueryResultResult.NotFound -> {

@@ -58,8 +58,8 @@ internal class SequenceNumberConflatedJobQueue<Params, Output>(
    * this method will wait for its completion and return its result, ignoring the given [params].
    *
    * If an existing job is running but its sequence number is *less than* [sequenceNumber], this
-   * method will wait for that job to complete and then return [ExecuteResult.Retry], signaling that
-   * the caller should call [execute] again to trigger a newer job.
+   * method will wait for that job to complete and then loop to either get a newly started job or
+   * trigger a new job.
    *
    * When a new job is eventually started, it will use the [params] associated with the highest
    * [sequenceNumber] seen while waiting.
@@ -67,17 +67,20 @@ internal class SequenceNumberConflatedJobQueue<Params, Output>(
    * @param sequenceNumber A strictly increasing number representing the version of the request.
    * @param params The parameters to stash. If this request triggers a new job, these parameters
    * will be passed to [block] unless a request with an even higher sequence number arrives first.
-   * @return An [ExecuteResult] containing either the successful result or a retry signal.
+   * @return A [SequencedReference] containing the successful output of the job, paired with the
+   * sequence number of the request that successfully triggered it (which will be >=
+   * [sequenceNumber]).
    */
-  suspend fun execute(sequenceNumber: Long, params: Params): ExecuteResult<Output> {
-    val jobSequencedReference = getOrStartExecuteJob(sequenceNumber, params)
+  suspend fun execute(sequenceNumber: Long, params: Params): SequencedReference<Output> {
+    while (true) {
+      val jobSequencedReference = getOrStartExecuteJob(sequenceNumber, params)
 
-    return if (jobSequencedReference.sequenceNumber < sequenceNumber) {
+      if (jobSequencedReference.sequenceNumber >= sequenceNumber) {
+        val output = jobSequencedReference.ref.await()
+        return SequencedReference(jobSequencedReference.sequenceNumber, output)
+      }
+
       jobSequencedReference.ref.join()
-      ExecuteResult.Retry
-    } else {
-      val data = jobSequencedReference.ref.await()
-      ExecuteResult.Success(SequencedReference(jobSequencedReference.sequenceNumber, data))
     }
   }
 
@@ -147,26 +150,4 @@ internal class SequenceNumberConflatedJobQueue<Params, Output>(
       this.jobSequencedReference = newJobSequencedReference
       newJobSequencedReference
     }
-
-  /**
-   * Represents the result of an [execute] call.
-   *
-   * @param T The type of the output data.
-   */
-  sealed interface ExecuteResult<out T> {
-    /**
-     * Indicates that the job completed successfully.
-     *
-     * @property output The result data wrapped in a [SequencedReference].
-     */
-    class Success<T>(val output: SequencedReference<T>) : ExecuteResult<T>
-
-    /**
-     * Indicates that the caller should retry the [execute] call.
-     *
-     * This typically happens when an older job finished, and a newer job (incorporating the
-     * caller's `sequenceNumber`) needs to be started.
-     */
-    data object Retry : ExecuteResult<Nothing>
-  }
 }

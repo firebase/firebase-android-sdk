@@ -35,7 +35,7 @@ internal class CacheOnlyNoCacheLocalQuery(
     authToken: String?,
     appCheckToken: String?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
-  ): ExecuteImplResult {
+  ): Nothing {
     throw CachedDataNotFoundException(
       "CACHE_ONLY fetch policy is unsupported when cache settings is null [m35wype9dt]"
     )

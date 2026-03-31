@@ -19,6 +19,8 @@ package com.google.firebase.dataconnect.querymgr
 import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.core.Logger
+import com.google.firebase.dataconnect.util.SequencedReference
+import com.google.firebase.dataconnect.util.SequencedReference.Companion.map
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.modules.SerializersModule
@@ -37,8 +39,8 @@ internal class ServerOnlyLocalQuery<Data>(
     authToken: String?,
     appCheckToken: String?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
-  ): ExecuteImplResult {
-    val remoteResult =
+  ): SequencedReference<ExecuteImplResult> {
+    val remoteResultSequencedReference =
       remoteQuery.execute(
         requestId = requestId,
         sequenceNumber = sequenceNumber,
@@ -47,14 +49,6 @@ internal class ServerOnlyLocalQuery<Data>(
         callerSdkType = callerSdkType,
       )
 
-    return when (remoteResult) {
-      RemoteQuery.ExecuteResult.Retry -> ExecuteImplResult.Retry
-      is RemoteQuery.ExecuteResult.Success ->
-        ExecuteImplResult.Success(
-          remoteResult.response.sequenceNumber,
-          remoteResult.response.ref,
-          DataSource.SERVER,
-        )
-    }
+    return remoteResultSequencedReference.map { ExecuteImplResult(it, DataSource.SERVER) }
   }
 }
