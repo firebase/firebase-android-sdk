@@ -55,6 +55,7 @@ import static com.google.firebase.firestore.pipeline.Expression.not;
 import static com.google.firebase.firestore.pipeline.Expression.notEqual;
 import static com.google.firebase.firestore.pipeline.Expression.nullValue;
 import static com.google.firebase.firestore.pipeline.Expression.or;
+import static com.google.firebase.firestore.pipeline.Expression.parent;
 import static com.google.firebase.firestore.pipeline.Expression.rand;
 import static com.google.firebase.firestore.pipeline.Expression.split;
 import static com.google.firebase.firestore.pipeline.Expression.startsWith;
@@ -3672,6 +3673,32 @@ public class PipelineTest {
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
         .containsExactly(ImmutableMap.of("docId", "book4"));
+  }
+
+  @Test
+  public void testSupportsParent() {
+    DocumentReference reviewRef =
+        randomCol.document("book4").collection("reviews").document("review1");
+
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol.getPath())
+            .limit(1)
+            .select(
+                parent(constant(reviewRef)).alias("parentRefStatic"),
+                constant(reviewRef).parent().alias("parentRefInstance"))
+            .select(
+                field("parentRefStatic").documentId().alias("parentIdStatic"),
+                field("parentRefInstance").documentId().alias("parentIdInstance"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of(
+                "parentIdStatic", "book4",
+                "parentIdInstance", "book4"));
   }
 
   @Test
