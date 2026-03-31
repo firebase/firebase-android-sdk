@@ -18,7 +18,9 @@ package com.google.firebase.ai
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.firebase.FirebaseApp
 import com.google.firebase.ai.type.GenerativeBackend
+import com.google.firebase.ai.type.PublicPreviewAPI
 
+@OptIn(PublicPreviewAPI::class)
 class AIModels {
 
   companion object {
@@ -31,6 +33,8 @@ class AIModels {
     lateinit var vertexAIFlashLiteModel: GenerativeModel
     lateinit var googleAIFlashModel: GenerativeModel
     lateinit var googleAIFlashLiteModel: GenerativeModel
+    lateinit var vertexAITemplateModel: TemplateGenerativeModel
+    lateinit var googleAITemplateModel: TemplateGenerativeModel
 
     /** Returns a list of general purpose models to test */
     fun getModels(): List<GenerativeModel> {
@@ -43,6 +47,14 @@ class AIModels {
         googleAIFlashModel,
         googleAIFlashLiteModel
       )
+    }
+
+    /** Returns a list of template models to test */
+    fun getTemplateModels(): List<TemplateGenerativeModel> {
+      if (app == null) {
+        setup()
+      }
+      return listOf(vertexAITemplateModel, googleAITemplateModel)
     }
 
     fun app(): FirebaseApp {
@@ -75,6 +87,10 @@ class AIModels {
           .generativeModel(
             modelName = "gemini-2.5-flash-lite",
           )
+      vertexAITemplateModel =
+        FirebaseAI.getInstance(app!!, GenerativeBackend.vertexAI()).templateGenerativeModel()
+      googleAITemplateModel =
+        FirebaseAI.getInstance(app!!, GenerativeBackend.googleAI()).templateGenerativeModel()
     }
   }
 }
