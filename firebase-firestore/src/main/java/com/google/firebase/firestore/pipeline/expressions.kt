@@ -3045,8 +3045,9 @@ abstract class Expression internal constructor() {
     fun trim(fieldName: String): Expression = FunctionExpression("trim", evaluateTrim, fieldName)
 
     /**
-     * Creates an expression that removes leading and trailing values from a expression. The
-     * accepted values types are string and blob.
+     * Creates an expression that removes a set of leading and trailing values from an expression.
+     *
+     * Note: The values to trim are treated as a **set**, not a substring.
      *
      * ```kotlin
      * // Trim specified characters from the 'userInput' field
@@ -3064,10 +3065,12 @@ abstract class Expression internal constructor() {
       FunctionExpression("trim", notImplemented, stringExpression, valueToTrim)
 
     /**
-     * Creates an expression that removes leading and trailing characters from a string field.
+     * Creates an expression that removes a set of leading and trailing values from a string field.
+     *
+     * Note: The values to trim are treated as a **set**, not a substring.
      *
      * ```kotlin
-     * // Trim '-', and '_' from the beginning and the end of 'userInput' field
+     * // Trim all '-', and '_' characters from the beginning and the end of 'userInput' field
      * trimValue("userInput", "-_")
      * ```
      *
@@ -3079,6 +3082,530 @@ abstract class Expression internal constructor() {
     @JvmStatic
     fun trimValue(fieldName: String, valueToTrim: String): Expression =
       FunctionExpression("trim", notImplemented, fieldName, constant(valueToTrim))
+
+    /**
+     * Creates an expression that removes leading whitespace from a string expression.
+     *
+     * ```kotlin
+     * // Trim leading whitespace from the 'text' field.
+     * ltrim(field("text"))
+     * ```
+     *
+     * @param stringExpression The expression representing the string to trim.
+     * @return A new [Expression] representing the ltrim operation.
+     */
+    @JvmStatic
+    fun ltrim(stringExpression: Expression): Expression =
+      FunctionExpression("ltrim", notImplemented, stringExpression)
+
+    /**
+     * Creates an expression that removes leading whitespace from a string field.
+     *
+     * ```kotlin
+     * // Trim leading whitespace from the 'text' field.
+     * ltrim("text")
+     * ```
+     *
+     * @param fieldName The name of the field containing the string to trim.
+     * @return A new [Expression] representing the ltrim operation.
+     */
+    @JvmStatic
+    fun ltrim(fieldName: String): Expression =
+      FunctionExpression("ltrim", notImplemented, field(fieldName))
+
+    /**
+     * Creates an expression that removes a set of leading values from a string expression.
+     *
+     * Note: The values to trim are treated as a **set**, not a substring.
+     *
+     * ```kotlin
+     * // Trim all leading '-' and '_' characters from the 'text' field.
+     * ltrimValue(field("text"), "-_")
+     * ```
+     *
+     * @param stringExpression The expression representing the string to trim.
+     * @param valuesToTrim The set of values to remove.
+     * @return A new [Expression] representing the ltrim operation.
+     */
+    @JvmStatic
+    fun ltrimValue(stringExpression: Expression, valuesToTrim: String): Expression =
+      FunctionExpression("ltrim", notImplemented, stringExpression, constant(valuesToTrim))
+
+    /**
+     * Creates an expression that removes a set of leading values from a string expression.
+     *
+     * Note: The values to trim are treated as a **set**, not a substring.
+     *
+     * ```kotlin
+     * // Trim leading characters defined by the 'chars' field from the 'text' field.
+     * ltrimValue(field("text"), field("chars"))
+     * ```
+     *
+     * @param stringExpression The expression representing the string to trim.
+     * @param valuesToTrim The expression representing the set of values to remove.
+     * @return A new [Expression] representing the ltrim operation.
+     */
+    @JvmStatic
+    fun ltrimValue(stringExpression: Expression, valuesToTrim: Expression): Expression =
+      FunctionExpression("ltrim", notImplemented, stringExpression, valuesToTrim)
+
+    /**
+     * Creates an expression that removes specified leading values from a string field.
+     *
+     * Note: The values to trim are treated as a **set**, not a substring.
+     *
+     * ```kotlin
+     * // Trim all leading '-' and '_' characters from the 'text' field.
+     * ltrimValue("text", "-_")
+     * ```
+     *
+     * @param fieldName The name of the field containing the string to trim.
+     * @param valuesToTrim The set of values to remove.
+     * @return A new [Expression] representing the ltrim operation.
+     */
+    @JvmStatic
+    fun ltrimValue(fieldName: String, valuesToTrim: String): Expression =
+      FunctionExpression("ltrim", notImplemented, field(fieldName), constant(valuesToTrim))
+
+    /**
+     * Creates an expression that removes specified leading values from a string field.
+     *
+     * Note: The values to trim are treated as a **set**, not a substring.
+     *
+     * ```kotlin
+     * // Trim leading characters defined by the 'chars' field from the 'text' field.
+     * ltrimValue("text", field("chars"))
+     * ```
+     *
+     * @param fieldName The name of the field containing the string to trim.
+     * @param valuesToTrim The expression representing the set of values to remove.
+     * @return A new [Expression] representing the ltrim operation.
+     */
+    @JvmStatic
+    fun ltrimValue(fieldName: String, valuesToTrim: Expression): Expression =
+      FunctionExpression("ltrim", notImplemented, field(fieldName), valuesToTrim)
+
+    /**
+     * Creates an expression that removes trailing whitespace from a string expression.
+     *
+     * ```kotlin
+     * // Trim trailing whitespace from the 'text' field.
+     * rtrim(field("text"))
+     * ```
+     *
+     * @param stringExpression The expression representing the string to trim.
+     * @return A new [Expression] representing the rtrim operation.
+     */
+    @JvmStatic
+    fun rtrim(stringExpression: Expression): Expression =
+      FunctionExpression("rtrim", notImplemented, stringExpression)
+
+    /**
+     * Creates an expression that removes trailing whitespace from a string field.
+     *
+     * ```kotlin
+     * // Trim trailing whitespace from the 'text' field.
+     * rtrim("text")
+     * ```
+     *
+     * @param fieldName The name of the field containing the string to trim.
+     * @return A new [Expression] representing the rtrim operation.
+     */
+    @JvmStatic
+    fun rtrim(fieldName: String): Expression =
+      FunctionExpression("rtrim", notImplemented, field(fieldName))
+
+    /**
+     * Creates an expression that removes a set of trailing values from a string expression.
+     *
+     * Note: The values to trim are treated as a **set**, not a substring.
+     *
+     * ```kotlin
+     * // Trim all trailing '-' and '_' characters from the 'text' field.
+     * rtrimValue(field("text"), "-_")
+     * ```
+     *
+     * @param stringExpression The expression representing the string to trim.
+     * @param valuesToTrim The set of values to remove.
+     * @return A new [Expression] representing the rtrim operation.
+     */
+    @JvmStatic
+    fun rtrimValue(stringExpression: Expression, valuesToTrim: String): Expression =
+      FunctionExpression("rtrim", notImplemented, stringExpression, constant(valuesToTrim))
+
+    /**
+     * Creates an expression that removes a set of trailing values from a string expression.
+     *
+     * Note: The values to trim are treated as a **set**, not a substring.
+     *
+     * ```kotlin
+     * // Trim trailing characters defined by the 'chars' field from the 'text' field.
+     * rtrimValue(field("text"), field("chars"))
+     * ```
+     *
+     * @param stringExpression The expression representing the string to trim.
+     * @param valuesToTrim The expression representing the set of values to remove.
+     * @return A new [Expression] representing the rtrim operation.
+     */
+    @JvmStatic
+    fun rtrimValue(stringExpression: Expression, valuesToTrim: Expression): Expression =
+      FunctionExpression("rtrim", notImplemented, stringExpression, valuesToTrim)
+
+    /**
+     * Creates an expression that removes a set of trailing values from a string field.
+     *
+     * Note: The values to trim are treated as a **set**, not a substring.
+     *
+     * ```kotlin
+     * // Trim all trailing '-' and '_' characters from the 'text' field.
+     * rtrimValue("text", "-_")
+     * ```
+     *
+     * @param fieldName The name of the field containing the string to trim.
+     * @param valuesToTrim The set of values to remove.
+     * @return A new [Expression] representing the rtrim operation.
+     */
+    @JvmStatic
+    fun rtrimValue(fieldName: String, valuesToTrim: String): Expression =
+      FunctionExpression("rtrim", notImplemented, field(fieldName), constant(valuesToTrim))
+
+    /**
+     * Creates an expression that removes a set of trailing values from a string field.
+     *
+     * Note: The values to trim are treated as a **set**, not a substring.
+     *
+     * ```kotlin
+     * // Trim trailing characters defined by the 'chars' field from the 'text' field.
+     * rtrimValue("text", field("chars"))
+     * ```
+     *
+     * @param fieldName The name of the field containing the string to trim.
+     * @param valuesToTrim The expression representing the set of values to remove.
+     * @return A new [Expression] representing the rtrim operation.
+     */
+    @JvmStatic
+    fun rtrimValue(fieldName: String, valuesToTrim: Expression): Expression =
+      FunctionExpression("rtrim", notImplemented, field(fieldName), valuesToTrim)
+
+    /**
+     * Creates an expression that repeats a string expression a given number of times.
+     *
+     * ```kotlin
+     * // Repeat the 'name' field 3 times.
+     * stringRepeat(field("name"), 3)
+     * ```
+     *
+     * @param stringExpression The expression representing the string to repeat.
+     * @param count The number of times to repeat the string.
+     * @return A new [Expression] representing the stringRepeat operation.
+     */
+    @JvmStatic
+    fun stringRepeat(stringExpression: Expression, count: Int): Expression =
+      FunctionExpression("string_repeat", notImplemented, stringExpression, constant(count))
+
+    /**
+     * Creates an expression that repeats a string expression a given number of times.
+     *
+     * ```kotlin
+     * // Repeat the 'name' field the number of times specified in the 'count' field.
+     * stringRepeat(field("name"), field("count"))
+     * ```
+     *
+     * @param stringExpression The expression representing the string to repeat.
+     * @param count The expression representing the number of times to repeat the string.
+     * @return A new [Expression] representing the stringRepeat operation.
+     */
+    @JvmStatic
+    fun stringRepeat(stringExpression: Expression, count: Expression): Expression =
+      FunctionExpression("string_repeat", notImplemented, stringExpression, count)
+
+    /**
+     * Creates an expression that repeats a string field a given number of times.
+     *
+     * ```kotlin
+     * // Repeat the 'name' field 3 times.
+     * stringRepeat("name", 3)
+     * ```
+     *
+     * @param fieldName The name of the field containing the string to repeat.
+     * @param count The number of times to repeat the string.
+     * @return A new [Expression] representing the stringRepeat operation.
+     */
+    @JvmStatic
+    fun stringRepeat(fieldName: String, count: Int): Expression =
+      FunctionExpression("string_repeat", notImplemented, field(fieldName), constant(count))
+
+    /**
+     * Creates an expression that repeats a string field a given number of times.
+     *
+     * ```kotlin
+     * // Repeat the 'name' field the number of times specified in the 'count' field.
+     * stringRepeat("name", field("count"))
+     * ```
+     *
+     * @param fieldName The name of the field containing the string to repeat.
+     * @param count The expression representing the number of times to repeat the string.
+     * @return A new [Expression] representing the stringRepeat operation.
+     */
+    @JvmStatic
+    fun stringRepeat(fieldName: String, count: Expression): Expression =
+      FunctionExpression("string_repeat", notImplemented, field(fieldName), count)
+
+    /**
+     * Creates an expression that replaces all occurrences of a substring with another string.
+     *
+     * ```kotlin
+     * // Replace all occurrences of the 'old' field with the 'new' field in 'text'.
+     * stringReplaceAll(field("text"), field("old"), field("new"))
+     * ```
+     *
+     * @param stringExpression The expression representing the original string.
+     * @param oldValue The expression representing the substring to replace.
+     * @param newValue The expression representing the replacement string.
+     * @return A new [Expression] representing the stringReplaceAll operation.
+     */
+    @JvmStatic
+    fun stringReplaceAll(
+      stringExpression: Expression,
+      oldValue: Expression,
+      newValue: Expression
+    ): Expression =
+      FunctionExpression("string_replace_all", notImplemented, stringExpression, oldValue, newValue)
+
+    /**
+     * Creates an expression that replaces all occurrences of a substring with another string.
+     *
+     * ```kotlin
+     * // Replace all occurrences of "cat" with "dog" in the 'text' field.
+     * stringReplaceAll(field("text"), "cat", "dog")
+     * ```
+     *
+     * @param stringExpression The expression representing the original string.
+     * @param oldValue The substring to replace.
+     * @param newValue The replacement string.
+     * @return A new [Expression] representing the stringReplaceAll operation.
+     */
+    @JvmStatic
+    fun stringReplaceAll(
+      stringExpression: Expression,
+      oldValue: String,
+      newValue: String
+    ): Expression =
+      FunctionExpression(
+        "string_replace_all",
+        notImplemented,
+        stringExpression,
+        constant(oldValue),
+        constant(newValue)
+      )
+
+    /**
+     * Creates an expression that replaces all occurrences of a substring with another string in a
+     * field.
+     *
+     * ```kotlin
+     * // Replace all occurrences of the 'old' field with the 'new' field in 'text'.
+     * stringReplaceAll("text", field("old"), field("new"))
+     * ```
+     *
+     * @param fieldName The name of the field containing the original string.
+     * @param oldValue The expression representing the substring to replace.
+     * @param newValue The expression representing the replacement string.
+     * @return A new [Expression] representing the stringReplaceAll operation.
+     */
+    @JvmStatic
+    fun stringReplaceAll(
+      fieldName: String,
+      oldValue: Expression,
+      newValue: Expression
+    ): Expression =
+      FunctionExpression("string_replace_all", notImplemented, field(fieldName), oldValue, newValue)
+
+    /**
+     * Creates an expression that replaces all occurrences of a substring with another string in a
+     * field.
+     *
+     * ```kotlin
+     * // Replace all occurrences of "cat" with "dog" in the 'text' field.
+     * stringReplaceAll("text", "cat", "dog")
+     * ```
+     *
+     * @param fieldName The name of the field containing the original string.
+     * @param oldValue The substring to replace.
+     * @param newValue The replacement string.
+     * @return A new [Expression] representing the stringReplaceAll operation.
+     */
+    @JvmStatic
+    fun stringReplaceAll(fieldName: String, oldValue: String, newValue: String): Expression =
+      FunctionExpression(
+        "string_replace_all",
+        notImplemented,
+        field(fieldName),
+        constant(oldValue),
+        constant(newValue)
+      )
+
+    /**
+     * Creates an expression that replaces the first occurrence of a substring with another string.
+     *
+     * ```kotlin
+     * // Replace the first occurrence of the 'old' field with the 'new' field in 'text'.
+     * stringReplaceOne(field("text"), field("old"), field("new"))
+     * ```
+     *
+     * @param stringExpression The expression representing the original string.
+     * @param oldValue The expression representing the substring to replace.
+     * @param newValue The expression representing the replacement string.
+     * @return A new [Expression] representing the stringReplaceOne operation.
+     */
+    @JvmStatic
+    fun stringReplaceOne(
+      stringExpression: Expression,
+      oldValue: Expression,
+      newValue: Expression
+    ): Expression =
+      FunctionExpression("string_replace_one", notImplemented, stringExpression, oldValue, newValue)
+
+    /**
+     * Creates an expression that replaces the first occurrence of a substring with another string.
+     *
+     * ```kotlin
+     * // Replace the first occurrence of "cat" with "dog" in the 'text' field.
+     * stringReplaceOne(field("text"), "cat", "dog")
+     * ```
+     *
+     * @param stringExpression The expression representing the original string.
+     * @param oldValue The substring to replace.
+     * @param newValue The replacement string.
+     * @return A new [Expression] representing the stringReplaceOne operation.
+     */
+    @JvmStatic
+    fun stringReplaceOne(
+      stringExpression: Expression,
+      oldValue: String,
+      newValue: String
+    ): Expression =
+      FunctionExpression(
+        "string_replace_one",
+        notImplemented,
+        stringExpression,
+        constant(oldValue),
+        constant(newValue)
+      )
+
+    /**
+     * Creates an expression that replaces the first occurrence of a substring with another string
+     * in a field.
+     *
+     * ```kotlin
+     * // Replace the first occurrence of the 'old' field with the 'new' field in 'text'.
+     * stringReplaceOne("text", field("old"), field("new"))
+     * ```
+     *
+     * @param fieldName The name of the field containing the original string.
+     * @param oldValue The expression representing the substring to replace.
+     * @param newValue The expression representing the replacement string.
+     * @return A new [Expression] representing the stringReplaceOne operation.
+     */
+    @JvmStatic
+    fun stringReplaceOne(
+      fieldName: String,
+      oldValue: Expression,
+      newValue: Expression
+    ): Expression =
+      FunctionExpression("string_replace_one", notImplemented, field(fieldName), oldValue, newValue)
+
+    /**
+     * Creates an expression that replaces the first occurrence of a substring with another string
+     * in a field.
+     *
+     * ```kotlin
+     * // Replace the first occurrence of "cat" with "dog" in the 'text' field.
+     * stringReplaceOne("text", "cat", "dog")
+     * ```
+     *
+     * @param fieldName The name of the field containing the original string.
+     * @param oldValue The substring to replace.
+     * @param newValue The replacement string.
+     * @return A new [Expression] representing the stringReplaceOne operation.
+     */
+    @JvmStatic
+    fun stringReplaceOne(fieldName: String, oldValue: String, newValue: String): Expression =
+      FunctionExpression(
+        "string_replace_one",
+        notImplemented,
+        field(fieldName),
+        constant(oldValue),
+        constant(newValue)
+      )
+
+    /**
+     * Creates an expression that returns the 0-based index of the first occurrence of the specified
+     * substring.
+     *
+     * ```kotlin
+     * // Get the index of the 'search' field within the 'text' field.
+     * stringIndexOf(field("text"), field("search"))
+     * ```
+     *
+     * @param stringExpression The expression representing the string to search within.
+     * @param substring The expression representing the substring to search for.
+     * @return A new [Expression] representing the stringIndexOf operation.
+     */
+    @JvmStatic
+    fun stringIndexOf(stringExpression: Expression, substring: Expression): Expression =
+      FunctionExpression("string_index_of", notImplemented, stringExpression, substring)
+
+    /**
+     * Creates an expression that returns the 0-based index of the first occurrence of the specified
+     * substring.
+     *
+     * ```kotlin
+     * // Get the index of "world" within the 'text' field.
+     * stringIndexOf(field("text"), "world")
+     * ```
+     *
+     * @param stringExpression The expression representing the string to search within.
+     * @param substring The substring to search for.
+     * @return A new [Expression] representing the stringIndexOf operation.
+     */
+    @JvmStatic
+    fun stringIndexOf(stringExpression: Expression, substring: String): Expression =
+      FunctionExpression("string_index_of", notImplemented, stringExpression, constant(substring))
+
+    /**
+     * Creates an expression that returns the 0-based index of the first occurrence of the specified
+     * substring in a field.
+     *
+     * ```kotlin
+     * // Get the index of the 'search' field within the 'text' field.
+     * stringIndexOf("text", field("search"))
+     * ```
+     *
+     * @param fieldName The name of the field containing the string to search within.
+     * @param substring The expression representing the substring to search for.
+     * @return A new [Expression] representing the stringIndexOf operation.
+     */
+    @JvmStatic
+    fun stringIndexOf(fieldName: String, substring: Expression): Expression =
+      FunctionExpression("string_index_of", notImplemented, field(fieldName), substring)
+
+    /**
+     * Creates an expression that returns the 0-based index of the first occurrence of the specified
+     * substring in a field.
+     *
+     * ```kotlin
+     * // Get the index of "world" within the 'text' field.
+     * stringIndexOf("text", "world")
+     * ```
+     *
+     * @param fieldName The name of the field containing the string to search within.
+     * @param substring The substring to search for.
+     * @return A new [Expression] representing the stringIndexOf operation.
+     */
+    @JvmStatic
+    fun stringIndexOf(fieldName: String, substring: String): Expression =
+      FunctionExpression("string_index_of", notImplemented, field(fieldName), constant(substring))
 
     /**
      * Creates an expression that concatenates string expressions together.
@@ -3397,6 +3924,227 @@ abstract class Expression internal constructor() {
     fun mapRemove(mapField: String, key: String): Expression =
       FunctionExpression("map_remove", notImplemented, mapField, key)
 
+    /**
+     * Creates an expression that returns a new map with the specified entries added or updated.
+     *
+     * Note: This only performs shallow updates to the map. Setting a value to `null` will retain
+     * the key with a `null` value. To remove a key entirely, use `mapRemove`.
+     *
+     * ```kotlin
+     * // Set the 'city' to "San Francisco" in the 'address' map
+     * mapSet(field("address"), constant("city"), constant("San Francisco"));
+     * ```
+     *
+     * @param mapExpr The expression representing the map.
+     * @param key The key to set. Must be an expression representing a string.
+     * @param value The value to set.
+     * @param moreKeyValues Additional key-value pairs to set.
+     * @return A new [Expression] representing the map with the entries set.
+     */
+    @JvmStatic
+    fun mapSet(
+      mapExpr: Expression,
+      key: Expression,
+      value: Expression,
+      vararg moreKeyValues: Expression
+    ): Expression =
+      FunctionExpression("map_set", notImplemented, mapExpr, key, value, *moreKeyValues)
+
+    /**
+     * Creates an expression that returns a new map with the specified entries added or updated.
+     *
+     * Note: This only performs shallow updates to the map. Setting a value to `null` will retain
+     * the key with a `null` value. To remove a key entirely, use `mapRemove`.
+     *
+     * ```kotlin
+     * // Set the 'city' to "San Francisco" in the 'address' map
+     * mapSet(field("address"), "city", "San Francisco");
+     * ```
+     *
+     * @param mapExpr The map field to set entries in.
+     * @param key The key to set.
+     * @param value The value to set.
+     * @param moreKeyValues Additional key-value pairs to set.
+     * @return A new [Expression] representing the map with the entries set.
+     */
+    @JvmStatic
+    fun mapSet(
+      mapExpr: Expression,
+      key: String,
+      value: Any?,
+      vararg moreKeyValues: Any
+    ): Expression =
+      FunctionExpression(
+        "map_set",
+        notImplemented,
+        mapExpr,
+        constant(key),
+        toExprOrConstant(value),
+        *toArrayOfExprOrConstant(moreKeyValues)
+      )
+
+    /**
+     * Creates an expression that returns a new map with the specified entries added or updated.
+     *
+     * Note: This only performs shallow updates to the map. Setting a value to `null` will retain
+     * the key with a `null` value. To remove a key entirely, use `mapRemove`.
+     *
+     * ```kotlin
+     * // Set the 'city' to "San Francisco" in the 'address' map
+     * mapSet("address", constant("city"), constant("San Francisco"));
+     * ```
+     *
+     * @param mapField The map field to set entries in.
+     * @param key The key to set. Must be an expression representing a string.
+     * @param value The value to set.
+     * @param moreKeyValues Additional key-value pairs to set.
+     * @return A new [Expression] representing the map with the entries set.
+     */
+    @JvmStatic
+    fun mapSet(
+      mapField: String,
+      key: Expression,
+      value: Expression,
+      vararg moreKeyValues: Expression
+    ): Expression =
+      FunctionExpression("map_set", notImplemented, field(mapField), key, value, *moreKeyValues)
+
+    /**
+     * Creates an expression that returns a new map with the specified entries added or updated.
+     *
+     * Note: This only performs shallow updates to the map. Setting a value to `null` will retain
+     * the key with a `null` value. To remove a key entirely, use `mapRemove`.
+     *
+     * ```kotlin
+     * // Set the 'city' to "San Francisco" in the 'address' map
+     * mapSet("address", "city", "San Francisco");
+     * ```
+     *
+     * @param mapField The map field to set entries in.
+     * @param key The key to set. Must be an expression representing a string.
+     * @param value The value to set.
+     * @param moreKeyValues Additional key-value pairs to set.
+     * @return A new [Expression] representing the map with the entries set.
+     */
+    @JvmStatic
+    fun mapSet(mapField: String, key: String, value: Any?, vararg moreKeyValues: Any): Expression =
+      FunctionExpression(
+        "map_set",
+        notImplemented,
+        field(mapField),
+        constant(key),
+        toExprOrConstant(value),
+        *toArrayOfExprOrConstant(moreKeyValues)
+      )
+
+    /**
+     * Creates an expression that returns the keys of a map.
+     *
+     * Note: While the backend generally preserves insertion order, relying on the order of the
+     * output array is not guaranteed and should be avoided.
+     *
+     * ```kotlin
+     * // Get the keys of a map expression.
+     * mapKeys(map(mapOf("a" to 1, "b" to 2)))
+     * ```
+     *
+     * @param mapExpr The expression representing the map to get the keys of.
+     * @return A new [Expression] representing the keys of the map.
+     */
+    @JvmStatic
+    fun mapKeys(mapExpr: Expression): Expression =
+      FunctionExpression("map_keys", notImplemented, mapExpr)
+
+    /**
+     * Creates an expression that returns the keys of a map.
+     *
+     * Note: While the backend generally preserves insertion order, relying on the order of the
+     * output array is not guaranteed and should be avoided.
+     *
+     * ```kotlin
+     * // Get the keys of the 'metadata' map field.
+     * mapKeys("metadata")
+     * ```
+     *
+     * @param mapField The map field to get the keys of.
+     * @return A new [Expression] representing the keys of the map.
+     */
+    @JvmStatic
+    fun mapKeys(mapField: String): Expression =
+      FunctionExpression("map_keys", notImplemented, field(mapField))
+
+    /**
+     * Creates an expression that returns the values of a map.
+     *
+     * Note: While the backend generally preserves insertion order, relying on the order of the
+     * output array is not guaranteed and should be avoided.
+     *
+     * ```kotlin
+     * // Get the values of a map expression.
+     * mapValues(map(mapOf("a" to 1, "b" to 2)))
+     * ```
+     *
+     * @param mapExpr The expression representing the map to get the values of.
+     * @return A new [Expression] representing the values of the map.
+     */
+    @JvmStatic
+    fun mapValues(mapExpr: Expression): Expression =
+      FunctionExpression("map_values", notImplemented, mapExpr)
+
+    /**
+     * Creates an expression that returns the values of a map.
+     *
+     * Note: While the backend generally preserves insertion order, relying on the order of the
+     * output array is not guaranteed and should be avoided.
+     *
+     * ```kotlin
+     * // Get the values of the 'metadata' map field.
+     * mapValues("metadata")
+     * ```
+     *
+     * @param mapField The map field to get the values of.
+     * @return A new [Expression] representing the values of the map.
+     */
+    @JvmStatic
+    fun mapValues(mapField: String): Expression =
+      FunctionExpression("map_values", notImplemented, field(mapField))
+
+    /**
+     * Creates an expression that returns the entries of a map as an array of maps, where each map
+     * contains a "k" property for the key and a "v" property for the value.
+     *
+     * Note: While the backend generally preserves insertion order, relying on the order of the
+     * output array is not guaranteed and should be avoided.
+     *
+     * ```kotlin
+     * // Get the entries of a map expression.
+     * mapEntries(map(mapOf("a" to 1, "b" to 2)))
+     * ```
+     *
+     * @param mapExpr The expression representing the map to get the entries of.
+     * @return A new [Expression] representing the entries of the map.
+     */
+    @JvmStatic
+    fun mapEntries(mapExpr: Expression): Expression =
+      FunctionExpression("map_entries", notImplemented, mapExpr)
+
+    /**
+     * Creates an expression that returns the entries of a map as an array of maps.
+     *
+     * Note: While the backend generally preserves insertion order, relying on the order of the
+     * output array is not guaranteed and should be avoided.
+     *
+     * ```kotlin
+     * // Get the entries of the 'metadata' map field.
+     * mapEntries("metadata")
+     * ```
+     *
+     * @param mapField The map field to get the entries of.
+     * @return A new [Expression] representing the entries of the map.
+     */
+    @JvmStatic
+    fun mapEntries(mapField: String): Expression =
+      FunctionExpression("map_entries", notImplemented, field(mapField))
     /**
      * Calculates the Cosine distance between two vector expressions.
      *
@@ -6503,6 +7251,120 @@ abstract class Expression internal constructor() {
       FunctionExpression("if_absent", notImplemented, ifFieldName, elseValue)
 
     /**
+     * Creates an expression that returns the [elseExpr] argument if [ifExpr] evaluates to null,
+     * else return the result of the [ifExpr] argument evaluation.
+     *
+     * This function provides a fallback for both absent and explicit null values. In contrast,
+     * [ifAbsent] only triggers for missing fields.
+     *
+     * ```kotlin
+     * // Returns the user's preferred name, or if that is null, returns their full name.
+     * ifNull(field("preferredName"), field("fullName"))
+     * ```
+     *
+     * @param ifExpr The expression to check for null.
+     * @param elseExpr The expression that will be evaluated and returned if [ifExpr] is null.
+     * @return A new [Expression] representing the ifNull operation.
+     */
+    @JvmStatic
+    fun ifNull(ifExpr: Expression, elseExpr: Expression): Expression =
+      FunctionExpression("if_null", notImplemented, ifExpr, elseExpr)
+
+    /**
+     * Creates an expression that returns the [elseValue] argument if [ifExpr] evaluates to null,
+     * else return the result of the [ifExpr] argument evaluation.
+     *
+     * This function provides a fallback for both absent and explicit null values. In contrast,
+     * [ifAbsent] only triggers for missing fields.
+     *
+     * ```kotlin
+     * // Returns the user's display name, or returns "Anonymous" if the field is null.
+     * ifNull(field("displayName"), "Anonymous")
+     * ```
+     *
+     * @param ifExpr The expression to check for null.
+     * @param elseValue The value that will be returned if [ifExpr] evaluates to null.
+     * @return A new [Expression] representing the ifNull operation.
+     */
+    @JvmStatic
+    fun ifNull(ifExpr: Expression, elseValue: Any): Expression =
+      FunctionExpression("if_null", notImplemented, ifExpr, elseValue)
+
+    /**
+     * Creates an expression that returns the [elseExpr] argument if [ifFieldName] field is null,
+     * else return the value of the field.
+     *
+     * ```kotlin
+     * // Returns the user's preferred name, or if that is null, returns their full name.
+     * ifNull("preferredName", field("fullName"))
+     * ```
+     *
+     * @param ifFieldName The field to check for null.
+     * @param elseExpr The expression that will be evaluated and returned if [ifFieldName] is null.
+     * @return A new [Expression] representing the ifNull operation.
+     */
+    @JvmStatic
+    fun ifNull(ifFieldName: String, elseExpr: Expression): Expression =
+      FunctionExpression("if_null", notImplemented, ifFieldName, elseExpr)
+
+    /**
+     * Creates an expression that returns the [elseValue] argument if [ifFieldName] field is null,
+     * else return the value of the field.
+     *
+     * ```kotlin
+     * // Returns the user's display name, or returns "Anonymous" if the field is null.
+     * ifNull("displayName", "Anonymous")
+     * ```
+     *
+     * @param ifFieldName The field to check for null.
+     * @param elseValue The value that will be returned if [ifFieldName] is null.
+     * @return A new [Expression] representing the ifNull operation.
+     */
+    @JvmStatic
+    fun ifNull(ifFieldName: String, elseValue: Any): Expression =
+      FunctionExpression("if_null", notImplemented, ifFieldName, elseValue)
+
+    /**
+     * Creates an expression that returns the first non-null, non-absent argument, without
+     * evaluating the rest of the arguments. When all arguments are null or absent, returns the last
+     * argument.
+     *
+     * ```kotlin
+     * // Returns the value of the first non-null, non-absent field among 'preferredName', 'fullName',
+     * // or the last argument if all previous fields are null.
+     * coalesce(field("preferredName"), field("fullName"), constant("Anonymous"))
+     * ```
+     *
+     * @param expression The first expression to check for null.
+     * @param replacement The fallback expression or value if the first one is null.
+     * @param others Optional additional expressions to check if previous ones are null.
+     * @return A new [Expression] representing the coalesce operation.
+     */
+    @JvmStatic
+    fun coalesce(expression: Expression, replacement: Any, vararg others: Any): Expression =
+      FunctionExpression("coalesce", notImplemented, expression, replacement, *others)
+
+    /**
+     * Creates an expression that returns the first non-null, non-absent argument, without
+     * evaluating the rest of the arguments. When all arguments are null or absent, returns the last
+     * argument.
+     *
+     * ```kotlin
+     * // Returns the value of the first non-null, non-absent field among 'preferredName', 'fullName',
+     * // or the last argument if all previous fields are null.
+     * coalesce("preferredName", field("fullName"), constant("Anonymous"))
+     * ```
+     *
+     * @param fieldName The name of the first field to check for null.
+     * @param replacement The fallback expression or value if the first one is null.
+     * @param others Optional additional expressions to check if previous ones are null.
+     * @return A new [Expression] representing the coalesce operation.
+     */
+    @JvmStatic
+    fun coalesce(fieldName: String, replacement: Any, vararg others: Any): Expression =
+      FunctionExpression("coalesce", notImplemented, fieldName, replacement, *others)
+
+    /**
      * Creates an expression that returns the collection ID from a path.
      *
      * ```kotlin
@@ -7638,31 +8500,234 @@ abstract class Expression internal constructor() {
   fun trim() = Companion.trim(this)
 
   /**
-   * Creates an expression that removes leading and trailing characters from this string expression.
+   * Creates an expression that removes a set of leading and trailing values from this string
+   * expression.
+   *
+   * Note: The values to trim are treated as a **set**, not a substring.
    *
    * ```kotlin
-   * // Trim '_' and '-' from the 'userInput' field
+   * // Trim all '_' and '-' characters from the 'userInput' field
    * field("userInput").trimValue("-_")
    * ```
    *
-   * @param valueToTrim The characters to trim from the string.
+   * @param valueToTrim The set of values to trim from the string.
    * @return A new [Expression] representing the trimmed string.
    */
   fun trimValue(valueToTrim: String) = Companion.trimValue(this, constant(valueToTrim))
 
   /**
-   * Creates an expression that removes leading and trailing value from this expression. The
-   * accepted types are string and blob.
+   * Creates an expression that removes a set of leading and trailing values from this expression.
+   * The accepted types are string and blob.
+   *
+   * Note: The values to trim are treated as a **set**, not a substring.
    *
    * ```kotlin
    * // Trim specified characters from the 'userInput' field
    * field("userInput").trimValue(field("trimChars"))
    * ```
    *
-   * @param valueToTrim The expression representing the characters to trim from the string.
+   * @param valueToTrim The expression representing the set of values to trim from the string.
    * @return A new [Expression] representing the trimmed string.
    */
   fun trimValue(valueToTrim: Expression) = Companion.trimValue(this, valueToTrim)
+
+  /**
+   * Creates an expression that removes leading whitespace from this string expression.
+   *
+   * ```kotlin
+   * // Trim leading whitespace from the 'text' field.
+   * field("text").ltrim()
+   * ```
+   *
+   * @return A new [Expression] representing the ltrim operation.
+   */
+  fun ltrim(): Expression = Companion.ltrim(this)
+
+  /**
+   * Creates an expression that removes a set of leading values from this string expression.
+   *
+   * Note: The values to trim are treated as a **set**, not a substring.
+   *
+   * ```kotlin
+   * // Trim all leading '-' and '_' characters from the 'text' field.
+   * field("text").ltrimValue("-_")
+   * ```
+   *
+   * @param valuesToTrim The string of characters to remove.
+   * @return A new [Expression] representing the ltrim operation.
+   */
+  fun ltrimValue(valuesToTrim: String): Expression = Companion.ltrimValue(this, valuesToTrim)
+
+  /**
+   * Creates an expression that removes a set of leading values from this string expression.
+   *
+   * Note: The values to trim are treated as a **set**, not a substring.
+   *
+   * ```kotlin
+   * // Trim leading characters defined by the 'chars' field from the 'text' field.
+   * field("text").ltrimValue(field("chars"))
+   * ```
+   *
+   * @param valuesToTrim The expression representing the set of values to remove.
+   * @return A new [Expression] representing the ltrim operation.
+   */
+  fun ltrimValue(valuesToTrim: Expression): Expression = Companion.ltrimValue(this, valuesToTrim)
+
+  /**
+   * Creates an expression that removes trailing whitespace from this string expression.
+   *
+   * ```kotlin
+   * // Trim trailing whitespace from the 'text' field.
+   * field("text").rtrim()
+   * ```
+   *
+   * @return A new [Expression] representing the rtrim operation.
+   */
+  fun rtrim(): Expression = Companion.rtrim(this)
+
+  /**
+   * Creates an expression that removes a set of trailing characters from this string expression.
+   *
+   * Note: The values to trim are treated as a **set**, not a substring.
+   *
+   * ```kotlin
+   * // Trim all trailing '-' and '_' characters from the 'text' field.
+   * field("text").rtrimValue("-_")
+   * ```
+   *
+   * @param valuesToTrim The set of values to remove.
+   * @return A new [Expression] representing the rtrim operation.
+   */
+  fun rtrimValue(valuesToTrim: String): Expression = Companion.rtrimValue(this, valuesToTrim)
+
+  /**
+   * Creates an expression that removes a set of trailing values from this string expression.
+   *
+   * Note: The values to trim are treated as a **set**, not a substring.
+   *
+   * ```kotlin
+   * // Trim trailing characters defined by the 'chars' field from the 'text' field.
+   * field("text").rtrimValue(field("chars"))
+   * ```
+   *
+   * @param valuesToTrim The expression representing the set of values to remove.
+   * @return A new [Expression] representing the rtrim operation.
+   */
+  fun rtrimValue(valuesToTrim: Expression): Expression = Companion.rtrimValue(this, valuesToTrim)
+
+  /**
+   * Creates an expression that repeats this string expression a given number of times.
+   *
+   * ```kotlin
+   * // Repeat the 'name' field 3 times.
+   * field("name").stringRepeat(3)
+   * ```
+   *
+   * @param count The number of times to repeat the string.
+   * @return A new [Expression] representing the stringRepeat operation.
+   */
+  fun stringRepeat(count: Int): Expression = Companion.stringRepeat(this, count)
+
+  /**
+   * Creates an expression that repeats this string expression a given number of times.
+   *
+   * ```kotlin
+   * // Repeat the 'name' field the number of times specified in the 'count' field.
+   * field("name").stringRepeat(field("count"))
+   * ```
+   *
+   * @param count The expression representing the number of times to repeat the string.
+   * @return A new [Expression] representing the stringRepeat operation.
+   */
+  fun stringRepeat(count: Expression): Expression = Companion.stringRepeat(this, count)
+
+  /**
+   * Creates an expression that replaces all occurrences of a substring with another string.
+   *
+   * ```kotlin
+   * // Replace all occurrences of "cat" with "dog" in the 'text' field.
+   * field("text").stringReplaceAll("cat", "dog")
+   * ```
+   *
+   * @param oldValue The substring to replace.
+   * @param newValue The replacement string.
+   * @return A new [Expression] representing the stringReplaceAll operation.
+   */
+  fun stringReplaceAll(oldValue: String, newValue: String): Expression =
+    Companion.stringReplaceAll(this, oldValue, newValue)
+
+  /**
+   * Creates an expression that replaces all occurrences of a substring with another string.
+   *
+   * ```kotlin
+   * // Replace all occurrences of the 'old' field with the 'new' field in 'text'.
+   * field("text").stringReplaceAll(field("old"), field("new"))
+   * ```
+   *
+   * @param oldValue The expression representing the substring to replace.
+   * @param newValue The expression representing the replacement string.
+   * @return A new [Expression] representing the stringReplaceAll operation.
+   */
+  fun stringReplaceAll(oldValue: Expression, newValue: Expression): Expression =
+    Companion.stringReplaceAll(this, oldValue, newValue)
+
+  /**
+   * Creates an expression that replaces the first occurrence of a substring with another string.
+   *
+   * ```kotlin
+   * // Replace the first occurrence of "cat" with "dog" in the 'text' field.
+   * field("text").stringReplaceOne("cat", "dog")
+   * ```
+   *
+   * @param oldValue The substring to replace.
+   * @param newValue The replacement string.
+   * @return A new [Expression] representing the stringReplaceOne operation.
+   */
+  fun stringReplaceOne(oldValue: String, newValue: String): Expression =
+    Companion.stringReplaceOne(this, oldValue, newValue)
+
+  /**
+   * Creates an expression that replaces the first occurrence of a substring with another string.
+   *
+   * ```kotlin
+   * // Replace the first occurrence of the 'old' field with the 'new' field in 'text'.
+   * field("text").stringReplaceOne(field("old"), field("new"))
+   * ```
+   *
+   * @param oldValue The expression representing the substring to replace.
+   * @param newValue The expression representing the replacement string.
+   * @return A new [Expression] representing the stringReplaceOne operation.
+   */
+  fun stringReplaceOne(oldValue: Expression, newValue: Expression): Expression =
+    Companion.stringReplaceOne(this, oldValue, newValue)
+
+  /**
+   * Creates an expression that returns the 0-based index of the first occurrence of the specified
+   * substring.
+   *
+   * ```kotlin
+   * // Get the index of "world" within the 'text' field.
+   * field("text").stringIndexOf("world")
+   * ```
+   *
+   * @param substring The substring to search for.
+   * @return A new [Expression] representing the stringIndexOf operation.
+   */
+  fun stringIndexOf(substring: String): Expression = Companion.stringIndexOf(this, substring)
+
+  /**
+   * Creates an expression that returns the 0-based index of the first occurrence of the specified
+   * substring.
+   *
+   * ```kotlin
+   * // Get the index of the 'search' field within the 'text' field.
+   * field("text").stringIndexOf(field("search"))
+   * ```
+   *
+   * @param substring The expression representing the substring to search for.
+   * @return A new [Expression] representing the stringIndexOf operation.
+   */
+  fun stringIndexOf(substring: Expression): Expression = Companion.stringIndexOf(this, substring)
 
   /**
    * Creates an expression that concatenates string expressions together.
@@ -7795,6 +8860,88 @@ abstract class Expression internal constructor() {
    * @return A new [Expression] that evaluates to a modified map.
    */
   fun mapRemove(key: String) = Companion.mapRemove(this, key)
+
+  /**
+   * Creates an expression that returns a new map with the specified entries added or updated.
+   *
+   * - Only performs shallow updates to the map.
+   * - Setting a value to `null` will retain the key with a `null` value. To remove a key entirely,
+   * use `mapRemove`.
+   *
+   * ```kotlin
+   * // Set the 'category' key to the value of the 'newCategory' field.
+   * field("metadata").mapSet(field("keyField"), field("newCategory"))
+   * ```
+   *
+   * @param key The key to set.
+   * @param value The value to set.
+   * @param moreKeyValues Additional key-value pairs to set.
+   * @return A new [Expression] representing the map with the entries set.
+   */
+  fun mapSet(key: Expression, value: Expression, vararg moreKeyValues: Expression): Expression =
+    Companion.mapSet(this, key, value, *moreKeyValues)
+
+  /**
+   * Creates an expression that returns a new map with the specified entries added or updated.
+   *
+   * ```kotlin
+   * // Set the 'category' key to "Electronics" and 'active' to true.
+   * field("metadata").mapSet("category", "Electronics", "active", true)
+   * ```
+   *
+   * @param key The key to set.
+   * @param value The value to set.
+   * @param moreKeyValues Additional key-value pairs to set.
+   * @return A new [Expression] representing the map with the entries set.
+   */
+  fun mapSet(key: String, value: Any?, vararg moreKeyValues: Any): Expression =
+    Companion.mapSet(this, key, value, *moreKeyValues)
+
+  /**
+   * Creates an expression that returns the keys of this map expression.
+   *
+   * While the backend generally preserves insertion order, relying on the order of the output array
+   * is not guaranteed and should be avoided.
+   *
+   * ```kotlin
+   * // Get the keys of the 'metadata' map field.
+   * field("metadata").mapKeys()
+   * ```
+   *
+   * @return A new [Expression] representing the keys of the map.
+   */
+  fun mapKeys(): Expression = Companion.mapKeys(this)
+
+  /**
+   * Creates an expression that returns the values of this map expression.
+   *
+   * While the backend generally preserves insertion order, relying on the order of the output array
+   * is not guaranteed and should be avoided.
+   *
+   * ```kotlin
+   * // Get the values of the 'metadata' map field.
+   * field("metadata").mapValues()
+   * ```
+   *
+   * @return A new [Expression] representing the values of the map.
+   */
+  fun mapValues(): Expression = Companion.mapValues(this)
+
+  /**
+   * Creates an expression that returns the entries of this map expression as an array of maps,
+   * where each map contains a "k" property for the key and a "v" property for the value.
+   *
+   * While the backend generally preserves insertion order, relying on the order of the output array
+   * is not guaranteed and should be avoided.
+   *
+   * ```kotlin
+   * // Get the entries of the 'metadata' map field.
+   * field("metadata").mapEntries()
+   * ```
+   *
+   * @return A new [Expression] representing the entries of the map.
+   */
+  fun mapEntries(): Expression = Companion.mapEntries(this)
 
   /**
    * Calculates the Cosine distance between this and another vector expressions.
@@ -9091,6 +10238,58 @@ abstract class Expression internal constructor() {
    * @return A new [Expression] representing the ifAbsent operation.
    */
   fun ifAbsent(elseValue: Any): Expression = Companion.ifAbsent(this, elseValue)
+
+  /**
+   * Creates an expression that returns the [elseExpression] argument if this expression evaluates
+   * to null, else return the result of this expression.
+   *
+   * This function provides a fallback for both absent and explicit null values. In contrast,
+   * [ifAbsent] only triggers for missing fields.
+   *
+   * ```kotlin
+   * // Returns the user's preferred name, or if that is null, returns their full name.
+   * field("preferredName").ifNull(field("fullName"))
+   * ```
+   *
+   * @param elseExpression The expression that will be evaluated and returned if this expression is
+   * null.
+   * @return A new [Expression] representing the ifNull operation.
+   */
+  fun ifNull(elseExpression: Expression): Expression = Companion.ifNull(this, elseExpression)
+
+  /**
+   * Creates an expression that returns the [elseValue] argument if this expression evaluates to
+   * null, else return the result of this expression.
+   *
+   * This function provides a fallback for both absent and explicit null values. In contrast,
+   * [ifAbsent] only triggers for missing fields.
+   *
+   * ```kotlin
+   * // Returns the user's display name, or returns "Anonymous" if the field is null.
+   * field("displayName").ifNull("Anonymous")
+   * ```
+   *
+   * @param elseValue The value that will be returned if this expression evaluates to null.
+   * @return A new [Expression] representing the ifNull operation.
+   */
+  fun ifNull(elseValue: Any): Expression = Companion.ifNull(this, elseValue)
+
+  /**
+   * Creates an expression that returns the first non-null, non-absent argument, without evaluating
+   * the rest of the arguments. When all arguments are null or absent, returns the last argument.
+   *
+   * ```kotlin
+   * // Returns the value of the first non-null, non-absent field among 'preferredName', 'fullName',
+   * // or the last argument if all previous fields are null.
+   * field("preferredName").coalesce(field("fullName"), "Anonymous")
+   * ```
+   *
+   * @param replacement The fallback expression or value if the first one is null.
+   * @param others Optional additional expressions to check if previous ones are null.
+   * @return A new [Expression] representing the coalesce operation.
+   */
+  fun coalesce(replacement: Any, vararg others: Any): Expression =
+    Companion.coalesce(this, replacement, *others)
 
   /**
    * Creates an expression that checks if this expression produces an error.
