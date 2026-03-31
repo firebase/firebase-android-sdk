@@ -287,6 +287,7 @@ internal class FirebaseDataConnectImpl(
       dataConnectGrpcRPCs = dataConnectGrpcRPCs,
       dataConnectAuth = dataConnectAuth,
       dataConnectAppCheck = dataConnectAppCheck,
+      ioDispatcher = blockingDispatcher,
       cpuDispatcher = nonBlockingDispatcher,
       requestIdGenerator = requestIdGenerator,
       cacheSettings = cacheSettings,

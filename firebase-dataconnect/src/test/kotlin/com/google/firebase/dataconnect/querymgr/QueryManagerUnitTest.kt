@@ -1093,6 +1093,7 @@ class QueryManagerUnitTest {
         dataConnectGrpcRPCs = mockk { stubExecuteQuery() },
         dataConnectAuth = mockDataConnectAuth(),
         dataConnectAppCheck = mockDataConnectAppCheck(),
+        ioDispatcher = Dispatchers.IO,
         cpuDispatcher = Dispatchers.Default,
         requestIdGenerator = Arb.dataConnect.requestIdGenerator().next(randomSource()),
         cacheSettings = null,
@@ -1204,10 +1205,6 @@ private fun testVariablesArb(stringArb: Arb<String> = alphanumericStringArb()): 
 private fun testDataArb(stringArb: Arb<String> = alphanumericStringArb()): Arb<TestData> =
   stringArb.map { TestData("data_$it") }
 
-private fun executeQueryResponseArb(
-  testData: Arb<TestData> = testDataArb()
-): Arb<ExecuteQueryResponse> = testData.map { it.encodeToExecuteQueryResponse() }
-
 private fun executeArgumentsArb(
   operationName: Arb<String> = operationNameArb(),
   variables: Arb<TestVariables> = testVariablesArb(),
@@ -1317,6 +1314,7 @@ private class QueryManagerBuilder(
   private var dataConnectGrpcRPCs: DataConnectGrpcRPCs,
   private var dataConnectAuth: DataConnectAuth,
   private var dataConnectAppCheck: DataConnectAppCheck,
+  private var ioDispatcher: CoroutineDispatcher,
   private var cpuDispatcher: CoroutineDispatcher,
   private var requestIdGenerator: RequestIdGenerator,
   private var cacheSettings: QueryManager.CacheSettings?,
@@ -1329,14 +1327,6 @@ private class QueryManagerBuilder(
 
   fun setDataConnectGrpcRPCs(value: DataConnectGrpcRPCs) {
     dataConnectGrpcRPCs = value
-  }
-
-  fun setDataConnectGrpcRPCsWithResponse(value: ExecuteQueryResponse): DataConnectGrpcRPCs {
-    val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk {
-      stubExecuteQuery(executeQueryResponse = value)
-    }
-    setDataConnectGrpcRPCs(dataConnectGrpcRPCs)
-    return dataConnectGrpcRPCs
   }
 
   fun setDataConnectAuth(value: DataConnectAuth) {
@@ -1361,6 +1351,7 @@ private class QueryManagerBuilder(
       dataConnectGrpcRPCs = dataConnectGrpcRPCs,
       dataConnectAuth = dataConnectAuth,
       dataConnectAppCheck = dataConnectAppCheck,
+      ioDispatcher = ioDispatcher,
       cpuDispatcher = cpuDispatcher,
       requestIdGenerator = requestIdGenerator,
       cacheSettings = cacheSettings,
