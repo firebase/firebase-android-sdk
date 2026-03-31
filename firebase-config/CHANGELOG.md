@@ -1,5 +1,7 @@
 # Unreleased
 
+- [fixed] Realtime support for A/B test updates
+
 # 23.0.1
 
 - [changed] Bumped internal dependencies.
