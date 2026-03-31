@@ -119,11 +119,7 @@ internal class FirebaseDataConnectImpl(
         }
     )
 
-  private val requestName =
-    "projects/$projectId/" +
-      "locations/${config.location}" +
-      "/services/${config.serviceId}" +
-      "/connectors/${config.connector}"
+  private val requestName = calculateRequestName(projectId, config)
 
   private val dataConnectAuth: DataConnectAuth =
     DataConnectAuth(

@@ -18,6 +18,7 @@ package com.google.firebase.dataconnect.core
 
 import android.content.Context
 import com.google.android.gms.security.ProviderInstaller
+import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.DataConnectException
 import com.google.firebase.dataconnect.DataConnectUntypedVariables
 import com.google.firebase.dataconnect.FirebaseDataConnect
@@ -744,3 +745,9 @@ internal fun <Variables> encodeVariables(
   } else {
     encodeToStruct(variables, serializer, serializersModule)
   }
+
+internal fun calculateRequestName(projectId: String, connectorConfig: ConnectorConfig): String =
+  "projects/$projectId" +
+    "/locations/${connectorConfig.location}" +
+    "/services/${connectorConfig.serviceId}" +
+    "/connectors/${connectorConfig.connector}"
