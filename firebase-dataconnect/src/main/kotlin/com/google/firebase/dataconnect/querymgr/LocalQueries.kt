@@ -33,7 +33,7 @@ internal class LocalQueries(
   dataConnectGrpcRPCs: DataConnectGrpcRPCs,
   private val cpuDispatcher: CoroutineDispatcher,
   private val cacheInfo: CacheInfo?,
-  coroutineScope: CoroutineScope,
+  private val coroutineScope: CoroutineScope,
 ) {
 
   private val localQueries = mutableMapOf<Key<*>, LocalQuery<*>>()
@@ -89,8 +89,21 @@ internal class LocalQueries(
 
     val untypedLocalQuery: LocalQuery<*> =
       localQueries.getOrPut(key) {
+        val queryCacheUpdater =
+          cacheInfo?.let {
+            QueryCacheUpdater(
+              cacheInfo = it,
+              authUid = remoteKey.authUid,
+              queryId = remoteKey.queryId,
+              cpuDispatcher = cpuDispatcher,
+              coroutineScope = coroutineScope,
+              logger = localQueryLogger,
+            )
+          }
+
         ServerOnlyLocalQuery(
           remoteQuery,
+          queryCacheUpdater,
           cpuDispatcher,
           key.dataDeserializer,
           key.dataSerializersModule,
