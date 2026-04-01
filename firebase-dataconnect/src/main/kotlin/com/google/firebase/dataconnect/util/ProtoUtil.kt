@@ -18,9 +18,9 @@ package com.google.firebase.dataconnect.util
 
 import com.google.firebase.dataconnect.DataConnectPath
 import com.google.firebase.dataconnect.DataConnectPathSegment
-import com.google.firebase.dataconnect.core.DataConnectGrpcClientGlobals.toErrorInfoImpl
 import com.google.firebase.dataconnect.core.DataConnectGrpcMetadata.Companion.putHeaders
 import com.google.firebase.dataconnect.toPathString
+import com.google.firebase.dataconnect.util.DeserializeUtils.toErrorInfoImpl
 import com.google.firebase.dataconnect.util.ProtoUtil.nullProtoValue
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.protobuf.Duration

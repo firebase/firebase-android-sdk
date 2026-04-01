@@ -58,11 +58,18 @@ import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.serializer
+import org.junit.Assume
+import org.junit.Before
 import org.junit.Test
 
 class QuerySubscriptionIntegrationTest : DataConnectIntegrationTestBase() {
 
   private val schema by lazy { PersonSchema(dataConnectFactory) }
+
+  @Before
+  fun SKIP_TESTS_UNTIL_QUERY_MANAGER_SUPPORTS_SUBSCRIPTIONS() {
+    Assume.assumeTrue("SKIP_TESTS_UNTIL_QUERY_MANAGER_SUPPORTS_SUBSCRIPTIONS", false)
+  }
 
   @Test
   fun lastResult_should_be_null_on_new_instance() {

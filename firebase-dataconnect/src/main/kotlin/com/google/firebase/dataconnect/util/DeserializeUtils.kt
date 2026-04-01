@@ -21,7 +21,6 @@ package com.google.firebase.dataconnect.util
 import com.google.firebase.dataconnect.DataConnectOperationException
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.DataConnectUntypedData
-import com.google.firebase.dataconnect.core.DataConnectGrpcClientGlobals.toErrorInfoImpl
 import com.google.firebase.dataconnect.core.DataConnectOperationFailureResponseImpl
 import com.google.firebase.dataconnect.util.ProtoUtil.decodeFromStruct
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
@@ -125,6 +124,12 @@ internal object DeserializeUtils {
     return deserialize(data, errors, deserializer, serializersModule)
   }
 
+  fun GraphqlError.toErrorInfoImpl() =
+    DataConnectOperationFailureResponseImpl.ErrorInfoImpl(
+      message = message,
+      path = path.toPathSegment(),
+    )
+
   private fun ListValue.toPathSegment() =
     valuesList.map {
       when (it.kindCase) {
@@ -140,10 +145,4 @@ internal object DeserializeUtils {
         else -> DataConnectPathSegment.Field(it.toString())
       }
     }
-
-  private fun GraphqlError.toErrorInfoImpl() =
-    DataConnectOperationFailureResponseImpl.ErrorInfoImpl(
-      message = message,
-      path = path.toPathSegment(),
-    )
 }
