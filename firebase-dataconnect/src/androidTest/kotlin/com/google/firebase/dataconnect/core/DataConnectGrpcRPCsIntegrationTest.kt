@@ -18,11 +18,14 @@
 
 package com.google.firebase.dataconnect.core
 
+import app.cash.turbine.test
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.OperationRef
 import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.copy
+import com.google.firebase.dataconnect.querymgr.RemoteQuerySubscription
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
+import com.google.firebase.dataconnect.testutil.SuspendingCountDownLatch
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.triple
 import com.google.firebase.dataconnect.testutil.schemas.PastaConnector
@@ -45,9 +48,11 @@ import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.next
 import io.kotest.property.arbs.firstName
 import io.kotest.property.checkAll
-import kotlin.time.Duration
+import io.mockk.mockk
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
@@ -57,50 +62,108 @@ import org.junit.Test
 class DataConnectGrpcRPCsIntegrationTest : DataConnectIntegrationTestBase() {
 
   @Test
-  fun streamTest() =
-    runTest(timeout = Duration.INFINITE) {
-      val stringArb = Arb.firstName().map { it.name }
-      val callerSdkTypeArb = Arb.enum<FirebaseDataConnect.CallerSdkType>()
-      val requestIdArb = Arb.dataConnect.requestId()
-      val connector = newConnector()
-      checkAll(propTestConfig, stringArb.triple()) { (name1, name2, name3) ->
-        val key = connector.insert(name1)
-        val dataConnectGrpcRPCs = connector.dataConnectGrpcRPCs
-        val queryRef = connector.refs.getByKey(key)
+  fun streamTest() = runTest {
+    val stringArb = Arb.firstName().map { it.name }
+    val callerSdkTypeArb = Arb.enum<FirebaseDataConnect.CallerSdkType>()
+    val requestIdArb = Arb.dataConnect.requestId()
+    val connector = newConnector()
+    checkAll(propTestConfig, stringArb.triple()) { (name1, name2, name3) ->
+      val key = connector.insert(name1)
+      val dataConnectGrpcRPCs = connector.dataConnectGrpcRPCs
+      val queryRef = connector.refs.getByKey(key)
 
-        val stream =
-          dataConnectGrpcRPCs.connect(
-            streamId = "con" + stringArb.bind(),
-            authToken = null,
-            appCheckToken = null,
-            callerSdkType = callerSdkTypeArb.bind(),
-            name = connector.calculateRequestName(),
-          )
+      val stream =
+        dataConnectGrpcRPCs.connect(
+          streamId = "con" + stringArb.bind(),
+          authToken = null,
+          appCheckToken = null,
+          callerSdkType = callerSdkTypeArb.bind(),
+          name = connector.calculateRequestName(),
+        )
 
-        val channel: ReceiveChannel<ExecuteQueryResponse> =
-          stream.subscribe(
-            requestId = requestIdArb.next(randomSource()),
-            ExecuteRequest.newBuilder()
-              .setOperationName(queryRef.operationName)
-              .setVariables(queryRef.encodeVariables())
-              .build()
-          )
+      val channel: ReceiveChannel<ExecuteQueryResponse> =
+        stream.subscribe(
+          requestId = requestIdArb.next(randomSource()),
+          ExecuteRequest.newBuilder()
+            .setOperationName(queryRef.operationName)
+            .setVariables(queryRef.encodeVariables())
+            .build()
+        )
 
-        withContext(Dispatchers.Default) {
-          withTimeout(3.seconds) {
-            try {
-              withClue("awaitItem1") { channel.receive().shouldHaveName(name1, queryRef) }
-              connector.update(key, name2)
-              withClue("awaitItem2") { channel.receive().shouldHaveName(name2, queryRef) }
-              connector.update(key, name3)
-              withClue("awaitItem3") { channel.receive().shouldHaveName(name3, queryRef) }
-            } finally {
-              channel.cancel()
-            }
+      withContext(Dispatchers.Default) {
+        withTimeout(3.seconds) {
+          try {
+            withClue("awaitItem1") { channel.receive().shouldHaveName(name1, queryRef) }
+            connector.update(key, name2)
+            withClue("awaitItem2") { channel.receive().shouldHaveName(name2, queryRef) }
+            connector.update(key, name3)
+            withClue("awaitItem3") { channel.receive().shouldHaveName(name3, queryRef) }
+          } finally {
+            channel.cancel()
           }
         }
       }
     }
+  }
+
+  @Test
+  fun remoteQuerySubscriptionTest() = runTest {
+    val stringArb = Arb.firstName().map { it.name }
+    val callerSdkTypeArb = Arb.enum<FirebaseDataConnect.CallerSdkType>()
+    val requestIdArb = Arb.dataConnect.requestId()
+    val connector = newConnector()
+    checkAll(propTestConfig, stringArb.triple()) { (name1, name2, name3) ->
+      val key = connector.insert(name1)
+      val dataConnectGrpcRPCs = connector.dataConnectGrpcRPCs
+      val queryRef = connector.refs.getByKey(key)
+
+      val stream =
+        dataConnectGrpcRPCs.connect(
+          streamId = "con" + stringArb.bind(),
+          authToken = null,
+          appCheckToken = null,
+          callerSdkType = callerSdkTypeArb.bind(),
+          name = connector.calculateRequestName(),
+        )
+
+      val remoteQuerySubscription =
+        RemoteQuerySubscription(
+          cacheUpdater = null,
+          cpuDispatcher = Dispatchers.Default,
+          requestProto =
+            ExecuteRequest.newBuilder()
+              .setOperationName(queryRef.operationName)
+              .setVariables(queryRef.encodeVariables())
+              .build(),
+          parentCoroutineScope = backgroundScope,
+          logger = mockk(relaxed = true),
+        )
+
+      val latch1 = SuspendingCountDownLatch(4)
+      val latch2 = SuspendingCountDownLatch(latch1.count)
+      val jobs =
+        List(latch1.count - 1) { jobIndex ->
+          backgroundScope.async(Dispatchers.IO) {
+            val requestId = requestIdArb.next(randomSource())
+            val flow = remoteQuerySubscription.subscribe(requestId, stream)
+            flow.test {
+              withClue("awaitItem-$jobIndex.1") { awaitItem().shouldHaveName(name1, queryRef) }
+              latch1.countDown().await()
+              withClue("awaitItem-$jobIndex.2") { awaitItem().shouldHaveName(name2, queryRef) }
+              latch2.countDown().await()
+              withClue("awaitItem-$jobIndex.3") { awaitItem().shouldHaveName(name3, queryRef) }
+            }
+          }
+        }
+
+      latch1.countDown().await()
+      connector.update(key, name2)
+      latch2.countDown().await()
+      connector.update(key, name3)
+
+      jobs.awaitAll()
+    }
+  }
 
   private fun newConnector(): PastaConnector {
     val connectorConfig = testConnectorConfig.copy(connector = PastaConnector.CONNECTOR_NAME)
