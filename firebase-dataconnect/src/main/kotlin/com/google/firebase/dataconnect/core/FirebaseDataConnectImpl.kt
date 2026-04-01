@@ -291,6 +291,7 @@ internal class FirebaseDataConnectImpl(
       cpuDispatcher = nonBlockingDispatcher,
       requestIdGenerator = requestIdGenerator,
       cacheSettings = cacheSettings,
+      currentTimeMillis = System::currentTimeMillis,
       logger = Logger("QueryManager").also { it.debug("created by $instanceId") },
     )
   }

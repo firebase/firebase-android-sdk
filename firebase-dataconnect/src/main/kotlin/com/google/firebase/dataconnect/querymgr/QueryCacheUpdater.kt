@@ -26,7 +26,6 @@ import com.google.firebase.dataconnect.util.ProtoUtil.toDataConnectPath
 import com.google.firebase.dataconnect.util.SequenceNumberConflatedJobQueue
 import google.firebase.dataconnect.proto.ExecuteQueryResponse as ExecuteQueryResponseProto
 import google.firebase.dataconnect.proto.GraphqlResponseExtensions.DataConnectProperties as DataConnectPropertiesProto
-import java.lang.System.currentTimeMillis
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -38,6 +37,7 @@ internal class QueryCacheUpdater(
   private val queryId: ImmutableByteArray,
   cpuDispatcher: CoroutineDispatcher,
   coroutineScope: CoroutineScope,
+  private val currentTimeMillis: () -> Long,
   private val logger: Logger,
 ) {
 

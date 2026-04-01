@@ -26,7 +26,6 @@ import com.google.firebase.dataconnect.util.ImmutableByteArray
 import com.google.firebase.dataconnect.util.SequencedReference
 import com.google.protobuf.Struct as StructProto
 import google.firebase.dataconnect.proto.ExecuteQueryResponse as ExecuteQueryResponseProto
-import java.lang.System.currentTimeMillis
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Deferred
 import kotlinx.serialization.DeserializationStrategy
@@ -40,6 +39,7 @@ internal class CacheOnlyLocalQuery<Data>(
   cpuDispatcher: CoroutineDispatcher,
   dataDeserializer: DeserializationStrategy<Data>,
   dataSerializersModule: SerializersModule?,
+  private val currentTimeMillis: () -> Long,
   private val logger: Logger,
 ) : LocalQuery<Data>(cpuDispatcher, dataDeserializer, dataSerializersModule, logger) {
 

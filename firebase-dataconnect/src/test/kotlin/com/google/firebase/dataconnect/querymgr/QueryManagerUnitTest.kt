@@ -71,6 +71,7 @@ import io.kotest.property.arbitrary.distinct
 import io.kotest.property.arbitrary.duration
 import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.list
+import io.kotest.property.arbitrary.long
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.next
 import io.kotest.property.arbitrary.of
@@ -88,9 +89,11 @@ import io.mockk.slot
 import java.io.File
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
 import kotlin.random.Random
 import kotlin.random.nextInt
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineDispatcher
@@ -955,7 +958,7 @@ class QueryManagerUnitTest {
   }
 
   @Test
-  fun `execute(fetchPolicy=CACHE_ONLY) with cacheSettings=null throws`() = runTest {
+  fun `execute(cacheSettings=null, fetchPolicy=CACHE_ONLY) throws`() = runTest {
     checkAll(
       propTestConfig,
       executeArgumentsArb(fetchPolicy = FetchPolicy.CACHE_ONLY),
@@ -975,7 +978,7 @@ class QueryManagerUnitTest {
   }
 
   @Test
-  fun `execute(fetchPolicy=SERVER_ONLY or PREFER_CACHE) with cacheSettings=null succeeds`() =
+  fun `execute(cacheSettings=null, fetchPolicy=SERVER_ONLY,PREFER_CACHE) fetches from server`() =
     runTest {
       checkAll(
         propTestConfig,
@@ -1001,29 +1004,28 @@ class QueryManagerUnitTest {
     }
 
   @Test
-  fun `execute(fetchPolicy=CACHE_ONLY) with cacheSettings and no cached results throws`() =
-    runTest {
-      checkAll(
-        propTestConfig,
-        executeArgumentsArb(fetchPolicy = FetchPolicy.CACHE_ONLY),
-        cacheSettingsArb(),
-      ) { args, cacheSettings ->
-        val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk()
-        val queryManager: QueryManager = buildQueryManager { setCacheSettings(cacheSettings) }
+  fun `execute(fetchPolicy=CACHE_ONLY) with no cached results throws`() = runTest {
+    checkAll(
+      propTestConfig,
+      executeArgumentsArb(fetchPolicy = FetchPolicy.CACHE_ONLY),
+      cacheSettingsArb(),
+    ) { args, cacheSettings ->
+      val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk()
+      val queryManager: QueryManager = buildQueryManager { setCacheSettings(cacheSettings) }
 
-        val exception = shouldThrow<CachedDataNotFoundException> { queryManager.execute(args) }
+      val exception = shouldThrow<CachedDataNotFoundException> { queryManager.execute(args) }
 
-        exception.messageShouldIndicateNoCachedResults()
-        confirmVerified(dataConnectGrpcRPCs)
-      }
+      exception.messageShouldIndicateNoCachedResults()
+      confirmVerified(dataConnectGrpcRPCs)
     }
+  }
 
   @Test
-  fun `execute(fetchPolicy=CACHE_ONLY) with cacheSettings with maxAge=0 succeeds`() = runTest {
+  fun `execute(fetchPolicy=CACHE_ONLY) with stale results returns from cache`() = runTest {
     checkAll(
       propTestConfig,
       executeArgumentsArb(),
-      cacheSettingsArb(maxAge = Duration.ZERO),
+      cacheSettingsArb(maxAge = Arb.duration(Duration.ZERO..1.hours)),
       Arb.of(FetchPolicy.PREFER_CACHE, FetchPolicy.SERVER_ONLY),
       testDataArb(),
     ) { args, cacheSettings, fetchPolicy1, testData ->
@@ -1033,6 +1035,15 @@ class QueryManagerUnitTest {
       val queryManager: QueryManager = buildQueryManager {
         setDataConnectGrpcRPCs(dataConnectGrpcRPCs)
         setCacheSettings(cacheSettings)
+
+        val timeStepRange = cacheSettings.maxAge.inWholeMilliseconds.let { it..(it + 1) }
+        setCurrentTimeMillis(
+          currentTimeMillisFuncArb(
+              start = Long.MIN_VALUE..(Long.MAX_VALUE - (timeStepRange.last * 2)),
+              step = timeStepRange,
+            )
+            .bind()
+        )
       }
       queryManager.execute(args.copy(fetchPolicy = fetchPolicy1)) // populate cache
 
@@ -1042,6 +1053,110 @@ class QueryManagerUnitTest {
       coVerify(exactly = 1) { dataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any()) }
     }
   }
+
+  @Test
+  fun `execute(fetchPolicy=CACHE_ONLY) with fresh results returns from cache`() = runTest {
+    checkAll(
+      propTestConfig,
+      executeArgumentsArb(),
+      cacheSettingsArb(maxAge = Arb.duration(1.seconds..1.hours)),
+      Arb.of(FetchPolicy.PREFER_CACHE, FetchPolicy.SERVER_ONLY),
+      testDataArb(),
+    ) { args, cacheSettings, fetchPolicy1, testData ->
+      val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk {
+        stubExecuteQuery(executeQueryResponse = testData.encodeToExecuteQueryResponse())
+      }
+      val queryManager: QueryManager = buildQueryManager {
+        setDataConnectGrpcRPCs(dataConnectGrpcRPCs)
+        setCacheSettings(cacheSettings)
+
+        val timeStepRange = cacheSettings.maxAge.inWholeMilliseconds.let { 0L until (it / 2) }
+        setCurrentTimeMillis(
+          currentTimeMillisFuncArb(
+              start = Long.MIN_VALUE..(Long.MAX_VALUE - (timeStepRange.last * 2)),
+              step = timeStepRange,
+            )
+            .bind()
+        )
+      }
+      queryManager.execute(args.copy(fetchPolicy = fetchPolicy1)) // populate cache
+
+      val result = queryManager.execute(args.copy(fetchPolicy = FetchPolicy.CACHE_ONLY))
+
+      result shouldBe QueryManager.ExecuteResult(testData, DataSource.CACHE)
+      coVerify(exactly = 1) { dataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any()) }
+    }
+  }
+
+  @Test
+  fun `execute(fetchPolicy=PREFER_CACHE) with stale results returns from server`() = runTest {
+    checkAll(
+      propTestConfig,
+      executeArgumentsArb(),
+      cacheSettingsArb(maxAge = Arb.duration(Duration.ZERO..1.hours)),
+      Arb.of(FetchPolicy.PREFER_CACHE, FetchPolicy.SERVER_ONLY),
+      Arb.list(testDataArb(), 2..5),
+    ) { args, cacheSettings, fetchPolicy1, testDataList ->
+      val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk {
+        coEvery { executeQuery(any(), any(), any(), any(), any()) } returnsMany
+          testDataList.map { it.encodeToExecuteQueryResponse() }
+      }
+      val queryManager: QueryManager = buildQueryManager {
+        setDataConnectGrpcRPCs(dataConnectGrpcRPCs)
+        setCacheSettings(cacheSettings)
+
+        val timeStepRange = cacheSettings.maxAge.inWholeMilliseconds.let { it..(it + 1) }
+        setCurrentTimeMillis(
+          currentTimeMillisFuncArb(
+              start =
+                Long.MIN_VALUE..(Long.MAX_VALUE - (timeStepRange.last * 2 * testDataList.size)),
+              step = timeStepRange,
+            )
+            .bind()
+        )
+      }
+      queryManager.execute(args.copy(fetchPolicy = fetchPolicy1)) // populate cache
+
+      val results =
+        List(testDataList.size - 1) {
+          queryManager.execute(args.copy(fetchPolicy = FetchPolicy.PREFER_CACHE))
+        }
+
+      results shouldContainExactly
+        testDataList.drop(1).map { QueryManager.ExecuteResult(it, DataSource.SERVER) }
+      coVerify(exactly = testDataList.size) {
+        dataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any())
+      }
+    }
+  }
+
+  @Test
+  fun `execute(fetchPolicy=CACHE_ONLY) with cacheSettings with maxAge in future returns from cache`() =
+    runTest {
+      checkAll(
+        propTestConfig,
+        executeArgumentsArb(),
+        cacheSettingsArb(maxAge = 1.hours),
+        Arb.of(FetchPolicy.PREFER_CACHE, FetchPolicy.SERVER_ONLY),
+        testDataArb(),
+      ) { args, cacheSettings, fetchPolicy1, testData ->
+        val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk {
+          stubExecuteQuery(executeQueryResponse = testData.encodeToExecuteQueryResponse())
+        }
+        val queryManager: QueryManager = buildQueryManager {
+          setDataConnectGrpcRPCs(dataConnectGrpcRPCs)
+          setCacheSettings(cacheSettings)
+        }
+        queryManager.execute(args.copy(fetchPolicy = fetchPolicy1)) // populate cache
+
+        val result = queryManager.execute(args.copy(fetchPolicy = FetchPolicy.CACHE_ONLY))
+
+        result shouldBe QueryManager.ExecuteResult(testData, DataSource.CACHE)
+        coVerify(exactly = 1) {
+          dataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any())
+        }
+      }
+    }
 
   @Test
   fun `execute(fetchPolicy=SERVER_ONLY) with cacheSettings=non-null always returns from server`() =
@@ -1100,6 +1215,7 @@ class QueryManagerUnitTest {
         cpuDispatcher = Dispatchers.Default,
         requestIdGenerator = Arb.dataConnect.requestIdGenerator().next(randomSource()),
         cacheSettings = null,
+        currentTimeMillis = System::currentTimeMillis,
         logger = newMockLogger("logger" + randomSource().random.nextAlphanumericString(10)),
       )
     builder.apply(block)
@@ -1321,6 +1437,7 @@ private class QueryManagerBuilder(
   private var cpuDispatcher: CoroutineDispatcher,
   private var requestIdGenerator: RequestIdGenerator,
   private var cacheSettings: QueryManager.CacheSettings?,
+  private var currentTimeMillis: () -> Long,
   private var logger: Logger,
 ) {
 
@@ -1348,6 +1465,10 @@ private class QueryManagerBuilder(
     cacheSettings = value
   }
 
+  fun setCurrentTimeMillis(value: () -> Long) {
+    currentTimeMillis = value
+  }
+
   fun build(): QueryManager =
     QueryManager(
       requestName = requestName,
@@ -1358,6 +1479,7 @@ private class QueryManagerBuilder(
       cpuDispatcher = cpuDispatcher,
       requestIdGenerator = requestIdGenerator,
       cacheSettings = cacheSettings,
+      currentTimeMillis = currentTimeMillis,
       logger = logger,
     )
 }
@@ -1372,4 +1494,26 @@ private fun Exception.messageShouldIndicateNoCachedResults() {
       it shouldContainWithNonAbuttingTextIgnoringCase "no cached results for query"
     }
   }
+}
+
+private fun currentTimeMillisFunc(start: Long, step: Long): () -> Long {
+  require(step >= 0) { "invalid step: $step" }
+  val nextTime = AtomicLong(start)
+  return { nextTime.getAndAdd(step) }
+}
+
+private fun currentTimeMillisFuncArb(start: LongRange, step: LongRange): Arb<(() -> Long)> =
+  currentTimeMillisFuncArb(start = Arb.long(start), step = Arb.long(step))
+
+private fun currentTimeMillisFuncArb(
+  start: Arb<Long> = Arb.long(Long.MIN_VALUE..(Long.MAX_VALUE - 1000)),
+  step: Arb<Long> = Arb.long(0L..10L),
+): Arb<CurrentTimeMillisFunction> = Arb.bind(start, step, ::CurrentTimeMillisFunction)
+
+private data class CurrentTimeMillisFunction(
+  val start: Long,
+  val step: Long,
+) : (() -> Long) {
+  private val func = currentTimeMillisFunc(start, step)
+  override operator fun invoke(): Long = func()
 }

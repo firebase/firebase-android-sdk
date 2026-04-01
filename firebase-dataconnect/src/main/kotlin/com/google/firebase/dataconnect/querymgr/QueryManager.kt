@@ -63,6 +63,7 @@ internal class QueryManager(
   private val cpuDispatcher: CoroutineDispatcher,
   private val requestIdGenerator: RequestIdGenerator,
   private val cacheSettings: CacheSettings?,
+  currentTimeMillis: () -> Long,
   private val logger: Logger,
 ) {
   private val state: MutableStateFlow<State> = run {
@@ -72,7 +73,14 @@ internal class QueryManager(
       State.Open(
         coroutineScope = coroutineScope,
         localQueriesMutex = Mutex(),
-        localQueries = LocalQueries(dataConnectGrpcRPCs, cpuDispatcher, cacheInfo, coroutineScope),
+        localQueries =
+          LocalQueries(
+            dataConnectGrpcRPCs,
+            cpuDispatcher,
+            cacheInfo,
+            coroutineScope,
+            currentTimeMillis
+          ),
         cacheDb = cacheInfo?.db,
       )
     )

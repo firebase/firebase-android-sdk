@@ -34,6 +34,7 @@ internal class LocalQueries(
   private val cpuDispatcher: CoroutineDispatcher,
   private val cacheInfo: CacheInfo?,
   private val coroutineScope: CoroutineScope,
+  private val currentTimeMillis: () -> Long,
 ) {
 
   private val localQueries = mutableMapOf<Key<*>, LocalQuery<*>>()
@@ -71,6 +72,7 @@ internal class LocalQueries(
           cpuDispatcher,
           key.dataDeserializer,
           key.dataSerializersModule,
+          currentTimeMillis,
           localQueryLogger,
         )
       }
@@ -97,6 +99,7 @@ internal class LocalQueries(
               queryId = remoteKey.queryId,
               cpuDispatcher = cpuDispatcher,
               coroutineScope = coroutineScope,
+              currentTimeMillis = currentTimeMillis,
               logger = localQueryLogger,
             )
           }
