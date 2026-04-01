@@ -17,7 +17,6 @@
 package com.google.firebase.dataconnect
 
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.dataconnect.core.FirebaseDataConnectInternal
 import com.google.firebase.dataconnect.testutil.DataConnectBackend
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.InProcessDataConnectGrpcServer
@@ -71,10 +70,10 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
 
   @Test
   fun authenticatedRequestsAreSuccessful() = runTest {
-    signIn()
     val person1Id = Arb.alphanumericString(prefix = "person1Id").next()
     val person2Id = Arb.alphanumericString(prefix = "person2Id").next()
     val person3Id = Arb.alphanumericString(prefix = "person3Id").next()
+    signIn(personSchema.dataConnect)
 
     personSchema.createPersonAuth(id = person1Id, name = "TestName1", age = 42).execute()
     personSchema.createPersonAuth(id = person2Id, name = "TestName2", age = 43).execute()
@@ -86,7 +85,7 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
 
   @Test
   fun queryFailsAfterUserSignsOut() = runTest {
-    signIn()
+    signIn(personSchema.dataConnect)
     // Verify that we are signed in by executing a query, which should succeed.
     personSchema.getPersonAuth(id = "foo").execute()
     signOut()
@@ -99,7 +98,7 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
 
   @Test
   fun mutationFailsAfterUserSignsOut() = runTest {
-    signIn()
+    signIn(personSchema.dataConnect)
     // Verify that we are signed in by executing a mutation, which should succeed.
     personSchema.createPersonAuth(id = Random.nextAlphanumericString(20), name = "foo").execute()
     signOut()
@@ -116,7 +115,6 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
 
   @Test
   fun queryShouldRetryOnUnauthenticated() = runTest {
-    signIn()
     val responseData = buildStructProto { put("foo", key) }
     val executeQueryResponse = executeQueryResponse { data = responseData }
     val grpcServer =
@@ -130,7 +128,7 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
       grpcServer.metadatas.map { it.get(firebaseAuthTokenHeader) }.toCollection(authTokens)
     }
     val dataConnect = dataConnectFactory.newInstance(auth.app, grpcServer)
-    (dataConnect as FirebaseDataConnectInternal).awaitAuthReady()
+    signIn(dataConnect)
     val operationName = Arb.dataConnect.operationName().next(rs)
     val queryRef =
       dataConnect.query(operationName, Unit, serializer<TestData>(), serializer<Unit>())
@@ -146,7 +144,6 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
 
   @Test
   fun mutationShouldRetryOnUnauthenticated() = runTest {
-    signIn()
     val responseData = buildStructProto { put("foo", key) }
     val executeMutationResponse = executeMutationResponse { data = responseData }
     val grpcServer =
@@ -160,7 +157,7 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
       grpcServer.metadatas.map { it.get(firebaseAuthTokenHeader) }.toCollection(authTokens)
     }
     val dataConnect = dataConnectFactory.newInstance(auth.app, grpcServer)
-    (dataConnect as FirebaseDataConnectInternal).awaitAuthReady()
+    signIn(dataConnect)
     val operationName = Arb.dataConnect.operationName().next(rs)
     val mutationRef =
       dataConnect.mutation(operationName, Unit, serializer<TestData>(), serializer<Unit>())
@@ -176,12 +173,12 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
 
   @Test
   fun queryShouldOnlyRetryOnUnauthenticatedOnce() = runTest {
-    signIn()
     val grpcServer =
       inProcessDataConnectGrpcServer.newInstance(
         errors = listOf(Status.UNAUTHENTICATED, Status.UNAUTHENTICATED),
       )
     val dataConnect = dataConnectFactory.newInstance(auth.app, grpcServer)
+    signIn(dataConnect)
     val operationName = Arb.dataConnect.operationName().next(rs)
     val queryRef = dataConnect.query(operationName, Unit, serializer<Unit>(), serializer<Unit>())
 
@@ -192,13 +189,13 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
 
   @Test
   fun mutationShouldOnlyRetryOnUnauthenticatedOnce() = runTest {
-    signIn()
     val grpcServer =
       inProcessDataConnectGrpcServer.newInstance(
         errors = listOf(Status.UNAUTHENTICATED, Status.UNAUTHENTICATED),
         responseDelay = 1.seconds, // avoid getting the same access token from auth emulator
       )
     val dataConnect = dataConnectFactory.newInstance(auth.app, grpcServer)
+    signIn(dataConnect)
     val operationName = Arb.dataConnect.operationName().next(rs)
     val mutationRef =
       dataConnect.mutation(operationName, Unit, serializer<Unit>(), serializer<Unit>())
@@ -208,8 +205,8 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
     thrownException.asClue { it.status shouldBe Status.UNAUTHENTICATED }
   }
 
-  private suspend fun signIn() {
-    personSchema.dataConnect.awaitAuthReady()
+  private suspend fun signIn(dataConnect: FirebaseDataConnect) {
+    dataConnect.awaitAuthReady()
     val authResult = auth.run { signInAnonymously().await() }
     withClue("authResult.user returned from signInAnonymously()") {
       authResult.user.shouldNotBeNull()
