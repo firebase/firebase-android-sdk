@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-@file:OptIn(ExperimentalKotest::class, DelicateKotest::class)
+@file:OptIn(DelicateKotest::class)
 
 package com.google.firebase.dataconnect.querymgr
 
@@ -37,6 +37,7 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.mock
 import com.google.firebase.dataconnect.testutil.property.arbitrary.pair
 import com.google.firebase.dataconnect.testutil.property.arbitrary.requestIdGenerator
 import com.google.firebase.dataconnect.testutil.property.arbitrary.withIterations
+import com.google.firebase.dataconnect.testutil.registerDataConnectKotestPrinters
 import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
@@ -87,6 +88,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import java.io.File
+import java.math.BigInteger
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
@@ -113,6 +115,7 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.serializer
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -124,6 +127,11 @@ class QueryManagerUnitTest {
 
   @get:Rule val cleanups = CleanupsRule()
   @get:Rule val temporaryFolder = TemporaryFolder()
+
+  @Before
+  fun registerPrinters() {
+    registerDataConnectKotestPrinters()
+  }
 
   @Test
   fun `execute() uses the requestName that was given to the constructor`() = runTest {
@@ -1035,14 +1043,8 @@ class QueryManagerUnitTest {
       val queryManager: QueryManager = buildQueryManager {
         setDataConnectGrpcRPCs(dataConnectGrpcRPCs)
         setCacheSettings(cacheSettings)
-
-        val timeStepRange = cacheSettings.maxAge.inWholeMilliseconds.let { it..(it + 1) }
         setCurrentTimeMillis(
-          currentTimeMillisFuncArb(
-              start = Long.MIN_VALUE..(Long.MAX_VALUE - (timeStepRange.last * 2)),
-              step = timeStepRange,
-            )
-            .bind()
+          currentTimeMillisFunctionForStaleCacheResults(cacheSettings, maxInvokeCount = 2)
         )
       }
       queryManager.execute(args.copy(fetchPolicy = fetchPolicy1)) // populate cache
@@ -1072,13 +1074,8 @@ class QueryManagerUnitTest {
           setDataConnectGrpcRPCs(dataConnectGrpcRPCs)
           setCacheSettings(cacheSettings)
 
-          val timeStepRange = cacheSettings.maxAge.inWholeMilliseconds.let { 0L until (it / 2) }
           setCurrentTimeMillis(
-            currentTimeMillisFuncArb(
-                start = Long.MIN_VALUE..(Long.MAX_VALUE - (timeStepRange.last * 2)),
-                step = timeStepRange,
-              )
-              .bind()
+            currentTimeMillisFunctionForFreshCacheResults(cacheSettings, maxInvokeCount = 2)
           )
         }
         queryManager.execute(args.copy(fetchPolicy = fetchPolicy1)) // populate cache
@@ -1108,15 +1105,11 @@ class QueryManagerUnitTest {
       val queryManager: QueryManager = buildQueryManager {
         setDataConnectGrpcRPCs(dataConnectGrpcRPCs)
         setCacheSettings(cacheSettings)
-
-        val timeStepRange = cacheSettings.maxAge.inWholeMilliseconds.let { it..(it + 1) }
         setCurrentTimeMillis(
-          currentTimeMillisFuncArb(
-              start =
-                Long.MIN_VALUE..(Long.MAX_VALUE - (timeStepRange.last * 2 * testDataList.size)),
-              step = timeStepRange,
-            )
-            .bind()
+          currentTimeMillisFunctionForStaleCacheResults(
+            cacheSettings,
+            maxInvokeCount = testDataList.size
+          )
         )
       }
       queryManager.execute(args.copy(fetchPolicy = fetchPolicy1)) // populate cache
@@ -1174,9 +1167,6 @@ class QueryManagerUnitTest {
     maxAge: Arb<Duration> = cacheSettingsDurationArb(),
   ): Arb<QueryManager.CacheSettings> = Arb.bind(file, maxAge, QueryManager::CacheSettings)
 
-  private fun cacheSettingsArb(maxAge: Duration): Arb<QueryManager.CacheSettings> =
-    cacheSettingsArb(maxAge = Arb.constant(maxAge))
-
   private suspend fun PropertyContext.buildQueryManager(
     block: QueryManagerBuilder.() -> Unit
   ): QueryManager {
@@ -1200,6 +1190,7 @@ class QueryManagerUnitTest {
   }
 }
 
+@OptIn(ExperimentalKotest::class)
 private val propTestConfig =
   PropTestConfig(
     iterations = 100,
@@ -1477,7 +1468,10 @@ private fun currentTimeMillisFunc(start: Long, step: Long): () -> Long {
   return { nextTime.getAndAdd(step) }
 }
 
-private fun currentTimeMillisFuncArb(start: LongRange, step: LongRange): Arb<(() -> Long)> =
+private fun currentTimeMillisFuncArb(
+  start: LongRange,
+  step: LongRange
+): Arb<CurrentTimeMillisFunction> =
   currentTimeMillisFuncArb(start = Arb.long(start), step = Arb.long(step))
 
 private fun currentTimeMillisFuncArb(
@@ -1491,4 +1485,54 @@ private data class CurrentTimeMillisFunction(
 ) : (() -> Long) {
   private val func = currentTimeMillisFunc(start, step)
   override operator fun invoke(): Long = func()
+}
+
+private fun Duration.toWholeMillisecondsCeil(): Long {
+  val nanos = toComponents { seconds, nanos ->
+    val secondsBigInt = seconds.toBigInteger()
+    val nanosBigInt = nanos.toBigInteger()
+    nanosBigInt + (secondsBigInt * 1_000_000_000.toBigInteger())
+  }
+
+  val (millis, remainder) = nanos.divideAndRemainder(1_000_000.toBigInteger())
+
+  val millisCeil = if (remainder == BigInteger.ZERO) millis else (millis + BigInteger.ONE)
+  val millisCeilLong = millisCeil.toLong()
+  check(millisCeil == millisCeilLong.toBigInteger())
+  return millisCeilLong
+}
+
+private fun QueryManager.CacheSettings.timeStepRangeForStaleCacheResults(): LongRange =
+  maxAge.toWholeMillisecondsCeil().let { (it + 1)..(2 * (it + 1)) }
+
+private fun PropertyContext.currentTimeMillisFunctionForStaleCacheResults(
+  cacheSettings: QueryManager.CacheSettings,
+  maxInvokeCount: Int
+): CurrentTimeMillisFunction {
+  val stepRange = cacheSettings.timeStepRangeForStaleCacheResults()
+  return currentTimeMillisFunctionForStepRange(stepRange, maxInvokeCount)
+}
+
+private fun QueryManager.CacheSettings.timeStepRangeForFreshCacheResults(): LongRange =
+  maxAge.inWholeMilliseconds.let { 0L until (it / 2) }
+
+private fun PropertyContext.currentTimeMillisFunctionForFreshCacheResults(
+  cacheSettings: QueryManager.CacheSettings,
+  maxInvokeCount: Int
+): CurrentTimeMillisFunction {
+  val stepRange = cacheSettings.timeStepRangeForFreshCacheResults()
+  return currentTimeMillisFunctionForStepRange(stepRange, maxInvokeCount)
+}
+
+private fun PropertyContext.currentTimeMillisFunctionForStepRange(
+  stepRange: LongRange,
+  maxInvokeCount: Int
+): CurrentTimeMillisFunction {
+  require(maxInvokeCount > 0)
+  val arb =
+    currentTimeMillisFuncArb(
+      start = Long.MIN_VALUE..(Long.MAX_VALUE - (stepRange.last * 2 * maxInvokeCount)),
+      step = stepRange,
+    )
+  return arb.bind()
 }
