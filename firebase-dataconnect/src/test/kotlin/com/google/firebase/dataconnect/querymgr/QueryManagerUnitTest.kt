@@ -58,6 +58,7 @@ import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
@@ -71,6 +72,7 @@ import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.distinct
 import io.kotest.property.arbitrary.duration
 import io.kotest.property.arbitrary.enum
+import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.list
 import io.kotest.property.arbitrary.long
 import io.kotest.property.arbitrary.map
@@ -735,31 +737,8 @@ class QueryManagerUnitTest {
       }
       val queryManager: QueryManager = buildQueryManager {
         setDataConnectGrpcRPCs(dataConnectGrpcRPCs)
-        setDataConnectAuth(
-          mockk {
-            val tokenIndex = AtomicInteger(1)
-            coEvery { getToken(any()) } answers
-              {
-                DataConnectAuth.GetAuthTokenResult(
-                  token = "authToken${tokenIndex.get()}",
-                  authUid = "testAuthUid",
-                )
-              }
-            every { forceRefresh() } answers { tokenIndex.incrementAndGet() }
-          }
-        )
-        setDataConnectAppCheck(
-          mockk {
-            val tokenIndex = AtomicInteger(1)
-            coEvery { getToken(any()) } answers
-              {
-                DataConnectAppCheck.GetAppCheckTokenResult(
-                  token = "appCheckToken${tokenIndex.get()}",
-                )
-              }
-            every { forceRefresh() } answers { tokenIndex.incrementAndGet() }
-          }
-        )
+        setDataConnectAuth(newDataConnectAuth(tokenPrefix = "authToken", authUid = "testAuthUid"))
+        setDataConnectAppCheck(newDataConnectAppCheck(tokenPrefix = "appCheckToken"))
       }
 
       val result = queryManager.execute(args)
@@ -1158,6 +1137,148 @@ class QueryManagerUnitTest {
     }
   }
 
+  @Test
+  fun `execute() propagates non-grpc exceptions and does not retry`() = runTest {
+    class TestException : Exception("hbjwa5cdcw")
+
+    checkAll(
+      propTestConfig,
+      executeArgumentsArb(fetchPolicy = Arb.of(FetchPolicy.SERVER_ONLY, FetchPolicy.PREFER_CACHE)),
+      cacheSettingsArb().orNull(nullProbability = 0.2),
+    ) { args, cacheSettings ->
+      val testException = TestException()
+      val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk {
+        coEvery { executeQuery(any(), any(), any(), any(), any()) } throws testException
+      }
+      val queryManager: QueryManager = buildQueryManager {
+        setDataConnectGrpcRPCs(dataConnectGrpcRPCs)
+        setCacheSettings(cacheSettings)
+      }
+
+      val exception = shouldThrow<TestException> { queryManager.execute(args) }
+
+      exception shouldBe testException
+      coVerify(exactly = 1) { dataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any()) }
+    }
+  }
+
+  @Test
+  fun `execute() propagates grpc exceptions other than UNAUTHENTICATED and does not retry`() =
+    runTest {
+      checkAll(
+        propTestConfig,
+        executeArgumentsArb(
+          fetchPolicy = Arb.of(FetchPolicy.SERVER_ONLY, FetchPolicy.PREFER_CACHE)
+        ),
+        cacheSettingsArb().orNull(nullProbability = 0.2),
+        Arb.enum<Status.Code>().filterNot { it == Status.Code.UNAUTHENTICATED },
+      ) { args, cacheSettings, statusCode ->
+        val statusException = StatusException(statusCode.toStatus())
+        val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk {
+          coEvery { executeQuery(any(), any(), any(), any(), any()) } throws statusException
+        }
+        val queryManager: QueryManager = buildQueryManager {
+          setDataConnectGrpcRPCs(dataConnectGrpcRPCs)
+          setCacheSettings(cacheSettings)
+        }
+
+        val exception = shouldThrow<StatusException> { queryManager.execute(args) }
+
+        exception shouldBe statusException
+        coVerify(exactly = 1) {
+          dataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any())
+        }
+      }
+    }
+
+  @Test
+  fun `execute() on UNAUTHENTICATED retry propagates another UNAUTHENTICATED exception`() =
+    runTest {
+      checkAll(
+        propTestConfig,
+        executeArgumentsArb(
+          fetchPolicy = Arb.of(FetchPolicy.SERVER_ONLY, FetchPolicy.PREFER_CACHE)
+        ),
+        cacheSettingsArb().orNull(nullProbability = 0.2),
+      ) { args, cacheSettings ->
+        val statusException1 = StatusException(Status.UNAUTHENTICATED.withDescription("1"))
+        val statusException2 = StatusException(Status.UNAUTHENTICATED.withDescription("2"))
+        val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk {
+          coEvery { executeQuery(any(), any(), any(), any(), any()) } throwsMany
+            listOf(statusException1, statusException2)
+        }
+        val queryManager: QueryManager = buildQueryManager {
+          setDataConnectGrpcRPCs(dataConnectGrpcRPCs)
+          setDataConnectAuth(newDataConnectAuth())
+          setCacheSettings(cacheSettings)
+        }
+
+        val exception = shouldThrow<StatusException> { queryManager.execute(args) }
+
+        exception shouldBe statusException2
+        exception shouldNotBe statusException1
+        coVerify(exactly = 2) {
+          dataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any())
+        }
+      }
+    }
+
+  @Test
+  fun `execute() on UNAUTHENTICATED retry propagates another grpc exception`() = runTest {
+    checkAll(
+      propTestConfig,
+      executeArgumentsArb(fetchPolicy = Arb.of(FetchPolicy.SERVER_ONLY, FetchPolicy.PREFER_CACHE)),
+      cacheSettingsArb().orNull(nullProbability = 0.2),
+      Arb.enum<Status.Code>().filterNot { it == Status.Code.UNAUTHENTICATED },
+    ) { args, cacheSettings, statusCode ->
+      val statusException1 = StatusException(Status.UNAUTHENTICATED)
+      val statusException2 = StatusException(statusCode.toStatus())
+      val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk {
+        coEvery { executeQuery(any(), any(), any(), any(), any()) } throwsMany
+          listOf(statusException1, statusException2)
+      }
+      val queryManager: QueryManager = buildQueryManager {
+        setDataConnectGrpcRPCs(dataConnectGrpcRPCs)
+        setDataConnectAuth(newDataConnectAuth())
+        setCacheSettings(cacheSettings)
+      }
+
+      val exception = shouldThrow<StatusException> { queryManager.execute(args) }
+
+      exception shouldBe statusException2
+      exception shouldNotBe statusException1
+      coVerify(exactly = 2) { dataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any()) }
+    }
+  }
+
+  @Test
+  fun `execute() on UNAUTHENTICATED retry propagates a non-grpc exception`() = runTest {
+    class TestException : Exception("x9avmjnkxs")
+
+    checkAll(
+      propTestConfig,
+      executeArgumentsArb(fetchPolicy = Arb.of(FetchPolicy.SERVER_ONLY, FetchPolicy.PREFER_CACHE)),
+      cacheSettingsArb().orNull(nullProbability = 0.2),
+    ) { args, cacheSettings ->
+      val statusException = StatusException(Status.UNAUTHENTICATED)
+      val testException = TestException()
+      val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk {
+        coEvery { executeQuery(any(), any(), any(), any(), any()) } throwsMany
+          listOf(statusException, testException)
+      }
+      val queryManager: QueryManager = buildQueryManager {
+        setDataConnectGrpcRPCs(dataConnectGrpcRPCs)
+        setDataConnectAuth(newDataConnectAuth())
+        setCacheSettings(cacheSettings)
+      }
+
+      val exception = shouldThrow<TestException> { queryManager.execute(args) }
+
+      exception shouldBe testException
+      coVerify(exactly = 2) { dataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any()) }
+    }
+  }
+
   private fun cacheFileArb(): Arb<File> = arbitrary {
     File(temporaryFolder.newFolder(), "db.sqlite")
   }
@@ -1535,4 +1656,32 @@ private fun PropertyContext.currentTimeMillisFunctionForStepRange(
       step = stepRange,
     )
   return arb.bind()
+}
+
+private fun newDataConnectAuth(
+  tokenPrefix: String = "authToken",
+  authUid: String = "authUid",
+  start: Int = 1
+): DataConnectAuth = mockk {
+  val tokenIndex = AtomicInteger(start)
+  coEvery { getToken(any()) } answers
+    {
+      DataConnectAuth.GetAuthTokenResult(
+        token = "$tokenPrefix${tokenIndex.get()}",
+        authUid = authUid,
+      )
+    }
+  every { forceRefresh() } answers { tokenIndex.incrementAndGet() }
+}
+
+private fun newDataConnectAppCheck(
+  tokenPrefix: String = "appCheckToken",
+  start: Int = 1
+): DataConnectAppCheck = mockk {
+  val tokenIndex = AtomicInteger(start)
+  coEvery { getToken(any()) } answers
+    {
+      DataConnectAppCheck.GetAppCheckTokenResult("$tokenPrefix${tokenIndex.get()}")
+    }
+  every { forceRefresh() } answers { tokenIndex.incrementAndGet() }
 }

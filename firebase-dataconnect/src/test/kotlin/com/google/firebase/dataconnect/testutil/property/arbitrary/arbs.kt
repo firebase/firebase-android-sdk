@@ -25,7 +25,6 @@ import com.google.firebase.dataconnect.core.DataConnectAppCheck
 import com.google.firebase.dataconnect.core.DataConnectAppCheck.GetAppCheckTokenResult
 import com.google.firebase.dataconnect.core.DataConnectAuth
 import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
-import com.google.firebase.dataconnect.core.DataConnectGrpcClient
 import com.google.firebase.dataconnect.core.DataConnectGrpcMetadata
 import com.google.firebase.dataconnect.core.DataConnectOperationFailureResponseImpl
 import com.google.firebase.dataconnect.core.DataConnectOperationFailureResponseImpl.ErrorInfoImpl
@@ -38,7 +37,6 @@ import com.google.firebase.dataconnect.testutil.StubOperationRefImpl
 import com.google.firebase.dataconnect.util.ProtoUtil.toMap
 import com.google.firebase.dataconnect.util.RequestIdGenerator
 import com.google.firebase.dataconnect.util.SemanticVersion
-import com.google.protobuf.Struct
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.withClue
 import io.kotest.matchers.shouldBe
@@ -109,11 +107,6 @@ internal fun DataConnectArb.operationFailureResponseImpl(
   Arb.bind(rawData, data, errors) { rawData0, data0, errors0 ->
     DataConnectOperationFailureResponseImpl(rawData0, data0, errors0)
   }
-
-internal fun DataConnectArb.operationResult(
-  data: Arb<Struct?> = Arb.proto.struct().map { it.struct }.orNull(nullProbability = 0.2),
-  errors: Arb<List<ErrorInfoImpl>> = operationErrors(),
-) = Arb.bind(data, errors, DataConnectGrpcClient::OperationResult)
 
 internal fun <Data, Variables> DataConnectArb.queryRefImpl(
   variables: Arb<Variables>,
