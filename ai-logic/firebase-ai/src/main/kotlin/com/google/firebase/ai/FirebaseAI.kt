@@ -30,6 +30,8 @@ import com.google.firebase.ai.type.LiveGenerationConfig
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.RequestOptions
 import com.google.firebase.ai.type.SafetySetting
+import com.google.firebase.ai.type.TemplateTool
+import com.google.firebase.ai.type.TemplateToolConfig
 import com.google.firebase.ai.type.Tool
 import com.google.firebase.ai.type.ToolConfig
 import com.google.firebase.annotations.concurrent.Blocking
@@ -161,6 +163,8 @@ internal constructor(
   @PublicPreviewAPI
   public fun templateGenerativeModel(
     requestOptions: RequestOptions = RequestOptions(),
+    tools: List<TemplateTool>? = null,
+    toolConfig: TemplateToolConfig? = null,
   ): TemplateGenerativeModel {
     val templateUri = getTemplateUri(backend)
     return TemplateGenerativeModel(
@@ -169,6 +173,8 @@ internal constructor(
       firebaseApp,
       useLimitedUseAppCheckTokens,
       requestOptions,
+      tools,
+      toolConfig,
       appCheckProvider.get(),
       internalAuthProvider.get(),
     )
