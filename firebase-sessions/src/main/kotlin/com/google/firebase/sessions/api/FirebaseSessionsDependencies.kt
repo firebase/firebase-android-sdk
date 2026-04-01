@@ -96,5 +96,8 @@ public object FirebaseSessionsDependencies {
     }
   }
 
-  private data class Dependency(val latch: CountDownLatch, var subscriber: SessionSubscriber? = null)
+  private data class Dependency(
+    val latch: CountDownLatch,
+    var subscriber: SessionSubscriber? = null
+  )
 }
