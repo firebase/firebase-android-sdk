@@ -30,7 +30,7 @@ In order to run the integration tests in the ./src/androidTest directory, run th
 
 In order to run the integration tests from a specific test class in the ./src/androidTest directory (e.g. com.google.firebase.dataconnect.EnumIntegrationTest), run this command:
 
-../../gradlew --configure-on-demand :firebase-dataconnect:testDebugUnitTest -Pandroid.testInstrumentationRunnerArguments.class=com.google.firebase.dataconnect.EnumIntegrationTest
+../../gradlew --configure-on-demand :firebase-dataconnect:connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.google.firebase.dataconnect.EnumIntegrationTest
 
 replacing "com.google.firebase.dataconnect.EnumIntegrationTest" with the fully qualified class name.
 
