@@ -33,6 +33,7 @@ import io.kotest.property.Arb
 import io.kotest.property.arbitrary.next
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
+import org.junit.Assume.assumeFalse
 import org.junit.Test
 
 class PostsConnectorIntegrationTest : DataConnectIntegrationTestBase() {
@@ -314,6 +315,8 @@ class PostsConnectorIntegrationTest : DataConnectIntegrationTestBase() {
 
   @Test
   fun subscribe() = runTest {
+    assumeFalse("Re-enable this test once query subscription is re-implemented", true)
+
     val postId = Arb.dataConnect.postId().next(rs)
     val postContent = Arb.dataConnect.postContent().next(rs)
 

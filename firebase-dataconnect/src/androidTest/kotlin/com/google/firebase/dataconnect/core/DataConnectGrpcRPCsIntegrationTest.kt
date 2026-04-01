@@ -67,8 +67,10 @@ class DataConnectGrpcRPCsIntegrationTest : DataConnectIntegrationTestBase() {
         val stream =
           dataConnectGrpcRPCs.connect(
             streamId = "con" + stringArb.bind(),
+            authToken = null,
+            appCheckToken = null,
             callerSdkType = callerSdkTypeArb.bind(),
-            name = connector.requestName,
+            name = connector.calculateRequestName(),
           )
 
         val flow: Flow<DataConnectStream.Response> =
@@ -105,12 +107,6 @@ private val propTestConfig =
 private val PastaConnector.dataConnectGrpcRPCs: DataConnectGrpcRPCs
   get() = (this.dataConnect as FirebaseDataConnectImpl).dataConnectGrpcRPCsForTesting
 
-private val PastaConnector.dataConnectGrpcClient: DataConnectGrpcClient
-  get() = (this.dataConnect as FirebaseDataConnectImpl).dataConnectGrpcClientForTesting
-
-private val PastaConnector.requestName: String
-  get() = dataConnectGrpcClient.requestNameForTesting
-
 private fun <T> Struct.decodeAsData(ref: OperationRef<T, *>): T =
   decodeFromStruct(this, ref.dataDeserializer, ref.dataSerializersModule)
 
@@ -127,3 +123,8 @@ private fun DataConnectStream.Response.shouldHaveName(
 
   data.asClue { it.item.shouldNotBeNull().name shouldBe name }
 }
+
+private fun PastaConnector.calculateRequestName(): String = dataConnect.calculateRequestName()
+
+private fun FirebaseDataConnect.calculateRequestName(): String =
+  calculateRequestName(app.options.projectId!!, config)

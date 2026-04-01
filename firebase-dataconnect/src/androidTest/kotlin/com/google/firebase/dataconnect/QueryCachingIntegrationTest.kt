@@ -321,9 +321,9 @@ class QueryCachingIntegrationTest : DataConnectIntegrationTestBase() {
       val exception = shouldThrow<DataConnectException> { connector.getString(key, fetchPolicy) }
 
       assertSoftly {
-        exception.message shouldContainWithNonAbuttingText CACHED_DATA_NOT_FOUND_ERROR_ID
+        exception.message shouldContainWithNonAbuttingText "xz3fvh9r39"
         exception.message shouldContainWithNonAbuttingTextIgnoringCase
-          "query was not found in the local cache"
+          "query result was not found in the local cache"
       }
 
       connector.dataConnect.suspendingClose()
@@ -743,8 +743,6 @@ private val propTestConfig =
     edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.2),
     shrinkingMode = ShrinkingMode.Off,
   )
-
-private const val CACHED_DATA_NOT_FOUND_ERROR_ID = "cck6p3fmd5"
 
 private fun alphanumericStringArb(): Arb<String> = Arb.string(0..10, Codepoint.alphanumeric())
 

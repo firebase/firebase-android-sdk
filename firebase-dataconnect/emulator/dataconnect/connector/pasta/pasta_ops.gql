@@ -24,7 +24,7 @@ query Pasta_GetByKey($key: Pasta_Key!)
   @auth(level: PUBLIC)
   @refresh(onMutationExecuted: {
     operation: "Pasta_Update",
-    condition: "request.variables.key == event.variables.key",
+    condition: "request.variables.key == mutation.variables.key",
   })
 {
   item: pasta(key: $key) { name }
