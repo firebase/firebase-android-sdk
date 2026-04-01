@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
+@file:OptIn(ExperimentalCoroutinesApi::class)
+
 package com.google.firebase.dataconnect.core
 
 import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
-import com.google.firebase.dataconnect.QueryRef.FetchPolicy
-import com.google.firebase.dataconnect.querymgr.DataSourcePair
+import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.querymgr.QueryManager
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.OperationRefConstructorArguments
@@ -31,7 +32,6 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.operationRefI
 import com.google.firebase.dataconnect.testutil.property.arbitrary.queryRefImpl
 import com.google.firebase.dataconnect.testutil.property.arbitrary.shouldHavePropertiesEqualTo
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
-import com.google.firebase.dataconnect.util.SequencedReference
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
@@ -45,11 +45,13 @@ import io.kotest.matchers.types.shouldNotBeSameInstanceAs
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
+import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.next
+import io.kotest.property.arbitrary.orNull
 import io.kotest.property.arbitrary.string
 import io.kotest.property.assume
 import io.kotest.property.checkAll
@@ -58,18 +60,21 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.modules.SerializersModule
+import kotlinx.serialization.serializer
 import org.junit.Test
 
+@ExperimentalKotest
 @Suppress("ReplaceCallWithBinaryOperator")
-@OptIn(ExperimentalKotest::class)
 class QueryRefImplUnitTest {
 
-  private interface TestData
-  private interface TestVariables
+  @Serializable private data class TestData(val foo: String)
+  interface TestVariables
   private interface TestData2
   private interface TestVariables2
 
@@ -94,114 +99,57 @@ class QueryRefImplUnitTest {
   }
 
   @Test
-  fun `execute() should return the result on success`() = runTest {
-    checkAll(propTestConfig, Arb.enum<DataSource>()) { dataSource ->
-      val data: TestData = mockk()
-      val querySlot = slot<QueryRefImpl<TestData, TestVariables>>()
-      val fetchPolicySlot = slot<FetchPolicy>()
-      val dataConnect =
-        dataConnectWithQueryResult(
-          Result.success(DataSourcePair(data, dataSource)),
-          querySlot,
-          fetchPolicySlot
-        )
-      val queryRefImpl = Arb.dataConnect.queryRefImpl(dataConnect).next()
-
-      val queryResult = queryRefImpl.execute()
-
-      assertSoftly {
-        queryResult.ref shouldBeSameInstanceAs queryRefImpl
-        queryResult.data shouldBe data
-        queryResult.dataSource shouldBe dataSource
-        querySlot.captured shouldBeSameInstanceAs queryRefImpl
-        fetchPolicySlot.captured shouldBe FetchPolicy.PREFER_CACHE
-      }
-    }
-  }
-
-  @Test
-  fun `execute(FetchPolicy) should return the result on success`() = runTest {
-    checkAll(propTestConfig, Arb.enum<FetchPolicy>(), Arb.enum<DataSource>()) {
-      fetchPolicy,
-      dataSource ->
-      val data: TestData = mockk()
-      val querySlot = slot<QueryRefImpl<TestData, TestVariables>>()
-      val fetchPolicySlot = slot<FetchPolicy>()
-      val dataConnect =
-        dataConnectWithQueryResult(
-          Result.success(DataSourcePair(data, dataSource)),
-          querySlot,
-          fetchPolicySlot
-        )
-      val queryRefImpl = Arb.dataConnect.queryRefImpl(dataConnect).next()
-
-      val queryResult = queryRefImpl.execute(fetchPolicy)
-
-      assertSoftly {
-        queryResult.ref shouldBeSameInstanceAs queryRefImpl
-        queryResult.data shouldBe data
-        queryResult.dataSource shouldBe dataSource
-        querySlot.captured shouldBeSameInstanceAs queryRefImpl
-        fetchPolicySlot.captured shouldBe fetchPolicy
-      }
-    }
-  }
-
-  @Test
-  fun `execute() should throw on failure`() = runTest {
-    val exception = Exception("forced exception h4sab92yy8")
-    val querySlot = slot<QueryRefImpl<TestData, TestVariables>>()
-    val fetchPolicySlot = slot<FetchPolicy>()
+  fun `execute() returns the result on success`() = runTest {
+    val data = Arb.dataConnect.testData().next()
+    val dataSource = Arb.enum<DataSource>().next()
     val dataConnect =
-      dataConnectWithQueryResult(Result.failure(exception), querySlot, fetchPolicySlot)
+      dataConnectWithQueryResult(Result.success(QueryManager.ExecuteResult(data, dataSource)))
     val queryRefImpl = Arb.dataConnect.queryRefImpl(dataConnect).next()
 
-    val thrownException = shouldThrow<Exception> { queryRefImpl.execute() }
+    val queryResult = queryRefImpl.execute()
 
     assertSoftly {
-      thrownException shouldBeSameInstanceAs exception
-      querySlot.captured shouldBeSameInstanceAs queryRefImpl
-      fetchPolicySlot.captured shouldBe FetchPolicy.PREFER_CACHE
+      queryResult.ref shouldBeSameInstanceAs queryRefImpl
+      queryResult.data shouldBe data
+      queryResult.dataSource shouldBe dataSource
     }
   }
 
   @Test
-  fun `execute(FetchPolicy) should throw on failure`() = runTest {
-    checkAll(propTestConfig, Arb.enum<FetchPolicy>()) { fetchPolicy ->
-      val exception = Exception("forced exception b95wa63yba")
-      val querySlot = slot<QueryRefImpl<TestData, TestVariables>>()
-      val fetchPolicySlot = slot<FetchPolicy>()
-      val dataConnect =
-        dataConnectWithQueryResult(Result.failure(exception), querySlot, fetchPolicySlot)
-      val queryRefImpl = Arb.dataConnect.queryRefImpl(dataConnect).next()
+  fun `execute() re-throws the exception on failure`() = runTest {
+    class TestException : Exception("forced exception zphgcrkp9n")
+    val testException = TestException()
+    val dataConnect = dataConnectWithQueryResult(Result.failure(testException))
+    val queryRefImpl = Arb.dataConnect.queryRefImpl(dataConnect).next()
 
-      val thrownException = shouldThrow<Exception> { queryRefImpl.execute(fetchPolicy) }
+    val exception = shouldThrow<TestException> { queryRefImpl.execute() }
 
-      assertSoftly {
-        thrownException shouldBeSameInstanceAs exception
-        querySlot.captured shouldBeSameInstanceAs queryRefImpl
-        fetchPolicySlot.captured shouldBe fetchPolicy
+    exception shouldBe testException
+  }
+
+  @Test
+  fun `execute() calls QueryManager with the correct arguments`() = runTest {
+    val data = Arb.dataConnect.testData().next()
+    val dataSource = Arb.enum<DataSource>().next()
+    val slots = QueryManagerExecuteSlots()
+    val dataConnect =
+      dataConnectWithQueryResult(
+        Result.success(QueryManager.ExecuteResult(data, dataSource)),
+        slots
+      )
+    val queryRefImpl = Arb.dataConnect.queryRefImpl(dataConnect).next()
+
+    checkAll(50, Arb.enum<QueryRef.FetchPolicy>().orNull(nullProbability = 0.1)) { fetchPolicy ->
+      slots.clear()
+
+      if (fetchPolicy === null) {
+        queryRefImpl.execute()
+      } else {
+        queryRefImpl.execute(fetchPolicy)
       }
+
+      slots.shouldBe(queryRefImpl, fetchPolicy ?: QueryRef.FetchPolicy.PREFER_CACHE)
     }
-  }
-
-  @Test
-  fun `subscribe() should return a QuerySubscription`() = runTest {
-    val queryRefImpl = Arb.dataConnect.queryRefImpl().next()
-
-    val querySubscription = queryRefImpl.subscribe()
-
-    querySubscription.query shouldBeSameInstanceAs queryRefImpl
-  }
-
-  @Test
-  fun `subscribe() should always return a new object`() = runTest {
-    val queryRefImpl = Arb.dataConnect.queryRefImpl().next()
-
-    val querySubscription1 = queryRefImpl.subscribe()
-    val querySubscription2 = queryRefImpl.subscribe()
-
-    querySubscription1 shouldNotBeSameInstanceAs querySubscription2
   }
 
   @Test
@@ -351,7 +299,7 @@ class QueryRefImplUnitTest {
         Arb.string(),
         Arb.int(),
         Arb.dataConnect.operationRefImpl<Nothing, TestVariables>(),
-        Arb.dataConnect.mutationRefImpl<Nothing, TestVariables>()
+        Arb.dataConnect.mutationRefImpl<Nothing, TestVariables>(),
       )
     checkAll(propTestConfig, Arb.dataConnect.queryRefImpl(), othersArb) { queryRefImpl, other ->
       queryRefImpl.equals(other) shouldBe false
@@ -627,24 +575,80 @@ class QueryRefImplUnitTest {
         edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.2),
       )
 
+    fun DataConnectArb.testData(string: Arb<String> = string()): Arb<TestData> = arbitrary {
+      TestData(string.bind())
+    }
+
     fun DataConnectArb.queryRefImpl(): Arb<QueryRefImpl<TestData?, TestVariables>> =
-      queryRefImpl<TestData?, TestVariables>()
+      queryRefImpl(
+        variables = Arb.mock(),
+        dataDeserializer = arbitrary { serializer() },
+        variablesSerializer = Arb.mock(),
+      )
 
     fun DataConnectArb.queryRefImpl(
       dataConnect: FirebaseDataConnectInternal
     ): Arb<QueryRefImpl<TestData?, TestVariables>> =
       queryRefImpl().map { it.withDataConnect(dataConnect) }
 
-    fun <Data, Variables> dataConnectWithQueryResult(
-      result: Result<DataSourcePair<Data>>,
-      querySlot: CapturingSlot<QueryRefImpl<Data, Variables>>,
-      fetchPolicySlot: CapturingSlot<FetchPolicy>,
+    class QueryManagerExecuteSlots(
+      val operationNameSlot: CapturingSlot<String> = slot(),
+      val variablesSlot: CapturingSlot<TestVariables> = slot(),
+      val dataDeserializerSlot: CapturingSlot<DeserializationStrategy<TestData>> = slot(),
+      val variablesSerializerSlot: CapturingSlot<SerializationStrategy<TestVariables>> = slot(),
+      val dataSerializersModuleSlot: CapturingSlot<SerializersModule?> = slot(),
+      val variablesSerializersModuleSlot: CapturingSlot<SerializersModule?> = slot(),
+      val callerSdkTypeSlot: CapturingSlot<CallerSdkType> = slot(),
+      val fetchPolicySlot: CapturingSlot<QueryRef.FetchPolicy> = slot(),
+    )
+
+    fun QueryManagerExecuteSlots.shouldBe(
+      ref: QueryRef<TestData?, TestVariables>,
+      fetchPolicy: QueryRef.FetchPolicy
+    ) {
+      assertSoftly {
+        operationNameSlot.captured shouldBe ref.operationName
+        variablesSlot.captured shouldBe ref.variables
+        dataDeserializerSlot.captured shouldBeSameInstanceAs ref.dataDeserializer
+        variablesSerializerSlot.captured shouldBeSameInstanceAs ref.variablesSerializer
+        dataSerializersModuleSlot.captured shouldBeSameInstanceAs ref.dataSerializersModule
+        variablesSerializersModuleSlot.captured shouldBeSameInstanceAs
+          ref.variablesSerializersModule
+        callerSdkTypeSlot.captured shouldBe ref.callerSdkType
+        fetchPolicySlot.captured shouldBe fetchPolicy
+      }
+    }
+
+    fun QueryManagerExecuteSlots.clear() {
+      operationNameSlot.clear()
+      variablesSlot.clear()
+      dataDeserializerSlot.clear()
+      variablesSerializerSlot.clear()
+      dataSerializersModuleSlot.clear()
+      variablesSerializersModuleSlot.clear()
+      callerSdkTypeSlot.clear()
+      fetchPolicySlot.clear()
+    }
+
+    fun dataConnectWithQueryResult(
+      result: Result<QueryManager.ExecuteResult<TestData>>,
+      slots: QueryManagerExecuteSlots = QueryManagerExecuteSlots(),
     ): FirebaseDataConnectInternal =
       mockk<FirebaseDataConnectInternal>(relaxed = true) {
-        every { queryManager } returns
+        every { getQueryManager() } returns
           mockk<QueryManager> {
-            coEvery { execute(capture(querySlot), capture(fetchPolicySlot)) } returns
-              SequencedReference(123, result)
+            coEvery {
+              execute(
+                capture(slots.operationNameSlot),
+                capture(slots.variablesSlot),
+                capture(slots.dataDeserializerSlot),
+                capture(slots.variablesSerializerSlot),
+                captureNullable(slots.dataSerializersModuleSlot),
+                captureNullable(slots.variablesSerializersModuleSlot),
+                capture(slots.callerSdkTypeSlot),
+                capture(slots.fetchPolicySlot),
+              )
+            } answers { result.getOrThrow() }
           }
       }
   }

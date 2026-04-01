@@ -16,6 +16,9 @@
 
 package com.google.firebase.dataconnect
 
+import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
+import com.google.protobuf.Value as ValueProto
+import com.google.protobuf.Value
 import google.firebase.dataconnect.proto.kotlinsdk.EntityPath as EntityPathProto
 import google.firebase.dataconnect.proto.kotlinsdk.FieldOrListIndex as FieldOrListIndexProto
 
@@ -191,4 +194,17 @@ internal fun FieldOrListIndexProto.toDataConnectPathSegment(): DataConnectPathSe
       throw IllegalArgumentException(
         "KIND_NOT_SET cannot be converted to DataConnectPathSegment [dp2pgjhkh3]"
       )
+  }
+
+internal fun ValueProto.toDataConnectPathSegment(): DataConnectPathSegment =
+  when (kindCase) {
+    Value.KindCase.STRING_VALUE -> DataConnectPathSegment.Field(stringValue)
+    Value.KindCase.NUMBER_VALUE -> DataConnectPathSegment.ListIndex(numberValue.toInt())
+    // The cases below are expected to never occur; however, implement some logic for them
+    // to avoid things like throwing exceptions in those cases.
+    Value.KindCase.NULL_VALUE -> DataConnectPathSegment.Field("null")
+    Value.KindCase.BOOL_VALUE -> DataConnectPathSegment.Field(boolValue.toString())
+    Value.KindCase.LIST_VALUE -> DataConnectPathSegment.Field(listValue.toCompactString())
+    Value.KindCase.STRUCT_VALUE -> DataConnectPathSegment.Field(structValue.toCompactString())
+    else -> DataConnectPathSegment.Field(toString())
   }

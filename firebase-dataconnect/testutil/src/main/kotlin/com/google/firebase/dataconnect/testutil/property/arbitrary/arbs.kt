@@ -149,6 +149,10 @@ object DataConnectArb {
     string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())
   ): Arb<String> = arbitrary { "accessToken_${string.bind()}" }
 
+  fun requestName(
+    string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())
+  ): Arb<String> = string.map { "requestName_$it" }
+
   fun requestId(string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())): Arb<String> =
     arbitrary {
       "requestId_${string.bind()}"

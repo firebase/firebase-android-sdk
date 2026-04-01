@@ -18,38 +18,25 @@
 
 package com.google.firebase.dataconnect.core
 
-import com.google.firebase.dataconnect.DataConnectException
-import com.google.firebase.dataconnect.DataConnectUntypedData
-import com.google.firebase.dataconnect.DataConnectUntypedVariables
-import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
-import com.google.firebase.dataconnect.core.DataConnectGrpcClient.OperationResult
+import com.google.firebase.dataconnect.MutationRef
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.OperationRefConstructorArguments
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.mock
 import com.google.firebase.dataconnect.testutil.property.arbitrary.mutationRefImpl
-import com.google.firebase.dataconnect.testutil.property.arbitrary.operationErrors
 import com.google.firebase.dataconnect.testutil.property.arbitrary.operationRefConstructorArguments
 import com.google.firebase.dataconnect.testutil.property.arbitrary.operationRefImpl
 import com.google.firebase.dataconnect.testutil.property.arbitrary.queryRefImpl
-import com.google.firebase.dataconnect.testutil.property.arbitrary.random
-import com.google.firebase.dataconnect.testutil.property.arbitrary.randomSeed
 import com.google.firebase.dataconnect.testutil.property.arbitrary.shouldHavePropertiesEqualTo
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
-import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
-import com.google.firebase.dataconnect.util.ProtoUtil.encodeToStruct
-import com.google.firebase.dataconnect.util.ProtoUtil.toStructProto
-import com.google.protobuf.Struct
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
-import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldEndWith
-import io.kotest.matchers.string.shouldNotBeBlank
 import io.kotest.matchers.string.shouldStartWith
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.matchers.types.shouldNotBeSameInstanceAs
@@ -70,10 +57,7 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
-import kotlin.random.Random
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.Serializable
@@ -87,15 +71,14 @@ import org.junit.Test
 class MutationRefImplUnitTest {
 
   @Serializable private data class TestData(val foo: String)
-  private interface TestVariables
+  interface TestVariables
   private interface TestData2
   private interface TestVariables2
 
   @Test
   fun `constructor should initialize properties to the given objects`() = runTest {
     val argsArb = Arb.dataConnect.operationRefConstructorArguments<TestData, TestVariables>()
-    checkAll(propTestConfig, argsArb, Arb.random()) { args, secureRandom,
-      ->
+    checkAll(propTestConfig, argsArb) { args ->
       val mutationRefImpl =
         MutationRefImpl(
           dataConnect = args.dataConnect,
@@ -106,7 +89,6 @@ class MutationRefImplUnitTest {
           callerSdkType = args.callerSdkType,
           dataSerializersModule = args.dataSerializersModule,
           variablesSerializersModule = args.variablesSerializersModule,
-          secureRandom = secureRandom,
         )
 
       mutationRefImpl.shouldHavePropertiesEqualTo(args)
@@ -114,38 +96,9 @@ class MutationRefImplUnitTest {
   }
 
   @Test
-  fun `should use the given secureRandom to generate request IDs`() = runTest {
-    val argsArb = Arb.dataConnect.operationRefConstructorArguments<TestData, TestVariables>()
-    checkAll(propTestConfig, argsArb, Arb.randomSeed()) { args, randomSeed,
-      ->
-      val (mutationRefImpl1, mutationRefImpl2) =
-        List(2) {
-          MutationRefImpl(
-            dataConnect = args.dataConnect,
-            operationName = args.operationName,
-            variables = args.variables,
-            dataDeserializer = args.dataDeserializer,
-            variablesSerializer = args.variablesSerializer,
-            callerSdkType = args.callerSdkType,
-            dataSerializersModule = args.dataSerializersModule,
-            variablesSerializersModule = args.variablesSerializersModule,
-            secureRandom = Random(randomSeed),
-          )
-        }
-
-      val requestIds1 = List(5) { mutationRefImpl1.randomRequestId() }
-      val requestIds2 = List(5) { mutationRefImpl2.randomRequestId() }
-
-      requestIds1 shouldContainExactly requestIds2
-    }
-  }
-
-  @Test
   fun `execute() returns the result on success`() = runTest {
     val data = Arb.dataConnect.testData().next()
-    val operationResult =
-      OperationResult(encodeToStruct(data), errors = emptyList(), DataSource.SERVER)
-    val dataConnect = dataConnectWithMutationResult(Result.success(operationResult))
+    val dataConnect = dataConnectWithMutationResult(Result.success(data))
     val mutationRefImpl = Arb.dataConnect.mutationRefImpl(dataConnect).next()
 
     val mutationResult = mutationRefImpl.execute()
@@ -157,95 +110,27 @@ class MutationRefImplUnitTest {
   }
 
   @Test
-  fun `execute() calls executeMutation with the correct arguments`() = runTest {
-    @Serializable data class TestSerializableVariables(val foo: String)
+  fun `execute() re-throws the exception on failure`() = runTest {
+    class TestException : Exception("forced exception zphgcrkp9n")
+    val testException = TestException()
+    val dataConnect = dataConnectWithMutationResult(Result.failure(testException))
+    val mutationRefImpl = Arb.dataConnect.mutationRefImpl(dataConnect).next()
+
+    val exception = shouldThrow<TestException> { mutationRefImpl.execute() }
+
+    exception shouldBe testException
+  }
+
+  @Test
+  fun `execute() calls MutationManager with the correct arguments`() = runTest {
     val data = Arb.dataConnect.testData().next()
-    val operationResult =
-      OperationResult(encodeToStruct(data), errors = emptyList(), DataSource.SERVER)
-    val requestIdSlot: CapturingSlot<String> = slot()
-    val operationNameSlot: CapturingSlot<String> = slot()
-    val variablesSlot: CapturingSlot<Struct> = slot()
-    val callerSdkTypeSlot: CapturingSlot<CallerSdkType> = slot()
-    val dataConnect =
-      dataConnectWithMutationResult(
-        Result.success(operationResult),
-        requestIdSlot,
-        operationNameSlot,
-        variablesSlot,
-        callerSdkTypeSlot,
-      )
-    val variables = TestSerializableVariables(Arb.dataConnect.string().next())
-    val mutationRefImpl =
-      Arb.dataConnect
-        .mutationRefImpl(dataConnect)
-        .next()
-        .withVariablesSerializer(
-          variables = variables,
-          variablesSerializer = serializer(),
-        )
-
-    mutationRefImpl.execute()
-    val requestId1 = requestIdSlot.captured
-    val operationName1 = operationNameSlot.captured
-    val variables1 = variablesSlot.captured
-    val callerSdkType1 = callerSdkTypeSlot.captured
-
-    requestIdSlot.clear()
-    operationNameSlot.clear()
-    variablesSlot.clear()
-    callerSdkTypeSlot.clear()
-    mutationRefImpl.execute()
-    val requestId2 = requestIdSlot.captured
-    val operationName2 = operationNameSlot.captured
-    val variables2 = variablesSlot.captured
-    val callerSdkType2 = callerSdkTypeSlot.captured
-
-    assertSoftly {
-      requestId1.shouldNotBeBlank()
-      requestId2.shouldNotBeBlank()
-      requestId1 shouldNotBe requestId2
-      operationName1 shouldBe mutationRefImpl.operationName
-      operationName2 shouldBe operationName1
-      variables1 shouldBe encodeToStruct(variables)
-      variables2 shouldBe variables1
-      callerSdkType1 shouldBe mutationRefImpl.callerSdkType
-      callerSdkType2 shouldBe mutationRefImpl.callerSdkType
-    }
-  }
-
-  @Test
-  fun `execute() handles DataConnectUntypedVariables and DataConnectUntypedData`() = runTest {
-    val variables = DataConnectUntypedVariables("foo" to 42.0)
-    val errors = Arb.dataConnect.operationErrors().next()
-    val data = DataConnectUntypedData(mapOf("bar" to 24.0), errors)
-    val variablesSlot: CapturingSlot<Struct> = slot()
-    val operationResult =
-      OperationResult(buildStructProto { put("bar", 24.0) }, errors, DataSource.SERVER)
-    val dataConnect =
-      dataConnectWithMutationResult(Result.success(operationResult), variablesSlot = variablesSlot)
-    val mutationRefImpl =
-      Arb.dataConnect
-        .mutationRefImpl(dataConnect)
-        .next()
-        .withVariablesSerializer(variables, DataConnectUntypedVariables)
-        .withDataDeserializer(DataConnectUntypedData)
-
-    val mutationResult = mutationRefImpl.execute()
-
-    assertSoftly {
-      mutationResult.ref shouldBeSameInstanceAs mutationRefImpl
-      mutationResult.data shouldBe data
-      variablesSlot.captured shouldBe variables.variables.toStructProto()
-    }
-  }
-
-  @Test
-  fun `execute() throws when the data is null`() = runTest {
-    val operationResult = OperationResult(data = null, errors = emptyList(), DataSource.SERVER)
-    val dataConnect = dataConnectWithMutationResult(Result.success(operationResult))
+    val slots = MutationManagerExecuteSlots()
+    val dataConnect = dataConnectWithMutationResult(Result.success(data), slots)
     val mutationRefImpl = Arb.dataConnect.mutationRefImpl(dataConnect).next()
 
-    shouldThrow<DataConnectException> { mutationRefImpl.execute() }
+    mutationRefImpl.execute()
+
+    slots.shouldBe(mutationRefImpl)
   }
 
   @Test
@@ -700,25 +585,47 @@ class MutationRefImplUnitTest {
     ): Arb<MutationRefImpl<TestData?, TestVariables>> =
       mutationRefImpl().map { it.withDataConnect(dataConnect) }
 
-    fun TestScope.dataConnectWithMutationResult(
-      result: Result<OperationResult>,
-      requestIdSlot: CapturingSlot<String> = slot(),
-      operationNameSlot: CapturingSlot<String> = slot(),
-      variablesSlot: CapturingSlot<Struct> = slot(),
-      callerSdkTypeSlot: CapturingSlot<CallerSdkType> = slot(),
+    class MutationManagerExecuteSlots(
+      val operationNameSlot: CapturingSlot<String> = slot(),
+      val variablesSlot: CapturingSlot<TestVariables> = slot(),
+      val dataDeserializerSlot: CapturingSlot<DeserializationStrategy<TestData>> = slot(),
+      val variablesSerializerSlot: CapturingSlot<SerializationStrategy<TestVariables>> = slot(),
+      val dataSerializersModuleSlot: CapturingSlot<SerializersModule?> = slot(),
+      val variablesSerializersModuleSlot: CapturingSlot<SerializersModule?> = slot(),
+      val callerSdkTypeSlot: CapturingSlot<CallerSdkType> = slot(),
+    )
+
+    fun MutationManagerExecuteSlots.shouldBe(ref: MutationRef<TestData?, TestVariables>) {
+      assertSoftly {
+        operationNameSlot.captured shouldBe ref.operationName
+        variablesSlot.captured shouldBe ref.variables
+        dataDeserializerSlot.captured shouldBeSameInstanceAs ref.dataDeserializer
+        variablesSerializerSlot.captured shouldBeSameInstanceAs ref.variablesSerializer
+        dataSerializersModuleSlot.captured shouldBeSameInstanceAs ref.dataSerializersModule
+        variablesSerializersModuleSlot.captured shouldBeSameInstanceAs
+          ref.variablesSerializersModule
+        callerSdkTypeSlot.captured shouldBe ref.callerSdkType
+      }
+    }
+
+    fun dataConnectWithMutationResult(
+      result: Result<TestData>,
+      slots: MutationManagerExecuteSlots = MutationManagerExecuteSlots(),
     ): FirebaseDataConnectInternal =
       mockk<FirebaseDataConnectInternal>(relaxed = true) {
-        every { blockingDispatcher } returns UnconfinedTestDispatcher(testScheduler)
-        every { grpcClient } returns
-          mockk<DataConnectGrpcClient> {
+        every { getMutationManager() } returns
+          mockk<MutationManager> {
             coEvery {
-              executeMutation(
-                capture(requestIdSlot),
-                capture(operationNameSlot),
-                capture(variablesSlot),
-                capture(callerSdkTypeSlot),
+              execute(
+                capture(slots.operationNameSlot),
+                capture(slots.variablesSlot),
+                capture(slots.dataDeserializerSlot),
+                capture(slots.variablesSerializerSlot),
+                capture(slots.callerSdkTypeSlot),
+                captureNullable(slots.dataSerializersModuleSlot),
+                captureNullable(slots.variablesSerializersModuleSlot),
               )
-            } returns result.getOrThrow()
+            } answers { result.getOrThrow() }
           }
       }
   }
