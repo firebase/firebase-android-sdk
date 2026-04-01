@@ -18,7 +18,10 @@
 
 package com.google.firebase.dataconnect.core
 
+import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
+import com.google.firebase.dataconnect.QueryRef
+import com.google.firebase.dataconnect.querymgr.QueryManager
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.OperationRefConstructorArguments
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
@@ -48,6 +51,7 @@ import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.next
+import io.kotest.property.arbitrary.orNull
 import io.kotest.property.arbitrary.string
 import io.kotest.property.assume
 import io.kotest.property.checkAll
@@ -70,7 +74,7 @@ import org.junit.Test
 class QueryRefImplUnitTest {
 
   @Serializable private data class TestData(val foo: String)
-  private interface TestVariables
+  interface TestVariables
   private interface TestData2
   private interface TestVariables2
 
@@ -97,7 +101,9 @@ class QueryRefImplUnitTest {
   @Test
   fun `execute() returns the result on success`() = runTest {
     val data = Arb.dataConnect.testData().next()
-    val dataConnect = dataConnectWithQueryResult(Result.success(data))
+    val dataSource = Arb.enum<DataSource>().next()
+    val dataConnect =
+      dataConnectWithQueryResult(Result.success(QueryManager.ExecuteResult(data, dataSource)))
     val queryRefImpl = Arb.dataConnect.queryRefImpl(dataConnect).next()
 
     val queryResult = queryRefImpl.execute()
@@ -105,6 +111,7 @@ class QueryRefImplUnitTest {
     assertSoftly {
       queryResult.ref shouldBeSameInstanceAs queryRefImpl
       queryResult.data shouldBe data
+      queryResult.dataSource shouldBe dataSource
     }
   }
 
@@ -123,17 +130,26 @@ class QueryRefImplUnitTest {
   @Test
   fun `execute() calls QueryManager with the correct arguments`() = runTest {
     val data = Arb.dataConnect.testData().next()
-    val queryRefSlot: CapturingSlot<QueryRefImpl<TestData, TestVariables>> = slot()
+    val dataSource = Arb.enum<DataSource>().next()
+    val slots = QueryManagerExecuteSlots()
     val dataConnect =
       dataConnectWithQueryResult(
-        Result.success(data),
-        queryRefSlot = queryRefSlot,
+        Result.success(QueryManager.ExecuteResult(data, dataSource)),
+        slots
       )
     val queryRefImpl = Arb.dataConnect.queryRefImpl(dataConnect).next()
 
-    queryRefImpl.execute()
+    checkAll(50, Arb.enum<QueryRef.FetchPolicy>().orNull(nullProbability = 0.1)) { fetchPolicy ->
+      slots.clear()
 
-    queryRefSlot.captured shouldBeSameInstanceAs queryRefImpl
+      if (fetchPolicy === null) {
+        queryRefImpl.execute()
+      } else {
+        queryRefImpl.execute(fetchPolicy)
+      }
+
+      slots.shouldBe(queryRefImpl, fetchPolicy ?: QueryRef.FetchPolicy.PREFER_CACHE)
+    }
   }
 
   @Test
@@ -575,14 +591,64 @@ class QueryRefImplUnitTest {
     ): Arb<QueryRefImpl<TestData?, TestVariables>> =
       queryRefImpl().map { it.withDataConnect(dataConnect) }
 
+    class QueryManagerExecuteSlots(
+      val operationNameSlot: CapturingSlot<String> = slot(),
+      val variablesSlot: CapturingSlot<TestVariables> = slot(),
+      val dataDeserializerSlot: CapturingSlot<DeserializationStrategy<TestData>> = slot(),
+      val variablesSerializerSlot: CapturingSlot<SerializationStrategy<TestVariables>> = slot(),
+      val dataSerializersModuleSlot: CapturingSlot<SerializersModule?> = slot(),
+      val variablesSerializersModuleSlot: CapturingSlot<SerializersModule?> = slot(),
+      val callerSdkTypeSlot: CapturingSlot<CallerSdkType> = slot(),
+      val fetchPolicySlot: CapturingSlot<QueryRef.FetchPolicy> = slot(),
+    )
+
+    fun QueryManagerExecuteSlots.shouldBe(
+      ref: QueryRef<TestData?, TestVariables>,
+      fetchPolicy: QueryRef.FetchPolicy
+    ) {
+      assertSoftly {
+        operationNameSlot.captured shouldBe ref.operationName
+        variablesSlot.captured shouldBe ref.variables
+        dataDeserializerSlot.captured shouldBeSameInstanceAs ref.dataDeserializer
+        variablesSerializerSlot.captured shouldBeSameInstanceAs ref.variablesSerializer
+        dataSerializersModuleSlot.captured shouldBeSameInstanceAs ref.dataSerializersModule
+        variablesSerializersModuleSlot.captured shouldBeSameInstanceAs
+          ref.variablesSerializersModule
+        callerSdkTypeSlot.captured shouldBe ref.callerSdkType
+        fetchPolicySlot.captured shouldBe fetchPolicy
+      }
+    }
+
+    fun QueryManagerExecuteSlots.clear() {
+      operationNameSlot.clear()
+      variablesSlot.clear()
+      dataDeserializerSlot.clear()
+      variablesSerializerSlot.clear()
+      dataSerializersModuleSlot.clear()
+      variablesSerializersModuleSlot.clear()
+      callerSdkTypeSlot.clear()
+      fetchPolicySlot.clear()
+    }
+
     fun dataConnectWithQueryResult(
-      result: Result<TestData>,
-      queryRefSlot: CapturingSlot<QueryRefImpl<TestData, TestVariables>> = slot(),
+      result: Result<QueryManager.ExecuteResult<TestData>>,
+      slots: QueryManagerExecuteSlots = QueryManagerExecuteSlots(),
     ): FirebaseDataConnectInternal =
       mockk<FirebaseDataConnectInternal>(relaxed = true) {
         every { getQueryManager() } returns
           mockk<QueryManager> {
-            coEvery { execute(capture(queryRefSlot)) } answers { result.getOrThrow() }
+            coEvery {
+              execute(
+                capture(slots.operationNameSlot),
+                capture(slots.variablesSlot),
+                capture(slots.dataDeserializerSlot),
+                capture(slots.variablesSerializerSlot),
+                captureNullable(slots.dataSerializersModuleSlot),
+                captureNullable(slots.variablesSerializersModuleSlot),
+                capture(slots.callerSdkTypeSlot),
+                capture(slots.fetchPolicySlot),
+              )
+            } answers { result.getOrThrow() }
           }
       }
   }

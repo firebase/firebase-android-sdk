@@ -19,6 +19,7 @@
 package com.google.firebase.dataconnect.core
 
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
+import com.google.firebase.dataconnect.MutationRef
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.OperationRefConstructorArguments
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
@@ -70,7 +71,7 @@ import org.junit.Test
 class MutationRefImplUnitTest {
 
   @Serializable private data class TestData(val foo: String)
-  private interface TestVariables
+  interface TestVariables
   private interface TestData2
   private interface TestVariables2
 
@@ -123,17 +124,13 @@ class MutationRefImplUnitTest {
   @Test
   fun `execute() calls MutationManager with the correct arguments`() = runTest {
     val data = Arb.dataConnect.testData().next()
-    val mutationRefSlot: CapturingSlot<MutationRefImpl<TestData, TestVariables>> = slot()
-    val dataConnect =
-      dataConnectWithMutationResult(
-        Result.success(data),
-        mutationRefSlot = mutationRefSlot,
-      )
+    val slots = MutationManagerExecuteSlots()
+    val dataConnect = dataConnectWithMutationResult(Result.success(data), slots)
     val mutationRefImpl = Arb.dataConnect.mutationRefImpl(dataConnect).next()
 
     mutationRefImpl.execute()
 
-    mutationRefSlot.captured shouldBeSameInstanceAs mutationRefImpl
+    slots.shouldBe(mutationRefImpl)
   }
 
   @Test
@@ -588,14 +585,47 @@ class MutationRefImplUnitTest {
     ): Arb<MutationRefImpl<TestData?, TestVariables>> =
       mutationRefImpl().map { it.withDataConnect(dataConnect) }
 
+    class MutationManagerExecuteSlots(
+      val operationNameSlot: CapturingSlot<String> = slot(),
+      val variablesSlot: CapturingSlot<TestVariables> = slot(),
+      val dataDeserializerSlot: CapturingSlot<DeserializationStrategy<TestData>> = slot(),
+      val variablesSerializerSlot: CapturingSlot<SerializationStrategy<TestVariables>> = slot(),
+      val dataSerializersModuleSlot: CapturingSlot<SerializersModule?> = slot(),
+      val variablesSerializersModuleSlot: CapturingSlot<SerializersModule?> = slot(),
+      val callerSdkTypeSlot: CapturingSlot<CallerSdkType> = slot(),
+    )
+
+    fun MutationManagerExecuteSlots.shouldBe(ref: MutationRef<TestData?, TestVariables>) {
+      assertSoftly {
+        operationNameSlot.captured shouldBe ref.operationName
+        variablesSlot.captured shouldBe ref.variables
+        dataDeserializerSlot.captured shouldBeSameInstanceAs ref.dataDeserializer
+        variablesSerializerSlot.captured shouldBeSameInstanceAs ref.variablesSerializer
+        dataSerializersModuleSlot.captured shouldBeSameInstanceAs ref.dataSerializersModule
+        variablesSerializersModuleSlot.captured shouldBeSameInstanceAs
+          ref.variablesSerializersModule
+        callerSdkTypeSlot.captured shouldBe ref.callerSdkType
+      }
+    }
+
     fun dataConnectWithMutationResult(
       result: Result<TestData>,
-      mutationRefSlot: CapturingSlot<MutationRefImpl<TestData, TestVariables>> = slot(),
+      slots: MutationManagerExecuteSlots = MutationManagerExecuteSlots(),
     ): FirebaseDataConnectInternal =
       mockk<FirebaseDataConnectInternal>(relaxed = true) {
         every { getMutationManager() } returns
           mockk<MutationManager> {
-            coEvery { execute(capture(mutationRefSlot)) } answers { result.getOrThrow() }
+            coEvery {
+              execute(
+                capture(slots.operationNameSlot),
+                capture(slots.variablesSlot),
+                capture(slots.dataDeserializerSlot),
+                capture(slots.variablesSerializerSlot),
+                capture(slots.callerSdkTypeSlot),
+                captureNullable(slots.dataSerializersModuleSlot),
+                captureNullable(slots.variablesSerializersModuleSlot),
+              )
+            } answers { result.getOrThrow() }
           }
       }
   }

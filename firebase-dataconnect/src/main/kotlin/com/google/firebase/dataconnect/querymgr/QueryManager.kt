@@ -28,6 +28,7 @@ import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import com.google.firebase.dataconnect.core.encodeVariables
 import com.google.firebase.dataconnect.core.retryOnGrpcUnauthenticatedError
+import com.google.firebase.dataconnect.querymgr.QueryManager.ExecuteResult
 import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase
 import com.google.firebase.dataconnect.util.ImmutableByteArray
 import com.google.firebase.dataconnect.util.ProtoUtil.calculateSha512
@@ -262,3 +263,20 @@ internal class QueryManager(
 
   data class CacheSettings(val dbFile: File?, val maxAge: Duration)
 }
+
+internal suspend fun <Data, Variables> QueryManager.execute(
+  ref: QueryRef<Data, Variables>,
+  fetchPolicy: QueryRef.FetchPolicy,
+): ExecuteResult<Data> =
+  ref.run {
+    execute(
+      operationName = operationName,
+      variables = variables,
+      dataDeserializer = dataDeserializer,
+      variablesSerializer = variablesSerializer,
+      dataSerializersModule = dataSerializersModule,
+      variablesSerializersModule = variablesSerializersModule,
+      callerSdkType = callerSdkType,
+      fetchPolicy = fetchPolicy,
+    )
+  }

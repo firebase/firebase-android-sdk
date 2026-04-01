@@ -51,9 +51,9 @@ message ExecuteRequest {
 
 message StreamResponse {
   string request_id = 1;
-  // NOTE: Value was changed to Struct in cl/882603261.
-  // Change Value to Struct here as well once the CL rolls out.
-  google.protobuf.Value data = 2;
+  // NOTE: The `data` field used to be google.protobuf.Value but was changed
+  // to google.protobuf.Struct in cl/882603261 submitted March 12, 2026.
+  google.protobuf.Struct data = 2;
   repeated GraphqlError errors = 3;
   GraphqlResponseExtensions extensions = 6;
   bool cancelled = 5;

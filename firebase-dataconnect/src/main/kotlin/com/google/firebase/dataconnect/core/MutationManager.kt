@@ -17,6 +17,7 @@
 
 package com.google.firebase.dataconnect.core
 
+import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.MutationRef
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
@@ -26,6 +27,9 @@ import google.firebase.dataconnect.proto.ExecuteMutationRequest as ExecuteMutati
 import google.firebase.dataconnect.proto.ExecuteMutationResponse as ExecuteMutationResponseProto
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.SerializationStrategy
+import kotlinx.serialization.modules.SerializersModule
 
 internal class MutationManager(
   private val requestName: String,
@@ -37,53 +41,75 @@ internal class MutationManager(
   private val logger: Logger,
 ) {
 
-  suspend fun <Data, Variables> execute(ref: MutationRef<Data, Variables>): Data =
-    ref.run {
-      val requestId = requestIdGenerator.nextMutationRequestId()
-      logger.debug {
-        "[rid=$requestId] Executing mutation with " +
-          "operationName=$operationName and variables=$variables"
+  suspend fun <Data, Variables> execute(
+    operationName: String,
+    variables: Variables,
+    dataDeserializer: DeserializationStrategy<Data>,
+    variablesSerializer: SerializationStrategy<Variables>,
+    callerSdkType: FirebaseDataConnect.CallerSdkType,
+    dataSerializersModule: SerializersModule?,
+    variablesSerializersModule: SerializersModule?,
+  ): Data {
+    val requestId = requestIdGenerator.nextMutationRequestId()
+    logger.debug {
+      "[rid=$requestId] Executing mutation with " +
+        "operationName=$operationName and variables=$variables"
+    }
+
+    val requestProto: ExecuteMutationRequestProto =
+      withContext(cpuDispatcher) {
+        val variablesStruct =
+          encodeVariables(variables, variablesSerializer, variablesSerializersModule)
+        ExecuteMutationRequestProto.newBuilder()
+          .setName(requestName)
+          .setOperationName(operationName)
+          .setVariables(variablesStruct)
+          .build()
       }
 
-      val requestProto: ExecuteMutationRequestProto =
-        withContext(cpuDispatcher) {
-          val variablesStruct =
-            encodeVariables(variables, variablesSerializer, variablesSerializersModule)
-          ExecuteMutationRequestProto.newBuilder()
-            .setName(requestName)
-            .setOperationName(operationName)
-            .setVariables(variablesStruct)
-            .build()
-        }
-
-      val response: ExecuteMutationResponseProto =
-        retryOnGrpcUnauthenticatedError(
+    val response: ExecuteMutationResponseProto =
+      retryOnGrpcUnauthenticatedError(
+        requestId = requestId,
+        getAuthToken = { dataConnectAuth.getToken(requestId) },
+        getAppCheckToken = { dataConnectAppCheck.getToken(requestId) },
+        forceRefreshTokens = {
+          // TODO: Deduplicate forceRefresh() calls with other parallel calls
+          dataConnectAuth.forceRefresh()
+          dataConnectAppCheck.forceRefresh()
+        },
+        logger,
+      ) { authTokenResult, appCheckTokenResult ->
+        dataConnectGrpcRPCs.executeMutation(
           requestId = requestId,
-          getAuthToken = { dataConnectAuth.getToken(requestId) },
-          getAppCheckToken = { dataConnectAppCheck.getToken(requestId) },
-          forceRefreshTokens = {
-            // TODO: Deduplicate forceRefresh() calls with other parallel calls
-            dataConnectAuth.forceRefresh()
-            dataConnectAppCheck.forceRefresh()
-          },
-          logger,
-        ) { authTokenResult, appCheckTokenResult ->
-          dataConnectGrpcRPCs.executeMutation(
-            requestId = requestId,
-            requestProto = requestProto,
-            authToken = authTokenResult?.token,
-            appCheckToken = appCheckTokenResult?.token,
-            callerSdkType = callerSdkType,
-          )
-        }
+          requestProto = requestProto,
+          authToken = authTokenResult?.token,
+          appCheckToken = appCheckTokenResult?.token,
+          callerSdkType = callerSdkType,
+        )
+      }
 
-      val dataResult =
-        withContext(cpuDispatcher) {
-          response.runCatching { deserialize(dataDeserializer, dataSerializersModule) }
-        }
+    val dataResult =
+      withContext(cpuDispatcher) {
+        response.runCatching { deserialize(dataDeserializer, dataSerializersModule) }
+      }
 
-      dataResult.onFailure { logger.warn(it) { "[rid=$requestId] decoding response data failed" } }
+    dataResult.onFailure { logger.warn(it) { "[rid=$requestId] decoding response data failed" } }
 
-      return dataResult.getOrThrow()
-    }
+    return dataResult.getOrThrow()
+  }
 }
+
+internal suspend fun <Data, Variables> MutationManager.execute(
+  ref: MutationRef<Data, Variables>
+): Data =
+  ref.run {
+    execute(
+      operationName = operationName,
+      variables = variables,
+      dataDeserializer = dataDeserializer,
+      variablesSerializer = variablesSerializer,
+      callerSdkType = callerSdkType,
+      dataSerializersModule = dataSerializersModule,
+      variablesSerializersModule = variablesSerializersModule,
+    )
+  }

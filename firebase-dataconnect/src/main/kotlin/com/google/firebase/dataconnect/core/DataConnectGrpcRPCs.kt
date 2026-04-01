@@ -596,7 +596,7 @@ internal class DataConnectGrpcRPCs(
 
 private fun StreamResponse.toDataConnectStreamResponse():
   DataConnectGrpcRPCs.DataConnectStream.Response? {
-  val data = if (hasData()) data.structValue else null
+  val data = if (hasData()) data else null
   val errors = if (errorsCount > 0) errorsList else emptyList()
 
   val extensionProperties =
