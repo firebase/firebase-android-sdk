@@ -199,10 +199,12 @@ internal class DataConnectGrpcRPCs(
     private val incomingResponses: SharedFlow<StreamResponse>
   ) {
 
-    fun subscribe(requestId: String, operationName: String, variables: Struct?): Flow<Response> =
-      incomingResponses
-        .filter { it.requestId == requestId }
-        .onStart { sendSubscribeRequest(requestId, operationName, variables) }
+    fun subscribe(requestId: String, operationName: String, variables: Struct?): Flow<Response> {
+      val streamRequestId = "sub-$requestId"
+
+      return incomingResponses
+        .filter { it.requestId == streamRequestId }
+        .onStart { sendSubscribeRequest(streamRequestId, operationName, variables) }
         .transformWhile {
           val response = it.toDataConnectStreamResponse()
           if (response !== null) {
@@ -210,6 +212,7 @@ internal class DataConnectGrpcRPCs(
           }
           !it.cancelled
         }
+    }
 
     private suspend fun sendSubscribeRequest(
       requestId: String,
