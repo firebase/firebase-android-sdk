@@ -1456,8 +1456,8 @@ private fun Exception.messageShouldIndicateNoCachedResults() {
   assertSoftly {
     message.let {
       it shouldContainWithNonAbuttingText "xz3fvh9r39"
-      it shouldContainWithNonAbuttingText "CACHE_ONLY"
-      it shouldContainWithNonAbuttingTextIgnoringCase "no cached results for query"
+      it shouldContainWithNonAbuttingTextIgnoringCase
+        "query result was not found in the local cache"
     }
   }
 }

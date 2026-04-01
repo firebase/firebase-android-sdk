@@ -19,7 +19,6 @@ package com.google.firebase.dataconnect.querymgr
 import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.core.Logger
-import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase.GetQueryResultResult
 import com.google.firebase.dataconnect.util.SequencedReference
 import kotlinx.coroutines.CoroutineDispatcher
@@ -43,12 +42,13 @@ internal class PreferCacheLocalQuery<Data>(
     callerSdkType: FirebaseDataConnect.CallerSdkType,
   ): SequencedReference<ExecuteImplResult> {
     run {
-      val cacheResult =
+      val getQueryResultResult =
         cacheOnlyLocalQuery.executeImpl(
           requestId,
           GetQueryResultResult.Stale::class,
         )
-      val executeImplResult = cacheResult.toExecuteImplResult(requestId)
+      logger.logGetQueryResultResult(requestId, getQueryResultResult)
+      val executeImplResult = getQueryResultResult.toExecuteImplResult()
       if (executeImplResult !== null) {
         return SequencedReference(sequenceNumber, executeImplResult)
       }
@@ -63,27 +63,17 @@ internal class PreferCacheLocalQuery<Data>(
     )
   }
 
-  private fun GetQueryResultResult.toExecuteImplResult(requestId: String): ExecuteImplResult? =
-    when (this) {
-      is GetQueryResultResult.Found -> {
-        logger.debug {
-          "[rid=$requestId] got query result from cache with freshnessRemaining=$freshnessRemaining"
-        }
-        ExecuteImplResult(
-          struct.toExecuteQueryResponseProto(),
-          DataSource.CACHE,
-        )
+  private companion object {
+
+    fun GetQueryResultResult.toExecuteImplResult(): ExecuteImplResult? =
+      when (this) {
+        GetQueryResultResult.NotFound -> null
+        is GetQueryResultResult.Stale -> null
+        is GetQueryResultResult.Found ->
+          ExecuteImplResult(
+            struct.toExecuteQueryResponseProto(),
+            DataSource.CACHE,
+          )
       }
-      GetQueryResultResult.NotFound -> {
-        logger.debug { "[rid=$requestId] no query result found in cache; getting from server" }
-        null
-      }
-      is GetQueryResultResult.Stale -> {
-        logger.debug {
-          "[rid=$requestId] stale query result found in cache (staleness=$staleness); " +
-            "getting from server"
-        }
-        null
-      }
-    }
+  }
 }

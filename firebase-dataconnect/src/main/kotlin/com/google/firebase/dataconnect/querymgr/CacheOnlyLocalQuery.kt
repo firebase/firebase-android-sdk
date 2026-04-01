@@ -21,6 +21,7 @@ import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
+import com.google.firebase.dataconnect.querymgr.LocalQuery.ExecuteImplResult
 import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase
 import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase.GetQueryResultResult
 import com.google.firebase.dataconnect.util.ImmutableByteArray
@@ -51,30 +52,12 @@ internal class CacheOnlyLocalQuery<Data>(
     authToken: String?,
     appCheckToken: String?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
-  ): SequencedReference<ExecuteImplResult> =
-    when (val result = executeImpl(requestId, GetQueryResultResult.Found::class)) {
-      is GetQueryResultResult.Found -> {
-        logger.debug {
-          "[rid=$requestId] got query result from cache " +
-            "with freshnessRemaining=${result.freshnessRemaining}"
-        }
-        SequencedReference(
-          sequenceNumber,
-          ExecuteImplResult(
-            result.struct.toExecuteQueryResponseProto(),
-            DataSource.CACHE,
-          ),
-        )
-      }
-      GetQueryResultResult.NotFound -> {
-        logger.debug { "[rid=$requestId] no query result found in cache" }
-        throw CachedDataNotFoundException(
-          "no cached results for query and CACHE_ONLY fetch policy was specified [xz3fvh9r39]"
-        )
-      }
-      is GetQueryResultResult.Stale ->
-        throw IllegalStateException("internal error axj5etj8v3: unexpected result: $result")
-    }
+  ): SequencedReference<ExecuteImplResult> {
+    val getQueryResultResult = executeImpl(requestId, GetQueryResultResult.Found::class)
+    logger.logGetQueryResultResult(requestId, getQueryResultResult)
+    val executeImplResult = getQueryResultResult.toExecuteImplResult()
+    return SequencedReference(sequenceNumber, executeImplResult)
+  }
 
   suspend fun executeImpl(
     requestId: String,
@@ -94,7 +77,39 @@ internal class CacheOnlyLocalQuery<Data>(
       staleResult = staleResult,
     )
   }
+
+  private companion object {
+
+    fun GetQueryResultResult.toExecuteImplResult(): ExecuteImplResult =
+      when (this) {
+        is GetQueryResultResult.Found ->
+          ExecuteImplResult(
+            struct.toExecuteQueryResponseProto(),
+            DataSource.CACHE,
+          )
+        GetQueryResultResult.NotFound ->
+          throw CachedDataNotFoundException(
+            "query result was not found in the local cache [xz3fvh9r39]"
+          )
+        is GetQueryResultResult.Stale ->
+          throw IllegalStateException("internal error axj5etj8v3: unexpected result: $this")
+      }
+  }
 }
 
 internal fun StructProto.toExecuteQueryResponseProto(): ExecuteQueryResponseProto =
   ExecuteQueryResponseProto.newBuilder().setData(this).build()
+
+internal fun Logger.logGetQueryResultResult(requestId: String, result: GetQueryResultResult) =
+  debug {
+    val message =
+      when (result) {
+        is GetQueryResultResult.Found ->
+          "found query result in the local cache (freshnessRemaining=${result.freshnessRemaining})"
+        GetQueryResultResult.NotFound -> "query result was not found in the local cache"
+        is GetQueryResultResult.Stale ->
+          "stale query result found in the local cache (staleness=${result.staleness})"
+      }
+
+    "[rid=$requestId] $message"
+  }
