@@ -233,6 +233,7 @@ jobs:
           export DATACONNECT_EMULATOR_BINARY_PATH
 
           export FIREBASE_DATACONNECT_POSTGRESQL_STRING='postgresql://postgres@127.0.0.1:5432?sslmode=disable'
+          export DATA_CONNECT_PREVIEW=refresh
           cd firebase-dataconnect/emulator
           ${{ env.FDC_FIREBASE_COMMAND }} emulators:start --only=auth,dataconnect >firebase.emulators.log 2>&1 &
 
