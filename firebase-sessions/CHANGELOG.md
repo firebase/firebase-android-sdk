@@ -1,5 +1,6 @@
 # Unreleased
 
+- [fixed] Lazy loading kotlinx.coroutines in FirebaseSessionsDependencies.kt to fix (#7882)
 - [changed] Bumped internal dependencies.
 
 # 3.0.4
