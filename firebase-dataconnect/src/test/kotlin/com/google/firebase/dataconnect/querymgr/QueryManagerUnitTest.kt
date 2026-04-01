@@ -1055,38 +1055,42 @@ class QueryManagerUnitTest {
   }
 
   @Test
-  fun `execute(fetchPolicy=CACHE_ONLY) with fresh results returns from cache`() = runTest {
-    checkAll(
-      propTestConfig,
-      executeArgumentsArb(),
-      cacheSettingsArb(maxAge = Arb.duration(1.seconds..1.hours)),
-      Arb.of(FetchPolicy.PREFER_CACHE, FetchPolicy.SERVER_ONLY),
-      testDataArb(),
-    ) { args, cacheSettings, fetchPolicy1, testData ->
-      val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk {
-        stubExecuteQuery(executeQueryResponse = testData.encodeToExecuteQueryResponse())
+  fun `execute(fetchPolicy=CACHE_ONLY,PREFER_CACHE) with fresh results returns from cache`() =
+    runTest {
+      checkAll(
+        propTestConfig,
+        executeArgumentsArb(),
+        cacheSettingsArb(maxAge = Arb.duration(1.seconds..1.hours)),
+        Arb.of(FetchPolicy.PREFER_CACHE, FetchPolicy.SERVER_ONLY),
+        Arb.of(FetchPolicy.PREFER_CACHE, FetchPolicy.CACHE_ONLY),
+        testDataArb(),
+      ) { args, cacheSettings, fetchPolicy1, fetchPolicy2, testData ->
+        val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk {
+          stubExecuteQuery(executeQueryResponse = testData.encodeToExecuteQueryResponse())
+        }
+        val queryManager: QueryManager = buildQueryManager {
+          setDataConnectGrpcRPCs(dataConnectGrpcRPCs)
+          setCacheSettings(cacheSettings)
+
+          val timeStepRange = cacheSettings.maxAge.inWholeMilliseconds.let { 0L until (it / 2) }
+          setCurrentTimeMillis(
+            currentTimeMillisFuncArb(
+                start = Long.MIN_VALUE..(Long.MAX_VALUE - (timeStepRange.last * 2)),
+                step = timeStepRange,
+              )
+              .bind()
+          )
+        }
+        queryManager.execute(args.copy(fetchPolicy = fetchPolicy1)) // populate cache
+
+        val result = queryManager.execute(args.copy(fetchPolicy = fetchPolicy2))
+
+        result shouldBe QueryManager.ExecuteResult(testData, DataSource.CACHE)
+        coVerify(exactly = 1) {
+          dataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any())
+        }
       }
-      val queryManager: QueryManager = buildQueryManager {
-        setDataConnectGrpcRPCs(dataConnectGrpcRPCs)
-        setCacheSettings(cacheSettings)
-
-        val timeStepRange = cacheSettings.maxAge.inWholeMilliseconds.let { 0L until (it / 2) }
-        setCurrentTimeMillis(
-          currentTimeMillisFuncArb(
-              start = Long.MIN_VALUE..(Long.MAX_VALUE - (timeStepRange.last * 2)),
-              step = timeStepRange,
-            )
-            .bind()
-        )
-      }
-      queryManager.execute(args.copy(fetchPolicy = fetchPolicy1)) // populate cache
-
-      val result = queryManager.execute(args.copy(fetchPolicy = FetchPolicy.CACHE_ONLY))
-
-      result shouldBe QueryManager.ExecuteResult(testData, DataSource.CACHE)
-      coVerify(exactly = 1) { dataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any()) }
     }
-  }
 
   @Test
   fun `execute(fetchPolicy=PREFER_CACHE) with stale results returns from server`() = runTest {
@@ -1131,64 +1135,35 @@ class QueryManagerUnitTest {
   }
 
   @Test
-  fun `execute(fetchPolicy=CACHE_ONLY) with cacheSettings with maxAge in future returns from cache`() =
-    runTest {
-      checkAll(
-        propTestConfig,
-        executeArgumentsArb(),
-        cacheSettingsArb(maxAge = 1.hours),
-        Arb.of(FetchPolicy.PREFER_CACHE, FetchPolicy.SERVER_ONLY),
-        testDataArb(),
-      ) { args, cacheSettings, fetchPolicy1, testData ->
-        val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk {
-          stubExecuteQuery(executeQueryResponse = testData.encodeToExecuteQueryResponse())
-        }
-        val queryManager: QueryManager = buildQueryManager {
-          setDataConnectGrpcRPCs(dataConnectGrpcRPCs)
-          setCacheSettings(cacheSettings)
-        }
-        queryManager.execute(args.copy(fetchPolicy = fetchPolicy1)) // populate cache
-
-        val result = queryManager.execute(args.copy(fetchPolicy = FetchPolicy.CACHE_ONLY))
-
-        result shouldBe QueryManager.ExecuteResult(testData, DataSource.CACHE)
-        coVerify(exactly = 1) {
-          dataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any())
-        }
+  fun `execute(fetchPolicy=SERVER_ONLY) always returns from server`() = runTest {
+    checkAll(
+      propTestConfig,
+      executeArgumentsArb(fetchPolicy = FetchPolicy.SERVER_ONLY),
+      cacheSettingsArb(),
+      Arb.dataConnect.requestName(),
+      Arb.list(testDataArb(), 1..5),
+    ) { args, cacheSettings, requestName, testDataList ->
+      val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk {
+        val responses = testDataList.map { it.encodeToExecuteQueryResponse() }
+        coEvery { executeQuery(any(), any(), any(), any(), any()) } returnsMany responses
       }
-    }
-
-  @Test
-  fun `execute(fetchPolicy=SERVER_ONLY) with cacheSettings=non-null always returns from server`() =
-    runTest {
-      checkAll(
-        propTestConfig,
-        executeArgumentsArb(fetchPolicy = FetchPolicy.SERVER_ONLY),
-        cacheSettingsArb(),
-        Arb.dataConnect.requestName(),
-        Arb.list(testDataArb(), 1..5),
-      ) { args, cacheSettings, requestName, testDataList ->
-        val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk {
-          val responses = testDataList.map { it.encodeToExecuteQueryResponse() }
-          coEvery { executeQuery(any(), any(), any(), any(), any()) } returnsMany responses
-        }
-        val queryManager: QueryManager = buildQueryManager {
-          setDataConnectGrpcRPCs(dataConnectGrpcRPCs)
-          setCacheSettings(cacheSettings)
-          setRequestName(requestName)
-        }
-
-        val results = List(testDataList.size) { queryManager.execute(args) }
-
-        val expectedResults = testDataList.map { QueryManager.ExecuteResult(it, DataSource.SERVER) }
-        results shouldContainExactly expectedResults
-        coVerify(exactly = testDataList.size) {
-          val requestProto = eq(args.encodeToExecuteQueryRequest(requestName))
-          dataConnectGrpcRPCs.executeQuery(any(), requestProto, any(), any(), any())
-        }
-        confirmVerified(dataConnectGrpcRPCs)
+      val queryManager: QueryManager = buildQueryManager {
+        setDataConnectGrpcRPCs(dataConnectGrpcRPCs)
+        setCacheSettings(cacheSettings)
+        setRequestName(requestName)
       }
+
+      val results = List(testDataList.size) { queryManager.execute(args) }
+
+      val expectedResults = testDataList.map { QueryManager.ExecuteResult(it, DataSource.SERVER) }
+      results shouldContainExactly expectedResults
+      coVerify(exactly = testDataList.size) {
+        val requestProto = eq(args.encodeToExecuteQueryRequest(requestName))
+        dataConnectGrpcRPCs.executeQuery(any(), requestProto, any(), any(), any())
+      }
+      confirmVerified(dataConnectGrpcRPCs)
     }
+  }
 
   private fun cacheFileArb(): Arb<File> = arbitrary {
     File(temporaryFolder.newFolder(), "db.sqlite")
