@@ -18,19 +18,19 @@
 
 package com.google.firebase.dataconnect.core
 
-import app.cash.turbine.test
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.OperationRef
 import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.copy
-import com.google.firebase.dataconnect.core.DataConnectGrpcRPCs.DataConnectStream
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
-import com.google.firebase.dataconnect.testutil.property.arbitrary.pair
+import com.google.firebase.dataconnect.testutil.property.arbitrary.triple
 import com.google.firebase.dataconnect.testutil.schemas.PastaConnector
 import com.google.firebase.dataconnect.util.ProtoUtil.decodeFromStruct
 import com.google.firebase.dataconnect.util.ProtoUtil.encodeToStruct
 import com.google.protobuf.Struct
+import google.firebase.dataconnect.proto.ExecuteQueryResponse
+import google.firebase.dataconnect.proto.ExecuteRequest
 import io.kotest.assertions.asClue
 import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
@@ -46,8 +46,12 @@ import io.kotest.property.arbitrary.next
 import io.kotest.property.arbs.firstName
 import io.kotest.property.checkAll
 import kotlin.time.Duration
-import kotlinx.coroutines.flow.Flow
+import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import org.junit.Test
 
 class DataConnectGrpcRPCsIntegrationTest : DataConnectIntegrationTestBase() {
@@ -59,7 +63,7 @@ class DataConnectGrpcRPCsIntegrationTest : DataConnectIntegrationTestBase() {
       val callerSdkTypeArb = Arb.enum<FirebaseDataConnect.CallerSdkType>()
       val requestIdArb = Arb.dataConnect.requestId()
       val connector = newConnector()
-      checkAll(propTestConfig, stringArb.pair()) { (name1, name2) ->
+      checkAll(propTestConfig, stringArb.triple()) { (name1, name2, name3) ->
         val key = connector.insert(name1)
         val dataConnectGrpcRPCs = connector.dataConnectGrpcRPCs
         val queryRef = connector.refs.getByKey(key)
@@ -73,19 +77,27 @@ class DataConnectGrpcRPCsIntegrationTest : DataConnectIntegrationTestBase() {
             name = connector.calculateRequestName(),
           )
 
-        val flow: Flow<DataConnectStream.Response> =
+        val channel: ReceiveChannel<ExecuteQueryResponse> =
           stream.subscribe(
             requestId = requestIdArb.next(randomSource()),
-            operationName = queryRef.operationName,
-            variables = queryRef.encodeVariables(),
+            ExecuteRequest.newBuilder()
+              .setOperationName(queryRef.operationName)
+              .setVariables(queryRef.encodeVariables())
+              .build()
           )
 
-        flow.test {
-          withClue("awaitItem1") { awaitItem().shouldHaveName(name1, queryRef) }
-
-          connector.update(key, name2)
-
-          withClue("awaitItem2") { awaitItem().shouldHaveName(name2, queryRef) }
+        withContext(Dispatchers.Default) {
+          withTimeout(3.seconds) {
+            try {
+              withClue("awaitItem1") { channel.receive().shouldHaveName(name1, queryRef) }
+              connector.update(key, name2)
+              withClue("awaitItem2") { channel.receive().shouldHaveName(name2, queryRef) }
+              connector.update(key, name3)
+              withClue("awaitItem3") { channel.receive().shouldHaveName(name3, queryRef) }
+            } finally {
+              channel.cancel()
+            }
+          }
         }
       }
     }
@@ -113,7 +125,7 @@ private fun <T> Struct.decodeAsData(ref: OperationRef<T, *>): T =
 private fun <T> QueryRef<*, T>.encodeVariables(): Struct =
   encodeToStruct(this.variables, variablesSerializer, variablesSerializersModule)
 
-private fun DataConnectStream.Response.shouldHaveName(
+private fun ExecuteQueryResponse.shouldHaveName(
   name: String,
   ref: OperationRef<PastaConnector.Data.Get, *>
 ) {

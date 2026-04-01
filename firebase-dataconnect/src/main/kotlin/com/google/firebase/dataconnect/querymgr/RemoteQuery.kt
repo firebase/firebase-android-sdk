@@ -86,9 +86,4 @@ internal class RemoteQuery(
       )
     return executeSerializer.execute(sequenceNumber, params)
   }
-
-  sealed interface ExecuteResult {
-    data class Success(val response: SequencedReference<ExecuteQueryResponseProto>) : ExecuteResult
-    data object Retry : ExecuteResult
-  }
 }
