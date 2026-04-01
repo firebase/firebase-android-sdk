@@ -441,6 +441,7 @@ package com.google.firebase.firestore {
     method public com.google.firebase.firestore.Pipeline replaceWith(String field);
     method public com.google.firebase.firestore.Pipeline sample(com.google.firebase.firestore.pipeline.SampleStage sample);
     method public com.google.firebase.firestore.Pipeline sample(int documents);
+    method @com.google.common.annotations.Beta public com.google.firebase.firestore.Pipeline search(com.google.firebase.firestore.pipeline.SearchStage searchStage);
     method public com.google.firebase.firestore.Pipeline select(com.google.firebase.firestore.pipeline.Selectable selection, java.lang.Object... additionalSelections);
     method public com.google.firebase.firestore.Pipeline select(String fieldName, java.lang.Object... additionalSelections);
     method public com.google.firebase.firestore.Pipeline sort(com.google.firebase.firestore.pipeline.Ordering order, com.google.firebase.firestore.pipeline.Ordering... additionalOrders);
@@ -1000,6 +1001,7 @@ package com.google.firebase.firestore.pipeline {
     method public static final com.google.firebase.firestore.pipeline.Expression documentId(com.google.firebase.firestore.DocumentReference docRef);
     method public static final com.google.firebase.firestore.pipeline.Expression documentId(com.google.firebase.firestore.pipeline.Expression documentPath);
     method public static final com.google.firebase.firestore.pipeline.Expression documentId(String documentPath);
+    method @com.google.common.annotations.Beta public static final com.google.firebase.firestore.pipeline.BooleanExpression documentMatches(String rquery);
     method public final com.google.firebase.firestore.pipeline.Expression dotProduct(com.google.firebase.firestore.pipeline.Expression vector);
     method public static final com.google.firebase.firestore.pipeline.Expression dotProduct(com.google.firebase.firestore.pipeline.Expression vector1, com.google.firebase.firestore.pipeline.Expression vector2);
     method public static final com.google.firebase.firestore.pipeline.Expression dotProduct(com.google.firebase.firestore.pipeline.Expression vector1, com.google.firebase.firestore.VectorValue vector2);
@@ -1048,6 +1050,8 @@ package com.google.firebase.firestore.pipeline {
     method public final com.google.firebase.firestore.pipeline.Expression floor();
     method public static final com.google.firebase.firestore.pipeline.Expression floor(com.google.firebase.firestore.pipeline.Expression numericExpr);
     method public static final com.google.firebase.firestore.pipeline.Expression floor(String numericField);
+    method @com.google.common.annotations.Beta public static final com.google.firebase.firestore.pipeline.Expression geoDistance(com.google.firebase.firestore.pipeline.Field field, com.google.firebase.firestore.GeoPoint location);
+    method @com.google.common.annotations.Beta public static final com.google.firebase.firestore.pipeline.Expression geoDistance(String fieldName, com.google.firebase.firestore.GeoPoint location);
     method public final com.google.firebase.firestore.pipeline.Expression getField(com.google.firebase.firestore.pipeline.Expression keyExpression);
     method public static final com.google.firebase.firestore.pipeline.Expression getField(com.google.firebase.firestore.pipeline.Expression expression, com.google.firebase.firestore.pipeline.Expression keyExpression);
     method public static final com.google.firebase.firestore.pipeline.Expression getField(com.google.firebase.firestore.pipeline.Expression expression, String key);
@@ -1088,6 +1092,9 @@ package com.google.firebase.firestore.pipeline {
     method public static final com.google.firebase.firestore.pipeline.BooleanExpression isAbsent(String fieldName);
     method public final com.google.firebase.firestore.pipeline.BooleanExpression isError();
     method public static final com.google.firebase.firestore.pipeline.BooleanExpression isError(com.google.firebase.firestore.pipeline.Expression expr);
+    method public static final com.google.firebase.firestore.pipeline.BooleanExpression isType(com.google.firebase.firestore.pipeline.Expression expr, String type);
+    method public final com.google.firebase.firestore.pipeline.BooleanExpression isType(String type);
+    method public static final com.google.firebase.firestore.pipeline.BooleanExpression isType(String fieldName, String type);
     method public final com.google.firebase.firestore.pipeline.Expression join(com.google.firebase.firestore.pipeline.Expression delimiterExpression);
     method public static final com.google.firebase.firestore.pipeline.Expression join(com.google.firebase.firestore.pipeline.Expression arrayExpression, com.google.firebase.firestore.pipeline.Expression delimiterExpression);
     method public static final com.google.firebase.firestore.pipeline.Expression join(com.google.firebase.firestore.pipeline.Expression arrayExpression, String delimiter);
@@ -1134,6 +1141,15 @@ package com.google.firebase.firestore.pipeline {
     method public final com.google.firebase.firestore.pipeline.Expression logicalMinimum(com.google.firebase.firestore.pipeline.Expression... others);
     method public final com.google.firebase.firestore.pipeline.Expression logicalMinimum(java.lang.Object... others);
     method public static final com.google.firebase.firestore.pipeline.Expression logicalMinimum(String fieldName, java.lang.Object... others);
+    method public final com.google.firebase.firestore.pipeline.Expression ltrim();
+    method public static final com.google.firebase.firestore.pipeline.Expression ltrim(com.google.firebase.firestore.pipeline.Expression stringExpression);
+    method public static final com.google.firebase.firestore.pipeline.Expression ltrim(String fieldName);
+    method public final com.google.firebase.firestore.pipeline.Expression ltrimValue(com.google.firebase.firestore.pipeline.Expression valuesToTrim);
+    method public static final com.google.firebase.firestore.pipeline.Expression ltrimValue(com.google.firebase.firestore.pipeline.Expression stringExpression, com.google.firebase.firestore.pipeline.Expression valuesToTrim);
+    method public static final com.google.firebase.firestore.pipeline.Expression ltrimValue(com.google.firebase.firestore.pipeline.Expression stringExpression, String valuesToTrim);
+    method public final com.google.firebase.firestore.pipeline.Expression ltrimValue(String valuesToTrim);
+    method public static final com.google.firebase.firestore.pipeline.Expression ltrimValue(String fieldName, com.google.firebase.firestore.pipeline.Expression valuesToTrim);
+    method public static final com.google.firebase.firestore.pipeline.Expression ltrimValue(String fieldName, String valuesToTrim);
     method public static final com.google.firebase.firestore.pipeline.Expression map(java.util.Map<java.lang.String,?> elements);
     method public final com.google.firebase.firestore.pipeline.Expression mapEntries();
     method public static final com.google.firebase.firestore.pipeline.Expression mapEntries(com.google.firebase.firestore.pipeline.Expression mapExpr);
@@ -1195,6 +1211,10 @@ package com.google.firebase.firestore.pipeline {
     method public final com.google.firebase.firestore.pipeline.BooleanExpression notEqualAny(java.util.List<?> values);
     method public static final com.google.firebase.firestore.pipeline.Expression nullValue();
     method public static final com.google.firebase.firestore.pipeline.BooleanExpression or(com.google.firebase.firestore.pipeline.BooleanExpression condition, com.google.firebase.firestore.pipeline.BooleanExpression... conditions);
+    method public final com.google.firebase.firestore.pipeline.Expression parent();
+    method public static final com.google.firebase.firestore.pipeline.Expression parent(com.google.firebase.firestore.DocumentReference docRef);
+    method public static final com.google.firebase.firestore.pipeline.Expression parent(com.google.firebase.firestore.pipeline.Expression documentPath);
+    method public static final com.google.firebase.firestore.pipeline.Expression parent(String documentPath);
     method public final com.google.firebase.firestore.pipeline.Expression pow(com.google.firebase.firestore.pipeline.Expression exponent);
     method public static final com.google.firebase.firestore.pipeline.Expression pow(com.google.firebase.firestore.pipeline.Expression numericExpr, com.google.firebase.firestore.pipeline.Expression exponent);
     method public static final com.google.firebase.firestore.pipeline.Expression pow(com.google.firebase.firestore.pipeline.Expression numericExpr, Number exponent);
@@ -1235,6 +1255,16 @@ package com.google.firebase.firestore.pipeline {
     method public final com.google.firebase.firestore.pipeline.Expression roundToPrecision(int decimalPlace);
     method public static final com.google.firebase.firestore.pipeline.Expression roundToPrecision(String numericField, com.google.firebase.firestore.pipeline.Expression decimalPlace);
     method public static final com.google.firebase.firestore.pipeline.Expression roundToPrecision(String numericField, int decimalPlace);
+    method public final com.google.firebase.firestore.pipeline.Expression rtrim();
+    method public static final com.google.firebase.firestore.pipeline.Expression rtrim(com.google.firebase.firestore.pipeline.Expression stringExpression);
+    method public static final com.google.firebase.firestore.pipeline.Expression rtrim(String fieldName);
+    method public final com.google.firebase.firestore.pipeline.Expression rtrimValue(com.google.firebase.firestore.pipeline.Expression valuesToTrim);
+    method public static final com.google.firebase.firestore.pipeline.Expression rtrimValue(com.google.firebase.firestore.pipeline.Expression stringExpression, com.google.firebase.firestore.pipeline.Expression valuesToTrim);
+    method public static final com.google.firebase.firestore.pipeline.Expression rtrimValue(com.google.firebase.firestore.pipeline.Expression stringExpression, String valuesToTrim);
+    method public final com.google.firebase.firestore.pipeline.Expression rtrimValue(String valuesToTrim);
+    method public static final com.google.firebase.firestore.pipeline.Expression rtrimValue(String fieldName, com.google.firebase.firestore.pipeline.Expression valuesToTrim);
+    method public static final com.google.firebase.firestore.pipeline.Expression rtrimValue(String fieldName, String valuesToTrim);
+    method @com.google.common.annotations.Beta public static final com.google.firebase.firestore.pipeline.Expression score();
     method public final com.google.firebase.firestore.pipeline.Expression split(com.google.firebase.firestore.Blob delimiter);
     method public final com.google.firebase.firestore.pipeline.Expression split(com.google.firebase.firestore.pipeline.Expression delimiter);
     method public static final com.google.firebase.firestore.pipeline.Expression split(com.google.firebase.firestore.pipeline.Expression value, com.google.firebase.firestore.Blob delimiter);
@@ -1266,6 +1296,30 @@ package com.google.firebase.firestore.pipeline {
     method public final com.google.firebase.firestore.pipeline.BooleanExpression stringContains(String substring);
     method public static final com.google.firebase.firestore.pipeline.BooleanExpression stringContains(String fieldName, com.google.firebase.firestore.pipeline.Expression substring);
     method public static final com.google.firebase.firestore.pipeline.BooleanExpression stringContains(String fieldName, String substring);
+    method public final com.google.firebase.firestore.pipeline.Expression stringIndexOf(com.google.firebase.firestore.pipeline.Expression substring);
+    method public static final com.google.firebase.firestore.pipeline.Expression stringIndexOf(com.google.firebase.firestore.pipeline.Expression stringExpression, com.google.firebase.firestore.pipeline.Expression substring);
+    method public static final com.google.firebase.firestore.pipeline.Expression stringIndexOf(com.google.firebase.firestore.pipeline.Expression stringExpression, String substring);
+    method public final com.google.firebase.firestore.pipeline.Expression stringIndexOf(String substring);
+    method public static final com.google.firebase.firestore.pipeline.Expression stringIndexOf(String fieldName, com.google.firebase.firestore.pipeline.Expression substring);
+    method public static final com.google.firebase.firestore.pipeline.Expression stringIndexOf(String fieldName, String substring);
+    method public final com.google.firebase.firestore.pipeline.Expression stringRepeat(com.google.firebase.firestore.pipeline.Expression count);
+    method public static final com.google.firebase.firestore.pipeline.Expression stringRepeat(com.google.firebase.firestore.pipeline.Expression stringExpression, com.google.firebase.firestore.pipeline.Expression count);
+    method public static final com.google.firebase.firestore.pipeline.Expression stringRepeat(com.google.firebase.firestore.pipeline.Expression stringExpression, int count);
+    method public final com.google.firebase.firestore.pipeline.Expression stringRepeat(int count);
+    method public static final com.google.firebase.firestore.pipeline.Expression stringRepeat(String fieldName, com.google.firebase.firestore.pipeline.Expression count);
+    method public static final com.google.firebase.firestore.pipeline.Expression stringRepeat(String fieldName, int count);
+    method public final com.google.firebase.firestore.pipeline.Expression stringReplaceAll(com.google.firebase.firestore.pipeline.Expression oldValue, com.google.firebase.firestore.pipeline.Expression newValue);
+    method public static final com.google.firebase.firestore.pipeline.Expression stringReplaceAll(com.google.firebase.firestore.pipeline.Expression stringExpression, com.google.firebase.firestore.pipeline.Expression oldValue, com.google.firebase.firestore.pipeline.Expression newValue);
+    method public static final com.google.firebase.firestore.pipeline.Expression stringReplaceAll(com.google.firebase.firestore.pipeline.Expression stringExpression, String oldValue, String newValue);
+    method public static final com.google.firebase.firestore.pipeline.Expression stringReplaceAll(String fieldName, com.google.firebase.firestore.pipeline.Expression oldValue, com.google.firebase.firestore.pipeline.Expression newValue);
+    method public final com.google.firebase.firestore.pipeline.Expression stringReplaceAll(String oldValue, String newValue);
+    method public static final com.google.firebase.firestore.pipeline.Expression stringReplaceAll(String fieldName, String oldValue, String newValue);
+    method public final com.google.firebase.firestore.pipeline.Expression stringReplaceOne(com.google.firebase.firestore.pipeline.Expression oldValue, com.google.firebase.firestore.pipeline.Expression newValue);
+    method public static final com.google.firebase.firestore.pipeline.Expression stringReplaceOne(com.google.firebase.firestore.pipeline.Expression stringExpression, com.google.firebase.firestore.pipeline.Expression oldValue, com.google.firebase.firestore.pipeline.Expression newValue);
+    method public static final com.google.firebase.firestore.pipeline.Expression stringReplaceOne(com.google.firebase.firestore.pipeline.Expression stringExpression, String oldValue, String newValue);
+    method public static final com.google.firebase.firestore.pipeline.Expression stringReplaceOne(String fieldName, com.google.firebase.firestore.pipeline.Expression oldValue, com.google.firebase.firestore.pipeline.Expression newValue);
+    method public final com.google.firebase.firestore.pipeline.Expression stringReplaceOne(String oldValue, String newValue);
+    method public static final com.google.firebase.firestore.pipeline.Expression stringReplaceOne(String fieldName, String oldValue, String newValue);
     method public final com.google.firebase.firestore.pipeline.Expression stringReverse();
     method public static final com.google.firebase.firestore.pipeline.Expression stringReverse(com.google.firebase.firestore.pipeline.Expression str);
     method public static final com.google.firebase.firestore.pipeline.Expression stringReverse(String fieldName);
@@ -1519,6 +1573,7 @@ package com.google.firebase.firestore.pipeline {
     method public com.google.firebase.firestore.pipeline.Expression documentId(com.google.firebase.firestore.DocumentReference docRef);
     method public com.google.firebase.firestore.pipeline.Expression documentId(com.google.firebase.firestore.pipeline.Expression documentPath);
     method public com.google.firebase.firestore.pipeline.Expression documentId(String documentPath);
+    method @com.google.common.annotations.Beta public com.google.firebase.firestore.pipeline.BooleanExpression documentMatches(String rquery);
     method public com.google.firebase.firestore.pipeline.Expression dotProduct(com.google.firebase.firestore.pipeline.Expression vector1, com.google.firebase.firestore.pipeline.Expression vector2);
     method public com.google.firebase.firestore.pipeline.Expression dotProduct(com.google.firebase.firestore.pipeline.Expression vector1, com.google.firebase.firestore.VectorValue vector2);
     method public com.google.firebase.firestore.pipeline.Expression dotProduct(com.google.firebase.firestore.pipeline.Expression vector1, double[] vector2);
@@ -1551,6 +1606,8 @@ package com.google.firebase.firestore.pipeline {
     method public com.google.firebase.firestore.pipeline.Field field(String name);
     method public com.google.firebase.firestore.pipeline.Expression floor(com.google.firebase.firestore.pipeline.Expression numericExpr);
     method public com.google.firebase.firestore.pipeline.Expression floor(String numericField);
+    method @com.google.common.annotations.Beta public com.google.firebase.firestore.pipeline.Expression geoDistance(com.google.firebase.firestore.pipeline.Field field, com.google.firebase.firestore.GeoPoint location);
+    method @com.google.common.annotations.Beta public com.google.firebase.firestore.pipeline.Expression geoDistance(String fieldName, com.google.firebase.firestore.GeoPoint location);
     method public com.google.firebase.firestore.pipeline.Expression getField(com.google.firebase.firestore.pipeline.Expression expression, com.google.firebase.firestore.pipeline.Expression keyExpression);
     method public com.google.firebase.firestore.pipeline.Expression getField(com.google.firebase.firestore.pipeline.Expression expression, String key);
     method public com.google.firebase.firestore.pipeline.Expression getField(String fieldName, com.google.firebase.firestore.pipeline.Expression keyExpression);
@@ -1577,6 +1634,8 @@ package com.google.firebase.firestore.pipeline {
     method public com.google.firebase.firestore.pipeline.BooleanExpression isAbsent(com.google.firebase.firestore.pipeline.Expression value);
     method public com.google.firebase.firestore.pipeline.BooleanExpression isAbsent(String fieldName);
     method public com.google.firebase.firestore.pipeline.BooleanExpression isError(com.google.firebase.firestore.pipeline.Expression expr);
+    method public com.google.firebase.firestore.pipeline.BooleanExpression isType(com.google.firebase.firestore.pipeline.Expression expr, String type);
+    method public com.google.firebase.firestore.pipeline.BooleanExpression isType(String fieldName, String type);
     method public com.google.firebase.firestore.pipeline.Expression join(com.google.firebase.firestore.pipeline.Expression arrayExpression, com.google.firebase.firestore.pipeline.Expression delimiterExpression);
     method public com.google.firebase.firestore.pipeline.Expression join(com.google.firebase.firestore.pipeline.Expression arrayExpression, String delimiter);
     method public com.google.firebase.firestore.pipeline.Expression join(String arrayFieldName, com.google.firebase.firestore.pipeline.Expression delimiterExpression);
@@ -1607,6 +1666,12 @@ package com.google.firebase.firestore.pipeline {
     method public com.google.firebase.firestore.pipeline.Expression logicalMaximum(String fieldName, java.lang.Object... others);
     method public com.google.firebase.firestore.pipeline.Expression logicalMinimum(com.google.firebase.firestore.pipeline.Expression expr, java.lang.Object... others);
     method public com.google.firebase.firestore.pipeline.Expression logicalMinimum(String fieldName, java.lang.Object... others);
+    method public com.google.firebase.firestore.pipeline.Expression ltrim(com.google.firebase.firestore.pipeline.Expression stringExpression);
+    method public com.google.firebase.firestore.pipeline.Expression ltrim(String fieldName);
+    method public com.google.firebase.firestore.pipeline.Expression ltrimValue(com.google.firebase.firestore.pipeline.Expression stringExpression, com.google.firebase.firestore.pipeline.Expression valuesToTrim);
+    method public com.google.firebase.firestore.pipeline.Expression ltrimValue(com.google.firebase.firestore.pipeline.Expression stringExpression, String valuesToTrim);
+    method public com.google.firebase.firestore.pipeline.Expression ltrimValue(String fieldName, com.google.firebase.firestore.pipeline.Expression valuesToTrim);
+    method public com.google.firebase.firestore.pipeline.Expression ltrimValue(String fieldName, String valuesToTrim);
     method public com.google.firebase.firestore.pipeline.Expression map(java.util.Map<java.lang.String,?> elements);
     method public com.google.firebase.firestore.pipeline.Expression mapEntries(com.google.firebase.firestore.pipeline.Expression mapExpr);
     method public com.google.firebase.firestore.pipeline.Expression mapEntries(String mapField);
@@ -1648,6 +1713,9 @@ package com.google.firebase.firestore.pipeline {
     method public com.google.firebase.firestore.pipeline.BooleanExpression notEqualAny(String fieldName, java.util.List<?> values);
     method public com.google.firebase.firestore.pipeline.Expression nullValue();
     method public com.google.firebase.firestore.pipeline.BooleanExpression or(com.google.firebase.firestore.pipeline.BooleanExpression condition, com.google.firebase.firestore.pipeline.BooleanExpression... conditions);
+    method public com.google.firebase.firestore.pipeline.Expression parent(com.google.firebase.firestore.DocumentReference docRef);
+    method public com.google.firebase.firestore.pipeline.Expression parent(com.google.firebase.firestore.pipeline.Expression documentPath);
+    method public com.google.firebase.firestore.pipeline.Expression parent(String documentPath);
     method public com.google.firebase.firestore.pipeline.Expression pow(com.google.firebase.firestore.pipeline.Expression numericExpr, com.google.firebase.firestore.pipeline.Expression exponent);
     method public com.google.firebase.firestore.pipeline.Expression pow(com.google.firebase.firestore.pipeline.Expression numericExpr, Number exponent);
     method public com.google.firebase.firestore.pipeline.Expression pow(String numericField, com.google.firebase.firestore.pipeline.Expression exponent);
@@ -1678,6 +1746,13 @@ package com.google.firebase.firestore.pipeline {
     method public com.google.firebase.firestore.pipeline.Expression roundToPrecision(com.google.firebase.firestore.pipeline.Expression numericExpr, int decimalPlace);
     method public com.google.firebase.firestore.pipeline.Expression roundToPrecision(String numericField, com.google.firebase.firestore.pipeline.Expression decimalPlace);
     method public com.google.firebase.firestore.pipeline.Expression roundToPrecision(String numericField, int decimalPlace);
+    method public com.google.firebase.firestore.pipeline.Expression rtrim(com.google.firebase.firestore.pipeline.Expression stringExpression);
+    method public com.google.firebase.firestore.pipeline.Expression rtrim(String fieldName);
+    method public com.google.firebase.firestore.pipeline.Expression rtrimValue(com.google.firebase.firestore.pipeline.Expression stringExpression, com.google.firebase.firestore.pipeline.Expression valuesToTrim);
+    method public com.google.firebase.firestore.pipeline.Expression rtrimValue(com.google.firebase.firestore.pipeline.Expression stringExpression, String valuesToTrim);
+    method public com.google.firebase.firestore.pipeline.Expression rtrimValue(String fieldName, com.google.firebase.firestore.pipeline.Expression valuesToTrim);
+    method public com.google.firebase.firestore.pipeline.Expression rtrimValue(String fieldName, String valuesToTrim);
+    method @com.google.common.annotations.Beta public com.google.firebase.firestore.pipeline.Expression score();
     method public com.google.firebase.firestore.pipeline.Expression split(com.google.firebase.firestore.pipeline.Expression value, com.google.firebase.firestore.Blob delimiter);
     method public com.google.firebase.firestore.pipeline.Expression split(com.google.firebase.firestore.pipeline.Expression value, com.google.firebase.firestore.pipeline.Expression delimiter);
     method public com.google.firebase.firestore.pipeline.Expression split(com.google.firebase.firestore.pipeline.Expression value, String delimiter);
@@ -1698,6 +1773,22 @@ package com.google.firebase.firestore.pipeline {
     method public com.google.firebase.firestore.pipeline.BooleanExpression stringContains(com.google.firebase.firestore.pipeline.Expression stringExpression, String substring);
     method public com.google.firebase.firestore.pipeline.BooleanExpression stringContains(String fieldName, com.google.firebase.firestore.pipeline.Expression substring);
     method public com.google.firebase.firestore.pipeline.BooleanExpression stringContains(String fieldName, String substring);
+    method public com.google.firebase.firestore.pipeline.Expression stringIndexOf(com.google.firebase.firestore.pipeline.Expression stringExpression, com.google.firebase.firestore.pipeline.Expression substring);
+    method public com.google.firebase.firestore.pipeline.Expression stringIndexOf(com.google.firebase.firestore.pipeline.Expression stringExpression, String substring);
+    method public com.google.firebase.firestore.pipeline.Expression stringIndexOf(String fieldName, com.google.firebase.firestore.pipeline.Expression substring);
+    method public com.google.firebase.firestore.pipeline.Expression stringIndexOf(String fieldName, String substring);
+    method public com.google.firebase.firestore.pipeline.Expression stringRepeat(com.google.firebase.firestore.pipeline.Expression stringExpression, com.google.firebase.firestore.pipeline.Expression count);
+    method public com.google.firebase.firestore.pipeline.Expression stringRepeat(com.google.firebase.firestore.pipeline.Expression stringExpression, int count);
+    method public com.google.firebase.firestore.pipeline.Expression stringRepeat(String fieldName, com.google.firebase.firestore.pipeline.Expression count);
+    method public com.google.firebase.firestore.pipeline.Expression stringRepeat(String fieldName, int count);
+    method public com.google.firebase.firestore.pipeline.Expression stringReplaceAll(com.google.firebase.firestore.pipeline.Expression stringExpression, com.google.firebase.firestore.pipeline.Expression oldValue, com.google.firebase.firestore.pipeline.Expression newValue);
+    method public com.google.firebase.firestore.pipeline.Expression stringReplaceAll(com.google.firebase.firestore.pipeline.Expression stringExpression, String oldValue, String newValue);
+    method public com.google.firebase.firestore.pipeline.Expression stringReplaceAll(String fieldName, com.google.firebase.firestore.pipeline.Expression oldValue, com.google.firebase.firestore.pipeline.Expression newValue);
+    method public com.google.firebase.firestore.pipeline.Expression stringReplaceAll(String fieldName, String oldValue, String newValue);
+    method public com.google.firebase.firestore.pipeline.Expression stringReplaceOne(com.google.firebase.firestore.pipeline.Expression stringExpression, com.google.firebase.firestore.pipeline.Expression oldValue, com.google.firebase.firestore.pipeline.Expression newValue);
+    method public com.google.firebase.firestore.pipeline.Expression stringReplaceOne(com.google.firebase.firestore.pipeline.Expression stringExpression, String oldValue, String newValue);
+    method public com.google.firebase.firestore.pipeline.Expression stringReplaceOne(String fieldName, com.google.firebase.firestore.pipeline.Expression oldValue, com.google.firebase.firestore.pipeline.Expression newValue);
+    method public com.google.firebase.firestore.pipeline.Expression stringReplaceOne(String fieldName, String oldValue, String newValue);
     method public com.google.firebase.firestore.pipeline.Expression stringReverse(com.google.firebase.firestore.pipeline.Expression str);
     method public com.google.firebase.firestore.pipeline.Expression stringReverse(String fieldName);
     method public com.google.firebase.firestore.pipeline.Expression substring(com.google.firebase.firestore.pipeline.Expression stringExpression, com.google.firebase.firestore.pipeline.Expression index, com.google.firebase.firestore.pipeline.Expression length);
@@ -1781,6 +1872,7 @@ package com.google.firebase.firestore.pipeline {
   }
 
   public final class Field extends com.google.firebase.firestore.pipeline.Selectable {
+    method @com.google.common.annotations.Beta public com.google.firebase.firestore.pipeline.Expression geoDistance(com.google.firebase.firestore.GeoPoint location);
     field public static final com.google.firebase.firestore.pipeline.Field.Companion Companion;
   }
 
@@ -1880,6 +1972,19 @@ package com.google.firebase.firestore.pipeline {
     property public final error.NonExistentClass PERCENT;
   }
 
+  @com.google.common.annotations.Beta public final class SearchStage extends com.google.firebase.firestore.pipeline.Stage<com.google.firebase.firestore.pipeline.SearchStage> {
+    method public com.google.firebase.firestore.pipeline.SearchStage withAddFields(com.google.firebase.firestore.pipeline.Selectable field, com.google.firebase.firestore.pipeline.Selectable... additionalFields);
+    method public static com.google.firebase.firestore.pipeline.SearchStage withQuery(com.google.firebase.firestore.pipeline.BooleanExpression query);
+    method public static com.google.firebase.firestore.pipeline.SearchStage withQuery(String rquery);
+    method public com.google.firebase.firestore.pipeline.SearchStage withSort(com.google.firebase.firestore.pipeline.Ordering order, com.google.firebase.firestore.pipeline.Ordering... additionalOrderings);
+    field public static final com.google.firebase.firestore.pipeline.SearchStage.Companion Companion;
+  }
+
+  public static final class SearchStage.Companion {
+    method public com.google.firebase.firestore.pipeline.SearchStage withQuery(com.google.firebase.firestore.pipeline.BooleanExpression query);
+    method public com.google.firebase.firestore.pipeline.SearchStage withQuery(String rquery);
+  }
+
   public abstract class Selectable extends com.google.firebase.firestore.pipeline.Expression {
     ctor public Selectable();
   }
@@ -1891,6 +1996,10 @@ package com.google.firebase.firestore.pipeline {
     method protected final T withOption(String key, error.NonExistentClass value);
     method public final T withOption(String key, String value);
     method public final T withOption(String key, long value);
+    field public static final com.google.firebase.firestore.pipeline.Stage.Companion Companion;
+  }
+
+  public static final class Stage.Companion {
   }
 
   public final class SubcollectionSource extends com.google.firebase.firestore.pipeline.Stage<com.google.firebase.firestore.pipeline.SubcollectionSource> {

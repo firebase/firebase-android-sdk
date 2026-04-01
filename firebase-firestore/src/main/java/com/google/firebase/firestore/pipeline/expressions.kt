@@ -14,6 +14,7 @@
 
 package com.google.firebase.firestore.pipeline
 
+import com.google.common.annotations.Beta
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.Blob
 import com.google.firebase.firestore.DocumentReference
@@ -65,9 +66,11 @@ abstract class Expression internal constructor() {
     override fun evaluateFunction(context: EvaluationContext) = { _: MutableDocument ->
       EvaluateResultValue(value)
     }
+
     override fun toString(): String {
       return canonicalId()
     }
+
     override fun canonicalId() = "cst(${canonicalId(value)})"
 
     override fun equals(other: Any?): Boolean {
@@ -1938,6 +1941,48 @@ abstract class Expression internal constructor() {
     fun type(fieldName: String): Expression = FunctionExpression("type", notImplemented, fieldName)
 
     /**
+     * Creates an expression that checks if the result of an expression is of the given type.
+     *
+     * Supported values for `type` are: "null", "array", "boolean", "bytes", "timestamp",
+     * "geo_point", "number", "int32", "int64", "float64", "decimal128", "map", "reference",
+     * "string", "vector", "max_key", "min_key", "object_id", "regex", and "request_timestamp".
+     *
+     * ```kotlin
+     * // Check if the 'age' field is an integer
+     * isType(field("age"), "int64")
+     * ```
+     *
+     * @param expr The expression to check the type of.
+     * @param type The type to check for.
+     * @return A new [BooleanExpression] that evaluates to true if the expression's result is of the
+     * given type, false otherwise.
+     */
+    @JvmStatic
+    fun isType(expr: Expression, type: String): BooleanExpression =
+      BooleanFunctionExpression("is_type", notImplemented, expr, constant(type))
+
+    /**
+     * Creates an expression that checks if the value of a field is of the given type.
+     *
+     * Supported values for `type` are: "null", "array", "boolean", "bytes", "timestamp",
+     * "geo_point", "number", "int32", "int64", "float64", "decimal128", "map", "reference",
+     * "string", "vector", "max_key", "min_key", "object_id", "regex", and "request_timestamp".
+     *
+     * ```kotlin
+     * // Check if the 'age' field is an integer
+     * isType("age", "int64")
+     * ```
+     *
+     * @param fieldName The name of the field to check the type of.
+     * @param type The type to check for.
+     * @return A new [BooleanExpression] that evaluates to true if the expression's result is of the
+     * given type, false otherwise.
+     */
+    @JvmStatic
+    fun isType(fieldName: String, type: String): BooleanExpression =
+      BooleanFunctionExpression("is_type", notImplemented, fieldName, constant(type))
+
+    /**
      * Creates an expression that calculates the length of a string, array, map, vector, or blob
      * expression.
      *
@@ -3003,8 +3048,9 @@ abstract class Expression internal constructor() {
     fun trim(fieldName: String): Expression = FunctionExpression("trim", evaluateTrim, fieldName)
 
     /**
-     * Creates an expression that removes leading and trailing values from a expression. The
-     * accepted values types are string and blob.
+     * Creates an expression that removes a set of leading and trailing values from an expression.
+     *
+     * Note: The values to trim are treated as a **set**, not a substring.
      *
      * ```kotlin
      * // Trim specified characters from the 'userInput' field
@@ -3022,10 +3068,12 @@ abstract class Expression internal constructor() {
       FunctionExpression("trim", notImplemented, stringExpression, valueToTrim)
 
     /**
-     * Creates an expression that removes leading and trailing characters from a string field.
+     * Creates an expression that removes a set of leading and trailing values from a string field.
+     *
+     * Note: The values to trim are treated as a **set**, not a substring.
      *
      * ```kotlin
-     * // Trim '-', and '_' from the beginning and the end of 'userInput' field
+     * // Trim all '-', and '_' characters from the beginning and the end of 'userInput' field
      * trimValue("userInput", "-_")
      * ```
      *
@@ -3037,6 +3085,530 @@ abstract class Expression internal constructor() {
     @JvmStatic
     fun trimValue(fieldName: String, valueToTrim: String): Expression =
       FunctionExpression("trim", notImplemented, fieldName, constant(valueToTrim))
+
+    /**
+     * Creates an expression that removes leading whitespace from a string expression.
+     *
+     * ```kotlin
+     * // Trim leading whitespace from the 'text' field.
+     * ltrim(field("text"))
+     * ```
+     *
+     * @param stringExpression The expression representing the string to trim.
+     * @return A new [Expression] representing the ltrim operation.
+     */
+    @JvmStatic
+    fun ltrim(stringExpression: Expression): Expression =
+      FunctionExpression("ltrim", notImplemented, stringExpression)
+
+    /**
+     * Creates an expression that removes leading whitespace from a string field.
+     *
+     * ```kotlin
+     * // Trim leading whitespace from the 'text' field.
+     * ltrim("text")
+     * ```
+     *
+     * @param fieldName The name of the field containing the string to trim.
+     * @return A new [Expression] representing the ltrim operation.
+     */
+    @JvmStatic
+    fun ltrim(fieldName: String): Expression =
+      FunctionExpression("ltrim", notImplemented, field(fieldName))
+
+    /**
+     * Creates an expression that removes a set of leading values from a string expression.
+     *
+     * Note: The values to trim are treated as a **set**, not a substring.
+     *
+     * ```kotlin
+     * // Trim all leading '-' and '_' characters from the 'text' field.
+     * ltrimValue(field("text"), "-_")
+     * ```
+     *
+     * @param stringExpression The expression representing the string to trim.
+     * @param valuesToTrim The set of values to remove.
+     * @return A new [Expression] representing the ltrim operation.
+     */
+    @JvmStatic
+    fun ltrimValue(stringExpression: Expression, valuesToTrim: String): Expression =
+      FunctionExpression("ltrim", notImplemented, stringExpression, constant(valuesToTrim))
+
+    /**
+     * Creates an expression that removes a set of leading values from a string expression.
+     *
+     * Note: The values to trim are treated as a **set**, not a substring.
+     *
+     * ```kotlin
+     * // Trim leading characters defined by the 'chars' field from the 'text' field.
+     * ltrimValue(field("text"), field("chars"))
+     * ```
+     *
+     * @param stringExpression The expression representing the string to trim.
+     * @param valuesToTrim The expression representing the set of values to remove.
+     * @return A new [Expression] representing the ltrim operation.
+     */
+    @JvmStatic
+    fun ltrimValue(stringExpression: Expression, valuesToTrim: Expression): Expression =
+      FunctionExpression("ltrim", notImplemented, stringExpression, valuesToTrim)
+
+    /**
+     * Creates an expression that removes specified leading values from a string field.
+     *
+     * Note: The values to trim are treated as a **set**, not a substring.
+     *
+     * ```kotlin
+     * // Trim all leading '-' and '_' characters from the 'text' field.
+     * ltrimValue("text", "-_")
+     * ```
+     *
+     * @param fieldName The name of the field containing the string to trim.
+     * @param valuesToTrim The set of values to remove.
+     * @return A new [Expression] representing the ltrim operation.
+     */
+    @JvmStatic
+    fun ltrimValue(fieldName: String, valuesToTrim: String): Expression =
+      FunctionExpression("ltrim", notImplemented, field(fieldName), constant(valuesToTrim))
+
+    /**
+     * Creates an expression that removes specified leading values from a string field.
+     *
+     * Note: The values to trim are treated as a **set**, not a substring.
+     *
+     * ```kotlin
+     * // Trim leading characters defined by the 'chars' field from the 'text' field.
+     * ltrimValue("text", field("chars"))
+     * ```
+     *
+     * @param fieldName The name of the field containing the string to trim.
+     * @param valuesToTrim The expression representing the set of values to remove.
+     * @return A new [Expression] representing the ltrim operation.
+     */
+    @JvmStatic
+    fun ltrimValue(fieldName: String, valuesToTrim: Expression): Expression =
+      FunctionExpression("ltrim", notImplemented, field(fieldName), valuesToTrim)
+
+    /**
+     * Creates an expression that removes trailing whitespace from a string expression.
+     *
+     * ```kotlin
+     * // Trim trailing whitespace from the 'text' field.
+     * rtrim(field("text"))
+     * ```
+     *
+     * @param stringExpression The expression representing the string to trim.
+     * @return A new [Expression] representing the rtrim operation.
+     */
+    @JvmStatic
+    fun rtrim(stringExpression: Expression): Expression =
+      FunctionExpression("rtrim", notImplemented, stringExpression)
+
+    /**
+     * Creates an expression that removes trailing whitespace from a string field.
+     *
+     * ```kotlin
+     * // Trim trailing whitespace from the 'text' field.
+     * rtrim("text")
+     * ```
+     *
+     * @param fieldName The name of the field containing the string to trim.
+     * @return A new [Expression] representing the rtrim operation.
+     */
+    @JvmStatic
+    fun rtrim(fieldName: String): Expression =
+      FunctionExpression("rtrim", notImplemented, field(fieldName))
+
+    /**
+     * Creates an expression that removes a set of trailing values from a string expression.
+     *
+     * Note: The values to trim are treated as a **set**, not a substring.
+     *
+     * ```kotlin
+     * // Trim all trailing '-' and '_' characters from the 'text' field.
+     * rtrimValue(field("text"), "-_")
+     * ```
+     *
+     * @param stringExpression The expression representing the string to trim.
+     * @param valuesToTrim The set of values to remove.
+     * @return A new [Expression] representing the rtrim operation.
+     */
+    @JvmStatic
+    fun rtrimValue(stringExpression: Expression, valuesToTrim: String): Expression =
+      FunctionExpression("rtrim", notImplemented, stringExpression, constant(valuesToTrim))
+
+    /**
+     * Creates an expression that removes a set of trailing values from a string expression.
+     *
+     * Note: The values to trim are treated as a **set**, not a substring.
+     *
+     * ```kotlin
+     * // Trim trailing characters defined by the 'chars' field from the 'text' field.
+     * rtrimValue(field("text"), field("chars"))
+     * ```
+     *
+     * @param stringExpression The expression representing the string to trim.
+     * @param valuesToTrim The expression representing the set of values to remove.
+     * @return A new [Expression] representing the rtrim operation.
+     */
+    @JvmStatic
+    fun rtrimValue(stringExpression: Expression, valuesToTrim: Expression): Expression =
+      FunctionExpression("rtrim", notImplemented, stringExpression, valuesToTrim)
+
+    /**
+     * Creates an expression that removes a set of trailing values from a string field.
+     *
+     * Note: The values to trim are treated as a **set**, not a substring.
+     *
+     * ```kotlin
+     * // Trim all trailing '-' and '_' characters from the 'text' field.
+     * rtrimValue("text", "-_")
+     * ```
+     *
+     * @param fieldName The name of the field containing the string to trim.
+     * @param valuesToTrim The set of values to remove.
+     * @return A new [Expression] representing the rtrim operation.
+     */
+    @JvmStatic
+    fun rtrimValue(fieldName: String, valuesToTrim: String): Expression =
+      FunctionExpression("rtrim", notImplemented, field(fieldName), constant(valuesToTrim))
+
+    /**
+     * Creates an expression that removes a set of trailing values from a string field.
+     *
+     * Note: The values to trim are treated as a **set**, not a substring.
+     *
+     * ```kotlin
+     * // Trim trailing characters defined by the 'chars' field from the 'text' field.
+     * rtrimValue("text", field("chars"))
+     * ```
+     *
+     * @param fieldName The name of the field containing the string to trim.
+     * @param valuesToTrim The expression representing the set of values to remove.
+     * @return A new [Expression] representing the rtrim operation.
+     */
+    @JvmStatic
+    fun rtrimValue(fieldName: String, valuesToTrim: Expression): Expression =
+      FunctionExpression("rtrim", notImplemented, field(fieldName), valuesToTrim)
+
+    /**
+     * Creates an expression that repeats a string expression a given number of times.
+     *
+     * ```kotlin
+     * // Repeat the 'name' field 3 times.
+     * stringRepeat(field("name"), 3)
+     * ```
+     *
+     * @param stringExpression The expression representing the string to repeat.
+     * @param count The number of times to repeat the string.
+     * @return A new [Expression] representing the stringRepeat operation.
+     */
+    @JvmStatic
+    fun stringRepeat(stringExpression: Expression, count: Int): Expression =
+      FunctionExpression("string_repeat", notImplemented, stringExpression, constant(count))
+
+    /**
+     * Creates an expression that repeats a string expression a given number of times.
+     *
+     * ```kotlin
+     * // Repeat the 'name' field the number of times specified in the 'count' field.
+     * stringRepeat(field("name"), field("count"))
+     * ```
+     *
+     * @param stringExpression The expression representing the string to repeat.
+     * @param count The expression representing the number of times to repeat the string.
+     * @return A new [Expression] representing the stringRepeat operation.
+     */
+    @JvmStatic
+    fun stringRepeat(stringExpression: Expression, count: Expression): Expression =
+      FunctionExpression("string_repeat", notImplemented, stringExpression, count)
+
+    /**
+     * Creates an expression that repeats a string field a given number of times.
+     *
+     * ```kotlin
+     * // Repeat the 'name' field 3 times.
+     * stringRepeat("name", 3)
+     * ```
+     *
+     * @param fieldName The name of the field containing the string to repeat.
+     * @param count The number of times to repeat the string.
+     * @return A new [Expression] representing the stringRepeat operation.
+     */
+    @JvmStatic
+    fun stringRepeat(fieldName: String, count: Int): Expression =
+      FunctionExpression("string_repeat", notImplemented, field(fieldName), constant(count))
+
+    /**
+     * Creates an expression that repeats a string field a given number of times.
+     *
+     * ```kotlin
+     * // Repeat the 'name' field the number of times specified in the 'count' field.
+     * stringRepeat("name", field("count"))
+     * ```
+     *
+     * @param fieldName The name of the field containing the string to repeat.
+     * @param count The expression representing the number of times to repeat the string.
+     * @return A new [Expression] representing the stringRepeat operation.
+     */
+    @JvmStatic
+    fun stringRepeat(fieldName: String, count: Expression): Expression =
+      FunctionExpression("string_repeat", notImplemented, field(fieldName), count)
+
+    /**
+     * Creates an expression that replaces all occurrences of a substring with another string.
+     *
+     * ```kotlin
+     * // Replace all occurrences of the 'old' field with the 'new' field in 'text'.
+     * stringReplaceAll(field("text"), field("old"), field("new"))
+     * ```
+     *
+     * @param stringExpression The expression representing the original string.
+     * @param oldValue The expression representing the substring to replace.
+     * @param newValue The expression representing the replacement string.
+     * @return A new [Expression] representing the stringReplaceAll operation.
+     */
+    @JvmStatic
+    fun stringReplaceAll(
+      stringExpression: Expression,
+      oldValue: Expression,
+      newValue: Expression
+    ): Expression =
+      FunctionExpression("string_replace_all", notImplemented, stringExpression, oldValue, newValue)
+
+    /**
+     * Creates an expression that replaces all occurrences of a substring with another string.
+     *
+     * ```kotlin
+     * // Replace all occurrences of "cat" with "dog" in the 'text' field.
+     * stringReplaceAll(field("text"), "cat", "dog")
+     * ```
+     *
+     * @param stringExpression The expression representing the original string.
+     * @param oldValue The substring to replace.
+     * @param newValue The replacement string.
+     * @return A new [Expression] representing the stringReplaceAll operation.
+     */
+    @JvmStatic
+    fun stringReplaceAll(
+      stringExpression: Expression,
+      oldValue: String,
+      newValue: String
+    ): Expression =
+      FunctionExpression(
+        "string_replace_all",
+        notImplemented,
+        stringExpression,
+        constant(oldValue),
+        constant(newValue)
+      )
+
+    /**
+     * Creates an expression that replaces all occurrences of a substring with another string in a
+     * field.
+     *
+     * ```kotlin
+     * // Replace all occurrences of the 'old' field with the 'new' field in 'text'.
+     * stringReplaceAll("text", field("old"), field("new"))
+     * ```
+     *
+     * @param fieldName The name of the field containing the original string.
+     * @param oldValue The expression representing the substring to replace.
+     * @param newValue The expression representing the replacement string.
+     * @return A new [Expression] representing the stringReplaceAll operation.
+     */
+    @JvmStatic
+    fun stringReplaceAll(
+      fieldName: String,
+      oldValue: Expression,
+      newValue: Expression
+    ): Expression =
+      FunctionExpression("string_replace_all", notImplemented, field(fieldName), oldValue, newValue)
+
+    /**
+     * Creates an expression that replaces all occurrences of a substring with another string in a
+     * field.
+     *
+     * ```kotlin
+     * // Replace all occurrences of "cat" with "dog" in the 'text' field.
+     * stringReplaceAll("text", "cat", "dog")
+     * ```
+     *
+     * @param fieldName The name of the field containing the original string.
+     * @param oldValue The substring to replace.
+     * @param newValue The replacement string.
+     * @return A new [Expression] representing the stringReplaceAll operation.
+     */
+    @JvmStatic
+    fun stringReplaceAll(fieldName: String, oldValue: String, newValue: String): Expression =
+      FunctionExpression(
+        "string_replace_all",
+        notImplemented,
+        field(fieldName),
+        constant(oldValue),
+        constant(newValue)
+      )
+
+    /**
+     * Creates an expression that replaces the first occurrence of a substring with another string.
+     *
+     * ```kotlin
+     * // Replace the first occurrence of the 'old' field with the 'new' field in 'text'.
+     * stringReplaceOne(field("text"), field("old"), field("new"))
+     * ```
+     *
+     * @param stringExpression The expression representing the original string.
+     * @param oldValue The expression representing the substring to replace.
+     * @param newValue The expression representing the replacement string.
+     * @return A new [Expression] representing the stringReplaceOne operation.
+     */
+    @JvmStatic
+    fun stringReplaceOne(
+      stringExpression: Expression,
+      oldValue: Expression,
+      newValue: Expression
+    ): Expression =
+      FunctionExpression("string_replace_one", notImplemented, stringExpression, oldValue, newValue)
+
+    /**
+     * Creates an expression that replaces the first occurrence of a substring with another string.
+     *
+     * ```kotlin
+     * // Replace the first occurrence of "cat" with "dog" in the 'text' field.
+     * stringReplaceOne(field("text"), "cat", "dog")
+     * ```
+     *
+     * @param stringExpression The expression representing the original string.
+     * @param oldValue The substring to replace.
+     * @param newValue The replacement string.
+     * @return A new [Expression] representing the stringReplaceOne operation.
+     */
+    @JvmStatic
+    fun stringReplaceOne(
+      stringExpression: Expression,
+      oldValue: String,
+      newValue: String
+    ): Expression =
+      FunctionExpression(
+        "string_replace_one",
+        notImplemented,
+        stringExpression,
+        constant(oldValue),
+        constant(newValue)
+      )
+
+    /**
+     * Creates an expression that replaces the first occurrence of a substring with another string
+     * in a field.
+     *
+     * ```kotlin
+     * // Replace the first occurrence of the 'old' field with the 'new' field in 'text'.
+     * stringReplaceOne("text", field("old"), field("new"))
+     * ```
+     *
+     * @param fieldName The name of the field containing the original string.
+     * @param oldValue The expression representing the substring to replace.
+     * @param newValue The expression representing the replacement string.
+     * @return A new [Expression] representing the stringReplaceOne operation.
+     */
+    @JvmStatic
+    fun stringReplaceOne(
+      fieldName: String,
+      oldValue: Expression,
+      newValue: Expression
+    ): Expression =
+      FunctionExpression("string_replace_one", notImplemented, field(fieldName), oldValue, newValue)
+
+    /**
+     * Creates an expression that replaces the first occurrence of a substring with another string
+     * in a field.
+     *
+     * ```kotlin
+     * // Replace the first occurrence of "cat" with "dog" in the 'text' field.
+     * stringReplaceOne("text", "cat", "dog")
+     * ```
+     *
+     * @param fieldName The name of the field containing the original string.
+     * @param oldValue The substring to replace.
+     * @param newValue The replacement string.
+     * @return A new [Expression] representing the stringReplaceOne operation.
+     */
+    @JvmStatic
+    fun stringReplaceOne(fieldName: String, oldValue: String, newValue: String): Expression =
+      FunctionExpression(
+        "string_replace_one",
+        notImplemented,
+        field(fieldName),
+        constant(oldValue),
+        constant(newValue)
+      )
+
+    /**
+     * Creates an expression that returns the 0-based index of the first occurrence of the specified
+     * substring.
+     *
+     * ```kotlin
+     * // Get the index of the 'search' field within the 'text' field.
+     * stringIndexOf(field("text"), field("search"))
+     * ```
+     *
+     * @param stringExpression The expression representing the string to search within.
+     * @param substring The expression representing the substring to search for.
+     * @return A new [Expression] representing the stringIndexOf operation.
+     */
+    @JvmStatic
+    fun stringIndexOf(stringExpression: Expression, substring: Expression): Expression =
+      FunctionExpression("string_index_of", notImplemented, stringExpression, substring)
+
+    /**
+     * Creates an expression that returns the 0-based index of the first occurrence of the specified
+     * substring.
+     *
+     * ```kotlin
+     * // Get the index of "world" within the 'text' field.
+     * stringIndexOf(field("text"), "world")
+     * ```
+     *
+     * @param stringExpression The expression representing the string to search within.
+     * @param substring The substring to search for.
+     * @return A new [Expression] representing the stringIndexOf operation.
+     */
+    @JvmStatic
+    fun stringIndexOf(stringExpression: Expression, substring: String): Expression =
+      FunctionExpression("string_index_of", notImplemented, stringExpression, constant(substring))
+
+    /**
+     * Creates an expression that returns the 0-based index of the first occurrence of the specified
+     * substring in a field.
+     *
+     * ```kotlin
+     * // Get the index of the 'search' field within the 'text' field.
+     * stringIndexOf("text", field("search"))
+     * ```
+     *
+     * @param fieldName The name of the field containing the string to search within.
+     * @param substring The expression representing the substring to search for.
+     * @return A new [Expression] representing the stringIndexOf operation.
+     */
+    @JvmStatic
+    fun stringIndexOf(fieldName: String, substring: Expression): Expression =
+      FunctionExpression("string_index_of", notImplemented, field(fieldName), substring)
+
+    /**
+     * Creates an expression that returns the 0-based index of the first occurrence of the specified
+     * substring in a field.
+     *
+     * ```kotlin
+     * // Get the index of "world" within the 'text' field.
+     * stringIndexOf("text", "world")
+     * ```
+     *
+     * @param fieldName The name of the field containing the string to search within.
+     * @param substring The substring to search for.
+     * @return A new [Expression] representing the stringIndexOf operation.
+     */
+    @JvmStatic
+    fun stringIndexOf(fieldName: String, substring: String): Expression =
+      FunctionExpression("string_index_of", notImplemented, field(fieldName), constant(substring))
 
     /**
      * Creates an expression that concatenates string expressions together.
@@ -6860,6 +7432,47 @@ abstract class Expression internal constructor() {
     @JvmStatic fun documentId(docRef: DocumentReference): Expression = documentId(constant(docRef))
 
     /**
+     * Creates an expression that returns the parent document reference of a document reference.
+     *
+     * ```kotlin
+     * // Get the parent document reference of a document reference.
+     * parent(field("__path__"))
+     * ```
+     *
+     * @param documentPath An expression evaluating to a document reference.
+     * @return A new [Expression] representing the parent operation.
+     */
+    @JvmStatic
+    fun parent(documentPath: Expression): Expression =
+      FunctionExpression("parent", notImplemented, documentPath)
+
+    /**
+     * Creates an expression that returns the parent document reference of a document reference.
+     *
+     * ```kotlin
+     * // Get the parent document reference of a document reference.
+     * parent("projects/p/databases/d/documents/c/d")
+     * ```
+     *
+     * @param documentPath A string path to get the parent from.
+     * @return A new [Expression] representing the parent operation.
+     */
+    @JvmStatic fun parent(documentPath: String): Expression = parent(constant(documentPath))
+
+    /**
+     * Creates an expression that returns the parent document reference of a document reference.
+     *
+     * ```kotlin
+     * // Get the parent document reference of a document reference.
+     * parent(myDocumentReference)
+     * ```
+     *
+     * @param docRef A [DocumentReference] to get the parent from.
+     * @return A new [Expression] representing the parent operation.
+     */
+    @JvmStatic fun parent(docRef: DocumentReference): Expression = parent(constant(docRef))
+
+    /**
      * Creates an expression that retrieves the value of a variable bound via [Pipeline.define].
      *
      * Example:
@@ -6894,7 +7507,257 @@ abstract class Expression internal constructor() {
      */
     @JvmStatic
     fun currentDocument(): Expression = FunctionExpression("current_document", notImplemented)
+
+    /**
+     * Evaluates to the distance in meters between the location in the specified field and the query
+     * location.
+     *
+     * Note: This Expression can only be used within a `Search` stage.
+     *
+     * @example
+     * ```kotlin
+     * db.pipeline().collection("restaurants").search(
+     *   SearchStage(query = documentMatches("waffles"), sort = arrayOf(geoDistance("location", GeoPoint(37.0, -122.0)).ascending()))
+     * )
+     * ```
+     *
+     * @param fieldName Specifies the field in the document which contains the first GeoPoint for
+     * distance computation.
+     * @param location Compute distance to this GeoPoint.
+     */
+    @Beta
+    @JvmStatic
+    fun geoDistance(fieldName: String, location: GeoPoint): Expression =
+      geoDistance(field(fieldName), location)
+
+    /**
+     * Evaluates to the distance in meters between the location in the specified field and the query
+     * location.
+     *
+     * Note: This Expression can only be used within a `Search` stage.
+     *
+     * @example
+     * ```kotlin
+     * db.pipeline().collection("restaurants").search(
+     *   SearchStage(query = documentMatches("waffles"), sort = arrayOf(geoDistance(field("location"), GeoPoint(37.0, -122.0)).ascending()))
+     * )
+     * ```
+     *
+     * @param field Specifies the field in the document which contains the first GeoPoint for
+     * distance computation.
+     * @param location Compute distance to this GeoPoint.
+     */
+    @Beta
+    @JvmStatic
+    fun geoDistance(field: Field, location: GeoPoint): Expression =
+      FunctionExpression("geo_distance", notImplemented, field, constant(location))
+
+    /**
+     * Perform a full-text search on all indexed search fields in the document.
+     *
+     * Note: This Expression can only be used within a `Search` stage.
+     *
+     * @example
+     * ```kotlin
+     * db.pipeline().collection("restaurants").search(
+     *   SearchStage(query = documentMatches("waffles OR pancakes"))
+     * )
+     * ```
+     *
+     * @param rquery Define the search query using the search DSL.
+     */
+    @Beta
+    @JvmStatic
+    fun documentMatches(rquery: String): BooleanExpression =
+      BooleanFunctionExpression("document_matches", notImplemented, constant(rquery))
+
+    //    /**
+    //     * Perform a full-text search on the specified field.
+    //     *
+    //     * Note: This Expression can only be used within a `Search` stage.
+    //     *
+    //     * @example
+    //     * ```kotlin
+    //     * db.pipeline().collection("restaurants").search(
+    //     *   SearchStage(query = matches("menu", "waffles"))
+    //     * )
+    //     * ```
+    //     *
+    //     * @param fieldName Perform search on this field.
+    //     * @param rquery Define the search query using the search DSL.
+    //     */
+    //    // TODO(search) this is internal until supported by the backend
+    //    @Beta
+    //    @JvmStatic
+    //    internal fun matches(fieldName: String, rquery: String): BooleanExpression =
+    //      matches(field(fieldName), rquery)
+    //
+    //    /**
+    //     * Perform a full-text search on the specified field.
+    //     *
+    //     * Note: This Expression can only be used within a `Search` stage.
+    //     *
+    //     * @example
+    //     * ```kotlin
+    //     * db.pipeline().collection("restaurants").search(
+    //     *   SearchStage(query = matches(field("menu"), "waffles"))
+    //     * )
+    //     * ```
+    //     *
+    //     * @param field Perform search on this field.
+    //     * @param rquery Define the search query using the search DSL.
+    //     */
+    //    // TODO(search) this is internal until supported by the backend
+    //    @Beta
+    //    @JvmStatic
+    //    internal fun matches(field: Field, rquery: String): BooleanExpression =
+    //      BooleanFunctionExpression("matches", notImplemented, field, constant(rquery))
+
+    /**
+     * Evaluates to the search score that reflects the topicality of the document to all of the text
+     * predicates (for example: `documentMatches`) in the search query. If `SearchStage.query` is
+     * not set or does not contain any text predicates, then this score will always be `0`.
+     *
+     * Note: This Expression can only be used within a `Search` stage.
+     * @example
+     * ```kotlin
+     * db.pipeline().collection("restaurants").search(
+     *   SearchStage(query = documentMatches("waffles"), sort = arrayOf(score().descending()))
+     * )
+     * ```
+     */
+    @Beta @JvmStatic fun score(): Expression = FunctionExpression("score", notImplemented)
+
+    //    /**
+    //     * Evaluates to an HTML-formatted text snippet that highlights terms matching the search
+    // query
+    //     * in `<b>bold</b>`.
+    //     *
+    //     * This Expression can only be used within a `Search` stage.
+    //     *
+    //     * @example
+    //     * ```kotlin
+    //     * db.pipeline().collection("restaurants").search(
+    //     *   SearchStage(query = documentMatches("waffles"), addFields = arrayOf(snippet("menu",
+    // "waffles").alias("snippet")))
+    //     * )
+    //     * ```
+    //     *
+    //     * @param fieldName Search the specified field for matching terms.
+    //     * @param rquery Define the search query using the search DSL.
+    //     */
+    //    @Beta
+    //    @JvmStatic
+    //    fun snippet(fieldName: String, rquery: String): Expression =
+    //      FunctionExpression("snippet", notImplemented, field(fieldName), constant(rquery))
+
+    //    /**
+    //     * Evaluates to an HTML-formatted text snippet that highlights terms matching the search
+    // query
+    //     * in `<b>bold</b>`.
+    //     *
+    //     * This Expression can only be used within a `Search` stage.
+    //     *
+    //     * @param fieldName Search the specified field for matching terms.
+    //     * @param options Define how the snippet is generated.
+    //     */
+    //    // TODO(search) snippet with options is internal and unimplemented until supported by the
+    //    // backend
+    //    @Beta
+    //    @JvmStatic
+    //    internal fun snippet(fieldName: String, options: SnippetOptions): Expression {
+    //      throw NotImplementedError("Not implemented")
+    //    }
+
+    //    /**
+    //     * Evaluates if the value in the field specified by `fieldName` is between the evaluated
+    // values
+    //     * for `lowerBound` (inclusive) and `upperBound` (inclusive).
+    //     *
+    //     * @param fieldName Determine if this field is between two bounds.
+    //     * @param lowerBound Lower bound (inclusive).
+    //     * @param upperBound Upper bound (inclusive).
+    //     */
+    //    // TODO(search) between is internal and unimplemented until supported by the backend
+    //    @JvmStatic
+    //    internal fun between(
+    //      fieldName: String,
+    //      lowerBound: Expression,
+    //      upperBound: Expression
+    //    ): BooleanExpression =
+    //      BooleanFunctionExpression("between", notImplemented, fieldName, lowerBound, upperBound)
+
+    //    /**
+    //     * Evaluates if the value in the field specified by `fieldName` is between the values for
+    //     * `lowerBound` (inclusive) and `upperBound` (inclusive).
+    //     *
+    //     * @param fieldName Determine if this field is between two bounds.
+    //     * @param lowerBound Lower bound (inclusive).
+    //     * @param upperBound Upper bound (inclusive).
+    //     */
+    //    @JvmStatic
+    //    internal fun between(fieldName: String, lowerBound: Any, upperBound: Any):
+    // BooleanExpression =
+    //      between(fieldName, toExprOrConstant(lowerBound), toExprOrConstant(upperBound))
+
+    //    /**
+    //     * Evaluates if the result of the specified `expression` is between the results of
+    // `lowerBound`
+    //     * (inclusive) and `upperBound` (inclusive).
+    //     *
+    //     * @param expression Determine if the result of this expression is between two bounds.
+    //     * @param lowerBound Lower bound (inclusive).
+    //     * @param upperBound Upper bound (inclusive).
+    //     */
+    //    @JvmStatic
+    //    internal fun between(
+    //      expression: Expression,
+    //      lowerBound: Expression,
+    //      upperBound: Expression
+    //    ): BooleanExpression =
+    //      BooleanFunctionExpression("between", notImplemented, expression, lowerBound, upperBound)
+
+    //    /**
+    //     * Evaluates if the result of the specified `expression` is between the `lowerBound`
+    // (inclusive)
+    //     * and `upperBound` (inclusive).
+    //     *
+    //     * @param expression Determine if the result of this expression is between two bounds.
+    //     * @param lowerBound Lower bound (inclusive).
+    //     * @param upperBound Upper bound (inclusive).
+    //     */
+    //    @JvmStatic
+    //    internal fun between(
+    //      expression: Expression,
+    //      lowerBound: Any,
+    //      upperBound: Any
+    //    ): BooleanExpression =
+    //      between(expression, toExprOrConstant(lowerBound), toExprOrConstant(upperBound))
   }
+
+  //  // TODO(search) SnippetOptions is internal until supported by the backend
+  //  @Beta
+  //  internal class SnippetOptions private constructor(options: InternalOptions) :
+  //    AbstractOptions<SnippetOptions>(options) {
+  //    /** Creates a new, empty `SnippetOptions` object. */
+  //    constructor(rquery: String) : this(InternalOptions.EMPTY.with("query", encodeValue(rquery)))
+  //
+  //    fun withMaxSnippetWidth(max: Int): SnippetOptions {
+  //      return with("max_snippet_width", encodeValue(max))
+  //    }
+  //
+  //    fun withMaxSnippets(max: Int): SnippetOptions {
+  //      return with("max_snippets", encodeValue(max))
+  //    }
+  //
+  //    fun withSeparator(separator: String): SnippetOptions {
+  //      return with("separator", encodeValue(separator))
+  //    }
+  //
+  //    internal override fun self(options: InternalOptions): SnippetOptions {
+  //      return SnippetOptions(options)
+  //    }
+  //  }
 
   /**
    * Creates an expression that applies a bitwise AND operation with other expression.
@@ -7061,6 +7924,19 @@ abstract class Expression internal constructor() {
    * @return A new [Expression] representing the documentId operation.
    */
   fun documentId(): Expression = Companion.documentId(this)
+
+  /**
+   * Creates an expression that returns the parent document reference of this document reference
+   * expression.
+   *
+   * ```kotlin
+   * // Get the parent document reference of the 'path' field.
+   * field("path").parent()
+   * ```
+   *
+   * @return A new [Expression] representing the parent operation.
+   */
+  fun parent(): Expression = Companion.parent(this)
 
   /**
    * Creates an expression that returns the collection ID from this path expression.
@@ -7549,7 +8425,25 @@ abstract class Expression internal constructor() {
    *
    * @return A new [Expression] representing the type operation.
    */
-  fun type(): Expression = type(this)
+  fun type(): Expression = Companion.type(this)
+
+  /**
+   * Creates an expression that checks if the result of this expression is of the given type.
+   *
+   * Supported values for `type` are: "null", "array", "boolean", "bytes", "timestamp", "geo_point",
+   * "number", "int32", "int64", "float64", "decimal128", "map", "reference", "string", "vector",
+   * "max_key", "min_key", "object_id", "regex", and "request_timestamp".
+   *
+   * ```kotlin
+   * // Check if the 'age' field is an integer
+   * field("age").isType("int64")
+   * ```
+   *
+   * @param type The type to check for.
+   * @return A new [BooleanExpression] that evaluates to true if the expression's result is of the
+   * given type, false otherwise.
+   */
+  fun isType(type: String): BooleanExpression = Companion.isType(this, type)
 
   /**
    * Creates an expression that splits this string or blob expression by a delimiter.
@@ -7913,31 +8807,234 @@ abstract class Expression internal constructor() {
   fun trim() = Companion.trim(this)
 
   /**
-   * Creates an expression that removes leading and trailing characters from this string expression.
+   * Creates an expression that removes a set of leading and trailing values from this string
+   * expression.
+   *
+   * Note: The values to trim are treated as a **set**, not a substring.
    *
    * ```kotlin
-   * // Trim '_' and '-' from the 'userInput' field
+   * // Trim all '_' and '-' characters from the 'userInput' field
    * field("userInput").trimValue("-_")
    * ```
    *
-   * @param valueToTrim The characters to trim from the string.
+   * @param valueToTrim The set of values to trim from the string.
    * @return A new [Expression] representing the trimmed string.
    */
   fun trimValue(valueToTrim: String) = Companion.trimValue(this, constant(valueToTrim))
 
   /**
-   * Creates an expression that removes leading and trailing value from this expression. The
-   * accepted types are string and blob.
+   * Creates an expression that removes a set of leading and trailing values from this expression.
+   * The accepted types are string and blob.
+   *
+   * Note: The values to trim are treated as a **set**, not a substring.
    *
    * ```kotlin
    * // Trim specified characters from the 'userInput' field
    * field("userInput").trimValue(field("trimChars"))
    * ```
    *
-   * @param valueToTrim The expression representing the characters to trim from the string.
+   * @param valueToTrim The expression representing the set of values to trim from the string.
    * @return A new [Expression] representing the trimmed string.
    */
   fun trimValue(valueToTrim: Expression) = Companion.trimValue(this, valueToTrim)
+
+  /**
+   * Creates an expression that removes leading whitespace from this string expression.
+   *
+   * ```kotlin
+   * // Trim leading whitespace from the 'text' field.
+   * field("text").ltrim()
+   * ```
+   *
+   * @return A new [Expression] representing the ltrim operation.
+   */
+  fun ltrim(): Expression = Companion.ltrim(this)
+
+  /**
+   * Creates an expression that removes a set of leading values from this string expression.
+   *
+   * Note: The values to trim are treated as a **set**, not a substring.
+   *
+   * ```kotlin
+   * // Trim all leading '-' and '_' characters from the 'text' field.
+   * field("text").ltrimValue("-_")
+   * ```
+   *
+   * @param valuesToTrim The string of characters to remove.
+   * @return A new [Expression] representing the ltrim operation.
+   */
+  fun ltrimValue(valuesToTrim: String): Expression = Companion.ltrimValue(this, valuesToTrim)
+
+  /**
+   * Creates an expression that removes a set of leading values from this string expression.
+   *
+   * Note: The values to trim are treated as a **set**, not a substring.
+   *
+   * ```kotlin
+   * // Trim leading characters defined by the 'chars' field from the 'text' field.
+   * field("text").ltrimValue(field("chars"))
+   * ```
+   *
+   * @param valuesToTrim The expression representing the set of values to remove.
+   * @return A new [Expression] representing the ltrim operation.
+   */
+  fun ltrimValue(valuesToTrim: Expression): Expression = Companion.ltrimValue(this, valuesToTrim)
+
+  /**
+   * Creates an expression that removes trailing whitespace from this string expression.
+   *
+   * ```kotlin
+   * // Trim trailing whitespace from the 'text' field.
+   * field("text").rtrim()
+   * ```
+   *
+   * @return A new [Expression] representing the rtrim operation.
+   */
+  fun rtrim(): Expression = Companion.rtrim(this)
+
+  /**
+   * Creates an expression that removes a set of trailing characters from this string expression.
+   *
+   * Note: The values to trim are treated as a **set**, not a substring.
+   *
+   * ```kotlin
+   * // Trim all trailing '-' and '_' characters from the 'text' field.
+   * field("text").rtrimValue("-_")
+   * ```
+   *
+   * @param valuesToTrim The set of values to remove.
+   * @return A new [Expression] representing the rtrim operation.
+   */
+  fun rtrimValue(valuesToTrim: String): Expression = Companion.rtrimValue(this, valuesToTrim)
+
+  /**
+   * Creates an expression that removes a set of trailing values from this string expression.
+   *
+   * Note: The values to trim are treated as a **set**, not a substring.
+   *
+   * ```kotlin
+   * // Trim trailing characters defined by the 'chars' field from the 'text' field.
+   * field("text").rtrimValue(field("chars"))
+   * ```
+   *
+   * @param valuesToTrim The expression representing the set of values to remove.
+   * @return A new [Expression] representing the rtrim operation.
+   */
+  fun rtrimValue(valuesToTrim: Expression): Expression = Companion.rtrimValue(this, valuesToTrim)
+
+  /**
+   * Creates an expression that repeats this string expression a given number of times.
+   *
+   * ```kotlin
+   * // Repeat the 'name' field 3 times.
+   * field("name").stringRepeat(3)
+   * ```
+   *
+   * @param count The number of times to repeat the string.
+   * @return A new [Expression] representing the stringRepeat operation.
+   */
+  fun stringRepeat(count: Int): Expression = Companion.stringRepeat(this, count)
+
+  /**
+   * Creates an expression that repeats this string expression a given number of times.
+   *
+   * ```kotlin
+   * // Repeat the 'name' field the number of times specified in the 'count' field.
+   * field("name").stringRepeat(field("count"))
+   * ```
+   *
+   * @param count The expression representing the number of times to repeat the string.
+   * @return A new [Expression] representing the stringRepeat operation.
+   */
+  fun stringRepeat(count: Expression): Expression = Companion.stringRepeat(this, count)
+
+  /**
+   * Creates an expression that replaces all occurrences of a substring with another string.
+   *
+   * ```kotlin
+   * // Replace all occurrences of "cat" with "dog" in the 'text' field.
+   * field("text").stringReplaceAll("cat", "dog")
+   * ```
+   *
+   * @param oldValue The substring to replace.
+   * @param newValue The replacement string.
+   * @return A new [Expression] representing the stringReplaceAll operation.
+   */
+  fun stringReplaceAll(oldValue: String, newValue: String): Expression =
+    Companion.stringReplaceAll(this, oldValue, newValue)
+
+  /**
+   * Creates an expression that replaces all occurrences of a substring with another string.
+   *
+   * ```kotlin
+   * // Replace all occurrences of the 'old' field with the 'new' field in 'text'.
+   * field("text").stringReplaceAll(field("old"), field("new"))
+   * ```
+   *
+   * @param oldValue The expression representing the substring to replace.
+   * @param newValue The expression representing the replacement string.
+   * @return A new [Expression] representing the stringReplaceAll operation.
+   */
+  fun stringReplaceAll(oldValue: Expression, newValue: Expression): Expression =
+    Companion.stringReplaceAll(this, oldValue, newValue)
+
+  /**
+   * Creates an expression that replaces the first occurrence of a substring with another string.
+   *
+   * ```kotlin
+   * // Replace the first occurrence of "cat" with "dog" in the 'text' field.
+   * field("text").stringReplaceOne("cat", "dog")
+   * ```
+   *
+   * @param oldValue The substring to replace.
+   * @param newValue The replacement string.
+   * @return A new [Expression] representing the stringReplaceOne operation.
+   */
+  fun stringReplaceOne(oldValue: String, newValue: String): Expression =
+    Companion.stringReplaceOne(this, oldValue, newValue)
+
+  /**
+   * Creates an expression that replaces the first occurrence of a substring with another string.
+   *
+   * ```kotlin
+   * // Replace the first occurrence of the 'old' field with the 'new' field in 'text'.
+   * field("text").stringReplaceOne(field("old"), field("new"))
+   * ```
+   *
+   * @param oldValue The expression representing the substring to replace.
+   * @param newValue The expression representing the replacement string.
+   * @return A new [Expression] representing the stringReplaceOne operation.
+   */
+  fun stringReplaceOne(oldValue: Expression, newValue: Expression): Expression =
+    Companion.stringReplaceOne(this, oldValue, newValue)
+
+  /**
+   * Creates an expression that returns the 0-based index of the first occurrence of the specified
+   * substring.
+   *
+   * ```kotlin
+   * // Get the index of "world" within the 'text' field.
+   * field("text").stringIndexOf("world")
+   * ```
+   *
+   * @param substring The substring to search for.
+   * @return A new [Expression] representing the stringIndexOf operation.
+   */
+  fun stringIndexOf(substring: String): Expression = Companion.stringIndexOf(this, substring)
+
+  /**
+   * Creates an expression that returns the 0-based index of the first occurrence of the specified
+   * substring.
+   *
+   * ```kotlin
+   * // Get the index of the 'search' field within the 'text' field.
+   * field("text").stringIndexOf(field("search"))
+   * ```
+   *
+   * @param substring The expression representing the substring to search for.
+   * @return A new [Expression] representing the stringIndexOf operation.
+   */
+  fun stringIndexOf(substring: Expression): Expression = Companion.stringIndexOf(this, substring)
 
   /**
    * Creates an expression that concatenates string expressions together.
@@ -9527,6 +10624,86 @@ abstract class Expression internal constructor() {
     }
   }
 
+  //  /**
+  //   * Evaluates to an HTML-formatted text snippet that highlights terms matching the search query
+  // in
+  //   * `<b>bold</b>`.
+  //   *
+  //   * Note: This Expression can only be used within a `Search` stage.
+  //   *
+  //   * @param rquery Define the search query using the search DTS.
+  //   */
+  //  @Beta
+  //  fun snippet(rquery: String): Expression =
+  //    FunctionExpression(
+  //      "snippet",
+  //      notImplemented,
+  //      arrayOf(this, constant(rquery)),
+  //      SnippetOptions(rquery).options
+  //    )
+  //
+  //  /**
+  //   * Evaluates to an HTML-formatted text snippet that highlights terms matching the search query
+  // in
+  //   * `<b>bold</b>`.
+  //   *
+  //   * Note: This Expression can only be used within a `Search` stage.
+  //   *
+  //   * @param options Define how the snippet is generated.
+  //   *
+  //   * TODO(search) implement snippet with SnippetOptions - out of scope for first release
+  //   */
+  //  @Beta
+  //  internal fun snippet(options: SnippetOptions): Expression {
+  //    throw NotImplementedError()
+  //  }
+  //
+  //  /**
+  //   * Evaluates if the result of this `expression` is between the `lowerBound` (inclusive) and
+  //   * `upperBound` (inclusive).
+  //   *
+  //   * @example
+  //   * ```
+  //   * // Evaluate if the 'tireWidth' is between 2.2 and 2.4
+  //   * field('tireWidth').between(constant(2.2), constant(2.4))
+  //   *
+  //   * // This is functionally equivalent to
+  //   * and(
+  //   *   field('tireWidth').greaterThanOrEqual(constant(2.2)),
+  //   *   field('tireWidth').lessThanOrEqual(constant(2.4)))
+  //   * ```
+  //   *
+  //   * @param lowerBound Lower bound (inclusive).
+  //   * @param upperBound Upper bound (inclusive).
+  //   *
+  //   * TODO(search) publish between - out of scope for first release
+  //   */
+  //  internal fun between(lowerBound: Expression, upperBound: Expression): BooleanExpression =
+  //    Companion.between(this, lowerBound, upperBound)
+  //
+  //  /**
+  //   * Evaluates if the result of this `expression` is between the `lowerBound` (inclusive) and
+  //   * `upperBound` (inclusive).
+  //   *
+  //   * @example
+  //   * ```
+  //   * // Evaluate if the 'tireWidth' is between 2.2 and 2.4
+  //   * field('tireWidth').between(2.2, 2.4)
+  //   *
+  //   * // This is functionally equivalent to
+  //   * and(
+  //   *   field('tireWidth').greaterThanOrEqual(2.2),
+  //   *   field('tireWidth').lessThanOrEqual(2.4))
+  //   * ```
+  //   *
+  //   * @param lowerBound Lower bound (inclusive).
+  //   * @param upperBound Upper bound (inclusive).
+  //   *
+  //   * TODO(search) publish between - out of scope for first release
+  //   */
+  //  internal fun between(lowerBound: Any, upperBound: Any): BooleanExpression =
+  //    Companion.between(this, lowerBound, upperBound)
+  //
   internal abstract fun toProto(userDataReader: UserDataReader): Value
 
   internal abstract fun evaluateFunction(context: EvaluationContext): EvaluateDocument
@@ -9623,6 +10800,7 @@ class Field internal constructor(internal val fieldPath: ModelFieldPath) : Selec
           ?: EvaluateResultUnset // This value is used if getField() returns null.
     }
   }
+
   private fun getServerTimestamp(fieldValue: Value, context: EvaluationContext): EvaluateResult {
     val behavior =
       context.pipeline.internalOptions?.serverTimestampBehavior
@@ -9649,6 +10827,25 @@ class Field internal constructor(internal val fieldPath: ModelFieldPath) : Selec
   override fun hashCode(): Int {
     return fieldPath.hashCode()
   }
+
+  /**
+   * Evaluates to the distance in meters between the location specified by this field and the query
+   * location.
+   *
+   * Note: This Expression can only be used within a `Search` stage.
+   *
+   * @param location Compute distance to this GeoPoint.
+   */
+  @Beta fun geoDistance(location: GeoPoint): Expression = geoDistance(this, location)
+
+  //  /**
+  //   * Perform a full-text search on this field.
+  //   *
+  //   * Note: This Expression can only be used within a `Search` stage.
+  //   *
+  //   * @param rquery Define the search query using the rquery DTS.
+  //   */
+  //  @Beta internal fun matches(rquery: String): BooleanExpression = matches(this, rquery)
 }
 
 /**
@@ -9671,27 +10868,32 @@ internal constructor(
     params: List<Expression>,
     options: InternalOptions = InternalOptions.EMPTY
   ) : this(name, FunctionRegistry.functions[name] ?: notImplemented, params.toTypedArray(), options)
+
   internal constructor(
     name: String,
     function: EvaluateFunction
   ) : this(name, function, emptyArray())
+
   internal constructor(
     name: String,
     function: EvaluateFunction,
     param: Expression
   ) : this(name, function, arrayOf(param))
+
   internal constructor(
     name: String,
     function: EvaluateFunction,
     param: Expression,
     vararg params: Any
   ) : this(name, function, arrayOf(param, *toArrayOfExprOrConstant(params)))
+
   internal constructor(
     name: String,
     function: EvaluateFunction,
     param1: Expression,
     param2: Expression
   ) : this(name, function, arrayOf(param1, param2))
+
   internal constructor(
     name: String,
     function: EvaluateFunction,
@@ -9699,11 +10901,13 @@ internal constructor(
     param2: Expression,
     vararg params: Any
   ) : this(name, function, arrayOf(param1, param2, *toArrayOfExprOrConstant(params)))
+
   internal constructor(
     name: String,
     function: EvaluateFunction,
     fieldName: String
   ) : this(name, function, arrayOf(field(fieldName)))
+
   internal constructor(
     name: String,
     function: EvaluateFunction,
@@ -9827,34 +11031,40 @@ internal class BooleanFunctionExpression internal constructor(val expr: Expressi
     function: EvaluateFunction,
     params: Array<out Expression>
   ) : this(FunctionExpression(name, function, params))
+
   internal constructor(
     name: String,
     function: EvaluateFunction,
     param: Expression
   ) : this(name, function, arrayOf(param))
+
   internal constructor(
     name: String,
     function: EvaluateFunction,
     param1: Expression,
     param2: Any
   ) : this(name, function, arrayOf(param1, Expression.toExprOrConstant(param2)))
+
   internal constructor(
     name: String,
     function: EvaluateFunction,
     param: Expression,
     vararg params: Any
   ) : this(name, function, arrayOf(param, *Expression.toArrayOfExprOrConstant(params)))
+
   internal constructor(
     name: String,
     function: EvaluateFunction,
     param1: Expression,
     param2: Expression
   ) : this(name, function, arrayOf(param1, param2))
+
   internal constructor(
     name: String,
     function: EvaluateFunction,
     fieldName: String
   ) : this(name, function, arrayOf(field(fieldName)))
+
   internal constructor(
     name: String,
     function: EvaluateFunction,
