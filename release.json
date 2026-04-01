@@ -1,0 +1,21 @@
+{
+    "name": "m179",
+    "libraries": [
+        ":firebase-appdistribution",
+        ":firebase-appdistribution-api",
+        ":firebase-crashlytics",
+        ":firebase-crashlytics-ndk",
+        ":firebase-sessions",
+        ":firebase-dataconnect",
+        ":firebase-firestore",
+        ":firebase-functions",
+        ":firebase-inappmessaging",
+        ":firebase-inappmessaging-display",
+        ":firebase-ml-modeldownloader",
+        ":firebase-perf",
+        ":ai-logic:firebase-ai",
+        ":transport:transport-api",
+        ":transport:transport-backend-cct",
+        ":transport:transport-runtime"
+    ]
+}
