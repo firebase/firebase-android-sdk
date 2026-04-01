@@ -36,7 +36,6 @@ import androidx.test.core.app.ApplicationProvider;
 import com.google.firebase.perf.FirebasePerformanceTestBase;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.session.PerfSession;
-import com.google.firebase.perf.session.gauges.GaugeManager;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Constants;
@@ -105,7 +104,8 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
   public void testLaunchActivity() {
     FakeScheduledExecutorService fakeExecutorService = new FakeScheduledExecutorService();
     AppStartTrace trace =
-        new AppStartTrace(transportManager, clock, configResolver, sessionManager, fakeExecutorService);
+        new AppStartTrace(
+            transportManager, clock, configResolver, sessionManager, fakeExecutorService);
     trace.registerActivityLifecycleCallbacks(appContext);
     // first activity goes through onCreate()->onStart()->onResume() state change.
     currentTime = 1;
@@ -179,7 +179,8 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
   public void testInterleavedActivity() {
     FakeScheduledExecutorService fakeExecutorService = new FakeScheduledExecutorService();
     AppStartTrace trace =
-        new AppStartTrace(transportManager, clock, configResolver, sessionManager, fakeExecutorService);
+        new AppStartTrace(
+            transportManager, clock, configResolver, sessionManager, fakeExecutorService);
     trace.registerActivityLifecycleCallbacks(appContext);
     // first activity onCreate()
     currentTime = 1;
@@ -216,7 +217,8 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
   public void testDelayedAppStart() {
     FakeScheduledExecutorService fakeExecutorService = new FakeScheduledExecutorService();
     AppStartTrace trace =
-        new AppStartTrace(transportManager, clock, configResolver, sessionManager, fakeExecutorService);
+        new AppStartTrace(
+            transportManager, clock, configResolver, sessionManager, fakeExecutorService);
     trace.registerActivityLifecycleCallbacks(appContext);
     // Delays activity creation after 1 minute from app start time.
     currentTime =
@@ -243,7 +245,8 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
     FakeScheduledExecutorService fakeExecutorService = new FakeScheduledExecutorService();
     Timer fakeTimer = spy(new Timer(currentTime));
     AppStartTrace trace =
-        new AppStartTrace(transportManager, clock, configResolver, sessionManager, fakeExecutorService);
+        new AppStartTrace(
+            transportManager, clock, configResolver, sessionManager, fakeExecutorService);
     trace.registerActivityLifecycleCallbacks(appContext);
     trace.setMainThreadRunnableTime(fakeTimer);
 
@@ -271,7 +274,8 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
     FakeScheduledExecutorService fakeExecutorService = new FakeScheduledExecutorService();
     Timer fakeTimer = spy(new Timer(currentTime));
     AppStartTrace trace =
-        new AppStartTrace(transportManager, clock, configResolver, sessionManager, fakeExecutorService);
+        new AppStartTrace(
+            transportManager, clock, configResolver, sessionManager, fakeExecutorService);
     trace.registerActivityLifecycleCallbacks(appContext);
     trace.setMainThreadRunnableTime(fakeTimer);
 
@@ -304,7 +308,8 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
     when(configResolver.getIsExperimentTTIDEnabled()).thenReturn(true);
     FakeScheduledExecutorService fakeExecutorService = new FakeScheduledExecutorService();
     AppStartTrace trace =
-        new AppStartTrace(transportManager, clock, configResolver, sessionManager, fakeExecutorService);
+        new AppStartTrace(
+            transportManager, clock, configResolver, sessionManager, fakeExecutorService);
     trace.registerActivityLifecycleCallbacks(appContext);
     // Simulate resume and manually stepping time forward
     ShadowSystemClock.advanceBy(Duration.ofMillis(1000));

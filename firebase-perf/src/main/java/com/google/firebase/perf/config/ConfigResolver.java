@@ -918,6 +918,6 @@ public class ConfigResolver {
   }
 
   public RemoteConfigManager getRemoteConfigManager() {
-      return remoteConfigManager;
+    return remoteConfigManager;
   }
 }

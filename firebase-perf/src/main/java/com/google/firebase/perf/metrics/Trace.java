@@ -157,11 +157,11 @@ public class Trace extends AppStateUpdateHandler
   }
 
   public Trace(
-          @NonNull String name,
-          @NonNull TransportManager transportManager,
-          @NonNull Clock clock,
-          @NonNull AppStateMonitor appStateMonitor,
-          @NonNull GaugeManager gaugeManager) {
+      @NonNull String name,
+      @NonNull TransportManager transportManager,
+      @NonNull Clock clock,
+      @NonNull AppStateMonitor appStateMonitor,
+      @NonNull GaugeManager gaugeManager) {
     this(
         name,
         transportManager,
@@ -284,8 +284,7 @@ public class Trace extends AppStateUpdateHandler
         transportManager.log(new TraceMetricBuilder(this).build(), getAppState());
 
         if (sessionManager.perfSession().isVerbose()) {
-          gaugeManager.collectGaugeMetricOnce(
-              sessionManager.perfSession().getTimer());
+          gaugeManager.collectGaugeMetricOnce(sessionManager.perfSession().getTimer());
         }
       } else {
         logger.error("Trace name is empty, no log is sent to server");

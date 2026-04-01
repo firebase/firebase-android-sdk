@@ -87,7 +87,8 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     if (instance == null) {
       synchronized (AppStateMonitor.class) {
         if (instance == null) {
-          instance = new AppStateMonitor(TransportManager.getInstance(), new Clock(), sessionManager);
+          instance =
+              new AppStateMonitor(TransportManager.getInstance(), new Clock(), sessionManager);
         }
       }
     }
@@ -109,8 +110,7 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
               new AppStateMonitor(
                   TransportManager.getInstance(),
                   new Clock(),
-                  new SessionManager(
-                      GaugeManager.getInstance(), PerfSession.createWithId(null)));
+                  new SessionManager(GaugeManager.getInstance(), PerfSession.createWithId(null)));
         }
       }
     }

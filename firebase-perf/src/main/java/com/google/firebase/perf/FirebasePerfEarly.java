@@ -36,7 +36,10 @@ import java.util.concurrent.Executor;
 public class FirebasePerfEarly {
 
   public FirebasePerfEarly(
-          FirebaseApp app, @Nullable StartupTime startupTime, Executor uiExecutor, SessionManager sessionManager) {
+      FirebaseApp app,
+      @Nullable StartupTime startupTime,
+      Executor uiExecutor,
+      SessionManager sessionManager) {
     Context context = app.getApplicationContext();
 
     // Initialize ConfigResolver early for accessing device caching layer.
@@ -45,7 +48,8 @@ public class FirebasePerfEarly {
 
     // Register FirebasePerformance as a subscriber ASAP - which will start collecting gauges if the
     // FirebaseSession is verbose.
-    FirebaseSessionsDependencies.register(new FirebasePerformanceSessionSubscriber(configResolver, sessionManager));
+    FirebaseSessionsDependencies.register(
+        new FirebasePerformanceSessionSubscriber(configResolver, sessionManager));
 
     AppStateMonitor appStateMonitor = AppStateMonitor.getInstance(sessionManager);
     appStateMonitor.registerActivityLifecycleCallbacks(context);
