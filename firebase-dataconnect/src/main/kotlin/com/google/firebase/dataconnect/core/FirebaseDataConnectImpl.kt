@@ -178,6 +178,7 @@ internal class FirebaseDataConnectImpl(
         when (currentState) {
           is State.New -> {
             val backendInfo = calculateBackendInfo(settings, currentState.emulatorSettings, logger)
+            logger.debug { "connecting to Data Connect backend: $backendInfo" }
             val grpcRPCs = createDataConnectGrpcRPCs(backendInfo)
             val queryManager = createQueryManager(grpcRPCs, backendInfo)
             val mutationManager = createMutationManager(grpcRPCs)
@@ -226,20 +227,6 @@ internal class FirebaseDataConnectImpl(
   }
 
   private fun createDataConnectGrpcRPCs(backendInfo: DataConnectBackendInfo): DataConnectGrpcRPCs {
-    val cacheSettings =
-      settings.cacheSettings?.run {
-        val dbFile =
-          when (storage) {
-            CacheSettings.Storage.MEMORY -> null
-            CacheSettings.Storage.PERSISTENT -> {
-              val dbName = "dataconnect_" + calculateCacheDbUniqueName(backendInfo)
-              context.getDatabasePath(dbName)
-            }
-          }
-        DataConnectGrpcRPCs.CacheSettings(dbFile, maxAge)
-      }
-
-    logger.debug { "connecting to Data Connect backend: $backendInfo" }
     val grpcMetadata =
       DataConnectGrpcMetadata.forSystemVersions(
         firebaseApp = app,
@@ -253,7 +240,6 @@ internal class FirebaseDataConnectImpl(
         sslEnabled = backendInfo.sslEnabled,
         blockingCoroutineDispatcher = blockingDispatcher,
         grpcMetadata = grpcMetadata,
-        cacheSettings = cacheSettings,
         parentLogger = logger,
       )
 

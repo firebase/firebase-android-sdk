@@ -19,6 +19,8 @@
 package com.google.firebase.dataconnect.querymgr
 
 import com.google.firebase.dataconnect.CachedDataNotFoundException
+import com.google.firebase.dataconnect.DataConnectPathSegment
+import com.google.firebase.dataconnect.DataConnectUntypedData
 import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.QueryRef.FetchPolicy
@@ -27,7 +29,11 @@ import com.google.firebase.dataconnect.core.DataConnectAppCheck
 import com.google.firebase.dataconnect.core.DataConnectAuth
 import com.google.firebase.dataconnect.core.DataConnectGrpcRPCs
 import com.google.firebase.dataconnect.core.Logger
+import com.google.firebase.dataconnect.sqlite.QueryResultArb
+import com.google.firebase.dataconnect.sqlite.QueryResultArb.EntityRepeatPolicy.INTER_SAMPLE_MUTATED
+import com.google.firebase.dataconnect.sqlite.hydratedStructWithMutatedEntityValuesFrom
 import com.google.firebase.dataconnect.testutil.CleanupsRule
+import com.google.firebase.dataconnect.testutil.DataConnectPath
 import com.google.firebase.dataconnect.testutil.SuspendingCountDownLatch
 import com.google.firebase.dataconnect.testutil.newMockLogger
 import com.google.firebase.dataconnect.testutil.property.arbitrary.appCheckTokenResult
@@ -35,18 +41,30 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.authTokenResu
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.mock
 import com.google.firebase.dataconnect.testutil.property.arbitrary.pair
+import com.google.firebase.dataconnect.testutil.property.arbitrary.proto
 import com.google.firebase.dataconnect.testutil.property.arbitrary.requestIdGenerator
+import com.google.firebase.dataconnect.testutil.property.arbitrary.scalarValue
+import com.google.firebase.dataconnect.testutil.property.arbitrary.struct
+import com.google.firebase.dataconnect.testutil.property.arbitrary.structKey
+import com.google.firebase.dataconnect.testutil.property.arbitrary.triple
 import com.google.firebase.dataconnect.testutil.property.arbitrary.withIterations
 import com.google.firebase.dataconnect.testutil.registerDataConnectKotestPrinters
 import com.google.firebase.dataconnect.testutil.shouldBe
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingTextIgnoringCase
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
+import com.google.firebase.dataconnect.util.ProtoUtil.toMap
+import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.firebase.dataconnect.util.RequestIdGenerator
+import com.google.firebase.dataconnect.withAddedListIndex
 import com.google.firebase.util.nextAlphanumericString
+import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
+import com.google.protobuf.Value
 import google.firebase.dataconnect.proto.ExecuteQueryRequest
 import google.firebase.dataconnect.proto.ExecuteQueryResponse
+import google.firebase.dataconnect.proto.GraphqlResponseExtensions
+import google.firebase.dataconnect.proto.GraphqlResponseExtensions.DataConnectProperties
 import io.grpc.Status
 import io.grpc.StatusException
 import io.kotest.assertions.assertSoftly
@@ -1138,6 +1156,51 @@ class QueryManagerUnitTest {
   }
 
   @Test
+  fun `execute() updates cached entities and returns normalized results from cache`() = runTest {
+    checkAll(
+      propTestConfig,
+      executeArgumentsArb().map { it.withDataDeserializer(DataConnectUntypedData) },
+      cacheSettingsArb(maxAge = Duration.INFINITE),
+      Arb.of(FetchPolicy.PREFER_CACHE, FetchPolicy.SERVER_ONLY).pair(),
+      Arb.of(FetchPolicy.PREFER_CACHE, FetchPolicy.CACHE_ONLY),
+      queryResultArb().triple(),
+    ) { args, cacheSettings, (fetchPolicy1, fetchPolicy2), fetchPolicy3, samples ->
+      val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk {
+        coEvery { executeQuery(any(), any(), any(), any(), any()) } returnsMany
+          samples.toList().map { it.toExecuteQueryResponse() }
+      }
+      val queryManager: QueryManager = buildQueryManager {
+        setDataConnectGrpcRPCs(dataConnectGrpcRPCs)
+        setCacheSettings(cacheSettings)
+      }
+
+      val result1 =
+        queryManager.execute(args.copy(operationName = "op1", fetchPolicy = fetchPolicy1))
+      val result2 =
+        queryManager.execute(args.copy(operationName = "op2", fetchPolicy = fetchPolicy2))
+      val result3 =
+        queryManager.execute(args.copy(operationName = "op1", fetchPolicy = fetchPolicy3))
+
+      val (sample1, sample2) = samples
+      val expectedResult3Data = sample1.hydratedStructWithMutatedEntityValuesFrom(sample2)
+      withClue("result1") { result1.shouldBe(sample1.hydratedStruct, DataSource.SERVER) }
+      withClue("result2") { result2.shouldBe(sample2.hydratedStruct, DataSource.SERVER) }
+      withClue("result3") { result3.shouldBe(expectedResult3Data, DataSource.CACHE) }
+      coVerify(exactly = 2) { dataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any()) }
+    }
+  }
+
+  private fun QueryManager.ExecuteResult<DataConnectUntypedData>.shouldBe(
+    expectedData: Struct,
+    expectedSource: DataSource
+  ) {
+    assertSoftly {
+      data shouldBe DataConnectUntypedData(expectedData.toMap(), errors = emptyList())
+      source shouldBe expectedSource
+    }
+  }
+
+  @Test
   fun `execute() propagates non-grpc exceptions and does not retry`() = runTest {
     class TestException : Exception("hbjwa5cdcw")
 
@@ -1282,6 +1345,9 @@ class QueryManagerUnitTest {
   private fun cacheFileArb(): Arb<File> = arbitrary {
     File(temporaryFolder.newFolder(), "db.sqlite")
   }
+
+  private fun cacheSettingsArb(maxAge: Duration): Arb<QueryManager.CacheSettings> =
+    cacheSettingsArb(maxAge = Arb.constant(maxAge))
 
   private fun cacheSettingsArb(
     file: Arb<File?> = cacheFileArb().orNull(nullProbability = 0.2),
@@ -1684,4 +1750,69 @@ private fun newDataConnectAppCheck(
       DataConnectAppCheck.GetAppCheckTokenResult("$tokenPrefix${tokenIndex.get()}")
     }
   every { forceRefresh() } answers { tokenIndex.incrementAndGet() }
+}
+
+private fun QueryResultArb.Sample.toExecuteQueryResponse(): ExecuteQueryResponse {
+  val builder = ExecuteQueryResponse.newBuilder()
+  builder.setData(hydratedStruct)
+  toGraphqlResponseExtensions()?.let { builder.setExtensions(it) }
+  return builder.build()
+}
+
+private fun QueryResultArb.Sample.toGraphqlResponseExtensions(): GraphqlResponseExtensions? {
+  val builder = GraphqlResponseExtensions.newBuilder()
+
+  entityByPath.entries.forEach { (path, entity) ->
+    val lastSegment = path.lastOrNull()
+    if (lastSegment is DataConnectPathSegment.Field) {
+      builder.addDataConnect(
+        DataConnectProperties.newBuilder()
+          .setPath(listValueFromPath(path))
+          .setEntityId(entity.entityId)
+          .build()
+      )
+    }
+  }
+
+  entityListPaths.forEach { entityListPath ->
+    val propertiesBuilder = DataConnectProperties.newBuilder()
+    propertiesBuilder.setPath(listValueFromPath(entityListPath))
+
+    var index = 0
+    while (true) {
+      val entityListElementPath = entityListPath.withAddedListIndex(index++)
+      val entity = entityByPath[entityListElementPath] ?: break
+      propertiesBuilder.addEntityIds(entity.entityId)
+    }
+
+    builder.addDataConnect(propertiesBuilder.build())
+  }
+
+  return if (builder.dataConnectCount > 0) builder.build() else null
+}
+
+private fun listValueFromPath(path: DataConnectPath): ListValue {
+  val builder = ListValue.newBuilder()
+  path.forEach { segment ->
+    builder.addValues(
+      when (segment) {
+        is DataConnectPathSegment.Field -> segment.field.toValueProto()
+        is DataConnectPathSegment.ListIndex -> segment.index.toValueProto()
+      }
+    )
+  }
+  return builder.build()
+}
+
+private fun queryResultArb(): QueryResultArb {
+  val structKeyArb = Arb.proto.structKey(length = 4)
+  val scalarValueArb = Arb.proto.scalarValue(exclude = Value.KindCase.KIND_NOT_SET)
+  val structArb = Arb.proto.struct(scalarValue = scalarValueArb, key = structKeyArb)
+
+  return QueryResultArb(
+    structKeyArb = structKeyArb,
+    structArb = structArb,
+    entityCountRange = 0..5,
+    entityRepeatPolicy = INTER_SAMPLE_MUTATED,
+  )
 }
