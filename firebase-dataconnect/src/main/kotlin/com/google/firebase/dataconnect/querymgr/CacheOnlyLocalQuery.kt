@@ -22,10 +22,12 @@ import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase
+import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase.GetQueryResultResult
 import com.google.firebase.dataconnect.util.ImmutableByteArray
 import com.google.firebase.dataconnect.util.SequencedReference
 import com.google.protobuf.Struct as StructProto
 import google.firebase.dataconnect.proto.ExecuteQueryResponse as ExecuteQueryResponseProto
+import kotlin.reflect.KClass
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Deferred
 import kotlinx.serialization.DeserializationStrategy
@@ -49,24 +51,9 @@ internal class CacheOnlyLocalQuery<Data>(
     authToken: String?,
     appCheckToken: String?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
-  ): SequencedReference<ExecuteImplResult> {
-    if (!cacheDbInitializeJob.isCompleted) {
-      logger.debug { "[rid=$requestId] waiting for cache database initialization" }
-      cacheDbInitializeJob.await()
-      logger.debug { "[rid=$requestId] waiting for cache database initialization done" }
-    }
-
-    logger.debug { "[rid=$requestId] getting query result from cache" }
-    val result =
-      cacheDb.getQueryResult(
-        authUid = authUid,
-        queryId = queryId,
-        currentTimeMillis = currentTimeMillis(),
-        staleResult = DataConnectCacheDatabase.GetQueryResultResult.Found::class,
-      )
-
-    return when (result) {
-      is DataConnectCacheDatabase.GetQueryResultResult.Found -> {
+  ): SequencedReference<ExecuteImplResult> =
+    when (val result = executeImpl(requestId, GetQueryResultResult.Found::class)) {
+      is GetQueryResultResult.Found -> {
         logger.debug {
           "[rid=$requestId] got query result from cache " +
             "with freshnessRemaining=${result.freshnessRemaining}"
@@ -79,17 +66,35 @@ internal class CacheOnlyLocalQuery<Data>(
           ),
         )
       }
-      DataConnectCacheDatabase.GetQueryResultResult.NotFound -> {
+      GetQueryResultResult.NotFound -> {
         logger.debug { "[rid=$requestId] no query result found in cache" }
         throw CachedDataNotFoundException(
           "no cached results for query and CACHE_ONLY fetch policy was specified [xz3fvh9r39]"
         )
       }
-      is DataConnectCacheDatabase.GetQueryResultResult.Stale ->
+      is GetQueryResultResult.Stale ->
         throw IllegalStateException("internal error axj5etj8v3: unexpected result: $result")
     }
+
+  suspend fun executeImpl(
+    requestId: String,
+    staleResult: KClass<out GetQueryResultResult>,
+  ): GetQueryResultResult {
+    if (!cacheDbInitializeJob.isCompleted) {
+      logger.debug { "[rid=$requestId] waiting for cache database initialization" }
+      cacheDbInitializeJob.await()
+      logger.debug { "[rid=$requestId] waiting for cache database initialization done" }
+    }
+
+    logger.debug { "[rid=$requestId] getting query result from cache" }
+    return cacheDb.getQueryResult(
+      authUid = authUid,
+      queryId = queryId,
+      currentTimeMillis = currentTimeMillis(),
+      staleResult = staleResult,
+    )
   }
 }
 
-private fun StructProto.toExecuteQueryResponseProto(): ExecuteQueryResponseProto =
+internal fun StructProto.toExecuteQueryResponseProto(): ExecuteQueryResponseProto =
   ExecuteQueryResponseProto.newBuilder().setData(this).build()

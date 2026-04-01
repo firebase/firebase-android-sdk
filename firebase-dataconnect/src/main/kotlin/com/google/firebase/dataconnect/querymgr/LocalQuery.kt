@@ -55,6 +55,14 @@ internal sealed class LocalQuery<out Data>(
     return executeImplResultSequencedReference.mapSuspending { it.toExecuteResult(requestId) }
   }
 
+  abstract suspend fun executeImpl(
+    requestId: String,
+    sequenceNumber: Long,
+    authToken: String?,
+    appCheckToken: String?,
+    callerSdkType: FirebaseDataConnect.CallerSdkType,
+  ): SequencedReference<ExecuteImplResult>
+
   private suspend fun ExecuteImplResult.toExecuteResult(
     requestId: String,
   ): ExecuteResult<Data> {
@@ -70,17 +78,9 @@ internal sealed class LocalQuery<out Data>(
     return ExecuteResult(dataDeserializeResult.getOrThrow(), dataSource)
   }
 
-  protected abstract suspend fun executeImpl(
-    requestId: String,
-    sequenceNumber: Long,
-    authToken: String?,
-    appCheckToken: String?,
-    callerSdkType: FirebaseDataConnect.CallerSdkType,
-  ): SequencedReference<ExecuteImplResult>
-
   data class ExecuteResult<out T>(val data: T, val source: DataSource)
 
-  protected data class ExecuteImplResult(
+  data class ExecuteImplResult(
     val executeQueryResponse: ExecuteQueryResponseProto,
     val dataSource: DataSource
   )

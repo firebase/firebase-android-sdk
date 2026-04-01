@@ -79,7 +79,8 @@ internal class QueryManager(
             cpuDispatcher,
             cacheInfo,
             coroutineScope,
-            currentTimeMillis
+            currentTimeMillis,
+            logger,
           ),
         cacheDb = cacheInfo?.db,
       )

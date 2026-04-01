@@ -18,6 +18,8 @@ package com.google.firebase.dataconnect.querymgr
 
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.core.DataConnectGrpcRPCs
+import com.google.firebase.dataconnect.core.Logger
+import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import com.google.firebase.dataconnect.util.SequenceNumberConflatedJobQueue
 import com.google.firebase.dataconnect.util.SequencedReference
 import google.firebase.dataconnect.proto.ExecuteQueryRequest as ExecuteQueryRequestProto
@@ -29,9 +31,11 @@ import kotlinx.coroutines.SupervisorJob
 
 internal class RemoteQuery(
   private val dataConnectGrpcRPCs: DataConnectGrpcRPCs,
-  private val cpuDispatcher: CoroutineDispatcher,
+  private val cacheUpdater: QueryCacheUpdater?,
+  cpuDispatcher: CoroutineDispatcher,
   val requestProto: ExecuteQueryRequestProto,
   private val coroutineScope: CoroutineScope,
+  private val logger: Logger,
 ) {
 
   private class ExecuteParams(
@@ -49,14 +53,21 @@ internal class RemoteQuery(
             SupervisorJob(coroutineScope.coroutineContext[Job]) +
             cpuDispatcher
         ),
-    ) {
-      dataConnectGrpcRPCs.executeQuery(
-        requestId = it.requestId,
-        requestProto = requestProto,
-        authToken = it.authToken,
-        appCheckToken = it.appCheckToken,
-        callerSdkType = it.callerSdkType,
-      )
+    ) { (sequenceNumber, params) ->
+      val executeQueryResponse: ExecuteQueryResponseProto =
+        dataConnectGrpcRPCs.executeQuery(
+          requestId = params.requestId,
+          requestProto = requestProto,
+          authToken = params.authToken,
+          appCheckToken = params.appCheckToken,
+          callerSdkType = params.callerSdkType,
+        )
+
+      cacheUpdater
+        ?.runCatching { update(sequenceNumber, params.requestId, executeQueryResponse) }
+        ?.onFailure { logger.warn(it) { "Failed to update cache" } }
+
+      executeQueryResponse
     }
 
   suspend fun execute(

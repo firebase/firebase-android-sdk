@@ -63,7 +63,7 @@ internal class QueryCacheUpdater(
             cpuDispatcher
         )
     ) {
-      update(it.requestId, it.executeQueryResponse)
+      update(it.ref.requestId, it.ref.executeQueryResponse)
     }
 
   private suspend fun update(

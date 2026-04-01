@@ -37,7 +37,7 @@ import kotlinx.coroutines.sync.withLock
  */
 internal class SequenceNumberConflatedJobQueue<Params, Output>(
   private val coroutineScope: CoroutineScope,
-  private val block: suspend (Params) -> Output,
+  private val block: suspend (SequencedReference<Params>) -> Output,
 ) {
   /** Mutex used to synchronize access to [jobSequencedReference] and [enqueuedJob]. */
   private val mutex = Mutex()
@@ -144,7 +144,8 @@ internal class SequenceNumberConflatedJobQueue<Params, Output>(
           "greater than or equal to sequenceNumber"
       }
 
-      val newJob: Deferred<Output> = coroutineScope.async { block(jobParams) }
+      val newJob: Deferred<Output> =
+        coroutineScope.async { block(SequencedReference(jobSequenceNumber, jobParams)) }
 
       val newJobSequencedReference = SequencedReference(jobSequenceNumber, newJob)
       this.jobSequencedReference = newJobSequencedReference

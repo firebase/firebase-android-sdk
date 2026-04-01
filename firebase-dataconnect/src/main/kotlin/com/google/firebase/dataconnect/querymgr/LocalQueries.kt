@@ -18,7 +18,7 @@ package com.google.firebase.dataconnect.querymgr
 
 import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.core.DataConnectGrpcRPCs
-import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
+import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase
 import com.google.firebase.dataconnect.util.ImmutableByteArray
 import com.google.protobuf.Duration as DurationProto
@@ -35,13 +35,16 @@ internal class LocalQueries(
   private val cacheInfo: CacheInfo?,
   private val coroutineScope: CoroutineScope,
   private val currentTimeMillis: () -> Long,
+  private val logger: Logger,
 ) {
-
   private val localQueries = mutableMapOf<Key<*>, LocalQuery<*>>()
-  private val remoteQueries = RemoteQueries(dataConnectGrpcRPCs, cpuDispatcher, coroutineScope)
-  private val localQueryLogger = Logger("LocalQuery")
-
-  @Volatile private var cacheOnlyNoCacheLocalQuery: CacheOnlyNoCacheLocalQuery? = null
+  private val remoteQueries =
+    RemoteQueries(
+      dataConnectGrpcRPCs,
+      cpuDispatcher,
+      coroutineScope,
+      logger,
+    )
 
   fun <T> getOrPut(
     key: Key<T>,
@@ -53,88 +56,103 @@ internal class LocalQueries(
       QueryRef.FetchPolicy.SERVER_ONLY -> getOrPutServerOnly(key, requestProto)
     }
 
-  fun <T> getOrPutCacheOnly(key: Key<T>): LocalQuery<T> {
-    check(key.fetchPolicy == QueryRef.FetchPolicy.CACHE_ONLY)
-
-    if (cacheInfo === null) {
-      val localQuery = cacheOnlyNoCacheLocalQuery ?: CacheOnlyNoCacheLocalQuery(localQueryLogger)
-      cacheOnlyNoCacheLocalQuery = localQuery
-      return localQuery
-    }
-
-    val untypedLocalQuery: LocalQuery<*> =
-      localQueries.getOrPut(key) {
-        CacheOnlyLocalQuery(
-          cacheInfo.db,
-          cacheInfo.initializeJob,
-          key.authUid,
-          key.queryId,
-          cpuDispatcher,
-          key.dataDeserializer,
-          key.dataSerializersModule,
-          currentTimeMillis,
-          localQueryLogger,
-        )
-      }
-
-    @Suppress("UNCHECKED_CAST") return untypedLocalQuery as LocalQuery<T>
-  }
-
-  fun <T> getOrPutServerOnly(
-    key: Key<T>,
-    requestProto: ExecuteQueryRequestProto,
-  ): LocalQuery<T> {
-    check(key.fetchPolicy == QueryRef.FetchPolicy.SERVER_ONLY)
-
-    val remoteKey = key.toRemoteKey()
-    val remoteQuery = remoteQueries.getOrPut(remoteKey, requestProto)
-
-    val untypedLocalQuery: LocalQuery<*> =
-      localQueries.getOrPut(key) {
-        val queryCacheUpdater =
-          cacheInfo?.let {
-            QueryCacheUpdater(
-              cacheInfo = it,
-              authUid = remoteKey.authUid,
-              queryId = remoteKey.queryId,
-              cpuDispatcher = cpuDispatcher,
-              coroutineScope = coroutineScope,
-              currentTimeMillis = currentTimeMillis,
-              logger = localQueryLogger,
-            )
-          }
-
-        ServerOnlyLocalQuery(
-          remoteQuery,
-          queryCacheUpdater,
-          cpuDispatcher,
-          key.dataDeserializer,
-          key.dataSerializersModule,
-          localQueryLogger,
-        )
-      }
-
-    @Suppress("UNCHECKED_CAST") return untypedLocalQuery as LocalQuery<T>
-  }
-
-  fun <T> getOrPutPreferCache(
+  private fun <T> getOrPutPreferCache(
     key: Key<T>,
     requestProto: ExecuteQueryRequestProto,
   ): LocalQuery<T> {
     check(key.fetchPolicy == QueryRef.FetchPolicy.PREFER_CACHE)
 
-    if (cacheInfo === null) {
-      return getOrPutServerOnly(
+    val serverOnlyLocalQuery: ServerOnlyLocalQuery<T> =
+      getOrPutServerOnly(
         key.copy(fetchPolicy = QueryRef.FetchPolicy.SERVER_ONLY),
-        requestProto
+        requestProto,
       )
+
+    if (cacheInfo === null) {
+      return serverOnlyLocalQuery
     }
 
-    // TODO: implement this
-    return getOrPutServerOnly(
-      key.copy(fetchPolicy = QueryRef.FetchPolicy.SERVER_ONLY),
-      requestProto
-    )
+    val cacheOnlyLocalQuery: CacheOnlyLocalQuery<T> =
+      getOrPutCacheOnly(key.copy(fetchPolicy = QueryRef.FetchPolicy.CACHE_ONLY))
+        as CacheOnlyLocalQuery<T>
+
+    val untypedLocalQuery: LocalQuery<*> =
+      localQueries.getOrPut(key) {
+        PreferCacheLocalQuery(
+          cacheOnlyLocalQuery,
+          serverOnlyLocalQuery,
+          cpuDispatcher,
+          key.dataDeserializer,
+          key.dataSerializersModule,
+          logger,
+        )
+      }
+
+    @Suppress("UNCHECKED_CAST") return untypedLocalQuery as PreferCacheLocalQuery<T>
+  }
+
+  private fun <T> getOrPutCacheOnly(key: Key<T>): LocalQuery<T> {
+    check(key.fetchPolicy == QueryRef.FetchPolicy.CACHE_ONLY)
+
+    val untypedLocalQuery: LocalQuery<*> =
+      localQueries.getOrPut(key) {
+        if (cacheInfo === null) {
+          CacheOnlyNoCacheLocalQuery(logger)
+        } else {
+          CacheOnlyLocalQuery(
+            cacheInfo.db,
+            cacheInfo.initializeJob,
+            key.authUid,
+            key.queryId,
+            cpuDispatcher,
+            key.dataDeserializer,
+            key.dataSerializersModule,
+            currentTimeMillis,
+            logger,
+          )
+        }
+      }
+
+    @Suppress("UNCHECKED_CAST") return untypedLocalQuery as LocalQuery<T>
+  }
+
+  private fun <T> getOrPutServerOnly(
+    key: Key<T>,
+    requestProto: ExecuteQueryRequestProto,
+  ): ServerOnlyLocalQuery<T> {
+    check(key.fetchPolicy == QueryRef.FetchPolicy.SERVER_ONLY)
+
+    val remoteKey = key.toRemoteKey()
+
+    val remoteQuery =
+      remoteQueries.getOrPut(remoteKey, requestProto) {
+        if (cacheInfo === null) {
+          null
+        } else {
+          QueryCacheUpdater(
+            cacheInfo = cacheInfo,
+            authUid = key.authUid,
+            queryId = key.queryId,
+            cpuDispatcher = cpuDispatcher,
+            coroutineScope = coroutineScope,
+            currentTimeMillis = currentTimeMillis,
+            logger = logger,
+          )
+        }
+      }
+
+    val untypedLocalQuery: LocalQuery<*> =
+      localQueries.getOrPut(key) {
+        ServerOnlyLocalQuery(
+          remoteQuery,
+          cpuDispatcher,
+          key.dataDeserializer,
+          key.dataSerializersModule,
+          logger,
+        )
+      }
+
+    @Suppress("UNCHECKED_CAST") return untypedLocalQuery as ServerOnlyLocalQuery<T>
   }
 
   data class Key<Data>(

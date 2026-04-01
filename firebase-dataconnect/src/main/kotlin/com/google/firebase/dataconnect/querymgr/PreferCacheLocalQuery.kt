@@ -19,18 +19,20 @@ package com.google.firebase.dataconnect.querymgr
 import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.core.Logger
+import com.google.firebase.dataconnect.core.LoggerGlobals.debug
+import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase.GetQueryResultResult
 import com.google.firebase.dataconnect.util.SequencedReference
-import com.google.firebase.dataconnect.util.SequencedReference.Companion.map
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.modules.SerializersModule
 
-internal class ServerOnlyLocalQuery<Data>(
-  private val remoteQuery: RemoteQuery,
+internal class PreferCacheLocalQuery<Data>(
+  private val cacheOnlyLocalQuery: CacheOnlyLocalQuery<Data>,
+  private val serverOnlyLocalQuery: ServerOnlyLocalQuery<Data>,
   cpuDispatcher: CoroutineDispatcher,
   dataDeserializer: DeserializationStrategy<Data>,
   dataSerializersModule: SerializersModule?,
-  logger: Logger,
+  private val logger: Logger,
 ) : LocalQuery<Data>(cpuDispatcher, dataDeserializer, dataSerializersModule, logger) {
 
   override suspend fun executeImpl(
@@ -40,15 +42,37 @@ internal class ServerOnlyLocalQuery<Data>(
     appCheckToken: String?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
   ): SequencedReference<ExecuteImplResult> {
-    val remoteQueryExecuteResult =
-      remoteQuery.execute(
-        requestId = requestId,
-        sequenceNumber = sequenceNumber,
-        authToken = authToken,
-        appCheckToken = appCheckToken,
-        callerSdkType = callerSdkType,
-      )
+    when (
+      val result = cacheOnlyLocalQuery.executeImpl(requestId, GetQueryResultResult.Stale::class)
+    ) {
+      is GetQueryResultResult.Found -> {
+        logger.debug {
+          "[rid=$requestId] got query result from cache " +
+            "with freshnessRemaining=${result.freshnessRemaining}"
+        }
+        return SequencedReference(
+          sequenceNumber,
+          ExecuteImplResult(
+            result.struct.toExecuteQueryResponseProto(),
+            DataSource.CACHE,
+          ),
+        )
+      }
+      GetQueryResultResult.NotFound ->
+        logger.debug { "[rid=$requestId] no query result found in cache; getting from server" }
+      is GetQueryResultResult.Stale ->
+        logger.debug {
+          "[rid=$requestId] stale query result found in cache (staleness=${result.staleness}); " +
+            "getting from server"
+        }
+    }
 
-    return remoteQueryExecuteResult.map { ExecuteImplResult(it, DataSource.SERVER) }
+    return serverOnlyLocalQuery.executeImpl(
+      requestId = requestId,
+      sequenceNumber = sequenceNumber,
+      authToken = authToken,
+      appCheckToken = appCheckToken,
+      callerSdkType = callerSdkType,
+    )
   }
 }
