@@ -55,6 +55,7 @@ import static com.google.firebase.firestore.pipeline.Expression.not;
 import static com.google.firebase.firestore.pipeline.Expression.notEqual;
 import static com.google.firebase.firestore.pipeline.Expression.nullValue;
 import static com.google.firebase.firestore.pipeline.Expression.or;
+import static com.google.firebase.firestore.pipeline.Expression.parent;
 import static com.google.firebase.firestore.pipeline.Expression.rand;
 import static com.google.firebase.firestore.pipeline.Expression.split;
 import static com.google.firebase.firestore.pipeline.Expression.startsWith;
@@ -1481,6 +1482,203 @@ public class PipelineTest {
                 "_-The Hitchhiker's Guide to the Galaxy-_",
                 "trimmedTitle",
                 "The Hitchhiker's Guide to the Galaxy"));
+  }
+
+  @Test
+  public void testLTrim() {
+    assumeFalse("Not implemented.", isRunningAgainstEmulator());
+
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(
+                map(
+                    ImmutableMap.of(
+                        "strWhitespace", "  trimMe  ", "strChars", "xxxtrimMe", "chars", "x")))
+            .select(
+                Expression.ltrim(constant("  trimMe  ")).alias("staticLtrimExpr"),
+                Expression.ltrim("strWhitespace").alias("staticLtrimStr"),
+                field("strWhitespace").ltrim().alias("instLtrim"),
+                Expression.ltrimValue(constant("xxxtrimMe"), "x").alias("staticLtrimValueExprPrim"),
+                Expression.ltrimValue(constant("xxxtrimMe"), constant("x"))
+                    .alias("staticLtrimValueExprExpr"),
+                Expression.ltrimValue("strChars", "x").alias("staticLtrimValueStrPrim"),
+                Expression.ltrimValue("strChars", field("chars")).alias("staticLtrimValueStrExpr"),
+                field("strChars").ltrimValue("x").alias("instLtrimValuePrim"),
+                field("strChars").ltrimValue(field("chars")).alias("instLtrimValueExpr"))
+            .execute();
+
+    Map<String, Object> result = waitFor(execute).getResults().get(0).getData();
+    assertThat(result.get("staticLtrimExpr")).isEqualTo("trimMe  ");
+    assertThat(result.get("staticLtrimStr")).isEqualTo("trimMe  ");
+    assertThat(result.get("instLtrim")).isEqualTo("trimMe  ");
+
+    assertThat(result.get("staticLtrimValueExprPrim")).isEqualTo("trimMe");
+    assertThat(result.get("staticLtrimValueExprExpr")).isEqualTo("trimMe");
+    assertThat(result.get("staticLtrimValueStrPrim")).isEqualTo("trimMe");
+    assertThat(result.get("staticLtrimValueStrExpr")).isEqualTo("trimMe");
+    assertThat(result.get("instLtrimValuePrim")).isEqualTo("trimMe");
+    assertThat(result.get("instLtrimValueExpr")).isEqualTo("trimMe");
+  }
+
+  @Test
+  public void testRTrim() {
+    assumeFalse("Not implemented.", isRunningAgainstEmulator());
+
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(
+                map(
+                    ImmutableMap.of(
+                        "strWhitespace", "  trimMe  ", "strChars", "trimMexxx", "chars", "x")))
+            .select(
+                Expression.rtrim(constant("  trimMe  ")).alias("staticRtrimExpr"),
+                Expression.rtrim("strWhitespace").alias("staticRtrimStr"),
+                field("strWhitespace").rtrim().alias("instRtrim"),
+                Expression.rtrimValue(constant("trimMexxx"), "x").alias("staticRtrimValueExprPrim"),
+                Expression.rtrimValue(constant("trimMexxx"), constant("x"))
+                    .alias("staticRtrimValueExprExpr"),
+                Expression.rtrimValue("strChars", "x").alias("staticRtrimValueStrPrim"),
+                Expression.rtrimValue("strChars", field("chars")).alias("staticRtrimValueStrExpr"),
+                field("strChars").rtrimValue("x").alias("instRtrimValuePrim"),
+                field("strChars").rtrimValue(field("chars")).alias("instRtrimValueExpr"))
+            .execute();
+
+    Map<String, Object> result = waitFor(execute).getResults().get(0).getData();
+    assertThat(result.get("staticRtrimExpr")).isEqualTo("  trimMe");
+    assertThat(result.get("staticRtrimStr")).isEqualTo("  trimMe");
+    assertThat(result.get("instRtrim")).isEqualTo("  trimMe");
+
+    assertThat(result.get("staticRtrimValueExprPrim")).isEqualTo("trimMe");
+    assertThat(result.get("staticRtrimValueExprExpr")).isEqualTo("trimMe");
+    assertThat(result.get("staticRtrimValueStrPrim")).isEqualTo("trimMe");
+    assertThat(result.get("staticRtrimValueStrExpr")).isEqualTo("trimMe");
+    assertThat(result.get("instRtrimValuePrim")).isEqualTo("trimMe");
+    assertThat(result.get("instRtrimValueExpr")).isEqualTo("trimMe");
+  }
+
+  @Test
+  public void testStringRepeat() {
+    assumeFalse("Not implemented.", isRunningAgainstEmulator());
+
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(map(ImmutableMap.of("str", "ha", "count", 3)))
+            .select(
+                Expression.stringRepeat(constant("ha"), 3).alias("staticExprPrim"),
+                Expression.stringRepeat(constant("ha"), constant(3)).alias("staticExprExpr"),
+                Expression.stringRepeat("str", 3).alias("staticStrPrim"),
+                Expression.stringRepeat("str", field("count")).alias("staticStrExpr"),
+                field("str").stringRepeat(3).alias("instPrim"),
+                field("str").stringRepeat(field("count")).alias("instExpr"))
+            .execute();
+
+    Map<String, Object> result = waitFor(execute).getResults().get(0).getData();
+    assertThat(result.get("staticExprPrim")).isEqualTo("hahaha");
+    assertThat(result.get("staticExprExpr")).isEqualTo("hahaha");
+    assertThat(result.get("staticStrPrim")).isEqualTo("hahaha");
+    assertThat(result.get("staticStrExpr")).isEqualTo("hahaha");
+    assertThat(result.get("instPrim")).isEqualTo("hahaha");
+    assertThat(result.get("instExpr")).isEqualTo("hahaha");
+  }
+
+  @Test
+  public void testStringReplaceAll() {
+    assumeFalse("Not implemented.", isRunningAgainstEmulator());
+
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(map(ImmutableMap.of("str", "hello world", "old", "o", "new", "a")))
+            .select(
+                Expression.stringReplaceAll(constant("hello world"), "o", "a")
+                    .alias("staticExprPrim"),
+                Expression.stringReplaceAll(constant("hello world"), constant("o"), constant("a"))
+                    .alias("staticExprExpr"),
+                Expression.stringReplaceAll("str", "o", "a").alias("staticStrPrim"),
+                Expression.stringReplaceAll("str", field("old"), field("new"))
+                    .alias("staticStrExpr"),
+                field("str").stringReplaceAll("o", "a").alias("instPrim"),
+                field("str").stringReplaceAll(field("old"), field("new")).alias("instExpr"))
+            .execute();
+
+    Map<String, Object> result = waitFor(execute).getResults().get(0).getData();
+    assertThat(result.get("staticExprPrim")).isEqualTo("hella warld");
+    assertThat(result.get("staticExprExpr")).isEqualTo("hella warld");
+    assertThat(result.get("staticStrPrim")).isEqualTo("hella warld");
+    assertThat(result.get("staticStrExpr")).isEqualTo("hella warld");
+    assertThat(result.get("instPrim")).isEqualTo("hella warld");
+    assertThat(result.get("instExpr")).isEqualTo("hella warld");
+  }
+
+  @Test
+  public void testStringReplaceOne() {
+    assumeFalse("Not implemented.", isRunningAgainstEmulator());
+
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(map(ImmutableMap.of("str", "hello world", "old", "o", "new", "a")))
+            .select(
+                Expression.stringReplaceOne(constant("hello world"), "o", "a")
+                    .alias("staticExprPrim"),
+                Expression.stringReplaceOne(constant("hello world"), constant("o"), constant("a"))
+                    .alias("staticExprExpr"),
+                Expression.stringReplaceOne("str", "o", "a").alias("staticStrPrim"),
+                Expression.stringReplaceOne("str", field("old"), field("new"))
+                    .alias("staticStrExpr"),
+                field("str").stringReplaceOne("o", "a").alias("instPrim"),
+                field("str").stringReplaceOne(field("old"), field("new")).alias("instExpr"))
+            .execute();
+
+    Map<String, Object> result = waitFor(execute).getResults().get(0).getData();
+    assertThat(result.get("staticExprPrim")).isEqualTo("hella world");
+    assertThat(result.get("staticExprExpr")).isEqualTo("hella world");
+    assertThat(result.get("staticStrPrim")).isEqualTo("hella world");
+    assertThat(result.get("staticStrExpr")).isEqualTo("hella world");
+    assertThat(result.get("instPrim")).isEqualTo("hella world");
+    assertThat(result.get("instExpr")).isEqualTo("hella world");
+  }
+
+  @Test
+  public void testStringIndexOf() {
+    assumeFalse("Not implemented.", isRunningAgainstEmulator());
+
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(map(ImmutableMap.of("str", "hello world", "sub", "world")))
+            .select(
+                Expression.stringIndexOf(constant("hello world"), "world").alias("staticExprPrim"),
+                Expression.stringIndexOf(constant("hello world"), constant("world"))
+                    .alias("staticExprExpr"),
+                Expression.stringIndexOf("str", "world").alias("staticStrPrim"),
+                Expression.stringIndexOf("str", field("sub")).alias("staticStrExpr"),
+                field("str").stringIndexOf("world").alias("instPrim"),
+                field("str").stringIndexOf(field("sub")).alias("instExpr"))
+            .execute();
+
+    Map<String, Object> result = waitFor(execute).getResults().get(0).getData();
+    assertThat(result.get("staticExprPrim")).isEqualTo(6L);
+    assertThat(result.get("staticExprExpr")).isEqualTo(6L);
+    assertThat(result.get("staticStrPrim")).isEqualTo(6L);
+    assertThat(result.get("staticStrExpr")).isEqualTo(6L);
+    assertThat(result.get("instPrim")).isEqualTo(6L);
+    assertThat(result.get("instExpr")).isEqualTo(6L);
   }
 
   @Test
@@ -3329,6 +3527,84 @@ public class PipelineTest {
   }
 
   @Test
+  public void testIsType() {
+    assumeFalse(
+        "Type expressions are not supported against the emulator.", isRunningAgainstEmulator());
+
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .replaceWith(
+                map(
+                    mapOfEntries(
+                        entry("int", 1),
+                        entry("float", 1.1),
+                        entry("str", "a string"),
+                        entry("bool", true),
+                        entry("null", null),
+                        entry("geoPoint", new GeoPoint(0.1, 0.2)),
+                        entry("timestamp", new Timestamp(123456, 0)),
+                        entry(
+                            "bytes",
+                            com.google.firebase.firestore.Blob.fromBytes(new byte[] {1, 2, 3})),
+                        entry("docRef", randomCol.document("bar")),
+                        entry("vector", FieldValue.vector(new double[] {1.0, 2.0, 3.0})),
+                        entry(
+                            "map",
+                            map(mapOfEntries(entry("numberK", 1), entry("stringK", "a string")))),
+                        entry("array", array(1, 2, true)))))
+            .select(
+                Expression.isType("int", "int64").alias("isInt64"),
+                Expression.isType("int", "number").alias("isInt64IsNumber"),
+                Expression.isType("int", "decimal128").alias("isInt64IsDecimal128"),
+                Expression.isType("float", "float64").alias("isFloat64"),
+                Expression.isType("float", "number").alias("isFloat64IsNumber"),
+                Expression.isType("float", "decimal128").alias("isFloat64IsDecimal128"),
+                Expression.isType("str", "string").alias("isStr"),
+                Expression.isType("str", "int64").alias("isStrNum"),
+                Expression.isType("int", "string").alias("isNumStr"),
+                Expression.isType("bool", "boolean").alias("isBool"),
+                Expression.isType("null", "null").alias("isNull"),
+                Expression.isType("geoPoint", "geo_point").alias("isGeoPoint"),
+                Expression.isType("timestamp", "timestamp").alias("isTimestamp"),
+                Expression.isType("bytes", "bytes").alias("isBytes"),
+                Expression.isType("docRef", "reference").alias("isDocRef"),
+                Expression.isType("vector", "vector").alias("isVector"),
+                Expression.isType("map", "map").alias("isMap"),
+                Expression.isType("array", "array").alias("isArray"),
+                Expression.isType(constant(1), "int64").alias("exprIsInt64"),
+                field("int").isType("int64").alias("staticIsInt64"))
+            .limit(1)
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            mapOfEntries(
+                entry("isInt64", true),
+                entry("isInt64IsNumber", true),
+                entry("isInt64IsDecimal128", false),
+                entry("isFloat64", true),
+                entry("isFloat64IsNumber", true),
+                entry("isFloat64IsDecimal128", false),
+                entry("isStr", true),
+                entry("isStrNum", false),
+                entry("isNumStr", false),
+                entry("isBool", true),
+                entry("isNull", true),
+                entry("isGeoPoint", true),
+                entry("isTimestamp", true),
+                entry("isBytes", true),
+                entry("isDocRef", true),
+                entry("isVector", true),
+                entry("isMap", true),
+                entry("isArray", true),
+                entry("exprIsInt64", true),
+                entry("staticIsInt64", true)));
+  }
+
+  @Test
   public void testVectorLength() {
     Task<Pipeline.Snapshot> execute =
         firestore
@@ -3397,6 +3673,32 @@ public class PipelineTest {
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
         .containsExactly(ImmutableMap.of("docId", "book4"));
+  }
+
+  @Test
+  public void testSupportsParent() {
+    DocumentReference reviewRef =
+        randomCol.document("book4").collection("reviews").document("review1");
+
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol.getPath())
+            .limit(1)
+            .select(
+                parent(constant(reviewRef)).alias("parentRefStatic"),
+                constant(reviewRef).parent().alias("parentRefInstance"))
+            .select(
+                field("parentRefStatic").documentId().alias("parentIdStatic"),
+                field("parentRefInstance").documentId().alias("parentIdInstance"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of(
+                "parentIdStatic", "book4",
+                "parentIdInstance", "book4"));
   }
 
   @Test
