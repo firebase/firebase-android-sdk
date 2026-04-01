@@ -1941,6 +1941,48 @@ abstract class Expression internal constructor() {
     fun type(fieldName: String): Expression = FunctionExpression("type", notImplemented, fieldName)
 
     /**
+     * Creates an expression that checks if the result of an expression is of the given type.
+     *
+     * Supported values for `type` are: "null", "array", "boolean", "bytes", "timestamp",
+     * "geo_point", "number", "int32", "int64", "float64", "decimal128", "map", "reference",
+     * "string", "vector", "max_key", "min_key", "object_id", "regex", and "request_timestamp".
+     *
+     * ```kotlin
+     * // Check if the 'age' field is an integer
+     * isType(field("age"), "int64")
+     * ```
+     *
+     * @param expr The expression to check the type of.
+     * @param type The type to check for.
+     * @return A new [BooleanExpression] that evaluates to true if the expression's result is of the
+     * given type, false otherwise.
+     */
+    @JvmStatic
+    fun isType(expr: Expression, type: String): BooleanExpression =
+      BooleanFunctionExpression("is_type", notImplemented, expr, constant(type))
+
+    /**
+     * Creates an expression that checks if the value of a field is of the given type.
+     *
+     * Supported values for `type` are: "null", "array", "boolean", "bytes", "timestamp",
+     * "geo_point", "number", "int32", "int64", "float64", "decimal128", "map", "reference",
+     * "string", "vector", "max_key", "min_key", "object_id", "regex", and "request_timestamp".
+     *
+     * ```kotlin
+     * // Check if the 'age' field is an integer
+     * isType("age", "int64")
+     * ```
+     *
+     * @param fieldName The name of the field to check the type of.
+     * @param type The type to check for.
+     * @return A new [BooleanExpression] that evaluates to true if the expression's result is of the
+     * given type, false otherwise.
+     */
+    @JvmStatic
+    fun isType(fieldName: String, type: String): BooleanExpression =
+      BooleanFunctionExpression("is_type", notImplemented, fieldName, constant(type))
+
+    /**
      * Creates an expression that calculates the length of a string, array, map, vector, or blob
      * expression.
      *
@@ -7692,6 +7734,47 @@ abstract class Expression internal constructor() {
     @JvmStatic fun documentId(docRef: DocumentReference): Expression = documentId(constant(docRef))
 
     /**
+     * Creates an expression that returns the parent document reference of a document reference.
+     *
+     * ```kotlin
+     * // Get the parent document reference of a document reference.
+     * parent(field("__path__"))
+     * ```
+     *
+     * @param documentPath An expression evaluating to a document reference.
+     * @return A new [Expression] representing the parent operation.
+     */
+    @JvmStatic
+    fun parent(documentPath: Expression): Expression =
+      FunctionExpression("parent", notImplemented, documentPath)
+
+    /**
+     * Creates an expression that returns the parent document reference of a document reference.
+     *
+     * ```kotlin
+     * // Get the parent document reference of a document reference.
+     * parent("projects/p/databases/d/documents/c/d")
+     * ```
+     *
+     * @param documentPath A string path to get the parent from.
+     * @return A new [Expression] representing the parent operation.
+     */
+    @JvmStatic fun parent(documentPath: String): Expression = parent(constant(documentPath))
+
+    /**
+     * Creates an expression that returns the parent document reference of a document reference.
+     *
+     * ```kotlin
+     * // Get the parent document reference of a document reference.
+     * parent(myDocumentReference)
+     * ```
+     *
+     * @param docRef A [DocumentReference] to get the parent from.
+     * @return A new [Expression] representing the parent operation.
+     */
+    @JvmStatic fun parent(docRef: DocumentReference): Expression = parent(constant(docRef))
+
+    /**
      * Creates an expression that retrieves the value of a variable bound via [Pipeline.define].
      *
      * Example:
@@ -8143,6 +8226,19 @@ abstract class Expression internal constructor() {
    * @return A new [Expression] representing the documentId operation.
    */
   fun documentId(): Expression = Companion.documentId(this)
+
+  /**
+   * Creates an expression that returns the parent document reference of this document reference
+   * expression.
+   *
+   * ```kotlin
+   * // Get the parent document reference of the 'path' field.
+   * field("path").parent()
+   * ```
+   *
+   * @return A new [Expression] representing the parent operation.
+   */
+  fun parent(): Expression = Companion.parent(this)
 
   /**
    * Creates an expression that returns the collection ID from this path expression.
@@ -8631,7 +8727,25 @@ abstract class Expression internal constructor() {
    *
    * @return A new [Expression] representing the type operation.
    */
-  fun type(): Expression = type(this)
+  fun type(): Expression = Companion.type(this)
+
+  /**
+   * Creates an expression that checks if the result of this expression is of the given type.
+   *
+   * Supported values for `type` are: "null", "array", "boolean", "bytes", "timestamp", "geo_point",
+   * "number", "int32", "int64", "float64", "decimal128", "map", "reference", "string", "vector",
+   * "max_key", "min_key", "object_id", "regex", and "request_timestamp".
+   *
+   * ```kotlin
+   * // Check if the 'age' field is an integer
+   * field("age").isType("int64")
+   * ```
+   *
+   * @param type The type to check for.
+   * @return A new [BooleanExpression] that evaluates to true if the expression's result is of the
+   * given type, false otherwise.
+   */
+  fun isType(type: String): BooleanExpression = Companion.isType(this, type)
 
   /**
    * Creates an expression that splits this string or blob expression by a delimiter.
