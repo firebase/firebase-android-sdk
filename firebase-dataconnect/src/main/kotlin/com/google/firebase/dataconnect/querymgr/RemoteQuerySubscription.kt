@@ -16,6 +16,7 @@
 
 package com.google.firebase.dataconnect.querymgr
 
+import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.core.DataConnectStream
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
@@ -48,6 +49,7 @@ internal class RemoteQuerySubscription(
   private val cacheUpdater: QueryCacheUpdater?,
   private val cpuDispatcher: CoroutineDispatcher,
   val requestProto: ExecuteRequestProto,
+  private val streamManager: QueryManager.StreamManager,
   private val parentCoroutineScope: CoroutineScope,
   private val logger: Logger,
 ) {
@@ -57,25 +59,42 @@ internal class RemoteQuerySubscription(
 
   suspend fun subscribe(
     requestId: String,
-    stream: DataConnectStream,
+    authToken: String?,
+    appCheckToken: String?,
+    callerSdkType: FirebaseDataConnect.CallerSdkType,
   ): Flow<ExecuteQueryResponseProto> {
-    val activeFlow = getOrStartActiveFlow(requestId, stream)
+    val activeFlow =
+      getOrStartActiveFlow(
+        requestId = requestId,
+        authToken = authToken,
+        appCheckToken = appCheckToken,
+        callerSdkType = callerSdkType,
+      )
+
     return activeFlow.flow.filterIsInstance<IncomingResponse.Data>().map { it.response }
   }
 
   private suspend fun getOrStartActiveFlow(
     requestId: String,
-    stream: DataConnectStream,
+    authToken: String?,
+    appCheckToken: String?,
+    callerSdkType: FirebaseDataConnect.CallerSdkType,
   ): ActiveFlow =
     mutex.withLock {
       activeFlow?.let {
-        if (it.coroutineScope.isActive) {
+        if (it.coroutineScope.isActive && it.stream.isAlive) {
           return it
         }
       }
       this.activeFlow = null
 
       val coroutineScope = createCoroutineScope()
+      val stream =
+        streamManager.getOrCreate(
+          authToken = authToken,
+          appCheckToken = appCheckToken,
+          callerSdkType = callerSdkType,
+        )
 
       val flow =
         stream
@@ -93,7 +112,7 @@ internal class RemoteQuerySubscription(
             started = SharingStarted.Eagerly,
           )
 
-      val activeFlow = ActiveFlow(flow, coroutineScope)
+      val activeFlow = ActiveFlow(stream, flow, coroutineScope)
       this.activeFlow = activeFlow
 
       if (cacheUpdater !== null) {
@@ -121,6 +140,7 @@ internal class RemoteQuerySubscription(
     }
 
   private class ActiveFlow(
+    val stream: DataConnectStream,
     val flow: SharedFlow<IncomingResponse>,
     val coroutineScope: CoroutineScope,
   )

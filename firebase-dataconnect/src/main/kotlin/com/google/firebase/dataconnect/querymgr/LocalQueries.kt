@@ -116,7 +116,7 @@ internal class LocalQueries(
     @Suppress("UNCHECKED_CAST") return untypedLocalQuery as LocalQuery<T>
   }
 
-  private fun <T> getOrPutServerOnly(
+  fun <T> getOrPutServerOnly(
     key: Key<T>,
     requestProto: ExecuteQueryRequestProto,
   ): ServerOnlyLocalQuery<T> {

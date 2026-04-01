@@ -20,6 +20,7 @@ import google.firebase.dataconnect.proto.ExecuteQueryResponse
 import google.firebase.dataconnect.proto.ExecuteRequest
 import google.firebase.dataconnect.proto.StreamRequest
 import google.firebase.dataconnect.proto.StreamResponse
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.ReceiveChannel
@@ -44,15 +45,26 @@ import kotlinx.coroutines.flow.transformWhile
 internal class DataConnectStream(
   private val coroutineScope: CoroutineScope,
   private val outgoingRequests: SendChannel<StreamRequest>,
-  private val incomingResponses: SharedFlow<IncomingResponse>
+  private val incomingResponses: SharedFlow<IncomingResponse>,
 ) {
+
+  private val atomicIsAlive = AtomicBoolean(true)
+
+  val isAlive: Boolean
+    get() = atomicIsAlive.get()
 
   fun subscribe(requestId: String, request: ExecuteRequest): ReceiveChannel<ExecuteQueryResponse> {
     val flow: Flow<ExecuteQueryResponse> =
       incomingResponses.transformWhile { incomingResponse: IncomingResponse ->
         when (incomingResponse) {
-          IncomingResponse.Completed -> false
-          is IncomingResponse.Error -> throw incomingResponse.throwable
+          IncomingResponse.Completed -> {
+            atomicIsAlive.set(false)
+            false
+          }
+          is IncomingResponse.Error -> {
+            atomicIsAlive.set(false)
+            throw incomingResponse.throwable
+          }
           IncomingResponse.Ready -> {
             outgoingRequests.send(
               StreamRequest.newBuilder().setRequestId(requestId).setSubscribe(request).build()

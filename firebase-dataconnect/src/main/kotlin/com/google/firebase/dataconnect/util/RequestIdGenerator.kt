@@ -30,6 +30,8 @@ internal class RequestIdGenerator(
 
   suspend fun nextMutationRequestId(): String = nextRequestId("mut")
 
+  suspend fun nextStreamId(): String = nextRequestId("str")
+
   private suspend fun nextRequestId(prefix: String): String =
     withContext(ioDispatcher) { prefix + secureRandom.nextAlphanumericString(length = 10) }
 }

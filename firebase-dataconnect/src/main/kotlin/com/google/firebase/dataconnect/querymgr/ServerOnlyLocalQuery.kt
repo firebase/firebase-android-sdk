@@ -26,7 +26,7 @@ import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.modules.SerializersModule
 
 internal class ServerOnlyLocalQuery<Data>(
-  private val remoteQuery: RemoteQuery,
+  val remoteQuery: RemoteQuery,
   cpuDispatcher: CoroutineDispatcher,
   dataDeserializer: DeserializationStrategy<Data>,
   dataSerializersModule: SerializersModule?,

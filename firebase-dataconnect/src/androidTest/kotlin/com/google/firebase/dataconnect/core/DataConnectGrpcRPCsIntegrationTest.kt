@@ -19,18 +19,21 @@
 package com.google.firebase.dataconnect.core
 
 import app.cash.turbine.test
+import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.OperationRef
 import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.copy
-import com.google.firebase.dataconnect.querymgr.RemoteQuerySubscription
+import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
+import com.google.firebase.dataconnect.querymgr.QueryManager
+import com.google.firebase.dataconnect.querymgr.subscribe
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
-import com.google.firebase.dataconnect.testutil.SuspendingCountDownLatch
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.triple
 import com.google.firebase.dataconnect.testutil.schemas.PastaConnector
 import com.google.firebase.dataconnect.util.ProtoUtil.decodeFromStruct
 import com.google.firebase.dataconnect.util.ProtoUtil.encodeToStruct
+import com.google.firebase.dataconnect.util.RequestIdGenerator
 import com.google.protobuf.Struct
 import google.firebase.dataconnect.proto.ExecuteQueryResponse
 import google.firebase.dataconnect.proto.ExecuteRequest
@@ -48,11 +51,13 @@ import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.next
 import io.kotest.property.arbs.firstName
 import io.kotest.property.checkAll
+import io.mockk.coEvery
 import io.mockk.mockk
+import kotlin.String
+import kotlin.random.Random
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
@@ -107,61 +112,39 @@ class DataConnectGrpcRPCsIntegrationTest : DataConnectIntegrationTestBase() {
   }
 
   @Test
-  fun remoteQuerySubscriptionTest() = runTest {
+  fun queryManagerTest() = runTest {
     val stringArb = Arb.firstName().map { it.name }
-    val callerSdkTypeArb = Arb.enum<FirebaseDataConnect.CallerSdkType>()
-    val requestIdArb = Arb.dataConnect.requestId()
     val connector = newConnector()
     checkAll(propTestConfig, stringArb.triple()) { (name1, name2, name3) ->
       val key = connector.insert(name1)
       val dataConnectGrpcRPCs = connector.dataConnectGrpcRPCs
       val queryRef = connector.refs.getByKey(key)
 
-      val stream =
-        dataConnectGrpcRPCs.connect(
-          streamId = "con" + stringArb.bind(),
-          authToken = null,
-          appCheckToken = null,
-          callerSdkType = callerSdkTypeArb.bind(),
-          name = connector.calculateRequestName(),
-        )
-
-      val remoteQuerySubscription =
-        RemoteQuerySubscription(
-          cacheUpdater = null,
+      val queryManager =
+        QueryManager(
+          requestName = connector.calculateRequestName(),
+          dataConnectGrpcRPCs = dataConnectGrpcRPCs,
+          dataConnectAuth = mockk(relaxed = true) { coEvery { getToken(any()) } returns null },
+          dataConnectAppCheck = mockk(relaxed = true) { coEvery { getToken(any()) } returns null },
+          ioDispatcher = Dispatchers.IO,
           cpuDispatcher = Dispatchers.Default,
-          requestProto =
-            ExecuteRequest.newBuilder()
-              .setOperationName(queryRef.operationName)
-              .setVariables(queryRef.encodeVariables())
-              .build(),
-          parentCoroutineScope = backgroundScope,
-          logger = mockk(relaxed = true),
+          requestIdGenerator = RequestIdGenerator(Random, Dispatchers.IO),
+          cacheSettings = QueryManager.CacheSettings(dbFile = null, maxAge = Duration.INFINITE),
+          currentTimeMillis = System::currentTimeMillis,
+          logger = Logger("queryManagerTest"),
         )
 
-      val latch1 = SuspendingCountDownLatch(4)
-      val latch2 = SuspendingCountDownLatch(latch1.count)
-      val jobs =
-        List(latch1.count - 1) { jobIndex ->
-          backgroundScope.async(Dispatchers.IO) {
-            val requestId = requestIdArb.next(randomSource())
-            val flow = remoteQuerySubscription.subscribe(requestId, stream)
-            flow.test {
-              withClue("awaitItem-$jobIndex.1") { awaitItem().shouldHaveName(name1, queryRef) }
-              latch1.countDown().await()
-              withClue("awaitItem-$jobIndex.2") { awaitItem().shouldHaveName(name2, queryRef) }
-              latch2.countDown().await()
-              withClue("awaitItem-$jobIndex.3") { awaitItem().shouldHaveName(name3, queryRef) }
-            }
-          }
+      try {
+        queryManager.subscribe(queryRef).test {
+          withClue("awaitItem1") { awaitItem().shouldHaveName(name1, DataSource.SERVER) }
+          connector.update(key, name2)
+          withClue("awaitItem2") { awaitItem().shouldHaveName(name2, DataSource.SERVER) }
+          connector.update(key, name3)
+          withClue("awaitItem3") { awaitItem().shouldHaveName(name3, DataSource.SERVER) }
         }
-
-      latch1.countDown().await()
-      connector.update(key, name2)
-      latch2.countDown().await()
-      connector.update(key, name3)
-
-      jobs.awaitAll()
+      } finally {
+        queryManager.close()
+      }
     }
   }
 
@@ -197,6 +180,16 @@ private fun ExecuteQueryResponse.shouldHaveName(
   val data: PastaConnector.Data.Get = withClue("decodeAsData") { struct.decodeAsData(ref) }
 
   data.asClue { it.item.shouldNotBeNull().name shouldBe name }
+}
+
+private fun Result<QueryManager.ExecuteResult<PastaConnector.Data.Get>>.shouldHaveName(
+  name: String,
+  dataSource: DataSource,
+) {
+  val result = getOrThrow()
+
+  withClue("name") { result.data.item.shouldNotBeNull().name shouldBe name }
+  withClue("dataSource") { result.source shouldBe dataSource }
 }
 
 private fun PastaConnector.calculateRequestName(): String = dataConnect.calculateRequestName()

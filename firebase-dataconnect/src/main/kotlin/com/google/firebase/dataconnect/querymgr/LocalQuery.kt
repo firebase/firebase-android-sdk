@@ -63,20 +63,16 @@ internal sealed class LocalQuery<out Data>(
     callerSdkType: FirebaseDataConnect.CallerSdkType,
   ): SequencedReference<ExecuteImplResult>
 
-  private suspend fun ExecuteImplResult.toExecuteResult(
-    requestId: String,
-  ): ExecuteResult<Data> {
-    val dataDeserializeResult =
-      withContext(cpuDispatcher) {
-        executeQueryResponse.runCatching { deserialize(dataDeserializer, dataSerializersModule) }
-      }
-
-    dataDeserializeResult.onFailure {
-      logger.warn(it) { "[rid=$requestId] decoding response data failed" }
-    }
-
-    return ExecuteResult(dataDeserializeResult.getOrThrow(), dataSource)
-  }
+  suspend fun ExecuteImplResult.toExecuteResult(requestId: String): ExecuteResult<Data> =
+    toExecuteResult(
+      requestId,
+      executeQueryResponse,
+      dataSource,
+      cpuDispatcher,
+      dataDeserializer,
+      dataSerializersModule,
+      logger,
+    )
 
   data class ExecuteResult<out T>(val data: T, val source: DataSource)
 
@@ -84,4 +80,28 @@ internal sealed class LocalQuery<out Data>(
     val executeQueryResponse: ExecuteQueryResponseProto,
     val dataSource: DataSource
   )
+
+  companion object {
+
+    suspend fun <Data> toExecuteResult(
+      requestId: String,
+      executeQueryResponse: ExecuteQueryResponseProto,
+      dataSource: DataSource,
+      cpuDispatcher: CoroutineDispatcher,
+      dataDeserializer: DeserializationStrategy<Data>,
+      dataSerializersModule: SerializersModule?,
+      logger: Logger,
+    ): ExecuteResult<Data> {
+      val dataDeserializeResult =
+        withContext(cpuDispatcher) {
+          executeQueryResponse.runCatching { deserialize(dataDeserializer, dataSerializersModule) }
+        }
+
+      dataDeserializeResult.onFailure {
+        logger.warn(it) { "[rid=$requestId] decoding response data failed" }
+      }
+
+      return ExecuteResult(dataDeserializeResult.getOrThrow(), dataSource)
+    }
+  }
 }

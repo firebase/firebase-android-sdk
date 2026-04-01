@@ -31,7 +31,7 @@ import kotlinx.coroutines.SupervisorJob
 
 internal class RemoteQuery(
   private val dataConnectGrpcRPCs: DataConnectGrpcRPCs,
-  private val cacheUpdater: QueryCacheUpdater?,
+  val cacheUpdater: QueryCacheUpdater?,
   cpuDispatcher: CoroutineDispatcher,
   val requestProto: ExecuteQueryRequestProto,
   private val coroutineScope: CoroutineScope,
