@@ -1292,8 +1292,10 @@ package com.google.firebase.ai.type {
     method public boolean isAudioConversationActive();
     method public boolean isClosed();
     method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.type.LiveServerMessage> receive();
-    method public suspend Object? send(com.google.firebase.ai.type.Content content, kotlin.coroutines.Continuation<? super kotlin.Unit>);
-    method public suspend Object? send(String text, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public suspend Object? send(com.google.firebase.ai.type.Content content, boolean turnComplete = true, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public suspend Object? send(com.google.firebase.ai.type.Content content, kotlin.coroutines.Continuation<? super kotlin.Unit> = true);
+    method public suspend Object? send(String text, boolean turnComplete = true, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public suspend Object? send(String text, kotlin.coroutines.Continuation<? super kotlin.Unit> = true);
     method public suspend Object? sendAudioRealtime(com.google.firebase.ai.type.InlineData audio, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public suspend Object? sendFunctionResponse(java.util.List<com.google.firebase.ai.type.FunctionResponsePart> functionList, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method @Deprecated public suspend Object? sendMediaStream(java.util.List<com.google.firebase.ai.type.MediaData> mediaChunks, kotlin.coroutines.Continuation<? super kotlin.Unit>);
