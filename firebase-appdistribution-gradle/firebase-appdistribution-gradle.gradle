@@ -225,6 +225,7 @@ dependencies {
 
   integrationTestImplementation(gradleApi())
   integrationTestImplementation(gradleTestKit())
+  integrationTestImplementation(sourceSets.main.output)
   integrationTestImplementation("com.android.tools.build:gradle:7.2.0")
   integrationTestImplementation(libs.junit)
   integrationTestImplementation("com.github.tomakehurst:wiremock:2.26.3")
@@ -234,6 +235,7 @@ dependencies {
 
   prodTestImplementation(gradleApi())
   prodTestImplementation(gradleTestKit())
+  prodTestImplementation(sourceSets.main.output)
   prodTestImplementation("com.android.tools.build:gradle:7.2.0")
   prodTestImplementation(libs.junit)
   prodTestImplementation("com.github.tomakehurst:wiremock:2.26.3")

@@ -20,21 +20,30 @@ jobs:
           java-version: 17
           distribution: temurin
           cache: gradle
+
+      - name: Setup local.properties for prodTest
+        run: |
+          echo "${{ secrets.INTEG_TESTS_FAD_GRADLE_PROD_TEST_PROPERTIES }}" > local.properties
+    
       - name: Add FAD service-credentials.json
         env:
           INTEG_TESTS_FAD_SERVICE_CREDENTIALS: ${{ secrets.INTEG_TESTS_FAD_SERVICE_CREDENTIALS }}
         if: env.INTEG_TESTS_FAD_SERVICE_CREDENTIALS != '' && env.INTEG_TESTS_FAD_SERVICE_CREDENTIALS != 'null'
         run: |
           echo $INTEG_TESTS_FAD_SERVICE_CREDENTIALS | base64 -d > firebase-appdistribution-gradle/service-credentials.json
+
       - name: Run tests
         id: tests
+        env:
+          FIREBASE_TOKEN: ${{ secrets.INTEG_TESTS_FAD_FIREBASE_TOKEN }}
         run: |
           ./gradlew \
-          :firebase-appdistribution-gradle:integrationTest
+          :firebase-appdistribution-gradle:integrationTest \
+          :firebase-appdistribution-gradle:prodTest
 
       - name: Upload Test Report
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: integration-test-report
-          path: firebase-appdistribution-gradle/build/reports/tests/integrationTest/
+          path: firebase-appdistribution-gradle/build/reports/tests/
