@@ -241,7 +241,6 @@ public class ConfigContainer {
       JSONArray affectedKeys = experiment.getJSONArray(AFFECTED_PARAMETER_KEYS);
       for (int j = 0; j < affectedKeys.length(); j++) {
         String key = affectedKeys.getString(j);
-        // Reuse the same JSONObject instance instead of creating a copy
         experimentsMap.put(key, experiment);
       }
     }
