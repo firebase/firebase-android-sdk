@@ -3994,7 +3994,7 @@ abstract class Expression internal constructor() {
      *
      * ```kotlin
      * // Set the 'city' to "San Francisco" in the 'address' map
-     * mapSet("address", constant("city"), constant("San Francisco"));
+     * mapSet("address", constant("city"), constant("San Francisco"))
      * ```
      *
      * @param mapField The map field to set entries in.
@@ -4020,7 +4020,7 @@ abstract class Expression internal constructor() {
      *
      * ```kotlin
      * // Set the 'city' to "San Francisco" in the 'address' map
-     * mapSet("address", "city", "San Francisco");
+     * mapSet("address", "city", "San Francisco")
      * ```
      *
      * @param mapField The map field to set entries in.
@@ -7802,7 +7802,7 @@ abstract class Expression internal constructor() {
      * firestore.pipeline().collection("books")
      *     .define(currentDocument().alias("doc"))
      *     // Access a field from the defined document variable
-     *     .select(variable("doc").getField("title"));
+     *     .select(variable("doc").getField("title"))
      * ```
      *
      * @return An [Expression] representing the current document.
