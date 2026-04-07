@@ -21,6 +21,7 @@ import com.google.firebase.ai.common.TemplateGenerateImageRequest
 import com.google.firebase.ai.common.util.descriptorToJson
 import com.google.firebase.ai.type.Candidate
 import com.google.firebase.ai.type.CountTokensResponse
+import com.google.firebase.ai.type.ImageConfig
 import com.google.firebase.ai.type.GenerateContentResponse
 import com.google.firebase.ai.type.GoogleSearch
 import com.google.firebase.ai.type.GroundingAttribution
@@ -154,7 +155,17 @@ internal class SerializationTests {
             "BLOCKLIST",
             "PROHIBITED_CONTENT",
             "SPII",
-            "MALFORMED_FUNCTION_CALL"
+            "MALFORMED_FUNCTION_CALL",
+            "IMAGE_SAFETY",
+            "IMAGE_PROHIBITED_CONTENT",
+            "IMAGE_OTHER",
+            "NO_IMAGE",
+            "IMAGE_RECITATION",
+            "LANGUAGE",
+            "UNEXPECTED_TOOL_CALL",
+            "TOO_MANY_TOOL_CALLS",
+            "MISSING_THOUGHT_SIGNATURE",
+            "MALFORMED_RESPONSE"
           ]
         },
         "safetyRatings": {
@@ -177,6 +188,28 @@ internal class SerializationTests {
       """
         .trimIndent()
     val actualJson = descriptorToJson(Candidate.Internal.serializer().descriptor)
+    expectedJsonAsString shouldEqualJson actualJson.toString()
+  }
+
+  @Test
+  fun `test ImageConfig serialization as Json`() {
+    val expectedJsonAsString =
+      """
+      {
+        "id": "ImageConfig",
+        "type": "object",
+        "properties": {
+          "aspect_ratio": {
+            "type": "string"
+          },
+          "image_size": {
+            "type": "string"
+          }
+        }
+      }
+      """
+        .trimIndent()
+    val actualJson = descriptorToJson(ImageConfig.Internal.serializer().descriptor)
     expectedJsonAsString shouldEqualJson actualJson.toString()
   }
 

@@ -82,6 +82,7 @@ import kotlinx.serialization.Serializable
  * guide for more details.
  *
  * @property responseModalities The format of data in which the model should respond with.
+ * @property imageConfig Configuration for the aspect ratio and size of generated images.
  */
 public class GenerationConfig
 private constructor(
@@ -98,6 +99,7 @@ private constructor(
   internal val responseJsonSchema: JsonSchema<*>?,
   internal val responseModalities: List<ResponseModality>?,
   internal val thinkingConfig: ThinkingConfig?,
+  internal val imageConfig: ImageConfig?,
 ) {
 
   /**
@@ -146,6 +148,7 @@ private constructor(
     @JvmField public var responseJsonSchema: JsonSchema<*>? = null
     @JvmField public var responseModalities: List<ResponseModality>? = null
     @JvmField public var thinkingConfig: ThinkingConfig? = null
+    @JvmField public var imageConfig: ImageConfig? = null
 
     public constructor()
 
@@ -163,6 +166,7 @@ private constructor(
       responseJsonSchema: JsonSchema<*>?,
       responseModalities: List<ResponseModality>?,
       thinkingConfig: ThinkingConfig?,
+      imageConfig: ImageConfig?,
     ) {
       this.temperature = temperature
       this.topK = topK
@@ -177,6 +181,7 @@ private constructor(
       this.responseJsonSchema = responseJsonSchema
       this.responseModalities = responseModalities
       this.thinkingConfig = thinkingConfig
+      this.imageConfig = imageConfig
     }
 
     public fun setTemperature(temperature: Float?): Builder = apply {
@@ -215,6 +220,10 @@ private constructor(
       this.thinkingConfig = thinkingConfig
     }
 
+    public fun setImageConfig(imageConfig: ImageConfig?): Builder = apply {
+      this.imageConfig = imageConfig
+    }
+
     /** Create a new [GenerationConfig] with the attached arguments. */
     public fun build(): GenerationConfig {
       if (responseSchema != null && responseJsonSchema != null) {
@@ -233,7 +242,8 @@ private constructor(
         responseSchema = responseSchema,
         responseJsonSchema = responseJsonSchema,
         responseModalities = responseModalities,
-        thinkingConfig = thinkingConfig
+        thinkingConfig = thinkingConfig,
+        imageConfig = imageConfig
       )
     }
   }
@@ -252,7 +262,8 @@ private constructor(
       responseSchema = responseSchema,
       responseJsonSchema = responseJsonSchema,
       responseModalities = responseModalities,
-      thinkingConfig = thinkingConfig
+      thinkingConfig = thinkingConfig,
+      imageConfig = imageConfig
     )
 
   internal fun toInternal() =
@@ -269,7 +280,8 @@ private constructor(
       responseSchema = responseSchema?.toInternalOpenApi(),
       responseJsonSchema = responseJsonSchema?.toInternalJson(),
       responseModalities = responseModalities?.map { it.toInternal() },
-      thinkingConfig = thinkingConfig?.toInternal()
+      thinkingConfig = thinkingConfig?.toInternal(),
+      imageConfig = imageConfig?.toInternal()
     )
 
   @Serializable
@@ -286,7 +298,8 @@ private constructor(
     @SerialName("response_schema") val responseSchema: Schema.InternalOpenAPI? = null,
     @SerialName("response_json_schema") val responseJsonSchema: Schema.InternalJson? = null,
     @SerialName("response_modalities") val responseModalities: List<String>? = null,
-    @SerialName("thinking_config") val thinkingConfig: ThinkingConfig.Internal? = null
+    @SerialName("thinking_config") val thinkingConfig: ThinkingConfig.Internal? = null,
+    @SerialName("image_config") val imageConfig: ImageConfig.Internal? = null
   )
 
   public companion object {
