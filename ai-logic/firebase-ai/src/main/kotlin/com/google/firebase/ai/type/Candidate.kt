@@ -342,7 +342,8 @@ public class FinishReason private constructor(public val name: String, public va
     @JvmField public val IMAGE_SAFETY: FinishReason = FinishReason("IMAGE_SAFETY", 10)
 
     /** Image generation stopped because generated images have other prohibited content. */
-    @JvmField public val IMAGE_PROHIBITED_CONTENT: FinishReason = FinishReason("IMAGE_PROHIBITED_CONTENT", 11)
+    @JvmField
+    public val IMAGE_PROHIBITED_CONTENT: FinishReason = FinishReason("IMAGE_PROHIBITED_CONTENT", 11)
 
     /** Image generation stopped because of other miscellaneous issue. */
     @JvmField public val IMAGE_OTHER: FinishReason = FinishReason("IMAGE_OTHER", 12)
@@ -357,13 +358,16 @@ public class FinishReason private constructor(public val name: String, public va
     @JvmField public val LANGUAGE: FinishReason = FinishReason("LANGUAGE", 15)
 
     /** Model generated a tool call but no tools were enabled in the request. */
-    @JvmField public val UNEXPECTED_TOOL_CALL: FinishReason = FinishReason("UNEXPECTED_TOOL_CALL", 16)
+    @JvmField
+    public val UNEXPECTED_TOOL_CALL: FinishReason = FinishReason("UNEXPECTED_TOOL_CALL", 16)
 
     /** Model called too many tools consecutively, thus the system exited execution. */
     @JvmField public val TOO_MANY_TOOL_CALLS: FinishReason = FinishReason("TOO_MANY_TOOL_CALLS", 17)
 
     /** Request has at least one thought signature missing. */
-    @JvmField public val MISSING_THOUGHT_SIGNATURE: FinishReason = FinishReason("MISSING_THOUGHT_SIGNATURE", 18)
+    @JvmField
+    public val MISSING_THOUGHT_SIGNATURE: FinishReason =
+      FinishReason("MISSING_THOUGHT_SIGNATURE", 18)
 
     /** Finished due to malformed response. */
     @JvmField public val MALFORMED_RESPONSE: FinishReason = FinishReason("MALFORMED_RESPONSE", 19)

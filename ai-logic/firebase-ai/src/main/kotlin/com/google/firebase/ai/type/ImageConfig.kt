@@ -22,16 +22,16 @@ import kotlinx.serialization.Serializable
 /**
  * Configuration options for generating images with Gemini models.
  *
- * See the [documentation](https://ai.google.dev/gemini-api/docs/image-generation#aspect_ratios_and_image_size)
+ * See the
+ * [documentation](https://ai.google.dev/gemini-api/docs/image-generation#aspect_ratios_and_image_size)
  * to learn about parameters available for use with Gemini image models.
  */
-public class ImageConfig private constructor(
+public class ImageConfig
+private constructor(
   internal val aspectRatio: AspectRatio? = null,
   internal val imageSize: ImageSize? = null
 ) {
-  /**
-   * Builder for creating a [ImageConfig].
-   */
+  /** Builder for creating a [ImageConfig]. */
   public class Builder {
     @JvmField public var aspectRatio: AspectRatio? = null
     @JvmField public var imageSize: ImageSize? = null
