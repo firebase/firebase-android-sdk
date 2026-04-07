@@ -18,6 +18,7 @@ import static com.google.firebase.perf.network.NetworkRequestMetricBuilderUtil.i
 
 import androidx.annotation.Nullable;
 import androidx.annotation.VisibleForTesting;
+import com.google.firebase.perf.FirebasePerformance;
 import com.google.firebase.perf.application.AppStateMonitor;
 import com.google.firebase.perf.application.AppStateUpdateHandler;
 import com.google.firebase.perf.logging.AndroidLogger;
@@ -37,6 +38,7 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -213,7 +215,14 @@ public final class NetworkRequestMetricBuilder extends AppStateUpdateHandler
 
   /** Sets the customAttributes for the current {@link NetworkRequestMetric}. */
   public NetworkRequestMetricBuilder setCustomAttributes(Map<String, String> attributes) {
-    builder.clearCustomAttributes().putAllCustomAttributes(attributes);
+    Map<String, String> merged = new HashMap<>();
+    try {
+      merged.putAll(FirebasePerformance.getInstance().getAttributes());
+    } catch (IllegalStateException e) {
+      // FirebaseApp not initialized yet, skip global attributes
+    }
+    merged.putAll(attributes);
+    builder.clearCustomAttributes().putAllCustomAttributes(merged);
     return this;
   }
 

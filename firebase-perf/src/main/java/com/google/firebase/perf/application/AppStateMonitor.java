@@ -22,6 +22,7 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
 import androidx.fragment.app.FragmentActivity;
+import com.google.firebase.perf.FirebasePerformance;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.metrics.FrameMetricsCalculator.PerfFrameMetrics;
@@ -391,6 +392,12 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
       // reset metrics.
       metricToCountMap.clear();
     }
+    try {
+      metric.putAllCustomAttributes(FirebasePerformance.getInstance().getAttributes());
+    } catch (IllegalStateException e) {
+      // FirebaseApp not initialized yet, skip global attributes
+    }
+
     // The Foreground and Background trace marks the transition between the two states,
     // so we always specify the state to be ApplicationProcessState.FOREGROUND_BACKGROUND.
     transportManager.log(metric.build(), ApplicationProcessState.FOREGROUND_BACKGROUND);

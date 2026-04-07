@@ -15,9 +15,11 @@
 package com.google.firebase.perf.metrics;
 
 import androidx.annotation.NonNull;
+import com.google.firebase.perf.FirebasePerformance;
 import com.google.firebase.perf.session.PerfSession;
 import com.google.firebase.perf.v1.TraceMetric;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -53,7 +55,14 @@ class TraceMetricBuilder {
       }
     }
 
-    traceMetric.putAllCustomAttributes(trace.getAttributes());
+    Map<String, String> mergedAttributes = new HashMap<>();
+    try {
+      mergedAttributes.putAll(FirebasePerformance.getInstance().getAttributes());
+    } catch (IllegalStateException e) {
+      // FirebaseApp not initialized yet, skip global attributes
+    }
+    mergedAttributes.putAll(trace.getAttributes());
+    traceMetric.putAllCustomAttributes(mergedAttributes);
 
     com.google.firebase.perf.v1.PerfSession[] perfSessions =
         PerfSession.buildAndSort(trace.getSessions());

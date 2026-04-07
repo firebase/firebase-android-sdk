@@ -20,6 +20,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.MockitoAnnotations.initMocks;
 
+import com.google.firebase.perf.FirebasePerformance;
 import com.google.firebase.perf.FirebasePerformanceTestBase;
 import com.google.firebase.perf.application.AppStateMonitor;
 import com.google.firebase.perf.session.PerfSession;
@@ -321,6 +322,34 @@ public class NetworkRequestMetricBuilderTest extends FirebasePerformanceTestBase
 
     networkMetricBuilder.setResponseContentType(null);
     assertThat(networkMetricBuilder.build().hasResponseContentType()).isFalse();
+  }
+
+  @Test
+  public void testGlobalAttributesIncludedInNetworkRequestMetric() {
+    FirebasePerformance firebasePerformance = FirebasePerformance.getInstance();
+    firebasePerformance.putAttribute("globalKey", "globalValue");
+
+    networkMetricBuilder.setCustomAttributes(java.util.Collections.emptyMap());
+
+    NetworkRequestMetric metric = networkMetricBuilder.build();
+    assertThat(metric.getCustomAttributesMap()).containsEntry("globalKey", "globalValue");
+
+    firebasePerformance.removeAttribute("globalKey");
+  }
+
+  @Test
+  public void testPerRequestAttributeOverridesGlobalAttributeInNetworkRequestMetric() {
+    FirebasePerformance firebasePerformance = FirebasePerformance.getInstance();
+    firebasePerformance.putAttribute("sharedKey", "globalValue");
+
+    networkMetricBuilder.setCustomAttributes(
+        java.util.Collections.singletonMap("sharedKey", "requestValue"));
+
+    NetworkRequestMetric metric = networkMetricBuilder.build();
+    assertThat(metric.getCustomAttributesMap()).containsEntry("sharedKey", "requestValue");
+    assertThat(metric.getCustomAttributesCount()).isEqualTo(1);
+
+    firebasePerformance.removeAttribute("sharedKey");
   }
 
   @Test

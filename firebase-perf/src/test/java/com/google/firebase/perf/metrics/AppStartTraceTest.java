@@ -33,6 +33,7 @@ import android.os.Process;
 import android.os.SystemClock;
 import android.view.View;
 import androidx.test.core.app.ApplicationProvider;
+import com.google.firebase.perf.FirebasePerformance;
 import com.google.firebase.perf.FirebasePerformanceTestBase;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.session.PerfSession;
@@ -340,5 +341,33 @@ public class AppStartTraceTest extends FirebasePerformanceTestBase {
     assertThat(ttid.getDurationUs()).isNotEqualTo(resumeTime - appStartTime);
     assertThat(ttid.getDurationUs()).isEqualTo(drawTime - appStartTime);
     assertThat(ttid.getSubtracesCount()).isEqualTo(3);
+  }
+
+  @Test
+  public void testAppStartTrace_globalAttributesIncluded() {
+    FirebasePerformance firebasePerformance = FirebasePerformance.getInstance();
+    firebasePerformance.putAttribute("globalKey", "globalValue");
+
+    FakeScheduledExecutorService fakeExecutorService = new FakeScheduledExecutorService();
+    AppStartTrace trace =
+        new AppStartTrace(transportManager, clock, configResolver, fakeExecutorService);
+    trace.registerActivityLifecycleCallbacks(appContext);
+    currentTime = 1;
+    trace.onActivityCreated(activity1, bundle);
+    currentTime = 2;
+    trace.onActivityStarted(activity1);
+    currentTime = 3;
+    trace.onActivityResumed(activity1);
+    fakeExecutorService.runAll();
+
+    verify(transportManager, times(1))
+        .log(
+            traceArgumentCaptor.capture(),
+            ArgumentMatchers.nullable(ApplicationProcessState.class));
+    TraceMetric metric = traceArgumentCaptor.getValue();
+    Assert.assertEquals(Constants.TraceNames.APP_START_TRACE_NAME.toString(), metric.getName());
+    Assert.assertEquals("globalValue", metric.getCustomAttributesMap().get("globalKey"));
+
+    firebasePerformance.removeAttribute("globalKey");
   }
 }
