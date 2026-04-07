@@ -33,6 +33,7 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.job
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -50,22 +51,32 @@ internal class QueryManager(
 ) {
 
   suspend fun start() {
+    logger.debug { "start() called" }
+
     val newState: State.New =
       mutex.withLock {
-        val newState: State.New =
-          when (val currentState = this.state) {
-            is State.New -> currentState
-            is State.Started,
-            State.Starting ->
-              throw IllegalStateException(
-                "start() has already been called (state=$currentState) [bn64pmgp98]"
-              )
-            State.Closed ->
-              throw IllegalStateException("start() cannot be called after close() [n7pc2n7xcd]")
+        when (val currentState = this.state) {
+          is State.New -> {
+            this.state = State.Starting
+            currentState
           }
+          is State.Started,
+          State.Starting ->
+            throw IllegalStateException(
+              "start() has already been called (state=$currentState) [bn64pmgp98]"
+            )
+          State.Closed ->
+            throw IllegalStateException("start() cannot be called after close() [n7pc2n7xcd]")
+        }
+      }
 
-        this.state = State.Starting
-        newState
+    val cacheDb: DataConnectCacheDatabase? =
+      newState.cacheSettings?.run {
+        val dbLogger = Logger("DataConnectCacheDatabase")
+        dbLogger.debug { "created by ${logger.nameWithId}" }
+        DataConnectCacheDatabase(dbFile, dbLogger).apply {
+          runCatching { initialize() }.onFailure { close() }.getOrThrow()
+        }
       }
 
     val coroutineScope =
@@ -79,13 +90,6 @@ internal class QueryManager(
             }
           }
       )
-
-    val cacheDb: DataConnectCacheDatabase? =
-      newState.cacheSettings?.run {
-        val dbLogger = Logger("DataConnectCacheDatabase")
-        dbLogger.debug { "created by ${logger.nameWithId}" }
-        DataConnectCacheDatabase(dbFile, dbLogger)
-      }
 
     val startedState =
       newState.run {
@@ -117,23 +121,23 @@ internal class QueryManager(
       is State.New,
       is State.Started ->
         throw IllegalStateException(
-          "internal error z5snhkxnf2: " + "unexpected value for this.state: $oldState"
+          "internal error z5snhkxnf2: unexpected value for this.state: $oldState"
         )
     }
   }
 
   suspend fun close() {
+    logger.debug { "close() called" }
     val currentState = mutex.withLock { this.state }
-
     if (currentState is State.Started) {
       currentState.close()
     }
-
     mutex.withLock { this.state = State.Closed }
   }
 
   private suspend fun State.Started.close() {
     coroutineScope.cancel("close() called")
+    coroutineScope.coroutineContext.job.join()
     cacheDb?.close()
   }
 
