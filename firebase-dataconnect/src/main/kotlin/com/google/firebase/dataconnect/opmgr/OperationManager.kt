@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.google.firebase.dataconnect.querymgr2
+package com.google.firebase.dataconnect.opmgr
 
 import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.FirebaseDataConnect
@@ -45,7 +45,7 @@ import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.modules.SerializersModule
 
-internal class QueryManager(
+internal class OperationManager(
   private val requestName: String,
   dataConnectGrpcRPCs: DataConnectGrpcRPCs,
   dataConnectAuth: DataConnectAuth,
@@ -246,11 +246,11 @@ internal class QueryManager(
       val cacheSettings: CacheSettings?,
       val currentTimeMillis: () -> Long,
     ) : State {
-      override fun toString() = "QueryManager.State.New"
+      override fun toString() = "OperationManager.State.New"
     }
 
     data object Starting : State {
-      override fun toString() = "QueryManager.State.Starting"
+      override fun toString() = "OperationManager.State.Starting"
     }
 
     data class Started(
@@ -264,25 +264,25 @@ internal class QueryManager(
       val cacheDb: DataConnectCacheDatabase?,
       val currentTimeMillis: () -> Long
     ) : State {
-      override fun toString() = "QueryManager.State.Started"
+      override fun toString() = "OperationManager.State.Started"
     }
 
     data class Closing(val started: Started) : State {
-      override fun toString() = "QueryManager.State.Closing"
+      override fun toString() = "OperationManager.State.Closing"
     }
 
     data object Closed : State {
-      override fun toString() = "QueryManager.State.Closed"
+      override fun toString() = "OperationManager.State.Closed"
     }
   }
 
   data class CacheSettings(val dbFile: File?, val maxAge: Duration)
 }
 
-internal suspend fun <Data, Variables> QueryManager.execute(
+internal suspend fun <Data, Variables> OperationManager.execute(
   ref: QueryRef<Data, Variables>,
   fetchPolicy: QueryRef.FetchPolicy,
-): QueryManager.ExecuteResult<Data> =
+): OperationManager.ExecuteResult<Data> =
   ref.run {
     executeQuery(
       operationName = operationName,
@@ -296,9 +296,9 @@ internal suspend fun <Data, Variables> QueryManager.execute(
     )
   }
 
-internal suspend fun <Data, Variables> QueryManager.execute(
+internal suspend fun <Data, Variables> OperationManager.execute(
   ref: MutationRef<Data, Variables>,
-): QueryManager.ExecuteResult<Data> =
+): OperationManager.ExecuteResult<Data> =
   ref.run {
     executeMutation(
       operationName = operationName,
@@ -311,9 +311,9 @@ internal suspend fun <Data, Variables> QueryManager.execute(
     )
   }
 
-internal suspend fun <Data, Variables> QueryManager.subscribe(
+internal suspend fun <Data, Variables> OperationManager.subscribe(
   ref: QueryRef<Data, Variables>,
-): Flow<Result<QueryManager.ExecuteResult<Data>>> =
+): Flow<Result<OperationManager.ExecuteResult<Data>>> =
   ref.run {
     subscribeQuery(
       operationName = operationName,
