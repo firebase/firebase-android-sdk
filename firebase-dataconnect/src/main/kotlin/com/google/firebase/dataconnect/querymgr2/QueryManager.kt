@@ -65,7 +65,8 @@ internal class QueryManager(
             throw IllegalStateException(
               "start() has already been called (state=$currentState) [bn64pmgp98]"
             )
-          State.Closed ->
+          State.Closed,
+          is State.Closing ->
             throw IllegalStateException("start() cannot be called after close() [n7pc2n7xcd]")
         }
       }
@@ -117,7 +118,8 @@ internal class QueryManager(
 
     when (oldState) {
       State.Starting -> {}
-      is State.Closed -> startedState.close()
+      State.Closed,
+      is State.Closing -> startedState.close()
       is State.New,
       is State.Started ->
         throw IllegalStateException(
@@ -128,11 +130,40 @@ internal class QueryManager(
 
   suspend fun close() {
     logger.debug { "close() called" }
-    val currentState = mutex.withLock { this.state }
-    if (currentState is State.Started) {
-      currentState.close()
+
+    val closingState: State.Closing =
+      mutex.withLock {
+        when (val currentState = this.state) {
+          State.Closed -> return
+          is State.Started -> {
+            val closingState = State.Closing(currentState)
+            this.state = closingState
+            closingState
+          }
+          is State.Closing -> currentState
+          is State.New,
+          State.Starting -> {
+            this.state = State.Closed
+            return
+          }
+        }
+      }
+
+    closingState.started.close()
+
+    mutex.withLock {
+      when (this.state) {
+        State.Closed -> {}
+        is State.Closing -> this.state = State.Closed
+        is State.New,
+        is State.Started,
+        State.Starting ->
+          throw IllegalStateException(
+            "internal error ebdtpd3624: unexpected state: $state " +
+              "(expected $closingState or ${State.Closed})"
+          )
+      }
     }
-    mutex.withLock { this.state = State.Closed }
   }
 
   private suspend fun State.Started.close() {
@@ -184,6 +215,10 @@ internal class QueryManager(
       val currentTimeMillis: () -> Long
     ) : State {
       override fun toString() = "QueryManager.State.Started"
+    }
+
+    data class Closing(val started: Started) : State {
+      override fun toString() = "QueryManager.State.Closing"
     }
 
     data object Closed : State {
