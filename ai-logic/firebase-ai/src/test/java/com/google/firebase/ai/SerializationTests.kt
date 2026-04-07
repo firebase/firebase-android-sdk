@@ -145,7 +145,7 @@ internal class SerializationTests {
         "finishReason": {
           "type": "string",
           "enum": [
-                      "UNKNOWN",
+            "UNKNOWN",
             "UNSPECIFIED",
             "STOP",
             "MAX_TOKENS",

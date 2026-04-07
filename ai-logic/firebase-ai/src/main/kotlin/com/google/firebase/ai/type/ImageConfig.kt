@@ -73,7 +73,8 @@ private constructor(
 /**
  * An aspect ratio for generated images.
  */
-public class AspectRatio private constructor(public val value: String) {
+public class AspectRatio
+private constructor(public val value: String) {
   internal fun toInternal() = value
 
   public companion object {
@@ -124,7 +125,8 @@ public class AspectRatio private constructor(public val value: String) {
 /**
  * The size of images to generate.
  */
-public class ImageSize private constructor(public val value: String) {
+public class ImageSize
+private constructor(public val value: String) {
   internal fun toInternal() = value
 
   public companion object {
