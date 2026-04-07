@@ -16,6 +16,10 @@
 
 package com.google.firebase.dataconnect.querymgr2
 
+import com.google.firebase.dataconnect.DataSource
+import com.google.firebase.dataconnect.FirebaseDataConnect
+import com.google.firebase.dataconnect.MutationRef
+import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.core.DataConnectAppCheck
 import com.google.firebase.dataconnect.core.DataConnectAuth
 import com.google.firebase.dataconnect.core.DataConnectGrpcRPCs
@@ -33,9 +37,13 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.job
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.SerializationStrategy
+import kotlinx.serialization.modules.SerializersModule
 
 internal class QueryManager(
   private val requestName: String,
@@ -172,6 +180,48 @@ internal class QueryManager(
     cacheDb?.close()
   }
 
+  data class ExecuteResult<Data>(
+    val data: Data,
+    val source: DataSource,
+  )
+
+  suspend fun <Data, Variables> executeQuery(
+    operationName: String,
+    variables: Variables,
+    dataDeserializer: DeserializationStrategy<Data>,
+    variablesSerializer: SerializationStrategy<Variables>,
+    dataSerializersModule: SerializersModule?,
+    variablesSerializersModule: SerializersModule?,
+    callerSdkType: FirebaseDataConnect.CallerSdkType,
+    fetchPolicy: QueryRef.FetchPolicy,
+  ): ExecuteResult<Data> {
+    TODO()
+  }
+
+  suspend fun <Data, Variables> executeMutation(
+    operationName: String,
+    variables: Variables,
+    dataDeserializer: DeserializationStrategy<Data>,
+    variablesSerializer: SerializationStrategy<Variables>,
+    dataSerializersModule: SerializersModule?,
+    variablesSerializersModule: SerializersModule?,
+    callerSdkType: FirebaseDataConnect.CallerSdkType,
+  ): ExecuteResult<Data> {
+    TODO()
+  }
+
+  suspend fun <Data, Variables> subscribeQuery(
+    operationName: String,
+    variables: Variables,
+    dataDeserializer: DeserializationStrategy<Data>,
+    variablesSerializer: SerializationStrategy<Variables>,
+    dataSerializersModule: SerializersModule?,
+    variablesSerializersModule: SerializersModule?,
+    callerSdkType: FirebaseDataConnect.CallerSdkType,
+  ): Flow<Result<ExecuteResult<Data>>> {
+    TODO()
+  }
+
   private val mutex = Mutex()
   private var state: State =
     State.New(
@@ -228,3 +278,50 @@ internal class QueryManager(
 
   data class CacheSettings(val dbFile: File?, val maxAge: Duration)
 }
+
+internal suspend fun <Data, Variables> QueryManager.execute(
+  ref: QueryRef<Data, Variables>,
+  fetchPolicy: QueryRef.FetchPolicy,
+): QueryManager.ExecuteResult<Data> =
+  ref.run {
+    executeQuery(
+      operationName = operationName,
+      variables = variables,
+      dataDeserializer = dataDeserializer,
+      variablesSerializer = variablesSerializer,
+      dataSerializersModule = dataSerializersModule,
+      variablesSerializersModule = variablesSerializersModule,
+      callerSdkType = callerSdkType,
+      fetchPolicy = fetchPolicy,
+    )
+  }
+
+internal suspend fun <Data, Variables> QueryManager.execute(
+  ref: MutationRef<Data, Variables>,
+): QueryManager.ExecuteResult<Data> =
+  ref.run {
+    executeMutation(
+      operationName = operationName,
+      variables = variables,
+      dataDeserializer = dataDeserializer,
+      variablesSerializer = variablesSerializer,
+      dataSerializersModule = dataSerializersModule,
+      variablesSerializersModule = variablesSerializersModule,
+      callerSdkType = callerSdkType,
+    )
+  }
+
+internal suspend fun <Data, Variables> QueryManager.subscribe(
+  ref: QueryRef<Data, Variables>,
+): Flow<Result<QueryManager.ExecuteResult<Data>>> =
+  ref.run {
+    subscribeQuery(
+      operationName = operationName,
+      variables = variables,
+      dataDeserializer = dataDeserializer,
+      variablesSerializer = variablesSerializer,
+      dataSerializersModule = dataSerializersModule,
+      variablesSerializersModule = variablesSerializersModule,
+      callerSdkType = callerSdkType,
+    )
+  }

@@ -275,6 +275,89 @@ internal class DataConnectGrpcRPCs(
     return DataConnectStream(connectCoroutineScope, requestChannel, incomingResponses)
   }
 
+  suspend fun connect2(
+    streamId: String,
+    authToken: String?,
+    appCheckToken: String?,
+    callerSdkType: FirebaseDataConnect.CallerSdkType,
+    name: String,
+  ): Pair<Channel<StreamRequest>, Flow<StreamResponse>> {
+    val metadata =
+      grpcMetadata.get(
+        authToken = authToken,
+        appCheckToken = appCheckToken,
+        callerSdkType = callerSdkType
+      )
+    val kotlinMethodName = "connect()"
+    val initRequest = StreamRequest.newBuilder().setName(name).setRequestId("init").build()
+
+    fun logOutgoingRequest(request: StreamRequest) {
+      if (request === initRequest) {
+        logger.logGrpcSending(
+          requestId = streamId,
+          kotlinMethodName = kotlinMethodName,
+          grpcMethod = ConnectorStreamServiceGrpc.getConnectMethod(),
+          metadata = metadata,
+          request = initRequest.toStructProto(),
+          requestTypeName = "StreamRequest",
+        )
+      } else {
+        logger.logGrpcSendingStreaming(
+          streamId = streamId,
+          requestId = request.requestId,
+          kotlinMethodName = kotlinMethodName,
+          request = request,
+        )
+      }
+    }
+
+    fun logIncomingResponse(response: StreamResponse) {
+      logger.logGrpcReceivedStreaming(
+        streamId = streamId,
+        requestId = response.requestId,
+        kotlinMethodName = kotlinMethodName,
+        response = response,
+      )
+    }
+
+    fun logCompletion(exception: Throwable?) {
+      if (exception === null || exception is CancellationException) {
+        logger.logGrpcCompleted(requestId = streamId, kotlinMethodName = kotlinMethodName)
+      } else {
+        logger.logGrpcFailed(
+          requestId = streamId,
+          kotlinMethodName = kotlinMethodName,
+          throwable = exception,
+        )
+      }
+    }
+
+    val requestChannel = Channel<StreamRequest>(Channel.UNLIMITED)
+    val outgoingRequests = run {
+      val collected = AtomicBoolean(false)
+      flow {
+        check(collected.compareAndSet(false, true)) {
+          "internal error h37dft6hbp: outgoingRequests may only be collected once " +
+            "(streamId=$streamId)"
+        }
+        emit(initRequest)
+        emitAll(requestChannel.receiveAsFlow())
+      }
+    }
+
+    val incomingResponses =
+      lazyStreamGrpcStub
+        .get()
+        .connect(outgoingRequests.onEach { logOutgoingRequest(it) }, metadata)
+        .onEach { logIncomingResponse(it) }
+        .onCompletion { exception ->
+          logCompletion(exception)
+          requestChannel.cancel()
+        }
+
+    return Pair(requestChannel, incomingResponses)
+  }
+
   suspend fun executeMutation(
     requestId: String,
     requestProto: ExecuteMutationRequest,
