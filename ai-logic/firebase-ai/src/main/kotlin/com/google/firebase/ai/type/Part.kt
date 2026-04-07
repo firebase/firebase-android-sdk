@@ -408,7 +408,7 @@ internal fun Part.toInternal(ignoreThoughtFlag: Boolean = false): InternalPart {
           name,
           response,
           id,
-          parts.map { it.toInternal(true) }
+          if (parts.isEmpty()) null else parts.map { it.toInternal(true) }
         ),
         thought,
         thoughtSignature

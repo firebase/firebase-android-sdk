@@ -19,22 +19,33 @@ package com.google.firebase.ai
 import com.google.firebase.FirebaseApp
 import com.google.firebase.ai.common.APIController
 import com.google.firebase.ai.common.AppCheckHeaderProvider
+import com.google.firebase.ai.common.JSON
 import com.google.firebase.ai.common.TemplateGenerateContentRequest
 import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.FinishReason
 import com.google.firebase.ai.type.FirebaseAIException
+import com.google.firebase.ai.type.FirebaseAutoFunctionException
+import com.google.firebase.ai.type.FunctionCallPart
+import com.google.firebase.ai.type.FunctionResponsePart
 import com.google.firebase.ai.type.GenerateContentResponse
 import com.google.firebase.ai.type.PromptBlockedException
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.RequestOptions
 import com.google.firebase.ai.type.ResponseStoppedException
 import com.google.firebase.ai.type.SerializationException
+import com.google.firebase.ai.type.TemplateAutoFunctionDeclaration
+import com.google.firebase.ai.type.TemplateTool
+import com.google.firebase.ai.type.TemplateToolConfig
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
+import kotlin.collections.emptyList
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonObject
 import org.json.JSONObject
 
@@ -47,6 +58,8 @@ public class TemplateGenerativeModel
 internal constructor(
   private val templateUri: String,
   private val controller: APIController,
+  private val tools: List<TemplateTool>? = null,
+  private val toolConfig: TemplateToolConfig? = null
 ) {
 
   internal constructor(
@@ -55,6 +68,8 @@ internal constructor(
     firebaseApp: FirebaseApp,
     useLimitedUseAppCheckTokens: Boolean,
     requestOptions: RequestOptions = RequestOptions(),
+    tools: List<TemplateTool>? = null,
+    toolConfig: TemplateToolConfig? = null,
     appCheckTokenProvider: InteropAppCheckTokenProvider? = null,
     internalAuthProvider: InternalAuthProvider? = null
   ) : this(
@@ -72,6 +87,8 @@ internal constructor(
         internalAuthProvider
       ),
     ),
+    tools,
+    toolConfig
   )
 
   /**
@@ -85,7 +102,7 @@ internal constructor(
    */
   public suspend fun generateContent(
     templateId: String,
-    inputs: Map<String, Any>,
+    inputs: Map<String, Any>
   ): GenerateContentResponse = generateContentWithHistory(templateId, inputs, null)
 
   /**
@@ -163,13 +180,64 @@ internal constructor(
     history: List<Content> = emptyList()
   ): TemplateChat = TemplateChat(this, templateId, inputs, history.toMutableList())
 
+  internal fun hasFunction(call: FunctionCallPart): Boolean {
+    return tools
+      ?.flatMap { it.autoFunctionDeclarations ?: emptyList() }
+      ?.firstOrNull { it.name == call.name && it.functionReference != null } != null
+  }
+
+  @OptIn(InternalSerializationApi::class)
+  internal suspend fun executeFunction(call: FunctionCallPart): FunctionResponsePart {
+    if (tools.isNullOrEmpty()) {
+      throw RuntimeException("No registered tools")
+    }
+    val tool = tools.flatMap { it.autoFunctionDeclarations ?: emptyList() }
+    val declaration =
+      tool.firstOrNull() { it.name == call.name }
+        ?: throw RuntimeException("No registered function named ${call.name}")
+    return executeFunction<Any, Any>(
+      call,
+      declaration as TemplateAutoFunctionDeclaration<Any, Any>,
+      JsonObject(call.args).toString()
+    )
+  }
+
+  @OptIn(InternalSerializationApi::class)
+  internal suspend fun <I : Any, O : Any> executeFunction(
+    functionCall: FunctionCallPart,
+    functionDeclaration: TemplateAutoFunctionDeclaration<I, O>,
+    parameter: String
+  ): FunctionResponsePart {
+    val inputDeserializer = functionDeclaration.inputSchema.getSerializer()
+    val input = JSON.decodeFromString(inputDeserializer, parameter)
+    val functionReference =
+      functionDeclaration.functionReference
+        ?: throw RuntimeException("Function reference for ${functionDeclaration.name} is missing")
+    try {
+      val output = functionReference.invoke(input)
+      val outputSerializer = functionDeclaration.outputSchema?.getSerializer()
+      if (outputSerializer != null) {
+        return FunctionResponsePart.from(
+            JSON.encodeToJsonElement(outputSerializer, output).jsonObject
+          )
+          .normalizeAgainstCall(functionCall)
+      }
+      return (output as FunctionResponsePart).normalizeAgainstCall(functionCall)
+    } catch (e: FirebaseAutoFunctionException) {
+      return FunctionResponsePart.from(JsonObject(mapOf("error" to JsonPrimitive(e.message))))
+        .normalizeAgainstCall(functionCall)
+    }
+  }
+
   internal fun constructRequest(
     inputs: Map<String, Any>,
     history: List<Content>? = null
   ): TemplateGenerateContentRequest {
     return TemplateGenerateContentRequest(
       Json.parseToJsonElement(JSONObject(inputs).toString()).jsonObject,
-      history?.let { it.map { it.toTemplateInternal() } }
+      history?.let { it.map { it.toTemplateInternal() } },
+      tools?.map { it.toInternal() },
+      toolConfig?.toInternal()
     )
   }
 

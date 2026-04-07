@@ -441,10 +441,12 @@ internal constructor(
    * Calling this after [startAudioConversation] will play the response audio immediately.
    *
    * @param content Client [Content] to be sent to the model.
+   * @param turnComplete Whether the user's input turn has finished.
    */
-  public suspend fun send(content: Content) {
+  @JvmOverloads
+  public suspend fun send(content: Content, turnComplete: Boolean = true) {
     sendFrame(
-      BidiGenerateContentClientContentSetup(listOf(content.toInternal()), true).toInternal()
+      BidiGenerateContentClientContentSetup(listOf(content.toInternal()), turnComplete).toInternal()
     )
   }
 
@@ -468,9 +470,11 @@ internal constructor(
    * Calling this after [startAudioConversation] will play the response audio immediately.
    *
    * @param text Text to be sent to the model.
+   * @param turnComplete Whether the user's input turn has finished.
    */
-  public suspend fun send(text: String) {
-    FirebaseAIException.catchAsync { send(Content.Builder().text(text).build()) }
+  @JvmOverloads
+  public suspend fun send(text: String, turnComplete: Boolean = true) {
+    FirebaseAIException.catchAsync { send(Content.Builder().text(text).build(), turnComplete) }
   }
 
   /**

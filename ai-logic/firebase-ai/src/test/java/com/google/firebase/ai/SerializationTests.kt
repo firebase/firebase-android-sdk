@@ -534,6 +534,15 @@ internal class SerializationTests {
               "items": {
                 "${"$"}ref": "Content"
               }
+            },
+            "tools": {
+              "type": "array",
+              "items": {
+                "${'$'}ref": "TemplateTool"
+              }
+            },
+            "tool_config": {
+              "${'$'}ref": "ToolConfig"
             }
           }
         }

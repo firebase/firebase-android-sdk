@@ -1,8 +1,10 @@
 # Unreleased
 
+- [feature] Added the `turnComplete` argument to multiple `LiveSession.send()` methods.
 - [deprecated] All Imagen models are deprecated and will shut down as early as June 2026.
   As a replacement, you can [migrate your apps to use Gemini Image models (the "Nano Banana" models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration).
 - [feature] Added support for Chat interactions using server prompt templates (#7986)
+- [feature] Added support for function calling in Chat interactions using server prompt templates (#8004)
 - [fixed] Fixed an issue causing network timeouts to throw the incorrect exception type, instead of
   `RequestTimeoutException` (#7966)
 - [fixed] Fixed missing `toString()` implementation for `InferenceSource` (#7970)
