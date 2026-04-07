@@ -46,7 +46,7 @@ import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.modules.SerializersModule
 
 internal class OperationManager(
-  private val requestName: String,
+  requestName: String,
   dataConnectGrpcRPCs: DataConnectGrpcRPCs,
   dataConnectAuth: DataConnectAuth,
   dataConnectAppCheck: DataConnectAppCheck,
@@ -57,6 +57,20 @@ internal class OperationManager(
   currentTimeMillis: () -> Long,
   private val logger: Logger,
 ) {
+
+  private val mutex = Mutex()
+  private var state: State =
+    State.New(
+      requestName = requestName,
+      dataConnectGrpcRPCs = dataConnectGrpcRPCs,
+      dataConnectAuth = dataConnectAuth,
+      dataConnectAppCheck = dataConnectAppCheck,
+      ioDispatcher = ioDispatcher,
+      cpuDispatcher = cpuDispatcher,
+      requestIdGenerator = requestIdGenerator,
+      cacheSettings = cacheSettings,
+      currentTimeMillis = currentTimeMillis,
+    )
 
   suspend fun start() {
     logger.debug { "start() called" }
@@ -100,20 +114,24 @@ internal class OperationManager(
           }
       )
 
-    val startedState =
+    val operationExecutor =
       newState.run {
-        State.Started(
-          coroutineScope = coroutineScope,
+        val operationExecutorLogger = Logger("OperationExecutor")
+        operationExecutorLogger.debug { "created by ${logger.nameWithId}" }
+        OperationExecutor(
+          requestName = requestName,
           dataConnectGrpcRPCs = dataConnectGrpcRPCs,
           dataConnectAuth = dataConnectAuth,
           dataConnectAppCheck = dataConnectAppCheck,
           ioDispatcher = ioDispatcher,
           cpuDispatcher = cpuDispatcher,
-          requestIdGenerator = requestIdGenerator,
           cacheDb = cacheDb,
           currentTimeMillis = currentTimeMillis,
+          logger = operationExecutorLogger,
         )
       }
+
+    val startedState = State.Started(coroutineScope, cacheDb, operationExecutor)
 
     val oldState =
       mutex.withLock {
@@ -180,10 +198,34 @@ internal class OperationManager(
     cacheDb?.close()
   }
 
-  data class ExecuteResult<Data>(
+  data class ExecuteQueryResult<Data>(
     val data: Data,
     val source: DataSource,
   )
+
+  data class ExecuteMutationResult<Data>(
+    val data: Data,
+  )
+
+  suspend fun <Data, Variables> executeMutation(
+    operationName: String,
+    variables: Variables,
+    dataDeserializer: DeserializationStrategy<Data>,
+    variablesSerializer: SerializationStrategy<Variables>,
+    dataSerializersModule: SerializersModule?,
+    variablesSerializersModule: SerializersModule?,
+    callerSdkType: FirebaseDataConnect.CallerSdkType,
+  ): ExecuteMutationResult<Data> = withOperationExecutor { operationExecutor ->
+    operationExecutor.executeMutation(
+      operationName = operationName,
+      variables = variables,
+      dataDeserializer = dataDeserializer,
+      variablesSerializer = variablesSerializer,
+      dataSerializersModule = dataSerializersModule,
+      variablesSerializersModule = variablesSerializersModule,
+      callerSdkType = callerSdkType,
+    )
+  }
 
   suspend fun <Data, Variables> executeQuery(
     operationName: String,
@@ -194,20 +236,17 @@ internal class OperationManager(
     variablesSerializersModule: SerializersModule?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
     fetchPolicy: QueryRef.FetchPolicy,
-  ): ExecuteResult<Data> {
-    TODO()
-  }
-
-  suspend fun <Data, Variables> executeMutation(
-    operationName: String,
-    variables: Variables,
-    dataDeserializer: DeserializationStrategy<Data>,
-    variablesSerializer: SerializationStrategy<Variables>,
-    dataSerializersModule: SerializersModule?,
-    variablesSerializersModule: SerializersModule?,
-    callerSdkType: FirebaseDataConnect.CallerSdkType,
-  ): ExecuteResult<Data> {
-    TODO()
+  ): ExecuteQueryResult<Data> = withOperationExecutor { operationExecutor ->
+    operationExecutor.executeQuery(
+      operationName = operationName,
+      variables = variables,
+      dataDeserializer = dataDeserializer,
+      variablesSerializer = variablesSerializer,
+      dataSerializersModule = dataSerializersModule,
+      variablesSerializersModule = variablesSerializersModule,
+      callerSdkType = callerSdkType,
+      fetchPolicy = fetchPolicy,
+    )
   }
 
   suspend fun <Data, Variables> subscribeQuery(
@@ -218,25 +257,36 @@ internal class OperationManager(
     dataSerializersModule: SerializersModule?,
     variablesSerializersModule: SerializersModule?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
-  ): Flow<Result<ExecuteResult<Data>>> {
-    TODO()
+  ): Flow<Result<ExecuteQueryResult<Data>>> = withOperationExecutor { operationExecutor ->
+    operationExecutor.subscribeQuery(
+      operationName = operationName,
+      variables = variables,
+      dataDeserializer = dataDeserializer,
+      variablesSerializer = variablesSerializer,
+      dataSerializersModule = dataSerializersModule,
+      variablesSerializersModule = variablesSerializersModule,
+      callerSdkType = callerSdkType,
+    )
   }
 
-  private val mutex = Mutex()
-  private var state: State =
-    State.New(
-      dataConnectGrpcRPCs = dataConnectGrpcRPCs,
-      dataConnectAuth = dataConnectAuth,
-      dataConnectAppCheck = dataConnectAppCheck,
-      ioDispatcher = ioDispatcher,
-      cpuDispatcher = cpuDispatcher,
-      requestIdGenerator = requestIdGenerator,
-      cacheSettings = cacheSettings,
-      currentTimeMillis = currentTimeMillis,
-    )
+  private suspend inline fun <T> withOperationExecutor(block: suspend (OperationExecutor) -> T): T {
+    val currentState = mutex.withLock { this.state }
+
+    val operationExecutor: OperationExecutor =
+      when (currentState) {
+        is State.Started -> currentState.operationExecutor
+        State.Closed,
+        is State.Closing -> throw IllegalStateException("close() has been called [cxnbhseye5]")
+        is State.New -> throw IllegalStateException("start() has not yet been called [ytcf8se5r2]")
+        State.Starting -> throw IllegalStateException("start() has not yet completed [wk7tkwf5v7]")
+      }
+
+    return block(operationExecutor)
+  }
 
   private sealed interface State {
     data class New(
+      val requestName: String,
       val dataConnectGrpcRPCs: DataConnectGrpcRPCs,
       val dataConnectAuth: DataConnectAuth,
       val dataConnectAppCheck: DataConnectAppCheck,
@@ -255,14 +305,8 @@ internal class OperationManager(
 
     data class Started(
       val coroutineScope: CoroutineScope,
-      val dataConnectGrpcRPCs: DataConnectGrpcRPCs,
-      val dataConnectAuth: DataConnectAuth,
-      val dataConnectAppCheck: DataConnectAppCheck,
-      val ioDispatcher: CoroutineDispatcher,
-      val cpuDispatcher: CoroutineDispatcher,
-      val requestIdGenerator: RequestIdGenerator,
       val cacheDb: DataConnectCacheDatabase?,
-      val currentTimeMillis: () -> Long
+      val operationExecutor: OperationExecutor,
     ) : State {
       override fun toString() = "OperationManager.State.Started"
     }
@@ -280,9 +324,24 @@ internal class OperationManager(
 }
 
 internal suspend fun <Data, Variables> OperationManager.execute(
+  ref: MutationRef<Data, Variables>,
+): OperationManager.ExecuteMutationResult<Data> =
+  ref.run {
+    executeMutation(
+      operationName = operationName,
+      variables = variables,
+      dataDeserializer = dataDeserializer,
+      variablesSerializer = variablesSerializer,
+      dataSerializersModule = dataSerializersModule,
+      variablesSerializersModule = variablesSerializersModule,
+      callerSdkType = callerSdkType,
+    )
+  }
+
+internal suspend fun <Data, Variables> OperationManager.execute(
   ref: QueryRef<Data, Variables>,
   fetchPolicy: QueryRef.FetchPolicy,
-): OperationManager.ExecuteResult<Data> =
+): OperationManager.ExecuteQueryResult<Data> =
   ref.run {
     executeQuery(
       operationName = operationName,
@@ -296,24 +355,9 @@ internal suspend fun <Data, Variables> OperationManager.execute(
     )
   }
 
-internal suspend fun <Data, Variables> OperationManager.execute(
-  ref: MutationRef<Data, Variables>,
-): OperationManager.ExecuteResult<Data> =
-  ref.run {
-    executeMutation(
-      operationName = operationName,
-      variables = variables,
-      dataDeserializer = dataDeserializer,
-      variablesSerializer = variablesSerializer,
-      dataSerializersModule = dataSerializersModule,
-      variablesSerializersModule = variablesSerializersModule,
-      callerSdkType = callerSdkType,
-    )
-  }
-
 internal suspend fun <Data, Variables> OperationManager.subscribe(
   ref: QueryRef<Data, Variables>,
-): Flow<Result<OperationManager.ExecuteResult<Data>>> =
+): Flow<Result<OperationManager.ExecuteQueryResult<Data>>> =
   ref.run {
     subscribeQuery(
       operationName = operationName,
