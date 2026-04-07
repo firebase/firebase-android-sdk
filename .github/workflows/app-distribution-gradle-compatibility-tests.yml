@@ -20,11 +20,21 @@ jobs:
           java-version: 17
           distribution: temurin
           cache: gradle
-      - name: Create credentials file
+      - name: Add FAD service-credentials.json
+        env:
+          INTEG_TESTS_FAD_SERVICE_CREDENTIALS: ${{ secrets.INTEG_TESTS_FAD_SERVICE_CREDENTIALS }}
+        if: env.INTEG_TESTS_FAD_SERVICE_CREDENTIALS != '' && env.INTEG_TESTS_FAD_SERVICE_CREDENTIALS != 'null'
         run: |
-          echo "${{ secrets.INTEG_TESTS_FAD_SERVICE_CREDENTIALS }}" > firebase-appdistribution-gradle/service-credentials.json
+          echo $INTEG_TESTS_FAD_SERVICE_CREDENTIALS | base64 -d > firebase-appdistribution-gradle/service-credentials.json
       - name: Run tests
         id: tests
         run: |
           ./gradlew \
           :firebase-appdistribution-gradle:integrationTest
+
+      - name: Upload Test Report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-test-report
+          path: firebase-appdistribution-gradle/build/reports/tests/integrationTest/
