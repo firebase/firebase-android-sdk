@@ -21,6 +21,10 @@ package com.google.firebase.ai.type
  *
  * @param safetyFilterLevel Used to filter unsafe content.
  * @param personFilterLevel Used to filter images containing people.
+ *
+ * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as early
+ * as June 2026. As a replacement, you can
+ * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
  */
 public class ImagenSafetySettings(
   internal val safetyFilterLevel: ImagenSafetyFilterLevel,
