@@ -119,7 +119,7 @@ internal class FirebaseDataConnectImpl(
         }
     )
 
-  private val requestName = calculateRequestName(projectId, config)
+  private val connectorResourceName = calculateConnectorResourceName(projectId, config)
 
   private val dataConnectAuth: DataConnectAuth =
     DataConnectAuth(
@@ -269,7 +269,7 @@ internal class FirebaseDataConnectImpl(
       }
 
     return QueryManager(
-      requestName = requestName,
+      connectorResourceName = connectorResourceName,
       dataConnectGrpcRPCs = dataConnectGrpcRPCs,
       dataConnectAuth = dataConnectAuth,
       dataConnectAppCheck = dataConnectAppCheck,
@@ -284,7 +284,7 @@ internal class FirebaseDataConnectImpl(
 
   private fun createMutationManager(dataConnectGrpcRPCs: DataConnectGrpcRPCs): MutationManager {
     return MutationManager(
-      requestName = requestName,
+      connectorResourceName = connectorResourceName,
       dataConnectGrpcRPCs = dataConnectGrpcRPCs,
       dataConnectAuth = dataConnectAuth,
       dataConnectAppCheck = dataConnectAppCheck,

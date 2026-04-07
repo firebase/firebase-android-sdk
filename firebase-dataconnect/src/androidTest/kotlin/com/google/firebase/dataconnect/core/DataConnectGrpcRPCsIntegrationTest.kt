@@ -36,7 +36,7 @@ import com.google.firebase.dataconnect.util.ProtoUtil.encodeToStruct
 import com.google.firebase.dataconnect.util.RequestIdGenerator
 import com.google.protobuf.Struct
 import google.firebase.dataconnect.proto.ExecuteQueryResponse
-import google.firebase.dataconnect.proto.ExecuteRequest
+import google.firebase.dataconnect.proto.StreamRequest
 import io.kotest.assertions.asClue
 import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
@@ -83,13 +83,13 @@ class DataConnectGrpcRPCsIntegrationTest : DataConnectIntegrationTestBase() {
           authToken = null,
           appCheckToken = null,
           callerSdkType = callerSdkTypeArb.bind(),
-          name = connector.calculateRequestName(),
+          connectorResourceName = connector.calculateConnectorResourceName(),
         )
 
       val channel: ReceiveChannel<ExecuteQueryResponse> =
         stream.subscribe(
           requestId = requestIdArb.next(randomSource()),
-          ExecuteRequest.newBuilder()
+          StreamRequest.Execute.newBuilder()
             .setOperationName(queryRef.operationName)
             .setVariables(queryRef.encodeVariables())
             .build()
@@ -122,7 +122,7 @@ class DataConnectGrpcRPCsIntegrationTest : DataConnectIntegrationTestBase() {
 
       val queryManager =
         QueryManager(
-          requestName = connector.calculateRequestName(),
+          connectorResourceName = connector.calculateConnectorResourceName(),
           dataConnectGrpcRPCs = dataConnectGrpcRPCs,
           dataConnectAuth = mockk(relaxed = true) { coEvery { getToken(any()) } returns null },
           dataConnectAppCheck = mockk(relaxed = true) { coEvery { getToken(any()) } returns null },
@@ -192,7 +192,8 @@ private fun Result<QueryManager.ExecuteResult<PastaConnector.Data.Get>>.shouldHa
   withClue("dataSource") { result.source shouldBe dataSource }
 }
 
-private fun PastaConnector.calculateRequestName(): String = dataConnect.calculateRequestName()
+private fun PastaConnector.calculateConnectorResourceName(): String =
+  dataConnect.calculateConnectorResourceName()
 
-private fun FirebaseDataConnect.calculateRequestName(): String =
-  calculateRequestName(app.options.projectId!!, config)
+private fun FirebaseDataConnect.calculateConnectorResourceName(): String =
+  calculateConnectorResourceName(app.options.projectId!!, config)

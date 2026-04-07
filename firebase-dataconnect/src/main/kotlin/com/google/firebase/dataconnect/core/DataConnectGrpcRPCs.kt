@@ -186,7 +186,7 @@ internal class DataConnectGrpcRPCs(
     authToken: String?,
     appCheckToken: String?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
-    name: String,
+    connectorResourceName: String,
   ): DataConnectStream {
     val metadata =
       grpcMetadata.get(
@@ -195,7 +195,11 @@ internal class DataConnectGrpcRPCs(
         callerSdkType = callerSdkType
       )
     val kotlinMethodName = "connect()"
-    val initRequest = StreamRequest.newBuilder().setName(name).setRequestId("init").build()
+    val initRequest =
+      StreamRequest.newBuilder()
+        .setConnectorResourceName(connectorResourceName)
+        .setRequestId("init")
+        .build()
 
     fun logOutgoingRequest(request: StreamRequest) {
       if (request === initRequest) {
@@ -280,7 +284,7 @@ internal class DataConnectGrpcRPCs(
     authToken: String?,
     appCheckToken: String?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
-    name: String,
+    connectorResourceName: String,
   ): Pair<Channel<StreamRequest>, Flow<StreamResponse>> {
     val metadata =
       grpcMetadata.get(
@@ -289,7 +293,11 @@ internal class DataConnectGrpcRPCs(
         callerSdkType = callerSdkType
       )
     val kotlinMethodName = "connect()"
-    val initRequest = StreamRequest.newBuilder().setName(name).setRequestId("init").build()
+    val initRequest =
+      StreamRequest.newBuilder()
+        .setConnectorResourceName(connectorResourceName)
+        .setRequestId("init")
+        .build()
 
     fun logOutgoingRequest(request: StreamRequest) {
       if (request === initRequest) {
@@ -690,7 +698,10 @@ internal fun <Variables> encodeVariables(
     encodeToStruct(variables, serializer, serializersModule)
   }
 
-internal fun calculateRequestName(projectId: String, connectorConfig: ConnectorConfig): String =
+internal fun calculateConnectorResourceName(
+  projectId: String,
+  connectorConfig: ConnectorConfig
+): String =
   "projects/$projectId" +
     "/locations/${connectorConfig.location}" +
     "/services/${connectorConfig.serviceId}" +

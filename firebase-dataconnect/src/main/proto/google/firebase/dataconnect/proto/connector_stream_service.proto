@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-// Adapted from http://google3/third_party/firebase/dataconnect/emulator/server/api/v1/connector_stream_service.proto;rcl=879265981
+// Adapted from http://google3/google/firebase/dataconnect/v1main/connector_stream_service.proto;rcl=890513448
 
 syntax = "proto3";
 
@@ -33,20 +33,24 @@ service ConnectorStreamService {
 }
 
 message StreamRequest {
-  string name = 1;
+  string connector_resource_name = 1;
   string request_id = 2;
+  map<string, string> headers = 10;
+  string data_etag = 8;
 
-  oneof request_kind {
-    ExecuteRequest subscribe = 3;
+  oneof kind {
+    Execute subscribe = 3;
+    Execute execute = 4;
+    Resume resume = 5;
     google.protobuf.Empty cancel = 6;
   }
 
-  map<string, string> headers = 10;
-}
+  message Execute {
+    string operation_name = 2;
+    google.protobuf.Struct variables = 3;
+  }
 
-message ExecuteRequest {
-  string operation_name = 2;
-  google.protobuf.Struct variables = 3;
+  message Resume {}
 }
 
 message StreamResponse {
@@ -57,4 +61,6 @@ message StreamResponse {
   repeated GraphqlError errors = 3;
   GraphqlResponseExtensions extensions = 6;
   bool cancelled = 5;
+  string data_etag = 4;
 }
+

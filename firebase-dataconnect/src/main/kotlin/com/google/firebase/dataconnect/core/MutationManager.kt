@@ -32,7 +32,7 @@ import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.modules.SerializersModule
 
 internal class MutationManager(
-  private val requestName: String,
+  private val connectorResourceName: String,
   private val dataConnectGrpcRPCs: DataConnectGrpcRPCs,
   private val dataConnectAuth: DataConnectAuth,
   private val dataConnectAppCheck: DataConnectAppCheck,
@@ -61,7 +61,7 @@ internal class MutationManager(
         val variablesStruct =
           encodeVariables(variables, variablesSerializer, variablesSerializersModule)
         ExecuteMutationRequestProto.newBuilder()
-          .setName(requestName)
+          .setName(connectorResourceName)
           .setOperationName(operationName)
           .setVariables(variablesStruct)
           .build()

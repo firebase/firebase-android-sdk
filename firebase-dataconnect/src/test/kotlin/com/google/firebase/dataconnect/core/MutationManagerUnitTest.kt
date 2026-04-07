@@ -53,7 +53,6 @@ import io.kotest.property.ShrinkingMode
 import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.map
-import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
 import io.mockk.CapturingSlot
 import io.mockk.coEvery
@@ -139,7 +138,7 @@ private fun PropertyContext.newMutationManager(
   mutationManagerArb(dataConnectGrpcRPCs = Arb.constant(dataConnectGrpcRPCs)).bind()
 
 private fun mutationManagerArb(
-  requestName: Arb<String> = Arb.dataConnect.requestName(),
+  connectorResourceName: Arb<String> = Arb.dataConnect.connectorResourceName(),
   dataConnectGrpcRPCs: Arb<DataConnectGrpcRPCs> = Arb.mock(),
   dataConnectAuth: Arb<DataConnectAuth> = Arb.dataConnect.dataConnectAuth(),
   dataConnectAppCheck: Arb<DataConnectAppCheck> = Arb.dataConnect.dataConnectAppCheck(),
@@ -148,7 +147,7 @@ private fun mutationManagerArb(
   logger: Arb<Logger> = Arb.dataConnect.string().map { newMockLogger("logger_$it") },
 ): Arb<MutationManager> =
   Arb.bind(
-    requestName,
+    connectorResourceName,
     dataConnectGrpcRPCs,
     dataConnectAuth,
     dataConnectAppCheck,

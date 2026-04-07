@@ -22,19 +22,15 @@ import com.google.firebase.dataconnect.core.DataConnectAppCheck
 import com.google.firebase.dataconnect.core.DataConnectAuth
 import com.google.firebase.dataconnect.core.DataConnectGrpcRPCs
 import com.google.firebase.dataconnect.core.Logger
-import com.google.firebase.dataconnect.core.LoggerGlobals.debug
-import com.google.firebase.dataconnect.core.encodeVariables
 import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase
 import com.google.firebase.dataconnect.util.RequestIdGenerator
-import google.firebase.dataconnect.proto.StreamRequest
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.modules.SerializersModule
 
-internal class OperationExecutor(
+internal class ConnectStream(
   private val requestName: String,
   private val dataConnectGrpcRPCs: DataConnectGrpcRPCs,
   private val dataConnectAuth: DataConnectAuth,
@@ -56,24 +52,6 @@ internal class OperationExecutor(
     variablesSerializersModule: SerializersModule?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
   ): OperationManager.ExecuteMutationResult<Data> {
-    val requestId = requestIdGenerator.nextMutationRequestId()
-    logger.debug {
-      "[rid=$requestId] Executing mutation with " +
-        "operationName=$operationName and variables=$variables"
-    }
-
-    val authToken = dataConnectAuth.getToken(requestId)
-
-    val requestProto: StreamRequest.Execute =
-      withContext(cpuDispatcher) {
-        val variablesStruct =
-          encodeVariables(variables, variablesSerializer, variablesSerializersModule)
-        StreamRequest.Execute.newBuilder()
-          .setOperationName(operationName)
-          .setVariables(variablesStruct)
-          .build()
-      }
-
     TODO()
   }
 
@@ -87,14 +65,6 @@ internal class OperationExecutor(
     callerSdkType: FirebaseDataConnect.CallerSdkType,
     fetchPolicy: QueryRef.FetchPolicy,
   ): OperationManager.ExecuteQueryResult<Data> {
-    val requestId = requestIdGenerator.nextQueryRequestId()
-    logger.debug {
-      "[rid=$requestId] Executing query with " +
-        "operationName=$operationName and variables=$variables"
-    }
-
-    val authToken = dataConnectAuth.getToken(requestId)
-
     TODO()
   }
 
@@ -107,14 +77,6 @@ internal class OperationExecutor(
     variablesSerializersModule: SerializersModule?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
   ): Flow<Result<OperationManager.ExecuteQueryResult<Data>>> {
-    val requestId = requestIdGenerator.nextQuerySubscriptionId()
-    logger.debug {
-      "[rid=$requestId] Subscribing to query with " +
-        "operationName=$operationName and variables=$variables"
-    }
-
-    val authToken = dataConnectAuth.getToken(requestId)
-
     TODO()
   }
 }

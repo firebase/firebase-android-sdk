@@ -38,7 +38,6 @@ import google.firebase.dataconnect.proto.ExecuteMutationRequest
 import google.firebase.dataconnect.proto.ExecuteMutationResponse
 import google.firebase.dataconnect.proto.ExecuteQueryRequest
 import google.firebase.dataconnect.proto.ExecuteQueryResponse
-import google.firebase.dataconnect.proto.ExecuteRequest
 import google.firebase.dataconnect.proto.GraphqlError
 import google.firebase.dataconnect.proto.GraphqlResponseExtensions
 import google.firebase.dataconnect.proto.ServiceInfo
@@ -301,13 +300,16 @@ internal object ProtoUtil {
   ): String = toStructProto().toCompactString(keySortSelector)
 
   fun StreamRequest.toStructProto(): Struct = buildStructProto {
-    name.takeIf { it.isNotEmpty() }?.let { put("name", it) }
+    connectorResourceName.takeIf { it.isNotEmpty() }?.let { put("name", it) }
     requestId.takeIf { it.isNotEmpty() }?.let { put("requestId", it) }
+    dataEtag.takeIf { it.isNotEmpty() }?.let { put("data_etag", it) }
 
-    when (requestKindCase) {
-      StreamRequest.RequestKindCase.SUBSCRIBE -> put("subscribe", subscribe)
-      StreamRequest.RequestKindCase.CANCEL -> put("cancel", true)
-      StreamRequest.RequestKindCase.REQUESTKIND_NOT_SET -> {}
+    when (kindCase) {
+      StreamRequest.KindCase.SUBSCRIBE -> put("subscribe", subscribe)
+      StreamRequest.KindCase.EXECUTE -> put("execute", execute)
+      StreamRequest.KindCase.RESUME -> put("resume", true)
+      StreamRequest.KindCase.CANCEL -> put("cancel", true)
+      StreamRequest.KindCase.KIND_NOT_SET -> {}
     }
 
     if (headersCount > 0) {
@@ -315,7 +317,7 @@ internal object ProtoUtil {
     }
   }
 
-  fun StructProtoBuilder.put(key: String, executeRequest: ExecuteRequest) {
+  fun StructProtoBuilder.put(key: String, executeRequest: StreamRequest.Execute) {
     putStruct(key) {
       executeRequest.run {
         put("operationName", operationName)

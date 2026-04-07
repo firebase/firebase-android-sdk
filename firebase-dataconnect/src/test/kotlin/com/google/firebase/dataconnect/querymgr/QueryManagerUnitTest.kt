@@ -154,15 +154,15 @@ class QueryManagerUnitTest {
   }
 
   @Test
-  fun `execute() uses the requestName that was given to the constructor`() = runTest {
+  fun `execute() uses the connectorResourceName that was given to the constructor`() = runTest {
     checkAll(
       propTestConfig,
       executeArgumentsArb(FetchPolicy.SERVER_ONLY),
       alphanumericStringArb(),
-    ) { args, requestName ->
+    ) { args, connectorResourceName ->
       val executeQueryRequestSlot = slot<ExecuteQueryRequest>()
       val queryManager: QueryManager = buildQueryManager {
-        setRequestName(requestName)
+        setConnectorResourceName(connectorResourceName)
         setDataConnectGrpcRPCs(
           mockk { stubExecuteQuery(executeQueryRequestSlot = executeQueryRequestSlot) }
         )
@@ -171,7 +171,7 @@ class QueryManagerUnitTest {
       queryManager.execute(args)
 
       val capturedName: String = executeQueryRequestSlot.captured.name
-      capturedName shouldBe requestName
+      capturedName shouldBe connectorResourceName
     }
   }
 
@@ -1130,9 +1130,9 @@ class QueryManagerUnitTest {
       propTestConfig,
       executeArgumentsArb(fetchPolicy = FetchPolicy.SERVER_ONLY),
       cacheSettingsArb(),
-      Arb.dataConnect.requestName(),
+      Arb.dataConnect.connectorResourceName(),
       Arb.list(testDataArb(), 1..5),
-    ) { args, cacheSettings, requestName, testDataList ->
+    ) { args, cacheSettings, connectorResourceName, testDataList ->
       val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk {
         val responses = testDataList.map { it.encodeToExecuteQueryResponse() }
         coEvery { executeQuery(any(), any(), any(), any(), any()) } returnsMany responses
@@ -1140,7 +1140,7 @@ class QueryManagerUnitTest {
       val queryManager: QueryManager = buildQueryManager {
         setDataConnectGrpcRPCs(dataConnectGrpcRPCs)
         setCacheSettings(cacheSettings)
-        setRequestName(requestName)
+        setConnectorResourceName(connectorResourceName)
       }
 
       val results = List(testDataList.size) { queryManager.execute(args) }
@@ -1148,7 +1148,7 @@ class QueryManagerUnitTest {
       val expectedResults = testDataList.map { QueryManager.ExecuteResult(it, DataSource.SERVER) }
       results shouldContainExactly expectedResults
       coVerify(exactly = testDataList.size) {
-        val requestProto = eq(args.encodeToExecuteQueryRequest(requestName))
+        val requestProto = eq(args.encodeToExecuteQueryRequest(connectorResourceName))
         dataConnectGrpcRPCs.executeQuery(any(), requestProto, any(), any(), any())
       }
       confirmVerified(dataConnectGrpcRPCs)
@@ -1359,7 +1359,8 @@ class QueryManagerUnitTest {
   ): QueryManager {
     val builder =
       QueryManagerBuilder(
-        requestName = "requestName" + randomSource().random.nextAlphanumericString(10),
+        connectorResourceName =
+          "connectorResourceName" + randomSource().random.nextAlphanumericString(10),
         dataConnectGrpcRPCs = mockk { stubExecuteQuery() },
         dataConnectAuth = mockDataConnectAuth(),
         dataConnectAppCheck = mockDataConnectAppCheck(),
@@ -1438,19 +1439,22 @@ private fun <Data, NewVariables> ExecuteArguments<Data, *>.withVariables(
 private fun TestVariables.encodeToStruct(): Struct = buildStructProto { put("value", value) }
 
 private fun TestVariables.encodeToExecuteQueryRequest(
-  requestName: String,
+  connectorResourceName: String,
   operationName: String
 ): ExecuteQueryRequest =
   ExecuteQueryRequest.newBuilder()
     .setVariables(encodeToStruct())
-    .setName(requestName)
+    .setName(connectorResourceName)
     .setOperationName(operationName)
     .build()
 
 private fun ExecuteArguments<*, TestVariables>.encodeToExecuteQueryRequest(
-  requestName: String
+  connectorResourceName: String
 ): ExecuteQueryRequest =
-  variables.encodeToExecuteQueryRequest(requestName = requestName, operationName = operationName)
+  variables.encodeToExecuteQueryRequest(
+    connectorResourceName = connectorResourceName,
+    operationName = operationName
+  )
 
 @Serializable private data class ContextualTestVariables(@Contextual val value: String)
 
@@ -1582,7 +1586,7 @@ private suspend fun <Data, Variables> QueryManager.execute(
   )
 
 private class QueryManagerBuilder(
-  private var requestName: String,
+  private var connectorResourceName: String,
   private var dataConnectGrpcRPCs: DataConnectGrpcRPCs,
   private var dataConnectAuth: DataConnectAuth,
   private var dataConnectAppCheck: DataConnectAppCheck,
@@ -1594,8 +1598,8 @@ private class QueryManagerBuilder(
   private var logger: Logger,
 ) {
 
-  fun setRequestName(value: String) {
-    requestName = value
+  fun setConnectorResourceName(value: String) {
+    connectorResourceName = value
   }
 
   fun setDataConnectGrpcRPCs(value: DataConnectGrpcRPCs) {
@@ -1624,7 +1628,7 @@ private class QueryManagerBuilder(
 
   fun build(): QueryManager =
     QueryManager(
-      requestName = requestName,
+      connectorResourceName = connectorResourceName,
       dataConnectGrpcRPCs = dataConnectGrpcRPCs,
       dataConnectAuth = dataConnectAuth,
       dataConnectAppCheck = dataConnectAppCheck,

@@ -22,7 +22,7 @@ import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import com.google.firebase.dataconnect.util.SequencedReference.Companion.nextSequenceNumber
 import google.firebase.dataconnect.proto.ExecuteQueryResponse as ExecuteQueryResponseProto
-import google.firebase.dataconnect.proto.ExecuteRequest as ExecuteRequestProto
+import google.firebase.dataconnect.proto.StreamRequest as StreamRequestProto
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineName
@@ -48,7 +48,7 @@ import kotlinx.coroutines.sync.withLock
 internal class RemoteQuerySubscription(
   private val cacheUpdater: QueryCacheUpdater?,
   private val cpuDispatcher: CoroutineDispatcher,
-  val requestProto: ExecuteRequestProto,
+  val requestProto: StreamRequestProto.Execute,
   private val streamManager: QueryManager.StreamManager,
   private val parentCoroutineScope: CoroutineScope,
   private val logger: Logger,

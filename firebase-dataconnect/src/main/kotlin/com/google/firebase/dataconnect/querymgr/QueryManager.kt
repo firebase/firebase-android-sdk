@@ -59,7 +59,7 @@ import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.modules.SerializersModule
 
 internal class QueryManager(
-  private val requestName: String,
+  private val connectorResourceName: String,
   private val dataConnectGrpcRPCs: DataConnectGrpcRPCs,
   private val dataConnectAuth: DataConnectAuth,
   private val dataConnectAppCheck: DataConnectAppCheck,
@@ -82,7 +82,8 @@ internal class QueryManager(
         currentTimeMillis,
         logger,
       )
-    val streamManager = StreamManager(dataConnectGrpcRPCs, requestIdGenerator, requestName)
+    val streamManager =
+      StreamManager(dataConnectGrpcRPCs, requestIdGenerator, connectorResourceName)
     val localQuerySubscriptions =
       LocalQuerySubscriptions(
         localQueries,
@@ -236,7 +237,7 @@ internal class QueryManager(
       val queryId = variablesStruct.calculateSha512(preamble = operationName)
       val requestProto =
         ExecuteQueryRequestProto.newBuilder()
-          .setName(requestName)
+          .setName(connectorResourceName)
           .setOperationName(operationName)
           .setVariables(variablesStruct)
           .build()
@@ -368,7 +369,7 @@ internal class QueryManager(
   class StreamManager(
     private val dataConnectGrpcRPCs: DataConnectGrpcRPCs,
     private val requestIdGenerator: RequestIdGenerator,
-    private val requestName: String,
+    private val connectorResourceName: String,
   ) {
     private val mutex = Mutex()
     private var stream: DataConnectStream? = null
@@ -391,7 +392,7 @@ internal class QueryManager(
             authToken = authToken,
             appCheckToken = appCheckToken,
             callerSdkType = callerSdkType,
-            name = requestName,
+            connectorResourceName = connectorResourceName,
           )
 
         this.stream = newStream

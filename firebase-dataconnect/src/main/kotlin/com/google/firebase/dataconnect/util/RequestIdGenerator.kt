@@ -28,6 +28,8 @@ internal class RequestIdGenerator(
 
   suspend fun nextQueryRequestId(): String = nextRequestId("qry")
 
+  suspend fun nextQuerySubscriptionId(): String = nextRequestId("sub")
+
   suspend fun nextMutationRequestId(): String = nextRequestId("mut")
 
   suspend fun nextStreamId(): String = nextRequestId("str")
