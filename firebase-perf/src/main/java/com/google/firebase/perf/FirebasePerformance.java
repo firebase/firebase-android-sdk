@@ -71,15 +71,15 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
 
   /** Maximum allowed number of attributes allowed in a trace. */
   @SuppressWarnings("unused") // Used in Javadoc.
-  private static final int MAX_TRACE_CUSTOM_ATTRIBUTES = Constants.MAX_TRACE_CUSTOM_ATTRIBUTES;
+  public static final int MAX_TRACE_CUSTOM_ATTRIBUTES = Constants.MAX_TRACE_CUSTOM_ATTRIBUTES;
 
   /** Maximum allowed length of the Key of the {@link Trace} attribute */
   @SuppressWarnings("unused") // Used in Javadoc.
-  private static final int MAX_ATTRIBUTE_KEY_LENGTH = Constants.MAX_ATTRIBUTE_KEY_LENGTH;
+  public static final int MAX_ATTRIBUTE_KEY_LENGTH = Constants.MAX_ATTRIBUTE_KEY_LENGTH;
 
   /** Maximum allowed length of the Value of the {@link Trace} attribute */
   @SuppressWarnings("unused") // Used in Javadoc.
-  private static final int MAX_ATTRIBUTE_VALUE_LENGTH = Constants.MAX_ATTRIBUTE_VALUE_LENGTH;
+  public static final int MAX_ATTRIBUTE_VALUE_LENGTH = Constants.MAX_ATTRIBUTE_VALUE_LENGTH;
 
   /** Maximum allowed length of the name of the {@link Trace} */
   @SuppressWarnings("unused") // Used in Javadoc.
@@ -332,7 +332,6 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
    *     length is limited to {@link #MAX_ATTRIBUTE_KEY_LENGTH}
    * @param value value of the attribute. The max length is limited to {@link
    *     #MAX_ATTRIBUTE_VALUE_LENGTH}
-   * @hide
    */
   @Override
   public void putAttribute(@NonNull String attribute, @NonNull String value) {
@@ -371,7 +370,6 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
    * Removes the attribute from the global list of attributes.
    *
    * @param attribute name of the attribute to be removed from the global pool.
-   * @hide
    */
   @Override
   public void removeAttribute(@NonNull String attribute) {
@@ -383,7 +381,6 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
    *
    * @param attribute name of the attribute to fetch the value for
    * @return the value of the attribute if it exists or null otherwise.
-   * @hide
    */
   @Override
   @Nullable
@@ -395,7 +392,6 @@ public class FirebasePerformance implements FirebasePerformanceAttributable {
    * Returns the map of all the attributes currently added in the global pool.
    *
    * @return map of attributes and its values currently added to the running Traces
-   * @hide
    */
   @Override
   @NonNull

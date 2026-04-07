@@ -2,11 +2,15 @@
 package com.google.firebase.perf {
 
   @javax.inject.Singleton public class FirebasePerformance {
+    method public String? getAttribute(String);
+    method public java.util.Map<java.lang.String!,java.lang.String!> getAttributes();
     method public static com.google.firebase.perf.FirebasePerformance getInstance();
     method public boolean isPerformanceCollectionEnabled();
     method public com.google.firebase.perf.metrics.HttpMetric newHttpMetric(String, @com.google.firebase.perf.FirebasePerformance.HttpMethod String);
     method public com.google.firebase.perf.metrics.HttpMetric newHttpMetric(java.net.URL, @com.google.firebase.perf.FirebasePerformance.HttpMethod String);
     method public com.google.firebase.perf.metrics.Trace newTrace(String);
+    method public void putAttribute(String, String);
+    method public void removeAttribute(String);
     method public void setPerformanceCollectionEnabled(boolean);
     method public static com.google.firebase.perf.metrics.Trace startTrace(String);
     field public static final int MAX_ATTRIBUTE_KEY_LENGTH = 40; // 0x28
