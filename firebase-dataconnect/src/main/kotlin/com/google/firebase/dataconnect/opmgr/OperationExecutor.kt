@@ -23,6 +23,7 @@ import com.google.firebase.dataconnect.core.DataConnectAuth
 import com.google.firebase.dataconnect.core.DataConnectGrpcRPCs
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase
+import com.google.firebase.dataconnect.util.RequestIdGenerator
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.DeserializationStrategy
@@ -36,6 +37,7 @@ internal class OperationExecutor(
   private val dataConnectAppCheck: DataConnectAppCheck,
   private val ioDispatcher: CoroutineDispatcher,
   private val cpuDispatcher: CoroutineDispatcher,
+  private val requestIdGenerator: RequestIdGenerator,
   private val cacheDb: DataConnectCacheDatabase?,
   private val currentTimeMillis: () -> Long,
   private val logger: Logger,

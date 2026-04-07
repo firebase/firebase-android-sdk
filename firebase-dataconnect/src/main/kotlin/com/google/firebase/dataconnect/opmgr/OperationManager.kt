@@ -108,7 +108,7 @@ internal class OperationManager(
           CoroutineName(logger.nameWithId) +
           CoroutineExceptionHandler { context, throwable ->
             logger.warn(throwable) {
-              "uncaught exception from a coroutine named ${context[CoroutineName]}: " +
+              "uncaught exception from a coroutine named ${context[CoroutineName]?.name}: " +
                 "$throwable [ekx3ehgakw]"
             }
           }
@@ -125,6 +125,7 @@ internal class OperationManager(
           dataConnectAppCheck = dataConnectAppCheck,
           ioDispatcher = ioDispatcher,
           cpuDispatcher = cpuDispatcher,
+          requestIdGenerator = requestIdGenerator,
           cacheDb = cacheDb,
           currentTimeMillis = currentTimeMillis,
           logger = operationExecutorLogger,
