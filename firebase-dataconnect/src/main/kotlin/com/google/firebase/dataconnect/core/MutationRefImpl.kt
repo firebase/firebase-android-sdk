@@ -21,6 +21,7 @@ import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.MutationRef
 import com.google.firebase.dataconnect.MutationResult
 import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
+import com.google.firebase.dataconnect.opmgr.execute
 import java.util.Objects
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
@@ -51,8 +52,8 @@ internal class MutationRefImpl<Data, Variables>(
   internal val logger = Logger("MutationRefImpl[$operationName]")
 
   override suspend fun execute(): MutationResultImpl {
-    val mutationManager = dataConnect.getMutationManager()
-    val data = mutationManager.execute(this)
+    val operationManager = dataConnect.getOperationManager()
+    val data = operationManager.execute(this)
     return MutationResultImpl(data)
   }
 

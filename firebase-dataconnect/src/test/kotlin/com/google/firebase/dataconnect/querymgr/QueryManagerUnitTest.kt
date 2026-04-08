@@ -342,146 +342,36 @@ class QueryManagerUnitTest {
   }
 
   @Test
-  fun `execute() when DataConnectAuth returns null sends null authToken`() = runTest {
+  fun `execute() sends whatever DataConnectAuth and DataConnectAppCheck return`() = runTest {
     checkAll(
       propTestConfig,
       executeArgumentsArb(FetchPolicy.SERVER_ONLY),
-    ) { args ->
-      val authTokenSlot = slot<String?>()
+      Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.33),
+      Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.33),
+    ) { args, authToken, appCheckToken ->
+      val authTokenSlot = slot<DataConnectAuth.GetAuthTokenResult?>()
+      val appCheckTokenSlot = slot<DataConnectAppCheck.GetAppCheckTokenResult?>()
       val queryManager: QueryManager = buildQueryManager {
-        setDataConnectGrpcRPCs(mockk { stubExecuteQuery(authTokenSlot = authTokenSlot) })
-        setDataConnectAuth(mockk { coEvery { getToken(any()) } returns null })
-      }
-
-      queryManager.execute(args)
-
-      authTokenSlot.captured shouldBe null
-    }
-  }
-
-  @Test
-  fun `execute() when DataConnectAuth returns non-null with null token sends null authToken`() =
-    runTest {
-      val authTokenResultArb = Arb.dataConnect.authTokenResult(accessToken = Arb.constant(null))
-      checkAll(
-        propTestConfig,
-        executeArgumentsArb(FetchPolicy.SERVER_ONLY),
-        authTokenResultArb,
-      ) { args, authTokenResult ->
-        val authTokenSlot = slot<String?>()
-        val queryManager: QueryManager = buildQueryManager {
-          setDataConnectGrpcRPCs(mockk { stubExecuteQuery(authTokenSlot = authTokenSlot) })
-          setDataConnectAuth(
-            mockk {
-              check(authTokenResult.token === null) // precondition check
-              coEvery { getToken(any()) } returns authTokenResult
-            }
-          )
-        }
-
-        queryManager.execute(args)
-
-        authTokenSlot.captured shouldBe null
-      }
-    }
-
-  @Test
-  fun `execute() when DataConnectAuth returns non-null token sends the authToken`() = runTest {
-    val authTokenResultArb =
-      Arb.dataConnect.authTokenResult(accessToken = Arb.dataConnect.accessToken())
-    checkAll(
-      propTestConfig,
-      executeArgumentsArb(FetchPolicy.SERVER_ONLY),
-      authTokenResultArb,
-    ) { args, authTokenResult ->
-      val authTokenSlot = slot<String?>()
-      val queryManager: QueryManager = buildQueryManager {
-        setDataConnectGrpcRPCs(mockk { stubExecuteQuery(authTokenSlot = authTokenSlot) })
-        setDataConnectAuth(
+        setDataConnectGrpcRPCs(
           mockk {
-            checkNotNull(authTokenResult.token) // precondition check
-            coEvery { getToken(any()) } returns authTokenResult
+            stubExecuteQuery(
+              authTokenSlot = authTokenSlot,
+              appCheckTokenSlot = appCheckTokenSlot,
+            )
           }
         )
+        setDataConnectAuth(mockk { coEvery { getToken(any()) } returns authToken })
+        setDataConnectAppCheck(mockk { coEvery { getToken(any()) } returns appCheckToken })
       }
 
       queryManager.execute(args)
 
-      authTokenSlot.captured shouldBe authTokenResult.token
+      assertSoftly {
+        withClue("authToken") { authTokenSlot.captured shouldBe authToken }
+        withClue("appCheckToken") { appCheckTokenSlot.captured shouldBe appCheckToken }
+      }
     }
   }
-
-  @Test
-  fun `execute() when DataConnectAppCheck returns null sends null appCheckToken`() = runTest {
-    checkAll(
-      propTestConfig,
-      executeArgumentsArb(FetchPolicy.SERVER_ONLY),
-    ) { args ->
-      val appCheckTokenSlot = slot<String?>()
-      val queryManager: QueryManager = buildQueryManager {
-        setDataConnectGrpcRPCs(mockk { stubExecuteQuery(appCheckTokenSlot = appCheckTokenSlot) })
-        setDataConnectAppCheck(mockk { coEvery { getToken(any()) } returns null })
-      }
-
-      queryManager.execute(args)
-
-      appCheckTokenSlot.captured shouldBe null
-    }
-  }
-
-  @Test
-  fun `execute() when DataConnectAppCheck returns non-null with null token sends null appCheckToken`() =
-    runTest {
-      val appCheckTokenResultArb =
-        Arb.dataConnect.appCheckTokenResult(accessToken = Arb.constant(null))
-      checkAll(
-        propTestConfig,
-        executeArgumentsArb(FetchPolicy.SERVER_ONLY),
-        appCheckTokenResultArb
-      ) { args, appCheckTokenResult ->
-        val appCheckTokenSlot = slot<String?>()
-        val queryManager: QueryManager = buildQueryManager {
-          setDataConnectGrpcRPCs(mockk { stubExecuteQuery(appCheckTokenSlot = appCheckTokenSlot) })
-          setDataConnectAppCheck(
-            mockk {
-              check(appCheckTokenResult.token === null) // precondition check
-              coEvery { getToken(any()) } returns appCheckTokenResult
-            }
-          )
-        }
-
-        queryManager.execute(args)
-
-        appCheckTokenSlot.captured shouldBe null
-      }
-    }
-
-  @Test
-  fun `execute() when DataConnectAppCheck returns non-null token sends the appCheckToken`() =
-    runTest {
-      val appCheckTokenResultArb =
-        Arb.dataConnect.appCheckTokenResult(accessToken = Arb.dataConnect.accessToken())
-      checkAll(
-        propTestConfig,
-        executeArgumentsArb(FetchPolicy.SERVER_ONLY),
-        appCheckTokenResultArb,
-      ) { args, appCheckTokenResult ->
-        val appCheckTokenSlot = slot<String?>()
-        val queryManager: QueryManager = buildQueryManager {
-          setDataConnectGrpcRPCs(mockk { stubExecuteQuery(appCheckTokenSlot = appCheckTokenSlot) })
-          setDataConnectAppCheck(
-            mockk {
-              checkNotNull(appCheckTokenResult.token) // precondition check
-              coEvery { getToken(any()) } returns appCheckTokenResult
-            }
-          )
-        }
-
-        queryManager.execute(args)
-
-        appCheckTokenSlot.captured shouldBe appCheckTokenResult.token
-      }
-    }
 
   @Test
   fun `execute() uses the given RequestIdGenerator`() = runTest {
@@ -670,7 +560,7 @@ class QueryManagerUnitTest {
         values shouldContainExactlyInAnyOrder expectedValues
       },
       newDataConnectAuth = {
-        val distinctAuthUidArb = Arb.dataConnect.authTokenResult().map { it.authUid }.distinct()
+        val distinctAuthUidArb = Arb.dataConnect.authUid().distinct()
         val authTokenResultArb = Arb.dataConnect.authTokenResult(authUid = distinctAuthUidArb)
         mockk {
           coEvery { getToken(any()) } answers
@@ -683,7 +573,7 @@ class QueryManagerUnitTest {
       },
       calculateExpectedExecuteQueryInvocationCount = { executeCount -> executeCount },
       verifyExecuteQueryInvocations = { invocations ->
-        val authTokens = invocations.map { it.authToken }
+        val authTokens = invocations.map { it.authToken?.token }
         authTokens shouldContainExactlyInAnyOrder generatedAuthTokens.toList()
         generatedAuthTokens.clear()
       }
@@ -768,15 +658,15 @@ class QueryManagerUnitTest {
         dataConnectGrpcRPCs.executeQuery(
           capture(capturedRequestIds),
           capture(capturedRequestProtos),
-          eq("authToken1"),
-          eq("appCheckToken1"),
+          eq(DataConnectAuth.GetAuthTokenResult("authToken1", "testAuthUid")),
+          eq(DataConnectAppCheck.GetAppCheckTokenResult("appCheckToken1")),
           eq(args.callerSdkType)
         )
         dataConnectGrpcRPCs.executeQuery(
           capture(capturedRequestIds),
           capture(capturedRequestProtos),
-          eq("authToken2"),
-          eq("appCheckToken2"),
+          eq(DataConnectAuth.GetAuthTokenResult("authToken2", "testAuthUid")),
+          eq(DataConnectAppCheck.GetAppCheckTokenResult("appCheckToken2")),
           eq(args.callerSdkType)
         )
       }
@@ -821,7 +711,7 @@ class QueryManagerUnitTest {
     val authTokenWithDistinctAuthUidArb = run {
       val nextIndex = AtomicInteger(0)
       Arb.dataConnect.authTokenResult(
-        accessToken = Arb.dataConnect.accessToken(),
+        accessToken = Arb.dataConnect.authToken(),
         authUid = arbitrary { "authToken${nextIndex.incrementAndGet()}" },
       )
     }
@@ -929,8 +819,8 @@ class QueryManagerUnitTest {
 
       val capturedRequestIds = mutableListOf<String>()
       val capturedRequestProtos = mutableListOf<ExecuteQueryRequest>()
-      val capturedAuthTokens = mutableListOf<String?>()
-      val capturedAppCheckTokens = mutableListOf<String?>()
+      val capturedAuthTokens = mutableListOf<DataConnectAuth.GetAuthTokenResult?>()
+      val capturedAppCheckTokens = mutableListOf<DataConnectAppCheck.GetAppCheckTokenResult?>()
       val capturedCallerSdkTypes = mutableListOf<CallerSdkType>()
       val expectedExecuteQueryInvocationCount =
         calculateExpectedExecuteQueryInvocationCount(jobs.size)
@@ -1400,8 +1290,8 @@ private data class ExecuteArguments<Data, Variables>(
 private data class ExecuteQueryArguments(
   val requestId: String,
   val requestProto: ExecuteQueryRequest,
-  val authToken: String?,
-  val appCheckToken: String?,
+  val authToken: DataConnectAuth.GetAuthTokenResult?,
+  val appCheckToken: DataConnectAppCheck.GetAppCheckTokenResult?,
   val callerSdkType: CallerSdkType,
 )
 
@@ -1544,8 +1434,8 @@ private class HardcodedStringKSerializer(private val hardcodedValue: String) : K
 private fun DataConnectGrpcRPCs.stubExecuteQuery(
   requestIdSlot: CapturingSlot<String> = slot(),
   executeQueryRequestSlot: CapturingSlot<ExecuteQueryRequest> = slot(),
-  authTokenSlot: CapturingSlot<String?> = slot(),
-  appCheckTokenSlot: CapturingSlot<String?> = slot(),
+  authTokenSlot: CapturingSlot<DataConnectAuth.GetAuthTokenResult?> = slot(),
+  appCheckTokenSlot: CapturingSlot<DataConnectAppCheck.GetAppCheckTokenResult?> = slot(),
   callerSdkTypeSlot: CapturingSlot<CallerSdkType> = slot(),
   executeQueryResponse: ExecuteQueryResponse? = null
 ) {

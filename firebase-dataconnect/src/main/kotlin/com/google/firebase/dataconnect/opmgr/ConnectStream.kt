@@ -43,18 +43,6 @@ internal class ConnectStream(
   private val logger: Logger,
 ) {
 
-  suspend fun <Data, Variables> executeMutation(
-    operationName: String,
-    variables: Variables,
-    dataDeserializer: DeserializationStrategy<Data>,
-    variablesSerializer: SerializationStrategy<Variables>,
-    dataSerializersModule: SerializersModule?,
-    variablesSerializersModule: SerializersModule?,
-    callerSdkType: FirebaseDataConnect.CallerSdkType,
-  ): OperationManager.ExecuteMutationResult<Data> {
-    TODO()
-  }
-
   suspend fun <Data, Variables> executeQuery(
     operationName: String,
     variables: Variables,

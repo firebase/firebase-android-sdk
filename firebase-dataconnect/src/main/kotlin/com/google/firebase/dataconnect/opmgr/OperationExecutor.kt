@@ -25,9 +25,14 @@ import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.core.encodeVariables
 import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase
+import com.google.firebase.dataconnect.util.DeserializeUtils.deserialize
 import com.google.firebase.dataconnect.util.RequestIdGenerator
+import google.firebase.dataconnect.proto.ExecuteMutationRequest
+import google.firebase.dataconnect.proto.ExecuteMutationResponse
 import google.firebase.dataconnect.proto.StreamRequest
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.DeserializationStrategy
@@ -35,7 +40,7 @@ import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.modules.SerializersModule
 
 internal class OperationExecutor(
-  private val requestName: String,
+  private val connectorResourceName: String,
   private val dataConnectGrpcRPCs: DataConnectGrpcRPCs,
   private val dataConnectAuth: DataConnectAuth,
   private val dataConnectAppCheck: DataConnectAppCheck,
@@ -55,26 +60,44 @@ internal class OperationExecutor(
     dataSerializersModule: SerializersModule?,
     variablesSerializersModule: SerializersModule?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
-  ): OperationManager.ExecuteMutationResult<Data> {
+  ): Data {
     val requestId = requestIdGenerator.nextMutationRequestId()
     logger.debug {
       "[rid=$requestId] Executing mutation with " +
         "operationName=$operationName and variables=$variables"
     }
 
-    val authToken = dataConnectAuth.getToken(requestId)
+    val response: ExecuteMutationResponse = coroutineScope {
+      val authTokenJob = async { dataConnectAuth.getToken(requestId) }
+      val appCheckTokenJob = async { dataConnectAppCheck.getToken(requestId) }
 
-    val requestProto: StreamRequest.Execute =
-      withContext(cpuDispatcher) {
-        val variablesStruct =
+      val variablesStruct =
+        withContext(cpuDispatcher) {
           encodeVariables(variables, variablesSerializer, variablesSerializersModule)
-        StreamRequest.Execute.newBuilder()
+        }
+
+      val requestProto: ExecuteMutationRequest =
+        ExecuteMutationRequest.newBuilder()
+          .setName(connectorResourceName)
           .setOperationName(operationName)
           .setVariables(variablesStruct)
           .build()
-      }
 
-    TODO()
+      val authToken: DataConnectAuth.GetAuthTokenResult? = authTokenJob.await()
+      val appCheckToken: DataConnectAppCheck.GetAppCheckTokenResult? = appCheckTokenJob.await()
+
+      dataConnectGrpcRPCs.executeMutation(
+        requestId = requestId,
+        requestProto = requestProto,
+        authToken = authToken,
+        appCheckToken = appCheckToken,
+        callerSdkType = callerSdkType,
+      )
+    }
+
+    return withContext(cpuDispatcher) {
+      response.deserialize(dataDeserializer, dataSerializersModule)
+    }
   }
 
   suspend fun <Data, Variables> executeQuery(
@@ -93,7 +116,7 @@ internal class OperationExecutor(
         "operationName=$operationName and variables=$variables"
     }
 
-    val authToken = dataConnectAuth.getToken(requestId)
+    val authUid = dataConnectAuth.getToken(requestId)?.authUid
 
     TODO()
   }
@@ -113,8 +136,23 @@ internal class OperationExecutor(
         "operationName=$operationName and variables=$variables"
     }
 
-    val authToken = dataConnectAuth.getToken(requestId)
+    val authUid = dataConnectAuth.getToken(requestId)?.authUid
 
     TODO()
+  }
+
+  private fun <Variables> createStreamRequestExecuteProto(
+    operationName: String,
+    variables: Variables,
+    variablesSerializer: SerializationStrategy<Variables>,
+    variablesSerializersModule: SerializersModule?,
+  ): StreamRequest.Execute {
+    val variablesStruct =
+      encodeVariables(variables, variablesSerializer, variablesSerializersModule)
+
+    return StreamRequest.Execute.newBuilder()
+      .setOperationName(operationName)
+      .setVariables(variablesStruct)
+      .build()
   }
 }

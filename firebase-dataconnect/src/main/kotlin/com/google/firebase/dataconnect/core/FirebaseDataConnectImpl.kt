@@ -31,7 +31,7 @@ import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import com.google.firebase.dataconnect.isDefaultHost
-import com.google.firebase.dataconnect.querymgr.QueryManager
+import com.google.firebase.dataconnect.opmgr.OperationManager
 import com.google.firebase.dataconnect.util.AlphanumericStringUtil.toAlphaNumericString
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.firebase.dataconnect.util.ProtoUtil.calculateSha512
@@ -70,8 +70,7 @@ internal interface FirebaseDataConnectInternal : FirebaseDataConnect {
   val nonBlockingExecutor: Executor
   val nonBlockingDispatcher: CoroutineDispatcher
 
-  fun getQueryManager(): QueryManager
-  fun getMutationManager(): MutationManager
+  fun getOperationManager(): OperationManager
 
   suspend fun awaitAuthReady()
   suspend fun awaitAppCheckReady()
@@ -155,12 +154,11 @@ internal class FirebaseDataConnectImpl(
     }
     data class Initialized(
       val grpcRPCs: DataConnectGrpcRPCs,
-      val queryManager: QueryManager,
-      val mutationManager: MutationManager,
+      val operationManager: OperationManager,
     ) : State
     data class Closing(
       val grpcRPCs: DataConnectGrpcRPCs,
-      val queryManager: QueryManager,
+      val operationManager: OperationManager,
       val closeJob: Deferred<Unit>
     ) : State
     object Closed : State
@@ -168,9 +166,7 @@ internal class FirebaseDataConnectImpl(
 
   private val state = MutableStateFlow<State>(State.New())
 
-  override fun getQueryManager(): QueryManager = initialize().queryManager
-
-  override fun getMutationManager(): MutationManager = initialize().mutationManager
+  override fun getOperationManager(): OperationManager = initialize().operationManager
 
   private fun initialize(): State.Initialized {
     val newState =
@@ -180,9 +176,8 @@ internal class FirebaseDataConnectImpl(
             val backendInfo = calculateBackendInfo(settings, currentState.emulatorSettings, logger)
             logger.debug { "connecting to Data Connect backend: $backendInfo" }
             val grpcRPCs = createDataConnectGrpcRPCs(backendInfo)
-            val queryManager = createQueryManager(grpcRPCs, backendInfo)
-            val mutationManager = createMutationManager(grpcRPCs)
-            State.Initialized(grpcRPCs, queryManager, mutationManager)
+            val operationManager = createOperationManager(grpcRPCs, backendInfo)
+            State.Initialized(grpcRPCs, operationManager)
           }
           is State.Initialized -> currentState
           is State.Closing -> currentState
@@ -251,10 +246,10 @@ internal class FirebaseDataConnectImpl(
     return dataConnectGrpcRPCs
   }
 
-  private fun createQueryManager(
+  private fun createOperationManager(
     dataConnectGrpcRPCs: DataConnectGrpcRPCs,
     backendInfo: DataConnectBackendInfo,
-  ): QueryManager {
+  ): OperationManager {
     val cacheSettings =
       settings.cacheSettings?.run {
         val dbFile =
@@ -265,10 +260,10 @@ internal class FirebaseDataConnectImpl(
               context.getDatabasePath(dbName)
             }
           }
-        QueryManager.CacheSettings(dbFile, maxAge)
+        OperationManager.CacheSettings(dbFile, maxAge)
       }
 
-    return QueryManager(
+    return OperationManager(
       connectorResourceName = connectorResourceName,
       dataConnectGrpcRPCs = dataConnectGrpcRPCs,
       dataConnectAuth = dataConnectAuth,
@@ -278,19 +273,7 @@ internal class FirebaseDataConnectImpl(
       requestIdGenerator = requestIdGenerator,
       cacheSettings = cacheSettings,
       currentTimeMillis = System::currentTimeMillis,
-      logger = Logger("QueryManager").also { it.debug("created by $instanceId") },
-    )
-  }
-
-  private fun createMutationManager(dataConnectGrpcRPCs: DataConnectGrpcRPCs): MutationManager {
-    return MutationManager(
-      connectorResourceName = connectorResourceName,
-      dataConnectGrpcRPCs = dataConnectGrpcRPCs,
-      dataConnectAuth = dataConnectAuth,
-      dataConnectAppCheck = dataConnectAppCheck,
-      cpuDispatcher = nonBlockingDispatcher,
-      requestIdGenerator = requestIdGenerator,
-      logger = Logger("MutationManager").also { it.debug("created by $instanceId") },
+      logger = Logger("OperationManager").also { it.debug("created by $instanceId") },
     )
   }
 
@@ -436,11 +419,14 @@ internal class FirebaseDataConnectImpl(
     dataConnectAuth.close()
     dataConnectAppCheck.close()
 
-    fun createCloseJob(grpcRPCs: DataConnectGrpcRPCs, queryManager: QueryManager): Deferred<Unit> {
+    fun createCloseJob(
+      grpcRPCs: DataConnectGrpcRPCs,
+      operationManager: OperationManager,
+    ): Deferred<Unit> {
       @OptIn(DelicateCoroutinesApi::class)
       val closeJob =
         GlobalScope.async(start = CoroutineStart.LAZY) {
-          queryManager.close()
+          operationManager.close()
           grpcRPCs.close()
         }
       closeJob.invokeOnCompletion { exception ->
@@ -470,13 +456,13 @@ internal class FirebaseDataConnectImpl(
           is State.Initialized ->
             State.Closing(
               currentState.grpcRPCs,
-              currentState.queryManager,
-              createCloseJob(currentState.grpcRPCs, currentState.queryManager)
+              currentState.operationManager,
+              createCloseJob(currentState.grpcRPCs, currentState.operationManager)
             )
           is State.Closing ->
             if (currentState.closeJob.isCancelled) {
               currentState.copy(
-                closeJob = createCloseJob(currentState.grpcRPCs, currentState.queryManager)
+                closeJob = createCloseJob(currentState.grpcRPCs, currentState.operationManager)
               )
             } else {
               currentState

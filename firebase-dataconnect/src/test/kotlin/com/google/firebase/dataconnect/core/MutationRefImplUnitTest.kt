@@ -20,6 +20,7 @@ package com.google.firebase.dataconnect.core
 
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.MutationRef
+import com.google.firebase.dataconnect.opmgr.OperationManager
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.OperationRefConstructorArguments
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
@@ -613,17 +614,17 @@ class MutationRefImplUnitTest {
       slots: MutationManagerExecuteSlots = MutationManagerExecuteSlots(),
     ): FirebaseDataConnectInternal =
       mockk<FirebaseDataConnectInternal>(relaxed = true) {
-        every { getMutationManager() } returns
-          mockk<MutationManager> {
+        every { getOperationManager() } returns
+          mockk<OperationManager> {
             coEvery {
-              execute(
+              executeMutation(
                 capture(slots.operationNameSlot),
                 capture(slots.variablesSlot),
                 capture(slots.dataDeserializerSlot),
                 capture(slots.variablesSerializerSlot),
-                capture(slots.callerSdkTypeSlot),
                 captureNullable(slots.dataSerializersModuleSlot),
                 captureNullable(slots.variablesSerializersModuleSlot),
+                capture(slots.callerSdkTypeSlot),
               )
             } answers { result.getOrThrow() }
           }

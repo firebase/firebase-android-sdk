@@ -189,8 +189,8 @@ internal class QueryManager(
         requestId = requestId,
         sequenceNumber = nextSequenceNumber(),
         localKey = localKey,
-        authToken = authTokenResult?.token,
-        appCheckToken = appCheckTokenResult?.token,
+        authToken = authTokenResult,
+        appCheckToken = appCheckTokenResult,
         requestProto = requestProto,
         callerSdkType = callerSdkType,
       )
@@ -201,8 +201,8 @@ internal class QueryManager(
     requestId: String,
     sequenceNumber: Long,
     localKey: LocalQueries.Key<Data>,
-    authToken: String?,
-    appCheckToken: String?,
+    authToken: DataConnectAuth.GetAuthTokenResult?,
+    appCheckToken: DataConnectAppCheck.GetAppCheckTokenResult?,
     requestProto: ExecuteQueryRequestProto,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
   ): ExecuteResult<Data> {
@@ -279,8 +279,8 @@ internal class QueryManager(
           dataDeserializer = dataDeserializer,
           dataSerializersModule = dataSerializersModule,
         ),
-      authToken = authTokenResult?.token,
-      appCheckToken = appCheckTokenResult?.token,
+      authToken = authTokenResult,
+      appCheckToken = appCheckTokenResult,
       requestProto = requestProto,
       callerSdkType = callerSdkType,
     )
@@ -289,8 +289,8 @@ internal class QueryManager(
   private suspend fun <Data> subscribe(
     requestId: String,
     localKey: LocalQuerySubscriptions.Key<Data>,
-    authToken: String?,
-    appCheckToken: String?,
+    authToken: DataConnectAuth.GetAuthTokenResult?,
+    appCheckToken: DataConnectAppCheck.GetAppCheckTokenResult?,
     requestProto: ExecuteQueryRequestProto,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
   ): Flow<Result<ExecuteResult<Data>>> {
@@ -375,8 +375,8 @@ internal class QueryManager(
     private var stream: DataConnectStream? = null
 
     suspend fun getOrCreate(
-      authToken: String?,
-      appCheckToken: String?,
+      authToken: DataConnectAuth.GetAuthTokenResult?,
+      appCheckToken: DataConnectAppCheck.GetAppCheckTokenResult?,
       callerSdkType: FirebaseDataConnect.CallerSdkType,
     ): DataConnectStream =
       mutex.withLock {

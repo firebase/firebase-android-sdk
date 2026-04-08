@@ -21,7 +21,8 @@ package com.google.firebase.dataconnect.core
 import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.QueryRef
-import com.google.firebase.dataconnect.querymgr.QueryManager
+import com.google.firebase.dataconnect.opmgr.OperationManager
+import com.google.firebase.dataconnect.opmgr.OperationManager.ExecuteQueryResult
 import com.google.firebase.dataconnect.testutil.property.arbitrary.DataConnectArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.OperationRefConstructorArguments
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
@@ -103,7 +104,7 @@ class QueryRefImplUnitTest {
     val data = Arb.dataConnect.testData().next()
     val dataSource = Arb.enum<DataSource>().next()
     val dataConnect =
-      dataConnectWithQueryResult(Result.success(QueryManager.ExecuteResult(data, dataSource)))
+      dataConnectWithQueryResult(Result.success(ExecuteQueryResult(data, dataSource)))
     val queryRefImpl = Arb.dataConnect.queryRefImpl(dataConnect).next()
 
     val queryResult = queryRefImpl.execute()
@@ -133,10 +134,7 @@ class QueryRefImplUnitTest {
     val dataSource = Arb.enum<DataSource>().next()
     val slots = QueryManagerExecuteSlots()
     val dataConnect =
-      dataConnectWithQueryResult(
-        Result.success(QueryManager.ExecuteResult(data, dataSource)),
-        slots
-      )
+      dataConnectWithQueryResult(Result.success(ExecuteQueryResult(data, dataSource)), slots)
     val queryRefImpl = Arb.dataConnect.queryRefImpl(dataConnect).next()
 
     checkAll(50, Arb.enum<QueryRef.FetchPolicy>().orNull(nullProbability = 0.1)) { fetchPolicy ->
@@ -631,14 +629,14 @@ class QueryRefImplUnitTest {
     }
 
     fun dataConnectWithQueryResult(
-      result: Result<QueryManager.ExecuteResult<TestData>>,
+      result: Result<OperationManager.ExecuteQueryResult<TestData>>,
       slots: QueryManagerExecuteSlots = QueryManagerExecuteSlots(),
     ): FirebaseDataConnectInternal =
       mockk<FirebaseDataConnectInternal>(relaxed = true) {
-        every { getQueryManager() } returns
-          mockk<QueryManager> {
+        every { getOperationManager() } returns
+          mockk<OperationManager> {
             coEvery {
-              execute(
+              executeQuery(
                 capture(slots.operationNameSlot),
                 capture(slots.variablesSlot),
                 capture(slots.dataDeserializerSlot),

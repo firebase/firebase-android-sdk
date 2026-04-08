@@ -46,7 +46,7 @@ import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.modules.SerializersModule
 
 internal class OperationManager(
-  requestName: String,
+  connectorResourceName: String,
   dataConnectGrpcRPCs: DataConnectGrpcRPCs,
   dataConnectAuth: DataConnectAuth,
   dataConnectAppCheck: DataConnectAppCheck,
@@ -61,7 +61,7 @@ internal class OperationManager(
   private val mutex = Mutex()
   private var state: State =
     State.New(
-      requestName = requestName,
+      connectorResourceName = connectorResourceName,
       dataConnectGrpcRPCs = dataConnectGrpcRPCs,
       dataConnectAuth = dataConnectAuth,
       dataConnectAppCheck = dataConnectAppCheck,
@@ -119,7 +119,7 @@ internal class OperationManager(
         val operationExecutorLogger = Logger("OperationExecutor")
         operationExecutorLogger.debug { "created by ${logger.nameWithId}" }
         OperationExecutor(
-          requestName = requestName,
+          connectorResourceName = connectorResourceName,
           dataConnectGrpcRPCs = dataConnectGrpcRPCs,
           dataConnectAuth = dataConnectAuth,
           dataConnectAppCheck = dataConnectAppCheck,
@@ -204,10 +204,6 @@ internal class OperationManager(
     val source: DataSource,
   )
 
-  data class ExecuteMutationResult<Data>(
-    val data: Data,
-  )
-
   suspend fun <Data, Variables> executeMutation(
     operationName: String,
     variables: Variables,
@@ -216,7 +212,7 @@ internal class OperationManager(
     dataSerializersModule: SerializersModule?,
     variablesSerializersModule: SerializersModule?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
-  ): ExecuteMutationResult<Data> = withOperationExecutor { operationExecutor ->
+  ): Data = withOperationExecutor { operationExecutor ->
     operationExecutor.executeMutation(
       operationName = operationName,
       variables = variables,
@@ -287,7 +283,7 @@ internal class OperationManager(
 
   private sealed interface State {
     data class New(
-      val requestName: String,
+      val connectorResourceName: String,
       val dataConnectGrpcRPCs: DataConnectGrpcRPCs,
       val dataConnectAuth: DataConnectAuth,
       val dataConnectAppCheck: DataConnectAppCheck,
@@ -326,7 +322,7 @@ internal class OperationManager(
 
 internal suspend fun <Data, Variables> OperationManager.execute(
   ref: MutationRef<Data, Variables>,
-): OperationManager.ExecuteMutationResult<Data> =
+): Data =
   ref.run {
     executeMutation(
       operationName = operationName,
