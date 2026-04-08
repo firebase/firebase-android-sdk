@@ -24,7 +24,6 @@ import com.google.firebase.dataconnect.core.Globals.toScrubbedAccessToken
 import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
-import com.google.firebase.dataconnect.util.StructProtoBuilder
 import com.google.protobuf.Struct
 import io.grpc.Metadata
 
@@ -99,7 +98,6 @@ internal class DataConnectGrpcMetadata(
 
   companion object {
     // TODO: Move this to ProtoUtil.kt where it would live alongside other related methods.
-    // NOTE: Keep the implementation of this method in parity with StructProtoBuilder.putHeaders().
     fun Metadata.toStructProto(authUid: String?): Struct = buildStructProto {
       val keys: List<Metadata.Key<String>> = run {
         val keySet: MutableSet<String> = keys().toMutableSet()
@@ -125,36 +123,6 @@ internal class DataConnectGrpcMetadata(
 
         for (scrubbedValue in scrubbedValues) {
           put(key.name(), scrubbedValue)
-        }
-      }
-    }
-
-    // TODO: Move this to ProtoUtil.kt where it would live alongside other related methods.
-    // NOTE: Keep the implementation of this method in parity with Metadata.toStructProto().
-    fun StructProtoBuilder.putHeaders(key: String, headers: Map<String, String>) {
-      putStruct(key) {
-        val keys: List<String> =
-          buildSet {
-              addAll(headers.keys)
-              // Always explicitly include the auth header in the returned string, even if it is
-              // absent.
-              add(firebaseAuthTokenHeader.name())
-              add(firebaseAppCheckTokenHeader.name())
-            }
-            .sorted()
-
-        keys.forEach { key ->
-          val value = headers[key]
-          val scrubbedValue =
-            value?.let {
-              when (key) {
-                firebaseAuthTokenHeader.name() -> it.toScrubbedAccessToken()
-                firebaseAppCheckTokenHeader.name() -> it.toScrubbedAccessToken()
-                else -> it
-              }
-            }
-
-          put(key, scrubbedValue)
         }
       }
     }
