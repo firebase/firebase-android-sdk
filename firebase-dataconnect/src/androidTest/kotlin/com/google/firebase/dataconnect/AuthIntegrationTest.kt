@@ -176,6 +176,7 @@ class AuthIntegrationTest : DataConnectIntegrationTestBase() {
     val grpcServer =
       inProcessDataConnectGrpcServer.newInstance(
         errors = listOf(Status.UNAUTHENTICATED, Status.UNAUTHENTICATED),
+        responseDelay = 1.seconds, // avoid getting the same access token from auth emulator
       )
     val dataConnect = dataConnectFactory.newInstance(auth.app, grpcServer)
     signIn(dataConnect)
