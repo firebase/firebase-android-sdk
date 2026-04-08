@@ -187,8 +187,10 @@ internal class DataConnectGrpcRPCs(
     requestId: String,
     request: ExecuteMutationRequest,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
+    authToken: DataConnectAuth.GetAuthTokenResult?,
+    appCheckToken: DataConnectAppCheck.GetAppCheckTokenResult?,
   ): ExecuteMutationResponse {
-    val metadata = grpcMetadata.get(requestId, callerSdkType).metadata
+    val metadata = grpcMetadata.get(authToken, appCheckToken, callerSdkType)
     val kotlinMethodName = "executeMutation(${request.operationName})"
 
     logger.logGrpcSending(
@@ -198,6 +200,7 @@ internal class DataConnectGrpcRPCs(
       metadata = metadata,
       request = request.toStructProto(),
       requestTypeName = "ExecuteMutationRequest",
+      authUid = authToken?.authUid,
     )
 
     val result = lazyGrpcStub.get().runCatching { executeMutation(request, metadata) }
@@ -252,15 +255,10 @@ internal class DataConnectGrpcRPCs(
     request: ExecuteQueryRequest,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
     fetchPolicy: FetchPolicy,
+    authToken: DataConnectAuth.GetAuthTokenResult?,
+    appCheckToken: DataConnectAppCheck.GetAppCheckTokenResult?,
   ): ExecuteQueryResult {
-    require(
-      fetchPolicy == FetchPolicy.PREFER_CACHE ||
-        fetchPolicy == FetchPolicy.CACHE_ONLY ||
-        fetchPolicy == FetchPolicy.SERVER_ONLY
-    ) {
-      "Only PREFER_CACHE, CACHE_ONLY, and SERVER_ONLY are supported for now"
-    }
-    val (metadata, authToken) = grpcMetadata.get(requestId, callerSdkType)
+    val metadata = grpcMetadata.get(authToken, appCheckToken, callerSdkType)
     val kotlinMethodName = "executeQuery(${request.operationName})"
 
     logger.logGrpcSending(
@@ -270,6 +268,7 @@ internal class DataConnectGrpcRPCs(
       metadata = metadata,
       request = request.toStructProto(),
       requestTypeName = "ExecuteQueryRequest",
+      authUid = authToken?.authUid,
     )
 
     val cacheInfo = queryCacheInfo(authToken, request)
@@ -478,11 +477,12 @@ internal class DataConnectGrpcRPCs(
       grpcMethod: MethodDescriptor<*, *>,
       metadata: Metadata,
       request: Struct,
-      requestTypeName: String
+      requestTypeName: String,
+      authUid: String?,
     ) = debug {
       val struct = buildStructProto {
         put("RPC", grpcMethod.fullMethodName)
-        put("Metadata", metadata.toStructProto())
+        put("Metadata", metadata.toStructProto(authUid))
         put(requestTypeName, request)
       }
       // Sort the keys in the output string to be more meaningful than alphabetical.
