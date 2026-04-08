@@ -18,8 +18,8 @@ package com.google.firebase.dataconnect.util
 
 import com.google.firebase.dataconnect.DataConnectPath
 import com.google.firebase.dataconnect.DataConnectPathSegment
-import com.google.firebase.dataconnect.core.DataConnectGrpcClientGlobals.toErrorInfoImpl
 import com.google.firebase.dataconnect.toPathString
+import com.google.firebase.dataconnect.util.DeserializeUtils.toErrorInfoImpl
 import com.google.firebase.dataconnect.util.ProtoUtil.nullProtoValue
 import com.google.firebase.dataconnect.util.ProtoUtil.toValueProto
 import com.google.protobuf.Duration
@@ -37,6 +37,8 @@ import google.firebase.dataconnect.proto.ExecuteMutationRequest
 import google.firebase.dataconnect.proto.ExecuteMutationResponse
 import google.firebase.dataconnect.proto.ExecuteQueryRequest
 import google.firebase.dataconnect.proto.ExecuteQueryResponse
+import google.firebase.dataconnect.proto.GraphqlError
+import google.firebase.dataconnect.proto.GraphqlResponseExtensions
 import google.firebase.dataconnect.proto.ServiceInfo
 import java.io.BufferedWriter
 import java.io.CharArrayWriter
@@ -223,30 +225,37 @@ internal object ProtoUtil {
 
   fun ExecuteQueryResponse.toStructProto(): Struct = buildStructProto {
     if (hasData()) put("data", data)
-    putList("errors") { errorsList.forEach { add(it.toErrorInfoImpl().toString()) } }
-
+    if (errorsCount > 0) {
+      put("errors", errorsList)
+    }
     if (hasExtensions()) {
-      putStruct("extensions") {
-        putList("data_connect") {
-          extensions.dataConnectList.forEach { dataConnectProperties ->
-            addStruct {
-              if (dataConnectProperties.hasPath()) {
-                put("path", dataConnectProperties.path.toDataConnectPath().toPathString())
-              }
-              dataConnectProperties.entityId
-                .takeIf { it.isNotEmpty() }
-                ?.let { put("entity_id", it) }
-              dataConnectProperties.entityIdsList
-                .takeIf { it.isNotEmpty() }
-                ?.let { putList("entity_ids") { it.forEach(::add) } }
-              if (dataConnectProperties.hasMaxAge()) {
-                put("max_age", dataConnectProperties.maxAge.toHumanFriendlyString())
-              }
+      put("extensions", extensions)
+    }
+  }
+
+  fun StructProtoBuilder.put(key: String, extensions: GraphqlResponseExtensions) {
+    putStruct(key) {
+      putList("data_connect") {
+        extensions.dataConnectList.forEach { dataConnectProperties ->
+          addStruct {
+            if (dataConnectProperties.hasPath()) {
+              put("path", dataConnectProperties.path.toDataConnectPath().toPathString())
+            }
+            dataConnectProperties.entityId.takeIf { it.isNotEmpty() }?.let { put("entity_id", it) }
+            dataConnectProperties.entityIdsList
+              .takeIf { it.isNotEmpty() }
+              ?.let { putList("entity_ids") { it.forEach(::add) } }
+            if (dataConnectProperties.hasMaxAge()) {
+              put("max_age", dataConnectProperties.maxAge.toHumanFriendlyString())
             }
           }
         }
       }
     }
+  }
+
+  fun StructProtoBuilder.put(key: String, errors: Collection<GraphqlError>) {
+    putList(key) { errors.forEach { add(it.toErrorInfoImpl().toString()) } }
   }
 
   fun Duration.toHumanFriendlyString(): String = humanFriendlyStringForDuration(seconds, nanos)
@@ -508,6 +517,10 @@ internal class StructProtoBuilder(struct: Struct? = null) {
 
   fun put(key: String, value: ListValue?) {
     builder.putFields(key, value?.toValueProto() ?: nullProtoValue)
+  }
+
+  fun putValue(key: String, value: Value?) {
+    builder.putFields(key, value ?: nullProtoValue)
   }
 
   fun putList(key: String, block: ListValueProtoBuilder.() -> Unit) {
