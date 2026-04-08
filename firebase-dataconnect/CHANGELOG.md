@@ -8,7 +8,7 @@
 - [changed] Internal refactor to use immutable byte arrays.
   ([#7957](https://github.com/firebase/firebase-android-sdk/pull/7957))
 - [changed] Internal refactor to use more descriptive variable names.
-  ([#NNNN](https://github.com/firebase/firebase-android-sdk/pull/NNNN))
+  ([#8025](https://github.com/firebase/firebase-android-sdk/pull/8025))
 
 # 17.2.0
 
