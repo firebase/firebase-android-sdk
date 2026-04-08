@@ -9,6 +9,8 @@
   ([#7957](https://github.com/firebase/firebase-android-sdk/pull/7957))
 - [changed] Internal refactor for calculating debug logging strings.
   ([#8024](https://github.com/firebase/firebase-android-sdk/pull/8024))
+- [changed] Internal refactor to use more descriptive variable names.
+  ([#8025](https://github.com/firebase/firebase-android-sdk/pull/8025))
 
 # 17.2.0
 
