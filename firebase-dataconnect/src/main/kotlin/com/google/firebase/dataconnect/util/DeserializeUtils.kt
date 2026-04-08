@@ -36,14 +36,9 @@ internal object DeserializeUtils {
       when (it.kindCase) {
         Value.KindCase.STRING_VALUE -> DataConnectPathSegment.Field(it.stringValue)
         Value.KindCase.NUMBER_VALUE -> DataConnectPathSegment.ListIndex(it.numberValue.toInt())
-        // The cases below are expected to never occur; however, implement some logic for them
+        // The other cases are expected to never occur; however, implement some logic for them
         // to avoid things like throwing exceptions in those cases.
-        Value.KindCase.NULL_VALUE -> DataConnectPathSegment.Field("null")
-        Value.KindCase.BOOL_VALUE -> DataConnectPathSegment.Field(it.boolValue.toString())
-        Value.KindCase.LIST_VALUE -> DataConnectPathSegment.Field(it.listValue.toCompactString())
-        Value.KindCase.STRUCT_VALUE ->
-          DataConnectPathSegment.Field(it.structValue.toCompactString())
-        else -> DataConnectPathSegment.Field(it.toString())
+        else -> DataConnectPathSegment.Field(it.toCompactString())
       }
     }
 }
