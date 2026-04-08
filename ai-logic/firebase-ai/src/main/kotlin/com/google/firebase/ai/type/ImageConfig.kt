@@ -36,19 +36,13 @@ private constructor(
     @JvmField public var aspectRatio: AspectRatio? = null
     @JvmField public var imageSize: ImageSize? = null
 
-    /**
-     * Sets the aspect ratio of generated images.
-     */
+    /** Sets the aspect ratio of generated images. */
     public fun setAspectRatio(aspectRatio: AspectRatio): Builder = apply {
       this.aspectRatio = aspectRatio
     }
 
-    /**
-     * Sets the size of the generated images.
-     */
-    public fun setImageSize(imageSize: ImageSize): Builder = apply {
-      this.imageSize = imageSize
-    }
+    /** Sets the size of the generated images. */
+    public fun setImageSize(imageSize: ImageSize): Builder = apply { this.imageSize = imageSize }
 
     /** Create a new [ImageConfig] with the attached arguments. */
     public fun build(): ImageConfig = ImageConfig(aspectRatio, imageSize)
@@ -63,18 +57,13 @@ private constructor(
   )
 
   public companion object {
-    /**
-     * Creates a new [Builder].
-     */
+    /** Creates a new [Builder]. */
     @JvmStatic public fun builder(): Builder = Builder()
   }
 }
 
-/**
- * An aspect ratio for generated images.
- */
-public class AspectRatio
-private constructor(public val value: String) {
+/** An aspect ratio for generated images. */
+public class AspectRatio private constructor(public val value: String) {
   internal fun toInternal() = value
 
   public companion object {
@@ -122,11 +111,8 @@ private constructor(public val value: String) {
   }
 }
 
-/**
- * The size of images to generate.
- */
-public class ImageSize
-private constructor(public val value: String) {
+/** The size of images to generate. */
+public class ImageSize private constructor(public val value: String) {
   internal fun toInternal() = value
 
   public companion object {
