@@ -46,7 +46,7 @@ import kotlinx.coroutines.withContext
  * @param K the type of keys maintained by this map.
  * @param V the type of mapped values, which must be a reference type.
  * @param blockingDispatcher the [CoroutineDispatcher] to use for the blocking operations in the
- * background cleanup loop (e.g., `Dispatchers.IO`).
+ * [runCleanupLoop] background cleanup loop (e.g., `Dispatchers.IO`).
  */
 internal class SuspendingWeakValueHashMap<K, V : Any>(
   private val blockingDispatcher: CoroutineDispatcher
