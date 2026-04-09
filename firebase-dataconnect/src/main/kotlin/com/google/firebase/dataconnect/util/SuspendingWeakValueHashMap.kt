@@ -16,6 +16,7 @@
 
 package com.google.firebase.dataconnect.util
 
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.coroutineScope
@@ -23,70 +24,94 @@ import kotlinx.coroutines.job
 import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import java.lang.ref.ReferenceQueue
 import java.lang.ref.WeakReference
 import java.util.concurrent.atomic.AtomicReference
 
-internal class SuspendingWeakValueHashMap<K, V : Any>: AutoCloseable {
+/**
+ * A thread-safe, coroutine-aware map that holds weak references to its values.
+ *
+ * Entries in this map are automatically removed when their values are garbage collected. To enable
+ * this automatic removal, a background cleanup loop must be started by calling [runCleanupLoop].
+ *
+ * This class is useful for caching objects that should be shared as long as they are referenced
+ * elsewhere, but allowed to be reclaimed by the garbage collector otherwise.
+ *
+ * ### Safe for concurrent use
+ *
+ * All methods and properties of [SuspendingWeakValueHashMap] are thread-safe and may be safely
+ * called and/or accessed concurrently from multiple threads and/or coroutines.
+ *
+ * @param K the type of keys maintained by this map.
+ * @param V the type of mapped values, which must be a reference type.
+ */
+internal class SuspendingWeakValueHashMap<K, V : Any>(private val blockingDispatcher: CoroutineDispatcher) : AutoCloseable {
 
   private val state = AtomicReference<State<K, V>>(State.New())
 
   /**
-   * Returns the value corresponding to the given [key], or `null` if such a key is not present in
-   * the map, or if the value has been garbage collected.
+   * Returns the value corresponding to the given key.
    *
-   * @throws IllegalStateException if [close] has been called.
+   * @param key the key whose associated value is to be returned.
+   * @return the value to which the specified key is mapped, or `null` if this map contains no
+   * mapping for the key, the value has been garbage collected, or [close] has been called.
    */
-  suspend fun get(key: K): V? = runLockedWithMapIfAvailable(resultIfMapNotAvailable = null) { map ->
-    map[key]?.get()
-  }
+  suspend fun get(key: K): V? =
+    runLockedWithMapIfAvailable(resultIfMapNotAvailable = null) { map -> map[key]?.get() }
 
   /**
-   * Removes the mapping for the specified [key] from this map if present.
+   * Removes the mapping for the given key, if present.
    *
-   * @return the previous value associated with the specified key, or `null` if there was no mapping
-   * for the key or if the previous value was garbage collected.
-   * @throws IllegalStateException if [close] has been called.
+   * @param key the key whose mapping to remove.
+   * @return the previous value associated with the given key, or `null` if there was no mapping
+   * for the key, the previous value was garbage collected, or [close] has been called.
    */
-  suspend fun remove(key: K): V? = runLockedWithMapIfAvailable(resultIfMapNotAvailable = null) { map ->
-    val oldValueReference = map.remove(key)
-    val oldValue = oldValueReference?.get()
-    oldValueReference?.clear()
-    return oldValue
-  }
-
-  /**
-   * Removes all the mappings from this map. The map will be empty after this call returns. Any weak
-   * references will be cleared.
-   *
-   * @return the number of key/value pairs removed.
-   * @throws IllegalStateException if [close] has been called.
-   */
-  suspend fun clear(): Int = runLockedWithMapIfAvailable(resultIfMapNotAvailable = 0) { map ->
-    val removeCount = map.size
-    map.values.forEach(ValueReference<K, V>::clear)
-    map.clear()
-    return removeCount
-  }
-
-  /**
-   * Returns the number of key-value mappings in this map.
-   *
-   * Note that this count includes entries whose values have been garbage collected but have not yet
-   * been removed by the background cleanup thread.
-   *
-   * @throws IllegalStateException if [close] has been called.
-   */
-  suspend fun size(): Int = runLockedWithMapIfAvailable(resultIfMapNotAvailable = 0) { map ->
-    map.size
-  }
-
-  private suspend inline fun <T> runLockedWithMapIfAvailable(resultIfMapNotAvailable: T, block: (MutableMap<K, ValueReference<K, V>>) -> T): T =
-    when (val currentState = state.get()) {
-      is State.New, is State.Closed -> resultIfMapNotAvailable
-      is State.Open -> currentState.mutex.withLock { block(currentState.map) }
+  suspend fun remove(key: K): V? =
+    runLockedWithMapIfAvailable(resultIfMapNotAvailable = null) { map ->
+      val oldValueReference = map.remove(key)
+      val oldValue = oldValueReference?.get()
+      oldValueReference?.clear()
+      return oldValue
     }
 
+  /**
+   * Removes all mappings.
+   *
+   * The map will be empty after this call returns, which includes entries whose values have been
+   * garbage collected but have not yet been removed by [runCleanupLoop].
+   *
+   * @return the number of key/value pairs removed, or `0` if [close] has been called.
+   */
+  suspend fun clear(): Int =
+    runLockedWithMapIfAvailable(resultIfMapNotAvailable = 0) { map ->
+      val removeCount = map.size
+      map.values.forEach(ValueReference<K, V>::clear)
+      map.clear()
+      return removeCount
+    }
+
+  /**
+   * Returns the number of key-value mappings.
+   *
+   * Note that this count includes entries whose values have been garbage collected but have not yet
+   * been removed [runCleanupLoop].
+   *
+   * @return the number of key-value mappings in this map, or `0` if [close] has been called.
+   */
+  suspend fun size(): Int =
+    runLockedWithMapIfAvailable(resultIfMapNotAvailable = 0) { map -> map.size }
+
+  /**
+   * Starts the background cleanup loop that removes entries from the map when their values are
+   * garbage collected.
+   *
+   * This method must be called exactly once before any calls to [put]. It is intended to be
+   * launched in a dedicated coroutine. The loop runs indefinitely until the map is closed or the
+   * coroutine is canceled.
+   *
+   * @throws IllegalStateException if this method is called more than once or after [close].
+   */
   suspend fun runCleanupLoop() = coroutineScope {
     val mutex = Mutex()
     val map = mutableMapOf<K, ValueReference<K, V>>()
@@ -95,39 +120,61 @@ internal class SuspendingWeakValueHashMap<K, V : Any>: AutoCloseable {
     while (true) {
       val currentState = state.get()
 
-      val newState: State.Open<K, V> = when (currentState) {
-        is State.Closed -> throw IllegalStateException("runCleanupLoop() cannot be called after close()")
-        is State.Open -> throw IllegalStateException("runCleanupLoop() has already been called")
-        is State.New -> State.Open<K, V>(coroutineContext.job, mutex, map, referenceQueue)
-      }
+      val newState: State.Open<K, V> =
+        when (currentState) {
+          is State.Closed ->
+            throw IllegalStateException("runCleanupLoop() cannot be called after close()")
+          is State.Open -> throw IllegalStateException("runCleanupLoop() has already been called")
+          is State.New -> State.Open<K, V>(coroutineContext.job, mutex, map, referenceQueue)
+        }
 
       if (state.compareAndSet(currentState, newState)) {
         break
       }
     }
 
-    while (true) {
-      val reference: ValueReference<K, V> = runInterruptible {
-        referenceQueue.removeValueReference()
+    withContext(blockingDispatcher) {
+      while (true) {
+        val reference: ValueReference<K, V> = runInterruptible {
+          referenceQueue.removeValueReference()
+        }
+        mutex.withLock { map.remove(reference.key, reference) }
       }
-      mutex.withLock { map.remove(reference.key, reference) }
     }
   }
 
+  /**
+   * Associates the given value with the given key.
+   *
+   * If the map previously contained a mapping for the given key, the old value is replaced and the
+   * old value is returned. The value is stored using a weak reference, allowing it to be garbage
+   * collected if no strong references to it remain.
+   *
+   * @param key the key with which the given value is to be associated.
+   * @param value the value to be associated with the given key.
+   * @return the previous value associated with the given key, or `null` if there was no mapping for
+   * the key or if the previous value was garbage collected.
+   * @throws IllegalStateException if [runCleanupLoop] has not been called or if [close] has been
+   * called.
+   */
   suspend fun put(key: K, value: V): V? =
     when (val currentState = this.state.get()) {
       is State.Closed -> throw IllegalStateException("put() cannot be called after close()")
       is State.New -> throw IllegalStateException("runCleanupLoop() must be called before put()")
-      is State.Open -> currentState.run {
-        mutex.withLock {
-          val oldValueReference = map.put(key, ValueReference(key, value, referenceQueue))
-          val oldValue = oldValueReference?.get()
-          oldValueReference?.clear()
-          oldValue
+      is State.Open ->
+        currentState.run {
+          mutex.withLock {
+            val oldValueReference = map.put(key, ValueReference(key, value, referenceQueue))
+            val oldValue = oldValueReference?.get()
+            oldValueReference?.clear()
+            oldValue
+          }
         }
-      }
     }
 
+  /**
+   * Closes this map and cancels the background cleanup loop.
+   */
   override fun close() {
     while (true) {
       val currentState = state.get()
@@ -143,6 +190,16 @@ internal class SuspendingWeakValueHashMap<K, V : Any>: AutoCloseable {
       }
     }
   }
+
+  private suspend inline fun <T> runLockedWithMapIfAvailable(
+    resultIfMapNotAvailable: T,
+    block: (MutableMap<K, ValueReference<K, V>>) -> T
+  ): T =
+    when (val currentState = state.get()) {
+      is State.New,
+      is State.Closed -> resultIfMapNotAvailable
+      is State.Open -> currentState.mutex.withLock { block(currentState.map) }
+    }
 
   private class ValueReference<K, V : Any>(
     val key: K,
