@@ -16,18 +16,19 @@
 
 package com.google.firebase.dataconnect.util
 
-import java.lang.ref.ReferenceQueue
-import java.lang.ref.WeakReference
-import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.job
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withContext
+import java.lang.ref.ReferenceQueue
+import java.lang.ref.WeakReference
 
 /**
  * A thread-safe, coroutine-aware map that holds weak references to its values.
@@ -52,7 +53,7 @@ internal class SuspendingWeakValueHashMap<K, V : Any>(
   private val blockingDispatcher: CoroutineDispatcher
 ) : AutoCloseable {
 
-  private val state = AtomicReference<State<K, V>>(State.New())
+  private val state = MutableStateFlow<State<K, V>>(State.New())
 
   /**
    * Returns the value corresponding to the given key.
@@ -114,26 +115,25 @@ internal class SuspendingWeakValueHashMap<K, V : Any>(
    * Starts the background cleanup loop that removes entries from the map when their values are
    * garbage collected.
    *
-   * This method must be called exactly once before any calls to [put]. It is intended to be
-   * launched in a dedicated coroutine. The loop runs indefinitely until the map is closed or the
-   * coroutine is canceled.
+   * This method must be called exactly once before any calls to [put]. The job will be started in
+   * the given [CoroutineScope] but will use a custom dispatcher that is suitable for blocking
+   * operations (the [CoroutineDispatcher] given to the constructor). The job will be canceled by
+   * [close].
    *
    * @throws IllegalStateException if this method is called more than once or after [close].
    */
-  suspend fun runCleanupLoop() = coroutineScope {
-    val mutex = Mutex()
-    val map = mutableMapOf<K, ValueReference<K, V>>()
-    val referenceQueue = ReferenceQueue<V>()
+  fun startCleanupJob(coroutineScope: CoroutineScope): Job {
+    val cleanupJob = CleanupJob<K, V>(coroutineScope, blockingDispatcher)
 
     while (true) {
-      val currentState = state.get()
+      val currentState = state.value
 
       val newState: State.Open<K, V> =
         when (currentState) {
           is State.Closed ->
             throw IllegalStateException("runCleanupLoop() cannot be called after close()")
           is State.Open -> throw IllegalStateException("runCleanupLoop() has already been called")
-          is State.New -> State.Open<K, V>(coroutineContext.job, mutex, map, referenceQueue)
+          is State.New -> cleanupJob.toOpenState()
         }
 
       if (state.compareAndSet(currentState, newState)) {
@@ -141,14 +141,7 @@ internal class SuspendingWeakValueHashMap<K, V : Any>(
       }
     }
 
-    withContext(blockingDispatcher) {
-      while (true) {
-        val reference: ValueReference<K, V> = runInterruptible {
-          referenceQueue.removeValueReference()
-        }
-        mutex.withLock { map.remove(reference.key, reference) }
-      }
-    }
+    return cleanupJob.job
   }
 
   /**
@@ -166,7 +159,7 @@ internal class SuspendingWeakValueHashMap<K, V : Any>(
    * called.
    */
   suspend fun put(key: K, value: V): V? =
-    when (val currentState = this.state.get()) {
+    when (val currentState = this.state.value) {
       is State.Closed -> throw IllegalStateException("put() cannot be called after close()")
       is State.New -> throw IllegalStateException("runCleanupLoop() must be called before put()")
       is State.Open ->
@@ -183,7 +176,7 @@ internal class SuspendingWeakValueHashMap<K, V : Any>(
   /** Closes this map and cancels the background cleanup loop. */
   override fun close() {
     while (true) {
-      val currentState = state.get()
+      val currentState = state.value
 
       when (currentState) {
         is State.Closed -> return
@@ -201,7 +194,7 @@ internal class SuspendingWeakValueHashMap<K, V : Any>(
     resultIfMapNotAvailable: T,
     block: (MutableMap<K, ValueReference<K, V>>) -> T
   ): T =
-    when (val currentState = state.get()) {
+    when (val currentState = state.value) {
       is State.New,
       is State.Closed -> resultIfMapNotAvailable
       is State.Open -> currentState.mutex.withLock { block(currentState.map) }
@@ -226,10 +219,35 @@ internal class SuspendingWeakValueHashMap<K, V : Any>(
     class Closed<K, V : Any> : State<K, V>
   }
 
+  private class CleanupJob<K, V : Any>(coroutineScope: CoroutineScope, blockingDispatcher: CoroutineDispatcher) {
+    val mutex: Mutex = Mutex()
+    val map: MutableMap<K, ValueReference<K, V>> = mutableMapOf()
+    val referenceQueue: ReferenceQueue<V> = ReferenceQueue<V>()
+
+    val job: Job = coroutineScope.launch(blockingDispatcher + CoroutineName("SuspendingWeakValueHashMap_CleanupJob"), CoroutineStart.LAZY,) {
+      while (true) {
+        remove(runInterruptible { referenceQueue.removeValueReference() })
+        while (true) {
+          remove(referenceQueue.pollValueReference() ?: break)
+        }
+      }
+    }
+
+    private suspend fun remove(ref: ValueReference<K, V>) {
+      mutex.withLock { map.remove(ref.key, ref) }
+    }
+  }
+
   private companion object {
 
     @Suppress("UNCHECKED_CAST")
     fun <K, V : Any> ReferenceQueue<V>.removeValueReference(): ValueReference<K, V> =
       remove() as ValueReference<K, V>
+
+    @Suppress("UNCHECKED_CAST")
+    fun <K, V : Any> ReferenceQueue<V>.pollValueReference(): ValueReference<K, V>? =
+      poll() as ValueReference<K, V>?
+
+    fun <K, V : Any> CleanupJob<K, V>.toOpenState(): State.Open<K, V> = State.Open(job, mutex, map, referenceQueue)
   }
 }

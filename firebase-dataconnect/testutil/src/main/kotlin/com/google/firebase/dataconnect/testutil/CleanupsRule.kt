@@ -39,7 +39,19 @@ class CleanupsRule : ExternalResource() {
    * Registers a cleanup. This function potentially blocks briefly while acquiring the lock on the
    * list of cleanups. Throws an exception if called before [before] or after [after] has started.
    */
-  fun register(name: String? = null, cleanup: suspend () -> Unit) = runBlocking {
+  fun register(autoCloseable: AutoCloseable) = register(name = autoCloseable::class.qualifiedName, autoCloseable::close)
+
+  /**
+   * Registers a cleanup. This function potentially blocks briefly while acquiring the lock on the
+   * list of cleanups. Throws an exception if called before [before] or after [after] has started.
+   */
+  fun register(cleanup: () -> Unit) = register(name = null, cleanup)
+
+  /**
+   * Registers a cleanup. This function potentially blocks briefly while acquiring the lock on the
+   * list of cleanups. Throws an exception if called before [before] or after [after] has started.
+   */
+  fun register(name: String?, cleanup: () -> Unit) = runBlocking {
     registerSuspending(name, cleanup)
   }
 
@@ -47,7 +59,13 @@ class CleanupsRule : ExternalResource() {
    * Registers a cleanup. This function potentially suspends while acquiring the lock on the list of
    * cleanups. Throws an exception if called before [before] or after [after] has started.
    */
-  suspend fun registerSuspending(name: String? = null, cleanup: suspend () -> Unit) {
+  suspend fun registerSuspending(cleanup: suspend () -> Unit) = registerSuspending(name = null, cleanup)
+
+  /**
+   * Registers a cleanup. This function potentially suspends while acquiring the lock on the list of
+   * cleanups. Throws an exception if called before [before] or after [after] has started.
+   */
+  suspend fun registerSuspending(name: String?, cleanup: suspend () -> Unit) {
     mutex.withLock {
       check(beforeCalled) {
         "cleanups can not be registered until before() is called " + "(error code 3yrwbehmvk)"

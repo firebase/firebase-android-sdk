@@ -13,16 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-@file:OptIn(ExperimentalKotest::class, DelicateKotest::class)
+@file:OptIn(ExperimentalKotest::class, DelicateKotest::class, ExperimentalCoroutinesApi::class)
 
 package com.google.firebase.dataconnect.util
 
-import com.google.firebase.dataconnect.SuspendingWeakValueHashMap
+import android.os.ConditionVariable
 import com.google.firebase.dataconnect.testutil.CleanupsRule
 import com.google.firebase.dataconnect.testutil.SuspendingCountDownLatch
 import com.google.firebase.dataconnect.testutil.delayIgnoringTestScheduler
+import com.google.firebase.dataconnect.testutil.property.arbitrary.distinctPair
 import com.google.firebase.dataconnect.testutil.property.arbitrary.pair
-import com.google.firebase.dataconnect.testutil.property.arbitrary.randomSeed
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.common.DelicateKotest
@@ -30,13 +30,16 @@ import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldBeIn
 import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.ints.shouldBeLessThanOrEqual
 import io.kotest.matchers.nulls.shouldBeNull
-import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.property.Arb
 import io.kotest.property.PropTestConfig
+import io.kotest.property.PropertyContext
+import io.kotest.property.RandomSource
 import io.kotest.property.ShrinkingMode
+import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.distinct
 import io.kotest.property.arbitrary.filterNot
 import io.kotest.property.arbitrary.int
@@ -47,20 +50,23 @@ import io.kotest.property.arbitrary.orNull
 import io.kotest.property.arbitrary.take
 import io.kotest.property.arbs.usernames
 import io.kotest.property.checkAll
-import java.lang.ref.WeakReference
-import java.util.concurrent.ThreadFactory
-import kotlin.random.Random
-import kotlin.time.Duration.Companion.milliseconds
+import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestName
+import java.lang.ref.WeakReference
+import java.util.concurrent.Executors
+import kotlin.random.Random
+import kotlin.time.Duration.Companion.milliseconds
 
 class SuspendingWeakValueHashMapUnitTest {
 
@@ -69,76 +75,156 @@ class SuspendingWeakValueHashMapUnitTest {
   @get:Rule val testName = TestName()
 
   @Test
-  fun `size() returns 0 on an empty map`() = runTest {
-    val map = SuspendingWeakValueHashMap<Int, Value>(cleanupThreadFactory)
-    cleanups.registerSuspending { map.close() }
-
-    map.size() shouldBe 0
+  fun `size() returns 0 on an new instance`() = verifyWithNewInstance {
+    it.size() shouldBe 0
   }
 
   @Test
-  fun `size() returns the size of a populated map`() = runTest {
-    checkAll(propTestConfig, Arb.int(0..50), Arb.randomSeed()) { size, randomSeed ->
-      val map = SuspendingWeakValueHashMap<Int, Value>(cleanupThreadFactory)
-      cleanups.registerSuspending { map.close() }
-      map.populate(size, randomSeed)
-
-      map.size() shouldBe size
-    }
+  fun `size() returns 0 on an empty but previously non-empty instance`() = verifyWithEmptyButPreviouslyNonEmptyInstance {
+    it.size() shouldBe 0
   }
 
   @Test
-  fun `size() returns smaller values as background cleanup occurs`() = runTest {
-    val map = SuspendingWeakValueHashMap<Int, Value>(cleanupThreadFactory)
-    cleanups.registerSuspending { map.close() }
-    map.populate()
+  fun `size() returns 0 on a closed instance that was _never_ populated`() = verifyWithClosedInstanceThatWasNeverPopulated {
+    it.size() shouldBe 0
+  }
 
-    val sizes =
-      List(50) {
-        map.size().also {
-          if (it > 0) {
-            System.gc()
-            delayIgnoringTestScheduler(50.milliseconds)
-          }
-        }
+  @Test
+  fun `size() returns 0 on a closed instance that _was_ populated`() = verifyWithClosedInstanceThatWasPopulated {
+    it.size() shouldBe 0
+  }
+
+  @Test
+  fun `size() returns the size of a populated map`() = verifyWithPopulatedMap { map, populatedValues ->
+    map.size() shouldBe populatedValues.size
+  }
+
+  @Test
+  fun `size() returns smaller values as background cleanup occurs`() = verifyAsValuesAreGarbageCollected(
+    onIteration = { map, _ -> map.size() },
+    verify = { _, sizes, populatedKeys ->
+      sizes shouldContainExactly sizes.sortedDescending()
+      if (sizes.isNotEmpty()) {
+        sizes.max() shouldBeLessThanOrEqual populatedKeys.size
       }
-
-    sizes shouldContainExactly sizes.sortedDescending()
-  }
+    }
+  )
 
   @Test
-  fun `size() does not return smaller values as garbage collection occurs without cleanup`() =
-    runTest {
-      val map = SuspendingWeakValueHashMap<Int, Value>(noopThreadFactory)
-      cleanups.registerSuspending { map.close() }
-      val expectedSize = map.populate().size
-
-      val sizes =
-        List(50) {
-          map.size().also {
-            if (it > 0) {
-              System.gc()
-              delayIgnoringTestScheduler(1.milliseconds)
-            }
-          }
-        }
-
-      val expectedSizes = List(sizes.size) { expectedSize }
+  fun `size() does not return smaller values as garbage collection occurs without cleanup`() = verifyAsCleanupLoopIsStalledAndValuesAreGarbageCollected(
+    onIteration = { map, _ -> map.size() },
+    verify = { _, sizes, populatedKeys ->
+      val expectedSizes = List(sizes.size) { populatedKeys.size }
       sizes shouldContainExactly expectedSizes
     }
+  )
+
+  private fun verifyWithNewInstance(verify: suspend (SuspendingWeakValueHashMap<Int, Value>) -> Unit) = runTest {
+    val map = SuspendingWeakValueHashMap<Int, Value>(mockk())
+    cleanups.register(map)
+    verify(map)
+  }
+
+  private fun verifyWithEmptyButPreviouslyNonEmptyInstance(verify: suspend (SuspendingWeakValueHashMap<Int, Value>) -> Unit) = runTest {
+    checkAll(propTestConfig, Arb.int(0..50)) { size ->
+      val map = SuspendingWeakValueHashMap<Int, Value>(blockingDispatcher)
+      cleanups.register(map)
+      map.startCleanupJob(backgroundScope)
+      map.populate(size, randomSource())
+      map.clear()
+      verify(map)
+    }
+  }
+
+  private fun verifyWithClosedInstanceThatWasNeverPopulated(verify: suspend (SuspendingWeakValueHashMap<Int, Value>) -> Unit) = runTest {
+    val map = SuspendingWeakValueHashMap<Int, Value>(mockk())
+    map.close()
+    verify(map)
+  }
+
+  private fun verifyWithClosedInstanceThatWasPopulated(verify: suspend (SuspendingWeakValueHashMap<Int, Value>) -> Unit) = runTest {
+    checkAll(propTestConfig, Arb.int(0..50)) { size ->
+      val map = SuspendingWeakValueHashMap<Int, Value>(blockingDispatcher)
+      cleanups.register(map)
+      map.startCleanupJob(backgroundScope)
+      map.populate(size, randomSource())
+      map.close()
+      verify(map)
+    }
+  }
+
+  private fun verifyWithPopulatedMap(verify: suspend (SuspendingWeakValueHashMap<Int, Value>, Map<Int, Value>) -> Unit) = runTest {
+    checkAll(propTestConfig, Arb.int(0..50)) { size ->
+      val map = SuspendingWeakValueHashMap<Int, Value>(blockingDispatcher)
+      cleanups.register(map)
+      map.startCleanupJob(backgroundScope)
+      val populatedValues = map.populate(size, randomSource())
+      verify(map, populatedValues)
+    }
+  }
+
+  private fun <T> verifyAsValuesAreGarbageCollected(onIteration: suspend PropertyContext.(SuspendingWeakValueHashMap<Int, Value>, List<Int>) -> T, verify: suspend PropertyContext.(SuspendingWeakValueHashMap<Int, Value>, List<T>, List<Int>) -> Unit) = verifyWithGarbageCollectionIntervals(onIteration, verify) {
+      val map = SuspendingWeakValueHashMap<Int, Value>(blockingDispatcher)
+      cleanups.register(map)
+      map.startCleanupJob(backgroundScope)
+      map
+  }
+
+  private fun <T> verifyAsCleanupLoopIsStalledAndValuesAreGarbageCollected(onIteration: suspend PropertyContext.(SuspendingWeakValueHashMap<Int, Value>, List<Int>) -> T, verify: suspend PropertyContext.(SuspendingWeakValueHashMap<Int, Value>, List<T>, List<Int>) -> Unit) = verifyWithGarbageCollectionIntervals(onIteration, verify) {
+    val singleThreadExecutor = Executors.newSingleThreadExecutor()
+    cleanups.register { singleThreadExecutor.shutdownNow() }
+    val cv = ConditionVariable()
+    cleanups.register { cv.open() }
+    singleThreadExecutor.execute { cv.block() }
+    val map = SuspendingWeakValueHashMap<Int, Value>(singleThreadExecutor.asCoroutineDispatcher())
+    cleanups.register(map)
+    map.startCleanupJob(backgroundScope)
+    map
+  }
+
+  private fun <T> verifyWithGarbageCollectionIntervals(onIteration: suspend PropertyContext.(SuspendingWeakValueHashMap<Int, Value>, List<Int>) -> T, verify: suspend PropertyContext.(SuspendingWeakValueHashMap<Int, Value>, List<T>, List<Int>) -> Unit, createMap: suspend TestScope.() -> SuspendingWeakValueHashMap<Int, Value>,) = runTest {
+    checkAll(propTestConfig, Arb.int(0..50)) { size ->
+      val map = createMap()
+      val populatedKeys = map.populate(size, randomSource()).keys.toList().sorted().shuffled(randomSource().random)
+
+      val values =
+        List(50) {
+          val value = onIteration(map, populatedKeys)
+          System.gc()
+          delayIgnoringTestScheduler(1.milliseconds)
+          value
+        }
+
+      verify(map, values, populatedKeys)
+    }
+  }
 
   @Test
-  fun `get() returns null on an empty map`() = runTest {
-    val map = SuspendingWeakValueHashMap<Int, Value>(cleanupThreadFactory)
-    cleanups.registerSuspending { map.close() }
-
-    checkAll(propTestConfig, Arb.int()) { key -> map.get(key).shouldBeNull() }
+  fun `get() returns null on an new instance`() = verifyWithNewInstance {
+    checkAll(propTestConfig, Arb.int()) { key -> it.get(key).shouldBeNull() }
   }
+
+  @Test
+  fun `get() returns null on an empty but previously non-empty instance`() = verifyWithEmptyButPreviouslyNonEmptyInstance {
+    checkAll(propTestConfig, Arb.int()) { key -> it.get(key).shouldBeNull() }
+  }
+
+  @Test
+  fun `get() returns null on a closed instance that was _never_ populated`() = verifyWithClosedInstanceThatWasNeverPopulated {
+    checkAll(propTestConfig, Arb.int()) { key -> it.get(key).shouldBeNull() }
+  }
+
+  @Test
+  fun `get() returns null on a closed instance that _was_ populated`() = verifyWithClosedInstanceThatWasPopulated {
+    checkAll(propTestConfig, Arb.int()) { key -> it.get(key).shouldBeNull() }
+  }
+
 
   @Test
   fun `get() returns the value specified to put()`() = runTest {
-    val map = SuspendingWeakValueHashMap<Int, Value>(cleanupThreadFactory)
-    cleanups.registerSuspending { map.close() }
+    val map = SuspendingWeakValueHashMap<Int, Value>(blockingDispatcher)
+    cleanups.register(map)
+    map.startCleanupJob(backgroundScope)
     val valueStrongReferences = mutableListOf<Value>()
 
     checkAll(propTestConfig, Arb.int().distinct(), valueArb()) { key, value ->
@@ -151,8 +237,9 @@ class SuspendingWeakValueHashMapUnitTest {
 
   @Test
   fun `get() returns the most recent value specified to put()`() = runTest {
-    val map = SuspendingWeakValueHashMap<Int, Value>(cleanupThreadFactory)
-    cleanups.registerSuspending { map.close() }
+    val map = SuspendingWeakValueHashMap<Int, Value>(blockingDispatcher)
+    cleanups.register(map)
+    map.startCleanupJob(backgroundScope)
     val valueStrongReferences = mutableListOf<Value>()
 
     checkAll(propTestConfig, Arb.int().distinct(), valueArb(), valueArb()) { key, value1, value2 ->
@@ -167,8 +254,9 @@ class SuspendingWeakValueHashMapUnitTest {
 
   @Test
   fun `get() returns null for keys never specified to put()`() = runTest {
-    val map = SuspendingWeakValueHashMap<Int, Value>(cleanupThreadFactory)
-    cleanups.registerSuspending { map.close() }
+    val map = SuspendingWeakValueHashMap<Int, Value>(blockingDispatcher)
+    cleanups.register(map)
+    map.startCleanupJob(backgroundScope)
     val expectedMap = mutableMapOf<Int, Value>()
 
     checkAll(propTestConfig, Arb.int().distinct(), valueArb()) { key, value ->
@@ -182,8 +270,9 @@ class SuspendingWeakValueHashMapUnitTest {
 
   @Test
   fun `get(key) returns null after remove(key)`() = runTest {
-    val map = SuspendingWeakValueHashMap<Int, Value>(cleanupThreadFactory)
-    cleanups.registerSuspending { map.close() }
+    val map = SuspendingWeakValueHashMap<Int, Value>(blockingDispatcher)
+    cleanups.register(map)
+    map.startCleanupJob(backgroundScope)
     val populatedData = map.populate()
 
     populatedData.keys.shuffled().forEach {
@@ -195,8 +284,9 @@ class SuspendingWeakValueHashMapUnitTest {
 
   @Test
   fun `get() returns null after clear()`() = runTest {
-    val map = SuspendingWeakValueHashMap<Int, Value>(cleanupThreadFactory)
-    cleanups.registerSuspending { map.close() }
+    val map = SuspendingWeakValueHashMap<Int, Value>(blockingDispatcher)
+    cleanups.register(map)
+    map.startCleanupJob(backgroundScope)
     val populatedData = map.populate()
 
     map.clear()
@@ -206,8 +296,8 @@ class SuspendingWeakValueHashMapUnitTest {
 
   @Test
   fun `get() returns null values after background cleanup`() = runTest {
-    val map = SuspendingWeakValueHashMap<Int, Value>(cleanupThreadFactory)
-    cleanups.registerSuspending { map.close() }
+    val map = SuspendingWeakValueHashMap<Int, Value>(blockingDispatcher)
+    cleanups.register(map)
     val keys = map.populate().keys.toList()
 
     val nonNullCounts =
@@ -230,87 +320,105 @@ class SuspendingWeakValueHashMapUnitTest {
   }
 
   @Test
-  fun `get() returns null as garbage collection occurs without cleanup`() = runTest {
-    val map = SuspendingWeakValueHashMap<Int, Value>(noopThreadFactory)
-    cleanups.registerSuspending { map.close() }
-    val keys = map.populate().keys.toList()
-
-    val nonNullCounts =
-      List(50) {
-        var nonNullCount = 0
-        keys.forEach {
-          if (map.get(it) !== null) {
-            nonNullCount++
-          }
+  fun `get() returns null as background cleanup occurs`() = verifyAsValuesAreGarbageCollected(
+    onIteration = { map, populatedKeys ->
+      var nonNullCount = 0
+      populatedKeys.forEach {
+        if (map.get(it) !== null) {
+          nonNullCount++
         }
-        if (nonNullCount > 0) {
-          System.gc()
-          delayIgnoringTestScheduler(50.milliseconds)
-        }
-        nonNullCount
       }
-
-    nonNullCounts.last() shouldBe 0
-    nonNullCounts shouldContainExactly nonNullCounts.sortedDescending()
-  }
+      nonNullCount
+    },
+    verify = { _, nonNullCounts, _ ->
+      nonNullCounts.last() shouldBe 0
+      nonNullCounts shouldContainExactly nonNullCounts.sortedDescending()
+    }
+  )
 
   @Test
-  fun `put() returns null on an empty map`() = runTest {
-    val map = SuspendingWeakValueHashMap<Int, Value>(cleanupThreadFactory)
-    cleanups.registerSuspending { map.close() }
+  fun `get() returns null as garbage collection occurs without cleanup`() = verifyAsCleanupLoopIsStalledAndValuesAreGarbageCollected(
+    onIteration = { map, populatedKeys ->
+      var nonNullCount = 0
+      populatedKeys.forEach {
+        if (map.get(it) !== null) {
+          nonNullCount++
+        }
+      }
+      nonNullCount
+    },
+    verify = { _, nonNullCounts, _ ->
+      nonNullCounts.last() shouldBe 0
+      nonNullCounts shouldContainExactly nonNullCounts.sortedDescending()
+    }
+  )
 
+  @Test
+  fun `put() throws on an new instance`() = verifyWithNewInstance {
     checkAll(propTestConfig, Arb.int().distinct(), valueArb()) { key, value ->
+      shouldThrow<IllegalStateException> { it.put(key, value) }
+    }
+  }
+
+  @Test
+  fun `put() returns null on an empty but previously non-empty instance`() = verifyWithEmptyButPreviouslyNonEmptyInstance {
+    checkAll(propTestConfig, Arb.int().distinct(), valueArb()) { key, value ->
+      it.put(key, value).shouldBeNull()
+    }
+  }
+
+  @Test
+  fun `put() throws on a closed instance that was _never_ populated`() = verifyWithClosedInstanceThatWasNeverPopulated {
+    checkAll(propTestConfig, Arb.int().distinct(), valueArb()) { key, value ->
+      shouldThrow<IllegalStateException> { it.put(key, value) }
+    }
+  }
+
+  @Test
+  fun `put() throws on a closed instance that _was_ populated`() = verifyWithClosedInstanceThatWasPopulated {
+    checkAll(propTestConfig, Arb.int().distinct(), valueArb()) { key, value ->
+      shouldThrow<IllegalStateException> { it.put(key, value) }
+    }
+  }
+
+  @Test
+  fun `put() returns null if key is not mapped`() = verifyWithPopulatedMap { map, populatedValues ->
+    checkAll(propTestConfig, Arb.int().filterNot { it in populatedValues }, valueArb()) { key, value ->
       map.put(key, value).shouldBeNull()
     }
   }
 
   @Test
-  fun `put() returns null if key is not mapped`() = runTest {
-    val map = SuspendingWeakValueHashMap<Int, Value>(cleanupThreadFactory)
-    cleanups.registerSuspending { map.close() }
-    val populatedData = map.populate()
-
-    checkAll(propTestConfig, Arb.int().filterNot { it in populatedData }, valueArb()) { key, value
-      ->
-      map.put(key, value).shouldBeNull()
-    }
-  }
-
-  @Test
-  fun `put() returns previous value if key was mapped`() = runTest {
-    val map = SuspendingWeakValueHashMap<Int, Value>(cleanupThreadFactory)
-    cleanups.registerSuspending { map.close() }
-    val populatedData = map.populate().toMutableMap()
-
-    checkAll(propTestConfig, Arb.of(populatedData.keys.sorted()), valueArb()) { key, newValue ->
-      val oldValue = populatedData[key]!!
+  fun `put() returns previous value if key was mapped`() = verifyWithPopulatedMap { map, populatedValues ->
+    val upToDatePopulatedValues = populatedValues.toMutableMap()
+    checkAll(propTestConfig, Arb.of(populatedValues.keys.sorted()), valueArb()) { key, newValue ->
+      val oldValue = upToDatePopulatedValues[key]!!
 
       map.put(key, newValue) shouldBeSameInstanceAs oldValue
 
-      populatedData[key] = newValue
+      upToDatePopulatedValues[key] = newValue
     }
   }
 
   @Test
-  fun `put() does not affect other key-value pairs`() = runTest {
-    val map = SuspendingWeakValueHashMap<Int, Value>(cleanupThreadFactory)
-    cleanups.registerSuspending { map.close() }
-    val populatedData = map.populate().toMutableMap()
+  fun `put() does not affect other key-value pairs`() = verifyWithPopulatedMap { map, populatedValues ->
+    val upToDatePopulatedValues = populatedValues.toMutableMap()
 
-    checkAll(propTestConfig, Arb.of(populatedData.keys.sorted()), valueArb()) { key, newValue ->
+    checkAll(propTestConfig, Arb.of(populatedValues.keys.sorted()), valueArb()) { key, newValue ->
       map.put(key, newValue)
-      populatedData[key] = newValue
+      upToDatePopulatedValues[key] = newValue
 
-      populatedData.keys.sorted().shuffled(randomSource().random).forEach {
-        map.get(it) shouldBeSameInstanceAs populatedData[it]
+      populatedValues.keys.sorted().shuffled(randomSource().random).forEach {
+        map.get(it) shouldBeSameInstanceAs upToDatePopulatedValues[it]
       }
     }
   }
 
   @Test
   fun `put() increments size if key was not previously mapped`() = runTest {
-    val map = SuspendingWeakValueHashMap<Int, Value>(cleanupThreadFactory)
-    cleanups.registerSuspending { map.close() }
+    val map = SuspendingWeakValueHashMap<Int, Value>(blockingDispatcher)
+    cleanups.register(map)
+    map.startCleanupJob(backgroundScope)
     val populatedData = map.populate()
     var expectedSize = populatedData.size
 
@@ -325,309 +433,267 @@ class SuspendingWeakValueHashMapUnitTest {
   }
 
   @Test
-  fun `put() does not change size if key was previously mapped`() = runTest {
-    val map = SuspendingWeakValueHashMap<Int, Value>(cleanupThreadFactory)
-    cleanups.registerSuspending { map.close() }
-    val populatedData = map.populate()
-    val expectedSize = populatedData.size
-
-    checkAll(propTestConfig, Arb.of(populatedData.keys.sorted()), valueArb()) { key, value ->
+  fun `put() does not change size if key was previously mapped`() = verifyWithPopulatedMap { map, populatedValues ->
+    checkAll(propTestConfig, Arb.of(populatedValues.keys.sorted()), valueArb()) { key, value ->
       map.put(key, value)
 
-      map.size() shouldBe expectedSize
+      map.size() shouldBe populatedValues.size
     }
   }
 
   @Test
-  fun `put() returns null values after background cleanup`() = runTest {
-    val map = SuspendingWeakValueHashMap<Int, Value>(cleanupThreadFactory)
-    cleanups.registerSuspending { map.close() }
-    val keys = map.populate().keys.toList()
-
-    repeat(50) {
-      if (map.size() != 0) {
-        System.gc()
-        delayIgnoringTestScheduler(50.milliseconds)
+  fun `put() returns null as background cleanup occurs`() = verifyAsValuesAreGarbageCollected(
+    onIteration = { _, _ -> },
+    verify = { map, _, populatedKeys ->
+      val valueArb = valueArb()
+      populatedKeys.sorted().shuffled().forEach {
+        map.put(it, valueArb.next(randomSource())).shouldBeNull()
       }
     }
-
-    keys.sorted().shuffled().forEach { map.put(it, valueArb().next()).shouldBeNull() }
-  }
+  )
 
   @Test
-  fun `put() returns null as garbage collection occurs without cleanup`() = runTest {
-    val map = SuspendingWeakValueHashMap<Int, Value>(noopThreadFactory)
-    cleanups.registerSuspending { map.close() }
-    val keys = map.populate().keys.toMutableSet()
+  fun `put() returns null as garbage collection occurs without cleanup`() {
+    val valueArb = valueArb()
+    var currentMap: SuspendingWeakValueHashMap<*,*>? = null
+    var currentRemainingKeys: MutableSet<Int>? = null
 
-    repeat(50) {
-      var nonNullFound = false
-      keys.toList().forEach { key ->
-        if (map.get(key) !== null) {
-          nonNullFound = true
-        } else {
-          map.put(key, valueArb().next()).shouldBeNull()
+    return verifyAsCleanupLoopIsStalledAndValuesAreGarbageCollected(
+      onIteration = run {
+        { map, populatedKeys ->
+          if (currentMap !== map) {
+            currentMap = map
+            currentRemainingKeys = populatedKeys.toMutableSet()
+          }
+          currentRemainingKeys!!.forEach { key ->
+            if (map.get(key) === null) {
+              map.put(key, valueArb.next(randomSource())).shouldBeNull()
+            }
+          }
         }
-        keys.remove(key)
+      },
+      verify = { map, _, _ ->
+        check(map === currentMap)
+        currentMap = null
+        currentRemainingKeys!!.shouldBeEmpty()
+        currentRemainingKeys = null
       }
-      if (nonNullFound) {
-        System.gc()
-        delayIgnoringTestScheduler(50.milliseconds)
-      }
+    )
+  }
+
+
+
+
+
+
+
+  @Test
+  fun `remove() returns null on an new instance`() = verifyWithNewInstance {
+    checkAll(propTestConfig, Arb.int()) { key -> it.remove(key).shouldBeNull() }
+  }
+
+  @Test
+  fun `remove() returns null on an empty but previously non-empty instance`() = verifyWithEmptyButPreviouslyNonEmptyInstance {
+    checkAll(propTestConfig, Arb.int()) { key -> it.remove(key).shouldBeNull() }
+  }
+
+  @Test
+  fun `remove() returns null on a closed instance that was _never_ populated`() = verifyWithClosedInstanceThatWasNeverPopulated {
+    checkAll(propTestConfig, Arb.int()) { key -> it.remove(key).shouldBeNull() }
+  }
+
+  @Test
+  fun `remove() returns null on a closed instance that _was_ populated`() = verifyWithClosedInstanceThatWasPopulated {
+    checkAll(propTestConfig, Arb.int()) { key -> it.remove(key).shouldBeNull() }
+  }
+
+  @Test
+  fun `remove(key) returns the removed value`() = verifyWithPopulatedMap { map, populatedValues ->
+    populatedValues.keys.shuffled().forEach { key ->
+      map.remove(key) shouldBeSameInstanceAs populatedValues[key]
     }
-
-    keys.shouldBeEmpty()
   }
 
   @Test
-  fun `remove() returns null on an empty map`() = runTest {
-    val map = SuspendingWeakValueHashMap<Int, Value>(cleanupThreadFactory)
-    cleanups.registerSuspending { map.close() }
-
-    checkAll(propTestConfig, Arb.int()) { key -> map.remove(key).shouldBeNull() }
-  }
-
-  @Test
-  fun `remove(key) causes get(key) to return null`() = runTest {
-    val map = SuspendingWeakValueHashMap<Int, Value>(cleanupThreadFactory)
-    cleanups.registerSuspending { map.close() }
-    val populatedData = map.populate()
-
-    checkAll(propTestConfig, Arb.int().filterNot { it in populatedData }) { key ->
+  fun `remove(key) returns null after removing the value`() = verifyWithPopulatedMap { map, populatedValues ->
+    populatedValues.keys.shuffled().forEach { key ->
       map.remove(key)
-
-      map.get(key).shouldBeNull()
-    }
-  }
-
-  @Test
-  fun `remove(key) does not affect get(some other key)`() = runTest {
-    val map = SuspendingWeakValueHashMap<Int, Value>(cleanupThreadFactory)
-    cleanups.registerSuspending { map.close() }
-    val populatedData = map.populate().toMutableMap()
-
-    checkAll(propTestConfig, Arb.int().filterNot { it in populatedData }) { key ->
-      populatedData.remove(key)
-
-      map.remove(key)
-
-      populatedData.keys.sorted().shuffled(randomSource().random).forEach {
-        map.get(it) shouldBeSameInstanceAs populatedData[it]
-      }
-    }
-  }
-
-  @Test
-  fun `remove(key) decrements size`() = runTest {
-    val map = SuspendingWeakValueHashMap<Int, Value>(cleanupThreadFactory)
-    cleanups.registerSuspending { map.close() }
-    val populatedData = map.populate()
-
-    populatedData.keys.sorted().shuffled().forEachIndexed { index, key ->
-      map.remove(key)
-
-      map.size() shouldBe populatedData.size - index - 1
-    }
-  }
-
-  @Test
-  fun `remove() returns null if key is not mapped`() = runTest {
-    val map = SuspendingWeakValueHashMap<Int, Value>(cleanupThreadFactory)
-    cleanups.registerSuspending { map.close() }
-    val populatedData = map.populate()
-
-    checkAll(propTestConfig, Arb.int().filterNot { it in populatedData }) { key ->
       map.remove(key).shouldBeNull()
     }
   }
 
   @Test
-  fun `remove() returns removed value if key was mapped`() = runTest {
-    val map = SuspendingWeakValueHashMap<Int, Value>(cleanupThreadFactory)
-    cleanups.registerSuspending { map.close() }
-    val populatedData = map.populate()
-
-    populatedData.keys.sorted().shuffled().forEach {
-      val oldValue = populatedData[it]!!
-
-      map.remove(it) shouldBeSameInstanceAs oldValue
-    }
-  }
-
-  @Test
-  fun `remove() returns null values after background cleanup`() = runTest {
-    val map = SuspendingWeakValueHashMap<Int, Value>(cleanupThreadFactory)
-    cleanups.registerSuspending { map.close() }
-    val keys = map.populate().keys.toList()
-
-    repeat(50) {
-      if (map.size() != 0) {
-        System.gc()
-        delayIgnoringTestScheduler(50.milliseconds)
-      }
-    }
-
-    keys.sorted().shuffled().forEach { map.remove(it).shouldBeNull() }
-  }
-
-  @Test
-  fun `remove() returns null as garbage collection occurs without cleanup`() = runTest {
-    val map = SuspendingWeakValueHashMap<Int, Value>(noopThreadFactory)
-    cleanups.registerSuspending { map.close() }
-    val keys = map.populate().keys.toMutableSet()
-
-    repeat(50) {
-      var nonNullFound = false
-      keys.toList().forEach { key ->
-        if (map.get(key) !== null) {
-          nonNullFound = true
-        } else {
-          map.remove(key).shouldBeNull()
-        }
-        keys.remove(key)
-      }
-      if (nonNullFound) {
-        System.gc()
-        delayIgnoringTestScheduler(50.milliseconds)
-      }
-    }
-
-    keys.shouldBeEmpty()
-  }
-
-  @Test
-  fun `clear() returns 0 on an empty map`() = runTest {
-    val map = SuspendingWeakValueHashMap<Int, Value>(cleanupThreadFactory)
-    cleanups.registerSuspending { map.close() }
-
-    map.clear() shouldBe 0
-  }
-
-  @Test
-  fun `clear() causes get(key) to return null`() = runTest {
-    val map = SuspendingWeakValueHashMap<Int, Value>(cleanupThreadFactory)
-    cleanups.registerSuspending { map.close() }
-    val populatedData = map.populate()
-
+  fun `remove(key) returns null after clear()`() = verifyWithPopulatedMap { map, populatedValues ->
     map.clear()
-
-    populatedData.keys.sorted().shuffled().forEach { map.get(it).shouldBeNull() }
+    populatedValues.keys.shuffled().forEach { key ->
+      map.remove(key).shouldBeNull()
+    }
   }
 
   @Test
-  fun `clear() causes size() to return 0`() = runTest {
-    checkAll(propTestConfig, Arb.int(0..50), Arb.randomSeed()) { size, randomSeed ->
-      val map = SuspendingWeakValueHashMap<Int, Value>(cleanupThreadFactory)
-      cleanups.registerSuspending { map.close() }
-      map.populate(size = size, randomSeed = randomSeed)
+  fun `remove(key) returns null for keys never set`() = verifyWithPopulatedMap { map, populatedValues ->
+    checkAll(propTestConfig, Arb.int().filterNot { it in populatedValues }) { key ->
+      map.remove(key).shouldBeNull()
+    }
+  }
 
+  @Test
+  fun `remove(key) causes get(key) to return null`() = verifyWithPopulatedMap { map, populatedValues ->
+    checkAll(propTestConfig, Arb.int().filterNot { it in populatedValues }) { key ->
+      map.remove(key)
+      map.get(key).shouldBeNull()
+    }
+  }
+
+  @Test
+  fun `remove(key) does not affect get(some other key)`() = verifyWithPopulatedMap { map, populatedValues ->
+    val remainingKeys = populatedValues.keys.toMutableSet()
+    val keyArb = Arb.choice(Arb.int(), Arb.of(populatedValues.keys))
+
+    checkAll(propTestConfig, keyArb.distinctPair()) { (key1, key2) ->
+      val key2ValueBefore = map.get(key2)
+      remainingKeys.remove(key1)
+
+      map.remove(key1)
+
+      val key2ValueAfter = map.get(key2)
+      key2ValueBefore shouldBeSameInstanceAs key2ValueAfter
+    }
+  }
+
+  @Test
+  fun `remove(key) decrements size`() = verifyWithPopulatedMap { map, populatedValues ->
+    populatedValues.keys.shuffled().forEachIndexed { index, key ->
+      map.remove(key)
+
+      map.size() shouldBe populatedValues.size - index - 1
+    }
+  }
+
+  @Test
+  fun `remove() returns null as background cleanup occurs`() = verifyAsValuesAreGarbageCollected(
+    onIteration = { _, _ ->  },
+    verify = { map, _, populatedKeys ->
+      populatedKeys.sorted().shuffled().forEach {
+        map.remove(it).shouldBeNull()
+      }
+    }
+  )
+
+  @Test
+  fun `remove() returns null as garbage collection occurs without cleanup`() {
+    var currentMap: SuspendingWeakValueHashMap<*,*>? = null
+    var currentRemainingKeys: MutableSet<Int>? = null
+
+    return verifyAsCleanupLoopIsStalledAndValuesAreGarbageCollected(
+      onIteration = run {
+        { map, populatedKeys ->
+          if (currentMap !== map) {
+            currentMap = map
+            currentRemainingKeys = populatedKeys.toMutableSet()
+          }
+          currentRemainingKeys!!.forEach { key ->
+            if (map.get(key) === null) {
+              map.remove(key).shouldBeNull()
+            }
+          }
+        }
+      },
+      verify = { map, _, _ ->
+        check(map === currentMap)
+        currentMap = null
+        currentRemainingKeys!!.shouldBeEmpty()
+        currentRemainingKeys = null
+      }
+    )
+  }
+
+
+
+  @Test
+  fun `clear() returns 0 on an new instance`() = verifyWithNewInstance {
+    it.clear() shouldBe 0
+  }
+
+  @Test
+  fun `clear() returns 0 on an empty but previously non-empty instance`() = verifyWithEmptyButPreviouslyNonEmptyInstance {
+    it.clear() shouldBe 0
+  }
+
+  @Test
+  fun `clear() returns 0 on a closed instance that was _never_ populated`() = verifyWithClosedInstanceThatWasNeverPopulated {
+    it.clear() shouldBe 0
+  }
+
+  @Test
+  fun `clear() returns 0 on a closed instance that _was_ populated`() = verifyWithClosedInstanceThatWasPopulated {
+    it.clear() shouldBe 0
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  @Test
+  fun `clear() causes get(key) to return null`() = verifyWithPopulatedMap { map, populatedValues ->
+    map.clear()
+    populatedValues.keys.shuffled().forEach { map.get(it).shouldBeNull() }
+  }
+
+  @Test
+  fun `clear() causes size() to return 0`() = verifyWithPopulatedMap { map, _ ->
       map.clear()
-
       map.size() shouldBe 0
-      map.close()
-    }
   }
 
   @Test
-  fun `clear() returns the number of key-value pairs removed`() = runTest {
-    checkAll(propTestConfig, Arb.int(0..50), Arb.randomSeed()) { size, randomSeed ->
-      val map = SuspendingWeakValueHashMap<Int, Value>(cleanupThreadFactory)
-      cleanups.registerSuspending { map.close() }
-      map.populate(size = size, randomSeed = randomSeed)
-
-      map.clear() shouldBe size
-
-      map.close()
-    }
+  fun `clear() returns the number of key-value pairs removed`() = verifyWithPopulatedMap { map, populatedValues ->
+    map.clear() shouldBe populatedValues.size
   }
 
-  @Test
-  fun `close() on a new instance causes all other methods to throw`() = runTest {
-    val map = SuspendingWeakValueHashMap<Int, Value>(cleanupThreadFactory)
-    map.close()
-
-    map.verifyAllMethodsThrowIllegalStateException()
-  }
 
   @Test
-  fun `close() on a populated instance causes all other methods to throw`() = runTest {
-    val map = SuspendingWeakValueHashMap<Int, Value>(cleanupThreadFactory)
-    cleanups.registerSuspending { map.close() }
-    map.populate()
-    map.close()
-
-    map.verifyAllMethodsThrowIllegalStateException()
-  }
-
-  @Test
-  fun `close() can be called multiple times`() = runTest {
-    val map = SuspendingWeakValueHashMap<Int, Value>(cleanupThreadFactory)
+  fun `close() can be called multiple times before put()`() = runTest {
+    val map = SuspendingWeakValueHashMap<Int, Value>(blockingDispatcher)
 
     repeat(10) { map.close() }
   }
 
   @Test
-  fun `cleanup thread cleans up garbage collected values`() = runTest {
-    val map = SuspendingWeakValueHashMap<Int, Value>(cleanupThreadFactory)
-    cleanups.registerSuspending { map.close() }
+  fun `close() can be called multiple times after put()`() = runTest {
+    val map = SuspendingWeakValueHashMap<Int, Value>(blockingDispatcher)
+    cleanups.register(map)
+    map.startCleanupJob(backgroundScope)
+    map.put(Arb.int().next(), valueArb().next())
 
-    map.put(1, Value("gc-test"))
-
-    repeat(50) {
-      if (map.size() != 0) {
-        System.gc()
-        delayIgnoringTestScheduler(50.milliseconds)
-      }
-    }
-
-    map.size() shouldBe 0
-    map.get(1) shouldBe null
+    repeat(10) { map.close() }
   }
 
   @Test
-  fun `cleanup thread is not started until first use`() = runTest {
-    val underlyingThreadFactory = cleanupThreadFactory
-    val threadRef = MutableStateFlow(NullableReference<Thread>())
-    val cleanupThreadFactory = ThreadFactory {
-      val thread = underlyingThreadFactory.newThread(it)
-      threadRef.value = NullableReference(thread)
-      thread
-    }
-    val map = SuspendingWeakValueHashMap<Int, Value>(cleanupThreadFactory)
-    cleanups.registerSuspending { map.close() }
-    threadRef.value.ref.shouldBeNull()
-
-    map.put(1, valueArb().next())
-
-    threadRef.value.ref.shouldNotBeNull()
-  }
-
-  @Test
-  fun `cleanup thread is stopped by close()`() = runTest {
-    val underlyingThreadFactory = cleanupThreadFactory
-    val threadRef = MutableStateFlow(NullableReference<Thread>())
-    val cleanupThreadFactory = ThreadFactory {
-      val thread = underlyingThreadFactory.newThread(it)
-      threadRef.value = NullableReference(thread)
-      thread
-    }
-    val map = SuspendingWeakValueHashMap<Int, Value>(cleanupThreadFactory)
-    cleanups.registerSuspending { map.close() }
-    threadRef.value.ref.shouldBeNull()
-    map.put(1, valueArb().next())
+  fun `cleanupLoop thread is cancelled by close()`() = runTest {
+    val map = SuspendingWeakValueHashMap<Int, Value>(blockingDispatcher)
+    cleanups.register(map)
+    val cleanupJob = map.startCleanupJob(backgroundScope)
 
     map.close()
 
-    threadRef.value.ref.shouldNotBeNull().let { thread ->
-      thread.join(1000)
-      thread.state shouldBe Thread.State.TERMINATED
-    }
+    cleanupJob.isCancelled shouldBe true
   }
 
   @Test
-  fun `cleanup thread ignores stale values`() = runTest {
-    val map = SuspendingWeakValueHashMap<Int, Value>(cleanupThreadFactory)
-    cleanups.registerSuspending { map.close() }
+  fun `cleanup loop ignores stale values`() = runTest {
+    val map = SuspendingWeakValueHashMap<Int, Value>(blockingDispatcher)
+    cleanups.register(map)
+    map.startCleanupJob(backgroundScope)
     val key = Arb.int().next()
     val (weakValue1, value2) =
       run {
@@ -650,8 +716,8 @@ class SuspendingWeakValueHashMapUnitTest {
 
   @Test
   fun `thread safety of put, get, and remove`() = runTest {
-    val map = SuspendingWeakValueHashMap<Int, Value>(cleanupThreadFactory)
-    cleanups.registerSuspending { map.close() }
+    val map = SuspendingWeakValueHashMap<Int, Value>(blockingDispatcher)
+    cleanups.register(map)
     val mutex = Mutex()
     val candidateValues = Arb.int().distinct().take(5).associateWith { mutableListOf<Value?>() }
     val latch = SuspendingCountDownLatch(50)
@@ -683,25 +749,18 @@ class SuspendingWeakValueHashMapUnitTest {
     }
   }
 
-  /** A [ThreadFactory] that always returns a new thread whose run() method returns immediately. */
-  val noopThreadFactory: ThreadFactory
-    get() = ThreadFactory { Thread(testName.methodName) }
-
-  private val cleanupThreadFactory
-    get() = ThreadFactory {
-      Thread(it).apply {
-        name = "${testName.methodName}-cleanup"
-        isDaemon = true
-      }
-    }
 }
 
 private val propTestConfig = PropTestConfig(iterations = 500, shrinkingMode = ShrinkingMode.Off)
+
+private val blockingDispatcher = Dispatchers.IO
 
 private fun valueArb(string: Arb<String> = Arb.usernames().map { it.value }): Arb<Value> =
   string.map(::Value)
 
 private data class Value(val string: String)
+
+private suspend fun SuspendingWeakValueHashMap<Int, Value>.populate(size: Int, rs: RandomSource,): Map<Int, Value> = populate(size=size, randomSeed = rs.random.nextLong())
 
 private suspend fun SuspendingWeakValueHashMap<Int, Value>.populate(
   size: Int = propTestConfig.iterations!!,
