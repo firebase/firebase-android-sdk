@@ -29,8 +29,6 @@ interface MultipleValues<T> : Iterable<T> {
   override fun iterator(): Iterator<T> = toList().iterator()
 }
 
-fun <T> MultipleValues<T>.iterator(): Iterator<T> = toList().iterator()
-
 fun <T : Comparable<T>> MultipleValues<T>.sorted(): List<T> = toList().sorted()
 
 data class TwoValues<T>(val value1: T, val value2: T) : MultipleValues<T> {
