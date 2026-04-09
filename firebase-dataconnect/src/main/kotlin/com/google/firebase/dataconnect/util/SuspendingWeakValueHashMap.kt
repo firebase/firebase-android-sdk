@@ -16,6 +16,9 @@
 
 package com.google.firebase.dataconnect.util
 
+import java.lang.ref.ReferenceQueue
+import java.lang.ref.WeakReference
+import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
@@ -25,9 +28,6 @@ import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import java.lang.ref.ReferenceQueue
-import java.lang.ref.WeakReference
-import java.util.concurrent.atomic.AtomicReference
 
 /**
  * A thread-safe, coroutine-aware map that holds weak references to its values.
@@ -45,8 +45,12 @@ import java.util.concurrent.atomic.AtomicReference
  *
  * @param K the type of keys maintained by this map.
  * @param V the type of mapped values, which must be a reference type.
+ * @param blockingDispatcher the [CoroutineDispatcher] to use for the blocking operations in the
+ * background cleanup loop (e.g., `Dispatchers.IO`).
  */
-internal class SuspendingWeakValueHashMap<K, V : Any>(private val blockingDispatcher: CoroutineDispatcher) : AutoCloseable {
+internal class SuspendingWeakValueHashMap<K, V : Any>(
+  private val blockingDispatcher: CoroutineDispatcher
+) : AutoCloseable {
 
   private val state = AtomicReference<State<K, V>>(State.New())
 
@@ -55,7 +59,8 @@ internal class SuspendingWeakValueHashMap<K, V : Any>(private val blockingDispat
    *
    * @param key the key whose associated value is to be returned.
    * @return the value to which the specified key is mapped, or `null` if this map contains no
-   * mapping for the key, the value has been garbage collected, or [close] has been called.
+   * mapping for the key, the value has been garbage collected, [runCleanupLoop] has not been
+   * called, or [close] has been called.
    */
   suspend fun get(key: K): V? =
     runLockedWithMapIfAvailable(resultIfMapNotAvailable = null) { map -> map[key]?.get() }
@@ -64,8 +69,9 @@ internal class SuspendingWeakValueHashMap<K, V : Any>(private val blockingDispat
    * Removes the mapping for the given key, if present.
    *
    * @param key the key whose mapping to remove.
-   * @return the previous value associated with the given key, or `null` if there was no mapping
-   * for the key, the previous value was garbage collected, or [close] has been called.
+   * @return the previous value associated with the given key, or `null` if there was no mapping for
+   * the key, the previous value was garbage collected, [runCleanupLoop] has not been called, or
+   * [close] has been called.
    */
   suspend fun remove(key: K): V? =
     runLockedWithMapIfAvailable(resultIfMapNotAvailable = null) { map ->
@@ -81,7 +87,8 @@ internal class SuspendingWeakValueHashMap<K, V : Any>(private val blockingDispat
    * The map will be empty after this call returns, which includes entries whose values have been
    * garbage collected but have not yet been removed by [runCleanupLoop].
    *
-   * @return the number of key/value pairs removed, or `0` if [close] has been called.
+   * @return the number of key/value pairs removed, or `0` if [runCleanupLoop] has not been called
+   * or [close] has been called.
    */
   suspend fun clear(): Int =
     runLockedWithMapIfAvailable(resultIfMapNotAvailable = 0) { map ->
@@ -95,9 +102,10 @@ internal class SuspendingWeakValueHashMap<K, V : Any>(private val blockingDispat
    * Returns the number of key-value mappings.
    *
    * Note that this count includes entries whose values have been garbage collected but have not yet
-   * been removed [runCleanupLoop].
+   * been removed by [runCleanupLoop].
    *
-   * @return the number of key-value mappings in this map, or `0` if [close] has been called.
+   * @return the number of key-value mappings in this map, or `0` if [runCleanupLoop] has not been
+   * called or [close] has been called.
    */
   suspend fun size(): Int =
     runLockedWithMapIfAvailable(resultIfMapNotAvailable = 0) { map -> map.size }
@@ -172,9 +180,7 @@ internal class SuspendingWeakValueHashMap<K, V : Any>(private val blockingDispat
         }
     }
 
-  /**
-   * Closes this map and cancels the background cleanup loop.
-   */
+  /** Closes this map and cancels the background cleanup loop. */
   override fun close() {
     while (true) {
       val currentState = state.get()
