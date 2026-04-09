@@ -49,7 +49,7 @@ internal class DataConnectGrpcClient(
   val instanceId: String
     get() = logger.nameWithId
 
-  private val requestName =
+  private val connectorResourceName =
     "projects/$projectId/" +
       "locations/${connector.location}" +
       "/services/${connector.serviceId}" +
@@ -69,7 +69,7 @@ internal class DataConnectGrpcClient(
     fetchPolicy: FetchPolicy,
   ): OperationResult {
     val request = executeQueryRequest {
-      this.name = requestName
+      this.name = connectorResourceName
       this.operationName = operationName
       this.variables = variables
     }
@@ -90,7 +90,7 @@ internal class DataConnectGrpcClient(
     callerSdkType: FirebaseDataConnect.CallerSdkType,
   ): OperationResult {
     val request = executeMutationRequest {
-      this.name = requestName
+      this.name = connectorResourceName
       this.operationName = operationName
       this.variables = variables
     }

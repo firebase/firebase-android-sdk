@@ -196,14 +196,14 @@ class DataConnectGrpcClientUnitTest {
         fetchPolicy
       )
 
-      val expectedName =
+      val expectedConnectorResourceName =
         "projects/${projectId}" +
           "/locations/${connectorConfig.location}" +
           "/services/${connectorConfig.serviceId}" +
           "/connectors/${connectorConfig.connector}"
       val expectedRequest =
         ExecuteQueryRequest.newBuilder()
-          .setName(expectedName)
+          .setName(expectedConnectorResourceName)
           .setOperationName(operationName)
           .setVariables(variables)
           .build()
@@ -230,14 +230,14 @@ class DataConnectGrpcClientUnitTest {
   fun `executeMutation() should send the right ExecuteMutationRequest`() = runTest {
     dataConnectGrpcClient.executeMutation(requestId, operationName, variables, callerSdkType)
 
-    val expectedName =
+    val expectedConnectorResourceName =
       "projects/${projectId}" +
         "/locations/${connectorConfig.location}" +
         "/services/${connectorConfig.serviceId}" +
         "/connectors/${connectorConfig.connector}"
     val expectedRequest =
       ExecuteMutationRequest.newBuilder()
-        .setName(expectedName)
+        .setName(expectedConnectorResourceName)
         .setOperationName(operationName)
         .setVariables(variables)
         .build()
