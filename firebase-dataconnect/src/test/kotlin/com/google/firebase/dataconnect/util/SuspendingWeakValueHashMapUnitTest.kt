@@ -747,6 +747,7 @@ class SuspendingWeakValueHashMapUnitTest {
   fun `thread safety of put, get, and remove`() = runTest {
     val map = SuspendingWeakValueHashMap<Int, Value>(blockingDispatcher)
     cleanups.register(map)
+    map.startCleanupJob(backgroundScope)
     val mutex = Mutex()
     val candidateValues = Arb.int().distinct().take(5).associateWith { mutableListOf<Value?>() }
     val latch = SuspendingCountDownLatch(50)
