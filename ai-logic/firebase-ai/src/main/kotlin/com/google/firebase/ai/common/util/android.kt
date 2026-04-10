@@ -42,10 +42,10 @@ internal fun AudioRecord.readAsFlow() = flow {
       delay(20)
       continue
     }
-    
+
     // Use non-blocking read to avoid leaking threads if the hardware blocks
     val bytesRead = read(buffer, 0, buffer.size, AudioRecord.READ_NON_BLOCKING)
-    
+
     if (bytesRead > 0) {
       emit(buffer.copyOf(bytesRead))
     } else if (bytesRead == 0) {
