@@ -210,7 +210,7 @@ internal class DataConnectGrpcRPCs(
           kotlinMethodName = kotlinMethodName,
           grpcMethod = ConnectorStreamServiceGrpc.getConnectMethod(),
           metadata = metadata,
-          request = initRequest.toStructProto(),
+          request = initRequest.toStructProto(authToken?.authUid),
           requestTypeName = "StreamRequest",
           authUid = authToken?.authUid,
         )
@@ -220,6 +220,7 @@ internal class DataConnectGrpcRPCs(
           requestId = request.requestId,
           kotlinMethodName = kotlinMethodName,
           request = request,
+          authUid = authToken?.authUid,
         )
       }
     }
@@ -309,7 +310,7 @@ internal class DataConnectGrpcRPCs(
           kotlinMethodName = kotlinMethodName,
           grpcMethod = ConnectorStreamServiceGrpc.getConnectMethod(),
           metadata = metadata,
-          request = initRequest.toStructProto(),
+          request = initRequest.toStructProto(authToken?.authUid),
           requestTypeName = "StreamRequest",
           authUid = authToken?.authUid,
         )
@@ -319,6 +320,7 @@ internal class DataConnectGrpcRPCs(
           requestId = request.requestId,
           kotlinMethodName = kotlinMethodName,
           request = request,
+          authUid = authToken?.authUid,
         )
       }
     }
@@ -598,9 +600,10 @@ internal class DataConnectGrpcRPCs(
       requestId: String,
       kotlinMethodName: String,
       request: StreamRequest,
+      authUid: String?
     ) = debug {
       "$kotlinMethodName [sid=$streamId, rid=$requestId] sending StreamRequest: " +
-        request.toCompactString()
+        request.toCompactString(authUid)
     }
 
     fun Logger.logGrpcReceivedStreaming(

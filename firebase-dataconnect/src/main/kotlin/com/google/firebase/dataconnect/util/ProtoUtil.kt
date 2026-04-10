@@ -296,10 +296,11 @@ internal object ProtoUtil {
     }
 
   fun StreamRequest.toCompactString(
-    keySortSelector: ((String) -> String)? = ::streamRequestKeySortSelector
-  ): String = toStructProto().toCompactString(keySortSelector)
+    authUid: String?,
+    keySortSelector: ((String) -> String)? = ::streamRequestKeySortSelector,
+  ): String = toStructProto(authUid).toCompactString(keySortSelector)
 
-  fun StreamRequest.toStructProto(): Struct = buildStructProto {
+  fun StreamRequest.toStructProto(authUid: String?): Struct = buildStructProto {
     connectorResourceName.takeIf { it.isNotEmpty() }?.let { put("name", it) }
     requestId.takeIf { it.isNotEmpty() }?.let { put("requestId", it) }
     dataEtag.takeIf { it.isNotEmpty() }?.let { put("data_etag", it) }
@@ -313,7 +314,7 @@ internal object ProtoUtil {
     }
 
     if (headersCount > 0) {
-      putHeaders("headers", headersMap)
+      putHeaders(authUid, "headers", headersMap)
     }
   }
 

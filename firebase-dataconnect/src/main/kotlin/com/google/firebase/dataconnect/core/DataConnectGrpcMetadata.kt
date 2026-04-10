@@ -133,7 +133,7 @@ internal class DataConnectGrpcMetadata(
 
     // TODO: Move this to ProtoUtil.kt where it would live alongside other related methods.
     // NOTE: Keep the implementation of this method in parity with Metadata.toStructProto().
-    fun StructProtoBuilder.putHeaders(key: String, headers: Map<String, String>) {
+    fun StructProtoBuilder.putHeaders(authUid: String?, key: String, headers: Map<String, String>) {
       putStruct(key) {
         val keys: List<String> =
           buildSet {
@@ -150,7 +150,7 @@ internal class DataConnectGrpcMetadata(
           val scrubbedValue =
             value?.let {
               when (key) {
-                firebaseAuthTokenHeader.name() -> it.toScrubbedAccessToken()
+                firebaseAuthTokenHeader.name() -> it.toScrubbedAccessToken() + " (authUid=$authUid)"
                 firebaseAppCheckTokenHeader.name() -> it.toScrubbedAccessToken()
                 else -> it
               }
