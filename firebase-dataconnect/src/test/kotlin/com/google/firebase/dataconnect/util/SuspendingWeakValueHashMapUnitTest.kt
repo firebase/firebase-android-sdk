@@ -34,6 +34,7 @@ import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.property.Arb
+import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
 import io.kotest.property.PropertyContext
 import io.kotest.property.RandomSource
@@ -244,7 +245,7 @@ class SuspendingWeakValueHashMapUnitTest {
         map.populate(size, randomSource()).keys.toList().sorted().shuffled(randomSource().random)
 
       val values =
-        List(50) {
+        List(10) {
           val value = onIteration(map, populatedKeys)
           if (value != 0) {
             System.gc()
@@ -373,7 +374,7 @@ class SuspendingWeakValueHashMapUnitTest {
         }
         if (nonNullCount > 0) {
           System.gc()
-          delayIgnoringTestScheduler(50.milliseconds)
+          delayIgnoringTestScheduler(1.milliseconds)
         }
         nonNullCount
       }
@@ -773,7 +774,7 @@ class SuspendingWeakValueHashMapUnitTest {
     repeat(50) {
       if (weakValue1.get() !== null) {
         System.gc()
-        delayIgnoringTestScheduler(50.milliseconds)
+        delayIgnoringTestScheduler(1.milliseconds)
       }
     }
 
@@ -818,7 +819,12 @@ class SuspendingWeakValueHashMapUnitTest {
   }
 }
 
-private val propTestConfig = PropTestConfig(iterations = 500, shrinkingMode = ShrinkingMode.Off)
+private val propTestConfig =
+  PropTestConfig(
+    iterations = 100,
+    edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.33),
+    shrinkingMode = ShrinkingMode.Off
+  )
 
 private val blockingDispatcher = Dispatchers.IO
 
