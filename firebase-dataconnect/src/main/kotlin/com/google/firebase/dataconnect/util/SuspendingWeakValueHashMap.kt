@@ -16,13 +16,16 @@
 
 package com.google.firebase.dataconnect.util
 
+import android.util.Log
 import java.lang.ref.ReferenceQueue
 import java.lang.ref.WeakReference
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
@@ -33,8 +36,10 @@ import kotlinx.coroutines.sync.withLock
 /**
  * A thread-safe, coroutine-aware map that holds weak references to its values.
  *
- * Entries in this map are automatically removed when their values are garbage collected. To enable
- * this automatic removal, a background cleanup loop must be started by calling [runCleanupLoop].
+ * Entries in this map are eventually removed when their values are garbage collected. This
+ * automatic removal requires a background cleanup job to run in a blocking fashion, hence the
+ * requirement of a [CoroutineDispatcher] constructor parameter. This background cleanup job is
+ * stopped by calling [close].
  *
  * This class is useful for caching objects that should be shared as long as they are referenced
  * elsewhere, but allowed to be reclaimed by the garbage collector otherwise.
@@ -45,25 +50,38 @@ import kotlinx.coroutines.sync.withLock
  * called and/or accessed concurrently from multiple threads and/or coroutines.
  *
  * @param K the type of keys maintained by this map.
- * @param V the type of mapped values, which must be a reference type.
+ * @param V the type of mapped values.
  * @param blockingDispatcher the [CoroutineDispatcher] to use for the blocking operations in the
- * [runCleanupLoop] background cleanup loop (e.g., `Dispatchers.IO`).
+ * background cleanup job. Long-running blocking operations will be done on the dispatcher, so it is
+ * strongly recommended to use an "elastic" dispatcher, like [kotlinx.coroutines.Dispatchers.IO].
  */
 internal class SuspendingWeakValueHashMap<K, V : Any>(
-  coroutineScope: CoroutineScope,
   blockingDispatcher: CoroutineDispatcher,
 ) : AutoCloseable {
 
   private val state =
-    MutableStateFlow<State<K, V>>(State.Uninitialized(coroutineScope, blockingDispatcher))
+    MutableStateFlow<State<K, V>>(
+      State.Uninitialized(
+        CoroutineScope(
+          SupervisorJob() +
+            blockingDispatcher +
+            CoroutineName("SuspendingWeakValueHashMap") +
+            CoroutineExceptionHandler { context, throwable ->
+              Log.w(
+                "uncaught exception from a coroutine named ${context[CoroutineName]?.name} [e3kr5myemq]",
+                throwable
+              )
+            }
+        )
+      )
+    )
 
   /**
    * Returns the value corresponding to the given key.
    *
    * @param key the key whose associated value is to be returned.
    * @return the value to which the specified key is mapped, or `null` if this map contains no
-   * mapping for the key, the value has been garbage collected, [runCleanupLoop] has not been
-   * called, or [close] has been called.
+   * mapping for the key, the value has been garbage collected, or [close] has been called.
    */
   suspend fun get(key: K): V? =
     runLockedWithMapIfAvailable(resultIfMapNotAvailable = null) { map -> map[key]?.get() }
@@ -73,8 +91,7 @@ internal class SuspendingWeakValueHashMap<K, V : Any>(
    *
    * @param key the key whose mapping to remove.
    * @return the previous value associated with the given key, or `null` if there was no mapping for
-   * the key, the previous value was garbage collected, [runCleanupLoop] has not been called, or
-   * [close] has been called.
+   * the key, the previous value was garbage collected, or [close] has been called.
    */
   suspend fun remove(key: K): V? =
     runLockedWithMapIfAvailable(resultIfMapNotAvailable = null) { map ->
@@ -88,10 +105,9 @@ internal class SuspendingWeakValueHashMap<K, V : Any>(
    * Removes all mappings.
    *
    * The map will be empty after this call returns, which includes entries whose values have been
-   * garbage collected but have not yet been removed by [runCleanupLoop].
+   * garbage collected but have not yet been removed by the background cleanup job.
    *
-   * @return the number of key/value pairs removed, or `0` if [runCleanupLoop] has not been called
-   * or [close] has been called.
+   * @return the number of key/value pairs removed, or `0` if [close] has been called.
    */
   suspend fun clear(): Int =
     runLockedWithMapIfAvailable(resultIfMapNotAvailable = 0) { map ->
@@ -105,10 +121,9 @@ internal class SuspendingWeakValueHashMap<K, V : Any>(
    * Returns the number of key-value mappings.
    *
    * Note that this count includes entries whose values have been garbage collected but have not yet
-   * been removed by [runCleanupLoop].
+   * been removed by the background cleanup job.
    *
-   * @return the number of key-value mappings in this map, or `0` if [runCleanupLoop] has not been
-   * called or [close] has been called.
+   * @return the number of key-value mappings in this map, or `0` if [close] has been called.
    */
   suspend fun size(): Int =
     runLockedWithMapIfAvailable(resultIfMapNotAvailable = 0) { map -> map.size }
@@ -124,8 +139,7 @@ internal class SuspendingWeakValueHashMap<K, V : Any>(
    * @param value the value to be associated with the given key.
    * @return the previous value associated with the given key, or `null` if there was no mapping for
    * the key or if the previous value was garbage collected.
-   * @throws IllegalStateException if [runCleanupLoop] has not been called or if [close] has been
-   * called.
+   * @throws IllegalStateException if [close] has been called.
    */
   suspend fun put(key: K, value: V): V? = withOpenState {
     cleanupJob.start()
@@ -167,7 +181,7 @@ internal class SuspendingWeakValueHashMap<K, V : Any>(
 
     val cleanupJob =
       coroutineScope.launch(
-        blockingDispatcher + CoroutineName("SuspendingWeakValueHashMap_CleanupJob"),
+        CoroutineName("SuspendingWeakValueHashMap_CleanupJob"),
         CoroutineStart.LAZY,
       ) {
         while (true) {
@@ -178,7 +192,7 @@ internal class SuspendingWeakValueHashMap<K, V : Any>(
         }
       }
 
-    return State.Open(cleanupJob, mutex, map, referenceQueue)
+    return State.Open(coroutineScope, cleanupJob, mutex, map, referenceQueue)
   }
 
   /** Closes this map and cancels the background cleanup loop. */
@@ -189,7 +203,8 @@ internal class SuspendingWeakValueHashMap<K, V : Any>(
       when (currentState) {
         is State.Closed -> return
         is State.Uninitialized -> {}
-        is State.Open -> currentState.cleanupJob.cancel("SuspendingWeakValueHashMap.close() called")
+        is State.Open ->
+          currentState.coroutineScope.cancel("SuspendingWeakValueHashMap.close() called")
       }
 
       if (state.compareAndSet(currentState, State.Closed())) {
@@ -215,12 +230,10 @@ internal class SuspendingWeakValueHashMap<K, V : Any>(
   ) : WeakReference<V>(value, referenceQueue)
 
   private sealed interface State<K, V : Any> {
-    class Uninitialized<K, V : Any>(
-      val coroutineScope: CoroutineScope,
-      val blockingDispatcher: CoroutineDispatcher,
-    ) : State<K, V>
+    class Uninitialized<K, V : Any>(val coroutineScope: CoroutineScope) : State<K, V>
 
     class Open<K, V : Any>(
+      val coroutineScope: CoroutineScope,
       val cleanupJob: Job,
       val mutex: Mutex,
       val map: MutableMap<K, ValueReference<K, V>>,

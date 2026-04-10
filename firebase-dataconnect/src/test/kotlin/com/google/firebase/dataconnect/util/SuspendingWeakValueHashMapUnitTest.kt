@@ -50,7 +50,6 @@ import io.kotest.property.arbitrary.orNull
 import io.kotest.property.arbitrary.take
 import io.kotest.property.arbs.usernames
 import io.kotest.property.checkAll
-import io.mockk.mockk
 import java.lang.ref.WeakReference
 import java.util.concurrent.Executors
 import java.util.concurrent.locks.ReentrantLock
@@ -128,7 +127,7 @@ class SuspendingWeakValueHashMapUnitTest {
   private fun verifyWithNewInstance(
     verify: suspend (SuspendingWeakValueHashMap<Int, Value>) -> Unit
   ) = runTest {
-    val map = SuspendingWeakValueHashMap<Int, Value>(backgroundScope, blockingDispatcher)
+    val map = SuspendingWeakValueHashMap<Int, Value>(blockingDispatcher)
     cleanups.register(map)
     verify(map)
   }
@@ -137,7 +136,7 @@ class SuspendingWeakValueHashMapUnitTest {
     verify: suspend (SuspendingWeakValueHashMap<Int, Value>) -> Unit
   ) = runTest {
     checkAll(propTestConfig, Arb.int(0..50)) { size ->
-      val map = SuspendingWeakValueHashMap<Int, Value>(backgroundScope, blockingDispatcher)
+      val map = SuspendingWeakValueHashMap<Int, Value>(blockingDispatcher)
       val cleanupRegistration = cleanups.register(map)
       map.populate(size, randomSource())
       map.clear()
@@ -150,7 +149,7 @@ class SuspendingWeakValueHashMapUnitTest {
   private fun verifyWithClosedInstanceThatWasNeverPopulated(
     verify: suspend (SuspendingWeakValueHashMap<Int, Value>) -> Unit
   ) = runTest {
-    val map = SuspendingWeakValueHashMap<Int, Value>(mockk(), mockk())
+    val map = SuspendingWeakValueHashMap<Int, Value>(blockingDispatcher)
     map.close()
     verify(map)
   }
@@ -159,7 +158,7 @@ class SuspendingWeakValueHashMapUnitTest {
     verify: suspend (SuspendingWeakValueHashMap<Int, Value>) -> Unit
   ) = runTest {
     checkAll(propTestConfig, Arb.int(0..50)) { size ->
-      val map = SuspendingWeakValueHashMap<Int, Value>(backgroundScope, blockingDispatcher)
+      val map = SuspendingWeakValueHashMap<Int, Value>(blockingDispatcher)
       val cleanupRegistration = cleanups.register(map)
       map.populate(size, randomSource())
       map.close()
@@ -173,7 +172,7 @@ class SuspendingWeakValueHashMapUnitTest {
     verify: suspend (SuspendingWeakValueHashMap<Int, Value>, Map<Int, Value>) -> Unit
   ) = runTest {
     checkAll(propTestConfig, Arb.int(1..50)) { size ->
-      val map = SuspendingWeakValueHashMap<Int, Value>(backgroundScope, blockingDispatcher)
+      val map = SuspendingWeakValueHashMap<Int, Value>(blockingDispatcher)
       val cleanupRegistration = cleanups.register(map)
       val populatedValues = map.populate(size, randomSource())
       verify(map, populatedValues)
@@ -235,7 +234,7 @@ class SuspendingWeakValueHashMapUnitTest {
     iterations: Int
   ) = runTest {
     checkAll(propTestConfig.withIterations(iterations), Arb.int(0..50)) { size ->
-      val map = SuspendingWeakValueHashMap<Int, Value>(backgroundScope, mapCoroutineDispatcher)
+      val map = SuspendingWeakValueHashMap<Int, Value>(mapCoroutineDispatcher)
       val cleanupRegistration = cleanups.register(map)
       val populatedKeys =
         map.populate(size, randomSource()).keys.toList().sorted().shuffled(randomSource().random)
@@ -281,7 +280,7 @@ class SuspendingWeakValueHashMapUnitTest {
 
   @Test
   fun `get() returns the value specified to put()`() = runTest {
-    val map = SuspendingWeakValueHashMap<Int, Value>(backgroundScope, blockingDispatcher)
+    val map = SuspendingWeakValueHashMap<Int, Value>(blockingDispatcher)
     cleanups.register(map)
     val valueStrongReferences = mutableListOf<Value>()
 
@@ -295,7 +294,7 @@ class SuspendingWeakValueHashMapUnitTest {
 
   @Test
   fun `get() returns the most recent value specified to put()`() = runTest {
-    val map = SuspendingWeakValueHashMap<Int, Value>(backgroundScope, blockingDispatcher)
+    val map = SuspendingWeakValueHashMap<Int, Value>(blockingDispatcher)
     cleanups.register(map)
     val valueStrongReferences = mutableListOf<Value>()
 
@@ -311,7 +310,7 @@ class SuspendingWeakValueHashMapUnitTest {
 
   @Test
   fun `get() returns null for keys never specified to put()`() = runTest {
-    val map = SuspendingWeakValueHashMap<Int, Value>(backgroundScope, blockingDispatcher)
+    val map = SuspendingWeakValueHashMap<Int, Value>(blockingDispatcher)
     cleanups.register(map)
     val expectedMap = mutableMapOf<Int, Value>()
 
@@ -326,7 +325,7 @@ class SuspendingWeakValueHashMapUnitTest {
 
   @Test
   fun `get(key) returns null after remove(key)`() = runTest {
-    val map = SuspendingWeakValueHashMap<Int, Value>(backgroundScope, blockingDispatcher)
+    val map = SuspendingWeakValueHashMap<Int, Value>(blockingDispatcher)
     cleanups.register(map)
     val populatedData = map.populate()
 
@@ -339,7 +338,7 @@ class SuspendingWeakValueHashMapUnitTest {
 
   @Test
   fun `get() returns null after clear()`() = runTest {
-    val map = SuspendingWeakValueHashMap<Int, Value>(backgroundScope, blockingDispatcher)
+    val map = SuspendingWeakValueHashMap<Int, Value>(blockingDispatcher)
     cleanups.register(map)
     val populatedData = map.populate()
 
@@ -350,7 +349,7 @@ class SuspendingWeakValueHashMapUnitTest {
 
   @Test
   fun `get() returns null values after background cleanup`() = runTest {
-    val map = SuspendingWeakValueHashMap<Int, Value>(backgroundScope, blockingDispatcher)
+    val map = SuspendingWeakValueHashMap<Int, Value>(blockingDispatcher)
     cleanups.register(map)
     val keys = map.populate().keys.toList()
 
@@ -478,7 +477,7 @@ class SuspendingWeakValueHashMapUnitTest {
 
   @Test
   fun `put() increments size if key was not previously mapped`() = runTest {
-    val map = SuspendingWeakValueHashMap<Int, Value>(backgroundScope, blockingDispatcher)
+    val map = SuspendingWeakValueHashMap<Int, Value>(blockingDispatcher)
     cleanups.register(map)
     val populatedData = map.populate()
     var expectedSize = populatedData.size
@@ -720,14 +719,14 @@ class SuspendingWeakValueHashMapUnitTest {
 
   @Test
   fun `close() can be called multiple times before put()`() = runTest {
-    val map = SuspendingWeakValueHashMap<Int, Value>(backgroundScope, blockingDispatcher)
+    val map = SuspendingWeakValueHashMap<Int, Value>(blockingDispatcher)
 
     repeat(10) { map.close() }
   }
 
   @Test
   fun `close() can be called multiple times after put()`() = runTest {
-    val map = SuspendingWeakValueHashMap<Int, Value>(backgroundScope, blockingDispatcher)
+    val map = SuspendingWeakValueHashMap<Int, Value>(blockingDispatcher)
     cleanups.register(map)
     map.put(Arb.int().next(), valueArb().next())
 
@@ -736,7 +735,7 @@ class SuspendingWeakValueHashMapUnitTest {
 
   @Test
   fun `cleanup loop ignores stale values`() = runTest {
-    val map = SuspendingWeakValueHashMap<Int, Value>(backgroundScope, blockingDispatcher)
+    val map = SuspendingWeakValueHashMap<Int, Value>(blockingDispatcher)
     cleanups.register(map)
     val key = Arb.int().next()
     val (weakValue1, value2) =
@@ -760,7 +759,7 @@ class SuspendingWeakValueHashMapUnitTest {
 
   @Test
   fun `thread safety of put, get, and remove`() = runTest {
-    val map = SuspendingWeakValueHashMap<Int, Value>(backgroundScope, blockingDispatcher)
+    val map = SuspendingWeakValueHashMap<Int, Value>(blockingDispatcher)
     cleanups.register(map)
     val mutex = Mutex()
     val candidateValues = Arb.int().distinct().take(5).associateWith { mutableListOf<Value?>() }
