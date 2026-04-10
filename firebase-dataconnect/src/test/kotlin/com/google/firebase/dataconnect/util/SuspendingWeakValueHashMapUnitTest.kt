@@ -51,6 +51,7 @@ import io.kotest.property.arbitrary.take
 import io.kotest.property.arbs.usernames
 import io.kotest.property.checkAll
 import io.mockk.mockk
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.asCoroutineDispatcher
@@ -65,8 +66,11 @@ import org.junit.Test
 import org.junit.rules.TestName
 import java.lang.ref.WeakReference
 import java.util.concurrent.Executors
+import java.util.concurrent.locks.ReentrantLock
 import kotlin.random.Random
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.nanoseconds
 
 class SuspendingWeakValueHashMapUnitTest {
 
@@ -112,7 +116,9 @@ class SuspendingWeakValueHashMapUnitTest {
 
   @Test
   fun `size() does not return smaller values as garbage collection occurs without cleanup`() = verifyAsCleanupLoopIsStalledAndValuesAreGarbageCollected(
-    onIteration = { map, _ -> map.size() },
+    onIteration = { map, _ ->
+      map.size()
+                  },
     verify = { _, sizes, populatedKeys ->
       val expectedSizes = List(sizes.size) { populatedKeys.size }
       sizes shouldContainExactly expectedSizes
@@ -169,30 +175,28 @@ class SuspendingWeakValueHashMapUnitTest {
     }
   }
 
-  private fun verifyAsValuesAreGarbageCollected(onIteration: suspend PropertyContext.(SuspendingWeakValueHashMap<Int, Value>, List<Int>) -> Int = {_, _ -> 0}, verify: suspend PropertyContext.(SuspendingWeakValueHashMap<Int, Value>, List<Int>, List<Int>) -> Unit) = verifyWithGarbageCollectionIntervals(onIteration, verify) {
-      val map = SuspendingWeakValueHashMap<Int, Value>(blockingDispatcher)
-      val cleanupsRegistration = cleanups.register(map)
-      map.startCleanupJob(backgroundScope)
-      Pair(map, cleanupsRegistration)
-  }
+  private fun verifyAsValuesAreGarbageCollected(onIteration: suspend PropertyContext.(SuspendingWeakValueHashMap<Int, Value>, List<Int>) -> Int = {_, _ -> 0}, verify: suspend PropertyContext.(SuspendingWeakValueHashMap<Int, Value>, List<Int>, List<Int>) -> Unit) = verifyWithGarbageCollectionIntervals(onIteration, verify, blockingDispatcher, gcDelay = 50.milliseconds, iterations=50)
 
   private fun verifyAsCleanupLoopIsStalledAndValuesAreGarbageCollected(onIteration: suspend PropertyContext.(SuspendingWeakValueHashMap<Int, Value>, List<Int>) -> Int, verify: suspend PropertyContext.(SuspendingWeakValueHashMap<Int, Value>, List<Int>, List<Int>) -> Unit) {
     val singleThreadExecutor = Executors.newSingleThreadExecutor()
     cleanups.register { singleThreadExecutor.shutdownNow() }
-    return verifyWithGarbageCollectionIntervals(onIteration, verify) {
-      val cv = ConditionVariable()
-      cleanups.register { cv.open() }
-      singleThreadExecutor.execute { cv.block() }
-      val map = SuspendingWeakValueHashMap<Int, Value>(singleThreadExecutor.asCoroutineDispatcher())
-      val cleanupRegistration = cleanups.register(map)
-      map.startCleanupJob(backgroundScope)
-      Pair(map, cleanupRegistration)
+
+    run {
+      val lock = ReentrantLock()
+      check(lock.tryLock())
+      singleThreadExecutor.execute {
+        lock.lockInterruptibly()
+      }
     }
+
+    return verifyWithGarbageCollectionIntervals(onIteration, verify, singleThreadExecutor.asCoroutineDispatcher(), gcDelay = 1.nanoseconds, iterations=5,)
   }
 
-  private fun verifyWithGarbageCollectionIntervals(onIteration: suspend PropertyContext.(SuspendingWeakValueHashMap<Int, Value>, List<Int>) -> Int, verify: suspend PropertyContext.(SuspendingWeakValueHashMap<Int, Value>, List<Int>, List<Int>) -> Unit, createMap: suspend TestScope.() -> Pair<SuspendingWeakValueHashMap<Int, Value>, CleanupsRule.Registration>,) = runTest {
-    checkAll(propTestConfig.withIterations(50), Arb.int(0..50)) { size ->
-      val (map, cleanupRegistration) = createMap()
+  private fun verifyWithGarbageCollectionIntervals(onIteration: suspend PropertyContext.(SuspendingWeakValueHashMap<Int, Value>, List<Int>) -> Int, verify: suspend PropertyContext.(SuspendingWeakValueHashMap<Int, Value>, List<Int>, List<Int>) -> Unit, mapCoroutineDispatcher: CoroutineDispatcher, gcDelay: Duration, iterations: Int) = runTest {
+    checkAll(propTestConfig.withIterations(iterations), Arb.int(0..50)) { size ->
+      val map = SuspendingWeakValueHashMap<Int, Value>(mapCoroutineDispatcher)
+      val cleanupRegistration = cleanups.register(map)
+      map.startCleanupJob(backgroundScope)
       val populatedKeys = map.populate(size, randomSource()).keys.toList().sorted().shuffled(randomSource().random)
 
       val values =
@@ -200,7 +204,7 @@ class SuspendingWeakValueHashMapUnitTest {
           val value = onIteration(map, populatedKeys)
           if (value != 0) {
             System.gc()
-            delayIgnoringTestScheduler(50.milliseconds)
+            delayIgnoringTestScheduler(gcDelay)
           }
           value
         }
