@@ -453,7 +453,9 @@ class SuspendingWeakValueHashMapUnitTest {
 
   @Test
   fun `put() does not change size if key was previously mapped`() = verifyWithPopulatedMap { map, populatedValues ->
+    val valueStrongReferences = mutableListOf<Value>()
     checkAll(propTestConfig, Arb.of(populatedValues.keys.sorted()), valueArb()) { key, value ->
+      valueStrongReferences.add(value)
       map.put(key, value)
 
       map.size() shouldBe populatedValues.size
