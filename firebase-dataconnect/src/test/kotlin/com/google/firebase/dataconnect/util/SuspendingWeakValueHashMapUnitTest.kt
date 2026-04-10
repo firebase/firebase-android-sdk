@@ -18,6 +18,7 @@
 package com.google.firebase.dataconnect.util
 
 import com.google.firebase.dataconnect.testutil.CleanupsRule
+import com.google.firebase.dataconnect.testutil.RandomSeedTestRule
 import com.google.firebase.dataconnect.testutil.SuspendingCountDownLatch
 import com.google.firebase.dataconnect.testutil.property.arbitrary.distinctPair
 import com.google.firebase.dataconnect.testutil.property.arbitrary.pair
@@ -53,7 +54,7 @@ import io.kotest.property.checkAll
 import java.lang.ref.WeakReference
 import java.util.concurrent.Executors
 import java.util.concurrent.locks.ReentrantLock
-import kotlin.random.Random
+import kotlin.getValue
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineDispatcher
@@ -75,6 +76,10 @@ class SuspendingWeakValueHashMapUnitTest {
   @get:Rule val cleanups = CleanupsRule()
 
   @get:Rule val testName = TestName()
+
+  @get:Rule(order = Int.MIN_VALUE) val randomSeedTestRule = RandomSeedTestRule()
+
+  val rs: RandomSource by randomSeedTestRule.rs
 
   @Test fun `size() returns 0 on an new instance`() = verifyWithNewInstance { it.size() shouldBe 0 }
 
@@ -170,7 +175,8 @@ class SuspendingWeakValueHashMapUnitTest {
   }
 
   private fun verifyWithPopulatedMap(
-    verify: suspend (SuspendingWeakValueHashMap<Int, Value>, Map<Int, Value>) -> Unit
+    verify:
+      suspend PropertyContext.(SuspendingWeakValueHashMap<Int, Value>, Map<Int, Value>) -> Unit
   ) = runTest {
     checkAll(propTestConfig, Arb.int(1..50)) { size ->
       val map = SuspendingWeakValueHashMap<Int, Value>(blockingDispatcher)
@@ -241,7 +247,7 @@ class SuspendingWeakValueHashMapUnitTest {
       val map = SuspendingWeakValueHashMap<Int, Value>(mapCoroutineDispatcher)
       val cleanupRegistration = cleanups.register(map)
       val populatedKeys =
-        map.populate(size, randomSource()).keys.toList().sorted().shuffled(randomSource().random)
+        map.populate(size, randomSource()).keys.sorted().shuffled(randomSource().random)
 
       val values = buildList {
         withTimeoutIgnoringTestScheduler(5.seconds) {
@@ -311,7 +317,7 @@ class SuspendingWeakValueHashMapUnitTest {
     cleanups.register(map)
     val valueStrongReferences = mutableListOf<Value>()
 
-    checkAll(propTestConfig, Arb.int().distinct(), valueArb(), valueArb()) { key, value1, value2 ->
+    checkAll(propTestConfig, Arb.int().distinct(), valueArb().pair()) { key, (value1, value2) ->
       valueStrongReferences.add(value1)
       valueStrongReferences.add(value2)
       map.put(key, value1)
@@ -342,7 +348,7 @@ class SuspendingWeakValueHashMapUnitTest {
     cleanups.register(map)
     val populatedData = map.populate()
 
-    populatedData.keys.shuffled().forEach {
+    populatedData.keys.sorted().shuffled(rs.random).forEach {
       map.remove(it)
 
       map.get(it).shouldBeNull()
@@ -357,14 +363,14 @@ class SuspendingWeakValueHashMapUnitTest {
 
     map.clear()
 
-    populatedData.keys.shuffled().forEach { map.get(it).shouldBeNull() }
+    populatedData.keys.sorted().shuffled(rs.random).forEach { map.get(it).shouldBeNull() }
   }
 
   @Test
   fun `get() returns null values after background cleanup`() = runTest {
     val map = SuspendingWeakValueHashMap<Int, Value>(blockingDispatcher)
     cleanups.register(map)
-    val keys = map.populate().keys.toList()
+    val keys = map.populate().keys.sorted().shuffled(rs.random)
 
     val nonNullCounts = buildList {
       withTimeoutIgnoringTestScheduler(5.seconds) {
@@ -531,7 +537,7 @@ class SuspendingWeakValueHashMapUnitTest {
       onIteration = { map, _ -> map.size() },
       verify = { map, _, populatedKeys ->
         val valueArb = valueArb()
-        populatedKeys.sorted().shuffled().forEach {
+        populatedKeys.sorted().shuffled(randomSource().random).forEach {
           map.put(it, valueArb.next(randomSource())).shouldBeNull()
         }
       }
@@ -552,7 +558,7 @@ class SuspendingWeakValueHashMapUnitTest {
               currentRemainingKeys = populatedKeys.toMutableSet()
             }
             val remainingKeys = currentRemainingKeys!!
-            remainingKeys.toList().forEach { key ->
+            remainingKeys.sorted().shuffled(randomSource().random).forEach { key ->
               if (map.get(key) === null) {
                 map.put(key, valueArb.next(randomSource())).shouldBeNull()
                 remainingKeys.remove(key)
@@ -603,7 +609,7 @@ class SuspendingWeakValueHashMapUnitTest {
   @Test
   fun `remove(key) returns null after removing the value`() =
     verifyWithPopulatedMap { map, populatedValues ->
-      populatedValues.keys.shuffled().forEach { key ->
+      populatedValues.keys.sorted().shuffled(randomSource().random).forEach { key ->
         map.remove(key)
         map.remove(key).shouldBeNull()
       }
@@ -612,7 +618,9 @@ class SuspendingWeakValueHashMapUnitTest {
   @Test
   fun `remove(key) returns null after clear()`() = verifyWithPopulatedMap { map, populatedValues ->
     map.clear()
-    populatedValues.keys.shuffled().forEach { key -> map.remove(key).shouldBeNull() }
+    populatedValues.keys.sorted().shuffled(randomSource().random).forEach { key ->
+      map.remove(key).shouldBeNull()
+    }
   }
 
   @Test
@@ -651,7 +659,7 @@ class SuspendingWeakValueHashMapUnitTest {
 
   @Test
   fun `remove(key) decrements size`() = verifyWithPopulatedMap { map, populatedValues ->
-    populatedValues.keys.shuffled().forEachIndexed { index, key ->
+    populatedValues.keys.sorted().shuffled(randomSource().random).forEachIndexed { index, key ->
       map.remove(key)
 
       map.size() shouldBe populatedValues.size - index - 1
@@ -663,7 +671,9 @@ class SuspendingWeakValueHashMapUnitTest {
     verifyAsValuesAreGarbageCollected(
       onIteration = { map, _ -> map.size() },
       verify = { map, _, populatedKeys ->
-        populatedKeys.sorted().shuffled().forEach { map.remove(it).shouldBeNull() }
+        populatedKeys.sorted().shuffled(randomSource().random).forEach {
+          map.remove(it).shouldBeNull()
+        }
       }
     )
 
@@ -681,7 +691,7 @@ class SuspendingWeakValueHashMapUnitTest {
               currentRemainingKeys = populatedKeys.toMutableSet()
             }
             val remainingKeys = currentRemainingKeys!!
-            remainingKeys.toList().forEach { key ->
+            remainingKeys.sorted().shuffled(randomSource().random).forEach { key ->
               if (map.get(key) === null) {
                 map.remove(key).shouldBeNull()
                 remainingKeys.remove(key)
@@ -723,7 +733,9 @@ class SuspendingWeakValueHashMapUnitTest {
   @Test
   fun `clear() causes get(key) to return null`() = verifyWithPopulatedMap { map, populatedValues ->
     map.clear()
-    populatedValues.keys.shuffled().forEach { map.get(it).shouldBeNull() }
+    populatedValues.keys.sorted().shuffled(randomSource().random).forEach {
+      map.get(it).shouldBeNull()
+    }
   }
 
   @Test
@@ -749,7 +761,7 @@ class SuspendingWeakValueHashMapUnitTest {
   fun `close() can be called multiple times after put()`() = runTest {
     val map = SuspendingWeakValueHashMap<Int, Value>(blockingDispatcher)
     cleanups.register(map)
-    map.put(Arb.int().next(), valueArb().next())
+    map.put(Arb.int().next(rs), valueArb().next(rs))
 
     repeat(10) { map.close() }
   }
@@ -758,10 +770,10 @@ class SuspendingWeakValueHashMapUnitTest {
   fun `cleanup loop ignores stale values`() = runTest {
     val map = SuspendingWeakValueHashMap<Int, Value>(blockingDispatcher)
     cleanups.register(map)
-    val key = Arb.int().next()
+    val key = Arb.int().next(rs)
     val (weakValue1, value2) =
       run {
-        val (value1, value2) = valueArb().pair().next()
+        val (value1, value2) = valueArb().pair().next(rs)
         map.put(key, value1)
         map.put(key, value2)
         Pair(WeakReference(value1), value2)
@@ -786,17 +798,18 @@ class SuspendingWeakValueHashMapUnitTest {
     val map = SuspendingWeakValueHashMap<Int, Value>(blockingDispatcher)
     cleanups.register(map)
     val mutex = Mutex()
-    val candidateValues = Arb.int().distinct().take(5).associateWith { mutableListOf<Value?>() }
+    val candidateValues = Arb.int().distinct().take(5, rs).associateWith { mutableListOf<Value?>() }
     val latch = SuspendingCountDownLatch(50)
     val jobs =
       List(latch.count) {
         backgroundScope.launch(Dispatchers.Default) {
-          val keys = Arb.of(candidateValues.keys).take(500).toList()
-          val values = valueArb().orNull(nullProbability = 0.002).take(keys.size).toList()
+          val keyValuePairs = run {
+            val keys = Arb.of(candidateValues.keys.sorted()).take(500, rs).toList()
+            val values = valueArb().orNull(nullProbability = 0.002).take(keys.size, rs).toList()
+            keys.zip(values)
+          }
           latch.countDown().await()
-          for (i in keys.indices) {
-            val key = keys[i]
-            val value = values[i]
+          keyValuePairs.forEach { (key, value) ->
             map.get(key)
             if (value !== null) {
               map.put(key, value)
@@ -805,7 +818,7 @@ class SuspendingWeakValueHashMapUnitTest {
             }
           }
           mutex.withLock {
-            keys.zip(values).forEach { (key, value) -> candidateValues[key]!!.add(value) }
+            keyValuePairs.forEach { (key, value) -> candidateValues[key]!!.add(value) }
           }
         }
       }
@@ -815,6 +828,9 @@ class SuspendingWeakValueHashMapUnitTest {
       map.get(key) shouldBeIn candidateValues
     }
   }
+
+  private suspend fun SuspendingWeakValueHashMap<Int, Value>.populate(): Map<Int, Value> =
+    populate(size = Arb.int(1..50).next(rs), rs = rs)
 }
 
 private val propTestConfig =
@@ -833,20 +849,13 @@ private data class Value(val string: String)
 
 private suspend fun SuspendingWeakValueHashMap<Int, Value>.populate(
   size: Int,
-  rs: RandomSource,
-): Map<Int, Value> = populate(size = size, randomSeed = rs.random.nextLong())
-
-private suspend fun SuspendingWeakValueHashMap<Int, Value>.populate(
-  size: Int = propTestConfig.iterations!!,
-  randomSeed: Long = Random.nextLong(),
+  rs: RandomSource
 ): Map<Int, Value> {
-  val insertedValues = mutableMapOf<Int, Value>()
-  val propTestConfig = propTestConfig.copy(iterations = size, seed = randomSeed)
+  val keys = Arb.int().distinct().take(size, rs)
+  val values = valueArb().take(size, rs)
+  val keyValuePairs = keys.zip(values).toList()
 
-  checkAll(propTestConfig, Arb.int().distinct(), valueArb()) { key, value ->
-    insertedValues[key] = value
-    put(key, value)
-  }
+  keyValuePairs.forEach { (key, value) -> put(key, value) }
 
-  return insertedValues.toMap()
+  return keyValuePairs.toMap().also { check(it.size == size) }
 }
