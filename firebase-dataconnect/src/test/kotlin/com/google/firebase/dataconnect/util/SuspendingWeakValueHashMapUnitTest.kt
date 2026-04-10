@@ -173,7 +173,7 @@ class SuspendingWeakValueHashMapUnitTest {
     }
   }
 
-  private fun verifyAsValuesAreGarbageCollected(onIteration: suspend PropertyContext.(SuspendingWeakValueHashMap<Int, Value>, List<Int>) -> Int, verify: suspend PropertyContext.(SuspendingWeakValueHashMap<Int, Value>, List<Int>, List<Int>) -> Unit) = verifyWithGarbageCollectionIntervals(onIteration, verify, blockingDispatcher, gcDelay = 50.milliseconds, iterations=50)
+  private fun verifyAsValuesAreGarbageCollected(onIteration: suspend PropertyContext.(SuspendingWeakValueHashMap<Int, Value>, List<Int>) -> Int, verify: suspend PropertyContext.(SuspendingWeakValueHashMap<Int, Value>, List<Int>, List<Int>) -> Unit) = verifyWithGarbageCollectionIntervals(onIteration, verify, blockingDispatcher, gcDelay = 1.milliseconds, iterations=50)
 
   private fun verifyAsCleanupLoopIsStalledAndValuesAreGarbageCollected(onIteration: suspend PropertyContext.(SuspendingWeakValueHashMap<Int, Value>, List<Int>) -> Int, verify: suspend PropertyContext.(SuspendingWeakValueHashMap<Int, Value>, List<Int>, List<Int>) -> Unit) {
     val singleThreadExecutor = Executors.newSingleThreadExecutor()
