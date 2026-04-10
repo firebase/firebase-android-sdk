@@ -316,6 +316,7 @@ class SuspendingWeakValueHashMapUnitTest {
   fun `get() returns null values after background cleanup`() = runTest {
     val map = SuspendingWeakValueHashMap<Int, Value>(blockingDispatcher)
     cleanups.register(map)
+    map.startCleanupJob(backgroundScope)
     val keys = map.populate().keys.toList()
 
     val nonNullCounts =
