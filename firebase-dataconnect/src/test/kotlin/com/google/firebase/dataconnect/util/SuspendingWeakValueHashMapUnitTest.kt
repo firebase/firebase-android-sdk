@@ -402,7 +402,8 @@ class SuspendingWeakValueHashMapUnitTest {
 
   @Test
   fun `put() returns null if key is not mapped`() = verifyWithPopulatedMap { map, populatedValues ->
-    checkAll(propTestConfig, Arb.int().filterNot { it in populatedValues }, valueArb()) { key, value ->
+    val keyArb = Arb.int().filterNot { it in populatedValues }.distinct()
+    checkAll(propTestConfig, keyArb, valueArb()) { key, value ->
       map.put(key, value).shouldBeNull()
     }
   }
