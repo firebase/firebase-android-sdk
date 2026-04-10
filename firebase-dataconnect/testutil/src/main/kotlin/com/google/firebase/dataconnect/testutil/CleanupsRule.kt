@@ -39,7 +39,8 @@ class CleanupsRule : ExternalResource() {
 
   private val state = MutableStateFlow<State>(State.BeforeNotCalled)
 
-  fun register(autoCloseable: AutoCloseable): Registration = register(name = autoCloseable::class.qualifiedName, autoCloseable::close)
+  fun register(autoCloseable: AutoCloseable): Registration =
+    register(name = autoCloseable::class.qualifiedName, autoCloseable::close)
 
   fun register(cleanup: () -> Unit): Registration = register(name = null, cleanup)
 
@@ -47,16 +48,20 @@ class CleanupsRule : ExternalResource() {
     val registration = Cleanup(name, cleanup)
 
     state.update { currentState ->
-      val activeState: State.Active = when (currentState) {
-        is State.Active -> currentState
-        State.AfterCalled -> throw IllegalStateException("cleanups can not be registered after after() is called")
-        State.BeforeNotCalled -> throw IllegalStateException("cleanups can not be registered until before() is called")
-      }
+      val activeState: State.Active =
+        when (currentState) {
+          is State.Active -> currentState
+          State.AfterCalled ->
+            throw IllegalStateException("cleanups can not be registered after after() is called")
+          State.BeforeNotCalled ->
+            throw IllegalStateException("cleanups can not be registered until before() is called")
+        }
 
-      val newCleanups = buildList(activeState.cleanups.size + 1) {
-        addAll(activeState.cleanups)
-        add(registration)
-      }
+      val newCleanups =
+        buildList(activeState.cleanups.size + 1) {
+          addAll(activeState.cleanups)
+          add(registration)
+        }
 
       State.Active(newCleanups)
     }
@@ -64,27 +69,31 @@ class CleanupsRule : ExternalResource() {
     return registration
   }
 
-  fun registerSuspending(cleanup: suspend () -> Unit): Registration = registerSuspending(name = null, cleanup)
+  fun registerSuspending(cleanup: suspend () -> Unit): Registration =
+    registerSuspending(name = null, cleanup)
 
-  fun registerSuspending(name: String?, cleanup: suspend () -> Unit): Registration = register(name) { runBlocking { cleanup() } }
+  fun registerSuspending(name: String?, cleanup: suspend () -> Unit): Registration =
+    register(name) { runBlocking { cleanup() } }
 
   fun unregister(registration: Registration) {
     state.update { currentState ->
-      val activeState: State.Active = when (currentState) {
-        is State.Active -> currentState
-        State.AfterCalled -> return
-        State.BeforeNotCalled -> return
-      }
+      val activeState: State.Active =
+        when (currentState) {
+          is State.Active -> currentState
+          State.AfterCalled -> return
+          State.BeforeNotCalled -> return
+        }
 
       val index = activeState.cleanups.indexOfFirst { it === registration }
       if (index < 0) {
         return
       }
 
-      val newCleanups = activeState.cleanups.toMutableList().let {
-        it.removeAt(index)
-        it.toList()
-      }
+      val newCleanups =
+        activeState.cleanups.toMutableList().let {
+          it.removeAt(index)
+          it.toList()
+        }
 
       State.Active(newCleanups)
     }
@@ -101,13 +110,15 @@ class CleanupsRule : ExternalResource() {
   }
 
   override fun after() {
-    val oldState = state.getAndUpdate { currentState ->
-      when (currentState) {
-        State.BeforeNotCalled -> throw IllegalStateException("before() must be called before after()")
-        is State.Active -> State.AfterCalled
-        State.AfterCalled -> throw IllegalStateException("after() has already been called")
+    val oldState =
+      state.getAndUpdate { currentState ->
+        when (currentState) {
+          State.BeforeNotCalled ->
+            throw IllegalStateException("before() must be called before after()")
+          is State.Active -> State.AfterCalled
+          State.AfterCalled -> throw IllegalStateException("after() has already been called")
+        }
       }
-    }
 
     check(oldState is State.Active)
 

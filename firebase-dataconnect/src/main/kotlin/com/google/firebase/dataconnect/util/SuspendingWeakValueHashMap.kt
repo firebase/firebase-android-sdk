@@ -16,6 +16,8 @@
 
 package com.google.firebase.dataconnect.util
 
+import java.lang.ref.ReferenceQueue
+import java.lang.ref.WeakReference
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -27,8 +29,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import java.lang.ref.ReferenceQueue
-import java.lang.ref.WeakReference
 
 /**
  * A thread-safe, coroutine-aware map that holds weak references to its values.
@@ -220,19 +220,26 @@ internal class SuspendingWeakValueHashMap<K, V : Any>(
     class Closed<K, V : Any> : State<K, V>
   }
 
-  private class CleanupJob<K, V : Any>(coroutineScope: CoroutineScope, blockingDispatcher: CoroutineDispatcher) {
+  private class CleanupJob<K, V : Any>(
+    coroutineScope: CoroutineScope,
+    blockingDispatcher: CoroutineDispatcher
+  ) {
     val mutex: Mutex = Mutex()
     val map: MutableMap<K, ValueReference<K, V>> = mutableMapOf()
     val referenceQueue: ReferenceQueue<V> = ReferenceQueue<V>()
 
-    val job: Job = coroutineScope.launch(blockingDispatcher + CoroutineName("SuspendingWeakValueHashMap_CleanupJob"), CoroutineStart.LAZY,) {
-      while (true) {
-        remove(runInterruptible { referenceQueue.removeValueReference() })
+    val job: Job =
+      coroutineScope.launch(
+        blockingDispatcher + CoroutineName("SuspendingWeakValueHashMap_CleanupJob"),
+        CoroutineStart.LAZY,
+      ) {
         while (true) {
-          remove(referenceQueue.pollValueReference() ?: break)
+          remove(runInterruptible { referenceQueue.removeValueReference() })
+          while (true) {
+            remove(referenceQueue.pollValueReference() ?: break)
+          }
         }
       }
-    }
 
     private suspend fun remove(ref: ValueReference<K, V>) {
       mutex.withLock { map.remove(ref.key, ref) }
@@ -249,6 +256,7 @@ internal class SuspendingWeakValueHashMap<K, V : Any>(
     fun <K, V : Any> ReferenceQueue<V>.pollValueReference(): ValueReference<K, V>? =
       poll() as ValueReference<K, V>?
 
-    fun <K, V : Any> CleanupJob<K, V>.toOpenState(): State.Open<K, V> = State.Open(job, mutex, map, referenceQueue)
+    fun <K, V : Any> CleanupJob<K, V>.toOpenState(): State.Open<K, V> =
+      State.Open(job, mutex, map, referenceQueue)
   }
 }
