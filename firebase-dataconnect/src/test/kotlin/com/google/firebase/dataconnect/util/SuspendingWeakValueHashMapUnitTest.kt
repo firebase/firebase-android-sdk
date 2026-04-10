@@ -19,10 +19,10 @@ package com.google.firebase.dataconnect.util
 
 import com.google.firebase.dataconnect.testutil.CleanupsRule
 import com.google.firebase.dataconnect.testutil.SuspendingCountDownLatch
-import com.google.firebase.dataconnect.testutil.delayIgnoringTestScheduler
 import com.google.firebase.dataconnect.testutil.property.arbitrary.distinctPair
 import com.google.firebase.dataconnect.testutil.property.arbitrary.pair
 import com.google.firebase.dataconnect.testutil.property.arbitrary.withIterations
+import com.google.firebase.dataconnect.testutil.withTimeoutIgnoringTestScheduler
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.common.DelicateKotest
 import io.kotest.common.ExperimentalKotest
@@ -54,13 +54,13 @@ import java.lang.ref.WeakReference
 import java.util.concurrent.Executors
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.random.Random
-import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.nanoseconds
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -121,7 +121,8 @@ class SuspendingWeakValueHashMapUnitTest {
       verify = { _, sizes, populatedKeys ->
         val expectedSizes = List(sizes.size) { populatedKeys.size }
         sizes shouldContainExactly expectedSizes
-      }
+      },
+      maxOnIterationCallsPerIteration = 10,
     )
 
   private fun verifyWithNewInstance(
@@ -184,20 +185,25 @@ class SuspendingWeakValueHashMapUnitTest {
   private fun verifyAsValuesAreGarbageCollected(
     onIteration: suspend PropertyContext.(SuspendingWeakValueHashMap<Int, Value>, List<Int>) -> Int,
     verify:
-      suspend PropertyContext.(SuspendingWeakValueHashMap<Int, Value>, List<Int>, List<Int>) -> Unit
+      suspend PropertyContext.(
+        SuspendingWeakValueHashMap<Int, Value>, List<Int>, List<Int>
+      ) -> Unit,
+    maxOnIterationCallsPerIteration: Int? = null,
   ) =
     verifyWithGarbageCollectionIntervals(
       onIteration,
       verify,
       blockingDispatcher,
-      gcDelay = 1.milliseconds,
-      iterations = 50
+      maxOnIterationCallsPerIteration = maxOnIterationCallsPerIteration,
     )
 
   private fun verifyAsCleanupLoopIsStalledAndValuesAreGarbageCollected(
     onIteration: suspend PropertyContext.(SuspendingWeakValueHashMap<Int, Value>, List<Int>) -> Int,
     verify:
-      suspend PropertyContext.(SuspendingWeakValueHashMap<Int, Value>, List<Int>, List<Int>) -> Unit
+      suspend PropertyContext.(
+        SuspendingWeakValueHashMap<Int, Value>, List<Int>, List<Int>
+      ) -> Unit,
+    maxOnIterationCallsPerIteration: Int? = null,
   ) {
     val singleThreadExecutor = Executors.newSingleThreadExecutor()
     cleanups.register { singleThreadExecutor.shutdownNow() }
@@ -218,8 +224,7 @@ class SuspendingWeakValueHashMapUnitTest {
       onIteration,
       verify,
       singleThreadExecutor.asCoroutineDispatcher(),
-      gcDelay = 1.nanoseconds,
-      iterations = 5,
+      maxOnIterationCallsPerIteration = maxOnIterationCallsPerIteration,
     )
   }
 
@@ -230,24 +235,32 @@ class SuspendingWeakValueHashMapUnitTest {
         SuspendingWeakValueHashMap<Int, Value>, List<Int>, List<Int>
       ) -> Unit,
     mapCoroutineDispatcher: CoroutineDispatcher,
-    gcDelay: Duration,
-    iterations: Int
+    maxOnIterationCallsPerIteration: Int?,
   ) = runTest {
-    checkAll(propTestConfig.withIterations(iterations), Arb.int(0..50)) { size ->
+    checkAll(propTestConfig.withIterations(5), Arb.int(0..50)) { size ->
       val map = SuspendingWeakValueHashMap<Int, Value>(mapCoroutineDispatcher)
       val cleanupRegistration = cleanups.register(map)
       val populatedKeys =
         map.populate(size, randomSource()).keys.toList().sorted().shuffled(randomSource().random)
 
-      val values =
-        List(10) {
-          val value = onIteration(map, populatedKeys)
-          if (value != 0) {
+      val values = buildList {
+        withTimeoutIgnoringTestScheduler(5.seconds) {
+          var onIterationCallIndex = 0
+          while (true) {
+            val value = onIteration(map, populatedKeys)
+            add(value)
+            if (
+              value == 0 ||
+                (maxOnIterationCallsPerIteration != null &&
+                  ++onIterationCallIndex >= maxOnIterationCallsPerIteration)
+            ) {
+              break
+            }
             System.gc()
-            delayIgnoringTestScheduler(gcDelay)
+            delay(1.milliseconds)
           }
-          value
         }
+      }
 
       verify(map, values, populatedKeys)
       map.close()
@@ -353,20 +366,26 @@ class SuspendingWeakValueHashMapUnitTest {
     cleanups.register(map)
     val keys = map.populate().keys.toList()
 
-    val nonNullCounts =
-      List(50) {
-        var nonNullCount = 0
-        keys.forEach {
-          if (map.get(it) !== null) {
-            nonNullCount++
+    val nonNullCounts = buildList {
+      withTimeoutIgnoringTestScheduler(5.seconds) {
+        while (true) {
+          var nonNullCount = 0
+          keys.forEach {
+            if (map.get(it) !== null) {
+              nonNullCount++
+            }
           }
-        }
-        if (nonNullCount > 0) {
+
+          add(nonNullCount)
+          if (nonNullCount == 0) {
+            break
+          }
+
           System.gc()
-          delayIgnoringTestScheduler(1.milliseconds)
+          delay(1.milliseconds)
         }
-        nonNullCount
       }
+    }
 
     nonNullCounts.last() shouldBe 0
     nonNullCounts shouldContainExactly nonNullCounts.sortedDescending()
@@ -482,8 +501,10 @@ class SuspendingWeakValueHashMapUnitTest {
     val populatedData = map.populate()
     var expectedSize = populatedData.size
     val unsetKeyArb = Arb.int().filterNot { it in populatedData }.distinct()
+    val valueStrongReferences = mutableListOf<Value>()
 
     checkAll(propTestConfig, unsetKeyArb, valueArb()) { key, value ->
+      valueStrongReferences.add(value)
       expectedSize++
 
       map.put(key, value)
@@ -746,10 +767,13 @@ class SuspendingWeakValueHashMapUnitTest {
         Pair(WeakReference(value1), value2)
       }
 
-    repeat(50) {
-      if (weakValue1.get() !== null) {
+    withTimeoutIgnoringTestScheduler(5.seconds) {
+      while (true) {
+        if (weakValue1.get() === null) {
+          break
+        }
         System.gc()
-        delayIgnoringTestScheduler(1.milliseconds)
+        delay(1.milliseconds)
       }
     }
 

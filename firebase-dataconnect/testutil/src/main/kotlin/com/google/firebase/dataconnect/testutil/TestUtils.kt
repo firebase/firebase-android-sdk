@@ -17,7 +17,6 @@
 package com.google.firebase.dataconnect.testutil
 
 import com.google.firebase.FirebaseApp
-import com.google.firebase.dataconnect.DataConnectSettings
 import com.google.firebase.dataconnect.OperationRef
 import com.google.firebase.util.nextAlphanumericString
 import io.kotest.assertions.print.print
@@ -28,20 +27,20 @@ import io.kotest.matchers.should
 import io.kotest.matchers.shouldNot
 import java.util.UUID
 import java.util.regex.Pattern
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
-import kotlin.coroutines.cancellation.CancellationException
 import kotlin.random.Random
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.withContext
-import org.junit.Assert
+import kotlinx.coroutines.withTimeout
 
 /**
  * Creates and returns a [Matcher] that can be used with kotest assertions for verifying that a
@@ -152,15 +151,19 @@ suspend fun delayIgnoringTestScheduler(duration: Duration) {
   withContext(Dispatchers.Default) { delay(duration) }
 }
 
-/** Delays the current coroutine until the given predicate returns `true`. */
-suspend fun delayUntil(name: String? = null, predicate: () -> Boolean) {
-  while (!predicate()) {
-    try {
-      delayIgnoringTestScheduler(0.2.seconds)
-    } catch (e: CancellationException) {
-      throw DelayUntilTimeoutException("delayUntil(name=$name) cancelled")
-    }
-  }
+/**
+ * Calls [kotlinx.coroutines.withTimeout] in such a way that it _really_ will wait, even when called
+ * from [kotlinx.coroutines.test.runTest], which _skips_ delays. This is achieved by switching
+ * contexts to a dispatcher that does _not_ use the [kotlinx.coroutines.test.TestCoroutineScheduler]
+ * scheduler and, therefore, will actually wait, as measured by a wall clock.
+ */
+@OptIn(ExperimentalContracts::class)
+suspend fun <T> withTimeoutIgnoringTestScheduler(
+  timeout: Duration,
+  block: suspend CoroutineScope.() -> T,
+): T {
+  contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
+  return withContext(Dispatchers.Default) { withTimeout(timeout, block) }
 }
 
 /**
@@ -170,17 +173,6 @@ suspend fun delayUntil(name: String? = null, predicate: () -> Boolean) {
  * dashes before writing the value to the database (see cl/629562890).
  */
 fun randomId(): String = UUID.randomUUID().toString().replace("-", "")
-
-class DelayUntilTimeoutException(message: String) : Exception(message)
-
-/**
- * Calls `Assert.fail()`, but also returns `Nothing` so that the Kotlin compiler can do better type
- * deduction for code that follows this `fail()` call.
- */
-fun fail(message: String): Nothing {
-  Assert.fail(message)
-  throw IllegalStateException("Should never get here")
-}
 
 /**
  * The largest positive integer value that can be represented by a 64-bit double.
@@ -215,23 +207,6 @@ fun randomApplicationId(key: String) = "appId-$key-${Random.nextAlphanumericStri
     ReplaceWith("Arb.projectId(key).next()", "com.google.firebase.dataconnect.testutil.projectId")
 )
 fun randomProjectId(key: String) = "projId-$key-${Random.nextAlphanumericString(length = 8)}"
-
-/**
- * Generates and returns a random, valid string suitable to be a host name in [DataConnectSettings].
- * @param key A hardcoded random string that will be incorporated into the returned string; useful
- * for correlating the application ID with its call site (for example, "cxncg4zbvb").
- */
-fun randomHost(key: String) = "host.$key.${Random.nextAlphanumericString(length = 8)}"
-
-/** Generates and returns a boolean value suitable for "sslEnabled". */
-fun randomSslEnabled() = Random.nextBoolean()
-
-/**
- * Generates and returns a new [DataConnectSettings] object with random values.
- * @param hostKey A value to specify to [randomHost] (for example, "wqxhf5apez").
- */
-fun randomDataConnectSettings(hostKey: String) =
-  DataConnectSettings(host = randomHost(hostKey), sslEnabled = randomSslEnabled())
 
 /**
  * Generates and returns a random, valid string suitable for a "request ID".
@@ -273,7 +248,6 @@ fun randomOperationName(key: String) =
  * cancelled upon test completion.
  */
 fun TestScope.newBackgroundScopeThatAdvancesLikeForeground(): CoroutineScope {
-  TestCoroutineScheduler
   // Find the `BackgroundWork` coroutine context element and create a new context that is the same
   // as the `backgroundScope` context but lacks the `BackgroundWork` element.
   val backgroundWorkClass = Class.forName("kotlinx.coroutines.test.BackgroundWork").kotlin
