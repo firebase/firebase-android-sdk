@@ -379,12 +379,7 @@ internal class DataConnectGrpcRPCs(
     appCheckToken: GetAppCheckTokenResult?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
   ): ExecuteMutationResponse {
-    val metadata =
-      grpcMetadata.get(
-        authToken = authToken,
-        appCheckToken = appCheckToken,
-        callerSdkType = callerSdkType
-      )
+    val metadata = grpcMetadata.get(authToken, appCheckToken, callerSdkType)
     val kotlinMethodName = "executeMutation(${requestProto.operationName})"
 
     logger.logGrpcSending(
@@ -425,12 +420,7 @@ internal class DataConnectGrpcRPCs(
     appCheckToken: GetAppCheckTokenResult?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
   ): ExecuteQueryResponse {
-    val metadata =
-      grpcMetadata.get(
-        authToken = authToken,
-        appCheckToken = appCheckToken,
-        callerSdkType = callerSdkType
-      )
+    val metadata = grpcMetadata.get(authToken, appCheckToken, callerSdkType)
     val kotlinMethodName = "executeQuery(${requestProto.operationName})"
 
     logger.logGrpcSending(

@@ -552,7 +552,7 @@ class QueryManagerUnitTest {
 
   @Test
   fun `execute() does NOT deduplicate queries with distinct authUid`() {
-    val generatedAuthTokens = CopyOnWriteArrayList<String?>()
+    val generatedAuthTokens = CopyOnWriteArrayList<GetAuthTokenResult?>()
 
     verifyExecuteDeduplication(
       transformExecuteArguments = { it.args },
@@ -568,14 +568,14 @@ class QueryManagerUnitTest {
           coEvery { getToken(any()) } answers
             {
               val authTokenResult = authTokenResultArb.next(randomSource())
-              generatedAuthTokens.add(authTokenResult.token)
+              generatedAuthTokens.add(authTokenResult)
               authTokenResult
             }
         }
       },
       calculateExpectedExecuteQueryInvocationCount = { executeCount -> executeCount },
       verifyExecuteQueryInvocations = { invocations ->
-        val authTokens = invocations.map { it.authToken?.token }
+        val authTokens = invocations.map { it.authToken }
         authTokens shouldContainExactlyInAnyOrder generatedAuthTokens.toList()
         generatedAuthTokens.clear()
       }
