@@ -183,7 +183,11 @@ class SuspendingWeakValueHashMapUnitTest {
       val lock = ReentrantLock()
       check(lock.tryLock())
       singleThreadExecutor.execute {
-        lock.lockInterruptibly()
+        try {
+          lock.lockInterruptibly()
+        } catch (_: InterruptedException) {
+          Thread.currentThread().interrupt()
+        }
       }
     }
 
@@ -435,8 +439,9 @@ class SuspendingWeakValueHashMapUnitTest {
     map.startCleanupJob(backgroundScope)
     val populatedData = map.populate()
     var expectedSize = populatedData.size
+    val unsetKeyArb = Arb.int().filterNot { it in populatedData }.distinct()
 
-    checkAll(propTestConfig, Arb.int().filterNot { it in populatedData }, valueArb()) { key, value
+    checkAll(propTestConfig, unsetKeyArb, valueArb()) { key, value
       ->
       expectedSize++
 
