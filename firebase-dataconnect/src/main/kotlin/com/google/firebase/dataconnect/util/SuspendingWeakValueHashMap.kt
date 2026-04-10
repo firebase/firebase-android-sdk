@@ -164,6 +164,7 @@ internal class SuspendingWeakValueHashMap<K, V : Any>(
       is State.New -> throw IllegalStateException("runCleanupLoop() must be called before put()")
       is State.Open ->
         currentState.run {
+          cleanupJob.start()
           mutex.withLock {
             val oldValueReference = map.put(key, ValueReference(key, value, referenceQueue))
             val oldValue = oldValueReference?.get()
