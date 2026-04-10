@@ -18,8 +18,8 @@ package com.google.firebase.dataconnect.querymgr
 
 import com.google.firebase.dataconnect.CachedDataNotFoundException
 import com.google.firebase.dataconnect.FirebaseDataConnect
-import com.google.firebase.dataconnect.core.DataConnectAppCheck
-import com.google.firebase.dataconnect.core.DataConnectAuth
+import com.google.firebase.dataconnect.core.DataConnectAppCheck.GetAppCheckTokenResult
+import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
 import com.google.firebase.dataconnect.core.Logger
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CoroutineDispatcher
@@ -34,8 +34,8 @@ internal class CacheOnlyNoCacheLocalQuery(
   override suspend fun executeImpl(
     requestId: String,
     sequenceNumber: Long,
-    authToken: DataConnectAuth.GetAuthTokenResult?,
-    appCheckToken: DataConnectAppCheck.GetAppCheckTokenResult?,
+    authToken: GetAuthTokenResult?,
+    appCheckToken: GetAppCheckTokenResult?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
   ): Nothing {
     throw CachedDataNotFoundException(

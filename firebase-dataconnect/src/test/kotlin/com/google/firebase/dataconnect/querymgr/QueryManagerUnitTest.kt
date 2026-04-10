@@ -26,7 +26,9 @@ import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.QueryRef.FetchPolicy
 import com.google.firebase.dataconnect.core.AuthUidChangedException
 import com.google.firebase.dataconnect.core.DataConnectAppCheck
+import com.google.firebase.dataconnect.core.DataConnectAppCheck.GetAppCheckTokenResult
 import com.google.firebase.dataconnect.core.DataConnectAuth
+import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
 import com.google.firebase.dataconnect.core.DataConnectGrpcRPCs
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.sqlite.QueryResultArb
@@ -349,8 +351,8 @@ class QueryManagerUnitTest {
       Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.33),
       Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.33),
     ) { args, authToken, appCheckToken ->
-      val authTokenSlot = slot<DataConnectAuth.GetAuthTokenResult?>()
-      val appCheckTokenSlot = slot<DataConnectAppCheck.GetAppCheckTokenResult?>()
+      val authTokenSlot = slot<GetAuthTokenResult?>()
+      val appCheckTokenSlot = slot<GetAppCheckTokenResult?>()
       val queryManager: QueryManager = buildQueryManager {
         setDataConnectGrpcRPCs(
           mockk {
@@ -658,15 +660,15 @@ class QueryManagerUnitTest {
         dataConnectGrpcRPCs.executeQuery(
           capture(capturedRequestIds),
           capture(capturedRequestProtos),
-          eq(DataConnectAuth.GetAuthTokenResult("authToken1", "testAuthUid")),
-          eq(DataConnectAppCheck.GetAppCheckTokenResult("appCheckToken1")),
+          eq(GetAuthTokenResult("authToken1", "testAuthUid")),
+          eq(GetAppCheckTokenResult("appCheckToken1")),
           eq(args.callerSdkType)
         )
         dataConnectGrpcRPCs.executeQuery(
           capture(capturedRequestIds),
           capture(capturedRequestProtos),
-          eq(DataConnectAuth.GetAuthTokenResult("authToken2", "testAuthUid")),
-          eq(DataConnectAppCheck.GetAppCheckTokenResult("appCheckToken2")),
+          eq(GetAuthTokenResult("authToken2", "testAuthUid")),
+          eq(GetAppCheckTokenResult("appCheckToken2")),
           eq(args.callerSdkType)
         )
       }
@@ -819,8 +821,8 @@ class QueryManagerUnitTest {
 
       val capturedRequestIds = mutableListOf<String>()
       val capturedRequestProtos = mutableListOf<ExecuteQueryRequest>()
-      val capturedAuthTokens = mutableListOf<DataConnectAuth.GetAuthTokenResult?>()
-      val capturedAppCheckTokens = mutableListOf<DataConnectAppCheck.GetAppCheckTokenResult?>()
+      val capturedAuthTokens = mutableListOf<GetAuthTokenResult?>()
+      val capturedAppCheckTokens = mutableListOf<GetAppCheckTokenResult?>()
       val capturedCallerSdkTypes = mutableListOf<CallerSdkType>()
       val expectedExecuteQueryInvocationCount =
         calculateExpectedExecuteQueryInvocationCount(jobs.size)
@@ -1244,7 +1246,7 @@ class QueryManagerUnitTest {
     maxAge: Arb<Duration> = cacheSettingsDurationArb(),
   ): Arb<QueryManager.CacheSettings> = Arb.bind(file, maxAge, QueryManager::CacheSettings)
 
-  private suspend fun PropertyContext.buildQueryManager(
+  private fun PropertyContext.buildQueryManager(
     block: QueryManagerBuilder.() -> Unit
   ): QueryManager {
     val builder =
@@ -1290,8 +1292,8 @@ private data class ExecuteArguments<Data, Variables>(
 private data class ExecuteQueryArguments(
   val requestId: String,
   val requestProto: ExecuteQueryRequest,
-  val authToken: DataConnectAuth.GetAuthTokenResult?,
-  val appCheckToken: DataConnectAppCheck.GetAppCheckTokenResult?,
+  val authToken: GetAuthTokenResult?,
+  val appCheckToken: GetAppCheckTokenResult?,
   val callerSdkType: CallerSdkType,
 )
 
@@ -1434,8 +1436,8 @@ private class HardcodedStringKSerializer(private val hardcodedValue: String) : K
 private fun DataConnectGrpcRPCs.stubExecuteQuery(
   requestIdSlot: CapturingSlot<String> = slot(),
   executeQueryRequestSlot: CapturingSlot<ExecuteQueryRequest> = slot(),
-  authTokenSlot: CapturingSlot<DataConnectAuth.GetAuthTokenResult?> = slot(),
-  appCheckTokenSlot: CapturingSlot<DataConnectAppCheck.GetAppCheckTokenResult?> = slot(),
+  authTokenSlot: CapturingSlot<GetAuthTokenResult?> = slot(),
+  appCheckTokenSlot: CapturingSlot<GetAppCheckTokenResult?> = slot(),
   callerSdkTypeSlot: CapturingSlot<CallerSdkType> = slot(),
   executeQueryResponse: ExecuteQueryResponse? = null
 ) {
@@ -1626,7 +1628,7 @@ private fun newDataConnectAuth(
   val tokenIndex = AtomicInteger(start)
   coEvery { getToken(any()) } answers
     {
-      DataConnectAuth.GetAuthTokenResult(
+      GetAuthTokenResult(
         token = "$tokenPrefix${tokenIndex.get()}",
         authUid = authUid,
       )
@@ -1639,10 +1641,7 @@ private fun newDataConnectAppCheck(
   start: Int = 1
 ): DataConnectAppCheck = mockk {
   val tokenIndex = AtomicInteger(start)
-  coEvery { getToken(any()) } answers
-    {
-      DataConnectAppCheck.GetAppCheckTokenResult("$tokenPrefix${tokenIndex.get()}")
-    }
+  coEvery { getToken(any()) } answers { GetAppCheckTokenResult("$tokenPrefix${tokenIndex.get()}") }
   every { forceRefresh() } answers { tokenIndex.incrementAndGet() }
 }
 

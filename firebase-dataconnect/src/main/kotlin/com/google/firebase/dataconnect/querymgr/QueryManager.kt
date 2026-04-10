@@ -20,7 +20,9 @@ import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.core.DataConnectAppCheck
+import com.google.firebase.dataconnect.core.DataConnectAppCheck.GetAppCheckTokenResult
 import com.google.firebase.dataconnect.core.DataConnectAuth
+import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
 import com.google.firebase.dataconnect.core.DataConnectGrpcRPCs
 import com.google.firebase.dataconnect.core.DataConnectStream
 import com.google.firebase.dataconnect.core.Logger
@@ -201,8 +203,8 @@ internal class QueryManager(
     requestId: String,
     sequenceNumber: Long,
     localKey: LocalQueries.Key<Data>,
-    authToken: DataConnectAuth.GetAuthTokenResult?,
-    appCheckToken: DataConnectAppCheck.GetAppCheckTokenResult?,
+    authToken: GetAuthTokenResult?,
+    appCheckToken: GetAppCheckTokenResult?,
     requestProto: ExecuteQueryRequestProto,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
   ): ExecuteResult<Data> {
@@ -289,8 +291,8 @@ internal class QueryManager(
   private suspend fun <Data> subscribe(
     requestId: String,
     localKey: LocalQuerySubscriptions.Key<Data>,
-    authToken: DataConnectAuth.GetAuthTokenResult?,
-    appCheckToken: DataConnectAppCheck.GetAppCheckTokenResult?,
+    authToken: GetAuthTokenResult?,
+    appCheckToken: GetAppCheckTokenResult?,
     requestProto: ExecuteQueryRequestProto,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
   ): Flow<Result<ExecuteResult<Data>>> {
@@ -375,8 +377,8 @@ internal class QueryManager(
     private var stream: DataConnectStream? = null
 
     suspend fun getOrCreate(
-      authToken: DataConnectAuth.GetAuthTokenResult?,
-      appCheckToken: DataConnectAppCheck.GetAppCheckTokenResult?,
+      authToken: GetAuthTokenResult?,
+      appCheckToken: GetAppCheckTokenResult?,
       callerSdkType: FirebaseDataConnect.CallerSdkType,
     ): DataConnectStream =
       mutex.withLock {

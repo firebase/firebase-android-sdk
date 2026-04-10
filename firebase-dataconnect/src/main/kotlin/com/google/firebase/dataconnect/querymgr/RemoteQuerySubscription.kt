@@ -17,8 +17,8 @@
 package com.google.firebase.dataconnect.querymgr
 
 import com.google.firebase.dataconnect.FirebaseDataConnect
-import com.google.firebase.dataconnect.core.DataConnectAppCheck
-import com.google.firebase.dataconnect.core.DataConnectAuth
+import com.google.firebase.dataconnect.core.DataConnectAppCheck.GetAppCheckTokenResult
+import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
 import com.google.firebase.dataconnect.core.DataConnectStream
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
@@ -61,8 +61,8 @@ internal class RemoteQuerySubscription(
 
   suspend fun subscribe(
     requestId: String,
-    authToken: DataConnectAuth.GetAuthTokenResult?,
-    appCheckToken: DataConnectAppCheck.GetAppCheckTokenResult?,
+    authToken: GetAuthTokenResult?,
+    appCheckToken: GetAppCheckTokenResult?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
   ): Flow<ExecuteQueryResponseProto> {
     val activeFlow =
@@ -78,8 +78,8 @@ internal class RemoteQuerySubscription(
 
   private suspend fun getOrStartActiveFlow(
     requestId: String,
-    authToken: DataConnectAuth.GetAuthTokenResult?,
-    appCheckToken: DataConnectAppCheck.GetAppCheckTokenResult?,
+    authToken: GetAuthTokenResult?,
+    appCheckToken: GetAppCheckTokenResult?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
   ): ActiveFlow =
     mutex.withLock {

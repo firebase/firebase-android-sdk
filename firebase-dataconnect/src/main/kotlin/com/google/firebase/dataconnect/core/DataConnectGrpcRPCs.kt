@@ -22,6 +22,8 @@ import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.DataConnectException
 import com.google.firebase.dataconnect.DataConnectUntypedVariables
 import com.google.firebase.dataconnect.FirebaseDataConnect
+import com.google.firebase.dataconnect.core.DataConnectAppCheck.GetAppCheckTokenResult
+import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
 import com.google.firebase.dataconnect.core.DataConnectGrpcMetadata.Companion.toStructProto
 import com.google.firebase.dataconnect.core.DataConnectStream.IncomingResponse
 import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
@@ -183,8 +185,8 @@ internal class DataConnectGrpcRPCs(
 
   suspend fun connect(
     streamId: String,
-    authToken: DataConnectAuth.GetAuthTokenResult?,
-    appCheckToken: DataConnectAppCheck.GetAppCheckTokenResult?,
+    authToken: GetAuthTokenResult?,
+    appCheckToken: GetAppCheckTokenResult?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
     connectorResourceName: String,
   ): DataConnectStream {
@@ -282,8 +284,8 @@ internal class DataConnectGrpcRPCs(
 
   suspend fun connect2(
     streamId: String,
-    authToken: DataConnectAuth.GetAuthTokenResult?,
-    appCheckToken: DataConnectAppCheck.GetAppCheckTokenResult?,
+    authToken: GetAuthTokenResult?,
+    appCheckToken: GetAppCheckTokenResult?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
     connectorResourceName: String,
   ): Pair<Channel<StreamRequest>, Flow<StreamResponse>> {
@@ -371,8 +373,8 @@ internal class DataConnectGrpcRPCs(
   suspend fun executeMutation(
     requestId: String,
     requestProto: ExecuteMutationRequest,
-    authToken: DataConnectAuth.GetAuthTokenResult?,
-    appCheckToken: DataConnectAppCheck.GetAppCheckTokenResult?,
+    authToken: GetAuthTokenResult?,
+    appCheckToken: GetAppCheckTokenResult?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
   ): ExecuteMutationResponse {
     val metadata =
@@ -417,8 +419,8 @@ internal class DataConnectGrpcRPCs(
   suspend fun executeQuery(
     requestId: String,
     requestProto: ExecuteQueryRequest,
-    authToken: DataConnectAuth.GetAuthTokenResult?,
-    appCheckToken: DataConnectAppCheck.GetAppCheckTokenResult?,
+    authToken: GetAuthTokenResult?,
+    appCheckToken: GetAppCheckTokenResult?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
   ): ExecuteQueryResponse {
     val metadata =
@@ -645,11 +647,11 @@ private val StatusException.isGrpcUnauthenticatedError: Boolean
 
 internal inline fun <T> retryOnGrpcUnauthenticatedError(
   requestId: String,
-  getAuthToken: () -> DataConnectAuth.GetAuthTokenResult?,
-  getAppCheckToken: () -> DataConnectAppCheck.GetAppCheckTokenResult?,
+  getAuthToken: () -> GetAuthTokenResult?,
+  getAppCheckToken: () -> GetAppCheckTokenResult?,
   forceRefreshTokens: () -> Unit,
   logger: Logger,
-  block: (DataConnectAuth.GetAuthTokenResult?, DataConnectAppCheck.GetAppCheckTokenResult?) -> T,
+  block: (GetAuthTokenResult?, GetAppCheckTokenResult?) -> T,
 ): T {
   val authToken1 = getAuthToken()
   val appCheckToken1 = getAppCheckToken()

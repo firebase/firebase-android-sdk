@@ -20,6 +20,8 @@ import android.os.Build
 import com.google.firebase.FirebaseApp
 import com.google.firebase.dataconnect.BuildConfig
 import com.google.firebase.dataconnect.FirebaseDataConnect
+import com.google.firebase.dataconnect.core.DataConnectAppCheck.GetAppCheckTokenResult
+import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
 import com.google.firebase.dataconnect.core.Globals.toScrubbedAccessToken
 import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
@@ -74,8 +76,8 @@ internal class DataConnectGrpcMetadata(
   }
 
   fun get(
-    authToken: DataConnectAuth.GetAuthTokenResult?,
-    appCheckToken: DataConnectAppCheck.GetAppCheckTokenResult?,
+    authToken: GetAuthTokenResult?,
+    appCheckToken: GetAppCheckTokenResult?,
     callerSdkType: FirebaseDataConnect.CallerSdkType
   ): Metadata {
     val metadata =

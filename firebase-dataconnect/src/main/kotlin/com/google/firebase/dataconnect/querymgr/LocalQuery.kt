@@ -18,8 +18,8 @@ package com.google.firebase.dataconnect.querymgr
 
 import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.FirebaseDataConnect
-import com.google.firebase.dataconnect.core.DataConnectAppCheck
-import com.google.firebase.dataconnect.core.DataConnectAuth
+import com.google.firebase.dataconnect.core.DataConnectAppCheck.GetAppCheckTokenResult
+import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import com.google.firebase.dataconnect.util.DeserializeUtils.deserialize
@@ -41,8 +41,8 @@ internal sealed class LocalQuery<out Data>(
   suspend fun execute(
     requestId: String,
     sequenceNumber: Long,
-    authToken: DataConnectAuth.GetAuthTokenResult?,
-    appCheckToken: DataConnectAppCheck.GetAppCheckTokenResult?,
+    authToken: GetAuthTokenResult?,
+    appCheckToken: GetAppCheckTokenResult?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
   ): SequencedReference<ExecuteResult<Data>> {
     val executeImplResultSequencedReference =
@@ -60,8 +60,8 @@ internal sealed class LocalQuery<out Data>(
   abstract suspend fun executeImpl(
     requestId: String,
     sequenceNumber: Long,
-    authToken: DataConnectAuth.GetAuthTokenResult?,
-    appCheckToken: DataConnectAppCheck.GetAppCheckTokenResult?,
+    authToken: GetAuthTokenResult?,
+    appCheckToken: GetAppCheckTokenResult?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
   ): SequencedReference<ExecuteImplResult>
 

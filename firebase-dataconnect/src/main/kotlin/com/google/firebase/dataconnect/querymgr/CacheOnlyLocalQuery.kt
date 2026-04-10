@@ -19,8 +19,8 @@ package com.google.firebase.dataconnect.querymgr
 import com.google.firebase.dataconnect.CachedDataNotFoundException
 import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.FirebaseDataConnect
-import com.google.firebase.dataconnect.core.DataConnectAppCheck
-import com.google.firebase.dataconnect.core.DataConnectAuth
+import com.google.firebase.dataconnect.core.DataConnectAppCheck.GetAppCheckTokenResult
+import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase
@@ -50,8 +50,8 @@ internal class CacheOnlyLocalQuery<Data>(
   override suspend fun executeImpl(
     requestId: String,
     sequenceNumber: Long,
-    authToken: DataConnectAuth.GetAuthTokenResult?,
-    appCheckToken: DataConnectAppCheck.GetAppCheckTokenResult?,
+    authToken: GetAuthTokenResult?,
+    appCheckToken: GetAppCheckTokenResult?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
   ): SequencedReference<ExecuteImplResult> {
     val getQueryResultResult = executeImpl(requestId, GetQueryResultResult.Found::class)

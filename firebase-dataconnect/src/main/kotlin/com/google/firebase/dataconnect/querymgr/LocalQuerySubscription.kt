@@ -19,8 +19,8 @@ package com.google.firebase.dataconnect.querymgr
 import com.google.firebase.dataconnect.CachedDataNotFoundException
 import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.FirebaseDataConnect
-import com.google.firebase.dataconnect.core.DataConnectAppCheck
-import com.google.firebase.dataconnect.core.DataConnectAuth
+import com.google.firebase.dataconnect.core.DataConnectAppCheck.GetAppCheckTokenResult
+import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import com.google.firebase.dataconnect.util.SequencedReference.Companion.nextSequenceNumber
@@ -46,8 +46,8 @@ internal class LocalQuerySubscription<out Data>(
 
   suspend fun subscribe(
     requestId: String,
-    authToken: DataConnectAuth.GetAuthTokenResult?,
-    appCheckToken: DataConnectAppCheck.GetAppCheckTokenResult?,
+    authToken: GetAuthTokenResult?,
+    appCheckToken: GetAppCheckTokenResult?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
   ): Flow<Result<LocalQuery.ExecuteResult<Data>>> {
     val cachedResult: Deferred<LocalQuery.ExecuteResult<Data>>? =

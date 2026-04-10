@@ -19,7 +19,9 @@ package com.google.firebase.dataconnect.opmgr
 import com.google.firebase.dataconnect.FirebaseDataConnect
 import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.core.DataConnectAppCheck
+import com.google.firebase.dataconnect.core.DataConnectAppCheck.GetAppCheckTokenResult
 import com.google.firebase.dataconnect.core.DataConnectAuth
+import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
 import com.google.firebase.dataconnect.core.DataConnectGrpcRPCs
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
@@ -83,8 +85,8 @@ internal class OperationExecutor(
           .setVariables(variablesStruct)
           .build()
 
-      val authToken: DataConnectAuth.GetAuthTokenResult? = authTokenJob.await()
-      val appCheckToken: DataConnectAppCheck.GetAppCheckTokenResult? = appCheckTokenJob.await()
+      val authToken: GetAuthTokenResult? = authTokenJob.await()
+      val appCheckToken: GetAppCheckTokenResult? = appCheckTokenJob.await()
 
       dataConnectGrpcRPCs.executeMutation(
         requestId = requestId,
