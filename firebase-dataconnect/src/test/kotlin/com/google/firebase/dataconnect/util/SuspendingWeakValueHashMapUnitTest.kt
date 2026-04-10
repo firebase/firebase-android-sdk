@@ -618,12 +618,14 @@ class SuspendingWeakValueHashMapUnitTest {
             currentMap = map
             currentRemainingKeys = populatedKeys.toMutableSet()
           }
-          currentRemainingKeys!!.forEach { key ->
+          val remainingKeys = currentRemainingKeys!!
+          remainingKeys.toList().forEach { key ->
             if (map.get(key) === null) {
               map.remove(key).shouldBeNull()
+              remainingKeys.remove(key)
             }
           }
-          currentRemainingKeys!!.size
+          remainingKeys.size
         }
       },
       verify = { map, _, _ ->
