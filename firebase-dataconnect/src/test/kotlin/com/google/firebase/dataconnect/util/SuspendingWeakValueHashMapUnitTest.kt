@@ -17,7 +17,6 @@
 
 package com.google.firebase.dataconnect.util
 
-import android.os.ConditionVariable
 import com.google.firebase.dataconnect.testutil.CleanupsRule
 import com.google.firebase.dataconnect.testutil.SuspendingCountDownLatch
 import com.google.firebase.dataconnect.testutil.delayIgnoringTestScheduler
@@ -59,7 +58,6 @@ import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import org.junit.Rule
 import org.junit.Test
@@ -175,7 +173,7 @@ class SuspendingWeakValueHashMapUnitTest {
     }
   }
 
-  private fun verifyAsValuesAreGarbageCollected(onIteration: suspend PropertyContext.(SuspendingWeakValueHashMap<Int, Value>, List<Int>) -> Int = {_, _ -> 0}, verify: suspend PropertyContext.(SuspendingWeakValueHashMap<Int, Value>, List<Int>, List<Int>) -> Unit) = verifyWithGarbageCollectionIntervals(onIteration, verify, blockingDispatcher, gcDelay = 50.milliseconds, iterations=50)
+  private fun verifyAsValuesAreGarbageCollected(onIteration: suspend PropertyContext.(SuspendingWeakValueHashMap<Int, Value>, List<Int>) -> Int, verify: suspend PropertyContext.(SuspendingWeakValueHashMap<Int, Value>, List<Int>, List<Int>) -> Unit) = verifyWithGarbageCollectionIntervals(onIteration, verify, blockingDispatcher, gcDelay = 50.milliseconds, iterations=50)
 
   private fun verifyAsCleanupLoopIsStalledAndValuesAreGarbageCollected(onIteration: suspend PropertyContext.(SuspendingWeakValueHashMap<Int, Value>, List<Int>) -> Int, verify: suspend PropertyContext.(SuspendingWeakValueHashMap<Int, Value>, List<Int>, List<Int>) -> Unit) {
     val singleThreadExecutor = Executors.newSingleThreadExecutor()
@@ -459,6 +457,7 @@ class SuspendingWeakValueHashMapUnitTest {
 
   @Test
   fun `put() returns null as background cleanup occurs`() = verifyAsValuesAreGarbageCollected(
+    onIteration = {map, _ -> map.size()},
     verify = { map, _, populatedKeys ->
       val valueArb = valueArb()
       populatedKeys.sorted().shuffled().forEach {
@@ -480,12 +479,14 @@ class SuspendingWeakValueHashMapUnitTest {
             currentMap = map
             currentRemainingKeys = populatedKeys.toMutableSet()
           }
-          currentRemainingKeys!!.forEach { key ->
+          val remainingKeys = currentRemainingKeys!!
+          remainingKeys.toList().forEach { key ->
             if (map.get(key) === null) {
               map.put(key, valueArb.next(randomSource())).shouldBeNull()
+              remainingKeys.remove(key)
             }
           }
-          currentRemainingKeys!!.size
+          remainingKeys.size
         }
       },
       verify = { map, _, _ ->
@@ -588,6 +589,7 @@ class SuspendingWeakValueHashMapUnitTest {
 
   @Test
   fun `remove() returns null as background cleanup occurs`() = verifyAsValuesAreGarbageCollected(
+    onIteration = {map, _ -> map.size()},
     verify = { map, _, populatedKeys ->
       populatedKeys.sorted().shuffled().forEach {
         map.remove(it).shouldBeNull()
