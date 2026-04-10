@@ -82,8 +82,8 @@ internal class MutationManager(
         dataConnectGrpcRPCs.executeMutation(
           requestId = requestId,
           requestProto = requestProto,
-          authToken = authTokenResult?.token,
-          appCheckToken = appCheckTokenResult?.token,
+          authToken = authTokenResult,
+          appCheckToken = appCheckTokenResult,
           callerSdkType = callerSdkType,
         )
       }

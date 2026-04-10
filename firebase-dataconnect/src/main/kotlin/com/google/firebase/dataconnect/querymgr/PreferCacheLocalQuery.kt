@@ -18,6 +18,8 @@ package com.google.firebase.dataconnect.querymgr
 
 import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.FirebaseDataConnect
+import com.google.firebase.dataconnect.core.DataConnectAppCheck.GetAppCheckTokenResult
+import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase.GetQueryResultResult
 import com.google.firebase.dataconnect.util.SequencedReference
@@ -37,8 +39,8 @@ internal class PreferCacheLocalQuery<Data>(
   override suspend fun executeImpl(
     requestId: String,
     sequenceNumber: Long,
-    authToken: String?,
-    appCheckToken: String?,
+    authToken: GetAuthTokenResult?,
+    appCheckToken: GetAppCheckTokenResult?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
   ): SequencedReference<ExecuteImplResult> {
     run {

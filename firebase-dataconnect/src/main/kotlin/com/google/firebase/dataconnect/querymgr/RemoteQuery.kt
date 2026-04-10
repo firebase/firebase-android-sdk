@@ -17,6 +17,8 @@
 package com.google.firebase.dataconnect.querymgr
 
 import com.google.firebase.dataconnect.FirebaseDataConnect
+import com.google.firebase.dataconnect.core.DataConnectAppCheck.GetAppCheckTokenResult
+import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
 import com.google.firebase.dataconnect.core.DataConnectGrpcRPCs
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
@@ -40,8 +42,8 @@ internal class RemoteQuery(
 
   private class ExecuteParams(
     val requestId: String,
-    val authToken: String?,
-    val appCheckToken: String?,
+    val authToken: GetAuthTokenResult?,
+    val appCheckToken: GetAppCheckTokenResult?,
     val callerSdkType: FirebaseDataConnect.CallerSdkType,
   )
 
@@ -73,8 +75,8 @@ internal class RemoteQuery(
   suspend fun execute(
     requestId: String,
     sequenceNumber: Long,
-    authToken: String?,
-    appCheckToken: String?,
+    authToken: GetAuthTokenResult?,
+    appCheckToken: GetAppCheckTokenResult?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
   ): SequencedReference<ExecuteQueryResponseProto> {
     val params =

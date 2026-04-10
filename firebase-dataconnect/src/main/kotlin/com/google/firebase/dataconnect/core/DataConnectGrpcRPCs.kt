@@ -22,6 +22,8 @@ import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.DataConnectException
 import com.google.firebase.dataconnect.DataConnectUntypedVariables
 import com.google.firebase.dataconnect.FirebaseDataConnect
+import com.google.firebase.dataconnect.core.DataConnectAppCheck.GetAppCheckTokenResult
+import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
 import com.google.firebase.dataconnect.core.DataConnectGrpcMetadata.Companion.toStructProto
 import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
@@ -243,8 +245,8 @@ internal class DataConnectGrpcRPCs(
 
   suspend fun connect(
     streamId: String,
-    authToken: String?,
-    appCheckToken: String?,
+    authToken: GetAuthTokenResult?,
+    appCheckToken: GetAppCheckTokenResult?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
     name: String,
   ): DataConnectStream {
@@ -264,8 +266,9 @@ internal class DataConnectGrpcRPCs(
           kotlinMethodName = kotlinMethodName,
           grpcMethod = ConnectorStreamServiceGrpc.getConnectMethod(),
           metadata = metadata,
-          request = initRequest.toStructProto(),
+          request = initRequest.toStructProto(authToken?.authUid),
           requestTypeName = "StreamRequest",
+          authUid = authToken?.authUid,
         )
       } else {
         logger.logGrpcSendingStreaming(
@@ -273,6 +276,7 @@ internal class DataConnectGrpcRPCs(
           requestId = request.requestId,
           kotlinMethodName = kotlinMethodName,
           request = request,
+          authUid = authToken?.authUid,
         )
       }
     }
@@ -328,16 +332,11 @@ internal class DataConnectGrpcRPCs(
   suspend fun executeMutation(
     requestId: String,
     requestProto: ExecuteMutationRequest,
-    authToken: String?,
-    appCheckToken: String?,
+    authToken: GetAuthTokenResult?,
+    appCheckToken: GetAppCheckTokenResult?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
   ): ExecuteMutationResponse {
-    val metadata =
-      grpcMetadata.get(
-        authToken = authToken,
-        appCheckToken = appCheckToken,
-        callerSdkType = callerSdkType
-      )
+    val metadata = grpcMetadata.get(authToken, appCheckToken, callerSdkType)
     val kotlinMethodName = "executeMutation(${requestProto.operationName})"
 
     logger.logGrpcSending(
@@ -347,6 +346,7 @@ internal class DataConnectGrpcRPCs(
       metadata = metadata,
       request = requestProto.toStructProto(),
       requestTypeName = "ExecuteMutationRequest",
+      authUid = authToken?.authUid,
     )
 
     val result = lazyGrpcStub.get().runCatching { executeMutation(requestProto, metadata) }
@@ -373,16 +373,11 @@ internal class DataConnectGrpcRPCs(
   suspend fun executeQuery(
     requestId: String,
     requestProto: ExecuteQueryRequest,
-    authToken: String?,
-    appCheckToken: String?,
+    authToken: GetAuthTokenResult?,
+    appCheckToken: GetAppCheckTokenResult?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
   ): ExecuteQueryResponse {
-    val metadata =
-      grpcMetadata.get(
-        authToken = authToken,
-        appCheckToken = appCheckToken,
-        callerSdkType = callerSdkType
-      )
+    val metadata = grpcMetadata.get(authToken, appCheckToken, callerSdkType)
     val kotlinMethodName = "executeQuery(${requestProto.operationName})"
 
     logger.logGrpcSending(
@@ -392,6 +387,7 @@ internal class DataConnectGrpcRPCs(
       metadata = metadata,
       request = requestProto.toStructProto(),
       requestTypeName = "ExecuteQueryRequest",
+      authUid = authToken?.authUid,
     )
 
     val result = lazyGrpcStub.get().runCatching { executeQuery(requestProto, metadata) }
@@ -526,11 +522,12 @@ internal class DataConnectGrpcRPCs(
       grpcMethod: MethodDescriptor<*, *>,
       metadata: Metadata,
       request: Struct,
-      requestTypeName: String
+      requestTypeName: String,
+      authUid: String?,
     ) = debug {
       val struct = buildStructProto {
         put("RPC", grpcMethod.fullMethodName)
-        put("Metadata", metadata.toStructProto())
+        put("Metadata", metadata.toStructProto(authUid))
         put(requestTypeName, request)
       }
       // Sort the keys in the output string to be more meaningful than alphabetical.
@@ -550,9 +547,10 @@ internal class DataConnectGrpcRPCs(
       requestId: String,
       kotlinMethodName: String,
       request: StreamRequest,
+      authUid: String?
     ) = debug {
       "$kotlinMethodName [sid=$streamId, rid=$requestId] sending StreamRequest: " +
-        request.toCompactString()
+        request.toCompactString(authUid)
     }
 
     fun Logger.logGrpcReceivedStreaming(
@@ -623,11 +621,11 @@ private val StatusException.isGrpcUnauthenticatedError: Boolean
 
 internal inline fun <T> retryOnGrpcUnauthenticatedError(
   requestId: String,
-  getAuthToken: () -> DataConnectAuth.GetAuthTokenResult?,
-  getAppCheckToken: () -> DataConnectAppCheck.GetAppCheckTokenResult?,
+  getAuthToken: () -> GetAuthTokenResult?,
+  getAppCheckToken: () -> GetAppCheckTokenResult?,
   forceRefreshTokens: () -> Unit,
   logger: Logger,
-  block: (DataConnectAuth.GetAuthTokenResult?, DataConnectAppCheck.GetAppCheckTokenResult?) -> T,
+  block: (GetAuthTokenResult?, GetAppCheckTokenResult?) -> T,
 ): T {
   val authToken1 = getAuthToken()
   val appCheckToken1 = getAppCheckToken()

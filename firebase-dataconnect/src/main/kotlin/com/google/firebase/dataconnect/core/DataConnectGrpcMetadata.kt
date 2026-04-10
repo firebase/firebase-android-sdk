@@ -20,6 +20,8 @@ import android.os.Build
 import com.google.firebase.FirebaseApp
 import com.google.firebase.dataconnect.BuildConfig
 import com.google.firebase.dataconnect.FirebaseDataConnect
+import com.google.firebase.dataconnect.core.DataConnectAppCheck.GetAppCheckTokenResult
+import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
 import com.google.firebase.dataconnect.core.Globals.toScrubbedAccessToken
 import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
@@ -74,8 +76,8 @@ internal class DataConnectGrpcMetadata(
   }
 
   fun get(
-    authToken: String?,
-    appCheckToken: String?,
+    authToken: GetAuthTokenResult?,
+    appCheckToken: GetAppCheckTokenResult?,
     callerSdkType: FirebaseDataConnect.CallerSdkType
   ): Metadata {
     val metadata =
@@ -85,11 +87,12 @@ internal class DataConnectGrpcMetadata(
         if (appId.isNotBlank()) {
           it.put(gmpAppIdHeader, appId)
         }
-        if (authToken !== null) {
-          it.put(firebaseAuthTokenHeader, authToken)
+
+        authToken?.token?.let { authTokenString ->
+          it.put(firebaseAuthTokenHeader, authTokenString)
         }
-        if (appCheckToken !== null) {
-          it.put(firebaseAppCheckTokenHeader, appCheckToken)
+        appCheckToken?.token?.let { appCheckTokenString ->
+          it.put(firebaseAppCheckTokenHeader, appCheckTokenString)
         }
       }
 
@@ -99,7 +102,7 @@ internal class DataConnectGrpcMetadata(
   companion object {
     // TODO: Move this to ProtoUtil.kt where it would live alongside other related methods.
     // NOTE: Keep the implementation of this method in parity with StructProtoBuilder.putHeaders().
-    fun Metadata.toStructProto(): Struct = buildStructProto {
+    fun Metadata.toStructProto(authUid: String?): Struct = buildStructProto {
       val keys: List<Metadata.Key<String>> = run {
         val keySet: MutableSet<String> = keys().toMutableSet()
         // Always explicitly include the auth header in the returned string, even if it is absent.
@@ -115,7 +118,7 @@ internal class DataConnectGrpcMetadata(
           else {
             values.map {
               when (key.name()) {
-                firebaseAuthTokenHeader.name() -> it.toScrubbedAccessToken()
+                firebaseAuthTokenHeader.name() -> it.toScrubbedAccessToken() + " (authUid=$authUid)"
                 firebaseAppCheckTokenHeader.name() -> it.toScrubbedAccessToken()
                 else -> it
               }
@@ -130,7 +133,7 @@ internal class DataConnectGrpcMetadata(
 
     // TODO: Move this to ProtoUtil.kt where it would live alongside other related methods.
     // NOTE: Keep the implementation of this method in parity with Metadata.toStructProto().
-    fun StructProtoBuilder.putHeaders(key: String, headers: Map<String, String>) {
+    fun StructProtoBuilder.putHeaders(authUid: String?, key: String, headers: Map<String, String>) {
       putStruct(key) {
         val keys: List<String> =
           buildSet {
@@ -147,7 +150,7 @@ internal class DataConnectGrpcMetadata(
           val scrubbedValue =
             value?.let {
               when (key) {
-                firebaseAuthTokenHeader.name() -> it.toScrubbedAccessToken()
+                firebaseAuthTokenHeader.name() -> it.toScrubbedAccessToken() + " (authUid=$authUid)"
                 firebaseAppCheckTokenHeader.name() -> it.toScrubbedAccessToken()
                 else -> it
               }

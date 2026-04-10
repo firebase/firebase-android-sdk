@@ -22,6 +22,8 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.firebase.dataconnect.BuildConfig
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.testutil.FirebaseAppUnitTestingRule
+import com.google.firebase.dataconnect.testutil.property.arbitrary.appCheckTokenResult
+import com.google.firebase.dataconnect.testutil.property.arbitrary.authTokenResult
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnectGrpcMetadata
 import io.grpc.Metadata
@@ -37,11 +39,8 @@ import io.kotest.property.PropTestConfig
 import io.kotest.property.ShrinkingMode
 import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.enum
-import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.next
 import io.kotest.property.arbitrary.orNull
-import io.kotest.property.arbs.travel.airport
-import io.kotest.property.arbs.usernames
 import io.kotest.property.checkAll
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
@@ -70,10 +69,12 @@ class DataConnectGrpcMetadataUnitTest {
         grpcVersion = Arb.constant("fq9fhx6j5e"),
       )
 
-    checkAll(propTestConfig, dataConnectGrpcMetadataArb, authTokenArb(), appCheckTokenArb()) {
-      dataConnectGrpcMetadata,
-      authToken,
-      appCheckToken ->
+    checkAll(
+      propTestConfig,
+      dataConnectGrpcMetadataArb,
+      Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.33),
+      Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.33),
+    ) { dataConnectGrpcMetadata, authToken, appCheckToken ->
       val metadata =
         dataConnectGrpcMetadata.get(
           authToken = authToken,
@@ -100,10 +101,12 @@ class DataConnectGrpcMetadataUnitTest {
         grpcVersion = Arb.constant("fq9fhx6j5e"),
       )
 
-    checkAll(propTestConfig, dataConnectGrpcMetadataArb, authTokenArb(), appCheckTokenArb()) {
-      dataConnectGrpcMetadata,
-      authToken,
-      appCheckToken ->
+    checkAll(
+      propTestConfig,
+      dataConnectGrpcMetadataArb,
+      Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.33),
+      Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.33),
+    ) { dataConnectGrpcMetadata, authToken, appCheckToken ->
       val metadata =
         dataConnectGrpcMetadata.get(
           authToken = authToken,
@@ -130,8 +133,8 @@ class DataConnectGrpcMetadataUnitTest {
     checkAll(
       propTestConfig,
       dataConnectGrpcMetadataArb,
-      authTokenArb(),
-      appCheckTokenArb(),
+      Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.33),
+      Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.33),
       Arb.enum<CallerSdkType>()
     ) { dataConnectGrpcMetadata, authToken, appCheckToken, callerSdkType ->
       val metadata =
@@ -157,8 +160,8 @@ class DataConnectGrpcMetadataUnitTest {
     checkAll(
       propTestConfig,
       dataConnectGrpcMetadataArb,
-      authTokenArb(),
-      appCheckTokenArb(),
+      Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.33),
+      Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.33),
       Arb.enum<CallerSdkType>()
     ) { dataConnectGrpcMetadata, authToken, appCheckToken, callerSdkType ->
       val metadata =
@@ -184,8 +187,8 @@ class DataConnectGrpcMetadataUnitTest {
     checkAll(
       propTestConfig,
       dataConnectGrpcMetadataArb,
-      authTokenArb(),
-      appCheckTokenArb(),
+      Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.33),
+      Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.33),
       Arb.enum<CallerSdkType>()
     ) { dataConnectGrpcMetadata, authToken, appCheckToken, callerSdkType ->
       val metadata =
@@ -207,8 +210,8 @@ class DataConnectGrpcMetadataUnitTest {
     checkAll(
       propTestConfig,
       dataConnectGrpcMetadataArb,
-      authTokenArb(),
-      appCheckTokenArb(),
+      Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.33),
+      Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.33),
       Arb.enum<CallerSdkType>()
     ) { dataConnectGrpcMetadata, authToken, appCheckToken, callerSdkType ->
       val metadata =
@@ -223,11 +226,11 @@ class DataConnectGrpcMetadataUnitTest {
   }
 
   @Test
-  fun `should omit x-firebase-auth-token when the auth token is null`() = runTest {
+  fun `should omit x-firebase-auth-token when the auth token result is null`() = runTest {
     checkAll(
       propTestConfig,
       Arb.dataConnect.dataConnectGrpcMetadata(),
-      appCheckTokenArb(),
+      Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.33),
       Arb.enum<CallerSdkType>()
     ) { dataConnectGrpcMetadata, appCheckToken, callerSdkType ->
       val metadata =
@@ -242,17 +245,38 @@ class DataConnectGrpcMetadataUnitTest {
   }
 
   @Test
+  fun `should omit x-firebase-auth-token when the auth token result is not null but the token is null`() =
+    runTest {
+      checkAll(
+        propTestConfig,
+        Arb.dataConnect.dataConnectGrpcMetadata(),
+        Arb.dataConnect.authTokenResult(accessToken = Arb.constant(null)),
+        Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.33),
+        Arb.enum<CallerSdkType>()
+      ) { dataConnectGrpcMetadata, authToken, appCheckToken, callerSdkType ->
+        val metadata =
+          dataConnectGrpcMetadata.get(
+            authToken = authToken,
+            appCheckToken = appCheckToken,
+            callerSdkType = callerSdkType,
+          )
+
+        metadata.asClue { it.keys() shouldNotContain "x-firebase-auth-token" }
+      }
+    }
+
+  @Test
   fun `should include x-firebase-auth-token when the auth token is not null`() = runTest {
     checkAll(
       propTestConfig,
       Arb.dataConnect.dataConnectGrpcMetadata(),
-      nonNullAuthTokenArb(),
-      appCheckTokenArb(),
+      Arb.dataConnect.authTokenResult(accessToken = Arb.dataConnect.authToken()),
+      Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.33),
       Arb.enum<CallerSdkType>()
-    ) { dataConnectGrpcMetadata, nonNullAuthToken, appCheckToken, callerSdkType ->
+    ) { dataConnectGrpcMetadata, authToken, appCheckToken, callerSdkType ->
       val metadata =
         dataConnectGrpcMetadata.get(
-          authToken = nonNullAuthToken,
+          authToken = authToken,
           appCheckToken = appCheckToken,
           callerSdkType = callerSdkType,
         )
@@ -260,17 +284,17 @@ class DataConnectGrpcMetadataUnitTest {
       metadata.asClue {
         it.keys() shouldContain "x-firebase-auth-token"
         val metadataKey = Metadata.Key.of("x-firebase-auth-token", Metadata.ASCII_STRING_MARSHALLER)
-        it.get(metadataKey) shouldBe nonNullAuthToken
+        it.get(metadataKey) shouldBe authToken.token
       }
     }
   }
 
   @Test
-  fun `should omit x-firebase-appcheck when the AppCheck token is null`() = runTest {
+  fun `should omit x-firebase-appcheck when the AppCheck token result is null`() = runTest {
     checkAll(
       propTestConfig,
       Arb.dataConnect.dataConnectGrpcMetadata(),
-      authTokenArb(),
+      Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.33),
       Arb.enum<CallerSdkType>()
     ) { dataConnectGrpcMetadata, authToken, callerSdkType ->
       val metadata =
@@ -285,25 +309,46 @@ class DataConnectGrpcMetadataUnitTest {
   }
 
   @Test
+  fun `should omit x-firebase-appcheck when the AppCheck token result is not null but the token is null`() =
+    runTest {
+      checkAll(
+        propTestConfig,
+        Arb.dataConnect.dataConnectGrpcMetadata(),
+        Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.33),
+        Arb.dataConnect.appCheckTokenResult(accessToken = Arb.constant(null)),
+        Arb.enum<CallerSdkType>()
+      ) { dataConnectGrpcMetadata, authToken, appCheckToken, callerSdkType ->
+        val metadata =
+          dataConnectGrpcMetadata.get(
+            authToken = authToken,
+            appCheckToken = appCheckToken,
+            callerSdkType = callerSdkType,
+          )
+
+        metadata.asClue { it.keys() shouldNotContain "x-firebase-appcheck" }
+      }
+    }
+
+  @Test
   fun `should include x-firebase-appcheck when the AppCheck token is not null`() = runTest {
     checkAll(
       propTestConfig,
       Arb.dataConnect.dataConnectGrpcMetadata(),
-      authTokenArb(),
-      nonNullAppCheckTokenArb(),
+      Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.33),
+      Arb.dataConnect.appCheckTokenResult(accessToken = Arb.dataConnect.appCheckToken()),
       Arb.enum<CallerSdkType>()
-    ) { dataConnectGrpcMetadata, authToken, nonNullAppCheckToken, callerSdkType ->
+    ) { dataConnectGrpcMetadata, authToken, appCheckToken, callerSdkType ->
       val metadata =
         dataConnectGrpcMetadata.get(
           authToken = authToken,
-          appCheckToken = nonNullAppCheckToken,
+          appCheckToken = appCheckToken,
           callerSdkType = callerSdkType,
         )
 
       metadata.asClue {
         it.keys() shouldContain "x-firebase-appcheck"
         val metadataKey = Metadata.Key.of("x-firebase-appcheck", Metadata.ASCII_STRING_MARSHALLER)
-        it.get(metadataKey) shouldBe nonNullAppCheckToken
+        it.get(metadataKey) shouldBe appCheckToken.token
       }
     }
   }
@@ -335,13 +380,3 @@ private val propTestConfig =
     edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.2),
     shrinkingMode = ShrinkingMode.Off,
   )
-
-private fun nonNullAuthTokenArb(): Arb<String> = Arb.usernames().map { "authToken_${it.value}" }
-
-private fun authTokenArb(): Arb<String?> = nonNullAuthTokenArb().orNull(nullProbability = 0.2)
-
-private fun nonNullAppCheckTokenArb(): Arb<String> =
-  Arb.airport().map { "appCheckToken_${it.iataCode}" }
-
-private fun appCheckTokenArb(): Arb<String?> =
-  nonNullAppCheckTokenArb().orNull(nullProbability = 0.2)
