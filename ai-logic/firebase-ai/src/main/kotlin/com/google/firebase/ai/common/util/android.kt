@@ -38,17 +38,22 @@ internal fun AudioRecord.readAsFlow() = flow {
 
   while (true) {
     if (recordingState != AudioRecord.RECORDSTATE_RECORDING) {
-      // delay uses a different scheduler in the backend, so it's "stickier" in its enforcement when
-      // compared to yield.
-      delay(0)
+      // Avoid busy looping when not recording
+      delay(20)
       continue
     }
-    val bytesRead = read(buffer, 0, buffer.size)
+    
+    // Use non-blocking read to avoid leaking threads if the hardware blocks
+    val bytesRead = read(buffer, 0, buffer.size, AudioRecord.READ_NON_BLOCKING)
+    
     if (bytesRead > 0) {
       emit(buffer.copyOf(bytesRead))
+    } else if (bytesRead == 0) {
+      // No data available yet, wait a bit
+      delay(10)
+    } else {
+      // Error read, small delay to avoid tight loop
+      delay(50)
     }
-    // delay uses a different scheduler in the backend, so it's "stickier" in its enforcement when
-    // compared to yield.
-    delay(0)
   }
 }
