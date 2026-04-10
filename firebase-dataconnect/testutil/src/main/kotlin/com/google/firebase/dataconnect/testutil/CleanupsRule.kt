@@ -17,8 +17,9 @@ package com.google.firebase.dataconnect.testutil
 
 import android.util.Log
 import io.kotest.common.runBlocking
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.getAndUpdate
+import kotlinx.coroutines.flow.update
 import org.junit.rules.ExternalResource
 
 /**
@@ -30,74 +31,90 @@ import org.junit.rules.ExternalResource
  */
 class CleanupsRule : ExternalResource() {
 
-  private val mutex = Mutex()
-  private var beforeCalled = false
-  private var afterCalled = false
-  private val cleanups = mutableListOf<Cleanup>()
-
-  /**
-   * Registers a cleanup. This function potentially blocks briefly while acquiring the lock on the
-   * list of cleanups. Throws an exception if called before [before] or after [after] has started.
-   */
-  fun register(autoCloseable: AutoCloseable) = register(name = autoCloseable::class.qualifiedName, autoCloseable::close)
-
-  /**
-   * Registers a cleanup. This function potentially blocks briefly while acquiring the lock on the
-   * list of cleanups. Throws an exception if called before [before] or after [after] has started.
-   */
-  fun register(cleanup: () -> Unit) = register(name = null, cleanup)
-
-  /**
-   * Registers a cleanup. This function potentially blocks briefly while acquiring the lock on the
-   * list of cleanups. Throws an exception if called before [before] or after [after] has started.
-   */
-  fun register(name: String?, cleanup: () -> Unit) = runBlocking {
-    registerSuspending(name, cleanup)
+  private sealed interface State {
+    data object BeforeNotCalled : State
+    class Active(val cleanups: List<Cleanup>) : State
+    data object AfterCalled : State
   }
 
-  /**
-   * Registers a cleanup. This function potentially suspends while acquiring the lock on the list of
-   * cleanups. Throws an exception if called before [before] or after [after] has started.
-   */
-  suspend fun registerSuspending(cleanup: suspend () -> Unit) = registerSuspending(name = null, cleanup)
+  private val state = MutableStateFlow<State>(State.BeforeNotCalled)
 
-  /**
-   * Registers a cleanup. This function potentially suspends while acquiring the lock on the list of
-   * cleanups. Throws an exception if called before [before] or after [after] has started.
-   */
-  suspend fun registerSuspending(name: String?, cleanup: suspend () -> Unit) {
-    mutex.withLock {
-      check(beforeCalled) {
-        "cleanups can not be registered until before() is called " + "(error code 3yrwbehmvk)"
+  fun register(autoCloseable: AutoCloseable): Registration = register(name = autoCloseable::class.qualifiedName, autoCloseable::close)
+
+  fun register(cleanup: () -> Unit): Registration = register(name = null, cleanup)
+
+  fun register(name: String?, cleanup: () -> Unit): Registration {
+    val registration = Cleanup(name, cleanup)
+
+    state.update { currentState ->
+      val activeState: State.Active = when (currentState) {
+        is State.Active -> currentState
+        State.AfterCalled -> throw IllegalStateException("cleanups can not be registered after after() is called")
+        State.BeforeNotCalled -> throw IllegalStateException("cleanups can not be registered until before() is called")
       }
 
-      check(!afterCalled) {
-        "cleanups can not be registered after after() has started " + "(error code dw92ms797f)"
+      val newCleanups = buildList(activeState.cleanups.size + 1) {
+        addAll(activeState.cleanups)
+        add(registration)
       }
 
-      cleanups.add(Cleanup(name, cleanup))
+      State.Active(newCleanups)
+    }
+
+    return registration
+  }
+
+  fun registerSuspending(cleanup: suspend () -> Unit): Registration = registerSuspending(name = null, cleanup)
+
+  fun registerSuspending(name: String?, cleanup: suspend () -> Unit): Registration = register(name) { runBlocking { cleanup() } }
+
+  fun unregister(registration: Registration) {
+    state.update { currentState ->
+      val activeState: State.Active = when (currentState) {
+        is State.Active -> currentState
+        State.AfterCalled -> return
+        State.BeforeNotCalled -> return
+      }
+
+      val index = activeState.cleanups.indexOfFirst { it === registration }
+      if (index < 0) {
+        return
+      }
+
+      val newCleanups = activeState.cleanups.toMutableList().let {
+        it.removeAt(index)
+        it.toList()
+      }
+
+      State.Active(newCleanups)
     }
   }
 
-  override fun before(): Unit = runBlocking {
-    mutex.withLock {
-      check(!beforeCalled) { "before() has already been called (error code hg4a8ab5ve)" }
-      beforeCalled = true
+  override fun before() {
+    state.update { currentState ->
+      when (currentState) {
+        State.BeforeNotCalled -> State.Active(emptyList())
+        is State.Active -> throw IllegalStateException("before() has already been called")
+        State.AfterCalled -> throw IllegalStateException("before() cannot be called after after()")
+      }
     }
   }
 
-  override fun after(): Unit = runBlocking {
-    mutex.withLock {
-      check(!afterCalled) { "after() has already been called (error code brewwkxs6g)" }
-      afterCalled = true
+  override fun after() {
+    val oldState = state.getAndUpdate { currentState ->
+      when (currentState) {
+        State.BeforeNotCalled -> throw IllegalStateException("before() must be called before after()")
+        is State.Active -> State.AfterCalled
+        State.AfterCalled -> throw IllegalStateException("after() has already been called")
+      }
     }
+
+    check(oldState is State.Active)
 
     var firstException: Throwable? = null
 
-    while (true) {
-      val cleanup = mutex.withLock { cleanups.removeLastOrNull() } ?: break
-
-      val result = cleanup.runCatching { action() }
+    oldState.cleanups.reversed().forEach { cleanup ->
+      val result = cleanup.runCatching { this.action() }
       result.onFailure {
         Log.e("CleanupsRule", "cleanup ${cleanup.name} failed: $it", it)
         if (firstException === null) {
@@ -109,5 +126,7 @@ class CleanupsRule : ExternalResource() {
     firstException?.let { throw it }
   }
 
-  private data class Cleanup(val name: String?, val action: suspend () -> Unit)
+  interface Registration
+
+  private data class Cleanup(val name: String?, val action: () -> Unit) : Registration
 }

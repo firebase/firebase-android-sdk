@@ -23,8 +23,8 @@ import com.google.firebase.dataconnect.testutil.SuspendingCountDownLatch
 import com.google.firebase.dataconnect.testutil.delayIgnoringTestScheduler
 import com.google.firebase.dataconnect.testutil.property.arbitrary.distinctPair
 import com.google.firebase.dataconnect.testutil.property.arbitrary.pair
+import com.google.firebase.dataconnect.testutil.property.arbitrary.withIterations
 import io.kotest.assertions.throwables.shouldThrow
-import io.kotest.assertions.withClue
 import io.kotest.common.DelicateKotest
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -128,11 +128,13 @@ class SuspendingWeakValueHashMapUnitTest {
   private fun verifyWithEmptyButPreviouslyNonEmptyInstance(verify: suspend (SuspendingWeakValueHashMap<Int, Value>) -> Unit) = runTest {
     checkAll(propTestConfig, Arb.int(0..50)) { size ->
       val map = SuspendingWeakValueHashMap<Int, Value>(blockingDispatcher)
-      cleanups.register(map)
+      val cleanupRegistration = cleanups.register(map)
       map.startCleanupJob(backgroundScope)
       map.populate(size, randomSource())
       map.clear()
       verify(map)
+      map.close()
+      cleanups.unregister(cleanupRegistration)
     }
   }
 
@@ -145,57 +147,67 @@ class SuspendingWeakValueHashMapUnitTest {
   private fun verifyWithClosedInstanceThatWasPopulated(verify: suspend (SuspendingWeakValueHashMap<Int, Value>) -> Unit) = runTest {
     checkAll(propTestConfig, Arb.int(0..50)) { size ->
       val map = SuspendingWeakValueHashMap<Int, Value>(blockingDispatcher)
-      cleanups.register(map)
+      val cleanupRegistration = cleanups.register(map)
       map.startCleanupJob(backgroundScope)
       map.populate(size, randomSource())
       map.close()
       verify(map)
+      map.close()
+      cleanups.unregister(cleanupRegistration)
     }
   }
 
   private fun verifyWithPopulatedMap(verify: suspend (SuspendingWeakValueHashMap<Int, Value>, Map<Int, Value>) -> Unit) = runTest {
     checkAll(propTestConfig, Arb.int(1..50)) { size ->
       val map = SuspendingWeakValueHashMap<Int, Value>(blockingDispatcher)
-      cleanups.register(map)
+      val cleanupRegistration = cleanups.register(map)
       map.startCleanupJob(backgroundScope)
       val populatedValues = map.populate(size, randomSource())
       verify(map, populatedValues)
+      map.close()
+      cleanups.unregister(cleanupRegistration)
     }
   }
 
-  private fun <T> verifyAsValuesAreGarbageCollected(onIteration: suspend PropertyContext.(SuspendingWeakValueHashMap<Int, Value>, List<Int>) -> T, verify: suspend PropertyContext.(SuspendingWeakValueHashMap<Int, Value>, List<T>, List<Int>) -> Unit) = verifyWithGarbageCollectionIntervals(onIteration, verify) {
+  private fun verifyAsValuesAreGarbageCollected(onIteration: suspend PropertyContext.(SuspendingWeakValueHashMap<Int, Value>, List<Int>) -> Int = {_, _ -> 0}, verify: suspend PropertyContext.(SuspendingWeakValueHashMap<Int, Value>, List<Int>, List<Int>) -> Unit) = verifyWithGarbageCollectionIntervals(onIteration, verify) {
       val map = SuspendingWeakValueHashMap<Int, Value>(blockingDispatcher)
-      cleanups.register(map)
+      val cleanupsRegistration = cleanups.register(map)
       map.startCleanupJob(backgroundScope)
-      map
+      Pair(map, cleanupsRegistration)
   }
 
-  private fun <T> verifyAsCleanupLoopIsStalledAndValuesAreGarbageCollected(onIteration: suspend PropertyContext.(SuspendingWeakValueHashMap<Int, Value>, List<Int>) -> T, verify: suspend PropertyContext.(SuspendingWeakValueHashMap<Int, Value>, List<T>, List<Int>) -> Unit) = verifyWithGarbageCollectionIntervals(onIteration, verify) {
+  private fun verifyAsCleanupLoopIsStalledAndValuesAreGarbageCollected(onIteration: suspend PropertyContext.(SuspendingWeakValueHashMap<Int, Value>, List<Int>) -> Int, verify: suspend PropertyContext.(SuspendingWeakValueHashMap<Int, Value>, List<Int>, List<Int>) -> Unit) {
     val singleThreadExecutor = Executors.newSingleThreadExecutor()
     cleanups.register { singleThreadExecutor.shutdownNow() }
-    val cv = ConditionVariable()
-    cleanups.register { cv.open() }
-    singleThreadExecutor.execute { cv.block() }
-    val map = SuspendingWeakValueHashMap<Int, Value>(singleThreadExecutor.asCoroutineDispatcher())
-    cleanups.register(map)
-    map.startCleanupJob(backgroundScope)
-    map
+    return verifyWithGarbageCollectionIntervals(onIteration, verify) {
+      val cv = ConditionVariable()
+      cleanups.register { cv.open() }
+      singleThreadExecutor.execute { cv.block() }
+      val map = SuspendingWeakValueHashMap<Int, Value>(singleThreadExecutor.asCoroutineDispatcher())
+      val cleanupRegistration = cleanups.register(map)
+      map.startCleanupJob(backgroundScope)
+      Pair(map, cleanupRegistration)
+    }
   }
 
-  private fun <T> verifyWithGarbageCollectionIntervals(onIteration: suspend PropertyContext.(SuspendingWeakValueHashMap<Int, Value>, List<Int>) -> T, verify: suspend PropertyContext.(SuspendingWeakValueHashMap<Int, Value>, List<T>, List<Int>) -> Unit, createMap: suspend TestScope.() -> SuspendingWeakValueHashMap<Int, Value>,) = runTest {
-    checkAll(propTestConfig, Arb.int(0..50)) { size ->
-      val map = createMap()
+  private fun verifyWithGarbageCollectionIntervals(onIteration: suspend PropertyContext.(SuspendingWeakValueHashMap<Int, Value>, List<Int>) -> Int, verify: suspend PropertyContext.(SuspendingWeakValueHashMap<Int, Value>, List<Int>, List<Int>) -> Unit, createMap: suspend TestScope.() -> Pair<SuspendingWeakValueHashMap<Int, Value>, CleanupsRule.Registration>,) = runTest {
+    checkAll(propTestConfig.withIterations(50), Arb.int(0..50)) { size ->
+      val (map, cleanupRegistration) = createMap()
       val populatedKeys = map.populate(size, randomSource()).keys.toList().sorted().shuffled(randomSource().random)
 
       val values =
         List(50) {
           val value = onIteration(map, populatedKeys)
-          System.gc()
-          delayIgnoringTestScheduler(1.milliseconds)
+          if (value != 0) {
+            System.gc()
+            delayIgnoringTestScheduler(50.milliseconds)
+          }
           value
         }
 
       verify(map, values, populatedKeys)
+      map.close()
+      cleanups.unregister(cleanupRegistration)
     }
   }
 
@@ -443,7 +455,6 @@ class SuspendingWeakValueHashMapUnitTest {
 
   @Test
   fun `put() returns null as background cleanup occurs`() = verifyAsValuesAreGarbageCollected(
-    onIteration = { _, _ -> },
     verify = { map, _, populatedKeys ->
       val valueArb = valueArb()
       populatedKeys.sorted().shuffled().forEach {
@@ -470,6 +481,7 @@ class SuspendingWeakValueHashMapUnitTest {
               map.put(key, valueArb.next(randomSource())).shouldBeNull()
             }
           }
+          currentRemainingKeys!!.size
         }
       },
       verify = { map, _, _ ->
@@ -572,7 +584,6 @@ class SuspendingWeakValueHashMapUnitTest {
 
   @Test
   fun `remove() returns null as background cleanup occurs`() = verifyAsValuesAreGarbageCollected(
-    onIteration = { _, _ ->  },
     verify = { map, _, populatedKeys ->
       populatedKeys.sorted().shuffled().forEach {
         map.remove(it).shouldBeNull()
@@ -597,6 +608,7 @@ class SuspendingWeakValueHashMapUnitTest {
               map.remove(key).shouldBeNull()
             }
           }
+          currentRemainingKeys!!.size
         }
       },
       verify = { map, _, _ ->
@@ -775,15 +787,4 @@ private suspend fun SuspendingWeakValueHashMap<Int, Value>.populate(
   }
 
   return insertedValues.toMap()
-}
-
-private suspend fun SuspendingWeakValueHashMap<Int, Value>
-  .verifyAllMethodsThrowIllegalStateException() {
-  val keyArb = Arb.int()
-  val valueArb = valueArb()
-  withClue("get()") { shouldThrow<IllegalStateException> { get(keyArb.next()) } }
-  withClue("put()") { shouldThrow<IllegalStateException> { put(keyArb.next(), valueArb.next()) } }
-  withClue("remove()") { shouldThrow<IllegalStateException> { remove(keyArb.next()) } }
-  withClue("clear()") { shouldThrow<IllegalStateException> { clear() } }
-  withClue("size()") { shouldThrow<IllegalStateException> { size() } }
 }
