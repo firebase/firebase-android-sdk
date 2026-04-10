@@ -31,7 +31,7 @@ import com.google.firebase.dataconnect.util.DeserializeUtils.deserialize
 import com.google.firebase.dataconnect.util.RequestIdGenerator
 import google.firebase.dataconnect.proto.ExecuteMutationRequest
 import google.firebase.dataconnect.proto.ExecuteMutationResponse
-import google.firebase.dataconnect.proto.StreamRequest
+import google.firebase.dataconnect.proto.ExecuteRequest
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -148,11 +148,11 @@ internal class OperationExecutor(
     variables: Variables,
     variablesSerializer: SerializationStrategy<Variables>,
     variablesSerializersModule: SerializersModule?,
-  ): StreamRequest.Execute {
+  ): ExecuteRequest {
     val variablesStruct =
       encodeVariables(variables, variablesSerializer, variablesSerializersModule)
 
-    return StreamRequest.Execute.newBuilder()
+    return ExecuteRequest.newBuilder()
       .setOperationName(operationName)
       .setVariables(variablesStruct)
       .build()

@@ -29,38 +29,36 @@ option java_package = "google.firebase.dataconnect.proto";
 option java_multiple_files = true;
 
 service ConnectorStreamService {
-  rpc Connect(stream StreamRequest) returns (stream StreamResponse) {}
+  rpc Connect(stream StreamRequest) returns (stream StreamResponse);
 }
 
 message StreamRequest {
-  string connector_resource_name = 1;
-  string request_id = 2;
+  string name = 1;
   map<string, string> headers = 10;
-  string data_etag = 8;
+  string request_id = 2;
 
-  oneof kind {
-    Execute subscribe = 3;
-    Execute execute = 4;
-    Resume resume = 5;
+  oneof request_kind {
+    ExecuteRequest subscribe = 3;
+    ExecuteRequest execute = 4;
+    ResumeRequest resume = 5;
     google.protobuf.Empty cancel = 6;
   }
 
-  message Execute {
-    string operation_name = 2;
-    google.protobuf.Struct variables = 3;
-  }
-
-  message Resume {}
+  string data_etag = 8;
 }
+
+message ExecuteRequest {
+  string operation_name = 2;
+  google.protobuf.Struct variables = 3;
+}
+
+message ResumeRequest {}
 
 message StreamResponse {
   string request_id = 1;
-  // NOTE: The `data` field used to be google.protobuf.Value but was changed
-  // to google.protobuf.Struct in cl/882603261 submitted March 12, 2026.
   google.protobuf.Struct data = 2;
-  repeated GraphqlError errors = 3;
-  GraphqlResponseExtensions extensions = 6;
-  bool cancelled = 5;
   string data_etag = 4;
+  repeated GraphqlError errors = 3;
+  bool cancelled = 5;
+  GraphqlResponseExtensions extensions = 6;
 }
-

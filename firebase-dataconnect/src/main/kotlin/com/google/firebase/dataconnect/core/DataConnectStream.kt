@@ -17,6 +17,7 @@
 package com.google.firebase.dataconnect.core
 
 import google.firebase.dataconnect.proto.ExecuteQueryResponse
+import google.firebase.dataconnect.proto.ExecuteRequest
 import google.firebase.dataconnect.proto.StreamRequest
 import google.firebase.dataconnect.proto.StreamResponse
 import java.util.concurrent.atomic.AtomicBoolean
@@ -54,7 +55,7 @@ internal class DataConnectStream(
 
   fun subscribe(
     requestId: String,
-    request: StreamRequest.Execute
+    request: ExecuteRequest,
   ): ReceiveChannel<ExecuteQueryResponse> {
     val flow: Flow<ExecuteQueryResponse> =
       incomingResponses.transformWhile { incomingResponse: IncomingResponse ->

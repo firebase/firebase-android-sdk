@@ -198,10 +198,7 @@ internal class DataConnectGrpcRPCs(
       )
     val kotlinMethodName = "connect()"
     val initRequest =
-      StreamRequest.newBuilder()
-        .setConnectorResourceName(connectorResourceName)
-        .setRequestId("init")
-        .build()
+      StreamRequest.newBuilder().setName(connectorResourceName).setRequestId("init").build()
 
     fun logOutgoingRequest(request: StreamRequest) {
       if (request === initRequest) {
@@ -298,10 +295,7 @@ internal class DataConnectGrpcRPCs(
       )
     val kotlinMethodName = "connect()"
     val initRequest =
-      StreamRequest.newBuilder()
-        .setConnectorResourceName(connectorResourceName)
-        .setRequestId("init")
-        .build()
+      StreamRequest.newBuilder().setName(connectorResourceName).setRequestId("init").build()
 
     fun logOutgoingRequest(request: StreamRequest) {
       if (request === initRequest) {

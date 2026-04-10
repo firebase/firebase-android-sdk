@@ -36,7 +36,7 @@ import com.google.firebase.dataconnect.util.ProtoUtil.encodeToStruct
 import com.google.firebase.dataconnect.util.RequestIdGenerator
 import com.google.protobuf.Struct
 import google.firebase.dataconnect.proto.ExecuteQueryResponse
-import google.firebase.dataconnect.proto.StreamRequest
+import google.firebase.dataconnect.proto.ExecuteRequest
 import io.kotest.assertions.asClue
 import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
@@ -89,7 +89,7 @@ class DataConnectGrpcRPCsIntegrationTest : DataConnectIntegrationTestBase() {
       val channel: ReceiveChannel<ExecuteQueryResponse> =
         stream.subscribe(
           requestId = requestIdArb.next(randomSource()),
-          StreamRequest.Execute.newBuilder()
+          ExecuteRequest.newBuilder()
             .setOperationName(queryRef.operationName)
             .setVariables(queryRef.encodeVariables())
             .build()

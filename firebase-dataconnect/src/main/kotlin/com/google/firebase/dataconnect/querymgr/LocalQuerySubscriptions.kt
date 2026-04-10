@@ -20,7 +20,7 @@ import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.util.ImmutableByteArray
 import google.firebase.dataconnect.proto.ExecuteQueryRequest as ExecuteQueryRequestProto
-import google.firebase.dataconnect.proto.StreamRequest as StreamRequestProto
+import google.firebase.dataconnect.proto.ExecuteRequest
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.serialization.DeserializationStrategy
@@ -76,7 +76,7 @@ internal class LocalQuerySubscriptions(
     val remoteQuerySubscription: RemoteQuerySubscription = run {
       val remoteSubscriptionKey = RemoteQuerySubscriptions.Key(key.authUid, key.queryId)
       val executeRequest =
-        StreamRequestProto.Execute.newBuilder()
+        ExecuteRequest.newBuilder()
           .setOperationName(requestProto.operationName)
           .setVariables(requestProto.variables)
           .build()
