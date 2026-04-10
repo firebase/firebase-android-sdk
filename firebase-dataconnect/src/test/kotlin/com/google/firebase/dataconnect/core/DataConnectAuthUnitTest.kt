@@ -88,7 +88,7 @@ class DataConnectAuthUnitTest {
   @get:Rule val dataConnectLogLevelRule = DataConnectLogLevelRule()
 
   private val rs = RandomSource.default()
-  private val accessTokenGenerator = Arb.dataConnect.accessToken()
+  private val accessTokenGenerator = Arb.dataConnect.authToken()
   private val accessToken: String = accessTokenGenerator.next(rs)
   private val requestId = Arb.dataConnect.requestId().next(rs)
   private val mockInternalAuthProvider: InternalAuthProvider =

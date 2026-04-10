@@ -30,6 +30,8 @@ import com.google.firebase.dataconnect.testutil.DataConnectLogLevelRule
 import com.google.firebase.dataconnect.testutil.DataConnectPath
 import com.google.firebase.dataconnect.testutil.newMockLogger
 import com.google.firebase.dataconnect.testutil.property.arbitrary.ProtoArb
+import com.google.firebase.dataconnect.testutil.property.arbitrary.appCheckTokenResult
+import com.google.firebase.dataconnect.testutil.property.arbitrary.authTokenResult
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnect
 import com.google.firebase.dataconnect.testutil.property.arbitrary.dataConnectGrpcMetadata
 import com.google.firebase.dataconnect.testutil.property.arbitrary.distinctPair
@@ -69,6 +71,7 @@ import io.kotest.property.arbitrary.distinct
 import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.next
 import io.kotest.property.arbitrary.of
+import io.kotest.property.arbitrary.orNull
 import io.kotest.property.arbitrary.pair
 import io.kotest.property.checkAll
 import java.io.File
@@ -112,9 +115,13 @@ class DataConnectGrpcRPCsUnitTest {
   fun `executeQuery(fetchPolicy=SERVER_ONLY) unconditionally returns results from server`() =
     runTest {
       val fetchPolicy1Arb = Arb.of(FetchPolicy.PREFER_CACHE, FetchPolicy.SERVER_ONLY)
-      checkAll(propTestConfig, QueryResultArb(entityCountRange = 0..5).pair(), fetchPolicy1Arb) {
-        (sample1, sample2),
-        fetchPolicy1 ->
+      checkAll(
+        propTestConfig,
+        QueryResultArb(entityCountRange = 0..5).pair(),
+        fetchPolicy1Arb,
+        Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.3),
+        Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.3),
+      ) { (sample1, sample2), fetchPolicy1, authToken, appCheckToken ->
         val response1 = sample1.hydratedStruct.toExecuteQueryResponse()
         val response2 = sample2.hydratedStruct.toExecuteQueryResponse()
 
@@ -128,6 +135,8 @@ class DataConnectGrpcRPCsUnitTest {
             request,
             callerSdkTypeArb.bind(),
             fetchPolicy1,
+            authToken,
+            appCheckToken,
           )
           server.nextResponse = response2
           val result2 =
@@ -136,6 +145,8 @@ class DataConnectGrpcRPCsUnitTest {
               request,
               callerSdkTypeArb.bind(),
               FetchPolicy.SERVER_ONLY,
+              authToken,
+              appCheckToken,
             )
 
           result2.shouldBeInstanceOf<ExecuteQueryResult.FromServer>().response shouldBe response2
@@ -149,7 +160,12 @@ class DataConnectGrpcRPCsUnitTest {
     val fetchPolicy1Arb = Arb.of(FetchPolicy.PREFER_CACHE, FetchPolicy.SERVER_ONLY)
     val fetchPolicy2Arb = Arb.of(FetchPolicy.PREFER_CACHE, FetchPolicy.CACHE_ONLY)
     val fetchPoliciesArb = Arb.pair(fetchPolicy1Arb, fetchPolicy2Arb)
-    checkAll(propTestConfig, fetchPoliciesArb) { (fetchPolicy1, fetchPolicy2) ->
+    checkAll(
+      propTestConfig,
+      fetchPoliciesArb,
+      Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.3),
+      Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.3),
+    ) { (fetchPolicy1, fetchPolicy2), authToken, appCheckToken ->
       val (sample1, sample2) =
         QueryResultArb(entityCountRange = 0..5, entityRepeatPolicy = INTER_SAMPLE_MUTATED)
           .pair()
@@ -165,6 +181,8 @@ class DataConnectGrpcRPCsUnitTest {
           request1,
           callerSdkTypeArb.bind(),
           fetchPolicy1,
+          authToken,
+          appCheckToken,
         )
         server.nextResponse = sample2.toExecuteQueryResponse()
         dataConnectGrpcRPCs.executeQuery(
@@ -172,6 +190,8 @@ class DataConnectGrpcRPCsUnitTest {
           request2,
           callerSdkTypeArb.bind(),
           FetchPolicy.SERVER_ONLY,
+          authToken,
+          appCheckToken,
         )
         val result =
           dataConnectGrpcRPCs.executeQuery(
@@ -179,6 +199,8 @@ class DataConnectGrpcRPCsUnitTest {
             request1,
             callerSdkTypeArb.bind(),
             fetchPolicy2,
+            authToken,
+            appCheckToken,
           )
 
         val expectedData = sample1.hydratedStructWithMutatedEntityValuesFrom(sample2)
@@ -200,6 +222,8 @@ class DataConnectGrpcRPCsUnitTest {
             request,
             callerSdkTypeArb.next(),
             FetchPolicy.CACHE_ONLY,
+            Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.3).next(),
+            Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.3).next(),
           )
         }
 
@@ -218,9 +242,13 @@ class DataConnectGrpcRPCsUnitTest {
       val fetchPolicy1Arb = Arb.of(FetchPolicy.PREFER_CACHE, FetchPolicy.SERVER_ONLY)
       val fetchPolicy2Arb = Arb.of(FetchPolicy.entries.filterNot { it == FetchPolicy.SERVER_ONLY })
       val fetchPoliciesArb = Arb.pair(fetchPolicy1Arb, fetchPolicy2Arb)
-      checkAll(propTestConfig, QueryResultArb(entityCountRange = 0..5), fetchPoliciesArb) {
-        sample,
-        (fetchPolicy1, fetchPolicy2) ->
+      checkAll(
+        propTestConfig,
+        QueryResultArb(entityCountRange = 0..5),
+        fetchPoliciesArb,
+        Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.3),
+        Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.3),
+      ) { sample, (fetchPolicy1, fetchPolicy2), authToken, appCheckToken ->
         startServer().use { server ->
           val response = sample.hydratedStruct.toExecuteQueryResponse()
           server.nextResponse = response
@@ -233,6 +261,8 @@ class DataConnectGrpcRPCsUnitTest {
               request,
               callerSdkTypeArb.bind(),
               fetchPolicy1,
+              authToken,
+              appCheckToken,
             )
           val result2 =
             dataConnectGrpcRPCs.executeQuery(
@@ -240,6 +270,8 @@ class DataConnectGrpcRPCsUnitTest {
               request,
               callerSdkTypeArb.bind(),
               fetchPolicy2,
+              authToken,
+              appCheckToken,
             )
 
           withClue("result1") {
@@ -262,8 +294,12 @@ class DataConnectGrpcRPCsUnitTest {
       val fetchPolicy2Arb = Arb.of(FetchPolicy.entries.filterNot { it == FetchPolicy.SERVER_ONLY })
       val fetchPoliciesArb =
         Arb.quadruple(fetchPolicy1Arb, fetchPolicy1Arb, fetchPolicy2Arb, fetchPolicy2Arb)
-      checkAll(propTestConfig, fetchPoliciesArb) {
-        (fetchPolicy1, fetchPolicy2, fetchPolicy3, fetchPolicy4) ->
+      checkAll(
+        propTestConfig,
+        fetchPoliciesArb,
+        Arb.dataConnect.authTokenResult().orNull(nullProbability = 0.3),
+        Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.3),
+      ) { (fetchPolicy1, fetchPolicy2, fetchPolicy3, fetchPolicy4), authToken, appCheckToken ->
         startServer().use { server ->
           val queryResultArb =
             QueryResultArb(entityCountRange = 0..5, entityRepeatPolicy = INTER_SAMPLE_MUTATED)
@@ -280,6 +316,8 @@ class DataConnectGrpcRPCsUnitTest {
             request1,
             callerSdkTypeArb.bind(),
             fetchPolicy1,
+            authToken,
+            appCheckToken,
           )
           server.nextResponse = sample2.toExecuteQueryResponse()
           dataConnectGrpcRPCs.executeQuery(
@@ -287,6 +325,8 @@ class DataConnectGrpcRPCsUnitTest {
             request2,
             callerSdkTypeArb.bind(),
             fetchPolicy2,
+            authToken,
+            appCheckToken,
           )
           val result1 =
             dataConnectGrpcRPCs.executeQuery(
@@ -294,6 +334,8 @@ class DataConnectGrpcRPCsUnitTest {
               request1,
               callerSdkTypeArb.bind(),
               fetchPolicy3,
+              authToken,
+              appCheckToken,
             )
           val result2 =
             dataConnectGrpcRPCs.executeQuery(
@@ -301,6 +343,8 @@ class DataConnectGrpcRPCsUnitTest {
               request2,
               callerSdkTypeArb.bind(),
               fetchPolicy4,
+              authToken,
+              appCheckToken,
             )
 
           withClue("result1") {
