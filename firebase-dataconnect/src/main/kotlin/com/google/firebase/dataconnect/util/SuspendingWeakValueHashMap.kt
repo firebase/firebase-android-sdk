@@ -17,6 +17,7 @@
 package com.google.firebase.dataconnect.util
 
 import android.util.Log
+import com.google.firebase.dataconnect.core.LoggerGlobals.LOG_TAG
 import java.lang.ref.ReferenceQueue
 import java.lang.ref.WeakReference
 import kotlinx.coroutines.CoroutineDispatcher
@@ -39,7 +40,8 @@ import kotlinx.coroutines.sync.withLock
  * Entries in this map are eventually removed when their values are garbage collected. This
  * automatic removal requires a background cleanup job to run in a blocking fashion, hence the
  * requirement of a [CoroutineDispatcher] constructor parameter. This background cleanup job is
- * stopped by calling [close].
+ * stopped by calling [close]. Therefore, it is extremely important to call [close] when the object
+ * is no longer needed.
  *
  * This class is useful for caching objects that should be shared as long as they are referenced
  * elsewhere, but allowed to be reclaimed by the garbage collector otherwise.
@@ -68,8 +70,10 @@ internal class SuspendingWeakValueHashMap<K, V : Any>(
             CoroutineName("SuspendingWeakValueHashMap") +
             CoroutineExceptionHandler { context, throwable ->
               Log.w(
-                "uncaught exception from a coroutine named ${context[CoroutineName]?.name} [e3kr5myemq]",
-                throwable
+                LOG_TAG,
+                "uncaught exception from a coroutine " +
+                  "named ${context[CoroutineName]?.name} [e3kr5myemq]",
+                throwable,
               )
             }
         )
