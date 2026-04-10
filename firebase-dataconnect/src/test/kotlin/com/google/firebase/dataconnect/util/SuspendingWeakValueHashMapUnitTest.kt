@@ -154,7 +154,7 @@ class SuspendingWeakValueHashMapUnitTest {
   }
 
   private fun verifyWithPopulatedMap(verify: suspend (SuspendingWeakValueHashMap<Int, Value>, Map<Int, Value>) -> Unit) = runTest {
-    checkAll(propTestConfig, Arb.int(0..50)) { size ->
+    checkAll(propTestConfig, Arb.int(1..50)) { size ->
       val map = SuspendingWeakValueHashMap<Int, Value>(blockingDispatcher)
       cleanups.register(map)
       map.startCleanupJob(backgroundScope)
