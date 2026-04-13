@@ -253,17 +253,30 @@ internal class OperationManager(
         val operationExecutor = run {
           val operationExecutorLogger = Logger("OperationExecutor")
           operationExecutorLogger.debug { "created by ${logger.nameWithId}" }
-          OperationExecutor(
-            dataConnectGrpcRPCs = dataConnectGrpcRPCs,
-            dataConnectAuth = dataConnectAuth,
-            dataConnectAppCheck = dataConnectAppCheck,
-            ioDispatcher = ioDispatcher,
-            cpuDispatcher = cpuDispatcher,
-            requestIdGenerator = requestIdGenerator,
-            cacheDb = cacheDb,
-            currentTimeMillis = currentTimeMillis,
-            logger = operationExecutorLogger,
-          )
+
+          if (cacheDb === null) {
+            OperationExecutorNoCache(
+              dataConnectGrpcRPCs = dataConnectGrpcRPCs,
+              dataConnectAuth = dataConnectAuth,
+              dataConnectAppCheck = dataConnectAppCheck,
+              ioDispatcher = ioDispatcher,
+              cpuDispatcher = cpuDispatcher,
+              requestIdGenerator = requestIdGenerator,
+              logger = operationExecutorLogger,
+            )
+          } else {
+            OperationExecutorWithCache(
+              dataConnectGrpcRPCs = dataConnectGrpcRPCs,
+              dataConnectAuth = dataConnectAuth,
+              dataConnectAppCheck = dataConnectAppCheck,
+              ioDispatcher = ioDispatcher,
+              cpuDispatcher = cpuDispatcher,
+              requestIdGenerator = requestIdGenerator,
+              cacheDb = cacheDb,
+              currentTimeMillis = currentTimeMillis,
+              logger = operationExecutorLogger,
+            )
+          }
         }
 
         State.Started(coroutineScope, cacheDb, operationExecutor)
