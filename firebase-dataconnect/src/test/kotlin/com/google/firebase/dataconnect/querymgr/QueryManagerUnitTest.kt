@@ -63,7 +63,6 @@ import com.google.firebase.util.nextAlphanumericString
 import com.google.protobuf.ListValue
 import com.google.protobuf.Struct
 import com.google.protobuf.Value
-import google.firebase.dataconnect.proto.ExecuteQueryRequest
 import google.firebase.dataconnect.proto.ExecuteQueryResponse
 import google.firebase.dataconnect.proto.GraphqlResponseExtensions
 import google.firebase.dataconnect.proto.GraphqlResponseExtensions.DataConnectProperties
@@ -156,44 +155,19 @@ class QueryManagerUnitTest {
   }
 
   @Test
-  fun `execute() uses the connectorResourceName that was given to the constructor`() = runTest {
-    checkAll(
-      propTestConfig,
-      executeArgumentsArb(FetchPolicy.SERVER_ONLY),
-      alphanumericStringArb(),
-    ) { args, connectorResourceName ->
-      val executeQueryRequestSlot = slot<ExecuteQueryRequest>()
-      val queryManager: QueryManager = buildQueryManager {
-        setConnectorResourceName(connectorResourceName)
-        setDataConnectGrpcRPCs(
-          mockk { stubExecuteQuery(executeQueryRequestSlot = executeQueryRequestSlot) }
-        )
-      }
-
-      queryManager.execute(args)
-
-      val capturedName: String = executeQueryRequestSlot.captured.name
-      capturedName shouldBe connectorResourceName
-    }
-  }
-
-  @Test
   fun `execute() uses the given operationName`() = runTest {
     checkAll(
       propTestConfig,
       executeArgumentsArb(FetchPolicy.SERVER_ONLY),
     ) { args ->
-      val executeQueryRequestSlot = slot<ExecuteQueryRequest>()
+      val operationNameSlot = slot<String>()
       val queryManager: QueryManager = buildQueryManager {
-        setDataConnectGrpcRPCs(
-          mockk { stubExecuteQuery(executeQueryRequestSlot = executeQueryRequestSlot) }
-        )
+        setDataConnectGrpcRPCs(mockk { stubExecuteQuery(operationNameSlot = operationNameSlot) })
       }
 
       queryManager.execute(args)
 
-      val capturedOperationName: String = executeQueryRequestSlot.captured.operationName
-      capturedOperationName shouldBe args.operationName
+      operationNameSlot.captured shouldBe args.operationName
     }
   }
 
@@ -203,18 +177,15 @@ class QueryManagerUnitTest {
       propTestConfig,
       executeArgumentsArb(FetchPolicy.SERVER_ONLY),
     ) { args ->
-      val executeQueryRequestSlot = slot<ExecuteQueryRequest>()
+      val variablesSlot = slot<Struct>()
       val queryManager: QueryManager = buildQueryManager {
-        setDataConnectGrpcRPCs(
-          mockk { stubExecuteQuery(executeQueryRequestSlot = executeQueryRequestSlot) }
-        )
+        setDataConnectGrpcRPCs(mockk { stubExecuteQuery(variablesSlot = variablesSlot) })
       }
 
       queryManager.execute(args)
 
-      val capturedVariables: Struct = executeQueryRequestSlot.captured.variables
       val expectedVariables: Struct = args.variables.encodeToStruct()
-      capturedVariables shouldBe expectedVariables
+      variablesSlot.captured shouldBe expectedVariables
     }
   }
 
@@ -247,19 +218,16 @@ class QueryManagerUnitTest {
       executeArgumentsArb(FetchPolicy.SERVER_ONLY),
       alphanumericStringArb(),
     ) { args, overrideValue ->
-      val executeQueryRequestSlot = slot<ExecuteQueryRequest>()
+      val variablesSlot = slot<Struct>()
       val queryManager: QueryManager = buildQueryManager {
-        setDataConnectGrpcRPCs(
-          mockk { stubExecuteQuery(executeQueryRequestSlot = executeQueryRequestSlot) }
-        )
+        setDataConnectGrpcRPCs(mockk { stubExecuteQuery(variablesSlot = variablesSlot) })
       }
       val variablesSerializer = TestVariablesOverrideSerializer(overrideValue)
 
       queryManager.execute(args.copy(variablesSerializer = variablesSerializer))
 
-      val capturedVariables: Struct = executeQueryRequestSlot.captured.variables
       val expectedVariables: Struct = TestVariables(overrideValue).encodeToStruct()
-      capturedVariables shouldBe expectedVariables
+      variablesSlot.captured shouldBe expectedVariables
     }
   }
 
@@ -300,11 +268,9 @@ class QueryManagerUnitTest {
       executeArgumentsArb(FetchPolicy.SERVER_ONLY),
       alphanumericStringArb().pair(),
     ) { args, (requestValue, overrideValue) ->
-      val executeQueryRequestSlot = slot<ExecuteQueryRequest>()
+      val variablesSlot = slot<Struct>()
       val queryManager: QueryManager = buildQueryManager {
-        setDataConnectGrpcRPCs(
-          mockk { stubExecuteQuery(executeQueryRequestSlot = executeQueryRequestSlot) }
-        )
+        setDataConnectGrpcRPCs(mockk { stubExecuteQuery(variablesSlot = variablesSlot) })
       }
       val variables = ContextualTestVariables(requestValue)
       val variablesSerializer = serializer<ContextualTestVariables>()
@@ -318,9 +284,8 @@ class QueryManagerUnitTest {
           .copy(variablesSerializersModule = variablesSerializersModule)
       )
 
-      val capturedVariables: Struct = executeQueryRequestSlot.captured.variables
       val expectedVariables: Struct = TestVariables(overrideValue).encodeToStruct()
-      capturedVariables shouldBe expectedVariables
+      variablesSlot.captured shouldBe expectedVariables
     }
   }
 
@@ -598,7 +563,7 @@ class QueryManagerUnitTest {
       },
       calculateExpectedExecuteQueryInvocationCount = { executeCount -> executeCount },
       verifyExecuteQueryInvocations = { invocations ->
-        val operationNames = invocations.map { it.requestProto.operationName }
+        val operationNames = invocations.map { it.operationName }
         operationNames shouldContainExactlyInAnyOrder generatedOperationNames.toList()
         generatedOperationNames.clear()
       }
@@ -621,7 +586,7 @@ class QueryManagerUnitTest {
       },
       calculateExpectedExecuteQueryInvocationCount = { executeCount -> executeCount },
       verifyExecuteQueryInvocations = { invocations ->
-        val variables = invocations.map { it.requestProto.variables }
+        val variables = invocations.map { it.variables }
         variables shouldContainExactlyInAnyOrder generatedVariables.map { it.encodeToStruct() }
         generatedVariables.clear()
       }
@@ -637,7 +602,7 @@ class QueryManagerUnitTest {
     ) { args, responseString ->
       val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk {
         val invocationIndex = AtomicInteger(0)
-        coEvery { executeQuery(any(), any(), any(), any(), any()) } answers
+        coEvery { executeQuery(any(), any(), any(), any(), any(), any()) } answers
           {
             if (invocationIndex.getAndIncrement() == 0) {
               throw StatusException(Status.UNAUTHENTICATED)
@@ -655,18 +620,21 @@ class QueryManagerUnitTest {
 
       result.data shouldBe TestData(responseString)
       val capturedRequestIds = mutableListOf<String>()
-      val capturedRequestProtos = mutableListOf<ExecuteQueryRequest>()
+      val capturedOperationNames = mutableListOf<String>()
+      val capturedVariables = mutableListOf<Struct>()
       coVerifySequence {
         dataConnectGrpcRPCs.executeQuery(
           capture(capturedRequestIds),
-          capture(capturedRequestProtos),
+          capture(capturedOperationNames),
+          capture(capturedVariables),
           eq(GetAuthTokenResult("authToken1", "testAuthUid")),
           eq(GetAppCheckTokenResult("appCheckToken1")),
           eq(args.callerSdkType)
         )
         dataConnectGrpcRPCs.executeQuery(
           capture(capturedRequestIds),
-          capture(capturedRequestProtos),
+          capture(capturedOperationNames),
+          capture(capturedVariables),
           eq(GetAuthTokenResult("authToken2", "testAuthUid")),
           eq(GetAppCheckTokenResult("appCheckToken2")),
           eq(args.callerSdkType)
@@ -674,7 +642,8 @@ class QueryManagerUnitTest {
       }
       assertSoftly {
         capturedRequestIds.distinct().shouldHaveSize(1)
-        capturedRequestProtos.distinct().shouldHaveSize(1)
+        capturedOperationNames.distinct().shouldHaveSize(1)
+        capturedVariables.distinct().shouldHaveSize(1)
       }
     }
   }
@@ -688,7 +657,7 @@ class QueryManagerUnitTest {
       Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.33),
     ) { args, authTokenResult, appCheckTokenResult ->
       val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk {
-        coEvery { executeQuery(any(), any(), any(), any(), any()) } throws
+        coEvery { executeQuery(any(), any(), any(), any(), any(), any()) } throws
           StatusException(Status.UNAUTHENTICATED)
       }
       val queryManager: QueryManager = buildQueryManager {
@@ -704,7 +673,9 @@ class QueryManagerUnitTest {
       val statusException = shouldThrow<StatusException> { queryManager.execute(args) }
 
       statusException.status.code shouldBe Status.UNAUTHENTICATED.code
-      coVerify(exactly = 1) { dataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any()) }
+      coVerify(exactly = 1) {
+        dataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any(), any())
+      }
     }
   }
 
@@ -724,7 +695,7 @@ class QueryManagerUnitTest {
       Arb.dataConnect.appCheckTokenResult().orNull(nullProbability = 0.33),
     ) { args, authTokenResults, appCheckTokenResult ->
       val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk {
-        coEvery { executeQuery(any(), any(), any(), any(), any()) } throws
+        coEvery { executeQuery(any(), any(), any(), any(), any(), any()) } throws
           StatusException(Status.UNAUTHENTICATED)
       }
       val queryManager: QueryManager = buildQueryManager {
@@ -747,7 +718,9 @@ class QueryManagerUnitTest {
         exception.message shouldContainWithNonAbuttingText authTokenResults.value2.authUid!!
         exception.message shouldContainWithNonAbuttingTextIgnoringCase "authUid changed"
       }
-      coVerify(exactly = 1) { dataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any()) }
+      coVerify(exactly = 1) {
+        dataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any(), any())
+      }
     }
   }
 
@@ -785,7 +758,7 @@ class QueryManagerUnitTest {
       val latch = SuspendingCountDownLatch(10)
       val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk {
         val executeQueryInvocationCount = AtomicInteger(0)
-        coEvery { executeQuery(any(), any(), any(), any(), any()) } coAnswers
+        coEvery { executeQuery(any(), any(), any(), any(), any(), any()) } coAnswers
           {
             val invocationIndex = executeQueryInvocationCount.getAndIncrement()
             if (invocationIndex == 0) {
@@ -820,7 +793,8 @@ class QueryManagerUnitTest {
       verifyResults(valuePrefix, valuePrefixOverride, jobs.size, results.map { it.data })
 
       val capturedRequestIds = mutableListOf<String>()
-      val capturedRequestProtos = mutableListOf<ExecuteQueryRequest>()
+      val capturedOperationNames = mutableListOf<String>()
+      val capturedVariables = mutableListOf<Struct>()
       val capturedAuthTokens = mutableListOf<GetAuthTokenResult?>()
       val capturedAppCheckTokens = mutableListOf<GetAppCheckTokenResult?>()
       val capturedCallerSdkTypes = mutableListOf<CallerSdkType>()
@@ -829,14 +803,16 @@ class QueryManagerUnitTest {
       coVerify(exactly = expectedExecuteQueryInvocationCount) {
         dataConnectGrpcRPCs.executeQuery(
           capture(capturedRequestIds),
-          capture(capturedRequestProtos),
+          capture(capturedOperationNames),
+          capture(capturedVariables),
           captureNullable(capturedAuthTokens),
           captureNullable(capturedAppCheckTokens),
           capture(capturedCallerSdkTypes),
         )
       }
       check(capturedRequestIds.size == expectedExecuteQueryInvocationCount)
-      check(capturedRequestProtos.size == expectedExecuteQueryInvocationCount)
+      check(capturedOperationNames.size == expectedExecuteQueryInvocationCount)
+      check(capturedVariables.size == expectedExecuteQueryInvocationCount)
       check(capturedAuthTokens.size == expectedExecuteQueryInvocationCount)
       check(capturedAppCheckTokens.size == expectedExecuteQueryInvocationCount)
       check(capturedCallerSdkTypes.size == expectedExecuteQueryInvocationCount)
@@ -844,7 +820,8 @@ class QueryManagerUnitTest {
         List(capturedRequestIds.size) {
           ExecuteQueryArguments(
             requestId = capturedRequestIds[it],
-            requestProto = capturedRequestProtos[it],
+            operationName = capturedOperationNames[it],
+            variables = capturedVariables[it],
             authToken = capturedAuthTokens[it],
             appCheckToken = capturedAppCheckTokens[it],
             callerSdkType = capturedCallerSdkTypes[it],
@@ -895,7 +872,7 @@ class QueryManagerUnitTest {
 
         result shouldBe QueryManager.ExecuteResult(testData, DataSource.SERVER)
         coVerify(exactly = 1) {
-          dataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any())
+          dataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any(), any())
         }
       }
     }
@@ -941,7 +918,9 @@ class QueryManagerUnitTest {
       val result = queryManager.execute(args.copy(fetchPolicy = FetchPolicy.CACHE_ONLY))
 
       result shouldBe QueryManager.ExecuteResult(testData, DataSource.CACHE)
-      coVerify(exactly = 1) { dataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any()) }
+      coVerify(exactly = 1) {
+        dataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any(), any())
+      }
     }
   }
 
@@ -973,7 +952,7 @@ class QueryManagerUnitTest {
 
         result shouldBe QueryManager.ExecuteResult(testData, DataSource.CACHE)
         coVerify(exactly = 1) {
-          dataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any())
+          dataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any(), any())
         }
       }
     }
@@ -988,7 +967,7 @@ class QueryManagerUnitTest {
       Arb.list(testDataArb(), 2..5),
     ) { args, cacheSettings, fetchPolicy1, testDataList ->
       val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk {
-        coEvery { executeQuery(any(), any(), any(), any(), any()) } returnsMany
+        coEvery { executeQuery(any(), any(), any(), any(), any(), any()) } returnsMany
           testDataList.map { it.encodeToExecuteQueryResponse() }
       }
       val queryManager: QueryManager = buildQueryManager {
@@ -1011,7 +990,7 @@ class QueryManagerUnitTest {
       results shouldContainExactly
         testDataList.drop(1).map { QueryManager.ExecuteResult(it, DataSource.SERVER) }
       coVerify(exactly = testDataList.size) {
-        dataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any())
+        dataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any(), any())
       }
     }
   }
@@ -1027,12 +1006,11 @@ class QueryManagerUnitTest {
     ) { args, cacheSettings, connectorResourceName, testDataList ->
       val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk {
         val responses = testDataList.map { it.encodeToExecuteQueryResponse() }
-        coEvery { executeQuery(any(), any(), any(), any(), any()) } returnsMany responses
+        coEvery { executeQuery(any(), any(), any(), any(), any(), any()) } returnsMany responses
       }
       val queryManager: QueryManager = buildQueryManager {
         setDataConnectGrpcRPCs(dataConnectGrpcRPCs)
         setCacheSettings(cacheSettings)
-        setConnectorResourceName(connectorResourceName)
       }
 
       val results = List(testDataList.size) { queryManager.execute(args) }
@@ -1040,8 +1018,14 @@ class QueryManagerUnitTest {
       val expectedResults = testDataList.map { QueryManager.ExecuteResult(it, DataSource.SERVER) }
       results shouldContainExactly expectedResults
       coVerify(exactly = testDataList.size) {
-        val requestProto = eq(args.encodeToExecuteQueryRequest(connectorResourceName))
-        dataConnectGrpcRPCs.executeQuery(any(), requestProto, any(), any(), any())
+        dataConnectGrpcRPCs.executeQuery(
+          any(),
+          args.operationName,
+          args.variables.encodeToStruct(),
+          any(),
+          any(),
+          any()
+        )
       }
       confirmVerified(dataConnectGrpcRPCs)
     }
@@ -1058,7 +1042,7 @@ class QueryManagerUnitTest {
       queryResultArb().triple(),
     ) { args, cacheSettings, (fetchPolicy1, fetchPolicy2), fetchPolicy3, samples ->
       val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk {
-        coEvery { executeQuery(any(), any(), any(), any(), any()) } returnsMany
+        coEvery { executeQuery(any(), any(), any(), any(), any(), any()) } returnsMany
           samples.toList().map { it.toExecuteQueryResponse() }
       }
       val queryManager: QueryManager = buildQueryManager {
@@ -1078,7 +1062,9 @@ class QueryManagerUnitTest {
       withClue("result1") { result1.shouldBe(sample1.hydratedStruct, DataSource.SERVER) }
       withClue("result2") { result2.shouldBe(sample2.hydratedStruct, DataSource.SERVER) }
       withClue("result3") { result3.shouldBe(expectedResult3Data, DataSource.CACHE) }
-      coVerify(exactly = 2) { dataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any()) }
+      coVerify(exactly = 2) {
+        dataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any(), any())
+      }
     }
   }
 
@@ -1103,7 +1089,7 @@ class QueryManagerUnitTest {
     ) { args, cacheSettings ->
       val testException = TestException()
       val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk {
-        coEvery { executeQuery(any(), any(), any(), any(), any()) } throws testException
+        coEvery { executeQuery(any(), any(), any(), any(), any(), any()) } throws testException
       }
       val queryManager: QueryManager = buildQueryManager {
         setDataConnectGrpcRPCs(dataConnectGrpcRPCs)
@@ -1113,7 +1099,9 @@ class QueryManagerUnitTest {
       val exception = shouldThrow<TestException> { queryManager.execute(args) }
 
       exception shouldBe testException
-      coVerify(exactly = 1) { dataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any()) }
+      coVerify(exactly = 1) {
+        dataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any(), any())
+      }
     }
   }
 
@@ -1130,7 +1118,7 @@ class QueryManagerUnitTest {
       ) { args, cacheSettings, statusCode ->
         val statusException = StatusException(statusCode.toStatus())
         val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk {
-          coEvery { executeQuery(any(), any(), any(), any(), any()) } throws statusException
+          coEvery { executeQuery(any(), any(), any(), any(), any(), any()) } throws statusException
         }
         val queryManager: QueryManager = buildQueryManager {
           setDataConnectGrpcRPCs(dataConnectGrpcRPCs)
@@ -1141,7 +1129,7 @@ class QueryManagerUnitTest {
 
         exception shouldBe statusException
         coVerify(exactly = 1) {
-          dataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any())
+          dataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any(), any())
         }
       }
     }
@@ -1159,7 +1147,7 @@ class QueryManagerUnitTest {
         val statusException1 = StatusException(Status.UNAUTHENTICATED.withDescription("1"))
         val statusException2 = StatusException(Status.UNAUTHENTICATED.withDescription("2"))
         val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk {
-          coEvery { executeQuery(any(), any(), any(), any(), any()) } throwsMany
+          coEvery { executeQuery(any(), any(), any(), any(), any(), any()) } throwsMany
             listOf(statusException1, statusException2)
         }
         val queryManager: QueryManager = buildQueryManager {
@@ -1173,7 +1161,7 @@ class QueryManagerUnitTest {
         exception shouldBe statusException2
         exception shouldNotBe statusException1
         coVerify(exactly = 2) {
-          dataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any())
+          dataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any(), any())
         }
       }
     }
@@ -1189,7 +1177,7 @@ class QueryManagerUnitTest {
       val statusException1 = StatusException(Status.UNAUTHENTICATED)
       val statusException2 = StatusException(statusCode.toStatus())
       val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk {
-        coEvery { executeQuery(any(), any(), any(), any(), any()) } throwsMany
+        coEvery { executeQuery(any(), any(), any(), any(), any(), any()) } throwsMany
           listOf(statusException1, statusException2)
       }
       val queryManager: QueryManager = buildQueryManager {
@@ -1202,7 +1190,9 @@ class QueryManagerUnitTest {
 
       exception shouldBe statusException2
       exception shouldNotBe statusException1
-      coVerify(exactly = 2) { dataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any()) }
+      coVerify(exactly = 2) {
+        dataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any(), any())
+      }
     }
   }
 
@@ -1218,7 +1208,7 @@ class QueryManagerUnitTest {
       val statusException = StatusException(Status.UNAUTHENTICATED)
       val testException = TestException()
       val dataConnectGrpcRPCs: DataConnectGrpcRPCs = mockk {
-        coEvery { executeQuery(any(), any(), any(), any(), any()) } throwsMany
+        coEvery { executeQuery(any(), any(), any(), any(), any(), any()) } throwsMany
           listOf(statusException, testException)
       }
       val queryManager: QueryManager = buildQueryManager {
@@ -1230,7 +1220,9 @@ class QueryManagerUnitTest {
       val exception = shouldThrow<TestException> { queryManager.execute(args) }
 
       exception shouldBe testException
-      coVerify(exactly = 2) { dataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any()) }
+      coVerify(exactly = 2) {
+        dataConnectGrpcRPCs.executeQuery(any(), any(), any(), any(), any(), any())
+      }
     }
   }
 
@@ -1251,8 +1243,6 @@ class QueryManagerUnitTest {
   ): QueryManager {
     val builder =
       QueryManagerBuilder(
-        connectorResourceName =
-          "connectorResourceName" + randomSource().random.nextAlphanumericString(10),
         dataConnectGrpcRPCs = mockk { stubExecuteQuery() },
         dataConnectAuth = mockDataConnectAuth(),
         dataConnectAppCheck = mockDataConnectAppCheck(),
@@ -1291,7 +1281,8 @@ private data class ExecuteArguments<Data, Variables>(
 
 private data class ExecuteQueryArguments(
   val requestId: String,
-  val requestProto: ExecuteQueryRequest,
+  val operationName: String,
+  val variables: Struct,
   val authToken: GetAuthTokenResult?,
   val appCheckToken: GetAppCheckTokenResult?,
   val callerSdkType: CallerSdkType,
@@ -1329,24 +1320,6 @@ private fun <Data, NewVariables> ExecuteArguments<Data, *>.withVariables(
 @Serializable private data class TestVariables(val value: String)
 
 private fun TestVariables.encodeToStruct(): Struct = buildStructProto { put("value", value) }
-
-private fun TestVariables.encodeToExecuteQueryRequest(
-  connectorResourceName: String,
-  operationName: String
-): ExecuteQueryRequest =
-  ExecuteQueryRequest.newBuilder()
-    .setVariables(encodeToStruct())
-    .setName(connectorResourceName)
-    .setOperationName(operationName)
-    .build()
-
-private fun ExecuteArguments<*, TestVariables>.encodeToExecuteQueryRequest(
-  connectorResourceName: String
-): ExecuteQueryRequest =
-  variables.encodeToExecuteQueryRequest(
-    connectorResourceName = connectorResourceName,
-    operationName = operationName
-  )
 
 @Serializable private data class ContextualTestVariables(@Contextual val value: String)
 
@@ -1435,7 +1408,8 @@ private class HardcodedStringKSerializer(private val hardcodedValue: String) : K
 
 private fun DataConnectGrpcRPCs.stubExecuteQuery(
   requestIdSlot: CapturingSlot<String> = slot(),
-  executeQueryRequestSlot: CapturingSlot<ExecuteQueryRequest> = slot(),
+  operationNameSlot: CapturingSlot<String> = slot(),
+  variablesSlot: CapturingSlot<Struct> = slot(),
   authTokenSlot: CapturingSlot<GetAuthTokenResult?> = slot(),
   appCheckTokenSlot: CapturingSlot<GetAppCheckTokenResult?> = slot(),
   callerSdkTypeSlot: CapturingSlot<CallerSdkType> = slot(),
@@ -1444,7 +1418,8 @@ private fun DataConnectGrpcRPCs.stubExecuteQuery(
   coEvery {
     executeQuery(
       capture(requestIdSlot),
-      capture(executeQueryRequestSlot),
+      capture(operationNameSlot),
+      capture(variablesSlot),
       captureNullable(authTokenSlot),
       captureNullable(appCheckTokenSlot),
       capture(callerSdkTypeSlot)
@@ -1478,7 +1453,6 @@ private suspend fun <Data, Variables> QueryManager.execute(
   )
 
 private class QueryManagerBuilder(
-  private var connectorResourceName: String,
   private var dataConnectGrpcRPCs: DataConnectGrpcRPCs,
   private var dataConnectAuth: DataConnectAuth,
   private var dataConnectAppCheck: DataConnectAppCheck,
@@ -1489,10 +1463,6 @@ private class QueryManagerBuilder(
   private var currentTimeMillis: () -> Long,
   private var logger: Logger,
 ) {
-
-  fun setConnectorResourceName(value: String) {
-    connectorResourceName = value
-  }
 
   fun setDataConnectGrpcRPCs(value: DataConnectGrpcRPCs) {
     dataConnectGrpcRPCs = value
@@ -1520,7 +1490,6 @@ private class QueryManagerBuilder(
 
   fun build(): QueryManager =
     QueryManager(
-      connectorResourceName = connectorResourceName,
       dataConnectGrpcRPCs = dataConnectGrpcRPCs,
       dataConnectAuth = dataConnectAuth,
       dataConnectAppCheck = dataConnectAppCheck,
