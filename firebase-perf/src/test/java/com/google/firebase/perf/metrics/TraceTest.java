@@ -24,6 +24,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import android.content.Context;
@@ -76,6 +77,7 @@ public class TraceTest extends FirebasePerformanceTestBase {
     initMocks(this);
     doAnswer((Answer<Timer>) invocationOnMock -> new Timer(currentTime)).when(mockClock).getTime();
     arguments = ArgumentCaptor.forClass(TraceMetric.class);
+    when(mockAppStateMonitor.getSessionManager()).thenReturn(sessionManager);
 
     DeviceCacheManager.clearInstance();
     ConfigResolver.clearInstance();

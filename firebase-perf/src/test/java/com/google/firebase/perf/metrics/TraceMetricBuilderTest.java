@@ -15,6 +15,7 @@
 package com.google.firebase.perf.metrics;
 
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.initMocks;
 
 import com.google.firebase.perf.FirebasePerformanceTestBase;
@@ -65,6 +66,7 @@ public class TraceMetricBuilderTest extends FirebasePerformanceTestBase {
             })
         .when(clock)
         .getTime();
+    when(appStateMonitor.getSessionManager()).thenReturn(sessionManager);
   }
 
   @Test

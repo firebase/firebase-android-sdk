@@ -168,12 +168,11 @@ public class Trace extends AppStateUpdateHandler
         clock,
         appStateMonitor,
         gaugeManager,
-        sessionManagerFrom(appStateMonitor));
-  }
-
-  private static SessionManager sessionManagerFrom(AppStateMonitor appStateMonitor) {
-    SessionManager sm = appStateMonitor.getSessionManager();
-    return sm != null ? sm : new SessionManager(null, PerfSession.createWithId(null));
+        // AppStateMonitor is always pre-seeded by FirebasePerfEarly before any Trace can be
+        // created in production. In tests, setUp() must call AppStateMonitor.getInstance(sm)
+        // before constructing a Trace; if it does not, getSessionManager() returns null and
+        // the 6-arg constructor will throw a NullPointerException on first session access.
+        appStateMonitor.getSessionManager());
   }
 
   /**

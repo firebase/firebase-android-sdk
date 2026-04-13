@@ -111,6 +111,7 @@ public class FragmentStateMonitorTest extends FirebasePerformanceTestBase {
 
     savedInstanceState = mock(Bundle.class);
     appStateMonitor = mock(AppStateMonitor.class);
+    when(appStateMonitor.getSessionManager()).thenReturn(sessionManager);
     mockFragment1 = mock(Fragment.class);
     mockFragment2 = mock(Fragment.class);
   }

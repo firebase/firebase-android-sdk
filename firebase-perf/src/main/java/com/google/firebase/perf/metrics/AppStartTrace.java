@@ -567,12 +567,6 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
         if (appProcess.importance != ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND) {
           continue;
         }
-        //        if (appProcess.processName.equals(appProcessName)
-        //            || appProcess.processName.startsWith(allowedAppProcessNamePrefix)) {
-        //          // Returns true if the process with `IMPORTANCE_FOREGROUND` matches current
-        // process.
-        //          return true;
-        //        }
       }
     }
 
