@@ -19,8 +19,7 @@ package com.google.firebase.dataconnect.querymgr
 import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.util.ImmutableByteArray
-import google.firebase.dataconnect.proto.ExecuteQueryRequest as ExecuteQueryRequestProto
-import google.firebase.dataconnect.proto.ExecuteRequest
+import com.google.protobuf.Struct
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.serialization.DeserializationStrategy
@@ -44,7 +43,8 @@ internal class LocalQuerySubscriptions(
 
   fun <T> getOrPut(
     key: Key<T>,
-    requestProto: ExecuteQueryRequestProto,
+    operationName: String,
+    variables: Struct,
   ): LocalQuerySubscription<T> {
 
     val cacheOnlyLocalQuery: CacheOnlyLocalQuery<T>? = run {
@@ -56,7 +56,7 @@ internal class LocalQuerySubscriptions(
           dataSerializersModule = key.dataSerializersModule,
           fetchPolicy = QueryRef.FetchPolicy.CACHE_ONLY,
         )
-      val localQuery = localQueries.getOrPut(localQueryKey, requestProto)
+      val localQuery = localQueries.getOrPut(localQueryKey, operationName, variables)
       localQuery as? CacheOnlyLocalQuery<T>
     }
 
@@ -69,18 +69,18 @@ internal class LocalQuerySubscriptions(
           dataSerializersModule = key.dataSerializersModule,
           fetchPolicy = QueryRef.FetchPolicy.SERVER_ONLY,
         )
-      val localQuery = localQueries.getOrPutServerOnly(localQueryKey, requestProto)
+      val localQuery = localQueries.getOrPutServerOnly(localQueryKey, operationName, variables)
       localQuery.remoteQuery.cacheUpdater
     }
 
     val remoteQuerySubscription: RemoteQuerySubscription = run {
       val remoteSubscriptionKey = RemoteQuerySubscriptions.Key(key.authUid, key.queryId)
-      val executeRequest =
-        ExecuteRequest.newBuilder()
-          .setOperationName(requestProto.operationName)
-          .setVariables(requestProto.variables)
-          .build()
-      remoteSubscriptions.getOrPut(remoteSubscriptionKey, executeRequest, { cacheUpdater })
+      remoteSubscriptions.getOrPut(
+        remoteSubscriptionKey,
+        operationName,
+        variables,
+        { cacheUpdater }
+      )
     }
 
     val untypedLocalSubscription: LocalQuerySubscription<*> =

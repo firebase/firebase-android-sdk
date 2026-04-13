@@ -16,6 +16,7 @@
 
 package com.google.firebase.dataconnect.core
 
+import com.google.protobuf.Struct
 import google.firebase.dataconnect.proto.ExecuteQueryResponse
 import google.firebase.dataconnect.proto.ExecuteRequest
 import google.firebase.dataconnect.proto.StreamRequest
@@ -55,7 +56,8 @@ internal class DataConnectStream(
 
   fun subscribe(
     requestId: String,
-    request: ExecuteRequest,
+    operationName: String,
+    variables: Struct,
   ): ReceiveChannel<ExecuteQueryResponse> {
     val flow: Flow<ExecuteQueryResponse> =
       incomingResponses.transformWhile { incomingResponse: IncomingResponse ->
@@ -69,6 +71,11 @@ internal class DataConnectStream(
             throw incomingResponse.throwable
           }
           IncomingResponse.Ready -> {
+            val request =
+              ExecuteRequest.newBuilder()
+                .setOperationName(operationName)
+                .setVariables(variables)
+                .build()
             outgoingRequests.send(
               StreamRequest.newBuilder().setRequestId(requestId).setSubscribe(request).build()
             )

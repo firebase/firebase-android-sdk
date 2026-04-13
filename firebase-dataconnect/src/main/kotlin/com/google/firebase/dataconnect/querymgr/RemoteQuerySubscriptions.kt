@@ -18,7 +18,7 @@ package com.google.firebase.dataconnect.querymgr
 
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.util.ImmutableByteArray
-import google.firebase.dataconnect.proto.ExecuteRequest
+import com.google.protobuf.Struct
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 
@@ -33,14 +33,16 @@ internal class RemoteQuerySubscriptions(
 
   fun getOrPut(
     key: Key,
-    requestProto: ExecuteRequest,
+    operationName: String,
+    variables: Struct,
     cacheUpdaterFactory: () -> QueryCacheUpdater?,
   ): RemoteQuerySubscription =
     map.getOrPut(key) {
       RemoteQuerySubscription(
         cacheUpdaterFactory(),
         cpuDispatcher,
-        requestProto,
+        operationName,
+        variables,
         streamManager,
         coroutineScope,
         logger,

@@ -38,7 +38,7 @@ import com.google.firebase.dataconnect.util.ProtoUtil.calculateSha512
 import com.google.firebase.dataconnect.util.RequestIdGenerator
 import com.google.firebase.dataconnect.util.SequencedReference.Companion.nextSequenceNumber
 import com.google.protobuf.Duration as DurationProto
-import google.firebase.dataconnect.proto.ExecuteQueryRequest as ExecuteQueryRequestProto
+import com.google.protobuf.Struct
 import java.io.File
 import kotlin.time.Duration
 import kotlinx.coroutines.CoroutineDispatcher
@@ -61,7 +61,6 @@ import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.modules.SerializersModule
 
 internal class QueryManager(
-  private val connectorResourceName: String,
   private val dataConnectGrpcRPCs: DataConnectGrpcRPCs,
   private val dataConnectAuth: DataConnectAuth,
   private val dataConnectAppCheck: DataConnectAppCheck,
@@ -84,8 +83,7 @@ internal class QueryManager(
         currentTimeMillis,
         logger,
       )
-    val streamManager =
-      StreamManager(dataConnectGrpcRPCs, requestIdGenerator, connectorResourceName)
+    val streamManager = StreamManager(dataConnectGrpcRPCs, requestIdGenerator)
     val localQuerySubscriptions =
       LocalQuerySubscriptions(
         localQueries,
@@ -159,7 +157,7 @@ internal class QueryManager(
       "[rid=$requestId] Executing query with operationName=$operationName and variables=$variables"
     }
 
-    val (requestProto, queryId) =
+    val (variablesStruct, queryId) =
       prepare(
         operationName,
         variables,
@@ -193,7 +191,8 @@ internal class QueryManager(
         localKey = localKey,
         authToken = authTokenResult,
         appCheckToken = appCheckTokenResult,
-        requestProto = requestProto,
+        operationName = operationName,
+        variables = variablesStruct,
         callerSdkType = callerSdkType,
       )
     }
@@ -205,10 +204,11 @@ internal class QueryManager(
     localKey: LocalQueries.Key<Data>,
     authToken: GetAuthTokenResult?,
     appCheckToken: GetAppCheckTokenResult?,
-    requestProto: ExecuteQueryRequestProto,
+    operationName: String,
+    variables: Struct,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
   ): ExecuteResult<Data> {
-    val localQuery = getLocalQuery(localKey, requestProto)
+    val localQuery = getLocalQuery(localKey, operationName, variables)
 
     val executeResultSequencedReference =
       localQuery.execute(
@@ -223,7 +223,7 @@ internal class QueryManager(
   }
 
   private data class PrepareResult(
-    val requestProto: ExecuteQueryRequestProto,
+    val variables: Struct,
     val queryId: ImmutableByteArray,
   )
 
@@ -237,13 +237,7 @@ internal class QueryManager(
       val variablesStruct =
         encodeVariables(variables, variablesSerializer, variablesSerializersModule)
       val queryId = variablesStruct.calculateSha512(preamble = operationName)
-      val requestProto =
-        ExecuteQueryRequestProto.newBuilder()
-          .setName(connectorResourceName)
-          .setOperationName(operationName)
-          .setVariables(variablesStruct)
-          .build()
-      PrepareResult(requestProto, queryId)
+      PrepareResult(variablesStruct, queryId)
     }
 
   suspend fun <Data, Variables> subscribe(
@@ -261,7 +255,7 @@ internal class QueryManager(
         "and variables=$variables"
     }
 
-    val (requestProto, queryId) =
+    val (variablesStruct, queryId) =
       prepare(
         operationName,
         variables,
@@ -283,7 +277,8 @@ internal class QueryManager(
         ),
       authToken = authTokenResult,
       appCheckToken = appCheckTokenResult,
-      requestProto = requestProto,
+      operationName = operationName,
+      variables = variablesStruct,
       callerSdkType = callerSdkType,
     )
   }
@@ -293,10 +288,11 @@ internal class QueryManager(
     localKey: LocalQuerySubscriptions.Key<Data>,
     authToken: GetAuthTokenResult?,
     appCheckToken: GetAppCheckTokenResult?,
-    requestProto: ExecuteQueryRequestProto,
+    operationName: String,
+    variables: Struct,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
   ): Flow<Result<ExecuteResult<Data>>> {
-    val localSubscription = getLocalQuerySubscription(localKey, requestProto)
+    val localSubscription = getLocalQuerySubscription(localKey, operationName, variables)
 
     val flow =
       localSubscription.subscribe(
@@ -311,14 +307,16 @@ internal class QueryManager(
 
   private suspend fun <Data> getLocalQuery(
     localKey: LocalQueries.Key<Data>,
-    requestProto: ExecuteQueryRequestProto,
-  ): LocalQuery<Data> = withLock { localQueries.getOrPut(localKey, requestProto) }
+    operationName: String,
+    variables: Struct,
+  ): LocalQuery<Data> = withLock { localQueries.getOrPut(localKey, operationName, variables) }
 
   private suspend fun <Data> getLocalQuerySubscription(
     localKey: LocalQuerySubscriptions.Key<Data>,
-    requestProto: ExecuteQueryRequestProto,
+    operationName: String,
+    variables: Struct,
   ): LocalQuerySubscription<Data> = withLock {
-    localQuerySubscriptions.getOrPut(localKey, requestProto)
+    localQuerySubscriptions.getOrPut(localKey, operationName, variables)
   }
 
   private suspend fun <T> withLock(block: State.Open.() -> T): T =
@@ -371,7 +369,6 @@ internal class QueryManager(
   class StreamManager(
     private val dataConnectGrpcRPCs: DataConnectGrpcRPCs,
     private val requestIdGenerator: RequestIdGenerator,
-    private val connectorResourceName: String,
   ) {
     private val mutex = Mutex()
     private var stream: DataConnectStream? = null
@@ -394,7 +391,6 @@ internal class QueryManager(
             authToken = authToken,
             appCheckToken = appCheckToken,
             callerSdkType = callerSdkType,
-            connectorResourceName = connectorResourceName,
           )
 
         this.stream = newStream

@@ -29,7 +29,6 @@ import com.google.firebase.dataconnect.core.encodeVariables
 import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase
 import com.google.firebase.dataconnect.util.DeserializeUtils.deserialize
 import com.google.firebase.dataconnect.util.RequestIdGenerator
-import google.firebase.dataconnect.proto.ExecuteMutationRequest
 import google.firebase.dataconnect.proto.ExecuteMutationResponse
 import google.firebase.dataconnect.proto.ExecuteRequest
 import kotlinx.coroutines.CoroutineDispatcher
@@ -42,7 +41,6 @@ import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.modules.SerializersModule
 
 internal class OperationExecutor(
-  private val connectorResourceName: String,
   private val dataConnectGrpcRPCs: DataConnectGrpcRPCs,
   private val dataConnectAuth: DataConnectAuth,
   private val dataConnectAppCheck: DataConnectAppCheck,
@@ -78,19 +76,13 @@ internal class OperationExecutor(
           encodeVariables(variables, variablesSerializer, variablesSerializersModule)
         }
 
-      val requestProto: ExecuteMutationRequest =
-        ExecuteMutationRequest.newBuilder()
-          .setName(connectorResourceName)
-          .setOperationName(operationName)
-          .setVariables(variablesStruct)
-          .build()
-
       val authToken: GetAuthTokenResult? = authTokenJob.await()
       val appCheckToken: GetAppCheckTokenResult? = appCheckTokenJob.await()
 
       dataConnectGrpcRPCs.executeMutation(
         requestId = requestId,
-        requestProto = requestProto,
+        operationName = operationName,
+        variables = variablesStruct,
         authToken = authToken,
         appCheckToken = appCheckToken,
         callerSdkType = callerSdkType,

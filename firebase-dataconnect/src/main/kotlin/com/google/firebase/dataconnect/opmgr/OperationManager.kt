@@ -48,7 +48,6 @@ import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.modules.SerializersModule
 
 internal class OperationManager(
-  connectorResourceName: String,
   dataConnectGrpcRPCs: DataConnectGrpcRPCs,
   dataConnectAuth: DataConnectAuth,
   dataConnectAppCheck: DataConnectAppCheck,
@@ -63,7 +62,6 @@ internal class OperationManager(
   private val state =
     MutableStateFlow<State>(
       State.New(
-        connectorResourceName = connectorResourceName,
         dataConnectGrpcRPCs = dataConnectGrpcRPCs,
         dataConnectAuth = dataConnectAuth,
         dataConnectAppCheck = dataConnectAppCheck,
@@ -185,7 +183,6 @@ internal class OperationManager(
 
   private sealed interface State {
     data class New(
-      val connectorResourceName: String,
       val dataConnectGrpcRPCs: DataConnectGrpcRPCs,
       val dataConnectAuth: DataConnectAuth,
       val dataConnectAppCheck: DataConnectAppCheck,
@@ -257,7 +254,6 @@ internal class OperationManager(
           val operationExecutorLogger = Logger("OperationExecutor")
           operationExecutorLogger.debug { "created by ${logger.nameWithId}" }
           OperationExecutor(
-            connectorResourceName = connectorResourceName,
             dataConnectGrpcRPCs = dataConnectGrpcRPCs,
             dataConnectAuth = dataConnectAuth,
             dataConnectAppCheck = dataConnectAppCheck,

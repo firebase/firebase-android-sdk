@@ -22,7 +22,7 @@ import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase
 import com.google.firebase.dataconnect.util.ImmutableByteArray
 import com.google.protobuf.Duration as DurationProto
-import google.firebase.dataconnect.proto.ExecuteQueryRequest as ExecuteQueryRequestProto
+import com.google.protobuf.Struct
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
@@ -48,24 +48,27 @@ internal class LocalQueries(
 
   fun <T> getOrPut(
     key: Key<T>,
-    requestProto: ExecuteQueryRequestProto,
+    operationName: String,
+    variables: Struct,
   ): LocalQuery<T> =
     when (key.fetchPolicy) {
-      QueryRef.FetchPolicy.PREFER_CACHE -> getOrPutPreferCache(key, requestProto)
+      QueryRef.FetchPolicy.PREFER_CACHE -> getOrPutPreferCache(key, operationName, variables)
       QueryRef.FetchPolicy.CACHE_ONLY -> getOrPutCacheOnly(key)
-      QueryRef.FetchPolicy.SERVER_ONLY -> getOrPutServerOnly(key, requestProto)
+      QueryRef.FetchPolicy.SERVER_ONLY -> getOrPutServerOnly(key, operationName, variables)
     }
 
   private fun <T> getOrPutPreferCache(
     key: Key<T>,
-    requestProto: ExecuteQueryRequestProto,
+    operationName: String,
+    variables: Struct,
   ): LocalQuery<T> {
     check(key.fetchPolicy == QueryRef.FetchPolicy.PREFER_CACHE)
 
     val serverOnlyLocalQuery: ServerOnlyLocalQuery<T> =
       getOrPutServerOnly(
         key.copy(fetchPolicy = QueryRef.FetchPolicy.SERVER_ONLY),
-        requestProto,
+        operationName,
+        variables,
       )
 
     if (cacheInfo === null) {
@@ -118,14 +121,15 @@ internal class LocalQueries(
 
   fun <T> getOrPutServerOnly(
     key: Key<T>,
-    requestProto: ExecuteQueryRequestProto,
+    operationName: String,
+    variables: Struct,
   ): ServerOnlyLocalQuery<T> {
     check(key.fetchPolicy == QueryRef.FetchPolicy.SERVER_ONLY)
 
     val remoteKey = key.toRemoteKey()
 
     val remoteQuery =
-      remoteQueries.getOrPut(remoteKey, requestProto) {
+      remoteQueries.getOrPut(remoteKey, operationName, variables) {
         if (cacheInfo === null) {
           null
         } else {

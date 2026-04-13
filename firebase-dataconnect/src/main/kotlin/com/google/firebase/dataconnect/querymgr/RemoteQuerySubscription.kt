@@ -23,8 +23,8 @@ import com.google.firebase.dataconnect.core.DataConnectStream
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import com.google.firebase.dataconnect.util.SequencedReference.Companion.nextSequenceNumber
+import com.google.protobuf.Struct
 import google.firebase.dataconnect.proto.ExecuteQueryResponse as ExecuteQueryResponseProto
-import google.firebase.dataconnect.proto.ExecuteRequest
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineName
@@ -50,7 +50,8 @@ import kotlinx.coroutines.sync.withLock
 internal class RemoteQuerySubscription(
   private val cacheUpdater: QueryCacheUpdater?,
   private val cpuDispatcher: CoroutineDispatcher,
-  val requestProto: ExecuteRequest,
+  private val operationName: String,
+  private val variables: Struct,
   private val streamManager: QueryManager.StreamManager,
   private val parentCoroutineScope: CoroutineScope,
   private val logger: Logger,
@@ -100,7 +101,7 @@ internal class RemoteQuerySubscription(
 
       val flow =
         stream
-          .subscribe(requestId, requestProto)
+          .subscribe(requestId, operationName, variables)
           .consumeAsFlow()
           .map<_, IncomingResponse> { IncomingResponse.Data(it) }
           .onCompletion { exception ->

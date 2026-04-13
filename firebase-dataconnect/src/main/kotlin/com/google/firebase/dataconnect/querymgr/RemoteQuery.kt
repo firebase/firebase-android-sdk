@@ -24,7 +24,7 @@ import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import com.google.firebase.dataconnect.util.SequenceNumberConflatedJobQueue
 import com.google.firebase.dataconnect.util.SequencedReference
-import google.firebase.dataconnect.proto.ExecuteQueryRequest as ExecuteQueryRequestProto
+import com.google.protobuf.Struct
 import google.firebase.dataconnect.proto.ExecuteQueryResponse as ExecuteQueryResponseProto
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -35,7 +35,8 @@ internal class RemoteQuery(
   private val dataConnectGrpcRPCs: DataConnectGrpcRPCs,
   val cacheUpdater: QueryCacheUpdater?,
   cpuDispatcher: CoroutineDispatcher,
-  val requestProto: ExecuteQueryRequestProto,
+  private val operationName: String,
+  private val variables: Struct,
   private val coroutineScope: CoroutineScope,
   private val logger: Logger,
 ) {
@@ -59,7 +60,8 @@ internal class RemoteQuery(
       val executeQueryResponse: ExecuteQueryResponseProto =
         dataConnectGrpcRPCs.executeQuery(
           requestId = params.requestId,
-          requestProto = requestProto,
+          operationName = operationName,
+          variables = variables,
           authToken = params.authToken,
           appCheckToken = params.appCheckToken,
           callerSdkType = params.callerSdkType,

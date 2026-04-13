@@ -118,8 +118,6 @@ internal class FirebaseDataConnectImpl(
         }
     )
 
-  private val connectorResourceName = calculateConnectorResourceName(projectId, config)
-
   private val dataConnectAuth: DataConnectAuth =
     DataConnectAuth(
         deferredAuthProvider = deferredAuthProvider,
@@ -233,6 +231,7 @@ internal class FirebaseDataConnectImpl(
         context = context,
         host = backendInfo.host,
         sslEnabled = backendInfo.sslEnabled,
+        connectorResourceName = calculateConnectorResourceName(projectId, config),
         blockingCoroutineDispatcher = blockingDispatcher,
         grpcMetadata = grpcMetadata,
         parentLogger = logger,
@@ -264,7 +263,6 @@ internal class FirebaseDataConnectImpl(
       }
 
     return OperationManager(
-      connectorResourceName = connectorResourceName,
       dataConnectGrpcRPCs = dataConnectGrpcRPCs,
       dataConnectAuth = dataConnectAuth,
       dataConnectAppCheck = dataConnectAppCheck,
