@@ -20,7 +20,6 @@ import com.google.firebase.dataconnect.core.DataConnectAppCheck
 import com.google.firebase.dataconnect.core.DataConnectAuth
 import com.google.firebase.dataconnect.core.DataConnectGrpcRPCs
 import com.google.firebase.dataconnect.core.Logger
-import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase
 import com.google.firebase.dataconnect.util.RequestIdGenerator
 import kotlinx.coroutines.CoroutineDispatcher
 
@@ -32,12 +31,13 @@ internal class OperationExecutorNoCache(
   cpuDispatcher: CoroutineDispatcher,
   requestIdGenerator: RequestIdGenerator,
   logger: Logger,
-): OperationExecutor(
-  dataConnectGrpcRPCs,
-  dataConnectAuth,
-  dataConnectAppCheck,
-  ioDispatcher,
-  cpuDispatcher,
-  requestIdGenerator,
-  logger,
-)
+) :
+  OperationExecutor(
+    dataConnectGrpcRPCs,
+    dataConnectAuth,
+    dataConnectAppCheck,
+    ioDispatcher,
+    cpuDispatcher,
+    requestIdGenerator,
+    logger,
+  )

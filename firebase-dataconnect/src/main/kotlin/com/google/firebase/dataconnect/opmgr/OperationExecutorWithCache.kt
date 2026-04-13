@@ -34,12 +34,13 @@ internal class OperationExecutorWithCache(
   private val cacheDb: DataConnectCacheDatabase,
   private val currentTimeMillis: () -> Long,
   logger: Logger,
-): OperationExecutor(
-  dataConnectGrpcRPCs,
-  dataConnectAuth,
-  dataConnectAppCheck,
-  ioDispatcher,
-  cpuDispatcher,
-  requestIdGenerator,
-  logger,
-)
+) :
+  OperationExecutor(
+    dataConnectGrpcRPCs,
+    dataConnectAuth,
+    dataConnectAppCheck,
+    ioDispatcher,
+    cpuDispatcher,
+    requestIdGenerator,
+    logger,
+  )
