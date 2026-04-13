@@ -35,12 +35,14 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.job
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.modules.SerializersModule
@@ -58,151 +60,20 @@ internal class OperationManager(
   private val logger: Logger,
 ) {
 
-  private val mutex = Mutex()
-  private var state: State =
-    State.New(
-      connectorResourceName = connectorResourceName,
-      dataConnectGrpcRPCs = dataConnectGrpcRPCs,
-      dataConnectAuth = dataConnectAuth,
-      dataConnectAppCheck = dataConnectAppCheck,
-      ioDispatcher = ioDispatcher,
-      cpuDispatcher = cpuDispatcher,
-      requestIdGenerator = requestIdGenerator,
-      cacheSettings = cacheSettings,
-      currentTimeMillis = currentTimeMillis,
-    )
-
-  suspend fun start() {
-    logger.debug { "start() called" }
-
-    val newState: State.New =
-      mutex.withLock {
-        when (val currentState = this.state) {
-          is State.New -> {
-            this.state = State.Starting
-            currentState
-          }
-          is State.Started,
-          State.Starting ->
-            throw IllegalStateException(
-              "start() has already been called (state=$currentState) [bn64pmgp98]"
-            )
-          State.Closed,
-          is State.Closing ->
-            throw IllegalStateException("start() cannot be called after close() [n7pc2n7xcd]")
-        }
-      }
-
-    val cacheDb: DataConnectCacheDatabase? =
-      newState.cacheSettings?.run {
-        val dbLogger = Logger("DataConnectCacheDatabase")
-        dbLogger.debug { "created by ${logger.nameWithId}" }
-        DataConnectCacheDatabase(dbFile, dbLogger).apply {
-          runCatching { initialize() }.onFailure { close() }.getOrThrow()
-        }
-      }
-
-    val coroutineScope =
-      CoroutineScope(
-        SupervisorJob() +
-          CoroutineName(logger.nameWithId) +
-          CoroutineExceptionHandler { context, throwable ->
-            logger.warn(throwable) {
-              "uncaught exception from a coroutine named ${context[CoroutineName]?.name}: " +
-                "$throwable [ekx3ehgakw]"
-            }
-          }
+  private val state =
+    MutableStateFlow<State>(
+      State.New(
+        connectorResourceName = connectorResourceName,
+        dataConnectGrpcRPCs = dataConnectGrpcRPCs,
+        dataConnectAuth = dataConnectAuth,
+        dataConnectAppCheck = dataConnectAppCheck,
+        ioDispatcher = ioDispatcher,
+        cpuDispatcher = cpuDispatcher,
+        requestIdGenerator = requestIdGenerator,
+        cacheSettings = cacheSettings,
+        currentTimeMillis = currentTimeMillis,
       )
-
-    val operationExecutor =
-      newState.run {
-        val operationExecutorLogger = Logger("OperationExecutor")
-        operationExecutorLogger.debug { "created by ${logger.nameWithId}" }
-        OperationExecutor(
-          connectorResourceName = connectorResourceName,
-          dataConnectGrpcRPCs = dataConnectGrpcRPCs,
-          dataConnectAuth = dataConnectAuth,
-          dataConnectAppCheck = dataConnectAppCheck,
-          ioDispatcher = ioDispatcher,
-          cpuDispatcher = cpuDispatcher,
-          requestIdGenerator = requestIdGenerator,
-          cacheDb = cacheDb,
-          currentTimeMillis = currentTimeMillis,
-          logger = operationExecutorLogger,
-        )
-      }
-
-    val startedState = State.Started(coroutineScope, cacheDb, operationExecutor)
-
-    val oldState =
-      mutex.withLock {
-        val currentState = this.state
-        if (currentState == State.Starting) {
-          this.state = startedState
-        }
-        currentState
-      }
-
-    when (oldState) {
-      State.Starting -> {}
-      State.Closed,
-      is State.Closing -> startedState.close()
-      is State.New,
-      is State.Started ->
-        throw IllegalStateException(
-          "internal error z5snhkxnf2: unexpected value for this.state: $oldState"
-        )
-    }
-  }
-
-  suspend fun close() {
-    logger.debug { "close() called" }
-
-    val closingState: State.Closing =
-      mutex.withLock {
-        when (val currentState = this.state) {
-          State.Closed -> return
-          is State.Started -> {
-            val closingState = State.Closing(currentState)
-            this.state = closingState
-            closingState
-          }
-          is State.Closing -> currentState
-          is State.New,
-          State.Starting -> {
-            this.state = State.Closed
-            return
-          }
-        }
-      }
-
-    closingState.started.close()
-
-    mutex.withLock {
-      when (this.state) {
-        State.Closed -> {}
-        is State.Closing -> this.state = State.Closed
-        is State.New,
-        is State.Started,
-        State.Starting ->
-          throw IllegalStateException(
-            "internal error ebdtpd3624: unexpected state: $state " +
-              "(expected $closingState or ${State.Closed})"
-          )
-      }
-    }
-  }
-
-  private suspend fun State.Started.close() {
-    coroutineScope.cancel("close() called")
-    coroutineScope.coroutineContext.job.join()
-    cacheDb?.close()
-  }
-
-  data class ExecuteQueryResult<Data>(
-    val data: Data,
-    val source: DataSource,
-  )
+    )
 
   suspend fun <Data, Variables> executeMutation(
     operationName: String,
@@ -223,6 +94,11 @@ internal class OperationManager(
       callerSdkType = callerSdkType,
     )
   }
+
+  data class ExecuteQueryResult<Data>(
+    val data: Data,
+    val source: DataSource,
+  )
 
   suspend fun <Data, Variables> executeQuery(
     operationName: String,
@@ -266,19 +142,45 @@ internal class OperationManager(
     )
   }
 
-  private suspend inline fun <T> withOperationExecutor(block: suspend (OperationExecutor) -> T): T {
-    val currentState = mutex.withLock { this.state }
+  suspend fun close() {
+    logger.debug { "close() called" }
 
-    val operationExecutor: OperationExecutor =
-      when (currentState) {
-        is State.Started -> currentState.operationExecutor
-        State.Closed,
-        is State.Closing -> throw IllegalStateException("close() has been called [cxnbhseye5]")
-        is State.New -> throw IllegalStateException("start() has not yet been called [ytcf8se5r2]")
-        State.Starting -> throw IllegalStateException("start() has not yet completed [wk7tkwf5v7]")
+    while (true) {
+      val currentState = state.value
+
+      val newState =
+        when (currentState) {
+          State.Closed -> return
+          is State.New -> State.Closed
+          is State.Starting -> State.Closing(currentState.coroutineScope, currentState.cacheDb)
+          is State.Started -> State.Closing(currentState.coroutineScope, currentState.cacheDb)
+          is State.Closing -> {
+            currentState.coroutineScope.cancel("close() called")
+            currentState.coroutineScope.coroutineContext.job.join()
+            currentState.cacheDb?.close()
+            State.Closed
+          }
+        }
+
+      state.compareAndSet(currentState, newState)
+    }
+  }
+
+  private suspend fun ensureStarted(): State.Started {
+    while (true) {
+      when (val currentState = state.value) {
+        is State.New -> state.compareAndSet(currentState, currentState.toStartingState())
+        is State.Starting -> state.compareAndSet(currentState, currentState.job.await())
+        is State.Started -> return currentState
+        is State.Closing,
+        State.Closed -> throw IllegalStateException("close() has been called [vpyvbt2k9z]")
       }
+    }
+  }
 
-    return block(operationExecutor)
+  private suspend inline fun <T> withOperationExecutor(block: suspend (OperationExecutor) -> T): T {
+    val startedState = ensureStarted()
+    return block(startedState.operationExecutor)
   }
 
   private sealed interface State {
@@ -296,7 +198,11 @@ internal class OperationManager(
       override fun toString() = "OperationManager.State.New"
     }
 
-    data object Starting : State {
+    data class Starting(
+      val coroutineScope: CoroutineScope,
+      val cacheDb: DataConnectCacheDatabase?,
+      val job: Deferred<Started>,
+    ) : State {
       override fun toString() = "OperationManager.State.Starting"
     }
 
@@ -308,7 +214,10 @@ internal class OperationManager(
       override fun toString() = "OperationManager.State.Started"
     }
 
-    data class Closing(val started: Started) : State {
+    data class Closing(
+      val coroutineScope: CoroutineScope,
+      val cacheDb: DataConnectCacheDatabase?,
+    ) : State {
       override fun toString() = "OperationManager.State.Closing"
     }
 
@@ -318,6 +227,54 @@ internal class OperationManager(
   }
 
   data class CacheSettings(val dbFile: File?, val maxAge: Duration)
+
+  private fun State.New.toStartingState(): State.Starting {
+    val cacheDb: DataConnectCacheDatabase? =
+      cacheSettings?.run {
+        val dbLogger = Logger("DataConnectCacheDatabase")
+        dbLogger.debug { "created by ${logger.nameWithId}" }
+        DataConnectCacheDatabase(dbFile, dbLogger)
+      }
+
+    val coroutineScope =
+      CoroutineScope(
+        SupervisorJob() +
+          CoroutineName(logger.nameWithId) +
+          cpuDispatcher +
+          CoroutineExceptionHandler { context, throwable ->
+            logger.warn(throwable) {
+              "uncaught exception from a coroutine named ${context[CoroutineName]?.name}: " +
+                "$throwable [ekx3ehgakw]"
+            }
+          }
+      )
+
+    val job =
+      coroutineScope.async(CoroutineName("OperationManager start"), start = CoroutineStart.LAZY) {
+        cacheDb?.initialize()
+
+        val operationExecutor = run {
+          val operationExecutorLogger = Logger("OperationExecutor")
+          operationExecutorLogger.debug { "created by ${logger.nameWithId}" }
+          OperationExecutor(
+            connectorResourceName = connectorResourceName,
+            dataConnectGrpcRPCs = dataConnectGrpcRPCs,
+            dataConnectAuth = dataConnectAuth,
+            dataConnectAppCheck = dataConnectAppCheck,
+            ioDispatcher = ioDispatcher,
+            cpuDispatcher = cpuDispatcher,
+            requestIdGenerator = requestIdGenerator,
+            cacheDb = cacheDb,
+            currentTimeMillis = currentTimeMillis,
+            logger = operationExecutorLogger,
+          )
+        }
+
+        State.Started(coroutineScope, cacheDb, operationExecutor)
+      }
+
+    return State.Starting(coroutineScope, cacheDb, job)
+  }
 }
 
 internal suspend fun <Data, Variables> OperationManager.execute(
