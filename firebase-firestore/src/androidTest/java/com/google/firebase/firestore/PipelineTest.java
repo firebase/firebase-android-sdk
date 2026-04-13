@@ -20,6 +20,7 @@ import static com.google.firebase.firestore.pipeline.Expression.and;
 import static com.google.firebase.firestore.pipeline.Expression.array;
 import static com.google.firebase.firestore.pipeline.Expression.arrayContains;
 import static com.google.firebase.firestore.pipeline.Expression.arrayContainsAny;
+import static com.google.firebase.firestore.pipeline.Expression.arrayFilter;
 import static com.google.firebase.firestore.pipeline.Expression.arrayFirst;
 import static com.google.firebase.firestore.pipeline.Expression.arrayFirstN;
 import static com.google.firebase.firestore.pipeline.Expression.arrayIndexOf;
@@ -31,6 +32,10 @@ import static com.google.firebase.firestore.pipeline.Expression.arrayMaximum;
 import static com.google.firebase.firestore.pipeline.Expression.arrayMaximumN;
 import static com.google.firebase.firestore.pipeline.Expression.arrayMinimum;
 import static com.google.firebase.firestore.pipeline.Expression.arrayMinimumN;
+import static com.google.firebase.firestore.pipeline.Expression.arraySlice;
+import static com.google.firebase.firestore.pipeline.Expression.arraySliceToEnd;
+import static com.google.firebase.firestore.pipeline.Expression.arrayTransform;
+import static com.google.firebase.firestore.pipeline.Expression.arrayTransformWithIndex;
 import static com.google.firebase.firestore.pipeline.Expression.collectionId;
 import static com.google.firebase.firestore.pipeline.Expression.concat;
 import static com.google.firebase.firestore.pipeline.Expression.constant;
@@ -50,6 +55,7 @@ import static com.google.firebase.firestore.pipeline.Expression.logicalMaximum;
 import static com.google.firebase.firestore.pipeline.Expression.logicalMinimum;
 import static com.google.firebase.firestore.pipeline.Expression.map;
 import static com.google.firebase.firestore.pipeline.Expression.mapGet;
+import static com.google.firebase.firestore.pipeline.Expression.multiply;
 import static com.google.firebase.firestore.pipeline.Expression.nor;
 import static com.google.firebase.firestore.pipeline.Expression.not;
 import static com.google.firebase.firestore.pipeline.Expression.notEqual;
@@ -69,6 +75,7 @@ import static com.google.firebase.firestore.pipeline.Expression.timestampTruncat
 import static com.google.firebase.firestore.pipeline.Expression.timestampTruncateWithTimezone;
 import static com.google.firebase.firestore.pipeline.Expression.trunc;
 import static com.google.firebase.firestore.pipeline.Expression.truncToPrecision;
+import static com.google.firebase.firestore.pipeline.Expression.variable;
 import static com.google.firebase.firestore.pipeline.Expression.vector;
 import static com.google.firebase.firestore.pipeline.Ordering.ascending;
 import static com.google.firebase.firestore.pipeline.Ordering.descending;
@@ -100,6 +107,7 @@ import com.google.firebase.firestore.pipeline.FindNearestStage;
 import com.google.firebase.firestore.pipeline.RawStage;
 import com.google.firebase.firestore.pipeline.UnnestOptions;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
@@ -964,6 +972,181 @@ public class PipelineTest {
                 ImmutableList.of("magic", "epic"),
                 "maximumTagsStaticMethod",
                 ImmutableList.of("magic", "epic", "adventure")));
+  }
+
+  @Test
+  public void arrayFilterWorks() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "The Lord of the Rings"))
+            .select(
+                field("tags")
+                    .arrayFilter("tag", notEqual(variable("tag"), "magic"))
+                    .alias("notMagicTags"),
+                arrayFilter("tags", "tag", notEqual(variable("tag"), "epic")).alias("notEpicTags"),
+                field("tags")
+                    .arrayFilter("tag", equal(variable("tag"), "romance"))
+                    .alias("noMatchingTags"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of(
+                "notMagicTags",
+                ImmutableList.of("adventure", "epic"),
+                "notEpicTags",
+                ImmutableList.of("adventure", "magic"),
+                "noMatchingTags",
+                ImmutableList.of()));
+  }
+
+  @Test
+  public void arrayFilterWithMixedTypesAndNullsWorks() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(
+                map(
+                    ImmutableMap.of(
+                        "arr",
+                        ImmutableList.of(
+                            1,
+                            "foo",
+                            Expression.nullValue(),
+                            20.0,
+                            "bar",
+                            30,
+                            "40",
+                            Expression.nullValue()))))
+            .select(
+                field("arr")
+                    .arrayFilter("element", greaterThan(variable("element"), 10))
+                    .alias("filtered"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(ImmutableMap.of("filtered", ImmutableList.of(20.0, 30L)));
+  }
+
+  @Test
+  public void supportsArrayTransformAndArrayTransformWithIndex() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(map(ImmutableMap.of("arr", Arrays.asList(10, 20, 30))))
+            .select(
+                arrayTransform("arr", "element", multiply(variable("element"), 10))
+                    .alias("staticTransform"),
+                field("arr")
+                    .arrayTransform("element", multiply(variable("element"), 10))
+                    .alias("instanceTransform"),
+                arrayTransformWithIndex(
+                        "arr", "element", "i", add(variable("element"), variable("i")))
+                    .alias("staticTransformWithIndex"),
+                field("arr")
+                    .arrayTransformWithIndex(
+                        "element", "i", add(variable("element"), variable("i")))
+                    .alias("instanceTransformWithIndex"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of(
+                "staticTransform",
+                ImmutableList.of(100L, 200L, 300L),
+                "instanceTransform",
+                ImmutableList.of(100L, 200L, 300L),
+                "staticTransformWithIndex",
+                ImmutableList.of(10L, 21L, 32L),
+                "instanceTransformWithIndex",
+                ImmutableList.of(10L, 21L, 32L)));
+  }
+
+  @Test
+  public void supportsArrayTransformWithEmptyArrayAndNulls() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(
+                map(ImmutableMap.of("arr", Arrays.asList(1, null, 3), "empty", ImmutableList.of())))
+            .select(
+                field("arr")
+                    .arrayTransform("element", add(variable("element"), 1))
+                    .alias("transformedWithNulls"),
+                field("empty")
+                    .arrayTransform("element", add(variable("element"), 1))
+                    .alias("transformedEmpty"),
+                field("arr")
+                    .arrayTransformWithIndex(
+                        "element", "idx", add(variable("element"), variable("idx")))
+                    .alias("transformedWithIndex"),
+                field("empty")
+                    .arrayTransformWithIndex(
+                        "element", "idx", add(variable("element"), variable("idx")))
+                    .alias("transformedEmptyWithIndex"))
+            .execute();
+    Map<String, Object> expectedMap = new HashMap<>();
+    expectedMap.put("transformedWithNulls", Arrays.asList(2L, null, 4L));
+    expectedMap.put("transformedEmpty", ImmutableList.of());
+    expectedMap.put("transformedWithIndex", Arrays.asList(1L, null, 5L));
+    expectedMap.put("transformedEmptyWithIndex", ImmutableList.of());
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(expectedMap);
+  }
+
+  @Test
+  public void arraySliceWorks() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "The Lord of the Rings"))
+            .select(
+                arraySlice("tags", 1, 1).alias("staticMethodSlice"),
+                arraySliceToEnd("tags", 1).alias("staticMethodSliceToEnd"),
+                field("tags").arraySlice(1, 1).alias("instanceMethodSlice"),
+                field("tags").arraySliceToEnd(1).alias("instanceMethodSliceToEnd"),
+                field("tags").arraySlice(1, 10).alias("overflowLength"),
+                field("tags").arraySlice(-1, 1).alias("negativeOffset"),
+                field("tags").arraySliceToEnd(-1).alias("negativeOffsetSliceToEnd"),
+                field("tags").arraySliceToEnd(10).alias("overflowOffset"),
+                field("tags").arraySliceToEnd(-10).alias("negativeOverflowOffset"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            mapOfEntries(
+                entry("staticMethodSlice", ImmutableList.of("magic")),
+                entry("staticMethodSliceToEnd", ImmutableList.of("magic", "epic")),
+                entry("instanceMethodSlice", ImmutableList.of("magic")),
+                entry("instanceMethodSliceToEnd", ImmutableList.of("magic", "epic")),
+                entry("overflowLength", ImmutableList.of("magic", "epic")),
+                entry("overflowOffset", ImmutableList.of()),
+                entry("negativeOffset", ImmutableList.of("epic")),
+                entry("negativeOffsetSliceToEnd", ImmutableList.of("epic")),
+                entry("negativeOverflowOffset", ImmutableList.of("adventure", "magic", "epic"))));
+  }
+
+  @Test
+  public void arraySliceThrowsErrorForNegativeLength() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "The Lord of the Rings"))
+            .select(arraySlice("tags", 1, -1).alias("negativeLengthSlice"))
+            .execute();
+    Exception exception = assertThrows(Exception.class, () -> waitFor(execute));
+    assertThat(exception).hasMessageThat().contains("length must be non-negative");
   }
 
   @Test
