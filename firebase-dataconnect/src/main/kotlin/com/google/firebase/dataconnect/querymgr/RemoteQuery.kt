@@ -22,14 +22,13 @@ import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
 import com.google.firebase.dataconnect.core.DataConnectGrpcRPCs
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
+import com.google.firebase.dataconnect.util.CoroutineUtils.createSupervisorCoroutineScope
 import com.google.firebase.dataconnect.util.SequenceNumberConflatedJobQueue
 import com.google.firebase.dataconnect.util.SequencedReference
 import com.google.protobuf.Struct
 import google.firebase.dataconnect.proto.ExecuteQueryResponse as ExecuteQueryResponseProto
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
 
 internal class RemoteQuery(
   private val dataConnectGrpcRPCs: DataConnectGrpcRPCs,
@@ -50,12 +49,7 @@ internal class RemoteQuery(
 
   private val executeSerializer =
     SequenceNumberConflatedJobQueue<ExecuteParams, ExecuteQueryResponseProto>(
-      coroutineScope =
-        CoroutineScope(
-          coroutineScope.coroutineContext +
-            SupervisorJob(coroutineScope.coroutineContext[Job]) +
-            cpuDispatcher
-        ),
+      createSupervisorCoroutineScope(cpuDispatcher, logger)
     ) { (sequenceNumber, params) ->
       val executeQueryResponse: ExecuteQueryResponseProto =
         dataConnectGrpcRPCs.executeQuery(

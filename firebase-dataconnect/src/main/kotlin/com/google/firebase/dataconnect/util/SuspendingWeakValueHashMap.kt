@@ -16,17 +16,15 @@
 
 package com.google.firebase.dataconnect.util
 
-import android.util.Log
-import com.google.firebase.dataconnect.core.LoggerGlobals.LOG_TAG
+import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
+import com.google.firebase.dataconnect.util.CoroutineUtils.createSupervisorCoroutineScope
 import java.lang.ref.ReferenceQueue
 import java.lang.ref.WeakReference
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
@@ -64,19 +62,7 @@ internal class SuspendingWeakValueHashMap<K, V : Any>(
   private val state =
     MutableStateFlow<State<K, V>>(
       State.Uninitialized(
-        CoroutineScope(
-          SupervisorJob() +
-            blockingDispatcher +
-            CoroutineName("SuspendingWeakValueHashMap") +
-            CoroutineExceptionHandler { context, throwable ->
-              Log.w(
-                LOG_TAG,
-                "uncaught exception from a coroutine " +
-                  "named ${context[CoroutineName]?.name} [e3kr5myemq]",
-                throwable,
-              )
-            }
-        )
+        createSupervisorCoroutineScope(blockingDispatcher, Logger("SuspendingWeakValueHashMap"))
       )
     )
 

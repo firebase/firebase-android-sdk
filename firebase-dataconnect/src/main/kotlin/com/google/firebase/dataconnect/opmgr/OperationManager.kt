@@ -26,18 +26,16 @@ import com.google.firebase.dataconnect.core.DataConnectGrpcRPCs
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
-import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase
+import com.google.firebase.dataconnect.util.CoroutineUtils.createSupervisorCoroutineScope
 import com.google.firebase.dataconnect.util.RequestIdGenerator
 import java.io.File
 import kotlin.time.Duration
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
@@ -233,18 +231,7 @@ internal class OperationManager(
         DataConnectCacheDatabase(dbFile, dbLogger)
       }
 
-    val coroutineScope =
-      CoroutineScope(
-        SupervisorJob() +
-          CoroutineName(logger.nameWithId) +
-          cpuDispatcher +
-          CoroutineExceptionHandler { context, throwable ->
-            logger.warn(throwable) {
-              "uncaught exception from a coroutine named ${context[CoroutineName]?.name}: " +
-                "$throwable [ekx3ehgakw]"
-            }
-          }
-      )
+    val coroutineScope = createSupervisorCoroutineScope(cpuDispatcher, logger)
 
     val job =
       coroutineScope.async(CoroutineName("OperationManager start"), start = CoroutineStart.LAZY) {

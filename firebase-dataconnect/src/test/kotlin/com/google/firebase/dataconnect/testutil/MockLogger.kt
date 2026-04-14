@@ -94,3 +94,7 @@ internal fun Logger.shouldNotHaveLoggedAnyMessagesContaining(
 ) {
   verify(inverse = true) { log(any(), any(), matchStringWithNonAdjacentText(text, ignoreCase)) }
 }
+
+internal fun Logger.shouldHaveLoggedExactlyOneMessageWithException(throwable: Throwable) {
+  verify(exactly = 1) { log(eq(throwable), any(), any()) }
+}

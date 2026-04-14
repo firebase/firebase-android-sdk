@@ -21,15 +21,12 @@ import com.google.firebase.dataconnect.core.DataConnectAppCheck.GetAppCheckToken
 import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
 import com.google.firebase.dataconnect.core.DataConnectStream
 import com.google.firebase.dataconnect.core.Logger
-import com.google.firebase.dataconnect.core.LoggerGlobals.warn
+import com.google.firebase.dataconnect.util.CoroutineUtils.createSupervisorCoroutineScope
 import com.google.firebase.dataconnect.util.SequencedReference.Companion.nextSequenceNumber
 import com.google.protobuf.Struct
 import google.firebase.dataconnect.proto.ExecuteQueryResponse as ExecuteQueryResponseProto
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharedFlow
@@ -42,7 +39,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.isActive
-import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -91,7 +87,7 @@ internal class RemoteQuerySubscription(
       }
       this.activeFlow = null
 
-      val coroutineScope = createCoroutineScope()
+      val coroutineScope = createSupervisorCoroutineScope(cpuDispatcher, logger)
       val stream =
         streamManager.getOrCreate(
           authToken = authToken,
@@ -147,19 +143,6 @@ internal class RemoteQuerySubscription(
     val flow: SharedFlow<IncomingResponse>,
     val coroutineScope: CoroutineScope,
   )
-
-  private fun createCoroutineScope(): CoroutineScope =
-    CoroutineScope(
-      SupervisorJob(parentCoroutineScope.coroutineContext.job) +
-        cpuDispatcher +
-        CoroutineName("${logger.nameWithId} RemoteQuerySubscription") +
-        CoroutineExceptionHandler { context, throwable ->
-          logger.warn(throwable) {
-            "uncaught exception from a coroutine named ${context[CoroutineName]}: " +
-              "$throwable [y88ms37hyr]"
-          }
-        }
-    )
 
   sealed interface IncomingResponse {
     data class Data(val response: ExecuteQueryResponseProto) : IncomingResponse

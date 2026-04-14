@@ -29,6 +29,7 @@ import com.google.firebase.dataconnect.core.DataConnectStream.IncomingResponse
 import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
+import com.google.firebase.dataconnect.util.CoroutineUtils.createSupervisorCoroutineScope
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.firebase.dataconnect.util.ProtoUtil.encodeToStruct
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
@@ -63,10 +64,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
@@ -110,16 +108,8 @@ internal class DataConnectGrpcRPCs(
   val instanceId: String
     get() = logger.nameWithId
 
-  private val connectCoroutineScope =
-    CoroutineScope(
-      SupervisorJob() +
-        CoroutineName("$instanceId-connect") +
-        CoroutineExceptionHandler { context, throwable ->
-          logger.warn(throwable) {
-            "uncaught exception from a coroutine named ${context[CoroutineName]} [nqn32z7x79]"
-          }
-        }
-    )
+  // TODO: Delete this!
+  private val connectCoroutineScope = createSupervisorCoroutineScope(Dispatchers.Default, logger)
 
   private val mutex = Mutex()
   private var closed = false

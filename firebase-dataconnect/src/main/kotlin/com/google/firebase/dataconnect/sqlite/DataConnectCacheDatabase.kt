@@ -25,6 +25,7 @@ import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.execSQL
 import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.getLastInsertRowId
 import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.rawQuery
 import com.google.firebase.dataconnect.util.BigIntegerUtil.LONG_MAX_VALUE_BIG_INTEGER
+import com.google.firebase.dataconnect.util.CoroutineUtils.createSupervisorCoroutineScope
 import com.google.firebase.dataconnect.util.ImmutableByteArray
 import com.google.protobuf.Duration as DurationProto
 import com.google.protobuf.Struct
@@ -38,13 +39,10 @@ import kotlin.reflect.KClass
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.nanoseconds
-import kotlinx.coroutines.CoroutineExceptionHandler
-import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.ExecutorCoroutineDispatcher
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
@@ -97,19 +95,7 @@ internal class DataConnectCacheDatabase(
         Executors.newSingleThreadExecutor { runnable -> Thread(runnable, logger.nameWithId) }
           .asCoroutineDispatcher()
 
-      val coroutineJob = SupervisorJob()
-
-      val coroutineScope =
-        CoroutineScope(
-          coroutineJob +
-            CoroutineName(logger.nameWithId) +
-            coroutineDispatcher +
-            CoroutineExceptionHandler { context, throwable ->
-              logger.warn(throwable) {
-                "uncaught exception from a coroutine named ${context[CoroutineName]}: $throwable"
-              }
-            }
-        )
+      val coroutineScope = createSupervisorCoroutineScope(coroutineDispatcher, logger)
 
       val initializeJob =
         coroutineScope.async {

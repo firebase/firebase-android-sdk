@@ -26,6 +26,7 @@ import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import com.google.firebase.dataconnect.core.encodeVariables
+import com.google.firebase.dataconnect.util.CoroutineUtils.createSupervisorCoroutineScope
 import com.google.firebase.dataconnect.util.DeserializeUtils.deserialize
 import com.google.firebase.dataconnect.util.DeserializeUtils.toErrorInfoImpl
 import com.google.firebase.dataconnect.util.RequestIdGenerator
@@ -37,16 +38,15 @@ import google.firebase.dataconnect.proto.GraphqlResponseExtensions.DataConnectPr
 import google.firebase.dataconnect.proto.StreamRequest
 import google.firebase.dataconnect.proto.StreamResponse
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.onFailure
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -68,7 +68,7 @@ internal sealed class OperationExecutor(
   dataConnectAuth: DataConnectAuth,
   dataConnectAppCheck: DataConnectAppCheck,
   ioDispatcher: CoroutineDispatcher,
-  cpuDispatcher: CoroutineDispatcher,
+  private val cpuDispatcher: CoroutineDispatcher,
   private val requestIdGenerator: RequestIdGenerator,
   private val logger: Logger,
 ) {
@@ -76,11 +76,10 @@ internal sealed class OperationExecutor(
   private val state =
     MutableStateFlow<State>(
       State.Info(
+        createSupervisorCoroutineScope(cpuDispatcher, logger),
         dataConnectGrpcRPCs,
         dataConnectAuth,
         dataConnectAppCheck,
-        ioDispatcher,
-        cpuDispatcher,
       )
     )
 
@@ -93,21 +92,29 @@ internal sealed class OperationExecutor(
     variablesSerializersModule: SerializersModule?,
     callerSdkType: CallerSdkType,
   ): Data {
+    val sequenceNumber = nextSequenceNumber()
     val requestId = requestIdGenerator.nextMutationRequestId()
     logger.debug {
       "[rid=$requestId] Executing mutation with operationName=$operationName " +
         "and variables=$variables"
     }
-    return execute(
-      requestId = requestId,
-      operationName = operationName,
-      variables = variables,
-      dataDeserializer = dataDeserializer,
-      variablesSerializer = variablesSerializer,
-      dataSerializersModule = dataSerializersModule,
-      variablesSerializersModule = variablesSerializersModule,
-      callerSdkType = callerSdkType,
-    )
+
+    return coroutineScope {
+      val encodeVariablesJob =
+        async(CoroutineName("OperationExecutor_EncodeVars_$requestId") + cpuDispatcher) {
+          encodeVariables(variables, variablesSerializer, variablesSerializersModule)
+        }
+
+      val connectedState = ensureConnected(requestId, sequenceNumber, callerSdkType)
+
+      connectedState.execute(
+        requestId = requestId,
+        operationName = operationName,
+        variables = encodeVariablesJob.await(),
+        dataDeserializer = dataDeserializer,
+        dataSerializersModule = dataSerializersModule,
+      )
+    }
   }
 
   suspend fun <Data, Variables> executeQuery(
@@ -120,22 +127,30 @@ internal sealed class OperationExecutor(
     callerSdkType: CallerSdkType,
     fetchPolicy: QueryRef.FetchPolicy,
   ): OperationManager.ExecuteQueryResult<Data> {
+    val sequenceNumber = nextSequenceNumber()
     val requestId = requestIdGenerator.nextQueryRequestId()
     logger.debug {
       "[rid=$requestId] Executing query with operationName=$operationName, " +
         "fetchPolicy=$fetchPolicy, and variables=$variables"
     }
-    val data =
-      execute(
+
+    val data = coroutineScope {
+      val encodeVariablesJob =
+        async(CoroutineName("OperationExecutor_EncodeVars_$requestId") + cpuDispatcher) {
+          encodeVariables(variables, variablesSerializer, variablesSerializersModule)
+        }
+
+      val connectedState = ensureConnected(requestId, sequenceNumber, callerSdkType)
+
+      connectedState.execute(
         requestId = requestId,
         operationName = operationName,
-        variables = variables,
+        variables = encodeVariablesJob.await(),
         dataDeserializer = dataDeserializer,
-        variablesSerializer = variablesSerializer,
         dataSerializersModule = dataSerializersModule,
-        variablesSerializersModule = variablesSerializersModule,
-        callerSdkType = callerSdkType,
       )
+    }
+
     return OperationManager.ExecuteQueryResult(data, DataSource.SERVER)
   }
 
@@ -157,71 +172,59 @@ internal sealed class OperationExecutor(
     TODO()
   }
 
-  private suspend fun <Data, Variables> execute(
+  private suspend fun <Data> State.Connected.execute(
     requestId: String,
     operationName: String,
-    variables: Variables,
+    variables: Struct,
     dataDeserializer: DeserializationStrategy<Data>,
-    variablesSerializer: SerializationStrategy<Variables>,
     dataSerializersModule: SerializersModule?,
-    variablesSerializersModule: SerializersModule?,
-    callerSdkType: CallerSdkType,
   ): Data {
-    return withConnectedState(requestId, nextSequenceNumber(), callerSdkType) {
-      val variablesStruct =
-        withContext(info.cpuDispatcher) {
-          encodeVariables(variables, variablesSerializer, variablesSerializersModule)
-        }
+    val streamRequest =
+      StreamRequest.newBuilder()
+        .setRequestId(requestId)
+        .setExecute(
+          ExecuteRequest.newBuilder().setOperationName(operationName).setVariables(variables)
+        )
+        .build()
 
-      val streamRequest =
-        StreamRequest.newBuilder()
-          .setRequestId(requestId)
-          .setExecute(
-            ExecuteRequest.newBuilder()
-              .setOperationName(operationName)
-              .setVariables(variablesStruct)
-          )
-          .build()
-
-      val flow =
-        incomingResponses.transformWhile { incomingResponse: IncomingResponse ->
-          when (incomingResponse) {
-            IncomingResponse.Completed -> {
-              logger.debug { "[rid=$requestId] Completed event received" }
-              false
+    val flow =
+      incomingResponses.transformWhile { incomingResponse: IncomingResponse ->
+        when (incomingResponse) {
+          IncomingResponse.Completed -> {
+            logger.debug { "[rid=$requestId] Completed event received" }
+            false
+          }
+          is IncomingResponse.Error -> {
+            logger.warn(incomingResponse.throwable) { "[rid=$requestId] Error received" }
+            throw incomingResponse.throwable
+          }
+          IncomingResponse.Ready -> {
+            logger.debug { "[rid=$requestId] Ready received; sending StreamRequest" }
+            val channelResult = outgoingStreamRequests.trySend(streamRequest)
+            channelResult.onFailure {
+              logger.warn(it) { "[rid=$requestId] sending StreamRequest failed" }
             }
-            is IncomingResponse.Error -> {
-              logger.warn(incomingResponse.throwable) { "[rid=$requestId] Error received" }
-              throw incomingResponse.throwable
-            }
-            IncomingResponse.Ready -> {
-              logger.debug { "[rid=$requestId] Ready received; sending StreamRequest" }
-              val channelResult = outgoingStreamRequests.trySend(streamRequest)
-              channelResult.onFailure {
-                logger.warn(it) { "[rid=$requestId] sending StreamRequest failed" }
+            channelResult.isSuccess
+          }
+          is IncomingResponse.Data -> {
+            if (incomingResponse.response.requestId != requestId) {
+              true
+            } else {
+              val streamResponse: StreamResponse = incomingResponse.response
+              val executeResponse = streamResponse.toExecuteResponse()
+              if (executeResponse !== null) {
+                emit(executeResponse)
               }
-              channelResult.isSuccess
-            }
-            is IncomingResponse.Data -> {
-              if (incomingResponse.response.requestId != requestId) {
-                true
-              } else {
-                val streamResponse: StreamResponse = incomingResponse.response
-                val executeResponse = streamResponse.toExecuteResponse()
-                if (executeResponse !== null) {
-                  emit(executeResponse)
-                }
-                !streamResponse.cancelled
-              }
+              !streamResponse.cancelled
             }
           }
         }
-
-      val executeResponse = flow.first()
-
-      withContext(info.cpuDispatcher) {
-        executeResponse.deserialize(dataDeserializer, dataSerializersModule)
       }
+
+    val executeResponse = flow.first()
+
+    return withContext(cpuDispatcher) {
+      executeResponse.deserialize(dataDeserializer, dataSerializersModule)
     }
   }
 
@@ -235,18 +238,11 @@ internal sealed class OperationExecutor(
 
       val newState: State =
         when (currentState) {
-          is State.Connected -> return currentState
-          State.Closed,
-          State.Closing -> throw IllegalStateException("close() has been called [ty783z85qk]")
-          is State.Info -> {
-            val coroutineScope = createCoroutineScope(currentState.cpuDispatcher)
-            currentState.toConnectingState(coroutineScope, requestId, callerSdkType)
-          }
+          is State.Info -> currentState.toConnectingState(requestId, callerSdkType)
           is State.Connecting -> {
             val result = currentState.job.runCatching { await() }
             if (result.isFailure && currentState.sequenceNumber < sequenceNumber) {
               currentState.info.toConnectingState(
-                currentState.coroutineScope,
                 requestId,
                 callerSdkType,
               )
@@ -254,6 +250,9 @@ internal sealed class OperationExecutor(
               result.getOrThrow()
             }
           }
+          is State.Connected -> return currentState
+          State.Closing,
+          State.Closed -> throw IllegalStateException("close() has been called [ty783z85qk]")
         }
 
       state.compareAndSet(currentState, newState)
@@ -261,22 +260,21 @@ internal sealed class OperationExecutor(
   }
 
   private fun State.Info.toConnectingState(
-    coroutineScope: CoroutineScope,
     requestId: String,
     callerSdkType: CallerSdkType
   ): State.Connecting {
     val getAuthTokenResult =
-      coroutineScope.async(CoroutineName("dataConnectAuth.getToken")) {
+      coroutineScope.async(CoroutineName("OperationExecutor_GetAuthToken_$requestId")) {
         dataConnectAuth.getToken(requestId)
       }
     val getAppCheckTokenResult =
-      coroutineScope.async(CoroutineName("dataConnectAppCheck.getToken")) {
+      coroutineScope.async(CoroutineName("OperationExecutor_GetAppCheckToken_$requestId")) {
         dataConnectAppCheck.getToken(requestId)
       }
 
     val job =
       coroutineScope.async(
-        CoroutineName("OperationExecutor connect"),
+        CoroutineName("OperationExecutor_Connect_$requestId"),
         start = CoroutineStart.LAZY,
       ) {
         logger.debug { "[rid=$requestId] connecting to Data Connect backend" }
@@ -314,7 +312,6 @@ internal sealed class OperationExecutor(
 
         State.Connected(
           this@toConnectingState,
-          coroutineScope,
           authToken?.authUid,
           collectJob,
           outgoingStreamRequests,
@@ -330,30 +327,7 @@ internal sealed class OperationExecutor(
       }
     }
 
-    return State.Connecting(nextSequenceNumber(), this, coroutineScope, job)
-  }
-
-  private fun createCoroutineScope(dispatcher: CoroutineDispatcher): CoroutineScope =
-    CoroutineScope(
-      SupervisorJob() +
-        CoroutineName(logger.nameWithId) +
-        dispatcher +
-        CoroutineExceptionHandler { context, throwable ->
-          logger.warn(throwable) {
-            "uncaught exception from a coroutine named ${context[CoroutineName]?.name}: " +
-              "$throwable [wtz7g7zadz]"
-          }
-        }
-    )
-
-  private suspend inline fun <T> withConnectedState(
-    requestId: String,
-    sequenceNumber: Long,
-    callerSdkType: CallerSdkType,
-    block: suspend State.Connected.() -> T
-  ): T {
-    val connectedState = ensureConnected(requestId, sequenceNumber, callerSdkType)
-    return block(connectedState)
+    return State.Connecting(nextSequenceNumber(), this, job)
   }
 
   /**
@@ -373,11 +347,10 @@ internal sealed class OperationExecutor(
   private sealed interface State {
 
     class Info(
+      val coroutineScope: CoroutineScope,
       val dataConnectGrpcRPCs: DataConnectGrpcRPCs,
       val dataConnectAuth: DataConnectAuth,
       val dataConnectAppCheck: DataConnectAppCheck,
-      val ioDispatcher: CoroutineDispatcher,
-      val cpuDispatcher: CoroutineDispatcher,
     ) : State {
       override fun toString() = "Info"
     }
@@ -385,7 +358,6 @@ internal sealed class OperationExecutor(
     class Connecting(
       val sequenceNumber: Long,
       val info: Info,
-      val coroutineScope: CoroutineScope,
       val job: Deferred<Connected>,
     ) : State {
       override fun toString() = "Connecting"
@@ -393,7 +365,6 @@ internal sealed class OperationExecutor(
 
     class Connected(
       val info: Info,
-      val coroutineScope: CoroutineScope,
       val authUid: String?,
       val collectJob: Job,
       val outgoingStreamRequests: Channel<StreamRequest>,

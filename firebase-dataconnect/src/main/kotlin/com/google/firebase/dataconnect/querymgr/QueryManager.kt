@@ -28,11 +28,11 @@ import com.google.firebase.dataconnect.core.DataConnectStream
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
-import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import com.google.firebase.dataconnect.core.encodeVariables
 import com.google.firebase.dataconnect.core.retryOnGrpcUnauthenticatedError
 import com.google.firebase.dataconnect.querymgr.QueryManager.ExecuteResult
 import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase
+import com.google.firebase.dataconnect.util.CoroutineUtils.createSupervisorCoroutineScope
 import com.google.firebase.dataconnect.util.ImmutableByteArray
 import com.google.firebase.dataconnect.util.ProtoUtil.calculateSha512
 import com.google.firebase.dataconnect.util.RequestIdGenerator
@@ -42,11 +42,9 @@ import com.google.protobuf.Struct
 import java.io.File
 import kotlin.time.Duration
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
@@ -72,7 +70,7 @@ internal class QueryManager(
   private val logger: Logger,
 ) {
   private val state: MutableStateFlow<State> = run {
-    val coroutineScope = createCoroutineScope()
+    val coroutineScope = createSupervisorCoroutineScope(cpuDispatcher, logger)
     val cacheInfo: LocalQueries.CacheInfo? = createLocalQueriesCacheInfo(coroutineScope)
     val localQueries =
       LocalQueries(
@@ -326,18 +324,6 @@ internal class QueryManager(
         currentState.run { mutex.withLock { block() } }
       }
     }
-
-  private fun createCoroutineScope(): CoroutineScope =
-    CoroutineScope(
-      SupervisorJob() +
-        CoroutineName(logger.nameWithId) +
-        CoroutineExceptionHandler { context, throwable ->
-          logger.warn(throwable) {
-            "uncaught exception from a coroutine named ${context[CoroutineName]}: " +
-              "$throwable [emhpq6ag2r]"
-          }
-        }
-    )
 
   private fun createLocalQueriesCacheInfo(coroutineScope: CoroutineScope): LocalQueries.CacheInfo? {
     if (cacheSettings === null) {

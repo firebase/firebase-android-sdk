@@ -21,6 +21,7 @@ import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.sqlite.GetEntityIdForPathFunction
+import com.google.firebase.dataconnect.util.CoroutineUtils.createSupervisorCoroutineScope
 import com.google.firebase.dataconnect.util.ImmutableByteArray
 import com.google.firebase.dataconnect.util.ProtoUtil.toDataConnectPath
 import com.google.firebase.dataconnect.util.SequenceNumberConflatedJobQueue
@@ -28,8 +29,6 @@ import google.firebase.dataconnect.proto.ExecuteQueryResponse as ExecuteQueryRes
 import google.firebase.dataconnect.proto.GraphqlResponseExtensions.DataConnectProperties as DataConnectPropertiesProto
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
 
 internal class QueryCacheUpdater(
   private val cacheInfo: LocalQueries.CacheInfo,
@@ -56,12 +55,7 @@ internal class QueryCacheUpdater(
 
   private val jobQueue =
     SequenceNumberConflatedJobQueue<Params, Unit>(
-      coroutineScope =
-        CoroutineScope(
-          coroutineScope.coroutineContext +
-            SupervisorJob(coroutineScope.coroutineContext[Job]) +
-            cpuDispatcher
-        )
+      createSupervisorCoroutineScope(cpuDispatcher, logger)
     ) {
       update(it.ref.requestId, it.ref.executeQueryResponse)
     }
