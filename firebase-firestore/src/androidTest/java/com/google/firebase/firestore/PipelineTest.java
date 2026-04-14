@@ -98,6 +98,7 @@ import com.google.firebase.firestore.pipeline.AggregateFunction;
 import com.google.firebase.firestore.pipeline.AggregateHints;
 import com.google.firebase.firestore.pipeline.AggregateOptions;
 import com.google.firebase.firestore.pipeline.AggregateStage;
+import com.google.firebase.firestore.pipeline.CollectionGroupOptions;
 import com.google.firebase.firestore.pipeline.CollectionHints;
 import com.google.firebase.firestore.pipeline.CollectionSourceOptions;
 import com.google.firebase.firestore.pipeline.Expression;
@@ -4106,9 +4107,6 @@ public class PipelineTest {
     assumeFalse(
         "Certain options are not supported against the emulator yet.", isRunningAgainstEmulator());
 
-    Pipeline.ExecuteOptions opts =
-        new Pipeline.ExecuteOptions().withIndexMode(Pipeline.ExecuteOptions.IndexMode.RECOMMENDED);
-
     double[] vector = {1.0, 2.0, 3.0};
 
     Pipeline pipeline =
@@ -4131,13 +4129,59 @@ public class PipelineTest {
                 new AggregateOptions()
                     .withHints(new AggregateHints().withForceStreamableEnabled()));
 
+    // Should throw an error because there is no index named "abcdef".
+    // The error validates that the backend did attempt to use the index with the name specified
+    // in the forceIndex option.
     RuntimeException exception =
         assertThrows(
             RuntimeException.class,
             () -> {
               waitFor(pipeline.execute());
             });
+
     assertThat(exception.getMessage()).contains("Invalid index");
+  }
+
+  @Test
+  public void testCollectionForceIndex() {
+    assumeFalse(
+            "Certain options are not supported against the emulator yet.", isRunningAgainstEmulator());
+
+    Task<Pipeline.Snapshot> execute =
+            firestore
+                    .pipeline()
+                    .collection(
+                            randomCol,
+                            new CollectionSourceOptions()
+                                    .withHints(new CollectionHints().withForceIndex("primary"))
+                    )
+                    .limit(1)
+                    .execute();
+
+
+    List<PipelineResult> results = waitFor(execute).getResults();
+    assertThat(results).hasSize(1);
+  }
+
+  @Test
+  public void testCollectionGroupForceIndex() {
+    assumeFalse(
+            "Certain options are not supported against the emulator yet.", isRunningAgainstEmulator());
+
+    Task<Pipeline.Snapshot> execute =
+            firestore
+                    .pipeline()
+                    .collectionGroup(
+                            randomCol.getId(),
+                            new CollectionGroupOptions()
+                                    .withHints(new CollectionHints().withForceIndex("primary"))
+                    )
+                    .limit(1)
+                    .execute();
+
+
+    List<PipelineResult> results = waitFor(execute).getResults();
+    assertThat(results).hasSize(1);
   }
 
   @Test
