@@ -35,8 +35,10 @@ import com.google.firebase.ai.type.Schema
 import com.google.firebase.ai.type.Tool
 import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.liveGenerationConfig
+import io.kotest.matchers.longs.shouldBeGreaterThan
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldContain
 import io.ktor.util.toLowerCasePreservingASCIIRules
 import java.io.ByteArrayOutputStream
@@ -157,36 +159,44 @@ class LiveSessionTests {
     try {
       val context = ApplicationProvider.getApplicationContext<Context>()
       val retriever = MediaMetadataRetriever()
-      val fd = context.resources.openRawResourceFd(R.raw.videoplayback)
-      retriever.setDataSource(fd.fileDescriptor, fd.startOffset, fd.length)
-      fd.close()
+      try {
+        val fd = context.resources.openRawResourceFd(R.raw.videoplayback)
+        retriever.setDataSource(fd.fileDescriptor, fd.startOffset, fd.length)
+        fd.close()
 
-      val durationStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
-      val durationMs = durationStr?.toLong() ?: 0L
+        val durationStr = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
+        val durationMs = durationStr?.toLong() ?: 0L
 
-      // Extract frames every 1 second
-      for (timeMs in 0 until durationMs step 1000) {
-        val bitmap =
-          retriever.getFrameAtTime(timeMs * 1000, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
-        if (bitmap != null) {
-          val stream = ByteArrayOutputStream()
-          bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
-          session.sendVideoRealtime(InlineData(stream.toByteArray(), "image/png"))
+        durationMs shouldBeGreaterThan 100
+
+        // Extract frames every 1 second
+        for (timeMs in 0 until durationMs step 1000) {
+          val bitmap =
+            retriever.getFrameAtTime(timeMs * 1000, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
+
+          bitmap shouldNotBe null
+
+          if (bitmap != null) {
+            val stream = ByteArrayOutputStream()
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
+            session.sendVideoRealtime(InlineData(stream.toByteArray(), "image/png"))
+          }
         }
+      } finally {
+        retriever.release()
       }
-      retriever.release()
 
       // The model doesn't respond unless we send some audio too (according to iOS test)
-      val audioIn = resourceAsBytes(R.raw.hello)
-      session.sendAudioRealtime(InlineData(audioIn, "audio/wav"))
-      session.sendAudioRealtime(InlineData(ByteArray(audioIn.size) { 0 }, "audio/wav"))
+      val audioBytes = resourceAsBytes(R.raw.hello)
+      session.sendAudioRealtime(InlineData(audioBytes, "audio/pcm"))
+      session.sendAudioRealtime(InlineData(ByteArray(audioBytes.size) { 0 }, "audio/pcm"))
 
       val text = withTimeoutOrNull(30.seconds) { session.collectNextAudioOutputTranscript() } ?: ""
       val response = text.toLowerCasePreservingASCIIRules()
       // Expected responses for the video could be "cat", "kitten", "kitty"
       // Based on iOS: #expect(["kitten", "cat", "kitty"].contains(modelResponse))
       val matches = listOf("cat", "kitten", "kitty").any { response.contains(it) }
-      // matches shouldBe true // Real model calls might be flakey
+      matches shouldBe true // Real model calls might be flakey
     } finally {
       session.close()
     }
