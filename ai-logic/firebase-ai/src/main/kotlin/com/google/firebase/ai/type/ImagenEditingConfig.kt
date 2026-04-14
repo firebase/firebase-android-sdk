@@ -21,7 +21,12 @@ import kotlinx.serialization.Serializable
  * Contains the editing settings which are not specific to a reference image
  * @param editMode holds the editing mode if the request is for inpainting or outpainting
  * @param editSteps the number of intermediate steps to include in the editing process
+ *
+ * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as early
+ * as June 2026. As a replacement, you can
+ * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
  */
+@Deprecated("All Imagen models are deprecated.")
 @PublicPreviewAPI
 public class ImagenEditingConfig(
   internal val editMode: ImagenEditMode? = null,

@@ -25,9 +25,14 @@ package com.google.firebase.ai.type
  * @param aspectRatio The aspect ratio of the generated images.
  * @param imageFormat The file format/compression of the generated images.
  * @param addWatermark Adds an invisible watermark to mark the image as AI generated.
+ *
+ * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as early
+ * as June 2026. As a replacement, you can
+ * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
  */
 import kotlin.jvm.JvmField
 
+@Deprecated("All Imagen models are deprecated.")
 public class ImagenGenerationConfig(
   public val negativePrompt: String? = null,
   public val numberOfImages: Int? = 1,
@@ -40,7 +45,12 @@ public class ImagenGenerationConfig(
    *
    * This is mainly intended for Java interop. For Kotlin, use [imagenGenerationConfig] for a more
    * idiomatic experience.
+   *
+   * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as
+   * early as June 2026. As a replacement, you can
+   * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
    */
+  @Deprecated("All Imagen models are deprecated.")
   public class Builder {
     @JvmField public var negativePrompt: String? = null
     @JvmField public var numberOfImages: Int? = 1
@@ -48,27 +58,62 @@ public class ImagenGenerationConfig(
     @JvmField public var imageFormat: ImagenImageFormat? = null
     @JvmField public var addWatermark: Boolean? = null
 
-    /** See [ImagenGenerationConfig.negativePrompt]. */
+    /**
+     * See [ImagenGenerationConfig.negativePrompt].
+     *
+     * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as
+     * early as June 2026. As a replacement, you can
+     * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
+     */
+    @Deprecated("All Imagen models are deprecated.")
     public fun setNegativePrompt(negativePrompt: String): Builder = apply {
       this.negativePrompt = negativePrompt
     }
 
-    /** See [ImagenGenerationConfig.numberOfImages]. */
+    /**
+     * See [ImagenGenerationConfig.numberOfImages].
+     *
+     * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as
+     * early as June 2026. As a replacement, you can
+     * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
+     */
+    @Deprecated("All Imagen models are deprecated.")
     public fun setNumberOfImages(numberOfImages: Int): Builder = apply {
       this.numberOfImages = numberOfImages
     }
 
-    /** See [ImagenGenerationConfig.aspectRatio]. */
+    /**
+     * See [ImagenGenerationConfig.aspectRatio].
+     *
+     * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as
+     * early as June 2026. As a replacement, you can
+     * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
+     */
+    @Deprecated("All Imagen models are deprecated.")
     public fun setAspectRatio(aspectRatio: ImagenAspectRatio): Builder = apply {
       this.aspectRatio = aspectRatio
     }
 
-    /** See [ImagenGenerationConfig.imageFormat]. */
+    /**
+     * See [ImagenGenerationConfig.imageFormat].
+     *
+     * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as
+     * early as June 2026. As a replacement, you can
+     * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
+     */
+    @Deprecated("All Imagen models are deprecated.")
     public fun setImageFormat(imageFormat: ImagenImageFormat): Builder = apply {
       this.imageFormat = imageFormat
     }
 
-    /** See [ImagenGenerationConfig.addWatermark]. */
+    /**
+     * See [ImagenGenerationConfig.addWatermark].
+     *
+     * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as
+     * early as June 2026. As a replacement, you can
+     * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
+     */
+    @Deprecated("All Imagen models are deprecated.")
     public fun setAddWatermark(addWatermark: Boolean): Builder = apply {
       this.addWatermark = addWatermark
     }
@@ -78,7 +123,12 @@ public class ImagenGenerationConfig(
      * ```
      * val config = GenerationConfig.builder()
      * ```
+     *
+     * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as
+     * early as June 2026. As a replacement, you can
+     * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
      */
+    @Deprecated("All Imagen models are deprecated.")
     public fun build(): ImagenGenerationConfig =
       ImagenGenerationConfig(
         negativePrompt = negativePrompt,
@@ -107,7 +157,12 @@ public class ImagenGenerationConfig(
  *   addWatermark = false
  * }
  * ```
+ *
+ * @deprecated **Deprecation Notice:** All Imagen models are deprecated and will shut down as early
+ * as June 2026. As a replacement, you can
+ * [migrate your apps to use Gemini Image models (the 'Nano Banana' models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration)
  */
+@Deprecated("All Imagen models are deprecated.")
 public fun imagenGenerationConfig(
   init: ImagenGenerationConfig.Builder.() -> Unit
 ): ImagenGenerationConfig {

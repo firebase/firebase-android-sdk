@@ -22,6 +22,7 @@ import android.os.Build
 import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
+import com.google.firebase.ai.BuildConfig
 import com.google.firebase.ai.common.util.decodeToFlow
 import com.google.firebase.ai.common.util.fullModelName
 import com.google.firebase.ai.type.APINotConfiguredException
@@ -51,6 +52,8 @@ import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.engine.okhttp.OkHttp
 import io.ktor.client.plugins.HttpTimeout
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.plugins.logging.LogLevel
+import io.ktor.client.plugins.logging.Logging
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.client.plugins.websocket.webSocketSession
@@ -155,6 +158,15 @@ internal constructor(
       }
       install(WebSockets)
       install(ContentNegotiation) { json(JSON) }
+      if (BuildConfig.DEBUG) {
+        install(Logging) {
+          sanitizeHeader { header ->
+            header.equals("X-Android-Cert", ignoreCase = true) ||
+              header.equals("x-goog-api-key", ignoreCase = true)
+          }
+          level = LogLevel.ALL
+        }
+      }
     }
 
   suspend fun generateContent(request: GenerateContentRequest): GenerateContentResponse.Internal =
@@ -477,7 +489,7 @@ private suspend fun validateResponse(response: HttpResponse) {
         The Firebase AI SDK requires the Vertex AI in Firebase API
         (`firebasevertexai.googleapis.com`) to be enabled in your Firebase project. Enable this API
         by visiting the Firebase Console at
-        https://console.firebase.google.com/project/${Firebase.options.projectId}/genai
+        https://console.firebase.google.com/project/${Firebase.options.projectId}/ailogic
         and clicking "Get started". If you enabled this API recently, wait a few minutes for the
         action to propagate to our systems and then retry.
       """
