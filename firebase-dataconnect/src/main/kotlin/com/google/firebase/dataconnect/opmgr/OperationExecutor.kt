@@ -16,6 +16,7 @@
 
 package com.google.firebase.dataconnect.opmgr
 
+import com.google.firebase.dataconnect.DataSource
 import com.google.firebase.dataconnect.FirebaseDataConnect.CallerSdkType
 import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.core.DataConnectAppCheck
@@ -26,10 +27,13 @@ import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import com.google.firebase.dataconnect.core.encodeVariables
 import com.google.firebase.dataconnect.util.DeserializeUtils.deserialize
+import com.google.firebase.dataconnect.util.DeserializeUtils.toErrorInfoImpl
 import com.google.firebase.dataconnect.util.RequestIdGenerator
 import com.google.firebase.dataconnect.util.SequencedReference.Companion.nextSequenceNumber
-import google.firebase.dataconnect.proto.ExecuteQueryResponse
+import com.google.protobuf.Struct
 import google.firebase.dataconnect.proto.ExecuteRequest
+import google.firebase.dataconnect.proto.GraphqlError
+import google.firebase.dataconnect.proto.GraphqlResponseExtensions.DataConnectProperties
 import google.firebase.dataconnect.proto.StreamRequest
 import google.firebase.dataconnect.proto.StreamResponse
 import kotlinx.coroutines.CoroutineDispatcher
@@ -91,10 +95,78 @@ internal sealed class OperationExecutor(
   ): Data {
     val requestId = requestIdGenerator.nextMutationRequestId()
     logger.debug {
-      "[rid=$requestId] Executing mutation with " +
+      "[rid=$requestId] Executing mutation with operationName=$operationName " +
+        "and variables=$variables"
+    }
+    return execute(
+      requestId = requestId,
+      operationName = operationName,
+      variables = variables,
+      dataDeserializer = dataDeserializer,
+      variablesSerializer = variablesSerializer,
+      dataSerializersModule = dataSerializersModule,
+      variablesSerializersModule = variablesSerializersModule,
+      callerSdkType = callerSdkType,
+    )
+  }
+
+  suspend fun <Data, Variables> executeQuery(
+    operationName: String,
+    variables: Variables,
+    dataDeserializer: DeserializationStrategy<Data>,
+    variablesSerializer: SerializationStrategy<Variables>,
+    dataSerializersModule: SerializersModule?,
+    variablesSerializersModule: SerializersModule?,
+    callerSdkType: CallerSdkType,
+    fetchPolicy: QueryRef.FetchPolicy,
+  ): OperationManager.ExecuteQueryResult<Data> {
+    val requestId = requestIdGenerator.nextQueryRequestId()
+    logger.debug {
+      "[rid=$requestId] Executing query with operationName=$operationName, " +
+        "fetchPolicy=$fetchPolicy, and variables=$variables"
+    }
+    val data =
+      execute(
+        requestId = requestId,
+        operationName = operationName,
+        variables = variables,
+        dataDeserializer = dataDeserializer,
+        variablesSerializer = variablesSerializer,
+        dataSerializersModule = dataSerializersModule,
+        variablesSerializersModule = variablesSerializersModule,
+        callerSdkType = callerSdkType,
+      )
+    return OperationManager.ExecuteQueryResult(data, DataSource.SERVER)
+  }
+
+  suspend fun <Data, Variables> subscribeQuery(
+    operationName: String,
+    variables: Variables,
+    dataDeserializer: DeserializationStrategy<Data>,
+    variablesSerializer: SerializationStrategy<Variables>,
+    dataSerializersModule: SerializersModule?,
+    variablesSerializersModule: SerializersModule?,
+    callerSdkType: CallerSdkType,
+  ): Flow<Result<OperationManager.ExecuteQueryResult<Data>>> {
+    val requestId = requestIdGenerator.nextQuerySubscriptionId()
+    logger.debug {
+      "[rid=$requestId] Subscribing to query with " +
         "operationName=$operationName and variables=$variables"
     }
 
+    TODO()
+  }
+
+  private suspend fun <Data, Variables> execute(
+    requestId: String,
+    operationName: String,
+    variables: Variables,
+    dataDeserializer: DeserializationStrategy<Data>,
+    variablesSerializer: SerializationStrategy<Variables>,
+    dataSerializersModule: SerializersModule?,
+    variablesSerializersModule: SerializersModule?,
+    callerSdkType: CallerSdkType,
+  ): Data {
     return withConnectedState(requestId, nextSequenceNumber(), callerSdkType) {
       val variablesStruct =
         withContext(info.cpuDispatcher) {
@@ -135,9 +207,9 @@ internal sealed class OperationExecutor(
                 true
               } else {
                 val streamResponse: StreamResponse = incomingResponse.response
-                val executeQueryResponse = streamResponse.toExecuteQueryResponse()
-                if (executeQueryResponse !== null) {
-                  emit(executeQueryResponse)
+                val executeResponse = streamResponse.toExecuteResponse()
+                if (executeResponse !== null) {
+                  emit(executeResponse)
                 }
                 !streamResponse.cancelled
               }
@@ -145,49 +217,12 @@ internal sealed class OperationExecutor(
           }
         }
 
-      val executeQueryResponse = flow.first()
+      val executeResponse = flow.first()
 
       withContext(info.cpuDispatcher) {
-        executeQueryResponse.deserialize(dataDeserializer, dataSerializersModule)
+        executeResponse.deserialize(dataDeserializer, dataSerializersModule)
       }
     }
-  }
-
-  suspend fun <Data, Variables> executeQuery(
-    operationName: String,
-    variables: Variables,
-    dataDeserializer: DeserializationStrategy<Data>,
-    variablesSerializer: SerializationStrategy<Variables>,
-    dataSerializersModule: SerializersModule?,
-    variablesSerializersModule: SerializersModule?,
-    callerSdkType: CallerSdkType,
-    fetchPolicy: QueryRef.FetchPolicy,
-  ): OperationManager.ExecuteQueryResult<Data> {
-    val requestId = requestIdGenerator.nextQueryRequestId()
-    logger.debug {
-      "[rid=$requestId] Executing query with " +
-        "operationName=$operationName and variables=$variables"
-    }
-
-    TODO()
-  }
-
-  suspend fun <Data, Variables> subscribeQuery(
-    operationName: String,
-    variables: Variables,
-    dataDeserializer: DeserializationStrategy<Data>,
-    variablesSerializer: SerializationStrategy<Variables>,
-    dataSerializersModule: SerializersModule?,
-    variablesSerializersModule: SerializersModule?,
-    callerSdkType: CallerSdkType,
-  ): Flow<Result<OperationManager.ExecuteQueryResult<Data>>> {
-    val requestId = requestIdGenerator.nextQuerySubscriptionId()
-    logger.debug {
-      "[rid=$requestId] Subscribing to query with " +
-        "operationName=$operationName and variables=$variables"
-    }
-
-    TODO()
   }
 
   private suspend fun ensureConnected(
@@ -337,26 +372,26 @@ internal sealed class OperationExecutor(
 
   private sealed interface State {
 
-    data class Info(
+    class Info(
       val dataConnectGrpcRPCs: DataConnectGrpcRPCs,
       val dataConnectAuth: DataConnectAuth,
       val dataConnectAppCheck: DataConnectAppCheck,
       val ioDispatcher: CoroutineDispatcher,
       val cpuDispatcher: CoroutineDispatcher,
     ) : State {
-      override fun toString() = "OperationExecutor.State.New"
+      override fun toString() = "Info"
     }
 
-    data class Connecting(
+    class Connecting(
       val sequenceNumber: Long,
       val info: Info,
       val coroutineScope: CoroutineScope,
       val job: Deferred<Connected>,
     ) : State {
-      override fun toString() = "OperationExecutor.State.Connecting"
+      override fun toString() = "Connecting"
     }
 
-    data class Connected(
+    class Connected(
       val info: Info,
       val coroutineScope: CoroutineScope,
       val authUid: String?,
@@ -364,34 +399,39 @@ internal sealed class OperationExecutor(
       val outgoingStreamRequests: Channel<StreamRequest>,
       val incomingResponses: SharedFlow<IncomingResponse>,
     ) : State {
-      override fun toString() = "OperationExecutor.State.Connected"
+      override fun toString() = "Connected"
     }
 
-    data object Closing : State {
-      override fun toString() = "OperationExecutor.State.Closing"
+    object Closing : State {
+      override fun toString() = "Closing"
     }
 
-    data object Closed : State {
-      override fun toString() = "OperationExecutor.State.Closed"
+    object Closed : State {
+      override fun toString() = "Closed"
     }
   }
 }
 
-private fun StreamResponse.toExecuteQueryResponse(): ExecuteQueryResponse? {
-  if (!hasData() && errorsCount == 0 && (!hasExtensions() || extensions.dataConnectCount == 0)) {
-    return null
-  }
+private class ExecuteResponse(
+  val data: Struct,
+  val errors: List<GraphqlError>,
+  val extensions: List<DataConnectProperties>,
+)
 
-  val builder = ExecuteQueryResponse.newBuilder()
-  if (hasData()) {
-    builder.setData(data)
-  }
-  if (errorsCount > 0) {
-    builder.addAllErrors(errorsList)
-  }
-  if (hasExtensions()) {
-    builder.setExtensions(extensions)
-  }
+private fun <T> ExecuteResponse.deserialize(
+  deserializer: DeserializationStrategy<T>,
+  serializersModule: SerializersModule?,
+): T = deserialize(data, errors.map { it.toErrorInfoImpl() }, deserializer, serializersModule)
 
-  return builder.build()
-}
+private fun StreamResponse.toExecuteResponse(): ExecuteResponse? =
+  if (!hasData() && errorsCount == 0) {
+    null
+  } else {
+    ExecuteResponse(
+      data = if (hasData()) data else Struct.getDefaultInstance(),
+      errors = if (errorsCount > 0) errorsList else emptyList(),
+      extensions =
+        if (hasExtensions() && extensions.dataConnectCount > 0) extensions.dataConnectList
+        else emptyList(),
+    )
+  }
