@@ -4145,19 +4145,17 @@ public class PipelineTest {
   @Test
   public void testCollectionForceIndex() {
     assumeFalse(
-            "Certain options are not supported against the emulator yet.", isRunningAgainstEmulator());
+        "Certain options are not supported against the emulator yet.", isRunningAgainstEmulator());
 
     Task<Pipeline.Snapshot> execute =
-            firestore
-                    .pipeline()
-                    .collection(
-                            randomCol,
-                            new CollectionSourceOptions()
-                                    .withHints(new CollectionHints().withForceIndex("primary"))
-                    )
-                    .limit(1)
-                    .execute();
-
+        firestore
+            .pipeline()
+            .collection(
+                randomCol,
+                new CollectionSourceOptions()
+                    .withHints(new CollectionHints().withForceIndex("primary")))
+            .limit(1)
+            .execute();
 
     List<PipelineResult> results = waitFor(execute).getResults();
     assertThat(results).hasSize(1);
@@ -4166,19 +4164,17 @@ public class PipelineTest {
   @Test
   public void testCollectionGroupForceIndex() {
     assumeFalse(
-            "Certain options are not supported against the emulator yet.", isRunningAgainstEmulator());
+        "Certain options are not supported against the emulator yet.", isRunningAgainstEmulator());
 
     Task<Pipeline.Snapshot> execute =
-            firestore
-                    .pipeline()
-                    .collectionGroup(
-                            randomCol.getId(),
-                            new CollectionGroupOptions()
-                                    .withHints(new CollectionHints().withForceIndex("primary"))
-                    )
-                    .limit(1)
-                    .execute();
-
+        firestore
+            .pipeline()
+            .collectionGroup(
+                randomCol.getId(),
+                new CollectionGroupOptions()
+                    .withHints(new CollectionHints().withForceIndex("primary")))
+            .limit(1)
+            .execute();
 
     List<PipelineResult> results = waitFor(execute).getResults();
     assertThat(results).hasSize(1);
