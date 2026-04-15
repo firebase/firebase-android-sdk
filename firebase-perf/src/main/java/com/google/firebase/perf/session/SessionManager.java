@@ -14,7 +14,6 @@
 
 package com.google.firebase.perf.session;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
 import androidx.annotation.Keep;
 import androidx.annotation.VisibleForTesting;
@@ -30,28 +29,15 @@ import java.util.Set;
 /** Session manager to generate sessionIDs and broadcast to the application. */
 @Keep // Needed because of b/117526359.
 public class SessionManager {
-  @SuppressLint("StaticFieldLeak")
-  private static final SessionManager instance = new SessionManager();
 
   private final GaugeManager gaugeManager;
   private final Set<WeakReference<SessionAwareObject>> clients = new HashSet<>();
 
   private PerfSession perfSession;
 
-  /** Returns the singleton instance of SessionManager. */
-  public static SessionManager getInstance() {
-    return instance;
-  }
-
   /** Returns the currently active PerfSession. */
   public final PerfSession perfSession() {
     return perfSession;
-  }
-
-  private SessionManager() {
-    // Creates a legacy session by default. This is a safety net to allow initializing
-    // SessionManager - but the current implementation replaces it immediately.
-    this(GaugeManager.getInstance(), PerfSession.createWithId(null));
   }
 
   @VisibleForTesting
@@ -65,7 +51,9 @@ public class SessionManager {
    * (currently that is before onResume finishes) to ensure gauge collection starts on time.
    */
   public void setApplicationContext(final Context appContext) {
-    gaugeManager.initializeGaugeMetadataManager(appContext);
+    if (gaugeManager != null) {
+      gaugeManager.initializeGaugeMetadataManager(appContext);
+    }
   }
 
   /**
@@ -74,7 +62,7 @@ public class SessionManager {
    * @see PerfSession#isSessionRunningTooLong()
    */
   public void stopGaugeCollectionIfSessionRunningTooLong() {
-    if (perfSession.isSessionRunningTooLong()) {
+    if (perfSession.isSessionRunningTooLong() && gaugeManager != null) {
       gaugeManager.stopCollectingGauges();
     }
   }
@@ -151,12 +139,15 @@ public class SessionManager {
   }
 
   private void logGaugeMetadataIfCollectionEnabled() {
-    if (perfSession.isVerbose()) {
+    if (perfSession.isVerbose() && gaugeManager != null) {
       gaugeManager.logGaugeMetadata(perfSession.sessionId());
     }
   }
 
   private void startOrStopCollectingGauges() {
+    if (gaugeManager == null) {
+      return;
+    }
     if (perfSession.isVerbose()) {
       gaugeManager.startCollectingGauges(perfSession);
     } else {

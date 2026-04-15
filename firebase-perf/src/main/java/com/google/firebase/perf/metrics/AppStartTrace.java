@@ -168,12 +168,15 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
   }
 
   public static AppStartTrace getInstance(SessionManager sessionManager) {
-    return instance != null ? instance : getInstance(TransportManager.getInstance(), new Clock(), sessionManager);
+    return instance != null
+        ? instance
+        : getInstance(TransportManager.getInstance(), new Clock(), sessionManager);
   }
 
   // TODO(b/258263016): Migrate to go/firebase-android-executors
   @SuppressLint("ThreadPoolCreation")
-  static AppStartTrace getInstance(TransportManager transportManager, Clock clock, SessionManager sessionManager) {
+  static AppStartTrace getInstance(
+      TransportManager transportManager, Clock clock, SessionManager sessionManager) {
     if (instance == null) {
       synchronized (AppStartTrace.class) {
         if (instance == null) {
@@ -564,11 +567,6 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
         if (appProcess.importance != ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND) {
           continue;
         }
-//        if (appProcess.processName.equals(appProcessName)
-//            || appProcess.processName.startsWith(allowedAppProcessNamePrefix)) {
-//          // Returns true if the process with `IMPORTANCE_FOREGROUND` matches current process.
-//          return true;
-//        }
       }
     }
 

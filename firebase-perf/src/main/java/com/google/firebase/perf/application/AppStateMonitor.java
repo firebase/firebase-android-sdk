@@ -26,7 +26,9 @@ import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.metrics.FrameMetricsCalculator.PerfFrameMetrics;
 import com.google.firebase.perf.metrics.Trace;
+import com.google.firebase.perf.session.PerfSession;
 import com.google.firebase.perf.session.SessionManager;
+import com.google.firebase.perf.session.gauges.GaugeManager;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Constants;
@@ -81,11 +83,34 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
   private boolean isRegisteredForLifecycleCallbacks = false;
   private boolean isColdStart = true;
 
+  public static AppStateMonitor getInstance(SessionManager sessionManager) {
+    if (instance == null) {
+      synchronized (AppStateMonitor.class) {
+        if (instance == null) {
+          instance =
+              new AppStateMonitor(TransportManager.getInstance(), new Clock(), sessionManager);
+        }
+      }
+    }
+    return instance;
+  }
+
+  /**
+   * Returns the singleton instance, creating it with a default {@link SessionManager} if not
+   * already initialized. In production, {@link #getInstance(SessionManager)} is always called
+   * first by {@link com.google.firebase.perf.FirebasePerfEarly}, so the pre-seeded instance is
+   * returned. This overload exists for call sites that run after early initialization (e.g.
+   * {@link com.google.firebase.perf.application.AppStateUpdateHandler}) and for test environments.
+   */
   public static AppStateMonitor getInstance() {
     if (instance == null) {
       synchronized (AppStateMonitor.class) {
         if (instance == null) {
-          instance = new AppStateMonitor(TransportManager.getInstance(), new Clock(), SessionManager.getInstance());
+          instance =
+              new AppStateMonitor(
+                  TransportManager.getInstance(),
+                  new Clock(),
+                  new SessionManager(GaugeManager.getInstance(), PerfSession.createWithId(null)));
         }
       }
     }
@@ -113,6 +138,15 @@ public class AppStateMonitor implements ActivityLifecycleCallbacks {
     this.configResolver = configResolver;
     this.sessionManager = sessionManager;
     this.screenPerformanceRecordingSupported = screenPerformanceRecordingSupported;
+  }
+
+  public SessionManager getSessionManager() {
+    return sessionManager;
+  }
+
+  @VisibleForTesting
+  public static void resetInstance() {
+    instance = null;
   }
 
   public synchronized void registerActivityLifecycleCallbacks(Context context) {

@@ -90,7 +90,11 @@ public final class NetworkRequestMetricBuilder extends AppStateUpdateHandler
    * initialize them.
    */
   private NetworkRequestMetricBuilder(TransportManager transportManager) {
-    this(transportManager, AppStateMonitor.getInstance(), GaugeManager.getInstance(), SessionManager.getInstance());
+    this(
+        transportManager,
+        AppStateMonitor.getInstance(),
+        GaugeManager.getInstance(),
+        AppStateMonitor.getInstance().getSessionManager());
   }
 
   /**

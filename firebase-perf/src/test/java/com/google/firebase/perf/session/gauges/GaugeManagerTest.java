@@ -83,7 +83,6 @@ public final class GaugeManagerTest extends FirebasePerformanceTestBase {
     GaugeCounter.resetCounter();
   }
 
-
   @Before
   public void setUp() {
     fakeScheduledExecutorService = new FakeScheduledExecutorService();

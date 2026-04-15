@@ -40,7 +40,6 @@ import com.google.firebase.perf.config.DeviceCacheManager;
 import com.google.firebase.perf.metrics.NetworkRequestMetricBuilder;
 import com.google.firebase.perf.metrics.Trace;
 import com.google.firebase.perf.session.PerfSession;
-import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.session.gauges.GaugeManager;
 import com.google.firebase.perf.transport.TransportManager;
 import com.google.firebase.perf.util.Clock;
@@ -53,7 +52,6 @@ import com.google.testing.timing.FakeDirectExecutorService;
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Map;
-import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -79,7 +77,6 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
 
   private Activity activity1;
   private Activity activity2;
-
 
   @Before
   public void setUp() {

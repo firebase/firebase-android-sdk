@@ -20,7 +20,10 @@ import com.google.firebase.perf.config.ConfigResolver
 import com.google.firebase.perf.logging.FirebaseSessionsEnforcementCheck.Companion.checkSession
 import com.google.firebase.sessions.api.SessionSubscriber
 
-class FirebasePerformanceSessionSubscriber(val configResolver: ConfigResolver, private val sessionManager: SessionManager) : SessionSubscriber {
+class FirebasePerformanceSessionSubscriber(
+  val configResolver: ConfigResolver,
+  private val sessionManager: SessionManager
+) : SessionSubscriber {
 
   override val sessionSubscriberName: SessionSubscriber.Name = SessionSubscriber.Name.PERFORMANCE
 

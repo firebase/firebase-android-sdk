@@ -157,13 +157,24 @@ public class Trace extends AppStateUpdateHandler
   }
 
   public Trace(
-          @NonNull String name,
-          @NonNull TransportManager transportManager,
-          @NonNull Clock clock,
-          @NonNull AppStateMonitor appStateMonitor,
-          @NonNull GaugeManager gaugeManager) {
-    this(name, transportManager, clock, appStateMonitor, gaugeManager, SessionManager.getInstance());
+      @NonNull String name,
+      @NonNull TransportManager transportManager,
+      @NonNull Clock clock,
+      @NonNull AppStateMonitor appStateMonitor,
+      @NonNull GaugeManager gaugeManager) {
+    this(
+        name,
+        transportManager,
+        clock,
+        appStateMonitor,
+        gaugeManager,
+        // AppStateMonitor is always pre-seeded by FirebasePerfEarly before any Trace can be
+        // created in production. In tests, setUp() must call AppStateMonitor.getInstance(sm)
+        // before constructing a Trace; if it does not, getSessionManager() returns null and
+        // the 6-arg constructor will throw a NullPointerException on first session access.
+        appStateMonitor.getSessionManager());
   }
+
   /**
    * Creates a Trace object with the given name. TransportManager, Clock and GaugeManager instances
    * are for testing.
@@ -213,7 +224,7 @@ public class Trace extends AppStateUpdateHandler
       clock = new Clock();
       gaugeManager = GaugeManager.getInstance();
     }
-    sessionManager = SessionManager.getInstance();
+    sessionManager = TransportManager.getInstance().getSessionManager();
   }
 
   /** Starts this trace. */
@@ -272,8 +283,7 @@ public class Trace extends AppStateUpdateHandler
         transportManager.log(new TraceMetricBuilder(this).build(), getAppState());
 
         if (sessionManager.perfSession().isVerbose()) {
-          gaugeManager.collectGaugeMetricOnce(
-              sessionManager.perfSession().getTimer());
+          gaugeManager.collectGaugeMetricOnce(sessionManager.perfSession().getTimer());
         }
       } else {
         logger.error("Trace name is empty, no log is sent to server");
