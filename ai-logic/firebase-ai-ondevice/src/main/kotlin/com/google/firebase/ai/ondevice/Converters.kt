@@ -86,7 +86,9 @@ internal fun com.google.mlkit.genai.prompt.GenerateContentResponse.toInterop():
 // ================================================
 internal fun GenerationConfig.toMlKit(): com.google.mlkit.genai.prompt.GenerationConfig =
   generationConfig {
-    modelConfig = this@toMlKit.modelConfig.toMlKit()
+    this@toMlKit.modelConfig?.let {
+      modelConfig = it.toMlKit()
+    }
   }
 
 // ===========================================
