@@ -17,7 +17,9 @@
 package com.google.firebase.ai.ondevice
 
 import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceGenerativeModelFactory
+import com.google.firebase.ai.ondevice.interop.GenerationConfig
 import com.google.firebase.ai.ondevice.interop.GenerativeModel
+import com.google.mlkit.genai.prompt.Generation
 
 /**
  * Factory class for Firebase AI OnDevice.
@@ -26,5 +28,16 @@ import com.google.firebase.ai.ondevice.interop.GenerativeModel
  */
 internal class FirebaseAIOnDeviceComponent : FirebaseAIOnDeviceGenerativeModelFactory {
 
-  override fun newGenerativeModel(): GenerativeModel = GenerativeModelImpl()
+  @Deprecated(
+    "Use newGenerativeModel(ModelConfig) instead",
+    replaceWith = ReplaceWith("newGenerativeModel(ModelConfig)")
+  )
+  override fun newGenerativeModel(): GenerativeModel = newGenerativeModel(null)
+
+  override fun newGenerativeModel(generationConfig: GenerationConfig?): GenerativeModel =
+    if (generationConfig == null) {
+      GenerativeModelImpl(Generation.getClient())
+    } else {
+      GenerativeModelImpl(Generation.getClient(generationConfig.toMlKit()))
+    }
 }
