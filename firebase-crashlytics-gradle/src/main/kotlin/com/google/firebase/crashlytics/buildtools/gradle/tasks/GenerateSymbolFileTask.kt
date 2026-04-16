@@ -134,16 +134,10 @@ abstract class GenerateSymbolFileTask : DefaultTask() {
     project: Project,
     symbolGeneratorTypeOverride: Property<String>,
   ) {
-    val symbolGeneratorGradleProperty =
-      project.providers.gradleProperty(SYMBOL_GENERATOR_PROPERTY)
     val symbolGeneratorTypeString =
-    if (symbolGeneratorGradleProperty.isPresent) {
-        symbolGeneratorGradleProperty.get()
-      } else if (symbolGeneratorTypeOverride.isPresent) {
-        symbolGeneratorTypeOverride.get()
-      } else {
-        SYMBOL_GENERATOR_BREAKPAD
-      }
+      project.providers.gradleProperty(SYMBOL_GENERATOR_PROPERTY)
+        .orElse(symbolGeneratorTypeOverride)
+        .getOrElse(SYMBOL_GENERATOR_BREAKPAD)
 
     // This will also validate the symbol generator type string.
     symbolGeneratorType.set(SymbolGeneratorType.fromString(symbolGeneratorTypeString))
