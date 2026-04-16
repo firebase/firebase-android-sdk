@@ -75,10 +75,33 @@ class TestReportGenerator(private val apiToken: String) {
               ?.int ?: throw RuntimeException("Couldn't find PR number for commit $obj"),
           )
         }
-    outputReport(outputFile, commits)
+    val dailyTests = arrayListOf<TestReport>()
+    // GraphQL does not expose actions in an easy to index way, and the REST API does
+    val dailyTestResponse = request("actions/workflows/ai-daily-tests.yml/runs?per_page=7")
+    val arr =
+      dailyTestResponse["workflow_runs"]?.jsonArray
+        ?: throw RuntimeException("Workflow request failed")
+    for (test in arr) {
+      val obj = test.jsonObject
+      dailyTests.add(
+        TestReport(
+          "ai-daily-test",
+          TestReport.Type.DAILY_TEST,
+          TestReport.Status.of(obj),
+          obj["head_commit"]?.jsonObject?.get("id")?.jsonPrimitive?.content
+            ?: throw RuntimeException("Missing head_commit"),
+          obj["html_url"]?.jsonPrimitive?.content ?: throw RuntimeException("Missing url"),
+        )
+      )
+    }
+    outputReport(outputFile, commits, dailyTests)
   }
 
-  private fun outputReport(outputFile: File, commits: List<ReportCommit>) {
+  private fun outputReport(
+    outputFile: File,
+    commits: List<ReportCommit>,
+    dailyTests: List<TestReport>,
+  ) {
     val reports = commits.flatMap { commit -> parseTestReports(commit.sha) }
     val output = StringBuilder()
     output.append("### Unit Tests\n\n")
@@ -96,6 +119,9 @@ class TestReportGenerator(private val apiToken: String) {
         reports.filter { r: TestReport -> r.type == TestReport.Type.INSTRUMENTATION_TEST },
       )
     )
+    output.append("\n")
+    output.append("### Daily Tests\n\n")
+    output.append(generateDailyTable(dailyTests))
     output.append("\n")
 
     try {
@@ -192,6 +218,42 @@ class TestReportGenerator(private val apiToken: String) {
     return output.toString()
   }
 
+  private fun generateDailyTable(reports: List<TestReport>): String {
+    val output = StringBuilder("| |")
+    var offset = 0
+    for (report in reports) {
+      output.append(" -${offset++}")
+      output.append(" |")
+    }
+    output.append(" Success Rate |\n|")
+    output.append(" :--- |")
+    output.append(" :---: |".repeat(reports.size))
+    output.append(" :--- |")
+    output.append("\n| AI Daily Tests |")
+    for (report in reports) {
+      val icon =
+        when (report.status) {
+          TestReport.Status.SUCCESS -> "✅"
+          TestReport.Status.FAILURE -> "⛔"
+          TestReport.Status.OTHER -> "➖"
+        }
+      val link: String = " [%s](%s)".format(icon, report.url)
+      output.append(link)
+      output.append(" |")
+    }
+    output.append(" ")
+    val successChance: Int =
+      reports.filter { r -> r.status == TestReport.Status.SUCCESS }.size * 100 / reports.size
+    if (successChance == 100) {
+      output.append("✅ 100%")
+    } else {
+      output.append("⛔ $successChance%")
+    }
+    output.append(" |")
+    output.append("\n")
+    return output.toString()
+  }
+
   private fun parseTestReports(commit: String): List<TestReport> {
     val runs = request("actions/runs?head_sha=$commit")
     for (el in runs["workflow_runs"] as JsonArray) {
@@ -234,16 +296,7 @@ class TestReportGenerator(private val apiToken: String) {
         .dropLastWhile { it.isEmpty() }
         .toTypedArray()[1]
     name = name.substring(0, name.length - 1) // Remove trailing ")"
-    val status =
-      if (job["status"]?.jsonPrimitive?.content == "completed") {
-        if (job["conclusion"]?.jsonPrimitive?.content == "success") {
-          TestReport.Status.SUCCESS
-        } else {
-          TestReport.Status.FAILURE
-        }
-      } else {
-        TestReport.Status.OTHER
-      }
+    val status = TestReport.Status.of(job)
     val url = job["html_url"]?.jsonPrimitive?.content ?: throw RuntimeException("PR missing URL")
     return TestReport(name, type, status, commit, url)
   }
