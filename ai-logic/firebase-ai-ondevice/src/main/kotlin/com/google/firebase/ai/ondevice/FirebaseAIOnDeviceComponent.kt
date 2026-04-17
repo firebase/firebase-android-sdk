@@ -29,8 +29,8 @@ import com.google.mlkit.genai.prompt.Generation
 internal class FirebaseAIOnDeviceComponent : FirebaseAIOnDeviceGenerativeModelFactory {
 
   @Deprecated(
-    "Use newGenerativeModel(GenerationConfig) instead",
-    replaceWith = ReplaceWith("newGenerativeModel(GenerationConfig)")
+    "Use newGenerativeModel(GenerationConfig?) instead",
+    replaceWith = ReplaceWith("newGenerativeModel(null)")
   )
   override fun newGenerativeModel(): GenerativeModel = newGenerativeModel(null)
 
