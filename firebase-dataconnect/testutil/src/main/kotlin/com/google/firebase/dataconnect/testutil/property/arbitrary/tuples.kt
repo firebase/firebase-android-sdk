@@ -22,11 +22,20 @@ import io.kotest.assertions.print.print
 import io.kotest.property.Arb
 import io.kotest.property.arbitrary.bind
 
-data class TwoValues<T>(val value1: T, val value2: T) {
+interface MultipleValues<T> : Iterable<T> {
+
+  fun toList(): List<T>
+
+  override fun iterator(): Iterator<T> = toList().iterator()
+}
+
+fun <T : Comparable<T>> MultipleValues<T>.sorted(): List<T> = toList().sorted()
+
+data class TwoValues<T>(val value1: T, val value2: T) : MultipleValues<T> {
   override fun toString() =
     "TwoValues(value1=${value1.print().value}, value2=${value2.print().value})"
 
-  fun toList(): List<T> = listOf(value1, value2)
+  override fun toList(): List<T> = listOf(value1, value2)
 }
 
 fun <T> List<T>.toTwoValues(): TwoValues<T> {
@@ -37,14 +46,14 @@ fun <T> List<T>.toTwoValues(): TwoValues<T> {
 fun <T : Comparable<T>> TwoValues<T>.sorted(): TwoValues<T> =
   if (value1 <= value2) this else TwoValues(value2, value1)
 
-data class ThreeValues<T>(val value1: T, val value2: T, val value3: T) {
+data class ThreeValues<T>(val value1: T, val value2: T, val value3: T) : MultipleValues<T> {
   override fun toString() =
     "ThreeValues(" +
       "value1=${value1.print().value}, " +
       "value2=${value2.print().value}, " +
       "value3=${value3.print().value})"
 
-  fun toList(): List<T> = listOf(value1, value2, value3)
+  override fun toList(): List<T> = listOf(value1, value2, value3)
 }
 
 fun <T : Comparable<T>> ThreeValues<T>.sorted(): ThreeValues<T> {
@@ -61,7 +70,8 @@ fun <T> List<T>.toThreeValues(): ThreeValues<T> {
   return ThreeValues(get(0), get(1), get(2))
 }
 
-data class FourValues<T>(val value1: T, val value2: T, val value3: T, val value4: T) {
+data class FourValues<T>(val value1: T, val value2: T, val value3: T, val value4: T) :
+  MultipleValues<T> {
   override fun toString() =
     "FourValues(" +
       "value1=${value1.print().value}, " +
@@ -69,7 +79,7 @@ data class FourValues<T>(val value1: T, val value2: T, val value3: T, val value4
       "value3=${value3.print().value}, " +
       "value4=${value4.print().value})"
 
-  fun toList(): List<T> = listOf(value1, value2, value3, value4)
+  override fun toList(): List<T> = listOf(value1, value2, value3, value4)
 }
 
 fun <T> List<T>.toFourValues(): FourValues<T> {
@@ -92,7 +102,7 @@ data class FiveValues<T>(
   val value3: T,
   val value4: T,
   val value5: T
-) {
+) : MultipleValues<T> {
   override fun toString() =
     "FiveValues(" +
       "value1=${value1.print().value}, " +
@@ -101,7 +111,7 @@ data class FiveValues<T>(
       "value4=${value4.print().value}, " +
       "value5=${value5.print().value})"
 
-  fun toList(): List<T> = listOf(value1, value2, value3, value4, value5)
+  override fun toList(): List<T> = listOf(value1, value2, value3, value4, value5)
 }
 
 fun <T> List<T>.toFiveValues(): FiveValues<T> {
