@@ -149,16 +149,27 @@ internal class OperationManager(
         when (currentState) {
           State.Closed -> return
           is State.New -> State.Closed
-          is State.Starting -> State.Closing(currentState.coroutineScope, currentState.cacheDb, currentState.operationExecutor)
-          is State.Started -> State.Closing(currentState.coroutineScope, currentState.cacheDb, currentState.operationExecutor)
-          is State.Closing -> currentState.run {
-            val dbCloseJob = coroutineScope.async { cacheDb?.close() }
-            val operationExecutorCloseJob = coroutineScope.async { operationExecutor.close() }
-            listOf(dbCloseJob, operationExecutorCloseJob).awaitAll()
-            currentState.coroutineScope.cancel("close() called")
-            currentState.coroutineScope.coroutineContext.job.join()
-            State.Closed
-          }
+          is State.Starting ->
+            State.Closing(
+              currentState.coroutineScope,
+              currentState.cacheDb,
+              currentState.operationExecutor
+            )
+          is State.Started ->
+            State.Closing(
+              currentState.coroutineScope,
+              currentState.cacheDb,
+              currentState.operationExecutor
+            )
+          is State.Closing ->
+            currentState.run {
+              val dbCloseJob = coroutineScope.async { cacheDb?.close() }
+              val operationExecutorCloseJob = coroutineScope.async { operationExecutor.close() }
+              listOf(dbCloseJob, operationExecutorCloseJob).awaitAll()
+              currentState.coroutineScope.cancel("close() called")
+              currentState.coroutineScope.coroutineContext.job.join()
+              State.Closed
+            }
         }
 
       state.compareAndSet(currentState, newState)

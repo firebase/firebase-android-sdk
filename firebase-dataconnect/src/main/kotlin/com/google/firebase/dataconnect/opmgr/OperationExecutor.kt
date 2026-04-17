@@ -99,16 +99,18 @@ internal sealed class OperationExecutor(
     while (true) {
       val currentState = state.value
 
-      val newState = when (currentState) {
-        is State.SupportsConversionToClosingState -> currentState.toClosingState()
-        is State.Closing -> currentState.run {
-          localQueries?.close()
-          coroutineScope.cancel("OperationExecutor.close() called")
-          coroutineScope.coroutineContext.job.join()
-          State.Closed
+      val newState =
+        when (currentState) {
+          is State.SupportsConversionToClosingState -> currentState.toClosingState()
+          is State.Closing ->
+            currentState.run {
+              localQueries?.close()
+              coroutineScope.cancel("OperationExecutor.close() called")
+              coroutineScope.coroutineContext.job.join()
+              State.Closed
+            }
+          State.Closed -> return
         }
-        State.Closed -> return
-      }
 
       state.compareAndSet(currentState, newState)
     }
@@ -168,17 +170,23 @@ internal sealed class OperationExecutor(
     val data = coroutineScope {
       val prepareQueryVariablesJob =
         async(CoroutineName("OperationExecutor_EncodeVars_$requestId") + cpuDispatcher) {
-          prepareQueryVariables(operationName, variables, variablesSerializer, variablesSerializersModule,)
+          prepareQueryVariables(
+            operationName,
+            variables,
+            variablesSerializer,
+            variablesSerializersModule,
+          )
         }
 
       val connectedState = ensureConnected(requestId, sequenceNumber, callerSdkType)
 
       val (variablesStruct, queryId) = prepareQueryVariablesJob.await()
 
-      val remoteQueryKey = RemoteQueryKey(
-        authUid = connectedState.authUid,
-        queryId =queryId,
-      )
+      val remoteQueryKey =
+        RemoteQueryKey(
+          authUid = connectedState.authUid,
+          queryId = queryId,
+        )
 
       val cacheDb = connectedState.info.cacheDb
       if (cacheDb === null) {
@@ -188,12 +196,13 @@ internal sealed class OperationExecutor(
           )
         }
 
-        val localQueryKey = LocalQueryKey(
-          remoteQueryKey,
-          dataDeserializer,
-          dataSerializersModule,
-          QueryRef.FetchPolicy.SERVER_ONLY,
-        )
+        val localQueryKey =
+          LocalQueryKey(
+            remoteQueryKey,
+            dataDeserializer,
+            dataSerializersModule,
+            QueryRef.FetchPolicy.SERVER_ONLY,
+          )
 
         while (true) {
           val x = connectedState.localQueries.get()
@@ -309,7 +318,8 @@ internal sealed class OperationExecutor(
             }
           }
           is State.Connected -> return currentState
-          is State.Closing, State.Closed -> error("close() has been called [ty783z85qk]")
+          is State.Closing,
+          State.Closed -> error("close() has been called [ty783z85qk]")
         }
 
       state.compareAndSet(currentState, newState)
@@ -441,8 +451,10 @@ internal sealed class OperationExecutor(
       val sequenceNumber: Long,
       val info: Info,
       val job: Deferred<Connected>,
-      val localQueries: SuspendingWeakValueHashMap<LocalQueryKey<*>, MutableStateFlow<SequencedReference<*>>>,
-      val remoteQueries: SuspendingWeakValueHashMap<RemoteQueryKey, MutableStateFlow<SequencedReference<Struct>>>,
+      val localQueries:
+        SuspendingWeakValueHashMap<LocalQueryKey<*>, MutableStateFlow<SequencedReference<*>>>,
+      val remoteQueries:
+        SuspendingWeakValueHashMap<RemoteQueryKey, MutableStateFlow<SequencedReference<Struct>>>,
     ) : State, SupportsConversionToClosingState {
       override fun toString() = "Connecting"
       override fun toClosingState() = Closing(info.coroutineScope, localQueries)
@@ -454,8 +466,10 @@ internal sealed class OperationExecutor(
       val collectJob: Job,
       val outgoingStreamRequests: Channel<StreamRequest>,
       val incomingResponses: SharedFlow<IncomingResponse>,
-      val localQueries: SuspendingWeakValueHashMap<LocalQueryKey<*>, MutableStateFlow<SequencedReference<*>>>,
-      val remoteQueries: SuspendingWeakValueHashMap<RemoteQueryKey, MutableStateFlow<SequencedReference<Struct>>>,
+      val localQueries:
+        SuspendingWeakValueHashMap<LocalQueryKey<*>, MutableStateFlow<SequencedReference<*>>>,
+      val remoteQueries:
+        SuspendingWeakValueHashMap<RemoteQueryKey, MutableStateFlow<SequencedReference<Struct>>>,
     ) : State, SupportsConversionToClosingState {
       override fun toString() = "Connected"
       override fun toClosingState() = Closing(info.coroutineScope, localQueries)
