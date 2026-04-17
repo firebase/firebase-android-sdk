@@ -29,8 +29,8 @@ public interface FirebaseAIOnDeviceGenerativeModelFactory {
    * @return A new [GenerativeModel] instance ready for use.
    */
   @Deprecated(
-    message = "Use newGenerativeModel(GenerationConfig) instead",
-    replaceWith = ReplaceWith("newGenerativeModel(GenerationConfig)")
+    message = "Use newGenerativeModel(GenerationConfig?) instead",
+    replaceWith = ReplaceWith("newGenerativeModel(null)")
   )
   public fun newGenerativeModel(): GenerativeModel
 
