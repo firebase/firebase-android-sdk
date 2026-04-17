@@ -20,6 +20,8 @@ import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.dataconnect.util.CoroutineUtils.createSupervisorCoroutineScope
 import java.lang.ref.ReferenceQueue
 import java.lang.ref.WeakReference
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.contract
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -133,12 +135,42 @@ internal class SuspendingWeakValueHashMap<K, V : Any>(
    */
   suspend fun put(key: K, value: V): V? = withOpenState {
     cleanupJob.start()
+    mutex.withLock { map.put(key, value, referenceQueue) }
+  }
+
+  /**
+   * Associates the given value with the given key if the key is not already associated with a
+   * value.
+   *
+   * @param key the key whose value to return, or with which the given value is to be associated.
+   * @param value the value to be associated with the given key if there is no value currently
+   * associated with it.
+   * @return the current value associated with the given key, or the given value if there was no
+   * value associated with the given key, or if the previous value was garbage collected.
+   * @throws IllegalStateException if [close] has been called.
+   */
+  suspend fun putIfAbsent(key: K, value: V): V = withOpenState {
+    cleanupJob.start()
     mutex.withLock {
-      val oldValueReference = map.put(key, ValueReference(key, value, referenceQueue))
-      val oldValue = oldValueReference?.get()
-      oldValueReference?.clear()
-      oldValue
+      val currentValue = map[key]?.get()
+      if (currentValue !== null) {
+        currentValue
+      } else {
+        map.put(key, value, referenceQueue)
+        value
+      }
     }
+  }
+
+  private fun MutableMap<K, ValueReference<K, V>>.put(
+    key: K,
+    value: V,
+    referenceQueue: ReferenceQueue<V>
+  ): V? {
+    val oldValueReference = put(key, ValueReference(key, value, referenceQueue))
+    val oldValue = oldValueReference?.get()
+    oldValueReference?.clear()
+    return oldValue
   }
 
   private inline fun <T> withOpenState(block: State.Open<K, V>.() -> T): T = block(ensureOpen())
@@ -243,4 +275,27 @@ internal class SuspendingWeakValueHashMap<K, V : Any>(
     fun <K, V : Any> ReferenceQueue<V>.pollValueReference(): ValueReference<K, V>? =
       poll() as ValueReference<K, V>?
   }
+}
+
+/**
+ * Returns the value associated with the given [key], populating the value using the given
+ * [defaultValue] function if it is not present.
+ *
+ * Note that there is a possibility that [defaultValue] is called but its value discarded. This can
+ * happen if some other thread or coroutine concurrently associates a value with the same key.
+ *
+ * @param key the key whose associated value to return, and with which to associate the new value if
+ * there was no value associated with it.
+ * @param defaultValue the function to call to create the value if it's not present.
+ * @return the value that was associated with the key or became associated with the given key by a
+ * concurrent thread or coroutine, or the value returned by the [defaultValue] function if there was
+ * no value associated with the key.
+ */
+@ExperimentalContracts
+internal suspend inline fun <K, V : Any> SuspendingWeakValueHashMap<K, V>.getOrPut(
+  key: K,
+  defaultValue: () -> V,
+): V {
+  contract { callsInPlace(defaultValue, kotlin.contracts.InvocationKind.AT_MOST_ONCE) }
+  return get(key) ?: putIfAbsent(key, defaultValue())
 }
