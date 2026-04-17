@@ -24,12 +24,17 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.distinctPair
 import com.google.firebase.dataconnect.testutil.property.arbitrary.pair
 import com.google.firebase.dataconnect.testutil.property.arbitrary.withIterations
 import com.google.firebase.dataconnect.testutil.withTimeoutIgnoringTestScheduler
+import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.assertions.withClue
 import io.kotest.common.DelicateKotest
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldBeIn
+import io.kotest.matchers.collections.shouldBeOneOf
 import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.ints.shouldBeInRange
 import io.kotest.matchers.ints.shouldBeLessThanOrEqual
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
@@ -53,14 +58,17 @@ import io.kotest.property.arbs.usernames
 import io.kotest.property.checkAll
 import java.lang.ref.WeakReference
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantLock
-import kotlin.getValue
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
@@ -441,10 +449,29 @@ class SuspendingWeakValueHashMapUnitTest {
   }
 
   @Test
+  fun `put() sets the mapping on a new instance`() = verifyWithNewInstance {
+    checkAll(propTestConfig, Arb.int().distinct(), valueArb()) { key, value ->
+      it.put(key, value)
+
+      it.get(key) shouldBeSameInstanceAs value
+    }
+  }
+
+  @Test
   fun `put() returns null on an empty but previously non-empty instance`() =
     verifyWithEmptyButPreviouslyNonEmptyInstance {
       checkAll(propTestConfig, Arb.int().distinct(), valueArb()) { key, value ->
         it.put(key, value).shouldBeNull()
+      }
+    }
+
+  @Test
+  fun `put() sets the mapping on an empty but previously non-empty instance`() =
+    verifyWithEmptyButPreviouslyNonEmptyInstance {
+      checkAll(propTestConfig, Arb.int().distinct(), valueArb()) { key, value ->
+        it.put(key, value)
+
+        it.get(key) shouldBeSameInstanceAs value
       }
     }
 
@@ -473,6 +500,17 @@ class SuspendingWeakValueHashMapUnitTest {
   }
 
   @Test
+  fun `put() sets the mapping if key is not mapped`() =
+    verifyWithPopulatedMap { map, populatedValues ->
+      val keyArb = Arb.int().filterNot { it in populatedValues }.distinct()
+      checkAll(propTestConfig, keyArb, valueArb()) { key, value ->
+        map.put(key, value)
+
+        map.get(key) shouldBeSameInstanceAs value
+      }
+    }
+
+  @Test
   fun `put() returns previous value if key was mapped`() =
     verifyWithPopulatedMap { map, populatedValues ->
       val upToDatePopulatedValues = populatedValues.toMutableMap()
@@ -486,7 +524,19 @@ class SuspendingWeakValueHashMapUnitTest {
     }
 
   @Test
-  fun `put() does not affect other key-value pairs`() =
+  fun `put() sets the mapping if key was mapped`() =
+    verifyWithPopulatedMap { map, populatedValues ->
+      val upToDatePopulatedValues = populatedValues.toMutableMap()
+      checkAll(propTestConfig, Arb.of(populatedValues.keys.sorted()), valueArb()) { key, newValue ->
+        map.put(key, newValue)
+
+        map.get(key) shouldBeSameInstanceAs newValue
+        upToDatePopulatedValues[key] = newValue
+      }
+    }
+
+  @Test
+  fun `put() does not affect other key-value pairs when the key _was_ mapped`() =
     verifyWithPopulatedMap { map, populatedValues ->
       val upToDatePopulatedValues = populatedValues.toMutableMap()
 
@@ -494,7 +544,23 @@ class SuspendingWeakValueHashMapUnitTest {
         map.put(key, newValue)
         upToDatePopulatedValues[key] = newValue
 
-        populatedValues.keys.sorted().shuffled(randomSource().random).forEach {
+        upToDatePopulatedValues.keys.sorted().shuffled(randomSource().random).forEach {
+          map.get(it) shouldBeSameInstanceAs upToDatePopulatedValues[it]
+        }
+      }
+    }
+
+  @Test
+  fun `put() does not affect other key-value pairs when the key was _not_ mapped`() =
+    verifyWithPopulatedMap { map, populatedValues ->
+      val unsetKeyArb = Arb.int().filterNot { it in populatedValues }.distinct()
+      val upToDatePopulatedValues = populatedValues.toMutableMap()
+
+      checkAll(propTestConfig, unsetKeyArb, valueArb()) { key, newValue ->
+        map.put(key, newValue)
+        upToDatePopulatedValues[key] = newValue
+
+        upToDatePopulatedValues.keys.sorted().shuffled(randomSource().random).forEach {
           map.get(it) shouldBeSameInstanceAs upToDatePopulatedValues[it]
         }
       }
@@ -510,12 +576,11 @@ class SuspendingWeakValueHashMapUnitTest {
     val valueStrongReferences = mutableListOf<Value>()
 
     checkAll(propTestConfig, unsetKeyArb, valueArb()) { key, value ->
-      valueStrongReferences.add(value)
-      expectedSize++
-
       map.put(key, value)
 
-      map.size() shouldBe expectedSize
+      map.size() shouldBe expectedSize + 1
+      expectedSize++
+      valueStrongReferences.add(value)
     }
   }
 
@@ -575,6 +640,231 @@ class SuspendingWeakValueHashMapUnitTest {
       }
     )
   }
+
+  @Test
+  fun `putIfAbsent() returns the given value on a new instance`() = verifyWithNewInstance {
+    checkAll(propTestConfig, Arb.int().distinct(), valueArb()) { key, value ->
+      it.putIfAbsent(key, value) shouldBeSameInstanceAs value
+    }
+  }
+
+  @Test
+  fun `putIfAbsent() sets the mapping on a new instance`() = verifyWithNewInstance {
+    checkAll(propTestConfig, Arb.int().distinct(), valueArb()) { key, value ->
+      it.putIfAbsent(key, value)
+
+      it.get(key) shouldBeSameInstanceAs value
+    }
+  }
+
+  @Test
+  fun `putIfAbsent() returns the given value on an empty but previously non-empty instance`() =
+    verifyWithEmptyButPreviouslyNonEmptyInstance {
+      checkAll(propTestConfig, Arb.int().distinct(), valueArb()) { key, value ->
+        it.putIfAbsent(key, value) shouldBeSameInstanceAs value
+      }
+    }
+
+  @Test
+  fun `putIfAbsent() sets the mapping on an empty but previously non-empty instance`() =
+    verifyWithEmptyButPreviouslyNonEmptyInstance {
+      checkAll(propTestConfig, Arb.int().distinct(), valueArb()) { key, value ->
+        it.putIfAbsent(key, value)
+
+        it.get(key) shouldBeSameInstanceAs value
+      }
+    }
+
+  @Test
+  fun `putIfAbsent() throws on a closed instance that was _never_ populated`() =
+    verifyWithClosedInstanceThatWasNeverPopulated {
+      checkAll(propTestConfig, Arb.int().distinct(), valueArb()) { key, value ->
+        shouldThrow<IllegalStateException> { it.putIfAbsent(key, value) }
+      }
+    }
+
+  @Test
+  fun `putIfAbsent() throws on a closed instance that _was_ populated`() =
+    verifyWithClosedInstanceThatWasPopulated {
+      checkAll(propTestConfig, Arb.int().distinct(), valueArb()) { key, value ->
+        shouldThrow<IllegalStateException> { it.putIfAbsent(key, value) }
+      }
+    }
+
+  @Test
+  fun `putIfAbsent() returns the given value if key is not mapped`() =
+    verifyWithPopulatedMap { map, populatedValues ->
+      val keyArb = Arb.int().filterNot { it in populatedValues }.distinct()
+      checkAll(propTestConfig, keyArb, valueArb()) { key, value ->
+        map.putIfAbsent(key, value) shouldBeSameInstanceAs value
+      }
+    }
+
+  @Test
+  fun `putIfAbsent() sets the mapping if key is not mapped`() =
+    verifyWithPopulatedMap { map, populatedValues ->
+      val keyArb = Arb.int().filterNot { it in populatedValues }.distinct()
+      checkAll(propTestConfig, keyArb, valueArb()) { key, value ->
+        map.putIfAbsent(key, value)
+
+        map.get(key) shouldBeSameInstanceAs value
+      }
+    }
+
+  @Test
+  fun `putIfAbsent() returns previous value if key was already mapped`() =
+    verifyWithPopulatedMap { map, populatedValues ->
+      checkAll(propTestConfig, Arb.of(populatedValues.keys.sorted()), valueArb()) { key, newValue ->
+        val oldValue = populatedValues[key]!!
+
+        map.putIfAbsent(key, newValue) shouldBeSameInstanceAs oldValue
+      }
+    }
+
+  @Test
+  fun `putIfAbsent() does _not_ set the mapping if key was already mapped`() =
+    verifyWithPopulatedMap { map, populatedValues ->
+      checkAll(propTestConfig, Arb.of(populatedValues.keys.sorted()), valueArb()) { key, newValue ->
+        val oldValue = populatedValues[key]!!
+
+        map.putIfAbsent(key, newValue)
+
+        map.get(key) shouldBeSameInstanceAs oldValue
+      }
+    }
+
+  @Test
+  fun `putIfAbsent() does not affect other key-value pairs when the key _was_ mapped`() =
+    verifyWithPopulatedMap { map, populatedValues ->
+      checkAll(propTestConfig, Arb.of(populatedValues.keys.sorted()), valueArb()) { key, newValue ->
+        map.putIfAbsent(key, newValue)
+
+        populatedValues.keys.sorted().shuffled(randomSource().random).forEach {
+          map.get(it) shouldBeSameInstanceAs populatedValues[it]
+        }
+      }
+    }
+
+  @Test
+  fun `putIfAbsent() does not affect other key-value pairs when the key was _not_ mapped`() =
+    verifyWithPopulatedMap { map, populatedValues ->
+      val unsetKeyArb = Arb.int().filterNot { it in populatedValues }.distinct()
+      val upToDatePopulatedValues = populatedValues.toMutableMap()
+
+      checkAll(propTestConfig, unsetKeyArb, valueArb()) { key, newValue ->
+        map.putIfAbsent(key, newValue)
+        upToDatePopulatedValues[key] = newValue
+
+        populatedValues.keys.sorted().shuffled(randomSource().random).forEach {
+          map.get(it) shouldBeSameInstanceAs upToDatePopulatedValues[it]
+        }
+      }
+    }
+
+  @Test
+  fun `putIfAbsent() increments size if key was not previously mapped`() = runTest {
+    val map = SuspendingWeakValueHashMap<Int, Value>(blockingDispatcher)
+    cleanups.register(map)
+    val populatedData = map.populate()
+    var expectedSize = populatedData.size
+    val unsetKeyArb = Arb.int().filterNot { it in populatedData }.distinct()
+    val valueStrongReferences = mutableListOf<Value>()
+
+    checkAll(propTestConfig, unsetKeyArb, valueArb()) { key, value ->
+      map.putIfAbsent(key, value)
+
+      map.size() shouldBe expectedSize + 1
+      expectedSize++
+      valueStrongReferences.add(value)
+    }
+  }
+
+  @Test
+  fun `putIfAbsent() does not change size if key was previously mapped`() =
+    verifyWithPopulatedMap { map, populatedValues ->
+      checkAll(propTestConfig, Arb.of(populatedValues.keys.sorted()), valueArb()) { key, value ->
+        map.putIfAbsent(key, value)
+
+        map.size() shouldBe populatedValues.size
+      }
+    }
+
+  @Test
+  fun `getOrPut() returns the new value and calls factory if key is not mapped`() = runTest {
+    val map = SuspendingWeakValueHashMap<Int, Value>(blockingDispatcher)
+    cleanups.register(map)
+    val valueStrongReferences = mutableListOf<Value>()
+
+    checkAll(propTestConfig, Arb.int().distinct(), valueArb()) { key, value ->
+      val factoryCalled = AtomicBoolean(false)
+
+      valueStrongReferences.add(value)
+      val result =
+        map.getOrPut(key) {
+          factoryCalled.set(true)
+          value
+        }
+
+      result shouldBeSameInstanceAs value
+      factoryCalled.get() shouldBe true
+      map.get(key) shouldBeSameInstanceAs value
+    }
+  }
+
+  @Test
+  fun `getOrPut() returns the old value and does not call factory if key is mapped`() = runTest {
+    val map = SuspendingWeakValueHashMap<Int, Value>(blockingDispatcher)
+    cleanups.register(map)
+    val populatedData = map.populate()
+
+    checkAll(propTestConfig, Arb.of(populatedData.keys.sorted()), valueArb()) { key, newValue ->
+      val factoryCalled = AtomicBoolean(false)
+
+      val oldValue = populatedData[key]!!
+      val result =
+        map.getOrPut(key) {
+          factoryCalled.set(false)
+          newValue
+        }
+
+      result shouldBeSameInstanceAs oldValue
+      factoryCalled.get() shouldBe false
+      map.get(key) shouldBeSameInstanceAs oldValue
+    }
+  }
+
+  @Test
+  fun `getOrPut() when called concurrently with the same key only calls the callback once`() =
+    runTest {
+      val map = SuspendingWeakValueHashMap<Int, Value>(blockingDispatcher)
+      cleanups.register(map)
+
+      checkAll(propTestConfig, Arb.int().distinct(), Arb.int(2..20)) { key, jobCount ->
+        val values = valueArb().take(jobCount).toList()
+        val latch = SuspendingCountDownLatch(jobCount)
+        val callbackCount = AtomicInteger(0)
+        val jobs =
+          values.map { value ->
+            async(Dispatchers.Default) {
+              latch.countDown().await()
+              val result =
+                map.getOrPut(key) {
+                  callbackCount.incrementAndGet()
+                  value
+                }
+              result
+            }
+          }
+
+        val results = jobs.awaitAll()
+
+        assertSoftly {
+          withClue("map.get(key)") { map.get(key) shouldBeOneOf values }
+          withClue("results") { results.distinct() shouldHaveSize 1 }
+          withClue("callbackCount") { callbackCount.get() shouldBeInRange 1..jobCount }
+        }
+      }
+    }
 
   @Test
   fun `remove() returns null on an new instance`() = verifyWithNewInstance {
@@ -849,13 +1139,15 @@ private data class Value(val string: String)
 
 private suspend fun SuspendingWeakValueHashMap<Int, Value>.populate(
   size: Int,
-  rs: RandomSource
+  rs: RandomSource,
 ): Map<Int, Value> {
-  val keys = Arb.int().distinct().take(size, rs)
-  val values = valueArb().take(size, rs)
-  val keyValuePairs = keys.zip(values).toList()
-
+  val keyValuePairs = rs.keyValuePairs().take(size).toList()
   keyValuePairs.forEach { (key, value) -> put(key, value) }
-
   return keyValuePairs.toMap().also { check(it.size == size) }
+}
+
+private fun RandomSource.keyValuePairs(): Sequence<Pair<Int, Value>> {
+  val keys = Arb.int().distinct().samples(this).map { it.value }
+  val values = valueArb().samples(this).map { it.value }
+  return keys.zip(values)
 }

@@ -20,8 +20,6 @@ import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.dataconnect.util.CoroutineUtils.createSupervisorCoroutineScope
 import java.lang.ref.ReferenceQueue
 import java.lang.ref.WeakReference
-import kotlin.contracts.ExperimentalContracts
-import kotlin.contracts.contract
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -286,16 +284,13 @@ internal class SuspendingWeakValueHashMap<K, V : Any>(
  *
  * @param key the key whose associated value to return, and with which to associate the new value if
  * there was no value associated with it.
- * @param defaultValue the function to call to create the value if it's not present.
+ * @param defaultValue the function to call to create the value if it's not present; its invocation
+ * satisfies [kotlin.contracts.CallsInPlace] and [kotlin.contracts.InvocationKind.AT_MOST_ONCE].
  * @return the value that was associated with the key or became associated with the given key by a
  * concurrent thread or coroutine, or the value returned by the [defaultValue] function if there was
  * no value associated with the key.
  */
-@ExperimentalContracts
 internal suspend inline fun <K, V : Any> SuspendingWeakValueHashMap<K, V>.getOrPut(
   key: K,
   defaultValue: () -> V,
-): V {
-  contract { callsInPlace(defaultValue, kotlin.contracts.InvocationKind.AT_MOST_ONCE) }
-  return get(key) ?: putIfAbsent(key, defaultValue())
-}
+): V = get(key) ?: putIfAbsent(key, defaultValue())
