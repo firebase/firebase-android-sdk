@@ -37,6 +37,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -148,12 +149,14 @@ internal class OperationManager(
         when (currentState) {
           State.Closed -> return
           is State.New -> State.Closed
-          is State.Starting -> State.Closing(currentState.coroutineScope, currentState.cacheDb)
-          is State.Started -> State.Closing(currentState.coroutineScope, currentState.cacheDb)
-          is State.Closing -> {
+          is State.Starting -> State.Closing(currentState.coroutineScope, currentState.cacheDb, currentState.operationExecutor)
+          is State.Started -> State.Closing(currentState.coroutineScope, currentState.cacheDb, currentState.operationExecutor)
+          is State.Closing -> currentState.run {
+            val dbCloseJob = coroutineScope.async { cacheDb?.close() }
+            val operationExecutorCloseJob = coroutineScope.async { operationExecutor.close() }
+            listOf(dbCloseJob, operationExecutorCloseJob).awaitAll()
             currentState.coroutineScope.cancel("close() called")
             currentState.coroutineScope.coroutineContext.job.join()
-            currentState.cacheDb?.close()
             State.Closed
           }
         }
@@ -196,6 +199,7 @@ internal class OperationManager(
     data class Starting(
       val coroutineScope: CoroutineScope,
       val cacheDb: DataConnectCacheDatabase?,
+      val operationExecutor: OperationExecutor,
       val job: Deferred<Started>,
     ) : State {
       override fun toString() = "OperationManager.State.Starting"
@@ -212,6 +216,7 @@ internal class OperationManager(
     data class Closing(
       val coroutineScope: CoroutineScope,
       val cacheDb: DataConnectCacheDatabase?,
+      val operationExecutor: OperationExecutor,
     ) : State {
       override fun toString() = "OperationManager.State.Closing"
     }
@@ -231,45 +236,44 @@ internal class OperationManager(
         DataConnectCacheDatabase(dbFile, dbLogger)
       }
 
+    val operationExecutor = run {
+      val operationExecutorLogger = Logger("OperationExecutor")
+      operationExecutorLogger.debug { "created by ${logger.nameWithId}" }
+
+      if (cacheDb === null) {
+        OperationExecutorNoCache(
+          dataConnectGrpcRPCs = dataConnectGrpcRPCs,
+          dataConnectAuth = dataConnectAuth,
+          dataConnectAppCheck = dataConnectAppCheck,
+          ioDispatcher = ioDispatcher,
+          cpuDispatcher = cpuDispatcher,
+          requestIdGenerator = requestIdGenerator,
+          logger = operationExecutorLogger,
+        )
+      } else {
+        OperationExecutorWithCache(
+          dataConnectGrpcRPCs = dataConnectGrpcRPCs,
+          dataConnectAuth = dataConnectAuth,
+          dataConnectAppCheck = dataConnectAppCheck,
+          ioDispatcher = ioDispatcher,
+          cpuDispatcher = cpuDispatcher,
+          requestIdGenerator = requestIdGenerator,
+          cacheDb = cacheDb,
+          currentTimeMillis = currentTimeMillis,
+          logger = operationExecutorLogger,
+        )
+      }
+    }
+
     val coroutineScope = createSupervisorCoroutineScope(cpuDispatcher, logger)
 
     val job =
       coroutineScope.async(CoroutineName("OperationManager start"), start = CoroutineStart.LAZY) {
         cacheDb?.initialize()
-
-        val operationExecutor = run {
-          val operationExecutorLogger = Logger("OperationExecutor")
-          operationExecutorLogger.debug { "created by ${logger.nameWithId}" }
-
-          if (cacheDb === null) {
-            OperationExecutorNoCache(
-              dataConnectGrpcRPCs = dataConnectGrpcRPCs,
-              dataConnectAuth = dataConnectAuth,
-              dataConnectAppCheck = dataConnectAppCheck,
-              ioDispatcher = ioDispatcher,
-              cpuDispatcher = cpuDispatcher,
-              requestIdGenerator = requestIdGenerator,
-              logger = operationExecutorLogger,
-            )
-          } else {
-            OperationExecutorWithCache(
-              dataConnectGrpcRPCs = dataConnectGrpcRPCs,
-              dataConnectAuth = dataConnectAuth,
-              dataConnectAppCheck = dataConnectAppCheck,
-              ioDispatcher = ioDispatcher,
-              cpuDispatcher = cpuDispatcher,
-              requestIdGenerator = requestIdGenerator,
-              cacheDb = cacheDb,
-              currentTimeMillis = currentTimeMillis,
-              logger = operationExecutorLogger,
-            )
-          }
-        }
-
         State.Started(coroutineScope, cacheDb, operationExecutor)
       }
 
-    return State.Starting(coroutineScope, cacheDb, job)
+    return State.Starting(coroutineScope, cacheDb, operationExecutor, job)
   }
 }
 
