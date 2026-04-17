@@ -36,7 +36,7 @@ public interface FirebaseAIOnDeviceGenerativeModelFactory {
 
   /**
    * Creates and returns a new instance of [GenerativeModel] optionally configured with
-   * [ModelConfig].
+   * [GenerationConfig].
    *
    * @param generationConfig The configuration for the model, `null` if the default configuration
    * should be used.
