@@ -59,3 +59,4 @@ val objectResponse = model.generateObject(
 
 val carDesign = objectResponse.getObject()
 ```
+
