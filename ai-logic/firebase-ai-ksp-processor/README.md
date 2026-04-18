@@ -13,7 +13,7 @@ plugins {
 dependencies {
     implementation("com.google.firebase:firebase-bom:<latest-version>")
     implementation("com.google.firebase:firebase-ai")
-    ksp("com.google.firebase:firebase-ai-ksp-processor:16.0.0")
+    ksp("com.google.firebase:firebase-ai-ksp-processor:2.1.21-2.0.2")
 }
 ```
 
@@ -54,9 +54,8 @@ public data class CarDesign(
 // elsewhere
 val model = Firebase.ai.generativeModel()
 val objectResponse = model.generateObject(
-    CarDesign.firebaseAISchema(), 
+    CarDesign.firebaseAISchema(),
     "Design the future of transportation.")
 
 val carDesign = objectResponse.getObject()
 ```
-
