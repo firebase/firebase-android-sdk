@@ -19,6 +19,7 @@ package com.google.firebase.dataconnect.opmgr
 import com.google.firebase.dataconnect.DataConnectPath
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.core.Logger
+import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase
 import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase.GetQueryResultResult
@@ -30,6 +31,7 @@ import com.google.protobuf.Duration as DurationProto
 import com.google.protobuf.Struct
 import google.firebase.dataconnect.proto.GraphqlResponseExtensions as GraphqlResponseExtensionsProto
 import google.firebase.dataconnect.proto.GraphqlResponseExtensions.DataConnectProperties as DataConnectPropertiesProto
+import java.io.File
 import kotlin.reflect.KClass
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -41,7 +43,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.job
 
 internal class CacheManager(
-  db: DataConnectCacheDatabase,
+  dbFile: File?,
   maxAge: DurationProto,
   currentTimeMillis: () -> Long,
   cpuDispatcher: CoroutineDispatcher,
@@ -52,7 +54,7 @@ internal class CacheManager(
     MutableStateFlow<State>(
       State.Settings(
         createSupervisorCoroutineScope(cpuDispatcher, logger),
-        db,
+        dbFile,
         maxAge,
         currentTimeMillis,
       )
@@ -66,12 +68,12 @@ internal class CacheManager(
 
       val newState =
         when (currentState) {
-          is State.Settings -> State.Closed
-          is State.Initializing -> State.Closing(currentState.settings)
-          is State.Initialized -> State.Closing(currentState.settings)
+          is State.Settings -> State.Closing(currentState)
+          is State.Initializing -> State.Closing(currentState)
+          is State.Initialized -> State.Closing(currentState)
           is State.Closing ->
-            currentState.settings.run {
-              db.close()
+            currentState.run {
+              db?.close()
               coroutineScope.cancel("CacheManager.close() called")
               coroutineScope.coroutineContext.job.join()
               State.Closed
@@ -83,7 +85,7 @@ internal class CacheManager(
     }
   }
 
-  private suspend fun insertQueryResult(
+  suspend fun insertQueryResult(
     requestId: String,
     authUid: String?,
     queryId: ImmutableByteArray,
@@ -96,14 +98,14 @@ internal class CacheManager(
         authUid = authUid,
         queryId = queryId,
         queryData = queryData,
-        maxAge = maxAge,
-        currentTimeMillis = currentTimeMillis(),
+        maxAge = settings.maxAge,
+        currentTimeMillis = settings.currentTimeMillis(),
         getEntityIdForPath = extensions.entityIdForPathFunction,
       )
     }
   }
 
-  private suspend fun insertQueryResult(
+  suspend fun getQueryResult(
     requestId: String,
     authUid: String?,
     queryId: ImmutableByteArray,
@@ -114,13 +116,13 @@ internal class CacheManager(
       return db.getQueryResult(
         authUid = authUid,
         queryId = queryId,
-        currentTimeMillis = currentTimeMillis(),
+        currentTimeMillis = settings.currentTimeMillis(),
         staleResult = staleResult,
       )
     }
   }
 
-  private suspend fun ensureInitialized(): State.Settings {
+  private suspend fun ensureInitialized(): State.Initialized {
     while (true) {
       val currentState = state.value
 
@@ -128,17 +130,19 @@ internal class CacheManager(
         when (currentState) {
           is State.Settings ->
             currentState.run {
-              State.Initializing(
-                this,
-                coroutineScope.async(start = CoroutineStart.LAZY) { db.initialize() },
-              )
+              val dbLogger = Logger("DataConnectCacheDatabase")
+              dbLogger.debug { "created by ${logger.nameWithId}" }
+              val db = DataConnectCacheDatabase(dbFile, dbLogger)
+              val initializeJob =
+                coroutineScope.async(start = CoroutineStart.LAZY) { db.initialize() }
+              State.Initializing(this, db, initializeJob)
             }
           is State.Initializing ->
             currentState.run {
               initializeJob.await()
-              State.Initialized(settings)
+              State.Initialized(settings, db)
             }
-          is State.Initialized -> return currentState.settings
+          is State.Initialized -> return currentState
           is State.Closing,
           State.Closed -> error("close() has been called")
         }
@@ -151,16 +155,28 @@ internal class CacheManager(
 
     class Settings(
       val coroutineScope: CoroutineScope,
-      val db: DataConnectCacheDatabase,
+      val dbFile: File?,
       val maxAge: DurationProto,
       val currentTimeMillis: () -> Long,
     ) : State
 
-    class Initializing(val settings: Settings, val initializeJob: Deferred<Unit>) : State
+    class Initializing(
+      val settings: Settings,
+      val db: DataConnectCacheDatabase,
+      val initializeJob: Deferred<Unit>,
+    ) : State
 
-    class Initialized(val settings: Settings) : State
+    class Initialized(val settings: Settings, val db: DataConnectCacheDatabase) : State
 
-    class Closing(val settings: Settings) : State
+    class Closing(val coroutineScope: CoroutineScope, val db: DataConnectCacheDatabase?) : State {
+      constructor(
+        settings: Settings,
+        db: DataConnectCacheDatabase?
+      ) : this(settings.coroutineScope, db)
+      constructor(settings: Settings) : this(settings, null)
+      constructor(initializing: Initializing) : this(initializing.settings, initializing.db)
+      constructor(initialized: Initialized) : this(initialized.settings, initialized.db)
+    }
 
     object Closed : State
   }
@@ -183,16 +199,16 @@ private val List<DataConnectPropertiesProto>.entityIdForPathFunction: GetEntityI
       val entityIdByPathBuilder = mutableMapOf<DataConnectPath, String>()
       val entityIdsByPathBuilder = mutableMapOf<DataConnectPath, List<String>>()
 
-      this.filter { it.hasPath() && it.path.valuesCount > 0 }
-        .filter { it.entityId.isNotEmpty() || it.entityIdsCount > 0 }
-        .forEach {
-          if (it.entityId.isNotEmpty()) {
-            entityIdByPathBuilder[it.path.toDataConnectPath()] = it.entityId
+      forEach { properties: DataConnectPropertiesProto ->
+        if (properties.hasPath() && properties.path.valuesCount > 0) {
+          if (properties.entityId.isNotEmpty()) {
+            entityIdByPathBuilder[properties.path.toDataConnectPath()] = properties.entityId
           }
-          if (it.entityIdsCount > 0) {
-            entityIdsByPathBuilder[it.path.toDataConnectPath()] = it.entityIdsList
+          if (properties.entityIdsCount > 0) {
+            entityIdsByPathBuilder[properties.path.toDataConnectPath()] = properties.entityIdsList
           }
         }
+      }
 
       if (entityIdByPathBuilder.isEmpty() && entityIdsByPathBuilder.isEmpty()) {
         return null
@@ -200,10 +216,6 @@ private val List<DataConnectPropertiesProto>.entityIdForPathFunction: GetEntityI
 
       entityIdByPath = entityIdByPathBuilder.toMap()
       entityIdsByPath = entityIdsByPathBuilder.toMap()
-    }
-
-    if (entityIdByPath.isEmpty() && entityIdsByPath.isEmpty()) {
-      return null
     }
 
     fun toEntityIdForPathFunction(path: DataConnectPath): String? {
