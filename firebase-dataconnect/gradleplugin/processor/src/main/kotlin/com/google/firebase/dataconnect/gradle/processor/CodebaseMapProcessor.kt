@@ -15,18 +15,11 @@ class CodebaseMapProcessor(private val outputFile: File) : SymbolProcessor {
         return emptyList()
       }
 
-      val classMapInfoList = buildList {
-        resolver.getFilesToIncludeInCodebaseMap().forEach { file ->
-          val classMapInfoSequence = file.toClassMapInfoSequence()
-          addAll(classMapInfoSequence)
-        }
-      }
+      val classMapInfoList = resolver.getFilesToIncludeInCodebaseMap().flatMap {
+        it.toClassMapInfoSequence()
+      }.toList()
 
       if (classMapInfoList.isNotEmpty()) {
-        println("zzyzx classMapInfoList.size(): ${classMapInfoList.size}")
-        classMapInfoList.forEachIndexed { index, info ->
-          println("zzyzx $index: $info")
-        }
         writeCodebaseMap(outputFile, classMapInfoList)
       }
 

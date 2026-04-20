@@ -44,14 +44,12 @@ private fun Writer.writeDirectory(directory: String, classes: List<ClassMapInfo>
 private fun Writer.writeFile(file: String, classes: List<ClassMapInfo>) {
   val simpleFileName = file.removeSuffix(".kt")
 
-  // Check if the file contains exactly one class AND that class matches the file name.
-  // This is the most common case and is highly compressible.
-  if (classes.size == 1 && classes[0].className == simpleFileName) {
-      write("  * $file\n")
-  } else {
-      write("  * $file\n")
-      val tree = buildClassTree(classes)
-      writeClassTree(tree, 2)
+  // If the file contains exactly one declaration whose name matches the class name
+  // then simply output the file name, which AI agents can deduce contains the one class.
+  write("  * $file\n")
+  if (classes.size > 1 || classes[0].className != simpleFileName) {
+    val tree = buildClassTree(classes)
+    writeClassTree(tree, 2)
   }
 }
 
