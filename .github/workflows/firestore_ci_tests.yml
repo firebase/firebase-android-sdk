@@ -190,7 +190,7 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@4cec3d8aa04e39d1a68397de0c4cd6fb9dce8ec1 # v4.6.1
         with:
-          name: named-db-logcat.txt
+          name: enterprise-db-logcat.txt
           path: logcat.txt
           retention-days: 7
           if-no-files-found: ignore
