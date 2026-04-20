@@ -10,20 +10,13 @@ import com.google.devtools.ksp.symbol.KSPropertyDeclaration
 import com.google.devtools.ksp.symbol.KSTypeAlias
 import com.google.devtools.ksp.symbol.Origin
 import com.google.devtools.ksp.symbol.Visibility
-import kotlin.sequences.filter
-import kotlin.sequences.forEach
 
 fun Resolver.getFilesToIncludeInCodebaseMap(): Sequence<KSFile> = getAllFiles().filter { it.origin == Origin.KOTLIN }
 
-fun KSFile.toClassMapInfoSequence(): Sequence<ClassMapInfo> = sequence {
-              declarations.filter(::isCodebaseMapDeclaration).forEach { declaration ->
-                val classMapInfo = declaration.toClassMapInfo()
-                if (classMapInfo != null) {
-                  yield(classMapInfo)
-                }
-              }
-
-}
+fun KSFile.toClassMapInfoSequence(): Sequence<ClassMapInfo> =
+    declarations
+      .filter(::isCodebaseMapDeclaration)
+      .mapNotNull { it.toClassMapInfo() }
 
 private fun isCodebaseMapDeclaration(declaration: KSDeclaration): Boolean {
   if (declaration.getVisibility() == Visibility.PRIVATE) {
