@@ -29,7 +29,6 @@ import com.google.firebase.dataconnect.util.ImmutableByteArray
 import com.google.firebase.dataconnect.util.ProtoUtil.toDataConnectPath
 import com.google.protobuf.Duration as DurationProto
 import com.google.protobuf.Struct
-import google.firebase.dataconnect.proto.GraphqlResponseExtensions as GraphqlResponseExtensionsProto
 import google.firebase.dataconnect.proto.GraphqlResponseExtensions.DataConnectProperties as DataConnectPropertiesProto
 import java.io.File
 import kotlin.reflect.KClass
@@ -90,7 +89,7 @@ internal class CacheManager(
     authUid: String?,
     queryId: ImmutableByteArray,
     queryData: Struct,
-    extensions: GraphqlResponseExtensionsProto,
+    extensions: List<DataConnectPropertiesProto>,
   ) {
     logger.debug { "[rid=$requestId] updating query result cache" }
     ensureInitialized().run {
@@ -182,16 +181,12 @@ internal class CacheManager(
   }
 }
 
-private val GraphqlResponseExtensionsProto.entityIdForPathFunction: GetEntityIdForPathFunction?
-  get() =
-    if (dataConnectCount == 0) {
-      null
-    } else {
-      dataConnectList.entityIdForPathFunction
-    }
-
 private val List<DataConnectPropertiesProto>.entityIdForPathFunction: GetEntityIdForPathFunction?
   get() {
+    if (isEmpty()) {
+      return null
+    }
+
     val entityIdByPath: Map<DataConnectPath, String>
     val entityIdsByPath: Map<DataConnectPath, List<String>>
 

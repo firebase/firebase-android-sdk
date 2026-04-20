@@ -31,15 +31,12 @@ import com.google.firebase.dataconnect.core.encodeVariables
 import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase
 import com.google.firebase.dataconnect.util.CoroutineUtils.createSupervisorCoroutineScope
 import com.google.firebase.dataconnect.util.DeserializeUtils.deserialize
-import com.google.firebase.dataconnect.util.DeserializeUtils.toErrorInfoImpl
 import com.google.firebase.dataconnect.util.ImmutableByteArray
 import com.google.firebase.dataconnect.util.ProtoUtil.calculateSha512
 import com.google.firebase.dataconnect.util.RequestIdGenerator
 import com.google.firebase.dataconnect.util.SequencedReference.Companion.nextSequenceNumber
 import com.google.protobuf.Struct
 import google.firebase.dataconnect.proto.ExecuteRequest
-import google.firebase.dataconnect.proto.GraphqlError
-import google.firebase.dataconnect.proto.GraphqlResponseExtensions.DataConnectProperties
 import google.firebase.dataconnect.proto.StreamRequest
 import google.firebase.dataconnect.proto.StreamResponse
 import kotlinx.coroutines.CoroutineDispatcher
@@ -102,7 +99,9 @@ internal sealed class OperationExecutor(
 
       val newState =
         when (currentState) {
-          is State.SupportsConversionToClosingState -> currentState.toClosingState()
+          is State.Info -> State.Closing(currentState)
+          is State.Connecting -> State.Closing(currentState)
+          is State.Connected -> State.Closing(currentState)
           is State.Closing ->
             currentState.run {
               queries?.localQueries?.close()
@@ -266,6 +265,22 @@ internal sealed class OperationExecutor(
     dataDeserializer: DeserializationStrategy<Data>,
     dataSerializersModule: SerializersModule?,
   ): Data {
+    val executeResponse =
+      execute(
+        requestId = requestId,
+        operationName = operationName,
+        variables = variables,
+      )
+    return withContext(cpuDispatcher) {
+      executeResponse.deserialize(dataDeserializer, dataSerializersModule)
+    }
+  }
+
+  private suspend fun State.Connected.execute(
+    requestId: String,
+    operationName: String,
+    variables: Struct,
+  ): ExecuteResponse {
     val streamRequest =
       StreamRequest.newBuilder()
         .setRequestId(requestId)
@@ -308,11 +323,7 @@ internal sealed class OperationExecutor(
         }
       }
 
-    val executeResponse = flow.first()
-
-    return withContext(cpuDispatcher) {
-      executeResponse.deserialize(dataDeserializer, dataSerializersModule)
-    }
+    return flow.first()
   }
 
   private suspend fun ensureConnected(
@@ -449,10 +460,6 @@ internal sealed class OperationExecutor(
 
   private sealed interface State {
 
-    sealed interface SupportsConversionToClosingState {
-      fun toClosingState(): Closing
-    }
-
     class Queries(
       val remoteQueries: RemoteQueries,
       val localQueries: LocalQueries,
@@ -465,20 +472,14 @@ internal sealed class OperationExecutor(
       val dataConnectAppCheck: DataConnectAppCheck,
       val cacheDb: DataConnectCacheDatabase?,
       val currentTimeMillis: () -> Long,
-    ) : State, SupportsConversionToClosingState {
-      override fun toString() = "Info"
-      override fun toClosingState() = Closing(coroutineScope, queries = null)
-    }
+    ) : State
 
     class Connecting(
       val sequenceNumber: Long,
       val info: Info,
       val job: Deferred<Connected>,
       val queries: Queries,
-    ) : State, SupportsConversionToClosingState {
-      override fun toString() = "Connecting"
-      override fun toClosingState() = Closing(info.coroutineScope, queries)
-    }
+    ) : State
 
     class Connected(
       val info: Info,
@@ -487,16 +488,16 @@ internal sealed class OperationExecutor(
       val outgoingStreamRequests: Channel<StreamRequest>,
       val incomingResponses: SharedFlow<IncomingResponse>,
       val queries: Queries,
-    ) : State, SupportsConversionToClosingState {
-      override fun toString() = "Connected"
-      override fun toClosingState() = Closing(info.coroutineScope, queries)
-    }
+    ) : State
 
     class Closing(
       val coroutineScope: CoroutineScope,
       val queries: Queries?,
     ) : State {
-      override fun toString() = "Closing"
+      constructor(info: Info, queries: Queries?) : this(info.coroutineScope, queries)
+      constructor(info: Info) : this(info, queries = null)
+      constructor(connecting: Connecting) : this(connecting.info, connecting.queries)
+      constructor(connected: Connected) : this(connected.info, connected.queries)
     }
 
     object Closed : State {
@@ -504,30 +505,6 @@ internal sealed class OperationExecutor(
     }
   }
 }
-
-private class ExecuteResponse(
-  val data: Struct,
-  val errors: List<GraphqlError>,
-  val extensions: List<DataConnectProperties>,
-)
-
-private fun <T> ExecuteResponse.deserialize(
-  deserializer: DeserializationStrategy<T>,
-  serializersModule: SerializersModule?,
-): T = deserialize(data, errors.map { it.toErrorInfoImpl() }, deserializer, serializersModule)
-
-private fun StreamResponse.toExecuteResponse(): ExecuteResponse? =
-  if (!hasData() && errorsCount == 0) {
-    null
-  } else {
-    ExecuteResponse(
-      data = if (hasData()) data else Struct.getDefaultInstance(),
-      errors = if (errorsCount > 0) errorsList else emptyList(),
-      extensions =
-        if (hasExtensions() && extensions.dataConnectCount > 0) extensions.dataConnectList
-        else emptyList(),
-    )
-  }
 
 private fun calculateQueryId(
   operationName: String,
