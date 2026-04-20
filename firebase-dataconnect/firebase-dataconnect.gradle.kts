@@ -25,7 +25,10 @@ plugins {
   id("copy-google-services")
   alias(libs.plugins.kotlinx.serialization)
   id("com.google.firebase.dataconnect.gradle.plugin") apply false
+  id("com.google.devtools.ksp") version "2.0.21-1.0.25"
 }
+
+ksp { arg("codebaseMapOutputFile", project.file("codebase-map.md").absolutePath) }
 
 firebaseLibrary {
   libraryGroup = "dataconnect"
@@ -109,6 +112,8 @@ dependencies {
   implementation("com.google.firebase:firebase-auth-interop:20.0.0")
   implementation(libs.firebase.components)
 
+  ksp(files("gradleplugin/processor/build/libs/processor-1.0.jar"))
+
   compileOnly(libs.javax.annotation.jsr250)
   compileOnly(libs.kotlinx.datetime)
   implementation(libs.grpc.android)
@@ -162,4 +167,8 @@ tasks.register<UpdateDataConnectExecutableVersionsTask>("updateJson") {
     file("gradleplugin/plugin/src/main/resources/${DataConnectExecutableVersionsRegistry.PATH}")
   )
   workDirectory.set(project.layout.buildDirectory.dir("updateJson"))
+}
+
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
+  dependsOn(gradle.includedBuild("gradleplugin").task(":processor:jar"))
 }
