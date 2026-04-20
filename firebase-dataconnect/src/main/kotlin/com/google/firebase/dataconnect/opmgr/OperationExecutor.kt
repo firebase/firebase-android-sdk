@@ -24,10 +24,10 @@ import com.google.firebase.dataconnect.core.DataConnectAppCheck
 import com.google.firebase.dataconnect.core.DataConnectAuth
 import com.google.firebase.dataconnect.core.DataConnectGrpcRPCs
 import com.google.firebase.dataconnect.core.Logger
+import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import com.google.firebase.dataconnect.core.encodeVariables
-import com.google.firebase.dataconnect.opmgr.OperationExecutor.PrepareQueryVariablesResult
 import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase
 import com.google.firebase.dataconnect.util.CoroutineUtils.createSupervisorCoroutineScope
 import com.google.firebase.dataconnect.util.DeserializeUtils.deserialize
@@ -35,9 +35,7 @@ import com.google.firebase.dataconnect.util.DeserializeUtils.toErrorInfoImpl
 import com.google.firebase.dataconnect.util.ImmutableByteArray
 import com.google.firebase.dataconnect.util.ProtoUtil.calculateSha512
 import com.google.firebase.dataconnect.util.RequestIdGenerator
-import com.google.firebase.dataconnect.util.SequencedReference
 import com.google.firebase.dataconnect.util.SequencedReference.Companion.nextSequenceNumber
-import com.google.firebase.dataconnect.util.SuspendingWeakValueHashMap
 import com.google.protobuf.Struct
 import google.firebase.dataconnect.proto.ExecuteRequest
 import google.firebase.dataconnect.proto.GraphqlError
@@ -51,7 +49,6 @@ import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.onFailure
@@ -71,7 +68,6 @@ import kotlinx.coroutines.job
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.yield
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.modules.SerializersModule
@@ -109,12 +105,8 @@ internal sealed class OperationExecutor(
           is State.SupportsConversionToClosingState -> currentState.toClosingState()
           is State.Closing ->
             currentState.run {
-              queries?.run {
-                coroutineScope {
-                  launch { remoteQueries.close() }
-                  launch { localQueries.close() }
-                }
-              }
+              queries?.localQueries?.close()
+              queries?.remoteQueries?.close()
               coroutineScope.cancel("OperationExecutor.close() called")
               coroutineScope.coroutineContext.job.join()
               State.Closed
@@ -142,23 +134,25 @@ internal sealed class OperationExecutor(
         "and variables=$variables"
     }
 
-    val (connectedState, variablesStruct) = coroutineScope {
-      var connectedState: State.Connected? = null
-      var variablesStruct: Struct? = null
+    val (connectedState, variablesStruct) =
+      coroutineScope {
+        var connectedState: State.Connected? = null
+        var variablesStruct: Struct? = null
 
-      val connectedStateJob =
-        launch(CoroutineName("OperationExecutor_ConState_$requestId")) {
-          connectedState = ensureConnected(requestId, sequenceNumber, callerSdkType)
-        }
-      val variablesJob =
-        launch(CoroutineName("OperationExecutor_EncodeVars_$requestId") + cpuDispatcher) {
-          variablesStruct = encodeVariables(variables, variablesSerializer, variablesSerializersModule)
-        }
+        val connectedStateJob =
+          launch(CoroutineName("OperationExecutor_ConState_$requestId")) {
+            connectedState = ensureConnected(requestId, sequenceNumber, callerSdkType)
+          }
+        val variablesJob =
+          launch(CoroutineName("OperationExecutor_EncodeVars_$requestId") + cpuDispatcher) {
+            variablesStruct =
+              encodeVariables(variables, variablesSerializer, variablesSerializersModule)
+          }
 
-      joinAll(connectedStateJob, variablesJob)
+        joinAll(connectedStateJob, variablesJob)
 
-      Pair(connectedState!!, variablesStruct!!)
-    }
+        Pair(connectedState!!, variablesStruct!!)
+      }
 
     return connectedState.execute(
       requestId = requestId,
@@ -186,62 +180,63 @@ internal sealed class OperationExecutor(
         "fetchPolicy=$fetchPolicy, and variables=$variables"
     }
 
-    val (connectedState, variablesStruct, queryId) = coroutineScope {
-      var connectedState: State.Connected? = null
-      var variablesStruct: Struct? = null
-      var queryId: ImmutableByteArray? = null
+    val (connectedState, variablesStruct, queryId) =
+      coroutineScope {
+        var connectedState: State.Connected? = null
+        var variablesStruct: Struct? = null
+        var queryId: ImmutableByteArray? = null
 
-      val connectedStateJob =
-        launch(CoroutineName("OperationExecutor_ConState_$requestId")) {
-          connectedState = ensureConnected(requestId, sequenceNumber, callerSdkType)
-        }
-      val variablesJob =
-        launch(CoroutineName("OperationExecutor_EncodeVars_$requestId") + cpuDispatcher) {
-          variablesStruct = encodeVariables(variables, variablesSerializer, variablesSerializersModule)
-          ensureActive()
-          queryId = calculateQueryId(operationName, variablesStruct)
-        }
+        val connectedStateJob =
+          launch(CoroutineName("OperationExecutor_ConState_$requestId")) {
+            connectedState = ensureConnected(requestId, sequenceNumber, callerSdkType)
+          }
+        val variablesJob =
+          launch(CoroutineName("OperationExecutor_EncodeVars_$requestId") + cpuDispatcher) {
+            variablesStruct =
+              encodeVariables(variables, variablesSerializer, variablesSerializersModule)
+            ensureActive()
+            queryId = calculateQueryId(operationName, variablesStruct)
+          }
 
-      joinAll(connectedStateJob, variablesJob)
+        joinAll(connectedStateJob, variablesJob)
 
-      Triple(connectedState!!, variablesStruct!!, queryId!!)
-    }
-
-      val remoteQueryKey =
-        RemoteQueries.Key(
-          authUid = connectedState.authUid,
-          queryId = queryId,
-        )
-
-      val cacheDb = connectedState.info.cacheDb
-      if (cacheDb === null) {
-        if (fetchPolicy == QueryRef.FetchPolicy.CACHE_ONLY) {
-          throw CachedDataNotFoundException(
-            "CACHE_ONLY fetch policy is unsupported when cache settings is null [m35wype9dt]"
-          )
-        }
-
-        val localQueryKey =
-          LocalQueries.Key(
-            remoteQueryKey,
-            dataDeserializer,
-            dataSerializersModule,
-            QueryRef.FetchPolicy.SERVER_ONLY,
-          )
-
-        while (true) {
-          val x = connectedState.localQueries.get()
-        }
+        Triple(connectedState!!, variablesStruct!!, queryId!!)
       }
 
-      connectedState.execute(
-        requestId = requestId,
-        operationName = operationName,
-        variables = variablesStruct,
-        dataDeserializer = dataDeserializer,
-        dataSerializersModule = dataSerializersModule,
+    val remoteQueryKey =
+      RemoteQueries.Key(
+        authUid = connectedState.authUid,
+        queryId = queryId,
       )
+
+    val cacheDb = connectedState.info.cacheDb
+    if (cacheDb === null) {
+      if (fetchPolicy == QueryRef.FetchPolicy.CACHE_ONLY) {
+        throw CachedDataNotFoundException(
+          "CACHE_ONLY fetch policy is unsupported when cache settings is null [m35wype9dt]"
+        )
+      }
+
+      val localQueryKey =
+        LocalQueries.Key(
+          remoteQueryKey,
+          dataDeserializer,
+          dataSerializersModule,
+          QueryRef.FetchPolicy.SERVER_ONLY,
+        )
+
+      while (true) {
+        val x = connectedState.localQueries.get()
+      }
     }
+
+    connectedState.execute(
+      requestId = requestId,
+      operationName = operationName,
+      variables = variablesStruct,
+      dataDeserializer = dataDeserializer,
+      dataSerializersModule = dataSerializersModule,
+    )
 
     return OperationManager.ExecuteQueryResult(data, DataSource.SERVER)
   }
@@ -363,7 +358,21 @@ internal sealed class OperationExecutor(
       coroutineScope.async(CoroutineName("OperationExecutor_GetAppCheckToken_$requestId")) {
         dataConnectAppCheck.getToken(requestId)
       }
-    val localQueries = SuspendingWeakValueHashMap<LocalQueries.Key<*>, LocalQuery<*>>(ioDispatcher)
+
+    val remoteQueries =
+      RemoteQueries(
+        ioDispatcher,
+        Logger("RemoteQueries").apply { debug { "created by ${logger.nameWithId}" } },
+      )
+
+    val localQueries =
+      LocalQueries(
+        remoteQueries,
+        ioDispatcher,
+        Logger("LocalQueries").apply { debug { "created by ${logger.nameWithId}" } },
+      )
+
+    val queries = State.Queries(remoteQueries, localQueries)
 
     val job =
       coroutineScope.async(
@@ -409,7 +418,7 @@ internal sealed class OperationExecutor(
           collectJob,
           outgoingStreamRequests,
           incomingResponses,
-          localQueries,
+          queries,
         )
       }
 
@@ -421,7 +430,7 @@ internal sealed class OperationExecutor(
       }
     }
 
-    return State.Connecting(nextSequenceNumber(), this, job, localQueries)
+    return State.Connecting(nextSequenceNumber(), this, job, queries)
   }
 
   /**
@@ -445,10 +454,8 @@ internal sealed class OperationExecutor(
     }
 
     class Queries(
-      val localQueries:
-        SuspendingWeakValueHashMap<LocalQueryKey<*>, MutableStateFlow<SequencedReference<*>>>,
-      val remoteQueries:
-        SuspendingWeakValueHashMap<RemoteQueryKey, MutableStateFlow<SequencedReference<Struct>>>,
+      val remoteQueries: RemoteQueries,
+      val localQueries: LocalQueries,
     )
 
     class Info(
@@ -526,5 +533,3 @@ private fun calculateQueryId(
   operationName: String,
   variables: Struct,
 ): ImmutableByteArray = variables.calculateSha512(preamble = operationName)
-
-

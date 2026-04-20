@@ -26,5 +26,4 @@ internal interface LocalQuery<Data> {
     val data: Data,
     val source: DataSource,
   )
-
 }

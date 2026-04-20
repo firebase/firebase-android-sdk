@@ -17,6 +17,7 @@
 package com.google.firebase.dataconnect.opmgr
 
 import com.google.firebase.dataconnect.core.Logger
+import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.util.ImmutableByteArray
 import com.google.firebase.dataconnect.util.SuspendingWeakValueHashMap
 import kotlinx.coroutines.CoroutineDispatcher
@@ -24,9 +25,14 @@ import kotlinx.coroutines.CoroutineDispatcher
 internal class RemoteQueries(
   cpuDispatcher: CoroutineDispatcher,
   private val logger: Logger,
-) {
+) : AutoCloseable {
 
   private val map = SuspendingWeakValueHashMap<Key, Unit>(cpuDispatcher)
+
+  override fun close() {
+    logger.debug { "close() called" }
+    map.close()
+  }
 
   data class Key(
     val authUid: String?,

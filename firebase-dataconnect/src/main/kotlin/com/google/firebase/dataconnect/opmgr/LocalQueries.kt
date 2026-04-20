@@ -18,21 +18,26 @@ package com.google.firebase.dataconnect.opmgr
 
 import com.google.firebase.dataconnect.QueryRef
 import com.google.firebase.dataconnect.core.Logger
+import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.util.SuspendingWeakValueHashMap
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.modules.SerializersModule
 
 internal class LocalQueries(
-  cpuDispatcher: CoroutineDispatcher,
+  remoteQueries: RemoteQueries,
+  ioDispatcher: CoroutineDispatcher,
   private val logger: Logger,
-) {
+) : AutoCloseable {
 
-  private val map = SuspendingWeakValueHashMap<RemoteQueries.Key, Unit>(cpuDispatcher)
+  private val map = SuspendingWeakValueHashMap<RemoteQueries.Key, Unit>(ioDispatcher)
 
-  suspend fun <Data> get(key: Key<Data>): LocalQuery<Data> {
-
+  override fun close() {
+    logger.debug { "close() called" }
+    map.close()
   }
+
+  suspend fun <Data> get(key: Key<Data>): LocalQuery<Data> {}
 
   data class Key<Data>(
     val remoteKey: RemoteQueries.Key,
