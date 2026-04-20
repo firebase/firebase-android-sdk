@@ -13,29 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-rootProject.name = "dataconnect-gradle-plugin"
 
-pluginManagement {
-  repositories {
-    gradlePluginPortal()
-    google()
-    mavenCentral()
-  }
+plugins {
+    alias(firebaseLibs.plugins.kotlin.jvm)
 }
 
-dependencyResolutionManagement {
-  repositories {
-    google()
-    mavenCentral()
-  }
+java { toolchain { languageVersion.set(JavaLanguageVersion.of(17)) } }
 
-  // Reuse libs.version.toml from the main Gradle project.
-  versionCatalogs {
-    create("firebaseLibs") {
-      from(files("../../gradle/libs.versions.toml"))
-    }
-  }
+dependencies {
+    compileOnly("com.google.devtools.ksp:symbol-processing-api:2.0.21-1.0.25")
 }
-
-include(":plugin")
-include(":processor")
+group = "com.google.firebase.dataconnect"
+version = "1.0"
