@@ -28,8 +28,6 @@ plugins {
   id("com.google.devtools.ksp") version "2.0.21-1.0.25"
 }
 
-ksp { arg("codebaseMapOutputFile", project.file("codebase-map.md").absolutePath) }
-
 firebaseLibrary {
   libraryGroup = "dataconnect"
   testLab.enabled = false

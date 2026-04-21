@@ -1,12 +1,11 @@
 package com.google.firebase.dataconnect.gradle.processor
 
-import java.io.File
+import java.io.OutputStream
 import java.io.Writer
 import java.nio.charset.StandardCharsets
 
-fun writeCodebaseMap(outputFile: File, classMapInfoList: List<ClassMapInfo>) {
-    outputFile.parentFile?.mkdirs() // Ensure directory exists just in case
-    outputFile.writer(StandardCharsets.UTF_8).use { writer ->
+fun writeCodebaseMap(outputStream: OutputStream, classMapInfoList: List<ClassMapInfo>) {
+    outputStream.writer(StandardCharsets.UTF_8).use { writer ->
       writer.writeCodebaseMap(classMapInfoList)
     }
 }
