@@ -65,14 +65,15 @@ internal constructor(
 
     @OptIn(PublicPreviewAPI::class)
     internal fun toPublic(): Candidate {
+      val content = this.content?.toPublic() ?: content("model") {}
       val safetyRatings = safetyRatings?.mapNotNull { it.toPublic() }.orEmpty()
-      val citations = citationMetadata?.toPublic()
+      val citations = citationMetadata?.toPublic(content)
       val finishReason = finishReason?.toPublic()
       val groundingMetadata = groundingMetadata?.toPublic()
       val urlContextMetadata = urlContextMetadata?.toPublic()
 
       return Candidate(
-        this.content?.toPublic() ?: content("model") {},
+        content,
         safetyRatings,
         citations,
         finishReason,
@@ -163,7 +164,7 @@ public class CitationMetadata internal constructor(public val citations: List<Ci
   @OptIn(ExperimentalSerializationApi::class)
   internal constructor(@JsonNames("citations") val citationSources: List<Citation.Internal>) {
 
-    internal fun toPublic() = CitationMetadata(citationSources.map { it.toPublic() })
+    internal fun toPublic(content: Content) = CitationMetadata(citationSources.map { it.toPublic(content) })
   }
 }
 
@@ -203,7 +204,7 @@ internal constructor(
     val publicationDate: Date? = null,
   ) {
 
-    internal fun toPublic(): Citation {
+    internal fun toPublic(content: Content): Citation {
       val publicationDateAsCalendar =
         publicationDate?.let {
           val calendar = Calendar.getInstance()
@@ -220,8 +221,8 @@ internal constructor(
         }
       return Citation(
         title = title,
-        startIndex = startIndex,
-        endIndex = endIndex,
+        startIndex = convertUtf8IndexToUtf16(content, startIndex),
+        endIndex = convertUtf8IndexToUtf16(content, endIndex),
         uri = uri,
         license = license,
         publicationDate = publicationDateAsCalendar
@@ -634,4 +635,38 @@ private constructor(public val name: String, public val ordinal: Int) {
     /** The URL retrieval failed because the content is unsafe. */
     @JvmField public val UNSAFE: UrlRetrievalStatus = UrlRetrievalStatus("UNSAFE", 4)
   }
+}
+
+internal fun convertUtf8IndexToUtf16(content: Content, originalIndex: Int): Int {
+  if (originalIndex == 0) {
+    return 0
+  }
+  var sumIndex = 0
+  var progress = 0
+  for (part in content.parts) {
+    val text = part.asTextOrNull() ?: ""
+    var i = 0
+    while (i < text.length) {
+      val c = text[i].code
+      progress += when {
+        c < 0x80 -> 1 // ASCII
+        c < 0x800 -> 2 // Two-byte codepoint
+        c in 0xD800 .. 0xDBFF -> 4 // High surrogate character
+        else -> 3
+      }
+      if (c in 0xD800..0xDBFF) {
+        i++ // Skip the low surrogate
+      }
+      i++
+      if (progress >= originalIndex) {
+        if (progress > originalIndex) {
+          throw StringIndexOutOfBoundsException("Desired index $originalIndex is between Unicode codepoints")
+          // Citation index was midway between a single codepoint??
+        }
+        return sumIndex + i
+      }
+    }
+    sumIndex += text.length
+  }
+  throw StringIndexOutOfBoundsException("Desired index $originalIndex is higher than content size $progress")
 }
