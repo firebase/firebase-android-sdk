@@ -1,12 +1,13 @@
 package com.google.firebase.dataconnect.gradle.processor
 
+import com.google.devtools.ksp.processing.CodeGenerator
+import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.processing.Resolver
 import com.google.devtools.ksp.processing.SymbolProcessor
 import com.google.devtools.ksp.symbol.KSAnnotated
-import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
 
-class CodebaseMapProcessor(private val outputFile: File) : SymbolProcessor {
+class CodebaseMapProcessor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
 
     private val hasRun = AtomicBoolean(false)
 
@@ -15,12 +16,20 @@ class CodebaseMapProcessor(private val outputFile: File) : SymbolProcessor {
         return emptyList()
       }
 
-      val classMapInfoList = resolver.getFilesToIncludeInCodebaseMap().flatMap {
+      val filesToInclude = resolver.getFilesToIncludeInCodebaseMap().toList()
+      val classMapInfoList = filesToInclude.flatMap {
         it.toClassMapInfoSequence()
-      }.toList()
+      }
 
       if (classMapInfoList.isNotEmpty()) {
-        writeCodebaseMap(outputFile, classMapInfoList)
+        val dependencies = Dependencies(aggregating = true, *filesToInclude.toTypedArray())
+        val outputStream = codeGenerator.createNewFile(
+            dependencies = dependencies,
+            packageName = "",
+            fileName = "codebase-map",
+            extensionName = "md"
+        )
+        writeCodebaseMap(outputStream, classMapInfoList)
       }
 
       return emptyList()
