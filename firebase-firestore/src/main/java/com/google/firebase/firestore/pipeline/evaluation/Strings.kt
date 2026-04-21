@@ -269,14 +269,6 @@ internal val evaluateTrim = unaryFunction { value: Value ->
   }
 }
 
-internal val evaluateLTrim = notImplemented // TODO: Does not exist in expressions.kt yet.
-
-internal val evaluateRTrim = notImplemented // TODO: Does not exist in expressions.kt yet.
-
-internal val evaluateReplaceAll = notImplemented // TODO: Does not exist in backend yet.
-
-internal val evaluateReplaceFirst = notImplemented // TODO: Does not exist in backend yet.
-
 internal val evaluateRegexContains =
   binaryFunctionConstructorType(
     ValueTypeCase.STRING_VALUE,
