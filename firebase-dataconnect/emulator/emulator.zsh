@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 
-# Copyright 2024 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,14 +14,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -euo pipefail
+setopt errexit nounset pipefail
 
-readonly SELF_EXECUTABLE="$0"
-readonly LOG_PREFIX="[$0] "
-readonly DEFAULT_POSTGRESQL_STRING='postgresql://postgres:postgres@localhost:5432?sslmode=disable'
+typeset -r self_executable="$0"
+typeset -r log_prefix="[$0] "
+typeset -r default_postgresql_string='postgresql://postgres:postgres@localhost:5432?sslmode=disable'
 
 function main {
-  cd "$(dirname "$0")"
+  cd "${0:A:h}"
   parse_args "$@"
   log "FIREBASE_DATACONNECT_POSTGRESQL_STRING=${FIREBASE_DATACONNECT_POSTGRESQL_STRING}"
   log "DATACONNECT_EMULATOR_BINARY_PATH=${DATACONNECT_EMULATOR_BINARY_PATH}"
@@ -30,49 +30,38 @@ function main {
 }
 
 function parse_args {
-  local emulator_binary=''
-  local postgresql_string="${DEFAULT_POSTGRESQL_STRING}"
-  local preview_flags=''
-  local wipe_and_restart_postgres_pod=0
+  zmodload zsh/zutil
+  local -A opts
+  zparseopts -D -E -A opts c: g p: v: w h || {
+    echo "Run with -h for help" >&2
+    exit 2
+  }
 
-  local OPTIND=1
-  local OPTERR=0
-  while getopts ":c:p:v:hwg" arg ; do
-    case "${arg}" in
-      c) emulator_binary="${OPTARG}" ;;
-      g) emulator_binary="gradle" ;;
-      p) postgresql_string="${OPTARG}" ;;
-      v) preview_flags="${OPTARG}" ;;
-      w) wipe_and_restart_postgres_pod=1 ;;
-      h)
-        print_help
-        exit 0
-        ;;
-      :)
-        echo "ERROR: missing value after option: -${OPTARG}" >&2
-        echo "Run with -h for help" >&2
-        exit 2
-        ;;
-      ?)
-        echo "ERROR: unrecognized option: -${OPTARG}" >&2
-        echo "Run with -h for help" >&2
-        exit 2
-        ;;
-      *)
-        log_error_and_exit "INTERNAL ERROR: unknown argument: ${arg}"
-        ;;
-    esac
-  done
+  if (( ${+opts[-h]} )); then
+    print_help
+    exit 0
+  fi
+
+  if (( $# > 0 )); then
+    echo "ERROR: unrecognized option or argument: $1" >&2
+    echo "Run with -h for help" >&2
+    exit 2
+  fi
+
+  local emulator_binary="${opts[-c]:-${opts[-g]+gradle}}"
+  local postgresql_string="${opts[-p]:-$default_postgresql_string}"
+  local preview_flags="${opts[-v]:-}"
+  local wipe_and_restart_postgres_pod=${+opts[-w]}
 
   if [[ ${emulator_binary} != "gradle" ]] ; then
     export DATACONNECT_EMULATOR_BINARY_PATH="${emulator_binary}"
   else
     run_command "../../gradlew" -p ../.. --configure-on-demand :firebase-dataconnect:connectors:downloadDebugDataConnectExecutable
-    local gradle_emulator_binaries=(../connectors/build/intermediates/dataconnect/debug/executable/*)
-    if [[ ${#gradle_emulator_binaries[@]} -ne 1 ]]; then
-      log_error_and_exit "expected exactly 1 emulator binary from gradle, but got ${#gradle_emulator_binaries[@]}: ${gradle_emulator_binaries[*]}"
+    local gradle_emulator_binaries=(../connectors/build/intermediates/dataconnect/debug/executable/*(N))
+    if [[ ${#gradle_emulator_binaries} -ne 1 ]]; then
+      log_error_and_exit "expected exactly 1 emulator binary from gradle, but got ${#gradle_emulator_binaries}: ${gradle_emulator_binaries[*]}"
     fi
-    local gradle_emulator_binary="${gradle_emulator_binaries[0]}"
+    local gradle_emulator_binary="${gradle_emulator_binaries[1]}"
     if [[ ! -e ${gradle_emulator_binary} ]] ; then
       log_error_and_exit "emulator binary from gradle does not exist: ${gradle_emulator_binary}"
     fi
@@ -87,16 +76,16 @@ function parse_args {
     run_command podman compose up -d
 
     echo "Waiting for Postgres service to appear to be healthy..."
-    postgres_health_check_number=0
+    local postgres_health_check_number=0
     while : ; do
-      postgres_health_check_number=$((postgres_health_check_number + 1))
-      postgres_service_status="$(print_postgres_status)"
+      (( postgres_health_check_number++ )) || true
+      local postgres_service_status="$(print_postgres_status)"
       echo "Postgres service health check ${postgres_health_check_number}: ${postgres_service_status}"
 
-      if [[ ${postgres_service_status} =~ "healthy" ]] ; then
+      if [[ ${postgres_service_status} == *"(healthy)"* ]] ; then
         echo "Postgres service appears to be healthy after ${postgres_health_check_number} seconds"
         break
-      elif [[ ${postgres_health_check_number} == 30 ]] ; then
+      elif [[ ${postgres_health_check_number} -eq 30 ]] ; then
         print_podman_compose_status
         echo "ERROR: Postgres service does not appear to be healthy after ${postgres_health_check_number} seconds" >&2
         exit 1
@@ -108,7 +97,7 @@ function parse_args {
 }
 
 function run_command {
-  log "Running command: $*"
+  log "Running command: ${(q)@}"
   "$@"
 }
 
@@ -117,7 +106,7 @@ function print_podman_compose_status {
 }
 
 function print_postgres_status {
-  print_podman_compose_status | jq -e '.[] | select(.Labels["com.docker.compose.service"] == "postgres") | .Status'
+  print_podman_compose_status | jq -re '.[] | select(.Labels["com.docker.compose.service"] == "postgres") | .Status'
 }
 
 function print_help {
@@ -127,7 +116,7 @@ function print_help {
   echo "and Firebase Authentication emulators in a way that is amenable for running"
   echo "the integration tests."
   echo
-  echo "Syntax: ${SELF_EXECUTABLE} [options]"
+  echo "Syntax: ${self_executable} [options]"
   echo
   echo "Options:"
   echo "  -c <data_connect_emulator_binary_path>"
@@ -140,7 +129,7 @@ function print_help {
   echo
   echo "  -p <postgresql_connection_string>"
   echo "    Uses the given string to connect to the PostgreSQL server. If not specified "
-  echo "    the the default value of \"${DEFAULT_POSTGRESQL_STRING}\" is used."
+  echo "    the the default value of \"${default_postgresql_string}\" is used."
   echo "    If specified as the empty string then an ephemeral PGLite server is used."
   echo
   echo "  -v <data_connect_preview_flags>"
@@ -158,11 +147,11 @@ function print_help {
 }
 
 function log {
-  echo "${LOG_PREFIX}$*"
+  echo "${log_prefix}$*"
 }
 
 function log_error_and_exit {
-  echo "${LOG_PREFIX}ERROR: $*" >&2
+  echo "${log_prefix}ERROR: $*" >&2
   exit 1
 }
 
