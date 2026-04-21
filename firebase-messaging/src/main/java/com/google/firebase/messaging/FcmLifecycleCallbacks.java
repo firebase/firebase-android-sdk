@@ -90,13 +90,13 @@ class FcmLifecycleCallbacks implements Application.ActivityLifecycleCallbacks {
         }
         analyticsData = extras.getBundle(Constants.MessageNotificationKeys.ANALYTICS_DATA);
       }
+      if (MessagingAnalytics.shouldUploadScionMetrics(analyticsData)) {
+        MessagingAnalytics.logNotificationOpen(analyticsData);
+      }
     } catch (RuntimeException e) {
       // Don't crash if there was a problem trying to get the analytics data Bundle since the
       // Intent could be coming from anywhere and could be incorrectly formatted.
       Log.w(TAG, "Failed trying to get analytics data from Intent extras.", e);
-    }
-    if (MessagingAnalytics.shouldUploadScionMetrics(analyticsData)) {
-      MessagingAnalytics.logNotificationOpen(analyticsData);
     }
   }
 }
