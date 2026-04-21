@@ -101,7 +101,7 @@ object VersionUtils {
   }
 
   private fun isUnstable(version: String): Boolean {
-    val unstableKeywords = listOf("alpha", "beta", "milestone", "canary", "m")
+    val unstableKeywords = listOf("alpha", "beta", "milestone", "canary", "m", "rc")
     return unstableKeywords.any { version.contains(it, ignoreCase = true) }
   }
 }
