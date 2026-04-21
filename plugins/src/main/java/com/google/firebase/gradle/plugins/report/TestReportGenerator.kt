@@ -22,6 +22,9 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.time.Duration
+import java.time.LocalDate
+import java.time.Month
+import java.util.Calendar
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -220,9 +223,12 @@ class TestReportGenerator(private val apiToken: String) {
 
   private fun generateDailyTable(reports: List<TestReport>): String {
     val output = StringBuilder("| |")
-    var offset = 0
-    for (report in reports) {
-      output.append(" -${offset++}")
+    val now = LocalDate.now()
+    for ((offset, report) in reports.withIndex().reversed()) {
+      val time = now.minusDays(offset.toLong())
+      val month = shortMonths.getOrDefault(time.month, "???")
+      val day = time.dayOfMonth
+      output.append(" $month $day")
       output.append(" |")
     }
     output.append(" Success Rate |\n|")
@@ -424,5 +430,19 @@ class TestReportGenerator(private val apiToken: String) {
       )
     private val CLIENT: HttpClient =
       HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build()
+    private val shortMonths: Map<Month, String> = mapOf(
+      Month.JANUARY to "Jan",
+      Month.FEBRUARY to "Feb",
+      Month.MARCH to "Mar",
+      Month.APRIL to "Apr",
+      Month.MAY to "May",
+      Month.JUNE to "Jun",
+      Month.JULY to "Jul",
+      Month.AUGUST to "Aug",
+      Month.SEPTEMBER to "Sep",
+      Month.OCTOBER to "Oct",
+      Month.NOVEMBER to "Nov",
+      Month.DECEMBER to "Dec",
+    )
   }
 }
