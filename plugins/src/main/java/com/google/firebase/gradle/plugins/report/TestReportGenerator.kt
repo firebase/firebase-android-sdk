@@ -22,9 +22,9 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.time.Duration
-import java.time.LocalDate
-import java.time.Month
-import java.util.Calendar
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.format.MonthNames
+import kotlinx.datetime.format.char
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -94,6 +94,7 @@ class TestReportGenerator(private val apiToken: String) {
           obj["head_commit"]?.jsonObject?.get("id")?.jsonPrimitive?.content
             ?: throw RuntimeException("Missing head_commit"),
           obj["html_url"]?.jsonPrimitive?.content ?: throw RuntimeException("Missing url"),
+          obj["created_at"]?.jsonPrimitive?.content?.substringBefore("T"),
         )
       )
     }
@@ -123,9 +124,11 @@ class TestReportGenerator(private val apiToken: String) {
       )
     )
     output.append("\n")
-    output.append("### Daily Tests\n\n")
-    output.append(generateDailyTable(dailyTests))
-    output.append("\n")
+    if (dailyTests.isNotEmpty()) {
+      output.append("### Daily Tests\n\n")
+      output.append(generateDailyTable(dailyTests.reversed()))
+      output.append("\n")
+    }
 
     try {
       outputFile.writeText(output.toString())
@@ -198,7 +201,7 @@ class TestReportGenerator(private val apiToken: String) {
               TestReport.Status.FAILURE -> "⛔"
               TestReport.Status.OTHER -> "➖"
             }
-          val link: String = " [%s](%s)".format(icon, report.url)
+          val link: String = " [$icon](${report.url})"
           output.append(link)
         }
         output.append(" |")
@@ -223,13 +226,9 @@ class TestReportGenerator(private val apiToken: String) {
 
   private fun generateDailyTable(reports: List<TestReport>): String {
     val output = StringBuilder("| |")
-    val now = LocalDate.now()
-    for ((offset, report) in reports.withIndex().reversed()) {
-      val time = now.minusDays(offset.toLong())
-      val month = shortMonths.getOrDefault(time.month, "???")
-      val day = time.dayOfMonth
-      output.append(" $month $day")
-      output.append(" |")
+    for (report in reports) {
+      val time = LocalDate.parse(report.date!!)
+      output.append(" ${DATE_FORMAT.format(time)} |")
     }
     output.append(" Success Rate |\n|")
     output.append(" :--- |")
@@ -243,13 +242,13 @@ class TestReportGenerator(private val apiToken: String) {
           TestReport.Status.FAILURE -> "⛔"
           TestReport.Status.OTHER -> "➖"
         }
-      val link: String = " [%s](%s)".format(icon, report.url)
+      val link: String = " [$icon](${report.url})"
       output.append(link)
       output.append(" |")
     }
     output.append(" ")
     val successChance: Int =
-      reports.filter { r -> r.status == TestReport.Status.SUCCESS }.size * 100 / reports.size
+      reports.count { r -> r.status == TestReport.Status.SUCCESS } * 100 / reports.size
     if (successChance == 100) {
       output.append("✅ 100%")
     } else {
@@ -430,19 +429,11 @@ class TestReportGenerator(private val apiToken: String) {
       )
     private val CLIENT: HttpClient =
       HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build()
-    private val shortMonths: Map<Month, String> = mapOf(
-      Month.JANUARY to "Jan",
-      Month.FEBRUARY to "Feb",
-      Month.MARCH to "Mar",
-      Month.APRIL to "Apr",
-      Month.MAY to "May",
-      Month.JUNE to "Jun",
-      Month.JULY to "Jul",
-      Month.AUGUST to "Aug",
-      Month.SEPTEMBER to "Sep",
-      Month.OCTOBER to "Oct",
-      Month.NOVEMBER to "Nov",
-      Month.DECEMBER to "Dec",
-    )
+    private val DATE_FORMAT =
+      LocalDate.Format {
+        monthName(MonthNames.ENGLISH_ABBREVIATED)
+        char(' ')
+        dayOfMonth()
+      }
   }
 }
