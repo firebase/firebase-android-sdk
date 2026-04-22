@@ -51,13 +51,14 @@ data class TestReport(
 
     companion object {
       fun of(json: JsonObject): Status {
-        return when {
-          json["status"]?.jsonPrimitive?.content == "completed" ->
-            when {
-              json["conclusion"]?.jsonPrimitive?.content == "success" -> SUCCESS
-              else -> FAILURE
-            }
-          else -> OTHER
+        if (json["status"]?.jsonPrimitive?.content == "completed") {
+          if (json["conclusion"]?.jsonPrimitive?.content == "success") {
+            return SUCCESS
+          } else {
+            return FAILURE
+          }
+        } else {
+          return OTHER
         }
       }
     }
