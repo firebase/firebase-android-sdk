@@ -54,7 +54,7 @@ internal class RemoteQuery(
     )
 
   private suspend fun execute(params: SequencedReference<ExecuteParams>): ExecuteResponse =
-    execute(params)
+    execute(params.ref)
 
   private suspend fun execute(params: ExecuteParams): ExecuteResponse =
     params.run {
