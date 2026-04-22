@@ -36,6 +36,7 @@ import kotlinx.serialization.json.jsonObject
  * @see LiveServerToolCallCancellation
  * @see LiveServerSetupComplete
  * @see LiveServerGoAway
+ * @see LiveSessionResumptionUpdate
  */
 @PublicPreviewAPI public interface LiveServerMessage
 
@@ -222,6 +223,41 @@ public class LiveServerGoAway(public val timeLeft: Duration?) : LiveServerMessag
   }
 }
 
+/**
+ * An update of the session resumption state.
+ *
+ * This message is only sent if [SessionResumptionConfig] was set in the session setup.
+ *
+ * @property newHandle The new handle that represents the state that can be resumed. Empty if `resumable` is false.
+ * @property resumable Indicates if the session can be resumed at this point.
+ * @property lastConsumedClientMessageIndex The index of the last client message that is included in the state represented by this update.
+ */
+@PublicPreviewAPI
+public class LiveSessionResumptionUpdate(
+  public val newHandle: String? = null,
+  public val resumable: Boolean? = null,
+  public val lastConsumedClientMessageIndex: Int? = null
+) : LiveServerMessage {
+  @Serializable
+  internal data class Internal(
+    val newHandle: String? = null,
+    val resumable: Boolean? = null,
+    val lastConsumedClientMessageIndex: Int? = null
+  )
+
+  @Serializable
+  internal data class InternalWrapper(val sessionResumptionUpdate: Internal) :
+    InternalLiveServerMessage {
+    override fun toPublic(): LiveSessionResumptionUpdate {
+      return LiveSessionResumptionUpdate(
+        newHandle = sessionResumptionUpdate.newHandle,
+        resumable = sessionResumptionUpdate.resumable,
+        lastConsumedClientMessageIndex = sessionResumptionUpdate.lastConsumedClientMessageIndex
+      )
+    }
+  }
+}
+
 @PublicPreviewAPI
 @Serializable(LiveServerMessageSerializer::class)
 internal sealed interface InternalLiveServerMessage {
@@ -243,6 +279,7 @@ internal object LiveServerMessageSerializer :
       "toolCallCancellation" in jsonObject ->
         LiveServerToolCallCancellation.InternalWrapper.serializer()
       "goAway" in jsonObject -> LiveServerGoAway.InternalWrapper.serializer()
+      "sessionResumptionUpdate" in jsonObject -> LiveSessionResumptionUpdate.InternalWrapper.serializer()
       else -> {
         Log.w(
           "LiveServerMsgSerializer",

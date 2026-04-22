@@ -112,7 +112,9 @@ internal constructor(
           tools.map { it.toInternal() }.takeIf { it.isNotEmpty() },
           systemInstruction?.toInternal(),
           config?.inputAudioTranscription?.toInternal(),
-          config?.outputAudioTranscription?.toInternal()
+          config?.outputAudioTranscription?.toInternal(),
+          newResumption?.toInternal(),
+          config?.contextWindowCompression?.toInternal()
         )
         .toInternal()
     val data: String = JSON.encodeToString(clientMessage)
@@ -123,16 +125,23 @@ internal constructor(
       val receivedJsonStr = webSession.incoming.receive().readBytes().toString(Charsets.UTF_8)
       val receivedJson = JSON.parseToJsonElement(receivedJsonStr)
 
-      return if (receivedJson is JsonObject && "setupComplete" in receivedJson) {
-        LiveSession(
-          session = webSession,
-          blockingDispatcher = blockingDispatcher,
-          firebaseApp = firebaseApp
-        )
+      if (receivedJson is JsonObject && "setupComplete" in receivedJson) {
+        webSession
       } else {
         webSession.close()
         throw ServiceConnectionHandshakeFailedException("Unable to connect to the server")
       }
+    }
+
+    var webSession: DefaultClientWebSocketSession? = null
+    try {
+      webSession = connectFactory(sessionResumption)
+      return LiveSession(
+        session = webSession,
+        blockingDispatcher = blockingDispatcher,
+        firebaseApp = firebaseApp,
+        connectionFactory = connectFactory
+      )
     } catch (e: ClosedReceiveChannelException) {
       val reason = webSession?.closeReason?.await()
       val message =
