@@ -39,6 +39,8 @@ package com.google.firebase.ai {
     method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.LiveGenerativeModel liveModel(String modelName, com.google.firebase.ai.type.LiveGenerationConfig? generationConfig = null, java.util.List<com.google.firebase.ai.type.Tool>? tools = null, com.google.firebase.ai.type.Content? systemInstruction = null, com.google.firebase.ai.type.RequestOptions requestOptions = com.google.firebase.ai.type.RequestOptions());
     method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.TemplateGenerativeModel templateGenerativeModel();
     method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.TemplateGenerativeModel templateGenerativeModel(com.google.firebase.ai.type.RequestOptions requestOptions = com.google.firebase.ai.type.RequestOptions());
+    method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.TemplateGenerativeModel templateGenerativeModel(com.google.firebase.ai.type.RequestOptions requestOptions = com.google.firebase.ai.type.RequestOptions(), java.util.List<com.google.firebase.ai.type.TemplateTool>? tools = null);
+    method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.TemplateGenerativeModel templateGenerativeModel(com.google.firebase.ai.type.RequestOptions requestOptions = com.google.firebase.ai.type.RequestOptions(), java.util.List<com.google.firebase.ai.type.TemplateTool>? tools = null, com.google.firebase.ai.type.TemplateToolConfig? toolConfig = null);
     method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.TemplateImagenModel templateImagenModel();
     method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.TemplateImagenModel templateImagenModel(com.google.firebase.ai.type.RequestOptions requestOptions = com.google.firebase.ai.type.RequestOptions());
     property public static final com.google.firebase.ai.FirebaseAI instance;
@@ -80,11 +82,11 @@ package com.google.firebase.ai {
     method @com.google.firebase.ai.type.PublicPreviewAPI public suspend Object? warmUp(kotlin.coroutines.Continuation<? super kotlin.Unit>);
   }
 
-  public final class ImagenModel {
-    method @com.google.firebase.ai.type.PublicPreviewAPI public suspend Object? editImage(java.util.List<? extends com.google.firebase.ai.type.ImagenReferenceImage> referenceImages, String prompt, com.google.firebase.ai.type.ImagenEditingConfig? config = null, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>>);
-    method public suspend Object? generateImages(String prompt, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>>);
-    method @com.google.firebase.ai.type.PublicPreviewAPI public suspend Object? inpaintImage(com.google.firebase.ai.type.ImagenInlineImage image, String prompt, com.google.firebase.ai.type.ImagenMaskReference mask, com.google.firebase.ai.type.ImagenEditingConfig config, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>>);
-    method @com.google.firebase.ai.type.PublicPreviewAPI public suspend Object? outpaintImage(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.Dimensions newDimensions, com.google.firebase.ai.type.ImagenImagePlacement newPosition = com.google.firebase.ai.type.ImagenImagePlacement.CENTER, String prompt = "", com.google.firebase.ai.type.ImagenEditingConfig? config = null, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>>);
+  @Deprecated public final class ImagenModel {
+    method @Deprecated @com.google.firebase.ai.type.PublicPreviewAPI public suspend Object? editImage(java.util.List<? extends com.google.firebase.ai.type.ImagenReferenceImage> referenceImages, String prompt, com.google.firebase.ai.type.ImagenEditingConfig? config = null, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>>);
+    method @Deprecated public suspend Object? generateImages(String prompt, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>>);
+    method @Deprecated @com.google.firebase.ai.type.PublicPreviewAPI public suspend Object? inpaintImage(com.google.firebase.ai.type.ImagenInlineImage image, String prompt, com.google.firebase.ai.type.ImagenMaskReference mask, com.google.firebase.ai.type.ImagenEditingConfig config, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>>);
+    method @Deprecated @com.google.firebase.ai.type.PublicPreviewAPI public suspend Object? outpaintImage(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.Dimensions newDimensions, com.google.firebase.ai.type.ImagenImagePlacement newPosition = com.google.firebase.ai.type.ImagenImagePlacement.CENTER, String prompt = "", com.google.firebase.ai.type.ImagenEditingConfig? config = null, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>>);
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class InferenceMode {
@@ -137,9 +139,19 @@ package com.google.firebase.ai {
   public static final class OnDeviceConfig.Companion {
   }
 
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class TemplateChat {
+    method public java.util.List<com.google.firebase.ai.type.Content> getHistory();
+    method public suspend Object? sendMessage(com.google.firebase.ai.type.Content prompt, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.GenerateContentResponse>);
+    method public suspend Object? sendMessage(String prompt, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.GenerateContentResponse>);
+    method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.type.GenerateContentResponse> sendMessageStream(com.google.firebase.ai.type.Content prompt);
+    method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.type.GenerateContentResponse> sendMessageStream(String prompt);
+    property public final java.util.List<com.google.firebase.ai.type.Content> history;
+  }
+
   @com.google.firebase.ai.type.PublicPreviewAPI public final class TemplateGenerativeModel {
     method public suspend Object? generateContent(String templateId, java.util.Map<java.lang.String,?> inputs, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.GenerateContentResponse>);
     method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.type.GenerateContentResponse> generateContentStream(String templateId, java.util.Map<java.lang.String,?> inputs);
+    method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.TemplateChat startChat(String templateId, java.util.Map<java.lang.String,?> inputs, java.util.List<com.google.firebase.ai.type.Content> history = emptyList());
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class TemplateImagenModel {
@@ -201,19 +213,19 @@ package com.google.firebase.ai.java {
     method public com.google.firebase.ai.java.GenerativeModelFutures from(com.google.firebase.ai.GenerativeModel model);
   }
 
-  @com.google.firebase.ai.type.PublicPreviewAPI public abstract class ImagenModelFutures {
-    method public abstract com.google.common.util.concurrent.ListenableFuture<com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>> editImage(java.util.List<? extends com.google.firebase.ai.type.ImagenReferenceImage> referenceImages, String prompt);
-    method public abstract com.google.common.util.concurrent.ListenableFuture<com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>> editImage(java.util.List<? extends com.google.firebase.ai.type.ImagenReferenceImage> referenceImages, String prompt, com.google.firebase.ai.type.ImagenEditingConfig? config = null);
-    method public static final com.google.firebase.ai.java.ImagenModelFutures from(com.google.firebase.ai.ImagenModel model);
-    method public abstract com.google.common.util.concurrent.ListenableFuture<com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>> generateImages(String prompt);
-    method public abstract com.google.firebase.ai.ImagenModel getImageModel();
-    method public abstract com.google.common.util.concurrent.ListenableFuture<com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>> inpaintImage(com.google.firebase.ai.type.ImagenInlineImage image, String prompt, com.google.firebase.ai.type.ImagenMaskReference mask, com.google.firebase.ai.type.ImagenEditingConfig config);
-    method public abstract com.google.common.util.concurrent.ListenableFuture<com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>> outpaintImage(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.Dimensions newDimensions, com.google.firebase.ai.type.ImagenImagePlacement newPosition = com.google.firebase.ai.type.ImagenImagePlacement.CENTER, String prompt = "", com.google.firebase.ai.type.ImagenEditingConfig? config = null);
-    field public static final com.google.firebase.ai.java.ImagenModelFutures.Companion Companion;
+  @Deprecated @com.google.firebase.ai.type.PublicPreviewAPI public abstract class ImagenModelFutures {
+    method @Deprecated public abstract com.google.common.util.concurrent.ListenableFuture<com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>> editImage(java.util.List<? extends com.google.firebase.ai.type.ImagenReferenceImage> referenceImages, String prompt);
+    method @Deprecated public abstract com.google.common.util.concurrent.ListenableFuture<com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>> editImage(java.util.List<? extends com.google.firebase.ai.type.ImagenReferenceImage> referenceImages, String prompt, com.google.firebase.ai.type.ImagenEditingConfig? config = null);
+    method @Deprecated public static final com.google.firebase.ai.java.ImagenModelFutures from(com.google.firebase.ai.ImagenModel model);
+    method @Deprecated public abstract com.google.common.util.concurrent.ListenableFuture<com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>> generateImages(String prompt);
+    method @Deprecated public abstract com.google.firebase.ai.ImagenModel getImageModel();
+    method @Deprecated public abstract com.google.common.util.concurrent.ListenableFuture<com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>> inpaintImage(com.google.firebase.ai.type.ImagenInlineImage image, String prompt, com.google.firebase.ai.type.ImagenMaskReference mask, com.google.firebase.ai.type.ImagenEditingConfig config);
+    method @Deprecated public abstract com.google.common.util.concurrent.ListenableFuture<com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>> outpaintImage(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.Dimensions newDimensions, com.google.firebase.ai.type.ImagenImagePlacement newPosition = com.google.firebase.ai.type.ImagenImagePlacement.CENTER, String prompt = "", com.google.firebase.ai.type.ImagenEditingConfig? config = null);
+    field @Deprecated public static final com.google.firebase.ai.java.ImagenModelFutures.Companion Companion;
   }
 
-  public static final class ImagenModelFutures.Companion {
-    method public com.google.firebase.ai.java.ImagenModelFutures from(com.google.firebase.ai.ImagenModel model);
+  @Deprecated public static final class ImagenModelFutures.Companion {
+    method @Deprecated public com.google.firebase.ai.java.ImagenModelFutures from(com.google.firebase.ai.ImagenModel model);
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public abstract class LiveModelFutures {
@@ -637,6 +649,20 @@ package com.google.firebase.ai.type {
     method public com.google.firebase.ai.type.GenerativeBackend vertexAI(String location = "us-central1");
   }
 
+  public final class GoogleMaps {
+    ctor public GoogleMaps();
+  }
+
+  public final class GoogleMapsGroundingChunk {
+    ctor public GoogleMapsGroundingChunk(String? uri, String? title, String? placeId);
+    method public String? getPlaceId();
+    method public String? getTitle();
+    method public String? getUri();
+    property public final String? placeId;
+    property public final String? title;
+    property public final String? uri;
+  }
+
   public final class GoogleSearch {
     ctor public GoogleSearch();
   }
@@ -650,8 +676,12 @@ package com.google.firebase.ai.type {
   }
 
   public final class GroundingChunk {
-    ctor public GroundingChunk(com.google.firebase.ai.type.WebGroundingChunk? web);
+    ctor public GroundingChunk();
+    ctor public GroundingChunk(com.google.firebase.ai.type.WebGroundingChunk? web = null);
+    ctor public GroundingChunk(com.google.firebase.ai.type.WebGroundingChunk? web = null, com.google.firebase.ai.type.GoogleMapsGroundingChunk? maps = null);
+    method public com.google.firebase.ai.type.GoogleMapsGroundingChunk? getMaps();
     method public com.google.firebase.ai.type.WebGroundingChunk? getWeb();
+    property public final com.google.firebase.ai.type.GoogleMapsGroundingChunk? maps;
     property public final com.google.firebase.ai.type.WebGroundingChunk? web;
   }
 
@@ -762,222 +792,222 @@ package com.google.firebase.ai.type {
     property public boolean isThought;
   }
 
-  public final class ImagenAspectRatio {
-    field public static final com.google.firebase.ai.type.ImagenAspectRatio.Companion Companion;
-    field public static final com.google.firebase.ai.type.ImagenAspectRatio LANDSCAPE_16x9;
-    field public static final com.google.firebase.ai.type.ImagenAspectRatio LANDSCAPE_4x3;
-    field public static final com.google.firebase.ai.type.ImagenAspectRatio PORTRAIT_3x4;
-    field public static final com.google.firebase.ai.type.ImagenAspectRatio PORTRAIT_9x16;
-    field public static final com.google.firebase.ai.type.ImagenAspectRatio SQUARE_1x1;
+  @Deprecated public final class ImagenAspectRatio {
+    field @Deprecated public static final com.google.firebase.ai.type.ImagenAspectRatio.Companion Companion;
+    field @Deprecated public static final com.google.firebase.ai.type.ImagenAspectRatio LANDSCAPE_16x9;
+    field @Deprecated public static final com.google.firebase.ai.type.ImagenAspectRatio LANDSCAPE_4x3;
+    field @Deprecated public static final com.google.firebase.ai.type.ImagenAspectRatio PORTRAIT_3x4;
+    field @Deprecated public static final com.google.firebase.ai.type.ImagenAspectRatio PORTRAIT_9x16;
+    field @Deprecated public static final com.google.firebase.ai.type.ImagenAspectRatio SQUARE_1x1;
   }
 
-  public static final class ImagenAspectRatio.Companion {
+  @Deprecated public static final class ImagenAspectRatio.Companion {
   }
 
-  @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenBackgroundMask extends com.google.firebase.ai.type.ImagenMaskReference {
-    ctor public ImagenBackgroundMask(Double? dilation = null);
+  @Deprecated @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenBackgroundMask extends com.google.firebase.ai.type.ImagenMaskReference {
+    ctor @Deprecated public ImagenBackgroundMask(Double? dilation = null);
   }
 
-  @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenControlReference extends com.google.firebase.ai.type.ImagenReferenceImage {
-    ctor public ImagenControlReference(com.google.firebase.ai.type.ImagenControlType type, com.google.firebase.ai.type.ImagenInlineImage? image = null, Integer? referenceId = null, Boolean? enableComputation = null, Integer? superpixelRegionSize = null, Integer? superpixelRuler = null);
+  @Deprecated @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenControlReference extends com.google.firebase.ai.type.ImagenReferenceImage {
+    ctor @Deprecated public ImagenControlReference(com.google.firebase.ai.type.ImagenControlType type, com.google.firebase.ai.type.ImagenInlineImage? image = null, Integer? referenceId = null, Boolean? enableComputation = null, Integer? superpixelRegionSize = null, Integer? superpixelRuler = null);
   }
 
-  public final class ImagenControlType {
-    field public static final com.google.firebase.ai.type.ImagenControlType CANNY;
-    field public static final com.google.firebase.ai.type.ImagenControlType COLOR_SUPERPIXEL;
-    field public static final com.google.firebase.ai.type.ImagenControlType.Companion Companion;
-    field public static final com.google.firebase.ai.type.ImagenControlType FACE_MESH;
-    field public static final com.google.firebase.ai.type.ImagenControlType SCRIBBLE;
+  @Deprecated public final class ImagenControlType {
+    field @Deprecated public static final com.google.firebase.ai.type.ImagenControlType CANNY;
+    field @Deprecated public static final com.google.firebase.ai.type.ImagenControlType COLOR_SUPERPIXEL;
+    field @Deprecated public static final com.google.firebase.ai.type.ImagenControlType.Companion Companion;
+    field @Deprecated public static final com.google.firebase.ai.type.ImagenControlType FACE_MESH;
+    field @Deprecated public static final com.google.firebase.ai.type.ImagenControlType SCRIBBLE;
   }
 
-  public static final class ImagenControlType.Companion {
+  @Deprecated public static final class ImagenControlType.Companion {
   }
 
-  public final class ImagenEditMode {
-    field public static final com.google.firebase.ai.type.ImagenEditMode.Companion Companion;
-    field public static final com.google.firebase.ai.type.ImagenEditMode INPAINT_INSERTION;
-    field public static final com.google.firebase.ai.type.ImagenEditMode INPAINT_REMOVAL;
-    field public static final com.google.firebase.ai.type.ImagenEditMode OUTPAINT;
+  @Deprecated public final class ImagenEditMode {
+    field @Deprecated public static final com.google.firebase.ai.type.ImagenEditMode.Companion Companion;
+    field @Deprecated public static final com.google.firebase.ai.type.ImagenEditMode INPAINT_INSERTION;
+    field @Deprecated public static final com.google.firebase.ai.type.ImagenEditMode INPAINT_REMOVAL;
+    field @Deprecated public static final com.google.firebase.ai.type.ImagenEditMode OUTPAINT;
   }
 
-  public static final class ImagenEditMode.Companion {
+  @Deprecated public static final class ImagenEditMode.Companion {
   }
 
-  @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenEditingConfig {
-    ctor public ImagenEditingConfig(com.google.firebase.ai.type.ImagenEditMode? editMode = null, Integer? editSteps = null);
+  @Deprecated @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenEditingConfig {
+    ctor @Deprecated public ImagenEditingConfig(com.google.firebase.ai.type.ImagenEditMode? editMode = null, Integer? editSteps = null);
   }
 
-  @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenForegroundMask extends com.google.firebase.ai.type.ImagenMaskReference {
-    ctor public ImagenForegroundMask(Double? dilation = null);
+  @Deprecated @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenForegroundMask extends com.google.firebase.ai.type.ImagenMaskReference {
+    ctor @Deprecated public ImagenForegroundMask(Double? dilation = null);
   }
 
-  public final class ImagenGenerationConfig {
-    ctor public ImagenGenerationConfig(String? negativePrompt = null, Integer? numberOfImages = 1, com.google.firebase.ai.type.ImagenAspectRatio? aspectRatio = null, com.google.firebase.ai.type.ImagenImageFormat? imageFormat = null, Boolean? addWatermark = null);
-    method public Boolean? getAddWatermark();
-    method public com.google.firebase.ai.type.ImagenAspectRatio? getAspectRatio();
-    method public com.google.firebase.ai.type.ImagenImageFormat? getImageFormat();
-    method public String? getNegativePrompt();
-    method public Integer? getNumberOfImages();
-    property public final Boolean? addWatermark;
-    property public final com.google.firebase.ai.type.ImagenAspectRatio? aspectRatio;
-    property public final com.google.firebase.ai.type.ImagenImageFormat? imageFormat;
-    property public final String? negativePrompt;
-    property public final Integer? numberOfImages;
-    field public static final com.google.firebase.ai.type.ImagenGenerationConfig.Companion Companion;
+  @Deprecated public final class ImagenGenerationConfig {
+    ctor @Deprecated public ImagenGenerationConfig(String? negativePrompt = null, Integer? numberOfImages = 1, com.google.firebase.ai.type.ImagenAspectRatio? aspectRatio = null, com.google.firebase.ai.type.ImagenImageFormat? imageFormat = null, Boolean? addWatermark = null);
+    method @Deprecated public Boolean? getAddWatermark();
+    method @Deprecated public com.google.firebase.ai.type.ImagenAspectRatio? getAspectRatio();
+    method @Deprecated public com.google.firebase.ai.type.ImagenImageFormat? getImageFormat();
+    method @Deprecated public String? getNegativePrompt();
+    method @Deprecated public Integer? getNumberOfImages();
+    property @Deprecated public final Boolean? addWatermark;
+    property @Deprecated public final com.google.firebase.ai.type.ImagenAspectRatio? aspectRatio;
+    property @Deprecated public final com.google.firebase.ai.type.ImagenImageFormat? imageFormat;
+    property @Deprecated public final String? negativePrompt;
+    property @Deprecated public final Integer? numberOfImages;
+    field @Deprecated public static final com.google.firebase.ai.type.ImagenGenerationConfig.Companion Companion;
   }
 
-  public static final class ImagenGenerationConfig.Builder {
-    ctor public ImagenGenerationConfig.Builder();
-    method public com.google.firebase.ai.type.ImagenGenerationConfig build();
-    method public com.google.firebase.ai.type.ImagenGenerationConfig.Builder setAddWatermark(boolean addWatermark);
-    method public com.google.firebase.ai.type.ImagenGenerationConfig.Builder setAspectRatio(com.google.firebase.ai.type.ImagenAspectRatio aspectRatio);
-    method public com.google.firebase.ai.type.ImagenGenerationConfig.Builder setImageFormat(com.google.firebase.ai.type.ImagenImageFormat imageFormat);
-    method public com.google.firebase.ai.type.ImagenGenerationConfig.Builder setNegativePrompt(String negativePrompt);
-    method public com.google.firebase.ai.type.ImagenGenerationConfig.Builder setNumberOfImages(int numberOfImages);
-    field public Boolean? addWatermark;
-    field public com.google.firebase.ai.type.ImagenAspectRatio? aspectRatio;
-    field public com.google.firebase.ai.type.ImagenImageFormat? imageFormat;
-    field public String? negativePrompt;
-    field public Integer? numberOfImages;
+  @Deprecated public static final class ImagenGenerationConfig.Builder {
+    ctor @Deprecated public ImagenGenerationConfig.Builder();
+    method @Deprecated public com.google.firebase.ai.type.ImagenGenerationConfig build();
+    method @Deprecated public com.google.firebase.ai.type.ImagenGenerationConfig.Builder setAddWatermark(boolean addWatermark);
+    method @Deprecated public com.google.firebase.ai.type.ImagenGenerationConfig.Builder setAspectRatio(com.google.firebase.ai.type.ImagenAspectRatio aspectRatio);
+    method @Deprecated public com.google.firebase.ai.type.ImagenGenerationConfig.Builder setImageFormat(com.google.firebase.ai.type.ImagenImageFormat imageFormat);
+    method @Deprecated public com.google.firebase.ai.type.ImagenGenerationConfig.Builder setNegativePrompt(String negativePrompt);
+    method @Deprecated public com.google.firebase.ai.type.ImagenGenerationConfig.Builder setNumberOfImages(int numberOfImages);
+    field @Deprecated public Boolean? addWatermark;
+    field @Deprecated public com.google.firebase.ai.type.ImagenAspectRatio? aspectRatio;
+    field @Deprecated public com.google.firebase.ai.type.ImagenImageFormat? imageFormat;
+    field @Deprecated public String? negativePrompt;
+    field @Deprecated public Integer? numberOfImages;
   }
 
-  public static final class ImagenGenerationConfig.Companion {
-    method public com.google.firebase.ai.type.ImagenGenerationConfig.Builder builder();
+  @Deprecated public static final class ImagenGenerationConfig.Companion {
+    method @Deprecated public com.google.firebase.ai.type.ImagenGenerationConfig.Builder builder();
   }
 
   public final class ImagenGenerationConfigKt {
-    method public static com.google.firebase.ai.type.ImagenGenerationConfig imagenGenerationConfig(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.ImagenGenerationConfig.Builder,kotlin.Unit> init);
+    method @Deprecated public static com.google.firebase.ai.type.ImagenGenerationConfig imagenGenerationConfig(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.ImagenGenerationConfig.Builder,kotlin.Unit> init);
   }
 
-  public final class ImagenGenerationResponse<T> {
-    method public String? getFilteredReason();
-    method public java.util.List<T> getImages();
-    property public final String? filteredReason;
-    property public final java.util.List<T> images;
+  @Deprecated public final class ImagenGenerationResponse<T> {
+    method @Deprecated public String? getFilteredReason();
+    method @Deprecated public java.util.List<T> getImages();
+    property @Deprecated public final String? filteredReason;
+    property @Deprecated public final java.util.List<T> images;
   }
 
-  public final class ImagenImageFormat {
-    method public Integer? getCompressionQuality();
-    method public String getMimeType();
-    method public static com.google.firebase.ai.type.ImagenImageFormat jpeg(Integer? compressionQuality = null);
-    method public static com.google.firebase.ai.type.ImagenImageFormat png();
-    property public final Integer? compressionQuality;
-    property public final String mimeType;
-    field public static final com.google.firebase.ai.type.ImagenImageFormat.Companion Companion;
+  @Deprecated public final class ImagenImageFormat {
+    method @Deprecated public Integer? getCompressionQuality();
+    method @Deprecated public String getMimeType();
+    method @Deprecated public static com.google.firebase.ai.type.ImagenImageFormat jpeg(Integer? compressionQuality = null);
+    method @Deprecated public static com.google.firebase.ai.type.ImagenImageFormat png();
+    property @Deprecated public final Integer? compressionQuality;
+    property @Deprecated public final String mimeType;
+    field @Deprecated public static final com.google.firebase.ai.type.ImagenImageFormat.Companion Companion;
   }
 
-  public static final class ImagenImageFormat.Companion {
-    method public com.google.firebase.ai.type.ImagenImageFormat jpeg(Integer? compressionQuality = null);
-    method public com.google.firebase.ai.type.ImagenImageFormat png();
+  @Deprecated public static final class ImagenImageFormat.Companion {
+    method @Deprecated public com.google.firebase.ai.type.ImagenImageFormat jpeg(Integer? compressionQuality = null);
+    method @Deprecated public com.google.firebase.ai.type.ImagenImageFormat png();
   }
 
-  public final class ImagenImagePlacement {
-    method public static com.google.firebase.ai.type.ImagenImagePlacement fromCoordinate(int x, int y);
-    method public Integer? getX();
-    method public Integer? getY();
-    property public final Integer? x;
-    property public final Integer? y;
-    field public static final com.google.firebase.ai.type.ImagenImagePlacement BOTTOM_CENTER;
-    field public static final com.google.firebase.ai.type.ImagenImagePlacement BOTTOM_LEFT;
-    field public static final com.google.firebase.ai.type.ImagenImagePlacement BOTTOM_RIGHT;
-    field public static final com.google.firebase.ai.type.ImagenImagePlacement CENTER;
-    field public static final com.google.firebase.ai.type.ImagenImagePlacement.Companion Companion;
-    field public static final com.google.firebase.ai.type.ImagenImagePlacement LEFT_CENTER;
-    field public static final com.google.firebase.ai.type.ImagenImagePlacement RIGHT_CENTER;
-    field public static final com.google.firebase.ai.type.ImagenImagePlacement TOP_CENTER;
-    field public static final com.google.firebase.ai.type.ImagenImagePlacement TOP_LEFT;
-    field public static final com.google.firebase.ai.type.ImagenImagePlacement TOP_RIGHT;
+  @Deprecated public final class ImagenImagePlacement {
+    method @Deprecated public static com.google.firebase.ai.type.ImagenImagePlacement fromCoordinate(int x, int y);
+    method @Deprecated public Integer? getX();
+    method @Deprecated public Integer? getY();
+    property @Deprecated public final Integer? x;
+    property @Deprecated public final Integer? y;
+    field @Deprecated public static final com.google.firebase.ai.type.ImagenImagePlacement BOTTOM_CENTER;
+    field @Deprecated public static final com.google.firebase.ai.type.ImagenImagePlacement BOTTOM_LEFT;
+    field @Deprecated public static final com.google.firebase.ai.type.ImagenImagePlacement BOTTOM_RIGHT;
+    field @Deprecated public static final com.google.firebase.ai.type.ImagenImagePlacement CENTER;
+    field @Deprecated public static final com.google.firebase.ai.type.ImagenImagePlacement.Companion Companion;
+    field @Deprecated public static final com.google.firebase.ai.type.ImagenImagePlacement LEFT_CENTER;
+    field @Deprecated public static final com.google.firebase.ai.type.ImagenImagePlacement RIGHT_CENTER;
+    field @Deprecated public static final com.google.firebase.ai.type.ImagenImagePlacement TOP_CENTER;
+    field @Deprecated public static final com.google.firebase.ai.type.ImagenImagePlacement TOP_LEFT;
+    field @Deprecated public static final com.google.firebase.ai.type.ImagenImagePlacement TOP_RIGHT;
   }
 
-  public static final class ImagenImagePlacement.Companion {
-    method public com.google.firebase.ai.type.ImagenImagePlacement fromCoordinate(int x, int y);
+  @Deprecated public static final class ImagenImagePlacement.Companion {
+    method @Deprecated public com.google.firebase.ai.type.ImagenImagePlacement fromCoordinate(int x, int y);
   }
 
-  public final class ImagenInlineImage {
-    method public android.graphics.Bitmap asBitmap();
-    method public byte[] getData();
-    method public String getMimeType();
-    property public final byte[] data;
-    property public final String mimeType;
+  @Deprecated public final class ImagenInlineImage {
+    method @Deprecated public android.graphics.Bitmap asBitmap();
+    method @Deprecated public byte[] getData();
+    method @Deprecated public String getMimeType();
+    property @Deprecated public final byte[] data;
+    property @Deprecated public final String mimeType;
   }
 
   public final class ImagenInlineImageKt {
-    method @com.google.firebase.ai.type.PublicPreviewAPI public static com.google.firebase.ai.type.ImagenInlineImage toImagenInlineImage(android.graphics.Bitmap);
+    method @Deprecated @com.google.firebase.ai.type.PublicPreviewAPI public static com.google.firebase.ai.type.ImagenInlineImage toImagenInlineImage(android.graphics.Bitmap);
   }
 
-  @com.google.firebase.ai.type.PublicPreviewAPI public abstract class ImagenMaskReference extends com.google.firebase.ai.type.ImagenReferenceImage {
-    method public static final java.util.List<com.google.firebase.ai.type.ImagenReferenceImage> generateMaskAndPadForOutpainting(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.Dimensions newDimensions);
-    method public static final java.util.List<com.google.firebase.ai.type.ImagenReferenceImage> generateMaskAndPadForOutpainting(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.Dimensions newDimensions, com.google.firebase.ai.type.ImagenImagePlacement newPosition = com.google.firebase.ai.type.ImagenImagePlacement.CENTER);
-    method public static final java.util.List<com.google.firebase.ai.type.ImagenReferenceImage> generateMaskAndPadForOutpainting(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.Dimensions newDimensions, com.google.firebase.ai.type.ImagenImagePlacement newPosition = com.google.firebase.ai.type.ImagenImagePlacement.CENTER, double dilation = 0.01);
-    field public static final com.google.firebase.ai.type.ImagenMaskReference.Companion Companion;
+  @Deprecated @com.google.firebase.ai.type.PublicPreviewAPI public abstract class ImagenMaskReference extends com.google.firebase.ai.type.ImagenReferenceImage {
+    method @Deprecated public static final java.util.List<com.google.firebase.ai.type.ImagenReferenceImage> generateMaskAndPadForOutpainting(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.Dimensions newDimensions);
+    method @Deprecated public static final java.util.List<com.google.firebase.ai.type.ImagenReferenceImage> generateMaskAndPadForOutpainting(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.Dimensions newDimensions, com.google.firebase.ai.type.ImagenImagePlacement newPosition = com.google.firebase.ai.type.ImagenImagePlacement.CENTER);
+    method @Deprecated public static final java.util.List<com.google.firebase.ai.type.ImagenReferenceImage> generateMaskAndPadForOutpainting(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.Dimensions newDimensions, com.google.firebase.ai.type.ImagenImagePlacement newPosition = com.google.firebase.ai.type.ImagenImagePlacement.CENTER, double dilation = 0.01);
+    field @Deprecated public static final com.google.firebase.ai.type.ImagenMaskReference.Companion Companion;
   }
 
-  public static final class ImagenMaskReference.Companion {
-    method public java.util.List<com.google.firebase.ai.type.ImagenReferenceImage> generateMaskAndPadForOutpainting(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.Dimensions newDimensions);
-    method public java.util.List<com.google.firebase.ai.type.ImagenReferenceImage> generateMaskAndPadForOutpainting(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.Dimensions newDimensions, com.google.firebase.ai.type.ImagenImagePlacement newPosition = com.google.firebase.ai.type.ImagenImagePlacement.CENTER);
-    method public java.util.List<com.google.firebase.ai.type.ImagenReferenceImage> generateMaskAndPadForOutpainting(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.Dimensions newDimensions, com.google.firebase.ai.type.ImagenImagePlacement newPosition = com.google.firebase.ai.type.ImagenImagePlacement.CENTER, double dilation = 0.01);
+  @Deprecated public static final class ImagenMaskReference.Companion {
+    method @Deprecated public java.util.List<com.google.firebase.ai.type.ImagenReferenceImage> generateMaskAndPadForOutpainting(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.Dimensions newDimensions);
+    method @Deprecated public java.util.List<com.google.firebase.ai.type.ImagenReferenceImage> generateMaskAndPadForOutpainting(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.Dimensions newDimensions, com.google.firebase.ai.type.ImagenImagePlacement newPosition = com.google.firebase.ai.type.ImagenImagePlacement.CENTER);
+    method @Deprecated public java.util.List<com.google.firebase.ai.type.ImagenReferenceImage> generateMaskAndPadForOutpainting(com.google.firebase.ai.type.ImagenInlineImage image, com.google.firebase.ai.type.Dimensions newDimensions, com.google.firebase.ai.type.ImagenImagePlacement newPosition = com.google.firebase.ai.type.ImagenImagePlacement.CENTER, double dilation = 0.01);
   }
 
-  public final class ImagenPersonFilterLevel {
-    field public static final com.google.firebase.ai.type.ImagenPersonFilterLevel ALLOW_ADULT;
-    field public static final com.google.firebase.ai.type.ImagenPersonFilterLevel ALLOW_ALL;
-    field public static final com.google.firebase.ai.type.ImagenPersonFilterLevel BLOCK_ALL;
-    field public static final com.google.firebase.ai.type.ImagenPersonFilterLevel.Companion Companion;
+  @Deprecated public final class ImagenPersonFilterLevel {
+    field @Deprecated public static final com.google.firebase.ai.type.ImagenPersonFilterLevel ALLOW_ADULT;
+    field @Deprecated public static final com.google.firebase.ai.type.ImagenPersonFilterLevel ALLOW_ALL;
+    field @Deprecated public static final com.google.firebase.ai.type.ImagenPersonFilterLevel BLOCK_ALL;
+    field @Deprecated public static final com.google.firebase.ai.type.ImagenPersonFilterLevel.Companion Companion;
   }
 
-  public static final class ImagenPersonFilterLevel.Companion {
+  @Deprecated public static final class ImagenPersonFilterLevel.Companion {
   }
 
-  @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenRawImage extends com.google.firebase.ai.type.ImagenReferenceImage {
-    ctor public ImagenRawImage(com.google.firebase.ai.type.ImagenInlineImage image);
+  @Deprecated @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenRawImage extends com.google.firebase.ai.type.ImagenReferenceImage {
+    ctor @Deprecated public ImagenRawImage(com.google.firebase.ai.type.ImagenInlineImage image);
   }
 
-  @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenRawMask extends com.google.firebase.ai.type.ImagenMaskReference {
-    ctor public ImagenRawMask(com.google.firebase.ai.type.ImagenInlineImage mask, Double? dilation = null);
+  @Deprecated @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenRawMask extends com.google.firebase.ai.type.ImagenMaskReference {
+    ctor @Deprecated public ImagenRawMask(com.google.firebase.ai.type.ImagenInlineImage mask, Double? dilation = null);
   }
 
-  @com.google.firebase.ai.type.PublicPreviewAPI public abstract class ImagenReferenceImage {
-    method public final com.google.firebase.ai.type.ImagenInlineImage? getImage();
-    method public final Integer? getReferenceId();
-    property public final com.google.firebase.ai.type.ImagenInlineImage? image;
-    property public final Integer? referenceId;
+  @Deprecated @com.google.firebase.ai.type.PublicPreviewAPI public abstract class ImagenReferenceImage {
+    method @Deprecated public final com.google.firebase.ai.type.ImagenInlineImage? getImage();
+    method @Deprecated public final Integer? getReferenceId();
+    property @Deprecated public final com.google.firebase.ai.type.ImagenInlineImage? image;
+    property @Deprecated public final Integer? referenceId;
   }
 
-  public final class ImagenSafetyFilterLevel {
-    field public static final com.google.firebase.ai.type.ImagenSafetyFilterLevel BLOCK_LOW_AND_ABOVE;
-    field public static final com.google.firebase.ai.type.ImagenSafetyFilterLevel BLOCK_MEDIUM_AND_ABOVE;
-    field public static final com.google.firebase.ai.type.ImagenSafetyFilterLevel BLOCK_NONE;
-    field public static final com.google.firebase.ai.type.ImagenSafetyFilterLevel BLOCK_ONLY_HIGH;
-    field public static final com.google.firebase.ai.type.ImagenSafetyFilterLevel.Companion Companion;
+  @Deprecated public final class ImagenSafetyFilterLevel {
+    field @Deprecated public static final com.google.firebase.ai.type.ImagenSafetyFilterLevel BLOCK_LOW_AND_ABOVE;
+    field @Deprecated public static final com.google.firebase.ai.type.ImagenSafetyFilterLevel BLOCK_MEDIUM_AND_ABOVE;
+    field @Deprecated public static final com.google.firebase.ai.type.ImagenSafetyFilterLevel BLOCK_NONE;
+    field @Deprecated public static final com.google.firebase.ai.type.ImagenSafetyFilterLevel BLOCK_ONLY_HIGH;
+    field @Deprecated public static final com.google.firebase.ai.type.ImagenSafetyFilterLevel.Companion Companion;
   }
 
-  public static final class ImagenSafetyFilterLevel.Companion {
+  @Deprecated public static final class ImagenSafetyFilterLevel.Companion {
   }
 
-  public final class ImagenSafetySettings {
-    ctor public ImagenSafetySettings(com.google.firebase.ai.type.ImagenSafetyFilterLevel safetyFilterLevel, com.google.firebase.ai.type.ImagenPersonFilterLevel personFilterLevel);
+  @Deprecated public final class ImagenSafetySettings {
+    ctor @Deprecated public ImagenSafetySettings(com.google.firebase.ai.type.ImagenSafetyFilterLevel safetyFilterLevel, com.google.firebase.ai.type.ImagenPersonFilterLevel personFilterLevel);
   }
 
-  @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenSemanticMask extends com.google.firebase.ai.type.ImagenMaskReference {
-    ctor public ImagenSemanticMask(java.util.List<java.lang.Integer> classes, Double? dilation = null);
+  @Deprecated @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenSemanticMask extends com.google.firebase.ai.type.ImagenMaskReference {
+    ctor @Deprecated public ImagenSemanticMask(java.util.List<java.lang.Integer> classes, Double? dilation = null);
   }
 
-  @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenStyleReference extends com.google.firebase.ai.type.ImagenReferenceImage {
-    ctor public ImagenStyleReference(com.google.firebase.ai.type.ImagenInlineImage image, Integer? referenceId = null, String? description = null);
+  @Deprecated @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenStyleReference extends com.google.firebase.ai.type.ImagenReferenceImage {
+    ctor @Deprecated public ImagenStyleReference(com.google.firebase.ai.type.ImagenInlineImage image, Integer? referenceId = null, String? description = null);
   }
 
-  @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenSubjectReference extends com.google.firebase.ai.type.ImagenReferenceImage {
-    ctor public ImagenSubjectReference(com.google.firebase.ai.type.ImagenInlineImage image, Integer? referenceId = null, String? description = null, com.google.firebase.ai.type.ImagenSubjectReferenceType? subjectType = null);
+  @Deprecated @com.google.firebase.ai.type.PublicPreviewAPI public final class ImagenSubjectReference extends com.google.firebase.ai.type.ImagenReferenceImage {
+    ctor @Deprecated public ImagenSubjectReference(com.google.firebase.ai.type.ImagenInlineImage image, Integer? referenceId = null, String? description = null, com.google.firebase.ai.type.ImagenSubjectReferenceType? subjectType = null);
   }
 
-  public final class ImagenSubjectReferenceType {
-    field public static final com.google.firebase.ai.type.ImagenSubjectReferenceType ANIMAL;
-    field public static final com.google.firebase.ai.type.ImagenSubjectReferenceType.Companion Companion;
-    field public static final com.google.firebase.ai.type.ImagenSubjectReferenceType PERSON;
-    field public static final com.google.firebase.ai.type.ImagenSubjectReferenceType PRODUCT;
+  @Deprecated public final class ImagenSubjectReferenceType {
+    field @Deprecated public static final com.google.firebase.ai.type.ImagenSubjectReferenceType ANIMAL;
+    field @Deprecated public static final com.google.firebase.ai.type.ImagenSubjectReferenceType.Companion Companion;
+    field @Deprecated public static final com.google.firebase.ai.type.ImagenSubjectReferenceType PERSON;
+    field @Deprecated public static final com.google.firebase.ai.type.ImagenSubjectReferenceType PRODUCT;
   }
 
-  public static final class ImagenSubjectReferenceType.Companion {
+  @Deprecated public static final class ImagenSubjectReferenceType.Companion {
   }
 
   public final class InlineData {
@@ -1167,6 +1197,17 @@ package com.google.firebase.ai.type {
     method public com.google.firebase.ai.type.JsonSchema<java.lang.String> string(String? description = null, boolean nullable = false, com.google.firebase.ai.type.StringFormat? format = null, String? title = null);
   }
 
+  public final class LatLng {
+    ctor public LatLng(double latitude, double longitude);
+    method public double component1();
+    method public double component2();
+    method public com.google.firebase.ai.type.LatLng copy(double latitude, double longitude);
+    method public double getLatitude();
+    method public double getLongitude();
+    property public final double latitude;
+    property public final double longitude;
+  }
+
   @com.google.firebase.ai.type.PublicPreviewAPI public final class LiveAudioConversationConfig {
     field public static final com.google.firebase.ai.type.LiveAudioConversationConfig.Companion Companion;
   }
@@ -1272,13 +1313,18 @@ package com.google.firebase.ai.type {
     property public final java.util.List<java.lang.String> functionIds;
   }
 
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class LiveServerUnknownMessage implements com.google.firebase.ai.type.LiveServerMessage {
+  }
+
   @com.google.firebase.ai.type.PublicPreviewAPI public final class LiveSession {
     method public suspend Object? close(kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public boolean isAudioConversationActive();
     method public boolean isClosed();
     method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.type.LiveServerMessage> receive();
-    method public suspend Object? send(com.google.firebase.ai.type.Content content, kotlin.coroutines.Continuation<? super kotlin.Unit>);
-    method public suspend Object? send(String text, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public suspend Object? send(com.google.firebase.ai.type.Content content, boolean turnComplete = true, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public suspend Object? send(com.google.firebase.ai.type.Content content, kotlin.coroutines.Continuation<? super kotlin.Unit> = true);
+    method public suspend Object? send(String text, boolean turnComplete = true, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public suspend Object? send(String text, kotlin.coroutines.Continuation<? super kotlin.Unit> = true);
     method public suspend Object? sendAudioRealtime(com.google.firebase.ai.type.InlineData audio, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public suspend Object? sendFunctionResponse(java.util.List<com.google.firebase.ai.type.FunctionResponsePart> functionList, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method @Deprecated public suspend Object? sendMediaStream(java.util.List<com.google.firebase.ai.type.MediaData> mediaChunks, kotlin.coroutines.Continuation<? super kotlin.Unit>);
@@ -1371,6 +1417,28 @@ package com.google.firebase.ai.type {
   public final class ResponseStoppedException extends com.google.firebase.ai.type.FirebaseAIException {
     method public com.google.firebase.ai.type.GenerateContentResponse getResponse();
     property public final com.google.firebase.ai.type.GenerateContentResponse response;
+  }
+
+  public final class RetrievalConfig {
+    method public static com.google.firebase.ai.type.RetrievalConfig.Builder builder();
+    field public static final com.google.firebase.ai.type.RetrievalConfig.Companion Companion;
+  }
+
+  public static final class RetrievalConfig.Builder {
+    ctor public RetrievalConfig.Builder();
+    method public com.google.firebase.ai.type.RetrievalConfig build();
+    method public com.google.firebase.ai.type.RetrievalConfig.Builder setLanguageCode(String? languageCode);
+    method public com.google.firebase.ai.type.RetrievalConfig.Builder setLatLng(com.google.firebase.ai.type.LatLng? latLng);
+    field public String? languageCode;
+    field public com.google.firebase.ai.type.LatLng? latLng;
+  }
+
+  public static final class RetrievalConfig.Companion {
+    method public com.google.firebase.ai.type.RetrievalConfig.Builder builder();
+  }
+
+  public final class RetrievalConfigKt {
+    method public static com.google.firebase.ai.type.RetrievalConfig retrievalConfig(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.RetrievalConfig.Builder,kotlin.Unit> init);
   }
 
   public final class SafetyRating {
@@ -1575,6 +1643,45 @@ package com.google.firebase.ai.type {
     ctor public StringFormat.Custom(String value);
   }
 
+  public final class TemplateAutoFunctionDeclaration<I, O> {
+    method public kotlin.jvm.functions.Function2<I,kotlin.coroutines.Continuation<? super O>,java.lang.Object?>? getFunctionReference();
+    method public com.google.firebase.ai.type.JsonSchema<I> getInputSchema();
+    method public String getName();
+    method public com.google.firebase.ai.type.JsonSchema<O>? getOutputSchema();
+    property public final kotlin.jvm.functions.Function2<I,kotlin.coroutines.Continuation<? super O>,java.lang.Object?>? functionReference;
+    property public final com.google.firebase.ai.type.JsonSchema<I> inputSchema;
+    property public final String name;
+    property public final com.google.firebase.ai.type.JsonSchema<O>? outputSchema;
+    field public static final com.google.firebase.ai.type.TemplateAutoFunctionDeclaration.Companion Companion;
+  }
+
+  public static final class TemplateAutoFunctionDeclaration.Companion {
+    method public <I, O> com.google.firebase.ai.type.TemplateAutoFunctionDeclaration<I,O> create(String functionName, com.google.firebase.ai.type.JsonSchema<I> inputSchema, com.google.firebase.ai.type.JsonSchema<O> outputSchema, kotlin.jvm.functions.Function2<? super I,? super kotlin.coroutines.Continuation<? super O>,? extends java.lang.Object?>? functionReference = null);
+  }
+
+  public class TemplateFunctionDeclaration {
+    ctor public TemplateFunctionDeclaration(String name, com.google.firebase.ai.type.JsonSchema<?>? inputSchema = null, com.google.firebase.ai.type.JsonSchema<?>? outputSchema = null);
+    method public final com.google.firebase.ai.type.JsonSchema<?>? getInputSchema();
+    method public final String getName();
+    method public final com.google.firebase.ai.type.JsonSchema<?>? getOutputSchema();
+    property public final com.google.firebase.ai.type.JsonSchema<?>? inputSchema;
+    property public final String name;
+    property public final com.google.firebase.ai.type.JsonSchema<?>? outputSchema;
+  }
+
+  public final class TemplateTool {
+    method public static com.google.firebase.ai.type.TemplateTool functionDeclarations(java.util.List<? extends com.google.firebase.ai.type.TemplateFunctionDeclaration> functionDeclarations, java.util.List<? extends com.google.firebase.ai.type.TemplateAutoFunctionDeclaration<? extends java.lang.Object?,? extends java.lang.Object?>>? autoFunctionDeclarations = null);
+    field public static final com.google.firebase.ai.type.TemplateTool.Companion Companion;
+  }
+
+  public static final class TemplateTool.Companion {
+    method public com.google.firebase.ai.type.TemplateTool functionDeclarations(java.util.List<? extends com.google.firebase.ai.type.TemplateFunctionDeclaration> functionDeclarations, java.util.List<? extends com.google.firebase.ai.type.TemplateAutoFunctionDeclaration<? extends java.lang.Object?,? extends java.lang.Object?>>? autoFunctionDeclarations = null);
+  }
+
+  public final class TemplateToolConfig {
+    ctor public TemplateToolConfig();
+  }
+
   public final class TextPart implements com.google.firebase.ai.type.Part {
     ctor public TextPart(String text);
     method public String getText();
@@ -1615,6 +1722,8 @@ package com.google.firebase.ai.type {
     method public static com.google.firebase.ai.type.Tool codeExecution();
     method public static com.google.firebase.ai.type.Tool functionDeclarations(java.util.List<com.google.firebase.ai.type.FunctionDeclaration> functionDeclarations);
     method public static com.google.firebase.ai.type.Tool functionDeclarations(java.util.List<com.google.firebase.ai.type.FunctionDeclaration>? functionDeclarations = null, java.util.List<? extends com.google.firebase.ai.type.AutoFunctionDeclaration<? extends java.lang.Object?,? extends java.lang.Object?>>? autoFunctionDeclarations);
+    method public static com.google.firebase.ai.type.Tool googleMaps();
+    method public static com.google.firebase.ai.type.Tool googleMaps(com.google.firebase.ai.type.GoogleMaps googleMaps = com.google.firebase.ai.type.GoogleMaps());
     method public static com.google.firebase.ai.type.Tool googleSearch();
     method public static com.google.firebase.ai.type.Tool googleSearch(com.google.firebase.ai.type.GoogleSearch googleSearch = com.google.firebase.ai.type.GoogleSearch());
     method public static com.google.firebase.ai.type.Tool urlContext();
@@ -1626,6 +1735,8 @@ package com.google.firebase.ai.type {
     method public com.google.firebase.ai.type.Tool codeExecution();
     method public com.google.firebase.ai.type.Tool functionDeclarations(java.util.List<com.google.firebase.ai.type.FunctionDeclaration> functionDeclarations);
     method public com.google.firebase.ai.type.Tool functionDeclarations(java.util.List<com.google.firebase.ai.type.FunctionDeclaration>? functionDeclarations = null, java.util.List<? extends com.google.firebase.ai.type.AutoFunctionDeclaration<? extends java.lang.Object?,? extends java.lang.Object?>>? autoFunctionDeclarations);
+    method public com.google.firebase.ai.type.Tool googleMaps();
+    method public com.google.firebase.ai.type.Tool googleMaps(com.google.firebase.ai.type.GoogleMaps googleMaps = com.google.firebase.ai.type.GoogleMaps());
     method public com.google.firebase.ai.type.Tool googleSearch();
     method public com.google.firebase.ai.type.Tool googleSearch(com.google.firebase.ai.type.GoogleSearch googleSearch = com.google.firebase.ai.type.GoogleSearch());
     method public com.google.firebase.ai.type.Tool urlContext();
@@ -1633,7 +1744,9 @@ package com.google.firebase.ai.type {
   }
 
   public final class ToolConfig {
-    ctor public ToolConfig(com.google.firebase.ai.type.FunctionCallingConfig? functionCallingConfig);
+    ctor public ToolConfig();
+    ctor public ToolConfig(com.google.firebase.ai.type.FunctionCallingConfig? functionCallingConfig = null);
+    ctor public ToolConfig(com.google.firebase.ai.type.FunctionCallingConfig? functionCallingConfig = null, com.google.firebase.ai.type.RetrievalConfig? retrievalConfig = null);
   }
 
   public final class Transcription {

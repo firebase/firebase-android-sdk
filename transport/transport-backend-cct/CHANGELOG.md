@@ -1,5 +1,7 @@
 # Unreleased
 
+- [feature] Support callback when the pseudonymous id was updated
+
 # 4.1.0
 
 - [feature] Support multiple encrypted experiment IDs.

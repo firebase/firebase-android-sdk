@@ -31,7 +31,7 @@ import com.google.firebase.ai.type.PublicPreviewAPI
  * @property seed The seed to use for generation to ensure reproducibility. See [GenerationConfig]
  * for more detail.
  * @property candidateCount The number of generated responses to return. See [GenerationConfig] for
- * more detail. By default it's set to 1.
+ * more detail. By default it's set to `1`.
  */
 @PublicPreviewAPI
 public class OnDeviceConfig
@@ -82,11 +82,18 @@ public class InferenceMode private constructor(private val value: String) {
 /** Indicates the source of the model inference. */
 @PublicPreviewAPI
 public class InferenceSource private constructor(private val value: String) {
+
+  override fun toString(): String = value
+
+  override fun equals(other: Any?): Boolean = other is InferenceSource && value == other.value
+
+  override fun hashCode(): Int = value.hashCode()
+
   public companion object {
     /** Inference was performed on the device. */
-    @JvmField public val ON_DEVICE: InferenceSource = InferenceSource("source on device")
+    @JvmField public val ON_DEVICE: InferenceSource = InferenceSource("On Device")
 
     /** Inference was performed in the cloud. */
-    @JvmField public val IN_CLOUD: InferenceSource = InferenceSource("source in cloud")
+    @JvmField public val IN_CLOUD: InferenceSource = InferenceSource("In Cloud")
   }
 }

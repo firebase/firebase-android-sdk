@@ -32,7 +32,7 @@ public class TestBackendFactory implements BackendFactory {
 
     @Override
     public BackendResponse send(BackendRequest backendRequest) {
-      return BackendResponse.ok(0);
+      return BackendResponse.ok(0, null);
     }
   }
 }

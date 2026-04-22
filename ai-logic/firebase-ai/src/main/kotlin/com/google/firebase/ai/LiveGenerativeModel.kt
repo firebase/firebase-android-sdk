@@ -40,7 +40,6 @@ import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.channels.ClosedReceiveChannelException
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 
 /**
@@ -105,22 +104,23 @@ internal constructor(
    * connection with the server.
    */
   @OptIn(ExperimentalSerializationApi::class)
-  public suspend fun connect(sessionResumption: SessionResumptionConfig? = null): LiveSession {
-    val connectFactory: suspend (SessionResumptionConfig?) -> DefaultClientWebSocketSession = { newResumption ->
-      val clientMessage =
-        LiveClientSetupMessage(
-            modelName,
-            config?.toInternal(),
-            tools.map { it.toInternal() }.takeIf { it.isNotEmpty() },
-            systemInstruction?.toInternal(),
-            config?.inputAudioTranscription?.toInternal(),
-            config?.outputAudioTranscription?.toInternal(),
-            newResumption?.toInternal(),
-            config?.contextWindowCompression?.toInternal()
-          )
-          .toInternal()
-      val data: String = Json.encodeToString(clientMessage)
-      val webSession = controller.getWebSocketSession(location)
+  public suspend fun connect(): LiveSession {
+    val clientMessage =
+      LiveClientSetupMessage(
+          modelName,
+          config?.toInternal(),
+          tools.map { it.toInternal() }.takeIf { it.isNotEmpty() },
+          systemInstruction?.toInternal(),
+          config?.inputAudioTranscription?.toInternal(),
+          config?.outputAudioTranscription?.toInternal(),
+          newResumption?.toInternal(),
+          config?.contextWindowCompression?.toInternal()
+        )
+        .toInternal()
+    val data: String = JSON.encodeToString(clientMessage)
+    var webSession: DefaultClientWebSocketSession? = null
+    try {
+      webSession = controller.getWebSocketSession(location)
       webSession.send(Frame.Text(data))
       val receivedJsonStr = webSession.incoming.receive().readBytes().toString(Charsets.UTF_8)
       val receivedJson = JSON.parseToJsonElement(receivedJsonStr)

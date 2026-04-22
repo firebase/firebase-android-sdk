@@ -36,7 +36,24 @@ public class CacheSettings(
    * The types of cache storage supported by [FirebaseDataConnect] in its [CacheSettings] setting.
    */
   public enum class Storage {
+
+    /**
+     * Cached data is stored ephemerally in memory.
+     *
+     * This storage is extremely fast, but the data is lost entirely when the application process
+     * terminates. It is isolated to the current process and cannot be shared. Note that this cache
+     * consumes RAM while the process is running.
+     */
     MEMORY,
+
+    /**
+     * Cached data is stored persistently on the device's local file system.
+     *
+     * This storage ensures data is retained across application restarts and device reboots. Because
+     * the data is persisted to disk, it may be accessed by multiple processes within the same
+     * application. Note that the data is stored in a directory that will be picked up by Android's
+     * [Auto Backup](https://developer.android.com/identity/data/autobackup) feature.
+     */
     PERSISTENT,
   }
 

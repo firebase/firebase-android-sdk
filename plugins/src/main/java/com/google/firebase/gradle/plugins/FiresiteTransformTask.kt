@@ -73,7 +73,7 @@ abstract class FiresiteTransformTask : DefaultTask() {
   }
 
   private fun File.fixHTMLFile() {
-    val fixedContent = readText().fixBookPath().fixHyperlinksInSeeBlocks()
+    val fixedContent = readText().fixBookPath().fixHyperlinksInSeeBlocks().fixCompanionLinks()
     writeText(fixedContent)
   }
 
@@ -186,4 +186,17 @@ abstract class FiresiteTransformTask : DefaultTask() {
   // TODO(b/243674303): Remove when dackka exposes configuration for this
   private fun String.fixBookPath() =
     remove(Regex("(?<=setvar book_path ?%})(.+)(?=/_book.yaml\\{% ?endsetvar)"))
+
+  /**
+   * Removes ".Companion" from hyperlinks in the rendered HTML.
+   *
+   * Companion object members are flattened into the parent class page, but dackka still generates
+   * links that point to the non-existent Companion object page.
+   *
+   * Example input:
+   * `.../com/google/firebase/ai/type/ImagenEditMode.Companion.html#INPAINT_INSERTION()`
+   *
+   * Example output: `.../com/google/firebase/ai/type/ImagenEditMode.html#INPAINT_INSERTION()`
+   */
+  private fun String.fixCompanionLinks() = replace(".Companion.html", ".html")
 }

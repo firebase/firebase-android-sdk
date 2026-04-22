@@ -33,6 +33,8 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.operationErro
 import com.google.firebase.dataconnect.testutil.property.arbitrary.operationRefConstructorArguments
 import com.google.firebase.dataconnect.testutil.property.arbitrary.operationRefImpl
 import com.google.firebase.dataconnect.testutil.property.arbitrary.queryRefImpl
+import com.google.firebase.dataconnect.testutil.property.arbitrary.random
+import com.google.firebase.dataconnect.testutil.property.arbitrary.randomSeed
 import com.google.firebase.dataconnect.testutil.property.arbitrary.shouldHavePropertiesEqualTo
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
@@ -43,6 +45,7 @@ import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
+import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.string.shouldEndWith
@@ -67,6 +70,7 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
+import kotlin.random.Random
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -90,7 +94,8 @@ class MutationRefImplUnitTest {
   @Test
   fun `constructor should initialize properties to the given objects`() = runTest {
     val argsArb = Arb.dataConnect.operationRefConstructorArguments<TestData, TestVariables>()
-    checkAll(propTestConfig, argsArb) { args ->
+    checkAll(propTestConfig, argsArb, Arb.random()) { args, secureRandom,
+      ->
       val mutationRefImpl =
         MutationRefImpl(
           dataConnect = args.dataConnect,
@@ -101,9 +106,37 @@ class MutationRefImplUnitTest {
           callerSdkType = args.callerSdkType,
           dataSerializersModule = args.dataSerializersModule,
           variablesSerializersModule = args.variablesSerializersModule,
+          secureRandom = secureRandom,
         )
 
       mutationRefImpl.shouldHavePropertiesEqualTo(args)
+    }
+  }
+
+  @Test
+  fun `should use the given secureRandom to generate request IDs`() = runTest {
+    val argsArb = Arb.dataConnect.operationRefConstructorArguments<TestData, TestVariables>()
+    checkAll(propTestConfig, argsArb, Arb.randomSeed()) { args, randomSeed,
+      ->
+      val (mutationRefImpl1, mutationRefImpl2) =
+        List(2) {
+          MutationRefImpl(
+            dataConnect = args.dataConnect,
+            operationName = args.operationName,
+            variables = args.variables,
+            dataDeserializer = args.dataDeserializer,
+            variablesSerializer = args.variablesSerializer,
+            callerSdkType = args.callerSdkType,
+            dataSerializersModule = args.dataSerializersModule,
+            variablesSerializersModule = args.variablesSerializersModule,
+            secureRandom = Random(randomSeed),
+          )
+        }
+
+      val requestIds1 = List(5) { mutationRefImpl1.randomRequestId() }
+      val requestIds2 = List(5) { mutationRefImpl2.randomRequestId() }
+
+      requestIds1 shouldContainExactly requestIds2
     }
   }
 

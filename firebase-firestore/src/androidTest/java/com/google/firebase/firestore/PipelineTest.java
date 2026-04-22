@@ -20,6 +20,22 @@ import static com.google.firebase.firestore.pipeline.Expression.and;
 import static com.google.firebase.firestore.pipeline.Expression.array;
 import static com.google.firebase.firestore.pipeline.Expression.arrayContains;
 import static com.google.firebase.firestore.pipeline.Expression.arrayContainsAny;
+import static com.google.firebase.firestore.pipeline.Expression.arrayFilter;
+import static com.google.firebase.firestore.pipeline.Expression.arrayFirst;
+import static com.google.firebase.firestore.pipeline.Expression.arrayFirstN;
+import static com.google.firebase.firestore.pipeline.Expression.arrayIndexOf;
+import static com.google.firebase.firestore.pipeline.Expression.arrayIndexOfAll;
+import static com.google.firebase.firestore.pipeline.Expression.arrayLast;
+import static com.google.firebase.firestore.pipeline.Expression.arrayLastIndexOf;
+import static com.google.firebase.firestore.pipeline.Expression.arrayLastN;
+import static com.google.firebase.firestore.pipeline.Expression.arrayMaximum;
+import static com.google.firebase.firestore.pipeline.Expression.arrayMaximumN;
+import static com.google.firebase.firestore.pipeline.Expression.arrayMinimum;
+import static com.google.firebase.firestore.pipeline.Expression.arrayMinimumN;
+import static com.google.firebase.firestore.pipeline.Expression.arraySlice;
+import static com.google.firebase.firestore.pipeline.Expression.arraySliceToEnd;
+import static com.google.firebase.firestore.pipeline.Expression.arrayTransform;
+import static com.google.firebase.firestore.pipeline.Expression.arrayTransformWithIndex;
 import static com.google.firebase.firestore.pipeline.Expression.collectionId;
 import static com.google.firebase.firestore.pipeline.Expression.concat;
 import static com.google.firebase.firestore.pipeline.Expression.constant;
@@ -39,20 +55,34 @@ import static com.google.firebase.firestore.pipeline.Expression.logicalMaximum;
 import static com.google.firebase.firestore.pipeline.Expression.logicalMinimum;
 import static com.google.firebase.firestore.pipeline.Expression.map;
 import static com.google.firebase.firestore.pipeline.Expression.mapGet;
+import static com.google.firebase.firestore.pipeline.Expression.multiply;
+import static com.google.firebase.firestore.pipeline.Expression.nor;
 import static com.google.firebase.firestore.pipeline.Expression.not;
 import static com.google.firebase.firestore.pipeline.Expression.notEqual;
 import static com.google.firebase.firestore.pipeline.Expression.nullValue;
 import static com.google.firebase.firestore.pipeline.Expression.or;
+import static com.google.firebase.firestore.pipeline.Expression.parent;
+import static com.google.firebase.firestore.pipeline.Expression.rand;
 import static com.google.firebase.firestore.pipeline.Expression.split;
 import static com.google.firebase.firestore.pipeline.Expression.startsWith;
 import static com.google.firebase.firestore.pipeline.Expression.stringConcat;
 import static com.google.firebase.firestore.pipeline.Expression.subtract;
+import static com.google.firebase.firestore.pipeline.Expression.switchOn;
+import static com.google.firebase.firestore.pipeline.Expression.timestampDiff;
+import static com.google.firebase.firestore.pipeline.Expression.timestampExtract;
+import static com.google.firebase.firestore.pipeline.Expression.timestampExtractWithTimezone;
+import static com.google.firebase.firestore.pipeline.Expression.timestampTruncate;
+import static com.google.firebase.firestore.pipeline.Expression.timestampTruncateWithTimezone;
+import static com.google.firebase.firestore.pipeline.Expression.trunc;
+import static com.google.firebase.firestore.pipeline.Expression.truncToPrecision;
+import static com.google.firebase.firestore.pipeline.Expression.variable;
 import static com.google.firebase.firestore.pipeline.Expression.vector;
 import static com.google.firebase.firestore.pipeline.Ordering.ascending;
 import static com.google.firebase.firestore.pipeline.Ordering.descending;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.isRunningAgainstEmulator;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitFor;
 import static com.google.firebase.firestore.testutil.IntegrationTestUtil.waitForException;
+import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assume.assumeFalse;
 import static org.junit.Assume.assumeTrue;
@@ -68,6 +98,7 @@ import com.google.firebase.firestore.pipeline.AggregateFunction;
 import com.google.firebase.firestore.pipeline.AggregateHints;
 import com.google.firebase.firestore.pipeline.AggregateOptions;
 import com.google.firebase.firestore.pipeline.AggregateStage;
+import com.google.firebase.firestore.pipeline.CollectionGroupOptions;
 import com.google.firebase.firestore.pipeline.CollectionHints;
 import com.google.firebase.firestore.pipeline.CollectionSourceOptions;
 import com.google.firebase.firestore.pipeline.Expression;
@@ -77,6 +108,7 @@ import com.google.firebase.firestore.pipeline.FindNearestStage;
 import com.google.firebase.firestore.pipeline.RawStage;
 import com.google.firebase.firestore.pipeline.UnnestOptions;
 import com.google.firebase.firestore.testutil.IntegrationTestUtil;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
@@ -127,7 +159,7 @@ public class PipelineTest {
     IntegrationTestUtil.tearDown();
   }
 
-  private final Map<String, Map<String, Object>> bookDocs =
+  static final Map<String, Map<String, Object>> bookDocs =
       mapOfEntries(
           entry(
               "book1",
@@ -466,6 +498,108 @@ public class PipelineTest {
   }
 
   @Test
+  public void whereByNorCondition() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(
+                nor(
+                    equal("genre", "Romance"),
+                    equal("genre", "Dystopian"),
+                    equal("genre", "Fantasy"),
+                    greaterThan("published", 1949)))
+            .select("title")
+            .sort(field("title").ascending())
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactlyElementsIn(
+            Lists.newArrayList(
+                ImmutableMap.of("title", "Crime and Punishment"),
+                ImmutableMap.of("title", "The Great Gatsby"),
+                ImmutableMap.of("title", "Timestamp Book")));
+  }
+
+  @Test
+  public void norConditionWithNull() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(
+                map(
+                    ImmutableMap.of(
+                        "a", false,
+                        "b", false,
+                        "c", true,
+                        "d", Expression.nullValue())))
+            .select(
+                nor(field("a").asBoolean(), field("b").asBoolean()).alias("twoConditions"),
+                nor(field("a").asBoolean(), field("b").asBoolean(), field("c").asBoolean())
+                    .alias("threeConditions"),
+                nor(field("a").asBoolean(), field("b").asBoolean(), field("d").asBoolean())
+                    .alias("threeConditionsWithNull"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            mapOfEntries(
+                entry("twoConditions", true),
+                entry("threeConditions", false),
+                entry("threeConditionsWithNull", null)));
+  }
+
+  @Test
+  public void selectWithSwitchOn() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(map(ImmutableMap.of("value", 2)))
+            .select(
+                switchOn(equal(field("value"), 2), constant("two"), constant("NA"))
+                    .alias("result1"),
+                switchOn(equal(field("value"), 3), constant("three"), constant("NA"))
+                    .alias("result2"),
+                switchOn(
+                        equal(field("value"), 1),
+                        constant("one"),
+                        equal(field("value"), 2),
+                        constant("two"),
+                        equal(field("value"), 3),
+                        constant("three"),
+                        constant("NA"))
+                    .alias("result3"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(ImmutableMap.of("result1", "two", "result2", "NA", "result3", "two"));
+  }
+
+  @Test
+  public void testSwitchOnWithNoDefaultValueAndNoMatchingCondition() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(map(ImmutableMap.of("value", 5)))
+            .select(
+                switchOn(
+                        equal(field("value"), 1),
+                        constant("one"),
+                        equal(field("value"), 2),
+                        constant("two"))
+                    .alias("result"))
+            .execute();
+    Exception exception = assertThrows(Exception.class, () -> waitFor(execute));
+    assertThat(exception).hasMessageThat().contains("all switch cases evaluate to false");
+  }
+
+  @Test
   public void offsetAndLimits() {
     Task<Pipeline.Snapshot> execute =
         firestore
@@ -540,6 +674,669 @@ public class PipelineTest {
             .where(equal("tagsCount", 3))
             .execute();
     assertThat(waitFor(execute).getResults()).hasSize(10);
+  }
+
+  @Test
+  public void arrayFirstWorks() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "The Lord of the Rings"))
+            .select(
+                field("tags").arrayFirst().alias("firstTagInstanceMethod"),
+                arrayFirst("tags").alias("firstTagStaticMethod"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of(
+                "firstTagInstanceMethod", "adventure", "firstTagStaticMethod", "adventure"));
+
+    // Test with empty/null/non-existent arrays
+    execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(
+                map(ImmutableMap.of("empty", emptyList(), "nullval", Expression.nullValue())))
+            .select(
+                arrayFirst("empty").alias("emptyResult"),
+                arrayFirst("nullval").alias("nullResult"),
+                arrayFirst("nonExistent").alias("absentResult"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(mapOfEntries(entry("nullResult", null), entry("absentResult", null)));
+    // no emptyResult as arrayFirst returns UNSET for empty arrays
+  }
+
+  @Test
+  public void arrayFirstNWorks() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "The Lord of the Rings"))
+            .select(
+                field("tags").arrayFirstN(2).alias("firstTagsInstanceMethod"),
+                arrayFirstN("tags", constant(4)).alias("firstTagsStaticMethod"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of(
+                "firstTagsInstanceMethod",
+                ImmutableList.of("adventure", "magic"),
+                "firstTagsStaticMethod",
+                ImmutableList.of("adventure", "magic", "epic")));
+
+    // Test with empty/null/non-existent arrays
+    execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(
+                map(ImmutableMap.of("empty", emptyList(), "nullval", Expression.nullValue())))
+            .select(
+                arrayFirstN("empty", 1).alias("emptyResult"),
+                arrayFirstN("nullval", 1).alias("nullResult"),
+                arrayFirstN("nonExistent", 1).alias("absentResult"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            mapOfEntries(
+                entry("emptyResult", emptyList()),
+                entry("nullResult", null),
+                entry("absentResult", null)));
+  }
+
+  @Test
+  public void arrayLastWorks() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "The Lord of the Rings"))
+            .select(
+                field("tags").arrayLast().alias("lastTagInstanceMethod"),
+                arrayLast("tags").alias("lastTagStaticMethod"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of("lastTagInstanceMethod", "epic", "lastTagStaticMethod", "epic"));
+
+    // Test with empty/null/non-existent arrays
+    execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(
+                map(ImmutableMap.of("empty", emptyList(), "nullval", Expression.nullValue())))
+            .select(
+                arrayLast("empty").alias("emptyResult"),
+                arrayLast("nullval").alias("nullResult"),
+                arrayLast("nonExistent").alias("absentResult"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(mapOfEntries(entry("nullResult", null), entry("absentResult", null)));
+    // no emptyResult as arrayLast returns UNSET for empty arrays
+  }
+
+  @Test
+  public void arrayLastNWorks() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "The Lord of the Rings"))
+            .select(
+                field("tags").arrayLastN(2).alias("lastTagsInstanceMethod"),
+                arrayLastN("tags", constant(4)).alias("lastTagsStaticMethod"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of(
+                "lastTagsInstanceMethod",
+                ImmutableList.of("magic", "epic"),
+                "lastTagsStaticMethod",
+                ImmutableList.of("adventure", "magic", "epic")));
+
+    // Test with empty/null/non-existent arrays
+    execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(
+                map(ImmutableMap.of("empty", emptyList(), "nullval", Expression.nullValue())))
+            .select(
+                arrayLastN("empty", 1).alias("emptyResult"),
+                arrayLastN("nullval", 1).alias("nullResult"),
+                arrayLastN("nonExistent", 1).alias("absentResult"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            mapOfEntries(
+                entry("emptyResult", emptyList()),
+                entry("nullResult", null),
+                entry("absentResult", null)));
+  }
+
+  @Test
+  public void arrayMinimumWorks() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "The Lord of the Rings"))
+            .select(
+                field("tags").arrayMinimum().alias("minimumTagInstanceMethod"),
+                arrayMinimum("tags").alias("minimumTagStaticMethod"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of(
+                "minimumTagInstanceMethod", "adventure", "minimumTagStaticMethod", "adventure"));
+
+    // Test with empty/null/non-existent and mixed types
+    execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(
+                map(
+                    ImmutableMap.of(
+                        "empty",
+                        emptyList(),
+                        "nullval",
+                        Expression.nullValue(),
+                        "mixed",
+                        ImmutableList.of(1, "2", 3, "10")))) // Numbers < Strings in Firestore.
+            .select(
+                arrayMinimum("empty").alias("emptyResult"),
+                    arrayMinimum("nullval").alias("nullResult"),
+                arrayMinimum("nonExistent").alias("absentResult"),
+                    arrayMinimum("mixed").alias("mixedResult"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            mapOfEntries(
+                entry("emptyResult", null),
+                entry("nullResult", null),
+                entry("absentResult", null),
+                entry("mixedResult", 1)));
+  }
+
+  @Test
+  public void arrayMinimumNWorks() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "The Lord of the Rings"))
+            .select(
+                field("tags").arrayMinimumN(2).alias("minimumTagsInstanceMethod"),
+                arrayMinimumN("tags", constant(4)).alias("minimumTagsStaticMethod"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of(
+                "minimumTagsInstanceMethod",
+                ImmutableList.of("adventure", "epic"),
+                "minimumTagsStaticMethod",
+                ImmutableList.of("adventure", "epic", "magic")));
+  }
+
+  @Test
+  public void arrayMaximumWorks() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "The Lord of the Rings"))
+            .select(
+                field("tags").arrayMaximum().alias("maximumTagInstanceMethod"),
+                arrayMaximum("tags").alias("maximumTagStaticMethod"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of(
+                "maximumTagInstanceMethod", "magic", "maximumTagStaticMethod", "magic"));
+
+    // Test with empty/null/non-existent and mixed types
+    execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(
+                map(
+                    ImmutableMap.of(
+                        "empty",
+                        emptyList(),
+                        "nullval",
+                        Expression.nullValue(),
+                        "mixed",
+                        ImmutableList.of(1, "2", 3, "10")))) // Strings > Numbers in Firestore.
+            .select(
+                arrayMaximum("empty").alias("emptyResult"),
+                    arrayMaximum("nullval").alias("nullResult"),
+                arrayMaximum("nonExistent").alias("absentResult"),
+                    arrayMaximum("mixed").alias("mixedResult"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            mapOfEntries(
+                entry("emptyResult", null),
+                entry("nullResult", null),
+                entry("absentResult", null),
+                entry("mixedResult", "2")));
+  }
+
+  @Test
+  public void arrayMaximumNWorks() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "The Lord of the Rings"))
+            .select(
+                field("tags").arrayMaximumN(2).alias("maximumTagsInstanceMethod"),
+                arrayMaximumN("tags", constant(4)).alias("maximumTagsStaticMethod"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of(
+                "maximumTagsInstanceMethod",
+                ImmutableList.of("magic", "epic"),
+                "maximumTagsStaticMethod",
+                ImmutableList.of("magic", "epic", "adventure")));
+  }
+
+  @Test
+  public void arrayFilterWorks() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "The Lord of the Rings"))
+            .select(
+                field("tags")
+                    .arrayFilter("tag", notEqual(variable("tag"), "magic"))
+                    .alias("notMagicTags"),
+                arrayFilter("tags", "tag", notEqual(variable("tag"), "epic")).alias("notEpicTags"),
+                field("tags")
+                    .arrayFilter("tag", equal(variable("tag"), "romance"))
+                    .alias("noMatchingTags"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of(
+                "notMagicTags",
+                ImmutableList.of("adventure", "epic"),
+                "notEpicTags",
+                ImmutableList.of("adventure", "magic"),
+                "noMatchingTags",
+                ImmutableList.of()));
+  }
+
+  @Test
+  public void arrayFilterWithMixedTypesAndNullsWorks() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(
+                map(
+                    ImmutableMap.of(
+                        "arr",
+                        ImmutableList.of(
+                            1,
+                            "foo",
+                            Expression.nullValue(),
+                            20.0,
+                            "bar",
+                            30,
+                            "40",
+                            Expression.nullValue()))))
+            .select(
+                field("arr")
+                    .arrayFilter("element", greaterThan(variable("element"), 10))
+                    .alias("filtered"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(ImmutableMap.of("filtered", ImmutableList.of(20.0, 30L)));
+  }
+
+  @Test
+  public void supportsArrayTransformAndArrayTransformWithIndex() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(map(ImmutableMap.of("arr", Arrays.asList(10, 20, 30))))
+            .select(
+                arrayTransform("arr", "element", multiply(variable("element"), 10))
+                    .alias("staticTransform"),
+                field("arr")
+                    .arrayTransform("element", multiply(variable("element"), 10))
+                    .alias("instanceTransform"),
+                arrayTransformWithIndex(
+                        "arr", "element", "i", add(variable("element"), variable("i")))
+                    .alias("staticTransformWithIndex"),
+                field("arr")
+                    .arrayTransformWithIndex(
+                        "element", "i", add(variable("element"), variable("i")))
+                    .alias("instanceTransformWithIndex"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of(
+                "staticTransform",
+                ImmutableList.of(100L, 200L, 300L),
+                "instanceTransform",
+                ImmutableList.of(100L, 200L, 300L),
+                "staticTransformWithIndex",
+                ImmutableList.of(10L, 21L, 32L),
+                "instanceTransformWithIndex",
+                ImmutableList.of(10L, 21L, 32L)));
+  }
+
+  @Test
+  public void supportsArrayTransformWithEmptyArrayAndNulls() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(
+                map(ImmutableMap.of("arr", Arrays.asList(1, null, 3), "empty", ImmutableList.of())))
+            .select(
+                field("arr")
+                    .arrayTransform("element", add(variable("element"), 1))
+                    .alias("transformedWithNulls"),
+                field("empty")
+                    .arrayTransform("element", add(variable("element"), 1))
+                    .alias("transformedEmpty"),
+                field("arr")
+                    .arrayTransformWithIndex(
+                        "element", "idx", add(variable("element"), variable("idx")))
+                    .alias("transformedWithIndex"),
+                field("empty")
+                    .arrayTransformWithIndex(
+                        "element", "idx", add(variable("element"), variable("idx")))
+                    .alias("transformedEmptyWithIndex"))
+            .execute();
+    Map<String, Object> expectedMap = new HashMap<>();
+    expectedMap.put("transformedWithNulls", Arrays.asList(2L, null, 4L));
+    expectedMap.put("transformedEmpty", ImmutableList.of());
+    expectedMap.put("transformedWithIndex", Arrays.asList(1L, null, 5L));
+    expectedMap.put("transformedEmptyWithIndex", ImmutableList.of());
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(expectedMap);
+  }
+
+  @Test
+  public void arraySliceWorks() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "The Lord of the Rings"))
+            .select(
+                arraySlice("tags", 1, 1).alias("staticMethodSlice"),
+                arraySliceToEnd("tags", 1).alias("staticMethodSliceToEnd"),
+                field("tags").arraySlice(1, 1).alias("instanceMethodSlice"),
+                field("tags").arraySliceToEnd(1).alias("instanceMethodSliceToEnd"),
+                field("tags").arraySlice(1, 10).alias("overflowLength"),
+                field("tags").arraySlice(-1, 1).alias("negativeOffset"),
+                field("tags").arraySliceToEnd(-1).alias("negativeOffsetSliceToEnd"),
+                field("tags").arraySliceToEnd(10).alias("overflowOffset"),
+                field("tags").arraySliceToEnd(-10).alias("negativeOverflowOffset"))
+            .execute();
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            mapOfEntries(
+                entry("staticMethodSlice", ImmutableList.of("magic")),
+                entry("staticMethodSliceToEnd", ImmutableList.of("magic", "epic")),
+                entry("instanceMethodSlice", ImmutableList.of("magic")),
+                entry("instanceMethodSliceToEnd", ImmutableList.of("magic", "epic")),
+                entry("overflowLength", ImmutableList.of("magic", "epic")),
+                entry("overflowOffset", ImmutableList.of()),
+                entry("negativeOffset", ImmutableList.of("epic")),
+                entry("negativeOffsetSliceToEnd", ImmutableList.of("epic")),
+                entry("negativeOverflowOffset", ImmutableList.of("adventure", "magic", "epic"))));
+  }
+
+  @Test
+  public void arraySliceThrowsErrorForNegativeLength() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "The Lord of the Rings"))
+            .select(arraySlice("tags", 1, -1).alias("negativeLengthSlice"))
+            .execute();
+    Exception exception = assertThrows(Exception.class, () -> waitFor(execute));
+    assertThat(exception).hasMessageThat().contains("length must be non-negative");
+  }
+
+  @Test
+  public void arrayIndexOfWorks() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "The Lord of the Rings"))
+            .select(
+                arrayIndexOf(field("tags"), "adventure").alias("indexFirst"),
+                arrayIndexOf("tags", "magic").alias("indexSecond"),
+                field("tags").arrayIndexOf("epic").alias("indexLast"),
+                arrayIndexOf("tags", "nonexistent").alias("indexNone"),
+                arrayIndexOf("empty", "anything").alias("indexEmpty"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            mapOfEntries(
+                entry("indexFirst", 0),
+                entry("indexSecond", 1),
+                entry("indexLast", 2),
+                entry("indexNone", -1),
+                entry("indexEmpty", null)));
+
+    // Test with duplicate values
+    execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(map(ImmutableMap.of("arr", ImmutableList.of(1, 2, 3, 2, 1))))
+            .select(arrayIndexOf("arr", 2).alias("firstIndex"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(ImmutableMap.of("firstIndex", 1));
+
+    // Test with null value
+    execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(
+                map(
+                    ImmutableMap.of(
+                        "arr",
+                        ImmutableList.of(1, Expression.nullValue(), 3, 2, 1),
+                        "nullArr",
+                        Expression.nullValue())))
+            .select(
+                arrayIndexOf("arr", null).alias("firstIndex"),
+                arrayIndexOf("nullArr", null).alias("firstIndexNull"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(mapOfEntries(entry("firstIndex", 1), entry("firstIndexNull", null)));
+  }
+
+  @Test
+  public void arrayLastIndexOfWorks() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "The Lord of the Rings"))
+            .select(
+                arrayLastIndexOf(field("tags"), "adventure").alias("lastIndexFirst"),
+                arrayLastIndexOf("tags", "magic").alias("lastIndexSecond"),
+                field("tags").arrayLastIndexOf("epic").alias("lastIndexLast"),
+                arrayLastIndexOf("tags", "nonexistent").alias("lastIndexNone"),
+                arrayLastIndexOf("empty", "anything").alias("lastIndexEmpty"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            mapOfEntries(
+                entry("lastIndexFirst", 0),
+                entry("lastIndexSecond", 1),
+                entry("lastIndexLast", 2),
+                entry("lastIndexNone", -1),
+                entry("lastIndexEmpty", null)));
+
+    // Test with duplicate values
+    execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(map(ImmutableMap.of("arr", ImmutableList.of(1, 2, 3, 2, 1))))
+            .select(arrayLastIndexOf("arr", 2).alias("lastIndex"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(ImmutableMap.of("lastIndex", 3));
+
+    // Test with null value
+    execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(
+                map(
+                    ImmutableMap.of(
+                        "arr",
+                        ImmutableList.of(1, Expression.nullValue(), 3, 2, 1),
+                        "nullArr",
+                        Expression.nullValue())))
+            .select(
+                arrayLastIndexOf("arr", null).alias("lastIndex"),
+                arrayLastIndexOf("nullArr", null).alias("lastIndexNull"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(mapOfEntries(entry("lastIndex", 1), entry("lastIndexNull", null)));
+  }
+
+  @Test
+  public void arrayIndexOfAllWorks() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "The Lord of the Rings"))
+            .select(
+                arrayIndexOfAll(field("tags"), "adventure").alias("indicesFirst"),
+                arrayIndexOfAll("tags", "magic").alias("indicesSecond"),
+                field("tags").arrayIndexOfAll("epic").alias("indicesLast"),
+                arrayIndexOfAll("tags", "nonexistent").alias("indicesNone"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            mapOfEntries(
+                entry("indicesFirst", ImmutableList.of(0L)),
+                entry("indicesSecond", ImmutableList.of(1L)),
+                entry("indicesLast", ImmutableList.of(2L)),
+                entry("indicesNone", emptyList())));
+
+    // Test with duplicate values
+    execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(map(ImmutableMap.of("arr", ImmutableList.of(1, 2, 3, 2, 1))))
+            .select(arrayIndexOfAll("arr", 2).alias("indices"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(ImmutableMap.of("indices", ImmutableList.of(1L, 3L)));
+
+    // Test with null value
+    execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(
+                map(
+                    ImmutableMap.of(
+                        "arr",
+                        ImmutableList.of(1, Expression.nullValue(), 3, Expression.nullValue(), 1),
+                        "nullArr",
+                        Expression.nullValue())))
+            .select(
+                arrayIndexOfAll("arr", null).alias("indices"),
+                arrayIndexOfAll("nullArr", null).alias("indicesNull"),
+                arrayIndexOfAll("nonExistentArray", null).alias("indicesNonExistentArray"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            mapOfEntries(
+                entry("indices", ImmutableList.of(1L, 3L)),
+                entry("indicesNull", null),
+                entry("indicesNonExistentArray", null)));
   }
 
   @Test
@@ -872,6 +1669,203 @@ public class PipelineTest {
   }
 
   @Test
+  public void testLTrim() {
+    assumeFalse("Not implemented.", isRunningAgainstEmulator());
+
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(
+                map(
+                    ImmutableMap.of(
+                        "strWhitespace", "  trimMe  ", "strChars", "xxxtrimMe", "chars", "x")))
+            .select(
+                Expression.ltrim(constant("  trimMe  ")).alias("staticLtrimExpr"),
+                Expression.ltrim("strWhitespace").alias("staticLtrimStr"),
+                field("strWhitespace").ltrim().alias("instLtrim"),
+                Expression.ltrimValue(constant("xxxtrimMe"), "x").alias("staticLtrimValueExprPrim"),
+                Expression.ltrimValue(constant("xxxtrimMe"), constant("x"))
+                    .alias("staticLtrimValueExprExpr"),
+                Expression.ltrimValue("strChars", "x").alias("staticLtrimValueStrPrim"),
+                Expression.ltrimValue("strChars", field("chars")).alias("staticLtrimValueStrExpr"),
+                field("strChars").ltrimValue("x").alias("instLtrimValuePrim"),
+                field("strChars").ltrimValue(field("chars")).alias("instLtrimValueExpr"))
+            .execute();
+
+    Map<String, Object> result = waitFor(execute).getResults().get(0).getData();
+    assertThat(result.get("staticLtrimExpr")).isEqualTo("trimMe  ");
+    assertThat(result.get("staticLtrimStr")).isEqualTo("trimMe  ");
+    assertThat(result.get("instLtrim")).isEqualTo("trimMe  ");
+
+    assertThat(result.get("staticLtrimValueExprPrim")).isEqualTo("trimMe");
+    assertThat(result.get("staticLtrimValueExprExpr")).isEqualTo("trimMe");
+    assertThat(result.get("staticLtrimValueStrPrim")).isEqualTo("trimMe");
+    assertThat(result.get("staticLtrimValueStrExpr")).isEqualTo("trimMe");
+    assertThat(result.get("instLtrimValuePrim")).isEqualTo("trimMe");
+    assertThat(result.get("instLtrimValueExpr")).isEqualTo("trimMe");
+  }
+
+  @Test
+  public void testRTrim() {
+    assumeFalse("Not implemented.", isRunningAgainstEmulator());
+
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(
+                map(
+                    ImmutableMap.of(
+                        "strWhitespace", "  trimMe  ", "strChars", "trimMexxx", "chars", "x")))
+            .select(
+                Expression.rtrim(constant("  trimMe  ")).alias("staticRtrimExpr"),
+                Expression.rtrim("strWhitespace").alias("staticRtrimStr"),
+                field("strWhitespace").rtrim().alias("instRtrim"),
+                Expression.rtrimValue(constant("trimMexxx"), "x").alias("staticRtrimValueExprPrim"),
+                Expression.rtrimValue(constant("trimMexxx"), constant("x"))
+                    .alias("staticRtrimValueExprExpr"),
+                Expression.rtrimValue("strChars", "x").alias("staticRtrimValueStrPrim"),
+                Expression.rtrimValue("strChars", field("chars")).alias("staticRtrimValueStrExpr"),
+                field("strChars").rtrimValue("x").alias("instRtrimValuePrim"),
+                field("strChars").rtrimValue(field("chars")).alias("instRtrimValueExpr"))
+            .execute();
+
+    Map<String, Object> result = waitFor(execute).getResults().get(0).getData();
+    assertThat(result.get("staticRtrimExpr")).isEqualTo("  trimMe");
+    assertThat(result.get("staticRtrimStr")).isEqualTo("  trimMe");
+    assertThat(result.get("instRtrim")).isEqualTo("  trimMe");
+
+    assertThat(result.get("staticRtrimValueExprPrim")).isEqualTo("trimMe");
+    assertThat(result.get("staticRtrimValueExprExpr")).isEqualTo("trimMe");
+    assertThat(result.get("staticRtrimValueStrPrim")).isEqualTo("trimMe");
+    assertThat(result.get("staticRtrimValueStrExpr")).isEqualTo("trimMe");
+    assertThat(result.get("instRtrimValuePrim")).isEqualTo("trimMe");
+    assertThat(result.get("instRtrimValueExpr")).isEqualTo("trimMe");
+  }
+
+  @Test
+  public void testStringRepeat() {
+    assumeFalse("Not implemented.", isRunningAgainstEmulator());
+
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(map(ImmutableMap.of("str", "ha", "count", 3)))
+            .select(
+                Expression.stringRepeat(constant("ha"), 3).alias("staticExprPrim"),
+                Expression.stringRepeat(constant("ha"), constant(3)).alias("staticExprExpr"),
+                Expression.stringRepeat("str", 3).alias("staticStrPrim"),
+                Expression.stringRepeat("str", field("count")).alias("staticStrExpr"),
+                field("str").stringRepeat(3).alias("instPrim"),
+                field("str").stringRepeat(field("count")).alias("instExpr"))
+            .execute();
+
+    Map<String, Object> result = waitFor(execute).getResults().get(0).getData();
+    assertThat(result.get("staticExprPrim")).isEqualTo("hahaha");
+    assertThat(result.get("staticExprExpr")).isEqualTo("hahaha");
+    assertThat(result.get("staticStrPrim")).isEqualTo("hahaha");
+    assertThat(result.get("staticStrExpr")).isEqualTo("hahaha");
+    assertThat(result.get("instPrim")).isEqualTo("hahaha");
+    assertThat(result.get("instExpr")).isEqualTo("hahaha");
+  }
+
+  @Test
+  public void testStringReplaceAll() {
+    assumeFalse("Not implemented.", isRunningAgainstEmulator());
+
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(map(ImmutableMap.of("str", "hello world", "old", "o", "new", "a")))
+            .select(
+                Expression.stringReplaceAll(constant("hello world"), "o", "a")
+                    .alias("staticExprPrim"),
+                Expression.stringReplaceAll(constant("hello world"), constant("o"), constant("a"))
+                    .alias("staticExprExpr"),
+                Expression.stringReplaceAll("str", "o", "a").alias("staticStrPrim"),
+                Expression.stringReplaceAll("str", field("old"), field("new"))
+                    .alias("staticStrExpr"),
+                field("str").stringReplaceAll("o", "a").alias("instPrim"),
+                field("str").stringReplaceAll(field("old"), field("new")).alias("instExpr"))
+            .execute();
+
+    Map<String, Object> result = waitFor(execute).getResults().get(0).getData();
+    assertThat(result.get("staticExprPrim")).isEqualTo("hella warld");
+    assertThat(result.get("staticExprExpr")).isEqualTo("hella warld");
+    assertThat(result.get("staticStrPrim")).isEqualTo("hella warld");
+    assertThat(result.get("staticStrExpr")).isEqualTo("hella warld");
+    assertThat(result.get("instPrim")).isEqualTo("hella warld");
+    assertThat(result.get("instExpr")).isEqualTo("hella warld");
+  }
+
+  @Test
+  public void testStringReplaceOne() {
+    assumeFalse("Not implemented.", isRunningAgainstEmulator());
+
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(map(ImmutableMap.of("str", "hello world", "old", "o", "new", "a")))
+            .select(
+                Expression.stringReplaceOne(constant("hello world"), "o", "a")
+                    .alias("staticExprPrim"),
+                Expression.stringReplaceOne(constant("hello world"), constant("o"), constant("a"))
+                    .alias("staticExprExpr"),
+                Expression.stringReplaceOne("str", "o", "a").alias("staticStrPrim"),
+                Expression.stringReplaceOne("str", field("old"), field("new"))
+                    .alias("staticStrExpr"),
+                field("str").stringReplaceOne("o", "a").alias("instPrim"),
+                field("str").stringReplaceOne(field("old"), field("new")).alias("instExpr"))
+            .execute();
+
+    Map<String, Object> result = waitFor(execute).getResults().get(0).getData();
+    assertThat(result.get("staticExprPrim")).isEqualTo("hella world");
+    assertThat(result.get("staticExprExpr")).isEqualTo("hella world");
+    assertThat(result.get("staticStrPrim")).isEqualTo("hella world");
+    assertThat(result.get("staticStrExpr")).isEqualTo("hella world");
+    assertThat(result.get("instPrim")).isEqualTo("hella world");
+    assertThat(result.get("instExpr")).isEqualTo("hella world");
+  }
+
+  @Test
+  public void testStringIndexOf() {
+    assumeFalse("Not implemented.", isRunningAgainstEmulator());
+
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(map(ImmutableMap.of("str", "hello world", "sub", "world")))
+            .select(
+                Expression.stringIndexOf(constant("hello world"), "world").alias("staticExprPrim"),
+                Expression.stringIndexOf(constant("hello world"), constant("world"))
+                    .alias("staticExprExpr"),
+                Expression.stringIndexOf("str", "world").alias("staticStrPrim"),
+                Expression.stringIndexOf("str", field("sub")).alias("staticStrExpr"),
+                field("str").stringIndexOf("world").alias("instPrim"),
+                field("str").stringIndexOf(field("sub")).alias("instExpr"))
+            .execute();
+
+    Map<String, Object> result = waitFor(execute).getResults().get(0).getData();
+    assertThat(result.get("staticExprPrim")).isEqualTo(6L);
+    assertThat(result.get("staticExprExpr")).isEqualTo(6L);
+    assertThat(result.get("staticStrPrim")).isEqualTo(6L);
+    assertThat(result.get("staticStrExpr")).isEqualTo(6L);
+    assertThat(result.get("instPrim")).isEqualTo(6L);
+    assertThat(result.get("instExpr")).isEqualTo(6L);
+  }
+
+  @Test
   public void testLike() {
     assumeFalse("Regexes are not supported against the emulator.", isRunningAgainstEmulator());
 
@@ -1132,6 +2126,219 @@ public class PipelineTest {
   }
 
   @Test
+  public void testMapSet() {
+    assumeFalse(
+        "Map functions are not supported against the emulator.", isRunningAgainstEmulator());
+
+    Map<String, Object> docData = new HashMap<>();
+    docData.put("existingField", ImmutableMap.of("foo", 1L));
+
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .replaceWith(Expression.map(docData))
+            .limit(1)
+            .select(
+                Expression.mapSet("existingField", "bar", 2).alias("modifiedField"),
+                Expression.mapSet(Expression.map(ImmutableMap.of()), "a", 1).alias("simple"),
+                Expression.mapSet(Expression.map(ImmutableMap.of("a", 1)), "b", 2).alias("add"),
+                Expression.mapSet(Expression.map(ImmutableMap.of("a", 1)), "a", 2)
+                    .alias("overwrite"),
+                Expression.mapSet(Expression.map(ImmutableMap.of("a", 1, "b", 2)), "a", 3, "c", 4)
+                    .alias("multi"),
+                Expression.mapSet(
+                        Expression.map(ImmutableMap.of("a", 1)), "a", field("non_existent"))
+                    .alias("remove"),
+                Expression.mapSet(Expression.map(ImmutableMap.of("a", 1)), "b", null)
+                    .alias("setNull"),
+                Expression.mapSet(
+                        Expression.map(ImmutableMap.of("a", ImmutableMap.of("b", 1))), "a.b", 2)
+                    .alias("setDotted"),
+                Expression.mapSet(Expression.map(ImmutableMap.of()), "", "empty")
+                    .alias("setEmptyKey"),
+                Expression.mapSet(
+                        Expression.map(ImmutableMap.of("a", 1)),
+                        "b",
+                        Expression.add(constant(1), constant(2)))
+                    .alias("setExprVal"),
+                Expression.mapSet(
+                        Expression.map(ImmutableMap.of()), "obj", ImmutableMap.of("hidden", true))
+                    .alias("setNestedMap"),
+                Expression.mapSet(Expression.map(ImmutableMap.of()), "~!@#$%^&*()_+", "special")
+                    .alias("setSpecialChars"),
+                field("existingField").mapSet("instanceKey", 100).alias("instanceSetField"),
+                Expression.map(ImmutableMap.of("x", 1))
+                    .mapSet(constant("y"), constant(2))
+                    .alias("instanceSetConstant"))
+            .execute();
+
+    List<PipelineResult> resultList = waitFor(execute).getResults();
+    assertThat(resultList).isNotEmpty();
+    Map<String, Object> data = resultList.get(0).getData();
+
+    assertThat((Map<?, ?>) data.get("modifiedField")).containsExactly("foo", 1L, "bar", 2L);
+    assertThat((Map<?, ?>) data.get("simple")).containsExactly("a", 1L);
+    assertThat((Map<?, ?>) data.get("add")).containsExactly("a", 1L, "b", 2L);
+    assertThat((Map<?, ?>) data.get("overwrite")).containsExactly("a", 2L);
+    assertThat((Map<?, ?>) data.get("multi")).containsExactly("a", 3L, "b", 2L, "c", 4L);
+    assertThat((Map<?, ?>) data.get("remove")).isEmpty();
+    assertThat((Map<?, ?>) data.get("setNull")).containsExactly("a", 1L, "b", null);
+
+    Map<?, ?> setDotted = (Map<?, ?>) data.get("setDotted");
+    assertThat(setDotted).containsEntry("a.b", 2L);
+    assertThat((Map<?, ?>) setDotted.get("a")).containsExactly("b", 1L);
+
+    assertThat((Map<?, ?>) data.get("setEmptyKey")).containsExactly("", "empty");
+    assertThat((Map<?, ?>) data.get("setExprVal")).containsExactly("a", 1L, "b", 3L);
+    assertThat((Map<?, ?>) data.get("setNestedMap"))
+        .isEqualTo(ImmutableMap.of("obj", ImmutableMap.of("hidden", true)));
+    assertThat((Map<?, ?>) data.get("setSpecialChars")).containsExactly("~!@#$%^&*()_+", "special");
+
+    assertThat((Map<?, ?>) data.get("instanceSetField"))
+        .containsExactly("foo", 1L, "instanceKey", 100L);
+    assertThat((Map<?, ?>) data.get("instanceSetConstant")).containsExactly("x", 1L, "y", 2L);
+  }
+
+  @Test
+  public void testMapKeys() {
+    assumeFalse(
+        "Map functions are not supported against the emulator.", isRunningAgainstEmulator());
+
+    Map<String, Object> docData = new HashMap<>();
+    docData.put("existingField", ImmutableMap.of("foo", 1L));
+
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .replaceWith(Expression.map(docData))
+            .limit(1)
+            .select(
+                Expression.mapKeys("existingField").alias("existingKeys"),
+                Expression.mapKeys(Expression.map(ImmutableMap.of("a", 1, "b", 2))).alias("keys"),
+                Expression.mapKeys(Expression.map(ImmutableMap.of())).alias("empty_keys"),
+                Expression.mapKeys(
+                        Expression.map(ImmutableMap.of("a", ImmutableMap.of("nested", true))))
+                    .alias("nested_keys"),
+                field("existingField").mapKeys().alias("instanceExistingKeys"),
+                Expression.map(ImmutableMap.of("x", 10, "y", 20)).mapKeys().alias("instanceKeys"))
+            .execute();
+
+    List<PipelineResult> resultList = waitFor(execute).getResults();
+    assertThat(resultList).isNotEmpty();
+    Map<String, Object> data = resultList.get(0).getData();
+
+    assertThat((List<?>) data.get("existingKeys")).containsExactly("foo");
+    assertThat((List<?>) data.get("keys")).containsExactly("a", "b");
+    assertThat((List<?>) data.get("empty_keys")).isEmpty();
+    assertThat((List<?>) data.get("nested_keys")).containsExactly("a");
+
+    assertThat((List<?>) data.get("instanceExistingKeys")).containsExactly("foo");
+    assertThat((List<?>) data.get("instanceKeys")).containsExactly("x", "y");
+  }
+
+  @Test
+  public void testMapValues() {
+    assumeFalse(
+        "Map functions are not supported against the emulator.", isRunningAgainstEmulator());
+
+    Map<String, Object> docData = new HashMap<>();
+    docData.put("existingField", ImmutableMap.of("foo", 1L));
+
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .replaceWith(Expression.map(docData))
+            .limit(1)
+            .select(
+                Expression.mapValues("existingField").alias("existingValues"),
+                Expression.mapValues(Expression.map(ImmutableMap.of("a", 1, "b", 2)))
+                    .alias("values"),
+                Expression.mapValues(Expression.map(ImmutableMap.of())).alias("empty_values"),
+                Expression.mapValues(
+                        Expression.map(ImmutableMap.of("a", ImmutableMap.of("nested", true))))
+                    .alias("nested_values"),
+                field("existingField").mapValues().alias("instanceExistingValues"),
+                Expression.map(ImmutableMap.of("x", 10, "y", 20))
+                    .mapValues()
+                    .alias("instanceValues"))
+            .execute();
+
+    List<PipelineResult> resultList = waitFor(execute).getResults();
+    assertThat(resultList).isNotEmpty();
+    Map<String, Object> data = resultList.get(0).getData();
+
+    assertThat((List<?>) data.get("existingValues")).containsExactly(1L);
+    assertThat((List<?>) data.get("values")).containsExactly(1L, 2L);
+    assertThat((List<?>) data.get("empty_values")).isEmpty();
+    assertThat((List<?>) data.get("nested_values"))
+        .containsExactly(ImmutableMap.of("nested", true));
+
+    assertThat((List<?>) data.get("instanceExistingValues")).containsExactly(1L);
+    assertThat((List<?>) data.get("instanceValues")).containsExactly(10L, 20L);
+  }
+
+  @Test
+  public void testMapEntries() {
+    assumeFalse(
+        "Map functions are not supported against the emulator.", isRunningAgainstEmulator());
+
+    Map<String, Object> docData = new HashMap<>();
+    docData.put("existingField", ImmutableMap.of("foo", 1L));
+
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .replaceWith(Expression.map(docData))
+            .limit(1)
+            .select(
+                Expression.mapEntries("existingField").alias("existingEntries"),
+                Expression.mapEntries(Expression.map(ImmutableMap.of("a", 1, "b", 2)))
+                    .alias("entries"),
+                Expression.mapEntries(Expression.map(ImmutableMap.of())).alias("empty_entries"),
+                Expression.mapEntries(
+                        Expression.map(ImmutableMap.of("a", ImmutableMap.of("nested", true))))
+                    .alias("nested_entries"),
+                field("existingField").mapEntries().alias("instanceExistingEntries"),
+                Expression.map(ImmutableMap.of("x", 10, "y", 20))
+                    .mapEntries()
+                    .alias("instanceEntries"))
+            .execute();
+
+    List<PipelineResult> resultList = waitFor(execute).getResults();
+    assertThat(resultList).isNotEmpty();
+    Map<String, Object> data = resultList.get(0).getData();
+
+    assertThat((List<?>) data.get("existingEntries"))
+        .containsExactly(ImmutableMap.of("k", "foo", "v", 1L));
+
+    @SuppressWarnings("unchecked")
+    List<Map<String, Object>> entries = (List<Map<String, Object>>) data.get("entries");
+    assertThat(entries).hasSize(2);
+
+    // Map entry order is not guaranteed, so we check containment instead of strict ordering
+    assertThat(entries).contains(ImmutableMap.of("k", "a", "v", 1L));
+    assertThat(entries).contains(ImmutableMap.of("k", "b", "v", 2L));
+
+    assertThat((List<?>) data.get("empty_entries")).isEmpty();
+    assertThat((List<?>) data.get("nested_entries"))
+        .containsExactly(ImmutableMap.of("k", "a", "v", ImmutableMap.of("nested", true)));
+
+    assertThat((List<?>) data.get("instanceExistingEntries"))
+        .containsExactly(ImmutableMap.of("k", "foo", "v", 1L));
+
+    @SuppressWarnings("unchecked")
+    List<Map<String, Object>> instanceEntries =
+        (List<Map<String, Object>>) data.get("instanceEntries");
+    assertThat(instanceEntries).hasSize(2);
+    assertThat(instanceEntries).contains(ImmutableMap.of("k", "x", "v", 10L));
+    assertThat(instanceEntries).contains(ImmutableMap.of("k", "y", "v", 20L));
+  }
+
+  @Test
   public void testDistanceFunctions() {
     double[] sourceVector = {0.1, 0.1};
     double[] targetVector = {0.5, 0.8};
@@ -1165,15 +2372,24 @@ public class PipelineTest {
             .select("title", "awards.hugo")
             .sort(field("title").descending())
             .execute();
+
+    Map<String, Object> hitchhikerResult;
+    Map<String, Object> duneResult;
+
+    hitchhikerResult =
+        mapOfEntries(
+            entry("title", "The Hitchhiker's Guide to the Galaxy"),
+            entry("awards", ImmutableMap.of("hugo", true)));
+    duneResult =
+        mapOfEntries(entry("title", "Dune"), entry("awards", ImmutableMap.of("hugo", true)));
+
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
-        .containsExactly(
-            ImmutableMap.of("title", "The Hitchhiker's Guide to the Galaxy", "awards.hugo", true),
-            ImmutableMap.of("title", "Dune", "awards.hugo", true));
+        .containsExactly(hitchhikerResult, duneResult);
   }
 
   @Test
-  public void testMapGetWithFieldNameIncludingNotation() {
+  public void testMapGetWithFieldNameIncludingDotNotation() {
     Task<Pipeline.Snapshot> execute =
         firestore
             .pipeline()
@@ -1185,12 +2401,23 @@ public class PipelineTest {
                 field("nestedField.level.1"),
                 mapGet("nestedField", "level.1").mapGet("level.2").alias("nested"))
             .execute();
+
+    Map<String, Object> hitchhikerResult;
+    Map<String, Object> duneResult;
+    hitchhikerResult =
+        mapOfEntries(
+            entry("title", "The Hitchhiker's Guide to the Galaxy"),
+            entry("nestedField", ImmutableMap.of("level", ImmutableMap.of())),
+            entry("nested", true));
+    duneResult =
+        mapOfEntries(
+            entry("title", "Dune"),
+            entry("nestedField", ImmutableMap.of("level", ImmutableMap.of())),
+            entry("nested", null));
+
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
-        .containsExactly(
-            mapOfEntries(
-                entry("title", "The Hitchhiker's Guide to the Galaxy"), entry("nested", true)),
-            mapOfEntries(entry("title", "Dune")));
+        .containsExactly(hitchhikerResult, duneResult);
   }
 
   @Test
@@ -1548,6 +2775,101 @@ public class PipelineTest {
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
         .containsExactly(ImmutableMap.of("count", 3));
+  }
+
+  @Test
+  public void testFirstAndLastAccumulators() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(greaterThan(field("published"), 0))
+            .sort(ascending(field("published")))
+            .aggregate(
+                AggregateFunction.first("rating").alias("firstBookRating"),
+                field("title").first().alias("firstBookTitle"),
+                AggregateFunction.last("rating").alias("lastBookRating"),
+                field("title").last().alias("lastBookTitle"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of(
+                "firstBookRating",
+                4.5,
+                "firstBookTitle",
+                "Pride and Prejudice",
+                "lastBookRating",
+                4.1,
+                "lastBookTitle",
+                "The Handmaid's Tale"));
+  }
+
+  @Test
+  public void testArrayAggAccumulators() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(greaterThan(field("published"), 0))
+            .sort(ascending(field("published")))
+            .aggregate(AggregateFunction.arrayAgg("rating").alias("allRatings"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of(
+                "allRatings", ImmutableList.of(4.5, 4.3, 4.0, 4.2, 4.7, 4.2, 4.6, 4.3, 4.2, 4.1)));
+  }
+
+  @Test
+  public void testArrayAggAccumulatorsWithInstanceMethod() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(greaterThan(field("published"), 0))
+            .sort(ascending(field("published")))
+            .aggregate(field("rating").arrayAgg().alias("allRatings"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of(
+                "allRatings", ImmutableList.of(4.5, 4.3, 4.0, 4.2, 4.7, 4.2, 4.6, 4.3, 4.2, 4.1)));
+  }
+
+  @Test
+  public void testArrayAggDistinctAccumulators() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(greaterThan(field("published"), 0))
+            .aggregate(AggregateFunction.arrayAggDistinct("rating").alias("allDistinctRatings"))
+            .execute();
+
+    Map<String, Object> result = waitFor(execute).getResults().get(0).getData();
+    List<?> distinctRatings = (List<?>) result.get("allDistinctRatings");
+    assertThat(distinctRatings).containsExactly(4.0, 4.1, 4.2, 4.3, 4.5, 4.6, 4.7);
+  }
+
+  @Test
+  public void testArrayAggDistinctAccumulatorsWithInstanceMethod() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(greaterThan(field("published"), 0))
+            .aggregate(field("rating").arrayAggDistinct().alias("allDistinctRatings"))
+            .execute();
+
+    Map<String, Object> result = waitFor(execute).getResults().get(0).getData();
+    List<?> distinctRatings = (List<?>) result.get("allDistinctRatings");
+    assertThat(distinctRatings).containsExactly(4.0, 4.1, 4.2, 4.3, 4.5, 4.6, 4.7);
   }
 
   @Test
@@ -1919,8 +3241,13 @@ public class PipelineTest {
                 Expression.timestampTruncate(field("timestamp"), "day").alias("trunc_day"),
                 Expression.timestampTruncate(field("timestamp"), "hour").alias("trunc_hour"),
                 Expression.timestampTruncate(field("timestamp"), "minute").alias("trunc_minute"),
-                Expression.timestampTruncate(field("timestamp"), "second").alias("trunc_second"))
+                Expression.timestampTruncate(field("timestamp"), "second").alias("trunc_second"),
+                timestampTruncate(field("timestamp"), "year").alias("standalone_str"),
+                field("timestamp").timestampTruncate("month").alias("fluid_str"),
+                timestampTruncate(field("timestamp"), constant("day")).alias("standalone_expr"),
+                field("timestamp").timestampTruncate(constant("hour")).alias("fluid_expr"))
             .execute();
+
     List<PipelineResult> results = waitFor(execute).getResults();
     assertThat(results).hasSize(1);
     Map<String, Object> data = results.get(0).getData();
@@ -1935,6 +3262,7 @@ public class PipelineTest {
     cal.set(Calendar.SECOND, 0);
     cal.set(Calendar.MILLISECOND, 0);
     assertThat(data.get("trunc_year")).isEqualTo(new Timestamp(cal.getTime()));
+    assertThat(data.get("standalone_str")).isEqualTo(new Timestamp(cal.getTime()));
 
     cal.setTime(originalDate);
     cal.set(Calendar.DAY_OF_MONTH, 1);
@@ -1943,6 +3271,7 @@ public class PipelineTest {
     cal.set(Calendar.SECOND, 0);
     cal.set(Calendar.MILLISECOND, 0);
     assertThat(data.get("trunc_month")).isEqualTo(new Timestamp(cal.getTime()));
+    assertThat(data.get("fluid_str")).isEqualTo(new Timestamp(cal.getTime()));
 
     cal.setTime(originalDate);
     cal.set(Calendar.HOUR_OF_DAY, 0);
@@ -1950,12 +3279,14 @@ public class PipelineTest {
     cal.set(Calendar.SECOND, 0);
     cal.set(Calendar.MILLISECOND, 0);
     assertThat(data.get("trunc_day")).isEqualTo(new Timestamp(cal.getTime()));
+    assertThat(data.get("standalone_expr")).isEqualTo(new Timestamp(cal.getTime()));
 
     cal.setTime(originalDate);
     cal.set(Calendar.MINUTE, 0);
     cal.set(Calendar.SECOND, 0);
     cal.set(Calendar.MILLISECOND, 0);
     assertThat(data.get("trunc_hour")).isEqualTo(new Timestamp(cal.getTime()));
+    assertThat(data.get("fluid_expr")).isEqualTo(new Timestamp(cal.getTime()));
 
     cal.setTime(originalDate);
     cal.set(Calendar.SECOND, 0);
@@ -1965,6 +3296,158 @@ public class PipelineTest {
     cal.setTime(originalDate);
     cal.set(Calendar.MILLISECOND, 0);
     assertThat(data.get("trunc_second")).isEqualTo(new Timestamp(cal.getTime()));
+  }
+
+  @Test
+  public void testTimestampTruncWithTimezone() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(equal("title", "Timestamp Book"))
+            .select(
+                timestampTruncateWithTimezone(field("timestamp"), "year", "America/Los_Angeles")
+                    .alias("st_str_str"),
+                field("timestamp")
+                    .timestampTruncateWithTimezone("month", "America/Los_Angeles")
+                    .alias("fl_str_str"),
+                timestampTruncateWithTimezone(
+                        field("timestamp"), constant("day"), constant("America/Los_Angeles"))
+                    .alias("st_expr_expr"),
+                field("timestamp")
+                    .timestampTruncateWithTimezone(
+                        constant("hour"), constant("America/Los_Angeles"))
+                    .alias("fl_expr_expr"))
+            .execute();
+
+    List<PipelineResult> results = waitFor(execute).getResults();
+    assertThat(results).hasSize(1);
+    Map<String, Object> data = results.get(0).getData();
+    Date originalDate = (Date) bookDocs.get("book11").get("timestamp");
+    Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("America/Los_Angeles"));
+
+    cal.setTime(originalDate);
+    cal.set(Calendar.MONTH, Calendar.JANUARY);
+    cal.set(Calendar.DAY_OF_MONTH, 1);
+    cal.set(Calendar.HOUR_OF_DAY, 0);
+    cal.set(Calendar.MINUTE, 0);
+    cal.set(Calendar.SECOND, 0);
+    cal.set(Calendar.MILLISECOND, 0);
+    assertThat(data.get("st_str_str")).isEqualTo(new Timestamp(cal.getTime()));
+
+    cal.setTime(originalDate);
+    cal.set(Calendar.DAY_OF_MONTH, 1);
+    cal.set(Calendar.HOUR_OF_DAY, 0);
+    cal.set(Calendar.MINUTE, 0);
+    cal.set(Calendar.SECOND, 0);
+    cal.set(Calendar.MILLISECOND, 0);
+    assertThat(data.get("fl_str_str")).isEqualTo(new Timestamp(cal.getTime()));
+
+    cal.setTime(originalDate);
+    cal.set(Calendar.HOUR_OF_DAY, 0);
+    cal.set(Calendar.MINUTE, 0);
+    cal.set(Calendar.SECOND, 0);
+    cal.set(Calendar.MILLISECOND, 0);
+    assertThat(data.get("st_expr_expr")).isEqualTo(new Timestamp(cal.getTime()));
+
+    cal.setTime(originalDate);
+    cal.set(Calendar.MINUTE, 0);
+    cal.set(Calendar.SECOND, 0);
+    cal.set(Calendar.MILLISECOND, 0);
+    assertThat(data.get("fl_expr_expr")).isEqualTo(new Timestamp(cal.getTime()));
+  }
+
+  @Test
+  public void testTimestampDiff() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .createFrom(randomCol)
+            .limit(1)
+            .replaceWith(
+                map(
+                    ImmutableMap.of(
+                        "end", new Timestamp(1741437296L, 123456789),
+                        "start", new Timestamp(1741428000L, 0))))
+            .select(
+                timestampDiff("end", "start", "hour").alias("diff_hour"),
+                field("end").timestampDiff(field("start"), "minute").alias("diff_minute"),
+                timestampDiff(field("end"), "start", "second").alias("diff_second"),
+                field("start").timestampDiff("end", "hour").alias("diff_hour_neg"))
+            .execute();
+
+    List<PipelineResult> results = waitFor(execute).getResults();
+    assertThat(results).hasSize(1);
+    Map<String, Object> data = results.get(0).getData();
+    assertThat(data.get("diff_hour")).isEqualTo(2L);
+    assertThat(data.get("diff_minute")).isEqualTo(154L);
+    assertThat(data.get("diff_second")).isEqualTo(9296L);
+    assertThat(data.get("diff_hour_neg")).isEqualTo(-2L);
+  }
+
+  @Test
+  public void testTimestampExtract() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .createFrom(randomCol)
+            .limit(1)
+            .replaceWith(map(ImmutableMap.of("ts", new Timestamp(1741437296L, 123456789))))
+            .select(
+                timestampExtract("ts", "year").alias("year"),
+                field("ts").timestampExtract("month").alias("month"),
+                timestampExtract(field("ts"), constant("day")).alias("day"),
+                field("ts").timestampExtract(constant("hour")).alias("hour"),
+                timestampExtract("ts", constant("minute")).alias("minute"),
+                field("ts").timestampExtract("second").alias("second"),
+                timestampExtract(field("ts"), "millisecond").alias("millis"),
+                field("ts").timestampExtract("microsecond").alias("micros"),
+                timestampExtract(field("ts"), "dayofyear").alias("day_of_year"))
+            .execute();
+
+    List<PipelineResult> results = waitFor(execute).getResults();
+    assertThat(results).hasSize(1);
+    Map<String, Object> data = results.get(0).getData();
+    assertThat(data.get("year")).isEqualTo(2025L);
+    assertThat(data.get("month")).isEqualTo(3L);
+    assertThat(data.get("day")).isEqualTo(8L);
+    assertThat(data.get("hour")).isEqualTo(12L);
+    assertThat(data.get("minute")).isEqualTo(34L);
+    assertThat(data.get("second")).isEqualTo(56L);
+    assertThat(data.get("millis")).isEqualTo(123L);
+    assertThat(data.get("micros")).isEqualTo(123456L);
+    assertThat(data.get("day_of_year")).isEqualTo(67L);
+  }
+
+  @Test
+  public void testTimestampExtractWithTimezone() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .createFrom(randomCol)
+            .limit(1)
+            .replaceWith(map(ImmutableMap.of("ts", new Timestamp(1741437296L, 123456789))))
+            .select(
+                timestampExtractWithTimezone("ts", "hour", "America/Los_Angeles")
+                    .alias("st_str_str"),
+                field("ts")
+                    .timestampExtractWithTimezone("hour", "America/Los_Angeles")
+                    .alias("fl_str_str"),
+                timestampExtractWithTimezone(
+                        field("ts"), constant("hour"), constant("America/Los_Angeles"))
+                    .alias("st_expr_expr"),
+                field("ts")
+                    .timestampExtractWithTimezone(constant("hour"), constant("America/Los_Angeles"))
+                    .alias("fl_expr_expr"))
+            .execute();
+
+    List<PipelineResult> results = waitFor(execute).getResults();
+    assertThat(results).hasSize(1);
+    Map<String, Object> data = results.get(0).getData();
+    assertThat(data.get("st_str_str")).isEqualTo(4L);
+    assertThat(data.get("fl_str_str")).isEqualTo(4L);
+    assertThat(data.get("st_expr_expr")).isEqualTo(4L);
+    assertThat(data.get("fl_expr_expr")).isEqualTo(4L);
   }
 
   @Test
@@ -2009,6 +3492,115 @@ public class PipelineTest {
     assertThat((Double) result.get("ln_rating")).isWithin(0.00001).of(1.54756);
     assertThat((Double) result.get("log_rating")).isWithin(0.00001).of(0.67209);
     assertThat((Double) result.get("log10_rating")).isWithin(0.00001).of(0.67209);
+  }
+
+  @Test
+  public void testRand() {
+    assumeFalse("Rand is not supported against the emulator.", isRunningAgainstEmulator());
+
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .select(rand().alias("randomNumber"))
+            .limit(1)
+            .execute();
+
+    List<PipelineResult> results = waitFor(execute).getResults();
+
+    assertThat(results).hasSize(1);
+    Object randomNumber = results.get(0).getData().get("randomNumber");
+    assertThat(randomNumber).isInstanceOf(Double.class);
+    assertThat((Double) randomNumber).isAtLeast(0.0);
+    assertThat((Double) randomNumber).isLessThan(1.0);
+  }
+
+  @Test
+  public void testTrunc() {
+    assumeFalse("Trunc is not supported against the emulator.", isRunningAgainstEmulator());
+
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(field("title").equal("Pride and Prejudice"))
+            .limit(1)
+            .select(trunc("rating").alias("truncatedRating"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(ImmutableMap.of("truncatedRating", 4.0));
+  }
+
+  @Test
+  public void testTruncWithInstanceMethod() {
+    assumeFalse("Trunc is not supported against the emulator.", isRunningAgainstEmulator());
+
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .where(field("title").equal("Pride and Prejudice"))
+            .limit(1)
+            .select(field("rating").trunc().alias("truncatedRating"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(ImmutableMap.of("truncatedRating", 4.0));
+  }
+
+  @Test
+  public void testTruncToPrecision() {
+    assumeFalse("Trunc is not supported against the emulator.", isRunningAgainstEmulator());
+
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .select(
+                truncToPrecision(constant(4.123456), 0).alias("p0"),
+                truncToPrecision(constant(4.123456), 1).alias("p1"),
+                truncToPrecision(constant(4.123456), 2).alias("p2"),
+                truncToPrecision(constant(4.123456), 4).alias("p4"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of(
+                "p0", 4.0,
+                "p1", 4.1,
+                "p2", 4.12,
+                "p4", 4.1234));
+  }
+
+  @Test
+  public void testTruncToPrecisionWithInstanceMethod() {
+    assumeFalse("Trunc is not supported against the emulator.", isRunningAgainstEmulator());
+
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .select(
+                constant(4.123456).truncToPrecision(0).alias("p0"),
+                constant(4.123456).truncToPrecision(1).alias("p1"),
+                constant(4.123456).truncToPrecision(constant(2)).alias("p2"),
+                constant(4.123456).truncToPrecision(4).alias("p4"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of(
+                "p0", 4.0,
+                "p1", 4.1,
+                "p2", 4.12,
+                "p4", 4.1234));
   }
 
   @Test
@@ -2119,6 +3711,84 @@ public class PipelineTest {
   }
 
   @Test
+  public void testIsType() {
+    assumeFalse(
+        "Type expressions are not supported against the emulator.", isRunningAgainstEmulator());
+
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .replaceWith(
+                map(
+                    mapOfEntries(
+                        entry("int", 1),
+                        entry("float", 1.1),
+                        entry("str", "a string"),
+                        entry("bool", true),
+                        entry("null", null),
+                        entry("geoPoint", new GeoPoint(0.1, 0.2)),
+                        entry("timestamp", new Timestamp(123456, 0)),
+                        entry(
+                            "bytes",
+                            com.google.firebase.firestore.Blob.fromBytes(new byte[] {1, 2, 3})),
+                        entry("docRef", randomCol.document("bar")),
+                        entry("vector", FieldValue.vector(new double[] {1.0, 2.0, 3.0})),
+                        entry(
+                            "map",
+                            map(mapOfEntries(entry("numberK", 1), entry("stringK", "a string")))),
+                        entry("array", array(1, 2, true)))))
+            .select(
+                Expression.isType("int", "int64").alias("isInt64"),
+                Expression.isType("int", "number").alias("isInt64IsNumber"),
+                Expression.isType("int", "decimal128").alias("isInt64IsDecimal128"),
+                Expression.isType("float", "float64").alias("isFloat64"),
+                Expression.isType("float", "number").alias("isFloat64IsNumber"),
+                Expression.isType("float", "decimal128").alias("isFloat64IsDecimal128"),
+                Expression.isType("str", "string").alias("isStr"),
+                Expression.isType("str", "int64").alias("isStrNum"),
+                Expression.isType("int", "string").alias("isNumStr"),
+                Expression.isType("bool", "boolean").alias("isBool"),
+                Expression.isType("null", "null").alias("isNull"),
+                Expression.isType("geoPoint", "geo_point").alias("isGeoPoint"),
+                Expression.isType("timestamp", "timestamp").alias("isTimestamp"),
+                Expression.isType("bytes", "bytes").alias("isBytes"),
+                Expression.isType("docRef", "reference").alias("isDocRef"),
+                Expression.isType("vector", "vector").alias("isVector"),
+                Expression.isType("map", "map").alias("isMap"),
+                Expression.isType("array", "array").alias("isArray"),
+                Expression.isType(constant(1), "int64").alias("exprIsInt64"),
+                field("int").isType("int64").alias("staticIsInt64"))
+            .limit(1)
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            mapOfEntries(
+                entry("isInt64", true),
+                entry("isInt64IsNumber", true),
+                entry("isInt64IsDecimal128", false),
+                entry("isFloat64", true),
+                entry("isFloat64IsNumber", true),
+                entry("isFloat64IsDecimal128", false),
+                entry("isStr", true),
+                entry("isStrNum", false),
+                entry("isNumStr", false),
+                entry("isBool", true),
+                entry("isNull", true),
+                entry("isGeoPoint", true),
+                entry("isTimestamp", true),
+                entry("isBytes", true),
+                entry("isDocRef", true),
+                entry("isVector", true),
+                entry("isMap", true),
+                entry("isArray", true),
+                entry("exprIsInt64", true),
+                entry("staticIsInt64", true)));
+  }
+
+  @Test
   public void testVectorLength() {
     Task<Pipeline.Snapshot> execute =
         firestore
@@ -2187,6 +3857,32 @@ public class PipelineTest {
     assertThat(waitFor(execute).getResults())
         .comparingElementsUsing(DATA_CORRESPONDENCE)
         .containsExactly(ImmutableMap.of("docId", "book4"));
+  }
+
+  @Test
+  public void testSupportsParent() {
+    DocumentReference reviewRef =
+        randomCol.document("book4").collection("reviews").document("review1");
+
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol.getPath())
+            .limit(1)
+            .select(
+                parent(constant(reviewRef)).alias("parentRefStatic"),
+                constant(reviewRef).parent().alias("parentRefInstance"))
+            .select(
+                field("parentRefStatic").documentId().alias("parentIdStatic"),
+                field("parentRefInstance").documentId().alias("parentIdInstance"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            ImmutableMap.of(
+                "parentIdStatic", "book4",
+                "parentIdInstance", "book4"));
   }
 
   @Test
@@ -2318,6 +4014,82 @@ public class PipelineTest {
   }
 
   @Test
+  public void testIfNull() {
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(map(ImmutableMap.of("title", "foo", "name", Expression.nullValue())))
+            .select(
+                Expression.ifNull("title", "default title").alias("staticMethod"),
+                field("title").ifNull("default title").alias("instanceMethod"),
+                field("name").ifNull(field("title")).alias("nameOrTitle"),
+                field("name").ifNull("default name").alias("fieldIsNull"),
+                field("absent").ifNull("default name").alias("fieldIsAbsent"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            mapOfEntries(
+                entry("staticMethod", "foo"),
+                entry("instanceMethod", "foo"),
+                entry("nameOrTitle", "foo"),
+                entry("fieldIsNull", "default name"),
+                entry("fieldIsAbsent", "default name")));
+  }
+
+  @Test
+  public void testCoalesce() {
+    assumeFalse("Coalesce is not supported against the emulator.", isRunningAgainstEmulator());
+
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(randomCol)
+            .limit(1)
+            .replaceWith(
+                map(
+                    ImmutableMap.of(
+                        "numberValue",
+                        1L,
+                        "stringValue",
+                        "unique_coalesce_hello",
+                        "booleanValue",
+                        false,
+                        "nullValue",
+                        Expression.nullValue(),
+                        "nullValue2",
+                        Expression.nullValue())))
+            .select(
+                Expression.coalesce(field("numberValue"), field("stringValue"))
+                    .alias("staticMethod"),
+                field("numberValue").coalesce(field("stringValue")).alias("instanceMethod"),
+                Expression.coalesce(field("nullValue"), field("stringValue")).alias("firstIsNull"),
+                Expression.coalesce(field("nullValue"), field("nullValue2"), field("booleanValue"))
+                    .alias("lastIsNotNull"),
+                Expression.coalesce(field("nullValue"), field("nullValue2")).alias("allFieldsNull"),
+                Expression.coalesce(field("nullValue"), field("nullValue2"), constant("default"))
+                    .alias("allFieldsNullWithDefault"),
+                Expression.coalesce(field("absentField"), field("numberValue"), constant("default"))
+                    .alias("withAbsentField"))
+            .execute();
+
+    assertThat(waitFor(execute).getResults())
+        .comparingElementsUsing(DATA_CORRESPONDENCE)
+        .containsExactly(
+            mapOfEntries(
+                entry("staticMethod", 1L),
+                entry("instanceMethod", 1L),
+                entry("firstIsNull", "unique_coalesce_hello"),
+                entry("lastIsNotNull", false),
+                entry("allFieldsNull", null),
+                entry("allFieldsNullWithDefault", "default"),
+                entry("withAbsentField", 1L)));
+  }
+
+  @Test
   public void testCrossDatabaseRejection() {
     FirebaseFirestore firestore2 = IntegrationTestUtil.testAlternateFirestore();
     CollectionReference collection2 = firestore2.collection("test-collection");
@@ -2334,9 +4106,6 @@ public class PipelineTest {
   public void testOptions() {
     assumeFalse(
         "Certain options are not supported against the emulator yet.", isRunningAgainstEmulator());
-
-    Pipeline.ExecuteOptions opts =
-        new Pipeline.ExecuteOptions().withIndexMode(Pipeline.ExecuteOptions.IndexMode.RECOMMENDED);
 
     double[] vector = {1.0, 2.0, 3.0};
 
@@ -2360,13 +4129,55 @@ public class PipelineTest {
                 new AggregateOptions()
                     .withHints(new AggregateHints().withForceStreamableEnabled()));
 
+    // Should throw an error because there is no index named "abcdef".
+    // The error validates that the backend did attempt to use the index with the name specified
+    // in the forceIndex option.
     RuntimeException exception =
         assertThrows(
             RuntimeException.class,
             () -> {
               waitFor(pipeline.execute());
             });
+
     assertThat(exception.getMessage()).contains("Invalid index");
+  }
+
+  @Test
+  public void testCollectionForceIndex() {
+    assumeFalse(
+        "Certain options are not supported against the emulator yet.", isRunningAgainstEmulator());
+
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collection(
+                randomCol,
+                new CollectionSourceOptions()
+                    .withHints(new CollectionHints().withForceIndex("primary")))
+            .limit(1)
+            .execute();
+
+    List<PipelineResult> results = waitFor(execute).getResults();
+    assertThat(results).hasSize(1);
+  }
+
+  @Test
+  public void testCollectionGroupForceIndex() {
+    assumeFalse(
+        "Certain options are not supported against the emulator yet.", isRunningAgainstEmulator());
+
+    Task<Pipeline.Snapshot> execute =
+        firestore
+            .pipeline()
+            .collectionGroup(
+                randomCol.getId(),
+                new CollectionGroupOptions()
+                    .withHints(new CollectionHints().withForceIndex("primary")))
+            .limit(1)
+            .execute();
+
+    List<PipelineResult> results = waitFor(execute).getResults();
+    assertThat(results).hasSize(1);
   }
 
   @Test

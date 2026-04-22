@@ -27,7 +27,6 @@ import com.google.firebase.crashlytics.buildtools.ndk.internal.elf.ElfSectionHea
 import com.google.firebase.crashlytics.buildtools.ndk.internal.elf.ElfSymbol;
 import com.google.firebase.crashlytics.buildtools.utils.FileUtils;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -47,7 +46,7 @@ public class BuildIdInfoCollector {
     BuildIdInfoContentHandler contentHandler = new BuildIdInfoContentHandler(file.getName());
     try {
       ElfDataParser.parse(file, contentHandler, false);
-    } catch (IOException | NegativeArraySizeException | ArithmeticException ex) {
+    } catch (Exception ex) {
       // TODO(b/289053263): Make build tools support Go binaries smoother.
       // Ignore any file that doesn't parse, or has unexpected opcodeBase, to avoid breaking builds.
       getLogger().logD("Unable to parse binary: " + file.getPath() + " - " + ex.getMessage());

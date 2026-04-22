@@ -63,7 +63,6 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
-import kotlinx.serialization.json.Json
 
 /** Represents a live WebSocket session capable of streaming content to and from the server. */
 @PublicPreviewAPI
@@ -382,14 +381,10 @@ internal constructor(
    * response from the client.
    */
   public suspend fun sendFunctionResponse(functionList: List<FunctionResponsePart>) {
-    FirebaseAIException.catchAsync {
-      val jsonString =
-        Json.encodeToString(
-          BidiGenerateContentToolResponseSetup(functionList.map { it.toInternalFunctionResponse() })
-            .toInternal()
-        )
-      session.send(Frame.Text(jsonString))
-    }
+    sendFrame(
+      BidiGenerateContentToolResponseSetup(functionList.map { it.toInternalFunctionResponse() })
+        .toInternal()
+    )
   }
 
   /**
@@ -403,11 +398,7 @@ internal constructor(
    * results, send 16-bit PCM audio at 24kHz.
    */
   public suspend fun sendAudioRealtime(audio: InlineData) {
-    FirebaseAIException.catchAsync {
-      val jsonString =
-        Json.encodeToString(BidiGenerateContentRealtimeInputSetup(audio = audio).toInternal())
-      session.send(Frame.Text(jsonString))
-    }
+    sendFrame(BidiGenerateContentRealtimeInputSetup(audio = audio).toInternal())
   }
 
   /**
@@ -425,11 +416,7 @@ internal constructor(
    * data (for example, `image/png`, `image/jpeg`, etc.).
    */
   public suspend fun sendVideoRealtime(video: InlineData) {
-    FirebaseAIException.catchAsync {
-      val jsonString =
-        Json.encodeToString(BidiGenerateContentRealtimeInputSetup(video = video).toInternal())
-      session.send(Frame.Text(jsonString))
-    }
+    sendFrame(BidiGenerateContentRealtimeInputSetup(video = video).toInternal())
   }
 
   /**
@@ -438,11 +425,7 @@ internal constructor(
    * @param text Text content to append to the current client's conversation.
    */
   public suspend fun sendTextRealtime(text: String) {
-    FirebaseAIException.catchAsync {
-      val jsonString =
-        Json.encodeToString(BidiGenerateContentRealtimeInputSetup(text = text).toInternal())
-      session.send(Frame.Text(jsonString))
-    }
+    sendFrame(BidiGenerateContentRealtimeInputSetup(text = text).toInternal())
   }
 
   /**
@@ -456,16 +439,10 @@ internal constructor(
   public suspend fun sendMediaStream(
     mediaChunks: List<MediaData>,
   ) {
-    FirebaseAIException.catchAsync {
-      val jsonString =
-        Json.encodeToString(
-          BidiGenerateContentRealtimeInputSetup(
-              mediaChunks.map { InlineData(it.data, it.mimeType) }
-            )
-            .toInternal()
-        )
-      session.send(Frame.Text(jsonString))
-    }
+    sendFrame(
+      BidiGenerateContentRealtimeInputSetup(mediaChunks.map { InlineData(it.data, it.mimeType) })
+        .toInternal()
+    )
   }
 
   /**
@@ -474,16 +451,28 @@ internal constructor(
    * Calling this after [startAudioConversation] will play the response audio immediately.
    *
    * @param content Client [Content] to be sent to the model.
+   * @param turnComplete Whether the user's input turn has finished.
    */
-  public suspend fun send(content: Content) {
+  @JvmOverloads
+  public suspend fun send(content: Content, turnComplete: Boolean = true) {
+    sendFrame(
+      BidiGenerateContentClientContentSetup(listOf(content.toInternal()), turnComplete).toInternal()
+    )
+  }
+
+  /**
+   * Encodes the provided data to a JSON string and sends it over the WebSocket session.
+   *
+   * If an exception is thrown, it will be handled by [FirebaseAIException.catchAsync]
+   *
+   * @param T The type of the data to be sent, which must be serializable.
+   * @param data The data object to be encoded and sent.
+   */
+  private suspend inline fun <reified T> sendFrame(data: T) =
     FirebaseAIException.catchAsync {
-      val jsonString =
-        Json.encodeToString(
-          BidiGenerateContentClientContentSetup(listOf(content.toInternal()), true).toInternal()
-        )
+      val jsonString = JSON.encodeToString(data)
       session.send(Frame.Text(jsonString))
     }
-  }
 
   /**
    * Sends text to the model.
@@ -491,9 +480,11 @@ internal constructor(
    * Calling this after [startAudioConversation] will play the response audio immediately.
    *
    * @param text Text to be sent to the model.
+   * @param turnComplete Whether the user's input turn has finished.
    */
-  public suspend fun send(text: String) {
-    FirebaseAIException.catchAsync { send(Content.Builder().text(text).build()) }
+  @JvmOverloads
+  public suspend fun send(text: String, turnComplete: Boolean = true) {
+    FirebaseAIException.catchAsync { send(Content.Builder().text(text).build(), turnComplete) }
   }
 
   /**
@@ -626,6 +617,7 @@ internal constructor(
             // Notify the application
             goAwayHandler?.invoke(it)
           }
+          is LiveServerUnknownMessage -> {} // Ignore. Logging happens at de-serialization time
         }
       }
       .launchIn(networkScope)

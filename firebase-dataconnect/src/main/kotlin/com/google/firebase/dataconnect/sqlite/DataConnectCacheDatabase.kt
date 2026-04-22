@@ -20,6 +20,7 @@ import android.annotation.SuppressLint
 import android.database.sqlite.SQLiteDatabase
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
+import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase.GetQueryResultResult
 import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.execSQL
 import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.getLastInsertRowId
 import com.google.firebase.dataconnect.sqlite.SQLiteDatabaseExts.rawQuery
@@ -33,6 +34,7 @@ import google.firebase.dataconnect.proto.kotlinsdk.QueryResultExpiry
 import java.io.File
 import java.math.BigInteger
 import java.util.concurrent.Executors
+import kotlin.reflect.KClass
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.nanoseconds
@@ -465,52 +467,73 @@ internal class DataConnectCacheDatabase(
   suspend fun getQueryResult(
     authUid: String?,
     queryId: ImmutableByteArray,
-    currentTimeMillis: Long
-  ): GetQueryResultResult =
-  // TODO: convert to read-only transaction so it can be run concurrently
-  runReadWriteTransaction { sqliteDatabase ->
-    val sqliteUserId = sqliteDatabase.getOrInsertAuthUid(authUid)
-    val getQueryResult = sqliteDatabase.getQuery(sqliteUserId, queryId)
-    if (getQueryResult === null) {
-      GetQueryResultResult.NotFound
-    } else {
-      val (sqliteQueryId, queryResultProto, expiryProto) = getQueryResult
+    currentTimeMillis: Long,
+    staleResult: KClass<out GetQueryResultResult>,
+  ): GetQueryResultResult {
+    require(staleResult in supportedStaleResults) {
+      val supportedStaleResultsString =
+        supportedStaleResults.map { it.simpleName ?: "" }.sorted().joinToString()
+      "unsupported staleResult: $staleResult " +
+        "(supported values $supportedStaleResultsString) [a7zkmf2rq8]"
+    }
 
-      val staleness = expiryProto.calculateStaleness(currentTimeMillis)
-      val staleDuration =
-        when (staleness) {
-          is Staleness.Stale -> staleness.staleness
-          Staleness.Invalid -> Duration.ZERO
-          Staleness.Unspecified -> Duration.ZERO
-          is Staleness.Fresh -> null
+    // TODO: convert to read-only transaction so it can be run concurrently
+    return runReadWriteTransaction { sqliteDatabase ->
+      val sqliteUserId = sqliteDatabase.getOrInsertAuthUid(authUid)
+      val getQueryResult = sqliteDatabase.getQuery(sqliteUserId, queryId)
+      if (getQueryResult === null) {
+        GetQueryResultResult.NotFound
+      } else {
+        val (sqliteQueryId, queryResultProto, expiryProto) = getQueryResult
+
+        val staleness = expiryProto.calculateStaleness(currentTimeMillis)
+        val staleDuration =
+          when (staleness) {
+            is Staleness.Stale -> staleness.staleness
+            Staleness.Invalid -> Duration.ZERO
+            Staleness.Unspecified -> Duration.ZERO
+            is Staleness.Fresh -> staleness.freshnessRemaining
+          }
+
+        if (staleness !is Staleness.Fresh && staleResult != GetQueryResultResult.Found::class) {
+          when (staleResult) {
+            GetQueryResultResult.NotFound::class ->
+              return@runReadWriteTransaction GetQueryResultResult.NotFound
+            GetQueryResultResult.Stale::class ->
+              return@runReadWriteTransaction GetQueryResultResult.Stale(staleDuration)
+            else ->
+              throw IllegalArgumentException(
+                "internal error eheprtkz29: should not get here: staleResult=$staleResult"
+              )
+          }
         }
-      if (staleDuration !== null) {
-        return@runReadWriteTransaction GetQueryResultResult.Stale(staleDuration)
-      }
-      check(staleness is Staleness.Fresh) {
-        "internal error h4v35rdhh4: staleness=$staleness (${staleness::class.qualifiedName}), " +
-          "but expected Staleness.Fresh (${Staleness.Fresh::class.qualifiedName})"
-      }
 
-      val entityIds: Set<String> = queryResultProto.referencedEntityIds()
-      val entityStructByEntityId =
-        sqliteDatabase.getEntities(
-          sqliteUserId,
-          entityIds,
-          EntityParseFailureAction.Error,
-        )
+        val entityIds: Set<String> = queryResultProto.referencedEntityIds()
+        val entityStructByEntityId =
+          sqliteDatabase.getEntities(
+            sqliteUserId,
+            entityIds,
+            EntityParseFailureAction.Error,
+          )
 
-      val rehydrateResult = runCatching {
-        rehydrateQueryResult(queryResultProto, entityStructByEntityId)
-      }
-      rehydrateResult.onFailure {
-        logger.warn {
-          "rehydrateQueryResult failed for id=${sqliteQueryId.sqliteRowId}, " +
-            "queryId=${queryId.to0xHexString()} [knpe3t4f5b]"
+        val rehydrateResult = runCatching {
+          rehydrateQueryResult(queryResultProto, entityStructByEntityId)
         }
-      }
+        rehydrateResult.onFailure {
+          logger.warn {
+            "rehydrateQueryResult failed for id=${sqliteQueryId.sqliteRowId}, " +
+              "queryId=${queryId.to0xHexString()} [knpe3t4f5b]"
+          }
+        }
 
-      GetQueryResultResult.Found(rehydrateResult.getOrThrow(), staleness.freshnessRemaining)
+        val staleDurationMultiplier =
+          when (staleness) {
+            is Staleness.Stale -> -1
+            else -> 1
+          }
+        val freshnessRemaining = staleDuration * staleDurationMultiplier
+        GetQueryResultResult.Found(rehydrateResult.getOrThrow(), freshnessRemaining)
+      }
     }
   }
 
@@ -746,3 +769,10 @@ private fun BigInteger.signedDurationFromNanoseconds(): SignedDuration {
     }
   }
 }
+
+private val supportedStaleResults =
+  listOf(
+    GetQueryResultResult.NotFound::class,
+    GetQueryResultResult.Found::class,
+    GetQueryResultResult.Stale::class,
+  )

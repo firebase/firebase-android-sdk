@@ -18,9 +18,11 @@ package com.google.firebase.dataconnect.core
 
 import android.content.Context
 import com.google.android.gms.security.ProviderInstaller
+import com.google.firebase.dataconnect.CachedDataNotFoundException
 import com.google.firebase.dataconnect.DataConnectPath
 import com.google.firebase.dataconnect.DataConnectPathSegment
 import com.google.firebase.dataconnect.FirebaseDataConnect
+import com.google.firebase.dataconnect.QueryRef.FetchPolicy
 import com.google.firebase.dataconnect.core.DataConnectGrpcMetadata.Companion.toStructProto
 import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
@@ -185,8 +187,10 @@ internal class DataConnectGrpcRPCs(
     requestId: String,
     request: ExecuteMutationRequest,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
+    authToken: DataConnectAuth.GetAuthTokenResult?,
+    appCheckToken: DataConnectAppCheck.GetAppCheckTokenResult?,
   ): ExecuteMutationResponse {
-    val metadata = grpcMetadata.get(requestId, callerSdkType).metadata
+    val metadata = grpcMetadata.get(authToken, appCheckToken, callerSdkType)
     val kotlinMethodName = "executeMutation(${request.operationName})"
 
     logger.logGrpcSending(
@@ -196,6 +200,7 @@ internal class DataConnectGrpcRPCs(
       metadata = metadata,
       request = request.toStructProto(),
       requestTypeName = "ExecuteMutationRequest",
+      authUid = authToken?.authUid,
     )
 
     val result = lazyGrpcStub.get().runCatching { executeMutation(request, metadata) }
@@ -240,7 +245,7 @@ internal class DataConnectGrpcRPCs(
       QueryCacheInfo(
         cacheDb,
         authUid = authToken?.authUid,
-        queryId = request.toQueryId(),
+        queryId = request.calculateQueryId(),
         maxAge = maxAge,
       )
     }
@@ -249,8 +254,11 @@ internal class DataConnectGrpcRPCs(
     requestId: String,
     request: ExecuteQueryRequest,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
+    fetchPolicy: FetchPolicy,
+    authToken: DataConnectAuth.GetAuthTokenResult?,
+    appCheckToken: DataConnectAppCheck.GetAppCheckTokenResult?,
   ): ExecuteQueryResult {
-    val (metadata, authToken) = grpcMetadata.get(requestId, callerSdkType)
+    val metadata = grpcMetadata.get(authToken, appCheckToken, callerSdkType)
     val kotlinMethodName = "executeQuery(${request.operationName})"
 
     logger.logGrpcSending(
@@ -260,27 +268,20 @@ internal class DataConnectGrpcRPCs(
       metadata = metadata,
       request = request.toStructProto(),
       requestTypeName = "ExecuteQueryRequest",
+      authUid = authToken?.authUid,
     )
 
     val cacheInfo = queryCacheInfo(authToken, request)
 
-    cacheInfo?.run {
-      when (val cachedResult = cacheDb.getQueryResult(authUid, queryId, currentTimeMillis())) {
-        is DataConnectCacheDatabase.GetQueryResultResult.Found -> {
-          logger.logGrpcReturningFromCache(
-            requestId = requestId,
-            kotlinMethodName = kotlinMethodName,
-            cachedResult = cachedResult,
-          )
-          return ExecuteQueryResult.FromCache(cachedResult.struct)
-        }
-        is DataConnectCacheDatabase.GetQueryResultResult.Stale ->
-          logger.logGrpcIgnoringStaleCache(
-            requestId = requestId,
-            kotlinMethodName = kotlinMethodName,
-            cachedResult = cachedResult,
-          )
-        is DataConnectCacheDatabase.GetQueryResultResult.NotFound -> {}
+    if (fetchPolicy != FetchPolicy.SERVER_ONLY) {
+      val cachedResult: ExecuteQueryResult.FromCache? =
+        cacheInfo?.executeQueryAgainstCache(
+          requestId = requestId,
+          kotlinMethodName = kotlinMethodName,
+          fetchPolicy = fetchPolicy,
+        )
+      if (cachedResult !== null) {
+        return cachedResult
       }
     }
 
@@ -315,6 +316,54 @@ internal class DataConnectGrpcRPCs(
     }
 
     return ExecuteQueryResult.FromServer(result.getOrThrow())
+  }
+
+  private suspend fun QueryCacheInfo.executeQueryAgainstCache(
+    requestId: String,
+    kotlinMethodName: String,
+    fetchPolicy: FetchPolicy,
+  ): ExecuteQueryResult.FromCache? {
+    val staleResult =
+      when (fetchPolicy) {
+        FetchPolicy.CACHE_ONLY -> DataConnectCacheDatabase.GetQueryResultResult.Found::class
+        else -> DataConnectCacheDatabase.GetQueryResultResult.Stale::class
+      }
+
+    val cachedResult = cacheDb.getQueryResult(authUid, queryId, currentTimeMillis(), staleResult)
+
+    val cachedData: Struct? =
+      when (cachedResult) {
+        is DataConnectCacheDatabase.GetQueryResultResult.Found -> {
+          logger.logGrpcReturningFromCache(
+            requestId = requestId,
+            kotlinMethodName = kotlinMethodName,
+            cachedResult = cachedResult,
+          )
+          cachedResult.struct
+        }
+        is DataConnectCacheDatabase.GetQueryResultResult.Stale -> {
+          logger.logGrpcIgnoringStaleCache(
+            requestId = requestId,
+            kotlinMethodName = kotlinMethodName,
+            cachedResult = cachedResult,
+          )
+          null
+        }
+        is DataConnectCacheDatabase.GetQueryResultResult.NotFound -> null
+      }
+
+    if (cachedData === null && fetchPolicy == FetchPolicy.CACHE_ONLY) {
+      val exception =
+        CachedDataNotFoundException("query was not found in the local cache [cck6p3fmd5]")
+      logger.logGrpcFailed(
+        requestId = requestId,
+        kotlinMethodName = kotlinMethodName,
+        throwable = exception,
+      )
+      throw exception
+    }
+
+    return cachedData?.let(ExecuteQueryResult::FromCache)
   }
 
   suspend fun getEmulatorInfo(requestId: String): EmulatorInfo {
@@ -399,15 +448,25 @@ internal class DataConnectGrpcRPCs(
 
     // Avoid blocking the calling thread by running potentially-blocking code on the dispatcher
     // given to the constructor, which should have similar semantics to [Dispatchers.IO].
+    val grpcChannelShutdownResult: Result<*>
+    val cacheDbCloseResult: Result<*>
     withContext(blockingCoroutineDispatcher) {
-      val grpcChannelShutdownResult = runCatching {
+      grpcChannelShutdownResult = runCatching {
         grpcChannel?.shutdownNow()
         grpcChannel?.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS)
       }
-      val cacheDbCloseResult = runCatching { cacheDb?.db?.close() }
+      cacheDbCloseResult = runCatching { cacheDb?.db?.close() }
+    }
 
-      grpcChannelShutdownResult.getOrThrow()
-      cacheDbCloseResult.getOrThrow()
+    // Bundle together any exceptions that were thrown.
+    val exceptions =
+      listOf(
+          grpcChannelShutdownResult,
+          cacheDbCloseResult,
+        )
+        .mapNotNull { it.exceptionOrNull() }
+    if (exceptions.isNotEmpty()) {
+      throw exceptions.first().apply { exceptions.drop(1).forEach { addSuppressed(it) } }
     }
   }
 
@@ -418,11 +477,12 @@ internal class DataConnectGrpcRPCs(
       grpcMethod: MethodDescriptor<*, *>,
       metadata: Metadata,
       request: Struct,
-      requestTypeName: String
+      requestTypeName: String,
+      authUid: String?,
     ) = debug {
       val struct = buildStructProto {
         put("RPC", grpcMethod.fullMethodName)
-        put("Metadata", metadata.toStructProto())
+        put("Metadata", metadata.toStructProto(authUid))
         put(requestTypeName, request)
       }
       // Sort the keys in the output string to be more meaningful than alphabetical.
@@ -485,10 +545,8 @@ internal class DataConnectGrpcRPCs(
   }
 }
 
-private fun ExecuteQueryRequest.toQueryId(): ImmutableByteArray {
-  val queryId = variables.calculateSha512(preamble = operationName)
-  return ImmutableByteArray.adopt(queryId)
-}
+private fun ExecuteQueryRequest.calculateQueryId(): ImmutableByteArray =
+  variables.calculateSha512(preamble = operationName)
 
 @JvmName("getEntityIdForPathFunction_ExecuteQueryResponse")
 private fun ExecuteQueryResponse.getEntityIdForPathFunction(): GetEntityIdForPathFunction? =

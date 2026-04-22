@@ -1,5 +1,8 @@
 # Unreleased
 
+- [fixed] Lazy loading kotlinx.coroutines in FirebaseSessionsDependencies.kt to fix (#7882)
+- [changed] Bumped internal dependencies.
+
 # 3.0.4
 
 - [fixed] Fixed a bug when the app foregrounds before Sessions has initialized (#7519)

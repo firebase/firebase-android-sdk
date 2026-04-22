@@ -90,6 +90,7 @@ internal class FirebaseDataConnectImpl(
   deferredAppCheckProvider: com.google.firebase.inject.Deferred<InteropAppCheckTokenProvider>,
   private val creator: FirebaseDataConnectFactory,
   override val settings: DataConnectSettings,
+  private val secureRandom: Random,
 ) : FirebaseDataConnectInternal {
 
   override val logger =
@@ -257,8 +258,6 @@ internal class FirebaseDataConnectImpl(
     val grpcMetadata =
       DataConnectGrpcMetadata.forSystemVersions(
         firebaseApp = app,
-        dataConnectAuth = dataConnectAuth,
-        dataConnectAppCheck = dataConnectAppCheck,
         connectorLocation = config.location,
         parentLogger = logger,
       )
@@ -322,6 +321,7 @@ internal class FirebaseDataConnectImpl(
             nonBlockingCoroutineDispatcher = nonBlockingDispatcher,
             grpcClient = grpcClient,
             registeredDataDeserializerFactory = registeredDataDeserializerFactory,
+            secureRandom = secureRandom,
             parentLogger = parentLogger,
           )
       }
@@ -445,6 +445,7 @@ internal class FirebaseDataConnectImpl(
       callerSdkType = options.callerSdkType ?: FirebaseDataConnect.CallerSdkType.Base,
       variablesSerializersModule = options.variablesSerializersModule,
       dataSerializersModule = options.dataSerializersModule,
+      secureRandom = secureRandom,
     )
   }
 

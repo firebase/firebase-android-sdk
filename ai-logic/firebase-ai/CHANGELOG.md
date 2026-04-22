@@ -1,6 +1,29 @@
 # Unreleased
 
+- [feature] Added support for [Maps Grounding](https://ai.google.dev/gemini-api/docs/maps-grounding) (#7950)
+
+- [feature] Added the `turnComplete` argument to multiple `LiveSession.send()` methods.
+
+- [deprecated] All Imagen models are deprecated and will shut down as early as June 2026.
+  As a replacement, you can [migrate your apps to use Gemini Image models (the "Nano Banana" models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration).
+
+- [feature] Added support for Chat interactions using server prompt templates (#7986)
+
+- [feature] Added support for function calling in Chat interactions using server prompt templates (#8004)
+
+- [fixed] Fixed an issue causing network timeouts to throw the incorrect exception type, instead of
+  `RequestTimeoutException` (#7966)
+
+- [fixed] Fixed missing `toString()` implementation for `InferenceSource` (#7970)
+
+- [fixed] Fixed an issue causing the SDK to throw an exception if an unknown message was received
+  from the LiveAPI model, instead of ignoring it (#7975)
+
+# 17.10.1
+
+- [fixed] Fixed an issue causing Live API to fail when using the `GoogleAI` backend (#7880)
 - [changed] Added the `hybrid` component to request headers coming from `prefer_in_cloud` configurations (#7857)
+- [fixed] Fixed documentation errors (#7891)
 
 # 17.10.0
 
@@ -147,4 +170,3 @@ using [specific Gemini models](/docs/vertex-ai/models).
 
 Note: This feature is in Public Preview, which means that it is not subject to any SLA or
 deprecation policy and could change in backwards-incompatible ways.
-

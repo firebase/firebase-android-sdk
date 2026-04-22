@@ -24,6 +24,7 @@ import com.google.firebase.firestore.model.ResourcePath
 import com.google.firebase.firestore.model.Values
 import com.google.firebase.firestore.model.Values.encodeValue
 import com.google.firebase.firestore.pipeline.Expression.Companion.constant
+import com.google.firebase.firestore.pipeline.Expression.Companion.documentMatches
 import com.google.firebase.firestore.pipeline.Expression.Companion.field
 import com.google.firebase.firestore.pipeline.evaluation.EvaluationContext
 import com.google.firebase.firestore.remote.RemoteSerializer
@@ -31,14 +32,24 @@ import com.google.firestore.v1.Pipeline
 import com.google.firestore.v1.Value
 import javax.annotation.Nonnull
 
-@Beta
 sealed class Stage<T : Stage<T>>(internal val name: String, internal val options: InternalOptions) {
-  internal fun toProtoStage(userDataReader: UserDataReader): Pipeline.Stage {
-    val builder = Pipeline.Stage.newBuilder()
-    builder.setName(name)
-    args(userDataReader).forEach(builder::addArgs)
-    options.forEach(builder::putOptions)
-    return builder.build()
+  companion object {
+    internal fun toProtoStage(
+      name: String,
+      args: Sequence<Value>,
+      options: InternalOptions,
+      userDataReader: UserDataReader
+    ): Pipeline.Stage {
+      val builder = Pipeline.Stage.newBuilder()
+      builder.setName(name)
+      args.forEach(builder::addArgs)
+      options.forEach(builder::putOptions)
+      return builder.build()
+    }
+  }
+
+  internal open fun toProtoStage(userDataReader: UserDataReader): Pipeline.Stage {
+    return Stage.toProtoStage(name, args(userDataReader), options, userDataReader)
   }
 
   internal abstract fun canonicalId(): String
@@ -110,7 +121,6 @@ sealed class Stage<T : Stage<T>>(internal val name: String, internal val options
  * This class provides a way to call stages that are supported by the Firestore backend but that are
  * not implemented in the SDK version being used.
  */
-@Beta
 class RawStage
 private constructor(
   name: String,
@@ -205,7 +215,6 @@ internal constructor(options: InternalOptions = InternalOptions.EMPTY) :
   }
 }
 
-@Beta
 class CollectionSource
 internal constructor(
   internal val path: ResourcePath,
@@ -253,7 +262,6 @@ internal constructor(
   }
 }
 
-@Beta
 class CollectionSourceOptions internal constructor(options: InternalOptions) :
   AbstractOptions<CollectionSourceOptions>(options) {
   /** Creates a new, empty `CollectionSourceOptions` object. */
@@ -272,7 +280,6 @@ class CollectionSourceOptions internal constructor(options: InternalOptions) :
   }
 }
 
-@Beta
 class CollectionHints internal constructor(options: InternalOptions) :
   AbstractOptions<CollectionHints>(options) {
   /** Creates a new, empty `CollectionHints` object. */
@@ -303,7 +310,6 @@ class CollectionHints internal constructor(options: InternalOptions) :
   }
 }
 
-@Beta
 class CollectionGroupSource
 internal constructor(val collectionId: String, options: InternalOptions) :
   Stage<CollectionGroupSource>("collection_group", options) {
@@ -344,7 +350,6 @@ internal constructor(val collectionId: String, options: InternalOptions) :
   }
 }
 
-@Beta
 class CollectionGroupOptions internal constructor(options: InternalOptions) :
   AbstractOptions<CollectionGroupOptions>(options) {
   /** Creates a new, empty `CollectionGroupOptions` object. */
@@ -405,6 +410,29 @@ internal constructor(
   override fun self(options: InternalOptions) = DocumentsSource(documents, options)
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
     documents.asSequence().map(::encodeValue)
+}
+
+class SubcollectionSource
+private constructor(internal val path: String, options: InternalOptions = InternalOptions.EMPTY) :
+  Stage<SubcollectionSource>("subcollection", options) {
+  companion object {
+    /**
+     * Creates a SubcollectionSource with the given path.
+     *
+     * @param path The path of the subcollection that will be the source of this pipeline.
+     */
+    @JvmStatic
+    fun of(path: String): SubcollectionSource {
+      return SubcollectionSource(path)
+    }
+  }
+
+  override fun self(options: InternalOptions) = SubcollectionSource(path, options)
+
+  override fun canonicalId(): String = "${name}($path)"
+
+  override fun args(userDataReader: UserDataReader): Sequence<Value> =
+    sequenceOf(Values.encodeValue(path))
 }
 
 private fun associateWithoutDuplications(
@@ -473,7 +501,6 @@ internal constructor(
  * [AggregateFunction.alias] on [AggregateFunction] instances. Each aggregation calculates a value
  * (e.g., sum, average, count) based on the documents within its group.
  */
-@Beta
 class AggregateStage
 private constructor(
   private val accumulators: Map<String, AggregateFunction>,
@@ -574,7 +601,6 @@ private constructor(
   }
 }
 
-@Beta
 class AggregateHints internal constructor(options: InternalOptions) :
   AbstractOptions<AggregateHints>(options) {
   /** Creates a new, empty `AggregateHints` object. */
@@ -589,7 +615,6 @@ class AggregateHints internal constructor(options: InternalOptions) :
   }
 }
 
-@Beta
 class AggregateOptions internal constructor(options: InternalOptions) :
   AbstractOptions<AggregateOptions>(options) {
   /** Creates a new, empty `AggregateOptions` object. */
@@ -648,7 +673,6 @@ internal constructor(
  * Performs a vector similarity search, ordering the result set by most similar to least similar,
  * and returning the first N documents in the result set.
  */
-@Beta
 class FindNearestStage
 internal constructor(
   private val property: Expression,
@@ -795,7 +819,6 @@ internal constructor(
   }
 }
 
-@Beta
 class FindNearestOptions private constructor(options: InternalOptions) :
   AbstractOptions<FindNearestOptions>(options) {
   /** Creates a new, empty `FindNearestOptions` object. */
@@ -834,6 +857,342 @@ class FindNearestOptions private constructor(options: InternalOptions) :
   fun withDistanceField(distanceField: String?): FindNearestOptions? {
     return withDistanceField(field(distanceField!!))
   }
+}
+
+/**
+ * The Search stage executes full-text search or geo search operations.
+ *
+ * The Search stage must be the first stage in a Pipeline.
+ *
+ * @example
+ * ```kotlin
+ * db.pipeline().collection("restaurants").search(
+ *   SearchStage(
+ *     query = documentMatches("waffles OR pancakes"),
+ *     sort = arrayOf(score().descending())
+ *   )
+ * )
+ * ```
+ */
+@Beta
+class SearchStage
+internal constructor(
+  private val query: BooleanExpression,
+  // TODO(search) enable with backend support
+  // private val languageCode: String? = null,
+  // TODO add indexPartition here when supported
+  // private val retrievalDepth: Long? = null,
+  private val sort: Array<Ordering>? = null,
+  // private val offset: Long? = null,
+  // private val limit: Long? = null,
+  // private val select: Array<Selectable>? = null,
+  private val addFields: Array<Selectable>? = null,
+  // private val queryEnhancement: QueryEnhancement? = null,
+  options: InternalOptions = InternalOptions.EMPTY
+) : Stage<SearchStage>("search", options) {
+  override fun self(options: InternalOptions) =
+    SearchStage(
+      query,
+      // languageCode,
+      // retrievalDepth,
+      sort,
+      // offset,
+      // limit,
+      // select,
+      addFields,
+      // queryEnhancement,
+      options
+    )
+  override fun canonicalId(): String {
+    TODO("Not yet implemented")
+  }
+  override fun args(userDataReader: UserDataReader): Sequence<Value> = emptySequence()
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is SearchStage) return false
+    // if (languageCode != other.languageCode) return false
+    // if (retrievalDepth != other.retrievalDepth) return false
+    if (!sort.contentEquals(other.sort)) return false
+    // if (limit != other.limit) return false
+    // if (!select.contentEquals(other.select)) return false
+    if (!addFields.contentEquals(other.addFields)) return false
+    // if (queryEnhancement != other.queryEnhancement) return false
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = query.hashCode()
+    // result = 31 * result + (languageCode?.hashCode() ?: 0)
+    // result = 31 * result + (retrievalDepth?.hashCode() ?: 0)
+    result = 31 * result + (sort?.contentHashCode() ?: 0)
+    // result = 31 * result + (offset?.hashCode() ?: 0)
+    // result = 31 * result + (limit?.hashCode() ?: 0)
+    // result = 31 * result + (select?.contentHashCode() ?: 0)
+    result = 31 * result + (addFields?.contentHashCode() ?: 0)
+    // result = 31 * result + (queryEnhancement?.hashCode() ?: 0)
+    result = 31 * result + options.hashCode()
+    return result
+  }
+
+  override fun toProtoStage(userDataReader: UserDataReader): Pipeline.Stage {
+    var completeOptions = options.with("query", query.toProto(userDataReader))
+
+    // if (languageCode != null) {
+    //  completeOptions = completeOptions.with("language_code", encodeValue(languageCode))
+    // }
+    // if (retrievalDepth != null) {
+    //  completeOptions = completeOptions.with("retrieval_depth", encodeValue(retrievalDepth))
+    // }
+    if (sort != null) {
+      completeOptions = completeOptions.with("sort", sort.map { it.toProto(userDataReader) })
+    }
+    // if (offset != null) {
+    //  completeOptions = completeOptions.with("offset", encodeValue(offset))
+    // }
+    // if (limit != null) {
+    //  completeOptions = completeOptions.with("limit", encodeValue(limit))
+    // }
+    // if (select != null) {
+    //  completeOptions =
+    //    completeOptions.with(
+    //      "select",
+    //      encodeValue(associateWithoutDuplications(select, userDataReader))
+    //    )
+    // }
+    if (addFields != null) {
+      completeOptions =
+        completeOptions.with(
+          "add_fields",
+          encodeValue(associateWithoutDuplications(addFields, userDataReader))
+        )
+    }
+    // if (queryEnhancement != null) {
+    //  completeOptions = completeOptions.with("query_enhancement", queryEnhancement.proto)
+    // }
+
+    return toProtoStage(name, args(userDataReader), completeOptions, userDataReader)
+  }
+
+  companion object {
+    /**
+     * Create [SearchStage] with an expression search query.
+     *
+     * `query` specifies the search query that will be used to query and score documents by the
+     * search stage.
+     *
+     * The query can be expressed as an `Expression`, which will be used to score and filter the
+     * results. Not all expressions supported by Pipelines are supported in the Search query.
+     *
+     * ```kotlin
+     * db.pipeline().collection("restaurants").search(
+     *   SearchStage.withQuery(
+     *     or(
+     *       documentContainsText("breakfast"),
+     *       field("menu").containsText("waffle AND coffee")
+     *     )
+     *   )
+     * )
+     * ```
+     */
+    @JvmStatic
+    fun withQuery(query: BooleanExpression): SearchStage {
+      return SearchStage(query)
+    }
+
+    /**
+     * Create [SearchStage] with an expression search query.
+     *
+     * `query` specifies the search query that will be used to query and score documents by the
+     * search stage.
+     *
+     * The query can also be expressed as a string in the Search DSL:
+     *
+     * ```kotlin
+     * db.pipeline().collection("restaurants").search(
+     *   SearchStage.withQuery("menu:(waffle and coffee) OR breakfast")
+     * )
+     * ```
+     */
+    @JvmStatic fun withQuery(rquery: String): SearchStage = withQuery(documentMatches(rquery))
+  }
+
+  // TODO(search) enable with backend support
+  /// **
+  // * Specifies if the `matches` and `snippet` expressions will enhance the user provided query to
+  // * perform matching of synonyms, misspellings, lemmatization, stemming.
+  // */
+  // @Beta
+  // class QueryEnhancement private constructor(internal val proto: Value) {
+  //  private constructor(protoString: String) : this(encodeValue(protoString))
+  //
+  //  companion object {
+  //    /**
+  //     * Search will fall back to the un-enhanced, user provided query, if the query enhancement
+  //     * fails.
+  //     */
+  //    @JvmField val PREFERRED = QueryEnhancement("preferred")
+  //
+  //    /**
+  //     * Search will fail if the query enhancement times out or if the query enhancement is not
+  //     * supported by the project's DRZ compliance requirements.
+  //     */
+  //    @JvmField val REQUIRED = QueryEnhancement("required")
+  //
+  //    /** Search will use the un-enhanced, user provided query. */
+  //    @JvmField val DISABLED = QueryEnhancement("disabled")
+  //  }
+  // }
+
+  /** Specify the fields to add to each document. */
+  fun withAddFields(field: Selectable, vararg additionalFields: Selectable): SearchStage {
+    val allAddFields = (listOf(field) + additionalFields).toTypedArray()
+
+    return SearchStage(
+      query,
+      // languageCode,
+      // retrievalDepth,
+      sort,
+      // offset,
+      // limit,
+      // select,
+      allAddFields,
+      // queryEnhancement,
+      options
+    )
+  }
+
+  // TODO(search) enable with backend support
+  /// ** Specify the fields to keep or add to each document. */
+  // fun withSelect(selection: Selectable, vararg additionalSelections: Any): SearchStage {
+  //  val allSelections =
+  //    (listOf(selection) + additionalSelections.map { Selectable.toSelectable(it)
+  // }).toTypedArray()
+  //
+  //  return SearchStage(
+  //    query,
+  //    //languageCode,
+  //    //retrievalDepth,
+  //    sort,
+  //    //offset,
+  //    //limit,
+  //    allSelections,
+  //    addFields,
+  //    //queryEnhancement,
+  //    options
+  //  )
+  // }
+  //
+  /// ** Specify the fields to keep or add to each document. */
+  // fun withSelect(fieldName: String, vararg additionalSelections: Any): SearchStage {
+  //  return withSelect(field(fieldName), *additionalSelections)
+  // }
+
+  /** Specify how the returned documents are sorted. One or more ordering are required. */
+  fun withSort(order: Ordering, vararg additionalOrderings: Ordering): SearchStage {
+    val allOrderings = (listOf(order) + additionalOrderings).toTypedArray()
+    return SearchStage(
+      query,
+      // languageCode,
+      // retrievalDepth,
+      allOrderings,
+      // offset,
+      // limit,
+      // select,
+      addFields,
+      // queryEnhancement,
+      options
+    )
+  }
+
+  // TODO(search) enable with backend support
+  /// ** Specify the maximum number of documents to return from the Search stage. */
+  // fun withLimit(limit: Long): SearchStage {
+  //  return SearchStage(
+  //    query,
+  //    //languageCode,
+  //    //retrievalDepth,
+  //    sort,
+  //    //offset,
+  //    limit,
+  //    //select,
+  //    addFields,
+  //    //queryEnhancement,
+  //    options
+  //  )
+  // }
+  //
+  /// **
+  // * Specify the maximum number of documents to retrieve. Documents will be retrieved in the
+  // * pre-sort order specified by the search index.
+  // */
+  // fun withRetrievalDepth(retrievalDepth: Long): SearchStage {
+  //  return SearchStage(
+  //    query,
+  //    //languageCode,
+  //    retrievalDepth,
+  //    sort,
+  //    //offset,
+  //    //limit,
+  //    //select,
+  //    addFields,
+  //    //queryEnhancement,
+  //    options
+  //  )
+  // }
+  //
+  /// ** Specify the number of documents to skip. */
+  // fun withOffset(offset: Long): SearchStage {
+  //  return SearchStage(
+  //    query,
+  //    //languageCode,
+  //    //retrievalDepth,
+  //    sort,
+  //    offset,
+  //    //limit,
+  //    //select,
+  //    addFields,
+  //    //queryEnhancement,
+  //    options
+  //  )
+  // }
+  //
+  /// ** Specify the BCP-47 language code of text in the search query, such as, “en-US” or “sr-Latn”
+  // */
+  // fun withLanguageCode(value: String): SearchStage {
+  //  return SearchStage(
+  //    query,
+  //    value,
+  //    //retrievalDepth,
+  //    sort,
+  //    //offset,
+  //    //limit,
+  //    //select,
+  //    addFields,
+  //    //queryEnhancement,
+  //    options
+  //  )
+  // }
+  //
+  /// **
+  // * Specify the query expansion behavior used by full-text search expressions in this search
+  // stage.
+  // * Default: `.PREFERRED`
+  // */
+  // fun withQueryEnhancement(queryEnhancement: QueryEnhancement): SearchStage {
+  //  return SearchStage(
+  //    query,
+  //    //languageCode,
+  //    //retrievalDepth,
+  //    sort,
+  //    //offset,
+  //    //limit,
+  //    //select,
+  //    addFields,
+  //    queryEnhancement,
+  //    options
+  //  )
+  // }
 }
 
 internal class LimitStage
@@ -1128,7 +1487,6 @@ internal constructor(
  * dictate how the sample is calculated either by specifying a target output size, or by specifying
  * a target percentage of the input size.
  */
-@Beta
 class SampleStage
 private constructor(
   private val size: Number,
@@ -1207,7 +1565,7 @@ internal constructor(
   }
 
   override fun args(userDataReader: UserDataReader): Sequence<Value> =
-    sequenceOf(Value.newBuilder().setPipelineValue(other.toPipelineProto()).build())
+    sequenceOf(Value.newBuilder().setPipelineValue(other.toPipelineProto(userDataReader)).build())
 
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
@@ -1228,7 +1586,6 @@ internal constructor(
  * Takes a specified array from the input documents and outputs a document for each element with the
  * element stored in a field with name specified by the alias.
  */
-@Beta
 class UnnestStage
 internal constructor(
   private val selectable: Selectable,
@@ -1302,7 +1659,6 @@ internal constructor(
   fun withIndexField(indexField: String): UnnestStage = withOption("index_field", indexField)
 }
 
-@Beta
 class UnnestOptions private constructor(options: InternalOptions) :
   AbstractOptions<UnnestOptions>(options) {
   /** Creates a new, empty `UnnestOptions` object. */
@@ -1323,5 +1679,46 @@ class UnnestOptions private constructor(options: InternalOptions) :
 
   override fun self(options: InternalOptions): UnnestOptions {
     return UnnestOptions(options)
+  }
+}
+
+internal class DefineStage
+internal constructor(
+  internal val aliasedExpressions: Array<out AliasedExpression>,
+  options: InternalOptions = InternalOptions.EMPTY
+) : Stage<DefineStage>("let", options) {
+  companion object {
+    /** Creates a DefineStage with at least one aliased expression. */
+    @JvmStatic
+    fun withVariables(
+      aliasedExpression: AliasedExpression,
+      vararg additionalExpressions: AliasedExpression
+    ): DefineStage {
+      return DefineStage(arrayOf(aliasedExpression, *additionalExpressions))
+    }
+  }
+
+  override fun self(options: InternalOptions) = DefineStage(aliasedExpressions, options)
+
+  override fun canonicalId(): String {
+    return "${name}(${aliasedExpressions.joinToString(",") { "${it.alias}=${it.expr.canonicalId()}" }})"
+  }
+
+  override fun args(userDataReader: UserDataReader): Sequence<Value> {
+    return sequenceOf(encodeValue(associateWithoutDuplications(aliasedExpressions, userDataReader)))
+  }
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is DefineStage) return false
+    if (!aliasedExpressions.contentEquals(other.aliasedExpressions)) return false
+    if (options != other.options) return false
+    return true
+  }
+
+  override fun hashCode(): Int {
+    var result = aliasedExpressions.contentHashCode()
+    result = 31 * result + options.hashCode()
+    return result
   }
 }
