@@ -1163,10 +1163,10 @@ internal constructor(
   }
 
   /** Specify the BCP-47 language code of text in the search query, such as, “en-US” or “sr-Latn” */
-  fun withLanguageCode(value: String): SearchStage {
+  fun withLanguageCode(languageCode: String): SearchStage {
     return SearchStage(
       query,
-      value,
+      languageCode,
       retrievalDepth,
       sort,
       offset,
