@@ -2009,8 +2009,12 @@ package com.google.firebase.firestore.pipeline {
 
   @com.google.common.annotations.Beta public final class SearchStage extends com.google.firebase.firestore.pipeline.Stage<com.google.firebase.firestore.pipeline.SearchStage> {
     method public com.google.firebase.firestore.pipeline.SearchStage withAddFields(com.google.firebase.firestore.pipeline.Selectable field, com.google.firebase.firestore.pipeline.Selectable... additionalFields);
+    method public com.google.firebase.firestore.pipeline.SearchStage withLanguageCode(String value);
+    method public com.google.firebase.firestore.pipeline.SearchStage withLimit(long limit);
+    method public com.google.firebase.firestore.pipeline.SearchStage withOffset(long offset);
     method public static com.google.firebase.firestore.pipeline.SearchStage withQuery(com.google.firebase.firestore.pipeline.BooleanExpression query);
     method public static com.google.firebase.firestore.pipeline.SearchStage withQuery(String rquery);
+    method public com.google.firebase.firestore.pipeline.SearchStage withRetrievalDepth(long retrievalDepth);
     method public com.google.firebase.firestore.pipeline.SearchStage withSort(com.google.firebase.firestore.pipeline.Ordering order, com.google.firebase.firestore.pipeline.Ordering... additionalOrderings);
     field public static final com.google.firebase.firestore.pipeline.SearchStage.Companion Companion;
   }
