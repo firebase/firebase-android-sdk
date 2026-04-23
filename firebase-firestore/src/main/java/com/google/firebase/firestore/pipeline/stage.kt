@@ -878,29 +878,30 @@ class FindNearestOptions private constructor(options: InternalOptions) :
 class SearchStage
 internal constructor(
   private val query: BooleanExpression,
-  // TODO(search) enable with backend support
-  // private val languageCode: String? = null,
+  private val languageCode: String? = null,
   // TODO add indexPartition here when supported
-  // private val retrievalDepth: Long? = null,
+  private val retrievalDepth: Long? = null,
   private val sort: Array<Ordering>? = null,
-  // private val offset: Long? = null,
-  // private val limit: Long? = null,
-  // private val select: Array<Selectable>? = null,
+  private val offset: Long? = null,
+  private val limit: Long? = null,
+  // TODO(search) enable with backend support
+  //  private val select: Array<Selectable>? = null,
   private val addFields: Array<Selectable>? = null,
-  // private val queryEnhancement: QueryEnhancement? = null,
+  // TODO(search) enable with backend support
+  //  private val queryEnhancement: QueryEnhancement? = null,
   options: InternalOptions = InternalOptions.EMPTY
 ) : Stage<SearchStage>("search", options) {
   override fun self(options: InternalOptions) =
     SearchStage(
       query,
-      // languageCode,
-      // retrievalDepth,
+      languageCode,
+      retrievalDepth,
       sort,
-      // offset,
-      // limit,
-      // select,
+      offset,
+      limit,
+      //      select,
       addFields,
-      // queryEnhancement,
+      //      queryEnhancement,
       options
     )
   override fun canonicalId(): String {
@@ -911,10 +912,10 @@ internal constructor(
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other !is SearchStage) return false
-    // if (languageCode != other.languageCode) return false
-    // if (retrievalDepth != other.retrievalDepth) return false
+    if (languageCode != other.languageCode) return false
+    if (retrievalDepth != other.retrievalDepth) return false
     if (!sort.contentEquals(other.sort)) return false
-    // if (limit != other.limit) return false
+    if (limit != other.limit) return false
     // if (!select.contentEquals(other.select)) return false
     if (!addFields.contentEquals(other.addFields)) return false
     // if (queryEnhancement != other.queryEnhancement) return false
@@ -923,11 +924,11 @@ internal constructor(
 
   override fun hashCode(): Int {
     var result = query.hashCode()
-    // result = 31 * result + (languageCode?.hashCode() ?: 0)
-    // result = 31 * result + (retrievalDepth?.hashCode() ?: 0)
+    result = 31 * result + (languageCode?.hashCode() ?: 0)
+    result = 31 * result + (retrievalDepth?.hashCode() ?: 0)
     result = 31 * result + (sort?.contentHashCode() ?: 0)
-    // result = 31 * result + (offset?.hashCode() ?: 0)
-    // result = 31 * result + (limit?.hashCode() ?: 0)
+    result = 31 * result + (offset?.hashCode() ?: 0)
+    result = 31 * result + (limit?.hashCode() ?: 0)
     // result = 31 * result + (select?.contentHashCode() ?: 0)
     result = 31 * result + (addFields?.contentHashCode() ?: 0)
     // result = 31 * result + (queryEnhancement?.hashCode() ?: 0)
@@ -938,28 +939,28 @@ internal constructor(
   override fun toProtoStage(userDataReader: UserDataReader): Pipeline.Stage {
     var completeOptions = options.with("query", query.toProto(userDataReader))
 
-    // if (languageCode != null) {
-    //  completeOptions = completeOptions.with("language_code", encodeValue(languageCode))
-    // }
-    // if (retrievalDepth != null) {
-    //  completeOptions = completeOptions.with("retrieval_depth", encodeValue(retrievalDepth))
-    // }
+    if (languageCode != null) {
+      completeOptions = completeOptions.with("language_code", encodeValue(languageCode))
+    }
+    if (retrievalDepth != null) {
+      completeOptions = completeOptions.with("retrieval_depth", encodeValue(retrievalDepth))
+    }
     if (sort != null) {
       completeOptions = completeOptions.with("sort", sort.map { it.toProto(userDataReader) })
     }
-    // if (offset != null) {
-    //  completeOptions = completeOptions.with("offset", encodeValue(offset))
-    // }
-    // if (limit != null) {
-    //  completeOptions = completeOptions.with("limit", encodeValue(limit))
-    // }
-    // if (select != null) {
-    //  completeOptions =
-    //    completeOptions.with(
-    //      "select",
-    //      encodeValue(associateWithoutDuplications(select, userDataReader))
-    //    )
-    // }
+    if (offset != null) {
+      completeOptions = completeOptions.with("offset", encodeValue(offset))
+    }
+    if (limit != null) {
+      completeOptions = completeOptions.with("limit", encodeValue(limit))
+    }
+    //    if (select != null) {
+    //      completeOptions =
+    //        completeOptions.with(
+    //          "select",
+    //          encodeValue(associateWithoutDuplications(select, userDataReader))
+    //        )
+    //    }
     if (addFields != null) {
       completeOptions =
         completeOptions.with(
@@ -967,9 +968,9 @@ internal constructor(
           encodeValue(associateWithoutDuplications(addFields, userDataReader))
         )
     }
-    // if (queryEnhancement != null) {
-    //  completeOptions = completeOptions.with("query_enhancement", queryEnhancement.proto)
-    // }
+    //    if (queryEnhancement != null) {
+    //      completeOptions = completeOptions.with("query_enhancement", queryEnhancement.proto)
+    //    }
 
     return toProtoStage(name, args(userDataReader), completeOptions, userDataReader)
   }
@@ -1019,30 +1020,32 @@ internal constructor(
 
   // TODO(search) enable with backend support
   /// **
-  // * Specifies if the `matches` and `snippet` expressions will enhance the user provided query to
-  // * perform matching of synonyms, misspellings, lemmatization, stemming.
-  // */
-  // @Beta
-  // class QueryEnhancement private constructor(internal val proto: Value) {
-  //  private constructor(protoString: String) : this(encodeValue(protoString))
+  //  /**
+  //   * Specifies if the `matches` and `snippet` expressions will enhance the user provided query
+  // to
+  //   * perform matching of synonyms, misspellings, lemmatization, stemming.
+  //   */
+  //  @Beta
+  //  class QueryEnhancement private constructor(internal val proto: Value) {
+  //    private constructor(protoString: String) : this(encodeValue(protoString))
   //
-  //  companion object {
-  //    /**
-  //     * Search will fall back to the un-enhanced, user provided query, if the query enhancement
-  //     * fails.
-  //     */
-  //    @JvmField val PREFERRED = QueryEnhancement("preferred")
+  //    companion object {
+  //      /**
+  //       * Search will fall back to the un-enhanced, user provided query, if the query enhancement
+  //       * fails.
+  //       */
+  //      @JvmField val PREFERRED = QueryEnhancement("preferred")
   //
-  //    /**
-  //     * Search will fail if the query enhancement times out or if the query enhancement is not
-  //     * supported by the project's DRZ compliance requirements.
-  //     */
-  //    @JvmField val REQUIRED = QueryEnhancement("required")
+  //      /**
+  //       * Search will fail if the query enhancement times out or if the query enhancement is not
+  //       * supported by the project's DRZ compliance requirements.
+  //       */
+  //      @JvmField val REQUIRED = QueryEnhancement("required")
   //
-  //    /** Search will use the un-enhanced, user provided query. */
-  //    @JvmField val DISABLED = QueryEnhancement("disabled")
+  //      /** Search will use the un-enhanced, user provided query. */
+  //      @JvmField val DISABLED = QueryEnhancement("disabled")
+  //    }
   //  }
-  // }
 
   /** Specify the fields to add to each document. */
   fun withAddFields(field: Selectable, vararg additionalFields: Selectable): SearchStage {
@@ -1050,14 +1053,14 @@ internal constructor(
 
     return SearchStage(
       query,
-      // languageCode,
-      // retrievalDepth,
+      languageCode,
+      retrievalDepth,
       sort,
-      // offset,
-      // limit,
-      // select,
+      offset,
+      limit,
+      //      select,
       allAddFields,
-      // queryEnhancement,
+      //      queryEnhancement,
       options
     )
   }
@@ -1093,106 +1096,105 @@ internal constructor(
     val allOrderings = (listOf(order) + additionalOrderings).toTypedArray()
     return SearchStage(
       query,
-      // languageCode,
-      // retrievalDepth,
+      languageCode,
+      retrievalDepth,
       allOrderings,
-      // offset,
-      // limit,
-      // select,
+      offset,
+      limit,
+      //      select,
       addFields,
-      // queryEnhancement,
+      //      queryEnhancement,
+      options
+    )
+  }
+
+  /** Specify the maximum number of documents to return from the Search stage. */
+  fun withLimit(limit: Long): SearchStage {
+    return SearchStage(
+      query,
+      languageCode,
+      retrievalDepth,
+      sort,
+      offset,
+      limit,
+      //      select,
+      addFields,
+      //      queryEnhancement,
+      options
+    )
+  }
+
+  /**
+   * Specify the maximum number of documents to retrieve. Documents will be retrieved in the
+   * pre-sort order specified by the search index.
+   */
+  fun withRetrievalDepth(retrievalDepth: Long): SearchStage {
+    return SearchStage(
+      query,
+      languageCode,
+      retrievalDepth,
+      sort,
+      offset,
+      limit,
+      //      select,
+      addFields,
+      //      queryEnhancement,
+      options
+    )
+  }
+
+  /** Specify the number of documents to skip. */
+  fun withOffset(offset: Long): SearchStage {
+    return SearchStage(
+      query,
+      languageCode,
+      retrievalDepth,
+      sort,
+      offset,
+      limit,
+      //      select,
+      addFields,
+      //      queryEnhancement,
+      options
+    )
+  }
+
+  /** Specify the BCP-47 language code of text in the search query, such as, “en-US” or “sr-Latn” */
+  fun withLanguageCode(value: String): SearchStage {
+    return SearchStage(
+      query,
+      value,
+      retrievalDepth,
+      sort,
+      offset,
+      limit,
+      //      select,
+      addFields,
+      //      queryEnhancement,
       options
     )
   }
 
   // TODO(search) enable with backend support
-  /// ** Specify the maximum number of documents to return from the Search stage. */
-  // fun withLimit(limit: Long): SearchStage {
-  //  return SearchStage(
-  //    query,
-  //    //languageCode,
-  //    //retrievalDepth,
-  //    sort,
-  //    //offset,
-  //    limit,
-  //    //select,
-  //    addFields,
-  //    //queryEnhancement,
-  //    options
-  //  )
-  // }
-  //
-  /// **
-  // * Specify the maximum number of documents to retrieve. Documents will be retrieved in the
-  // * pre-sort order specified by the search index.
-  // */
-  // fun withRetrievalDepth(retrievalDepth: Long): SearchStage {
-  //  return SearchStage(
-  //    query,
-  //    //languageCode,
-  //    retrievalDepth,
-  //    sort,
-  //    //offset,
-  //    //limit,
-  //    //select,
-  //    addFields,
-  //    //queryEnhancement,
-  //    options
-  //  )
-  // }
-  //
-  /// ** Specify the number of documents to skip. */
-  // fun withOffset(offset: Long): SearchStage {
-  //  return SearchStage(
-  //    query,
-  //    //languageCode,
-  //    //retrievalDepth,
-  //    sort,
-  //    offset,
-  //    //limit,
-  //    //select,
-  //    addFields,
-  //    //queryEnhancement,
-  //    options
-  //  )
-  // }
-  //
-  /// ** Specify the BCP-47 language code of text in the search query, such as, “en-US” or “sr-Latn”
-  // */
-  // fun withLanguageCode(value: String): SearchStage {
-  //  return SearchStage(
-  //    query,
-  //    value,
-  //    //retrievalDepth,
-  //    sort,
-  //    //offset,
-  //    //limit,
-  //    //select,
-  //    addFields,
-  //    //queryEnhancement,
-  //    options
-  //  )
-  // }
-  //
-  /// **
-  // * Specify the query expansion behavior used by full-text search expressions in this search
+  //  /**
+  //   * Specify the query expansion behavior used by full-text search expressions in this search
   // stage.
-  // * Default: `.PREFERRED`
-  // */
-  // fun withQueryEnhancement(queryEnhancement: QueryEnhancement): SearchStage {
-  //  return SearchStage(
-  //    query,
-  //    //languageCode,
-  //    //retrievalDepth,
-  //    sort,
-  //    //offset,
-  //    //limit,
-  //    //select,
-  //    addFields,
-  //    queryEnhancement,
-  //    options
-  //  )
-  // }
+  //   * Default: `.PREFERRED`
+  //   */
+  //  fun withQueryEnhancement(queryEnhancement: QueryEnhancement): SearchStage {
+  //    return SearchStage(
+  //      query,
+  //      languageCode,
+  //      retrievalDepth,
+  //      sort,
+  //      offset,
+  //      limit,
+  //      select,
+  //      addFields,
+  //      queryEnhancement,
+  //      options
+  //    )
+  //  }
 }
 
 internal class LimitStage
