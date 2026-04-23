@@ -266,6 +266,18 @@ package com.google.firebase.ai.java {
     method public com.google.firebase.ai.java.LiveSessionFutures from(com.google.firebase.ai.type.LiveSession session);
   }
 
+  @com.google.firebase.ai.type.PublicPreviewAPI public abstract class TemplateChatFutures {
+    method public static final com.google.firebase.ai.java.TemplateChatFutures from(com.google.firebase.ai.TemplateChat templateChat);
+    method public abstract com.google.firebase.ai.TemplateChat getTemplateChat();
+    method public abstract com.google.common.util.concurrent.ListenableFuture<com.google.firebase.ai.type.GenerateContentResponse> sendMessage(com.google.firebase.ai.type.Content prompt);
+    method public abstract org.reactivestreams.Publisher<com.google.firebase.ai.type.GenerateContentResponse> sendMessageStream(com.google.firebase.ai.type.Content prompt);
+    field public static final com.google.firebase.ai.java.TemplateChatFutures.Companion Companion;
+  }
+
+  public static final class TemplateChatFutures.Companion {
+    method public com.google.firebase.ai.java.TemplateChatFutures from(com.google.firebase.ai.TemplateChat templateChat);
+  }
+
   public abstract class TemplateGenerativeModelFutures {
     method public static final com.google.firebase.ai.java.TemplateGenerativeModelFutures from(com.google.firebase.ai.TemplateGenerativeModel model);
     method public abstract com.google.common.util.concurrent.ListenableFuture<com.google.firebase.ai.type.GenerateContentResponse> generateContent(String templateId, java.util.Map<java.lang.String,?> inputs);
