@@ -19,6 +19,9 @@
 - [fixed] Fixed an issue causing the SDK to throw an exception if an unknown message was received
   from the LiveAPI model, instead of ignoring it (#7975)
 
+- [fixed] Fixed `LiveGenerativeModel.connect()` not attaching the `X-Firebase-AppCheck`
+  header, causing Live API requests to be rejected when App Check is enforced on AI Logic. (#8060)
+
 # 17.10.1
 
 - [fixed] Fixed an issue causing Live API to fail when using the `GoogleAI` backend (#7880)

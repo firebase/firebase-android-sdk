@@ -255,8 +255,17 @@ internal constructor(
         "wss://firebasevertexai.googleapis.com/ws/google.firebase.vertexai.v1beta.GenerativeService/BidiGenerateContent?key=$key"
     }
 
-  suspend fun getWebSocketSession(location: String): DefaultClientWebSocketSession =
-    client.webSocketSession(getBidiEndpoint(location)) { applyCommonHeaders() }
+  suspend fun getWebSocketSession(location: String): DefaultClientWebSocketSession {
+    // applyHeaderProvider() is suspend; Ktor's webSocketSession { } config lambda is not.
+    // Pre-fetch headers (including X-Firebase-AppCheck) in the outer suspend context, then
+    // set them synchronously inside the lambda. Other methods route through HTTP builders
+    // whose pipelines allow calling applyHeaderProvider() directly inside the config block.
+    val extraHeaders = headerProvider?.generateHeaders().orEmpty()
+    return client.webSocketSession(getBidiEndpoint(location)) {
+      applyCommonHeaders()
+      extraHeaders.forEach { (name, value) -> header(name, value) }
+    }
+  }
 
   fun generateContentStream(
     request: GenerateContentRequest
