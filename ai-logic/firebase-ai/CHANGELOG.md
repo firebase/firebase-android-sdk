@@ -1,5 +1,7 @@
 # Unreleased
 
+- [feature] Added a Java-friendly wrapper for TemplateChat interactions (`TemplateChatFutures`).
+
 - [feature] Added support for [Maps Grounding](https://ai.google.dev/gemini-api/docs/maps-grounding) (#7950)
 
 - [feature] Added the `turnComplete` argument to multiple `LiveSession.send()` methods.
