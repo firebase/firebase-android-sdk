@@ -126,7 +126,7 @@ public class JavaCompileTests {
     TemplateGenerativeModelFutures templateFutures =
         TemplateGenerativeModelFutures.from(templateModel);
     TemplateChat templateChat =
-        templateModel.startChat("fake-template", Map.of(), Collections.emptyList());
+        templateModel.startChat("fake-template", Collections.emptyMap(), Collections.emptyList());
     TemplateChatFutures templateChatFutures = TemplateChatFutures.from(templateChat);
     testTemplateChatFutures(templateChatFutures);
   }
