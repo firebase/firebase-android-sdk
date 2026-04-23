@@ -64,6 +64,16 @@ internal constructor(private val options: ImmutableMap<String, Value>) {
     }
   }
 
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (other !is InternalOptions) return false
+    return options == other.options
+  }
+
+  override fun hashCode(): Int {
+    return options.hashCode()
+  }
+
   private fun toValue(): Value {
     val mapValue = MapValue.newBuilder().putAllFields(options).build()
     return Value.newBuilder().setMapValue(mapValue).build()

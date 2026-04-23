@@ -194,11 +194,9 @@ class PipelineSearchTest {
           //                        .withQueryEnhancement(SearchStage.QueryEnhancement.DISABLED)
           )
 
-    val exception =
-      org.junit.Assert.assertThrows(Exception::class.java) {
-        IntegrationTestUtil.waitFor(ppl.execute())
-      }
-    assertThat(exception).isNotNull()
+    org.junit.Assert.assertThrows(Exception::class.java) {
+      IntegrationTestUtil.waitFor(ppl.execute())
+    }
   }
 
   @Test

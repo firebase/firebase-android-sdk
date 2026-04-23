@@ -912,13 +912,16 @@ internal constructor(
   override fun equals(other: Any?): Boolean {
     if (this === other) return true
     if (other !is SearchStage) return false
+    if (query != other.query) return false
     if (languageCode != other.languageCode) return false
     if (retrievalDepth != other.retrievalDepth) return false
     if (!sort.contentEquals(other.sort)) return false
+    if (offset != other.offset) return false
     if (limit != other.limit) return false
     // if (!select.contentEquals(other.select)) return false
     if (!addFields.contentEquals(other.addFields)) return false
     // if (queryEnhancement != other.queryEnhancement) return false
+    if (options != other.options) return false
     return true
   }
 
