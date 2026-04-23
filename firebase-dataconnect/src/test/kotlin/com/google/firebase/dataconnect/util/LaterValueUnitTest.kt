@@ -32,6 +32,7 @@ import io.kotest.property.arbitrary.orNull
 import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
 import io.mockk.confirmVerified
+import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.test.runTest
@@ -106,40 +107,84 @@ class LaterValueUnitTest {
   }
 
   @Test
-  fun `onValue() before set() does not call block`() = runTest {
+  fun `ifSet() before set() does not call block`() = runTest {
     val laterValue = LaterValue<TestValue>()
     val block: (TestValue) -> Unit = mockk(relaxed = true)
 
-    laterValue.onValue(block)
+    laterValue.ifSet(block)
 
     confirmVerified(block)
   }
 
   @Test
-  fun `onValue() after set() calls block`() = testWithNullableTestValues { value ->
+  fun `ifSet() after set() calls block`() = testWithNullableTestValues { value ->
     val laterValue = LaterValue<TestValue?>()
     laterValue.set(value)
     val block: (TestValue?) -> Unit = mockk(relaxed = true)
 
-    laterValue.onValue(block)
+    laterValue.ifSet(block)
 
     verify(exactly = 1) { block(value) }
     confirmVerified(block)
   }
 
   @Test
-  fun `onValue() before set() returns the receiver`() = runTest {
+  fun `ifSet() before set() returns the receiver`() = runTest {
     val laterValue = LaterValue<TestValue>()
-    laterValue.onValue(mockk(relaxed = true)) shouldBeSameInstanceAs laterValue
+    laterValue.ifSet(mockk(relaxed = true)) shouldBeSameInstanceAs laterValue
   }
 
   @Test
-  fun `onValue() after set() returns the receiver`() = testWithNullableTestValues { value ->
+  fun `ifSet() after set() returns the receiver`() = testWithNullableTestValues { value ->
     val laterValue = LaterValue<TestValue?>()
     laterValue.set(value)
 
-    laterValue.onValue(mockk(relaxed = true)) shouldBeSameInstanceAs laterValue
+    laterValue.ifSet(mockk(relaxed = true)) shouldBeSameInstanceAs laterValue
   }
+
+  @Test
+  fun `getOrElse() before set() calls the block`() = testWithNullableTestValues { value ->
+    val laterValue = LaterValue<TestValue?>()
+    val block: () -> TestValue? = mockk { every { this@mockk() } returns value }
+
+    laterValue.getOrElse(block)
+
+    verify(exactly = 1) { block() }
+  }
+
+  @Test
+  fun `getOrElse() after set() does not call the block`() = testWithNullableTestValues { value ->
+    val laterValue = LaterValue<TestValue?>()
+    laterValue.set(value)
+    val block: () -> TestValue? = mockk(relaxed = true)
+
+    laterValue.getOrElse(block)
+
+    confirmVerified(block)
+  }
+
+  @Test
+  fun `getOrElse() before set() returns the value returned from the block`() =
+    testWithNullableTestValues { value ->
+      val laterValue = LaterValue<TestValue?>()
+      val block: () -> TestValue? = mockk { every { this@mockk() } returns value }
+
+      val result = laterValue.getOrElse(block)
+
+      result shouldBeSameInstanceAs value
+    }
+
+  @Test
+  fun `getOrElse() after set() returns the receiver's value`() =
+    testWithNullableTestValues { value ->
+      val laterValue = LaterValue<TestValue?>()
+      laterValue.set(value)
+      val block: () -> TestValue? = mockk(relaxed = true)
+
+      val result = laterValue.getOrElse(block)
+
+      result shouldBeSameInstanceAs value
+    }
 }
 
 /** The configuration for property-based tests in this file. */

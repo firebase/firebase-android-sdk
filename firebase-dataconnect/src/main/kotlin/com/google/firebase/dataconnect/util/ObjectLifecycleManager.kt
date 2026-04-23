@@ -19,6 +19,7 @@ package com.google.firebase.dataconnect.util
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.util.CoroutineUtils.createSupervisorCoroutineScope
+import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -31,7 +32,6 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.job
 import kotlinx.coroutines.withContext
-import java.util.concurrent.atomic.AtomicReference
 
 // ObjectLifecycleManager uses very nuanced aspects of the Kotlin Coroutines API to manage its state
 // and, especially, the lifetime of the OpenedResource. In particular, the class makes absolute sure
@@ -85,7 +85,8 @@ import java.util.concurrent.atomic.AtomicReference
 //    abstract closeResource(it).
 // 2. Partial Open (Failure after Set): If the abstract openResource() method calls
 //    openedResource.set(ctx) and then subsequently throws an exception or is canceled, the
-//    closeJob's finally block will still observe that the value was set (via openedResource.onValue)
+//    closeJob's finally block will still observe that the value was set (via
+// openedResource.onValue)
 //    and call closeResource(ctx). This prevents leaks in "half-opened" states.
 // 3. Cancellation during Open: If the abstract openResource() method is cancelled before it calls
 //    openedResource.set(), the ObjectLifecycleManager does not yet own the resource. In this case,
@@ -105,8 +106,8 @@ import java.util.concurrent.atomic.AtomicReference
 //  operations never overlap and that closing always completes.
 
 /**
- * A thread-safe manager for objects with a lifecycle consisting of an asynchronous "open" phase
- * and a guaranteed "close" phase.
+ * A thread-safe manager for objects with a lifecycle consisting of an asynchronous "open" phase and
+ * a guaranteed "close" phase.
  *
  * It ensures that the resource is opened at most once (even if multiple concurrent [open] calls
  * occur), shared among all callers, and unconditionally closed when [close] is called.
@@ -130,11 +131,24 @@ internal abstract class ObjectLifecycleManager<OpenParams, OpenedResource>(
       run {
         val coroutineScope = createSupervisorCoroutineScope(coroutineDispatcher, logger)
 
+        var openParams: OpenParams? = openParams
         val openedResource = LaterValue<OpenedResource>()
         val openJob: Deferred<OpenedResource> =
           coroutineScope.async(start = CoroutineStart.LAZY) {
+            val openParams =
+              openParams.let {
+                openParams = null
+                checkNotNull(it) {
+                  "internal error xvjmyh9qk9: openParams was null " +
+                    "(was the coroutine started twice?)"
+                }
+              }
+
             openResource(openParams, openedResource)
-            openedResource.getOrThrow()
+
+            openedResource.getOrElse {
+              error("openResource() failed to call openedResource.set() [exr2qhcppc]")
+            }
           }
 
         val openJobRef = AtomicReference(openJob)
@@ -153,7 +167,7 @@ internal abstract class ObjectLifecycleManager<OpenParams, OpenedResource>(
                   it.cancel(cancellationException)
                   it.join()
                 }
-                openedResource.onValue { closeResource(it) }
+                openedResource.ifSet { closeResource(it) }
               }
             }
           }

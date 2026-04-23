@@ -91,17 +91,35 @@ internal class LaterValue<T> {
  * Executes the given [block] with the value of the receiver [LaterValue] if, and only if, it has
  * been set.
  *
- * If the value of the receiver [LaterValue] has _not_ been set, then the block is not called.
+ * If the value of the receiver [LaterValue] has _not_ been set, then [block] is not called.
  *
  * @param block The block to execute with the value.
  * @return This [LaterValue] instance for chaining.
  */
 @OptIn(ExperimentalContracts::class)
-internal inline fun <T> LaterValue<T>.onValue(block: (T) -> Unit): LaterValue<T> {
+internal inline fun <T> LaterValue<T>.ifSet(block: (T) -> Unit): LaterValue<T> {
   contract { callsInPlace(block, kotlin.contracts.InvocationKind.AT_MOST_ONCE) }
-
   if (isSet) {
     block(getOrThrow())
   }
   return this
+}
+
+/**
+ * Returns the value set in the receiver [LaterValue], or the value returned from the given [block]
+ * if [LaterValue.set] has not yet been called.
+ *
+ * If the value of the receiver [LaterValue] _has_ been set, then [block] is not called.
+ *
+ * @param block The block to execute if the receiver's [set] method has not been called.
+ * @return This value set in the receiver [LaterValue], or the value returned from [block], if the
+ * [LaterValue.set] has not been called on the receiver.
+ */
+@OptIn(ExperimentalContracts::class)
+internal inline fun <T, R : T> LaterValue<T>.getOrElse(block: () -> R): T {
+  contract { callsInPlace(block, kotlin.contracts.InvocationKind.AT_MOST_ONCE) }
+  ifSet {
+    return it
+  }
+  return block()
 }
