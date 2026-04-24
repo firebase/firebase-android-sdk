@@ -131,17 +131,14 @@ internal abstract class ObjectLifecycleManager<OpenParams, OpenedResource>(
       run {
         val coroutineScope = createSupervisorCoroutineScope(coroutineDispatcher, logger)
 
-        var openParams: OpenParams? = openParams
+        var nullableOpenParams: OpenParams? = openParams
         val openedResource = LaterValue<OpenedResource>()
         val openJob: Deferred<OpenedResource> =
           coroutineScope.async(start = CoroutineStart.LAZY) {
             val openParams =
-              openParams.let {
-                openParams = null
-                checkNotNull(it) {
-                  "internal error xvjmyh9qk9: openParams was null " +
-                    "(was the coroutine started twice?)"
-                }
+              nullableOpenParams.let {
+                nullableOpenParams = null
+                checkNotNull(it) { "internal error xvjmyh9qk9: nullableOpenParams was null" }
               }
 
             openResource(openParams, openedResource)
@@ -186,10 +183,12 @@ internal abstract class ObjectLifecycleManager<OpenParams, OpenedResource>(
    * [LaterValue.set] on its `openedResource` argument early on and then proceeds to do other work.
    *
    * If [openResource] throws an exception, then that exception will be re-thrown from this method,
-   * and all future invocations of this method (until [close] is called).
+   * and all future invocations of this method (until [close] is called). Notably, if [close] is
+   * called concurrently then this method is likely to throw [CancellationException] as a result of
+   * the cancellation of the coroutine that calls [openResource].
    *
    * @return The [OpenedResource] produced by [openResource].
-   * @throws IllegalStateException If [close] has been called, or is called concurrently.
+   * @throws IllegalStateException If [close] has been called.
    * @throws Exception Any exception thrown by the underlying [openResource] implementation.
    */
   suspend fun open(): OpenedResource {
