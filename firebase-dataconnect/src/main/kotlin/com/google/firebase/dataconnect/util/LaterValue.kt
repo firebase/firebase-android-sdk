@@ -50,6 +50,12 @@ internal class LaterValue<T>(initialValue: MaybeValue<T> = MaybeValue.Empty) {
       error("set() has already been called")
     }
   }
+
+  override fun toString() =
+    when (val currentState = state.value) {
+      MaybeValue.Empty -> "<unset>"
+      is MaybeValue.Value -> currentState.value.toString()
+    }
 }
 
 /** Returns [MaybeValue.isEmpty] of the [LaterValue.state] of the receiver. */
@@ -60,7 +66,11 @@ internal val LaterValue<*>.isEmpty: Boolean
 internal fun <T> LaterValue<T>.getOrNull(): T? = state.value.getOrNull()
 
 /** Returns [MaybeValue.getOrThrow] of the [LaterValue.state] of the receiver. */
-internal fun <T> LaterValue<T>.getOrThrow(): T = state.value.getOrThrow()
+internal fun <T> LaterValue<T>.getOrThrow(): T =
+  when (val currentState = state.value) {
+    is MaybeValue.Value -> currentState.value
+    is MaybeValue.Empty -> error("set() has not yet been called")
+  }
 
 /** Returns [MaybeValue.getOrElse] of the [LaterValue.state] of the receiver. */
 @OptIn(ExperimentalContracts::class)

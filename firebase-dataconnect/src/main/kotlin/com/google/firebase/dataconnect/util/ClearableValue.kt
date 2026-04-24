@@ -50,6 +50,12 @@ internal class ClearableValue<T>(initialValue: MaybeValue<T>) {
   fun clear() {
     _state.value = MaybeValue.Empty
   }
+
+  override fun toString() =
+    when (val currentState = state.value) {
+      MaybeValue.Empty -> "<cleared>"
+      is MaybeValue.Value -> currentState.value.toString()
+    }
 }
 
 /** Returns [MaybeValue.isEmpty] of the [ClearableValue.state] of the receiver. */
@@ -60,7 +66,11 @@ internal val ClearableValue<*>.isEmpty: Boolean
 internal fun <T> ClearableValue<T>.getOrNull(): T? = state.value.getOrNull()
 
 /** Returns [MaybeValue.getOrThrow] of the [ClearableValue.state] of the receiver. */
-internal fun <T> ClearableValue<T>.getOrThrow(): T = state.value.getOrThrow()
+internal fun <T> ClearableValue<T>.getOrThrow(): T =
+  when (val currentState = state.value) {
+    is MaybeValue.Value -> currentState.value
+    is MaybeValue.Empty -> error("clear() has been called")
+  }
 
 /** Returns [MaybeValue.getOrElse] of the [ClearableValue.state] of the receiver. */
 @OptIn(ExperimentalContracts::class)

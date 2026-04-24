@@ -37,7 +37,7 @@ internal sealed interface MaybeValue<out T> {
 
   class Value<out T>(val value: T) : MaybeValue<T> {
     override val isEmpty: Boolean
-      get() = true
+      get() = false
 
     override fun getOrNull(): T? = value
 
@@ -52,7 +52,7 @@ internal sealed interface MaybeValue<out T> {
 
   object Empty : MaybeValue<Nothing> {
     override val isEmpty: Boolean
-      get() = false
+      get() = true
 
     override fun getOrNull() = null
 

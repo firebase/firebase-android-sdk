@@ -17,10 +17,11 @@
 package com.google.firebase.dataconnect.util
 
 import com.google.firebase.dataconnect.testutil.property.arbitrary.triple
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
-import io.kotest.matchers.result.shouldBeFailure
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.throwable.shouldHaveMessage
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
@@ -41,18 +42,18 @@ import org.junit.Test
 class LaterValueUnitTest {
 
   @Test
-  fun `isSet returns false initially`() = runTest {
+  fun `isEmpty returns true initially`() = runTest {
     val laterValue = LaterValue<TestValue>()
 
-    laterValue.isSet shouldBe false
+    laterValue.isEmpty shouldBe true
   }
 
   @Test
-  fun `isSet returns true after set()`() = testWithNullableTestValues { value ->
+  fun `isEmpty returns false after set()`() = testWithNullableTestValues { value ->
     val laterValue = LaterValue<TestValue?>()
     laterValue.set(value)
 
-    laterValue.isSet shouldBe true
+    laterValue.isEmpty shouldBe false
   }
 
   @Test
@@ -62,12 +63,13 @@ class LaterValueUnitTest {
       val laterValue = LaterValue<TestValue?>()
       laterValue.set(value1)
 
-      val result1 = laterValue.runCatching { set(value2) }
-      val result2 = laterValue.runCatching { set(value3) }
+      val exception1 =
+        withClue("exception1") { shouldThrow<IllegalStateException> { laterValue.set(value2) } }
+      val exception2 =
+        withClue("exception2") { shouldThrow<IllegalStateException> { laterValue.set(value3) } }
 
-      val expectedFailure = IllegalStateException("set() has already been called")
-      withClue("result1") { result1.shouldBeFailure(expectedFailure) }
-      withClue("result2") { result2.shouldBeFailure(expectedFailure) }
+      withClue("exception1") { exception1 shouldHaveMessage "set() has already been called" }
+      withClue("exception2") { exception2 shouldHaveMessage "set() has already been called" }
     }
   }
 
@@ -84,9 +86,9 @@ class LaterValueUnitTest {
   fun `getOrThrow() throws initially`() = runTest {
     val laterValue = LaterValue<TestValue>()
 
-    val result = laterValue.runCatching { getOrThrow() }
+    val exception = shouldThrow<IllegalStateException> { laterValue.getOrThrow() }
 
-    result.shouldBeFailure(IllegalStateException("set() has not yet been called"))
+    exception shouldHaveMessage "set() has not yet been called"
   }
 
   @Test fun `getOrThrow() returns the set value`() = testGetReturnsSetValue { getOrThrow() }
@@ -107,39 +109,67 @@ class LaterValueUnitTest {
   }
 
   @Test
-  fun `ifSet() before set() does not call block`() = runTest {
+  fun `ifNonEmpty() before set() does not call block`() = runTest {
     val laterValue = LaterValue<TestValue>()
     val block: (TestValue) -> Unit = mockk(relaxed = true)
 
-    laterValue.ifSet(block)
+    laterValue.ifNonEmpty(block)
 
     confirmVerified(block)
   }
 
   @Test
-  fun `ifSet() after set() calls block`() = testWithNullableTestValues { value ->
+  fun `ifNonEmpty() after set() calls block`() = testWithNullableTestValues { value ->
     val laterValue = LaterValue<TestValue?>()
     laterValue.set(value)
     val block: (TestValue?) -> Unit = mockk(relaxed = true)
 
-    laterValue.ifSet(block)
+    laterValue.ifNonEmpty(block)
 
     verify(exactly = 1) { block(value) }
     confirmVerified(block)
   }
 
   @Test
-  fun `ifSet() before set() returns the receiver`() = runTest {
+  fun `ifNonEmpty() before set() returns the receiver`() = runTest {
     val laterValue = LaterValue<TestValue>()
-    laterValue.ifSet(mockk(relaxed = true)) shouldBeSameInstanceAs laterValue
+    laterValue.ifNonEmpty(mockk(relaxed = true)) shouldBeSameInstanceAs laterValue
   }
 
   @Test
-  fun `ifSet() after set() returns the receiver`() = testWithNullableTestValues { value ->
+  fun `ifEmpty() before set() calls block`() = runTest {
+    val laterValue = LaterValue<TestValue>()
+    val block: () -> Unit = mockk(relaxed = true)
+
+    laterValue.ifEmpty(block)
+
+    verify(exactly = 1) { block() }
+    confirmVerified(block)
+  }
+
+  @Test
+  fun `ifEmpty() after set() does not call block`() = testWithNullableTestValues { value ->
+    val laterValue = LaterValue<TestValue?>()
+    laterValue.set(value)
+    val block: () -> Unit = mockk(relaxed = true)
+
+    laterValue.ifEmpty(block)
+
+    confirmVerified(block)
+  }
+
+  @Test
+  fun `ifEmpty() before set() returns the receiver`() = runTest {
+    val laterValue = LaterValue<TestValue>()
+    laterValue.ifEmpty(mockk(relaxed = true)) shouldBeSameInstanceAs laterValue
+  }
+
+  @Test
+  fun `ifEmpty() after set() returns the receiver`() = testWithNullableTestValues { value ->
     val laterValue = LaterValue<TestValue?>()
     laterValue.set(value)
 
-    laterValue.ifSet(mockk(relaxed = true)) shouldBeSameInstanceAs laterValue
+    laterValue.ifEmpty(mockk(relaxed = true)) shouldBeSameInstanceAs laterValue
   }
 
   @Test
