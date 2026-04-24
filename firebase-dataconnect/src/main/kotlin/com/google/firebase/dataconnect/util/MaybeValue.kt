@@ -85,6 +85,7 @@ internal inline fun <T> MaybeValue<T>.getOrElse(block: () -> T): T {
   }
 }
 
+@Suppress("UnusedReceiverParameter")
 @OptIn(ExperimentalContracts::class)
 internal inline fun <T> MaybeValue.Empty.getOrElse(block: () -> T): T {
   contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
@@ -185,10 +186,11 @@ internal inline fun <T, R> MaybeValue<T>.fold(
   }
 }
 
+@Suppress("UnusedReceiverParameter")
 @OptIn(ExperimentalContracts::class)
-internal inline fun <T, R> MaybeValue.Empty.fold(
+internal inline fun <R> MaybeValue.Empty.fold(
   onEmpty: () -> R,
-  onNonEmpty: (T) -> R,
+  onNonEmpty: (Nothing) -> R,
 ): R {
   contract {
     callsInPlace(onEmpty, InvocationKind.EXACTLY_ONCE)
