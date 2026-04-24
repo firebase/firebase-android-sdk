@@ -16,7 +16,9 @@
 
 package com.google.firebase.dataconnect.util
 
-import java.util.concurrent.atomic.AtomicReference
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
 
@@ -31,13 +33,11 @@ import kotlin.contracts.contract
  * All methods and properties of [LaterValue] are thread-safe and may be safely called and/or
  * accessed concurrently from multiple threads and/or coroutines.
  */
-internal class LaterValue<T> {
+internal class LaterValue<T>(initialValue: MaybeValue<T> = MaybeValue.Empty) {
 
-  private val state = AtomicReference<State<T>>(State.NoValue)
+  private val _state = MutableStateFlow(initialValue)
 
-  /** Whether the value has been set by a call to [set]. */
-  val isSet: Boolean
-    get() = state.get() !is State.NoValue
+  val state: StateFlow<MaybeValue<T>> = _state.asStateFlow()
 
   /**
    * Sets the value.
@@ -46,80 +46,53 @@ internal class LaterValue<T> {
    * @throws IllegalStateException if [set] has already been called.
    */
   fun set(value: T) {
-    if (!state.compareAndSet(State.NoValue, State.Value(value))) {
+    if (!_state.compareAndSet(MaybeValue.Empty, MaybeValue.Value(value))) {
       error("set() has already been called")
     }
   }
 
-  /**
-   * Returns the value if it has been set, or `null` if it has not.
-   *
-   * Note that if [T] is a nullable type, this method returns `null` both when the value has not
-   * been set and when it has been set to `null`. Use [isSet] to disambiguate.
-   */
-  fun getOrNull(): T? =
-    when (val currentState = state.get()) {
-      State.NoValue -> null
-      is State.Value -> currentState.value
-    }
-
-  /**
-   * Returns the value if it has been set, or throws an exception if it has not.
-   *
-   * @return The set value.
-   * @throws IllegalStateException if the value has not yet been set.
-   */
-  fun getOrThrow(): T =
-    when (val currentState = state.get()) {
-      State.NoValue -> error("set() has not yet been called")
-      is State.Value -> currentState.value
-    }
-
-  override fun toString() = state.get().toString()
-
-  private sealed interface State<out T> {
-    data object NoValue : State<Nothing> {
-      override fun toString() = "<unset>"
-    }
-    data class Value<T>(val value: T) : State<T> {
-      override fun toString() = value.toString()
-    }
-  }
 }
 
 /**
- * Executes the given [block] with the value of the receiver [LaterValue] if, and only if, it has
- * been set.
- *
- * If the value of the receiver [LaterValue] has _not_ been set, then [block] is not called.
- *
- * @param block The block to execute with the value.
- * @return This [LaterValue] instance for chaining.
+ * Returns [MaybeValue.isEmpty] of the [LaterValue.state] of the receiver.
+ */
+internal val LaterValue<*>.isEmpty: Boolean get() = state.value.isEmpty
+
+/**
+ * Returns [MaybeValue.getOrNull] of the [LaterValue.state] of the receiver.
+ */
+internal fun <T> LaterValue<T>.getOrNull(): T? = state.value.getOrNull()
+
+/**
+ * Returns [MaybeValue.getOrThrow] of the [LaterValue.state] of the receiver.
+ */
+internal fun <T> LaterValue<T>.getOrThrow(): T = state.value.getOrThrow()
+
+/**
+ * Returns [MaybeValue.getOrElse] of the [LaterValue.state] of the receiver.
  */
 @OptIn(ExperimentalContracts::class)
-internal inline fun <T> LaterValue<T>.ifSet(block: (T) -> Unit): LaterValue<T> {
+internal inline fun <T> LaterValue<T>.getOrElse(block: () -> T): T {
   contract { callsInPlace(block, kotlin.contracts.InvocationKind.AT_MOST_ONCE) }
-  if (isSet) {
-    block(getOrThrow())
-  }
+  return state.value.getOrElse(block)
+}
+
+/**
+ * Returns [MaybeValue.ifEmpty] of the [LaterValue.state] of the receiver.
+ */
+@OptIn(ExperimentalContracts::class)
+internal inline fun <T> LaterValue<T>.ifEmpty(block: () -> Unit): LaterValue<T> {
+  contract { callsInPlace(block, kotlin.contracts.InvocationKind.AT_MOST_ONCE) }
+  state.value.ifEmpty(block)
   return this
 }
 
 /**
- * Returns the value set in the receiver [LaterValue], or the value returned from the given [block]
- * if [LaterValue.set] has not yet been called.
- *
- * If the value of the receiver [LaterValue] _has_ been set, then [block] is not called.
- *
- * @param block The block to execute if the receiver's [set] method has not been called.
- * @return This value set in the receiver [LaterValue], or the value returned from [block], if the
- * [LaterValue.set] has not been called on the receiver.
+ * Returns [MaybeValue.ifNonEmpty] of the [LaterValue.state] of the receiver.
  */
 @OptIn(ExperimentalContracts::class)
-internal inline fun <T, R : T> LaterValue<T>.getOrElse(block: () -> R): T {
+internal inline fun <T> LaterValue<T>.ifNonEmpty(block: (T) -> Unit): LaterValue<T> {
   contract { callsInPlace(block, kotlin.contracts.InvocationKind.AT_MOST_ONCE) }
-  ifSet {
-    return it
-  }
-  return block()
+  state.value.ifNonEmpty(block)
+  return this
 }
