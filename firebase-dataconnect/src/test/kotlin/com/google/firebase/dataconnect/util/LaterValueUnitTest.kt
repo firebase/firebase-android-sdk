@@ -215,6 +215,46 @@ class LaterValueUnitTest {
 
       result shouldBeSameInstanceAs value
     }
+
+  /**
+   * A simple data class used as a test value to verify referential integrity and basic operations.
+   */
+  private data class TestValue(val value: String)
+
+  private companion object {
+
+    /**
+     * Creates and returns an [Arb] that generates [TestValue] instances.
+     *
+     * @param string The [Arb] used to generate the underlying string values.
+     */
+    fun testValueArb(string: Arb<String> = Arb.string()): Arb<TestValue> = string.map(::TestValue)
+
+    /**
+     * Runs a property-based test with nullable [TestValue] instances.
+     *
+     * @param property The property test logic to execute.
+     */
+    fun testWithNullableTestValues(property: suspend PropertyContext.(TestValue?) -> Unit) =
+      runTest {
+        checkAll(propTestConfig, testValueArb().orNull(nullProbability = 0.2), property)
+      }
+
+    /**
+     * Verifies that the given [block] correctly returns the value that was set on the [LaterValue].
+     *
+     * @param T The type of the value.
+     * @param block A lambda that retrieves the value from the [LaterValue].
+     */
+    fun <T : TestValue?> testGetReturnsSetValue(block: LaterValue<TestValue?>.() -> T) =
+      testWithNullableTestValues { value ->
+        val laterValue = LaterValue<TestValue?>()
+
+        laterValue.set(value)
+
+        block(laterValue) shouldBeSameInstanceAs value
+      }
+  }
 }
 
 /** The configuration for property-based tests in this file. */
@@ -225,41 +265,3 @@ private val propTestConfig =
     edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.2),
     shrinkingMode = ShrinkingMode.Off,
   )
-
-/**
- * A simple data class used as a test value to verify referential integrity and basic operations.
- */
-private data class TestValue(val value: String)
-
-/**
- * Creates and returns an [Arb] that generates [TestValue] instances.
- *
- * @param string The [Arb] used to generate the underlying string values.
- */
-private fun testValueArb(string: Arb<String> = Arb.string()): Arb<TestValue> =
-  string.map(::TestValue)
-
-/**
- * Runs a property-based test with nullable [TestValue] instances.
- *
- * @param property The property test logic to execute.
- */
-private fun testWithNullableTestValues(property: suspend PropertyContext.(TestValue?) -> Unit) =
-  runTest {
-    checkAll(propTestConfig, testValueArb().orNull(nullProbability = 0.2), property)
-  }
-
-/**
- * Verifies that the given [block] correctly returns the value that was set on the [LaterValue].
- *
- * @param T The type of the value.
- * @param block A lambda that retrieves the value from the [LaterValue].
- */
-private fun <T : TestValue?> testGetReturnsSetValue(block: LaterValue<TestValue?>.() -> T) =
-  testWithNullableTestValues { value ->
-    val laterValue = LaterValue<TestValue?>()
-
-    laterValue.set(value)
-
-    block(laterValue) shouldBeSameInstanceAs value
-  }

@@ -82,18 +82,16 @@ internal inline fun <T> LaterValue<T>.getOrElse(block: () -> T): T {
 
 /** Calls [StateFlow.ifEmpty] on the [LaterValue.state] of the receiver. */
 @OptIn(ExperimentalContracts::class)
-internal inline fun <T> LaterValue<T>.ifEmpty(block: () -> Unit): LaterValue<T> {
+internal inline fun <T> LaterValue<T>.ifEmpty(block: () -> Unit) {
   contract { callsInPlace(block, InvocationKind.AT_MOST_ONCE) }
   state.ifEmpty(block)
-  return this
 }
 
 /** Calls [StateFlow.ifNonEmpty] on the [LaterValue.state] of the receiver. */
 @OptIn(ExperimentalContracts::class)
-internal inline fun <T> LaterValue<T>.ifNonEmpty(block: (T) -> Unit): LaterValue<T> {
+internal inline fun <T> LaterValue<T>.ifNonEmpty(block: (T) -> Unit) {
   contract { callsInPlace(block, InvocationKind.AT_MOST_ONCE) }
   state.ifNonEmpty(block)
-  return this
 }
 
 /** Returns [StateFlow.fold] of the [LaterValue.state] of the receiver. */
