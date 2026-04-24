@@ -69,7 +69,7 @@ import kotlinx.serialization.encodeToString
 @OptIn(ExperimentalSerializationApi::class)
 public class LiveSession
 internal constructor(
-  private var session: DefaultClientWebSocketSession,
+  @kotlin.jvm.Volatile private var session: DefaultClientWebSocketSession,
   @Blocking private val blockingDispatcher: CoroutineContext,
   private var audioHelper: AudioHelper? = null,
   private val firebaseApp: FirebaseApp,
