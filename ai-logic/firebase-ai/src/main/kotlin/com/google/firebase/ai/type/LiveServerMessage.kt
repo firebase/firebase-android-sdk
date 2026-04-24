@@ -234,9 +234,9 @@ public class LiveServerGoAway(public val timeLeft: Duration?) : LiveServerMessag
  */
 @PublicPreviewAPI
 public class LiveSessionResumptionUpdate(
-  public val newHandle: String? = null,
-  public val resumable: Boolean? = null,
-  public val lastConsumedClientMessageIndex: Int? = null
+  internal val newHandle: String? = null,
+  internal val resumable: Boolean? = null,
+  internal val lastConsumedClientMessageIndex: Int? = null
 ) : LiveServerMessage {
   @Serializable
   internal data class Internal(

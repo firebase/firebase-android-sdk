@@ -28,6 +28,7 @@ import com.google.firebase.ai.type.LiveSession
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.RequestOptions
 import com.google.firebase.ai.type.ServiceConnectionHandshakeFailedException
+import com.google.firebase.ai.type.SessionResumptionConfig
 import com.google.firebase.ai.type.Tool
 import com.google.firebase.annotations.concurrent.Blocking
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
@@ -103,28 +104,27 @@ internal constructor(
    * @throws [ServiceConnectionHandshakeFailedException] If the client was not able to establish a
    * connection with the server.
    */
+  @JvmOverloads
   @OptIn(ExperimentalSerializationApi::class)
-  public suspend fun connect(): LiveSession {
-    val clientMessage =
-      LiveClientSetupMessage(
+  public suspend fun connect(sessionResumption: SessionResumptionConfig? = null): LiveSession {
+    val connectFactory: (suspend (SessionResumptionConfig?) -> DefaultClientWebSocketSession) = {
+      resumption ->
+      val clientMessage =
+        LiveClientSetupMessage(
           modelName,
           config?.toInternal(),
           tools.map { it.toInternal() }.takeIf { it.isNotEmpty() },
           systemInstruction?.toInternal(),
           config?.inputAudioTranscription?.toInternal(),
           config?.outputAudioTranscription?.toInternal(),
-          newResumption?.toInternal(),
+          resumption?.toInternal(),
           config?.contextWindowCompression?.toInternal()
-        )
-        .toInternal()
-    val data: String = JSON.encodeToString(clientMessage)
-    var webSession: DefaultClientWebSocketSession? = null
-    try {
-      webSession = controller.getWebSocketSession(location)
+        ).toInternal()
+      val data: String = JSON.encodeToString(clientMessage)
+      val webSession = controller.getWebSocketSession(location)
       webSession.send(Frame.Text(data))
       val receivedJsonStr = webSession.incoming.receive().readBytes().toString(Charsets.UTF_8)
       val receivedJson = JSON.parseToJsonElement(receivedJsonStr)
-
       if (receivedJson is JsonObject && "setupComplete" in receivedJson) {
         webSession
       } else {
@@ -132,7 +132,6 @@ internal constructor(
         throw ServiceConnectionHandshakeFailedException("Unable to connect to the server")
       }
     }
-
     var webSession: DefaultClientWebSocketSession? = null
     try {
       webSession = connectFactory(sessionResumption)

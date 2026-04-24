@@ -75,7 +75,7 @@ private constructor(
   internal val speechConfig: SpeechConfig?,
   internal val inputAudioTranscription: AudioTranscriptionConfig?,
   internal val outputAudioTranscription: AudioTranscriptionConfig?,
-  public val contextWindowCompression: ContextWindowCompressionConfig?,
+  internal val contextWindowCompression: ContextWindowCompressionConfig?,
 ) {
 
   /**

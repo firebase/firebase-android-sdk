@@ -17,6 +17,7 @@
 package com.google.firebase.ai.type
 
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
