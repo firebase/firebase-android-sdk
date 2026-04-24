@@ -54,7 +54,7 @@ internal inline fun <T> StateFlow<MaybeValue<T>>.ifEmpty(block: () -> Unit) {
 }
 
 /**
- * Returns [MaybeValue.ifNonEmpty] of the [StateFlow.value] of the receiver.
+ * Calls [MaybeValue.ifNonEmpty] of the [StateFlow.value] of the receiver.
  *
  * Note that unlike [MaybeValue.ifNonEmpty], which returns a reference to itself to facilitate
  * chaining, this function returns [Unit]. This is done to _discourage_ calling [ifEmpty] and
