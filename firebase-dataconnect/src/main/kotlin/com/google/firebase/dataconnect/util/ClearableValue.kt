@@ -58,39 +58,50 @@ internal class ClearableValue<T>(initialValue: MaybeValue<T>) {
     }
 }
 
-/** Returns [MaybeValue.isEmpty] of the [ClearableValue.state] of the receiver. */
+/** Returns [StateFlow.isEmpty] of the [ClearableValue.state] of the receiver. */
 internal val ClearableValue<*>.isEmpty: Boolean
-  get() = state.value.isEmpty
+  get() = state.isEmpty
 
-/** Returns [MaybeValue.getOrNull] of the [ClearableValue.state] of the receiver. */
-internal fun <T> ClearableValue<T>.getOrNull(): T? = state.value.getOrNull()
+/** Returns [StateFlow.getOrNull] of the [ClearableValue.state] of the receiver. */
+internal fun <T> ClearableValue<T>.getOrNull(): T? = state.getOrNull()
 
-/** Returns [MaybeValue.getOrThrow] of the [ClearableValue.state] of the receiver. */
+/** Returns [StateFlow.getOrThrow] of the [ClearableValue.state] of the receiver. */
 internal fun <T> ClearableValue<T>.getOrThrow(): T =
   when (val currentState = state.value) {
     is MaybeValue.Value -> currentState.value
     is MaybeValue.Empty -> error("clear() has been called")
   }
 
-/** Returns [MaybeValue.getOrElse] of the [ClearableValue.state] of the receiver. */
+/** Returns [StateFlow.getOrElse] of the [ClearableValue.state] of the receiver. */
 @OptIn(ExperimentalContracts::class)
 internal inline fun <T> ClearableValue<T>.getOrElse(block: () -> T): T {
   contract { callsInPlace(block, InvocationKind.AT_MOST_ONCE) }
-  return state.value.getOrElse(block)
+  return state.getOrElse(block)
 }
 
-/** Returns [MaybeValue.ifEmpty] of the [ClearableValue.state] of the receiver. */
+/** Calls [StateFlow.ifEmpty] on the [ClearableValue.state] of the receiver. */
 @OptIn(ExperimentalContracts::class)
-internal inline fun <T> ClearableValue<T>.ifEmpty(block: () -> Unit): ClearableValue<T> {
+internal inline fun <T> ClearableValue<T>.ifEmpty(block: () -> Unit) {
   contract { callsInPlace(block, InvocationKind.AT_MOST_ONCE) }
-  state.value.ifEmpty(block)
-  return this
+  state.ifEmpty(block)
 }
 
-/** Returns [MaybeValue.ifNonEmpty] of the [ClearableValue.state] of the receiver. */
+/** Calls [StateFlow.ifNonEmpty] on the [ClearableValue.state] of the receiver. */
 @OptIn(ExperimentalContracts::class)
-internal inline fun <T> ClearableValue<T>.ifNonEmpty(block: (T) -> Unit): ClearableValue<T> {
+internal inline fun <T> ClearableValue<T>.ifNonEmpty(block: (T) -> Unit) {
   contract { callsInPlace(block, InvocationKind.AT_MOST_ONCE) }
-  state.value.ifNonEmpty(block)
-  return this
+  state.ifNonEmpty(block)
+}
+
+/** Returns [MaybeValue.fold] of the [ClearableValue.state] of the receiver. */
+@OptIn(ExperimentalContracts::class)
+internal inline fun <T, R> ClearableValue<T>.fold(
+  onEmpty: () -> R,
+  onNonEmpty: (T) -> R,
+): R {
+  contract {
+    callsInPlace(onEmpty, InvocationKind.AT_MOST_ONCE)
+    callsInPlace(onNonEmpty, InvocationKind.AT_MOST_ONCE)
+  }
+  return state.fold(onEmpty, onNonEmpty)
 }

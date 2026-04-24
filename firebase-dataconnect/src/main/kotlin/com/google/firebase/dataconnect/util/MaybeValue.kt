@@ -17,24 +17,26 @@
 package com.google.firebase.dataconnect.util
 
 import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 
+/** A discriminated union of a (possibly null) value or the absence of a value (empty). */
 internal sealed interface MaybeValue<out T> {
 
-  /** Whether this object has a value: `true` if it has a value or `false` if it does not. */
+  /** Whether this object is "empty" (has no value). */
   val isEmpty: Boolean
 
-  /** Returns the value, if it has a value, or `null` if it does not. */
+  /** Returns the value, if this object has a value, or `null` if it does not. */
   fun getOrNull(): T?
 
   /**
-   * Returns the value if it has been set, or throws an exception if it has not.
+   * Returns the value, if this object has a value, or throws an exception if it does not.
    *
-   * @return The set value.
-   * @throws IllegalStateException if the value has not yet been set.
+   * @throws IllegalStateException if this object does not have a value.
    */
   fun getOrThrow(): T
 
+  /** The implementation of [MaybeValue] that _has_ a value (is non-empty). */
   class Value<out T>(val value: T) : MaybeValue<T> {
     override val isEmpty: Boolean
       get() = false
@@ -50,6 +52,7 @@ internal sealed interface MaybeValue<out T> {
     override fun toString() = "MaybeValue.Value(value=$value)"
   }
 
+  /** The implementation of [MaybeValue] that _does not_ have a value (is empty). */
   object Empty : MaybeValue<Nothing> {
     override val isEmpty: Boolean
       get() = true
@@ -75,7 +78,7 @@ internal sealed interface MaybeValue<out T> {
  */
 @OptIn(ExperimentalContracts::class)
 internal inline fun <T> MaybeValue<T>.getOrElse(block: () -> T): T {
-  contract { callsInPlace(block, kotlin.contracts.InvocationKind.AT_MOST_ONCE) }
+  contract { callsInPlace(block, InvocationKind.AT_MOST_ONCE) }
   return when (this) {
     MaybeValue.Empty -> block()
     is MaybeValue.Value -> value
@@ -84,13 +87,13 @@ internal inline fun <T> MaybeValue<T>.getOrElse(block: () -> T): T {
 
 @OptIn(ExperimentalContracts::class)
 internal inline fun <T> MaybeValue.Empty.getOrElse(block: () -> T): T {
-  contract { callsInPlace(block, kotlin.contracts.InvocationKind.EXACTLY_ONCE) }
+  contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
   return block()
 }
 
 @OptIn(ExperimentalContracts::class)
 internal inline fun <T> MaybeValue.Value<T>.getOrElse(block: () -> T): T {
-  contract { callsInPlace(block, kotlin.contracts.InvocationKind.AT_MOST_ONCE) }
+  contract { callsInPlace(block, InvocationKind.AT_MOST_ONCE) }
   return value
 }
 
@@ -105,7 +108,7 @@ internal inline fun <T> MaybeValue.Value<T>.getOrElse(block: () -> T): T {
  */
 @OptIn(ExperimentalContracts::class)
 internal inline fun <T> MaybeValue<T>.ifEmpty(block: () -> Unit): MaybeValue<T> {
-  contract { callsInPlace(block, kotlin.contracts.InvocationKind.AT_MOST_ONCE) }
+  contract { callsInPlace(block, InvocationKind.AT_MOST_ONCE) }
   if (this is MaybeValue.Empty) {
     block()
   }
@@ -114,29 +117,29 @@ internal inline fun <T> MaybeValue<T>.ifEmpty(block: () -> Unit): MaybeValue<T> 
 
 @OptIn(ExperimentalContracts::class)
 internal inline fun MaybeValue.Empty.ifEmpty(block: () -> Unit): MaybeValue.Empty {
-  contract { callsInPlace(block, kotlin.contracts.InvocationKind.EXACTLY_ONCE) }
+  contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
   block()
   return this
 }
 
 @OptIn(ExperimentalContracts::class)
 internal inline fun <T> MaybeValue.Value<T>.ifEmpty(block: () -> Unit): MaybeValue.Value<T> {
-  contract { callsInPlace(block, kotlin.contracts.InvocationKind.AT_MOST_ONCE) }
+  contract { callsInPlace(block, InvocationKind.AT_MOST_ONCE) }
   return this
 }
 
 /**
- * Calls the given [block] if, and only if, the receiver is empty.
+ * Calls the given [block] if, and only if, the receiver is non-empty.
  *
- * If receiver is [MaybeValue.Empty] then [block] is called exactly once; otherwise, this method
- * does nothing and, specifically, [block] is _not_ called.
+ * If receiver is [MaybeValue.Value] then [block] is called exactly once with the value; otherwise,
+ * this method does nothing and, specifically, [block] is _not_ called.
  *
- * @param block The block to execute if the receiver is empty.
+ * @param block The block to execute if the receiver is non-empty.
  * @return The receiver, for chaining.
  */
 @OptIn(ExperimentalContracts::class)
 internal inline fun <T> MaybeValue<T>.ifNonEmpty(block: (T) -> Unit): MaybeValue<T> {
-  contract { callsInPlace(block, kotlin.contracts.InvocationKind.AT_MOST_ONCE) }
+  contract { callsInPlace(block, InvocationKind.AT_MOST_ONCE) }
   if (this is MaybeValue.Value) {
     block(value)
   }
@@ -144,14 +147,64 @@ internal inline fun <T> MaybeValue<T>.ifNonEmpty(block: (T) -> Unit): MaybeValue
 }
 
 @OptIn(ExperimentalContracts::class)
-internal inline fun <T> MaybeValue.Empty.ifNonEmpty(block: (T) -> Unit): MaybeValue.Empty {
-  contract { callsInPlace(block, kotlin.contracts.InvocationKind.AT_MOST_ONCE) }
+internal inline fun MaybeValue.Empty.ifNonEmpty(block: (Nothing) -> Unit): MaybeValue.Empty {
+  contract { callsInPlace(block, InvocationKind.AT_MOST_ONCE) }
   return this
 }
 
 @OptIn(ExperimentalContracts::class)
 internal inline fun <T> MaybeValue.Value<T>.ifNonEmpty(block: (T) -> Unit): MaybeValue.Value<T> {
-  contract { callsInPlace(block, kotlin.contracts.InvocationKind.EXACTLY_ONCE) }
+  contract { callsInPlace(block, InvocationKind.EXACTLY_ONCE) }
   block(value)
   return this
+}
+
+/**
+ * Calls the given [onEmpty] if the receiver is empty, or [onNonEmpty] if the receiver is non-empty.
+ *
+ * If receiver is [MaybeValue.Value] then [onNonEmpty] is called exactly once with the value and
+ * [onEmpty] is not called at all; otherwise, if receiver is [MaybeValue.Empty], [onEmpty] is called
+ * exactly once and [onNonEmpty] is not called at all.
+ *
+ * @param onEmpty The block to execute if the receiver is empty.
+ * @param onNonEmpty The block to execute if the receiver is non-empty.
+ * @return The value returned from [onEmpty] or [onNonEmpty], whichever was called.
+ */
+@OptIn(ExperimentalContracts::class)
+internal inline fun <T, R> MaybeValue<T>.fold(
+  onEmpty: () -> R,
+  onNonEmpty: (T) -> R,
+): R {
+  contract {
+    callsInPlace(onEmpty, InvocationKind.AT_MOST_ONCE)
+    callsInPlace(onNonEmpty, InvocationKind.AT_MOST_ONCE)
+  }
+  return when (this) {
+    MaybeValue.Empty -> onEmpty()
+    is MaybeValue.Value -> onNonEmpty(value)
+  }
+}
+
+@OptIn(ExperimentalContracts::class)
+internal inline fun <T, R> MaybeValue.Empty.fold(
+  onEmpty: () -> R,
+  onNonEmpty: (T) -> R,
+): R {
+  contract {
+    callsInPlace(onEmpty, InvocationKind.EXACTLY_ONCE)
+    callsInPlace(onNonEmpty, InvocationKind.AT_MOST_ONCE)
+  }
+  return onEmpty()
+}
+
+@OptIn(ExperimentalContracts::class)
+internal inline fun <T, R> MaybeValue.Value<T>.fold(
+  onEmpty: () -> R,
+  onNonEmpty: (T) -> R,
+): R {
+  contract {
+    callsInPlace(onEmpty, InvocationKind.AT_MOST_ONCE)
+    callsInPlace(onNonEmpty, InvocationKind.EXACTLY_ONCE)
+  }
+  return onNonEmpty(value)
 }
