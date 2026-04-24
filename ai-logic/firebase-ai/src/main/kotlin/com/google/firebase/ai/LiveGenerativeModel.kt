@@ -107,31 +107,32 @@ internal constructor(
   @JvmOverloads
   @OptIn(ExperimentalSerializationApi::class)
   public suspend fun connect(sessionResumption: SessionResumptionConfig? = null): LiveSession {
-    val connectFactory: (suspend (SessionResumptionConfig?) -> DefaultClientWebSocketSession) = {
-      resumption ->
-      val clientMessage =
-        LiveClientSetupMessage(
-          modelName,
-          config?.toInternal(),
-          tools.map { it.toInternal() }.takeIf { it.isNotEmpty() },
-          systemInstruction?.toInternal(),
-          config?.inputAudioTranscription?.toInternal(),
-          config?.outputAudioTranscription?.toInternal(),
-          resumption?.toInternal(),
-          config?.contextWindowCompression?.toInternal()
-        ).toInternal()
-      val data: String = JSON.encodeToString(clientMessage)
-      val webSession = controller.getWebSocketSession(location)
-      webSession.send(Frame.Text(data))
-      val receivedJsonStr = webSession.incoming.receive().readBytes().toString(Charsets.UTF_8)
-      val receivedJson = JSON.parseToJsonElement(receivedJsonStr)
-      if (receivedJson is JsonObject && "setupComplete" in receivedJson) {
-        webSession
-      } else {
-        webSession.close()
-        throw ServiceConnectionHandshakeFailedException("Unable to connect to the server")
+    val connectFactory: (suspend (SessionResumptionConfig?) -> DefaultClientWebSocketSession) =
+      { resumption ->
+        val clientMessage =
+          LiveClientSetupMessage(
+              modelName,
+              config?.toInternal(),
+              tools.map { it.toInternal() }.takeIf { it.isNotEmpty() },
+              systemInstruction?.toInternal(),
+              config?.inputAudioTranscription?.toInternal(),
+              config?.outputAudioTranscription?.toInternal(),
+              resumption?.toInternal(),
+              config?.contextWindowCompression?.toInternal()
+            )
+            .toInternal()
+        val data: String = JSON.encodeToString(clientMessage)
+        val webSession = controller.getWebSocketSession(location)
+        webSession.send(Frame.Text(data))
+        val receivedJsonStr = webSession.incoming.receive().readBytes().toString(Charsets.UTF_8)
+        val receivedJson = JSON.parseToJsonElement(receivedJsonStr)
+        if (receivedJson is JsonObject && "setupComplete" in receivedJson) {
+          webSession
+        } else {
+          webSession.close()
+          throw ServiceConnectionHandshakeFailedException("Unable to connect to the server")
+        }
       }
-    }
     var webSession: DefaultClientWebSocketSession? = null
     try {
       webSession = connectFactory(sessionResumption)

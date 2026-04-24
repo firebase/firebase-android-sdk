@@ -29,10 +29,7 @@ import kotlinx.serialization.Serializable
 public class SlidingWindow(public val targetTokens: Int? = null) {
   internal fun toInternal() = Internal(targetTokens)
 
-  @Serializable
-  internal data class Internal(
-    val targetTokens: Int? = null
-  )
+  @Serializable internal data class Internal(val targetTokens: Int? = null)
 }
 
 /**
@@ -40,7 +37,8 @@ public class SlidingWindow(public val targetTokens: Int? = null) {
  *
  * This mechanism prevents the context from exceeding a given length.
  *
- * @property triggerTokens The number of tokens (before running a turn) that triggers the context window compression.
+ * @property triggerTokens The number of tokens (before running a turn) that triggers the context
+ * window compression.
  * @property slidingWindow The sliding window compression mechanism.
  */
 @PublicPreviewAPI

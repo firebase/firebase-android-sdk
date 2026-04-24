@@ -148,9 +148,10 @@ private constructor(
       this.outputAudioTranscription = config
     }
 
-    public fun setContextWindowCompression(config: ContextWindowCompressionConfig?): Builder = apply {
-      this.contextWindowCompression = config
-    }
+    public fun setContextWindowCompression(config: ContextWindowCompressionConfig?): Builder =
+      apply {
+        this.contextWindowCompression = config
+      }
 
     /** Create a new [LiveGenerationConfig] with the attached arguments. */
     public fun build(): LiveGenerationConfig =

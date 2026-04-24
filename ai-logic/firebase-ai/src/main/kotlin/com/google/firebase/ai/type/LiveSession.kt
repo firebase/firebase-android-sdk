@@ -73,7 +73,9 @@ internal constructor(
   @Blocking private val blockingDispatcher: CoroutineContext,
   private var audioHelper: AudioHelper? = null,
   private val firebaseApp: FirebaseApp,
-  private val connectionFactory: (suspend (SessionResumptionConfig?) -> DefaultClientWebSocketSession)? = null
+  private val connectionFactory:
+    (suspend (SessionResumptionConfig?) -> DefaultClientWebSocketSession)? =
+    null
 ) {
   /**
    * Coroutine scope that we batch data on for network related behavior.
@@ -318,12 +320,12 @@ internal constructor(
             val response = currentSession.incoming.tryReceive()
             if (!startedReceiving.get()) break
             if (response.isClosed) {
-                if (currentSession === session) {
-                    break
-                } else {
-                    delay(0)
-                    continue
-                }
+              if (currentSession === session) {
+                break
+              } else {
+                delay(0)
+                continue
+              }
             }
             response
               .getOrNull()
@@ -505,12 +507,13 @@ internal constructor(
   /**
    * Resumes an existing live session with the server.
    *
-   * This closes the current WebSocket connection and establishes a new one using
-   * the same configuration (URI, headers, model, system instruction, tools, etc.)
-   * as the original session.
+   * This closes the current WebSocket connection and establishes a new one using the same
+   * configuration (URI, headers, model, system instruction, tools, etc.) as the original session.
    *
-   * @param sessionResumption The configuration for session resumption, such as the handle to the previous session state to restore.
+   * @param sessionResumption The configuration for session resumption, such as the handle to the
+   * previous session state to restore.
    */
+  @JvmOverloads
   public suspend fun resumeSession(sessionResumption: SessionResumptionConfig? = null) {
     if (connectionFactory == null) {
       throw IllegalStateException("resumeSession is not supported on this instance.")

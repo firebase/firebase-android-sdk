@@ -284,30 +284,36 @@ class LiveSessionTests {
     val session = liveModel.connect(SessionResumptionConfig())
     session.send("Hello, please respond", true)
     var piecesOfContent = 0
-    var lastResumptionUpdate : LiveSessionResumptionUpdate? = null
+    var lastResumptionUpdate: LiveSessionResumptionUpdate? = null
     withTimeout(30_000) {
-      session.receive().takeWhile {
-        if (it is LiveSessionResumptionUpdate) {
-          lastResumptionUpdate = it
-        } else if (it is LiveServerContent) {
-          piecesOfContent++
-          !it.turnComplete
+      session
+        .receive()
+        .takeWhile {
+          if (it is LiveSessionResumptionUpdate) {
+            lastResumptionUpdate = it
+          } else if (it is LiveServerContent) {
+            piecesOfContent++
+            !it.turnComplete
+          }
+          true
         }
-        true
-      }.collect {}
+        .collect {}
     }
     val firstContentSize = piecesOfContent
     lastResumptionUpdate shouldNotBe null
     session.resumeSession(SessionResumptionConfig(handle = lastResumptionUpdate!!.newHandle))
     session.send("Hello, please respond")
     withTimeout(30_000) {
-      session.receive().takeWhile {
-        if (it is LiveServerContent) {
-          piecesOfContent++
-          !it.turnComplete
+      session
+        .receive()
+        .takeWhile {
+          if (it is LiveServerContent) {
+            piecesOfContent++
+            !it.turnComplete
+          }
+          true
         }
-        true
-      }.collect {}
+        .collect {}
     }
     piecesOfContent shouldBeGreaterThan firstContentSize
   }

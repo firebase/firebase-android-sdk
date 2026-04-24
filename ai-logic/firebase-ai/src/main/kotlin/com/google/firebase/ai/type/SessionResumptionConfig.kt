@@ -29,8 +29,5 @@ import kotlinx.serialization.Serializable
 public class SessionResumptionConfig(internal val handle: String? = null) {
   internal fun toInternal() = Internal(handle)
 
-  @Serializable
-  internal data class Internal(
-    val handle: String? = null
-  )
+  @Serializable internal data class Internal(val handle: String? = null)
 }

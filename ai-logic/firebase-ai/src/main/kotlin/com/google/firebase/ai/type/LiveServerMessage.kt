@@ -228,15 +228,17 @@ public class LiveServerGoAway(public val timeLeft: Duration?) : LiveServerMessag
  *
  * This message is only sent if [SessionResumptionConfig] was set in the session setup.
  *
- * @property newHandle The new handle that represents the state that can be resumed. Empty if `resumable` is false.
+ * @property newHandle The new handle that represents the state that can be resumed. Empty if
+ * `resumable` is false.
  * @property resumable Indicates if the session can be resumed at this point.
- * @property lastConsumedClientMessageIndex The index of the last client message that is included in the state represented by this update.
+ * @property lastConsumedClientMessageIndex The index of the last client message that is included in
+ * the state represented by this update.
  */
 @PublicPreviewAPI
 public class LiveSessionResumptionUpdate(
-  internal val newHandle: String? = null,
-  internal val resumable: Boolean? = null,
-  internal val lastConsumedClientMessageIndex: Int? = null
+  public val newHandle: String? = null,
+  public val resumable: Boolean? = null,
+  public val lastConsumedClientMessageIndex: Int? = null
 ) : LiveServerMessage {
   @Serializable
   internal data class Internal(
@@ -279,7 +281,8 @@ internal object LiveServerMessageSerializer :
       "toolCallCancellation" in jsonObject ->
         LiveServerToolCallCancellation.InternalWrapper.serializer()
       "goAway" in jsonObject -> LiveServerGoAway.InternalWrapper.serializer()
-      "sessionResumptionUpdate" in jsonObject -> LiveSessionResumptionUpdate.InternalWrapper.serializer()
+      "sessionResumptionUpdate" in jsonObject ->
+        LiveSessionResumptionUpdate.InternalWrapper.serializer()
       else -> {
         Log.w(
           "LiveServerMsgSerializer",
