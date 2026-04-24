@@ -257,13 +257,15 @@ internal constructor(
 
   suspend fun getWebSocketSession(location: String): DefaultClientWebSocketSession {
     // applyHeaderProvider() is suspend; Ktor's webSocketSession { } config lambda is not.
-    // Pre-fetch headers (including X-Firebase-AppCheck) in the outer suspend context, then
-    // set them synchronously inside the lambda. Other methods route through HTTP builders
-    // whose pipelines allow calling applyHeaderProvider() directly inside the config block.
-    val extraHeaders = headerProvider?.generateHeaders().orEmpty()
+    // Pre-fetch headers (including X-Firebase-AppCheck) in the outer suspend context using
+    // the same timeout-protected path as HTTP methods, then set them synchronously inside the
+    // lambda.
+    val extraHeaders = extractHeaders(headerProvider)
     return client.webSocketSession(getBidiEndpoint(location)) {
       applyCommonHeaders()
-      extraHeaders.forEach { (name, value) -> header(name, value) }
+      for ((tag, value) in extraHeaders) {
+        header(tag, value)
+      }
     }
   }
 
@@ -315,16 +317,18 @@ internal constructor(
   }
 
   private suspend fun HttpRequestBuilder.applyHeaderProvider() {
-    if (headerProvider != null) {
-      try {
-        withTimeout(headerProvider.timeout) {
-          for ((tag, value) in headerProvider.generateHeaders()) {
-            header(tag, value)
-          }
-        }
-      } catch (e: TimeoutCancellationException) {
-        Log.w(TAG, "HeaderProvided timed out without generating headers, ignoring")
-      }
+    for ((tag, value) in extractHeaders(headerProvider)) {
+      header(tag, value)
+    }
+  }
+
+  private suspend fun extractHeaders(headerProvider: HeaderProvider?): Map<String, String> {
+    if (headerProvider == null) return emptyMap()
+    return try {
+      withTimeout(headerProvider.timeout) { headerProvider.generateHeaders() }
+    } catch (e: TimeoutCancellationException) {
+      Log.w(TAG, "HeaderProvided timed out without generating headers, ignoring", e)
+      emptyMap()
     }
   }
 
