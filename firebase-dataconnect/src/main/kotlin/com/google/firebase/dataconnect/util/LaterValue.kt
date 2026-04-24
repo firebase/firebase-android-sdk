@@ -16,11 +16,11 @@
 
 package com.google.firebase.dataconnect.util
 
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.contract
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlin.contracts.ExperimentalContracts
-import kotlin.contracts.contract
 
 /**
  * A thread-safe container for a value that can be set at most once.
@@ -50,36 +50,26 @@ internal class LaterValue<T>(initialValue: MaybeValue<T> = MaybeValue.Empty) {
       error("set() has already been called")
     }
   }
-
 }
 
-/**
- * Returns [MaybeValue.isEmpty] of the [LaterValue.state] of the receiver.
- */
-internal val LaterValue<*>.isEmpty: Boolean get() = state.value.isEmpty
+/** Returns [MaybeValue.isEmpty] of the [LaterValue.state] of the receiver. */
+internal val LaterValue<*>.isEmpty: Boolean
+  get() = state.value.isEmpty
 
-/**
- * Returns [MaybeValue.getOrNull] of the [LaterValue.state] of the receiver.
- */
+/** Returns [MaybeValue.getOrNull] of the [LaterValue.state] of the receiver. */
 internal fun <T> LaterValue<T>.getOrNull(): T? = state.value.getOrNull()
 
-/**
- * Returns [MaybeValue.getOrThrow] of the [LaterValue.state] of the receiver.
- */
+/** Returns [MaybeValue.getOrThrow] of the [LaterValue.state] of the receiver. */
 internal fun <T> LaterValue<T>.getOrThrow(): T = state.value.getOrThrow()
 
-/**
- * Returns [MaybeValue.getOrElse] of the [LaterValue.state] of the receiver.
- */
+/** Returns [MaybeValue.getOrElse] of the [LaterValue.state] of the receiver. */
 @OptIn(ExperimentalContracts::class)
 internal inline fun <T> LaterValue<T>.getOrElse(block: () -> T): T {
   contract { callsInPlace(block, kotlin.contracts.InvocationKind.AT_MOST_ONCE) }
   return state.value.getOrElse(block)
 }
 
-/**
- * Returns [MaybeValue.ifEmpty] of the [LaterValue.state] of the receiver.
- */
+/** Returns [MaybeValue.ifEmpty] of the [LaterValue.state] of the receiver. */
 @OptIn(ExperimentalContracts::class)
 internal inline fun <T> LaterValue<T>.ifEmpty(block: () -> Unit): LaterValue<T> {
   contract { callsInPlace(block, kotlin.contracts.InvocationKind.AT_MOST_ONCE) }
@@ -87,9 +77,7 @@ internal inline fun <T> LaterValue<T>.ifEmpty(block: () -> Unit): LaterValue<T> 
   return this
 }
 
-/**
- * Returns [MaybeValue.ifNonEmpty] of the [LaterValue.state] of the receiver.
- */
+/** Returns [MaybeValue.ifNonEmpty] of the [LaterValue.state] of the receiver. */
 @OptIn(ExperimentalContracts::class)
 internal inline fun <T> LaterValue<T>.ifNonEmpty(block: (T) -> Unit): LaterValue<T> {
   contract { callsInPlace(block, kotlin.contracts.InvocationKind.AT_MOST_ONCE) }

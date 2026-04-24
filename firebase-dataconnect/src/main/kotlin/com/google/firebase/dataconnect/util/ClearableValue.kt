@@ -16,12 +16,12 @@
 
 package com.google.firebase.dataconnect.util
 
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 /**
  * A thread-safe container for a value that can be cleared.
@@ -50,36 +50,26 @@ internal class ClearableValue<T>(initialValue: MaybeValue<T>) {
   fun clear() {
     _state.value = MaybeValue.Empty
   }
-
 }
 
-/**
- * Returns [MaybeValue.isEmpty] of the [ClearableValue.state] of the receiver.
- */
-internal val ClearableValue<*>.isEmpty: Boolean get() = state.value.isEmpty
+/** Returns [MaybeValue.isEmpty] of the [ClearableValue.state] of the receiver. */
+internal val ClearableValue<*>.isEmpty: Boolean
+  get() = state.value.isEmpty
 
-/**
- * Returns [MaybeValue.getOrNull] of the [ClearableValue.state] of the receiver.
- */
+/** Returns [MaybeValue.getOrNull] of the [ClearableValue.state] of the receiver. */
 internal fun <T> ClearableValue<T>.getOrNull(): T? = state.value.getOrNull()
 
-/**
- * Returns [MaybeValue.getOrThrow] of the [ClearableValue.state] of the receiver.
- */
+/** Returns [MaybeValue.getOrThrow] of the [ClearableValue.state] of the receiver. */
 internal fun <T> ClearableValue<T>.getOrThrow(): T = state.value.getOrThrow()
 
-/**
- * Returns [MaybeValue.getOrElse] of the [ClearableValue.state] of the receiver.
- */
+/** Returns [MaybeValue.getOrElse] of the [ClearableValue.state] of the receiver. */
 @OptIn(ExperimentalContracts::class)
 internal inline fun <T> ClearableValue<T>.getOrElse(block: () -> T): T {
   contract { callsInPlace(block, InvocationKind.AT_MOST_ONCE) }
   return state.value.getOrElse(block)
 }
 
-/**
- * Returns [MaybeValue.ifEmpty] of the [ClearableValue.state] of the receiver.
- */
+/** Returns [MaybeValue.ifEmpty] of the [ClearableValue.state] of the receiver. */
 @OptIn(ExperimentalContracts::class)
 internal inline fun <T> ClearableValue<T>.ifEmpty(block: () -> Unit): ClearableValue<T> {
   contract { callsInPlace(block, InvocationKind.AT_MOST_ONCE) }
@@ -87,9 +77,7 @@ internal inline fun <T> ClearableValue<T>.ifEmpty(block: () -> Unit): ClearableV
   return this
 }
 
-/**
- * Returns [MaybeValue.ifNonEmpty] of the [ClearableValue.state] of the receiver.
- */
+/** Returns [MaybeValue.ifNonEmpty] of the [ClearableValue.state] of the receiver. */
 @OptIn(ExperimentalContracts::class)
 internal inline fun <T> ClearableValue<T>.ifNonEmpty(block: (T) -> Unit): ClearableValue<T> {
   contract { callsInPlace(block, InvocationKind.AT_MOST_ONCE) }

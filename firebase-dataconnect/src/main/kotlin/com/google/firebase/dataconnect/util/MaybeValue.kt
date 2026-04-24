@@ -21,14 +21,10 @@ import kotlin.contracts.contract
 
 internal sealed interface MaybeValue<out T> {
 
-  /**
-   * Whether this object has a value: `true` if it has a value or `false` if it does not.
-   */
+  /** Whether this object has a value: `true` if it has a value or `false` if it does not. */
   val isEmpty: Boolean
 
-  /**
-   * Returns the value, if it has a value, or `null` if it does not.
-   */
+  /** Returns the value, if it has a value, or `null` if it does not. */
   fun getOrNull(): T?
 
   /**
@@ -40,7 +36,8 @@ internal sealed interface MaybeValue<out T> {
   fun getOrThrow(): T
 
   class Value<out T>(val value: T) : MaybeValue<T> {
-    override val isEmpty: Boolean get() = true
+    override val isEmpty: Boolean
+      get() = true
 
     override fun getOrNull(): T? = value
 
@@ -51,11 +48,11 @@ internal sealed interface MaybeValue<out T> {
     override fun hashCode() = value.hashCode()
 
     override fun toString() = "MaybeValue.Value(value=$value)"
-
   }
 
   object Empty : MaybeValue<Nothing> {
-    override val isEmpty: Boolean get() = false
+    override val isEmpty: Boolean
+      get() = false
 
     override fun getOrNull() = null
 
@@ -63,7 +60,6 @@ internal sealed interface MaybeValue<out T> {
 
     override fun toString() = "MaybeValue.Empty"
   }
-
 }
 
 /**

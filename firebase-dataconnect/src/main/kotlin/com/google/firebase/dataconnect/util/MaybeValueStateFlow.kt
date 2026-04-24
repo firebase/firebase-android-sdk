@@ -16,49 +16,42 @@
 
 package com.google.firebase.dataconnect.util
 
-import kotlinx.coroutines.flow.StateFlow
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
+import kotlinx.coroutines.flow.StateFlow
 
-/**
- * Returns [MaybeValue.isEmpty] of the [StateFlow.value] of the receiver.
- */
-internal val StateFlow<MaybeValue<*>>.isEmpty: Boolean get() = value.isEmpty
+/** Returns [MaybeValue.isEmpty] of the [StateFlow.value] of the receiver. */
+internal val StateFlow<MaybeValue<*>>.isEmpty: Boolean
+  get() = value.isEmpty
 
-/**
- * Returns [MaybeValue.getOrNull] of the [StateFlow.value] of the receiver.
- */
+/** Returns [MaybeValue.getOrNull] of the [StateFlow.value] of the receiver. */
 internal fun <T> StateFlow<MaybeValue<T>>.getOrNull(): T? = value.getOrNull()
 
-/**
- * Returns [MaybeValue.getOrThrow] of the [StateFlow.value] of the receiver.
- */
+/** Returns [MaybeValue.getOrThrow] of the [StateFlow.value] of the receiver. */
 internal fun <T> StateFlow<MaybeValue<T>>.getOrThrow(): T = value.getOrThrow()
 
-/**
- * Returns [MaybeValue.getOrElse] of the [StateFlow.value] of the receiver.
- */
+/** Returns [MaybeValue.getOrElse] of the [StateFlow.value] of the receiver. */
 @OptIn(ExperimentalContracts::class)
 internal inline fun <T> StateFlow<MaybeValue<T>>.getOrElse(block: () -> T): T {
   contract { callsInPlace(block, kotlin.contracts.InvocationKind.AT_MOST_ONCE) }
   return value.getOrElse(block)
 }
 
-/**
- * Returns [MaybeValue.ifEmpty] of the [StateFlow.value] of the receiver.
- */
+/** Returns [MaybeValue.ifEmpty] of the [StateFlow.value] of the receiver. */
 @OptIn(ExperimentalContracts::class)
-internal inline fun <T> StateFlow<MaybeValue<T>>.ifEmpty(block: () -> Unit): StateFlow<MaybeValue<T>> {
+internal inline fun <T> StateFlow<MaybeValue<T>>.ifEmpty(
+  block: () -> Unit
+): StateFlow<MaybeValue<T>> {
   contract { callsInPlace(block, kotlin.contracts.InvocationKind.AT_MOST_ONCE) }
   value.ifEmpty(block)
   return this
 }
 
-/**
- * Returns [MaybeValue.ifNonEmpty] of the [StateFlow.value] of the receiver.
- */
+/** Returns [MaybeValue.ifNonEmpty] of the [StateFlow.value] of the receiver. */
 @OptIn(ExperimentalContracts::class)
-internal inline fun <T> StateFlow<MaybeValue<T>>.ifNonEmpty(block: (T) -> Unit): StateFlow<MaybeValue<T>> {
+internal inline fun <T> StateFlow<MaybeValue<T>>.ifNonEmpty(
+  block: (T) -> Unit
+): StateFlow<MaybeValue<T>> {
   contract { callsInPlace(block, kotlin.contracts.InvocationKind.AT_MOST_ONCE) }
   value.ifNonEmpty(block)
   return this
