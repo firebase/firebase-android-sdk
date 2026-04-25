@@ -16,103 +16,200 @@
 
 package com.google.firebase.dataconnect.testutil.property.arbitrary
 
+import io.kotest.assertions.print.print
 import io.kotest.property.Arb
 import io.kotest.property.RandomSource
 import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.alphanumeric
+import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.boolean
 import io.kotest.property.arbitrary.byte
 import io.kotest.property.arbitrary.char
+import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.double
+import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.float
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.long
+import io.kotest.property.arbitrary.map
+import io.kotest.property.arbitrary.of
 import io.kotest.property.arbitrary.short
 import io.kotest.property.arbitrary.string
 import io.kotest.property.asSample
+import java.util.Objects
 import kotlin.random.nextInt
 import kotlin.reflect.KClass
 
-fun Arb.Companion.someValue(maxDepth: Int = 2, maxSize: Int = 3): Arb<Any> =
+fun Arb.Companion.someValue(maxDepth: Int = 2, maxSize: Int = 3): SomeValueArb =
   SomeValueArb(maxDepth, maxSize)
 
-private class SomeValueArb(maxDepth: Int, maxSize: Int) : Arb<Any>() {
+class SomeValueArb private constructor(private val delegate: ArbWithEdgeCases<Sample>) :
+  ArbWithEdgeCases<SomeValueArb.Sample>() {
 
-  private val scalarArb = SomeScalarValueArb()
-  private val compositeArb =
-    SomeCompositeValueArb(maxDepth = maxDepth, maxSize = maxSize, scalarArb = scalarArb)
+  constructor(
+    maxDepth: Int,
+    maxSize: Int
+  ) : this(createValueArb(maxDepth = maxDepth, maxSize = maxSize))
 
-  override fun sample(rs: RandomSource) =
-    generate(
-        rs = rs,
-        edgeCaseProbability = rs.random.nextDouble(),
-      )
-      .asSample()
+  override fun sample(rs: RandomSource) = delegate.sample(rs)
 
-  override fun edgecase(rs: RandomSource) =
-    generate(
-      rs = rs,
-      edgeCaseProbability = 1.0,
-    )
+  override fun edgecase(rs: RandomSource) = delegate.edgecase(rs)
 
-  private fun generate(
-    rs: RandomSource,
-    edgeCaseProbability: Double,
-  ): Any {
-    val arb =
-      when (SampleType.entries.random(rs.random)) {
-        SampleType.Scalar -> scalarArb
-        SampleType.Composite -> compositeArb
+  sealed class Sample(
+    val value: Any,
+    val edgeCaseProbability: Double,
+  ) {
+
+    class Scalar(value: Any, edgeCaseProbability: Double, val type: Type, val isEdgeCase: Boolean) :
+      Sample(value, edgeCaseProbability) {
+
+      override fun toString() = "SomeValueArb.Sample.Scalar(${value.print().value})"
+
+      override fun equals(other: Any?) = other is Scalar && other.value == value
+
+      override fun hashCode() = Objects.hash(Scalar::class, value)
+
+      @Suppress("RemoveRedundantQualifierName")
+      enum class Type(val kClass: KClass<*>) {
+        Boolean(kotlin.Boolean::class),
+        Byte(kotlin.Byte::class),
+        Char(kotlin.Char::class),
+        Double(kotlin.Double::class),
+        Float(kotlin.Float::class),
+        Int(kotlin.Int::class),
+        Long(kotlin.Long::class),
+        Short(kotlin.Short::class),
+        String(kotlin.String::class),
+        Unit(kotlin.Unit::class),
+        Throwable(kotlin.Throwable::class),
+        KClass(kotlin.reflect.KClass::class),
       }
-    return arb.next(rs, edgeCaseProbability)
+    }
+
+    class Composite(
+      value: Any,
+      edgeCaseProbability: Double,
+      val type: Type,
+      val maxDepth: Int,
+      val compositeProbability: Double,
+      val edgeCases: Set<EdgeCase>,
+    ) : Sample(value, edgeCaseProbability) {
+
+      override fun toString() = "SomeValueArb.Sample.Composite(${value.print().value})"
+
+      override fun equals(other: Any?) = other is Composite && other.value == value
+
+      override fun hashCode() = Objects.hash(Composite::class, value)
+
+      enum class EdgeCase {
+        MaxDepth,
+        Value,
+        Composite,
+      }
+
+      @Suppress("RemoveRedundantQualifierName")
+      enum class Type(val kClass: KClass<*>) {
+        List(kotlin.collections.List::class),
+        Map(kotlin.collections.Map::class),
+        MutableList(kotlin.collections.MutableList::class),
+        MutableMap(kotlin.collections.MutableMap::class),
+        MutableSet(kotlin.collections.MutableSet::class),
+        Pair(kotlin.Pair::class),
+        Result(kotlin.Result::class),
+        Set(kotlin.collections.Set::class),
+        Triple(kotlin.Triple::class),
+      }
+    }
   }
 
-  enum class SampleType {
-    Scalar,
-    Composite,
+  companion object {
+
+    private fun createValueArb(maxDepth: Int, maxSize: Int): ArbWithEdgeCases<Sample> {
+      val constituentArbs = buildList {
+        val scalarArb = SomeScalarValueArb()
+        add(scalarArb)
+
+        if (maxDepth != 0) {
+          add(SomeCompositeValueArb(maxDepth = maxDepth, maxSize = maxSize, scalarArb = scalarArb))
+        }
+      }
+
+      return Arb.choice(constituentArbs).toArbWithEdgeCases()
+    }
   }
 }
 
-private class SomeScalarValueArb : Arb<Any>() {
+internal abstract class SomeScalarOrCompositeValueArb<out T : SomeValueArb.Sample> : Arb<T>() {
+
+  // Remove nullability from return type.
+  abstract override fun edgecase(rs: RandomSource): T
+}
+
+private class SomeScalarValueArb : SomeScalarOrCompositeValueArb<SomeValueArb.Sample.Scalar>() {
 
   override fun sample(rs: RandomSource) =
     generate(
         rs,
         edgeCaseProbability = rs.random.nextDouble(),
+        isEdgeCase = false,
       )
       .asSample()
 
-  override fun edgecase(rs: RandomSource) = generate(rs, edgeCaseProbability = 1.0)
+  override fun edgecase(rs: RandomSource) =
+    generate(
+      rs,
+      edgeCaseProbability = 1.0,
+      isEdgeCase = true,
+    )
 
-  private fun generate(
+  fun generate(
     rs: RandomSource,
     edgeCaseProbability: Double,
-  ): Any {
-    val scalarType = ScalarType.entries.random(rs.random)
+    isEdgeCase: Boolean,
+  ): SomeValueArb.Sample.Scalar {
+    val scalarType = SomeValueArb.Sample.Scalar.Type.entries.random(rs.random)
     val arb = scalarType.createArb()
-    return arb.next(rs, edgeCaseProbability)
+    val value = arb.next(rs, edgeCaseProbability)
+    return SomeValueArb.Sample.Scalar(
+      value = value,
+      edgeCaseProbability = edgeCaseProbability,
+      type = scalarType,
+      isEdgeCase = isEdgeCase,
+    )
   }
 
-  private enum class ScalarType(val createArb: () -> Arb<Any>) {
-    Boolean({ Arb.boolean() }),
-    Byte({ Arb.byte() }),
-    Char({ Arb.char() }),
-    Double({ Arb.double() }),
-    Float({ Arb.float() }),
-    Int({ Arb.int() }),
-    Long({ Arb.long() }),
-    Short({ Arb.short() }),
-    String({ Arb.string() }),
-    Unit({ Arb.constant(Unit) }),
+  private companion object {
+
+    fun SomeValueArb.Sample.Scalar.Type.createArb(): Arb<Any> =
+      when (this) {
+        SomeValueArb.Sample.Scalar.Type.Boolean -> Arb.boolean()
+        SomeValueArb.Sample.Scalar.Type.Byte -> Arb.byte()
+        SomeValueArb.Sample.Scalar.Type.Char -> Arb.char()
+        SomeValueArb.Sample.Scalar.Type.Double -> Arb.double()
+        SomeValueArb.Sample.Scalar.Type.Float -> Arb.float()
+        SomeValueArb.Sample.Scalar.Type.Int -> Arb.int()
+        SomeValueArb.Sample.Scalar.Type.Long -> Arb.long()
+        SomeValueArb.Sample.Scalar.Type.Short -> Arb.short()
+        SomeValueArb.Sample.Scalar.Type.String -> Arb.string()
+        SomeValueArb.Sample.Scalar.Type.Unit -> Arb.constant(Unit)
+        SomeValueArb.Sample.Scalar.Type.Throwable -> throwableArb()
+        SomeValueArb.Sample.Scalar.Type.KClass -> kClassArb()
+      }
+
+    private fun kClassArb(): Arb<KClass<*>> {
+      val scalarKClassArb = Arb.enum<SomeValueArb.Sample.Scalar.Type>().map { it.kClass }
+      val compositeKClassArb = Arb.enum<SomeValueArb.Sample.Composite.Type>().map { it.kClass }
+      return Arb.choice(scalarKClassArb, compositeKClassArb)
+    }
   }
 }
 
 private class SomeCompositeValueArb(
   private val maxDepth: Int,
   maxSize: Int,
-  private val scalarArb: Arb<Any>
-) : Arb<Any>() {
+  private val scalarArb: Arb<SomeValueArb.Sample.Scalar>
+) : SomeScalarOrCompositeValueArb<SomeValueArb.Sample.Composite>() {
 
   init {
     require(maxDepth in validMaxDepthRange) {
@@ -124,7 +221,6 @@ private class SomeCompositeValueArb(
   }
 
   private val sizeArb = Arb.int(0..maxSize)
-  private val messageArb = Arb.string(0..10, Codepoint.alphanumeric())
 
   override fun sample(rs: RandomSource) =
     generate(
@@ -132,21 +228,25 @@ private class SomeCompositeValueArb(
         maxDepth = maxDepth,
         edgeCaseProbability = rs.random.nextDouble(),
         compositeProbability = rs.random.nextDouble(),
+        edgeCases = emptySet(),
       )
       .asSample()
 
-  override fun edgecase(rs: RandomSource): Any {
-    val edgeCases = run {
-      val edgeCases = EdgeCase.entries.shuffled(rs.random)
+  override fun edgecase(rs: RandomSource): SomeValueArb.Sample.Composite {
+    val edgeCases: Set<SomeValueArb.Sample.Composite.EdgeCase> = run {
+      val edgeCases = SomeValueArb.Sample.Composite.EdgeCase.entries.shuffled(rs.random)
       val edgeCaseCount = rs.random.nextInt(1..edgeCases.size)
       edgeCases.take(edgeCaseCount).toSet()
     }
 
     return generate(
       rs,
-      maxDepth = if (EdgeCase.MaxDepth in edgeCases) 1 else maxDepth,
-      edgeCaseProbability = if (EdgeCase.Value in edgeCases) 1.0 else 0.0,
-      compositeProbability = if (EdgeCase.Composite in edgeCases) 1.0 else 0.0,
+      maxDepth = if (SomeValueArb.Sample.Composite.EdgeCase.MaxDepth in edgeCases) 1 else maxDepth,
+      edgeCaseProbability =
+        if (SomeValueArb.Sample.Composite.EdgeCase.Value in edgeCases) 1.0 else 0.0,
+      compositeProbability =
+        if (SomeValueArb.Sample.Composite.EdgeCase.Composite in edgeCases) 1.0 else 0.0,
+      edgeCases = edgeCases,
     )
   }
 
@@ -155,7 +255,8 @@ private class SomeCompositeValueArb(
     maxDepth: Int,
     edgeCaseProbability: Double,
     compositeProbability: Double,
-  ): Any {
+    edgeCases: Set<SomeValueArb.Sample.Composite.EdgeCase>,
+  ): SomeValueArb.Sample.Composite {
     require(maxDepth in 1..this.maxDepth) {
       "invalid maxDepth: $maxDepth (this.maxDepth=${this.maxDepth})"
     }
@@ -165,16 +266,26 @@ private class SomeCompositeValueArb(
         rs,
         edgeCaseProbability = edgeCaseProbability,
         compositeProbability = compositeProbability,
+        edgeCases = edgeCases,
       )
 
-    val compositeType = CompositeType.entries.random(rs.random)
-    return compositeType.generate(valueGenerator, maxDepth)
+    val compositeType = SomeValueArb.Sample.Composite.Type.entries.random(rs.random)
+    val value = valueGenerator.generate(compositeType, maxDepth)
+    return SomeValueArb.Sample.Composite(
+      value = value,
+      edgeCaseProbability = edgeCaseProbability,
+      type = compositeType,
+      maxDepth = maxDepth,
+      compositeProbability = compositeProbability,
+      edgeCases = edgeCases,
+    )
   }
 
   private inner class ValueGenerator(
     val rs: RandomSource,
     val edgeCaseProbability: Double,
     val compositeProbability: Double,
+    val edgeCases: Set<SomeValueArb.Sample.Composite.EdgeCase>,
   ) {
 
     fun values(maxDepth: Int): Sequence<Any> {
@@ -182,25 +293,24 @@ private class SomeCompositeValueArb(
       return generateSequence {
         val sampleType =
           if (maxDepth == 0) {
-            SomeValueArb.SampleType.Scalar
+            SampleType.Scalar
           } else {
-            SomeValueArb.SampleType.entries.random(rs.random)
+            SampleType.entries.random(rs.random)
           }
 
         when (sampleType) {
-          SomeValueArb.SampleType.Scalar -> scalarArb.next(rs, edgeCaseProbability)
-          SomeValueArb.SampleType.Composite ->
+          SampleType.Scalar -> scalarArb.next(rs, edgeCaseProbability)
+          SampleType.Composite ->
             generate(
               rs,
               maxDepth = maxDepth,
               edgeCaseProbability = edgeCaseProbability,
               compositeProbability = compositeProbability,
+              edgeCases = edgeCases,
             )
-        }
+        }.value
       }
     }
-
-    fun kClass(): KClass<*> = values(maxDepth = 1).first()::class
 
     fun list(maxDepth: Int): List<*> = mutableList(maxDepth).toList()
 
@@ -230,12 +340,6 @@ private class SomeCompositeValueArb(
       return mutableMap
     }
 
-    fun throwable(): Throwable {
-      val message = messageArb.next(rs, edgeCaseProbability)
-      val factory = throwableFactories.random(rs.random)
-      return factory(message)
-    }
-
     fun pair(maxDepth: Int): Pair<*, *> {
       val values = values(maxDepth = maxDepth - 1).iterator()
       return Pair(values.next(), values.next())
@@ -248,7 +352,7 @@ private class SomeCompositeValueArb(
 
     fun result(maxDepth: Int): Result<*> =
       if (rs.random.nextBoolean()) {
-        val throwable = throwable()
+        val throwable = throwableArb().next(rs, edgeCaseProbability)
         Result.failure<Any>(throwable)
       } else {
         val value = values(maxDepth = maxDepth - 1).first()
@@ -256,40 +360,47 @@ private class SomeCompositeValueArb(
       }
   }
 
-  private enum class EdgeCase {
-    MaxDepth,
-    Value,
+  private fun ValueGenerator.generate(
+    type: SomeValueArb.Sample.Composite.Type,
+    maxDepth: Int
+  ): Any =
+    when (type) {
+      SomeValueArb.Sample.Composite.Type.List -> list(maxDepth = maxDepth)
+      SomeValueArb.Sample.Composite.Type.Map -> map(maxDepth = maxDepth)
+      SomeValueArb.Sample.Composite.Type.MutableList -> mutableList(maxDepth = maxDepth)
+      SomeValueArb.Sample.Composite.Type.MutableMap -> mutableMap(maxDepth = maxDepth)
+      SomeValueArb.Sample.Composite.Type.MutableSet -> mutableSet(maxDepth = maxDepth)
+      SomeValueArb.Sample.Composite.Type.Pair -> pair(maxDepth = maxDepth)
+      SomeValueArb.Sample.Composite.Type.Result -> result(maxDepth = maxDepth)
+      SomeValueArb.Sample.Composite.Type.Set -> set(maxDepth = maxDepth)
+      SomeValueArb.Sample.Composite.Type.Triple -> triple(maxDepth = maxDepth)
+    }
+
+  private enum class SampleType {
+    Scalar,
     Composite,
   }
 
-  private enum class CompositeType(val generate: (ValueGenerator, maxDepth: Int) -> Any) {
-    KClass({ generator, _ -> generator.kClass() }),
-    List({ generator, maxDepth -> generator.list(maxDepth = maxDepth) }),
-    Map({ generator, maxDepth -> generator.map(maxDepth = maxDepth) }),
-    MutableList({ generator, maxDepth -> generator.mutableList(maxDepth = maxDepth) }),
-    MutableMap({ generator, maxDepth -> generator.mutableMap(maxDepth = maxDepth) }),
-    MutableSet({ generator, maxDepth -> generator.mutableSet(maxDepth = maxDepth) }),
-    Pair({ generator, maxDepth -> generator.pair(maxDepth = maxDepth) }),
-    Result({ generator, maxDepth -> generator.result(maxDepth = maxDepth) }),
-    Set({ generator, maxDepth -> generator.set(maxDepth = maxDepth) }),
-    Throwable({ generator, _ -> generator.throwable() }),
-    Triple({ generator, maxDepth -> generator.triple(maxDepth = maxDepth) }),
-  }
-
-  private val throwableFactories: List<(String) -> Throwable> =
-    listOf(
-      ::Throwable,
-      ::Exception,
-      ::RuntimeException,
-      ::IllegalArgumentException,
-      ::IllegalStateException,
-      ::NoSuchElementException,
-      ::IndexOutOfBoundsException,
-      ::NullPointerException,
-    )
-
-  companion object {
+  private companion object {
     val validMaxDepthRange = 1..5
     val validMaxSizeRange = 0..5
   }
+}
+
+private val throwableFactories: List<(String) -> Throwable> =
+  listOf(
+    ::Throwable,
+    ::Exception,
+    ::RuntimeException,
+    ::IllegalArgumentException,
+    ::IllegalStateException,
+    ::NoSuchElementException,
+    ::IndexOutOfBoundsException,
+    ::NullPointerException,
+  )
+
+private fun throwableArb(): Arb<Throwable> {
+  val messageArb = Arb.string(0..10, Codepoint.alphanumeric())
+  val factoryArb = Arb.of(throwableFactories)
+  return Arb.bind(messageArb, factoryArb) { message, factory -> factory(message) }
 }

@@ -79,4 +79,5 @@ dependencies {
   implementation(libs.truth)
 
   testImplementation(libs.commons.statistics.inference)
+  testImplementation(libs.kotlin.reflect)
 }
