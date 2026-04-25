@@ -21,6 +21,7 @@ import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
+import io.kotest.inspectors.shouldForAll
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.ints.shouldBeLessThanOrEqual
@@ -143,8 +144,8 @@ class SomeValueArbUnitTest {
 
       val value = arb.bind()
 
-      val size = value.calculateSize()
-      size shouldBeLessThanOrEqual maxSize
+      val sizes = value.calculateSizes()
+      sizes.shouldForAll { it shouldBeLessThanOrEqual maxSize }
     }
   }
 
@@ -209,18 +210,35 @@ private fun Any?.calculateSampleValueDepth(): Int =
     else -> 0 // Scalars, KClass, Throwable, Unit, etc.
   }
 
-private fun SomeValueArb.Sample.calculateSize(): Int =
+private fun SomeValueArb.Sample.calculateSizes(): List<Int> =
   when (this) {
-    is SomeValueArb.Sample.Scalar -> 0
-    is SomeValueArb.Sample.Composite -> value.calculateSampleValueSize()
+    is SomeValueArb.Sample.Scalar -> emptyList()
+    is SomeValueArb.Sample.Composite -> value.calculateSampleValueSizes()
   }
 
-private fun Any?.calculateSampleValueSize(): Int =
-  when (this) {
-    is Collection<*> -> size
-    is Map<*, *> -> size
-    else -> 0 // Pairs, Triples, Results have fixed size (not governed by maxSize)
+private fun Any.calculateSampleValueSizes(): List<Int> {
+  val sizes = mutableListOf<Int>()
+  val queue = ArrayDeque<Any?>()
+  queue.add(this)
+
+  while (!queue.isEmpty()) {
+    when (val value = queue.removeFirst()) {
+      is Collection<*> -> {
+        sizes.add(value.size)
+        queue.addAll(value)
+      }
+      is Map<*, *> -> {
+        sizes.add(value.size)
+        queue.addAll(value.values)
+      }
+      else -> 0 // Pairs, Triples, Results have fixed size (not governed by maxSize)
+    }
+
+    return sizes.toList()
   }
+
+  return sizes.toList()
+}
 
 private val validMaxDepthRange = 0..5
 
