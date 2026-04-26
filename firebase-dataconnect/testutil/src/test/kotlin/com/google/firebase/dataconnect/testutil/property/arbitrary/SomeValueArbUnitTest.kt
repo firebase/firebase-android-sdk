@@ -16,6 +16,7 @@
 
 package com.google.firebase.dataconnect.testutil.property.arbitrary
 
+import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import io.kotest.assertions.asClue
 import io.kotest.assertions.assertSoftly
 import io.kotest.assertions.throwables.shouldThrow
@@ -27,15 +28,26 @@ import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.ints.shouldBeLessThanOrEqual
 import io.kotest.matchers.ranges.shouldBeIn
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
 import io.kotest.property.ShrinkingMode
+import io.kotest.property.arbitrary.arbitrary
+import io.kotest.property.arbitrary.bind
+import io.kotest.property.arbitrary.boolean
 import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.constant
+import io.kotest.property.arbitrary.double
+import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.filterIsInstance
 import io.kotest.property.arbitrary.int
+import io.kotest.property.arbitrary.map
+import io.kotest.property.arbs.fooddrink.iceCreams
 import io.kotest.property.checkAll
+import kotlin.Any
+import kotlin.Double
+import kotlin.random.nextInt
 import kotlin.reflect.KClass
 import kotlin.reflect.full.isSubclassOf
 import kotlinx.coroutines.test.runTest
@@ -171,6 +183,104 @@ class SomeValueArbUnitTest {
       withClue("missingTypes") { missingTypes.shouldBeEmpty() }
     }
   }
+
+  @Test
+  fun `Sample Scalar constructor stores given argument values in properties`() = runTest {
+    class TestValue
+    val testValueArb = arbitrary { TestValue() }
+    checkAll(
+      propTestConfig,
+      testValueArb,
+      Arb.double(),
+      Arb.enum<SomeValueArb.Sample.Scalar.Type>(),
+      Arb.boolean(),
+    ) { value, edgeCaseProbability, type, isEdgeCase ->
+      val sample =
+        SomeValueArb.Sample.Scalar(
+          value = value,
+          edgeCaseProbability = edgeCaseProbability,
+          type = type,
+          isEdgeCase = isEdgeCase,
+        )
+
+      assertSoftly {
+        withClue("value") { sample.value shouldBeSameInstanceAs value }
+        withClue("edgeCaseProbability") { sample.edgeCaseProbability shouldBe edgeCaseProbability }
+        withClue("type") { sample.type shouldBe type }
+        withClue("isEdgeCase") { sample.isEdgeCase shouldBe isEdgeCase }
+      }
+    }
+  }
+
+  @Test
+  fun `Sample Scalar toString() returns expected value`() = runTest {
+    data class TestValue(val value: Int)
+    val testValueArb = Arb.int().map(::TestValue)
+    val sampleArb: Arb<SomeValueArb.Sample.Scalar> =
+      someValueArbSampleScalarArb(value = testValueArb)
+    checkAll(propTestConfig, sampleArb) { sample ->
+      assertSoftly {
+        sample.toString() shouldContainWithNonAbuttingText sample.value.toString()
+        sample.toString() shouldContainWithNonAbuttingText "SomeValueArb.Sample"
+      }
+    }
+  }
+
+  @Test
+  fun `Sample Scalar equals() returns true when given self`() = runTest {
+    checkAll(propTestConfig, someValueArbSampleScalarArb()) { sample: SomeValueArb.Sample.Scalar ->
+      @Suppress("ReplaceCallWithBinaryOperator")
+      sample.equals(sample) shouldBe true
+    }
+  }
+
+  @Test
+  fun `Sample Scalar equals() returns true when given distinct, but equal instance`() = runTest {
+    checkAll(propTestConfig, someValueArbSampleScalarArb()) { sample: SomeValueArb.Sample.Scalar ->
+      val sampleCopy = sample.copy()
+
+      @Suppress("ReplaceCallWithBinaryOperator")
+      sample.equals(sampleCopy) shouldBe true
+    }
+  }
+
+  @Test
+  fun `Sample Scalar equals() returns true when given instance with same value but different other properties`() =
+    runTest {
+      checkAll(
+        propTestConfig,
+        Arb.iceCreams(),
+        Arb.double().distinctPair(),
+        Arb.enum<SomeValueArb.Sample.Scalar.Type>().distinctPair(),
+        Arb.boolean().distinctPair(),
+      ) { value, edgeCaseProbabilities, types, isEdgeCases ->
+        val sample1 =
+          SomeValueArb.Sample.Scalar(
+            value,
+            edgeCaseProbabilities.first,
+            types.first,
+            isEdgeCases.first
+          )
+        val sample2 = run {
+          val changeDomain = listOf(edgeCaseProbabilities, types, isEdgeCases)
+          val changeCount = randomSource().random.nextInt(1..changeDomain.size)
+          val changes = changeDomain.shuffled(randomSource().random).take(changeCount)
+          SomeValueArb.Sample.Scalar(
+            value,
+            edgeCaseProbability =
+              if (edgeCaseProbabilities in changes) edgeCaseProbabilities.second
+              else edgeCaseProbabilities.first,
+            type = if (types in changes) types.second else types.first,
+            isEdgeCase = if (isEdgeCases in changes) isEdgeCases.second else isEdgeCases.first,
+          )
+        }
+
+        @Suppress("ReplaceCallWithBinaryOperator")
+        sample1.equals(sample2) shouldBe true
+      }
+    }
+
+  @Test fun `Sample Scalar equals() more tests`() = runTest { TODO("more tests!") }
 }
 
 @OptIn(ExperimentalKotest::class)
@@ -287,3 +397,24 @@ private val compositeTypes: Set<KClass<*>> =
   )
 
 private val scalarAndCompositeTypes: Set<KClass<*>> = scalarTypes + compositeTypes
+
+private fun someValueArbSampleScalarArb(
+  value: Arb<Any> = Arb.iceCreams(),
+  edgeCaseProbability: Arb<Double> = Arb.double(),
+  type: Arb<SomeValueArb.Sample.Scalar.Type> = Arb.enum(),
+  isEdgeCase: Arb<Boolean> = Arb.boolean(),
+): Arb<SomeValueArb.Sample.Scalar> =
+  Arb.bind(value, edgeCaseProbability, type, isEdgeCase, SomeValueArb.Sample::Scalar)
+
+private fun SomeValueArb.Sample.Scalar.copy(
+  value: Any = this.value,
+  edgeCaseProbability: Double = this.edgeCaseProbability,
+  type: SomeValueArb.Sample.Scalar.Type = this.type,
+  isEdgeCase: Boolean = this.isEdgeCase,
+) =
+  SomeValueArb.Sample.Scalar(
+    value = value,
+    edgeCaseProbability = edgeCaseProbability,
+    type = type,
+    isEdgeCase = isEdgeCase,
+  )
