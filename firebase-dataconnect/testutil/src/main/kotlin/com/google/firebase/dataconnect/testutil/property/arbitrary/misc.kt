@@ -28,10 +28,17 @@ import io.kotest.property.exhaustive.exhaustive
 import kotlin.random.nextInt
 
 /** Returns a new [Arb] that produces two _unequal_ values of this [Arb]. */
-fun <T> Arb<T>.distinctPair(isEqual: (T, T) -> Boolean = { v1, v2 -> v1 == v2 }): Arb<Pair<T, T>> =
+fun <T> Arb<T>.distinctPair(isEqual: (T, T) -> Boolean = isEqualByEqualsOperator): Arb<Pair<T, T>> =
   flatMap { value1 ->
     this@distinctPair.filterNot { isEqual(value1, it) }.map { Pair(value1, it) }
   }
+
+/** Returns a new [Arb] that produces two _unequal_ values of this [Arb]. */
+fun <T> Arb<T>.twoDistinctValues(
+  isEqual: (T, T) -> Boolean = isEqualByEqualsOperator
+): Arb<TwoValues<T>> = distinctPair(isEqual).map(::TwoValues)
+
+val isEqualByEqualsOperator: (Any?, Any?) -> Boolean = { v1, v2 -> v1 == v2 }
 
 fun Arb<String>.withPrefix(prefix: String): Arb<String> = arbitrary { "$prefix${bind()}" }
 
