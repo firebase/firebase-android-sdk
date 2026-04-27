@@ -19,6 +19,7 @@ package com.google.firebase.dataconnect.testutil.property.arbitrary
 import com.google.firebase.dataconnect.testutil.shouldContainWithNonAbuttingText
 import io.kotest.assertions.asClue
 import io.kotest.assertions.assertSoftly
+import io.kotest.assertions.print.print
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
@@ -28,6 +29,7 @@ import io.kotest.matchers.collections.shouldNotBeEmpty
 import io.kotest.matchers.ints.shouldBeLessThanOrEqual
 import io.kotest.matchers.ranges.shouldBeIn
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.shouldNotBe
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
@@ -45,15 +47,15 @@ import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbs.fooddrink.iceCreams
 import io.kotest.property.checkAll
-import kotlin.Any
-import kotlin.Double
-import kotlin.random.nextInt
+import java.util.Objects
 import kotlin.reflect.KClass
 import kotlin.reflect.full.isSubclassOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
 class SomeValueArbUnitTest {
+
+  // region Tests for SomeValueArb
 
   @Test
   fun `someValue(maxDepth=invalid) throws`() = runTest {
@@ -184,6 +186,10 @@ class SomeValueArbUnitTest {
     }
   }
 
+  // endregion
+
+  // region Tests for SomeValueArb.Sample.Scalar
+
   @Test
   fun `Sample Scalar constructor stores given argument values in properties`() = runTest {
     class TestValue
@@ -227,60 +233,39 @@ class SomeValueArbUnitTest {
   }
 
   @Test
-  fun `Sample Scalar equals() returns true when given self`() = runTest {
-    checkAll(propTestConfig, someValueArbSampleScalarArb()) { sample: SomeValueArb.Sample.Scalar ->
+  fun `Sample Scalar equals() returns true for equal instances`() = runTest {
+    checkAll(propTestConfig, someValueArbSampleScalarEqualPairArb()) { sample ->
       @Suppress("ReplaceCallWithBinaryOperator")
-      sample.equals(sample) shouldBe true
+      sample.scalarSample1.equals(sample.scalarSample2) shouldBe true
+      sample.scalarSample2.equals(sample.scalarSample1) shouldBe true
     }
   }
 
   @Test
-  fun `Sample Scalar equals() returns true when given distinct, but equal instance`() = runTest {
-    checkAll(propTestConfig, someValueArbSampleScalarArb()) { sample: SomeValueArb.Sample.Scalar ->
-      val sampleCopy = sample.copy()
-
+  fun `Sample Scalar equals() returns false for unequal instances`() = runTest {
+    checkAll(propTestConfig, someValueArbSampleScalarUnequalPairArb()) { sample ->
       @Suppress("ReplaceCallWithBinaryOperator")
-      sample.equals(sampleCopy) shouldBe true
+      sample.scalarSample1.equals(sample.scalarSample2) shouldBe false
+      sample.scalarSample2.equals(sample.scalarSample1) shouldBe false
     }
   }
 
   @Test
-  fun `Sample Scalar equals() returns true when given instance with same value but different other properties`() =
-    runTest {
-      checkAll(
-        propTestConfig,
-        Arb.iceCreams(),
-        Arb.double().distinctPair(),
-        Arb.enum<SomeValueArb.Sample.Scalar.Type>().distinctPair(),
-        Arb.boolean().distinctPair(),
-      ) { value, edgeCaseProbabilities, types, isEdgeCases ->
-        val sample1 =
-          SomeValueArb.Sample.Scalar(
-            value,
-            edgeCaseProbabilities.first,
-            types.first,
-            isEdgeCases.first
-          )
-        val sample2 = run {
-          val changeDomain = listOf(edgeCaseProbabilities, types, isEdgeCases)
-          val changeCount = randomSource().random.nextInt(1..changeDomain.size)
-          val changes = changeDomain.shuffled(randomSource().random).take(changeCount)
-          SomeValueArb.Sample.Scalar(
-            value,
-            edgeCaseProbability =
-              if (edgeCaseProbabilities in changes) edgeCaseProbabilities.second
-              else edgeCaseProbabilities.first,
-            type = if (types in changes) types.second else types.first,
-            isEdgeCase = if (isEdgeCases in changes) isEdgeCases.second else isEdgeCases.first,
-          )
-        }
-
-        @Suppress("ReplaceCallWithBinaryOperator")
-        sample1.equals(sample2) shouldBe true
-      }
+  fun `Sample Scalar hashCode() returns same value for equal instances`() = runTest {
+    checkAll(propTestConfig, someValueArbSampleScalarEqualPairArb()) { sample ->
+      sample.scalarSample1.hashCode() shouldBe sample.scalarSample2.hashCode()
     }
+  }
 
-  @Test fun `Sample Scalar equals() more tests`() = runTest { TODO("more tests!") }
+  @Test
+  fun `Sample Scalar hashCode() returns different value for unequal instances`() = runTest {
+    checkAll(hashEqualityPropTestConfig, someValueArbSampleScalarUnequalPairArb()) { sample ->
+      sample.scalarSample1.hashCode() shouldNotBe sample.scalarSample2.hashCode()
+    }
+  }
+
+  // endregion
+
 }
 
 @OptIn(ExperimentalKotest::class)
@@ -289,6 +274,15 @@ private val propTestConfig =
     iterations = 200,
     edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.2),
     shrinkingMode = ShrinkingMode.Off,
+  )
+
+// Allow a small number of failures to account for the rare, but possible situation where two
+// distinct instances produce the same hash code.
+@OptIn(ExperimentalKotest::class)
+private val hashEqualityPropTestConfig =
+  propTestConfig.copy(
+    minSuccess = propTestConfig.iterations!! - 2,
+    maxFailure = 2,
   )
 
 private fun SomeValueArb.Sample.calculateDepth(): Int =
@@ -418,3 +412,181 @@ private fun SomeValueArb.Sample.Scalar.copy(
     type = type,
     isEdgeCase = isEdgeCase,
   )
+
+private fun someValueArbSampleScalarEqualPairArb(): Arb<SomeValueArbSampleScalarEqualPairSample> =
+  someValueArbSampleScalarEqualPairArb(Arb.iceCreams()) { it.copy() }
+
+private fun <T : Any> someValueArbSampleScalarEqualPairArb(
+  value: Arb<T>,
+  copy: (T) -> T
+): Arb<SomeValueArbSampleScalarEqualPairSample> =
+  Arb.bind(
+    Arb.twoValues(someValueArbSampleScalarArb()),
+    value,
+    Arb.enum<SomeValueArbSampleEqualityDimension>(),
+    Arb.enumSubset<SomeValueArbSampleScalarProperty>(),
+  ) { (sampleTemplate1, sampleTemplate2), value, dimension, properties ->
+    val sample1 = sampleTemplate1.copy(value = value)
+    val sample2 =
+      when (dimension) {
+        SomeValueArbSampleEqualityDimension.SameInstance -> sample1
+        SomeValueArbSampleEqualityDimension.DifferentInstanceSameValueInstance -> sample1.copy()
+        SomeValueArbSampleEqualityDimension.DifferentInstanceDifferentButEqualValueInstance ->
+          sample1.copy(value = copy(value))
+        SomeValueArbSampleEqualityDimension.DifferentInstanceEqualValueDifferentOtherProperties ->
+          sample1.copy(
+            value =
+              if (SomeValueArbSampleScalarProperty.Value in properties) copy(value) else value,
+            edgeCaseProbability =
+              if (SomeValueArbSampleScalarProperty.EdgeCaseProbability in properties)
+                sampleTemplate2.edgeCaseProbability
+              else sampleTemplate1.edgeCaseProbability,
+            type =
+              if (SomeValueArbSampleScalarProperty.Type in properties) sampleTemplate2.type
+              else sampleTemplate1.type,
+            isEdgeCase =
+              if (SomeValueArbSampleScalarProperty.IsEdgeCase in properties)
+                sampleTemplate2.isEdgeCase
+              else sampleTemplate1.isEdgeCase,
+          )
+      }
+    SomeValueArbSampleScalarEqualPairSample(sample1, sample2, dimension, properties)
+  }
+
+private class SomeValueArbSampleScalarEqualPairSample(
+  val scalarSample1: SomeValueArb.Sample.Scalar,
+  val scalarSample2: SomeValueArb.Sample.Scalar,
+  val dimension: SomeValueArbSampleEqualityDimension,
+  val properties: Set<SomeValueArbSampleScalarProperty>,
+) {
+
+  override fun toString() =
+    "SomeValueArbSampleScalarEqualPairSample(" +
+      "scalarSample1=${scalarSample1.print().value}, " +
+      "scalarSample2=${scalarSample2.print().value}, " +
+      "dimension=${dimension.print().value}, " +
+      "properties=${properties.toSortedSet().print().value})"
+
+  override fun equals(other: Any?) =
+    other is SomeValueArbSampleScalarEqualPairSample &&
+      other.scalarSample1 == scalarSample1 &&
+      other.scalarSample2 == scalarSample2
+
+  override fun hashCode() =
+    Objects.hash(SomeValueArbSampleScalarEqualPairSample::class, scalarSample1, scalarSample2)
+}
+
+private enum class SomeValueArbSampleEqualityDimension {
+  SameInstance,
+  DifferentInstanceSameValueInstance,
+  DifferentInstanceDifferentButEqualValueInstance,
+  DifferentInstanceEqualValueDifferentOtherProperties,
+}
+
+private enum class SomeValueArbSampleScalarProperty {
+  Value,
+  EdgeCaseProbability,
+  Type,
+  IsEdgeCase,
+}
+
+private fun someValueArbSampleScalarUnequalPairArb():
+  Arb<SomeValueArbSampleScalarUnequalPairSample> =
+  someValueArbSampleScalarUnequalPairArb(Arb.iceCreams())
+
+private fun <T : Any> someValueArbSampleScalarUnequalPairArb(
+  value: Arb<T>
+): Arb<SomeValueArbSampleScalarUnequalPairSample> =
+  Arb.bind(
+    Arb.twoValues(someValueArbSampleScalarArb()),
+    value.distinctPair(),
+    Arb.enumSubset<SomeValueArbSampleScalarProperty>(),
+  ) { (sampleTemplate1, sampleTemplate2), (value1, value2), properties ->
+    val sample1 = sampleTemplate1.copy(value = value1)
+    val sample2 =
+      sample1.copy(
+        value = value2,
+        edgeCaseProbability =
+          if (SomeValueArbSampleScalarProperty.EdgeCaseProbability in properties)
+            sampleTemplate2.edgeCaseProbability
+          else sampleTemplate1.edgeCaseProbability,
+        type =
+          if (SomeValueArbSampleScalarProperty.Type in properties) sampleTemplate2.type
+          else sampleTemplate1.type,
+        isEdgeCase =
+          if (SomeValueArbSampleScalarProperty.IsEdgeCase in properties) sampleTemplate2.isEdgeCase
+          else sampleTemplate1.isEdgeCase,
+      )
+
+    SomeValueArbSampleScalarUnequalPairSample(sample1, sample2, properties)
+  }
+
+private class SomeValueArbSampleScalarUnequalPairSample(
+  val scalarSample1: SomeValueArb.Sample.Scalar,
+  val scalarSample2: SomeValueArb.Sample.Scalar,
+  val properties: Set<SomeValueArbSampleScalarProperty>,
+) {
+
+  override fun toString() =
+    "SomeValueArbSampleScalarUnequalPairSample(" +
+      "scalarSample1=${scalarSample1.print().value}, " +
+      "scalarSample2=${scalarSample2.print().value}, " +
+      "properties=${properties.toSortedSet().print().value})"
+
+  override fun equals(other: Any?) =
+    other is SomeValueArbSampleScalarUnequalPairSample &&
+      other.scalarSample1 == scalarSample1 &&
+      other.scalarSample2 == scalarSample2
+
+  override fun hashCode() =
+    Objects.hash(SomeValueArbSampleScalarUnequalPairSample::class, scalarSample1, scalarSample2)
+}
+
+private fun someValueArbSampleCompositeArb(
+  value: Arb<Any> = Arb.iceCreams(),
+  edgeCaseProbability: Arb<Double> = Arb.double(),
+  type: Arb<SomeValueArb.Sample.Composite.Type> = Arb.enum(),
+  maxDepth: Arb<Int> = Arb.int(),
+  compositeProbability: Arb<Double> = Arb.double(),
+  edgeCases: Arb<Set<SomeValueArb.Sample.Composite.EdgeCase>> =
+    Arb.enumSubset<SomeValueArb.Sample.Composite.EdgeCase>()
+): Arb<SomeValueArb.Sample.Composite> =
+  Arb.bind(
+    value,
+    edgeCaseProbability,
+    type,
+    maxDepth,
+    compositeProbability,
+    edgeCases,
+    SomeValueArb.Sample::Composite
+  )
+
+private fun SomeValueArb.Sample.Composite.copy(
+  value: Any = this.value,
+  edgeCaseProbability: Double = this.edgeCaseProbability,
+  type: SomeValueArb.Sample.Composite.Type = this.type,
+  maxDepth: Int = this.maxDepth,
+  compositeProbability: Double = this.compositeProbability,
+  edgeCases: Set<SomeValueArb.Sample.Composite.EdgeCase> = this.edgeCases,
+) =
+  SomeValueArb.Sample.Composite(
+    value = value,
+    edgeCaseProbability = edgeCaseProbability,
+    type = type,
+    maxDepth = maxDepth,
+    compositeProbability = compositeProbability,
+    edgeCases = edgeCases,
+  )
+
+/**
+ * Creates and returns an [Arb] that generates pairs of object that are "equal" according to the
+ * `==` operator, but are distinct objects (that is, they compare _unequal_ by the `===` operator).
+ */
+private fun equalButDistinctValuesArb(): Arb<Pair<Any, Any>> =
+  Arb.iceCreams().map { iceCream1 ->
+    val iceCream2 = iceCream1.copy()
+    check(iceCream1 == iceCream2)
+    check(iceCream2 == iceCream1)
+    check(iceCream1 !== iceCream2)
+    Pair(iceCream1, iceCream2)
+  }
