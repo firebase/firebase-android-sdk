@@ -22,3 +22,7 @@ import io.kotest.property.PropTestConfig
 fun PropTestConfig.withIterations(iterations: Int): PropTestConfig {
   @OptIn(ExperimentalKotest::class) return copy(iterations = iterations)
 }
+
+fun PropTestConfig.withSeed(seed: Long): PropTestConfig {
+  @OptIn(ExperimentalKotest::class) return copy(seed = seed)
+}

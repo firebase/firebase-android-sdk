@@ -17,9 +17,6 @@
 package com.google.firebase.dataconnect.testutil.property.arbitrary
 
 import io.kotest.property.Arb
-import io.kotest.property.arbitrary.bind
-import io.kotest.property.arbitrary.int
-import io.kotest.property.arbitrary.shuffle
 import kotlin.enums.EnumEntries
 import kotlin.enums.enumEntries
 
@@ -41,16 +38,4 @@ inline fun <reified T : Enum<T>> Arb.Companion.enumSubset(
   entries: EnumEntries<T> = enumEntries(),
   minSize: Int = 0,
   maxSize: Int = entries.size,
-): Arb<Set<T>> {
-  val validSizeRange = 0..entries.size
-  require(minSize in validSizeRange) { "invalid minSize: $minSize (must be in $validSizeRange)" }
-  require(maxSize in validSizeRange) { "invalid maxSize: $maxSize (must be in $validSizeRange)" }
-  require(minSize <= maxSize) {
-    "minSize ($minSize) is greater than maxSize ($maxSize), " +
-      "but minSize must be less than or equal to maxSize"
-  }
-
-  return Arb.bind(Arb.shuffle(entries), Arb.int(minSize..maxSize)) { shuffledEntries, size ->
-    shuffledEntries.take(size).toSet()
-  }
-}
+): Arb<Set<T>> = subset(entries.toSet(), minSize = minSize, maxSize = maxSize)

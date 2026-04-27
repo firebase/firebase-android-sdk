@@ -19,16 +19,20 @@ package com.google.firebase.dataconnect.testutil.property.arbitrary
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.collections.shouldContainAll
+import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
 import io.kotest.matchers.ints.shouldBeInRange
 import io.kotest.matchers.ints.shouldBeLessThanOrEqual
+import io.kotest.matchers.shouldBe
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
+import io.kotest.property.RandomSource
 import io.kotest.property.ShrinkingMode
 import io.kotest.property.arbitrary.choice
 import io.kotest.property.arbitrary.int
 import io.kotest.property.arbitrary.set
+import io.kotest.property.arbitrary.shuffle
 import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
 import kotlinx.coroutines.test.runTest
@@ -85,7 +89,12 @@ class SubsetUnitTest {
   @Test
   fun `subset() respects minSize and maxSize, when both are specified`() = runTest {
     checkAll(propTestConfig, Arb.set(Arb.string(), 0..5)) { set ->
-      val (minSize, maxSize) = Arb.int(0..set.size).twoDistinctValues().bind().sorted()
+      val (minSize, maxSize) =
+        if (set.isEmpty()) {
+          TwoValues(0, 0)
+        } else {
+          Arb.int(0..set.size).twoDistinctValues().bind().sorted()
+        }
       val arb = Arb.subset(values = set, minSize = minSize, maxSize = maxSize)
       val sample = arb.bind()
       sample.size shouldBeInRange minSize..maxSize
@@ -98,6 +107,41 @@ class SubsetUnitTest {
       val arb = Arb.subset(set)
       val sample = arb.bind()
       set shouldContainAll sample
+    }
+  }
+
+  @Test
+  fun `subset() is independent of input set iteration order`() = runTest {
+    checkAll(propTestConfig, Arb.set(Arb.string(), 2..5), Arb.randomSeed()) { set, seed ->
+      val (set1, set2) =
+        run { Arb.shuffle(set.sorted()).twoDistinctValues().bind().toList().map(::LinkedHashSet) }
+      check(set1 == set2)
+      check(set1.toList() != set2.toList())
+      val arbs = listOf(set1, set2).map { Arb.subset(it) }
+
+      val (samples1, samples2) =
+        arbs.map { arb ->
+          val rs = RandomSource.seeded(seed)
+          List(50) { arb.next(rs, propTestConfig.edgeConfig.edgecasesGenerationProbability) }
+        }
+
+      samples1 shouldBe samples2
+    }
+  }
+
+  @Test
+  fun `subset() is deterministic for a fixed seed`() = runTest {
+    checkAll(propTestConfig, Arb.set(Arb.string(), 1..5), Arb.randomSeed()) { set, seed ->
+      val arb1 = Arb.subset(set)
+      val arb2 = Arb.subset(set)
+      val rs1 = RandomSource.seeded(seed)
+      val rs2 = RandomSource.seeded(seed)
+      val edgeCaseProbability = propTestConfig.edgeConfig.edgecasesGenerationProbability
+
+      val values1 = List(100) { arb1.next(rs1, edgeCaseProbability) }
+      val values2 = List(100) { arb2.next(rs2, edgeCaseProbability) }
+
+      values1 shouldContainExactly values2
     }
   }
 }
