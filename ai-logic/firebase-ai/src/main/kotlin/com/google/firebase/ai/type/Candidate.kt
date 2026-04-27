@@ -52,7 +52,7 @@ internal constructor(
   public val finishReason: FinishReason?,
   public val finishMessage: String?,
   public val groundingMetadata: GroundingMetadata?,
-  public val urlContextMetadata: UrlContextMetadata?,
+  public val urlContextMetadata: UrlContextMetadata?
 ) {
 
   @OptIn(PublicPreviewAPI::class)
@@ -64,7 +64,7 @@ internal constructor(
     val safetyRatings: List<SafetyRating.Internal>? = null,
     val citationMetadata: CitationMetadata.Internal? = null,
     val groundingMetadata: GroundingMetadata.Internal? = null,
-    val urlContextMetadata: UrlContextMetadata.Internal? = null,
+    val urlContextMetadata: UrlContextMetadata.Internal? = null
   ) {
 
     @OptIn(PublicPreviewAPI::class)
@@ -82,7 +82,7 @@ internal constructor(
         finishReason,
         finishMessage,
         groundingMetadata,
-        urlContextMetadata,
+        urlContextMetadata
       )
     }
   }

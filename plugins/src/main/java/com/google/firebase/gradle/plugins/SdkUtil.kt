@@ -46,20 +46,8 @@ val Project.sdkDir: File
 
 val Project.androidJar: File?
   get() {
-    val android = project.extensions.findByType(LibraryExtension::class.java)
-    val compileSdkVersion = android?.compileSdkVersion
-    if (compileSdkVersion != null) {
-      return File(sdkDir, String.format("/platforms/%s/android.jar", compileSdkVersion))
-    }
-    val platformsDir = File(sdkDir, "platforms")
-    if (platformsDir.exists()) {
-      val platforms = platformsDir.listFiles { file -> file.isDirectory && file.name.startsWith("android-") }
-      val highestPlatform = platforms?.maxByOrNull { it.name }
-      if (highestPlatform != null) {
-        return File(highestPlatform, "android.jar")
-      }
-    }
-    return null
+    val android = project.extensions.findByType(LibraryExtension::class.java) ?: return null
+    return File(sdkDir, String.format("/platforms/%s/android.jar", android.compileSdkVersion))
   }
 
 /**

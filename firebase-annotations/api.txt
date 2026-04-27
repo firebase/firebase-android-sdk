@@ -1,14 +1,14 @@
 // Signature format: 3.0
 package com.google.firebase.annotations {
 
-  @java.lang.annotation.Documented @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) @java.lang.annotation.Target({java.lang.annotation.ElementType.TYPE, java.lang.annotation.ElementType.FIELD, java.lang.annotation.ElementType.METHOD, java.lang.annotation.ElementType.CONSTRUCTOR}) public @interface PreviewApi {
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) public @interface PreviewApi {
   }
 
 }
 
 package com.google.firebase.annotations.concurrent {
 
-  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) @java.lang.annotation.Target({java.lang.annotation.ElementType.PARAMETER, java.lang.annotation.ElementType.METHOD, java.lang.annotation.ElementType.FIELD}) @javax.inject.Qualifier public @interface Background {
+  @java.lang.annotation.Retention(java.lang.annotation.RetentionPolicy.CLASS) @javax.inject.Qualifier public @interface Background {
   }
 
 }
