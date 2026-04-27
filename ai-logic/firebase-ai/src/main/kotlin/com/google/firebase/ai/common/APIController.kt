@@ -255,8 +255,19 @@ internal constructor(
         "wss://firebasevertexai.googleapis.com/ws/google.firebase.vertexai.v1beta.GenerativeService/BidiGenerateContent?key=$key"
     }
 
-  suspend fun getWebSocketSession(location: String): DefaultClientWebSocketSession =
-    client.webSocketSession(getBidiEndpoint(location)) { applyCommonHeaders() }
+  suspend fun getWebSocketSession(location: String): DefaultClientWebSocketSession {
+    // applyHeaderProvider() is suspend; Ktor's webSocketSession { } config lambda is not.
+    // Pre-fetch headers (including X-Firebase-AppCheck) in the outer suspend context using
+    // the same timeout-protected path as HTTP methods, then set them synchronously inside the
+    // lambda.
+    val extraHeaders = extractHeaders(headerProvider)
+    return client.webSocketSession(getBidiEndpoint(location)) {
+      applyCommonHeaders()
+      for ((tag, value) in extraHeaders) {
+        header(tag, value)
+      }
+    }
+  }
 
   fun generateContentStream(
     request: GenerateContentRequest
@@ -306,16 +317,18 @@ internal constructor(
   }
 
   private suspend fun HttpRequestBuilder.applyHeaderProvider() {
-    if (headerProvider != null) {
-      try {
-        withTimeout(headerProvider.timeout) {
-          for ((tag, value) in headerProvider.generateHeaders()) {
-            header(tag, value)
-          }
-        }
-      } catch (e: TimeoutCancellationException) {
-        Log.w(TAG, "HeaderProvided timed out without generating headers, ignoring")
-      }
+    for ((tag, value) in extractHeaders(headerProvider)) {
+      header(tag, value)
+    }
+  }
+
+  private suspend fun extractHeaders(headerProvider: HeaderProvider?): Map<String, String> {
+    if (headerProvider == null) return emptyMap()
+    return try {
+      withTimeout(headerProvider.timeout) { headerProvider.generateHeaders() }
+    } catch (e: TimeoutCancellationException) {
+      Log.w(TAG, "HeaderProvided timed out without generating headers, ignoring", e)
+      emptyMap()
     }
   }
 
