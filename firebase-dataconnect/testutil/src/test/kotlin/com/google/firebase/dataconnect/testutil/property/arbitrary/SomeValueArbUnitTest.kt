@@ -227,24 +227,24 @@ class SomeValueArbUnitTest {
     checkAll(propTestConfig, sampleArb) { sample ->
       assertSoftly {
         sample.toString() shouldContainWithNonAbuttingText sample.value.toString()
-        sample.toString() shouldContainWithNonAbuttingText "SomeValueArb.Sample"
+        sample.toString() shouldContainWithNonAbuttingText "SomeValueArb.Sample.Scalar"
       }
     }
   }
 
   @Test
+  @Suppress("ReplaceCallWithBinaryOperator")
   fun `Sample Scalar equals() returns true for equal instances`() = runTest {
     checkAll(propTestConfig, someValueArbSampleScalarEqualPairArb()) { sample ->
-      @Suppress("ReplaceCallWithBinaryOperator")
       sample.scalarSample1.equals(sample.scalarSample2) shouldBe true
       sample.scalarSample2.equals(sample.scalarSample1) shouldBe true
     }
   }
 
   @Test
+  @Suppress("ReplaceCallWithBinaryOperator")
   fun `Sample Scalar equals() returns false for unequal instances`() = runTest {
     checkAll(propTestConfig, someValueArbSampleScalarUnequalPairArb()) { sample ->
-      @Suppress("ReplaceCallWithBinaryOperator")
       sample.scalarSample1.equals(sample.scalarSample2) shouldBe false
       sample.scalarSample2.equals(sample.scalarSample1) shouldBe false
     }
@@ -261,6 +261,92 @@ class SomeValueArbUnitTest {
   fun `Sample Scalar hashCode() returns different value for unequal instances`() = runTest {
     checkAll(hashEqualityPropTestConfig, someValueArbSampleScalarUnequalPairArb()) { sample ->
       sample.scalarSample1.hashCode() shouldNotBe sample.scalarSample2.hashCode()
+    }
+  }
+
+  // endregion
+
+  // region Tests for SomeValueArb.Sample.Composite
+
+  @Test
+  fun `Sample Composite constructor stores given argument values in properties`() = runTest {
+    class TestValue
+    val testValueArb = arbitrary { TestValue() }
+    checkAll(
+      propTestConfig,
+      testValueArb,
+      Arb.double(),
+      Arb.enum<SomeValueArb.Sample.Composite.Type>(),
+      Arb.int(),
+      Arb.double(),
+      Arb.enumSubset<SomeValueArb.Sample.Composite.EdgeCase>(),
+    ) { value, edgeCaseProbability, type, maxDepth, compositeProbability, edgeCases ->
+      val sample =
+        SomeValueArb.Sample.Composite(
+          value = value,
+          edgeCaseProbability = edgeCaseProbability,
+          type = type,
+          maxDepth = maxDepth,
+          compositeProbability = compositeProbability,
+          edgeCases = edgeCases,
+        )
+
+      assertSoftly {
+        withClue("value") { sample.value shouldBeSameInstanceAs value }
+        withClue("edgeCaseProbability") { sample.edgeCaseProbability shouldBe edgeCaseProbability }
+        withClue("type") { sample.type shouldBe type }
+        withClue("maxDepth") { sample.maxDepth shouldBe maxDepth }
+        withClue("compositeProbability") {
+          sample.compositeProbability shouldBe compositeProbability
+        }
+        withClue("edgeCases") { sample.edgeCases shouldBe edgeCases }
+      }
+    }
+  }
+
+  @Test
+  fun `Sample Composite toString() returns expected value`() = runTest {
+    data class TestValue(val value: Int)
+    val testValueArb = Arb.int().map(::TestValue)
+    val sampleArb: Arb<SomeValueArb.Sample.Composite> =
+      someValueArbSampleCompositeArb(value = testValueArb)
+    checkAll(propTestConfig, sampleArb) { sample ->
+      assertSoftly {
+        sample.toString() shouldContainWithNonAbuttingText sample.value.toString()
+        sample.toString() shouldContainWithNonAbuttingText "SomeValueArb.Sample.Composite"
+      }
+    }
+  }
+
+  @Test
+  @Suppress("ReplaceCallWithBinaryOperator")
+  fun `Sample Composite equals() returns true for equal instances`() = runTest {
+    checkAll(propTestConfig, someValueArbSampleCompositeEqualPairArb()) { sample ->
+      sample.compositeSample1.equals(sample.compositeSample2) shouldBe true
+      sample.compositeSample2.equals(sample.compositeSample1) shouldBe true
+    }
+  }
+
+  @Test
+  @Suppress("ReplaceCallWithBinaryOperator")
+  fun `Sample Composite equals() returns false for unequal instances`() = runTest {
+    checkAll(propTestConfig, someValueArbSampleCompositeUnequalPairArb()) { sample ->
+      sample.compositeSample1.equals(sample.compositeSample2) shouldBe false
+      sample.compositeSample2.equals(sample.compositeSample1) shouldBe false
+    }
+  }
+
+  @Test
+  fun `Sample Composite hashCode() returns same value for equal instances`() = runTest {
+    checkAll(propTestConfig, someValueArbSampleCompositeEqualPairArb()) { sample ->
+      sample.compositeSample1.hashCode() shouldBe sample.compositeSample2.hashCode()
+    }
+  }
+
+  @Test
+  fun `Sample Composite hashCode() returns different value for unequal instances`() = runTest {
+    checkAll(hashEqualityPropTestConfig, someValueArbSampleCompositeUnequalPairArb()) { sample ->
+      sample.compositeSample1.hashCode() shouldNotBe sample.compositeSample2.hashCode()
     }
   }
 
@@ -590,3 +676,151 @@ private fun equalButDistinctValuesArb(): Arb<Pair<Any, Any>> =
     check(iceCream1 !== iceCream2)
     Pair(iceCream1, iceCream2)
   }
+
+private enum class SomeValueArbSampleCompositeProperty {
+  Value,
+  EdgeCaseProbability,
+  Type,
+  MaxDepth,
+  CompositeProbability,
+  EdgeCases,
+}
+
+private fun someValueArbSampleCompositeEqualPairArb():
+  Arb<SomeValueArbSampleCompositeEqualPairSample> =
+  someValueArbSampleCompositeEqualPairArb(Arb.iceCreams()) { it.copy() }
+
+private fun <T : Any> someValueArbSampleCompositeEqualPairArb(
+  value: Arb<T>,
+  copy: (T) -> T
+): Arb<SomeValueArbSampleCompositeEqualPairSample> =
+  Arb.bind(
+    Arb.twoValues(someValueArbSampleCompositeArb()),
+    value,
+    Arb.enum<SomeValueArbSampleEqualityDimension>(),
+    Arb.enumSubset<SomeValueArbSampleCompositeProperty>(),
+  ) { (sampleTemplate1, sampleTemplate2), value, dimension, properties ->
+    val sample1 = sampleTemplate1.copy(value = value)
+    val sample2 =
+      when (dimension) {
+        SomeValueArbSampleEqualityDimension.SameInstance -> sample1
+        SomeValueArbSampleEqualityDimension.DifferentInstanceSameValueInstance -> sample1.copy()
+        SomeValueArbSampleEqualityDimension.DifferentInstanceDifferentButEqualValueInstance ->
+          sample1.copy(value = copy(value))
+        SomeValueArbSampleEqualityDimension.DifferentInstanceEqualValueDifferentOtherProperties ->
+          sample1.copy(
+            value =
+              if (SomeValueArbSampleCompositeProperty.Value in properties) copy(value) else value,
+            edgeCaseProbability =
+              if (SomeValueArbSampleCompositeProperty.EdgeCaseProbability in properties)
+                sampleTemplate2.edgeCaseProbability
+              else sampleTemplate1.edgeCaseProbability,
+            type =
+              if (SomeValueArbSampleCompositeProperty.Type in properties) sampleTemplate2.type
+              else sampleTemplate1.type,
+            maxDepth =
+              if (SomeValueArbSampleCompositeProperty.MaxDepth in properties)
+                sampleTemplate2.maxDepth
+              else sampleTemplate1.maxDepth,
+            compositeProbability =
+              if (SomeValueArbSampleCompositeProperty.CompositeProbability in properties)
+                sampleTemplate2.compositeProbability
+              else sampleTemplate1.compositeProbability,
+            edgeCases =
+              if (SomeValueArbSampleCompositeProperty.EdgeCases in properties)
+                sampleTemplate2.edgeCases
+              else sampleTemplate1.edgeCases,
+          )
+      }
+    SomeValueArbSampleCompositeEqualPairSample(sample1, sample2, dimension, properties)
+  }
+
+private class SomeValueArbSampleCompositeEqualPairSample(
+  val compositeSample1: SomeValueArb.Sample.Composite,
+  val compositeSample2: SomeValueArb.Sample.Composite,
+  val dimension: SomeValueArbSampleEqualityDimension,
+  val properties: Set<SomeValueArbSampleCompositeProperty>,
+) {
+
+  override fun toString() =
+    "SomeValueArbSampleCompositeEqualPairSample(" +
+      "compositeSample1=${compositeSample1.print().value}, " +
+      "compositeSample2=${compositeSample2.print().value}, " +
+      "dimension=${dimension.print().value}, " +
+      "properties=${properties.toSortedSet().print().value})"
+
+  override fun equals(other: Any?) =
+    other is SomeValueArbSampleCompositeEqualPairSample &&
+      other.compositeSample1 == compositeSample1 &&
+      other.compositeSample2 == compositeSample2
+
+  override fun hashCode() =
+    Objects.hash(
+      SomeValueArbSampleCompositeEqualPairSample::class,
+      compositeSample1,
+      compositeSample2
+    )
+}
+
+private fun someValueArbSampleCompositeUnequalPairArb():
+  Arb<SomeValueArbSampleCompositeUnequalPairSample> =
+  someValueArbSampleCompositeUnequalPairArb(Arb.iceCreams())
+
+private fun <T : Any> someValueArbSampleCompositeUnequalPairArb(
+  value: Arb<T>
+): Arb<SomeValueArbSampleCompositeUnequalPairSample> =
+  Arb.bind(
+    Arb.twoValues(someValueArbSampleCompositeArb()),
+    value.distinctPair(),
+    Arb.enumSubset<SomeValueArbSampleCompositeProperty>(),
+  ) { (sampleTemplate1, sampleTemplate2), (value1, value2), properties ->
+    val sample1 = sampleTemplate1.copy(value = value1)
+    val sample2 =
+      sample1.copy(
+        value = value2,
+        edgeCaseProbability =
+          if (SomeValueArbSampleCompositeProperty.EdgeCaseProbability in properties)
+            sampleTemplate2.edgeCaseProbability
+          else sampleTemplate1.edgeCaseProbability,
+        type =
+          if (SomeValueArbSampleCompositeProperty.Type in properties) sampleTemplate2.type
+          else sampleTemplate1.type,
+        maxDepth =
+          if (SomeValueArbSampleCompositeProperty.MaxDepth in properties) sampleTemplate2.maxDepth
+          else sampleTemplate1.maxDepth,
+        compositeProbability =
+          if (SomeValueArbSampleCompositeProperty.CompositeProbability in properties)
+            sampleTemplate2.compositeProbability
+          else sampleTemplate1.compositeProbability,
+        edgeCases =
+          if (SomeValueArbSampleCompositeProperty.EdgeCases in properties) sampleTemplate2.edgeCases
+          else sampleTemplate1.edgeCases,
+      )
+
+    SomeValueArbSampleCompositeUnequalPairSample(sample1, sample2, properties)
+  }
+
+private class SomeValueArbSampleCompositeUnequalPairSample(
+  val compositeSample1: SomeValueArb.Sample.Composite,
+  val compositeSample2: SomeValueArb.Sample.Composite,
+  val properties: Set<SomeValueArbSampleCompositeProperty>,
+) {
+
+  override fun toString() =
+    "SomeValueArbSampleCompositeUnequalPairSample(" +
+      "compositeSample1=${compositeSample1.print().value}, " +
+      "compositeSample2=${compositeSample2.print().value}, " +
+      "properties=${properties.toSortedSet().print().value})"
+
+  override fun equals(other: Any?) =
+    other is SomeValueArbSampleCompositeUnequalPairSample &&
+      other.compositeSample1 == compositeSample1 &&
+      other.compositeSample2 == compositeSample2
+
+  override fun hashCode() =
+    Objects.hash(
+      SomeValueArbSampleCompositeUnequalPairSample::class,
+      compositeSample1,
+      compositeSample2
+    )
+}
