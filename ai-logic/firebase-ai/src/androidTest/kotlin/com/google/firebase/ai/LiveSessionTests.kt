@@ -29,12 +29,15 @@ import com.google.firebase.ai.type.LiveGenerationConfig
 import com.google.firebase.ai.type.LiveServerContent
 import com.google.firebase.ai.type.LiveServerToolCall
 import com.google.firebase.ai.type.LiveSession
+import com.google.firebase.ai.type.LiveSessionResumptionUpdate
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.ResponseModality
 import com.google.firebase.ai.type.Schema
+import com.google.firebase.ai.type.SessionResumptionConfig
 import com.google.firebase.ai.type.Tool
 import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.liveGenerationConfig
+import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.longs.shouldBeGreaterThan
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -47,6 +50,7 @@ import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -267,6 +271,51 @@ class LiveSessionTests {
     } finally {
       session.close()
     }
+  }
+
+  @Test
+  fun testResumption(): Unit = runBlocking {
+    val liveModel =
+      getLiveModel(
+        modelName = modelName,
+        config = generationConfig,
+        systemInstruction = SystemInstructions.yesOrNo
+      )
+    val session = liveModel.connect(SessionResumptionConfig())
+    session.send("Hello, please respond", true)
+    var piecesOfContent = 0
+    var lastResumptionUpdate: LiveSessionResumptionUpdate? = null
+    withTimeout(30_000) {
+      session
+        .receive()
+        .takeWhile {
+          if (it is LiveSessionResumptionUpdate) {
+            lastResumptionUpdate = it
+          } else if (it is LiveServerContent) {
+            piecesOfContent++
+            !it.turnComplete
+          }
+          true
+        }
+        .collect {}
+    }
+    val firstContentSize = piecesOfContent
+    lastResumptionUpdate shouldNotBe null
+    session.resumeSession(SessionResumptionConfig(handle = lastResumptionUpdate!!.newHandle))
+    session.send("Hello, please respond")
+    withTimeout(30_000) {
+      session
+        .receive()
+        .takeWhile {
+          if (it is LiveServerContent) {
+            piecesOfContent++
+            !it.turnComplete
+          }
+          true
+        }
+        .collect {}
+    }
+    piecesOfContent shouldBeGreaterThan firstContentSize
   }
 
   private suspend fun LiveSession.collectNextAudioOutputTranscript(): String {
