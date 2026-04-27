@@ -257,7 +257,8 @@ internal class RequestFormatTests {
                 FunctionCallingConfig.Internal(
                   mode = FunctionCallingConfig.Internal.Mode.ANY,
                   allowedFunctionNames = listOf("allowedFunctionName")
-                )
+                ),
+                null
               )
           ),
         )
@@ -418,6 +419,42 @@ internal class RequestFormatTests {
     withTimeout(5.seconds) { controller.countTokens(textCountTokenRequest("cats")) }
 
     mockEngine.requestHistory.first().headers.contains("header1") shouldBe false
+  }
+
+  @Test
+  fun `headers from HeaderProvider are added to the WebSocket handshake`() = doBlocking {
+    val mockEngine = MockEngine {
+      // MockEngine isn't designed to complete a WebSocket upgrade handshake, but the
+      // outgoing request is recorded in requestHistory before the handshake attempt,
+      // so we can still assert on its headers.
+      respond("", HttpStatusCode.OK)
+    }
+
+    val testHeaderProvider =
+      object : HeaderProvider {
+        override val timeout: Duration
+          get() = 5.seconds
+
+        override suspend fun generateHeaders(): Map<String, String> =
+          mapOf("X-Firebase-AppCheck" to "test-token")
+      }
+
+    val controller =
+      APIController(
+        "super_cool_test_key",
+        "gemini-pro-2.5",
+        RequestOptions(),
+        mockEngine,
+        TEST_CLIENT_ID,
+        mockFirebaseApp,
+        TEST_VERSION,
+        TEST_APP_ID,
+        testHeaderProvider,
+      )
+
+    runCatching { withTimeout(5.seconds) { controller.getWebSocketSession("us-central1") } }
+
+    mockEngine.requestHistory.first().headers["X-Firebase-AppCheck"] shouldBe "test-token"
   }
 
   @Test

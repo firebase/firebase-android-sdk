@@ -145,9 +145,15 @@ object DataConnectArb {
     }
   }
 
-  fun accessToken(
+  fun authUid(string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())): Arb<String> =
+    string.map { "authUid_${it.lowercase()}" }
+
+  fun authToken(string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())): Arb<String> =
+    string.map { "authToken_${it.lowercase()}" }
+
+  fun appCheckToken(
     string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())
-  ): Arb<String> = arbitrary { "accessToken_${string.bind()}" }
+  ): Arb<String> = string.map { "appCheckToken_${it.lowercase()}" }
 
   fun requestId(string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())): Arb<String> =
     arbitrary {

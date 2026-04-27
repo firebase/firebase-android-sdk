@@ -110,7 +110,8 @@ package com.google.firebase.ai {
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class LiveGenerativeModel {
-    method public suspend Object? connect(kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.LiveSession>);
+    method public suspend Object? connect(com.google.firebase.ai.type.SessionResumptionConfig? sessionResumption = null, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.LiveSession>);
+    method public suspend Object? connect(kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.LiveSession> = null);
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class OnDeviceConfig {
@@ -431,6 +432,14 @@ package com.google.firebase.ai.type {
   public static final class ContentModality.Companion {
   }
 
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class ContextWindowCompressionConfig {
+    ctor public ContextWindowCompressionConfig(Integer? triggerTokens = null, com.google.firebase.ai.type.SlidingWindow? slidingWindow = null);
+    method public com.google.firebase.ai.type.SlidingWindow? getSlidingWindow();
+    method public Integer? getTriggerTokens();
+    property public final com.google.firebase.ai.type.SlidingWindow? slidingWindow;
+    property public final Integer? triggerTokens;
+  }
+
   public final class CountTokensResponse {
     ctor public CountTokensResponse(int totalTokens, @Deprecated Integer? totalBillableCharacters = null, java.util.List<com.google.firebase.ai.type.ModalityTokenCount> promptTokensDetails = emptyList());
     method public operator int component1();
@@ -649,6 +658,20 @@ package com.google.firebase.ai.type {
     method public com.google.firebase.ai.type.GenerativeBackend vertexAI(String location = "us-central1");
   }
 
+  public final class GoogleMaps {
+    ctor public GoogleMaps();
+  }
+
+  public final class GoogleMapsGroundingChunk {
+    ctor public GoogleMapsGroundingChunk(String? uri, String? title, String? placeId);
+    method public String? getPlaceId();
+    method public String? getTitle();
+    method public String? getUri();
+    property public final String? placeId;
+    property public final String? title;
+    property public final String? uri;
+  }
+
   public final class GoogleSearch {
     ctor public GoogleSearch();
   }
@@ -662,8 +685,12 @@ package com.google.firebase.ai.type {
   }
 
   public final class GroundingChunk {
-    ctor public GroundingChunk(com.google.firebase.ai.type.WebGroundingChunk? web);
+    ctor public GroundingChunk();
+    ctor public GroundingChunk(com.google.firebase.ai.type.WebGroundingChunk? web = null);
+    ctor public GroundingChunk(com.google.firebase.ai.type.WebGroundingChunk? web = null, com.google.firebase.ai.type.GoogleMapsGroundingChunk? maps = null);
+    method public com.google.firebase.ai.type.GoogleMapsGroundingChunk? getMaps();
     method public com.google.firebase.ai.type.WebGroundingChunk? getWeb();
+    property public final com.google.firebase.ai.type.GoogleMapsGroundingChunk? maps;
     property public final com.google.firebase.ai.type.WebGroundingChunk? web;
   }
 
@@ -1179,6 +1206,17 @@ package com.google.firebase.ai.type {
     method public com.google.firebase.ai.type.JsonSchema<java.lang.String> string(String? description = null, boolean nullable = false, com.google.firebase.ai.type.StringFormat? format = null, String? title = null);
   }
 
+  public final class LatLng {
+    ctor public LatLng(double latitude, double longitude);
+    method public double component1();
+    method public double component2();
+    method public com.google.firebase.ai.type.LatLng copy(double latitude, double longitude);
+    method public double getLatitude();
+    method public double getLongitude();
+    property public final double latitude;
+    property public final double longitude;
+  }
+
   @com.google.firebase.ai.type.PublicPreviewAPI public final class LiveAudioConversationConfig {
     field public static final com.google.firebase.ai.type.LiveAudioConversationConfig.Companion Companion;
   }
@@ -1213,6 +1251,7 @@ package com.google.firebase.ai.type {
   public static final class LiveGenerationConfig.Builder {
     ctor public LiveGenerationConfig.Builder();
     method public com.google.firebase.ai.type.LiveGenerationConfig build();
+    method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setContextWindowCompression(com.google.firebase.ai.type.ContextWindowCompressionConfig? config);
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setFrequencyPenalty(Float? frequencyPenalty);
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setInputAudioTranscription(com.google.firebase.ai.type.AudioTranscriptionConfig? config);
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setMaxOutputTokens(Integer? maxOutputTokens);
@@ -1223,6 +1262,7 @@ package com.google.firebase.ai.type {
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setTemperature(Float? temperature);
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setTopK(Integer? topK);
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setTopP(Float? topP);
+    field public com.google.firebase.ai.type.ContextWindowCompressionConfig? contextWindowCompression;
     field public Float? frequencyPenalty;
     field public com.google.firebase.ai.type.AudioTranscriptionConfig? inputAudioTranscription;
     field public Integer? maxOutputTokens;
@@ -1292,6 +1332,8 @@ package com.google.firebase.ai.type {
     method public boolean isAudioConversationActive();
     method public boolean isClosed();
     method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.type.LiveServerMessage> receive();
+    method public suspend Object? resumeSession(com.google.firebase.ai.type.SessionResumptionConfig? sessionResumption = null, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public suspend Object? resumeSession(kotlin.coroutines.Continuation<? super kotlin.Unit> = null);
     method public suspend Object? send(com.google.firebase.ai.type.Content content, boolean turnComplete = true, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public suspend Object? send(com.google.firebase.ai.type.Content content, kotlin.coroutines.Continuation<? super kotlin.Unit> = true);
     method public suspend Object? send(String text, boolean turnComplete = true, kotlin.coroutines.Continuation<? super kotlin.Unit>);
@@ -1308,6 +1350,16 @@ package com.google.firebase.ai.type {
     method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public suspend Object? startAudioConversation(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.FunctionCallPart,com.google.firebase.ai.type.FunctionResponsePart>? functionCallHandler = null, kotlin.jvm.functions.Function2<? super com.google.firebase.ai.type.Transcription?,? super com.google.firebase.ai.type.Transcription?,kotlin.Unit>? transcriptHandler = null, kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.LiveServerGoAway,kotlin.Unit>? goAwayHandler = null, boolean enableInterruptions = false, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public void stopAudioConversation();
     method public void stopReceiving();
+  }
+
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class LiveSessionResumptionUpdate implements com.google.firebase.ai.type.LiveServerMessage {
+    ctor public LiveSessionResumptionUpdate(String? newHandle = null, Boolean? resumable = null, Integer? lastConsumedClientMessageIndex = null);
+    method public Integer? getLastConsumedClientMessageIndex();
+    method public String? getNewHandle();
+    method public Boolean? getResumable();
+    property public final Integer? lastConsumedClientMessageIndex;
+    property public final String? newHandle;
+    property public final Boolean? resumable;
   }
 
   @Deprecated @com.google.firebase.ai.type.PublicPreviewAPI public final class MediaData {
@@ -1388,6 +1440,28 @@ package com.google.firebase.ai.type {
   public final class ResponseStoppedException extends com.google.firebase.ai.type.FirebaseAIException {
     method public com.google.firebase.ai.type.GenerateContentResponse getResponse();
     property public final com.google.firebase.ai.type.GenerateContentResponse response;
+  }
+
+  public final class RetrievalConfig {
+    method public static com.google.firebase.ai.type.RetrievalConfig.Builder builder();
+    field public static final com.google.firebase.ai.type.RetrievalConfig.Companion Companion;
+  }
+
+  public static final class RetrievalConfig.Builder {
+    ctor public RetrievalConfig.Builder();
+    method public com.google.firebase.ai.type.RetrievalConfig build();
+    method public com.google.firebase.ai.type.RetrievalConfig.Builder setLanguageCode(String? languageCode);
+    method public com.google.firebase.ai.type.RetrievalConfig.Builder setLatLng(com.google.firebase.ai.type.LatLng? latLng);
+    field public String? languageCode;
+    field public com.google.firebase.ai.type.LatLng? latLng;
+  }
+
+  public static final class RetrievalConfig.Companion {
+    method public com.google.firebase.ai.type.RetrievalConfig.Builder builder();
+  }
+
+  public final class RetrievalConfigKt {
+    method public static com.google.firebase.ai.type.RetrievalConfig retrievalConfig(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.RetrievalConfig.Builder,kotlin.Unit> init);
   }
 
   public final class SafetyRating {
@@ -1579,6 +1653,16 @@ package com.google.firebase.ai.type {
     ctor public SessionAlreadyReceivingException();
   }
 
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class SessionResumptionConfig {
+    ctor public SessionResumptionConfig(String? handle = null);
+  }
+
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class SlidingWindow {
+    ctor public SlidingWindow(Integer? targetTokens = null);
+    method public Integer? getTargetTokens();
+    property public final Integer? targetTokens;
+  }
+
   @com.google.firebase.ai.type.PublicPreviewAPI public final class SpeechConfig {
     ctor public SpeechConfig(com.google.firebase.ai.type.Voice voice);
     method public com.google.firebase.ai.type.Voice getVoice();
@@ -1671,6 +1755,8 @@ package com.google.firebase.ai.type {
     method public static com.google.firebase.ai.type.Tool codeExecution();
     method public static com.google.firebase.ai.type.Tool functionDeclarations(java.util.List<com.google.firebase.ai.type.FunctionDeclaration> functionDeclarations);
     method public static com.google.firebase.ai.type.Tool functionDeclarations(java.util.List<com.google.firebase.ai.type.FunctionDeclaration>? functionDeclarations = null, java.util.List<? extends com.google.firebase.ai.type.AutoFunctionDeclaration<? extends java.lang.Object?,? extends java.lang.Object?>>? autoFunctionDeclarations);
+    method public static com.google.firebase.ai.type.Tool googleMaps();
+    method public static com.google.firebase.ai.type.Tool googleMaps(com.google.firebase.ai.type.GoogleMaps googleMaps = com.google.firebase.ai.type.GoogleMaps());
     method public static com.google.firebase.ai.type.Tool googleSearch();
     method public static com.google.firebase.ai.type.Tool googleSearch(com.google.firebase.ai.type.GoogleSearch googleSearch = com.google.firebase.ai.type.GoogleSearch());
     method public static com.google.firebase.ai.type.Tool urlContext();
@@ -1682,6 +1768,8 @@ package com.google.firebase.ai.type {
     method public com.google.firebase.ai.type.Tool codeExecution();
     method public com.google.firebase.ai.type.Tool functionDeclarations(java.util.List<com.google.firebase.ai.type.FunctionDeclaration> functionDeclarations);
     method public com.google.firebase.ai.type.Tool functionDeclarations(java.util.List<com.google.firebase.ai.type.FunctionDeclaration>? functionDeclarations = null, java.util.List<? extends com.google.firebase.ai.type.AutoFunctionDeclaration<? extends java.lang.Object?,? extends java.lang.Object?>>? autoFunctionDeclarations);
+    method public com.google.firebase.ai.type.Tool googleMaps();
+    method public com.google.firebase.ai.type.Tool googleMaps(com.google.firebase.ai.type.GoogleMaps googleMaps = com.google.firebase.ai.type.GoogleMaps());
     method public com.google.firebase.ai.type.Tool googleSearch();
     method public com.google.firebase.ai.type.Tool googleSearch(com.google.firebase.ai.type.GoogleSearch googleSearch = com.google.firebase.ai.type.GoogleSearch());
     method public com.google.firebase.ai.type.Tool urlContext();
@@ -1689,7 +1777,9 @@ package com.google.firebase.ai.type {
   }
 
   public final class ToolConfig {
-    ctor public ToolConfig(com.google.firebase.ai.type.FunctionCallingConfig? functionCallingConfig);
+    ctor public ToolConfig();
+    ctor public ToolConfig(com.google.firebase.ai.type.FunctionCallingConfig? functionCallingConfig = null);
+    ctor public ToolConfig(com.google.firebase.ai.type.FunctionCallingConfig? functionCallingConfig = null, com.google.firebase.ai.type.RetrievalConfig? retrievalConfig = null);
   }
 
   public final class Transcription {

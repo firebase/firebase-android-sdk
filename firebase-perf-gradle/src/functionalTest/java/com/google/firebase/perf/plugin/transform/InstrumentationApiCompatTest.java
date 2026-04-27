@@ -52,8 +52,8 @@ public class InstrumentationApiCompatTest {
   private static final String GRADLE_RELEASES_URL =
       "https://api.github.com/repos/gradle/gradle/releases/latest";
   // Latest verified versions. Update these as new versions are released and verified.
-  private static final String VERIFIED_AGP_VERSION = "9.2.0-alpha05";
-  private static final String VERIFIED_GRADLE_VERSION = "9.5.0-milestone-5";
+  private static final String VERIFIED_AGP_VERSION = "9.2.0-alpha08";
+  private static final String VERIFIED_GRADLE_VERSION = "9.4.1";
   private final OkHttpClient client = new OkHttpClient();
 
   @RegisterExtension public GradleBuildProject gradleBuildProject = new GradleBuildProject();
@@ -130,7 +130,6 @@ public class InstrumentationApiCompatTest {
       JsonObject releaseObject = JsonParser.parseString(response.body().string()).getAsJsonObject();
       return releaseObject.get("name").getAsString();
     } catch (Exception e) {
-      // Catch all exceptions (IO, XML parsing, etc.) and wrap them
       throw new RuntimeException(
           "Failed to fetch or parse latest Gradle version: " + e.getMessage(), e);
     }
