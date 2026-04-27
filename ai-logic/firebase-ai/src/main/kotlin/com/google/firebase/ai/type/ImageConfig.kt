@@ -16,6 +16,7 @@
 
 package com.google.firebase.ai.type
 
+import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -48,13 +49,14 @@ private constructor(
     public fun build(): ImageConfig = ImageConfig(aspectRatio, imageSize)
   }
 
-  internal fun toInternal() = Internal(aspectRatio?.toInternal(), imageSize?.toInternal())
-
+  @OptIn(InternalSerializationApi::class)
   @Serializable
   internal data class Internal(
     @SerialName("aspect_ratio") val aspectRatio: String? = null,
     @SerialName("image_size") val imageSize: String? = null
   )
+
+  internal fun toInternal() = Internal(aspectRatio?.toInternal(), imageSize?.toInternal())
 
   public companion object {
     /** Creates a new [Builder]. */
@@ -62,70 +64,9 @@ private constructor(
   }
 }
 
-/** An aspect ratio for generated images. */
-public class AspectRatio private constructor(public val value: String) {
-  internal fun toInternal() = value
-
-  public companion object {
-    /** Square (1:1) aspect ratio. */
-    @JvmField public val SQUARE_1x1: AspectRatio = AspectRatio("1:1")
-
-    /** Portrait widescreen (9:16) aspect ratio. */
-    @JvmField public val PORTRAIT_9x16: AspectRatio = AspectRatio("9:16")
-
-    /** Widescreen (16:9) aspect ratio. */
-    @JvmField public val LANDSCAPE_16x9: AspectRatio = AspectRatio("16:9")
-
-    /** Portrait full screen (3:4) aspect ratio. */
-    @JvmField public val PORTRAIT_3x4: AspectRatio = AspectRatio("3:4")
-
-    /** Fullscreen (4:3) aspect ratio. */
-    @JvmField public val LANDSCAPE_4x3: AspectRatio = AspectRatio("4:3")
-
-    /** Portrait (2:3) aspect ratio. */
-    @JvmField public val PORTRAIT_2x3: AspectRatio = AspectRatio("2:3")
-
-    /** Landscape (3:2) aspect ratio. */
-    @JvmField public val LANDSCAPE_3x2: AspectRatio = AspectRatio("3:2")
-
-    /** Portrait (4:5) aspect ratio. */
-    @JvmField public val PORTRAIT_4x5: AspectRatio = AspectRatio("4:5")
-
-    /** Landscape (5:4) aspect ratio. */
-    @JvmField public val LANDSCAPE_5x4: AspectRatio = AspectRatio("5:4")
-
-    /** Portrait (1:4) aspect ratio. */
-    @JvmField public val PORTRAIT_1x4: AspectRatio = AspectRatio("1:4")
-
-    /** Landscape (4:1) aspect ratio. */
-    @JvmField public val LANDSCAPE_4x1: AspectRatio = AspectRatio("4:1")
-
-    /** Portrait (1:8) aspect ratio. */
-    @JvmField public val PORTRAIT_1x8: AspectRatio = AspectRatio("1:8")
-
-    /** Landscape (8:1) aspect ratio. */
-    @JvmField public val LANDSCAPE_8x1: AspectRatio = AspectRatio("8:1")
-
-    /** Ultrawide (21:9) aspect ratio. */
-    @JvmField public val ULTRAWIDE_21x9: AspectRatio = AspectRatio("21:9")
-  }
-}
-
-/** The size of images to generate. */
-public class ImageSize private constructor(public val value: String) {
-  internal fun toInternal() = value
-
-  public companion object {
-    /** 512px (0.5K) image size. */
-    @JvmField public val SIZE_512: ImageSize = ImageSize("512")
-
-    /** 1K image size. */
-    @JvmField public val SIZE_1K: ImageSize = ImageSize("1K")
-
-    /** 2K image size. */
-    @JvmField public val SIZE_2K: ImageSize = ImageSize("2K")
-
-    /** 4K image size. */
-    @JvmField public val SIZE_4K: ImageSize = ImageSize("4K")
-  }
+/** Helper method to construct an [ImageConfig] in a DSL-like manner. */
+public fun imageConfig(init: ImageConfig.Builder.() -> Unit): ImageConfig {
+  val builder = ImageConfig.builder()
+  builder.init()
+  return builder.build()
 }

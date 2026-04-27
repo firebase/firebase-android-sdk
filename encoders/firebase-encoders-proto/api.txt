@@ -19,7 +19,7 @@ package com.google.firebase.encoders.proto {
   public class ProtobufEncoder {
     method public static com.google.firebase.encoders.proto.ProtobufEncoder.Builder! builder();
     method public byte[] encode(Object);
-    method public void encode(Object, OutputStream);
+    method public void encode(Object, java.io.OutputStream) throws java.io.IOException;
   }
 
   public static final class ProtobufEncoder.Builder implements com.google.firebase.encoders.config.EncoderConfig<com.google.firebase.encoders.proto.ProtobufEncoder.Builder!> {
@@ -28,7 +28,7 @@ package com.google.firebase.encoders.proto {
     method public com.google.firebase.encoders.proto.ProtobufEncoder.Builder configureWith(com.google.firebase.encoders.config.Configurator);
     method public <U> com.google.firebase.encoders.proto.ProtobufEncoder.Builder registerEncoder(Class<U!>, com.google.firebase.encoders.ObjectEncoder<? super U!>);
     method public <U> com.google.firebase.encoders.proto.ProtobufEncoder.Builder registerEncoder(Class<U!>, com.google.firebase.encoders.ValueEncoder<? super U!>);
-    method public com.google.firebase.encoders.proto.ProtobufEncoder.Builder registerFallbackEncoder(com.google.firebase.encoders.ObjectEncoder<Object!>);
+    method public com.google.firebase.encoders.proto.ProtobufEncoder.Builder registerFallbackEncoder(com.google.firebase.encoders.ObjectEncoder<java.lang.Object!>);
   }
 
 }

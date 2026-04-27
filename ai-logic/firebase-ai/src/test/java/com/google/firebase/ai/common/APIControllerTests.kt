@@ -25,16 +25,20 @@ import com.google.firebase.ai.common.util.commonTest
 import com.google.firebase.ai.common.util.createResponses
 import com.google.firebase.ai.common.util.doBlocking
 import com.google.firebase.ai.common.util.prepareStreamingResponse
+import com.google.firebase.ai.type.AspectRatio
 import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.CountTokensResponse
 import com.google.firebase.ai.type.FunctionCallingConfig
 import com.google.firebase.ai.type.GoogleSearch
+import com.google.firebase.ai.type.ImageSize
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.RequestOptions
 import com.google.firebase.ai.type.TextPart
 import com.google.firebase.ai.type.Tool
 import com.google.firebase.ai.type.ToolConfig
 import com.google.firebase.ai.type.UrlContext
+import com.google.firebase.ai.type.generationConfig
+import com.google.firebase.ai.type.imageConfig
 import io.kotest.assertions.json.shouldContainJsonKey
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
@@ -453,6 +457,52 @@ internal class RequestFormatTests {
     val requestBodyAsText = (mockEngine.requestHistory.first().body as TextContent).text
 
     requestBodyAsText shouldContainJsonKey "tools[0].codeExecution"
+  }
+
+  @Test
+  fun `image config serialization contains correct keys`() = doBlocking {
+    val channel = ByteChannel(autoFlush = true)
+    val mockEngine = MockEngine {
+      respond(channel, HttpStatusCode.OK, headersOf(HttpHeaders.ContentType, "application/json"))
+    }
+    prepareStreamingResponse(createResponses("Random")).forEach { channel.writeFully(it) }
+
+    val controller =
+      APIController(
+        "super_cool_test_key",
+        "gemini-pro-2.5",
+        RequestOptions(),
+        mockEngine,
+        TEST_CLIENT_ID,
+        mockFirebaseApp,
+        TEST_VERSION,
+        TEST_APP_ID,
+        null,
+      )
+
+    withTimeout(5.seconds) {
+      controller
+        .generateContentStream(
+          GenerateContentRequest(
+            model = "unused",
+            contents = listOf(Content.Internal(parts = listOf(TextPart.Internal("Arbitrary")))),
+            generationConfig =
+              generationConfig {
+                  imageConfig = imageConfig {
+                    aspectRatio = AspectRatio.LANDSCAPE_21x9
+                    imageSize = ImageSize.SIZE_2K
+                  }
+                }
+                .toInternal()
+          ),
+        )
+        .collect { channel.close() }
+    }
+
+    val requestBodyAsText = (mockEngine.requestHistory.first().body as TextContent).text
+
+    requestBodyAsText shouldContainJsonKey "generation_config.image_config.aspect_ratio"
+    requestBodyAsText shouldContainJsonKey "generation_config.image_config.image_size"
   }
 }
 

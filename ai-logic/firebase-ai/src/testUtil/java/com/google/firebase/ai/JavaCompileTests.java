@@ -30,6 +30,7 @@ import com.google.firebase.ai.java.GenerativeModelFutures;
 import com.google.firebase.ai.java.ImagenModelFutures;
 import com.google.firebase.ai.java.LiveModelFutures;
 import com.google.firebase.ai.java.LiveSessionFutures;
+import com.google.firebase.ai.type.AspectRatio;
 import com.google.firebase.ai.type.BlockReason;
 import com.google.firebase.ai.type.Candidate;
 import com.google.firebase.ai.type.Citation;
@@ -47,7 +48,9 @@ import com.google.firebase.ai.type.GenerationConfig;
 import com.google.firebase.ai.type.HarmCategory;
 import com.google.firebase.ai.type.HarmProbability;
 import com.google.firebase.ai.type.HarmSeverity;
+import com.google.firebase.ai.type.ImageConfig;
 import com.google.firebase.ai.type.ImagePart;
+import com.google.firebase.ai.type.ImageSize;
 import com.google.firebase.ai.type.ImagenBackgroundMask;
 import com.google.firebase.ai.type.ImagenEditMode;
 import com.google.firebase.ai.type.ImagenEditingConfig;
@@ -129,6 +132,11 @@ public class JavaCompileTests {
         .setResponseMimeType("image/jxl")
         .setResponseModalities(List.of(ResponseModality.TEXT, ResponseModality.TEXT))
         .setResponseSchema(getSchema())
+        .setImageConfig(
+            ImageConfig.builder()
+                .setAspectRatio(AspectRatio.LANDSCAPE_21x9)
+                .setImageSize(ImageSize.SIZE_512)
+                .build())
         .build();
   }
 

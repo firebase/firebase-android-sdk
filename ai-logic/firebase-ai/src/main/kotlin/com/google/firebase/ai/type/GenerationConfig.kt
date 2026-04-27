@@ -132,6 +132,8 @@ private constructor(
    *
    * @property responseModalities See [GenerationConfig.responseModalities].
    *
+   * @property imageConfig See [GenerationConfig.imageConfig].
+   *
    * @see [generationConfig]
    */
   public class Builder {
@@ -219,7 +221,6 @@ private constructor(
     public fun setThinkingConfig(thinkingConfig: ThinkingConfig?): Builder = apply {
       this.thinkingConfig = thinkingConfig
     }
-
     public fun setImageConfig(imageConfig: ImageConfig?): Builder = apply {
       this.imageConfig = imageConfig
     }

@@ -37,6 +37,8 @@ import kotlinx.serialization.json.JsonNames
  * @property safetyRatings A list of [SafetyRating]s describing the generated content.
  * @property citationMetadata Metadata about the sources used to generate this content.
  * @property finishReason The reason the model stopped generating content, if it exists.
+ * @property finishMessage The optional message associated with the finish reason, providing more
+ * details.
  * @property groundingMetadata Metadata returned to the client when the model grounds its response.
  * @property urlContextMetadata Metadata returned to the client when the [UrlContext] tool is
  * enabled.
@@ -48,8 +50,9 @@ internal constructor(
   public val safetyRatings: List<SafetyRating>,
   public val citationMetadata: CitationMetadata?,
   public val finishReason: FinishReason?,
+  public val finishMessage: String?,
   public val groundingMetadata: GroundingMetadata?,
-  public val urlContextMetadata: UrlContextMetadata?
+  public val urlContextMetadata: UrlContextMetadata?,
 ) {
 
   @OptIn(PublicPreviewAPI::class)
@@ -57,10 +60,11 @@ internal constructor(
   internal data class Internal(
     val content: Content.Internal? = null,
     val finishReason: FinishReason.Internal? = null,
+    val finishMessage: String? = null,
     val safetyRatings: List<SafetyRating.Internal>? = null,
     val citationMetadata: CitationMetadata.Internal? = null,
     val groundingMetadata: GroundingMetadata.Internal? = null,
-    val urlContextMetadata: UrlContextMetadata.Internal? = null
+    val urlContextMetadata: UrlContextMetadata.Internal? = null,
   ) {
 
     @OptIn(PublicPreviewAPI::class)
@@ -76,8 +80,9 @@ internal constructor(
         safetyRatings,
         citations,
         finishReason,
+        finishMessage,
         groundingMetadata,
-        urlContextMetadata
+        urlContextMetadata,
       )
     }
   }
@@ -89,6 +94,7 @@ internal constructor(
         safetyRatings = emptyList(),
         citationMetadata = null,
         finishReason = FinishReason.fromInterop(candidate.finishReason),
+        finishMessage = null,
         groundingMetadata = null,
         urlContextMetadata = null
       )

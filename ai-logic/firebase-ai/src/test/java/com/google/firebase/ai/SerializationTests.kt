@@ -19,6 +19,7 @@ package com.google.firebase.ai
 import com.google.firebase.ai.common.TemplateGenerateContentRequest
 import com.google.firebase.ai.common.TemplateGenerateImageRequest
 import com.google.firebase.ai.common.util.descriptorToJson
+import com.google.firebase.ai.type.AspectRatio
 import com.google.firebase.ai.type.Candidate
 import com.google.firebase.ai.type.CountTokensResponse
 import com.google.firebase.ai.type.GenerateContentResponse
@@ -28,6 +29,7 @@ import com.google.firebase.ai.type.GroundingChunk
 import com.google.firebase.ai.type.GroundingMetadata
 import com.google.firebase.ai.type.GroundingSupport
 import com.google.firebase.ai.type.ImageConfig
+import com.google.firebase.ai.type.ImageSize
 import com.google.firebase.ai.type.ImagenReferenceImage
 import com.google.firebase.ai.type.LiveServerGoAway
 import com.google.firebase.ai.type.ModalityTokenCount
@@ -40,7 +42,10 @@ import com.google.firebase.ai.type.UrlContext
 import com.google.firebase.ai.type.UrlContextMetadata
 import com.google.firebase.ai.type.UrlMetadata
 import com.google.firebase.ai.type.WebGroundingChunk
+import com.google.firebase.ai.type.imageConfig
 import io.kotest.assertions.json.shouldEqualJson
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import org.junit.Test
 
 @OptIn(PublicPreviewAPI::class)
@@ -182,6 +187,9 @@ internal class SerializationTests {
             },
         "urlContextMetadata": {
           "${'$'}ref": "UrlContextMetadata"
+        },
+        "finishMessage": {
+          "type": "string"
         }
       }
     }
