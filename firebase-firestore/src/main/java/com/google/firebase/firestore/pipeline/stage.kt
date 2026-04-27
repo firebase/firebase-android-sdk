@@ -1005,16 +1005,20 @@ internal constructor(
     }
 
     /**
-     * Create [SearchStage] with an expression search query.
+     * Create [SearchStage] with a string search query. The string will be used as rquery for
+     * searching the document.
      *
      * `query` specifies the search query that will be used to query and score documents by the
      * search stage.
      *
-     * The query can also be expressed as a string in the Search DSL:
-     *
      * ```kotlin
      * db.pipeline().collection("restaurants").search(
-     *   SearchStage.withQuery("menu:(waffle and coffee) OR breakfast")
+     *   SearchStage.withQuery("breakfast -diner")
+     * )
+     *
+     * // The above query is equivalent to:
+     * db.pipeline().collection("restaurants").search(
+     *   SearchStage.withQuery(documentMatches("breakfast -diner"))
      * )
      * ```
      */
@@ -1111,7 +1115,10 @@ internal constructor(
     )
   }
 
-  /** Specify the maximum number of documents to return from the Search stage. */
+  /**
+   * Specify the maximum number of documents to return. The limit is applied after documents are
+   * scored and sorted.
+   */
   fun withLimit(limit: Long): SearchStage {
     return SearchStage(
       query,
@@ -1128,8 +1135,10 @@ internal constructor(
   }
 
   /**
-   * Specify the maximum number of documents to retrieve. Documents will be retrieved in the
-   * pre-sort order specified by the search index.
+   * Specify the maximum number of documents to retrieve from the search index. Documents will be
+   * retrieved in the pre-sort order specified by the search index. The `retrievalDepth` is a limit
+   * applied before documents are scored and sorted, which can reduce costs of expensive scoring and
+   * sorting operations.
    */
   fun withRetrievalDepth(retrievalDepth: Long): SearchStage {
     return SearchStage(
@@ -1162,7 +1171,7 @@ internal constructor(
     )
   }
 
-  /** Specify the BCP-47 language code of text in the search query, such as, “en-US” or “sr-Latn” */
+  /** Specify the BCP-47 language code of text in the search query, such as “en” or “sr”. */
   fun withLanguageCode(languageCode: String): SearchStage {
     return SearchStage(
       query,
