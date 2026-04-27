@@ -14,11 +14,8 @@
  * limitations under the License.
  */
 
-package com.google.firebase.dataconnect.testutil
+package com.google.firebase.dataconnect.testutil.property.arbitrary
 
-import com.google.firebase.dataconnect.testutil.property.arbitrary.enumSubset
-import com.google.firebase.dataconnect.testutil.property.arbitrary.twoDistinctValues
-import com.google.firebase.dataconnect.testutil.property.arbitrary.twoValues
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
