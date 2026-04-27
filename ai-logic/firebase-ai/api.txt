@@ -110,7 +110,8 @@ package com.google.firebase.ai {
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class LiveGenerativeModel {
-    method public suspend Object? connect(kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.LiveSession>);
+    method public suspend Object? connect(com.google.firebase.ai.type.SessionResumptionConfig? sessionResumption = null, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.LiveSession>);
+    method public suspend Object? connect(kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.LiveSession> = null);
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class OnDeviceConfig {
@@ -429,6 +430,14 @@ package com.google.firebase.ai.type {
   }
 
   public static final class ContentModality.Companion {
+  }
+
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class ContextWindowCompressionConfig {
+    ctor public ContextWindowCompressionConfig(Integer? triggerTokens = null, com.google.firebase.ai.type.SlidingWindow? slidingWindow = null);
+    method public com.google.firebase.ai.type.SlidingWindow? getSlidingWindow();
+    method public Integer? getTriggerTokens();
+    property public final com.google.firebase.ai.type.SlidingWindow? slidingWindow;
+    property public final Integer? triggerTokens;
   }
 
   public final class CountTokensResponse {
@@ -1242,6 +1251,7 @@ package com.google.firebase.ai.type {
   public static final class LiveGenerationConfig.Builder {
     ctor public LiveGenerationConfig.Builder();
     method public com.google.firebase.ai.type.LiveGenerationConfig build();
+    method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setContextWindowCompression(com.google.firebase.ai.type.ContextWindowCompressionConfig? config);
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setFrequencyPenalty(Float? frequencyPenalty);
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setInputAudioTranscription(com.google.firebase.ai.type.AudioTranscriptionConfig? config);
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setMaxOutputTokens(Integer? maxOutputTokens);
@@ -1252,6 +1262,7 @@ package com.google.firebase.ai.type {
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setTemperature(Float? temperature);
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setTopK(Integer? topK);
     method public com.google.firebase.ai.type.LiveGenerationConfig.Builder setTopP(Float? topP);
+    field public com.google.firebase.ai.type.ContextWindowCompressionConfig? contextWindowCompression;
     field public Float? frequencyPenalty;
     field public com.google.firebase.ai.type.AudioTranscriptionConfig? inputAudioTranscription;
     field public Integer? maxOutputTokens;
@@ -1321,6 +1332,8 @@ package com.google.firebase.ai.type {
     method public boolean isAudioConversationActive();
     method public boolean isClosed();
     method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.type.LiveServerMessage> receive();
+    method public suspend Object? resumeSession(com.google.firebase.ai.type.SessionResumptionConfig? sessionResumption = null, kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method public suspend Object? resumeSession(kotlin.coroutines.Continuation<? super kotlin.Unit> = null);
     method public suspend Object? send(com.google.firebase.ai.type.Content content, boolean turnComplete = true, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public suspend Object? send(com.google.firebase.ai.type.Content content, kotlin.coroutines.Continuation<? super kotlin.Unit> = true);
     method public suspend Object? send(String text, boolean turnComplete = true, kotlin.coroutines.Continuation<? super kotlin.Unit>);
@@ -1337,6 +1350,16 @@ package com.google.firebase.ai.type {
     method @RequiresPermission(android.Manifest.permission.RECORD_AUDIO) public suspend Object? startAudioConversation(kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.FunctionCallPart,com.google.firebase.ai.type.FunctionResponsePart>? functionCallHandler = null, kotlin.jvm.functions.Function2<? super com.google.firebase.ai.type.Transcription?,? super com.google.firebase.ai.type.Transcription?,kotlin.Unit>? transcriptHandler = null, kotlin.jvm.functions.Function1<? super com.google.firebase.ai.type.LiveServerGoAway,kotlin.Unit>? goAwayHandler = null, boolean enableInterruptions = false, kotlin.coroutines.Continuation<? super kotlin.Unit>);
     method public void stopAudioConversation();
     method public void stopReceiving();
+  }
+
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class LiveSessionResumptionUpdate implements com.google.firebase.ai.type.LiveServerMessage {
+    ctor public LiveSessionResumptionUpdate(String? newHandle = null, Boolean? resumable = null, Integer? lastConsumedClientMessageIndex = null);
+    method public Integer? getLastConsumedClientMessageIndex();
+    method public String? getNewHandle();
+    method public Boolean? getResumable();
+    property public final Integer? lastConsumedClientMessageIndex;
+    property public final String? newHandle;
+    property public final Boolean? resumable;
   }
 
   @Deprecated @com.google.firebase.ai.type.PublicPreviewAPI public final class MediaData {
@@ -1628,6 +1651,16 @@ package com.google.firebase.ai.type {
 
   public final class SessionAlreadyReceivingException extends com.google.firebase.ai.type.FirebaseAIException {
     ctor public SessionAlreadyReceivingException();
+  }
+
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class SessionResumptionConfig {
+    ctor public SessionResumptionConfig(String? handle = null);
+  }
+
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class SlidingWindow {
+    ctor public SlidingWindow(Integer? targetTokens = null);
+    method public Integer? getTargetTokens();
+    property public final Integer? targetTokens;
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class SpeechConfig {
