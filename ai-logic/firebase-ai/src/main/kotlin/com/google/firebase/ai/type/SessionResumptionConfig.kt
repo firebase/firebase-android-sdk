@@ -26,7 +26,17 @@ import kotlinx.serialization.Serializable
  * @property handle The session resumption handle of the previous session to restore.
  */
 @PublicPreviewAPI
-public class SessionResumptionConfig(internal val handle: String? = null) {
+public class SessionResumptionConfig {
+  internal val handle: String?
+
+  public constructor() {
+    this.handle = null
+  }
+
+  public constructor(handle: String) {
+    this.handle = handle
+  }
+
   internal fun toInternal() = Internal(handle)
 
   @Serializable internal data class Internal(val handle: String? = null)
