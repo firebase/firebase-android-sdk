@@ -1,5 +1,7 @@
 # Unreleased
 
+# 16.0.0-beta18
+
 - [changed] Bumped internal dependencies.
 
 # 16.0.0-beta17
@@ -156,3 +158,4 @@ has been moved to the new API-only library: `firebase-appdistribution-api-ktx`.
 
 This new Kotlin extensions library transitively includes the `firebase-appdistribution-api` library.
 The Kotlin extensions library has no additional updates.
+
