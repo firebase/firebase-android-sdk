@@ -16,7 +16,6 @@
 
 package com.google.firebase.ai.ondevice
 
-import android.graphics.Bitmap
 import com.google.firebase.ai.ondevice.interop.Candidate
 import com.google.firebase.ai.ondevice.interop.CountTokensResponse
 import com.google.firebase.ai.ondevice.interop.FinishReason
@@ -31,7 +30,6 @@ import com.google.mlkit.genai.prompt.ModelReleaseStage
 import com.google.mlkit.genai.prompt.TextPart
 import com.google.mlkit.genai.prompt.generationConfig
 import com.google.mlkit.genai.prompt.modelConfig
-import kotlin.math.min
 
 // ====================================
 // `Part` converter extension functions
@@ -39,7 +37,7 @@ import kotlin.math.min
 internal fun com.google.firebase.ai.ondevice.interop.TextPart.toMlKit(): TextPart = TextPart(text)
 
 internal fun com.google.firebase.ai.ondevice.interop.ImagePart.toMlKit(): ImagePart =
-  ImagePart(downsizeBitmapIfNeeded(bitmap))
+  ImagePart(bitmap)
 
 // ============================================
 // `CountTokens*` converter extension functions
