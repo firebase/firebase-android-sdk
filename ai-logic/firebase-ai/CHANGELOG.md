@@ -1,5 +1,12 @@
 # Unreleased
 
+- [feature] Added support for [Maps Grounding](https://ai.google.dev/gemini-api/docs/maps-grounding) (#7950)
+
+- [feature] Added the `turnComplete` argument to multiple `LiveSession.send()` methods. (#8014)
+
+- [fixed] Fixed `LiveGenerativeModel.connect()` not attaching the `X-Firebase-AppCheck`
+  header, causing Live API requests to be rejected when App Check is enforced on AI Logic. (#8060)
+
 # 17.11.0
 
 - [deprecated] All Imagen models are deprecated and will shut down as early as June 2026.
@@ -16,9 +23,6 @@
 
 - [fixed] Fixed an issue causing the SDK to throw an exception if an unknown message was received
   from the LiveAPI model, instead of ignoring it (#7975)
-
-- [fixed] Fixed `LiveGenerativeModel.connect()` not attaching the `X-Firebase-AppCheck`
-  header, causing Live API requests to be rejected when App Check is enforced on AI Logic. (#8060)
 
 # 17.10.1
 
@@ -171,4 +175,3 @@ using [specific Gemini models](/docs/vertex-ai/models).
 
 Note: This feature is in Public Preview, which means that it is not subject to any SLA or
 deprecation policy and could change in backwards-incompatible ways.
-
