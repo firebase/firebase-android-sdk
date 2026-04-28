@@ -17,6 +17,9 @@
 package com.google.firebase.dataconnect.testutil.property.arbitrary
 
 import io.kotest.assertions.print.print
+import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.property.Arb
 import io.kotest.property.RandomSource
 import io.kotest.property.arbitrary.Codepoint
@@ -549,3 +552,25 @@ private data class ValueCopierPair<out T>(
   val value: T,
   val valueCopy: () -> T,
 )
+
+fun Any?.shouldHaveSameValueAs(value: Any, valueCopy: () -> Any) {
+  if (valueCopy() === value) {
+    this shouldBeSameInstanceAs value
+  } else {
+    this shouldBe value
+  }
+}
+
+@JvmName("Any_shouldHaveSameValueAs")
+fun Any.shouldHaveSameValueAs(sample: SomeValueArb.Sample) {
+  shouldHaveSameValueAs(sample.value, sample.valueCopy)
+}
+
+@JvmName("Nullable_Any_shouldHaveSameValueAs")
+fun Any?.shouldHaveSameValueAs(sample: SomeValueArb.Sample?) {
+  if (sample === null) {
+    this.shouldBeNull()
+  } else {
+    shouldHaveSameValueAs(sample.value, sample.valueCopy)
+  }
+}

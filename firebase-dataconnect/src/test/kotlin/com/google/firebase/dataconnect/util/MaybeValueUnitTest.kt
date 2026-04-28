@@ -17,10 +17,13 @@
 package com.google.firebase.dataconnect.util
 
 import com.google.firebase.dataconnect.testutil.property.arbitrary.filterNotEqual
+import com.google.firebase.dataconnect.testutil.property.arbitrary.shouldHaveSameValueAs
 import com.google.firebase.dataconnect.testutil.property.arbitrary.someValue
+import com.google.firebase.dataconnect.testutil.property.arbitrary.twoValues
 import io.kotest.assertions.print.print
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.common.ExperimentalKotest
+import io.kotest.matchers.collections.shouldHaveSingleElement
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
@@ -29,20 +32,15 @@ import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
-import io.kotest.property.PropertyContext
 import io.kotest.property.ShrinkingMode
 import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.orNull
-import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
-import io.mockk.confirmVerified
-import io.mockk.every
-import io.mockk.mockk
-import io.mockk.verify
 import java.util.Objects
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
@@ -155,11 +153,7 @@ class MaybeValueUnitTest {
 
       val result = maybeValue.getOrNull()
 
-      if (valueCopy() === value) {
-        result shouldBeSameInstanceAs value
-      } else {
-        result shouldBe value
-      }
+      result.shouldHaveSameValueAs(value, valueCopy)
     }
   }
 
@@ -196,11 +190,7 @@ class MaybeValueUnitTest {
 
       val result = maybeValue.getOrThrow()
 
-      if (valueCopy() === value) {
-        result shouldBeSameInstanceAs value
-      } else {
-        result shouldBe value
-      }
+      result.shouldHaveSameValueAs(value, valueCopy)
     }
   }
 
@@ -343,11 +333,7 @@ class MaybeValueUnitTest {
 
       val result = maybeValue.getOrElse(block)
 
-      if (valueCopy() === value) {
-        result shouldBeSameInstanceAs value
-      } else {
-        result shouldBe value
-      }
+      result.shouldHaveSameValueAs(value, valueCopy)
       block.callCount shouldBe 0
     }
   }
@@ -386,202 +372,273 @@ class MaybeValueUnitTest {
 
       val result = maybeValue.getOrElse(block)
 
-      if (valueCopy() === value) {
-        result shouldBeSameInstanceAs value
-      } else {
-        result shouldBe value
-      }
+      result.shouldHaveSameValueAs(value, valueCopy)
       block.callCount shouldBe 0
     }
   }
 
   // endregion
 
-  // region ifEmpty
+  // region Tests for ifEmpty extension function
 
   @Test
-  fun `ifEmpty on Empty typed as MaybeValue calls block`() = runTest {
-    val empty: MaybeValue<TestValue?> = MaybeValue.Empty
-    val block: () -> Unit = mockk(relaxed = true)
+  fun `Empty ifEmpty() calls block`() = runTest {
+    checkAll(propTestConfig, Arb.constant(null)) { _ ->
+      val block = BlockReturningUnit()
 
-    val result = empty.ifEmpty(block)
+      val result = MaybeValue.Empty.ifEmpty(block)
 
-    result shouldBeSameInstanceAs empty
-    verify(exactly = 1) { block() }
+      result shouldBeSameInstanceAs MaybeValue.Empty
+      block.callCount shouldBe 1
+    }
   }
 
   @Test
-  fun `ifEmpty on typed Empty calls block`() = runTest {
-    val empty = MaybeValue.Empty
-    val block: () -> Unit = mockk(relaxed = true)
-
-    val result = empty.ifEmpty(block)
-
-    result shouldBeSameInstanceAs empty
-    verify(exactly = 1) { block() }
-  }
-
-  @Test
-  fun `ifEmpty on Value typed as MaybeValue does not call block`() =
-    testWithNullableTestValues { value ->
-      val maybeValue: MaybeValue<TestValue?> = MaybeValue.Value(value)
-      val block: () -> Unit = mockk(relaxed = true)
+  fun `Value(null) ifEmpty() does not call block`() = runTest {
+    checkAll(propTestConfig, Arb.constant(null)) { _ ->
+      val maybeValue = MaybeValue.Value(null)
+      val block = BlockThrowing("block should not be called [dddrp5v4jt]")
 
       val result = maybeValue.ifEmpty(block)
 
       result shouldBeSameInstanceAs maybeValue
-      confirmVerified(block)
+      block.callCount shouldBe 0
     }
+  }
 
   @Test
-  fun `ifEmpty on typed Value does not call block`() = testWithNullableTestValues { value ->
-    val maybeValue = MaybeValue.Value(value)
-    val block: () -> Unit = mockk(relaxed = true)
+  fun `Value(non-null) ifEmpty() does not call block`() = runTest {
+    checkAll(propTestConfig, Arb.someValue()) { (value) ->
+      val maybeValue = MaybeValue.Value(value)
+      val block = BlockThrowing("block should not be called [a7axvtqker]")
 
-    val result = maybeValue.ifEmpty(block)
+      val result = maybeValue.ifEmpty(block)
 
-    result shouldBeSameInstanceAs maybeValue
-    confirmVerified(block)
+      result shouldBeSameInstanceAs maybeValue
+      block.callCount shouldBe 0
+    }
+  }
+
+  @Test
+  fun `MaybeValue ifEmpty() with Empty receiver calls block`() = runTest {
+    checkAll(propTestConfig, Arb.constant(null)) { _ ->
+      val maybeValue: MaybeValue<*> = MaybeValue.Empty
+      val block = BlockReturningUnit()
+
+      val result = maybeValue.ifEmpty(block)
+
+      result shouldBeSameInstanceAs maybeValue
+      block.callCount shouldBe 1
+    }
+  }
+
+  @Test
+  fun `MaybeValue ifEmpty() with Value(null) receiver does not call block`() = runTest {
+    checkAll(propTestConfig, Arb.constant(null)) { _ ->
+      val maybeValue: MaybeValue<*> = MaybeValue.Value(null)
+      val block = BlockThrowing("block should not be called [y79ey8582t]")
+
+      val result = maybeValue.ifEmpty(block)
+
+      result shouldBeSameInstanceAs maybeValue
+      block.callCount shouldBe 0
+    }
+  }
+
+  @Test
+  fun `MaybeValue ifEmpty() with Value(non-null) receiver does not call block`() = runTest {
+    checkAll(propTestConfig, Arb.someValue()) { (value) ->
+      val maybeValue: MaybeValue<*> = MaybeValue.Value(value)
+      val block = BlockThrowing("block should not be called [jdes7ymjn9]")
+
+      val result = maybeValue.ifEmpty(block)
+
+      result shouldBeSameInstanceAs maybeValue
+      block.callCount shouldBe 0
+    }
   }
 
   // endregion
 
-  // region ifNonEmpty
+  // region Tests for ifNonEmpty extension function
 
   @Test
-  fun `ifNonEmpty on Empty typed as MaybeValue does not call block`() = runTest {
-    val empty: MaybeValue<TestValue?> = MaybeValue.Empty
-    val block: (TestValue?) -> Unit = mockk(relaxed = true)
+  fun `Empty ifNonEmpty() does not call block`() = runTest {
+    checkAll(propTestConfig, Arb.constant(null)) { _ ->
+      val block = BlockThrowingWithParameter("block should not be called [tgbfxty2kr]")
 
-    val result = empty.ifNonEmpty(block)
+      val result = MaybeValue.Empty.ifNonEmpty(block)
 
-    result shouldBeSameInstanceAs empty
-    confirmVerified(block)
+      result shouldBeSameInstanceAs MaybeValue.Empty
+      block.callCount shouldBe 0
+    }
   }
 
   @Test
-  fun `ifNonEmpty on typed Empty does not call block`() = runTest {
-    val empty = MaybeValue.Empty
-    val block: (Nothing) -> Unit = mockk(relaxed = true)
-
-    val result = empty.ifNonEmpty(block)
-
-    result shouldBeSameInstanceAs empty
-    confirmVerified(block)
-  }
-
-  @Test
-  fun `ifNonEmpty on Value typed as MaybeValue calls block`() =
-    testWithNullableTestValues { value ->
-      val maybeValue: MaybeValue<TestValue?> = MaybeValue.Value(value)
-      val block: (TestValue?) -> Unit = mockk(relaxed = true)
+  fun `Value(null) ifNonEmpty() calls block`() = runTest {
+    checkAll(propTestConfig, Arb.constant(null)) { _ ->
+      val maybeValue = MaybeValue.Value(null)
+      val block = BlockWithParameter<Nothing?>()
 
       val result = maybeValue.ifNonEmpty(block)
 
       result shouldBeSameInstanceAs maybeValue
-      verify(exactly = 1) { block(value) }
+      block.calls shouldHaveSingleElement null
     }
+  }
 
   @Test
-  fun `ifNonEmpty on typed Value calls block`() = testWithNullableTestValues { value ->
-    val maybeValue = MaybeValue.Value(value)
-    val block: (TestValue?) -> Unit = mockk(relaxed = true)
+  fun `Value(non-null) ifNonEmpty() calls block`() = runTest {
+    checkAll(propTestConfig, Arb.someValue()) { (value) ->
+      val maybeValue = MaybeValue.Value(value)
+      val block = BlockWithParameter<Any>()
 
-    val result = maybeValue.ifNonEmpty(block)
+      val result = maybeValue.ifNonEmpty(block)
 
-    result shouldBeSameInstanceAs maybeValue
-    verify(exactly = 1) { block(value) }
+      result shouldBeSameInstanceAs maybeValue
+      block.calls shouldHaveSingleElement value
+    }
+  }
+
+  @Test
+  fun `MaybeValue ifNonEmpty() with Empty receiver does not call block`() = runTest {
+    checkAll(propTestConfig, Arb.constant(null)) { _ ->
+      val maybeValue: MaybeValue<Nothing?> = MaybeValue.Empty
+      val block = BlockThrowingWithParameter("block should not be called [aensstz8am]")
+
+      val result = maybeValue.ifNonEmpty(block)
+
+      result shouldBeSameInstanceAs MaybeValue.Empty
+      block.callCount shouldBe 0
+    }
+  }
+
+  @Test
+  fun `MaybeValue ifNonEmpty() with Value(null) receiver calls the block`() = runTest {
+    checkAll(propTestConfig, Arb.constant(null)) { _ ->
+      val maybeValue: MaybeValue<*> = MaybeValue.Value(null)
+      val block = BlockWithParameter<Any?>()
+
+      val result = maybeValue.ifNonEmpty(block)
+
+      result shouldBeSameInstanceAs maybeValue
+      block.calls shouldHaveSingleElement null
+    }
+  }
+
+  @Test
+  fun `MaybeValue ifNonEmpty() with Value(non-null) receiver calls the block`() = runTest {
+    checkAll(propTestConfig, Arb.someValue()) { (value) ->
+      val maybeValue: MaybeValue<*> = MaybeValue.Value(value)
+      val block = BlockWithParameter<Any?>()
+
+      val result = maybeValue.ifNonEmpty(block)
+
+      result shouldBeSameInstanceAs maybeValue
+      block.calls shouldHaveSingleElement value
+    }
   }
 
   // endregion
 
-  // region fold
+  // region Tests for ifNonEmpty extension function
 
   @Test
-  fun `fold on Empty typed as MaybeValue calls onEmpty`() = testWithNullableTestValues { value ->
-    val empty: MaybeValue<TestValue?> = MaybeValue.Empty
-    val onEmpty: () -> TestValue? = mockk { every { this@mockk() } returns value }
-    val onNonEmpty: (TestValue?) -> TestValue? = mockk(relaxed = true)
+  fun `Empty fold() calls onEmpty`() = runTest {
+    checkAll(propTestConfig, Arb.someValue().orNull(nullProbability = 0.3)) { value ->
+      val onEmpty = BlockReturning(value?.value)
+      val onNonEmpty = BlockThrowingWithParameter("onNonEmpty should not be called [nrxvx3qgvf]")
 
-    val result = empty.fold(onEmpty, onNonEmpty)
+      val result = MaybeValue.Empty.fold(onEmpty, onNonEmpty)
 
-    result shouldBeSameInstanceAs value
-    verify(exactly = 1) { onEmpty() }
-    confirmVerified(onNonEmpty)
-  }
-
-  @Test
-  fun `fold on typed Empty calls onEmpty`() = testWithNullableTestValues { value ->
-    val empty = MaybeValue.Empty
-    val onEmpty: () -> TestValue? = mockk { every { this@mockk() } returns value }
-    val onNonEmpty: (Nothing) -> TestValue? = mockk(relaxed = true)
-
-    val result = empty.fold(onEmpty, onNonEmpty)
-
-    result shouldBeSameInstanceAs value
-    verify(exactly = 1) { onEmpty() }
-    confirmVerified(onNonEmpty)
-  }
-
-  @Test
-  fun `fold on Value typed as MaybeValue calls onNonEmpty`() = testWithNullableTestValues { value ->
-    val maybeValue: MaybeValue<TestValue?> = MaybeValue.Value(value)
-    val mappedValue = TestValue("mapped")
-    val onEmpty: () -> TestValue? = mockk(relaxed = true)
-    val onNonEmpty: (TestValue?) -> TestValue? = mockk {
-      every { this@mockk(any()) } returns mappedValue
+      result.shouldHaveSameValueAs(value)
+      onEmpty.callCount shouldBe 1
+      onNonEmpty.callCount shouldBe 0
     }
-
-    val result = maybeValue.fold(onEmpty, onNonEmpty)
-
-    result shouldBeSameInstanceAs mappedValue
-    verify(exactly = 1) { onNonEmpty(value) }
-    confirmVerified(onEmpty)
   }
 
   @Test
-  fun `fold on typed Value calls onNonEmpty`() = testWithNullableTestValues { value ->
-    val maybeValue = MaybeValue.Value(value)
-    val mappedValue = TestValue("mapped")
-    val onEmpty: () -> TestValue? = mockk(relaxed = true)
-    val onNonEmpty: (TestValue?) -> TestValue? = mockk {
-      every { this@mockk(any()) } returns mappedValue
+  fun `Value(null) fold() calls onNonEmpty`() = runTest {
+    checkAll(propTestConfig, Arb.someValue().orNull(nullProbability = 0.3)) { value ->
+      val maybeValue = MaybeValue.Value(null)
+      val onEmpty = BlockThrowing("onEmpty should not be called [f7gw69tray]")
+      val onNonEmpty = BlockReturningWithParameter<Nothing?, _>(value?.value)
+
+      val result = maybeValue.fold(onEmpty, onNonEmpty)
+
+      result.shouldHaveSameValueAs(value)
+      onEmpty.callCount shouldBe 0
+      onNonEmpty.calls shouldHaveSingleElement null
     }
-
-    val result = maybeValue.fold(onEmpty, onNonEmpty)
-
-    result shouldBeSameInstanceAs mappedValue
-    verify(exactly = 1) { onNonEmpty(value) }
-    confirmVerified(onEmpty)
   }
 
-  private companion object {
+  @Test
+  fun `Value(non-null) fold() calls onNonEmpty`() = runTest {
+    checkAll(propTestConfig, Arb.twoValues(Arb.someValue().orNull(nullProbability = 0.3))) {
+      (value1, value2) ->
+      val maybeValue = MaybeValue.Value(value1?.value)
+      val onEmpty = BlockThrowing("onEmpty should not be called [sg2pvssp4j]")
+      val onNonEmpty = BlockReturningWithParameter<Any?, _>(value2?.value)
 
-    /**
-     * A simple data class used as a test value to verify referential integrity and basic
-     * operations.
-     */
-    private data class TestValue(val value: String)
+      val result = maybeValue.fold(onEmpty, onNonEmpty)
 
-    /**
-     * Creates and returns an [Arb] that generates [TestValue] instances.
-     *
-     * @param string The [Arb] used to generate the underlying string values.
-     */
-    private fun testValueArb(string: Arb<String> = Arb.string()): Arb<TestValue> =
-      string.map(::TestValue)
-
-    /**
-     * Runs a property-based test with nullable [TestValue] instances.
-     *
-     * @param property The property test logic to execute.
-     */
-    private fun testWithNullableTestValues(property: suspend PropertyContext.(TestValue?) -> Unit) =
-      runTest {
-        checkAll(propTestConfig, testValueArb().orNull(nullProbability = 0.2), property)
-      }
+      result.shouldHaveSameValueAs(value2)
+      onEmpty.callCount shouldBe 0
+      onNonEmpty.calls shouldHaveSingleElement value1?.value
+    }
   }
+
+  @Test
+  fun `MaybeValue fold() with Empty receiver calls onEmpty`() = runTest {
+    checkAll(propTestConfig, Arb.someValue().orNull(nullProbability = 0.3)) { value ->
+      val maybeValue: MaybeValue<Nothing?> = MaybeValue.Empty
+      val onEmpty = BlockReturning(value?.value)
+      val onNonEmpty = BlockThrowingWithParameter("onNonEmpty should not be called [p8kw29xp7v]")
+
+      val result = maybeValue.fold(onEmpty, onNonEmpty)
+
+      result.shouldHaveSameValueAs(value)
+      onEmpty.callCount shouldBe 1
+      onNonEmpty.callCount shouldBe 0
+    }
+  }
+
+  @Test
+  fun `MaybeValue fold() with Value(null) receiver calls the onNonEmpty`() = runTest {
+    checkAll(propTestConfig, Arb.someValue().orNull(nullProbability = 0.3)) { value ->
+      val maybeValue: MaybeValue<*> = MaybeValue.Value(null)
+      val onEmpty = BlockThrowing("onEmpty should not be called [kh9bm5qpdm]")
+      val onNonEmpty = BlockReturningWithParameter<Any?, _>(value?.value)
+
+      val result = maybeValue.fold(onEmpty, onNonEmpty)
+
+      result.shouldHaveSameValueAs(value)
+      onEmpty.callCount shouldBe 0
+      onNonEmpty.calls shouldHaveSingleElement null
+    }
+  }
+
+  @Test
+  fun `MaybeValue fold() with Value(non-null) receiver calls the block`() = runTest {
+    checkAll(propTestConfig, Arb.twoValues(Arb.someValue().orNull(nullProbability = 0.3))) {
+      (value1, value2) ->
+      val maybeValue: MaybeValue<*> = MaybeValue.Value(value1?.value)
+      val onEmpty = BlockThrowing("onEmpty should not be called [sg2pvssp4j]")
+      val onNonEmpty = BlockReturningWithParameter<Any?, _>(value2?.value)
+
+      val result = maybeValue.fold(onEmpty, onNonEmpty)
+
+      result.shouldHaveSameValueAs(value2)
+      onEmpty.callCount shouldBe 0
+      onNonEmpty.calls shouldHaveSingleElement value1?.value
+    }
+  }
+
+  // endregion
+
 }
+
+// region Helper classes, functions, and properties
 
 /** The configuration for property-based tests in this file. */
 @OptIn(ExperimentalKotest::class)
@@ -683,6 +740,31 @@ private fun maybeValueValueNonNullNotEqualPairArb(): Arb<MaybeValueValueNotEqual
   }
 }
 
+private class BlockReturningWithParameter<T, out R>(val returnValue: R) : ((T) -> R) {
+
+  private val _calls = CopyOnWriteArrayList<T>()
+
+  val calls: List<T>
+    get() = _calls.toList()
+
+  override operator fun invoke(argument: T): R {
+    _calls.add(argument)
+    return returnValue
+  }
+}
+
+private class BlockWithParameter<T> : ((T) -> Unit) {
+
+  private val _calls = CopyOnWriteArrayList<T>()
+
+  val calls: List<T>
+    get() = _calls.toList()
+
+  override operator fun invoke(argument: T) {
+    _calls.add(argument)
+  }
+}
+
 private class BlockReturning<out T>(val returnValue: T) : (() -> T) {
 
   private val _callCount = AtomicInteger(0)
@@ -693,6 +775,18 @@ private class BlockReturning<out T>(val returnValue: T) : (() -> T) {
   override operator fun invoke(): T {
     _callCount.incrementAndGet()
     return returnValue
+  }
+}
+
+private class BlockReturningUnit : (() -> Unit) {
+
+  private val _callCount = AtomicInteger(0)
+
+  val callCount: Int
+    get() = _callCount.get()
+
+  override operator fun invoke() {
+    _callCount.incrementAndGet()
   }
 }
 
@@ -710,3 +804,20 @@ private class BlockThrowing(val message: String) : (() -> Nothing) {
 
   class UnexpectedInvocationException(message: String) : Exception(message)
 }
+
+private class BlockThrowingWithParameter(val message: String) : ((Nothing?) -> Nothing) {
+
+  private val _callCount = AtomicInteger(0)
+
+  val callCount: Int
+    get() = _callCount.get()
+
+  override operator fun invoke(ignored: Nothing?): Nothing {
+    _callCount.incrementAndGet()
+    throw UnexpectedInvocationException(message)
+  }
+
+  class UnexpectedInvocationException(message: String) : Exception(message)
+}
+
+// endregion
