@@ -157,11 +157,9 @@ final class SharedPreferencesQueue {
 
   @WorkerThread
   private void syncState() {
-    String queueValue;
     synchronized (internalQueue) {
-      queueValue = serialize();
+      sharedPreferences.edit().putString(queueName, serialize()).apply();
     }
-    sharedPreferences.edit().putString(queueName, queueValue).apply();
   }
 
   @GuardedBy("internalQueue")
