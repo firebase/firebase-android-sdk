@@ -1,5 +1,8 @@
 # Unreleased
 
+- [fixed] Fixed a runtime crash that could occur in minified native apps when using the Crashlytics
+  C++ header (#7906)
+- 
 # 20.0.4
 
 - [changed] Updated `firebase-sessions` dependency to v3.0.4

@@ -866,7 +866,7 @@ class FindNearestOptions private constructor(options: InternalOptions) :
  *
  * @example
  * ```kotlin
- * db.pipeline().collection('restaurants').search(
+ * db.pipeline().collection("restaurants").search(
  *   SearchStage(
  *     query = documentMatches("waffles OR pancakes"),
  *     sort = arrayOf(score().descending())
@@ -984,13 +984,15 @@ internal constructor(
      * The query can be expressed as an `Expression`, which will be used to score and filter the
      * results. Not all expressions supported by Pipelines are supported in the Search query.
      *
-     * ```
-     * db.pipeline().collection('restaurants').search({
-     *   query: or(
-     *     documentContainsText("breakfast"),
-     *     field('menu').containsText('waffle AND coffee')
+     * ```kotlin
+     * db.pipeline().collection("restaurants").search(
+     *   SearchStage.withQuery(
+     *     or(
+     *       documentContainsText("breakfast"),
+     *       field("menu").containsText("waffle AND coffee")
+     *     )
      *   )
-     * })
+     * )
      * ```
      */
     @JvmStatic
@@ -1006,10 +1008,10 @@ internal constructor(
      *
      * The query can also be expressed as a string in the Search DSL:
      *
-     * ```
-     * db.pipeline().collection('restaurants').search({
-     *   query: 'menu:(waffle and coffee) OR breakfast'
-     * })
+     * ```kotlin
+     * db.pipeline().collection("restaurants").search(
+     *   SearchStage.withQuery("menu:(waffle and coffee) OR breakfast")
+     * )
      * ```
      */
     @JvmStatic fun withQuery(rquery: String): SearchStage = withQuery(documentMatches(rquery))

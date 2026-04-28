@@ -172,7 +172,6 @@ jobs:
         continue-on-error: true
 
       - name: Firestore Enterprise DB Integ Tests
-        timeout-minutes: 20
         uses: reactivecircus/android-emulator-runner@62dbb605bba737720e10b196cb4220d374026a6d #v2.33.0
         env:
           FIREBASE_CI: 1
