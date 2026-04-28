@@ -25,12 +25,19 @@ import com.google.firebase.ai.ImagenModel;
 import com.google.firebase.ai.InferenceMode;
 import com.google.firebase.ai.LiveGenerativeModel;
 import com.google.firebase.ai.OnDeviceConfig;
+import com.google.firebase.ai.TemplateChat;
+import com.google.firebase.ai.TemplateGenerativeModel;
 import com.google.firebase.ai.java.ChatFutures;
 import com.google.firebase.ai.java.GenerativeModelFutures;
 import com.google.firebase.ai.java.ImagenModelFutures;
 import com.google.firebase.ai.java.LiveModelFutures;
 import com.google.firebase.ai.java.LiveSessionFutures;
+<<<<<<< pb-nanobanana-image-config
 import com.google.firebase.ai.type.AspectRatio;
+=======
+import com.google.firebase.ai.java.TemplateChatFutures;
+import com.google.firebase.ai.java.TemplateGenerativeModelFutures;
+>>>>>>> main
 import com.google.firebase.ai.type.BlockReason;
 import com.google.firebase.ai.type.Candidate;
 import com.google.firebase.ai.type.Citation;
@@ -120,6 +127,14 @@ public class JavaCompileTests {
     LiveModelFutures liveFutures = LiveModelFutures.from(live);
     testFutures(futures);
     testLiveFutures(liveFutures);
+
+    TemplateGenerativeModel templateModel = vertex.templateGenerativeModel();
+    TemplateGenerativeModelFutures templateFutures =
+        TemplateGenerativeModelFutures.from(templateModel);
+    TemplateChat templateChat =
+        templateModel.startChat("fake-template", Collections.emptyMap(), Collections.emptyList());
+    TemplateChatFutures templateChatFutures = TemplateChatFutures.from(templateChat);
+    testTemplateChatFutures(templateChatFutures);
   }
 
   private GenerationConfig getGenerationConfig() {
@@ -213,6 +228,43 @@ public class JavaCompileTests {
         },
         executor);
     Publisher<GenerateContentResponse> responsePublisher = futures.generateContentStream(content);
+    responsePublisher.subscribe(
+        new Subscriber<GenerateContentResponse>() {
+          private boolean complete = false;
+
+          @Override
+          public void onSubscribe(Subscription s) {
+            s.request(Long.MAX_VALUE);
+          }
+
+          @Override
+          public void onNext(GenerateContentResponse response) {
+            Assert.assertFalse(complete);
+            validateGenerateContentResponse(response);
+          }
+
+          @Override
+          public void onError(Throwable t) {
+            // Ignore
+          }
+
+          @Override
+          public void onComplete() {
+            complete = true;
+          }
+        });
+  }
+
+  private void testTemplateChatFutures(TemplateChatFutures futures) throws Exception {
+    Content content =
+        new Content.Builder()
+            .setParts(new ArrayList<>())
+            .addText("Fake prompt")
+            .setRole("user")
+            .build();
+    ListenableFuture<GenerateContentResponse> generateResponse = futures.sendMessage(content);
+    validateGenerateContentResponse(generateResponse.get());
+    Publisher<GenerateContentResponse> responsePublisher = futures.sendMessageStream(content);
     responsePublisher.subscribe(
         new Subscriber<GenerateContentResponse>() {
           private boolean complete = false;
