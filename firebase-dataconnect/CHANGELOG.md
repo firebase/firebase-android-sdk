@@ -1,5 +1,7 @@
 # Unreleased
 
+# 17.2.1
+
 - [changed] Ensure exceptions are not silently ignored when closing
   `FirebaseDataConnect` instances.
   ([#7909](https://github.com/firebase/firebase-android-sdk/pull/7909))
