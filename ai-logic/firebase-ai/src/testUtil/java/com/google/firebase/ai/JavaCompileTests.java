@@ -32,12 +32,9 @@ import com.google.firebase.ai.java.GenerativeModelFutures;
 import com.google.firebase.ai.java.ImagenModelFutures;
 import com.google.firebase.ai.java.LiveModelFutures;
 import com.google.firebase.ai.java.LiveSessionFutures;
-<<<<<<< pb-nanobanana-image-config
-import com.google.firebase.ai.type.AspectRatio;
-=======
 import com.google.firebase.ai.java.TemplateChatFutures;
 import com.google.firebase.ai.java.TemplateGenerativeModelFutures;
->>>>>>> main
+import com.google.firebase.ai.type.AspectRatio;
 import com.google.firebase.ai.type.BlockReason;
 import com.google.firebase.ai.type.Candidate;
 import com.google.firebase.ai.type.Citation;
