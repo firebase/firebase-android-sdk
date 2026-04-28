@@ -23,6 +23,7 @@ import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.comparables.shouldBeGreaterThan
 import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -79,8 +80,14 @@ class MaybeValueArbUnitTest {
   // region Tests for nonEmptyMaybeValue()
 
   @Test
-  fun `nonEmptyMaybeValue() produces Value objects`() = runTest {
-    checkAll(propTestConfig, Arb.nonEmptyMaybeValue()) {}
+  fun `nonEmptyMaybeValue() produces various Value objects`() = runTest {
+    val typeNames = mutableSetOf<String>()
+
+    checkAll(propTestConfig, Arb.nonEmptyMaybeValue()) {
+      typeNames.add(it.value::class.qualifiedName ?: "")
+    }
+
+    typeNames.size shouldBeGreaterThan 2
   }
 
   // endregion
