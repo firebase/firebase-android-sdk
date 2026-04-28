@@ -283,7 +283,7 @@ class LiveSessionTests {
     val session = liveModel.connect(SessionResumptionConfig())
     session.send("My favorite color is blue. Remember that.", true)
     var lastResumptionUpdate: LiveSessionResumptionUpdate? = null
-    withTimeout(30_000) {
+    withTimeout(30.seconds) {
       session
         .receive()
         .takeWhile {
