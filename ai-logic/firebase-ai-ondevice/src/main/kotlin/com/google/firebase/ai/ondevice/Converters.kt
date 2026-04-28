@@ -123,24 +123,3 @@ private fun generateContentRequest(
   builder.init()
   return builder.build()
 }
-
-private fun downsizeBitmapIfNeeded(bitmap: Bitmap): Bitmap {
-  val IMAGE_SHORTER_DIMENSION_MAX_VALUE: Int = 768
-  val width = bitmap.width
-  val height = bitmap.height
-  val shorterDimension: Int = min(width, height)
-  if (shorterDimension <= IMAGE_SHORTER_DIMENSION_MAX_VALUE) {
-    return bitmap
-  }
-
-  val scaleFactor = (IMAGE_SHORTER_DIMENSION_MAX_VALUE.toDouble()) / shorterDimension
-
-  val newWidth = (width * scaleFactor).toInt()
-  val newHeight = (height * scaleFactor).toInt()
-
-  val resizedBitmap = Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, /* filter= */ false)
-  if (resizedBitmap != bitmap) {
-    bitmap.recycle()
-  }
-  return resizedBitmap
-}

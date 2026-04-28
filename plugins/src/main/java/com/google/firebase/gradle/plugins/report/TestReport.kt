@@ -15,16 +15,20 @@
  */
 package com.google.firebase.gradle.plugins.report
 
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonPrimitive
+
 /**
  * Represents a single run of a test in CI. One unit/instrumentation test workflow run creates many
  * `TestReport`s, one for each tested SDK.
  *
  * @param name SDK name of the associated test run.
- * @param type What type of test result this is, either unit or instrumentation test.
+ * @param type What type of test result this is, either unit, instrumentation or daily test.
  * @param status Conclusion status of the test run, `SUCCESS`/`FAILURE` for typical results, `OTHER`
  *   for ongoing runs and unexpected data.
  * @param commit Commit SHA this test was run on.
  * @param url Link to the GHA test run info, including logs.
+ * @param date The ISO date of the run, only if the test is a daily test
  */
 data class TestReport(
   val name: String,
@@ -32,15 +36,31 @@ data class TestReport(
   val status: Status,
   val commit: String,
   val url: String,
+  val date: String? = null,
 ) {
   enum class Type {
     UNIT_TEST,
     INSTRUMENTATION_TEST,
+    DAILY_TEST,
   }
 
   enum class Status {
     SUCCESS,
     FAILURE,
-    OTHER,
+    OTHER;
+
+    companion object {
+      fun of(json: JsonObject): Status {
+        if (json["status"]?.jsonPrimitive?.content == "completed") {
+          if (json["conclusion"]?.jsonPrimitive?.content == "success") {
+            return SUCCESS
+          } else {
+            return FAILURE
+          }
+        } else {
+          return OTHER
+        }
+      }
+    }
   }
 }
