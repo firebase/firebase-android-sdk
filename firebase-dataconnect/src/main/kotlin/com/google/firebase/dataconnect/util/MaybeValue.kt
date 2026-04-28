@@ -37,17 +37,13 @@ internal sealed interface MaybeValue<out T> {
   fun getOrThrow(): T
 
   /** The implementation of [MaybeValue] that _has_ a value (is non-empty). */
-  class Value<out T>(val value: T) : MaybeValue<T> {
+  data class Value<out T>(val value: T) : MaybeValue<T> {
     override val isEmpty: Boolean
       get() = false
 
     override fun getOrNull(): T? = value
 
     override fun getOrThrow(): T = value
-
-    override fun equals(other: Any?) = other is Value<*> && other.value == value
-
-    override fun hashCode() = value.hashCode()
 
     override fun toString() = "MaybeValue.Value(value=$value)"
   }
