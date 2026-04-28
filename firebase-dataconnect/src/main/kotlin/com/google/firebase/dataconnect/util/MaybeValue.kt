@@ -45,7 +45,7 @@ internal sealed interface MaybeValue<out T> {
 
     override fun getOrThrow(): T = value
 
-    override fun toString() = "MaybeValue.Value(value=$value)"
+    override fun toString() = "MaybeValue.Value($value)"
   }
 
   /** The implementation of [MaybeValue] that _does not_ have a value (is empty). */
