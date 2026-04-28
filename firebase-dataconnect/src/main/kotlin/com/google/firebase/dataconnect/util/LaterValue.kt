@@ -123,11 +123,13 @@ internal fun <T> LaterValue<T>.getOrNull(): T? = state.getOrNull()
 /**
  * Returns the receiver's value if the receiver is in the "set" state according to [isSet], or
  * throws an exception if it is _not_ in the "set" state.
+ *
+ * @throws MaybeValue.NoValueException if the receiver's value is not set.
  */
 internal fun <T> LaterValue<T>.getOrThrow(): T =
   when (val currentState = state.value) {
     is MaybeValue.Value -> currentState.value
-    is MaybeValue.Empty -> error("set() has not yet been called")
+    is MaybeValue.Empty -> throw MaybeValue.NoValueException("set() has not yet been called")
   }
 
 /**

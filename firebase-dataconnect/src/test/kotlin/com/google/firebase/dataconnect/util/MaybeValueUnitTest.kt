@@ -26,6 +26,7 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.filterNotEqua
 import com.google.firebase.dataconnect.testutil.property.arbitrary.shouldHaveSameValueAs
 import com.google.firebase.dataconnect.testutil.property.arbitrary.someValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.twoValues
+import com.google.firebase.dataconnect.util.MaybeValue.NoValueException
 import io.kotest.assertions.print.print
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.common.ExperimentalKotest
@@ -64,8 +65,8 @@ class MaybeValueUnitTest {
   }
 
   @Test
-  fun `Empty getOrThrow() throws IllegalStateException`() {
-    val exception = shouldThrow<IllegalStateException> { MaybeValue.Empty.getOrThrow() }
+  fun `Empty getOrThrow() throws NoValueException`() {
+    val exception = shouldThrow<NoValueException> { MaybeValue.Empty.getOrThrow() }
     exception shouldHaveMessage "no value"
   }
 

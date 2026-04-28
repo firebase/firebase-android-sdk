@@ -32,9 +32,12 @@ internal sealed interface MaybeValue<out T> {
   /**
    * Returns the value, if this object has a value, or throws an exception if it does not.
    *
-   * @throws IllegalStateException if this object does not have a value.
+   * @throws NoValueException if this object does not have a value.
    */
   fun getOrThrow(): T
+
+  /** Exception thrown by [getOrThrow] when the object does not have a value. */
+  class NoValueException(message: String) : Exception(message)
 
   /** The implementation of [MaybeValue] that _has_ a value (is non-empty). */
   data class Value<out T>(val value: T) : MaybeValue<T> {
@@ -55,7 +58,7 @@ internal sealed interface MaybeValue<out T> {
 
     override fun getOrNull() = null
 
-    override fun getOrThrow() = error("no value")
+    override fun getOrThrow() = throw NoValueException("no value")
 
     override fun toString() = "MaybeValue.Empty"
   }

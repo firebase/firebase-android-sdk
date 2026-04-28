@@ -25,6 +25,7 @@ import com.google.firebase.dataconnect.testutil.BlockWithParameter
 import com.google.firebase.dataconnect.testutil.property.arbitrary.shouldHaveSameValueAs
 import com.google.firebase.dataconnect.testutil.property.arbitrary.someValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.twoValues
+import com.google.firebase.dataconnect.util.MaybeValue.NoValueException
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.collections.shouldHaveSingleElement
@@ -85,7 +86,7 @@ class MaybeValueStateFlowUnitTest {
   @Test
   fun `getOrThrow throws for Empty`() {
     val stateFlow = MutableStateFlow<MaybeValue<Int>>(MaybeValue.Empty)
-    val exception = shouldThrow<IllegalStateException> { stateFlow.getOrThrow() }
+    val exception = shouldThrow<NoValueException> { stateFlow.getOrThrow() }
     exception shouldHaveMessage "no value"
   }
 
@@ -117,7 +118,7 @@ class MaybeValueStateFlowUnitTest {
   @Test
   fun `getOrElse returns value and does not call block for Value`() = runTest {
     checkAll(propTestConfig, Arb.someValue().orNull(nullProbability = 0.2)) { value ->
-      val stateFlow = MutableStateFlow(MaybeValue.Value(value))
+      val stateFlow = MutableStateFlow(MaybeValue.Value(value?.value))
       val block = BlockThrowing("block should not be called [jdqedgps94]")
 
       val result = stateFlow.getOrElse(block)
@@ -175,7 +176,7 @@ class MaybeValueStateFlowUnitTest {
 
       stateFlow.ifNonEmpty(block)
 
-      block.calls shouldHaveSingleElement value
+      block.calls shouldHaveSingleElement value?.value
     }
   }
 
@@ -192,7 +193,7 @@ class MaybeValueStateFlowUnitTest {
 
       val result = stateFlow.fold(onEmpty = onEmpty, onNonEmpty = onNonEmpty)
 
-      result shouldBeSameInstanceAs value
+      result shouldBeSameInstanceAs value?.value
       onEmpty.callCount shouldBe 1
       onNonEmpty.callCount shouldBe 0
     }
@@ -208,7 +209,7 @@ class MaybeValueStateFlowUnitTest {
 
       val result = stateFlow.fold(onEmpty = onEmpty, onNonEmpty = onNonEmpty)
 
-      result shouldBeSameInstanceAs resultValue
+      result shouldBeSameInstanceAs resultValue?.value
       onEmpty.callCount shouldBe 0
       onNonEmpty.calls shouldHaveSingleElement value?.value
     }

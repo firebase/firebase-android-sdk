@@ -20,9 +20,11 @@ import com.google.firebase.dataconnect.testutil.SuspendingCountDownLatch
 import com.google.firebase.dataconnect.testutil.property.arbitrary.SomeValueArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.hasSameValueAs
 import com.google.firebase.dataconnect.testutil.property.arbitrary.maybeValue
+import com.google.firebase.dataconnect.testutil.property.arbitrary.nonEmptyMaybeValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.pair
 import com.google.firebase.dataconnect.testutil.property.arbitrary.shouldHaveSameValueAs
 import com.google.firebase.dataconnect.testutil.property.arbitrary.someValue
+import com.google.firebase.dataconnect.util.MaybeValue.NoValueException
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
@@ -45,15 +47,17 @@ import org.junit.Test
 
 class LaterValueUnitTest {
 
+  // region Tests for LaterValue constructor
+
   @Test
-  fun `primary constructor default value is empty`() {
+  fun `constructor default value is empty`() {
     val laterValue = LaterValue<Nothing?>()
 
     laterValue.state.value shouldBe MaybeValue.Empty
   }
 
   @Test
-  fun `primary constructor populates state with the given object`() = runTest {
+  fun `constructor populates state with the given object`() = runTest {
     checkAll(propTestConfig, Arb.maybeValue()) { maybeValue ->
       val laterValue = LaterValue(maybeValue)
 
@@ -62,7 +66,7 @@ class LaterValueUnitTest {
   }
 
   @Test
-  fun `primary constructor populates state with the given MaybeValue_Value(null)`() {
+  fun `constructor populates state with the given MaybeValue_Value(null)`() {
     val maybeValue = MaybeValue.Value(null)
 
     val laterValue = LaterValue(maybeValue)
@@ -70,8 +74,12 @@ class LaterValueUnitTest {
     laterValue.state.value shouldBeSameInstanceAs maybeValue
   }
 
+  // endregion
+
+  // region Tests for LaterValue.set()
+
   @Test
-  fun `set(non-null) on a LaterValue initialized with Empty succeeds`() = runTest {
+  fun `set(non-null) when initialized with Empty`() = runTest {
     checkAll(propTestConfig, Arb.someValue()) { value ->
       val laterValue = LaterValue<Any>()
 
@@ -82,7 +90,7 @@ class LaterValueUnitTest {
   }
 
   @Test
-  fun `set(null) on a LaterValue initialized with Empty succeeds`() {
+  fun `set(null) when initialized with Empty`() {
     val laterValue = LaterValue<Nothing?>()
 
     laterValue.set(null)
@@ -91,20 +99,21 @@ class LaterValueUnitTest {
   }
 
   @Test
-  fun `set(non-null) on a LaterValue initialized with Value(non-null) throws`() = runTest {
-    checkAll(propTestConfig, Arb.someValue().pair()) { (value1, value2) ->
-      val laterValue = LaterValue(MaybeValue.Value(value1.value))
+  fun `set(non-null) when initialized with Value(non-null)`() = runTest {
+    checkAll(propTestConfig, Arb.nonEmptyMaybeValue(), Arb.someValue()) { initialValue, (newValue)
+      ->
+      val laterValue = LaterValue(initialValue)
       val stateBefore = laterValue.state.value
 
-      shouldThrow<IllegalStateException> { laterValue.set(value2.value) }
+      shouldThrow<IllegalStateException> { laterValue.set(newValue) }
       laterValue.state.value shouldBeSameInstanceAs stateBefore
     }
   }
 
   @Test
-  fun `set(null) on a LaterValue initialized with Value(non-null) throws`() = runTest {
-    checkAll(propTestConfig, Arb.someValue()) { value ->
-      val laterValue = LaterValue(MaybeValue.Value<Any?>(value.value))
+  fun `set(null) when initialized with Value(non-null)`() = runTest {
+    checkAll(propTestConfig, Arb.nonEmptyMaybeValue()) { maybeValue ->
+      val laterValue = LaterValue<Any?>(maybeValue)
       val stateBefore = laterValue.state.value
 
       shouldThrow<IllegalStateException> { laterValue.set(null) }
@@ -113,18 +122,18 @@ class LaterValueUnitTest {
   }
 
   @Test
-  fun `set(non-null) on a LaterValue initialized with Value(null) throws`() = runTest {
-    checkAll(propTestConfig, Arb.someValue()) { value ->
+  fun `set(non-null) when initialized with Value(null)`() = runTest {
+    checkAll(propTestConfig, Arb.someValue()) { (value) ->
       val laterValue = LaterValue<Any?>(MaybeValue.Value(null))
       val stateBefore = laterValue.state.value
 
-      shouldThrow<IllegalStateException> { laterValue.set(value.value) }
+      shouldThrow<IllegalStateException> { laterValue.set(value) }
       laterValue.state.value shouldBeSameInstanceAs stateBefore
     }
   }
 
   @Test
-  fun `set(null) on a LaterValue initialized with Value(null) throws`() {
+  fun `set(null) when initialized with Value(null)`() {
     val laterValue = LaterValue<Any?>(MaybeValue.Value(null))
     val stateBefore = laterValue.state.value
 
@@ -133,7 +142,7 @@ class LaterValueUnitTest {
   }
 
   @Test
-  fun `set(null) on a LaterValue initialized with Empty then set to null throws`() {
+  fun `set(null) after successful set(null)`() {
     val laterValue = LaterValue<Any?>()
     laterValue.set(null)
     val stateBefore = laterValue.state.value
@@ -143,7 +152,7 @@ class LaterValueUnitTest {
   }
 
   @Test
-  fun `set(null) on a LaterValue initialized with Empty then set to non-null throws`() = runTest {
+  fun `set(null) after successful set(non-null)`() = runTest {
     checkAll(propTestConfig, Arb.someValue()) { (value) ->
       val laterValue = LaterValue<Any?>()
       laterValue.set(value)
@@ -155,7 +164,7 @@ class LaterValueUnitTest {
   }
 
   @Test
-  fun `set(non-null) on a LaterValue initialized with Empty then set to null throws`() = runTest {
+  fun `set(non-null) after successful set(null)`() = runTest {
     checkAll(propTestConfig, Arb.someValue()) { (value) ->
       val laterValue = LaterValue<Any?>()
       laterValue.set(null)
@@ -167,33 +176,31 @@ class LaterValueUnitTest {
   }
 
   @Test
-  fun `set(non-null) on a LaterValue initialized with Empty then set to non-null throws`() =
-    runTest {
-      checkAll(propTestConfig, Arb.someValue().pair()) { (value1, value2) ->
-        val laterValue = LaterValue<Any>()
-        laterValue.set(value1.value)
-        val stateBefore = laterValue.state.value
+  fun `set(non-null) after successful set(non-null)`() = runTest {
+    checkAll(propTestConfig, Arb.someValue().pair()) { (value1, value2) ->
+      val laterValue = LaterValue<Any>()
+      laterValue.set(value1.value)
+      val stateBefore = laterValue.state.value
 
-        shouldThrow<IllegalStateException> { laterValue.set(value2.value) }
-        laterValue.state.value shouldBeSameInstanceAs stateBefore
-      }
+      shouldThrow<IllegalStateException> { laterValue.set(value2.value) }
+      laterValue.state.value shouldBeSameInstanceAs stateBefore
     }
+  }
 
   @Test
-  fun `set(non-null) on a LaterValue initialized with Empty then set to the same value throws`() =
-    runTest {
-      checkAll(propTestConfig, Arb.someValue()) { (value) ->
-        val laterValue = LaterValue<Any>()
-        laterValue.set(value)
-        val stateBefore = laterValue.state.value
+  fun `set(non-null) after successful set(same object)`() = runTest {
+    checkAll(propTestConfig, Arb.someValue()) { (value) ->
+      val laterValue = LaterValue<Any>()
+      laterValue.set(value)
+      val stateBefore = laterValue.state.value
 
-        shouldThrow<IllegalStateException> { laterValue.set(value) }
-        laterValue.state.value shouldBeSameInstanceAs stateBefore
-      }
+      shouldThrow<IllegalStateException> { laterValue.set(value) }
+      laterValue.state.value shouldBeSameInstanceAs stateBefore
     }
+  }
 
   @Test
-  fun `set() succeeds exactly once and throws for all subsequent invocations`() = runTest {
+  fun `set() concurrent calls, first succeeds, subsequent fail`() = runTest {
     checkAll(propTestConfig, Arb.list(Arb.someValue(), 2..50)) { values ->
       val laterValue = LaterValue<Any>()
       val latch = SuspendingCountDownLatch(values.size)
@@ -215,7 +222,171 @@ class LaterValueUnitTest {
       values.count { value.hasSameValueAs(it) } shouldBeGreaterThan 0
     }
   }
+
+  // endregion
+
+  // region Tests for LaterValue.toString()
+
+  @Test
+  fun `toString() when no value set`() {
+    val laterValue = LaterValue<Nothing>()
+    laterValue.toString() shouldBe "<unset>"
+  }
+
+  @Test
+  fun `toString() when value initialized to null`() {
+    val laterValue = LaterValue(MaybeValue.Value(null))
+    laterValue.toString() shouldBe null.toString()
+  }
+
+  @Test
+  fun `toString() when value initialized to non-null`() = runTest {
+    checkAll(propTestConfig, Arb.nonEmptyMaybeValue()) { maybeValue ->
+      val laterValue = LaterValue(maybeValue)
+      laterValue.toString() shouldBe maybeValue.value.toString()
+    }
+  }
+
+  @Test
+  fun `toString() after set(null)`() {
+    val laterValue = LaterValue<Nothing?>()
+    laterValue.set(null)
+    laterValue.toString() shouldBe null.toString()
+  }
+
+  @Test
+  fun `toString() after set(non-null)`() = runTest {
+    checkAll(propTestConfig, Arb.someValue()) { (value) ->
+      val laterValue = LaterValue<Any>()
+      laterValue.set(value)
+      laterValue.toString() shouldBe value.toString()
+    }
+  }
+
+  // endregion
+
+  // region Tests for LaterValue.isSet
+
+  @Test
+  fun `isSet when no value set`() {
+    val laterValue = LaterValue<Nothing>()
+    laterValue.isSet shouldBe false
+  }
+
+  @Test
+  fun `isSet when value initialized to null`() {
+    val laterValue = LaterValue(MaybeValue.Value(null))
+    laterValue.isSet shouldBe true
+  }
+
+  @Test
+  fun `isSet when value initialized to non-null`() = runTest {
+    checkAll(propTestConfig, Arb.nonEmptyMaybeValue()) { maybeValue ->
+      val laterValue = LaterValue(maybeValue)
+      laterValue.isSet shouldBe true
+    }
+  }
+
+  @Test
+  fun `isSet after set(null)`() {
+    val laterValue = LaterValue<Nothing?>()
+    laterValue.set(null)
+    laterValue.isSet shouldBe true
+  }
+
+  @Test
+  fun `isSet after set(non-null)`() = runTest {
+    checkAll(propTestConfig, Arb.someValue()) { (value) ->
+      val laterValue = LaterValue<Any>()
+      laterValue.set(value)
+      laterValue.isSet shouldBe true
+    }
+  }
+
+  // endregion
+
+  // region Tests for LaterValue.getOrNull
+
+  @Test
+  fun `getOrNull() when no value set`() {
+    val laterValue = LaterValue<Nothing>()
+    laterValue.getOrNull().shouldBeNull()
+  }
+
+  @Test
+  fun `getOrNull() when value initialized to null`() {
+    val laterValue = LaterValue(MaybeValue.Value(null))
+    laterValue.getOrNull().shouldBeNull()
+  }
+
+  @Test
+  fun `getOrNull() when value initialized to non-null`() = runTest {
+    checkAll(propTestConfig, Arb.someValue()) { value ->
+      val laterValue = LaterValue(MaybeValue.Value(value.value))
+      laterValue.getOrNull().shouldHaveSameValueAs(value)
+    }
+  }
+
+  @Test
+  fun `getOrNull() after set(null)`() {
+    val laterValue = LaterValue<Nothing?>()
+    laterValue.set(null)
+    laterValue.getOrNull().shouldBeNull()
+  }
+
+  @Test
+  fun `getOrNull() after set(non-null)`() = runTest {
+    checkAll(propTestConfig, Arb.someValue()) { value ->
+      val laterValue = LaterValue<Any>()
+      laterValue.set(value.value)
+      laterValue.getOrNull().shouldHaveSameValueAs(value)
+    }
+  }
+
+  // endregion
+
+  // region Tests for LaterValue.getOrThrow
+
+  @Test
+  fun `getOrThrow() when no value set`() {
+    val laterValue = LaterValue<Nothing>()
+    shouldThrow<NoValueException> { laterValue.getOrThrow() }
+  }
+
+  @Test
+  fun `getOrThrow() when value initialized to null`() {
+    val laterValue = LaterValue(MaybeValue.Value(null))
+    laterValue.getOrThrow().shouldBeNull()
+  }
+
+  @Test
+  fun `getOrThrow() when value initialized to non-null`() = runTest {
+    checkAll(propTestConfig, Arb.someValue()) { value ->
+      val laterValue = LaterValue(MaybeValue.Value(value.value))
+      laterValue.getOrThrow().shouldHaveSameValueAs(value)
+    }
+  }
+
+  @Test
+  fun `getOrThrow() after set(null)`() {
+    val laterValue = LaterValue<Nothing?>()
+    laterValue.set(null)
+    laterValue.getOrThrow().shouldBeNull()
+  }
+
+  @Test
+  fun `getOrThrow() after set(non-null)`() = runTest {
+    checkAll(propTestConfig, Arb.someValue()) { value ->
+      val laterValue = LaterValue<Any>()
+      laterValue.set(value.value)
+      laterValue.getOrThrow().shouldHaveSameValueAs(value)
+    }
+  }
+
+  // endregion
 }
+
+// region Helper classes, functions, and properties
 
 /** The configuration for property-based tests in this file. */
 @OptIn(ExperimentalKotest::class)
@@ -229,3 +400,5 @@ private val propTestConfig =
 private fun MaybeValue<*>.shouldBeValueFromSample(sample: SomeValueArb.Sample) {
   shouldBeInstanceOf<MaybeValue.Value<*>>().value.shouldHaveSameValueAs(sample)
 }
+
+// endregion
