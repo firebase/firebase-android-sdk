@@ -1,5 +1,8 @@
 # Unreleased
 
+- [fixed] Prevented app crashes in `FcmLifecycleCallbacks` when an exported activity is
+  invoked with malformed Intent extras. [#8049]
+
 # 25.0.1
 
 - [changed] Bumped internal dependencies.
