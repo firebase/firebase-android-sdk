@@ -84,17 +84,17 @@ class SomeValueArbUnitTest {
   }
 
   @Test
-  fun `someValue() edgeCaseProbability is reasonable`() = runTest {
-    checkAll(propTestConfig, Arb.someValue()) { sample ->
-      sample.edgeCaseProbability shouldBeIn 0.0..1.0
-    }
-  }
-
-  @Test
   fun `someValue() valueCopy returns a value that satisfies == value`() = runTest {
     checkAll(propTestConfig, Arb.someValue()) { sample ->
       val copy = sample.valueCopy()
       copy shouldBe sample.value
+    }
+  }
+
+  @Test
+  fun `someValue() edgeCaseProbability is reasonable`() = runTest {
+    checkAll(propTestConfig, Arb.someValue()) { sample ->
+      sample.edgeCaseProbability shouldBeIn 0.0..1.0
     }
   }
 
@@ -213,16 +213,16 @@ class SomeValueArbUnitTest {
       val sample =
         SomeValueArb.Sample.Scalar(
           value = value,
-          edgeCaseProbability = edgeCaseProbability,
           valueCopy = valueCopy,
+          edgeCaseProbability = edgeCaseProbability,
           type = type,
           isEdgeCase = isEdgeCase,
         )
 
       assertSoftly {
         withClue("value") { sample.value shouldBeSameInstanceAs value }
-        withClue("edgeCaseProbability") { sample.edgeCaseProbability shouldBe edgeCaseProbability }
         withClue("valueCopy") { sample.valueCopy shouldBeSameInstanceAs valueCopy }
+        withClue("edgeCaseProbability") { sample.edgeCaseProbability shouldBe edgeCaseProbability }
         withClue("type") { sample.type shouldBe type }
         withClue("isEdgeCase") { sample.isEdgeCase shouldBe isEdgeCase }
       }
@@ -296,8 +296,8 @@ class SomeValueArbUnitTest {
       val sample =
         SomeValueArb.Sample.Composite(
           value = value,
-          edgeCaseProbability = edgeCaseProbability,
           valueCopy = valueCopy,
+          edgeCaseProbability = edgeCaseProbability,
           type = type,
           maxDepth = maxDepth,
           compositeProbability = compositeProbability,
@@ -306,8 +306,8 @@ class SomeValueArbUnitTest {
 
       assertSoftly {
         withClue("value") { sample.value shouldBeSameInstanceAs value }
-        withClue("edgeCaseProbability") { sample.edgeCaseProbability shouldBe edgeCaseProbability }
         withClue("valueCopy") { sample.valueCopy shouldBeSameInstanceAs valueCopy }
+        withClue("edgeCaseProbability") { sample.edgeCaseProbability shouldBe edgeCaseProbability }
         withClue("type") { sample.type shouldBe type }
         withClue("maxDepth") { sample.maxDepth shouldBe maxDepth }
         withClue("compositeProbability") {
@@ -532,8 +532,8 @@ private fun someValueArbSampleScalarArb(
     isEdgeCase ->
     SomeValueArb.Sample.Scalar(
       value = value,
-      edgeCaseProbability = edgeCaseProbability,
       valueCopy = valueCopy,
+      edgeCaseProbability = edgeCaseProbability,
       type = type,
       isEdgeCase = isEdgeCase,
     )
@@ -549,8 +549,8 @@ private fun SomeValueArb.Sample.Scalar.copy(
 ) =
   SomeValueArb.Sample.Scalar(
     value = value,
-    edgeCaseProbability = edgeCaseProbability,
     valueCopy = valueCopy,
+    edgeCaseProbability = edgeCaseProbability,
     type = type,
     isEdgeCase = isEdgeCase,
   )
@@ -587,6 +587,10 @@ private fun <T : Any> someValueArbSampleScalarEqualPairArb(
           sample1.copy(
             value =
               if (SomeValueArbSampleScalarProperty.Value in properties) copy(value) else value,
+            valueCopy =
+              if (SomeValueArbSampleScalarProperty.ValueCopy in properties)
+                sampleTemplate2.valueCopy
+              else sampleTemplate1.valueCopy,
             edgeCaseProbability =
               if (SomeValueArbSampleScalarProperty.EdgeCaseProbability in properties)
                 sampleTemplate2.edgeCaseProbability
@@ -641,6 +645,7 @@ private enum class SomeValueArbSampleEqualityDimension {
 /** The properties of [SomeValueArb.Sample.Scalar] that can be varied in tests. */
 private enum class SomeValueArbSampleScalarProperty {
   Value,
+  ValueCopy,
   EdgeCaseProbability,
   Type,
   IsEdgeCase,
@@ -670,6 +675,10 @@ private fun <T : Any> someValueArbSampleScalarUnequalPairArb(
     val sample2 =
       sample1.copy(
         value = value2,
+        valueCopy =
+          if (SomeValueArbSampleScalarProperty.ValueCopy in properties)
+            ({ sampleTemplate2.valueCopy() })
+          else sampleTemplate1.valueCopy,
         edgeCaseProbability =
           if (SomeValueArbSampleScalarProperty.EdgeCaseProbability in properties)
             sampleTemplate2.edgeCaseProbability
@@ -733,8 +742,8 @@ private fun someValueArbSampleCompositeArb(
   ) { (value, valueCopy), edgeCaseProbability, type, maxDepth, compositeProbability, edgeCases ->
     SomeValueArb.Sample.Composite(
       value = value,
-      edgeCaseProbability = edgeCaseProbability,
       valueCopy = valueCopy,
+      edgeCaseProbability = edgeCaseProbability,
       type = type,
       maxDepth = maxDepth,
       compositeProbability = compositeProbability,
@@ -745,8 +754,8 @@ private fun someValueArbSampleCompositeArb(
 /** Creates a copy of the receiver [SomeValueArb.Sample.Composite] with the specified properties. */
 private fun SomeValueArb.Sample.Composite.copy(
   value: Any = this.value,
-  edgeCaseProbability: Double = this.edgeCaseProbability,
   valueCopy: () -> Any = this.valueCopy,
+  edgeCaseProbability: Double = this.edgeCaseProbability,
   type: SomeValueArb.Sample.Composite.Type = this.type,
   maxDepth: Int = this.maxDepth,
   compositeProbability: Double = this.compositeProbability,
@@ -754,8 +763,8 @@ private fun SomeValueArb.Sample.Composite.copy(
 ) =
   SomeValueArb.Sample.Composite(
     value = value,
-    edgeCaseProbability = edgeCaseProbability,
     valueCopy = valueCopy,
+    edgeCaseProbability = edgeCaseProbability,
     type = type,
     maxDepth = maxDepth,
     compositeProbability = compositeProbability,
@@ -765,6 +774,7 @@ private fun SomeValueArb.Sample.Composite.copy(
 /** The properties of [SomeValueArb.Sample.Composite] that can be varied in tests. */
 private enum class SomeValueArbSampleCompositeProperty {
   Value,
+  ValueCopy,
   EdgeCaseProbability,
   Type,
   MaxDepth,
@@ -805,6 +815,10 @@ private fun <T : Any> someValueArbSampleCompositeEqualPairArb(
           sample1.copy(
             value =
               if (SomeValueArbSampleCompositeProperty.Value in properties) copy(value) else value,
+            valueCopy =
+              if (SomeValueArbSampleCompositeProperty.ValueCopy in properties)
+                sampleTemplate2.valueCopy
+              else sampleTemplate1.valueCopy,
             edgeCaseProbability =
               if (SomeValueArbSampleCompositeProperty.EdgeCaseProbability in properties)
                 sampleTemplate2.edgeCaseProbability
@@ -884,6 +898,9 @@ private fun <T : Any> someValueArbSampleCompositeUnequalPairArb(
     val sample2 =
       sample1.copy(
         value = value2,
+        valueCopy =
+          if (SomeValueArbSampleCompositeProperty.ValueCopy in properties) sampleTemplate2.valueCopy
+          else sampleTemplate1.valueCopy,
         edgeCaseProbability =
           if (SomeValueArbSampleCompositeProperty.EdgeCaseProbability in properties)
             sampleTemplate2.edgeCaseProbability
