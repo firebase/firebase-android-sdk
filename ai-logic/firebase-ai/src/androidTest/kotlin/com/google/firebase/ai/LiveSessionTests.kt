@@ -297,9 +297,9 @@ class LiveSessionTests {
         .collect {}
     }
     lastResumptionUpdate shouldNotBe null
-    lastResumptionUpdate?.newHandle?.let { handle ->
-      session.resumeSession(SessionResumptionConfig(handle))
-    }
+    val handle = lastResumptionUpdate?.newHandle
+    handle.shouldNotBeNull()
+    session.resumeSession(SessionResumptionConfig(handle))
     session.send("What is my favorite color?")
     val text = withTimeoutOrNull(30.seconds) { session.collectNextAudioOutputTranscript() } ?: ""
     text.toLowerCasePreservingASCIIRules() shouldContain "blue"
