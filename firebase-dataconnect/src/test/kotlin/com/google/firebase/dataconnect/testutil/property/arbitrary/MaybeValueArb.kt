@@ -21,7 +21,6 @@ import io.kotest.property.Arb
 import io.kotest.property.arbitrary.choose
 import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.map
-import kotlin.math.roundToInt
 
 internal fun Arb.Companion.emptyMaybeValue(): Arb<MaybeValue.Empty> = Arb.constant(MaybeValue.Empty)
 
@@ -35,21 +34,28 @@ internal fun Arb.Companion.nonEmptyMaybeValue(): Arb<MaybeValue.Value<Any>> =
 internal fun <T> Arb.Companion.maybeValue(
   value: Arb<T>,
   emptyProbability: Double = 0.33,
-): Arb<MaybeValue<T>> = maybeValue(nonEmptyMaybeValue(value), emptyProbability)
-
-@JvmName("maybeValue_Arb_MaybeValue_Value_T")
-internal fun <T> Arb.Companion.maybeValue(
-  nonEmptyMaybeValue: Arb<MaybeValue.Value<T>>,
-  emptyProbability: Double = 0.33,
-): Arb<MaybeValue<T>> {
-  val emptyWeight = (1000 * emptyProbability).toInt()
-  val nonEmptyWeight = 1000 - emptyWeight
-  return Arb.choose(
-    emptyWeight to emptyMaybeValue(),
-    nonEmptyWeight to nonEmptyMaybeValue,
-  )
-}
+): Arb<MaybeValue<T>> = maybeValueFromValueArb(nonEmptyMaybeValue(value), emptyProbability)
 
 @JvmName("maybeValue_Arb_Any")
 internal fun Arb.Companion.maybeValue(emptyProbability: Double = 0.33): Arb<MaybeValue<Any>> =
   maybeValue(Arb.someValue().map { it.value }, emptyProbability)
+
+private fun <T> Arb.Companion.maybeValueFromValueArb(
+  nonEmptyMaybeValue: Arb<MaybeValue.Value<T>>,
+  emptyProbability: Double = 0.33,
+): Arb<MaybeValue<T>> {
+  return when (emptyProbability) {
+    0.0 -> nonEmptyMaybeValue
+    1.0 -> emptyMaybeValue()
+    else -> {
+      val emptyWeight = (FULL_WEIGHT * emptyProbability).toInt()
+      val nonEmptyWeight = FULL_WEIGHT - emptyWeight
+      Arb.choose(
+        emptyWeight to emptyMaybeValue(),
+        nonEmptyWeight to nonEmptyMaybeValue,
+      )
+    }
+  }
+}
+
+private const val FULL_WEIGHT: Int = 1_000_000_000
