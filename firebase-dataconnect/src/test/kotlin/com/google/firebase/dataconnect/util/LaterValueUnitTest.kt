@@ -42,18 +42,18 @@ import org.junit.Test
 class LaterValueUnitTest {
 
   @Test
-  fun `isEmpty returns true initially`() = runTest {
+  fun `isSet returns false initially`() = runTest {
     val laterValue = LaterValue<TestValue>()
 
-    laterValue.isEmpty shouldBe true
+    laterValue.isSet shouldBe false
   }
 
   @Test
-  fun `isEmpty returns false after set()`() = testWithNullableTestValues { value ->
+  fun `isSet returns true after set()`() = testWithNullableTestValues { value ->
     val laterValue = LaterValue<TestValue?>()
     laterValue.set(value)
 
-    laterValue.isEmpty shouldBe false
+    laterValue.isSet shouldBe true
   }
 
   @Test
@@ -109,67 +109,47 @@ class LaterValueUnitTest {
   }
 
   @Test
-  fun `ifNonEmpty() before set() does not call block`() = runTest {
+  fun `ifSet() before set() does not call block`() = runTest {
     val laterValue = LaterValue<TestValue>()
     val block: (TestValue) -> Unit = mockk(relaxed = true)
 
-    laterValue.ifNonEmpty(block)
+    laterValue.ifSet(block)
 
     confirmVerified(block)
   }
 
   @Test
-  fun `ifNonEmpty() after set() calls block`() = testWithNullableTestValues { value ->
+  fun `ifSet() after set() calls block`() = testWithNullableTestValues { value ->
     val laterValue = LaterValue<TestValue?>()
     laterValue.set(value)
     val block: (TestValue?) -> Unit = mockk(relaxed = true)
 
-    laterValue.ifNonEmpty(block)
+    laterValue.ifSet(block)
 
     verify(exactly = 1) { block(value) }
     confirmVerified(block)
   }
 
   @Test
-  fun `ifNonEmpty() before set() returns the receiver`() = runTest {
-    val laterValue = LaterValue<TestValue>()
-    laterValue.ifNonEmpty(mockk(relaxed = true)) shouldBeSameInstanceAs laterValue
-  }
-
-  @Test
-  fun `ifEmpty() before set() calls block`() = runTest {
+  fun `ifNotSet() before set() calls block`() = runTest {
     val laterValue = LaterValue<TestValue>()
     val block: () -> Unit = mockk(relaxed = true)
 
-    laterValue.ifEmpty(block)
+    laterValue.ifNotSet(block)
 
     verify(exactly = 1) { block() }
     confirmVerified(block)
   }
 
   @Test
-  fun `ifEmpty() after set() does not call block`() = testWithNullableTestValues { value ->
+  fun `ifNotSet() after set() does not call block`() = testWithNullableTestValues { value ->
     val laterValue = LaterValue<TestValue?>()
     laterValue.set(value)
     val block: () -> Unit = mockk(relaxed = true)
 
-    laterValue.ifEmpty(block)
+    laterValue.ifNotSet(block)
 
     confirmVerified(block)
-  }
-
-  @Test
-  fun `ifEmpty() before set() returns the receiver`() = runTest {
-    val laterValue = LaterValue<TestValue>()
-    laterValue.ifEmpty(mockk(relaxed = true)) shouldBeSameInstanceAs laterValue
-  }
-
-  @Test
-  fun `ifEmpty() after set() returns the receiver`() = testWithNullableTestValues { value ->
-    val laterValue = LaterValue<TestValue?>()
-    laterValue.set(value)
-
-    laterValue.ifEmpty(mockk(relaxed = true)) shouldBeSameInstanceAs laterValue
   }
 
   @Test
