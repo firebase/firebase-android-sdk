@@ -25,14 +25,11 @@ import io.kotest.property.asSample
 
 internal fun Arb.Companion.emptyMaybeValue(): Arb<MaybeValue.Empty> = Arb.constant(MaybeValue.Empty)
 
-@JvmName("nonEmptyMaybeValue_Arb_T")
 internal fun <T> Arb.Companion.nonEmptyMaybeValue(value: Arb<T>): Arb<MaybeValue.Value<T>> =
   value.map(MaybeValue<T>::Value)
 
-@JvmName("nonEmptyMaybeValue_Arb_Any")
-internal fun Arb.Companion.nonEmptyMaybeValue(
-  value: Arb<Any> = Arb.someValue()
-): Arb<MaybeValue.Value<Any>> = nonEmptyMaybeValue<Any>(value)
+internal fun Arb.Companion.nonEmptyMaybeValue(): Arb<MaybeValue.Value<Any>> =
+  Arb.someValue().map { MaybeValue.Value(it.value) }
 
 @JvmName("maybeValue_Arb_T")
 internal fun <T> Arb.Companion.maybeValue(
@@ -47,16 +44,8 @@ internal fun <T> Arb.Companion.maybeValue(
 ): Arb<MaybeValue<T>> = MaybeValueArb(nonEmptyMaybeValue, emptyProbability)
 
 @JvmName("maybeValue_Arb_Any")
-internal fun Arb.Companion.maybeValue(
-  value: Arb<Any>,
-  emptyProbability: Double = 0.33,
-): Arb<MaybeValue<Any>> = maybeValue<Any>(value, emptyProbability)
-
-@JvmName("maybeValue_Arb_MaybeValue_Value_Any")
-internal fun Arb.Companion.maybeValue(
-  nonEmptyMaybeValue: Arb<MaybeValue.Value<Any>>,
-  emptyProbability: Double = 0.33,
-): Arb<MaybeValue<Any>> = maybeValue<Any>(nonEmptyMaybeValue, emptyProbability)
+internal fun Arb.Companion.maybeValue(emptyProbability: Double = 0.33): Arb<MaybeValue<Any>> =
+  maybeValue(Arb.someValue().map { it.value }, emptyProbability)
 
 private class MaybeValueArb<T>(
   private val nonEmptyArb: Arb<MaybeValue.Value<T>>,
