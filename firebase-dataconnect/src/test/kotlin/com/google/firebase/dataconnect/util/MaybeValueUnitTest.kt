@@ -98,9 +98,28 @@ class MaybeValueUnitTest {
 
   @Test
   fun `Empty equals(MaybeValue Value) returns false`() = runTest {
-    val maybeValueArb = Arb.someValue().map { MaybeValue.Value(it) }
-    checkAll(propTestConfig, maybeValueArb) { maybeValueValue ->
+    checkAll(propTestConfig, Arb.someValue().orNull(nullProbability = 0.3)) { value ->
+      val maybeValueValue = MaybeValue.Value(value?.value)
       MaybeValue.Empty.equals(maybeValueValue) shouldBe false
+    }
+  }
+
+  // endregion
+
+  // region Tests for MaybeValue.Value.value
+
+  @Test
+  fun `Value(null) value is null`() {
+    val maybeValue = MaybeValue.Value(null)
+    maybeValue.value.shouldBeNull()
+  }
+
+  @Test
+  fun `Value(non-null) value is the same value that was given to the constructor`() = runTest {
+    checkAll(propTestConfig, Arb.someValue()) { (value, valueCopy) ->
+      val maybeValue = MaybeValue.Value(value)
+
+      maybeValue.value.shouldHaveSameValueAs(value, valueCopy)
     }
   }
 
@@ -717,6 +736,7 @@ private class MaybeValueValueNotEqualPair<out T : Any>(
     Empty,
     NullValue,
     UnequalValue,
+    UnrelatedType,
   }
 }
 
@@ -735,6 +755,7 @@ private fun maybeValueValueNonNullNotEqualPairArb(): Arb<MaybeValueValueNotEqual
         MaybeValueValueNotEqualPair.Dimension.NullValue -> MaybeValue.Value(null)
         MaybeValueValueNotEqualPair.Dimension.UnequalValue ->
           MaybeValue.Value(valueArb.filterNotEqual(value1).bind())
+        MaybeValueValueNotEqualPair.Dimension.UnrelatedType -> valueArb.bind()
       }
     MaybeValueValueNotEqualPair(value1 = maybeValue1, value2 = value2, dimension)
   }
