@@ -1,8 +1,6 @@
 # Unreleased
 
-- [feature] Added support for [Maps Grounding](https://ai.google.dev/gemini-api/docs/maps-grounding) (#7950)
-
-- [feature] Added the `turnComplete` argument to multiple `LiveSession.send()` methods.
+# 17.11.0
 
 - [deprecated] All Imagen models are deprecated and will shut down as early as June 2026.
   As a replacement, you can [migrate your apps to use Gemini Image models (the "Nano Banana" models)](https://firebase.google.com/docs/ai-logic/imagen-models-migration).
@@ -173,3 +171,4 @@ using [specific Gemini models](/docs/vertex-ai/models).
 
 Note: This feature is in Public Preview, which means that it is not subject to any SLA or
 deprecation policy and could change in backwards-incompatible ways.
+

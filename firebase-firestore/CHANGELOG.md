@@ -1,8 +1,7 @@
 # Unreleased
 
-- [feature] Added search stage support for `languageCode`, `offset`, `limit`, and `retrievalDepth`.
-- [feature] Added support for Pipeline expressions `arraySlice`, `arraySliceToEnd`, `arrayFilter`, `arrayTransform` and `arrayTransformWithIndex`.
-  [#7989](https://github.com/firebase/firebase-android-sdk/pull/7989)
+# 26.2.0
+
 - [feature] Added support for `parent` Pipeline expression.
   [#7999](https://github.com/firebase/firebase-android-sdk/pull/7999)
 - [feature] Added support for Pipeline expressions `ifNull` and `coalesce`.
