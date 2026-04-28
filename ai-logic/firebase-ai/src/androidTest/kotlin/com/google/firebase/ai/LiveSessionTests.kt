@@ -56,6 +56,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import org.junit.Ignore
 import org.junit.Test
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(PublicPreviewAPI::class)
 class LiveSessionTests {
@@ -285,10 +286,12 @@ class LiveSessionTests {
         .takeWhile {
           if (it is LiveSessionResumptionUpdate) {
             lastResumptionUpdate = it
-          } else if (it is LiveServerContent) {
-            !it.turnComplete
           }
-          true
+          if (it is LiveServerContent && it.turnComplete) {
+            false
+          } else {
+            true
+          }
         }
         .collect {}
     }
