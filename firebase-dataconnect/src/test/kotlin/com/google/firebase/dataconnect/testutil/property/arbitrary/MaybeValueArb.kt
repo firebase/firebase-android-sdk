@@ -18,11 +18,9 @@ package com.google.firebase.dataconnect.testutil.property.arbitrary
 
 import com.google.firebase.dataconnect.util.MaybeValue
 import io.kotest.property.Arb
-import io.kotest.property.RandomSource
 import io.kotest.property.arbitrary.choose
 import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.map
-import io.kotest.property.asSample
 import kotlin.math.roundToInt
 
 internal fun Arb.Companion.emptyMaybeValue(): Arb<MaybeValue.Empty> = Arb.constant(MaybeValue.Empty)
@@ -44,36 +42,14 @@ internal fun <T> Arb.Companion.maybeValue(
   nonEmptyMaybeValue: Arb<MaybeValue.Value<T>>,
   emptyProbability: Double = 0.33,
 ): Arb<MaybeValue<T>> {
-  val totalWeight = 1000000000
-  val emptyWeight = totalWeight * emptyProbability
-  val nonEmptyWeight = totalWeight - emptyWeight
+  val emptyWeight = (1000 * emptyProbability).toInt()
+  val nonEmptyWeight = 1000 - emptyWeight
   return Arb.choose(
-    emptyWeight.roundToInt() to emptyMaybeValue(),
-    nonEmptyWeight.roundToInt() to nonEmptyMaybeValue,
+    emptyWeight to emptyMaybeValue(),
+    nonEmptyWeight to nonEmptyMaybeValue,
   )
 }
 
 @JvmName("maybeValue_Arb_Any")
 internal fun Arb.Companion.maybeValue(emptyProbability: Double = 0.33): Arb<MaybeValue<Any>> =
   maybeValue(Arb.someValue().map { it.value }, emptyProbability)
-
-private class MaybeValueArb<T>(
-  private val nonEmptyArb: Arb<MaybeValue.Value<T>>,
-  private val emptyProbability: Double = 0.33,
-) : Arb<MaybeValue<T>>() {
-
-  override fun sample(rs: RandomSource) =
-    generate(rs, edgeCaseProbability = rs.random.nextDouble()).asSample()
-
-  override fun edgecase(rs: RandomSource) = generate(rs, edgeCaseProbability = 1.0)
-
-  private fun generate(
-    rs: RandomSource,
-    edgeCaseProbability: Double,
-  ): MaybeValue<T> =
-    if (rs.random.nextDouble() <= emptyProbability) {
-      MaybeValue.Empty
-    } else {
-      nonEmptyArb.next(rs, edgeCaseProbability)
-    }
-}
