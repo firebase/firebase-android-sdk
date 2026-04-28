@@ -16,6 +16,12 @@
 
 package com.google.firebase.dataconnect.util
 
+import com.google.firebase.dataconnect.testutil.BlockReturning
+import com.google.firebase.dataconnect.testutil.BlockReturningUnit
+import com.google.firebase.dataconnect.testutil.BlockReturningWithParameter
+import com.google.firebase.dataconnect.testutil.BlockThrowing
+import com.google.firebase.dataconnect.testutil.BlockThrowingWithParameter
+import com.google.firebase.dataconnect.testutil.BlockWithParameter
 import com.google.firebase.dataconnect.testutil.property.arbitrary.filterNotEqual
 import com.google.firebase.dataconnect.testutil.property.arbitrary.shouldHaveSameValueAs
 import com.google.firebase.dataconnect.testutil.property.arbitrary.someValue
@@ -40,8 +46,6 @@ import io.kotest.property.arbitrary.map
 import io.kotest.property.arbitrary.orNull
 import io.kotest.property.checkAll
 import java.util.Objects
-import java.util.concurrent.CopyOnWriteArrayList
-import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
@@ -759,86 +763,6 @@ private fun maybeValueValueNonNullNotEqualPairArb(): Arb<MaybeValueValueNotEqual
       }
     MaybeValueValueNotEqualPair(value1 = maybeValue1, value2 = value2, dimension)
   }
-}
-
-private class BlockReturningWithParameter<T, out R>(val returnValue: R) : ((T) -> R) {
-
-  private val _calls = CopyOnWriteArrayList<T>()
-
-  val calls: List<T>
-    get() = _calls.toList()
-
-  override operator fun invoke(argument: T): R {
-    _calls.add(argument)
-    return returnValue
-  }
-}
-
-private class BlockWithParameter<T> : ((T) -> Unit) {
-
-  private val _calls = CopyOnWriteArrayList<T>()
-
-  val calls: List<T>
-    get() = _calls.toList()
-
-  override operator fun invoke(argument: T) {
-    _calls.add(argument)
-  }
-}
-
-private class BlockReturning<out T>(val returnValue: T) : (() -> T) {
-
-  private val _callCount = AtomicInteger(0)
-
-  val callCount: Int
-    get() = _callCount.get()
-
-  override operator fun invoke(): T {
-    _callCount.incrementAndGet()
-    return returnValue
-  }
-}
-
-private class BlockReturningUnit : (() -> Unit) {
-
-  private val _callCount = AtomicInteger(0)
-
-  val callCount: Int
-    get() = _callCount.get()
-
-  override operator fun invoke() {
-    _callCount.incrementAndGet()
-  }
-}
-
-private class BlockThrowing(val message: String) : (() -> Nothing) {
-
-  private val _callCount = AtomicInteger(0)
-
-  val callCount: Int
-    get() = _callCount.get()
-
-  override operator fun invoke(): Nothing {
-    _callCount.incrementAndGet()
-    throw UnexpectedInvocationException(message)
-  }
-
-  class UnexpectedInvocationException(message: String) : Exception(message)
-}
-
-private class BlockThrowingWithParameter(val message: String) : ((Nothing?) -> Nothing) {
-
-  private val _callCount = AtomicInteger(0)
-
-  val callCount: Int
-    get() = _callCount.get()
-
-  override operator fun invoke(ignored: Nothing?): Nothing {
-    _callCount.incrementAndGet()
-    throw UnexpectedInvocationException(message)
-  }
-
-  class UnexpectedInvocationException(message: String) : Exception(message)
 }
 
 // endregion
