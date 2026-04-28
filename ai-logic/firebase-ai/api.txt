@@ -1666,7 +1666,8 @@ package com.google.firebase.ai.type {
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class SessionResumptionConfig {
-    ctor public SessionResumptionConfig(String? handle = null);
+    ctor public SessionResumptionConfig();
+    ctor public SessionResumptionConfig(String handle);
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class SlidingWindow {

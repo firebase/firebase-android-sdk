@@ -275,47 +275,32 @@ class LiveSessionTests {
 
   @Test
   fun testResumption(): Unit = runBlocking {
-    val liveModel =
-      getLiveModel(
-        modelName = modelName,
-        config = generationConfig,
-        systemInstruction = SystemInstructions.yesOrNo
-      )
+    val liveModel = getLiveModel(modelName = modelName, config = generationConfig)
     val session = liveModel.connect(SessionResumptionConfig())
-    session.send("Hello, please respond", true)
-    var piecesOfContent = 0
+    session.send("My favorite color is blue. Remember that.", true)
     var lastResumptionUpdate: LiveSessionResumptionUpdate? = null
-    withTimeout(30_000) {
+    withTimeout(30.seconds) {
       session
         .receive()
         .takeWhile {
           if (it is LiveSessionResumptionUpdate) {
             lastResumptionUpdate = it
-          } else if (it is LiveServerContent) {
-            piecesOfContent++
-            !it.turnComplete
           }
-          true
+          if (it is LiveServerContent && it.turnComplete) {
+            false
+          } else {
+            true
+          }
         }
         .collect {}
     }
-    val firstContentSize = piecesOfContent
     lastResumptionUpdate shouldNotBe null
-    session.resumeSession(SessionResumptionConfig(handle = lastResumptionUpdate!!.newHandle))
-    session.send("Hello, please respond")
-    withTimeout(30_000) {
-      session
-        .receive()
-        .takeWhile {
-          if (it is LiveServerContent) {
-            piecesOfContent++
-            !it.turnComplete
-          }
-          true
-        }
-        .collect {}
-    }
-    piecesOfContent shouldBeGreaterThan firstContentSize
+    val handle = lastResumptionUpdate?.newHandle
+    handle.shouldNotBeNull()
+    session.resumeSession(SessionResumptionConfig(handle))
+    session.send("What is my favorite color?")
+    val text = withTimeoutOrNull(30.seconds) { session.collectNextAudioOutputTranscript() } ?: ""
+    text.toLowerCasePreservingASCIIRules() shouldContain "blue"
   }
 
   private suspend fun LiveSession.collectNextAudioOutputTranscript(): String {
