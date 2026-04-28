@@ -91,6 +91,14 @@ class SomeValueArbUnitTest {
   }
 
   @Test
+  fun `someValue() valueCopy returns a value that satisfies == value`() = runTest {
+    checkAll(propTestConfig, Arb.someValue()) { sample ->
+      val copy = sample.valueCopy()
+      copy shouldBe sample.value
+    }
+  }
+
+  @Test
   fun `someValue() compositeProbability is reasonable`() = runTest {
     checkAll(propTestConfig, Arb.someValue().filterIsInstance<SomeValueArb.Sample.Composite>()) {
       sample ->
@@ -114,9 +122,9 @@ class SomeValueArbUnitTest {
     checkAll(propTestConfig, Arb.constant(Arb.someValue())) { arb ->
       val sample = arb.sample(randomSource()).value
       sample.asClue {
-        when (val sample = arb.sample(randomSource()).value) {
-          is SomeValueArb.Sample.Composite -> sample.edgeCases.shouldBeEmpty()
-          is SomeValueArb.Sample.Scalar -> sample.isEdgeCase shouldBe false
+        when (it) {
+          is SomeValueArb.Sample.Composite -> it.edgeCases.shouldBeEmpty()
+          is SomeValueArb.Sample.Scalar -> it.isEdgeCase shouldBe false
         }
       }
     }
@@ -201,10 +209,12 @@ class SomeValueArbUnitTest {
       Arb.enum<SomeValueArb.Sample.Scalar.Type>(),
       Arb.boolean(),
     ) { value, edgeCaseProbability, type, isEdgeCase ->
+      val valueCopy = { value }
       val sample =
         SomeValueArb.Sample.Scalar(
           value = value,
           edgeCaseProbability = edgeCaseProbability,
+          valueCopy = valueCopy,
           type = type,
           isEdgeCase = isEdgeCase,
         )
@@ -212,6 +222,7 @@ class SomeValueArbUnitTest {
       assertSoftly {
         withClue("value") { sample.value shouldBeSameInstanceAs value }
         withClue("edgeCaseProbability") { sample.edgeCaseProbability shouldBe edgeCaseProbability }
+        withClue("valueCopy") { sample.valueCopy shouldBeSameInstanceAs valueCopy }
         withClue("type") { sample.type shouldBe type }
         withClue("isEdgeCase") { sample.isEdgeCase shouldBe isEdgeCase }
       }
@@ -221,7 +232,7 @@ class SomeValueArbUnitTest {
   @Test
   fun `Sample Scalar toString() returns expected value`() = runTest {
     data class TestValue(val value: Int)
-    val testValueArb = Arb.int().map(::TestValue)
+    val testValueArb = Arb.int().map(::TestValue).map { ValueCopierPair(it) { it.copy() } }
     val sampleArb: Arb<SomeValueArb.Sample.Scalar> =
       someValueArbSampleScalarArb(value = testValueArb)
     checkAll(propTestConfig, sampleArb) { sample ->
@@ -281,10 +292,12 @@ class SomeValueArbUnitTest {
       Arb.double(),
       Arb.enumSubset<SomeValueArb.Sample.Composite.EdgeCase>(),
     ) { value, edgeCaseProbability, type, maxDepth, compositeProbability, edgeCases ->
+      val valueCopy = { value }
       val sample =
         SomeValueArb.Sample.Composite(
           value = value,
           edgeCaseProbability = edgeCaseProbability,
+          valueCopy = valueCopy,
           type = type,
           maxDepth = maxDepth,
           compositeProbability = compositeProbability,
@@ -294,6 +307,7 @@ class SomeValueArbUnitTest {
       assertSoftly {
         withClue("value") { sample.value shouldBeSameInstanceAs value }
         withClue("edgeCaseProbability") { sample.edgeCaseProbability shouldBe edgeCaseProbability }
+        withClue("valueCopy") { sample.valueCopy shouldBeSameInstanceAs valueCopy }
         withClue("type") { sample.type shouldBe type }
         withClue("maxDepth") { sample.maxDepth shouldBe maxDepth }
         withClue("compositeProbability") {
@@ -307,7 +321,7 @@ class SomeValueArbUnitTest {
   @Test
   fun `Sample Composite toString() returns expected value`() = runTest {
     data class TestValue(val value: Int)
-    val testValueArb = Arb.int().map(::TestValue)
+    val testValueArb = Arb.int().map(::TestValue).map { ValueCopierPair(it) { it.copy() } }
     val sampleArb: Arb<SomeValueArb.Sample.Composite> =
       someValueArbSampleCompositeArb(value = testValueArb)
     checkAll(propTestConfig, sampleArb) { sample ->
@@ -354,6 +368,9 @@ class SomeValueArbUnitTest {
 
 }
 
+// region Helper classes, functions, and properties
+
+/** The default [PropTestConfig] used for property-based tests in this file. */
 @OptIn(ExperimentalKotest::class)
 private val propTestConfig =
   PropTestConfig(
@@ -362,8 +379,10 @@ private val propTestConfig =
     shrinkingMode = ShrinkingMode.Off,
   )
 
-// Allow a small number of failures to account for the rare, but possible situation where two
-// distinct instances produce the same hash code.
+/**
+ * A [PropTestConfig] specifically for testing hash code equality, which allows for a small number
+ * of collisions.
+ */
 @OptIn(ExperimentalKotest::class)
 private val hashEqualityPropTestConfig =
   propTestConfig.copy(
@@ -371,12 +390,14 @@ private val hashEqualityPropTestConfig =
     maxFailure = 2,
   )
 
+/** Calculates the maximum depth of nested composite values in the receiver. */
 private fun SomeValueArb.Sample.calculateDepth(): Int =
   when (this) {
     is SomeValueArb.Sample.Scalar -> 0
     is SomeValueArb.Sample.Composite -> value.calculateSampleValueDepth()
   }
 
+/** Calculates the maximum depth of nested composite values in the receiver. */
 private fun Any?.calculateSampleValueDepth(): Int =
   when (this) {
     is Iterable<*> -> {
@@ -400,16 +421,27 @@ private fun Any?.calculateSampleValueDepth(): Int =
     else -> 0 // Scalars, KClass, Throwable, Unit, etc.
   }
 
+/**
+ * Calculates the sizes of all collections and maps within the [value] property of the receiver,
+ * recursively. If the receiver is a [SomeValueArb.Sample.Scalar] then an empty list is returned
+ * unconditionally
+ */
 private fun SomeValueArb.Sample.calculateSizes(): List<Int> =
   when (this) {
     is SomeValueArb.Sample.Scalar -> emptyList()
     is SomeValueArb.Sample.Composite -> value.calculateSampleValueSizes()
   }
 
+/** Calculates the sizes of all collections and maps within the receiver, recursively. */
 private fun Any.calculateSampleValueSizes(): List<Int> {
-  val sizes = mutableListOf<Int>()
   val queue = ArrayDeque<Any?>()
   queue.add(this)
+  return calculateSampleValueSizes(queue)
+}
+
+/** Helper function for Any.calculateSampleValueSizes(); do not call it directly. */
+private fun calculateSampleValueSizes(queue: ArrayDeque<Any?>): List<Int> {
+  val sizes = mutableListOf<Int>()
 
   while (!queue.isEmpty()) {
     when (val value = queue.removeFirst()) {
@@ -421,32 +453,35 @@ private fun Any.calculateSampleValueSizes(): List<Int> {
         sizes.add(value.size)
         queue.addAll(value.values)
       }
-      else -> 0 // Pairs, Triples, Results have fixed size (not governed by maxSize)
     }
-
-    return sizes.toList()
   }
 
   return sizes.toList()
 }
 
+/** The range of valid `maxDepth` values supported by [SomeValueArb]. */
 private val validMaxDepthRange = 0..5
 
+/** An [Arb] that generates Int values outside of [validMaxDepthRange]. */
 private fun invalidMaxDepthArb(): Arb<Int> =
   Arb.choice(
     Arb.int(max = validMaxDepthRange.first - 1),
     Arb.int(min = validMaxDepthRange.last + 1)
   )
 
+/** The range of valid `maxSize` values for collections generated by [SomeValueArb]. */
 private val validMaxSizeRange = 0..5
 
+/** An [Arb] that generates integers outside of [validMaxSizeRange]. */
 private fun invalidMaxSizeArb(): Arb<Int> =
   Arb.choice(Arb.int(max = validMaxSizeRange.first - 1), Arb.int(min = validMaxSizeRange.last + 1))
 
+/** Filters a list of classes, removing those that are superclasses of other classes in the list. */
 private fun List<KClass<*>>.filterMostSpecificTypes(): List<KClass<*>> = filterNot { matchingType ->
   any { it !== matchingType && it.isSubclassOf(matchingType) }
 }
 
+/** The set of [KClass] objects representing the scalar types generated by [SomeValueArb]. */
 private val scalarTypes: Set<KClass<*>> =
   setOf(
     Boolean::class,
@@ -463,6 +498,7 @@ private val scalarTypes: Set<KClass<*>> =
     KClass::class,
   )
 
+/** The set of [KClass] objects representing the composite types generated by [SomeValueArb]. */
 private val compositeTypes: Set<KClass<*>> =
   setOf(
     Map::class,
@@ -476,32 +512,60 @@ private val compositeTypes: Set<KClass<*>> =
     Triple::class,
   )
 
+/** The union of [scalarTypes] and [compositeTypes]. */
 private val scalarAndCompositeTypes: Set<KClass<*>> = scalarTypes + compositeTypes
 
+/**
+ * An [Arb] that generates [SomeValueArb.Sample.Scalar] instances with specified or random
+ * properties.
+ */
 private fun someValueArbSampleScalarArb(
-  value: Arb<Any> = Arb.iceCreams(),
+  value: Arb<ValueCopierPair<Any>> = Arb.iceCreams().map { ValueCopierPair(it) { it.copy() } },
   edgeCaseProbability: Arb<Double> = Arb.double(),
   type: Arb<SomeValueArb.Sample.Scalar.Type> = Arb.enum(),
   isEdgeCase: Arb<Boolean> = Arb.boolean(),
 ): Arb<SomeValueArb.Sample.Scalar> =
-  Arb.bind(value, edgeCaseProbability, type, isEdgeCase, SomeValueArb.Sample::Scalar)
+  Arb.bind(value, edgeCaseProbability, type, isEdgeCase) {
+    (value, valueCopy),
+    edgeCaseProbability,
+    type,
+    isEdgeCase ->
+    SomeValueArb.Sample.Scalar(
+      value = value,
+      edgeCaseProbability = edgeCaseProbability,
+      valueCopy = valueCopy,
+      type = type,
+      isEdgeCase = isEdgeCase,
+    )
+  }
 
+/** Creates a copy of this [SomeValueArb.Sample.Scalar] with the specified properties. */
 private fun SomeValueArb.Sample.Scalar.copy(
   value: Any = this.value,
   edgeCaseProbability: Double = this.edgeCaseProbability,
+  valueCopy: () -> Any = this.valueCopy,
   type: SomeValueArb.Sample.Scalar.Type = this.type,
   isEdgeCase: Boolean = this.isEdgeCase,
 ) =
   SomeValueArb.Sample.Scalar(
     value = value,
     edgeCaseProbability = edgeCaseProbability,
+    valueCopy = valueCopy,
     type = type,
     isEdgeCase = isEdgeCase,
   )
 
+/**
+ * An [Arb] that generates pairs of [SomeValueArb.Sample.Scalar] instances that should be considered
+ * equal by the `==` operator.
+ */
 private fun someValueArbSampleScalarEqualPairArb(): Arb<SomeValueArbSampleScalarEqualPairSample> =
   someValueArbSampleScalarEqualPairArb(Arb.iceCreams()) { it.copy() }
 
+/**
+ * An [Arb] that generates pairs of [SomeValueArb.Sample.Scalar] instances that should be considered
+ * equal by the `==` operator.
+ */
 private fun <T : Any> someValueArbSampleScalarEqualPairArb(
   value: Arb<T>,
   copy: (T) -> T
@@ -539,6 +603,10 @@ private fun <T : Any> someValueArbSampleScalarEqualPairArb(
     SomeValueArbSampleScalarEqualPairSample(sample1, sample2, dimension, properties)
   }
 
+/**
+ * A sample containing a pair of equal [SomeValueArb.Sample.Scalar] instances and metadata about
+ * their creation.
+ */
 private class SomeValueArbSampleScalarEqualPairSample(
   val scalarSample1: SomeValueArb.Sample.Scalar,
   val scalarSample2: SomeValueArb.Sample.Scalar,
@@ -562,6 +630,7 @@ private class SomeValueArbSampleScalarEqualPairSample(
     Objects.hash(SomeValueArbSampleScalarEqualPairSample::class, scalarSample1, scalarSample2)
 }
 
+/** The different ways two samples can be "equal". */
 private enum class SomeValueArbSampleEqualityDimension {
   SameInstance,
   DifferentInstanceSameValueInstance,
@@ -569,6 +638,7 @@ private enum class SomeValueArbSampleEqualityDimension {
   DifferentInstanceEqualValueDifferentOtherProperties,
 }
 
+/** The properties of [SomeValueArb.Sample.Scalar] that can be varied in tests. */
 private enum class SomeValueArbSampleScalarProperty {
   Value,
   EdgeCaseProbability,
@@ -576,10 +646,18 @@ private enum class SomeValueArbSampleScalarProperty {
   IsEdgeCase,
 }
 
+/**
+ * An [Arb] that generates pairs of [SomeValueArb.Sample.Scalar] instances that should be considered
+ * unequal by the `==` operator.
+ */
 private fun someValueArbSampleScalarUnequalPairArb():
   Arb<SomeValueArbSampleScalarUnequalPairSample> =
   someValueArbSampleScalarUnequalPairArb(Arb.iceCreams())
 
+/**
+ * An [Arb] that generates pairs of [SomeValueArb.Sample.Scalar] instances that should be considered
+ * unequal by the `==` operator.
+ */
 private fun <T : Any> someValueArbSampleScalarUnequalPairArb(
   value: Arb<T>
 ): Arb<SomeValueArbSampleScalarUnequalPairSample> =
@@ -607,6 +685,10 @@ private fun <T : Any> someValueArbSampleScalarUnequalPairArb(
     SomeValueArbSampleScalarUnequalPairSample(sample1, sample2, properties)
   }
 
+/**
+ * A sample containing a pair of unequal [SomeValueArb.Sample.Scalar] instances and metadata about
+ * their creation.
+ */
 private class SomeValueArbSampleScalarUnequalPairSample(
   val scalarSample1: SomeValueArb.Sample.Scalar,
   val scalarSample2: SomeValueArb.Sample.Scalar,
@@ -628,8 +710,12 @@ private class SomeValueArbSampleScalarUnequalPairSample(
     Objects.hash(SomeValueArbSampleScalarUnequalPairSample::class, scalarSample1, scalarSample2)
 }
 
+/**
+ * An [Arb] that generates [SomeValueArb.Sample.Composite] instances with specified or random
+ * properties.
+ */
 private fun someValueArbSampleCompositeArb(
-  value: Arb<Any> = Arb.iceCreams(),
+  value: Arb<ValueCopierPair<Any>> = Arb.iceCreams().map { ValueCopierPair(it) { it.copy() } },
   edgeCaseProbability: Arb<Double> = Arb.double(),
   type: Arb<SomeValueArb.Sample.Composite.Type> = Arb.enum(),
   maxDepth: Arb<Int> = Arb.int(),
@@ -644,12 +730,23 @@ private fun someValueArbSampleCompositeArb(
     maxDepth,
     compositeProbability,
     edgeCases,
-    SomeValueArb.Sample::Composite
-  )
+  ) { (value, valueCopy), edgeCaseProbability, type, maxDepth, compositeProbability, edgeCases ->
+    SomeValueArb.Sample.Composite(
+      value = value,
+      edgeCaseProbability = edgeCaseProbability,
+      valueCopy = valueCopy,
+      type = type,
+      maxDepth = maxDepth,
+      compositeProbability = compositeProbability,
+      edgeCases = edgeCases,
+    )
+  }
 
+/** Creates a copy of the receiver [SomeValueArb.Sample.Composite] with the specified properties. */
 private fun SomeValueArb.Sample.Composite.copy(
   value: Any = this.value,
   edgeCaseProbability: Double = this.edgeCaseProbability,
+  valueCopy: () -> Any = this.valueCopy,
   type: SomeValueArb.Sample.Composite.Type = this.type,
   maxDepth: Int = this.maxDepth,
   compositeProbability: Double = this.compositeProbability,
@@ -658,25 +755,14 @@ private fun SomeValueArb.Sample.Composite.copy(
   SomeValueArb.Sample.Composite(
     value = value,
     edgeCaseProbability = edgeCaseProbability,
+    valueCopy = valueCopy,
     type = type,
     maxDepth = maxDepth,
     compositeProbability = compositeProbability,
     edgeCases = edgeCases,
   )
 
-/**
- * Creates and returns an [Arb] that generates pairs of object that are "equal" according to the
- * `==` operator, but are distinct objects (that is, they compare _unequal_ by the `===` operator).
- */
-private fun equalButDistinctValuesArb(): Arb<Pair<Any, Any>> =
-  Arb.iceCreams().map { iceCream1 ->
-    val iceCream2 = iceCream1.copy()
-    check(iceCream1 == iceCream2)
-    check(iceCream2 == iceCream1)
-    check(iceCream1 !== iceCream2)
-    Pair(iceCream1, iceCream2)
-  }
-
+/** The properties of [SomeValueArb.Sample.Composite] that can be varied in tests. */
 private enum class SomeValueArbSampleCompositeProperty {
   Value,
   EdgeCaseProbability,
@@ -686,10 +772,18 @@ private enum class SomeValueArbSampleCompositeProperty {
   EdgeCases,
 }
 
+/**
+ * An [Arb] that generates pairs of [SomeValueArb.Sample.Composite] instances that should be
+ * considered equal by the `==` operator.
+ */
 private fun someValueArbSampleCompositeEqualPairArb():
   Arb<SomeValueArbSampleCompositeEqualPairSample> =
   someValueArbSampleCompositeEqualPairArb(Arb.iceCreams()) { it.copy() }
 
+/**
+ * An [Arb] that generates pairs of [SomeValueArb.Sample.Composite] instances that should be
+ * considered equal by the `==` operator.
+ */
 private fun <T : Any> someValueArbSampleCompositeEqualPairArb(
   value: Arb<T>,
   copy: (T) -> T
@@ -735,6 +829,10 @@ private fun <T : Any> someValueArbSampleCompositeEqualPairArb(
     SomeValueArbSampleCompositeEqualPairSample(sample1, sample2, dimension, properties)
   }
 
+/**
+ * A sample containing a pair of equal [SomeValueArb.Sample.Composite] instances and metadata about
+ * their creation.
+ */
 private class SomeValueArbSampleCompositeEqualPairSample(
   val compositeSample1: SomeValueArb.Sample.Composite,
   val compositeSample2: SomeValueArb.Sample.Composite,
@@ -762,10 +860,18 @@ private class SomeValueArbSampleCompositeEqualPairSample(
     )
 }
 
+/**
+ * An [Arb] that generates pairs of [SomeValueArb.Sample.Composite] instances that should be
+ * considered unequal by the `==` operator.
+ */
 private fun someValueArbSampleCompositeUnequalPairArb():
   Arb<SomeValueArbSampleCompositeUnequalPairSample> =
   someValueArbSampleCompositeUnequalPairArb(Arb.iceCreams())
 
+/**
+ * An [Arb] that generates pairs of [SomeValueArb.Sample.Composite] instances that should be
+ * considered unequal by the `==` operator.
+ */
 private fun <T : Any> someValueArbSampleCompositeUnequalPairArb(
   value: Arb<T>
 ): Arb<SomeValueArbSampleCompositeUnequalPairSample> =
@@ -800,6 +906,10 @@ private fun <T : Any> someValueArbSampleCompositeUnequalPairArb(
     SomeValueArbSampleCompositeUnequalPairSample(sample1, sample2, properties)
   }
 
+/**
+ * A sample containing a pair of unequal [SomeValueArb.Sample.Composite] instances and metadata
+ * about their creation.
+ */
 private class SomeValueArbSampleCompositeUnequalPairSample(
   val compositeSample1: SomeValueArb.Sample.Composite,
   val compositeSample2: SomeValueArb.Sample.Composite,
@@ -824,3 +934,11 @@ private class SomeValueArbSampleCompositeUnequalPairSample(
       compositeSample2
     )
 }
+
+/** A pair of a value, and a function to create a copy of that value. */
+private data class ValueCopierPair<out T>(
+  val value: T,
+  val valueCopy: () -> T,
+)
+
+// endregion

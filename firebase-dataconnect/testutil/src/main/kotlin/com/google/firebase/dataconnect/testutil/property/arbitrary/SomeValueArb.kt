@@ -80,10 +80,18 @@ class SomeValueArb private constructor(private val delegate: ArbWithEdgeCases<Sa
    *
    * @property value The actual generated object (for example, an [Int] or a [List]).
    * @property edgeCaseProbability The probability that this value was generated as an edge case.
+   * @property valueCopy A function that creates a _shallow_ copy of [value]; may return the same
+   * instance as [value] if creating a copy is not possible, such as due to string interning or
+   * types whose `==` operator uses referential equality, such as [Throwable]; in any case, the
+   * value returned from the function will compare equal using the `==` operator to [value]. Note
+   * that the [valueCopy] property of [Composite] is _guaranteed_ to return a distinct instance from
+   * [value], whereas [Scalar] does not specify if it returns the same or different instance, but
+   * does its best effort to return a distinct instance.
    */
   sealed class Sample(
     val value: Any,
     val edgeCaseProbability: Double,
+    val valueCopy: () -> Any,
   ) {
 
     /**
@@ -95,8 +103,13 @@ class SomeValueArb private constructor(private val delegate: ArbWithEdgeCases<Sa
      * [SomeValueArb.edgecase], and `true` indicates that this it was produced by
      * [SomeValueArb.sample].
      */
-    class Scalar(value: Any, edgeCaseProbability: Double, val type: Type, val isEdgeCase: Boolean) :
-      Sample(value, edgeCaseProbability) {
+    class Scalar(
+      value: Any,
+      edgeCaseProbability: Double,
+      valueCopy: () -> Any,
+      val type: Type,
+      val isEdgeCase: Boolean,
+    ) : Sample(value, edgeCaseProbability, valueCopy) {
 
       override fun toString() = "SomeValueArb.Sample.Scalar(${value.print().value})"
 
@@ -140,11 +153,12 @@ class SomeValueArb private constructor(private val delegate: ArbWithEdgeCases<Sa
     class Composite(
       value: Any,
       edgeCaseProbability: Double,
+      valueCopy: () -> Any,
       val type: Type,
       val maxDepth: Int,
       val compositeProbability: Double,
       val edgeCases: Set<EdgeCase>,
-    ) : Sample(value, edgeCaseProbability) {
+    ) : Sample(value, edgeCaseProbability, valueCopy) {
 
       override fun toString() = "SomeValueArb.Sample.Composite(${value.print().value})"
 
@@ -237,10 +251,11 @@ private class SomeScalarValueArb : ArbWithEdgeCases<SomeValueArb.Sample.Scalar>(
   ): SomeValueArb.Sample.Scalar {
     val scalarType = SomeValueArb.Sample.Scalar.Type.entries.random(rs.random)
     val arb = scalarType.createArb()
-    val value = arb.next(rs, edgeCaseProbability)
+    val (value, valueCopy) = arb.next(rs, edgeCaseProbability)
     return SomeValueArb.Sample.Scalar(
       value = value,
       edgeCaseProbability = edgeCaseProbability,
+      valueCopy = valueCopy,
       type = scalarType,
       isEdgeCase = isEdgeCase,
     )
@@ -248,20 +263,54 @@ private class SomeScalarValueArb : ArbWithEdgeCases<SomeValueArb.Sample.Scalar>(
 
   private companion object {
 
-    fun SomeValueArb.Sample.Scalar.Type.createArb(): Arb<Any> =
+    fun SomeValueArb.Sample.Scalar.Type.createArb(): Arb<ValueCopierPair<Any>> =
       when (this) {
-        SomeValueArb.Sample.Scalar.Type.Boolean -> Arb.boolean()
-        SomeValueArb.Sample.Scalar.Type.Byte -> Arb.byte()
-        SomeValueArb.Sample.Scalar.Type.Char -> Arb.char()
-        SomeValueArb.Sample.Scalar.Type.Double -> Arb.double()
-        SomeValueArb.Sample.Scalar.Type.Float -> Arb.float()
-        SomeValueArb.Sample.Scalar.Type.Int -> Arb.int()
-        SomeValueArb.Sample.Scalar.Type.Long -> Arb.long()
-        SomeValueArb.Sample.Scalar.Type.Short -> Arb.short()
-        SomeValueArb.Sample.Scalar.Type.String -> Arb.string()
-        SomeValueArb.Sample.Scalar.Type.Unit -> Arb.constant(Unit)
-        SomeValueArb.Sample.Scalar.Type.Throwable -> throwableArb()
-        SomeValueArb.Sample.Scalar.Type.KClass -> kClassArb()
+        SomeValueArb.Sample.Scalar.Type.Boolean ->
+          Arb.boolean().map {
+            ValueCopierPair(it) { it } // primitive types cannot be copied
+          }
+        SomeValueArb.Sample.Scalar.Type.Byte ->
+          Arb.byte().map {
+            ValueCopierPair(it) { it } // primitive types cannot be copied
+          }
+        SomeValueArb.Sample.Scalar.Type.Char ->
+          Arb.char().map {
+            ValueCopierPair(it) { it } // primitive types cannot be copied
+          }
+        SomeValueArb.Sample.Scalar.Type.Double ->
+          Arb.double().map {
+            ValueCopierPair(it) { it } // primitive types cannot be copied
+          }
+        SomeValueArb.Sample.Scalar.Type.Float ->
+          Arb.float().map {
+            ValueCopierPair(it) { it } // primitive types cannot be copied
+          }
+        SomeValueArb.Sample.Scalar.Type.Int ->
+          Arb.int().map {
+            ValueCopierPair(it) { it } // primitive types cannot be copied
+          }
+        SomeValueArb.Sample.Scalar.Type.Long ->
+          Arb.long().map {
+            ValueCopierPair(it) { it } // primitive types cannot be copied
+          }
+        SomeValueArb.Sample.Scalar.Type.Short ->
+          Arb.short().map {
+            ValueCopierPair(it) { it } // primitive types cannot be copied
+          }
+        SomeValueArb.Sample.Scalar.Type.String ->
+          Arb.string().map { ValueCopierPair(it) { String(it.toCharArray()) } }
+        SomeValueArb.Sample.Scalar.Type.Unit ->
+          Arb.constant(Unit).map {
+            ValueCopierPair(it) { it } // Unit is a singleton
+          }
+        SomeValueArb.Sample.Scalar.Type.Throwable ->
+          throwableArb().map {
+            ValueCopierPair(it) { it } // Throwable uses referential equality
+          }
+        SomeValueArb.Sample.Scalar.Type.KClass ->
+          kClassArb().map {
+            ValueCopierPair(it) { it } // KClass instances are singletons per class loader
+          }
       }
 
     private fun kClassArb(): Arb<KClass<*>> {
@@ -332,7 +381,7 @@ private class SomeCompositeValueArb(
     )
   }
 
-  private fun generate(
+  fun generate(
     rs: RandomSource,
     maxDepth: Int,
     edgeCaseProbability: Double,
@@ -352,10 +401,11 @@ private class SomeCompositeValueArb(
       )
 
     val compositeType = SomeValueArb.Sample.Composite.Type.entries.random(rs.random)
-    val value = valueGenerator.generate(compositeType, maxDepth)
+    val (value, valueCopy) = valueGenerator.generate(compositeType, maxDepth)
     return SomeValueArb.Sample.Composite(
       value = value,
       edgeCaseProbability = edgeCaseProbability,
+      valueCopy = valueCopy,
       type = compositeType,
       maxDepth = maxDepth,
       compositeProbability = compositeProbability,
@@ -439,17 +489,33 @@ private class SomeCompositeValueArb(
   private fun ValueGenerator.generate(
     type: SomeValueArb.Sample.Composite.Type,
     maxDepth: Int
-  ): Any =
+  ): ValueCopierPair<Any> =
     when (type) {
-      SomeValueArb.Sample.Composite.Type.List -> list(maxDepth = maxDepth)
-      SomeValueArb.Sample.Composite.Type.Map -> map(maxDepth = maxDepth)
-      SomeValueArb.Sample.Composite.Type.MutableList -> mutableList(maxDepth = maxDepth)
-      SomeValueArb.Sample.Composite.Type.MutableMap -> mutableMap(maxDepth = maxDepth)
-      SomeValueArb.Sample.Composite.Type.MutableSet -> mutableSet(maxDepth = maxDepth)
-      SomeValueArb.Sample.Composite.Type.Pair -> pair(maxDepth = maxDepth)
-      SomeValueArb.Sample.Composite.Type.Result -> result(maxDepth = maxDepth)
-      SomeValueArb.Sample.Composite.Type.Set -> set(maxDepth = maxDepth)
-      SomeValueArb.Sample.Composite.Type.Triple -> triple(maxDepth = maxDepth)
+      SomeValueArb.Sample.Composite.Type.List ->
+        list(maxDepth = maxDepth).let { ValueCopierPair(it) { it.toList() } }
+      SomeValueArb.Sample.Composite.Type.Map ->
+        map(maxDepth = maxDepth).let { ValueCopierPair(it) { it.toMap() } }
+      SomeValueArb.Sample.Composite.Type.MutableList ->
+        mutableList(maxDepth = maxDepth).let { ValueCopierPair(it) { it.toMutableList() } }
+      SomeValueArb.Sample.Composite.Type.MutableMap ->
+        mutableMap(maxDepth = maxDepth).let { ValueCopierPair(it) { it.toMutableMap() } }
+      SomeValueArb.Sample.Composite.Type.MutableSet ->
+        mutableSet(maxDepth = maxDepth).let { ValueCopierPair(it) { it.toMutableSet() } }
+      SomeValueArb.Sample.Composite.Type.Pair ->
+        pair(maxDepth = maxDepth).let { ValueCopierPair(it) { it.copy() } }
+      SomeValueArb.Sample.Composite.Type.Result ->
+        result(maxDepth = maxDepth).let {
+          ValueCopierPair(it) {
+            it.fold(
+              onSuccess = Result.Companion::success,
+              onFailure = Result.Companion::failure,
+            )
+          }
+        }
+      SomeValueArb.Sample.Composite.Type.Set ->
+        set(maxDepth = maxDepth).let { ValueCopierPair(it) { it.toSet() } }
+      SomeValueArb.Sample.Composite.Type.Triple ->
+        triple(maxDepth = maxDepth).let { ValueCopierPair(it) { it.copy() } }
     }
 
   private companion object {
@@ -475,3 +541,8 @@ private fun throwableArb(): Arb<Throwable> {
   val factoryArb = Arb.of(throwableFactories)
   return Arb.bind(messageArb, factoryArb) { message, factory -> factory(message) }
 }
+
+private data class ValueCopierPair<out T>(
+  val value: T,
+  val valueCopy: () -> T,
+)
