@@ -9,7 +9,7 @@
 - [fixed] Fixed `LiveGenerativeModel.connect()` not attaching the `X-Firebase-AppCheck`
   header, causing Live API requests to be rejected when App Check is enforced on AI Logic. (#8060)
 
-- [feature] Added support for Java usage of Chat interactions using server prompt templates (#8065)  
+- [feature] Added support for Java usage of Chat interactions using server prompt templates (#8065)
 
 # 17.11.0
 
