@@ -16,6 +16,7 @@
 
 package com.google.firebase.dataconnect.util
 
+import com.google.firebase.dataconnect.testutil.property.arbitrary.someValue
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.shouldBe
@@ -46,12 +47,12 @@ class MaybeValueUnitTest {
   }
 
   @Test
-  fun `Empty getOrNull returns null`() {
+  fun `Empty getOrNull() returns null`() {
     MaybeValue.Empty.getOrNull() shouldBe null
   }
 
   @Test
-  fun `Empty getOrThrow throws IllegalStateException`() {
+  fun `Empty getOrThrow() throws IllegalStateException`() {
     val exception = shouldThrow<IllegalStateException> { MaybeValue.Empty.getOrThrow() }
     exception shouldHaveMessage "no value"
   }
@@ -59,6 +60,41 @@ class MaybeValueUnitTest {
   @Test
   fun `Empty toString returns correct string`() {
     MaybeValue.Empty.toString() shouldBe "MaybeValue.Empty"
+  }
+
+  @Test
+  fun `Empty hashCode() returns the same value on every invocation`() {
+    val hashCodes = List(100) { MaybeValue.Empty.hashCode() }
+
+    hashCodes.distinct().size shouldBe 1
+  }
+
+  @Test
+  @Suppress("ReplaceCallWithBinaryOperator")
+  fun `Empty equals(Empty) returns true`() {
+    MaybeValue.Empty.equals(MaybeValue.Empty) shouldBe true
+  }
+
+  @Test
+  fun `Empty equals(null) returns false`() {
+    MaybeValue.Empty.equals(null) shouldBe false
+  }
+
+  @Test
+  fun `Empty equals(any other value) returns false`() = runTest {
+    val someValueArb = Arb.someValue().map { it.value }
+    checkAll(propTestConfig, someValueArb) { value ->
+      @Suppress("ReplaceCallWithBinaryOperator")
+      MaybeValue.Empty.equals(value) shouldBe false
+    }
+  }
+
+  @Test
+  fun `Empty equals(MaybeValue) returns false`() = runTest {
+    val maybeValueArb = Arb.someValue().map { MaybeValue.Value(it) }
+    checkAll(propTestConfig, maybeValueArb) { maybeValueValue ->
+      MaybeValue.Empty.equals(maybeValueValue) shouldBe false
+    }
   }
 
   @Test
