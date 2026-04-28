@@ -56,7 +56,6 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import org.junit.Ignore
 import org.junit.Test
-import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(PublicPreviewAPI::class)
 class LiveSessionTests {
