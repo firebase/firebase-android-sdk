@@ -17,6 +17,7 @@ package com.google.firebase.perf.metrics;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.MockitoAnnotations.initMocks;
 
+import com.google.firebase.perf.FirebasePerformance;
 import com.google.firebase.perf.FirebasePerformanceTestBase;
 import com.google.firebase.perf.application.AppStateMonitor;
 import com.google.firebase.perf.transport.TransportManager;
@@ -330,5 +331,62 @@ public class TraceMetricBuilderTest extends FirebasePerformanceTestBase {
     Assert.assertEquals(TRACE_ATTRIBUTE_VALUE + "New", trace.getAttribute(TRACE_ATTRIBUTE_KEY));
     Assert.assertEquals(TRACE_1, traceMetric.getName());
     Assert.assertEquals(1, traceMetric.getCustomAttributesCount());
+  }
+
+  @Test
+  public void testGlobalAttributesIncludedInTraceMetric() {
+    FirebasePerformance firebasePerformance = FirebasePerformance.getInstance();
+    firebasePerformance.putAttribute("globalKey", "globalValue");
+
+    Trace trace = new Trace(TRACE_1, transportManager, clock, appStateMonitor);
+    currentTime = 1;
+    trace.start();
+    currentTime = 2;
+    trace.stop();
+    TraceMetric traceMetric = new TraceMetricBuilder(trace).build();
+
+    Assert.assertEquals(1, traceMetric.getCustomAttributesCount());
+    Assert.assertEquals("globalValue", traceMetric.getCustomAttributesMap().get("globalKey"));
+
+    firebasePerformance.removeAttribute("globalKey");
+  }
+
+  @Test
+  public void testTraceAttributeOverridesGlobalAttribute() {
+    FirebasePerformance firebasePerformance = FirebasePerformance.getInstance();
+    firebasePerformance.putAttribute("sharedKey", "globalValue");
+
+    Trace trace = new Trace(TRACE_1, transportManager, clock, appStateMonitor);
+    currentTime = 1;
+    trace.start();
+    trace.putAttribute("sharedKey", "traceValue");
+    currentTime = 2;
+    trace.stop();
+    TraceMetric traceMetric = new TraceMetricBuilder(trace).build();
+
+    Assert.assertEquals(1, traceMetric.getCustomAttributesCount());
+    Assert.assertEquals("traceValue", traceMetric.getCustomAttributesMap().get("sharedKey"));
+
+    firebasePerformance.removeAttribute("sharedKey");
+  }
+
+  @Test
+  public void testGlobalAndTraceAttributesMerged() {
+    FirebasePerformance firebasePerformance = FirebasePerformance.getInstance();
+    firebasePerformance.putAttribute("globalKey", "globalValue");
+
+    Trace trace = new Trace(TRACE_1, transportManager, clock, appStateMonitor);
+    currentTime = 1;
+    trace.start();
+    trace.putAttribute("traceKey", "traceValue");
+    currentTime = 2;
+    trace.stop();
+    TraceMetric traceMetric = new TraceMetricBuilder(trace).build();
+
+    Assert.assertEquals(2, traceMetric.getCustomAttributesCount());
+    Assert.assertEquals("globalValue", traceMetric.getCustomAttributesMap().get("globalKey"));
+    Assert.assertEquals("traceValue", traceMetric.getCustomAttributesMap().get("traceKey"));
+
+    firebasePerformance.removeAttribute("globalKey");
   }
 }

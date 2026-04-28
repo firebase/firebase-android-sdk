@@ -1,5 +1,6 @@
 # Unreleased
 
+- [feature] Added support for custom attributes on built-in traces. Global attributes set via `FirebasePerformance.getInstance().putAttribute()` are now included in all built-in traces (`_app_start`, `_app_in_foreground`, `_app_in_background`, screen traces) and network requests. [#6664]
 - [changed] Bumped internal dependencies.
 
 # 22.0.4

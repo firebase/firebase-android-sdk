@@ -35,6 +35,7 @@ import androidx.lifecycle.OnLifecycleEvent;
 import androidx.lifecycle.ProcessLifecycleOwner;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.StartupTime;
+import com.google.firebase.perf.FirebasePerformance;
 import com.google.firebase.perf.config.ConfigResolver;
 import com.google.firebase.perf.logging.AndroidLogger;
 import com.google.firebase.perf.session.PerfSession;
@@ -477,6 +478,12 @@ public class AppStartTrace implements ActivityLifecycleCallbacks, LifecycleObser
     }
 
     metric.addAllSubtraces(subtraces).addPerfSessions(this.startSession.build());
+
+    try {
+      metric.putAllCustomAttributes(FirebasePerformance.getInstance().getAttributes());
+    } catch (IllegalStateException e) {
+      // FirebaseApp not initialized yet, skip global attributes
+    }
 
     transportManager.log(metric.build(), ApplicationProcessState.FOREGROUND_BACKGROUND);
   }

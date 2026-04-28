@@ -33,6 +33,7 @@ import android.app.Application;
 import android.content.Context;
 import android.os.Bundle;
 import android.view.WindowManager.LayoutParams;
+import com.google.firebase.perf.FirebasePerformance;
 import com.google.firebase.perf.FirebasePerformanceInitializer;
 import com.google.firebase.perf.FirebasePerformanceTestBase;
 import com.google.firebase.perf.config.ConfigResolver;
@@ -769,6 +770,66 @@ public class AppStateMonitorTest extends FirebasePerformanceTestBase {
     // Activity comes to Foreground
     monitor.onActivityResumed(activity1);
     verify(mockInitializer1, times(1)).onAppColdStart();
+  }
+
+  @Test
+  public void screenTrace_globalAttributesIncluded() {
+    FirebasePerformance firebasePerformance = FirebasePerformance.getInstance();
+    firebasePerformance.putAttribute("globalKey", "globalValue");
+
+    AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
+    currentTime = 1;
+    monitor.onActivityStarted(activity1);
+    currentTime = 2;
+    monitor.onActivityStopped(activity1);
+
+    verify(transportManager, times(1))
+        .log(argTraceMetric.capture(), any(ApplicationProcessState.class));
+    TraceMetric metric = argTraceMetric.getValue();
+    assertThat(metric.getName()).startsWith(Constants.SCREEN_TRACE_PREFIX);
+    assertThat(metric.getCustomAttributesMap()).containsEntry("globalKey", "globalValue");
+
+    firebasePerformance.removeAttribute("globalKey");
+  }
+
+  @Test
+  public void foregroundTrace_globalAttributesIncluded() {
+    FirebasePerformance firebasePerformance = FirebasePerformance.getInstance();
+    firebasePerformance.putAttribute("globalKey", "globalValue");
+
+    AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
+    currentTime = 1;
+    monitor.onActivityResumed(activity1);
+    currentTime = 2;
+    monitor.onActivityStopped(activity1);
+
+    verify(transportManager, times(1)).log(argTraceMetric.capture(), eq(FOREGROUND_BACKGROUND));
+    TraceMetric metric = argTraceMetric.getValue();
+    Assert.assertEquals(Constants.TraceNames.FOREGROUND_TRACE_NAME.toString(), metric.getName());
+    Assert.assertEquals("globalValue", metric.getCustomAttributesMap().get("globalKey"));
+
+    firebasePerformance.removeAttribute("globalKey");
+  }
+
+  @Test
+  public void backgroundTrace_globalAttributesIncluded() {
+    FirebasePerformance firebasePerformance = FirebasePerformance.getInstance();
+    firebasePerformance.putAttribute("globalKey", "globalValue");
+
+    AppStateMonitor monitor = new AppStateMonitor(transportManager, clock);
+    currentTime = 1;
+    monitor.onActivityResumed(activity1);
+    currentTime = 2;
+    monitor.onActivityStopped(activity1);
+    currentTime = 3;
+    monitor.onActivityResumed(activity1);
+
+    verify(transportManager, times(2)).log(argTraceMetric.capture(), eq(FOREGROUND_BACKGROUND));
+    TraceMetric metric = argTraceMetric.getValue();
+    Assert.assertEquals(Constants.TraceNames.BACKGROUND_TRACE_NAME.toString(), metric.getName());
+    Assert.assertEquals("globalValue", metric.getCustomAttributesMap().get("globalKey"));
+
+    firebasePerformance.removeAttribute("globalKey");
   }
 
   private static Activity createFakeActivity(boolean isHardwareAccelerated) {
