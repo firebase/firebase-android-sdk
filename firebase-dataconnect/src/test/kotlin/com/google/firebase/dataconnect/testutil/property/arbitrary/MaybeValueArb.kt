@@ -19,9 +19,11 @@ package com.google.firebase.dataconnect.testutil.property.arbitrary
 import com.google.firebase.dataconnect.util.MaybeValue
 import io.kotest.property.Arb
 import io.kotest.property.RandomSource
+import io.kotest.property.arbitrary.choose
 import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.map
 import io.kotest.property.asSample
+import kotlin.math.roundToInt
 
 internal fun Arb.Companion.emptyMaybeValue(): Arb<MaybeValue.Empty> = Arb.constant(MaybeValue.Empty)
 
@@ -41,7 +43,15 @@ internal fun <T> Arb.Companion.maybeValue(
 internal fun <T> Arb.Companion.maybeValue(
   nonEmptyMaybeValue: Arb<MaybeValue.Value<T>>,
   emptyProbability: Double = 0.33,
-): Arb<MaybeValue<T>> = MaybeValueArb(nonEmptyMaybeValue, emptyProbability)
+): Arb<MaybeValue<T>> {
+  val totalWeight = 1000000000
+  val emptyWeight = totalWeight * emptyProbability
+  val nonEmptyWeight = totalWeight - emptyWeight
+  return Arb.choose(
+    emptyWeight.roundToInt() to emptyMaybeValue(),
+    nonEmptyWeight.roundToInt() to nonEmptyMaybeValue,
+  )
+}
 
 @JvmName("maybeValue_Arb_Any")
 internal fun Arb.Companion.maybeValue(emptyProbability: Double = 0.33): Arb<MaybeValue<Any>> =
