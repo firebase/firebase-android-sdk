@@ -16,13 +16,17 @@
 
 package com.google.firebase.dataconnect.util
 
+import com.google.firebase.dataconnect.testutil.SuspendingCountDownLatch
 import com.google.firebase.dataconnect.testutil.property.arbitrary.SomeValueArb
+import com.google.firebase.dataconnect.testutil.property.arbitrary.hasSameValueAs
 import com.google.firebase.dataconnect.testutil.property.arbitrary.maybeValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.pair
 import com.google.firebase.dataconnect.testutil.property.arbitrary.shouldHaveSameValueAs
 import com.google.firebase.dataconnect.testutil.property.arbitrary.someValue
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
+import io.kotest.matchers.comparables.shouldBeGreaterThan
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -31,7 +35,11 @@ import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
 import io.kotest.property.ShrinkingMode
+import io.kotest.property.arbitrary.list
 import io.kotest.property.checkAll
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
@@ -183,6 +191,30 @@ class LaterValueUnitTest {
         laterValue.state.value shouldBeSameInstanceAs stateBefore
       }
     }
+
+  @Test
+  fun `set() succeeds exactly once and throws for all subsequent invocations`() = runTest {
+    checkAll(propTestConfig, Arb.list(Arb.someValue(), 2..50)) { values ->
+      val laterValue = LaterValue<Any>()
+      val latch = SuspendingCountDownLatch(values.size)
+
+      // Use a SuspendingCountDownLatch to create a "thundering herd" of coroutines calling set().
+      val jobs =
+        values.map { valueSample ->
+          backgroundScope.async(Dispatchers.Default) {
+            val value = valueSample.value
+            latch.countDown().await()
+            laterValue.runCatching { set(value) }
+          }
+        }
+      val jobResults = jobs.awaitAll()
+
+      withClue("successes") { jobResults.count { it.isSuccess } shouldBe 1 }
+      withClue("failures") { jobResults.count { it.isFailure } shouldBe jobs.size - 1 }
+      val value = laterValue.state.value.shouldBeInstanceOf<MaybeValue.Value<*>>().value
+      values.count { value.hasSameValueAs(it) } shouldBeGreaterThan 0
+    }
+  }
 }
 
 /** The configuration for property-based tests in this file. */

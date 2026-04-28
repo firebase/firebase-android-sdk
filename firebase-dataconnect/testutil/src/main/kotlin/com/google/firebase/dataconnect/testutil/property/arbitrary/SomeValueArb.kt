@@ -574,3 +574,22 @@ fun Any?.shouldHaveSameValueAs(sample: SomeValueArb.Sample?) {
     shouldHaveSameValueAs(sample.value, sample.valueCopy)
   }
 }
+
+fun Any?.hasSameValueAs(value: Any, valueCopy: () -> Any): Boolean =
+  if (valueCopy() === value) {
+    this === value
+  } else {
+    this == value
+  }
+
+@JvmName("Any_hasSameValueAs")
+fun Any.hasSameValueAs(sample: SomeValueArb.Sample): Boolean =
+  hasSameValueAs(sample.value, sample.valueCopy)
+
+@JvmName("Nullable_Any_hasSameValueAs")
+fun Any?.hasSameValueAs(sample: SomeValueArb.Sample?): Boolean =
+  if (sample === null) {
+    this === null
+  } else {
+    hasSameValueAs(sample.value, sample.valueCopy)
+  }
