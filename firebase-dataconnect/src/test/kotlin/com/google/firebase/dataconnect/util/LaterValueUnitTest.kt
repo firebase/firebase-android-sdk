@@ -16,225 +16,173 @@
 
 package com.google.firebase.dataconnect.util
 
-import com.google.firebase.dataconnect.testutil.property.arbitrary.triple
+import com.google.firebase.dataconnect.testutil.property.arbitrary.SomeValueArb
+import com.google.firebase.dataconnect.testutil.property.arbitrary.maybeValue
+import com.google.firebase.dataconnect.testutil.property.arbitrary.pair
+import com.google.firebase.dataconnect.testutil.property.arbitrary.shouldHaveSameValueAs
+import com.google.firebase.dataconnect.testutil.property.arbitrary.someValue
 import io.kotest.assertions.throwables.shouldThrow
-import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.throwable.shouldHaveMessage
+import io.kotest.matchers.types.shouldBeInstanceOf
 import io.kotest.matchers.types.shouldBeSameInstanceAs
 import io.kotest.property.Arb
 import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
-import io.kotest.property.PropertyContext
 import io.kotest.property.ShrinkingMode
-import io.kotest.property.arbitrary.map
-import io.kotest.property.arbitrary.orNull
-import io.kotest.property.arbitrary.string
 import io.kotest.property.checkAll
-import io.mockk.confirmVerified
-import io.mockk.every
-import io.mockk.mockk
-import io.mockk.verify
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
 class LaterValueUnitTest {
 
   @Test
-  fun `isSet returns false initially`() = runTest {
-    val laterValue = LaterValue<TestValue>()
+  fun `primary constructor default value is empty`() {
+    val laterValue = LaterValue<Nothing?>()
 
-    laterValue.isSet shouldBe false
+    laterValue.state.value shouldBe MaybeValue.Empty
   }
 
   @Test
-  fun `isSet returns true after set()`() = testWithNullableTestValues { value ->
-    val laterValue = LaterValue<TestValue?>()
-    laterValue.set(value)
+  fun `primary constructor populates state with the given object`() = runTest {
+    checkAll(propTestConfig, Arb.maybeValue()) { maybeValue ->
+      val laterValue = LaterValue(maybeValue)
 
-    laterValue.isSet shouldBe true
-  }
-
-  @Test
-  fun `set() throws after first invocation`() = runTest {
-    checkAll(propTestConfig, testValueArb().orNull(nullProbability = 0.33).triple()) {
-      (value1, value2, value3) ->
-      val laterValue = LaterValue<TestValue?>()
-      laterValue.set(value1)
-
-      val exception1 =
-        withClue("exception1") { shouldThrow<IllegalStateException> { laterValue.set(value2) } }
-      val exception2 =
-        withClue("exception2") { shouldThrow<IllegalStateException> { laterValue.set(value3) } }
-
-      withClue("exception1") { exception1 shouldHaveMessage "set() has already been called" }
-      withClue("exception2") { exception2 shouldHaveMessage "set() has already been called" }
+      laterValue.state.value shouldBeSameInstanceAs maybeValue
     }
   }
 
   @Test
-  fun `getOrNull() returns null initially`() = runTest {
-    val laterValue = LaterValue<TestValue>()
+  fun `primary constructor populates state with the given MaybeValue_Value(null)`() {
+    val maybeValue = MaybeValue.Value(null)
 
-    laterValue.getOrNull() shouldBe null
-  }
+    val laterValue = LaterValue(maybeValue)
 
-  @Test fun `getOrNull() returns the set value`() = testGetReturnsSetValue { getOrNull() }
-
-  @Test
-  fun `getOrThrow() throws initially`() = runTest {
-    val laterValue = LaterValue<TestValue>()
-
-    val exception = shouldThrow<IllegalStateException> { laterValue.getOrThrow() }
-
-    exception shouldHaveMessage "set() has not yet been called"
-  }
-
-  @Test fun `getOrThrow() returns the set value`() = testGetReturnsSetValue { getOrThrow() }
-
-  @Test
-  fun `toString() before set() is called`() = runTest {
-    val laterValue = LaterValue<TestValue>()
-    laterValue.toString() shouldBe "<unset>"
+    laterValue.state.value shouldBeSameInstanceAs maybeValue
   }
 
   @Test
-  fun `toString() after set() is called`() = testWithNullableTestValues { value ->
-    val laterValue = LaterValue<TestValue?>()
+  fun `set(non-null) on a LaterValue initialized with Empty succeeds`() = runTest {
+    checkAll(propTestConfig, Arb.someValue()) { value ->
+      val laterValue = LaterValue<Any>()
 
-    laterValue.set(value)
+      laterValue.set(value.value)
 
-    laterValue.toString() shouldBe value.toString()
-  }
-
-  @Test
-  fun `ifSet() before set() does not call block`() = runTest {
-    val laterValue = LaterValue<TestValue>()
-    val block: (TestValue) -> Unit = mockk(relaxed = true)
-
-    laterValue.ifSet(block)
-
-    confirmVerified(block)
-  }
-
-  @Test
-  fun `ifSet() after set() calls block`() = testWithNullableTestValues { value ->
-    val laterValue = LaterValue<TestValue?>()
-    laterValue.set(value)
-    val block: (TestValue?) -> Unit = mockk(relaxed = true)
-
-    laterValue.ifSet(block)
-
-    verify(exactly = 1) { block(value) }
-    confirmVerified(block)
-  }
-
-  @Test
-  fun `ifNotSet() before set() calls block`() = runTest {
-    val laterValue = LaterValue<TestValue>()
-    val block: () -> Unit = mockk(relaxed = true)
-
-    laterValue.ifNotSet(block)
-
-    verify(exactly = 1) { block() }
-    confirmVerified(block)
-  }
-
-  @Test
-  fun `ifNotSet() after set() does not call block`() = testWithNullableTestValues { value ->
-    val laterValue = LaterValue<TestValue?>()
-    laterValue.set(value)
-    val block: () -> Unit = mockk(relaxed = true)
-
-    laterValue.ifNotSet(block)
-
-    confirmVerified(block)
-  }
-
-  @Test
-  fun `getOrElse() before set() calls the block`() = testWithNullableTestValues { value ->
-    val laterValue = LaterValue<TestValue?>()
-    val block: () -> TestValue? = mockk { every { this@mockk() } returns value }
-
-    laterValue.getOrElse(block)
-
-    verify(exactly = 1) { block() }
-  }
-
-  @Test
-  fun `getOrElse() after set() does not call the block`() = testWithNullableTestValues { value ->
-    val laterValue = LaterValue<TestValue?>()
-    laterValue.set(value)
-    val block: () -> TestValue? = mockk(relaxed = true)
-
-    laterValue.getOrElse(block)
-
-    confirmVerified(block)
-  }
-
-  @Test
-  fun `getOrElse() before set() returns the value returned from the block`() =
-    testWithNullableTestValues { value ->
-      val laterValue = LaterValue<TestValue?>()
-      val block: () -> TestValue? = mockk { every { this@mockk() } returns value }
-
-      val result = laterValue.getOrElse(block)
-
-      result shouldBeSameInstanceAs value
+      laterValue.state.value.shouldBeValueFromSample(value)
     }
+  }
 
   @Test
-  fun `getOrElse() after set() returns the receiver's value`() =
-    testWithNullableTestValues { value ->
-      val laterValue = LaterValue<TestValue?>()
+  fun `set(null) on a LaterValue initialized with Empty succeeds`() {
+    val laterValue = LaterValue<Nothing?>()
+
+    laterValue.set(null)
+
+    laterValue.state.value.shouldBeInstanceOf<MaybeValue.Value<*>>().value.shouldBeNull()
+  }
+
+  @Test
+  fun `set(non-null) on a LaterValue initialized with Value(non-null) throws`() = runTest {
+    checkAll(propTestConfig, Arb.someValue().pair()) { (value1, value2) ->
+      val laterValue = LaterValue(MaybeValue.Value(value1.value))
+      val stateBefore = laterValue.state.value
+
+      shouldThrow<IllegalStateException> { laterValue.set(value2.value) }
+      laterValue.state.value shouldBeSameInstanceAs stateBefore
+    }
+  }
+
+  @Test
+  fun `set(null) on a LaterValue initialized with Value(non-null) throws`() = runTest {
+    checkAll(propTestConfig, Arb.someValue()) { value ->
+      val laterValue = LaterValue(MaybeValue.Value<Any?>(value.value))
+      val stateBefore = laterValue.state.value
+
+      shouldThrow<IllegalStateException> { laterValue.set(null) }
+      laterValue.state.value shouldBeSameInstanceAs stateBefore
+    }
+  }
+
+  @Test
+  fun `set(non-null) on a LaterValue initialized with Value(null) throws`() = runTest {
+    checkAll(propTestConfig, Arb.someValue()) { value ->
+      val laterValue = LaterValue<Any?>(MaybeValue.Value(null))
+      val stateBefore = laterValue.state.value
+
+      shouldThrow<IllegalStateException> { laterValue.set(value.value) }
+      laterValue.state.value shouldBeSameInstanceAs stateBefore
+    }
+  }
+
+  @Test
+  fun `set(null) on a LaterValue initialized with Value(null) throws`() {
+    val laterValue = LaterValue<Any?>(MaybeValue.Value(null))
+    val stateBefore = laterValue.state.value
+
+    shouldThrow<IllegalStateException> { laterValue.set(null) }
+    laterValue.state.value shouldBeSameInstanceAs stateBefore
+  }
+
+  @Test
+  fun `set(null) on a LaterValue initialized with Empty then set to null throws`() {
+    val laterValue = LaterValue<Any?>()
+    laterValue.set(null)
+    val stateBefore = laterValue.state.value
+
+    shouldThrow<IllegalStateException> { laterValue.set(null) }
+    laterValue.state.value shouldBeSameInstanceAs stateBefore
+  }
+
+  @Test
+  fun `set(null) on a LaterValue initialized with Empty then set to non-null throws`() = runTest {
+    checkAll(propTestConfig, Arb.someValue()) { (value) ->
+      val laterValue = LaterValue<Any?>()
       laterValue.set(value)
-      val block: () -> TestValue? = mockk(relaxed = true)
+      val stateBefore = laterValue.state.value
 
-      val result = laterValue.getOrElse(block)
+      shouldThrow<IllegalStateException> { laterValue.set(null) }
+      laterValue.state.value shouldBeSameInstanceAs stateBefore
+    }
+  }
 
-      result shouldBeSameInstanceAs value
+  @Test
+  fun `set(non-null) on a LaterValue initialized with Empty then set to null throws`() = runTest {
+    checkAll(propTestConfig, Arb.someValue()) { (value) ->
+      val laterValue = LaterValue<Any?>()
+      laterValue.set(null)
+      val stateBefore = laterValue.state.value
+
+      shouldThrow<IllegalStateException> { laterValue.set(value) }
+      laterValue.state.value shouldBeSameInstanceAs stateBefore
+    }
+  }
+
+  @Test
+  fun `set(non-null) on a LaterValue initialized with Empty then set to non-null throws`() =
+    runTest {
+      checkAll(propTestConfig, Arb.someValue().pair()) { (value1, value2) ->
+        val laterValue = LaterValue<Any>()
+        laterValue.set(value1.value)
+        val stateBefore = laterValue.state.value
+
+        shouldThrow<IllegalStateException> { laterValue.set(value2.value) }
+        laterValue.state.value shouldBeSameInstanceAs stateBefore
+      }
     }
 
-  /**
-   * A simple data class used as a test value to verify referential integrity and basic operations.
-   */
-  private data class TestValue(val value: String)
-
-  private companion object {
-
-    /**
-     * Creates and returns an [Arb] that generates [TestValue] instances.
-     *
-     * @param string The [Arb] used to generate the underlying string values.
-     */
-    fun testValueArb(string: Arb<String> = Arb.string()): Arb<TestValue> = string.map(::TestValue)
-
-    /**
-     * Runs a property-based test with nullable [TestValue] instances.
-     *
-     * @param property The property test logic to execute.
-     */
-    fun testWithNullableTestValues(property: suspend PropertyContext.(TestValue?) -> Unit) =
-      runTest {
-        checkAll(propTestConfig, testValueArb().orNull(nullProbability = 0.2), property)
-      }
-
-    /**
-     * Verifies that the given [block] correctly returns the value that was set on the [LaterValue].
-     *
-     * @param T The type of the value.
-     * @param block A lambda that retrieves the value from the [LaterValue].
-     */
-    fun <T : TestValue?> testGetReturnsSetValue(block: LaterValue<TestValue?>.() -> T) =
-      testWithNullableTestValues { value ->
-        val laterValue = LaterValue<TestValue?>()
-
+  @Test
+  fun `set(non-null) on a LaterValue initialized with Empty then set to the same value throws`() =
+    runTest {
+      checkAll(propTestConfig, Arb.someValue()) { (value) ->
+        val laterValue = LaterValue<Any>()
         laterValue.set(value)
+        val stateBefore = laterValue.state.value
 
-        block(laterValue) shouldBeSameInstanceAs value
+        shouldThrow<IllegalStateException> { laterValue.set(value) }
+        laterValue.state.value shouldBeSameInstanceAs stateBefore
       }
-  }
+    }
 }
 
 /** The configuration for property-based tests in this file. */
@@ -245,3 +193,7 @@ private val propTestConfig =
     edgeConfig = EdgeConfig(edgecasesGenerationProbability = 0.2),
     shrinkingMode = ShrinkingMode.Off,
   )
+
+private fun MaybeValue<*>.shouldBeValueFromSample(sample: SomeValueArb.Sample) {
+  shouldBeInstanceOf<MaybeValue.Value<*>>().value.shouldHaveSameValueAs(sample)
+}
