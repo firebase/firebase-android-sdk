@@ -275,11 +275,7 @@ class LiveSessionTests {
 
   @Test
   fun testResumption(): Unit = runBlocking {
-    val liveModel =
-      getLiveModel(
-        modelName = modelName,
-        config = generationConfig
-      )
+    val liveModel = getLiveModel(modelName = modelName, config = generationConfig)
     val session = liveModel.connect(SessionResumptionConfig())
     session.send("My favorite color is blue. Remember that.", true)
     var lastResumptionUpdate: LiveSessionResumptionUpdate? = null
