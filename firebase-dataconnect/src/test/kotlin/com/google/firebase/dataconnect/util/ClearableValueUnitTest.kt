@@ -24,6 +24,7 @@ import com.google.firebase.dataconnect.testutil.BlockThrowingWithParameter
 import com.google.firebase.dataconnect.testutil.BlockWithParameter
 import com.google.firebase.dataconnect.testutil.SuspendingCountDownLatch
 import com.google.firebase.dataconnect.testutil.property.arbitrary.SomeValueArb
+import com.google.firebase.dataconnect.testutil.property.arbitrary.distinctPair
 import com.google.firebase.dataconnect.testutil.property.arbitrary.hasSameValueAs
 import com.google.firebase.dataconnect.testutil.property.arbitrary.maybeValue
 import com.google.firebase.dataconnect.testutil.property.arbitrary.nonEmptyMaybeValue
@@ -349,6 +350,81 @@ class ClearableValueUnitTest {
 
     result.shouldBeNull()
     block.callCount shouldBe 0
+  }
+
+  // endregion
+
+  // region Tests for ClearableValue.clearOrElse()
+
+  @Test
+  fun `clearOrElse() when cleared`() = runTest {
+    checkAll(propTestConfig, Arb.someValue().orNull(nullProbability = 0.3)) { value ->
+      val clearableValue = ClearableValue(MaybeValue.Empty)
+      val block = BlockReturning(value?.value)
+
+      val result = clearableValue.clearOrElse(block)
+
+      result.shouldHaveSameValueAs(value)
+      block.callCount shouldBe 1
+      clearableValue.isCleared shouldBe true
+    }
+  }
+
+  @Test
+  fun `clearOrElse() when value is non-null`() = runTest {
+    checkAll(propTestConfig, Arb.someValue()) { value ->
+      val clearableValue = ClearableValue(value.value)
+      val block = BlockThrowing("block should not be called [kc2vpc2xt9]")
+
+      val result = clearableValue.clearOrElse(block)
+
+      result.shouldHaveSameValueAs(value)
+      block.callCount shouldBe 0
+      clearableValue.isCleared shouldBe true
+    }
+  }
+
+  @Test
+  fun `clearOrElse() when value is null`() {
+    val clearableValue = ClearableValue(null)
+    val block = BlockThrowing("block should not be called [vrnv85ea7m]")
+
+    val result = clearableValue.clearOrElse(block)
+
+    result.shouldBeNull()
+    block.callCount shouldBe 0
+    clearableValue.isCleared shouldBe true
+  }
+
+  @Test
+  fun `clearOrElse() concurrent calls`() = runTest {
+    val someNullableValuePairArb =
+      Arb.someValue().orNull(nullProbability = 0.3).distinctPair { sample1, sample2 ->
+        sample1?.value.hasSameValueAs(sample2)
+      }
+    checkAll(
+      propTestConfig,
+      someNullableValuePairArb,
+    ) { (initialValue, blockReturnValue) ->
+      val clearableValue = ClearableValue(MaybeValue.Value(initialValue?.value))
+      val latch = SuspendingCountDownLatch(50)
+      val block = BlockReturning(blockReturnValue?.value)
+
+      val jobs =
+        (1..50).map {
+          backgroundScope.async(Dispatchers.Default) {
+            latch.countDown().await()
+            clearableValue.clearOrElse(block)
+          }
+        }
+      val jobResults = jobs.awaitAll()
+
+      withClue("successes") { jobResults.count { it.hasSameValueAs(initialValue) } shouldBe 1 }
+      withClue("failures") {
+        jobResults.count { it.hasSameValueAs(blockReturnValue) } shouldBe jobs.size - 1
+      }
+      clearableValue.state.value shouldBe MaybeValue.Empty
+    }
   }
 
   // endregion

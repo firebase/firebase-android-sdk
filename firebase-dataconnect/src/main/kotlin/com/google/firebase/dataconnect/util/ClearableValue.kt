@@ -159,6 +159,30 @@ internal inline fun <T> ClearableValue<T>.getOrElse(block: () -> T): T {
 }
 
 /**
+ * Clears the receiver's value if the receiver is not in the "cleared" state according to
+ * [isCleared], returning the receiver's value, or the return value of [block] if the receiver _was_
+ * in the "cleared" state.
+ *
+ * This function is identical to [getOrElse] except that it _also_ atomically clears the receiver's
+ * value. If many threads are calling this method on a receiver that is _not_ in the "cleared" state
+ * then exactly one of those calls will get the receiver's value and the rest will have their
+ * [block] called.
+ *
+ * When this function returns the receiver is guaranteed to be in the "cleared" state.
+ *
+ * @param block the block to call, and whose return value to return, if, and only if, the receiver
+ * is in the "cleared" state; if called, the block will be called in-place exactly once.
+ */
+@OptIn(ExperimentalContracts::class)
+internal inline fun <T> ClearableValue<T>.clearOrElse(block: () -> T): T {
+  contract { callsInPlace(block, InvocationKind.AT_MOST_ONCE) }
+  return when (val oldValue = clear()) {
+    MaybeValue.Empty -> block()
+    is MaybeValue.Value -> oldValue.value
+  }
+}
+
+/**
  * Calls the given [block] if, and only if, the receiver is in the "cleared" state according to
  * [isCleared].
  *
