@@ -30,6 +30,7 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.nonEmptyMaybe
 import com.google.firebase.dataconnect.testutil.property.arbitrary.shouldHaveSameValueAs
 import com.google.firebase.dataconnect.testutil.property.arbitrary.someValue
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactly
@@ -88,8 +89,9 @@ class ClearableValueUnitTest {
   fun `clear() when initialized with Empty`() {
     val clearableValue = ClearableValue(MaybeValue.Empty)
 
-    clearableValue.clear()
+    val result = clearableValue.clear()
 
+    result shouldBe MaybeValue.Empty
     clearableValue.state.value shouldBe MaybeValue.Empty
   }
 
@@ -98,8 +100,9 @@ class ClearableValueUnitTest {
     checkAll(propTestConfig, Arb.nonEmptyMaybeValue()) { maybeValue ->
       val clearableValue = ClearableValue(maybeValue)
 
-      clearableValue.clear()
+      val result = clearableValue.clear()
 
+      result shouldBeSameInstanceAs maybeValue
       clearableValue.state.value shouldBe MaybeValue.Empty
     }
   }
@@ -107,9 +110,11 @@ class ClearableValueUnitTest {
   @Test
   fun `clear() when initialized with Value(null)`() {
     val clearableValue = ClearableValue(null)
+    val stateBefore = clearableValue.state.value
 
-    clearableValue.clear()
+    val result = clearableValue.clear()
 
+    result shouldBeSameInstanceAs stateBefore
     clearableValue.state.value shouldBe MaybeValue.Empty
   }
 
@@ -121,9 +126,18 @@ class ClearableValueUnitTest {
     ) { maybeValue ->
       val clearableValue = ClearableValue(maybeValue)
 
-      repeat(10) {
-        clearableValue.clear()
-        clearableValue.state.value shouldBe MaybeValue.Empty
+      val clearResults =
+        List(10) {
+          val clearResult = clearableValue.clear()
+          clearableValue.state.value shouldBe MaybeValue.Empty
+          clearResult
+        }
+
+      clearResults[0] shouldBeSameInstanceAs maybeValue
+      clearResults.forEachIndexed { index, clearResult ->
+        if (index > 0) {
+          withClue("index=$index") { clearResult shouldBe MaybeValue.Empty }
+        }
       }
     }
   }
@@ -144,8 +158,10 @@ class ClearableValueUnitTest {
             clearableValue.clear()
           }
         }
-      jobs.awaitAll()
+      val jobResults = jobs.awaitAll()
 
+      withClue("successes") { jobResults.count { it === maybeValue } shouldBe 1 }
+      withClue("failures") { jobResults.count { it == MaybeValue.Empty } shouldBe jobs.size - 1 }
       clearableValue.state.value shouldBe MaybeValue.Empty
     }
   }

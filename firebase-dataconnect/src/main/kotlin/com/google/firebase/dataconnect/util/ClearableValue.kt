@@ -22,6 +22,7 @@ import kotlin.contracts.contract
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.getAndUpdate
 
 /**
  * A thread-safe container for a value that can be cleared.
@@ -53,7 +54,7 @@ internal class ClearableValue<out T>(initialValue: MaybeValue<T>) {
    */
   constructor(initialValue: T) : this(MaybeValue.Value(initialValue))
 
-  private val _state = MutableStateFlow(initialValue)
+  private val _state = MutableStateFlow<MaybeValue<T>>(initialValue)
 
   /**
    * The current state of this object, either [MaybeValue.Empty] or the [MaybeValue.Value] that was
@@ -84,10 +85,14 @@ internal class ClearableValue<out T>(initialValue: MaybeValue<T>) {
    *
    * This method may be called multiple times. Subsequent invocations have no effect and return as
    * if successful.
+   *
+   * @return the old value of [state]; will be an instance of [MaybeValue.Value] if this specific
+   * invocation of [clear] caused the state to transition to the "cleared" state; otherwise, will be
+   * [MaybeValue.Empty] if some other call caused the state to transition to the "cleared" state; at
+   * most one invocation of this method on a given instance will return a [MaybeValue.Value] object,
+   * with all others returning [MaybeValue.Empty].
    */
-  fun clear() {
-    _state.value = MaybeValue.Empty
-  }
+  fun clear(): MaybeValue<T> = _state.getAndUpdate { MaybeValue.Empty }
 
   /**
    * Generates and returns a string representation of this object.

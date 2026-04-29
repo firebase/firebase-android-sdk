@@ -42,7 +42,7 @@ import kotlinx.coroutines.flow.asStateFlow
  */
 internal class LaterValue<T>(initialValue: MaybeValue<T> = MaybeValue.Empty) {
 
-  private val _state = MutableStateFlow(initialValue)
+  private val _state = MutableStateFlow<MaybeValue<T>>(initialValue)
 
   /**
    * The current state of this object: either [MaybeValue.Empty] or the [MaybeValue.Value] that was
