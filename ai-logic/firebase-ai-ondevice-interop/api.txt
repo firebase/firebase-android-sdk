@@ -36,7 +36,8 @@ package com.google.firebase.ai.ondevice.interop {
   }
 
   public interface FirebaseAIOnDeviceGenerativeModelFactory {
-    method public com.google.firebase.ai.ondevice.interop.GenerativeModel newGenerativeModel();
+    method @Deprecated public com.google.firebase.ai.ondevice.interop.GenerativeModel newGenerativeModel();
+    method public com.google.firebase.ai.ondevice.interop.GenerativeModel newGenerativeModel(com.google.firebase.ai.ondevice.interop.GenerationConfig? generationConfig);
   }
 
   public final class FirebaseAIOnDeviceInvalidRequestException extends com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceException {
@@ -75,6 +76,12 @@ package com.google.firebase.ai.ondevice.interop {
     property public final java.util.List<com.google.firebase.ai.ondevice.interop.Candidate> candidates;
   }
 
+  public final class GenerationConfig {
+    ctor public GenerationConfig(com.google.firebase.ai.ondevice.interop.ModelConfig modelConfig);
+    method public com.google.firebase.ai.ondevice.interop.ModelConfig getModelConfig();
+    property public final com.google.firebase.ai.ondevice.interop.ModelConfig modelConfig;
+  }
+
   public interface GenerativeModel {
     method public suspend Object? countTokens(com.google.firebase.ai.ondevice.interop.GenerateContentRequest request, kotlin.coroutines.Continuation<? super com.google.firebase.ai.ondevice.interop.CountTokensResponse>);
     method public suspend Object? generateContent(com.google.firebase.ai.ondevice.interop.GenerateContentRequest request, kotlin.coroutines.Continuation<? super com.google.firebase.ai.ondevice.interop.GenerateContentResponse>);
@@ -89,6 +96,24 @@ package com.google.firebase.ai.ondevice.interop {
     ctor public ImagePart(android.graphics.Bitmap bitmap);
     method public android.graphics.Bitmap getBitmap();
     property public final android.graphics.Bitmap bitmap;
+  }
+
+  public final class ModelConfig {
+    ctor public ModelConfig(com.google.firebase.ai.ondevice.interop.ModelReleaseStage releaseStage = com.google.firebase.ai.ondevice.interop.ModelReleaseStage.STABLE, com.google.firebase.ai.ondevice.interop.ModelPreference preference = com.google.firebase.ai.ondevice.interop.ModelPreference.FULL);
+    method public com.google.firebase.ai.ondevice.interop.ModelPreference getPreference();
+    method public com.google.firebase.ai.ondevice.interop.ModelReleaseStage getReleaseStage();
+    property public final com.google.firebase.ai.ondevice.interop.ModelPreference preference;
+    property public final com.google.firebase.ai.ondevice.interop.ModelReleaseStage releaseStage;
+  }
+
+  public enum ModelPreference {
+    enum_constant public static final com.google.firebase.ai.ondevice.interop.ModelPreference FAST;
+    enum_constant public static final com.google.firebase.ai.ondevice.interop.ModelPreference FULL;
+  }
+
+  public enum ModelReleaseStage {
+    enum_constant public static final com.google.firebase.ai.ondevice.interop.ModelReleaseStage PREVIEW;
+    enum_constant public static final com.google.firebase.ai.ondevice.interop.ModelReleaseStage STABLE;
   }
 
   public interface Part {

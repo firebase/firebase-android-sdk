@@ -18,8 +18,13 @@ package com.google.firebase.ai.ondevice
 
 import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceException
 import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceUnknownException
+import com.google.firebase.ai.ondevice.interop.GenerationConfig
 import com.google.mlkit.genai.common.FeatureStatus
 import com.google.mlkit.genai.prompt.Generation
+import com.google.mlkit.genai.prompt.ModelPreference as MlKitModelPreference
+import com.google.mlkit.genai.prompt.ModelReleaseStage as MlKitModelReleaseStage
+import com.google.mlkit.genai.prompt.generationConfig
+import com.google.mlkit.genai.prompt.modelConfig
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -33,10 +38,13 @@ public object FirebaseAIOnDevice {
   /**
    * Checks the current status / availability of the on-device AI model.
    *
+   * @param option The configuration option for the model.
    * @return An [OnDeviceModelStatus] object indicating the current state of the model.
    */
-  public suspend fun checkStatus(): OnDeviceModelStatus {
-    return OnDeviceModelStatus.fromFeatureStatus(Generation.getClient().checkStatus())
+  public suspend fun checkStatus(option: OnDeviceModelOption): OnDeviceModelStatus {
+    return OnDeviceModelStatus.fromFeatureStatus(
+      Generation.getClient(option.toMlKit()).checkStatus()
+    )
   }
 
   /**
@@ -46,11 +54,50 @@ public object FirebaseAIOnDevice {
    * Consumers should collect the flow to start the download process, and optionally process any
    * updates on the download state, progress, and completion or failure.
    *
+   * @param option The configuration option for the model.
    * @return A [Flow] of [DownloadStatus] objects representing the download lifecycle.
    */
-  public fun download(): Flow<DownloadStatus> =
-    Generation.getClient().download().map { DownloadStatus.fromMlKit(it) }
+  public fun download(option: OnDeviceModelOption): Flow<DownloadStatus> {
+    return Generation.getClient(option.toMlKit()).download().map { DownloadStatus.fromMlKit(it) }
+  }
 }
+
+/** Options for configuring the on-device AI model. */
+public class OnDeviceModelOption private constructor(private val value: String) {
+  override fun toString(): String = value
+
+  public companion object {
+    /** Selects the latest stable model. */
+    @JvmField public val STABLE: OnDeviceModelOption = OnDeviceModelOption("stable")
+
+    /** Selects the latest preview model with full performance. */
+    @JvmField public val PREVIEW: OnDeviceModelOption = OnDeviceModelOption("preview")
+
+    /** Selects the latest preview model optimized for speed. */
+    @JvmField public val PREVIEW_FAST: OnDeviceModelOption = OnDeviceModelOption("preview_fast")
+  }
+}
+
+internal fun OnDeviceModelOption.toMlKit(): com.google.mlkit.genai.prompt.GenerationConfig =
+  generationConfig {
+    modelConfig = modelConfig {
+      when (this@toMlKit) {
+        OnDeviceModelOption.STABLE -> {
+          releaseStage = MlKitModelReleaseStage.STABLE
+          preference = MlKitModelPreference.FULL
+        }
+        OnDeviceModelOption.PREVIEW -> {
+          releaseStage = MlKitModelReleaseStage.PREVIEW
+          preference = MlKitModelPreference.FULL
+        }
+        OnDeviceModelOption.PREVIEW_FAST -> {
+          releaseStage = MlKitModelReleaseStage.PREVIEW
+          preference = MlKitModelPreference.FAST
+        }
+        else -> throw IllegalArgumentException("Unknown option: ${this@toMlKit}")
+      }
+    }
+  }
 
 /** Represents the current status of the on-device AI model. */
 public class OnDeviceModelStatus private constructor(private val status: Int) {
