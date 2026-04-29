@@ -1,0 +1,250 @@
+{
+    "changesByLibraryName": {
+        "firebase-config": [
+            {
+                "commitId": "d40d90b652489115144b36f6481bb64d42aa4b38",
+                "prId": "8002",
+                "author": "Athira M",
+                "message": "Detect changes in AB Testing (ABT) experiment metadata during config fetch (#8002)\n\nUpdated to detect changes in AB Testing (ABT) experiment metadata. This\nensures that if an experiment's variant or affected parameter keys\nchange, the associated config keys are correctly identified as changed,\neven if the parameter values remain the same.\n\nKey changes:\n- Added  constant to .\n- Implemented in to map affected config keys to their respective\nexperiment descriptions.\n- Modified  to compare experiment metadata for each config key.\n- Updated  with cases for changed, deleted, and key-shifted experiments.\n\nValidation:\n- Adding an experiment with 100% exposure assigns user to a variant\n- Updating exposure to 0% returns default value to user\n- Updating exposure back to 100% returns the previously assigned variant\n- Updating the variant value returns the new value to user\n\nTesting on sample Android app:\n[Link](https://screencast.googleplex.com/cast/NTQ0NzUyNTU4NTY0OTY2NHwxOWRlY2VkNi1kYw)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/d40d90b652489115144b36f6481bb64d42aa4b38",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8002"
+            }
+        ],
+        "firebase-dataconnect": [
+            {
+                "commitId": "3cebbd9e116dc14d425f71bb8975b681c27f0b64",
+                "prId": "8073",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: fix CHANGELOG entries incorrectly moved to 17.2.1 header by PR #8070 (m179 mergeback) (#8073)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/3cebbd9e116dc14d425f71bb8975b681c27f0b64",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8073"
+            },
+            {
+                "commitId": "8b65c208d2c638d482ada65f34653b1f1aaa6b19",
+                "prId": "8057",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: ci: upgrade data connect emulator to 3.4.5 (was 3.3.13) and firebase-tools to 15.15.0 (was 15.13.0) (#8057)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/8b65c208d2c638d482ada65f34653b1f1aaa6b19",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8057"
+            },
+            {
+                "commitId": "554fe26a4f0c71ace1f707fc1c62c11a401c29ed",
+                "prId": "8027",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(chore): use token objects instead of strings to improve type safety (#8027)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/554fe26a4f0c71ace1f707fc1c62c11a401c29ed",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8027"
+            },
+            {
+                "commitId": "6dc16c6ed78c1a495538d242a9685ea5b181272f",
+                "prId": "8026",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect: ci: upgrade data connect emulator to 3.3.13 (was 3.3.1) and firebase-tools to 15.13.0 (was 15.12.0) (#8026)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/6dc16c6ed78c1a495538d242a9685ea5b181272f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8026"
+            },
+            {
+                "commitId": "1a32c9cbda003bb81e83f09bd623b8ee3abab73d",
+                "prId": "8025",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(change): internal refactor of connectorResourceName variable names (#8025)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/1a32c9cbda003bb81e83f09bd623b8ee3abab73d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8025"
+            },
+            {
+                "commitId": "7cf6ce93ffd9281b7f298c2feb0823fc2ddcdedf",
+                "prId": "8024",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(change): refactor toCompactString() for future code reuse (#8024)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7cf6ce93ffd9281b7f298c2feb0823fc2ddcdedf",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8024"
+            },
+            {
+                "commitId": "7a7408bd19439756fcb0c159a9e386e4d3ffb91d",
+                "prId": "8023",
+                "author": "Denver Coneybeare",
+                "message": "dataconnect(test): fix test flakiness in AuthIntegrationTest.kt (#8023)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7a7408bd19439756fcb0c159a9e386e4d3ffb91d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8023"
+            }
+        ],
+        "firebase-firestore": [
+            {
+                "commitId": "b78f1c6797991420e9ce739383cbc828f1911786",
+                "prId": "8066",
+                "author": "Mark Duckworth",
+                "message": "feat(firestore): Added search stage support for languageCode, offset, limit, and retrievalDepth (#8066)\n\nCo-authored-by: gemini-code-assist[bot] <176961590+gemini-code-assist[bot]@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/b78f1c6797991420e9ce739383cbc828f1911786",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8066"
+            },
+            {
+                "commitId": "e163a9b90f0977cc522af4796f9ed4646aced4df",
+                "prId": "8036",
+                "author": "Daniel La Rocque",
+                "message": "test(firestore): Add tests for `forceIndex` with `\"primary\"` (#8036)\n\nAdds tests for `forceIndex` that use the `\"primary\"` index.\nThere was already a test that validates that `forceIndex` is passed to\nthe backend.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/e163a9b90f0977cc522af4796f9ed4646aced4df",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8036"
+            },
+            {
+                "commitId": "2eca2cfea6a4274ecbc539682f52cebf0c372220",
+                "prId": "7989",
+                "author": "Mila",
+                "message": "feat(firestore): add array expressions (#7989)",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/2eca2cfea6a4274ecbc539682f52cebf0c372220",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7989"
+            },
+            {
+                "commitId": "619471e4ad64af4e7e26a90e696c97feed9f0dd8",
+                "prId": "8017",
+                "author": "wu-hui",
+                "message": "docs: improve Pipeline API documentation formatting (#8017)\n\n- Replace HTML tags with Markdown in class-level docs\n- Add 'kotlin' language tag to code snippets\n- Convert Java-style examples to idiomatic Kotlin (remove 'new' and\nsemicolons)\n- Fix incorrect language tags for JSON output blocks",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/619471e4ad64af4e7e26a90e696c97feed9f0dd8",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8017"
+            }
+        ],
+        "firebase-messaging": [
+            {
+                "commitId": "b396cfbf2fcb564733ede73f06501429caaa5506",
+                "prId": "8068",
+                "author": "Xiaohe Gong",
+                "message": "[FCM] Fix ANR in SharedPreferencesQueue by reducing lock contention (#8068)\n\nChange `SharedPreferences.Editor.commit()` to `apply()` in\n`SharedPreferencesQueue.syncState()`.\n  \nPreviously, the synchronized block held the lock while performing a\nsynchronous `commit()`, which could block the background thread on disk\nI/O. If the main thread attempted to access the queue (e.g., in\n`add()`), it would block waiting for the lock, leading to ANRs.\n  \nBy switching to `apply()`, the operation updates the in-memory\nSharedPreferences immediately and schedules the disk write\nasynchronously. This avoids blocking on disk I/O while holding the lock,\nsignificantly reducing lock contention and preventing ANRs. Keeping it\ninside the synchronized block ensures that updates are applied in the\ncorrect order even if called from multiple threads.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/b396cfbf2fcb564733ede73f06501429caaa5506",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8068"
+            }
+        ],
+        "firebase-messaging-directboot": [],
+        "firebase-crashlytics": [],
+        "firebase-crashlytics-ndk": [],
+        "firebase-sessions": [
+            {
+                "commitId": "7f0a4f27c94b34f23dc35c8fe056170171be2ace",
+                "prId": "7996",
+                "author": "Joseph Rodiz",
+                "message": "Replace Mutex with CountDownLatch to fix ANR on cold start (#7996)\n\n**Summary**\n- Fix ANR during cold start on budget devices (Realme, Vivo) caused by\nCrashlyticsRegistrar.<clinit> eagerly\nloading the entire kotlinx.coroutines synchronization infrastructure on\nthe main thread\n- Replace kotlinx.coroutines.sync.Mutex with\njava.util.concurrent.CountDownLatch in\nFirebaseSessionsDependencies — a JVM primitive with zero class-loading\noverhead and identical one-shot gate\n  semantics       \n- Update test to use runBlocking for real-time timeout behavior with the\nblocking CountDownLatch.await() call\n**Problem\n#7882(https://github.com/firebase/firebase-android-sdk/issues/7882)**\nWhen ComponentDiscovery loads CrashlyticsRegistrar via Class.forName()\non the main thread, the static block\ncalls FirebaseSessionsDependencies.addDependency(), which creates a\nMutex(locked = true). This cascades into\nloading ~10 coroutines classes (SemaphoreAndMutexImpl, SemaphoreSegment,\nConcurrentLinkedListNode,\nSystemPropsKt, etc.) via <clinit> chains — all before\nApplication.onCreate(). On budget devices where APK\n  class loading is slow, this **may** exceed the ANR timeout.\n\n  **Fix**\nThe Mutex was only used as a one-shot gate (create locked, unlock once\nwhen registered, waiters proceed).\nCountDownLatch(1) provides the exact same semantics as a JVM bootstrap\nclass with no additional class loading.\nrunInterruptible { latch.await() } preserves suspend/cancellation\nsupport in getRegisteredSubscribers().\n\nI have also added a test cases representing the times to load both\napproaches, here's the result\n\n```\n=== Mutex class-loading cascade (from ANR stack traces) ===\nClasses loaded when calling Mutex(locked=true):\n  loaded kotlinx.coroutines.sync.Mutex (493us)\n  loaded kotlinx.coroutines.sync.MutexImpl (4319us)\n  loaded kotlinx.coroutines.sync.SemaphoreAndMutexImpl (2us)\n  loaded kotlinx.coroutines.sync.SemaphoreSegment (1544us)\n  loaded kotlinx.coroutines.sync.SemaphoreKt (1392us)\n  loaded kotlinx.coroutines.internal.ConcurrentLinkedListNode (2us)\n  loaded kotlinx.coroutines.internal.ConcurrentLinkedListKt (673us)\n  loaded kotlinx.coroutines.internal.Segment (1us)\n  loaded kotlinx.coroutines.internal.SystemPropsKt (1us)\n  loaded kotlinx.coroutines.internal.SystemPropsKt__SystemPropsKt (1us)\nMutex total: 8431us for 10 classes\n\n=== CountDownLatch class-loading (fix) ===\nCountDownLatch is a JDK bootstrap class — already loaded by the VM.\nCreating CountDownLatch(1) triggers ZERO additional class loading.\n\n=== Actual construction timing ===\nMutex(locked=true): 1591us\nCountDownLatch(1): 2us\n\n=== Functional equivalence ===\nMutex.isLocked = true\nCountDownLatch.count = 1\nAfter unlock/countDown:\nMutex.isLocked = false\nCountDownLatch.count = 0\n\n=== Impact on budget devices ===\nMutex loads 10 classes via <clinit> chain.\nCountDownLatch loads 0 additional classes.\nOn budget Realme/Vivo devices, class loading from APK is 10-100x slower.\nThe Mutex cascade during CrashlyticsRegistrar.<clinit> pushes past the ANR timeout.\n```",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7f0a4f27c94b34f23dc35c8fe056170171be2ace",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7996"
+            }
+        ],
+        "ai-logic/firebase-ai": [
+            {
+                "commitId": "25e26e06189b55b9b921ecb78ae9ca34e511a626",
+                "prId": "8043",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Add configurable model generation for AI On-Device  (#8043)\n\nIntroduced `GenerationConfig`, `ModelConfig`, `ModelReleaseStage`, and\n`ModelPreference` to `firebase-ai-ondevice-interop` to allow for\nconfigurable model selection.\n\nUpdated the internal `genaiPrompt` dependency to `1.0.0-beta2` to\nsupport the new configuration options.\n\nDeprecated the parameter-less\n`FirebaseAIOnDeviceGenerativeModelFactory.newGenerativeModel()` method\nin favor of a new overload that accepts a `GenerationConfig`.\n\n---------\n\nCo-authored-by: gemini-code-assist[bot] <176961590+gemini-code-assist[bot]@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/25e26e06189b55b9b921ecb78ae9ca34e511a626",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8043"
+            },
+            {
+                "commitId": "2ce20e452bba7f6a41cc1f6637448824354b545d",
+                "prId": "8020",
+                "author": "Paul Beusterien",
+                "message": "[AI] ImageConfig and FinishReasons (#8020)\n\nReplicating changes from iOS SDK for ImageConfig, finishMessage in\nreponse and expanded FinishReasons.\n\nSuccessor PR to #7424 from @thatfiredev\n\n---------\n\nCo-authored-by: Mila <107142260+milaGGL@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/2ce20e452bba7f6a41cc1f6637448824354b545d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8020"
+            },
+            {
+                "commitId": "5742b348e00b23f23b1ffb55d174726ac241a7e4",
+                "prId": "8069",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Improve SessionResumptionConfig constructors (#8069)\n\nRefactored the `SessionResumptionConfig` class to provide two distinct\nconstructors: a no-argument constructor for starting a new session and a\nconstructor that explicitly takes a non-nullable `handle` for resuming a\nsession. This enhances API clarity by separating these two use cases.\n\nThe `resumption_with_dialogue` integration test was updated to use the\nnew constructor signatures. Additionally, the test now includes a more\nrobust verification of session resumption by ensuring that previously\nremembered information is recalled after the session is resumed.\n\n---------\n\nCo-authored-by: gemini-code-assist[bot] <176961590+gemini-code-assist[bot]@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/5742b348e00b23f23b1ffb55d174726ac241a7e4",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8069"
+            },
+            {
+                "commitId": "2a33ae000bee36416d0b890668c528f5b5b3d8d6",
+                "prId": "8065",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Add Java-friendly wrapper for TemplateChat (#8065)\n\nIntroduced `TemplateChatFutures`, a Java-compatible wrapper for\n`TemplateChat`. It's the equivalent of `ChatFutures` for the\nnon-template version of `Chat`.\n\n---------\n\nCo-authored-by: gemini-code-assist[bot] <176961590+gemini-code-assist[bot]@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/2a33ae000bee36416d0b890668c528f5b5b3d8d6",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8065"
+            },
+            {
+                "commitId": "81f561420ad1396f9cbd1c9007dc6f5f0d1298dd",
+                "prId": "8063",
+                "author": "Jackson E J",
+                "message": "[AI] Attach X-Firebase-AppCheck header on Live API WebSocket handshake (#8063)\n\nFixes #8060\n\n## Summary\n\n`APIController.getWebSocketSession()` did not call\n`applyHeaderProvider()`, so the `X-Firebase-AppCheck` header was missing\nfrom the WebSocket upgrade request. This broke Gemini Live whenever App\nCheck was enforced on AI Logic, while HTTPS methods on the same class\ncontinued to work because they route through either\n`applyHeaderProvider()` directly or `postStream` (which calls it\ninternally).\n\n## Fix\n\n`applyHeaderProvider()` is `suspend` and Ktor's `webSocketSession { }`\nconfig lambda is non-suspend, so the fix pre-fetches headers in the\nouter suspend context and applies them synchronously inside the lambda.\n\n## Test plan\n\n- [x] Added unit test `headers from HeaderProvider are added to the\nWebSocket handshake` mirroring the existing HTTP-path test — passes.\n- [x] Existing `RequestFormatTests` suite still passes (`./gradlew\n:ai-logic:firebase-ai:test`).\n- [x] Code formatted with `./gradlew\n:ai-logic:firebase-ai:spotlessApply`.\n- [x] Manual E2E reproduction: built the SDK locally, consumed via\n`mavenLocal()` in a real app, confirmed `liveModel().connect()` succeeds\nwith App Check enforced on AI Logic.\n\n---------\n\nCo-authored-by: Jackson E J <jackson@entri.me>\nCo-authored-by: Vinay Guthal <vguthal@google.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/81f561420ad1396f9cbd1c9007dc6f5f0d1298dd",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8063"
+            },
+            {
+                "commitId": "47545737869a51a79f42fa1cea1fa6ed298dee8d",
+                "prId": "8067",
+                "author": "emilypgoogle",
+                "message": "Session resumption support (#8067)\n\nAdjustments were made to the original feature PR with additional\nautomated testing that session resumption is functional.\n\n---------\n\nCo-authored-by: Cynthia J <cynthiajoan@users.noreply.github.com>\nCo-authored-by: gemini-code-assist[bot] <176961590+gemini-code-assist[bot]@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/47545737869a51a79f42fa1cea1fa6ed298dee8d",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8067"
+            },
+            {
+                "commitId": "a5e0041d2a0259429a9e39ba698cbd44658254c5",
+                "prId": "8009",
+                "author": "emilypgoogle",
+                "message": "Add LiveSession testing (#8009)\n\nAdds LiveSession integration testing using recorded clips to our daily\nAI integration tests.\nThis was based on the iOS testing.\nCurrently, there is a disabled test due to the inability of the Android\nSDK to specify turn complete manually.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/a5e0041d2a0259429a9e39ba698cbd44658254c5",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8009"
+            },
+            {
+                "commitId": "cc4edd65790c9e165a0ef03a3dd2fd40bebc1f33",
+                "prId": "7983",
+                "author": "emilypgoogle",
+                "message": "Implement Maps Grounding (#7983)\n\nThis reintroduces maps grounding for M180.\n\nNot to be merged until after the M179 code freeze next week.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/cc4edd65790c9e165a0ef03a3dd2fd40bebc1f33",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7983"
+            },
+            {
+                "commitId": "3f45c66300830e5845fa2070fdfecba17e820e97",
+                "prId": "8028",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Remove references to 1.5 in tests (#8028)\n\nThese are the last references to the deprecated models. For an updated\nlist of supported models see\n\nhttps://firebase.google.com/docs/ai-logic/models",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/3f45c66300830e5845fa2070fdfecba17e820e97",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8028"
+            },
+            {
+                "commitId": "98b8e48283a838d35251a8daaa2bb1105f0939a2",
+                "prId": "8018",
+                "author": "lehcar09",
+                "message": "Fix the AI Logic link to console (#8018)\n\nFix the AI Logic link shown in error message",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/98b8e48283a838d35251a8daaa2bb1105f0939a2",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8018"
+            },
+            {
+                "commitId": "7b743b642c4f5b283087a55a7f14cce7206ed2da",
+                "prId": "8014",
+                "author": "emilypgoogle",
+                "message": "Add turnComplete to API (#8014)\n\n`turnComplete` was missing from the LiveAPI implementation on Android,\nbut was present on other platform. This PR introduces it as an optional\nparameter with the previous method signature present as an overload, to\nmaintain compatibility.\nHaving `turnComplete` available will let developers send content without\nending the user's conversation turn and have more control over the\nfunctionality of the model.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/7b743b642c4f5b283087a55a7f14cce7206ed2da",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8014"
+            }
+        ],
+        "ai-logic/firebase-ai-ondevice": [
+            {
+                "commitId": "25e26e06189b55b9b921ecb78ae9ca34e511a626",
+                "prId": "8043",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Add configurable model generation for AI On-Device  (#8043)\n\nIntroduced `GenerationConfig`, `ModelConfig`, `ModelReleaseStage`, and\n`ModelPreference` to `firebase-ai-ondevice-interop` to allow for\nconfigurable model selection.\n\nUpdated the internal `genaiPrompt` dependency to `1.0.0-beta2` to\nsupport the new configuration options.\n\nDeprecated the parameter-less\n`FirebaseAIOnDeviceGenerativeModelFactory.newGenerativeModel()` method\nin favor of a new overload that accepts a `GenerationConfig`.\n\n---------\n\nCo-authored-by: gemini-code-assist[bot] <176961590+gemini-code-assist[bot]@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/25e26e06189b55b9b921ecb78ae9ca34e511a626",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8043"
+            },
+            {
+                "commitId": "4191e8e60e0e9f2662ec9e557b2d954777763c7f",
+                "prId": "7896",
+                "author": "Rodrigo Lazo",
+                "message": "[Infra] Upgrade to Kotlin 2.1 compiler and remove image downsizing (#7896)\n\nUpgraded the project to use the Kotlin compiler 2.1 by updating the\nKotlin Android plugin version, but keeping the compatibility with the\ncurrent support versio, 2.0, by setting the language version for Kotlin\ncompile tasks, and configuring core libraries version.\n\nAdditionally, updated the `genaiPrompt` dependency from `1.0.0-alpha1`\nto `1.0.0-beta1`. This updated enable us to Remove the local image\ndownsizing logic within `Converters.kt`, as the bitmap resizing fix is\npart of the updated dependency.",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/4191e8e60e0e9f2662ec9e557b2d954777763c7f",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/7896"
+            }
+        ],
+        "ai-logic/firebase-ai-ondevice-interop": [
+            {
+                "commitId": "25e26e06189b55b9b921ecb78ae9ca34e511a626",
+                "prId": "8043",
+                "author": "Rodrigo Lazo",
+                "message": "[AI] Add configurable model generation for AI On-Device  (#8043)\n\nIntroduced `GenerationConfig`, `ModelConfig`, `ModelReleaseStage`, and\n`ModelPreference` to `firebase-ai-ondevice-interop` to allow for\nconfigurable model selection.\n\nUpdated the internal `genaiPrompt` dependency to `1.0.0-beta2` to\nsupport the new configuration options.\n\nDeprecated the parameter-less\n`FirebaseAIOnDeviceGenerativeModelFactory.newGenerativeModel()` method\nin favor of a new overload that accepts a `GenerationConfig`.\n\n---------\n\nCo-authored-by: gemini-code-assist[bot] <176961590+gemini-code-assist[bot]@users.noreply.github.com>",
+                "commitLink": "https://github.com/firebase/firebase-android-sdk/commit/25e26e06189b55b9b921ecb78ae9ca34e511a626",
+                "prLink": "https://github.com/firebase/firebase-android-sdk/pull/8043"
+            }
+        ]
+    },
+    "changedLibrariesWithNoChangelog": [
+        ":ai-logic:firebase-ai-ksp-processor"
+    ]
+}

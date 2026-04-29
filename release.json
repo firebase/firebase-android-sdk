@@ -1,0 +1,16 @@
+{
+    "name": "m180_test",
+    "libraries": [
+        ":firebase-config",
+        ":firebase-dataconnect",
+        ":firebase-firestore",
+        ":firebase-messaging",
+        ":firebase-messaging-directboot",
+        ":firebase-crashlytics",
+        ":firebase-crashlytics-ndk",
+        ":firebase-sessions",
+        ":ai-logic:firebase-ai",
+        ":ai-logic:firebase-ai-ondevice",
+        ":ai-logic:firebase-ai-ondevice-interop"
+    ]
+}
