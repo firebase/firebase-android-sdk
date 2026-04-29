@@ -16,13 +16,13 @@
 
 package com.google.firebase.ai.ondevice.interop
 
-public class GenerationConfig(public val modelConfig: ModelConfig? = null) {
+public class GenerationConfig(public val modelConfig: ModelConfig) {
   override fun toString(): String = "GenerationConfig(modelConfig=$modelConfig)"
 
   override fun equals(other: Any?): Boolean =
     other is GenerationConfig && modelConfig == other.modelConfig
 
-  override fun hashCode(): Int = modelConfig?.hashCode() ?: 0
+  override fun hashCode(): Int = modelConfig.hashCode() ?: 0
 }
 
 /**

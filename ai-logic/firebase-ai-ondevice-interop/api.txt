@@ -77,9 +77,9 @@ package com.google.firebase.ai.ondevice.interop {
   }
 
   public final class GenerationConfig {
-    ctor public GenerationConfig(com.google.firebase.ai.ondevice.interop.ModelConfig? modelConfig = null);
-    method public com.google.firebase.ai.ondevice.interop.ModelConfig? getModelConfig();
-    property public final com.google.firebase.ai.ondevice.interop.ModelConfig? modelConfig;
+    ctor public GenerationConfig(com.google.firebase.ai.ondevice.interop.ModelConfig modelConfig);
+    method public com.google.firebase.ai.ondevice.interop.ModelConfig getModelConfig();
+    property public final com.google.firebase.ai.ondevice.interop.ModelConfig modelConfig;
   }
 
   public interface GenerativeModel {
