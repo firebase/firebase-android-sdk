@@ -29,12 +29,15 @@ import com.google.firebase.ai.type.LiveGenerationConfig
 import com.google.firebase.ai.type.LiveServerContent
 import com.google.firebase.ai.type.LiveServerToolCall
 import com.google.firebase.ai.type.LiveSession
+import com.google.firebase.ai.type.LiveSessionResumptionUpdate
 import com.google.firebase.ai.type.PublicPreviewAPI
 import com.google.firebase.ai.type.ResponseModality
 import com.google.firebase.ai.type.Schema
+import com.google.firebase.ai.type.SessionResumptionConfig
 import com.google.firebase.ai.type.Tool
 import com.google.firebase.ai.type.content
 import com.google.firebase.ai.type.liveGenerationConfig
+import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.longs.shouldBeGreaterThan
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -47,6 +50,7 @@ import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -267,6 +271,36 @@ class LiveSessionTests {
     } finally {
       session.close()
     }
+  }
+
+  @Test
+  fun testResumption(): Unit = runBlocking {
+    val liveModel = getLiveModel(modelName = modelName, config = generationConfig)
+    val session = liveModel.connect(SessionResumptionConfig())
+    session.send("My favorite color is blue. Remember that.", true)
+    var lastResumptionUpdate: LiveSessionResumptionUpdate? = null
+    withTimeout(30.seconds) {
+      session
+        .receive()
+        .takeWhile {
+          if (it is LiveSessionResumptionUpdate) {
+            lastResumptionUpdate = it
+          }
+          if (it is LiveServerContent && it.turnComplete) {
+            false
+          } else {
+            true
+          }
+        }
+        .collect {}
+    }
+    lastResumptionUpdate shouldNotBe null
+    val handle = lastResumptionUpdate?.newHandle
+    handle.shouldNotBeNull()
+    session.resumeSession(SessionResumptionConfig(handle))
+    session.send("What is my favorite color?")
+    val text = withTimeoutOrNull(30.seconds) { session.collectNextAudioOutputTranscript() } ?: ""
+    text.toLowerCasePreservingASCIIRules() shouldContain "blue"
   }
 
   private suspend fun LiveSession.collectNextAudioOutputTranscript(): String {

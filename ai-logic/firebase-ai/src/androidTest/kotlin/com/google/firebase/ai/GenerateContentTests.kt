@@ -17,7 +17,17 @@ package com.google.firebase.ai
 
 import android.graphics.Bitmap
 import com.google.firebase.ai.AIModels.Companion.getModels
+import com.google.firebase.ai.type.AspectRatio
 import com.google.firebase.ai.type.Content
+import com.google.firebase.ai.type.GenerativeBackend
+import com.google.firebase.ai.type.ImagePart
+import com.google.firebase.ai.type.ImageSize
+import com.google.firebase.ai.type.ResponseModality
+import com.google.firebase.ai.type.generationConfig
+import com.google.firebase.ai.type.imageConfig
+import io.kotest.matchers.collections.shouldNotBeEmpty
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContainIgnoringCase
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
@@ -79,6 +89,42 @@ class GenerateContentTests {
           )
         validator.validateResponse(response)
       }
+    }
+  }
+
+  @Test
+  fun testGenerateContent_ImageConfig() {
+    val app = AIModels.app()
+    val model =
+      FirebaseAI.getInstance(app, GenerativeBackend.googleAI())
+        .generativeModel(
+          modelName = "gemini-3.1-flash-image-preview",
+          generationConfig =
+            generationConfig {
+              responseModalities = listOf(ResponseModality.IMAGE)
+              imageConfig = imageConfig {
+                aspectRatio = AspectRatio.SQUARE_1x1
+                imageSize = ImageSize.SIZE_512
+              }
+            }
+        )
+
+    runBlocking {
+      val response = model.generateContent("Generate a landscape picture of a sunset")
+      response.candidates.shouldNotBeEmpty()
+
+      val parts = response.candidates.first().content.parts
+      val imagePart = parts.filterIsInstance<ImagePart>().firstOrNull()
+      imagePart.shouldNotBeNull()
+
+      val bitmap = imagePart.image
+
+      // Verify Aspect Ratio (1:1)
+      bitmap.width shouldBe bitmap.height
+
+      // Verify Size (512px)
+      bitmap.width shouldBe 512
+      bitmap.height shouldBe 512
     }
   }
 }
