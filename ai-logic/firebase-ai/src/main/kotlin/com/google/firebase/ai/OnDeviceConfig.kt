@@ -32,6 +32,7 @@ import com.google.firebase.ai.type.PublicPreviewAPI
  * for more detail.
  * @property candidateCount The number of generated responses to return. See [GenerationConfig] for
  * more detail. By default it's set to `1`.
+ * @property generationConfig Configuration for the on-device model selection and performance.
  */
 @PublicPreviewAPI
 public class OnDeviceConfig
@@ -42,7 +43,8 @@ constructor(
   public val temperature: Float? = null,
   public val topK: Int? = null,
   public val seed: Int? = null,
-  public val candidateCount: Int = 1
+  public val candidateCount: Int = 1,
+  public val generationConfig: OnDeviceGenerationConfig? = null
 ) {
 
   public companion object {
@@ -96,4 +98,72 @@ public class InferenceSource private constructor(private val value: String) {
     /** Inference was performed in the cloud. */
     @JvmField public val IN_CLOUD: InferenceSource = InferenceSource("In Cloud")
   }
+}
+
+@PublicPreviewAPI
+public class ModelReleaseStage private constructor(private val value: String) {
+  override fun toString(): String = value
+
+  internal fun toInterop(): com.google.firebase.ai.ondevice.interop.ModelReleaseStage =
+    when (this) {
+      PREVIEW -> com.google.firebase.ai.ondevice.interop.ModelReleaseStage.PREVIEW
+      else -> com.google.firebase.ai.ondevice.interop.ModelReleaseStage.STABLE
+    }
+
+  public companion object {
+    @JvmField public val STABLE: ModelReleaseStage = ModelReleaseStage("stable")
+    @JvmField public val PREVIEW: ModelReleaseStage = ModelReleaseStage("preview")
+  }
+}
+
+@PublicPreviewAPI
+public class ModelPreference private constructor(private val value: String) {
+  override fun toString(): String = value
+
+  internal fun toInterop(): com.google.firebase.ai.ondevice.interop.ModelPreference =
+    when (this) {
+      FAST -> com.google.firebase.ai.ondevice.interop.ModelPreference.FAST
+      else -> com.google.firebase.ai.ondevice.interop.ModelPreference.FULL
+    }
+
+  public companion object {
+    @JvmField public val FULL: ModelPreference = ModelPreference("full")
+    @JvmField public val FAST: ModelPreference = ModelPreference("fast")
+  }
+}
+
+@PublicPreviewAPI
+public class ModelConfig(
+  public val releaseStage: ModelReleaseStage = ModelReleaseStage.STABLE,
+  public val preference: ModelPreference = ModelPreference.FULL,
+) {
+  internal fun toInterop(): com.google.firebase.ai.ondevice.interop.ModelConfig =
+    com.google.firebase.ai.ondevice.interop.ModelConfig(
+      releaseStage = releaseStage.toInterop(),
+      preference = preference.toInterop()
+    )
+
+  override fun equals(other: Any?): Boolean =
+    other is ModelConfig && releaseStage == other.releaseStage && preference == other.preference
+
+  override fun hashCode(): Int {
+    var result = releaseStage.hashCode()
+    result = 31 * result + preference.hashCode()
+    return result
+  }
+
+  override fun toString(): String {
+    return "ModelConfig(releaseStage=$releaseStage, preference=$preference)"
+  }
+}
+
+@PublicPreviewAPI
+public class OnDeviceGenerationConfig(public val modelConfig: ModelConfig? = null) {
+  internal fun toInterop(): com.google.firebase.ai.ondevice.interop.GenerationConfig =
+    com.google.firebase.ai.ondevice.interop.GenerationConfig(modelConfig = modelConfig?.toInterop())
+
+  override fun toString(): String = "OnDeviceGenerationConfig(modelConfig=$modelConfig)"
+  override fun equals(other: Any?): Boolean =
+    other is OnDeviceGenerationConfig && modelConfig == other.modelConfig
+  override fun hashCode(): Int = modelConfig?.hashCode() ?: 0
 }

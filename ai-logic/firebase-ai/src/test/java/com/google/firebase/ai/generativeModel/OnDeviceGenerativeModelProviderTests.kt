@@ -18,7 +18,11 @@ package com.google.firebase.ai.generativemodel
 
 import com.google.firebase.ai.InferenceMode
 import com.google.firebase.ai.InferenceSource
+import com.google.firebase.ai.ModelConfig
+import com.google.firebase.ai.ModelPreference
+import com.google.firebase.ai.ModelReleaseStage
 import com.google.firebase.ai.OnDeviceConfig
+import com.google.firebase.ai.OnDeviceGenerationConfig
 import com.google.firebase.ai.ondevice.interop.Candidate as OnDeviceCandidate
 import com.google.firebase.ai.ondevice.interop.CountTokensResponse as OnDeviceCountTokensResponse
 import com.google.firebase.ai.ondevice.interop.FinishReason as OnDeviceFinishReason
@@ -128,5 +132,38 @@ internal class OnDeviceGenerativeModelProviderTests {
 
     val exception = shouldThrow<FirebaseAIException> { provider.generateContent(promptNoText) }
     exception.cause!!::class shouldBe IllegalArgumentException::class
+  }
+
+  @Test
+  fun `OnDeviceConfig can be constructed with OnDeviceGenerationConfig`() {
+    val config =
+      OnDeviceConfig(
+        mode = InferenceMode.ONLY_ON_DEVICE,
+        generationConfig =
+          OnDeviceGenerationConfig(
+            modelConfig =
+              ModelConfig(
+                releaseStage = ModelReleaseStage.PREVIEW,
+                preference = ModelPreference.FAST
+              )
+          )
+      )
+    config.generationConfig?.modelConfig?.releaseStage shouldBe ModelReleaseStage.PREVIEW
+    config.generationConfig?.modelConfig?.preference shouldBe ModelPreference.FAST
+  }
+  @Test
+  fun `OnDeviceGenerationConfig toInterop maps correctly`() {
+    val config =
+      OnDeviceGenerationConfig(
+        modelConfig =
+          ModelConfig(releaseStage = ModelReleaseStage.PREVIEW, preference = ModelPreference.FAST)
+      )
+
+    val interopConfig = config.toInterop()
+
+    interopConfig.modelConfig?.releaseStage shouldBe
+      com.google.firebase.ai.ondevice.interop.ModelReleaseStage.PREVIEW
+    interopConfig.modelConfig?.preference shouldBe
+      com.google.firebase.ai.ondevice.interop.ModelPreference.FAST
   }
 }

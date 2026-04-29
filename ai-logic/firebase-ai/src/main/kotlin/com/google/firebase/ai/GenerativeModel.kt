@@ -345,9 +345,14 @@ internal constructor(
     }
 
     @OptIn(PublicPreviewAPI::class)
-    internal fun buildOnDeviceModelProvider(): GenerativeModelProvider =
+    internal fun buildOnDeviceModelProvider(
+      generationConfig: OnDeviceGenerationConfig?
+    ): GenerativeModelProvider =
       onDeviceFactoryProvider?.let {
-        OnDeviceGenerativeModelProvider(it.newGenerativeModel(), onDeviceConfig)
+        OnDeviceGenerativeModelProvider(
+          it.newGenerativeModel(generationConfig?.toInterop()),
+          onDeviceConfig
+        )
       }
         ?: MissingOnDeviceGenerativeModelProvider()
 
@@ -355,10 +360,10 @@ internal constructor(
     internal fun getModelProvider(): GenerativeModelProvider =
       when (onDeviceConfig.mode) {
         InferenceMode.ONLY_IN_CLOUD -> buildCloudModelProvider()
-        InferenceMode.ONLY_ON_DEVICE -> buildOnDeviceModelProvider()
+        InferenceMode.ONLY_ON_DEVICE -> buildOnDeviceModelProvider(onDeviceConfig.generationConfig)
         InferenceMode.PREFER_ON_DEVICE -> {
           FallbackGenerativeModelProvider(
-            defaultModel = buildOnDeviceModelProvider(),
+            defaultModel = buildOnDeviceModelProvider(onDeviceConfig.generationConfig),
             fallbackModel = buildCloudModelProvider(isHybrid = true),
             shouldFallbackInException = true
           )
@@ -366,7 +371,7 @@ internal constructor(
         InferenceMode.PREFER_IN_CLOUD ->
           FallbackGenerativeModelProvider(
             defaultModel = buildCloudModelProvider(isHybrid = true),
-            fallbackModel = buildOnDeviceModelProvider(),
+            fallbackModel = buildOnDeviceModelProvider(onDeviceConfig.generationConfig),
             precondition =
               NetworkStatusChecker(
                 firebaseApp.applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE)

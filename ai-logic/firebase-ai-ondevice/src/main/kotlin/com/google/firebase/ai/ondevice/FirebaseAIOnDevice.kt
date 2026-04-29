@@ -63,15 +63,19 @@ public object FirebaseAIOnDevice {
 }
 
 /** Options for configuring the on-device AI model. */
-public enum class OnDeviceModelOption {
-  /** Selects the latest stable model. */
-  STABLE,
+public class OnDeviceModelOption private constructor(private val value: String) {
+  override fun toString(): String = value
 
-  /** Selects the latest preview model with full performance. */
-  PREVIEW,
+  public companion object {
+    /** Selects the latest stable model. */
+    @JvmField public val STABLE: OnDeviceModelOption = OnDeviceModelOption("stable")
 
-  /** Selects the latest preview model optimized for speed. */
-  PREVIEW_FAST
+    /** Selects the latest preview model with full performance. */
+    @JvmField public val PREVIEW: OnDeviceModelOption = OnDeviceModelOption("preview")
+
+    /** Selects the latest preview model optimized for speed. */
+    @JvmField public val PREVIEW_FAST: OnDeviceModelOption = OnDeviceModelOption("preview_fast")
+  }
 }
 
 internal fun OnDeviceModelOption.toMlKit(): com.google.mlkit.genai.prompt.GenerationConfig =
