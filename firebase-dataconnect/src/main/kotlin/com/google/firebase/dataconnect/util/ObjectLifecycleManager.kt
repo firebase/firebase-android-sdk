@@ -130,15 +130,18 @@ internal abstract class ObjectLifecycleManager<OpenParams, OpenedResource>(
     MutableStateFlow<State<OpenedResource>>(
       run {
         val coroutineScope = createSupervisorCoroutineScope(coroutineDispatcher, logger)
-
-        var nullableOpenParams: OpenParams? = openParams
+        val clearableOpenParams = ClearableValue(openParams)
         val openedResource = LaterValue<OpenedResource>()
+
         val openJob: Deferred<OpenedResource> =
           coroutineScope.async(start = CoroutineStart.LAZY) {
             val openParams =
-              nullableOpenParams.let {
-                nullableOpenParams = null
-                checkNotNull(it) { "internal error xvjmyh9qk9: nullableOpenParams was null" }
+              when (val maybeOpenParams = clearableOpenParams.clear()) {
+                MaybeValue.Empty ->
+                  error(
+                    "internal error xvjmyh9qk9: clearableOpenParams.clear() has already been called"
+                  )
+                is MaybeValue.Value -> maybeOpenParams.value
               }
 
             openResource(openParams, openedResource)
