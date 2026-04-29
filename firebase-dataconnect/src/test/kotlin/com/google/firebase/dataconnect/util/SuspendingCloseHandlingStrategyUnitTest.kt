@@ -110,11 +110,12 @@ class SuspendingCloseHandlingStrategyUnitTest {
     val resultDeferred = AtomicReference<String?>(null)
 
     val job = launch {
-      val deferred = SuspendingCloseHandlingStrategy.Async.handle(this) {
-        blockStarted.complete(Unit)
-        delay(100)
-        "done"
-      }
+      val deferred =
+        SuspendingCloseHandlingStrategy.Async.handle(this) {
+          blockStarted.complete(Unit)
+          delay(100)
+          "done"
+        }
       resultDeferred.set(deferred.await())
     }
 
@@ -124,7 +125,6 @@ class SuspendingCloseHandlingStrategyUnitTest {
     resultDeferred.get() shouldBe "done"
   }
 
-
   @Test
   fun `Async handle uses NonCancellable`() = runTest {
     val blockStarted = CompletableDeferred<Unit>()
@@ -132,23 +132,25 @@ class SuspendingCloseHandlingStrategyUnitTest {
     val resultValue = AtomicReference<String?>(null)
 
     val job = launch {
-      val deferred = SuspendingCloseHandlingStrategy.Async.handle(this) {
-        blockStarted.complete(Unit)
-        try {
-          delay(1000)
-        } finally {
-          resultValue.set("finished")
-          blockFinished.complete(Unit)
+      val deferred =
+        SuspendingCloseHandlingStrategy.Async.handle(this) {
+          blockStarted.complete(Unit)
+          try {
+            delay(1000)
+          } finally {
+            resultValue.set("finished")
+            blockFinished.complete(Unit)
+          }
+          "done"
         }
-        "done"
-      }
       deferred.await()
     }
 
     blockStarted.await()
     job.cancelAndJoin()
-    
-    // Even though the job was cancelled, the block should continue to run because it's wrapped in NonCancellable
+
+    // Even though the job was cancelled, the block should continue to run because it's wrapped in
+    // NonCancellable
     blockFinished.await()
     resultValue.get() shouldBe "finished"
   }

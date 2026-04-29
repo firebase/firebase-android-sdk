@@ -27,7 +27,7 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.test.runTest
 import org.junit.Test
 
-class SuspendingFlagUnitTests {
+class SuspendingFlagUnitTest {
 
   // region Tests for SuspendingFlag constructor
 
@@ -105,10 +105,12 @@ class SuspendingFlagUnitTests {
     val latch = SuspendingCountDownLatch(50)
 
     val jobs =
-      List(latch.count) {
+      List(latch.count) { jobIndex ->
         backgroundScope.async(Dispatchers.Default) {
           latch.countDown().await()
-          flag.set()
+          val setResult = flag.set()
+          withClue("jobIndex=$jobIndex") { flag.isSet shouldBe true }
+          setResult
         }
       }
     val results = jobs.awaitAll()
@@ -135,7 +137,7 @@ class SuspendingFlagUnitTests {
   @Test
   fun `ifSet() does not call block if unset`() {
     val flag = SuspendingFlag()
-    val block = BlockThrowing("block should not be called")
+    val block = BlockThrowing("block should not be called [xt5jh944m2]")
 
     flag.ifSet(block)
 
@@ -170,7 +172,7 @@ class SuspendingFlagUnitTests {
   @Test
   fun `ifNotSet() does not call block if set`() {
     val flag = SuspendingFlag(SuspendingFlag.Values.set)
-    val block = BlockThrowing("block should not be called")
+    val block = BlockThrowing("block should not be called [pv3psaetnp]")
 
     flag.ifNotSet(block)
 
@@ -181,7 +183,7 @@ class SuspendingFlagUnitTests {
   fun `ifNotSet() does not call block after set()`() {
     val flag = SuspendingFlag()
     flag.set()
-    val block = BlockThrowing("block should not be called")
+    val block = BlockThrowing("block should not be called [k79m4cankf]")
 
     flag.ifNotSet(block)
 
@@ -195,7 +197,7 @@ class SuspendingFlagUnitTests {
   @Test
   fun `setOrElse() transitions to set and does not call block if unset`() {
     val flag = SuspendingFlag()
-    val block = BlockThrowing("block should not be called")
+    val block = BlockThrowing("block should not be called [cesasxbrz7]")
 
     flag.setOrElse(block)
 
@@ -242,7 +244,7 @@ class SuspendingFlagUnitTests {
   @Test
   fun `fold() calls onNotSet if unset`() {
     val flag = SuspendingFlag()
-    val onSet = BlockThrowing("onSet should not be called")
+    val onSet = BlockThrowing("onSet should not be called [x5saca5fyr]")
     val onNotSet = BlockReturningUnit()
 
     flag.fold(onSet = onSet, onNotSet = onNotSet)
@@ -255,7 +257,7 @@ class SuspendingFlagUnitTests {
   fun `fold() calls onSet if set`() {
     val flag = SuspendingFlag(SuspendingFlag.Values.set)
     val onSet = BlockReturningUnit()
-    val onNotSet = BlockThrowing("onNotSet should not be called")
+    val onNotSet = BlockThrowing("onNotSet should not be called [am3jap4jcb]")
 
     flag.fold(onSet = onSet, onNotSet = onNotSet)
 
