@@ -18,17 +18,15 @@ package com.google.firebase.ai.generativemodel
 
 import com.google.firebase.ai.InferenceMode
 import com.google.firebase.ai.InferenceSource
-import com.google.firebase.ai.ModelConfig
-import com.google.firebase.ai.ModelPreference
-import com.google.firebase.ai.ModelReleaseStage
 import com.google.firebase.ai.OnDeviceConfig
-import com.google.firebase.ai.OnDeviceGenerationConfig
+import com.google.firebase.ai.OnDeviceModelOption
 import com.google.firebase.ai.ondevice.interop.Candidate as OnDeviceCandidate
 import com.google.firebase.ai.ondevice.interop.CountTokensResponse as OnDeviceCountTokensResponse
 import com.google.firebase.ai.ondevice.interop.FinishReason as OnDeviceFinishReason
 import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceNotAvailableException
 import com.google.firebase.ai.ondevice.interop.GenerateContentResponse as OnDeviceGenerateContentResponse
 import com.google.firebase.ai.ondevice.interop.GenerativeModel as OnDeviceGenerativeModel
+import com.google.firebase.ai.toInterop
 import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.FirebaseAIException
 import com.google.firebase.ai.type.JsonSchema
@@ -135,31 +133,20 @@ internal class OnDeviceGenerativeModelProviderTests {
   }
 
   @Test
-  fun `OnDeviceConfig can be constructed with OnDeviceGenerationConfig`() {
+  fun `OnDeviceConfig can be constructed with OnDeviceModelOption`() {
     val config =
       OnDeviceConfig(
         mode = InferenceMode.ONLY_ON_DEVICE,
-        generationConfig =
-          OnDeviceGenerationConfig(
-            modelConfig =
-              ModelConfig(
-                releaseStage = ModelReleaseStage.PREVIEW,
-                preference = ModelPreference.FAST
-              )
-          )
+        modelOption = OnDeviceModelOption.PREVIEW_FAST
       )
-    config.generationConfig?.modelConfig?.releaseStage shouldBe ModelReleaseStage.PREVIEW
-    config.generationConfig?.modelConfig?.preference shouldBe ModelPreference.FAST
+    config.modelOption shouldBe OnDeviceModelOption.PREVIEW_FAST
   }
-  @Test
-  fun `OnDeviceGenerationConfig toInterop maps correctly`() {
-    val config =
-      OnDeviceGenerationConfig(
-        modelConfig =
-          ModelConfig(releaseStage = ModelReleaseStage.PREVIEW, preference = ModelPreference.FAST)
-      )
 
-    val interopConfig = config.toInterop()
+  @Test
+  fun `OnDeviceModelOption toInterop maps correctly`() {
+    val option = OnDeviceModelOption.PREVIEW_FAST
+
+    val interopConfig = option.toInterop()
 
     interopConfig.modelConfig?.releaseStage shouldBe
       com.google.firebase.ai.ondevice.interop.ModelReleaseStage.PREVIEW
