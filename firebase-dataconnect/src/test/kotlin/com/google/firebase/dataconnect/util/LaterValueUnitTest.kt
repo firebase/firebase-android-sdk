@@ -34,6 +34,7 @@ import com.google.firebase.dataconnect.util.MaybeValue.NoValueException
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldHaveSingleElement
 import io.kotest.matchers.comparables.shouldBeGreaterThan
@@ -526,11 +527,11 @@ class LaterValueUnitTest {
   @Test
   fun `ifSet() when no value set`() {
     val laterValue = LaterValue<Nothing>()
-    val block = BlockThrowingWithParameter("block should not be called [ge5pqehnwr]")
+    val block = BlockThrowingWithParameter<Nothing>("block should not be called [ge5pqehnwr]")
 
     laterValue.ifSet(block)
 
-    block.callCount shouldBe 0
+    block.calls.shouldBeEmpty()
   }
 
   @Test
@@ -588,13 +589,13 @@ class LaterValueUnitTest {
     checkAll(propTestConfig, Arb.someValue().orNull(nullProbability = 0.3)) { value ->
       val laterValue = LaterValue<Nothing>()
       val onNotSet = BlockReturning(value?.value)
-      val onSet = BlockThrowingWithParameter("onSet() should not be called [h5dm6m7egq]")
+      val onSet = BlockThrowingWithParameter<Nothing>("onSet() should not be called [h5dm6m7egq]")
 
       val result = laterValue.fold(onNotSet, onSet)
 
       result.shouldHaveSameValueAs(value)
       onNotSet.callCount shouldBe 1
-      onSet.callCount shouldBe 0
+      onSet.calls.shouldBeEmpty()
     }
   }
 

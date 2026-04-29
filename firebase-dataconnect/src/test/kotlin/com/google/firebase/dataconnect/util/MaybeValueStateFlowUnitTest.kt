@@ -28,6 +28,7 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.twoValues
 import com.google.firebase.dataconnect.util.MaybeValue.NoValueException
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.common.ExperimentalKotest
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSingleElement
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
@@ -161,11 +162,11 @@ class MaybeValueStateFlowUnitTest {
   @Test
   fun `ifNonEmpty does not call block for Empty`() {
     val stateFlow = MutableStateFlow<MaybeValue<Nothing?>>(MaybeValue.Empty)
-    val block = BlockThrowingWithParameter("block should not be called [yp9hg6zeam]")
+    val block = BlockThrowingWithParameter<Nothing?>("block should not be called [yp9hg6zeam]")
 
     stateFlow.ifNonEmpty(block)
 
-    block.callCount shouldBe 0
+    block.calls.shouldBeEmpty()
   }
 
   @Test
@@ -189,13 +190,14 @@ class MaybeValueStateFlowUnitTest {
     checkAll(propTestConfig, Arb.someValue().orNull(nullProbability = 0.3)) { value ->
       val stateFlow = MutableStateFlow<MaybeValue<Nothing?>>(MaybeValue.Empty)
       val onEmpty = BlockReturning(value?.value)
-      val onNonEmpty = BlockThrowingWithParameter("onNonEmpty should not be called [v7zhnjpjcy]")
+      val onNonEmpty =
+        BlockThrowingWithParameter<Nothing?>("onNonEmpty should not be called [v7zhnjpjcy]")
 
       val result = stateFlow.fold(onEmpty = onEmpty, onNonEmpty = onNonEmpty)
 
       result shouldBeSameInstanceAs value?.value
       onEmpty.callCount shouldBe 1
-      onNonEmpty.callCount shouldBe 0
+      onNonEmpty.calls.shouldBeEmpty()
     }
   }
 

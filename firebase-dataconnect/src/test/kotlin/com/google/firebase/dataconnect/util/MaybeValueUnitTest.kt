@@ -30,6 +30,7 @@ import com.google.firebase.dataconnect.util.MaybeValue.NoValueException
 import io.kotest.assertions.print.print
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.common.ExperimentalKotest
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSingleElement
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldBeNull
@@ -489,12 +490,12 @@ class MaybeValueUnitTest {
   @Test
   fun `Empty ifNonEmpty() does not call block`() = runTest {
     checkAll(propTestConfig, Arb.constant(null)) { _ ->
-      val block = BlockThrowingWithParameter("block should not be called [tgbfxty2kr]")
+      val block = BlockThrowingWithParameter<Nothing>("block should not be called [tgbfxty2kr]")
 
       val result = MaybeValue.Empty.ifNonEmpty(block)
 
       result shouldBeSameInstanceAs MaybeValue.Empty
-      block.callCount shouldBe 0
+      block.calls.shouldBeEmpty()
     }
   }
 
@@ -528,12 +529,12 @@ class MaybeValueUnitTest {
   fun `MaybeValue ifNonEmpty() with Empty receiver does not call block`() = runTest {
     checkAll(propTestConfig, Arb.constant(null)) { _ ->
       val maybeValue: MaybeValue<Nothing?> = MaybeValue.Empty
-      val block = BlockThrowingWithParameter("block should not be called [aensstz8am]")
+      val block = BlockThrowingWithParameter<Nothing?>("block should not be called [aensstz8am]")
 
       val result = maybeValue.ifNonEmpty(block)
 
       result shouldBeSameInstanceAs MaybeValue.Empty
-      block.callCount shouldBe 0
+      block.calls.shouldBeEmpty()
     }
   }
 
@@ -571,13 +572,14 @@ class MaybeValueUnitTest {
   fun `Empty fold() calls onEmpty`() = runTest {
     checkAll(propTestConfig, Arb.someValue().orNull(nullProbability = 0.3)) { value ->
       val onEmpty = BlockReturning(value?.value)
-      val onNonEmpty = BlockThrowingWithParameter("onNonEmpty should not be called [nrxvx3qgvf]")
+      val onNonEmpty =
+        BlockThrowingWithParameter<Nothing>("onNonEmpty should not be called [nrxvx3qgvf]")
 
       val result = MaybeValue.Empty.fold(onEmpty, onNonEmpty)
 
       result.shouldHaveSameValueAs(value)
       onEmpty.callCount shouldBe 1
-      onNonEmpty.callCount shouldBe 0
+      onNonEmpty.calls.shouldBeEmpty()
     }
   }
 
@@ -617,13 +619,14 @@ class MaybeValueUnitTest {
     checkAll(propTestConfig, Arb.someValue().orNull(nullProbability = 0.3)) { value ->
       val maybeValue: MaybeValue<Nothing?> = MaybeValue.Empty
       val onEmpty = BlockReturning(value?.value)
-      val onNonEmpty = BlockThrowingWithParameter("onNonEmpty should not be called [p8kw29xp7v]")
+      val onNonEmpty =
+        BlockThrowingWithParameter<Nothing?>("onNonEmpty should not be called [p8kw29xp7v]")
 
       val result = maybeValue.fold(onEmpty, onNonEmpty)
 
       result.shouldHaveSameValueAs(value)
       onEmpty.callCount shouldBe 1
-      onNonEmpty.callCount shouldBe 0
+      onNonEmpty.calls.shouldBeEmpty()
     }
   }
 

@@ -31,6 +31,7 @@ import com.google.firebase.dataconnect.testutil.property.arbitrary.shouldHaveSam
 import com.google.firebase.dataconnect.testutil.property.arbitrary.someValue
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.common.ExperimentalKotest
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldHaveSingleElement
 import io.kotest.matchers.nulls.shouldBeNull
@@ -233,7 +234,7 @@ class ClearableValueUnitTest {
 
   @Test
   fun `getOrNull() when value is null`() {
-    val clearableValue = ClearableValue<Nothing?>(null)
+    val clearableValue = ClearableValue(null)
     clearableValue.getOrNull().shouldBeNull()
   }
 
@@ -360,6 +361,32 @@ class ClearableValueUnitTest {
     }
   }
 
+  @Test
+  fun `ifCleared() when value is null`() = runTest {
+    val clearableValue = ClearableValue(null)
+    val block = BlockThrowing("block should not be called [v9w8z7qea1]")
+
+    clearableValue.ifCleared(block)
+
+    block.callCount shouldBe 0
+  }
+
+  @Test
+  fun `ifCleared() after clear()`() = runTest {
+    checkAll(
+      propTestConfig,
+      Arb.maybeValue(Arb.someValue().map { it.value }.orNull(nullProbability = 0.3))
+    ) { maybeValue ->
+      val clearableValue = ClearableValue(maybeValue)
+      clearableValue.clear()
+      val block = BlockReturningUnit()
+
+      clearableValue.ifCleared(block)
+
+      block.callCount shouldBe 1
+    }
+  }
+
   // endregion
 
   // region Tests for ClearableValue.ifNotCleared()
@@ -367,11 +394,11 @@ class ClearableValueUnitTest {
   @Test
   fun `ifNotCleared() when cleared`() {
     val clearableValue = ClearableValue(MaybeValue.Empty)
-    val block = BlockThrowingWithParameter("block should not be called [qea1v9w8z7]")
+    val block = BlockThrowingWithParameter<Nothing>("block should not be called [qea1v9w8z7]")
 
     clearableValue.ifNotCleared(block)
 
-    block.callCount shouldBe 0
+    block.calls.shouldBeEmpty()
   }
 
   @Test
@@ -396,6 +423,22 @@ class ClearableValueUnitTest {
     block.calls.shouldContainExactly(null)
   }
 
+  @Test
+  fun `ifNotCleared() after clear()`() = runTest {
+    checkAll(
+      propTestConfig,
+      Arb.maybeValue(Arb.someValue().map { it.value }.orNull(nullProbability = 0.3))
+    ) { maybeValue ->
+      val clearableValue = ClearableValue(maybeValue)
+      clearableValue.clear()
+      val block = BlockThrowingWithParameter<Any?>("block should not be called [gfb2wb7qnm]")
+
+      clearableValue.ifNotCleared(block)
+
+      block.calls.shouldBeEmpty()
+    }
+  }
+
   // endregion
 
   // region Tests for ClearableValue.fold()
@@ -406,13 +449,13 @@ class ClearableValueUnitTest {
       val clearableValue = ClearableValue(MaybeValue.Empty)
       val onCleared = BlockReturning(value?.value)
       val onNotCleared =
-        BlockThrowingWithParameter("onNotCleared() should not be called [z7qea1v9w8]")
+        BlockThrowingWithParameter<Nothing>("onNotCleared() should not be called [z7qea1v9w8]")
 
       val result = clearableValue.fold(onCleared, onNotCleared)
 
       result.shouldHaveSameValueAs(value)
       onCleared.callCount shouldBe 1
-      onNotCleared.callCount shouldBe 0
+      onNotCleared.calls.shouldBeEmpty()
     }
   }
 

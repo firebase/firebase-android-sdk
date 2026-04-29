@@ -84,15 +84,15 @@ class BlockThrowing(val message: String) : (() -> Nothing) {
   class UnexpectedInvocationException(message: String) : Exception(message)
 }
 
-class BlockThrowingWithParameter(val message: String) : ((Nothing?) -> Nothing) {
+class BlockThrowingWithParameter<T>(val message: String) : ((T) -> Nothing) {
 
-  private val _callCount = AtomicInteger(0)
+  private val _calls = CopyOnWriteArrayList<Any?>()
 
-  val callCount: Int
-    get() = _callCount.get()
+  val calls: List<Any?>
+    get() = _calls.toList()
 
-  override operator fun invoke(ignored: Nothing?): Nothing {
-    _callCount.incrementAndGet()
+  override operator fun invoke(argument: T): Nothing {
+    _calls.add(argument)
     throw UnexpectedInvocationException(message)
   }
 
