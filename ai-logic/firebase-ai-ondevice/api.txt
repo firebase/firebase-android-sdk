@@ -25,9 +25,19 @@ package com.google.firebase.ai.ondevice {
   }
 
   public final class FirebaseAIOnDevice {
-    method public suspend Object? checkStatus(kotlin.coroutines.Continuation<? super com.google.firebase.ai.ondevice.OnDeviceModelStatus>);
-    method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.ondevice.DownloadStatus> download();
+    method public suspend Object? checkStatus(com.google.firebase.ai.ondevice.OnDeviceModelOption option, kotlin.coroutines.Continuation<? super com.google.firebase.ai.ondevice.OnDeviceModelStatus>);
+    method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.ondevice.DownloadStatus> download(com.google.firebase.ai.ondevice.OnDeviceModelOption option);
     field public static final com.google.firebase.ai.ondevice.FirebaseAIOnDevice INSTANCE;
+  }
+
+  public final class OnDeviceModelOption {
+    field public static final com.google.firebase.ai.ondevice.OnDeviceModelOption.Companion Companion;
+    field public static final com.google.firebase.ai.ondevice.OnDeviceModelOption PREVIEW;
+    field public static final com.google.firebase.ai.ondevice.OnDeviceModelOption PREVIEW_FAST;
+    field public static final com.google.firebase.ai.ondevice.OnDeviceModelOption STABLE;
+  }
+
+  public static final class OnDeviceModelOption.Companion {
   }
 
   public final class OnDeviceModelStatus {

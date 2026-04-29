@@ -32,6 +32,7 @@ import com.google.firebase.ai.type.PublicPreviewAPI
  * for more detail.
  * @property candidateCount The number of generated responses to return. See [GenerationConfig] for
  * more detail. By default it's set to `1`.
+ * @property modelOption Configuration for the on-device model selection and performance.
  */
 @PublicPreviewAPI
 public class OnDeviceConfig
@@ -42,7 +43,8 @@ constructor(
   public val temperature: Float? = null,
   public val topK: Int? = null,
   public val seed: Int? = null,
-  public val candidateCount: Int = 1
+  public val candidateCount: Int = 1,
+  public val modelOption: OnDeviceModelOption? = null
 ) {
 
   public companion object {
@@ -97,3 +99,46 @@ public class InferenceSource private constructor(private val value: String) {
     @JvmField public val IN_CLOUD: InferenceSource = InferenceSource("In Cloud")
   }
 }
+
+@PublicPreviewAPI
+public class OnDeviceModelOption private constructor(private val value: String) {
+  override fun toString(): String = value
+
+  override fun equals(other: Any?): Boolean = other is OnDeviceModelOption && value == other.value
+
+  override fun hashCode(): Int = value.hashCode()
+
+  public companion object {
+    @JvmField public val STABLE: OnDeviceModelOption = OnDeviceModelOption("stable")
+    @JvmField public val PREVIEW: OnDeviceModelOption = OnDeviceModelOption("preview")
+    @JvmField public val PREVIEW_FAST: OnDeviceModelOption = OnDeviceModelOption("preview_fast")
+  }
+}
+
+@OptIn(PublicPreviewAPI::class)
+internal fun OnDeviceModelOption.toInterop():
+  com.google.firebase.ai.ondevice.interop.GenerationConfig =
+  when (this) {
+    OnDeviceModelOption.STABLE ->
+      com.google.firebase.ai.ondevice.interop.GenerationConfig(
+        com.google.firebase.ai.ondevice.interop.ModelConfig(
+          com.google.firebase.ai.ondevice.interop.ModelReleaseStage.STABLE,
+          com.google.firebase.ai.ondevice.interop.ModelPreference.FULL
+        )
+      )
+    OnDeviceModelOption.PREVIEW ->
+      com.google.firebase.ai.ondevice.interop.GenerationConfig(
+        com.google.firebase.ai.ondevice.interop.ModelConfig(
+          com.google.firebase.ai.ondevice.interop.ModelReleaseStage.PREVIEW,
+          com.google.firebase.ai.ondevice.interop.ModelPreference.FULL
+        )
+      )
+    OnDeviceModelOption.PREVIEW_FAST ->
+      com.google.firebase.ai.ondevice.interop.GenerationConfig(
+        com.google.firebase.ai.ondevice.interop.ModelConfig(
+          com.google.firebase.ai.ondevice.interop.ModelReleaseStage.PREVIEW,
+          com.google.firebase.ai.ondevice.interop.ModelPreference.FAST
+        )
+      )
+    else -> throw IllegalArgumentException("Unknown option")
+  }

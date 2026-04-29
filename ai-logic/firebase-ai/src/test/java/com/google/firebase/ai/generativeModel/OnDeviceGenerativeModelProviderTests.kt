@@ -19,12 +19,14 @@ package com.google.firebase.ai.generativemodel
 import com.google.firebase.ai.InferenceMode
 import com.google.firebase.ai.InferenceSource
 import com.google.firebase.ai.OnDeviceConfig
+import com.google.firebase.ai.OnDeviceModelOption
 import com.google.firebase.ai.ondevice.interop.Candidate as OnDeviceCandidate
 import com.google.firebase.ai.ondevice.interop.CountTokensResponse as OnDeviceCountTokensResponse
 import com.google.firebase.ai.ondevice.interop.FinishReason as OnDeviceFinishReason
 import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceNotAvailableException
 import com.google.firebase.ai.ondevice.interop.GenerateContentResponse as OnDeviceGenerateContentResponse
 import com.google.firebase.ai.ondevice.interop.GenerativeModel as OnDeviceGenerativeModel
+import com.google.firebase.ai.toInterop
 import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.FirebaseAIException
 import com.google.firebase.ai.type.JsonSchema
@@ -128,5 +130,27 @@ internal class OnDeviceGenerativeModelProviderTests {
 
     val exception = shouldThrow<FirebaseAIException> { provider.generateContent(promptNoText) }
     exception.cause!!::class shouldBe IllegalArgumentException::class
+  }
+
+  @Test
+  fun `OnDeviceConfig can be constructed with OnDeviceModelOption`() {
+    val config =
+      OnDeviceConfig(
+        mode = InferenceMode.ONLY_ON_DEVICE,
+        modelOption = OnDeviceModelOption.PREVIEW_FAST
+      )
+    config.modelOption shouldBe OnDeviceModelOption.PREVIEW_FAST
+  }
+
+  @Test
+  fun `OnDeviceModelOption toInterop maps correctly`() {
+    val option = OnDeviceModelOption.PREVIEW_FAST
+
+    val interopConfig = option.toInterop()
+
+    interopConfig.modelConfig?.releaseStage shouldBe
+      com.google.firebase.ai.ondevice.interop.ModelReleaseStage.PREVIEW
+    interopConfig.modelConfig?.preference shouldBe
+      com.google.firebase.ai.ondevice.interop.ModelPreference.FAST
   }
 }
