@@ -25,7 +25,7 @@ plugins {
   id("copy-google-services")
   alias(libs.plugins.kotlinx.serialization)
   id("com.google.firebase.dataconnect.gradle.plugin") apply false
-  id("com.google.devtools.ksp") version "2.0.21-1.0.25"
+  id("com.google.devtools.ksp") version "2.1.21-2.0.2"
 }
 
 firebaseLibrary {

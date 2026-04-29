@@ -21,7 +21,7 @@ plugins {
 java { toolchain { languageVersion.set(JavaLanguageVersion.of(17)) } }
 
 dependencies {
-    compileOnly("com.google.devtools.ksp:symbol-processing-api:2.0.21-1.0.25")
+    compileOnly("com.google.devtools.ksp:symbol-processing-api:2.1.21-2.0.2")
 }
 group = "com.google.firebase.dataconnect"
 version = "1.0"
