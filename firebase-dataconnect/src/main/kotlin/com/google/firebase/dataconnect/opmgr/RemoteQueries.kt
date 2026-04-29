@@ -34,16 +34,18 @@ internal class RemoteQueries(
 ) {
 
   private val lifecycleManager =
-    ObjectLifecycleManager<State>(
-      cpuDispatcher,
-      logger
-    ) {
+    ObjectLifecycleManager<State>(cpuDispatcher, logger) {
       logger.debug { "opening" }
-      val state = State(
-        map = SuspendingWeakValueHashMap(ioDispatcher),
-        executeFunction = executeFunction,
-        cacheManager = cacheManager,
-      )
+      val state =
+        State(
+          map =
+            SuspendingWeakValueHashMap(
+              nonBlockingDispatcher = cpuDispatcher,
+              blockingDispatcher = ioDispatcher,
+            ),
+          executeFunction = executeFunction,
+          cacheManager = cacheManager,
+        )
       ObjectLifecycleManager.OpenResult(state, state.map::close)
     }
 

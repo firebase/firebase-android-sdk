@@ -147,16 +147,18 @@ class ClearableValueUnitTest {
   fun `clear() concurrent calls`() = runTest {
     checkAll(
       propTestConfig,
-      Arb.maybeValue(Arb.someValue().map { it.value }.orNull(nullProbability = 0.3))
+      Arb.nonEmptyMaybeValue(Arb.someValue().map { it.value }.orNull(nullProbability = 0.3))
     ) { maybeValue ->
       val clearableValue = ClearableValue(maybeValue)
       val latch = SuspendingCountDownLatch(50)
 
       val jobs =
-        (1..50).map {
+        List(latch.count) { jobIndex ->
           backgroundScope.async(Dispatchers.Default) {
             latch.countDown().await()
-            clearableValue.clear()
+            val clearResult = clearableValue.clear()
+            withClue("jobIndex=$jobIndex") { clearableValue.isCleared shouldBe true }
+            clearResult
           }
         }
       val jobResults = jobs.awaitAll()
@@ -411,10 +413,12 @@ class ClearableValueUnitTest {
       val block = BlockReturning(blockReturnValue?.value)
 
       val jobs =
-        (1..50).map {
+        List(latch.count) { jobIndex ->
           backgroundScope.async(Dispatchers.Default) {
             latch.countDown().await()
-            clearableValue.clearOrElse(block)
+            val clearOrElseResult = clearableValue.clearOrElse(block)
+            withClue("jobIndex=$jobIndex") { clearableValue.isCleared shouldBe true }
+            clearOrElseResult
           }
         }
       val jobResults = jobs.awaitAll()

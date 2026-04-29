@@ -34,7 +34,9 @@ import com.google.firebase.dataconnect.util.ProtoUtil.buildStructProto
 import com.google.firebase.dataconnect.util.ProtoUtil.encodeToStruct
 import com.google.firebase.dataconnect.util.ProtoUtil.toCompactString
 import com.google.firebase.dataconnect.util.ProtoUtil.toStructProto
+import com.google.firebase.dataconnect.util.SuspendingFlag
 import com.google.firebase.dataconnect.util.SuspendingLazy
+import com.google.firebase.dataconnect.util.setOrElse
 import com.google.protobuf.Struct
 import google.firebase.dataconnect.proto.ConnectorServiceGrpc
 import google.firebase.dataconnect.proto.ConnectorServiceGrpcKt
@@ -71,6 +73,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
@@ -332,14 +335,14 @@ internal class DataConnectGrpcRPCs(
 
     val requestChannel = Channel<StreamRequest>(Channel.UNLIMITED)
     val outgoingRequests = run {
-      val collected = AtomicBoolean(false)
+      val collected = SuspendingFlag()
       flow {
-        check(collected.compareAndSet(false, true)) {
+        collected.setOrElse {
           "internal error h37dft6hbp: outgoingRequests may only be collected once " +
             "(streamId=$streamId)"
         }
         emit(initRequest)
-        emitAll(requestChannel.receiveAsFlow())
+        emitAll(requestChannel.consumeAsFlow())
       }
     }
 

@@ -23,7 +23,6 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.async
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 
@@ -32,9 +31,9 @@ import kotlinx.coroutines.withContext
  *
  * The intended use case for [SuspendingCloseHandlingStrategy] is for "close" functions that perform
  * suspending work. Such "close" methods can provide the usual `suspend fun close()`, which is the
- * standard way to close it. It can also provide a non-suspending overload like
- * `fun close(suspendStrategy: SuspendingCloseHandlingStrategy): Deferred<Unit>` which allows close() to be
- * called from a non-suspending context.
+ * standard way to close it. It can also provide a non-suspending overload like `fun
+ * close(suspendStrategy: SuspendingCloseHandlingStrategy): Deferred<Unit>` which allows close() to
+ * be called from a non-suspending context.
  */
 internal sealed interface SuspendingCloseHandlingStrategy {
 
@@ -44,9 +43,7 @@ internal sealed interface SuspendingCloseHandlingStrategy {
    */
   fun <T> handle(coroutineScope: CoroutineScope, block: suspend () -> T): Deferred<T>
 
-  /**
-   * Handle suspending code by blocking the calling thread.
-   */
+  /** Handle suspending code by blocking the calling thread. */
   object Block : SuspendingCloseHandlingStrategy {
 
     override fun <T> handle(coroutineScope: CoroutineScope, block: suspend () -> T): Deferred<T> {
@@ -58,21 +55,15 @@ internal sealed interface SuspendingCloseHandlingStrategy {
       }
       return deferred
     }
-
   }
 
-  /**
-   * Handle suspending code by running it asynchronously.
-   */
+  /** Handle suspending code by running it asynchronously. */
   object Async : SuspendingCloseHandlingStrategy {
 
     override fun <T> handle(coroutineScope: CoroutineScope, block: suspend () -> T): Deferred<T> {
       return coroutineScope.async(Dispatchers.Unconfined, CoroutineStart.UNDISPATCHED) {
-        withContext(NonCancellable) {
-          block()
-        }
+        withContext(NonCancellable) { block() }
       }
     }
-
   }
 }

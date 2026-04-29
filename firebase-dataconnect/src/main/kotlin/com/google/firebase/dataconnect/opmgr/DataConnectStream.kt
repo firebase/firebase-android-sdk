@@ -21,20 +21,17 @@ import com.google.firebase.dataconnect.core.DataConnectAppCheck
 import com.google.firebase.dataconnect.core.DataConnectAuth
 import com.google.firebase.dataconnect.core.DataConnectGrpcRPCs
 import com.google.firebase.dataconnect.core.Logger
-import com.google.firebase.dataconnect.core.LoggerGlobals.debug
-import com.google.firebase.dataconnect.util.CoroutineUtils.createSupervisorCoroutineScope
+import com.google.firebase.dataconnect.util.CoroutineUtils.awaitAll
+import com.google.firebase.dataconnect.util.ObjectLifecycleManager
 import com.google.firebase.dataconnect.util.RequestIdGenerator
-import google.firebase.dataconnect.proto.StreamResponse as StreamResponseProto
+import google.firebase.dataconnect.proto.StreamRequest
+import google.firebase.dataconnect.proto.StreamResponse
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.job
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 
 internal class DataConnectStream(
   dataConnectGrpcRPCs: DataConnectGrpcRPCs,
@@ -44,119 +41,47 @@ internal class DataConnectStream(
   private val cpuDispatcher: CoroutineDispatcher,
   private val logger: Logger,
 ) {
-  private val state =
-    MutableStateFlow<State>(
-      State.Settings(dataConnectGrpcRPCs, dataConnectAuth, dataConnectAppCheck, requestIdGenerator)
-    )
 
-  suspend fun close() {
-    while (true) {
-      val currentState = state.value
+  private class LifecycleResource(
+    val coroutineScope: CoroutineScope,
+    val dataConnectGrpcRPCs: DataConnectGrpcRPCs,
+    val dataConnectAuth: DataConnectAuth,
+    val dataConnectAppCheck: DataConnectAppCheck,
+    val requestIdGenerator: RequestIdGenerator,
+  )
 
-      val newState =
-        when (currentState) {
-          is State.Settings -> State.Closed
-          is State.Connecting -> State.Closing(currentState)
-          is State.Connected -> State.Closing(currentState)
-          is State.Closing -> {
-            currentState.coroutineScope.cancel("DataConnectStream.close() called")
-            currentState.coroutineScope.coroutineContext.job.join()
-            State.Closed
-          }
-          State.Closed -> return
-        }
-
-      state.compareAndSet(currentState, newState)
+  private val lifecycle =
+    ObjectLifecycleManager<LifecycleResource>(
+      cpuDispatcher,
+      logger,
+    ) {
+      LifecycleResource(
+          coroutineScope = lifetimeScope,
+          dataConnectGrpcRPCs = dataConnectGrpcRPCs,
+          dataConnectAuth = dataConnectAuth,
+          dataConnectAppCheck = dataConnectAppCheck,
+          requestIdGenerator = requestIdGenerator,
+        )
+        .toOpenResultWithNothingToClose()
     }
-  }
 
-  private suspend fun ensureConnected(requestId: String): State.Connected {
-    while (true) {
-      val currentState = state.value
-
-      val newState =
-        when (currentState) {
-          is State.Settings ->
-            currentState.run {
-              val coroutineScope = createSupervisorCoroutineScope(cpuDispatcher, logger)
-              val job =
-                coroutineScope.async(start = CoroutineStart.LAZY) {
-                  connect(currentState, requestId)
-                }
-              State.Connecting(currentState, coroutineScope, job)
-            }
-          is State.Connecting -> {
-            currentState.job.join()
-            State.Connected(currentState)
-          }
-          is State.Connected -> return currentState
-          is State.Closing,
-          State.Closed -> error("close() has been called")
-        }
-
-      state.compareAndSet(currentState, newState)
-    }
-  }
-
-  private suspend fun CoroutineScope.connect(
-    settings: State.Settings,
+  suspend fun connect(
     requestId: String,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
-  ): DataConnectGrpcRPCs.ConnectResult =
-    settings.run {
-      val streamId = requestIdGenerator.nextStreamId()
-      logger.debug { "[rid=requestId, sid=$streamId] Connecting to Data Connect backend" }
+  ) =
+    lifecycle.open().run {
+      val (streamId, authToken, appCheckToken) =
+        awaitAll(
+          coroutineScope.async { requestIdGenerator.nextStreamId() },
+          coroutineScope.async { dataConnectAuth.getToken(requestId) },
+          coroutineScope.async { dataConnectAppCheck.getToken(requestId) },
+        )
 
-      val authTokenJob = async { dataConnectAuth.getToken(requestId) }
-      val appCheckTokenJob = async { dataConnectAppCheck.getToken(requestId) }
-      awaitAll(authTokenJob, appCheckTokenJob)
-      val authToken = authTokenJob.await()
-      val appCheckToken = appCheckTokenJob.await()
-
-      dataConnectGrpcRPCs.connect2(
-        streamId = streamId,
-        authToken = authToken,
-        appCheckToken = appCheckToken,
-        callerSdkType = callerSdkType,
-      )
+      val (outgoingRequests: Channel<StreamRequest>, incomingResponses: Flow<StreamResponse>) =
+        dataConnectGrpcRPCs.connect2(streamId, authToken, appCheckToken, callerSdkType)
     }
 
-  private sealed interface StreamResponse {
-    class Success(val response: StreamResponseProto) : StreamResponse
-    class Error(val response: StreamResponseProto) : StreamResponse
-  }
-
-  private sealed interface State {
-
-    class Settings(
-      val dataConnectGrpcRPCs: DataConnectGrpcRPCs,
-      val dataConnectAuth: DataConnectAuth,
-      val dataConnectAppCheck: DataConnectAppCheck,
-      val requestIdGenerator: RequestIdGenerator,
-    ) : State
-
-    class Connecting(
-      val settings: Settings,
-      val coroutineScope: CoroutineScope,
-      val job: Deferred<Unit>,
-    ) : State
-
-    class Connected(
-      val settings: Settings,
-      val authUid: String?,
-      val coroutineScope: CoroutineScope,
-    ) : State {
-      constructor(
-        state: Connecting,
-        authUid: String?
-      ) : this(state.settings, authUid, state.coroutineScope)
-    }
-
-    class Closing(val coroutineScope: CoroutineScope) : State {
-      constructor(state: Connecting) : this(state.coroutineScope)
-      constructor(state: Connected) : this(state.coroutineScope)
-    }
-
-    object Closed : State
+  suspend fun close() {
+    lifecycle.close()
   }
 }

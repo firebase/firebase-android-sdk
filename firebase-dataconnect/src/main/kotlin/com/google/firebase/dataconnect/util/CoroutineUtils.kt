@@ -22,8 +22,10 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.awaitAll
 
 internal object CoroutineUtils {
 
@@ -34,7 +36,8 @@ internal object CoroutineUtils {
    * The returned scope has the following properties:
    * 1. Its job is a [SupervisorJob], with the given [parent] (if specified).
    * 2. Its dispatcher is the given [CoroutineDispatcher].
-   * 3. Its [CoroutineName] is the [Logger.nameWithId] of the given [Logger], or the given [coroutineName].
+   * 3. Its [CoroutineName] is the [Logger.nameWithId] of the given [Logger], or the given
+   * [coroutineName].
    * 4. Its [CoroutineExceptionHandler] logs a warning message rather than crashing the scope.
    */
   fun createSupervisorCoroutineScope(
@@ -53,4 +56,18 @@ internal object CoroutineUtils {
           }
         }
     )
+
+  suspend fun <T1, T2> awaitAll(job1: Deferred<T1>, job2: Deferred<T2>): Pair<T1, T2> {
+    listOf(job1, job2).awaitAll()
+    return Pair(job1.await(), job2.await())
+  }
+
+  suspend fun <T1, T2, T3> awaitAll(
+    job1: Deferred<T1>,
+    job2: Deferred<T2>,
+    job3: Deferred<T3>,
+  ): Triple<T1, T2, T3> {
+    listOf(job1, job2, job3).awaitAll()
+    return Triple(job1.await(), job2.await(), job3.await())
+  }
 }

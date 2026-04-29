@@ -26,18 +26,25 @@ import kotlinx.serialization.modules.SerializersModule
 
 internal class LocalQueries(
   remoteQueries: RemoteQueries,
+  cpuDispatcher: CoroutineDispatcher,
   ioDispatcher: CoroutineDispatcher,
   private val logger: Logger,
 ) : AutoCloseable {
 
-  private val map = SuspendingWeakValueHashMap<RemoteQueries.Key, Unit>(ioDispatcher)
+  private val map =
+    SuspendingWeakValueHashMap<RemoteQueries.Key, Unit>(
+      nonBlockingDispatcher = cpuDispatcher,
+      blockingDispatcher = ioDispatcher,
+    )
 
   override fun close() {
     logger.debug { "close() called" }
     map.close()
   }
 
-  suspend fun <Data> get(key: Key<Data>): LocalQuery<Data> {}
+  suspend fun <Data> get(key: Key<Data>): LocalQuery<Data> {
+    TODO()
+  }
 
   data class Key<Data>(
     val remoteKey: RemoteQueries.Key,

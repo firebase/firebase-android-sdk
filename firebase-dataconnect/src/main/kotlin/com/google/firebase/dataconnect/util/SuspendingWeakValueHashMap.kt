@@ -17,6 +17,8 @@
 package com.google.firebase.dataconnect.util
 
 import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
+import java.lang.ref.ReferenceQueue
+import java.lang.ref.WeakReference
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -26,8 +28,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import java.lang.ref.ReferenceQueue
-import java.lang.ref.WeakReference
 
 /**
  * A thread-safe, coroutine-aware map that holds weak references to its values.
@@ -55,7 +55,7 @@ import java.lang.ref.WeakReference
 internal class SuspendingWeakValueHashMap<K, V : Any>(
   nonBlockingDispatcher: CoroutineDispatcher,
   blockingDispatcher: CoroutineDispatcher,
-): AutoCloseable {
+) : AutoCloseable {
 
   private val logger = Logger("SuspendingWeakValueHashMap")
 
@@ -66,16 +66,17 @@ internal class SuspendingWeakValueHashMap<K, V : Any>(
     val referenceQueue: ReferenceQueue<V>,
   )
 
-  private val lifecycle = ObjectLifecycleManager(
-    coroutineDispatcher = nonBlockingDispatcher,
-    logger = logger,
-  ) {
+  private val lifecycle =
+    ObjectLifecycleManager(
+      coroutineDispatcher = nonBlockingDispatcher,
+      logger = logger,
+    ) {
       val mutex = Mutex()
       val map = mutableMapOf<K, ValueReference<K, V>>()
       val referenceQueue = ReferenceQueue<V>()
 
       val cleanupJob =
-        backgroundScope.launch(
+        lifetimeScope.launch(
           blockingDispatcher + CoroutineName("${logger.nameWithId} cleanup"),
           start = CoroutineStart.LAZY,
         ) {
@@ -91,10 +92,8 @@ internal class SuspendingWeakValueHashMap<K, V : Any>(
           }
         }
 
-      val resources = Resources(cleanupJob, mutex, map, referenceQueue)
-      ObjectLifecycleManager.OpenResult(resources)
+      Resources(cleanupJob, mutex, map, referenceQueue).toOpenResultWithNothingToClose()
     }
-
 
   /**
    * Returns the value corresponding to the given key.
@@ -167,7 +166,6 @@ internal class SuspendingWeakValueHashMap<K, V : Any>(
       mutex.withLock { map.put(key, value, referenceQueue) }
     }
 
-
   /**
    * Associates the given value with the given key if the key is not already associated with a
    * value.
@@ -179,18 +177,19 @@ internal class SuspendingWeakValueHashMap<K, V : Any>(
    * value associated with the given key, or if the previous value was garbage collected.
    * @throws IllegalStateException if [close] has been called.
    */
-  suspend fun putIfAbsent(key: K, value: V): V = lifecycle.open().run {
-    cleanupJob.start()
-    mutex.withLock {
-      val currentValue = map[key]?.get()
-      if (currentValue !== null) {
-        currentValue
-      } else {
-        map.put(key, value, referenceQueue)
-        value
+  suspend fun putIfAbsent(key: K, value: V): V =
+    lifecycle.open().run {
+      cleanupJob.start()
+      mutex.withLock {
+        val currentValue = map[key]?.get()
+        if (currentValue !== null) {
+          currentValue
+        } else {
+          map.put(key, value, referenceQueue)
+          value
+        }
       }
     }
-  }
 
   private fun MutableMap<K, ValueReference<K, V>>.put(
     key: K,
@@ -207,8 +206,7 @@ internal class SuspendingWeakValueHashMap<K, V : Any>(
   override fun close() {
     // Closing the lifecycle in the background is fine because the "only" work that it does is
     // cancel a CoroutineScope, which is quick and cheap and never fails.
-    @Suppress("DeferredResultUnused")
-    lifecycle.close(SuspendingCloseHandlingStrategy.Async)
+    @Suppress("DeferredResultUnused") lifecycle.close(SuspendingCloseHandlingStrategy.Async)
   }
 
   private suspend inline fun <T> runLockedWithMapIfAvailable(

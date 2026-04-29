@@ -204,7 +204,7 @@ internal class OperationExecutor(
 
     val remoteQueryKey =
       RemoteQueries.Key(
-        authUid = connectedState.authUid,
+        // authUid = connectedState.authUid,
         queryId = queryId,
       )
 
@@ -225,7 +225,7 @@ internal class OperationExecutor(
         )
 
       while (true) {
-        val x = connectedState.localQueries.get()
+        TODO()
       }
     }
 
@@ -237,7 +237,7 @@ internal class OperationExecutor(
       dataSerializersModule = dataSerializersModule,
     )
 
-    return OperationManager.ExecuteQueryResult(data, DataSource.SERVER)
+    return OperationManager.ExecuteQueryResult(TODO(), DataSource.SERVER)
   }
 
   suspend fun <Data, Variables> subscribeQuery(
@@ -313,7 +313,7 @@ internal class OperationExecutor(
               true
             } else {
               val streamResponse: StreamResponse = incomingResponse.response
-              val executeResponse = streamResponse.toExecuteResponse()
+              val executeResponse = streamResponse.toExecuteResponse(TODO())
               if (executeResponse !== null) {
                 emit(executeResponse)
               }
@@ -372,6 +372,9 @@ internal class OperationExecutor(
 
     val remoteQueries =
       RemoteQueries(
+        TODO(),
+        TODO(),
+        TODO(),
         ioDispatcher,
         Logger("RemoteQueries").apply { debug { "created by ${logger.nameWithId}" } },
       )
@@ -379,6 +382,7 @@ internal class OperationExecutor(
     val localQueries =
       LocalQueries(
         remoteQueries,
+        cpuDispatcher,
         ioDispatcher,
         Logger("LocalQueries").apply { debug { "created by ${logger.nameWithId}" } },
       )

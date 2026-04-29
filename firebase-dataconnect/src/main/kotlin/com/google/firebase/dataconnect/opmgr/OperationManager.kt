@@ -51,38 +51,36 @@ internal class OperationManager(
 
   private val lifecycle =
     ObjectLifecycleManager(
-      openResource = {
-        logger.debug { "opening" }
-
-        val cacheDb =
-          cacheSettings?.let {
-            val cacheDb = DataConnectCacheDatabase(it.dbFile, logger)
-            launch { cacheDb.initialize() }
-            cacheDb
-          }
-
-        val operationExecutor =
-          OperationExecutor(
-            dataConnectGrpcRPCs,
-            dataConnectAuth,
-            dataConnectAppCheck,
-            cacheDb,
-            currentTimeMillis,
-            ioDispatcher,
-            cpuDispatcher,
-            requestIdGenerator,
-            logger,
-          )
-
-        RunningState(cacheDb, operationExecutor)
-      },
-      closeResource = {
-        it.operationExecutor.close()
-        it.cacheDb?.close()
-      },
       cpuDispatcher,
       logger,
-    )
+    ) {
+      logger.debug { "opening" }
+
+      val cacheDb =
+        cacheSettings?.let {
+          val cacheDb = DataConnectCacheDatabase(it.dbFile, logger)
+          openScope.launch { cacheDb.initialize() }
+          cacheDb
+        }
+
+      val operationExecutor =
+        OperationExecutor(
+          dataConnectGrpcRPCs,
+          dataConnectAuth,
+          dataConnectAppCheck,
+          cacheDb,
+          currentTimeMillis,
+          ioDispatcher,
+          cpuDispatcher,
+          requestIdGenerator,
+          logger,
+        )
+
+      RunningState(cacheDb, operationExecutor).toOpenResultWithClose {
+        operationExecutor.close()
+        cacheDb?.close()
+      }
+    }
 
   suspend fun close() {
     logger.debug { "close() called" }

@@ -26,7 +26,6 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.async
@@ -34,7 +33,6 @@ import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.job
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 
 // ObjectLifecycleManager employs sophisticated Kotlin Coroutines patterns to manage the lifecycle
@@ -127,11 +125,12 @@ internal class ObjectLifecycleManager<Resource>(
   private val state =
     MutableStateFlow<State<Resource>>(
       run {
-        val coroutineScope = createSupervisorCoroutineScope(
-          coroutineDispatcher,
-          logger,
-          coroutineName = logger.nameWithId,
-        )
+        val coroutineScope =
+          createSupervisorCoroutineScope(
+            coroutineDispatcher,
+            logger,
+            coroutineName = logger.nameWithId,
+          )
         val resourceRef = LaterValue<Resource>()
         val closeResourceRef = LaterValue<suspend () -> Unit>()
 
@@ -140,14 +139,15 @@ internal class ObjectLifecycleManager<Resource>(
             coroutineName = "${logger.nameWithId} open job",
             start = CoroutineStart.LAZY,
             openResourceRef = ClearableValue(openResource),
-            resourceRef=resourceRef,
-            closeResourceRef=closeResourceRef,
-            backgroundScope = createSupervisorCoroutineScope(
-              coroutineDispatcher,
-              logger,
-              parent = coroutineScope.coroutineContext.job,
-              coroutineName = "${logger.nameWithId} background",
-            ),
+            resourceRef = resourceRef,
+            closeResourceRef = closeResourceRef,
+            lifetimeScope =
+              createSupervisorCoroutineScope(
+                coroutineDispatcher,
+                logger,
+                parent = coroutineScope.coroutineContext.job,
+                coroutineName = "${logger.nameWithId} background",
+              ),
           )
 
         val closeJob =
@@ -197,23 +197,26 @@ internal class ObjectLifecycleManager<Resource>(
   }
 
   /**
-   * Immediately returns either the resource managed by this object, if it has been opened and not yet closed, or `null` otherwise.
+   * Immediately returns either the resource managed by this object, if it has been opened and not
+   * yet closed, or `null` otherwise.
    *
-   * The only case where this function returns a value other than `null` is when a previous invocation
-   * of [open] completed successfully _and_ there has not been a call to [close].
-   * If [open] has never been called then this function returns `null`.
-   * If [open] has been called but the "open job" is not yet complete then this function returns `null`.
-   * If [close] has been called then this function returns `null`.
+   * The only case where this function returns a value other than `null` is when a previous
+   * invocation of [open] completed successfully _and_ there has not been a call to [close]. If
+   * [open] has never been called then this function returns `null`. If [open] has been called but
+   * the "open job" is not yet complete then this function returns `null`. If [close] has been
+   * called then this function returns `null`.
    *
    * This function neither blocks nor suspends: it effectively returns "immediately".
    *
    * @return Returns the resource managed by this object, if opened and not yet closed.
    */
-  fun poll(): Resource? = when (val currentState = state.value) {
-    is State.Unopened -> null
-    is State.Opened -> currentState.openedResource
-    is State.Closing, State.Closed -> null
-  }
+  fun poll(): Resource? =
+    when (val currentState = state.value) {
+      is State.Unopened -> null
+      is State.Opened -> currentState.openedResource
+      is State.Closing,
+      State.Closed -> null
+    }
 
   /**
    * Closes the resource and releases any associated assets.
@@ -232,18 +235,19 @@ internal class ObjectLifecycleManager<Resource>(
     while (true) {
       val currentState = state.value
 
-      val newState = when (currentState) {
-        is State.Unopened -> State.Closing(currentState)
-        is State.Opened -> State.Closing(currentState)
-        is State.Closing ->
-          currentState.coroutineScope.run {
-            cancel("${logger.nameWithId} close()")
-            currentState.closeJob.await()
-            coroutineContext.job.join()
-          State.Closed
+      val newState =
+        when (currentState) {
+          is State.Unopened -> State.Closing(currentState)
+          is State.Opened -> State.Closing(currentState)
+          is State.Closing ->
+            currentState.coroutineScope.run {
+              cancel("${logger.nameWithId} close()")
+              currentState.closeJob.await()
+              coroutineContext.job.join()
+              State.Closed
+            }
+          State.Closed -> return
         }
-        State.Closed -> return
-      }
 
       state.compareAndSet(currentState, newState)
     }
@@ -253,24 +257,25 @@ internal class ObjectLifecycleManager<Resource>(
    * Starts this object's closing process and optionally blocks (not suspends, blocks!) until the
    * closing process has completed.
    *
-   * This method is provided to allow closing this object from a normal, non-suspending context.
-   * It ultimately has the exact same result as the suspending version of [close], except that the
+   * This method is provided to allow closing this object from a normal, non-suspending context. It
+   * ultimately has the exact same result as the suspending version of [close], except that the
    * caller has the option to block the calling thread until the close operation is complete, or
    * simply run the closing process in the background.
    *
-   * @return a [Deferred] that completes when the closing process completes.
-   * If [SuspendingCloseHandlingStrategy.Block] is specified then it will unconditionally be completed
-   * successfully. Otherwise, If [SuspendingCloseHandlingStrategy.Async] is specified,
-   * then it will complete when the closing process has completed, completing exceptionally if any
-   * errors occurred during the closing process.
+   * @return a [Deferred] that completes when the closing process completes. If
+   * [SuspendingCloseHandlingStrategy.Block] is specified then it will unconditionally be completed
+   * successfully. Otherwise, If [SuspendingCloseHandlingStrategy.Async] is specified, then it will
+   * complete when the closing process has completed, completing exceptionally if any errors
+   * occurred during the closing process.
    */
   fun close(suspendHandlingStrategy: SuspendingCloseHandlingStrategy): Deferred<*> {
-    val coroutineScope = when (val currentState = state.value) {
-      is State.Unopened -> currentState.coroutineScope
-      is State.Opened -> currentState.coroutineScope
-      is State.Closing -> currentState.coroutineScope
-      State.Closed -> return CompletableDeferred(Unit)
-    }
+    val coroutineScope =
+      when (val currentState = state.value) {
+        is State.Unopened -> currentState.coroutineScope
+        is State.Opened -> currentState.coroutineScope
+        is State.Closing -> currentState.coroutineScope
+        State.Closed -> return CompletableDeferred(Unit)
+      }
     return suspendHandlingStrategy.handle(coroutineScope) { close() }
   }
 
@@ -304,7 +309,7 @@ internal class ObjectLifecycleManager<Resource>(
     data object Closed : State<Nothing>
   }
 
-  interface OpenContext {
+  class OpenContext(
 
     /**
      * A [CoroutineScope] whose lifetime matches that of the "open job".
@@ -320,7 +325,7 @@ internal class ObjectLifecycleManager<Resource>(
      *
      * This scope is canceled by a call to [ObjectLifecycleManager.close] of the owner.
      */
-    val openScope: CoroutineScope
+    val openScope: CoroutineScope,
 
     /**
      * A [CoroutineScope] whose lifetime matches that of the owner [ObjectLifecycleManager].
@@ -335,15 +340,26 @@ internal class ObjectLifecycleManager<Resource>(
      *
      * This scope is canceled by a call to [ObjectLifecycleManager.close] of the owner.
      */
-    val backgroundScope: CoroutineScope
+    val lifetimeScope: CoroutineScope,
+  ) {
+    /**
+     * Convenience function to create an [OpenResult] from the receiver that specifies a no-op
+     * function for [OpenResult.close]
+     */
+    fun <T> T.toOpenResultWithNothingToClose(): OpenResult<T> = OpenResult(this, {})
+
+    /**
+     * Convenience function to create an [OpenResult] from the receiver with the given
+     * [OpenResult.close]
+     */
+    fun <T> T.toOpenResultWithClose(close: suspend () -> Unit): OpenResult<T> =
+      OpenResult(this, close)
   }
 
   class OpenResult<Resource>(
     val resource: Resource,
-    val close: suspend () -> Unit = {},
+    val close: suspend () -> Unit,
   )
-
-  private class OpenContextImpl(override val openScope: CoroutineScope, override val backgroundScope: CoroutineScope,) : OpenContext
 
   private companion object {
 
@@ -353,7 +369,7 @@ internal class ObjectLifecycleManager<Resource>(
       openResourceRef: ClearableValue<OpenContext.() -> OpenResult<Resource>>,
       resourceRef: LaterValue<Resource>,
       closeResourceRef: LaterValue<suspend () -> Unit>,
-      backgroundScope: CoroutineScope,
+      lifetimeScope: CoroutineScope,
     ): ClearableValue<Deferred<OpenResult<Resource>>> {
       val job =
         async(CoroutineName(coroutineName), start = start) {
@@ -361,10 +377,11 @@ internal class ObjectLifecycleManager<Resource>(
             openResourceRef.clearOrElse {
               error("internal error xvjmyh9qk9: openRef has already been cleared")
             }
-          val openContext = OpenContextImpl(
-            openScope = this@launchOpenJob,
-            backgroundScope=backgroundScope,
-          )
+          val openContext =
+            OpenContext(
+              openScope = this@launchOpenJob,
+              lifetimeScope = lifetimeScope,
+            )
           open(openContext).apply {
             resourceRef.set(resource)
             closeResourceRef.set(close)
