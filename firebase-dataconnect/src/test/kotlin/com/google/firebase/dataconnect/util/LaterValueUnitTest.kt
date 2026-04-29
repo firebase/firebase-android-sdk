@@ -16,6 +16,12 @@
 
 package com.google.firebase.dataconnect.util
 
+import com.google.firebase.dataconnect.testutil.BlockReturning
+import com.google.firebase.dataconnect.testutil.BlockReturningUnit
+import com.google.firebase.dataconnect.testutil.BlockReturningWithParameter
+import com.google.firebase.dataconnect.testutil.BlockThrowing
+import com.google.firebase.dataconnect.testutil.BlockThrowingWithParameter
+import com.google.firebase.dataconnect.testutil.BlockWithParameter
 import com.google.firebase.dataconnect.testutil.SuspendingCountDownLatch
 import com.google.firebase.dataconnect.testutil.property.arbitrary.SomeValueArb
 import com.google.firebase.dataconnect.testutil.property.arbitrary.hasSameValueAs
@@ -28,6 +34,8 @@ import com.google.firebase.dataconnect.util.MaybeValue.NoValueException
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.assertions.withClue
 import io.kotest.common.ExperimentalKotest
+import io.kotest.matchers.collections.shouldContainExactly
+import io.kotest.matchers.collections.shouldHaveSingleElement
 import io.kotest.matchers.comparables.shouldBeGreaterThan
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
@@ -38,6 +46,7 @@ import io.kotest.property.EdgeConfig
 import io.kotest.property.PropTestConfig
 import io.kotest.property.ShrinkingMode
 import io.kotest.property.arbitrary.list
+import io.kotest.property.arbitrary.orNull
 import io.kotest.property.checkAll
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -305,7 +314,7 @@ class LaterValueUnitTest {
 
   // endregion
 
-  // region Tests for LaterValue.getOrNull
+  // region Tests for LaterValue.getOrNull()
 
   @Test
   fun `getOrNull() when no value set`() {
@@ -345,7 +354,7 @@ class LaterValueUnitTest {
 
   // endregion
 
-  // region Tests for LaterValue.getOrThrow
+  // region Tests for LaterValue.getOrThrow()
 
   @Test
   fun `getOrThrow() when no value set`() {
@@ -380,6 +389,278 @@ class LaterValueUnitTest {
       val laterValue = LaterValue<Any>()
       laterValue.set(value.value)
       laterValue.getOrThrow().shouldHaveSameValueAs(value)
+    }
+  }
+
+  // endregion
+
+  // region Tests for LaterValue.getOrElse()
+
+  @Test
+  fun `getOrElse() when no value set`() = runTest {
+    checkAll(propTestConfig, Arb.someValue()) { value ->
+      val laterValue = LaterValue<Any>()
+      val block = BlockReturning(value.value)
+
+      val result = laterValue.getOrElse(block)
+
+      result.shouldHaveSameValueAs(value)
+      block.callCount shouldBe 1
+    }
+  }
+
+  @Test
+  fun `getOrElse() when value initialized to null`() {
+    val laterValue = LaterValue(MaybeValue.Value(null))
+    val block = BlockThrowing("block should not be called [s4r9b8p3pe]")
+
+    val result = laterValue.getOrElse(block)
+
+    result.shouldBeNull()
+    block.callCount shouldBe 0
+  }
+
+  @Test
+  fun `getOrElse() when value initialized to non-null`() = runTest {
+    checkAll(propTestConfig, Arb.someValue()) { value ->
+      val laterValue = LaterValue(MaybeValue.Value(value.value))
+      val block = BlockThrowing("block should not be called [mb4w9v999r]")
+
+      val result = laterValue.getOrElse(block)
+
+      result.shouldHaveSameValueAs(value)
+      block.callCount shouldBe 0
+    }
+  }
+
+  @Test
+  fun `getOrElse() after set(null)`() {
+    val laterValue = LaterValue<Nothing?>()
+    laterValue.set(null)
+    val block = BlockThrowing("block should not be called [hqa9c67ka9]")
+
+    val result = laterValue.getOrElse(block)
+
+    result.shouldBeNull()
+    block.callCount shouldBe 0
+  }
+
+  @Test
+  fun `getOrElse() after set(non-null)`() = runTest {
+    checkAll(propTestConfig, Arb.someValue()) { value ->
+      val laterValue = LaterValue<Any>()
+      laterValue.set(value.value)
+      val block = BlockThrowing("block should not be called [hqa9c67ka9]")
+
+      val result = laterValue.getOrElse(block)
+
+      result.shouldHaveSameValueAs(value)
+      block.callCount shouldBe 0
+    }
+  }
+
+  // endregion
+
+  // region Tests for LaterValue.ifNotSet()
+
+  @Test
+  fun `ifNotSet() when no value set`() {
+    val laterValue = LaterValue<Nothing>()
+    val block = BlockReturningUnit()
+
+    laterValue.ifNotSet(block)
+
+    block.callCount shouldBe 1
+  }
+
+  @Test
+  fun `ifNotSet() when value initialized to null`() {
+    val laterValue = LaterValue(MaybeValue.Value(null))
+    val block = BlockThrowing("block should not be called [y5qpj2bdmg]")
+
+    laterValue.ifNotSet(block)
+
+    block.callCount shouldBe 0
+  }
+
+  @Test
+  fun `ifNotSet() when value initialized to non-null`() = runTest {
+    checkAll(propTestConfig, Arb.someValue()) { value ->
+      val laterValue = LaterValue(MaybeValue.Value(value.value))
+      val block = BlockThrowing("block should not be called [wgpggd833c]")
+
+      laterValue.ifNotSet(block)
+
+      block.callCount shouldBe 0
+    }
+  }
+
+  @Test
+  fun `ifNotSet() after set(null)`() {
+    val laterValue = LaterValue<Nothing?>()
+    laterValue.set(null)
+    val block = BlockThrowing("block should not be called [dz42z46xhy]")
+
+    laterValue.ifNotSet(block)
+
+    block.callCount shouldBe 0
+  }
+
+  @Test
+  fun `ifNotSet() after set(non-null)`() = runTest {
+    checkAll(propTestConfig, Arb.someValue()) { value ->
+      val laterValue = LaterValue<Any>()
+      laterValue.set(value.value)
+      val block = BlockThrowing("block should not be called [sg7asf4ers]")
+
+      laterValue.ifNotSet(block)
+
+      block.callCount shouldBe 0
+    }
+  }
+
+  // endregion
+
+  // region Tests for LaterValue.ifSet()
+
+  @Test
+  fun `ifSet() when no value set`() {
+    val laterValue = LaterValue<Nothing>()
+    val block = BlockThrowingWithParameter("block should not be called [ge5pqehnwr]")
+
+    laterValue.ifSet(block)
+
+    block.callCount shouldBe 0
+  }
+
+  @Test
+  fun `ifSet() when value initialized to null`() {
+    val laterValue = LaterValue(MaybeValue.Value(null))
+    val block = BlockWithParameter<Nothing?>()
+
+    laterValue.ifSet(block)
+
+    block.calls.shouldContainExactly(null)
+  }
+
+  @Test
+  fun `ifSet() when value initialized to non-null`() = runTest {
+    checkAll(propTestConfig, Arb.someValue()) { value ->
+      val laterValue = LaterValue(MaybeValue.Value(value.value))
+      val block = BlockWithParameter<Any>()
+
+      laterValue.ifSet(block)
+
+      block.calls.shouldHaveSingleElement { it.hasSameValueAs(value) }
+    }
+  }
+
+  @Test
+  fun `ifSet() after set(null)`() {
+    val laterValue = LaterValue<Nothing?>()
+    laterValue.set(null)
+    val block = BlockWithParameter<Nothing?>()
+
+    laterValue.ifSet(block)
+
+    block.calls.shouldContainExactly(null)
+  }
+
+  @Test
+  fun `ifSet() after set(non-null)`() = runTest {
+    checkAll(propTestConfig, Arb.someValue()) { value ->
+      val laterValue = LaterValue<Any>()
+      laterValue.set(value.value)
+      val block = BlockWithParameter<Any>()
+
+      laterValue.ifSet(block)
+
+      block.calls.shouldHaveSingleElement { it.hasSameValueAs(value) }
+    }
+  }
+
+  // endregion
+
+  // region Tests for LaterValue.fold()
+
+  @Test
+  fun `fold() when no value set`() = runTest {
+    checkAll(propTestConfig, Arb.someValue().orNull(nullProbability = 0.3)) { value ->
+      val laterValue = LaterValue<Nothing>()
+      val onNotSet = BlockReturning(value?.value)
+      val onSet = BlockThrowingWithParameter("onSet() should not be called [h5dm6m7egq]")
+
+      val result = laterValue.fold(onNotSet, onSet)
+
+      result.shouldHaveSameValueAs(value)
+      onNotSet.callCount shouldBe 1
+      onSet.callCount shouldBe 0
+    }
+  }
+
+  @Test
+  fun `fold() when value initialized to null`() = runTest {
+    checkAll(propTestConfig, Arb.someValue().orNull(nullProbability = 0.3)) { value ->
+      val laterValue = LaterValue(MaybeValue.Value(null))
+      val onNotSet = BlockThrowing("onNotSet() should not be called [atsxhmj2sg]")
+      val onSet = BlockReturningWithParameter<Any?, _>(value?.value)
+
+      val result = laterValue.fold(onNotSet, onSet)
+
+      result.shouldHaveSameValueAs(value)
+      onNotSet.callCount shouldBe 0
+      onSet.calls.shouldHaveSingleElement(null)
+    }
+  }
+
+  @Test
+  fun `fold() when value initialized to non-null`() = runTest {
+    checkAll(propTestConfig, Arb.someValue(), Arb.someValue().orNull(nullProbability = 0.3)) {
+      value1,
+      value2 ->
+      val laterValue = LaterValue(MaybeValue.Value(value1.value))
+      val onNotSet = BlockThrowing("onNotSet() should not be called [m2b94z5gck]")
+      val onSet = BlockReturningWithParameter<Any, _>(value2?.value)
+
+      val result = laterValue.fold(onNotSet, onSet)
+
+      result.shouldHaveSameValueAs(value2)
+      onNotSet.callCount shouldBe 0
+      onSet.calls.shouldHaveSingleElement { it.hasSameValueAs(value1) }
+    }
+  }
+
+  @Test
+  fun `fold() after set(null)`() = runTest {
+    checkAll(propTestConfig, Arb.someValue().orNull(nullProbability = 0.3)) { value ->
+      val laterValue = LaterValue<Nothing?>()
+      laterValue.set(null)
+      val onNotSet = BlockThrowing("onNotSet() should not be called [nmavjc4mbb]")
+      val onSet = BlockReturningWithParameter<Any?, _>(value?.value)
+
+      val result = laterValue.fold(onNotSet, onSet)
+
+      result.shouldHaveSameValueAs(value)
+      onNotSet.callCount shouldBe 0
+      onSet.calls.shouldHaveSingleElement(null)
+    }
+  }
+
+  @Test
+  fun `fold() after set(non-null)`() = runTest {
+    checkAll(propTestConfig, Arb.someValue(), Arb.someValue().orNull(nullProbability = 0.3)) {
+      value1,
+      value2 ->
+      val laterValue = LaterValue<Any>()
+      laterValue.set(value1.value)
+      val onNotSet = BlockThrowing("onNotSet() should not be called [nmavjc4mbb]")
+      val onSet = BlockReturningWithParameter<Any?, _>(value2?.value)
+
+      val result = laterValue.fold(onNotSet, onSet)
+
+      result.shouldHaveSameValueAs(value2)
+      onNotSet.callCount shouldBe 0
+      onSet.calls.shouldHaveSingleElement { it.hasSameValueAs(value1) }
     }
   }
 
