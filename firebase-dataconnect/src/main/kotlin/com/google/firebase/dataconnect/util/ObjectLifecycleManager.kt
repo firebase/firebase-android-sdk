@@ -19,7 +19,6 @@ package com.google.firebase.dataconnect.util
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.util.CoroutineUtils.createSupervisorCoroutineScope
-import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -86,7 +85,7 @@ import kotlinx.coroutines.withContext
 // 2. Partial Open (Failure after Set): If the abstract openResource() method calls
 //    openedResource.set(ctx) and then subsequently throws an exception or is canceled, the
 //    closeJob's finally block will still observe that the value was set (via
-// openedResource.onValue)
+//    openedResource.onValue)
 //    and call closeResource(ctx). This prevents leaks in "half-opened" states.
 // 3. Cancellation during Open: If the abstract openResource() method is cancelled before it calls
 //    openedResource.set(), the ObjectLifecycleManager does not yet own the resource. In this case,
@@ -151,8 +150,8 @@ internal abstract class ObjectLifecycleManager<OpenParams, OpenedResource>(
             }
           }
 
-        val openJobRef = AtomicReference(openJob)
-        openJob.invokeOnCompletion { openJobRef.set(null) }
+        val openJobRef = ClearableValue(openJob)
+        openJob.invokeOnCompletion { openJobRef.clear() }
 
         val closeJob =
           coroutineScope.async(start = CoroutineStart.UNDISPATCHED) {
@@ -163,7 +162,7 @@ internal abstract class ObjectLifecycleManager<OpenParams, OpenedResource>(
               cancellationException = e
             } finally {
               withContext(NonCancellable) {
-                openJobRef.get()?.let {
+                openJobRef.ifNotCleared {
                   it.cancel(cancellationException)
                   it.join()
                 }
@@ -249,9 +248,9 @@ internal abstract class ObjectLifecycleManager<OpenParams, OpenedResource>(
   /**
    * Performs the resource allocation and initialization.
    *
-   * Implementations **MUST** call [openedResource.set][LaterValue.set] as soon as the resource is
-   * allocated, especially before any suspension points are reached. Otherwise, there is a
-   * possibility that the resource will leak and never be closed. Once [LaterValue.set] is called,
+   * Implementations **MUST** call [LaterValue.set] on the [openedResource] argument as soon as the
+   * resource is allocated, especially before any suspension points are reached. Otherwise, there is
+   * a possibility that the resource will leak and never be closed. Once [LaterValue.set] is called,
    * this [ObjectLifecycleManager] takes responsibility for ensuring that the resource is eventually
    * passed to the [closeResource] method.
    *
@@ -259,9 +258,8 @@ internal abstract class ObjectLifecycleManager<OpenParams, OpenedResource>(
    *
    * @param params The parameters provided to the constructor.
    * @param openedResource A container to receive the allocated resource.
-   * @receiver The scope of the coroutine that is calling this method (see [async]).
    */
-  protected abstract suspend fun CoroutineScope.openResource(
+  protected abstract suspend fun openResource(
     params: OpenParams,
     openedResource: LaterValue<OpenedResource>,
   )
