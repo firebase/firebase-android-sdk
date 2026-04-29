@@ -141,7 +141,7 @@ internal inline fun SuspendingFlag.setOrElse(block: () -> Unit) {
  * @param onNotSet the function to call if the receiver is _not_ in the "set" state.
  */
 @OptIn(ExperimentalContracts::class)
-internal inline fun <T, R> SuspendingFlag.fold(
+internal inline fun <R> SuspendingFlag.fold(
   onSet: () -> R,
   onNotSet: () -> R,
 ): R {
