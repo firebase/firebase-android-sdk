@@ -32,19 +32,20 @@ internal object CoroutineUtils {
    * needs a scope to perform work and will cancel the scope upon its "close" method being invoked.
    *
    * The returned scope has the following properties:
-   * 1. Its job is a [SupervisorJob], with the given parent (if specified).
+   * 1. Its job is a [SupervisorJob], with the given [parent] (if specified).
    * 2. Its dispatcher is the given [CoroutineDispatcher].
-   * 3. Its [CoroutineName] is the [Logger.nameWithId] of the given [Logger].
+   * 3. Its [CoroutineName] is the [Logger.nameWithId] of the given [Logger], or the given [coroutineName].
    * 4. Its [CoroutineExceptionHandler] logs a warning message rather than crashing the scope.
    */
   fun createSupervisorCoroutineScope(
     dispatcher: CoroutineDispatcher,
     logger: Logger,
     parent: Job? = null,
+    coroutineName: String = logger.nameWithId,
   ): CoroutineScope =
     CoroutineScope(
       SupervisorJob(parent) +
-        CoroutineName(logger.nameWithId) +
+        CoroutineName(coroutineName) +
         dispatcher +
         CoroutineExceptionHandler { context, throwable ->
           logger.warn(throwable) {

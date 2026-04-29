@@ -17,20 +17,17 @@
 package com.google.firebase.dataconnect.util
 
 import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
-import com.google.firebase.dataconnect.util.CoroutineUtils.createSupervisorCoroutineScope
-import java.lang.ref.ReferenceQueue
-import java.lang.ref.WeakReference
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.lang.ref.ReferenceQueue
+import java.lang.ref.WeakReference
 
 /**
  * A thread-safe, coroutine-aware map that holds weak references to its values.
@@ -56,15 +53,48 @@ import kotlinx.coroutines.sync.withLock
  * strongly recommended to use an "elastic" dispatcher, like [kotlinx.coroutines.Dispatchers.IO].
  */
 internal class SuspendingWeakValueHashMap<K, V : Any>(
+  nonBlockingDispatcher: CoroutineDispatcher,
   blockingDispatcher: CoroutineDispatcher,
-) : AutoCloseable {
+): AutoCloseable {
 
-  private val state =
-    MutableStateFlow<State<K, V>>(
-      State.Uninitialized(
-        createSupervisorCoroutineScope(blockingDispatcher, Logger("SuspendingWeakValueHashMap"))
-      )
-    )
+  private val logger = Logger("SuspendingWeakValueHashMap")
+
+  private class Resources<K, V : Any>(
+    val cleanupJob: Job,
+    val mutex: Mutex,
+    val map: MutableMap<K, ValueReference<K, V>>,
+    val referenceQueue: ReferenceQueue<V>,
+  )
+
+  private val lifecycle = ObjectLifecycleManager(
+    coroutineDispatcher = nonBlockingDispatcher,
+    logger = logger,
+  ) {
+      val mutex = Mutex()
+      val map = mutableMapOf<K, ValueReference<K, V>>()
+      val referenceQueue = ReferenceQueue<V>()
+
+      val cleanupJob =
+        backgroundScope.launch(
+          blockingDispatcher + CoroutineName("${logger.nameWithId} cleanup"),
+          start = CoroutineStart.LAZY,
+        ) {
+          suspend fun remove(ref: ValueReference<K, V>) {
+            mutex.withLock { map.remove(ref.key, ref) }
+          }
+
+          while (true) {
+            remove(runInterruptible { referenceQueue.removeValueReference() })
+            while (true) {
+              remove(referenceQueue.pollValueReference() ?: break)
+            }
+          }
+        }
+
+      val resources = Resources(cleanupJob, mutex, map, referenceQueue)
+      ObjectLifecycleManager.OpenResult(resources)
+    }
+
 
   /**
    * Returns the value corresponding to the given key.
@@ -131,10 +161,12 @@ internal class SuspendingWeakValueHashMap<K, V : Any>(
    * the key or if the previous value was garbage collected.
    * @throws IllegalStateException if [close] has been called.
    */
-  suspend fun put(key: K, value: V): V? = withOpenState {
-    cleanupJob.start()
-    mutex.withLock { map.put(key, value, referenceQueue) }
-  }
+  suspend fun put(key: K, value: V): V? =
+    lifecycle.open().run {
+      cleanupJob.start()
+      mutex.withLock { map.put(key, value, referenceQueue) }
+    }
+
 
   /**
    * Associates the given value with the given key if the key is not already associated with a
@@ -147,7 +179,7 @@ internal class SuspendingWeakValueHashMap<K, V : Any>(
    * value associated with the given key, or if the previous value was garbage collected.
    * @throws IllegalStateException if [close] has been called.
    */
-  suspend fun putIfAbsent(key: K, value: V): V = withOpenState {
+  suspend fun putIfAbsent(key: K, value: V): V = lifecycle.open().run {
     cleanupJob.start()
     mutex.withLock {
       val currentValue = map[key]?.get()
@@ -171,77 +203,23 @@ internal class SuspendingWeakValueHashMap<K, V : Any>(
     return oldValue
   }
 
-  private inline fun <T> withOpenState(block: State.Open<K, V>.() -> T): T = block(ensureOpen())
-
-  private fun ensureOpen(): State.Open<K, V> {
-    while (true) {
-      val currentState: State.Uninitialized<K, V> =
-        when (val currentState = state.value) {
-          is State.Closed -> throw IllegalStateException("close() has been called")
-          is State.Open -> return currentState
-          is State.Uninitialized -> currentState
-        }
-
-      val openState = currentState.toOpenState()
-
-      if (state.compareAndSet(currentState, openState)) {
-        return openState
-      }
-    }
-  }
-
-  private fun State.Uninitialized<K, V>.toOpenState(): State.Open<K, V> {
-    val mutex = Mutex()
-    val map = mutableMapOf<K, ValueReference<K, V>>()
-    val referenceQueue = ReferenceQueue<V>()
-
-    suspend fun remove(ref: ValueReference<K, V>) {
-      mutex.withLock { map.remove(ref.key, ref) }
-    }
-
-    val cleanupJob =
-      coroutineScope.launch(
-        CoroutineName("SuspendingWeakValueHashMap_CleanupJob"),
-        CoroutineStart.LAZY,
-      ) {
-        while (true) {
-          remove(runInterruptible { referenceQueue.removeValueReference() })
-          while (true) {
-            remove(referenceQueue.pollValueReference() ?: break)
-          }
-        }
-      }
-
-    return State.Open(coroutineScope, cleanupJob, mutex, map, referenceQueue)
-  }
-
   /** Closes this map and cancels the background cleanup loop. */
   override fun close() {
-    while (true) {
-      val currentState = state.value
-
-      when (currentState) {
-        is State.Closed -> return
-        is State.Uninitialized -> {}
-        is State.Open ->
-          currentState.coroutineScope.cancel("SuspendingWeakValueHashMap.close() called")
-      }
-
-      if (state.compareAndSet(currentState, State.Closed())) {
-        return
-      }
-    }
+    // Closing the lifecycle in the background is fine because the "only" work that it does is
+    // cancel a CoroutineScope, which is quick and cheap and never fails.
+    @Suppress("DeferredResultUnused")
+    lifecycle.close(SuspendingCloseHandlingStrategy.Async)
   }
 
   private suspend inline fun <T> runLockedWithMapIfAvailable(
     resultIfMapNotAvailable: T,
     block: (MutableMap<K, ValueReference<K, V>>) -> T
-  ): T =
-    when (val currentState = state.value) {
-      is State.Uninitialized,
-      is State.Closed -> resultIfMapNotAvailable
-      is State.Open -> currentState.mutex.withLock { block(currentState.map) }
+  ): T {
+    val resources = lifecycle.poll() ?: return resultIfMapNotAvailable
+    resources.mutex.withLock {
+      return block(resources.map)
     }
+  }
 
   private class ValueReference<K, V : Any>(
     val key: K,

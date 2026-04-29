@@ -69,7 +69,7 @@ import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.modules.SerializersModule
 
-internal sealed class OperationExecutor(
+internal class OperationExecutor(
   dataConnectGrpcRPCs: DataConnectGrpcRPCs,
   dataConnectAuth: DataConnectAuth,
   dataConnectAppCheck: DataConnectAppCheck,

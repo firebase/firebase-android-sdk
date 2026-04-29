@@ -24,24 +24,15 @@ import com.google.firebase.dataconnect.core.DataConnectAppCheck
 import com.google.firebase.dataconnect.core.DataConnectAuth
 import com.google.firebase.dataconnect.core.DataConnectGrpcRPCs
 import com.google.firebase.dataconnect.core.Logger
-import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase
-import com.google.firebase.dataconnect.util.CoroutineUtils.createSupervisorCoroutineScope
+import com.google.firebase.dataconnect.util.ObjectLifecycleManager
 import com.google.firebase.dataconnect.util.RequestIdGenerator
 import java.io.File
 import kotlin.time.Duration
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.job
+import kotlinx.coroutines.launch
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.modules.SerializersModule
@@ -58,19 +49,50 @@ internal class OperationManager(
   private val logger: Logger,
 ) {
 
-  private val state =
-    MutableStateFlow<State>(
-      State.New(
-        dataConnectGrpcRPCs = dataConnectGrpcRPCs,
-        dataConnectAuth = dataConnectAuth,
-        dataConnectAppCheck = dataConnectAppCheck,
-        ioDispatcher = ioDispatcher,
-        cpuDispatcher = cpuDispatcher,
-        requestIdGenerator = requestIdGenerator,
-        cacheSettings = cacheSettings,
-        currentTimeMillis = currentTimeMillis,
-      )
+  private val lifecycle =
+    ObjectLifecycleManager(
+      openResource = {
+        logger.debug { "opening" }
+
+        val cacheDb =
+          cacheSettings?.let {
+            val cacheDb = DataConnectCacheDatabase(it.dbFile, logger)
+            launch { cacheDb.initialize() }
+            cacheDb
+          }
+
+        val operationExecutor =
+          OperationExecutor(
+            dataConnectGrpcRPCs,
+            dataConnectAuth,
+            dataConnectAppCheck,
+            cacheDb,
+            currentTimeMillis,
+            ioDispatcher,
+            cpuDispatcher,
+            requestIdGenerator,
+            logger,
+          )
+
+        RunningState(cacheDb, operationExecutor)
+      },
+      closeResource = {
+        it.operationExecutor.close()
+        it.cacheDb?.close()
+      },
+      cpuDispatcher,
+      logger,
     )
+
+  suspend fun close() {
+    logger.debug { "close() called" }
+    lifecycle.close()
+  }
+
+  private class RunningState(
+    val cacheDb: DataConnectCacheDatabase?,
+    val operationExecutor: OperationExecutor,
+  )
 
   suspend fun <Data, Variables> executeMutation(
     operationName: String,
@@ -80,8 +102,9 @@ internal class OperationManager(
     dataSerializersModule: SerializersModule?,
     variablesSerializersModule: SerializersModule?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
-  ): Data = withOperationExecutor { operationExecutor ->
-    operationExecutor.executeMutation(
+  ): Data {
+    val runningState = lifecycle.open()
+    return runningState.operationExecutor.executeMutation(
       operationName = operationName,
       variables = variables,
       dataDeserializer = dataDeserializer,
@@ -106,8 +129,9 @@ internal class OperationManager(
     variablesSerializersModule: SerializersModule?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
     fetchPolicy: QueryRef.FetchPolicy,
-  ): ExecuteQueryResult<Data> = withOperationExecutor { operationExecutor ->
-    operationExecutor.executeQuery(
+  ): ExecuteQueryResult<Data> {
+    val runningState = lifecycle.open()
+    return runningState.operationExecutor.executeQuery(
       operationName = operationName,
       variables = variables,
       dataDeserializer = dataDeserializer,
@@ -127,8 +151,9 @@ internal class OperationManager(
     dataSerializersModule: SerializersModule?,
     variablesSerializersModule: SerializersModule?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
-  ): Flow<Result<ExecuteQueryResult<Data>>> = withOperationExecutor { operationExecutor ->
-    operationExecutor.subscribeQuery(
+  ): Flow<Result<ExecuteQueryResult<Data>>> {
+    val runningState = lifecycle.open()
+    return runningState.operationExecutor.subscribeQuery(
       operationName = operationName,
       variables = variables,
       dataDeserializer = dataDeserializer,
@@ -139,153 +164,7 @@ internal class OperationManager(
     )
   }
 
-  suspend fun close() {
-    logger.debug { "close() called" }
-
-    while (true) {
-      val currentState = state.value
-
-      val newState =
-        when (currentState) {
-          State.Closed -> return
-          is State.New -> State.Closed
-          is State.Starting ->
-            State.Closing(
-              currentState.coroutineScope,
-              currentState.cacheDb,
-              currentState.operationExecutor
-            )
-          is State.Started ->
-            State.Closing(
-              currentState.coroutineScope,
-              currentState.cacheDb,
-              currentState.operationExecutor
-            )
-          is State.Closing ->
-            currentState.run {
-              val dbCloseJob = coroutineScope.async { cacheDb?.close() }
-              val operationExecutorCloseJob = coroutineScope.async { operationExecutor.close() }
-              listOf(dbCloseJob, operationExecutorCloseJob).awaitAll()
-              currentState.coroutineScope.cancel("close() called")
-              currentState.coroutineScope.coroutineContext.job.join()
-              State.Closed
-            }
-        }
-
-      state.compareAndSet(currentState, newState)
-    }
-  }
-
-  private suspend fun ensureStarted(): State.Started {
-    while (true) {
-      when (val currentState = state.value) {
-        is State.New -> state.compareAndSet(currentState, currentState.toStartingState())
-        is State.Starting -> state.compareAndSet(currentState, currentState.job.await())
-        is State.Started -> return currentState
-        is State.Closing,
-        State.Closed -> throw IllegalStateException("close() has been called [vpyvbt2k9z]")
-      }
-    }
-  }
-
-  private suspend inline fun <T> withOperationExecutor(block: suspend (OperationExecutor) -> T): T {
-    val startedState = ensureStarted()
-    return block(startedState.operationExecutor)
-  }
-
-  private sealed interface State {
-    data class New(
-      val dataConnectGrpcRPCs: DataConnectGrpcRPCs,
-      val dataConnectAuth: DataConnectAuth,
-      val dataConnectAppCheck: DataConnectAppCheck,
-      val ioDispatcher: CoroutineDispatcher,
-      val cpuDispatcher: CoroutineDispatcher,
-      val requestIdGenerator: RequestIdGenerator,
-      val cacheSettings: CacheSettings?,
-      val currentTimeMillis: () -> Long,
-    ) : State {
-      override fun toString() = "OperationManager.State.New"
-    }
-
-    data class Starting(
-      val coroutineScope: CoroutineScope,
-      val cacheDb: DataConnectCacheDatabase?,
-      val operationExecutor: OperationExecutor,
-      val job: Deferred<Started>,
-    ) : State {
-      override fun toString() = "OperationManager.State.Starting"
-    }
-
-    data class Started(
-      val coroutineScope: CoroutineScope,
-      val cacheDb: DataConnectCacheDatabase?,
-      val operationExecutor: OperationExecutor,
-    ) : State {
-      override fun toString() = "OperationManager.State.Started"
-    }
-
-    data class Closing(
-      val coroutineScope: CoroutineScope,
-      val cacheDb: DataConnectCacheDatabase?,
-      val operationExecutor: OperationExecutor,
-    ) : State {
-      override fun toString() = "OperationManager.State.Closing"
-    }
-
-    data object Closed : State {
-      override fun toString() = "OperationManager.State.Closed"
-    }
-  }
-
   data class CacheSettings(val dbFile: File?, val maxAge: Duration)
-
-  private fun State.New.toStartingState(): State.Starting {
-    val cacheDb: DataConnectCacheDatabase? =
-      cacheSettings?.run {
-        val dbLogger = Logger("DataConnectCacheDatabase")
-        dbLogger.debug { "created by ${logger.nameWithId}" }
-        DataConnectCacheDatabase(dbFile, dbLogger)
-      }
-
-    val operationExecutor = run {
-      val operationExecutorLogger = Logger("OperationExecutor")
-      operationExecutorLogger.debug { "created by ${logger.nameWithId}" }
-
-      if (cacheDb === null) {
-        OperationExecutorNoCache(
-          dataConnectGrpcRPCs = dataConnectGrpcRPCs,
-          dataConnectAuth = dataConnectAuth,
-          dataConnectAppCheck = dataConnectAppCheck,
-          ioDispatcher = ioDispatcher,
-          cpuDispatcher = cpuDispatcher,
-          requestIdGenerator = requestIdGenerator,
-          logger = operationExecutorLogger,
-        )
-      } else {
-        OperationExecutorWithCache(
-          dataConnectGrpcRPCs = dataConnectGrpcRPCs,
-          dataConnectAuth = dataConnectAuth,
-          dataConnectAppCheck = dataConnectAppCheck,
-          ioDispatcher = ioDispatcher,
-          cpuDispatcher = cpuDispatcher,
-          requestIdGenerator = requestIdGenerator,
-          cacheDb = cacheDb,
-          currentTimeMillis = currentTimeMillis,
-          logger = operationExecutorLogger,
-        )
-      }
-    }
-
-    val coroutineScope = createSupervisorCoroutineScope(cpuDispatcher, logger)
-
-    val job =
-      coroutineScope.async(CoroutineName("OperationManager start"), start = CoroutineStart.LAZY) {
-        cacheDb?.initialize()
-        State.Started(coroutineScope, cacheDb, operationExecutor)
-      }
-
-    return State.Starting(coroutineScope, cacheDb, operationExecutor, job)
-  }
 }
 
 internal suspend fun <Data, Variables> OperationManager.execute(
