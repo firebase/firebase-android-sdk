@@ -39,6 +39,38 @@ dependencyResolutionManagement {
   }
 }
 
+fun readSubprojectsFile(
+  subprojectsFileNames: Iterable<String>,
+  subprojectsDirectory: Directory
+): String {
+  val subprojectsFileText =
+    subprojectsFileNames.firstNotNullOfOrNull {
+      val subprojectsRegularFile = subprojectsDirectory.file(it)
+      val subprojectsFile = subprojectsRegularFile.asFile
+      val fileTextProvider = providers.fileContents(subprojectsRegularFile).asText
+      if (!fileTextProvider.isPresent) {
+        logger.info("Skipping non-existent subprojects file: {}", subprojectsFile.absolutePath)
+        null
+      } else {
+        logger.info("Loading subprojects file: {}", subprojectsFile.absolutePath)
+        fileTextProvider.get()
+      }
+    }
+
+  class SubprojectsFileNotFoundException(message: String) : Exception(message)
+  return subprojectsFileText
+    ?: throw SubprojectsFileNotFoundException(
+      "No subprojects files found in ${subprojectsDirectory.asFile.absolutePath} " +
+        "(looked for: ${subprojectsFileNames.joinToString()})"
+    )
+}
+
+fun readSubprojectsFile(): String {
+  val subprojectsFileNames = listOf("subprojects.local.cfg", "subprojects.cfg")
+  val subprojectsDirectory = @Suppress("UnstableApiUsage") layout.settingsDirectory
+  return readSubprojectsFile(subprojectsFileNames, subprojectsDirectory)
+}
+
 /**
  * Parses the input file and returns a list of subprojects.
  *
@@ -47,11 +79,16 @@ dependencyResolutionManagement {
  * - Text following a '#' character on the same line is treated as a comment.
  * - Other lines are treated as project paths.
  */
-fun discoverSubprojects(subprojectsFile: File): List<String> {
-  return subprojectsFile
-    .readLines()
-    .map { it.split("#").firstOrNull()?.trim() ?: "" }
+fun discoverSubprojects(subprojectsFileContents: String): List<String> {
+  return subprojectsFileContents
+    .lines()
+    .mapNotNull { it.split("#").firstOrNull()?.trim() }
     .filter { it.isNotEmpty() }
+}
+
+fun discoverSubprojects(): List<String> {
+  val subprojectsFileText = readSubprojectsFile()
+  return discoverSubprojects(subprojectsFileText)
 }
 
 /**
@@ -93,8 +130,12 @@ fun setBuildScripts(project: ProjectDescriptor) {
   }
 }
 
-/** Note: Do not add subprojects to this file. Instead, add them to `subprojects.cfg`. */
-discoverSubprojects(file("subprojects.cfg")).forEach { include(":$it") }
+// Add subprojects to `subprojects.cfg` instead of modifying `settings.gradle.kts` directly.
+//
+// If `subprojects.local.cfg` exists, it overrides `subprojects.cfg`. This is useful for local
+// development to load only a subset of submodules, which reduces build times and improves
+// IDE performance by reducing the number of files to index.
+discoverSubprojects().forEach { include(":$it") }
 
 setBuildScripts(rootProject)
 

@@ -16,154 +16,190 @@
 
 package com.google.firebase.dataconnect.util
 
-import java.util.concurrent.atomic.AtomicReference
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * A thread-safe container for a value that can be set at most once.
+ * A thread-safe container for a value that can be cleared.
  *
- * This class is useful for scenarios where a value is computed or received asynchronously and needs
- * to be stored for later retrieval, ensuring that it is not modified once set.
+ * This class is useful for scenarios where the reference to a value should be cleared at some later
+ * time in order to allow it to be garbage collected.
  *
- * This class correctly handles nullable values for [T].
+ * This class correctly handles nullable values for [T], correctly differentiating between a value
+ * of `null` and the value having been cleared.
  *
  * All methods and properties of [ClearableValue] are thread-safe and may be safely called and/or
  * accessed concurrently from multiple threads and/or coroutines.
+ *
+ * @param initialValue The initial value for the [ClearableValue]. If it is [MaybeValue.Empty] then
+ * the [ClearableValue] will initially be in the "cleared" state, as if [clear] had been invoked.
+ * Otherwise, the initial value of this object will be the value of the given [MaybeValue.Value]
+ * object.
  */
-internal sealed interface ClearableValue<T> {
-  /** Whether the value has been cleared by a call to [clear]. */
-  val isCleared: Boolean
+internal class ClearableValue<out T>(initialValue: MaybeValue<T>) {
 
   /**
-   * Clears the value.
+   * Creates a new [ClearableValue] object that is initially in the non-cleared state and whose
+   * value is the given value.
    *
-   * This method may be called more than once; subsequent invocations have no effects and return as
-   * if successful.
+   * This constructor is merely a shorthand for calling the primary constructor with a
+   * [MaybeValue.Value] whose value is [initialValue].
+   *
+   * @param initialValue The value with which to initialize this object.
    */
-  fun clear()
+  constructor(initialValue: T) : this(MaybeValue.Value(initialValue))
+
+  private val _state = MutableStateFlow(initialValue)
 
   /**
-   * Returns the value if it has been cleared, or `null` if it has been cleared.
+   * The current state of this object, either [MaybeValue.Empty] or the [MaybeValue.Value] that was
+   * specified to the primary constructor.
    *
-   * Note that if [T] is a nullable type, this method returns `null` both when the value has been
-   * cleared and when it has been set to `null`. Use [isCleared] to disambiguate.
+   * A value of [MaybeValue.Empty] indicates that either [clear] has been invoked or this object was
+   * initialized with [MaybeValue.Empty] being specified to the primary constructor.
+   *
+   * Otherwise, a value of [MaybeValue.Value] indicates that [clear] has not been invoked and the
+   * [MaybeValue.Value] object is that which was specified to the primary constructor.
+   *
+   * There is only one transition that can happen with the value of the [StateFlow]: it can
+   * transition from [MaybeValue.Value] to [MaybeValue.Empty] by a call to [clear]. Once its value
+   * is [MaybeValue.Empty] it will never change again.
    */
-  fun getOrNull(): T?
+  val state: StateFlow<MaybeValue<T>> = _state.asStateFlow()
 
   /**
-   * Returns the value if it has not been cleared, or throws an exception if it has been cleared.
+   * Transitions this [ClearableValue] to the "cleared" state.
    *
-   * @return The value that was specified to the constructor.
-   * @throws IllegalStateException if the value has been cleared.
-   */
-  fun getOrThrow(): T
-
-  companion object {}
-}
-
-internal fun <T> ClearableValue(value: T): ClearableValue
-
-internal class ClearableValue<T>(value: T) {
-
-  private val _state = AtomicReference<State<T>>(State.Value(value))
-
-  val state: State<T>
-    get() = _state.get()
-
-  /** Whether the value has been cleared by a call to [clear]. */
-  val isCleared: Boolean
-    get() =
-      when (state) {
-        is State.Value -> false
-        State.Cleared -> true
-      }
-
-  /**
-   * Clears the value.
+   * Once the value is cleared, it is cleared forever and can never be "un-cleared". If this object
+   * was previously _not_ in the "cleared" state then all references to the value are released,
+   * potentially making it candidate for garbage collection if there are no other strong references
+   * to it.
    *
-   * This method may be called more than once; subsequent invocations have no effects and return as
+   * The directly-observable side effect of this method is that the value of [state] changes to
+   * [MaybeValue.Empty]. Additionally, all future checks of [isCleared] will return `true`.
+   *
+   * This method may be called multiple times. Subsequent invocations have no effect and return as
    * if successful.
    */
   fun clear() {
-    _state.set(State.Cleared)
+    _state.value = MaybeValue.Empty
   }
 
   /**
-   * Returns the value if it has been cleared, or `null` if it has been cleared.
+   * Generates and returns a string representation of this object.
    *
-   * Note that if [T] is a nullable type, this method returns `null` both when the value has been
-   * cleared and when it has been set to `null`. Use [isCleared] to disambiguate.
+   * If this object is in the "cleared" state then the return value is a string indicating
+   * "cleared"; otherwise, the result of [toString] on the value is returned verbatim.
    */
-  fun getOrNull(): T? =
-    when (val currentState = state) {
-      is State.Value -> currentState.value
-      State.Cleared -> null
+  override fun toString() =
+    when (val currentState = state.value) {
+      MaybeValue.Empty -> "<cleared>"
+      is MaybeValue.Value -> currentState.value.toString()
     }
-
-  /**
-   * Returns the value if it has not been cleared, or throws an exception if it has been cleared.
-   *
-   * @return The value that was specified to the constructor.
-   * @throws IllegalStateException if the value has been cleared.
-   */
-  fun getOrThrow(): T =
-    when (val currentState = state) {
-      is State.Value -> currentState.value
-      State.Cleared -> error("clear() has been called")
-    }
-
-  override fun toString() = state.get().toString()
-
-  sealed interface State<out T> {
-    data class Value<T>(val value: T) : State<T> {
-      override fun toString() = value.toString()
-    }
-    data object Cleared : State<Nothing> {
-      override fun toString() = "<cleared>"
-    }
-  }
 }
 
 /**
- * Executes the given [block] with the value of the receiver [ClearableValue] if, and only if, it
- * has not been cleared.
+ * Returns whether the receiver [ClearableValue] is in the "cleared" state.
  *
- * If [ClearableValue.clear] has been called on the receiver, then [block] is not called.
+ * A [ClearableValue] object is considered to be in the "cleared" state if, and only if, the value
+ * of its [ClearableValue.state] is [MaybeValue.Empty]. This "cleared" state is reachable either by
+ * the [ClearableValue] being initialized with [MaybeValue.Empty] or by [clear] being called on a
+ * [ClearableValue] that was initialized with a [MaybeValue.Value] object.
+ */
+internal val ClearableValue<*>.isCleared: Boolean
+  get() = state.isEmpty
+
+/**
+ * Returns the receiver's value if the receiver is not in the "cleared" state according to
+ * [isCleared], or `null` if it _is_ in the "cleared" state.
  *
- * @param block The block to execute with the value if it has not been cleared.
- * @return This [ClearableValue] instance for chaining.
+ * Note that a return value of `null` could mean either that the receiver is in the "cleared" state
+ * _or_ that the receiver is _not_ in the "cleared" state but its value is `null`. A subsequent
+ * check of [isCleared] can largely differentiate between these two meanings of a `null` return
+ * value; however, there is still a race condition in that the state could have transitioned from a
+ * value of `null` to the "cleared" state by an interleaving call to [clear] by another thread. To
+ * absolutely and atomically distinguish between these two cases use one of the other methods that
+ * handle these two cases naturally, such as [getOrThrow], [getOrElse], [ifCleared], [ifNotCleared],
+ * and [fold].
+ */
+internal fun <T> ClearableValue<T>.getOrNull(): T? = state.getOrNull()
+
+/**
+ * Returns the receiver's value if the receiver is not in the "cleared" state according to
+ * [isCleared], or throws an exception if it _is_ in the "cleared" state.
+ *
+ * @throws MaybeValue.NoValueException if the receiver is in the "cleared" state.
+ */
+internal fun <T> ClearableValue<T>.getOrThrow(): T =
+  when (val currentState = state.value) {
+    is MaybeValue.Value -> currentState.value
+    is MaybeValue.Empty -> throw MaybeValue.NoValueException("clear() has been called")
+  }
+
+/**
+ * Returns the receiver's value if the receiver is not in the "cleared" state according to
+ * [isCleared], or the return value of [block] if the receiver _is_ in the "cleared" state.
+ *
+ * @param block the block to call, and whose return value to return, if, and only if, the receiver
+ * is in the "cleared" state; if called, the block will be called in-place exactly once.
  */
 @OptIn(ExperimentalContracts::class)
-internal inline fun <T> ClearableValue<T>.ifSet(block: (T) -> Unit): ClearableValue<T> {
+internal inline fun <T> ClearableValue<T>.getOrElse(block: () -> T): T {
   contract { callsInPlace(block, InvocationKind.AT_MOST_ONCE) }
-  val value = getOrNull()
-  if (value !== null || isCleared) {}
-  if (value != null) {
-    block(value)
-  }
-  if (isCleared) {
-    block(getOrThrow())
-  }
-  return this
+  return state.getOrElse(block)
 }
 
 /**
- * Returns the value set in the receiver [ClearableValue], or the value returned from the given
- * [block] if [ClearableValue.set] has not yet been called.
+ * Calls the given [block] if, and only if, the receiver is in the "cleared" state according to
+ * [isCleared].
  *
- * If the value of the receiver [ClearableValue] _has_ been set, then [block] is not called.
- *
- * @param block The block to execute if the receiver's [set] method has not been called.
- * @return This value set in the receiver [ClearableValue], or the value returned from [block], if
- * the [ClearableValue.set] has not been called on the receiver.
+ * @param block the block to call if, and only if, the receiver is in the "cleared" state; if
+ * called, it will be called in-place exactly once.
  */
 @OptIn(ExperimentalContracts::class)
-internal inline fun <T, R : T> ClearableValue<T>.getOrElse(block: () -> R): T {
+internal inline fun <T> ClearableValue<T>.ifCleared(block: () -> Unit) {
   contract { callsInPlace(block, InvocationKind.AT_MOST_ONCE) }
-  ifSet {
-    return it
+  state.ifEmpty(block)
+}
+
+/**
+ * Calls the given [block] if, and only if, the receiver is _not_ in the "cleared" state according
+ * to [isCleared].
+ *
+ * @param block the block to call if, and only if, the receiver is _not_ in the "cleared" state; if
+ * called, it will be called in-place exactly once and its argument will be the value with which the
+ * receiver was initialized.
+ */
+@OptIn(ExperimentalContracts::class)
+internal inline fun <T> ClearableValue<T>.ifNotCleared(block: (T) -> Unit) {
+  contract { callsInPlace(block, InvocationKind.AT_MOST_ONCE) }
+  state.ifNonEmpty(block)
+}
+
+/**
+ * Calls the given function that corresponds to whether the receiver is in the "cleared" state
+ * according to [isCleared].
+ *
+ * Exactly one of [onCleared] or [onNotCleared] will be called, and will be called in-place exactly
+ * once. This method returns whatever value is returned from the invocation of [onCleared] or
+ * [onNotCleared].
+ *
+ * @param onCleared the function to call if the receiver is in the "cleared" state.
+ * @param onNotCleared the function to call if the receiver is _not_ in the "cleared" state; the
+ * single argument will be the receiver's current value (the value with which it was initialized).
+ */
+@OptIn(ExperimentalContracts::class)
+internal inline fun <T, R> ClearableValue<T>.fold(
+  onCleared: () -> R,
+  onNotCleared: (T) -> R,
+): R {
+  contract {
+    callsInPlace(onCleared, InvocationKind.AT_MOST_ONCE)
+    callsInPlace(onNotCleared, InvocationKind.AT_MOST_ONCE)
   }
-  return block()
+  return state.fold(onCleared, onNotCleared)
 }

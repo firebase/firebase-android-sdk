@@ -17,6 +17,7 @@
 package com.google.firebase.dataconnect.testutil.property.arbitrary
 
 import com.google.firebase.dataconnect.testutil.withNullAppended
+import io.kotest.assertions.print.print
 import io.kotest.property.Arb
 import io.kotest.property.Exhaustive
 import io.kotest.property.arbitrary.arbitrary
@@ -25,13 +26,29 @@ import io.kotest.property.arbitrary.flatMap
 import io.kotest.property.arbitrary.map
 import io.kotest.property.exhaustive.enum
 import io.kotest.property.exhaustive.exhaustive
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.random.nextInt
 
 /** Returns a new [Arb] that produces two _unequal_ values of this [Arb]. */
-fun <T> Arb<T>.distinctPair(isEqual: (T, T) -> Boolean = { v1, v2 -> v1 == v2 }): Arb<Pair<T, T>> =
+fun <T> Arb<T>.distinctPair(isEqual: (T, T) -> Boolean = isEqualByEqualsOperator): Arb<Pair<T, T>> =
   flatMap { value1 ->
-    this@distinctPair.filterNot { isEqual(value1, it) }.map { Pair(value1, it) }
+    val attemptCount = AtomicInteger(0)
+    this@distinctPair.filterNot {
+        check(attemptCount.incrementAndGet() < 100) {
+          "gave up generating a distinct value after ${attemptCount.get()} attempts; " +
+            "value1=${value1.print().value} [zapkd36vqx]"
+        }
+        isEqual(value1, it)
+      }
+      .map { Pair(value1, it) }
   }
+
+/** Returns a new [Arb] that produces two _unequal_ values of this [Arb]. */
+fun <T> Arb<T>.twoDistinctValues(
+  isEqual: (T, T) -> Boolean = isEqualByEqualsOperator
+): Arb<TwoValues<T>> = distinctPair(isEqual).map(::TwoValues)
+
+val isEqualByEqualsOperator: (Any?, Any?) -> Boolean = { v1, v2 -> v1 == v2 }
 
 fun Arb<String>.withPrefix(prefix: String): Arb<String> = arbitrary { "$prefix${bind()}" }
 

@@ -306,15 +306,18 @@ val Arb.Companion.dataConnect: DataConnectArb
 
 inline fun <reified T : Any> Arb.Companion.mock(): Arb<T> = arbitrary { mockk<T>(relaxed = true) }
 
-fun <T> Arb<T>.next(rs: RandomSource, edgeCaseProbability: Float): T {
-  require(edgeCaseProbability in 0.0f..1.0f) {
+fun <T> Arb<T>.next(rs: RandomSource, edgeCaseProbability: Float): T =
+  next(rs, edgeCaseProbability.toDouble())
+
+fun <T> Arb<T>.next(rs: RandomSource, edgeCaseProbability: Double): T {
+  require(edgeCaseProbability in 0.0..1.0) {
     "invalid edgeCaseProbability: $edgeCaseProbability (must be between 0.0 and 1.0, inclusive)"
   }
 
   val isEdgeCase =
     when (edgeCaseProbability) {
-      0.0f -> false
-      1.0f -> true
+      0.0 -> false
+      1.0 -> true
       else -> rs.random.nextFloat() < edgeCaseProbability
     }
 

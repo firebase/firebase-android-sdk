@@ -32,6 +32,9 @@ interface MultipleValues<T> : Iterable<T> {
 fun <T : Comparable<T>> MultipleValues<T>.sorted(): List<T> = toList().sorted()
 
 data class TwoValues<T>(val value1: T, val value2: T) : MultipleValues<T> {
+
+  constructor(values: Pair<T, T>) : this(values.first, values.second)
+
   override fun toString() =
     "TwoValues(value1=${value1.print().value}, value2=${value2.print().value})"
 
@@ -47,6 +50,9 @@ fun <T : Comparable<T>> TwoValues<T>.sorted(): TwoValues<T> =
   if (value1 <= value2) this else TwoValues(value2, value1)
 
 data class ThreeValues<T>(val value1: T, val value2: T, val value3: T) : MultipleValues<T> {
+
+  constructor(values: Triple<T, T, T>) : this(values.first, values.second, values.third)
+
   override fun toString() =
     "ThreeValues(" +
       "value1=${value1.print().value}, " +
@@ -72,6 +78,11 @@ fun <T> List<T>.toThreeValues(): ThreeValues<T> {
 
 data class FourValues<T>(val value1: T, val value2: T, val value3: T, val value4: T) :
   MultipleValues<T> {
+
+  constructor(
+    values: Quadruple<T, T, T, T>
+  ) : this(values.first, values.second, values.third, values.fourth)
+
   override fun toString() =
     "FourValues(" +
       "value1=${value1.print().value}, " +
@@ -103,6 +114,11 @@ data class FiveValues<T>(
   val value4: T,
   val value5: T
 ) : MultipleValues<T> {
+
+  constructor(
+    values: Quintuple<T, T, T, T, T>
+  ) : this(values.first, values.second, values.third, values.fourth, values.fifth)
+
   override fun toString() =
     "FiveValues(" +
       "value1=${value1.print().value}, " +
