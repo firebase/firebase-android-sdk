@@ -131,11 +131,13 @@ internal fun <T> ClearableValue<T>.getOrNull(): T? = state.getOrNull()
 /**
  * Returns the receiver's value if the receiver is not in the "cleared" state according to
  * [isCleared], or throws an exception if it _is_ in the "cleared" state.
+ *
+ * @throws MaybeValue.NoValueException if the receiver is in the "cleared" state.
  */
 internal fun <T> ClearableValue<T>.getOrThrow(): T =
   when (val currentState = state.value) {
     is MaybeValue.Value -> currentState.value
-    is MaybeValue.Empty -> error("clear() has been called")
+    is MaybeValue.Empty -> throw MaybeValue.NoValueException("clear() has been called")
   }
 
 /**
