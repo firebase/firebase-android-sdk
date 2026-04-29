@@ -94,6 +94,7 @@ internal fun OnDeviceModelOption.toMlKit(): com.google.mlkit.genai.prompt.Genera
           releaseStage = MlKitModelReleaseStage.PREVIEW
           preference = MlKitModelPreference.FAST
         }
+        else -> throw IllegalArgumentException("Unknown option: ${this@toMlKit}")
       }
     }
   }

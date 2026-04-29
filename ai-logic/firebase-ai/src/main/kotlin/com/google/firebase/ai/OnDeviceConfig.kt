@@ -104,6 +104,10 @@ public class InferenceSource private constructor(private val value: String) {
 public class OnDeviceModelOption private constructor(private val value: String) {
   override fun toString(): String = value
 
+  override fun equals(other: Any?): Boolean = other is OnDeviceModelOption && value == other.value
+
+  override fun hashCode(): Int = value.hashCode()
+
   public companion object {
     @JvmField public val STABLE: OnDeviceModelOption = OnDeviceModelOption("stable")
     @JvmField public val PREVIEW: OnDeviceModelOption = OnDeviceModelOption("preview")
