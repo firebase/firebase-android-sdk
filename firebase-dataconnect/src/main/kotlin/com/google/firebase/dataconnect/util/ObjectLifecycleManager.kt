@@ -279,13 +279,19 @@ internal class ObjectLifecycleManager<Resource, ResourceParams>(
         when (currentState) {
           is State.Unopened -> State.Closing(currentState)
           is State.Opened -> State.Closing(currentState)
-          is State.Closing ->
-            currentState.coroutineScope.run {
-              cancel("${logger.nameWithId} close()")
+          is State.Closing -> {
+            currentState.coroutineScope.cancel("${logger.nameWithId} close()")
+            try {
               currentState.closeJob.await()
-              coroutineContext.job.join()
-              State.Closed
+            } catch (_: CancellationException) {
+              // Discard CancellationException since that is a "normal" way for coroutines to
+              // terminate; however, allow other exceptions to bubble up to avoid suppressing
+              // legitimate errors.
+            } finally {
+              currentState.coroutineScope.coroutineContext.job.join()
             }
+            State.Closed
+          }
           State.Closed -> return
         }
 
@@ -503,7 +509,10 @@ internal class ObjectLifecycleManager<Resource, ResourceParams>(
 
             // Cleanup Step 2: Run the "close blocks" that were registered during the "open job".
             val closeExceptions =
-              closeBlocksRef.getOrThrow().mapNotNull { runCatching { it() }.exceptionOrNull() }
+              closeBlocksRef
+                .getOrThrow()
+                .mapNotNull { runCatching { it() }.exceptionOrNull() }
+                .filter { it !is CancellationException }
             if (closeExceptions.size == 1) {
               throw closeExceptions[0]
             } else if (closeExceptions.size > 1) {
