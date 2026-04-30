@@ -59,7 +59,7 @@ internal class SuspendingWeakValueHashMap<K, V : Any>(
 
   private val logger = Logger("SuspendingWeakValueHashMap")
 
-  private class Resources<K, V : Any>(
+  private class LifecycleResource<K, V : Any>(
     val cleanupJob: Job,
     val mutex: Mutex,
     val map: MutableMap<K, ValueReference<K, V>>,
@@ -67,7 +67,7 @@ internal class SuspendingWeakValueHashMap<K, V : Any>(
   )
 
   private val lifecycle =
-    ObjectLifecycleManager(
+    ObjectLifecycleManager<LifecycleResource<K, V>, Unit>(
       coroutineDispatcher = nonBlockingDispatcher,
       logger = logger,
     ) {
@@ -92,7 +92,7 @@ internal class SuspendingWeakValueHashMap<K, V : Any>(
           }
         }
 
-      Resources(cleanupJob, mutex, map, referenceQueue).toOpenResultWithNothingToClose()
+      LifecycleResource(cleanupJob, mutex, map, referenceQueue)
     }
 
   /**

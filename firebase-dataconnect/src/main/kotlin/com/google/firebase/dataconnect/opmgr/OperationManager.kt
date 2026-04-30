@@ -28,6 +28,7 @@ import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.sqlite.DataConnectCacheDatabase
 import com.google.firebase.dataconnect.util.ObjectLifecycleManager
 import com.google.firebase.dataconnect.util.RequestIdGenerator
+import com.google.firebase.dataconnect.util.open
 import java.io.File
 import kotlin.time.Duration
 import kotlinx.coroutines.CoroutineDispatcher
@@ -50,7 +51,7 @@ internal class OperationManager(
 ) {
 
   private val lifecycle =
-    ObjectLifecycleManager(
+    ObjectLifecycleManager<LifecycleResource, Unit>(
       cpuDispatcher,
       logger,
     ) {
@@ -62,6 +63,7 @@ internal class OperationManager(
           openScope.launch { cacheDb.initialize() }
           cacheDb
         }
+      onClose { cacheDb?.close() }
 
       val operationExecutor =
         OperationExecutor(
@@ -75,22 +77,20 @@ internal class OperationManager(
           requestIdGenerator,
           logger,
         )
+      onClose { operationExecutor.close() }
 
-      RunningState(cacheDb, operationExecutor).toOpenResultWithClose {
-        operationExecutor.close()
-        cacheDb?.close()
-      }
+      LifecycleResource(cacheDb, operationExecutor)
     }
+
+  private class LifecycleResource(
+    val cacheDb: DataConnectCacheDatabase?,
+    val operationExecutor: OperationExecutor,
+  )
 
   suspend fun close() {
     logger.debug { "close() called" }
     lifecycle.close()
   }
-
-  private class RunningState(
-    val cacheDb: DataConnectCacheDatabase?,
-    val operationExecutor: OperationExecutor,
-  )
 
   suspend fun <Data, Variables> executeMutation(
     operationName: String,

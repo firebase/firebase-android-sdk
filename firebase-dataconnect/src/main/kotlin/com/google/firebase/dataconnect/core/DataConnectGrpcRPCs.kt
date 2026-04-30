@@ -274,12 +274,20 @@ internal class DataConnectGrpcRPCs(
     return DataConnectStream(connectCoroutineScope, requestChannel, incomingResponses)
   }
 
+  class ConnectStreamPair(
+    val outgoingRequests: Channel<StreamRequest>,
+    val incomingResponses: Flow<StreamResponse>,
+  ) {
+    operator fun component1() = outgoingRequests
+    operator fun component2() = incomingResponses
+  }
+
   suspend fun connect2(
     streamId: String,
     authToken: GetAuthTokenResult?,
     appCheckToken: GetAppCheckTokenResult?,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
-  ): Pair<Channel<StreamRequest>, Flow<StreamResponse>> {
+  ): ConnectStreamPair {
     val metadata =
       grpcMetadata.get(
         authToken = authToken,
@@ -356,7 +364,7 @@ internal class DataConnectGrpcRPCs(
           requestChannel.cancel()
         }
 
-    return Pair(requestChannel, incomingResponses)
+    return ConnectStreamPair(requestChannel, incomingResponses)
   }
 
   suspend fun executeMutation(

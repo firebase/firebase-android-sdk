@@ -22,6 +22,8 @@ import kotlin.contracts.contract
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.filterIsInstance
+import kotlinx.coroutines.flow.first
 
 /**
  * A thread-safe container for a value that can be set at most once.
@@ -76,10 +78,30 @@ internal class LaterValue<T>(initialValue: MaybeValue<T> = MaybeValue.Empty) {
    * @throws IllegalStateException if this object is already in the "set" state.
    */
   fun set(value: T) {
-    if (!_state.compareAndSet(MaybeValue.Empty, MaybeValue.Value(value))) {
+    if (!compareAndSet(MaybeValue.Empty, value)) {
       error("set() has already been called")
     }
   }
+
+  /**
+   * Transitions this [LaterValue] to the "set" state with the given `update` value, if this object
+   * is not already in the "set" state.
+   *
+   * Note that although the [expected] argument is not technically needed since [MaybeValue.Empty]
+   * is a singleton, it's been left there to mirror the idiomatic "compareAndSet" method in atomic
+   * operations, such as [MutableStateFlow.compareAndSet].
+   *
+   * @param expected must be [MaybeValue.Empty].
+   * @param update the value to set.
+   * @return returns `true` if this [LaterValue] transitioned to the "set" state and now has the
+   * given [update] value as a consequence of this invocation; returns `false` if this method did
+   * nothing because it was _already_ in the "set" state.
+   */
+  fun compareAndSet(@Suppress("unused") expected: MaybeValue.Empty, update: T): Boolean =
+    when (val currentValue = _state.value) {
+      MaybeValue.Empty -> _state.compareAndSet(currentValue, MaybeValue.Value(update))
+      is MaybeValue.Value -> false
+    }
 
   /**
    * Generates and returns a string representation of this object.
@@ -129,7 +151,7 @@ internal fun <T> LaterValue<T>.getOrNull(): T? = state.getOrNull()
 internal fun <T> LaterValue<T>.getOrThrow(): T =
   when (val currentState = state.value) {
     is MaybeValue.Value -> currentState.value
-    is MaybeValue.Empty -> throw MaybeValue.NoValueException("set() has not yet been called")
+    MaybeValue.Empty -> throw MaybeValue.NoValueException("set() has not yet been called")
   }
 
 /**
@@ -143,6 +165,46 @@ internal fun <T> LaterValue<T>.getOrThrow(): T =
 internal inline fun <T> LaterValue<T>.getOrElse(block: () -> T): T {
   contract { callsInPlace(block, InvocationKind.AT_MOST_ONCE) }
   return state.getOrElse(block)
+}
+
+/**
+ * Returns the receiver's value if the receiver is in the "set" state according to [isSet], or
+ * transitions it to the "set" state using the value returned from the given [value] function.
+ *
+ * Note that just because the given [value] function is invoked does _not_ mean that the value it
+ * returned has necessarily become the receiver's value. This is because there could have been some
+ * other interleaving call to [LaterValue.set] or [LaterValue.compareAndSet] that set the value
+ * _after_ this function called [value].
+ *
+ * The given [value] function will _only_ be called if the receiver does not have a value set. When
+ * it _is_ called, it will be called exactly once, in-place.
+ *
+ * @param value The function to create the value to set.
+ * @return the receiver's value, which may be the value returned from [value] or a value that was
+ * set by someone else.
+ */
+@OptIn(ExperimentalContracts::class)
+internal inline fun <T> LaterValue<T>.getOrSet(value: () -> T): T {
+  contract { callsInPlace(value, InvocationKind.AT_MOST_ONCE) }
+
+  when (val currentValue = state.value) {
+    is MaybeValue.Value -> return currentValue.value
+    is MaybeValue.Empty -> {
+      val newValue = value()
+      if (compareAndSet(currentValue, newValue)) {
+        return newValue
+      }
+    }
+  }
+
+  when (val currentState = state.value) {
+    is MaybeValue.Value -> return currentState.value
+    MaybeValue.Empty ->
+      error(
+        "internal error eha6py3s3d: MaybeValue.Value was changed to MaybeValue.Empty, " +
+          "which violates the invariants of this object"
+      )
+  }
 }
 
 /**
@@ -191,4 +253,12 @@ internal inline fun <T, R> LaterValue<T>.fold(
     callsInPlace(onSet, InvocationKind.AT_MOST_ONCE)
   }
   return state.fold(onNotSet, onSet)
+}
+
+/**
+ * Suspends until the receiver transitions to the "set" state, at which point this function returns
+ * the value to which it was set.
+ */
+internal suspend fun <T> LaterValue<T>.await(): T = getOrElse {
+  state.filterIsInstance<MaybeValue.Value<T>>().first().value
 }

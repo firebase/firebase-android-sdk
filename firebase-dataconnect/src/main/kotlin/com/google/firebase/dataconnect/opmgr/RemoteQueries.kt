@@ -22,6 +22,7 @@ import com.google.firebase.dataconnect.util.ImmutableByteArray
 import com.google.firebase.dataconnect.util.ObjectLifecycleManager
 import com.google.firebase.dataconnect.util.SuspendingWeakValueHashMap
 import com.google.firebase.dataconnect.util.getOrPut
+import com.google.firebase.dataconnect.util.open
 import com.google.protobuf.Struct
 import kotlinx.coroutines.CoroutineDispatcher
 
@@ -34,19 +35,21 @@ internal class RemoteQueries(
 ) {
 
   private val lifecycleManager =
-    ObjectLifecycleManager<State>(cpuDispatcher, logger) {
+    ObjectLifecycleManager<LifecycleResource, Unit>(cpuDispatcher, logger) {
       logger.debug { "opening" }
-      val state =
-        State(
-          map =
-            SuspendingWeakValueHashMap(
-              nonBlockingDispatcher = cpuDispatcher,
-              blockingDispatcher = ioDispatcher,
-            ),
-          executeFunction = executeFunction,
-          cacheManager = cacheManager,
+
+      val map =
+        SuspendingWeakValueHashMap<Key, RemoteQuery>(
+          nonBlockingDispatcher = cpuDispatcher,
+          blockingDispatcher = ioDispatcher,
         )
-      ObjectLifecycleManager.OpenResult(state, state.map::close)
+      onClose(map::close)
+
+      LifecycleResource(
+        map = map,
+        executeFunction = executeFunction,
+        cacheManager = cacheManager,
+      )
     }
 
   suspend fun close() {
@@ -73,7 +76,7 @@ internal class RemoteQueries(
     }
   }
 
-  private class State(
+  private class LifecycleResource(
     val map: SuspendingWeakValueHashMap<Key, RemoteQuery>,
     val executeFunction: RemoteQueryExecuteFunction,
     val cacheManager: CacheManager?,

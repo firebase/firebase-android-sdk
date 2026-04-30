@@ -19,6 +19,9 @@ package com.google.firebase.dataconnect.util
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.util.CoroutineUtils.createSupervisorCoroutineScope
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineDispatcher
@@ -32,6 +35,8 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.getAndUpdate
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.job
 import kotlinx.coroutines.withContext
 
@@ -110,20 +115,21 @@ import kotlinx.coroutines.withContext
  * @param openResource The function to call to open the resource. This function is called at most
  * once and is called in response to an invocation of [open] on a thread from [coroutineDispatcher].
  * When [openResource] returns, the [ObjectLifecycleManager] assumes ownership of the returned
- * resource and guarantees that the returned [OpenResult.close] method will be called to close it in
- * response to an invocation of [close].
+ * resource and guarantees that all close blocks registered with [OpenContext.onClose] during the
+ * opening process will be called in response to an invocation of [close].
  * @param coroutineDispatcher The dispatcher to use for the internal background jobs that manage the
- * resource's lifecycle and for calling [openResource] and [OpenResult.close].
+ * resource's lifecycle and for calling [openResource] and close blocks registered with
+ * [OpenContext.onClose].
  * @param logger A logger to use.
  */
-internal class ObjectLifecycleManager<Resource>(
+internal class ObjectLifecycleManager<Resource, ResourceParams>(
   coroutineDispatcher: CoroutineDispatcher,
   private val logger: Logger,
-  openResource: OpenContext.() -> OpenResult<Resource>,
+  openResource: OpenContext<ResourceParams>.() -> Resource,
 ) {
 
   private val state =
-    MutableStateFlow<State<Resource>>(
+    MutableStateFlow<State<Resource, ResourceParams>>(
       run {
         val coroutineScope =
           createSupervisorCoroutineScope(
@@ -131,8 +137,9 @@ internal class ObjectLifecycleManager<Resource>(
             logger,
             coroutineName = logger.nameWithId,
           )
+        val resourceParamsRef = LaterValue<ResourceParams>()
         val resourceRef = LaterValue<Resource>()
-        val closeResourceRef = LaterValue<suspend () -> Unit>()
+        val closeBlocksRef = LaterValue<List<suspend () -> Unit>>()
 
         val openJobRef =
           coroutineScope.launchOpenJob(
@@ -140,7 +147,8 @@ internal class ObjectLifecycleManager<Resource>(
             start = CoroutineStart.LAZY,
             openResourceRef = ClearableValue(openResource),
             resourceRef = resourceRef,
-            closeResourceRef = closeResourceRef,
+            resourceParamsRef = resourceParamsRef,
+            closeBlocksRef = closeBlocksRef,
             lifetimeScope =
               createSupervisorCoroutineScope(
                 coroutineDispatcher,
@@ -155,10 +163,10 @@ internal class ObjectLifecycleManager<Resource>(
             coroutineName = "${logger.nameWithId} close job",
             start = CoroutineStart.UNDISPATCHED,
             openJobRef = openJobRef,
-            closeResourceRef = closeResourceRef,
+            closeBlocksRef = closeBlocksRef,
           )
 
-        State.Unopened(coroutineScope, openJobRef.getOrThrow(), closeJob)
+        State.Unopened(coroutineScope, resourceParamsRef, openJobRef.getOrThrow(), closeJob)
       }
     )
 
@@ -181,12 +189,17 @@ internal class ObjectLifecycleManager<Resource>(
    *
    * @throws IllegalStateException If [close] has been called.
    */
-  suspend fun open(): Resource {
+  suspend fun open(resourceParamsToken: ResourceParamsToken<Resource, ResourceParams>): Resource {
+    require(resourceParamsToken === _resourceParamsToken) {
+      "invalid resourceParamsToken argument; " +
+        "get the correct instance by either calling setResourceParams() " +
+        "or retrieving it from the resourceParamsToken property"
+    }
     while (true) {
       when (val currentState = state.value) {
         is State.Unopened -> {
-          val openResult = currentState.openJob.await()
-          val newState = State.Opened(currentState, openResult.resource)
+          val resource = currentState.openJob.await()
+          val newState = State.Opened(currentState, resource)
           state.compareAndSet(currentState, newState)
         }
         is State.Opened -> return currentState.openedResource
@@ -195,6 +208,33 @@ internal class ObjectLifecycleManager<Resource>(
       }
     }
   }
+
+  class ResourceParamsToken<Resource, ResourceParams>(
+    val owner: ObjectLifecycleManager<Resource, ResourceParams>
+  )
+
+  private val _resourceParamsToken = ResourceParamsToken(this)
+
+  val resourceParamsToken: ResourceParamsToken<Resource, ResourceParams>?
+    get() {
+      val ref = getResourceParamsRef() ?: return _resourceParamsToken
+      return if (ref.isSet) _resourceParamsToken else null
+    }
+
+  fun setResourceParams(
+    resourceParams: ResourceParams
+  ): ResourceParamsToken<Resource, ResourceParams> {
+    getResourceParamsRef()?.set(resourceParams)
+    return _resourceParamsToken
+  }
+
+  private fun getResourceParamsRef(): LaterValue<ResourceParams>? =
+    when (val currentState = state.value) {
+      is State.Unopened -> currentState.resourceParamsRef
+      is State.Opened,
+      is State.Closing,
+      State.Closed -> null
+    }
 
   /**
    * Immediately returns either the resource managed by this object, if it has been opened and not
@@ -279,21 +319,22 @@ internal class ObjectLifecycleManager<Resource>(
     return suspendHandlingStrategy.handle(coroutineScope) { close() }
   }
 
-  private sealed interface State<out Resource> {
+  private sealed interface State<out Resource, out ResourceParams> {
 
-    class Unopened<Resource>(
+    class Unopened<Resource, ResourceParams>(
       val coroutineScope: CoroutineScope,
-      val openJob: Deferred<OpenResult<Resource>>,
+      val resourceParamsRef: LaterValue<ResourceParams>,
+      val openJob: Deferred<Resource>,
       val closeJob: Deferred<Unit>,
-    ) : State<Resource>
+    ) : State<Resource, ResourceParams>
 
     class Opened<Resource>(
       val coroutineScope: CoroutineScope,
       val closeJob: Deferred<Unit>,
       val openedResource: Resource,
-    ) : State<Resource> {
+    ) : State<Resource, Nothing> {
       constructor(
-        state: Unopened<*>,
+        state: Unopened<*, *>,
         openedResource: Resource
       ) : this(state.coroutineScope, state.closeJob, openedResource)
     }
@@ -301,15 +342,17 @@ internal class ObjectLifecycleManager<Resource>(
     class Closing(
       val coroutineScope: CoroutineScope,
       val closeJob: Deferred<Unit>,
-    ) : State<Nothing> {
-      constructor(state: Unopened<*>) : this(state.coroutineScope, state.closeJob)
+    ) : State<Nothing, Nothing> {
+      constructor(state: Unopened<*, *>) : this(state.coroutineScope, state.closeJob)
       constructor(state: Opened<*>) : this(state.coroutineScope, state.closeJob)
     }
 
-    data object Closed : State<Nothing>
+    data object Closed : State<Nothing, Nothing>
   }
 
-  class OpenContext(
+  interface OpenContext<ResourceParams> {
+    /** The [ResourceParams] that were set by calling [ObjectLifecycleManager.setResourceParams]. */
+    val params: ResourceParams
 
     /**
      * A [CoroutineScope] whose lifetime matches that of the "open job".
@@ -325,7 +368,7 @@ internal class ObjectLifecycleManager<Resource>(
      *
      * This scope is canceled by a call to [ObjectLifecycleManager.close] of the owner.
      */
-    val openScope: CoroutineScope,
+    val openScope: CoroutineScope
 
     /**
      * A [CoroutineScope] whose lifetime matches that of the owner [ObjectLifecycleManager].
@@ -340,51 +383,90 @@ internal class ObjectLifecycleManager<Resource>(
      *
      * This scope is canceled by a call to [ObjectLifecycleManager.close] of the owner.
      */
-    val lifetimeScope: CoroutineScope,
-  ) {
-    /**
-     * Convenience function to create an [OpenResult] from the receiver that specifies a no-op
-     * function for [OpenResult.close]
-     */
-    fun <T> T.toOpenResultWithNothingToClose(): OpenResult<T> = OpenResult(this, {})
+    val lifetimeScope: CoroutineScope
 
     /**
-     * Convenience function to create an [OpenResult] from the receiver with the given
-     * [OpenResult.close]
+     * Register a function to be called during close, known as a "close block".
+     *
+     * When [ObjectLifecycleManager.close] is called it will trigger the execution of all registered
+     * code blocks.
+     *
+     * Zero, one, or many close blocks may be registered. They will run in the opposite order in
+     * which they were registered ("LIFO", last-in-first-out, order). Any exceptions thrown by close
+     * blocks are saved until all code blocks have executed. At that point, the first exception
+     * thrown by a close block will be re-thrown, and any other exceptions thrown by other code
+     * blocks will be added to the first exception's "suppressed" list by calling its
+     * [Throwable.addSuppressed] method.
+     *
+     * The code blocks will run in the context of [lifetimeScope]; however, at their time of
+     * execution the coroutine will have been canceled and the close blocks will be run in a
+     * [NonCancellable] context.
      */
-    fun <T> T.toOpenResultWithClose(close: suspend () -> Unit): OpenResult<T> =
-      OpenResult(this, close)
+    fun onClose(block: suspend () -> Unit)
   }
 
-  class OpenResult<Resource>(
-    val resource: Resource,
-    val close: suspend () -> Unit,
-  )
+  private class OpenContextImpl<ResourceParams>(
+    override val params: ResourceParams,
+    override val openScope: CoroutineScope,
+    override val lifetimeScope: CoroutineScope
+  ) : OpenContext<ResourceParams> {
+
+    private sealed interface State {
+      class Open(val closeBlocks: List<suspend () -> Unit> = emptyList()) : State {
+        fun withAddedCloseBlock(block: suspend () -> Unit): Open = Open(closeBlocks + block)
+      }
+      object Closed : State
+    }
+
+    private val state = MutableStateFlow<State>(State.Open())
+
+    fun close(): List<suspend () -> Unit> =
+      when (val oldState = state.getAndUpdate { State.Closed }) {
+        State.Closed -> error("close() has already been called")
+        is State.Open -> oldState.closeBlocks
+      }
+
+    override fun onClose(block: suspend () -> Unit) {
+      state.update { currentState ->
+        when (currentState) {
+          State.Closed ->
+            error("OpenContextImpl is no longer open for new close block registrations")
+          is State.Open -> currentState.withAddedCloseBlock(block)
+        }
+      }
+    }
+  }
 
   private companion object {
 
-    fun <Resource> CoroutineScope.launchOpenJob(
+    fun <Resource, ResourceParams> CoroutineScope.launchOpenJob(
       coroutineName: String,
       start: CoroutineStart,
-      openResourceRef: ClearableValue<OpenContext.() -> OpenResult<Resource>>,
+      openResourceRef: ClearableValue<OpenContext<ResourceParams>.() -> Resource>,
       resourceRef: LaterValue<Resource>,
-      closeResourceRef: LaterValue<suspend () -> Unit>,
+      resourceParamsRef: LaterValue<ResourceParams>,
+      closeBlocksRef: LaterValue<List<suspend () -> Unit>>,
       lifetimeScope: CoroutineScope,
-    ): ClearableValue<Deferred<OpenResult<Resource>>> {
+    ): ClearableValue<Deferred<Resource>> {
       val job =
         async(CoroutineName(coroutineName), start = start) {
           val open =
             openResourceRef.clearOrElse {
               error("internal error xvjmyh9qk9: openRef has already been cleared")
             }
+          val resourceParams =
+            resourceParamsRef.getOrElse {
+              error("setResourceParams() must be called before open() [tar9z3vvxn]")
+            }
           val openContext =
-            OpenContext(
+            OpenContextImpl(
+              params = resourceParams,
               openScope = this@launchOpenJob,
               lifetimeScope = lifetimeScope,
             )
-          open(openContext).apply {
-            resourceRef.set(resource)
-            closeResourceRef.set(close)
+          open(openContext).also {
+            resourceRef.set(it)
+            closeBlocksRef.set(openContext.close())
           }
         }
 
@@ -402,7 +484,7 @@ internal class ObjectLifecycleManager<Resource>(
       coroutineName: String,
       start: CoroutineStart,
       openJobRef: ClearableValue<Job>,
-      closeResourceRef: LaterValue<suspend () -> Unit>,
+      closeBlocksRef: LaterValue<List<suspend () -> Unit>>,
     ): Deferred<Unit> =
       async(CoroutineName(coroutineName), start = start) {
         val cancellationException = LaterValue<CancellationException>()
@@ -419,10 +501,45 @@ internal class ObjectLifecycleManager<Resource>(
               openJob.join()
             }
 
-            // Cleanup Step 2: Close the Resource, if it was registered by the "open job".
-            closeResourceRef.ifSet { it() }
+            // Cleanup Step 2: Run the "close blocks" that were registered during the "open job".
+            val closeExceptions =
+              closeBlocksRef.getOrThrow().mapNotNull { runCatching { it() }.exceptionOrNull() }
+            if (closeExceptions.size == 1) {
+              throw closeExceptions[0]
+            } else if (closeExceptions.size > 1) {
+              val representativeException = closeExceptions[0]
+              closeExceptions.drop(1).forEach { representativeException.addSuppressed(it) }
+              throw representativeException
+            }
           }
         }
       }
   }
 }
+
+/**
+ * Convenience method to call [ObjectLifecycleManager.open], but calling
+ * [ObjectLifecycleManager.setResourceParams] beforehand if
+ * [ObjectLifecycleManager.resourceParamsToken] returns `null` to get the necessary token.
+ *
+ * @receiver the [ObjectLifecycleManager] object whose [ObjectLifecycleManager.open] method to call
+ * after ensuring the ResourceParams are set.
+ * @param resourceParams the function to call if, and only if, the receiver needs resourceParams; it
+ * will be called at most once and will be called in-place.
+ * @return the resource returned from [ObjectLifecycleManager.open].
+ */
+@OptIn(ExperimentalContracts::class)
+internal suspend inline fun <Resource, ResourceParams> ObjectLifecycleManager<
+  Resource, ResourceParams
+>
+  .open(resourceParams: () -> ResourceParams): Resource {
+  contract { callsInPlace(resourceParams, InvocationKind.AT_MOST_ONCE) }
+  val token = resourceParamsToken ?: setResourceParams(resourceParams())
+  return open(token)
+}
+
+/**
+ * Convenience shorthand for calling [ObjectLifecycleManager.open] when the ResourceParams type is
+ * [Unit].
+ */
+internal suspend fun <Resource> ObjectLifecycleManager<Resource, Unit>.open(): Resource = open {}
