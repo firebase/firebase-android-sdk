@@ -57,9 +57,8 @@ fun readSubprojectsFile(
       }
     }
 
-  class SubprojectsFileNotFoundException(message: String) : Exception(message)
   return subprojectsFileText
-    ?: throw SubprojectsFileNotFoundException(
+    ?: error(
       "No subprojects files found in ${subprojectsDirectory.asFile.absolutePath} " +
         "(looked for: ${subprojectsFileNames.joinToString()})"
     )
