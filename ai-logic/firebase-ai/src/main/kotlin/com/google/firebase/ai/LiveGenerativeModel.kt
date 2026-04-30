@@ -118,7 +118,8 @@ internal constructor(
               config?.inputAudioTranscription?.toInternal(),
               config?.outputAudioTranscription?.toInternal(),
               resumption?.toInternal(),
-              config?.contextWindowCompression?.toInternal()
+              config?.contextWindowCompression?.toInternal(),
+              config?.realtimeInputConfig?.toInternal()
             )
             .toInternal()
         val data: String = JSON.encodeToString(clientMessage)

@@ -63,7 +63,9 @@ import com.google.firebase.ai.type.ImagenMaskReference;
 import com.google.firebase.ai.type.InlineData;
 import com.google.firebase.ai.type.InlineDataPart;
 import com.google.firebase.ai.type.LatLng;
+import com.google.firebase.ai.type.LiveActivityDetection;
 import com.google.firebase.ai.type.LiveGenerationConfig;
+import com.google.firebase.ai.type.LiveRealtimeInputConfig;
 import com.google.firebase.ai.type.LiveServerContent;
 import com.google.firebase.ai.type.LiveServerMessage;
 import com.google.firebase.ai.type.LiveServerSetupComplete;
@@ -183,6 +185,19 @@ public class JavaCompileTests {
         .setPresencePenalty(2.0F)
         .setResponseModality(ResponseModality.AUDIO)
         .setSpeechConfig(new SpeechConfig(new Voice("AOEDE")))
+        .setRealtimeInputConfig(
+            new LiveRealtimeInputConfig.Builder()
+                .setActivityHandling(LiveRealtimeInputConfig.ActivityHandling.NO_INTERRUPT)
+                .setTurnCoverage(LiveRealtimeInputConfig.TurnCoverage.ONLY_ACTIVITY)
+                .setAutomaticActivityDetection(
+                    new LiveActivityDetection.Builder()
+                        .setDisabled(true)
+                        .setStartSensitivity(LiveActivityDetection.Sensitivity.HIGH)
+                        .setEndSensitivity(LiveActivityDetection.Sensitivity.LOW)
+                        .setPrefixPaddingMS(100)
+                        .setSilenceDurationMS(500)
+                        .build())
+                .build())
         .build();
   }
 
@@ -448,6 +463,8 @@ public class JavaCompileTests {
     session.sendAudioRealtime(new InlineData(bytes, "audio/jxl", null));
     session.sendVideoRealtime(new InlineData(bytes, "image/jxl", null));
     session.sendTextRealtime("text");
+    session.sendStartActivityRealtime();
+    session.sendStopActivityRealtime();
 
     FunctionResponsePart functionResponse =
         new FunctionResponsePart("myFunction", new JsonObject(Map.of()));

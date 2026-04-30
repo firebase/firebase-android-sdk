@@ -58,6 +58,8 @@ import kotlinx.serialization.Serializable
  * @property outputAudioTranscription Specifies the configuration for transcribing output audio from
  * the model.
  *
+ * @property realtimeInputConfig Configures realtime input for the session
+ *
  * Refer to the
  * [Control generated output](https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/control-generated-output)
  * guide for more details.
@@ -76,6 +78,7 @@ private constructor(
   internal val inputAudioTranscription: AudioTranscriptionConfig?,
   internal val outputAudioTranscription: AudioTranscriptionConfig?,
   internal val contextWindowCompression: ContextWindowCompressionConfig?,
+  internal val realtimeInputConfig: LiveRealtimeInputConfig?,
 ) {
 
   /**
@@ -105,6 +108,8 @@ private constructor(
    * @property outputAudioTranscription see [LiveGenerationConfig.outputAudioTranscription]
    *
    * @property contextWindowCompression see [LiveGenerationConfig.contextWindowCompression]
+   *
+   * @property realtimeInputConfig see [LiveGenerationConfig.realtimeInputConfig]
    */
   public class Builder {
     @JvmField public var temperature: Float? = null
@@ -118,6 +123,7 @@ private constructor(
     @JvmField public var inputAudioTranscription: AudioTranscriptionConfig? = null
     @JvmField public var outputAudioTranscription: AudioTranscriptionConfig? = null
     @JvmField public var contextWindowCompression: ContextWindowCompressionConfig? = null
+    @JvmField public var realtimeInputConfig: LiveRealtimeInputConfig? = null
 
     public fun setTemperature(temperature: Float?): Builder = apply {
       this.temperature = temperature
@@ -153,6 +159,10 @@ private constructor(
         this.contextWindowCompression = config
       }
 
+    public fun setRealtimeInputConfig(config: LiveRealtimeInputConfig?): Builder = apply {
+      this.realtimeInputConfig = config
+    }
+
     /** Create a new [LiveGenerationConfig] with the attached arguments. */
     public fun build(): LiveGenerationConfig =
       LiveGenerationConfig(
@@ -167,6 +177,7 @@ private constructor(
         inputAudioTranscription = inputAudioTranscription,
         outputAudioTranscription = outputAudioTranscription,
         contextWindowCompression = contextWindowCompression,
+        realtimeInputConfig = realtimeInputConfig,
       )
   }
 
