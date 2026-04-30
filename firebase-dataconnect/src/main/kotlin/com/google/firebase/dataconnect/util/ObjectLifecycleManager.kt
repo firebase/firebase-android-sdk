@@ -154,7 +154,7 @@ internal class ObjectLifecycleManager<Resource, ResourceParams>(
                 coroutineDispatcher,
                 logger,
                 parent = coroutineScope.coroutineContext.job,
-                coroutineName = "${logger.nameWithId} background",
+                coroutineName = "${logger.nameWithId} lifetimeScope",
               ),
           )
 
