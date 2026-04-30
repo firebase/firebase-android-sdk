@@ -330,11 +330,10 @@ public class CrashlyticsCore {
    */
   public void log(final String msg) {
     final long timestamp = System.currentTimeMillis() - startTime;
-    // queuing up on common worker to maintain the order
-    crashlyticsWorkers.common.submit(
-        () -> {
-          crashlyticsWorkers.diskWrite.submit(() -> controller.writeToLog(timestamp, msg));
-        });
+    // submitTask ensures the common worker waits for the diskWrite task to complete, ensuring
+    // that subsequent tasks on the common worker (e.g. logException) see this log entry.
+    crashlyticsWorkers.common.submitTask(
+        () -> crashlyticsWorkers.diskWrite.submit(() -> controller.writeToLog(timestamp, msg)));
   }
 
   public void setUserId(String identifier) {

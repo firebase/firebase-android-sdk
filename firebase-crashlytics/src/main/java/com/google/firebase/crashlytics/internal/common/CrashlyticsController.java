@@ -25,6 +25,7 @@ import android.os.StatFs;
 import android.util.Base64;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
 import com.google.android.gms.tasks.SuccessContinuation;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
@@ -791,6 +792,12 @@ class CrashlyticsController {
 
   UserMetadata getUserMetadata() {
     return userMetadata;
+  }
+
+  @VisibleForTesting
+  @Nullable
+  String getLogString() {
+    return logFileManager.getLogString();
   }
 
   boolean isHandlingException() {
