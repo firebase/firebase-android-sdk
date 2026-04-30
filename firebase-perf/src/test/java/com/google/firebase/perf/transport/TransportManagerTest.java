@@ -15,6 +15,8 @@
 package com.google.firebase.perf.transport;
 
 import static com.google.common.truth.Truth.assertThat;
+import static com.google.firebase.perf.session.FirebaseSessionsTestHelperKt.createTestSession;
+import static com.google.firebase.perf.session.FirebaseSessionsTestHelperKt.testSessionId;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
@@ -28,6 +30,7 @@ import static org.robolectric.Shadows.shadowOf;
 
 import android.content.Context;
 import android.content.pm.PackageInfo;
+import android.os.Process;
 import androidx.test.core.app.ApplicationProvider;
 import com.google.android.datatransport.TransportFactory;
 import com.google.android.gms.tasks.Tasks;
@@ -38,9 +41,7 @@ import com.google.firebase.perf.FirebasePerformance;
 import com.google.firebase.perf.FirebasePerformanceTestBase;
 import com.google.firebase.perf.application.AppStateMonitor;
 import com.google.firebase.perf.config.ConfigResolver;
-import com.google.firebase.perf.session.SessionManager;
 import com.google.firebase.perf.shadows.ShadowPreconditions;
-import com.google.firebase.perf.util.Clock;
 import com.google.firebase.perf.util.Constants;
 import com.google.firebase.perf.util.Constants.CounterNames;
 import com.google.firebase.perf.v1.AndroidMemoryReading;
@@ -1168,8 +1169,7 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
   public void logTraceMetric_sessionEnabled_doesNotStripOffSessionId() {
     TraceMetric.Builder validTrace = createValidTraceMetric().toBuilder();
     List<PerfSession> perfSessions = new ArrayList<>();
-    perfSessions.add(
-        new com.google.firebase.perf.session.PerfSession("fakeSessionId", new Clock()).build());
+    perfSessions.add(createTestSession(1).build());
     validTrace.addAllPerfSessions(perfSessions);
 
     testTransportManager.log(validTrace.build());
@@ -1178,7 +1178,7 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
     PerfMetric loggedPerfMetric = getLastLoggedEvent(times(1));
     assertThat(loggedPerfMetric.getTraceMetric().getPerfSessionsCount()).isEqualTo(1);
     assertThat(loggedPerfMetric.getTraceMetric().getPerfSessions(0).getSessionId())
-        .isEqualTo("fakeSessionId");
+        .isEqualTo(testSessionId(1));
   }
 
   @Test
@@ -1186,8 +1186,7 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
     NetworkRequestMetric.Builder validNetworkRequest =
         createValidNetworkRequestMetric().toBuilder();
     List<PerfSession> perfSessions = new ArrayList<>();
-    perfSessions.add(
-        new com.google.firebase.perf.session.PerfSession("fakeSessionId", new Clock()).build());
+    perfSessions.add(createTestSession(1).build());
     validNetworkRequest.clearPerfSessions().addAllPerfSessions(perfSessions);
 
     testTransportManager.log(validNetworkRequest.build());
@@ -1196,7 +1195,7 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
     PerfMetric loggedPerfMetric = getLastLoggedEvent(times(1));
     assertThat(loggedPerfMetric.getNetworkRequestMetric().getPerfSessionsCount()).isEqualTo(1);
     assertThat(loggedPerfMetric.getNetworkRequestMetric().getPerfSessions(0).getSessionId())
-        .isEqualTo("fakeSessionId");
+        .isEqualTo(testSessionId(1));
   }
 
   @Test
@@ -1206,14 +1205,14 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
     when(mockPerfSession.sessionId()).thenReturn("sessionId");
     when(mockPerfSession.isSessionRunningTooLong()).thenReturn(true);
 
-    SessionManager.getInstance().setPerfSession(mockPerfSession);
-    String oldSessionId = SessionManager.getInstance().perfSession().sessionId();
-    assertThat(oldSessionId).isEqualTo(SessionManager.getInstance().perfSession().sessionId());
+    sessionManager.setPerfSession(mockPerfSession);
+    String oldSessionId = sessionManager.perfSession().sessionId();
+    assertThat(oldSessionId).isEqualTo(sessionManager.perfSession().sessionId());
 
     testTransportManager.log(createValidTraceMetric(), ApplicationProcessState.BACKGROUND);
     fakeExecutorService.runAll();
 
-    assertThat(oldSessionId).isEqualTo(SessionManager.getInstance().perfSession().sessionId());
+    assertThat(oldSessionId).isEqualTo(sessionManager.perfSession().sessionId());
   }
 
   @Test
@@ -1223,14 +1222,14 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
     when(mockPerfSession.sessionId()).thenReturn("sessionId");
     when(mockPerfSession.isSessionRunningTooLong()).thenReturn(true);
 
-    SessionManager.getInstance().setPerfSession(mockPerfSession);
-    String oldSessionId = SessionManager.getInstance().perfSession().sessionId();
-    assertThat(oldSessionId).isEqualTo(SessionManager.getInstance().perfSession().sessionId());
+    sessionManager.setPerfSession(mockPerfSession);
+    String oldSessionId = sessionManager.perfSession().sessionId();
+    assertThat(oldSessionId).isEqualTo(sessionManager.perfSession().sessionId());
 
     testTransportManager.log(createValidNetworkRequestMetric(), ApplicationProcessState.BACKGROUND);
     fakeExecutorService.runAll();
 
-    assertThat(oldSessionId).isEqualTo(SessionManager.getInstance().perfSession().sessionId());
+    assertThat(oldSessionId).isEqualTo(sessionManager.perfSession().sessionId());
   }
 
   @Test
@@ -1240,14 +1239,14 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
     when(mockPerfSession.sessionId()).thenReturn("sessionId");
     when(mockPerfSession.isSessionRunningTooLong()).thenReturn(true);
 
-    SessionManager.getInstance().setPerfSession(mockPerfSession);
-    String oldSessionId = SessionManager.getInstance().perfSession().sessionId();
-    assertThat(oldSessionId).isEqualTo(SessionManager.getInstance().perfSession().sessionId());
+    sessionManager.setPerfSession(mockPerfSession);
+    String oldSessionId = sessionManager.perfSession().sessionId();
+    assertThat(oldSessionId).isEqualTo(sessionManager.perfSession().sessionId());
 
     testTransportManager.log(createValidGaugeMetric(), ApplicationProcessState.FOREGROUND);
     fakeExecutorService.runAll();
 
-    assertThat(oldSessionId).isEqualTo(SessionManager.getInstance().perfSession().sessionId());
+    assertThat(oldSessionId).isEqualTo(sessionManager.perfSession().sessionId());
   }
 
   @Test
@@ -1257,14 +1256,14 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
     when(mockPerfSession.sessionId()).thenReturn("sessionId");
     when(mockPerfSession.isSessionRunningTooLong()).thenReturn(false);
 
-    SessionManager.getInstance().setPerfSession(mockPerfSession);
-    String oldSessionId = SessionManager.getInstance().perfSession().sessionId();
-    assertThat(oldSessionId).isEqualTo(SessionManager.getInstance().perfSession().sessionId());
+    sessionManager.setPerfSession(mockPerfSession);
+    String oldSessionId = sessionManager.perfSession().sessionId();
+    assertThat(oldSessionId).isEqualTo(sessionManager.perfSession().sessionId());
 
     testTransportManager.log(createValidTraceMetric(), ApplicationProcessState.BACKGROUND);
     fakeExecutorService.runAll();
 
-    assertThat(oldSessionId).isEqualTo(SessionManager.getInstance().perfSession().sessionId());
+    assertThat(oldSessionId).isEqualTo(sessionManager.perfSession().sessionId());
   }
 
   @Test
@@ -1274,14 +1273,14 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
     when(mockPerfSession.sessionId()).thenReturn("sessionId");
     when(mockPerfSession.isSessionRunningTooLong()).thenReturn(false);
 
-    SessionManager.getInstance().setPerfSession(mockPerfSession);
-    String oldSessionId = SessionManager.getInstance().perfSession().sessionId();
-    assertThat(oldSessionId).isEqualTo(SessionManager.getInstance().perfSession().sessionId());
+    sessionManager.setPerfSession(mockPerfSession);
+    String oldSessionId = sessionManager.perfSession().sessionId();
+    assertThat(oldSessionId).isEqualTo(sessionManager.perfSession().sessionId());
 
     testTransportManager.log(createValidNetworkRequestMetric(), ApplicationProcessState.BACKGROUND);
     fakeExecutorService.runAll();
 
-    assertThat(oldSessionId).isEqualTo(SessionManager.getInstance().perfSession().sessionId());
+    assertThat(oldSessionId).isEqualTo(sessionManager.perfSession().sessionId());
   }
 
   @Test
@@ -1291,14 +1290,14 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
     when(mockPerfSession.sessionId()).thenReturn("sessionId");
     when(mockPerfSession.isSessionRunningTooLong()).thenReturn(false);
 
-    SessionManager.getInstance().setPerfSession(mockPerfSession);
-    String oldSessionId = SessionManager.getInstance().perfSession().sessionId();
-    assertThat(oldSessionId).isEqualTo(SessionManager.getInstance().perfSession().sessionId());
+    sessionManager.setPerfSession(mockPerfSession);
+    String oldSessionId = sessionManager.perfSession().sessionId();
+    assertThat(oldSessionId).isEqualTo(sessionManager.perfSession().sessionId());
 
     testTransportManager.log(createValidGaugeMetric(), ApplicationProcessState.FOREGROUND);
     fakeExecutorService.runAll();
 
-    assertThat(oldSessionId).isEqualTo(SessionManager.getInstance().perfSession().sessionId());
+    assertThat(oldSessionId).isEqualTo(sessionManager.perfSession().sessionId());
   }
 
   // endregion
@@ -1400,6 +1399,11 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
     if (shouldInitialize) {
       // Set the version name since Firebase sessions needs it.
       Context context = ApplicationProvider.getApplicationContext();
+
+      // For unit test, app context does not application info related to uid, so we have to force
+      // set it through process info.
+      context.getApplicationInfo().uid = Process.myUid();
+
       ShadowPackageManager shadowPackageManager = shadowOf(context.getPackageManager());
 
       PackageInfo packageInfo =
@@ -1418,7 +1422,8 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
           mockRateLimiter,
           mockAppStateMonitor,
           mockFlgTransport,
-          fakeExecutorService);
+          fakeExecutorService,
+          sessionManager);
 
     } else {
       testTransportManager.setInitialized(false);
@@ -1469,6 +1474,8 @@ public class TransportManagerTest extends FirebasePerformanceTestBase {
         .isEqualTo(FAKE_FIREBASE_APPLICATION_ID);
     assertThat(loggedPerfMetric.getApplicationInfo().getApplicationProcessState())
         .isEqualTo(applicationProcessState);
+    assertThat(loggedPerfMetric.getApplicationInfo().getProcessName())
+        .isEqualTo("com.google.firebase.perf.test");
     assertThat(loggedPerfMetric.getApplicationInfo().hasAndroidAppInfo()).isTrue();
   }
 

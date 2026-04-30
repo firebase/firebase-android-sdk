@@ -75,7 +75,7 @@ public class ConfigResolver {
       @Nullable ImmutableBundle metadataBundle,
       @Nullable DeviceCacheManager deviceCacheManager) {
     this.remoteConfigManager =
-        remoteConfigManager == null ? RemoteConfigManager.getInstance() : remoteConfigManager;
+        remoteConfigManager == null ? new RemoteConfigManager() : remoteConfigManager;
     this.metadataBundle = metadataBundle == null ? new ImmutableBundle() : metadataBundle;
     this.deviceCacheManager =
         deviceCacheManager == null ? DeviceCacheManager.getInstance() : deviceCacheManager;
@@ -915,5 +915,9 @@ public class ConfigResolver {
 
   private boolean isSessionsMaxDurationMinutesValid(long maxDurationMin) {
     return maxDurationMin > 0;
+  }
+
+  public RemoteConfigManager getRemoteConfigManager() {
+    return remoteConfigManager;
   }
 }
