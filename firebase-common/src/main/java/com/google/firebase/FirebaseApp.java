@@ -675,7 +675,11 @@ public class FirebaseApp {
     }
 
     public void unregister() {
-      applicationContext.unregisterReceiver(this);
+      try {
+        applicationContext.unregisterReceiver(this);
+      } catch (IllegalArgumentException ignore) {
+        // The receiver isn't registered.
+      }
     }
   }
 
