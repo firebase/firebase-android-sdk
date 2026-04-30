@@ -121,15 +121,18 @@ package com.google.firebase.ai {
     ctor public OnDeviceConfig(com.google.firebase.ai.InferenceMode mode, Integer? maxOutputTokens = null, Float? temperature = null, Integer? topK = null);
     ctor public OnDeviceConfig(com.google.firebase.ai.InferenceMode mode, Integer? maxOutputTokens = null, Float? temperature = null, Integer? topK = null, Integer? seed = null);
     ctor public OnDeviceConfig(com.google.firebase.ai.InferenceMode mode, Integer? maxOutputTokens = null, Float? temperature = null, Integer? topK = null, Integer? seed = null, int candidateCount = 1);
+    ctor public OnDeviceConfig(com.google.firebase.ai.InferenceMode mode, Integer? maxOutputTokens = null, Float? temperature = null, Integer? topK = null, Integer? seed = null, int candidateCount = 1, com.google.firebase.ai.OnDeviceModelOption? modelOption = null);
     method public int getCandidateCount();
     method public Integer? getMaxOutputTokens();
     method public com.google.firebase.ai.InferenceMode getMode();
+    method public com.google.firebase.ai.OnDeviceModelOption? getModelOption();
     method public Integer? getSeed();
     method public Float? getTemperature();
     method public Integer? getTopK();
     property public final int candidateCount;
     property public final Integer? maxOutputTokens;
     property public final com.google.firebase.ai.InferenceMode mode;
+    property public final com.google.firebase.ai.OnDeviceModelOption? modelOption;
     property public final Integer? seed;
     property public final Float? temperature;
     property public final Integer? topK;
@@ -138,6 +141,16 @@ package com.google.firebase.ai {
   }
 
   public static final class OnDeviceConfig.Companion {
+  }
+
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class OnDeviceModelOption {
+    field public static final com.google.firebase.ai.OnDeviceModelOption.Companion Companion;
+    field public static final com.google.firebase.ai.OnDeviceModelOption PREVIEW;
+    field public static final com.google.firebase.ai.OnDeviceModelOption PREVIEW_FAST;
+    field public static final com.google.firebase.ai.OnDeviceModelOption STABLE;
+  }
+
+  public static final class OnDeviceModelOption.Companion {
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class TemplateChat {
