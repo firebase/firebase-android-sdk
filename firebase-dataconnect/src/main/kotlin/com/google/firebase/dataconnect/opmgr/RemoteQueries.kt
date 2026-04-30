@@ -23,11 +23,11 @@ import com.google.firebase.dataconnect.util.ObjectLifecycleManager
 import com.google.firebase.dataconnect.util.SuspendingWeakValueHashMap
 import com.google.firebase.dataconnect.util.getOrPut
 import com.google.firebase.dataconnect.util.open
-import com.google.protobuf.Struct
+import google.firebase.dataconnect.proto.ExecuteRequest
 import kotlinx.coroutines.CoroutineDispatcher
 
 internal class RemoteQueries(
-  executeFunction: RemoteQueryExecuteFunction,
+  dataConnectStream: DataConnectStream,
   cacheManager: CacheManager?,
   private val cpuDispatcher: CoroutineDispatcher,
   ioDispatcher: CoroutineDispatcher,
@@ -45,11 +45,7 @@ internal class RemoteQueries(
         )
       onClose(map::close)
 
-      LifecycleResource(
-        map = map,
-        executeFunction = executeFunction,
-        cacheManager = cacheManager,
-      )
+      LifecycleResource(map, dataConnectStream, cacheManager)
     }
 
   suspend fun close() {
@@ -59,26 +55,24 @@ internal class RemoteQueries(
 
   suspend fun get(
     key: Key,
-    operationName: String,
-    variables: Struct,
+    executeRequest: ExecuteRequest,
   ): RemoteQuery {
-    val state = lifecycleManager.open()
-    return state.map.getOrPut(key) {
+    val lifecycleResource = lifecycleManager.open()
+    return lifecycleResource.map.getOrPut(key) {
       RemoteQuery(
-        queryId = key.queryId,
-        operationName = operationName,
-        variables = variables,
-        executeFunction = state.executeFunction,
-        cacheManager = state.cacheManager,
+        key.queryId,
+        executeRequest,
+        lifecycleResource.dataConnectStream,
+        lifecycleResource.cacheManager,
         cpuDispatcher = cpuDispatcher,
-        logger = logger,
+        logger,
       )
     }
   }
 
   private class LifecycleResource(
     val map: SuspendingWeakValueHashMap<Key, RemoteQuery>,
-    val executeFunction: RemoteQueryExecuteFunction,
+    val dataConnectStream: DataConnectStream,
     val cacheManager: CacheManager?,
   )
 
