@@ -25,6 +25,7 @@ import com.google.firebase.dataconnect.core.LoggerGlobals.debug
 import com.google.firebase.dataconnect.util.CoroutineUtils.awaitAll
 import com.google.firebase.dataconnect.util.ObjectLifecycleManager
 import com.google.firebase.dataconnect.util.RequestIdGenerator
+import com.google.firebase.dataconnect.util.SequencedReference.Companion.nextSequenceNumber
 import com.google.firebase.dataconnect.util.open
 import google.firebase.dataconnect.proto.ExecuteRequest
 import google.firebase.dataconnect.proto.StreamRequest
@@ -37,10 +38,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.Channel.Factory.UNLIMITED
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.FlowCollector
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onSubscription
@@ -59,7 +61,7 @@ internal class DataConnectStream(
 
   private class LifecycleResource(
     val outgoingRequests: Channel<StreamRequest>,
-    val incomingResponses: SharedFlow<IncomingResponse>,
+    val incomingResponses: Flow<IncomingResponse>,
     val authUid: String?
   )
 
@@ -129,7 +131,7 @@ internal class DataConnectStream(
     request: ExecuteRequest,
     block: Channel<StreamRequest>.(requestId: String, request: ExecuteRequest) -> Unit,
     outgoingRequests: Channel<StreamRequest>,
-    incomingResponses: SharedFlow<IncomingResponse>,
+    incomingResponses: Flow<IncomingResponse>,
     authUid: String?
   ): Flow<ExecuteResponse> =
     incomingResponses.transformWhile { incomingResponse ->
@@ -165,7 +167,7 @@ internal class DataConnectStream(
   }
 
   private sealed interface IncomingResponse {
-    class Data(val response: StreamResponse) : IncomingResponse
+    class Data(val sequenceNumber: Long, val response: StreamResponse) : IncomingResponse
     class Error(val throwable: Throwable) : IncomingResponse
     object Completed : IncomingResponse
     object Subscribed : IncomingResponse
@@ -177,10 +179,10 @@ internal class DataConnectStream(
     private fun createSharedFlow(
       coroutineScope: CoroutineScope,
       incomingResponses: Flow<StreamResponse>
-    ): SharedFlow<IncomingResponse> =
+    ): Flow<IncomingResponse> =
       incomingResponses
         .transform {
-          emit(IncomingResponse.Data(it))
+          emit(IncomingResponse.Data(nextSequenceNumber(), it))
           emit(IncomingResponse.Noop) // don't let Data sit in the replay cache, consuming memory
         }
         .onCompletion { exception ->
@@ -191,6 +193,7 @@ internal class DataConnectStream(
         .catch { exception -> emit(IncomingResponse.Error(exception)) }
         .shareIn(coroutineScope, SharingStarted.Lazily, replay = 1)
         .onSubscription { emit(IncomingResponse.Subscribed) }
+        .buffer(capacity = UNLIMITED)
   }
 }
 
