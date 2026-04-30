@@ -16,6 +16,7 @@ package com.google.firebase.crashlytics.internal.common;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.any;
@@ -456,6 +457,31 @@ public class CrashlyticsCoreTest extends CrashlyticsTestCase {
   @Test
   public void testBreadcrumbSourceIsRegistered() {
     Mockito.verify(mockBreadcrumbSource).registerBreadcrumbHandler(any(BreadcrumbHandler.class));
+  }
+
+  /**
+   * Regression test for https://github.com/firebase/firebase-android-sdk/issues/8034.
+   *
+   * <p>Verifies that a breadcrumb logged immediately before {@code logException} is written to disk
+   * before the non-fatal event snapshots the log. Prior to the fix, {@code log()} used
+   * {@code common.submit()} which completed as soon as the disk-write was enqueued, allowing the
+   * subsequent {@code logException()} task to read an empty log. The fix uses {@code submitTask()}
+   * so the common worker suspends until the disk write finishes.
+   */
+  @Test
+  public void testLog_breadcrumbIsWrittenBeforeLogExceptionReadsIt() throws Exception {
+    final String breadcrumb = "test breadcrumb";
+
+    crashlyticsCore.log(breadcrumb);
+    crashlyticsCore.logException(new RuntimeException("non-fatal"), Map.of());
+
+    // Awaiting common is sufficient: submitTask makes common suspend until diskWrite completes,
+    // so when this returns the log entry is guaranteed to be on disk.
+    crashlyticsWorkers.common.await();
+
+    final String logString = crashlyticsCore.getController().getLogString();
+    assertNotNull("Log should have been written before logException read it", logString);
+    assertTrue("Log should contain the breadcrumb", logString.contains(breadcrumb));
   }
 
   @Test
