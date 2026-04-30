@@ -109,8 +109,13 @@ internal class SuspendingWeakValueHashMap<K, V : Any>(
         ) {
           suspend fun remove(ref: ValueReference<K, V>) {
             mutex.withLock { map.remove(ref.key, ref) }
-            if (_garbageCollectedKeys.subscriptionCount.value > 0) {
-              _garbageCollectedKeys.emit(ref.key)
+
+            _garbageCollectedKeys.tryEmit(ref.key).also {
+              check(it) {
+                "internal error hawykvtjbr: _garbageCollectedKeys.tryEmit returned $it " +
+                  "(this must mean that something is configured incorrectly because this " +
+                  "should never happen when extraBufferCapacity=Int.MAX_VALUE)"
+              }
             }
           }
 
