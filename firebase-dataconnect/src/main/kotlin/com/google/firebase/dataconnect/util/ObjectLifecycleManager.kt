@@ -224,7 +224,7 @@ internal class ObjectLifecycleManager<Resource, ResourceParams>(
   fun setResourceParams(
     resourceParams: ResourceParams
   ): ResourceParamsToken<Resource, ResourceParams> {
-    getResourceParamsRef()?.set(resourceParams)
+    getResourceParamsRef()?.compareAndSet(MaybeValue.Empty, resourceParams)
     return _resourceParamsToken
   }
 
