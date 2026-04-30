@@ -7,7 +7,7 @@
 - [changed] Internal refactor to use token objects instead of strings.
   ([#8027](https://github.com/firebase/firebase-android-sdk/pull/8027))
 - [changed] Internal change to add protos for realtime query updates.
-  ([#NNNN](https://github.com/firebase/firebase-android-sdk/pull/NNNN))
+  ([#8081](https://github.com/firebase/firebase-android-sdk/pull/8081))
 
 # 17.2.1
 
