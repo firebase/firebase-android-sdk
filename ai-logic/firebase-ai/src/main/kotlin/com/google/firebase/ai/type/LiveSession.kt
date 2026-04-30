@@ -439,7 +439,7 @@ internal constructor(
    * interruption. An example of the start of user activity could be the user speaking (not
    * silence).
    *
-   * Should be followed with a call to [sendStopActivityRealtime]; after all the data has been sent
+   * Should be followed with a call to [sendStopActivityRealtime] after all the data has been sent
    * for the user's turn.
    *
    * Only required when automatic activity detection is disabled via [LiveRealtimeInputConfig].
@@ -456,7 +456,7 @@ internal constructor(
    *
    * Should follow after a previous call to [sendStartActivityRealtime].
    *
-   * Only required when automatic activity detection is disabled via ``LiveRealtimeInputConfig``.
+   * Only required when automatic activity detection is disabled via [LiveRealtimeInputConfig].
    */
   public suspend fun sendStopActivityRealtime() {
     sendFrame(BidiGenerateContentRealtimeInputSetup(activityEnd = true).toInternal())

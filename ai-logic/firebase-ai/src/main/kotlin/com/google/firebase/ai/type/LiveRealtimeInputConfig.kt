@@ -33,9 +33,9 @@ import kotlinx.serialization.Serializable
 @PublicPreviewAPI
 public class LiveRealtimeInputConfig
 private constructor(
-  public val automaticActivityDetection: LiveActivityDetection?,
-  public val activityHandling: ActivityHandling?,
-  public val turnCoverage: TurnCoverage?
+  internal val automaticActivityDetection: LiveActivityDetection?,
+  internal val activityHandling: ActivityHandling?,
+  internal val turnCoverage: TurnCoverage?
 ) {
 
   /** How a model handles user input activity. */

@@ -38,11 +38,11 @@ import kotlinx.serialization.Serializable
 @PublicPreviewAPI
 public class LiveActivityDetection
 private constructor(
-  public val startSensitivity: Sensitivity?,
-  public val endSensitivity: Sensitivity?,
-  public val prefixPaddingMS: Int?,
-  public val silenceDurationMS: Int?,
-  public val disabled: Boolean?
+  internal val startSensitivity: Sensitivity?,
+  internal val endSensitivity: Sensitivity?,
+  internal val prefixPaddingMS: Int?,
+  internal val silenceDurationMS: Int?,
+  internal val disabled: Boolean?
 ) {
 
   /** How sensitive the model interprets speech activity. */

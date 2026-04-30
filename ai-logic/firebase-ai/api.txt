@@ -1310,16 +1310,6 @@ package com.google.firebase.ai.type {
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class LiveActivityDetection {
     method public static com.google.firebase.ai.type.LiveActivityDetection.Builder builder();
-    method public Boolean? getDisabled();
-    method public com.google.firebase.ai.type.LiveActivityDetection.Sensitivity? getEndSensitivity();
-    method public Integer? getPrefixPaddingMS();
-    method public Integer? getSilenceDurationMS();
-    method public com.google.firebase.ai.type.LiveActivityDetection.Sensitivity? getStartSensitivity();
-    property public final Boolean? disabled;
-    property public final com.google.firebase.ai.type.LiveActivityDetection.Sensitivity? endSensitivity;
-    property public final Integer? prefixPaddingMS;
-    property public final Integer? silenceDurationMS;
-    property public final com.google.firebase.ai.type.LiveActivityDetection.Sensitivity? startSensitivity;
     field public static final com.google.firebase.ai.type.LiveActivityDetection.Companion Companion;
   }
 
@@ -1421,12 +1411,6 @@ package com.google.firebase.ai.type {
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class LiveRealtimeInputConfig {
     method public static com.google.firebase.ai.type.LiveRealtimeInputConfig.Builder builder();
-    method public com.google.firebase.ai.type.LiveRealtimeInputConfig.ActivityHandling? getActivityHandling();
-    method public com.google.firebase.ai.type.LiveActivityDetection? getAutomaticActivityDetection();
-    method public com.google.firebase.ai.type.LiveRealtimeInputConfig.TurnCoverage? getTurnCoverage();
-    property public final com.google.firebase.ai.type.LiveRealtimeInputConfig.ActivityHandling? activityHandling;
-    property public final com.google.firebase.ai.type.LiveActivityDetection? automaticActivityDetection;
-    property public final com.google.firebase.ai.type.LiveRealtimeInputConfig.TurnCoverage? turnCoverage;
     field public static final com.google.firebase.ai.type.LiveRealtimeInputConfig.Companion Companion;
   }
 
