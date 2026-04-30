@@ -135,13 +135,9 @@ abstract class GenerateSymbolFileTask : DefaultTask() {
     symbolGeneratorTypeOverride: Property<String>,
   ) {
     val symbolGeneratorTypeString =
-      if (project.hasProperty(SYMBOL_GENERATOR_PROPERTY)) {
-        project.findProperty(SYMBOL_GENERATOR_PROPERTY) as String
-      } else if (symbolGeneratorTypeOverride.isPresent) {
-        symbolGeneratorTypeOverride.get()
-      } else {
-        SYMBOL_GENERATOR_BREAKPAD
-      }
+      project.providers.gradleProperty(SYMBOL_GENERATOR_PROPERTY)
+        .orElse(symbolGeneratorTypeOverride)
+        .getOrElse(SYMBOL_GENERATOR_BREAKPAD)
 
     // This will also validate the symbol generator type string.
     symbolGeneratorType.set(SymbolGeneratorType.fromString(symbolGeneratorTypeString))
@@ -174,8 +170,10 @@ abstract class GenerateSymbolFileTask : DefaultTask() {
       project.tasks.register<GenerateSymbolFileTask>(
         "generateCrashlyticsSymbolFile${variant.name.capitalized()}"
       ) {
-        if (project.hasProperty(BREAKPAD_BINARY_PROPERTY)) {
-          breakpadBinary.set(File(project.findProperty(BREAKPAD_BINARY_PROPERTY) as String))
+        val breakpadBinaryGradleProperty =
+          project.providers.gradleProperty(BREAKPAD_BINARY_PROPERTY)
+        if (breakpadBinaryGradleProperty.isPresent) {
+          breakpadBinary.set(File(breakpadBinaryGradleProperty.get()))
         } else {
           breakpadBinary.set(crashlyticsExtension.breakpadBinary)
         }
