@@ -24,6 +24,11 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.sync.Mutex
@@ -59,6 +64,28 @@ internal class SuspendingWeakValueHashMap<K, V : Any>(
 
   private val logger = Logger("SuspendingWeakValueHashMap")
 
+  private val _garbageCollectedKeys =
+    MutableSharedFlow<K>(
+      replay = 0,
+      extraBufferCapacity = Int.MAX_VALUE,
+      onBufferOverflow = BufferOverflow.SUSPEND,
+    )
+
+  /**
+   * A [Flow] that emits the keys of entries whose values have been garbage collected.
+   *
+   * Note that this [Flow] only emits events for keys that were reclaimed by the garbage collector
+   * automatically; keys/value pairs that were explicitly removed, such as by calling [remove] or
+   * [clear], do _not_ result in events being produced by this [Flow].
+   *
+   * This flow is useful for being notified when entries are automatically removed from the map.
+   * Note that the emission of a key from this flow happens _after_ the corresponding entry has been
+   * removed from the map's internal storage.
+   *
+   * This flow is thread-safe and supports multiple concurrent collectors.
+   */
+  val garbageCollectedKeys: SharedFlow<K> = _garbageCollectedKeys.asSharedFlow()
+
   private class LifecycleResource<K, V : Any>(
     val cleanupJob: Job,
     val mutex: Mutex,
@@ -82,6 +109,9 @@ internal class SuspendingWeakValueHashMap<K, V : Any>(
         ) {
           suspend fun remove(ref: ValueReference<K, V>) {
             mutex.withLock { map.remove(ref.key, ref) }
+            if (_garbageCollectedKeys.subscriptionCount.value > 0) {
+              _garbageCollectedKeys.emit(ref.key)
+            }
           }
 
           while (true) {

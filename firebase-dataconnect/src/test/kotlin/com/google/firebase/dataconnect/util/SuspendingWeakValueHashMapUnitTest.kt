@@ -70,6 +70,8 @@ import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -1201,6 +1203,124 @@ class SuspendingWeakValueHashMapUnitTest {
     candidateValues.entries.forEach { (key, candidateValues) ->
       map.get(key) shouldBeIn candidateValues
     }
+  }
+
+  @Test
+  fun `garbageCollectedKeys emits key when value is garbage collected`() = runTest {
+    val map =
+      SuspendingWeakValueHashMap<Int, Value>(
+        nonBlockingDispatcher = nonBlockingDispatcher,
+        blockingDispatcher = blockingDispatcher,
+      )
+    cleanups.register(map)
+    val key = Arb.int().next(rs)
+
+    val garbageCollectedKeysJob = async { map.garbageCollectedKeys.take(1).toList() }
+
+    run {
+      val value = Value("to-be-gc'd")
+      map.put(key, value)
+    }
+
+    withTimeoutIgnoringTestScheduler(5.seconds) {
+      while (garbageCollectedKeysJob.isActive) {
+        System.gc()
+        delay(10.milliseconds)
+      }
+    }
+
+    garbageCollectedKeysJob.await() shouldContainExactly listOf(key)
+  }
+
+  @Test
+  fun `garbageCollectedKeys supports multiple concurrent collectors`() = runTest {
+    val map =
+      SuspendingWeakValueHashMap<Int, Value>(
+        nonBlockingDispatcher = nonBlockingDispatcher,
+        blockingDispatcher = blockingDispatcher,
+      )
+    cleanups.register(map)
+    val key = Arb.int().next(rs)
+
+    val collector1 = async { map.garbageCollectedKeys.take(1).toList() }
+    val collector2 = async { map.garbageCollectedKeys.take(1).toList() }
+
+    run {
+      val value = Value("to-be-gc'd")
+      map.put(key, value)
+    }
+
+    withTimeoutIgnoringTestScheduler(5.seconds) {
+      while (collector1.isActive || collector2.isActive) {
+        System.gc()
+        delay(10.milliseconds)
+      }
+    }
+
+    collector1.await() shouldContainExactly listOf(key)
+    collector2.await() shouldContainExactly listOf(key)
+  }
+
+  @Test
+  fun `garbageCollectedKeys does not block cleanup loop with slow collector`() = runTest {
+    val map =
+      SuspendingWeakValueHashMap<Int, Value>(
+        nonBlockingDispatcher = nonBlockingDispatcher,
+        blockingDispatcher = blockingDispatcher,
+      )
+    cleanups.register(map)
+    val key1 = 1
+    val key2 = 2
+
+    val latch = SuspendingCountDownLatch(1)
+    val slowCollectorJob = launch { map.garbageCollectedKeys.collect { latch.await() } }
+
+    run {
+      val value1 = Value("v1")
+      val value2 = Value("v2")
+      map.put(key1, value1)
+      map.put(key2, value2)
+    }
+
+    // Both should be GC'd and removed from map, even if collector is stuck
+    withTimeoutIgnoringTestScheduler(5.seconds) {
+      while (map.size() > 0) {
+        System.gc()
+        delay(10.milliseconds)
+      }
+    }
+
+    map.size() shouldBe 0
+    latch.countDown()
+    slowCollectorJob.cancel()
+  }
+
+  @Test
+  fun `garbageCollectedKeys obeys read-after-write semantics`() = runTest {
+    val map =
+      SuspendingWeakValueHashMap<Int, Value>(
+        nonBlockingDispatcher = nonBlockingDispatcher,
+        blockingDispatcher = blockingDispatcher,
+      )
+    cleanups.register(map)
+    val key = Arb.int().next(rs)
+
+    val collector = async { map.garbageCollectedKeys.take(1).toList() }
+
+    // This put happens-after the collector has subscribed (in this coroutine's timeline)
+    run {
+      val value = Value("v")
+      map.put(key, value)
+    }
+
+    withTimeoutIgnoringTestScheduler(5.seconds) {
+      while (collector.isActive) {
+        System.gc()
+        delay(10.milliseconds)
+      }
+    }
+
+    collector.await() shouldContainExactly listOf(key)
   }
 
   private suspend fun SuspendingWeakValueHashMap<Int, Value>.populate(): Map<Int, Value> =
