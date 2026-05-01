@@ -305,7 +305,7 @@ jobs:
         with:
           args: -color /github/workspace/.github/workflows/dataconnect.yml
 
-  shellcheck:
+  zshellcheck:
     continue-on-error: false
     runs-on: ubuntu-latest
     steps:
@@ -313,8 +313,10 @@ jobs:
         with:
           show-progress: false
           sparse-checkout: 'firebase-dataconnect/'
-      - name: shellcheck
-        run: find . -name '*.sh' -print0 | xargs --verbose -0 shellcheck --norc --enable=all --shell=bash
+      - uses: afadesigns/zshellcheck@87dff02d094b6443b98e6d1ac01b4742da4c95ff #v1.0.17
+        with:
+          version: '1.0.17'
+          args: -format sarif -severity style
 
   python-ci-unit-tests:
     continue-on-error: false
