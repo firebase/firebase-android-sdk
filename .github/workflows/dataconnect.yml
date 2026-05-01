@@ -316,7 +316,7 @@ jobs:
       - uses: afadesigns/zshellcheck@87dff02d094b6443b98e6d1ac01b4742da4c95ff #v1.0.17
         with:
           version: 'v1.0.17'
-          args: -severity style firebase-dataconnect/emulator/emulator.zsh firebase-dataconnect/scripts/compile_kotlin.zsh firebase-dataconnect/scripts/generate_data_connect_sources.zsh firebase-dataconnect/scripts/generateApiTxtFile.zsh firebase-dataconnect/scripts/headless_android_emulator_run.zsh firebase-dataconnect/scripts/run_all_tests.zsh firebase-dataconnect/scripts/run_integration_tests.zsh firebase-dataconnect/scripts/run_unit_tests.zsh firebase-dataconnect/scripts/shellcheck.zsh firebase-dataconnect/scripts/spotlessApply.zsh firebase-dataconnect/scripts/update_versions_json.zsh
+          args: -severity style -no-color -no-banner -diff firebase-dataconnect/emulator/emulator.zsh firebase-dataconnect/scripts/compile_kotlin.zsh firebase-dataconnect/scripts/generate_data_connect_sources.zsh firebase-dataconnect/scripts/generateApiTxtFile.zsh firebase-dataconnect/scripts/headless_android_emulator_run.zsh firebase-dataconnect/scripts/run_all_tests.zsh firebase-dataconnect/scripts/run_integration_tests.zsh firebase-dataconnect/scripts/run_unit_tests.zsh firebase-dataconnect/scripts/shellcheck.zsh firebase-dataconnect/scripts/spotlessApply.zsh firebase-dataconnect/scripts/update_versions_json.zsh
 
   python-ci-unit-tests:
     continue-on-error: false
