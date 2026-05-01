@@ -283,14 +283,50 @@ class LiveSessionTests {
       session
         .receive()
         .takeWhile {
+          println("testResumption: Received ${it::class}")
           if (it is LiveSessionResumptionUpdate) {
+            println("testResumption: Is newHandle null: ${it.newHandle == null}")
             lastResumptionUpdate = it
           }
           if (it is LiveServerContent && it.turnComplete) {
+            println("testResumption: Received turnComplete")
             false
           } else {
             true
           }
+        }
+        .collect {}
+    }
+    lastResumptionUpdate shouldNotBe null
+    val handle = lastResumptionUpdate?.newHandle
+    handle.shouldNotBeNull()
+    session.resumeSession(SessionResumptionConfig(handle))
+    session.send("What is my favorite color?")
+    val text = withTimeoutOrNull(30.seconds) { session.collectNextAudioOutputTranscript() } ?: ""
+    text.toLowerCasePreservingASCIIRules() shouldContain "blue"
+  }
+
+  @Test
+  fun testResumptionWithFix(): Unit = runBlocking {
+    val liveModel = getLiveModel(modelName = modelName, config = generationConfig)
+    val session = liveModel.connect(SessionResumptionConfig())
+    session.send("My favorite color is blue. Remember that.", true)
+    var lastResumptionUpdate: LiveSessionResumptionUpdate? = null
+    var gotTurnComplete = false
+    withTimeout(30.seconds) {
+      session
+        .receive()
+        .takeWhile {
+          println("testResumptionWithFix: Received ${it::class}")
+          if (it is LiveSessionResumptionUpdate) {
+            println("testResumptionWithFix: Is newHandle null: ${it.newHandle == null}")
+            lastResumptionUpdate = it
+          }
+          if (it is LiveServerContent && it.turnComplete) {
+            println("testResumptionWithFix: Received turnComplete")
+            gotTurnComplete = true
+          }
+          !(gotTurnComplete && lastResumptionUpdate?.newHandle != null)
         }
         .collect {}
     }
