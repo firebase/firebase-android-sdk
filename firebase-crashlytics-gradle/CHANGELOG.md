@@ -3,7 +3,7 @@
 - [fixed] Fixed an incompatibility between Crashlytics Gradle plugin and Gradle isolated projects when enabling nativeSymbolUploadEnabled. [#8037]
 
 ### Crashlytics Gradle plugin version 3.0.7
- 
+
 * [changed] Improved efficiency when extracting breakpad binary files.
 * [fixed] Avoid build breaks when handling unsupported native libraries for injectCrashlyticsBuildIds task [#7780]
 
