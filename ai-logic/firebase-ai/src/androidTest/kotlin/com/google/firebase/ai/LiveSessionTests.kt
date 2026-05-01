@@ -290,6 +290,7 @@ class LiveSessionTests {
           if (it is LiveServerContent && it.turnComplete) {
             gotTurnComplete = true
           }
+          // Stop when we've seen a turn complete and we have a new handle
           !(gotTurnComplete && lastResumptionUpdate?.newHandle != null)
         }
         .collect {}
