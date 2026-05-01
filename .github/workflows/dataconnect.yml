@@ -315,7 +315,7 @@ jobs:
           sparse-checkout: 'firebase-dataconnect/'
       - uses: afadesigns/zshellcheck@87dff02d094b6443b98e6d1ac01b4742da4c95ff #v1.0.17
         with:
-          version: '1.0.17'
+          version: 'v1.0.17'
           args: -format sarif -severity style
 
   python-ci-unit-tests:
