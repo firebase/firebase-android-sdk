@@ -22,6 +22,9 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.time.Duration
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.format.MonthNames
+import kotlinx.datetime.format.char
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -75,10 +78,34 @@ class TestReportGenerator(private val apiToken: String) {
               ?.int ?: throw RuntimeException("Couldn't find PR number for commit $obj"),
           )
         }
-    outputReport(outputFile, commits)
+    val dailyTests = arrayListOf<TestReport>()
+    // GraphQL does not expose actions in an easy to index way, and the REST API does
+    val dailyTestResponse = request("actions/workflows/ai-daily-tests.yml/runs?per_page=7")
+    val arr =
+      dailyTestResponse["workflow_runs"]?.jsonArray
+        ?: throw RuntimeException("Workflow request failed")
+    for (test in arr) {
+      val obj = test.jsonObject
+      dailyTests.add(
+        TestReport(
+          "ai-daily-test",
+          TestReport.Type.DAILY_TEST,
+          TestReport.Status.of(obj),
+          obj["head_commit"]?.jsonObject?.get("id")?.jsonPrimitive?.content
+            ?: throw RuntimeException("Missing head_commit"),
+          obj["html_url"]?.jsonPrimitive?.content ?: throw RuntimeException("Missing url"),
+          obj["created_at"]?.jsonPrimitive?.content?.substringBefore("T"),
+        )
+      )
+    }
+    outputReport(outputFile, commits, dailyTests)
   }
 
-  private fun outputReport(outputFile: File, commits: List<ReportCommit>) {
+  private fun outputReport(
+    outputFile: File,
+    commits: List<ReportCommit>,
+    dailyTests: List<TestReport>,
+  ) {
     val reports = commits.flatMap { commit -> parseTestReports(commit.sha) }
     val output = StringBuilder()
     output.append("### Unit Tests\n\n")
@@ -97,6 +124,11 @@ class TestReportGenerator(private val apiToken: String) {
       )
     )
     output.append("\n")
+    if (dailyTests.isNotEmpty()) {
+      output.append("### Daily Tests\n\n")
+      output.append(generateDailyTable(dailyTests.reversed()))
+      output.append("\n")
+    }
 
     try {
       outputFile.writeText(output.toString())
@@ -169,7 +201,7 @@ class TestReportGenerator(private val apiToken: String) {
               TestReport.Status.FAILURE -> "⛔"
               TestReport.Status.OTHER -> "➖"
             }
-          val link: String = " [%s](%s)".format(icon, report.url)
+          val link: String = " [$icon](${report.url})"
           output.append(link)
         }
         output.append(" |")
@@ -189,6 +221,41 @@ class TestReportGenerator(private val apiToken: String) {
     if (passingSdks > 0) {
       output.append("\n*+$passingSdks passing SDKs")
     }
+    return output.toString()
+  }
+
+  private fun generateDailyTable(reports: List<TestReport>): String {
+    val output = StringBuilder("| |")
+    for (report in reports) {
+      val time = LocalDate.parse(report.date!!)
+      output.append(" ${DATE_FORMAT.format(time)} |")
+    }
+    output.append(" Success Rate |\n|")
+    output.append(" :--- |")
+    output.append(" :---: |".repeat(reports.size))
+    output.append(" :--- |")
+    output.append("\n| AI Daily Tests |")
+    for (report in reports) {
+      val icon =
+        when (report.status) {
+          TestReport.Status.SUCCESS -> "✅"
+          TestReport.Status.FAILURE -> "⛔"
+          TestReport.Status.OTHER -> "➖"
+        }
+      val link: String = " [$icon](${report.url})"
+      output.append(link)
+      output.append(" |")
+    }
+    output.append(" ")
+    val successChance: Int =
+      reports.count { r -> r.status == TestReport.Status.SUCCESS } * 100 / reports.size
+    if (successChance == 100) {
+      output.append("✅ 100%")
+    } else {
+      output.append("⛔ $successChance%")
+    }
+    output.append(" |")
+    output.append("\n")
     return output.toString()
   }
 
@@ -234,16 +301,7 @@ class TestReportGenerator(private val apiToken: String) {
         .dropLastWhile { it.isEmpty() }
         .toTypedArray()[1]
     name = name.substring(0, name.length - 1) // Remove trailing ")"
-    val status =
-      if (job["status"]?.jsonPrimitive?.content == "completed") {
-        if (job["conclusion"]?.jsonPrimitive?.content == "success") {
-          TestReport.Status.SUCCESS
-        } else {
-          TestReport.Status.FAILURE
-        }
-      } else {
-        TestReport.Status.OTHER
-      }
+    val status = TestReport.Status.of(job)
     val url = job["html_url"]?.jsonPrimitive?.content ?: throw RuntimeException("PR missing URL")
     return TestReport(name, type, status, commit, url)
   }
@@ -371,5 +429,11 @@ class TestReportGenerator(private val apiToken: String) {
       )
     private val CLIENT: HttpClient =
       HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build()
+    private val DATE_FORMAT =
+      LocalDate.Format {
+        monthName(MonthNames.ENGLISH_ABBREVIATED)
+        char(' ')
+        dayOfMonth()
+      }
   }
 }

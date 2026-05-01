@@ -22,6 +22,7 @@ plugins {
   alias(libs.plugins.protobuf) apply false
   alias(libs.plugins.errorprone)
   alias(libs.plugins.crashlytics) apply false
+  id("org.jetbrains.kotlin.android") version "2.1.21" apply false
   id("PublishingPlugin")
   id("test-report")
   id("firebase-ci")
