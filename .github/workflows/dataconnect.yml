@@ -322,7 +322,9 @@ jobs:
           curl -fsSL -o zshellcheck.tar.gz https://github.com/afadesigns/zshellcheck/releases/download/v1.0.17/zshellcheck_Linux_x86_64.tar.gz
           tar xvf zshellcheck.tar.gz
       - name: zshellcheck
-        run: '${{ runner.temp }}/zshellcheck/zshellcheck' -severity style -no-color -no-banner -diff $(find . -name '*.zsh')
+        run: |
+          set -xveuo pipefail
+          find . -name '*.zsh' -exec '${{ runner.temp }}/zshellcheck/zshellcheck' -severity style -no-color -no-banner -diff '{}' +
 
   python-ci-unit-tests:
     continue-on-error: false
