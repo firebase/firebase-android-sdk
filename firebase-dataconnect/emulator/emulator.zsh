@@ -16,11 +16,13 @@
 
 setopt errexit nounset pipefail
 
+source "${0:A:h:h}/scripts/util/say.zsh"
+
 typeset -r self_executable="$0"
-typeset -r log_prefix="[$0] "
+typeset -r log_prefix="[$0]"
 typeset -r default_postgresql_string='postgresql://postgres:postgres@localhost:5432?sslmode=disable'
 
-function main {
+main() {
   cd "${0:A:h}"
   parse_args "$@"
   log "FIREBASE_DATACONNECT_POSTGRESQL_STRING=${FIREBASE_DATACONNECT_POSTGRESQL_STRING}"
@@ -29,11 +31,11 @@ function main {
   run_command firebase --debug emulators:start --only auth,dataconnect
 }
 
-function parse_args {
+parse_args() {
   zmodload zsh/zutil
   local -A opts
   zparseopts -D -E -A opts c: g p: v: w h || {
-    echo "Run with -h for help" >&2
+    sayp "Run with %F{cyan}-h%f for help" >&2
     exit 2
   }
 
@@ -42,26 +44,26 @@ function parse_args {
     exit 0
   fi
 
-  if (( $# > 0 )); then
-    echo "ERROR: unrecognized option or argument: $1" >&2
-    echo "Run with -h for help" >&2
+  if (( # > 0 )); then
+    say_error "unrecognized option or argument: $1" >&2
+    sayp "Run with %F{cyan}-h%f for help" >&2
     exit 2
   fi
 
-  local emulator_binary="${opts[-c]:-${opts[-g]+gradle}}"
-  local postgresql_string="${opts[-p]:-$default_postgresql_string}"
-  local preview_flags="${opts[-v]:-}"
-  local wipe_and_restart_postgres_pod=${+opts[-w]}
+  typeset emulator_binary="${opts[-c]:-${opts[-g]+gradle}}"
+  typeset postgresql_string="${opts[-p]:-$default_postgresql_string}"
+  typeset preview_flags="${opts[-v]:-}"
+  typeset wipe_and_restart_postgres_pod=${+opts[-w]}
 
   if [[ ${emulator_binary} != "gradle" ]] ; then
     export DATACONNECT_EMULATOR_BINARY_PATH="${emulator_binary}"
   else
     run_command "../../gradlew" -p ../.. --configure-on-demand :firebase-dataconnect:connectors:downloadDebugDataConnectExecutable
-    local gradle_emulator_binaries=(../connectors/build/intermediates/dataconnect/debug/executable/*(N))
-    if [[ ${#gradle_emulator_binaries} -ne 1 ]]; then
+    typeset gradle_emulator_binaries=(../connectors/build/intermediates/dataconnect/debug/executable/*(N))
+    if (( ${#gradle_emulator_binaries} != 1 )); then
       log_error_and_exit "expected exactly 1 emulator binary from gradle, but got ${#gradle_emulator_binaries}: ${gradle_emulator_binaries[*]}"
     fi
-    local gradle_emulator_binary="${gradle_emulator_binaries[1]}"
+    typeset gradle_emulator_binary="${gradle_emulator_binaries[1]}"
     if [[ ! -e ${gradle_emulator_binary} ]] ; then
       log_error_and_exit "emulator binary from gradle does not exist: ${gradle_emulator_binary}"
     fi
@@ -75,19 +77,19 @@ function parse_args {
     run_command podman compose down -v
     run_command podman compose up -d
 
-    echo "Waiting for Postgres service to appear to be healthy..."
-    local postgres_health_check_number=0
+    say "Waiting for Postgres service to appear to be healthy..."
+    typeset postgres_health_check_number=0
     while : ; do
       (( postgres_health_check_number++ )) || true
-      local postgres_service_status="$(print_postgres_status)"
-      echo "Postgres service health check ${postgres_health_check_number}: ${postgres_service_status}"
+      typeset postgres_service_status="$(print_postgres_status)"
+      say "Postgres service health check ${postgres_health_check_number}: ${postgres_service_status}"
 
       if [[ ${postgres_service_status} == *"(healthy)"* ]] ; then
-        echo "Postgres service appears to be healthy after ${postgres_health_check_number} seconds"
+        say "Postgres service appears to be healthy after ${postgres_health_check_number} seconds"
         break
-      elif [[ ${postgres_health_check_number} -eq 30 ]] ; then
+      elif (( ${postgres_health_check_number} == 30 )) ; then
         print_podman_compose_status
-        echo "ERROR: Postgres service does not appear to be healthy after ${postgres_health_check_number} seconds" >&2
+        say "ERROR: Postgres service does not appear to be healthy after ${postgres_health_check_number} seconds" >&2
         exit 1
       fi
 
@@ -96,63 +98,74 @@ function parse_args {
   fi
 }
 
-function run_command {
-  log "Running command: ${(q)@}"
-  "$@"
+run_command() {
+  logn "Running command: "
+  say_args "$@"
 }
 
-function print_podman_compose_status {
+print_podman_compose_status() {
   podman compose ps --format=json
 }
 
-function print_postgres_status {
+print_postgres_status() {
   print_podman_compose_status | jq -re '.[] | select(.Labels["com.docker.compose.service"] == "postgres") | .Status'
 }
 
-function print_help {
-  echo "Firebase Data Connect Emulator Launcher Helper"
-  echo
-  echo "This script provides a convenient way to launch the Firebase Data Connect"
-  echo "and Firebase Authentication emulators in a way that is amenable for running"
-  echo "the integration tests."
-  echo
-  echo "Syntax: ${self_executable} [options]"
-  echo
-  echo "Options:"
-  echo "  -c <data_connect_emulator_binary_path>"
-  echo "    Uses the Data Connect Emulator binary at the given path. A value of \"gradle\" "
-  echo "    will use the same binary as the Gradle build. If not specified, or if specified "
-  echo "    as the empty string, then the emulator binary is downloaded."
-  echo
-  echo "  -g"
-  echo "    Shorthand for: -c gradle"
-  echo
-  echo "  -p <postgresql_connection_string>"
-  echo "    Uses the given string to connect to the PostgreSQL server. If not specified "
-  echo "    the the default value of \"${default_postgresql_string}\" is used."
-  echo "    If specified as the empty string then an ephemeral PGLite server is used."
-  echo
-  echo "  -v <data_connect_preview_flags>"
-  echo "    Uses the given Data Connect preview flags when launching the emulator."
-  echo "    If not specified then an empty string is used, meaning that no preview flags"
-  echo "    are in effect."
-  echo
-  echo "  -w"
-  echo "    If specified, then a local PostgreSQL container is wiped and restarted"
-  echo "    before launching the emulators. This is accomplished by running:"
-  echo "    podman compose down -v && podman compose up -d"
-  echo
-  echo "  -h"
-  echo "    Print this help screen and exit, as if successful."
+print_help() {
+  sayp "%BFirebase Data Connect Emulator Launcher Helper%b"
+  say
+  saypn "%BSyntax: "
+  sayn "${self_executable}"
+  sayp " [options]%b"
+  say
+  say "This script provides a convenient way to launch the Firebase Data Connect"
+  say "and Firebase Authentication emulators in a way that is amenable for running"
+  say "the integration tests."
+  say
+  sayp "%UOptions:%u"
+  say
+  sayp "%F{cyan}  -c <data_connect_emulator_binary_path>%f"
+  say "    Uses the Data Connect Emulator binary at the given path. A value of \"gradle\" "
+  say "    will use the same binary as the Gradle build. If not specified, or if specified "
+  say "    as the empty string, then the emulator binary is downloaded."
+  say
+  sayp "%F{cyan}  -g%f"
+  say "    Shorthand for: -c gradle"
+  say
+  sayp "%F{cyan}  -p <postgresql_connection_string>%f"
+  say "    Uses the given string to connect to the PostgreSQL server. If not specified "
+  say "    the the default value of \"${default_postgresql_string}\" is used."
+  say "    If specified as the empty string then an ephemeral PGLite server is used."
+  say
+  sayp "%F{cyan}  -v <data_connect_preview_flags>%f"
+  say "    Uses the given Data Connect preview flags when launching the emulator."
+  say "    If not specified then an empty string is used, meaning that no preview flags"
+  say "    are in effect."
+  say
+  sayp "%F{cyan}  -w%f"
+  say "    If specified, then a local PostgreSQL container is wiped and restarted"
+  say "    before launching the emulators. This is accomplished by running:"
+  say "    podman compose down -v && podman compose up -d"
+  say
+  sayp "%F{cyan}  -h%f"
+  say "    Print this help screen and exit, as if successful."
 }
 
-function log {
-  echo "${log_prefix}$*"
+log() {
+  logn "$@"
+  say
 }
 
-function log_error_and_exit {
-  echo "${log_prefix}ERROR: $*" >&2
-  exit 1
+logn() {
+  saypn "%F{magenta}"
+  sayn "${log_prefix} "
+  saypn "%f"
+  sayn "$@"
+}
+
+log_error_and_exit() {
+  say_error "$@" >&2 
+  return 1
 }
 
 main "$@"

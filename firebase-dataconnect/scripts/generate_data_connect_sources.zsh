@@ -16,6 +16,8 @@
 
 setopt errexit nounset pipefail
 
+source "${0:A:h}/util/say.zsh"
+
 typeset -r project_root_dir="${0:A:h:h:h}"
 
 typeset -r targets=(
@@ -31,5 +33,5 @@ typeset -r args=(
   "${targets[@]}"
 )
 
-print -r -- "${(q)args}"
+say_args "${args[@]}"
 exec "${args[@]}" # zshellcheck disable=ZC1909

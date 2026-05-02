@@ -16,6 +16,8 @@
 
 setopt errexit nounset pipefail
 
+source "${0:A:h}/util/say.zsh"
+
 typeset -r dataconnect_root_dir="${0:A:h:h}"
 
 typeset -r sh_files=(
@@ -24,10 +26,11 @@ typeset -r sh_files=(
 
 typeset -r args=(
   "zshellcheck"
-  "--severity"
+  "-severity"
   "style"
+  "$@"
   "${sh_files[@]}"
 )
 
-print -r -- "${(q)args}"
+say_args "${args[@]}"
 exec "${args[@]}" # zshellcheck disable=ZC1909

@@ -306,7 +306,7 @@ jobs:
         with:
           args: -color /github/workspace/.github/workflows/dataconnect.yml
 
-  shellcheck:
+  zshellcheck:
     continue-on-error: false
     runs-on: ubuntu-latest
     steps:
@@ -314,8 +314,18 @@ jobs:
         with:
           show-progress: false
           sparse-checkout: 'firebase-dataconnect/'
-      - name: shellcheck
-        run: find . -name '*.sh' -print0 | xargs --verbose -0 shellcheck --norc --enable=all --shell=bash
+      - name: zshellcheck setup
+        run: |
+          set -xveuo pipefail
+          cd '${{ runner.temp }}'
+          mkdir zshellcheck
+          cd zshellcheck
+          curl -fsSL -o zshellcheck.tar.gz https://github.com/afadesigns/zshellcheck/releases/download/v1.0.17/zshellcheck_Linux_x86_64.tar.gz
+          tar xvf zshellcheck.tar.gz
+      - name: zshellcheck
+        run: |
+          set -xveuo pipefail
+          find . -name '*.zsh' -exec '${{ runner.temp }}/zshellcheck/zshellcheck' -severity style -no-color -no-banner -diff '{}' +
 
   python-ci-unit-tests:
     continue-on-error: false
