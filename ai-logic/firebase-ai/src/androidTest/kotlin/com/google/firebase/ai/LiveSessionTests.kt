@@ -332,15 +332,20 @@ class LiveSessionTests {
         automaticActivityDetection = liveActivityDetection { disabled = true }
       }
     }
-    val liveModel = getLiveModel(modelName = modelName, config = config)
+    val liveModel =
+      getLiveModel(
+        modelName = modelName,
+        config = config,
+        systemInstruction = SystemInstructions.yesOrNo
+      )
     val session = liveModel.connect()
     try {
       session.sendStartActivityRealtime()
-      session.sendTextRealtime("Hello")
+      session.sendTextRealtime("Does five plus five equal ten?")
       session.sendStopActivityRealtime()
 
-      // Wait for some response, just ensure no crash
-      val text = withTimeoutOrNull(10.seconds) { session.collectNextAudioOutputTranscript() }
+      val text = withTimeoutOrNull(15.seconds) { session.collectNextAudioOutputTranscript() } ?: ""
+      text.toLowerCasePreservingASCIIRules() shouldContain "yes"
     } finally {
       session.close()
     }
@@ -363,12 +368,17 @@ class LiveSessionTests {
         }
       }
     }
-    val liveModel = getLiveModel(modelName = modelName, config = config)
+    val liveModel =
+      getLiveModel(
+        modelName = modelName,
+        config = config,
+        systemInstruction = SystemInstructions.yesOrNo
+      )
     val session = liveModel.connect()
     try {
-      session.sendTextRealtime("Hello")
-      val text = withTimeoutOrNull(15.seconds) { session.collectNextAudioOutputTranscript() }
-      text.shouldNotBeNull()
+      session.sendTextRealtime("Is the sky blue?")
+      val text = withTimeoutOrNull(15.seconds) { session.collectNextAudioOutputTranscript() } ?: ""
+      text.toLowerCasePreservingASCIIRules() shouldContain "yes"
     } finally {
       session.close()
     }

@@ -39,39 +39,37 @@ private constructor(
 ) {
 
   /** How a model handles user input activity. */
-  public enum class ActivityHandling {
-    /**
-     * When the user sends input marking the start of activity, the model's current response will be
-     * cut-off immediately.
-     *
-     * The start of activity could be manually specified in the call, or the model could interpret
-     * it automatically (depending on the value of `automaticActivityDetection`).
-     *
-     * An example of activity starting implicitly could be the user speaking over the model.
-     */
-    INTERRUPT,
+  public class ActivityHandling private constructor(internal val value: String) {
+    public companion object {
+      /**
+       * When the user sends input marking the start of activity, the model's current response will
+       * be cut-off immediately.
+       */
+      @JvmField
+      public val INTERRUPT: ActivityHandling = ActivityHandling("START_OF_ACTIVITY_INTERRUPTS")
 
-    /**
-     * When the user sends input marking the start of activity, the model will process it, but won't
-     * cut-off its current response.
-     *
-     * This is the inverse of `interrupt`.
-     */
-    NO_INTERRUPT
+      /**
+       * When the user sends input marking the start of activity, the model will process it, but
+       * won't cut-off its current response.
+       */
+      @JvmField public val NO_INTERRUPT: ActivityHandling = ActivityHandling("NO_INTERRUPTION")
+    }
   }
 
   /** How the model considers which input is included in the user's turn. */
-  public enum class TurnCoverage {
-    /**
-     * The model will exclude inactivity (e.g, silence on the audio stream) from the user's input.
-     */
-    ONLY_ACTIVITY,
+  public class TurnCoverage private constructor(internal val value: String) {
+    public companion object {
+      /**
+       * The model will exclude inactivity (e.g, silence on the audio stream) from the user's input.
+       */
+      @JvmField public val ONLY_ACTIVITY: TurnCoverage = TurnCoverage("TURN_INCLUDES_ONLY_ACTIVITY")
 
-    /**
-     * The model will include all input (including inactivity) since the last turn as the user's
-     * input.
-     */
-    ALL_INPUT
+      /**
+       * The model will include all input (including inactivity) since the last turn as the user's
+       * input.
+       */
+      @JvmField public val ALL_INPUT: TurnCoverage = TurnCoverage("TURN_INCLUDES_ALL_INPUT")
+    }
   }
 
   /** Builder for creating a [LiveRealtimeInputConfig]. */
@@ -100,41 +98,17 @@ private constructor(
   internal fun toInternal(): Internal =
     Internal(
       automaticActivityDetection = automaticActivityDetection?.toInternal(),
-      activityHandling =
-        when (activityHandling) {
-          ActivityHandling.INTERRUPT -> Internal.ActivityHandling.START_OF_ACTIVITY_INTERRUPTS
-          ActivityHandling.NO_INTERRUPT -> Internal.ActivityHandling.NO_INTERRUPTION
-          null -> null
-        },
-      turnCoverage =
-        when (turnCoverage) {
-          TurnCoverage.ONLY_ACTIVITY -> Internal.TurnCoverage.ONLY_ACTIVITY
-          TurnCoverage.ALL_INPUT -> Internal.TurnCoverage.ALL_INPUT
-          null -> null
-        }
+      activityHandling = activityHandling?.value,
+      turnCoverage = turnCoverage?.value
     )
 
   @Serializable
   internal data class Internal(
     @SerialName("automatic_activity_detection")
     val automaticActivityDetection: LiveActivityDetection.Internal? = null,
-    @SerialName("activity_handling") val activityHandling: ActivityHandling? = null,
-    @SerialName("turn_coverage") val turnCoverage: TurnCoverage? = null
-  ) {
-    @Serializable
-    internal enum class ActivityHandling {
-      @SerialName("ACTIVITY_HANDLING_UNSPECIFIED") UNSPECIFIED,
-      @SerialName("START_OF_ACTIVITY_INTERRUPTS") START_OF_ACTIVITY_INTERRUPTS,
-      @SerialName("NO_INTERRUPTION") NO_INTERRUPTION
-    }
-
-    @Serializable
-    internal enum class TurnCoverage {
-      @SerialName("TURN_COVERAGE_UNSPECIFIED") UNSPECIFIED,
-      @SerialName("TURN_INCLUDES_ONLY_ACTIVITY") ONLY_ACTIVITY,
-      @SerialName("TURN_INCLUDES_ALL_INPUT") ALL_INPUT,
-    }
-  }
+    @SerialName("activity_handling") val activityHandling: String? = null,
+    @SerialName("turn_coverage") val turnCoverage: String? = null
+  )
 
   public companion object {
     /** Creates a new [Builder]. */

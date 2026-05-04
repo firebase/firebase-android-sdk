@@ -46,17 +46,20 @@ private constructor(
 ) {
 
   /** How sensitive the model interprets speech activity. */
-  public enum class Sensitivity {
-    /**
-     * The model will detect speech less often. In other words, a higher volume of speech is
-     * required for the model to consider the user is speaking.
-     */
-    LOW,
-    /**
-     * The model will detect speech more often. In other words, a lower volume of speech is required
-     * for the model to consider the user is speaking.
-     */
-    HIGH
+  public class Sensitivity private constructor(internal val value: String) {
+    public companion object {
+      /**
+       * The model will detect speech less often. In other words, a higher volume of speech is
+       * required for the model to consider the user is speaking.
+       */
+      @JvmField public val LOW: Sensitivity = Sensitivity("LOW")
+
+      /**
+       * The model will detect speech more often. In other words, a lower volume of speech is
+       * required for the model to consider the user is speaking.
+       */
+      @JvmField public val HIGH: Sensitivity = Sensitivity("HIGH")
+    }
   }
 
   /** Builder for creating a [LiveActivityDetection]. */
@@ -98,18 +101,8 @@ private constructor(
 
   internal fun toInternal(): Internal =
     Internal(
-      startSensitivity =
-        when (startSensitivity) {
-          Sensitivity.LOW -> Internal.StartSensitivity.LOW
-          Sensitivity.HIGH -> Internal.StartSensitivity.HIGH
-          null -> null
-        },
-      endSensitivity =
-        when (endSensitivity) {
-          Sensitivity.LOW -> Internal.EndSensitivity.LOW
-          Sensitivity.HIGH -> Internal.EndSensitivity.HIGH
-          null -> null
-        },
+      startSensitivity = startSensitivity?.let { "START_SENSITIVITY_${it.value}" },
+      endSensitivity = endSensitivity?.let { "END_SENSITIVITY_${it.value}" },
       prefixPaddingMs = prefixPaddingMS,
       silenceDurationMs = silenceDurationMS,
       disabled = disabled
@@ -117,26 +110,12 @@ private constructor(
 
   @Serializable
   internal data class Internal(
-    @SerialName("start_of_speech_sensitivity") val startSensitivity: StartSensitivity? = null,
-    @SerialName("end_of_speech_sensitivity") val endSensitivity: EndSensitivity? = null,
+    @SerialName("start_of_speech_sensitivity") val startSensitivity: String? = null,
+    @SerialName("end_of_speech_sensitivity") val endSensitivity: String? = null,
     @SerialName("prefix_padding_ms") val prefixPaddingMs: Int? = null,
     @SerialName("silence_duration_ms") val silenceDurationMs: Int? = null,
     @SerialName("disabled") val disabled: Boolean? = null
-  ) {
-    @Serializable
-    internal enum class StartSensitivity {
-      @SerialName("START_SENSITIVITY_UNSPECIFIED") UNSPECIFIED,
-      @SerialName("START_SENSITIVITY_HIGH") HIGH,
-      @SerialName("START_SENSITIVITY_LOW") LOW
-    }
-
-    @Serializable
-    internal enum class EndSensitivity {
-      @SerialName("END_SENSITIVITY_UNSPECIFIED") UNSPECIFIED,
-      @SerialName("END_SENSITIVITY_HIGH") HIGH,
-      @SerialName("END_SENSITIVITY_LOW") LOW
-    }
-  }
+  )
 
   public companion object {
     /** Creates a new [Builder]. */

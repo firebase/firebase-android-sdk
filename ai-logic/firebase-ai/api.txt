@@ -1332,9 +1332,13 @@ package com.google.firebase.ai.type {
     method public com.google.firebase.ai.type.LiveActivityDetection.Builder builder();
   }
 
-  public enum LiveActivityDetection.Sensitivity {
-    enum_constant public static final com.google.firebase.ai.type.LiveActivityDetection.Sensitivity HIGH;
-    enum_constant public static final com.google.firebase.ai.type.LiveActivityDetection.Sensitivity LOW;
+  public static final class LiveActivityDetection.Sensitivity {
+    field public static final com.google.firebase.ai.type.LiveActivityDetection.Sensitivity.Companion Companion;
+    field public static final com.google.firebase.ai.type.LiveActivityDetection.Sensitivity HIGH;
+    field public static final com.google.firebase.ai.type.LiveActivityDetection.Sensitivity LOW;
+  }
+
+  public static final class LiveActivityDetection.Sensitivity.Companion {
   }
 
   public final class LiveActivityDetectionKt {
@@ -1414,9 +1418,13 @@ package com.google.firebase.ai.type {
     field public static final com.google.firebase.ai.type.LiveRealtimeInputConfig.Companion Companion;
   }
 
-  public enum LiveRealtimeInputConfig.ActivityHandling {
-    enum_constant public static final com.google.firebase.ai.type.LiveRealtimeInputConfig.ActivityHandling INTERRUPT;
-    enum_constant public static final com.google.firebase.ai.type.LiveRealtimeInputConfig.ActivityHandling NO_INTERRUPT;
+  public static final class LiveRealtimeInputConfig.ActivityHandling {
+    field public static final com.google.firebase.ai.type.LiveRealtimeInputConfig.ActivityHandling.Companion Companion;
+    field public static final com.google.firebase.ai.type.LiveRealtimeInputConfig.ActivityHandling INTERRUPT;
+    field public static final com.google.firebase.ai.type.LiveRealtimeInputConfig.ActivityHandling NO_INTERRUPT;
+  }
+
+  public static final class LiveRealtimeInputConfig.ActivityHandling.Companion {
   }
 
   public static final class LiveRealtimeInputConfig.Builder {
@@ -1434,9 +1442,13 @@ package com.google.firebase.ai.type {
     method public com.google.firebase.ai.type.LiveRealtimeInputConfig.Builder builder();
   }
 
-  public enum LiveRealtimeInputConfig.TurnCoverage {
-    enum_constant public static final com.google.firebase.ai.type.LiveRealtimeInputConfig.TurnCoverage ALL_INPUT;
-    enum_constant public static final com.google.firebase.ai.type.LiveRealtimeInputConfig.TurnCoverage ONLY_ACTIVITY;
+  public static final class LiveRealtimeInputConfig.TurnCoverage {
+    field public static final com.google.firebase.ai.type.LiveRealtimeInputConfig.TurnCoverage ALL_INPUT;
+    field public static final com.google.firebase.ai.type.LiveRealtimeInputConfig.TurnCoverage.Companion Companion;
+    field public static final com.google.firebase.ai.type.LiveRealtimeInputConfig.TurnCoverage ONLY_ACTIVITY;
+  }
+
+  public static final class LiveRealtimeInputConfig.TurnCoverage.Companion {
   }
 
   public final class LiveRealtimeInputConfigKt {
