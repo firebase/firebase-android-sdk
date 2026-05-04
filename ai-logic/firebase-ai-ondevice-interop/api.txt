@@ -15,6 +15,32 @@ package com.google.firebase.ai.ondevice.interop {
     property public final int totalTokens;
   }
 
+  public final class DownloadStatusInterop {
+    ctor public DownloadStatusInterop();
+  }
+
+  public static final class DownloadStatusInterop.DownloadCompleted extends com.google.firebase.ai.ondevice.interop.DownloadStatusInterop {
+    ctor public DownloadStatusInterop.DownloadCompleted();
+  }
+
+  public static final class DownloadStatusInterop.DownloadFailed extends com.google.firebase.ai.ondevice.interop.DownloadStatusInterop {
+    ctor public DownloadStatusInterop.DownloadFailed(com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceException exception);
+    method public com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceException getException();
+    property public final com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceException exception;
+  }
+
+  public static final class DownloadStatusInterop.DownloadInProgress extends com.google.firebase.ai.ondevice.interop.DownloadStatusInterop {
+    ctor public DownloadStatusInterop.DownloadInProgress(long totalBytesDownloaded);
+    method public long getTotalBytesDownloaded();
+    property public final long totalBytesDownloaded;
+  }
+
+  public static final class DownloadStatusInterop.DownloadStarted extends com.google.firebase.ai.ondevice.interop.DownloadStatusInterop {
+    ctor public DownloadStatusInterop.DownloadStarted(long bytesToDownload);
+    method public long getBytesToDownload();
+    property public final long bytesToDownload;
+  }
+
   public final class FinishReason {
     method public String getName();
     property public final String name;
@@ -83,7 +109,9 @@ package com.google.firebase.ai.ondevice.interop {
   }
 
   public interface GenerativeModel {
+    method public suspend Object? checkStatus(kotlin.coroutines.Continuation<? super com.google.firebase.ai.ondevice.interop.OnDeviceModelStatusInterop>);
     method public suspend Object? countTokens(com.google.firebase.ai.ondevice.interop.GenerateContentRequest request, kotlin.coroutines.Continuation<? super com.google.firebase.ai.ondevice.interop.CountTokensResponse>);
+    method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.ondevice.interop.DownloadStatusInterop> download();
     method public suspend Object? generateContent(com.google.firebase.ai.ondevice.interop.GenerateContentRequest request, kotlin.coroutines.Continuation<? super com.google.firebase.ai.ondevice.interop.GenerateContentResponse>);
     method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.ondevice.interop.GenerateContentResponse> generateContentStream(com.google.firebase.ai.ondevice.interop.GenerateContentRequest request);
     method public suspend Object? getBaseModelName(kotlin.coroutines.Continuation<? super java.lang.String>);
@@ -114,6 +142,17 @@ package com.google.firebase.ai.ondevice.interop {
   public enum ModelReleaseStage {
     enum_constant public static final com.google.firebase.ai.ondevice.interop.ModelReleaseStage PREVIEW;
     enum_constant public static final com.google.firebase.ai.ondevice.interop.ModelReleaseStage STABLE;
+  }
+
+  public final class OnDeviceModelStatusInterop {
+    field public static final com.google.firebase.ai.ondevice.interop.OnDeviceModelStatusInterop AVAILABLE;
+    field public static final com.google.firebase.ai.ondevice.interop.OnDeviceModelStatusInterop.Companion Companion;
+    field public static final com.google.firebase.ai.ondevice.interop.OnDeviceModelStatusInterop DOWNLOADABLE;
+    field public static final com.google.firebase.ai.ondevice.interop.OnDeviceModelStatusInterop DOWNLOADING;
+    field public static final com.google.firebase.ai.ondevice.interop.OnDeviceModelStatusInterop UNAVAILABLE;
+  }
+
+  public static final class OnDeviceModelStatusInterop.Companion {
   }
 
   public interface Part {

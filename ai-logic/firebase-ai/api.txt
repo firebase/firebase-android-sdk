@@ -13,6 +13,31 @@ package com.google.firebase.ai {
     property public final java.util.List<com.google.firebase.ai.type.Content> history;
   }
 
+  @com.google.firebase.ai.type.PublicPreviewAPI public abstract sealed class DownloadStatus {
+  }
+
+  public static final class DownloadStatus.DownloadCompleted extends com.google.firebase.ai.DownloadStatus {
+    ctor public DownloadStatus.DownloadCompleted();
+  }
+
+  public static final class DownloadStatus.DownloadFailed extends com.google.firebase.ai.DownloadStatus {
+    ctor public DownloadStatus.DownloadFailed(com.google.firebase.ai.type.FirebaseAIException exception);
+    method public com.google.firebase.ai.type.FirebaseAIException getException();
+    property public final com.google.firebase.ai.type.FirebaseAIException exception;
+  }
+
+  public static final class DownloadStatus.DownloadInProgress extends com.google.firebase.ai.DownloadStatus {
+    ctor public DownloadStatus.DownloadInProgress(long totalBytesDownloaded);
+    method public long getTotalBytesDownloaded();
+    property public final long totalBytesDownloaded;
+  }
+
+  public static final class DownloadStatus.DownloadStarted extends com.google.firebase.ai.DownloadStatus {
+    ctor public DownloadStatus.DownloadStarted(long bytesToDownload);
+    method public long getBytesToDownload();
+    property public final long bytesToDownload;
+  }
+
   public final class FirebaseAI {
     method public com.google.firebase.ai.GenerativeModel generativeModel(String modelName);
     method public com.google.firebase.ai.GenerativeModel generativeModel(String modelName, com.google.firebase.ai.type.GenerationConfig? generationConfig = null);
@@ -78,8 +103,10 @@ package com.google.firebase.ai {
     method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.type.GenerateContentResponse> generateContentStream(java.util.List<com.google.firebase.ai.type.Content> prompt);
     method public suspend <T> Object? generateObject(com.google.firebase.ai.type.JsonSchema<T> jsonSchema, com.google.firebase.ai.type.Content prompt, com.google.firebase.ai.type.Content[] prompts, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.GenerateObjectResponse<T>>);
     method public suspend <T> Object? generateObject(com.google.firebase.ai.type.JsonSchema<T> jsonSchema, String prompt, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.GenerateObjectResponse<T>>);
+    method public com.google.firebase.ai.OnDeviceExtension? getOnDeviceExtension();
     method public com.google.firebase.ai.Chat startChat(java.util.List<com.google.firebase.ai.type.Content> history = emptyList());
-    method @com.google.firebase.ai.type.PublicPreviewAPI public suspend Object? warmUp(kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    method @Deprecated @com.google.firebase.ai.type.PublicPreviewAPI public suspend Object? warmUp(kotlin.coroutines.Continuation<? super kotlin.Unit>);
+    property public final com.google.firebase.ai.OnDeviceExtension? onDeviceExtension;
   }
 
   @Deprecated public final class ImagenModel {
@@ -143,6 +170,12 @@ package com.google.firebase.ai {
   public static final class OnDeviceConfig.Companion {
   }
 
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class OnDeviceExtension {
+    method public suspend Object? checkStatus(kotlin.coroutines.Continuation<? super com.google.firebase.ai.OnDeviceModelStatus>);
+    method public kotlinx.coroutines.flow.Flow<com.google.firebase.ai.DownloadStatus> download();
+    method public suspend Object? warmUp(kotlin.coroutines.Continuation<? super kotlin.Unit>);
+  }
+
   @com.google.firebase.ai.type.PublicPreviewAPI public final class OnDeviceModelOption {
     field public static final com.google.firebase.ai.OnDeviceModelOption.Companion Companion;
     field public static final com.google.firebase.ai.OnDeviceModelOption PREVIEW;
@@ -151,6 +184,17 @@ package com.google.firebase.ai {
   }
 
   public static final class OnDeviceModelOption.Companion {
+  }
+
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class OnDeviceModelStatus {
+    field public static final com.google.firebase.ai.OnDeviceModelStatus AVAILABLE;
+    field public static final com.google.firebase.ai.OnDeviceModelStatus.Companion Companion;
+    field public static final com.google.firebase.ai.OnDeviceModelStatus DOWNLOADABLE;
+    field public static final com.google.firebase.ai.OnDeviceModelStatus DOWNLOADING;
+    field public static final com.google.firebase.ai.OnDeviceModelStatus UNAVAILABLE;
+  }
+
+  public static final class OnDeviceModelStatus.Companion {
   }
 
   @com.google.firebase.ai.type.PublicPreviewAPI public final class TemplateChat {
