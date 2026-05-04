@@ -66,6 +66,7 @@ import org.junit.runner.RunWith
 import org.mockito.Mockito
 
 @RunWith(AndroidJUnit4::class)
+@OptIn(PublicPreviewAPI::class)
 internal class GenerativeModelTesting {
   private val TEST_CLIENT_ID = "test"
   private val TEST_APP_ID = "1:android:12345"
