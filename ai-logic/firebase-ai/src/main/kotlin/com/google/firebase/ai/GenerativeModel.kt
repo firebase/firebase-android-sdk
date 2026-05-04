@@ -246,8 +246,8 @@ internal constructor(
    * @throws [FirebaseAIException] if the warmup failed.
    */
   @Deprecated(
-    message = "Use onDevice?.warmUp() instead",
-    replaceWith = ReplaceWith("onDevice?.warmUp()")
+    message = "Use onDeviceExtension?.warmUp() instead",
+    replaceWith = ReplaceWith("onDeviceExtension?.warmUp()")
   )
   @PublicPreviewAPI
   public suspend fun warmUp(): Unit = actualModel.warmUp()
