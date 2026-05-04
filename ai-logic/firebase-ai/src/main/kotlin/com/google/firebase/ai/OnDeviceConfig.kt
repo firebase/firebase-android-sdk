@@ -225,6 +225,8 @@ public abstract class DownloadStatus {
           DownloadCompleted()
         is com.google.firebase.ai.ondevice.interop.DownloadStatusInterop.DownloadFailed ->
           DownloadFailed(FirebaseAIException.from(status.exception))
+        else ->
+          DownloadFailed(FirebaseAIException.from(IllegalStateException("Unknown download status")))
       }
   }
 }
