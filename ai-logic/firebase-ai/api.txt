@@ -13,7 +13,8 @@ package com.google.firebase.ai {
     property public final java.util.List<com.google.firebase.ai.type.Content> history;
   }
 
-  @com.google.firebase.ai.type.PublicPreviewAPI public abstract sealed class DownloadStatus {
+  @com.google.firebase.ai.type.PublicPreviewAPI public abstract class DownloadStatus {
+    ctor public DownloadStatus();
   }
 
   public static final class DownloadStatus.DownloadCompleted extends com.google.firebase.ai.DownloadStatus {

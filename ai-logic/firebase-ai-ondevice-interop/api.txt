@@ -15,7 +15,7 @@ package com.google.firebase.ai.ondevice.interop {
     property public final int totalTokens;
   }
 
-  public final class DownloadStatusInterop {
+  public class DownloadStatusInterop {
     ctor public DownloadStatusInterop();
   }
 
