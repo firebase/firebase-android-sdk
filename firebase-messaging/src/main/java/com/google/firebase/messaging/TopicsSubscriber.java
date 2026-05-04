@@ -30,12 +30,12 @@ import androidx.collection.ArrayMap;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskCompletionSource;
 import com.google.android.gms.tasks.Tasks;
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.installations.FirebaseInstallationsApi;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeoutException;
 
 /**
  * Manages pending topics subscriptions and unsubscriptions.
@@ -44,17 +44,12 @@ import java.util.concurrent.TimeoutException;
  */
 class TopicsSubscriber {
 
-  static final String ERROR_INTERNAL_SERVER_ERROR = "INTERNAL_SERVER_ERROR";
-  static final String ERROR_SERVICE_NOT_AVAILABLE = "SERVICE_NOT_AVAILABLE";
-
-  private static final long RPC_TIMEOUT_SEC = 30;
   private static final long MIN_DELAY_SEC = 30;
   private static final long MAX_DELAY_SEC = HOURS.toSeconds(8);
 
   private final Context context;
   private final Metadata metadata;
-  private final GmsRpc rpc;
-  private final FirebaseMessaging firebaseMessaging;
+  private final TopicSubscriptionClient topicSubscriptionClient;
 
   @GuardedBy("pendingOperations")
   private final Map<String, ArrayDeque<TaskCompletionSource<Void>>> pendingOperations =
@@ -69,9 +64,9 @@ class TopicsSubscriber {
 
   @VisibleForTesting
   static Task<TopicsSubscriber> createInstance(
-      FirebaseMessaging firebaseMessaging,
+      FirebaseApp firebaseApp,
+      FirebaseInstallationsApi firebaseInstallationsApi,
       Metadata metadata,
-      GmsRpc rpc,
       Context context,
       @NonNull ScheduledExecutorService syncExecutor) {
     return Tasks.call(
@@ -80,22 +75,25 @@ class TopicsSubscriber {
           TopicsStore topicsStore = TopicsStore.getInstance(context, syncExecutor);
           TopicsSubscriber topicsSubscriber =
               new TopicsSubscriber(
-                  firebaseMessaging, metadata, topicsStore, rpc, context, syncExecutor);
+                  metadata,
+                  topicsStore,
+                  new TopicSubscriptionClient(firebaseApp, firebaseInstallationsApi),
+                  context,
+                  syncExecutor);
           return topicsSubscriber;
         });
   }
 
-  private TopicsSubscriber(
-      FirebaseMessaging firebaseMessaging,
+  @VisibleForTesting
+  TopicsSubscriber(
       Metadata metadata,
       TopicsStore store,
-      GmsRpc rpc,
+      TopicSubscriptionClient topicSubscriptionClient,
       Context context,
       @NonNull ScheduledExecutorService syncExecutor) {
-    this.firebaseMessaging = firebaseMessaging;
     this.metadata = metadata;
     this.store = store;
-    this.rpc = rpc;
+    this.topicSubscriptionClient = topicSubscriptionClient;
     this.context = context;
     this.syncExecutor = syncExecutor;
   }
@@ -222,9 +220,7 @@ class TopicsSubscriber {
    * Performs one topic operation.
    *
    * @return true if successful, false if needs to be rescheduled
-   * @throws IOException on a hard failure that should not be retried. Hard failures are failures
-   *     except {@link TopicsSubscriber#ERROR_SERVICE_NOT_AVAILABLE} and {@link
-   *     TopicsSubscriber#ERROR_INTERNAL_SERVER_ERROR}
+   * @throws IOException on a hard failure that should not be retried.
    */
   @WorkerThread
   boolean performTopicOperation(TopicOperation topicOperation) throws IOException {
@@ -272,33 +268,12 @@ class TopicsSubscriber {
   @WorkerThread
   // TODO: (b/148494404) refactor so we only block once on this code path
   private void blockingSubscribeToTopic(String topic) throws IOException {
-    awaitTask(rpc.subscribeToTopic(firebaseMessaging.blockingGetToken(), topic));
+    topicSubscriptionClient.subscribe(topic);
   }
 
   @WorkerThread
   private void blockingUnsubscribeFromTopic(String topic) throws IOException {
-    awaitTask(rpc.unsubscribeFromTopic(firebaseMessaging.blockingGetToken(), topic));
-  }
-
-  /** Awaits an RPC task, rethrowing any IOExceptions or RuntimeExceptions. */
-  @WorkerThread
-  private static <T> void awaitTask(Task<T> task) throws IOException {
-    try {
-      Tasks.await(task, RPC_TIMEOUT_SEC, SECONDS);
-    } catch (ExecutionException e) {
-      // The underlying exception should always be an IOException or RuntimeException, which we
-      // rethrow.
-      Throwable cause = e.getCause();
-      if (cause instanceof IOException) {
-        throw (IOException) cause;
-      } else if (cause instanceof RuntimeException) {
-        throw (RuntimeException) cause;
-      }
-      // should not happen but for safety
-      throw new IOException(e);
-    } catch (InterruptedException | TimeoutException e) {
-      throw new IOException(ERROR_SERVICE_NOT_AVAILABLE, e);
-    }
+    topicSubscriptionClient.unsubscribe(topic);
   }
 
   synchronized boolean isSyncScheduledOrRunning() {

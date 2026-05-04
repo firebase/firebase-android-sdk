@@ -86,6 +86,7 @@ public class GmsRpcRoboTest {
   private static final String PARAM_FIS_AUTH_TOKEN = "Goog-Firebase-Installations-Auth";
   // SHA-1 hashed b64 value of (nick)name "[default]" of Firebase Core SDK (a.k.a. FirebaseApp)
   private static final String PARAM_FIREBASE_APP_NAME_HASH = "firebase-app-name-hash";
+  private static final String PARAM_API_KEY = "Goog-Api-Key";
 
   // registration result action and extras
   private static final String EXTRA_REGISTRATION_ID = "registration_id";
@@ -119,7 +120,11 @@ public class GmsRpcRoboTest {
     context = ApplicationProvider.getApplicationContext();
 
     FirebaseOptions firebaseOptions =
-        new FirebaseOptions.Builder().setApplicationId(APP_ID).setGcmSenderId(SENDER_ID).build();
+        new FirebaseOptions.Builder()
+            .setApplicationId(APP_ID)
+            .setApiKey("test_api_key")
+            .setGcmSenderId(SENDER_ID)
+            .build();
     FirebaseApp app = mock(FirebaseApp.class);
     HeartBeatInfo heartBeatInfoObject =
         new HeartBeatInfo() {
@@ -165,7 +170,7 @@ public class GmsRpcRoboTest {
   @Test
   public void testGetToken() throws Throwable {
     doReturn(createRegistrationResponse("a_token")).when(internalRpc).send(any(Bundle.class));
-    Task<String> tokenTask = gmsRpc.getToken();
+    Task<String> tokenTask = gmsRpc.getToken(false);
 
     // verify the task
     String token = Tasks.await(tokenTask, TIMEOUT_S, TimeUnit.SECONDS);
@@ -178,14 +183,14 @@ public class GmsRpcRoboTest {
 
   @Test
   public void testGetToken_propagatesIoException() {
-    testPropagatesIoException(() -> gmsRpc.getToken());
+    testPropagatesIoException(() -> gmsRpc.getToken(false));
   }
 
   @Test
   public void testDeleteToken() throws Throwable {
     doReturn(createUnregistrationResponse()).when(internalRpc).send(any(Bundle.class));
 
-    Task<?> rpcTask = gmsRpc.deleteToken();
+    Task<?> rpcTask = gmsRpc.deleteToken(false);
     rpcTask.getResult(IOException.class);
     assertThat(rpcTask.isSuccessful()).isTrue();
 
@@ -197,51 +202,7 @@ public class GmsRpcRoboTest {
 
   @Test
   public void testDeleteToken_propagatesIoException() {
-    testPropagatesIoException(() -> gmsRpc.deleteToken());
-  }
-
-  @Test
-  public void testSubscribeToTopic() throws Throwable {
-    String topic = "topic_1311";
-    String cachedToken = "token_1311";
-    doReturn(createTopicResponse()).when(internalRpc).send(any(Bundle.class));
-
-    Task<?> rpcTask = gmsRpc.subscribeToTopic(cachedToken, topic);
-
-    assertThat(rpcTask.isSuccessful()).isTrue();
-
-    // verify the request bundle
-    Bundle expectedParameters = getDefaultParameters(cachedToken, TOPIC_PREFIX + topic);
-    expectedParameters.putString(EXTRA_TOPIC, TOPIC_PREFIX + topic);
-    verifyRpcCallArgument(expectedParameters);
-  }
-
-  @Test
-  public void testSubscribeToToken_propagatesIoException() {
-    testPropagatesIoException(() -> gmsRpc.subscribeToTopic("cachedToken", "topic"));
-  }
-
-  @Test
-  public void testUnsubscribeFromTopic() throws Throwable {
-    String topic = "topic_1311";
-    String cachedToken = "token_1311";
-    doReturn(createTopicResponse()).when(internalRpc).send(any(Bundle.class));
-
-    Task<?> rpcTask = gmsRpc.unsubscribeFromTopic(cachedToken, topic);
-
-    // verify the task is completed in time
-    Tasks.await(rpcTask, TIMEOUT_S, TimeUnit.SECONDS);
-
-    // verify the request bundle
-    Bundle expectedParameters = getDefaultParameters(cachedToken, TOPIC_PREFIX + topic);
-    expectedParameters.putString(EXTRA_DELETE, "1");
-    expectedParameters.putString(EXTRA_TOPIC, TOPIC_PREFIX + topic);
-    verifyRpcCallArgument(expectedParameters);
-  }
-
-  @Test
-  public void testUnsubscribeFromToken_propagatesIoException() {
-    testPropagatesIoException(() -> gmsRpc.unsubscribeFromTopic("cachedToken", "topic"));
+    testPropagatesIoException(() -> gmsRpc.deleteToken(false));
   }
 
   @Test
@@ -274,7 +235,7 @@ public class GmsRpcRoboTest {
       when(mockLibraryVersion.getVersion(eq("firebase-fcm"))).thenReturn("1337");
       LibraryVersion.setInstanceForTesting(mockLibraryVersion);
       // verify the task is completed in time
-      Tasks.await(gmsRpc.getToken(), TIMEOUT_S, TimeUnit.SECONDS);
+      Tasks.await(gmsRpc.getToken(false), TIMEOUT_S, TimeUnit.SECONDS);
 
       // verify the request bundle
       Bundle expectedParameters = getDefaultParameters(/* to= */ SENDER_ID, /* scope= */ SCOPE_ALL);
