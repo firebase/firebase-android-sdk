@@ -443,7 +443,7 @@ internal constructor(
   /**
    * Initiates the download of the on-device AI model.
    *
-   * @param option The configuration option for the model.
+   *
    * @return A [Flow] of [DownloadStatus] objects representing the download lifecycle.
    */
   public fun download(): Flow<DownloadStatus> {
