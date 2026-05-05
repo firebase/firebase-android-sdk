@@ -18,7 +18,11 @@ package com.google.firebase.ai
 import com.google.firebase.ai.type.Candidate
 import com.google.firebase.ai.type.Content
 import com.google.firebase.ai.type.GenerateContentResponse
+import com.google.firebase.ai.type.GroundingSupport
 import com.google.firebase.ai.type.TextPart
+import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
+import io.kotest.matchers.ints.shouldBeLessThan
+import io.kotest.matchers.ints.shouldBeLessThanOrEqual
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
@@ -38,6 +42,24 @@ class TypesValidator {
 
   fun validateCandidate(candidate: Candidate) {
     validateContent(candidate.content)
+    if (candidate.groundingMetadata != null) {
+      for (grounding in candidate.groundingMetadata.groundingSupports) {
+        validateGroundingSupport(candidate, grounding)
+      }
+    }
+  }
+
+  fun validateGroundingSupport(candidate: Candidate, grounding: GroundingSupport) {
+    val segment = grounding.segment
+    segment.partIndex shouldBeGreaterThanOrEqual 0
+    segment.partIndex shouldBeLessThan candidate.content.parts.size
+    val part = candidate.content.parts[segment.partIndex]
+    part::class shouldBe TextPart::class
+    val text = (part as TextPart).text
+    segment.startIndex shouldBeGreaterThanOrEqual 0
+    segment.startIndex shouldBeLessThanOrEqual segment.endIndex
+    segment.endIndex shouldBeLessThanOrEqual text.length
+    segment.text shouldBe text.substring(segment.startIndex, segment.endIndex)
   }
 
   fun validateContent(content: Content) {

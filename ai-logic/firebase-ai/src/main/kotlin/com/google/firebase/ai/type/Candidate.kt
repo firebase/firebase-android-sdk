@@ -19,6 +19,7 @@
 
 package com.google.firebase.ai.type
 
+import android.util.Log
 import com.google.firebase.ai.common.util.FirstOrdinalSerializer
 import com.google.firebase.ai.ondevice.interop.Candidate as OnDeviceCandidate
 import com.google.firebase.ai.ondevice.interop.FinishReason as OnDeviceFinishReason
@@ -69,7 +70,7 @@ internal constructor(
       val safetyRatings = safetyRatings?.mapNotNull { it.toPublic() }.orEmpty()
       val citations = citationMetadata?.toPublic(content)
       val finishReason = finishReason?.toPublic()
-      val groundingMetadata = groundingMetadata?.toPublic()
+      val groundingMetadata = groundingMetadata?.toPublic(content)
       val urlContextMetadata = urlContextMetadata?.toPublic()
 
       return Candidate(
@@ -164,7 +165,8 @@ public class CitationMetadata internal constructor(public val citations: List<Ci
   @OptIn(ExperimentalSerializationApi::class)
   internal constructor(@JsonNames("citations") val citationSources: List<Citation.Internal>) {
 
-    internal fun toPublic(content: Content) = CitationMetadata(citationSources.map { it.toPublic(content) })
+    internal fun toPublic(content: Content) =
+      CitationMetadata(citationSources.map { it.toPublic(content) })
   }
 }
 
@@ -372,14 +374,15 @@ public class GroundingMetadata(
     val groundingChunks: List<GroundingChunk.Internal>?,
     val groundingSupports: List<GroundingSupport.Internal>?,
   ) {
-    internal fun toPublic() =
+    internal fun toPublic(content: Content) =
       GroundingMetadata(
         webSearchQueries = webSearchQueries.orEmpty(),
         searchEntryPoint = searchEntryPoint?.toPublic(),
         retrievalQueries = retrievalQueries.orEmpty(),
-        groundingAttribution = groundingAttribution?.map { it.toPublic() }.orEmpty(),
+        groundingAttribution = groundingAttribution?.map { it.toPublic(content) }.orEmpty(),
         groundingChunks = groundingChunks?.map { it.toPublic() }.orEmpty(),
-        groundingSupports = groundingSupports?.map { it.toPublic() }.orEmpty().filterNotNull()
+        groundingSupports =
+          groundingSupports?.map { it.toPublic(content) }.orEmpty().filterNotNull()
       )
   }
 }
@@ -492,12 +495,12 @@ public class GroundingSupport(
     val segment: Segment.Internal?,
     val groundingChunkIndices: List<Int>?,
   ) {
-    internal fun toPublic(): GroundingSupport? {
+    internal fun toPublic(content: Content): GroundingSupport? {
       if (segment == null) {
         return null
       }
       return GroundingSupport(
-        segment = segment.toPublic(),
+        segment = segment.toPublic(content),
         groundingChunkIndices = groundingChunkIndices.orEmpty(),
       )
     }
@@ -515,8 +518,8 @@ public class GroundingAttribution(
     val segment: Segment.Internal,
     val confidenceScore: Float?,
   ) {
-    internal fun toPublic() =
-      GroundingAttribution(segment = segment.toPublic(), confidenceScore = confidenceScore)
+    internal fun toPublic(content: Content) =
+      GroundingAttribution(segment = segment.toPublic(content), confidenceScore = confidenceScore)
   }
 }
 
@@ -547,13 +550,17 @@ public class Segment(
     val partIndex: Int?,
     val text: String?,
   ) {
-    internal fun toPublic() =
-      Segment(
-        startIndex = startIndex ?: 0,
-        endIndex = endIndex ?: 0,
-        partIndex = partIndex ?: 0,
+    internal fun toPublic(content: Content): Segment {
+      val partIndex = this.partIndex ?: 0
+      val part = content.parts.getOrNull(partIndex)
+      val fakeContent = Content(content.role, if (part == null) emptyList() else listOf(part))
+      return Segment(
+        startIndex = convertUtf8IndexToUtf16(fakeContent, startIndex ?: 0),
+        endIndex = convertUtf8IndexToUtf16(fakeContent, endIndex ?: 0),
+        partIndex = partIndex,
         text = text ?: ""
       )
+    }
   }
 }
 
@@ -648,25 +655,30 @@ internal fun convertUtf8IndexToUtf16(content: Content, originalIndex: Int): Int 
     var i = 0
     while (i < text.length) {
       val c = text[i].code
-      progress += when {
-        c < 0x80 -> 1 // ASCII
-        c < 0x800 -> 2 // Two-byte codepoint
-        c in 0xD800 .. 0xDBFF -> 4 // High surrogate character
-        else -> 3
-      }
+      progress +=
+        when {
+          c < 0x80 -> 1 // ASCII
+          c < 0x800 -> 2 // Two-byte codepoint
+          c in 0xD800..0xDBFF -> 4 // High surrogate character
+          else -> 3
+        }
       if (c in 0xD800..0xDBFF) {
         i++ // Skip the low surrogate
       }
       i++
       if (progress >= originalIndex) {
         if (progress > originalIndex) {
-          throw StringIndexOutOfBoundsException("Desired index $originalIndex is between Unicode codepoints")
-          // Citation index was midway between a single codepoint??
+          Log.w(
+            Candidate::class.simpleName,
+            "Desired index $originalIndex is between Unicode codepoints"
+          )
         }
         return sumIndex + i
       }
     }
     sumIndex += text.length
   }
-  throw StringIndexOutOfBoundsException("Desired index $originalIndex is higher than content size $progress")
+  throw StringIndexOutOfBoundsException(
+    "Desired index $originalIndex is higher than content size $progress"
+  )
 }

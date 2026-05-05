@@ -14,20 +14,19 @@ import org.junit.Test
 
 @OptIn(PublicPreviewAPI::class, ExperimentalSerializationApi::class)
 class EncodingTests {
-  val testStrings = listOf(
-    "hello world",
-    "¡Sí! Tengo muchos años.",
-    "🙂🤝📩",
-    "速度を上げて",
-    "",
-  )
+  val testStrings =
+    listOf(
+      "hello world",
+      "¡Sí! Tengo muchos años.",
+      "🙂🤝📩",
+      "速度を上げて",
+      "",
+    )
 
   @Test
   fun `UTF-8 to UFT-16 index mapping matches length`() {
     for (string in testStrings) {
-      val content = content {
-        text(string)
-      }
+      val content = content { text(string) }
       val ba = string.toByteArray(Charsets.UTF_8)
       val index = convertUtf8IndexToUtf16(content, ba.size)
       index shouldBe string.length
@@ -36,15 +35,19 @@ class EncodingTests {
 
   @Test
   fun `CitationMetadata gets converted to UTF-16`() {
-    val internalCandidate = Candidate.Internal(
-      content = Content.Internal("", listOf(TextPart.Internal("í abc í"))),
-      citationMetadata = CitationMetadata.Internal(
-        listOf(Citation.Internal(
-          startIndex = 3,
-          endIndex = 6,
-        ))
+    val internalCandidate =
+      Candidate.Internal(
+        content = Content.Internal("", listOf(TextPart.Internal("í abc í"))),
+        citationMetadata =
+          CitationMetadata.Internal(
+            listOf(
+              Citation.Internal(
+                startIndex = 3,
+                endIndex = 6,
+              )
+            )
+          )
       )
-    )
     val candidate = internalCandidate.toPublic()
     val start = candidate.citationMetadata!!.citations.first().startIndex
     val end = candidate.citationMetadata.citations.first().endIndex
