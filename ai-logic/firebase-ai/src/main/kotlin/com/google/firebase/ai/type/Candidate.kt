@@ -662,17 +662,11 @@ internal fun convertUtf8IndexToUtf16(content: Content, originalIndex: Int): Int 
           c in 0xD800..0xDBFF -> 4 // High surrogate character
           else -> 3
         }
-      if (c in 0xD800..0xDBFF) {
+      if (c in 0xD800..0xDBFF && i + 1 < text.length) {
         i++ // Skip the low surrogate
       }
       i++
       if (progress >= originalIndex) {
-        if (progress > originalIndex) {
-          Log.w(
-            Candidate::class.simpleName,
-            "Desired index $originalIndex is between Unicode codepoints"
-          )
-        }
         return sumIndex + i
       }
     }
