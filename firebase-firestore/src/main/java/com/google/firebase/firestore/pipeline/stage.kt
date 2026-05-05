@@ -1171,7 +1171,7 @@ internal constructor(
     )
   }
 
-  /** Specify the BCP-47 language code of text in the search query, such as “en” or “sr”. */
+  /** Specify the BCP-47 language code of text in the search query, such as "en" or "sr". */
   fun withLanguageCode(languageCode: String): SearchStage {
     return SearchStage(
       query,
