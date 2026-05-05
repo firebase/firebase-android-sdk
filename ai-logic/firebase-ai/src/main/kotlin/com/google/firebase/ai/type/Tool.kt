@@ -143,10 +143,10 @@ internal constructor(
      * incorporate location-based information into its responses.
      *
      * When using this feature, you are required to comply with the "Grounding with Google Maps"
-     * usage requirements for your chosen API provider: {@link
-     * https://ai.google.dev/gemini-api/terms#grounding-with-google-maps | Gemini Developer API} or
-     * Vertex AI Gemini API (see {@link https://cloud.google.com/terms/service-terms | Service
-     * Terms} section within the Service Specific Terms).
+     * usage requirements for your chosen API provider:
+     * [Gemini Developer API](https://ai.google.dev/gemini-api/terms#grounding-with-google-maps) or
+     * Vertex AI Gemini API (see [Service Terms](https://cloud.google.com/terms/service-terms)
+     * section within the Service Specific Terms).
      *
      * @return A [Tool] configured for Google Maps.
      */
