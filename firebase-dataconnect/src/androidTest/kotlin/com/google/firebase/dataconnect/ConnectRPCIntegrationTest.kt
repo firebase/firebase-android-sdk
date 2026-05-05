@@ -20,6 +20,8 @@ import app.cash.turbine.test
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.createGrpcManagedChannel
 import com.google.firebase.dataconnect.testutil.schemas.RealtimeConnector
+import com.google.firebase.dataconnect.testutil.schemas.RealtimeConnector.GetStringByKeyQuery
+import com.google.firebase.dataconnect.testutil.schemas.RealtimeConnector.InsertStringMutation
 import com.google.firebase.dataconnect.util.ProtoUtil.decodeFromStruct
 import com.google.firebase.dataconnect.util.ProtoUtil.encodeToStruct
 import google.firebase.dataconnect.proto.ConnectorStreamServiceGrpcKt.ConnectorStreamServiceCoroutineStub
@@ -41,9 +43,6 @@ import kotlinx.coroutines.channels.SendChannel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.test.runTest
-import kotlinx.serialization.SerializationStrategy
-import kotlinx.serialization.modules.SerializersModule
-import kotlinx.serialization.serializer
 import org.junit.Test
 
 class ConnectRPCIntegrationTest : DataConnectIntegrationTestBase() {
@@ -57,7 +56,19 @@ class ConnectRPCIntegrationTest : DataConnectIntegrationTestBase() {
     outgoingRequests.sendInitRequest(requestId = "init", connector.resourceName)
 
     incomingResponses.test {
-      outgoingRequests.sendGetStringByKeyExecuteRequest(requestId, key)
+      outgoingRequests.sendNonBlockingOrThrow(
+        StreamRequest.newBuilder().let { streamRequest ->
+          streamRequest.setRequestId(requestId)
+          streamRequest.setExecute(
+            ExecuteRequest.newBuilder().let { executeRequest ->
+              executeRequest.setOperationName(GetStringByKeyQuery.OPERATION_NAME)
+              executeRequest.setVariables(encodeToStruct(GetStringByKeyQuery.Variables(key)))
+              executeRequest.build()
+            }
+          )
+          streamRequest.build()
+        }
+      )
 
       val streamResponse = awaitItem()
 
@@ -73,11 +84,23 @@ class ConnectRPCIntegrationTest : DataConnectIntegrationTestBase() {
     outgoingRequests.sendInitRequest(requestId = "init", connector.resourceName)
 
     incomingResponses.test {
-      outgoingRequests.sendInsertStringExecuteRequest(requestId, name)
+      outgoingRequests.sendNonBlockingOrThrow(
+        StreamRequest.newBuilder().let { streamRequest ->
+          streamRequest.setRequestId(requestId)
+          streamRequest.setExecute(
+            ExecuteRequest.newBuilder().let { executeRequest ->
+              executeRequest.setOperationName(InsertStringMutation.OPERATION_NAME)
+              executeRequest.setVariables(encodeToStruct(InsertStringMutation.Variables(name)))
+              executeRequest.build()
+            }
+          )
+          streamRequest.build()
+        }
+      )
+
       val streamResponse = awaitItem()
 
       val key = streamResponse.shouldBeInsertStringData(requestId = requestId)
-
       connector.getString(key).shouldNotBeNull().name shouldBe name
     }
   }
@@ -161,92 +184,6 @@ private fun SendChannel<StreamRequest>.sendInitRequest(
 }
 
 /**
- * Sends an execution request for an operation to the receiver [ConnectionStreams.outgoingRequests].
- *
- * @param requestId The "request ID" to send in the outgoing message.
- * @param operationName The "operation name" to send in the outgoing message.
- * @param variables The "variables" to send in the outgoing message; these variables will be encoded
- * using the object's default serializer, as determined by the [serializer] function.
- */
-private inline fun <reified Variables> SendChannel<StreamRequest>.sendExecuteRequest(
-  requestId: String,
-  operationName: String,
-  variables: Variables
-) {
-  sendExecuteRequest(requestId, operationName, variables, serializer(), null)
-}
-
-/**
- * Sends an execution request for an operation to the receiver [ConnectionStreams.outgoingRequests].
- *
- * @param requestId The "request ID" to send in the outgoing message.
- * @param operationName The "operation name" to send in the outgoing message.
- * @param variables The "variables" to send in the outgoing message; these variables will be encoded
- * using the given [serializer] and [serializersModule].
- * @param serializer The [SerializationStrategy] to use for encoding the given [variables].
- * @param serializersModule The [SerializersModule] to use when encoding the given [variables].
- */
-private fun <Variables> SendChannel<StreamRequest>.sendExecuteRequest(
-  requestId: String,
-  operationName: String,
-  variables: Variables,
-  serializer: SerializationStrategy<Variables>,
-  serializersModule: SerializersModule?
-) {
-  val variablesStruct = encodeToStruct(variables, serializer, serializersModule)
-
-  val executeRequest =
-    ExecuteRequest.newBuilder().let {
-      it.setOperationName(operationName)
-      it.setVariables(variablesStruct)
-      it.build()
-    }
-
-  val streamRequest =
-    StreamRequest.newBuilder().let {
-      it.setRequestId(requestId)
-      it.setExecute(executeRequest)
-      it.build()
-    }
-
-  sendNonBlockingOrThrow(streamRequest)
-}
-
-/**
- * Sends an execution request for a "RealtimeString_GetByKey" query to the receiver
- * [ConnectionStreams.outgoingRequests].
- *
- * @param requestId The "request ID" to send in the outgoing message.
- * @param key The "key" to send in the outgoing message for the
- * [RealtimeConnector.GetStringByKeyQuery.Variables.key] property.
- */
-private fun SendChannel<StreamRequest>.sendGetStringByKeyExecuteRequest(
-  requestId: String,
-  key: RealtimeConnector.Key
-) {
-  val operationName = RealtimeConnector.GetStringByKeyQuery.OPERATION_NAME
-  val variables = RealtimeConnector.GetStringByKeyQuery.Variables(key)
-  sendExecuteRequest(requestId, operationName, variables)
-}
-
-/**
- * Sends an execution request for a "RealtimeString_Insert" query to the receiver
- * [ConnectionStreams.outgoingRequests].
- *
- * @param requestId The "request ID" to send in the outgoing message.
- * @param name The "name" to send in the outgoing message for the
- * [RealtimeConnector.InsertStringMutation.Variables.name] property.
- */
-private fun SendChannel<StreamRequest>.sendInsertStringExecuteRequest(
-  requestId: String,
-  name: String,
-) {
-  val operationName = RealtimeConnector.InsertStringMutation.OPERATION_NAME
-  val variables = RealtimeConnector.InsertStringMutation.Variables(name = name)
-  sendExecuteRequest(requestId, operationName, variables)
-}
-
-/**
  * Assertion to verify that a [StreamResponse] matches the expected "RealtimeString_GetByKey" data.
  *
  * @param requestId The expected request ID.
@@ -255,7 +192,7 @@ private fun SendChannel<StreamRequest>.sendInsertStringExecuteRequest(
 private fun StreamResponse.shouldBeGetStringByKeyDataWithName(requestId: String, name: String) {
   withClue("StreamResponse.shouldBeGetStringByKeyDataWithName") {
     assertSoftly {
-      val data = shouldBeSuccess<RealtimeConnector.GetStringByKeyQuery.Data>(requestId = requestId)
+      val data = shouldBeSuccess<GetStringByKeyQuery.Data>(requestId = requestId)
       withClue("data") { data.item.shouldNotBeNull().name shouldBe name }
     }
   }
@@ -268,9 +205,7 @@ private fun StreamResponse.shouldBeGetStringByKeyDataWithName(requestId: String,
  */
 private fun StreamResponse.shouldBeInsertStringData(requestId: String): RealtimeConnector.Key =
   withClue("StreamResponse.shouldBeInsertStringData") {
-    assertSoftly {
-      shouldBeSuccess<RealtimeConnector.InsertStringMutation.Data>(requestId = requestId).key
-    }
+    assertSoftly { shouldBeSuccess<InsertStringMutation.Data>(requestId = requestId).key }
   }
 
 /**
