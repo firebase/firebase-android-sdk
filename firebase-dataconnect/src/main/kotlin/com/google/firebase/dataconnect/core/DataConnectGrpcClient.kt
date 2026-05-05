@@ -39,8 +39,7 @@ import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.modules.SerializersModule
 
 internal class DataConnectGrpcClient(
-  projectId: String,
-  connector: ConnectorConfig,
+  private val connectorResourceName: String,
   private val grpcRPCs: DataConnectGrpcRPCs,
   private val dataConnectAuth: DataConnectAuth,
   private val dataConnectAppCheck: DataConnectAppCheck,
@@ -48,12 +47,6 @@ internal class DataConnectGrpcClient(
 ) {
   val instanceId: String
     get() = logger.nameWithId
-
-  private val connectorResourceName =
-    "projects/$projectId/" +
-      "locations/${connector.location}" +
-      "/services/${connector.serviceId}" +
-      "/connectors/${connector.connector}"
 
   data class OperationResult(
     val data: Struct?,

@@ -18,13 +18,18 @@ package com.google.firebase.dataconnect.testutil.schemas
 
 import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.FirebaseDataConnect
+import com.google.firebase.dataconnect.core.FirebaseDataConnectInternal
 import com.google.firebase.dataconnect.serializers.UUIDSerializer
 import com.google.firebase.dataconnect.testutil.TestDataConnectFactory
 import java.util.UUID
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer
 
-class RealtimeConnector private constructor(val dataConnect: FirebaseDataConnect) {
+class RealtimeConnector private constructor(dataConnectInternal: FirebaseDataConnectInternal) {
+
+  val dataConnect: FirebaseDataConnect = dataConnectInternal
+
+  val resourceName: String = dataConnectInternal.connectorResourceName
 
   val getStringByKey = GetStringByKeyQuery(this)
 
@@ -125,7 +130,7 @@ class RealtimeConnector private constructor(val dataConnect: FirebaseDataConnect
 
     fun getInstance(dataConnectFactory: TestDataConnectFactory): RealtimeConnector {
       val dataConnect = dataConnectFactory.newInstance(config)
-      return RealtimeConnector(dataConnect)
+      return RealtimeConnector(dataConnect as FirebaseDataConnectInternal)
     }
   }
 }
