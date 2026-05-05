@@ -39,6 +39,8 @@ abstract class DataConnectIntegrationTestBase {
 
   @get:Rule val dataConnectFactory = TestDataConnectFactory(firebaseAppFactory)
 
+  @get:Rule val cleanups = CleanupsRule()
+
   @get:Rule(order = Int.MIN_VALUE) val randomSeedTestRule = RandomSeedTestRule()
 
   val rs: RandomSource by randomSeedTestRule.rs

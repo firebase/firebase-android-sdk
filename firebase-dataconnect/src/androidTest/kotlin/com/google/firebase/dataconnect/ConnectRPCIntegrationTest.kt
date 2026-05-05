@@ -49,7 +49,7 @@ import org.junit.Test
 class ConnectRPCIntegrationTest : DataConnectIntegrationTestBase() {
 
   @Test
-  fun messagesAreReceivedAsEntityChanges() = runTest {
+  fun responseIsReceivedForExecuteQueryRequest() = runTest {
     val requestId = requestIdArb().sample()
     val name = nameArb().sample()
     val (connector, outgoingRequests, incomingResponses) = connect()
@@ -58,8 +58,27 @@ class ConnectRPCIntegrationTest : DataConnectIntegrationTestBase() {
 
     incomingResponses.test {
       outgoingRequests.sendGetStringByKeyExecuteRequest(requestId, key)
+
       val streamResponse = awaitItem()
+
       streamResponse.shouldBeGetStringByKeyDataWithName(requestId = requestId, name = name)
+    }
+  }
+
+  @Test
+  fun responseIsReceivedForExecuteMutationRequest() = runTest {
+    val requestId = requestIdArb().sample()
+    val name = nameArb().sample()
+    val (connector, outgoingRequests, incomingResponses) = connect()
+    outgoingRequests.sendInitRequest(requestId = "init", connector.resourceName)
+
+    incomingResponses.test {
+      outgoingRequests.sendInsertStringExecuteRequest(requestId, name)
+      val streamResponse = awaitItem()
+
+      val key = streamResponse.shouldBeInsertStringData(requestId = requestId)
+
+      connector.getString(key).shouldNotBeNull().name shouldBe name
     }
   }
 
@@ -194,7 +213,7 @@ private fun <Variables> SendChannel<StreamRequest>.sendExecuteRequest(
 }
 
 /**
- * Sends an execution request for a "GetStringByKey" query to the receiver
+ * Sends an execution request for a "RealtimeString_GetByKey" query to the receiver
  * [ConnectionStreams.outgoingRequests].
  *
  * @param requestId The "request ID" to send in the outgoing message.
@@ -211,29 +230,61 @@ private fun SendChannel<StreamRequest>.sendGetStringByKeyExecuteRequest(
 }
 
 /**
- * Assertion to verify that a [StreamResponse] matches the expected "GetStringByKey" data.
+ * Sends an execution request for a "RealtimeString_Insert" query to the receiver
+ * [ConnectionStreams.outgoingRequests].
+ *
+ * @param requestId The "request ID" to send in the outgoing message.
+ * @param name The "name" to send in the outgoing message for the
+ * [RealtimeConnector.InsertStringMutation.Variables.name] property.
+ */
+private fun SendChannel<StreamRequest>.sendInsertStringExecuteRequest(
+  requestId: String,
+  name: String,
+) {
+  val operationName = RealtimeConnector.InsertStringMutation.OPERATION_NAME
+  val variables = RealtimeConnector.InsertStringMutation.Variables(name = name)
+  sendExecuteRequest(requestId, operationName, variables)
+}
+
+/**
+ * Assertion to verify that a [StreamResponse] matches the expected "RealtimeString_GetByKey" data.
  *
  * @param requestId The expected request ID.
  * @param name The expected name in the data.
- * @param clue An arbitrary string to use as the "clue" to accompany any error messages produced by
- * this method; if null (the default) then some default clue string will be used.
  */
-private fun StreamResponse.shouldBeGetStringByKeyDataWithName(
-  requestId: String,
-  name: String,
-  clue: String? = null
-) {
-  withClue(clue ?: "StreamResponse.shouldBeGetStringByKeyDataWithName") {
+private fun StreamResponse.shouldBeGetStringByKeyDataWithName(requestId: String, name: String) {
+  withClue("StreamResponse.shouldBeGetStringByKeyDataWithName") {
     assertSoftly {
-      withClue("requestId") { this.requestId shouldBe requestId }
-      withClue("errorsCount") { this.errorsCount shouldBe 0 }
-
-      val dataDecodeResult = runCatching {
-        decodeFromStruct<RealtimeConnector.GetStringByKeyQuery.Data>(this.data)
-      }
-      withClue("data") {
-        dataDecodeResult shouldBeSuccess { it.item.shouldNotBeNull().name shouldBe name }
-      }
+      val data = shouldBeSuccess<RealtimeConnector.GetStringByKeyQuery.Data>(requestId = requestId)
+      withClue("data") { data.item.shouldNotBeNull().name shouldBe name }
     }
   }
+}
+
+/**
+ * Assertion to verify that a [StreamResponse] matches the expected "RealtimeString_Insert" data.
+ *
+ * @param requestId The expected request ID.
+ */
+private fun StreamResponse.shouldBeInsertStringData(requestId: String): RealtimeConnector.Key =
+  withClue("StreamResponse.shouldBeInsertStringData") {
+    assertSoftly {
+      shouldBeSuccess<RealtimeConnector.InsertStringMutation.Data>(requestId = requestId).key
+    }
+  }
+
+/**
+ * Assertion to verify that a [StreamResponse] matches the expected "RealtimeString_Insert" data.
+ *
+ * @param requestId The expected request ID.
+ * @return the [Data] decoded from the receiver.
+ */
+private inline fun <reified Data> StreamResponse.shouldBeSuccess(requestId: String): Data {
+  withClue("requestId") { this.requestId shouldBe requestId }
+  withClue("errorsCount") { this.errorsCount shouldBe 0 }
+
+  val dataDecodeResult = runCatching { decodeFromStruct<Data>(this.data) }
+  val data = withClue("decodeFromStruct(data)") { dataDecodeResult.shouldBeSuccess() }
+
+  return data
 }

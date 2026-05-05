@@ -39,19 +39,19 @@ class RealtimeConnector private constructor(dataConnectInternal: FirebaseDataCon
 
   val deleteString = DeleteStringMutation(this)
 
-  suspend fun getString(key: Key) = getStringByKey.execute(key)
+  suspend fun getString(key: Key): GetStringByKeyQuery.Data.Item? = getStringByKey.execute(key)
 
-  suspend fun insertString(name: String) = insertString.execute(name)
+  suspend fun insertString(name: String): Key = insertString.execute(name)
 
-  suspend fun updateString(key: Key, name: String) = updateString.execute(key, name)
+  suspend fun updateString(key: Key, name: String): Unit = updateString.execute(key, name)
 
-  suspend fun deleteString(key: Key) = deleteString.execute(key)
+  suspend fun deleteString(key: Key): Unit = deleteString.execute(key)
 
   class GetStringByKeyQuery(val connector: RealtimeConnector) {
 
-    suspend fun execute(key: Key) = execute(Variables(key))
+    suspend fun execute(key: Key): Data.Item? = execute(Variables(key))
 
-    suspend fun execute(variables: Variables) = queryRef(variables).execute().data.item
+    suspend fun execute(variables: Variables): Data.Item? = queryRef(variables).execute().data.item
 
     fun queryRef(variables: Variables) =
       connector.dataConnect.query(OPERATION_NAME, variables, serializer<Data>(), serializer())
@@ -72,9 +72,9 @@ class RealtimeConnector private constructor(dataConnectInternal: FirebaseDataCon
     @Serializable data class Variables(val name: String)
     @Serializable data class Data(val key: Key)
 
-    suspend fun execute(name: String) = execute(Variables(name = name))
+    suspend fun execute(name: String): Key = execute(Variables(name = name))
 
-    suspend fun execute(variables: Variables) = mutationRef(variables).execute().data.key
+    suspend fun execute(variables: Variables): Key = mutationRef(variables).execute().data.key
 
     fun mutationRef(variables: Variables) =
       connector.dataConnect.mutation(OPERATION_NAME, variables, serializer<Data>(), serializer())
@@ -87,7 +87,7 @@ class RealtimeConnector private constructor(dataConnectInternal: FirebaseDataCon
   class UpdateStringMutation(val connector: RealtimeConnector) {
     @Serializable data class Variables(val key: Key, val name: String)
 
-    suspend fun execute(key: Key, name: String) = execute(Variables(key = key, name = name))
+    suspend fun execute(key: Key, name: String): Unit = execute(Variables(key = key, name = name))
 
     suspend fun execute(variables: Variables) {
       mutationRef(variables).execute()
@@ -104,7 +104,7 @@ class RealtimeConnector private constructor(dataConnectInternal: FirebaseDataCon
   class DeleteStringMutation(val connector: RealtimeConnector) {
     @Serializable data class Variables(val key: Key)
 
-    suspend fun execute(key: Key) = execute(Variables(key = key))
+    suspend fun execute(key: Key): Unit = execute(Variables(key = key))
 
     suspend fun execute(variables: Variables) {
       mutationRef(variables).execute()
