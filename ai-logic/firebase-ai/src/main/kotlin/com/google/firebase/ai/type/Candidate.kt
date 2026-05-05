@@ -19,7 +19,6 @@
 
 package com.google.firebase.ai.type
 
-import android.util.Log
 import com.google.firebase.ai.common.util.FirstOrdinalSerializer
 import com.google.firebase.ai.ondevice.interop.Candidate as OnDeviceCandidate
 import com.google.firebase.ai.ondevice.interop.FinishReason as OnDeviceFinishReason
