@@ -30,6 +30,7 @@ import io.kotest.property.arbitrary.alphanumeric
 import io.kotest.property.arbitrary.arabic
 import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.ascii
+import io.kotest.property.arbitrary.az
 import io.kotest.property.arbitrary.bind
 import io.kotest.property.arbitrary.boolean
 import io.kotest.property.arbitrary.choice
@@ -159,6 +160,10 @@ object DataConnectArb {
     arbitrary {
       "requestId_${string.bind()}"
     }
+
+  fun connectorResourceName(
+    string: Arb<String> = Arb.string(size = 8, Codepoint.az())
+  ): Arb<String> = arbitrary { "connectorResourceName_${string.bind()}" }
 
   fun operationName(
     string: Arb<String> = Arb.string(size = 8, Codepoint.alphanumeric())
