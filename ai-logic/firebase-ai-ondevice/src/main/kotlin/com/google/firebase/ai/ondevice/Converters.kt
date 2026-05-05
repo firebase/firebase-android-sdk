@@ -18,11 +18,15 @@ package com.google.firebase.ai.ondevice
 
 import com.google.firebase.ai.ondevice.interop.Candidate
 import com.google.firebase.ai.ondevice.interop.CountTokensResponse
+import com.google.firebase.ai.ondevice.interop.DownloadStatusInterop
 import com.google.firebase.ai.ondevice.interop.FinishReason
+import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceException
 import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceInvalidRequestException
+import com.google.firebase.ai.ondevice.interop.FirebaseAIOnDeviceUnknownException
 import com.google.firebase.ai.ondevice.interop.GenerateContentResponse
 import com.google.firebase.ai.ondevice.interop.GenerationConfig
 import com.google.firebase.ai.ondevice.interop.ModelConfig
+import com.google.firebase.ai.ondevice.interop.OnDeviceModelStatusInterop
 import com.google.mlkit.genai.prompt.GenerateContentRequest
 import com.google.mlkit.genai.prompt.ImagePart
 import com.google.mlkit.genai.prompt.ModelPreference
@@ -121,3 +125,34 @@ private fun generateContentRequest(
   builder.init()
   return builder.build()
 }
+
+// ========================================================================
+// `DownloadStatus` and `OnDeviceModelStatus` converter extension functions
+// ========================================================================
+internal fun com.google.mlkit.genai.common.DownloadStatus.toInterop(): DownloadStatusInterop =
+  when (this) {
+    is com.google.mlkit.genai.common.DownloadStatus.DownloadStarted ->
+      DownloadStatusInterop.DownloadStarted(bytesToDownload)
+    is com.google.mlkit.genai.common.DownloadStatus.DownloadProgress ->
+      DownloadStatusInterop.DownloadInProgress(totalBytesDownloaded)
+    is com.google.mlkit.genai.common.DownloadStatus.DownloadCompleted ->
+      DownloadStatusInterop.DownloadCompleted()
+    is com.google.mlkit.genai.common.DownloadStatus.DownloadFailed ->
+      DownloadStatusInterop.DownloadFailed(FirebaseAIOnDeviceException.from(e))
+    else ->
+      DownloadStatusInterop.DownloadFailed(
+        FirebaseAIOnDeviceUnknownException("Unknown download status")
+      )
+  }
+
+internal fun Int.toInteropStatus(): OnDeviceModelStatusInterop =
+  when (this) {
+    com.google.mlkit.genai.common.FeatureStatus.UNAVAILABLE ->
+      OnDeviceModelStatusInterop.UNAVAILABLE
+    com.google.mlkit.genai.common.FeatureStatus.DOWNLOADABLE ->
+      OnDeviceModelStatusInterop.DOWNLOADABLE
+    com.google.mlkit.genai.common.FeatureStatus.DOWNLOADING ->
+      OnDeviceModelStatusInterop.DOWNLOADING
+    com.google.mlkit.genai.common.FeatureStatus.AVAILABLE -> OnDeviceModelStatusInterop.AVAILABLE
+    else -> OnDeviceModelStatusInterop.UNAVAILABLE
+  }
