@@ -16,7 +16,9 @@
 
 package com.google.firebase.dataconnect
 
+import app.cash.turbine.Event
 import app.cash.turbine.test
+import app.cash.turbine.turbineScope
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.createGrpcManagedChannel
 import com.google.firebase.dataconnect.testutil.property.arbitrary.pair
@@ -300,6 +302,38 @@ class ConnectRPCIntegrationTest : DataConnectIntegrationTestBase() {
   }
 
   @Test
+  fun collectingFlowTwiceThrows() = runTest {
+    val streams = connect()
+    streams.sendInitRequest()
+    val (streamRequest1, streamRequest2) = validStreamRequestArb().pair().sample()
+    streams.outgoingRequests.send(streamRequest1)
+
+    turbineScope {
+      val collectors = List(2) { streams.incomingResponses.testIn(backgroundScope) }
+      val events = collectors.map { it.awaitEvent() }
+
+      withClue("events=${events.print().value}") {
+        assertSoftly {
+          withClue("items") { events.count { it is Event.Item } shouldBe 1 }
+          withClue("errors") { events.count { it is Event.Error } shouldBe 1 }
+        }
+      }
+
+      // Make sure the "good" collector still works despite the other one failing.
+      val (collector, streamResponse1) =
+        collectors
+          .zip(events)
+          .mapNotNull { (collector, event) ->
+            (event as? Event.Item)?.let { Pair(collector, it.value) }
+          }
+          .single()
+      streamResponse1.requestId shouldBe streamRequest1.requestId
+      streams.outgoingRequests.send(streamRequest2)
+      collector.awaitItem().requestId shouldBe streamRequest2.requestId
+    }
+  }
+
+  @Test
   fun testValidStreamRequestArb() = runTest {
     val streams = connect()
     streams.sendInitRequest()
@@ -350,7 +384,7 @@ class ConnectRPCIntegrationTest : DataConnectIntegrationTestBase() {
   private fun connect(): ConnectionStreams {
     val connector = RealtimeConnector.getInstance(dataConnectFactory)
     val grpcManagedChannel = createGrpcManagedChannel(connector.dataConnect)
-    val outgoingRequests = Channel<StreamRequest>(Channel.UNLIMITED)
+    val outgoingRequests = Channel<StreamRequest>(UNLIMITED)
     val stub = ConnectorStreamServiceCoroutineStub(grpcManagedChannel)
     val incomingResponses = stub.connect(outgoingRequests.consumeAsFlow())
     return ConnectionStreams(connector, outgoingRequests, incomingResponses)
