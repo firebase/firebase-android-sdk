@@ -53,8 +53,12 @@ public class NumericMinimumTransformOperation extends NumericTransformOperation 
         return operand;
       }
 
-      double min = Math.min(prevDouble, operDouble);
-      return Value.newBuilder().setDoubleValue(min).build();
+      if (prevDouble == operDouble) {
+        return previousValue;
+      }
+
+      boolean choosePrevious = prevDouble < operDouble;
+      return choosePrevious ? previousValue : operand;
     }
   }
 }

@@ -53,8 +53,12 @@ public class NumericMaximumTransformOperation extends NumericTransformOperation 
         return operand;
       }
 
-      double max = Math.max(prevDouble, operDouble);
-      return Value.newBuilder().setDoubleValue(max).build();
+      if (prevDouble == operDouble) {
+        return previousValue;
+      }
+
+      boolean choosePrevious = prevDouble > operDouble;
+      return choosePrevious ? previousValue : operand;
     }
   }
 }
