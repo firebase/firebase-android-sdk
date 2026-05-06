@@ -286,52 +286,50 @@ public class NumericTransformsTest {
 
   @Test
   public void mixedTypesPreserveOperandTypeForMinimum() {
-    // field and input value of mixed types: field takes on type of smaller operand
+    // field and input value of mixed types: promoted to double if either is a double
     writeInitialData(map("sum", 10L));
     waitFor(docRef.update("sum", FieldValue.minimum(5.5D)));
-    // 5.5D is smaller, so sum should become 5.5D (double)
     expectLocalAndRemoteValue(5.5D);
 
     writeInitialData(map("sum", 10.5D));
     waitFor(docRef.update("sum", FieldValue.minimum(5L)));
-    // 5L is smaller, so sum should become 5L (long)
-    expectLocalAndRemoteValue(5L);
+    // Promotes to 5.0D (double)
+    expectLocalAndRemoteValue(5.0D);
   }
 
   @Test
   public void mixedTypesPreserveOperandTypeForMaximum() {
-    // field and input value of mixed types: field takes on type of larger operand
+    // field and input value of mixed types: promoted to double if either is a double
     writeInitialData(map("sum", 10L));
     waitFor(docRef.update("sum", FieldValue.maximum(20.5D)));
-    // 20.5D is larger, so sum should become 20.5D (double)
     expectLocalAndRemoteValue(20.5D);
 
     writeInitialData(map("sum", 10.5D));
     waitFor(docRef.update("sum", FieldValue.maximum(20L)));
-    // 20L is larger, so sum should become 20L (long)
-    expectLocalAndRemoteValue(20L);
+    // Promotes to 20.0D (double)
+    expectLocalAndRemoteValue(20.0D);
   }
 
   @Test
   public void equivalentValuesDoNotChangeTypeForMinimum() {
-    // equivalent (e.g. 3 and 3.0), field does not change type
+    // equivalent (e.g. 3 and 3.0), promoted to double if either is a double
     writeInitialData(map("sum", 3L));
     waitFor(docRef.update("sum", FieldValue.minimum(3.0D)));
-    // 3L is equivalent to 3.0D, field type/value should remain 3L (integer)
-    expectLocalAndRemoteValue(3L);
+    // Promotes to 3.0D (double)
+    expectLocalAndRemoteValue(3.0D);
 
     writeInitialData(map("sum", 3.0D));
     waitFor(docRef.update("sum", FieldValue.minimum(3L)));
-    // 3.0D is equivalent to 3L, field type/value should remain 3.0D (double)
     expectLocalAndRemoteValue(3.0D);
   }
 
   @Test
   public void equivalentValuesDoNotChangeTypeForMaximum() {
-    // equivalent (e.g. 3 and 3.0), field does not change type
+    // equivalent (e.g. 3 and 3.0), promoted to double if either is a double
     writeInitialData(map("sum", 3L));
     waitFor(docRef.update("sum", FieldValue.maximum(3.0D)));
-    expectLocalAndRemoteValue(3L);
+    // Promotes to 3.0D (double)
+    expectLocalAndRemoteValue(3.0D);
 
     writeInitialData(map("sum", 3.0D));
     waitFor(docRef.update("sum", FieldValue.maximum(3L)));
