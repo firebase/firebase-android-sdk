@@ -20,6 +20,7 @@ import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
+import com.google.firebase.firestore.model.Values;
 import com.google.firestore.v1.Value;
 
 /**
@@ -30,6 +31,13 @@ import com.google.firestore.v1.Value;
 public class NumericIncrementTransformOperation extends NumericTransformOperation {
   public NumericIncrementTransformOperation(Value operand) {
     super(operand);
+  }
+
+  @Override
+  public Value computeBaseValue(@Nullable Value previousValue) {
+    return Values.isNumber(previousValue)
+        ? previousValue
+        : Value.newBuilder().setIntegerValue(0).build();
   }
 
   @Override

@@ -829,24 +829,7 @@ public class MutationTest {
     allTransforms.put("nested", new HashMap<>(allTransforms));
 
     Mutation mutation = patchMutation("collection/key", allTransforms);
-    ObjectValue baseValue = mutation.extractTransformBaseValue(baseDoc);
-
-    Value expected =
-        wrap(
-            map(
-                "double",
-                42.0,
-                "long",
-                42,
-                "string",
-                0,
-                "map",
-                0,
-                "missing",
-                0,
-                "nested",
-                map("double", 42.0, "long", 42, "string", 0, "map", 0, "missing", 0)));
-    assertEquals(expected, baseValue.get(FieldPath.EMPTY_PATH));
+    assertNull(mutation.extractTransformBaseValue(baseDoc));
   }
 
   @Test
@@ -871,24 +854,7 @@ public class MutationTest {
     allTransforms.put("nested", new HashMap<>(allTransforms));
 
     Mutation mutation = patchMutation("collection/key", allTransforms);
-    ObjectValue baseValue = mutation.extractTransformBaseValue(baseDoc);
-
-    Value expected =
-        wrap(
-            map(
-                "double",
-                42.0,
-                "long",
-                42,
-                "string",
-                0,
-                "map",
-                0,
-                "missing",
-                0,
-                "nested",
-                map("double", 42.0, "long", 42, "string", 0, "map", 0, "missing", 0)));
-    assertEquals(expected, baseValue.get(FieldPath.EMPTY_PATH));
+    assertNull(mutation.extractTransformBaseValue(baseDoc));
   }
 
   @Test

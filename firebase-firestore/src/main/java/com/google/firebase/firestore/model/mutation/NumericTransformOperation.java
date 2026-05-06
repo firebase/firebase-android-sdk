@@ -45,14 +45,11 @@ public abstract class NumericTransformOperation implements TransformOperation {
   }
 
   /**
-   * Inspects the provided value, returning the provided value if it is already a NumberValue,
-   * otherwise returning a coerced IntegerValue of 0.
+   * Returns null since minimum and maximum operations do not require a base value.
    */
   @Override
   public Value computeBaseValue(@Nullable Value previousValue) {
-    return Values.isNumber(previousValue)
-        ? previousValue
-        : Value.newBuilder().setIntegerValue(0).build();
+    return null;
   }
 
   protected double operandAsDouble() {
