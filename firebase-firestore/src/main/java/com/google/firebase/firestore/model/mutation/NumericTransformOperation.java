@@ -24,8 +24,8 @@ import com.google.firebase.firestore.model.Values;
 import com.google.firestore.v1.Value;
 
 /**
- * // Implements the backend semantics for locally computed numeric transforms.
- * // Base class for increment, minimum, and maximum transforms.
+ * Implements the backend semantics for locally computed numeric transforms.
+ * Base class for increment, minimum, and maximum transforms.
  */
 public abstract class NumericTransformOperation implements TransformOperation {
   protected final Value operand;
