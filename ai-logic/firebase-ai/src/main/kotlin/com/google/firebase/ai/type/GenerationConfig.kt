@@ -101,7 +101,7 @@ private constructor(
   internal val responseModalities: List<ResponseModality>?,
   internal val thinkingConfig: ThinkingConfig?,
   internal val imageConfig: ImageConfig?,
-    internal val speechConfig: SpeechConfig?,
+  internal val speechConfig: SpeechConfig?,
 ) {
 
   /**
