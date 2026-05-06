@@ -234,6 +234,134 @@ public class MutationTest {
   }
 
   @Test
+  public void testAppliesMinimumTransformToDocument() {
+    Map<String, Object> baseDoc =
+        map(
+            "longMinLong",
+            5,
+            "longMinDouble",
+            5,
+            "doubleMinLong",
+            5.5,
+            "doubleMinDouble",
+            5.5,
+            "longMinNan",
+            5,
+            "doubleMinNan",
+            5.5);
+    Map<String, Object> transform =
+        map(
+            "longMinLong",
+            FieldValue.minimum(2),
+            "longMinDouble",
+            FieldValue.minimum(2.2),
+            "doubleMinLong",
+            FieldValue.minimum(2),
+            "doubleMinDouble",
+            FieldValue.minimum(2.2),
+            "longMinNan",
+            FieldValue.minimum(Double.NaN),
+            "doubleMinNan",
+            FieldValue.minimum(Double.NaN));
+    Map<String, Object> expected =
+        map(
+            "longMinLong",
+            2L,
+            "longMinDouble",
+            2.2D,
+            "doubleMinLong",
+            2.0D,
+            "doubleMinDouble",
+            2.2D,
+            "longMinNan",
+            Double.NaN,
+            "doubleMinNan",
+            Double.NaN);
+
+    verifyTransform(baseDoc, transform, expected);
+  }
+
+  @Test
+  public void testAppliesMaximumTransformToDocument() {
+    Map<String, Object> baseDoc =
+        map(
+            "longMaxLong",
+            5,
+            "longMaxDouble",
+            5,
+            "doubleMaxLong",
+            5.5,
+            "doubleMaxDouble",
+            5.5,
+            "longMaxNan",
+            5,
+            "doubleMaxNan",
+            5.5);
+    Map<String, Object> transform =
+        map(
+            "longMaxLong",
+            FieldValue.maximum(8),
+            "longMaxDouble",
+            FieldValue.maximum(8.8),
+            "doubleMaxLong",
+            FieldValue.maximum(8),
+            "doubleMaxDouble",
+            FieldValue.maximum(8.8),
+            "longMaxNan",
+            FieldValue.maximum(Double.NaN),
+            "doubleMaxNan",
+            FieldValue.maximum(Double.NaN));
+    Map<String, Object> expected =
+        map(
+            "longMaxLong",
+            8L,
+            "longMaxDouble",
+            8.8D,
+            "doubleMaxLong",
+            8.0D,
+            "doubleMaxDouble",
+            8.8D,
+            "longMaxNan",
+            Double.NaN,
+            "doubleMaxNan",
+            Double.NaN);
+
+    verifyTransform(baseDoc, transform, expected);
+  }
+
+  @Test
+  public void testAppliesMinimumTransformToUnexpectedType() {
+    Map<String, Object> baseDoc = map("string", "value");
+    Map<String, Object> transform = map("string", FieldValue.minimum(1));
+    Map<String, Object> expected = map("string", 1);
+    verifyTransform(baseDoc, transform, expected);
+  }
+
+  @Test
+  public void testAppliesMaximumTransformToUnexpectedType() {
+    Map<String, Object> baseDoc = map("string", "value");
+    Map<String, Object> transform = map("string", FieldValue.maximum(1));
+    Map<String, Object> expected = map("string", 1);
+    verifyTransform(baseDoc, transform, expected);
+  }
+
+  @Test
+  public void testAppliesMinimumTransformToMissingField() {
+    Map<String, Object> baseDoc = map();
+    Map<String, Object> transform = map("missing", FieldValue.minimum(1));
+    Map<String, Object> expected = map("missing", 1);
+    verifyTransform(baseDoc, transform, expected);
+  }
+
+  @Test
+  public void testAppliesMaximumTransformToMissingField() {
+    Map<String, Object> baseDoc = map();
+    Map<String, Object> transform = map("missing", FieldValue.maximum(1));
+    Map<String, Object> expected = map("missing", 1);
+    verifyTransform(baseDoc, transform, expected);
+  }
+
+  @Test
   public void testAppliesIncrementTransformsConsecutively() {
     Map<String, Object> baseDoc = map("number", 1);
     Map<String, Object> transform1 = map("number", FieldValue.increment(2));
@@ -656,6 +784,90 @@ public class MutationTest {
             FieldValue.increment(1),
             "missing",
             FieldValue.increment(1));
+    allTransforms.put("nested", new HashMap<>(allTransforms));
+
+    Mutation mutation = patchMutation("collection/key", allTransforms);
+    ObjectValue baseValue = mutation.extractTransformBaseValue(baseDoc);
+
+    Value expected =
+        wrap(
+            map(
+                "double",
+                42.0,
+                "long",
+                42,
+                "string",
+                0,
+                "map",
+                0,
+                "missing",
+                0,
+                "nested",
+                map("double", 42.0, "long", 42, "string", 0, "map", 0, "missing", 0)));
+    assertEquals(expected, baseValue.get(FieldPath.EMPTY_PATH));
+  }
+
+  @Test
+  public void testNumericMinimumBaseValue() {
+    Map<String, Object> allValues =
+        map("ignore", "foo", "double", 42.0, "long", 42, "string", "foo", "map", map());
+    allValues.put("nested", new HashMap<>(allValues));
+    MutableDocument baseDoc = doc("collection/key", 1, allValues);
+
+    Map<String, Object> allTransforms =
+        map(
+            "double",
+            FieldValue.minimum(1),
+            "long",
+            FieldValue.minimum(1),
+            "string",
+            FieldValue.minimum(1),
+            "map",
+            FieldValue.minimum(1),
+            "missing",
+            FieldValue.minimum(1));
+    allTransforms.put("nested", new HashMap<>(allTransforms));
+
+    Mutation mutation = patchMutation("collection/key", allTransforms);
+    ObjectValue baseValue = mutation.extractTransformBaseValue(baseDoc);
+
+    Value expected =
+        wrap(
+            map(
+                "double",
+                42.0,
+                "long",
+                42,
+                "string",
+                0,
+                "map",
+                0,
+                "missing",
+                0,
+                "nested",
+                map("double", 42.0, "long", 42, "string", 0, "map", 0, "missing", 0)));
+    assertEquals(expected, baseValue.get(FieldPath.EMPTY_PATH));
+  }
+
+  @Test
+  public void testNumericMaximumBaseValue() {
+    Map<String, Object> allValues =
+        map("ignore", "foo", "double", 42.0, "long", 42, "string", "foo", "map", map());
+    allValues.put("nested", new HashMap<>(allValues));
+    MutableDocument baseDoc = doc("collection/key", 1, allValues);
+
+    Map<String, Object> allTransforms =
+        map(
+            "double",
+            FieldValue.maximum(1),
+            "long",
+            FieldValue.maximum(1),
+            "string",
+            FieldValue.maximum(1),
+            "map",
+            FieldValue.maximum(1),
+            "missing",
+            FieldValue.maximum(1));
     allTransforms.put("nested", new HashMap<>(allTransforms));
 
     Mutation mutation = patchMutation("collection/key", allTransforms);

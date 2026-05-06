@@ -16,12 +16,10 @@ package com.google.firebase.firestore.model.mutation;
 
 import static com.google.firebase.firestore.model.Values.isDouble;
 import static com.google.firebase.firestore.model.Values.isInteger;
-import static com.google.firebase.firestore.util.Assert.fail;
 import static com.google.firebase.firestore.util.Assert.hardAssert;
 
 import androidx.annotation.Nullable;
 import com.google.firebase.Timestamp;
-import com.google.firebase.firestore.model.Values;
 import com.google.firestore.v1.Value;
 
 /**
@@ -29,14 +27,9 @@ import com.google.firestore.v1.Value;
  * Converts all field values to longs or doubles and resolves overflows to
  * Long.MAX_VALUE/Long.MIN_VALUE.
  */
-public class NumericIncrementTransformOperation implements TransformOperation {
-  private Value operand;
-
+public class NumericIncrementTransformOperation extends NumericTransformOperation {
   public NumericIncrementTransformOperation(Value operand) {
-    hardAssert(
-        Values.isNumber(operand),
-        "NumericIncrementTransformOperation expects a NumberValue operand");
-    this.operand = operand;
+    super(operand);
   }
 
   @Override
@@ -60,26 +53,6 @@ public class NumericIncrementTransformOperation implements TransformOperation {
     }
   }
 
-  @Override
-  public Value applyToRemoteDocument(@Nullable Value previousValue, Value transformResult) {
-    return transformResult;
-  }
-
-  public Value getOperand() {
-    return operand;
-  }
-
-  /**
-   * Inspects the provided value, returning the provided value if it is already a NumberValue,
-   * otherwise returning a coerced IntegerValue of 0.
-   */
-  @Override
-  public Value computeBaseValue(@Nullable Value previousValue) {
-    return Values.isNumber(previousValue)
-        ? previousValue
-        : Value.newBuilder().setIntegerValue(0).build();
-  }
-
   /**
    * Implementation of Java 8's `addExact()` that resolves positive and negative numeric overflows
    * to Long.MAX_VALUE or Long.MIN_VALUE respectively (instead of throwing an ArithmeticException).
@@ -96,30 +69,6 @@ public class NumericIncrementTransformOperation implements TransformOperation {
       return Long.MIN_VALUE;
     } else {
       return Long.MAX_VALUE;
-    }
-  }
-
-  private double operandAsDouble() {
-    if (isDouble(operand)) {
-      return operand.getDoubleValue();
-    } else if (isInteger(operand)) {
-      return operand.getIntegerValue();
-    } else {
-      throw fail(
-          "Expected 'operand' to be of Number type, but was "
-              + operand.getClass().getCanonicalName());
-    }
-  }
-
-  private long operandAsLong() {
-    if (isDouble(operand)) {
-      return (long) operand.getDoubleValue();
-    } else if (isInteger(operand)) {
-      return operand.getIntegerValue();
-    } else {
-      throw fail(
-          "Expected 'operand' to be of Number type, but was "
-              + operand.getClass().getCanonicalName());
     }
   }
 }
