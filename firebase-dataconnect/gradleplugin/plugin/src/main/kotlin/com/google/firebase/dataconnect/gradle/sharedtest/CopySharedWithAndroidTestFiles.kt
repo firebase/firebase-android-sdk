@@ -108,7 +108,7 @@ private fun copyAnnotatedFiles(srcDir: File, destDir: File, taskPath: String, lo
 
       srcFile.useLines { lines ->
         lines.forEach { line ->
-          it.print(line)
+          it.println(line)
         }
       }
     }
