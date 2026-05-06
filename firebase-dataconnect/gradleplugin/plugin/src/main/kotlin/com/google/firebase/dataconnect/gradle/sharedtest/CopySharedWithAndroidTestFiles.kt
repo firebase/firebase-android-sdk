@@ -15,14 +15,13 @@
  */
 package com.google.firebase.dataconnect.gradle.sharedtest
 
-import java.io.File
 import org.gradle.api.DefaultTask
-import org.gradle.api.GradleException
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.logging.Logger
 import org.gradle.api.tasks.InputDirectory
 import org.gradle.api.tasks.OutputDirectory
 import org.gradle.api.tasks.TaskAction
+import java.io.File
 
 /**
  * A Gradle task that copies Kotlin source files annotated with `@file:SharedWithAndroidTest` from
@@ -45,14 +44,6 @@ abstract class CopySharedWithAndroidTestFiles : DefaultTask() {
 
     logger.info("inputDirectory={}", inputDirectory.absolutePath)
     logger.info("outputDirectory={}", outputDirectory.absolutePath)
-
-    if (outputDirectory.isDirectory()) {
-      logger.info("Deleting output directory: {}", outputDirectory)
-      outputDirectory.deleteRecursively()
-    }
-    if (outputDirectory.exists()) {
-      throw GradleException("outputDirectory exists, but is not a directory: $outputDirectory")
-    }
 
     copyAnnotatedFiles(
       srcDir = inputDirectory,
