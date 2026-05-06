@@ -1,5 +1,7 @@
 # Unreleased
 
+- [fixed] Fixed citation indices to be native UTF-16 instead of UTF-8. (#8056)
+
 - [feature] Added support for [Maps Grounding](https://ai.google.dev/gemini-api/docs/maps-grounding) (#7950)
 
 - [feature] Added the `turnComplete` argument to multiple `LiveSession.send()` methods.

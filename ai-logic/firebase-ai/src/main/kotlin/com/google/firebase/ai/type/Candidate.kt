@@ -529,11 +529,11 @@ public class GroundingAttribution(
  * @property partIndex The zero-based index of the [Part] object within the `parts` array of its
  * parent [Content] object. This identifies which part of the content the segment belongs to.
  * @property startIndex The zero-based start index of the segment within the specified [Part],
- * measured in UTF-8 bytes. This offset is inclusive, starting from 0 at the beginning of the part's
- * content.
+ * measured in UTF-16 characters. This offset is inclusive, starting from 0 at the beginning of the
+ * part's content.
  * @property endIndex The zero-based end index of the segment within the specified [Part], measured
- * in UTF-8 bytes. This offset is exclusive, meaning the character at this index is not included in
- * the segment.
+ * in UTF-16 characters. This offset is exclusive, meaning the character at this index is not
+ * included in the segment.
  * @property text The text corresponding to the segment from the response.
  */
 public class Segment(
