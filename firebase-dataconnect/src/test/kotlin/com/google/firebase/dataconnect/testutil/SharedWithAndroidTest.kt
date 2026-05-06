@@ -21,7 +21,14 @@ package com.google.firebase.dataconnect.testutil
 /**
  * Annotation used to mark files that should be shared with the androidTest source set.
  *
- * This is used by a build-time mechanism to incorporate these files into the androidTest build.
+ * This annotation is processed by the CopySharedWithAndroidTestFiles Gradle task. For performance
+ * and simplicity, the task performs a rudimentary string-based check on the file's contents. To be
+ * recognized, a line in the source file must, when trimmed, exactly equal either:
+ * - `@file:SharedWithAndroidTest`
+ * - `@file:com.google.firebase.dataconnect.testutil.SharedWithAndroidTest`
+ *
+ * Notably, "grouped syntax" like `@file:[JvmName("MyFile") SharedWithAndroidTest]` is NOT supported
+ * and will not be recognized by the task.
  */
 @Target(AnnotationTarget.FILE)
 @Retention(AnnotationRetention.SOURCE)
