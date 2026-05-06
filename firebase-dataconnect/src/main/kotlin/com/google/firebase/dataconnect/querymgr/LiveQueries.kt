@@ -20,7 +20,7 @@ import com.google.firebase.dataconnect.*
 import com.google.firebase.dataconnect.core.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.Logger
 import com.google.firebase.dataconnect.core.LoggerGlobals.debug
-import com.google.firebase.dataconnect.util.AlphanumericStringUtil.toAlphaNumericString
+import com.google.firebase.dataconnect.util.ImmutableByteArray
 import com.google.firebase.dataconnect.util.ProtoUtil.calculateSha512
 import com.google.firebase.dataconnect.util.ProtoUtil.encodeToStruct
 import com.google.firebase.dataconnect.util.ProtoUtil.toStructProto
@@ -75,10 +75,10 @@ internal class LiveQueries(
         }
       }
 
-    val variablesHash =
-      withContext(blockingDispatcher) { variablesStruct.calculateSha512().toAlphaNumericString() }
+    val variablesHash: ImmutableByteArray =
+      withContext(blockingDispatcher) { variablesStruct.calculateSha512() }
 
-    val key = LiveQuery.Key(operationName = query.operationName, variablesHash = variablesHash)
+    val key = LiveQuery.Key(query.operationName, variablesHash)
 
     val referenceCountedLiveQuery =
       referenceCountedLiveQueryByKey.getOrPut(key) {

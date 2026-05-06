@@ -9,9 +9,11 @@ schema:
       cloudSql:
         instanceId: "iidtpktdqb8gxm"
 connectorDirs: [
+  "./connector/caching",
   "./connector/demo",
   "./connector/alltypes",
   "./connector/keywords",
+  "./connector/realtime",
   "./connector/person",
   "./connector/posts",
 ]

@@ -218,7 +218,7 @@ abstract class BaseFirebaseLibraryPlugin : Plugin<Project> {
 
             pom(firebaseLibrary.customizePomAction)
             firebaseLibrary.applyPomTransformations(pom)
-            from(components.findByName(firebaseLibrary.type.componentName))
+            from(components.findByName(firebaseLibrary.componentName))
           }
         }
       }

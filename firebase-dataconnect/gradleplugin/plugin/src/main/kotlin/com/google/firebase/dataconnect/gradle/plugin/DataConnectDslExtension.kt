@@ -29,6 +29,9 @@ abstract class DataConnectDslExtension @Inject constructor(objectFactory: Object
   /** The Data Connect executable to use. */
   abstract var dataConnectExecutable: DataConnectExecutable?
 
+  /** The preview flags to specify to the Data Connect executable. */
+  abstract var previewFlags: Collection<String>?
+
   /** Convenience DSL for configuring [dataConnectExecutable]. */
   fun dataConnectExecutable(block: DataConnectExecutableBuilder.() -> Unit) {
     dataConnectExecutable =

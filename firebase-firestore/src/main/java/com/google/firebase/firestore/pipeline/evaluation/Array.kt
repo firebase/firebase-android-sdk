@@ -15,8 +15,10 @@
 package com.google.firebase.firestore.pipeline.evaluation
 
 import com.google.firebase.firestore.model.MutableDocument
+import com.google.firebase.firestore.model.Values
 import com.google.firebase.firestore.model.Values.Enterprise.equals
 import com.google.firebase.firestore.model.Values.encodeValue
+import com.google.firebase.firestore.model.Values.isNullValue
 import com.google.firebase.firestore.pipeline.evaluation.EvaluateResult.Companion.list
 import com.google.firebase.firestore.util.Assert
 import com.google.firestore.v1.Value
@@ -78,6 +80,223 @@ internal val evaluateArrayLength = unaryFunction { array: List<Value> ->
 
 internal val evaluateArrayReverse = unaryFunction { array: List<Value> ->
   EvaluateResult.value(encodeValue(array.reversed()))
+}
+
+internal val evaluateArrayFirst: EvaluateFunction = { params ->
+  block@{ input: MutableDocument ->
+    if (params.size != 1)
+      throw Assert.fail("Function should have exactly 1 params, but %d were given.", params.size)
+
+    val p1 = params[0](input)
+    if (p1.isError) return@block EvaluateResultError
+    if (p1.isUnset) return@block EvaluateResult.NULL
+
+    val value = p1.value!!
+    if (value.hasNullValue()) return@block EvaluateResult.NULL
+    if (!value.hasArrayValue()) return@block EvaluateResultError
+
+    val array = value.arrayValue.valuesList
+    if (array.isEmpty()) return@block EvaluateResultUnset
+
+    EvaluateResult.value(array.first())
+  }
+}
+
+internal val evaluateArrayLast: EvaluateFunction = { params ->
+  block@{ input: MutableDocument ->
+    if (params.size != 1)
+      throw Assert.fail("Function should have exactly 1 params, but %d were given.", params.size)
+
+    val p1 = params[0](input)
+    if (p1.isError) return@block EvaluateResultError
+    if (p1.isUnset) return@block EvaluateResult.NULL
+
+    val value = p1.value!!
+    if (value.hasNullValue()) return@block EvaluateResult.NULL
+    if (!value.hasArrayValue()) return@block EvaluateResultError
+
+    val array = value.arrayValue.valuesList
+    if (array.isEmpty()) return@block EvaluateResultUnset
+
+    EvaluateResult.value(array.last())
+  }
+}
+
+internal val evaluateArrayFirstN: EvaluateFunction = { params ->
+  block@{ input: MutableDocument ->
+    if (params.size != 2)
+      throw Assert.fail("Function should have exactly 2 params, but %d were given.", params.size)
+
+    val p1 = params[0](input)
+    if (p1.isError) return@block EvaluateResultError
+    if (p1.isUnset) return@block EvaluateResult.NULL
+
+    val value1 = p1.value!!
+    if (value1.hasNullValue()) return@block EvaluateResult.NULL
+    if (!value1.hasArrayValue()) return@block EvaluateResultError
+    val array = value1.arrayValue.valuesList
+
+    val p2 = params[1](input)
+    if (p2.isError) return@block EvaluateResultError
+    val value2 = p2.value
+    if (value2 == null || !value2.hasIntegerValue()) return@block EvaluateResultError
+    val n = value2.integerValue.toInt()
+
+    if (n < 0) return@block EvaluateResultError
+
+    val count = n.coerceAtMost(array.size)
+    EvaluateResult.list(array.subList(0, count))
+  }
+}
+
+internal val evaluateArrayLastN: EvaluateFunction = { params ->
+  block@{ input: MutableDocument ->
+    if (params.size != 2)
+      throw Assert.fail("Function should have exactly 2 params, but %d were given.", params.size)
+
+    val p1 = params[0](input)
+    if (p1.isError) return@block EvaluateResultError
+    if (p1.isUnset) return@block EvaluateResult.NULL
+
+    val value1 = p1.value!!
+    if (value1.hasNullValue()) return@block EvaluateResult.NULL
+    if (!value1.hasArrayValue()) return@block EvaluateResultError
+    val array = value1.arrayValue.valuesList
+
+    val p2 = params[1](input)
+    if (p2.isError) return@block EvaluateResultError
+    val value2 = p2.value
+    if (value2 == null || !value2.hasIntegerValue()) return@block EvaluateResultError
+    val n = value2.integerValue.toInt()
+
+    if (n < 0) return@block EvaluateResultError
+
+    val count = n.coerceAtMost(array.size)
+    EvaluateResult.list(array.subList(array.size - count, array.size))
+  }
+}
+
+internal val evaluateArrayMinimum: EvaluateFunction = { params ->
+  block@{ input: MutableDocument ->
+    if (params.size != 1)
+      throw Assert.fail("Function should have exactly 1 params, but %d were given.", params.size)
+
+    val p1 = params[0](input)
+    if (p1.isError) return@block EvaluateResultError
+    if (p1.isUnset) return@block EvaluateResult.NULL
+
+    val value = p1.value!!
+    if (value.hasNullValue()) return@block EvaluateResult.NULL
+    if (!value.hasArrayValue()) return@block EvaluateResultError
+
+    val array = value.arrayValue.valuesList
+    if (array.isEmpty()) return@block EvaluateResult.NULL
+
+    var min = array[0]
+    for (i in 1 until array.size) {
+      if (
+        Values.Enterprise.strictCompare(array[i], min) == Values.Enterprise.CompareResult.LESS_THAN
+      ) {
+        min = array[i]
+      }
+    }
+    EvaluateResult.value(min)
+  }
+}
+
+internal val evaluateArrayMaximum: EvaluateFunction = { params ->
+  block@{ input: MutableDocument ->
+    if (params.size != 1)
+      throw Assert.fail("Function should have exactly 1 params, but %d were given.", params.size)
+
+    val p1 = params[0](input)
+    if (p1.isError) return@block EvaluateResultError
+    if (p1.isUnset) return@block EvaluateResult.NULL
+
+    val value = p1.value!!
+    if (value.hasNullValue()) return@block EvaluateResult.NULL
+    if (!value.hasArrayValue()) return@block EvaluateResultError
+
+    val array = value.arrayValue.valuesList
+    if (array.isEmpty()) return@block EvaluateResult.NULL
+
+    var max = array[0]
+    for (i in 1 until array.size) {
+      if (
+        Values.Enterprise.strictCompare(array[i], max) ==
+          Values.Enterprise.CompareResult.GREATER_THAN
+      ) {
+        max = array[i]
+      }
+    }
+    EvaluateResult.value(max)
+  }
+}
+
+internal val evaluateArrayMinimumN: EvaluateFunction = { params ->
+  block@{ input: MutableDocument ->
+    if (params.size != 2)
+      throw Assert.fail("Function should have exactly 2 params, but %d were given.", params.size)
+
+    val p1 = params[0](input)
+    val array =
+      if (p1.value?.hasArrayValue() == true) {
+        p1.value?.arrayValue?.valuesList
+      } else null
+
+    val p2 = params[1](input)
+    val n =
+      if (p2.value?.hasIntegerValue() == true) {
+        p2.value?.integerValue?.toInt()
+      } else return@block EvaluateResultError
+
+    if (array == null) return@block EvaluateResultUnset
+    if (n!! < 0) return@block EvaluateResultError
+
+    val sorted =
+      array.sortedWith { o1, o2 ->
+        when (Values.Enterprise.strictCompare(o1, o2)) {
+          Values.Enterprise.CompareResult.LESS_THAN -> -1
+          Values.Enterprise.CompareResult.GREATER_THAN -> 1
+          else -> 0
+        }
+      }
+    val count = n.coerceAtMost(sorted.size)
+    EvaluateResult.list(sorted.subList(0, count))
+  }
+}
+
+internal val evaluateArrayMaximumN: EvaluateFunction = { params ->
+  block@{ input: MutableDocument ->
+    if (params.size != 2)
+      throw Assert.fail("Function should have exactly 2 params, but %d were given.", params.size)
+
+    val p1 = params[0](input)
+    val array =
+      if (p1.value?.hasArrayValue() == true) {
+        p1.value?.arrayValue?.valuesList
+      } else null
+
+    val p2 = params[1](input)
+    val n =
+      if (p2.value?.hasIntegerValue() == true) {
+        p2.value?.integerValue?.toInt()
+      } else return@block EvaluateResultError
+
+    if (array == null) return@block EvaluateResultUnset
+    if (n!! < 0) return@block EvaluateResultError
+
+    val sorted =
+      array.sortedWith { o1, o2 ->
+        when (Values.Enterprise.strictCompare(o1, o2)) {
+          Values.Enterprise.CompareResult.LESS_THAN -> 1
+          Values.Enterprise.CompareResult.GREATER_THAN -> -1
+          else -> 0
+        }
+      }
+    val count = n.coerceAtMost(sorted.size)
+    EvaluateResult.list(sorted.subList(0, count))
+  }
 }
 
 internal val evaluateJoin: EvaluateFunction = { params ->
@@ -243,4 +462,83 @@ private fun notEqualAny(value: Value, list: List<Value>): EvaluateResult {
     false -> {}
   }
   return EvaluateResult.TRUE
+}
+
+internal val evaluateArrayIndexOf: EvaluateFunction = { params ->
+  block@{ input: MutableDocument ->
+    if (params.size != 3)
+      throw Assert.fail("Function should have exactly 3 params, but %d were given.", params.size)
+
+    val p1 = params[0](input)
+    val p2 = params[1](input)
+    val p3 = params[2](input)
+
+    if (p1.isError || p2.isError || p3.isError) return@block EvaluateResultError
+
+    val direction =
+      if (p3.value?.hasStringValue() == true) {
+        p3.value?.stringValue
+      } else return@block EvaluateResultError
+
+    val arrayValue = p1.value
+    if (arrayValue == null || isNullValue(arrayValue))
+      return@block EvaluateResult.value(Values.NULL_VALUE)
+
+    if (!arrayValue.hasArrayValue()) return@block EvaluateResultError
+
+    // For the second parameter (value), if it is UNSET (null), we return NULL.
+    // If it is actual NULL_VALUE, it is a valid search target.
+    val value = p2.value ?: return@block EvaluateResult.value(Values.NULL_VALUE)
+
+    val array = arrayValue.arrayValue.valuesList
+    var index = -1
+
+    if (direction == "last") {
+      for (i in array.indices.reversed()) {
+        if (Values.Enterprise.equals(array[i], value)) {
+          index = i
+          break
+        }
+      }
+    } else if (direction == "first") {
+      for (i in array.indices) {
+        if (Values.Enterprise.equals(array[i], value)) {
+          index = i
+          break
+        }
+      }
+    } else {
+      return@block EvaluateResultError
+    }
+    EvaluateResult.value(encodeValue(index))
+  }
+}
+
+internal val evaluateArrayIndexOfAll: EvaluateFunction = { params ->
+  block@{ input: MutableDocument ->
+    if (params.size != 2)
+      throw Assert.fail("Function should have exactly 2 params, but %d were given.", params.size)
+
+    val p1 = params[0](input)
+    val p2 = params[1](input)
+
+    if (p1.isError || p2.isError) return@block EvaluateResultError
+
+    val arrayValue = p1.value
+    if (arrayValue == null || isNullValue(arrayValue))
+      return@block EvaluateResult.value(Values.NULL_VALUE)
+
+    if (!arrayValue.hasArrayValue()) return@block EvaluateResultError
+
+    val value = p2.value ?: return@block EvaluateResult.value(Values.NULL_VALUE)
+
+    val array = arrayValue.arrayValue.valuesList
+    val indices = mutableListOf<Value>()
+    for (i in array.indices) {
+      if (Values.Enterprise.equals(array[i], value)) {
+        indices.add(encodeValue(i))
+      }
+    }
+    EvaluateResult.list(indices)
+  }
 }

@@ -48,6 +48,10 @@ public class FeedbackSenderTest {
   private static final String TEST_FEEDBACK_TEXT = "Feedback text";
   private static final String TEST_FILENAME_PNG = "test.png";
   private static final Uri TEST_SCREENSHOT_URI_PNG = uriForFilename(TEST_FILENAME_PNG);
+  private static final String TEST_FILENAME_JPG = "test.jpg";
+  private static final Uri TEST_SCREENSHOT_URI_JPG = uriForFilename(TEST_FILENAME_JPG);
+  private static final String TEST_FILENAME_JPEG = "test.jpeg";
+  private static final Uri TEST_SCREENSHOT_URI_JPEG = uriForFilename(TEST_FILENAME_JPEG);
 
   @Lightweight private final Executor lightweightExecutor = TestOnlyExecutors.lite();
 
@@ -83,28 +87,25 @@ public class FeedbackSenderTest {
 
   @Test
   public void sendFeedbackJpg() throws Exception {
-    String jpegFilename = "test.jpg"; // jpg, not jpeg
-    Uri jpegUri = uriForFilename(jpegFilename);
-
     Task<Void> task =
         feedbackSender.sendFeedback(
-            TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT, jpegUri, FeedbackTrigger.CUSTOM);
+            TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT, TEST_SCREENSHOT_URI_JPG, FeedbackTrigger.CUSTOM);
     TestUtils.awaitTask(task);
 
-    verifyTesterApiCalls(jpegUri, jpegFilename, CONTENT_TYPE_JPEG);
+    verifyTesterApiCalls(TEST_SCREENSHOT_URI_JPG, TEST_FILENAME_JPG, CONTENT_TYPE_JPEG);
   }
 
   @Test
   public void sendFeedbackJpeg() throws Exception {
-    String jpegFilename = "test.jpeg"; // jpeg, not jpg
-    Uri jpegUri = uriForFilename(jpegFilename);
-
     Task<Void> task =
         feedbackSender.sendFeedback(
-            TEST_RELEASE_NAME, TEST_FEEDBACK_TEXT, jpegUri, FeedbackTrigger.CUSTOM);
+            TEST_RELEASE_NAME,
+            TEST_FEEDBACK_TEXT,
+            TEST_SCREENSHOT_URI_JPEG,
+            FeedbackTrigger.CUSTOM);
     TestUtils.awaitTask(task);
 
-    verifyTesterApiCalls(jpegUri, jpegFilename, CONTENT_TYPE_JPEG);
+    verifyTesterApiCalls(TEST_SCREENSHOT_URI_JPEG, TEST_FILENAME_JPEG, CONTENT_TYPE_JPEG);
   }
 
   @Test

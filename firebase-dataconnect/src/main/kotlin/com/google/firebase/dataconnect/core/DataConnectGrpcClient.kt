@@ -16,8 +16,13 @@
 
 package com.google.firebase.dataconnect.core
 
+import androidx.annotation.VisibleForTesting
 import com.google.firebase.dataconnect.*
 import com.google.firebase.dataconnect.DataConnectPathSegment
+import com.google.firebase.dataconnect.DataSource
+import com.google.firebase.dataconnect.QueryRef.FetchPolicy
+import com.google.firebase.dataconnect.core.DataConnectAppCheck.GetAppCheckTokenResult
+import com.google.firebase.dataconnect.core.DataConnectAuth.GetAuthTokenResult
 import com.google.firebase.dataconnect.core.DataConnectGrpcClientGlobals.toErrorInfoImpl
 import com.google.firebase.dataconnect.core.LoggerGlobals.warn
 import com.google.firebase.dataconnect.util.ProtoUtil.decodeFromStruct
@@ -35,8 +40,7 @@ import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.modules.SerializersModule
 
 internal class DataConnectGrpcClient(
-  projectId: String,
-  connector: ConnectorConfig,
+  @get:VisibleForTesting val connectorResourceName: String,
   private val grpcRPCs: DataConnectGrpcRPCs,
   private val dataConnectAuth: DataConnectAuth,
   private val dataConnectAppCheck: DataConnectAppCheck,
@@ -45,15 +49,10 @@ internal class DataConnectGrpcClient(
   val instanceId: String
     get() = logger.nameWithId
 
-  private val requestName =
-    "projects/$projectId/" +
-      "locations/${connector.location}" +
-      "/services/${connector.serviceId}" +
-      "/connectors/${connector.connector}"
-
   data class OperationResult(
     val data: Struct?,
     val errors: List<DataConnectOperationFailureResponseImpl.ErrorInfoImpl>,
+    val source: DataSource,
   )
 
   suspend fun executeQuery(
@@ -61,16 +60,18 @@ internal class DataConnectGrpcClient(
     operationName: String,
     variables: Struct,
     callerSdkType: FirebaseDataConnect.CallerSdkType,
+    fetchPolicy: FetchPolicy,
   ): OperationResult {
     val request = executeQueryRequest {
-      this.name = requestName
+      this.name = connectorResourceName
       this.operationName = operationName
       this.variables = variables
     }
 
     val executeQueryResult =
-      grpcRPCs.retryOnGrpcUnauthenticatedError(requestId, "executeQuery") {
-        executeQuery(requestId, request, callerSdkType)
+      grpcRPCs.retryOnGrpcUnauthenticatedError(requestId, "executeQuery") { authToken, appCheckToken
+        ->
+        executeQuery(requestId, request, callerSdkType, fetchPolicy, authToken, appCheckToken)
       }
 
     return executeQueryResult.toOperationResult()
@@ -83,29 +84,35 @@ internal class DataConnectGrpcClient(
     callerSdkType: FirebaseDataConnect.CallerSdkType,
   ): OperationResult {
     val request = executeMutationRequest {
-      this.name = requestName
+      this.name = connectorResourceName
       this.operationName = operationName
       this.variables = variables
     }
 
     val response =
       grpcRPCs.retryOnGrpcUnauthenticatedError(requestId, "executeMutation") {
-        executeMutation(requestId, request, callerSdkType)
+        authToken,
+        appCheckToken ->
+        executeMutation(requestId, request, callerSdkType, authToken, appCheckToken)
       }
 
     return OperationResult(
       data = if (response.hasData()) response.data else null,
-      errors = response.errorsList.map { it.toErrorInfoImpl() }
+      errors = response.errorsList.map { it.toErrorInfoImpl() },
+      source = DataSource.SERVER,
     )
   }
 
-  private inline fun <T, R> T.retryOnGrpcUnauthenticatedError(
+  private suspend inline fun <T, R> T.retryOnGrpcUnauthenticatedError(
     requestId: String,
     kotlinMethodName: String,
-    block: T.() -> R
+    block: T.(GetAuthTokenResult?, GetAppCheckTokenResult?) -> R,
   ): R {
+    val authToken1 = dataConnectAuth.getToken(requestId)
+    val appCheckToken1 = dataConnectAppCheck.getToken(requestId)
+
     return try {
-      block()
+      block(authToken1, appCheckToken1)
     } catch (e: StatusException) {
       if (e.status.code != Status.UNAUTHENTICATED.code) {
         throw e
@@ -120,7 +127,10 @@ internal class DataConnectGrpcClient(
       dataConnectAuth.forceRefresh()
       dataConnectAppCheck.forceRefresh()
 
-      block()
+      val authToken2 = dataConnectAuth.getToken(requestId)
+      val appCheckToken2 = dataConnectAppCheck.getToken(requestId)
+
+      block(authToken2, appCheckToken2)
     }
   }
 }
@@ -132,11 +142,13 @@ private fun DataConnectGrpcRPCs.ExecuteQueryResult.toOperationResult():
       DataConnectGrpcClient.OperationResult(
         data = data,
         errors = emptyList(),
+        source = DataSource.CACHE,
       )
     is DataConnectGrpcRPCs.ExecuteQueryResult.FromServer ->
       DataConnectGrpcClient.OperationResult(
         data = if (response.hasData()) response.data else null,
         errors = response.errorsList.map { it.toErrorInfoImpl() },
+        source = DataSource.SERVER,
       )
   }
 

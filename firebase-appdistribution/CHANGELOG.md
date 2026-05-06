@@ -1,5 +1,9 @@
 # Unreleased
 
+# 16.0.0-beta18
+
+- [changed] Bump internal dependencies.
+
 # 16.0.0-beta17
 
 - [changed] Bumped internal dependencies.
@@ -97,3 +101,4 @@ The [appdistro] Android library with Kotlin extensions is now available in beta.
 extensions library transitively includes the base `firebase-app-distribution` library. To learn
 more, visit the
 [[appdistro] KTX reference documentation](/docs/reference/kotlin/com/google/firebase/appdistribution/ktx/package-summary).
+

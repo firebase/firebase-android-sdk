@@ -1,5 +1,9 @@
 # Unreleased
 
+- [fixed] Remote Config Realtime updates now trigger when a parameter's experiment
+  or variant assignment changes, ensuring more accurate A/B test analytics and
+  consistent user experiences. #8002
+
 # 23.0.1
 
 - [changed] Bumped internal dependencies.

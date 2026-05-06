@@ -35,6 +35,7 @@ fun Task.runDataConnectExecutable(
   subCommand: List<String>,
   configDirectory: File,
   execOperations: ExecOperations,
+  previewFlags: List<String>,
   configure: DataConnectExecutableConfig.() -> Unit,
 ) {
   val config =
@@ -91,6 +92,10 @@ fun Task.runDataConnectExecutable(
         config.platform?.let { args("-platform=${it}") }
         config.localConnectionString?.let { args("-local_connection_string=${it}") }
         config.schemaExtensionsOutputEnabled?.let { args("-enable_output_schema_extensions=${it}") }
+
+        if (previewFlags.isNotEmpty()) {
+          environment("DATA_CONNECT_PREVIEW", previewFlags.joinToString(","))
+        }
       }
     }
   } catch (e: Exception) {

@@ -171,7 +171,8 @@ public sealed interface OptionalVariable<out T> {
         is OptionalVariable.Undefined -> {
           /* nothing to do */
         }
-        is OptionalVariable.Value<T> -> elementSerializer.serialize(encoder, value.value)
+        is OptionalVariable.Value<T> ->
+          encoder.encodeSerializableValue(elementSerializer, value.value)
       }
     }
   }

@@ -292,7 +292,7 @@ public class CctTransportBackendTest {
                         JSON_PAYLOAD_ESCAPED)))
             .withoutHeader("Cookie"));
 
-    assertEquals(BackendResponse.ok(3), response);
+    assertEquals(BackendResponse.ok(3, null), response);
   }
 
   @Test
@@ -391,7 +391,7 @@ public class CctTransportBackendTest {
                         JSON_PAYLOAD_ESCAPED)))
             .withoutHeader("Cookie"));
 
-    assertEquals(BackendResponse.ok(3), response);
+    assertEquals(BackendResponse.ok(3, null), response);
   }
 
   @Test
@@ -490,7 +490,7 @@ public class CctTransportBackendTest {
                         JSON_PAYLOAD_ESCAPED)))
             .withoutHeader("Cookie"));
 
-    assertEquals(BackendResponse.ok(3), response);
+    assertEquals(BackendResponse.ok(3, null), response);
   }
 
   @Test
@@ -536,7 +536,7 @@ public class CctTransportBackendTest {
                     String.format(
                         "$[?(@.logRequest[0].clientInfo.androidClientInfo.mccMnc == \"\")]"))));
 
-    assertEquals(BackendResponse.ok(3), response);
+    assertEquals(BackendResponse.ok(3, null), response);
   }
 
   @Test
@@ -570,7 +570,7 @@ public class CctTransportBackendTest {
                                 ApplicationProvider.getApplicationContext().getPackageName(),
                                 /* flags= */ 0)
                             .versionCode))));
-    assertEquals(BackendResponse.ok(3), response);
+    assertEquals(BackendResponse.ok(3, null), response);
   }
 
   @Test
@@ -806,7 +806,7 @@ public class CctTransportBackendTest {
         postRequestedFor(urlEqualTo("/api/hello"))
             .withHeader("Content-Type", equalTo("application/json")));
 
-    assertEquals(BackendResponse.ok(3), response);
+    assertEquals(BackendResponse.ok(3, null), response);
   }
 
   @Test
@@ -836,7 +836,7 @@ public class CctTransportBackendTest {
         postRequestedFor(urlEqualTo("/api/hello"))
             .withHeader("Content-Type", equalTo("application/json")));
 
-    assertEquals(BackendResponse.ok(3), response);
+    assertEquals(BackendResponse.ok(3, null), response);
   }
 
   @Test
@@ -895,7 +895,7 @@ public class CctTransportBackendTest {
             .withHeader("Content-Type", equalTo("application/json"))
             .withHeader("Content-Encoding", equalTo("gzip")));
 
-    assertEquals(BackendResponse.ok(3), response);
+    assertEquals(BackendResponse.ok(3, null), response);
   }
 
   @Test
@@ -952,7 +952,7 @@ public class CctTransportBackendTest {
                 matchingJsonPath(
                     String.format("$[?(@.logRequest[1].logSourceName == \"%s\")]", TEST_NAME))));
 
-    assertEquals(BackendResponse.ok(3), response);
+    assertEquals(BackendResponse.ok(3, null), response);
   }
 
   @Test
@@ -1006,7 +1006,7 @@ public class CctTransportBackendTest {
                     String.format("$[?(@.logRequest[1].logSourceName == \"%s\")]", TEST_NAME)))
             .withRequestBody(matchingJsonPath("$[?(@.logRequest[1].logEvent.size() == 1)]")));
 
-    assertEquals(BackendResponse.ok(3), response);
+    assertEquals(BackendResponse.ok(3, null), response);
   }
 
   @Test

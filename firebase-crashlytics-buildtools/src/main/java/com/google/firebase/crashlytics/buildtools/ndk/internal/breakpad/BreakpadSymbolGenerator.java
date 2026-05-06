@@ -18,13 +18,13 @@ package com.google.firebase.crashlytics.buildtools.ndk.internal.breakpad;
 
 import com.google.firebase.crashlytics.buildtools.Buildtools;
 import com.google.firebase.crashlytics.buildtools.ndk.NativeSymbolGenerator;
-import com.google.firebase.crashlytics.buildtools.ndk.internal.CodeMappingException;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.Arrays;
@@ -43,7 +43,7 @@ public class BreakpadSymbolGenerator implements NativeSymbolGenerator {
 
   private static final Set<PosixFilePermission> DUMP_SYMS_PERMISSIONS =
       Collections.unmodifiableSet(
-          new HashSet<PosixFilePermission>(
+          new HashSet<>(
               Arrays.asList(
                   PosixFilePermission.OWNER_READ,
                   PosixFilePermission.GROUP_READ,
@@ -65,15 +65,16 @@ public class BreakpadSymbolGenerator implements NativeSymbolGenerator {
    */
   public static File extractDefaultDumpSymsBinary(File destPath) throws IOException {
     final String osString = getOsForDumpSyms();
+    final String resource = "dump_syms/" + osString + "/dump_syms.bin";
 
     final File outputFile =
         new File(destPath, OS_WINDOWS.equals(osString) ? "dump_syms.exe" : "dump_syms.bin");
-    if (outputFile.exists()) {
+
+    if (outputFile.exists() && isLocalFileApplicable(outputFile, resource)) {
       Buildtools.logD("Skipping dumpsyms extraction, file exists: " + outputFile.getAbsolutePath());
       return outputFile;
     }
 
-    final String resource = "dump_syms/" + osString + "/dump_syms.bin";
     Buildtools.logD(
         "Extracting dump_syms from " + resource + " to " + outputFile.getAbsolutePath());
     extractResource(resource, outputFile);
@@ -98,10 +99,27 @@ public class BreakpadSymbolGenerator implements NativeSymbolGenerator {
     return outputFile;
   }
 
+  /**
+   * @return true if localFile can still be useful; if a different file size is found at resources,
+   * file extraction is required.
+   */
+  private static boolean isLocalFileApplicable(File localFile, String rawResourcesFilePath) {
+    try {
+      Path localFilePath = Paths.get(localFile.getPath());
+      Path resourcesFilePath = Paths.get(rawResourcesFilePath);
+
+      // A different file size means a newer version is available at resources path.
+      return Files.size(localFilePath) == Files.size(resourcesFilePath);
+    } catch (IOException e) {
+      // Fallback value to keep process going forward.
+      return false;
+    }
+  }
+
   private static void extractResource(String pathToResource, File outputFile) throws IOException {
     final InputStream binStream =
         BreakpadSymbolGenerator.class.getClassLoader().getResourceAsStream(pathToResource);
-    final OutputStream outStream = new FileOutputStream(outputFile);
+    final OutputStream outStream = Files.newOutputStream(outputFile.toPath());
     IOUtils.copy(binStream, outStream);
     binStream.close();
     outStream.close();
@@ -127,8 +145,7 @@ public class BreakpadSymbolGenerator implements NativeSymbolGenerator {
   }
 
   @Override
-  public File generateSymbols(File nativeLib, File symbolFileOutputDir)
-      throws IOException, CodeMappingException {
+  public File generateSymbols(File nativeLib, File symbolFileOutputDir) throws IOException {
 
     Buildtools.logD(
         "Crashlytics generating Breakpad Symbol file for: " + nativeLib.getAbsolutePath());

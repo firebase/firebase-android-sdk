@@ -36,6 +36,9 @@ public abstract class EventContext {
   @SuppressWarnings("mutable")
   public abstract List<byte[]> getExperimentIdsEncryptedList();
 
+  @Nullable
+  public abstract String getPseudonymousIdUpdateReceiverClassName();
+
   public static Builder builder() {
     return new AutoValue_EventContext.Builder();
   }
@@ -53,6 +56,9 @@ public abstract class EventContext {
 
     @NonNull
     public abstract Builder setExperimentIdsEncryptedList(List<byte[]> value);
+
+    @NonNull
+    public abstract Builder setPseudonymousIdUpdateReceiverClassName(String value);
 
     @NonNull
     public abstract EventContext build();

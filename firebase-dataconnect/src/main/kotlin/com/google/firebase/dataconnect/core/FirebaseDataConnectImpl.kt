@@ -20,6 +20,7 @@ import android.content.Context
 import com.google.firebase.FirebaseApp
 import com.google.firebase.appcheck.interop.InteropAppCheckTokenProvider
 import com.google.firebase.auth.internal.InternalAuthProvider
+import com.google.firebase.dataconnect.CacheSettings
 import com.google.firebase.dataconnect.ConnectorConfig
 import com.google.firebase.dataconnect.DataConnectSettings
 import com.google.firebase.dataconnect.FirebaseDataConnect
@@ -71,7 +72,9 @@ internal interface FirebaseDataConnectInternal : FirebaseDataConnect {
   val nonBlockingExecutor: Executor
   val nonBlockingDispatcher: CoroutineDispatcher
 
+  val connectorResourceName: String
   val grpcClient: DataConnectGrpcClient
+  val grpcRPCs: DataConnectGrpcRPCs
   val queryManager: QueryManager
 
   suspend fun awaitAuthReady()
@@ -89,6 +92,7 @@ internal class FirebaseDataConnectImpl(
   deferredAppCheckProvider: com.google.firebase.inject.Deferred<InteropAppCheckTokenProvider>,
   private val creator: FirebaseDataConnectFactory,
   override val settings: DataConnectSettings,
+  private val secureRandom: Random,
 ) : FirebaseDataConnectInternal {
 
   override val logger =
@@ -118,6 +122,12 @@ internal class FirebaseDataConnectImpl(
           }
         }
     )
+
+  override val connectorResourceName =
+    "projects/$projectId/" +
+      "locations/${config.location}" +
+      "/services/${config.serviceId}" +
+      "/connectors/${config.connector}"
 
   private val dataConnectAuth: DataConnectAuth =
     DataConnectAuth(
@@ -162,6 +172,8 @@ internal class FirebaseDataConnectImpl(
 
   override val grpcClient: DataConnectGrpcClient
     get() = initialize().grpcClient
+  override val grpcRPCs: DataConnectGrpcRPCs
+    get() = initialize().grpcRPCs
   override val queryManager: QueryManager
     get() = initialize().queryManager
 
@@ -239,12 +251,23 @@ internal class FirebaseDataConnectImpl(
         backendInfoFromEmulatorSettings
       }
 
+    val cacheSettings =
+      settings.cacheSettings?.run {
+        val dbFile =
+          when (storage) {
+            CacheSettings.Storage.MEMORY -> null
+            CacheSettings.Storage.PERSISTENT -> {
+              val dbName = "dataconnect_" + calculateCacheDbUniqueName(backendInfo)
+              context.getDatabasePath(dbName)
+            }
+          }
+        DataConnectGrpcRPCs.CacheSettings(dbFile, maxAge)
+      }
+
     logger.debug { "connecting to Data Connect backend: $backendInfo" }
     val grpcMetadata =
       DataConnectGrpcMetadata.forSystemVersions(
         firebaseApp = app,
-        dataConnectAuth = dataConnectAuth,
-        dataConnectAppCheck = dataConnectAppCheck,
         connectorLocation = config.location,
         parentLogger = logger,
       )
@@ -255,7 +278,7 @@ internal class FirebaseDataConnectImpl(
         sslEnabled = backendInfo.sslEnabled,
         blockingCoroutineDispatcher = blockingDispatcher,
         grpcMetadata = grpcMetadata,
-        cacheSettings = null, // TODO: pass cache settings once implemented
+        cacheSettings = cacheSettings,
         parentLogger = logger,
       )
 
@@ -269,8 +292,7 @@ internal class FirebaseDataConnectImpl(
 
   private fun createDataConnectGrpcClient(grpcRPCs: DataConnectGrpcRPCs): DataConnectGrpcClient =
     DataConnectGrpcClient(
-      projectId = projectId,
-      connector = config,
+      connectorResourceName = connectorResourceName,
       grpcRPCs = grpcRPCs,
       dataConnectAuth = dataConnectAuth,
       dataConnectAppCheck = dataConnectAppCheck,
@@ -308,6 +330,7 @@ internal class FirebaseDataConnectImpl(
             nonBlockingCoroutineDispatcher = nonBlockingDispatcher,
             grpcClient = grpcClient,
             registeredDataDeserializerFactory = registeredDataDeserializerFactory,
+            secureRandom = secureRandom,
             parentLogger = parentLogger,
           )
       }
@@ -431,6 +454,7 @@ internal class FirebaseDataConnectImpl(
       callerSdkType = options.callerSdkType ?: FirebaseDataConnect.CallerSdkType.Base,
       variablesSerializersModule = options.variablesSerializersModule,
       dataSerializersModule = options.dataSerializersModule,
+      secureRandom = secureRandom,
     )
   }
 

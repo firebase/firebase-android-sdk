@@ -14,7 +14,7 @@ Here is a summary of the detailed steps from below:
 2. Install `podman`, such as via homebrew: `brew install podman`
 3. On macOS, initialize Podman's Linux VM: `podman machine init`
 4. On macOS, start Podman's Linux VM: `podman machine start`
-5. Start the Postgresql container: `./start_postgres_pod.sh`
+5. Start the Postgresql container: `podman compose up -d`
 6. Start the emulator: `./cli -alsologtostderr=1 -stderrthreshold=0 dev`
 
 ## Step 1: Compile Firebase Data Connect emulator
@@ -128,7 +128,7 @@ work around this, a competing product named "Podman" (https://podman.io) was bor
 instructions here use Podman instead of Docker to avoid the unnecessary root daemon. See
 go/dont-install-docker for more details on this.
 
-The instructions to setup and run podman are quite simple on Linux, and a little mor involved on
+The instructions to setup and run podman are quite simple on Linux, and a little more involved on
 macOS. However, once setup, launching the container is as easy as launching any other emulator.
 
 #### Install Podman (Linux)
@@ -153,20 +153,32 @@ The "machine" commands create and start the Linux virtual machine, respectively.
 
 #### Launch the Postgresql containers
 
-A handy helper script is all that is needed to start the Postgresql server:
+Run `podman compose up -d` to start the Postgresql server:
 
 ```
-./start_postgres_pod.sh
+podman compose up -d
 ```
 
 It is safe to run this command if the containers are already running (they will just continue to run
 unaffected).
 
-The final output of the script shows some additional commands that can be run to, for example, stop
-the Postgresql server and delete the Postgresql server's database.
+To stop the Postgresql server and delete the containers, run:
+
+```
+podman compose down
+```
+
+To also delete the database volumes (wiping all data), run:
+
+```
+podman compose down -v
+```
 
 There is also a Web UI called "pgadmin4" that can be used to visually interact with the database.
-The URL and login credentials are included in the final lines of output from the script.
+The URL is http://localhost:8888 and the default login credentials are
+`admin@google.com` / `hyh5tttjj5`.
+These default values can be overridden by setting the `PGADMIN_DEFAULT_EMAIL`
+and `PGADMIN_DEFAULT_PASSWORD` environment variables, respectively.
 
 #### Launch the Data Connect emulator
 

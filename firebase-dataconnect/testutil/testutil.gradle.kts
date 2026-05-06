@@ -64,6 +64,7 @@ dependencies {
   implementation("com.google.firebase:firebase-auth:22.3.1")
 
   compileOnly(libs.kotlinx.datetime)
+  compileOnly(libs.commons.statistics.inference)
 
   implementation(libs.androidx.test.junit)
   implementation(libs.kotest.assertions)
@@ -76,4 +77,6 @@ dependencies {
   implementation(libs.robolectric)
   implementation(libs.testonly.three.ten.abp)
   implementation(libs.truth)
+
+  testImplementation(libs.commons.statistics.inference)
 }
