@@ -62,7 +62,9 @@ private fun handleVariant(variant: Variant, tasks: TaskContainer) {
     tasks.register<CopySharedWithAndroidTestFiles>(
       "copy${variantNameTitleCase}SharedWithAndroidTestFiles"
     ) {
-      inputDirectory.set(project.layout.projectDirectory.dir("src/test/kotlin"))
+      val projectDirectory = project.layout.projectDirectory
+      inputBaseDirectory.set(projectDirectory)
+      inputDirectory.set(projectDirectory.dir("src/test/kotlin"))
     }
 
   androidTest.sources.java!!.addGeneratedSourceDirectory(
