@@ -327,22 +327,20 @@ class ConnectRPCIntegrationTest : DataConnectIntegrationTestBase() {
         streamRequest.build()
       }
 
-    val streamResponses = Channel<StreamResponse>(capacity = 1)
+    var streamResponse: StreamResponse? = null
     streams.incomingResponses.test {
       streams.outgoingRequests.sendNonBlockingOrThrow(streamRequest)
 
-      val streamResponse = awaitItem()
+      streamResponse = awaitItem()
 
       assertSoftly {
         withClue("requestId") { streamResponse.requestId shouldBe requestId }
         withClue("cancelled") { streamResponse.cancelled shouldBe true }
         withClue("errorsCount") { streamResponse.errorsCount shouldBe expectedErrorsCount }
       }
-
-      streamResponses.send(streamResponse)
     }
 
-    return streamResponses.receive()
+    return streamResponse!!
   }
 
   /**
