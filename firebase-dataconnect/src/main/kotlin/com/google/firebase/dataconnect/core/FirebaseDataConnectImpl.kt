@@ -72,7 +72,9 @@ internal interface FirebaseDataConnectInternal : FirebaseDataConnect {
   val nonBlockingExecutor: Executor
   val nonBlockingDispatcher: CoroutineDispatcher
 
+  val connectorResourceName: String
   val grpcClient: DataConnectGrpcClient
+  val grpcRPCs: DataConnectGrpcRPCs
   val queryManager: QueryManager
 
   suspend fun awaitAuthReady()
@@ -121,6 +123,12 @@ internal class FirebaseDataConnectImpl(
         }
     )
 
+  override val connectorResourceName =
+    "projects/$projectId/" +
+      "locations/${config.location}" +
+      "/services/${config.serviceId}" +
+      "/connectors/${config.connector}"
+
   private val dataConnectAuth: DataConnectAuth =
     DataConnectAuth(
         deferredAuthProvider = deferredAuthProvider,
@@ -164,6 +172,8 @@ internal class FirebaseDataConnectImpl(
 
   override val grpcClient: DataConnectGrpcClient
     get() = initialize().grpcClient
+  override val grpcRPCs: DataConnectGrpcRPCs
+    get() = initialize().grpcRPCs
   override val queryManager: QueryManager
     get() = initialize().queryManager
 
@@ -282,8 +292,7 @@ internal class FirebaseDataConnectImpl(
 
   private fun createDataConnectGrpcClient(grpcRPCs: DataConnectGrpcRPCs): DataConnectGrpcClient =
     DataConnectGrpcClient(
-      projectId = projectId,
-      connector = config,
+      connectorResourceName = connectorResourceName,
       grpcRPCs = grpcRPCs,
       dataConnectAuth = dataConnectAuth,
       dataConnectAppCheck = dataConnectAppCheck,

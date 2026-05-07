@@ -115,8 +115,7 @@ class DataConnectGrpcClientUnitTest {
   @get:Rule val randomSeedTestRule = RandomSeedTestRule()
 
   private val rs: RandomSource by randomSeedTestRule.rs
-  private val projectId = Arb.dataConnect.projectId().next(rs)
-  private val connectorConfig = Arb.dataConnect.connectorConfig().next(rs)
+  private val connectorResourceName = Arb.dataConnect.connectorResourceName().next(rs)
   private val requestId = Arb.dataConnect.requestId().next(rs)
   private val operationName = Arb.dataConnect.operationName().next(rs)
   private val variables = Arb.proto.struct().next(rs).struct
@@ -144,8 +143,7 @@ class DataConnectGrpcClientUnitTest {
 
   private val dataConnectGrpcClient =
     DataConnectGrpcClient(
-      projectId = projectId,
-      connector = connectorConfig,
+      connectorResourceName = connectorResourceName,
       grpcRPCs = mockDataConnectGrpcRPCs,
       dataConnectAuth = mockDataConnectAuth,
       dataConnectAppCheck = mockDataConnectAppCheck,
@@ -196,14 +194,9 @@ class DataConnectGrpcClientUnitTest {
         fetchPolicy
       )
 
-      val expectedConnectorResourceName =
-        "projects/${projectId}" +
-          "/locations/${connectorConfig.location}" +
-          "/services/${connectorConfig.serviceId}" +
-          "/connectors/${connectorConfig.connector}"
       val expectedRequest =
         ExecuteQueryRequest.newBuilder()
-          .setName(expectedConnectorResourceName)
+          .setName(connectorResourceName)
           .setOperationName(operationName)
           .setVariables(variables)
           .build()
@@ -230,14 +223,9 @@ class DataConnectGrpcClientUnitTest {
   fun `executeMutation() should send the right ExecuteMutationRequest`() = runTest {
     dataConnectGrpcClient.executeMutation(requestId, operationName, variables, callerSdkType)
 
-    val expectedConnectorResourceName =
-      "projects/${projectId}" +
-        "/locations/${connectorConfig.location}" +
-        "/services/${connectorConfig.serviceId}" +
-        "/connectors/${connectorConfig.connector}"
     val expectedRequest =
       ExecuteMutationRequest.newBuilder()
-        .setName(expectedConnectorResourceName)
+        .setName(connectorResourceName)
         .setOperationName(operationName)
         .setVariables(variables)
         .build()

@@ -1,5 +1,7 @@
 # Unreleased
 
+- [changed] Fix ANR in SharedPreferencesQueue by reducing lock contention
+
 # 25.0.1
 
 - [changed] Bumped internal dependencies.

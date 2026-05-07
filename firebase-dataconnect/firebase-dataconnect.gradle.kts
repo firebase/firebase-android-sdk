@@ -25,6 +25,7 @@ plugins {
   id("copy-google-services")
   alias(libs.plugins.kotlinx.serialization)
   id("com.google.firebase.dataconnect.gradle.plugin") apply false
+  id("com.google.firebase.dataconnect.sharedtest")
 }
 
 firebaseLibrary {

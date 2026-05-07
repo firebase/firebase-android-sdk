@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env zsh
 
-# Copyright 2024 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,23 +14,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -euo pipefail
+setopt errexit nounset pipefail
 
-PROJECT_ROOT_DIR="$(dirname "$0")/../.."
-readonly PROJECT_ROOT_DIR
+source "${0:A:h}/util/say.zsh"
 
-readonly TARGETS=(
-  ":firebase-dataconnect:connectors:generateDebugDataConnectSources"
+typeset -r dataconnect_root_dir="${0:A:h:h}"
+
+typeset -r sh_files=(
+  ${dataconnect_root_dir}/{emulator,scripts}/*.zsh(N)
 )
 
-readonly args=(
-  "${PROJECT_ROOT_DIR}/gradlew"
-  "-p"
-  "${PROJECT_ROOT_DIR}"
-  "--configure-on-demand"
+typeset -r args=(
+  "zshellcheck"
+  "-severity"
+  "style"
   "$@"
-  "${TARGETS[@]}"
+  "${sh_files[@]}"
 )
 
-echo "${args[*]}"
-exec "${args[@]}"
+say_args "${args[@]}"
+exec "${args[@]}" # zshellcheck disable=ZC1909

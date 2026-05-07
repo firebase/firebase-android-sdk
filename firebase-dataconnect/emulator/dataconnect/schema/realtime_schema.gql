@@ -1,6 +1,4 @@
-#!/bin/bash
-
-# Copyright 2024 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,19 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -euo pipefail
-
-PROJECT_ROOT_DIR="$(dirname "$0")/../.."
-readonly PROJECT_ROOT_DIR
-
-readonly args=(
-  "${PROJECT_ROOT_DIR}/gradlew"
-  "-p"
-  "${PROJECT_ROOT_DIR}"
-  "--configure-on-demand"
-  "$@"
-  ":firebase-dataconnect:generateApiTxtFile"
-)
-
-echo "${args[*]}"
-exec "${args[@]}"
+type RealtimeString @table {
+  name: String!
+}

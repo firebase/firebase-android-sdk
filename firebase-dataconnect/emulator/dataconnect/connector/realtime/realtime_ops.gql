@@ -1,6 +1,4 @@
-#!/bin/bash
-
-# Copyright 2024 Google LLC
+# Copyright 2026 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,26 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -euo pipefail
+mutation RealtimeString_Insert($name: String!) @auth(level: PUBLIC) {
+  key: realtimeString_insert(data: {name: $name})
+}
 
-PROJECT_ROOT_DIR="$(dirname "$0")/../.."
-readonly PROJECT_ROOT_DIR
+mutation RealtimeString_Update($key: RealtimeString_Key!, $name: String!) @auth(level: PUBLIC) {
+  realtimeString_update(key: $key, data: {name: $name})
+}
 
-(
-  set -xv
-  cd "${PROJECT_ROOT_DIR}"/firebase-dataconnect/emulator
-  ./wipe_postgres_db.sh
-  ./start_postgres_pod.sh
-)
+mutation RealtimeString_Delete($key: RealtimeString_Key!) @auth(level: PUBLIC) {
+  realtimeString_delete(key: $key)
+}
 
-readonly args=(
-  "${PROJECT_ROOT_DIR}/gradlew"
-  "-p"
-  "${PROJECT_ROOT_DIR}"
-  "--configure-on-demand"
-  "$@"
-  ":firebase-dataconnect:connectors:runDebugDataConnectEmulator"
-)
-
-echo "${args[*]}"
-exec "${args[@]}"
+query RealtimeString_GetByKey($key: RealtimeString_Key!) @auth(level: PUBLIC) {
+  item: realtimeString(key: $key) { name }
+}

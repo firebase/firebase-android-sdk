@@ -26,6 +26,7 @@ import com.google.firebase.firestore.AggregateField;
 import com.google.firebase.firestore.EventListener;
 import com.google.firebase.firestore.FirebaseFirestoreException;
 import com.google.firebase.firestore.FirebaseFirestoreException.Code;
+import com.google.firebase.firestore.FirebaseFirestoreSettings;
 import com.google.firebase.firestore.LoadBundleTask;
 import com.google.firebase.firestore.PipelineResultObserver;
 import com.google.firebase.firestore.TransactionOptions;
@@ -296,7 +297,9 @@ public final class FirestoreClient {
     eventManager = provider.getEventManager();
     IndexBackfiller indexBackfiller = provider.getIndexBackfiller();
 
-    if (gcScheduler != null) {
+    if (gcScheduler != null
+        && provider.settings.getCacheSizeBytes()
+            != FirebaseFirestoreSettings.CACHE_SIZE_UNLIMITED) {
       gcScheduler.start();
     }
 
