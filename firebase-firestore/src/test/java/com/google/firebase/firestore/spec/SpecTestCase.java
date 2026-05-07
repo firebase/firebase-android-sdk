@@ -59,7 +59,6 @@ import com.google.firebase.firestore.core.Query;
 import com.google.firebase.firestore.core.QueryListener;
 import com.google.firebase.firestore.core.QueryOrPipeline;
 import com.google.firebase.firestore.core.SyncEngine;
-import com.google.firebase.firestore.core.Target;
 import com.google.firebase.firestore.core.TargetOrPipeline;
 import com.google.firebase.firestore.local.LocalStore;
 import com.google.firebase.firestore.local.LruDelegate;
@@ -83,6 +82,7 @@ import com.google.firebase.firestore.remote.RemoteEvent;
 import com.google.firebase.firestore.remote.RemoteSerializer;
 import com.google.firebase.firestore.remote.RemoteStore;
 import com.google.firebase.firestore.remote.RemoteStore.RemoteStoreCallback;
+import com.google.firebase.firestore.remote.RemoteTargetId;
 import com.google.firebase.firestore.remote.WatchChange;
 import com.google.firebase.firestore.remote.WatchChange.DocumentChange;
 import com.google.firebase.firestore.remote.WatchChange.ExistenceFilterWatchChange;
@@ -222,6 +222,11 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
   /** Set of expected active targets, keyed by target ID. */
   private Map<Integer, List<TargetData>> expectedActiveTargets;
 
+  private Map<Integer, List<Integer>> sdkToRemoteTargetIds;
+  private Map<Integer, List<Integer>> sdkTargetIdMapExpectedToActual;
+  private Integer currentRemoteTargetIndex;
+  private boolean allowUnlistedTargetRemoval;
+
   /**
    * The writes that have been sent to the SyncEngine via {@link SyncEngine#writeMutations} but not
    * yet acknowledged by calling receiveWriteAck/Error. They are tracked per-user.
@@ -297,6 +302,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     this.useEagerGcForMemory = config.optBoolean("useEagerGCForMemory", true);
     this.maxConcurrentLimboResolutions =
         config.optInt("maxConcurrentLimboResolutions", Integer.MAX_VALUE);
+    this.allowUnlistedTargetRemoval = config.optBoolean("allowUnlistedTargetRemoval", false);
 
     currentUser = User.UNAUTHENTICATED;
     databaseInfo = PersistenceTestHelpers.nextDatabaseInfo();
@@ -307,6 +313,10 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     }
 
     initClient();
+
+    sdkToRemoteTargetIds = new HashMap<>();
+    sdkTargetIdMapExpectedToActual = new HashMap<>();
+    currentRemoteTargetIndex = null;
 
     // Set up internal event tracking for the spec tests.
     events = new ArrayList<>();
@@ -333,6 +343,7 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
   private void initClient() {
     queue = new AsyncQueue();
     datastore = new MockDatastore(databaseInfo, queue);
+    datastore.allowUnlistedTargetRemoval = this.allowUnlistedTargetRemoval;
 
     ComponentProvider.Configuration configuration =
         new ComponentProvider.Configuration(
@@ -614,8 +625,30 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     queue.runSync(
         () -> {
           int actualId = eventManager.addQueryListener(listener);
-          assertEquals(expectedId, actualId);
+          List<Integer> actualIds = sdkTargetIdMapExpectedToActual.get(expectedId);
+          if (actualIds == null) {
+            actualIds = new ArrayList<>();
+            sdkTargetIdMapExpectedToActual.put(expectedId, actualIds);
+          }
+          if (!actualIds.contains(actualId)) {
+            actualIds.add(actualId);
+          }
+          if (!usePipelineMode) {
+            assertEquals(expectedId, actualId);
+          }
         });
+
+    RemoteTargetId remoteTargetId = remoteStore.getRemoteTargetId(expectedId);
+    if (remoteTargetId != null) {
+      List<Integer> remoteIds = sdkToRemoteTargetIds.get(expectedId);
+      if (remoteIds == null) {
+        remoteIds = new ArrayList<>();
+        sdkToRemoteTargetIds.put(expectedId, remoteIds);
+      }
+      if (!remoteIds.contains(remoteTargetId.value())) {
+        remoteIds.add(remoteTargetId.value());
+      }
+    }
   }
 
   private void doUnlisten(JSONArray unlistenSpec) throws Exception {
@@ -643,7 +676,12 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
           syncEngine.loadBundle(bundleReader, bundleTask);
           bundleTask.addOnFailureListener(e -> log("Loading bundle failed with " + e));
         });
-    assertTrue(bundleTask.isSuccessful());
+    if (!bundleTask.isSuccessful()) {
+      if (bundleTask.getException() != null) {
+        bundleTask.getException().printStackTrace();
+      }
+      Assert.fail("Bundle task was not successful");
+    }
   }
 
   private void doMutation(Mutation mutation) throws Exception {
@@ -709,14 +747,23 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     queue.runSync(() -> datastore.writeWatchChange(change, version));
   }
 
+  private List<Integer> getRemoteTargetIds(List<Integer> sdkIds) {
+    List<Integer> remoteIds = new ArrayList<>(sdkIds.size());
+    for (int id : sdkIds) {
+      remoteIds.add(getRemoteTargetId(id));
+    }
+    return remoteIds;
+  }
+
   private void doWatchAck(JSONArray ackedTargets) throws Exception {
     WatchTargetChange change =
-        new WatchTargetChange(WatchTargetChangeType.Added, parseIntList(ackedTargets));
+        new WatchTargetChange(
+            WatchTargetChangeType.Added, getRemoteTargetIds(parseIntList(ackedTargets)));
     writeWatchChange(change, SnapshotVersion.NONE);
   }
 
   private void doWatchCurrent(JSONArray currentSpec) throws Exception {
-    List<Integer> currentTargets = parseIntList(currentSpec.getJSONArray(0));
+    List<Integer> currentTargets = getRemoteTargetIds(parseIntList(currentSpec.getJSONArray(0)));
     ByteString resumeToken = ByteString.copyFromUtf8(currentSpec.getString(1));
     WatchTargetChange change =
         new WatchTargetChange(WatchTargetChangeType.Current, currentTargets, resumeToken);
@@ -732,7 +779,8 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
         error = Status.fromCodeValue(code);
       }
     }
-    List<Integer> targetIds = parseIntList(watchRemoveSpec.getJSONArray("targetIds"));
+    List<Integer> targetIds =
+        getRemoteTargetIds(parseIntList(watchRemoveSpec.getJSONArray("targetIds")));
     WatchTargetChange change =
         new WatchTargetChange(
             WatchTargetChangeType.Removed, targetIds, WatchStream.EMPTY_RESUME_TOKEN, error);
@@ -765,13 +813,15 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
           !docSpec.isNull("value") ? parseMap(docSpec.getJSONObject("value")) : null;
       long version = docSpec.getLong("version");
       MutableDocument doc = value != null ? doc(key, version, value) : deletedDoc(key, version);
-      List<Integer> updated = parseIntList(watchEntity.optJSONArray("targets"));
-      List<Integer> removed = parseIntList(watchEntity.optJSONArray("removedTargets"));
+      List<Integer> updated = getRemoteTargetIds(parseIntList(watchEntity.optJSONArray("targets")));
+      List<Integer> removed =
+          getRemoteTargetIds(parseIntList(watchEntity.optJSONArray("removedTargets")));
       WatchChange change = new DocumentChange(updated, removed, doc.getKey(), doc);
       writeWatchChange(change, SnapshotVersion.NONE);
     } else if (watchEntity.has("key")) {
       String key = watchEntity.getString("key");
-      List<Integer> removed = parseIntList(watchEntity.optJSONArray("removedTargets"));
+      List<Integer> removed =
+          getRemoteTargetIds(parseIntList(watchEntity.optJSONArray("removedTargets")));
       WatchChange change = new DocumentChange(Collections.emptyList(), removed, key(key), null);
       writeWatchChange(change, SnapshotVersion.NONE);
     } else {
@@ -791,12 +841,13 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
             : null;
 
     ExistenceFilter filter = new ExistenceFilter(keys.size(), bloomFilterProto);
-    ExistenceFilterWatchChange change = new ExistenceFilterWatchChange(targets.get(0), filter);
+    int targetId = getRemoteTargetId(targets.get(0));
+    ExistenceFilterWatchChange change = new ExistenceFilterWatchChange(targetId, filter);
     writeWatchChange(change, SnapshotVersion.NONE);
   }
 
   private void doWatchReset(JSONArray targetIds) throws Exception {
-    List<Integer> targets = parseIntList(targetIds);
+    List<Integer> targets = getRemoteTargetIds(parseIntList(targetIds));
     WatchChange change = new WatchTargetChange(WatchTargetChangeType.Reset, targets);
     writeWatchChange(change, SnapshotVersion.NONE);
   }
@@ -804,10 +855,11 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
   private void doWatchSnapshot(JSONObject watchSnapshot) throws Exception {
     // The client will only respond to watchSnapshots if they are on a target change with an empty
     // set of target IDs.
-    List<Integer> targets =
+    List<Integer> sdkTargets =
         watchSnapshot.has("targetIds")
             ? parseIntList(watchSnapshot.getJSONArray("targetIds"))
             : Collections.emptyList();
+    List<Integer> targets = getRemoteTargetIds(sdkTargets);
     String resumeToken = watchSnapshot.optString("resumeToken");
     WatchChange change =
         new WatchTargetChange(
@@ -936,6 +988,10 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
   }
 
   private void doStep(JSONObject step) throws Exception {
+    if (step.length() == 0) {
+      return;
+    }
+
     if (step.optInt("clientIndex", 0) != 0) {
       throw Assert.fail("The Android client does not support switching clients");
     }
@@ -974,6 +1030,8 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
       doWatchSnapshot(step.getJSONObject("watchSnapshot"));
     } else if (step.has("watchStreamClose")) {
       doWatchStreamClose(step.getJSONObject("watchStreamClose"));
+    } else if (step.has("watchUsesTargetIndex")) {
+      doWatchUsesTargetIndex(step.get("watchUsesTargetIndex"));
     } else if (step.has("watchProto")) {
       // watchProto isn't yet used, and it's unclear how to create arbitrary protos from JSON.
       throw Assert.fail("watchProto is not yet supported.");
@@ -1009,6 +1067,56 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
     } else {
       throw Assert.fail("Unknown step: %s", step);
     }
+  }
+
+  private void doWatchUsesTargetIndex(Object value) throws Exception {
+    if (value instanceof Integer) {
+      currentRemoteTargetIndex = (Integer) value;
+    } else if (value instanceof String && ((String) value).equals("latest")) {
+      currentRemoteTargetIndex = null;
+    } else {
+      throw Assert.fail("watchUsesTargetIndex was not an integer or 'latest'");
+    }
+  }
+
+  private int getRemoteTargetId(int sdkTargetId) {
+    List<Integer> actualIds = sdkTargetIdMapExpectedToActual.get(sdkTargetId);
+    int actualId = sdkTargetId;
+    if (actualIds != null && !actualIds.isEmpty()) {
+      if (currentRemoteTargetIndex != null && currentRemoteTargetIndex < actualIds.size()) {
+        actualId = actualIds.get(currentRemoteTargetIndex);
+      } else {
+        actualId = actualIds.get(actualIds.size() - 1);
+      }
+    }
+
+    RemoteTargetId remoteTargetId = remoteStore.getRemoteTargetId(actualId);
+    List<Integer> remoteIds = sdkToRemoteTargetIds.get(actualId);
+    if (remoteIds == null) {
+      remoteIds = new ArrayList<>();
+      sdkToRemoteTargetIds.put(sdkTargetId, remoteIds);
+    }
+    if (remoteTargetId != null && !remoteIds.contains(remoteTargetId.value())) {
+      remoteIds.add(remoteTargetId.value());
+    }
+
+    if (currentRemoteTargetIndex != null) {
+      assertTrue(
+          "Index "
+              + currentRemoteTargetIndex
+              + " has not been generated yet (history: "
+              + remoteIds
+              + ")",
+          currentRemoteTargetIndex < remoteIds.size());
+      return remoteIds.get(currentRemoteTargetIndex);
+    }
+
+    if (remoteTargetId != null) {
+      return remoteTargetId.value();
+    }
+
+    assertTrue("No remote ID generated yet for target " + sdkTargetId, !remoteIds.isEmpty());
+    return remoteIds.get(remoteIds.size() - 1);
   }
 
   //
@@ -1167,12 +1275,9 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
             if (usePipelineMode && !purpose.equals(QueryPurpose.LIMBO_RESOLUTION)) {
               targetData =
                   new TargetData(
-                      new TargetOrPipeline.TargetWrapper(
-                          // We are specifically using the explicit orderBys for pipelines
-                          // because these are the one used in query to pipeline conversions.
-                          // Otherwise the tests will failed due to mismatched expected pipelines,
-                          // despite them being semantically the same.
-                          query.toTarget(query.getExplicitOrderBy())),
+                      new TargetOrPipeline.PipelineWrapper(
+                          query.toRealtimePipeline(
+                              db, new UserDataReader(databaseInfo.getDatabaseId()))),
                       targetId,
                       ARBITRARY_SEQUENCE_NUMBER,
                       purpose);
@@ -1313,52 +1418,85 @@ public abstract class SpecTestCase implements RemoteStoreCallback {
       return;
     }
 
-    // Create a copy so we can modify it in tests
-    Map<Integer, TargetData> actualTargets = new HashMap<>(datastore.activeTargets());
+    // Create a copy and map remote target IDs to SDK target IDs
+    Map<Integer, TargetData> actualTargets = new HashMap<>();
+    for (Map.Entry<Integer, TargetData> entry : datastore.activeTargets().entrySet()) {
+      int remoteTargetId = entry.getKey();
+      Integer sdkTargetId = remoteStore.getSdkTargetId(RemoteTargetId.from(remoteTargetId));
+      if (sdkTargetId != null) {
+        TargetData remoteTargetData = entry.getValue();
+        TargetData sdkTargetData =
+            new TargetData(
+                remoteTargetData.getTarget(),
+                sdkTargetId,
+                remoteTargetData.getSequenceNumber(),
+                remoteTargetData.getPurpose(),
+                remoteTargetData.getSnapshotVersion(),
+                remoteTargetData.getLastLimboFreeSnapshotVersion(),
+                remoteTargetData.getResumeToken(),
+                remoteTargetData.getExpectedCount());
+        actualTargets.put(sdkTargetId, sdkTargetData);
+      }
+    }
 
     for (Map.Entry<Integer, List<TargetData>> expected : expectedActiveTargets.entrySet()) {
-      assertTrue(
-          "Expected active target not found: " + expected.getValue(),
-          actualTargets.containsKey(expected.getKey()));
-
-      List<TargetData> expectedQueries = expected.getValue();
-      TargetData expectedTarget = expectedQueries.get(0);
-      TargetData actualTarget = actualTargets.get(expected.getKey());
-
-      // TODO: Replace the assertEquals() checks on the individual properties of TargetData below
-      // with the single assertEquals on the TargetData objects themselves if the sequenceNumber is
-      // ever made to be consistent.
-      // assertEquals(expectedTarget, actualTarget);
-      assertEquals(expectedTarget.getPurpose(), actualTarget.getPurpose());
-      if (usePipelineMode && !expectedTarget.getPurpose().equals(QueryPurpose.LIMBO_RESOLUTION)) {
-        Target target = expectedTarget.getTarget().target();
-        assertEquals(
-            new TargetOrPipeline.PipelineWrapper(
-                new Query(
-                        target.getPath(),
-                        target.getCollectionGroup(),
-                        target.getFilters(),
-                        target.getOrderBy(),
-                        target.getLimit(),
-                        Query.LimitType.LIMIT_TO_FIRST,
-                        target.getStartAt(),
-                        target.getEndAt())
-                    .toRealtimePipeline(db, new UserDataReader(databaseInfo.getDatabaseId()))),
-            actualTarget.getTarget());
-      } else {
-        assertEquals(expectedTarget.getTarget(), actualTarget.getTarget());
-      }
-      assertEquals(expectedTarget.getTargetId(), actualTarget.getTargetId());
-      assertEquals(expectedTarget.getSnapshotVersion(), actualTarget.getSnapshotVersion());
-      assertEquals(
-          expectedTarget.getResumeToken().toStringUtf8(),
-          actualTarget.getResumeToken().toStringUtf8());
-
-      if (expectedTarget.getExpectedCount() != null) {
-        assertEquals(expectedTarget.getExpectedCount(), actualTarget.getExpectedCount());
+      int expectedId = expected.getKey();
+      List<Integer> actualIds = sdkTargetIdMapExpectedToActual.get(expectedId);
+      if (actualIds == null || actualIds.isEmpty()) {
+        actualIds = Collections.singletonList(expectedId);
       }
 
-      actualTargets.remove(expected.getKey());
+      for (int actualId : actualIds) {
+        if (actualTargets.containsKey(actualId)) {
+          List<TargetData> expectedQueries = expected.getValue();
+          TargetData expectedTarget = expectedQueries.get(0);
+          TargetData actualTarget = actualTargets.get(actualId);
+
+          // TODO: Replace the assertEquals() checks on the individual properties of TargetData
+          // below
+          // with the single assertEquals on the TargetData objects themselves if the sequenceNumber
+          // is
+          // ever made to be consistent.
+          // assertEquals(expectedTarget, actualTarget);
+          assertEquals(expectedTarget.getPurpose(), actualTarget.getPurpose());
+          if (usePipelineMode
+              && !expectedTarget.getPurpose().equals(QueryPurpose.LIMBO_RESOLUTION)) {
+            boolean matched = false;
+            for (TargetData expTarget : expectedQueries) {
+              if (expTarget.getTarget().equals(actualTarget.getTarget())) {
+                matched = true;
+                break;
+              }
+            }
+            assertTrue(
+                "Expected pipeline "
+                    + actualTarget.getTarget()
+                    + " not found in expected active list: "
+                    + expectedQueries,
+                matched);
+          } else {
+            assertEquals(expectedTarget.getTarget(), actualTarget.getTarget());
+          }
+          int expectedTargetId = expectedTarget.getTargetId();
+          List<Integer> expActualIds = sdkTargetIdMapExpectedToActual.get(expectedTargetId);
+          if (expActualIds == null) {
+            expActualIds = Collections.singletonList(expectedTargetId);
+          }
+          assertTrue(
+              "Expected target ID mapping not found for " + expectedTargetId,
+              expActualIds.contains(actualTarget.getTargetId()));
+          assertEquals(expectedTarget.getSnapshotVersion(), actualTarget.getSnapshotVersion());
+          assertEquals(
+              expectedTarget.getResumeToken().toStringUtf8(),
+              actualTarget.getResumeToken().toStringUtf8());
+
+          if (expectedTarget.getExpectedCount() != null) {
+            assertEquals(expectedTarget.getExpectedCount(), actualTarget.getExpectedCount());
+          }
+
+          actualTargets.remove(actualId);
+        }
+      }
     }
 
     assertTrue("Unexpected active targets: " + actualTargets, actualTargets.isEmpty());

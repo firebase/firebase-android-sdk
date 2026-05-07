@@ -76,6 +76,7 @@ import com.google.firebase.firestore.model.mutation.SetMutation;
 import com.google.firebase.firestore.model.mutation.VerifyMutation;
 import com.google.firebase.firestore.remote.ExistenceFilter;
 import com.google.firebase.firestore.remote.RemoteEvent;
+import com.google.firebase.firestore.remote.RemoteTargetId;
 import com.google.firebase.firestore.remote.TargetChange;
 import com.google.firebase.firestore.remote.WatchChange;
 import com.google.firebase.firestore.remote.WatchChange.DocumentChange;
@@ -493,14 +494,20 @@ public class TestUtil {
             TEST_PROJECT,
             new WatchChangeAggregator.TargetMetadataProvider() {
               @Override
-              public ImmutableSortedSet<DocumentKey> getRemoteKeysForTarget(int targetId) {
+              public ImmutableSortedSet<DocumentKey> getRemoteKeysForTarget(
+                  RemoteTargetId targetId) {
                 return DocumentKey.emptyKeySet();
               }
 
               @Override
-              public TargetData getTargetDataForTarget(int targetId) {
+              public TargetData getTargetDataForTarget(RemoteTargetId targetId) {
                 ResourcePath collectionPath = docs.get(0).getKey().getCollectionPath();
-                return targetData(targetId, QueryPurpose.LISTEN, collectionPath.toString());
+                return targetData(targetId.value(), QueryPurpose.LISTEN, collectionPath.toString());
+              }
+
+              @Override
+              public int getSdkTargetId(RemoteTargetId remoteTargetId) {
+                return remoteTargetId.value();
               }
             });
 
@@ -540,15 +547,21 @@ public class TestUtil {
             TEST_PROJECT,
             new WatchChangeAggregator.TargetMetadataProvider() {
               @Override
-              public ImmutableSortedSet<DocumentKey> getRemoteKeysForTarget(int targetId) {
+              public ImmutableSortedSet<DocumentKey> getRemoteKeysForTarget(
+                  RemoteTargetId targetId) {
                 return DocumentKey.emptyKeySet().insert(doc.getKey());
               }
 
               @Override
-              public TargetData getTargetDataForTarget(int targetId) {
-                return activeTargets.contains(targetId)
-                    ? targetData(targetId, QueryPurpose.LISTEN, doc.getKey().toString())
+              public TargetData getTargetDataForTarget(RemoteTargetId targetId) {
+                return activeTargets.contains(targetId.value())
+                    ? targetData(targetId.value(), QueryPurpose.LISTEN, doc.getKey().toString())
                     : null;
+              }
+
+              @Override
+              public int getSdkTargetId(RemoteTargetId remoteTargetId) {
+                return remoteTargetId.value();
               }
             });
     aggregator.handleDocumentChange(change);

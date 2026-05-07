@@ -119,9 +119,12 @@ public class MockDatastore extends Datastore {
               // Technically removing an unknown target is valid (e.g. it could race with a
               // server-side removal), but we want to pay extra careful attention in tests
               // that we only remove targets we listened too.
-              throw new IllegalStateException("Removing a non-active target");
+              if (!allowUnlistedTargetRemoval) {
+                throw new IllegalStateException("Removing a non-active target");
+              }
+            } else {
+              activeTargets.remove(targetId);
             }
-            activeTargets.remove(targetId);
           }
         }
         if (!targetChange.getTargetIds().isEmpty()) {
@@ -208,6 +211,8 @@ public class MockDatastore extends Datastore {
       return sentWrites.size();
     }
   }
+
+  public boolean allowUnlistedTargetRemoval = false;
 
   private MockWatchStream watchStream;
   private MockWriteStream writeStream;
