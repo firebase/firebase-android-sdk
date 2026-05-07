@@ -943,5 +943,25 @@ class CrashlyticsController {
           .v("ANR feature enabled, but device is API " + android.os.Build.VERSION.SDK_INT);
     }
   }
+  /** This function must be called before opening the first session. */
+  boolean didANROnPreviousExecution() {
+    CrashlyticsWorkers.checkBackgroundThread();
+    if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+      return false;
+    }
+    final String sessionId = getCurrentSessionId();
+    if (sessionId == null) {
+      return false;
+    }
+    ActivityManager activityManager =
+        (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+    List<ApplicationExitInfo> applicationExitInfoList =
+        activityManager.getHistoricalProcessExitReasons(null, 0, 0);
+    if (applicationExitInfoList.isEmpty()) {
+      return false;
+    }
+    return reportingCoordinator.didRelevantAnrOccur(sessionId, applicationExitInfoList);
+  }
+
   // endregion
 }

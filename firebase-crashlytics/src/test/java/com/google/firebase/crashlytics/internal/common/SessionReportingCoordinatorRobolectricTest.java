@@ -165,6 +165,55 @@ public class SessionReportingCoordinatorRobolectricTest {
   }
 
   @Test
+  @SdkSuppress(minSdkVersion = VERSION_CODES.R)
+  public void testDidRelevantAnrOccur_returnsTrueForAnrWithinSession() {
+    final long sessionStartTimestamp = 0;
+    final String sessionId = "testSessionId";
+    when(reportPersistence.getStartTimestampMillis(sessionId)).thenReturn(sessionStartTimestamp);
+
+    addAppExitInfo(ApplicationExitInfo.REASON_ANR);
+    List<ApplicationExitInfo> testApplicationExitInfoList = getAppExitInfoList();
+
+    assertTrue(reportingCoordinator.didRelevantAnrOccur(sessionId, testApplicationExitInfoList));
+  }
+
+  @Test
+  @SdkSuppress(minSdkVersion = VERSION_CODES.R)
+  public void testDidRelevantAnrOccur_returnsFalseForAnrBeforeSession() {
+    // ANR timestamp is 0; session starts at 10, so ANR was before the session.
+    final long sessionStartTimestamp = 10;
+    final String sessionId = "testSessionId";
+    when(reportPersistence.getStartTimestampMillis(sessionId)).thenReturn(sessionStartTimestamp);
+
+    addAppExitInfo(ApplicationExitInfo.REASON_ANR);
+    List<ApplicationExitInfo> testApplicationExitInfoList = getAppExitInfoList();
+
+    assertFalse(reportingCoordinator.didRelevantAnrOccur(sessionId, testApplicationExitInfoList));
+  }
+
+  @Test
+  @SdkSuppress(minSdkVersion = VERSION_CODES.R)
+  public void testDidRelevantAnrOccur_returnsFalseForNonAnrWithinSession() {
+    final long sessionStartTimestamp = 0;
+    final String sessionId = "testSessionId";
+    when(reportPersistence.getStartTimestampMillis(sessionId)).thenReturn(sessionStartTimestamp);
+
+    addAppExitInfo(ApplicationExitInfo.REASON_EXIT_SELF);
+    List<ApplicationExitInfo> testApplicationExitInfoList = getAppExitInfoList();
+
+    assertFalse(reportingCoordinator.didRelevantAnrOccur(sessionId, testApplicationExitInfoList));
+  }
+
+  @Test
+  @SdkSuppress(minSdkVersion = VERSION_CODES.R)
+  public void testDidRelevantAnrOccur_returnsFalseForEmptyList() {
+    final String sessionId = "testSessionId";
+    when(reportPersistence.getStartTimestampMillis(sessionId)).thenReturn(0L);
+
+    assertFalse(reportingCoordinator.didRelevantAnrOccur(sessionId, List.of()));
+  }
+
+  @Test
   public void testconvertInputStreamToString_worksSuccessfully() throws IOException {
     String stackTrace = "-----stacktrace---------";
     InputStream inputStream = new ByteArrayInputStream(stackTrace.getBytes());
