@@ -463,6 +463,16 @@ public class FirebaseCrashlytics {
   }
 
   /**
+   * Checks whether the app was terminated due to an ANR (Application Not Responding) on its
+   * previous run. Requires Android API 30 (R) or above; returns {@code false} on older versions.
+   *
+   * @return true if an ANR was recorded during the previous run of the app.
+   */
+  public boolean didANRKillOnPreviousExecution() {
+    return core.didANROnPreviousExecution();
+  }
+
+  /**
    * Indicates whether or not automatic data collection is enabled.
    *
    * @return In order of priority:
