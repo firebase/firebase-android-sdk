@@ -376,8 +376,16 @@ class ConnectRPCIntegrationTest : DataConnectIntegrationTestBase() {
     val streams = connect()
     streams.sendInitRequest()
 
+    // Use distinct UUIDs in the "subscribe" requests because the backend appears to do some weird
+    // de-duping if the same query is subscribed to with distinct request IDs.
+    val subscribeStreamRequestArb =
+      validSubscribeStreamRequestArb(
+        validExecuteQueryRequest =
+          validExecuteQueryRequestArb(keyArb(@OptIn(DelicateKotest::class) Arb.uuid().distinct()))
+      )
+
     streams.incomingResponses.test {
-      checkAll(propTestConfig, validSubscribeStreamRequestArb()) { streamRequest ->
+      checkAll(propTestConfig, subscribeStreamRequestArb) { streamRequest ->
         check(streamRequest.hasSubscribe())
         streams.outgoingRequests.send(streamRequest)
         val streamResponse = awaitItem()
