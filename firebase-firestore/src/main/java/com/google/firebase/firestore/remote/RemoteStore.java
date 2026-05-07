@@ -405,6 +405,12 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
 
     if (remoteTargetId == null) {
       TargetOrPipeline top = targetData.getTarget();
+      String topCanonicalId =
+          top.isPipeline()
+              ? getPipelineCanonicalIdExceptSort(
+                  top.pipeline$com_google_firebase_firebase_firestore())
+              : null;
+
       for (Map.Entry<RemoteTargetId, TargetData> entry : listenTargets.entrySet()) {
         TargetOrPipeline activeTop = entry.getValue().getTarget();
         if (top.isTarget() && activeTop.isTarget()) {
@@ -414,11 +420,9 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
             break;
           }
         } else if (top.isPipeline() && activeTop.isPipeline()) {
-          if (getPipelineCanonicalIdExceptSort(
-                  top.pipeline$com_google_firebase_firebase_firestore())
-              .equals(
-                  getPipelineCanonicalIdExceptSort(
-                      activeTop.pipeline$com_google_firebase_firebase_firestore()))) {
+          if (topCanonicalId.equals(
+              getPipelineCanonicalIdExceptSort(
+                  activeTop.pipeline$com_google_firebase_firebase_firestore()))) {
             remoteTargetId = entry.getKey();
             targetIdMapSdkToRemote.put(sdkTargetId, remoteTargetId);
             break;
@@ -629,14 +633,26 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
         "Can't raise event for unknown SnapshotVersion");
     RemoteEvent remoteEvent = watchChangeAggregator.createRemoteEvent(snapshotVersion);
 
+    Map<RemoteTargetId, List<Integer>> remoteToSdkIds = new HashMap<>();
+    for (Entry<Integer, RemoteTargetId> entry : targetIdMapSdkToRemote.entrySet()) {
+      RemoteTargetId remoteTargetId = entry.getValue();
+      List<Integer> sdkIds = remoteToSdkIds.get(remoteTargetId);
+      if (sdkIds == null) {
+        sdkIds = new ArrayList<>();
+        remoteToSdkIds.put(remoteTargetId, sdkIds);
+      }
+      sdkIds.add(entry.getKey());
+    }
+
     Map<Integer, TargetChange> duplicatedTargetChanges = new HashMap<>();
     for (Entry<Integer, TargetChange> entry : remoteEvent.getTargetChanges().entrySet()) {
       int sdkTargetId = entry.getKey();
       RemoteTargetId remoteTargetId = targetIdMapSdkToRemote.get(sdkTargetId);
       if (remoteTargetId != null) {
-        for (Entry<Integer, RemoteTargetId> mapping : targetIdMapSdkToRemote.entrySet()) {
-          if (mapping.getValue().equals(remoteTargetId)) {
-            duplicatedTargetChanges.put(mapping.getKey(), entry.getValue());
+        List<Integer> sdkIds = remoteToSdkIds.get(remoteTargetId);
+        if (sdkIds != null) {
+          for (int mappedSdkId : sdkIds) {
+            duplicatedTargetChanges.put(mappedSdkId, entry.getValue());
           }
         }
       } else {
@@ -649,9 +665,10 @@ public final class RemoteStore implements WatchChangeAggregator.TargetMetadataPr
       int sdkTargetId = entry.getKey();
       RemoteTargetId remoteTargetId = targetIdMapSdkToRemote.get(sdkTargetId);
       if (remoteTargetId != null) {
-        for (Entry<Integer, RemoteTargetId> mapping : targetIdMapSdkToRemote.entrySet()) {
-          if (mapping.getValue().equals(remoteTargetId)) {
-            duplicatedTargetMismatches.put(mapping.getKey(), entry.getValue());
+        List<Integer> sdkIds = remoteToSdkIds.get(remoteTargetId);
+        if (sdkIds != null) {
+          for (int mappedSdkId : sdkIds) {
+            duplicatedTargetMismatches.put(mappedSdkId, entry.getValue());
           }
         }
       } else {
