@@ -514,7 +514,8 @@ public class CrashlyticsCore {
     Boolean result;
     try {
       result = future.get(DEFAULT_MAIN_HANDLER_TIMEOUT_SEC, TimeUnit.SECONDS);
-    } catch (Exception ignored) {
+    } catch (Exception ex) {
+      Logger.getLogger().v("Error checking for previous ANR: " + ex.getMessage());
       didANROnPreviousExecution = false;
       return;
     }
