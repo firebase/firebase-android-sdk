@@ -16,7 +16,9 @@
 
 package com.google.firebase.dataconnect
 
+import app.cash.turbine.Event
 import app.cash.turbine.test
+import app.cash.turbine.turbineScope
 import com.google.firebase.dataconnect.testutil.DataConnectIntegrationTestBase
 import com.google.firebase.dataconnect.testutil.createGrpcManagedChannel
 import com.google.firebase.dataconnect.testutil.property.arbitrary.pair
@@ -51,6 +53,7 @@ import io.kotest.property.ShrinkingMode
 import io.kotest.property.arbitrary.Codepoint
 import io.kotest.property.arbitrary.arbitrary
 import io.kotest.property.arbitrary.az
+import io.kotest.property.arbitrary.constant
 import io.kotest.property.arbitrary.distinct
 import io.kotest.property.arbitrary.enum
 import io.kotest.property.arbitrary.map
@@ -300,12 +303,98 @@ class ConnectRPCIntegrationTest : DataConnectIntegrationTestBase() {
   }
 
   @Test
+  fun collectingFlowTwiceThrows() = runTest {
+    val streams = connect()
+    streams.sendInitRequest()
+    val (streamRequest1, streamRequest2) = validStreamRequestArb().pair().sample()
+    streams.outgoingRequests.send(streamRequest1)
+
+    turbineScope {
+      val collectors = List(2) { streams.incomingResponses.testIn(backgroundScope) }
+      val events = collectors.map { it.awaitEvent() }
+
+      withClue("events=${events.print().value}") {
+        assertSoftly {
+          withClue("items") { events.count { it is Event.Item } shouldBe 1 }
+          withClue("errors") { events.count { it is Event.Error } shouldBe 1 }
+        }
+      }
+
+      // Make sure the "good" collector still works despite the other one failing.
+      val (collector, streamResponse1) =
+        collectors
+          .zip(events)
+          .mapNotNull { (collector, event) ->
+            (event as? Event.Item)?.let { Pair(collector, it.value) }
+          }
+          .single()
+      streamResponse1.requestId shouldBe streamRequest1.requestId
+      streams.outgoingRequests.send(streamRequest2)
+      collector.awaitItem().requestId shouldBe streamRequest2.requestId
+    }
+  }
+
+  @Test
+  fun registeringRequestIdTwiceThrows() = runTest {
+    val streams = connect()
+    streams.sendInitRequest()
+    val requestId = requestIdArb().sample()
+    val (streamRequest1, streamRequest2) =
+      validSubscribeStreamRequestArb(
+          requestId = Arb.constant(requestId),
+          validExecuteQueryRequest =
+            @OptIn(DelicateKotest::class) validExecuteQueryRequestArb().distinct(),
+        )
+        .pair()
+        .sample()
+
+    check(streamRequest1.requestId == streamRequest2.requestId)
+    check(streamRequest1.subscribe != streamRequest2.subscribe)
+
+    streams.incomingResponses.test {
+      streams.outgoingRequests.send(streamRequest1)
+      awaitItem().requestId shouldBe requestId
+
+      streams.outgoingRequests.send(streamRequest2)
+      val exception = awaitError()
+
+      val statusException = exception.shouldBeInstanceOf<StatusException>()
+      statusException.status.code shouldBe Status.Code.FAILED_PRECONDITION
+      statusException.message shouldContainWithNonAbuttingTextIgnoringCase "request_id"
+    }
+  }
+
+  @Test
   fun testValidStreamRequestArb() = runTest {
     val streams = connect()
     streams.sendInitRequest()
 
     streams.incomingResponses.test {
       checkAll(propTestConfig, validStreamRequestArb()) { streamRequest ->
+        streams.outgoingRequests.send(streamRequest)
+        val streamResponse = awaitItem()
+        streamResponse.requestId shouldBe streamRequest.requestId
+        streamResponse.errorsCount shouldBe 0
+      }
+    }
+  }
+
+  @Test
+  fun testValidSubscribeStreamRequestArb() = runTest {
+    val streams = connect()
+    streams.sendInitRequest()
+
+    // Use distinct UUIDs in the "subscribe" requests because the backend appears to do some weird
+    // de-duping if the same query is subscribed to with distinct request IDs.
+    val subscribeStreamRequestArb =
+      validSubscribeStreamRequestArb(
+        validExecuteQueryRequest =
+          validExecuteQueryRequestArb(keyArb(@OptIn(DelicateKotest::class) Arb.uuid().distinct()))
+      )
+
+    streams.incomingResponses.test {
+      checkAll(propTestConfig, subscribeStreamRequestArb) { streamRequest ->
+        check(streamRequest.hasSubscribe())
         streams.outgoingRequests.send(streamRequest)
         val streamResponse = awaitItem()
         streamResponse.requestId shouldBe streamRequest.requestId
@@ -350,7 +439,7 @@ class ConnectRPCIntegrationTest : DataConnectIntegrationTestBase() {
   private fun connect(): ConnectionStreams {
     val connector = RealtimeConnector.getInstance(dataConnectFactory)
     val grpcManagedChannel = createGrpcManagedChannel(connector.dataConnect)
-    val outgoingRequests = Channel<StreamRequest>(Channel.UNLIMITED)
+    val outgoingRequests = Channel<StreamRequest>(UNLIMITED)
     val stub = ConnectorStreamServiceCoroutineStub(grpcManagedChannel)
     val incomingResponses = stub.connect(outgoingRequests.consumeAsFlow())
     return ConnectionStreams(connector, outgoingRequests, incomingResponses)
@@ -457,6 +546,7 @@ private inline fun <reified Data> StreamResponse.shouldHaveData(
 }
 
 private enum class ValidStreamRequestType {
+  SubscribeQuery,
   ExecuteQuery,
   ExecuteMutation,
 }
@@ -467,31 +557,66 @@ private enum class ValidStreamRequestType {
  */
 private fun validStreamRequestArb(
   requestId: Arb<String> = @OptIn(DelicateKotest::class) requestIdArb().distinct(),
-  name: Arb<String> = nameArb(),
-  key: Arb<RealtimeConnector.Key> = keyArb(),
+  validExecuteQueryRequest: Arb<ExecuteRequest> = validExecuteQueryRequestArb(),
+  validExecuteMutationRequest: Arb<ExecuteRequest> = validExecuteMutationRequestArb(),
   validStreamRequestType: Arb<ValidStreamRequestType> = Arb.enum<ValidStreamRequestType>(),
 ): Arb<StreamRequest> = arbitrary {
   val streamRequest = StreamRequest.newBuilder()
   streamRequest.setRequestId(requestId.bind())
 
   when (validStreamRequestType.bind()) {
-    ValidStreamRequestType.ExecuteQuery ->
-      streamRequest.setExecute(
-        ExecuteRequest.newBuilder().let { executeRequest ->
-          executeRequest.setOperationName(GetStringByKeyQuery.OPERATION_NAME)
-          executeRequest.setVariables(encodeToStruct(GetStringByKeyQuery.Variables(key.bind())))
-          executeRequest.build()
-        }
-      )
+    ValidStreamRequestType.SubscribeQuery ->
+      streamRequest.setSubscribe(validExecuteQueryRequest.bind())
+    ValidStreamRequestType.ExecuteQuery -> streamRequest.setExecute(validExecuteQueryRequest.bind())
     ValidStreamRequestType.ExecuteMutation ->
-      streamRequest.setExecute(
-        ExecuteRequest.newBuilder().let { executeRequest ->
-          executeRequest.setOperationName(InsertStringMutation.OPERATION_NAME)
-          executeRequest.setVariables(encodeToStruct(InsertStringMutation.Variables(name.bind())))
-          executeRequest.build()
-        }
-      )
+      streamRequest.setExecute(validExecuteMutationRequest.bind())
   }
 
+  streamRequest.build()
+}
+
+/**
+ * Creates and returns an [Arb] that generates [ExecuteRequest] objects that, when sent as the
+ * [StreamRequest.setExecute] or [StreamRequest.setSubscribe] member of a [StreamRequest] to the
+ * [ConnectionStreams.outgoingRequests] after the "init" request, should successfully run a query.
+ */
+private fun validExecuteQueryRequestArb(
+  key: Arb<RealtimeConnector.Key> = keyArb(),
+): Arb<ExecuteRequest> = arbitrary {
+  ExecuteRequest.newBuilder().let { executeRequest ->
+    executeRequest.setOperationName(GetStringByKeyQuery.OPERATION_NAME)
+    executeRequest.setVariables(encodeToStruct(GetStringByKeyQuery.Variables(key.bind())))
+    executeRequest.build()
+  }
+}
+
+/**
+ * Creates and returns an [Arb] that generates [ExecuteRequest] objects that, when sent as the
+ * [StreamRequest.setExecute] member of a [StreamRequest] to the
+ * [ConnectionStreams.outgoingRequests] after the "init" request, should successfully run a
+ * mutation.
+ */
+private fun validExecuteMutationRequestArb(
+  name: Arb<String> = nameArb(),
+): Arb<ExecuteRequest> = arbitrary {
+  ExecuteRequest.newBuilder().let { executeRequest ->
+    executeRequest.setOperationName(InsertStringMutation.OPERATION_NAME)
+    executeRequest.setVariables(encodeToStruct(InsertStringMutation.Variables(name.bind())))
+    executeRequest.build()
+  }
+}
+
+/**
+ * Creates and returns an [Arb] that generates [StreamRequest] objects that, when sent to the
+ * [ConnectionStreams.outgoingRequests] after the "init" request, should successfully register a
+ * query subscription.
+ */
+private fun validSubscribeStreamRequestArb(
+  requestId: Arb<String> = @OptIn(DelicateKotest::class) requestIdArb().distinct(),
+  validExecuteQueryRequest: Arb<ExecuteRequest> = validExecuteQueryRequestArb(),
+): Arb<StreamRequest> = arbitrary {
+  val streamRequest = StreamRequest.newBuilder()
+  streamRequest.setRequestId(requestId.bind())
+  streamRequest.setSubscribe(validExecuteQueryRequest.bind())
   streamRequest.build()
 }
