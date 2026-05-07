@@ -340,8 +340,16 @@ class ConnectRPCIntegrationTest : DataConnectIntegrationTestBase() {
     streams.sendInitRequest()
     val requestId = requestIdArb().sample()
     val (streamRequest1, streamRequest2) =
-      validStreamRequestArb(requestId = Arb.constant(requestId)).pair().sample()
+      validSubscribeStreamRequestArb(
+          requestId = Arb.constant(requestId),
+          validExecuteQueryRequest =
+            @OptIn(DelicateKotest::class) validExecuteQueryRequestArb().distinct(),
+        )
+        .pair()
+        .sample()
+
     check(streamRequest1.requestId == streamRequest2.requestId)
+    check(streamRequest1.subscribe != streamRequest2.subscribe)
 
     streams.incomingResponses.test {
       streams.outgoingRequests.send(streamRequest1)
