@@ -15,6 +15,7 @@
 package com.google.firebase.crashlytics.internal;
 
 import android.util.Log;
+import com.google.firebase.crashlytics.BuildConfig;
 
 /** Default logger that logs to android.util.Log. */
 public class Logger {
@@ -23,7 +24,7 @@ public class Logger {
   static final Logger DEFAULT_LOGGER = new Logger(TAG);
 
   private final String tag;
-  private int logLevel;
+  private final int logLevel;
 
   public Logger(String tag) {
     this.tag = tag;
@@ -36,7 +37,7 @@ public class Logger {
   }
 
   private boolean canLog(int level) {
-    return logLevel <= level || Log.isLoggable(tag, level);
+    return BuildConfig.LOGCAT_ENABLED && (logLevel <= level || Log.isLoggable(tag, level));
   }
 
   public void d(String text, Throwable throwable) {

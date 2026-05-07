@@ -46,6 +46,7 @@ android {
 
         multiDexEnabled true
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField "boolean", "LOGCAT_ENABLED", "true"
     }
     sourceSets {
         androidTest {
