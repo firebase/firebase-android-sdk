@@ -213,8 +213,8 @@ package com.google.firebase.ai {
     method @com.google.firebase.ai.type.PublicPreviewAPI public com.google.firebase.ai.TemplateChat startChat(String templateId, java.util.Map<java.lang.String,?> inputs, java.util.List<com.google.firebase.ai.type.Content> history = emptyList());
   }
 
-  @com.google.firebase.ai.type.PublicPreviewAPI public final class TemplateImagenModel {
-    method public suspend Object? generateImages(String templateId, java.util.Map<java.lang.String,?> inputs, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>>);
+  @Deprecated @com.google.firebase.ai.type.PublicPreviewAPI public final class TemplateImagenModel {
+    method @Deprecated public suspend Object? generateImages(String templateId, java.util.Map<java.lang.String,?> inputs, kotlin.coroutines.Continuation<? super com.google.firebase.ai.type.ImagenGenerationResponse<com.google.firebase.ai.type.ImagenInlineImage>>);
   }
 
 }
@@ -717,6 +717,7 @@ package com.google.firebase.ai.type {
     method public com.google.firebase.ai.type.GenerationConfig.Builder setResponseModalities(java.util.List<com.google.firebase.ai.type.ResponseModality>? responseModalities);
     method public com.google.firebase.ai.type.GenerationConfig.Builder setResponseSchema(com.google.firebase.ai.type.Schema? responseSchema);
     method public com.google.firebase.ai.type.GenerationConfig.Builder setResponseSchemaJson(com.google.firebase.ai.type.JsonSchema<? extends java.lang.Object?>? responseSchemaJson);
+    method public com.google.firebase.ai.type.GenerationConfig.Builder setSpeechConfig(com.google.firebase.ai.type.SpeechConfig? speechConfig);
     method public com.google.firebase.ai.type.GenerationConfig.Builder setStopSequences(java.util.List<java.lang.String>? stopSequences);
     method public com.google.firebase.ai.type.GenerationConfig.Builder setTemperature(Float? temperature);
     method public com.google.firebase.ai.type.GenerationConfig.Builder setThinkingConfig(com.google.firebase.ai.type.ThinkingConfig? thinkingConfig);
@@ -731,6 +732,7 @@ package com.google.firebase.ai.type {
     field public String? responseMimeType;
     field public java.util.List<com.google.firebase.ai.type.ResponseModality>? responseModalities;
     field public com.google.firebase.ai.type.Schema? responseSchema;
+    field public com.google.firebase.ai.type.SpeechConfig? speechConfig;
     field public java.util.List<java.lang.String>? stopSequences;
     field public Float? temperature;
     field public com.google.firebase.ai.type.ThinkingConfig? thinkingConfig;
@@ -1513,6 +1515,14 @@ package com.google.firebase.ai.type {
     property public final int tokenCount;
   }
 
+  @com.google.firebase.ai.type.PublicPreviewAPI @kotlinx.serialization.Serializable public final class MultiSpeakerVoiceConfig {
+    ctor public MultiSpeakerVoiceConfig(java.util.List<com.google.firebase.ai.type.SpeakerVoiceConfig> speakerVoiceConfigs);
+    method public java.util.List<com.google.firebase.ai.type.SpeakerVoiceConfig> component1();
+    method public com.google.firebase.ai.type.MultiSpeakerVoiceConfig copy(java.util.List<com.google.firebase.ai.type.SpeakerVoiceConfig> speakerVoiceConfigs);
+    method public java.util.List<com.google.firebase.ai.type.SpeakerVoiceConfig> getSpeakerVoiceConfigs();
+    property public final java.util.List<com.google.firebase.ai.type.SpeakerVoiceConfig> speakerVoiceConfigs;
+  }
+
   public interface Part {
     method public boolean isThought();
     property public abstract boolean isThought;
@@ -1798,10 +1808,28 @@ package com.google.firebase.ai.type {
     property public final Integer? targetTokens;
   }
 
-  @com.google.firebase.ai.type.PublicPreviewAPI public final class SpeechConfig {
-    ctor public SpeechConfig(com.google.firebase.ai.type.Voice voice);
+  @com.google.firebase.ai.type.PublicPreviewAPI @kotlinx.serialization.Serializable public final class SpeakerVoiceConfig {
+    ctor public SpeakerVoiceConfig(String speaker, com.google.firebase.ai.type.Voice voice);
+    method public String component1();
+    method public com.google.firebase.ai.type.Voice component2();
+    method public com.google.firebase.ai.type.SpeakerVoiceConfig copy(String speaker, com.google.firebase.ai.type.Voice voice);
+    method public String getSpeaker();
     method public com.google.firebase.ai.type.Voice getVoice();
+    property public final String speaker;
     property public final com.google.firebase.ai.type.Voice voice;
+  }
+
+  @com.google.firebase.ai.type.PublicPreviewAPI public final class SpeechConfig {
+    ctor public SpeechConfig(com.google.firebase.ai.type.MultiSpeakerVoiceConfig multiSpeakerVoiceConfig);
+    ctor public SpeechConfig(com.google.firebase.ai.type.MultiSpeakerVoiceConfig multiSpeakerVoiceConfig, String? languageCode = null);
+    ctor public SpeechConfig(com.google.firebase.ai.type.Voice voice);
+    ctor public SpeechConfig(com.google.firebase.ai.type.Voice voice, String? languageCode = null);
+    method public String? getLanguageCode();
+    method public com.google.firebase.ai.type.MultiSpeakerVoiceConfig? getMultiSpeakerVoiceConfig();
+    method public com.google.firebase.ai.type.Voice? getVoice();
+    property public final String? languageCode;
+    property public final com.google.firebase.ai.type.MultiSpeakerVoiceConfig? multiSpeakerVoiceConfig;
+    property public final com.google.firebase.ai.type.Voice? voice;
   }
 
   public abstract class StringFormat {
@@ -1984,7 +2012,7 @@ package com.google.firebase.ai.type {
     property public final int totalTokenCount;
   }
 
-  @com.google.firebase.ai.type.PublicPreviewAPI public final class Voice {
+  @com.google.firebase.ai.type.PublicPreviewAPI @kotlinx.serialization.Serializable public final class Voice {
     ctor public Voice(String voiceName);
     method public String getVoiceName();
     property public final String voiceName;
